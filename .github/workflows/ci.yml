@@ -31,6 +31,8 @@ jobs:
           pip install -e ".[dev]"
       - name: Run tests
         run: pytest tests/ -v
+      - name: Run property-based tests (Hypothesis)
+        run: pytest tests/test_hypothesis_properties.py -v --hypothesis-seed=0
 
   rust-tests:
     name: Rust (stable)

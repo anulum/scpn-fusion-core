@@ -36,6 +36,7 @@ classifiers = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "hypothesis",
     "black",
     "ruff",
     "sphinx",
