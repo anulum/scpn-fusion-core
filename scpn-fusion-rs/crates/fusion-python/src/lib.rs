@@ -1,22 +1,22 @@
-// ─────────────────────────────────────────────────────────────────────
-// SCPN Fusion Core — Fusion Python
-// © 1998–2026 Miroslav Šotek. All rights reserved.
-// Contact: www.anulum.li | protoscience@anulum.li
-// ORCID: https://orcid.org/0009-0009-3560-0851
-// License: GNU AGPL v3 | Commercial licensing available
-// ─────────────────────────────────────────────────────────────────────
 //! PyO3 Python bindings for SCPN Fusion Core.
 //!
 //! Stage 10: Exposes Grad-Shafranov solver, thermodynamics, control,
 //! diagnostics, and ML modules to Python via PyO3 + numpy.
 
-use ndarray::Array2;
+use ndarray::{Array1, Array2};
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray2};
 use pyo3::prelude::*;
 
 use fusion_core::ignition::calculate_thermodynamics;
+use fusion_core::inverse::{reconstruct_equilibrium, InverseConfig, JacobianMode};
 use fusion_core::kernel::FusionKernel;
-use fusion_ml::neural_equilibrium::{EquilibriumMLP, NeuralEquilibrium, PCA};
+use fusion_core::source::ProfileParams;
+use fusion_engineering::blanket::neutron_wall_loading;
+use fusion_engineering::layout::{
+    aries_cost_scaling, cost_of_electricity as engineering_coe, scan_major_radius,
+};
+use fusion_engineering::tritium::tritium_breeding_ratio;
+use fusion_ml::neural_transport::NeuralTransportModel;
 // ReactorConfig used internally by FusionKernel::from_file
 
 // ─── Equilibrium solver ───
@@ -98,6 +98,50 @@ impl PyFusionKernel {
     }
 }
 
+// ─── Neural transport ───
+
+/// Python wrapper for neural transport surrogate (10 -> 64 -> 32 -> 3).
+#[pyclass]
+struct PyNeuralTransport {
+    inner: NeuralTransportModel,
+}
+
+#[pymethods]
+impl PyNeuralTransport {
+    #[new]
+    fn new() -> Self {
+        Self {
+            inner: NeuralTransportModel::new(),
+        }
+    }
+
+    #[staticmethod]
+    fn from_npz(path: &str) -> PyResult<Self> {
+        let inner = NeuralTransportModel::from_npz(path)
+            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+        Ok(Self { inner })
+    }
+
+    fn predict<'py>(&self, py: Python<'py>, input: Vec<f64>) -> Bound<'py, PyArray1<f64>> {
+        let output = self.inner.predict(&Array1::from_vec(input));
+        output.into_pyarray(py)
+    }
+
+    fn predict_profile<'py>(
+        &self,
+        py: Python<'py>,
+        inputs: PyReadonlyArray2<'py, f64>,
+    ) -> Bound<'py, PyArray2<f64>> {
+        let input_arr = inputs.as_array().to_owned();
+        let output = self.inner.predict_profile(&input_arr);
+        output.into_pyarray(py)
+    }
+
+    fn is_neural(&self) -> bool {
+        self.inner.is_neural()
+    }
+}
+
 // ─── Result types ───
 
 /// Equilibrium solve result.
@@ -168,6 +212,168 @@ impl PyThermodynamicsResult {
     }
 }
 
+// ─── Inverse solver ───
+
+#[pyclass]
+#[derive(Clone)]
+struct PyInverseResult {
+    #[pyo3(get)]
+    params_p: Vec<f64>,
+    #[pyo3(get)]
+    params_ff: Vec<f64>,
+    #[pyo3(get)]
+    converged: bool,
+    #[pyo3(get)]
+    iterations: usize,
+    #[pyo3(get)]
+    residual: f64,
+}
+
+#[pymethods]
+impl PyInverseResult {
+    fn __repr__(&self) -> String {
+        format!(
+            "InverseResult(converged={}, iters={}, residual={:.3e})",
+            self.converged, self.iterations, self.residual
+        )
+    }
+}
+
+#[pyclass]
+struct PyInverseSolver;
+
+fn parse_jacobian_mode(mode: &str) -> PyResult<JacobianMode> {
+    match mode.to_ascii_lowercase().as_str() {
+        "analytical" => Ok(JacobianMode::Analytical),
+        "fd" | "finite_difference" | "finite-difference" => Ok(JacobianMode::FiniteDifference),
+        _ => Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Unknown jacobian_mode '{mode}'. Use 'analytical' or 'finite_difference'."
+        ))),
+    }
+}
+
+fn parse_profile(values: Option<Vec<f64>>, default: ProfileParams) -> PyResult<ProfileParams> {
+    let Some(v) = values else {
+        return Ok(default);
+    };
+    if v.len() != 4 {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Profile parameter vector must have 4 values [ped_height, ped_top, ped_width, core_alpha], got {}",
+            v.len()
+        )));
+    }
+    Ok(ProfileParams {
+        ped_height: v[0],
+        ped_top: v[1],
+        ped_width: v[2],
+        core_alpha: v[3],
+    })
+}
+
+#[pymethods]
+impl PyInverseSolver {
+    #[new]
+    fn new() -> Self {
+        Self
+    }
+
+    #[pyo3(signature=(probes, measurements, jacobian_mode="analytical", initial_p=None, initial_ff=None))]
+    fn reconstruct(
+        &self,
+        probes: Vec<f64>,
+        measurements: Vec<f64>,
+        jacobian_mode: &str,
+        initial_p: Option<Vec<f64>>,
+        initial_ff: Option<Vec<f64>>,
+    ) -> PyResult<PyInverseResult> {
+        let mode = parse_jacobian_mode(jacobian_mode)?;
+        let init_p = parse_profile(initial_p, ProfileParams::default())?;
+        let init_ff = parse_profile(initial_ff, ProfileParams::default())?;
+
+        let config = InverseConfig {
+            jacobian_mode: mode,
+            ..Default::default()
+        };
+
+        let result = reconstruct_equilibrium(&probes, &measurements, init_p, init_ff, &config)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+
+        Ok(PyInverseResult {
+            params_p: vec![
+                result.params_p.ped_height,
+                result.params_p.ped_top,
+                result.params_p.ped_width,
+                result.params_p.core_alpha,
+            ],
+            params_ff: vec![
+                result.params_ff.ped_height,
+                result.params_ff.ped_top,
+                result.params_ff.ped_width,
+                result.params_ff.core_alpha,
+            ],
+            converged: result.converged,
+            iterations: result.iterations,
+            residual: result.residual,
+        })
+    }
+}
+
+// ─── Plant model ───
+
+#[pyclass]
+struct PyPlantModel;
+
+#[pymethods]
+impl PyPlantModel {
+    #[new]
+    fn new() -> Self {
+        Self
+    }
+
+    fn tritium_breeding_ratio(
+        &self,
+        n_li6: f64,
+        sigma_li6: f64,
+        neutron_flux: f64,
+        blanket_vol: f64,
+    ) -> f64 {
+        tritium_breeding_ratio(n_li6, sigma_li6, neutron_flux, blanket_vol)
+    }
+
+    fn wall_loading(&self, p_neutron: f64, r: f64, a: f64, kappa: f64) -> f64 {
+        neutron_wall_loading(p_neutron, r, a, kappa)
+    }
+
+    fn aries_cost_scaling(&self, c0: f64, r: f64, b: f64) -> f64 {
+        aries_cost_scaling(c0, r, b)
+    }
+
+    fn cost_of_electricity(&self, capital_annuity: f64, o_and_m: f64, p_net: f64, cf: f64) -> f64 {
+        engineering_coe(capital_annuity, o_and_m, p_net, cf)
+    }
+
+    fn scan_radius(
+        &self,
+        r_min: f64,
+        r_max: f64,
+        steps: usize,
+    ) -> Vec<(f64, f64, f64, f64, f64, f64)> {
+        scan_major_radius(r_min, r_max, steps)
+            .into_iter()
+            .map(|d| {
+                (
+                    d.r_major,
+                    d.b_field,
+                    d.p_net,
+                    d.capacity_factor,
+                    d.capital_cost,
+                    d.coe,
+                )
+            })
+            .collect()
+    }
+}
+
 // ─── Control systems ───
 
 /// Shafranov equilibrium calculator.
@@ -187,7 +393,6 @@ fn solve_coil_currents(green_func: Vec<f64>, target_bv: f64) -> Vec<f64> {
 
 /// Create sensor suite and measure magnetics from Psi array.
 #[pyfunction]
-#[allow(clippy::too_many_arguments)]
 fn measure_magnetics<'py>(
     py: Python<'py>,
     psi: PyReadonlyArray2<'py, f64>,
@@ -213,91 +418,6 @@ fn simulate_tearing_mode(steps: usize) -> (Vec<f64>, u8, i64) {
     (shot.signal, shot.label, shot.time_to_disruption)
 }
 
-// ─── Neural Equilibrium ───
-
-/// PCA + MLP neural equilibrium accelerator.
-///
-/// Predicts equilibrium flux maps from coil currents at ~1000× speedup
-/// over the iterative Grad-Shafranov solver.
-#[pyclass]
-struct PyNeuralEquilibrium {
-    inner: NeuralEquilibrium,
-}
-
-#[pymethods]
-impl PyNeuralEquilibrium {
-    /// Create a new neural equilibrium model by fitting PCA on training data.
-    ///
-    /// Parameters
-    /// ----------
-    /// training_data : numpy.ndarray
-    ///     (n_samples, n_features) matrix of flattened Psi fields.
-    /// n_components : int
-    ///     Number of PCA components to retain.
-    /// input_dim : int
-    ///     Dimension of the MLP input (number of coil currents).
-    #[new]
-    fn new(
-        training_data: PyReadonlyArray2<'_, f64>,
-        n_components: usize,
-        input_dim: usize,
-    ) -> Self {
-        let data = training_data.as_array().to_owned();
-        let pca = PCA::fit(&data, n_components);
-        let mlp = EquilibriumMLP::new(input_dim, pca.n_components);
-        PyNeuralEquilibrium {
-            inner: NeuralEquilibrium { pca, mlp },
-        }
-    }
-
-    /// Predict equilibrium from coil currents.
-    ///
-    /// Parameters
-    /// ----------
-    /// currents : numpy.ndarray
-    ///     1-D array of coil currents (length = input_dim).
-    ///
-    /// Returns
-    /// -------
-    /// numpy.ndarray
-    ///     Flattened Psi field (length = n_features from training data).
-    fn predict<'py>(
-        &self,
-        py: Python<'py>,
-        currents: PyReadonlyArray2<'py, f64>,
-    ) -> Bound<'py, PyArray1<f64>> {
-        let c = currents.as_array().row(0).to_owned();
-        let result = self.inner.predict(&c);
-        result.into_pyarray(py)
-    }
-
-    /// Batch forward pass through MLP only (no PCA inverse).
-    ///
-    /// Parameters
-    /// ----------
-    /// x : numpy.ndarray
-    ///     (n_samples, input_dim) array.
-    ///
-    /// Returns
-    /// -------
-    /// numpy.ndarray
-    ///     (n_samples, n_components) PCA coefficient predictions.
-    fn forward_batch<'py>(
-        &self,
-        py: Python<'py>,
-        x: PyReadonlyArray2<'py, f64>,
-    ) -> Bound<'py, PyArray2<f64>> {
-        let input = x.as_array().to_owned();
-        let result = self.inner.mlp.forward_batch(&input);
-        result.into_pyarray(py)
-    }
-
-    /// Number of PCA components.
-    fn n_components(&self) -> usize {
-        self.inner.pca.n_components
-    }
-}
-
 // ─── Module registration ───
 
 /// SCPN Fusion Core — Rust-accelerated plasma physics.
@@ -306,7 +426,10 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyFusionKernel>()?;
     m.add_class::<PyEquilibriumResult>()?;
     m.add_class::<PyThermodynamicsResult>()?;
-    m.add_class::<PyNeuralEquilibrium>()?;
+    m.add_class::<PyNeuralTransport>()?;
+    m.add_class::<PyInverseSolver>()?;
+    m.add_class::<PyInverseResult>()?;
+    m.add_class::<PyPlantModel>()?;
     m.add_function(wrap_pyfunction!(shafranov_bv, m)?)?;
     m.add_function(wrap_pyfunction!(solve_coil_currents, m)?)?;
     m.add_function(wrap_pyfunction!(measure_magnetics, m)?)?;
