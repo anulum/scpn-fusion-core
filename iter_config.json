@@ -1,0 +1,28 @@
+{
+    "reactor_name": "ITER-Standard",
+    "grid_resolution": [128, 128],
+    "dimensions": {
+        "R_min": 2.0,
+        "R_max": 10.0,
+        "Z_min": -6.0,
+        "Z_max": 6.0
+    },
+    "physics": {
+        "plasma_current_target": 15.0,
+        "vacuum_permeability": 1.0
+    },
+    "coils": [
+        { "name": "PF1", "r": 3.9, "z": 7.6, "current": -0.3288 },
+        { "name": "PF2", "r": 8.2, "z": 6.7, "current": -1.3229 },
+        { "name": "PF3", "r": 12.0, "z": 2.7, "current": -3.0182 },
+        { "name": "PF4", "r": 12.6, "z": -2.3, "current": -2.9829 },
+        { "name": "PF5", "r": 8.4, "z": -6.7, "current": -1.3663 },
+        { "name": "PF6", "r": 4.3, "z": -7.6, "current": -0.3880 },
+        { "name": "CS",  "r": 1.7, "z": 0.0, "current": 0.1543 }
+    ],
+    "solver": {
+        "max_iterations": 1000,
+        "convergence_threshold": 0.0001,
+        "relaxation_factor": 0.1
+    }
+}

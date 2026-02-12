@@ -29,6 +29,11 @@ from scpn_fusion.scpn.structure import StochasticPetriNet
 from scpn_fusion.scpn.compiler import FusionCompiler, CompiledNet
 
 
+def _to_dense(arr):
+    """Convert sparse or dense array to dense numpy array."""
+    return arr.toarray() if hasattr(arr, "toarray") else np.asarray(arr)
+
+
 # ── Strategies ────────────────────────────────────────────────────────
 
 tokens_01 = st.floats(min_value=0.0, max_value=1.0)
@@ -115,8 +120,10 @@ class TestPetriNetProperties:
     @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
     def test_weight_matrices_nonneg(self, net: StochasticPetriNet):
         """Arc weight matrices are non-negative."""
-        assert np.all(net.W_in.toarray() >= 0.0)
-        assert np.all(net.W_out.toarray() >= 0.0)
+        W_in = _to_dense(net.W_in)
+        W_out = _to_dense(net.W_out)
+        assert np.all(W_in >= 0.0)
+        assert np.all(W_out >= 0.0)
 
     @given(petri_net())
     @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
@@ -160,14 +167,14 @@ class TestCompilerProperties:
 
     @given(petri_net())
     @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow])
-    def test_compiled_thresholds_in_unit(self, net):
-        """Compiled thresholds are in [0, 1] range."""
+    def test_compiled_thresholds_positive(self, net):
+        """Compiled thresholds are positive and match source net."""
         compiler = FusionCompiler(bitstream_length=1024, seed=42)
         compiled = compiler.compile(net)
 
         assert compiled.thresholds.shape == (net.n_transitions,)
-        assert np.all(compiled.thresholds >= 0.0)
-        assert np.all(compiled.thresholds <= 1.0)
+        assert np.all(compiled.thresholds > 0.0)
+        np.testing.assert_array_equal(compiled.thresholds, net.get_thresholds())
 
     @given(petri_net())
     @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow])
@@ -177,7 +184,7 @@ class TestCompilerProperties:
         compiled = compiler.compile(net)
 
         marking = net.get_initial_marking()
-        output = compiled.dense_forward_float(compiled.W_in.toarray(), marking)
+        output = compiled.dense_forward_float(_to_dense(compiled.W_in), marking)
 
         assert not np.any(np.isnan(output))
         assert output.shape == (net.n_transitions,)
@@ -198,8 +205,8 @@ class TestSeedDeterminism:
         r1 = c1.compile(net)
         r2 = c2.compile(net)
 
-        np.testing.assert_array_equal(r1.W_in.toarray(), r2.W_in.toarray())
-        np.testing.assert_array_equal(r1.W_out.toarray(), r2.W_out.toarray())
+        np.testing.assert_array_equal(_to_dense(r1.W_in), _to_dense(r2.W_in))
+        np.testing.assert_array_equal(_to_dense(r1.W_out), _to_dense(r2.W_out))
         np.testing.assert_array_equal(r1.initial_marking, r2.initial_marking)
         np.testing.assert_array_equal(r1.thresholds, r2.thresholds)
 
@@ -272,8 +279,8 @@ class TestTokenEvolution:
         compiled = compiler.compile(net)
 
         marking = compiled.initial_marking.copy()
-        W_in_dense = compiled.W_in.toarray()
-        W_out_dense = compiled.W_out.toarray()
+        W_in_dense = _to_dense(compiled.W_in)
+        W_out_dense = _to_dense(compiled.W_out)
 
         for _ in range(n_steps):
             # Simple float-path step: fire → transfer tokens
