@@ -40,6 +40,17 @@ impl Default for ProfileParams {
     }
 }
 
+/// Context passed to profile-driven source update.
+#[derive(Debug, Clone, Copy)]
+pub struct SourceProfileContext<'a> {
+    pub psi: &'a Array2<f64>,
+    pub grid: &'a Grid2D,
+    pub psi_axis: f64,
+    pub psi_boundary: f64,
+    pub mu0: f64,
+    pub i_target: f64,
+}
+
 /// mTanh profile:
 /// f(psi_n) = 0.5 * h * (1 + tanh(y)) + alpha * core(psi_n)
 /// y = (ped_top - psi_n) / ped_width
@@ -146,17 +157,19 @@ pub fn update_plasma_source_nonlinear(
 ///
 /// This is the kernel-facing hook used by inverse reconstruction when profile
 /// parameters are being estimated from measurements.
-#[allow(clippy::too_many_arguments)]
 pub fn update_plasma_source_with_profiles(
-    psi: &Array2<f64>,
-    grid: &Grid2D,
-    psi_axis: f64,
-    psi_boundary: f64,
-    mu0: f64,
-    i_target: f64,
+    ctx: SourceProfileContext<'_>,
     params_p: &ProfileParams,
     params_ff: &ProfileParams,
 ) -> Array2<f64> {
+    let SourceProfileContext {
+        psi,
+        grid,
+        psi_axis,
+        psi_boundary,
+        mu0,
+        i_target,
+    } = ctx;
     let nz = grid.nz;
     let nr = grid.nr;
 
@@ -298,7 +311,16 @@ mod tests {
         };
 
         let j = update_plasma_source_with_profiles(
-            &psi, &grid, 1.0, 0.0, 1.0, 15e6, &params_p, &params_ff,
+            SourceProfileContext {
+                psi: &psi,
+                grid: &grid,
+                psi_axis: 1.0,
+                psi_boundary: 0.0,
+                mu0: 1.0,
+                i_target: 15e6,
+            },
+            &params_p,
+            &params_ff,
         );
         assert!(
             j.iter().all(|v| v.is_finite()),

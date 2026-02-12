@@ -7,6 +7,7 @@
 use crate::bfield::compute_b_field;
 use crate::source::{
     update_plasma_source_nonlinear, update_plasma_source_with_profiles, ProfileParams,
+    SourceProfileContext,
 };
 use crate::vacuum::calculate_vacuum_field;
 use crate::xpoint::find_x_point;
@@ -192,12 +193,14 @@ impl FusionKernel {
                     self.profile_params_ff.as_ref(),
                 ) {
                     self.state.j_phi = update_plasma_source_with_profiles(
-                        &self.state.psi,
-                        &self.grid,
-                        psi_axis_val,
-                        psi_boundary_val,
-                        mu0,
-                        i_target,
+                        SourceProfileContext {
+                            psi: &self.state.psi,
+                            grid: &self.grid,
+                            psi_axis: psi_axis_val,
+                            psi_boundary: psi_boundary_val,
+                            mu0,
+                            i_target,
+                        },
                         params_p,
                         params_ff,
                     );

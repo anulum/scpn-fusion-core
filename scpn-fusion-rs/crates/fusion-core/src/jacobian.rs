@@ -81,9 +81,10 @@ pub fn compute_fd_jacobian(
 ) -> Vec<Vec<f64>> {
     let base = forward_model_response(probe_psi_norm, params_p, params_ff);
     let h = fd_step.abs().max(1e-9);
+    const PARAM_INDICES: [usize; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
 
     let mut jac = vec![vec![0.0; 8]; probe_psi_norm.len()];
-    for (col, _) in [(); 8].iter().enumerate() {
+    for col in PARAM_INDICES {
         let (p_pert, ff_pert) = perturb_param(params_p, params_ff, col, h);
         let f_pert = forward_model_response(probe_psi_norm, &p_pert, &ff_pert);
         for (row, (&fp, &b)) in jac.iter_mut().zip(f_pert.iter().zip(base.iter())) {
