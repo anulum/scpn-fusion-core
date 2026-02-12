@@ -1,0 +1,184 @@
+// ─────────────────────────────────────────────────────────────────────
+// SCPN Fusion Core — AMR-Aware Kernel Solver
+// © 1998–2026 Miroslav Šotek. All rights reserved.
+// Contact: www.anulum.li | protoscience@anulum.li
+// ORCID: https://orcid.org/0009-0009-3560-0851
+// License: GNU AGPL v3 | Commercial licensing available
+// ─────────────────────────────────────────────────────────────────────
+//! AMR-assisted equilibrium solve wrapper.
+
+use fusion_math::amr::{estimate_error_field, AmrHierarchy};
+use fusion_math::sor::sor_solve;
+use fusion_types::state::Grid2D;
+use ndarray::Array2;
+
+#[derive(Debug, Clone)]
+pub struct AmrKernelConfig {
+    pub max_levels: usize,
+    pub refinement_threshold: f64,
+    pub omega: f64,
+    pub coarse_iters: usize,
+    pub patch_iters: usize,
+    pub blend: f64,
+}
+
+impl Default for AmrKernelConfig {
+    fn default() -> Self {
+        Self {
+            max_levels: 2,
+            refinement_threshold: 0.1,
+            omega: 1.8,
+            coarse_iters: 400,
+            patch_iters: 300,
+            blend: 0.5,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AmrKernelSolver {
+    pub config: AmrKernelConfig,
+}
+
+impl AmrKernelSolver {
+    pub fn new(config: AmrKernelConfig) -> Self {
+        Self { config }
+    }
+
+    pub fn solve(&self, base_grid: &Grid2D, source: &Array2<f64>) -> Array2<f64> {
+        self.solve_with_hierarchy(base_grid, source).0
+    }
+
+    pub fn solve_with_hierarchy(
+        &self,
+        base_grid: &Grid2D,
+        source: &Array2<f64>,
+    ) -> (Array2<f64>, AmrHierarchy) {
+        let mut psi = Array2::zeros((base_grid.nz, base_grid.nr));
+        sor_solve(
+            &mut psi,
+            source,
+            base_grid,
+            self.config.omega,
+            self.config.coarse_iters,
+        );
+
+        let error = estimate_error_field(source, base_grid);
+        let mut hierarchy = AmrHierarchy::new(
+            base_grid.clone(),
+            self.config.max_levels,
+            self.config.refinement_threshold,
+        );
+        hierarchy.refine(&error);
+
+        if hierarchy.patches.is_empty() {
+            return (psi, hierarchy);
+        }
+
+        for patch in &mut hierarchy.patches {
+            let (iz_lo, _iz_hi, ir_lo, _ir_hi) = patch.bounds;
+
+            for pz in 0..patch.grid.nz {
+                for pr in 0..patch.grid.nr {
+                    let base_iz = (iz_lo + pz / 2).min(base_grid.nz - 1);
+                    let base_ir = (ir_lo + pr / 2).min(base_grid.nr - 1);
+                    patch.psi[[pz, pr]] = psi[[base_iz, base_ir]];
+                }
+            }
+
+            let patch_source = Array2::from_shape_fn((patch.grid.nz, patch.grid.nr), |(pz, pr)| {
+                let base_iz = (iz_lo + pz / 2).min(base_grid.nz - 1);
+                let base_ir = (ir_lo + pr / 2).min(base_grid.nr - 1);
+                source[[base_iz, base_ir]]
+            });
+
+            sor_solve(
+                &mut patch.psi,
+                &patch_source,
+                &patch.grid,
+                self.config.omega,
+                self.config.patch_iters,
+            );
+        }
+
+        let blend = self.config.blend.clamp(0.0, 1.0);
+        for patch in &hierarchy.patches {
+            for iz in patch.bounds.0..=patch.bounds.1 {
+                for ir in patch.bounds.2..=patch.bounds.3 {
+                    let pz = (iz - patch.bounds.0) * 2;
+                    let pr = (ir - patch.bounds.2) * 2;
+                    let patch_val = patch.psi[[pz, pr]];
+                    psi[[iz, ir]] = (1.0 - blend) * psi[[iz, ir]] + blend * patch_val;
+                }
+            }
+        }
+
+        (psi, hierarchy)
+    }
+}
+
+impl Default for AmrKernelSolver {
+    fn default() -> Self {
+        Self::new(AmrKernelConfig::default())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn gaussian_source(grid: &Grid2D) -> Array2<f64> {
+        let r0 = grid.r[grid.nr - 1] - 0.08 * (grid.r[grid.nr - 1] - grid.r[0]);
+        let z0 = 0.0;
+        Array2::from_shape_fn((grid.nz, grid.nr), |(iz, ir)| {
+            let dr = grid.rr[[iz, ir]] - r0;
+            let dz = grid.zz[[iz, ir]] - z0;
+            -(-((dr * dr) / 0.02 + (dz * dz) / 0.04)).exp()
+        })
+    }
+
+    fn rel_l2(a: &Array2<f64>, b: &Array2<f64>) -> f64 {
+        let num = (a - b).mapv(|v| v * v).sum().sqrt();
+        let den = b.mapv(|v| v * v).sum().sqrt().max(1e-12);
+        num / den
+    }
+
+    #[test]
+    fn test_amr_kernel_runs_with_refinement() {
+        let grid = Grid2D::new(33, 33, 1.0, 2.0, -1.0, 1.0);
+        let source = gaussian_source(&grid);
+        let solver = AmrKernelSolver::default();
+        let (psi, hierarchy) = solver.solve_with_hierarchy(&grid, &source);
+
+        assert!(psi.iter().all(|v| v.is_finite()));
+        assert!(
+            !hierarchy.patches.is_empty(),
+            "Expected at least one AMR patch for pedestal-weighted source"
+        );
+    }
+
+    #[test]
+    fn test_amr_kernel_no_refinement_matches_coarse() {
+        let grid = Grid2D::new(33, 33, 1.0, 2.0, -1.0, 1.0);
+        let source = gaussian_source(&grid);
+
+        let coarse_cfg = AmrKernelConfig {
+            refinement_threshold: f64::INFINITY,
+            ..Default::default()
+        };
+        let solver = AmrKernelSolver::new(coarse_cfg.clone());
+        let (amr_off, hierarchy) = solver.solve_with_hierarchy(&grid, &source);
+        assert!(hierarchy.patches.is_empty());
+
+        let mut coarse = Array2::zeros((grid.nz, grid.nr));
+        sor_solve(
+            &mut coarse,
+            &source,
+            &grid,
+            coarse_cfg.omega,
+            coarse_cfg.coarse_iters,
+        );
+        let err = rel_l2(&amr_off, &coarse);
+        assert!(err < 1e-12, "No-refinement path should match coarse solve");
+    }
+}
