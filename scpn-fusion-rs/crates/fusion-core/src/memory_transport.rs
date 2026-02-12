@@ -149,22 +149,18 @@ impl MemoryTransportSolver {
 
         // q = -Q_mem
         let flux = self.q_memory.mapv(|v| -v);
-        let div_flux =
-            Self::divergence_flux_cylindrical(&flux, &self.profiles.rho, dr).mapv(|v| {
-                if v.is_finite() {
-                    v.clamp(-MAX_DIV_FLUX, MAX_DIV_FLUX)
-                } else {
-                    0.0
-                }
-            });
+        let div_flux = Self::divergence_flux_cylindrical(&flux, &self.profiles.rho, dr).mapv(|v| {
+            if v.is_finite() {
+                v.clamp(-MAX_DIV_FLUX, MAX_DIV_FLUX)
+            } else {
+                0.0
+            }
+        });
 
         let te_old = self.profiles.te.clone();
         for i in 1..n - 1 {
-            let s_heat =
-                (p_aux_mw * (-self.profiles.rho[i].powi(2) / HEATING_WIDTH).exp()).clamp(
-                    0.0,
-                    MAX_HEATING,
-                );
+            let s_heat = (p_aux_mw * (-self.profiles.rho[i].powi(2) / HEATING_WIDTH).exp())
+                .clamp(0.0, MAX_HEATING);
             let s_cool = COOLING_FACTOR * te_old[i].abs().sqrt() * self.profiles.n_impurity[i];
             let te_new = te_old[i] + dt * (div_flux[i] + s_heat - s_cool);
             self.profiles.te[i] = if te_new.is_finite() {
