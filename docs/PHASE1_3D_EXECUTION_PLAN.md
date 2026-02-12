@@ -33,7 +33,7 @@ Source: `SCPN Fusion Core with Enhanced 3D Capabilities.md`
 | P1-006 | Add ITER/SPARC RMSE dashboard script | Done | `validation/rmse_dashboard.py` |
 | P1-007 | Add cProfile + flamegraph scripts for kernel/3D path | Done | `profiling/profile_kernel.py`, `profiling/profile_geometry_3d.py` |
 | P1-008 | Add CI job for geometry quickstart smoke test | Done | `.github/workflows/ci.yml` |
-| P1-009 | Add docs quickstart section in README + Sphinx | In Progress | `README.md`, `docs/sphinx/` updates |
+| P1-009 | Add docs quickstart section in README + Sphinx | Done | `README.md`, `docs/sphinx/` updates |
 
 ## Next Queue (Phase 1)
 
