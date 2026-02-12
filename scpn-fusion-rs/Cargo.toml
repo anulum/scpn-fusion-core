@@ -13,6 +13,11 @@ members = [
 ]
 resolver = "2"
 
+[workspace.package]
+authors = ["Miroslav Sotek", "Michal Reiprich"]
+license = "AGPL-3.0-or-later"
+edition = "2021"
+
 [workspace.dependencies]
 ndarray = "0.16"
 nalgebra = "0.33"

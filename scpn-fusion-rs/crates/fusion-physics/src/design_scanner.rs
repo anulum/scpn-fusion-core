@@ -1,3 +1,10 @@
+// ─────────────────────────────────────────────────────────────────────
+// SCPN Fusion Core — Design Scanner
+// © 1998–2026 Miroslav Šotek. All rights reserved.
+// Contact: www.anulum.li | protoscience@anulum.li
+// ORCID: https://orcid.org/0009-0009-3560-0851
+// License: GNU AGPL v3 | Commercial licensing available
+// ─────────────────────────────────────────────────────────────────────
 //! Monte Carlo global design space scanner.
 //!
 //! Port of `global_design_scanner.py`.

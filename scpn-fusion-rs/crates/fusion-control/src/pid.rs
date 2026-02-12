@@ -1,3 +1,10 @@
+// ─────────────────────────────────────────────────────────────────────
+// SCPN Fusion Core — PID
+// © 1998–2026 Miroslav Šotek. All rights reserved.
+// Contact: www.anulum.li | protoscience@anulum.li
+// ORCID: https://orcid.org/0009-0009-3560-0851
+// License: GNU AGPL v3 | Commercial licensing available
+// ─────────────────────────────────────────────────────────────────────
 //! PID controller for tokamak position control.
 //!
 //! Port of `tokamak_flight_sim.py`.

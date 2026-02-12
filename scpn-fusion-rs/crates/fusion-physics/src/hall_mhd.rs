@@ -1,3 +1,10 @@
+// ─────────────────────────────────────────────────────────────────────
+// SCPN Fusion Core — Hall MHD
+// © 1998–2026 Miroslav Šotek. All rights reserved.
+// Contact: www.anulum.li | protoscience@anulum.li
+// ORCID: https://orcid.org/0009-0009-3560-0851
+// License: GNU AGPL v3 | Commercial licensing available
+// ─────────────────────────────────────────────────────────────────────
 //! Reduced Hall-MHD with spontaneous zonal flow generation.
 //!
 //! Port of `hall_mhd_discovery.py`.

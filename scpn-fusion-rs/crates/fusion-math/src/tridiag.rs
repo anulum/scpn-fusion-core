@@ -1,3 +1,10 @@
+// ─────────────────────────────────────────────────────────────────────
+// SCPN Fusion Core — Tridiag
+// © 1998–2026 Miroslav Šotek. All rights reserved.
+// Contact: www.anulum.li | protoscience@anulum.li
+// ORCID: https://orcid.org/0009-0009-3560-0851
+// License: GNU AGPL v3 | Commercial licensing available
+// ─────────────────────────────────────────────────────────────────────
 //! Thomas algorithm for tridiagonal systems.
 //!
 //! Port of temhd_peltier.py solve_tridiagonal() (lines 25-58).
