@@ -8,7 +8,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "SCPN Fusion Core"
 type: software
-version: 1.0.0
+version: 1.0.1
 date-released: 2026-02-12
 license: AGPL-3.0-or-later
 repository-code: "https://github.com/anulum/scpn-fusion-core"
@@ -46,7 +46,7 @@ preferred-citation:
       orcid: "https://orcid.org/0009-0009-3560-0851"
     - family-names: Reiprich
       given-names: Michal
-  version: 1.0.0
+  version: 1.0.1
   date-released: 2026-02-12
   url: "https://github.com/anulum/scpn-fusion-core"
   license: AGPL-3.0-or-later
