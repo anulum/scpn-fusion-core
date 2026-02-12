@@ -12,6 +12,7 @@
 
 pub mod bfield;
 pub mod ignition;
+pub mod inverse;
 pub mod kernel;
 pub mod rf_heating;
 pub mod source;
