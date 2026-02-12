@@ -9,6 +9,7 @@
 
 pub mod elliptic;
 pub mod fft;
+pub mod gmres;
 pub mod interp;
 pub mod linalg;
 pub mod multigrid;
