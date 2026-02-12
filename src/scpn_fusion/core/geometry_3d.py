@@ -92,6 +92,24 @@ class Reactor3DBuilder:
 
         return r_ax, z_ax, psi_axis, psi_boundary
 
+    def _fallback_ellipse(
+        self,
+        resolution_poloidal: int,
+        r_ax: float,
+        z_ax: float,
+    ) -> np.ndarray:
+        """Build a conservative elliptical boundary fallback inside the domain."""
+        r_margin = min(r_ax - float(self.kernel.R[0]), float(self.kernel.R[-1]) - r_ax)
+        z_margin = min(z_ax - float(self.kernel.Z[0]), float(self.kernel.Z[-1]) - z_ax)
+        semi_r = max(0.85 * r_margin, 1e-3)
+        semi_z = max(0.85 * z_margin, 1e-3)
+
+        thetas = np.linspace(0.0, 2.0 * np.pi, resolution_poloidal, endpoint=False)
+        points = np.zeros((resolution_poloidal, 2), dtype=float)
+        points[:, 0] = r_ax + semi_r * np.cos(thetas)
+        points[:, 1] = z_ax + semi_z * np.sin(thetas)
+        return points
+
     def _trace_lcfs(self, resolution_poloidal: int, radial_steps: int) -> np.ndarray:
         if resolution_poloidal < 8:
             raise ValueError("resolution_poloidal must be >= 8.")
@@ -118,6 +136,8 @@ class Reactor3DBuilder:
             prev_radius = 0.0
             prev_diff = psi_axis - psi_boundary
             found = False
+            sampled_radii: list[float] = []
+            sampled_diffs: list[float] = []
 
             for radius in ray_samples[1:]:
                 r_test = r_ax + radius * cos_t
@@ -128,6 +148,8 @@ class Reactor3DBuilder:
 
                 psi_test = self._sample_psi_bilinear(r_test, z_test)
                 diff = psi_test - psi_boundary
+                sampled_radii.append(float(radius))
+                sampled_diffs.append(float(diff))
 
                 crossed = diff == 0.0 or (prev_diff > 0.0 and diff < 0.0) or (
                     prev_diff < 0.0 and diff > 0.0
@@ -149,13 +171,20 @@ class Reactor3DBuilder:
                 prev_radius = radius
                 prev_diff = diff
 
-            if not found:
-                continue
+            if not found and sampled_diffs:
+                # If no strict crossing is found on this ray (common on coarse/sparse
+                # equilibria), use the closest sampled point to the boundary level.
+                min_idx = int(np.argmin(np.abs(np.asarray(sampled_diffs, dtype=float))))
+                hit_radius = sampled_radii[min_idx]
+                points.append(
+                    [
+                        r_ax + hit_radius * cos_t,
+                        z_ax + hit_radius * sin_t,
+                    ]
+                )
 
         if len(points) < max(8, resolution_poloidal // 3):
-            raise RuntimeError(
-                f"Insufficient LCFS points ({len(points)}) extracted from equilibrium."
-            )
+            return self._fallback_ellipse(resolution_poloidal, r_ax, z_ax)
 
         return np.asarray(points, dtype=float)
 

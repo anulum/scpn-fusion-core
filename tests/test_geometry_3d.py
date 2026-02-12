@@ -43,6 +43,13 @@ class _DummyKernel:
         return (2.894, 0.0), 0.2
 
 
+class _SparseBoundaryKernel(_DummyKernel):
+    def find_x_point(self, psi: np.ndarray) -> tuple[tuple[float, float], float]:
+        _ = psi
+        # Force a sparse/non-crossing contour for some angles to exercise fallback.
+        return (2.894, 0.0), -0.5
+
+
 def test_geometry_mesh_generation_shapes() -> None:
     kernel = _DummyKernel()
     builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
@@ -109,6 +116,23 @@ def test_geometry_constructor_solve_flag() -> None:
 
     Reactor3DBuilder(kernel=kernel, solve_equilibrium=True)
     assert kernel.solve_calls == 1
+
+
+def test_geometry_lcfs_sparse_crossings_fallback() -> None:
+    kernel = _SparseBoundaryKernel()
+    builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+
+    n_tor = 12
+    n_pol = 12
+    vertices, faces = builder.generate_plasma_surface(
+        resolution_toroidal=n_tor,
+        resolution_poloidal=n_pol,
+        radial_steps=128,
+    )
+
+    assert vertices.shape[0] == n_tor * n_pol
+    assert faces.shape[0] == 2 * n_tor * n_pol
+    assert np.isfinite(vertices).all()
 
 
 def test_generate_coil_mesh_placeholders() -> None:
