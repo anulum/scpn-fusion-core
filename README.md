@@ -274,6 +274,7 @@ Representative single-shot runtimes on contemporary hardware (2024-2025 publicat
 
 ## Documentation
 
+- [Solver Tuning Guide](docs/SOLVER_TUNING_GUIDE.md) (relaxation, Tikhonov, Huber, grid sizing)
 - [Benchmarks & Comparisons](docs/BENCHMARKS.md)
 - [Benchmark Figures (static export)](docs/BENCHMARK_FIGURES.md)
 - [Compact Reactor Findings](docs/COMPACT_REACTOR_FINDINGS.md)
