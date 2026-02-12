@@ -1,0 +1,110 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-python-docs:
+    name: Build Python API docs (Sphinx)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints myst-parser
+      - name: Build Sphinx docs
+        run: |
+          cd docs/sphinx
+          make html
+      - name: Upload Python docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-docs
+          path: docs/sphinx/_build/html/
+
+  build-rust-docs:
+    name: Build Rust API docs (rustdoc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Build rustdoc
+        working-directory: scpn-fusion-rs
+        run: cargo doc --no-deps --all-features
+      - name: Upload Rust docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-docs
+          path: scpn-fusion-rs/target/doc/
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: [build-python-docs, build-rust-docs]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download Python docs
+        uses: actions/download-artifact@v4
+        with:
+          name: python-docs
+          path: site/python/
+      - name: Download Rust docs
+        uses: actions/download-artifact@v4
+        with:
+          name: rust-docs
+          path: site/rust/
+      - name: Create index page
+        run: |
+          cat > site/index.html << 'HTMLEOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>SCPN Fusion Core — API Documentation</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 80px auto; padding: 20px; }
+              h1 { border-bottom: 2px solid #0366d6; padding-bottom: 10px; }
+              a { color: #0366d6; text-decoration: none; font-size: 1.2em; }
+              a:hover { text-decoration: underline; }
+              .links { margin-top: 30px; }
+              .links a { display: block; margin: 15px 0; }
+            </style>
+          </head>
+          <body>
+            <h1>SCPN Fusion Core</h1>
+            <p>Tokamak plasma physics simulation and neuro-symbolic control suite.</p>
+            <div class="links">
+              <a href="python/">Python API Reference (Sphinx)</a>
+              <a href="rust/fusion_core/">Rust API Reference (rustdoc)</a>
+              <a href="https://github.com/anulum/scpn-fusion-core">GitHub Repository</a>
+            </div>
+          </body>
+          </html>
+          HTMLEOF
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

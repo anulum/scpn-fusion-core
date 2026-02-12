@@ -33,10 +33,22 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "ruff",
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinx-autodoc-typehints",
+    "myst-parser",
+]
+
 [project.urls]
 Homepage = "https://github.com/anulum/scpn-fusion-core"
 Repository = "https://github.com/anulum/scpn-fusion-core"
 Issues = "https://github.com/anulum/scpn-fusion-core/issues"
+Documentation = "https://anulum.github.io/scpn-fusion-core/"
 
 [project.scripts]
 scpn-dashboard = "scpn_fusion.ui.app:main"
