@@ -14,3 +14,4 @@ rayon = { workspace = true }
 num-complex = { workspace = true }
 rand = { workspace = true }
 rand_distr = { workspace = true }
+ndarray-npy = { workspace = true }

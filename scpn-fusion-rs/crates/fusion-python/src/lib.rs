@@ -393,6 +393,7 @@ fn solve_coil_currents(green_func: Vec<f64>, target_bv: f64) -> Vec<f64> {
 
 /// Create sensor suite and measure magnetics from Psi array.
 #[pyfunction]
+#[allow(clippy::too_many_arguments)]
 fn measure_magnetics<'py>(
     py: Python<'py>,
     psi: PyReadonlyArray2<'py, f64>,

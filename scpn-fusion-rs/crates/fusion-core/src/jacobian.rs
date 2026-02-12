@@ -83,11 +83,11 @@ pub fn compute_fd_jacobian(
     let h = fd_step.abs().max(1e-9);
 
     let mut jac = vec![vec![0.0; 8]; probe_psi_norm.len()];
-    for col in 0..8 {
+    for (col, _) in [(); 8].iter().enumerate() {
         let (p_pert, ff_pert) = perturb_param(params_p, params_ff, col, h);
         let f_pert = forward_model_response(probe_psi_norm, &p_pert, &ff_pert);
-        for i in 0..probe_psi_norm.len() {
-            jac[i][col] = (f_pert[i] - base[i]) / h;
+        for (row, (&fp, &b)) in jac.iter_mut().zip(f_pert.iter().zip(base.iter())) {
+            row[col] = (fp - b) / h;
         }
     }
     jac

@@ -36,6 +36,12 @@ pub struct NeuralTransportModel {
     weights: Option<NeuralTransportWeights>,
 }
 
+impl Default for NeuralTransportModel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NeuralTransportModel {
     /// Construct an analytic fallback model (no neural weights loaded).
     pub fn new() -> Self {

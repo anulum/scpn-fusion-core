@@ -19,6 +19,7 @@ const WIDTH: usize = 32;
 /// Default number of FNO layers.
 const N_LAYERS: usize = 4;
 /// Default grid size.
+#[cfg(test)]
 const GRID_SIZE: usize = 64;
 
 fn gelu(x: f64) -> f64 {
@@ -215,27 +216,29 @@ fn read_array3_f64(npz: &mut NpzReader<File>, key: &str) -> FusionResult<Array3<
 }
 
 fn read_scalar_usize(npz: &mut NpzReader<File>, key: &str) -> FusionResult<usize> {
-    if let Ok(v) = npz
+    let v_i64: Result<Array1<i64>, _> = npz
         .by_name::<OwnedRepr<i64>, Ix1>(&format!("{key}.npy"))
-        .or_else(|_| npz.by_name::<OwnedRepr<i64>, Ix1>(key))
-    {
-        if let Some(x) = v.get(0) {
+        .or_else(|_| npz.by_name::<OwnedRepr<i64>, Ix1>(key));
+    if let Ok(v) = v_i64 {
+        if let Some(x) = v.iter().next() {
             return Ok((*x).max(0) as usize);
         }
     }
-    if let Ok(v) = npz
+
+    let v_i32: Result<Array1<i32>, _> = npz
         .by_name::<OwnedRepr<i32>, Ix1>(&format!("{key}.npy"))
-        .or_else(|_| npz.by_name::<OwnedRepr<i32>, Ix1>(key))
-    {
-        if let Some(x) = v.get(0) {
+        .or_else(|_| npz.by_name::<OwnedRepr<i32>, Ix1>(key));
+    if let Ok(v) = v_i32 {
+        if let Some(x) = v.iter().next() {
             return Ok((*x).max(0) as usize);
         }
     }
-    if let Ok(v) = npz
+
+    let v_f64: Result<Array1<f64>, _> = npz
         .by_name::<OwnedRepr<f64>, Ix1>(&format!("{key}.npy"))
-        .or_else(|_| npz.by_name::<OwnedRepr<f64>, Ix1>(key))
-    {
-        if let Some(x) = v.get(0) {
+        .or_else(|_| npz.by_name::<OwnedRepr<f64>, Ix1>(key));
+    if let Ok(v) = v_f64 {
+        if let Some(x) = v.iter().next() {
             return Ok((*x).max(0.0) as usize);
         }
     }

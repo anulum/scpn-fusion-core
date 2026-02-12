@@ -146,6 +146,7 @@ pub fn update_plasma_source_nonlinear(
 ///
 /// This is the kernel-facing hook used by inverse reconstruction when profile
 /// parameters are being estimated from measurements.
+#[allow(clippy::too_many_arguments)]
 pub fn update_plasma_source_with_profiles(
     psi: &Array2<f64>,
     grid: &Grid2D,

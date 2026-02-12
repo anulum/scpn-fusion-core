@@ -308,7 +308,7 @@ fn kernel_analytical_forward_and_jacobian(
     let mut jac = vec![vec![0.0; N_PARAMS]; probes_rz.len()];
     let sens_iters = (kernel_cfg.kernel_max_iterations.max(20) * 2).min(600);
 
-    for col in 0..N_PARAMS {
+    for (col, _) in [(); N_PARAMS].iter().enumerate() {
         let mut d_raw = Array2::zeros((grid.nz, grid.nr));
         for iz in 0..grid.nz {
             for ir in 0..grid.nr {
@@ -361,7 +361,7 @@ fn kernel_fd_jacobian_from_base(
     let mut jac = vec![vec![0.0; N_PARAMS]; probes_rz.len()];
     let h = kernel_cfg.inverse.fd_step.abs().max(1e-6);
 
-    for col in 0..N_PARAMS {
+    for (col, _) in [(); N_PARAMS].iter().enumerate() {
         let mut x = pack_params(&params_p, &params_ff);
         x[col] += h;
         let (p_pert, ff_pert) = unpack_params(&x);
