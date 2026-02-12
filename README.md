@@ -240,17 +240,37 @@ The `scpn-fusion-rs/` directory contains a 10-crate Rust workspace that mirrors 
 
 ## Benchmarks
 
-Performance comparison against community codes (EFIT, QuaLiKiz, QLKNN):
+### Headline Performance
 
-| Subsystem | Key Result | Details |
-|-----------|-----------|---------|
-| **Inverse reconstruction** | ~4 s full reconstruction (Rust), competitive with EFIT | [BENCHMARKS.md](docs/BENCHMARKS.md#inverse-reconstruction-performance) |
-| **Neural transport** | ~5 µs/point MLP inference, ~200,000× faster than gyrokinetic | [BENCHMARKS.md](docs/BENCHMARKS.md#neural-transport-surrogate) |
-| **Equilibrium solver** | 15 ms @ 65×65 (Rust multigrid) | [BENCHMARKS.md](docs/BENCHMARKS.md#equilibrium-solver-convergence) |
+| Metric | Value | Notes |
+|--------|-------|-------|
+| **Equilibrium solve** | **15 ms** @ 65×65 | Rust multigrid V-cycle, **50× faster** than Python |
+| **Inverse reconstruction** | **~4 s** full (5 LM iters) | Competitive with EFIT (Fortran) |
+| **Neural transport** | **5 µs/point** MLP inference | **200,000× faster** than gyrokinetic |
+| **Memory** | **0.7 MB** full equilibrium | 5 KFLOP for MLP inference |
+| **GPU (projected)** | **~2 ms** equilibrium | wgpu roadmap, RTX 4090-class |
 
-- **Interactive notebook:** [`examples/06_inverse_and_transport_benchmarks.ipynb`](examples/06_inverse_and_transport_benchmarks.ipynb)
-- **Static figures for PDF/arXiv:** [`docs/BENCHMARK_FIGURES.md`](docs/BENCHMARK_FIGURES.md) (includes LaTeX table snippets)
+### Community Comparison
+
+Representative single-shot runtimes on contemporary hardware (2024-2025 publications):
+
+| Code | Category | Typical Runtime | Language |
+|------|----------|-----------------|----------|
+| **GENE** | 5D gyrokinetic | ~10⁶ CPU-h | Fortran/MPI |
+| **JINTRAC** | Integrated modelling | ~10 min/shot | Fortran/Python |
+| **CHEASE** | Fixed-boundary equilibrium | ~5 s | Fortran |
+| **EFIT** | Current-filament reconstruction | ~2 s | Fortran |
+| **TORAX** | Integrated (JAX) | ~30 s (GPU) | Python/JAX |
+| **DREAM** | Disruption / runaway electrons | ~1 s | C++ |
+| **P-EFIT** | GPU-accelerated reconstruction | <1 ms | Fortran+OpenACC |
+| **SCPN (Rust)** | **Full-stack** | **~4 s recon, 15 ms equil.** | **Rust+Python** |
+
+### Resources
+
 - **Full comparison tables:** [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)
+- **Static figures for PDF/arXiv:** [`docs/BENCHMARK_FIGURES.md`](docs/BENCHMARK_FIGURES.md) (includes LaTeX table snippets)
+- **Interactive notebook:** [`examples/06_inverse_and_transport_benchmarks.ipynb`](examples/06_inverse_and_transport_benchmarks.ipynb)
+- **Pre-built HTML notebooks:** [`docs/notebooks/`](docs/notebooks/) (also served via [GitHub Pages](https://anulum.github.io/scpn-fusion-core/notebooks/))
 
 ## Documentation
 

@@ -54,9 +54,32 @@ jobs:
           name: rust-docs
           path: scpn-fusion-rs/target/doc/
 
+  build-notebook-html:
+    name: Build tutorial notebook HTML exports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install nbconvert
+      - name: Convert notebooks to HTML
+        run: |
+          mkdir -p docs/notebooks
+          jupyter nbconvert --to html examples/*.ipynb --output-dir docs/notebooks/
+      - name: Upload notebook HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: notebook-html
+          path: docs/notebooks/
+
   deploy:
     name: Deploy to GitHub Pages
-    needs: [build-python-docs, build-rust-docs]
+    needs: [build-python-docs, build-rust-docs, build-notebook-html]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -72,6 +95,11 @@ jobs:
         with:
           name: rust-docs
           path: site/rust/
+      - name: Download notebook HTML
+        uses: actions/download-artifact@v4
+        with:
+          name: notebook-html
+          path: site/notebooks/
       - name: Create index page
         run: |
           cat > site/index.html << 'HTMLEOF'
@@ -94,6 +122,7 @@ jobs:
             <div class="links">
               <a href="python/">Python API Reference (Sphinx)</a>
               <a href="rust/fusion_core/">Rust API Reference (rustdoc)</a>
+              <a href="notebooks/">Tutorial Notebooks (HTML)</a>
               <a href="https://github.com/anulum/scpn-fusion-core">GitHub Repository</a>
             </div>
           </body>

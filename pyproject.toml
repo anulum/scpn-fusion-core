@@ -46,6 +46,7 @@ dev = [
     "sphinx-rtd-theme",
     "sphinx-autodoc-typehints",
     "myst-parser",
+    "nbconvert",
 ]
 
 [project.urls]
