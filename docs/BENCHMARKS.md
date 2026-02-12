@@ -112,6 +112,123 @@ Key properties:
 
 *Reference: van de Plassche, K.L. et al. (2020). Phys. Plasmas 27, 022310.*
 
+## Extended Community Baseline Comparison
+
+Comparison against established equilibrium, transport, and integrated
+modelling codes used in the fusion community. Runtimes are representative
+single-shot values on contemporary hardware (2024–2025 publications).
+
+| Code | Category | Solver | Transport | Grid | Typical Runtime | Language |
+|------|----------|--------|-----------|------|-----------------|----------|
+| **EFIT** | Reconstruction | Current-filament Picard | N/A | 65×65 | ~2 s | Fortran |
+| **P-EFIT** | Reconstruction | GPU-accelerated EFIT | N/A | 65×65 | <1 ms | Fortran+OpenACC |
+| **CHEASE** | Equilibrium | Fixed-boundary, cubic Hermite | N/A | 257×257 | ~5 s | Fortran |
+| **HELENA** | Equilibrium | Fixed-boundary, isoparametric | N/A | 201 flux, 257 pol | ~10 s | Fortran |
+| **JINTRAC** | Integrated | HELENA + QLKNN + NEMO | 1.5D flux-driven | 100 radial | ~10 min/shot | Fortran/Python |
+| **TORAX** | Integrated | JAX spectral | 1D QLKNN | Spectral | ~30 s (GPU) | Python/JAX |
+| **GENE** | Gyrokinetic | Nonlinear δf | 5D Vlasov | 128³×64v² | ~10⁶ CPU-h | Fortran/MPI |
+| **CGYRO** | Gyrokinetic | Nonlinear | 5D continuum | 256 radial | ~10⁵ CPU-h | Fortran/MPI |
+| **DREAM** | Disruption | RE kinetic + fluid | 0D–1D | 100 radial | ~1 s | C++ |
+| **SCPN (Rust)** | Full-stack | Multigrid + LM inverse | 1.5D + MLP surrogate | 65×65 | ~4 s recon | Rust+Python |
+| **SCPN (Python)** | Full-stack | Picard + SOR | 1.5D + crit-gradient | 65×65 | ~40 s recon | Python |
+
+**References:**
+- Lao, L.L. et al. (1985). *Nucl. Fusion* 25, 1611 (EFIT).
+- Sabbagh, S.A. et al. (2023). GPU-accelerated EFIT (P-EFIT).
+- Lütjens, H. et al. (1996). *Comput. Phys. Commun.* 97, 219 (CHEASE).
+- Huysmans, G.T.A. et al. (1991). *Proc. CP90 Conf. Comput. Physics* (HELENA).
+- Romanelli, M. et al. (2014). *Plasma Fusion Res.* 9, 3403023 (JINTRAC).
+- Jenko, F. et al. (2000). *Phys. Plasmas* 7, 1904 (GENE).
+- Belli, E.A. & Candy, J. (2008). *Phys. Plasmas* 15, 092510 (CGYRO).
+- Hoppe, M. et al. (2021). *Comput. Phys. Commun.* 268, 108098 (DREAM).
+- van de Plassche, K.L. et al. (2020). *Phys. Plasmas* 27, 022310 (QLKNN).
+
+## Computational Power Metrics
+
+Estimated FLOPS, memory footprint, and energy for each solver component.
+Energy estimated at ~15 pJ/FLOP (AMD Zen 4 core, ~5 W at 300 GFLOP/s).
+
+### FLOP and Memory Estimates
+
+| Component | Grid/Size | FLOP count | Memory (MB) | Est. Energy (mJ) | Notes |
+|-----------|-----------|-----------|-------------|-------------------|-------|
+| SOR step (65×65) | 4,225 pts | ~0.1 MFLOP | 0.26 | ~0.002 | 5-pt stencil, 4 FLOP/pt |
+| Multigrid V-cycle (65×65) | 4 levels | ~2 MFLOP | 0.7 | ~0.03 | 3+3 smoothing + restrict + prolong |
+| Full equilibrium (65×65, 12 cycles) | — | ~24 MFLOP | 0.7 | ~0.4 | 12 V-cycles × 2 MFLOP |
+| Full equilibrium (128×128, 15 cycles) | — | ~120 MFLOP | 2.5 | ~2 | Dominated by SOR sweeps |
+| Inverse LM iter (65×65) | 8 fwd solves | ~192 MFLOP | 1.5 | ~3 | + Cholesky ~0.01 MFLOP |
+| MLP inference (H=64/32) | 10→64→32→3 | ~5 KFLOP | <0.01 | <0.001 | 2 matmul + 2 ReLU + softplus |
+| MLP profile (1000-pt) | batch×10→3 | ~5 MFLOP | 0.08 | ~0.08 | Single batched matmul path |
+| Critical-gradient (1000-pt) | 1000 pts | ~0.02 MFLOP | 0.06 | ~0.0003 | Vectorised numpy |
+
+### Memory Bandwidth Utilisation
+
+| Component | Data moved (KB) | BW utilisation |
+|-----------|----------------|----------------|
+| SOR step 65×65 | 132 KB (2 arrays × 4225 × 8B × 2 pass) | <1% of 50 GB/s |
+| Multigrid V-cycle | ~300 KB (multi-level) | <1% |
+| MLP 1000-pt batch | 160 KB (input + output + weights) | <1% |
+
+All current workloads are compute-bound rather than memory-bound at these
+grid sizes. Bandwidth becomes significant at 512×512 and above.
+
+## GPU Offload Roadmap
+
+Status and projected targets for GPU acceleration. Tracked in issue #12.
+Implementation strategy uses the `wgpu` crate (cross-platform
+Vulkan/Metal/D3D12/WebGPU) to avoid CUDA lock-in.
+See `SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md` Section 28 for full details.
+
+### Target Status
+
+| Target | Backend | Expected Speedup | Priority | Status |
+|--------|---------|-----------------|----------|--------|
+| SOR red-black sweep | wgpu compute shader | 20–50× (65×65), 100–200× (256×256) | P0 | Planned |
+| Multigrid V-cycle | wgpu + host orchestration | 10–30× | P1 | Planned |
+| Vacuum field (elliptic integrals) | rayon (CPU) → wgpu | 5–10× | P2 | rayon done |
+| MLP batch inference | wgpu or cuBLAS | 2–5× (small H) | P3 | Planned |
+| FNO turbulence (FFT) | cuFFT / wgpu FFT | 50–100× (64×64) | P3 | Planned |
+
+### Projected Timings (GPU, RTX 4090-class)
+
+| Component | CPU Rust (release) | GPU projected | Source |
+|-----------|-------------------|---------------|--------|
+| Equilibrium 65×65 | 100 ms | ~2 ms | Section 28 study |
+| Equilibrium 256×256 | ~10 s | ~50 ms | Extrapolated |
+| P-EFIT reference (65×65) | — | <1 ms | Sabbagh 2023 |
+| Full inverse reconstruction | ~4 s | ~200 ms | 8× GPU fwd solve |
+| MLP 1000-pt profile | 0.3 ms | ~0.05 ms | Batch matmul |
+
+Implementation path: `wgpu` crate targeting Vulkan/Metal/D3D12/WebGPU,
+with fallback to CPU SIMD for systems without GPU support.
+
+## Adaptive Grids & 3D Transport Roadmap
+
+### Current State & Targets
+
+| Feature | Current State | Target | Effort | Prerequisite |
+|---------|--------------|--------|--------|-------------|
+| Uniform multigrid | Production (V-cycle, 4 grid sizes) | — | Done | — |
+| AMR (h-refinement) | Not implemented | Quadtree, error-based tagging | ~4 weeks | Multigrid |
+| AMR error estimator | Not implemented | Gradient-jump + curvature indicators | ~1 week | AMR structure |
+| 3D equilibrium (stellarator) | Not applicable (tokamak only) | VMEC-like 3D | ~3 months | — |
+| 3D transport | 1.5D radial only | Toroidal mode coupling (n=0,1,2) | ~6 weeks | 3D geometry |
+| FNO 3D turbulence | 2D proof-of-concept | 3D fftn + toroidal modes | ~4 weeks | Training data |
+| 3D geometry physics | Visualization only (OBJ export) | Field-line tracing, Poincaré maps | ~3 weeks | 3D equilibrium |
+
+### AMR Comparison with Community Codes
+
+| Code | AMR Type | Application |
+|------|---------|-------------|
+| NIMROD | Block-structured | 3D MHD |
+| JOREK | Bézier elements, h-p | 3D nonlinear MHD |
+| BOUT++ | Field-aligned, block | Edge turbulence |
+| SCPN (planned) | Quadtree, gradient-based | 2D GS + 3D extension |
+
+The planned quadtree AMR is simpler than JOREK's h-p adaptivity but
+sufficient for equilibrium and transport applications where steep gradients
+are localised near the pedestal and X-point regions.
+
 ## Running Benchmarks
 
 ```bash
