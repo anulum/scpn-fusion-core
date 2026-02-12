@@ -114,6 +114,32 @@ maturin develop --release
 
 The Python package auto-detects the Rust extension and falls back to NumPy if unavailable.
 
+### Testing
+
+```bash
+# Python unit + property-based tests
+pip install -e ".[dev]"
+pytest tests/ -v
+
+# Rust unit + property-based tests
+cd scpn-fusion-rs
+cargo test --all-features
+
+# Rust benchmarks
+cargo bench
+```
+
+The test suites include property-based tests powered by [Hypothesis](https://hypothesis.readthedocs.io/) (Python) and [proptest](https://crates.io/crates/proptest) (Rust), covering numerical invariants, topology preservation, and solver convergence properties.
+
+## Tutorial Notebooks
+
+| Notebook | Description |
+|----------|-------------|
+| `01_compact_reactor_search` | MVR-0.96 compact reactor optimizer walkthrough |
+| `02_neuro_symbolic_compiler` | Petri net → stochastic neuron compilation pipeline |
+| `03_grad_shafranov_equilibrium` | Free-boundary equilibrium solver tutorial |
+| `04_divertor_and_neutronics` | Divertor heat flux & tritium breeding ratio |
+
 ## 26 Simulation Modes
 
 | Mode | Description |
