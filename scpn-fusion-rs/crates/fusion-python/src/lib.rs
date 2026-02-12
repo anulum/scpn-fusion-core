@@ -16,6 +16,7 @@ use pyo3::prelude::*;
 
 use fusion_core::ignition::calculate_thermodynamics;
 use fusion_core::kernel::FusionKernel;
+use fusion_ml::neural_equilibrium::{EquilibriumMLP, NeuralEquilibrium, PCA};
 // ReactorConfig used internally by FusionKernel::from_file
 
 // ─── Equilibrium solver ───
@@ -212,6 +213,91 @@ fn simulate_tearing_mode(steps: usize) -> (Vec<f64>, u8, i64) {
     (shot.signal, shot.label, shot.time_to_disruption)
 }
 
+// ─── Neural Equilibrium ───
+
+/// PCA + MLP neural equilibrium accelerator.
+///
+/// Predicts equilibrium flux maps from coil currents at ~1000× speedup
+/// over the iterative Grad-Shafranov solver.
+#[pyclass]
+struct PyNeuralEquilibrium {
+    inner: NeuralEquilibrium,
+}
+
+#[pymethods]
+impl PyNeuralEquilibrium {
+    /// Create a new neural equilibrium model by fitting PCA on training data.
+    ///
+    /// Parameters
+    /// ----------
+    /// training_data : numpy.ndarray
+    ///     (n_samples, n_features) matrix of flattened Psi fields.
+    /// n_components : int
+    ///     Number of PCA components to retain.
+    /// input_dim : int
+    ///     Dimension of the MLP input (number of coil currents).
+    #[new]
+    fn new(
+        training_data: PyReadonlyArray2<'_, f64>,
+        n_components: usize,
+        input_dim: usize,
+    ) -> Self {
+        let data = training_data.as_array().to_owned();
+        let pca = PCA::fit(&data, n_components);
+        let mlp = EquilibriumMLP::new(input_dim, pca.n_components);
+        PyNeuralEquilibrium {
+            inner: NeuralEquilibrium { pca, mlp },
+        }
+    }
+
+    /// Predict equilibrium from coil currents.
+    ///
+    /// Parameters
+    /// ----------
+    /// currents : numpy.ndarray
+    ///     1-D array of coil currents (length = input_dim).
+    ///
+    /// Returns
+    /// -------
+    /// numpy.ndarray
+    ///     Flattened Psi field (length = n_features from training data).
+    fn predict<'py>(
+        &self,
+        py: Python<'py>,
+        currents: PyReadonlyArray2<'py, f64>,
+    ) -> Bound<'py, PyArray1<f64>> {
+        let c = currents.as_array().row(0).to_owned();
+        let result = self.inner.predict(&c);
+        result.into_pyarray(py)
+    }
+
+    /// Batch forward pass through MLP only (no PCA inverse).
+    ///
+    /// Parameters
+    /// ----------
+    /// x : numpy.ndarray
+    ///     (n_samples, input_dim) array.
+    ///
+    /// Returns
+    /// -------
+    /// numpy.ndarray
+    ///     (n_samples, n_components) PCA coefficient predictions.
+    fn forward_batch<'py>(
+        &self,
+        py: Python<'py>,
+        x: PyReadonlyArray2<'py, f64>,
+    ) -> Bound<'py, PyArray2<f64>> {
+        let input = x.as_array().to_owned();
+        let result = self.inner.mlp.forward_batch(&input);
+        result.into_pyarray(py)
+    }
+
+    /// Number of PCA components.
+    fn n_components(&self) -> usize {
+        self.inner.pca.n_components
+    }
+}
+
 // ─── Module registration ───
 
 /// SCPN Fusion Core — Rust-accelerated plasma physics.
@@ -220,6 +306,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyFusionKernel>()?;
     m.add_class::<PyEquilibriumResult>()?;
     m.add_class::<PyThermodynamicsResult>()?;
+    m.add_class::<PyNeuralEquilibrium>()?;
     m.add_function(wrap_pyfunction!(shafranov_bv, m)?)?;
     m.add_function(wrap_pyfunction!(solve_coil_currents, m)?)?;
     m.add_function(wrap_pyfunction!(measure_magnetics, m)?)?;

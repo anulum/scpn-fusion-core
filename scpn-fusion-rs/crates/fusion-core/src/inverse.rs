@@ -43,6 +43,7 @@ use crate::source::{ProfileMode, ProfileParams};
 use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::Grid2D;
 use ndarray::Array2;
+use rayon::prelude::*;
 
 // ── Configuration ────────────────────────────────────────────────────
 
@@ -437,17 +438,24 @@ pub fn reconstruct_equilibrium(
             break;
         }
 
-        // Build Jacobian (n_meas x N_PARAMS) via finite differences
+        // Build Jacobian (n_meas x N_PARAMS) via finite differences.
+        // Each column is independent, so we run them in parallel with rayon.
+        let jacobian_columns: Vec<FusionResult<(usize, Vec<f64>, f64)>> = (0..N_PARAMS)
+            .into_par_iter()
+            .map(|j| {
+                let mut kern = kernel.clone();
+                let mut x_pert = x;
+                let h = config.fd_step * (1.0 + x[j].abs());
+                x_pert[j] += h;
+                let (p_pert, ff_pert) = unpack_params(&x_pert);
+                let sim_pert = forward_model(&mut kern, &p_pert, &ff_pert, probes)?;
+                Ok((j, sim_pert, h))
+            })
+            .collect();
+
         let mut jacobian = vec![vec![0.0; N_PARAMS]; n_meas];
-
-        for j in 0..N_PARAMS {
-            let mut x_pert = x;
-            let h = config.fd_step * (1.0 + x[j].abs());
-            x_pert[j] += h;
-
-            let (p_pert, ff_pert) = unpack_params(&x_pert);
-            let sim_pert = forward_model(kernel, &p_pert, &ff_pert, probes)?;
-
+        for col_result in jacobian_columns {
+            let (j, sim_pert, h) = col_result?;
             for i in 0..n_meas {
                 jacobian[i][j] = (sim_pert[i] - sim[i]) / h;
             }

@@ -21,7 +21,7 @@ use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::{EquilibriumResult, Grid2D, PlasmaState};
 use ndarray::Array2;
 
-/// Picard relaxation factor (Python line 180: `alpha = 0.1`).
+/// Default Picard relaxation factor, used when config value is zero or missing.
 const DEFAULT_PICARD_RELAXATION: f64 = 0.1;
 
 /// Gaussian sigma for seed current distribution (Python line 193: `sigma = 1.0`).
@@ -46,6 +46,7 @@ const MIN_PSI_SEPARATION: f64 = 0.1;
 const LIMITER_FALLBACK_FACTOR: f64 = 0.1;
 
 /// The Grad-Shafranov equilibrium solver.
+#[derive(Clone)]
 pub struct FusionKernel {
     config: ReactorConfig,
     grid: Grid2D,
@@ -126,7 +127,11 @@ impl FusionKernel {
         let i_target = self.config.physics.plasma_current_target;
         let max_iter = self.config.solver.max_iterations;
         let tol = self.config.solver.convergence_threshold;
-        let alpha = DEFAULT_PICARD_RELAXATION;
+        let alpha = if self.config.solver.relaxation_factor > 0.0 {
+            self.config.solver.relaxation_factor
+        } else {
+            DEFAULT_PICARD_RELAXATION
+        };
 
         let nz = self.grid.nz;
         let nr = self.grid.nr;

@@ -72,19 +72,41 @@ class HPCBridge:
         """Return *True* if the compiled solver library was loaded."""
         return self.loaded
 
+    def close(self) -> None:
+        """Release the C++ solver instance, if one was created."""
+        if self.solver_ptr is not None and self.loaded:
+            try:
+                self.lib.destroy_solver(self.solver_ptr)
+            except Exception:
+                pass
+            self.solver_ptr = None
+
+    def __del__(self) -> None:
+        self.close()
+
+    def __enter__(self) -> "HPCBridge":
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.close()
+
     def _setup_signatures(self):
         # void* create_solver(int nr, int nz, double rmin, double rmax, double zmin, double zmax)
         self.lib.create_solver.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
         self.lib.create_solver.restype = ctypes.c_void_p
-        
+
         # void run_step(void* solver, double* j, double* psi, int size, int iter)
         self.lib.run_step.argtypes = [
-            ctypes.c_void_p, 
+            ctypes.c_void_p,
             np.ctypeslib.ndpointer(dtype=np.float64, flags='C_CONTIGUOUS'),
             np.ctypeslib.ndpointer(dtype=np.float64, flags='C_CONTIGUOUS'),
             ctypes.c_int,
             ctypes.c_int
         ]
+
+        # void destroy_solver(void* solver)
+        self.lib.destroy_solver.argtypes = [ctypes.c_void_p]
+        self.lib.destroy_solver.restype = None
 
     def initialize(
         self,

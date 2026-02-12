@@ -430,7 +430,7 @@ class FusionKernel:
 
         max_iter: int = self.cfg["solver"]["max_iterations"]
         tol: float = self.cfg["solver"]["convergence_threshold"]
-        alpha: float = 0.1
+        alpha: float = self.cfg["solver"].get("relaxation_factor", 0.1)
         mu0: float = self.cfg["physics"]["vacuum_permeability"]
 
         x_point_pos: tuple[float, float] = (0.0, 0.0)
