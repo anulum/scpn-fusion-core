@@ -311,6 +311,8 @@ MLP 1000-pt profile & 0.3\,ms & $\sim$0.05\,ms & Batch matmul \\
 
 ![Tuned vs Defaults](figures/tuned_vs_defaults.png)
 
+*Comparison of convergence and runtime for conservative, production, and speed-optimized configurations (see [SOLVER_TUNING_GUIDE.md §8](SOLVER_TUNING_GUIDE.md#8-common-pitfalls--tuning-tips)).*
+
 Four-panel comparison of three solver configurations from
 [`SOLVER_TUNING_GUIDE.md` §8](SOLVER_TUNING_GUIDE.md#8-common-pitfalls--tuning-tips):
 
