@@ -96,10 +96,13 @@ python run_fusion_suite.py kernel       # Grad-Shafranov equilibrium
 python run_fusion_suite.py optimizer    # Compact reactor search (MVR-0.96)
 python run_fusion_suite.py flight       # Tokamak flight simulator
 python run_fusion_suite.py neural       # Neural equilibrium solver
+python examples/run_3d_flux_quickstart.py --toroidal 24 --poloidal 24
 
 # Run tests
 pytest tests/ -v
 ```
+
+The 3D quickstart writes an OBJ mesh to `artifacts/SCPN_Plasma_3D_quickstart.obj`.
 
 ### Rust Acceleration (Optional)
 
@@ -285,6 +288,8 @@ Struggling with convergence? See the [Solver Tuning Guide](docs/SOLVER_TUNING_GU
 - [Neuro-Symbolic Compiler Architecture](docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md)
 - [Packet C Control API](docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md)
 - [Future Applications](docs/FUTURE_APPLICATIONS.md)
+- [Phase 1 3D Execution Plan](docs/PHASE1_3D_EXECUTION_PLAN.md)
+- [3D Gap Audit](docs/3d_gaps.md)
 - [Comprehensive Technical Study](SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md) (30,000+ words)
 
 ## Citation
