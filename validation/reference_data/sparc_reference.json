@@ -1,0 +1,20 @@
+{
+  "scenario": "SPARC_V2C",
+  "source": "Creely et al., J. Plasma Phys. 86 (2020)",
+  "I_p_MA": 8.7,
+  "B_t_T": 12.2,
+  "R_m": 1.85,
+  "a_m": 0.57,
+  "kappa": 1.97,
+  "q95": 3.4,
+  "n_e_1e19": 37.0,
+  "P_aux_MW": 25.0,
+  "P_loss_MW": 35.0,
+  "tau_E_s": 0.77,
+  "P_fusion_MW": 140.0,
+  "Q": 11.0,
+  "beta_N": 1.0,
+  "H98y2": 1.7,
+  "A_eff_amu": 2.5,
+  "notes": "P_loss is used for IPB98(y,2) confinement regression checks."
+}

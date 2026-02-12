@@ -1,0 +1,22 @@
+{
+  "scenario": "ITER_15MA_baseline",
+  "source": "ITER Physics Basis (Nucl. Fusion 39, 1999) with 2007 update",
+  "I_p_MA": 15.0,
+  "B_t_T": 5.3,
+  "R_m": 6.2,
+  "a_m": 2.0,
+  "kappa": 1.7,
+  "delta": 0.33,
+  "q95": 3.0,
+  "n_e_1e19": 10.1,
+  "T_e0_keV": 25.0,
+  "P_aux_MW": 50.0,
+  "P_loss_MW": 85.0,
+  "tau_E_s": 3.7,
+  "P_fusion_MW": 500.0,
+  "Q": 10.0,
+  "beta_N": 1.8,
+  "H98y2": 1.0,
+  "A_eff_amu": 2.5,
+  "notes": "P_loss is used for IPB98(y,2) confinement regression checks."
+}
