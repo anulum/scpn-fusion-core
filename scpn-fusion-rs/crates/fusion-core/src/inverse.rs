@@ -854,6 +854,80 @@ mod tests {
     }
 
     #[test]
+    fn test_kernel_analytical_jacobian_tracks_fd() {
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
+            .unwrap();
+        let probes = vec![(6.2, 0.0), (6.3, 0.08), (6.4, -0.12), (6.5, 0.0)];
+        let params_p = ProfileParams {
+            ped_top: 0.9,
+            ped_width: 0.08,
+            ped_height: 1.1,
+            core_alpha: 0.25,
+        };
+        let params_ff = ProfileParams {
+            ped_top: 0.86,
+            ped_width: 0.07,
+            ped_height: 0.95,
+            core_alpha: 0.12,
+        };
+        let kcfg = KernelInverseConfig {
+            inverse: InverseConfig {
+                jacobian_mode: JacobianMode::Analytical,
+                fd_step: 1e-5,
+                ..Default::default()
+            },
+            kernel_max_iterations: 50,
+            require_kernel_converged: false,
+        };
+
+        let (pred, jac_analytical) =
+            kernel_analytical_forward_and_jacobian(&cfg, &probes, params_p, params_ff, &kcfg)
+                .unwrap();
+        let jac_fd =
+            kernel_fd_jacobian_from_base(&cfg, &probes, params_p, params_ff, &kcfg, &pred)
+                .unwrap();
+
+        assert_eq!(jac_analytical.len(), jac_fd.len());
+        assert!(jac_analytical.iter().all(|row| row.len() == N_PARAMS));
+        assert!(jac_fd.iter().all(|row| row.len() == N_PARAMS));
+
+        let mut num = 0.0_f64;
+        let mut den = 0.0_f64;
+        let mut same_sign = 0usize;
+        let mut comparable = 0usize;
+
+        for (row_a, row_f) in jac_analytical.iter().zip(jac_fd.iter()) {
+            for (&a, &f) in row_a.iter().zip(row_f.iter()) {
+                assert!(a.is_finite() && f.is_finite());
+                let d = a - f;
+                num += d * d;
+                den += f * f;
+
+                if a.abs() > 1e-6 || f.abs() > 1e-6 {
+                    comparable += 1;
+                    if a.signum() == f.signum() {
+                        same_sign += 1;
+                    }
+                }
+            }
+        }
+
+        let nrmse = (num / den.max(1e-14)).sqrt();
+        let sign_match = same_sign as f64 / comparable.max(1) as f64;
+
+        // The analytical kernel Jacobian uses a linearized local sensitivity model.
+        // It should track FD directionality and scale well enough for LM updates.
+        assert!(
+            nrmse < 1.5,
+            "Kernel analytical Jacobian deviates too much from FD (NRMSE={nrmse})"
+        );
+        assert!(
+            sign_match >= 0.65,
+            "Kernel analytical Jacobian sign agreement too low ({sign_match})"
+        );
+    }
+
+    #[test]
     fn test_kernel_inverse_analytical_mode_reduces_residual() {
         let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
             .unwrap();
