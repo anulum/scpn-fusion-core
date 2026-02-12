@@ -28,6 +28,14 @@ Read a SPARC GEQDSK equilibrium::
     eq = read_geqdsk("validation/reference_data/sparc/lmode_vv.geqdsk")
     print(f"B_T = {eq.bcentr:.1f} T, I_p = {eq.current/1e6:.1f} MA")
 
+Generate a 3D quickstart mesh::
+
+    python examples/run_3d_flux_quickstart.py --toroidal 24 --poloidal 24
+
+Generate RMSE dashboard report::
+
+    python validation/rmse_dashboard.py
+
 Rust Acceleration
 -----------------
 

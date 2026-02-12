@@ -26,14 +26,22 @@ Source: `SCPN Fusion Core with Enhanced 3D Capabilities.md`
 | P1-004 | Document 3D extension gaps | Done | `docs/3d_gaps.md` |
 | P1-005 | Define sequenced Phase 1 plan | Done | `docs/PHASE1_3D_EXECUTION_PLAN.md` |
 
-## Next Phase 1 Items (Queued)
+## Phase 1 Follow-Up Items (Executed)
+
+| ID | Task | Status | Output |
+|---|---|---|---|
+| P1-006 | Add ITER/SPARC RMSE dashboard script | Done | `validation/rmse_dashboard.py` |
+| P1-007 | Add cProfile + flamegraph scripts for kernel/3D path | Done | `profiling/profile_kernel.py`, `profiling/profile_geometry_3d.py` |
+| P1-008 | Add CI job for geometry quickstart smoke test | Done | `.github/workflows/ci.yml` |
+| P1-009 | Add docs quickstart section in README + Sphinx | In Progress | `README.md`, `docs/sphinx/` updates |
+
+## Next Queue (Phase 1)
 
 | ID | Task | Dependency | Exit Metric |
 |---|---|---|---|
-| P1-006 | Add ITER/SPARC RMSE dashboard script | P1-001..005 | RMSE report generated from `validation/` |
-| P1-007 | Add cProfile + flamegraph scripts for kernel/3D path | P1-001..005 | Profiling report with top hot paths |
-| P1-008 | Add CI job for geometry quickstart smoke test | P1-002..003 | CI verifies OBJ artifact generation |
-| P1-009 | Add docs quickstart section in README + Sphinx | P1-003 | Single command path in docs |
+| P1-010 | Add RMSE dashboard regression test coverage | P1-006 | `tests/test_rmse_dashboard.py` green |
+| P1-011 | Publish Sphinx page for 3D/validation/profiling workflows | P1-009 | New page in docs TOC |
+| P1-012 | Add CI smoke for RMSE dashboard generation | P1-006, P1-010 | CI emits non-empty dashboard artifact |
 
 ## Verification Commands
 

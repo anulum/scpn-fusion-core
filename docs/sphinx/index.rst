@@ -8,6 +8,7 @@ Tokamak plasma physics simulation and neuro-symbolic control suite.
    :caption: Contents
 
    getting_started
+   workflows
    modules/core
    modules/eqdsk
    modules/control
