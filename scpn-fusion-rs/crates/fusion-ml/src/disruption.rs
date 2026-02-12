@@ -156,7 +156,9 @@ impl MultiHeadAttention {
         let mut rng = rand::thread_rng();
         let scale = (2.0 / (d_model + d_model) as f64).sqrt();
         let rand_init = |rng: &mut rand::rngs::ThreadRng| {
-            Array2::from_shape_fn((d_model, d_model), |_| (rng.gen::<f64>() - 0.5) * 2.0 * scale)
+            Array2::from_shape_fn((d_model, d_model), |_| {
+                (rng.gen::<f64>() - 0.5) * 2.0 * scale
+            })
         };
 
         MultiHeadAttention {
@@ -282,7 +284,9 @@ impl DisruptionTransformer {
             .collect();
 
         DisruptionTransformer {
-            w_embed: Array2::from_shape_fn((1, D_MODEL), |_| (rng.gen::<f64>() - 0.5) * 2.0 * s_embed),
+            w_embed: Array2::from_shape_fn((1, D_MODEL), |_| {
+                (rng.gen::<f64>() - 0.5) * 2.0 * s_embed
+            }),
             b_embed: Array1::zeros(D_MODEL),
             pos_encoding: Array2::from_shape_fn((SEQ_LEN, D_MODEL), |_| rng.gen::<f64>() * 0.1),
             layers,

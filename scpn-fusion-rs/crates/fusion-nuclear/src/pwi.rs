@@ -11,7 +11,7 @@
 //! Calculates sputtering yield, erosion rate, and material lifetime.
 
 /// Avogadro's number [1/mol].
-const AVOGADRO: f64 = 6.022e23;
+const _AVOGADRO: f64 = 6.022e23;
 
 /// Atomic mass unit [kg].
 const AMU_KG: f64 = 1.66e-27;

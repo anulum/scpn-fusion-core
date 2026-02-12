@@ -153,8 +153,8 @@ impl ReducedMHD {
         }
 
         // Update psi
-        for i in 1..n - 1 {
-            self.psi_hat[i] += dt * dpsi[i];
+        for (psi_i, dpsi_i) in self.psi_hat[1..n - 1].iter_mut().zip(dpsi[1..n - 1].iter()) {
+            *psi_i += dt * *dpsi_i;
         }
 
         // Update vorticity and solve for phi

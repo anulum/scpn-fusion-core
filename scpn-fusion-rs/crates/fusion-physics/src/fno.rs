@@ -20,6 +20,7 @@ use rand_distr::StandardNormal;
 const MODES: usize = 12;
 
 /// Default grid size. Python: GRID_SIZE=64.
+#[cfg(test)]
 const GRID_SIZE: usize = 64;
 
 /// Spectral turbulence generator (drift wave physics).
@@ -37,9 +38,8 @@ pub struct SpectralTurbulenceGenerator {
 impl SpectralTurbulenceGenerator {
     pub fn new(size: usize) -> Self {
         let mut rng = rand::thread_rng();
-        let field = Array2::from_shape_fn((size, size), |_| {
-            rng.sample::<f64, _>(StandardNormal) * 0.1
-        });
+        let field =
+            Array2::from_shape_fn((size, size), |_| rng.sample::<f64, _>(StandardNormal) * 0.1);
 
         let ky = Array2::from_shape_fn((size, size), |(i, _)| {
             if i <= size / 2 {
@@ -171,8 +171,7 @@ impl FnoController {
     /// Predict turbulence and compute suppression factor [0, 1].
     pub fn predict_and_suppress(&self, field: &Array2<f64>) -> (f64, Array2<f64>) {
         let prediction = self.fno.forward(field);
-        let energy: f64 =
-            prediction.iter().map(|v| v * v).sum::<f64>() / prediction.len() as f64;
+        let energy: f64 = prediction.iter().map(|v| v * v).sum::<f64>() / prediction.len() as f64;
         let suppression = (energy * 10.0).tanh();
         (suppression, prediction)
     }

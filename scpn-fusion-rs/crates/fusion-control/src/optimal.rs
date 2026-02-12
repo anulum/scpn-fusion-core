@@ -51,11 +51,8 @@ pub fn svd_optimal_correction(
             return Array1::zeros(n);
         }
 
-        let aat_inv = Array2::from_shape_vec(
-            (2, 2),
-            vec![d / det, -b / det, -c / det, a / det],
-        )
-        .unwrap();
+        let aat_inv =
+            Array2::from_shape_vec((2, 2), vec![d / det, -b / det, -c / det, a / det]).unwrap();
 
         let pinv = response_matrix.t().dot(&aat_inv); // n×m
         let mut delta = pinv.dot(error) * gain;
@@ -151,11 +148,7 @@ mod tests {
     fn test_response_matrix_linear() {
         // Plant: position = [sum(I), I[0] - I[1]]
         let base = vec![0.0, 0.0];
-        let resp = build_response_matrix(
-            |i: &[f64]| [i[0] + i[1], i[0] - i[1]],
-            &base,
-            0.5,
-        );
+        let resp = build_response_matrix(|i: &[f64]| [i[0] + i[1], i[0] - i[1]], &base, 0.5);
         assert!((resp[[0, 0]] - 1.0).abs() < 1e-6);
         assert!((resp[[0, 1]] - 1.0).abs() < 1e-6);
         assert!((resp[[1, 0]] - 1.0).abs() < 1e-6);

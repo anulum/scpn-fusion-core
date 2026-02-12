@@ -84,7 +84,7 @@ mod tests {
         let x = thomas_solve(&a, &b, &c, &d);
 
         // Verify Ax = d
-        let ax = vec![
+        let ax = [
             b[0] * x[0] + c[0] * x[1],
             a[1] * x[0] + b[1] * x[1] + c[1] * x[2],
             a[2] * x[1] + b[2] * x[2] + c[2] * x[3],

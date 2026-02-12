@@ -37,7 +37,7 @@ const P_AUX_MW: f64 = 50.0;
 const MAX_WALL_LOAD: f64 = 5.0;
 
 /// Max divertor load [MW/m²] (TEMHD liquid metal target).
-const MAX_DIV_LOAD: f64 = 100.0;
+const _MAX_DIV_LOAD: f64 = 100.0;
 
 /// A viable reactor design point.
 #[derive(Debug, Clone)]

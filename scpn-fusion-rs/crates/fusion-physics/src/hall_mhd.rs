@@ -222,8 +222,7 @@ impl HallMHD {
         // dψ/dt = -[φ,ψ] + ρ_s²·[J,ψ] - η·k²·ψ
         let dpsi_k = Array2::from_shape_fn((n, n), |(i, j)| {
             let k2v = self.k2[[i, j]];
-            -bracket_phi_psi[[i, j]]
-                + Complex64::new(RHO_S * RHO_S, 0.0) * bracket_j_psi[[i, j]]
+            -bracket_phi_psi[[i, j]] + Complex64::new(RHO_S * RHO_S, 0.0) * bracket_j_psi[[i, j]]
                 - Complex64::new(RESISTIVITY * k2v, 0.0) * psi_k[[i, j]]
         });
 
@@ -323,11 +322,7 @@ mod tests {
         // After evolution, zonal energy should be non-negligible fraction of total
         let total: f64 = mhd.energy_history.last().copied().unwrap_or(0.0);
         let zonal: f64 = mhd.zonal_history.last().copied().unwrap_or(0.0);
-        let max_zonal: f64 = mhd
-            .zonal_history
-            .iter()
-            .copied()
-            .fold(0.0_f64, f64::max);
+        let max_zonal: f64 = mhd.zonal_history.iter().copied().fold(0.0_f64, f64::max);
 
         // Zonal modes should carry some energy
         assert!(

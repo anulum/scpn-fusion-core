@@ -92,11 +92,7 @@ pub struct AshSnapshot {
 /// `tau_he_ratio`: τ_He/τ_E ratio (lower = better pumping).
 /// `dt`: timestep [s].
 /// Returns time history of fusion power and He fraction.
-pub fn simulate_ash_poisoning(
-    burn_time_s: f64,
-    tau_he_ratio: f64,
-    dt: f64,
-) -> Vec<AshSnapshot> {
+pub fn simulate_ash_poisoning(burn_time_s: f64, tau_he_ratio: f64, dt: f64) -> Vec<AshSnapshot> {
     let tau_he = tau_he_ratio * TAU_E;
     let mut n_he = 0.0_f64;
     let mut history = Vec::new();
@@ -148,7 +144,7 @@ fn bosch_hale_approx(t_kev: f64) -> f64 {
     // Simplified Bosch-Hale: σv ≈ C · T^{-2/3} · exp(-a / T^{1/3})
     // Calibrated to match: σv(10 keV) ≈ 1.1e-22, σv(20 keV) ≈ 4.2e-22
     let c1 = 3.7e-18; // [m³/s · keV^{2/3}]
-    let a1 = 19.94;   // [keV^{1/3}]
+    let a1 = 19.94; // [keV^{1/3}]
     let sigma_v = c1 * t_kev.powf(-2.0 / 3.0) * (-a1 / t_kev.powf(1.0 / 3.0)).exp();
     sigma_v.max(0.0)
 }

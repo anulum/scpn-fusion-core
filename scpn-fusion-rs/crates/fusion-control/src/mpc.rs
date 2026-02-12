@@ -64,15 +64,13 @@ impl MPController {
     /// Returns first action to apply.
     pub fn plan(&self, current_state: &Array1<f64>) -> Array1<f64> {
         let n_coils = self.model.b_matrix.ncols();
-        let mut actions: Vec<Array1<f64>> = (0..self.horizon)
-            .map(|_| Array1::zeros(n_coils))
-            .collect();
+        let mut actions: Vec<Array1<f64>> =
+            (0..self.horizon).map(|_| Array1::zeros(n_coils)).collect();
 
         for _ in 0..GD_ITERATIONS {
             // Forward rollout to compute gradients
-            let mut grads: Vec<Array1<f64>> = (0..self.horizon)
-                .map(|_| Array1::zeros(n_coils))
-                .collect();
+            let mut grads: Vec<Array1<f64>> =
+                (0..self.horizon).map(|_| Array1::zeros(n_coils)).collect();
 
             let mut state = current_state.clone();
             for t in 0..self.horizon {

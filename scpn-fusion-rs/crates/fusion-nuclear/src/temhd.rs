@@ -76,14 +76,14 @@ impl TemhdStabilizer {
 
         // Compute effective conductivity via TEMHD enhancement
         let mut k_eff = vec![K_THERMAL; n];
-        for i in 1..n - 1 {
+        for (i, k_eff_i) in k_eff.iter_mut().enumerate().take(n - 1).skip(1) {
             let grad_t = (self.t_field[i + 1] - self.t_field[i - 1]) / (2.0 * dz);
             let j_te = -SIGMA * SEEBECK * grad_t;
             let f_lorentz = (j_te * self.b0).abs();
             let v_conv = f_lorentz * dz * dz / (VISCOSITY + 1e-20);
             let alpha = K_THERMAL / (RHO * CP);
             let pe = (v_conv * dz / alpha).clamp(0.0, PE_CLIP_MAX);
-            k_eff[i] = K_THERMAL * (1.0 + PE_FACTOR * pe);
+            *k_eff_i = K_THERMAL * (1.0 + PE_FACTOR * pe);
         }
 
         // Build tridiagonal system (Crank-Nicolson implicit)

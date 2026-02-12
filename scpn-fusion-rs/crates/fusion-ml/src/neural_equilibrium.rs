@@ -61,9 +61,8 @@ impl PCA {
             components.row_mut(j).assign(&(&v_j / norm));
         }
 
-        let explained_variance = Array1::from_vec(
-            eigenvalues.iter().map(|&ev| ev / (n - 1) as f64).collect(),
-        );
+        let explained_variance =
+            Array1::from_vec(eigenvalues.iter().map(|&ev| ev / (n - 1) as f64).collect());
 
         PCA {
             n_components: k,
@@ -81,7 +80,11 @@ impl PCA {
 
     /// Inverse transform: coefficients → reconstructed data.
     pub fn inverse_transform(&self, coeffs: &Array2<f64>) -> Array2<f64> {
-        coeffs.dot(&self.components) + self.mean.broadcast((coeffs.nrows(), self.mean.len())).unwrap()
+        coeffs.dot(&self.components)
+            + self
+                .mean
+                .broadcast((coeffs.nrows(), self.mean.len()))
+                .unwrap()
     }
 }
 
@@ -146,11 +149,15 @@ impl EquilibriumMLP {
         let s3 = (2.0 / (HIDDEN2 + output_dim) as f64).sqrt();
 
         EquilibriumMLP {
-            w1: Array2::from_shape_fn((input_dim, HIDDEN1), |_| (rng.gen::<f64>() - 0.5) * 2.0 * s1),
+            w1: Array2::from_shape_fn((input_dim, HIDDEN1), |_| {
+                (rng.gen::<f64>() - 0.5) * 2.0 * s1
+            }),
             b1: Array1::zeros(HIDDEN1),
             w2: Array2::from_shape_fn((HIDDEN1, HIDDEN2), |_| (rng.gen::<f64>() - 0.5) * 2.0 * s2),
             b2: Array1::zeros(HIDDEN2),
-            w3: Array2::from_shape_fn((HIDDEN2, output_dim), |_| (rng.gen::<f64>() - 0.5) * 2.0 * s3),
+            w3: Array2::from_shape_fn((HIDDEN2, output_dim), |_| {
+                (rng.gen::<f64>() - 0.5) * 2.0 * s3
+            }),
             b3: Array1::zeros(output_dim),
         }
     }

@@ -128,10 +128,7 @@ mod tests {
         pid.step(1.0);
         pid.step(1.0);
         let out = pid.step(1.0);
-        assert!(
-            (out - 3.0).abs() < 1e-10,
-            "Integral of three 1s = 3: {out}"
-        );
+        assert!((out - 3.0).abs() < 1e-10, "Integral of three 1s = 3: {out}");
     }
 
     #[test]
@@ -146,10 +143,7 @@ mod tests {
             r += 0.01 * cr;
             z += 0.01 * cz;
         }
-        assert!(
-            (r - 6.2).abs() < 0.5,
-            "R should approach target: {r}"
-        );
+        assert!((r - 6.2).abs() < 0.5, "R should approach target: {r}");
         assert!((z).abs() < 0.5, "Z should approach 0: {z}");
     }
 }

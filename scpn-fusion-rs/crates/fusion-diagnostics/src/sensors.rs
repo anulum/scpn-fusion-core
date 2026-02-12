@@ -211,10 +211,7 @@ mod tests {
             let r_norm = dr / wall_r;
             // Should lie on unit circle
             let d = (r_norm * r_norm + dz * dz).sqrt();
-            assert!(
-                (d - 1.0).abs() < 1e-10,
-                "Probe {i} not on wall: d={d}"
-            );
+            assert!((d - 1.0).abs() < 1e-10, "Probe {i} not on wall: d={d}");
         }
     }
 

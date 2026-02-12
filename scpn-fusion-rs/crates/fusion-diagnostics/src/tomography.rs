@@ -46,12 +46,7 @@ impl PlasmaTomography {
     /// `chords`: list of (start, end) where each is (R, Z).
     /// `r_range`: (R_min, R_max) of reconstruction domain.
     /// `z_range`: (Z_min, Z_max) of reconstruction domain.
-    pub fn new(
-        chords: &[Chord],
-        r_range: (f64, f64),
-        z_range: (f64, f64),
-        res: usize,
-    ) -> Self {
+    pub fn new(chords: &[Chord], r_range: (f64, f64), z_range: (f64, f64), res: usize) -> Self {
         let r_grid = Array1::linspace(r_range.0, r_range.1, res);
         let z_grid = Array1::linspace(z_range.0, z_range.1, res);
         let dr = r_grid[1] - r_grid[0];
@@ -91,11 +86,7 @@ impl PlasmaTomography {
     }
 
     /// Build with default resolution.
-    pub fn with_default_res(
-        chords: &[Chord],
-        r_range: (f64, f64),
-        z_range: (f64, f64),
-    ) -> Self {
+    pub fn with_default_res(chords: &[Chord], r_range: (f64, f64), z_range: (f64, f64)) -> Self {
         Self::new(chords, r_range, z_range, DEFAULT_RES)
     }
 
@@ -148,8 +139,7 @@ impl PlasmaTomography {
     /// Reconstruct and reshape to 2D grid (res × res).
     pub fn reconstruct_2d(&self, signals: &[f64]) -> Array2<f64> {
         let flat = self.reconstruct(signals);
-        Array2::from_shape_vec((self.res, self.res), flat)
-            .expect("reshape failed")
+        Array2::from_shape_vec((self.res, self.res), flat).expect("reshape failed")
     }
 }
 
@@ -191,10 +181,7 @@ mod tests {
         let tomo = PlasmaTomography::new(&chords, (1.0, 9.0), (-5.0, 5.0), 10);
         for i in 0..tomo.geometry.nrows() {
             let row_sum: f64 = tomo.geometry.row(i).iter().sum();
-            assert!(
-                row_sum > 0.0,
-                "Chord {i} has zero geometry (no pixels hit)"
-            );
+            assert!(row_sum > 0.0, "Chord {i} has zero geometry (no pixels hit)");
         }
     }
 
@@ -250,10 +237,10 @@ mod tests {
 
         // Forward project reconstruction: should be close to original signals
         let recon_arr = Array1::from_vec(recon);
-        for i in 0..signals.len() {
+        for (i, &signal_i) in signals.iter().enumerate() {
             let recon_signal: f64 = tomo.geometry.row(i).dot(&recon_arr);
-            let rel_err = if signals[i].abs() > 1e-10 {
-                (recon_signal - signals[i]).abs() / signals[i]
+            let rel_err = if signal_i.abs() > 1e-10 {
+                (recon_signal - signal_i).abs() / signal_i
             } else {
                 recon_signal.abs()
             };

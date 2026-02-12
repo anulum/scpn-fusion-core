@@ -34,6 +34,7 @@ const SIGMA_MULTIPLY: f64 = 0.08;
 const MULTIPLIER_GAIN: f64 = 1.8;
 
 /// Default incident flux [n/(cm²·s)]. Python: 1e14.
+#[cfg(test)]
 const DEFAULT_FLUX: f64 = 1e14;
 
 /// Result of a breeding blanket calculation.

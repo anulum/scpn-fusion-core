@@ -94,8 +94,7 @@ impl SandpileReactor {
         // Simple policy: increase suppression near core if avalanches are large
         for i in 0..L {
             let radial_factor = 1.0 - (i as f64) / (L as f64);
-            self.suppression[i] =
-                (norm_aval * 0.5 + norm_temp * 0.5) * radial_factor;
+            self.suppression[i] = (norm_aval * 0.5 + norm_temp * 0.5) * radial_factor;
             self.suppression[i] = self.suppression[i].clamp(0.0, 1.0);
         }
     }
@@ -160,9 +159,6 @@ mod tests {
         let small: usize = sizes.iter().filter(|&&s| s <= 5).count();
         let large: usize = sizes.iter().filter(|&&s| s > 50).count();
         // Should have more small than large (rough power law check)
-        assert!(
-            small > large * 2,
-            "Power law: small={small}, large={large}"
-        );
+        assert!(small > large * 2, "Power law: small={small}, large={large}");
     }
 }

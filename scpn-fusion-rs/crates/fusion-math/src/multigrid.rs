@@ -149,11 +149,7 @@ fn prolongate(coarse: &Array2<f64>, fine: &mut Array2<f64>) {
 /// Compute the residual vector r = source - L[psi] on the given grid.
 ///
 /// The operator L is the Grad-Shafranov 5-point stencil with toroidal 1/R terms.
-fn compute_residual_vector(
-    psi: &Array2<f64>,
-    source: &Array2<f64>,
-    grid: &Grid2D,
-) -> Array2<f64> {
+fn compute_residual_vector(psi: &Array2<f64>, source: &Array2<f64>, grid: &Grid2D) -> Array2<f64> {
     let (nz, nr) = psi.dim();
     let dr = grid.dr;
     let dz = grid.dz;
@@ -185,7 +181,7 @@ fn compute_residual_vector(
 
 /// Compute coarse grid dimensions from fine grid.
 fn coarse_size(n: usize) -> usize {
-    (n + 1) / 2
+    n.div_ceil(2)
 }
 
 /// Build a coarsened Grid2D from a fine Grid2D.
@@ -204,12 +200,7 @@ fn coarsen_grid(fine_grid: &Grid2D) -> Grid2D {
 /// Recursive: smooths on the current level, restricts the residual to
 /// a coarser grid, solves the coarse correction, prolongs it back, and
 /// post-smooths.
-fn v_cycle(
-    psi: &mut Array2<f64>,
-    source: &Array2<f64>,
-    grid: &Grid2D,
-    config: &MultigridConfig,
-) {
+fn v_cycle(psi: &mut Array2<f64>, source: &Array2<f64>, grid: &Grid2D, config: &MultigridConfig) {
     let (nz, nr) = psi.dim();
 
     // Base case: grid too small for further coarsening — solve directly
@@ -344,7 +335,10 @@ mod tests {
             "Should converge: residual = {}, cycles = {}",
             result.residual, result.cycles
         );
-        assert!(result.cycles < 20, "Should converge in fewer than 20 cycles");
+        assert!(
+            result.cycles < 20,
+            "Should converge in fewer than 20 cycles"
+        );
     }
 
     #[test]
@@ -421,10 +415,7 @@ mod tests {
             "Zero source should give zero solution: max = {}",
             max_val
         );
-        assert!(
-            result.converged,
-            "Zero source should converge immediately"
-        );
+        assert!(result.converged, "Zero source should converge immediately");
     }
 
     #[test]

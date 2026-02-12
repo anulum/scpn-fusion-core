@@ -17,6 +17,7 @@ use rand::Rng;
 use rand_distr::StandardNormal;
 
 /// Grid size. Python: GRID=64.
+#[cfg(test)]
 const GRID: usize = 64;
 
 /// Domain size. Python: L=10.0.
@@ -41,6 +42,7 @@ const DEALIAS_FRACTION: f64 = 2.0 / 3.0;
 const N_PROBES: usize = 16;
 
 /// Default ESN reservoir size. Python: 500.
+#[cfg(test)]
 const RESERVOIR_SIZE: usize = 200;
 
 /// ESN spectral radius. Python: 0.95.
@@ -97,13 +99,17 @@ impl DriftWavePhysics {
 
         let k_max = (n / 2) as f64 * dk;
         let k_cut = DEALIAS_FRACTION * k_max;
-        let mask = Array2::from_shape_fn((n, n), |(i, j)| {
-            if k2[[i, j]] < k_cut * k_cut {
-                1.0
-            } else {
-                0.0
-            }
-        });
+        let mask =
+            Array2::from_shape_fn(
+                (n, n),
+                |(i, j)| {
+                    if k2[[i, j]] < k_cut * k_cut {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                },
+            );
 
         let phi_k = Array2::from_shape_fn((n, n), |_| {
             Complex64::new(
@@ -135,11 +141,7 @@ impl DriftWavePhysics {
     }
 
     /// Poisson bracket [A, B] with de-aliasing.
-    fn bracket(
-        &self,
-        a_k: &Array2<Complex64>,
-        b_k: &Array2<Complex64>,
-    ) -> Array2<Complex64> {
+    fn bracket(&self, a_k: &Array2<Complex64>, b_k: &Array2<Complex64>) -> Array2<Complex64> {
         let n = self.n;
         let iu = Complex64::new(0.0, 1.0);
 
@@ -264,19 +266,12 @@ impl DriftWavePhysics {
                         + 2.0 * k3_phi[[i, j]]
                         + k4_phi[[i, j]]);
                 self.n_k[[i, j]] += Complex64::new(dt / 6.0, 0.0)
-                    * (k1_n[[i, j]]
-                        + 2.0 * k2_n[[i, j]]
-                        + 2.0 * k3_n[[i, j]]
-                        + k4_n[[i, j]]);
+                    * (k1_n[[i, j]] + 2.0 * k2_n[[i, j]] + 2.0 * k3_n[[i, j]] + k4_n[[i, j]]);
             }
         }
 
         // Stability clamp
-        let max_phi = self
-            .phi_k
-            .iter()
-            .map(|c| c.norm())
-            .fold(0.0_f64, f64::max);
+        let max_phi = self.phi_k.iter().map(|c| c.norm()).fold(0.0_f64, f64::max);
         if max_phi > 100.0 {
             let scale = 100.0 / max_phi;
             for val in self.phi_k.iter_mut() {
@@ -315,9 +310,7 @@ impl OracleESN {
         let mut rng = rand::thread_rng();
 
         // Input weights: uniform [-1, 1]
-        let w_in = Array2::from_shape_fn((reservoir_size, input_dim), |_| {
-            rng.gen_range(-1.0..1.0)
-        });
+        let w_in = Array2::from_shape_fn((reservoir_size, input_dim), |_| rng.gen_range(-1.0..1.0));
 
         // Sparse reservoir (density ~0.1)
         let mut w_res = Array2::zeros((reservoir_size, reservoir_size));
@@ -353,7 +346,7 @@ impl OracleESN {
         let n = self.reservoir_size;
         let mut new_state = vec![0.0; n];
 
-        for i in 0..n {
+        for (i, new_state_i) in new_state.iter_mut().enumerate().take(n) {
             let mut sum = 0.0;
             // W_in · u
             for (j, &u) in input.iter().enumerate() {
@@ -363,7 +356,7 @@ impl OracleESN {
             for j in 0..n {
                 sum += self.w_res[[i, j]] * self.state[j];
             }
-            new_state[i] = sum.tanh();
+            *new_state_i = sum.tanh();
         }
 
         self.state = new_state;
@@ -581,10 +574,7 @@ mod tests {
         let x = cholesky_solve(&a, &b);
         for i in 0..n {
             for j in 0..2 {
-                assert!(
-                    (x[[i, j]] - b[[i, j]]).abs() < 1e-10,
-                    "I·x should equal b"
-                );
+                assert!((x[[i, j]] - b[[i, j]]).abs() < 1e-10, "I·x should equal b");
             }
         }
     }

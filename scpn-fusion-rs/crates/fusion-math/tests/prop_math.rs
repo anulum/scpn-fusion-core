@@ -11,9 +11,9 @@
 //! SVD reconstruction, eigenvalue decomposition.
 
 use fusion_math::elliptic::{ellipe, ellipk};
-use fusion_math::interp::{gradient_2d, interp2d};
-use fusion_math::linalg::{eig_2x2, pinv_svd, svd_small};
-use fusion_math::sor::{sor_residual, sor_solve, sor_step};
+use fusion_math::interp::interp2d;
+use fusion_math::linalg::{eig_2x2, svd_small};
+use fusion_math::sor::{sor_residual, sor_solve};
 use fusion_math::tridiag::thomas_solve;
 use fusion_types::state::Grid2D;
 use ndarray::Array2;
@@ -292,7 +292,7 @@ proptest! {
         let k = sigma.len();
 
         // Reconstruct
-        let mut recon = Array2::zeros((m, n));
+        let mut recon: Array2<f64> = Array2::zeros((m, n));
         for i in 0..m {
             for j in 0..n {
                 for s in 0..k {

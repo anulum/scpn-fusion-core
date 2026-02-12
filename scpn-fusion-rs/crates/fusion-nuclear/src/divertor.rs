@@ -108,8 +108,8 @@ impl DivertorLab {
     /// Calculate target heat flux [MW/m²] given expansion factor.
     pub fn calculate_heat_load(&self, expansion_factor: f64) -> f64 {
         let lambda_q_m = self.lambda_q_mm() * 1e-3;
-        let q_parallel = self.p_sol_mw * 1e6
-            / (2.0 * std::f64::consts::PI * self.r_major * lambda_q_m);
+        let q_parallel =
+            self.p_sol_mw * 1e6 / (2.0 * std::f64::consts::PI * self.r_major * lambda_q_m);
         let q_target = q_parallel / expansion_factor;
         q_target / 1e6 // MW/m²
     }
@@ -214,7 +214,7 @@ mod tests {
         let (t_li, f_rad, _) = lab.simulate_lithium_vapor(q);
         assert!(t_li.is_finite(), "Li temp should be finite: {t_li}");
         assert!(
-            f_rad >= 0.0 && f_rad <= 1.0,
+            (0.0..=1.0).contains(&f_rad),
             "Radiative fraction in [0,1]: {f_rad}"
         );
     }

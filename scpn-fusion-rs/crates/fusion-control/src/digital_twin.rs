@@ -206,11 +206,7 @@ impl Plasma2D {
 
         let total: f64 = self.temp.iter().sum();
         let count = self.mask.iter().filter(|&&v| v > 0.5).count();
-        let avg = if count > 0 {
-            total / count as f64
-        } else {
-            0.0
-        };
+        let avg = if count > 0 { total / count as f64 } else { 0.0 };
 
         (core_temp, avg)
     }
@@ -232,7 +228,7 @@ mod tests {
         let x = Array1::zeros(GRID);
         let out = mlp.forward(&x);
         assert!(
-            out >= -1.0 && out <= 1.0,
+            (-1.0..=1.0).contains(&out),
             "Output should be in [-1, 1]: {out}"
         );
     }
@@ -262,7 +258,7 @@ mod tests {
             plasma.step(0.0);
         }
         for &t in plasma.temp.iter() {
-            assert!(t >= 0.0 && t <= 100.0, "Temp out of bounds: {t}");
+            assert!((0.0..=100.0).contains(&t), "Temp out of bounds: {t}");
         }
     }
 }

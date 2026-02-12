@@ -61,9 +61,9 @@ pub struct SPISnapshot {
 
 /// Shattered Pellet Injection simulator.
 pub struct SPIMitigation {
-    pub w_th: f64,  // [J]
-    pub ip: f64,    // [A]
-    pub te: f64,    // [keV]
+    pub w_th: f64, // [J]
+    pub ip: f64,   // [A]
+    pub te: f64,   // [keV]
     pub phase: Phase,
 }
 

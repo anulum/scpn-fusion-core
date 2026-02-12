@@ -120,8 +120,12 @@ impl SpikingControllerPool {
 
         // Windowed rate
         let window = self.window_size.min(self.history_pos.len());
-        let recent_pos: usize = self.history_pos[self.history_pos.len() - window..].iter().sum();
-        let recent_neg: usize = self.history_neg[self.history_neg.len() - window..].iter().sum();
+        let recent_pos: usize = self.history_pos[self.history_pos.len() - window..]
+            .iter()
+            .sum();
+        let recent_neg: usize = self.history_neg[self.history_neg.len() - window..]
+            .iter()
+            .sum();
 
         let rate_pos = recent_pos as f64 / (window as f64 * self.n_neurons as f64);
         let rate_neg = recent_neg as f64 / (window as f64 * self.n_neurons as f64);
