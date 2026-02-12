@@ -9,13 +9,19 @@
 
 use crate::jacobian::{compute_analytical_jacobian, compute_fd_jacobian, forward_model_response};
 use crate::kernel::FusionKernel;
-use crate::source::ProfileParams;
+use crate::source::{mtanh_profile, mtanh_profile_derivatives, ProfileParams};
 use fusion_math::linalg::pinv_svd;
 use fusion_types::config::ReactorConfig;
 use fusion_types::error::{FusionError, FusionResult};
+use fusion_types::state::Grid2D;
 use ndarray::{Array1, Array2};
 
 const N_PARAMS: usize = 8;
+const SOURCE_BETA_MIX: f64 = 0.5;
+const MIN_FLUX_DENOMINATOR: f64 = 1e-9;
+const MIN_CURRENT_INTEGRAL: f64 = 1e-9;
+const MIN_RADIUS: f64 = 1e-9;
+const SENSITIVITY_RELAXATION: f64 = 0.8;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum JacobianMode {
@@ -121,6 +127,42 @@ fn to_array2(jac: Vec<Vec<f64>>) -> Array2<f64> {
     out
 }
 
+fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
+    let mut best_idx = 0usize;
+    let mut best_dist = f64::INFINITY;
+    for (idx, &x) in axis.iter().enumerate() {
+        let d = (x - value).abs();
+        if d < best_dist {
+            best_dist = d;
+            best_idx = idx;
+        }
+    }
+    best_idx
+}
+
+fn probe_indices(grid: &Grid2D, probes_rz: &[(f64, f64)]) -> Vec<(usize, usize)> {
+    probes_rz
+        .iter()
+        .map(|&(r, z)| (nearest_index(&grid.z, z), nearest_index(&grid.r, r)))
+        .collect()
+}
+
+fn mtanh_profile_dpsi_norm(psi_norm: f64, params: &ProfileParams) -> f64 {
+    let w = params.ped_width.abs().max(1e-8);
+    let ped_top = params.ped_top.abs().max(1e-8);
+    let y = (params.ped_top - psi_norm) / w;
+    let tanh_y = y.tanh();
+    let sech2 = 1.0 - tanh_y * tanh_y;
+
+    let d_edge = -0.5 * params.ped_height * sech2 / w;
+    let d_core = if psi_norm.abs() < ped_top {
+        -2.0 * params.core_alpha * psi_norm / ped_top.powi(2)
+    } else {
+        0.0
+    };
+    d_edge + d_core
+}
+
 fn kernel_forward_observables(
     reactor_config: &ReactorConfig,
     probes_rz: &[(f64, f64)],
@@ -143,15 +185,179 @@ fn kernel_forward_observables(
     Ok(kernel.sample_psi_at_probes(probes_rz))
 }
 
-fn kernel_fd_jacobian(
+fn solve_linearized_sensitivity(
+    grid: &Grid2D,
+    ds_dx: &Array2<f64>,
+    ds_dpsi: &Array2<f64>,
+    iterations: usize,
+) -> Array2<f64> {
+    let mut delta = Array2::zeros((grid.nz, grid.nr));
+    if grid.nz < 3 || grid.nr < 3 || iterations == 0 {
+        return delta;
+    }
+
+    let mut next = delta.clone();
+    let dr_sq = grid.dr * grid.dr;
+
+    for _ in 0..iterations {
+        for iz in 1..grid.nz - 1 {
+            for ir in 1..grid.nr - 1 {
+                let coupled_rhs = ds_dpsi[[iz, ir]] * delta[[iz, ir]] + ds_dx[[iz, ir]];
+                let jacobi = 0.25
+                    * (delta[[iz - 1, ir]]
+                        + delta[[iz + 1, ir]]
+                        + delta[[iz, ir - 1]]
+                        + delta[[iz, ir + 1]]
+                        - dr_sq * coupled_rhs);
+                next[[iz, ir]] = (1.0 - SENSITIVITY_RELAXATION) * delta[[iz, ir]]
+                    + SENSITIVITY_RELAXATION * jacobi;
+            }
+        }
+
+        for ir in 0..grid.nr {
+            next[[0, ir]] = 0.0;
+            next[[grid.nz - 1, ir]] = 0.0;
+        }
+        for iz in 0..grid.nz {
+            next[[iz, 0]] = 0.0;
+            next[[iz, grid.nr - 1]] = 0.0;
+        }
+
+        std::mem::swap(&mut delta, &mut next);
+    }
+
+    delta
+}
+
+fn kernel_analytical_forward_and_jacobian(
     reactor_config: &ReactorConfig,
     probes_rz: &[(f64, f64)],
     params_p: ProfileParams,
     params_ff: ProfileParams,
     kernel_cfg: &KernelInverseConfig,
+) -> FusionResult<(Vec<f64>, Vec<Vec<f64>>)> {
+    let mut cfg = reactor_config.clone();
+    cfg.solver.max_iterations = kernel_cfg.kernel_max_iterations.max(1);
+
+    let mut kernel = FusionKernel::new(cfg);
+    let solve_result = kernel.solve_equilibrium_with_profiles(params_p, params_ff)?;
+    if kernel_cfg.require_kernel_converged && !solve_result.converged {
+        return Err(FusionError::SolverDiverged {
+            iteration: solve_result.iterations,
+            message: "Kernel forward solve did not converge under inverse constraints".to_string(),
+        });
+    }
+
+    let base_observables = kernel.sample_psi_at_probes(probes_rz);
+    let grid = kernel.grid();
+    let psi = kernel.psi();
+    let mu0 = kernel.config().physics.vacuum_permeability;
+    let i_target = kernel.config().physics.plasma_current_target;
+
+    let mut flux_denom = solve_result.psi_boundary - solve_result.psi_axis;
+    if flux_denom.abs() < MIN_FLUX_DENOMINATOR {
+        flux_denom = MIN_FLUX_DENOMINATOR;
+    }
+
+    let mut psi_norm = Array2::zeros((grid.nz, grid.nr));
+    let mut inside = Array2::from_elem((grid.nz, grid.nr), false);
+    let mut raw = Array2::zeros((grid.nz, grid.nr));
+    let mut raw_dpsi_norm = Array2::zeros((grid.nz, grid.nr));
+
+    for iz in 0..grid.nz {
+        for ir in 0..grid.nr {
+            let psi_n = (psi[[iz, ir]] - solve_result.psi_axis) / flux_denom;
+            psi_norm[[iz, ir]] = psi_n;
+            if !(0.0..1.0).contains(&psi_n) {
+                continue;
+            }
+
+            let r = grid.rr[[iz, ir]].abs().max(MIN_RADIUS);
+            let p = mtanh_profile(psi_n, &params_p);
+            let ff = mtanh_profile(psi_n, &params_ff);
+            let dp_dpsi = mtanh_profile_dpsi_norm(psi_n, &params_p);
+            let dff_dpsi = mtanh_profile_dpsi_norm(psi_n, &params_ff);
+
+            raw[[iz, ir]] = SOURCE_BETA_MIX * r * p + (1.0 - SOURCE_BETA_MIX) * (ff / (mu0 * r));
+            raw_dpsi_norm[[iz, ir]] =
+                SOURCE_BETA_MIX * r * dp_dpsi + (1.0 - SOURCE_BETA_MIX) * (dff_dpsi / (mu0 * r));
+            inside[[iz, ir]] = true;
+        }
+    }
+
+    let i_raw = raw.iter().sum::<f64>() * grid.dr * grid.dz;
+    if i_raw.abs() <= MIN_CURRENT_INTEGRAL {
+        return Ok((base_observables, vec![vec![0.0; N_PARAMS]; probes_rz.len()]));
+    }
+    let scale = i_target / i_raw;
+
+    // Approximate local dS/dPsi for linearized kernel solve.
+    let mut ds_dpsi = Array2::zeros((grid.nz, grid.nr));
+    for iz in 0..grid.nz {
+        for ir in 0..grid.nr {
+            if !inside[[iz, ir]] {
+                continue;
+            }
+            let r = grid.rr[[iz, ir]];
+            let dj_dpsi = scale * raw_dpsi_norm[[iz, ir]] / flux_denom;
+            ds_dpsi[[iz, ir]] = -mu0 * r * dj_dpsi;
+        }
+    }
+
+    let probe_idx = probe_indices(grid, probes_rz);
+    let mut jac = vec![vec![0.0; N_PARAMS]; probes_rz.len()];
+    let sens_iters = (kernel_cfg.kernel_max_iterations.max(20) * 2).min(600);
+
+    for col in 0..N_PARAMS {
+        let mut d_raw = Array2::zeros((grid.nz, grid.nr));
+        for iz in 0..grid.nz {
+            for ir in 0..grid.nr {
+                if !inside[[iz, ir]] {
+                    continue;
+                }
+
+                let psi_n = psi_norm[[iz, ir]];
+                let r = grid.rr[[iz, ir]].abs().max(MIN_RADIUS);
+                if col < 4 {
+                    let dp = mtanh_profile_derivatives(psi_n, &params_p)[col];
+                    d_raw[[iz, ir]] = SOURCE_BETA_MIX * r * dp;
+                } else {
+                    let dff = mtanh_profile_derivatives(psi_n, &params_ff)[col - 4];
+                    d_raw[[iz, ir]] = (1.0 - SOURCE_BETA_MIX) * (dff / (mu0 * r));
+                }
+            }
+        }
+
+        let d_i = d_raw.iter().sum::<f64>() * grid.dr * grid.dz;
+        let mut ds_dx = Array2::zeros((grid.nz, grid.nr));
+        for iz in 0..grid.nz {
+            for ir in 0..grid.nr {
+                if !inside[[iz, ir]] {
+                    continue;
+                }
+                let r = grid.rr[[iz, ir]];
+                let dj = scale * (d_raw[[iz, ir]] - raw[[iz, ir]] * d_i / i_raw);
+                ds_dx[[iz, ir]] = -mu0 * r * dj;
+            }
+        }
+
+        let delta_psi = solve_linearized_sensitivity(grid, &ds_dx, &ds_dpsi, sens_iters);
+        for (row, &(iz, ir)) in probe_idx.iter().enumerate() {
+            jac[row][col] = delta_psi[[iz, ir]];
+        }
+    }
+
+    Ok((base_observables, jac))
+}
+
+fn kernel_fd_jacobian_from_base(
+    reactor_config: &ReactorConfig,
+    probes_rz: &[(f64, f64)],
+    params_p: ProfileParams,
+    params_ff: ProfileParams,
+    kernel_cfg: &KernelInverseConfig,
+    base: &[f64],
 ) -> FusionResult<Vec<Vec<f64>>> {
-    let base =
-        kernel_forward_observables(reactor_config, probes_rz, params_p, params_ff, kernel_cfg)?;
     let mut jac = vec![vec![0.0; N_PARAMS]; probes_rz.len()];
     let h = kernel_cfg.inverse.fd_step.abs().max(1e-6);
 
@@ -343,8 +549,33 @@ pub fn reconstruct_equilibrium_with_kernel(
 
     for iter in 0..kernel_cfg.inverse.max_iterations {
         let (params_p, params_ff) = unpack_params(&x);
-        let prediction =
-            kernel_forward_observables(reactor_config, probes_rz, params_p, params_ff, kernel_cfg)?;
+        let (prediction, jac) = match kernel_cfg.inverse.jacobian_mode {
+            JacobianMode::Analytical => kernel_analytical_forward_and_jacobian(
+                reactor_config,
+                probes_rz,
+                params_p,
+                params_ff,
+                kernel_cfg,
+            )?,
+            JacobianMode::FiniteDifference => {
+                let pred = kernel_forward_observables(
+                    reactor_config,
+                    probes_rz,
+                    params_p,
+                    params_ff,
+                    kernel_cfg,
+                )?;
+                let jac = kernel_fd_jacobian_from_base(
+                    reactor_config,
+                    probes_rz,
+                    params_p,
+                    params_ff,
+                    kernel_cfg,
+                    &pred,
+                )?;
+                (pred, jac)
+            }
+        };
         let residual_vec: Vec<f64> = prediction
             .iter()
             .zip(measurements.iter())
@@ -360,9 +591,6 @@ pub fn reconstruct_equilibrium_with_kernel(
             break;
         }
 
-        // Full analytical Jacobian of the kernel is not available yet.
-        // Use kernel finite-difference Jacobian in both modes for robustness.
-        let jac = kernel_fd_jacobian(reactor_config, probes_rz, params_p, params_ff, kernel_cfg)?;
         let j = to_array2(jac);
 
         let lambda = kernel_cfg.inverse.tikhonov.max(1e-10);
@@ -587,5 +815,117 @@ mod tests {
             }
             _ => panic!("Expected ConfigError for mismatched inputs"),
         }
+    }
+
+    #[test]
+    fn test_kernel_analytical_jacobian_computes() {
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
+            .unwrap();
+        let probes = vec![(6.2, 0.0), (6.35, 0.1), (6.45, -0.15)];
+        let params_p = ProfileParams {
+            ped_top: 0.9,
+            ped_width: 0.08,
+            ped_height: 1.1,
+            core_alpha: 0.25,
+        };
+        let params_ff = ProfileParams {
+            ped_top: 0.86,
+            ped_width: 0.07,
+            ped_height: 0.95,
+            core_alpha: 0.12,
+        };
+        let kcfg = KernelInverseConfig {
+            inverse: InverseConfig {
+                jacobian_mode: JacobianMode::Analytical,
+                fd_step: 1e-5,
+                ..Default::default()
+            },
+            kernel_max_iterations: 50,
+            require_kernel_converged: false,
+        };
+
+        let (pred, jac) =
+            kernel_analytical_forward_and_jacobian(&cfg, &probes, params_p, params_ff, &kcfg)
+                .unwrap();
+        assert_eq!(pred.len(), probes.len());
+        assert_eq!(jac.len(), probes.len());
+        assert!(jac.iter().all(|row| row.len() == N_PARAMS));
+        assert!(jac.iter().flatten().all(|v| v.is_finite()));
+    }
+
+    #[test]
+    fn test_kernel_inverse_analytical_mode_reduces_residual() {
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
+            .unwrap();
+        let probes = vec![(6.2, 0.0), (6.3, 0.1), (6.4, -0.1), (6.55, 0.0)];
+
+        let true_p = ProfileParams {
+            ped_top: 0.91,
+            ped_width: 0.08,
+            ped_height: 1.15,
+            core_alpha: 0.28,
+        };
+        let true_ff = ProfileParams {
+            ped_top: 0.85,
+            ped_width: 0.06,
+            ped_height: 0.92,
+            core_alpha: 0.14,
+        };
+        let init_p = ProfileParams {
+            ped_top: 0.78,
+            ped_width: 0.12,
+            ped_height: 0.7,
+            core_alpha: 0.03,
+        };
+        let init_ff = ProfileParams {
+            ped_top: 0.74,
+            ped_width: 0.11,
+            ped_height: 0.65,
+            core_alpha: 0.02,
+        };
+
+        let base_cfg = KernelInverseConfig {
+            inverse: InverseConfig {
+                max_iterations: 4,
+                damping: 0.6,
+                tolerance: 1e-8,
+                tikhonov: 1e-4,
+                ..Default::default()
+            },
+            kernel_max_iterations: 50,
+            require_kernel_converged: false,
+        };
+
+        let measurements =
+            kernel_forward_observables(&cfg, &probes, true_p, true_ff, &base_cfg).unwrap();
+        let init_prediction =
+            kernel_forward_observables(&cfg, &probes, init_p, init_ff, &base_cfg).unwrap();
+        let init_residual = (init_prediction
+            .iter()
+            .zip(measurements.iter())
+            .map(|(p, m)| (p - m).powi(2))
+            .sum::<f64>()
+            / measurements.len() as f64)
+            .sqrt();
+
+        let mut analytical_cfg = base_cfg.clone();
+        analytical_cfg.inverse.jacobian_mode = JacobianMode::Analytical;
+        let result = reconstruct_equilibrium_with_kernel(
+            &cfg,
+            &probes,
+            &measurements,
+            init_p,
+            init_ff,
+            &analytical_cfg,
+        )
+        .unwrap();
+
+        assert!(result.residual.is_finite());
+        assert!(
+            result.residual < init_residual,
+            "Expected analytical kernel mode to reduce residual: init={}, final={}",
+            init_residual,
+            result.residual
+        );
     }
 }
