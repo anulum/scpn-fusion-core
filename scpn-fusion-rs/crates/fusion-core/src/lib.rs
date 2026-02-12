@@ -8,6 +8,7 @@ pub mod ignition;
 pub mod inverse;
 pub mod jacobian;
 pub mod kernel;
+pub mod memory_transport;
 pub mod rf_heating;
 pub mod source;
 pub mod stability;
