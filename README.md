@@ -142,6 +142,7 @@ The test suites include property-based tests powered by [Hypothesis](https://hyp
 | `03_grad_shafranov_equilibrium` | Free-boundary equilibrium solver tutorial |
 | `04_divertor_and_neutronics` | Divertor heat flux & tritium breeding ratio |
 | `05_validation_against_experiments` | Cross-validation vs SPARC GEQDSK & ITPA scaling |
+| `06_inverse_and_transport_benchmarks` | Inverse solver & neural transport surrogate benchmarks |
 
 ## Validation Against Experimental Data
 
@@ -237,8 +238,24 @@ The `scpn-fusion-rs/` directory contains a 10-crate Rust workspace that mirrors 
 - **Dependencies**: `ndarray`, `nalgebra`, `rayon` (parallelism), `rustfft`, `serde`
 - **No external runtime**: pure Rust with no C/Fortran dependencies
 
+## Benchmarks
+
+Performance comparison against community codes (EFIT, QuaLiKiz, QLKNN):
+
+| Subsystem | Key Result | Details |
+|-----------|-----------|---------|
+| **Inverse reconstruction** | ~4 s full reconstruction (Rust), competitive with EFIT | [BENCHMARKS.md](docs/BENCHMARKS.md#inverse-reconstruction-performance) |
+| **Neural transport** | ~5 µs/point MLP inference, ~200,000× faster than gyrokinetic | [BENCHMARKS.md](docs/BENCHMARKS.md#neural-transport-surrogate) |
+| **Equilibrium solver** | 15 ms @ 65×65 (Rust multigrid) | [BENCHMARKS.md](docs/BENCHMARKS.md#equilibrium-solver-convergence) |
+
+- **Interactive notebook:** [`examples/06_inverse_and_transport_benchmarks.ipynb`](examples/06_inverse_and_transport_benchmarks.ipynb)
+- **Static figures for PDF/arXiv:** [`docs/BENCHMARK_FIGURES.md`](docs/BENCHMARK_FIGURES.md) (includes LaTeX table snippets)
+- **Full comparison tables:** [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)
+
 ## Documentation
 
+- [Benchmarks & Comparisons](docs/BENCHMARKS.md)
+- [Benchmark Figures (static export)](docs/BENCHMARK_FIGURES.md)
 - [Compact Reactor Findings](docs/COMPACT_REACTOR_FINDINGS.md)
 - [Physics Methods](docs/PHYSICS_METHODS_COMPLETE.md)
 - [ITER Validation](docs/VALIDATION_AGAINST_ITER.md)
