@@ -1,5 +1,5 @@
 {
-    "reactor_name": "ITER-Standard",
+    "reactor_name": "ITER-Like-Demo",
     "grid_resolution": [128, 128],
     "dimensions": {
         "R_min": 2.0,
@@ -12,7 +12,7 @@
         "vacuum_permeability": 1.0
     },
     "coils": [
-        { "name": "PF1", "r": 3.9, "z": 7.6, "current": -0.3288 },
+        { "name": "PF1", "r": 3.0, "z": 7.6, "current": 8.0 },
         { "name": "PF2", "r": 8.2, "z": 6.7, "current": -1.3229 },
         { "name": "PF3", "r": 12.0, "z": 2.7, "current": -3.0182 },
         { "name": "PF4", "r": 12.6, "z": -2.3, "current": -2.9829 },
