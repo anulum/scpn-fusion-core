@@ -12,9 +12,10 @@
 //! X-point detection, and convergence tracking.
 
 use crate::bfield::compute_b_field;
-use crate::source::update_plasma_source_nonlinear;
+use crate::source::{update_plasma_source_with_profiles, ProfileMode, ProfileParams};
 use crate::vacuum::calculate_vacuum_field;
 use crate::xpoint::find_x_point;
+use fusion_math::multigrid::{multigrid_solve, MultigridConfig};
 use fusion_types::config::ReactorConfig;
 use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::{EquilibriumResult, Grid2D, PlasmaState};
@@ -26,11 +27,14 @@ const DEFAULT_PICARD_RELAXATION: f64 = 0.1;
 /// Gaussian sigma for seed current distribution (Python line 193: `sigma = 1.0`).
 const SEED_GAUSSIAN_SIGMA: f64 = 1.0;
 
-/// Number of Jacobi iterations for initial elliptic solve (Python line 204: `range(50)`).
-const INITIAL_JACOBI_ITERS: usize = 50;
+/// V-cycles for initial multigrid solve (replaces 50 Jacobi iterations).
+const INITIAL_MG_CYCLES: usize = 10;
 
-/// Number of inner SOR iterations per Picard step.
-const INNER_SOLVE_ITERS: usize = 50;
+/// V-cycles per inner Picard step.
+const INNER_MG_CYCLES: usize = 5;
+
+/// Multigrid convergence tolerance for inner solves.
+const MG_TOL: f64 = 1e-6;
 
 /// Minimum Ψ_axis to avoid normalization singularity (Python line 218: `1e-6`).
 const MIN_PSI_AXIS: f64 = 1e-6;
@@ -47,6 +51,9 @@ pub struct FusionKernel {
     grid: Grid2D,
     state: PlasmaState,
     external_profile_mode: bool,
+    profile_mode: ProfileMode,
+    p_prime_params: ProfileParams,
+    ff_prime_params: ProfileParams,
 }
 
 impl FusionKernel {
@@ -55,11 +62,42 @@ impl FusionKernel {
         let grid = config.create_grid();
         let state = PlasmaState::new(grid.nz, grid.nr);
 
+        // Read profile config if present
+        let (profile_mode, p_prime_params, ff_prime_params) =
+            if let Some(ref pc) = config.physics.profiles {
+                let mode = match pc.mode.as_str() {
+                    "h-mode" | "H-mode" | "hmode" => ProfileMode::HMode,
+                    _ => ProfileMode::LMode,
+                };
+                let p = ProfileParams {
+                    ped_top: pc.p_prime.ped_top,
+                    ped_width: pc.p_prime.ped_width,
+                    ped_height: pc.p_prime.ped_height,
+                    core_alpha: pc.p_prime.core_alpha,
+                };
+                let ff = ProfileParams {
+                    ped_top: pc.ff_prime.ped_top,
+                    ped_width: pc.ff_prime.ped_width,
+                    ped_height: pc.ff_prime.ped_height,
+                    core_alpha: pc.ff_prime.core_alpha,
+                };
+                (mode, p, ff)
+            } else {
+                (
+                    ProfileMode::LMode,
+                    ProfileParams::default(),
+                    ProfileParams::default(),
+                )
+            };
+
         FusionKernel {
             config,
             grid,
             state,
             external_profile_mode: false,
+            profile_mode,
+            p_prime_params,
+            ff_prime_params,
         }
     }
 
@@ -74,11 +112,11 @@ impl FusionKernel {
     /// Algorithm:
     /// 1. Compute vacuum field from coils
     /// 2. Seed Gaussian current distribution
-    /// 3. Initial Jacobi solve
+    /// 3. Initial multigrid solve (V-cycle with Red-Black SOR smoother)
     /// 4. Picard iteration loop:
     ///    a. Find O-point (axis) and X-point
     ///    b. Update nonlinear source term
-    ///    c. Jacobi elliptic solve
+    ///    c. Multigrid elliptic solve (correct GS stencil with 1/R terms)
     ///    d. Apply vacuum boundary conditions
     ///    e. Relax: Ψ = (1-α)Ψ_old + α Ψ_new
     ///    f. Check convergence
@@ -129,20 +167,16 @@ impl FusionKernel {
             }
         }
 
-        // Initial Jacobi solve
-        let dr_sq = dr * dr;
-        for _ in 0..INITIAL_JACOBI_ITERS {
-            for iz in 1..nz - 1 {
-                for ir in 1..nr - 1 {
-                    self.state.psi[[iz, ir]] = 0.25
-                        * (self.state.psi[[iz - 1, ir]]
-                            + self.state.psi[[iz + 1, ir]]
-                            + self.state.psi[[iz, ir - 1]]
-                            + self.state.psi[[iz, ir + 1]]
-                            - dr_sq * source[[iz, ir]]);
-                }
-            }
-        }
+        // Initial multigrid solve (replaces plain Jacobi — fixes missing 1/R terms)
+        let mg_config = MultigridConfig::default();
+        multigrid_solve(
+            &mut self.state.psi,
+            &source,
+            &self.grid,
+            &mg_config,
+            INITIAL_MG_CYCLES,
+            MG_TOL,
+        );
 
         // 4. Picard iteration
         let mut x_point_pos = (0.0_f64, 0.0_f64);
@@ -188,13 +222,16 @@ impl FusionKernel {
 
             // 4b. Update nonlinear source
             if !self.external_profile_mode {
-                self.state.j_phi = update_plasma_source_nonlinear(
+                self.state.j_phi = update_plasma_source_with_profiles(
                     &self.state.psi,
                     &self.grid,
                     psi_axis_val,
                     psi_boundary_val,
                     mu0,
                     i_target,
+                    self.profile_mode,
+                    &self.p_prime_params,
+                    &self.ff_prime_params,
                 );
             }
 
@@ -205,20 +242,16 @@ impl FusionKernel {
                 }
             }
 
-            // 4c. Jacobi elliptic solve
+            // 4c. Multigrid elliptic solve (replaces Jacobi — correct GS stencil with 1/R terms)
             let mut psi_new = self.state.psi.clone();
-            for _ in 0..INNER_SOLVE_ITERS {
-                for iz in 1..nz - 1 {
-                    for ir in 1..nr - 1 {
-                        psi_new[[iz, ir]] = 0.25
-                            * (psi_new[[iz - 1, ir]]
-                                + psi_new[[iz + 1, ir]]
-                                + psi_new[[iz, ir - 1]]
-                                + psi_new[[iz, ir + 1]]
-                                - dr_sq * source[[iz, ir]]);
-                    }
-                }
-            }
+            multigrid_solve(
+                &mut psi_new,
+                &source,
+                &self.grid,
+                &mg_config,
+                INNER_MG_CYCLES,
+                MG_TOL,
+            );
 
             // 4d. Apply vacuum boundary conditions
             for ir in 0..nr {
@@ -315,6 +348,18 @@ impl FusionKernel {
     pub fn config(&self) -> &ReactorConfig {
         &self.config
     }
+
+    /// Set profile mode and pedestal parameters for p' and FF'.
+    pub fn set_profile_mode(
+        &mut self,
+        mode: ProfileMode,
+        p_params: ProfileParams,
+        ff_params: ProfileParams,
+    ) {
+        self.profile_mode = mode;
+        self.p_prime_params = p_params;
+        self.ff_prime_params = ff_params;
+    }
 }
 
 #[cfg(test)]
@@ -396,5 +441,43 @@ mod tests {
             !kernel.psi().iter().any(|v| v.is_nan()),
             "No NaN in validated config solve"
         );
+    }
+
+    #[test]
+    fn test_hmode_equilibrium_no_crash() {
+        use crate::source::{ProfileMode, ProfileParams};
+
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_validated_config.json")).unwrap();
+
+        // Switch to H-mode pedestal profiles
+        kernel.set_profile_mode(
+            ProfileMode::HMode,
+            ProfileParams {
+                ped_top: 0.92,
+                ped_width: 0.05,
+                ped_height: 1.0,
+                core_alpha: 0.3,
+            },
+            ProfileParams {
+                ped_top: 0.90,
+                ped_width: 0.06,
+                ped_height: 0.8,
+                core_alpha: 0.2,
+            },
+        );
+
+        let result = kernel.solve_equilibrium().unwrap();
+
+        // Must not NaN
+        assert!(
+            !kernel.psi().iter().any(|v| v.is_nan()),
+            "H-mode solve produced NaN"
+        );
+        assert!(
+            !kernel.psi().iter().any(|v| v.is_infinite()),
+            "H-mode solve produced Inf"
+        );
+        assert!(result.iterations > 0, "H-mode should run at least 1 iteration");
     }
 }

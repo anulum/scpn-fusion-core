@@ -36,6 +36,56 @@ pub struct GridDimensions {
 pub struct PhysicsParams {
     pub plasma_current_target: f64,
     pub vacuum_permeability: f64,
+    /// Optional H-mode pedestal profile configuration.
+    /// When absent, the solver uses L-mode linear profiles.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profiles: Option<ProfileConfig>,
+}
+
+/// H-mode pedestal profile parameters (optional in JSON config).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProfileConfig {
+    /// Profile mode: "l-mode" or "h-mode"
+    pub mode: String,
+    /// Pressure gradient pedestal parameters
+    #[serde(default)]
+    pub p_prime: PedestalParams,
+    /// Poloidal current pedestal parameters
+    #[serde(default)]
+    pub ff_prime: PedestalParams,
+}
+
+/// Pedestal shape parameters for a single profile (p' or FF').
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PedestalParams {
+    /// Pedestal top location in normalized flux (default: 0.92)
+    #[serde(default = "default_ped_top")]
+    pub ped_top: f64,
+    /// Pedestal width in normalized flux (default: 0.05)
+    #[serde(default = "default_ped_width")]
+    pub ped_width: f64,
+    /// Pedestal height, relative (default: 1.0)
+    #[serde(default = "default_ped_height")]
+    pub ped_height: f64,
+    /// Core peaking factor (default: 0.3)
+    #[serde(default = "default_core_alpha")]
+    pub core_alpha: f64,
+}
+
+fn default_ped_top() -> f64 { 0.92 }
+fn default_ped_width() -> f64 { 0.05 }
+fn default_ped_height() -> f64 { 1.0 }
+fn default_core_alpha() -> f64 { 0.3 }
+
+impl Default for PedestalParams {
+    fn default() -> Self {
+        PedestalParams {
+            ped_top: default_ped_top(),
+            ped_width: default_ped_width(),
+            ped_height: default_ped_height(),
+            core_alpha: default_core_alpha(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

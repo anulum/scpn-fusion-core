@@ -62,6 +62,26 @@ class FusionKernel:
         # Physics profiles parameters
         self.p_prime_0 = -1.0 # Pressure gradient scale
         self.ff_prime_0 = -1.0 # Poloidal current scale
+
+        # Profile mode: 'l-mode' (linear) or 'h-mode' (mtanh pedestal)
+        self.profile_mode = 'l-mode'
+        self.ped_params_p = {
+            'ped_top': 0.92, 'ped_width': 0.05,
+            'ped_height': 1.0, 'core_alpha': 0.3,
+        }
+        self.ped_params_ff = {
+            'ped_top': 0.92, 'ped_width': 0.05,
+            'ped_height': 1.0, 'core_alpha': 0.3,
+        }
+
+        # Read profile config if present in JSON
+        profiles_cfg = self.cfg.get('physics', {}).get('profiles')
+        if profiles_cfg:
+            self.profile_mode = profiles_cfg.get('mode', 'l-mode')
+            if 'p_prime' in profiles_cfg:
+                self.ped_params_p.update(profiles_cfg['p_prime'])
+            if 'ff_prime' in profiles_cfg:
+                self.ped_params_ff.update(profiles_cfg['ff_prime'])
         
     def calculate_vacuum_field(self):
         """Computes Green's function using Elliptic Integrals (Toroidal Geometry)."""
@@ -122,59 +142,80 @@ class FusionKernel:
         else:
             return (0,0), np.min(Psi) # Fallback
 
+    @staticmethod
+    def mtanh_profile(psi_norm, params):
+        """
+        Vectorized mtanh pedestal profile.
+
+        Parameters
+        ----------
+        psi_norm : ndarray
+            Normalised poloidal flux (0 at axis, 1 at separatrix).
+        params : dict
+            Keys: ped_top, ped_width, ped_height, core_alpha.
+
+        Returns
+        -------
+        ndarray  — profile value (0 outside plasma).
+        """
+        result = np.zeros_like(psi_norm)
+        mask = (psi_norm >= 0) & (psi_norm < 1.0)
+        x = psi_norm[mask]
+
+        # Pedestal step via tanh
+        y = np.clip((params['ped_top'] - x) / params['ped_width'], -20, 20)
+        pedestal = 0.5 * params['ped_height'] * (1.0 + np.tanh(y))
+
+        # Core parabolic peaking
+        core = np.where(
+            x < params['ped_top'],
+            np.maximum(0.0, 1.0 - (x / params['ped_top'])**2),
+            0.0,
+        )
+
+        result[mask] = pedestal + params['core_alpha'] * core
+        return result
+
     def update_plasma_source_nonlinear(self, Psi_axis, Psi_boundary):
         """
         Calculates J_phi using full Grad-Shafranov source term:
         J_phi = R * p'(psi) + (1/(mu0*R)) * FF'(psi)
+
+        Supports both L-mode (linear 1-psi_norm) and H-mode (mtanh pedestal)
+        profiles, controlled by self.profile_mode.
         """
         mu0 = self.cfg['physics']['vacuum_permeability']
-        
-        # Normalize flux: 0 at axis, 1 at boundary
-        # Note: In standard convention, Psi decreases from axis to edge usually, 
-        # or increases depending on current direction. We handle diff.
-        
+
         denom = (Psi_boundary - Psi_axis)
         if abs(denom) < 1e-9: denom = 1e-9
-            
+
         Psi_norm = (self.Psi - Psi_axis) / denom
-        
-        # Profiles (Linear/Parabolic models for p' and ff')
-        # Only defined inside plasma (Psi_norm < 1.0)
         mask_plasma = (Psi_norm >= 0) & (Psi_norm < 1.0)
-        
-        # Model: Simple linear profiles typical for L-mode
-        # p'(psi) ~ (1 - psi_norm)
-        # ff'(psi) ~ (1 - psi_norm)
-        
-        # Scaling factors (should be optimized to match Total Current target)
-        # Here we dynamically adjust them to match I_p
-        
-        # Shape function
-        profile_shape = np.zeros_like(self.Psi)
-        profile_shape[mask_plasma] = (1.0 - Psi_norm[mask_plasma])
-        
-        # Terms
-        # Term 1: Pressure driven current (Dominates at large R)
-        J_p = self.RR * profile_shape 
-        
-        # Term 2: Poloidal field current (Dominates at small R)
-        J_f = (1.0 / (mu0 * self.RR)) * profile_shape
-        
-        # Mix (Beta poloidal control)
-        # High Beta_p means more pressure contribution
-        beta_mix = 0.5 
+
+        if self.profile_mode in ('h-mode', 'H-mode', 'hmode'):
+            p_profile = self.mtanh_profile(Psi_norm, self.ped_params_p)
+            ff_profile = self.mtanh_profile(Psi_norm, self.ped_params_ff)
+        else:
+            # L-mode: linear (1 - psi_norm)
+            p_profile = np.zeros_like(self.Psi)
+            p_profile[mask_plasma] = 1.0 - Psi_norm[mask_plasma]
+            ff_profile = p_profile.copy()
+
+        J_p = self.RR * p_profile
+        J_f = (1.0 / (mu0 * self.RR)) * ff_profile
+
+        beta_mix = 0.5
         J_raw = beta_mix * J_p + (1 - beta_mix) * J_f
-        
-        # Renormalize to match Target Current exactly
+
         I_current = np.sum(J_raw) * self.dR * self.dZ
         I_target = self.cfg['physics']['plasma_current_target']
-        
+
         if abs(I_current) > 1e-9:
             scale_factor = I_target / I_current
             self.J_phi = J_raw * scale_factor
         else:
             self.J_phi = np.zeros_like(self.Psi)
-            
+
         return self.J_phi
         
     def solve_equilibrium(self):
