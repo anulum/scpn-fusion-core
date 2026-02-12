@@ -1,0 +1,28 @@
+{
+    "reactor_name": "SCPN-Standard-Model",
+    "grid_resolution": [65, 65],
+    "dimensions": {
+        "R_min": 2.0,
+        "R_max": 10.0,
+        "Z_min": -6.0,
+        "Z_max": 6.0
+    },
+    "physics": {
+        "plasma_current_target": 15.0,
+        "vacuum_permeability": 1.0
+    },
+    "coils": [
+        {"name": "PF1", "r": 3.9, "z": 7.6,  "current": 4.0},
+        {"name": "PF2", "r": 8.2, "z": 6.7,  "current": -1.5},
+        {"name": "PF3", "r": 12.0, "z": 2.7,  "current": 2.0},
+        {"name": "PF4", "r": 12.6, "z": -2.3, "current": 2.0},
+        {"name": "PF5", "r": 8.4, "z": -6.7, "current": -1.5},
+        {"name": "PF6", "r": 4.3, "z": -7.6, "current": 6.0},
+        {"name": "CS",  "r": 1.7, "z": 0.0,  "current": -2.0}
+    ],
+    "solver": {
+        "max_iterations": 1000,
+        "convergence_threshold": 1e-4,
+        "relaxation_factor": 0.08
+    }
+}

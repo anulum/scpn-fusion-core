@@ -1,0 +1,104 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+import os
+
+class TEMHD_Stabilizer:
+    """
+    Implicit 1D Heat Solver for TEMHD-stabilized Liquid Metal Divertors.
+    """
+    def __init__(self, layer_thickness_mm=5.0, B_field=10.0):
+        self.L = layer_thickness_mm / 1000.0
+        self.B0 = B_field
+        self.N = 50
+        self.z = np.linspace(0, self.L, self.N)
+        self.dz = self.z[1] - self.z[0]
+        self.rho = 500.0
+        self.cp = 4200.0
+        self.k_thermal = 50.0
+        self.Seebeck = 20e-6
+        self.sigma = 3e6
+        self.viscosity = 1e-3
+        self.T = np.ones(self.N) * 300.0
+        self.T_wall = 300.0
+
+    def solve_tridiagonal(self, a, b, c, d):
+        n = len(d)
+        cp = np.zeros(n-1)
+        dp = np.zeros(n)
+        res = np.zeros(n)
+        
+        cp[0] = c[0] / b[0]
+        dp[0] = d[0] / b[0]
+        
+        for i in range(1, n-1):
+            m = b[i] - a[i-1] * cp[i-1]
+            cp[i] = c[i] / m
+            dp[i] = (d[i] - a[i-1] * dp[i-1]) / m
+            
+        # Last element
+        m = b[-1] - a[-1] * cp[-1]
+        dp[-1] = (d[-1] - a[-1] * dp[-1]) / m # Wait, fixed below
+        
+        # Standard Thomas
+        c_prime = np.zeros(n)
+        d_prime = np.zeros(n)
+        c_prime[0] = c[0] / b[0]
+        d_prime[0] = d[0] / b[0]
+        for i in range(1, n-1):
+            den = b[i] - a[i-1] * c_prime[i-1]
+            c_prime[i] = c[i] / den
+            d_prime[i] = (d[i] - a[i-1] * d_prime[i-1]) / den
+        d_prime[-1] = (d[-1] - a[-1] * d_prime[-2]) / (b[-1] - a[-1] * c_prime[-2])
+        
+        res[-1] = d_prime[-1]
+        for i in range(n-2, -1, -1):
+            res[i] = d_prime[i] - c_prime[i] * res[i+1]
+        return res
+
+    def step(self, heat_flux_MW_m2, dt=0.1):
+        grad_T = np.gradient(self.T, self.dz)
+        J_te = -self.sigma * self.Seebeck * grad_T
+        F_lorentz = np.abs(J_te * self.B0)
+        # Empirical scaling for TEMHD convection: k_eff = k * (1 + C * gradT * B)
+        # Based on Jaworski et al. (2013)
+        v_conv = (F_lorentz * self.dz**2) / (self.viscosity + 1e-9)
+        alpha = self.k_thermal / (self.rho * self.cp)
+        Pe = np.clip(v_conv * self.dz / alpha, 0, 200.0)
+        k_eff = self.k_thermal * (1.0 + 0.2 * Pe)
+        
+        r = (k_eff * dt) / (self.rho * self.cp * self.dz**2)
+        n_solve = self.N - 1
+        
+        # Matrix diagonals
+        b = 1.0 + 2.0 * r[1:]
+        a = -r[2:] # Sub
+        c = -r[1:-1] # Super
+        d = self.T[1:].copy()
+        
+        # BCs
+        d[0] += r[1] * self.T_wall
+        b[-1] = 1.0 + r[-1]
+        q_in = heat_flux_MW_m2 * 1e6
+        d[-1] += r[-1] * (q_in * self.dz / k_eff[-1])
+        
+        self.T[1:] = self.solve_tridiagonal(a, b, c, d)
+        return self.T[-1], np.max(k_eff)
+
+def run_temhd_experiment():
+    sim_pel = TEMHD_Stabilizer(B_field=10.0)
+    flux_ramp = np.linspace(0, 100, 20)
+    
+    res_T = []
+    print(f"{'Flux':<10} | {'T_surf':<10}")
+    for q in flux_ramp:
+        for _ in range(20): T, _ = sim_pel.step(q, dt=0.5)
+        res_T.append(T)
+        if int(q) % 20 == 0: print(f"{q:<10.1f} | {T:<10.1f}")
+    
+    plt.plot(flux_ramp, res_T, 'r-')
+    plt.axhline(1342, color='k', ls='--')
+    plt.savefig("TEMHD_Corrected.png")
+
+if __name__ == "__main__":
+    run_temhd_experiment()

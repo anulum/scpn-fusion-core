@@ -1,0 +1,297 @@
+{
+  "$id": "https://anulum.ai/schemas/scpnctl.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SCPN Controller Artifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "topology",
+    "weights",
+    "readout",
+    "initial_state"
+  ],
+  "definitions": {
+    "weight_matrix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shape", "data"],
+      "properties": {
+        "shape": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "data": {
+          "type": "array",
+          "items": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "packed_weights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shape", "data_u64"],
+      "properties": {
+        "shape": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "data_u64": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  },
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_version",
+        "name",
+        "dt_control_s",
+        "stream_length",
+        "fixed_point",
+        "firing_mode",
+        "seed_policy",
+        "created_utc",
+        "compiler"
+      ],
+      "properties": {
+        "artifact_version": {
+          "type": "string",
+          "pattern": "^1\\.0\\.0$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dt_control_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "stream_length": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "fixed_point": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["data_width", "fraction_bits", "signed"],
+          "properties": {
+            "data_width": {
+              "type": "integer",
+              "minimum": 8,
+              "maximum": 32
+            },
+            "fraction_bits": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 24
+            },
+            "signed": {
+              "type": "boolean"
+            }
+          }
+        },
+        "firing_mode": {
+          "type": "string",
+          "enum": ["binary", "fractional"]
+        },
+        "seed_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "hash_fn", "rng_family"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "hash_fn": {
+              "type": "string",
+              "enum": ["splitmix64", "wyhash64", "xxh3_64"]
+            },
+            "rng_family": {
+              "type": "string",
+              "enum": ["xoshiro256++", "pcg64_dxsm", "philox_4x64_10"]
+            }
+          }
+        },
+        "created_utc": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "compiler": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "version", "git_sha"],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "git_sha": {
+              "type": "string",
+              "minLength": 7
+            }
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "topology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["places", "transitions"],
+      "properties": {
+        "places": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name"],
+            "properties": {
+              "id": { "type": "integer", "minimum": 0 },
+              "name": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "transitions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "threshold"],
+            "properties": {
+              "id": { "type": "integer", "minimum": 0 },
+              "name": { "type": "string", "minLength": 1 },
+              "threshold": { "type": "number", "minimum": 0, "maximum": 1 },
+              "margin": { "type": "number", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "weights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["w_in", "w_out"],
+      "properties": {
+        "w_in": { "$ref": "#/definitions/weight_matrix" },
+        "w_out": { "$ref": "#/definitions/weight_matrix" },
+        "packed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["words_per_stream", "w_in_packed"],
+          "properties": {
+            "words_per_stream": { "type": "integer", "minimum": 1 },
+            "w_in_packed": { "$ref": "#/definitions/packed_weights" },
+            "w_out_packed": { "$ref": "#/definitions/packed_weights" }
+          }
+        }
+      }
+    },
+    "readout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actions", "gains", "limits"],
+      "properties": {
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "pos_place", "neg_place"],
+            "properties": {
+              "id": { "type": "integer", "minimum": 0 },
+              "name": { "type": "string", "minLength": 1 },
+              "pos_place": { "type": "integer", "minimum": 0 },
+              "neg_place": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "gains": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["per_action"],
+          "properties": {
+            "per_action": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "number" }
+            }
+          }
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["per_action_abs_max", "slew_per_s"],
+          "properties": {
+            "per_action_abs_max": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "number", "exclusiveMinimum": 0 }
+            },
+            "slew_per_s": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "initial_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["marking", "place_injections"],
+      "properties": {
+        "marking": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "place_injections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["place_id", "source", "scale", "offset", "clamp_0_1"],
+            "properties": {
+              "place_id": { "type": "integer", "minimum": 0 },
+              "source": {
+                "type": "string",
+                "enum": ["x_R_pos", "x_R_neg", "x_Z_pos", "x_Z_neg"]
+              },
+              "scale": { "type": "number" },
+              "offset": { "type": "number" },
+              "clamp_0_1": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "ir": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "graph_name", "text"],
+      "properties": {
+        "format": { "type": "string", "enum": ["scir-v1-text"] },
+        "graph_name": { "type": "string" },
+        "text": { "type": "string" }
+      }
+    }
+  }
+}

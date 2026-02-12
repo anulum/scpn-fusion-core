@@ -1,0 +1,456 @@
+# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Neuro-Symbolic Logic Compiler
+# © 1998–2026 Miroslav Šotek. All rights reserved.
+# Contact: www.anulum.li | protoscience@anulum.li
+# ORCID: https://orcid.org/0009-0009-3560-0851
+# License: GNU AGPL v3 | Commercial licensing available
+# ──────────────────────────────────────────────────────────────────────
+"""
+SCPN Controller Artifact (``.scpnctl.json``) loader / saver.
+
+Defines the ``Artifact`` dataclass that mirrors the JSON schema sections
+(meta, topology, weights, readout, initial_state) and provides lightweight
+validation on load.
+"""
+
+from __future__ import annotations
+
+import json
+import math
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+
+# ── Sub-structures ──────────────────────────────────────────────────────────
+
+
+@dataclass
+class FixedPoint:
+    data_width: int
+    fraction_bits: int
+    signed: bool
+
+
+@dataclass
+class SeedPolicy:
+    id: str
+    hash_fn: str
+    rng_family: str
+
+
+@dataclass
+class CompilerInfo:
+    name: str
+    version: str
+    git_sha: str
+
+
+@dataclass
+class ArtifactMeta:
+    artifact_version: str
+    name: str
+    dt_control_s: float
+    stream_length: int
+    fixed_point: FixedPoint
+    firing_mode: str
+    seed_policy: SeedPolicy
+    created_utc: str
+    compiler: CompilerInfo
+    notes: Optional[str] = None
+
+
+@dataclass
+class PlaceSpec:
+    id: int
+    name: str
+
+
+@dataclass
+class TransitionSpec:
+    id: int
+    name: str
+    threshold: float
+    margin: Optional[float] = None
+
+
+@dataclass
+class Topology:
+    places: List[PlaceSpec]
+    transitions: List[TransitionSpec]
+
+
+@dataclass
+class WeightMatrix:
+    shape: List[int]  # [rows, cols]
+    data: List[float]  # row-major
+
+
+@dataclass
+class PackedWeights:
+    shape: List[int]  # [rows, cols, words]
+    data_u64: List[int]
+
+
+@dataclass
+class PackedWeightsGroup:
+    words_per_stream: int
+    w_in_packed: PackedWeights
+    w_out_packed: Optional[PackedWeights] = None
+
+
+@dataclass
+class Weights:
+    w_in: WeightMatrix
+    w_out: WeightMatrix
+    packed: Optional[PackedWeightsGroup] = None
+
+
+@dataclass
+class ActionReadout:
+    id: int
+    name: str
+    pos_place: int
+    neg_place: int
+
+
+@dataclass
+class Readout:
+    actions: List[ActionReadout]
+    gains: List[float]
+    abs_max: List[float]
+    slew_per_s: List[float]
+
+
+@dataclass
+class PlaceInjection:
+    place_id: int
+    source: str
+    scale: float
+    offset: float
+    clamp_0_1: bool
+
+
+@dataclass
+class InitialState:
+    marking: List[float]
+    place_injections: List[PlaceInjection]
+
+
+# ── Artifact ────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class Artifact:
+    """Full SCPN controller artifact (``.scpnctl.json``)."""
+
+    meta: ArtifactMeta
+    topology: Topology
+    weights: Weights
+    readout: Readout
+    initial_state: InitialState
+
+    @property
+    def nP(self) -> int:
+        return len(self.topology.places)
+
+    @property
+    def nT(self) -> int:
+        return len(self.topology.transitions)
+
+
+# ── Validation ──────────────────────────────────────────────────────────────
+
+
+class ArtifactValidationError(ValueError):
+    """Raised when an artifact fails lightweight validation."""
+
+
+def _validate(artifact: Artifact) -> None:
+    """Lightweight checks: required fields, ranges, shape consistency."""
+    meta = artifact.meta
+
+    if meta.firing_mode not in ("binary", "fractional"):
+        raise ArtifactValidationError(
+            f"firing_mode must be 'binary' or 'fractional', "
+            f"got '{meta.firing_mode}'"
+        )
+
+    if meta.stream_length < 1:
+        raise ArtifactValidationError("stream_length must be >= 1")
+
+    if meta.dt_control_s <= 0:
+        raise ArtifactValidationError("dt_control_s must be > 0")
+
+    # Weight ranges
+    for val in artifact.weights.w_in.data:
+        if not (0.0 <= val <= 1.0):
+            raise ArtifactValidationError(
+                f"w_in weight {val} outside [0, 1]"
+            )
+    for val in artifact.weights.w_out.data:
+        if not (0.0 <= val <= 1.0):
+            raise ArtifactValidationError(
+                f"w_out weight {val} outside [0, 1]"
+            )
+
+    # Threshold ranges
+    for t in artifact.topology.transitions:
+        if not (0.0 <= t.threshold <= 1.0):
+            raise ArtifactValidationError(
+                f"threshold {t.threshold} for '{t.name}' outside [0, 1]"
+            )
+
+    # Shape consistency
+    nP = artifact.nP
+    nT = artifact.nT
+    expected_w_in = nT * nP
+    expected_w_out = nP * nT
+
+    if len(artifact.weights.w_in.data) != expected_w_in:
+        raise ArtifactValidationError(
+            f"w_in data length {len(artifact.weights.w_in.data)} "
+            f"!= nT*nP={expected_w_in}"
+        )
+    if len(artifact.weights.w_out.data) != expected_w_out:
+        raise ArtifactValidationError(
+            f"w_out data length {len(artifact.weights.w_out.data)} "
+            f"!= nP*nT={expected_w_out}"
+        )
+
+    # Marking length
+    if len(artifact.initial_state.marking) != nP:
+        raise ArtifactValidationError(
+            f"marking length {len(artifact.initial_state.marking)} != nP={nP}"
+        )
+    for val in artifact.initial_state.marking:
+        if not (0.0 <= val <= 1.0):
+            raise ArtifactValidationError(
+                f"initial marking {val} outside [0, 1]"
+            )
+
+
+# ── Load / Save ─────────────────────────────────────────────────────────────
+
+
+def load_artifact(path: Union[str, Path]) -> Artifact:
+    """Parse a ``.scpnctl.json`` file into an ``Artifact`` dataclass."""
+    with open(path, "r", encoding="utf-8") as f:
+        obj = json.load(f)
+
+    # Meta
+    m = obj["meta"]
+    meta = ArtifactMeta(
+        artifact_version=m["artifact_version"],
+        name=m["name"],
+        dt_control_s=float(m["dt_control_s"]),
+        stream_length=int(m["stream_length"]),
+        fixed_point=FixedPoint(
+            data_width=m["fixed_point"]["data_width"],
+            fraction_bits=m["fixed_point"]["fraction_bits"],
+            signed=m["fixed_point"]["signed"],
+        ),
+        firing_mode=m["firing_mode"],
+        seed_policy=SeedPolicy(
+            id=m["seed_policy"]["id"],
+            hash_fn=m["seed_policy"]["hash_fn"],
+            rng_family=m["seed_policy"]["rng_family"],
+        ),
+        created_utc=m["created_utc"],
+        compiler=CompilerInfo(
+            name=m["compiler"]["name"],
+            version=m["compiler"]["version"],
+            git_sha=m["compiler"]["git_sha"],
+        ),
+        notes=m.get("notes"),
+    )
+
+    # Topology
+    places = [PlaceSpec(id=p["id"], name=p["name"]) for p in obj["topology"]["places"]]
+    transitions = [
+        TransitionSpec(
+            id=t["id"],
+            name=t["name"],
+            threshold=float(t["threshold"]),
+            margin=t.get("margin"),
+        )
+        for t in obj["topology"]["transitions"]
+    ]
+    topology = Topology(places=places, transitions=transitions)
+
+    # Weights
+    w_in = WeightMatrix(
+        shape=obj["weights"]["w_in"]["shape"],
+        data=list(map(float, obj["weights"]["w_in"]["data"])),
+    )
+    w_out = WeightMatrix(
+        shape=obj["weights"]["w_out"]["shape"],
+        data=list(map(float, obj["weights"]["w_out"]["data"])),
+    )
+    packed = None
+    if "packed" in obj["weights"]:
+        pw = obj["weights"]["packed"]
+        pw_in = PackedWeights(
+            shape=pw["w_in_packed"]["shape"],
+            data_u64=list(map(int, pw["w_in_packed"]["data_u64"])),
+        )
+        pw_out = None
+        if "w_out_packed" in pw:
+            pw_out = PackedWeights(
+                shape=pw["w_out_packed"]["shape"],
+                data_u64=list(map(int, pw["w_out_packed"]["data_u64"])),
+            )
+        packed = PackedWeightsGroup(
+            words_per_stream=int(pw["words_per_stream"]),
+            w_in_packed=pw_in,
+            w_out_packed=pw_out,
+        )
+    weights = Weights(w_in=w_in, w_out=w_out, packed=packed)
+
+    # Readout
+    actions = [
+        ActionReadout(
+            id=a["id"],
+            name=a["name"],
+            pos_place=a["pos_place"],
+            neg_place=a["neg_place"],
+        )
+        for a in obj["readout"]["actions"]
+    ]
+    readout = Readout(
+        actions=actions,
+        gains=list(map(float, obj["readout"]["gains"]["per_action"])),
+        abs_max=list(map(float, obj["readout"]["limits"]["per_action_abs_max"])),
+        slew_per_s=list(map(float, obj["readout"]["limits"]["slew_per_s"])),
+    )
+
+    # Initial state
+    injections = [
+        PlaceInjection(
+            place_id=inj["place_id"],
+            source=inj["source"],
+            scale=float(inj["scale"]),
+            offset=float(inj["offset"]),
+            clamp_0_1=bool(inj["clamp_0_1"]),
+        )
+        for inj in obj["initial_state"]["place_injections"]
+    ]
+    initial_state = InitialState(
+        marking=list(map(float, obj["initial_state"]["marking"])),
+        place_injections=injections,
+    )
+
+    artifact = Artifact(
+        meta=meta,
+        topology=topology,
+        weights=weights,
+        readout=readout,
+        initial_state=initial_state,
+    )
+    _validate(artifact)
+    return artifact
+
+
+def save_artifact(artifact: Artifact, path: Union[str, Path]) -> None:
+    """Serialize an ``Artifact`` to indented JSON."""
+
+    def _weight_matrix_dict(wm: WeightMatrix) -> Dict[str, Any]:
+        return {"shape": wm.shape, "data": wm.data}
+
+    packed_dict: Optional[Dict[str, Any]] = None
+    if artifact.weights.packed is not None:
+        pg = artifact.weights.packed
+        pw_in_d = {"shape": pg.w_in_packed.shape, "data_u64": pg.w_in_packed.data_u64}
+        pw_out_d = None
+        if pg.w_out_packed is not None:
+            pw_out_d = {
+                "shape": pg.w_out_packed.shape,
+                "data_u64": pg.w_out_packed.data_u64,
+            }
+        packed_dict = {
+            "words_per_stream": pg.words_per_stream,
+            "w_in_packed": pw_in_d,
+        }
+        if pw_out_d is not None:
+            packed_dict["w_out_packed"] = pw_out_d
+
+    obj: Dict[str, Any] = {
+        "meta": {
+            "artifact_version": artifact.meta.artifact_version,
+            "name": artifact.meta.name,
+            "dt_control_s": artifact.meta.dt_control_s,
+            "stream_length": artifact.meta.stream_length,
+            "fixed_point": {
+                "data_width": artifact.meta.fixed_point.data_width,
+                "fraction_bits": artifact.meta.fixed_point.fraction_bits,
+                "signed": artifact.meta.fixed_point.signed,
+            },
+            "firing_mode": artifact.meta.firing_mode,
+            "seed_policy": {
+                "id": artifact.meta.seed_policy.id,
+                "hash_fn": artifact.meta.seed_policy.hash_fn,
+                "rng_family": artifact.meta.seed_policy.rng_family,
+            },
+            "created_utc": artifact.meta.created_utc,
+            "compiler": {
+                "name": artifact.meta.compiler.name,
+                "version": artifact.meta.compiler.version,
+                "git_sha": artifact.meta.compiler.git_sha,
+            },
+        },
+        "topology": {
+            "places": [{"id": p.id, "name": p.name} for p in artifact.topology.places],
+            "transitions": [
+                {
+                    "id": t.id,
+                    "name": t.name,
+                    "threshold": t.threshold,
+                    **({"margin": t.margin} if t.margin is not None else {}),
+                }
+                for t in artifact.topology.transitions
+            ],
+        },
+        "weights": {
+            "w_in": _weight_matrix_dict(artifact.weights.w_in),
+            "w_out": _weight_matrix_dict(artifact.weights.w_out),
+        },
+        "readout": {
+            "actions": [
+                {
+                    "id": a.id,
+                    "name": a.name,
+                    "pos_place": a.pos_place,
+                    "neg_place": a.neg_place,
+                }
+                for a in artifact.readout.actions
+            ],
+            "gains": {"per_action": artifact.readout.gains},
+            "limits": {
+                "per_action_abs_max": artifact.readout.abs_max,
+                "slew_per_s": artifact.readout.slew_per_s,
+            },
+        },
+        "initial_state": {
+            "marking": artifact.initial_state.marking,
+            "place_injections": [
+                {
+                    "place_id": inj.place_id,
+                    "source": inj.source,
+                    "scale": inj.scale,
+                    "offset": inj.offset,
+                    "clamp_0_1": inj.clamp_0_1,
+                }
+                for inj in artifact.initial_state.place_injections
+            ],
+        },
+    }
+
+    if artifact.meta.notes is not None:
+        obj["meta"]["notes"] = artifact.meta.notes
+
+    if packed_dict is not None:
+        obj["weights"]["packed"] = packed_dict
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, indent=2)
+        f.write("\n")

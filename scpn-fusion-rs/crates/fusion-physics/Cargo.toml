@@ -1,0 +1,14 @@
+[package]
+name = "fusion-physics"
+version = "0.1.0"
+edition = "2021"
+description = "SCPN Fusion Core - Standalone physics modules"
+
+[dependencies]
+fusion-types = { path = "../fusion-types" }
+fusion-math = { path = "../fusion-math" }
+ndarray = { workspace = true }
+rayon = { workspace = true }
+num-complex = { workspace = true }
+rand = { workspace = true }
+rand_distr = { workspace = true }

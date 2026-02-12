@@ -1,0 +1,104 @@
+{
+  "iter_config.json": {
+    "reactor_name": "ITER-Like-Demo",
+    "grid_resolution": [
+      128,
+      128
+    ],
+    "num_coils": 7,
+    "max_iterations": 1000,
+    "R_range": [
+      1.0,
+      9.0
+    ],
+    "Z_range": [
+      -5.0,
+      5.0
+    ]
+  },
+  "iter_validated": {
+    "reactor_name": "ITER-Validated",
+    "grid_resolution": [
+      65,
+      65
+    ],
+    "num_coils": 7,
+    "max_iterations": 1000,
+    "R_range": [
+      2.0,
+      10.0
+    ],
+    "Z_range": [
+      -6.0,
+      6.0
+    ]
+  },
+  "iter_genetic": {
+    "reactor_name": "ITER-Evol",
+    "grid_resolution": [
+      65,
+      65
+    ],
+    "num_coils": 7,
+    "max_iterations": 300,
+    "R_range": [
+      2.0,
+      10.0
+    ],
+    "Z_range": [
+      -6.0,
+      6.0
+    ]
+  },
+  "iter_analytic": {
+    "reactor_name": "ITER-Validated",
+    "grid_resolution": [
+      65,
+      65
+    ],
+    "num_coils": 7,
+    "max_iterations": 1000,
+    "R_range": [
+      2.0,
+      10.0
+    ],
+    "Z_range": [
+      -6.0,
+      6.0
+    ]
+  },
+  "iter_force_balanced": {
+    "reactor_name": "ITER-Validated",
+    "grid_resolution": [
+      65,
+      65
+    ],
+    "num_coils": 7,
+    "max_iterations": 1000,
+    "R_range": [
+      2.0,
+      10.0
+    ],
+    "Z_range": [
+      -6.0,
+      6.0
+    ]
+  },
+  "default": {
+    "reactor_name": "SCPN-Standard-Model",
+    "grid_resolution": [
+      65,
+      65
+    ],
+    "num_coils": 7,
+    "max_iterations": 1000,
+    "R_range": [
+      2.0,
+      10.0
+    ],
+    "Z_range": [
+      -6.0,
+      6.0
+    ]
+  }
+}

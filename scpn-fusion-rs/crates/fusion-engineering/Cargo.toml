@@ -1,0 +1,9 @@
+[package]
+name = "fusion-engineering"
+version = "0.1.0"
+edition = "2021"
+description = "SCPN Fusion Core - Engineering (balance of plant, divertor)"
+
+[dependencies]
+fusion-types = { path = "../fusion-types" }
+ndarray = { workspace = true }

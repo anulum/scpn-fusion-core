@@ -1,0 +1,11 @@
+[package]
+name = "fusion-types"
+version = "0.1.0"
+edition = "2021"
+description = "SCPN Fusion Core - Type definitions and configuration"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+ndarray = { workspace = true }
+thiserror = { workspace = true }

@@ -1,0 +1,220 @@
+# SCPN Fusion Core
+
+[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org/)
+
+A comprehensive tokamak plasma physics simulation and control suite with neuro-symbolic compilation. SCPN Fusion Core models the full lifecycle of a fusion reactor — from Grad-Shafranov equilibrium and MHD stability through transport, heating, neutronics, and real-time disruption prediction — with optional Rust acceleration via PyO3 and an optional bridge to [SC-NeuroCore](https://github.com/anulum/sc-neurocore) spiking neural networks.
+
+## Architecture
+
+```
+scpn-fusion-core/
+├── src/scpn_fusion/           # Python package (46 modules)
+│   ├── core/                  # Plasma physics engines
+│   │   ├── fusion_kernel.py           Grad-Shafranov + transport solver
+│   │   ├── compact_reactor_optimizer  MVR-0.96 compact reactor search
+│   │   ├── mhd_sawtooth.py           MHD sawtooth crash simulator
+│   │   ├── rf_heating.py             ICRH/ECRH/LHCD heating models
+│   │   ├── divertor_thermal_sim.py   Divertor heat-flux solver
+│   │   ├── hall_mhd_discovery.py     Hall-MHD two-fluid effects
+│   │   ├── sandpile_fusion_reactor   SOC criticality model
+│   │   ├── neural_equilibrium.py     Neural-network equilibrium solver
+│   │   ├── fno_turbulence_suppressor Fourier Neural Operator turbulence model
+│   │   ├── turbulence_oracle.py      ITG/TEM turbulence predictor
+│   │   ├── wdm_engine.py             Warm dense matter EOS
+│   │   ├── geometry_3d.py            3D flux-surface geometry
+│   │   ├── global_design_scanner.py  Multi-objective design space explorer
+│   │   └── integrated_transport      Coupled transport solver
+│   ├── control/               # Reactor control & AI
+│   │   ├── tokamak_flight_sim.py     Real-time flight simulator
+│   │   ├── tokamak_digital_twin.py   Digital twin with live telemetry
+│   │   ├── fusion_optimal_control    Model-predictive controller
+│   │   ├── fusion_sota_mpc.py        State-of-the-art MPC
+│   │   ├── disruption_predictor.py   ML disruption early-warning
+│   │   ├── spi_mitigation.py         Shattered pellet injection
+│   │   ├── fusion_control_room.py    Integrated control room sim
+│   │   ├── neuro_cybernetic_controller  SNN-based feedback controller
+│   │   └── advanced_soc_fusion_learning Self-organized criticality RL
+│   ├── nuclear/               # Nuclear engineering
+│   │   ├── blanket_neutronics.py     Tritium breeding ratio solver
+│   │   ├── nuclear_wall_interaction  PMI / first-wall damage
+│   │   ├── pwi_erosion.py            Plasma-wall erosion model
+│   │   └── temhd_peltier.py          Thermoelectric MHD effects
+│   ├── diagnostics/           # Synthetic diagnostics
+│   │   ├── synthetic_sensors.py      Virtual instrument suite
+│   │   └── tomography.py             Soft X-ray tomographic inversion
+│   ├── engineering/           # Balance of plant
+│   │   └── balance_of_plant.py       Thermal cycle, turbine, cryo
+│   ├── scpn/                  # Neuro-symbolic compiler
+│   │   ├── compiler.py               Petri nets → stochastic neurons
+│   │   ├── controller.py             SNN-driven plasma control
+│   │   ├── structure.py              Petri net data structures
+│   │   ├── contracts.py              Formal verification contracts
+│   │   └── artifact.py               Compilation artifact storage
+│   ├── hpc/                   # High-performance computing
+│   │   └── hpc_bridge.py             C++/Rust FFI bridge
+│   └── ui/                    # Dashboard
+│       └── app.py                    Streamlit real-time dashboard
+├── scpn-fusion-rs/            # Rust workspace (10 crates)
+│   ├── crates/
+│   │   ├── fusion-types/      # Shared data types
+│   │   ├── fusion-math/       # Linear algebra, FFT, interpolation
+│   │   ├── fusion-core/       # Grad-Shafranov, transport in Rust
+│   │   ├── fusion-physics/    # MHD, heating, turbulence
+│   │   ├── fusion-nuclear/    # Neutronics, wall erosion
+│   │   ├── fusion-engineering/ # Balance of plant
+│   │   ├── fusion-control/    # PID, MPC, disruption predictor
+│   │   ├── fusion-diagnostics/ # Sensor models
+│   │   ├── fusion-ml/         # Inference engine
+│   │   └── fusion-python/     # PyO3 bindings → scpn_fusion_rs.pyd
+│   └── Cargo.toml             # Workspace manifest
+├── tests/                     # Python test suite
+├── docs/                      # Technical documentation
+├── validation/                # ITER validation configurations
+├── calibration/               # Optimization tools
+└── schemas/                   # JSON schemas
+```
+
+## Quick Start
+
+```bash
+# Clone
+git clone https://github.com/anulum/scpn-fusion-core.git
+cd scpn-fusion-core
+
+# Install (Python)
+pip install -e .
+
+# Run a simulation
+python run_fusion_suite.py kernel       # Grad-Shafranov equilibrium
+python run_fusion_suite.py optimizer    # Compact reactor search (MVR-0.96)
+python run_fusion_suite.py flight       # Tokamak flight simulator
+python run_fusion_suite.py neural       # Neural equilibrium solver
+
+# Run tests
+pytest tests/ -v
+```
+
+### Rust Acceleration (Optional)
+
+```bash
+cd scpn-fusion-rs
+cargo build --release
+cargo test
+
+# Build Python bindings (requires maturin)
+pip install maturin
+cd crates/fusion-python
+maturin develop --release
+```
+
+The Python package auto-detects the Rust extension and falls back to NumPy if unavailable.
+
+## 26 Simulation Modes
+
+| Mode | Description |
+|------|-------------|
+| `kernel` | Grad-Shafranov equilibrium + coupled transport |
+| `flight` | Real-time tokamak flight simulator |
+| `optimal` | Model-predictive optimal control |
+| `learning` | Self-organized criticality reinforcement learning |
+| `digital-twin` | Live digital twin with telemetry |
+| `control-room` | Integrated control room simulation |
+| `sandpile` | SOC sandpile criticality model |
+| `nuclear` | Plasma-wall interaction & first-wall damage |
+| `breeding` | Tritium breeding blanket neutronics |
+| `safety` | ML disruption predictor + early warning |
+| `optimizer` | Compact reactor design search (MVR-0.96) |
+| `divertor` | Divertor thermal load simulation |
+| `diagnostics` | Synthetic diagnostic instrument suite |
+| `sawtooth` | MHD sawtooth crash dynamics |
+| `neural` | Neural-network equilibrium solver |
+| `geometry` | 3D flux-surface geometry |
+| `spi` | Shattered pellet injection mitigation |
+| `scanner` | Multi-objective global design scanner |
+| `heating` | RF heating (ICRH / ECRH / LHCD) |
+| `wdm` | Warm dense matter equation of state |
+| `quantum` | Quantum computing bridge |
+| `q-control` | Quantum control agent |
+| `neuro-control` | SNN-based cybernetic controller |
+| `neuro-quantum` | Neuro-quantum hybrid controller |
+| `lazarus` | Lazarus protocol bridge |
+| `director` | Director AI interface |
+| `vibrana` | Vibrana resonance bridge |
+
+## Minimum Viable Reactor (MVR-0.96)
+
+The compact reactor optimizer (`python run_fusion_suite.py optimizer`) performs multi-objective design-space exploration to find the smallest tokamak configuration that achieves Q >= 10 ignition. The "0.96" refers to the normalized minor radius target. Key parameters explored:
+
+- Major/minor radius, elongation, triangularity
+- Magnetic field strength, plasma current
+- Heating power allocation (NBI, ICRH, ECRH)
+- Tritium breeding ratio constraints
+- Divertor heat-flux limits
+
+## Neuro-Symbolic Compiler
+
+The `scpn/` subpackage implements a **Petri net → stochastic neuron** compiler:
+
+1. **Petri Net Definition** — plasma control logic expressed as place/transition nets with formal contracts
+2. **Compilation** — Petri net transitions mapped to stochastic LIF neurons (using [SC-NeuroCore](https://github.com/anulum/sc-neurocore) when available, NumPy fallback otherwise)
+3. **Execution** — SNN-driven real-time plasma control with sub-millisecond latency
+4. **Verification** — formal contract checking on compiled artifacts
+
+## SC-NeuroCore Integration
+
+SCPN Fusion Core has an **optional** dependency on [sc-neurocore](https://github.com/anulum/sc-neurocore). When installed, the neuro-symbolic compiler uses hardware-accurate stochastic LIF neurons and Bernoulli bitstream encoding. Without it, all paths fall back to NumPy float computation:
+
+```python
+try:
+    from sc_neurocore import StochasticLIFNeuron, generate_bernoulli_bitstream
+    _HAS_SC_NEUROCORE = True
+except ImportError:
+    _HAS_SC_NEUROCORE = False  # NumPy float-path fallback
+```
+
+## Rust Workspace
+
+The `scpn-fusion-rs/` directory contains a 10-crate Rust workspace that mirrors the Python package structure. Key features:
+
+- **Performance**: `opt-level = 3`, fat LTO, single codegen unit for maximum optimization
+- **FFI**: `fusion-python` crate provides PyO3 bindings producing `scpn_fusion_rs.so/.pyd`
+- **Dependencies**: `ndarray`, `nalgebra`, `rayon` (parallelism), `rustfft`, `serde`
+- **No external runtime**: pure Rust with no C/Fortran dependencies
+
+## Documentation
+
+- [Compact Reactor Findings](docs/COMPACT_REACTOR_FINDINGS.md)
+- [Physics Methods](docs/PHYSICS_METHODS_COMPLETE.md)
+- [ITER Validation](docs/VALIDATION_AGAINST_ITER.md)
+- [Neuro-Symbolic Compiler Architecture](docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md)
+- [Packet C Control API](docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md)
+- [Future Applications](docs/FUTURE_APPLICATIONS.md)
+- [Comprehensive Technical Study](SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md) (30,000+ words)
+
+## Citation
+
+If you use SCPN Fusion Core in your research, please cite:
+
+```bibtex
+@software{scpn_fusion_core,
+  title   = {SCPN Fusion Core: Tokamak Plasma Physics Simulation and Neuro-Symbolic Control Suite},
+  author  = {Sotek, Miroslav and Reiprich, Michal},
+  year    = {2026},
+  url     = {https://github.com/anulum/scpn-fusion-core},
+  version = {1.0.0}
+}
+```
+
+## Authors
+
+- **Miroslav Sotek** — ANULUM CH & LI
+- **Michal Reiprich** — ANULUM CH & LI
+
+## License
+
+GNU Affero General Public License v3.0 — see [LICENSE](LICENSE).
+
+For commercial licensing inquiries, contact: protoscience@anulum.li

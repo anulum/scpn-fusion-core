@@ -1,0 +1,13 @@
+[package]
+name = "fusion-control"
+version = "0.1.0"
+edition = "2021"
+description = "SCPN Fusion Core - Control systems (PID, MPC, SNN, RL)"
+
+[dependencies]
+fusion-types = { path = "../fusion-types" }
+fusion-math = { path = "../fusion-math" }
+fusion-core = { path = "../fusion-core" }
+ndarray = { workspace = true }
+rand = { workspace = true }
+rand_distr = { workspace = true }

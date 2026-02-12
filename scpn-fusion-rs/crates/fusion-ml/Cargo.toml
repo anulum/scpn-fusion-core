@@ -1,0 +1,13 @@
+[package]
+name = "fusion-ml"
+version = "0.1.0"
+edition = "2021"
+description = "SCPN Fusion Core - ML models (neural equilibrium, disruption predictor)"
+
+[dependencies]
+fusion-types = { path = "../fusion-types" }
+fusion-math = { path = "../fusion-math" }
+ndarray = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rand = { workspace = true }

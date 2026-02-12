@@ -1,0 +1,10 @@
+[package]
+name = "fusion-nuclear"
+version = "0.1.0"
+edition = "2021"
+description = "SCPN Fusion Core - Nuclear engineering (neutronics, erosion, blanket)"
+
+[dependencies]
+fusion-types = { path = "../fusion-types" }
+fusion-math = { path = "../fusion-math" }
+ndarray = { workspace = true }

@@ -1,0 +1,12 @@
+[package]
+name = "fusion-core"
+version = "0.1.0"
+edition = "2021"
+description = "SCPN Fusion Core - Grad-Shafranov kernel and equilibrium solver"
+
+[dependencies]
+fusion-types = { path = "../fusion-types" }
+fusion-math = { path = "../fusion-math" }
+ndarray = { workspace = true }
+rayon = { workspace = true }
+log = { workspace = true }

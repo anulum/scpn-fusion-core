@@ -1,0 +1,23 @@
+[package]
+name = "scpn-fusion-rs"
+version = "0.1.0"
+edition = "2021"
+description = "SCPN Fusion Core - Python bindings via PyO3"
+
+[lib]
+name = "scpn_fusion_rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+fusion-types = { path = "../fusion-types" }
+fusion-math = { path = "../fusion-math" }
+fusion-core = { path = "../fusion-core" }
+fusion-physics = { path = "../fusion-physics" }
+fusion-nuclear = { path = "../fusion-nuclear" }
+fusion-engineering = { path = "../fusion-engineering" }
+fusion-control = { path = "../fusion-control" }
+fusion-diagnostics = { path = "../fusion-diagnostics" }
+fusion-ml = { path = "../fusion-ml" }
+pyo3 = { workspace = true }
+numpy = { workspace = true }
+ndarray = { workspace = true }
