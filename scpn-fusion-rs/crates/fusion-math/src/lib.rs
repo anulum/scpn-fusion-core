@@ -11,5 +11,6 @@ pub mod elliptic;
 pub mod fft;
 pub mod interp;
 pub mod linalg;
+pub mod multigrid;
 pub mod sor;
 pub mod tridiag;
