@@ -41,6 +41,7 @@ References
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -52,6 +53,9 @@ from numpy.typing import NDArray
 logger = logging.getLogger(__name__)
 
 FloatArray = NDArray[np.float64]
+
+# Weight file format version expected by this loader.
+_WEIGHTS_FORMAT_VERSION = 1
 
 
 # ── Data containers ───────────────────────────────────────────────────
@@ -255,6 +259,7 @@ class NeuralTransportModel:
         self._weights: Optional[MLPWeights] = None
         self.is_neural: bool = False
         self.weights_path: Optional[Path] = None
+        self.weights_checksum: Optional[str] = None
 
         if weights_path is not None:
             self.weights_path = Path(weights_path)
@@ -281,6 +286,16 @@ class NeuralTransportModel:
                     )
                     return
 
+            # Version check (optional key, defaults to 1)
+            version = int(data["version"]) if "version" in data else 1
+            if version != _WEIGHTS_FORMAT_VERSION:
+                logger.warning(
+                    "Weight file version %d != expected %d — falling back",
+                    version,
+                    _WEIGHTS_FORMAT_VERSION,
+                )
+                return
+
             self._weights = MLPWeights(
                 w1=data["w1"],
                 b1=data["b1"],
@@ -293,13 +308,23 @@ class NeuralTransportModel:
                 output_scale=data["output_scale"],
             )
             self.is_neural = True
+
+            # Compute checksum for reproducibility tracking
+            raw = b"".join(
+                data[k].tobytes() for k in sorted(data.files)
+                if k != "version"
+            )
+            self.weights_checksum = hashlib.sha256(raw).hexdigest()[:16]
+
             logger.info(
                 "Loaded neural transport weights from %s "
-                "(layers: %s→%s→%s→3)",
+                "(layers: %s→%s→%s→3, version=%d, sha256=%s)",
                 self.weights_path,
                 self._weights.w1.shape[0],
                 self._weights.w1.shape[1],
                 self._weights.w2.shape[1],
+                version,
+                self.weights_checksum,
             )
         except Exception:
             logger.exception("Failed to load neural transport weights")
@@ -357,7 +382,8 @@ class NeuralTransportModel:
 
         Computes normalised gradients from the profile arrays via
         central finite differences, then evaluates the surrogate at
-        each radial point.
+        each radial point.  When the MLP is loaded the entire profile
+        is evaluated in a single batched forward pass (no Python loop).
 
         Parameters
         ----------
@@ -380,8 +406,6 @@ class NeuralTransportModel:
             Transport coefficient profiles, each shape ``(N,)``.
         """
         n = len(rho)
-        dr = np.gradient(rho) * r_major  # convert to metres
-        dr = np.maximum(dr, 1e-6)
 
         # Normalised gradients: R/L_X = -R * (1/X) * dX/dr
         def norm_grad(x: FloatArray) -> FloatArray:
@@ -389,31 +413,30 @@ class NeuralTransportModel:
             safe_x = np.maximum(np.abs(x), 1e-6)
             return -r_major * dx / safe_x
 
-        grad_te = norm_grad(te)
-        grad_ti = norm_grad(ti)
-        grad_ne = norm_grad(ne)
+        grad_te = np.clip(norm_grad(te), 0, 50)
+        grad_ti = np.clip(norm_grad(ti), 0, 50)
+        grad_ne = np.clip(norm_grad(ne), -10, 30)
+        beta_e = 4.03e-3 * ne * te
 
-        chi_e_out = np.zeros(n)
-        chi_i_out = np.zeros(n)
-        d_e_out = np.zeros(n)
+        # ── Neural path: single batched forward pass ─────────────
+        if self.is_neural and self._weights is not None:
+            x_batch = np.column_stack([
+                rho, te, ti, ne,
+                grad_te, grad_ti, grad_ne,
+                q_profile, s_hat_profile, beta_e,
+            ])  # (N, 10)
+            out = _mlp_forward(x_batch, self._weights)  # (N, 3)
+            chi_e_out = out[:, 0]
+            chi_i_out = out[:, 1]
+            d_e_out = out[:, 2]
+            return chi_e_out, chi_i_out, d_e_out
 
-        for i in range(n):
-            beta_e = 4.03e-3 * ne[i] * te[i]  # approximate beta_e
-            inp = TransportInputs(
-                rho=float(rho[i]),
-                te_kev=float(te[i]),
-                ti_kev=float(ti[i]),
-                ne_19=float(ne[i]),
-                grad_te=float(np.clip(grad_te[i], 0, 50)),
-                grad_ti=float(np.clip(grad_ti[i], 0, 50)),
-                grad_ne=float(np.clip(grad_ne[i], -10, 30)),
-                q=float(q_profile[i]),
-                s_hat=float(s_hat_profile[i]),
-                beta_e=float(beta_e),
-            )
-            fluxes = self.predict(inp)
-            chi_e_out[i] = fluxes.chi_e
-            chi_i_out[i] = fluxes.chi_i
-            d_e_out[i] = fluxes.d_e
+        # ── Fallback: vectorised critical-gradient model ─────────
+        excess_itg = np.maximum(0.0, grad_ti - _CRIT_ITG)
+        excess_tem = np.maximum(0.0, grad_te - _CRIT_TEM)
+
+        chi_i_out = _CHI_GB * excess_itg ** _STIFFNESS
+        chi_e_out = _CHI_GB * excess_tem ** _STIFFNESS
+        d_e_out = chi_e_out / 3.0
 
         return chi_e_out, chi_i_out, d_e_out

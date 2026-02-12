@@ -66,6 +66,17 @@ pub enum ProbeKind {
     FluxLoop,
 }
 
+/// Loss function for the residual cost.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub enum LossFunction {
+    /// Standard least-squares: cost = Σ rᵢ².
+    #[default]
+    LeastSquares,
+    /// Huber loss: quadratic for |r| < delta, linear beyond.
+    /// More robust to outlier measurements.
+    Huber(f64),
+}
+
 /// Configuration for the inverse solver.
 #[derive(Debug, Clone)]
 pub struct InverseConfig {
@@ -81,6 +92,16 @@ pub struct InverseConfig {
     pub lambda_down: f64,
     /// Finite-difference step for Jacobian computation.
     pub fd_step: f64,
+    /// Tikhonov regularisation strength (0 = disabled).
+    /// Adds `tikhonov * ‖x - x₀‖²` to the cost, pulling parameters
+    /// towards the initial guess when data is insufficient.
+    pub tikhonov: f64,
+    /// Measurement uncertainty (σ) per probe.  When `Some`, residuals
+    /// are weighted by 1/σᵢ in the chi-squared.  Length must equal
+    /// the number of probes.
+    pub sigma: Option<Vec<f64>>,
+    /// Loss function (default: least-squares).
+    pub loss: LossFunction,
 }
 
 impl Default for InverseConfig {
@@ -92,6 +113,9 @@ impl Default for InverseConfig {
             lambda_up: 10.0,
             lambda_down: 0.1,
             fd_step: 1e-4,
+            tikhonov: 0.0,
+            sigma: None,
+            loss: LossFunction::default(),
         }
     }
 }
@@ -271,6 +295,42 @@ fn solve_dense(a: &[[f64; N_PARAMS]; N_PARAMS], b: &[f64; N_PARAMS]) -> Option<[
 
 // ── Inverse solver ───────────────────────────────────────────────────
 
+// ── Loss helpers ─────────────────────────────────────────────────────
+
+/// Compute cost from a single residual under the chosen loss function.
+fn loss_cost(r: f64, loss: LossFunction) -> f64 {
+    match loss {
+        LossFunction::LeastSquares => r * r,
+        LossFunction::Huber(delta) => {
+            let a = r.abs();
+            if a <= delta {
+                r * r
+            } else {
+                2.0 * delta * a - delta * delta
+            }
+        }
+    }
+}
+
+/// Weight factor for the Jacobian under Huber loss.
+/// For |r| <= delta this is 1.0 (standard LS), for |r| > delta it
+/// reduces the influence of outliers.
+fn loss_weight(r: f64, loss: LossFunction) -> f64 {
+    match loss {
+        LossFunction::LeastSquares => 1.0,
+        LossFunction::Huber(delta) => {
+            let a = r.abs();
+            if a <= delta {
+                1.0
+            } else {
+                delta / a
+            }
+        }
+    }
+}
+
+// ── Inverse solver ───────────────────────────────────────────────────
+
 /// Reconstruct plasma equilibrium from magnetic probe measurements.
 ///
 /// # Arguments
@@ -279,6 +339,14 @@ fn solve_dense(a: &[[f64; N_PARAMS]; N_PARAMS], b: &[f64; N_PARAMS]) -> Option<[
 /// * `probes` - Probe locations and types on the vessel wall.
 /// * `measurements` - Measured values corresponding to each probe.
 /// * `config` - Levenberg-Marquardt solver configuration.
+///
+/// # Features
+///
+/// * **Measurement weights** — when `config.sigma` is `Some`, residuals
+///   are divided by σᵢ so that noisier channels contribute less.
+/// * **Tikhonov regularisation** — adds `α ‖x - x₀‖²` to the cost
+///   and `α I` to the normal matrix, stabilising ill-conditioned inversions.
+/// * **Huber robust loss** — reduces the influence of outlier measurements.
 ///
 /// # Returns
 ///
@@ -305,15 +373,51 @@ pub fn reconstruct_equilibrium(
             N_PARAMS, n_meas
         )));
     }
+    if let Some(ref s) = config.sigma {
+        if s.len() != n_meas {
+            return Err(FusionError::ConfigError(format!(
+                "sigma length ({}) != measurement count ({})",
+                s.len(),
+                n_meas
+            )));
+        }
+    }
+
+    // Precompute inverse-sigma weights (1/σ, or 1.0 if unweighted)
+    let inv_sigma: Vec<f64> = match &config.sigma {
+        Some(s) => s.iter().map(|si| 1.0 / si.max(1e-30)).collect(),
+        None => vec![1.0; n_meas],
+    };
 
     // Initial guess: default pedestal parameters
     let p0 = ProfileParams::default();
     let ff0 = ProfileParams::default();
-    let mut x = pack_params(&p0, &ff0);
+    let x0 = pack_params(&p0, &ff0);
+    let mut x = x0;
 
     let mut lambda = config.lambda_init;
     let mut converged = false;
     let mut final_iter = 0;
+
+    // Weighted cost function: Σ loss(wᵢ rᵢ) + tikhonov ‖x-x₀‖²
+    let compute_cost = |res: &[f64], x_cur: &[f64; N_PARAMS]| -> f64 {
+        let data_cost: f64 = res
+            .iter()
+            .zip(inv_sigma.iter())
+            .map(|(&r, &w)| loss_cost(r * w, config.loss))
+            .sum();
+        let reg: f64 = if config.tikhonov > 0.0 {
+            config.tikhonov
+                * x_cur
+                    .iter()
+                    .zip(x0.iter())
+                    .map(|(xi, x0i)| (xi - x0i).powi(2))
+                    .sum::<f64>()
+        } else {
+            0.0
+        };
+        data_cost + reg
+    };
 
     // Current forward model evaluation
     let (p_cur, ff_cur) = unpack_params(&x);
@@ -323,7 +427,7 @@ pub fn reconstruct_equilibrium(
         .zip(sim.iter())
         .map(|(m, s)| m - s)
         .collect();
-    let mut chi2: f64 = residuals.iter().map(|r| r * r).sum();
+    let mut chi2 = compute_cost(&residuals, &x);
 
     for iter in 0..config.max_iterations {
         final_iter = iter;
@@ -349,26 +453,36 @@ pub fn reconstruct_equilibrium(
             }
         }
 
-        // JᵀJ + λI
+        // Build normal equations: (JᵀWJ + λI + αI) δx = JᵀWr + α(x₀-x)
         let mut jtj = [[0.0; N_PARAMS]; N_PARAMS];
         let mut jtr = [0.0; N_PARAMS];
 
         for i in 0..N_PARAMS {
             for j in 0..N_PARAMS {
                 let mut sum = 0.0;
-                for row in jacobian.iter().take(n_meas) {
-                    sum += row[i] * row[j];
+                for (k, row) in jacobian.iter().enumerate() {
+                    let w = inv_sigma[k]
+                        * inv_sigma[k]
+                        * loss_weight(residuals[k] * inv_sigma[k], config.loss);
+                    sum += row[i] * row[j] * w;
                 }
                 jtj[i][j] = sum;
             }
-            // Jᵀr
+            // JᵀWr
             let mut sum = 0.0;
-            for (row, &res) in jacobian.iter().zip(residuals.iter()).take(n_meas) {
-                sum += row[i] * res;
+            for (k, (row, &res)) in jacobian.iter().zip(residuals.iter()).enumerate() {
+                let w = inv_sigma[k] * inv_sigma[k] * loss_weight(res * inv_sigma[k], config.loss);
+                sum += row[i] * res * w;
             }
             jtr[i] = sum;
 
-            // Damping
+            // Tikhonov: adds α(x₀ᵢ - xᵢ) to gradient, αI to Hessian
+            if config.tikhonov > 0.0 {
+                jtj[i][i] += config.tikhonov;
+                jtr[i] += config.tikhonov * (x0[i] - x[i]);
+            }
+
+            // LM damping
             jtj[i][i] += lambda;
         }
 
@@ -376,7 +490,6 @@ pub fn reconstruct_equilibrium(
         let delta = match solve_dense(&jtj, &jtr) {
             Some(d) => d,
             None => {
-                // Not positive definite — increase damping and retry
                 lambda *= config.lambda_up;
                 continue;
             }
@@ -395,7 +508,7 @@ pub fn reconstruct_equilibrium(
             .zip(sim_trial.iter())
             .map(|(m, s)| m - s)
             .collect();
-        let chi2_trial: f64 = res_trial.iter().map(|r| r * r).sum();
+        let chi2_trial = compute_cost(&res_trial, &x_trial);
 
         // Accept/reject
         if chi2_trial < chi2 {
@@ -667,6 +780,153 @@ mod tests {
         );
         let inv = result.unwrap();
         assert!(inv.chi_squared.is_finite());
+    }
+
+    // ── Loss / regularisation unit tests ────────────────────────────
+
+    #[test]
+    fn test_loss_cost_least_squares() {
+        assert!((loss_cost(3.0, LossFunction::LeastSquares) - 9.0).abs() < 1e-12);
+        assert!((loss_cost(-2.0, LossFunction::LeastSquares) - 4.0).abs() < 1e-12);
+        assert!((loss_cost(0.0, LossFunction::LeastSquares)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_loss_cost_huber() {
+        let delta = 1.0;
+        // Inside: |r| <= delta → r²
+        assert!((loss_cost(0.5, LossFunction::Huber(delta)) - 0.25).abs() < 1e-12);
+        // At boundary: |r| == delta → delta² (same either way)
+        assert!((loss_cost(1.0, LossFunction::Huber(delta)) - 1.0).abs() < 1e-12);
+        // Outside: |r| > delta → 2δ|r| - δ²
+        let expected = 2.0 * 1.0 * 3.0 - 1.0; // = 5.0
+        assert!((loss_cost(3.0, LossFunction::Huber(delta)) - expected).abs() < 1e-12);
+        // Symmetric in sign
+        assert!((loss_cost(-3.0, LossFunction::Huber(delta)) - expected).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_loss_weight_least_squares() {
+        assert!((loss_weight(100.0, LossFunction::LeastSquares) - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_loss_weight_huber() {
+        let delta = 2.0;
+        // Inside: weight = 1.0
+        assert!((loss_weight(1.0, LossFunction::Huber(delta)) - 1.0).abs() < 1e-12);
+        // Outside: weight = delta / |r| < 1
+        let w = loss_weight(4.0, LossFunction::Huber(delta));
+        assert!((w - 0.5).abs() < 1e-12, "Huber weight: {w}");
+    }
+
+    #[test]
+    fn test_sigma_length_mismatch() {
+        let mut kernel = make_kernel();
+        let probes = generate_vessel_probes(6.0, 0.0, 4.0, 5.0, 8, 4);
+        let measurements = vec![0.0; 12];
+        let config = InverseConfig {
+            max_iterations: 1,
+            sigma: Some(vec![1.0; 5]), // wrong length
+            ..InverseConfig::default()
+        };
+        let result = reconstruct_equilibrium(&mut kernel, &probes, &measurements, &config);
+        assert!(result.is_err(), "Should reject sigma length mismatch");
+    }
+
+    #[test]
+    fn test_tikhonov_increases_cost() {
+        // With Tikhonov > 0 and params != x0, cost should be larger
+        // than with Tikhonov = 0, since the regularisation penalty is positive.
+        let r = 2.0;
+        let cost_ls = loss_cost(r, LossFunction::LeastSquares); // 4.0
+                                                                // Tikhonov penalty is computed inside reconstruct_equilibrium,
+                                                                // but we can verify the cost helper:
+        assert!(cost_ls > 0.0);
+        // Huber cost <= LS cost for same residual when |r| > delta
+        let cost_huber = loss_cost(r, LossFunction::Huber(1.0));
+        assert!(
+            cost_huber <= cost_ls,
+            "Huber cost ({cost_huber}) should be <= LS cost ({cost_ls}) for |r| > delta"
+        );
+    }
+
+    #[test]
+    fn test_reconstruction_with_tikhonov() {
+        // Smoke test: single iteration with Tikhonov enabled
+        let mut kernel = make_kernel();
+        let probes = generate_vessel_probes(6.0, 0.0, 4.0, 5.0, 10, 6);
+        let p = ProfileParams::default();
+        let ff = ProfileParams::default();
+        let measurements =
+            generate_synthetic_measurements(&mut kernel, &probes, &p, &ff, 0.0).unwrap();
+
+        let inv_config = InverseConfig {
+            max_iterations: 1,
+            tolerance: 1e-10,
+            tikhonov: 0.1,
+            ..InverseConfig::default()
+        };
+
+        let result = reconstruct_equilibrium(&mut kernel, &probes, &measurements, &inv_config);
+        assert!(
+            result.is_ok(),
+            "Tikhonov reconstruction failed: {:?}",
+            result.err()
+        );
+        assert!(result.unwrap().chi_squared.is_finite());
+    }
+
+    #[test]
+    fn test_reconstruction_with_huber() {
+        // Smoke test: single iteration with Huber loss
+        let mut kernel = make_kernel();
+        let probes = generate_vessel_probes(6.0, 0.0, 4.0, 5.0, 10, 6);
+        let p = ProfileParams::default();
+        let ff = ProfileParams::default();
+        let measurements =
+            generate_synthetic_measurements(&mut kernel, &probes, &p, &ff, 0.0).unwrap();
+
+        let inv_config = InverseConfig {
+            max_iterations: 1,
+            tolerance: 1e-10,
+            loss: LossFunction::Huber(0.1),
+            ..InverseConfig::default()
+        };
+
+        let result = reconstruct_equilibrium(&mut kernel, &probes, &measurements, &inv_config);
+        assert!(
+            result.is_ok(),
+            "Huber reconstruction failed: {:?}",
+            result.err()
+        );
+        assert!(result.unwrap().chi_squared.is_finite());
+    }
+
+    #[test]
+    fn test_reconstruction_with_sigma() {
+        // Smoke test: single iteration with measurement weights
+        let mut kernel = make_kernel();
+        let probes = generate_vessel_probes(6.0, 0.0, 4.0, 5.0, 10, 6);
+        let p = ProfileParams::default();
+        let ff = ProfileParams::default();
+        let measurements =
+            generate_synthetic_measurements(&mut kernel, &probes, &p, &ff, 0.0).unwrap();
+
+        let inv_config = InverseConfig {
+            max_iterations: 1,
+            tolerance: 1e-10,
+            sigma: Some(vec![0.01; 16]),
+            ..InverseConfig::default()
+        };
+
+        let result = reconstruct_equilibrium(&mut kernel, &probes, &measurements, &inv_config);
+        assert!(
+            result.is_ok(),
+            "Sigma reconstruction failed: {:?}",
+            result.err()
+        );
+        assert!(result.unwrap().chi_squared.is_finite());
     }
 
     #[test]

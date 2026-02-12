@@ -209,3 +209,116 @@ class TestNeuralTransportModel:
         assert abs(via_model.chi_i - via_direct.chi_i) < 1e-12
         assert abs(via_model.chi_e - via_direct.chi_e) < 1e-12
         assert via_model.channel == via_direct.channel
+
+    def test_vectorised_profile_matches_pointwise(self):
+        """Vectorised predict_profile must match point-by-point fallback."""
+        model = NeuralTransportModel()  # fallback mode
+        n = 30
+        rho = np.linspace(0.01, 0.99, n)
+        te = 8.0 * (1 - rho ** 2) + 0.2
+        ti = te * 0.95
+        ne = 6.0 * (1 - rho ** 2) + 0.5
+        q = 1.0 + 2.5 * rho ** 2
+        s_hat = 5.0 * rho
+
+        chi_e, chi_i, d_e = model.predict_profile(rho, te, ti, ne, q, s_hat)
+
+        # Point-by-point via predict()
+        for i in range(n):
+            # Recompute normalised gradients the same way
+            dx_te = np.gradient(te, rho)
+            safe_te = np.maximum(np.abs(te), 1e-6)
+            grad_te_i = float(np.clip(-6.2 * dx_te[i] / safe_te[i], 0, 50))
+
+            dx_ti = np.gradient(ti, rho)
+            safe_ti = np.maximum(np.abs(ti), 1e-6)
+            grad_ti_i = float(np.clip(-6.2 * dx_ti[i] / safe_ti[i], 0, 50))
+
+            inp = TransportInputs(grad_te=grad_te_i, grad_ti=grad_ti_i)
+            fluxes = critical_gradient_model(inp)
+            np.testing.assert_allclose(chi_e[i], fluxes.chi_e, rtol=1e-10)
+            np.testing.assert_allclose(chi_i[i], fluxes.chi_i, rtol=1e-10)
+
+    def test_weight_versioning_accepted(self):
+        """Version=1 weights should load successfully."""
+        hidden = 8
+        rng = np.random.RandomState(99)
+        weights = {
+            "version": np.array(1),
+            "w1": rng.randn(10, hidden),
+            "b1": np.zeros(hidden),
+            "w2": rng.randn(hidden, hidden),
+            "b2": np.zeros(hidden),
+            "w3": rng.randn(hidden, 3),
+            "b3": np.zeros(3),
+            "input_mean": np.zeros(10),
+            "input_std": np.ones(10),
+            "output_scale": np.ones(3),
+        }
+        with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as f:
+            np.savez(f.name, **weights)
+            model = NeuralTransportModel(f.name)
+
+        assert model.is_neural
+        assert model.weights_checksum is not None
+        assert len(model.weights_checksum) == 16
+
+    def test_weight_versioning_rejected(self):
+        """Version=99 weights should be rejected (fallback)."""
+        hidden = 8
+        rng = np.random.RandomState(99)
+        weights = {
+            "version": np.array(99),
+            "w1": rng.randn(10, hidden),
+            "b1": np.zeros(hidden),
+            "w2": rng.randn(hidden, hidden),
+            "b2": np.zeros(hidden),
+            "w3": rng.randn(hidden, 3),
+            "b3": np.zeros(3),
+            "input_mean": np.zeros(10),
+            "input_std": np.ones(10),
+            "output_scale": np.ones(3),
+        }
+        with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as f:
+            np.savez(f.name, **weights)
+            model = NeuralTransportModel(f.name)
+
+        assert not model.is_neural
+
+    def test_neural_predict_profile_batched(self):
+        """Neural-mode predict_profile should use batched forward pass."""
+        hidden = 16
+        rng = np.random.RandomState(42)
+        weights = {
+            "version": np.array(1),
+            "w1": rng.randn(10, hidden) * 0.1,
+            "b1": np.zeros(hidden),
+            "w2": rng.randn(hidden, hidden) * 0.1,
+            "b2": np.zeros(hidden),
+            "w3": rng.randn(hidden, 3) * 0.1,
+            "b3": np.zeros(3),
+            "input_mean": np.zeros(10),
+            "input_std": np.ones(10),
+            "output_scale": np.ones(3),
+        }
+        with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as f:
+            np.savez(f.name, **weights)
+            model = NeuralTransportModel(f.name)
+
+        assert model.is_neural
+        n = 20
+        rho = np.linspace(0.01, 0.99, n)
+        te = 5.0 * (1 - rho ** 2) + 0.1
+        ti = te.copy()
+        ne = 5.0 * (1 - rho ** 2) + 0.5
+        q = 1.0 + 2.0 * rho ** 2
+        s_hat = 4.0 * rho
+
+        chi_e, chi_i, d_e = model.predict_profile(rho, te, ti, ne, q, s_hat)
+
+        assert chi_e.shape == (n,)
+        assert chi_i.shape == (n,)
+        assert d_e.shape == (n,)
+        assert all(chi_e > 0)  # softplus ensures positivity
+        assert all(chi_i > 0)
+        assert all(d_e > 0)
