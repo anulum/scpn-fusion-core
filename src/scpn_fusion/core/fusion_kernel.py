@@ -5,198 +5,290 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-import numpy as np
+"""
+Non-linear free-boundary Grad-Shafranov equilibrium solver.
+
+Solves the Grad-Shafranov equation for toroidal plasma equilibrium using
+Picard iteration with under-relaxation.  Supports both L-mode (linear)
+and H-mode (mtanh pedestal) pressure/current profiles.
+
+The solver can optionally offload the inner elliptic solve to a compiled
+C++ library via :class:`~scpn_fusion.hpc.hpc_bridge.HPCBridge`, or to
+the Rust multigrid backend when available.
+"""
+
+from __future__ import annotations
+
 import json
+import logging
 import time
-import os
-from scipy.optimize import minimize
+from pathlib import Path
+from typing import Any, Optional
+
+import numpy as np
+from numpy.typing import NDArray
+from scipy.special import ellipe, ellipk
+
 from scpn_fusion.hpc.hpc_bridge import HPCBridge
 
+logger = logging.getLogger(__name__)
+
+# ── Type aliases ──────────────────────────────────────────────────────
+FloatArray = NDArray[np.float64]
+
+
 class FusionKernel:
+    """Non-linear free-boundary Grad-Shafranov equilibrium solver.
+
+    Parameters
+    ----------
+    config_path : str | Path
+        Path to a JSON configuration file describing the reactor geometry,
+        coil set, physics parameters and solver settings.
+
+    Attributes
+    ----------
+    Psi : FloatArray
+        Poloidal flux on the (Z, R) grid.
+    J_phi : FloatArray
+        Toroidal current density on the (Z, R) grid.
+    B_R, B_Z : FloatArray
+        Radial and vertical magnetic field components (set after solve).
     """
-    SCPN Fusion Core - Advanced Non-Linear Free-Boundary Solver.
-    Features:
-    - Full Grad-Shafranov Physics (Pressure + Poloidal Current)
-    - X-Point Detection (Newton-Raphson)
-    - Dynamic Separatrix finding
-    - HPC Acceleration Support (C++ Kernel)
-    """
-    def __init__(self, config_path):
+
+    # ── construction ──────────────────────────────────────────────────
+
+    def __init__(self, config_path: str | Path) -> None:
         self.load_config(config_path)
         self.initialize_grid()
         self.setup_accelerator()
-        
-    def setup_accelerator(self):
-        # Initialize HPC Bridge
-        self.hpc = HPCBridge()
-        if self.hpc.is_available():
-            print("[Kernel] HPC Acceleration ENABLED.")
-            # Configure the C++ solver with grid parameters
-            self.hpc.initialize(
-                self.NR, self.NZ, 
-                (self.R[0], self.R[-1]), 
-                (self.Z[0], self.Z[-1])
-            )
-        else:
-            print("[Kernel] HPC Acceleration UNAVAILABLE (Using Python fallback).")
-        
-    def load_config(self, path):
-        with open(path, 'r') as f:
-            self.cfg = json.load(f)
-        print(f"[Kernel] Loaded configuration for: {self.cfg['reactor_name']}")
-        
-    def initialize_grid(self):
-        dims = self.cfg['dimensions']
-        res = self.cfg['grid_resolution']
-        
-        self.NR, self.NZ = res[0], res[1]
-        self.R = np.linspace(dims['R_min'], dims['R_max'], self.NR)
-        self.Z = np.linspace(dims['Z_min'], dims['Z_max'], self.NZ)
-        self.dR = self.R[1] - self.R[0]
-        self.dZ = self.Z[1] - self.Z[0]
+
+    def load_config(self, path: str | Path) -> None:
+        """Load reactor configuration from a JSON file.
+
+        Parameters
+        ----------
+        path : str | Path
+            Filesystem path to the configuration JSON.
+        """
+        with open(path, "r") as f:
+            self.cfg: dict[str, Any] = json.load(f)
+        logger.info("Loaded configuration for: %s", self.cfg["reactor_name"])
+
+    def initialize_grid(self) -> None:
+        """Build the computational (R, Z) mesh from the loaded config."""
+        dims = self.cfg["dimensions"]
+        res = self.cfg["grid_resolution"]
+
+        self.NR: int = res[0]
+        self.NZ: int = res[1]
+        self.R: FloatArray = np.linspace(dims["R_min"], dims["R_max"], self.NR)
+        self.Z: FloatArray = np.linspace(dims["Z_min"], dims["Z_max"], self.NZ)
+        self.dR: float = float(self.R[1] - self.R[0])
+        self.dZ: float = float(self.Z[1] - self.Z[0])
+        self.RR: FloatArray
+        self.ZZ: FloatArray
         self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
-        
+
         self.Psi = np.zeros((self.NZ, self.NR))
         self.J_phi = np.zeros((self.NZ, self.NR))
-        
-        # Physics profiles parameters
-        self.p_prime_0 = -1.0 # Pressure gradient scale
-        self.ff_prime_0 = -1.0 # Poloidal current scale
 
-        # Profile mode: 'l-mode' (linear) or 'h-mode' (mtanh pedestal)
-        self.profile_mode = 'l-mode'
-        self.ped_params_p = {
-            'ped_top': 0.92, 'ped_width': 0.05,
-            'ped_height': 1.0, 'core_alpha': 0.3,
+        self.p_prime_0: float = -1.0
+        self.ff_prime_0: float = -1.0
+
+        # Profile mode
+        self.profile_mode: str = "l-mode"
+        self.ped_params_p: dict[str, float] = {
+            "ped_top": 0.92,
+            "ped_width": 0.05,
+            "ped_height": 1.0,
+            "core_alpha": 0.3,
         }
-        self.ped_params_ff = {
-            'ped_top': 0.92, 'ped_width': 0.05,
-            'ped_height': 1.0, 'core_alpha': 0.3,
+        self.ped_params_ff: dict[str, float] = {
+            "ped_top": 0.92,
+            "ped_width": 0.05,
+            "ped_height": 1.0,
+            "core_alpha": 0.3,
         }
 
-        # Read profile config if present in JSON
-        profiles_cfg = self.cfg.get('physics', {}).get('profiles')
+        profiles_cfg = self.cfg.get("physics", {}).get("profiles")
         if profiles_cfg:
-            self.profile_mode = profiles_cfg.get('mode', 'l-mode')
-            if 'p_prime' in profiles_cfg:
-                self.ped_params_p.update(profiles_cfg['p_prime'])
-            if 'ff_prime' in profiles_cfg:
-                self.ped_params_ff.update(profiles_cfg['ff_prime'])
-        
-    def calculate_vacuum_field(self):
-        """Computes Green's function using Elliptic Integrals (Toroidal Geometry)."""
-        from scipy.special import ellipk, ellipe
-        print("[Kernel] Computing Vacuum Field (Toroidal Exact)...")
-        Psi_vac = np.zeros((self.NZ, self.NR))
-        mu0 = self.cfg['physics'].get('vacuum_permeability', 1.0)
+            self.profile_mode = profiles_cfg.get("mode", "l-mode")
+            if "p_prime" in profiles_cfg:
+                self.ped_params_p.update(profiles_cfg["p_prime"])
+            if "ff_prime" in profiles_cfg:
+                self.ped_params_ff.update(profiles_cfg["ff_prime"])
 
-        for coil in self.cfg['coils']:
-            Rc, Zc = coil['r'], coil['z']
-            I = coil['current']
-            
-            # Coordinate differences
+    def setup_accelerator(self) -> None:
+        """Initialise the optional C++ HPC acceleration bridge."""
+        self.hpc = HPCBridge()
+        if self.hpc.is_available():
+            logger.info("HPC Acceleration ENABLED.")
+            self.hpc.initialize(
+                self.NR,
+                self.NZ,
+                (self.R[0], self.R[-1]),
+                (self.Z[0], self.Z[-1]),
+            )
+        else:
+            logger.info(
+                "HPC Acceleration UNAVAILABLE (using Python fallback)."
+            )
+
+    # ── vacuum field ──────────────────────────────────────────────────
+
+    def calculate_vacuum_field(self) -> FloatArray:
+        """Compute the vacuum poloidal flux from the external coil set.
+
+        Uses elliptic integrals (toroidal Green's function) for each coil.
+
+        Returns
+        -------
+        FloatArray
+            Vacuum flux Psi_vac on the (NZ, NR) grid.
+        """
+        logger.debug("Computing vacuum field (toroidal exact)…")
+        Psi_vac = np.zeros((self.NZ, self.NR))
+        mu0: float = self.cfg["physics"].get("vacuum_permeability", 1.0)
+
+        for coil in self.cfg["coils"]:
+            Rc, Zc = coil["r"], coil["z"]
+            I = coil["current"]
+
             dZ = self.ZZ - Zc
-            R_plus_Rc_sq = (self.RR + Rc)**2
-            
-            # k squared parameter m = k^2
+            R_plus_Rc_sq = (self.RR + Rc) ** 2
+
             k2 = (4.0 * self.RR * Rc) / (R_plus_Rc_sq + dZ**2)
-            k2 = np.clip(k2, 1e-9, 0.999999) # Avoid singularity
-            
-            # Elliptic Integrals
+            k2 = np.clip(k2, 1e-9, 0.999999)
+
             K = ellipk(k2)
             E = ellipe(k2)
-            
-            # Flux Calculation (Standard Smythe/Jackson form for Toroidal loop)
-            # Psi = (mu0 * I / 2 * pi) * sqrt((R + Rc)^2 + z^2) * ((2 - k^2)*K - 2*E) / k^2
-            
+
             prefactor = (mu0 * I) / (2 * np.pi)
             sqrt_term = np.sqrt(R_plus_Rc_sq + dZ**2)
-            
             term = ((2.0 - k2) * K - 2.0 * E) / k2
-            coil_flux = prefactor * sqrt_term * term
-            
-            Psi_vac += coil_flux
-            
+            Psi_vac += prefactor * sqrt_term * term
+
         return Psi_vac
-    
-    def find_x_point(self, Psi):
+
+    # ── topology analysis ─────────────────────────────────────────────
+
+    def find_x_point(
+        self, Psi: FloatArray
+    ) -> tuple[tuple[float, float], float]:
+        """Locate the X-point (magnetic null) in the lower divertor region.
+
+        Parameters
+        ----------
+        Psi : FloatArray
+            Poloidal flux array on the (NZ, NR) grid.
+
+        Returns
+        -------
+        tuple[tuple[float, float], float]
+            ``((R_x, Z_x), Psi_x)`` — position and flux value at the
+            X-point.
         """
-        Locates the Null Point (B=0) using local minimization.
-        This defines the Separatrix (LCFS).
-        """
-        # Gradient of Psi (proportional to B)
         dPsi_dR, dPsi_dZ = np.gradient(Psi, self.dR, self.dZ)
         B_mag = np.sqrt(dPsi_dR**2 + dPsi_dZ**2)
-        
-        # Look for minimum B in the divertor region (usually bottom part)
-        # We mask the core to avoid finding the O-point (magnetic axis)
-        mask_divertor = self.ZZ < (self.cfg['dimensions']['Z_min'] * 0.5) 
-        
+
+        mask_divertor = self.ZZ < (self.cfg["dimensions"]["Z_min"] * 0.5)
         if np.any(mask_divertor):
             masked_B = np.where(mask_divertor, B_mag, 1e9)
             idx_min = np.argmin(masked_B)
             iz, ir = np.unravel_index(idx_min, Psi.shape)
-            
-            # Sub-grid refinement could go here, but grid point is enough for physics logic
-            return (self.R[ir], self.Z[iz]), Psi[iz, ir]
-        else:
-            return (0,0), np.min(Psi) # Fallback
+            return (float(self.R[ir]), float(self.Z[iz])), float(Psi[iz, ir])
 
-    @staticmethod
-    def mtanh_profile(psi_norm, params):
-        """
-        Vectorized mtanh pedestal profile.
+        return (0.0, 0.0), float(np.min(Psi))
 
-        Parameters
-        ----------
-        psi_norm : ndarray
-            Normalised poloidal flux (0 at axis, 1 at separatrix).
-        params : dict
-            Keys: ped_top, ped_width, ped_height, core_alpha.
+    def _find_magnetic_axis(self) -> tuple[int, int, float]:
+        """Find the O-point (magnetic axis) as the global Psi maximum.
 
         Returns
         -------
-        ndarray  — profile value (0 outside plasma).
+        tuple[int, int, float]
+            ``(iz, ir, Psi_axis)`` — grid indices and flux value.
+        """
+        idx_max = int(np.argmax(self.Psi))
+        iz, ir = np.unravel_index(idx_max, self.Psi.shape)
+        psi_axis = float(self.Psi[iz, ir])
+        if abs(psi_axis) < 1e-6:
+            psi_axis = 1e-6
+        return int(iz), int(ir), psi_axis
+
+    # ── profile functions ─────────────────────────────────────────────
+
+    @staticmethod
+    def mtanh_profile(
+        psi_norm: FloatArray, params: dict[str, float]
+    ) -> FloatArray:
+        """Evaluate a modified-tanh pedestal profile (vectorised).
+
+        Parameters
+        ----------
+        psi_norm : FloatArray
+            Normalised poloidal flux (0 at axis, 1 at separatrix).
+        params : dict[str, float]
+            Profile shape parameters with keys ``ped_top``, ``ped_width``,
+            ``ped_height``, ``core_alpha``.
+
+        Returns
+        -------
+        FloatArray
+            Profile value; zero outside the plasma region.
         """
         result = np.zeros_like(psi_norm)
         mask = (psi_norm >= 0) & (psi_norm < 1.0)
         x = psi_norm[mask]
 
-        # Pedestal step via tanh
-        y = np.clip((params['ped_top'] - x) / params['ped_width'], -20, 20)
-        pedestal = 0.5 * params['ped_height'] * (1.0 + np.tanh(y))
+        y = np.clip((params["ped_top"] - x) / params["ped_width"], -20, 20)
+        pedestal = 0.5 * params["ped_height"] * (1.0 + np.tanh(y))
 
-        # Core parabolic peaking
         core = np.where(
-            x < params['ped_top'],
-            np.maximum(0.0, 1.0 - (x / params['ped_top'])**2),
+            x < params["ped_top"],
+            np.maximum(0.0, 1.0 - (x / params["ped_top"]) ** 2),
             0.0,
         )
 
-        result[mask] = pedestal + params['core_alpha'] * core
+        result[mask] = pedestal + params["core_alpha"] * core
         return result
 
-    def update_plasma_source_nonlinear(self, Psi_axis, Psi_boundary):
-        """
-        Calculates J_phi using full Grad-Shafranov source term:
-        J_phi = R * p'(psi) + (1/(mu0*R)) * FF'(psi)
+    # ── source term ───────────────────────────────────────────────────
 
-        Supports both L-mode (linear 1-psi_norm) and H-mode (mtanh pedestal)
-        profiles, controlled by self.profile_mode.
-        """
-        mu0 = self.cfg['physics']['vacuum_permeability']
+    def update_plasma_source_nonlinear(
+        self, Psi_axis: float, Psi_boundary: float
+    ) -> FloatArray:
+        """Compute the toroidal current density J_phi from the GS source.
 
-        denom = (Psi_boundary - Psi_axis)
-        if abs(denom) < 1e-9: denom = 1e-9
+        Uses ``J_phi = R p'(psi) + FF'(psi) / (mu0 R)`` with either
+        L-mode (linear) or H-mode (mtanh) profiles, then renormalises to
+        match the target plasma current.
+
+        Parameters
+        ----------
+        Psi_axis : float
+            Poloidal flux at the magnetic axis (O-point).
+        Psi_boundary : float
+            Poloidal flux at the separatrix (X-point or limiter).
+
+        Returns
+        -------
+        FloatArray
+            Updated ``J_phi`` on the (NZ, NR) grid.
+        """
+        mu0: float = self.cfg["physics"]["vacuum_permeability"]
+
+        denom = Psi_boundary - Psi_axis
+        if abs(denom) < 1e-9:
+            denom = 1e-9
 
         Psi_norm = (self.Psi - Psi_axis) / denom
         mask_plasma = (Psi_norm >= 0) & (Psi_norm < 1.0)
 
-        if self.profile_mode in ('h-mode', 'H-mode', 'hmode'):
+        if self.profile_mode in ("h-mode", "H-mode", "hmode"):
             p_profile = self.mtanh_profile(Psi_norm, self.ped_params_p)
             ff_profile = self.mtanh_profile(Psi_norm, self.ped_params_ff)
         else:
-            # L-mode: linear (1 - psi_norm)
             p_profile = np.zeros_like(self.Psi)
             p_profile[mask_plasma] = 1.0 - Psi_norm[mask_plasma]
             ff_profile = p_profile.copy()
@@ -207,163 +299,236 @@ class FusionKernel:
         beta_mix = 0.5
         J_raw = beta_mix * J_p + (1 - beta_mix) * J_f
 
-        I_current = np.sum(J_raw) * self.dR * self.dZ
-        I_target = self.cfg['physics']['plasma_current_target']
+        I_current = float(np.sum(J_raw)) * self.dR * self.dZ
+        I_target: float = self.cfg["physics"]["plasma_current_target"]
 
         if abs(I_current) > 1e-9:
-            scale_factor = I_target / I_current
-            self.J_phi = J_raw * scale_factor
+            self.J_phi = J_raw * (I_target / I_current)
         else:
             self.J_phi = np.zeros_like(self.Psi)
 
         return self.J_phi
-        
-    def solve_equilibrium(self):
+
+    # ── elliptic sub-solvers ──────────────────────────────────────────
+
+    def _jacobi_step(
+        self, Psi: FloatArray, Source: FloatArray
+    ) -> FloatArray:
+        """Perform one Jacobi iteration on the interior grid points.
+
+        Parameters
+        ----------
+        Psi : FloatArray
+            Current flux estimate.
+        Source : FloatArray
+            Right-hand-side source term ``-mu0 R J_phi``.
+
+        Returns
+        -------
+        FloatArray
+            Updated flux array (boundaries unchanged).
+        """
+        Psi_new = Psi.copy()
+        Psi_new[1:-1, 1:-1] = 0.25 * (
+            Psi[0:-2, 1:-1]
+            + Psi[2:, 1:-1]
+            + Psi[1:-1, 0:-2]
+            + Psi[1:-1, 2:]
+            - (self.dR**2) * Source[1:-1, 1:-1]
+        )
+        return Psi_new
+
+    def _apply_boundary_conditions(
+        self, Psi: FloatArray, Psi_bc: FloatArray
+    ) -> None:
+        """Copy vacuum-field boundary values onto the edges of *Psi*.
+
+        Parameters
+        ----------
+        Psi : FloatArray
+            Array to update (modified in place).
+        Psi_bc : FloatArray
+            Boundary-condition source (typically the vacuum field).
+        """
+        Psi[0, :] = Psi_bc[0, :]
+        Psi[-1, :] = Psi_bc[-1, :]
+        Psi[:, 0] = Psi_bc[:, 0]
+        Psi[:, -1] = Psi_bc[:, -1]
+
+    def _elliptic_solve(
+        self, Source: FloatArray, Psi_bc: FloatArray
+    ) -> FloatArray:
+        """Run the inner elliptic solve (HPC or Python fallback).
+
+        Parameters
+        ----------
+        Source : FloatArray
+            Right-hand-side ``-mu0 R J_phi``.
+        Psi_bc : FloatArray
+            Vacuum-field array used for Dirichlet boundary conditions.
+
+        Returns
+        -------
+        FloatArray
+            Updated Psi after elliptic solve + boundary enforcement.
+        """
+        if self.hpc.is_available():
+            Psi_acc = self.hpc.solve(self.J_phi, iterations=50)
+            if Psi_acc is not None:
+                self._apply_boundary_conditions(Psi_acc, Psi_bc)
+                return Psi_acc
+
+        # Python fallback: single Jacobi sweep
+        Psi_new = self._jacobi_step(self.Psi, Source)
+        self._apply_boundary_conditions(Psi_new, Psi_bc)
+        return Psi_new
+
+    # ── seed plasma ───────────────────────────────────────────────────
+
+    def _seed_plasma(self, mu0: float) -> None:
+        """Create an initial Gaussian current seed and do preliminary solves.
+
+        Parameters
+        ----------
+        mu0 : float
+            Vacuum permeability.
+        """
+        R_center = (
+            self.cfg["dimensions"]["R_min"]
+            + self.cfg["dimensions"]["R_max"]
+        ) / 2.0
+        dist_sq = (self.RR - R_center) ** 2 + self.ZZ**2
+        self.J_phi = np.exp(-dist_sq / 2.0)
+
+        I_seed = float(np.sum(self.J_phi)) * self.dR * self.dZ
+        I_target: float = self.cfg["physics"]["plasma_current_target"]
+        if I_seed > 0:
+            self.J_phi *= I_target / I_seed
+
+        Source = -mu0 * self.RR * self.J_phi
+        for _ in range(50):
+            self.Psi = self._jacobi_step(self.Psi, Source)
+
+    # ── main solver ───────────────────────────────────────────────────
+
+    def solve_equilibrium(self) -> None:
+        """Run the full Picard-iteration equilibrium solver.
+
+        Iterates: topology analysis -> source update -> elliptic solve ->
+        under-relaxation until the residual drops below the configured
+        convergence threshold or the maximum iteration count is reached.
+
+        Raises
+        ------
+        RuntimeError
+            If the solver produces NaN or Inf (logged as a warning and
+            reverts to the best-known state rather than raising).
+        """
         t0 = time.time()
         self.Psi = self.calculate_vacuum_field()
         Psi_vac_boundary = self.Psi.copy()
-        
-        max_iter = self.cfg['solver']['max_iterations']
-        tol = self.cfg['solver']['convergence_threshold']
-        alpha = 0.1 # Lower relaxation for non-linear stability
-        mu0 = self.cfg['physics']['vacuum_permeability']
-        
-        # Init X-point tracker
-        x_point_pos = (0,0)
+
+        max_iter: int = self.cfg["solver"]["max_iterations"]
+        tol: float = self.cfg["solver"]["convergence_threshold"]
+        alpha: float = 0.1
+        mu0: float = self.cfg["physics"]["vacuum_permeability"]
+
+        x_point_pos: tuple[float, float] = (0.0, 0.0)
         Psi_best = self.Psi.copy()
-        diff_best = 1e9
-        
-        # SEED PLASMA (Initial Guess)
-        # Force current to be centered at R=6.0 to avoid wall-lock
-        R_center = (self.cfg['dimensions']['R_min'] + self.cfg['dimensions']['R_max']) / 2.0
-        Z_center = 0.0
-        dist_sq = (self.RR - R_center)**2 + (self.ZZ - Z_center)**2
-        sigma = 1.0
-        self.J_phi = np.exp(-dist_sq / (2 * sigma**2))
-        
-        # Normalize Seed Current
-        I_seed = np.sum(self.J_phi) * self.dR * self.dZ
-        I_target = self.cfg['physics']['plasma_current_target']
-        if I_seed > 0:
-            self.J_phi *= (I_target / I_seed)
-            
-        # Initial Elliptic Solve to set Psi based on Seed
-        Source = -mu0 * self.RR * self.J_phi
-        for _ in range(50):
-             self.Psi[1:-1, 1:-1] = 0.25 * (
-                self.Psi[0:-2, 1:-1] + self.Psi[2:, 1:-1] + 
-                self.Psi[1:-1, 0:-2] + self.Psi[1:-1, 2:] - 
-                (self.dR**2) * Source[1:-1, 1:-1]
-            )
-        
+        diff_best: float = 1e9
+
+        self._seed_plasma(mu0)
+
         for k in range(max_iter):
-            # 1. Analyze Topology
-            # Axis (O-point)
-            idx_max = np.argmax(self.Psi)
-            iz_ax, ir_ax = np.unravel_index(idx_max, self.Psi.shape)
-            Psi_axis = self.Psi[iz_ax, ir_ax]
-            
-            if abs(Psi_axis) < 1e-6: Psi_axis = 1e-6 # Safety
-            
-            # Boundary (Separatrix defined by X-point)
-            x_point_pos, Psi_x = self.find_x_point(self.Psi)
-            Psi_boundary = Psi_x 
-            
-            # Safety check: if axis and boundary are too close (no plasma)
+            # 1. Topology
+            _, _, Psi_axis = self._find_magnetic_axis()
+            x_point_pos, Psi_boundary = self.find_x_point(self.Psi)
+
             if abs(Psi_axis - Psi_boundary) < 0.1:
-                Psi_boundary = Psi_axis * 0.1 # Fallback to limiter mode
-            
-            # 2. Update Source (Non-Linear Physics)
-            # If we are in "Fixed Profile" mode (e.g. from Transport Solver), skip internal profile update
-            if not getattr(self, 'external_profile_mode', False):
-                self.J_phi = self.update_plasma_source_nonlinear(Psi_axis, Psi_boundary)
-            else:
-                # We still need to re-normalize the external profile to match target Ip if desired
-                # But we assume the shape is set externally (e.g. by TransportSolver)
-                pass 
-            
-            # 3. Elliptic Solve
-            Source = -mu0 * self.RR * self.J_phi # Note R^2 logic handled inside J calculation
-            
-            Psi_new = self.Psi.copy()
-            
-            # Check for HPC Acceleration
-            if self.hpc.is_available():
-                # Offload the heavy lifting to C++
-                # It does multiple iterations internally (e.g. 50-100)
-                # We can reduce the python-side 'k' loop iterations if we trust the inner loop
-                
-                # Pass current J_phi (Source term basically) and get updated Psi
-                # Note: C++ solver expects J, it calculates Source internally.
-                # But our C++ solver expects J_phi.
-                
-                Psi_accelerated = self.hpc.solve(self.J_phi, iterations=50)
-                if Psi_accelerated is not None:
-                    Psi_new = Psi_accelerated
-                    
-                    # Boundary conditions are handled in C++? 
-                    # Actually C++ solver in this version doesn't handle boundary update from vacuum field dynamically
-                    # We need to enforce boundary conditions here
-                    Psi_new[0,:] = Psi_vac_boundary[0,:]
-                    Psi_new[-1,:] = Psi_vac_boundary[-1,:]
-                    Psi_new[:,0] = Psi_vac_boundary[:,0]
-                    Psi_new[:,-1] = Psi_vac_boundary[:,-1]
-            else:
-                # Python Slow-Mo Solver
-                Psi_new[1:-1, 1:-1] = 0.25 * (
-                    self.Psi[0:-2, 1:-1] + 
-                    self.Psi[2:, 1:-1] + 
-                    self.Psi[1:-1, 0:-2] + 
-                    self.Psi[1:-1, 2:] - 
-                    (self.dR**2) * Source[1:-1, 1:-1]
+                Psi_boundary = Psi_axis * 0.1
+
+            # 2. Source update
+            if not getattr(self, "external_profile_mode", False):
+                self.J_phi = self.update_plasma_source_nonlinear(
+                    Psi_axis, Psi_boundary
                 )
-                
-                # Boundary conditions
-                Psi_new[0,:] = Psi_vac_boundary[0,:]
-                Psi_new[-1,:] = Psi_vac_boundary[-1,:]
-                Psi_new[:,0] = Psi_vac_boundary[:,0]
-                Psi_new[:,-1] = Psi_vac_boundary[:,-1]
-            
-            # Robustness Check
+
+            # 3. Elliptic solve
+            Source = -mu0 * self.RR * self.J_phi
+            Psi_new = self._elliptic_solve(Source, Psi_vac_boundary)
+
+            # Divergence check
             if np.isnan(Psi_new).any() or np.isinf(Psi_new).any():
-                print(f"[Kernel] WARNING: Solver diverged at iter {k}. Reverting to best known state.")
+                logger.warning(
+                    "Solver diverged at iter %d — reverting to best state.",
+                    k,
+                )
                 self.Psi = Psi_best
                 break
-            
-            # 4. Relax
-            diff = np.mean(np.abs(Psi_new - self.Psi))
+
+            # 4. Under-relaxation
+            diff = float(np.mean(np.abs(Psi_new - self.Psi)))
             self.Psi = (1.0 - alpha) * self.Psi + alpha * Psi_new
-            
-            # Save best
+
             if diff < diff_best:
                 diff_best = diff
                 Psi_best = self.Psi.copy()
-            
+
             if diff < tol:
-                print(f"[Kernel] Converged at iter {k}. Res: {diff:.6e}")
+                logger.info("Converged at iter %d.  Residual: %.6e", k, diff)
                 break
-                
+
             if k % 100 == 0:
-                print(f"  Iter {k}: Res={diff:.6e} | Axis={Psi_axis:.2f} | X-Point={Psi_boundary:.2f} at R={x_point_pos[0]:.2f},Z={x_point_pos[1]:.2f}")
+                logger.debug(
+                    "Iter %d: res=%.2e | axis=%.2f | X-pt=%.2f "
+                    "at R=%.2f, Z=%.2f",
+                    k,
+                    diff,
+                    Psi_axis,
+                    Psi_boundary,
+                    x_point_pos[0],
+                    x_point_pos[1],
+                )
 
-        # Finalize
         self.compute_b_field()
-        print(f"[Kernel] Solved in {time.time()-t0:.2f}s. Final X-Point: R={x_point_pos[0]:.2f}, Z={x_point_pos[1]:.2f}")
+        elapsed = time.time() - t0
+        logger.info(
+            "Solved in %.2fs.  X-point: R=%.2f, Z=%.2f",
+            elapsed,
+            x_point_pos[0],
+            x_point_pos[1],
+        )
 
-    def compute_b_field(self):
+    # ── post-processing ───────────────────────────────────────────────
+
+    def compute_b_field(self) -> None:
+        """Derive the magnetic field components from the solved Psi."""
         dPsi_dR, dPsi_dZ = np.gradient(self.Psi, self.dR, self.dZ)
         R_safe = np.maximum(self.RR, 1e-6)
-        self.B_R = -(1.0 / R_safe) * dPsi_dZ
-        self.B_Z =  (1.0 / R_safe) * dPsi_dR
-        
-    def save_results(self, filename="equilibrium_nonlinear.npz"):
+        self.B_R: FloatArray = -(1.0 / R_safe) * dPsi_dZ
+        self.B_Z: FloatArray = (1.0 / R_safe) * dPsi_dR
+
+    def save_results(self, filename: str = "equilibrium_nonlinear.npz") -> None:
+        """Save the equilibrium state to a compressed NumPy archive.
+
+        Parameters
+        ----------
+        filename : str
+            Output file path.
+        """
         np.savez(filename, R=self.R, Z=self.Z, Psi=self.Psi, J_phi=self.J_phi)
-        print(f"[Kernel] Saved: {filename}")
+        logger.info("Saved: %s", filename)
+
 
 if __name__ == "__main__":
-    # Test run
     import sys
-    config_file = sys.argv[1] if len(sys.argv) > 1 else "03_CODE/SCPN-Fusion-Core/iter_config.json"
+
+    logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
+    config_file = (
+        sys.argv[1]
+        if len(sys.argv) > 1
+        else "03_CODE/SCPN-Fusion-Core/iter_config.json"
+    )
     fk = FusionKernel(config_file)
     fk.solve_equilibrium()
     fk.save_results("03_CODE/SCPN-Fusion-Core/final_state_nonlinear.npz")
