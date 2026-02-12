@@ -7,7 +7,9 @@ Tokamak plasma physics simulation and neuro-symbolic control suite.
    :maxdepth: 2
    :caption: Contents
 
+   getting_started
    modules/core
+   modules/eqdsk
    modules/control
    modules/nuclear
    modules/diagnostics

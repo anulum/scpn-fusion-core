@@ -1,11 +1,13 @@
 # SCPN Fusion Core
 
 [![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml)
+[![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://anulum.github.io/scpn-fusion-core/)
+[![PyPI](https://img.shields.io/pypi/v/scpn-fusion.svg)](https://pypi.org/project/scpn-fusion/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/scpn-fusion.svg)](https://pypi.org/project/scpn-fusion/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org/)
 [![DOI](https://img.shields.io/badge/DOI-Zenodo-blue.svg)](https://zenodo.org/)
-[![Docs](https://img.shields.io/badge/docs-GitHub_Pages-brightgreen.svg)](https://anulum.github.io/scpn-fusion-core/)
 
 A comprehensive tokamak plasma physics simulation and control suite with neuro-symbolic compilation. SCPN Fusion Core models the full lifecycle of a fusion reactor — from Grad-Shafranov equilibrium and MHD stability through transport, heating, neutronics, and real-time disruption prediction — with optional Rust acceleration via PyO3 and an optional bridge to [SC-NeuroCore](https://github.com/anulum/sc-neurocore) spiking neural networks.
 

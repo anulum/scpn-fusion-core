@@ -1,15 +1,21 @@
 # ──────────────────────────────────────────────────────────────────────
 # SCPN Fusion Core — Sphinx Configuration
-# © 1998–2026 Miroslav Šotek. All rights reserved.
+# © 1998–2026 Miroslav Sotek. All rights reserved.
 # Contact: www.anulum.li | protoscience@anulum.li
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 
+import sys
+from pathlib import Path
+
+# Ensure the src/ package is importable for autodoc
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
+
 project = "SCPN Fusion Core"
-copyright = "1998–2026, Miroslav Šotek"
+copyright = "1998-2026, Miroslav Sotek"
 author = "Miroslav Sotek, Michal Reiprich"
-release = "1.0.0"
+release = "1.0.1"
 
 extensions = [
     "sphinx.ext.autodoc",

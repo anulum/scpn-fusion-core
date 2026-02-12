@@ -105,9 +105,31 @@ We especially welcome contributions in:
 
 - **Benchmarks**: criterion.rs benchmarks, Python `%timeit` comparisons
 - **Validation**: Cross-checking against published tokamak data (JET, DIII-D, ITER)
-- **Solver improvements**: SOR/multigrid upgrades for Grad-Shafranov
+- **Solver improvements**: SOR/multigrid upgrades, adaptive grid refinement
 - **Documentation**: Tutorials, Jupyter notebooks, docstring improvements
 - **Testing**: Increasing coverage, property-based testing with hypothesis/proptest
+- **GPU acceleration**: CUDA/OpenCL offload for SOR, FFT, transport solvers
+- **Data integration**: IMAS IDS import/export, MDSplus readers, CHEASE format
+
+### Good First Issues
+
+Look for issues tagged `good first issue` on our [issue tracker](https://github.com/anulum/scpn-fusion-core/issues). Some ideas:
+
+- Add `%timeit` benchmarks to existing Jupyter notebooks
+- Expand docstrings on public API functions
+- Add new GEQDSK test cases from publicly available tokamak data
+- Implement additional elliptic integral identities in proptest
+- Add CI badges for code coverage
+
+### Roadmap
+
+| Phase | Focus | Status |
+|-------|-------|--------|
+| v1.0 | Core solvers, PyO3 bindings, PyPI release | Done |
+| v1.1 | Adaptive mesh refinement, IMAS compatibility | Planned |
+| v1.2 | GPU offload (CUDA via cupy/wgpu), FNO turbulence | Planned |
+| v1.3 | Real-time digital twin integration, WebSocket API | Planned |
+| v2.0 | Full ITER scenario modelling with validated transport | Planned |
 
 ## License
 
