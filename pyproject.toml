@@ -4,59 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scpn-fusion"
-version = "1.0.1"
-description = "SCPN Fusion Core - Tokamak Plasma Physics Simulation and Neuro-Symbolic Control Suite"
-readme = "README.md"
-license = "AGPL-3.0-or-later"
+version = "1.0.2"
+description = "SCPN Fusion Core - Advanced Plasma Physics & Control Suite"
 authors = [
     {name = "Miroslav Sotek"},
     {name = "Michal Reiprich"}
 ]
-requires-python = ">=3.9"
 dependencies = [
     "numpy",
     "matplotlib",
     "scipy",
     "streamlit"
 ]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Science/Research",
-    "Intended Audience :: Education",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Rust",
-    "Topic :: Scientific/Engineering :: Physics",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Scientific/Engineering :: Mathematics",
-    "Typing :: Typed",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "hypothesis",
-    "black",
-    "ruff",
-    "sphinx",
-    "sphinx-rtd-theme",
-    "sphinx-autodoc-typehints",
-    "myst-parser",
-    "nbconvert",
-]
-
-[project.urls]
-Homepage = "https://github.com/anulum/scpn-fusion-core"
-Repository = "https://github.com/anulum/scpn-fusion-core"
-Issues = "https://github.com/anulum/scpn-fusion-core/issues"
-Documentation = "https://anulum.github.io/scpn-fusion-core/"
+requires-python = ">=3.8"
 
 [project.scripts]
 scpn-dashboard = "scpn_fusion.ui.app:main"
-
-[tool.setuptools.packages.find]
-where = ["src"]

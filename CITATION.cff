@@ -1,52 +1,22 @@
-# ──────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────
 # SCPN Fusion Core — Citation Metadata
 # © 1998–2026 Miroslav Šotek. All rights reserved.
 # Contact: www.anulum.li | protoscience@anulum.li
+# ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
-# ──────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
 title: "SCPN Fusion Core"
+message: "If you use this software, please cite it using the metadata below."
 type: software
-version: 1.0.1
-date-released: 2026-02-12
-license: AGPL-3.0-or-later
-repository-code: "https://github.com/anulum/scpn-fusion-core"
-url: "https://anulum.github.io/scpn-fusion-core/"
-abstract: >-
-  Tokamak plasma physics simulation and neuro-symbolic control suite.
-  54 Python modules across 7 subpackages, 10 Rust crates with PyO3
-  bindings, 26 simulation modes, and a Petri net to stochastic neuron
-  compiler with optional SC-NeuroCore integration.
-keywords:
-  - tokamak
-  - fusion
-  - plasma physics
-  - Grad-Shafranov
-  - MHD
-  - neuro-symbolic
-  - spiking neural networks
-  - reactor design
-  - SCPN
 authors:
-  - family-names: Sotek
-    given-names: Miroslav
+  - family-names: "Sotek"
+    given-names: "Miroslav"
     orcid: "https://orcid.org/0009-0009-3560-0851"
-    affiliation: "ANULUM CH & LI"
-    email: protoscience@anulum.li
-  - family-names: Reiprich
-    given-names: Michal
-    affiliation: "ANULUM CH & LI"
-preferred-citation:
-  type: software
-  title: "SCPN Fusion Core: Tokamak Plasma Physics Simulation and Neuro-Symbolic Control Suite"
-  authors:
-    - family-names: Sotek
-      given-names: Miroslav
-      orcid: "https://orcid.org/0009-0009-3560-0851"
-    - family-names: Reiprich
-      given-names: Michal
-  version: 1.0.1
-  date-released: 2026-02-12
-  url: "https://github.com/anulum/scpn-fusion-core"
-  license: AGPL-3.0-or-later
+  - family-names: "Reiprich"
+    given-names: "Michal"
+version: "1.0.2"
+date-released: "2026-02-12"
+license: "AGPL-3.0-or-later"
+repository-code: "https://github.com/anulum/scpn-fusion-core"
+url: "https://www.anulum.li"
