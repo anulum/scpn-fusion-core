@@ -223,6 +223,87 @@ inference time from ~5 µs to ~10 µs per point.
 
 ---
 
+## 8. Common Pitfalls & Tuning Tips
+
+> **Quick-fix cheat sheet** — when something goes wrong, start here.
+
+### Equilibrium diverges (NaN / residual blows up)
+
+| Symptom | Likely cause | Fix |
+|---------|-------------|-----|
+| NaN after 5–20 iterations | `relaxation_factor` too high for this plasma | Lower to `0.05` or even `0.02` |
+| Residual oscillates (up/down/up) | Under-relaxation fighting strong nonlinearity | Reduce `relaxation_factor` to `0.05`; increase `max_iterations` to 1000 |
+| Converges to wrong equilibrium | Initial vacuum field too far from target | Add more coils or adjust coil currents to give a better initial guess |
+| Works at 33×33 but fails at 65×65 | Finer grid resolves steeper gradients | Reduce `relaxation_factor` by ~30% when doubling grid |
+
+**Rule of thumb:** if the solver diverges with defaults, set
+`relaxation_factor = 0.05` and `max_iterations = 1000` — this is the
+"safe slow" configuration that converges for virtually all tokamak-like
+equilibria.
+
+### Inverse reconstruction produces unphysical profiles
+
+| Symptom | Likely cause | Fix |
+|---------|-------------|-----|
+| Parameters hit bounds every iteration | Ill-conditioned Jacobian | Add `tikhonov = 0.01`–`0.1` |
+| One probe dominates the fit | Outlier / malfunctioning sensor | Add `loss = Huber(0.1)` |
+| Reconstruction oscillates between iterations | Underdetermined (too many params, too few probes) | Increase `tikhonov`; reduce `fd_step` if using very large perturbations |
+| chi-squared stuck at ~1 (never decreases) | `fd_step` too small → Jacobian numerically zero | Increase `fd_step` to `1e-3` |
+
+### Transport surrogate gives wrong diffusivities
+
+| Symptom | Likely cause | Fix |
+|---------|-------------|-----|
+| chi_i = 0 everywhere | `grad_ti` below critical threshold | Check input normalisation (R/L_Ti, not ∇T_i in keV/m) |
+| Discontinuity at threshold | Fallback model uses hard cutoff | Switch to MLP weights (smooth transition) |
+| MLP output is negative | Bad training data | Retrain with clipped targets; or use `output_scale` to enforce positivity |
+
+### Performance is slower than expected
+
+| Symptom | Likely cause | Fix |
+|---------|-------------|-----|
+| Python solve ~5s at 65×65 | Normal — Python uses SOR, not multigrid | Build Rust backend: `maturin develop --release` |
+| Rust solve slower than 100ms at 65×65 | Debug build (`cargo build` without `--release`) | Always use `--release` for benchmarks |
+| Parallel Jacobian no faster than serial | Too few cores or `RAYON_NUM_THREADS=1` | Check `nproc` / set `RAYON_NUM_THREADS` to core count |
+| Profile evaluation slow with MLP | Using point-by-point loop instead of `predict_profile()` | Use `predict_profile(rho, te, ti, ne, q, s)` for vectorised batch |
+
+### Recommended starting configurations
+
+**Conservative (never fails):**
+```json
+{
+    "solver": {
+        "max_iterations": 1000,
+        "convergence_threshold": 1e-6,
+        "relaxation_factor": 0.05
+    }
+}
+```
+
+**Production (fast + reliable for ITER-class):**
+```json
+{
+    "solver": {
+        "max_iterations": 500,
+        "convergence_threshold": 1e-6,
+        "relaxation_factor": 0.1
+    }
+}
+```
+
+**Speed-optimised (parameter sweeps on 33×33):**
+```json
+{
+    "solver": {
+        "max_iterations": 200,
+        "convergence_threshold": 1e-4,
+        "relaxation_factor": 0.2
+    }
+}
+```
+
+---
+
 ## Quick Reference Card
 
 | Parameter | Location | Default | Safe range |
