@@ -1,3 +1,9 @@
+# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Continuous Integration
+# © 1998–2026 Miroslav Šotek. All rights reserved.
+# Contact: www.anulum.li | protoscience@anulum.li
+# License: GNU AGPL v3 | Commercial licensing available
+# ──────────────────────────────────────────────────────────────────────
 name: CI
 
 on:
@@ -23,7 +29,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-          pip install pytest
       - name: Run tests
         run: pytest tests/ -v
 
@@ -54,3 +59,57 @@ jobs:
         run: cargo clippy --all-targets --all-features -- -D warnings
       - name: Run tests
         run: cargo test --all-features
+
+  rust-coverage:
+    name: Rust Coverage (tarpaulin)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scpn-fusion-rs
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            scpn-fusion-rs/target
+          key: ${{ runner.os }}-tarpaulin-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-tarpaulin-
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
+      - name: Generate coverage
+        run: cargo tarpaulin --all-features --workspace --timeout 300 --out xml --output-dir coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: scpn-fusion-rs/coverage/cobertura.xml
+          flags: rust
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  rust-benchmarks:
+    name: Rust Benchmarks (dry run)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scpn-fusion-rs
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            scpn-fusion-rs/target
+          key: ${{ runner.os }}-bench-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-bench-
+      - name: Compile benchmarks (verify they build)
+        run: cargo bench --no-run

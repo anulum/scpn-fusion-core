@@ -4,6 +4,8 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org/)
+[![DOI](https://img.shields.io/badge/DOI-Zenodo-blue.svg)](https://zenodo.org/)
+[![Docs](https://img.shields.io/badge/docs-GitHub_Pages-brightgreen.svg)](https://anulum.github.io/scpn-fusion-core/)
 
 A comprehensive tokamak plasma physics simulation and control suite with neuro-symbolic compilation. SCPN Fusion Core models the full lifecycle of a fusion reactor — from Grad-Shafranov equilibrium and MHD stability through transport, heating, neutronics, and real-time disruption prediction — with optional Rust acceleration via PyO3 and an optional bridge to [SC-NeuroCore](https://github.com/anulum/sc-neurocore) spiking neural networks.
 
@@ -196,7 +198,7 @@ The `scpn-fusion-rs/` directory contains a 10-crate Rust workspace that mirrors 
 
 ## Citation
 
-If you use SCPN Fusion Core in your research, please cite:
+If you use SCPN Fusion Core in your research, please cite using the [CITATION.cff](CITATION.cff) file or:
 
 ```bibtex
 @software{scpn_fusion_core,
@@ -208,9 +210,11 @@ If you use SCPN Fusion Core in your research, please cite:
 }
 ```
 
+This software is archived on **Zenodo** (DOI pending first release deposit) and published on **Academia.edu**.
+
 ## Authors
 
-- **Miroslav Sotek** — ANULUM CH & LI
+- **Miroslav Sotek** — ANULUM CH & LI — [ORCID](https://orcid.org/0009-0009-3560-0851)
 - **Michal Reiprich** — ANULUM CH & LI
 
 ## License
