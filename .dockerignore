@@ -1,0 +1,63 @@
+# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Docker Ignore
+# © 1998–2026 Miroslav Šotek. All rights reserved.
+# Contact: www.anulum.li | protoscience@anulum.li
+# License: GNU AGPL v3 | Commercial licensing available
+# ──────────────────────────────────────────────────────────────────────
+
+# Version control
+.git/
+.gitignore
+.github/
+
+# Rust build artefacts (rebuilt inside Docker)
+scpn-fusion-rs/target/
+
+# Python caches and build artefacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing and CI artefacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation build output
+docs/_build/
+
+# Docker-in-Docker prevention
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Misc project files not needed at runtime
+*.md
+LICENSE
+CITATION.cff
+SECURITY.md
+generate_whitepaper.py
