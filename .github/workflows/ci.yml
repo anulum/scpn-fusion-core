@@ -94,6 +94,19 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  rust-audit:
+    name: Rust Security Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scpn-fusion-rs
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+      - name: Run security audit
+        run: cargo audit
+
   rust-benchmarks:
     name: Rust Benchmarks (dry run)
     runs-on: ubuntu-latest
