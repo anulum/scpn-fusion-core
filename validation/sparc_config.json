@@ -1,0 +1,49 @@
+{
+    "reactor_name": "SPARC-V2C (CFS, B=12.2T)",
+    "grid_resolution": [129, 129],
+    "dimensions": {
+        "R_min": 0.1,
+        "R_max": 3.5,
+        "Z_min": -3.0,
+        "Z_max": 3.0
+    },
+    "physics": {
+        "plasma_current_target": 8.7,
+        "vacuum_permeability": 1.0
+    },
+    "coils": [
+        {"name": "CS1U", "r": 0.384, "z": 0.84, "current": -12.0},
+        {"name": "CS1L", "r": 0.384, "z": -0.84, "current": -12.0},
+        {"name": "CS2U", "r": 0.384, "z": 0.42, "current": -8.0},
+        {"name": "CS2L", "r": 0.384, "z": -0.42, "current": -8.0},
+        {"name": "CS3",  "r": 0.384, "z": 0.0,  "current": -5.0},
+        {"name": "PF1U", "r": 0.53,  "z": 1.42, "current": 2.5},
+        {"name": "PF1L", "r": 0.53,  "z": -1.42, "current": 2.5},
+        {"name": "PF2U", "r": 1.10,  "z": 1.80, "current": -3.0},
+        {"name": "PF2L", "r": 1.10,  "z": -1.80, "current": -3.0},
+        {"name": "PF3U", "r": 2.50,  "z": 1.45, "current": -1.5},
+        {"name": "PF3L", "r": 2.50,  "z": -1.45, "current": -1.5},
+        {"name": "PF4U", "r": 2.90,  "z": 0.70, "current": 1.0},
+        {"name": "PF4L", "r": 2.90,  "z": -0.70, "current": 1.0},
+        {"name": "DIV1", "r": 0.75,  "z": -1.10, "current": 5.0},
+        {"name": "DIV2", "r": 1.50,  "z": -1.35, "current": -4.0}
+    ],
+    "solver": {
+        "max_iterations": 2000,
+        "convergence_threshold": 0.0001,
+        "relaxation_factor": 0.1
+    },
+    "_reference": {
+        "paper": "Creely et al., J. Plasma Physics 86 (2020) 865860502",
+        "R_major_m": 1.85,
+        "a_minor_m": 0.57,
+        "B_T": 12.2,
+        "Ip_MA": 8.7,
+        "kappa": 1.75,
+        "delta": 0.33,
+        "q95": 3.4,
+        "Q_target": 2.0,
+        "P_fusion_MW": 140,
+        "note": "Coil positions approximate; use GEQDSK files for high-fidelity comparison"
+    }
+}

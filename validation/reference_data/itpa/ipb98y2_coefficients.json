@@ -1,0 +1,36 @@
+{
+  "name": "IPB98(y,2)",
+  "reference": "ITER Physics Basis, Nuclear Fusion 39 (1999) 2175",
+  "updated_reference": "Verdoolaege et al., Nuclear Fusion 61 (2021) 076006",
+  "formula": "tau_E = C * Ip^alpha_Ip * BT^alpha_BT * ne19^alpha_ne * Ploss^alpha_P * R^alpha_R * kappa^alpha_kappa * epsilon^alpha_epsilon * M^alpha_M",
+  "C": 0.0562,
+  "exponents": {
+    "Ip_MA": 0.93,
+    "BT_T": 0.15,
+    "ne19_1e19m3": 0.41,
+    "Ploss_MW": -0.69,
+    "R_m": 1.97,
+    "kappa": 0.78,
+    "epsilon": 0.58,
+    "M_AMU": 0.19
+  },
+  "uncertainties_1sigma": {
+    "C": 0.012,
+    "Ip_MA": 0.03,
+    "BT_T": 0.05,
+    "ne19_1e19m3": 0.04,
+    "Ploss_MW": 0.02,
+    "R_m": 0.08,
+    "kappa": 0.07,
+    "epsilon": 0.06,
+    "M_AMU": 0.04
+  },
+  "rmse_log10": 0.145,
+  "machines_in_database": [
+    "ASDEX", "ASDEX-Upgrade", "Alcator-C-Mod", "COMPASS-D",
+    "DIII-D", "JET", "JFT-2M", "JT-60U", "MAST", "NSTX",
+    "PBX-M", "PDX", "START", "T-10", "TCV", "TdeV", "TFTR", "TUMAN-3M"
+  ],
+  "total_data_points": 5920,
+  "standard_subset_points": 1621
+}

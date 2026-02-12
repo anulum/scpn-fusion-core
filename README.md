@@ -139,6 +139,29 @@ The test suites include property-based tests powered by [Hypothesis](https://hyp
 | `02_neuro_symbolic_compiler` | Petri net → stochastic neuron compilation pipeline |
 | `03_grad_shafranov_equilibrium` | Free-boundary equilibrium solver tutorial |
 | `04_divertor_and_neutronics` | Divertor heat flux & tritium breeding ratio |
+| `05_validation_against_experiments` | Cross-validation vs SPARC GEQDSK & ITPA scaling |
+
+## Validation Against Experimental Data
+
+The `validation/` directory contains reference data from real tokamaks for cross-checking simulation outputs:
+
+| Dataset | Source | Contents |
+|---------|--------|----------|
+| **SPARC GEQDSK** | [SPARCPublic](https://github.com/cfs-energy/SPARCPublic) | 8 equilibrium files (B=12.2 T, I_p up to 8.7 MA) |
+| **ITPA H-mode** | Verdoolaege et al., NF 61 (2021) | Confinement data from 10 tokamaks (JET, DIII-D, C-Mod, ...) |
+| **IPB98(y,2)** | ITER Physics Basis | Scaling law coefficients + uncertainties |
+| **ITER configs** | Internal | 4 coil-optimised ITER configurations |
+| **SPARC config** | Creely et al., JPP 2020 | Machine parameters for compact high-field design |
+| **DIII-D config** | Luxon, NF 42 (2002) | Medium-size US tokamak parameters |
+| **JET config** | Pamela et al. (2007) | Largest tokamak, DT fusion data |
+
+```bash
+# Run validation script
+python validation/validate_against_sparc.py
+
+# Read a GEQDSK equilibrium
+python -c "from scpn_fusion.core.eqdsk import read_geqdsk; eq = read_geqdsk('validation/reference_data/sparc/lmode_vv.geqdsk'); print(f'B={eq.bcentr:.1f}T, Ip={eq.current/1e6:.1f}MA')"
+```
 
 ## 26 Simulation Modes
 

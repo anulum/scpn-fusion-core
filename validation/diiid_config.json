@@ -1,0 +1,42 @@
+{
+    "reactor_name": "DIII-D (General Atomics)",
+    "grid_resolution": [65, 65],
+    "dimensions": {
+        "R_min": 0.8,
+        "R_max": 2.6,
+        "Z_min": -1.8,
+        "Z_max": 1.8
+    },
+    "physics": {
+        "plasma_current_target": 1.6,
+        "vacuum_permeability": 1.0
+    },
+    "coils": [
+        {"name": "OH",   "r": 0.42,  "z": 0.0,   "current": -4.0},
+        {"name": "F1A",  "r": 0.86,  "z": 1.01,  "current": 2.0},
+        {"name": "F2A",  "r": 0.86,  "z": 0.60,  "current": 1.5},
+        {"name": "F3A",  "r": 0.86,  "z": 0.17,  "current": 0.8},
+        {"name": "F4A",  "r": 0.86,  "z": -0.17, "current": 0.8},
+        {"name": "F5A",  "r": 0.86,  "z": -0.60, "current": 1.5},
+        {"name": "F6A",  "r": 0.86,  "z": -1.01, "current": 2.0},
+        {"name": "F7A",  "r": 2.40,  "z": 1.10,  "current": -1.2},
+        {"name": "F8A",  "r": 2.40,  "z": -1.10, "current": -1.2},
+        {"name": "F9A",  "r": 2.00,  "z": 1.55,  "current": -0.5}
+    ],
+    "solver": {
+        "max_iterations": 1000,
+        "convergence_threshold": 0.0001,
+        "relaxation_factor": 0.1
+    },
+    "_reference": {
+        "paper": "Luxon, Nucl. Fusion 42 (2002) 614",
+        "R_major_m": 1.67,
+        "a_minor_m": 0.60,
+        "B_T": 2.2,
+        "Ip_MA_max": 3.0,
+        "kappa": 1.80,
+        "delta": 0.35,
+        "q95_typical": 4.0,
+        "note": "Medium-size conventional tokamak, largest in US. Coil positions approximate."
+    }
+}
