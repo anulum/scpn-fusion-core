@@ -8,9 +8,14 @@ Generate a 3D LCFS mesh OBJ from validated ITER config::
 
     python examples/run_3d_flux_quickstart.py --toroidal 24 --poloidal 24
 
+Generate OBJ + PNG preview::
+
+    python examples/run_3d_flux_quickstart.py --toroidal 24 --poloidal 24 --preview-png artifacts/SCPN_Plasma_3D_quickstart.png
+
 Output file:
 
 - ``artifacts/SCPN_Plasma_3D_quickstart.obj``
+- ``artifacts/SCPN_Plasma_3D_quickstart.png`` (optional preview)
 
 Validation RMSE Dashboard
 -------------------------

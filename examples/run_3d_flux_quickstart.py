@@ -39,6 +39,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--toroidal", type=int, default=48, help="Toroidal resolution.")
     parser.add_argument("--poloidal", type=int, default=48, help="Poloidal resolution.")
+    parser.add_argument(
+        "--preview-png",
+        default="",
+        help="Optional preview PNG path.",
+    )
     args = parser.parse_args(argv)
 
     builder = Reactor3DBuilder(args.config)
@@ -47,6 +52,9 @@ def main(argv: list[str] | None = None) -> int:
         resolution_poloidal=args.poloidal,
     )
     output_path = builder.export_obj(vertices, faces, args.output)
+    if args.preview_png:
+        png_path = builder.export_preview_png(vertices, faces, args.preview_png)
+        print(f"Preview PNG: {png_path}")
 
     print("SCPN 3D quickstart complete.")
     print(f"Config: {args.config}")

@@ -34,14 +34,14 @@ Source: `SCPN Fusion Core with Enhanced 3D Capabilities.md`
 | P1-007 | Add cProfile + flamegraph scripts for kernel/3D path | Done | `profiling/profile_kernel.py`, `profiling/profile_geometry_3d.py` |
 | P1-008 | Add CI job for geometry quickstart smoke test | Done | `.github/workflows/ci.yml` |
 | P1-009 | Add docs quickstart section in README + Sphinx | Done | `README.md`, `docs/sphinx/` updates |
+| P1-010 | Add RMSE dashboard regression test coverage | Done | `tests/test_rmse_dashboard.py` |
+| P1-011 | Publish Sphinx page for 3D/validation/profiling workflows | Done | `docs/sphinx/workflows.rst` |
+| P1-012 | Add CI smoke for RMSE dashboard generation | Done | `.github/workflows/ci.yml` |
+| P1-013 | Add simple 3D visual preview workflow (PNG) | Done | `src/scpn_fusion/core/geometry_3d.py`, `examples/run_3d_flux_quickstart.py` |
 
 ## Next Queue (Phase 1)
 
-| ID | Task | Dependency | Exit Metric |
-|---|---|---|---|
-| P1-010 | Add RMSE dashboard regression test coverage | P1-006 | `tests/test_rmse_dashboard.py` green |
-| P1-011 | Publish Sphinx page for 3D/validation/profiling workflows | P1-009 | New page in docs TOC |
-| P1-012 | Add CI smoke for RMSE dashboard generation | P1-006, P1-010 | CI emits non-empty dashboard artifact |
+All currently scoped Phase 1 items (`P1-001` through `P1-013`) are complete.
 
 ## Verification Commands
 

@@ -88,6 +88,20 @@ def test_geometry_export_obj(tmp_path) -> None:
     assert sum(1 for line in text if line.startswith("f ")) == len(faces)
 
 
+def test_geometry_export_preview_png(tmp_path) -> None:
+    kernel = _DummyKernel()
+    builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+    vertices, faces = builder.generate_plasma_surface(
+        resolution_toroidal=10,
+        resolution_poloidal=16,
+        radial_steps=192,
+    )
+    png_path = tmp_path / "plasma_preview.png"
+    written = builder.export_preview_png(vertices, faces, png_path)
+    assert written.exists()
+    assert written.stat().st_size > 0
+
+
 def test_geometry_constructor_solve_flag() -> None:
     kernel = _DummyKernel()
     Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)

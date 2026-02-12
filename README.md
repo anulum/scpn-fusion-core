@@ -97,6 +97,7 @@ python run_fusion_suite.py optimizer    # Compact reactor search (MVR-0.96)
 python run_fusion_suite.py flight       # Tokamak flight simulator
 python run_fusion_suite.py neural       # Neural equilibrium solver
 python examples/run_3d_flux_quickstart.py --toroidal 24 --poloidal 24
+python examples/run_3d_flux_quickstart.py --toroidal 24 --poloidal 24 --preview-png artifacts/SCPN_Plasma_3D_quickstart.png
 
 # Run tests
 pytest tests/ -v
@@ -105,7 +106,7 @@ pytest tests/ -v
 python validation/rmse_dashboard.py
 ```
 
-The 3D quickstart writes an OBJ mesh to `artifacts/SCPN_Plasma_3D_quickstart.obj`.
+The 3D quickstart writes an OBJ mesh to `artifacts/SCPN_Plasma_3D_quickstart.obj` and can optionally render a PNG preview.
 
 ### Rust Acceleration (Optional)
 

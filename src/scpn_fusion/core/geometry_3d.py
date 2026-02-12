@@ -236,6 +236,55 @@ class Reactor3DBuilder:
 
         return output_path
 
+    def export_preview_png(
+        self,
+        vertices: np.ndarray,
+        faces: np.ndarray,
+        filename: str | Path = "plasma_preview.png",
+        *,
+        dpi: int = 140,
+    ) -> Path:
+        """Render mesh preview to a PNG using matplotlib."""
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        output_path = Path(filename)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        fig = plt.figure(figsize=(8.0, 8.0), dpi=dpi)
+        ax = fig.add_subplot(111, projection="3d")
+        ax.plot_trisurf(
+            vertices[:, 0],
+            vertices[:, 1],
+            vertices[:, 2],
+            triangles=faces,
+            cmap="viridis",
+            linewidth=0.05,
+            antialiased=True,
+            alpha=0.95,
+        )
+        ax.set_title("SCPN LCFS 3D Mesh Preview")
+        ax.set_xlabel("X [m]")
+        ax.set_ylabel("Y [m]")
+        ax.set_zlabel("Z [m]")
+        ax.view_init(elev=18, azim=45)
+
+        # Keep axes visually proportional.
+        mins = vertices.min(axis=0)
+        maxs = vertices.max(axis=0)
+        center = 0.5 * (mins + maxs)
+        radius = 0.55 * float(np.max(maxs - mins))
+        ax.set_xlim(center[0] - radius, center[0] + radius)
+        ax.set_ylim(center[1] - radius, center[1] + radius)
+        ax.set_zlim(center[2] - radius, center[2] + radius)
+
+        fig.tight_layout()
+        fig.savefig(output_path, dpi=dpi)
+        plt.close(fig)
+        return output_path
+
 
 def _default_config_path() -> Path:
     repo_root = Path(__file__).resolve().parents[3]
@@ -272,6 +321,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         default=512,
         help="Ray marching samples per poloidal angle.",
     )
+    parser.add_argument(
+        "--preview-png",
+        default="",
+        help="Optional PNG preview output path.",
+    )
     args = parser.parse_args(argv)
 
     builder = Reactor3DBuilder(args.config)
@@ -281,6 +335,9 @@ def main(argv: Optional[list[str]] = None) -> int:
         radial_steps=args.radial_steps,
     )
     path = builder.export_obj(vertices, faces, args.output)
+    if args.preview_png:
+        png_path = builder.export_preview_png(vertices, faces, args.preview_png)
+        print(f"Preview PNG: {png_path}")
     print(
         f"Exported {path} with {len(vertices)} vertices and {len(faces)} faces "
         f"(toroidal={args.toroidal}, poloidal={args.poloidal})."
