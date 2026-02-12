@@ -307,5 +307,51 @@ MLP 1000-pt profile & 0.3\,ms & $\sim$0.05\,ms & Batch matmul \\
 
 ---
 
+## Figure 4: Tuned Parameters vs Defaults (2×2 Panel)
+
+![Tuned vs Defaults](figures/tuned_vs_defaults.png)
+
+Four-panel comparison of three solver configurations from
+[`SOLVER_TUNING_GUIDE.md` §8](SOLVER_TUNING_GUIDE.md#8-common-pitfalls--tuning-tips):
+
+| Panel | Content |
+|-------|---------|
+| **Top-left** | Convergence history (residual vs iteration, log scale) |
+| **Top-right** | Wall-time bar chart (total solve time per configuration) |
+| **Bottom-left** | Midplane normalised Psi profile overlay |
+| **Bottom-right** | Ion thermal diffusivity chi_i profile |
+
+### Table 8: Tuned Parameters vs Defaults
+
+| Configuration | Grid | alpha | max_iter | tol | Notes |
+|---------------|------|-------|----------|-----|-------|
+| **Defaults** | 65×65 | 0.10 | 100 | 1e-6 | Balanced speed & accuracy |
+| **Conservative** | 65×65 | 0.05 | 1000 | 1e-8 | Publication-quality convergence |
+| **Speed-optimised** | 33×33 | 0.20 | 200 | 1e-4 | Parameter sweeps, design scans |
+
+Hardware: AMD Ryzen 9 5950X, 16 cores / 32 threads, 64 GB DDR4-3200,
+Python 3.11 + NumPy (OpenBLAS). Use relative speedups for cross-machine
+comparison.
+
+```latex
+\begin{table}[htbp]
+\centering
+\caption{Solver configuration comparison: defaults vs tuned parameters.
+Measured on AMD Ryzen\,9 5950X, Python\,3.11 + NumPy (OpenBLAS).}
+\label{tab:tuned-vs-defaults}
+\begin{tabular}{lrrrrl}
+\toprule
+Configuration & Grid & $\alpha$ & max\_iter & tol & Notes \\
+\midrule
+Defaults & $65\times65$ & 0.10 & 100 & $10^{-6}$ & Balanced \\
+Conservative & $65\times65$ & 0.05 & 1000 & $10^{-8}$ & Publication quality \\
+Speed-optimised & $33\times33$ & 0.20 & 200 & $10^{-4}$ & Parameter sweeps \\
+\bottomrule
+\end{tabular}
+\end{table}
+```
+
+---
+
 *Generated from notebook 06. See [`docs/BENCHMARKS.md`](BENCHMARKS.md) for
 the full benchmark comparison tables.*

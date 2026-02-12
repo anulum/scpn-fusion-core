@@ -265,6 +265,8 @@ Representative single-shot runtimes on contemporary hardware (2024-2025 publicat
 | **P-EFIT** | GPU-accelerated reconstruction | <1 ms | Fortran+OpenACC |
 | **SCPN (Rust)** | **Full-stack** | **~4 s recon, 15 ms equil.** | **Rust+Python** |
 
+Struggling with convergence? See the [Solver Tuning Guide](docs/SOLVER_TUNING_GUIDE.md) + benchmarks notebook Part F.
+
 ### Resources
 
 - **Full comparison tables:** [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)
