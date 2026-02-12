@@ -72,10 +72,18 @@ pub struct PedestalParams {
     pub core_alpha: f64,
 }
 
-fn default_ped_top() -> f64 { 0.92 }
-fn default_ped_width() -> f64 { 0.05 }
-fn default_ped_height() -> f64 { 1.0 }
-fn default_core_alpha() -> f64 { 0.3 }
+fn default_ped_top() -> f64 {
+    0.92
+}
+fn default_ped_width() -> f64 {
+    0.05
+}
+fn default_ped_height() -> f64 {
+    1.0
+}
+fn default_core_alpha() -> f64 {
+    0.3
+}
 
 impl Default for PedestalParams {
     fn default() -> Self {

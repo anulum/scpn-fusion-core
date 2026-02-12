@@ -160,12 +160,7 @@ fn gs_matvec(x_grid: &Array2<f64>, grid: &Grid2D, out: &mut [f64]) {
 
 /// Convenience wrapper: flat vector in → flat vector out, using a
 /// scratch grid to hold the 2D form (boundaries zeroed).
-fn gs_matvec_flat(
-    x: &[f64],
-    grid: &Grid2D,
-    scratch: &mut Array2<f64>,
-    out: &mut [f64],
-) {
+fn gs_matvec_flat(x: &[f64], grid: &Grid2D, scratch: &mut Array2<f64>, out: &mut [f64]) {
     let nz = grid.nz;
     let nr = grid.nr;
 
@@ -463,10 +458,8 @@ pub fn gmres_solve(
             }
 
             // Compute new Givens rotation to zero H[j+1, j]
-            let rot = GivensRotation::compute(
-                h_store[j * h_rows + j],
-                h_store[j * h_rows + (j + 1)],
-            );
+            let rot =
+                GivensRotation::compute(h_store[j * h_rows + j], h_store[j * h_rows + (j + 1)]);
             {
                 let a_ptr = j * h_rows + j;
                 let b_ptr = j * h_rows + (j + 1);
@@ -626,19 +619,13 @@ mod tests {
 
         let result = gmres_solve(&mut psi, &source, &grid, &GmresConfig::default());
 
-        let max_val: f64 = psi
-            .iter()
-            .cloned()
-            .fold(0.0_f64, |a, b| a.max(b.abs()));
+        let max_val: f64 = psi.iter().cloned().fold(0.0_f64, |a, b| a.max(b.abs()));
         assert!(
             max_val < 1e-14,
             "Zero source should give zero solution: max = {}",
             max_val
         );
-        assert!(
-            result.converged,
-            "Zero source should converge immediately"
-        );
+        assert!(result.converged, "Zero source should converge immediately");
     }
 
     #[test]

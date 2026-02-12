@@ -478,6 +478,9 @@ mod tests {
             !kernel.psi().iter().any(|v| v.is_infinite()),
             "H-mode solve produced Inf"
         );
-        assert!(result.iterations > 0, "H-mode should run at least 1 iteration");
+        assert!(
+            result.iterations > 0,
+            "H-mode should run at least 1 iteration"
+        );
     }
 }
