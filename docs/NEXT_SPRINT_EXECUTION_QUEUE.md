@@ -46,14 +46,15 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - Completed: `GDEP-01` (NSTX-U/SPARC digital-twin ingest hook with SNN scenario planning and thresholded validation).
 - Completed: `GDEP-02` (GPU runtime integration bridge for multigrid + SNN lanes with deterministic latency/speedup gates).
 - Completed: `GDEP-03` (blind EU-DEMO/K-DEMO synthetic holdout dashboard with strict RMSE/parity thresholds).
-- Next active task: `GDEP-05` RFC/implementation staging.
+- Completed: `GDEP-05` (v2.0-cutting-edge release-readiness gate and changelog contract validation lane).
+- Next active task: `GPHY-01` RFC/implementation staging.
 
 ## Explicitly Deferred (Not In Sprint S1)
 
 - `GNEU-01`, `GNEU-02`, `GNEU-03`
 - `GAI-01`, `GAI-02`, `GAI-03`
 - `GMVR-01`, `GMVR-02`, `GMVR-03`
-- `GDEP-01`, `GDEP-02`, `GDEP-05`
+- `GDEP-01`, `GDEP-02`
 - `GPHY-01`, `GPHY-02`, `GPHY-03`, `GPHY-04`, `GPHY-05`, `GPHY-06`
 
 ## Merge Gate Checklist (Per PR)

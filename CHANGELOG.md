@@ -10,6 +10,12 @@
 
 ## Unreleased
 
+### Cutting-Edge Release Staging
+
+- Prepared `v2.0-cutting-edge` release contract:
+  - Novum elevated - SNN + GyroSwin hybrids for resilient, 1000x fast control; MVR grounded in 2025-2026 liquid metal/HTS.
+- Added deterministic release-readiness validator (`validation/gdep_05_release_readiness.py`) with tracker/changelog gate checks.
+
 ### Stability and CI
 
 - Hardened 3D LCFS extraction for coarse smoke meshes:
