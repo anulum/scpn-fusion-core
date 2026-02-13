@@ -38,3 +38,7 @@ files = [
     "src/scpn_fusion/scpn/compiler.py",
     "src/scpn_fusion/scpn/__init__.py",
 ]
+
+[[tool.mypy.overrides]]
+module = ["sc_neurocore", "sc_neurocore.*"]
+ignore_missing_imports = true

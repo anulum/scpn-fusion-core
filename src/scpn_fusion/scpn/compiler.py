@@ -38,10 +38,10 @@ logger = logging.getLogger(__name__)
 _HAS_SC_NEUROCORE = False
 
 try:
-    from sc_neurocore import StochasticLIFNeuron  # type: ignore[import-untyped]
+    from sc_neurocore import StochasticLIFNeuron
     from sc_neurocore import generate_bernoulli_bitstream
     from sc_neurocore import RNG as _SC_RNG
-    from sc_neurocore.accel.vector_ops import pack_bitstream, vec_and, vec_popcount  # type: ignore[import-untyped]
+    from sc_neurocore.accel.vector_ops import pack_bitstream, vec_and, vec_popcount
 
     _HAS_SC_NEUROCORE = True
     logger.info("sc_neurocore detected — stochastic path enabled.")

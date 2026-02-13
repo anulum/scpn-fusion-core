@@ -29,6 +29,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
+      - name: Install sc-neurocore (Python 3.12 lane)
+        if: matrix.python-version == '3.12'
+        run: |
+          pip install "git+https://github.com/anulum/sc-neurocore.git"
       - name: Run tests
         run: pytest tests/ -v
       - name: Run property-based tests (Hypothesis)
@@ -237,6 +241,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
+      - name: Install sc-neurocore
+        run: |
+          pip install "git+https://github.com/anulum/sc-neurocore.git"
       - name: IPB98 confinement scaling validation
         run: pytest tests/test_uncertainty.py -v --tb=short
       - name: Full regression suite
