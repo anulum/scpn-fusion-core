@@ -51,6 +51,7 @@ from scpn_fusion.scpn.artifact import (
     ArtifactValidationError,
     PackedWeights,
     PackedWeightsGroup,
+    PlaceInjection,
     decode_u64_compact,
     encode_u64_compact,
     load_artifact,
@@ -710,6 +711,52 @@ class TestIntegration:
             assert "timing_ms" in rec
         finally:
             os.unlink(log_path)
+
+    def test_controller_supports_passthrough_injection_sources(
+        self, artifact_path: str
+    ) -> None:
+        art = load_artifact(artifact_path)
+        art.initial_state.place_injections.append(
+            PlaceInjection(
+                place_id=0,
+                source="density_norm",
+                scale=1.0,
+                offset=0.0,
+                clamp_0_1=True,
+            )
+        )
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=77,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+        )
+        obs = {"R_axis_m": 6.2, "Z_axis_m": 0.0, "density_norm": 0.73}
+        act = c.step(obs, 0)
+        assert "dI_PF3_A" in act
+        assert "dI_PF_topbot_A" in act
+
+    def test_controller_passthrough_injection_missing_key_raises(
+        self, artifact_path: str
+    ) -> None:
+        art = load_artifact(artifact_path)
+        art.initial_state.place_injections.append(
+            PlaceInjection(
+                place_id=0,
+                source="density_norm",
+                scale=1.0,
+                offset=0.0,
+                clamp_0_1=True,
+            )
+        )
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=88,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+        )
+        with pytest.raises(KeyError, match="density_norm"):
+            c.step({"R_axis_m": 6.2, "Z_axis_m": 0.0}, 0)
 
 
 # ═════════════════════════════════════════════════════════════════════════════

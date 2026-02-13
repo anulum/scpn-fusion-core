@@ -99,6 +99,13 @@ class NeuroSymbolicController:
             ],
             dtype=np.float64,
         )
+        default_sources = {"x_R_pos", "x_R_neg", "x_Z_pos", "x_Z_neg"}
+        passthrough_sources: list[str] = []
+        for inj in self.artifact.initial_state.place_injections:
+            src = inj.source
+            if src not in default_sources and src not in passthrough_sources:
+                passthrough_sources.append(src)
+        self._passthrough_sources = passthrough_sources
 
         # Live state
         self.marking: List[float] = artifact.initial_state.marking[:]
@@ -155,7 +162,12 @@ class NeuroSymbolicController:
 
         # 1. Feature extraction
         obs_map = {key: float(cast(float, value)) for key, value in obs.items()}
-        feats = extract_features(obs_map, self.targets, self.scales)
+        feats = extract_features(
+            obs_map,
+            self.targets,
+            self.scales,
+            passthrough_keys=self._passthrough_sources or None,
+        )
 
         # 2. Inject features into marking
         self._inject_places(feats)
