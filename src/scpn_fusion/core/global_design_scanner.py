@@ -20,6 +20,7 @@ except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
 from scpn_fusion.core.divertor_thermal_sim import DivertorLab
+from scpn_fusion.core.heat_ml_shadow_surrogate import HeatMLShadowSurrogate
 from scpn_fusion.engineering.balance_of_plant import PowerPlantModel
 
 class GlobalDesignExplorer:
@@ -30,6 +31,8 @@ class GlobalDesignExplorer:
     """
     def __init__(self, base_config_path):
         self.base_config_path = base_config_path
+        self.heat_ml_shadow = HeatMLShadowSurrogate()
+        self.heat_ml_shadow.fit_synthetic(seed=42, samples=1536)
         
     def evaluate_design(self, R_maj, B_field, I_plasma):
         """
@@ -64,6 +67,14 @@ class GlobalDesignExplorer:
         P_sol = 0.2 * P_fus + 50.0 # Alpha + Aux
         # q_div ~ P_sol / (R * lambda)
         Div_Load = P_sol / (R_maj * lambda_q * 1e-3) / 10.0 # Expansion factor 10
+
+        # HEAT-ML magnetic-shadow attenuation (GAI-03).
+        b_pol_equiv = max(0.4, 0.22 * B_field)
+        shadow_features = np.array([R_maj, b_pol_equiv, P_sol, 10.0, 1.65, 0.35, -1.8])
+        shadow_fraction = float(self.heat_ml_shadow.predict_shadow_fraction(shadow_features)[0])
+        Div_Load_Optimized = float(
+            self.heat_ml_shadow.predict_divertor_flux(Div_Load, shadow_features)[0]
+        )
         
         # Engineering Q
         P_aux = 50.0
@@ -74,7 +85,10 @@ class GlobalDesignExplorer:
             'P_fus': P_fus,
             'Q': Q_eng,
             'Wall_Load': Neutron_Load,
-            'Div_Load': Div_Load,
+            'Div_Load_Baseline': Div_Load,
+            'Shadow_Fraction': shadow_fraction,
+            'Div_Load_Optimized': Div_Load_Optimized,
+            'Div_Load': Div_Load_Optimized,
             'Cost': R_maj**3 * B_field # Rough proxy for cost
         }
 
@@ -105,8 +119,8 @@ class GlobalDesignExplorer:
 
     def analyze_pareto(self, df):
         # Filter: Viable Reactors
-        # Q > 2 (Pilot Goal), Wall Load < 5.0
-        viable = df[ (df['Q'] > 2.0) & (df['Wall_Load'] < 5.0) ]
+        # Q > 2 (Pilot Goal), Wall Load < 5.0, optimized divertor load < 60
+        viable = df[(df['Q'] > 2.0) & (df['Wall_Load'] < 5.0) & (df['Div_Load'] < 60.0)]
         
         print(f"Viable Reactors (Q>2, Load<5): {len(viable)}")
         
@@ -122,7 +136,8 @@ class GlobalDesignExplorer:
         print(f"Field:  {best['B']:.2f} T")
         print(f"Power:  {best['P_fus']:.1f} MW")
         print(f"Cost Index: {best['Cost']:.1f}")
-        print(f"Div Load: {best['Div_Load']:.1f} MW/m2")
+        print(f"Div Load (baseline): {best['Div_Load_Baseline']:.1f} MW/m2")
+        print(f"Div Load (HEAT-ML optimized): {best['Div_Load_Optimized']:.1f} MW/m2")
         
         # Plot
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -143,7 +158,7 @@ class GlobalDesignExplorer:
         # B field vs Divertor Load
         sc2 = ax2.scatter(df['B'], df['Div_Load'], c=df['P_fus'], cmap='plasma', alpha=0.5)
         ax2.set_xlabel("Magnetic Field B (T)")
-        ax2.set_ylabel("Divertor Heat Flux (MW/m2)")
+        ax2.set_ylabel("Divertor Heat Flux (MW/m2, HEAT-ML optimized)")
         ax2.set_yscale('log')
         ax2.axhline(10, color='green', linestyle='--', label='W Limit (10)')
         ax2.axhline(50, color='orange', linestyle='--', label='Li Limit (50)')
