@@ -7,12 +7,11 @@
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel
-import sys
-import os
 
 # --- FLIGHT PARAMETERS ---
 SHOT_DURATION = 50 # Time steps
@@ -143,6 +142,7 @@ class IsoFluxController:
 
 if __name__ == "__main__":
     # Path to existing config
-    cfg_path = "03_CODE/SCPN-Fusion-Core/iter_config.json"
-    sim = IsoFluxController(cfg_path)
+    repo_root = Path(__file__).resolve().parents[3]
+    cfg_path = repo_root / "iter_config.json"
+    sim = IsoFluxController(str(cfg_path))
     sim.run_shot()

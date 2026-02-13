@@ -7,12 +7,11 @@
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel
-import sys
-import os
 
 # --- MISSION PARAMETERS ---
 TARGET_R = 6.0
@@ -175,10 +174,11 @@ class OptimalController:
 
 if __name__ == "__main__":
     # Path to config
-    cfg = "03_CODE/SCPN-Fusion-Core/iter_config.json"
+    repo_root = Path(__file__).resolve().parents[3]
+    cfg = repo_root / "iter_config.json"
     
     # Initialize and Identify
-    pilot = OptimalController(cfg)
+    pilot = OptimalController(str(cfg))
     pilot.identify_system()
     
     # Run

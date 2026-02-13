@@ -7,12 +7,11 @@
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel
-import sys
-import os
 import time
 
 # --- SOTA PARAMETERS ---
@@ -156,8 +155,9 @@ def run_sota_simulation():
     print("\n--- SCPN FUSION SOTA: Neural-MPC Hybrid Control ---")
     
     # 1. Init Real Physics (Ground Truth)
-    config_path = "03_CODE/SCPN-Fusion-Core/iter_config.json"
-    kernel = FusionKernel(config_path)
+    repo_root = Path(__file__).resolve().parents[3]
+    config_path = repo_root / "iter_config.json"
+    kernel = FusionKernel(str(config_path))
     
     # 2. Train Surrogate (The "Digital Twin" used for planning)
     # State Vector: [R_axis, Z_axis, X_R, X_Z]
