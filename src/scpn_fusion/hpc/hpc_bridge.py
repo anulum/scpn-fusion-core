@@ -7,6 +7,7 @@
 # ──────────────────────────────────────────────────────────────────────
 import ctypes
 import logging
+import math
 import numpy as np
 import os
 import platform
@@ -41,6 +42,26 @@ def _require_c_contiguous_f64(
             f"{name} shape mismatch: expected {expected_shape}, received {tuple(array.shape)}"
         )
     return array
+
+
+def _sanitize_convergence_params(
+    max_iterations: int,
+    tolerance: float,
+    omega: float,
+) -> tuple[int, float, float]:
+    """Return safe convergence parameters for native calls."""
+    max_iters = max(int(max_iterations), 1)
+
+    omega_safe = float(omega)
+    if not math.isfinite(omega_safe):
+        omega_safe = 1.8
+    omega_safe = min(max(omega_safe, 0.1), 1.99)
+
+    tol_safe = float(tolerance)
+    if not math.isfinite(tol_safe) or tol_safe < 0.0:
+        tol_safe = 0.0
+
+    return max_iters, tol_safe, omega_safe
 
 
 class HPCBridge:
@@ -289,6 +310,9 @@ class HPCBridge:
             return None
         j_input, expected_shape = prepared
         psi_target = _require_c_contiguous_f64(psi_out, expected_shape, "psi_out")
+        max_iters, tol_safe, omega_safe = _sanitize_convergence_params(
+            max_iterations, tolerance, omega
+        )
 
         if not self._has_converged_api:
             self.lib.run_step(
@@ -296,9 +320,9 @@ class HPCBridge:
                 j_input,
                 psi_target,
                 int(j_input.size),
-                int(max(max_iterations, 1)),
+                int(max_iters),
             )
-            return int(max(max_iterations, 1)), float("nan")
+            return int(max_iters), float("nan")
 
         final_delta = ctypes.c_double(0.0)
         iterations_used = int(
@@ -307,9 +331,9 @@ class HPCBridge:
                 j_input,
                 psi_target,
                 int(j_input.size),
-                int(max(max_iterations, 1)),
-                float(omega),
-                float(max(tolerance, 0.0)),
+                int(max_iters),
+                float(omega_safe),
+                float(tol_safe),
                 ctypes.byref(final_delta),
             )
         )

@@ -187,6 +187,26 @@ def test_solve_until_converged_into_reuses_output_buffer() -> None:
     assert bridge.lib.last_max_iterations == 33
 
 
+def test_solve_until_converged_into_sanitizes_nonfinite_params() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
+    out_buf = np.empty((3, 2), dtype=np.float64)
+    out = bridge.solve_until_converged_into(
+        j_phi,
+        out_buf,
+        max_iterations=0,
+        tolerance=float("nan"),
+        omega=float("inf"),
+    )
+    assert out is not None
+    iters, delta = out
+    assert iters == 7
+    assert abs(delta - 2.5e-4) < 1e-12
+    assert bridge.lib.last_max_iterations == 1
+    assert abs(bridge.lib.last_omega - 1.8) < 1e-12
+    assert abs(bridge.lib.last_tolerance - 0.0) < 1e-12
+
+
 def test_solve_until_converged_falls_back_without_native_api() -> None:
     bridge = _make_bridge(nr=2, nz=3)
     bridge._has_converged_api = False

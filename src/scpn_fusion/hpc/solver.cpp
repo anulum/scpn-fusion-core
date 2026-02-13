@@ -228,8 +228,12 @@ void run_step(void *solver_ptr,
     }
 
     auto *solver = static_cast<FastSolver *>(solver_ptr);
+    const size_t n = static_cast<size_t>(size);
+    if (n != solver->get_size()) {
+        return;
+    }
 
-    solver->set_current_profile(j_array, static_cast<size_t>(size));
+    solver->set_current_profile(j_array, n);
 
     const int n_iter = std::max(iterations, 1);
     for (int i = 0; i < n_iter; ++i) {
@@ -237,7 +241,7 @@ void run_step(void *solver_ptr,
     }
 
     const double *result = solver->get_psi_ptr();
-    std::copy(result, result + size, psi_array);
+    std::copy(result, result + n, psi_array);
 }
 
 /// Run SOR with early convergence stop based on max |delta psi|.
@@ -260,11 +264,20 @@ int run_step_converged(void *solver_ptr,
     }
 
     auto *solver = static_cast<FastSolver *>(solver_ptr);
-    solver->set_current_profile(j_array, static_cast<size_t>(size));
+    const size_t n = static_cast<size_t>(size);
+    if (n != solver->get_size()) {
+        if (final_delta_out != nullptr) {
+            *final_delta_out = 0.0;
+        }
+        return 0;
+    }
+    solver->set_current_profile(j_array, n);
 
     const int n_iter = std::max(max_iterations, 1);
-    const double omega_clamped = std::clamp(omega, 0.1, 1.99);
-    const double tol = std::max(tolerance, 0.0);
+    const double omega_safe = std::isfinite(omega) ? omega : 1.8;
+    const double tol_safe = std::isfinite(tolerance) ? tolerance : 0.0;
+    const double omega_clamped = std::clamp(omega_safe, 0.1, 1.99);
+    const double tol = std::max(tol_safe, 0.0);
 
     double last_delta = 0.0;
     int performed = 0;
@@ -277,7 +290,7 @@ int run_step_converged(void *solver_ptr,
     }
 
     const double *result = solver->get_psi_ptr();
-    std::copy(result, result + size, psi_array);
+    std::copy(result, result + n, psi_array);
     if (final_delta_out != nullptr) {
         *final_delta_out = last_delta;
     }
