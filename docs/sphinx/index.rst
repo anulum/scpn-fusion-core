@@ -17,6 +17,7 @@ Tokamak plasma physics simulation and neuro-symbolic control suite.
    modules/engineering
    modules/scpn
    modules/hpc
+   gpu_roadmap
 
 Indices and tables
 ==================
