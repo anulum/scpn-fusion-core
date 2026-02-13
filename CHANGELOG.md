@@ -35,6 +35,10 @@
   - new `symplectic.rs` with canonical velocity-Verlet stepper and RK4 reference
   - long-horizon Hamiltonian drift checks for harmonic-oscillator stress profiles
   - regression coverage for bounded symplectic drift and coarse-step drift superiority vs RK4
+- Added reduced non-LTE impurity-radiation lookup in `fusion-nuclear/wall_interaction.rs`:
+  - ADAS-style synthetic PEC grids with charge-state distinction (including W20+ and W40+)
+  - bilinear PEC interpolation in `(log ne, log Te)` space
+  - collisional-radiative power-density and volume-integrated radiative-loss helpers
 - Upgraded AMR hierarchy and kernel integration to level-aware scaling (`2^level`) for multi-level patch colocation/prolongation.
 - Added AMR multilevel tests for hierarchy generation and level-scaled interpolation.
 - Added low-order toroidal mode coupling closure in `fusion-core` transport:

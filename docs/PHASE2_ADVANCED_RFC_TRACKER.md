@@ -33,7 +33,7 @@ Legend:
 | GDEP-05 | Done | Done (`docs/rfc/GDEP-05_RFC.md`, `validation/gdep_05_release_readiness.py`, `tests/test_gdep_05_release_readiness.py`) | Done (repository-local metadata/changelog scope) | Done (required done-coverage + changelog contract) | Done (deterministic smoke profile) | Unassigned |
 | GPHY-01 | Done | Done (`docs/rfc/GPHY-01_RFC.md`, `scpn-fusion-rs/crates/fusion-core/src/particles.rs`, `scpn-fusion-rs/crates/fusion-core/src/kernel.rs`) | Done (synthetic particle overlay scope) | Done (Boris invariance + deposition + blend-to-target checks) | Done (`cargo test -p fusion-core` bounded) | Unassigned |
 | GPHY-02 | Done | Done (`docs/rfc/GPHY-02_RFC.md`, `scpn-fusion-rs/crates/fusion-math/src/symplectic.rs`) | Done (analytic synthetic Hamiltonian scope) | Done (bounded long-horizon drift + coarse-step symplectic vs RK4 comparison) | Done (`cargo test -p fusion-math` bounded) | Unassigned |
-| GPHY-03 | Pending | Pending | Pending | Pending | Pending | Unassigned |
+| GPHY-03 | Done | Done (`docs/rfc/GPHY-03_RFC.md`, `scpn-fusion-rs/crates/fusion-nuclear/src/wall_interaction.rs`) | Done (synthetic ADAS-style table scope) | Done (charge-state PEC differentiation + CR power/loss checks) | Done (`cargo test -p fusion-nuclear` bounded) | Unassigned |
 | GPHY-04 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GPHY-05 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GPHY-06 | Pending | Pending | Pending | Pending | Pending | Unassigned |
