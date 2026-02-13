@@ -75,20 +75,27 @@ impl AmrKernelSolver {
             return (psi, hierarchy);
         }
 
+        fn refinement_scale(level: usize) -> usize {
+            let max_shift = usize::BITS as usize - 1;
+            let shift = level.min(max_shift) as u32;
+            1usize << shift
+        }
+
         for patch in &mut hierarchy.patches {
             let (iz_lo, _iz_hi, ir_lo, _ir_hi) = patch.bounds;
+            let scale = refinement_scale(patch.level);
 
             for pz in 0..patch.grid.nz {
                 for pr in 0..patch.grid.nr {
-                    let base_iz = (iz_lo + pz / 2).min(base_grid.nz - 1);
-                    let base_ir = (ir_lo + pr / 2).min(base_grid.nr - 1);
+                    let base_iz = (iz_lo + pz / scale).min(base_grid.nz - 1);
+                    let base_ir = (ir_lo + pr / scale).min(base_grid.nr - 1);
                     patch.psi[[pz, pr]] = psi[[base_iz, base_ir]];
                 }
             }
 
             let patch_source = Array2::from_shape_fn((patch.grid.nz, patch.grid.nr), |(pz, pr)| {
-                let base_iz = (iz_lo + pz / 2).min(base_grid.nz - 1);
-                let base_ir = (ir_lo + pr / 2).min(base_grid.nr - 1);
+                let base_iz = (iz_lo + pz / scale).min(base_grid.nz - 1);
+                let base_ir = (ir_lo + pr / scale).min(base_grid.nr - 1);
                 source[[base_iz, base_ir]]
             });
 
@@ -103,10 +110,14 @@ impl AmrKernelSolver {
 
         let blend = self.config.blend.clamp(0.0, 1.0);
         for patch in &hierarchy.patches {
+            let scale = refinement_scale(patch.level);
             for iz in patch.bounds.0..=patch.bounds.1 {
                 for ir in patch.bounds.2..=patch.bounds.3 {
-                    let pz = (iz - patch.bounds.0) * 2;
-                    let pr = (ir - patch.bounds.2) * 2;
+                    let pz = (iz - patch.bounds.0) * scale;
+                    let pr = (ir - patch.bounds.2) * scale;
+                    if pz >= patch.grid.nz || pr >= patch.grid.nr {
+                        continue;
+                    }
                     let patch_val = patch.psi[[pz, pr]];
                     psi[[iz, ir]] = (1.0 - blend) * psi[[iz, ir]] + blend * patch_val;
                 }
@@ -180,5 +191,26 @@ mod tests {
         );
         let err = rel_l2(&amr_off, &coarse);
         assert!(err < 1e-12, "No-refinement path should match coarse solve");
+    }
+
+    #[test]
+    fn test_amr_kernel_multilevel_hierarchy_when_enabled() {
+        let grid = Grid2D::new(33, 33, 1.0, 2.0, -1.0, 1.0);
+        let source = gaussian_source(&grid);
+        let solver = AmrKernelSolver::new(AmrKernelConfig {
+            max_levels: 3,
+            refinement_threshold: 0.05,
+            ..Default::default()
+        });
+
+        let (_psi, hierarchy) = solver.solve_with_hierarchy(&grid, &source);
+        assert!(
+            hierarchy.patches.len() >= 2,
+            "Expected multi-level AMR hierarchy for max_levels=3"
+        );
+        assert_eq!(
+            hierarchy.patches.iter().map(|p| p.level).max().unwrap_or(0),
+            2
+        );
     }
 }

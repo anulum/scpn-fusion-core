@@ -36,6 +36,45 @@ impl AmrHierarchy {
         }
     }
 
+    fn refinement_scale(level: usize) -> usize {
+        let max_shift = usize::BITS as usize - 1;
+        let shift = level.min(max_shift) as u32;
+        1usize << shift
+    }
+
+    fn make_patch(
+        &self,
+        level: usize,
+        iz_lo: usize,
+        iz_hi: usize,
+        ir_lo: usize,
+        ir_hi: usize,
+    ) -> Option<AmrPatch> {
+        if iz_hi <= iz_lo || ir_hi <= ir_lo {
+            return None;
+        }
+        let scale = Self::refinement_scale(level);
+        let nz_patch = (iz_hi - iz_lo) * scale + 1;
+        let nr_patch = (ir_hi - ir_lo) * scale + 1;
+        if nz_patch < 3 || nr_patch < 3 {
+            return None;
+        }
+
+        let r_min = self.base.r[ir_lo];
+        let r_max = self.base.r[ir_hi];
+        let z_min = self.base.z[iz_lo];
+        let z_max = self.base.z[iz_hi];
+        let grid = Grid2D::new(nr_patch, nz_patch, r_min, r_max, z_min, z_max);
+        let psi = Array2::zeros((nz_patch, nr_patch));
+
+        Some(AmrPatch {
+            grid,
+            psi,
+            level,
+            bounds: (iz_lo, iz_hi, ir_lo, ir_hi),
+        })
+    }
+
     /// Refine in pedestal-adjacent cells where |∇²J_phi| exceeds threshold.
     pub fn refine(&mut self, error_field: &Array2<f64>) {
         self.patches.clear();
@@ -89,21 +128,55 @@ impl AmrHierarchy {
             return;
         }
 
-        let r_min = self.base.r[ir_lo];
-        let r_max = self.base.r[ir_hi];
-        let z_min = self.base.z[iz_lo];
-        let z_max = self.base.z[iz_hi];
-        let nr_patch = (ir_hi - ir_lo) * 2 + 1;
-        let nz_patch = (iz_hi - iz_lo) * 2 + 1;
-        let grid = Grid2D::new(nr_patch, nz_patch, r_min, r_max, z_min, z_max);
-        let psi = Array2::zeros((nz_patch, nr_patch));
+        if let Some(level1) = self.make_patch(1, iz_lo, iz_hi, ir_lo, ir_hi) {
+            self.patches.push(level1);
+        } else {
+            return;
+        }
 
-        self.patches.push(AmrPatch {
-            grid,
-            psi,
-            level: 1,
-            bounds: (iz_lo, iz_hi, ir_lo, ir_hi),
-        });
+        let mut parent_bounds = (iz_lo, iz_hi, ir_lo, ir_hi);
+        // `max_levels` counts total hierarchy levels including base level 0.
+        // Therefore refined patch levels span 1..(max_levels-1).
+        for level in 2..self.max_levels {
+            let threshold = self.refinement_threshold * (1.0 + 0.35 * (level as f64 - 1.0));
+            let mut l_iz_lo = usize::MAX;
+            let mut l_iz_hi = 0usize;
+            let mut l_ir_lo = usize::MAX;
+            let mut l_ir_hi = 0usize;
+
+            for iz in parent_bounds.0..=parent_bounds.1 {
+                for ir in parent_bounds.2..=parent_bounds.3 {
+                    let rho = (self.base.r[ir] - self.base.r[0]) / r_span;
+                    if rho < 0.9 || error_field[[iz, ir]] <= threshold {
+                        continue;
+                    }
+                    l_iz_lo = l_iz_lo.min(iz);
+                    l_iz_hi = l_iz_hi.max(iz);
+                    l_ir_lo = l_ir_lo.min(ir);
+                    l_ir_hi = l_ir_hi.max(ir);
+                }
+            }
+
+            if l_iz_lo == usize::MAX {
+                break;
+            }
+
+            l_iz_lo = l_iz_lo.saturating_sub(pad).max(parent_bounds.0).max(1);
+            l_ir_lo = l_ir_lo.saturating_sub(pad).max(parent_bounds.2).max(1);
+            l_iz_hi = (l_iz_hi + pad).min(parent_bounds.1).min(self.base.nz - 2);
+            l_ir_hi = (l_ir_hi + pad).min(parent_bounds.3).min(self.base.nr - 2);
+
+            if l_iz_hi <= l_iz_lo || l_ir_hi <= l_ir_lo {
+                break;
+            }
+
+            if let Some(patch) = self.make_patch(level, l_iz_lo, l_iz_hi, l_ir_lo, l_ir_hi) {
+                self.patches.push(patch);
+                parent_bounds = (l_iz_lo, l_iz_hi, l_ir_lo, l_ir_hi);
+            } else {
+                break;
+            }
+        }
     }
 
     pub fn coarsen(&mut self) {
@@ -117,10 +190,14 @@ impl AmrHierarchy {
 
         for patch in &self.patches {
             let (iz_lo, iz_hi, ir_lo, ir_hi) = patch.bounds;
+            let scale = Self::refinement_scale(patch.level);
             for iz in iz_lo..=iz_hi {
                 for ir in ir_lo..=ir_hi {
-                    let pz = (iz - iz_lo) * 2;
-                    let pr = (ir - ir_lo) * 2;
+                    let pz = (iz - iz_lo) * scale;
+                    let pr = (ir - ir_lo) * scale;
+                    if pz >= patch.grid.nz || pr >= patch.grid.nr {
+                        continue;
+                    }
                     out[[iz, ir]] += patch.psi[[pz, pr]];
                     hits[[iz, ir]] += 1.0;
                 }
@@ -188,20 +265,21 @@ mod tests {
 
         for patch in &mut hierarchy.patches {
             let (iz_lo, _iz_hi, ir_lo, _ir_hi) = patch.bounds;
+            let scale = AmrHierarchy::refinement_scale(patch.level);
 
             // Seed patch from collocated coarse values.
             for pz in 0..patch.grid.nz {
                 for pr in 0..patch.grid.nr {
-                    let base_iz = (iz_lo + pz / 2).min(base_grid.nz - 1);
-                    let base_ir = (ir_lo + pr / 2).min(base_grid.nr - 1);
+                    let base_iz = (iz_lo + pz / scale).min(base_grid.nz - 1);
+                    let base_ir = (ir_lo + pr / scale).min(base_grid.nr - 1);
                     patch.psi[[pz, pr]] = psi[[base_iz, base_ir]];
                 }
             }
 
             // Nearest-neighbor source prolongation from base to patch grid.
             let patch_source = Array2::from_shape_fn((patch.grid.nz, patch.grid.nr), |(pz, pr)| {
-                let base_iz = (iz_lo + pz / 2).min(base_grid.nz - 1);
-                let base_ir = (ir_lo + pr / 2).min(base_grid.nr - 1);
+                let base_iz = (iz_lo + pz / scale).min(base_grid.nz - 1);
+                let base_ir = (ir_lo + pr / scale).min(base_grid.nr - 1);
                 source[[base_iz, base_ir]]
             });
 
@@ -210,8 +288,11 @@ mod tests {
             // Inject back (restricted collocation).
             for iz in patch.bounds.0..=patch.bounds.1 {
                 for ir in patch.bounds.2..=patch.bounds.3 {
-                    let pz = (iz - patch.bounds.0) * 2;
-                    let pr = (ir - patch.bounds.2) * 2;
+                    let pz = (iz - patch.bounds.0) * scale;
+                    let pr = (ir - patch.bounds.2) * scale;
+                    if pz >= patch.grid.nz || pr >= patch.grid.nr {
+                        continue;
+                    }
                     psi[[iz, ir]] = 0.5 * psi[[iz, ir]] + 0.5 * patch.psi[[pz, pr]];
                 }
             }
@@ -228,6 +309,54 @@ mod tests {
 
     fn downsample_2x(fine: &Array2<f64>, nz: usize, nr: usize) -> Array2<f64> {
         Array2::from_shape_fn((nz, nr), |(iz, ir)| fine[[iz * 2, ir * 2]])
+    }
+
+    #[test]
+    fn test_amr_refinement_generates_multilevel_when_enabled() {
+        let base = Grid2D::new(33, 33, 1.0, 2.0, -1.0, 1.0);
+        let mut error = Array2::zeros((33, 33));
+        for iz in 10..23 {
+            for ir in 28..32 {
+                error[[iz, ir]] = 12.0;
+            }
+        }
+
+        let mut hierarchy = AmrHierarchy::new(base, 3, 0.5);
+        hierarchy.refine(&error);
+
+        assert!(
+            hierarchy.patches.len() >= 2,
+            "Expected at least two AMR levels when max_levels=3"
+        );
+        let max_level = hierarchy.patches.iter().map(|p| p.level).max().unwrap_or(0);
+        assert_eq!(max_level, 2);
+    }
+
+    #[test]
+    fn test_interpolate_to_base_uses_patch_level_scale() {
+        let base = Grid2D::new(9, 9, 1.0, 2.0, -1.0, 1.0);
+        let mut hierarchy = AmrHierarchy::new(base, 3, 1.0);
+
+        // Level-2 patch has 4x collocation stride relative to base cells.
+        let patch_grid = Grid2D::new(5, 5, 1.5, 1.75, -0.25, 0.0);
+        let mut patch = AmrPatch {
+            grid: patch_grid,
+            psi: Array2::zeros((5, 5)),
+            level: 2,
+            bounds: (3, 4, 4, 5),
+        };
+
+        patch.psi[[0, 0]] = 10.0; // (3,4)
+        patch.psi[[0, 4]] = 20.0; // (3,5)
+        patch.psi[[4, 0]] = 30.0; // (4,4)
+        patch.psi[[4, 4]] = 40.0; // (4,5)
+        hierarchy.patches.push(patch);
+
+        let out = hierarchy.interpolate_to_base();
+        assert!((out[[3, 4]] - 10.0).abs() < 1e-12);
+        assert!((out[[3, 5]] - 20.0).abs() < 1e-12);
+        assert!((out[[4, 4]] - 30.0).abs() < 1e-12);
+        assert!((out[[4, 5]] - 40.0).abs() < 1e-12);
     }
 
     #[test]
