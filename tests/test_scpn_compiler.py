@@ -343,6 +343,32 @@ class TestFusionCompiler:
     @pytest.mark.skipif(
         not _HAS_SC_NEUROCORE, reason="sc_neurocore not installed"
     )
+    def test_custom_lif_runtime_parameters(self, traffic_net: StochasticPetriNet) -> None:
+        compiler = FusionCompiler(
+            bitstream_length=128,
+            seed=7,
+            lif_tau_mem=10.0,
+            lif_noise_std=0.1,
+            lif_dt=0.5,
+            lif_resistance=2.0,
+            lif_refractory_period=3,
+        )
+        compiled = compiler.compile(traffic_net)
+        assert compiled.lif_tau_mem == 10.0
+        assert compiled.lif_noise_std == 0.1
+        assert compiled.lif_dt == 0.5
+        assert compiled.lif_resistance == 2.0
+        assert compiled.lif_refractory_period == 3
+        for neuron in compiled.neurons:
+            assert neuron.tau_mem == 10.0
+            assert neuron.noise_std == 0.1
+            assert neuron.dt == 0.5
+            assert neuron.resistance == 2.0
+            assert neuron.refractory_period == 3
+
+    @pytest.mark.skipif(
+        not _HAS_SC_NEUROCORE, reason="sc_neurocore not installed"
+    )
     def test_packed_weight_shapes(self, compiled: CompiledNet) -> None:
         n_words = int(np.ceil(1024 / 64))  # 16
         assert compiled.W_in_packed.shape == (3, 3, n_words)
@@ -498,3 +524,7 @@ class TestCyclicFlow:
     def test_bitstream_length_minimum(self) -> None:
         with pytest.raises(ValueError, match="bitstream_length"):
             FusionCompiler(bitstream_length=32)
+
+    def test_invalid_lif_parameter_rejected(self) -> None:
+        with pytest.raises(ValueError, match="lif_tau_mem"):
+            FusionCompiler(lif_tau_mem=0.0)

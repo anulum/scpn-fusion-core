@@ -16,9 +16,10 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 from .artifact import Artifact
 from .contracts import (
@@ -32,6 +33,8 @@ from .contracts import (
     decode_actions,
     extract_features,
 )
+
+FloatArray = NDArray[np.float64]
 
 
 class NeuroSymbolicController:
@@ -53,6 +56,7 @@ class NeuroSymbolicController:
         scales: ControlScales,
         sc_n_passes: int = 8,
         sc_bitflip_rate: float = 0.0,
+        sc_binary_margin: float = 0.0,
     ) -> None:
         self.artifact = artifact
         self.seed_base = int(seed_base)
@@ -60,6 +64,7 @@ class NeuroSymbolicController:
         self.scales = scales
         self._sc_n_passes = max(int(sc_n_passes), 1)
         self._sc_bitflip_rate = float(np.clip(sc_bitflip_rate, 0.0, 1.0))
+        self._sc_binary_margin = float(max(0.0, sc_binary_margin))
 
         # Flatten weight matrices for fast indexing
         self._w_in = artifact.weights.w_in.data[:]
@@ -133,7 +138,8 @@ class NeuroSymbolicController:
         t0 = time.perf_counter()
 
         # 1. Feature extraction
-        feats = extract_features(obs, self.targets, self.scales)
+        obs_map = {key: float(cast(float, value)) for key, value in obs.items()}
+        feats = extract_features(obs_map, self.targets, self.scales)
 
         # 2. Inject features into marking
         self._inject_places(feats)
@@ -232,10 +238,20 @@ class NeuroSymbolicController:
             margins = np.maximum(self._margins, 1e-12)
             p_fire = np.clip((a - self._thresholds) / margins, 0.0, 1.0)
         else:
-            # Binary mode keeps exact threshold semantics for stability.
-            p_fire = (a >= self._thresholds).astype(np.float64)
+            if self._sc_binary_margin > 0.0:
+                # Optional smooth probability around threshold for binary mode.
+                p_fire = np.clip(
+                    0.5 + 0.5 * ((a - self._thresholds) / self._sc_binary_margin),
+                    0.0,
+                    1.0,
+                )
+            else:
+                # Binary mode keeps exact threshold semantics for stability.
+                p_fire = (a >= self._thresholds).astype(np.float64)
 
-        if self._firing_mode == "binary" or self._sc_n_passes <= 1:
+        if self._sc_n_passes <= 1 or (
+            self._firing_mode == "binary" and self._sc_binary_margin <= 0.0
+        ):
             f = p_fire
             rng = None
         else:
@@ -258,8 +274,8 @@ class NeuroSymbolicController:
         return f.tolist(), m2.tolist()
 
     def _apply_bit_flip_faults(
-        self, values: np.ndarray, rng: np.random.Generator
-    ) -> np.ndarray:
+        self, values: FloatArray, rng: np.random.Generator
+    ) -> FloatArray:
         """Inject bounded deterministic bit-flip faults into float vectors."""
         out = np.asarray(values, dtype=np.float64).copy()
         if self._sc_bitflip_rate <= 0.0 or out.size == 0:

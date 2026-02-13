@@ -21,7 +21,10 @@ from enum import Enum, auto
 from typing import Dict, List, Tuple
 
 import numpy as np
-from scipy import sparse
+from numpy.typing import NDArray
+from scipy import sparse  # type: ignore[import-untyped]
+
+FloatArray = NDArray[np.float64]
 
 
 class _NodeKind(Enum):
@@ -380,11 +383,11 @@ class StochasticPetriNet:
     def last_validation_report(self) -> Dict[str, object] | None:
         return self._last_validation_report
 
-    def get_initial_marking(self) -> np.ndarray:
+    def get_initial_marking(self) -> FloatArray:
         """Return (n_places,) float64 vector of initial token densities."""
         return np.array(self._place_tokens, dtype=np.float64)
 
-    def get_thresholds(self) -> np.ndarray:
+    def get_thresholds(self) -> FloatArray:
         """Return (n_transitions,) float64 vector of firing thresholds."""
         return np.array(self._transition_thresholds, dtype=np.float64)
 
@@ -416,6 +419,8 @@ class StochasticPetriNet:
             lines.append(f"  {src} --({w:.3f})--> {tgt}{extra}")
 
         if self._compiled:
+            assert self.W_in is not None
+            assert self.W_out is not None
             lines.append("")
             lines.append(
                 f"W_in  (nT={self.W_in.shape[0]}, nP={self.W_in.shape[1]})  "

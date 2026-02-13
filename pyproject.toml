@@ -22,7 +22,19 @@ requires-python = ">=3.8"
 dev = [
     "pytest>=7.0",
     "hypothesis>=6.0",
+    "mypy>=1.10",
 ]
 
 [project.scripts]
 scpn-dashboard = "scpn_fusion.ui.app:main"
+
+[tool.mypy]
+strict = true
+files = [
+    "src/scpn_fusion/scpn/contracts.py",
+    "src/scpn_fusion/scpn/controller.py",
+    "src/scpn_fusion/scpn/structure.py",
+    "src/scpn_fusion/scpn/artifact.py",
+    "src/scpn_fusion/scpn/compiler.py",
+    "src/scpn_fusion/scpn/__init__.py",
+]

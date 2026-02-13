@@ -358,6 +358,52 @@ class TestLevel1Determinism:
         out2 = [c2.step(obs, k) for k in range(20)]
         assert out1 == out2
 
+    def test_binary_threshold_mode_matches_oracle_by_default(self, artifact_path: str) -> None:
+        art = load_artifact(artifact_path)
+        controller = NeuroSymbolicController(
+            artifact=art,
+            seed_base=99,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            sc_n_passes=32,
+            sc_binary_margin=0.0,
+        )
+        obs: ControlObservation = {"R_axis_m": 6.15, "Z_axis_m": 0.0}
+        controller.step(obs, 0)
+        np.testing.assert_allclose(
+            controller.last_sc_firing,
+            controller.last_oracle_firing,
+            atol=0.0,
+        )
+
+    def test_binary_probabilistic_margin_is_deterministic_and_nonoracle(
+        self, artifact_path: str
+    ) -> None:
+        art = load_artifact(artifact_path)
+        kwargs = dict(
+            artifact=art,
+            seed_base=4242,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            sc_n_passes=64,
+            sc_bitflip_rate=0.0,
+            sc_binary_margin=0.2,
+        )
+        c1 = NeuroSymbolicController(**kwargs)
+        c2 = NeuroSymbolicController(**kwargs)
+        obs: ControlObservation = {"R_axis_m": 6.15, "Z_axis_m": 0.0}
+        out1 = []
+        out2 = []
+        diffs = []
+        for k in range(10):
+            out1.append(c1.step(obs, k))
+            diffs.append(
+                float(np.max(np.abs(np.asarray(c1.last_sc_firing) - np.asarray(c1.last_oracle_firing))))
+            )
+            out2.append(c2.step(obs, k))
+        assert out1 == out2
+        assert any(d > 0.0 for d in diffs)
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Level 2 — Primitive correctness (SC vs oracle)

@@ -33,6 +33,18 @@ jobs:
         run: pytest tests/ -v
       - name: Run property-based tests (Hypothesis)
         run: pytest tests/test_hypothesis_properties.py -v --hypothesis-seed=0
+      - name: Static typing (SCPN strict)
+        if: matrix.python-version == '3.12'
+        env:
+          PYTHONPATH: src
+        run: |
+          python -m mypy --strict \
+            src/scpn_fusion/scpn/contracts.py \
+            src/scpn_fusion/scpn/controller.py \
+            src/scpn_fusion/scpn/structure.py \
+            src/scpn_fusion/scpn/artifact.py \
+            src/scpn_fusion/scpn/compiler.py \
+            src/scpn_fusion/scpn/__init__.py
 
   geometry-3d-smoke:
     name: Geometry 3D Smoke

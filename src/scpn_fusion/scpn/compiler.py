@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion import __version__ as PACKAGE_VERSION
 from .structure import StochasticPetriNet
@@ -37,11 +38,10 @@ logger = logging.getLogger(__name__)
 _HAS_SC_NEUROCORE = False
 
 try:
-    from sc_neurocore import StochasticLIFNeuron
+    from sc_neurocore import StochasticLIFNeuron  # type: ignore[import-untyped]
     from sc_neurocore import generate_bernoulli_bitstream
-    from sc_neurocore import bitstream_to_probability
     from sc_neurocore import RNG as _SC_RNG
-    from sc_neurocore.accel.vector_ops import pack_bitstream, vec_and, vec_popcount
+    from sc_neurocore.accel.vector_ops import pack_bitstream, vec_and, vec_popcount  # type: ignore[import-untyped]
 
     _HAS_SC_NEUROCORE = True
     logger.info("sc_neurocore detected — stochastic path enabled.")
@@ -49,6 +49,9 @@ except ImportError:
     logger.warning(
         "sc_neurocore not installed — using numpy float-path only."
     )
+
+FloatArray = NDArray[np.float64]
+UInt64Array = NDArray[np.uint64]
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -79,10 +82,10 @@ def _resolve_git_sha() -> str:
 
 
 def _encode_weight_matrix_packed(
-    W: np.ndarray,
+    W: FloatArray,
     bitstream_length: int,
     seed: int,
-) -> np.ndarray:
+) -> UInt64Array:
     """Encode each element of *W* as a packed uint64 bitstream.
 
     Parameters
@@ -141,23 +144,28 @@ class CompiledNet:
     transition_names: List[str]
 
     # Dense weight matrices (float path)
-    W_in: np.ndarray          # (nT, nP)
-    W_out: np.ndarray         # (nP, nT)
+    W_in: FloatArray          # (nT, nP)
+    W_out: FloatArray         # (nP, nT)
 
     # Pre-packed weight bitstreams (stochastic path) — None if no sc_neurocore
-    W_in_packed: Optional[np.ndarray] = None   # (nT, nP, n_words) uint64
-    W_out_packed: Optional[np.ndarray] = None  # (nP, nT, n_words) uint64
+    W_in_packed: Optional[UInt64Array] = None   # (nT, nP, n_words) uint64
+    W_out_packed: Optional[UInt64Array] = None  # (nP, nT, n_words) uint64
 
     # LIF neurons (one per transition) — empty list if no sc_neurocore
-    neurons: List = field(default_factory=list)
+    neurons: List[Any] = field(default_factory=list)
 
     # Config
     bitstream_length: int = 1024
-    thresholds: np.ndarray = field(default_factory=lambda: np.array([]))
-    initial_marking: np.ndarray = field(default_factory=lambda: np.array([]))
+    thresholds: FloatArray = field(default_factory=lambda: np.array([], dtype=np.float64))
+    initial_marking: FloatArray = field(default_factory=lambda: np.array([], dtype=np.float64))
     seed: int = 42
     firing_mode: str = "binary"
     firing_margin: float = 0.05
+    lif_tau_mem: float = 1e6
+    lif_noise_std: float = 0.0
+    lif_dt: float = 1.0
+    lif_resistance: float = 1.0
+    lif_refractory_period: int = 0
 
     @property
     def has_stochastic_path(self) -> bool:
@@ -167,9 +175,9 @@ class CompiledNet:
 
     def dense_forward(
         self,
-        W_packed: np.ndarray,
-        input_probs: np.ndarray,
-    ) -> np.ndarray:
+        W_packed: UInt64Array,
+        input_probs: FloatArray,
+    ) -> FloatArray:
         """Stochastic matrix-vector product via AND + popcount.
 
         Parameters
@@ -214,13 +222,13 @@ class CompiledNet:
 
     def dense_forward_float(
         self,
-        W: np.ndarray,
-        inputs: np.ndarray,
-    ) -> np.ndarray:
+        W: FloatArray,
+        inputs: FloatArray,
+    ) -> FloatArray:
         """Float-path validation: simple ``W @ inputs``."""
-        return W @ inputs
+        return np.asarray(W @ inputs, dtype=np.float64)
 
-    def lif_fire(self, currents: np.ndarray) -> np.ndarray:
+    def lif_fire(self, currents: FloatArray) -> FloatArray:
         """Run LIF threshold detection on all transitions.
 
         Binary mode: ``f_t = 1 if current >= threshold else 0``
@@ -239,7 +247,7 @@ class CompiledNet:
         if self.firing_mode == "fractional":
             margin = max(self.firing_margin, 1e-12)
             raw = (currents - self.thresholds) / margin
-            return np.clip(raw, 0.0, 1.0)
+            return np.asarray(np.clip(raw, 0.0, 1.0), dtype=np.float64)
 
         # Binary mode
         if self.neurons:
@@ -249,7 +257,7 @@ class CompiledNet:
                 fired[i] = float(neuron.step(float(currents[i])))
             return fired
         else:
-            return (currents >= self.thresholds).astype(np.float64)
+            return np.asarray((currents >= self.thresholds).astype(np.float64), dtype=np.float64)
 
     # ── Convenience ──────────────────────────────────────────────────────
 
@@ -268,7 +276,7 @@ class CompiledNet:
         dt_control_s: float = 0.001,
         readout_config: Optional[Dict[str, Any]] = None,
         injection_config: Optional[List[Dict[str, Any]]] = None,
-    ) -> "artifact_mod.Artifact":
+    ) -> Any:
         """Build an ``Artifact`` from compiled state + user-provided config.
 
         Parameters
@@ -384,11 +392,36 @@ class FusionCompiler:
     seed : Base RNG seed for reproducibility.
     """
 
-    def __init__(self, bitstream_length: int = 1024, seed: int = 42) -> None:
+    def __init__(
+        self,
+        bitstream_length: int = 1024,
+        seed: int = 42,
+        *,
+        lif_tau_mem: float = 1e6,
+        lif_noise_std: float = 0.0,
+        lif_dt: float = 1.0,
+        lif_resistance: float = 1.0,
+        lif_refractory_period: int = 0,
+    ) -> None:
         if bitstream_length < 64:
             raise ValueError("bitstream_length must be >= 64")
+        if lif_tau_mem <= 0.0:
+            raise ValueError("lif_tau_mem must be > 0")
+        if lif_noise_std < 0.0:
+            raise ValueError("lif_noise_std must be >= 0")
+        if lif_dt <= 0.0:
+            raise ValueError("lif_dt must be > 0")
+        if lif_resistance <= 0.0:
+            raise ValueError("lif_resistance must be > 0")
+        if lif_refractory_period < 0:
+            raise ValueError("lif_refractory_period must be >= 0")
         self.bitstream_length = bitstream_length
         self.seed = seed
+        self.lif_tau_mem = float(lif_tau_mem)
+        self.lif_noise_std = float(lif_noise_std)
+        self.lif_dt = float(lif_dt)
+        self.lif_resistance = float(lif_resistance)
+        self.lif_refractory_period = int(lif_refractory_period)
 
     def compile(
         self,
@@ -428,34 +461,36 @@ class FusionCompiler:
                 strict_validation=bool(strict_topology),
                 allow_inhibitor=bool(allow_inhibitor),
             )
+        assert net.W_in is not None
+        assert net.W_out is not None
 
         # 1. Dense matrices
-        W_in = net.W_in.toarray()    # (nT, nP)
-        W_out = net.W_out.toarray()  # (nP, nT)
+        W_in: FloatArray = np.asarray(net.W_in.toarray(), dtype=np.float64)    # (nT, nP)
+        W_out: FloatArray = np.asarray(net.W_out.toarray(), dtype=np.float64)  # (nP, nT)
 
         thresholds = net.get_thresholds()
         initial_marking = net.get_initial_marking()
 
         # 2. LIF neurons (one per transition)
-        neurons: list = []
+        neurons: list[Any] = []
         if _HAS_SC_NEUROCORE:
             for t_idx in range(net.n_transitions):
                 neuron = StochasticLIFNeuron(
                     v_rest=0.0,
                     v_reset=0.0,
                     v_threshold=float(thresholds[t_idx]),
-                    tau_mem=1e6,       # Effectively no leak
-                    dt=1.0,
-                    noise_std=0.0,     # Deterministic threshold
-                    resistance=1.0,    # Current passes through unchanged
-                    refractory_period=0,
+                    tau_mem=self.lif_tau_mem,
+                    dt=self.lif_dt,
+                    noise_std=self.lif_noise_std,
+                    resistance=self.lif_resistance,
+                    refractory_period=self.lif_refractory_period,
                     seed=self.seed + t_idx,
                 )
                 neurons.append(neuron)
 
         # 3. Pre-encode weight bitstreams
-        W_in_packed: np.ndarray | None = None
-        W_out_packed: np.ndarray | None = None
+        W_in_packed: UInt64Array | None = None
+        W_out_packed: UInt64Array | None = None
 
         if _HAS_SC_NEUROCORE:
             W_in_packed = _encode_weight_matrix_packed(
@@ -482,4 +517,9 @@ class FusionCompiler:
             seed=self.seed,
             firing_mode=firing_mode,
             firing_margin=firing_margin,
+            lif_tau_mem=self.lif_tau_mem,
+            lif_noise_std=self.lif_noise_std,
+            lif_dt=self.lif_dt,
+            lif_resistance=self.lif_resistance,
+            lif_refractory_period=self.lif_refractory_period,
         )
