@@ -58,6 +58,7 @@ from scpn_fusion.scpn.artifact import (
     save_artifact,
 )
 from scpn_fusion.scpn.controller import NeuroSymbolicController
+from scpn_fusion.scpn import controller as controller_mod
 
 
 # ── Fixture: 8-place controller net ─────────────────────────────────────────
@@ -377,6 +378,46 @@ class TestLevel1Determinism:
             controller.last_oracle_firing,
             atol=0.0,
         )
+
+    def test_binary_threshold_mode_matches_oracle_for_deterministic_profile(
+        self, artifact_path: str
+    ) -> None:
+        art = load_artifact(artifact_path)
+        controller = NeuroSymbolicController(
+            artifact=art,
+            seed_base=100,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            sc_n_passes=64,
+            runtime_profile="deterministic",
+        )
+        obs: ControlObservation = {"R_axis_m": 6.15, "Z_axis_m": 0.0}
+        controller.step(obs, 0)
+        np.testing.assert_allclose(
+            controller.last_sc_firing,
+            controller.last_oracle_firing,
+            atol=0.0,
+        )
+
+    def test_adaptive_profile_introduces_probabilistic_binary_margin(
+        self, artifact_path: str
+    ) -> None:
+        art = load_artifact(artifact_path)
+        controller = NeuroSymbolicController(
+            artifact=art,
+            seed_base=101,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            sc_n_passes=64,
+            sc_bitflip_rate=0.0,
+            runtime_profile="adaptive",
+        )
+        obs: ControlObservation = {"R_axis_m": 6.15, "Z_axis_m": 0.0}
+        controller.step(obs, 0)
+        delta = np.max(
+            np.abs(np.asarray(controller.last_sc_firing) - np.asarray(controller.last_oracle_firing))
+        )
+        assert float(delta) > 0.0
 
     def test_binary_probabilistic_margin_is_deterministic_and_nonoracle(
         self, artifact_path: str
@@ -836,6 +877,36 @@ class TestIntegration:
         assert "dI_PF_topbot_A" in act
         assert c.last_oracle_firing == []
         assert c.last_oracle_marking == []
+
+    def test_runtime_backend_rust_request_falls_back_when_unavailable(
+        self, artifact_path: str
+    ) -> None:
+        art = load_artifact(artifact_path)
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=222,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            runtime_backend="rust",
+        )
+        if controller_mod._HAS_RUST_SCPN_RUNTIME:
+            assert c.runtime_backend_name == "rust"
+        else:
+            assert c.runtime_backend_name == "numpy"
+
+    def test_runtime_backend_auto_can_force_numpy_via_problem_threshold(
+        self, artifact_path: str
+    ) -> None:
+        art = load_artifact(artifact_path)
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=223,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            runtime_backend="auto",
+            rust_backend_min_problem_size=10**9,
+        )
+        assert c.runtime_backend_name == "numpy"
 
 
 # ═════════════════════════════════════════════════════════════════════════════

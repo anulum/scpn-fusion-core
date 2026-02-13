@@ -4,7 +4,7 @@
 //! diagnostics, and ML modules to Python via PyO3 + numpy.
 
 use ndarray::{Array1, Array2};
-use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray2};
+use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
 use pyo3::prelude::*;
 
 use fusion_core::ignition::calculate_thermodynamics;
@@ -410,6 +410,41 @@ fn measure_magnetics<'py>(
     ndarray::Array1::from_vec(measurements).into_pyarray(py)
 }
 
+// ─── SCPN runtime kernels ───
+
+/// Dense activation kernel for SCPN controller path.
+#[pyfunction]
+fn scpn_dense_activations<'py>(
+    py: Python<'py>,
+    w_in: PyReadonlyArray2<'py, f64>,
+    marking: PyReadonlyArray1<'py, f64>,
+) -> Bound<'py, PyArray1<f64>> {
+    let w = w_in.as_array();
+    let m = marking.as_array();
+    let out = w.dot(&m);
+    out.into_pyarray(py)
+}
+
+/// Dense marking update kernel: clip(m - W_in^T f + W_out f, 0, 1).
+#[pyfunction]
+fn scpn_marking_update<'py>(
+    py: Python<'py>,
+    marking: PyReadonlyArray1<'py, f64>,
+    w_in: PyReadonlyArray2<'py, f64>,
+    w_out: PyReadonlyArray2<'py, f64>,
+    firing: PyReadonlyArray1<'py, f64>,
+) -> Bound<'py, PyArray1<f64>> {
+    let m = marking.as_array();
+    let wi = w_in.as_array();
+    let wo = w_out.as_array();
+    let f = firing.as_array();
+
+    let cons = wi.t().dot(&f);
+    let prod = wo.dot(&f);
+    let out = (&m - &cons + &prod).mapv(|x| x.clamp(0.0, 1.0));
+    out.into_pyarray(py)
+}
+
 // ─── ML ───
 
 /// Simulate a tearing mode plasma shot.
@@ -434,6 +469,8 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(shafranov_bv, m)?)?;
     m.add_function(wrap_pyfunction!(solve_coil_currents, m)?)?;
     m.add_function(wrap_pyfunction!(measure_magnetics, m)?)?;
+    m.add_function(wrap_pyfunction!(scpn_dense_activations, m)?)?;
+    m.add_function(wrap_pyfunction!(scpn_marking_update, m)?)?;
     m.add_function(wrap_pyfunction!(simulate_tearing_mode, m)?)?;
     Ok(())
 }

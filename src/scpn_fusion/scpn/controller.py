@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -35,6 +35,24 @@ from .contracts import (
 )
 
 FloatArray = NDArray[np.float64]
+
+_HAS_RUST_SCPN_RUNTIME = False
+_rust_dense_activations: Optional[Callable[[FloatArray, FloatArray], object]] = None
+_rust_marking_update: Optional[
+    Callable[[FloatArray, FloatArray, FloatArray, FloatArray], object]
+] = None
+
+try:
+    from scpn_fusion_rs import (  # type: ignore[import-not-found]
+        scpn_dense_activations as _rust_dense_activations_impl,
+        scpn_marking_update as _rust_marking_update_impl,
+    )
+
+    _rust_dense_activations = _rust_dense_activations_impl
+    _rust_marking_update = _rust_marking_update_impl
+    _HAS_RUST_SCPN_RUNTIME = True
+except Exception:
+    _HAS_RUST_SCPN_RUNTIME = False
 
 
 class NeuroSymbolicController:
@@ -56,10 +74,13 @@ class NeuroSymbolicController:
         scales: ControlScales,
         sc_n_passes: int = 8,
         sc_bitflip_rate: float = 0.0,
-        sc_binary_margin: float = 0.0,
+        sc_binary_margin: Optional[float] = None,
         sc_antithetic: bool = True,
         enable_oracle_diagnostics: bool = True,
         feature_axes: Optional[Sequence[FeatureAxisSpec]] = None,
+        runtime_profile: str = "adaptive",
+        runtime_backend: str = "auto",
+        rust_backend_min_problem_size: int = 4096,
     ) -> None:
         self.artifact = artifact
         self.seed_base = int(seed_base)
@@ -67,10 +88,16 @@ class NeuroSymbolicController:
         self.scales = scales
         self._sc_n_passes = max(int(sc_n_passes), 1)
         self._sc_bitflip_rate = float(np.clip(sc_bitflip_rate, 0.0, 1.0))
-        self._sc_binary_margin = float(max(0.0, sc_binary_margin))
+        self._runtime_profile = runtime_profile.strip().lower()
+        if self._runtime_profile not in {"adaptive", "deterministic"}:
+            raise ValueError("runtime_profile must be 'adaptive' or 'deterministic'")
         self._sc_antithetic = bool(sc_antithetic)
         self._enable_oracle_diagnostics = bool(enable_oracle_diagnostics)
         self._feature_axes = list(feature_axes) if feature_axes is not None else None
+        self._runtime_backend_request = runtime_backend.strip().lower()
+        if self._runtime_backend_request not in {"auto", "numpy", "rust"}:
+            raise ValueError("runtime_backend must be 'auto', 'numpy', or 'rust'")
+        self._rust_backend_min_problem_size = max(int(rust_backend_min_problem_size), 1)
 
         # Flatten weight matrices for fast indexing
         self._w_in = artifact.weights.w_in.data[:]
@@ -103,6 +130,24 @@ class NeuroSymbolicController:
             ],
             dtype=np.float64,
         )
+        if sc_binary_margin is None:
+            if self._runtime_profile == "adaptive":
+                self._sc_binary_margin = 0.05
+            else:
+                self._sc_binary_margin = 0.0
+        else:
+            self._sc_binary_margin = float(max(0.0, sc_binary_margin))
+
+        problem_size = int(self._nP * self._nT)
+        rust_eligible = _HAS_RUST_SCPN_RUNTIME and (
+            problem_size >= self._rust_backend_min_problem_size
+        )
+        if self._runtime_backend_request == "numpy":
+            self._runtime_backend = "numpy"
+        elif self._runtime_backend_request == "rust":
+            self._runtime_backend = "rust" if _HAS_RUST_SCPN_RUNTIME else "numpy"
+        else:
+            self._runtime_backend = "rust" if rust_eligible else "numpy"
         if self._feature_axes is not None:
             produced_feature_keys = {axis.pos_key for axis in self._feature_axes}
             produced_feature_keys.update(axis.neg_key for axis in self._feature_axes)
@@ -149,6 +194,10 @@ class NeuroSymbolicController:
         self.last_sc_firing = []
         self.last_oracle_marking = self.marking[:] if self._enable_oracle_diagnostics else []
         self.last_sc_marking = self.marking[:]
+
+    @property
+    def runtime_backend_name(self) -> str:
+        return self._runtime_backend
 
     def step(
         self,
@@ -254,7 +303,7 @@ class NeuroSymbolicController:
         m = np.asarray(self.marking, dtype=np.float64)
 
         # Activation: a = W_in @ m
-        a = self._W_in @ m
+        a = self._dense_activations(m)
 
         # Firing decision
         if self._firing_mode == "fractional":
@@ -268,16 +317,14 @@ class NeuroSymbolicController:
         )
 
         # Marking update: m' = clip(m - W_in^T @ f + W_out @ f, 0, 1)
-        cons = self._W_in.T @ f_timed
-        prod = self._W_out @ f_timed
-        m2 = np.clip(m - cons + prod, 0.0, 1.0)
+        m2 = self._marking_update(m, f_timed)
 
         return f_timed.tolist(), m2.tolist()
 
     def _sc_step(self, k: int) -> Tuple[List[float], List[float]]:
         """Deterministic stochastic path with optional bit-flip fault injection."""
         m = np.asarray(self.marking, dtype=np.float64)
-        a = self._W_in @ m
+        a = self._dense_activations(m)
 
         if self._firing_mode == "fractional":
             margins = np.maximum(self._margins, 1e-12)
@@ -318,9 +365,7 @@ class NeuroSymbolicController:
         f_timed, self._sc_cursor = self._apply_transition_timing(
             f, self._sc_pending, self._sc_cursor
         )
-        cons = self._W_in.T @ f_timed
-        prod = self._W_out @ f_timed
-        m2 = np.clip(m - cons + prod, 0.0, 1.0)
+        m2 = self._marking_update(m, f_timed)
         if self._sc_bitflip_rate > 0.0:
             assert rng is not None
             m2 = self._apply_bit_flip_faults(m2, rng)
@@ -355,6 +400,22 @@ class NeuroSymbolicController:
 
         next_cursor = (cursor + 1) % pending.shape[0]
         return fired_now, next_cursor
+
+    def _dense_activations(self, marking: FloatArray) -> FloatArray:
+        if self._runtime_backend == "rust" and _HAS_RUST_SCPN_RUNTIME:
+            assert _rust_dense_activations is not None
+            out = _rust_dense_activations(self._W_in, marking)
+            return np.asarray(out, dtype=np.float64)
+        return np.asarray(self._W_in @ marking, dtype=np.float64)
+
+    def _marking_update(self, marking: FloatArray, firing: FloatArray) -> FloatArray:
+        if self._runtime_backend == "rust" and _HAS_RUST_SCPN_RUNTIME:
+            assert _rust_marking_update is not None
+            out = _rust_marking_update(marking, self._W_in, self._W_out, firing)
+            return np.asarray(out, dtype=np.float64)
+        cons = self._W_in.T @ firing
+        prod = self._W_out @ firing
+        return np.asarray(np.clip(marking - cons + prod, 0.0, 1.0), dtype=np.float64)
 
     def _apply_bit_flip_faults(
         self, values: FloatArray, rng: np.random.Generator
