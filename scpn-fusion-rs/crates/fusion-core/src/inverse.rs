@@ -884,8 +884,7 @@ mod tests {
             kernel_analytical_forward_and_jacobian(&cfg, &probes, params_p, params_ff, &kcfg)
                 .unwrap();
         let jac_fd =
-            kernel_fd_jacobian_from_base(&cfg, &probes, params_p, params_ff, &kcfg, &pred)
-                .unwrap();
+            kernel_fd_jacobian_from_base(&cfg, &probes, params_p, params_ff, &kcfg, &pred).unwrap();
 
         assert_eq!(jac_analytical.len(), jac_fd.len());
         assert!(jac_analytical.iter().all(|row| row.len() == N_PARAMS));
