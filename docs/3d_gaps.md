@@ -16,7 +16,7 @@ The following gaps block full 3D physics fidelity.
 | Gap ID | Current State | Limitation | Required Extension |
 |---|---|---|---|
 | G3D-01 | LCFS extracted from 2D axisymmetric equilibrium and revolved, plus reduced VMEC-like flux-coordinate interface in `src/scpn_fusion/core/equilibrium_3d.py` | Reduced closure only (not a full 3D force-balance VMEC solve) | Extend reduced VMEC-like interface to a full 3D equilibrium solve with force-balance residual closure |
-| G3D-02 | Ray-based LCFS tracing over 2D grid | No field-line topology diagnostics | Add field-line tracing and Poincare map generation |
+| G3D-02 | Ray-based LCFS tracing over 2D grid with reduced 3D field-line and Poincare diagnostics in `src/scpn_fusion/core/fieldline_3d.py` | Reduced closure only (does not yet solve full 3D field-line integration from self-consistent 3D MHD fields) | Extend reduced tracer to full field solve on self-consistent 3D magnetic geometry |
 | G3D-03 | Transport is radial (1.5D) with low-order `n!=0` closure in `fusion-core/src/transport.rs` | Closure model only (no resolved `(rho, phi)` PDE transport) | Extend from reduced spectral closure to native toroidal transport solve |
 | G3D-04 | FNO turbulence is 2D with reduced toroidal-harmonic spectral closure in `fusion-physics/src/fno.rs` | No native `(rho, theta, phi)` 3D spectral tensor evolution | Extend to full 3D FFT/FNO transport with explicit toroidal coordinate state |
 | G3D-05 | Neutronics simplified wall flux methods | No volumetric 3D blanket transport | Add 3D mesh-based neutronics surrogate |
@@ -31,7 +31,8 @@ The following gaps block full 3D physics fidelity.
 3. G3D-04 (reduced toroidal-harmonic turbulence coupling) - completed
 4. G3D-06 (reduced 3D strike-point asymmetry mapping) - completed
 5. G3D-01 (reduced VMEC-like native 3D flux coordinates) - completed
-6. G3D-02 (field-line tracing + Poincare diagnostics)
+6. G3D-02 (reduced field-line tracing + Poincare diagnostics) - completed
+7. G3D-05 (3D blanket neutronics surrogate)
 
 ## Phase 2 Entry Criteria
 

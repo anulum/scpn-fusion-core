@@ -42,6 +42,13 @@
   - integration with `Reactor3DBuilder` for direct 3D surface generation without 2D revolve-only path
   - builder utility `build_vmec_like_equilibrium(...)` to infer baseline shaping from traced 2D LCFS
   - regression coverage in `tests/test_equilibrium_3d.py` and quickstart support for VMEC-like mode
+- Added reduced 3D field-line and Poincare diagnostics:
+  - new `FieldLineTracer3D` in `src/scpn_fusion/core/fieldline_3d.py`
+  - reduced helical field-line tracing over VMEC-like flux coordinates
+  - Poincare section generation for arbitrary toroidal cut planes
+  - `Reactor3DBuilder` helpers: `create_fieldline_tracer(...)` and `generate_poincare_map(...)`
+  - new quickstart workflow in `examples/run_3d_fieldline_quickstart.py`
+  - regression coverage in `tests/test_fieldline_3d.py`
 - Added PCE checked APIs:
   - `PCEModel::try_fit(...) -> FusionResult<PCEModel>`
   - `PCEModel::try_predict(...) -> FusionResult<Array1<f64>>`

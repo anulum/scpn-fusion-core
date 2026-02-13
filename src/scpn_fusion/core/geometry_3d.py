@@ -20,6 +20,7 @@ from typing import Optional
 import numpy as np
 
 from scpn_fusion.core.equilibrium_3d import FourierMode3D, VMECStyleEquilibrium3D
+from scpn_fusion.core.fieldline_3d import FieldLineTrace3D, FieldLineTracer3D
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
@@ -304,6 +305,68 @@ class Reactor3DBuilder:
                 }
             )
         return meshes
+
+    def create_fieldline_tracer(
+        self,
+        *,
+        rotational_transform: float = 0.45,
+        helical_coupling_scale: float = 0.08,
+        radial_coupling_scale: float = 0.0,
+        nfp: int = 1,
+        toroidal_modes: Optional[list[FourierMode3D]] = None,
+        lcfs_resolution: int = 96,
+        radial_steps: int = 512,
+    ) -> FieldLineTracer3D:
+        """Create a reduced 3D field-line tracer."""
+        equilibrium = self.equilibrium_3d
+        if equilibrium is None:
+            equilibrium = self.build_vmec_like_equilibrium(
+                lcfs_resolution=lcfs_resolution,
+                radial_steps=radial_steps,
+                nfp=nfp,
+                toroidal_modes=toroidal_modes,
+            )
+        return FieldLineTracer3D(
+            equilibrium,
+            rotational_transform=rotational_transform,
+            helical_coupling_scale=helical_coupling_scale,
+            radial_coupling_scale=radial_coupling_scale,
+        )
+
+    def generate_poincare_map(
+        self,
+        *,
+        rho0: float = 0.95,
+        theta0: float = 0.0,
+        phi0: float = 0.0,
+        toroidal_turns: int = 20,
+        steps_per_turn: int = 256,
+        phi_planes: Optional[list[float]] = None,
+        rotational_transform: float = 0.45,
+        helical_coupling_scale: float = 0.08,
+        radial_coupling_scale: float = 0.0,
+        nfp: int = 1,
+        toroidal_modes: Optional[list[FourierMode3D]] = None,
+    ) -> tuple[FieldLineTrace3D, dict[float, np.ndarray]]:
+        """Trace one field line and return Poincare map in (R, Z)."""
+        tracer = self.create_fieldline_tracer(
+            rotational_transform=rotational_transform,
+            helical_coupling_scale=helical_coupling_scale,
+            radial_coupling_scale=radial_coupling_scale,
+            nfp=nfp,
+            toroidal_modes=toroidal_modes,
+        )
+        trace = tracer.trace_line(
+            rho0=rho0,
+            theta0=theta0,
+            phi0=phi0,
+            toroidal_turns=toroidal_turns,
+            steps_per_turn=steps_per_turn,
+        )
+        planes = phi_planes if phi_planes is not None else [0.0]
+        sections = tracer.poincare_map(trace, phi_planes=planes)
+        rz_map = {plane: section.rz for plane, section in sections.items()}
+        return trace, rz_map
 
     def export_obj(
         self,
