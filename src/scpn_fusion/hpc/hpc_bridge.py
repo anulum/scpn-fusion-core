@@ -346,6 +346,14 @@ class HPCBridge:
             return None
 
         j_input = _as_contiguous_f64(j_phi)
+        if j_input.ndim != 2:
+            raise ValueError(
+                f"j_phi must be a 2D array, received ndim={j_input.ndim}"
+            )
+        if j_input.size == 0:
+            raise ValueError("j_phi must be non-empty")
+        if not np.all(np.isfinite(j_input)):
+            raise ValueError("j_phi must contain only finite values")
         expected_shape = (
             getattr(self, "nz", j_input.shape[0]),
             getattr(self, "nr", j_input.shape[-1]),

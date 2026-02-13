@@ -110,6 +110,20 @@ def test_solve_raises_on_shape_mismatch() -> None:
         bridge.solve(np.zeros((2, 2), dtype=np.float64))
 
 
+def test_solve_rejects_non_2d_input() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    with pytest.raises(ValueError, match="must be a 2D array"):
+        bridge.solve(np.zeros((6,), dtype=np.float64))
+
+
+def test_solve_rejects_nonfinite_input() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    bad = np.arange(6, dtype=np.float64).reshape(3, 2)
+    bad[1, 1] = np.nan
+    with pytest.raises(ValueError, match="finite values"):
+        bridge.solve(bad)
+
+
 def test_solve_runs_and_returns_expected_shape() -> None:
     bridge = _make_bridge(nr=2, nz=3)
     j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
@@ -149,6 +163,13 @@ def test_solve_into_rejects_wrong_shape_output() -> None:
     out_buf = np.empty((2, 2), dtype=np.float64)
     with pytest.raises(ValueError, match="shape mismatch"):
         bridge.solve_into(j_phi, out_buf, iterations=3)
+
+
+def test_solve_into_rejects_non_ndarray_output() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
+    with pytest.raises(ValueError, match="numpy.ndarray"):
+        bridge.solve_into(j_phi, [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], iterations=3)  # type: ignore[arg-type]
 
 
 def test_solve_until_converged_uses_native_api() -> None:

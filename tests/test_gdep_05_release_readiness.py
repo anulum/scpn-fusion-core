@@ -29,12 +29,14 @@ def test_tracker_parser_extracts_known_statuses() -> None:
     assert statuses.get("GDEP-03") == "Done"
 
 
-def test_phase3_parser_extracts_s2_statuses() -> None:
+def test_phase3_parser_extracts_s2_and_s3_statuses() -> None:
     statuses = gdep_05_release_readiness.parse_phase3_active_statuses(
         ROOT / "docs" / "PHASE3_EXECUTION_REGISTRY.md"
     )
     assert statuses.get("S2-001") == "Completed"
     assert statuses.get("S2-008") in {"Completed", "In progress"}
+    assert statuses.get("S3-001") == "Completed"
+    assert statuses.get("S3-006") in {"Completed", "In progress"}
 
 
 def test_gdep_05_campaign_passes_thresholds() -> None:
@@ -42,9 +44,13 @@ def test_gdep_05_campaign_passes_thresholds() -> None:
     assert out["passes_thresholds"] is True
     assert out["done_count"] == out["required_done_count"]
     assert out["changelog_phrase_present"] is True
+    assert out["phase3_queue_parse_ok"] is True
     assert out["s2_queue_health"]["parse_ok"] is True
     assert out["s2_queue_health"]["completed_count"] >= 8
     assert out["s2_queue_health"]["in_progress_count"] >= 0
+    assert out["s3_queue_health"]["parse_ok"] is True
+    assert out["s3_queue_health"]["completed_count"] >= 5
+    assert out["s3_queue_health"]["in_progress_count"] >= 0
 
 
 def test_render_markdown_contains_sections() -> None:
@@ -53,4 +59,5 @@ def test_render_markdown_contains_sections() -> None:
     assert "# GDEP-05 Release Readiness" in text
     assert "Tracker Coverage" in text
     assert "Phase 3 Queue" in text
+    assert "Active S3 tasks" in text
     assert "Overall pass" in text

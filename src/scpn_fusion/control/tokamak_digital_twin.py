@@ -7,9 +7,6 @@
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-import sys
-import os
 
 # --- HYPER-PARAMETERS ---
 GRID_SIZE = 40        # 40x40 Poloidal Cross-section
@@ -176,8 +173,23 @@ class SimpleNeuralNet:
         
         return np.mean(np.abs(grad_out))
 
-def run_digital_twin():
-    print("--- SCPN 2D TOKAMAK DIGITAL TWIN + NEURAL CONTROL ---")
+def run_digital_twin(
+    time_steps=TIME_STEPS,
+    seed=42,
+    save_plot=True,
+    output_path="Tokamak_Digital_Twin.png",
+    verbose=True,
+):
+    """
+    Run deterministic digital-twin control simulation.
+
+    Returns a summary dict so callers can use the simulation without relying on
+    console text or plot artifacts.
+    """
+    steps = max(int(time_steps), 1)
+    np.random.seed(int(seed))
+    if verbose:
+        print("--- SCPN 2D TOKAMAK DIGITAL TWIN + NEURAL CONTROL ---")
     
     topo = TokamakTopoloy()
     plasma = Plasma2D(topo)
@@ -190,9 +202,10 @@ def run_digital_twin():
     history_rewards = []
     history_actions = []
     
-    print(f"Training Neural Network for {TIME_STEPS} steps...")
+    if verbose:
+        print(f"Training Neural Network for {steps} steps...")
     
-    for t in range(TIME_STEPS):
+    for t in range(steps):
         # 1. Observe State (Midplane Profile)
         midplane_idx = GRID_SIZE // 2
         state_vector = plasma.T[midplane_idx, :].reshape(1, -1)
@@ -221,54 +234,82 @@ def run_digital_twin():
         history_rewards.append(reward)
         history_actions.append(action)
         
-        if t % 500 == 0:
+        if verbose and t % 500 == 0:
             print(f"Step {t}: AvgTemp={avg_temp:.2f} | Action={action:.2f} | Loss={loss:.4f} | Islands Detected={np.sum(topo.get_rational_surfaces())} px")
 
-    # --- VISUALIZATION ---
-    fig = plt.figure(figsize=(15, 6))
-    
-    # 1. 2D Plasma Cross-Section (Heatmap)
-    ax1 = fig.add_subplot(1, 3, 1)
-    im = ax1.imshow(plasma.T, cmap='inferno', origin='lower')
-    ax1.set_title("Final Plasma Cross-Section (2D)")
-    plt.colorbar(im, ax=ax1, label='Temperature (keV)')
-    
-    # Overlay Magnetic Islands
-    islands = topo.get_rational_surfaces()
-    ax1.contour(islands, colors='cyan', levels=[0.5], linewidths=1, alpha=0.5)
-    ax1.text(2, 2, "Cyan = q-Resonance (Islands)", color='cyan', fontsize=8)
+    plot_saved = False
+    plot_error = None
+    if save_plot:
+        try:
+            # --- VISUALIZATION ---
+            fig = plt.figure(figsize=(15, 6))
 
-    # 2. Learning Curve
-    ax2 = fig.add_subplot(1, 3, 2)
-    ax2.plot(history_rewards, color='orange', alpha=0.6)
-    # Moving average
-    if len(history_rewards) > 50:
-        mov_avg = np.convolve(history_rewards, np.ones(50)/50, mode='valid')
-        ax2.plot(range(len(mov_avg)), mov_avg, 'r-', linewidth=2, label='Moving Avg')
-    ax2.set_title("Neural Network Learning Curve")
-    ax2.set_xlabel("Steps")
-    ax2.set_ylabel("Reward (Confinement)")
-    ax2.legend()
-    
-    # 3. q-Profile and Stability
-    ax3 = fig.add_subplot(1, 3, 3)
-    r_axis = np.linspace(0, 1, GRID_SIZE//2) # Fix: Match slice size
-    q_axis = topo.q_map[GRID_SIZE//2, GRID_SIZE//2:] # Radial slice
-    ax3.plot(r_axis, q_axis, 'b-', linewidth=2, label='Safety Factor q(r)')
-    
-    # Draw Danger Zones
-    for q_res in [1.5, 2.0, 2.5, 3.0]:
-        ax3.axhline(q_res, color='red', linestyle='--', alpha=0.3)
-        ax3.text(0.1, q_res, f"q={q_res}", color='red', fontsize=8)
-        
-    ax3.set_title("Final Safety Factor Profile")
-    ax3.set_xlabel("Normalized Radius r/a")
-    ax3.set_ylabel("q")
-    ax3.legend()
-    
-    plt.tight_layout()
-    plt.savefig("Tokamak_Digital_Twin.png")
-    print("\nDigital Twin Simulation Complete. Snapshot saved: Tokamak_Digital_Twin.png")
+            # 1. 2D Plasma Cross-Section (Heatmap)
+            ax1 = fig.add_subplot(1, 3, 1)
+            im = ax1.imshow(plasma.T, cmap='inferno', origin='lower')
+            ax1.set_title("Final Plasma Cross-Section (2D)")
+            plt.colorbar(im, ax=ax1, label='Temperature (keV)')
+
+            # Overlay Magnetic Islands
+            islands = topo.get_rational_surfaces()
+            ax1.contour(islands, colors='cyan', levels=[0.5], linewidths=1, alpha=0.5)
+            ax1.text(2, 2, "Cyan = q-Resonance (Islands)", color='cyan', fontsize=8)
+
+            # 2. Learning Curve
+            ax2 = fig.add_subplot(1, 3, 2)
+            ax2.plot(history_rewards, color='orange', alpha=0.6)
+            # Moving average
+            if len(history_rewards) > 50:
+                mov_avg = np.convolve(history_rewards, np.ones(50)/50, mode='valid')
+                ax2.plot(range(len(mov_avg)), mov_avg, 'r-', linewidth=2, label='Moving Avg')
+            ax2.set_title("Neural Network Learning Curve")
+            ax2.set_xlabel("Steps")
+            ax2.set_ylabel("Reward (Confinement)")
+            ax2.legend()
+
+            # 3. q-Profile and Stability
+            ax3 = fig.add_subplot(1, 3, 3)
+            r_axis = np.linspace(0, 1, GRID_SIZE//2) # Fix: Match slice size
+            q_axis = topo.q_map[GRID_SIZE//2, GRID_SIZE//2:] # Radial slice
+            ax3.plot(r_axis, q_axis, 'b-', linewidth=2, label='Safety Factor q(r)')
+
+            # Draw Danger Zones
+            for q_res in [1.5, 2.0, 2.5, 3.0]:
+                ax3.axhline(q_res, color='red', linestyle='--', alpha=0.3)
+                ax3.text(0.1, q_res, f"q={q_res}", color='red', fontsize=8)
+
+            ax3.set_title("Final Safety Factor Profile")
+            ax3.set_xlabel("Normalized Radius r/a")
+            ax3.set_ylabel("q")
+            ax3.legend()
+
+            plt.tight_layout()
+            plt.savefig(output_path)
+            plt.close(fig)
+            plot_saved = True
+            if verbose:
+                print(
+                    f"\nDigital Twin Simulation Complete. Snapshot saved: {output_path}"
+                )
+        except Exception as exc:
+            plot_error = str(exc)
+            if verbose:
+                print(f"\nDigital Twin completed without plot artifact: {exc}")
+
+    islands_final = int(np.sum(topo.get_rational_surfaces()))
+    final_avg_temp = float(history_rewards[-1] + islands_final * 0.05) if history_rewards else 0.0
+    summary = {
+        "seed": int(seed),
+        "steps": int(steps),
+        "final_avg_temp": float(final_avg_temp),
+        "final_reward": float(history_rewards[-1]) if history_rewards else 0.0,
+        "final_action": float(history_actions[-1]) if history_actions else 0.0,
+        "final_islands_px": islands_final,
+        "reward_mean_last_50": float(np.mean(history_rewards[-50:])) if history_rewards else 0.0,
+        "plot_saved": bool(plot_saved),
+        "plot_error": plot_error,
+    }
+    return summary
 
 if __name__ == "__main__":
     run_digital_twin()
