@@ -10,6 +10,7 @@
 //! Port of `nuclear_wall_interaction.py`.
 //! Models helium ash accumulation, wall neutron loading, and material lifetime.
 
+use fusion_math::iga::{open_uniform_knots, ControlPoint2D, NurbsCurve2D};
 use std::f64::consts::PI;
 
 /// Core electron density [m⁻³]. Python: 1e20.
@@ -290,6 +291,79 @@ pub fn generate_first_wall(
     (r_wall, z_wall)
 }
 
+/// NURBS-smoothed D-shaped first wall geometry.
+///
+/// Returns (R, Z) arrays for a reduced IGA-compatible contour.
+pub fn generate_first_wall_nurbs(
+    r0: f64,
+    a: f64,
+    kappa: f64,
+    delta: f64,
+    n_points: usize,
+) -> (Vec<f64>, Vec<f64>) {
+    let n = n_points.max(8);
+    let a_wall = a + 0.5;
+    let control_points = vec![
+        ControlPoint2D {
+            x: r0 + a_wall,
+            y: 0.0,
+        },
+        ControlPoint2D {
+            x: r0 + 0.9 * a_wall,
+            y: 0.65 * kappa * a_wall,
+        },
+        ControlPoint2D {
+            x: r0 + delta * a_wall,
+            y: kappa * a_wall,
+        },
+        ControlPoint2D {
+            x: r0 - 0.55 * a_wall,
+            y: 0.65 * kappa * a_wall,
+        },
+        ControlPoint2D {
+            x: r0 - a_wall,
+            y: 0.0,
+        },
+        ControlPoint2D {
+            x: r0 - 0.55 * a_wall,
+            y: -0.65 * kappa * a_wall,
+        },
+        ControlPoint2D {
+            x: r0 + delta * a_wall,
+            y: -kappa * a_wall,
+        },
+        ControlPoint2D {
+            x: r0 + 0.9 * a_wall,
+            y: -0.65 * kappa * a_wall,
+        },
+        ControlPoint2D {
+            x: r0 + a_wall,
+            y: 0.0,
+        },
+        ControlPoint2D {
+            x: r0 + 0.9 * a_wall,
+            y: 0.65 * kappa * a_wall,
+        },
+    ];
+
+    let weights = vec![1.0; control_points.len()];
+    let knots = open_uniform_knots(control_points.len(), 3);
+    let curve =
+        NurbsCurve2D::new(3, knots, control_points, weights).expect("valid first-wall NURBS");
+    let mut sampled = curve.sample_uniform(n);
+    if let Some(first) = sampled.first().copied() {
+        let last_index = sampled.len() - 1;
+        sampled[last_index] = first;
+    }
+    let mut r_wall = Vec::with_capacity(sampled.len());
+    let mut z_wall = Vec::with_capacity(sampled.len());
+    for point in sampled {
+        r_wall.push(point.x);
+        z_wall.push(point.y);
+    }
+    (r_wall, z_wall)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -350,6 +424,34 @@ mod tests {
         let r_max = r.iter().copied().fold(f64::NEG_INFINITY, f64::max);
         assert!(r_min > 0.0, "R_min should be positive: {r_min}");
         assert!(r_max > r_min, "Wall should have radial extent");
+    }
+
+    #[test]
+    fn test_first_wall_nurbs_geometry() {
+        let (r, z) = generate_first_wall_nurbs(5.0, 3.0, 1.9, 0.4, 200);
+        assert_eq!(r.len(), 200);
+        assert!(r.iter().all(|v| v.is_finite()));
+        assert!(z.iter().all(|v| v.is_finite()));
+
+        let closure = ((r[0] - r[r.len() - 1]).powi(2) + (z[0] - z[z.len() - 1]).powi(2)).sqrt();
+        assert!(closure < 1e-9, "NURBS wall should be explicitly closed");
+    }
+
+    #[test]
+    fn test_first_wall_nurbs_matches_analytic_envelope() {
+        let (r_a, z_a) = generate_first_wall(5.0, 3.0, 1.9, 0.4, 200);
+        let (r_n, z_n) = generate_first_wall_nurbs(5.0, 3.0, 1.9, 0.4, 200);
+
+        let r_a_min = r_a.iter().copied().fold(f64::INFINITY, f64::min);
+        let r_a_max = r_a.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        let r_n_min = r_n.iter().copied().fold(f64::INFINITY, f64::min);
+        let r_n_max = r_n.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        let z_a_max = z_a.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        let z_n_max = z_n.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+
+        assert!((r_n_min - r_a_min).abs() < 1.0);
+        assert!((r_n_max - r_a_max).abs() < 1.0);
+        assert!((z_n_max - z_a_max).abs() < 1.0);
     }
 
     #[test]

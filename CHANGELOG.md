@@ -39,6 +39,10 @@
   - ADAS-style synthetic PEC grids with charge-state distinction (including W20+ and W40+)
   - bilinear PEC interpolation in `(log ne, log Te)` space
   - collisional-radiative power-density and volume-integrated radiative-loss helpers
+- Added reduced IGA/NURBS geometry lane:
+  - new `fusion-math/src/iga.rs` for NURBS curve evaluation and open-uniform knot generation
+  - NURBS-based first-wall contour generator (`generate_first_wall_nurbs`) in `fusion-nuclear`
+  - regression checks for endpoint consistency, contour closure, and analytic-envelope proximity
 - Upgraded AMR hierarchy and kernel integration to level-aware scaling (`2^level`) for multi-level patch colocation/prolongation.
 - Added AMR multilevel tests for hierarchy generation and level-scaled interpolation.
 - Added low-order toroidal mode coupling closure in `fusion-core` transport:

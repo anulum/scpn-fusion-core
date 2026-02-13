@@ -50,7 +50,8 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - Completed: `GPHY-01` (reduced Boris-pusher particle tracker with toroidal current feedback blending into Grad-Shafranov source updates).
 - Completed: `GPHY-02` (velocity-Verlet symplectic integration baseline in `fusion-math` with long-horizon drift checks).
 - Completed: `GPHY-03` (reduced non-LTE collisional-radiative lookup for impurity charge-state PEC and radiative-loss estimation).
-- Next active task: `GPHY-04` RFC/implementation staging.
+- Completed: `GPHY-04` (reduced IGA/NURBS boundary lane with smooth first-wall contour generation and regression checks).
+- Next active task: `GPHY-05` RFC/implementation staging.
 
 ## Explicitly Deferred (Not In Sprint S1)
 
@@ -58,7 +59,7 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - `GAI-01`, `GAI-02`, `GAI-03`
 - `GMVR-01`, `GMVR-02`, `GMVR-03`
 - `GDEP-01`, `GDEP-02`
-- `GPHY-04`, `GPHY-05`, `GPHY-06`
+- `GPHY-05`, `GPHY-06`
 
 ## Merge Gate Checklist (Per PR)
 
