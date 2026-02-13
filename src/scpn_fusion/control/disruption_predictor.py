@@ -7,6 +7,7 @@
 # ──────────────────────────────────────────────────────────────────────
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 
 try:
     import torch
@@ -16,6 +17,9 @@ except Exception:  # pragma: no cover - optional dependency path
     torch = None
     nn = None
     optim = None
+
+DEFAULT_SEQ_LEN = 100
+DEFAULT_MODEL_FILENAME = "disruption_model.pth"
 
 # --- PHYSICS: MODIFIED RUTHERFORD EQUATION ---
 def simulate_tearing_mode(steps=1000):
@@ -369,28 +373,47 @@ def run_anomaly_alarm_campaign(
         "passes_thresholds": passes,
     }
 
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
+def default_model_path() -> Path:
+    return _repo_root() / "artifacts" / DEFAULT_MODEL_FILENAME
+
+
+def _normalize_seq_len(seq_len):
+    return max(int(seq_len), 8)
+
+
+def _prepare_signal_window(signal, seq_len):
+    seq_len = _normalize_seq_len(seq_len)
+    flat = np.asarray(signal, dtype=float).reshape(-1)
+    if flat.size >= seq_len:
+        return flat[:seq_len]
+    return np.pad(flat, (0, seq_len - flat.size), mode="edge")
+
 # --- AI: TRANSFORMER MODEL ---
 if torch is not None:
     class DisruptionTransformer(nn.Module):
-        def __init__(self):
+        def __init__(self, seq_len=DEFAULT_SEQ_LEN):
             super().__init__()
+            self.seq_len = _normalize_seq_len(seq_len)
             self.embedding = nn.Linear(1, 32)
-            self.pos_encoder = nn.Parameter(torch.zeros(1, 100, 32))
-            
+            self.pos_encoder = nn.Parameter(torch.zeros(1, self.seq_len, 32))
             encoder_layer = nn.TransformerEncoderLayer(d_model=32, nhead=4, dim_feedforward=64)
             self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=2)
-            
-            self.classifier = nn.Linear(32, 1) # Output: Probability of Disruption
+            self.classifier = nn.Linear(32, 1)
             self.sigmoid = nn.Sigmoid()
-            
+
         def forward(self, src):
-            # src shape: [Batch, Seq_Len, 1]
+            if src.shape[1] > self.seq_len:
+                raise ValueError(
+                    f"Input sequence length {src.shape[1]} exceeds configured seq_len {self.seq_len}."
+                )
             x = self.embedding(src) + self.pos_encoder[:, :src.shape[1], :]
-            x = x.permute(1, 0, 2) # [Seq, Batch, Dim] for Transformer
-            
+            x = x.permute(1, 0, 2)
             output = self.transformer(x)
-            
-            # Take the last time step embedding for classification
             last_step = output[-1, :, :]
             return self.sigmoid(self.classifier(last_step))
 else:  # pragma: no cover - only used without torch installed
@@ -398,72 +421,164 @@ else:  # pragma: no cover - only used without torch installed
         def __init__(self):
             raise RuntimeError("Torch is required for DisruptionTransformer.")
 
-def train_predictor():
+def train_predictor(
+    seq_len=DEFAULT_SEQ_LEN,
+    n_shots=500,
+    epochs=50,
+    model_path=None,
+    seed=42,
+    save_plot=True,
+):
     if torch is None or optim is None:
         raise RuntimeError("Torch is required for train_predictor().")
 
+    seq_len = _normalize_seq_len(seq_len)
+    n_shots = max(int(n_shots), 8)
+    epochs = max(int(epochs), 1)
+    seed = int(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    model_path = Path(model_path) if model_path is not None else default_model_path()
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+
     print("--- SCPN SAFETY AI: Disruption Prediction (Transformer) ---")
-    
-    # 1. Generate Data
+    print(f"Sequence length: {seq_len} | Shots: {n_shots} | Epochs: {epochs}")
+
     print("Generating synthetic shots (Rutherford Physics)...")
     X_train = []
     y_train = []
-    
-    for _ in range(500):
-        sig, label, _ = simulate_tearing_mode()
-        # Crop/Pad to length 100
-        if len(sig) > 100: sig = sig[:100]
-        else: sig = np.pad(sig, (0, 100-len(sig)))
-        
-        X_train.append(sig.reshape(-1, 1))
+
+    sim_steps = max(1000, seq_len + 16)
+    for _ in range(n_shots):
+        sig, label, _ = simulate_tearing_mode(steps=sim_steps)
+        sig_window = _prepare_signal_window(sig, seq_len)
+        X_train.append(sig_window.reshape(-1, 1))
         y_train.append(label)
-        
-    X_tensor = torch.tensor(X_train, dtype=torch.float32)
+
+    X_tensor = torch.tensor(np.asarray(X_train, dtype=np.float32), dtype=torch.float32)
     y_tensor = torch.tensor(y_train, dtype=torch.float32).unsqueeze(1)
-    
-    # 2. Train Model
-    model = DisruptionTransformer()
+
+    model = DisruptionTransformer(seq_len=seq_len)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.BCELoss()
-    
+
     print("Training Transformer...")
     losses = []
-    for epoch in range(50):
+    for epoch in range(epochs):
         optimizer.zero_grad()
         output = model(X_tensor)
         loss = criterion(output, y_tensor)
         loss.backward()
         optimizer.step()
         losses.append(loss.item())
-        
-        if epoch % 10 == 0:
+
+        if epoch % 10 == 0 or epoch == epochs - 1:
             print(f"Epoch {epoch}: Loss={loss.item():.4f}")
-            
-    # 3. Validate
+
     print("Validating on a new shot...")
-    test_sig, test_lbl, _ = simulate_tearing_mode()
-    # Prepare for AI
-    real_len = min(len(test_sig), 100)
-    input_sig = test_sig[:real_len]
+    test_sig, test_lbl, _ = simulate_tearing_mode(steps=sim_steps)
+    input_sig = _prepare_signal_window(test_sig, seq_len)
     input_tensor = torch.tensor(input_sig, dtype=torch.float32).reshape(1, -1, 1)
-    
+
+    model.eval()
     with torch.no_grad():
         risk = model(input_tensor).item()
-        
+
     print(f"Test Shot Ground Truth: {'DISRUPTIVE' if test_lbl else 'SAFE'}")
-    print(f"AI Prediction Risk: {risk*100:.1f}%")
-    
-    # Plot
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-    ax1.plot(losses)
-    ax1.set_title("Transformer Training Loss")
-    ax1.set_xlabel("Epoch")
-    
-    ax2.plot(test_sig, 'r-' if test_lbl else 'g-')
-    ax2.set_title(f"Diagnostic Signal (AI Risk: {risk:.2f})")
-    
-    plt.savefig("Disruption_AI_Result.png")
-    print("Saved: Disruption_AI_Result.png")
+    print(f"AI Prediction Risk: {risk * 100:.1f}%")
+
+    torch.save({"state_dict": model.state_dict(), "seq_len": int(seq_len)}, model_path)
+    print(f"Saved model: {model_path}")
+
+    plot_path = _repo_root() / "artifacts" / "Disruption_AI_Result.png"
+    if save_plot:
+        plot_path.parent.mkdir(parents=True, exist_ok=True)
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+        ax1.plot(losses)
+        ax1.set_title("Transformer Training Loss")
+        ax1.set_xlabel("Epoch")
+        ax2.plot(test_sig, "r-" if test_lbl else "g-")
+        ax2.set_title(f"Diagnostic Signal (AI Risk: {risk:.2f})")
+        plt.tight_layout()
+        plt.savefig(plot_path)
+        plt.close(fig)
+        print(f"Saved: {plot_path}")
+
+    return model, {
+        "seq_len": int(seq_len),
+        "shots": int(n_shots),
+        "epochs": int(epochs),
+        "model_path": str(model_path),
+        "risk": float(risk),
+        "test_label": int(test_lbl),
+    }
+
+
+def load_or_train_predictor(
+    model_path=None,
+    seq_len=DEFAULT_SEQ_LEN,
+    force_retrain=False,
+    train_kwargs=None,
+):
+    if torch is None:
+        raise RuntimeError("Torch is required for load_or_train_predictor().")
+
+    path = Path(model_path) if model_path is not None else default_model_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    seq_len = _normalize_seq_len(seq_len)
+    kwargs = dict(train_kwargs or {})
+
+    if path.exists() and not force_retrain:
+        checkpoint = torch.load(path, map_location="cpu")
+        if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
+            state_dict = checkpoint["state_dict"]
+            loaded_seq_len = _normalize_seq_len(checkpoint.get("seq_len", seq_len))
+        else:
+            state_dict = checkpoint
+            loaded_seq_len = seq_len
+
+        model = DisruptionTransformer(seq_len=loaded_seq_len)
+        model.load_state_dict(state_dict)
+        model.eval()
+        return model, {
+            "trained": False,
+            "model_path": str(path),
+            "seq_len": int(loaded_seq_len),
+        }
+
+    kwargs.setdefault("seq_len", seq_len)
+    kwargs.setdefault("model_path", path)
+    model, info = train_predictor(**kwargs)
+    info["trained"] = True
+    return model, info
 
 if __name__ == "__main__":
-    train_predictor()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Train or load disruption Transformer predictor.")
+    parser.add_argument("--seq-len", type=int, default=DEFAULT_SEQ_LEN)
+    parser.add_argument("--model-path", type=str, default=None)
+    parser.add_argument("--shots", type=int, default=500)
+    parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--force-retrain", action="store_true")
+    parser.add_argument("--no-plot", action="store_true")
+    args = parser.parse_args()
+
+    _, meta = load_or_train_predictor(
+        model_path=args.model_path,
+        seq_len=args.seq_len,
+        force_retrain=bool(args.force_retrain),
+        train_kwargs={
+            "seq_len": args.seq_len,
+            "n_shots": args.shots,
+            "epochs": args.epochs,
+            "seed": args.seed,
+            "save_plot": not args.no_plot,
+        },
+    )
+    print(
+        f"Predictor ready | trained={meta.get('trained')} | seq_len={meta.get('seq_len')} "
+        f"| model_path={meta.get('model_path')}"
+    )
