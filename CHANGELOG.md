@@ -31,6 +31,11 @@
   - configurable toroidal harmonic spectrum via `set_toroidal_harmonics(...)`
   - non-zonal low-k spectral amplification closure with bounded coupling gain
   - regression tests for default parity, non-zonal energy increase, and clamp safety
+- Added reduced 3D divertor strike-point asymmetry projection in `fusion-nuclear`:
+  - toroidal/poloidal heat-flux map projection via `project_heat_flux_3d(...)`
+  - low-order toroidal mode shaping through `ToroidalMode { n, amplitude, phase }`
+  - map normalization preserving Eich-derived mean target load
+  - regression tests for strike localization, toroidal asymmetry increase, and mean-load conservation
 - Added PCE checked APIs:
   - `PCEModel::try_fit(...) -> FusionResult<PCEModel>`
   - `PCEModel::try_predict(...) -> FusionResult<Array1<f64>>`

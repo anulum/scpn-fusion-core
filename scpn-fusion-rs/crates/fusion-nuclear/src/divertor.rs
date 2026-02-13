@@ -11,6 +11,9 @@
 //! Models heat flux width, solid tungsten conduction, and
 //! self-regulating lithium vapor shield.
 
+use ndarray::Array2;
+use std::f64::consts::PI;
+
 /// Eich scaling coefficient [mm]. Python: 0.63.
 const EICH_COEFF: f64 = 0.63;
 
@@ -56,12 +59,49 @@ const RELAXATION: f64 = 0.5;
 /// Ambient temperature [°C].
 const T_AMBIENT: f64 = 300.0;
 
+/// Lower-divertor strike-point centroid angle [rad].
+const STRIKE_THETA_LOWER: f64 = 1.35 * PI;
+/// Primary strike footprint angular width [rad].
+const STRIKE_WIDTH_PRIMARY: f64 = 0.20;
+/// Secondary/private-flux footprint angular width [rad].
+const STRIKE_WIDTH_SECONDARY: f64 = 0.32;
+/// Minimum positive toroidal modulation floor.
+const TOROIDAL_MOD_MIN: f64 = 0.10;
+/// Baseline floor for poloidal footprint weighting.
+const STRIKE_FOOTPRINT_FLOOR: f64 = 0.05;
+
+fn wrapped_angle_distance(a: f64, b: f64) -> f64 {
+    let d = (a - b + PI).rem_euclid(2.0 * PI) - PI;
+    d.abs()
+}
+
 /// Status of a divertor surface.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SurfaceStatus {
     Ok,
     Melted,
     BoilingLithium,
+}
+
+/// Low-order toroidal mode descriptor used for reduced 3D heat-flux closure.
+#[derive(Debug, Clone, Copy)]
+pub struct ToroidalMode {
+    /// Toroidal mode number n (n >= 1).
+    pub n: usize,
+    /// Mode amplitude.
+    pub amplitude: f64,
+    /// Phase offset [rad].
+    pub phase_rad: f64,
+}
+
+impl ToroidalMode {
+    pub fn new(n: usize, amplitude: f64, phase_rad: f64) -> Self {
+        Self {
+            n: n.max(1),
+            amplitude,
+            phase_rad,
+        }
+    }
 }
 
 /// Divertor thermal analysis results.
@@ -155,6 +195,68 @@ impl DivertorLab {
         (t_li, f_rad, status)
     }
 
+    /// Reduced 3D strike-point heat-flux map projection.
+    ///
+    /// Returns `q_target(theta, phi)` in MW/m² with average equal to the
+    /// axisymmetric Eich-derived target heat load for the same expansion factor.
+    pub fn project_heat_flux_3d(
+        &self,
+        expansion_factor: f64,
+        n_poloidal: usize,
+        n_toroidal: usize,
+        modes: &[ToroidalMode],
+    ) -> Array2<f64> {
+        let n_poloidal = n_poloidal.max(1);
+        let n_toroidal = n_toroidal.max(1);
+        let q_base = self.calculate_heat_load(expansion_factor.max(1e-9));
+
+        let mut heat_map = Array2::zeros((n_poloidal, n_toroidal));
+        for i_theta in 0..n_poloidal {
+            let theta = 2.0 * PI * i_theta as f64 / n_poloidal as f64;
+            let d_primary = wrapped_angle_distance(theta, STRIKE_THETA_LOWER);
+            let d_secondary = wrapped_angle_distance(theta, STRIKE_THETA_LOWER + PI);
+            let primary = (-(0.5) * (d_primary / STRIKE_WIDTH_PRIMARY).powi(2)).exp();
+            let secondary = 0.35 * (-(0.5) * (d_secondary / STRIKE_WIDTH_SECONDARY).powi(2)).exp();
+            let poloidal_weight = (primary + secondary + STRIKE_FOOTPRINT_FLOOR).max(1e-9);
+
+            for j_phi in 0..n_toroidal {
+                let phi = 2.0 * PI * j_phi as f64 / n_toroidal as f64;
+                let mut toroidal_mod = 1.0;
+                for mode in modes {
+                    let mode_n = mode.n.max(1) as f64;
+                    let amp = mode.amplitude.clamp(-0.95, 0.95);
+                    toroidal_mod += amp * (mode_n * phi + mode.phase_rad).cos();
+                }
+                toroidal_mod = toroidal_mod.max(TOROIDAL_MOD_MIN);
+                heat_map[[i_theta, j_phi]] = poloidal_weight * toroidal_mod;
+            }
+        }
+
+        // Normalize map so mean heat flux matches q_base.
+        let mean_weight = heat_map.sum() / (n_poloidal * n_toroidal) as f64;
+        if mean_weight > 1e-12 {
+            heat_map.mapv_inplace(|v| q_base * v / mean_weight);
+        } else {
+            heat_map.fill(q_base);
+        }
+
+        heat_map
+    }
+
+    /// Max/min asymmetry ratio for a projected heat map.
+    pub fn heat_flux_asymmetry_ratio(heat_map: &Array2<f64>) -> f64 {
+        let mut q_max = f64::NEG_INFINITY;
+        let mut q_min = f64::INFINITY;
+        for q in heat_map.iter().copied() {
+            q_max = q_max.max(q);
+            q_min = q_min.min(q);
+        }
+        if !q_max.is_finite() || !q_min.is_finite() {
+            return 1.0;
+        }
+        q_max / q_min.max(1e-12)
+    }
+
     /// Full divertor analysis at given expansion factor.
     pub fn analyze(&self, expansion_factor: f64) -> DivertorResult {
         let q_target = self.calculate_heat_load(expansion_factor);
@@ -175,6 +277,14 @@ impl DivertorLab {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn toroidal_row_std(map: &Array2<f64>, row: usize) -> f64 {
+        let row = row.min(map.nrows().saturating_sub(1));
+        let values = map.row(row);
+        let mean = values.iter().copied().sum::<f64>() / values.len().max(1) as f64;
+        let var = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / values.len().max(1) as f64;
+        var.sqrt()
+    }
 
     #[test]
     fn test_eich_lambda_q() {
@@ -229,5 +339,86 @@ mod tests {
             t_li < t_w,
             "Lithium with vapor shield should be cooler: Li={t_li} vs W={t_w}"
         );
+    }
+
+    #[test]
+    fn test_heat_flux_3d_projection_preserves_mean_heat_load() {
+        let lab = DivertorLab::new(60.0, 2.1, 2.0);
+        let expansion = 14.0;
+        let q_base = lab.calculate_heat_load(expansion);
+        let map = lab.project_heat_flux_3d(expansion, 64, 48, &[]);
+        let mean_q = map.sum() / map.len() as f64;
+        let rel_err = ((mean_q - q_base) / q_base.max(1e-12)).abs();
+        assert!(
+            rel_err < 1e-12,
+            "Mean projected heat load must match axisymmetric target: base={q_base}, mean={mean_q}, rel_err={rel_err}"
+        );
+    }
+
+    #[test]
+    fn test_heat_flux_3d_projection_has_strike_point_localization() {
+        let lab = DivertorLab::new(80.0, 2.1, 2.4);
+        let n_poloidal = 72;
+        let n_toroidal = 64;
+        let map = lab.project_heat_flux_3d(12.0, n_poloidal, n_toroidal, &[]);
+
+        let mut best_idx = 0usize;
+        let mut best_val = f64::NEG_INFINITY;
+        for i in 0..n_poloidal {
+            let row_mean = map.row(i).iter().copied().sum::<f64>() / n_toroidal as f64;
+            if row_mean > best_val {
+                best_val = row_mean;
+                best_idx = i;
+            }
+        }
+
+        let expected_idx = ((STRIKE_THETA_LOWER / (2.0 * PI)) * n_poloidal as f64).round() as isize;
+        let mut d = (best_idx as isize - expected_idx).abs();
+        d = d.min(n_poloidal as isize - d);
+        assert!(
+            d <= 4,
+            "Expected strike localization near lower divertor index {} but got {}",
+            expected_idx,
+            best_idx
+        );
+    }
+
+    #[test]
+    fn test_heat_flux_3d_toroidal_modes_increase_toroidal_asymmetry() {
+        let lab = DivertorLab::new(70.0, 2.1, 2.1);
+        let expansion = 15.0;
+        let n_poloidal = 64;
+        let n_toroidal = 60;
+        let map_base = lab.project_heat_flux_3d(expansion, n_poloidal, n_toroidal, &[]);
+        let map_asym = lab.project_heat_flux_3d(
+            expansion,
+            n_poloidal,
+            n_toroidal,
+            &[
+                ToroidalMode::new(1, 0.18, 0.0),
+                ToroidalMode::new(2, 0.10, 0.4),
+            ],
+        );
+
+        // Compare toroidal variation on the dominant strike row.
+        let mut strike_row = 0usize;
+        let mut best = f64::NEG_INFINITY;
+        for i in 0..n_poloidal {
+            let row_mean = map_base.row(i).iter().copied().sum::<f64>() / n_toroidal as f64;
+            if row_mean > best {
+                best = row_mean;
+                strike_row = i;
+            }
+        }
+
+        let std_base = toroidal_row_std(&map_base, strike_row);
+        let std_asym = toroidal_row_std(&map_asym, strike_row);
+        assert!(
+            std_asym > std_base,
+            "Expected stronger toroidal variation with modes: base_std={std_base}, asym_std={std_asym}"
+        );
+
+        let ratio = DivertorLab::heat_flux_asymmetry_ratio(&map_asym);
+        assert!(ratio > 1.05, "Expected non-trivial asymmetry ratio, got {ratio}");
     }
 }

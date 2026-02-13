@@ -20,7 +20,7 @@ The following gaps block full 3D physics fidelity.
 | G3D-03 | Transport is radial (1.5D) with low-order `n!=0` closure in `fusion-core/src/transport.rs` | Closure model only (no resolved `(rho, phi)` PDE transport) | Extend from reduced spectral closure to native toroidal transport solve |
 | G3D-04 | FNO turbulence is 2D with reduced toroidal-harmonic spectral closure in `fusion-physics/src/fno.rs` | No native `(rho, theta, phi)` 3D spectral tensor evolution | Extend to full 3D FFT/FNO transport with explicit toroidal coordinate state |
 | G3D-05 | Neutronics simplified wall flux methods | No volumetric 3D blanket transport | Add 3D mesh-based neutronics surrogate |
-| G3D-06 | Divertor models are reduced geometry | No 3D strike-point asymmetry mapping | Add 3D heat-flux projection from flux geometry |
+| G3D-06 | Divertor model includes reduced 3D strike-point asymmetry projection in `fusion-nuclear/src/divertor.rs` | Projection closure only (not a full 3D SOL/target transport solve) | Extend to self-consistent 3D SOL transport and wall-coupled strike-point evolution |
 | G3D-07 | Control logic built on 2D state summaries | No 3D instability observables | Add toroidal asymmetry features (ELM/RMP indicators) |
 | G3D-08 | CI validates 2D-heavy paths | No dedicated 3D smoke/regression pipeline | Add CI smoke test generating and validating OBJ mesh artifacts |
 
@@ -29,7 +29,7 @@ The following gaps block full 3D physics fidelity.
 1. G3D-08 (CI safety for 3D path) - completed
 2. G3D-03 (reduced low-order toroidal transport coupling) - completed
 3. G3D-04 (reduced toroidal-harmonic turbulence coupling) - completed
-4. G3D-06 (3D divertor heat flux)
+4. G3D-06 (reduced 3D strike-point asymmetry mapping) - completed
 5. G3D-01 (native 3D equilibrium)
 
 ## Phase 2 Entry Criteria
