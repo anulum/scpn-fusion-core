@@ -13,3 +13,13 @@ except ImportError:
 from .fusion_ignition_sim import FusionBurnPhysics
 from .equilibrium_3d import FourierMode3D, VMECStyleEquilibrium3D
 from .fieldline_3d import FieldLineTrace3D, FieldLineTracer3D, PoincareSection3D
+from .gyro_swin_surrogate import (
+    GyroSwinLikeSurrogate,
+    SpeedBenchmark,
+    TurbulenceDataset,
+    benchmark_speedup,
+    generate_synthetic_gyrokinetic_dataset,
+    gene_proxy_predict,
+    rmse_percent,
+    synthetic_core_turbulence_target,
+)

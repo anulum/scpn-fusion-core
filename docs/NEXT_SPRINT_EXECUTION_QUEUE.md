@@ -37,7 +37,8 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - Completed: `S1-003` (added low-point LCFS fallback regression test and VMEC-like geometry CI smoke coverage).
 - Completed: `S1-004` (deterministic control fault/noise resilience baseline in Python + Rust with campaign reporting and thresholds).
 - Completed: `S1-005` (RFC template + tracker: `docs/PHASE2_ADVANCED_RFC_TEMPLATE.md`, `docs/PHASE2_ADVANCED_RFC_TRACKER.md`).
-- Next active task: `GAI-01` RFC/implementation staging.
+- Completed: `GAI-01` (synthetic GyroSwin-like turbulence surrogate benchmark lane + strict RMSE/speedup validation).
+- Next active task: `GAI-02` RFC/implementation staging.
 
 ## Explicitly Deferred (Not In Sprint S1)
 
