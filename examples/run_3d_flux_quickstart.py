@@ -25,6 +25,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.path.insert(0, str(src_path))
 
     from scpn_fusion.core.geometry_3d import Reactor3DBuilder
+    from scpn_fusion.core.equilibrium_3d import FourierMode3D
 
     parser = argparse.ArgumentParser(description="SCPN 3D flux-surface quickstart.")
     parser.add_argument(
@@ -40,6 +41,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--toroidal", type=int, default=48, help="Toroidal resolution.")
     parser.add_argument("--poloidal", type=int, default=48, help="Poloidal resolution.")
     parser.add_argument(
+        "--vmec-like",
+        action="store_true",
+        help="Generate surface from reduced VMEC-like 3D equilibrium coordinates.",
+    )
+    parser.add_argument(
+        "--n1-amplitude",
+        type=float,
+        default=0.0,
+        help="Optional amplitude for a single n=1 harmonic in VMEC-like mode.",
+    )
+    parser.add_argument(
         "--preview-png",
         default="",
         help="Optional preview PNG path.",
@@ -47,6 +59,15 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     builder = Reactor3DBuilder(args.config)
+    if args.vmec_like:
+        modes: list[FourierMode3D] = []
+        if abs(args.n1_amplitude) > 0.0:
+            amp = float(args.n1_amplitude)
+            modes.append(FourierMode3D(m=1, n=1, r_cos=amp, z_sin=0.5 * amp))
+        builder.equilibrium_3d = builder.build_vmec_like_equilibrium(
+            toroidal_modes=modes
+        )
+
     vertices, faces = builder.generate_plasma_surface(
         resolution_toroidal=args.toroidal,
         resolution_poloidal=args.poloidal,
@@ -58,6 +79,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print("SCPN 3D quickstart complete.")
     print(f"Config: {args.config}")
+    print(f"VMEC-like mode: {args.vmec_like}")
     print(f"Output: {output_path}")
     print(f"Vertices: {len(vertices)} | Faces: {len(faces)}")
     return 0

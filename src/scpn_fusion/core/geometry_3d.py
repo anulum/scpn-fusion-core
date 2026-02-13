@@ -19,6 +19,8 @@ from typing import Optional
 
 import numpy as np
 
+from scpn_fusion.core.equilibrium_3d import FourierMode3D, VMECStyleEquilibrium3D
+
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
@@ -33,59 +35,77 @@ class Reactor3DBuilder:
         config_path: Optional[str | Path] = None,
         *,
         kernel: Optional[FusionKernel] = None,
+        equilibrium_3d: Optional[VMECStyleEquilibrium3D] = None,
         solve_equilibrium: bool = True,
     ) -> None:
+        self.equilibrium_3d = equilibrium_3d
+
         if kernel is not None:
             self.kernel = kernel
         elif config_path is not None:
             self.kernel = FusionKernel(str(config_path))
+        elif equilibrium_3d is not None:
+            self.kernel = None
         else:
-            raise ValueError("Provide either `config_path` or `kernel`.")
+            raise ValueError(
+                "Provide either `config_path`, `kernel`, or `equilibrium_3d`."
+            )
 
-        if solve_equilibrium:
+        if solve_equilibrium and self.kernel is not None:
             self.kernel.solve_equilibrium()
 
+    def _require_kernel(self) -> FusionKernel:
+        if self.kernel is None:
+            raise RuntimeError(
+                "This operation requires a 2D kernel-backed builder. "
+                "Initialize Reactor3DBuilder with `config_path` or `kernel`."
+            )
+        return self.kernel
+
     def _inside_domain(self, r_val: float, z_val: float) -> bool:
+        kernel = self._require_kernel()
         return (
-            self.kernel.R[0] <= r_val <= self.kernel.R[-1]
-            and self.kernel.Z[0] <= z_val <= self.kernel.Z[-1]
+            kernel.R[0] <= r_val <= kernel.R[-1]
+            and kernel.Z[0] <= z_val <= kernel.Z[-1]
         )
 
     def _sample_psi_bilinear(self, r_val: float, z_val: float) -> float:
+        kernel = self._require_kernel()
         if not self._inside_domain(r_val, z_val):
             raise ValueError("Requested sample outside kernel domain.")
 
-        ir = int(np.searchsorted(self.kernel.R, r_val) - 1)
-        iz = int(np.searchsorted(self.kernel.Z, z_val) - 1)
-        ir = int(np.clip(ir, 0, self.kernel.NR - 2))
-        iz = int(np.clip(iz, 0, self.kernel.NZ - 2))
+        ir = int(np.searchsorted(kernel.R, r_val) - 1)
+        iz = int(np.searchsorted(kernel.Z, z_val) - 1)
+        ir = int(np.clip(ir, 0, kernel.NR - 2))
+        iz = int(np.clip(iz, 0, kernel.NZ - 2))
 
-        r0, r1 = self.kernel.R[ir], self.kernel.R[ir + 1]
-        z0, z1 = self.kernel.Z[iz], self.kernel.Z[iz + 1]
+        r0, r1 = kernel.R[ir], kernel.R[ir + 1]
+        z0, z1 = kernel.Z[iz], kernel.Z[iz + 1]
         fr = float((r_val - r0) / (r1 - r0 + 1e-12))
         fz = float((z_val - z0) / (z1 - z0 + 1e-12))
 
-        p00 = self.kernel.Psi[iz, ir]
-        p01 = self.kernel.Psi[iz, ir + 1]
-        p10 = self.kernel.Psi[iz + 1, ir]
-        p11 = self.kernel.Psi[iz + 1, ir + 1]
+        p00 = kernel.Psi[iz, ir]
+        p01 = kernel.Psi[iz, ir + 1]
+        p10 = kernel.Psi[iz + 1, ir]
+        p11 = kernel.Psi[iz + 1, ir + 1]
 
         p0 = (1.0 - fr) * p00 + fr * p01
         p1 = (1.0 - fr) * p10 + fr * p11
         return float((1.0 - fz) * p0 + fz * p1)
 
     def _axis_and_boundary_flux(self) -> tuple[float, float, float, float]:
-        idx_max = int(np.argmax(self.kernel.Psi))
-        iz_ax, ir_ax = np.unravel_index(idx_max, self.kernel.Psi.shape)
-        r_ax = float(self.kernel.R[ir_ax])
-        z_ax = float(self.kernel.Z[iz_ax])
-        psi_axis = float(self.kernel.Psi[iz_ax, ir_ax])
+        kernel = self._require_kernel()
+        idx_max = int(np.argmax(kernel.Psi))
+        iz_ax, ir_ax = np.unravel_index(idx_max, kernel.Psi.shape)
+        r_ax = float(kernel.R[ir_ax])
+        z_ax = float(kernel.Z[iz_ax])
+        psi_axis = float(kernel.Psi[iz_ax, ir_ax])
 
-        _, psi_x = self.kernel.find_x_point(self.kernel.Psi)
+        _, psi_x = kernel.find_x_point(kernel.Psi)
         psi_boundary = float(psi_x)
 
         if not np.isfinite(psi_boundary) or abs(psi_boundary - psi_axis) < 1e-10:
-            psi_boundary = float(np.nanmin(self.kernel.Psi))
+            psi_boundary = float(np.nanmin(kernel.Psi))
 
         if abs(psi_boundary - psi_axis) < 1e-10:
             raise RuntimeError("Failed to infer a valid boundary flux.")
@@ -99,8 +119,9 @@ class Reactor3DBuilder:
         z_ax: float,
     ) -> np.ndarray:
         """Build a conservative elliptical boundary fallback inside the domain."""
-        r_margin = min(r_ax - float(self.kernel.R[0]), float(self.kernel.R[-1]) - r_ax)
-        z_margin = min(z_ax - float(self.kernel.Z[0]), float(self.kernel.Z[-1]) - z_ax)
+        kernel = self._require_kernel()
+        r_margin = min(r_ax - float(kernel.R[0]), float(kernel.R[-1]) - r_ax)
+        z_margin = min(z_ax - float(kernel.Z[0]), float(kernel.Z[-1]) - z_ax)
         semi_r = max(0.85 * r_margin, 1e-3)
         semi_z = max(0.85 * z_margin, 1e-3)
 
@@ -206,6 +227,13 @@ class Reactor3DBuilder:
         if resolution_toroidal < 3:
             raise ValueError("resolution_toroidal must be >= 3.")
 
+        if self.equilibrium_3d is not None:
+            return self.equilibrium_3d.sample_surface(
+                rho=1.0,
+                resolution_toroidal=resolution_toroidal,
+                resolution_poloidal=resolution_poloidal,
+            )
+
         poloidal_points = self._trace_lcfs(resolution_poloidal, radial_steps)
         n_pol = int(poloidal_points.shape[0])
         n_tor = int(resolution_toroidal)
@@ -234,8 +262,38 @@ class Reactor3DBuilder:
 
         return np.asarray(vertices, dtype=float), np.asarray(faces, dtype=np.int64)
 
+    def build_vmec_like_equilibrium(
+        self,
+        *,
+        lcfs_resolution: int = 96,
+        radial_steps: int = 512,
+        nfp: int = 1,
+        toroidal_modes: Optional[list[FourierMode3D]] = None,
+    ) -> VMECStyleEquilibrium3D:
+        """Infer a reduced VMEC-like 3D equilibrium from solved 2D LCFS."""
+        if lcfs_resolution < 8:
+            raise ValueError("lcfs_resolution must be >= 8.")
+        if radial_steps < 16:
+            raise ValueError("radial_steps must be >= 16.")
+
+        r_axis, z_axis, _, _ = self._axis_and_boundary_flux()
+        lcfs_points = self._trace_lcfs(
+            resolution_poloidal=lcfs_resolution,
+            radial_steps=radial_steps,
+        )
+        return VMECStyleEquilibrium3D.from_axisymmetric_lcfs(
+            lcfs_points=lcfs_points,
+            r_axis=r_axis,
+            z_axis=z_axis,
+            nfp=nfp,
+            modes=toroidal_modes,
+        )
+
     def generate_coil_meshes(self) -> list[dict[str, float | str]]:
         """Return compact metadata for external coil geometry placeholders."""
+        if self.kernel is None:
+            return []
+
         meshes: list[dict[str, float | str]] = []
         for coil in self.kernel.cfg["coils"]:
             meshes.append(

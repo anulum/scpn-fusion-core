@@ -36,6 +36,12 @@
   - low-order toroidal mode shaping through `ToroidalMode { n, amplitude, phase }`
   - map normalization preserving Eich-derived mean target load
   - regression tests for strike localization, toroidal asymmetry increase, and mean-load conservation
+- Added reduced VMEC-like native 3D equilibrium interface:
+  - new `VMECStyleEquilibrium3D` + `FourierMode3D` in `src/scpn_fusion/core/equilibrium_3d.py`
+  - native flux-coordinate mapping `(rho, theta, phi) -> (R, Z) -> (x, y, z)`
+  - integration with `Reactor3DBuilder` for direct 3D surface generation without 2D revolve-only path
+  - builder utility `build_vmec_like_equilibrium(...)` to infer baseline shaping from traced 2D LCFS
+  - regression coverage in `tests/test_equilibrium_3d.py` and quickstart support for VMEC-like mode
 - Added PCE checked APIs:
   - `PCEModel::try_fit(...) -> FusionResult<PCEModel>`
   - `PCEModel::try_predict(...) -> FusionResult<Array1<f64>>`
