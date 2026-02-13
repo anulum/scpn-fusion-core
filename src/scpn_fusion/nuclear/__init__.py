@@ -6,3 +6,14 @@
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 from .nuclear_wall_interaction import NuclearEngineeringLab
+from .blanket_neutronics import BreedingBlanket, VolumetricBlanketReport
+from .pwi_erosion import SputteringPhysics
+from .temhd_peltier import TEMHD_Stabilizer
+
+__all__ = [
+    "NuclearEngineeringLab",
+    "BreedingBlanket",
+    "VolumetricBlanketReport",
+    "SputteringPhysics",
+    "TEMHD_Stabilizer",
+]
