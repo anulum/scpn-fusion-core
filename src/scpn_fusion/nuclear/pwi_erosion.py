@@ -15,7 +15,7 @@ class SputteringPhysics:
     and Wall Erosion Rate.
     Based on Eckstein semi-empirical formulas.
     """
-    def __init__(self, material="Tungsten"):
+    def __init__(self, material="Tungsten", redeposition_factor=0.95):
         self.material = material
         # Physics Parameters for Tungsten (W) impacting by Deuterium (D)
         if material == "Tungsten":
@@ -29,26 +29,35 @@ class SputteringPhysics:
             self.Q = 0.1
             self.atomic_mass = 12.0
             self.density = 2.2
+        self.redeposition_factor = float(np.clip(redeposition_factor, 0.0, 0.999))
 
     def calculate_yield(self, E_ion_eV, angle_deg=45.0):
         """
         Calculates Sputtering Yield (Y).
         Y = ejected_atoms / incident_ion
         """
-        # Eckstein Bohdansky Formula (Simplified)
-        # Y depends heavily on Energy E
-        
-        if E_ion_eV < self.E_th:
+        # Reduced Bohdansky-style yield:
+        # Y ~ Q * S_n(eps) * (1 - (Eth/E)^(2/3)) * (1 - Eth/E)^2 * f(theta)
+        # with bounded angular enhancement.
+        E = float(E_ion_eV)
+        if E <= self.E_th:
             return 0.0
-        
-        reduced_E = E_ion_eV / self.E_th
-        f_E = (np.log(reduced_E) * (reduced_E - 1)) / (reduced_E**2 + 1)
-        
-        # Angular dependence (Grazing incidence increases sputtering)
-        # But for rough surfaces, it averages out. We use a factor.
-        f_alpha = 1.0 + (angle_deg / 90.0)**2 
-        
-        Y = self.Q * f_E * f_alpha
+
+        eps = E / self.E_th
+        eth_ratio = self.E_th / E
+
+        # Nuclear stopping surrogate (monotone in eps and bounded for stability).
+        s_n = np.log1p(1.2288 * eps) / (1.0 + np.sqrt(eps))
+
+        # Bohdansky threshold correction.
+        threshold_term = (1.0 - eth_ratio ** (2.0 / 3.0)) * (1.0 - eth_ratio) ** 2
+        threshold_term = max(0.0, threshold_term)
+
+        # Angular dependence: stronger sputtering near grazing incidence.
+        theta = np.deg2rad(np.clip(angle_deg, 0.0, 89.0))
+        f_alpha = min(5.0, 1.0 / max(np.cos(theta), 1e-3))
+
+        Y = self.Q * s_n * threshold_term * f_alpha
         return max(0.0, Y)
 
     def calculate_erosion_rate(self, flux_particles_m2_s, T_ion_eV):
@@ -68,8 +77,7 @@ class SputteringPhysics:
         
         # 4. Redeposition (Crucial!)
         # In magnetic field, 90-99% of sputtered atoms ionize and fly back to wall.
-        R_redep = 0.95 # 95% redeposition efficiency
-        Flux_net = Flux_erosion * (1.0 - R_redep)
+        Flux_net = Flux_erosion * (1.0 - self.redeposition_factor)
         
         # 5. Convert to thickness (mm/year)
         # Mass loss rate = Flux_net * Atomic_Mass / Avogadro
@@ -77,13 +85,6 @@ class SputteringPhysics:
         
         Avogadro = 6.022e23
         mass_per_atom_g = self.atomic_mass / Avogadro
-        
-        # g/m2/s
-        mass_loss_rate = Flux_net * mass_per_atom_g
-        
-        # cm3/m2/s = (g/m2/s) / (g/cm3) -> needs unit conversion
-        # density is g/cm3 = 1e6 g/m3
-        density_SI = self.density * 1e6
         
         # m/s
         recession_speed = (Flux_net * (self.atomic_mass * 1.66e-27)) / (self.density * 1000) 
@@ -96,6 +97,7 @@ class SputteringPhysics:
             'Yield': Y,
             'E_impact': E_impact,
             'Net_Flux': Flux_net,
+            'Redeposition': self.redeposition_factor,
             'Erosion_mm_year': mm_year,
             'Impurity_Source': Flux_net # Particles entering plasma
         }
