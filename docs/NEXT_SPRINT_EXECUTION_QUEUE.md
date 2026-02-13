@@ -52,7 +52,8 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - Completed: `GPHY-03` (reduced non-LTE collisional-radiative lookup for impurity charge-state PEC and radiative-loss estimation).
 - Completed: `GPHY-04` (reduced IGA/NURBS boundary lane with smooth first-wall contour generation and regression checks).
 - Completed: `GPHY-05` (latency-aware control lane with vector OU noise, actuator delay-line, and lagged MPC rollout).
-- Next active task: `GPHY-06` RFC/implementation staging.
+- Completed: `GPHY-06` (reduced runtime regime-specialized kernel cache/hot-swap lane in `fusion-core`).
+- Next active task: none (advanced registry baseline closed).
 
 ## Explicitly Deferred (Not In Sprint S1)
 
@@ -60,7 +61,6 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - `GAI-01`, `GAI-02`, `GAI-03`
 - `GMVR-01`, `GMVR-02`, `GMVR-03`
 - `GDEP-01`, `GDEP-02`
-- `GPHY-06`
 
 ## Merge Gate Checklist (Per PR)
 

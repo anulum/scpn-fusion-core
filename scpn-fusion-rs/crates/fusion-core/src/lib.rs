@@ -8,6 +8,7 @@ pub mod bfield;
 pub mod ignition;
 pub mod inverse;
 pub mod jacobian;
+pub mod jit;
 pub mod kernel;
 pub mod memory_transport;
 pub mod particles;

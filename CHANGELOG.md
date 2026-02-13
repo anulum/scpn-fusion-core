@@ -47,6 +47,10 @@
   - vector Ornstein-Uhlenbeck noise layer for multi-channel perturbations
   - actuator delay-line with configurable lag blending
   - DDE-like delayed rollout path in MPC (`plan_with_delay_dynamics`)
+- Added reduced runtime regime-specialized kernel lane in `fusion-core`:
+  - new `fusion-core/src/jit.rs` with deterministic regime routing and specialization specs
+  - compile-cache and hot-swap manager (`RuntimeKernelJit`) for regime-triggered kernel activation
+  - regression tests for cache reuse, hot-swap response divergence, and identity-safe fallback
 - Upgraded AMR hierarchy and kernel integration to level-aware scaling (`2^level`) for multi-level patch colocation/prolongation.
 - Added AMR multilevel tests for hierarchy generation and level-scaled interpolation.
 - Added low-order toroidal mode coupling closure in `fusion-core` transport:
