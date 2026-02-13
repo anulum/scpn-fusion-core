@@ -8,6 +8,7 @@
 
 import sys
 from pathlib import Path
+import re
 
 # Ensure the src/ package is importable for autodoc
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
@@ -19,7 +20,10 @@ author = "Miroslav Sotek, Michal Reiprich"
 try:
     from scpn_fusion import __version__ as package_version
 except Exception:
-    package_version = "1.0.2"
+    init_path = Path(__file__).resolve().parents[2] / "src" / "scpn_fusion" / "__init__.py"
+    text = init_path.read_text(encoding="utf-8")
+    match = re.search(r'__version__\s*=\s*"([^"]+)"', text)
+    package_version = match.group(1) if match else "0.0.0"
 
 release = package_version
 
