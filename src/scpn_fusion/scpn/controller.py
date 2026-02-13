@@ -520,6 +520,7 @@ class NeuroSymbolicController:
                     rng = None
             else:
                 rng = np.random.default_rng(sample_seed)
+                counts: NDArray[np.int64]
                 if self._sc_antithetic and self._sc_n_passes >= 2:
                     n_pairs = (self._sc_n_passes + 1) // 2
                     base = rng.random((n_pairs, self._nT))
@@ -534,10 +535,11 @@ class NeuroSymbolicController:
                             axis=0,
                             dtype=np.int64,
                         )
-                    counts = low_hits + high_hits
+                    counts = np.asarray(low_hits + high_hits, dtype=np.int64)
                 else:
                     counts = np.asarray(
-                        rng.binomial(self._sc_n_passes, p_fire), dtype=np.int64
+                        rng.binomial(self._sc_n_passes, p_fire, size=self._nT),
+                        dtype=np.int64,
                     )
                 f = counts.astype(np.float64) / float(self._sc_n_passes)
 
