@@ -42,12 +42,16 @@ The following gaps block full 3D physics fidelity.
 | GNEU-01 | Benchmark SNN compiler vs SOTA RL tearing-mode avoidance baseline (DIII-D-style, 2025 references) | `>95%` match vs DeepMind TORAX baseline; bit-flip resilience recovery `<1 ms` on synthetic disruptions | Extend `scpn/neuro_symbolic_compiler.py` with RL baseline harness + fault-injection resilience tests |
 | GNEU-02 | Neuromorphic anomaly detection aligned with Startorus supervised/unsupervised early-alarm style | Robust early MHD/liquid-flow instability alarms under random perturbations | Extend `control/disruption_predictor.rs` with supervised+unsupervised alarm path and `proptest` perturbation coverage |
 | GNEU-03 | Ice pellet fueling control mode via Petri-to-SNN controller path | Plasma density tracking error `<=1e-3` on ITER config scenarios | Add fueling mode implementation in `modes/fueling.py` with ITER-oriented simulation loop + regression tests |
+| GAI-01 | GyroSwin-like turbulence surrogate for 5D transport closure | `~1000x` speedup vs reference GENE-style runs; RMSE `<10%` on core turbulence benchmarks | Extend `transport/toroidal_closure.rs` with Torch-trained surrogate pipeline over public gyrokinetic datasets (JET/ITPA) |
+| GAI-02 | TORAX hybrid real-time control loop integration | Stable hybrid loop execution on NSTX-U digital-twin scenarios with closed-loop control hooks | Integrate/fork DeepMind TORAX workflow into `run_realtime_simulation.py` and couple with existing SNN controller path |
+| GAI-03 | HEAT-ML magnetic shadow surrogate for divertor optimization | Magnetic shadow prediction runtime `<1 s` per scenario with optimization-ready outputs | Add HEAT-ML-style surrogate and integrate into MVR scanner heat-flux optimization workflow |
 
 ## Backlog Summary
 
 - Remaining 3D gaps: `G3D-05`, `G3D-07` (2 tasks)
 - Added neuromorphic/control tasks: `GNEU-01`, `GNEU-02`, `GNEU-03` (3 tasks)
-- Total remaining tracked tasks: 5
+- Added AI-surrogate integration tasks: `GAI-01`, `GAI-02`, `GAI-03` (3 tasks)
+- Total remaining tracked tasks: 8
 
 ## Phase 2 Entry Criteria
 
