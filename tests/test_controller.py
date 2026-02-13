@@ -31,6 +31,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from scpn_fusion import __version__ as PACKAGE_VERSION
 from scpn_fusion.scpn.structure import StochasticPetriNet
 from scpn_fusion.scpn.compiler import FusionCompiler, CompiledNet, _HAS_SC_NEUROCORE
 from scpn_fusion.scpn.contracts import (
@@ -199,6 +200,10 @@ class TestLevel0Static:
     def test_firing_mode_declared(self, artifact_path: str) -> None:
         art = load_artifact(artifact_path)
         assert art.meta.firing_mode in ("binary", "fractional")
+
+    def test_compiler_version_matches_package(self, artifact_path: str) -> None:
+        art = load_artifact(artifact_path)
+        assert art.meta.compiler.version == PACKAGE_VERSION
 
     def test_marking_in_unit_range(self, artifact_path: str) -> None:
         art = load_artifact(artifact_path)

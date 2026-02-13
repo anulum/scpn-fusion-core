@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
+from scpn_fusion import __version__ as PACKAGE_VERSION
 from .structure import StochasticPetriNet
 
 logger = logging.getLogger(__name__)
@@ -257,7 +258,7 @@ class CompiledNet:
             created_utc=datetime.now(timezone.utc).isoformat(),
             compiler=artifact_mod.CompilerInfo(
                 name="FusionCompiler",
-                version="1.0.0",
+                version=PACKAGE_VERSION,
                 git_sha="0000000",
             ),
         )
