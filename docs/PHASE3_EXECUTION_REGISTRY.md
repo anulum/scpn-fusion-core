@@ -92,4 +92,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `S3-005`
 - Completed: `S3-006`
 - Completed: `S4-001`
-- In progress: `S4-002`
+- Completed: `S4-002`
+- In progress: `S4-003`

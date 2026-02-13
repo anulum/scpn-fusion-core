@@ -49,6 +49,10 @@ from scpn_fusion.scpn.artifact import (
     ARTIFACT_SCHEMA_VERSION,
     Artifact,
     ArtifactValidationError,
+    PackedWeights,
+    PackedWeightsGroup,
+    decode_u64_compact,
+    encode_u64_compact,
     load_artifact,
     save_artifact,
 )
@@ -257,6 +261,49 @@ class TestLevel0Static:
                     art2.weights.packed.w_out_packed.data_u64
                     == art1.weights.packed.w_out_packed.data_u64
                 )
+        finally:
+            os.unlink(path2)
+
+    def test_compact_u64_codec_roundtrip_deterministic(self) -> None:
+        values = [
+            0,
+            1,
+            2,
+            0x0123456789ABCDEF,
+            0x7FFFFFFFFFFFFFFF,
+            0x8000000000000000,
+            0xFFFFFFFFFFFFFFFF,
+        ]
+        enc1 = encode_u64_compact(values)
+        enc2 = encode_u64_compact(values)
+        assert enc1 == enc2
+        decoded = decode_u64_compact(enc1)
+        assert decoded == values
+
+    def test_artifact_roundtrip_compact_packed_synthetic(self, artifact_path: str) -> None:
+        art1 = load_artifact(artifact_path)
+        w_in_u64 = [0, 1, 2, 3, 4, 5]
+        w_out_u64 = [9, 8, 7, 6]
+        art1.weights.packed = PackedWeightsGroup(
+            words_per_stream=2,
+            w_in_packed=PackedWeights(shape=[3, 1, 2], data_u64=w_in_u64),
+            w_out_packed=PackedWeights(shape=[2, 1, 2], data_u64=w_out_u64),
+        )
+
+        fd, path2 = tempfile.mkstemp(suffix=".scpnctl.json")
+        os.close(fd)
+        try:
+            save_artifact(art1, path2, compact_packed=True)
+            payload_obj = json.loads(Path(path2).read_text(encoding="utf-8"))
+            packed_obj = payload_obj["weights"]["packed"]
+            assert packed_obj["w_in_packed"]["encoding"] == "u64-le-zlib-base64"
+            assert packed_obj["w_out_packed"]["encoding"] == "u64-le-zlib-base64"
+
+            art2 = load_artifact(path2)
+            assert art2.weights.packed is not None
+            assert art2.weights.packed.w_in_packed.data_u64 == w_in_u64
+            assert art2.weights.packed.w_out_packed is not None
+            assert art2.weights.packed.w_out_packed.data_u64 == w_out_u64
         finally:
             os.unlink(path2)
 

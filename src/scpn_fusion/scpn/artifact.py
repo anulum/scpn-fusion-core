@@ -220,6 +220,16 @@ def _decode_u64_compact(encoded: Dict[str, Any]) -> List[int]:
     ]
 
 
+def encode_u64_compact(data_u64: List[int]) -> Dict[str, Any]:
+    """Public compact codec helper for deterministic uint64 payload encoding."""
+    return _encode_u64_compact(list(map(int, data_u64)))
+
+
+def decode_u64_compact(encoded: Dict[str, Any]) -> List[int]:
+    """Public compact codec helper for deterministic uint64 payload decoding."""
+    return _decode_u64_compact(encoded)
+
+
 def _validate(artifact: Artifact) -> None:
     """Lightweight checks: required fields, ranges, shape consistency."""
     meta = artifact.meta
