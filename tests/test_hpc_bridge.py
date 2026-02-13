@@ -25,6 +25,7 @@ class _DummyLib:
         self.last_omega = None
         self.last_tolerance = None
         self.destroyed = None
+        self.boundary_value = None
 
     def run_step(self, solver_ptr, j_array, psi_array, size, iterations) -> None:
         self.called = True
@@ -55,6 +56,9 @@ class _DummyLib:
     def destroy_solver(self, solver_ptr) -> None:
         self.destroyed = solver_ptr
 
+    def set_boundary_dirichlet(self, solver_ptr, value) -> None:
+        self.boundary_value = float(value)
+
 
 class _DummyDeleteLib:
     def __init__(self) -> None:
@@ -71,6 +75,7 @@ def _make_bridge(nr: int = 2, nz: int = 3) -> HPCBridge:
     bridge.loaded = True
     bridge._destroy_symbol = "destroy_solver"
     bridge._has_converged_api = True
+    bridge._has_boundary_api = True
     bridge.nr = nr
     bridge.nz = nz
     return bridge
@@ -142,6 +147,19 @@ def test_solve_until_converged_falls_back_without_native_api() -> None:
     assert np.allclose(psi, 0.5 * j_phi)
     assert iters == 12
     assert np.isnan(delta)
+
+
+def test_set_boundary_dirichlet_calls_native_symbol() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    bridge.set_boundary_dirichlet(1.25)
+    assert bridge.lib.boundary_value == 1.25
+
+
+def test_set_boundary_dirichlet_noop_without_support() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    bridge._has_boundary_api = False
+    bridge.set_boundary_dirichlet(0.5)
+    assert bridge.lib.boundary_value is None
 
 
 def test_close_releases_solver_pointer() -> None:

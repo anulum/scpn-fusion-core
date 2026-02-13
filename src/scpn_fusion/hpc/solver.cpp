@@ -75,10 +75,14 @@ public:
                 r_grid[z * cfg.nr + r] = cfg.r_min + r * dr;
             }
         }
+
+        apply_dirichlet_boundaries();
     }
 
     /// Run one Red-Black SOR sweep and return max |delta psi|.
     double solve_step_sor(double omega = 1.8) {
+        apply_dirichlet_boundaries();
+
         double red_max_delta = 0.0;
         // Red pass (iz + ir even)
         #ifdef _OPENMP
@@ -116,10 +120,31 @@ public:
         }
     }
 
+    void set_boundary_value(double value) {
+        boundary_value = value;
+        apply_dirichlet_boundaries();
+    }
+
     const double *get_psi_ptr() const { return psi.data(); }
     size_t get_size() const { return psi.size(); }
 
 private:
+    inline void apply_dirichlet_boundaries() {
+        if (cfg.nr <= 0 || cfg.nz <= 0) {
+            return;
+        }
+        const int nr = cfg.nr;
+        const int nz = cfg.nz;
+        for (int r = 0; r < nr; ++r) {
+            psi[r] = boundary_value;
+            psi[(nz - 1) * nr + r] = boundary_value;
+        }
+        for (int z = 0; z < nz; ++z) {
+            psi[z * nr] = boundary_value;
+            psi[z * nr + (nr - 1)] = boundary_value;
+        }
+    }
+
     inline double update_point(int z, int r, double omega) {
         const int idx = z * cfg.nr + r;
         const double R = r_grid[idx];
@@ -151,6 +176,7 @@ private:
     std::vector<double> j_phi;
     std::vector<double> r_grid;
     double dr, dz, dr_sq, dz_sq;
+    double boundary_value = 0.0;
 };
 
 // ── C-linkage API (consumed by Python ctypes) ───────────────────────
@@ -172,6 +198,16 @@ void *create_solver(int nr, int nz,
     cfg.vacuum_perm = 1.0;
 
     return static_cast<void *>(new FastSolver(cfg));
+}
+
+/// Set fixed Dirichlet boundary value for the psi edges.
+void set_boundary_dirichlet(void *solver_ptr, double boundary_value)
+{
+    if (solver_ptr == nullptr) {
+        return;
+    }
+    auto *solver = static_cast<FastSolver *>(solver_ptr);
+    solver->set_boundary_value(boundary_value);
 }
 
 /// Run `iterations` Red-Black SOR sweeps.

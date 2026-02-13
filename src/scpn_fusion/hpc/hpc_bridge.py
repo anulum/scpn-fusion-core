@@ -46,6 +46,7 @@ class HPCBridge:
         self.loaded: bool = False
         self._destroy_symbol: Optional[str] = None
         self._has_converged_api: bool = False
+        self._has_boundary_api: bool = False
 
         if lib_path is None:
             lib_name = (
@@ -133,6 +134,14 @@ class HPCBridge:
         else:
             self._has_converged_api = False
 
+        # void set_boundary_dirichlet(void* solver, double boundary_value)
+        if hasattr(self.lib, "set_boundary_dirichlet"):
+            self.lib.set_boundary_dirichlet.argtypes = [ctypes.c_void_p, ctypes.c_double]
+            self.lib.set_boundary_dirichlet.restype = None
+            self._has_boundary_api = True
+        else:
+            self._has_boundary_api = False
+
         # void destroy_solver(void* solver) or void delete_solver(void* solver)
         if hasattr(self.lib, "destroy_solver"):
             self.lib.destroy_solver.argtypes = [ctypes.c_void_p]
@@ -151,6 +160,7 @@ class HPCBridge:
         nz: int,
         r_range: tuple[float, float],
         z_range: tuple[float, float],
+        boundary_value: float = 0.0,
     ) -> None:
         """Create the C++ solver instance for the given grid dimensions."""
         if not self.loaded:
@@ -160,6 +170,18 @@ class HPCBridge:
         self.solver_ptr = self.lib.create_solver(
             nr, nz, r_range[0], r_range[1], z_range[0], z_range[1]
         )
+        self.set_boundary_dirichlet(boundary_value)
+
+    def set_boundary_dirichlet(self, boundary_value: float = 0.0) -> None:
+        """Set a fixed Dirichlet boundary value for psi edges, if supported."""
+        if (
+            not self.loaded
+            or self.solver_ptr is None
+            or self.lib is None
+            or not self._has_boundary_api
+        ):
+            return
+        self.lib.set_boundary_dirichlet(self.solver_ptr, float(boundary_value))
 
     def solve(
         self,
