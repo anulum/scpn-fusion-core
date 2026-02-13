@@ -26,7 +26,7 @@ Legend:
 | GAI-03 | Done | Done (`docs/rfc/GAI-03_RFC.md`, `src/scpn_fusion/core/heat_ml_shadow_surrogate.py`, `src/scpn_fusion/core/global_design_scanner.py`, `validation/gai_03_heat_ml_shadow.py`) | Done (synthetic HEAT-ML scope) | Done (RMSE `<=10%`, inference `<1s`, mean reduction `>=8%`) | Done (smoke profile under CI budget) | Unassigned |
 | GMVR-01 | Done | Done (`docs/rfc/GMVR-01_RFC.md`, `src/scpn_fusion/core/global_design_scanner.py`, `validation/gmvr_01_compact_constraints.py`) | Done (synthetic compact-scan scope) | Done (R `1.2..1.5m`, `Q>5`, divertor/Zeff/HTS caps) | Done (deterministic smoke profile) | Unassigned |
 | GMVR-02 | Done | Done (`docs/rfc/GMVR-02_RFC.md`, `src/scpn_fusion/core/divertor_thermal_sim.py`, `validation/gmvr_02_temhd_divertor.py`) | Done (synthetic TEMHD scope) | Done (pressure/evap ratios + toroidal stability threshold) | Done (deterministic smoke profile) | Unassigned |
-| GMVR-03 | Pending | Pending | Pending | Pending | Pending | Unassigned |
+| GMVR-03 | Done | Done (`docs/rfc/GMVR-03_RFC.md`, `src/scpn_fusion/core/geometry_3d.py`, `validation/gmvr_03_stellarator_extension.py`) | Done (synthetic stellarator extension scope) | Done (SNN improvement + VMEC++ proxy parity thresholds) | Done (deterministic smoke profile) | Unassigned |
 | GDEP-01 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GDEP-02 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GDEP-03 | Pending | Pending | Pending | Pending | Pending | Unassigned |

@@ -290,6 +290,44 @@ class Reactor3DBuilder:
             modes=toroidal_modes,
         )
 
+    def build_stellarator_w7x_like_equilibrium(
+        self,
+        *,
+        lcfs_resolution: int = 96,
+        radial_steps: int = 512,
+        nfp: int = 5,
+        edge_ripple: float = 0.08,
+        vertical_ripple: float = 0.05,
+    ) -> VMECStyleEquilibrium3D:
+        """Build a reduced W7-X-like non-axisymmetric equilibrium extension."""
+        edge = float(np.clip(edge_ripple, 0.0, 0.25))
+        vert = float(np.clip(vertical_ripple, 0.0, 0.25))
+        modes = [
+            FourierMode3D(m=1, n=1, r_cos=0.45 * edge, z_sin=0.35 * vert),
+            FourierMode3D(m=2, n=1, r_sin=0.30 * edge, z_cos=0.20 * vert),
+            FourierMode3D(m=2, n=2, r_cos=0.25 * edge, z_sin=0.25 * vert),
+            FourierMode3D(m=3, n=1, r_sin=0.18 * edge, z_cos=0.12 * vert),
+        ]
+
+        if self.kernel is None and self.equilibrium_3d is not None:
+            base = self.equilibrium_3d
+            return VMECStyleEquilibrium3D(
+                r_axis=base.r_axis,
+                z_axis=base.z_axis,
+                a_minor=base.a_minor,
+                kappa=base.kappa,
+                triangularity=base.triangularity,
+                nfp=nfp,
+                modes=modes,
+            )
+
+        return self.build_vmec_like_equilibrium(
+            lcfs_resolution=lcfs_resolution,
+            radial_steps=radial_steps,
+            nfp=nfp,
+            toroidal_modes=modes,
+        )
+
     def generate_coil_meshes(self) -> list[dict[str, float | str]]:
         """Return compact metadata for external coil geometry placeholders."""
         if self.kernel is None:

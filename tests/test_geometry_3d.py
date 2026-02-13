@@ -9,6 +9,7 @@
 
 import numpy as np
 
+from scpn_fusion.core.equilibrium_3d import VMECStyleEquilibrium3D
 from scpn_fusion.core.geometry_3d import Reactor3DBuilder
 
 
@@ -169,3 +170,29 @@ def test_geometry_lcfs_low_point_edge_case_fallback() -> None:
     assert np.isfinite(lcfs).all()
     assert np.all((lcfs[:, 0] >= kernel.R[0]) & (lcfs[:, 0] <= kernel.R[-1]))
     assert np.all((lcfs[:, 1] >= kernel.Z[0]) & (lcfs[:, 1] <= kernel.Z[-1]))
+
+
+def test_build_stellarator_w7x_like_equilibrium_nonaxisymmetric() -> None:
+    base_eq = VMECStyleEquilibrium3D(
+        r_axis=2.0,
+        z_axis=0.0,
+        a_minor=0.5,
+        kappa=1.6,
+        triangularity=0.2,
+        nfp=1,
+    )
+    builder = Reactor3DBuilder(equilibrium_3d=base_eq, solve_equilibrium=False)
+    eq = builder.build_stellarator_w7x_like_equilibrium(
+        nfp=5,
+        edge_ripple=0.10,
+        vertical_ripple=0.06,
+    )
+
+    assert eq.nfp == 5
+    assert len(eq.modes) >= 3
+
+    rho = np.array([1.0, 1.0], dtype=float)
+    theta = np.array([0.45 * np.pi, 0.45 * np.pi], dtype=float)
+    phi = np.array([0.0, 0.6], dtype=float)
+    r_val, _, _ = eq.flux_to_cylindrical(rho, theta, phi)
+    assert abs(float(r_val[0] - r_val[1])) > 1e-4
