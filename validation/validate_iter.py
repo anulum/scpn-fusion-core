@@ -5,28 +5,24 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
+import argparse
+from pathlib import Path
+
 import numpy as np
-import matplotlib.pyplot as plt
-import sys
-import os
-import json
 
-# Add src to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-
-from scpn_fusion.core.fusion_kernel import FusionKernel
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
 
-def validate_iter():
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CONFIG_PATH = ROOT / "validation" / "iter_force_balanced.json"
+
+
+def validate_iter(config_path: Path = DEFAULT_CONFIG_PATH) -> None:
     print("--- SCPN VALIDATION SUITE: ITER BENCHMARK ---")
     print("Objective: Reproduce ITER Q=10 baseline (500MW Fusion Power)")
-    
-    # 1. Load Validated ITER Configuration
-    config_path = "03_CODE/SCPN-Fusion-Core/validation/iter_force_balanced.json"
-    
+
     # 2. Run Physics Kernel
     print("[1/3] Solving MHD Equilibrium...")
-    sim = FusionBurnPhysics(config_path)
+    sim = FusionBurnPhysics(str(config_path))
     sim.solve_equilibrium()
     
     # Check Geometry
@@ -73,5 +69,14 @@ def validate_iter():
     else:
         print("\nRESULT: MODEL NEEDS CALIBRATION.")
 
+
 if __name__ == "__main__":
-    validate_iter()
+    parser = argparse.ArgumentParser(description="Validate ITER baseline scenario.")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=DEFAULT_CONFIG_PATH,
+        help="Path to ITER validation configuration JSON.",
+    )
+    args = parser.parse_args()
+    validate_iter(config_path=args.config)
