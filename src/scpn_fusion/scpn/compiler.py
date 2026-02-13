@@ -18,8 +18,11 @@ from __future__ import annotations
 
 import logging
 import math
+import os
+import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -48,6 +51,31 @@ except ImportError:
     )
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
+
+
+def _resolve_git_sha() -> str:
+    """Resolve a short git SHA for artifact metadata."""
+    for key in ("SCPN_GIT_SHA", "GITHUB_SHA", "CI_COMMIT_SHA"):
+        value = os.environ.get(key, "").strip()
+        if value:
+            return value[:7]
+
+    try:
+        repo_root = Path(__file__).resolve().parents[3]
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        sha = result.stdout.strip()
+        if sha:
+            return sha[:7]
+    except Exception:
+        pass
+
+    return "0000000"
 
 
 def _encode_weight_matrix_packed(
@@ -259,7 +287,7 @@ class CompiledNet:
             compiler=artifact_mod.CompilerInfo(
                 name="FusionCompiler",
                 version=PACKAGE_VERSION,
-                git_sha="0000000",
+                git_sha=_resolve_git_sha(),
             ),
         )
 

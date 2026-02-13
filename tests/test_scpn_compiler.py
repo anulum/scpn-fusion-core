@@ -274,6 +274,18 @@ class TestFusionCompiler:
             err_msg="Stochastic path deviates >0.15 from float path",
         )
 
+    def test_export_artifact_prefers_env_git_sha(
+        self,
+        traffic_net: StochasticPetriNet,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        compiler = FusionCompiler(bitstream_length=128, seed=7)
+        compiled = compiler.compile(traffic_net)
+        monkeypatch.setenv("SCPN_GIT_SHA", "abcdef1234567890")
+
+        artifact = compiled.export_artifact(name="sha_test")
+        assert artifact.meta.compiler.git_sha == "abcdef1"
+
 
 # ── Integration: 10-step cyclic flow ────────────────────────────────────────
 
