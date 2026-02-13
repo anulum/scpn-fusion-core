@@ -40,6 +40,7 @@ from scpn_fusion.scpn.contracts import (
     ControlObservation,
     ControlScales,
     ControlTargets,
+    FeatureAxisSpec,
     _clip01,
     decode_actions,
     extract_features,
@@ -507,6 +508,47 @@ class TestContracts:
         )
         for v in feats.values():
             assert 0.0 <= v <= 1.0
+
+    def test_extract_features_custom_axes(self) -> None:
+        obs = {"beta_n": 2.2, "q95": 4.5}
+        axes = [
+            FeatureAxisSpec(
+                obs_key="beta_n",
+                target=1.8,
+                scale=1.0,
+                pos_key="x_beta_pos",
+                neg_key="x_beta_neg",
+            ),
+            FeatureAxisSpec(
+                obs_key="q95",
+                target=5.0,
+                scale=2.0,
+                pos_key="x_q95_pos",
+                neg_key="x_q95_neg",
+            ),
+        ]
+        feats = extract_features(
+            obs=obs,
+            targets=ControlTargets(),
+            scales=ControlScales(),
+            feature_axes=axes,
+        )
+        assert set(feats.keys()) == {"x_beta_pos", "x_beta_neg", "x_q95_pos", "x_q95_neg"}
+        assert feats["x_beta_pos"] == 0.0
+        assert feats["x_beta_neg"] > 0.0
+        assert feats["x_q95_pos"] > 0.0
+        assert feats["x_q95_neg"] == 0.0
+
+    def test_extract_features_passthrough_keys(self) -> None:
+        obs = {"R_axis_m": 6.2, "Z_axis_m": 0.0, "density_norm": 0.73}
+        feats = extract_features(
+            obs=obs,
+            targets=ControlTargets(),
+            scales=ControlScales(),
+            passthrough_keys=["density_norm"],
+        )
+        assert "density_norm" in feats
+        assert abs(feats["density_norm"] - 0.73) < 1e-12
 
     def test_decode_actions_basic(self) -> None:
         marking = [0.0, 0.0, 0.0, 0.0, 0.8, 0.2, 0.7, 0.1]

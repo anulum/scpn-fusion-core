@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from typing import Dict, List, Optional, TypedDict
+from typing import Dict, List, Mapping, Optional, Sequence, TypedDict
 
 
 # ── Observation / Action TypedDicts ──────────────────────────────────────────
@@ -55,6 +55,26 @@ class ControlScales:
     Z_scale_m: float = 0.5
 
 
+@dataclass(frozen=True)
+class FeatureAxisSpec:
+    """Configurable feature axis mapping from observation -> unipolar features.
+
+    Parameters
+    ----------
+    obs_key : observation key to read.
+    target : target/setpoint value for this axis.
+    scale : normalisation scale for signed error (target - obs) / scale.
+    pos_key : output feature key for positive error component.
+    neg_key : output feature key for negative error component.
+    """
+
+    obs_key: str
+    target: float
+    scale: float
+    pos_key: str
+    neg_key: str
+
+
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -73,27 +93,56 @@ def _seed64(seed_base: int, sid: str) -> int:
 
 
 def extract_features(
-    obs: ControlObservation,
+    obs: Mapping[str, float],
     targets: ControlTargets,
     scales: ControlScales,
+    feature_axes: Optional[Sequence[FeatureAxisSpec]] = None,
+    passthrough_keys: Optional[Sequence[str]] = None,
 ) -> Dict[str, float]:
     """Map observation → unipolar [0, 1] feature sources.
 
-    Returns dict with keys ``x_R_pos``, ``x_R_neg``, ``x_Z_pos``, ``x_Z_neg``.
+    By default returns keys ``x_R_pos``, ``x_R_neg``, ``x_Z_pos``, ``x_Z_neg``.
+    Custom feature mappings can be supplied via ``feature_axes`` for arbitrary
+    observation dictionaries.
     """
-    eR = (targets.R_target_m - obs["R_axis_m"]) / scales.R_scale_m
-    eZ = (targets.Z_target_m - obs["Z_axis_m"]) / scales.Z_scale_m
+    axes = (
+        list(feature_axes)
+        if feature_axes is not None
+        else [
+            FeatureAxisSpec(
+                obs_key="R_axis_m",
+                target=targets.R_target_m,
+                scale=scales.R_scale_m,
+                pos_key="x_R_pos",
+                neg_key="x_R_neg",
+            ),
+            FeatureAxisSpec(
+                obs_key="Z_axis_m",
+                target=targets.Z_target_m,
+                scale=scales.Z_scale_m,
+                pos_key="x_Z_pos",
+                neg_key="x_Z_neg",
+            ),
+        ]
+    )
 
-    # Clamp signed error to [-1, 1]
-    eR = max(-1.0, min(1.0, eR))
-    eZ = max(-1.0, min(1.0, eZ))
+    out: Dict[str, float] = {}
+    for axis in axes:
+        if axis.obs_key not in obs:
+            raise KeyError(f"Missing observation key for feature extraction: {axis.obs_key}")
+        scale = axis.scale if abs(axis.scale) > 1e-12 else 1e-12
+        err = (axis.target - float(obs[axis.obs_key])) / scale
+        err = max(-1.0, min(1.0, err))
+        out[axis.pos_key] = _clip01(max(0.0, err))
+        out[axis.neg_key] = _clip01(max(0.0, -err))
 
-    return {
-        "x_R_pos": _clip01(max(0.0, eR)),
-        "x_R_neg": _clip01(max(0.0, -eR)),
-        "x_Z_pos": _clip01(max(0.0, eZ)),
-        "x_Z_neg": _clip01(max(0.0, -eZ)),
-    }
+    if passthrough_keys is not None:
+        for key in passthrough_keys:
+            if key not in obs:
+                raise KeyError(f"Missing observation key for passthrough: {key}")
+            out[key] = _clip01(float(obs[key]))
+
+    return out
 
 
 # ── Action decoding ─────────────────────────────────────────────────────────
