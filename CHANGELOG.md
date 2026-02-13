@@ -27,6 +27,10 @@
 ### Solver Validation and Numerics
 
 - Added kernel-level analytical-vs-finite-difference Jacobian consistency test for inverse reconstruction.
+- Added reduced particle feedback lane in `fusion-core`:
+  - new `particles.rs` with Boris pusher and toroidal current deposition
+  - optional kernel hook `set_particle_current_feedback(...)` to blend particle `J_phi` into GS source updates
+  - regression tests for Boris invariance, deposition non-zero support, blend renormalization, and shape guard
 - Upgraded AMR hierarchy and kernel integration to level-aware scaling (`2^level`) for multi-level patch colocation/prolongation.
 - Added AMR multilevel tests for hierarchy generation and level-scaled interpolation.
 - Added low-order toroidal mode coupling closure in `fusion-core` transport:

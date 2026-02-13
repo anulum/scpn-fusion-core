@@ -5,6 +5,7 @@
 //! X-point detection, and convergence tracking.
 
 use crate::bfield::compute_b_field;
+use crate::particles::blend_particle_current;
 use crate::source::{
     update_plasma_source_nonlinear, update_plasma_source_with_profiles, ProfileParams,
     SourceProfileContext,
@@ -45,6 +46,8 @@ pub struct FusionKernel {
     external_profile_mode: bool,
     profile_params_p: Option<ProfileParams>,
     profile_params_ff: Option<ProfileParams>,
+    particle_current_feedback: Option<Array2<f64>>,
+    particle_feedback_coupling: f64,
 }
 
 impl FusionKernel {
@@ -60,6 +63,8 @@ impl FusionKernel {
             external_profile_mode: false,
             profile_params_p: None,
             profile_params_ff: None,
+            particle_current_feedback: None,
+            particle_feedback_coupling: 0.0,
         }
     }
 
@@ -215,6 +220,15 @@ impl FusionKernel {
                     i_target,
                 );
             }
+            if let Some(particle_j_phi) = self.particle_current_feedback.as_ref() {
+                self.state.j_phi = blend_particle_current(
+                    &self.state.j_phi,
+                    particle_j_phi,
+                    &self.grid,
+                    i_target,
+                    self.particle_feedback_coupling,
+                )?;
+            }
 
             // Source = -μ₀ R J_phi
             for iz in 0..nz {
@@ -348,6 +362,31 @@ impl FusionKernel {
         self.profile_params_ff = None;
     }
 
+    /// Inject a static particle-current map blended into fluid J_phi each Picard step.
+    pub fn set_particle_current_feedback(
+        &mut self,
+        particle_j_phi: Array2<f64>,
+        coupling: f64,
+    ) -> FusionResult<()> {
+        if particle_j_phi.dim() != (self.grid.nz, self.grid.nr) {
+            return Err(FusionError::PhysicsViolation(format!(
+                "Particle feedback shape mismatch: expected ({}, {}), got {:?}",
+                self.grid.nz,
+                self.grid.nr,
+                particle_j_phi.dim(),
+            )));
+        }
+        self.particle_current_feedback = Some(particle_j_phi);
+        self.particle_feedback_coupling = coupling.clamp(0.0, 1.0);
+        Ok(())
+    }
+
+    /// Disable particle-current feedback for subsequent solves.
+    pub fn clear_particle_current_feedback(&mut self) {
+        self.particle_current_feedback = None;
+        self.particle_feedback_coupling = 0.0;
+    }
+
     /// Convenience wrapper to solve with temporary external profile parameters.
     pub fn solve_equilibrium_with_profiles(
         &mut self,
@@ -390,6 +429,7 @@ impl FusionKernel {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ndarray::Array2;
     use std::path::PathBuf;
 
     fn project_root() -> PathBuf {
@@ -466,5 +506,34 @@ mod tests {
             !kernel.psi().iter().any(|v| v.is_nan()),
             "No NaN in validated config solve"
         );
+    }
+
+    #[test]
+    fn test_particle_feedback_shape_guard() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let bad_shape = Array2::zeros((8, 8));
+        let err = kernel
+            .set_particle_current_feedback(bad_shape, 0.4)
+            .unwrap_err();
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("shape mismatch"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_set_and_clear() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
+        kernel
+            .set_particle_current_feedback(feedback, 1.5)
+            .expect("feedback set should succeed");
+        assert!(kernel.particle_current_feedback.is_some());
+        assert!((kernel.particle_feedback_coupling - 1.0).abs() < 1e-12);
+        kernel.clear_particle_current_feedback();
+        assert!(kernel.particle_current_feedback.is_none());
+        assert_eq!(kernel.particle_feedback_coupling, 0.0);
     }
 }

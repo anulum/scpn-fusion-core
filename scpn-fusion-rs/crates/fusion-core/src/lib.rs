@@ -10,6 +10,7 @@ pub mod inverse;
 pub mod jacobian;
 pub mod kernel;
 pub mod memory_transport;
+pub mod particles;
 pub mod pedestal;
 pub mod rf_heating;
 pub mod source;

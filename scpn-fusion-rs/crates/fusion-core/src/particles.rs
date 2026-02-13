@@ -1,0 +1,294 @@
+//! Reduced particle tracker overlay for hybrid MHD/PIC-style current feedback.
+//!
+//! This module introduces a deterministic charged-particle pusher using the
+//! Boris integrator and a simple toroidal current deposition path on the
+//! Grad-Shafranov grid.
+
+use fusion_types::error::{FusionError, FusionResult};
+use fusion_types::state::Grid2D;
+use ndarray::{Array1, Array2};
+
+const MIN_RADIUS_M: f64 = 1e-9;
+const MIN_CELL_AREA_M2: f64 = 1e-12;
+const MIN_CURRENT_INTEGRAL: f64 = 1e-9;
+
+/// Charged macro-particle state.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ChargedParticle {
+    pub x_m: f64,
+    pub y_m: f64,
+    pub z_m: f64,
+    pub vx_m_s: f64,
+    pub vy_m_s: f64,
+    pub vz_m_s: f64,
+    pub charge_c: f64,
+    pub mass_kg: f64,
+    pub weight: f64,
+}
+
+impl ChargedParticle {
+    /// Cylindrical major radius R from Cartesian position.
+    pub fn cylindrical_radius_m(&self) -> f64 {
+        (self.x_m * self.x_m + self.y_m * self.y_m).sqrt()
+    }
+
+    /// Toroidal velocity component v_phi in cylindrical basis.
+    pub fn toroidal_velocity_m_s(&self) -> f64 {
+        let r = self.cylindrical_radius_m().max(MIN_RADIUS_M);
+        (-self.y_m * self.vx_m_s + self.x_m * self.vy_m_s) / r
+    }
+}
+
+fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
+}
+
+fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
+fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
+    let mut best_idx = 0usize;
+    let mut best_dist = f64::INFINITY;
+    for (idx, x) in axis.iter().copied().enumerate() {
+        let dist = (x - value).abs();
+        if dist < best_dist {
+            best_dist = dist;
+            best_idx = idx;
+        }
+    }
+    best_idx
+}
+
+/// Advance one particle state using the Boris push.
+pub fn boris_push_step(
+    particle: &mut ChargedParticle,
+    electric_v_m: [f64; 3],
+    magnetic_t: [f64; 3],
+    dt_s: f64,
+) {
+    if particle.mass_kg <= 0.0 || !dt_s.is_finite() || dt_s <= 0.0 {
+        return;
+    }
+
+    let qmdt2 = particle.charge_c * dt_s / (2.0 * particle.mass_kg);
+    let v_minus = [
+        particle.vx_m_s + qmdt2 * electric_v_m[0],
+        particle.vy_m_s + qmdt2 * electric_v_m[1],
+        particle.vz_m_s + qmdt2 * electric_v_m[2],
+    ];
+
+    let t = [
+        qmdt2 * magnetic_t[0],
+        qmdt2 * magnetic_t[1],
+        qmdt2 * magnetic_t[2],
+    ];
+    let t2 = dot(t, t);
+    let s = [
+        (2.0 * t[0]) / (1.0 + t2),
+        (2.0 * t[1]) / (1.0 + t2),
+        (2.0 * t[2]) / (1.0 + t2),
+    ];
+
+    let v_prime = {
+        let c = cross(v_minus, t);
+        [v_minus[0] + c[0], v_minus[1] + c[1], v_minus[2] + c[2]]
+    };
+    let v_plus = {
+        let c = cross(v_prime, s);
+        [v_minus[0] + c[0], v_minus[1] + c[1], v_minus[2] + c[2]]
+    };
+
+    let vx_new = v_plus[0] + qmdt2 * electric_v_m[0];
+    let vy_new = v_plus[1] + qmdt2 * electric_v_m[1];
+    let vz_new = v_plus[2] + qmdt2 * electric_v_m[2];
+
+    particle.vx_m_s = vx_new;
+    particle.vy_m_s = vy_new;
+    particle.vz_m_s = vz_new;
+    particle.x_m += vx_new * dt_s;
+    particle.y_m += vy_new * dt_s;
+    particle.z_m += vz_new * dt_s;
+}
+
+/// Advance a particle set for a fixed number of Boris steps.
+pub fn advance_particles_boris(
+    particles: &mut [ChargedParticle],
+    electric_v_m: [f64; 3],
+    magnetic_t: [f64; 3],
+    dt_s: f64,
+    steps: usize,
+) {
+    for _ in 0..steps {
+        for particle in particles.iter_mut() {
+            boris_push_step(particle, electric_v_m, magnetic_t, dt_s);
+        }
+    }
+}
+
+/// Deposit particle toroidal current density J_phi on the GS R-Z grid.
+pub fn deposit_toroidal_current_density(
+    particles: &[ChargedParticle],
+    grid: &Grid2D,
+) -> Array2<f64> {
+    let mut j_phi = Array2::zeros((grid.nz, grid.nr));
+    let area = (grid.dr.abs() * grid.dz.abs()).max(MIN_CELL_AREA_M2);
+    let r_min = grid.r[0];
+    let r_max = grid.r[grid.nr - 1];
+    let z_min = grid.z[0];
+    let z_max = grid.z[grid.nz - 1];
+
+    for particle in particles {
+        let r = particle.cylindrical_radius_m();
+        let z = particle.z_m;
+        if r < r_min || r > r_max || z < z_min || z > z_max {
+            continue;
+        }
+
+        let ir = nearest_index(&grid.r, r);
+        let iz = nearest_index(&grid.z, z);
+        let v_phi = particle.toroidal_velocity_m_s();
+        let j_contrib = particle.charge_c * particle.weight * v_phi / area;
+        j_phi[[iz, ir]] += j_contrib;
+    }
+
+    j_phi
+}
+
+/// Blend fluid and particle current maps and renormalize integral to `i_target`.
+pub fn blend_particle_current(
+    fluid_j_phi: &Array2<f64>,
+    particle_j_phi: &Array2<f64>,
+    grid: &Grid2D,
+    i_target: f64,
+    particle_coupling: f64,
+) -> FusionResult<Array2<f64>> {
+    let expected_shape = (grid.nz, grid.nr);
+    if fluid_j_phi.dim() != expected_shape || particle_j_phi.dim() != expected_shape {
+        return Err(FusionError::PhysicsViolation(format!(
+            "Particle-current blend shape mismatch: expected {:?}, fluid {:?}, particle {:?}",
+            expected_shape,
+            fluid_j_phi.dim(),
+            particle_j_phi.dim(),
+        )));
+    }
+
+    let coupling = particle_coupling.clamp(0.0, 1.0);
+    let fluid_weight = 1.0 - coupling;
+    let mut combined = Array2::zeros(expected_shape);
+
+    for iz in 0..grid.nz {
+        for ir in 0..grid.nr {
+            combined[[iz, ir]] =
+                fluid_weight * fluid_j_phi[[iz, ir]] + coupling * particle_j_phi[[iz, ir]];
+        }
+    }
+
+    let i_current = combined.iter().sum::<f64>() * grid.dr * grid.dz;
+    if i_current.abs() > MIN_CURRENT_INTEGRAL {
+        let scale = i_target / i_current;
+        combined.mapv_inplace(|v| v * scale);
+    } else {
+        combined.fill(0.0);
+    }
+
+    Ok(combined)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_boris_push_preserves_speed_without_electric_field() {
+        let particle = ChargedParticle {
+            x_m: 2.0,
+            y_m: 0.0,
+            z_m: 0.0,
+            vx_m_s: 80_000.0,
+            vy_m_s: 10_000.0,
+            vz_m_s: 5_000.0,
+            charge_c: 1.602_176_634e-19,
+            mass_kg: 1.672_621_923_69e-27,
+            weight: 1.0,
+        };
+        let speed_0 =
+            (particle.vx_m_s.powi(2) + particle.vy_m_s.powi(2) + particle.vz_m_s.powi(2)).sqrt();
+        let mut particles = vec![particle];
+        advance_particles_boris(&mut particles, [0.0, 0.0, 0.0], [0.0, 0.0, 2.5], 5e-10, 600);
+        let updated = particles[0];
+        let speed_1 =
+            (updated.vx_m_s.powi(2) + updated.vy_m_s.powi(2) + updated.vz_m_s.powi(2)).sqrt();
+        let rel = (speed_1 - speed_0).abs() / speed_0;
+        assert!(rel < 1e-10, "Speed drift too high for Boris push: {rel}");
+    }
+
+    #[test]
+    fn test_toroidal_current_deposition_is_nonzero() {
+        let grid = Grid2D::new(17, 17, 1.0, 9.0, -4.0, 4.0);
+        let particles = vec![
+            ChargedParticle {
+                x_m: 5.0,
+                y_m: 0.0,
+                z_m: 0.0,
+                vx_m_s: 0.0,
+                vy_m_s: 100_000.0,
+                vz_m_s: 0.0,
+                charge_c: 1.602_176_634e-19,
+                mass_kg: 1.672_621_923_69e-27,
+                weight: 2.0e16,
+            },
+            ChargedParticle {
+                x_m: 5.0,
+                y_m: 0.2,
+                z_m: 0.3,
+                vx_m_s: 10_000.0,
+                vy_m_s: 90_000.0,
+                vz_m_s: -2_000.0,
+                charge_c: 1.602_176_634e-19,
+                mass_kg: 1.672_621_923_69e-27,
+                weight: 1.5e16,
+            },
+        ];
+
+        let j = deposit_toroidal_current_density(&particles, &grid);
+        let sum_abs = j.iter().map(|v| v.abs()).sum::<f64>();
+        assert!(
+            sum_abs > 0.0,
+            "Expected non-zero toroidal current deposition"
+        );
+    }
+
+    #[test]
+    fn test_blend_particle_current_renormalizes_target_current() {
+        let grid = Grid2D::new(8, 8, 1.0, 5.0, -2.0, 2.0);
+        let fluid = Array2::from_elem((8, 8), 2.0);
+        let particle = Array2::from_elem((8, 8), 6.0);
+        let i_target = 15.0e6;
+        let blended = blend_particle_current(&fluid, &particle, &grid, i_target, 0.25).unwrap();
+        let i_actual = blended.iter().sum::<f64>() * grid.dr * grid.dz;
+        let rel = ((i_actual - i_target) / i_target).abs();
+        assert!(
+            rel < 1e-12,
+            "Blended current should match target after renormalization"
+        );
+    }
+
+    #[test]
+    fn test_blend_particle_current_shape_mismatch_errors() {
+        let grid = Grid2D::new(8, 8, 1.0, 5.0, -2.0, 2.0);
+        let fluid = Array2::zeros((8, 8));
+        let particle_bad = Array2::zeros((7, 8));
+        let err = blend_particle_current(&fluid, &particle_bad, &grid, 1.0, 0.5).unwrap_err();
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("shape mismatch"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+}
