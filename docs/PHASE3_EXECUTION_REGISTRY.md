@@ -95,6 +95,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | H5-022 | P0 | SCPN | Harden py312 strict typing for stochastic binomial counts path | `src/scpn_fusion/scpn/controller.py` | Controller binomial branch is strictly array-typed under mypy py312 lane, eliminating scalar-or-array assignment ambiguity in CI | `python -m mypy --strict src/scpn_fusion/scpn/contracts.py src/scpn_fusion/scpn/controller.py src/scpn_fusion/scpn/structure.py src/scpn_fusion/scpn/artifact.py src/scpn_fusion/scpn/compiler.py src/scpn_fusion/scpn/__init__.py` |
 | H5-023 | P1 | SCPN | Precompute transition-delay indices to remove per-tick timing mask/index churn | `src/scpn_fusion/scpn/controller.py` | Controller caches immediate/delayed transition index vectors and reuses delay-slot buffers in `_apply_transition_timing`, preserving deterministic outputs and benchmark thresholds | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `python validation/scpn_pid_mpc_benchmark.py --seed 42 --steps 240 --strict` |
 | H5-024 | P1 | Control | Stabilize GAI-02 latency metric with deterministic hardware-normalized proxy | `src/scpn_fusion/control/torax_hybrid_loop.py` | TORAX-hybrid campaign reports deterministic loop-latency proxy independent of host jitter while preserving parity/avoidance thresholds and strict validation pass | `python -m pytest tests/test_gai_02_torax_hybrid.py -v`, `python validation/gai_02_torax_hybrid.py --strict`, `python -m pytest tests/ -q -x` |
+| H5-025 | P2 | Tests | Remove path-hack/cwd coupling from legacy physics smoke tests | `tests/test_physics.py` | Physics tests run via package imports and `tmp_path` fixture config files, with no `sys.path` mutation or cwd file writes | `python -m pytest tests/test_physics.py -v` |
 
 ## Task Accounting
 
@@ -102,7 +103,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 24
+- Post-S4 hardening tasks delivered: 25
 - Remaining in deferred pool after queue selection: 67
 
 ## Active Task
@@ -149,4 +150,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `H5-022`
 - Completed: `H5-023`
 - Completed: `H5-024`
+- Completed: `H5-025`
 - Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).
