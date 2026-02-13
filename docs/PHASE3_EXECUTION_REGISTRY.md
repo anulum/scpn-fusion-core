@@ -93,6 +93,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | H5-020 | P1 | Container | Harden runtime image with prod-by-default dependency install and non-root user | `Dockerfile` | Runtime image installs `.` by default (`INSTALL_DEV=1` opt-in for dev extras) and runs as unprivileged `appuser` | Docker build smoke |
 | H5-021 | P0 | Core | Add solver fail-fast mode for divergence and enable for validation configs | `src/scpn_fusion/core/fusion_kernel.py`, `validation/*.json`, `tests/test_fusion_kernel_fail_on_diverge.py` | Equilibrium solver raises on NaN/Inf when `solver.fail_on_diverge=true`; validation configs enable flag; tests cover both guarded and permissive behavior | `python -m pytest tests/test_fusion_kernel_fail_on_diverge.py -v` |
 | H5-022 | P0 | SCPN | Harden py312 strict typing for stochastic binomial counts path | `src/scpn_fusion/scpn/controller.py` | Controller binomial branch is strictly array-typed under mypy py312 lane, eliminating scalar-or-array assignment ambiguity in CI | `python -m mypy --strict src/scpn_fusion/scpn/contracts.py src/scpn_fusion/scpn/controller.py src/scpn_fusion/scpn/structure.py src/scpn_fusion/scpn/artifact.py src/scpn_fusion/scpn/compiler.py src/scpn_fusion/scpn/__init__.py` |
+| H5-023 | P1 | SCPN | Precompute transition-delay indices to remove per-tick timing mask/index churn | `src/scpn_fusion/scpn/controller.py` | Controller caches immediate/delayed transition index vectors and reuses delay-slot buffers in `_apply_transition_timing`, preserving deterministic outputs and benchmark thresholds | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `python validation/scpn_pid_mpc_benchmark.py --seed 42 --steps 240 --strict` |
 
 ## Task Accounting
 
@@ -100,7 +101,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 22
+- Post-S4 hardening tasks delivered: 23
 - Remaining in deferred pool after queue selection: 67
 
 ## Active Task
@@ -145,4 +146,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `H5-020`
 - Completed: `H5-021`
 - Completed: `H5-022`
+- Completed: `H5-023`
 - Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).

@@ -161,6 +161,22 @@ class NeuroSymbolicController:
             [max(int(getattr(tr, "delay_ticks", 0)), 0) for tr in artifact.topology.transitions],
             dtype=np.int64,
         )
+        self._delay_immediate_idx = np.flatnonzero(self._delay_ticks == 0).astype(
+            np.int64, copy=False
+        )
+        self._delay_delayed_idx = np.flatnonzero(self._delay_ticks > 0).astype(
+            np.int64, copy=False
+        )
+        if self._delay_delayed_idx.size:
+            self._delay_delayed_offsets = np.asarray(
+                self._delay_ticks[self._delay_delayed_idx], dtype=np.int64
+            )
+            self._tmp_delay_slots = np.zeros(
+                self._delay_delayed_idx.size, dtype=np.int64
+            )
+        else:
+            self._delay_delayed_offsets = np.asarray([], dtype=np.int64)
+            self._tmp_delay_slots = np.asarray([], dtype=np.int64)
         self._max_delay_ticks = int(np.max(self._delay_ticks)) if self._delay_ticks.size else 0
         pending_len = self._max_delay_ticks + 1
         self._oracle_pending = np.zeros((pending_len, self._nT), dtype=np.float64)
@@ -571,17 +587,18 @@ class NeuroSymbolicController:
         fired_now = np.asarray(pending[cursor], dtype=np.float64).copy()
         pending[cursor, :] = 0.0
 
-        immediate_mask = self._delay_ticks == 0
-        if np.any(immediate_mask):
-            fired_now[immediate_mask] = np.clip(
-                fired_now[immediate_mask] + desired[immediate_mask], 0.0, 1.0
+        if self._delay_immediate_idx.size:
+            idx = self._delay_immediate_idx
+            fired_now[idx] = np.clip(
+                fired_now[idx] + desired[idx], 0.0, 1.0
             )
 
-        delayed_idx = np.flatnonzero(self._delay_ticks > 0)
-        if delayed_idx.size:
-            slots = (cursor + self._delay_ticks[delayed_idx]) % pending.shape[0]
-            pending[slots, delayed_idx] = np.clip(
-                pending[slots, delayed_idx] + desired[delayed_idx], 0.0, 1.0
+        if self._delay_delayed_idx.size:
+            np.add(cursor, self._delay_delayed_offsets, out=self._tmp_delay_slots)
+            self._tmp_delay_slots %= pending.shape[0]
+            idx = self._delay_delayed_idx
+            pending[self._tmp_delay_slots, idx] = np.clip(
+                pending[self._tmp_delay_slots, idx] + desired[idx], 0.0, 1.0
             )
 
         next_cursor = (cursor + 1) % pending.shape[0]
