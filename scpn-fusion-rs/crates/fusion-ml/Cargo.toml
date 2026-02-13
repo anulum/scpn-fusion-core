@@ -15,6 +15,7 @@ ndarray-npy = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true }
+proptest = { workspace = true }
 
 [[bench]]
 name = "neural_transport_bench"

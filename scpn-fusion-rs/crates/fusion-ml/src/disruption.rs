@@ -178,6 +178,75 @@ fn logistic(v: f64) -> f64 {
     1.0 / (1.0 + (-v).exp())
 }
 
+/// Hybrid supervised/unsupervised anomaly detector for early alarms.
+#[derive(Debug, Clone, Copy)]
+pub struct HybridAnomalyDetector {
+    /// Alarm threshold in [0, 1].
+    pub threshold: f64,
+    /// EMA factor for online moments.
+    pub ema: f64,
+    mean: f64,
+    var: f64,
+    initialized: bool,
+}
+
+impl HybridAnomalyDetector {
+    pub fn new(threshold: f64, ema: f64) -> Self {
+        Self {
+            threshold: threshold.clamp(0.0, 1.0),
+            ema: ema.clamp(1e-4, 1.0),
+            mean: 0.0,
+            var: 1.0,
+            initialized: false,
+        }
+    }
+
+    /// Returns `(supervised_score, unsupervised_score, anomaly_score, alarm)`.
+    pub fn score(
+        &mut self,
+        signal: &[f64],
+        toroidal: Option<ToroidalAsymmetryObservables>,
+    ) -> (f64, f64, f64, bool) {
+        let features = build_disruption_feature_vector(signal, toroidal);
+        let supervised = logistic(
+            -4.0 + 0.55 * features[2]
+                + 0.35 * features[1]
+                + 0.10 * features[4]
+                + 0.25 * features[3]
+                + 1.10 * features[6]
+                + 0.70 * features[7]
+                + 0.45 * features[8]
+                + 0.50 * features[9]
+                + 0.15 * features[10]
+                + 0.15 * features[0]
+                + 0.20 * features[5],
+        );
+
+        let unsupervised = if self.initialized {
+            let z = (supervised - self.mean).abs() / (self.var + 1e-9).sqrt();
+            1.0 - (-0.5 * z).exp()
+        } else {
+            self.initialized = true;
+            0.0
+        };
+
+        let alpha = self.ema;
+        let delta = supervised - self.mean;
+        self.mean += alpha * delta;
+        self.var = ((1.0 - alpha) * self.var + alpha * delta * delta).max(1e-9);
+
+        let anomaly_score = (0.7 * supervised + 0.3 * unsupervised).clamp(0.0, 1.0);
+        let alarm = anomaly_score >= self.threshold;
+        (supervised, unsupervised, anomaly_score, alarm)
+    }
+}
+
+impl Default for HybridAnomalyDetector {
+    fn default() -> Self {
+        Self::new(0.65, 0.05)
+    }
+}
+
 // --- Tiny Transformer Implementation ---
 
 /// Layer normalization over last dimension.
@@ -419,6 +488,7 @@ impl Default for DisruptionTransformer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
 
     #[test]
     fn test_simulate_produces_signal() {
@@ -525,5 +595,52 @@ mod tests {
             high,
             low
         );
+    }
+
+    #[test]
+    fn test_hybrid_anomaly_detector_outputs_bounded_scores() {
+        let mut det = HybridAnomalyDetector::default();
+        let signal = vec![0.4; 64];
+        let (_s, _u, score, _alarm) = det.score(
+            &signal,
+            Some(ToroidalAsymmetryObservables {
+                n1_amp: 0.2,
+                n2_amp: 0.1,
+                n3_amp: 0.05,
+                asymmetry_index: 0.25,
+                radial_spread: 0.03,
+            }),
+        );
+        assert!(score.is_finite(), "Anomaly score must be finite");
+        assert!(
+            (0.0..=1.0).contains(&score),
+            "Anomaly score must be in [0,1]: {score}"
+        );
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(32))]
+
+        #[test]
+        fn prop_hybrid_detector_stays_finite_under_random_perturbations(
+            signal in proptest::collection::vec(-5.0f64..5.0f64, 1..192),
+            n1 in 0.0f64..2.5f64,
+            n2 in 0.0f64..2.5f64,
+            n3 in 0.0f64..2.5f64,
+            spread in 0.0f64..1.0f64
+        ) {
+            let mut det = HybridAnomalyDetector::default();
+            let asym = (n1*n1 + n2*n2 + n3*n3).sqrt();
+            let obs = ToroidalAsymmetryObservables {
+                n1_amp: n1,
+                n2_amp: n2,
+                n3_amp: n3,
+                asymmetry_index: asym,
+                radial_spread: spread,
+            };
+            let (_s, _u, score, _alarm) = det.score(&signal, Some(obs));
+            prop_assert!(score.is_finite());
+            prop_assert!((0.0..=1.0).contains(&score));
+        }
     }
 }

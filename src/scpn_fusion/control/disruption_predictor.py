@@ -254,6 +254,121 @@ def run_fault_noise_campaign(
         "passes_thresholds": passes,
     }
 
+
+class HybridAnomalyDetector:
+    """
+    Lightweight supervised+unsupervised anomaly detector for early alarms.
+
+    - Supervised term: `predict_disruption_risk`.
+    - Unsupervised term: online z-score novelty on recent risk stream.
+    """
+
+    def __init__(self, threshold=0.65, ema=0.05):
+        self.threshold = float(np.clip(threshold, 0.0, 1.0))
+        self.ema = float(np.clip(ema, 1e-4, 1.0))
+        self.mean = 0.0
+        self.var = 1.0
+        self.initialized = False
+
+    def score(self, signal, toroidal_observables=None):
+        supervised = predict_disruption_risk(signal, toroidal_observables)
+        value = float(supervised)
+
+        if self.initialized:
+            z = abs(value - self.mean) / float(np.sqrt(self.var + 1e-9))
+            unsupervised = float(1.0 - np.exp(-0.5 * z))
+        else:
+            unsupervised = 0.0
+            self.initialized = True
+
+        alpha = self.ema
+        delta = value - self.mean
+        self.mean += alpha * delta
+        self.var = (1.0 - alpha) * self.var + alpha * delta * delta
+        self.var = float(max(self.var, 1e-9))
+
+        anomaly_score = float(np.clip(0.7 * supervised + 0.3 * unsupervised, 0.0, 1.0))
+        return {
+            "supervised_score": float(supervised),
+            "unsupervised_score": float(unsupervised),
+            "anomaly_score": anomaly_score,
+            "alarm": bool(anomaly_score >= self.threshold),
+        }
+
+
+def run_anomaly_alarm_campaign(
+    seed=42,
+    episodes=32,
+    window=128,
+    threshold=0.65,
+):
+    """
+    Deterministic anomaly-alarm campaign under random perturbations.
+    """
+    rng = np.random.default_rng(int(seed))
+    episodes = max(int(episodes), 1)
+    window = max(int(window), 16)
+    detector = HybridAnomalyDetector(threshold=threshold)
+
+    true_positives = 0
+    false_positives = 0
+    positives = 0
+    negatives = 0
+    latencies = []
+
+    for ep in range(episodes):
+        np.random.seed(int(seed + ep))
+        signal, label, _ = simulate_tearing_mode(steps=window)
+        if signal.size < window:
+            signal = np.pad(signal, (0, window - signal.size), mode="edge")
+        signal = np.asarray(signal[:window], dtype=float)
+
+        n1 = float(rng.uniform(0.03, 0.24))
+        n2 = float(rng.uniform(0.02, 0.16))
+        n3 = float(rng.uniform(0.01, 0.10))
+        toroidal = {
+            "toroidal_n1_amp": n1,
+            "toroidal_n2_amp": n2,
+            "toroidal_n3_amp": n3,
+            "toroidal_asymmetry_index": float(np.sqrt(n1 * n1 + n2 * n2 + n3 * n3)),
+            "toroidal_radial_spread": float(rng.uniform(0.01, 0.08)),
+        }
+
+        first_alarm = None
+        for k in range(window):
+            perturbed_signal = signal[: k + 1].copy()
+            perturbed_signal[-1] += float(rng.normal(0.0, 0.02))
+            score = detector.score(perturbed_signal, toroidal)
+            if score["alarm"] and first_alarm is None:
+                first_alarm = k
+
+        is_positive = bool(label == 1)
+        if is_positive:
+            positives += 1
+            if first_alarm is not None:
+                true_positives += 1
+                latencies.append(first_alarm)
+        else:
+            negatives += 1
+            if first_alarm is not None:
+                false_positives += 1
+
+    tpr = float(true_positives / max(positives, 1))
+    fpr = float(false_positives / max(negatives, 1))
+    p95_latency = float(np.percentile(latencies, 95)) if latencies else float(window)
+    passes = bool(tpr >= 0.75 and fpr <= 0.35)
+
+    return {
+        "seed": int(seed),
+        "episodes": episodes,
+        "window": window,
+        "threshold": float(threshold),
+        "true_positive_rate": tpr,
+        "false_positive_rate": fpr,
+        "p95_alarm_latency_steps": p95_latency,
+        "passes_thresholds": passes,
+    }
+
 # --- AI: TRANSFORMER MODEL ---
 if torch is not None:
     class DisruptionTransformer(nn.Module):

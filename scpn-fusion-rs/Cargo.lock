@@ -410,6 +410,7 @@ dependencies = [
  "fusion-types",
  "ndarray",
  "ndarray-npy",
+ "proptest",
  "rand 0.8.5",
  "serde",
  "serde_json",
