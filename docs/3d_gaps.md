@@ -49,6 +49,21 @@ The following requested tasks are retained, but normalized to actual repository 
 | `engineering/divertor.py` | `src/scpn_fusion/core/divertor_thermal_sim.py`, `scpn-fusion-rs/crates/fusion-nuclear/src/divertor.rs` |
 | `modes/fueling.py` | `src/scpn_fusion/control/spi_mitigation.py` (extend with fueling mode) or new module under `src/scpn_fusion/control/` |
 
+## Phase 3 Imported-Pack Path Normalization
+
+The following high-impact instruction packs have been normalized to existing repository paths.
+
+| Imported Pack | Canonical Path Mapping |
+|---|---|
+| Control + simulation enhancement pack | `src/scpn_fusion/control/fusion_sota_mpc.py`, `src/scpn_fusion/control/neuro_cybernetic_controller.py`, `src/scpn_fusion/control/spi_mitigation.py`, `src/scpn_fusion/control/tokamak_digital_twin.py`, `src/scpn_fusion/control/tokamak_flight_sim.py`, `src/scpn_fusion/control/advanced_soc_fusion_learning.py`, `src/scpn_fusion/control/analytic_solver.py`, `src/scpn_fusion/control/director_interface.py`, `src/scpn_fusion/control/disruption_predictor.py`, `src/scpn_fusion/control/fusion_control_room.py`, `src/scpn_fusion/control/fusion_optimal_control.py` |
+| HPC solver enhancement pack | `src/scpn_fusion/hpc/types.h`, `src/scpn_fusion/hpc/solver.cpp`, `src/scpn_fusion/hpc/hpc_bridge.py`, `tests/test_hpc_bridge.py` |
+| Nuclear enhancement pack | `src/scpn_fusion/nuclear/blanket_neutronics.py`, `src/scpn_fusion/nuclear/nuclear_wall_interaction.py`, `src/scpn_fusion/nuclear/pwi_erosion.py`, `src/scpn_fusion/nuclear/temhd_peltier.py`, `src/scpn_fusion/nuclear/__init__.py`, `tests/test_blanket_neutronics.py`, `tests/test_pwi_erosion.py`, `tests/test_temhd_peltier.py` |
+| SCPN compiler enhancement pack | `src/scpn_fusion/scpn/structure.py`, `src/scpn_fusion/scpn/compiler.py`, `src/scpn_fusion/scpn/contracts.py`, `src/scpn_fusion/scpn/controller.py`, `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py`, `tests/test_gneu_01_benchmark.py`, `validation/gneu_01_benchmark.py` |
+
+Notes:
+- Source instruction documents under `03_CODE/SCPN-Fusion-Core/src/scpn_fusion/*/Enhancement Plan*.md` are local coordination inputs and are not mirrored to GitHub.
+- Execution queue authority remains `docs/PHASE3_EXECUTION_REGISTRY.md`.
+
 ## Restructured Phase 2 Tracks
 
 ### Track A: Stability and Regression Guard (mandatory)
