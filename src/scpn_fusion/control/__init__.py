@@ -6,4 +6,5 @@
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 from .fusion_sota_mpc import ModelPredictiveController, NeuralSurrogate
+from .fueling_mode import IcePelletFuelingController, FuelingSimResult, simulate_iter_density_control
 from .tokamak_flight_sim import IsoFluxController

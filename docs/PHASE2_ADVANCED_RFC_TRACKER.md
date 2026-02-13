@@ -20,7 +20,7 @@ Legend:
 |---|---|---|---|---|---|---|
 | GNEU-01 | Done | Done (`docs/rfc/GNEU-01_RFC.md`, `validation/gneu_01_benchmark.py`) | Done (synthetic-only v1 scope) | Done (implemented + tested) | Done (smoke config under threshold) | Unassigned |
 | GNEU-02 | Done | Done (`src/scpn_fusion/control/disruption_predictor.py`, `scpn-fusion-rs/crates/fusion-ml/src/disruption.rs`) | Done (synthetic campaign scope) | Done (pytest + Rust tests/proptest) | Done (bounded smoke runtime) | Unassigned |
-| GNEU-03 | Pending | Pending | Pending | Pending | Pending | Unassigned |
+| GNEU-03 | Done | Done (`src/scpn_fusion/control/fueling_mode.py`, `validation/gneu_03_fueling_mode.py`) | Done (reduced ITER-like synthetic mode) | Done (final abs density error `<=1e-3`) | Done (deterministic smoke under CI budget) | Unassigned |
 | GAI-01 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GAI-02 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GAI-03 | Pending | Pending | Pending | Pending | Pending | Unassigned |
