@@ -115,7 +115,7 @@ class HeatMLShadowSurrogate:
         shadow = self.predict_shadow_fraction(features)
         # Map shadow fraction to effective heat-load attenuation.
         atten = 1.0 - 0.58 * shadow
-        return np.maximum(q * atten, 1e3)
+        return np.maximum(q * atten, 1e-6)
 
 
 def rmse_percent(y_true: np.ndarray, y_pred: np.ndarray) -> float:

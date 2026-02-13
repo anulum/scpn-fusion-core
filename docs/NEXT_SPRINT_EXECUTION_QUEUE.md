@@ -40,7 +40,8 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - Completed: `GAI-01` (synthetic GyroSwin-like turbulence surrogate benchmark lane + strict RMSE/speedup validation).
 - Completed: `GAI-02` (synthetic TORAX-hybrid realtime loop lane + NSTX-U-like disturbance campaign thresholds).
 - Completed: `GAI-03` (HEAT-ML magnetic-shadow surrogate integrated into MVR scanner with strict runtime/accuracy gates).
-- Next active task: `GMVR-01` RFC/implementation staging.
+- Completed: `GMVR-01` (compact-constraint scanner update with divertor/Zeff/HTS caps in R=1.2..1.5m window).
+- Next active task: `GMVR-02` RFC/implementation staging.
 
 ## Explicitly Deferred (Not In Sprint S1)
 

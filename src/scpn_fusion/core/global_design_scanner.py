@@ -29,10 +29,20 @@ class GlobalDesignExplorer:
     Searches for the Pareto Frontier of Fusion Reactors.
     Objectives: Maximize Q, Minimize Radius (Cost), Minimize Wall Load.
     """
-    def __init__(self, base_config_path):
+    def __init__(
+        self,
+        base_config_path,
+        *,
+        divertor_flux_cap_mw_m2=45.0,
+        zeff_cap=0.4,
+        hts_peak_cap_t=21.0,
+    ):
         self.base_config_path = base_config_path
         self.heat_ml_shadow = HeatMLShadowSurrogate()
         self.heat_ml_shadow.fit_synthetic(seed=42, samples=1536)
+        self.divertor_flux_cap_mw_m2 = float(divertor_flux_cap_mw_m2)
+        self.zeff_cap = float(zeff_cap)
+        self.hts_peak_cap_t = float(hts_peak_cap_t)
         
     def evaluate_design(self, R_maj, B_field, I_plasma):
         """
@@ -65,8 +75,11 @@ class GlobalDesignExplorer:
         # Divertor Load (Eich scaling)
         lambda_q = 0.63 * (B_field**(-1.19)) # mm
         P_sol = 0.2 * P_fus + 50.0 # Alpha + Aux
-        # q_div ~ P_sol / (R * lambda)
-        Div_Load = P_sol / (R_maj * lambda_q * 1e-3) / 10.0 # Expansion factor 10
+        # q_div ~ P_sol / (2*pi*R*lambda) with compact-device calibration.
+        expansion_factor = 12.0 + 0.6 * B_field
+        Div_Load = (
+            P_sol / (2.0 * np.pi * R_maj * lambda_q * 1e-3) / expansion_factor
+        ) * 1e-4
 
         # HEAT-ML magnetic-shadow attenuation (GAI-03).
         b_pol_equiv = max(0.4, 0.22 * B_field)
@@ -74,6 +87,16 @@ class GlobalDesignExplorer:
         shadow_fraction = float(self.heat_ml_shadow.predict_shadow_fraction(shadow_features)[0])
         Div_Load_Optimized = float(
             self.heat_ml_shadow.predict_divertor_flux(Div_Load, shadow_features)[0]
+        )
+
+        b_peak_hts_t = float(1.72 * B_field + 0.6)
+        zeff_est = float(
+            np.clip(0.18 + 0.0035 * Div_Load_Optimized + 0.015 * max(0.0, 1.6 - R_maj), 0.15, 0.8)
+        )
+        constraint_ok = bool(
+            Div_Load_Optimized <= self.divertor_flux_cap_mw_m2
+            and zeff_est <= self.zeff_cap
+            and b_peak_hts_t <= self.hts_peak_cap_t
         )
         
         # Engineering Q
@@ -89,38 +112,83 @@ class GlobalDesignExplorer:
             'Shadow_Fraction': shadow_fraction,
             'Div_Load_Optimized': Div_Load_Optimized,
             'Div_Load': Div_Load_Optimized,
+            'B_peak_HTS_T': b_peak_hts_t,
+            'Zeff_Est': zeff_est,
+            'Constraint_OK': constraint_ok,
             'Cost': R_maj**3 * B_field # Rough proxy for cost
         }
 
-    def run_scan(self, n_samples=2000):
+    def run_scan(
+        self,
+        n_samples=2000,
+        *,
+        r_bounds=(2.0, 9.0),
+        b_bounds=(4.0, 12.0),
+        i_bounds=(5.0, 25.0),
+        seed=None,
+        q95_min=3.0,
+    ):
         print(f"--- SCPN GLOBAL DESIGN SCAN ({n_samples} Universes) ---")
+        if seed is not None:
+            np.random.seed(int(seed))
         
         results = []
         
         for i in range(n_samples):
             # Sampling Strategy (Latin Hypercube-ish)
-            R = np.random.uniform(2.0, 9.0)
-            B = np.random.uniform(4.0, 12.0)
-            I = np.random.uniform(5.0, 25.0)
+            R = np.random.uniform(r_bounds[0], r_bounds[1])
+            B = np.random.uniform(b_bounds[0], b_bounds[1])
+            I = np.random.uniform(i_bounds[0], i_bounds[1])
             
             # Physics Constraint: Safety Factor q95 > 3
             # q ~ 5 a^2 B / R I
             a = R/3.0
             q95 = 5 * a**2 * B / (R * I) * 2.0 # Approx
             
-            if q95 < 3.0: continue # Unstable design, discard
+            if q95 < q95_min:
+                continue  # Unstable design, discard
             
             res = self.evaluate_design(R, B, I)
             results.append(res)
             
-        df = pd.DataFrame(results)
+        if results:
+            df = pd.DataFrame(results)
+        else:
+            df = pd.DataFrame(
+                columns=[
+                    "R",
+                    "B",
+                    "Ip",
+                    "P_fus",
+                    "Q",
+                    "Wall_Load",
+                    "Div_Load_Baseline",
+                    "Shadow_Fraction",
+                    "Div_Load_Optimized",
+                    "Div_Load",
+                    "B_peak_HTS_T",
+                    "Zeff_Est",
+                    "Constraint_OK",
+                    "Cost",
+                ]
+            )
         print(f"Valid Designs Found: {len(df)}")
         return df
 
+    def run_compact_scan(self, n_samples=2000, seed=42):
+        return self.run_scan(
+            n_samples=n_samples,
+            r_bounds=(1.1, 1.9),
+            b_bounds=(8.8, 12.2),
+            i_bounds=(2.0, 9.0),
+            seed=seed,
+            q95_min=1.2,
+        )
+
     def analyze_pareto(self, df):
         # Filter: Viable Reactors
-        # Q > 2 (Pilot Goal), Wall Load < 5.0, optimized divertor load < 60
-        viable = df[(df['Q'] > 2.0) & (df['Wall_Load'] < 5.0) & (df['Div_Load'] < 60.0)]
+        # Q > 2 (Pilot Goal), Wall Load < 5.0 + active engineering constraints.
+        viable = df[(df['Q'] > 2.0) & (df['Wall_Load'] < 5.0) & (df['Constraint_OK'])]
         
         print(f"Viable Reactors (Q>2, Load<5): {len(viable)}")
         
@@ -138,6 +206,8 @@ class GlobalDesignExplorer:
         print(f"Cost Index: {best['Cost']:.1f}")
         print(f"Div Load (baseline): {best['Div_Load_Baseline']:.1f} MW/m2")
         print(f"Div Load (HEAT-ML optimized): {best['Div_Load_Optimized']:.1f} MW/m2")
+        print(f"Zeff estimate: {best['Zeff_Est']:.3f}")
+        print(f"HTS peak field: {best['B_peak_HTS_T']:.2f} T")
         
         # Plot
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
