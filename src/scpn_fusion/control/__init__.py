@@ -7,6 +7,7 @@
 # ──────────────────────────────────────────────────────────────────────
 from .fusion_sota_mpc import ModelPredictiveController, NeuralSurrogate
 from .fueling_mode import IcePelletFuelingController, FuelingSimResult, simulate_iter_density_control
+from .digital_twin_ingest import RealtimeTwinHook, TelemetryPacket, generate_emulated_stream
 from .torax_hybrid_loop import (
     ToraxHybridCampaignResult,
     ToraxPlasmaState,
