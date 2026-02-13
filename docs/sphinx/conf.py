@@ -15,7 +15,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "src"))
 project = "SCPN Fusion Core"
 copyright = "1998-2026, Miroslav Sotek"
 author = "Miroslav Sotek, Michal Reiprich"
-release = "1.0.1"
+
+try:
+    from scpn_fusion import __version__ as package_version
+except Exception:
+    package_version = "1.0.2"
+
+release = package_version
 
 extensions = [
     "sphinx.ext.autodoc",
