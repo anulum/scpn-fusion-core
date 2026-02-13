@@ -29,7 +29,7 @@ Legend:
 | GMVR-03 | Done | Done (`docs/rfc/GMVR-03_RFC.md`, `src/scpn_fusion/core/geometry_3d.py`, `validation/gmvr_03_stellarator_extension.py`) | Done (synthetic stellarator extension scope) | Done (SNN improvement + VMEC++ proxy parity thresholds) | Done (deterministic smoke profile) | Unassigned |
 | GDEP-01 | Done | Done (`docs/rfc/GDEP-01_RFC.md`, `src/scpn_fusion/control/digital_twin_ingest.py`, `validation/gdep_01_digital_twin_hook.py`) | Done (synthetic NSTX-U/SPARC stream scope) | Done (scenario-planning success/risk/latency thresholds) | Done (deterministic smoke profile) | Unassigned |
 | GDEP-02 | Done | Done (`docs/rfc/GDEP-02_RFC.md`, `src/scpn_fusion/core/gpu_runtime.py`, `validation/gdep_02_gpu_integration.py`) | Done (synthetic GPU-sim scope) | Done (multigrid/SNN latency + speedup thresholds) | Done (deterministic smoke profile) | Unassigned |
-| GDEP-03 | Pending | Pending | Pending | Pending | Pending | Unassigned |
+| GDEP-03 | Done | Done (`docs/rfc/GDEP-03_RFC.md`, `validation/gdep_03_blind_validation.py`, `tests/test_gdep_03_blind_validation.py`) | Done (synthetic blind holdout scope) | Done (`tau_E`/`beta_N`/core-edge RMSE + parity thresholds) | Done (deterministic smoke profile) | Unassigned |
 | GDEP-05 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GPHY-01 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GPHY-02 | Pending | Pending | Pending | Pending | Pending | Unassigned |
