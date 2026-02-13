@@ -405,6 +405,70 @@ class TestLevel1Determinism:
         assert out1 == out2
         assert any(d > 0.0 for d in diffs)
 
+    def test_antithetic_stochastic_fractional_replay(
+        self, artifact_path_fractional: str
+    ) -> None:
+        art = load_artifact(artifact_path_fractional)
+        kwargs = dict(
+            artifact=art,
+            seed_base=222333444,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            sc_n_passes=15,
+            sc_bitflip_rate=0.0,
+            sc_antithetic=True,
+        )
+        c1 = NeuroSymbolicController(**kwargs)
+        c2 = NeuroSymbolicController(**kwargs)
+        obs: ControlObservation = {"R_axis_m": 6.145, "Z_axis_m": 0.0}
+        out1 = [c1.step(obs, k) for k in range(20)]
+        out2 = [c2.step(obs, k) for k in range(20)]
+        assert out1 == out2
+
+    def test_antithetic_sampling_reduces_stochastic_firing_error(
+        self, artifact_path_fractional: str
+    ) -> None:
+        art = load_artifact(artifact_path_fractional)
+        base_kwargs = dict(
+            artifact=art,
+            seed_base=5050,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            sc_n_passes=16,
+            sc_bitflip_rate=0.0,
+        )
+        c_plain = NeuroSymbolicController(**base_kwargs, sc_antithetic=False)
+        c_anti = NeuroSymbolicController(**base_kwargs, sc_antithetic=True)
+
+        obs: ControlObservation = {"R_axis_m": 6.145, "Z_axis_m": 0.0}
+        plain_gaps = []
+        anti_gaps = []
+        for k in range(80):
+            c_plain.step(obs, k)
+            c_anti.step(obs, k)
+            plain_gaps.append(
+                float(
+                    np.mean(
+                        np.abs(
+                            np.asarray(c_plain.last_sc_firing)
+                            - np.asarray(c_plain.last_oracle_firing)
+                        )
+                    )
+                )
+            )
+            anti_gaps.append(
+                float(
+                    np.mean(
+                        np.abs(
+                            np.asarray(c_anti.last_sc_firing)
+                            - np.asarray(c_anti.last_oracle_firing)
+                        )
+                    )
+                )
+            )
+
+        assert float(np.mean(anti_gaps)) <= float(np.mean(plain_gaps)) + 1e-12
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Level 2 — Primitive correctness (SC vs oracle)

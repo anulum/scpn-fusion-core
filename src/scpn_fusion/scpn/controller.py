@@ -57,6 +57,7 @@ class NeuroSymbolicController:
         sc_n_passes: int = 8,
         sc_bitflip_rate: float = 0.0,
         sc_binary_margin: float = 0.0,
+        sc_antithetic: bool = True,
     ) -> None:
         self.artifact = artifact
         self.seed_base = int(seed_base)
@@ -65,6 +66,7 @@ class NeuroSymbolicController:
         self._sc_n_passes = max(int(sc_n_passes), 1)
         self._sc_bitflip_rate = float(np.clip(sc_bitflip_rate, 0.0, 1.0))
         self._sc_binary_margin = float(max(0.0, sc_binary_margin))
+        self._sc_antithetic = bool(sc_antithetic)
 
         # Flatten weight matrices for fast indexing
         self._w_in = artifact.weights.w_in.data[:]
@@ -274,7 +276,13 @@ class NeuroSymbolicController:
             rng = None
         else:
             rng = np.random.default_rng(_seed64(self.seed_base, f"sc_step:{int(k)}"))
-            draws = rng.random((self._sc_n_passes, self._nT)) < p_fire[None, :]
+            if self._sc_antithetic and self._sc_n_passes >= 2:
+                n_pairs = (self._sc_n_passes + 1) // 2
+                base = rng.random((n_pairs, self._nT))
+                mirrored = np.concatenate((base, 1.0 - base), axis=0)
+                draws = mirrored[: self._sc_n_passes, :] < p_fire[None, :]
+            else:
+                draws = rng.random((self._sc_n_passes, self._nT)) < p_fire[None, :]
             f = draws.mean(axis=0).astype(np.float64)
 
         if self._sc_bitflip_rate > 0.0:
