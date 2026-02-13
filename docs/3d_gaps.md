@@ -86,6 +86,7 @@ The following requested tasks are retained, but normalized to actual repository 
 ## Next Sprint Queue
 
 Execution queue is defined in `docs/NEXT_SPRINT_EXECUTION_QUEUE.md`.
+Advanced-task RFC tracking is maintained in `docs/PHASE2_ADVANCED_RFC_TRACKER.md`.
 
 Only items in that queue are considered in-sprint active work.
 
