@@ -10,6 +10,7 @@
 //! Implements multivariate total-order Hermite chaos with least-squares fitting.
 
 use fusion_math::linalg::pinv_svd;
+use fusion_types::error::{FusionError, FusionResult};
 use ndarray::{Array1, Array2, ArrayView1};
 use rand::seq::SliceRandom;
 use rand::Rng;
@@ -24,39 +25,88 @@ pub struct PCEModel {
 }
 
 impl PCEModel {
-    /// Fit a PCE model with multivariate Hermite basis up to total `order`.
-    ///
-    /// `samples`: (n_samples, n_dims), `outputs`: (n_samples, n_outputs)
-    pub fn fit(samples: &Array2<f64>, outputs: &Array2<f64>, order: usize) -> Self {
-        assert!(
-            samples.nrows() == outputs.nrows(),
-            "PCE fit requires matching sample and output rows"
-        );
-        assert!(samples.nrows() > 0, "PCE fit requires at least one sample");
-        assert!(
-            samples.ncols() > 0,
-            "PCE fit requires at least one dimension"
-        );
-        assert!(
-            outputs.ncols() > 0,
-            "PCE fit requires at least one output column"
-        );
+    /// Checked fit API returning structured errors on invalid data.
+    pub fn try_fit(
+        samples: &Array2<f64>,
+        outputs: &Array2<f64>,
+        order: usize,
+    ) -> FusionResult<Self> {
+        if samples.nrows() != outputs.nrows() {
+            return Err(FusionError::ConfigError(
+                "PCE fit requires matching sample and output rows".to_string(),
+            ));
+        }
+        if samples.nrows() == 0 {
+            return Err(FusionError::ConfigError(
+                "PCE fit requires at least one sample".to_string(),
+            ));
+        }
+        if samples.ncols() == 0 {
+            return Err(FusionError::ConfigError(
+                "PCE fit requires at least one dimension".to_string(),
+            ));
+        }
+        if outputs.ncols() == 0 {
+            return Err(FusionError::ConfigError(
+                "PCE fit requires at least one output column".to_string(),
+            ));
+        }
+        if !samples.iter().all(|v| v.is_finite()) || !outputs.iter().all(|v| v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "PCE fit received non-finite sample or output values".to_string(),
+            ));
+        }
 
         let multi_index = total_order_multi_index(samples.ncols(), order);
         let design = design_matrix(samples, &multi_index);
         let pinv = pinv_svd(&design, 1e-10);
         let coefficients = pinv.dot(outputs);
+        if !coefficients.iter().all(|v| v.is_finite()) {
+            return Err(FusionError::LinAlg(
+                "PCE coefficients contain non-finite values".to_string(),
+            ));
+        }
 
-        Self {
+        Ok(Self {
             coefficients,
             multi_index,
+        })
+    }
+
+    /// Fit a PCE model with multivariate Hermite basis up to total `order`.
+    ///
+    /// `samples`: (n_samples, n_dims), `outputs`: (n_samples, n_outputs)
+    pub fn fit(samples: &Array2<f64>, outputs: &Array2<f64>, order: usize) -> Self {
+        Self::try_fit(samples, outputs, order).expect("PCE fit failed")
+    }
+
+    /// Checked prediction API returning error on shape/data mismatch.
+    pub fn try_predict(&self, x: &Array1<f64>) -> FusionResult<Array1<f64>> {
+        let Some(first_term) = self.multi_index.first() else {
+            return Err(FusionError::ConfigError(
+                "PCE model has an empty basis".to_string(),
+            ));
+        };
+        if x.len() != first_term.len() {
+            return Err(FusionError::ConfigError(format!(
+                "PCE input dimension mismatch: expected {}, got {}",
+                first_term.len(),
+                x.len()
+            )));
         }
+        if !x.iter().all(|v| v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "PCE prediction received non-finite input values".to_string(),
+            ));
+        }
+
+        let basis = basis_row(x.view(), &self.multi_index);
+        Ok(basis.dot(&self.coefficients))
     }
 
     /// Predict model output at a single input point.
     pub fn predict(&self, x: &Array1<f64>) -> Array1<f64> {
-        let basis = basis_row(x.view(), &self.multi_index);
-        basis.dot(&self.coefficients)
+        self.try_predict(x).expect("PCE prediction failed")
     }
 
     /// First-order Sobol sensitivity indices estimated from PCE coefficients.
@@ -317,5 +367,32 @@ mod tests {
         let s = pce.sobol_indices();
         assert_eq!(s.len(), 3);
         assert!(s.iter().all(|v| (0.0..=1.0).contains(v)));
+    }
+
+    #[test]
+    fn test_try_fit_rejects_non_finite_inputs() {
+        let mut x = Array2::zeros((4, 2));
+        let y = Array2::ones((4, 1));
+        x[[1, 1]] = f64::NAN;
+
+        let err = PCEModel::try_fit(&x, &y, 2).unwrap_err();
+        match err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("non-finite")),
+            _ => panic!("Expected ConfigError for non-finite PCE input"),
+        }
+    }
+
+    #[test]
+    fn test_try_predict_rejects_dimension_mismatch() {
+        let x = Array2::from_shape_vec((3, 2), vec![0.0, 0.0, 0.2, -0.1, -0.3, 0.4]).unwrap();
+        let y = Array2::from_shape_vec((3, 1), vec![1.0, 1.2, 0.8]).unwrap();
+        let model = PCEModel::fit(&x, &y, 2);
+        let bad = Array1::from_vec(vec![0.1, 0.2, 0.3]);
+
+        let err = model.try_predict(&bad).unwrap_err();
+        match err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("dimension mismatch")),
+            _ => panic!("Expected ConfigError for PCE dimension mismatch"),
+        }
     }
 }
