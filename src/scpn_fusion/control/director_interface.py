@@ -5,27 +5,32 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-import sys
-import os
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 
-# Add DIRECTOR_AI to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../DIRECTOR_AI/src')))
 try:
     from director_module import DirectorModule
     DIRECTOR_AVAILABLE = True
 except ImportError:
     DIRECTOR_AVAILABLE = False
-    print("[Warning] DIRECTOR_AI not found. Director Interface disabled.")
+    DirectorModule = None
+    print(
+        "[Warning] DIRECTOR_AI not found. Install/activate it and run with "
+        "PYTHONPATH including DIRECTOR_AI/src to enable DirectorInterface."
+    )
 
-# Add Fusion Core
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 try:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:
-    from scpn_fusion.core.fusion_kernel import FusionKernel
-    RUST_BACKEND = False
+    try:
+        from scpn_fusion.core.fusion_kernel import FusionKernel
+        RUST_BACKEND = False
+    except ImportError as exc:  # pragma: no cover - import-guard path
+        raise ImportError(
+            "Unable to import FusionKernel. Run with PYTHONPATH=src "
+            "or use `python -m scpn_fusion.control.director_interface`."
+        ) from exc
 from scpn_fusion.control.neuro_cybernetic_controller import NeuroCyberneticController
 
 class DirectorInterface:
@@ -162,6 +167,7 @@ class DirectorInterface:
         print("Analysis saved: Director_Interface_Result.png")
 
 if __name__ == "__main__":
-    cfg = "03_CODE/SCPN-Fusion-Core/iter_config.json"
-    di = DirectorInterface(cfg)
+    repo_root = Path(__file__).resolve().parents[3]
+    cfg = repo_root / "iter_config.json"
+    di = DirectorInterface(str(cfg))
     di.run_directed_mission()

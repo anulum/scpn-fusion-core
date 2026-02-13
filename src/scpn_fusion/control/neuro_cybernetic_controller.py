@@ -8,21 +8,29 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-import os
 from collections import deque
+from pathlib import Path
 
-# Add sc-neurocore to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../sc-neurocore/src')))
-from sc_neurocore.neurons.stochastic_lif import StochasticLIFNeuron
-from sc_neurocore.sources.quantum_entropy import QuantumEntropySource
+try:
+    from sc_neurocore.neurons.stochastic_lif import StochasticLIFNeuron
+    from sc_neurocore.sources.quantum_entropy import QuantumEntropySource
+    SC_NEUROCORE_AVAILABLE = True
+except Exception:  # pragma: no cover - optional dependency path
+    SC_NEUROCORE_AVAILABLE = False
+    StochasticLIFNeuron = None
+    QuantumEntropySource = None
 
-# Add fusion core to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 try:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:
-    from scpn_fusion.core.fusion_kernel import FusionKernel
-    RUST_BACKEND = False
+    try:
+        from scpn_fusion.core.fusion_kernel import FusionKernel
+        RUST_BACKEND = False
+    except ImportError as exc:  # pragma: no cover - import-guard path
+        raise ImportError(
+            "Unable to import FusionKernel. Run with PYTHONPATH=src "
+            "or use `python -m scpn_fusion.control.neuro_cybernetic_controller`."
+        ) from exc
 
 # --- CONTROL PARAMETERS ---
 SHOT_DURATION = 100
@@ -42,6 +50,11 @@ class SpikingControllerPool:
     Output = (Rate_A - Rate_B) * Gain
     """
     def __init__(self, n_neurons=20, gain=1.0, tau_window=10, use_quantum=False):
+        if not SC_NEUROCORE_AVAILABLE:
+            raise RuntimeError(
+                "sc-neurocore is required for SpikingControllerPool. "
+                "Install/activate sc-neurocore and run with PYTHONPATH including sc-neurocore/src."
+            )
         self.n_neurons = n_neurons
         self.gain = gain
         self.window_size = tau_window
@@ -204,8 +217,9 @@ class NeuroCyberneticController:
         print(f"Analysis saved: {filename}")
 
 if __name__ == "__main__":
-    cfg = "03_CODE/SCPN-Fusion-Core/iter_config.json"
-    nc = NeuroCyberneticController(cfg)
+    repo_root = Path(__file__).resolve().parents[3]
+    cfg = repo_root / "iter_config.json"
+    nc = NeuroCyberneticController(str(cfg))
     
     # Check CLI args for Quantum Mode
     if len(sys.argv) > 1 and sys.argv[1] == "quantum":

@@ -7,16 +7,18 @@
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
 import json
-import os
-import sys
-
-# Add src to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+from pathlib import Path
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
-    from scpn_fusion.core.fusion_kernel import FusionKernel
+    try:
+        from scpn_fusion.core.fusion_kernel import FusionKernel
+    except ImportError as exc:  # pragma: no cover - import-guard path
+        raise ImportError(
+            "Unable to import FusionKernel. Run with PYTHONPATH=src "
+            "or use `python -m scpn_fusion.control.analytic_solver`."
+        ) from exc
 
 class AnalyticEquilibriumSolver:
     """
@@ -63,28 +65,6 @@ class AnalyticEquilibriumSolver:
         G = np.zeros(n_coils)
         
         print("\nCalculating Coil Influence Matrix (Green's Functions)...")
-        for i, coil in enumerate(coils):
-            # Biot-Savart Law for a Loop at (Rc, Zc) affecting (Rt, 0)
-            # Simplified for B_z on the midplane
-            Rc, Zc = coil['r'], coil['z']
-            Rt = target_R
-            
-            # Distance vectors
-            # This requires Elliptic Integrals for precision, 
-            # but we use the dipole approx for far-field estimation in this script
-            # B_z ~ mu0 * I * R^2 / (2 * (R^2 + Z^2)^1.5)
-            
-            dist_sq = (Rc - Rt)**2 + (Zc - 0)**2
-            dist = np.sqrt(dist_sq)
-            
-            # Using our kernel's Green function logic logic (Logarithmic approx)
-            # dPsi/dR gives B_Z. Psi ~ ln(1/dist). dPsi/dR ~ -1/dist * d(dist)/dR
-            # Actually, let's use the Kernel's existing function to be consistent!
-            
-            # Temporarily set coil to 1A, others 0
-            # This is "Virtual Experiment"
-            pass # We will do it properly below
-            
         # Better approach: Use the Kernel to compute B-field map for unitary currents
         # Because our Kernel uses specific approximations, we must be consistent with it.
         
@@ -103,13 +83,14 @@ class AnalyticEquilibriumSolver:
             # Find grid index for Target R
             idx_R = np.abs(self.kernel.R - target_R).argmin()
             idx_Z = np.abs(self.kernel.Z - 0.0).argmin() # Midplane
+            idx_R = int(np.clip(idx_R, 1, len(self.kernel.R) - 2))
             
             # Gradient dPsi/dR
             dPsi = (Psi_vac[idx_Z, idx_R+1] - Psi_vac[idx_Z, idx_R-1]) / (2 * self.kernel.dR)
             Bz_unit = (1.0 / target_R) * dPsi
             
             G[i] = Bz_unit
-            print(f"  Coil {coil['name']} Efficiency: {Bz_unit:.4f} T/MA")
+            print(f"  Coil {coils[i]['name']} Efficiency: {Bz_unit:.4f} T/MA")
             
         # NOW SOLVE: G . I = Target_Bv
         # We have 1 equation, N unknowns. Underdetermined.
@@ -136,18 +117,21 @@ class AnalyticEquilibriumSolver:
             self.kernel.cfg['coils'][i]['current'] = val
             
         # Save
-        out_path = os.path.join(os.path.dirname(__file__), "../../../validation/iter_analytic_config.json")
-        with open(out_path, "w") as f:
+        repo_root = Path(__file__).resolve().parents[3]
+        out_path = repo_root / "validation" / "iter_analytic_config.json"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "w", encoding="utf-8") as f:
             json.dump(self.kernel.cfg, f, indent=4)
         print(f"Saved Analytic Configuration: {out_path}")
 if __name__ == "__main__":
+    repo_root = Path(__file__).resolve().parents[3]
     # Load template
-    cfg_path = "03_CODE/SCPN-Fusion-Core/calibration/iter_genetic_temp.json" 
+    cfg_path = repo_root / "calibration" / "iter_genetic_temp.json"
     # Use temp template from previous step if exists, or create new
-    if not os.path.exists(cfg_path):
-        cfg_path = "03_CODE/SCPN-Fusion-Core/validation/iter_validated_config.json"
+    if not cfg_path.exists():
+        cfg_path = repo_root / "validation" / "iter_validated_config.json"
         
-    solver = AnalyticEquilibriumSolver(cfg_path)
+    solver = AnalyticEquilibriumSolver(str(cfg_path))
     
     # ITER Specs
     R_target = 6.2
