@@ -282,7 +282,8 @@ mod tests {
         let row = row.min(map.nrows().saturating_sub(1));
         let values = map.row(row);
         let mean = values.iter().copied().sum::<f64>() / values.len().max(1) as f64;
-        let var = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / values.len().max(1) as f64;
+        let var =
+            values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / values.len().max(1) as f64;
         var.sqrt()
     }
 
@@ -419,6 +420,9 @@ mod tests {
         );
 
         let ratio = DivertorLab::heat_flux_asymmetry_ratio(&map_asym);
-        assert!(ratio > 1.05, "Expected non-trivial asymmetry ratio, got {ratio}");
+        assert!(
+            ratio > 1.05,
+            "Expected non-trivial asymmetry ratio, got {ratio}"
+        );
     }
 }
