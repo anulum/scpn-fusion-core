@@ -129,6 +129,11 @@ class NeuroSymbolicController:
         )
         self._axis_pos_keys = [axis.pos_key for axis in axes]
         self._axis_neg_keys = [axis.neg_key for axis in axes]
+        self._empty = np.zeros(0, dtype=np.float64)
+        self._tmp_obs_vals = np.zeros(self._axis_count, dtype=np.float64)
+        self._tmp_feature_err = np.zeros(self._axis_count, dtype=np.float64)
+        self._tmp_feature_pos = np.zeros(self._axis_count, dtype=np.float64)
+        self._tmp_feature_neg = np.zeros(self._axis_count, dtype=np.float64)
 
         # Flatten weight matrices for fast indexing
         self._w_in = artifact.weights.w_in.data[:]
@@ -143,6 +148,7 @@ class NeuroSymbolicController:
         self._tmp_production = np.zeros(self._nP, dtype=np.float64)
         self._tmp_marking_oracle = np.zeros(self._nP, dtype=np.float64)
         self._tmp_marking_sc = np.zeros(self._nP, dtype=np.float64)
+        self._tmp_marking_input = np.zeros(self._nP, dtype=np.float64)
         self._thresholds = np.asarray(
             [tr.threshold for tr in artifact.topology.transitions], dtype=np.float64
         )
@@ -218,9 +224,11 @@ class NeuroSymbolicController:
         self._inj_clamp_mask = np.asarray(
             [bool(inj.clamp_0_1) for inj in injections], dtype=np.bool_
         )
-        self._inj_has_clamp = bool(np.any(self._inj_clamp_mask))
+        self._inj_clamp_idx = np.flatnonzero(self._inj_clamp_mask)
+        self._inj_has_clamp = bool(self._inj_clamp_idx.size)
         self._inj_source_axis_idx = np.full(self._inj_count, -1, dtype=np.int64)
         self._inj_source_axis_pos = np.zeros(self._inj_count, dtype=np.bool_)
+        self._tmp_inj_values = np.zeros(self._inj_count, dtype=np.float64)
         passthrough_pairs: list[Tuple[int, str]] = []
         for i, src in enumerate(self._inj_sources):
             axis_info = key_to_axis.get(src)
@@ -255,9 +263,10 @@ class NeuroSymbolicController:
 
     def reset(self) -> None:
         """Restore initial marking and zero previous actions."""
-        self._marking = np.asarray(
-            self.artifact.initial_state.marking, dtype=np.float64
-        ).copy()
+        np.copyto(
+            self._marking,
+            np.asarray(self.artifact.initial_state.marking, dtype=np.float64),
+        )
         self._prev_actions.fill(0.0)
         self._oracle_pending.fill(0.0)
         self._sc_pending.fill(0.0)
@@ -312,7 +321,8 @@ class NeuroSymbolicController:
         )
 
         # 2. Inject features into marking
-        m = self._marking.copy()
+        m = self._tmp_marking_input
+        np.copyto(m, self._marking)
         self._inject_places(m, obs, pos_vals, neg_vals)
 
         # 3. Oracle float path (optional)
@@ -369,21 +379,22 @@ class NeuroSymbolicController:
         self, obs_map: Mapping[str, float]
     ) -> Tuple[FloatArray, FloatArray]:
         if self._axis_count == 0:
-            empty = np.asarray([], dtype=np.float64)
-            return empty, empty
+            return self._empty, self._empty
 
-        obs_vals = np.empty(self._axis_count, dtype=np.float64)
+        obs_vals = self._tmp_obs_vals
         for i, key in enumerate(self._axis_obs_keys):
             if key not in obs_map:
                 raise KeyError(
                     f"Missing observation key for feature extraction: {key}"
                 )
             obs_vals[i] = float(obs_map[key])
-        err = (self._axis_targets - obs_vals) / self._axis_scales
-        err = np.clip(err, -1.0, 1.0)
-        pos = np.clip(err, 0.0, 1.0)
-        neg = np.clip(-err, 0.0, 1.0)
-        return pos, neg
+        np.subtract(self._axis_targets, obs_vals, out=self._tmp_feature_err)
+        np.divide(self._tmp_feature_err, self._axis_scales, out=self._tmp_feature_err)
+        np.clip(self._tmp_feature_err, -1.0, 1.0, out=self._tmp_feature_err)
+        np.clip(self._tmp_feature_err, 0.0, 1.0, out=self._tmp_feature_pos)
+        np.negative(self._tmp_feature_err, out=self._tmp_feature_neg)
+        np.clip(self._tmp_feature_neg, 0.0, 1.0, out=self._tmp_feature_neg)
+        return self._tmp_feature_pos, self._tmp_feature_neg
 
     def _build_feature_dict(
         self, obs_map: Mapping[str, float], pos_vals: FloatArray, neg_vals: FloatArray
@@ -410,7 +421,8 @@ class NeuroSymbolicController:
         if self._inj_count == 0:
             return
 
-        values = np.empty(self._inj_count, dtype=np.float64)
+        values = self._tmp_inj_values
+        values.fill(0.0)
         axis_mask = self._inj_source_axis_idx >= 0
         if np.any(axis_mask):
             axis_indices = self._inj_source_axis_idx[axis_mask]
@@ -425,11 +437,11 @@ class NeuroSymbolicController:
                 raise KeyError(f"Missing observation key for passthrough: {key}")
             values[idx] = float(np.clip(obs_map[key], 0.0, 1.0))
 
-        values = values * self._inj_scales + self._inj_offsets
+        np.multiply(values, self._inj_scales, out=values)
+        values += self._inj_offsets
         if self._inj_has_clamp:
-            values = values.copy()
-            values[self._inj_clamp_mask] = np.clip(
-                values[self._inj_clamp_mask], 0.0, 1.0
+            values[self._inj_clamp_idx] = np.clip(
+                values[self._inj_clamp_idx], 0.0, 1.0
             )
         marking[self._inj_place_ids] = values
 
