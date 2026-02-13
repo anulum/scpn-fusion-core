@@ -13,6 +13,7 @@
 use ndarray::{Array1, Array2};
 use rand::Rng;
 use rand_distr::StandardNormal;
+use std::collections::VecDeque;
 
 /// Grid size. Python: 40.
 const GRID: usize = 40;
@@ -78,6 +79,75 @@ impl NoiseInjectionLayer {
 impl Default for NoiseInjectionLayer {
     fn default() -> Self {
         Self::new(DEFAULT_OU_THETA, DEFAULT_OU_SIGMA, DEFAULT_OU_DT)
+    }
+}
+
+/// Vectorized Ornstein-Uhlenbeck noise over multiple channels.
+#[derive(Debug, Clone)]
+pub struct VectorNoiseInjectionLayer {
+    pub channels: Vec<NoiseInjectionLayer>,
+}
+
+impl VectorNoiseInjectionLayer {
+    pub fn new(n_channels: usize, theta: f64, sigma: f64, dt: f64) -> Self {
+        let channels = (0..n_channels)
+            .map(|_| NoiseInjectionLayer::new(theta, sigma, dt))
+            .collect();
+        Self { channels }
+    }
+
+    pub fn step<R: Rng + ?Sized>(&mut self, rng: &mut R) -> Array1<f64> {
+        Array1::from_vec(
+            self.channels
+                .iter_mut()
+                .map(|layer| layer.step(rng))
+                .collect(),
+        )
+    }
+}
+
+/// Delay + lag line for actuator commands.
+#[derive(Debug, Clone)]
+pub struct ActuatorDelayLine {
+    delay_steps: usize,
+    lag_alpha: f64,
+    queue: VecDeque<Array1<f64>>,
+    last_applied: Array1<f64>,
+}
+
+impl ActuatorDelayLine {
+    pub fn new(n_actions: usize, delay_steps: usize, lag_alpha: f64) -> Self {
+        Self {
+            delay_steps,
+            lag_alpha: lag_alpha.clamp(0.0, 1.0),
+            queue: VecDeque::new(),
+            last_applied: Array1::zeros(n_actions),
+        }
+    }
+
+    /// Push a command and return the delayed+lagged action applied this step.
+    pub fn push(&mut self, command: Array1<f64>) -> Array1<f64> {
+        if command.len() != self.last_applied.len() {
+            return self.last_applied.clone();
+        }
+        self.queue.push_back(command);
+
+        let target = if self.queue.len() > self.delay_steps {
+            self.queue
+                .pop_front()
+                .unwrap_or_else(|| Array1::zeros(self.last_applied.len()))
+        } else {
+            Array1::zeros(self.last_applied.len())
+        };
+
+        let alpha = self.lag_alpha;
+        self.last_applied = &self.last_applied * (1.0 - alpha) + target * alpha;
+        self.last_applied.clone()
+    }
+
+    pub fn reset(&mut self) {
+        self.queue.clear();
+        self.last_applied.fill(0.0);
     }
 }
 
@@ -365,5 +435,40 @@ mod tests {
             (0.0..=100.0).contains(&meas),
             "Measurement must remain bounded"
         );
+    }
+
+    #[test]
+    fn test_vector_ou_noise_deterministic_with_seed() {
+        let mut rng1 = StdRng::seed_from_u64(7);
+        let mut rng2 = StdRng::seed_from_u64(7);
+        let mut n1 = VectorNoiseInjectionLayer::new(4, 0.2, 0.03, 1.0);
+        let mut n2 = VectorNoiseInjectionLayer::new(4, 0.2, 0.03, 1.0);
+        for _ in 0..16 {
+            let a = n1.step(&mut rng1);
+            let b = n2.step(&mut rng2);
+            for i in 0..a.len() {
+                assert!((a[i] - b[i]).abs() < 1e-12);
+            }
+        }
+    }
+
+    #[test]
+    fn test_actuator_delay_line_enforces_delay() {
+        let mut delay = ActuatorDelayLine::new(1, 2, 1.0);
+        let a0 = delay.push(Array1::from_vec(vec![1.0]));
+        let a1 = delay.push(Array1::from_vec(vec![2.0]));
+        let a2 = delay.push(Array1::from_vec(vec![3.0]));
+        assert!((a0[0] - 0.0).abs() < 1e-12);
+        assert!((a1[0] - 0.0).abs() < 1e-12);
+        assert!((a2[0] - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_actuator_delay_line_applies_lag() {
+        let mut delay = ActuatorDelayLine::new(1, 0, 0.5);
+        let a0 = delay.push(Array1::from_vec(vec![2.0]));
+        let a1 = delay.push(Array1::from_vec(vec![2.0]));
+        assert!((a0[0] - 1.0).abs() < 1e-12);
+        assert!((a1[0] - 1.5).abs() < 1e-12);
     }
 }

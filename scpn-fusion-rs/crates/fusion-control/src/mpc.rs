@@ -121,6 +121,37 @@ impl MPController {
 
         self.plan(&predicted_state)
     }
+
+    /// Delay-aware MPC rollout with first-order actuator lag.
+    ///
+    /// This provides a reduced DDE-like controller path where delayed commands
+    /// are filtered before being applied to the surrogate dynamics.
+    pub fn plan_with_delay_dynamics(
+        &self,
+        measured_state: &Array1<f64>,
+        delayed_actions: &[Array1<f64>],
+        sensor_noise: Option<&Array1<f64>>,
+        actuator_lag_alpha: f64,
+    ) -> Array1<f64> {
+        let n_coils = self.model.b_matrix.ncols();
+        let mut predicted_state = measured_state.clone();
+        if let Some(noise) = sensor_noise {
+            if noise.len() == predicted_state.len() {
+                predicted_state = &predicted_state + noise;
+            }
+        }
+
+        let mut delayed_applied = Array1::zeros(n_coils);
+        let alpha = actuator_lag_alpha.clamp(0.0, 1.0);
+        for action in delayed_actions {
+            if action.len() == n_coils {
+                delayed_applied = &delayed_applied * (1.0 - alpha) + action * alpha;
+                predicted_state = self.model.predict(&predicted_state, &delayed_applied);
+            }
+        }
+
+        self.plan(&predicted_state)
+    }
 }
 
 #[cfg(test)]
@@ -197,6 +228,36 @@ mod tests {
                 v.abs() <= ACTION_CLIP + 1e-10,
                 "Action should remain clipped: {v}"
             );
+        }
+    }
+
+    #[test]
+    fn test_mpc_delay_dynamics_path() {
+        let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
+        let model = NeuralSurrogate::new(b);
+        let target = Array1::from_vec(vec![6.0, 0.0]);
+        let mpc = MPController::new(model, target);
+
+        let measured = Array1::from_vec(vec![5.0, 1.0]);
+        let delayed = vec![
+            Array1::from_vec(vec![0.4, -0.2]),
+            Array1::from_vec(vec![0.4, -0.2]),
+        ];
+        let noise = Array1::from_vec(vec![0.03, -0.01]);
+        let action = mpc.plan_with_delay_dynamics(&measured, &delayed, Some(&noise), 0.5);
+
+        assert!(
+            action[0] > 0.0,
+            "Delay dynamics MPC should push R positive: {}",
+            action[0]
+        );
+        assert!(
+            action[1] < 0.0,
+            "Delay dynamics MPC should push Z negative: {}",
+            action[1]
+        );
+        for &v in action.iter() {
+            assert!(v.abs() <= ACTION_CLIP + 1e-10);
         }
     }
 }

@@ -43,6 +43,10 @@
   - new `fusion-math/src/iga.rs` for NURBS curve evaluation and open-uniform knot generation
   - NURBS-based first-wall contour generator (`generate_first_wall_nurbs`) in `fusion-nuclear`
   - regression checks for endpoint consistency, contour closure, and analytic-envelope proximity
+- Added latency-aware control realism extensions in `fusion-control`:
+  - vector Ornstein-Uhlenbeck noise layer for multi-channel perturbations
+  - actuator delay-line with configurable lag blending
+  - DDE-like delayed rollout path in MPC (`plan_with_delay_dynamics`)
 - Upgraded AMR hierarchy and kernel integration to level-aware scaling (`2^level`) for multi-level patch colocation/prolongation.
 - Added AMR multilevel tests for hierarchy generation and level-scaled interpolation.
 - Added low-order toroidal mode coupling closure in `fusion-core` transport:
