@@ -44,7 +44,8 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - Completed: `GMVR-02` (TEMHD divertor MHD pressure-loss + velocity-dependent evaporation model with 3D toroidal stability sweep).
 - Completed: `GMVR-03` (stellarator geometry extension with SNN stability loop and VMEC++-proxy parity benchmark).
 - Completed: `GDEP-01` (NSTX-U/SPARC digital-twin ingest hook with SNN scenario planning and thresholded validation).
-- Next active task: `GDEP-02` RFC/implementation staging.
+- Completed: `GDEP-02` (GPU runtime integration bridge for multigrid + SNN lanes with deterministic latency/speedup gates).
+- Next active task: `GDEP-03` RFC/implementation staging.
 
 ## Explicitly Deferred (Not In Sprint S1)
 

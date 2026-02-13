@@ -21,6 +21,7 @@ from .heat_ml_shadow_surrogate import (
     rmse_percent as shadow_rmse_percent,
     synthetic_shadow_reference,
 )
+from .gpu_runtime import GPURuntimeBridge, RuntimeBenchmark
 from .gyro_swin_surrogate import (
     GyroSwinLikeSurrogate,
     SpeedBenchmark,
