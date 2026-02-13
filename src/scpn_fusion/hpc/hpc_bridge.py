@@ -24,6 +24,25 @@ def _as_contiguous_f64(array: NDArray[np.floating]) -> NDArray[np.float64]:
     return np.ascontiguousarray(array, dtype=np.float64)
 
 
+def _require_c_contiguous_f64(
+    array: NDArray[np.floating],
+    expected_shape: tuple[int, int],
+    name: str,
+) -> NDArray[np.float64]:
+    """Validate that an output buffer can be written into without copying."""
+    if not isinstance(array, np.ndarray):
+        raise ValueError(f"{name} must be a numpy.ndarray")
+    if array.dtype != np.float64:
+        raise ValueError(f"{name} must have dtype float64")
+    if not array.flags.c_contiguous:
+        raise ValueError(f"{name} must be C-contiguous")
+    if tuple(array.shape) != tuple(expected_shape):
+        raise ValueError(
+            f"{name} shape mismatch: expected {expected_shape}, received {tuple(array.shape)}"
+        )
+    return array
+
+
 class HPCBridge:
     """Interface between Python and the compiled C++ Grad-Shafranov solver.
 
@@ -196,17 +215,35 @@ class HPCBridge:
         prepared = self._prepare_inputs(j_phi)
         if prepared is None:
             return None
-        j_input, expected_shape = prepared
+        _, expected_shape = prepared
 
         psi_out = np.zeros(expected_shape, dtype=np.float64)
+        solved = self.solve_into(j_phi, psi_out, iterations=iterations)
+        if solved is None:
+            return None
+        return solved
+
+    def solve_into(
+        self,
+        j_phi: NDArray[np.float64],
+        psi_out: NDArray[np.float64],
+        iterations: int = 100,
+    ) -> Optional[NDArray[np.float64]]:
+        """Run the C++ solver and write results into ``psi_out`` in-place."""
+        prepared = self._prepare_inputs(j_phi)
+        if prepared is None:
+            return None
+        j_input, expected_shape = prepared
+        psi_target = _require_c_contiguous_f64(psi_out, expected_shape, "psi_out")
+
         self.lib.run_step(
             self.solver_ptr,
             j_input,
-            psi_out,
+            psi_target,
             int(j_input.size),
             int(iterations),
         )
-        return psi_out
+        return psi_target
 
     def solve_until_converged(
         self,
@@ -223,21 +260,52 @@ class HPCBridge:
         prepared = self._prepare_inputs(j_phi)
         if prepared is None:
             return None
-        j_input, expected_shape = prepared
-
-        if not self._has_converged_api:
-            psi = self.solve(j_input, iterations=max_iterations)
-            if psi is None:
-                return None
-            return psi, int(max(max_iterations, 1)), float("nan")
+        _, expected_shape = prepared
 
         psi_out = np.zeros(expected_shape, dtype=np.float64)
+        converged = self.solve_until_converged_into(
+            j_phi,
+            psi_out,
+            max_iterations=max_iterations,
+            tolerance=tolerance,
+            omega=omega,
+        )
+        if converged is None:
+            return None
+        iterations_used, final_delta = converged
+        return psi_out, iterations_used, final_delta
+
+    def solve_until_converged_into(
+        self,
+        j_phi: NDArray[np.float64],
+        psi_out: NDArray[np.float64],
+        max_iterations: int = 1000,
+        tolerance: float = 1e-6,
+        omega: float = 1.8,
+    ) -> Optional[tuple[int, float]]:
+        """Run convergence API and write results into ``psi_out`` in-place."""
+        prepared = self._prepare_inputs(j_phi)
+        if prepared is None:
+            return None
+        j_input, expected_shape = prepared
+        psi_target = _require_c_contiguous_f64(psi_out, expected_shape, "psi_out")
+
+        if not self._has_converged_api:
+            self.lib.run_step(
+                self.solver_ptr,
+                j_input,
+                psi_target,
+                int(j_input.size),
+                int(max(max_iterations, 1)),
+            )
+            return int(max(max_iterations, 1)), float("nan")
+
         final_delta = ctypes.c_double(0.0)
         iterations_used = int(
             self.lib.run_step_converged(
                 self.solver_ptr,
                 j_input,
-                psi_out,
+                psi_target,
                 int(j_input.size),
                 int(max(max_iterations, 1)),
                 float(omega),
@@ -245,7 +313,7 @@ class HPCBridge:
                 ctypes.byref(final_delta),
             )
         )
-        return psi_out, iterations_used, float(final_delta.value)
+        return iterations_used, float(final_delta.value)
 
     def _prepare_inputs(
         self, j_phi: NDArray[np.float64]

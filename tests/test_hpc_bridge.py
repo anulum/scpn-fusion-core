@@ -26,11 +26,13 @@ class _DummyLib:
         self.last_tolerance = None
         self.destroyed = None
         self.boundary_value = None
+        self.last_psi_ref = None
 
     def run_step(self, solver_ptr, j_array, psi_array, size, iterations) -> None:
         self.called = True
         self.last_size = int(size)
         self.last_iterations = int(iterations)
+        self.last_psi_ref = psi_array
         psi_array[:] = 0.5 * j_array
 
     def run_step_converged(
@@ -49,6 +51,7 @@ class _DummyLib:
         self.last_max_iterations = int(max_iterations)
         self.last_omega = float(omega)
         self.last_tolerance = float(tolerance)
+        self.last_psi_ref = psi_array
         psi_array[:] = 0.25 * j_array
         final_delta_ptr._obj.value = 2.5e-4
         return 7
@@ -120,6 +123,34 @@ def test_solve_runs_and_returns_expected_shape() -> None:
     assert bridge.lib.last_iterations == 17
 
 
+def test_solve_into_reuses_output_buffer() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
+    out_buf = np.empty((3, 2), dtype=np.float64)
+    out = bridge.solve_into(j_phi, out_buf, iterations=5)
+
+    assert out is out_buf
+    assert bridge.lib.last_psi_ref is out_buf
+    assert np.allclose(out_buf, 0.5 * j_phi)
+    assert bridge.lib.last_iterations == 5
+
+
+def test_solve_into_rejects_noncontiguous_output() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
+    out_buf = np.empty((2, 3), dtype=np.float64).T
+    with pytest.raises(ValueError, match="C-contiguous"):
+        bridge.solve_into(j_phi, out_buf, iterations=3)
+
+
+def test_solve_into_rejects_wrong_shape_output() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
+    out_buf = np.empty((2, 2), dtype=np.float64)
+    with pytest.raises(ValueError, match="shape mismatch"):
+        bridge.solve_into(j_phi, out_buf, iterations=3)
+
+
 def test_solve_until_converged_uses_native_api() -> None:
     bridge = _make_bridge(nr=2, nz=3)
     j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
@@ -136,6 +167,26 @@ def test_solve_until_converged_uses_native_api() -> None:
     assert abs(bridge.lib.last_tolerance - 1e-5) < 1e-12
 
 
+def test_solve_until_converged_into_reuses_output_buffer() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
+    out_buf = np.empty((3, 2), dtype=np.float64)
+    out = bridge.solve_until_converged_into(
+        j_phi,
+        out_buf,
+        max_iterations=33,
+        tolerance=1e-7,
+        omega=1.5,
+    )
+    assert out is not None
+    iters, delta = out
+    assert iters == 7
+    assert abs(delta - 2.5e-4) < 1e-12
+    assert bridge.lib.last_psi_ref is out_buf
+    assert np.allclose(out_buf, 0.25 * j_phi)
+    assert bridge.lib.last_max_iterations == 33
+
+
 def test_solve_until_converged_falls_back_without_native_api() -> None:
     bridge = _make_bridge(nr=2, nz=3)
     bridge._has_converged_api = False
@@ -147,6 +198,20 @@ def test_solve_until_converged_falls_back_without_native_api() -> None:
     assert np.allclose(psi, 0.5 * j_phi)
     assert iters == 12
     assert np.isnan(delta)
+
+
+def test_solve_until_converged_into_fallback_without_native_api() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    bridge._has_converged_api = False
+    j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
+    out_buf = np.empty((3, 2), dtype=np.float64)
+    out = bridge.solve_until_converged_into(j_phi, out_buf, max_iterations=9)
+    assert out is not None
+    iters, delta = out
+    assert iters == 9
+    assert np.isnan(delta)
+    assert np.allclose(out_buf, 0.5 * j_phi)
+    assert bridge.lib.last_iterations == 9
 
 
 def test_set_boundary_dirichlet_calls_native_symbol() -> None:
