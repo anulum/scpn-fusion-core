@@ -6,6 +6,8 @@
 use ndarray::{Array1, Array2};
 use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
 use pyo3::prelude::*;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 use fusion_core::ignition::calculate_thermodynamics;
 use fusion_core::inverse::{reconstruct_equilibrium, InverseConfig, JacobianMode};
@@ -445,6 +447,56 @@ fn scpn_marking_update<'py>(
     out.into_pyarray(py)
 }
 
+/// Stochastic firing estimator for SCPN transitions.
+///
+/// Returns mean Bernoulli activation over `n_passes` samples with optional
+/// antithetic pairing.
+#[pyfunction]
+fn scpn_sample_firing<'py>(
+    py: Python<'py>,
+    p_fire: PyReadonlyArray1<'py, f64>,
+    n_passes: usize,
+    seed: u64,
+    antithetic: bool,
+) -> Bound<'py, PyArray1<f64>> {
+    let probs = p_fire.as_array();
+    let n_t = probs.len();
+    let mut counts = vec![0_u32; n_t];
+    let mut rng = StdRng::seed_from_u64(seed);
+
+    if antithetic && n_passes >= 2 {
+        let n_pairs = n_passes.div_ceil(2);
+        let odd_trim = !n_passes.is_multiple_of(2);
+        for pair_idx in 0..n_pairs {
+            let use_mirror = !odd_trim || (pair_idx + 1 < n_pairs);
+            for (i, p_raw) in probs.iter().enumerate() {
+                let p = p_raw.clamp(0.0, 1.0);
+                let u: f64 = rng.gen();
+                if u < p {
+                    counts[i] += 1;
+                }
+                if use_mirror && (1.0 - u) < p {
+                    counts[i] += 1;
+                }
+            }
+        }
+    } else {
+        for _ in 0..n_passes {
+            for (i, p_raw) in probs.iter().enumerate() {
+                let p = p_raw.clamp(0.0, 1.0);
+                let u: f64 = rng.gen();
+                if u < p {
+                    counts[i] += 1;
+                }
+            }
+        }
+    }
+
+    let denom = n_passes.max(1) as f64;
+    let out = Array1::from_iter(counts.into_iter().map(|c| (c as f64) / denom));
+    out.into_pyarray(py)
+}
+
 // ─── ML ───
 
 /// Simulate a tearing mode plasma shot.
@@ -471,6 +523,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(measure_magnetics, m)?)?;
     m.add_function(wrap_pyfunction!(scpn_dense_activations, m)?)?;
     m.add_function(wrap_pyfunction!(scpn_marking_update, m)?)?;
+    m.add_function(wrap_pyfunction!(scpn_sample_firing, m)?)?;
     m.add_function(wrap_pyfunction!(simulate_tearing_mode, m)?)?;
     Ok(())
 }

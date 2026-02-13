@@ -37,15 +37,20 @@ _rust_dense_activations: Optional[Callable[[FloatArray, FloatArray], object]] = 
 _rust_marking_update: Optional[
     Callable[[FloatArray, FloatArray, FloatArray, FloatArray], object]
 ] = None
+_rust_sample_firing: Optional[
+    Callable[[FloatArray, int, int, bool], object]
+] = None
 
 try:
     from scpn_fusion_rs import (  # type: ignore[import-not-found]
         scpn_dense_activations as _rust_dense_activations_impl,
         scpn_marking_update as _rust_marking_update_impl,
+        scpn_sample_firing as _rust_sample_firing_impl,
     )
 
     _rust_dense_activations = _rust_dense_activations_impl
     _rust_marking_update = _rust_marking_update_impl
+    _rust_sample_firing = _rust_sample_firing_impl
     _HAS_RUST_SCPN_RUNTIME = True
 except Exception:
     _HAS_RUST_SCPN_RUNTIME = False
@@ -494,27 +499,43 @@ class NeuroSymbolicController:
             f = p_fire
             rng = None
         else:
-            rng = np.random.default_rng(_seed64(self.seed_base, f"sc_step:{int(k)}"))
-            if self._sc_antithetic and self._sc_n_passes >= 2:
-                n_pairs = (self._sc_n_passes + 1) // 2
-                base = rng.random((n_pairs, self._nT))
-                low_hits = np.sum(base < p_fire[None, :], axis=0, dtype=np.int64)
-                if self._sc_n_passes % 2 == 0:
-                    high_hits = np.sum(
-                        base > (1.0 - p_fire)[None, :], axis=0, dtype=np.int64
-                    )
-                else:
-                    high_hits = np.sum(
-                        base[:-1, :] > (1.0 - p_fire)[None, :],
-                        axis=0,
-                        dtype=np.int64,
-                    )
-                counts = low_hits + high_hits
-            else:
-                counts = np.asarray(
-                    rng.binomial(self._sc_n_passes, p_fire), dtype=np.int64
+            sample_seed = _seed64(self.seed_base, f"sc_step:{int(k)}")
+            if (
+                self._runtime_backend == "rust"
+                and _HAS_RUST_SCPN_RUNTIME
+                and _rust_sample_firing is not None
+                and self._sc_bitflip_rate <= 0.0
+            ):
+                sampled = _rust_sample_firing(
+                    p_fire,
+                    int(self._sc_n_passes),
+                    int(sample_seed),
+                    bool(self._sc_antithetic),
                 )
-            f = counts.astype(np.float64) / float(self._sc_n_passes)
+                f = np.asarray(sampled, dtype=np.float64)
+                rng = None
+            else:
+                rng = np.random.default_rng(sample_seed)
+                if self._sc_antithetic and self._sc_n_passes >= 2:
+                    n_pairs = (self._sc_n_passes + 1) // 2
+                    base = rng.random((n_pairs, self._nT))
+                    low_hits = np.sum(base < p_fire[None, :], axis=0, dtype=np.int64)
+                    if self._sc_n_passes % 2 == 0:
+                        high_hits = np.sum(
+                            base > (1.0 - p_fire)[None, :], axis=0, dtype=np.int64
+                        )
+                    else:
+                        high_hits = np.sum(
+                            base[:-1, :] > (1.0 - p_fire)[None, :],
+                            axis=0,
+                            dtype=np.int64,
+                        )
+                    counts = low_hits + high_hits
+                else:
+                    counts = np.asarray(
+                        rng.binomial(self._sc_n_passes, p_fire), dtype=np.int64
+                    )
+                f = counts.astype(np.float64) / float(self._sc_n_passes)
 
         if self._sc_bitflip_rate > 0.0:
             if rng is None:

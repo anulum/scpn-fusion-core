@@ -83,6 +83,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | H5-010 | P1 | SCPN | Remove per-tick observation-map churn and keep marking updates buffer-backed without aliasing | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py` | Controller feature extraction uses incoming observation mapping directly, marking update writes into dedicated work buffers, and `marking` accessors preserve non-aliasing API behavior | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `python validation/scpn_pid_mpc_benchmark.py --seed 42 --steps 240 --strict` |
 | H5-011 | P1 | SCPN | Convert feature/injection/input-marking hot path to fully reusable in-place scratch buffers | `src/scpn_fusion/scpn/controller.py` | Step path avoids per-tick allocation for observation vectors, feature components, injection values, and input-marking prep while preserving deterministic outputs and benchmark gates | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `python validation/scpn_pid_mpc_benchmark.py --seed 42 --steps 240 --strict` |
 | H5-012 | P1 | SCPN | Replace high-allocation stochastic sampling path with binomial and low-allocation antithetic counting | `src/scpn_fusion/scpn/controller.py` | SC firing estimation avoids mirrored draw tensors, uses binomial counts for plain sampling, preserves deterministic replay, and keeps benchmark thresholds unchanged | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `python validation/scpn_pid_mpc_benchmark.py --seed 42 --steps 240 --strict` |
+| H5-013 | P1 | SCPN | Add Rust stochastic-firing kernel bridge for runtime backend and validate Rust sample path execution | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py`, `scpn-fusion-rs/crates/fusion-python/src/lib.rs`, `scpn-fusion-rs/crates/fusion-python/Cargo.toml` | Rust backend can offload SC firing-sampling counts (when bit-flip faults are disabled), Python keeps deterministic fallback, and tests prove Rust sample hook execution | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `cargo test -p scpn-fusion-rs`, `cargo clippy -p scpn-fusion-rs --all-targets --all-features -- -D warnings`, `python validation/scpn_pid_mpc_benchmark.py --seed 42 --steps 240 --strict` |
 
 ## Task Accounting
 
@@ -90,7 +91,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 12
+- Post-S4 hardening tasks delivered: 13
 - Remaining in deferred pool after queue selection: 67
 
 ## Active Task
@@ -125,4 +126,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `H5-010`
 - Completed: `H5-011`
 - Completed: `H5-012`
+- Completed: `H5-013`
 - Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).
