@@ -17,7 +17,7 @@ The following gaps block full 3D physics fidelity.
 |---|---|---|---|
 | G3D-01 | LCFS extracted from 2D axisymmetric equilibrium and revolved | No true non-axisymmetric equilibrium | Add VMEC-like 3D equilibrium interface and native 3D flux coordinates |
 | G3D-02 | Ray-based LCFS tracing over 2D grid | No field-line topology diagnostics | Add field-line tracing and Poincare map generation |
-| G3D-03 | Transport is radial (1.5D) | No toroidal mode coupling (`n!=0`) | Add low-order toroidal mode coupling for transport closure |
+| G3D-03 | Transport is radial (1.5D) with low-order `n!=0` closure in `fusion-core/src/transport.rs` | Closure model only (no resolved `(rho, phi)` PDE transport) | Extend from reduced spectral closure to native toroidal transport solve |
 | G3D-04 | FNO turbulence is 2D | Missing 3D spectral coupling | Add 3D FFT/FNO path with toroidal harmonics |
 | G3D-05 | Neutronics simplified wall flux methods | No volumetric 3D blanket transport | Add 3D mesh-based neutronics surrogate |
 | G3D-06 | Divertor models are reduced geometry | No 3D strike-point asymmetry mapping | Add 3D heat-flux projection from flux geometry |
@@ -26,8 +26,8 @@ The following gaps block full 3D physics fidelity.
 
 ## Priority Order
 
-1. G3D-08 (CI safety for 3D path)
-2. G3D-03 (toroidal transport coupling)
+1. G3D-08 (CI safety for 3D path) - completed
+2. G3D-03 (reduced low-order toroidal transport coupling) - completed
 3. G3D-04 (3D turbulence surrogate)
 4. G3D-06 (3D divertor heat flux)
 5. G3D-01 (native 3D equilibrium)

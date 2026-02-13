@@ -37,12 +37,17 @@ const COOLING_FACTOR: f64 = 5.0;
 /// Gaussian heating profile width. Python line 100.
 const HEATING_WIDTH: f64 = 0.1;
 
+/// Cap for low-order toroidal-mode coupling multiplier.
+const TOROIDAL_COUPLING_MAX_FACTOR: f64 = 3.0;
+
 /// 1.5D radial transport solver.
 pub struct TransportSolver {
     pub profiles: RadialProfiles,
     pub chi: Array1<f64>,
     pub dt: f64,
     pub pedestal: PedestalModel,
+    pub toroidal_mode_amplitudes: Vec<f64>,
+    pub toroidal_coupling_gain: f64,
 }
 
 impl TransportSolver {
@@ -81,7 +86,46 @@ impl TransportSolver {
             chi,
             dt: 0.01,
             pedestal,
+            toroidal_mode_amplitudes: vec![0.0; 3],
+            toroidal_coupling_gain: 0.0,
         }
+    }
+
+    /// Configure low-order toroidal mode spectrum `n=1..N` for reduced transport closure.
+    ///
+    /// The solver remains 1.5D; this adds a radial transport multiplier using spectral
+    /// energy from low-order `n != 0` modes to mimic toroidal asymmetry effects.
+    pub fn set_toroidal_mode_spectrum(&mut self, amplitudes: &[f64], gain: f64) {
+        self.toroidal_mode_amplitudes.clear();
+        self.toroidal_mode_amplitudes
+            .extend(amplitudes.iter().map(|a| a.abs()));
+        self.toroidal_coupling_gain = gain.max(0.0);
+    }
+
+    fn toroidal_mode_coupling_factor(&self, rho: f64) -> f64 {
+        if self.toroidal_coupling_gain <= 0.0 || self.toroidal_mode_amplitudes.is_empty() {
+            return 1.0;
+        }
+
+        // Weight higher-n modes by n to reflect stronger short-scale asymmetry drive.
+        let spectral_rms = self
+            .toroidal_mode_amplitudes
+            .iter()
+            .enumerate()
+            .map(|(idx, amp)| {
+                let n = (idx + 1) as f64;
+                (n * amp).powi(2)
+            })
+            .sum::<f64>()
+            .sqrt();
+        if spectral_rms <= 1e-12 {
+            return 1.0;
+        }
+
+        // Edge-weighted envelope keeps core near baseline while allowing edge asymmetry.
+        let envelope = rho.clamp(0.0, 1.0).powi(2);
+        (1.0 + self.toroidal_coupling_gain * envelope * spectral_rms)
+            .clamp(1.0, TOROIDAL_COUPLING_MAX_FACTOR)
     }
 
     /// Update thermal diffusivity using Bohm/Gyro-Bohm + EPED-like pedestal.
@@ -107,6 +151,9 @@ impl TransportSolver {
             // Bohm/Gyro-Bohm transport
             let excess = (-grad_t - CRIT_GRADIENT).max(0.0);
             self.chi[i] = CHI_BASE + CHI_TURB * excess;
+
+            // Reduced toroidal coupling closure from low-order n!=0 mode spectrum.
+            self.chi[i] *= self.toroidal_mode_coupling_factor(self.profiles.rho[i]);
 
             // EPED-like H-mode pedestal suppression
             if p_aux_mw > HMODE_POWER_THRESHOLD && self.profiles.rho[i] >= barrier_rho {
@@ -274,6 +321,63 @@ mod tests {
             "H-mode should reduce edge chi: {} vs {}",
             chi_edge_hmode,
             chi_edge_no_hmode
+        );
+    }
+
+    #[test]
+    fn test_toroidal_mode_coupling_disabled_by_default() {
+        let mut baseline = TransportSolver::new();
+        baseline.update_transport_model(20.0);
+        let baseline_chi = baseline.chi.clone();
+
+        let mut coupled = TransportSolver::new();
+        coupled.set_toroidal_mode_spectrum(&[0.2, 0.1, 0.05], 0.0);
+        coupled.update_transport_model(20.0);
+
+        let max_err = baseline_chi
+            .iter()
+            .zip(coupled.chi.iter())
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0, f64::max);
+        assert!(
+            max_err < 1e-12,
+            "Expected baseline parity when toroidal coupling gain is zero, max_err={max_err}"
+        );
+    }
+
+    #[test]
+    fn test_toroidal_mode_coupling_boosts_edge_more_than_core() {
+        let mut baseline = TransportSolver::new();
+        baseline.update_transport_model(20.0);
+        let base_edge = baseline.chi[48];
+        let base_core = baseline.chi[4];
+
+        let mut coupled = TransportSolver::new();
+        coupled.set_toroidal_mode_spectrum(&[0.2, 0.1, 0.04], 0.7);
+        coupled.update_transport_model(20.0);
+        let edge_gain = coupled.chi[48] / base_edge.max(1e-12);
+        let core_gain = coupled.chi[4] / base_core.max(1e-12);
+
+        assert!(
+            edge_gain > 1.0,
+            "Expected edge transport gain > 1 from toroidal coupling, got {edge_gain}"
+        );
+        assert!(
+            edge_gain > core_gain,
+            "Expected stronger edge gain than core gain: edge={edge_gain}, core={core_gain}"
+        );
+    }
+
+    #[test]
+    fn test_toroidal_mode_coupling_factor_is_clamped() {
+        let mut ts = TransportSolver::new();
+        ts.set_toroidal_mode_spectrum(&[10.0, 10.0, 10.0], 10.0);
+        let factor = ts.toroidal_mode_coupling_factor(1.0);
+        assert!(
+            (factor - TOROIDAL_COUPLING_MAX_FACTOR).abs() < 1e-12,
+            "Expected clamped factor={}, got {}",
+            TOROIDAL_COUPLING_MAX_FACTOR,
+            factor
         );
     }
 

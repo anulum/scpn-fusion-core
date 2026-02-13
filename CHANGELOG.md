@@ -23,6 +23,10 @@
 - Added kernel-level analytical-vs-finite-difference Jacobian consistency test for inverse reconstruction.
 - Upgraded AMR hierarchy and kernel integration to level-aware scaling (`2^level`) for multi-level patch colocation/prolongation.
 - Added AMR multilevel tests for hierarchy generation and level-scaled interpolation.
+- Added low-order toroidal mode coupling closure in `fusion-core` transport:
+  - configurable `n=1..N` mode spectrum via `set_toroidal_mode_spectrum(...)`
+  - edge-weighted diffusivity coupling factor for reduced `n!=0` transport effects
+  - regression tests for baseline parity, edge-dominant coupling, and clamp safety
 - Added PCE checked APIs:
   - `PCEModel::try_fit(...) -> FusionResult<PCEModel>`
   - `PCEModel::try_predict(...) -> FusionResult<Array1<f64>>`
