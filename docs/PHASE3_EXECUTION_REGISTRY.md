@@ -58,12 +58,22 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | S3-005 | P1 | HPC | Extend bridge/solver validation for invalid stride/shape edge paths | `src/scpn_fusion/hpc/hpc_bridge.py`, `src/scpn_fusion/hpc/solver.cpp`, `tests/test_hpc_bridge.py` | Additional boundary/fuzz-style guards and tests for invalid buffer geometry | `python -m pytest tests/test_hpc_bridge.py -v` |
 | S3-006 | P2 | Release | Add S3 queue health visibility in release-readiness markdown | `validation/gdep_05_release_readiness.py`, `tests/test_gdep_05_release_readiness.py` | Release report captures S3 progress without weakening existing hard gates | `python -m pytest tests/test_gdep_05_release_readiness.py -v` |
 
+## Sprint S4 Execution Queue (Ordered)
+
+| ID | Priority | Track | Task | Target Files | Definition of Done | Validation |
+|---|---|---|---|---|---|---|
+| S4-001 | P0 | SCPN | Wire topology/inhibitor compile controls through `FusionCompiler` | `src/scpn_fusion/scpn/compiler.py`, `tests/test_scpn_compiler.py` | Compiler can enforce topology checks and inhibitor opt-in at compile entry point | `python -m pytest tests/test_scpn_compiler.py tests/test_hypothesis_properties.py -v` |
+| S4-002 | P1 | SCPN | Add deterministic compact-packed artifact codec smoke checks independent of runtime packed availability | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Compact codec validated directly for deterministic roundtrip of u64 payloads | `python -m pytest tests/test_controller.py -v` |
+| S4-003 | P1 | Control | Add deterministic safe runtime summary path for `tokamak_flight_sim` | `src/scpn_fusion/control/tokamak_flight_sim.py`, `tests/` | Control script callable in CI without interactive plotting dependency | `python -m pytest -v` |
+| S4-004 | P2 | Release | Extend release-readiness queue health to include S4 lane | `validation/gdep_05_release_readiness.py`, `tests/test_gdep_05_release_readiness.py` | Release report includes S2/S3/S4 queue snapshots | `python -m pytest tests/test_gdep_05_release_readiness.py -v` |
+
 ## Task Accounting
 
 - Total imported tasks: 85
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
-- Remaining in deferred pool after queue selection: 71
+- Tasks currently queued for Sprint S4: 4
+- Remaining in deferred pool after queue selection: 67
 
 ## Active Task
 
@@ -81,4 +91,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `S3-004`
 - Completed: `S3-005`
 - Completed: `S3-006`
-- Next active task: none (Sprint S3 queue baseline closed; 71 deferred tasks remain).
+- Completed: `S4-001`
+- In progress: `S4-002`

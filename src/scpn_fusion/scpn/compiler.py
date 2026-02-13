@@ -395,6 +395,10 @@ class FusionCompiler:
         net: StochasticPetriNet,
         firing_mode: str = "binary",
         firing_margin: float = 0.05,
+        *,
+        allow_inhibitor: bool = False,
+        validate_topology: bool = False,
+        strict_topology: bool = False,
     ) -> CompiledNet:
         """Compile the Petri Net into sc_neurocore artifacts.
 
@@ -403,6 +407,9 @@ class FusionCompiler:
         net : compiled ``StochasticPetriNet``.
         firing_mode : ``"binary"`` (default) or ``"fractional"``.
         firing_margin : margin for fractional firing (ignored in binary mode).
+        allow_inhibitor : enable inhibitor arc compilation.
+        validate_topology : run topology diagnostics during compile.
+        strict_topology : raise if topology diagnostics detect issues.
 
         Steps:
             1. Extract dense W_in (nT x nP) and W_out (nP x nT).
@@ -414,8 +421,13 @@ class FusionCompiler:
             raise ValueError(
                 f"firing_mode must be 'binary' or 'fractional', got '{firing_mode}'"
             )
-        if not net.is_compiled:
-            net.compile()
+        validate = bool(validate_topology or strict_topology)
+        if (not net.is_compiled) or allow_inhibitor or validate:
+            net.compile(
+                validate_topology=validate,
+                strict_validation=bool(strict_topology),
+                allow_inhibitor=bool(allow_inhibitor),
+            )
 
         # 1. Dense matrices
         W_in = net.W_in.toarray()    # (nT, nP)

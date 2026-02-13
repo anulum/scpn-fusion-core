@@ -261,6 +261,49 @@ class TestStochasticPetriNet:
 
 
 class TestFusionCompiler:
+    def test_compile_strict_topology_rejects_dead_nodes(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("A", initial_tokens=1.0)
+        net.add_place("B_dead", initial_tokens=0.0)
+        net.add_transition("T_live", threshold=0.5)
+        net.add_transition("T_dead", threshold=0.5)
+        net.add_arc("A", "T_live", weight=1.0)
+        net.add_arc("T_live", "A", weight=1.0)
+
+        compiler = FusionCompiler(bitstream_length=128, seed=7)
+        with pytest.raises(ValueError, match="Topology validation failed"):
+            compiler.compile(net, strict_topology=True)
+
+    def test_compile_validate_topology_populates_report(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("A", initial_tokens=1.0)
+        net.add_place("B_dead", initial_tokens=0.0)
+        net.add_transition("T_live", threshold=0.5)
+        net.add_transition("T_dead", threshold=0.5)
+        net.add_arc("A", "T_live", weight=1.0)
+        net.add_arc("T_live", "A", weight=1.0)
+
+        compiler = FusionCompiler(bitstream_length=128, seed=7)
+        compiled = compiler.compile(net, validate_topology=True)
+        assert compiled.n_places == 2
+        assert compiled.n_transitions == 2
+        assert net.last_validation_report is not None
+        assert net.last_validation_report["dead_places"] == ["B_dead"]
+        assert net.last_validation_report["dead_transitions"] == ["T_dead"]
+
+    def test_compile_allow_inhibitor_opt_in(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("P", initial_tokens=0.0)
+        net.add_transition("T", threshold=0.5)
+        net.add_arc("P", "T", weight=2.0, inhibitor=True)
+
+        compiler = FusionCompiler(bitstream_length=128, seed=7)
+        with pytest.raises(ValueError, match="allow_inhibitor=True"):
+            compiler.compile(net)
+
+        compiled = compiler.compile(net, allow_inhibitor=True)
+        np.testing.assert_array_equal(compiled.W_in, [[-2.0]])
+
     def test_compiled_net_shapes(self, compiled: CompiledNet) -> None:
         assert compiled.W_in.shape == (3, 3)
         assert compiled.W_out.shape == (3, 3)
