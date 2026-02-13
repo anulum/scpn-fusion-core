@@ -51,7 +51,7 @@ jobs:
               "-m",
               "pip",
               "install",
-              "git+https://github.com/anulum/sc-neurocore.git#subdirectory=bridge",
+              "git+https://github.com/anulum/sc-neurocore.git@df81aa28fd2db55665cacd87c3c4a62b7d8e077f#subdirectory=bridge",
           ]
           result = subprocess.run(cmd, check=False)
           if result.returncode != 0:
@@ -286,7 +286,7 @@ jobs:
               "-m",
               "pip",
               "install",
-              "git+https://github.com/anulum/sc-neurocore.git#subdirectory=bridge",
+              "git+https://github.com/anulum/sc-neurocore.git@df81aa28fd2db55665cacd87c3c4a62b7d8e077f#subdirectory=bridge",
           ]
           result = subprocess.run(cmd, check=False)
           if result.returncode != 0:

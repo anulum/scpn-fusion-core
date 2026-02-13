@@ -86,6 +86,13 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | H5-013 | P1 | SCPN | Add Rust stochastic-firing kernel bridge for runtime backend and validate Rust sample path execution | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py`, `scpn-fusion-rs/crates/fusion-python/src/lib.rs`, `scpn-fusion-rs/crates/fusion-python/Cargo.toml` | Rust backend can offload SC firing-sampling counts (when bit-flip faults are disabled), Python keeps deterministic fallback, and tests prove Rust sample hook execution | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `cargo test -p scpn-fusion-rs`, `cargo clippy -p scpn-fusion-rs --all-targets --all-features -- -D warnings`, `python validation/scpn_pid_mpc_benchmark.py --seed 42 --steps 240 --strict` |
 | H5-014 | P1 | SCPN | Add regression lock that default runtime profile remains adaptive (non-oracle binary) | `tests/test_controller.py` | Default controller construction (without runtime_profile override) provably diverges from strict oracle binary threshold path under identical seed/obs inputs | `python -m pytest tests/test_controller.py -v` |
 | H5-015 | P1 | SCPN | Expand Rust stochastic-sampling offload coverage to bit-flip campaigns via dedicated fault RNG stream | `src/scpn_fusion/scpn/controller.py` | Rust backend sampling remains active even when bit-flip injection is enabled; faults use separate deterministic `sc_flip` RNG stream and benchmark gates remain unchanged | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `python validation/scpn_pid_mpc_benchmark.py --seed 42 --steps 240 --strict` |
+| H5-016 | P0 | HPC | Restrict native solver library loading to trusted package paths + explicit env override | `src/scpn_fusion/hpc/hpc_bridge.py`, `tests/test_hpc_bridge.py` | HPC bridge no longer searches CWD for native libraries, supports `SCPN_SOLVER_LIB` opt-in override, and defaults to package-local paths only | `python -m pytest tests/test_hpc_bridge.py -v` |
+| H5-017 | P0 | SCPN | Add bounded compact-payload decompression with strict base64 and size caps | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Compact artifact decode validates payload type, compressed size, decompressed size, and count bounds to prevent zip-bomb / memory abuse paths | `python -m pytest tests/test_controller.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/artifact.py` |
+| H5-018 | P1 | CI | Pin optional `sc-neurocore` bootstrap dependency to immutable commit | `.github/workflows/ci.yml` | CI optional pip install references `sc-neurocore` with explicit commit SHA in both Python 3.12 bootstrap lanes for reproducibility | CI workflow run |
+| H5-019 | P1 | Runtime | Remove hardcoded path + `sys.path` hack from realtime simulation entrypoint | `run_realtime_simulation.py` | Realtime script resolves config relative to script root and supports explicit `--config`, without mutating `sys.path` at runtime | `python run_realtime_simulation.py --help` |
+| H5-020 | P1 | Container | Harden runtime image with prod-by-default dependency install and non-root user | `Dockerfile` | Runtime image installs `.` by default (`INSTALL_DEV=1` opt-in for dev extras) and runs as unprivileged `appuser` | Docker build smoke |
+| H5-021 | P0 | Core | Add solver fail-fast mode for divergence and enable for validation configs | `src/scpn_fusion/core/fusion_kernel.py`, `validation/*.json`, `tests/test_fusion_kernel_fail_on_diverge.py` | Equilibrium solver raises on NaN/Inf when `solver.fail_on_diverge=true`; validation configs enable flag; tests cover both guarded and permissive behavior | `python -m pytest tests/test_fusion_kernel_fail_on_diverge.py -v` |
+| H5-022 | P0 | SCPN | Harden py312 strict typing for stochastic binomial counts path | `src/scpn_fusion/scpn/controller.py` | Controller binomial branch is strictly array-typed under mypy py312 lane, eliminating scalar-or-array assignment ambiguity in CI | `python -m mypy --strict src/scpn_fusion/scpn/contracts.py src/scpn_fusion/scpn/controller.py src/scpn_fusion/scpn/structure.py src/scpn_fusion/scpn/artifact.py src/scpn_fusion/scpn/compiler.py src/scpn_fusion/scpn/__init__.py` |
 
 ## Task Accounting
 
@@ -93,7 +100,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 15
+- Post-S4 hardening tasks delivered: 22
 - Remaining in deferred pool after queue selection: 67
 
 ## Active Task
@@ -131,4 +138,11 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `H5-013`
 - Completed: `H5-014`
 - Completed: `H5-015`
+- Completed: `H5-016`
+- Completed: `H5-017`
+- Completed: `H5-018`
+- Completed: `H5-019`
+- Completed: `H5-020`
+- Completed: `H5-021`
+- Completed: `H5-022`
 - Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).

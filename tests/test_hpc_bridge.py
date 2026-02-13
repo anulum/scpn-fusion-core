@@ -9,10 +9,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from scpn_fusion.hpc.hpc_bridge import HPCBridge, _as_contiguous_f64
+from scpn_fusion.hpc import hpc_bridge as hpc_mod
 
 
 class _DummyLib:
@@ -284,3 +287,55 @@ def test_close_supports_delete_solver_alias() -> None:
     bridge.close()
     assert bridge.solver_ptr is None
     assert bridge.lib.deleted == 999
+
+
+def test_init_prefers_env_override_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    expected = "/tmp/scpn_solver_override.so"
+
+    def _raise_cdll(_path: str):
+        raise OSError("no library")
+
+    monkeypatch.setenv("SCPN_SOLVER_LIB", expected)
+    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _raise_cdll)
+    bridge = HPCBridge()
+    assert bridge.lib_path == expected
+    assert not bridge.loaded
+
+
+def test_init_uses_package_local_default_without_cwd(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise_cdll(_path: str):
+        raise OSError("no library")
+
+    monkeypatch.delenv("SCPN_SOLVER_LIB", raising=False)
+    monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _raise_cdll)
+
+    bridge = HPCBridge()
+    expected = str(Path(hpc_mod.__file__).resolve().parent / "libscpn_solver.so")
+    assert bridge.lib_path == expected
+    assert not bridge.loaded
+
+
+def test_compile_cpp_requires_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SCPN_ALLOW_NATIVE_BUILD", raising=False)
+    assert hpc_mod.compile_cpp() is None
+
+
+def test_compile_cpp_builds_in_package_bin(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: dict[str, object] = {}
+
+    def _fake_run(cmd, check):  # type: ignore[no-untyped-def]
+        calls["cmd"] = list(cmd)
+        calls["check"] = check
+
+    monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
+    monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(hpc_mod.subprocess, "run", _fake_run)
+
+    out = hpc_mod.compile_cpp()
+    assert out is not None
+    assert Path(out).name == "libscpn_solver.so"
+    assert Path(out).parent.name == "bin"
+    assert calls["check"] is True
+    assert isinstance(calls["cmd"], list)
+    assert calls["cmd"][0] == "g++"

@@ -24,6 +24,9 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 ARTIFACT_SCHEMA_VERSION = "1.0.0"
+MAX_PACKED_WORDS = 10_000_000
+MAX_DECOMPRESSED_BYTES = MAX_PACKED_WORDS * 8
+MAX_COMPRESSED_BYTES = 50_000_000
 
 
 # ── Sub-structures ──────────────────────────────────────────────────────────
@@ -196,12 +199,41 @@ def _decode_u64_compact(encoded: Dict[str, Any]) -> List[int]:
     if not isinstance(payload, str):
         raise ArtifactValidationError("Missing compact packed payload string.")
 
+    count_val = encoded.get("count")
+    if isinstance(count_val, int) and (count_val < 0 or count_val > MAX_PACKED_WORDS):
+        raise ArtifactValidationError(
+            f"Packed count {count_val} exceeds limit {MAX_PACKED_WORDS}."
+        )
+
     try:
-        raw = zlib.decompress(base64.b64decode(payload.encode("ascii")))
+        comp = base64.b64decode(payload.encode("ascii"), validate=True)
+    except Exception as exc:
+        raise ArtifactValidationError(f"Invalid base64 payload: {exc}") from exc
+
+    if len(comp) > MAX_COMPRESSED_BYTES:
+        raise ArtifactValidationError(
+            f"Compressed payload too large: {len(comp)} bytes."
+        )
+
+    try:
+        decomp = zlib.decompressobj()
+        raw = decomp.decompress(comp, MAX_DECOMPRESSED_BYTES + 1)
+        if decomp.unconsumed_tail:
+            raise ArtifactValidationError(
+                "Decompressed packed payload exceeds configured limit."
+            )
+        raw += decomp.flush()
+    except ArtifactValidationError:
+        raise
     except Exception as exc:
         raise ArtifactValidationError(
             f"Invalid compact packed payload: {exc}"
         ) from exc
+
+    if len(raw) > MAX_DECOMPRESSED_BYTES:
+        raise ArtifactValidationError(
+            "Decompressed packed payload exceeds configured limit."
+        )
 
     if len(raw) % 8 != 0:
         raise ArtifactValidationError(
@@ -209,7 +241,14 @@ def _decode_u64_compact(encoded: Dict[str, Any]) -> List[int]:
         )
 
     available = len(raw) // 8
-    count = int(encoded.get("count", available))
+    if isinstance(count_val, int):
+        count = count_val
+    elif count_val is None:
+        count = available
+    else:
+        raise ArtifactValidationError(
+            f"Invalid compact packed count type: {type(count_val).__name__}."
+        )
     if count < 0 or count > available:
         raise ArtifactValidationError(
             f"Invalid compact packed count {count}; available words={available}."

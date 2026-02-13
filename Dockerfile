@@ -36,6 +36,7 @@ RUN cd scpn-fusion-rs/crates/fusion-python \
 FROM python:3.12-slim AS runtime
 
 WORKDIR /app
+ARG INSTALL_DEV=0
 
 # Install the built Rust wheel first (before Python package, for layer caching)
 COPY --from=rust-builder /build/wheels/ /tmp/wheels/
@@ -45,8 +46,12 @@ RUN pip install --no-cache-dir /tmp/wheels/*.whl && rm -rf /tmp/wheels
 COPY pyproject.toml setup.py ./
 COPY src/ src/
 
-# Install the Python package with dev dependencies
-RUN pip install --no-cache-dir ".[dev]"
+# Install runtime dependencies (dev extras optional)
+RUN if [ "$INSTALL_DEV" = "1" ]; then \
+      pip install --no-cache-dir ".[dev]" ; \
+    else \
+      pip install --no-cache-dir . ; \
+    fi
 
 # Copy remaining project assets needed at runtime
 COPY calibration/ calibration/
@@ -55,6 +60,9 @@ COPY examples/ examples/
 COPY validation/ validation/
 COPY tests/ tests/
 COPY run_fusion_suite.py conftest.py iter_config.json ./
+
+RUN useradd -m -u 10001 appuser && chown -R appuser:appuser /app
+USER appuser
 
 # Streamlit configuration: disable telemetry, use port 8501
 ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false \

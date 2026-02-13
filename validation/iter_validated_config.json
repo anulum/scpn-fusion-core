@@ -23,6 +23,7 @@
     "solver": {
         "max_iterations": 1000,
         "convergence_threshold": 1e-4,
-        "relaxation_factor": 0.1
+        "relaxation_factor": 0.1,
+        "fail_on_diverge": true
     }
 }

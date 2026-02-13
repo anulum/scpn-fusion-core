@@ -11,6 +11,8 @@ import math
 import numpy as np
 import os
 import platform
+import subprocess
+from pathlib import Path
 from typing import Optional
 
 from numpy.typing import NDArray
@@ -76,8 +78,8 @@ class HPCBridge:
     ----------
     lib_path : str, optional
         Explicit path to the shared library.  When *None* (default) the
-        bridge searches the current directory and its own package
-        directory.
+        bridge searches trusted package-local locations only, unless
+        ``SCPN_SOLVER_LIB`` is set explicitly.
     """
 
     def __init__(self, lib_path: Optional[str] = None) -> None:
@@ -88,32 +90,34 @@ class HPCBridge:
         self._has_converged_api: bool = False
         self._has_boundary_api: bool = False
 
+        lib_name = (
+            "scpn_solver.dll"
+            if platform.system() == "Windows"
+            else "libscpn_solver.so"
+        )
+        env_path = os.environ.get("SCPN_SOLVER_LIB")
+        if lib_path is None and env_path:
+            lib_path = env_path
+
         if lib_path is None:
-            lib_name = (
-                "scpn_solver.dll"
-                if platform.system() == "Windows"
-                else "libscpn_solver.so"
-            )
+            here = Path(__file__).resolve().parent
             candidates = [
-                f"./{lib_name}",
-                os.path.join(os.path.dirname(__file__), lib_name),
-                os.path.join(
-                    os.getcwd(), "03_CODE", "SCPN-Fusion-Core", lib_name
-                ),
+                here / lib_name,
+                here / "bin" / lib_name,
             ]
             for c in candidates:
-                if os.path.exists(c):
-                    lib_path = c
+                if c.exists():
+                    lib_path = str(c)
                     break
             if lib_path is None:
-                lib_path = f"./{lib_name}"
+                lib_path = str(here / lib_name)
 
-        self.lib_path = lib_path
+        self.lib_path = str(lib_path)
 
         try:
-            self.lib = ctypes.CDLL(lib_path)
+            self.lib = ctypes.CDLL(self.lib_path)
             self._setup_signatures()
-            logger.info("Loaded C++ accelerator: %s", lib_path)
+            logger.info("Loaded C++ accelerator: %s", self.lib_path)
             self.loaded = True
         except OSError:
             pass
@@ -375,34 +379,50 @@ def compile_cpp() -> Optional[str]:
     str or None
         Path to the compiled library, or *None* on failure.
     """
-    logger.info("Compiling C++ solver kernel…")
+    if os.environ.get("SCPN_ALLOW_NATIVE_BUILD") != "1":
+        logger.warning(
+            "Native build disabled. Set SCPN_ALLOW_NATIVE_BUILD=1 to enable."
+        )
+        return None
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    src = os.path.join(script_dir, "solver.cpp")
+    logger.info("Compiling C++ solver kernel…")
+    script_dir = Path(__file__).resolve().parent
+    src = script_dir / "solver.cpp"
+    out_dir = script_dir / "bin"
+    out_dir.mkdir(exist_ok=True)
 
     if platform.system() == "Windows":
-        out = "scpn_solver.dll"
-        cmd = f'g++ -shared -o {out} "{src}" -O3 -mavx2'
+        out = out_dir / "scpn_solver.dll"
+        cmd = ["g++", "-shared", "-o", str(out), str(src), "-O3", "-mavx2"]
     else:
-        out = "libscpn_solver.so"
-        cmd = f'g++ -shared -fPIC -o {out} "{src}" -O3 -march=native'
+        out = out_dir / "libscpn_solver.so"
+        cmd = [
+            "g++",
+            "-shared",
+            "-fPIC",
+            "-o",
+            str(out),
+            str(src),
+            "-O3",
+            "-march=native",
+        ]
 
-    logger.info("Executing: %s", cmd)
-    ret = os.system(cmd)
+    logger.info("Executing: %s", " ".join(cmd))
+    try:
+        subprocess.run(cmd, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        logger.error("Compilation failed: %s", exc)
+        return None
 
-    if ret == 0:
-        logger.info("Compilation succeeded: %s", out)
-        return out
-
-    logger.error("Compilation failed (exit code %d). Is g++ installed?", ret)
-    return None
+    logger.info("Compilation succeeded: %s", out)
+    return str(out)
 
 if __name__ == "__main__":
     # Test sequence
     lib_file = compile_cpp()
     
     if lib_file:
-        bridge = HPCBridge(f"./{lib_file}")
+        bridge = HPCBridge(lib_file)
         
         # Test Grid
         N = 100

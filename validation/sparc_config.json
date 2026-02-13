@@ -31,7 +31,8 @@
     "solver": {
         "max_iterations": 2000,
         "convergence_threshold": 0.0001,
-        "relaxation_factor": 0.1
+        "relaxation_factor": 0.1,
+        "fail_on_diverge": true
     },
     "_reference": {
         "paper": "Creely et al., J. Plasma Physics 86 (2020) 865860502",

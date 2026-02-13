@@ -421,8 +421,8 @@ class FusionKernel:
         Raises
         ------
         RuntimeError
-            If the solver produces NaN or Inf (logged as a warning and
-            reverts to the best-known state rather than raising).
+            If the solver produces NaN or Inf and ``solver.fail_on_diverge``
+            is enabled in the active configuration.
         """
         t0 = time.time()
         self.Psi = self.calculate_vacuum_field()
@@ -431,6 +431,9 @@ class FusionKernel:
         max_iter: int = self.cfg["solver"]["max_iterations"]
         tol: float = self.cfg["solver"]["convergence_threshold"]
         alpha: float = self.cfg["solver"].get("relaxation_factor", 0.1)
+        fail_on_diverge: bool = bool(
+            self.cfg["solver"].get("fail_on_diverge", False)
+        )
         mu0: float = self.cfg["physics"]["vacuum_permeability"]
 
         x_point_pos: tuple[float, float] = (0.0, 0.0)
@@ -464,6 +467,10 @@ class FusionKernel:
                     k,
                 )
                 self.Psi = Psi_best
+                if fail_on_diverge:
+                    raise RuntimeError(
+                        f"Equilibrium solver diverged at iter={k}"
+                    )
                 break
 
             # 4. Under-relaxation

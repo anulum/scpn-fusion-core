@@ -26,6 +26,8 @@ import json
 import math
 import os
 import tempfile
+import base64
+import zlib
 from pathlib import Path
 
 import numpy as np
@@ -59,6 +61,7 @@ from scpn_fusion.scpn.artifact import (
 )
 from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn import controller as controller_mod
+from scpn_fusion.scpn import artifact as artifact_mod
 
 
 # ── Fixture: 8-place controller net ─────────────────────────────────────────
@@ -282,6 +285,50 @@ class TestLevel0Static:
         assert enc1 == enc2
         decoded = decode_u64_compact(enc1)
         assert decoded == values
+
+    def test_compact_u64_codec_rejects_invalid_base64(self) -> None:
+        bad = {
+            "encoding": "u64-le-zlib-base64",
+            "count": 1,
+            "data_u64_b64_zlib": "$$$not-base64$$$",
+        }
+        with pytest.raises(ArtifactValidationError, match="Invalid base64 payload"):
+            decode_u64_compact(bad)
+
+    def test_compact_u64_codec_rejects_oversized_compressed_payload(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(artifact_mod, "MAX_COMPRESSED_BYTES", 8)
+        payload = base64.b64encode(b"x" * 32).decode("ascii")
+        bad = {
+            "encoding": "u64-le-zlib-base64",
+            "count": 1,
+            "data_u64_b64_zlib": payload,
+        }
+        with pytest.raises(ArtifactValidationError, match="Compressed payload too large"):
+            decode_u64_compact(bad)
+
+    def test_compact_u64_codec_rejects_oversized_decompressed_payload(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(artifact_mod, "MAX_PACKED_WORDS", 1)
+        monkeypatch.setattr(artifact_mod, "MAX_DECOMPRESSED_BYTES", 8)
+        raw = (1).to_bytes(8, "little") + (2).to_bytes(8, "little")
+        payload = base64.b64encode(zlib.compress(raw, level=9)).decode("ascii")
+        bad = {
+            "encoding": "u64-le-zlib-base64",
+            "data_u64_b64_zlib": payload,
+        }
+        with pytest.raises(
+            ArtifactValidationError, match="Decompressed packed payload exceeds configured limit"
+        ):
+            decode_u64_compact(bad)
+
+    def test_compact_u64_codec_rejects_invalid_count_type(self) -> None:
+        good = encode_u64_compact([1, 2, 3])
+        good["count"] = "3"
+        with pytest.raises(ArtifactValidationError, match="count type"):
+            decode_u64_compact(good)
 
     def test_artifact_roundtrip_compact_packed_synthetic(self, artifact_path: str) -> None:
         art1 = load_artifact(artifact_path)
