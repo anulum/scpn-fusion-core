@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Callable, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Mapping, Optional, Sequence, Tuple, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -158,7 +158,9 @@ class NeuroSymbolicController:
         self._passthrough_sources = passthrough_sources
 
         # Live state
-        self.marking: List[float] = artifact.initial_state.marking[:]
+        self._marking = np.asarray(
+            artifact.initial_state.marking, dtype=np.float64
+        ).copy()
         injections = artifact.initial_state.place_injections
         self._inj_sources = [inj.source for inj in injections]
         self._inj_count = len(self._inj_sources)
@@ -192,14 +194,16 @@ class NeuroSymbolicController:
         self._prev_actions = np.zeros(len(self._action_names), dtype=np.float64)
         self.last_oracle_firing: List[float] = []
         self.last_sc_firing: List[float] = []
-        self.last_oracle_marking: List[float] = self.marking[:]
-        self.last_sc_marking: List[float] = self.marking[:]
+        self.last_oracle_marking: List[float] = self._marking.tolist()
+        self.last_sc_marking: List[float] = self._marking.tolist()
 
     # ── Public API ───────────────────────────────────────────────────────
 
     def reset(self) -> None:
         """Restore initial marking and zero previous actions."""
-        self.marking = self.artifact.initial_state.marking[:]
+        self._marking = np.asarray(
+            self.artifact.initial_state.marking, dtype=np.float64
+        ).copy()
         self._prev_actions.fill(0.0)
         self._oracle_pending.fill(0.0)
         self._sc_pending.fill(0.0)
@@ -207,12 +211,25 @@ class NeuroSymbolicController:
         self._sc_cursor = 0
         self.last_oracle_firing = []
         self.last_sc_firing = []
-        self.last_oracle_marking = self.marking[:] if self._enable_oracle_diagnostics else []
-        self.last_sc_marking = self.marking[:]
+        self.last_oracle_marking = (
+            self._marking.tolist() if self._enable_oracle_diagnostics else []
+        )
+        self.last_sc_marking = self._marking.tolist()
 
     @property
     def runtime_backend_name(self) -> str:
         return self._runtime_backend
+
+    @property
+    def marking(self) -> List[float]:
+        return cast(List[float], self._marking.tolist())
+
+    @marking.setter
+    def marking(self, values: Sequence[float]) -> None:
+        arr = np.asarray(list(values), dtype=np.float64)
+        if arr.shape != (self._nP,):
+            raise ValueError(f"marking must have length {self._nP}, got {arr.size}")
+        self._marking = np.clip(arr, 0.0, 1.0)
 
     def step(
         self,
@@ -243,8 +260,8 @@ class NeuroSymbolicController:
         )
 
         # 2. Inject features into marking
-        m = np.asarray(self.marking, dtype=np.float64)
-        m = self._inject_places(m, feats)
+        m = self._marking.copy()
+        self._inject_places(m, feats)
 
         # 3. Oracle float path (optional)
         if self._enable_oracle_diagnostics:
@@ -265,7 +282,7 @@ class NeuroSymbolicController:
         self.last_sc_marking = m_sc.tolist()
 
         # Commit SC state
-        self.marking = m_sc.tolist()
+        self._marking = m_sc
 
         # 5. Decode actions
         actions_dict = self._decode_actions(m_sc)
@@ -280,7 +297,7 @@ class NeuroSymbolicController:
                 "features": feats,
                 "f_oracle": f_oracle.tolist(),
                 "f_sc": f_sc.tolist(),
-                "marking": self.marking,
+                "marking": m_sc.tolist(),
                 "actions": actions_dict,
                 "timing_ms": (t1 - t0) * 1000.0,
             }
@@ -296,10 +313,10 @@ class NeuroSymbolicController:
 
     # ── Internal ─────────────────────────────────────────────────────────
 
-    def _inject_places(self, marking: FloatArray, feats: Dict[str, float]) -> FloatArray:
+    def _inject_places(self, marking: FloatArray, feats: Dict[str, float]) -> None:
         """Write features into a marking vector via place_injections config."""
         if self._inj_count == 0:
-            return marking
+            return
 
         values = np.fromiter(
             (feats[src] for src in self._inj_sources),
@@ -312,10 +329,7 @@ class NeuroSymbolicController:
             values[self._inj_clamp_mask] = np.clip(
                 values[self._inj_clamp_mask], 0.0, 1.0
             )
-
-        out = marking.copy()
-        out[self._inj_place_ids] = values
-        return out
+        marking[self._inj_place_ids] = values
 
     def _oracle_step(self, marking: FloatArray) -> Tuple[FloatArray, FloatArray]:
         """Float-path Petri step.
