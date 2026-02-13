@@ -758,6 +758,28 @@ class TestIntegration:
         with pytest.raises(KeyError, match="density_norm"):
             c.step({"R_axis_m": 6.2, "Z_axis_m": 0.0}, 0)
 
+    def test_disable_oracle_diagnostics_skips_oracle_path(
+        self, artifact_path: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        art = load_artifact(artifact_path)
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=99,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            enable_oracle_diagnostics=False,
+        )
+
+        def _fail_oracle() -> tuple[list[float], list[float]]:
+            raise AssertionError("_oracle_step must not run when diagnostics are disabled")
+
+        monkeypatch.setattr(c, "_oracle_step", _fail_oracle)
+        act = c.step({"R_axis_m": 6.2, "Z_axis_m": 0.0}, 0)
+        assert "dI_PF3_A" in act
+        assert "dI_PF_topbot_A" in act
+        assert c.last_oracle_firing == []
+        assert c.last_oracle_marking == []
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Contract helpers

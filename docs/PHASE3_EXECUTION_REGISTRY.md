@@ -73,6 +73,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 |---|---|---|---|---|---|---|
 | H5-001 | P1 | SCPN | Generalize controller feature passthrough sources from artifact injections | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py` | Non-default injection sources are consumed without hardcoded feature keys; missing passthrough keys fail deterministically | `python -m pytest tests/test_controller.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py` |
 | H5-002 | P1 | SCPN | Add strict topology guard for positive input-weight overflow | `src/scpn_fusion/scpn/structure.py`, `tests/test_scpn_compiler.py` | Topology diagnostics surface transitions with positive input sum >1.0 and strict compile rejects them | `python -m pytest tests/test_scpn_compiler.py tests/test_hypothesis_properties.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/structure.py` |
+| H5-003 | P1 | SCPN | Add optional oracle-path bypass for runtime controller loops + generic observation mapping | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py` | Controller accepts arbitrary observation mappings for feature passthrough and can skip oracle diagnostics path when disabled | `python -m pytest tests/test_controller.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py` |
 
 ## Task Accounting
 
@@ -80,7 +81,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 2
+- Post-S4 hardening tasks delivered: 3
 - Remaining in deferred pool after queue selection: 67
 
 ## Active Task
@@ -105,4 +106,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `S4-004`
 - Completed: `H5-001`
 - Completed: `H5-002`
+- Completed: `H5-003`
 - Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).

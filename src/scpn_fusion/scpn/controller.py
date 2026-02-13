@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Mapping, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -25,7 +25,6 @@ from .artifact import Artifact
 from .contracts import (
     ActionSpec,
     ControlAction,
-    ControlObservation,
     ControlScales,
     ControlTargets,
     _clip01,
@@ -58,6 +57,7 @@ class NeuroSymbolicController:
         sc_bitflip_rate: float = 0.0,
         sc_binary_margin: float = 0.0,
         sc_antithetic: bool = True,
+        enable_oracle_diagnostics: bool = True,
     ) -> None:
         self.artifact = artifact
         self.seed_base = int(seed_base)
@@ -67,6 +67,7 @@ class NeuroSymbolicController:
         self._sc_bitflip_rate = float(np.clip(sc_bitflip_rate, 0.0, 1.0))
         self._sc_binary_margin = float(max(0.0, sc_binary_margin))
         self._sc_antithetic = bool(sc_antithetic)
+        self._enable_oracle_diagnostics = bool(enable_oracle_diagnostics)
 
         # Flatten weight matrices for fast indexing
         self._w_in = artifact.weights.w_in.data[:]
@@ -139,12 +140,12 @@ class NeuroSymbolicController:
         self._sc_cursor = 0
         self.last_oracle_firing = []
         self.last_sc_firing = []
-        self.last_oracle_marking = self.marking[:]
+        self.last_oracle_marking = self.marking[:] if self._enable_oracle_diagnostics else []
         self.last_sc_marking = self.marking[:]
 
     def step(
         self,
-        obs: ControlObservation,
+        obs: Mapping[str, float],
         k: int,
         log_path: Optional[str] = None,
     ) -> ControlAction:
@@ -153,7 +154,7 @@ class NeuroSymbolicController:
         Steps:
             1. ``extract_features(obs)`` → 4 unipolar features
             2. ``_inject_places(features)``
-            3. ``_oracle_step()`` — float path
+            3. ``_oracle_step()`` — float path (optional)
             4. ``_sc_step(k)`` — deterministic stochastic path
             5. ``_decode_actions()`` — gain × differencing, slew + abs clamp
             6. Optional JSONL logging
@@ -161,7 +162,7 @@ class NeuroSymbolicController:
         t0 = time.perf_counter()
 
         # 1. Feature extraction
-        obs_map = {key: float(cast(float, value)) for key, value in obs.items()}
+        obs_map = {key: float(value) for key, value in obs.items()}
         feats = extract_features(
             obs_map,
             self.targets,
@@ -172,8 +173,12 @@ class NeuroSymbolicController:
         # 2. Inject features into marking
         self._inject_places(feats)
 
-        # 3. Oracle float path
-        f_oracle, m_oracle = self._oracle_step()
+        # 3. Oracle float path (optional)
+        if self._enable_oracle_diagnostics:
+            f_oracle, m_oracle = self._oracle_step()
+        else:
+            f_oracle = []
+            m_oracle = []
 
         # 4. Stochastic path
         f_sc, m_sc = self._sc_step(k)
@@ -181,7 +186,7 @@ class NeuroSymbolicController:
         # Diagnostics (used by deterministic benchmark gates)
         self.last_oracle_firing = f_oracle[:]
         self.last_sc_firing = f_sc[:]
-        self.last_oracle_marking = m_oracle[:]
+        self.last_oracle_marking = m_oracle[:] if self._enable_oracle_diagnostics else []
         self.last_sc_marking = m_sc[:]
 
         # Commit SC state
