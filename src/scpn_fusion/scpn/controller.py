@@ -313,10 +313,11 @@ class NeuroSymbolicController:
                 fired_now[immediate_mask] + desired[immediate_mask], 0.0, 1.0
             )
 
-        for idx in np.flatnonzero(self._delay_ticks > 0):
-            slot = (cursor + int(self._delay_ticks[idx])) % pending.shape[0]
-            pending[slot, idx] = float(
-                np.clip(pending[slot, idx] + desired[idx], 0.0, 1.0)
+        delayed_idx = np.flatnonzero(self._delay_ticks > 0)
+        if delayed_idx.size:
+            slots = (cursor + self._delay_ticks[delayed_idx]) % pending.shape[0]
+            pending[slots, delayed_idx] = np.clip(
+                pending[slots, delayed_idx] + desired[delayed_idx], 0.0, 1.0
             )
 
         next_cursor = (cursor + 1) % pending.shape[0]
@@ -335,9 +336,10 @@ class NeuroSymbolicController:
             return out
 
         raw = out.view(np.uint64)
-        for idx in np.flatnonzero(flips):
-            bit = int(rng.integers(0, 52))
-            raw[idx] = np.uint64(raw[idx] ^ (np.uint64(1) << np.uint64(bit)))
+        flip_idx = np.flatnonzero(flips)
+        bits = rng.integers(0, 52, size=flip_idx.size, dtype=np.uint64)
+        masks = np.left_shift(np.uint64(1), bits)
+        raw[flip_idx] ^= masks
 
         out = raw.view(np.float64)
         out = np.nan_to_num(out, nan=0.0, posinf=1.0, neginf=0.0)
