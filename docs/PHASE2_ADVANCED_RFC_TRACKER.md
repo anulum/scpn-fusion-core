@@ -22,7 +22,7 @@ Legend:
 | GNEU-02 | Done | Done (`src/scpn_fusion/control/disruption_predictor.py`, `scpn-fusion-rs/crates/fusion-ml/src/disruption.rs`) | Done (synthetic campaign scope) | Done (pytest + Rust tests/proptest) | Done (bounded smoke runtime) | Unassigned |
 | GNEU-03 | Done | Done (`src/scpn_fusion/control/fueling_mode.py`, `validation/gneu_03_fueling_mode.py`) | Done (reduced ITER-like synthetic mode) | Done (final abs density error `<=1e-3`) | Done (deterministic smoke under CI budget) | Unassigned |
 | GAI-01 | Done | Done (`docs/rfc/GAI-01_RFC.md`, `src/scpn_fusion/core/gyro_swin_surrogate.py`, `validation/gai_01_turbulence_surrogate.py`) | Done (synthetic-only v1 scope) | Done (RMSE `<=10%`, speedup `>=1000x`) | Done (smoke profile under CI budget) | Unassigned |
-| GAI-02 | Pending | Pending | Pending | Pending | Pending | Unassigned |
+| GAI-02 | Done | Done (`docs/rfc/GAI-02_RFC.md`, `src/scpn_fusion/control/torax_hybrid_loop.py`, `validation/gai_02_torax_hybrid.py`, `run_realtime_simulation.py`) | Done (synthetic NSTX-U-like scenarios) | Done (avoidance `>=0.90`, parity `>=95%`, p95 latency `<=1.0ms`) | Done (deterministic smoke profile) | Unassigned |
 | GAI-03 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GMVR-01 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GMVR-02 | Pending | Pending | Pending | Pending | Pending | Unassigned |

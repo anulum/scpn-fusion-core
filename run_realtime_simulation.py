@@ -17,6 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
 from scpn_fusion.nuclear.pwi_erosion import SputteringPhysics
+from scpn_fusion.control.torax_hybrid_loop import run_nstxu_torax_hybrid_campaign
 
 # --- SHARED MEMORY STRUCTURE ---
 # We use a Dictionary Proxy to simulate the Network Bus (Redis/Kafka)
@@ -156,5 +157,33 @@ def run_digital_twin_2_0():
     p_log.join()
     print("[SYSTEM] Offline.")
 
+
+def run_torax_hybrid_smoke(seed=42, episodes=8, steps_per_episode=180):
+    """Run synthetic TORAX+SNN hybrid loop smoke for realtime path checks."""
+    print("==================================================")
+    print("   SCPN TORAX-HYBRID REALTIME LOOP (SMOKE)        ")
+    print("==================================================")
+    result = run_nstxu_torax_hybrid_campaign(
+        seed=seed,
+        episodes=episodes,
+        steps_per_episode=steps_per_episode,
+    )
+    summary = {
+        "disruption_avoidance_rate": result.disruption_avoidance_rate,
+        "torax_parity_pct": result.torax_parity_pct,
+        "p95_loop_latency_ms": result.p95_loop_latency_ms,
+        "passes_thresholds": result.passes_thresholds,
+    }
+    print(
+        f"[GAI-02] avoidance={summary['disruption_avoidance_rate']:.3f}, "
+        f"parity={summary['torax_parity_pct']:.2f}%, "
+        f"p95_latency={summary['p95_loop_latency_ms']:.4f} ms, "
+        f"passes={summary['passes_thresholds']}"
+    )
+    return summary
+
 if __name__ == "__main__":
-    run_digital_twin_2_0()
+    if "--torax-hybrid" in sys.argv:
+        run_torax_hybrid_smoke()
+    else:
+        run_digital_twin_2_0()

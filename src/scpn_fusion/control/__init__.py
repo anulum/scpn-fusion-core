@@ -7,4 +7,9 @@
 # ──────────────────────────────────────────────────────────────────────
 from .fusion_sota_mpc import ModelPredictiveController, NeuralSurrogate
 from .fueling_mode import IcePelletFuelingController, FuelingSimResult, simulate_iter_density_control
+from .torax_hybrid_loop import (
+    ToraxHybridCampaignResult,
+    ToraxPlasmaState,
+    run_nstxu_torax_hybrid_campaign,
+)
 from .tokamak_flight_sim import IsoFluxController
