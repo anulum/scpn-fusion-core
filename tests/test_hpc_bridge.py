@@ -32,11 +32,20 @@ class _DummyLib:
         self.destroyed = solver_ptr
 
 
+class _DummyDeleteLib:
+    def __init__(self) -> None:
+        self.deleted = None
+
+    def delete_solver(self, solver_ptr) -> None:
+        self.deleted = solver_ptr
+
+
 def _make_bridge(nr: int = 2, nz: int = 3) -> HPCBridge:
     bridge = HPCBridge.__new__(HPCBridge)
     bridge.lib = _DummyLib()
     bridge.solver_ptr = 12345
     bridge.loaded = True
+    bridge._destroy_symbol = "destroy_solver"
     bridge.nr = nr
     bridge.nz = nz
     return bridge
@@ -86,3 +95,14 @@ def test_close_releases_solver_pointer() -> None:
     bridge.close()
     assert bridge.solver_ptr is None
     assert bridge.lib.destroyed == 12345
+
+
+def test_close_supports_delete_solver_alias() -> None:
+    bridge = HPCBridge.__new__(HPCBridge)
+    bridge.lib = _DummyDeleteLib()
+    bridge.solver_ptr = 999
+    bridge.loaded = True
+    bridge._destroy_symbol = "delete_solver"
+    bridge.close()
+    assert bridge.solver_ptr is None
+    assert bridge.lib.deleted == 999

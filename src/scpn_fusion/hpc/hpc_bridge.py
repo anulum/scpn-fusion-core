@@ -44,6 +44,7 @@ class HPCBridge:
         self.lib = None
         self.solver_ptr = None
         self.loaded: bool = False
+        self._destroy_symbol: Optional[str] = None
 
         if lib_path is None:
             lib_name = (
@@ -83,8 +84,8 @@ class HPCBridge:
         """Release the C++ solver instance, if one was created."""
         if self.solver_ptr is not None and self.loaded:
             try:
-                if self.lib is not None and hasattr(self.lib, "destroy_solver"):
-                    self.lib.destroy_solver(self.solver_ptr)
+                if self.lib is not None and self._destroy_symbol is not None:
+                    getattr(self.lib, self._destroy_symbol)(self.solver_ptr)
             except Exception:
                 pass
             self.solver_ptr = None
@@ -112,9 +113,17 @@ class HPCBridge:
             ctypes.c_int
         ]
 
-        # void destroy_solver(void* solver)
-        self.lib.destroy_solver.argtypes = [ctypes.c_void_p]
-        self.lib.destroy_solver.restype = None
+        # void destroy_solver(void* solver) or void delete_solver(void* solver)
+        if hasattr(self.lib, "destroy_solver"):
+            self.lib.destroy_solver.argtypes = [ctypes.c_void_p]
+            self.lib.destroy_solver.restype = None
+            self._destroy_symbol = "destroy_solver"
+        elif hasattr(self.lib, "delete_solver"):
+            self.lib.delete_solver.argtypes = [ctypes.c_void_p]
+            self.lib.delete_solver.restype = None
+            self._destroy_symbol = "delete_solver"
+        else:
+            self._destroy_symbol = None
 
     def initialize(
         self,

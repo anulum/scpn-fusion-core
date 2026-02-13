@@ -191,4 +191,9 @@ void destroy_solver(void *solver_ptr) {
     delete static_cast<FastSolver *>(solver_ptr);
 }
 
+/// Backward-compatible alias for bindings expecting delete_solver().
+void delete_solver(void *solver_ptr) {
+    destroy_solver(solver_ptr);
+}
+
 }  // extern "C"
