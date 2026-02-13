@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Dict, List, Mapping, Optional, Tuple
+from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -25,6 +25,7 @@ from .artifact import Artifact
 from .contracts import (
     ActionSpec,
     ControlAction,
+    FeatureAxisSpec,
     ControlScales,
     ControlTargets,
     _clip01,
@@ -58,6 +59,7 @@ class NeuroSymbolicController:
         sc_binary_margin: float = 0.0,
         sc_antithetic: bool = True,
         enable_oracle_diagnostics: bool = True,
+        feature_axes: Optional[Sequence[FeatureAxisSpec]] = None,
     ) -> None:
         self.artifact = artifact
         self.seed_base = int(seed_base)
@@ -68,6 +70,7 @@ class NeuroSymbolicController:
         self._sc_binary_margin = float(max(0.0, sc_binary_margin))
         self._sc_antithetic = bool(sc_antithetic)
         self._enable_oracle_diagnostics = bool(enable_oracle_diagnostics)
+        self._feature_axes = list(feature_axes) if feature_axes is not None else None
 
         # Flatten weight matrices for fast indexing
         self._w_in = artifact.weights.w_in.data[:]
@@ -100,11 +103,15 @@ class NeuroSymbolicController:
             ],
             dtype=np.float64,
         )
-        default_sources = {"x_R_pos", "x_R_neg", "x_Z_pos", "x_Z_neg"}
+        if self._feature_axes is not None:
+            produced_feature_keys = {axis.pos_key for axis in self._feature_axes}
+            produced_feature_keys.update(axis.neg_key for axis in self._feature_axes)
+        else:
+            produced_feature_keys = {"x_R_pos", "x_R_neg", "x_Z_pos", "x_Z_neg"}
         passthrough_sources: list[str] = []
         for inj in self.artifact.initial_state.place_injections:
             src = inj.source
-            if src not in default_sources and src not in passthrough_sources:
+            if src not in produced_feature_keys and src not in passthrough_sources:
                 passthrough_sources.append(src)
         self._passthrough_sources = passthrough_sources
 
@@ -167,6 +174,7 @@ class NeuroSymbolicController:
             obs_map,
             self.targets,
             self.scales,
+            feature_axes=self._feature_axes,
             passthrough_keys=self._passthrough_sources or None,
         )
 

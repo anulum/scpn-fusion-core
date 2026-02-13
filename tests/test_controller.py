@@ -758,6 +758,63 @@ class TestIntegration:
         with pytest.raises(KeyError, match="density_norm"):
             c.step({"R_axis_m": 6.2, "Z_axis_m": 0.0}, 0)
 
+    def test_controller_supports_custom_feature_axes(self, artifact_path: str) -> None:
+        art = load_artifact(artifact_path)
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=333,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            feature_axes=[
+                FeatureAxisSpec(
+                    obs_key="beta_n",
+                    target=1.8,
+                    scale=0.6,
+                    pos_key="x_R_pos",
+                    neg_key="x_R_neg",
+                ),
+                FeatureAxisSpec(
+                    obs_key="q95",
+                    target=4.8,
+                    scale=1.0,
+                    pos_key="x_Z_pos",
+                    neg_key="x_Z_neg",
+                ),
+            ],
+        )
+        act = c.step({"beta_n": 1.6, "q95": 5.2}, 0)
+        assert "dI_PF3_A" in act
+        assert "dI_PF_topbot_A" in act
+
+    def test_controller_custom_feature_axes_missing_key_raises(
+        self, artifact_path: str
+    ) -> None:
+        art = load_artifact(artifact_path)
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=334,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            feature_axes=[
+                FeatureAxisSpec(
+                    obs_key="beta_n",
+                    target=1.8,
+                    scale=0.6,
+                    pos_key="x_R_pos",
+                    neg_key="x_R_neg",
+                ),
+                FeatureAxisSpec(
+                    obs_key="q95",
+                    target=4.8,
+                    scale=1.0,
+                    pos_key="x_Z_pos",
+                    neg_key="x_Z_neg",
+                ),
+            ],
+        )
+        with pytest.raises(KeyError, match="q95"):
+            c.step({"beta_n": 1.7}, 0)
+
     def test_disable_oracle_diagnostics_skips_oracle_path(
         self, artifact_path: str, monkeypatch: pytest.MonkeyPatch
     ) -> None:
