@@ -21,6 +21,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+ARTIFACT_SCHEMA_VERSION = "1.0.0"
+
 
 # ── Sub-structures ──────────────────────────────────────────────────────────
 

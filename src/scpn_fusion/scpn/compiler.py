@@ -244,7 +244,7 @@ class CompiledNet:
         n_words = int(math.ceil(self.bitstream_length / 64))
 
         meta = artifact_mod.ArtifactMeta(
-            artifact_version="1.0.0",
+            artifact_version=artifact_mod.ARTIFACT_SCHEMA_VERSION,
             name=name,
             dt_control_s=dt_control_s,
             stream_length=self.bitstream_length,

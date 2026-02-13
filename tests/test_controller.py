@@ -45,6 +45,7 @@ from scpn_fusion.scpn.contracts import (
     extract_features,
 )
 from scpn_fusion.scpn.artifact import (
+    ARTIFACT_SCHEMA_VERSION,
     Artifact,
     ArtifactValidationError,
     load_artifact,
@@ -200,6 +201,10 @@ class TestLevel0Static:
     def test_firing_mode_declared(self, artifact_path: str) -> None:
         art = load_artifact(artifact_path)
         assert art.meta.firing_mode in ("binary", "fractional")
+
+    def test_artifact_schema_version_matches_constant(self, artifact_path: str) -> None:
+        art = load_artifact(artifact_path)
+        assert art.meta.artifact_version == ARTIFACT_SCHEMA_VERSION
 
     def test_compiler_version_matches_package(self, artifact_path: str) -> None:
         art = load_artifact(artifact_path)
