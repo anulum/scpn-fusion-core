@@ -117,6 +117,77 @@ class DivertorLab:
             
         return T_surf, q_surf, f_rad
 
+    def calculate_mhd_pressure_loss(
+        self,
+        flow_velocity_m_s,
+        channel_length_m=1.2,
+        channel_half_gap_m=0.012,
+        density_kg_m3=510.0,
+        viscosity_pa_s=2.5e-3,
+        conductivity_s_m=8.0e5,
+    ):
+        """
+        Reduced TEMHD pressure-loss model using a Hartmann-flow correction.
+
+        Returns pressure-loss summary for the provided channel flow speed.
+        """
+        v = max(float(flow_velocity_m_s), 1e-6)
+        b_field = max(float(self.B_pol), 1e-6)
+        a = max(float(channel_half_gap_m), 1e-5)
+        l = max(float(channel_length_m), 1e-3)
+        rho = max(float(density_kg_m3), 1.0)
+        mu = max(float(viscosity_pa_s), 1e-6)
+        sigma = max(float(conductivity_s_m), 1e3)
+
+        nu = mu / rho
+        ha = b_field * a * np.sqrt(sigma / max(rho * nu, 1e-12))
+        dp_viscous = 12.0 * mu * l * v / (a**2)
+        dp_total = dp_viscous * (1.0 + ha / 6.0)
+
+        return {
+            "flow_velocity_m_s": v,
+            "hartmann_number": float(ha),
+            "pressure_loss_pa": float(dp_total),
+        }
+
+    def estimate_evaporation_rate(self, surface_temp_c, flow_velocity_m_s):
+        """
+        Velocity-dependent lithium evaporation estimate [kg m^-2 s^-1].
+        """
+        t_c = float(surface_temp_c)
+        v = max(float(flow_velocity_m_s), 1e-6)
+        thermal_drive = np.exp(np.clip((t_c - 500.0) / 260.0, -8.0, 8.0))
+        flow_relief = 1.0 / (1.0 + 0.45 * np.sqrt(v))
+        return float(2.0e-6 * thermal_drive * flow_relief)
+
+    def simulate_temhd_liquid_metal(self, flow_velocity_m_s, expansion_factor=15.0):
+        """
+        Reduced TEMHD divertor state including MHD pressure loss and evaporation.
+        """
+        self.calculate_heat_load(expansion_factor=expansion_factor)
+        t_li_c, q_surface_w_m2, shielding = self.simulate_lithium_vapor()
+        mhd = self.calculate_mhd_pressure_loss(flow_velocity_m_s)
+        evap_rate = self.estimate_evaporation_rate(t_li_c, flow_velocity_m_s)
+
+        stability_index = (
+            q_surface_w_m2 / 45.0e6
+            + mhd["pressure_loss_pa"] / 8.0e5
+            + evap_rate / 1.0e-3
+        )
+        is_stable = bool(stability_index <= 1.0)
+
+        return {
+            "flow_velocity_m_s": float(flow_velocity_m_s),
+            "surface_temperature_c": float(t_li_c),
+            "surface_heat_flux_w_m2": float(q_surface_w_m2),
+            "shielding_fraction": float(shielding),
+            "pressure_loss_pa": float(mhd["pressure_loss_pa"]),
+            "hartmann_number": float(mhd["hartmann_number"]),
+            "evaporation_rate_kg_m2_s": float(evap_rate),
+            "stability_index": float(stability_index),
+            "is_stable": is_stable,
+        }
+
 def run_divertor_sim():
     print("\n--- SCPN HEAT EXHAUST: The Lithium Solution ---")
     
