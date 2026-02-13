@@ -386,6 +386,21 @@ class TestFusionCompiler:
             assert neuron.resistance == 2.0
             assert neuron.refractory_period == 3
 
+    def test_reactor_lif_factory_defaults(self, traffic_net: StochasticPetriNet) -> None:
+        compiler = FusionCompiler.with_reactor_lif_defaults(
+            bitstream_length=256,
+            seed=11,
+        )
+        assert compiler.lif_tau_mem == 10.0
+        assert compiler.lif_noise_std == 0.1
+        assert compiler.lif_dt == 1.0
+        assert compiler.lif_resistance == 1.0
+        assert compiler.lif_refractory_period == 0
+
+        compiled = compiler.compile(traffic_net)
+        assert compiled.lif_tau_mem == 10.0
+        assert compiled.lif_noise_std == 0.1
+
     @pytest.mark.skipif(
         not _HAS_SC_NEUROCORE, reason="sc_neurocore not installed"
     )

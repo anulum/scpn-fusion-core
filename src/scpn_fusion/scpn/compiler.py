@@ -416,6 +416,31 @@ class FusionCompiler:
         self.lif_resistance = float(lif_resistance)
         self.lif_refractory_period = int(lif_refractory_period)
 
+    @classmethod
+    def with_reactor_lif_defaults(
+        cls,
+        bitstream_length: int = 1024,
+        seed: int = 42,
+        *,
+        lif_dt: float = 1.0,
+        lif_resistance: float = 1.0,
+        lif_refractory_period: int = 0,
+    ) -> "FusionCompiler":
+        """Create a compiler with reactor-like LIF defaults.
+
+        Keeps the legacy constructor defaults untouched for compatibility while
+        exposing a realistic preset for new control experiments.
+        """
+        return cls(
+            bitstream_length=bitstream_length,
+            seed=seed,
+            lif_tau_mem=10.0,
+            lif_noise_std=0.1,
+            lif_dt=lif_dt,
+            lif_resistance=lif_resistance,
+            lif_refractory_period=lif_refractory_period,
+        )
+
     def compile(
         self,
         net: StochasticPetriNet,
