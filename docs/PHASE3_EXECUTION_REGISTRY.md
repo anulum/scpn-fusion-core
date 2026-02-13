@@ -78,6 +78,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | H5-005 | P0 | SCPN | Promote adaptive SCPN runtime defaults and add optional Rust dense-runtime kernels | `src/scpn_fusion/scpn/controller.py`, `scpn-fusion-rs/crates/fusion-python/src/lib.rs`, `tests/test_controller.py` | Controller default profile is adaptive (binary probabilistic margin), supports runtime backend selection (`auto`/`numpy`/`rust`), and uses Rust dense kernels when available for large nets | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `cargo test -p scpn-fusion-rs`, `cargo clippy -p scpn-fusion-rs --all-targets --all-features -- -D warnings` |
 | H5-006 | P1 | SCPN | Reduce Python overhead in SCPN tick loop via vectorized injection/action decode and array-native stepping | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py`, `tests/test_scpn_pid_mpc_benchmark.py` | Controller step avoids redundant list↔array conversions, uses vectorized place injection + action decode, and keeps benchmark thresholds unchanged | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py` |
 | H5-007 | P1 | SCPN | Keep controller state in internal NumPy marking array with compatibility accessors | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py` | Internal runtime state remains array-native across ticks while external `marking` API remains compatible, preserving benchmark thresholds | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py` |
+| H5-008 | P1 | SCPN | Add compiled feature-evaluation path for injection sources to remove per-tick dict churn | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py` | Controller computes feature components once per tick from compiled axis metadata and injects directly into marking with deterministic error semantics and unchanged benchmark thresholds | `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -v`, `python -m mypy --strict src/scpn_fusion/scpn/controller.py` |
 
 ## Task Accounting
 
@@ -85,7 +86,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 7
+- Post-S4 hardening tasks delivered: 8
 - Remaining in deferred pool after queue selection: 67
 
 ## Active Task
@@ -115,4 +116,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `H5-005`
 - Completed: `H5-006`
 - Completed: `H5-007`
+- Completed: `H5-008`
 - Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).

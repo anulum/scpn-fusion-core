@@ -28,7 +28,6 @@ from .contracts import (
     ControlScales,
     ControlTargets,
     _seed64,
-    extract_features,
 )
 
 FloatArray = NDArray[np.float64]
@@ -96,6 +95,41 @@ class NeuroSymbolicController:
             raise ValueError("runtime_backend must be 'auto', 'numpy', or 'rust'")
         self._rust_backend_min_problem_size = max(int(rust_backend_min_problem_size), 1)
 
+        if self._feature_axes is not None:
+            axes = list(self._feature_axes)
+        else:
+            axes = [
+                FeatureAxisSpec(
+                    obs_key="R_axis_m",
+                    target=self.targets.R_target_m,
+                    scale=self.scales.R_scale_m,
+                    pos_key="x_R_pos",
+                    neg_key="x_R_neg",
+                ),
+                FeatureAxisSpec(
+                    obs_key="Z_axis_m",
+                    target=self.targets.Z_target_m,
+                    scale=self.scales.Z_scale_m,
+                    pos_key="x_Z_pos",
+                    neg_key="x_Z_neg",
+                ),
+            ]
+        self._feature_axes_effective = axes
+        self._axis_count = len(axes)
+        self._axis_obs_keys = [axis.obs_key for axis in axes]
+        self._axis_targets = np.asarray(
+            [axis.target for axis in axes], dtype=np.float64
+        )
+        self._axis_scales = np.asarray(
+            [
+                axis.scale if abs(axis.scale) > 1e-12 else 1e-12
+                for axis in axes
+            ],
+            dtype=np.float64,
+        )
+        self._axis_pos_keys = [axis.pos_key for axis in axes]
+        self._axis_neg_keys = [axis.neg_key for axis in axes]
+
         # Flatten weight matrices for fast indexing
         self._w_in = artifact.weights.w_in.data[:]
         self._w_out = artifact.weights.w_out.data[:]
@@ -145,17 +179,19 @@ class NeuroSymbolicController:
             self._runtime_backend = "rust" if _HAS_RUST_SCPN_RUNTIME else "numpy"
         else:
             self._runtime_backend = "rust" if rust_eligible else "numpy"
-        if self._feature_axes is not None:
-            produced_feature_keys = {axis.pos_key for axis in self._feature_axes}
-            produced_feature_keys.update(axis.neg_key for axis in self._feature_axes)
-        else:
-            produced_feature_keys = {"x_R_pos", "x_R_neg", "x_Z_pos", "x_Z_neg"}
+        produced_feature_keys = set(self._axis_pos_keys)
+        produced_feature_keys.update(self._axis_neg_keys)
         passthrough_sources: list[str] = []
         for inj in self.artifact.initial_state.place_injections:
             src = inj.source
             if src not in produced_feature_keys and src not in passthrough_sources:
                 passthrough_sources.append(src)
         self._passthrough_sources = passthrough_sources
+        key_to_axis: Dict[str, Tuple[int, bool]] = {}
+        for i, key in enumerate(self._axis_pos_keys):
+            key_to_axis[key] = (i, True)
+        for i, key in enumerate(self._axis_neg_keys):
+            key_to_axis[key] = (i, False)
 
         # Live state
         self._marking = np.asarray(
@@ -177,6 +213,18 @@ class NeuroSymbolicController:
             [bool(inj.clamp_0_1) for inj in injections], dtype=np.bool_
         )
         self._inj_has_clamp = bool(np.any(self._inj_clamp_mask))
+        self._inj_source_axis_idx = np.full(self._inj_count, -1, dtype=np.int64)
+        self._inj_source_axis_pos = np.zeros(self._inj_count, dtype=np.bool_)
+        passthrough_pairs: list[Tuple[int, str]] = []
+        for i, src in enumerate(self._inj_sources):
+            axis_info = key_to_axis.get(src)
+            if axis_info is not None:
+                axis_idx, is_pos = axis_info
+                self._inj_source_axis_idx[i] = int(axis_idx)
+                self._inj_source_axis_pos[i] = bool(is_pos)
+            else:
+                passthrough_pairs.append((i, src))
+        self._inj_passthrough_pairs = passthrough_pairs
 
         self._action_names = [a.name for a in artifact.readout.actions]
         self._action_pos_idx = np.asarray(
@@ -249,19 +297,18 @@ class NeuroSymbolicController:
         """
         t0 = time.perf_counter()
 
-        # 1. Feature extraction
+        # 1. Feature extraction (fast compiled mapping)
         obs_map = {key: float(value) for key, value in obs.items()}
-        feats = extract_features(
-            obs_map,
-            self.targets,
-            self.scales,
-            feature_axes=self._feature_axes,
-            passthrough_keys=self._passthrough_sources or None,
+        pos_vals, neg_vals = self._compute_feature_components(obs_map)
+        feats = (
+            self._build_feature_dict(obs_map, pos_vals, neg_vals)
+            if log_path is not None
+            else None
         )
 
         # 2. Inject features into marking
         m = self._marking.copy()
-        self._inject_places(m, feats)
+        self._inject_places(m, obs_map, pos_vals, neg_vals)
 
         # 3. Oracle float path (optional)
         if self._enable_oracle_diagnostics:
@@ -313,16 +360,66 @@ class NeuroSymbolicController:
 
     # ── Internal ─────────────────────────────────────────────────────────
 
-    def _inject_places(self, marking: FloatArray, feats: Dict[str, float]) -> None:
+    def _compute_feature_components(
+        self, obs_map: Mapping[str, float]
+    ) -> Tuple[FloatArray, FloatArray]:
+        if self._axis_count == 0:
+            empty = np.asarray([], dtype=np.float64)
+            return empty, empty
+
+        obs_vals = np.empty(self._axis_count, dtype=np.float64)
+        for i, key in enumerate(self._axis_obs_keys):
+            if key not in obs_map:
+                raise KeyError(
+                    f"Missing observation key for feature extraction: {key}"
+                )
+            obs_vals[i] = float(obs_map[key])
+        err = (self._axis_targets - obs_vals) / self._axis_scales
+        err = np.clip(err, -1.0, 1.0)
+        pos = np.clip(err, 0.0, 1.0)
+        neg = np.clip(-err, 0.0, 1.0)
+        return pos, neg
+
+    def _build_feature_dict(
+        self, obs_map: Mapping[str, float], pos_vals: FloatArray, neg_vals: FloatArray
+    ) -> Dict[str, float]:
+        feats: Dict[str, float] = {}
+        for i, key in enumerate(self._axis_pos_keys):
+            feats[key] = float(pos_vals[i])
+        for i, key in enumerate(self._axis_neg_keys):
+            feats[key] = float(neg_vals[i])
+        for key in self._passthrough_sources:
+            if key not in obs_map:
+                raise KeyError(f"Missing observation key for passthrough: {key}")
+            feats[key] = float(np.clip(obs_map[key], 0.0, 1.0))
+        return feats
+
+    def _inject_places(
+        self,
+        marking: FloatArray,
+        obs_map: Mapping[str, float],
+        pos_vals: FloatArray,
+        neg_vals: FloatArray,
+    ) -> None:
         """Write features into a marking vector via place_injections config."""
         if self._inj_count == 0:
             return
 
-        values = np.fromiter(
-            (feats[src] for src in self._inj_sources),
-            dtype=np.float64,
-            count=self._inj_count,
-        )
+        values = np.empty(self._inj_count, dtype=np.float64)
+        axis_mask = self._inj_source_axis_idx >= 0
+        if np.any(axis_mask):
+            axis_indices = self._inj_source_axis_idx[axis_mask]
+            axis_pos = self._inj_source_axis_pos[axis_mask]
+            values[axis_mask] = np.where(
+                axis_pos,
+                pos_vals[axis_indices],
+                neg_vals[axis_indices],
+            )
+        for idx, key in self._inj_passthrough_pairs:
+            if key not in obs_map:
+                raise KeyError(f"Missing observation key for passthrough: {key}")
+            values[idx] = float(np.clip(obs_map[key], 0.0, 1.0))
+
         values = values * self._inj_scales + self._inj_offsets
         if self._inj_has_clamp:
             values = values.copy()
