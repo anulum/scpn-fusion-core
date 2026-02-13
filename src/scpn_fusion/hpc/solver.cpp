@@ -77,27 +77,37 @@ public:
         }
     }
 
-    /// Run one Red-Black SOR sweep.
-    void solve_step_sor(double omega = 1.8) {
+    /// Run one Red-Black SOR sweep and return max |delta psi|.
+    double solve_step_sor(double omega = 1.8) {
+        double red_max_delta = 0.0;
         // Red pass (iz + ir even)
         #ifdef _OPENMP
-        #pragma omp parallel for collapse(2)
+        #pragma omp parallel for collapse(2) reduction(max:red_max_delta)
         #endif
         for (int z = 1; z < cfg.nz - 1; ++z) {
             for (int r = 1; r < cfg.nr - 1; ++r) {
-                if ((z + r) % 2 == 0) update_point(z, r, omega);
+                if ((z + r) % 2 == 0) {
+                    const double delta = update_point(z, r, omega);
+                    red_max_delta = std::max(red_max_delta, delta);
+                }
             }
         }
 
+        double black_max_delta = 0.0;
         // Black pass (iz + ir odd)
         #ifdef _OPENMP
-        #pragma omp parallel for collapse(2)
+        #pragma omp parallel for collapse(2) reduction(max:black_max_delta)
         #endif
         for (int z = 1; z < cfg.nz - 1; ++z) {
             for (int r = 1; r < cfg.nr - 1; ++r) {
-                if ((z + r) % 2 != 0) update_point(z, r, omega);
+                if ((z + r) % 2 != 0) {
+                    const double delta = update_point(z, r, omega);
+                    black_max_delta = std::max(black_max_delta, delta);
+                }
             }
         }
+
+        return std::max(red_max_delta, black_max_delta);
     }
 
     void set_current_profile(const double *j_in, size_t size) {
@@ -110,7 +120,7 @@ public:
     size_t get_size() const { return psi.size(); }
 
 private:
-    inline void update_point(int z, int r, double omega) {
+    inline double update_point(int z, int r, double omega) {
         const int idx = z * cfg.nr + r;
         const double R = r_grid[idx];
         const double source = -cfg.vacuum_perm * R * j_phi[idx];
@@ -130,7 +140,10 @@ private:
                              + c_r_plus * p_right
                              + c_r_minus * p_left) / center;
 
-        psi[idx] = (1.0 - omega) * psi[idx] + omega * p_gs;
+        const double old_psi = psi[idx];
+        const double new_psi = (1.0 - omega) * old_psi + omega * p_gs;
+        psi[idx] = new_psi;
+        return std::abs(new_psi - old_psi);
     }
 
     PlasmaConfig cfg;
@@ -174,16 +187,65 @@ void run_step(void *solver_ptr,
               int           size,
               int           iterations)
 {
+    if (solver_ptr == nullptr || j_array == nullptr || psi_array == nullptr || size <= 0) {
+        return;
+    }
+
     auto *solver = static_cast<FastSolver *>(solver_ptr);
 
     solver->set_current_profile(j_array, static_cast<size_t>(size));
 
-    for (int i = 0; i < iterations; ++i) {
+    const int n_iter = std::max(iterations, 1);
+    for (int i = 0; i < n_iter; ++i) {
         solver->solve_step_sor(1.8);
     }
 
     const double *result = solver->get_psi_ptr();
     std::copy(result, result + size, psi_array);
+}
+
+/// Run SOR with early convergence stop based on max |delta psi|.
+///
+/// @return iterations executed (>=1)
+int run_step_converged(void *solver_ptr,
+                       const double *j_array,
+                       double       *psi_array,
+                       int           size,
+                       int           max_iterations,
+                       double        omega,
+                       double        tolerance,
+                       double       *final_delta_out)
+{
+    if (solver_ptr == nullptr || j_array == nullptr || psi_array == nullptr || size <= 0) {
+        if (final_delta_out != nullptr) {
+            *final_delta_out = 0.0;
+        }
+        return 0;
+    }
+
+    auto *solver = static_cast<FastSolver *>(solver_ptr);
+    solver->set_current_profile(j_array, static_cast<size_t>(size));
+
+    const int n_iter = std::max(max_iterations, 1);
+    const double omega_clamped = std::clamp(omega, 0.1, 1.99);
+    const double tol = std::max(tolerance, 0.0);
+
+    double last_delta = 0.0;
+    int performed = 0;
+    for (int i = 0; i < n_iter; ++i) {
+        last_delta = solver->solve_step_sor(omega_clamped);
+        performed = i + 1;
+        if (last_delta <= tol) {
+            break;
+        }
+    }
+
+    const double *result = solver->get_psi_ptr();
+    std::copy(result, result + size, psi_array);
+    if (final_delta_out != nullptr) {
+        *final_delta_out = last_delta;
+    }
+    return performed;
 }
 
 /// Free a solver instance.

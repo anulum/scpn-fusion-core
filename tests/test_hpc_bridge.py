@@ -18,8 +18,12 @@ from scpn_fusion.hpc.hpc_bridge import HPCBridge, _as_contiguous_f64
 class _DummyLib:
     def __init__(self) -> None:
         self.called = False
+        self.called_converged = False
         self.last_size = None
         self.last_iterations = None
+        self.last_max_iterations = None
+        self.last_omega = None
+        self.last_tolerance = None
         self.destroyed = None
 
     def run_step(self, solver_ptr, j_array, psi_array, size, iterations) -> None:
@@ -27,6 +31,26 @@ class _DummyLib:
         self.last_size = int(size)
         self.last_iterations = int(iterations)
         psi_array[:] = 0.5 * j_array
+
+    def run_step_converged(
+        self,
+        solver_ptr,
+        j_array,
+        psi_array,
+        size,
+        max_iterations,
+        omega,
+        tolerance,
+        final_delta_ptr,
+    ) -> int:
+        self.called_converged = True
+        self.last_size = int(size)
+        self.last_max_iterations = int(max_iterations)
+        self.last_omega = float(omega)
+        self.last_tolerance = float(tolerance)
+        psi_array[:] = 0.25 * j_array
+        final_delta_ptr._obj.value = 2.5e-4
+        return 7
 
     def destroy_solver(self, solver_ptr) -> None:
         self.destroyed = solver_ptr
@@ -46,6 +70,7 @@ def _make_bridge(nr: int = 2, nz: int = 3) -> HPCBridge:
     bridge.solver_ptr = 12345
     bridge.loaded = True
     bridge._destroy_symbol = "destroy_solver"
+    bridge._has_converged_api = True
     bridge.nr = nr
     bridge.nz = nz
     return bridge
@@ -88,6 +113,35 @@ def test_solve_runs_and_returns_expected_shape() -> None:
     assert bridge.lib.called
     assert bridge.lib.last_size == 6
     assert bridge.lib.last_iterations == 17
+
+
+def test_solve_until_converged_uses_native_api() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
+    out = bridge.solve_until_converged(j_phi, max_iterations=200, tolerance=1e-5, omega=1.7)
+    assert out is not None
+    psi, iters, delta = out
+    assert psi.shape == (3, 2)
+    assert np.allclose(psi, 0.25 * j_phi)
+    assert iters == 7
+    assert abs(delta - 2.5e-4) < 1e-12
+    assert bridge.lib.called_converged
+    assert bridge.lib.last_max_iterations == 200
+    assert abs(bridge.lib.last_omega - 1.7) < 1e-12
+    assert abs(bridge.lib.last_tolerance - 1e-5) < 1e-12
+
+
+def test_solve_until_converged_falls_back_without_native_api() -> None:
+    bridge = _make_bridge(nr=2, nz=3)
+    bridge._has_converged_api = False
+    j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
+    out = bridge.solve_until_converged(j_phi, max_iterations=12)
+    assert out is not None
+    psi, iters, delta = out
+    assert psi.shape == (3, 2)
+    assert np.allclose(psi, 0.5 * j_phi)
+    assert iters == 12
+    assert np.isnan(delta)
 
 
 def test_close_releases_solver_pointer() -> None:

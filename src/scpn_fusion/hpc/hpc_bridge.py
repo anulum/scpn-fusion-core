@@ -45,6 +45,7 @@ class HPCBridge:
         self.solver_ptr = None
         self.loaded: bool = False
         self._destroy_symbol: Optional[str] = None
+        self._has_converged_api: bool = False
 
         if lib_path is None:
             lib_name = (
@@ -113,6 +114,25 @@ class HPCBridge:
             ctypes.c_int
         ]
 
+        # int run_step_converged(void* solver, const double* j, double* psi,
+        #                        int size, int max_iter, double omega,
+        #                        double tol, double* final_delta)
+        if hasattr(self.lib, "run_step_converged"):
+            self.lib.run_step_converged.argtypes = [
+                ctypes.c_void_p,
+                np.ctypeslib.ndpointer(dtype=np.float64, flags='C_CONTIGUOUS'),
+                np.ctypeslib.ndpointer(dtype=np.float64, flags='C_CONTIGUOUS'),
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_double,
+                ctypes.c_double,
+                ctypes.POINTER(ctypes.c_double),
+            ]
+            self.lib.run_step_converged.restype = ctypes.c_int
+            self._has_converged_api = True
+        else:
+            self._has_converged_api = False
+
         # void destroy_solver(void* solver) or void delete_solver(void* solver)
         if hasattr(self.lib, "destroy_solver"):
             self.lib.destroy_solver.argtypes = [ctypes.c_void_p]
@@ -151,15 +171,10 @@ class HPCBridge:
         Returns *None* if the library is not loaded (caller should
         fall back to a Python solver).
         """
-        if not self.loaded or self.solver_ptr is None:
+        prepared = self._prepare_inputs(j_phi)
+        if prepared is None:
             return None
-
-        j_input = _as_contiguous_f64(j_phi)
-        expected_shape = (getattr(self, "nz", j_input.shape[0]), getattr(self, "nr", j_input.shape[-1]))
-        if tuple(j_input.shape) != tuple(expected_shape):
-            raise ValueError(
-                f"j_phi shape mismatch: expected {expected_shape}, received {tuple(j_input.shape)}"
-            )
+        j_input, expected_shape = prepared
 
         psi_out = np.zeros(expected_shape, dtype=np.float64)
         self.lib.run_step(
@@ -170,6 +185,62 @@ class HPCBridge:
             int(iterations),
         )
         return psi_out
+
+    def solve_until_converged(
+        self,
+        j_phi: NDArray[np.float64],
+        max_iterations: int = 1000,
+        tolerance: float = 1e-6,
+        omega: float = 1.8,
+    ) -> Optional[tuple[NDArray[np.float64], int, float]]:
+        """Run solver until convergence, if native API is available.
+
+        Returns ``(psi, iterations_used, final_delta)``. If the library is
+        unavailable or uninitialized, returns ``None``.
+        """
+        prepared = self._prepare_inputs(j_phi)
+        if prepared is None:
+            return None
+        j_input, expected_shape = prepared
+
+        if not self._has_converged_api:
+            psi = self.solve(j_input, iterations=max_iterations)
+            if psi is None:
+                return None
+            return psi, int(max(max_iterations, 1)), float("nan")
+
+        psi_out = np.zeros(expected_shape, dtype=np.float64)
+        final_delta = ctypes.c_double(0.0)
+        iterations_used = int(
+            self.lib.run_step_converged(
+                self.solver_ptr,
+                j_input,
+                psi_out,
+                int(j_input.size),
+                int(max(max_iterations, 1)),
+                float(omega),
+                float(max(tolerance, 0.0)),
+                ctypes.byref(final_delta),
+            )
+        )
+        return psi_out, iterations_used, float(final_delta.value)
+
+    def _prepare_inputs(
+        self, j_phi: NDArray[np.float64]
+    ) -> Optional[tuple[NDArray[np.float64], tuple[int, int]]]:
+        if not self.loaded or self.solver_ptr is None:
+            return None
+
+        j_input = _as_contiguous_f64(j_phi)
+        expected_shape = (
+            getattr(self, "nz", j_input.shape[0]),
+            getattr(self, "nr", j_input.shape[-1]),
+        )
+        if tuple(j_input.shape) != tuple(expected_shape):
+            raise ValueError(
+                f"j_phi shape mismatch: expected {expected_shape}, received {tuple(j_input.shape)}"
+            )
+        return j_input, expected_shape
 
 def compile_cpp() -> Optional[str]:
     """Compile the C++ solver from source.
