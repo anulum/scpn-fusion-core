@@ -196,6 +196,7 @@ class StochasticPetriNet:
                 report["dead_places"]
                 or report["dead_transitions"]
                 or report["unseeded_place_cycles"]
+                or report["input_weight_overflow_transitions"]
             )
             if strict_validation and has_issues:
                 issues: List[str] = []
@@ -206,6 +207,11 @@ class StochasticPetriNet:
                 if report["unseeded_place_cycles"]:
                     issues.append(
                         f"unseeded_place_cycles={report['unseeded_place_cycles']}"
+                    )
+                if report["input_weight_overflow_transitions"]:
+                    issues.append(
+                        "input_weight_overflow_transitions="
+                        f"{report['input_weight_overflow_transitions']}"
                     )
                 raise ValueError(
                     "Topology validation failed: " + "; ".join(issues)
@@ -261,20 +267,27 @@ class StochasticPetriNet:
         - ``dead_transitions``: transitions with zero total degree.
         - ``unseeded_place_cycles``: place-level SCC cycles with no initial
           token mass.
+        - ``input_weight_overflow_transitions``: transitions whose positive
+          input arc-weight sum exceeds 1.0.
         """
         place_in_deg = {p: 0 for p in self._places}
         place_out_deg = {p: 0 for p in self._places}
         trans_in_deg = {t: 0 for t in self._transitions}
         trans_out_deg = {t: 0 for t in self._transitions}
+        transition_positive_input_weight_sum = {
+            t: 0.0 for t in self._transitions
+        }
 
         transition_inputs: Dict[str, List[str]] = {t: [] for t in self._transitions}
         transition_outputs: Dict[str, List[str]] = {t: [] for t in self._transitions}
 
-        for src, tgt, _w, _is_inhibitor in self._arcs:
+        for src, tgt, w, _is_inhibitor in self._arcs:
             if self._kind[src] is _NodeKind.PLACE:
                 place_out_deg[src] += 1
                 trans_in_deg[tgt] += 1
                 transition_inputs[tgt].append(src)
+                if w > 0.0:
+                    transition_positive_input_weight_sum[tgt] += float(w)
             else:
                 trans_out_deg[src] += 1
                 place_in_deg[tgt] += 1
@@ -315,10 +328,16 @@ class StochasticPetriNet:
                 unseeded_place_cycles.append(sorted(comp))
 
         unseeded_place_cycles.sort(key=lambda c: tuple(c))
+        input_weight_overflow_transitions = sorted(
+            t
+            for t, total_w in transition_positive_input_weight_sum.items()
+            if total_w > (1.0 + 1e-12)
+        )
         return {
             "dead_places": dead_places,
             "dead_transitions": dead_transitions,
             "unseeded_place_cycles": unseeded_place_cycles,
+            "input_weight_overflow_transitions": input_weight_overflow_transitions,
         }
 
     @staticmethod

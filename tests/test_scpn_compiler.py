@@ -222,6 +222,21 @@ class TestStochasticPetriNet:
         assert report["dead_transitions"] == []
         assert report["unseeded_place_cycles"] == [["P0", "P1"]]
 
+    def test_validate_topology_detects_input_weight_overflow(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("P0", initial_tokens=1.0)
+        net.add_place("P1", initial_tokens=1.0)
+        net.add_transition("T", threshold=0.5)
+        net.add_arc("P0", "T", weight=0.7)
+        net.add_arc("P1", "T", weight=0.6)
+        net.add_arc("T", "P0", weight=1.0)
+
+        report = net.validate_topology()
+        assert report["dead_places"] == []
+        assert report["dead_transitions"] == []
+        assert report["unseeded_place_cycles"] == []
+        assert report["input_weight_overflow_transitions"] == ["T"]
+
     def test_compile_validate_topology_populates_report(self) -> None:
         net = StochasticPetriNet()
         net.add_place("A", initial_tokens=1.0)
@@ -247,6 +262,20 @@ class TestStochasticPetriNet:
         net.add_arc("T_live", "A", weight=1.0)
 
         with pytest.raises(ValueError, match="Topology validation failed"):
+            net.compile(strict_validation=True)
+
+    def test_compile_strict_validation_rejects_input_weight_overflow(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("P0", initial_tokens=1.0)
+        net.add_place("P1", initial_tokens=1.0)
+        net.add_transition("T", threshold=0.5)
+        net.add_arc("P0", "T", weight=0.7)
+        net.add_arc("P1", "T", weight=0.6)
+        net.add_arc("T", "P0", weight=1.0)
+
+        with pytest.raises(
+            ValueError, match="input_weight_overflow_transitions"
+        ):
             net.compile(strict_validation=True)
 
     def test_inhibitor_arc_requires_opt_in_during_compile(self) -> None:
@@ -291,6 +320,21 @@ class TestFusionCompiler:
 
         compiler = FusionCompiler(bitstream_length=128, seed=7)
         with pytest.raises(ValueError, match="Topology validation failed"):
+            compiler.compile(net, strict_topology=True)
+
+    def test_compile_strict_topology_rejects_input_weight_overflow(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("P0", initial_tokens=1.0)
+        net.add_place("P1", initial_tokens=1.0)
+        net.add_transition("T", threshold=0.5)
+        net.add_arc("P0", "T", weight=0.7)
+        net.add_arc("P1", "T", weight=0.6)
+        net.add_arc("T", "P0", weight=1.0)
+
+        compiler = FusionCompiler(bitstream_length=128, seed=7)
+        with pytest.raises(
+            ValueError, match="input_weight_overflow_transitions"
+        ):
             compiler.compile(net, strict_topology=True)
 
     def test_compile_validate_topology_populates_report(self) -> None:
