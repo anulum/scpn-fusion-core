@@ -948,6 +948,30 @@ class TestIntegration:
         assert calls["dense"] >= 1
         assert calls["update"] >= 1
 
+    def test_marking_property_returns_copy_not_alias(self, artifact_path: str) -> None:
+        art = load_artifact(artifact_path)
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=225,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+        )
+        m = c.marking
+        assert len(m) == art.nP
+        m[0] = 1.0 - m[0]
+        assert c.marking[0] != m[0]
+
+    def test_marking_setter_validates_length(self, artifact_path: str) -> None:
+        art = load_artifact(artifact_path)
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=226,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+        )
+        with pytest.raises(ValueError, match="marking must have length"):
+            c.marking = [0.0, 1.0]
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Contract helpers

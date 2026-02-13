@@ -141,7 +141,8 @@ class NeuroSymbolicController:
         self._tmp_activations = np.zeros(self._nT, dtype=np.float64)
         self._tmp_consumption = np.zeros(self._nP, dtype=np.float64)
         self._tmp_production = np.zeros(self._nP, dtype=np.float64)
-        self._tmp_marking = np.zeros(self._nP, dtype=np.float64)
+        self._tmp_marking_oracle = np.zeros(self._nP, dtype=np.float64)
+        self._tmp_marking_sc = np.zeros(self._nP, dtype=np.float64)
         self._thresholds = np.asarray(
             [tr.threshold for tr in artifact.topology.transitions], dtype=np.float64
         )
@@ -303,17 +304,16 @@ class NeuroSymbolicController:
         t0 = time.perf_counter()
 
         # 1. Feature extraction (fast compiled mapping)
-        obs_map = {key: float(value) for key, value in obs.items()}
-        pos_vals, neg_vals = self._compute_feature_components(obs_map)
+        pos_vals, neg_vals = self._compute_feature_components(obs)
         feats = (
-            self._build_feature_dict(obs_map, pos_vals, neg_vals)
+            self._build_feature_dict(obs, pos_vals, neg_vals)
             if log_path is not None
             else None
         )
 
         # 2. Inject features into marking
         m = self._marking.copy()
-        self._inject_places(m, obs_map, pos_vals, neg_vals)
+        self._inject_places(m, obs, pos_vals, neg_vals)
 
         # 3. Oracle float path (optional)
         if self._enable_oracle_diagnostics:
@@ -334,7 +334,7 @@ class NeuroSymbolicController:
         self.last_sc_marking = m_sc.tolist()
 
         # Commit SC state
-        self._marking = m_sc
+        np.copyto(self._marking, m_sc)
 
         # 5. Decode actions
         actions_dict = self._decode_actions(m_sc)
@@ -453,7 +453,7 @@ class NeuroSymbolicController:
         )
 
         # Marking update: m' = clip(m - W_in^T @ f + W_out @ f, 0, 1)
-        m2 = self._marking_update(marking, f_timed)
+        m2 = self._marking_update(marking, f_timed, self._tmp_marking_oracle)
 
         return f_timed, m2
 
@@ -500,7 +500,7 @@ class NeuroSymbolicController:
         f_timed, self._sc_cursor = self._apply_transition_timing(
             f, self._sc_pending, self._sc_cursor
         )
-        m2 = self._marking_update(marking, f_timed)
+        m2 = self._marking_update(marking, f_timed, self._tmp_marking_sc)
         if self._sc_bitflip_rate > 0.0:
             assert rng is not None
             m2 = self._apply_bit_flip_faults(m2, rng)
@@ -544,18 +544,21 @@ class NeuroSymbolicController:
         self._tmp_activations[:] = self._W_in @ marking
         return self._tmp_activations
 
-    def _marking_update(self, marking: FloatArray, firing: FloatArray) -> FloatArray:
+    def _marking_update(
+        self, marking: FloatArray, firing: FloatArray, out: FloatArray
+    ) -> FloatArray:
         if self._runtime_backend == "rust" and _HAS_RUST_SCPN_RUNTIME:
             assert _rust_marking_update is not None
-            out = _rust_marking_update(marking, self._W_in, self._W_out, firing)
-            return np.asarray(out, dtype=np.float64)
+            rust_out = _rust_marking_update(marking, self._W_in, self._W_out, firing)
+            np.copyto(out, np.asarray(rust_out, dtype=np.float64))
+            return out
         self._tmp_consumption[:] = self._W_in_t @ firing
         self._tmp_production[:] = self._W_out @ firing
-        self._tmp_marking[:] = marking
-        self._tmp_marking -= self._tmp_consumption
-        self._tmp_marking += self._tmp_production
-        np.clip(self._tmp_marking, 0.0, 1.0, out=self._tmp_marking)
-        return self._tmp_marking.copy()
+        out[:] = marking
+        out -= self._tmp_consumption
+        out += self._tmp_production
+        np.clip(out, 0.0, 1.0, out=out)
+        return out
 
     def _decode_actions(self, marking: FloatArray) -> Dict[str, float]:
         if not self._action_names:
