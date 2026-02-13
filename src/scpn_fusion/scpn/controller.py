@@ -504,7 +504,6 @@ class NeuroSymbolicController:
                 self._runtime_backend == "rust"
                 and _HAS_RUST_SCPN_RUNTIME
                 and _rust_sample_firing is not None
-                and self._sc_bitflip_rate <= 0.0
             ):
                 sampled = _rust_sample_firing(
                     p_fire,
@@ -513,7 +512,12 @@ class NeuroSymbolicController:
                     bool(self._sc_antithetic),
                 )
                 f = np.asarray(sampled, dtype=np.float64)
-                rng = None
+                if self._sc_bitflip_rate > 0.0:
+                    rng = np.random.default_rng(
+                        _seed64(self.seed_base, f"sc_flip:{int(k)}")
+                    )
+                else:
+                    rng = None
             else:
                 rng = np.random.default_rng(sample_seed)
                 if self._sc_antithetic and self._sc_n_passes >= 2:
