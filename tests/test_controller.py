@@ -266,6 +266,23 @@ class TestLevel1Determinism:
         run2 = [controller.step(obs, k) for k in range(10)]
         assert run1 == run2
 
+    def test_deterministic_stochastic_fractional_replay(self, artifact_path_fractional: str) -> None:
+        art = load_artifact(artifact_path_fractional)
+        kwargs = dict(
+            artifact=art,
+            seed_base=987654321,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            sc_n_passes=16,
+            sc_bitflip_rate=0.0,
+        )
+        c1 = NeuroSymbolicController(**kwargs)
+        c2 = NeuroSymbolicController(**kwargs)
+        obs: ControlObservation = {"R_axis_m": 6.35, "Z_axis_m": -0.08}
+        out1 = [c1.step(obs, k) for k in range(20)]
+        out2 = [c2.step(obs, k) for k in range(20)]
+        assert out1 == out2
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Level 2 — Primitive correctness (SC vs oracle)
@@ -380,6 +397,25 @@ class TestLevel3PetriSemantics:
         fired = compiled.lif_fire(currents)
         for v in fired:
             assert v in (0.0, 1.0), f"binary fire not in {{0,1}}: {v}"
+
+    def test_sc_bitflip_path_stays_bounded(self, artifact_path_fractional: str) -> None:
+        art = load_artifact(artifact_path_fractional)
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=24680,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            sc_n_passes=8,
+            sc_bitflip_rate=0.05,
+        )
+        for k in range(100):
+            obs: ControlObservation = {
+                "R_axis_m": 6.2 + 0.2 * math.sin(0.09 * k),
+                "Z_axis_m": 0.1 * math.cos(0.11 * k),
+            }
+            c.step(obs, k)
+            for v in c.marking:
+                assert 0.0 <= v <= 1.0
 
 
 # ═════════════════════════════════════════════════════════════════════════════

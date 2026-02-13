@@ -28,6 +28,7 @@ from .contracts import (
     ControlScales,
     ControlTargets,
     _clip01,
+    _seed64,
     decode_actions,
     extract_features,
 )
@@ -50,11 +51,15 @@ class NeuroSymbolicController:
         seed_base: int,
         targets: ControlTargets,
         scales: ControlScales,
+        sc_n_passes: int = 8,
+        sc_bitflip_rate: float = 0.0,
     ) -> None:
         self.artifact = artifact
         self.seed_base = int(seed_base)
         self.targets = targets
         self.scales = scales
+        self._sc_n_passes = max(int(sc_n_passes), 1)
+        self._sc_bitflip_rate = float(np.clip(sc_bitflip_rate, 0.0, 1.0))
 
         # Flatten weight matrices for fast indexing
         self._w_in = artifact.weights.w_in.data[:]
@@ -113,7 +118,7 @@ class NeuroSymbolicController:
             1. ``extract_features(obs)`` → 4 unipolar features
             2. ``_inject_places(features)``
             3. ``_oracle_step()`` — float path
-            4. ``_sc_step(k)`` — stochastic path (oracle fallback for now)
+            4. ``_sc_step(k)`` — deterministic stochastic path
             5. ``_decode_actions()`` — gain × differencing, slew + abs clamp
             6. Optional JSONL logging
         """
@@ -131,7 +136,7 @@ class NeuroSymbolicController:
         # 4. Stochastic path
         f_sc, m_sc = self._sc_step(k)
 
-        # Commit SC state (falls back to oracle until Rust kernel exposed)
+        # Commit SC state
         self.marking = m_sc
 
         # 5. Decode actions
@@ -205,5 +210,56 @@ class NeuroSymbolicController:
         return f.tolist(), m2.tolist()
 
     def _sc_step(self, k: int) -> Tuple[List[float], List[float]]:
-        """Stochastic path — falls back to oracle until Rust kernel exposed."""
-        return self._oracle_step()
+        """Deterministic stochastic path with optional bit-flip fault injection."""
+        m = np.asarray(self.marking, dtype=np.float64)
+        a = self._W_in @ m
+
+        if self._firing_mode == "fractional":
+            margins = np.maximum(self._margins, 1e-12)
+            p_fire = np.clip((a - self._thresholds) / margins, 0.0, 1.0)
+        else:
+            # Binary mode keeps exact threshold semantics for stability.
+            p_fire = (a >= self._thresholds).astype(np.float64)
+
+        if self._firing_mode == "binary" or self._sc_n_passes <= 1:
+            f = p_fire
+            rng = None
+        else:
+            rng = np.random.default_rng(_seed64(self.seed_base, f"sc_step:{int(k)}"))
+            draws = rng.random((self._sc_n_passes, self._nT)) < p_fire[None, :]
+            f = draws.mean(axis=0).astype(np.float64)
+
+        if self._sc_bitflip_rate > 0.0:
+            if rng is None:
+                rng = np.random.default_rng(_seed64(self.seed_base, f"sc_flip:{int(k)}"))
+            f = self._apply_bit_flip_faults(f, rng)
+
+        cons = self._W_in.T @ f
+        prod = self._W_out @ f
+        m2 = np.clip(m - cons + prod, 0.0, 1.0)
+        if self._sc_bitflip_rate > 0.0:
+            assert rng is not None
+            m2 = self._apply_bit_flip_faults(m2, rng)
+
+        return f.tolist(), m2.tolist()
+
+    def _apply_bit_flip_faults(
+        self, values: np.ndarray, rng: np.random.Generator
+    ) -> np.ndarray:
+        """Inject bounded deterministic bit-flip faults into float vectors."""
+        out = np.asarray(values, dtype=np.float64).copy()
+        if self._sc_bitflip_rate <= 0.0 or out.size == 0:
+            return out
+
+        flips = rng.random(out.size) < self._sc_bitflip_rate
+        if not np.any(flips):
+            return out
+
+        raw = out.view(np.uint64)
+        for idx in np.flatnonzero(flips):
+            bit = int(rng.integers(0, 52))
+            raw[idx] = np.uint64(raw[idx] ^ (np.uint64(1) << np.uint64(bit)))
+
+        out = raw.view(np.float64)
+        out = np.nan_to_num(out, nan=0.0, posinf=1.0, neginf=0.0)
+        return np.clip(out, 0.0, 1.0)
