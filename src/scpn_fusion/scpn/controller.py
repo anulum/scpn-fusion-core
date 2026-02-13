@@ -498,11 +498,23 @@ class NeuroSymbolicController:
             if self._sc_antithetic and self._sc_n_passes >= 2:
                 n_pairs = (self._sc_n_passes + 1) // 2
                 base = rng.random((n_pairs, self._nT))
-                mirrored = np.concatenate((base, 1.0 - base), axis=0)
-                draws = mirrored[: self._sc_n_passes, :] < p_fire[None, :]
+                low_hits = np.sum(base < p_fire[None, :], axis=0, dtype=np.int64)
+                if self._sc_n_passes % 2 == 0:
+                    high_hits = np.sum(
+                        base > (1.0 - p_fire)[None, :], axis=0, dtype=np.int64
+                    )
+                else:
+                    high_hits = np.sum(
+                        base[:-1, :] > (1.0 - p_fire)[None, :],
+                        axis=0,
+                        dtype=np.int64,
+                    )
+                counts = low_hits + high_hits
             else:
-                draws = rng.random((self._sc_n_passes, self._nT)) < p_fire[None, :]
-            f = draws.mean(axis=0).astype(np.float64)
+                counts = np.asarray(
+                    rng.binomial(self._sc_n_passes, p_fire), dtype=np.int64
+                )
+            f = counts.astype(np.float64) / float(self._sc_n_passes)
 
         if self._sc_bitflip_rate > 0.0:
             if rng is None:
