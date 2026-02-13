@@ -908,6 +908,46 @@ class TestIntegration:
         )
         assert c.runtime_backend_name == "numpy"
 
+    def test_runtime_backend_rust_path_executes_rust_kernels_when_available(
+        self, artifact_path: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        art = load_artifact(artifact_path)
+        calls = {"dense": 0, "update": 0}
+
+        def _fake_dense(w_in: np.ndarray, marking: np.ndarray) -> np.ndarray:
+            calls["dense"] += 1
+            return np.asarray(w_in @ marking, dtype=np.float64)
+
+        def _fake_update(
+            marking: np.ndarray,
+            w_in: np.ndarray,
+            w_out: np.ndarray,
+            firing: np.ndarray,
+        ) -> np.ndarray:
+            calls["update"] += 1
+            cons = w_in.T @ firing
+            prod = w_out @ firing
+            return np.asarray(np.clip(marking - cons + prod, 0.0, 1.0), dtype=np.float64)
+
+        monkeypatch.setattr(controller_mod, "_HAS_RUST_SCPN_RUNTIME", True)
+        monkeypatch.setattr(controller_mod, "_rust_dense_activations", _fake_dense)
+        monkeypatch.setattr(controller_mod, "_rust_marking_update", _fake_update)
+
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=224,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            runtime_backend="rust",
+        )
+        assert c.runtime_backend_name == "rust"
+
+        act = c.step({"R_axis_m": 6.2, "Z_axis_m": 0.0}, 0)
+        assert "dI_PF3_A" in act
+        assert "dI_PF_topbot_A" in act
+        assert calls["dense"] >= 1
+        assert calls["update"] >= 1
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Contract helpers

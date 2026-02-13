@@ -137,6 +137,11 @@ class NeuroSymbolicController:
         self._nT = artifact.nT
         self._W_in = np.asarray(self._w_in, dtype=np.float64).reshape(self._nT, self._nP)
         self._W_out = np.asarray(self._w_out, dtype=np.float64).reshape(self._nP, self._nT)
+        self._W_in_t = self._W_in.T
+        self._tmp_activations = np.zeros(self._nT, dtype=np.float64)
+        self._tmp_consumption = np.zeros(self._nP, dtype=np.float64)
+        self._tmp_production = np.zeros(self._nP, dtype=np.float64)
+        self._tmp_marking = np.zeros(self._nP, dtype=np.float64)
         self._thresholds = np.asarray(
             [tr.threshold for tr in artifact.topology.transitions], dtype=np.float64
         )
@@ -536,16 +541,21 @@ class NeuroSymbolicController:
             assert _rust_dense_activations is not None
             out = _rust_dense_activations(self._W_in, marking)
             return np.asarray(out, dtype=np.float64)
-        return np.asarray(self._W_in @ marking, dtype=np.float64)
+        self._tmp_activations[:] = self._W_in @ marking
+        return self._tmp_activations
 
     def _marking_update(self, marking: FloatArray, firing: FloatArray) -> FloatArray:
         if self._runtime_backend == "rust" and _HAS_RUST_SCPN_RUNTIME:
             assert _rust_marking_update is not None
             out = _rust_marking_update(marking, self._W_in, self._W_out, firing)
             return np.asarray(out, dtype=np.float64)
-        cons = self._W_in.T @ firing
-        prod = self._W_out @ firing
-        return np.asarray(np.clip(marking - cons + prod, 0.0, 1.0), dtype=np.float64)
+        self._tmp_consumption[:] = self._W_in_t @ firing
+        self._tmp_production[:] = self._W_out @ firing
+        self._tmp_marking[:] = marking
+        self._tmp_marking -= self._tmp_consumption
+        self._tmp_marking += self._tmp_production
+        np.clip(self._tmp_marking, 0.0, 1.0, out=self._tmp_marking)
+        return self._tmp_marking.copy()
 
     def _decode_actions(self, marking: FloatArray) -> Dict[str, float]:
         if not self._action_names:
