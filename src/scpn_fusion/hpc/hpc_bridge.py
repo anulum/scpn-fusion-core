@@ -17,6 +17,13 @@ from numpy.typing import NDArray
 logger = logging.getLogger(__name__)
 
 
+def _as_contiguous_f64(array: NDArray[np.floating]) -> NDArray[np.float64]:
+    """Return ``array`` as C-contiguous ``float64`` with minimal copying."""
+    if isinstance(array, np.ndarray) and array.dtype == np.float64 and array.flags.c_contiguous:
+        return array
+    return np.ascontiguousarray(array, dtype=np.float64)
+
+
 class HPCBridge:
     """Interface between Python and the compiled C++ Grad-Shafranov solver.
 
@@ -76,7 +83,8 @@ class HPCBridge:
         """Release the C++ solver instance, if one was created."""
         if self.solver_ptr is not None and self.loaded:
             try:
-                self.lib.destroy_solver(self.solver_ptr)
+                if self.lib is not None and hasattr(self.lib, "destroy_solver"):
+                    self.lib.destroy_solver(self.solver_ptr)
             except Exception:
                 pass
             self.solver_ptr = None
@@ -134,16 +142,23 @@ class HPCBridge:
         Returns *None* if the library is not loaded (caller should
         fall back to a Python solver).
         """
-        if not self.loaded:
+        if not self.loaded or self.solver_ptr is None:
             return None
 
-        psi_out = np.zeros_like(j_phi)
+        j_input = _as_contiguous_f64(j_phi)
+        expected_shape = (getattr(self, "nz", j_input.shape[0]), getattr(self, "nr", j_input.shape[-1]))
+        if tuple(j_input.shape) != tuple(expected_shape):
+            raise ValueError(
+                f"j_phi shape mismatch: expected {expected_shape}, received {tuple(j_input.shape)}"
+            )
+
+        psi_out = np.zeros(expected_shape, dtype=np.float64)
         self.lib.run_step(
             self.solver_ptr,
-            np.ascontiguousarray(j_phi),
+            j_input,
             psi_out,
-            j_phi.size,
-            iterations,
+            int(j_input.size),
+            int(iterations),
         )
         return psi_out
 
