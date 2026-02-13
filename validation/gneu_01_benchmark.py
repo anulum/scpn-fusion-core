@@ -155,6 +155,7 @@ def run_benchmark(
 
     agreement_flags = []
     abs_deltas = []
+    oracle_sc_mark_deltas = []
     recovery_steps = []
 
     for ep in range(episodes):
@@ -180,6 +181,10 @@ def run_benchmark(
             snn_seq.append(snn)
             agreement_flags.append((rl >= 0.5) == (snn >= 0.5))
             abs_deltas.append(abs(snn - rl))
+            if controller.last_oracle_marking and controller.last_sc_marking:
+                oracle_mark = np.asarray(controller.last_oracle_marking, dtype=float)
+                sc_mark = np.asarray(controller.last_sc_marking, dtype=float)
+                oracle_sc_mark_deltas.append(float(np.mean(np.abs(sc_mark - oracle_mark))))
 
         baseline = np.asarray(snn_seq, dtype=float)
         faulted = baseline.copy()
@@ -201,17 +206,24 @@ def run_benchmark(
 
     agreement = float(np.mean(np.asarray(agreement_flags, dtype=float)))
     mean_abs_delta = float(np.mean(np.asarray(abs_deltas, dtype=float)))
+    oracle_sc_mean_abs_delta = (
+        float(np.mean(np.asarray(oracle_sc_mark_deltas, dtype=float)))
+        if oracle_sc_mark_deltas
+        else 0.0
+    )
     p95_recovery_steps = float(np.percentile(np.asarray(recovery_steps, dtype=float), 95))
     p95_recovery_ms = p95_recovery_steps * float(dt_ms)
 
     thresholds = {
         "min_agreement": 0.95,
         "max_mean_abs_delta": 0.08,
+        "max_oracle_sc_mean_abs_delta": 0.05,
         "max_recovery_ms_p95": 1.0,
     }
     passes = bool(
         agreement >= thresholds["min_agreement"]
         and mean_abs_delta <= thresholds["max_mean_abs_delta"]
+        and oracle_sc_mean_abs_delta <= thresholds["max_oracle_sc_mean_abs_delta"]
         and p95_recovery_ms <= thresholds["max_recovery_ms_p95"]
     )
 
@@ -224,6 +236,7 @@ def run_benchmark(
         "agreement_pct": agreement * 100.0,
         "torax_parity_estimate_pct": agreement * 100.0,
         "mean_abs_delta": mean_abs_delta,
+        "oracle_sc_mean_abs_delta": oracle_sc_mean_abs_delta,
         "recovery_steps_p95": p95_recovery_steps,
         "recovery_ms_p95": p95_recovery_ms,
         "thresholds": thresholds,
@@ -257,6 +270,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Agreement: `{b['agreement_pct']:.2f}%`",
         f"- TORAX parity estimate: `{b['torax_parity_estimate_pct']:.2f}%`",
         f"- Mean absolute risk delta: `{b['mean_abs_delta']:.6f}`",
+        f"- Mean oracle-vs-SC marking delta: `{b['oracle_sc_mean_abs_delta']:.6f}`",
         f"- P95 recovery: `{b['recovery_ms_p95']:.3f} ms`",
         f"- Threshold pass: `{'YES' if b['passes_thresholds'] else 'NO'}`",
         "",
@@ -264,6 +278,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         f"- Min agreement: `{b['thresholds']['min_agreement']}`",
         f"- Max mean abs delta: `{b['thresholds']['max_mean_abs_delta']}`",
+        f"- Max oracle-vs-SC marking delta: `{b['thresholds']['max_oracle_sc_mean_abs_delta']}`",
         f"- Max P95 recovery ms: `{b['thresholds']['max_recovery_ms_p95']}`",
         "",
     ]

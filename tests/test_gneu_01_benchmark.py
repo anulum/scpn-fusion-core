@@ -26,6 +26,7 @@ def test_run_benchmark_is_deterministic_for_seed() -> None:
     b = gneu_01_benchmark.run_benchmark(seed=17, episodes=6, window=48)
     assert a["agreement"] == b["agreement"]
     assert a["mean_abs_delta"] == b["mean_abs_delta"]
+    assert a["oracle_sc_mean_abs_delta"] == b["oracle_sc_mean_abs_delta"]
     assert a["recovery_ms_p95"] == b["recovery_ms_p95"]
 
 
@@ -33,6 +34,7 @@ def test_run_benchmark_meets_thresholds_on_smoke_config() -> None:
     out = gneu_01_benchmark.run_benchmark(seed=42, episodes=8, window=64)
     assert out["agreement"] >= 0.95
     assert out["mean_abs_delta"] <= 0.08
+    assert out["oracle_sc_mean_abs_delta"] <= 0.05
     assert out["recovery_ms_p95"] <= 1.0
     assert out["passes_thresholds"] is True
 
@@ -43,3 +45,4 @@ def test_render_markdown_contains_key_sections() -> None:
     assert "# GNEU-01 Benchmark" in text
     assert "## Metrics" in text
     assert "TORAX parity estimate" in text
+    assert "oracle-vs-SC marking delta" in text

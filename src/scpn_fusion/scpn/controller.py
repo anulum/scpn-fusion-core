@@ -88,6 +88,10 @@ class NeuroSymbolicController:
         self._prev_actions: List[float] = [
             0.0 for _ in artifact.readout.actions
         ]
+        self.last_oracle_firing: List[float] = []
+        self.last_sc_firing: List[float] = []
+        self.last_oracle_marking: List[float] = self.marking[:]
+        self.last_sc_marking: List[float] = self.marking[:]
 
         # Build ActionSpec list for decode_actions
         self._action_specs = [
@@ -105,6 +109,10 @@ class NeuroSymbolicController:
         """Restore initial marking and zero previous actions."""
         self.marking = self.artifact.initial_state.marking[:]
         self._prev_actions = [0.0 for _ in self.artifact.readout.actions]
+        self.last_oracle_firing = []
+        self.last_sc_firing = []
+        self.last_oracle_marking = self.marking[:]
+        self.last_sc_marking = self.marking[:]
 
     def step(
         self,
@@ -135,6 +143,12 @@ class NeuroSymbolicController:
 
         # 4. Stochastic path
         f_sc, m_sc = self._sc_step(k)
+
+        # Diagnostics (used by deterministic benchmark gates)
+        self.last_oracle_firing = f_oracle[:]
+        self.last_sc_firing = f_sc[:]
+        self.last_oracle_marking = m_oracle[:]
+        self.last_sc_marking = m_sc[:]
 
         # Commit SC state
         self.marking = m_sc
