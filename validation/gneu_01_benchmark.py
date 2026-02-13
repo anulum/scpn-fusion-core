@@ -15,9 +15,10 @@ import math
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 import sys
 
@@ -31,9 +32,23 @@ from scpn_fusion.control.disruption_predictor import (
     simulate_tearing_mode,
 )
 from scpn_fusion.scpn.compiler import FusionCompiler
-from scpn_fusion.scpn.contracts import ControlScales, ControlTargets
+from scpn_fusion.scpn.contracts import (
+    ControlObservation,
+    ControlScales,
+    ControlTargets,
+)
 from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn.structure import StochasticPetriNet
+
+FloatArray = NDArray[np.float64]
+_SimTearingModeFn = Callable[[int], tuple[FloatArray, object, object]]
+_BuildFeatureVectorFn = Callable[[FloatArray, dict[str, float]], FloatArray]
+_ApplyBitFlipFn = Callable[[float, int], float]
+_simulate_tearing_mode = cast(_SimTearingModeFn, simulate_tearing_mode)
+_build_disruption_feature_vector = cast(
+    _BuildFeatureVectorFn, build_disruption_feature_vector
+)
+_apply_bit_flip_fault = cast(_ApplyBitFlipFn, apply_bit_flip_fault)
 
 
 def _sigmoid(x: float) -> float:
@@ -66,7 +81,10 @@ def _build_controller() -> NeuroSymbolicController:
     net.add_arc("T_Zn", "a_Z_neg", weight=1.0)
     net.compile()
 
-    compiled = FusionCompiler(bitstream_length=1024, seed=42).compile(
+    compiled = FusionCompiler.with_reactor_lif_defaults(
+        bitstream_length=1024,
+        seed=42,
+    ).compile(
         net, firing_mode="binary"
     )
     artifact = compiled.export_artifact(
@@ -96,7 +114,7 @@ def _build_controller() -> NeuroSymbolicController:
     )
 
 
-def _rl_baseline_risk(features: np.ndarray) -> float:
+def _rl_baseline_risk(features: FloatArray) -> float:
     mean, std, max_val, slope, energy, last, n1, n2, n3, asym, spread = features
     logit = (
         -3.8
@@ -114,9 +132,14 @@ def _rl_baseline_risk(features: np.ndarray) -> float:
     return float(_sigmoid(logit))
 
 
-def _snn_risk(controller: NeuroSymbolicController, features: np.ndarray, k: int, rl_risk: float) -> float:
+def _snn_risk(
+    controller: NeuroSymbolicController,
+    features: FloatArray,
+    k: int,
+    rl_risk: float,
+) -> float:
     mean, std, _max_val, slope, _energy, _last, n1, n2, _n3, asym, _spread = features
-    obs = {
+    obs: ControlObservation = {
         "R_axis_m": float(6.2 + 0.22 * (mean - 0.7) + 0.06 * n1),
         "Z_axis_m": float(0.12 * slope + 0.04 * n2 + 0.03 * std),
     }
@@ -128,9 +151,9 @@ def _snn_risk(controller: NeuroSymbolicController, features: np.ndarray, k: int,
     return float(np.clip(0.88 * rl_risk + 0.12 * snn_policy, 0.0, 1.0))
 
 
-def _episode_signal(seed: int, window: int) -> np.ndarray:
+def _episode_signal(seed: int, window: int) -> FloatArray:
     np.random.seed(int(seed))
-    sig, _label, _ttd = simulate_tearing_mode(steps=max(window, 64))
+    sig, _label, _ttd = _simulate_tearing_mode(max(window, 64))
     if sig.size < window:
         sig = np.pad(sig, (0, window - sig.size), mode="edge")
     return np.asarray(sig[:window], dtype=float)
@@ -174,7 +197,7 @@ def run_benchmark(
         rl_seq: list[float] = []
         snn_seq: list[float] = []
         for k in range(window):
-            features = build_disruption_feature_vector(signal[: k + 1], toroidal)
+            features = _build_disruption_feature_vector(signal[: k + 1], toroidal)
             rl = _rl_baseline_risk(features)
             snn = _snn_risk(controller, features, k, rl)
             rl_seq.append(rl)
@@ -190,7 +213,14 @@ def run_benchmark(
         faulted = baseline.copy()
         inject_idx = window // 3
         faulted[inject_idx] = float(
-            np.clip(apply_bit_flip_fault(float(faulted[inject_idx]), int(rng.integers(0, 52))), 0.0, 1.0)
+            np.clip(
+                _apply_bit_flip_fault(
+                    float(faulted[inject_idx]),
+                    int(rng.integers(0, 52)),
+                ),
+                0.0,
+                1.0,
+            )
         )
         for t in range(inject_idx + 1, window):
             # Fast closed-loop recovery toward nominal trajectory.

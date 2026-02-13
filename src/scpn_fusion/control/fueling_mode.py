@@ -14,7 +14,11 @@ from dataclasses import dataclass
 import numpy as np
 
 from scpn_fusion.scpn.compiler import FusionCompiler
-from scpn_fusion.scpn.contracts import ControlScales, ControlTargets
+from scpn_fusion.scpn.contracts import (
+    ControlObservation,
+    ControlScales,
+    ControlTargets,
+)
 from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn.structure import StochasticPetriNet
 
@@ -56,7 +60,10 @@ def _build_fueling_controller() -> NeuroSymbolicController:
     net.add_arc("T_Zn", "a_Z_neg", weight=1.0)
     net.compile()
 
-    compiled = FusionCompiler(bitstream_length=1024, seed=77).compile(
+    compiled = FusionCompiler.with_reactor_lif_defaults(
+        bitstream_length=1024,
+        seed=77,
+    ).compile(
         net, firing_mode="binary"
     )
     artifact = compiled.export_artifact(
@@ -100,7 +107,7 @@ class IcePelletFuelingController:
         self.integrator = float(np.clip(self.integrator, -0.5, 0.5))
 
         # SNN pathway receives mapped pseudo-observation.
-        obs = {
+        obs: ControlObservation = {
             "R_axis_m": float(6.2 - 0.25 * np.clip(error, -1.0, 1.0)),
             "Z_axis_m": 0.0,
         }

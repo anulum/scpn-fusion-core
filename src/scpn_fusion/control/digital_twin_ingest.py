@@ -11,14 +11,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import time
+from typing import Callable, cast
 
 import numpy as np
 
 from scpn_fusion.control.disruption_predictor import predict_disruption_risk
 from scpn_fusion.scpn.compiler import FusionCompiler
-from scpn_fusion.scpn.contracts import ControlScales, ControlTargets
+from scpn_fusion.scpn.contracts import (
+    ControlObservation,
+    ControlScales,
+    ControlTargets,
+)
 from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn.structure import StochasticPetriNet
+
+_PredictRiskFn = Callable[[list[float], dict[str, float]], float]
+_predict_disruption_risk = cast(_PredictRiskFn, predict_disruption_risk)
 
 
 @dataclass(frozen=True)
@@ -45,7 +53,10 @@ def _build_snn_planner() -> NeuroSymbolicController:
     net.add_arc("T_Rn", "a_R_neg", weight=1.0)
     net.compile()
 
-    artifact = FusionCompiler(bitstream_length=1024, seed=404).compile(net, firing_mode="binary").export_artifact(
+    artifact = FusionCompiler.with_reactor_lif_defaults(
+        bitstream_length=1024,
+        seed=404,
+    ).compile(net, firing_mode="binary").export_artifact(
         name="gdep01_digital_twin",
         dt_control_s=0.001,
         readout_config={
@@ -146,7 +157,7 @@ class RealtimeTwinHook:
 
         t0 = time.perf_counter()
         for k in range(max(int(horizon), 4)):
-            obs = {"R_axis_m": beta, "Z_axis_m": 0.0}
+            obs: ControlObservation = {"R_axis_m": beta, "Z_axis_m": 0.0}
             action = self.controller.step(obs, k)
             control = float(np.clip(action["dI_PF3_A"] / 3500.0, -0.8, 0.8))
             last_action = control
@@ -171,7 +182,7 @@ class RealtimeTwinHook:
                 "toroidal_asymmetry_index": float(0.07 + 0.06 * abs(control)),
                 "toroidal_radial_spread": float(0.02 + 0.01 * abs(control)),
             }
-            risk = float(predict_disruption_risk(signal_history, toroidal_obs))
+            risk = float(_predict_disruption_risk(signal_history, toroidal_obs))
             risks.append(risk)
             if risk < 0.85:
                 safe_steps += 1

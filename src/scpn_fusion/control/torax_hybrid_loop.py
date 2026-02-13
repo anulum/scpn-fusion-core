@@ -11,14 +11,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import time
+from typing import Callable, cast
 
 import numpy as np
 
 from scpn_fusion.control.disruption_predictor import predict_disruption_risk
 from scpn_fusion.scpn.compiler import FusionCompiler
-from scpn_fusion.scpn.contracts import ControlScales, ControlTargets
+from scpn_fusion.scpn.contracts import (
+    ControlObservation,
+    ControlScales,
+    ControlTargets,
+)
 from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn.structure import StochasticPetriNet
+
+_PredictRiskFn = Callable[[list[float], dict[str, float]], float]
+_predict_disruption_risk = cast(_PredictRiskFn, predict_disruption_risk)
 
 
 @dataclass(frozen=True)
@@ -54,7 +62,10 @@ def _build_hybrid_controller() -> NeuroSymbolicController:
     net.add_arc("T_Rn", "a_R_neg", weight=1.0)
     net.compile()
 
-    compiled = FusionCompiler(bitstream_length=1024, seed=211).compile(net, firing_mode="binary")
+    compiled = FusionCompiler.with_reactor_lif_defaults(
+        bitstream_length=1024,
+        seed=211,
+    ).compile(net, firing_mode="binary")
     artifact = compiled.export_artifact(
         name="gai02_torax_hybrid",
         dt_control_s=0.001,
@@ -168,7 +179,7 @@ def run_nstxu_torax_hybrid_campaign(
             # Hybrid branch = TORAX command + SNN correction
             t0 = time.perf_counter()
             base_cmd = _torax_policy(hybrid_state)
-            obs = {"R_axis_m": hybrid_state.beta_n, "Z_axis_m": 0.0}
+            obs: ControlObservation = {"R_axis_m": hybrid_state.beta_n, "Z_axis_m": 0.0}
             action = controller.step(obs, ep * steps + k)
             snn_corr = float(np.clip(action["dI_PF3_A"] / 4500.0, -0.45, 0.45))
             cmd = float(np.clip(base_cmd + 0.30 * snn_corr, -2.0, 2.0))
@@ -184,7 +195,7 @@ def run_nstxu_torax_hybrid_campaign(
                 "toroidal_asymmetry_index": 0.05 + 0.48 * disturbance,
                 "toroidal_radial_spread": 0.02 + 0.08 * disturbance,
             }
-            risk = float(predict_disruption_risk(signal_history, toroidal))
+            risk = float(_predict_disruption_risk(signal_history, toroidal))
             all_risks.append(risk)
 
             if risk > 0.93:
