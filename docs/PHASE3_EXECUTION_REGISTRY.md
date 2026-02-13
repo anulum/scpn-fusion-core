@@ -47,11 +47,23 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | S2-007 | P2 | Docs | Normalize path mappings for all imported tasks to repository modules | `docs/3d_gaps.md`, `docs/PHASE3_EXECUTION_REGISTRY.md` | Every queued task maps to real paths only | Docs review |
 | S2-008 | P2 | Release | Add queue-level release gate summary for S2 | `validation/gdep_05_release_readiness.py`, `tests/test_gdep_05_release_readiness.py` | Report includes S2 queue health section without breaking current checks | `python -m pytest tests/test_gdep_05_release_readiness.py -v` |
 
+## Sprint S3 Execution Queue (Ordered)
+
+| ID | Priority | Track | Task | Target Files | Definition of Done | Validation |
+|---|---|---|---|---|---|---|
+| S3-001 | P0 | SCPN | Add topology diagnostics for dead nodes and unseeded place cycles | `src/scpn_fusion/scpn/structure.py`, `tests/test_scpn_compiler.py` | `validate_topology()` + optional strict compile validation implemented and tested | `python -m pytest tests/test_scpn_compiler.py tests/test_hypothesis_properties.py -v` |
+| S3-002 | P0 | SCPN | Add inhibitor-arc support with explicit opt-in semantics | `src/scpn_fusion/scpn/structure.py`, `tests/test_scpn_compiler.py` | Inhibitor arc definition supported without breaking default positive-weight semantics | `python -m pytest tests/test_scpn_compiler.py -v` |
+| S3-003 | P1 | SCPN | Add compact artifact serialization mode for packed bitstreams | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Optional compact export/import path round-trips deterministically | `python -m pytest tests/test_controller.py -v` |
+| S3-004 | P1 | Control | Normalize control simulation imports and deterministic fallback entry points | `src/scpn_fusion/control/disruption_predictor.py`, `src/scpn_fusion/control/tokamak_digital_twin.py`, `tests/test_gneu_02_anomaly.py` | No hard crash on missing model/dependency paths in core control entry points | `python -m pytest tests/test_gneu_02_anomaly.py -v` |
+| S3-005 | P1 | HPC | Extend bridge/solver validation for invalid stride/shape edge paths | `src/scpn_fusion/hpc/hpc_bridge.py`, `src/scpn_fusion/hpc/solver.cpp`, `tests/test_hpc_bridge.py` | Additional boundary/fuzz-style guards and tests for invalid buffer geometry | `python -m pytest tests/test_hpc_bridge.py -v` |
+| S3-006 | P2 | Release | Add S3 queue health visibility in release-readiness markdown | `validation/gdep_05_release_readiness.py`, `tests/test_gdep_05_release_readiness.py` | Release report captures S3 progress without weakening existing hard gates | `python -m pytest tests/test_gdep_05_release_readiness.py -v` |
+
 ## Task Accounting
 
 - Total imported tasks: 85
 - Tasks currently queued for Sprint S2: 8
-- Remaining in deferred pool after queue selection: 77
+- Tasks currently queued for Sprint S3: 6
+- Remaining in deferred pool after queue selection: 71
 
 ## Active Task
 
@@ -63,4 +75,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `S2-006`
 - Completed: `S2-007`
 - Completed: `S2-008`
-- Next active task: none (Sprint S2 queue baseline closed; 77 deferred tasks remain).
+- Completed: `S3-001`
+- Completed: `S3-002`
+- Completed: `S3-003`
+- In progress: `S3-004`

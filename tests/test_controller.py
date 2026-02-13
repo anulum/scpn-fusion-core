@@ -232,6 +232,34 @@ class TestLevel0Static:
         finally:
             os.unlink(path2)
 
+    def test_artifact_roundtrip_compact_packed(self, artifact_path: str) -> None:
+        """Compact packed serialization should roundtrip equivalently."""
+        art1 = load_artifact(artifact_path)
+        if art1.weights.packed is None:
+            pytest.skip("packed weights unavailable in this environment")
+
+        fd, path2 = tempfile.mkstemp(suffix=".scpnctl.json")
+        os.close(fd)
+        try:
+            save_artifact(art1, path2, compact_packed=True)
+            text = Path(path2).read_text(encoding="utf-8")
+            assert "data_u64_b64_zlib" in text
+
+            art2 = load_artifact(path2)
+            assert art2.weights.packed is not None
+            assert (
+                art2.weights.packed.w_in_packed.data_u64
+                == art1.weights.packed.w_in_packed.data_u64
+            )
+            if art1.weights.packed.w_out_packed is not None:
+                assert art2.weights.packed.w_out_packed is not None
+                assert (
+                    art2.weights.packed.w_out_packed.data_u64
+                    == art1.weights.packed.w_out_packed.data_u64
+                )
+        finally:
+            os.unlink(path2)
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Level 1 — Determinism

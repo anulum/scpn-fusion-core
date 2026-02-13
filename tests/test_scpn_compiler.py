@@ -173,6 +173,89 @@ class TestStochasticPetriNet:
         with pytest.raises(ValueError, match="weight must be > 0"):
             net.add_arc("A", "T", weight=-0.5)
 
+    def test_validate_topology_detects_dead_nodes(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("A", initial_tokens=1.0)
+        net.add_place("B_dead", initial_tokens=0.0)
+        net.add_transition("T_live", threshold=0.5)
+        net.add_transition("T_dead", threshold=0.5)
+        net.add_arc("A", "T_live", weight=1.0)
+        net.add_arc("T_live", "A", weight=1.0)
+
+        report = net.validate_topology()
+        assert report["dead_places"] == ["B_dead"]
+        assert report["dead_transitions"] == ["T_dead"]
+        assert report["unseeded_place_cycles"] == []
+
+    def test_validate_topology_detects_unseeded_place_cycle(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("P0", initial_tokens=0.0)
+        net.add_place("P1", initial_tokens=0.0)
+        net.add_transition("T0", threshold=0.1)
+        net.add_transition("T1", threshold=0.1)
+        net.add_arc("P0", "T0", weight=1.0)
+        net.add_arc("T0", "P1", weight=1.0)
+        net.add_arc("P1", "T1", weight=1.0)
+        net.add_arc("T1", "P0", weight=1.0)
+
+        report = net.validate_topology()
+        assert report["dead_places"] == []
+        assert report["dead_transitions"] == []
+        assert report["unseeded_place_cycles"] == [["P0", "P1"]]
+
+    def test_compile_validate_topology_populates_report(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("A", initial_tokens=1.0)
+        net.add_place("B_dead", initial_tokens=0.0)
+        net.add_transition("T_live", threshold=0.5)
+        net.add_transition("T_dead", threshold=0.5)
+        net.add_arc("A", "T_live", weight=1.0)
+        net.add_arc("T_live", "A", weight=1.0)
+
+        net.compile(validate_topology=True)
+        assert net.is_compiled
+        assert net.last_validation_report is not None
+        assert net.last_validation_report["dead_places"] == ["B_dead"]
+        assert net.last_validation_report["dead_transitions"] == ["T_dead"]
+
+    def test_compile_strict_validation_rejects_dead_nodes(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("A", initial_tokens=1.0)
+        net.add_place("B_dead", initial_tokens=0.0)
+        net.add_transition("T_live", threshold=0.5)
+        net.add_transition("T_dead", threshold=0.5)
+        net.add_arc("A", "T_live", weight=1.0)
+        net.add_arc("T_live", "A", weight=1.0)
+
+        with pytest.raises(ValueError, match="Topology validation failed"):
+            net.compile(strict_validation=True)
+
+    def test_inhibitor_arc_requires_opt_in_during_compile(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("P", initial_tokens=0.0)
+        net.add_transition("T", threshold=0.5)
+        net.add_arc("P", "T", weight=1.0, inhibitor=True)
+        with pytest.raises(ValueError, match="allow_inhibitor=True"):
+            net.compile()
+
+    def test_inhibitor_arc_compiles_with_negative_weight_when_opted_in(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("P", initial_tokens=0.0)
+        net.add_transition("T", threshold=0.5)
+        net.add_arc("P", "T", weight=2.0, inhibitor=True)
+        net.compile(allow_inhibitor=True)
+        assert net.W_in is not None
+        np.testing.assert_array_equal(net.W_in.toarray(), [[-2.0]])
+
+    def test_inhibitor_arc_rejects_transition_to_place_direction(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("P", initial_tokens=0.0)
+        net.add_transition("T", threshold=0.5)
+        with pytest.raises(
+            ValueError, match="only supported for Place->Transition"
+        ):
+            net.add_arc("T", "P", weight=1.0, inhibitor=True)
+
 
 # ── Packet B: Compiler tests ────────────────────────────────────────────────
 
