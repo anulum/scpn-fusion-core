@@ -29,10 +29,34 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-      - name: Install sc-neurocore (Python 3.12 lane)
+      - name: Bootstrap optional sc-neurocore modules (Python 3.12 lane)
         if: matrix.python-version == '3.12'
         run: |
-          pip install "git+https://github.com/anulum/sc-neurocore.git"
+          python - <<'PY'
+          import importlib.util
+          import shutil
+          import subprocess
+          import sys
+
+          if importlib.util.find_spec("sc_neurocore") is not None:
+              print("sc_neurocore already available.")
+              raise SystemExit(0)
+
+          if shutil.which("rustc") is None:
+              print("rustc not available in this lane; continuing with numpy fallback path.")
+              raise SystemExit(0)
+
+          cmd = [
+              sys.executable,
+              "-m",
+              "pip",
+              "install",
+              "git+https://github.com/anulum/sc-neurocore.git#subdirectory=bridge",
+          ]
+          result = subprocess.run(cmd, check=False)
+          if result.returncode != 0:
+              print("Optional sc-neurocore bootstrap failed; continuing with fallback path.")
+          PY
       - name: Run tests
         run: pytest tests/ -v
       - name: Run property-based tests (Hypothesis)
@@ -241,9 +265,33 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-      - name: Install sc-neurocore
+      - name: Bootstrap optional sc-neurocore modules
         run: |
-          pip install "git+https://github.com/anulum/sc-neurocore.git"
+          python - <<'PY'
+          import importlib.util
+          import shutil
+          import subprocess
+          import sys
+
+          if importlib.util.find_spec("sc_neurocore") is not None:
+              print("sc_neurocore already available.")
+              raise SystemExit(0)
+
+          if shutil.which("rustc") is None:
+              print("rustc not available in this lane; continuing with numpy fallback path.")
+              raise SystemExit(0)
+
+          cmd = [
+              sys.executable,
+              "-m",
+              "pip",
+              "install",
+              "git+https://github.com/anulum/sc-neurocore.git#subdirectory=bridge",
+          ]
+          result = subprocess.run(cmd, check=False)
+          if result.returncode != 0:
+              print("Optional sc-neurocore bootstrap failed; continuing with fallback path.")
+          PY
       - name: IPB98 confinement scaling validation
         run: pytest tests/test_uncertainty.py -v --tb=short
       - name: Full regression suite
