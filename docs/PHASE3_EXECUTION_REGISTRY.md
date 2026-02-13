@@ -97,6 +97,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | H5-024 | P1 | Control | Stabilize GAI-02 latency metric with deterministic hardware-normalized proxy | `src/scpn_fusion/control/torax_hybrid_loop.py` | TORAX-hybrid campaign reports deterministic loop-latency proxy independent of host jitter while preserving parity/avoidance thresholds and strict validation pass | `python -m pytest tests/test_gai_02_torax_hybrid.py -v`, `python validation/gai_02_torax_hybrid.py --strict`, `python -m pytest tests/ -q -x` |
 | H5-025 | P2 | Tests | Remove path-hack/cwd coupling from legacy physics smoke tests | `tests/test_physics.py` | Physics tests run via package imports and `tmp_path` fixture config files, with no `sys.path` mutation or cwd file writes | `python -m pytest tests/test_physics.py -v` |
 | H5-026 | P2 | Validation | Remove path-hack and hardcoded root path from ITER validation runner | `validation/validate_iter.py` | ITER validation script resolves config relative to repository root, exposes `--config`, and runs without `sys.path` mutation | `python validation/validate_iter.py --help` |
+| H5-027 | P2 | Tests | Remove path-hack/cwd dependency from legacy unittest aggregation harness | `tests/run_all_tests.py` | `run_all_tests.py` relies on package imports only and writes temp config into an isolated temporary directory (no cwd mutation) | `python tests/run_all_tests.py` |
 
 ## Task Accounting
 
@@ -104,7 +105,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 26
+- Post-S4 hardening tasks delivered: 27
 - Remaining in deferred pool after queue selection: 67
 
 ## Active Task
@@ -153,4 +154,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `H5-024`
 - Completed: `H5-025`
 - Completed: `H5-026`
+- Completed: `H5-027`
 - Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).

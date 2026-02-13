@@ -6,13 +6,11 @@
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 import unittest
-import sys
-import os
 import json
-import numpy as np
+import tempfile
+from pathlib import Path
 
-# Add src to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+import numpy as np
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
@@ -23,7 +21,8 @@ class TestFusionSystem(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Create a mini config for fast testing
-        cls.test_config_path = "test_config_ci.json"
+        cls._tmp_dir = tempfile.TemporaryDirectory()
+        cls.test_config_path = str(Path(cls._tmp_dir.name) / "test_config_ci.json")
         config = {
             "reactor_name": "Test-Unit",
             "grid_resolution": [30, 30], # Low res for speed
@@ -32,13 +31,12 @@ class TestFusionSystem(unittest.TestCase):
             "coils": [{"name": "PF1", "r": 2.0, "z": 3.0, "current": 1.0}],
             "solver": {"max_iterations": 10, "convergence_threshold": 1e-2, "relaxation_factor": 0.1}
         }
-        with open(cls.test_config_path, "w") as f:
+        with open(cls.test_config_path, "w", encoding="utf-8") as f:
             json.dump(config, f)
 
     @classmethod
     def tearDownClass(cls):
-        if os.path.exists(cls.test_config_path):
-            os.remove(cls.test_config_path)
+        cls._tmp_dir.cleanup()
 
     def test_01_kernel_initialization(self):
         """Test if FusionKernel loads and initializes grid correctly."""
