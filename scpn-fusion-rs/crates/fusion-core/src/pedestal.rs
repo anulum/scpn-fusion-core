@@ -166,4 +166,41 @@ mod tests {
         assert!(profiles.te[i_edge] < te_before);
         assert!(profiles.ne[i_edge] < ne_before);
     }
+
+    #[test]
+    fn test_elm_cooldown_blocks_retrigger_until_advanced() {
+        let mut model = PedestalModel::default();
+        let mut profiles = sample_profiles();
+
+        assert!(model.is_elm_triggered(5_000.0));
+        model.apply_elm_crash(&mut profiles);
+        assert!(
+            !model.is_elm_triggered(5_000.0),
+            "ELM cooldown should block immediate retriggering"
+        );
+
+        model.advance(10.0);
+        assert!(
+            model.is_elm_triggered(5_000.0),
+            "ELM trigger should recover after cooldown elapses"
+        );
+    }
+
+    #[test]
+    fn test_elm_crash_respects_minimum_profile_floors() {
+        let mut model = PedestalModel::default();
+        let n = 16;
+        let mut profiles = RadialProfiles {
+            rho: Array1::linspace(0.0, 1.0, n),
+            te: Array1::from_elem(n, 0.06),
+            ti: Array1::from_elem(n, 0.06),
+            ne: Array1::from_elem(n, 2.0e-4),
+            n_impurity: Array1::zeros(n),
+        };
+
+        model.apply_elm_crash(&mut profiles);
+        assert!(profiles.te.iter().all(|v| *v >= MIN_T_KEV));
+        assert!(profiles.ti.iter().all(|v| *v >= MIN_T_KEV));
+        assert!(profiles.ne.iter().all(|v| *v >= MIN_NE));
+    }
 }
