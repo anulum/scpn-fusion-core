@@ -419,6 +419,28 @@ class TestLevel1Determinism:
         )
         assert float(delta) > 0.0
 
+    def test_default_runtime_profile_is_adaptive_nonoracle_binary(
+        self, artifact_path: str
+    ) -> None:
+        art = load_artifact(artifact_path)
+        controller = NeuroSymbolicController(
+            artifact=art,
+            seed_base=102,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            sc_n_passes=64,
+            sc_bitflip_rate=0.0,
+        )
+        obs: ControlObservation = {"R_axis_m": 6.15, "Z_axis_m": 0.0}
+        controller.step(obs, 0)
+        delta = np.max(
+            np.abs(
+                np.asarray(controller.last_sc_firing)
+                - np.asarray(controller.last_oracle_firing)
+            )
+        )
+        assert float(delta) > 0.0
+
     def test_binary_probabilistic_margin_is_deterministic_and_nonoracle(
         self, artifact_path: str
     ) -> None:
