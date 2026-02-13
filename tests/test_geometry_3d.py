@@ -50,6 +50,19 @@ class _SparseBoundaryKernel(_DummyKernel):
         return (2.894, 0.0), -0.5
 
 
+class _EdgeAxisKernel(_DummyKernel):
+    def __init__(self) -> None:
+        super().__init__()
+        # Move magnetic axis near the inboard boundary so many rays immediately
+        # leave the domain and trigger low-point fallback behavior.
+        radius2 = (self.RR - 1.08) ** 2 + self.ZZ**2
+        self.Psi = 1.0 - radius2
+
+    def find_x_point(self, psi: np.ndarray) -> tuple[tuple[float, float], float]:
+        _ = psi
+        return (1.45, 0.0), 0.2
+
+
 def test_geometry_mesh_generation_shapes() -> None:
     kernel = _DummyKernel()
     builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
@@ -142,3 +155,17 @@ def test_generate_coil_mesh_placeholders() -> None:
     assert len(coils) == 2
     assert coils[0]["name"] == "PF1"
     assert "R" in coils[0] and "Z" in coils[0]
+
+
+def test_geometry_lcfs_low_point_edge_case_fallback() -> None:
+    kernel = _EdgeAxisKernel()
+    builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+
+    n_pol = 24
+    lcfs = builder._trace_lcfs(resolution_poloidal=n_pol, radial_steps=64)
+
+    # Fallback path should still return a full closed contour.
+    assert lcfs.shape == (n_pol, 2)
+    assert np.isfinite(lcfs).all()
+    assert np.all((lcfs[:, 0] >= kernel.R[0]) & (lcfs[:, 0] <= kernel.R[-1]))
+    assert np.all((lcfs[:, 1] >= kernel.Z[0]) & (lcfs[:, 1] <= kernel.Z[-1]))

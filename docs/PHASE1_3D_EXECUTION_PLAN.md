@@ -42,6 +42,7 @@ Source: `SCPN Fusion Core with Enhanced 3D Capabilities.md`
 ## Next Queue (Phase 1)
 
 All currently scoped Phase 1 items (`P1-001` through `P1-013`) are complete.
+Phase 2 execution is tracked in `docs/NEXT_SPRINT_EXECUTION_QUEUE.md` and normalized by `docs/3d_gaps.md`.
 
 ## Verification Commands
 

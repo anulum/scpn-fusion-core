@@ -1,0 +1,53 @@
+# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Disruption Toroidal Feature Tests
+# © 1998–2026 Miroslav Šotek. All rights reserved.
+# Contact: www.anulum.li | protoscience@anulum.li
+# ORCID: https://orcid.org/0009-0009-3560-0851
+# License: GNU AGPL v3 | Commercial licensing available
+# ──────────────────────────────────────────────────────────────────────
+"""Tests for toroidal-asymmetry-aware disruption feature path."""
+
+from __future__ import annotations
+
+import numpy as np
+
+from scpn_fusion.control.disruption_predictor import (
+    build_disruption_feature_vector,
+    predict_disruption_risk,
+)
+
+
+def test_build_disruption_feature_vector_includes_toroidal_terms() -> None:
+    signal = np.linspace(0.2, 1.0, 100)
+    observables = {
+        "toroidal_n1_amp": 0.4,
+        "toroidal_n2_amp": 0.2,
+        "toroidal_n3_amp": 0.1,
+        "toroidal_asymmetry_index": 0.6,
+        "toroidal_radial_spread": 0.05,
+    }
+    features = build_disruption_feature_vector(signal, observables)
+    assert features.shape == (11,)
+    assert features[6] == 0.4
+    assert features[7] == 0.2
+    assert features[8] == 0.1
+    assert features[9] == 0.6
+    assert features[10] == 0.05
+
+
+def test_predict_disruption_risk_increases_with_toroidal_asymmetry() -> None:
+    signal = np.full(128, 0.7, dtype=float)
+    low = predict_disruption_risk(signal, {"toroidal_n1_amp": 0.0})
+    high = predict_disruption_risk(
+        signal,
+        {
+            "toroidal_n1_amp": 1.2,
+            "toroidal_n2_amp": 0.8,
+            "toroidal_n3_amp": 0.5,
+            "toroidal_asymmetry_index": 1.6,
+            "toroidal_radial_spread": 0.4,
+        },
+    )
+    assert 0.0 <= low <= 1.0
+    assert 0.0 <= high <= 1.0
+    assert high > low

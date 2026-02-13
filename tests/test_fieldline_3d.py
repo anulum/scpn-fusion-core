@@ -103,3 +103,30 @@ def test_builder_poincare_map_from_kernel_path() -> None:
     assert poincare[np.pi / 2.0].shape[1] == 2
     assert len(poincare[0.0]) > 0
     assert len(poincare[np.pi / 2.0]) > 0
+
+
+def test_toroidal_asymmetry_observables_detect_helical_mode() -> None:
+    eq_axisym = VMECStyleEquilibrium3D(
+        r_axis=2.0,
+        z_axis=0.0,
+        a_minor=0.45,
+        kappa=1.4,
+    )
+    eq_helical = VMECStyleEquilibrium3D(
+        r_axis=2.0,
+        z_axis=0.0,
+        a_minor=0.45,
+        kappa=1.4,
+        modes=[FourierMode3D(m=1, n=1, r_cos=0.08, z_sin=0.05)],
+    )
+
+    tracer_axis = FieldLineTracer3D(eq_axisym, rotational_transform=0.4)
+    tracer_helical = FieldLineTracer3D(eq_helical, rotational_transform=0.4)
+    trace_axis = tracer_axis.trace_line(toroidal_turns=10, steps_per_turn=192)
+    trace_helical = tracer_helical.trace_line(toroidal_turns=10, steps_per_turn=192)
+
+    obs_axis = tracer_axis.toroidal_asymmetry_observables(trace_axis)
+    obs_helical = tracer_helical.toroidal_asymmetry_observables(trace_helical)
+
+    assert obs_helical.asymmetry_index > obs_axis.asymmetry_index + 1e-4
+    assert obs_helical.n1_amp > obs_axis.n1_amp

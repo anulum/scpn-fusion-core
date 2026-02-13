@@ -5,12 +5,17 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-import numpy as np
 import matplotlib.pyplot as plt
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
+import numpy as np
+
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except Exception:  # pragma: no cover - optional dependency path
+    torch = None
+    nn = None
+    optim = None
 
 # --- PHYSICS: MODIFIED RUTHERFORD EQUATION ---
 def simulate_tearing_mode(steps=1000):
@@ -54,31 +59,90 @@ def simulate_tearing_mode(steps=1000):
             
     return np.array(w_history), 0, -1
 
+
+def build_disruption_feature_vector(signal, toroidal_observables=None):
+    """
+    Build a compact feature vector for control-oriented disruption scoring.
+
+    Feature layout:
+      [mean, std, max, slope, energy, last,
+       toroidal_n1_amp, toroidal_n2_amp, toroidal_n3_amp,
+       toroidal_asymmetry_index, toroidal_radial_spread]
+    """
+    sig = np.asarray(signal, dtype=float).reshape(-1)
+    if sig.size == 0:
+        raise ValueError("signal must contain at least one sample")
+
+    mean = float(np.mean(sig))
+    std = float(np.std(sig))
+    max_val = float(np.max(sig))
+    slope = float((sig[-1] - sig[0]) / max(sig.size - 1, 1))
+    energy = float(np.mean(sig**2))
+    last = float(sig[-1])
+
+    obs = toroidal_observables or {}
+    n1 = float(obs.get("toroidal_n1_amp", 0.0))
+    n2 = float(obs.get("toroidal_n2_amp", 0.0))
+    n3 = float(obs.get("toroidal_n3_amp", 0.0))
+    asym = float(obs.get("toroidal_asymmetry_index", np.sqrt(n1 * n1 + n2 * n2 + n3 * n3)))
+    spread = float(obs.get("toroidal_radial_spread", 0.0))
+
+    return np.array(
+        [mean, std, max_val, slope, energy, last, n1, n2, n3, asym, spread],
+        dtype=float,
+    )
+
+
+def predict_disruption_risk(signal, toroidal_observables=None):
+    """
+    Lightweight deterministic disruption risk estimator (0..1) for control loops.
+
+    This supplements the Transformer pathway by explicitly consuming toroidal
+    asymmetry observables from 3D diagnostics.
+    """
+    features = build_disruption_feature_vector(signal, toroidal_observables)
+    mean, std, max_val, slope, energy, last, n1, n2, n3, asym, spread = features
+
+    thermal_term = 0.55 * max_val + 0.35 * std + 0.10 * energy + 0.25 * slope
+    asym_term = 1.10 * n1 + 0.70 * n2 + 0.45 * n3 + 0.50 * asym + 0.15 * spread
+    state_term = 0.15 * mean + 0.20 * last
+
+    logits = -4.0 + thermal_term + asym_term + state_term
+    return float(1.0 / (1.0 + np.exp(-logits)))
+
 # --- AI: TRANSFORMER MODEL ---
-class DisruptionTransformer(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.embedding = nn.Linear(1, 32)
-        self.pos_encoder = nn.Parameter(torch.zeros(1, 100, 32))
-        
-        encoder_layer = nn.TransformerEncoderLayer(d_model=32, nhead=4, dim_feedforward=64)
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=2)
-        
-        self.classifier = nn.Linear(32, 1) # Output: Probability of Disruption
-        self.sigmoid = nn.Sigmoid()
-        
-    def forward(self, src):
-        # src shape: [Batch, Seq_Len, 1]
-        x = self.embedding(src) + self.pos_encoder[:, :src.shape[1], :]
-        x = x.permute(1, 0, 2) # [Seq, Batch, Dim] for Transformer
-        
-        output = self.transformer(x)
-        
-        # Take the last time step embedding for classification
-        last_step = output[-1, :, :]
-        return self.sigmoid(self.classifier(last_step))
+if torch is not None:
+    class DisruptionTransformer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.embedding = nn.Linear(1, 32)
+            self.pos_encoder = nn.Parameter(torch.zeros(1, 100, 32))
+            
+            encoder_layer = nn.TransformerEncoderLayer(d_model=32, nhead=4, dim_feedforward=64)
+            self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=2)
+            
+            self.classifier = nn.Linear(32, 1) # Output: Probability of Disruption
+            self.sigmoid = nn.Sigmoid()
+            
+        def forward(self, src):
+            # src shape: [Batch, Seq_Len, 1]
+            x = self.embedding(src) + self.pos_encoder[:, :src.shape[1], :]
+            x = x.permute(1, 0, 2) # [Seq, Batch, Dim] for Transformer
+            
+            output = self.transformer(x)
+            
+            # Take the last time step embedding for classification
+            last_step = output[-1, :, :]
+            return self.sigmoid(self.classifier(last_step))
+else:  # pragma: no cover - only used without torch installed
+    class DisruptionTransformer:  # type: ignore[no-redef]
+        def __init__(self):
+            raise RuntimeError("Torch is required for DisruptionTransformer.")
 
 def train_predictor():
+    if torch is None or optim is None:
+        raise RuntimeError("Torch is required for train_predictor().")
+
     print("--- SCPN SAFETY AI: Disruption Prediction (Transformer) ---")
     
     # 1. Generate Data

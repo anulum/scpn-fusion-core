@@ -294,6 +294,7 @@ Struggling with convergence? See the [Solver Tuning Guide](docs/SOLVER_TUNING_GU
 - [Future Applications](docs/FUTURE_APPLICATIONS.md)
 - [Phase 1 3D Execution Plan](docs/PHASE1_3D_EXECUTION_PLAN.md)
 - [3D Gap Audit](docs/3d_gaps.md)
+- [Next Sprint Execution Queue](docs/NEXT_SPRINT_EXECUTION_QUEUE.md)
 - [Profiling Quickstart](profiling/README.md)
 - [Comprehensive Technical Study](SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md) (30,000+ words)
 

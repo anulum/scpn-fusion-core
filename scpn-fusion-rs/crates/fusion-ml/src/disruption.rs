@@ -110,6 +110,74 @@ pub fn normalize_sequence(signal: &[f64], target_len: usize) -> Vec<f64> {
     out
 }
 
+/// Reduced toroidal asymmetry observables for disruption-risk coupling.
+#[derive(Debug, Clone, Copy)]
+pub struct ToroidalAsymmetryObservables {
+    pub n1_amp: f64,
+    pub n2_amp: f64,
+    pub n3_amp: f64,
+    pub asymmetry_index: f64,
+    pub radial_spread: f64,
+}
+
+impl Default for ToroidalAsymmetryObservables {
+    fn default() -> Self {
+        Self {
+            n1_amp: 0.0,
+            n2_amp: 0.0,
+            n3_amp: 0.0,
+            asymmetry_index: 0.0,
+            radial_spread: 0.0,
+        }
+    }
+}
+
+/// Build compact disruption features and append toroidal asymmetry indicators.
+pub fn build_disruption_feature_vector(
+    signal: &[f64],
+    toroidal: Option<ToroidalAsymmetryObservables>,
+) -> Vec<f64> {
+    if signal.is_empty() {
+        return vec![0.0; 11];
+    }
+
+    let n = signal.len() as f64;
+    let mean = signal.iter().sum::<f64>() / n;
+    let var = signal.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / n;
+    let std = var.sqrt();
+    let max_val = signal
+        .iter()
+        .copied()
+        .fold(f64::NEG_INFINITY, f64::max)
+        .max(0.0);
+    let slope = if signal.len() > 1 {
+        (signal[signal.len() - 1] - signal[0]) / (signal.len() - 1) as f64
+    } else {
+        0.0
+    };
+    let energy = signal.iter().map(|v| v * v).sum::<f64>() / n;
+    let last = *signal.last().unwrap_or(&0.0);
+
+    let obs = toroidal.unwrap_or_default();
+    vec![
+        mean,
+        std,
+        max_val,
+        slope,
+        energy,
+        last,
+        obs.n1_amp,
+        obs.n2_amp,
+        obs.n3_amp,
+        obs.asymmetry_index,
+        obs.radial_spread,
+    ]
+}
+
+fn logistic(v: f64) -> f64 {
+    1.0 / (1.0 + (-v).exp())
+}
+
 // --- Tiny Transformer Implementation ---
 
 /// Layer normalization over last dimension.
@@ -314,6 +382,32 @@ impl DisruptionTransformer {
         let logit = last.dot(&self.w_class) + self.b_class;
         1.0 / (1.0 + (-logit).exp()) // sigmoid
     }
+
+    /// Forward pass augmented with toroidal asymmetry observables.
+    pub fn forward_with_observables(
+        &self,
+        signal: &[f64],
+        toroidal: Option<ToroidalAsymmetryObservables>,
+    ) -> f64 {
+        let base_prob = self.forward(signal);
+        let features = build_disruption_feature_vector(signal, toroidal);
+
+        let asym_logit = -4.0
+            + 0.55 * features[2]
+            + 0.35 * features[1]
+            + 0.10 * features[4]
+            + 0.25 * features[3]
+            + 1.10 * features[6]
+            + 0.70 * features[7]
+            + 0.45 * features[8]
+            + 0.50 * features[9]
+            + 0.15 * features[10]
+            + 0.15 * features[0]
+            + 0.20 * features[5];
+
+        let asym_prob = logistic(asym_logit);
+        (0.75 * base_prob + 0.25 * asym_prob).clamp(0.0, 1.0)
+    }
 }
 
 impl Default for DisruptionTransformer {
@@ -391,5 +485,45 @@ mod tests {
         let v = Array2::from_elem((10, 8), 0.1);
         let out = scaled_attention(&q, &k, &v);
         assert_eq!(out.dim(), (10, 8));
+    }
+
+    #[test]
+    fn test_feature_vector_carries_toroidal_observables() {
+        let signal = vec![0.5, 0.7, 0.8, 1.0];
+        let obs = ToroidalAsymmetryObservables {
+            n1_amp: 0.2,
+            n2_amp: 0.1,
+            n3_amp: 0.05,
+            asymmetry_index: 0.25,
+            radial_spread: 0.04,
+        };
+        let features = build_disruption_feature_vector(&signal, Some(obs));
+        assert_eq!(features.len(), 11);
+        assert!((features[6] - 0.2).abs() < 1e-12);
+        assert!((features[9] - 0.25).abs() < 1e-12);
+        assert!((features[10] - 0.04).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_forward_with_observables_increases_risk_when_asymmetry_high() {
+        let model = DisruptionTransformer::new();
+        let signal = vec![0.2; 100];
+        let low = model.forward_with_observables(&signal, None);
+        let high = model.forward_with_observables(
+            &signal,
+            Some(ToroidalAsymmetryObservables {
+                n1_amp: 1.6,
+                n2_amp: 1.1,
+                n3_amp: 0.8,
+                asymmetry_index: 2.1,
+                radial_spread: 0.5,
+            }),
+        );
+        assert!(
+            high > low,
+            "High toroidal asymmetry should increase disruption risk: {} <= {}",
+            high,
+            low
+        );
     }
 }

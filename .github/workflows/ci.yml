@@ -51,23 +51,27 @@ jobs:
       - name: Run 3D quickstart smoke
         run: |
           python examples/run_3d_flux_quickstart.py --toroidal 12 --poloidal 12 --output artifacts/ci_3d_smoke.obj
+          python examples/run_3d_flux_quickstart.py --vmec-like --n1-amplitude 0.04 --toroidal 12 --poloidal 12 --output artifacts/ci_3d_vmec_smoke.obj
       - name: Validate OBJ artifact
         run: |
           python - <<'PY'
           from pathlib import Path
-          p = Path("artifacts/ci_3d_smoke.obj")
-          if not p.exists() or p.stat().st_size == 0:
-              raise SystemExit("OBJ artifact missing or empty")
-          verts = 0
-          faces = 0
-          for line in p.read_text(encoding="utf-8").splitlines():
-              if line.startswith("v "):
-                  verts += 1
-              elif line.startswith("f "):
-                  faces += 1
-          if verts <= 0 or faces <= 0:
-              raise SystemExit(f"Invalid mesh content: verts={verts}, faces={faces}")
-          print(f"OBJ smoke OK: verts={verts}, faces={faces}")
+          def validate_obj(path: Path) -> None:
+              if not path.exists() or path.stat().st_size == 0:
+                  raise SystemExit(f"OBJ artifact missing or empty: {path}")
+              verts = 0
+              faces = 0
+              for line in path.read_text(encoding="utf-8").splitlines():
+                  if line.startswith("v "):
+                      verts += 1
+                  elif line.startswith("f "):
+                      faces += 1
+              if verts <= 0 or faces <= 0:
+                  raise SystemExit(f"Invalid mesh content for {path}: verts={verts}, faces={faces}")
+              print(f"OBJ smoke OK {path.name}: verts={verts}, faces={faces}")
+
+          validate_obj(Path("artifacts/ci_3d_smoke.obj"))
+          validate_obj(Path("artifacts/ci_3d_vmec_smoke.obj"))
           PY
 
   rmse-dashboard-smoke:
