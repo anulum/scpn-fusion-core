@@ -98,16 +98,28 @@ def _encode_weight_matrix_packed(
     R, C = W.shape
     n_words = int(np.ceil(bitstream_length / 64))
     packed = np.zeros((R, C, n_words), dtype=np.uint64)
+    probs = np.clip(np.asarray(W, dtype=np.float64), 0.0, 1.0)
 
-    rng_seed = seed
-    for r in range(R):
-        for c in range(C):
-            p = float(np.clip(W[r, c], 0.0, 1.0))
-            rng = _SC_RNG(rng_seed)
-            bits = generate_bernoulli_bitstream(p, bitstream_length, rng=rng)
-            packed[r, c, :] = pack_bitstream(bits)
-            rng_seed += 1
+    if _HAS_SC_NEUROCORE:
+        rng_seed = seed
+        for r in range(R):
+            for c in range(C):
+                rng = _SC_RNG(rng_seed)
+                bits = generate_bernoulli_bitstream(float(probs[r, c]), bitstream_length, rng=rng)
+                packed[r, c, :] = pack_bitstream(bits)
+                rng_seed += 1
+        return packed
 
+    # NumPy fallback (no sc_neurocore): deterministic Bernoulli bitstreams
+    # using one RNG stream and vectorized packing across all matrix entries.
+    rng = np.random.default_rng(int(seed))
+    streams = (rng.random((R, C, bitstream_length)) < probs[:, :, None]).astype(np.uint8)
+    pad = n_words * 64 - bitstream_length
+    if pad > 0:
+        streams = np.pad(streams, ((0, 0), (0, 0), (0, pad)), mode="constant")
+    bits = streams.reshape(R, C, n_words, 64).astype(np.uint64)
+    shifts = np.arange(64, dtype=np.uint64).reshape(1, 1, 1, 64)
+    packed[:, :, :] = np.sum(bits << shifts, axis=-1, dtype=np.uint64)
     return packed
 
 
