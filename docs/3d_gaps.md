@@ -46,12 +46,38 @@ The following gaps block full 3D physics fidelity.
 | GAI-02 | TORAX hybrid real-time control loop integration | Stable hybrid loop execution on NSTX-U digital-twin scenarios with closed-loop control hooks | Integrate/fork DeepMind TORAX workflow into `run_realtime_simulation.py` and couple with existing SNN controller path |
 | GAI-03 | HEAT-ML magnetic shadow surrogate for divertor optimization | Magnetic shadow prediction runtime `<1 s` per scenario with optimization-ready outputs | Add HEAT-ML-style surrogate and integrate into MVR scanner heat-flux optimization workflow |
 
+## Additional Requested Tasks (2026-02-13, Batch B: Compact/Liquid-Metal + Deployment)
+
+| Task ID | Scope | Target Metric | Planned Extension |
+|---|---|---|---|
+| GMVR-01 | Reground MVR scanner constraints using compact/liquid-metal + HTS assumptions | Feasible `R ~1.2-1.5 m`, `Q > 5`, divertor flux `<=45 MW/m^2`, `Zeff <=0.4`, REBCO-like peak field up to `21 T` | Update MVR constraint envelope and rerun scan with DOE liquid-Li and compact-HTS bounded assumptions |
+| GMVR-02 | TEMHD divertor MHD pressure-loss + velocity-coupled evaporation | Stable operating windows in reduced 3D toroidal runs across slow (`~1 mm/s`) to fast (`~10 m/s`) flow regimes | Prototype in code execution path and integrate reduced model into `engineering/divertor.py` |
+| GMVR-03 | Stellarator extension and non-axisymmetric control compatibility | Benchmarkable non-axisymmetric geometry/control path against VMEC++-style references | Extend `geometry_3d.py` for stellarator-like non-axisymmetric fields and couple with SNN stability hooks |
+| GDEP-01 | NSTX-U/SPARC digital-twin data hook | Real-time ingest + scenario-planning loop over synthetic/streamed diagnostics | Add ingestion and planning scaffolding under `validation/` for STELLAR-AI-style emulation |
+| GDEP-02 | GPU integration completion (multigrid + neuromorphic inference) | `~2 ms` multigrid solves with end-to-end GPU path and deployable edge-inference hooks | Complete `wgpu` multigrid pipeline and add SNN inference acceleration path (including Loihi-facing API abstractions) |
+| GDEP-03 | Blind validation on unseen EU-DEMO/K-DEMO-style scenarios | Internal RMSE dashboards at SOTA-parity envelopes for core-edge metrics | Add unseen-data validation harness and reporting in `validation/` dashboards |
+| GDEP-04 | Resilience proof suite for noisy/faulty control loops | Demonstrated robustness advantage of SNN over baseline NN/RL under fault/noise campaigns | Add fault/noise campaign runner (bit-flips + stochastic noise) and comparative control metrics |
+| GDEP-05 | v2.0-cutting-edge release tag and narrative | Versioned release package with changelog traceability for new hybrid stack | Prepare `v2.0-cutting-edge` release notes and version tags once required tasks are complete |
+
+## Additional Requested Tasks (2026-02-13, Batch C: Grey-Zone Physics + Numerical Structure)
+
+| Task ID | Scope | Target Metric | Planned Extension |
+|---|---|---|---|
+| GPHY-01 | PIC/MHD hybrid overlay for runaway-electron and SOL non-Maxwellian behavior | Particle tracker coupled to grid current with bounded runtime overhead and disruption-wall impact observables | Add `fusion-core/src/particles.rs` with Boris pusher and feed particle-derived current back into Grad-Shafranov/current closures |
+| GPHY-02 | Symplectic/geometric integration integrity for long-pulse runs | Reduced numerical energy drift over long-pulse scenarios relative to RK baselines | Introduce symplectic integrators in `fusion-math` and preserve field-line/Poincare invariants in integration pipelines |
+| GPHY-03 | Hamiltonian-constrained ML surrogate path | Improved long-horizon conservation behavior vs unconstrained operator baselines | Add Hamiltonian-informed surrogate track (HNN-oriented) alongside FNO/Torch paths for conservation-sensitive modules |
+| GPHY-04 | Non-LTE wall/impurity radiative model integration | Improved divertor/wall radiation fidelity via species-state-aware emission coefficients | Integrate reduced collisional-radiative/PEC lookup workflow (ADAS-derived tables) into wall/divertor interaction models |
+| GPHY-05 | Isogeometric (NURBS/B-spline) boundary fidelity path | Reduced boundary-shape discretization artifacts in magnetic/field calculations | Add spline/NURBS-ready geometry representation and coupling hooks for Grad-Shafranov boundary handling |
+| GPHY-06 | Causality-aware control and runtime specialization | Delay/noise-aware MPC stability under realistic sensor/actuator latency plus runtime-specialized kernels for regime switching | Extend `digital_twin.rs` with stochastic noise layers, `mpc.rs` with delay-aware formulation, and investigate LLVM/InkWell JIT hooks for runtime solver specialization |
+
 ## Backlog Summary
 
 - Remaining 3D gaps: `G3D-05`, `G3D-07` (2 tasks)
 - Added neuromorphic/control tasks: `GNEU-01`, `GNEU-02`, `GNEU-03` (3 tasks)
 - Added AI-surrogate integration tasks: `GAI-01`, `GAI-02`, `GAI-03` (3 tasks)
-- Total remaining tracked tasks: 8
+- Added compact/liquid-metal + deployment tasks: `GMVR-01..03`, `GDEP-01..05` (8 tasks)
+- Added grey-zone physics + numerical-structure tasks: `GPHY-01..06` (6 tasks)
+- Total remaining tracked tasks: 22
 
 ## Phase 2 Entry Criteria
 
