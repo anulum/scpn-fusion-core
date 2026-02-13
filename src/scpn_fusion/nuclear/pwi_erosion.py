@@ -60,7 +60,7 @@ class SputteringPhysics:
         Y = self.Q * s_n * threshold_term * f_alpha
         return max(0.0, Y)
 
-    def calculate_erosion_rate(self, flux_particles_m2_s, T_ion_eV):
+    def calculate_erosion_rate(self, flux_particles_m2_s, T_ion_eV, angle_deg=45.0):
         """
         Calculates macroscopic erosion rate (mm/year).
         """
@@ -70,7 +70,7 @@ class SputteringPhysics:
         E_impact = 5.0 * T_ion_eV
         
         # 2. Yield
-        Y = self.calculate_yield(E_impact)
+        Y = self.calculate_yield(E_impact, angle_deg=angle_deg)
         
         # 3. Gross Erosion Flux (atoms/m2/s)
         Flux_erosion = flux_particles_m2_s * Y
@@ -82,9 +82,6 @@ class SputteringPhysics:
         # 5. Convert to thickness (mm/year)
         # Mass loss rate = Flux_net * Atomic_Mass / Avogadro
         # Volume loss rate = Mass_rate / Density
-        
-        Avogadro = 6.022e23
-        mass_per_atom_g = self.atomic_mass / Avogadro
         
         # m/s
         recession_speed = (Flux_net * (self.atomic_mass * 1.66e-27)) / (self.density * 1000) 

@@ -27,6 +27,26 @@ def test_yield_increases_with_energy_above_threshold() -> None:
     assert 0.0 <= y1 <= y2 <= y3
 
 
+def test_yield_increases_toward_grazing_angles() -> None:
+    pwi = SputteringPhysics("Tungsten")
+    base_energy = 900.0
+    y0 = pwi.calculate_yield(base_energy, angle_deg=0.0)
+    y45 = pwi.calculate_yield(base_energy, angle_deg=45.0)
+    y80 = pwi.calculate_yield(base_energy, angle_deg=80.0)
+    assert 0.0 <= y0 <= y45 <= y80
+
+
+def test_yield_angle_clamping_is_stable() -> None:
+    pwi = SputteringPhysics("Tungsten")
+    energy = 900.0
+    assert pwi.calculate_yield(energy, angle_deg=-15.0) == pwi.calculate_yield(
+        energy, angle_deg=0.0
+    )
+    assert pwi.calculate_yield(energy, angle_deg=95.0) == pwi.calculate_yield(
+        energy, angle_deg=89.0
+    )
+
+
 def test_erosion_reduces_with_higher_redeposition() -> None:
     low_redep = SputteringPhysics("Tungsten", redeposition_factor=0.8)
     high_redep = SputteringPhysics("Tungsten", redeposition_factor=0.98)
@@ -37,6 +57,19 @@ def test_erosion_reduces_with_higher_redeposition() -> None:
     r2 = high_redep.calculate_erosion_rate(flux, ion_temp)
     assert r1["Erosion_mm_year"] > r2["Erosion_mm_year"]
     assert r1["Net_Flux"] > r2["Net_Flux"]
+
+
+def test_redeposition_factor_is_bounded_and_controls_net_flux() -> None:
+    low = SputteringPhysics("Tungsten", redeposition_factor=-1.0)
+    high = SputteringPhysics("Tungsten", redeposition_factor=3.0)
+    assert low.redeposition_factor == 0.0
+    assert abs(high.redeposition_factor - 0.999) < 1e-12
+
+    out_low = low.calculate_erosion_rate(1e24, 60.0)
+    out_high = high.calculate_erosion_rate(1e24, 60.0)
+    assert out_low["Net_Flux"] >= out_high["Net_Flux"]
+    assert out_low["Impurity_Source"] == out_low["Net_Flux"]
+    assert out_high["Impurity_Source"] == out_high["Net_Flux"]
 
 
 def test_erosion_outputs_finite_and_nonnegative() -> None:
