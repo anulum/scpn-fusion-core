@@ -33,6 +33,21 @@ The following gaps block full 3D physics fidelity.
 5. G3D-01 (reduced VMEC-like native 3D flux coordinates) - completed
 6. G3D-02 (reduced field-line tracing + Poincare diagnostics) - completed
 7. G3D-05 (3D blanket neutronics surrogate)
+8. G3D-07 (3D instability observables for control)
+
+## Additional Requested Tasks (2026-02-13)
+
+| Task ID | Scope | Target Metric | Planned Extension |
+|---|---|---|---|
+| GNEU-01 | Benchmark SNN compiler vs SOTA RL tearing-mode avoidance baseline (DIII-D-style, 2025 references) | `>95%` match vs DeepMind TORAX baseline; bit-flip resilience recovery `<1 ms` on synthetic disruptions | Extend `scpn/neuro_symbolic_compiler.py` with RL baseline harness + fault-injection resilience tests |
+| GNEU-02 | Neuromorphic anomaly detection aligned with Startorus supervised/unsupervised early-alarm style | Robust early MHD/liquid-flow instability alarms under random perturbations | Extend `control/disruption_predictor.rs` with supervised+unsupervised alarm path and `proptest` perturbation coverage |
+| GNEU-03 | Ice pellet fueling control mode via Petri-to-SNN controller path | Plasma density tracking error `<=1e-3` on ITER config scenarios | Add fueling mode implementation in `modes/fueling.py` with ITER-oriented simulation loop + regression tests |
+
+## Backlog Summary
+
+- Remaining 3D gaps: `G3D-05`, `G3D-07` (2 tasks)
+- Added neuromorphic/control tasks: `GNEU-01`, `GNEU-02`, `GNEU-03` (3 tasks)
+- Total remaining tracked tasks: 5
 
 ## Phase 2 Entry Criteria
 
