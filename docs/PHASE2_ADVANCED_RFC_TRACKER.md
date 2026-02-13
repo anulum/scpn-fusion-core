@@ -18,7 +18,7 @@ Legend:
 
 | Task ID | Status | Path Mapping | Data + License | Metrics Protocol | CI Cost | Owner |
 |---|---|---|---|---|---|---|
-| GNEU-01 | Pending | Pending | Pending | Pending | Pending | Unassigned |
+| GNEU-01 | Ready | Done (`docs/rfc/GNEU-01_RFC.md`) | Done (synthetic-only v1 scope) | Done (`docs/rfc/GNEU-01_RFC.md`) | Done (<=60s CI target) | Unassigned |
 | GNEU-02 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GNEU-03 | Pending | Pending | Pending | Pending | Pending | Unassigned |
 | GAI-01 | Pending | Pending | Pending | Pending | Pending | Unassigned |
