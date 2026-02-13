@@ -7,8 +7,6 @@
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
-import os
 
 class TEMHD_Stabilizer:
     """
@@ -30,37 +28,57 @@ class TEMHD_Stabilizer:
         self.T_wall = 300.0
 
     def solve_tridiagonal(self, a, b, c, d):
-        n = len(d)
-        cp = np.zeros(n-1)
-        dp = np.zeros(n)
-        res = np.zeros(n)
-        
-        cp[0] = c[0] / b[0]
-        dp[0] = d[0] / b[0]
-        
-        for i in range(1, n-1):
-            m = b[i] - a[i-1] * cp[i-1]
-            cp[i] = c[i] / m
-            dp[i] = (d[i] - a[i-1] * dp[i-1]) / m
-            
-        # Last element
-        m = b[-1] - a[-1] * cp[-1]
-        dp[-1] = (d[-1] - a[-1] * dp[-1]) / m # Wait, fixed below
-        
-        # Standard Thomas
-        c_prime = np.zeros(n)
-        d_prime = np.zeros(n)
-        c_prime[0] = c[0] / b[0]
-        d_prime[0] = d[0] / b[0]
-        for i in range(1, n-1):
-            den = b[i] - a[i-1] * c_prime[i-1]
-            c_prime[i] = c[i] / den
-            d_prime[i] = (d[i] - a[i-1] * d_prime[i-1]) / den
-        d_prime[-1] = (d[-1] - a[-1] * d_prime[-2]) / (b[-1] - a[-1] * c_prime[-2])
-        
+        """Solve tridiagonal system Ax=d via Thomas algorithm.
+
+        Parameters
+        ----------
+        a : sub-diagonal (n-1)
+        b : diagonal (n)
+        c : super-diagonal (n-1)
+        d : rhs (n)
+        """
+        a = np.asarray(a, dtype=float)
+        b = np.asarray(b, dtype=float)
+        c = np.asarray(c, dtype=float)
+        d = np.asarray(d, dtype=float)
+
+        n = int(d.size)
+        if b.size != n:
+            raise ValueError(f"b length {b.size} must equal d length {n}")
+        if n == 0:
+            return np.array([], dtype=float)
+        if a.size != max(n - 1, 0) or c.size != max(n - 1, 0):
+            raise ValueError(
+                f"Invalid tridiagonal sizes: len(a)={a.size}, len(b)={b.size}, "
+                f"len(c)={c.size}, len(d)={n}"
+            )
+
+        if n == 1:
+            if abs(b[0]) < 1e-14:
+                raise ValueError("Singular diagonal encountered in tridiagonal solve.")
+            return np.array([d[0] / b[0]], dtype=float)
+
+        c_prime = np.zeros(n - 1, dtype=float)
+        d_prime = np.zeros(n, dtype=float)
+
+        den = b[0]
+        if abs(den) < 1e-14:
+            raise ValueError("Singular diagonal encountered in tridiagonal solve.")
+        c_prime[0] = c[0] / den
+        d_prime[0] = d[0] / den
+
+        for i in range(1, n):
+            den = b[i] - a[i - 1] * c_prime[i - 1]
+            if abs(den) < 1e-14:
+                raise ValueError("Singular diagonal encountered in tridiagonal solve.")
+            if i < n - 1:
+                c_prime[i] = c[i] / den
+            d_prime[i] = (d[i] - a[i - 1] * d_prime[i - 1]) / den
+
+        res = np.zeros(n, dtype=float)
         res[-1] = d_prime[-1]
-        for i in range(n-2, -1, -1):
-            res[i] = d_prime[i] - c_prime[i] * res[i+1]
+        for i in range(n - 2, -1, -1):
+            res[i] = d_prime[i] - c_prime[i] * res[i + 1]
         return res
 
     def step(self, heat_flux_MW_m2, dt=0.1):
@@ -75,8 +93,6 @@ class TEMHD_Stabilizer:
         k_eff = self.k_thermal * (1.0 + 0.2 * Pe)
         
         r = (k_eff * dt) / (self.rho * self.cp * self.dz**2)
-        n_solve = self.N - 1
-        
         # Matrix diagonals
         b = 1.0 + 2.0 * r[1:]
         a = -r[2:] # Sub
