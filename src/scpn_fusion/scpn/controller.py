@@ -23,14 +23,11 @@ from numpy.typing import NDArray
 
 from .artifact import Artifact
 from .contracts import (
-    ActionSpec,
     ControlAction,
     FeatureAxisSpec,
     ControlScales,
     ControlTargets,
-    _clip01,
     _seed64,
-    decode_actions,
     extract_features,
 )
 
@@ -162,30 +159,48 @@ class NeuroSymbolicController:
 
         # Live state
         self.marking: List[float] = artifact.initial_state.marking[:]
-        self._prev_actions: List[float] = [
-            0.0 for _ in artifact.readout.actions
-        ]
+        injections = artifact.initial_state.place_injections
+        self._inj_sources = [inj.source for inj in injections]
+        self._inj_count = len(self._inj_sources)
+        self._inj_place_ids = np.asarray(
+            [inj.place_id for inj in injections], dtype=np.int64
+        )
+        self._inj_scales = np.asarray(
+            [inj.scale for inj in injections], dtype=np.float64
+        )
+        self._inj_offsets = np.asarray(
+            [inj.offset for inj in injections], dtype=np.float64
+        )
+        self._inj_clamp_mask = np.asarray(
+            [bool(inj.clamp_0_1) for inj in injections], dtype=np.bool_
+        )
+        self._inj_has_clamp = bool(np.any(self._inj_clamp_mask))
+
+        self._action_names = [a.name for a in artifact.readout.actions]
+        self._action_pos_idx = np.asarray(
+            [a.pos_place for a in artifact.readout.actions], dtype=np.int64
+        )
+        self._action_neg_idx = np.asarray(
+            [a.neg_place for a in artifact.readout.actions], dtype=np.int64
+        )
+        self._action_gains = np.asarray(artifact.readout.gains, dtype=np.float64)
+        self._action_abs_max = np.asarray(artifact.readout.abs_max, dtype=np.float64)
+        self._action_slew_per_s = np.asarray(
+            artifact.readout.slew_per_s, dtype=np.float64
+        )
+        self._dt = float(artifact.meta.dt_control_s)
+        self._prev_actions = np.zeros(len(self._action_names), dtype=np.float64)
         self.last_oracle_firing: List[float] = []
         self.last_sc_firing: List[float] = []
         self.last_oracle_marking: List[float] = self.marking[:]
         self.last_sc_marking: List[float] = self.marking[:]
-
-        # Build ActionSpec list for decode_actions
-        self._action_specs = [
-            ActionSpec(
-                name=a.name,
-                pos_place=a.pos_place,
-                neg_place=a.neg_place,
-            )
-            for a in artifact.readout.actions
-        ]
 
     # ── Public API ───────────────────────────────────────────────────────
 
     def reset(self) -> None:
         """Restore initial marking and zero previous actions."""
         self.marking = self.artifact.initial_state.marking[:]
-        self._prev_actions = [0.0 for _ in self.artifact.readout.actions]
+        self._prev_actions.fill(0.0)
         self._oracle_pending.fill(0.0)
         self._sc_pending.fill(0.0)
         self._oracle_cursor = 0
@@ -228,37 +243,32 @@ class NeuroSymbolicController:
         )
 
         # 2. Inject features into marking
-        self._inject_places(feats)
+        m = np.asarray(self.marking, dtype=np.float64)
+        m = self._inject_places(m, feats)
 
         # 3. Oracle float path (optional)
         if self._enable_oracle_diagnostics:
-            f_oracle, m_oracle = self._oracle_step()
+            f_oracle, m_oracle = self._oracle_step(m)
         else:
-            f_oracle = []
-            m_oracle = []
+            f_oracle = np.asarray([], dtype=np.float64)
+            m_oracle = np.asarray([], dtype=np.float64)
 
         # 4. Stochastic path
-        f_sc, m_sc = self._sc_step(k)
+        f_sc, m_sc = self._sc_step(m, k)
 
         # Diagnostics (used by deterministic benchmark gates)
-        self.last_oracle_firing = f_oracle[:]
-        self.last_sc_firing = f_sc[:]
-        self.last_oracle_marking = m_oracle[:] if self._enable_oracle_diagnostics else []
-        self.last_sc_marking = m_sc[:]
+        self.last_oracle_firing = f_oracle.tolist()
+        self.last_sc_firing = f_sc.tolist()
+        self.last_oracle_marking = (
+            m_oracle.tolist() if self._enable_oracle_diagnostics else []
+        )
+        self.last_sc_marking = m_sc.tolist()
 
         # Commit SC state
-        self.marking = m_sc
+        self.marking = m_sc.tolist()
 
         # 5. Decode actions
-        actions_dict = decode_actions(
-            marking=self.marking,
-            actions_spec=self._action_specs,
-            gains=self.artifact.readout.gains,
-            abs_max=self.artifact.readout.abs_max,
-            slew_per_s=self.artifact.readout.slew_per_s,
-            dt=self.artifact.meta.dt_control_s,
-            prev=self._prev_actions,
-        )
+        actions_dict = self._decode_actions(m_sc)
 
         t1 = time.perf_counter()
 
@@ -268,8 +278,8 @@ class NeuroSymbolicController:
                 "k": int(k),
                 "obs": dict(obs),
                 "features": feats,
-                "f_oracle": f_oracle,
-                "f_sc": f_sc,
+                "f_oracle": f_oracle.tolist(),
+                "f_sc": f_sc.tolist(),
                 "marking": self.marking,
                 "actions": actions_dict,
                 "timing_ms": (t1 - t0) * 1000.0,
@@ -286,24 +296,34 @@ class NeuroSymbolicController:
 
     # ── Internal ─────────────────────────────────────────────────────────
 
-    def _inject_places(self, feats: Dict[str, float]) -> None:
-        """Write features into marking via place_injections config."""
-        for inj in self.artifact.initial_state.place_injections:
-            pid = inj.place_id
-            v = feats[inj.source] * inj.scale + inj.offset
-            if inj.clamp_0_1:
-                v = _clip01(v)
-            self.marking[pid] = v
+    def _inject_places(self, marking: FloatArray, feats: Dict[str, float]) -> FloatArray:
+        """Write features into a marking vector via place_injections config."""
+        if self._inj_count == 0:
+            return marking
 
-    def _oracle_step(self) -> Tuple[List[float], List[float]]:
+        values = np.fromiter(
+            (feats[src] for src in self._inj_sources),
+            dtype=np.float64,
+            count=self._inj_count,
+        )
+        values = values * self._inj_scales + self._inj_offsets
+        if self._inj_has_clamp:
+            values = values.copy()
+            values[self._inj_clamp_mask] = np.clip(
+                values[self._inj_clamp_mask], 0.0, 1.0
+            )
+
+        out = marking.copy()
+        out[self._inj_place_ids] = values
+        return out
+
+    def _oracle_step(self, marking: FloatArray) -> Tuple[FloatArray, FloatArray]:
         """Float-path Petri step.
 
         Returns (firing_vector, next_marking).
         """
-        m = np.asarray(self.marking, dtype=np.float64)
-
         # Activation: a = W_in @ m
-        a = self._dense_activations(m)
+        a = self._dense_activations(marking)
 
         # Firing decision
         if self._firing_mode == "fractional":
@@ -317,14 +337,13 @@ class NeuroSymbolicController:
         )
 
         # Marking update: m' = clip(m - W_in^T @ f + W_out @ f, 0, 1)
-        m2 = self._marking_update(m, f_timed)
+        m2 = self._marking_update(marking, f_timed)
 
-        return f_timed.tolist(), m2.tolist()
+        return f_timed, m2
 
-    def _sc_step(self, k: int) -> Tuple[List[float], List[float]]:
+    def _sc_step(self, marking: FloatArray, k: int) -> Tuple[FloatArray, FloatArray]:
         """Deterministic stochastic path with optional bit-flip fault injection."""
-        m = np.asarray(self.marking, dtype=np.float64)
-        a = self._dense_activations(m)
+        a = self._dense_activations(marking)
 
         if self._firing_mode == "fractional":
             margins = np.maximum(self._margins, 1e-12)
@@ -365,12 +384,12 @@ class NeuroSymbolicController:
         f_timed, self._sc_cursor = self._apply_transition_timing(
             f, self._sc_pending, self._sc_cursor
         )
-        m2 = self._marking_update(m, f_timed)
+        m2 = self._marking_update(marking, f_timed)
         if self._sc_bitflip_rate > 0.0:
             assert rng is not None
             m2 = self._apply_bit_flip_faults(m2, rng)
 
-        return f_timed.tolist(), m2.tolist()
+        return f_timed, m2
 
     def _apply_transition_timing(
         self,
@@ -416,6 +435,22 @@ class NeuroSymbolicController:
         cons = self._W_in.T @ firing
         prod = self._W_out @ firing
         return np.asarray(np.clip(marking - cons + prod, 0.0, 1.0), dtype=np.float64)
+
+    def _decode_actions(self, marking: FloatArray) -> Dict[str, float]:
+        if not self._action_names:
+            return {}
+
+        raw = (
+            (marking[self._action_pos_idx] - marking[self._action_neg_idx])
+            * self._action_gains
+        )
+        max_delta = self._action_slew_per_s * self._dt
+        raw = np.clip(raw, self._prev_actions - max_delta, self._prev_actions + max_delta)
+        raw = np.clip(raw, -self._action_abs_max, self._action_abs_max)
+        self._prev_actions = np.asarray(raw, dtype=np.float64)
+        return {
+            name: float(self._prev_actions[i]) for i, name in enumerate(self._action_names)
+        }
 
     def _apply_bit_flip_faults(
         self, values: FloatArray, rng: np.random.Generator
