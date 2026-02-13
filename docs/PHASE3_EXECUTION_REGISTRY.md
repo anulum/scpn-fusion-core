@@ -99,6 +99,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | H5-026 | P2 | Validation | Remove path-hack and hardcoded root path from ITER validation runner | `validation/validate_iter.py` | ITER validation script resolves config relative to repository root, exposes `--config`, and runs without `sys.path` mutation | `python validation/validate_iter.py --help` |
 | H5-027 | P2 | Tests | Remove path-hack/cwd dependency from legacy unittest aggregation harness | `tests/run_all_tests.py` | `run_all_tests.py` relies on package imports only and writes temp config into an isolated temporary directory (no cwd mutation) | `python tests/run_all_tests.py` |
 | H5-028 | P2 | Diagnostics | Remove path-hack/hardcoded root dependency from diagnostics demo runner | `src/scpn_fusion/diagnostics/run_diagnostics.py` | Diagnostics demo resolves config/output paths via `Path` defaults and exposes CLI flags without `sys.path` mutation | `python src/scpn_fusion/diagnostics/run_diagnostics.py --help` |
+| H5-029 | P2 | Validation | Remove path injection from SPARC validation CLI and rely on package import path | `validation/validate_against_sparc.py` | SPARC validation script runs without mutating `sys.path`, preserving existing metrics/report behavior | `python validation/validate_against_sparc.py` |
 
 ## Task Accounting
 
@@ -106,7 +107,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 28
+- Post-S4 hardening tasks delivered: 29
 - Remaining in deferred pool after queue selection: 67
 
 ## Active Task
@@ -157,4 +158,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `H5-026`
 - Completed: `H5-027`
 - Completed: `H5-028`
+- Completed: `H5-029`
 - Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).

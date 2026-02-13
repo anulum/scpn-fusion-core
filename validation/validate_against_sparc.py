@@ -20,13 +20,9 @@ Requires: numpy
 """
 
 import json
-import sys
 from pathlib import Path
 
 import numpy as np
-
-# Ensure src/ is importable
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from scpn_fusion.core.eqdsk import read_geqdsk, GEqdsk
 
