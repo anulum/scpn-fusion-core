@@ -16,7 +16,6 @@ Compiles a ``StochasticPetriNet`` into sc_neurocore artifacts:
 
 from __future__ import annotations
 
-import functools
 import logging
 import math
 import os
@@ -54,7 +53,6 @@ except ImportError:
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
-@functools.lru_cache(maxsize=1)
 def _resolve_git_sha() -> str:
     """Resolve a short git SHA for artifact metadata."""
     for key in ("SCPN_GIT_SHA", "GITHUB_SHA", "CI_COMMIT_SHA"):
