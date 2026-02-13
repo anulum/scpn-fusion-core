@@ -48,7 +48,8 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - Completed: `GDEP-03` (blind EU-DEMO/K-DEMO synthetic holdout dashboard with strict RMSE/parity thresholds).
 - Completed: `GDEP-05` (v2.0-cutting-edge release-readiness gate and changelog contract validation lane).
 - Completed: `GPHY-01` (reduced Boris-pusher particle tracker with toroidal current feedback blending into Grad-Shafranov source updates).
-- Next active task: `GPHY-02` RFC/implementation staging.
+- Completed: `GPHY-02` (velocity-Verlet symplectic integration baseline in `fusion-math` with long-horizon drift checks).
+- Next active task: `GPHY-03` RFC/implementation staging.
 
 ## Explicitly Deferred (Not In Sprint S1)
 
@@ -56,7 +57,7 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - `GAI-01`, `GAI-02`, `GAI-03`
 - `GMVR-01`, `GMVR-02`, `GMVR-03`
 - `GDEP-01`, `GDEP-02`
-- `GPHY-02`, `GPHY-03`, `GPHY-04`, `GPHY-05`, `GPHY-06`
+- `GPHY-03`, `GPHY-04`, `GPHY-05`, `GPHY-06`
 
 ## Merge Gate Checklist (Per PR)
 

@@ -80,8 +80,8 @@ The following requested tasks are retained, but normalized to actual repository 
 
 - Ready now (execution lane): none.
 - Delivered in current sprint: `GDEP-04` baseline via `validation/control_resilience_campaign.py` and control-path hooks in Python/Rust modules.
-- Needs RFC before coding: `GPHY-02..06`.
-- Delivered advanced v1 lanes (synthetic scope): `GNEU-01..03`, `GAI-01..03`, `GMVR-01..03`, `GDEP-01..05`, `GPHY-01`.
+- Needs RFC before coding: `GPHY-03..06`.
+- Delivered advanced v1 lanes (synthetic scope): `GNEU-01..03`, `GAI-01..03`, `GMVR-01..03`, `GDEP-01..05`, `GPHY-01..02`.
 - Blocked by external dependency readiness: tasks requiring TORAX fork sync, large external gyrokinetic datasets, or ADAS data ingestion.
 
 ## Next Sprint Queue

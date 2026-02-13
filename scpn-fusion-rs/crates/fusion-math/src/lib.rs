@@ -7,4 +7,5 @@ pub mod fft;
 pub mod interp;
 pub mod linalg;
 pub mod sor;
+pub mod symplectic;
 pub mod tridiag;
