@@ -18,6 +18,8 @@ import json
 import time
 from typing import Dict, List, Optional, Tuple
 
+import numpy as np
+
 from .artifact import Artifact
 from .contracts import (
     ActionSpec,
@@ -57,6 +59,24 @@ class NeuroSymbolicController:
         # Flatten weight matrices for fast indexing
         self._w_in = artifact.weights.w_in.data[:]
         self._w_out = artifact.weights.w_out.data[:]
+        self._nP = artifact.nP
+        self._nT = artifact.nT
+        self._W_in = np.asarray(self._w_in, dtype=np.float64).reshape(self._nT, self._nP)
+        self._W_out = np.asarray(self._w_out, dtype=np.float64).reshape(self._nP, self._nT)
+        self._thresholds = np.asarray(
+            [tr.threshold for tr in artifact.topology.transitions], dtype=np.float64
+        )
+        self._firing_mode = artifact.meta.firing_mode
+        default_margin = float(getattr(artifact.meta, "firing_margin", 0.05) or 0.05)
+        self._margins = np.asarray(
+            [
+                float(
+                    ((tr.margin if tr.margin is not None else default_margin) or default_margin)
+                )
+                for tr in artifact.topology.transitions
+            ],
+            dtype=np.float64,
+        )
 
         # Live state
         self.marking: List[float] = artifact.initial_state.marking[:]
@@ -165,41 +185,24 @@ class NeuroSymbolicController:
 
         Returns (firing_vector, next_marking).
         """
-        nT = self.artifact.nT
-        nP = self.artifact.nP
+        m = np.asarray(self.marking, dtype=np.float64)
 
-        # Activation: a_t = Σ_p W_in[t, p] × m[p]
-        a = [0.0] * nT
-        for t in range(nT):
-            acc = 0.0
-            row_off = t * nP
-            for p in range(nP):
-                acc += self._w_in[row_off + p] * self.marking[p]
-            a[t] = acc
+        # Activation: a = W_in @ m
+        a = self._W_in @ m
 
         # Firing decision
-        f = [0.0] * nT
-        for t, tr in enumerate(self.artifact.topology.transitions):
-            thr = tr.threshold
-            if self.artifact.meta.firing_mode == "fractional":
-                margin = (tr.margin or 0.05) or 0.05
-                f[t] = _clip01((a[t] - thr) / margin)
-            else:
-                f[t] = 1.0 if a[t] >= thr else 0.0
+        if self._firing_mode == "fractional":
+            margins = np.maximum(self._margins, 1e-12)
+            f = np.clip((a - self._thresholds) / margins, 0.0, 1.0)
+        else:
+            f = (a >= self._thresholds).astype(np.float64)
 
         # Marking update: m' = clip(m - W_in^T @ f + W_out @ f, 0, 1)
-        m2 = self.marking[:]
-        for p in range(nP):
-            cons = 0.0
-            for t in range(nT):
-                cons += self._w_in[t * nP + p] * f[t]
-            prod = 0.0
-            row_off = p * nT
-            for t in range(nT):
-                prod += self._w_out[row_off + t] * f[t]
-            m2[p] = _clip01(m2[p] - cons + prod)
+        cons = self._W_in.T @ f
+        prod = self._W_out @ f
+        m2 = np.clip(m - cons + prod, 0.0, 1.0)
 
-        return f, m2
+        return f.tolist(), m2.tolist()
 
     def _sc_step(self, k: int) -> Tuple[List[float], List[float]]:
         """Stochastic path — falls back to oracle until Rust kernel exposed."""
