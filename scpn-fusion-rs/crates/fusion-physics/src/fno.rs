@@ -21,6 +21,8 @@ const N_LAYERS: usize = 4;
 /// Default grid size.
 #[cfg(test)]
 const GRID_SIZE: usize = 64;
+/// Cap for reduced toroidal-harmonic spectral coupling.
+const TOROIDAL_COUPLING_MAX_FACTOR: f64 = 2.5;
 
 fn gelu(x: f64) -> f64 {
     0.5 * x * (1.0 + ((2.0 / PI).sqrt() * (x + 0.044_715 * x.powi(3))).tanh())
@@ -258,6 +260,10 @@ pub struct SpectralTurbulenceGenerator {
     ky: Array2<f64>,
     /// k² wavenumber squared.
     k2: Array2<f64>,
+    /// Toroidal harmonic amplitudes for reduced 3D spectral coupling (n=1..N).
+    pub toroidal_harmonics: Vec<f64>,
+    /// Coupling gain for toroidal-harmonic closure.
+    pub toroidal_coupling_gain: f64,
 }
 
 impl SpectralTurbulenceGenerator {
@@ -292,7 +298,45 @@ impl SpectralTurbulenceGenerator {
             size,
             ky,
             k2,
+            toroidal_harmonics: Vec::new(),
+            toroidal_coupling_gain: 0.0,
         }
+    }
+
+    /// Configure reduced toroidal-harmonic coupling used by the spectral step.
+    ///
+    /// This keeps the base 2D solver, but injects a low-order `n != 0` closure
+    /// through edge/non-zonal spectral amplification.
+    pub fn set_toroidal_harmonics(&mut self, amplitudes: &[f64], gain: f64) {
+        self.toroidal_harmonics.clear();
+        self.toroidal_harmonics
+            .extend(amplitudes.iter().map(|a| a.abs()));
+        self.toroidal_coupling_gain = gain.max(0.0);
+    }
+
+    fn toroidal_spectral_rms(&self) -> f64 {
+        if self.toroidal_coupling_gain <= 0.0 || self.toroidal_harmonics.is_empty() {
+            return 0.0;
+        }
+        self.toroidal_harmonics
+            .iter()
+            .enumerate()
+            .map(|(idx, amp)| {
+                let n = (idx + 1) as f64;
+                (n * amp).powi(2)
+            })
+            .sum::<f64>()
+            .sqrt()
+    }
+
+    fn toroidal_coupling_factor(&self, spectral_rms: f64, ky: f64, k2: f64) -> f64 {
+        if spectral_rms <= 1e-12 {
+            return 1.0;
+        }
+        let non_zonal_weight = (ky.abs() / (1.0 + ky.abs())).clamp(0.0, 1.0);
+        let low_k_weight = (25.0 / (25.0 + k2.max(0.0))).clamp(0.0, 1.0);
+        (1.0 + self.toroidal_coupling_gain * spectral_rms * non_zonal_weight * low_k_weight)
+            .clamp(1.0, TOROIDAL_COUPLING_MAX_FACTOR)
     }
 
     /// Evolve turbulence one step in Fourier space.
@@ -304,6 +348,7 @@ impl SpectralTurbulenceGenerator {
         let mut field_k = fft2(&self.field);
         let n = self.size;
         let damping = damping.clamp(0.0, 1.0);
+        let spectral_rms = self.toroidal_spectral_rms();
 
         for i in 0..n {
             for j in 0..n {
@@ -317,6 +362,9 @@ impl SpectralTurbulenceGenerator {
                 if k2v > 0.0 && k2v < 25.0 {
                     field_k[[i, j]] *= Complex64::new(1.001, 0.0);
                 }
+
+                let toroidal_factor = self.toroidal_coupling_factor(spectral_rms, kyv, k2v);
+                field_k[[i, j]] *= Complex64::new(toroidal_factor, 0.0);
 
                 let visc = (-0.001 * k2v * dt).exp();
                 field_k[[i, j]] *= Complex64::new(visc * (1.0 - damping), 0.0);
@@ -473,6 +521,19 @@ mod tests {
     use rand::SeedableRng;
     use std::time::{SystemTime, UNIX_EPOCH};
 
+    fn nonzonal_energy(gen: &SpectralTurbulenceGenerator) -> f64 {
+        let field_k = fft2(&gen.field);
+        let mut sum = 0.0;
+        for i in 0..gen.size {
+            for j in 0..gen.size {
+                if gen.ky[[i, j]].abs() > 1e-12 {
+                    sum += field_k[[i, j]].norm_sqr();
+                }
+            }
+        }
+        sum / (gen.size * gen.size) as f64
+    }
+
     fn teacher_weights() -> FnoWeights {
         FnoWeights {
             modes: 8,
@@ -545,6 +606,60 @@ mod tests {
         assert!(
             gen.field.iter().all(|v| v.is_finite()),
             "Field should be finite after step"
+        );
+    }
+
+    #[test]
+    fn test_toroidal_harmonics_disabled_has_baseline_parity() {
+        let mut baseline = SpectralTurbulenceGenerator::new(GRID_SIZE);
+        let mut coupled = baseline.clone();
+        coupled.set_toroidal_harmonics(&[0.2, 0.1, 0.05], 0.0);
+
+        baseline.step(0.01, 0.2);
+        coupled.step(0.01, 0.2);
+
+        let max_err = baseline
+            .field
+            .iter()
+            .zip(coupled.field.iter())
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0, f64::max);
+        assert!(
+            max_err < 1e-12,
+            "Expected parity when toroidal coupling disabled, max_err={max_err}"
+        );
+    }
+
+    #[test]
+    fn test_toroidal_harmonics_raise_nonzonal_spectral_energy() {
+        let mut baseline = SpectralTurbulenceGenerator::new(GRID_SIZE);
+        let mut coupled = baseline.clone();
+        coupled.set_toroidal_harmonics(&[0.25, 0.12, 0.06], 0.35);
+
+        for _ in 0..6 {
+            baseline.step(0.01, 0.05);
+            coupled.step(0.01, 0.05);
+        }
+
+        let e_base = nonzonal_energy(&baseline);
+        let e_coupled = nonzonal_energy(&coupled);
+        assert!(
+            e_coupled > e_base,
+            "Expected higher non-zonal spectral energy with toroidal harmonics: base={e_base:.6e}, coupled={e_coupled:.6e}"
+        );
+    }
+
+    #[test]
+    fn test_toroidal_coupling_factor_clamped() {
+        let mut gen = SpectralTurbulenceGenerator::new(GRID_SIZE);
+        gen.set_toroidal_harmonics(&[10.0, 10.0, 10.0], 10.0);
+        let rms = gen.toroidal_spectral_rms();
+        let factor = gen.toroidal_coupling_factor(rms, 6.0, 0.01);
+        assert!(
+            (factor - TOROIDAL_COUPLING_MAX_FACTOR).abs() < 1e-12,
+            "Expected clamped coupling factor={}, got {}",
+            TOROIDAL_COUPLING_MAX_FACTOR,
+            factor
         );
     }
 

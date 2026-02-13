@@ -27,6 +27,10 @@
   - configurable `n=1..N` mode spectrum via `set_toroidal_mode_spectrum(...)`
   - edge-weighted diffusivity coupling factor for reduced `n!=0` transport effects
   - regression tests for baseline parity, edge-dominant coupling, and clamp safety
+- Added reduced 3D-aware toroidal-harmonic coupling in `fusion-physics` FNO turbulence:
+  - configurable toroidal harmonic spectrum via `set_toroidal_harmonics(...)`
+  - non-zonal low-k spectral amplification closure with bounded coupling gain
+  - regression tests for default parity, non-zonal energy increase, and clamp safety
 - Added PCE checked APIs:
   - `PCEModel::try_fit(...) -> FusionResult<PCEModel>`
   - `PCEModel::try_predict(...) -> FusionResult<Array1<f64>>`
