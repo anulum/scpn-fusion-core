@@ -103,18 +103,7 @@ def _encode_weight_matrix_packed(
     packed = np.zeros((R, C, n_words), dtype=np.uint64)
     probs = np.clip(np.asarray(W, dtype=np.float64), 0.0, 1.0)
 
-    if _HAS_SC_NEUROCORE:
-        rng_seed = seed
-        for r in range(R):
-            for c in range(C):
-                rng = _SC_RNG(rng_seed)
-                bits = generate_bernoulli_bitstream(float(probs[r, c]), bitstream_length, rng=rng)
-                packed[r, c, :] = pack_bitstream(bits)
-                rng_seed += 1
-        return packed
-
-    # NumPy fallback (no sc_neurocore): deterministic Bernoulli bitstreams
-    # using one RNG stream and vectorized packing across all matrix entries.
+    # Deterministic vectorized Bernoulli packing across all matrix entries.
     rng = np.random.default_rng(int(seed))
     streams = (rng.random((R, C, bitstream_length)) < probs[:, :, None]).astype(np.uint8)
     pad = n_words * 64 - bitstream_length
@@ -157,6 +146,9 @@ class CompiledNet:
     # Config
     bitstream_length: int = 1024
     thresholds: FloatArray = field(default_factory=lambda: np.array([], dtype=np.float64))
+    transition_delay_ticks: NDArray[np.int64] = field(
+        default_factory=lambda: np.array([], dtype=np.int64)
+    )
     initial_marking: FloatArray = field(default_factory=lambda: np.array([], dtype=np.float64))
     seed: int = 42
     firing_mode: str = "binary"
@@ -321,6 +313,7 @@ class CompiledNet:
                 name=n,
                 threshold=float(self.thresholds[i]),
                 margin=self.firing_margin if self.firing_mode == "fractional" else None,
+                delay_ticks=int(self.transition_delay_ticks[i]),
             )
             for i, n in enumerate(self.transition_names)
         ]
@@ -469,6 +462,7 @@ class FusionCompiler:
         W_out: FloatArray = np.asarray(net.W_out.toarray(), dtype=np.float64)  # (nP, nT)
 
         thresholds = net.get_thresholds()
+        delay_ticks = net.get_delay_ticks()
         initial_marking = net.get_initial_marking()
 
         # 2. LIF neurons (one per transition)
@@ -513,6 +507,7 @@ class FusionCompiler:
             neurons=neurons,
             bitstream_length=self.bitstream_length,
             thresholds=thresholds,
+            transition_delay_ticks=delay_ticks,
             initial_marking=initial_marking,
             seed=self.seed,
             firing_mode=firing_mode,

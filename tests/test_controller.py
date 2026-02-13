@@ -66,7 +66,7 @@ from scpn_fusion.scpn.controller import NeuroSymbolicController
 # Each transition reads one input place and writes one output place.
 
 
-def _build_controller_net() -> StochasticPetriNet:
+def _build_controller_net(transition_delay_ticks: int = 0) -> StochasticPetriNet:
     """8-place, 4-transition pass-through controller net."""
     net = StochasticPetriNet()
 
@@ -83,10 +83,10 @@ def _build_controller_net() -> StochasticPetriNet:
     net.add_place("a_Z_neg", initial_tokens=0.0)
 
     # Transitions (low threshold for pass-through)
-    net.add_transition("T_Rp", threshold=0.1)
-    net.add_transition("T_Rn", threshold=0.1)
-    net.add_transition("T_Zp", threshold=0.1)
-    net.add_transition("T_Zn", threshold=0.1)
+    net.add_transition("T_Rp", threshold=0.1, delay_ticks=transition_delay_ticks)
+    net.add_transition("T_Rn", threshold=0.1, delay_ticks=transition_delay_ticks)
+    net.add_transition("T_Zp", threshold=0.1, delay_ticks=transition_delay_ticks)
+    net.add_transition("T_Zn", threshold=0.1, delay_ticks=transition_delay_ticks)
 
     # Input arcs: input place → transition
     net.add_arc("x_R_pos", "T_Rp", weight=1.0)
@@ -107,9 +107,10 @@ def _build_controller_net() -> StochasticPetriNet:
 def _build_artifact_path(
     firing_mode: str = "binary",
     firing_margin: float = 0.05,
+    transition_delay_ticks: int = 0,
 ) -> str:
     """Compile the 8-place net, export artifact, save to temp file."""
-    net = _build_controller_net()
+    net = _build_controller_net(transition_delay_ticks=transition_delay_ticks)
     compiler = FusionCompiler(bitstream_length=1024, seed=42)
     compiled = compiler.compile(
         net, firing_mode=firing_mode, firing_margin=firing_margin
@@ -518,6 +519,31 @@ class TestLevel3PetriSemantics:
         fired = compiled.lif_fire(currents)
         for v in fired:
             assert v in (0.0, 1.0), f"binary fire not in {{0,1}}: {v}"
+
+    def test_timed_transition_defers_action_release(self) -> None:
+        delayed_path = _build_artifact_path(
+            firing_mode="binary", transition_delay_ticks=2
+        )
+        try:
+            art = load_artifact(delayed_path)
+            assert all(t.delay_ticks == 2 for t in art.topology.transitions)
+            c = NeuroSymbolicController(
+                artifact=art,
+                seed_base=101,
+                targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+                scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+                sc_n_passes=1,
+                sc_bitflip_rate=0.0,
+            )
+            obs: ControlObservation = {"R_axis_m": 5.9, "Z_axis_m": 0.0}
+            a0 = c.step(obs, 0)["dI_PF3_A"]
+            a1 = c.step(obs, 1)["dI_PF3_A"]
+            a2 = c.step(obs, 2)["dI_PF3_A"]
+            assert abs(a0) < 1e-12
+            assert abs(a1) < 1e-12
+            assert a2 > 0.0
+        finally:
+            os.unlink(delayed_path)
 
     def test_sc_bitflip_path_stays_bounded(self, artifact_path_fractional: str) -> None:
         art = load_artifact(artifact_path_fractional)

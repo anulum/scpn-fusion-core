@@ -76,6 +76,7 @@ class TransitionSpec:
     name: str
     threshold: float
     margin: Optional[float] = None
+    delay_ticks: int = 0
 
 
 @dataclass
@@ -248,9 +249,9 @@ def _validate(artifact: Artifact) -> None:
 
     # Weight ranges
     for val in artifact.weights.w_in.data:
-        if not (0.0 <= val <= 1.0):
+        if not (-1.0 <= val <= 1.0):
             raise ArtifactValidationError(
-                f"w_in weight {val} outside [0, 1]"
+                f"w_in weight {val} outside [-1, 1]"
             )
     for val in artifact.weights.w_out.data:
         if not (0.0 <= val <= 1.0):
@@ -263,6 +264,10 @@ def _validate(artifact: Artifact) -> None:
         if not (0.0 <= t.threshold <= 1.0):
             raise ArtifactValidationError(
                 f"threshold {t.threshold} for '{t.name}' outside [0, 1]"
+            )
+        if int(t.delay_ticks) < 0:
+            raise ArtifactValidationError(
+                f"delay_ticks {t.delay_ticks} for '{t.name}' must be >= 0"
             )
 
     # Shape consistency
@@ -337,6 +342,7 @@ def load_artifact(path: Union[str, Path]) -> Artifact:
             name=t["name"],
             threshold=float(t["threshold"]),
             margin=t.get("margin"),
+            delay_ticks=int(t.get("delay_ticks", 0)),
         )
         for t in obj["topology"]["transitions"]
     ]
@@ -492,6 +498,7 @@ def save_artifact(
                     "name": t.name,
                     "threshold": t.threshold,
                     **({"margin": t.margin} if t.margin is not None else {}),
+                    "delay_ticks": int(t.delay_ticks),
                 }
                 for t in artifact.topology.transitions
             ],

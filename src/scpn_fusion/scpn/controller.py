@@ -76,6 +76,16 @@ class NeuroSymbolicController:
         self._thresholds = np.asarray(
             [tr.threshold for tr in artifact.topology.transitions], dtype=np.float64
         )
+        self._delay_ticks = np.asarray(
+            [max(int(getattr(tr, "delay_ticks", 0)), 0) for tr in artifact.topology.transitions],
+            dtype=np.int64,
+        )
+        self._max_delay_ticks = int(np.max(self._delay_ticks)) if self._delay_ticks.size else 0
+        pending_len = self._max_delay_ticks + 1
+        self._oracle_pending = np.zeros((pending_len, self._nT), dtype=np.float64)
+        self._sc_pending = np.zeros((pending_len, self._nT), dtype=np.float64)
+        self._oracle_cursor = 0
+        self._sc_cursor = 0
         self._firing_mode = artifact.meta.firing_mode
         default_margin = float(getattr(artifact.meta, "firing_margin", 0.05) or 0.05)
         self._margins = np.asarray(
@@ -114,6 +124,10 @@ class NeuroSymbolicController:
         """Restore initial marking and zero previous actions."""
         self.marking = self.artifact.initial_state.marking[:]
         self._prev_actions = [0.0 for _ in self.artifact.readout.actions]
+        self._oracle_pending.fill(0.0)
+        self._sc_pending.fill(0.0)
+        self._oracle_cursor = 0
+        self._sc_cursor = 0
         self.last_oracle_firing = []
         self.last_sc_firing = []
         self.last_oracle_marking = self.marking[:]
@@ -222,12 +236,16 @@ class NeuroSymbolicController:
         else:
             f = (a >= self._thresholds).astype(np.float64)
 
+        f_timed, self._oracle_cursor = self._apply_transition_timing(
+            f, self._oracle_pending, self._oracle_cursor
+        )
+
         # Marking update: m' = clip(m - W_in^T @ f + W_out @ f, 0, 1)
-        cons = self._W_in.T @ f
-        prod = self._W_out @ f
+        cons = self._W_in.T @ f_timed
+        prod = self._W_out @ f_timed
         m2 = np.clip(m - cons + prod, 0.0, 1.0)
 
-        return f.tolist(), m2.tolist()
+        return f_timed.tolist(), m2.tolist()
 
     def _sc_step(self, k: int) -> Tuple[List[float], List[float]]:
         """Deterministic stochastic path with optional bit-flip fault injection."""
@@ -264,14 +282,45 @@ class NeuroSymbolicController:
                 rng = np.random.default_rng(_seed64(self.seed_base, f"sc_flip:{int(k)}"))
             f = self._apply_bit_flip_faults(f, rng)
 
-        cons = self._W_in.T @ f
-        prod = self._W_out @ f
+        f_timed, self._sc_cursor = self._apply_transition_timing(
+            f, self._sc_pending, self._sc_cursor
+        )
+        cons = self._W_in.T @ f_timed
+        prod = self._W_out @ f_timed
         m2 = np.clip(m - cons + prod, 0.0, 1.0)
         if self._sc_bitflip_rate > 0.0:
             assert rng is not None
             m2 = self._apply_bit_flip_faults(m2, rng)
 
-        return f.tolist(), m2.tolist()
+        return f_timed.tolist(), m2.tolist()
+
+    def _apply_transition_timing(
+        self,
+        desired_firing: FloatArray,
+        pending: FloatArray,
+        cursor: int,
+    ) -> Tuple[FloatArray, int]:
+        desired = np.asarray(np.clip(desired_firing, 0.0, 1.0), dtype=np.float64)
+        if self._max_delay_ticks <= 0:
+            return desired, cursor
+
+        fired_now = np.asarray(pending[cursor], dtype=np.float64).copy()
+        pending[cursor, :] = 0.0
+
+        immediate_mask = self._delay_ticks == 0
+        if np.any(immediate_mask):
+            fired_now[immediate_mask] = np.clip(
+                fired_now[immediate_mask] + desired[immediate_mask], 0.0, 1.0
+            )
+
+        for idx in np.flatnonzero(self._delay_ticks > 0):
+            slot = (cursor + int(self._delay_ticks[idx])) % pending.shape[0]
+            pending[slot, idx] = float(
+                np.clip(pending[slot, idx] + desired[idx], 0.0, 1.0)
+            )
+
+        next_cursor = (cursor + 1) % pending.shape[0]
+        return fired_now, next_cursor
 
     def _apply_bit_flip_faults(
         self, values: FloatArray, rng: np.random.Generator

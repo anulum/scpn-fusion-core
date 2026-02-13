@@ -87,6 +87,10 @@ class TestStochasticPetriNet:
         th = traffic_net.get_thresholds()
         np.testing.assert_array_equal(th, [0.5, 0.5, 0.5])
 
+    def test_delay_ticks_default_zero(self, traffic_net: StochasticPetriNet) -> None:
+        delays = traffic_net.get_delay_ticks()
+        np.testing.assert_array_equal(delays, [0, 0, 0])
+
     def test_W_in_shape(self, traffic_net: StochasticPetriNet) -> None:
         assert traffic_net.W_in.shape == (3, 3)  # (nT, nP)
 
@@ -172,6 +176,21 @@ class TestStochasticPetriNet:
         net.add_transition("T")
         with pytest.raises(ValueError, match="weight must be > 0"):
             net.add_arc("A", "T", weight=-0.5)
+
+    def test_negative_delay_ticks_rejected(self) -> None:
+        net = StochasticPetriNet()
+        with pytest.raises(ValueError, match="delay_ticks"):
+            net.add_transition("T_bad", threshold=0.5, delay_ticks=-1)
+
+    def test_transition_delay_ticks_persist(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("P", initial_tokens=1.0)
+        net.add_transition("T", threshold=0.5, delay_ticks=3)
+        net.add_arc("P", "T", weight=1.0)
+        net.add_arc("T", "P", weight=1.0)
+        net.compile()
+        np.testing.assert_array_equal(net.get_delay_ticks(), [3])
+        assert "delay_ticks=3" in net.summary()
 
     def test_validate_topology_detects_dead_nodes(self) -> None:
         net = StochasticPetriNet()
@@ -312,6 +331,7 @@ class TestFusionCompiler:
 
     def test_thresholds(self, compiled: CompiledNet) -> None:
         np.testing.assert_array_equal(compiled.thresholds, [0.5, 0.5, 0.5])
+        np.testing.assert_array_equal(compiled.transition_delay_ticks, [0, 0, 0])
 
     def test_initial_marking(self, compiled: CompiledNet) -> None:
         np.testing.assert_array_equal(
@@ -437,6 +457,7 @@ class TestFusionCompiler:
 
         artifact = compiled.export_artifact(name="sha_test")
         assert artifact.meta.compiler.git_sha == "abcdef1"
+        assert all(t.delay_ticks == 0 for t in artifact.topology.transitions)
 
 
 # ── Integration: 10-step cyclic flow ────────────────────────────────────────

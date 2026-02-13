@@ -54,6 +54,7 @@ class StochasticPetriNet:
 
         self._transitions: List[str] = []
         self._transition_thresholds: List[float] = []
+        self._transition_delays: List[int] = []
         self._transition_idx: Dict[str, int] = {}
 
         # Node kind lookup (for arc validation) --------------------------------
@@ -86,15 +87,20 @@ class StochasticPetriNet:
         self._kind[name] = _NodeKind.PLACE
         self._compiled = False
 
-    def add_transition(self, name: str, threshold: float = 0.5) -> None:
+    def add_transition(
+        self, name: str, threshold: float = 0.5, delay_ticks: int = 0
+    ) -> None:
         """Add a transition (logic gate) with a firing threshold."""
         if name in self._kind:
             raise ValueError(f"Node '{name}' already exists.")
         if threshold < 0.0:
             raise ValueError(f"threshold must be >= 0, got {threshold}")
+        if delay_ticks < 0:
+            raise ValueError(f"delay_ticks must be >= 0, got {delay_ticks}")
         idx = len(self._transitions)
         self._transitions.append(name)
         self._transition_thresholds.append(threshold)
+        self._transition_delays.append(int(delay_ticks))
         self._transition_idx[name] = idx
         self._kind[name] = _NodeKind.TRANSITION
         self._compiled = False
@@ -391,6 +397,10 @@ class StochasticPetriNet:
         """Return (n_transitions,) float64 vector of firing thresholds."""
         return np.array(self._transition_thresholds, dtype=np.float64)
 
+    def get_delay_ticks(self) -> NDArray[np.int64]:
+        """Return (n_transitions,) int64 vector of transition delay ticks."""
+        return np.array(self._transition_delays, dtype=np.int64)
+
     def summary(self) -> str:
         """Human-readable summary of the net."""
         lines = [
@@ -410,7 +420,10 @@ class StochasticPetriNet:
         for i, (name, th) in enumerate(
             zip(self._transitions, self._transition_thresholds)
         ):
-            lines.append(f"  [{i}] {name:20s}  threshold={th:.3f}")
+            delay = self._transition_delays[i]
+            lines.append(
+                f"  [{i}] {name:20s}  threshold={th:.3f}  delay_ticks={delay}"
+            )
 
         lines.append("")
         lines.append("Arcs:")
