@@ -110,6 +110,150 @@ def predict_disruption_risk(signal, toroidal_observables=None):
     logits = -4.0 + thermal_term + asym_term + state_term
     return float(1.0 / (1.0 + np.exp(-logits)))
 
+
+def apply_bit_flip_fault(value, bit_index):
+    """Inject a deterministic single-bit fault into a float."""
+    bit = int(bit_index) % 64
+    raw = np.array([float(value)], dtype=np.float64).view(np.uint64)[0]
+    flipped = np.uint64(raw ^ (np.uint64(1) << np.uint64(bit)))
+    out = np.array([flipped], dtype=np.uint64).view(np.float64)[0]
+    return float(out if np.isfinite(out) else value)
+
+
+def _synthetic_control_signal(rng, length):
+    t = np.linspace(0.0, 1.0, int(length), dtype=float)
+    base = 0.7 + 0.15 * np.sin(2.0 * np.pi * 3.0 * t) + 0.05 * np.cos(2.0 * np.pi * 7.0 * t)
+    ramp = np.where(t > 0.65, (t - 0.65) * 0.9, 0.0)
+    noise = rng.normal(0.0, 0.01, size=t.shape)
+    return np.clip(base + ramp + noise, 0.01, None)
+
+
+def run_fault_noise_campaign(
+    seed=42,
+    episodes=64,
+    window=128,
+    noise_std=0.03,
+    bit_flip_interval=11,
+    recovery_window=6,
+    recovery_epsilon=0.03,
+):
+    """
+    Run deterministic synthetic fault/noise campaign for disruption-risk resilience.
+    """
+    rng = np.random.default_rng(int(seed))
+    episodes = max(int(episodes), 1)
+    window = max(int(window), 16)
+    bit_flip_interval = max(int(bit_flip_interval), 1)
+    recovery_window = max(int(recovery_window), 1)
+    recovery_epsilon = max(float(recovery_epsilon), 1e-9)
+
+    abs_errors = []
+    recovery_steps = []
+    n_faults = 0
+
+    for _ in range(episodes):
+        signal = _synthetic_control_signal(rng, window)
+        toroidal = {
+            "toroidal_n1_amp": float(rng.uniform(0.05, 0.25)),
+            "toroidal_n2_amp": float(rng.uniform(0.03, 0.18)),
+            "toroidal_n3_amp": float(rng.uniform(0.01, 0.12)),
+            "toroidal_radial_spread": float(rng.uniform(0.01, 0.08)),
+        }
+        toroidal["toroidal_asymmetry_index"] = float(
+            np.sqrt(
+                toroidal["toroidal_n1_amp"] ** 2
+                + toroidal["toroidal_n2_amp"] ** 2
+                + toroidal["toroidal_n3_amp"] ** 2
+            )
+        )
+
+        baseline = np.array(
+            [predict_disruption_risk(signal[: i + 1], toroidal) for i in range(window)],
+            dtype=float,
+        )
+
+        faulty_signal = signal.copy()
+        faulty_indices = []
+        for i in range(window):
+            faulty_signal[i] += float(rng.normal(0.0, noise_std))
+            if i % bit_flip_interval == 0:
+                faulty_signal[i] = apply_bit_flip_fault(
+                    faulty_signal[i], int(rng.integers(0, 52))
+                )
+                faulty_indices.append(i)
+
+        faulty_toroidal = dict(toroidal)
+        faulty_toroidal["toroidal_n1_amp"] = max(
+            0.0, faulty_toroidal["toroidal_n1_amp"] + float(rng.normal(0.0, noise_std * 0.5))
+        )
+        faulty_toroidal["toroidal_n2_amp"] = max(
+            0.0, faulty_toroidal["toroidal_n2_amp"] + float(rng.normal(0.0, noise_std * 0.4))
+        )
+        faulty_toroidal["toroidal_asymmetry_index"] = float(
+            np.sqrt(
+                faulty_toroidal["toroidal_n1_amp"] ** 2
+                + faulty_toroidal["toroidal_n2_amp"] ** 2
+                + faulty_toroidal["toroidal_n3_amp"] ** 2
+            )
+        )
+
+        perturbed = np.array(
+            [
+                predict_disruption_risk(faulty_signal[: i + 1], faulty_toroidal)
+                for i in range(window)
+            ],
+            dtype=float,
+        )
+
+        err = np.abs(perturbed - baseline)
+        abs_errors.extend(err.tolist())
+
+        for idx in faulty_indices:
+            n_faults += 1
+            stop = min(window, idx + recovery_window + 1)
+            recover_idx = stop
+            for j in range(idx, stop):
+                if err[j] <= recovery_epsilon:
+                    recover_idx = j
+                    break
+            recovery_steps.append(int(recover_idx - idx))
+
+    errors_arr = np.asarray(abs_errors, dtype=float)
+    rec_arr = np.asarray(recovery_steps if recovery_steps else [recovery_window + 1], dtype=float)
+
+    mean_abs_err = float(np.mean(errors_arr))
+    p95_abs_err = float(np.percentile(errors_arr, 95))
+    p95_recovery = float(np.percentile(rec_arr, 95))
+    success_rate = float(np.mean(rec_arr <= recovery_window))
+
+    thresholds = {
+        "max_mean_abs_risk_error": 0.08,
+        "max_p95_abs_risk_error": 0.22,
+        "max_recovery_steps_p95": float(recovery_window),
+        "min_recovery_success_rate": 0.80,
+    }
+    passes = bool(
+        mean_abs_err <= thresholds["max_mean_abs_risk_error"]
+        and p95_abs_err <= thresholds["max_p95_abs_risk_error"]
+        and p95_recovery <= thresholds["max_recovery_steps_p95"]
+        and success_rate >= thresholds["min_recovery_success_rate"]
+    )
+
+    return {
+        "seed": int(seed),
+        "episodes": episodes,
+        "window": window,
+        "noise_std": float(noise_std),
+        "bit_flip_interval": bit_flip_interval,
+        "fault_count": int(n_faults),
+        "mean_abs_risk_error": mean_abs_err,
+        "p95_abs_risk_error": p95_abs_err,
+        "recovery_steps_p95": p95_recovery,
+        "recovery_success_rate": success_rate,
+        "thresholds": thresholds,
+        "passes_thresholds": passes,
+    }
+
 # --- AI: TRANSFORMER MODEL ---
 if torch is not None:
     class DisruptionTransformer(nn.Module):

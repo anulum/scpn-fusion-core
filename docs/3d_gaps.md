@@ -78,7 +78,8 @@ The following requested tasks are retained, but normalized to actual repository 
 
 ## Reclassified Backlog State
 
-- Ready now (execution lane): `GDEP-04` (scoped to existing modules only).
+- Ready now (execution lane): none.
+- Delivered in current sprint: `GDEP-04` baseline via `validation/control_resilience_campaign.py` and control-path hooks in Python/Rust modules.
 - Needs RFC before coding: `GNEU-01..03`, `GAI-01..03`, `GMVR-01..03`, `GDEP-01..03`, `GDEP-05`, `GPHY-01..06`.
 - Blocked by external dependency readiness: tasks requiring TORAX fork sync, large external gyrokinetic datasets, or ADAS data ingestion.
 
@@ -92,4 +93,4 @@ Only items in that queue are considered in-sprint active work.
 
 - Baseline reduced 3D gaps `G3D-01..G3D-08` complete with tests.
 - CI remains green for Python + Rust + 3D smoke.
-- At least one resilience campaign report merged (fault/noise sensitivity summary).
+- Resilience campaign harness and thresholded report path merged (`validation/control_resilience_campaign.py`).

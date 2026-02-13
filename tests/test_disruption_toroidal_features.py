@@ -12,8 +12,10 @@ from __future__ import annotations
 import numpy as np
 
 from scpn_fusion.control.disruption_predictor import (
+    apply_bit_flip_fault,
     build_disruption_feature_vector,
     predict_disruption_risk,
+    run_fault_noise_campaign,
 )
 
 
@@ -51,3 +53,32 @@ def test_predict_disruption_risk_increases_with_toroidal_asymmetry() -> None:
     assert 0.0 <= low <= 1.0
     assert 0.0 <= high <= 1.0
     assert high > low
+
+
+def test_apply_bit_flip_fault_returns_finite_value() -> None:
+    value = 0.75
+    flipped = apply_bit_flip_fault(value, 7)
+    assert np.isfinite(flipped)
+    assert flipped != value
+
+
+def test_fault_noise_campaign_metrics_and_thresholds() -> None:
+    report = run_fault_noise_campaign(
+        seed=123,
+        episodes=8,
+        window=48,
+        noise_std=0.02,
+        bit_flip_interval=9,
+        recovery_window=6,
+    )
+    for key in (
+        "mean_abs_risk_error",
+        "p95_abs_risk_error",
+        "recovery_steps_p95",
+        "recovery_success_rate",
+        "passes_thresholds",
+    ):
+        assert key in report
+    assert 0.0 <= report["mean_abs_risk_error"]
+    assert 0.0 <= report["p95_abs_risk_error"]
+    assert 0.0 <= report["recovery_success_rate"] <= 1.0

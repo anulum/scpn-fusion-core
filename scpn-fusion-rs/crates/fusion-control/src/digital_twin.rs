@@ -29,6 +29,58 @@ const D_BASE: f64 = 0.01;
 /// Turbulent diffusivity (at magnetic islands). Python: 0.5.
 const D_TURB: f64 = 0.5;
 
+/// Default Ornstein-Uhlenbeck theta.
+const DEFAULT_OU_THETA: f64 = 0.25;
+
+/// Default Ornstein-Uhlenbeck sigma.
+const DEFAULT_OU_SIGMA: f64 = 0.05;
+
+/// Default noise time step.
+const DEFAULT_OU_DT: f64 = 1.0;
+
+/// Single-bit floating-point fault injection.
+pub fn apply_bit_flip_fault(value: f64, bit_index: u8) -> f64 {
+    let bit = u32::from(bit_index % 64);
+    let flipped = f64::from_bits(value.to_bits() ^ (1_u64 << bit));
+    if flipped.is_finite() {
+        flipped
+    } else {
+        value
+    }
+}
+
+/// Ornstein-Uhlenbeck noise process for sensor/actuator perturbations.
+#[derive(Debug, Clone, Copy)]
+pub struct NoiseInjectionLayer {
+    pub theta: f64,
+    pub sigma: f64,
+    pub dt: f64,
+    pub state: f64,
+}
+
+impl NoiseInjectionLayer {
+    pub fn new(theta: f64, sigma: f64, dt: f64) -> Self {
+        Self {
+            theta: theta.max(0.0),
+            sigma: sigma.max(0.0),
+            dt: dt.max(1e-9),
+            state: 0.0,
+        }
+    }
+
+    pub fn step<R: Rng + ?Sized>(&mut self, rng: &mut R) -> f64 {
+        let xi: f64 = rng.sample(StandardNormal);
+        self.state += self.theta * (-self.state) * self.dt + self.sigma * self.dt.sqrt() * xi;
+        self.state
+    }
+}
+
+impl Default for NoiseInjectionLayer {
+    fn default() -> Self {
+        Self::new(DEFAULT_OU_THETA, DEFAULT_OU_SIGMA, DEFAULT_OU_DT)
+    }
+}
+
 /// Simple feedforward neural network: input → 64 (tanh) → 1 (tanh).
 pub struct SimpleMLP {
     pub w1: Array2<f64>,
@@ -210,6 +262,20 @@ impl Plasma2D {
 
         (core_temp, avg)
     }
+
+    /// One step with additive process noise on central heating source.
+    pub fn step_with_process_noise(&mut self, action: f64, process_noise: f64) -> (f64, f64) {
+        let center = GRID / 2;
+        self.temp[[center, center]] =
+            (self.temp[[center, center]] + process_noise).clamp(0.0, 100.0);
+        self.step(action)
+    }
+
+    /// Sensor readout helper with additive measurement noise.
+    pub fn measure_core_temp(&self, measurement_noise: f64) -> f64 {
+        let center = GRID / 2;
+        (self.temp[[center, center]] + measurement_noise).clamp(0.0, 100.0)
+    }
 }
 
 impl Default for Plasma2D {
@@ -221,6 +287,8 @@ impl Default for Plasma2D {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::rngs::StdRng;
+    use rand::SeedableRng;
 
     #[test]
     fn test_mlp_forward_bounded() {
@@ -260,5 +328,42 @@ mod tests {
         for &t in plasma.temp.iter() {
             assert!((0.0..=100.0).contains(&t), "Temp out of bounds: {t}");
         }
+    }
+
+    #[test]
+    fn test_bit_flip_fault_changes_value_or_preserves_finite() {
+        let value = 0.75_f64;
+        let flipped = apply_bit_flip_fault(value, 7);
+        assert!(flipped.is_finite(), "Flipped value must remain finite");
+        assert_ne!(flipped, value, "Bit flip should modify value for this case");
+    }
+
+    #[test]
+    fn test_ou_noise_deterministic_with_seed() {
+        let mut rng1 = StdRng::seed_from_u64(1234);
+        let mut rng2 = StdRng::seed_from_u64(1234);
+        let mut n1 = NoiseInjectionLayer::default();
+        let mut n2 = NoiseInjectionLayer::default();
+        for _ in 0..32 {
+            let a = n1.step(&mut rng1);
+            let b = n2.step(&mut rng2);
+            assert!(
+                (a - b).abs() < 1e-12,
+                "Noise sequence should be deterministic"
+            );
+        }
+    }
+
+    #[test]
+    fn test_plasma_noise_helpers_bounded() {
+        let mut plasma = Plasma2D::new();
+        for _ in 0..32 {
+            let _ = plasma.step_with_process_noise(0.0, 0.5);
+        }
+        let meas = plasma.measure_core_temp(0.2);
+        assert!(
+            (0.0..=100.0).contains(&meas),
+            "Measurement must remain bounded"
+        );
     }
 }

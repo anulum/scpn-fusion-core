@@ -94,6 +94,33 @@ impl MPController {
 
         actions[0].clone()
     }
+
+    /// Plan action accounting for known actuation delay and sensor bias.
+    ///
+    /// `delayed_actions` are already-issued actions that will still take effect
+    /// before the next new control is applied.
+    pub fn plan_with_delay_and_bias(
+        &self,
+        measured_state: &Array1<f64>,
+        delayed_actions: &[Array1<f64>],
+        sensor_bias: Option<&Array1<f64>>,
+    ) -> Array1<f64> {
+        let n_coils = self.model.b_matrix.ncols();
+        let mut predicted_state = measured_state.clone();
+        if let Some(bias) = sensor_bias {
+            if bias.len() == predicted_state.len() {
+                predicted_state = &predicted_state + bias;
+            }
+        }
+
+        for action in delayed_actions {
+            if action.len() == n_coils {
+                predicted_state = self.model.predict(&predicted_state, action);
+            }
+        }
+
+        self.plan(&predicted_state)
+    }
 }
 
 #[cfg(test)]
@@ -139,6 +166,36 @@ mod tests {
             assert!(
                 v.abs() <= ACTION_CLIP + 1e-10,
                 "Action should be clipped: {v}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_mpc_delay_and_bias_path() {
+        let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
+        let model = NeuralSurrogate::new(b);
+        let target = Array1::from_vec(vec![6.0, 0.0]);
+        let mpc = MPController::new(model, target);
+
+        let measured = Array1::from_vec(vec![5.0, 1.0]);
+        let delayed = vec![Array1::from_vec(vec![0.2, -0.1])];
+        let bias = Array1::from_vec(vec![0.05, -0.02]);
+        let action = mpc.plan_with_delay_and_bias(&measured, &delayed, Some(&bias));
+
+        assert!(
+            action[0] > 0.0,
+            "Delayed MPC should push R positive: {}",
+            action[0]
+        );
+        assert!(
+            action[1] < 0.0,
+            "Delayed MPC should push Z negative: {}",
+            action[1]
+        );
+        for &v in action.iter() {
+            assert!(
+                v.abs() <= ACTION_CLIP + 1e-10,
+                "Action should remain clipped: {v}"
             );
         }
     }

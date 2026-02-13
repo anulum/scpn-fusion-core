@@ -220,10 +220,8 @@ impl BreedingBlanket {
         let incident_flux = config.incident_flux.max(1.0);
 
         // Use a nominal enriched reference profile for a stable reduced 3D surrogate.
-        let profile =
-            BreedingBlanket::new(VOLUMETRIC_REFERENCE_THICKNESS_CM, 0.9).solve_transport(
-                incident_flux,
-            );
+        let profile = BreedingBlanket::new(VOLUMETRIC_REFERENCE_THICKNESS_CM, 0.9)
+            .solve_transport(incident_flux);
         let sigma_li6 = SIGMA_LI6 * self.enrichment;
 
         let thickness_m = (self.thickness * 0.01).max(1e-9);
