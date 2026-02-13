@@ -82,6 +82,17 @@ class TEMHD_Stabilizer:
         return res
 
     def step(self, heat_flux_MW_m2, dt=0.1):
+        dt = float(dt)
+        heat_flux_MW_m2 = float(heat_flux_MW_m2)
+        if not np.isfinite(dt) or dt <= 0.0:
+            raise ValueError("dt must be a finite positive value.")
+        if not np.isfinite(heat_flux_MW_m2) or heat_flux_MW_m2 < 0.0:
+            raise ValueError("heat_flux_MW_m2 must be a finite non-negative value.")
+        if not np.isfinite(self.dz) or self.dz <= 0.0:
+            raise ValueError("Invalid grid spacing dz in TEMHD solver.")
+        if not np.all(np.isfinite(self.T)):
+            raise ValueError("Temperature state contains non-finite values.")
+
         grad_T = np.gradient(self.T, self.dz)
         J_te = -self.sigma * self.Seebeck * grad_T
         F_lorentz = np.abs(J_te * self.B0)
@@ -90,9 +101,11 @@ class TEMHD_Stabilizer:
         v_conv = (F_lorentz * self.dz**2) / (self.viscosity + 1e-9)
         alpha = self.k_thermal / (self.rho * self.cp)
         Pe = np.clip(v_conv * self.dz / alpha, 0, 200.0)
-        k_eff = self.k_thermal * (1.0 + 0.2 * Pe)
+        k_eff = np.maximum(self.k_thermal * (1.0 + 0.2 * Pe), 1e-9)
         
         r = (k_eff * dt) / (self.rho * self.cp * self.dz**2)
+        if not np.all(np.isfinite(r)):
+            raise ValueError("Non-finite diffusion coefficients encountered.")
         # Matrix diagonals
         b = 1.0 + 2.0 * r[1:]
         a = -r[2:] # Sub

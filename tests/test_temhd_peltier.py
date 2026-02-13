@@ -41,6 +41,17 @@ def test_solve_tridiagonal_rejects_inconsistent_sizes() -> None:
         )
 
 
+def test_solve_tridiagonal_rejects_singular_system() -> None:
+    sim = TEMHD_Stabilizer()
+    with pytest.raises(ValueError, match="Singular diagonal"):
+        sim.solve_tridiagonal(
+            a=np.array([1.0, 1.0], dtype=float),
+            b=np.array([0.0, 1.0, 1.0], dtype=float),
+            c=np.array([1.0, 1.0], dtype=float),
+            d=np.array([1.0, 2.0, 3.0], dtype=float),
+        )
+
+
 def test_step_higher_flux_increases_surface_temperature() -> None:
     low = TEMHD_Stabilizer(B_field=10.0)
     high = TEMHD_Stabilizer(B_field=10.0)
@@ -63,3 +74,27 @@ def test_step_remains_finite_over_flux_ramp() -> None:
         assert np.isfinite(t_surface)
         assert np.isfinite(k_eff_max)
         assert k_eff_max > 0.0
+
+
+def test_step_rejects_invalid_time_step_and_flux() -> None:
+    sim = TEMHD_Stabilizer()
+    with pytest.raises(ValueError, match="dt must be a finite positive value"):
+        sim.step(heat_flux_MW_m2=5.0, dt=0.0)
+    with pytest.raises(ValueError, match="finite non-negative"):
+        sim.step(heat_flux_MW_m2=-1.0, dt=0.1)
+
+
+def test_step_rejects_nonfinite_temperature_state() -> None:
+    sim = TEMHD_Stabilizer()
+    sim.T[3] = np.nan
+    with pytest.raises(ValueError, match="non-finite"):
+        sim.step(heat_flux_MW_m2=10.0, dt=0.1)
+
+
+def test_step_low_viscosity_path_remains_finite() -> None:
+    sim = TEMHD_Stabilizer(B_field=10.0)
+    sim.viscosity = 1e-12
+    t_surface, k_eff_max = sim.step(heat_flux_MW_m2=25.0, dt=0.1)
+    assert np.isfinite(t_surface)
+    assert np.isfinite(k_eff_max)
+    assert k_eff_max > 0.0
