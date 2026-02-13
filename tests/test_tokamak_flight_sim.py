@@ -1,0 +1,98 @@
+# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Tokamak Flight Sim Tests
+# © 1998–2026 Miroslav Šotek. All rights reserved.
+# Contact: www.anulum.li | protoscience@anulum.li
+# ORCID: https://orcid.org/0009-0009-3560-0851
+# License: GNU AGPL v3 | Commercial licensing available
+# ──────────────────────────────────────────────────────────────────────
+"""Deterministic smoke tests for tokamak_flight_sim runtime entry points."""
+
+from __future__ import annotations
+
+import numpy as np
+
+from scpn_fusion.control.tokamak_flight_sim import run_flight_sim
+
+
+class _DummyKernel:
+    """Lightweight deterministic stand-in for FusionKernel in CI tests."""
+
+    def __init__(self, _config_file: str) -> None:
+        self.cfg = {
+            "physics": {"plasma_current_target": 5.0},
+            "coils": [{"current": 0.0} for _ in range(5)],
+        }
+        self.R = np.linspace(5.8, 6.4, 13)
+        self.Z = np.linspace(-0.3, 0.3, 13)
+        self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
+        self.Psi = np.zeros((len(self.Z), len(self.R)), dtype=np.float64)
+        self._ticks = 0
+        self.solve_equilibrium()
+
+    def solve_equilibrium(self) -> None:
+        self._ticks += 1
+        radial_drive = float(self.cfg["coils"][2]["current"])
+        vertical_drive = float(self.cfg["coils"][4]["current"]) - float(
+            self.cfg["coils"][0]["current"]
+        )
+        center_r = 6.1 + 0.05 * np.tanh(radial_drive / 10.0)
+        center_z = 0.0 + 0.04 * np.tanh(vertical_drive / 10.0)
+        ir = int(np.argmin(np.abs(self.R - center_r)))
+        iz = int(np.argmin(np.abs(self.Z - center_z)))
+        self.Psi.fill(-1.0)
+        self.Psi[iz, ir] = 1.0 + 0.001 * float(
+            self.cfg["physics"]["plasma_current_target"]
+        )
+
+    def find_x_point(self, _psi: np.ndarray) -> tuple[tuple[float, float], float]:
+        return (float(self.R[-2]), float(self.Z[1])), 0.0
+
+
+def test_run_flight_sim_returns_finite_summary_without_plot() -> None:
+    summary = run_flight_sim(
+        config_file="dummy.json",
+        shot_duration=18,
+        seed=123,
+        save_plot=False,
+        verbose=False,
+        kernel_factory=_DummyKernel,
+    )
+    for key in (
+        "seed",
+        "config_path",
+        "steps",
+        "final_ip_ma",
+        "final_axis_r",
+        "final_axis_z",
+        "mean_abs_r_error",
+        "mean_abs_z_error",
+        "plot_saved",
+    ):
+        assert key in summary
+    assert summary["config_path"] == "dummy.json"
+    assert summary["steps"] == 18
+    assert summary["plot_saved"] is False
+    assert summary["plot_error"] is None
+    assert np.isfinite(summary["final_ip_ma"])
+    assert np.isfinite(summary["final_axis_r"])
+    assert np.isfinite(summary["final_axis_z"])
+    assert np.isfinite(summary["mean_abs_r_error"])
+    assert np.isfinite(summary["mean_abs_z_error"])
+
+
+def test_run_flight_sim_is_deterministic_for_fixed_seed() -> None:
+    kwargs = dict(
+        config_file="dummy.json",
+        shot_duration=14,
+        seed=77,
+        save_plot=False,
+        verbose=False,
+        kernel_factory=_DummyKernel,
+    )
+    a = run_flight_sim(**kwargs)
+    b = run_flight_sim(**kwargs)
+    assert a["final_ip_ma"] == b["final_ip_ma"]
+    assert a["final_axis_r"] == b["final_axis_r"]
+    assert a["final_axis_z"] == b["final_axis_z"]
+    assert a["mean_abs_r_error"] == b["mean_abs_r_error"]
+    assert a["mean_abs_z_error"] == b["mean_abs_z_error"]

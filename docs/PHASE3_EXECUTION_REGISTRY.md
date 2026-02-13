@@ -93,4 +93,6 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `S3-006`
 - Completed: `S4-001`
 - Completed: `S4-002`
-- In progress: `S4-003`
+- Completed: `S4-003`
+- Completed: `S4-004`
+- Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged).

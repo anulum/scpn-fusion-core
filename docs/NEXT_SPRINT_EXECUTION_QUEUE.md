@@ -53,7 +53,7 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - Completed: `GPHY-04` (reduced IGA/NURBS boundary lane with smooth first-wall contour generation and regression checks).
 - Completed: `GPHY-05` (latency-aware control lane with vector OU noise, actuator delay-line, and lagged MPC rollout).
 - Completed: `GPHY-06` (reduced runtime regime-specialized kernel cache/hot-swap lane in `fusion-core`).
-- Next active task: moved to `docs/PHASE3_EXECUTION_REGISTRY.md` (`S4-003` in progress).
+- Next active task: moved to `docs/PHASE3_EXECUTION_REGISTRY.md` (S4 baseline queue closed).
 
 ## Explicitly Deferred (Not In Sprint S1)
 

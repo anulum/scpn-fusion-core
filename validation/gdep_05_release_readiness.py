@@ -113,7 +113,10 @@ def run_campaign(
     passes = bool(not missing_done and changelog_phrase_present)
     s2_health = _queue_health(phase3_statuses, "S2")
     s3_health = _queue_health(phase3_statuses, "S3")
-    phase3_queue_parse_ok = bool(s2_health["parse_ok"] and s3_health["parse_ok"])
+    s4_health = _queue_health(phase3_statuses, "S4")
+    phase3_queue_parse_ok = bool(
+        s2_health["parse_ok"] and s3_health["parse_ok"] and s4_health["parse_ok"]
+    )
 
     return {
         "tracker_path": str(tracker_path),
@@ -126,6 +129,7 @@ def run_campaign(
         "phase3_queue_parse_ok": phase3_queue_parse_ok,
         "s2_queue_health": s2_health,
         "s3_queue_health": s3_health,
+        "s4_queue_health": s4_health,
         "required_changelog_phrase": REQUIRED_CHANGELOG_PHRASE,
         "changelog_phrase_present": changelog_phrase_present,
         "passes_thresholds": passes,
@@ -168,6 +172,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Completed S3 tasks tracked: `{g['s3_queue_health']['completed_count']}`",
         f"- In-progress S3 tasks tracked: `{g['s3_queue_health']['in_progress_count']}`",
         f"- Active S3 tasks: `{', '.join(g['s3_queue_health']['in_progress_tasks']) if g['s3_queue_health']['in_progress_tasks'] else 'none'}`",
+        f"- Completed S4 tasks tracked: `{g['s4_queue_health']['completed_count']}`",
+        f"- In-progress S4 tasks tracked: `{g['s4_queue_health']['in_progress_count']}`",
+        f"- Active S4 tasks: `{', '.join(g['s4_queue_health']['in_progress_tasks']) if g['s4_queue_health']['in_progress_tasks'] else 'none'}`",
         "",
         f"- Overall pass: `{'YES' if g['passes_thresholds'] else 'NO'}`",
         "",
