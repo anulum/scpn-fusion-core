@@ -199,16 +199,22 @@ class CompiledNet:
             bits = generate_bernoulli_bitstream(p, self.bitstream_length, rng=rng)
             input_packed[j, :] = pack_bitstream(bits)
 
-        # For each output row: AND each weight stream with input stream, sum
-        for i in range(n_out):
-            total_ones = 0
-            for j in range(n_in):
-                anded = vec_and(W_packed[i, j, :], input_packed[j, :])
-                total_ones += int(vec_popcount(anded))
-            # Normalize: sum of products, each product ≈ w_ij * x_j
-            # Max possible ones per AND = bitstream_length, there are n_in
-            # terms, but we want the sum not the average, so divide only by L.
-            output[i] = total_ones / self.bitstream_length
+        # Vectorized path when numpy bit_count is available; fallback keeps
+        # explicit per-stream sc_neurocore ops for compatibility.
+        if hasattr(np, "bit_count"):
+            anded = np.bitwise_and(W_packed, input_packed[np.newaxis, :, :])
+            ones = np.bit_count(anded).sum(axis=(1, 2), dtype=np.uint64)
+            output[:] = ones.astype(np.float64) / self.bitstream_length
+        else:
+            for i in range(n_out):
+                total_ones = 0
+                for j in range(n_in):
+                    anded = vec_and(W_packed[i, j, :], input_packed[j, :])
+                    total_ones += int(vec_popcount(anded))
+                # Normalize: sum of products, each product ≈ w_ij * x_j
+                # Max possible ones per AND = bitstream_length, there are n_in
+                # terms, but we want the sum not the average, so divide only by L.
+                output[i] = total_ones / self.bitstream_length
 
         return output
 
