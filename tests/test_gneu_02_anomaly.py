@@ -9,10 +9,15 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
+import scpn_fusion.control.disruption_predictor as dp
 from scpn_fusion.control.disruption_predictor import (
     HybridAnomalyDetector,
+    predict_disruption_risk,
+    predict_disruption_risk_safe,
     run_anomaly_alarm_campaign,
 )
 
@@ -62,3 +67,41 @@ def test_anomaly_alarm_campaign_outputs_expected_metrics() -> None:
         assert key in report
     assert 0.0 <= report["true_positive_rate"] <= 1.0
     assert 0.0 <= report["false_positive_rate"] <= 1.0
+
+
+def test_predict_disruption_risk_safe_fallback_when_checkpoint_missing(
+    tmp_path: Path,
+) -> None:
+    signal = np.linspace(0.25, 0.95, 80)
+    toroidal = {
+        "toroidal_n1_amp": 0.16,
+        "toroidal_n2_amp": 0.07,
+        "toroidal_n3_amp": 0.03,
+        "toroidal_asymmetry_index": 0.177,
+        "toroidal_radial_spread": 0.02,
+    }
+    expected = predict_disruption_risk(signal, toroidal)
+    risk, meta = predict_disruption_risk_safe(
+        signal,
+        toroidal,
+        model_path=tmp_path / "missing_model.pth",
+        train_if_missing=False,
+    )
+    assert abs(risk - expected) < 1e-12
+    assert meta["mode"] == "fallback"
+    assert meta["risk_source"] == "predict_disruption_risk"
+    assert "reason" in meta
+
+
+def test_load_or_train_predictor_can_return_fallback_metadata_when_missing(
+    tmp_path: Path,
+) -> None:
+    model, meta = dp.load_or_train_predictor(
+        model_path=tmp_path / "missing_model.pth",
+        seq_len=32,
+        train_if_missing=False,
+        allow_fallback=True,
+    )
+    assert model is None
+    assert meta["fallback"] is True
+    assert meta["reason"] in {"checkpoint_missing", "torch_unavailable"}

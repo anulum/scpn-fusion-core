@@ -8,6 +8,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
+from typing import Any
 
 try:
     import torch
@@ -520,9 +521,19 @@ def load_or_train_predictor(
     seq_len=DEFAULT_SEQ_LEN,
     force_retrain=False,
     train_kwargs=None,
+    train_if_missing=True,
+    allow_fallback=True,
 ):
     if torch is None:
-        raise RuntimeError("Torch is required for load_or_train_predictor().")
+        if not allow_fallback:
+            raise RuntimeError("Torch is required for load_or_train_predictor().")
+        return None, {
+            "trained": False,
+            "fallback": True,
+            "reason": "torch_unavailable",
+            "model_path": str(model_path) if model_path is not None else str(default_model_path()),
+            "seq_len": int(_normalize_seq_len(seq_len)),
+        }
 
     path = Path(model_path) if model_path is not None else default_model_path()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -543,15 +554,92 @@ def load_or_train_predictor(
         model.eval()
         return model, {
             "trained": False,
+            "fallback": False,
             "model_path": str(path),
             "seq_len": int(loaded_seq_len),
         }
 
+    if not train_if_missing and not force_retrain:
+        if allow_fallback:
+            return None, {
+                "trained": False,
+                "fallback": True,
+                "reason": "checkpoint_missing",
+                "model_path": str(path),
+                "seq_len": int(seq_len),
+            }
+        raise FileNotFoundError(f"Checkpoint not found: {path}")
+
     kwargs.setdefault("seq_len", seq_len)
     kwargs.setdefault("model_path", path)
-    model, info = train_predictor(**kwargs)
+    try:
+        model, info = train_predictor(**kwargs)
+    except Exception as exc:
+        if not allow_fallback:
+            raise
+        return None, {
+            "trained": False,
+            "fallback": True,
+            "reason": f"train_failed:{exc.__class__.__name__}",
+            "model_path": str(path),
+            "seq_len": int(seq_len),
+        }
     info["trained"] = True
+    info["fallback"] = False
     return model, info
+
+
+def predict_disruption_risk_safe(
+    signal,
+    toroidal_observables=None,
+    *,
+    model_path=None,
+    seq_len=DEFAULT_SEQ_LEN,
+    train_if_missing=False,
+) -> tuple[float, dict[str, Any]]:
+    """
+    Predict disruption risk with checkpoint path if available, else deterministic fallback.
+
+    Returns
+    -------
+    risk, metadata
+        ``risk`` is always a bounded float in ``[0, 1]``.
+        ``metadata`` includes whether fallback mode was used.
+    """
+    base_risk = float(np.clip(predict_disruption_risk(signal, toroidal_observables), 0.0, 1.0))
+
+    model, meta = load_or_train_predictor(
+        model_path=model_path,
+        seq_len=seq_len,
+        force_retrain=False,
+        train_kwargs={"seq_len": _normalize_seq_len(seq_len), "save_plot": False},
+        train_if_missing=bool(train_if_missing),
+        allow_fallback=True,
+    )
+
+    if model is None or torch is None:
+        out_meta = dict(meta)
+        out_meta["mode"] = "fallback"
+        out_meta["risk_source"] = "predict_disruption_risk"
+        return base_risk, out_meta
+
+    try:
+        model.eval()
+        model_seq_len = int(meta.get("seq_len", _normalize_seq_len(seq_len)))
+        input_sig = _prepare_signal_window(signal, model_seq_len)
+        input_tensor = torch.tensor(input_sig, dtype=torch.float32).reshape(1, -1, 1)
+        with torch.no_grad():
+            model_risk = float(np.clip(float(model(input_tensor).item()), 0.0, 1.0))
+        out_meta = dict(meta)
+        out_meta["mode"] = "checkpoint"
+        out_meta["risk_source"] = "transformer"
+        return model_risk, out_meta
+    except Exception as exc:
+        out_meta = dict(meta)
+        out_meta["mode"] = "fallback"
+        out_meta["risk_source"] = "predict_disruption_risk"
+        out_meta["reason"] = f"inference_failed:{exc.__class__.__name__}"
+        return base_risk, out_meta
 
 if __name__ == "__main__":
     import argparse
