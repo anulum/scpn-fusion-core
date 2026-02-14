@@ -49,3 +49,17 @@ def test_campaign_meets_thresholds_smoke() -> None:
     assert out["inference_seconds_200k"] <= 1.0
     assert out["mean_divertor_reduction_pct"] >= 8.0
     assert out["passes_thresholds"] is True
+
+
+def test_campaign_does_not_mutate_global_numpy_rng_state() -> None:
+    np.random.seed(31415)
+    state = np.random.get_state()
+
+    _ = gai_03_heat_ml_shadow.run_campaign(
+        seed=11, train_samples=512, eval_samples=192, scan_samples=160
+    )
+
+    observed = float(np.random.random())
+    np.random.set_state(state)
+    expected = float(np.random.random())
+    assert observed == expected

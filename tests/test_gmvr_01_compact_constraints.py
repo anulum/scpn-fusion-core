@@ -12,6 +12,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import numpy as np
+
 from scpn_fusion.core.global_design_scanner import GlobalDesignExplorer
 
 
@@ -42,3 +44,16 @@ def test_campaign_finds_feasible_design_in_target_window() -> None:
     assert best["Div_Load_Optimized_MW_m2"] <= 45.0
     assert best["Zeff_Est"] <= 0.4
     assert best["B_peak_HTS_T"] <= 21.0
+
+
+def test_compact_scan_does_not_mutate_global_numpy_rng_state() -> None:
+    np.random.seed(2222)
+    state = np.random.get_state()
+
+    explorer = GlobalDesignExplorer("dummy")
+    _ = explorer.run_compact_scan(n_samples=200, seed=5)
+
+    observed = float(np.random.random())
+    np.random.set_state(state)
+    expected = float(np.random.random())
+    assert observed == expected

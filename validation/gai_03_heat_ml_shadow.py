@@ -47,9 +47,8 @@ def run_campaign(
     rmse_pct_val = rmse_percent(eval_set.shadow_fraction, pred)
     inference_seconds = benchmark_inference_seconds(model, samples=200_000)
 
-    np.random.seed(seed)
     explorer = GlobalDesignExplorer("dummy")
-    df = explorer.run_scan(n_samples=scan_samples)
+    df = explorer.run_scan(n_samples=scan_samples, seed=seed)
     baseline = np.maximum(df["Div_Load_Baseline"].to_numpy(dtype=float), 1e-9)
     optimized = df["Div_Load_Optimized"].to_numpy(dtype=float)
     reduction_pct = 100.0 * (baseline - optimized) / baseline

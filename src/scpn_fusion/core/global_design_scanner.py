@@ -126,16 +126,15 @@ class GlobalDesignExplorer:
         q95_min=3.0,
     ):
         print(f"--- SCPN GLOBAL DESIGN SCAN ({n_samples} Universes) ---")
-        if seed is not None:
-            np.random.seed(int(seed))
+        rng = np.random.default_rng(int(seed)) if seed is not None else np.random.default_rng()
         
         results = []
         
         for i in range(n_samples):
             # Sampling Strategy (Latin Hypercube-ish)
-            R = np.random.uniform(r_bounds[0], r_bounds[1])
-            B = np.random.uniform(b_bounds[0], b_bounds[1])
-            I = np.random.uniform(i_bounds[0], i_bounds[1])
+            R = float(rng.uniform(r_bounds[0], r_bounds[1]))
+            B = float(rng.uniform(b_bounds[0], b_bounds[1]))
+            I = float(rng.uniform(i_bounds[0], i_bounds[1]))
             
             # Physics Constraint: Safety Factor q95 > 3
             # q ~ 5 a^2 B / R I
