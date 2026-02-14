@@ -228,7 +228,11 @@ fn probe_indices(grid: &Grid2D, probes_rz: &[(f64, f64)]) -> Vec<(usize, usize)>
         .collect()
 }
 
-fn mtanh_profile_dpsi_norm(psi_norm: f64, params: &ProfileParams, label: &str) -> FusionResult<f64> {
+fn mtanh_profile_dpsi_norm(
+    psi_norm: f64,
+    params: &ProfileParams,
+    label: &str,
+) -> FusionResult<f64> {
     if !psi_norm.is_finite() {
         return Err(FusionError::ConfigError(format!(
             "{label}.psi_norm must be finite, got {psi_norm}"
