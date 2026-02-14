@@ -104,7 +104,7 @@ impl FusionKernel {
         let dz = self.grid.dz;
 
         // 1. Compute vacuum field
-        let psi_vac = calculate_vacuum_field(&self.grid, &self.config.coils, mu0);
+        let psi_vac = calculate_vacuum_field(&self.grid, &self.config.coils, mu0)?;
         self.state.psi = psi_vac.clone();
         let psi_vac_boundary = psi_vac;
 

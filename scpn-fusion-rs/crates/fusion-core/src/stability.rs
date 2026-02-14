@@ -285,7 +285,7 @@ pub fn solve_force_balance(
 
     for iter in 0..MAX_NEWTON_ITER {
         // Compute vacuum field and force
-        let psi = calculate_vacuum_field(grid, &config.coils, mu0);
+        let psi = calculate_vacuum_field(grid, &config.coils, mu0)?;
         let (f_r, _f_z) = calculate_forces(&psi, grid, r_target, z_target, i_plasma_ma)?;
 
         if f_r.abs() < FORCE_TOLERANCE {
@@ -301,7 +301,7 @@ pub fn solve_force_balance(
                 let original = config.coils[coil_idx].current;
                 config.coils[coil_idx].current = original + COIL_PERTURBATION_MA;
 
-                let psi_pert = calculate_vacuum_field(grid, &config.coils, mu0);
+                let psi_pert = calculate_vacuum_field(grid, &config.coils, mu0)?;
                 let (f_r_pert, _) =
                     calculate_forces(&psi_pert, grid, r_target, z_target, i_plasma_ma)?;
 
@@ -326,7 +326,7 @@ pub fn solve_force_balance(
     }
 
     // Final force evaluation
-    let psi = calculate_vacuum_field(grid, &config.coils, mu0);
+    let psi = calculate_vacuum_field(grid, &config.coils, mu0)?;
     let (f_r, _) = calculate_forces(&psi, grid, r_target, z_target, i_plasma_ma)?;
     Ok((MAX_NEWTON_ITER, f_r.abs()))
 }
@@ -352,7 +352,8 @@ mod tests {
     fn test_decay_index_finite() {
         let cfg = ReactorConfig::from_file(&config_path("iter_config.json")).unwrap();
         let grid = cfg.create_grid();
-        let psi = calculate_vacuum_field(&grid, &cfg.coils, cfg.physics.vacuum_permeability);
+        let psi = calculate_vacuum_field(&grid, &cfg.coils, cfg.physics.vacuum_permeability)
+            .expect("valid vacuum-field inputs");
 
         let n = decay_index(&psi, &grid, 6.2, 0.0).expect("valid finite decay-index inputs");
         assert!(n.is_finite(), "Decay index should be finite: {n}");
@@ -362,7 +363,8 @@ mod tests {
     fn test_forces_finite() {
         let cfg = ReactorConfig::from_file(&config_path("iter_config.json")).unwrap();
         let grid = cfg.create_grid();
-        let psi = calculate_vacuum_field(&grid, &cfg.coils, cfg.physics.vacuum_permeability);
+        let psi = calculate_vacuum_field(&grid, &cfg.coils, cfg.physics.vacuum_permeability)
+            .expect("valid vacuum-field inputs");
 
         let (fr, fz) =
             calculate_forces(&psi, &grid, 6.2, 0.0, 15.0).expect("valid finite force inputs");
@@ -374,7 +376,8 @@ mod tests {
     fn test_stability_analysis() {
         let cfg = ReactorConfig::from_file(&config_path("iter_config.json")).unwrap();
         let grid = cfg.create_grid();
-        let psi = calculate_vacuum_field(&grid, &cfg.coils, cfg.physics.vacuum_permeability);
+        let psi = calculate_vacuum_field(&grid, &cfg.coils, cfg.physics.vacuum_permeability)
+            .expect("valid vacuum-field inputs");
 
         let result = analyze_stability(&psi, &grid, 6.2, 0.0, 15.0)
             .expect("valid finite stability-analysis inputs");
@@ -408,7 +411,8 @@ mod tests {
     fn test_stability_rejects_invalid_runtime_inputs() {
         let cfg = ReactorConfig::from_file(&config_path("iter_config.json")).unwrap();
         let grid = cfg.create_grid();
-        let psi = calculate_vacuum_field(&grid, &cfg.coils, cfg.physics.vacuum_permeability);
+        let psi = calculate_vacuum_field(&grid, &cfg.coils, cfg.physics.vacuum_permeability)
+            .expect("valid vacuum-field inputs");
 
         assert!(decay_index(&psi, &grid, f64::NAN, 0.0).is_err());
         assert!(calculate_forces(&psi, &grid, 0.0, 0.0, 15.0).is_err());
