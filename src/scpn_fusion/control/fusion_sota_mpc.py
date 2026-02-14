@@ -50,7 +50,9 @@ class NeuralSurrogate:
         self._log("[SOTA] Training Neural Surrogate on Physics Kernel...")
         kernel.solve_equilibrium()
         base_state = self.get_state(kernel)
-        p = max(float(perturbation), 1e-9)
+        p = float(perturbation)
+        if not np.isfinite(p) or p <= 0.0:
+            raise ValueError("perturbation must be finite and > 0.")
 
         for i in range(len(kernel.cfg["coils"])):
             old_i = float(kernel.cfg["coils"][i].get("current", 0.0))

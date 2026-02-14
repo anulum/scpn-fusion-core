@@ -190,3 +190,10 @@ def test_mpc_controller_rejects_invalid_constructor_inputs(
             target_state=np.zeros(4, dtype=np.float64),
             **kwargs,
         )
+
+
+def test_surrogate_rejects_invalid_perturbation() -> None:
+    surrogate = NeuralSurrogate(n_coils=4, n_state=4, verbose=False)
+    kernel = _DummyKernel("dummy.json")
+    with pytest.raises(ValueError, match="perturbation"):
+        surrogate.train_on_kernel(kernel, perturbation=0.0)
