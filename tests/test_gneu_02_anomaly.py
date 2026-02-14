@@ -57,6 +57,26 @@ def test_hybrid_detector_deterministic_given_same_sequence() -> None:
     assert np.allclose(o1, o2)
 
 
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"threshold": -0.1}, "threshold"),
+        ({"threshold": 1.1}, "threshold"),
+        ({"threshold": float("nan")}, "threshold"),
+        ({"threshold": float("inf")}, "threshold"),
+        ({"ema": 0.0}, "ema"),
+        ({"ema": -0.1}, "ema"),
+        ({"ema": 1.1}, "ema"),
+        ({"ema": float("nan")}, "ema"),
+    ],
+)
+def test_hybrid_detector_rejects_invalid_constructor_inputs(
+    kwargs: dict[str, float], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        HybridAnomalyDetector(**kwargs)
+
+
 def test_anomaly_alarm_campaign_outputs_expected_metrics() -> None:
     report = run_anomaly_alarm_campaign(seed=23, episodes=8, window=64)
     for key in (

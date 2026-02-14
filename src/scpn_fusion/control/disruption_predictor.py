@@ -335,8 +335,14 @@ class HybridAnomalyDetector:
     """
 
     def __init__(self, threshold=0.65, ema=0.05):
-        self.threshold = float(np.clip(threshold, 0.0, 1.0))
-        self.ema = float(np.clip(ema, 1e-4, 1.0))
+        threshold_f = float(threshold)
+        ema_f = float(ema)
+        if not np.isfinite(threshold_f) or threshold_f < 0.0 or threshold_f > 1.0:
+            raise ValueError("threshold must be finite and in [0, 1].")
+        if not np.isfinite(ema_f) or ema_f <= 0.0 or ema_f > 1.0:
+            raise ValueError("ema must be finite and in (0, 1].")
+        self.threshold = threshold_f
+        self.ema = ema_f
         self.mean = 0.0
         self.var = 1.0
         self.initialized = False
