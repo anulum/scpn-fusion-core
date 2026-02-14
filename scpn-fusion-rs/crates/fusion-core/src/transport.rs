@@ -4,6 +4,7 @@
 //! Solves heat and particle diffusion on radial grid ρ ∈ [0, 1].
 
 use crate::pedestal::{PedestalConfig, PedestalModel};
+use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::RadialProfiles;
 use ndarray::Array1;
 
@@ -95,11 +96,26 @@ impl TransportSolver {
     ///
     /// The solver remains 1.5D; this adds a radial transport multiplier using spectral
     /// energy from low-order `n != 0` modes to mimic toroidal asymmetry effects.
-    pub fn set_toroidal_mode_spectrum(&mut self, amplitudes: &[f64], gain: f64) {
+    pub fn set_toroidal_mode_spectrum(
+        &mut self,
+        amplitudes: &[f64],
+        gain: f64,
+    ) -> FusionResult<()> {
+        if !gain.is_finite() || gain < 0.0 {
+            return Err(FusionError::PhysicsViolation(
+                "toroidal coupling gain must be finite and >= 0".to_string(),
+            ));
+        }
+        if amplitudes.iter().any(|a| !a.is_finite() || *a < 0.0) {
+            return Err(FusionError::PhysicsViolation(
+                "toroidal mode amplitudes must be finite and >= 0".to_string(),
+            ));
+        }
         self.toroidal_mode_amplitudes.clear();
         self.toroidal_mode_amplitudes
-            .extend(amplitudes.iter().map(|a| a.abs()));
-        self.toroidal_coupling_gain = gain.max(0.0);
+            .extend(amplitudes.iter().copied());
+        self.toroidal_coupling_gain = gain;
+        Ok(())
     }
 
     fn toroidal_mode_coupling_factor(&self, rho: f64) -> f64 {
@@ -331,7 +347,9 @@ mod tests {
         let baseline_chi = baseline.chi.clone();
 
         let mut coupled = TransportSolver::new();
-        coupled.set_toroidal_mode_spectrum(&[0.2, 0.1, 0.05], 0.0);
+        coupled
+            .set_toroidal_mode_spectrum(&[0.2, 0.1, 0.05], 0.0)
+            .expect("valid spectrum");
         coupled.update_transport_model(20.0);
 
         let max_err = baseline_chi
@@ -353,7 +371,9 @@ mod tests {
         let base_core = baseline.chi[4];
 
         let mut coupled = TransportSolver::new();
-        coupled.set_toroidal_mode_spectrum(&[0.2, 0.1, 0.04], 0.7);
+        coupled
+            .set_toroidal_mode_spectrum(&[0.2, 0.1, 0.04], 0.7)
+            .expect("valid spectrum");
         coupled.update_transport_model(20.0);
         let edge_gain = coupled.chi[48] / base_edge.max(1e-12);
         let core_gain = coupled.chi[4] / base_core.max(1e-12);
@@ -371,7 +391,8 @@ mod tests {
     #[test]
     fn test_toroidal_mode_coupling_factor_is_clamped() {
         let mut ts = TransportSolver::new();
-        ts.set_toroidal_mode_spectrum(&[10.0, 10.0, 10.0], 10.0);
+        ts.set_toroidal_mode_spectrum(&[10.0, 10.0, 10.0], 10.0)
+            .expect("valid spectrum");
         let factor = ts.toroidal_mode_coupling_factor(1.0);
         assert!(
             (factor - TOROIDAL_COUPLING_MAX_FACTOR).abs() < 1e-12,
@@ -379,6 +400,33 @@ mod tests {
             TOROIDAL_COUPLING_MAX_FACTOR,
             factor
         );
+    }
+
+    #[test]
+    fn test_toroidal_mode_spectrum_rejects_invalid_inputs() {
+        let mut ts = TransportSolver::new();
+        for bad_gain in [f64::NAN, -0.1] {
+            let err = ts
+                .set_toroidal_mode_spectrum(&[0.1, 0.2], bad_gain)
+                .expect_err("invalid gain must error");
+            match err {
+                FusionError::PhysicsViolation(msg) => {
+                    assert!(msg.contains("gain"));
+                }
+                other => panic!("Unexpected error: {other:?}"),
+            }
+        }
+        for bad_amp in [f64::NAN, -0.2] {
+            let err = ts
+                .set_toroidal_mode_spectrum(&[0.1, bad_amp], 0.3)
+                .expect_err("invalid amplitude must error");
+            match err {
+                FusionError::PhysicsViolation(msg) => {
+                    assert!(msg.contains("amplitudes"));
+                }
+                other => panic!("Unexpected error: {other:?}"),
+            }
+        }
     }
 
     #[test]
