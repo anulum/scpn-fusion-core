@@ -61,6 +61,23 @@ impl VmecBoundaryState {
                 "VMEC boundary requires nfp >= 1".to_string(),
             ));
         }
+        for (idx, mode) in self.modes.iter().enumerate() {
+            if mode.m < 0 {
+                return Err(FusionError::PhysicsViolation(format!(
+                    "VMEC boundary mode[{idx}] requires m >= 0, got {}",
+                    mode.m
+                )));
+            }
+            if !mode.r_cos.is_finite()
+                || !mode.r_sin.is_finite()
+                || !mode.z_cos.is_finite()
+                || !mode.z_sin.is_finite()
+            {
+                return Err(FusionError::PhysicsViolation(format!(
+                    "VMEC boundary mode[{idx}] contains non-finite coefficients"
+                )));
+            }
+        }
         Ok(())
     }
 }
@@ -85,9 +102,15 @@ pub fn export_vmec_like_text(state: &VmecBoundaryState) -> FusionResult<String> 
 }
 
 fn parse_float(key: &str, text: &str) -> FusionResult<f64> {
-    text.parse::<f64>().map_err(|e| {
+    let val = text.parse::<f64>().map_err(|e| {
         FusionError::PhysicsViolation(format!("Failed to parse VMEC key '{key}' as float: {e}"))
-    })
+    })?;
+    if !val.is_finite() {
+        return Err(FusionError::PhysicsViolation(format!(
+            "VMEC key '{key}' must be finite, got {val}"
+        )));
+    }
+    Ok(val)
 }
 
 fn parse_int<T>(key: &str, text: &str) -> FusionResult<T>
@@ -140,12 +163,54 @@ pub fn import_vmec_like_text(text: &str) -> FusionResult<VmecBoundaryState> {
         let key = key.trim();
         let value = value.trim();
         match key {
-            "r_axis" => r_axis = Some(parse_float(key, value)?),
-            "z_axis" => z_axis = Some(parse_float(key, value)?),
-            "a_minor" => a_minor = Some(parse_float(key, value)?),
-            "kappa" => kappa = Some(parse_float(key, value)?),
-            "triangularity" => triangularity = Some(parse_float(key, value)?),
-            "nfp" => nfp = Some(parse_int(key, value)?),
+            "r_axis" => {
+                if r_axis.is_some() {
+                    return Err(FusionError::PhysicsViolation(
+                        "Duplicate VMEC key: r_axis".to_string(),
+                    ));
+                }
+                r_axis = Some(parse_float(key, value)?);
+            }
+            "z_axis" => {
+                if z_axis.is_some() {
+                    return Err(FusionError::PhysicsViolation(
+                        "Duplicate VMEC key: z_axis".to_string(),
+                    ));
+                }
+                z_axis = Some(parse_float(key, value)?);
+            }
+            "a_minor" => {
+                if a_minor.is_some() {
+                    return Err(FusionError::PhysicsViolation(
+                        "Duplicate VMEC key: a_minor".to_string(),
+                    ));
+                }
+                a_minor = Some(parse_float(key, value)?);
+            }
+            "kappa" => {
+                if kappa.is_some() {
+                    return Err(FusionError::PhysicsViolation(
+                        "Duplicate VMEC key: kappa".to_string(),
+                    ));
+                }
+                kappa = Some(parse_float(key, value)?);
+            }
+            "triangularity" => {
+                if triangularity.is_some() {
+                    return Err(FusionError::PhysicsViolation(
+                        "Duplicate VMEC key: triangularity".to_string(),
+                    ));
+                }
+                triangularity = Some(parse_float(key, value)?);
+            }
+            "nfp" => {
+                if nfp.is_some() {
+                    return Err(FusionError::PhysicsViolation(
+                        "Duplicate VMEC key: nfp".to_string(),
+                    ));
+                }
+                nfp = Some(parse_int(key, value)?);
+            }
             other => {
                 return Err(FusionError::PhysicsViolation(format!(
                     "Unknown VMEC key: {other}"
@@ -243,6 +308,33 @@ nfp=1
         let err = import_vmec_like_text(text).expect_err("a_minor=0 must fail");
         match err {
             FusionError::PhysicsViolation(msg) => assert!(msg.contains("a_minor")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_vmec_rejects_invalid_modes_and_duplicates() {
+        let mut state = sample_state();
+        state.modes[0].r_cos = f64::NAN;
+        let err = export_vmec_like_text(&state).expect_err("non-finite mode coeff must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => assert!(msg.contains("mode")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        let dup_text = "\
+format=vmec_like_v1
+r_axis=6.2
+r_axis=6.3
+z_axis=0.0
+a_minor=2.0
+kappa=1.7
+triangularity=0.2
+nfp=1
+";
+        let err = import_vmec_like_text(dup_text).expect_err("duplicate keys must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => assert!(msg.contains("Duplicate VMEC key")),
             other => panic!("Unexpected error: {other:?}"),
         }
     }
