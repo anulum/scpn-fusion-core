@@ -513,10 +513,10 @@ mod tests {
     fn test_vector_ou_noise_deterministic_with_seed() {
         let mut rng1 = StdRng::seed_from_u64(7);
         let mut rng2 = StdRng::seed_from_u64(7);
-        let mut n1 = VectorNoiseInjectionLayer::new(4, 0.2, 0.03, 1.0)
-            .expect("valid vector OU config");
-        let mut n2 = VectorNoiseInjectionLayer::new(4, 0.2, 0.03, 1.0)
-            .expect("valid vector OU config");
+        let mut n1 =
+            VectorNoiseInjectionLayer::new(4, 0.2, 0.03, 1.0).expect("valid vector OU config");
+        let mut n2 =
+            VectorNoiseInjectionLayer::new(4, 0.2, 0.03, 1.0).expect("valid vector OU config");
         for _ in 0..16 {
             let a = n1.step(&mut rng1);
             let b = n2.step(&mut rng2);
