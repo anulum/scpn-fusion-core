@@ -148,3 +148,23 @@ def test_mpc_plan_is_clipped_to_action_limit() -> None:
     )
     action = mpc.plan_trajectory(np.full(4, 5.0, dtype=np.float64))
     assert float(np.max(np.abs(action))) <= 0.3 + 1e-12
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"shot_length": 0}, "shot_length"),
+        ({"disturbance_start_step": -1}, "disturbance_start_step"),
+    ],
+)
+def test_run_sota_simulation_rejects_invalid_runtime_inputs(
+    kwargs: dict[str, int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        run_sota_simulation(
+            config_file="dummy.json",
+            save_plot=False,
+            verbose=False,
+            kernel_factory=_DummyKernel,
+            **kwargs,
+        )

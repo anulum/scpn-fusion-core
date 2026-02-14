@@ -177,8 +177,12 @@ def run_sota_simulation(
 
     lo_ip, hi_ip = _normalize_bounds(current_target_bounds, "current_target_bounds")
     lo_i, hi_i = _normalize_bounds(coil_current_limits, "coil_current_limits")
-    steps = max(int(shot_length), 1)
-    drift_start = max(int(disturbance_start_step), 0)
+    steps = int(shot_length)
+    if steps < 1:
+        raise ValueError("shot_length must be >= 1.")
+    drift_start = int(disturbance_start_step)
+    if drift_start < 0:
+        raise ValueError("disturbance_start_step must be >= 0.")
     drift_per = float(disturbance_per_step_ma)
     if target_vector is None:
         target_vec = np.array([6.0, 0.0, 5.0, -3.5], dtype=np.float64)
