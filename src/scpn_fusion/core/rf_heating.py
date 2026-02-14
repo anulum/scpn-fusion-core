@@ -11,9 +11,6 @@ from scipy.integrate import odeint
 import sys
 import os
 
-# Add src to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:

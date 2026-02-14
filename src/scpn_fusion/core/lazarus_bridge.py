@@ -19,8 +19,6 @@ except ImportError:
     OPENTRONS_AVAILABLE = False
     print("[Lazarus] Opentrons API not found. Using Biological Simulation Mode.")
 
-# Add fusion core path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 try:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:

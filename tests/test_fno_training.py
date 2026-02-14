@@ -7,12 +7,8 @@
 # ─────────────────────────────────────────────────────────────────────
 
 from pathlib import Path
-import sys
 
 import numpy as np
-
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from scpn_fusion.core.fno_training import train_fno
 from scpn_fusion.core.fno_turbulence_suppressor import FNO_Controller

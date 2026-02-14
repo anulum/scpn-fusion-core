@@ -20,8 +20,6 @@ except ImportError:
     VIBRANA_AVAILABLE = False
     print("[Warning] CCW_Standalone not found. VIBRANA Bridge disabled.")
 
-# Add Fusion Core path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 try:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:

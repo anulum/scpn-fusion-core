@@ -15,11 +15,6 @@ Covers:
   - Physics module monotonicity / NaN-freedom
 """
 
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-
 import numpy as np
 import pytest
 from hypothesis import given, settings, assume, HealthCheck
