@@ -1,0 +1,348 @@
+%% Path A — Computer Physics Communications (Elsevier)
+%% "Open-Source Equilibrium Reconstruction for Tokamak Plasmas:
+%%  Validation Against DIII-D Discharges"
+%%
+%% Compile: pdflatex -> bibtex -> pdflatex x2  (see Makefile)
+%% -----------------------------------------------------------
+\documentclass[preprint,12pt,authoryear]{elsarticle}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{subcaption}
+\usepackage{xcolor}
+
+% Placeholder text (remove for final submission)
+\usepackage{lipsum}
+
+\journal{Computer Physics Communications}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Open-Source Equilibrium Reconstruction for Tokamak Plasmas:\\
+       Validation Against DIII-D Discharges}
+
+\author[anulum]{Miroslav Sotek\corref{cor1}}
+\ead{miroslav.sotek@anulum.research}
+\author[anulum]{Michal Reiprich}
+
+\cortext[cor1]{Corresponding author.}
+
+\affiliation[anulum]{organization={Anulum Research},
+                     country={Czech Republic}}
+
+\begin{abstract}
+% TODO: Write abstract (~200 words)
+% Key points to cover:
+% - Open-source Grad-Shafranov equilibrium solver
+% - Picard iteration with SOR for forward solve
+% - Levenberg-Marquardt inverse with mtanh parameterisation
+% - Tikhonov + Huber regularisation for robustness
+% - Rust core with Python bindings (PyO3)
+% - Validation against DIII-D experimental discharges
+% - Performance benchmarks vs existing codes (EFIT, FREEGS)
+\lipsum[1]
+\end{abstract}
+
+\begin{keyword}
+tokamak \sep equilibrium reconstruction \sep Grad-Shafranov \sep
+Levenberg-Marquardt \sep open-source \sep Rust \sep PyO3
+\end{keyword}
+
+\end{frontmatter}
+
+%% ============================================================
+%%  1. INTRODUCTION
+%% ============================================================
+\section{Introduction}
+\label{sec:introduction}
+
+% TODO: Motivate the need for open-source equilibrium reconstruction codes.
+% Points to cover:
+% - Equilibrium reconstruction is foundational for tokamak operation
+% - EFIT is the de-facto standard but proprietary / export-controlled
+% - FREEGS exists but limited inverse capability
+% - TORAX (DeepMind) focuses on transport, not equilibrium
+% - Gap: no open-source code with full inverse + modern regularisation
+% - Our contribution: Rust-based solver with Python API, validated on DIII-D
+
+\lipsum[2-3]
+
+The Grad-Shafranov (GS) equation~\cite{grad1958,shafranov1966} governs
+axisymmetric magnetohydrostatic equilibria in tokamak plasmas.
+Accurate and rapid solution of the GS equation, both in the forward
+(given profiles, compute flux) and inverse (given measurements,
+reconstruct profiles) directions, is essential for plasma control,
+stability analysis, and discharge design.
+
+% TODO: Expand with discussion of EFIT heritage
+The EFIT code~\cite{lao1985,lao2005,sabbagh2023} has served as the
+workhorse for equilibrium reconstruction across the world tokamak
+programme for nearly four decades.  However, its proprietary nature
+limits reproducibility and community-driven improvement.
+
+% TODO: Discuss FREEGS and TORAX
+Open-source alternatives such as FREEGS~\cite{freegs} and the
+recently released TORAX~\cite{torax2024} address parts of this gap,
+but neither provides a complete, validated inverse solver with modern
+regularisation techniques.
+
+% TODO: State contributions clearly
+In this paper we present \textsc{SCPN-Fusion-Core}, an open-source
+equilibrium reconstruction code implemented in Rust with Python
+bindings via PyO3.  Our main contributions are:
+\begin{enumerate}
+  \item A Picard-iteration forward solver with successive over-relaxation (SOR);
+  \item A Levenberg-Marquardt inverse solver with analytic \texttt{mtanh}
+        Jacobians;
+  \item Tikhonov and Huber regularisation for robust profile recovery;
+  \item Validation against DIII-D experimental data;
+  \item Performance benchmarks demonstrating the advantages of the Rust
+        implementation.
+\end{enumerate}
+
+%% ============================================================
+%%  2. NUMERICAL METHODS
+%% ============================================================
+\section{Numerical Methods}
+\label{sec:methods}
+
+\subsection{Grad-Shafranov Formulation}
+\label{sec:gs-formulation}
+
+% TODO: Derive or state the GS equation
+% \Delta^* \psi = -\mu_0 R J_\phi = -\mu_0 R^2 p'(\psi) - F F'(\psi)
+% Boundary conditions, computational domain, normalised flux
+
+The axisymmetric equilibrium of a magnetically confined plasma is
+governed by the Grad-Shafranov equation~\cite{grad1958,shafranov1966}:
+\begin{equation}
+  \Delta^{*}\psi \equiv R\frac{\partial}{\partial R}
+    \!\left(\frac{1}{R}\frac{\partial\psi}{\partial R}\right)
+    + \frac{\partial^{2}\psi}{\partial Z^{2}}
+  = -\mu_{0}R^{2}\,p'(\psi) - F\,F'(\psi),
+  \label{eq:gs}
+\end{equation}
+where $\psi(R,Z)$ is the poloidal magnetic flux function, $p(\psi)$ is
+the plasma pressure, $F(\psi)=RB_\phi$ is the poloidal current
+function, and $\Delta^{*}$ is the Grad-Shafranov operator.
+
+\lipsum[4]
+
+\subsection{Picard Iteration with Successive Over-Relaxation}
+\label{sec:picard-sor}
+
+% TODO: Describe the iterative scheme
+% - Discretisation on (R,Z) grid
+% - Five-point stencil for \Delta^*
+% - Picard iteration: linearise RHS, solve Poisson-like system
+% - SOR acceleration with optimal omega
+% - Convergence criterion
+
+\lipsum[5]
+
+\subsection{Levenberg-Marquardt Inverse with mtanh Jacobians}
+\label{sec:lm-inverse}
+
+% TODO: Describe the inverse problem formulation
+% - Measurement vector: magnetic probes, flux loops, MSE, pressure
+% - Parameter vector: mtanh profile coefficients
+% - LM update: (J^T J + \lambda diag(J^T J)) \delta p = J^T r
+% - Analytic Jacobians for mtanh parameterisation
+% - Step-size control and convergence
+
+The Levenberg-Marquardt algorithm~\cite{levenberg1944,marquardt1963}
+is employed to solve the nonlinear least-squares inverse problem.
+
+\lipsum[6]
+
+\subsection{Tikhonov and Huber Regularisation}
+\label{sec:regularisation}
+
+% TODO: Describe regularisation strategy
+% - Tikhonov: \|L(p - p_0)\|^2 penalty
+% - Huber loss for outlier-robust residuals
+% - L-curve or GCV for hyperparameter selection
+% - Tikhonov reference: \cite{tikhonov1963}
+
+Tikhonov regularisation~\cite{tikhonov1963} is applied to stabilise
+the inverse problem against measurement noise and ill-conditioning.
+
+\lipsum[7]
+
+%% ============================================================
+%%  3. IMPLEMENTATION
+%% ============================================================
+\section{Implementation}
+\label{sec:implementation}
+
+\subsection{Rust Core with PyO3 Bindings}
+\label{sec:rust-pyo3}
+
+% TODO: Describe the software architecture
+% - Rust crate structure (scpn-fusion-rs)
+% - PyO3 bindings for Python interoperability
+% - ndarray for matrix operations
+% - Parallelism via rayon
+% - Memory layout and cache efficiency
+
+\lipsum[8]
+
+\subsection{Performance Considerations}
+\label{sec:performance}
+
+% TODO: Discuss performance design choices
+% - SIMD vectorisation
+% - Cache-friendly grid traversal (row-major vs column-major)
+% - Sparse vs dense Jacobian storage
+% - Parallelism strategy
+
+\lipsum[9]
+
+%% ============================================================
+%%  4. VALIDATION
+%% ============================================================
+\section{Validation}
+\label{sec:validation}
+
+\subsection{Data Sources}
+\label{sec:data-sources}
+
+% TODO: Describe DIII-D data used
+% - Shot numbers and discharge types (L-mode, H-mode, high-beta)
+% - Diagnostic channels: magnetic probes, flux loops, MSE, Thomson scattering
+% - Reference EFIT reconstructions from MDS+
+
+\lipsum[10]
+
+\subsection{Forward Solve Results}
+\label{sec:forward-results}
+
+% TODO: Present forward solve validation
+% - Comparison with analytic Solov'ev solutions
+% - Grid convergence study
+% - Comparison with FREEGS for identical inputs
+% - Figures: flux surfaces, safety factor profiles
+
+\lipsum[11]
+
+\subsection{Inverse Reconstruction Results}
+\label{sec:inverse-results}
+
+% TODO: Present inverse reconstruction validation
+% - Shot-by-shot comparison with EFIT
+% - Residual chi-squared statistics
+% - Profile comparisons: p(\psi), q(\psi), J_\phi(R,Z)
+% - Effect of regularisation on profile smoothness
+% - Figures: reconstructed vs EFIT flux surfaces, profile comparisons
+
+\lipsum[12]
+
+%% ============================================================
+%%  5. PERFORMANCE BENCHMARKS
+%% ============================================================
+\section{Performance Benchmarks}
+\label{sec:benchmarks}
+
+\subsection{Grid Scaling}
+\label{sec:grid-scaling}
+
+% TODO: Present scaling with grid resolution
+% - Wall-clock time vs N_R x N_Z for forward solve
+% - Scaling exponent and comparison with O(N^2) expectation
+% - Memory usage
+
+\lipsum[13]
+
+\subsection{Solver Comparison}
+\label{sec:solver-comparison}
+
+% TODO: Compare with existing codes
+% - EFIT (if timing data available from literature)
+% - FREEGS (Python)
+% - TORAX (JAX-based)
+% - Table: code, language, forward time, inverse time, grid size
+
+\begin{table}[htbp]
+\centering
+\caption{Performance comparison of equilibrium solvers on a
+$65\times65$ grid.}
+\label{tab:performance}
+\begin{tabular}{@{}lllrr@{}}
+\toprule
+Code & Language & Approach & Forward [\si{\ms}] & Inverse [\si{\ms}] \\
+\midrule
+EFIT         & Fortran & Picard + LM   & ---  & ---  \\
+FREEGS       & Python  & Picard        & ---  & N/A  \\
+TORAX        & JAX     & Transport     & ---  & N/A  \\
+\textbf{This work} & \textbf{Rust} & \textbf{Picard+SOR / LM} & \textbf{---} & \textbf{---} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\lipsum[14]
+
+%% ============================================================
+%%  6. DISCUSSION
+%% ============================================================
+\section{Discussion}
+\label{sec:discussion}
+
+% TODO: Discuss results, limitations, future work
+% - Accuracy comparable to EFIT for tested discharges
+% - Speed advantage of Rust over Python implementations
+% - Current limitations: 2D only, no free-boundary yet, limited coil models
+% - Future: GPU acceleration, real-time capable, ITER-relevant geometries
+% - Comparison with ML-based approaches (emerging trend)
+
+\lipsum[15-16]
+
+%% ============================================================
+%%  7. CONCLUSION
+%% ============================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+% TODO: Summarise contributions and key findings
+% - Open-source, validated equilibrium reconstruction code
+% - Rust + PyO3 architecture balances performance and usability
+% - Validated against DIII-D discharges
+% - Available under permissive license
+
+\lipsum[17]
+
+%% ============================================================
+%%  8. CODE AVAILABILITY
+%% ============================================================
+\section{Code Availability}
+\label{sec:code-availability}
+
+% TODO: Fill in actual repository URL and version
+The source code for \textsc{SCPN-Fusion-Core} is available at
+\url{https://github.com/TODO/scpn-fusion-core} under the MIT license.
+The version used in this paper is tagged as \texttt{vX.Y.Z}.
+Supplementary data and scripts to reproduce all figures are included
+in the repository under \texttt{paper/path\_a/reproduce/}.
+
+%% ============================================================
+%%  ACKNOWLEDGEMENTS
+%% ============================================================
+\section*{Acknowledgements}
+
+% TODO: Acknowledge funding, data providers, collaborators
+% - DIII-D data provided under GA collaboration agreement
+% - Computational resources
+
+%% ============================================================
+%%  REFERENCES
+%% ============================================================
+\bibliographystyle{elsarticle-harv}
+\bibliography{references}
+
+\end{document}

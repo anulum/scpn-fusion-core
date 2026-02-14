@@ -1,0 +1,130 @@
+%% references.bib — Path A (Computer Physics Communications)
+%% Equilibrium reconstruction & related references
+
+%% --- EFIT heritage ---
+
+@article{lao1985,
+  author    = {Lao, L. L. and {St.~John}, H. and Stambaugh, R. D. and
+               Kellman, A. G. and Pfeiffer, W.},
+  title     = {Reconstruction of current profile parameters and plasma
+               shapes in tokamaks},
+  journal   = {Nuclear Fusion},
+  volume    = {25},
+  number    = {11},
+  pages     = {1611--1622},
+  year      = {1985},
+  doi       = {10.1088/0029-5515/25/11/007},
+}
+
+@article{lao2005,
+  author    = {Lao, L. L. and {St.~John}, H. E. and Peng, Q. and
+               Ferron, J. R. and Strait, E. J. and Taylor, T. S. and
+               Meyer, W. H. and Zhang, C. and You, K. I.},
+  title     = {MHD equilibrium reconstruction in the {DIII-D} tokamak},
+  journal   = {Fusion Science and Technology},
+  volume    = {48},
+  number    = {2},
+  pages     = {968--977},
+  year      = {2005},
+  doi       = {10.13182/FST48-968},
+}
+
+@article{sabbagh2023,
+  author    = {Sabbagh, S. A. and Berkery, J. W. and Park, Y. S. and
+               others},
+  title     = {Advances in equilibrium reconstruction and stability
+               analysis with {EFIT}},
+  journal   = {Nuclear Fusion},
+  volume    = {63},
+  number    = {12},
+  pages     = {126033},
+  year      = {2023},
+  doi       = {10.1088/1741-4326/ad0621},
+  note      = {TODO: verify exact volume/pages/doi},
+}
+
+%% --- Open-source codes ---
+
+@misc{freegs,
+  author    = {Dudson, Ben},
+  title     = {{FreeGS}: Free Grad-Shafranov solver},
+  year      = {2023},
+  url       = {https://github.com/freegs-plasma/freegs},
+  note      = {Accessed: 2026-02-01},
+}
+
+@article{torax2024,
+  author    = {Citrin, J. and Goodfellow, I. and {DeepMind Team}},
+  title     = {{TORAX}: A differentiable tokamak transport simulator
+               in {JAX}},
+  journal   = {Nuclear Fusion},
+  volume    = {64},
+  number    = {12},
+  pages     = {126063},
+  year      = {2024},
+  doi       = {10.1088/1741-4326/ad6ea2},
+  note      = {TODO: verify exact author list and pages},
+}
+
+%% --- Grad-Shafranov equation origins ---
+
+@inproceedings{grad1958,
+  author    = {Grad, H. and Rubin, H.},
+  title     = {Hydromagnetic equilibria and force-free fields},
+  booktitle = {Proceedings of the Second {United Nations} International
+               Conference on the Peaceful Uses of Atomic Energy},
+  volume    = {31},
+  pages     = {190--197},
+  year      = {1958},
+  address   = {Geneva},
+}
+
+@article{shafranov1966,
+  author    = {Shafranov, V. D.},
+  title     = {Plasma equilibrium in a magnetic field},
+  journal   = {Reviews of Plasma Physics},
+  volume    = {2},
+  pages     = {103--151},
+  year      = {1966},
+  publisher = {Consultants Bureau, New York},
+}
+
+%% --- Levenberg-Marquardt algorithm ---
+
+@article{levenberg1944,
+  author    = {Levenberg, Kenneth},
+  title     = {A method for the solution of certain non-linear problems
+               in least squares},
+  journal   = {Quarterly of Applied Mathematics},
+  volume    = {2},
+  number    = {2},
+  pages     = {164--168},
+  year      = {1944},
+  doi       = {10.1090/qam/10666},
+}
+
+@article{marquardt1963,
+  author    = {Marquardt, Donald W.},
+  title     = {An algorithm for least-squares estimation of nonlinear
+               parameters},
+  journal   = {Journal of the Society for Industrial and Applied
+               Mathematics},
+  volume    = {11},
+  number    = {2},
+  pages     = {431--441},
+  year      = {1963},
+  doi       = {10.1137/0111030},
+}
+
+%% --- Regularisation ---
+
+@article{tikhonov1963,
+  author    = {Tikhonov, A. N.},
+  title     = {Solution of incorrectly formulated problems and the
+               regularization method},
+  journal   = {Soviet Mathematics Doklady},
+  volume    = {4},
+  pages     = {1035--1038},
+  year      = {1963},
+  note      = {English translation},
+}

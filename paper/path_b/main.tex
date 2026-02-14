@@ -1,0 +1,458 @@
+%% Path B — Fusion Engineering and Design (Elsevier)
+%% "Stochastic Neural Control of Tokamak Vertical Position
+%%  via Compiled Petri Nets"
+%%
+%% Compile: pdflatex -> bibtex -> pdflatex x2  (see Makefile)
+%% -----------------------------------------------------------
+\documentclass[preprint,12pt,authoryear]{elsarticle}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{petri,arrows.meta,positioning}
+
+% Placeholder text (remove for final submission)
+\usepackage{lipsum}
+
+\journal{Fusion Engineering and Design}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Stochastic Neural Control of Tokamak Vertical Position\\
+       via Compiled Petri Nets}
+
+\author[anulum]{Miroslav Sotek\corref{cor1}}
+\ead{miroslav.sotek@anulum.research}
+\author[anulum]{Michal Reiprich}
+
+\cortext[cor1]{Corresponding author.}
+
+\affiliation[anulum]{organization={Anulum Research},
+                     country={Czech Republic}}
+
+\begin{abstract}
+% TODO: Write abstract (~200 words)
+% Key points to cover:
+% - Vertical position control is safety-critical in tokamaks
+% - Propose a formally verifiable controller based on Petri nets
+% - Petri net is compiled into a spiking neural network (SNN)
+% - Stochastic firing semantics provide noise robustness
+% - Formal properties (boundedness, liveness, mutual exclusion) preserved
+% - Benchmarked against PID baseline on DIII-D-like vertical instability model
+% - Comparable or superior disturbance rejection with formal guarantees
+\lipsum[1]
+\end{abstract}
+
+\begin{keyword}
+tokamak \sep vertical stability \sep Petri net \sep spiking neural network \sep
+stochastic computing \sep formal verification \sep plasma control
+\end{keyword}
+
+\end{frontmatter}
+
+%% ============================================================
+%%  1. INTRODUCTION
+%% ============================================================
+\section{Introduction}
+\label{sec:introduction}
+
+% TODO: Motivate the problem
+% Points to cover:
+% - Vertical instability is the primary safety concern in elongated tokamaks
+% - Loss of vertical control -> VDE -> wall damage, disruptions
+% - Current controllers: PID, LQR, model-predictive — none formally verified
+% - Formal verification is standard in aerospace/nuclear-fission but absent
+%   in fusion plasma control
+% - Our contribution: Petri-net-based controller compiled to SNN
+%   with provable safety properties
+
+\lipsum[2-3]
+
+Vertical position control in elongated tokamak plasmas is a
+safety-critical task: loss of vertical stability leads to vertical
+displacement events (VDEs) that can cause severe damage to
+plasma-facing components~\cite{ariola2008,humphreys2015}.
+
+% TODO: Discuss the formal verification gap in fusion control
+Despite the safety-critical nature of vertical control, existing
+controllers in the tokamak community---typically PID or LQR
+variants---lack formal guarantees of correctness.  In contrast,
+safety-critical systems in aerospace and nuclear fission routinely
+employ formally verified controllers.
+
+% TODO: State contributions
+In this paper we propose a novel controller architecture in which:
+\begin{enumerate}
+  \item A Petri net~\cite{petri1962} encodes the control logic with
+        formally verifiable structural properties;
+  \item The Petri net is compiled into a spiking neural
+        network~\cite{maass1997} preserving all verified properties;
+  \item Stochastic firing semantics provide inherent noise robustness
+        without sacrificing formal guarantees;
+  \item The compiled controller is benchmarked against a tuned PID
+        baseline on a DIII-D-like vertical instability plant model.
+\end{enumerate}
+
+%% ============================================================
+%%  2. BACKGROUND
+%% ============================================================
+\section{Background}
+\label{sec:background}
+
+\subsection{Vertical Position Instability}
+\label{sec:vertical-instability}
+
+% TODO: Describe the physics of vertical instability
+% - Elongated plasmas: n=0 vertical instability growth rate
+% - Passive stabilisation via conducting structures (wall, vessel)
+% - Active feedback required on timescale < wall time
+% - Typical growth rates: ~100-1000 s^-1
+% - Controlled by poloidal field coil currents
+
+\lipsum[4]
+
+The vertical instability growth rate $\gamma$ for an elongated plasma
+with elongation $\kappa$ scales approximately
+as~\cite{ariola2008}:
+\begin{equation}
+  \gamma \sim \frac{(\kappa^{2}-1)}{\tau_{w}},
+  \label{eq:growth-rate}
+\end{equation}
+where $\tau_w$ is the resistive wall time of the surrounding
+conducting structure.
+
+\subsection{Petri Net Formalism}
+\label{sec:petri-nets}
+
+% TODO: Define Petri nets formally
+% - Definition: bipartite directed graph (P, T, F, W, M_0)
+% - Places, transitions, arcs, weights, initial marking
+% - Firing rule
+% - Key properties: boundedness, liveness, reachability, mutual exclusion
+% - Reference: \cite{petri1962,murata1989}
+
+A Petri net~\cite{petri1962} is a bipartite directed graph
+$\mathcal{N} = (P, T, F, W, M_0)$ where $P$ is a finite set of
+places, $T$ is a finite set of transitions, $F \subseteq (P \times T)
+\cup (T \times P)$ is the flow relation, $W: F \to \mathbb{N}^{+}$ is
+the weight function, and $M_0: P \to \mathbb{N}$ is the initial
+marking~\cite{murata1989}.
+
+\lipsum[5]
+
+\subsection{Spiking Neural Networks}
+\label{sec:snn}
+
+% TODO: Describe SNN basics
+% - Leaky integrate-and-fire (LIF) neuron model
+% - Spike-based communication
+% - Temporal coding
+% - Computational universality
+% - Reference: \cite{maass1997}
+
+Spiking neural networks (SNNs)~\cite{maass1997} represent the
+third generation of neural network models, in which information is
+encoded in the precise timing of discrete spike events rather than
+continuous activation values.
+
+\lipsum[6]
+
+\subsection{Stochastic Computing}
+\label{sec:stochastic-computing}
+
+% TODO: Describe stochastic computing principles
+% - Values encoded as probabilities in bitstreams
+% - Multiplication = AND gate, addition = MUX
+% - Inherent noise tolerance
+% - Low hardware cost
+% - Connection to SC-NeuroCore architecture \cite{scneurocore}
+
+\lipsum[7]
+
+%% ============================================================
+%%  3. METHOD
+%% ============================================================
+\section{Method}
+\label{sec:method}
+
+\subsection{Petri Net Controller Design}
+\label{sec:pn-design}
+
+% TODO: Describe the Petri net structure for vertical control
+% - Places: position_error, integral_error, derivative_error,
+%           coil_current_command, safety_interlock
+% - Transitions: proportional_action, integral_action,
+%                derivative_action, saturation_limit, emergency_stop
+% - Guard conditions and inhibitor arcs for safety
+% - Figure: Petri net diagram (TikZ)
+
+\lipsum[8]
+
+% TODO: Add TikZ Petri net diagram
+\begin{figure}[htbp]
+\centering
+% \begin{tikzpicture}[node distance=2cm, ...]
+%   % TODO: Draw the Petri net
+% \end{tikzpicture}
+\fbox{\parbox{0.8\textwidth}{\centering\vspace{3cm}
+  TODO: Petri net controller diagram\vspace{3cm}}}
+\caption{Petri net structure for vertical position control.
+  Circles denote places (state variables); bars denote transitions
+  (control actions).  Inhibitor arcs enforce mutual exclusion
+  between normal operation and emergency shutdown.}
+\label{fig:petri-net}
+\end{figure}
+
+\subsection{Compilation to Spiking Neural Network}
+\label{sec:compilation}
+
+% TODO: Describe the PN -> SNN compilation
+% - Each place -> reservoir of LIF neurons
+% - Each transition -> coincidence detector neuron
+% - Arc weights -> synaptic weights
+% - Inhibitor arcs -> inhibitory synapses
+% - Token count -> spike rate (rate coding)
+% - Compilation algorithm (pseudocode)
+
+\lipsum[9]
+
+\begin{algorithm}[htbp]
+\caption{Petri Net to SNN Compilation}
+\label{alg:compilation}
+\begin{algorithmic}[1]
+\Require Petri net $\mathcal{N} = (P, T, F, W, M_0)$
+\Ensure SNN graph $\mathcal{S} = (N, E, \mathbf{w})$
+\For{each place $p_i \in P$}
+  \State Create neuron pool $\mathcal{P}_i$ with $M_0(p_i)$ baseline rate
+\EndFor
+\For{each transition $t_j \in T$}
+  \State Create coincidence neuron $c_j$
+  \For{each input arc $(p_i, t_j) \in F$}
+    \State Add excitatory synapse $\mathcal{P}_i \to c_j$
+          with weight $W(p_i, t_j)$
+  \EndFor
+  \For{each output arc $(t_j, p_k) \in F$}
+    \State Add excitatory synapse $c_j \to \mathcal{P}_k$
+          with weight $W(t_j, p_k)$
+  \EndFor
+\EndFor
+\State \Return $\mathcal{S}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Stochastic Firing Semantics}
+\label{sec:stochastic-firing}
+
+% TODO: Describe how stochastic computing is applied
+% - Transition firing probability proportional to input marking
+% - Stochastic bitstream encoding of continuous control signals
+% - Noise injection and its effect on control bandwidth
+% - Connection to SC-NeuroCore stochastic compute units
+
+\lipsum[10]
+
+\subsection{Formal Property Preservation}
+\label{sec:property-preservation}
+
+% TODO: Prove/argue that compilation preserves formal properties
+% - Theorem: If PN is k-bounded, compiled SNN spike rates are bounded
+% - Theorem: If PN is live, SNN has no dead neurons
+% - Theorem: Mutual exclusion in PN -> inhibitory exclusion in SNN
+% - Sketch of proofs or reference to appendix
+
+\lipsum[11]
+
+%% ============================================================
+%%  4. FORMAL ANALYSIS
+%% ============================================================
+\section{Formal Analysis}
+\label{sec:formal-analysis}
+
+\subsection{Boundedness}
+\label{sec:boundedness}
+
+% TODO: Prove boundedness of the Petri net
+% - Coverability tree analysis
+% - All places are k-bounded (state k)
+% - Physical interpretation: bounded coil currents, bounded errors
+
+\lipsum[12]
+
+\subsection{Liveness}
+\label{sec:liveness}
+
+% TODO: Prove liveness
+% - Every transition can eventually fire from any reachable marking
+% - No deadlocks in the control logic
+% - Implication: controller never gets stuck
+
+\lipsum[13]
+
+\subsection{Mutual Exclusion}
+\label{sec:mutual-exclusion}
+
+% TODO: Prove mutual exclusion properties
+% - Normal operation and emergency shutdown are mutually exclusive
+% - Coil current increase and decrease cannot fire simultaneously
+% - S-invariant analysis
+
+\lipsum[14]
+
+\subsection{Home State}
+\label{sec:home-state}
+
+% TODO: Prove home state property
+% - The initial marking M_0 is reachable from every reachable marking
+% - Implication: controller can always return to safe idle state
+% - T-invariant analysis
+
+\lipsum[15]
+
+%% ============================================================
+%%  5. EXPERIMENTAL VALIDATION
+%% ============================================================
+\section{Experimental Validation}
+\label{sec:validation}
+
+\subsection{Plant Model}
+\label{sec:plant-model}
+
+% TODO: Describe the vertical instability plant model
+% - Linearised rigid body + conducting wall model
+% - Parameters from DIII-D: growth rate, wall time, coil response
+% - State-space representation
+% - Noise model (sensor noise, actuator noise, plasma disturbances)
+
+\lipsum[16]
+
+The vertical dynamics are modelled as a linearised system:
+\begin{equation}
+  \dot{z}_p = \gamma\, z_p + \frac{1}{\tau_c}\, I_c + d(t),
+  \label{eq:plant}
+\end{equation}
+where $z_p$ is the vertical displacement, $\gamma$ the instability
+growth rate, $I_c$ the control coil current, $\tau_c$ the coil
+response time, and $d(t)$ represents plasma disturbances.
+
+\subsection{PID Baseline}
+\label{sec:pid-baseline}
+
+% TODO: Describe the PID baseline controller
+% - Standard PID with anti-windup
+% - Tuning method (Ziegler-Nichols or optimization-based)
+% - Performance metrics: settling time, overshoot, steady-state error
+
+\lipsum[17]
+
+\subsection{Benchmark Scenarios}
+\label{sec:scenarios}
+
+% TODO: Define benchmark scenarios
+% - Scenario 1: Step disturbance (e.g., minor disruption)
+% - Scenario 2: Ramp disturbance (e.g., beta ramp-up)
+% - Scenario 3: Sensor noise rejection
+% - Scenario 4: Actuator saturation
+% - Scenario 5: Combined worst-case
+
+\lipsum[18]
+
+\subsection{Head-to-Head Results}
+\label{sec:results}
+
+% TODO: Present comparative results
+% - Table: PID vs PN-SNN for each scenario (settling time, max deviation, etc.)
+% - Figures: time traces for each scenario
+% - Statistical comparison over Monte Carlo runs
+
+\begin{table}[htbp]
+\centering
+\caption{Head-to-head comparison: PID vs.\ Petri-net SNN controller.}
+\label{tab:results}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Metric & PID & PN-SNN & Units & Improvement \\
+\midrule
+Settling time ($2\%$)     & --- & --- & \si{\ms} & --- \\
+Max displacement           & --- & --- & \si{\mm} & --- \\
+Steady-state error         & --- & --- & \si{\mm} & --- \\
+Noise rejection ($3\sigma$)& --- & --- & \si{\mm} & --- \\
+Saturation recovery        & --- & --- & \si{\ms} & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\lipsum[19]
+
+%% ============================================================
+%%  6. DISCUSSION
+%% ============================================================
+\section{Discussion}
+\label{sec:discussion}
+
+% TODO: Discuss results, implications, limitations
+% Points to cover:
+% - Formal guarantees are the primary advantage
+% - Performance comparable to or better than PID
+% - Stochastic firing provides inherent robustness
+% - Compilation overhead is one-time (offline)
+% - Runtime on neuromorphic hardware (SC-NeuroCore) would be sub-microsecond
+% - Limitations: linearised plant model, limited disturbance scenarios
+% - Future: nonlinear plant, ITER-relevant scenarios, hardware deployment
+
+\lipsum[20-21]
+
+%% ============================================================
+%%  7. CONCLUSION
+%% ============================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+% TODO: Summarise contributions
+% - First formally verified controller for tokamak vertical stability
+% - Petri net -> SNN compilation preserves all four properties
+% - Stochastic firing adds noise robustness without losing guarantees
+% - Competitive with PID in simulation benchmarks
+% - Path to neuromorphic hardware deployment via SC-NeuroCore
+
+\lipsum[22]
+
+%% ============================================================
+%%  8. CODE AVAILABILITY
+%% ============================================================
+\section{Code Availability}
+\label{sec:code-availability}
+
+% TODO: Fill in actual repository URLs
+The Petri net controller design, SNN compilation code, and benchmark
+scripts are available at:
+\begin{itemize}
+  \item \textsc{SCPN-Fusion-Core}: \url{https://github.com/TODO/scpn-fusion-core}
+  \item \textsc{SC-NeuroCore}: \url{https://github.com/TODO/sc-neurocore}
+\end{itemize}
+Both repositories are released under the MIT license.
+
+%% ============================================================
+%%  ACKNOWLEDGEMENTS
+%% ============================================================
+\section*{Acknowledgements}
+
+% TODO: Acknowledge funding, collaborators
+% - Computational resources
+% - DIII-D team for plant model parameters (if applicable)
+
+%% ============================================================
+%%  REFERENCES
+%% ============================================================
+\bibliographystyle{elsarticle-harv}
+\bibliography{references}
+
+\end{document}
