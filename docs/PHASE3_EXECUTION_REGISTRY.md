@@ -257,6 +257,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-030 | P1 | Operations | Harden chaos-monkey runtime path with strict config/channel validation | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs` | Chaos-monkey injection now validates runtime config fields and channel values (`dropout_prob`, `gaussian_noise_std`, channel finiteness) and returns explicit `FusionError::ConfigError` instead of relying on panic-prone `expect` behavior for invalid Gaussian setup | `cargo test -p fusion-control digital_twin::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-031 | P1 | Operations | Harden digital-twin SimpleMLP constructor and runtime input validation | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs` | SimpleMLP paths now reject invalid constructor/runtime inputs (`input_dim == 0`, input length mismatch, non-finite input/advantage) and guard against non-finite parameter updates via explicit `FusionError::ConfigError`, preventing shape/NaN propagation in training and inference | `cargo test -p fusion-control digital_twin::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-032 | P1 | Operations | Harden Plasma2D runtime step/measurement paths with strict finite-value validation | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs` | Plasma2D runtime methods now reject non-finite action/process/measurement inputs and return explicit `FusionError::ConfigError` on non-finite outputs, preventing NaN/Inf propagation through thermal step and sensor readout paths | `cargo test -p fusion-control digital_twin::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
+| H8-033 | P1 | Operations | Harden OU noise runtime stepping with strict field/state validation | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs` | Scalar/vector OU noise runtime steps now validate mutable runtime fields (`theta`, `sigma`, `dt`, `state`) and return explicit `FusionError::ConfigError` on invalid or non-finite evolution, preventing silent NaN/Inf propagation after post-construction mutation | `cargo test -p fusion-control digital_twin::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 
 ## Task Accounting
 
@@ -264,7 +265,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 168
+- Post-S4 hardening tasks delivered: 169
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -456,4 +457,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-030`
 - Completed: `H8-031`
 - Completed: `H8-032`
+- Completed: `H8-033`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

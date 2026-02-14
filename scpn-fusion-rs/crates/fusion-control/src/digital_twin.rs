@@ -91,10 +91,40 @@ impl NoiseInjectionLayer {
         })
     }
 
-    pub fn step<R: Rng + ?Sized>(&mut self, rng: &mut R) -> f64 {
+    pub fn step<R: Rng + ?Sized>(&mut self, rng: &mut R) -> FusionResult<f64> {
+        if !self.theta.is_finite() || self.theta < 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "OU theta must be finite and >= 0, got {}",
+                self.theta
+            )));
+        }
+        if !self.sigma.is_finite() || self.sigma < 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "OU sigma must be finite and >= 0, got {}",
+                self.sigma
+            )));
+        }
+        if !self.dt.is_finite() || self.dt <= 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "OU dt must be finite and > 0, got {}",
+                self.dt
+            )));
+        }
+        if !self.state.is_finite() {
+            return Err(FusionError::ConfigError(format!(
+                "OU state must be finite, got {}",
+                self.state
+            )));
+        }
+
         let xi: f64 = rng.sample(StandardNormal);
         self.state += self.theta * (-self.state) * self.dt + self.sigma * self.dt.sqrt() * xi;
-        self.state
+        if !self.state.is_finite() {
+            return Err(FusionError::ConfigError(
+                "OU state became non-finite after step".to_string(),
+            ));
+        }
+        Ok(self.state)
     }
 }
 
@@ -122,13 +152,12 @@ impl VectorNoiseInjectionLayer {
         Ok(Self { channels })
     }
 
-    pub fn step<R: Rng + ?Sized>(&mut self, rng: &mut R) -> Array1<f64> {
-        Array1::from_vec(
-            self.channels
-                .iter_mut()
-                .map(|layer| layer.step(rng))
-                .collect(),
-        )
+    pub fn step<R: Rng + ?Sized>(&mut self, rng: &mut R) -> FusionResult<Array1<f64>> {
+        let mut out = Vec::with_capacity(self.channels.len());
+        for layer in &mut self.channels {
+            out.push(layer.step(rng)?);
+        }
+        Ok(Array1::from_vec(out))
     }
 }
 
@@ -627,8 +656,8 @@ mod tests {
         let mut n1 = NoiseInjectionLayer::default();
         let mut n2 = NoiseInjectionLayer::default();
         for _ in 0..32 {
-            let a = n1.step(&mut rng1);
-            let b = n2.step(&mut rng2);
+            let a = n1.step(&mut rng1).expect("valid OU step");
+            let b = n2.step(&mut rng2).expect("valid OU step");
             assert!(
                 (a - b).abs() < 1e-12,
                 "Noise sequence should be deterministic"
@@ -670,8 +699,8 @@ mod tests {
         let mut n2 =
             VectorNoiseInjectionLayer::new(4, 0.2, 0.03, 1.0).expect("valid vector OU config");
         for _ in 0..16 {
-            let a = n1.step(&mut rng1);
-            let b = n2.step(&mut rng2);
+            let a = n1.step(&mut rng1).expect("valid vector OU step");
+            let b = n2.step(&mut rng2).expect("valid vector OU step");
             for i in 0..a.len() {
                 assert!((a[i] - b[i]).abs() < 1e-12);
             }
@@ -756,6 +785,31 @@ mod tests {
         assert!(NoiseInjectionLayer::new(0.1, -0.1, 1.0).is_err());
         assert!(NoiseInjectionLayer::new(0.1, 0.1, 0.0).is_err());
         assert!(NoiseInjectionLayer::new(0.1, 0.1, f64::NAN).is_err());
+    }
+
+    #[test]
+    fn test_noise_injection_layer_rejects_invalid_runtime_state() {
+        let mut rng = StdRng::seed_from_u64(111);
+        let mut layer = NoiseInjectionLayer {
+            state: f64::INFINITY,
+            ..Default::default()
+        };
+        assert!(layer.step(&mut rng).is_err());
+
+        let mut bad_dt = NoiseInjectionLayer {
+            dt: 0.0,
+            ..Default::default()
+        };
+        assert!(bad_dt.step(&mut rng).is_err());
+    }
+
+    #[test]
+    fn test_vector_ou_noise_rejects_invalid_runtime_channel_state() {
+        let mut rng = StdRng::seed_from_u64(222);
+        let mut layer =
+            VectorNoiseInjectionLayer::new(2, 0.2, 0.03, 1.0).expect("valid vector OU config");
+        layer.channels[1].sigma = f64::NAN;
+        assert!(layer.step(&mut rng).is_err());
     }
 
     #[test]
