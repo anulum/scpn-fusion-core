@@ -103,6 +103,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | H5-030 | P2 | Validation | Remove path injection from G* validation runners and rely on package import path | `validation/control_resilience_campaign.py`, `validation/gai_01_turbulence_surrogate.py`, `validation/gai_02_torax_hybrid.py`, `validation/gai_03_heat_ml_shadow.py`, `validation/gdep_01_digital_twin_hook.py`, `validation/gdep_02_gpu_integration.py`, `validation/gmvr_03_stellarator_extension.py` | G-series validation runners execute without mutating `sys.path`, preserving existing CLI/report behavior via package import resolution | `python -m pytest tests/test_gai_01_turbulence_surrogate.py tests/test_gai_02_torax_hybrid.py tests/test_gai_03_heat_ml_shadow.py tests/test_gdep_01_digital_twin_hook.py tests/test_gdep_02_gpu_integration.py tests/test_gmvr_03_stellarator_extension.py -q` |
 | H5-031 | P2 | Validation | Remove path injection from remaining GMVR/GNEU/RMSE benchmark runners and rely on package import path | `validation/gmvr_01_compact_constraints.py`, `validation/gmvr_02_temhd_divertor.py`, `validation/gneu_01_benchmark.py`, `validation/gneu_03_fueling_mode.py`, `validation/rmse_dashboard.py`, `validation/scpn_pid_mpc_benchmark.py` | Remaining validation runners execute without mutating `sys.path`, preserving strict campaign/report outputs under package import resolution | `python -m pytest tests/test_gmvr_01_compact_constraints.py tests/test_gmvr_02_temhd_divertor.py tests/test_gneu_01_benchmark.py tests/test_gneu_03_fueling_mode.py tests/test_rmse_dashboard.py tests/test_scpn_pid_mpc_benchmark.py -q`, `python validation/gneu_01_benchmark.py --strict`, `python validation/gneu_03_fueling_mode.py --strict`, `python validation/rmse_dashboard.py`, `python validation/scpn_pid_mpc_benchmark.py --strict` |
 | H5-032 | P2 | Runtime | Remove package path injection from legacy core modules and targeted tests while preserving external bridge override | `src/scpn_fusion/core/force_balance.py`, `src/scpn_fusion/core/global_design_scanner.py`, `src/scpn_fusion/core/integrated_transport_solver.py`, `src/scpn_fusion/core/lazarus_bridge.py`, `src/scpn_fusion/core/neural_equilibrium.py`, `src/scpn_fusion/core/rf_heating.py`, `src/scpn_fusion/core/stability_analyzer.py`, `src/scpn_fusion/core/vibrana_bridge.py`, `src/scpn_fusion/core/wdm_engine.py`, `tests/test_fno_training.py`, `tests/test_hypothesis_properties.py` | Core/test modules no longer mutate `sys.path` for package imports; only `vibrana_bridge.py` keeps explicit external `CCW_Standalone` bridge path | `python -m pytest tests/test_fno_training.py tests/test_hypothesis_properties.py tests/test_gai_03_heat_ml_shadow.py tests/test_gmvr_01_compact_constraints.py -q`, `python -c \"import scpn_fusion.core.force_balance, scpn_fusion.core.global_design_scanner, scpn_fusion.core.integrated_transport_solver, scpn_fusion.core.lazarus_bridge, scpn_fusion.core.neural_equilibrium, scpn_fusion.core.rf_heating, scpn_fusion.core.stability_analyzer, scpn_fusion.core.vibrana_bridge, scpn_fusion.core.wdm_engine\"` |
+| H5-033 | P1 | SCPN | Expand default Rust offload eligibility and add chunked antithetic sampling for large-net runtime stability | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py` | Auto backend now prefers Rust whenever available (override still supported), antithetic sampling uses chunked vector passes for large transition counts, and deterministic replay/benchmark thresholds remain stable | `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -q`, `python validation/scpn_pid_mpc_benchmark.py --strict` |
 
 ## Task Accounting
 
@@ -110,7 +111,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 32
+- Post-S4 hardening tasks delivered: 33
 - Remaining in deferred pool after queue selection: 67
 
 ## Active Task
@@ -165,4 +166,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `H5-030`
 - Completed: `H5-031`
 - Completed: `H5-032`
+- Completed: `H5-033`
 - Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).

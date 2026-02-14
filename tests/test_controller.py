@@ -977,6 +977,50 @@ class TestIntegration:
         )
         assert c.runtime_backend_name == "numpy"
 
+    def test_runtime_backend_auto_prefers_rust_when_available(
+        self, artifact_path: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        art = load_artifact(artifact_path)
+        monkeypatch.setattr(controller_mod, "_HAS_RUST_SCPN_RUNTIME", True)
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=228,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            runtime_backend="auto",
+        )
+        assert c.runtime_backend_name == "rust"
+
+    def test_antithetic_chunked_sampling_is_deterministic(
+        self, artifact_path: str
+    ) -> None:
+        art = load_artifact(artifact_path)
+        kwargs = dict(
+            artifact=art,
+            seed_base=229,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            runtime_profile="adaptive",
+            sc_n_passes=8,
+            sc_binary_margin=0.2,
+            sc_antithetic=True,
+            sc_antithetic_chunk_size=1,
+            runtime_backend="numpy",
+        )
+        c1 = NeuroSymbolicController(**kwargs)
+        c2 = NeuroSymbolicController(**kwargs)
+        obs = {"R_axis_m": 6.29, "Z_axis_m": 0.03}
+        for k in range(8):
+            a1 = c1.step(obs, k)
+            a2 = c2.step(obs, k)
+            assert a1 == pytest.approx(a2, rel=0.0, abs=0.0)
+            np.testing.assert_allclose(
+                np.asarray(c1.last_sc_firing, dtype=np.float64),
+                np.asarray(c2.last_sc_firing, dtype=np.float64),
+                atol=0.0,
+                rtol=0.0,
+            )
+
     def test_runtime_backend_rust_path_executes_rust_kernels_when_available(
         self, artifact_path: str, monkeypatch: pytest.MonkeyPatch
     ) -> None:

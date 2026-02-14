@@ -81,7 +81,8 @@ class NeuroSymbolicController:
         feature_axes: Optional[Sequence[FeatureAxisSpec]] = None,
         runtime_profile: str = "adaptive",
         runtime_backend: str = "auto",
-        rust_backend_min_problem_size: int = 4096,
+        rust_backend_min_problem_size: int = 1,
+        sc_antithetic_chunk_size: int = 2048,
     ) -> None:
         self.artifact = artifact
         self.seed_base = int(seed_base)
@@ -99,6 +100,9 @@ class NeuroSymbolicController:
         if self._runtime_backend_request not in {"auto", "numpy", "rust"}:
             raise ValueError("runtime_backend must be 'auto', 'numpy', or 'rust'")
         self._rust_backend_min_problem_size = max(int(rust_backend_min_problem_size), 1)
+        if sc_antithetic_chunk_size <= 0:
+            raise ValueError("sc_antithetic_chunk_size must be > 0")
+        self._sc_antithetic_chunk_size = int(sc_antithetic_chunk_size)
 
         if self._feature_axes is not None:
             axes = list(self._feature_axes)
@@ -154,6 +158,7 @@ class NeuroSymbolicController:
         self._tmp_marking_oracle = np.zeros(self._nP, dtype=np.float64)
         self._tmp_marking_sc = np.zeros(self._nP, dtype=np.float64)
         self._tmp_marking_input = np.zeros(self._nP, dtype=np.float64)
+        self._tmp_sc_counts = np.zeros(self._nT, dtype=np.int64)
         self._thresholds = np.asarray(
             [tr.threshold for tr in artifact.topology.transitions], dtype=np.float64
         )
@@ -536,26 +541,56 @@ class NeuroSymbolicController:
                     rng = None
             else:
                 rng = np.random.default_rng(sample_seed)
-                counts: NDArray[np.int64]
+                counts = self._tmp_sc_counts
                 if self._sc_antithetic and self._sc_n_passes >= 2:
                     n_pairs = (self._sc_n_passes + 1) // 2
-                    base = rng.random((n_pairs, self._nT))
-                    low_hits = np.sum(base < p_fire[None, :], axis=0, dtype=np.int64)
-                    if self._sc_n_passes % 2 == 0:
-                        high_hits = np.sum(
-                            base > (1.0 - p_fire)[None, :], axis=0, dtype=np.int64
-                        )
+                    counts.fill(0)
+                    if self._nT <= self._sc_antithetic_chunk_size:
+                        base = rng.random((n_pairs, self._nT))
+                        low_hits = np.sum(base < p_fire[None, :], axis=0, dtype=np.int64)
+                        if self._sc_n_passes % 2 == 0:
+                            high_hits = np.sum(
+                                base > (1.0 - p_fire)[None, :], axis=0, dtype=np.int64
+                            )
+                        else:
+                            high_hits = np.sum(
+                                base[:-1, :] > (1.0 - p_fire)[None, :],
+                                axis=0,
+                                dtype=np.int64,
+                            )
+                        counts[:] = np.asarray(low_hits + high_hits, dtype=np.int64)
                     else:
-                        high_hits = np.sum(
-                            base[:-1, :] > (1.0 - p_fire)[None, :],
-                            axis=0,
-                            dtype=np.int64,
-                        )
-                    counts = np.asarray(low_hits + high_hits, dtype=np.int64)
+                        for start in range(0, self._nT, self._sc_antithetic_chunk_size):
+                            end = min(start + self._sc_antithetic_chunk_size, self._nT)
+                            p_chunk = p_fire[start:end]
+                            base = rng.random((n_pairs, end - start))
+                            low_hits = np.sum(
+                                base < p_chunk[None, :],
+                                axis=0,
+                                dtype=np.int64,
+                            )
+                            if self._sc_n_passes % 2 == 0:
+                                high_hits = np.sum(
+                                    base > (1.0 - p_chunk)[None, :],
+                                    axis=0,
+                                    dtype=np.int64,
+                                )
+                            else:
+                                high_hits = np.sum(
+                                    base[:-1, :] > (1.0 - p_chunk)[None, :],
+                                    axis=0,
+                                    dtype=np.int64,
+                                )
+                            counts[start:end] = np.asarray(
+                                low_hits + high_hits, dtype=np.int64
+                            )
                 else:
-                    counts = np.asarray(
-                        rng.binomial(self._sc_n_passes, p_fire, size=self._nT),
-                        dtype=np.int64,
+                    np.copyto(
+                        counts,
+                        np.asarray(
+                            rng.binomial(self._sc_n_passes, p_fire, size=self._nT),
+                            dtype=np.int64,
+                        ),
                     )
                 f = counts.astype(np.float64) / float(self._sc_n_passes)
 
