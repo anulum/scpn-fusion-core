@@ -292,6 +292,10 @@ def _validate(artifact: Artifact) -> None:
         raise ArtifactValidationError("fixed_point.fraction_bits must be an integer >= 0")
     if meta.fixed_point.fraction_bits < 0:
         raise ArtifactValidationError("fixed_point.fraction_bits must be >= 0")
+    if meta.fixed_point.fraction_bits >= meta.fixed_point.data_width:
+        raise ArtifactValidationError(
+            "fixed_point.fraction_bits must be < fixed_point.data_width"
+        )
     if not isinstance(meta.fixed_point.signed, bool):
         raise ArtifactValidationError("fixed_point.signed must be a boolean")
 

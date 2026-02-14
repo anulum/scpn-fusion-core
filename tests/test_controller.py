@@ -413,6 +413,7 @@ class TestLevel0Static:
         [
             (("meta", "fixed_point", "data_width"), 16.5, "fixed_point.data_width"),
             (("meta", "fixed_point", "fraction_bits"), -1, "fixed_point.fraction_bits"),
+            (("meta", "fixed_point", "fraction_bits"), 16, "fixed_point.fraction_bits"),
             (("meta", "fixed_point", "signed"), "true", "fixed_point.signed"),
         ],
     )
