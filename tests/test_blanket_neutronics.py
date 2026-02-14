@@ -77,6 +77,27 @@ def test_higher_li6_enrichment_increases_volumetric_tbr() -> None:
     assert high_report.tbr > low_report.tbr
 
 
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"major_radius_m": 0.05}, "major_radius_m"),
+        ({"minor_radius_m": 0.01}, "minor_radius_m"),
+        ({"elongation": 0.0}, "elongation"),
+        ({"radial_cells": 1}, "radial_cells"),
+        ({"poloidal_cells": 4}, "poloidal_cells"),
+        ({"toroidal_cells": 4}, "toroidal_cells"),
+        ({"incident_flux": 0.0}, "incident_flux"),
+        ({"incident_flux": float("nan")}, "incident_flux"),
+    ],
+)
+def test_volumetric_surrogate_rejects_invalid_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    blanket = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.9)
+    with pytest.raises(ValueError, match=match):
+        blanket.calculate_volumetric_tbr(**kwargs)
+
+
 def test_rear_albedo_increases_1d_tbr() -> None:
     blanket = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.9)
     phi_sink = blanket.solve_transport(incident_flux=1.0e14, rear_albedo=0.0)

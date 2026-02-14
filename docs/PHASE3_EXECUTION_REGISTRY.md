@@ -174,6 +174,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-037 | P1 | Control | Harden disruption campaign APIs with strict input guards for fault/noise and anomaly lanes | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_toroidal_features.py`, `tests/test_gneu_02_anomaly.py` | Fault/noise and anomaly campaign entry points now reject invalid range/non-finite arguments instead of silently coercing values, while preserving deterministic seeded behavior and existing threshold metrics for valid runs | `python -m pytest tests/test_disruption_toroidal_features.py tests/test_disruption_predictor_rng.py tests/test_gneu_02_anomaly.py tests/test_control_resilience_campaign.py -v`, `python -m pytest tests/ -q -x` |
 | H7-038 | P1 | SCPN | Harden action decode contracts with explicit shape/index/timebase guards | `src/scpn_fusion/scpn/contracts.py`, `tests/test_controller.py` | `decode_actions` now validates per-action vector lengths, rejects non-finite/non-positive `dt`, and raises deterministic errors on invalid action place indices, with regression tests covering all guard paths | `python -m mypy --strict src/scpn_fusion/scpn/contracts.py`, `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
 | H7-039 | P1 | SCPN | Harden feature extraction contracts with finite-input guards for axis and passthrough lanes | `src/scpn_fusion/scpn/contracts.py`, `tests/test_controller.py` | `extract_features` now rejects non-finite axis observations/targets/scales and passthrough values with deterministic errors, preventing NaN propagation into runtime feature injection while preserving existing deterministic behavior for valid inputs | `python -m mypy --strict src/scpn_fusion/scpn/contracts.py`, `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
+| H7-040 | P1 | Nuclear | Harden volumetric blanket surrogate with strict geometry/grid/flux input guards | `src/scpn_fusion/nuclear/blanket_neutronics.py`, `tests/test_blanket_neutronics.py` | Volumetric blanket surrogate now rejects invalid/non-finite geometry, mesh, and incident-flux inputs with deterministic errors (no silent coercion), while preserving deterministic TBR trends and runtime summaries for valid campaigns | `python -m pytest tests/test_blanket_neutronics.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -181,8 +182,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 85
-- Remaining in deferred pool after queue selection: 28
+- Post-S4 hardening tasks delivered: 86
+- Remaining in deferred pool after queue selection: 27
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -290,4 +291,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-037`
 - Completed: `H7-038`
 - Completed: `H7-039`
-- Next active task: `H7-040` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-040`
+- Next active task: `H7-041` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

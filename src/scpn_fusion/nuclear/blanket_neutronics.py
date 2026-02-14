@@ -142,13 +142,27 @@ class BreedingBlanket:
         - Blanket shell is toroidal with shaped poloidal section via `elongation`.
         - Incident-angle weighting captures first-order poloidal asymmetry.
         """
-        major_radius_m = max(float(major_radius_m), 0.1)
-        minor_radius_m = max(float(minor_radius_m), 0.05)
-        elongation = max(float(elongation), 0.1)
-        radial_cells = max(int(radial_cells), 2)
-        poloidal_cells = max(int(poloidal_cells), 8)
-        toroidal_cells = max(int(toroidal_cells), 8)
-        incident_flux = max(float(incident_flux), 1.0)
+        major_radius_m = float(major_radius_m)
+        if (not np.isfinite(major_radius_m)) or major_radius_m < 0.1:
+            raise ValueError("major_radius_m must be finite and >= 0.1.")
+        minor_radius_m = float(minor_radius_m)
+        if (not np.isfinite(minor_radius_m)) or minor_radius_m < 0.05:
+            raise ValueError("minor_radius_m must be finite and >= 0.05.")
+        elongation = float(elongation)
+        if (not np.isfinite(elongation)) or elongation < 0.1:
+            raise ValueError("elongation must be finite and >= 0.1.")
+        radial_cells = int(radial_cells)
+        if radial_cells < 2:
+            raise ValueError("radial_cells must be >= 2.")
+        poloidal_cells = int(poloidal_cells)
+        if poloidal_cells < 8:
+            raise ValueError("poloidal_cells must be >= 8.")
+        toroidal_cells = int(toroidal_cells)
+        if toroidal_cells < 8:
+            raise ValueError("toroidal_cells must be >= 8.")
+        incident_flux = float(incident_flux)
+        if (not np.isfinite(incident_flux)) or incident_flux < 1.0:
+            raise ValueError("incident_flux must be finite and >= 1.0.")
 
         # Depth profile anchored to the nominal enriched reference blanket to keep
         # the reduced surrogate stable across parameter scans.
