@@ -96,15 +96,45 @@ pub fn seed_alpha_test_particles(
     kinetic_energy_mev: f64,
     pitch_cos: f64,
     weight_per_particle: f64,
-) -> Vec<ChargedParticle> {
-    let n_particles = n_particles.max(1);
-    let r0 = major_radius_m.max(MIN_RADIUS_M);
-    let energy_j = kinetic_energy_mev.max(1e-6) * 1.0e6 * ELEMENTARY_CHARGE_C;
+) -> FusionResult<Vec<ChargedParticle>> {
+    if n_particles == 0 {
+        return Err(FusionError::PhysicsViolation(
+            "n_particles must be >= 1".to_string(),
+        ));
+    }
+    if !major_radius_m.is_finite() || major_radius_m <= 0.0 {
+        return Err(FusionError::PhysicsViolation(
+            "major_radius_m must be finite and > 0".to_string(),
+        ));
+    }
+    if !z_m.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "z_m must be finite".to_string(),
+        ));
+    }
+    if !kinetic_energy_mev.is_finite() || kinetic_energy_mev <= 0.0 {
+        return Err(FusionError::PhysicsViolation(
+            "kinetic_energy_mev must be finite and > 0".to_string(),
+        ));
+    }
+    if !pitch_cos.is_finite() || !(-1.0..=1.0).contains(&pitch_cos) {
+        return Err(FusionError::PhysicsViolation(
+            "pitch_cos must be finite and in [-1, 1]".to_string(),
+        ));
+    }
+    if !weight_per_particle.is_finite() || weight_per_particle <= 0.0 {
+        return Err(FusionError::PhysicsViolation(
+            "weight_per_particle must be finite and > 0".to_string(),
+        ));
+    }
+
+    let r0 = major_radius_m;
+    let energy_j = kinetic_energy_mev * 1.0e6 * ELEMENTARY_CHARGE_C;
     let speed = (2.0 * energy_j / ALPHA_MASS_KG).sqrt();
-    let pitch = pitch_cos.clamp(-0.999, 0.999);
+    let pitch = pitch_cos;
     let v_par = speed * pitch;
     let v_perp = speed * (1.0 - pitch * pitch).sqrt();
-    let weight = weight_per_particle.max(1.0);
+    let weight = weight_per_particle;
 
     let mut out = Vec::with_capacity(n_particles);
     for i in 0..n_particles {
@@ -125,7 +155,7 @@ pub fn seed_alpha_test_particles(
             weight,
         });
     }
-    out
+    Ok(out)
 }
 
 /// Summarize kinetic state of a particle population.
@@ -429,7 +459,8 @@ mod tests {
 
     #[test]
     fn test_seed_alpha_particles_matches_requested_energy_band() {
-        let particles = seed_alpha_test_particles(24, 6.2, 0.0, 3.5, 0.6, 5.0e12);
+        let particles =
+            seed_alpha_test_particles(24, 6.2, 0.0, 3.5, 0.6, 5.0e12).expect("valid seeds");
         assert_eq!(particles.len(), 24);
         let summary = summarize_particle_population(&particles, 2.0);
         assert!(summary.mean_energy_mev > 3.0);
@@ -440,11 +471,30 @@ mod tests {
     #[test]
     fn test_alpha_heating_profile_is_positive_when_particles_in_domain() {
         let grid = Grid2D::new(33, 33, 3.0, 9.0, -2.5, 2.5);
-        let particles = seed_alpha_test_particles(16, 6.0, 0.1, 3.5, 0.4, 1.0e13);
+        let particles =
+            seed_alpha_test_particles(16, 6.0, 0.1, 3.5, 0.4, 1.0e13).expect("valid seeds");
         let heat = estimate_alpha_heating_profile(&particles, &grid, 0.25);
         let total = heat.iter().sum::<f64>();
         assert!(total > 0.0, "Expected positive deposited alpha heating");
         assert!(!heat.iter().any(|v| !v.is_finite()));
+    }
+
+    #[test]
+    fn test_seed_alpha_particles_rejects_invalid_parameters() {
+        let bad = [
+            seed_alpha_test_particles(0, 6.2, 0.0, 3.5, 0.6, 1.0),
+            seed_alpha_test_particles(8, 0.0, 0.0, 3.5, 0.6, 1.0),
+            seed_alpha_test_particles(8, 6.2, f64::NAN, 3.5, 0.6, 1.0),
+            seed_alpha_test_particles(8, 6.2, 0.0, -1.0, 0.6, 1.0),
+            seed_alpha_test_particles(8, 6.2, 0.0, 3.5, 1.2, 1.0),
+            seed_alpha_test_particles(8, 6.2, 0.0, 3.5, 0.6, 0.0),
+        ];
+        for candidate in bad {
+            assert!(
+                candidate.is_err(),
+                "Expected invalid seed parameters to return an error"
+            );
+        }
     }
 
     #[test]

@@ -227,6 +227,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-090 | P1 | SCPN | Harden artifact readout-action metadata with strict id/name/place-index guardrails | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Artifact loading now rejects malformed readout action specs (`id`, `name`, `pos_place`, `neg_place`) with deterministic validation errors, preventing invalid action-place routing from entering runtime | `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
 | H8-001 | P1 | Interop | Harden IMAS/IDS digital-twin adapter with strict numeric typing and millisecond-grid time-slice guards | `src/scpn_fusion/io/imas_connector.py`, `tests/test_tokamak_digital_twin.py` | IDS mapping now rejects malformed metadata and payload fields (`machine`, `shot`, `run`, axis/performance scalars, islands count, `time_slice.index`) and disallows non-millisecond `time_slice.time_s` values to prevent silent coercion/rounding in interop loops | `python -m pytest tests/test_tokamak_digital_twin.py -q`, `python -m pytest tests/ -q -x` |
 | H8-002 | P1 | Operations | Harden Rust digital-twin fault/actuator constructor paths with strict finite-range guards (no silent clamping) | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs` | OU noise layers, chaos configuration, and actuator delay line constructors now reject invalid inputs via explicit `Result` errors (`theta`, `sigma`, `dt`, `dropout_prob`, `gaussian_noise_std`, `n_channels`, `n_actions`, `lag_alpha`) instead of silently clamping, with deterministic guard regression coverage | `cargo test -p fusion-control digital_twin` |
+| H8-003 | P1 | Physics | Harden alpha test-particle seeding with strict finite-range guardrails (no silent clamping) | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | Alpha particle seeding now rejects invalid inputs (`n_particles`, `major_radius_m`, `z_m`, `kinetic_energy_mev`, `pitch_cos`, `weight_per_particle`) via explicit `FusionResult` errors instead of silently coercing/clamping, with regression tests locking invalid-parameter rejection and valid energy-band behavior | `cargo test -p fusion-core particles` |
 
 ## Task Accounting
 
@@ -234,7 +235,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 138
+- Post-S4 hardening tasks delivered: 139
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -396,4 +397,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-090`
 - Completed: `H8-001`
 - Completed: `H8-002`
+- Completed: `H8-003`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
