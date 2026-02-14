@@ -466,10 +466,7 @@ def default_model_path() -> Path:
 
 
 def _normalize_seq_len(seq_len):
-    seq_len_i = int(seq_len)
-    if seq_len_i < 8:
-        raise ValueError("seq_len must be >= 8.")
-    return seq_len_i
+    return _require_int("seq_len", seq_len, 8)
 
 
 def _prepare_signal_window(signal, seq_len):
@@ -519,13 +516,9 @@ def train_predictor(
         raise RuntimeError("Torch is required for train_predictor().")
 
     seq_len = _normalize_seq_len(seq_len)
-    n_shots = int(n_shots)
-    if n_shots < 8:
-        raise ValueError("n_shots must be >= 8.")
-    epochs = int(epochs)
-    if epochs < 1:
-        raise ValueError("epochs must be >= 1.")
-    seed = int(seed)
+    n_shots = _require_int("n_shots", n_shots, 8)
+    epochs = _require_int("epochs", epochs, 1)
+    seed = _require_int("seed", seed, 0)
     torch.manual_seed(seed)
     data_rng = np.random.default_rng(seed)
     eval_rng = np.random.default_rng(seed + 1000003)

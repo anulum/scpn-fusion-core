@@ -70,14 +70,20 @@ def test_load_or_train_reuses_existing_checkpoint(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("kwargs", "match"),
     [
+        ({"seq_len": 7}, "seq_len"),
+        ({"seq_len": 16.5}, "seq_len"),
         ({"n_shots": 7}, "n_shots"),
+        ({"n_shots": 8.5}, "n_shots"),
         ({"epochs": 0}, "epochs"),
+        ({"epochs": 1.5}, "epochs"),
+        ({"seed": -1}, "seed"),
+        ({"seed": 3.5}, "seed"),
     ],
 )
 def test_train_predictor_rejects_invalid_training_inputs(
-    tmp_path: Path, kwargs: dict[str, int], match: str
+    tmp_path: Path, kwargs: dict[str, object], match: str
 ) -> None:
-    params: dict[str, int | Path | bool] = {
+    params: dict[str, object] = {
         "seq_len": 16,
         "n_shots": 8,
         "epochs": 1,
