@@ -153,8 +153,12 @@ def run_nstxu_torax_hybrid_campaign(
 
     rng = np.random.default_rng(int(seed))
     controller = _build_hybrid_controller()
-    episodes = max(int(episodes), 1)
-    steps = max(int(steps_per_episode), 32)
+    episodes = int(episodes)
+    if episodes < 1:
+        raise ValueError("episodes must be >= 1.")
+    steps = int(steps_per_episode)
+    if steps < 32:
+        raise ValueError("steps_per_episode must be >= 32.")
 
     disruptions = 0
     parity_scores = []

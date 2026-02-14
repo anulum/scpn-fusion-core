@@ -12,6 +12,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 from scpn_fusion.control.torax_hybrid_loop import run_nstxu_torax_hybrid_campaign
 
 
@@ -52,3 +54,17 @@ def test_run_realtime_hybrid_smoke_function() -> None:
     )
     assert summary["passes_thresholds"] is True
     assert summary["torax_parity_pct"] >= 95.0
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"episodes": 0}, "episodes"),
+        ({"steps_per_episode": 16}, "steps_per_episode"),
+    ],
+)
+def test_campaign_rejects_invalid_runtime_inputs(
+    kwargs: dict[str, int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        run_nstxu_torax_hybrid_campaign(seed=42, **kwargs)

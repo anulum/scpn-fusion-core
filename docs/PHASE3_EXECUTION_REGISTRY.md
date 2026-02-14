@@ -184,6 +184,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-047 | P1 | Validation | Harden GDEP-01 campaign interfaces with strict chaos/runtime input guards | `validation/gdep_01_digital_twin_hook.py`, `tests/test_gdep_01_digital_twin_hook.py` | GDEP-01 campaign paths now reject invalid/non-finite campaign and chaos parameters (`samples_per_machine`, `chaos_dropout_prob`, `chaos_noise_std`) with deterministic errors (no silent coercion/metadata clipping), while preserving seeded deterministic campaign outcomes for valid runs | `python -m pytest tests/test_gdep_01_digital_twin_hook.py tests/test_digital_twin_ingest_runtime.py -v`, `python -m pytest tests/ -q -x` |
 | H7-048 | P1 | Validation | Harden SCPN-vs-PID/MPC benchmark campaign with strict step-count input guard | `validation/scpn_pid_mpc_benchmark.py`, `tests/test_scpn_pid_mpc_benchmark.py` | PID/MPC benchmark campaign now rejects invalid `steps` values with deterministic errors (no silent coercion to minimum), while preserving deterministic seeded metrics, runtime-lane reporting, and threshold checks for valid runs | `python -m pytest tests/test_scpn_pid_mpc_benchmark.py -v`, `python -m pytest tests/ -q -x` |
 | H7-049 | P1 | Control | Harden fueling-mode runtime campaign with strict integration-step and timestep guards | `src/scpn_fusion/control/fueling_mode.py`, `tests/test_gneu_03_fueling_mode.py` | Fueling simulation now rejects invalid integration horizons (`steps`) and overly small timesteps (`dt_s`) with deterministic errors (no silent coercion/flooring), while preserving deterministic convergence behavior and threshold outcomes for valid runs | `python -m pytest tests/test_gneu_03_fueling_mode.py -v`, `python -m pytest tests/ -q -x` |
+| H7-050 | P1 | Control | Harden TORAX-hybrid campaign with strict episode and per-episode-step input guards | `src/scpn_fusion/control/torax_hybrid_loop.py`, `tests/test_gai_02_torax_hybrid.py` | TORAX-hybrid campaign now rejects invalid runtime horizon parameters (`episodes`, `steps_per_episode`) with deterministic errors (no silent coercion), while preserving deterministic avoidance/parity/latency behavior for valid campaigns | `python -m pytest tests/test_gai_02_torax_hybrid.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -191,8 +192,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 95
-- Remaining in deferred pool after queue selection: 18
+- Post-S4 hardening tasks delivered: 96
+- Remaining in deferred pool after queue selection: 17
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -310,4 +311,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-047`
 - Completed: `H7-048`
 - Completed: `H7-049`
-- Next active task: `H7-050` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-050`
+- Next active task: `H7-051` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
