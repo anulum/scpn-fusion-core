@@ -148,3 +148,24 @@ def test_run_diag_demo_saves_expected_figures(tmp_path: Path) -> None:
     geom_path = Path(str(summary["sensor_geometry_path"]))
     assert tomo_path.exists()
     assert geom_path.exists()
+
+
+def test_run_diag_demo_does_not_mutate_global_numpy_rng_state() -> None:
+    np.random.seed(97531)
+    state = np.random.get_state()
+
+    run_diag_demo(
+        config_path="dummy.json",
+        output_dir="unused",
+        seed=101,
+        save_figures=False,
+        verbose=False,
+        kernel_factory=_DummyKernel,
+        sensor_factory=_DummySensorSuite,
+        tomography_factory=_DummyTomography,
+    )
+
+    observed = float(np.random.random())
+    np.random.set_state(state)
+    expected = float(np.random.random())
+    assert observed == expected

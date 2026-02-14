@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import inspect
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
@@ -26,6 +27,33 @@ DEFAULT_CONFIG_PATH = ROOT / "validation" / "iter_validated_config.json"
 DEFAULT_OUTPUT_DIR = ROOT / "artifacts" / "diagnostics_demo"
 
 
+def _build_sensor_suite(
+    sensor_factory: Callable[[Any], Any],
+    kernel: Any,
+    *,
+    seed: int,
+    rng: np.random.Generator,
+) -> Any:
+    """Instantiate sensor suite, passing scoped RNG/seed when supported."""
+    try:
+        params = inspect.signature(sensor_factory).parameters
+    except (TypeError, ValueError):
+        params = {}
+
+    if "rng" in params:
+        return sensor_factory(kernel, rng=rng)
+    if "seed" in params:
+        return sensor_factory(kernel, seed=seed)
+
+    try:
+        return sensor_factory(kernel, rng=rng)
+    except TypeError:
+        try:
+            return sensor_factory(kernel, seed=seed)
+        except TypeError:
+            return sensor_factory(kernel)
+
+
 def run_diag_demo(
     config_path: Path | str = DEFAULT_CONFIG_PATH,
     output_dir: Path | str = DEFAULT_OUTPUT_DIR,
@@ -42,7 +70,8 @@ def run_diag_demo(
     """
     cfg = Path(config_path)
     out_dir = Path(output_dir)
-    np.random.seed(int(seed))
+    seed_int = int(seed)
+    rng = np.random.default_rng(seed_int)
 
     if verbose:
         print("--- SCPN SYNTHETIC DIAGNOSTICS & TOMOGRAPHY ---")
@@ -65,7 +94,7 @@ def run_diag_demo(
     hot_ir = int(np.clip(int(0.35 * (phantom.shape[1] - 1)), 0, phantom.shape[1] - 1))
     phantom[hot_iz, hot_ir] += 0.5
 
-    sensors = sensor_factory(kernel)
+    sensors = _build_sensor_suite(sensor_factory, kernel, seed=seed_int, rng=rng)
     if verbose:
         print("Measuring Signals...")
     mag_signals = np.asarray(sensors.measure_magnetics(), dtype=np.float64)
@@ -115,7 +144,7 @@ def run_diag_demo(
             plot_error = f"{exc.__class__.__name__}: {exc}"
 
     return {
-        "seed": int(seed),
+        "seed": seed_int,
         "config_path": str(cfg),
         "mag_channels": int(mag_signals.size),
         "bolo_channels": int(bolo_signals.size),
