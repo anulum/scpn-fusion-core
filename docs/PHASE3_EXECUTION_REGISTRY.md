@@ -259,6 +259,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-032 | P1 | Operations | Harden Plasma2D runtime step/measurement paths with strict finite-value validation | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs` | Plasma2D runtime methods now reject non-finite action/process/measurement inputs and return explicit `FusionError::ConfigError` on non-finite outputs, preventing NaN/Inf propagation through thermal step and sensor readout paths | `cargo test -p fusion-control digital_twin::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-033 | P1 | Operations | Harden OU noise runtime stepping with strict field/state validation | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs` | Scalar/vector OU noise runtime steps now validate mutable runtime fields (`theta`, `sigma`, `dt`, `state`) and return explicit `FusionError::ConfigError` on invalid or non-finite evolution, preventing silent NaN/Inf propagation after post-construction mutation | `cargo test -p fusion-control digital_twin::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-034 | P1 | Runtime | Harden JIT kernel runtime execution with strict active-kernel and vector validation | `scpn-fusion-rs/crates/fusion-core/src/jit.rs` | JIT runtime execution now rejects missing active kernels, state/control length mismatches, and non-finite runtime vectors via explicit `FusionError::ConfigError`, replacing prior silent identity/fallback behavior in step paths | `cargo test -p fusion-core jit::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
+| H8-035 | P1 | Tooling | Restore Rust stable CI lane by applying canonical rustfmt across recent hardening edits | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs`, `scpn-fusion-rs/crates/fusion-core/src/jit.rs` | Applied workspace `cargo fmt` normalization to clear `cargo fmt --all -- --check` gate failures observed on CI Rust(stable) runs while preserving runtime hardening logic; verified full Rust(stable) lane locally (`clippy` + `cargo test --all-features`) | `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features` |
 
 ## Task Accounting
 
@@ -266,7 +267,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 170
+- Post-S4 hardening tasks delivered: 171
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -460,4 +461,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-032`
 - Completed: `H8-033`
 - Completed: `H8-034`
+- Completed: `H8-035`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

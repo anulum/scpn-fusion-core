@@ -282,7 +282,11 @@ impl RuntimeKernelJit {
     }
 
     /// Execute one step with the active specialized kernel.
-    pub fn step_active(&self, state: &Array1<f64>, control: &Array1<f64>) -> FusionResult<Array1<f64>> {
+    pub fn step_active(
+        &self,
+        state: &Array1<f64>,
+        control: &Array1<f64>,
+    ) -> FusionResult<Array1<f64>> {
         let Some(regime) = self.active else {
             return Err(FusionError::ConfigError(
                 "jit step_active requires an active regime; compile or refresh first".to_string(),

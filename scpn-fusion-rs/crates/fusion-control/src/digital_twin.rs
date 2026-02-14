@@ -598,9 +598,7 @@ mod tests {
     fn test_mlp_train_step() {
         let mut mlp = SimpleMLP::new(GRID).expect("valid MLP config");
         let x = Array1::from_elem(GRID, 0.5);
-        let loss = mlp
-            .train_step(&x, 1.0)
-            .expect("valid training-step inputs");
+        let loss = mlp.train_step(&x, 1.0).expect("valid training-step inputs");
         assert!(loss.is_finite(), "Loss should be finite: {loss}");
     }
 
@@ -774,7 +772,9 @@ mod tests {
         };
         let ok_cfg = ChaosMonkeyConfig::new(0.1, 0.0).expect("valid config");
 
-        assert!(apply_chaos_monkey(&Array1::from_vec(vec![1.0]), bad_dropout_cfg, &mut rng).is_err());
+        assert!(
+            apply_chaos_monkey(&Array1::from_vec(vec![1.0]), bad_dropout_cfg, &mut rng).is_err()
+        );
         assert!(apply_chaos_monkey(&Array1::from_vec(vec![1.0]), bad_sigma_cfg, &mut rng).is_err());
         assert!(apply_chaos_monkey(&x, ok_cfg, &mut rng).is_err());
     }
