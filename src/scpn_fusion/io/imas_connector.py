@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any, Mapping
 
 
@@ -76,7 +77,9 @@ def ids_to_digital_twin_summary(payload: Mapping[str, Any]) -> dict[str, Any]:
     time_slice = payload.get("time_slice", {})
 
     time_s = float(time_slice.get("time_s", 0.0))
-    steps = max(int(round(time_s * 1.0e3)), 0)
+    if not math.isfinite(time_s) or time_s < 0.0:
+        raise ValueError("time_slice.time_s must be finite and >= 0.")
+    steps = int(round(time_s * 1.0e3))
 
     return {
         "steps": steps,

@@ -204,6 +204,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-067 | P1 | Control | Harden advanced SOC reactor/agent constructors with strict parameter guards | `src/scpn_fusion/control/advanced_soc_fusion_learning.py`, `tests/test_advanced_soc_fusion_learning.py` | Advanced SOC constructors now reject invalid/non-finite reactor and agent parameters (`size`, `flow_generation`, `flow_damping`, `shear_efficiency`, `max_sub_steps`, `alpha`, `gamma`, `epsilon`, `n_states_turb`, `n_states_flow`, `n_actions`) with deterministic errors (no silent coercion/clipping), while preserving deterministic seeded campaign behavior for valid configurations | `python -m pytest tests/test_advanced_soc_fusion_learning.py -v`, `python -m pytest tests/ -q -x` |
 | H7-068 | P1 | HPC | Harden native convergence bridge with strict max-iteration/tolerance/omega guards | `src/scpn_fusion/hpc/hpc_bridge.py`, `tests/test_hpc_bridge.py` | HPC convergence path now rejects invalid/non-finite solver controls (`max_iterations`, `tolerance`, `omega`) with deterministic errors (no silent coercion/clipping), while preserving native/fallback solve behavior and deterministic output-buffer reuse for valid runs | `python -m pytest tests/test_hpc_bridge.py -v`, `python -m pytest tests/ -q -x` |
 | H7-069 | P1 | Diagnostics | Harden forward interferometer runtime with strict sample/wavelength guards | `src/scpn_fusion/diagnostics/forward.py`, `tests/test_forward_diagnostics_guards.py` | Forward interferometer path now rejects invalid/non-finite runtime controls (`samples`, `laser_wavelength_m`) with deterministic errors (no silent coercion/flooring), while preserving deterministic channel synthesis and diagnostics-suite compatibility for valid inputs | `python -m pytest tests/test_forward_diagnostics_guards.py tests/test_diagnostics.py tests/test_run_diagnostics.py tests/test_tomography.py tests/test_synthetic_sensors.py -v`, `python -m pytest tests/ -q -x` |
+| H7-070 | P1 | IO/Control | Harden IDS-to-digital-twin time-slice decoding with strict non-negative finite guards | `src/scpn_fusion/io/imas_connector.py`, `tests/test_tokamak_digital_twin.py` | IDS import path now rejects invalid/non-finite `time_slice.time_s` values with deterministic errors (no silent floor-to-zero coercion), while preserving deterministic IDS roundtrip semantics for valid payloads | `python -m pytest tests/test_tokamak_digital_twin.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -211,7 +212,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 115
+- Post-S4 hardening tasks delivered: 116
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -350,4 +351,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-067`
 - Completed: `H7-068`
 - Completed: `H7-069`
+- Completed: `H7-070`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted).

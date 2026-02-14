@@ -66,6 +66,17 @@ def test_ids_roundtrip_preserves_core_digital_twin_fields() -> None:
     assert np.isfinite(recovered["final_reward"])
 
 
+@pytest.mark.parametrize("bad_time_s", [-0.001, float("nan"), float("inf")])
+def test_ids_to_digital_twin_summary_rejects_invalid_time_slice_time(
+    bad_time_s: float,
+) -> None:
+    summary = run_digital_twin(time_steps=12, seed=3, save_plot=False, verbose=False)
+    ids_payload = digital_twin_summary_to_ids(summary, machine="ITER", shot=101, run=2)
+    ids_payload["time_slice"]["time_s"] = bad_time_s
+    with pytest.raises(ValueError, match="time_slice.time_s"):
+        ids_to_digital_twin_summary(ids_payload)
+
+
 def test_run_digital_twin_supports_deterministic_gyro_surrogate() -> None:
     def surrogate(temp_map: np.ndarray, q_map: np.ndarray, danger: np.ndarray) -> np.ndarray:
         _ = q_map
