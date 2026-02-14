@@ -126,3 +126,33 @@ def test_director_interface_can_disable_fallback(
             allow_fallback=False,
             controller_factory=_DummyNeuroController,
         )
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"duration": 0}, "duration"),
+        ({"glitch_start_step": -1}, "glitch_start_step"),
+        ({"glitch_std": -0.1}, "glitch_std"),
+        ({"glitch_std": float("nan")}, "glitch_std"),
+    ],
+)
+def test_directed_mission_rejects_invalid_runtime_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+    kwargs: dict[str, float | int],
+    match: str,
+) -> None:
+    monkeypatch.setattr(director_mod, "DIRECTOR_AVAILABLE", False)
+    monkeypatch.setattr(director_mod, "DirectorModule", None)
+    di = DirectorInterface(
+        "dummy.json",
+        allow_fallback=True,
+        controller_factory=_DummyNeuroController,
+    )
+    with pytest.raises(ValueError, match=match):
+        di.run_directed_mission(
+            rng_seed=7,
+            save_plot=False,
+            verbose=False,
+            **kwargs,
+        )

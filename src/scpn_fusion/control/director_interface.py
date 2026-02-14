@@ -150,9 +150,15 @@ class DirectorInterface:
         output_path: str = "Director_Interface_Result.png",
         verbose: bool = True,
     ) -> dict[str, Any]:
-        duration = max(int(duration), 1)
-        glitch_start_step = max(int(glitch_start_step), 0)
-        glitch_std = max(float(glitch_std), 0.0)
+        duration = int(duration)
+        if duration < 1:
+            raise ValueError("duration must be >= 1.")
+        glitch_start_step = int(glitch_start_step)
+        if glitch_start_step < 0:
+            raise ValueError("glitch_start_step must be >= 0.")
+        glitch_std = float(glitch_std)
+        if not np.isfinite(glitch_std) or glitch_std < 0.0:
+            raise ValueError("glitch_std must be finite and >= 0.")
         rng = np.random.default_rng(int(rng_seed))
 
         if verbose:
