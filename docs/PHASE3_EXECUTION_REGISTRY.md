@@ -225,6 +225,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-088 | P1 | SCPN | Harden artifact readout vector parsing with strict numeric/range guardrails | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Artifact loading now rejects malformed readout vectors (`gains`, `abs_max`, `slew_per_s`) when types, finiteness, lengths, or non-negativity constraints are violated, preventing invalid action-scaling semantics from entering runtime | `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
 | H7-089 | P1 | SCPN | Harden artifact place-injection parsing with strict type/index/finiteness guardrails | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Artifact loading now rejects malformed `initial_state.place_injections` fields (`place_id`, `source`, `scale`, `offset`, `clamp_0_1`) without silent casts, preventing invalid feature-injection semantics from entering runtime | `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
 | H7-090 | P1 | SCPN | Harden artifact readout-action metadata with strict id/name/place-index guardrails | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Artifact loading now rejects malformed readout action specs (`id`, `name`, `pos_place`, `neg_place`) with deterministic validation errors, preventing invalid action-place routing from entering runtime | `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
+| H8-001 | P1 | Interop | Harden IMAS/IDS digital-twin adapter with strict numeric typing and millisecond-grid time-slice guards | `src/scpn_fusion/io/imas_connector.py`, `tests/test_tokamak_digital_twin.py` | IDS mapping now rejects malformed metadata and payload fields (`machine`, `shot`, `run`, axis/performance scalars, islands count, `time_slice.index`) and disallows non-millisecond `time_slice.time_s` values to prevent silent coercion/rounding in interop loops | `python -m pytest tests/test_tokamak_digital_twin.py -q`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -232,7 +233,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 136
+- Post-S4 hardening tasks delivered: 137
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -392,4 +393,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-088`
 - Completed: `H7-089`
 - Completed: `H7-090`
-- Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted).
+- Completed: `H8-001`
+- Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

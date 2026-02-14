@@ -77,6 +77,80 @@ def test_ids_to_digital_twin_summary_rejects_invalid_time_slice_time(
         ids_to_digital_twin_summary(ids_payload)
 
 
+@pytest.mark.parametrize(
+    ("patch", "msg"),
+    [
+        ({"machine": ""}, "machine"),
+        ({"shot": -1}, "shot"),
+        ({"shot": 1.5}, "shot"),
+        ({"run": True}, "run"),
+    ],
+)
+def test_digital_twin_summary_to_ids_rejects_invalid_metadata(
+    patch: dict[str, object],
+    msg: str,
+) -> None:
+    summary = run_digital_twin(time_steps=12, seed=31, save_plot=False, verbose=False)
+    kwargs: dict[str, object] = {"machine": "ITER", "shot": 1, "run": 2}
+    kwargs.update(patch)
+    with pytest.raises(ValueError, match=msg):
+        digital_twin_summary_to_ids(summary, **kwargs)
+
+
+@pytest.mark.parametrize(
+    ("summary_patch", "msg"),
+    [
+        ({"steps": 12.5}, "summary.steps"),
+        ({"steps": -1}, "summary.steps"),
+        ({"final_axis_r": float("nan")}, "summary.final_axis_r"),
+        ({"final_islands_px": 2.2}, "summary.final_islands_px"),
+        ({"final_reward": "bad"}, "summary.final_reward"),
+    ],
+)
+def test_digital_twin_summary_to_ids_rejects_invalid_summary_fields(
+    summary_patch: dict[str, object],
+    msg: str,
+) -> None:
+    summary = run_digital_twin(time_steps=12, seed=32, save_plot=False, verbose=False)
+    summary.update(summary_patch)
+    with pytest.raises(ValueError, match=msg):
+        digital_twin_summary_to_ids(summary, machine="ITER", shot=101, run=2)
+
+
+def test_ids_to_digital_twin_summary_rejects_non_ms_time_slice_time() -> None:
+    summary = run_digital_twin(time_steps=12, seed=33, save_plot=False, verbose=False)
+    ids_payload = digital_twin_summary_to_ids(summary, machine="ITER", shot=101, run=2)
+    ids_payload["time_slice"]["time_s"] = 0.0125
+    with pytest.raises(ValueError, match="integer millisecond"):
+        ids_to_digital_twin_summary(ids_payload)
+
+
+@pytest.mark.parametrize(
+    ("patch_path", "value", "msg"),
+    [
+        (("equilibrium", "axis", "r_m"), float("inf"), "equilibrium.axis.r_m"),
+        (("equilibrium", "islands_px"), -1, "equilibrium.islands_px"),
+        (("performance", "final_reward"), float("nan"), "performance.final_reward"),
+        (("time_slice", "index"), 1.2, "time_slice.index"),
+    ],
+)
+def test_ids_to_digital_twin_summary_rejects_invalid_field_types(
+    patch_path: tuple[str, ...],
+    value: object,
+    msg: str,
+) -> None:
+    summary = run_digital_twin(time_steps=14, seed=34, save_plot=False, verbose=False)
+    ids_payload = digital_twin_summary_to_ids(summary, machine="ITER", shot=101, run=2)
+    node: dict[str, object] = ids_payload
+    for key in patch_path[:-1]:
+        next_node = node[key]
+        assert isinstance(next_node, dict)
+        node = next_node
+    node[patch_path[-1]] = value
+    with pytest.raises(ValueError, match=msg):
+        ids_to_digital_twin_summary(ids_payload)
+
+
 def test_run_digital_twin_supports_deterministic_gyro_surrogate() -> None:
     def surrogate(temp_map: np.ndarray, q_map: np.ndarray, danger: np.ndarray) -> np.ndarray:
         _ = q_map
