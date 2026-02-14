@@ -88,10 +88,20 @@ pub fn pack_halo_rows(
             local.nrows()
         )));
     }
+    if local.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "Local block contains non-finite values".to_string(),
+        ));
+    }
     let top = local.slice(s![halo..(2 * halo), ..]).to_owned();
     let bottom = local
         .slice(s![(local.nrows() - 2 * halo)..(local.nrows() - halo), ..])
         .to_owned();
+    if top.iter().any(|v| !v.is_finite()) || bottom.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "Packed halo rows contain non-finite values".to_string(),
+        ));
+    }
     Ok((top, bottom))
 }
 
@@ -112,6 +122,11 @@ pub fn apply_halo_rows(
             local.nrows()
         )));
     }
+    if local.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "Local block contains non-finite values".to_string(),
+        ));
+    }
     if let Some(top) = recv_top {
         if top.dim() != (halo, local.ncols()) {
             return Err(FusionError::PhysicsViolation(format!(
@@ -119,6 +134,11 @@ pub fn apply_halo_rows(
                 local.ncols(),
                 top.dim()
             )));
+        }
+        if top.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::PhysicsViolation(
+                "Top halo contains non-finite values".to_string(),
+            ));
         }
         local.slice_mut(s![0..halo, ..]).assign(top);
     }
@@ -130,8 +150,18 @@ pub fn apply_halo_rows(
                 bottom.dim()
             )));
         }
+        if bottom.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::PhysicsViolation(
+                "Bottom halo contains non-finite values".to_string(),
+            ));
+        }
         let n = local.nrows();
         local.slice_mut(s![(n - halo)..n, ..]).assign(bottom);
+    }
+    if local.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "Applying halo rows produced non-finite values".to_string(),
+        ));
     }
     Ok(())
 }
@@ -140,12 +170,40 @@ pub fn split_with_halo(
     global: &Array2<f64>,
     slices: &[DomainSlice],
 ) -> FusionResult<Vec<Array2<f64>>> {
+    if slices.is_empty() {
+        return Err(FusionError::PhysicsViolation(
+            "No slices provided for split_with_halo".to_string(),
+        ));
+    }
+    if global.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "Global array contains non-finite values".to_string(),
+        ));
+    }
     let mut out = Vec::with_capacity(slices.len());
     for sdef in slices {
+        if sdef.global_nz != global.nrows() {
+            return Err(FusionError::PhysicsViolation(format!(
+                "Slice/global mismatch: slice.global_nz={} global.nrows()={}",
+                sdef.global_nz,
+                global.nrows()
+            )));
+        }
+        if sdef.z_start >= sdef.z_end || sdef.z_end > sdef.global_nz {
+            return Err(FusionError::PhysicsViolation(format!(
+                "Invalid slice bounds z_start={} z_end={} global_nz={}",
+                sdef.z_start, sdef.z_end, sdef.global_nz
+            )));
+        }
         let start = sdef.z_start.saturating_sub(sdef.halo);
         let end = (sdef.z_end + sdef.halo).min(sdef.global_nz);
         let mut local = Array2::zeros((end - start, global.ncols()));
         local.assign(&global.slice(s![start..end, ..]));
+        if local.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::PhysicsViolation(
+                "Split local block contains non-finite values".to_string(),
+            ));
+        }
         out.push(local);
     }
     Ok(out)
@@ -163,12 +221,22 @@ pub fn stitch_without_halo(
             slices.len()
         )));
     }
+    if slices.is_empty() {
+        return Err(FusionError::PhysicsViolation(
+            "No slices provided for stitch_without_halo".to_string(),
+        ));
+    }
     let global_nz = slices
         .last()
         .map(|s| s.global_nz)
         .ok_or_else(|| FusionError::PhysicsViolation("No slices provided".to_string()))?;
     let mut global = Array2::zeros((global_nz, ncols));
     for (local, sdef) in locals.iter().zip(slices.iter()) {
+        if local.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::PhysicsViolation(
+                "Local block contains non-finite values".to_string(),
+            ));
+        }
         if local.ncols() != ncols {
             return Err(FusionError::PhysicsViolation(format!(
                 "Local ncols mismatch: expected {ncols}, got {}",
@@ -187,6 +255,11 @@ pub fn stitch_without_halo(
             .slice_mut(s![sdef.z_start..sdef.z_end, ..])
             .assign(&local.slice(s![core_start..core_end, ..]));
     }
+    if global.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "Stitched global array contains non-finite values".to_string(),
+        ));
+    }
     Ok(global)
 }
 
@@ -204,6 +277,11 @@ pub fn serial_halo_exchange(
     let mut top_send: Vec<Option<Array2<f64>>> = vec![None; locals.len()];
     let mut bottom_send: Vec<Option<Array2<f64>>> = vec![None; locals.len()];
     for (i, (local, sdef)) in locals.iter().zip(slices.iter()).enumerate() {
+        if local.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::PhysicsViolation(format!(
+                "Local block at index {i} contains non-finite values"
+            )));
+        }
         if sdef.halo == 0 {
             continue;
         }
@@ -229,6 +307,11 @@ pub fn serial_halo_exchange(
         };
         apply_halo_rows(&mut locals[i], halo, recv_top, recv_bottom)?;
     }
+    if locals.iter().any(|arr| arr.iter().any(|v| !v.is_finite())) {
+        return Err(FusionError::PhysicsViolation(
+            "Serial halo exchange produced non-finite values".to_string(),
+        ));
+    }
     Ok(())
 }
 
@@ -240,12 +323,23 @@ pub fn l2_norm_delta(a: &Array2<f64>, b: &Array2<f64>) -> FusionResult<f64> {
             b.dim()
         )));
     }
+    if a.iter().any(|v| !v.is_finite()) || b.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "l2_norm_delta inputs must be finite".to_string(),
+        ));
+    }
     let mut accum = 0.0f64;
     for (av, bv) in a.iter().zip(b.iter()) {
         let d = av - bv;
         accum += d * d;
     }
-    Ok(accum.sqrt())
+    let out = accum.sqrt();
+    if !out.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "l2_norm_delta produced non-finite result".to_string(),
+        ));
+    }
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -309,5 +403,25 @@ mod tests {
         let b = a.clone();
         let d = l2_norm_delta(&a, &b).expect("delta");
         assert!(d.abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_mpi_domain_rejects_non_finite_inputs() {
+        let mut local = sample_grid(8, 4);
+        local[[2, 2]] = f64::NAN;
+        let err = pack_halo_rows(&local, 1).expect_err("non-finite local should fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => assert!(msg.contains("non-finite")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        let mut a = sample_grid(4, 4);
+        let b = sample_grid(4, 4);
+        a[[0, 0]] = f64::INFINITY;
+        let err = l2_norm_delta(&a, &b).expect_err("non-finite delta input should fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => assert!(msg.contains("finite")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
     }
 }

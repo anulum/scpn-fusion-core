@@ -269,6 +269,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-042 | P1 | Runtime | Harden memory-kernel transport constructor and step runtime validation | `scpn-fusion-rs/crates/fusion-core/src/memory_transport.rs` | Memory-kernel transport now rejects invalid runtime inputs (non-finite/negative `tau_d`, non-finite drive vectors, invalid `dt`/`p_aux_mw`, non-finite gradient/divergence/source evolution) via explicit `FusionError::ConfigError` instead of silently clamping/falling back on non-finite updates during temperature/memory evolution | `cargo test -p fusion-core memory_transport::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-043 | P1 | Runtime | Harden nonlinear plasma-source kernel entrypoints with strict input/profile validation | `scpn-fusion-rs/crates/fusion-core/src/source.rs`, `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | Plasma-source update entrypoints now reject invalid runtime inputs (psi/grid shape mismatches, non-finite values, degenerate flux denominator, non-positive in-plasma radius, invalid `mu0`, malformed profile parameters) via explicit `FusionError::ConfigError`, and equilibrium solve now propagates source update failures explicitly through `FusionResult` instead of silent denominator/radius coercions | `cargo test -p fusion-core source::tests:: -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_validated_config_equilibrium -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-044 | P1 | Runtime | Harden radial transport runtime evolution paths with strict finite/domain validation | `scpn-fusion-rs/crates/fusion-core/src/transport.rs` | Radial transport runtime entrypoints now reject invalid runtime inputs (non-finite/negative `p_aux_mw` and `erosion_rate`, invalid `dt`, non-positive interior `rho`, non-finite gradient/divergence/source terms) via explicit `FusionError::ConfigError`, and step/update/evolve/injection paths now propagate failures through `FusionResult` instead of silent coercion fallbacks in runtime evolution | `cargo test -p fusion-core transport::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
+| H8-045 | P1 | Runtime | Harden MPI decomposition/halo utilities with strict finite-data and metadata guards | `scpn-fusion-rs/crates/fusion-core/src/mpi_domain.rs` | MPI decomposition and halo/stitch/delta utilities now reject invalid runtime inputs (non-finite local/global array values, invalid slice bounds/metadata, malformed halo buffers, non-finite L2 inputs/outputs) via explicit `FusionError::PhysicsViolation` instead of silently propagating invalid values through exchange/stitch operations | `cargo test -p fusion-core mpi_domain::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 
 ## Task Accounting
 
@@ -276,7 +277,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 180
+- Post-S4 hardening tasks delivered: 181
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -480,4 +481,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-042`
 - Completed: `H8-043`
 - Completed: `H8-044`
+- Completed: `H8-045`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
