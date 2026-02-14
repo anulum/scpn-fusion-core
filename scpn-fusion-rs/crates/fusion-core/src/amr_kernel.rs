@@ -71,15 +71,35 @@ impl AmrKernelSolver {
         Ok(Self { config })
     }
 
-    pub fn solve(&self, base_grid: &Grid2D, source: &Array2<f64>) -> Array2<f64> {
-        self.solve_with_hierarchy(base_grid, source).0
+    fn validate_source_inputs(&self, base_grid: &Grid2D, source: &Array2<f64>) -> FusionResult<()> {
+        if source.nrows() != base_grid.nz || source.ncols() != base_grid.nr {
+            return Err(FusionError::ConfigError(format!(
+                "AMR source shape mismatch: expected ({}, {}), got ({}, {})",
+                base_grid.nz,
+                base_grid.nr,
+                source.nrows(),
+                source.ncols()
+            )));
+        }
+        if source.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "AMR source must contain only finite values".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn solve(&self, base_grid: &Grid2D, source: &Array2<f64>) -> FusionResult<Array2<f64>> {
+        self.solve_with_hierarchy(base_grid, source)
+            .map(|(psi, _)| psi)
     }
 
     pub fn solve_with_hierarchy(
         &self,
         base_grid: &Grid2D,
         source: &Array2<f64>,
-    ) -> (Array2<f64>, AmrHierarchy) {
+    ) -> FusionResult<(Array2<f64>, AmrHierarchy)> {
+        self.validate_source_inputs(base_grid, source)?;
         let mut psi = Array2::zeros((base_grid.nz, base_grid.nr));
         sor_solve(
             &mut psi,
@@ -88,6 +108,11 @@ impl AmrKernelSolver {
             self.config.omega,
             self.config.coarse_iters,
         );
+        if psi.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "AMR coarse solve produced non-finite psi values".to_string(),
+            ));
+        }
 
         let error = estimate_error_field(source, base_grid);
         let mut hierarchy = AmrHierarchy::new(
@@ -98,7 +123,7 @@ impl AmrKernelSolver {
         hierarchy.refine(&error);
 
         if hierarchy.patches.is_empty() {
-            return (psi, hierarchy);
+            return Ok((psi, hierarchy));
         }
 
         fn refinement_scale(level: usize) -> usize {
@@ -132,6 +157,11 @@ impl AmrKernelSolver {
                 self.config.omega,
                 self.config.patch_iters,
             );
+            if patch.psi.iter().any(|v| !v.is_finite()) {
+                return Err(FusionError::ConfigError(
+                    "AMR patch solve produced non-finite psi values".to_string(),
+                ));
+            }
         }
 
         let blend = self.config.blend;
@@ -150,7 +180,13 @@ impl AmrKernelSolver {
             }
         }
 
-        (psi, hierarchy)
+        if psi.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "AMR blended solve produced non-finite psi values".to_string(),
+            ));
+        }
+
+        Ok((psi, hierarchy))
     }
 }
 
@@ -185,7 +221,9 @@ mod tests {
         let grid = Grid2D::new(33, 33, 1.0, 2.0, -1.0, 1.0);
         let source = gaussian_source(&grid);
         let solver = AmrKernelSolver::default();
-        let (psi, hierarchy) = solver.solve_with_hierarchy(&grid, &source);
+        let (psi, hierarchy) = solver
+            .solve_with_hierarchy(&grid, &source)
+            .expect("valid AMR solve inputs");
 
         assert!(psi.iter().all(|v| v.is_finite()));
         assert!(
@@ -204,7 +242,9 @@ mod tests {
             ..Default::default()
         };
         let solver = AmrKernelSolver::new(coarse_cfg.clone()).expect("valid AMR config");
-        let (amr_off, hierarchy) = solver.solve_with_hierarchy(&grid, &source);
+        let (amr_off, hierarchy) = solver
+            .solve_with_hierarchy(&grid, &source)
+            .expect("valid AMR solve inputs");
         assert!(hierarchy.patches.is_empty());
 
         let mut coarse = Array2::zeros((grid.nz, grid.nr));
@@ -230,7 +270,9 @@ mod tests {
         })
         .expect("valid AMR config");
 
-        let (_psi, hierarchy) = solver.solve_with_hierarchy(&grid, &source);
+        let (_psi, hierarchy) = solver
+            .solve_with_hierarchy(&grid, &source)
+            .expect("valid AMR solve inputs");
         assert!(
             hierarchy.patches.len() >= 2,
             "Expected multi-level AMR hierarchy for max_levels=3"
@@ -293,5 +335,18 @@ mod tests {
                 other => panic!("Unexpected error: {other:?}"),
             }
         }
+    }
+
+    #[test]
+    fn test_amr_kernel_rejects_invalid_source_shape_or_values() {
+        let grid = Grid2D::new(17, 17, 1.0, 2.0, -1.0, 1.0);
+        let solver = AmrKernelSolver::default();
+
+        let bad_shape = Array2::zeros((16, 17));
+        assert!(solver.solve_with_hierarchy(&grid, &bad_shape).is_err());
+
+        let mut bad_values = Array2::zeros((17, 17));
+        bad_values[[0, 0]] = f64::NAN;
+        assert!(solver.solve_with_hierarchy(&grid, &bad_values).is_err());
     }
 }
