@@ -105,6 +105,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | H5-032 | P2 | Runtime | Remove package path injection from legacy core modules and targeted tests while preserving external bridge override | `src/scpn_fusion/core/force_balance.py`, `src/scpn_fusion/core/global_design_scanner.py`, `src/scpn_fusion/core/integrated_transport_solver.py`, `src/scpn_fusion/core/lazarus_bridge.py`, `src/scpn_fusion/core/neural_equilibrium.py`, `src/scpn_fusion/core/rf_heating.py`, `src/scpn_fusion/core/stability_analyzer.py`, `src/scpn_fusion/core/vibrana_bridge.py`, `src/scpn_fusion/core/wdm_engine.py`, `tests/test_fno_training.py`, `tests/test_hypothesis_properties.py` | Core/test modules no longer mutate `sys.path` for package imports; only `vibrana_bridge.py` keeps explicit external `CCW_Standalone` bridge path | `python -m pytest tests/test_fno_training.py tests/test_hypothesis_properties.py tests/test_gai_03_heat_ml_shadow.py tests/test_gmvr_01_compact_constraints.py -q`, `python -c \"import scpn_fusion.core.force_balance, scpn_fusion.core.global_design_scanner, scpn_fusion.core.integrated_transport_solver, scpn_fusion.core.lazarus_bridge, scpn_fusion.core.neural_equilibrium, scpn_fusion.core.rf_heating, scpn_fusion.core.stability_analyzer, scpn_fusion.core.vibrana_bridge, scpn_fusion.core.wdm_engine\"` |
 | H5-033 | P1 | SCPN | Expand default Rust offload eligibility and add chunked antithetic sampling for large-net runtime stability | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py` | Auto backend now prefers Rust whenever available (override still supported), antithetic sampling uses chunked vector passes for large transition counts, and deterministic replay/benchmark thresholds remain stable | `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `python -m pytest tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py tests/test_gneu_01_benchmark.py -q`, `python validation/scpn_pid_mpc_benchmark.py --strict` |
 | H5-034 | P1 | Validation | Shift PID/MPC SCPN campaign baseline from strict-binary thresholding to adaptive stochastic margin | `validation/scpn_pid_mpc_benchmark.py` | Benchmark controller now uses non-zero binary margin (`0.05`) so default lane reflects adaptive stochastic SCPN behavior while preserving deterministic replay and strict thresholds | `python -m pytest tests/test_scpn_pid_mpc_benchmark.py tests/test_controller.py tests/test_gneu_01_benchmark.py -q`, `python validation/scpn_pid_mpc_benchmark.py --strict` |
+| H5-035 | P1 | Validation | Add regression lock ensuring PID/MPC SCPN lane keeps non-zero adaptive binary margin | `tests/test_scpn_pid_mpc_benchmark.py` | Benchmark test suite asserts `_build_scpn_controller()` configures SCPN with non-zero `sc_binary_margin`, preventing silent reversion to strict-binary thresholding | `python -m pytest tests/test_scpn_pid_mpc_benchmark.py tests/test_controller.py tests/test_gneu_01_benchmark.py -q`, `python validation/scpn_pid_mpc_benchmark.py --strict` |
 
 ## Task Accounting
 
@@ -112,7 +113,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 34
+- Post-S4 hardening tasks delivered: 35
 - Remaining in deferred pool after queue selection: 67
 
 ## Active Task
@@ -169,4 +170,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `H5-032`
 - Completed: `H5-033`
 - Completed: `H5-034`
+- Completed: `H5-035`
 - Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).

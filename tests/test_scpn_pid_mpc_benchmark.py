@@ -41,6 +41,11 @@ def test_campaign_meets_thresholds_smoke() -> None:
     assert out["ratios"]["scpn_vs_mpc_rmse_ratio"] <= out["thresholds"]["max_scpn_vs_mpc_rmse_ratio"]
 
 
+def test_campaign_controller_uses_nonzero_binary_margin() -> None:
+    controller = scpn_pid_mpc_benchmark._build_scpn_controller()
+    assert getattr(controller, "_sc_binary_margin", 0.0) > 0.0
+
+
 def test_render_markdown_contains_sections() -> None:
     report = scpn_pid_mpc_benchmark.generate_report(seed=11, steps=120)
     text = scpn_pid_mpc_benchmark.render_markdown(report)
