@@ -379,8 +379,13 @@ impl FusionKernel {
                 particle_j_phi.dim(),
             )));
         }
+        if !coupling.is_finite() || !(0.0..=1.0).contains(&coupling) {
+            return Err(FusionError::PhysicsViolation(
+                "particle feedback coupling must be finite and in [0, 1]".to_string(),
+            ));
+        }
         self.particle_current_feedback = Some(particle_j_phi);
-        self.particle_feedback_coupling = coupling.clamp(0.0, 1.0);
+        self.particle_feedback_coupling = coupling;
         Ok(())
     }
 
@@ -544,13 +549,30 @@ mod tests {
         let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
         let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
         kernel
-            .set_particle_current_feedback(feedback, 1.5)
+            .set_particle_current_feedback(feedback, 1.0)
             .expect("feedback set should succeed");
         assert!(kernel.particle_current_feedback.is_some());
         assert!((kernel.particle_feedback_coupling - 1.0).abs() < 1e-12);
         kernel.clear_particle_current_feedback();
         assert!(kernel.particle_current_feedback.is_none());
         assert_eq!(kernel.particle_feedback_coupling, 0.0);
+    }
+
+    #[test]
+    fn test_particle_feedback_rejects_invalid_coupling() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
+        for coupling in [f64::NAN, -0.2, 1.2] {
+            let err = kernel
+                .set_particle_current_feedback(feedback.clone(), coupling)
+                .expect_err("invalid coupling must error");
+            match err {
+                FusionError::PhysicsViolation(msg) => {
+                    assert!(msg.contains("coupling"));
+                }
+                other => panic!("Unexpected error: {other:?}"),
+            }
+        }
     }
 
     #[test]

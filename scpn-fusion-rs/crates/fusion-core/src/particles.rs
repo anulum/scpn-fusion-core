@@ -341,8 +341,18 @@ pub fn blend_particle_current(
             particle_j_phi.dim(),
         )));
     }
+    if !particle_coupling.is_finite() || !(0.0..=1.0).contains(&particle_coupling) {
+        return Err(FusionError::PhysicsViolation(
+            "particle_coupling must be finite and in [0, 1]".to_string(),
+        ));
+    }
+    if !i_target.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "i_target must be finite".to_string(),
+        ));
+    }
 
-    let coupling = particle_coupling.clamp(0.0, 1.0);
+    let coupling = particle_coupling;
     let fluid_weight = 1.0 - coupling;
     let mut combined = Array2::zeros(expected_shape);
 
@@ -452,6 +462,31 @@ mod tests {
         match err {
             FusionError::PhysicsViolation(msg) => {
                 assert!(msg.contains("shape mismatch"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_blend_particle_current_rejects_invalid_coupling_and_target() {
+        let grid = Grid2D::new(8, 8, 1.0, 5.0, -2.0, 2.0);
+        let fluid = Array2::from_elem((8, 8), 2.0);
+        let particle = Array2::from_elem((8, 8), 6.0);
+        for bad_coupling in [f64::NAN, -0.1, 1.1] {
+            let err = blend_particle_current(&fluid, &particle, &grid, 1.0, bad_coupling)
+                .expect_err("invalid coupling must error");
+            match err {
+                FusionError::PhysicsViolation(msg) => {
+                    assert!(msg.contains("particle_coupling"));
+                }
+                other => panic!("Unexpected error: {other:?}"),
+            }
+        }
+        let err = blend_particle_current(&fluid, &particle, &grid, f64::INFINITY, 0.5)
+            .expect_err("non-finite target current must error");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("i_target"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
