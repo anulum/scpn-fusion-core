@@ -5,6 +5,7 @@
 //!   J_phi = R · p'(ψ_norm) + (1/(μ₀R)) · FF'(ψ_norm)
 //! where ψ_norm = (Ψ - Ψ_axis) / (Ψ_boundary - Ψ_axis).
 
+use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::Grid2D;
 use ndarray::Array2;
 
@@ -49,6 +50,98 @@ pub struct SourceProfileContext<'a> {
     pub psi_boundary: f64,
     pub mu0: f64,
     pub i_target: f64,
+}
+
+fn validate_source_inputs(
+    psi: &Array2<f64>,
+    grid: &Grid2D,
+    psi_axis: f64,
+    psi_boundary: f64,
+    mu0: f64,
+    i_target: f64,
+) -> FusionResult<()> {
+    if grid.nz == 0 || grid.nr == 0 {
+        return Err(FusionError::ConfigError(
+            "source update grid requires nz,nr >= 1".to_string(),
+        ));
+    }
+    if !grid.dr.is_finite()
+        || !grid.dz.is_finite()
+        || grid.dr.abs() <= f64::EPSILON
+        || grid.dz.abs() <= f64::EPSILON
+    {
+        return Err(FusionError::ConfigError(format!(
+            "source update requires finite non-zero grid spacing, got dr={} dz={}",
+            grid.dr, grid.dz
+        )));
+    }
+    if psi.nrows() != grid.nz || psi.ncols() != grid.nr {
+        return Err(FusionError::ConfigError(format!(
+            "source update psi shape mismatch: expected ({}, {}), got ({}, {})",
+            grid.nz,
+            grid.nr,
+            psi.nrows(),
+            psi.ncols()
+        )));
+    }
+    if grid.rr.nrows() != grid.nz || grid.rr.ncols() != grid.nr {
+        return Err(FusionError::ConfigError(format!(
+            "source update grid.rr shape mismatch: expected ({}, {}), got ({}, {})",
+            grid.nz,
+            grid.nr,
+            grid.rr.nrows(),
+            grid.rr.ncols()
+        )));
+    }
+    if psi.iter().any(|v| !v.is_finite()) || grid.rr.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "source update inputs must be finite".to_string(),
+        ));
+    }
+    if !psi_axis.is_finite() || !psi_boundary.is_finite() {
+        return Err(FusionError::ConfigError(
+            "source update psi_axis/psi_boundary must be finite".to_string(),
+        ));
+    }
+    if !mu0.is_finite() || mu0 <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "source update requires finite mu0 > 0, got {mu0}"
+        )));
+    }
+    if !i_target.is_finite() {
+        return Err(FusionError::ConfigError(
+            "source update target current must be finite".to_string(),
+        ));
+    }
+    let denom = psi_boundary - psi_axis;
+    if !denom.is_finite() || denom.abs() < MIN_FLUX_DENOMINATOR {
+        return Err(FusionError::ConfigError(format!(
+            "source update flux denominator must satisfy |psi_boundary-psi_axis| >= {MIN_FLUX_DENOMINATOR}, got {}",
+            denom
+        )));
+    }
+    Ok(())
+}
+
+fn validate_profile_params(params: &ProfileParams, label: &str) -> FusionResult<()> {
+    if !params.ped_top.is_finite() || params.ped_top <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "{label}.ped_top must be finite and > 0, got {}",
+            params.ped_top
+        )));
+    }
+    if !params.ped_width.is_finite() || params.ped_width <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "{label}.ped_width must be finite and > 0, got {}",
+            params.ped_width
+        )));
+    }
+    if !params.ped_height.is_finite() || !params.core_alpha.is_finite() {
+        return Err(FusionError::ConfigError(format!(
+            "{label}.ped_height/core_alpha must be finite"
+        )));
+    }
+    Ok(())
 }
 
 /// mTanh profile:
@@ -106,33 +199,46 @@ pub fn update_plasma_source_nonlinear(
     psi_boundary: f64,
     mu0: f64,
     i_target: f64,
-) -> Array2<f64> {
+) -> FusionResult<Array2<f64>> {
+    validate_source_inputs(psi, grid, psi_axis, psi_boundary, mu0, i_target)?;
     let nz = grid.nz;
     let nr = grid.nr;
 
     // Normalize flux
-    let mut denom = psi_boundary - psi_axis;
-    if denom.abs() < MIN_FLUX_DENOMINATOR {
-        denom = MIN_FLUX_DENOMINATOR;
-    }
+    let denom = psi_boundary - psi_axis;
 
     let mut j_phi = Array2::zeros((nz, nr));
 
     for iz in 0..nz {
         for ir in 0..nr {
             let psi_norm = (psi[[iz, ir]] - psi_axis) / denom;
+            if !psi_norm.is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "source update produced non-finite psi_norm at ({iz}, {ir})"
+                )));
+            }
 
             // Only inside plasma (0 ≤ ψ_norm < 1)
             if (0.0..1.0).contains(&psi_norm) {
                 let profile = 1.0 - psi_norm;
 
                 let r = grid.rr[[iz, ir]];
+                if r <= 0.0 {
+                    return Err(FusionError::ConfigError(format!(
+                        "source update requires R > 0 inside plasma at ({iz}, {ir}), got {r}"
+                    )));
+                }
 
                 // Pressure-driven current (dominates at large R)
                 let j_p = r * profile;
 
                 // Poloidal field current (dominates at small R)
                 let j_f = (1.0 / (mu0 * r)) * profile;
+                if !j_p.is_finite() || !j_f.is_finite() {
+                    return Err(FusionError::ConfigError(format!(
+                        "source update produced non-finite current components at ({iz}, {ir})"
+                    )));
+                }
 
                 // Mix
                 j_phi[[iz, ir]] = DEFAULT_BETA_MIX * j_p + (1.0 - DEFAULT_BETA_MIX) * j_f;
@@ -142,15 +248,30 @@ pub fn update_plasma_source_nonlinear(
 
     // Renormalize to match target current
     let i_current: f64 = j_phi.iter().sum::<f64>() * grid.dr * grid.dz;
+    if !i_current.is_finite() {
+        return Err(FusionError::ConfigError(
+            "source update current integral became non-finite".to_string(),
+        ));
+    }
 
     if i_current.abs() > MIN_CURRENT_INTEGRAL {
         let scale = i_target / i_current;
+        if !scale.is_finite() {
+            return Err(FusionError::ConfigError(
+                "source update renormalization scale became non-finite".to_string(),
+            ));
+        }
         j_phi.mapv_inplace(|v| v * scale);
     } else {
         j_phi.fill(0.0);
     }
 
-    j_phi
+    if j_phi.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "source update output contains non-finite values".to_string(),
+        ));
+    }
+    Ok(j_phi)
 }
 
 /// Update toroidal current density using externally provided profile parameters.
@@ -161,7 +282,7 @@ pub fn update_plasma_source_with_profiles(
     ctx: SourceProfileContext<'_>,
     params_p: &ProfileParams,
     params_ff: &ProfileParams,
-) -> Array2<f64> {
+) -> FusionResult<Array2<f64>> {
     let SourceProfileContext {
         psi,
         grid,
@@ -170,38 +291,73 @@ pub fn update_plasma_source_with_profiles(
         mu0,
         i_target,
     } = ctx;
+    validate_source_inputs(psi, grid, psi_axis, psi_boundary, mu0, i_target)?;
+    validate_profile_params(params_p, "params_p")?;
+    validate_profile_params(params_ff, "params_ff")?;
     let nz = grid.nz;
     let nr = grid.nr;
 
-    let mut denom = psi_boundary - psi_axis;
-    if denom.abs() < MIN_FLUX_DENOMINATOR {
-        denom = MIN_FLUX_DENOMINATOR;
-    }
+    let denom = psi_boundary - psi_axis;
 
     let mut j_phi = Array2::zeros((nz, nr));
     for iz in 0..nz {
         for ir in 0..nr {
             let psi_norm = (psi[[iz, ir]] - psi_axis) / denom;
+            if !psi_norm.is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "profile source update produced non-finite psi_norm at ({iz}, {ir})"
+                )));
+            }
             if (0.0..1.0).contains(&psi_norm) {
-                let r = grid.rr[[iz, ir]].abs().max(1e-9);
+                let r = grid.rr[[iz, ir]];
+                if r <= 0.0 {
+                    return Err(FusionError::ConfigError(format!(
+                        "profile source update requires R > 0 inside plasma at ({iz}, {ir}), got {r}"
+                    )));
+                }
                 let p_profile = mtanh_profile(psi_norm, params_p);
                 let ff_profile = mtanh_profile(psi_norm, params_ff);
+                if !p_profile.is_finite() || !ff_profile.is_finite() {
+                    return Err(FusionError::ConfigError(format!(
+                        "profile source update produced non-finite profile values at ({iz}, {ir})"
+                    )));
+                }
 
                 let j_p = r * p_profile;
                 let j_f = (1.0 / (mu0 * r)) * ff_profile;
+                if !j_p.is_finite() || !j_f.is_finite() {
+                    return Err(FusionError::ConfigError(format!(
+                        "profile source update produced non-finite current components at ({iz}, {ir})"
+                    )));
+                }
                 j_phi[[iz, ir]] = DEFAULT_BETA_MIX * j_p + (1.0 - DEFAULT_BETA_MIX) * j_f;
             }
         }
     }
 
     let i_current: f64 = j_phi.iter().sum::<f64>() * grid.dr * grid.dz;
+    if !i_current.is_finite() {
+        return Err(FusionError::ConfigError(
+            "profile source update current integral became non-finite".to_string(),
+        ));
+    }
     if i_current.abs() > MIN_CURRENT_INTEGRAL {
         let scale = i_target / i_current;
+        if !scale.is_finite() {
+            return Err(FusionError::ConfigError(
+                "profile source update renormalization scale became non-finite".to_string(),
+            ));
+        }
         j_phi.mapv_inplace(|v| v * scale);
     } else {
         j_phi.fill(0.0);
     }
-    j_phi
+    if j_phi.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "profile source update output contains non-finite values".to_string(),
+        ));
+    }
+    Ok(j_phi)
 }
 
 #[cfg(test)]
@@ -214,7 +370,8 @@ mod tests {
         // Ψ everywhere = 0, axis = 1.0, boundary = 0.0
         // ψ_norm = (0 - 1) / (0 - 1) = 1.0 → outside plasma
         let psi = Array2::zeros((16, 16));
-        let j = update_plasma_source_nonlinear(&psi, &grid, 1.0, 0.0, 1.0, 1e6);
+        let j = update_plasma_source_nonlinear(&psi, &grid, 1.0, 0.0, 1.0, 1e6)
+            .expect("valid source-update inputs");
 
         // Everything should be zero (all ψ_norm = 1.0, exactly at boundary)
         let max_j = j.iter().cloned().fold(0.0_f64, |a, b| a.max(b.abs()));
@@ -235,7 +392,8 @@ mod tests {
         let psi_boundary = 0.0; // edge
         let i_target = 15e6; // 15 MA
 
-        let j = update_plasma_source_nonlinear(&psi, &grid, psi_axis, psi_boundary, 1.0, i_target);
+        let j = update_plasma_source_nonlinear(&psi, &grid, psi_axis, psi_boundary, 1.0, i_target)
+            .expect("valid source-update inputs");
 
         // Check integral matches target
         let i_actual: f64 = j.iter().sum::<f64>() * grid.dr * grid.dz;
@@ -321,7 +479,8 @@ mod tests {
             },
             &params_p,
             &params_ff,
-        );
+        )
+        .expect("valid profile-source-update inputs");
         assert!(
             j.iter().all(|v| v.is_finite()),
             "Profile source contains non-finite values"
@@ -329,5 +488,42 @@ mod tests {
         let i_actual: f64 = j.iter().sum::<f64>() * grid.dr * grid.dz;
         let rel_error = ((i_actual - 15e6) / 15e6).abs();
         assert!(rel_error < 1e-10, "Current mismatch after renormalization");
+    }
+
+    #[test]
+    fn test_source_rejects_invalid_runtime_inputs() {
+        let mut grid = Grid2D::new(16, 16, 1.0, 9.0, -5.0, 5.0);
+        let psi = Array2::zeros((16, 16));
+
+        let err = update_plasma_source_nonlinear(&psi, &grid, 1.0, 1.0, 1.0, 1.0)
+            .expect_err("degenerate flux normalization must fail");
+        assert!(matches!(err, FusionError::ConfigError(_)));
+
+        grid.rr[[3, 3]] = 0.0;
+        let psi_inside = Array2::from_elem((16, 16), 0.5);
+        let err = update_plasma_source_nonlinear(&psi_inside, &grid, 1.0, 0.0, 1.0, 1.0)
+            .expect_err("non-positive radius inside plasma must fail");
+        assert!(matches!(err, FusionError::ConfigError(_)));
+
+        let params_bad = ProfileParams {
+            ped_top: 0.9,
+            ped_width: 0.0,
+            ped_height: 1.0,
+            core_alpha: 0.2,
+        };
+        let err = update_plasma_source_with_profiles(
+            SourceProfileContext {
+                psi: &Array2::from_elem((16, 16), 0.5),
+                grid: &Grid2D::new(16, 16, 1.0, 9.0, -5.0, 5.0),
+                psi_axis: 1.0,
+                psi_boundary: 0.0,
+                mu0: 1.0,
+                i_target: 1.0,
+            },
+            &params_bad,
+            &ProfileParams::default(),
+        )
+        .expect_err("invalid profile params must fail");
+        assert!(matches!(err, FusionError::ConfigError(_)));
     }
 }

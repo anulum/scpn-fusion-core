@@ -211,7 +211,7 @@ impl FusionKernel {
                         },
                         params_p,
                         params_ff,
-                    );
+                    )?;
                 }
             } else {
                 self.state.j_phi = update_plasma_source_nonlinear(
@@ -221,7 +221,7 @@ impl FusionKernel {
                     psi_boundary_val,
                     mu0,
                     i_target,
-                );
+                )?;
             }
             if let Some(particle_j_phi) = self.particle_current_feedback.as_ref() {
                 self.state.j_phi = blend_particle_current(

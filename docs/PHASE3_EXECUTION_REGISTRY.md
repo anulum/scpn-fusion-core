@@ -267,6 +267,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-040 | P1 | Runtime | Harden vacuum-field kernel with strict grid/coil/physics validation | `scpn-fusion-rs/crates/fusion-core/src/vacuum.rs`, `scpn-fusion-rs/crates/fusion-core/src/kernel.rs`, `scpn-fusion-rs/crates/fusion-core/src/stability.rs` | Vacuum-field generation now rejects invalid runtime inputs (`mu0`, grid-shape/finite checks, coil radius/current finiteness, denominator/k²/elliptic/value finiteness) via explicit `FusionError::ConfigError`, and kernel/stability paths now propagate these failures explicitly instead of accepting silent non-finite propagation | `cargo test -p fusion-core vacuum::tests:: -- --nocapture`, `cargo test -p fusion-core stability::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-041 | P1 | Runtime | Harden B-field and X-point kernels with strict grid/shape/domain validation | `scpn-fusion-rs/crates/fusion-core/src/bfield.rs`, `scpn-fusion-rs/crates/fusion-core/src/xpoint.rs`, `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | B-field and X-point entrypoints now reject invalid runtime inputs (grid/psi shape mismatches, non-finite values, non-positive radius samples, empty divertor search region, non-finite `z_min`) via explicit `FusionError::ConfigError`, and equilibrium solve now propagates these failures explicitly instead of silently falling back to min-psi X-point selection | `cargo test -p fusion-core bfield::tests:: -- --nocapture`, `cargo test -p fusion-core xpoint::tests:: -- --nocapture`, `cargo test -p fusion-core kernel::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-042 | P1 | Runtime | Harden memory-kernel transport constructor and step runtime validation | `scpn-fusion-rs/crates/fusion-core/src/memory_transport.rs` | Memory-kernel transport now rejects invalid runtime inputs (non-finite/negative `tau_d`, non-finite drive vectors, invalid `dt`/`p_aux_mw`, non-finite gradient/divergence/source evolution) via explicit `FusionError::ConfigError` instead of silently clamping/falling back on non-finite updates during temperature/memory evolution | `cargo test -p fusion-core memory_transport::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
+| H8-043 | P1 | Runtime | Harden nonlinear plasma-source kernel entrypoints with strict input/profile validation | `scpn-fusion-rs/crates/fusion-core/src/source.rs`, `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | Plasma-source update entrypoints now reject invalid runtime inputs (psi/grid shape mismatches, non-finite values, degenerate flux denominator, non-positive in-plasma radius, invalid `mu0`, malformed profile parameters) via explicit `FusionError::ConfigError`, and equilibrium solve now propagates source update failures explicitly through `FusionResult` instead of silent denominator/radius coercions | `cargo test -p fusion-core source::tests:: -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_validated_config_equilibrium -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 
 ## Task Accounting
 
@@ -274,7 +275,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 178
+- Post-S4 hardening tasks delivered: 179
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -476,4 +477,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-040`
 - Completed: `H8-041`
 - Completed: `H8-042`
+- Completed: `H8-043`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
