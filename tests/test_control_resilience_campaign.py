@@ -12,6 +12,9 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import numpy as np
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "control_resilience_campaign.py"
@@ -60,3 +63,40 @@ def test_render_markdown_contains_metrics_section() -> None:
     assert "# Control Resilience Campaign" in text
     assert "## Metrics" in text
     assert "Threshold pass" in text
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"episodes": 0}, "episodes"),
+        ({"window": 8}, "window"),
+        ({"noise_std": -0.1}, "noise_std"),
+        ({"noise_std": float("nan")}, "noise_std"),
+        ({"bit_flip_interval": 0}, "bit_flip_interval"),
+        ({"recovery_window": 0}, "recovery_window"),
+        ({"recovery_epsilon": 0.0}, "recovery_epsilon"),
+    ],
+)
+def test_generate_campaign_report_validates_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        control_resilience_campaign.generate_campaign_report(**kwargs)
+
+
+def test_generate_campaign_report_does_not_mutate_global_numpy_rng_state() -> None:
+    np.random.seed(777)
+    state = np.random.get_state()
+
+    control_resilience_campaign.generate_campaign_report(
+        seed=13,
+        episodes=6,
+        window=32,
+        noise_std=0.01,
+        bit_flip_interval=5,
+    )
+
+    observed = float(np.random.random())
+    np.random.set_state(state)
+    expected = float(np.random.random())
+    assert observed == expected

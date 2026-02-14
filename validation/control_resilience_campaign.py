@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,6 +20,48 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 
 from scpn_fusion.control.disruption_predictor import run_fault_noise_campaign
+
+
+def _normalize_campaign_inputs(
+    *,
+    seed: int,
+    episodes: int,
+    window: int,
+    noise_std: float,
+    bit_flip_interval: int,
+    recovery_window: int,
+    recovery_epsilon: float,
+) -> tuple[int, int, int, float, int, int, float]:
+    seed_i = int(seed)
+    episodes_i = int(episodes)
+    window_i = int(window)
+    noise = float(noise_std)
+    bit_flip_i = int(bit_flip_interval)
+    recovery_window_i = int(recovery_window)
+    recovery_eps = float(recovery_epsilon)
+
+    if episodes_i < 1:
+        raise ValueError("episodes must be >= 1.")
+    if window_i < 16:
+        raise ValueError("window must be >= 16.")
+    if not math.isfinite(noise) or noise < 0.0:
+        raise ValueError("noise_std must be finite and >= 0.")
+    if bit_flip_i < 1:
+        raise ValueError("bit_flip_interval must be >= 1.")
+    if recovery_window_i < 1:
+        raise ValueError("recovery_window must be >= 1.")
+    if not math.isfinite(recovery_eps) or recovery_eps <= 0.0:
+        raise ValueError("recovery_epsilon must be finite and > 0.")
+
+    return (
+        seed_i,
+        episodes_i,
+        window_i,
+        noise,
+        bit_flip_i,
+        recovery_window_i,
+        recovery_eps,
+    )
 
 
 def generate_campaign_report(
@@ -31,8 +74,15 @@ def generate_campaign_report(
     recovery_window: int = 6,
     recovery_epsilon: float = 0.03,
 ) -> dict[str, Any]:
-    start = time.perf_counter()
-    metrics = run_fault_noise_campaign(
+    (
+        seed_i,
+        episodes_i,
+        window_i,
+        noise,
+        bit_flip_i,
+        recovery_window_i,
+        recovery_eps,
+    ) = _normalize_campaign_inputs(
         seed=seed,
         episodes=episodes,
         window=window,
@@ -40,6 +90,16 @@ def generate_campaign_report(
         bit_flip_interval=bit_flip_interval,
         recovery_window=recovery_window,
         recovery_epsilon=recovery_epsilon,
+    )
+    start = time.perf_counter()
+    metrics = run_fault_noise_campaign(
+        seed=seed_i,
+        episodes=episodes_i,
+        window=window_i,
+        noise_std=noise,
+        bit_flip_interval=bit_flip_i,
+        recovery_window=recovery_window_i,
+        recovery_epsilon=recovery_eps,
     )
     elapsed = time.perf_counter() - start
     return {
