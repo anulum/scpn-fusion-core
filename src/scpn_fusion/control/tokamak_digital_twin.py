@@ -22,6 +22,15 @@ MEMORY_SIZE = 1000
 R_MAJ = 2.0  # Major Radius
 R_MIN = 0.8  # Minor Radius
 
+
+def _resolve_rng(seed: int, rng: np.random.Generator | None) -> np.random.Generator:
+    if rng is not None:
+        if not isinstance(rng, np.random.Generator):
+            raise TypeError("rng must be a numpy.random.Generator when provided")
+        return rng
+    return np.random.default_rng(int(seed))
+
+
 class TokamakTopoloy:
     """
     Handles the magnetic geometry (Safety Factor q-profile).
@@ -143,11 +152,18 @@ class SimpleNeuralNet:
     A lightweight Multi-Layer Perceptron (MLP) written in numpy.
     Implements a Policy Network for Continuous Control.
     """
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        output_size: int,
+        *,
+        rng: np.random.Generator,
+    ) -> None:
         # Xavier Initialization
-        self.W1 = np.random.randn(input_size, hidden_size) * np.sqrt(1/input_size)
+        self.W1 = rng.standard_normal((input_size, hidden_size)) * np.sqrt(1 / input_size)
         self.b1 = np.zeros((1, hidden_size))
-        self.W2 = np.random.randn(hidden_size, output_size) * np.sqrt(1/hidden_size)
+        self.W2 = rng.standard_normal((hidden_size, output_size)) * np.sqrt(1 / hidden_size)
         self.b2 = np.zeros((1, output_size))
         
     def forward(self, x):
@@ -197,6 +213,7 @@ def run_digital_twin(
     output_path="Tokamak_Digital_Twin.png",
     verbose=True,
     gyro_surrogate=None,
+    rng: np.random.Generator | None = None,
 ):
     """
     Run deterministic digital-twin control simulation.
@@ -205,7 +222,7 @@ def run_digital_twin(
     console text or plot artifacts.
     """
     steps = max(int(time_steps), 1)
-    np.random.seed(int(seed))
+    local_rng = _resolve_rng(seed=int(seed), rng=rng)
     if verbose:
         print("--- SCPN 2D TOKAMAK DIGITAL TWIN + NEURAL CONTROL ---")
     
@@ -215,7 +232,7 @@ def run_digital_twin(
     # State: Simplified to radial profile samples (to keep NN small)
     # We take 40 points along the midplane
     state_dim = GRID_SIZE 
-    brain = SimpleNeuralNet(state_dim, HIDDEN_SIZE, 1)
+    brain = SimpleNeuralNet(state_dim, HIDDEN_SIZE, 1, rng=local_rng)
     
     history_rewards = []
     history_actions = []
@@ -230,9 +247,9 @@ def run_digital_twin(
         
         # 2. Action (Explore vs Exploit)
         # Add exploration noise
-        noise = np.random.normal(0, 0.2)
+        noise = float(local_rng.normal(0.0, 0.2))
         raw_action = brain.forward(state_vector)
-        action = np.clip(raw_action + noise, -1.0, 1.0)[0,0]
+        action = float(np.clip(raw_action + noise, -1.0, 1.0)[0, 0])
         
         # 3. Physics Step
         _, avg_temp = plasma.step(action)

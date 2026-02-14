@@ -104,3 +104,35 @@ def test_run_digital_twin_validates_gyro_surrogate_shape() -> None:
             verbose=False,
             gyro_surrogate=bad_surrogate,
         )
+
+
+def test_run_digital_twin_does_not_mutate_global_numpy_rng_state() -> None:
+    np.random.seed(4321)
+    state = np.random.get_state()
+
+    run_digital_twin(time_steps=8, seed=2, save_plot=False, verbose=False)
+
+    observed = float(np.random.random())
+    np.random.set_state(state)
+    expected = float(np.random.random())
+    assert observed == expected
+
+
+def test_run_digital_twin_accepts_injected_rng_and_replays_deterministically() -> None:
+    a = run_digital_twin(
+        time_steps=20,
+        seed=1,
+        save_plot=False,
+        verbose=False,
+        rng=np.random.default_rng(2026),
+    )
+    b = run_digital_twin(
+        time_steps=20,
+        seed=999,
+        save_plot=False,
+        verbose=False,
+        rng=np.random.default_rng(2026),
+    )
+    assert a["final_avg_temp"] == b["final_avg_temp"]
+    assert a["final_reward"] == b["final_reward"]
+    assert a["final_action"] == b["final_action"]
