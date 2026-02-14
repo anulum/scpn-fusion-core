@@ -15,6 +15,7 @@
 use crate::source::{
     mtanh_profile, mtanh_profile_derivatives as source_mtanh_profile_derivatives, ProfileParams,
 };
+use fusion_types::error::{FusionError, FusionResult};
 
 /// Re-export profile derivatives for callers expecting this symbol in `jacobian`.
 pub fn mtanh_profile_derivatives(psi_norm: f64, params: &ProfileParams) -> [f64; 4] {
@@ -78,9 +79,15 @@ pub fn compute_fd_jacobian(
     params_ff: &ProfileParams,
     probe_psi_norm: &[f64],
     fd_step: f64,
-) -> Vec<Vec<f64>> {
+) -> FusionResult<Vec<Vec<f64>>> {
+    if !fd_step.is_finite() || fd_step <= 0.0 {
+        return Err(FusionError::ConfigError(
+            "jacobian fd_step must be finite and > 0".to_string(),
+        ));
+    }
+
     let base = forward_model_response(probe_psi_norm, params_p, params_ff);
-    let h = fd_step.abs().max(1e-9);
+    let h = fd_step;
     const PARAM_INDICES: [usize; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
 
     let mut jac = vec![vec![0.0; 8]; probe_psi_norm.len()];
@@ -91,7 +98,7 @@ pub fn compute_fd_jacobian(
             row[col] = (fp - b) / h;
         }
     }
-    jac
+    Ok(jac)
 }
 
 #[cfg(test)]
@@ -115,7 +122,7 @@ mod tests {
         let probes: Vec<f64> = (0..32).map(|i| i as f64 / 31.0).collect();
 
         let ja = compute_analytical_jacobian(&p, &ff, &probes);
-        let jf = compute_fd_jacobian(&p, &ff, &probes, 1e-6);
+        let jf = compute_fd_jacobian(&p, &ff, &probes, 1e-6).expect("valid fd_step");
         for i in 0..probes.len() {
             for j in 0..8 {
                 let abs = (ja[i][j] - jf[i][j]).abs();
@@ -154,5 +161,21 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn test_fd_jacobian_rejects_invalid_fd_step() {
+        let p = ProfileParams {
+            ped_top: 0.9,
+            ped_width: 0.08,
+            ped_height: 1.1,
+            core_alpha: 0.25,
+        };
+        let ff = p;
+        let probes: Vec<f64> = (0..8).map(|i| i as f64 / 7.0).collect();
+
+        assert!(compute_fd_jacobian(&p, &ff, &probes, 0.0).is_err());
+        assert!(compute_fd_jacobian(&p, &ff, &probes, -1e-6).is_err());
+        assert!(compute_fd_jacobian(&p, &ff, &probes, f64::NAN).is_err());
     }
 }

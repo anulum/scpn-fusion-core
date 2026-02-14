@@ -469,13 +469,15 @@ pub fn reconstruct_equilibrium(
         }
 
         let jac = match config.jacobian_mode {
-            JacobianMode::Analytical => {
-                compute_analytical_jacobian(&params_p, &params_ff, probe_psi_norm)
-            }
+            JacobianMode::Analytical => Ok(compute_analytical_jacobian(
+                &params_p,
+                &params_ff,
+                probe_psi_norm,
+            )),
             JacobianMode::FiniteDifference => {
                 compute_fd_jacobian(&params_p, &params_ff, probe_psi_norm, config.fd_step)
             }
-        };
+        }?;
 
         let j = to_array2(jac);
         let lambda = config.tikhonov;
