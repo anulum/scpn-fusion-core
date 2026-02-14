@@ -15,6 +15,7 @@ action decoding (marking → slew-limited actuator commands).
 from __future__ import annotations
 
 import hashlib
+import math
 from dataclasses import dataclass
 from typing import Dict, List, Mapping, Optional, Sequence, TypedDict
 
@@ -182,8 +183,28 @@ def decode_actions(
     -------
     dict mapping action name → clamped value.  Also mutates *prev* in-place.
     """
+    n_actions = len(actions_spec)
+    if (
+        len(gains) != n_actions
+        or len(abs_max) != n_actions
+        or len(slew_per_s) != n_actions
+        or len(prev) != n_actions
+    ):
+        raise ValueError(
+            "actions_spec, gains, abs_max, slew_per_s, and prev must have equal lengths."
+        )
+    if not math.isfinite(dt) or dt <= 0.0:
+        raise ValueError("dt must be finite and > 0.")
+
+    n_places = len(marking)
     result: Dict[str, float] = {}
     for i, spec in enumerate(actions_spec):
+        if spec.pos_place < 0 or spec.neg_place < 0:
+            raise ValueError("Action place indices must be >= 0.")
+        if spec.pos_place >= n_places or spec.neg_place >= n_places:
+            raise ValueError(
+                "Action place index out of bounds for marking vector."
+            )
         pos = marking[spec.pos_place]
         neg = marking[spec.neg_place]
         raw = (pos - neg) * gains[i]

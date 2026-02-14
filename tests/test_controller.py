@@ -1281,6 +1281,57 @@ class TestContracts:
         assert abs(result["dI_PF3_A"] - 60.0) < 1e-10
         assert abs(result["dI_PF_topbot_A"] - 60.0) < 1e-10
 
+    def test_decode_actions_rejects_vector_length_mismatch(self) -> None:
+        with pytest.raises(ValueError, match="equal lengths"):
+            decode_actions(
+                marking=[0.0, 1.0],
+                actions_spec=[ActionSpec(name="a", pos_place=0, neg_place=1)],
+                gains=[1.0, 2.0],
+                abs_max=[1.0],
+                slew_per_s=[1.0],
+                dt=0.01,
+                prev=[0.0],
+            )
+
+    def test_decode_actions_rejects_nonpositive_or_nonfinite_dt(self) -> None:
+        specs = [ActionSpec(name="a", pos_place=0, neg_place=1)]
+        kwargs = dict(
+            marking=[0.0, 1.0],
+            actions_spec=specs,
+            gains=[1.0],
+            abs_max=[1.0],
+            slew_per_s=[1.0],
+            prev=[0.0],
+        )
+        with pytest.raises(ValueError, match="dt must be finite and > 0"):
+            decode_actions(dt=0.0, **kwargs)
+        with pytest.raises(ValueError, match="dt must be finite and > 0"):
+            decode_actions(dt=float("nan"), **kwargs)
+
+    def test_decode_actions_rejects_negative_place_index(self) -> None:
+        with pytest.raises(ValueError, match=">= 0"):
+            decode_actions(
+                marking=[0.0, 1.0],
+                actions_spec=[ActionSpec(name="a", pos_place=-1, neg_place=1)],
+                gains=[1.0],
+                abs_max=[1.0],
+                slew_per_s=[1.0],
+                dt=0.01,
+                prev=[0.0],
+            )
+
+    def test_decode_actions_rejects_out_of_bounds_place_index(self) -> None:
+        with pytest.raises(ValueError, match="out of bounds"):
+            decode_actions(
+                marking=[0.0, 1.0],
+                actions_spec=[ActionSpec(name="a", pos_place=0, neg_place=2)],
+                gains=[1.0],
+                abs_max=[1.0],
+                slew_per_s=[1.0],
+                dt=0.01,
+                prev=[0.0],
+            )
+
     def test_clip01(self) -> None:
         assert _clip01(-0.5) == 0.0
         assert _clip01(0.5) == 0.5

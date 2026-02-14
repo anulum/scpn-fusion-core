@@ -172,6 +172,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-035 | P1 | Validation | Add global RNG isolation regression lock for GAI-01 turbulence surrogate campaign | `tests/test_gai_01_turbulence_surrogate.py` | GAI-01 campaign path now has explicit regression coverage proving no global `np.random` state mutation during deterministic training/eval/benchmark execution | `python -m pytest tests/test_gai_01_turbulence_surrogate.py -v`, `python -m pytest tests/ -q -x` |
 | H7-036 | P1 | Validation | Harden control resilience campaign input semantics and add global RNG isolation regression lock | `validation/control_resilience_campaign.py`, `tests/test_control_resilience_campaign.py` | Control resilience campaign now rejects invalid campaign ranges/noise parameters (no silent coercion), preserves deterministic seeded campaign metrics, and adds regression coverage proving no global `np.random` state mutation | `python -m pytest tests/test_control_resilience_campaign.py tests/test_disruption_predictor_rng.py tests/test_gneu_02_anomaly.py -v`, `python -m pytest tests/ -q -x` |
 | H7-037 | P1 | Control | Harden disruption campaign APIs with strict input guards for fault/noise and anomaly lanes | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_toroidal_features.py`, `tests/test_gneu_02_anomaly.py` | Fault/noise and anomaly campaign entry points now reject invalid range/non-finite arguments instead of silently coercing values, while preserving deterministic seeded behavior and existing threshold metrics for valid runs | `python -m pytest tests/test_disruption_toroidal_features.py tests/test_disruption_predictor_rng.py tests/test_gneu_02_anomaly.py tests/test_control_resilience_campaign.py -v`, `python -m pytest tests/ -q -x` |
+| H7-038 | P1 | SCPN | Harden action decode contracts with explicit shape/index/timebase guards | `src/scpn_fusion/scpn/contracts.py`, `tests/test_controller.py` | `decode_actions` now validates per-action vector lengths, rejects non-finite/non-positive `dt`, and raises deterministic errors on invalid action place indices, with regression tests covering all guard paths | `python -m mypy --strict src/scpn_fusion/scpn/contracts.py`, `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -179,8 +180,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 83
-- Remaining in deferred pool after queue selection: 30
+- Post-S4 hardening tasks delivered: 84
+- Remaining in deferred pool after queue selection: 29
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -286,4 +287,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-035`
 - Completed: `H7-036`
 - Completed: `H7-037`
-- Next active task: `H7-038` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-038`
+- Next active task: `H7-039` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
