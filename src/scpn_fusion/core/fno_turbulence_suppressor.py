@@ -33,9 +33,22 @@ class SpectralTurbulenceGenerator:
     Generates synthetic ITG turbulence with Fourier-space drift-wave dynamics.
     """
 
-    def __init__(self, size: int = GRID_SIZE) -> None:
+    def __init__(
+        self,
+        size: int = GRID_SIZE,
+        *,
+        seed: Optional[int] = None,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        if seed is not None and rng is not None:
+            raise ValueError("Provide either seed or rng, not both.")
         self.size = size
-        self.field = np.random.randn(size, size) * 0.1
+        self._rng = (
+            rng
+            if rng is not None
+            else (np.random.default_rng(int(seed)) if seed is not None else np.random.default_rng())
+        )
+        self.field = self._rng.standard_normal((size, size)) * 0.1
         self.field_k = np.fft.fft2(self.field)
 
     def step(self, dt: float = 0.01, damping: float = 0.0) -> np.ndarray:
@@ -48,7 +61,7 @@ class SpectralTurbulenceGenerator:
         omega = ky_grid / (1.0 + k2)
         phase_shift = np.exp(-1j * omega * dt)
 
-        forcing = np.random.randn(self.size, self.size) + 1j * np.random.randn(self.size, self.size)
+        forcing = self._rng.standard_normal((self.size, self.size)) + 1j * self._rng.standard_normal((self.size, self.size))
         forcing_k = np.fft.fft2(forcing)
         forcing_k *= (k2 < 25.0) * 5.0
 
@@ -89,10 +102,15 @@ class FNO_Controller:
         return suppression, prediction
 
 
-def run_fno_simulation(time_steps: int = TIME_STEPS, weights_path: Optional[str] = None) -> None:
+def run_fno_simulation(
+    time_steps: int = TIME_STEPS,
+    weights_path: Optional[str] = None,
+    *,
+    seed: int = 42,
+) -> None:
     print("--- SCPN FNO: Spectral Turbulence Suppression ---")
 
-    sim = SpectralTurbulenceGenerator()
+    sim = SpectralTurbulenceGenerator(seed=int(seed))
     ai = FNO_Controller(weights_path=weights_path)
 
     if ai.loaded_weights:
