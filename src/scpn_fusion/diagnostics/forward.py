@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Sequence
+from typing import Sequence
 
 import numpy as np
 from numpy.typing import NDArray
@@ -29,6 +29,39 @@ class ForwardDiagnosticChannels:
 def _nearest_index(axis: FloatArray, value: float) -> int:
     idx = int(np.argmin(np.abs(axis - float(value))))
     return int(np.clip(idx, 0, axis.size - 1))
+
+
+def _validate_field_grid(
+    field: FloatArray,
+    r_grid: FloatArray,
+    z_grid: FloatArray,
+    *,
+    name: str,
+) -> tuple[FloatArray, FloatArray, FloatArray]:
+    arr = np.asarray(field, dtype=np.float64)
+    r = np.asarray(r_grid, dtype=np.float64).reshape(-1)
+    z = np.asarray(z_grid, dtype=np.float64).reshape(-1)
+
+    if r.ndim != 1 or z.ndim != 1 or r.size < 2 or z.size < 2:
+        raise ValueError(f"{name}: r_grid and z_grid must be 1D with at least 2 points.")
+    if arr.ndim != 2 or arr.shape != (z.size, r.size):
+        raise ValueError(
+            f"{name}: field shape {arr.shape} must match (len(z_grid), len(r_grid)) "
+            f"= ({z.size}, {r.size})."
+        )
+    if not (np.all(np.isfinite(arr)) and np.all(np.isfinite(r)) and np.all(np.isfinite(z))):
+        raise ValueError(f"{name}: field and grids must be finite.")
+    return arr, r, z
+
+
+def _validate_chords(
+    chords: Sequence[tuple[tuple[float, float], tuple[float, float]]],
+) -> Sequence[tuple[tuple[float, float], tuple[float, float]]]:
+    for i, (start, end) in enumerate(chords):
+        vals = [start[0], start[1], end[0], end[1]]
+        if not np.all(np.isfinite(np.asarray(vals, dtype=np.float64))):
+            raise ValueError(f"chords[{i}] has non-finite coordinates.")
+    return chords
 
 
 def _line_integral_nearest(
@@ -63,13 +96,22 @@ def interferometer_phase_shift(
 ) -> FloatArray:
     """Predict line-integrated interferometer phase shift [rad]."""
     wavelength = max(float(laser_wavelength_m), 1e-12)
+    if not np.isfinite(wavelength):
+        raise ValueError("laser_wavelength_m must be finite.")
     coeff = ELECTRON_RADIUS_M * wavelength
+    ne, r, z = _validate_field_grid(
+        np.asarray(electron_density_m3, dtype=np.float64),
+        np.asarray(r_grid, dtype=np.float64),
+        np.asarray(z_grid, dtype=np.float64),
+        name="interferometer_phase_shift",
+    )
+    _validate_chords(chords)
     phases = np.zeros(len(chords), dtype=np.float64)
     for i, (start, end) in enumerate(chords):
         line_ne = _line_integral_nearest(
-            np.asarray(electron_density_m3, dtype=np.float64),
-            np.asarray(r_grid, dtype=np.float64),
-            np.asarray(z_grid, dtype=np.float64),
+            ne,
+            r,
+            z,
             start,
             end,
             samples=samples,
@@ -87,9 +129,19 @@ def neutron_count_rate(
 ) -> float:
     """Predict detector neutron count rate [Hz] from volumetric source."""
     source = np.asarray(neutron_source_m3_s, dtype=np.float64)
-    vol = max(float(volume_element_m3), 1e-12)
-    eff = float(np.clip(detector_efficiency, 0.0, 1.0))
-    omega = max(float(solid_angle_fraction), 0.0)
+    if source.size == 0 or source.ndim != 2:
+        raise ValueError("neutron_source_m3_s must be a non-empty 2D array.")
+    if not np.all(np.isfinite(source)):
+        raise ValueError("neutron_source_m3_s must be finite.")
+    vol = float(volume_element_m3)
+    eff = float(detector_efficiency)
+    omega = float(solid_angle_fraction)
+    if not np.isfinite(vol) or vol <= 0.0:
+        raise ValueError("volume_element_m3 must be finite and > 0.")
+    if not np.isfinite(eff) or eff < 0.0 or eff > 1.0:
+        raise ValueError("detector_efficiency must be finite and within [0, 1].")
+    if not np.isfinite(omega) or omega < 0.0:
+        raise ValueError("solid_angle_fraction must be finite and >= 0.")
     emitted_per_s = float(np.sum(np.clip(source, 0.0, None)) * vol)
     return float(emitted_per_s * eff * omega)
 
