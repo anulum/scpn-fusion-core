@@ -11,6 +11,7 @@
 //! Uses Hamiltonian ray equations in cold plasma approximation.
 
 use fusion_types::constants::MU0_SI;
+use fusion_types::error::{FusionError, FusionResult};
 
 /// Deuterium charge [C]. Python line 23.
 const Q_D: f64 = 1.602e-19;
@@ -80,6 +81,28 @@ impl RFHeatingSystem {
             b0: B0,
             r0: R0,
         }
+    }
+
+    fn validate_runtime_parameters(&self) -> FusionResult<()> {
+        if !self.omega.is_finite() || self.omega <= 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "RF omega must be finite and > 0, got {}",
+                self.omega
+            )));
+        }
+        if !self.b0.is_finite() || self.b0 <= 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "RF b0 must be finite and > 0, got {}",
+                self.b0
+            )));
+        }
+        if !self.r0.is_finite() || self.r0 <= 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "RF r0 must be finite and > 0, got {}",
+                self.r0
+            )));
+        }
+        Ok(())
     }
 
     /// Toroidal magnetic field at radius R: B(R) = B0 · R0 / R.
@@ -177,9 +200,21 @@ impl RFHeatingSystem {
     /// Ion cyclotron resonance radius.
     ///
     /// ω_ci = qB/m → B_res = ωm/q → R_res = B0·R0/B_res
-    pub fn resonance_radius(&self) -> f64 {
+    pub fn resonance_radius(&self) -> FusionResult<f64> {
+        self.validate_runtime_parameters()?;
         let b_res = self.omega * M_D / Q_D;
-        self.b0 * self.r0 / b_res
+        if !b_res.is_finite() || b_res <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "RF resonance field must be finite and > 0".to_string(),
+            ));
+        }
+        let r_res = self.b0 * self.r0 / b_res;
+        if !r_res.is_finite() || r_res <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "RF resonance radius became non-finite or non-positive".to_string(),
+            ));
+        }
+        Ok(r_res)
     }
 
     /// Trace a single ray from given initial conditions.
@@ -194,8 +229,20 @@ impl RFHeatingSystem {
         kz0: f64,
         n_steps: usize,
         _dt_hint: f64,
-    ) -> RayTraceResult {
-        let r_res = self.resonance_radius();
+    ) -> FusionResult<RayTraceResult> {
+        self.validate_runtime_parameters()?;
+        if !r0.is_finite() || r0 <= 0.0 || !z0.is_finite() || !kr0.is_finite() || !kz0.is_finite() {
+            return Err(FusionError::ConfigError(
+                "RF ray initial conditions must be finite with r0 > 0".to_string(),
+            ));
+        }
+        if n_steps == 0 {
+            return Err(FusionError::ConfigError(
+                "RF ray tracing requires n_steps >= 1".to_string(),
+            ));
+        }
+
+        let r_res = self.resonance_radius()?;
         let mut state: RayState = [r0, z0, kr0, kz0];
         let mut trajectory = Vec::with_capacity(n_steps);
         let mut resonance_point = None;
@@ -204,6 +251,11 @@ impl RFHeatingSystem {
         const MAX_DISP: f64 = 0.05;
 
         for _ in 0..n_steps {
+            if state.iter().any(|v| !v.is_finite()) {
+                return Err(FusionError::ConfigError(
+                    "RF ray state became non-finite".to_string(),
+                ));
+            }
             trajectory.push((state[0], state[1]));
 
             // Check resonance crossing
@@ -213,12 +265,27 @@ impl RFHeatingSystem {
 
             // Adaptive dt: estimate RHS magnitude
             let rhs = self.ray_rhs(&state);
+            if rhs.iter().any(|v| !v.is_finite()) {
+                return Err(FusionError::ConfigError(
+                    "RF ray RHS became non-finite".to_string(),
+                ));
+            }
             let v_mag = (rhs[0] * rhs[0] + rhs[1] * rhs[1]).sqrt();
+            if !v_mag.is_finite() {
+                return Err(FusionError::ConfigError(
+                    "RF ray velocity magnitude became non-finite".to_string(),
+                ));
+            }
             let dt = if v_mag > 1e-10 {
                 MAX_DISP / v_mag
             } else {
                 1e-3
             };
+            if !dt.is_finite() || dt <= 0.0 {
+                return Err(FusionError::ConfigError(
+                    "RF adaptive timestep became invalid".to_string(),
+                ));
+            }
 
             state = self.rk4_step(&state, dt);
 
@@ -226,31 +293,29 @@ impl RFHeatingSystem {
             if state[0] < 0.5 || state[0] > 15.0 || state[1].abs() > 10.0 {
                 break;
             }
-            // Check for NaN
-            if state.iter().any(|v| v.is_nan()) {
-                break;
-            }
         }
 
-        RayTraceResult {
+        Ok(RayTraceResult {
             trajectory,
             resonance_point,
             r_resonance: r_res,
-        }
+        })
     }
 
     /// Trace all rays from the antenna array. Python lines 126-157.
-    pub fn trace_rays(&self) -> Vec<RayTraceResult> {
+    pub fn trace_rays(&self) -> FusionResult<Vec<RayTraceResult>> {
+        self.validate_runtime_parameters()?;
         let n_steps = 500;
         let dt = 0.0; // adaptive
 
         let mut results = Vec::with_capacity(N_RAYS);
         for i in 0..N_RAYS {
             let z_antenna = -1.0 + 2.0 * (i as f64) / ((N_RAYS - 1) as f64);
-            let result = self.trace_single_ray(R_ANTENNA, z_antenna, -K0_INITIAL, 0.0, n_steps, dt);
+            let result =
+                self.trace_single_ray(R_ANTENNA, z_antenna, -K0_INITIAL, 0.0, n_steps, dt)?;
             results.push(result);
         }
-        results
+        Ok(results)
     }
 }
 
@@ -267,7 +332,9 @@ mod tests {
     #[test]
     fn test_resonance_radius() {
         let rf = RFHeatingSystem::new();
-        let r_res = rf.resonance_radius();
+        let r_res = rf
+            .resonance_radius()
+            .expect("valid RF resonance-radius parameters");
         // For ITER: B0=5.3T, R0=6.2m, f=50MHz
         // B_res = 2π·50e6·3.34e-27/1.602e-19 ≈ 6.54 T
         // R_res = 5.3·6.2/6.54 ≈ 5.02 m
@@ -277,7 +344,9 @@ mod tests {
     #[test]
     fn test_trace_single_ray() {
         let rf = RFHeatingSystem::new();
-        let result = rf.trace_single_ray(R_ANTENNA, 0.0, -K0_INITIAL, 0.0, 500, 0.0);
+        let result = rf
+            .trace_single_ray(R_ANTENNA, 0.0, -K0_INITIAL, 0.0, 500, 0.0)
+            .expect("valid RF single-ray trace parameters");
 
         // Ray should propagate inward
         assert!(result.trajectory.len() > 1, "Should have trajectory points");
@@ -290,7 +359,9 @@ mod tests {
     #[test]
     fn test_trace_rays_array() {
         let rf = RFHeatingSystem::new();
-        let results = rf.trace_rays();
+        let results = rf
+            .trace_rays()
+            .expect("valid RF multi-ray trace parameters");
         assert_eq!(results.len(), N_RAYS);
         for result in &results {
             assert!(!result.trajectory.is_empty());
@@ -305,5 +376,21 @@ mod tests {
             v_a > 0.0 && v_a.is_finite(),
             "v_A should be positive: {v_a}"
         );
+    }
+
+    #[test]
+    fn test_rf_heating_rejects_invalid_runtime_inputs() {
+        let mut rf = RFHeatingSystem::new();
+        rf.b0 = f64::NAN;
+        assert!(rf.resonance_radius().is_err());
+        assert!(rf.trace_rays().is_err());
+
+        let rf = RFHeatingSystem::new();
+        assert!(rf
+            .trace_single_ray(0.0, 0.0, -K0_INITIAL, 0.0, 500, 0.0)
+            .is_err());
+        assert!(rf
+            .trace_single_ray(R_ANTENNA, 0.0, -K0_INITIAL, 0.0, 0, 0.0)
+            .is_err());
     }
 }
