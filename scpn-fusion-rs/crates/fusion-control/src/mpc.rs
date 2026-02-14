@@ -28,6 +28,15 @@ const LAMBDA: f64 = 0.1;
 /// Action clipping. Python: 2.0.
 const ACTION_CLIP: f64 = 2.0;
 
+fn ensure_finite_vector(name: &str, values: &Array1<f64>) -> FusionResult<()> {
+    if values.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::ConfigError(format!(
+            "mpc {name} must contain only finite values"
+        )));
+    }
+    Ok(())
+}
+
 /// Linear surrogate model: x_{t+1} = x_t + B·u_t.
 pub struct NeuralSurrogate {
     /// Control impact matrix (n_state × n_coils).
@@ -55,6 +64,8 @@ impl NeuralSurrogate {
                 action.len()
             )));
         }
+        ensure_finite_vector("state", state)?;
+        ensure_finite_vector("action", action)?;
         Ok(state + &self.b_matrix.dot(action))
     }
 }
@@ -101,6 +112,7 @@ impl MPController {
     /// Plan optimal action via gradient descent over horizon.
     /// Returns first action to apply.
     pub fn plan(&self, current_state: &Array1<f64>) -> FusionResult<Array1<f64>> {
+        ensure_finite_vector("current_state", current_state)?;
         let n_coils = self.model.b_matrix.ncols();
         let mut actions: Vec<Array1<f64>> =
             (0..self.horizon).map(|_| Array1::zeros(n_coils)).collect();
@@ -143,6 +155,7 @@ impl MPController {
         delayed_actions: &[Array1<f64>],
         sensor_bias: Option<&Array1<f64>>,
     ) -> FusionResult<Array1<f64>> {
+        ensure_finite_vector("measured_state", measured_state)?;
         let n_coils = self.model.b_matrix.ncols();
         let mut predicted_state = measured_state.clone();
         if let Some(bias) = sensor_bias {
@@ -153,6 +166,7 @@ impl MPController {
                     bias.len()
                 )));
             }
+            ensure_finite_vector("sensor_bias", bias)?;
             predicted_state = &predicted_state + bias;
         }
 
@@ -161,6 +175,11 @@ impl MPController {
                 return Err(FusionError::ConfigError(format!(
                     "mpc delayed action[{idx}] length mismatch: expected {n_coils}, got {}",
                     action.len()
+                )));
+            }
+            if action.iter().any(|v| !v.is_finite()) {
+                return Err(FusionError::ConfigError(format!(
+                    "mpc delayed action[{idx}] must contain only finite values"
                 )));
             }
             predicted_state = self.model.predict(&predicted_state, action)?;
@@ -186,6 +205,7 @@ impl MPController {
             ));
         }
 
+        ensure_finite_vector("measured_state", measured_state)?;
         let n_coils = self.model.b_matrix.ncols();
         let mut predicted_state = measured_state.clone();
         if let Some(noise) = sensor_noise {
@@ -196,6 +216,7 @@ impl MPController {
                     noise.len()
                 )));
             }
+            ensure_finite_vector("sensor_noise", noise)?;
             predicted_state = &predicted_state + noise;
         }
 
@@ -206,6 +227,11 @@ impl MPController {
                 return Err(FusionError::ConfigError(format!(
                     "mpc delayed action[{idx}] length mismatch: expected {n_coils}, got {}",
                     action.len()
+                )));
+            }
+            if action.iter().any(|v| !v.is_finite()) {
+                return Err(FusionError::ConfigError(format!(
+                    "mpc delayed action[{idx}] must contain only finite values"
                 )));
             }
             delayed_applied = &delayed_applied * (1.0 - alpha) + action * alpha;
@@ -418,5 +444,51 @@ mod tests {
         let model = NeuralSurrogate::new(good_b);
         let bad_target = Array1::from_vec(vec![6.0, f64::INFINITY]);
         assert!(MPController::new(model, bad_target).is_err());
+    }
+
+    #[test]
+    fn test_surrogate_predict_rejects_non_finite_state_or_action_values() {
+        let b = Array2::from_shape_vec((2, 2), vec![1.0, 0.0, 0.0, 1.0]).unwrap();
+        let model = NeuralSurrogate::new(b);
+        let bad_state = Array1::from_vec(vec![f64::NAN, 2.0]);
+        let bad_action = Array1::from_vec(vec![0.5, f64::INFINITY]);
+        assert!(model
+            .predict(&bad_state, &Array1::from_vec(vec![0.1, 0.2]))
+            .is_err());
+        assert!(model
+            .predict(&Array1::from_vec(vec![1.0, 2.0]), &bad_action)
+            .is_err());
+    }
+
+    #[test]
+    fn test_mpc_delay_paths_reject_non_finite_vectors() {
+        let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
+        let model = NeuralSurrogate::new(b);
+        let target = Array1::from_vec(vec![6.0, 0.0]);
+        let mpc = MPController::new(model, target).expect("matching target length");
+        let measured_bad = Array1::from_vec(vec![5.0, f64::NAN]);
+        let measured = Array1::from_vec(vec![5.0, 1.0]);
+        let bad_bias = Array1::from_vec(vec![0.05, f64::INFINITY]);
+        let bad_noise = Array1::from_vec(vec![0.03, f64::NAN]);
+        let bad_delayed = vec![Array1::from_vec(vec![0.2, f64::NAN])];
+
+        assert!(mpc
+            .plan_with_delay_and_bias(&measured_bad, &[], None)
+            .is_err());
+        assert!(mpc
+            .plan_with_delay_and_bias(&measured, &[], Some(&bad_bias))
+            .is_err());
+        assert!(mpc
+            .plan_with_delay_and_bias(&measured, &bad_delayed, None)
+            .is_err());
+        assert!(mpc
+            .plan_with_delay_dynamics(&measured_bad, &[], None, 0.5)
+            .is_err());
+        assert!(mpc
+            .plan_with_delay_dynamics(&measured, &[], Some(&bad_noise), 0.5)
+            .is_err());
+        assert!(mpc
+            .plan_with_delay_dynamics(&measured, &bad_delayed, None, 0.5)
+            .is_err());
     }
 }

@@ -244,6 +244,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-017 | P1 | Control | Harden delay-aware MPC vector-shape handling with strict length validation | `scpn-fusion-rs/crates/fusion-control/src/mpc.rs` | Delay-aware MPC paths now reject malformed input vector shapes (sensor bias/noise length mismatches and delayed-action coil-count mismatches) via explicit `FusionError::ConfigError` instead of silently ignoring invalid vectors, while preserving deterministic rollout behavior for valid inputs | `cargo test -p fusion-control mpc::tests::test_mpc_delay_and_bias_rejects_mismatched_vector_lengths -- --nocapture`, `cargo test -p fusion-control mpc::tests::test_mpc_delay_dynamics_rejects_mismatched_vector_lengths -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-018 | P1 | Control | Harden MPC core state/target/action shape validation in surrogate and planner paths | `scpn-fusion-rs/crates/fusion-control/src/mpc.rs` | MPC surrogate prediction and planner paths now reject incompatible state/target/action dimensions via explicit `FusionError::ConfigError` instead of allowing shape mismatch panics, while preserving deterministic optimization behavior for valid dimensions | `cargo test -p fusion-control mpc::tests::test_mpc_constructor_rejects_target_length_mismatch -- --nocapture`, `cargo test -p fusion-control mpc::tests::test_surrogate_predict_rejects_state_and_action_shape_mismatch -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-019 | P1 | Control | Harden MPC constructor finite-value validation for model and target tensors | `scpn-fusion-rs/crates/fusion-control/src/mpc.rs` | MPC constructor now rejects non-finite values in `b_matrix` and `target` via explicit `FusionError::ConfigError`, preventing NaN/Inf propagation into optimization rollouts while preserving deterministic behavior for finite inputs | `cargo test -p fusion-control mpc::tests::test_mpc_constructor_rejects_non_finite_matrix_or_target_values -- --nocapture`, `cargo test -p fusion-control mpc::tests::test_mpc_moves_toward_target -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
+| H8-020 | P1 | Control | Harden MPC runtime vector finite-value validation for delay-aware execution paths | `scpn-fusion-rs/crates/fusion-control/src/mpc.rs` | MPC runtime paths now reject non-finite values in state/action/bias/noise/delayed-action vectors via explicit `FusionError::ConfigError`, preventing NaN/Inf telemetry from silently propagating through surrogate rollout and delayed dynamics | `cargo test -p fusion-control mpc::tests::test_surrogate_predict_rejects_non_finite_state_or_action_values -- --nocapture`, `cargo test -p fusion-control mpc::tests::test_mpc_delay_paths_reject_non_finite_vectors -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 
 ## Task Accounting
 
@@ -251,7 +252,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 155
+- Post-S4 hardening tasks delivered: 156
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -430,4 +431,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-017`
 - Completed: `H8-018`
 - Completed: `H8-019`
+- Completed: `H8-020`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
