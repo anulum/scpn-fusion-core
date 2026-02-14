@@ -91,7 +91,7 @@ def _build_scpn_controller() -> NeuroSymbolicController:
         scales=ControlScales(R_scale_m=1.0, Z_scale_m=1.0),
         sc_n_passes=16,
         sc_bitflip_rate=0.0,
-        sc_binary_margin=0.0,
+        sc_binary_margin=0.05,
     )
 
 
