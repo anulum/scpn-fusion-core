@@ -512,8 +512,12 @@ def train_predictor(
         raise RuntimeError("Torch is required for train_predictor().")
 
     seq_len = _normalize_seq_len(seq_len)
-    n_shots = max(int(n_shots), 8)
-    epochs = max(int(epochs), 1)
+    n_shots = int(n_shots)
+    if n_shots < 8:
+        raise ValueError("n_shots must be >= 8.")
+    epochs = int(epochs)
+    if epochs < 1:
+        raise ValueError("epochs must be >= 1.")
     seed = int(seed)
     torch.manual_seed(seed)
     data_rng = np.random.default_rng(seed)

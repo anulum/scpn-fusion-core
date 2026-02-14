@@ -65,3 +65,26 @@ def test_load_or_train_reuses_existing_checkpoint(tmp_path: Path) -> None:
     assert meta["trained"] is False
     assert meta["seq_len"] == 24
     assert Path(meta["model_path"]) == model_path
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"n_shots": 7}, "n_shots"),
+        ({"epochs": 0}, "epochs"),
+    ],
+)
+def test_train_predictor_rejects_invalid_training_inputs(
+    tmp_path: Path, kwargs: dict[str, int], match: str
+) -> None:
+    params: dict[str, int | Path | bool] = {
+        "seq_len": 16,
+        "n_shots": 8,
+        "epochs": 1,
+        "model_path": tmp_path / "invalid.pth",
+        "seed": 3,
+        "save_plot": False,
+    }
+    params.update(kwargs)
+    with pytest.raises(ValueError, match=match):
+        dp.train_predictor(**params)
