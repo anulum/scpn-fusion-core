@@ -281,7 +281,9 @@ def run_control_room(
     """
     Run the control-room loop and return deterministic summary metrics.
     """
-    steps = max(int(sim_duration), 1)
+    steps = int(sim_duration)
+    if steps < 1:
+        raise ValueError("sim_duration must be >= 1.")
     rng = np.random.default_rng(int(seed))
 
     kernel = None

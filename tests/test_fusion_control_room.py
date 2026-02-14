@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.control.fusion_control_room import run_control_room
 
@@ -96,3 +97,14 @@ def test_run_control_room_supports_kernel_backed_psi_source() -> None:
     )
     assert summary["psi_source"] == "kernel"
     assert summary["kernel_error"] is None
+
+
+def test_run_control_room_rejects_invalid_sim_duration() -> None:
+    with pytest.raises(ValueError, match="sim_duration"):
+        run_control_room(
+            sim_duration=0,
+            seed=1,
+            save_animation=False,
+            save_report=False,
+            verbose=False,
+        )
