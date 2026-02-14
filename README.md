@@ -7,6 +7,7 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org/)
+[![codecov](https://codecov.io/gh/anulum/scpn-fusion-core/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core)
 [![DOI](https://img.shields.io/badge/DOI-Zenodo-blue.svg)](https://zenodo.org/)
 
 A comprehensive tokamak plasma physics simulation and control suite with neuro-symbolic compilation. SCPN Fusion Core models the full lifecycle of a fusion reactor — from Grad-Shafranov equilibrium and MHD stability through transport, heating, neutronics, and real-time disruption prediction — with optional Rust acceleration via PyO3 and an optional bridge to [SC-NeuroCore](https://github.com/anulum/sc-neurocore) spiking neural networks.
@@ -107,6 +108,36 @@ python validation/rmse_dashboard.py
 ```
 
 The 3D quickstart writes an OBJ mesh to `artifacts/SCPN_Plasma_3D_quickstart.obj` and can optionally render a PNG preview.
+
+### Docker (One-Click Run)
+
+```bash
+# Run the Streamlit dashboard
+docker compose up
+
+# Or build and run manually
+docker build -t scpn-fusion-core .
+docker run -p 8501:8501 scpn-fusion-core
+
+# With dev dependencies (for running tests inside the container)
+docker build --build-arg INSTALL_DEV=1 -t scpn-fusion-core:dev .
+docker run scpn-fusion-core:dev pytest tests/ -v
+```
+
+### Pure Python (No Rust Toolchain Required)
+
+The entire simulation suite works without Rust. Every module auto-detects the
+Rust extension and falls back to NumPy/SciPy:
+
+```bash
+pip install scpn-fusion          # from PyPI (pre-built wheels include Rust)
+# OR
+pip install -e .                 # from source (pure Python, no cargo needed)
+```
+
+If the Rust extension is not available, you'll see a one-time info message at
+import and all computations run on NumPy. The only difference is speed
+(Rust kernels are ~10-50x faster for equilibrium solves).
 
 ### Rust Acceleration (Optional)
 
@@ -297,6 +328,24 @@ Struggling with convergence? See the [Solver Tuning Guide](docs/SOLVER_TUNING_GU
 - [Next Sprint Execution Queue](docs/NEXT_SPRINT_EXECUTION_QUEUE.md)
 - [Profiling Quickstart](profiling/README.md)
 - [Comprehensive Technical Study](SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md) (30,000+ words)
+
+## Validation Data Licensing
+
+The `validation/reference_data/` directory contains third-party data used
+exclusively for regression testing. Each dataset has its own licensing terms:
+
+| Dataset | License / Source | Redistribution |
+|---------|-----------------|----------------|
+| **SPARC GEQDSK** | MIT ([cfs-energy/SPARCPublic](https://github.com/cfs-energy/SPARCPublic)) | See `validation/reference_data/sparc/LICENSE` |
+| **ITPA H-mode** | 20-row illustrative subset from Verdoolaege et al., NF 61 (2021) | See `validation/reference_data/itpa/README.md` |
+| **ITER configs** | Internally generated from published parameters | No restrictions |
+| **JET / DIII-D** | Manually constructed from published literature | No restrictions |
+| **EU-DEMO / K-DEMO** | Synthetic reference configurations | No restrictions |
+
+The SPARC data carries an MIT license from Commonwealth Fusion Systems. The
+ITPA subset is a small illustrative extract from a published paper and is not
+the full ITPA global confinement database. For the authoritative ITPA dataset,
+contact the ITPA Confinement Database Working Group.
 
 ## Citation
 

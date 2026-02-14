@@ -1,0 +1,13 @@
+# SCPN Fusion Core — Docker Compose
+# Quick start: docker compose up
+# Dashboard: http://localhost:8501
+
+services:
+  fusion:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./artifacts:/app/artifacts
+    environment:
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false

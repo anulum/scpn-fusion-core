@@ -1,5 +1,17 @@
 # SCPN Fusion Core v1.0.0 — Announcement Drafts
 
+## Development History
+
+This GitHub repository was initialized in February 2026 when the codebase was
+open-sourced. The underlying physics modules, validation suites, and
+neuro-symbolic compiler were developed privately as part of the SCPN
+(Self-Consistent Phenomenological Network) research framework starting in 1998,
+with the fusion-specific components written between 2024-2026. The commit
+history reflects the public release preparation, not the full development
+timeline.
+
+---
+
 ## X / Twitter (280 chars)
 
 ### Option A
