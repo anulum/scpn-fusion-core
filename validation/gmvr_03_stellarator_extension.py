@@ -17,11 +17,8 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
 
 from scpn_fusion.core.equilibrium_3d import FourierMode3D, VMECStyleEquilibrium3D
 from scpn_fusion.core.geometry_3d import Reactor3DBuilder

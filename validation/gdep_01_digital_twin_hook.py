@@ -17,11 +17,8 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
 
 from scpn_fusion.control.digital_twin_ingest import RealtimeTwinHook, generate_emulated_stream
 
