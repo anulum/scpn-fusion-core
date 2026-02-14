@@ -151,6 +151,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-014 | P1 | Diagnostics | Add explicit seeded-RNG lane for synthetic sensor noise to guarantee deterministic diagnostics replay | `src/scpn_fusion/diagnostics/synthetic_sensors.py`, `tests/test_synthetic_sensors.py` | Sensor suite supports deterministic seeded/injected RNG sampling without breaking legacy global-RNG behavior, and regression tests lock seeded equality + invalid seed/rng guard semantics | `python -m pytest tests/test_synthetic_sensors.py tests/test_diagnostics.py tests/test_run_diagnostics.py -v` |
 | H7-015 | P1 | Diagnostics | Harden tomography inversion with strict signal guards and deterministic non-SciPy fallback solve path | `src/scpn_fusion/diagnostics/tomography.py`, `tests/test_tomography.py` | Tomography validates chord-signal length/finite inputs, supports bounded regularization controls, and falls back to deterministic non-negative least-squares via NumPy when SciPy linear solver is unavailable | `python -m pytest tests/test_tomography.py tests/test_diagnostics.py tests/test_run_diagnostics.py -v` |
 | H7-016 | P1 | Control | Decouple disruption synthetic-shot generation from global NumPy RNG and harden deterministic campaign replay | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_predictor_rng.py` | Tearing-mode simulation accepts scoped RNG for deterministic replay, anomaly campaign no longer mutates global NumPy seed, training data/eval generation use dedicated seeded generators, and regression tests lock seed determinism + global-RNG independence | `python -m pytest tests/test_disruption_predictor_rng.py tests/test_disruption_toroidal_features.py tests/test_gneu_02_anomaly.py -v` |
+| H7-017 | P1 | Control | Add deterministic session-level runtime API for digital twin ingest planning with optional chaos injection | `src/scpn_fusion/control/digital_twin_ingest.py`, `tests/test_digital_twin_ingest_runtime.py` | Digital twin ingest exposes typed non-interactive session summary runner with strict machine validation, deterministic chaos/dropout injection controls, and regression tests for determinism + invalid-machine guard behavior | `python -m pytest tests/test_digital_twin_ingest_runtime.py tests/test_gdep_01_digital_twin_hook.py -v` |
 
 ## Task Accounting
 
@@ -158,8 +159,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 62
-- Remaining in deferred pool after queue selection: 51
+- Post-S4 hardening tasks delivered: 63
+- Remaining in deferred pool after queue selection: 50
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -244,4 +245,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-014`
 - Completed: `H7-015`
 - Completed: `H7-016`
-- Next active task: `H7-017` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-017`
+- Next active task: `H7-018` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

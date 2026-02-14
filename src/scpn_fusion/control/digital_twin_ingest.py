@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import time
-from typing import Callable, cast
+from typing import Any, Callable, cast
 
 import numpy as np
 
@@ -27,6 +27,7 @@ from scpn_fusion.scpn.structure import StochasticPetriNet
 
 _PredictRiskFn = Callable[[list[float], dict[str, float]], float]
 _predict_disruption_risk = cast(_PredictRiskFn, predict_disruption_risk)
+_VALID_MACHINES = {"NSTX-U", "SPARC"}
 
 
 @dataclass(frozen=True)
@@ -37,6 +38,13 @@ class TelemetryPacket:
     beta_n: float
     q95: float
     density_1e19: float
+
+
+def _normalize_machine(machine: str) -> str:
+    machine_key = machine.strip().upper()
+    if machine_key not in _VALID_MACHINES:
+        raise ValueError("machine must be 'NSTX-U' or 'SPARC'")
+    return machine_key
 
 
 def _build_snn_planner() -> NeuroSymbolicController:
@@ -85,9 +93,7 @@ def generate_emulated_stream(
     dt_ms: int = 5,
     seed: int = 42,
 ) -> list[TelemetryPacket]:
-    machine_key = machine.strip().upper()
-    if machine_key not in {"NSTX-U", "SPARC"}:
-        raise ValueError("machine must be 'NSTX-U' or 'SPARC'")
+    machine_key = _normalize_machine(machine)
 
     rng = np.random.default_rng(int(seed))
     samples = max(int(samples), 32)
@@ -122,10 +128,10 @@ class RealtimeTwinHook:
     """In-memory realtime ingest + SNN planning hook."""
 
     def __init__(self, machine: str, *, max_buffer: int = 512, seed: int = 42) -> None:
-        self.machine = machine.strip().upper()
+        self.machine = _normalize_machine(machine)
         self.max_buffer = max(int(max_buffer), 64)
         self.buffer: list[TelemetryPacket] = []
-        self.rng = np.random.default_rng(int(seed))
+        self.seed = int(seed)
         self.controller = _build_snn_planner()
 
     def ingest(self, packet: TelemetryPacket) -> None:
@@ -201,3 +207,111 @@ class RealtimeTwinHook:
             "latency_wall_ms": float(wall_latency_ms),
             "passes": bool(safe_horizon_rate >= 0.90 and mean_risk <= 0.75),
         }
+
+
+def _apply_chaos_monkey(
+    packet: TelemetryPacket,
+    *,
+    rng: np.random.Generator,
+    dropout_prob: float,
+    gaussian_noise_std: float,
+) -> TelemetryPacket:
+    drop = float(np.clip(dropout_prob, 0.0, 1.0))
+    sigma = max(float(gaussian_noise_std), 0.0)
+
+    def channel(value: float) -> float:
+        out = float(value)
+        if drop > 0.0 and float(rng.random()) < drop:
+            out = 0.0
+        if sigma > 0.0:
+            out += float(rng.normal(0.0, sigma))
+        return out
+
+    return TelemetryPacket(
+        t_ms=int(packet.t_ms),
+        machine=str(packet.machine),
+        ip_ma=channel(packet.ip_ma),
+        beta_n=channel(packet.beta_n),
+        q95=channel(packet.q95),
+        density_1e19=max(0.0, channel(packet.density_1e19)),
+    )
+
+
+def run_realtime_twin_session(
+    machine: str,
+    *,
+    seed: int = 42,
+    samples: int = 320,
+    dt_ms: int = 5,
+    horizon: int = 24,
+    plan_every: int = 8,
+    max_buffer: int = 512,
+    chaos_dropout_prob: float = 0.0,
+    chaos_noise_std: float = 0.0,
+) -> dict[str, Any]:
+    """
+    Run deterministic digital-twin ingest+planning session and return summary.
+    """
+    machine_key = _normalize_machine(machine)
+    samples = max(int(samples), 32)
+    dt_ms = max(int(dt_ms), 1)
+    horizon = max(int(horizon), 4)
+    plan_every = max(int(plan_every), 1)
+    dropout = float(np.clip(chaos_dropout_prob, 0.0, 1.0))
+    noise_std = float(max(chaos_noise_std, 0.0))
+
+    stream = generate_emulated_stream(
+        machine_key,
+        samples=samples,
+        dt_ms=dt_ms,
+        seed=int(seed),
+    )
+    hook = RealtimeTwinHook(machine_key, max_buffer=max_buffer, seed=int(seed))
+    chaos_rng = np.random.default_rng(int(seed) + 2026)
+
+    plans: list[dict[str, float | bool]] = []
+    for i, packet in enumerate(stream):
+        noisy_packet = _apply_chaos_monkey(
+            packet,
+            rng=chaos_rng,
+            dropout_prob=dropout,
+            gaussian_noise_std=noise_std,
+        )
+        hook.ingest(noisy_packet)
+        if i % plan_every == 0 and i > 0:
+            plans.append(hook.scenario_plan(horizon=horizon))
+
+    if not plans:
+        return {
+            "machine": machine_key,
+            "seed": int(seed),
+            "samples": int(samples),
+            "horizon": int(horizon),
+            "plan_every": int(plan_every),
+            "chaos_dropout_prob": dropout,
+            "chaos_noise_std": noise_std,
+            "plan_count": 0,
+            "planning_success_rate": 0.0,
+            "mean_risk": 1.0,
+            "p95_latency_ms": 999.0,
+            "passes_thresholds": False,
+        }
+
+    success_rate = float(np.mean([1.0 if p["passes"] else 0.0 for p in plans]))
+    mean_risk = float(np.mean([float(p["mean_risk"]) for p in plans]))
+    p95_latency = float(np.percentile([float(p["latency_ms"]) for p in plans], 95))
+    passes = bool(success_rate >= 0.90 and mean_risk <= 0.75 and p95_latency <= 6.0)
+    return {
+        "machine": machine_key,
+        "seed": int(seed),
+        "samples": int(samples),
+        "horizon": int(horizon),
+        "plan_every": int(plan_every),
+        "chaos_dropout_prob": dropout,
+        "chaos_noise_std": noise_std,
+        "plan_count": int(len(plans)),
+        "planning_success_rate": success_rate,
+        "mean_risk": mean_risk,
+        "p95_latency_ms": p95_latency,
+        "passes_thresholds": passes,
+    }
