@@ -5,10 +5,12 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
+from __future__ import annotations
+
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 try:
     import torch
@@ -23,7 +25,11 @@ DEFAULT_SEQ_LEN = 100
 DEFAULT_MODEL_FILENAME = "disruption_model.pth"
 
 # --- PHYSICS: MODIFIED RUTHERFORD EQUATION ---
-def simulate_tearing_mode(steps=1000):
+def simulate_tearing_mode(
+    steps=1000,
+    *,
+    rng: Optional[np.random.Generator] = None,
+):
     """
     Generates synthetic shot data.
     Returns:
@@ -31,14 +37,19 @@ def simulate_tearing_mode(steps=1000):
         label (int): 1 if disrupted, 0 if safe
         time_to_disruption (array): Time remaining (or -1 if safe)
     """
+    steps = max(int(steps), 1)
     dt = 0.01
     w = 0.01 # Island width
     
     # Physics Parameters
     # Stable shot: Delta' < 0
     # Disruptive shot: Delta' > 0 (Triggered at random time)
-    is_disruptive = np.random.rand() > 0.5
-    trigger_time = np.random.randint(200, 800) if is_disruptive else 9999
+    if rng is None:
+        is_disruptive = np.random.rand() > 0.5
+        trigger_time = np.random.randint(200, 800) if is_disruptive else 9999
+    else:
+        is_disruptive = float(rng.random()) > 0.5
+        trigger_time = int(rng.integers(200, 800)) if is_disruptive else 9999
     
     delta_prime = -0.5
     w_history = []
@@ -52,7 +63,10 @@ def simulate_tearing_mode(steps=1000):
         # Saturated growth: dw/dt = Delta' * (1 - w/w_sat)
         dw = (delta_prime * (1 - w/10.0)) * dt
         w += dw
-        w += np.random.normal(0, 0.05) # Measurement noise
+        if rng is None:
+            w += np.random.normal(0, 0.05) # Measurement noise
+        else:
+            w += float(rng.normal(0.0, 0.05))
         w = max(w, 0.01)
         
         w_history.append(w)
@@ -322,8 +336,8 @@ def run_anomaly_alarm_campaign(
     latencies = []
 
     for ep in range(episodes):
-        np.random.seed(int(seed + ep))
-        signal, label, _ = simulate_tearing_mode(steps=window)
+        sim_rng = np.random.default_rng(int(seed + ep))
+        signal, label, _ = simulate_tearing_mode(steps=window, rng=sim_rng)
         if signal.size < window:
             signal = np.pad(signal, (0, window - signal.size), mode="edge")
         signal = np.asarray(signal[:window], dtype=float)
@@ -437,8 +451,9 @@ def train_predictor(
     n_shots = max(int(n_shots), 8)
     epochs = max(int(epochs), 1)
     seed = int(seed)
-    np.random.seed(seed)
     torch.manual_seed(seed)
+    data_rng = np.random.default_rng(seed)
+    eval_rng = np.random.default_rng(seed + 1000003)
 
     model_path = Path(model_path) if model_path is not None else default_model_path()
     model_path.parent.mkdir(parents=True, exist_ok=True)
@@ -452,7 +467,7 @@ def train_predictor(
 
     sim_steps = max(1000, seq_len + 16)
     for _ in range(n_shots):
-        sig, label, _ = simulate_tearing_mode(steps=sim_steps)
+        sig, label, _ = simulate_tearing_mode(steps=sim_steps, rng=data_rng)
         sig_window = _prepare_signal_window(sig, seq_len)
         X_train.append(sig_window.reshape(-1, 1))
         y_train.append(label)
@@ -478,7 +493,7 @@ def train_predictor(
             print(f"Epoch {epoch}: Loss={loss.item():.4f}")
 
     print("Validating on a new shot...")
-    test_sig, test_lbl, _ = simulate_tearing_mode(steps=sim_steps)
+    test_sig, test_lbl, _ = simulate_tearing_mode(steps=sim_steps, rng=eval_rng)
     input_sig = _prepare_signal_window(test_sig, seq_len)
     input_tensor = torch.tensor(input_sig, dtype=torch.float32).reshape(1, -1, 1)
 
