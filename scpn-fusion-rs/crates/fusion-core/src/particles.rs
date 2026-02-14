@@ -162,15 +162,20 @@ pub fn seed_alpha_test_particles(
 pub fn summarize_particle_population(
     particles: &[ChargedParticle],
     runaway_threshold_mev: f64,
-) -> ParticlePopulationSummary {
+) -> FusionResult<ParticlePopulationSummary> {
+    if !runaway_threshold_mev.is_finite() || runaway_threshold_mev < 0.0 {
+        return Err(FusionError::PhysicsViolation(
+            "runaway_threshold_mev must be finite and >= 0".to_string(),
+        ));
+    }
     if particles.is_empty() {
-        return ParticlePopulationSummary {
+        return Ok(ParticlePopulationSummary {
             count: 0,
             mean_energy_mev: 0.0,
             p95_energy_mev: 0.0,
             max_energy_mev: 0.0,
             runaway_fraction: 0.0,
-        };
+        });
     }
 
     let mut energies: Vec<f64> = particles
@@ -183,17 +188,19 @@ pub fn summarize_particle_population(
     let p95_idx = ((count - 1) as f64 * 0.95).round() as usize;
     let p95_energy_mev = energies[p95_idx.min(count - 1)];
     let max_energy_mev = *energies.last().unwrap_or(&0.0);
-    let threshold = runaway_threshold_mev.max(0.0);
-    let n_runaway = energies.iter().filter(|&&e| e >= threshold).count();
+    let n_runaway = energies
+        .iter()
+        .filter(|&&e| e >= runaway_threshold_mev)
+        .count();
     let runaway_fraction = (n_runaway as f64) / (count as f64);
 
-    ParticlePopulationSummary {
+    Ok(ParticlePopulationSummary {
         count,
         mean_energy_mev,
         p95_energy_mev,
         max_energy_mev,
         runaway_fraction,
-    }
+    })
 }
 
 /// Estimate alpha-particle heating power density [W/m^3] on the R-Z grid.
@@ -497,7 +504,7 @@ mod tests {
         let particles =
             seed_alpha_test_particles(24, 6.2, 0.0, 3.5, 0.6, 5.0e12).expect("valid seeds");
         assert_eq!(particles.len(), 24);
-        let summary = summarize_particle_population(&particles, 2.0);
+        let summary = summarize_particle_population(&particles, 2.0).expect("valid threshold");
         assert!(summary.mean_energy_mev > 3.0);
         assert!(summary.max_energy_mev < 4.2);
         assert!(summary.runaway_fraction > 0.9);
@@ -534,9 +541,24 @@ mod tests {
 
     #[test]
     fn test_population_summary_empty_is_zero() {
-        let summary = summarize_particle_population(&[], 1.0);
+        let summary = summarize_particle_population(&[], 1.0).expect("valid threshold");
         assert_eq!(summary.count, 0);
         assert_eq!(summary.mean_energy_mev, 0.0);
         assert_eq!(summary.runaway_fraction, 0.0);
+    }
+
+    #[test]
+    fn test_population_summary_rejects_invalid_threshold() {
+        let particles = seed_alpha_test_particles(4, 6.2, 0.0, 3.5, 0.2, 1.0).expect("valid seeds");
+        for bad in [f64::NAN, -0.01] {
+            let err = summarize_particle_population(&particles, bad)
+                .expect_err("invalid threshold must error");
+            match err {
+                FusionError::PhysicsViolation(msg) => {
+                    assert!(msg.contains("runaway_threshold_mev"));
+                }
+                other => panic!("Unexpected error: {other:?}"),
+            }
+        }
     }
 }

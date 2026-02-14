@@ -229,6 +229,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-002 | P1 | Operations | Harden Rust digital-twin fault/actuator constructor paths with strict finite-range guards (no silent clamping) | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs` | OU noise layers, chaos configuration, and actuator delay line constructors now reject invalid inputs via explicit `Result` errors (`theta`, `sigma`, `dt`, `dropout_prob`, `gaussian_noise_std`, `n_channels`, `n_actions`, `lag_alpha`) instead of silently clamping, with deterministic guard regression coverage | `cargo test -p fusion-control digital_twin` |
 | H8-003 | P1 | Physics | Harden alpha test-particle seeding with strict finite-range guardrails (no silent clamping) | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | Alpha particle seeding now rejects invalid inputs (`n_particles`, `major_radius_m`, `z_m`, `kinetic_energy_mev`, `pitch_cos`, `weight_per_particle`) via explicit `FusionResult` errors instead of silently coercing/clamping, with regression tests locking invalid-parameter rejection and valid energy-band behavior | `cargo test -p fusion-core particles` |
 | H8-004 | P1 | Physics | Harden particle-current coupling controls with strict finite-range validation (no silent clamping) | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs`, `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | Particle-current coupling now rejects invalid/non-finite values in both kernel feedback setup and current blending (`coupling`, `particle_coupling`, `i_target`) via explicit `FusionError` results instead of silent coercion/clamping, with regression tests for invalid coupling and target current guards | `cargo test -p fusion-core particles::tests::test_blend_particle_current_rejects_invalid_coupling_and_target -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_invalid_coupling -- --nocapture` |
+| H8-005 | P1 | Physics | Harden particle runaway-threshold handling with strict finite non-negative validation (no silent clamping) | `scpn-fusion-rs/crates/fusion-core/src/particles.rs`, `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | Particle-population summary now rejects invalid `runaway_threshold_mev` values (`NaN`, negative) via explicit `FusionError` results instead of silently clamping to zero, and kernel population-feedback path propagates the validation error deterministically | `cargo test -p fusion-core particles::tests::test_population_summary_rejects_invalid_threshold -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_rejects_invalid_threshold -- --nocapture` |
 
 ## Task Accounting
 
@@ -236,7 +237,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 140
+- Post-S4 hardening tasks delivered: 141
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -400,4 +401,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-002`
 - Completed: `H8-003`
 - Completed: `H8-004`
+- Completed: `H8-005`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
