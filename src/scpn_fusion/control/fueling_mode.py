@@ -136,7 +136,9 @@ def simulate_iter_density_control(
     steps: int = 3000,
     dt_s: float = 1e-3,
 ) -> FuelingSimResult:
-    steps = max(int(steps), 8)
+    steps = int(steps)
+    if steps < 8:
+        raise ValueError("steps must be >= 8.")
     raw_dt_s = float(dt_s)
     target_density = float(target_density)
     density = float(initial_density)
@@ -146,7 +148,9 @@ def simulate_iter_density_control(
         raise ValueError("initial_density must be finite and >= 0.")
     if not np.isfinite(raw_dt_s) or raw_dt_s <= 0.0:
         raise ValueError("dt_s must be finite and > 0.")
-    dt_s = max(raw_dt_s, 1e-5)
+    if raw_dt_s < 1e-5:
+        raise ValueError("dt_s must be >= 1e-5.")
+    dt_s = raw_dt_s
 
     ctrl = IcePelletFuelingController(target_density=target_density)
     history_density: list[float] = []

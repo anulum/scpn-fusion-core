@@ -12,6 +12,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 from scpn_fusion.control.fueling_mode import (
     _build_fueling_controller,
     simulate_iter_density_control,
@@ -53,3 +55,17 @@ def test_validation_report_marks_threshold_pass() -> None:
     g = report["gneu_03"]
     assert g["final_abs_error"] <= 1e-3
     assert g["passes_thresholds"] is True
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"steps": 7}, "steps"),
+        ({"dt_s": 1.0e-6}, "dt_s"),
+    ],
+)
+def test_simulate_iter_density_control_rejects_invalid_runtime_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        simulate_iter_density_control(target_density=1.0, initial_density=0.82, **kwargs)
