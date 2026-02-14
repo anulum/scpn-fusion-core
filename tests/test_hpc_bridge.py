@@ -211,24 +211,31 @@ def test_solve_until_converged_into_reuses_output_buffer() -> None:
     assert bridge.lib.last_max_iterations == 33
 
 
-def test_solve_until_converged_into_sanitizes_nonfinite_params() -> None:
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"max_iterations": 0}, "max_iterations"),
+        ({"tolerance": float("nan")}, "tolerance"),
+        ({"tolerance": -1.0e-3}, "tolerance"),
+        ({"omega": float("inf")}, "omega"),
+        ({"omega": 0.0}, "omega"),
+        ({"omega": 2.0}, "omega"),
+    ],
+)
+def test_solve_until_converged_into_rejects_invalid_convergence_params(
+    kwargs: dict[str, float | int], match: str
+) -> None:
     bridge = _make_bridge(nr=2, nz=3)
     j_phi = np.arange(6, dtype=np.float64).reshape(3, 2)
     out_buf = np.empty((3, 2), dtype=np.float64)
-    out = bridge.solve_until_converged_into(
-        j_phi,
-        out_buf,
-        max_iterations=0,
-        tolerance=float("nan"),
-        omega=float("inf"),
-    )
-    assert out is not None
-    iters, delta = out
-    assert iters == 7
-    assert abs(delta - 2.5e-4) < 1e-12
-    assert bridge.lib.last_max_iterations == 1
-    assert abs(bridge.lib.last_omega - 1.8) < 1e-12
-    assert abs(bridge.lib.last_tolerance - 0.0) < 1e-12
+    params: dict[str, float | int] = {
+        "max_iterations": 32,
+        "tolerance": 1e-7,
+        "omega": 1.6,
+    }
+    params.update(kwargs)
+    with pytest.raises(ValueError, match=match):
+        bridge.solve_until_converged_into(j_phi, out_buf, **params)
 
 
 def test_solve_until_converged_falls_back_without_native_api() -> None:

@@ -202,6 +202,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-065 | P1 | Control | Harden disruption-predictor training campaign with strict shot/epoch input guards | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_model_checkpoint.py` | Predictor training now rejects invalid `n_shots` and `epochs` values with deterministic errors (no silent coercion), while preserving deterministic checkpoint load/train behavior and fallback paths for valid inputs | `python -m pytest tests/test_disruption_model_checkpoint.py tests/test_gneu_02_anomaly.py tests/test_disruption_predictor_rng.py tests/test_disruption_toroidal_features.py -v`, `python -m pytest tests/ -q -x` |
 | H7-066 | P1 | Control | Harden advanced SOC runtime campaign with strict step/shear/noise input guards | `src/scpn_fusion/control/advanced_soc_fusion_learning.py`, `tests/test_advanced_soc_fusion_learning.py` | Advanced SOC runtime now rejects invalid/non-finite campaign parameters (`time_steps`, `shear_step`, `noise_probability`) with deterministic errors (no silent coercion/clipping), while preserving deterministic seeded learning dynamics for valid runs | `python -m pytest tests/test_advanced_soc_fusion_learning.py -v`, `python -m pytest tests/ -q -x` |
 | H7-067 | P1 | Control | Harden advanced SOC reactor/agent constructors with strict parameter guards | `src/scpn_fusion/control/advanced_soc_fusion_learning.py`, `tests/test_advanced_soc_fusion_learning.py` | Advanced SOC constructors now reject invalid/non-finite reactor and agent parameters (`size`, `flow_generation`, `flow_damping`, `shear_efficiency`, `max_sub_steps`, `alpha`, `gamma`, `epsilon`, `n_states_turb`, `n_states_flow`, `n_actions`) with deterministic errors (no silent coercion/clipping), while preserving deterministic seeded campaign behavior for valid configurations | `python -m pytest tests/test_advanced_soc_fusion_learning.py -v`, `python -m pytest tests/ -q -x` |
+| H7-068 | P1 | HPC | Harden native convergence bridge with strict max-iteration/tolerance/omega guards | `src/scpn_fusion/hpc/hpc_bridge.py`, `tests/test_hpc_bridge.py` | HPC convergence path now rejects invalid/non-finite solver controls (`max_iterations`, `tolerance`, `omega`) with deterministic errors (no silent coercion/clipping), while preserving native/fallback solve behavior and deterministic output-buffer reuse for valid runs | `python -m pytest tests/test_hpc_bridge.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -209,7 +210,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 113
+- Post-S4 hardening tasks delivered: 114
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -346,4 +347,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-065`
 - Completed: `H7-066`
 - Completed: `H7-067`
+- Completed: `H7-068`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted).

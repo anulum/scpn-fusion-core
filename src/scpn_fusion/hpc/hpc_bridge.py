@@ -51,17 +51,18 @@ def _sanitize_convergence_params(
     tolerance: float,
     omega: float,
 ) -> tuple[int, float, float]:
-    """Return safe convergence parameters for native calls."""
-    max_iters = max(int(max_iterations), 1)
-
-    omega_safe = float(omega)
-    if not math.isfinite(omega_safe):
-        omega_safe = 1.8
-    omega_safe = min(max(omega_safe, 0.1), 1.99)
+    """Validate convergence parameters for native calls."""
+    max_iters = int(max_iterations)
+    if max_iters < 1:
+        raise ValueError("max_iterations must be >= 1.")
 
     tol_safe = float(tolerance)
     if not math.isfinite(tol_safe) or tol_safe < 0.0:
-        tol_safe = 0.0
+        raise ValueError("tolerance must be finite and >= 0.")
+
+    omega_safe = float(omega)
+    if not math.isfinite(omega_safe) or omega_safe <= 0.0 or omega_safe >= 2.0:
+        raise ValueError("omega must be finite and in (0, 2).")
 
     return max_iters, tol_safe, omega_safe
 
