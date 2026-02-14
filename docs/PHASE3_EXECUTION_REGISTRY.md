@@ -216,6 +216,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-079 | P1 | Control | Harden disruption predictor sequence/training integer knobs with strict type/range guards | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_model_checkpoint.py`, `tests/test_gneu_02_anomaly.py` | Predictor load/train paths now reject non-integer or out-of-range controls (`seq_len`, `n_shots`, `epochs`, `seed`) with deterministic errors (no silent float-to-int coercion), while preserving deterministic checkpoint fallback/training behavior for valid settings | `python -m pytest tests/test_disruption_model_checkpoint.py tests/test_gneu_02_anomaly.py -v`, `python -m pytest tests/ -q -x` |
 | H7-080 | P1 | Control | Harden disruption feature-vector inputs with finite signal/observable guards | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_toroidal_features.py` | Disruption feature extraction now rejects non-finite signal samples and non-finite toroidal observable terms with deterministic errors (no NaN/Inf propagation into risk scores), while preserving deterministic risk trends for valid channels | `python -m pytest tests/test_disruption_toroidal_features.py tests/test_disruption_predictor_rng.py tests/test_gneu_02_anomaly.py -v`, `python -m pytest tests/ -q -x` |
 | H7-081 | P1 | SCPN | Harden artifact transition delay parsing with strict integer guardrails | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Artifact loading now rejects non-integer transition `delay_ticks` values with deterministic validation errors (no silent cast/floor coercion), while preserving delay semantics for valid integer artifacts | `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
+| H7-082 | P1 | SCPN | Harden artifact stream-length parsing with strict integer guardrails | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Artifact loading now rejects non-integer `meta.stream_length` values with deterministic validation errors (no silent cast/floor coercion), while preserving valid integer stream-length semantics and controller runtime behavior | `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -223,7 +224,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 127
+- Post-S4 hardening tasks delivered: 128
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -374,4 +375,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-079`
 - Completed: `H7-080`
 - Completed: `H7-081`
+- Completed: `H7-082`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted).

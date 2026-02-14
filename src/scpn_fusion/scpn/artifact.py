@@ -280,6 +280,8 @@ def _validate(artifact: Artifact) -> None:
             f"got '{meta.firing_mode}'"
         )
 
+    if isinstance(meta.stream_length, bool) or not isinstance(meta.stream_length, int):
+        raise ArtifactValidationError("stream_length must be an integer >= 1")
     if meta.stream_length < 1:
         raise ArtifactValidationError("stream_length must be >= 1")
 
@@ -356,7 +358,7 @@ def load_artifact(path: Union[str, Path]) -> Artifact:
         artifact_version=m["artifact_version"],
         name=m["name"],
         dt_control_s=float(m["dt_control_s"]),
-        stream_length=int(m["stream_length"]),
+        stream_length=m["stream_length"],
         fixed_point=FixedPoint(
             data_width=m["fixed_point"]["data_width"],
             fraction_bits=m["fixed_point"]["fraction_bits"],
