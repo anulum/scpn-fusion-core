@@ -112,7 +112,9 @@ def run_pwi_demo(
     t_hi = float(temp_max_eV)
     if not np.isfinite(t_lo) or not np.isfinite(t_hi) or t_lo >= t_hi:
         raise ValueError("temp_min_eV/temp_max_eV must be finite with temp_min_eV < temp_max_eV.")
-    n = max(int(num_points), 3)
+    n = int(num_points)
+    if n < 3:
+        raise ValueError("num_points must be >= 3.")
 
     pwi = SputteringPhysics(material=material, redeposition_factor=redeposition_factor)
     flux = float(flux_particles_m2_s)

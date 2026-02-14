@@ -177,6 +177,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-040 | P1 | Nuclear | Harden volumetric blanket surrogate with strict geometry/grid/flux input guards | `src/scpn_fusion/nuclear/blanket_neutronics.py`, `tests/test_blanket_neutronics.py` | Volumetric blanket surrogate now rejects invalid/non-finite geometry, mesh, and incident-flux inputs with deterministic errors (no silent coercion), while preserving deterministic TBR trends and runtime summaries for valid campaigns | `python -m pytest tests/test_blanket_neutronics.py -v`, `python -m pytest tests/ -q -x` |
 | H7-041 | P1 | Nuclear | Harden ash-poisoning runtime with strict burn-time and confinement-ratio input guards | `src/scpn_fusion/nuclear/nuclear_wall_interaction.py`, `tests/test_nuclear_wall_interaction.py` | Ash-poisoning simulation now rejects invalid/non-finite `burn_time_sec` and `tau_He_ratio` inputs with deterministic errors (no silent coercion), while preserving pumping-efficiency behavior and deterministic runtime summaries for valid inputs | `python -m pytest tests/test_nuclear_wall_interaction.py -v`, `python -m pytest tests/ -q -x` |
 | H7-042 | P1 | Nuclear | Harden TEMHD runtime campaign with strict sweep-grid and settle-step input guards | `src/scpn_fusion/nuclear/temhd_peltier.py`, `tests/test_temhd_peltier_runtime.py` | TEMHD experiment runner now rejects invalid/non-finite sweep-grid/runtime arguments (`flux_points`, `settle_steps_per_flux`, `dt_s`) with deterministic errors (no silent coercion), while preserving deterministic surface-temperature and effective-conductivity summaries for valid runs | `python -m pytest tests/test_temhd_peltier_runtime.py tests/test_temhd_peltier.py -v`, `python -m pytest tests/ -q -x` |
+| H7-043 | P1 | Nuclear | Harden PWI runtime campaign with strict scan-grid size validation | `src/scpn_fusion/nuclear/pwi_erosion.py`, `tests/test_pwi_erosion_runtime.py` | PWI erosion runtime now rejects invalid `num_points` values with deterministic errors (no silent coercion), while preserving deterministic erosion/yield summaries for valid scans | `python -m pytest tests/test_pwi_erosion_runtime.py tests/test_pwi_erosion.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -184,8 +185,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 88
-- Remaining in deferred pool after queue selection: 25
+- Post-S4 hardening tasks delivered: 89
+- Remaining in deferred pool after queue selection: 24
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -296,4 +297,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-040`
 - Completed: `H7-041`
 - Completed: `H7-042`
-- Next active task: `H7-043` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-043`
+- Next active task: `H7-044` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

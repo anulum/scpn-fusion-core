@@ -72,3 +72,8 @@ def test_run_pwi_demo_is_deterministic_for_fixed_inputs() -> None:
 def test_run_pwi_demo_rejects_invalid_temperature_range() -> None:
     with pytest.raises(ValueError, match="temp_min_eV"):
         run_pwi_demo(temp_min_eV=40.0, temp_max_eV=40.0, save_plot=False, verbose=False)
+
+
+def test_run_pwi_demo_rejects_invalid_num_points() -> None:
+    with pytest.raises(ValueError, match="num_points"):
+        run_pwi_demo(num_points=2, save_plot=False, verbose=False)
