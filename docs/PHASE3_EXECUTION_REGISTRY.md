@@ -109,6 +109,25 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | H5-036 | P1 | Validation | Pin GNEU-01 benchmark controller to adaptive non-zero binary margin and add regression lock | `validation/gneu_01_benchmark.py`, `tests/test_gneu_01_benchmark.py` | GNEU-01 controller construction explicitly sets `sc_binary_margin=0.05` and tests assert the benchmark lane preserves non-zero adaptive stochastic margin | `python -m pytest tests/test_gneu_01_benchmark.py tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py -q`, `python validation/gneu_01_benchmark.py --strict` |
 | H5-037 | P1 | Validation | Pin GNEU-03 fueling controller to adaptive non-zero binary margin and add regression lock | `src/scpn_fusion/control/fueling_mode.py`, `tests/test_gneu_03_fueling_mode.py` | Fueling controller construction explicitly sets `sc_binary_margin=0.05` and tests assert the controller lane preserves non-zero adaptive stochastic margin | `python -m pytest tests/test_gneu_03_fueling_mode.py tests/test_gneu_01_benchmark.py tests/test_scpn_pid_mpc_benchmark.py -q`, `python validation/gneu_03_fueling_mode.py --strict` |
 
+## Reactor Engineering Elevation Queue (External Intake 2026-02-14)
+
+These items map the external "research framework -> reactor engineering suite" gaps
+into executable backlog tasks. Existing reduced implementations (VMEC-like geometry,
+particle overlay, digital-twin noise/lag, and HPC migration docs) are treated as
+starting points and upgraded to engineering-grade lanes below.
+
+| ID | Priority | Track | Task | Target Files | Definition of Done | Validation |
+|---|---|---|---|---|---|---|
+| H6-001 | P0 | Physics | Add 3D equilibrium interoperability lane via VMEC interface wrapper (no full solver rewrite) | `scpn-fusion-rs/crates/fusion-core/src/vmec_interface.rs`, `scpn-fusion-rs/crates/fusion-core/src/lib.rs`, `src/scpn_fusion/core/equilibrium_3d.py`, `tests/test_equilibrium_3d.py` | VMEC-compatible IO bridge loads/export reduced Fourier boundary/state and round-trips deterministic equilibrium fields for non-axisymmetric validation cases | `cargo test -p fusion-core vmec_interface`, `python -m pytest tests/test_equilibrium_3d.py -v` |
+| H6-002 | P0 | Physics | Extend hybrid kinetic-fluid lane for high-energy alpha / runaway test particles on top of MHD background | `scpn-fusion-rs/crates/fusion-core/src/particles.rs`, `scpn-fusion-rs/crates/fusion-core/src/kernel.rs`, `tests/test_physics.py` | Reduced test-particle tracker reports orbit/energy statistics and current-feedback coupling under high-energy scenarios without destabilizing base GS solve | `cargo test -p fusion-core particles`, `python -m pytest tests/test_physics.py -v` |
+| H6-003 | P0 | Diagnostics | Add synthetic forward diagnostics producing raw-observable channels (interferometer phase, neutron count) | `src/scpn_fusion/diagnostics/forward.py`, `src/scpn_fusion/diagnostics/synthetic_sensors.py`, `tests/test_diagnostics.py`, `validation/rmse_dashboard.py` | Forward models generate deterministic raw sensor outputs from plasma state and can be directly scored against reference channel traces | `python -m pytest tests/test_diagnostics.py tests/test_rmse_dashboard.py -v`, `python validation/rmse_dashboard.py` |
+| H6-004 | P1 | Interop | Add IMAS/IDS adapter pattern for Digital Twin state interchange | `src/scpn_fusion/io/imas_connector.py`, `src/scpn_fusion/control/tokamak_digital_twin.py`, `tests/test_tokamak_digital_twin.py` | Digital Twin state maps to/from IDS-shaped payloads with schema checks, deterministic field mapping, and graceful missing-field handling | `python -m pytest tests/test_tokamak_digital_twin.py -v` |
+| H6-005 | P1 | Engineering | Add CAD geometry integration lane for STEP/STL-derived heat/neutron load tracing | `src/scpn_fusion/engineering/cad_raytrace.py`, `src/scpn_fusion/nuclear/nuclear_wall_interaction.py`, `tests/test_blanket_neutronics.py` | CAD mesh ingestion (STEP/STL->mesh) computes deterministic line-of-sight loading estimates and merges with existing wall/blanket post-processing | `python -m pytest tests/test_blanket_neutronics.py -v` |
+| H6-006 | P1 | Control | Add explicit actuator transfer-function dynamics to flight simulation/control execution path | `src/scpn_fusion/control/tokamak_flight_sim.py`, `src/scpn_fusion/scpn/contracts.py`, `tests/test_tokamak_flight_sim.py` | Coil/heating commands pass through first-order lag/latency transfer models with bounded outputs and deterministic replay under fixed seeds | `python -m pytest tests/test_tokamak_flight_sim.py -v` |
+| H6-007 | P1 | Operations | Add domain-randomization "chaos monkey" faults for sensor dropout and Gaussian perturbations in twin training lane | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs`, `validation/gdep_01_digital_twin_hook.py`, `tests/test_gdep_01_digital_twin_hook.py` | Training/evaluation campaigns support deterministic configurable channel-drop/noise injections with thresholded resilience metrics | `cargo test -p fusion-control digital_twin`, `python -m pytest tests/test_gdep_01_digital_twin_hook.py -v` |
+| H6-008 | P2 | Performance | Add multi-node MPI domain-decomposition scaffolding for core grid solves | `scpn-fusion-rs/crates/fusion-core/Cargo.toml`, `scpn-fusion-rs/crates/fusion-core/src/mpi_domain.rs`, `src/scpn_fusion/hpc/HPC_MIGRATION_PLAN.md` | Optional MPI build path partitions grid/domain metadata and synchronizes halo boundaries with deterministic serial-equivalence smoke checks | `cargo test -p fusion-core mpi_domain`, `cargo clippy -p fusion-core --all-targets --all-features -- -D warnings` |
+| H6-009 | P2 | Performance | Add traceable control-loop runtime lane to reduce Python interpreter overhead in tight loops | `src/scpn_fusion/scpn/controller.py`, `src/scpn_fusion/scpn/compiler.py`, `validation/scpn_pid_mpc_benchmark.py`, `tests/test_scpn_pid_mpc_benchmark.py` | Traceable execution mode (JAX/TorchScript-ready graph boundary) preserves deterministic controller outputs while reducing per-step overhead in benchmark lane | `python -m pytest tests/test_scpn_pid_mpc_benchmark.py tests/test_controller.py -v`, `python validation/scpn_pid_mpc_benchmark.py --strict` |
+
 ## Task Accounting
 
 - Total imported tasks: 85
@@ -117,6 +136,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S4: 4
 - Post-S4 hardening tasks delivered: 37
 - Remaining in deferred pool after queue selection: 67
+- External reactor-engineering intake tasks (H6 queue): 9
 
 ## Active Task
 
