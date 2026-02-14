@@ -10,6 +10,7 @@
 //! Port of `tokamak_digital_twin.py`.
 //! 2D thermal dynamics with q-profile and RL-trained neural controller.
 
+use fusion_types::error::{FusionError, FusionResult};
 use ndarray::{Array1, Array2};
 use rand::Rng;
 use rand_distr::{Distribution, StandardNormal};
@@ -198,23 +199,37 @@ impl ActuatorDelayLine {
     }
 
     /// Push a command and return the delayed+lagged action applied this step.
-    pub fn push(&mut self, command: Array1<f64>) -> Array1<f64> {
+    pub fn push(&mut self, command: Array1<f64>) -> FusionResult<Array1<f64>> {
         if command.len() != self.last_applied.len() {
-            return self.last_applied.clone();
+            return Err(FusionError::ConfigError(format!(
+                "delay-line command length mismatch: expected {}, got {}",
+                self.last_applied.len(),
+                command.len()
+            )));
+        }
+        if command.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "delay-line command must contain only finite values".to_string(),
+            ));
         }
         self.queue.push_back(command);
 
         let target = if self.queue.len() > self.delay_steps {
-            self.queue
-                .pop_front()
-                .unwrap_or_else(|| Array1::zeros(self.last_applied.len()))
+            self.queue.pop_front().ok_or_else(|| {
+                FusionError::ConfigError("delay-line internal queue unexpectedly empty".to_string())
+            })?
         } else {
             Array1::zeros(self.last_applied.len())
         };
 
         let alpha = self.lag_alpha;
         self.last_applied = &self.last_applied * (1.0 - alpha) + target * alpha;
-        self.last_applied.clone()
+        if self.last_applied.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "delay-line output became non-finite".to_string(),
+            ));
+        }
+        Ok(self.last_applied.clone())
     }
 
     pub fn reset(&mut self) {
@@ -529,9 +544,15 @@ mod tests {
     #[test]
     fn test_actuator_delay_line_enforces_delay() {
         let mut delay = ActuatorDelayLine::new(1, 2, 1.0).expect("valid delay line");
-        let a0 = delay.push(Array1::from_vec(vec![1.0]));
-        let a1 = delay.push(Array1::from_vec(vec![2.0]));
-        let a2 = delay.push(Array1::from_vec(vec![3.0]));
+        let a0 = delay
+            .push(Array1::from_vec(vec![1.0]))
+            .expect("valid delay-line input");
+        let a1 = delay
+            .push(Array1::from_vec(vec![2.0]))
+            .expect("valid delay-line input");
+        let a2 = delay
+            .push(Array1::from_vec(vec![3.0]))
+            .expect("valid delay-line input");
         assert!((a0[0] - 0.0).abs() < 1e-12);
         assert!((a1[0] - 0.0).abs() < 1e-12);
         assert!((a2[0] - 1.0).abs() < 1e-12);
@@ -540,8 +561,12 @@ mod tests {
     #[test]
     fn test_actuator_delay_line_applies_lag() {
         let mut delay = ActuatorDelayLine::new(1, 0, 0.5).expect("valid delay line");
-        let a0 = delay.push(Array1::from_vec(vec![2.0]));
-        let a1 = delay.push(Array1::from_vec(vec![2.0]));
+        let a0 = delay
+            .push(Array1::from_vec(vec![2.0]))
+            .expect("valid delay-line input");
+        let a1 = delay
+            .push(Array1::from_vec(vec![2.0]))
+            .expect("valid delay-line input");
         assert!((a0[0] - 1.0).abs() < 1e-12);
         assert!((a1[0] - 1.5).abs() < 1e-12);
     }
@@ -596,5 +621,12 @@ mod tests {
         assert!(ActuatorDelayLine::new(1, 0, -0.1).is_err());
         assert!(ActuatorDelayLine::new(1, 0, 1.1).is_err());
         assert!(ActuatorDelayLine::new(1, 0, f64::NAN).is_err());
+    }
+
+    #[test]
+    fn test_actuator_delay_line_rejects_invalid_push_inputs() {
+        let mut delay = ActuatorDelayLine::new(2, 1, 0.5).expect("valid delay line");
+        assert!(delay.push(Array1::from_vec(vec![1.0])).is_err());
+        assert!(delay.push(Array1::from_vec(vec![1.0, f64::NAN])).is_err());
     }
 }
