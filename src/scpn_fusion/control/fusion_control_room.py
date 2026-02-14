@@ -40,7 +40,10 @@ class TokamakPhysicsEngine:
         seed: int = 42,
         kernel: Optional[Any] = None,
     ) -> None:
-        self.size = max(int(size), 16)
+        size = int(size)
+        if size < 16:
+            raise ValueError("size must be >= 16.")
+        self.size = size
         self.rng = np.random.default_rng(int(seed))
         self.kernel = kernel
 

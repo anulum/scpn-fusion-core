@@ -189,6 +189,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-052 | P1 | Control | Harden tokamak flight-sim runtime with strict shot-duration input guard | `src/scpn_fusion/control/tokamak_flight_sim.py`, `tests/test_tokamak_flight_sim.py` | Flight-sim runtime now rejects invalid `shot_duration` values with deterministic errors (no silent coercion to minimum), while preserving deterministic seeded summary and actuator-lag metrics for valid runs | `python -m pytest tests/test_tokamak_flight_sim.py -v`, `python -m pytest tests/ -q -x` |
 | H7-053 | P1 | Control | Harden tokamak flight-sim actuator/control timebase constructors with strict finite-positive guards | `src/scpn_fusion/control/tokamak_flight_sim.py`, `tests/test_tokamak_flight_sim.py` | Flight-sim actuator and controller constructors now reject invalid/non-finite `tau_s`, `dt_s`, and `control_dt_s` values with deterministic errors (no silent coercion), while preserving deterministic runtime behavior for valid control loops | `python -m pytest tests/test_tokamak_flight_sim.py -v`, `python -m pytest tests/ -q -x` |
 | H7-054 | P1 | Control | Harden fusion control-room runtime with strict simulation-duration input guard | `src/scpn_fusion/control/fusion_control_room.py`, `tests/test_fusion_control_room.py` | Control-room runtime now rejects invalid `sim_duration` values with deterministic errors (no silent coercion to minimum), while preserving deterministic seeded analytic/kernel-backed summary behavior for valid runs | `python -m pytest tests/test_fusion_control_room.py -v`, `python -m pytest tests/ -q -x` |
+| H7-055 | P1 | Control | Harden control-room physics-engine constructor with strict grid-size input guard | `src/scpn_fusion/control/fusion_control_room.py`, `tests/test_fusion_control_room.py` | Control-room physics engine now rejects invalid `size` values with deterministic errors (no silent coercion to minimum), while preserving deterministic seeded analytic/kernel-backed behavior for valid configurations | `python -m pytest tests/test_fusion_control_room.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -196,8 +197,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 100
-- Remaining in deferred pool after queue selection: 13
+- Post-S4 hardening tasks delivered: 101
+- Remaining in deferred pool after queue selection: 12
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -320,4 +321,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-052`
 - Completed: `H7-053`
 - Completed: `H7-054`
-- Next active task: `H7-055` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-055`
+- Next active task: `H7-056` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

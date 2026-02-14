@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from scpn_fusion.control.fusion_control_room import run_control_room
+from scpn_fusion.control.fusion_control_room import TokamakPhysicsEngine, run_control_room
 
 
 class _DummyKernel:
@@ -108,3 +108,8 @@ def test_run_control_room_rejects_invalid_sim_duration() -> None:
             save_report=False,
             verbose=False,
         )
+
+
+def test_tokamak_physics_engine_rejects_invalid_size() -> None:
+    with pytest.raises(ValueError, match="size"):
+        TokamakPhysicsEngine(size=8, seed=1)
