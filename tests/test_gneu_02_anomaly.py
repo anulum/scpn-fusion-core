@@ -123,3 +123,13 @@ def test_load_or_train_predictor_can_return_fallback_metadata_when_missing(
     assert model is None
     assert meta["fallback"] is True
     assert meta["reason"] in {"checkpoint_missing", "torch_unavailable"}
+
+
+def test_load_or_train_predictor_rejects_invalid_seq_len(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="seq_len"):
+        dp.load_or_train_predictor(
+            model_path=tmp_path / "missing_model.pth",
+            seq_len=0,
+            train_if_missing=False,
+            allow_fallback=True,
+        )

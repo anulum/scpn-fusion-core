@@ -459,7 +459,10 @@ def default_model_path() -> Path:
 
 
 def _normalize_seq_len(seq_len):
-    return max(int(seq_len), 8)
+    seq_len_i = int(seq_len)
+    if seq_len_i < 8:
+        raise ValueError("seq_len must be >= 8.")
+    return seq_len_i
 
 
 def _prepare_signal_window(signal, seq_len):
