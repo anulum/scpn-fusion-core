@@ -193,6 +193,21 @@ fn validate_measurements(measurements: &[f64]) -> FusionResult<()> {
     Ok(())
 }
 
+fn validate_update_vector(delta: &Array1<f64>, label: &str) -> FusionResult<()> {
+    if delta.len() != N_PARAMS {
+        return Err(FusionError::LinAlg(format!(
+            "{label} has unexpected dimension: got {}, expected {N_PARAMS}",
+            delta.len()
+        )));
+    }
+    if delta.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::LinAlg(format!(
+            "{label} contains non-finite values"
+        )));
+    }
+    Ok(())
+}
+
 fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
     let mut best_idx = 0usize;
     let mut best_dist = f64::INFINITY;
@@ -603,13 +618,7 @@ pub fn reconstruct_equilibrium(
         let pinv = pinv_svd(&j_aug, 1e-12);
         let delta_raw = pinv.dot(&r_aug).mapv(|v| -v);
         let delta = delta_raw.mapv(|v| v.clamp(-0.5, 0.5));
-
-        if delta.len() != N_PARAMS {
-            return Err(FusionError::LinAlg(format!(
-                "Unexpected update dimension: got {}, expected {N_PARAMS}",
-                delta.len()
-            )));
-        }
+        validate_update_vector(&delta, "inverse.delta")?;
 
         let mut accepted = false;
         let mut local_damping = damping;
@@ -771,6 +780,7 @@ pub fn reconstruct_equilibrium_with_kernel(
         let pinv = pinv_svd(&j_aug, 1e-12);
         let delta_raw = pinv.dot(&r_aug).mapv(|v| -v);
         let delta = delta_raw.mapv(|v| v.clamp(-0.5, 0.5));
+        validate_update_vector(&delta, "kernel_inverse.delta")?;
 
         let mut accepted = false;
         let mut local_damping = damping;
@@ -842,6 +852,7 @@ mod tests {
     use super::*;
     use crate::jacobian::forward_model_response;
     use fusion_types::config::ReactorConfig;
+    use ndarray::Array1;
     use std::path::PathBuf;
 
     fn project_root() -> PathBuf {
@@ -1008,6 +1019,19 @@ mod tests {
         assert!(validate_radius(-0.5, "r").is_err());
         assert!(validate_radius(f64::INFINITY, "r").is_err());
         assert!(validate_radius(0.25, "r").is_ok());
+    }
+
+    #[test]
+    fn test_inverse_update_vector_validation_guards() {
+        let bad_len = Array1::zeros(N_PARAMS - 1);
+        assert!(validate_update_vector(&bad_len, "delta").is_err());
+
+        let mut bad_values = Array1::zeros(N_PARAMS);
+        bad_values[2] = f64::NAN;
+        assert!(validate_update_vector(&bad_values, "delta").is_err());
+
+        let ok = Array1::zeros(N_PARAMS);
+        assert!(validate_update_vector(&ok, "delta").is_ok());
     }
 
     #[test]
