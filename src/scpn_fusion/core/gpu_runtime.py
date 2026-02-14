@@ -32,9 +32,19 @@ class GPURuntimeBridge:
         self.w1 = rng.normal(0.0, 0.15, size=(32, 64))
         self.w2 = rng.normal(0.0, 0.15, size=(64, 8))
 
+    @staticmethod
+    def _require_int_at_least(value: int, *, name: str, minimum: int) -> int:
+        v = int(value)
+        if v < minimum:
+            raise ValueError(f"{name} must be >= {minimum}.")
+        return v
+
     def _gpu_sim_multigrid(self, field: np.ndarray, iterations: int = 4) -> np.ndarray:
         u = field.astype(np.float64, copy=True)
-        for _ in range(max(int(iterations), 1)):
+        iterations = self._require_int_at_least(
+            iterations, name="iterations", minimum=1
+        )
+        for _ in range(iterations):
             u = 0.2 * (
                 u
                 + np.roll(u, 1, axis=0)
@@ -47,7 +57,10 @@ class GPURuntimeBridge:
     def _cpu_multigrid(self, field: np.ndarray, iterations: int = 4) -> np.ndarray:
         u = field.astype(np.float64, copy=True)
         n0, n1 = u.shape
-        for _ in range(max(int(iterations), 1)):
+        iterations = self._require_int_at_least(
+            iterations, name="iterations", minimum=1
+        )
+        for _ in range(iterations):
             next_u = u.copy()
             for i in range(1, n0 - 1):
                 for j in range(1, n1 - 1):
@@ -89,8 +102,8 @@ class GPURuntimeBridge:
         if backend not in {"cpu", "gpu_sim"}:
             raise ValueError("backend must be 'cpu' or 'gpu_sim'")
 
-        trials = max(int(trials), 8)
-        n = max(int(grid_size), 16)
+        trials = self._require_int_at_least(trials, name="trials", minimum=8)
+        n = self._require_int_at_least(grid_size, name="grid_size", minimum=16)
         field = np.linspace(0.0, 1.0, n * n, dtype=np.float64).reshape(n, n)
         features = np.linspace(-1.0, 1.0, 32 * 8, dtype=np.float64).reshape(8, 32)
 

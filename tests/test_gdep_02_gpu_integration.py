@@ -12,6 +12,9 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import numpy as np
+import pytest
+
 from scpn_fusion.core.gpu_runtime import GPURuntimeBridge
 
 
@@ -34,3 +37,29 @@ def test_gpu_runtime_bridge_speedup_estimates() -> None:
 def test_gdep_02_campaign_passes_thresholds() -> None:
     out = gdep_02_gpu_integration.run_campaign(trials=48, grid_size=64)
     assert out["passes_thresholds"] is True
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"trials": 7}, "trials"),
+        ({"grid_size": 15}, "grid_size"),
+    ],
+)
+def test_gpu_runtime_bridge_rejects_invalid_benchmark_inputs(
+    kwargs: dict[str, int], match: str
+) -> None:
+    bridge = GPURuntimeBridge(seed=42)
+    params = {"backend": "cpu", "trials": 32, "grid_size": 64}
+    params.update(kwargs)
+    with pytest.raises(ValueError, match=match):
+        bridge.benchmark(**params)
+
+
+def test_gpu_runtime_bridge_rejects_invalid_multigrid_iterations() -> None:
+    bridge = GPURuntimeBridge(seed=42)
+    field = np.linspace(0.0, 1.0, 16 * 16, dtype=np.float64).reshape(16, 16)
+    with pytest.raises(ValueError, match="iterations"):
+        bridge._gpu_sim_multigrid(field, iterations=0)
+    with pytest.raises(ValueError, match="iterations"):
+        bridge._cpu_multigrid(field, iterations=0)
