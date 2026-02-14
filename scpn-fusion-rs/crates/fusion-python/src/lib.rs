@@ -60,9 +60,10 @@ impl PyFusionKernel {
     }
 
     /// Calculate thermodynamics for given auxiliary power [MW].
-    fn calculate_thermodynamics(&self, p_aux_mw: f64) -> PyThermodynamicsResult {
-        let result = calculate_thermodynamics(&self.inner, p_aux_mw);
-        PyThermodynamicsResult {
+    fn calculate_thermodynamics(&self, p_aux_mw: f64) -> PyResult<PyThermodynamicsResult> {
+        let result = calculate_thermodynamics(&self.inner, p_aux_mw)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        Ok(PyThermodynamicsResult {
             p_fusion_mw: result.p_fusion_mw,
             p_alpha_mw: result.p_alpha_mw,
             p_loss_mw: result.p_loss_mw,
@@ -71,7 +72,7 @@ impl PyFusionKernel {
             q_factor: result.q_factor,
             t_peak_kev: result.t_peak_kev,
             w_thermal_mj: result.w_thermal_mj,
-        }
+        })
     }
 
     /// Get Psi (magnetic flux) as numpy array [nz, nr].

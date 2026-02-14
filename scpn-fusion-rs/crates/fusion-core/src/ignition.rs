@@ -12,11 +12,8 @@
 
 use crate::kernel::FusionKernel;
 use fusion_types::constants::E_FUSION_DT;
+use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::ThermodynamicsResult;
-
-/// Minimum temperature in keV (below this σv is negligible).
-/// Python line 22: `T = max(T, 0.1)`
-const T_MIN_KEV: f64 = 0.1;
 
 /// Peak density [m⁻³]. Python line 56.
 const N_PEAK: f64 = 1.0e20;
@@ -45,10 +42,20 @@ const KEV_TO_JOULES: f64 = 1.602e-16;
 /// Uses NRL Plasma Formulary approximation:
 ///   σv = 3.68e-18 / T^(2/3) × exp(-19.94 / T^(1/3))
 ///
-/// Valid for T < 100 keV. T is clamped to T_MIN_KEV.
-pub fn bosch_hale_dt(t_kev: f64) -> f64 {
-    let t = t_kev.max(T_MIN_KEV);
-    3.68e-18 / t.powf(2.0 / 3.0) * (-19.94 / t.powf(1.0 / 3.0)).exp()
+/// Valid for T < 100 keV. Caller must provide finite T > 0.
+pub fn bosch_hale_dt(t_kev: f64) -> FusionResult<f64> {
+    if !t_kev.is_finite() || t_kev <= 0.0 {
+        return Err(FusionError::ConfigError(
+            "ignition temperature must be finite and > 0 keV".to_string(),
+        ));
+    }
+    let rate = 3.68e-18 / t_kev.powf(2.0 / 3.0) * (-19.94 / t_kev.powf(1.0 / 3.0)).exp();
+    if !rate.is_finite() {
+        return Err(FusionError::ConfigError(
+            "ignition Bosch-Hale rate became non-finite".to_string(),
+        ));
+    }
+    Ok(rate)
 }
 
 /// Calculate full thermodynamics from equilibrium state.
@@ -61,7 +68,16 @@ pub fn bosch_hale_dt(t_kev: f64) -> f64 {
 /// 5. Thermal energy: W_th = ∫ 3·n·T dV
 /// 6. Losses: P_loss = W_th / τ_E
 /// 7. Q = P_fusion / P_aux
-pub fn calculate_thermodynamics(kernel: &FusionKernel, p_aux_mw: f64) -> ThermodynamicsResult {
+pub fn calculate_thermodynamics(
+    kernel: &FusionKernel,
+    p_aux_mw: f64,
+) -> FusionResult<ThermodynamicsResult> {
+    if !p_aux_mw.is_finite() || p_aux_mw < 0.0 {
+        return Err(FusionError::ConfigError(
+            "ignition p_aux_mw must be finite and >= 0".to_string(),
+        ));
+    }
+
     let grid = kernel.grid();
     let psi = kernel.psi();
     let state = kernel.state();
@@ -72,9 +88,11 @@ pub fn calculate_thermodynamics(kernel: &FusionKernel, p_aux_mw: f64) -> Thermod
 
     let psi_axis = state.psi_axis;
     let psi_boundary = state.psi_boundary;
-    let mut denom = psi_boundary - psi_axis;
-    if denom.abs() < 1e-9 {
-        denom = 1e-9;
+    let denom = psi_boundary - psi_axis;
+    if !denom.is_finite() || denom.abs() < 1e-9 {
+        return Err(FusionError::ConfigError(
+            "ignition flux normalization denominator must be finite and non-zero".to_string(),
+        ));
     }
 
     let mut p_fusion_w = 0.0_f64;
@@ -101,7 +119,7 @@ pub fn calculate_thermodynamics(kernel: &FusionKernel, p_aux_mw: f64) -> Thermod
                 let n_d = n_e / 2.0;
                 let n_t = n_e / 2.0;
 
-                let sigma_v = bosch_hale_dt(t_kev);
+                let sigma_v = bosch_hale_dt(t_kev)?;
 
                 let r = grid.rr[[iz, ir]];
                 let dv = dr * dz * 2.0 * std::f64::consts::PI * r; // toroidal volume element
@@ -128,7 +146,7 @@ pub fn calculate_thermodynamics(kernel: &FusionKernel, p_aux_mw: f64) -> Thermod
 
     let net_mw = p_alpha_mw + p_aux_mw - p_loss_mw;
 
-    ThermodynamicsResult {
+    Ok(ThermodynamicsResult {
         p_fusion_mw,
         p_alpha_mw,
         p_loss_mw,
@@ -137,7 +155,7 @@ pub fn calculate_thermodynamics(kernel: &FusionKernel, p_aux_mw: f64) -> Thermod
         q_factor,
         t_peak_kev: t_peak_actual,
         w_thermal_mj,
-    }
+    })
 }
 
 #[cfg(test)]
@@ -146,13 +164,16 @@ mod tests {
 
     #[test]
     fn test_bosch_hale_zero_temp() {
-        // At T=0 (clamped to 0.1 keV), rate should be extremely small
-        assert!(bosch_hale_dt(0.0) < 1e-30, "Rate at T=0 should be tiny");
+        // At T=0.1 keV, rate should be extremely small
+        assert!(
+            bosch_hale_dt(0.1).expect("valid keV input") < 1e-30,
+            "Rate at T=0.1 keV should be tiny"
+        );
     }
 
     #[test]
     fn test_bosch_hale_20kev() {
-        let rate = bosch_hale_dt(20.0);
+        let rate = bosch_hale_dt(20.0).expect("valid keV input");
         assert!(
             rate > 1e-22 && rate < 1e-21,
             "Rate at 20keV: {rate}, expected O(1e-22)"
@@ -161,8 +182,8 @@ mod tests {
 
     #[test]
     fn test_bosch_hale_peak_higher() {
-        let rate_60 = bosch_hale_dt(60.0);
-        let rate_1 = bosch_hale_dt(1.0);
+        let rate_60 = bosch_hale_dt(60.0).expect("valid keV input");
+        let rate_1 = bosch_hale_dt(1.0).expect("valid keV input");
         assert!(
             rate_60 > rate_1 * 1000.0,
             "Rate at 60keV ({rate_60}) should be >> rate at 1keV ({rate_1})"
@@ -172,9 +193,9 @@ mod tests {
     #[test]
     fn test_bosch_hale_monotonic_rise() {
         // Rate should increase monotonically from 1 to ~60 keV
-        let mut prev = bosch_hale_dt(1.0);
+        let mut prev = bosch_hale_dt(1.0).expect("valid keV input");
         for t in [5.0, 10.0, 20.0, 40.0, 60.0] {
-            let rate = bosch_hale_dt(t);
+            let rate = bosch_hale_dt(t).expect("valid keV input");
             assert!(
                 rate > prev,
                 "Rate should increase: T={t}, rate={rate}, prev={prev}"
@@ -202,7 +223,7 @@ mod tests {
             FusionKernel::from_file(&config_path("validation/iter_validated_config.json")).unwrap();
         kernel.solve_equilibrium().unwrap();
 
-        let result = calculate_thermodynamics(&kernel, 50.0);
+        let result = calculate_thermodynamics(&kernel, 50.0).expect("valid thermodynamics input");
 
         // Fusion power should be positive and finite
         assert!(
@@ -221,5 +242,26 @@ mod tests {
             (alpha_ratio - 0.2).abs() < 1e-10,
             "Alpha ratio = {alpha_ratio}, expected 0.2"
         );
+    }
+
+    #[test]
+    fn test_ignition_rejects_invalid_inputs() {
+        assert!(bosch_hale_dt(0.0).is_err());
+        assert!(bosch_hale_dt(f64::NAN).is_err());
+
+        use std::path::PathBuf;
+        fn project_root() -> PathBuf {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("..")
+                .join("..")
+                .join("..")
+        }
+        fn config_path(relative: &str) -> String {
+            project_root().join(relative).to_string_lossy().to_string()
+        }
+
+        let kernel =
+            FusionKernel::from_file(&config_path("validation/iter_validated_config.json")).unwrap();
+        assert!(calculate_thermodynamics(&kernel, f64::NAN).is_err());
     }
 }
