@@ -154,16 +154,38 @@ impl CompiledKernel {
     }
 
     /// Execute one reduced control step for this specialized kernel.
-    pub fn step(&self, state: &Array1<f64>, control: &Array1<f64>) -> Array1<f64> {
+    pub fn step(&self, state: &Array1<f64>, control: &Array1<f64>) -> FusionResult<Array1<f64>> {
         if state.len() != self.spec.n_state {
-            return state.clone();
+            return Err(FusionError::ConfigError(format!(
+                "jit step state length mismatch: expected {}, got {}",
+                self.spec.n_state,
+                state.len()
+            )));
+        }
+        if control.len() != self.spec.n_control {
+            return Err(FusionError::ConfigError(format!(
+                "jit step control length mismatch: expected {}, got {}",
+                self.spec.n_control,
+                control.len()
+            )));
+        }
+        if state.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "jit step state vector must contain only finite values".to_string(),
+            ));
+        }
+        if control.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "jit step control vector must contain only finite values".to_string(),
+            ));
         }
 
-        let control_mean = if control.len() == self.spec.n_control {
-            control.iter().copied().sum::<f64>() / self.spec.n_control as f64
-        } else {
-            0.0
-        };
+        let control_mean = control.iter().copied().sum::<f64>() / self.spec.n_control as f64;
+        if !control_mean.is_finite() {
+            return Err(FusionError::ConfigError(
+                "jit step control mean became non-finite".to_string(),
+            ));
+        }
 
         let forcing = self.control_gain * control_mean + self.bias;
         let dt = self.spec.dt_s;
@@ -178,7 +200,12 @@ impl CompiledKernel {
                     next_slice[idx] = x + dt * (drift + forcing);
                 }
             }
-            return next;
+            if next_slice.iter().any(|v| !v.is_finite()) {
+                return Err(FusionError::ConfigError(
+                    "jit step produced non-finite state output".to_string(),
+                ));
+            }
+            return Ok(next);
         }
 
         for (idx, out) in next.iter_mut().enumerate() {
@@ -186,7 +213,12 @@ impl CompiledKernel {
             let drift = (self.nonlinear_gain * x).tanh() - 0.10 * x;
             *out = x + dt * (drift + forcing);
         }
-        next
+        if next.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "jit step produced non-finite state output".to_string(),
+            ));
+        }
+        Ok(next)
     }
 }
 
@@ -250,12 +282,16 @@ impl RuntimeKernelJit {
     }
 
     /// Execute one step with the active specialized kernel.
-    pub fn step_active(&self, state: &Array1<f64>, control: &Array1<f64>) -> Array1<f64> {
+    pub fn step_active(&self, state: &Array1<f64>, control: &Array1<f64>) -> FusionResult<Array1<f64>> {
         let Some(regime) = self.active else {
-            return state.clone();
+            return Err(FusionError::ConfigError(
+                "jit step_active requires an active regime; compile or refresh first".to_string(),
+            ));
         };
         let Some(kernel) = self.kernels.get(&regime) else {
-            return state.clone();
+            return Err(FusionError::ConfigError(
+                "jit step_active active regime has no compiled kernel".to_string(),
+            ));
         };
         kernel.step(state, control)
     }
@@ -311,11 +347,15 @@ mod tests {
 
         jit.compile_for_regime(PlasmaRegime::LMode, spec)
             .expect("valid compile spec");
-        let l_step = jit.step_active(&state, &control);
+        let l_step = jit
+            .step_active(&state, &control)
+            .expect("valid active-kernel step inputs");
 
         jit.compile_for_regime(PlasmaRegime::HMode, spec)
             .expect("valid compile spec");
-        let h_step = jit.step_active(&state, &control);
+        let h_step = jit
+            .step_active(&state, &control)
+            .expect("valid active-kernel step inputs");
 
         assert_eq!(jit.active_regime(), Some(PlasmaRegime::HMode));
         let delta_sum = (&h_step - &l_step).iter().map(|v| v.abs()).sum::<f64>();
@@ -350,12 +390,11 @@ mod tests {
     }
 
     #[test]
-    fn test_step_active_without_kernel_is_identity() {
+    fn test_step_active_without_kernel_rejects_missing_active_kernel() {
         let jit = RuntimeKernelJit::new();
         let state = Array1::from_vec(vec![1.0, -2.0, 0.5]);
         let control = Array1::from_vec(vec![0.1, 0.1]);
-        let next = jit.step_active(&state, &control);
-        assert_eq!(next, state);
+        assert!(jit.step_active(&state, &control).is_err());
     }
 
     #[test]
@@ -403,5 +442,24 @@ mod tests {
         assert!(jit.refresh_for_observation(&bad, spec).is_err());
         assert_eq!(jit.compile_events(), 0);
         assert_eq!(jit.cache_size(), 0);
+    }
+
+    #[test]
+    fn test_step_active_rejects_invalid_runtime_vectors() {
+        let mut jit = RuntimeKernelJit::new();
+        let spec = KernelCompileSpec::default();
+        jit.compile_for_regime(PlasmaRegime::LMode, spec)
+            .expect("valid compile spec");
+
+        let bad_state = Array1::from_vec(vec![0.0; spec.n_state - 1]);
+        let good_control = Array1::from_vec(vec![0.1; spec.n_control]);
+        assert!(jit.step_active(&bad_state, &good_control).is_err());
+
+        let good_state = Array1::from_vec(vec![0.0; spec.n_state]);
+        let bad_control = Array1::from_vec(vec![0.1; spec.n_control - 1]);
+        assert!(jit.step_active(&good_state, &bad_control).is_err());
+
+        let nan_state = Array1::from_vec(vec![f64::NAN; spec.n_state]);
+        assert!(jit.step_active(&nan_state, &good_control).is_err());
     }
 }
