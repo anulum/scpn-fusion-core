@@ -141,6 +141,47 @@ def _synthetic_control_signal(rng, length):
     return np.clip(base + ramp + noise, 0.01, None)
 
 
+def _normalize_fault_campaign_inputs(
+    seed,
+    episodes,
+    window,
+    noise_std,
+    bit_flip_interval,
+    recovery_window,
+    recovery_epsilon,
+):
+    seed_i = int(seed)
+    episodes_i = int(episodes)
+    window_i = int(window)
+    noise = float(noise_std)
+    bit_flip_i = int(bit_flip_interval)
+    recovery_window_i = int(recovery_window)
+    recovery_eps = float(recovery_epsilon)
+
+    if episodes_i < 1:
+        raise ValueError("episodes must be >= 1.")
+    if window_i < 16:
+        raise ValueError("window must be >= 16.")
+    if not np.isfinite(noise) or noise < 0.0:
+        raise ValueError("noise_std must be finite and >= 0.")
+    if bit_flip_i < 1:
+        raise ValueError("bit_flip_interval must be >= 1.")
+    if recovery_window_i < 1:
+        raise ValueError("recovery_window must be >= 1.")
+    if not np.isfinite(recovery_eps) or recovery_eps <= 0.0:
+        raise ValueError("recovery_epsilon must be finite and > 0.")
+
+    return (
+        seed_i,
+        episodes_i,
+        window_i,
+        noise,
+        bit_flip_i,
+        recovery_window_i,
+        recovery_eps,
+    )
+
+
 def run_fault_noise_campaign(
     seed=42,
     episodes=64,
@@ -153,19 +194,31 @@ def run_fault_noise_campaign(
     """
     Run deterministic synthetic fault/noise campaign for disruption-risk resilience.
     """
-    rng = np.random.default_rng(int(seed))
-    episodes = max(int(episodes), 1)
-    window = max(int(window), 16)
-    bit_flip_interval = max(int(bit_flip_interval), 1)
-    recovery_window = max(int(recovery_window), 1)
-    recovery_epsilon = max(float(recovery_epsilon), 1e-9)
+    (
+        seed_i,
+        episodes_i,
+        window_i,
+        noise,
+        bit_flip_i,
+        recovery_window_i,
+        recovery_eps,
+    ) = _normalize_fault_campaign_inputs(
+        seed,
+        episodes,
+        window,
+        noise_std,
+        bit_flip_interval,
+        recovery_window,
+        recovery_epsilon,
+    )
+    rng = np.random.default_rng(seed_i)
 
     abs_errors = []
     recovery_steps = []
     n_faults = 0
 
-    for _ in range(episodes):
-        signal = _synthetic_control_signal(rng, window)
+    for _ in range(episodes_i):
+        signal = _synthetic_control_signal(rng, window_i)
         toroidal = {
             "toroidal_n1_amp": float(rng.uniform(0.05, 0.25)),
             "toroidal_n2_amp": float(rng.uniform(0.03, 0.18)),
@@ -181,15 +234,15 @@ def run_fault_noise_campaign(
         )
 
         baseline = np.array(
-            [predict_disruption_risk(signal[: i + 1], toroidal) for i in range(window)],
+            [predict_disruption_risk(signal[: i + 1], toroidal) for i in range(window_i)],
             dtype=float,
         )
 
         faulty_signal = signal.copy()
         faulty_indices = []
-        for i in range(window):
-            faulty_signal[i] += float(rng.normal(0.0, noise_std))
-            if i % bit_flip_interval == 0:
+        for i in range(window_i):
+            faulty_signal[i] += float(rng.normal(0.0, noise))
+            if i % bit_flip_i == 0:
                 faulty_signal[i] = apply_bit_flip_fault(
                     faulty_signal[i], int(rng.integers(0, 52))
                 )
@@ -197,10 +250,10 @@ def run_fault_noise_campaign(
 
         faulty_toroidal = dict(toroidal)
         faulty_toroidal["toroidal_n1_amp"] = max(
-            0.0, faulty_toroidal["toroidal_n1_amp"] + float(rng.normal(0.0, noise_std * 0.5))
+            0.0, faulty_toroidal["toroidal_n1_amp"] + float(rng.normal(0.0, noise * 0.5))
         )
         faulty_toroidal["toroidal_n2_amp"] = max(
-            0.0, faulty_toroidal["toroidal_n2_amp"] + float(rng.normal(0.0, noise_std * 0.4))
+            0.0, faulty_toroidal["toroidal_n2_amp"] + float(rng.normal(0.0, noise * 0.4))
         )
         faulty_toroidal["toroidal_asymmetry_index"] = float(
             np.sqrt(
@@ -213,7 +266,7 @@ def run_fault_noise_campaign(
         perturbed = np.array(
             [
                 predict_disruption_risk(faulty_signal[: i + 1], faulty_toroidal)
-                for i in range(window)
+                for i in range(window_i)
             ],
             dtype=float,
         )
@@ -223,26 +276,29 @@ def run_fault_noise_campaign(
 
         for idx in faulty_indices:
             n_faults += 1
-            stop = min(window, idx + recovery_window + 1)
+            stop = min(window_i, idx + recovery_window_i + 1)
             recover_idx = stop
             for j in range(idx, stop):
-                if err[j] <= recovery_epsilon:
+                if err[j] <= recovery_eps:
                     recover_idx = j
                     break
             recovery_steps.append(int(recover_idx - idx))
 
     errors_arr = np.asarray(abs_errors, dtype=float)
-    rec_arr = np.asarray(recovery_steps if recovery_steps else [recovery_window + 1], dtype=float)
+    rec_arr = np.asarray(
+        recovery_steps if recovery_steps else [recovery_window_i + 1],
+        dtype=float,
+    )
 
     mean_abs_err = float(np.mean(errors_arr))
     p95_abs_err = float(np.percentile(errors_arr, 95))
     p95_recovery = float(np.percentile(rec_arr, 95))
-    success_rate = float(np.mean(rec_arr <= recovery_window))
+    success_rate = float(np.mean(rec_arr <= recovery_window_i))
 
     thresholds = {
         "max_mean_abs_risk_error": 0.08,
         "max_p95_abs_risk_error": 0.22,
-        "max_recovery_steps_p95": float(recovery_window),
+        "max_recovery_steps_p95": float(recovery_window_i),
         "min_recovery_success_rate": 0.80,
     }
     passes = bool(
@@ -253,11 +309,11 @@ def run_fault_noise_campaign(
     )
 
     return {
-        "seed": int(seed),
-        "episodes": episodes,
-        "window": window,
-        "noise_std": float(noise_std),
-        "bit_flip_interval": bit_flip_interval,
+        "seed": seed_i,
+        "episodes": episodes_i,
+        "window": window_i,
+        "noise_std": noise,
+        "bit_flip_interval": bit_flip_i,
         "fault_count": int(n_faults),
         "mean_abs_risk_error": mean_abs_err,
         "p95_abs_risk_error": p95_abs_err,
@@ -318,10 +374,19 @@ def run_anomaly_alarm_campaign(
     """
     Deterministic anomaly-alarm campaign under random perturbations.
     """
-    rng = np.random.default_rng(int(seed))
-    episodes = max(int(episodes), 1)
-    window = max(int(window), 16)
-    detector = HybridAnomalyDetector(threshold=threshold)
+    seed_i = int(seed)
+    episodes_i = int(episodes)
+    window_i = int(window)
+    threshold_f = float(threshold)
+    if episodes_i < 1:
+        raise ValueError("episodes must be >= 1.")
+    if window_i < 16:
+        raise ValueError("window must be >= 16.")
+    if not np.isfinite(threshold_f) or threshold_f < 0.0 or threshold_f > 1.0:
+        raise ValueError("threshold must be finite and in [0, 1].")
+
+    rng = np.random.default_rng(seed_i)
+    detector = HybridAnomalyDetector(threshold=threshold_f)
 
     true_positives = 0
     false_positives = 0
@@ -329,12 +394,12 @@ def run_anomaly_alarm_campaign(
     negatives = 0
     latencies = []
 
-    for ep in range(episodes):
-        sim_rng = np.random.default_rng(int(seed + ep))
-        signal, label, _ = simulate_tearing_mode(steps=window, rng=sim_rng)
-        if signal.size < window:
-            signal = np.pad(signal, (0, window - signal.size), mode="edge")
-        signal = np.asarray(signal[:window], dtype=float)
+    for ep in range(episodes_i):
+        sim_rng = np.random.default_rng(int(seed_i + ep))
+        signal, label, _ = simulate_tearing_mode(steps=window_i, rng=sim_rng)
+        if signal.size < window_i:
+            signal = np.pad(signal, (0, window_i - signal.size), mode="edge")
+        signal = np.asarray(signal[:window_i], dtype=float)
 
         n1 = float(rng.uniform(0.03, 0.24))
         n2 = float(rng.uniform(0.02, 0.16))
@@ -348,7 +413,7 @@ def run_anomaly_alarm_campaign(
         }
 
         first_alarm = None
-        for k in range(window):
+        for k in range(window_i):
             perturbed_signal = signal[: k + 1].copy()
             perturbed_signal[-1] += float(rng.normal(0.0, 0.02))
             score = detector.score(perturbed_signal, toroidal)
@@ -368,14 +433,14 @@ def run_anomaly_alarm_campaign(
 
     tpr = float(true_positives / max(positives, 1))
     fpr = float(false_positives / max(negatives, 1))
-    p95_latency = float(np.percentile(latencies, 95)) if latencies else float(window)
+    p95_latency = float(np.percentile(latencies, 95)) if latencies else float(window_i)
     passes = bool(tpr >= 0.75 and fpr <= 0.35)
 
     return {
-        "seed": int(seed),
-        "episodes": episodes,
-        "window": window,
-        "threshold": float(threshold),
+        "seed": seed_i,
+        "episodes": episodes_i,
+        "window": window_i,
+        "threshold": threshold_f,
         "true_positive_rate": tpr,
         "false_positive_rate": fpr,
         "p95_alarm_latency_steps": p95_latency,

@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.control.disruption_predictor import (
     apply_bit_flip_fault,
@@ -82,3 +83,22 @@ def test_fault_noise_campaign_metrics_and_thresholds() -> None:
     assert 0.0 <= report["mean_abs_risk_error"]
     assert 0.0 <= report["p95_abs_risk_error"]
     assert 0.0 <= report["recovery_success_rate"] <= 1.0
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"episodes": 0}, "episodes"),
+        ({"window": 8}, "window"),
+        ({"noise_std": -0.1}, "noise_std"),
+        ({"noise_std": float("nan")}, "noise_std"),
+        ({"bit_flip_interval": 0}, "bit_flip_interval"),
+        ({"recovery_window": 0}, "recovery_window"),
+        ({"recovery_epsilon": 0.0}, "recovery_epsilon"),
+    ],
+)
+def test_fault_noise_campaign_rejects_invalid_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        run_fault_noise_campaign(**kwargs)

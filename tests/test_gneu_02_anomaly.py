@@ -12,6 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 import scpn_fusion.control.disruption_predictor as dp
 from scpn_fusion.control.disruption_predictor import (
@@ -67,6 +68,23 @@ def test_anomaly_alarm_campaign_outputs_expected_metrics() -> None:
         assert key in report
     assert 0.0 <= report["true_positive_rate"] <= 1.0
     assert 0.0 <= report["false_positive_rate"] <= 1.0
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"episodes": 0}, "episodes"),
+        ({"window": 8}, "window"),
+        ({"threshold": -0.1}, "threshold"),
+        ({"threshold": 1.1}, "threshold"),
+        ({"threshold": float("nan")}, "threshold"),
+    ],
+)
+def test_anomaly_alarm_campaign_rejects_invalid_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        run_anomaly_alarm_campaign(**kwargs)
 
 
 def test_predict_disruption_risk_safe_fallback_when_checkpoint_missing(
