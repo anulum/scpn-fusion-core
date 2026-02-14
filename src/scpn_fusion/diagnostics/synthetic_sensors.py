@@ -5,6 +5,10 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
+from __future__ import annotations
+
+from typing import Any, Optional
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -16,8 +20,21 @@ class SensorSuite:
     1. Magnetic Loops (Measure Flux Psi).
     2. Bolometer Cameras (Measure Line-Integrated Radiation).
     """
-    def __init__(self, kernel):
+    def __init__(
+        self,
+        kernel: Any,
+        *,
+        seed: Optional[int] = None,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        if seed is not None and rng is not None:
+            raise ValueError("Provide either seed or rng, not both.")
         self.kernel = kernel
+        self._rng = (
+            rng
+            if rng is not None
+            else (np.random.default_rng(int(seed)) if seed is not None else None)
+        )
         self.wall_R, self.wall_Z = self._generate_sensor_positions()
         
         # Bolometer Chords (Lines of Sight)
@@ -45,6 +62,12 @@ class SensorSuite:
             chords.append((origin, target))
         return chords
 
+    def _noise(self, scale: float) -> float:
+        sigma = float(max(scale, 0.0))
+        if self._rng is not None:
+            return float(self._rng.normal(0.0, sigma))
+        return float(np.random.normal(0.0, sigma))
+
     def measure_magnetics(self):
         """
         Returns Flux Psi at sensor locations.
@@ -65,7 +88,7 @@ class SensorSuite:
             
             val = self.kernel.Psi[iz, ir]
             # Add Sensor Noise
-            val += np.random.normal(0, 0.01) 
+            val += self._noise(0.01)
             measurements.append(val)
             
         return np.array(measurements)
@@ -102,7 +125,7 @@ class SensorSuite:
                     integral += val * dl
             
             # Add Noise (Photon shot noise)
-            integral += np.random.normal(0, 0.05 * integral if integral > 0 else 0.001)
+            integral += self._noise(0.05 * integral if integral > 0 else 0.001)
             signals.append(integral)
             
         return np.array(signals)
