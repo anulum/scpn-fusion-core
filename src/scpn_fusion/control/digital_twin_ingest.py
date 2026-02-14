@@ -253,12 +253,24 @@ def run_realtime_twin_session(
     Run deterministic digital-twin ingest+planning session and return summary.
     """
     machine_key = _normalize_machine(machine)
-    samples = max(int(samples), 32)
-    dt_ms = max(int(dt_ms), 1)
-    horizon = max(int(horizon), 4)
-    plan_every = max(int(plan_every), 1)
-    dropout = float(np.clip(chaos_dropout_prob, 0.0, 1.0))
-    noise_std = float(max(chaos_noise_std, 0.0))
+    samples = int(samples)
+    if samples < 32:
+        raise ValueError("samples must be >= 32.")
+    dt_ms = int(dt_ms)
+    if dt_ms < 1:
+        raise ValueError("dt_ms must be >= 1.")
+    horizon = int(horizon)
+    if horizon < 4:
+        raise ValueError("horizon must be >= 4.")
+    plan_every = int(plan_every)
+    if plan_every < 1:
+        raise ValueError("plan_every must be >= 1.")
+    dropout = float(chaos_dropout_prob)
+    if not np.isfinite(dropout) or dropout < 0.0 or dropout > 1.0:
+        raise ValueError("chaos_dropout_prob must be finite and in [0, 1].")
+    noise_std = float(chaos_noise_std)
+    if not np.isfinite(noise_std) or noise_std < 0.0:
+        raise ValueError("chaos_noise_std must be finite and >= 0.")
 
     stream = generate_emulated_stream(
         machine_key,

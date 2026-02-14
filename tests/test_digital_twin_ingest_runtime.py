@@ -68,3 +68,22 @@ def test_run_realtime_twin_session_is_deterministic_for_same_seed() -> None:
 def test_run_realtime_twin_session_rejects_invalid_machine() -> None:
     with pytest.raises(ValueError, match="machine must be"):
         run_realtime_twin_session("ITER", seed=1, samples=64)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"samples": 16}, "samples"),
+        ({"dt_ms": 0}, "dt_ms"),
+        ({"horizon": 3}, "horizon"),
+        ({"plan_every": 0}, "plan_every"),
+        ({"chaos_dropout_prob": 1.5}, "chaos_dropout_prob"),
+        ({"chaos_dropout_prob": float("nan")}, "chaos_dropout_prob"),
+        ({"chaos_noise_std": -0.1}, "chaos_noise_std"),
+    ],
+)
+def test_run_realtime_twin_session_rejects_invalid_runtime_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        run_realtime_twin_session("SPARC", seed=1, **kwargs)
