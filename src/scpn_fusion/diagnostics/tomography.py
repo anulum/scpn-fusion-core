@@ -5,87 +5,106 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-import numpy as np
+from __future__ import annotations
+
+from typing import Any
+
 import matplotlib.pyplot as plt
-from scipy.optimize import lsq_linear
+import numpy as np
+
+try:
+    from scipy.optimize import lsq_linear
+except Exception:  # pragma: no cover - optional dependency path
+    lsq_linear = None
+
 
 class PlasmaTomography:
     """
-    Reconstructs 2D Emissivity Profile from 1D Chord Measurements.
-    Uses Tikhonov Regularization (Pixel-based inversion).
+    Reconstruct 2D emissivity profile from line-integrated chord signals.
     """
-    def __init__(self, sensors, grid_res=20):
+
+    def __init__(
+        self,
+        sensors: Any,
+        grid_res: int = 20,
+        *,
+        lambda_reg: float = 0.1,
+        verbose: bool = True,
+    ) -> None:
         self.sensors = sensors
-        self.res = grid_res
-        
-        # Reconstruction Grid (Coarser than physics grid)
-        self.R_rec = np.linspace(sensors.kernel.R[0], sensors.kernel.R[-1], grid_res)
-        self.Z_rec = np.linspace(sensors.kernel.Z[0], sensors.kernel.Z[-1], grid_res)
-        self.n_pixels = grid_res * grid_res
-        
-        # Build Geometry Matrix (A)
-        # Signal_i = Sum_j (A_ij * Pixel_j)
+        self.res = max(int(grid_res), 4)
+        self.lambda_reg = max(float(lambda_reg), 0.0)
+        self.verbose = bool(verbose)
+
+        self.R_rec = np.linspace(sensors.kernel.R[0], sensors.kernel.R[-1], self.res)
+        self.Z_rec = np.linspace(sensors.kernel.Z[0], sensors.kernel.Z[-1], self.res)
+        self.n_pixels = self.res * self.res
         self.A = self._build_geometry_matrix()
-        
-    def _build_geometry_matrix(self):
-        print("[Tomography] Building Geometry Matrix A...")
+
+    def _log(self, message: str) -> None:
+        if self.verbose:
+            print(message)
+
+    def _build_geometry_matrix(self) -> np.ndarray:
+        self._log("[Tomography] Building Geometry Matrix A...")
         n_chords = len(self.sensors.bolo_chords)
-        A = np.zeros((n_chords, self.n_pixels))
-        
-        # For each chord
+        A = np.zeros((n_chords, self.n_pixels), dtype=np.float64)
+
+        dr = float(self.R_rec[1] - self.R_rec[0])
+        dz = float(self.Z_rec[1] - self.Z_rec[0])
         for i, (start, end) in enumerate(self.sensors.bolo_chords):
-            # Ray trace through reconstruction grid
-            # Simplified: Check which pixels the line intersects
-            # Here using sample points
             num_samples = 100
             r_samples = np.linspace(start[0], end[0], num_samples)
             z_samples = np.linspace(start[1], end[1], num_samples)
-            dl = np.linalg.norm(end - start) / num_samples
-            
+            dl = float(np.linalg.norm(np.asarray(end) - np.asarray(start)) / num_samples)
+
             for k in range(num_samples):
-                r, z = r_samples[k], z_samples[k]
-                
-                # Find pixel index
-                ir = int((r - self.R_rec[0]) / (self.R_rec[1]-self.R_rec[0]))
-                iz = int((z - self.Z_rec[0]) / (self.Z_rec[1]-self.Z_rec[0]))
-                
+                r = float(r_samples[k])
+                z = float(z_samples[k])
+                ir = int((r - float(self.R_rec[0])) / dr)
+                iz = int((z - float(self.Z_rec[0])) / dz)
                 if 0 <= ir < self.res and 0 <= iz < self.res:
                     pixel_idx = iz * self.res + ir
                     A[i, pixel_idx] += dl
-                    
+
         return A
 
-    def reconstruct(self, signals):
+    def reconstruct(self, signals: np.ndarray) -> np.ndarray:
         """
-        Solves: min ||Ax - b||^2 + lambda * ||Lx||^2
+        Solve non-negative regularized inversion from chord signals.
         """
-        # Regularization (Smoothness)
-        lambda_reg = 0.1
-        
-        # Laplacian Matrix L (Finite difference of pixels)
-        # Hard to construct for 1D flattened vector, so we use Identity (Ridge Regression)
-        # min ||Ax - b||^2 + lambda * ||x||^2
-        
-        # Augmented System
-        # [ A          ] [ x ]   [ b ]
-        # [ sqrt(lam)I ]         [ 0 ]
-        
-        A_aug = np.vstack([self.A, np.sqrt(lambda_reg) * np.eye(self.n_pixels)])
-        b_aug = np.concatenate([signals, np.zeros(self.n_pixels)])
-        
-        # Solve Least Squares
-        # Use lsq_linear to enforce non-negativity (Emissivity > 0)
-        res = lsq_linear(A_aug, b_aug, bounds=(0, np.inf), tol=1e-4)
-        
-        return res.x.reshape((self.res, self.res))
+        b = np.asarray(signals, dtype=np.float64).reshape(-1)
+        if b.size != self.A.shape[0]:
+            raise ValueError(
+                f"signals length mismatch: expected {self.A.shape[0]}, got {b.size}."
+            )
+        if not np.all(np.isfinite(b)):
+            raise ValueError("signals must be finite.")
 
-    def plot_reconstruction(self, ground_truth, reconstruction):
+        lam = self.lambda_reg
+        A_aug = np.vstack([self.A, np.sqrt(lam) * np.eye(self.n_pixels, dtype=np.float64)])
+        b_aug = np.concatenate([b, np.zeros(self.n_pixels, dtype=np.float64)])
+
+        if lsq_linear is not None:
+            res = lsq_linear(A_aug, b_aug, bounds=(0.0, np.inf), tol=1e-4)
+            x = np.asarray(res.x, dtype=np.float64)
+        else:
+            x, *_ = np.linalg.lstsq(A_aug, b_aug, rcond=None)
+            x = np.clip(np.asarray(x, dtype=np.float64), 0.0, np.inf)
+
+        return x.reshape((self.res, self.res))
+
+    def plot_reconstruction(
+        self,
+        ground_truth: np.ndarray,
+        reconstruction: np.ndarray,
+    ):
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-        
+
         ax1.set_title("Ground Truth (Phantom)")
-        ax1.imshow(ground_truth, origin='lower', cmap='hot')
-        
+        ax1.imshow(np.asarray(ground_truth, dtype=np.float64), origin="lower", cmap="hot")
+
         ax2.set_title("Tomographic Reconstruction")
-        ax2.imshow(reconstruction, origin='lower', cmap='hot')
-        
+        ax2.imshow(np.asarray(reconstruction, dtype=np.float64), origin="lower", cmap="hot")
+
         return fig
