@@ -181,6 +181,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-044 | P1 | Validation | Harden GNEU-01 benchmark campaign with strict runtime input guards | `validation/gneu_01_benchmark.py`, `tests/test_gneu_01_benchmark.py` | GNEU-01 benchmark runner now rejects invalid/non-finite campaign parameters (`episodes`, `window`, `recovery_window_steps`, `recovery_epsilon`, `dt_ms`) with deterministic errors (no silent coercion), while preserving deterministic agreement/recovery metrics for valid runs | `python -m pytest tests/test_gneu_01_benchmark.py -v`, `python -m pytest tests/ -q -x` |
 | H7-045 | P1 | Control | Harden digital-twin ingest runtime with strict session and chaos-parameter input guards | `src/scpn_fusion/control/digital_twin_ingest.py`, `tests/test_digital_twin_ingest_runtime.py` | Realtime digital-twin session runner now rejects invalid/non-finite session sizing and chaos parameters (`samples`, `dt_ms`, `horizon`, `plan_every`, `chaos_dropout_prob`, `chaos_noise_std`) with deterministic errors (no silent coercion), while preserving deterministic planning metrics for valid runs | `python -m pytest tests/test_digital_twin_ingest_runtime.py tests/test_gdep_01_digital_twin_hook.py -v`, `python -m pytest tests/ -q -x` |
 | H7-046 | P1 | Control | Harden digital-twin helper surfaces with strict stream/buffer/horizon input guards | `src/scpn_fusion/control/digital_twin_ingest.py`, `tests/test_gdep_01_digital_twin_hook.py`, `tests/test_digital_twin_ingest_runtime.py` | Digital-twin helper paths now reject invalid stream cadence, ring-buffer capacity, and scenario-horizon values (`samples`, `dt_ms`, `max_buffer`, `horizon`) with deterministic errors (no silent coercion), while preserving deterministic planning behavior and session metrics for valid runs | `python -m pytest tests/test_gdep_01_digital_twin_hook.py tests/test_digital_twin_ingest_runtime.py -v`, `python -m pytest tests/ -q -x` |
+| H7-047 | P1 | Validation | Harden GDEP-01 campaign interfaces with strict chaos/runtime input guards | `validation/gdep_01_digital_twin_hook.py`, `tests/test_gdep_01_digital_twin_hook.py` | GDEP-01 campaign paths now reject invalid/non-finite campaign and chaos parameters (`samples_per_machine`, `chaos_dropout_prob`, `chaos_noise_std`) with deterministic errors (no silent coercion/metadata clipping), while preserving seeded deterministic campaign outcomes for valid runs | `python -m pytest tests/test_gdep_01_digital_twin_hook.py tests/test_digital_twin_ingest_runtime.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -188,8 +189,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 92
-- Remaining in deferred pool after queue selection: 21
+- Post-S4 hardening tasks delivered: 93
+- Remaining in deferred pool after queue selection: 20
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -304,4 +305,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-044`
 - Completed: `H7-045`
 - Completed: `H7-046`
-- Next active task: `H7-047` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-047`
+- Next active task: `H7-048` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

@@ -92,3 +92,20 @@ def test_gdep_01_chaos_campaign_is_deterministic_for_seed() -> None:
     assert a["passes_thresholds"] == b["passes_thresholds"]
     assert a["machines"][0]["planning_success_rate"] == b["machines"][0]["planning_success_rate"]
     assert a["machines"][1]["mean_risk"] == b["machines"][1]["mean_risk"]
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"samples_per_machine": 16}, "samples_per_machine"),
+        ({"chaos_dropout_prob": 1.2}, "chaos_dropout_prob"),
+        ({"chaos_dropout_prob": float("nan")}, "chaos_dropout_prob"),
+        ({"chaos_noise_std": -0.1}, "chaos_noise_std"),
+        ({"chaos_noise_std": float("inf")}, "chaos_noise_std"),
+    ],
+)
+def test_gdep_01_campaign_rejects_invalid_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        gdep_01_digital_twin_hook.run_campaign(seed=1, **kwargs)

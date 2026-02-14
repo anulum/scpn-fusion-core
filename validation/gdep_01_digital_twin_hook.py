@@ -32,8 +32,12 @@ def _apply_chaos_monkey(
 ):
     from scpn_fusion.control.digital_twin_ingest import TelemetryPacket
 
-    drop = float(np.clip(dropout_prob, 0.0, 1.0))
-    sigma = max(float(gaussian_noise_std), 0.0)
+    drop = float(dropout_prob)
+    if not np.isfinite(drop) or drop < 0.0 or drop > 1.0:
+        raise ValueError("chaos_dropout_prob must be finite and in [0, 1].")
+    sigma = float(gaussian_noise_std)
+    if not np.isfinite(sigma) or sigma < 0.0:
+        raise ValueError("chaos_noise_std must be finite and >= 0.")
 
     def channel(value: float) -> float:
         if drop > 0.0 and float(rng.random()) < drop:
@@ -105,6 +109,16 @@ def run_campaign(
     chaos_dropout_prob: float = 0.0,
     chaos_noise_std: float = 0.0,
 ) -> dict[str, Any]:
+    samples_per_machine = int(samples_per_machine)
+    if samples_per_machine < 32:
+        raise ValueError("samples_per_machine must be >= 32.")
+    dropout = float(chaos_dropout_prob)
+    if not np.isfinite(dropout) or dropout < 0.0 or dropout > 1.0:
+        raise ValueError("chaos_dropout_prob must be finite and in [0, 1].")
+    noise_std = float(chaos_noise_std)
+    if not np.isfinite(noise_std) or noise_std < 0.0:
+        raise ValueError("chaos_noise_std must be finite and >= 0.")
+
     t0 = time.perf_counter()
     machines = ["NSTX-U", "SPARC"]
     per_machine = [
@@ -112,15 +126,15 @@ def run_campaign(
             machines[0],
             seed=seed,
             samples=samples_per_machine,
-            chaos_dropout_prob=chaos_dropout_prob,
-            chaos_noise_std=chaos_noise_std,
+            chaos_dropout_prob=dropout,
+            chaos_noise_std=noise_std,
         ),
         _run_machine(
             machines[1],
             seed=seed + 1,
             samples=samples_per_machine,
-            chaos_dropout_prob=chaos_dropout_prob,
-            chaos_noise_std=chaos_noise_std,
+            chaos_dropout_prob=dropout,
+            chaos_noise_std=noise_std,
         ),
     ]
     passes = bool(all(m["passes_thresholds"] for m in per_machine))
@@ -128,8 +142,8 @@ def run_campaign(
     return {
         "seed": int(seed),
         "samples_per_machine": int(samples_per_machine),
-        "chaos_dropout_prob": float(np.clip(chaos_dropout_prob, 0.0, 1.0)),
-        "chaos_noise_std": float(max(chaos_noise_std, 0.0)),
+        "chaos_dropout_prob": dropout,
+        "chaos_noise_std": noise_std,
         "thresholds": {
             "min_planning_success_rate": 0.90,
             "max_mean_risk": 0.75,
