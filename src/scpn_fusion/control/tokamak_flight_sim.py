@@ -35,8 +35,14 @@ class FirstOrderActuator:
         u_min: float = -1.0e9,
         u_max: float = 1.0e9,
     ) -> None:
-        self.tau_s = max(float(tau_s), 1e-9)
-        self.dt_s = max(float(dt_s), 1e-9)
+        tau_s = float(tau_s)
+        dt_s = float(dt_s)
+        if not np.isfinite(tau_s) or tau_s <= 0.0:
+            raise ValueError("tau_s must be finite and > 0.")
+        if not np.isfinite(dt_s) or dt_s <= 0.0:
+            raise ValueError("dt_s must be finite and > 0.")
+        self.tau_s = tau_s
+        self.dt_s = dt_s
         self.u_min = float(u_min)
         self.u_max = float(u_max)
         self.state = 0.0
@@ -73,7 +79,10 @@ class IsoFluxController:
             'ctrl_Z_cmd': [],
             'ctrl_Z_applied': [],
         }
-        self.control_dt_s = max(float(control_dt_s), 1e-6)
+        control_dt_s = float(control_dt_s)
+        if not np.isfinite(control_dt_s) or control_dt_s <= 0.0:
+            raise ValueError("control_dt_s must be finite and > 0.")
+        self.control_dt_s = control_dt_s
         
         # PID Gains for Position Control
         # Radial Control (Horizontal) -> Controlled by Outer Coils (PF2, PF3, PF4)

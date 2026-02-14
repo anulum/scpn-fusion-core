@@ -12,7 +12,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from scpn_fusion.control.tokamak_flight_sim import run_flight_sim
+from scpn_fusion.control.tokamak_flight_sim import (
+    FirstOrderActuator,
+    IsoFluxController,
+    run_flight_sim,
+)
 
 
 class _DummyKernel:
@@ -133,4 +137,21 @@ def test_run_flight_sim_rejects_invalid_shot_duration() -> None:
             save_plot=False,
             verbose=False,
             kernel_factory=_DummyKernel,
+        )
+
+
+def test_first_order_actuator_rejects_invalid_params() -> None:
+    with pytest.raises(ValueError, match="tau_s"):
+        FirstOrderActuator(tau_s=0.0, dt_s=0.05)
+    with pytest.raises(ValueError, match="dt_s"):
+        FirstOrderActuator(tau_s=0.05, dt_s=0.0)
+
+
+def test_isoflux_controller_rejects_invalid_control_dt() -> None:
+    with pytest.raises(ValueError, match="control_dt_s"):
+        IsoFluxController(
+            config_file="dummy.json",
+            kernel_factory=_DummyKernel,
+            verbose=False,
+            control_dt_s=0.0,
         )

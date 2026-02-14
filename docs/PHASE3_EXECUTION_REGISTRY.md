@@ -187,6 +187,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-050 | P1 | Control | Harden TORAX-hybrid campaign with strict episode and per-episode-step input guards | `src/scpn_fusion/control/torax_hybrid_loop.py`, `tests/test_gai_02_torax_hybrid.py` | TORAX-hybrid campaign now rejects invalid runtime horizon parameters (`episodes`, `steps_per_episode`) with deterministic errors (no silent coercion), while preserving deterministic avoidance/parity/latency behavior for valid campaigns | `python -m pytest tests/test_gai_02_torax_hybrid.py -v`, `python -m pytest tests/ -q -x` |
 | H7-051 | P1 | Control | Harden tokamak digital-twin runtime with strict timestep-count input guard | `src/scpn_fusion/control/tokamak_digital_twin.py`, `tests/test_tokamak_digital_twin.py` | Digital-twin runtime now rejects invalid `time_steps` values with deterministic errors (no silent coercion to minimum), while preserving deterministic seeded summaries, surrogate hooks, and RNG-isolation behavior for valid runs | `python -m pytest tests/test_tokamak_digital_twin.py -v`, `python -m pytest tests/ -q -x` |
 | H7-052 | P1 | Control | Harden tokamak flight-sim runtime with strict shot-duration input guard | `src/scpn_fusion/control/tokamak_flight_sim.py`, `tests/test_tokamak_flight_sim.py` | Flight-sim runtime now rejects invalid `shot_duration` values with deterministic errors (no silent coercion to minimum), while preserving deterministic seeded summary and actuator-lag metrics for valid runs | `python -m pytest tests/test_tokamak_flight_sim.py -v`, `python -m pytest tests/ -q -x` |
+| H7-053 | P1 | Control | Harden tokamak flight-sim actuator/control timebase constructors with strict finite-positive guards | `src/scpn_fusion/control/tokamak_flight_sim.py`, `tests/test_tokamak_flight_sim.py` | Flight-sim actuator and controller constructors now reject invalid/non-finite `tau_s`, `dt_s`, and `control_dt_s` values with deterministic errors (no silent coercion), while preserving deterministic runtime behavior for valid control loops | `python -m pytest tests/test_tokamak_flight_sim.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -194,8 +195,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 98
-- Remaining in deferred pool after queue selection: 15
+- Post-S4 hardening tasks delivered: 99
+- Remaining in deferred pool after queue selection: 14
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -316,4 +317,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-050`
 - Completed: `H7-051`
 - Completed: `H7-052`
-- Next active task: `H7-053` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-053`
+- Next active task: `H7-054` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
