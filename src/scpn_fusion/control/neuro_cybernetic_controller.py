@@ -10,7 +10,7 @@ from __future__ import annotations
 import sys
 from collections import deque
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -183,20 +183,37 @@ class NeuroCyberneticController:
     Replaces PID loops with push-pull spiking populations.
     """
 
-    def __init__(self, config_file: str, seed: int = 42) -> None:
-        fusion_kernel_cls = _resolve_fusion_kernel()
+    def __init__(
+        self,
+        config_file: str,
+        seed: int = 42,
+        *,
+        shot_duration: int = SHOT_DURATION,
+        kernel_factory: Optional[Callable[[str], Any]] = None,
+    ) -> None:
+        if int(shot_duration) <= 0:
+            raise ValueError("shot_duration must be > 0")
+        fusion_kernel_cls = kernel_factory if kernel_factory is not None else _resolve_fusion_kernel()
         self.kernel = fusion_kernel_cls(config_file)
         self.seed = int(seed)
-        self.history: Dict[str, list[float]] = {
+        self.shot_duration = int(shot_duration)
+        self.history: Dict[str, list[float]] = {}
+        self.brain_R: Optional[SpikingControllerPool] = None
+        self.brain_Z: Optional[SpikingControllerPool] = None
+        self._reset_history()
+
+    def _reset_history(self) -> None:
+        self.history = {
             "t": [],
             "Ip": [],
             "R_axis": [],
             "Z_axis": [],
+            "Err_R": [],
+            "Err_Z": [],
             "Control_R": [],
+            "Control_Z": [],
             "Spike_Rates": [],
         }
-        self.brain_R: Optional[SpikingControllerPool] = None
-        self.brain_Z: Optional[SpikingControllerPool] = None
 
     def initialize_brains(self, use_quantum: bool = False) -> None:
         self.brain_R = SpikingControllerPool(
@@ -214,28 +231,54 @@ class NeuroCyberneticController:
             seed=self.seed + 2,
         )
 
-    def run_shot(self) -> None:
+    def run_shot(
+        self,
+        *,
+        save_plot: bool = True,
+        verbose: bool = True,
+        output_path: Optional[str] = None,
+    ) -> Dict[str, Any]:
         self.initialize_brains(use_quantum=False)
-        self._execute_simulation("Neuro-Cybernetic (Classical SNN)")
+        return self._execute_simulation(
+            "Neuro-Cybernetic (Classical SNN)",
+            mode="classical",
+            save_plot=save_plot,
+            verbose=verbose,
+            output_path=output_path,
+        )
 
-    def run_quantum_shot(self) -> None:
+    def run_quantum_shot(
+        self,
+        *,
+        save_plot: bool = True,
+        verbose: bool = True,
+        output_path: Optional[str] = None,
+    ) -> Dict[str, Any]:
         self.initialize_brains(use_quantum=True)
-        self._execute_simulation("Quantum-Neuro Hybrid (QNN)")
+        return self._execute_simulation(
+            "Quantum-Neuro Hybrid (QNN)",
+            mode="quantum",
+            save_plot=save_plot,
+            verbose=verbose,
+            output_path=output_path,
+        )
 
-    def _execute_simulation(self, title: str) -> None:
+    def _execute_simulation(
+        self,
+        title: str,
+        *,
+        mode: str,
+        save_plot: bool,
+        verbose: bool,
+        output_path: Optional[str],
+    ) -> Dict[str, Any]:
         assert self.brain_R is not None and self.brain_Z is not None
-        print(f"--- {title.upper()} PLASMA INTERFACE ---")
-        print("Initializing Stochastic Neural Network (SNN)...")
-        print(f"Neurons: {self.brain_R.n_neurons * 4} (Push-Pull Configuration)")
+        if verbose:
+            print(f"--- {title.upper()} PLASMA INTERFACE ---")
+            print("Initializing Stochastic Neural Network (SNN)...")
+            print(f"Neurons: {self.brain_R.n_neurons * 4} (Push-Pull Configuration)")
 
-        self.history = {
-            "t": [],
-            "Ip": [],
-            "R_axis": [],
-            "Z_axis": [],
-            "Control_R": [],
-            "Spike_Rates": [],
-        }
+        self._reset_history()
 
         self.kernel.solve_equilibrium()
 
@@ -246,8 +289,8 @@ class NeuroCyberneticController:
         for coil in coils:
             coil.setdefault("current", 0.0)
 
-        for t in range(SHOT_DURATION):
-            target_ip = 5.0 + (10.0 * t / SHOT_DURATION)
+        for t in range(self.shot_duration):
+            target_ip = 5.0 + (10.0 * t / self.shot_duration)
             physics_cfg["plasma_current_target"] = target_ip
 
             idx_max = int(np.argmax(self.kernel.Psi))
@@ -271,20 +314,61 @@ class NeuroCyberneticController:
             self.history["Ip"].append(float(target_ip))
             self.history["R_axis"].append(curr_r)
             self.history["Z_axis"].append(curr_z)
+            self.history["Err_R"].append(float(err_r))
+            self.history["Err_Z"].append(float(err_z))
             self.history["Control_R"].append(ctrl_r)
+            self.history["Control_Z"].append(ctrl_z)
             self.history["Spike_Rates"].append(
                 float(self.brain_R.last_rate_pos - self.brain_R.last_rate_neg)
             )
 
-            print(
-                f"T={t}: Pos=({curr_r:.2f}, {curr_z:.2f}) | "
-                f"Err=({err_r:.3f}, {err_z:.3f}) | "
-                f"Brain_Out=({ctrl_r:.3f}, {ctrl_z:.3f})"
-            )
+            if verbose:
+                print(
+                    f"T={t}: Pos=({curr_r:.2f}, {curr_z:.2f}) | "
+                    f"Err=({err_r:.3f}, {err_z:.3f}) | "
+                    f"Brain_Out=({ctrl_r:.3f}, {ctrl_z:.3f})"
+                )
 
-        self.visualize(title)
+        plot_saved = False
+        plot_error: Optional[str] = None
+        if save_plot:
+            try:
+                self.visualize(title, output_path=output_path, verbose=verbose)
+                plot_saved = True
+            except Exception as exc:
+                plot_error = str(exc)
+                if verbose:
+                    print(f"Plot export skipped due to error: {exc}")
 
-    def visualize(self, title: str) -> None:
+        err_r = np.asarray(self.history["Err_R"], dtype=np.float64)
+        err_z = np.asarray(self.history["Err_Z"], dtype=np.float64)
+        ctrl_r = np.asarray(self.history["Control_R"], dtype=np.float64)
+        ctrl_z = np.asarray(self.history["Control_Z"], dtype=np.float64)
+        summary: Dict[str, Any] = {
+            "seed": self.seed,
+            "steps": int(self.shot_duration),
+            "mode": str(mode),
+            "backend_r": self.brain_R.backend,
+            "backend_z": self.brain_Z.backend,
+            "final_r": float(self.history["R_axis"][-1]),
+            "final_z": float(self.history["Z_axis"][-1]),
+            "mean_abs_err_r": float(np.mean(np.abs(err_r))),
+            "mean_abs_err_z": float(np.mean(np.abs(err_z))),
+            "max_abs_control_r": float(np.max(np.abs(ctrl_r))),
+            "max_abs_control_z": float(np.max(np.abs(ctrl_z))),
+            "mean_spike_imbalance": float(np.mean(self.history["Spike_Rates"])),
+            "plot_saved": bool(plot_saved),
+            "plot_error": plot_error,
+        }
+        return summary
+
+    def visualize(
+        self,
+        title: str,
+        *,
+        output_path: Optional[str] = None,
+        verbose: bool = True,
+    ) -> str:
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
         ax1.set_title(f"{title} Control")
@@ -302,10 +386,44 @@ class NeuroCyberneticController:
         ax2.set_xlabel("Time Step")
         ax2.legend()
 
-        filename = f"{title.replace(' ', '_')}_Result.png"
+        filename = (
+            output_path
+            if output_path is not None
+            else f"{title.replace(' ', '_')}_Result.png"
+        )
         plt.tight_layout()
         plt.savefig(filename)
-        print(f"Analysis saved: {filename}")
+        plt.close(fig)
+        if verbose:
+            print(f"Analysis saved: {filename}")
+        return filename
+
+
+def run_neuro_cybernetic_control(
+    *,
+    config_file: str,
+    shot_duration: int = SHOT_DURATION,
+    seed: int = 42,
+    quantum: bool = False,
+    save_plot: bool = False,
+    verbose: bool = False,
+    output_path: Optional[str] = None,
+    kernel_factory: Optional[Callable[[str], Any]] = None,
+) -> Dict[str, Any]:
+    """Run neuro-cybernetic control in deterministic non-interactive mode."""
+    controller = NeuroCyberneticController(
+        config_file,
+        seed=seed,
+        shot_duration=shot_duration,
+        kernel_factory=kernel_factory,
+    )
+    if quantum:
+        return controller.run_quantum_shot(
+            save_plot=save_plot, verbose=verbose, output_path=output_path
+        )
+    return controller.run_shot(
+        save_plot=save_plot, verbose=verbose, output_path=output_path
+    )
 
 
 if __name__ == "__main__":

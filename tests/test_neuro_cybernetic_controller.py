@@ -13,7 +13,34 @@ import numpy as np
 import pytest
 
 import scpn_fusion.control.neuro_cybernetic_controller as controller_mod
-from scpn_fusion.control.neuro_cybernetic_controller import SpikingControllerPool
+from scpn_fusion.control.neuro_cybernetic_controller import (
+    SpikingControllerPool,
+    run_neuro_cybernetic_control,
+)
+
+
+class _DummyKernel:
+    def __init__(self, _config_file: str) -> None:
+        self.cfg = {
+            "physics": {"plasma_current_target": 5.0},
+            "coils": [{"current": 0.0} for _ in range(5)],
+        }
+        self.R = np.linspace(5.9, 6.5, 25)
+        self.Z = np.linspace(-0.3, 0.3, 25)
+        self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
+        self.Psi = np.zeros((25, 25), dtype=np.float64)
+        self.solve_equilibrium()
+
+    def solve_equilibrium(self) -> None:
+        radial_drive = float(self.cfg["coils"][2]["current"])
+        vertical_drive = float(self.cfg["coils"][4]["current"]) - float(
+            self.cfg["coils"][0]["current"]
+        )
+        center_r = 6.2 + 0.07 * np.tanh(radial_drive / 20.0)
+        center_z = 0.0 + 0.05 * np.tanh(vertical_drive / 20.0)
+        self.Psi = 1.0 - (
+            (self.RR - center_r) ** 2 + ((self.ZZ - center_z) / 1.4) ** 2
+        )
 
 
 @pytest.fixture(autouse=True)
@@ -62,3 +89,74 @@ def test_spiking_pool_push_pull_sign_response() -> None:
 def test_spiking_pool_exposes_backend_name() -> None:
     pool = SpikingControllerPool(n_neurons=8, gain=1.0, tau_window=4, seed=11)
     assert pool.backend == "numpy_lif"
+
+
+def test_run_neuro_cybernetic_control_returns_finite_summary_without_plot() -> None:
+    summary = run_neuro_cybernetic_control(
+        config_file="dummy.json",
+        shot_duration=14,
+        seed=101,
+        quantum=False,
+        save_plot=False,
+        verbose=False,
+        kernel_factory=_DummyKernel,
+    )
+    for key in (
+        "seed",
+        "steps",
+        "mode",
+        "backend_r",
+        "backend_z",
+        "final_r",
+        "final_z",
+        "mean_abs_err_r",
+        "mean_abs_err_z",
+        "max_abs_control_r",
+        "max_abs_control_z",
+        "mean_spike_imbalance",
+        "plot_saved",
+    ):
+        assert key in summary
+    assert summary["seed"] == 101
+    assert summary["steps"] == 14
+    assert summary["mode"] == "classical"
+    assert summary["backend_r"] == "numpy_lif"
+    assert summary["backend_z"] == "numpy_lif"
+    assert summary["plot_saved"] is False
+    assert np.isfinite(summary["final_r"])
+    assert np.isfinite(summary["final_z"])
+
+
+def test_run_neuro_cybernetic_control_is_deterministic_for_seed() -> None:
+    kwargs = dict(
+        config_file="dummy.json",
+        shot_duration=12,
+        seed=77,
+        quantum=False,
+        save_plot=False,
+        verbose=False,
+        kernel_factory=_DummyKernel,
+    )
+    a = run_neuro_cybernetic_control(**kwargs)
+    b = run_neuro_cybernetic_control(**kwargs)
+    for key in (
+        "final_r",
+        "final_z",
+        "mean_abs_err_r",
+        "mean_abs_err_z",
+        "max_abs_control_r",
+        "max_abs_control_z",
+        "mean_spike_imbalance",
+    ):
+        assert a[key] == pytest.approx(b[key], rel=0.0, abs=0.0)
+
+
+def test_run_neuro_cybernetic_control_rejects_nonpositive_duration() -> None:
+    with pytest.raises(ValueError, match="shot_duration"):
+        run_neuro_cybernetic_control(
+            config_file="dummy.json",
+            shot_duration=0,
+            save_plot=False,
+            verbose=False,
+            kernel_factory=_DummyKernel,
+        )
