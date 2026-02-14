@@ -138,8 +138,12 @@ def run_temhd_experiment(
         raise ValueError(
             "flux_min_MW_m2/flux_max_MW_m2 must be finite with flux_min_MW_m2 < flux_max_MW_m2."
         )
-    n_flux = max(int(flux_points), 2)
-    settle_steps = max(int(settle_steps_per_flux), 1)
+    n_flux = int(flux_points)
+    if n_flux < 2:
+        raise ValueError("flux_points must be >= 2.")
+    settle_steps = int(settle_steps_per_flux)
+    if settle_steps < 1:
+        raise ValueError("settle_steps_per_flux must be >= 1.")
     dt = float(dt_s)
     if not np.isfinite(dt) or dt <= 0.0:
         raise ValueError("dt_s must be finite and > 0.")

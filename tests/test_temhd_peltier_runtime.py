@@ -70,3 +70,18 @@ def test_run_temhd_experiment_rejects_invalid_flux_range() -> None:
             save_plot=False,
             verbose=False,
         )
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"flux_points": 1}, "flux_points"),
+        ({"settle_steps_per_flux": 0}, "settle_steps_per_flux"),
+        ({"dt_s": 0.0}, "dt_s"),
+    ],
+)
+def test_run_temhd_experiment_rejects_invalid_runtime_parameters(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        run_temhd_experiment(save_plot=False, verbose=False, **kwargs)
