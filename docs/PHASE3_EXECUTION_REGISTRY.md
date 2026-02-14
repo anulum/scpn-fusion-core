@@ -137,6 +137,9 @@ derive the imported 85-task Phase 3 backlog.
 |---|---|---|---|---|---|---|
 | H7-001 | P1 | Control | Add reduced `Z_eff` impurity-dilution and calibrated CQ time-constant lane in SPI mitigation model | `src/scpn_fusion/control/spi_mitigation.py`, `tests/test_spi_mitigation.py` | SPI path exposes deterministic `Z_eff` + `tau_CQ` diagnostics, preserves existing demo behavior, and validates monotonic impurity/quench trends | `python -m pytest tests/test_spi_mitigation.py -v` |
 | H7-002 | P1 | Control | Add optional gyrokinetic-surrogate diffusivity hook in digital twin runtime | `src/scpn_fusion/control/tokamak_digital_twin.py`, `tests/test_tokamak_digital_twin.py` | Digital twin accepts deterministic surrogate correction map with strict shape guards and preserves default deterministic behavior when unset | `python -m pytest tests/test_tokamak_digital_twin.py tests/test_gdep_01_digital_twin_hook.py -v` |
+| H7-003 | P1 | Control | Harden fusion-control-room runtime with deterministic non-interactive execution lane and optional kernel-backed Psi ingestion | `src/scpn_fusion/control/fusion_control_room.py`, `tests/test_fusion_control_room.py` | Control-room loop returns deterministic summary metrics in CI-safe mode, supports optional kernel-provided Psi fields, and keeps GIF/report export optional | `python -m pytest tests/test_fusion_control_room.py -v` |
+| H7-004 | P1 | Nuclear | Add rear-albedo reflection boundary control to blanket transport lane and validate monotonic TBR behavior | `src/scpn_fusion/nuclear/blanket_neutronics.py`, `tests/test_blanket_neutronics.py` | 1D transport accepts bounded rear albedo parameter, rejects invalid values, and tests lock expected TBR reflection trend | `python -m pytest tests/test_blanket_neutronics.py -v` |
+| H7-005 | P1 | Control | Add deterministic NumPy LIF fallback backend for neuro-cybernetic spiking pool when sc-neurocore is unavailable | `src/scpn_fusion/control/neuro_cybernetic_controller.py`, `tests/test_neuro_cybernetic_controller.py` | Spiking pool preserves push-pull control semantics with deterministic fallback dynamics and backend visibility without optional dependency hard-fail | `python -m pytest tests/test_neuro_cybernetic_controller.py -v` |
 
 ## Task Accounting
 
@@ -144,8 +147,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 48
-- Remaining in deferred pool after queue selection: 65
+- Post-S4 hardening tasks delivered: 51
+- Remaining in deferred pool after queue selection: 62
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -216,4 +219,7 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H6-009`
 - Completed: `H7-001`
 - Completed: `H7-002`
-- Next active task: `H7-003` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-003`
+- Completed: `H7-004`
+- Completed: `H7-005`
+- Next active task: `H7-006` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

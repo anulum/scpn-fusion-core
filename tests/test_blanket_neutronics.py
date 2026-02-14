@@ -14,6 +14,7 @@ from pathlib import Path
 import sys
 
 import numpy as np
+import pytest
 
 from scpn_fusion.engineering.cad_raytrace import estimate_surface_loading
 
@@ -73,6 +74,23 @@ def test_higher_li6_enrichment_increases_volumetric_tbr() -> None:
     )
 
     assert high_report.tbr > low_report.tbr
+
+
+def test_rear_albedo_increases_1d_tbr() -> None:
+    blanket = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.9)
+    phi_sink = blanket.solve_transport(incident_flux=1.0e14, rear_albedo=0.0)
+    phi_reflect = blanket.solve_transport(incident_flux=1.0e14, rear_albedo=0.7)
+    tbr_sink, _ = blanket.calculate_tbr(phi_sink)
+    tbr_reflect, _ = blanket.calculate_tbr(phi_reflect)
+    assert tbr_reflect > tbr_sink
+
+
+def test_rear_albedo_requires_valid_range() -> None:
+    blanket = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.9)
+    with pytest.raises(ValueError, match="rear_albedo"):
+        blanket.solve_transport(rear_albedo=-0.1)
+    with pytest.raises(ValueError, match="rear_albedo"):
+        blanket.solve_transport(rear_albedo=1.0)
 
 
 def test_cad_surface_loading_smoke() -> None:

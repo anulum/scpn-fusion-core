@@ -45,11 +45,15 @@ class BreedingBlanket:
         # Multiplier gain (neutrons per (n,2n) reaction)
         self.multiplier_gain = 1.8 
 
-    def solve_transport(self, incident_flux=1e14):
+    def solve_transport(self, incident_flux=1e14, rear_albedo=0.0):
         """
         Solves steady-state diffusion-reaction equation for neutron flux Phi(x).
         -D * d2Phi/dx2 + Sigma_abs * Phi = Source
         """
+        rear_albedo = float(rear_albedo)
+        if rear_albedo < 0.0 or rear_albedo >= 1.0:
+            raise ValueError("rear_albedo must satisfy 0.0 <= rear_albedo < 1.0")
+
         # Diffusion Coefficient (D = 1 / 3*Sigma_total)
         Sigma_total = self.Sigma_capture_Li6 + self.Sigma_scatter + self.Sigma_parasitic + self.Sigma_multiply
         D = 1.0 / (3.0 * Sigma_total)
@@ -76,8 +80,10 @@ class BreedingBlanket:
         A[0, 0] = 1.0
         b[0] = incident_flux
         
-        # x=L (Shield): Vacuum/Reflective (Simplified: Flux -> 0)
+        # x=L (Shield): albedo reflection relation phi[L] = A * phi[L-dx].
+        # A=0.0 -> vacuum-like sink (legacy behavior), A->1.0 -> strong reflection.
         A[-1, -1] = 1.0
+        A[-1, -2] = -rear_albedo
         b[-1] = 0.0
         
         # Solve
@@ -140,7 +146,10 @@ class BreedingBlanket:
         # Depth profile anchored to the nominal enriched reference blanket to keep
         # the reduced surrogate stable across parameter scans.
         transport_profile = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.9)
-        phi_1d = transport_profile.solve_transport(incident_flux=incident_flux)
+        phi_1d = transport_profile.solve_transport(
+            incident_flux=incident_flux,
+            rear_albedo=0.5,
+        )
         x_norm = transport_profile.x / max(transport_profile.thickness, 1e-9)
 
         thickness_m = max(self.thickness * 0.01, 1e-6)
