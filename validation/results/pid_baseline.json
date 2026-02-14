@@ -1,0 +1,78 @@
+{
+  "generated_at_utc": "2026-02-14T17:47:15.868324+00:00",
+  "controller": "pid_baseline",
+  "pid_config": {
+    "kp": -0.5,
+    "ki": -0.05,
+    "kd": -0.0007,
+    "anti_windup": true
+  },
+  "scenarios": [
+    {
+      "controller": "pid_baseline",
+      "scenario": "step_5mm",
+      "settling_time_ms": 4.6,
+      "max_overshoot_mm": 5.0125,
+      "steady_state_error_mm": 0.025850106565008402,
+      "rms_control_effort": 0.00027523880799089676,
+      "peak_control_effort": 0.002542300653032987,
+      "disrupted": false,
+      "wall_time_us_per_step": 25.5883
+    },
+    {
+      "controller": "pid_baseline",
+      "scenario": "step_noisy",
+      "settling_time_ms": 4.6,
+      "max_overshoot_mm": 5.012500003047171,
+      "steady_state_error_mm": 0.025850226975584416,
+      "rms_control_effort": 0.00027523881575435195,
+      "peak_control_effort": 0.0025423006758867827,
+      "disrupted": false,
+      "wall_time_us_per_step": 24.032
+    },
+    {
+      "controller": "pid_baseline",
+      "scenario": "ramp_disturbance",
+      "settling_time_ms": 0.0,
+      "max_overshoot_mm": 0.0638696188367287,
+      "steady_state_error_mm": 0.026189133560852246,
+      "rms_control_effort": 5.277420832458923e-05,
+      "peak_control_effort": 0.00017899717212172,
+      "disrupted": false,
+      "wall_time_us_per_step": 37.2437
+    },
+    {
+      "controller": "pid_baseline",
+      "scenario": "random_perturbation",
+      "settling_time_ms": 0.0,
+      "max_overshoot_mm": 0.09591689005178111,
+      "steady_state_error_mm": 0.02080849804476863,
+      "rms_control_effort": 5.304081403507578e-05,
+      "peak_control_effort": 0.00017899549399592472,
+      "disrupted": false,
+      "wall_time_us_per_step": 28.47348
+    },
+    {
+      "controller": "pid_baseline",
+      "scenario": "plant_uncertainty",
+      "settling_time_ms": 100.0,
+      "max_overshoot_mm": 31.02202053102999,
+      "steady_state_error_mm": 26.432538103532778,
+      "rms_control_effort": 0.008508676311466441,
+      "peak_control_effort": 0.015980062123549375,
+      "disrupted": false,
+      "wall_time_us_per_step": 18.9339
+    },
+    {
+      "controller": "pid_baseline",
+      "scenario": "sensor_dropout",
+      "settling_time_ms": 100.0,
+      "max_overshoot_mm": 1.463940018846928e+18,
+      "steady_state_error_mm": 1.500927713003981e+17,
+      "rms_control_effort": 8.100275623956772,
+      "peak_control_effort": 10.0,
+      "disrupted": true,
+      "wall_time_us_per_step": 20.9662
+    }
+  ]
+}

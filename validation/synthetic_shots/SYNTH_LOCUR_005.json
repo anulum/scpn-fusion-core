@@ -1,0 +1,37 @@
+{
+  "shot_id": "SYNTH_LOCUR_005",
+  "category": "low_current",
+  "description": "Low-current edge case #5",
+  "R0_m": 2.9272,
+  "a_m": 0.3364,
+  "B0_T": 0.654,
+  "Ip_MA": 0.782,
+  "kappa": 1.1535,
+  "delta": 0.0298,
+  "beta_N": 1.609,
+  "grid": {
+    "nr": 65,
+    "nz": 65,
+    "R_min_m": 2.48988,
+    "R_max_m": 3.36452,
+    "Z_min_m": -0.488957,
+    "Z_max_m": 0.488957
+  },
+  "n_probes": 40,
+  "solver": "solovev_cerfon_freidberg_2010",
+  "A_param": -0.97393012,
+  "psi_axis": -0.45781407999999996,
+  "r_axis_m": 2.968199,
+  "z_axis_m": 0.0,
+  "has_interior_minimum": true,
+  "boundary_kappa_estimate": 1.1535,
+  "coefficients": [
+    -0.0477176287,
+    -0.1531623418,
+    -0.0164308292,
+    -0.0487789536,
+    -0.0064371578,
+    -0.0492188333,
+    -0.0004719396
+  ]
+}

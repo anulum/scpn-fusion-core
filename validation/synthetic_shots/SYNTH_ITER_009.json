@@ -1,0 +1,37 @@
+{
+  "shot_id": "SYNTH_ITER_009",
+  "category": "high_elongation",
+  "description": "ITER-like high elongation #9",
+  "R0_m": 5.5004,
+  "a_m": 2.397,
+  "B0_T": 5.664,
+  "Ip_MA": 10.407,
+  "kappa": 1.994,
+  "delta": 0.4667,
+  "beta_N": 17.6169,
+  "grid": {
+    "nr": 65,
+    "nz": 65,
+    "R_min_m": 2.3843,
+    "R_max_m": 8.6165,
+    "Z_min_m": -5.498718,
+    "Z_max_m": 5.498718
+  },
+  "n_probes": 40,
+  "solver": "solovev_cerfon_freidberg_2010",
+  "A_param": -0.68079958,
+  "psi_axis": -11.44853256,
+  "r_axis_m": 6.182047,
+  "z_axis_m": 0.0,
+  "has_interior_minimum": true,
+  "boundary_kappa_estimate": 1.994,
+  "coefficients": [
+    -0.0030778579,
+    -0.2473811073,
+    -0.0049797194,
+    -0.0193517556,
+    -0.0081863307,
+    -0.0572530904,
+    -0.0011090029
+  ]
+}

@@ -1,0 +1,266 @@
+{
+  "generator": "generate_synthetic_shots.py",
+  "solver": "solovev_cerfon_freidberg_2010",
+  "reference": "Cerfon & Freidberg, Phys. Plasmas 17 (2010) 032502",
+  "seed": 20260214,
+  "n_shots": 50,
+  "categories": {
+    "circular": 10,
+    "moderate_elongation": 15,
+    "high_elongation": 15,
+    "high_beta": 5,
+    "low_current": 5
+  },
+  "shots": [
+    {
+      "shot_id": "SYNTH_CIRC_001",
+      "category": "circular",
+      "beta_N": 0.5729
+    },
+    {
+      "shot_id": "SYNTH_CIRC_002",
+      "category": "circular",
+      "beta_N": 7.3089
+    },
+    {
+      "shot_id": "SYNTH_CIRC_003",
+      "category": "circular",
+      "beta_N": 1.0988
+    },
+    {
+      "shot_id": "SYNTH_CIRC_004",
+      "category": "circular",
+      "beta_N": 5.5981
+    },
+    {
+      "shot_id": "SYNTH_CIRC_005",
+      "category": "circular",
+      "beta_N": 1.1491
+    },
+    {
+      "shot_id": "SYNTH_CIRC_006",
+      "category": "circular",
+      "beta_N": 5.6308
+    },
+    {
+      "shot_id": "SYNTH_CIRC_007",
+      "category": "circular",
+      "beta_N": 8.2659
+    },
+    {
+      "shot_id": "SYNTH_CIRC_008",
+      "category": "circular",
+      "beta_N": 2.3111
+    },
+    {
+      "shot_id": "SYNTH_CIRC_009",
+      "category": "circular",
+      "beta_N": 0.7123
+    },
+    {
+      "shot_id": "SYNTH_CIRC_010",
+      "category": "circular",
+      "beta_N": 0.3602
+    },
+    {
+      "shot_id": "SYNTH_DIIID_001",
+      "category": "moderate_elongation",
+      "beta_N": 2.9526
+    },
+    {
+      "shot_id": "SYNTH_DIIID_002",
+      "category": "moderate_elongation",
+      "beta_N": 1.1855
+    },
+    {
+      "shot_id": "SYNTH_DIIID_003",
+      "category": "moderate_elongation",
+      "beta_N": 4.5655
+    },
+    {
+      "shot_id": "SYNTH_DIIID_004",
+      "category": "moderate_elongation",
+      "beta_N": 2.5819
+    },
+    {
+      "shot_id": "SYNTH_DIIID_005",
+      "category": "moderate_elongation",
+      "beta_N": 2.5065
+    },
+    {
+      "shot_id": "SYNTH_DIIID_006",
+      "category": "moderate_elongation",
+      "beta_N": 1.1227
+    },
+    {
+      "shot_id": "SYNTH_DIIID_007",
+      "category": "moderate_elongation",
+      "beta_N": 0.9342
+    },
+    {
+      "shot_id": "SYNTH_DIIID_008",
+      "category": "moderate_elongation",
+      "beta_N": 0.7925
+    },
+    {
+      "shot_id": "SYNTH_DIIID_009",
+      "category": "moderate_elongation",
+      "beta_N": 2.1504
+    },
+    {
+      "shot_id": "SYNTH_DIIID_010",
+      "category": "moderate_elongation",
+      "beta_N": 2.0135
+    },
+    {
+      "shot_id": "SYNTH_DIIID_011",
+      "category": "moderate_elongation",
+      "beta_N": 1.3796
+    },
+    {
+      "shot_id": "SYNTH_DIIID_012",
+      "category": "moderate_elongation",
+      "beta_N": 1.0775
+    },
+    {
+      "shot_id": "SYNTH_DIIID_013",
+      "category": "moderate_elongation",
+      "beta_N": 1.8838
+    },
+    {
+      "shot_id": "SYNTH_DIIID_014",
+      "category": "moderate_elongation",
+      "beta_N": 1.0001
+    },
+    {
+      "shot_id": "SYNTH_DIIID_015",
+      "category": "moderate_elongation",
+      "beta_N": 0.8805
+    },
+    {
+      "shot_id": "SYNTH_ITER_001",
+      "category": "high_elongation",
+      "beta_N": 25.2947
+    },
+    {
+      "shot_id": "SYNTH_ITER_002",
+      "category": "high_elongation",
+      "beta_N": 14.805
+    },
+    {
+      "shot_id": "SYNTH_ITER_003",
+      "category": "high_elongation",
+      "beta_N": 16.4779
+    },
+    {
+      "shot_id": "SYNTH_ITER_004",
+      "category": "high_elongation",
+      "beta_N": 20.2735
+    },
+    {
+      "shot_id": "SYNTH_ITER_005",
+      "category": "high_elongation",
+      "beta_N": 23.2795
+    },
+    {
+      "shot_id": "SYNTH_ITER_006",
+      "category": "high_elongation",
+      "beta_N": 27.0529
+    },
+    {
+      "shot_id": "SYNTH_ITER_007",
+      "category": "high_elongation",
+      "beta_N": 18.2926
+    },
+    {
+      "shot_id": "SYNTH_ITER_008",
+      "category": "high_elongation",
+      "beta_N": 25.3055
+    },
+    {
+      "shot_id": "SYNTH_ITER_009",
+      "category": "high_elongation",
+      "beta_N": 17.6169
+    },
+    {
+      "shot_id": "SYNTH_ITER_010",
+      "category": "high_elongation",
+      "beta_N": 24.1595
+    },
+    {
+      "shot_id": "SYNTH_ITER_011",
+      "category": "high_elongation",
+      "beta_N": 17.2268
+    },
+    {
+      "shot_id": "SYNTH_ITER_012",
+      "category": "high_elongation",
+      "beta_N": 21.2053
+    },
+    {
+      "shot_id": "SYNTH_ITER_013",
+      "category": "high_elongation",
+      "beta_N": 18.963
+    },
+    {
+      "shot_id": "SYNTH_ITER_014",
+      "category": "high_elongation",
+      "beta_N": 19.0485
+    },
+    {
+      "shot_id": "SYNTH_ITER_015",
+      "category": "high_elongation",
+      "beta_N": 30.5348
+    },
+    {
+      "shot_id": "SYNTH_HIBETA_001",
+      "category": "high_beta",
+      "beta_N": 0.9832
+    },
+    {
+      "shot_id": "SYNTH_HIBETA_002",
+      "category": "high_beta",
+      "beta_N": 1.146
+    },
+    {
+      "shot_id": "SYNTH_HIBETA_003",
+      "category": "high_beta",
+      "beta_N": 1.9338
+    },
+    {
+      "shot_id": "SYNTH_HIBETA_004",
+      "category": "high_beta",
+      "beta_N": 1.856
+    },
+    {
+      "shot_id": "SYNTH_HIBETA_005",
+      "category": "high_beta",
+      "beta_N": 1.2807
+    },
+    {
+      "shot_id": "SYNTH_LOCUR_001",
+      "category": "low_current",
+      "beta_N": 1.0138
+    },
+    {
+      "shot_id": "SYNTH_LOCUR_002",
+      "category": "low_current",
+      "beta_N": 0.1446
+    },
+    {
+      "shot_id": "SYNTH_LOCUR_003",
+      "category": "low_current",
+      "beta_N": 0.7022
+    },
+    {
+      "shot_id": "SYNTH_LOCUR_004",
+      "category": "low_current",
+      "beta_N": 0.8942
+    },
+    {
+      "shot_id": "SYNTH_LOCUR_005",
+      "category": "low_current",
+      "beta_N": 1.609
+    }
+  ]
+}

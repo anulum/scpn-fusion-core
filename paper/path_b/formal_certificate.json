@@ -1,0 +1,71 @@
+{
+  "certificate_version": "1.0.0",
+  "generator": "scpn_fusion.scpn.formal_analysis.generate_proof_certificate",
+  "date": "2026-02-14",
+  "net": {
+    "name": "VerticalControlNet",
+    "description": "Vertical position control Petri net for tokamak plasma Z-axis stabilization",
+    "places": 8,
+    "transitions": 7,
+    "arcs": 18
+  },
+  "discretization": {
+    "method": "binary threshold",
+    "threshold": 0.5,
+    "semantics": "weighted threshold enablement (activation = sum(W_in[t,p] * m[p]) >= threshold[t])"
+  },
+  "results": {
+    "bounded": true,
+    "bound": 1,
+    "live": true,
+    "dead_transitions": [],
+    "mutex_pairs_verified": [
+      ["P_error_pos", "P_error_neg"]
+    ],
+    "mutex_violations": [],
+    "home_state": false,
+    "home_state_note": "P_applied is a sink place (no outgoing consumption arcs). After the first control cycle, P_applied retains a token permanently, making the pristine initial marking (P_idle only) unreachable. This is by design: P_applied records that a control signal was sent.",
+    "place_liveness": {
+      "P_idle": true
+    },
+    "place_liveness_note": "P_idle is eventually marked from every reachable marking, guaranteeing the controller never permanently stalls."
+  },
+  "reachability_graph": {
+    "reachable_markings_count": 14,
+    "theoretical_max": 256,
+    "compression_ratio": 18.29,
+    "initial_marking_discrete": [1, 0, 0, 0, 0, 0, 0, 0]
+  },
+  "place_names": [
+    "P_idle",
+    "P_measured",
+    "P_error_pos",
+    "P_error_neg",
+    "P_error_large",
+    "P_error_small",
+    "P_actuating",
+    "P_applied"
+  ],
+  "transition_names": [
+    "T_read",
+    "T_pos",
+    "T_neg",
+    "T_large",
+    "T_small",
+    "T_compute",
+    "T_apply"
+  ],
+  "properties_summary": {
+    "1_bounded": "PASS — Every place holds at most 1 token in all 14 reachable markings.",
+    "L1_live": "PASS — All 7 transitions are enabled in at least one reachable marking.",
+    "mutex_P_error_pos_P_error_neg": "PASS — These places are never simultaneously marked. The error-sign routing (T_pos vs T_neg) produces a token in exactly one of them per cycle.",
+    "P_idle_place_liveness": "PASS — P_idle is eventually marked from every reachable marking. The controller always returns to its idle state.",
+    "home_state": "FAIL (by design) — P_applied accumulates tokens; the exact initial marking is not recoverable after the first cycle."
+  },
+  "preservation_argument": "These properties are preserved by the SNN compilation because: (1) the FusionCompiler faithfully encodes W_in and W_out as weight matrices; (2) the threshold comparator (LIF neuron in comparator mode) implements the same enablement check; (3) the marking update rule m' = clip(m - W_in^T @ f + W_out @ f, 0, 1) is a continuous relaxation of discrete firing that converges to the same fixed points; (4) the stochastic computing path (AND + popcount) produces an unbiased estimator of the float-path result.",
+  "test_coverage": {
+    "test_file": "tests/test_formal_analysis.py",
+    "total_tests": 25,
+    "all_passing": true
+  }
+}

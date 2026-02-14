@@ -1,0 +1,37 @@
+{
+  "shot_id": "SYNTH_CIRC_009",
+  "category": "circular",
+  "description": "Circular cross-section #9",
+  "R0_m": 3.7128,
+  "a_m": 0.3217,
+  "B0_T": 5.622,
+  "Ip_MA": 3.112,
+  "kappa": 1.0,
+  "delta": 0.0,
+  "beta_N": 0.7123,
+  "grid": {
+    "nr": 65,
+    "nz": 65,
+    "R_min_m": 3.29459,
+    "R_max_m": 4.13101,
+    "Z_min_m": -0.41821,
+    "Z_max_m": 0.41821
+  },
+  "n_probes": 40,
+  "solver": "solovev_cerfon_freidberg_2010",
+  "A_param": -0.98509676,
+  "psi_axis": -2.31084672,
+  "r_axis_m": 3.738938,
+  "z_axis_m": 0.0,
+  "has_interior_minimum": true,
+  "boundary_kappa_estimate": 1.0,
+  "coefficients": [
+    -0.04847676,
+    -0.1170426964,
+    -0.0540179947,
+    -0.0844469172,
+    0.0047335263,
+    0.0147792787,
+    -0.0001016272
+  ]
+}

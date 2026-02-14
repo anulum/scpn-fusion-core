@@ -1,0 +1,37 @@
+{
+  "shot_id": "SYNTH_HIBETA_002",
+  "category": "high_beta",
+  "description": "High-beta stress test #2",
+  "R0_m": 2.0108,
+  "a_m": 0.7313,
+  "B0_T": 1.021,
+  "Ip_MA": 0.4,
+  "kappa": 1.6328,
+  "delta": 0.2532,
+  "beta_N": 1.146,
+  "grid": {
+    "nr": 65,
+    "nz": 65,
+    "R_min_m": 1.06011,
+    "R_max_m": 2.96149,
+    "Z_min_m": -1.413457,
+    "Z_max_m": 1.413457
+  },
+  "n_probes": 40,
+  "solver": "solovev_cerfon_freidberg_2010",
+  "A_param": -0.76636693,
+  "psi_axis": -0.160864,
+  "r_axis_m": 2.218763,
+  "z_axis_m": 0.0,
+  "has_interior_minimum": true,
+  "boundary_kappa_estimate": 1.6328,
+  "coefficients": [
+    -0.0138666914,
+    -0.2236208402,
+    -0.0003367834,
+    -0.022967645,
+    -0.0088001916,
+    -0.0566485973,
+    -0.0008174989
+  ]
+}

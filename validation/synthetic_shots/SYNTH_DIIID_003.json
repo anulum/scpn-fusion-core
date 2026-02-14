@@ -1,0 +1,37 @@
+{
+  "shot_id": "SYNTH_DIIID_003",
+  "category": "moderate_elongation",
+  "description": "DIII-D-like moderate elongation #3",
+  "R0_m": 2.3885,
+  "a_m": 0.7577,
+  "B0_T": 1.803,
+  "Ip_MA": 2.716,
+  "kappa": 1.6708,
+  "delta": 0.2355,
+  "beta_N": 4.5655,
+  "grid": {
+    "nr": 65,
+    "nz": 65,
+    "R_min_m": 1.40349,
+    "R_max_m": 3.37351,
+    "Z_min_m": -1.493275,
+    "Z_max_m": 1.493275
+  },
+  "n_probes": 40,
+  "solver": "solovev_cerfon_freidberg_2010",
+  "A_param": -0.81713474,
+  "psi_axis": -1.2974332000000002,
+  "r_axis_m": 2.573189,
+  "z_axis_m": 0.0,
+  "has_interior_minimum": true,
+  "boundary_kappa_estimate": 1.6708,
+  "coefficients": [
+    -0.017808555,
+    -0.2184861325,
+    -0.0003674524,
+    -0.0211269876,
+    -0.0094993797,
+    -0.0615697438,
+    -0.0008667181
+  ]
+}
