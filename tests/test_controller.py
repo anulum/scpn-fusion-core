@@ -389,9 +389,11 @@ class TestLevel0Static:
         finally:
             os.unlink(bad_path)
 
-    @pytest.mark.parametrize("dt_control_s", [float("nan"), float("inf")])
+    @pytest.mark.parametrize(
+        "dt_control_s", [float("nan"), float("inf"), "0.01", True]
+    )
     def test_load_artifact_rejects_non_finite_dt_control(
-        self, artifact_path: str, dt_control_s: float
+        self, artifact_path: str, dt_control_s: object
     ) -> None:
         obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
         obj["meta"]["dt_control_s"] = dt_control_s
