@@ -37,7 +37,7 @@ from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn.structure import StochasticPetriNet
 
 FloatArray = NDArray[np.float64]
-_SimTearingModeFn = Callable[[int], tuple[FloatArray, object, object]]
+_SimTearingModeFn = Callable[..., tuple[FloatArray, object, object]]
 _BuildFeatureVectorFn = Callable[[FloatArray, dict[str, float]], FloatArray]
 _ApplyBitFlipFn = Callable[[float, int], float]
 _simulate_tearing_mode = cast(_SimTearingModeFn, simulate_tearing_mode)
@@ -149,8 +149,8 @@ def _snn_risk(
 
 
 def _episode_signal(seed: int, window: int) -> FloatArray:
-    np.random.seed(int(seed))
-    sig, _label, _ttd = _simulate_tearing_mode(max(window, 64))
+    local_rng = np.random.default_rng(int(seed))
+    sig, _label, _ttd = _simulate_tearing_mode(max(window, 64), rng=local_rng)
     if sig.size < window:
         sig = np.pad(sig, (0, window - sig.size), mode="edge")
     return np.asarray(sig[:window], dtype=float)

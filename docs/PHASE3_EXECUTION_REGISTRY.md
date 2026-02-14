@@ -163,6 +163,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-026 | P1 | Control | Remove global NumPy RNG mutation from tokamak-flight runtime and lock deterministic replay semantics | `src/scpn_fusion/control/tokamak_flight_sim.py`, `tests/test_tokamak_flight_sim.py` | Flight-sim runtime no longer mutates global `np.random` state in deterministic control-only paths, retains stable seeded-summary metadata, and adds regression coverage proving no global RNG side effects | `python -m pytest tests/test_tokamak_flight_sim.py -v` |
 | H7-027 | P1 | Control | Remove global NumPy RNG mutation from optimal-control runtime and lock deterministic replay semantics | `src/scpn_fusion/control/fusion_optimal_control.py`, `tests/test_fusion_optimal_control.py` | Optimal-control runtime no longer mutates global `np.random` state in deterministic solve lanes, keeps stable seeded-summary metadata, and adds regression coverage proving no global RNG side effects | `python -m pytest tests/test_fusion_optimal_control.py -v` |
 | H7-028 | P1 | Control | Remove residual global NumPy RNG mutation from tearing-mode simulation fallback path | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_predictor_rng.py` | Tearing-mode simulation now always uses scoped RNG sampling (injected or local generator), avoids global `np.random` mutation in fallback calls, and adds regression coverage for global RNG state isolation | `python -m pytest tests/test_disruption_predictor_rng.py tests/test_disruption_toroidal_features.py tests/test_gneu_02_anomaly.py -v` |
+| H7-029 | P1 | Validation | Stabilize GNEU-01 benchmark episode synthesis with scoped per-episode RNG | `validation/gneu_01_benchmark.py`, `tests/test_gneu_01_benchmark.py` | GNEU-01 episode generation now uses deterministic seeded local generators passed into tearing-mode synthesis (no global seed coupling), restoring deterministic benchmark replay and eliminating global RNG side effects | `python -m pytest tests/test_gneu_01_benchmark.py tests/test_disruption_predictor_rng.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -170,8 +171,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 74
-- Remaining in deferred pool after queue selection: 39
+- Post-S4 hardening tasks delivered: 75
+- Remaining in deferred pool after queue selection: 38
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -268,4 +269,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-026`
 - Completed: `H7-027`
 - Completed: `H7-028`
-- Next active task: `H7-029` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-029`
+- Next active task: `H7-030` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
