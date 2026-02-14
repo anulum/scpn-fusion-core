@@ -230,7 +230,7 @@ jobs:
         run: cargo audit
 
   rust-benchmarks:
-    name: Rust Benchmarks (dry run)
+    name: Rust Benchmarks
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -248,8 +248,30 @@ jobs:
             scpn-fusion-rs/target
           key: ${{ runner.os }}-bench-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-bench-
-      - name: Compile benchmarks (verify they build)
-        run: cargo bench --no-run
+      - name: Record hardware metadata
+        run: |
+          mkdir -p benchmark-results
+          {
+            echo "runner: github-actions ubuntu-latest"
+            echo "cpu: $(lscpu | grep 'Model name' | sed 's/.*:\s*//')"
+            echo "cores: $(nproc)"
+            echo "ram_mb: $(free -m | awk '/Mem:/{print $2}')"
+            echo "rustc: $(rustc --version)"
+          } > benchmark-results/hardware.txt
+      - name: Run benchmarks
+        run: cargo bench 2>&1 | tee benchmark-results/bench_output.txt
+      - name: Collect Criterion JSON
+        if: always()
+        run: |
+          if [ -d target/criterion ]; then
+            cp -r target/criterion benchmark-results/criterion_data
+          fi
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-benchmarks
+          path: scpn-fusion-rs/benchmark-results/
 
   validation-regression:
     name: Physics Validation Suite

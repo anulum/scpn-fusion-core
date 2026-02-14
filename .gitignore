@@ -36,6 +36,9 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Benchmark results (local runs)
+benchmarks/results/
+
 # Simulation outputs
 *.npz
 *.gif
