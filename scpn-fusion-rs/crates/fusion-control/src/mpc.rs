@@ -40,8 +40,22 @@ impl NeuralSurrogate {
     }
 
     /// Predict next state.
-    pub fn predict(&self, state: &Array1<f64>, action: &Array1<f64>) -> Array1<f64> {
-        state + &self.b_matrix.dot(action)
+    pub fn predict(&self, state: &Array1<f64>, action: &Array1<f64>) -> FusionResult<Array1<f64>> {
+        let n_state = self.b_matrix.nrows();
+        let n_coils = self.b_matrix.ncols();
+        if state.len() != n_state {
+            return Err(FusionError::ConfigError(format!(
+                "mpc state length mismatch: expected {n_state}, got {}",
+                state.len()
+            )));
+        }
+        if action.len() != n_coils {
+            return Err(FusionError::ConfigError(format!(
+                "mpc action length mismatch: expected {n_coils}, got {}",
+                action.len()
+            )));
+        }
+        Ok(state + &self.b_matrix.dot(action))
     }
 }
 
@@ -53,17 +67,30 @@ pub struct MPController {
 }
 
 impl MPController {
-    pub fn new(model: NeuralSurrogate, target: Array1<f64>) -> Self {
-        MPController {
+    pub fn new(model: NeuralSurrogate, target: Array1<f64>) -> FusionResult<Self> {
+        let n_state = model.b_matrix.nrows();
+        let n_coils = model.b_matrix.ncols();
+        if n_state == 0 || n_coils == 0 {
+            return Err(FusionError::ConfigError(
+                "mpc b_matrix must have non-zero state and coil dimensions".to_string(),
+            ));
+        }
+        if target.len() != n_state {
+            return Err(FusionError::ConfigError(format!(
+                "mpc target length mismatch: expected {n_state}, got {}",
+                target.len()
+            )));
+        }
+        Ok(MPController {
             model,
             target,
             horizon: HORIZON,
-        }
+        })
     }
 
     /// Plan optimal action via gradient descent over horizon.
     /// Returns first action to apply.
-    pub fn plan(&self, current_state: &Array1<f64>) -> Array1<f64> {
+    pub fn plan(&self, current_state: &Array1<f64>) -> FusionResult<Array1<f64>> {
         let n_coils = self.model.b_matrix.ncols();
         let mut actions: Vec<Array1<f64>> =
             (0..self.horizon).map(|_| Array1::zeros(n_coils)).collect();
@@ -75,7 +102,7 @@ impl MPController {
 
             let mut state = current_state.clone();
             for t in 0..self.horizon {
-                let next = self.model.predict(&state, &actions[t]);
+                let next = self.model.predict(&state, &actions[t])?;
                 let error = &next - &self.target;
                 // Gradient of ||error||² w.r.t. u_t = B^T · error
                 let grad = self.model.b_matrix.t().dot(&error) + &actions[t] * LAMBDA;
@@ -93,7 +120,7 @@ impl MPController {
             }
         }
 
-        actions[0].clone()
+        Ok(actions[0].clone())
     }
 
     /// Plan action accounting for known actuation delay and sensor bias.
@@ -126,10 +153,10 @@ impl MPController {
                     action.len()
                 )));
             }
-            predicted_state = self.model.predict(&predicted_state, action);
+            predicted_state = self.model.predict(&predicted_state, action)?;
         }
 
-        Ok(self.plan(&predicted_state))
+        self.plan(&predicted_state)
     }
 
     /// Delay-aware MPC rollout with first-order actuator lag.
@@ -172,10 +199,10 @@ impl MPController {
                 )));
             }
             delayed_applied = &delayed_applied * (1.0 - alpha) + action * alpha;
-            predicted_state = self.model.predict(&predicted_state, &delayed_applied);
+            predicted_state = self.model.predict(&predicted_state, &delayed_applied)?;
         }
 
-        Ok(self.plan(&predicted_state))
+        self.plan(&predicted_state)
     }
 }
 
@@ -189,7 +216,9 @@ mod tests {
         let model = NeuralSurrogate::new(b);
         let state = Array1::from_vec(vec![1.0, 2.0]);
         let action = Array1::from_vec(vec![0.5, -0.3]);
-        let next = model.predict(&state, &action);
+        let next = model
+            .predict(&state, &action)
+            .expect("matching state/action shape");
         assert!((next[0] - 1.5).abs() < 1e-10);
         assert!((next[1] - 1.7).abs() < 1e-10);
     }
@@ -199,10 +228,10 @@ mod tests {
         let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
         let model = NeuralSurrogate::new(b);
         let target = Array1::from_vec(vec![6.0, 0.0]);
-        let mpc = MPController::new(model, target.clone());
+        let mpc = MPController::new(model, target.clone()).expect("matching target length");
 
         let state = Array1::from_vec(vec![5.0, 1.0]);
-        let action = mpc.plan(&state);
+        let action = mpc.plan(&state).expect("matching state shape");
 
         // Action should push state toward target
         assert!(action[0] > 0.0, "Should push R positive: {}", action[0]);
@@ -214,10 +243,10 @@ mod tests {
         let b = Array2::from_shape_vec((2, 2), vec![10.0, 0.0, 0.0, 10.0]).unwrap();
         let model = NeuralSurrogate::new(b);
         let target = Array1::from_vec(vec![100.0, 0.0]);
-        let mpc = MPController::new(model, target);
+        let mpc = MPController::new(model, target).expect("matching target length");
 
         let state = Array1::from_vec(vec![0.0, 0.0]);
-        let action = mpc.plan(&state);
+        let action = mpc.plan(&state).expect("matching state shape");
         for &v in action.iter() {
             assert!(
                 v.abs() <= ACTION_CLIP + 1e-10,
@@ -231,7 +260,7 @@ mod tests {
         let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
         let model = NeuralSurrogate::new(b);
         let target = Array1::from_vec(vec![6.0, 0.0]);
-        let mpc = MPController::new(model, target);
+        let mpc = MPController::new(model, target).expect("matching target length");
 
         let measured = Array1::from_vec(vec![5.0, 1.0]);
         let delayed = vec![Array1::from_vec(vec![0.2, -0.1])];
@@ -263,7 +292,7 @@ mod tests {
         let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
         let model = NeuralSurrogate::new(b);
         let target = Array1::from_vec(vec![6.0, 0.0]);
-        let mpc = MPController::new(model, target);
+        let mpc = MPController::new(model, target).expect("matching target length");
 
         let measured = Array1::from_vec(vec![5.0, 1.0]);
         let delayed = vec![
@@ -295,7 +324,7 @@ mod tests {
         let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
         let model = NeuralSurrogate::new(b);
         let target = Array1::from_vec(vec![6.0, 0.0]);
-        let mpc = MPController::new(model, target);
+        let mpc = MPController::new(model, target).expect("matching target length");
         let measured = Array1::from_vec(vec![5.0, 1.0]);
         let delayed = vec![Array1::from_vec(vec![0.1, -0.05])];
 
@@ -315,7 +344,7 @@ mod tests {
         let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
         let model = NeuralSurrogate::new(b);
         let target = Array1::from_vec(vec![6.0, 0.0]);
-        let mpc = MPController::new(model, target);
+        let mpc = MPController::new(model, target).expect("matching target length");
         let measured = Array1::from_vec(vec![5.0, 1.0]);
         let bad_bias = Array1::from_vec(vec![0.02, -0.01, 0.0]);
         let bad_delayed = vec![Array1::from_vec(vec![0.1, -0.05, 0.01])];
@@ -333,7 +362,7 @@ mod tests {
         let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
         let model = NeuralSurrogate::new(b);
         let target = Array1::from_vec(vec![6.0, 0.0]);
-        let mpc = MPController::new(model, target);
+        let mpc = MPController::new(model, target).expect("matching target length");
         let measured = Array1::from_vec(vec![5.0, 1.0]);
         let bad_noise = Array1::from_vec(vec![0.01, -0.01, 0.0]);
         let bad_delayed = vec![Array1::from_vec(vec![0.1, -0.05, 0.01])];
@@ -343,6 +372,28 @@ mod tests {
             .is_err());
         assert!(mpc
             .plan_with_delay_dynamics(&measured, &bad_delayed, None, 0.5)
+            .is_err());
+    }
+
+    #[test]
+    fn test_mpc_constructor_rejects_target_length_mismatch() {
+        let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
+        let model = NeuralSurrogate::new(b);
+        let bad_target = Array1::from_vec(vec![6.0, 0.0, -0.1]);
+        assert!(MPController::new(model, bad_target).is_err());
+    }
+
+    #[test]
+    fn test_surrogate_predict_rejects_state_and_action_shape_mismatch() {
+        let b = Array2::from_shape_vec((2, 2), vec![1.0, 0.0, 0.0, 1.0]).unwrap();
+        let model = NeuralSurrogate::new(b);
+        let bad_state = Array1::from_vec(vec![1.0, 2.0, 3.0]);
+        let bad_action = Array1::from_vec(vec![0.5]);
+        assert!(model
+            .predict(&bad_state, &Array1::from_vec(vec![0.2, 0.1]))
+            .is_err());
+        assert!(model
+            .predict(&Array1::from_vec(vec![1.0, 2.0]), &bad_action)
             .is_err());
     }
 }
