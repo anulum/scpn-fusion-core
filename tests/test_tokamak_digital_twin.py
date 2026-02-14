@@ -136,3 +136,8 @@ def test_run_digital_twin_accepts_injected_rng_and_replays_deterministically() -
     assert a["final_avg_temp"] == b["final_avg_temp"]
     assert a["final_reward"] == b["final_reward"]
     assert a["final_action"] == b["final_action"]
+
+
+def test_run_digital_twin_rejects_invalid_time_steps() -> None:
+    with pytest.raises(ValueError, match="time_steps"):
+        run_digital_twin(time_steps=0, seed=2, save_plot=False, verbose=False)

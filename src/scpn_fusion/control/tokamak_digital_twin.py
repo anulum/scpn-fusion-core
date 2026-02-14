@@ -222,7 +222,9 @@ def run_digital_twin(
     Returns a summary dict so callers can use the simulation without relying on
     console text or plot artifacts.
     """
-    steps = max(int(time_steps), 1)
+    steps = int(time_steps)
+    if steps < 1:
+        raise ValueError("time_steps must be >= 1.")
     local_rng = _resolve_rng(seed=int(seed), rng=rng)
     if verbose:
         print("--- SCPN 2D TOKAMAK DIGITAL TWIN + NEURAL CONTROL ---")
