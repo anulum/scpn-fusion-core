@@ -10,6 +10,7 @@
 //! Port of `fusion_sota_mpc.py`.
 //! Linear surrogate + gradient descent over prediction horizon.
 
+use fusion_types::error::{FusionError, FusionResult};
 use ndarray::{Array1, Array2};
 
 /// Prediction horizon. Python: 10.
@@ -132,7 +133,13 @@ impl MPController {
         delayed_actions: &[Array1<f64>],
         sensor_noise: Option<&Array1<f64>>,
         actuator_lag_alpha: f64,
-    ) -> Array1<f64> {
+    ) -> FusionResult<Array1<f64>> {
+        if !actuator_lag_alpha.is_finite() || !(0.0..=1.0).contains(&actuator_lag_alpha) {
+            return Err(FusionError::ConfigError(
+                "mpc actuator_lag_alpha must be finite and within [0, 1]".to_string(),
+            ));
+        }
+
         let n_coils = self.model.b_matrix.ncols();
         let mut predicted_state = measured_state.clone();
         if let Some(noise) = sensor_noise {
@@ -142,7 +149,7 @@ impl MPController {
         }
 
         let mut delayed_applied = Array1::zeros(n_coils);
-        let alpha = actuator_lag_alpha.clamp(0.0, 1.0);
+        let alpha = actuator_lag_alpha;
         for action in delayed_actions {
             if action.len() == n_coils {
                 delayed_applied = &delayed_applied * (1.0 - alpha) + action * alpha;
@@ -150,7 +157,7 @@ impl MPController {
             }
         }
 
-        self.plan(&predicted_state)
+        Ok(self.plan(&predicted_state))
     }
 }
 
@@ -244,7 +251,9 @@ mod tests {
             Array1::from_vec(vec![0.4, -0.2]),
         ];
         let noise = Array1::from_vec(vec![0.03, -0.01]);
-        let action = mpc.plan_with_delay_dynamics(&measured, &delayed, Some(&noise), 0.5);
+        let action = mpc
+            .plan_with_delay_dynamics(&measured, &delayed, Some(&noise), 0.5)
+            .expect("valid actuator lag alpha");
 
         assert!(
             action[0] > 0.0,
@@ -259,5 +268,25 @@ mod tests {
         for &v in action.iter() {
             assert!(v.abs() <= ACTION_CLIP + 1e-10);
         }
+    }
+
+    #[test]
+    fn test_mpc_delay_dynamics_rejects_invalid_actuator_lag_alpha() {
+        let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
+        let model = NeuralSurrogate::new(b);
+        let target = Array1::from_vec(vec![6.0, 0.0]);
+        let mpc = MPController::new(model, target);
+        let measured = Array1::from_vec(vec![5.0, 1.0]);
+        let delayed = vec![Array1::from_vec(vec![0.1, -0.05])];
+
+        assert!(mpc
+            .plan_with_delay_dynamics(&measured, &delayed, None, -0.1)
+            .is_err());
+        assert!(mpc
+            .plan_with_delay_dynamics(&measured, &delayed, None, 1.1)
+            .is_err());
+        assert!(mpc
+            .plan_with_delay_dynamics(&measured, &delayed, None, f64::NAN)
+            .is_err());
     }
 }
