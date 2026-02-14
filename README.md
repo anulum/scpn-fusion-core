@@ -204,7 +204,7 @@ python validation/validate_against_sparc.py
 python -c "from scpn_fusion.core.eqdsk import read_geqdsk; eq = read_geqdsk('validation/reference_data/sparc/lmode_vv.geqdsk'); print(f'B={eq.bcentr:.1f}T, Ip={eq.current/1e6:.1f}MA')"
 ```
 
-## 26 Simulation Modes
+## 21 Simulation Modes
 
 | Mode | Description |
 |------|-------------|
@@ -228,13 +228,17 @@ python -c "from scpn_fusion.core.eqdsk import read_geqdsk; eq = read_geqdsk('val
 | `scanner` | Multi-objective global design scanner |
 | `heating` | RF heating (ICRH / ECRH / LHCD) |
 | `wdm` | Warm dense matter equation of state |
-| `quantum` | Quantum computing bridge |
-| `q-control` | Quantum control agent |
 | `neuro-control` | SNN-based cybernetic controller |
-| `neuro-quantum` | Neuro-quantum hybrid controller |
-| `lazarus` | Lazarus protocol bridge |
-| `director` | Director AI interface |
-| `vibrana` | Vibrana resonance bridge |
+
+Additional experimental modes (quantum, vibrana, lazarus, director) are
+available for SCPN framework integration work. These require external
+components not shipped in this repo:
+
+```bash
+python run_fusion_suite.py --experimental quantum
+# or
+SCPN_EXPERIMENTAL=1 python run_fusion_suite.py vibrana
+```
 
 ## Minimum Viable Reactor (MVR-0.96)
 
