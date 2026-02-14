@@ -93,11 +93,26 @@ class ModelPredictiveController:
     ) -> None:
         self.model = surrogate
         self.target = np.asarray(target_state, dtype=np.float64).reshape(-1)
-        self.horizon = max(int(prediction_horizon), 1)
-        self.learning_rate = max(float(learning_rate), 1e-9)
-        self.iterations = max(int(iterations), 1)
-        self.action_limit = max(float(action_limit), 1e-9)
-        self.action_regularization = max(float(action_regularization), 0.0)
+        horizon = int(prediction_horizon)
+        if horizon < 1:
+            raise ValueError("prediction_horizon must be >= 1.")
+        learning_rate = float(learning_rate)
+        if not np.isfinite(learning_rate) or learning_rate <= 0.0:
+            raise ValueError("learning_rate must be finite and > 0.")
+        iterations = int(iterations)
+        if iterations < 1:
+            raise ValueError("iterations must be >= 1.")
+        action_limit = float(action_limit)
+        if not np.isfinite(action_limit) or action_limit <= 0.0:
+            raise ValueError("action_limit must be finite and > 0.")
+        action_regularization = float(action_regularization)
+        if not np.isfinite(action_regularization) or action_regularization < 0.0:
+            raise ValueError("action_regularization must be finite and >= 0.")
+        self.horizon = horizon
+        self.learning_rate = learning_rate
+        self.iterations = iterations
+        self.action_limit = action_limit
+        self.action_regularization = action_regularization
 
     def plan_trajectory(self, current_state: np.ndarray) -> np.ndarray:
         n_coils = int(self.model.B.shape[1])

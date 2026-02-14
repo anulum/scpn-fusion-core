@@ -193,6 +193,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-056 | P1 | Control | Harden SOTA-MPC runtime campaign with strict shot-length and disturbance-start input guards | `src/scpn_fusion/control/fusion_sota_mpc.py`, `tests/test_fusion_sota_mpc.py` | SOTA-MPC campaign now rejects invalid runtime horizon parameters (`shot_length`, `disturbance_start_step`) with deterministic errors (no silent coercion), while preserving deterministic seeded tracking metrics and bounded-action behavior for valid runs | `python -m pytest tests/test_fusion_sota_mpc.py -v`, `python -m pytest tests/ -q -x` |
 | H7-057 | P1 | Control | Harden optimal-control runtime campaign with strict shot-step input guard | `src/scpn_fusion/control/fusion_optimal_control.py`, `tests/test_fusion_optimal_control.py` | Optimal-control shot runtime now rejects invalid `shot_steps` values with deterministic errors (no silent coercion to minimum), while preserving deterministic bounded-control summaries for valid runs | `python -m pytest tests/test_fusion_optimal_control.py -v`, `python -m pytest tests/ -q -x` |
 | H7-058 | P1 | Control | Harden optimal-control constructor/system-ID/regularization knobs with strict numeric guards | `src/scpn_fusion/control/fusion_optimal_control.py`, `tests/test_fusion_optimal_control.py` | Optimal-control paths now reject invalid/non-finite `correction_limit`, `perturbation`, and `regularization_limit` values with deterministic errors (no silent coercion), while preserving deterministic bounded-control behavior for valid settings | `python -m pytest tests/test_fusion_optimal_control.py -v`, `python -m pytest tests/ -q -x` |
+| H7-059 | P1 | Control | Harden SOTA-MPC controller constructor knobs with strict numeric guards | `src/scpn_fusion/control/fusion_sota_mpc.py`, `tests/test_fusion_sota_mpc.py` | MPC-controller constructor now rejects invalid/non-finite `prediction_horizon`, `learning_rate`, `iterations`, `action_limit`, and `action_regularization` values with deterministic errors (no silent coercion), while preserving deterministic bounded-action planning for valid settings | `python -m pytest tests/test_fusion_sota_mpc.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -200,8 +201,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 104
-- Remaining in deferred pool after queue selection: 9
+- Post-S4 hardening tasks delivered: 105
+- Remaining in deferred pool after queue selection: 8
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -328,4 +329,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-056`
 - Completed: `H7-057`
 - Completed: `H7-058`
-- Next active task: `H7-059` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-059`
+- Next active task: `H7-060` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

@@ -168,3 +168,25 @@ def test_run_sota_simulation_rejects_invalid_runtime_inputs(
             kernel_factory=_DummyKernel,
             **kwargs,
         )
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"prediction_horizon": 0}, "prediction_horizon"),
+        ({"learning_rate": 0.0}, "learning_rate"),
+        ({"iterations": 0}, "iterations"),
+        ({"action_limit": 0.0}, "action_limit"),
+        ({"action_regularization": -1.0}, "action_regularization"),
+    ],
+)
+def test_mpc_controller_rejects_invalid_constructor_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    surrogate = NeuralSurrogate(n_coils=3, n_state=4, verbose=False)
+    with pytest.raises(ValueError, match=match):
+        ModelPredictiveController(
+            surrogate=surrogate,
+            target_state=np.zeros(4, dtype=np.float64),
+            **kwargs,
+        )
