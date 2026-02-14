@@ -316,12 +316,21 @@ class FusionKernel:
     ) -> FloatArray:
         """Perform one Jacobi iteration on the interior grid points.
 
+        Uses the correct cylindrical GS stencil:
+            d²ψ/dR² - (1/R) dψ/dR + d²ψ/dZ² = source
+
+        The 5-point finite-difference stencil is:
+            c_R+ = 1/dR² - 1/(2R·dR)   (right neighbour)
+            c_R- = 1/dR² + 1/(2R·dR)   (left neighbour)
+            c_Z  = 1/dZ²               (up/down neighbours)
+            center = 2/dR² + 2/dZ²
+
         Parameters
         ----------
         Psi : FloatArray
-            Current flux estimate.
+            Current flux estimate, shape (NZ, NR).
         Source : FloatArray
-            Right-hand-side source term ``-mu0 R J_phi``.
+            Right-hand-side source term ``-mu0 R J_phi``, shape (NZ, NR).
 
         Returns
         -------
@@ -329,13 +338,24 @@ class FusionKernel:
             Updated flux array (boundaries unchanged).
         """
         Psi_new = Psi.copy()
-        Psi_new[1:-1, 1:-1] = 0.25 * (
-            Psi[0:-2, 1:-1]
-            + Psi[2:, 1:-1]
-            + Psi[1:-1, 0:-2]
-            + Psi[1:-1, 2:]
-            - (self.dR**2) * Source[1:-1, 1:-1]
-        )
+        dr_sq = self.dR ** 2
+        dz_sq = self.dZ ** 2
+
+        # R values at interior points: self.RR has shape (NZ, NR)
+        R_inner = self.RR[1:-1, 1:-1]
+
+        # Cylindrical stencil coefficients (asymmetric in R)
+        c_r_plus = 1.0 / dr_sq - 1.0 / (2.0 * R_inner * self.dR)
+        c_r_minus = 1.0 / dr_sq + 1.0 / (2.0 * R_inner * self.dR)
+        c_z = 1.0 / dz_sq
+        center = 2.0 / dr_sq + 2.0 / dz_sq
+
+        Psi_new[1:-1, 1:-1] = (
+            c_r_plus * Psi[1:-1, 2:]       # R + dR
+            + c_r_minus * Psi[1:-1, :-2]   # R - dR
+            + c_z * (Psi[:-2, 1:-1] + Psi[2:, 1:-1])  # Z ± dZ
+            - Source[1:-1, 1:-1]
+        ) / center
         return Psi_new
 
     def _apply_boundary_conditions(

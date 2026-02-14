@@ -58,7 +58,7 @@ def test_solovev_circular() -> None:
     ).solve()
 
     # psi_rz must be a 2-D array of the expected shape
-    assert eq.psi_rz.shape == (65, 65)
+    assert eq.psi_rz.shape == (129, 129)
 
     # The minimum must be interior (not on any edge row/column)
     assert eq.has_interior_minimum(), (
@@ -274,11 +274,11 @@ def test_array_shapes() -> None:
         delta=0.15,
     ).solve()
 
-    assert eq.psi_rz.shape == (65, 65), f"psi_rz shape: {eq.psi_rz.shape}"
-    assert eq.r_grid.shape == (65,), f"r_grid shape: {eq.r_grid.shape}"
-    assert eq.z_grid.shape == (65,), f"z_grid shape: {eq.z_grid.shape}"
-    assert eq.p_prime.shape == (65,), f"p_prime shape: {eq.p_prime.shape}"
-    assert eq.ff_prime.shape == (65,), f"ff_prime shape: {eq.ff_prime.shape}"
+    assert eq.psi_rz.shape == (129, 129), f"psi_rz shape: {eq.psi_rz.shape}"
+    assert eq.r_grid.shape == (129,), f"r_grid shape: {eq.r_grid.shape}"
+    assert eq.z_grid.shape == (129,), f"z_grid shape: {eq.z_grid.shape}"
+    assert eq.p_prime.shape == (129,), f"p_prime shape: {eq.p_prime.shape}"
+    assert eq.ff_prime.shape == (129,), f"ff_prime shape: {eq.ff_prime.shape}"
     assert eq.probe_r.shape == (40,), f"probe_r shape: {eq.probe_r.shape}"
     assert eq.probe_z.shape == (40,), f"probe_z shape: {eq.probe_z.shape}"
     assert eq.probe_psi.shape == (40,), f"probe_psi shape: {eq.probe_psi.shape}"

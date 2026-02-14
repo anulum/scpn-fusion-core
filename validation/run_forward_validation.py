@@ -524,9 +524,9 @@ def _compute_scale_factor(meta: dict, psi_rz: NDArray, r_grid: NDArray,
         1.0,           # psi_h2 = x^2 = 1
         0.0,           # psi_h3 = y^2 - x^2 ln(x) = 0
         1.0,           # psi_h4 = x^4 - 4x^2 y^2 = 1
-        0.0,           # psi_h5 at (1,0) = 0 (all terms have y^2 or ln(1))
-        0.0,           # psi_h6 = x^2 y^2 - y^4/3 = 0
-        1.0,           # psi_h7 = x^6 - 12x^4 y^2 + 8x^2 y^4 = 1
+        0.0,           # psi_h5: all terms have y^2 or ln(1), = 0
+        1.0,           # psi_h6 = x^6 - 12x^4 y^2 + 8x^2 y^4 = 1
+        -7.0 / 6.0,   # psi_h7: f6(1,0)*ln(1) + h(1,0) = 0 + (-7/6)
     ]
     psi_raw_center = 0.125 + A_param * (-0.125)
     for k in range(len(coeffs)):
@@ -743,6 +743,7 @@ def run_forward_validation(
     max_iter: int = 10000,
     omega: float = 1.7,
     tol: float = 1e-8,
+    source_mode: str = "analytical",
 ) -> List[dict]:
     """Run forward solve validation on all synthetic shots.
 
@@ -758,6 +759,12 @@ def run_forward_validation(
         SOR relaxation factor.
     tol : float
         Convergence tolerance.
+    source_mode : str
+        Source term mode: ``"analytical"`` uses the Solov'ev analytical
+        source (tests full pipeline including discretisation error);
+        ``"manufactured"`` applies the discrete GS stencil to the
+        reference psi (tests only solver correctness, eliminating
+        truncation error).
 
     Returns
     -------
@@ -775,6 +782,7 @@ def run_forward_validation(
     print(f"Found {n_shots} synthetic shots in {shots_dir}")
     print(f"Results will be saved to {results_dir}")
     print(f"Solver settings: max_iter={max_iter}, omega={omega}, tol={tol}")
+    print(f"Source mode: {source_mode}")
     print("-" * 78)
 
     all_results = []
@@ -784,17 +792,23 @@ def run_forward_validation(
 
         t0 = time.time()
 
-        # Compute the Solov'ev source term from analytical parameters.
-        # psi_rz is (nr, nz); we need source in the same layout initially,
-        # but picard_sor_solve will transpose internally.
+        # Compute source term.
         nr = len(shot.r_grid)
         nz = len(shot.z_grid)
-        RR_nz_nr = np.ones((nz, 1)) * shot.r_grid[np.newaxis, :]
-        source_nz_nr = _compute_solovev_source(
-            RR_nz_nr, shot.R0, shot.A_param, shot.scale_factor,
-        )
-        # Transpose to (nr, nz) to match psi_rz convention
-        source_nr_nz = source_nz_nr.T
+
+        if source_mode == "manufactured":
+            # Apply the discrete GS stencil to the reference psi.
+            # This tests solver correctness only (no truncation error).
+            source_nr_nz = _compute_source_manufactured_vectorised(
+                shot.psi_rz, shot.r_grid, shot.z_grid,
+            )
+        else:
+            # Analytical Solov'ev source (tests full pipeline).
+            RR_nz_nr = np.ones((nz, 1)) * shot.r_grid[np.newaxis, :]
+            source_nz_nr = _compute_solovev_source(
+                RR_nz_nr, shot.R0, shot.A_param, shot.scale_factor,
+            )
+            source_nr_nz = source_nz_nr.T
 
         # Run Picard+SOR forward solve
         ours = picard_sor_solve(
@@ -1015,6 +1029,13 @@ def main() -> None:
         "--seed", type=int, default=20260214,
         help="RNG seed for shot generation if shots don't exist (default: 20260214).",
     )
+    parser.add_argument(
+        "--source-mode", type=str, default="analytical",
+        choices=["analytical", "manufactured"],
+        help="Source term mode: 'analytical' (Solov'ev, tests full pipeline) "
+             "or 'manufactured' (discrete stencil applied to reference psi, "
+             "tests solver correctness only). Default: analytical.",
+    )
     args = parser.parse_args()
 
     script_dir = Path(__file__).resolve().parent
@@ -1062,6 +1083,7 @@ def main() -> None:
         max_iter=args.max_iter,
         omega=args.omega,
         tol=args.tol,
+        source_mode=args.source_mode,
     )
 
     if not results:

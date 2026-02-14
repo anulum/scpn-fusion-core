@@ -96,24 +96,34 @@ def _psi_h5(x: NDArray, y: NDArray) -> NDArray:
 
 
 def _psi_h6(x: NDArray, y: NDArray) -> NDArray:
-    """psi_6 = x^2 y^2 - y^4/3  (even in y, no ln)."""
-    # This is the y-even, non-logarithmic 4th-order solution.
-    # It couples radial and vertical structure without log singularity.
-    return x ** 2 * y ** 2 - y ** 4 / 3.0
+    """psi_6 = x^6 - 12 x^4 y^2 + 8 x^2 y^4.
+
+    Sixth-order polynomial homogeneous solution of the GS equation
+    (even in y, no ln).  Cerfon & Freidberg (2010), Appendix A.
+    """
+    return x ** 6 - 12.0 * x ** 4 * y ** 2 + 8.0 * x ** 2 * y ** 4
 
 
 def _psi_h7(x: NDArray, y: NDArray) -> NDArray:
-    """psi_7 = x^2 y^4 - 3/5 y^6 + (3 x^4 y^2)/2 ln(x) ...
+    """psi_7 = (x^6 - 12 x^4 y^2 + 8 x^2 y^4) ln(x)
+              - (7/6) x^6 + 9 x^4 y^2 - (8/15) y^6.
 
-    Sixth-order term.  Included for completeness; rarely needed for
-    ITER-class shaping but useful for high-triangularity stress tests.
+    Sixth-order logarithmic homogeneous solution of the GS equation
+    (even in y, with ln).  Derived as the companion log-solution of
+    psi_6 following the Cerfon-Freidberg construction: if f(x,y) is
+    a polynomial homogeneous solution, then g = f·ln(x) + h(x,y) is
+    also homogeneous when h is chosen to cancel Delta*(f·ln x).
 
-    Simplified form: y * (x^4 - 4 x^2 y^2) -- this is the *odd-in-y*
-    companion of psi_4, adequate for up-down asymmetric shaping.
-    For our symmetric-boundary shots we use:
-        psi_7 = x^6 - 12 x^4 y^2 + 8 x^2 y^4.
+    The cross-term source Delta*(f·ln x) = (2/x)(f' - f/x) evaluates
+    to 10 x^4 - 72 x^2 y^2 + 16 y^4 for f = psi_6.  The particular
+    solution h satisfying Delta*(h) = -(10 x^4 - 72 x^2 y^2 + 16 y^4)
+    is h = -(7/6) x^6 + 9 x^4 y^2 - (8/15) y^6.
     """
-    return x ** 6 - 12.0 * x ** 4 * y ** 2 + 8.0 * x ** 2 * y ** 4
+    x_safe = np.clip(x, 1e-30, None)
+    lnx = np.log(x_safe)
+    f6 = x ** 6 - 12.0 * x ** 4 * y ** 2 + 8.0 * x ** 2 * y ** 4
+    h = -(7.0 / 6.0) * x ** 6 + 9.0 * x ** 4 * y ** 2 - (8.0 / 15.0) * y ** 6
+    return f6 * lnx + h
 
 
 # Ordered list so we can index c[0..6] -> psi_h1..psi_h7
@@ -209,9 +219,9 @@ class SolovevEquilibrium:
     delta : float
         Triangularity.
     nr : int
-        Number of R grid points (default 65).
+        Number of R grid points (default 129).
     nz : int
-        Number of Z grid points (default 65).
+        Number of Z grid points (default 129).
     n_boundary : int
         Number of boundary constraint points (default 64).
     n_probes : int
@@ -224,8 +234,8 @@ class SolovevEquilibrium:
     Ip: float          # MA
     kappa: float
     delta: float
-    nr: int = 65
-    nz: int = 65
+    nr: int = 129
+    nz: int = 129
     n_boundary: int = 64
     n_probes: int = 40
 
@@ -741,7 +751,7 @@ def generate_all_shots(
             "psi_axis": float(eq.psi_axis),
             "r_axis_m": round(float(eq.r_axis), 6),
             "z_axis_m": round(float(eq.z_axis), 6),
-            "has_interior_minimum": eq.has_interior_minimum(),
+            "has_interior_minimum": bool(eq.has_interior_minimum()),
             "boundary_kappa_estimate": round(eq.boundary_kappa_estimate(), 4),
             "coefficients": [round(float(c), 10) for c in eq.coefficients],
         }
