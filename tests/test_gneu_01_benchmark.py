@@ -39,6 +39,11 @@ def test_run_benchmark_meets_thresholds_on_smoke_config() -> None:
     assert out["passes_thresholds"] is True
 
 
+def test_gneu_controller_uses_nonzero_binary_margin() -> None:
+    controller = gneu_01_benchmark._build_controller()
+    assert getattr(controller, "_sc_binary_margin", 0.0) > 0.0
+
+
 def test_render_markdown_contains_key_sections() -> None:
     report = gneu_01_benchmark.generate_report(seed=5, episodes=4, window=40)
     text = gneu_01_benchmark.render_markdown(report)
