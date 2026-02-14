@@ -13,6 +13,7 @@ import numpy as np
 import pytest
 
 from scpn_fusion.control.advanced_soc_fusion_learning import (
+    CoupledSandpileReactor,
     FusionAIAgent,
     run_advanced_learning_sim,
 )
@@ -116,3 +117,38 @@ def test_run_advanced_learning_sim_rejects_invalid_runtime_inputs(
     params.update(kwargs)
     with pytest.raises(ValueError, match=match):
         run_advanced_learning_sim(**params)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"size": 4}, "size"),
+        ({"flow_generation": -0.1}, "flow_generation"),
+        ({"flow_damping": 1.0}, "flow_damping"),
+        ({"shear_efficiency": -0.1}, "shear_efficiency"),
+        ({"max_sub_steps": 0}, "max_sub_steps"),
+    ],
+)
+def test_reactor_rejects_invalid_constructor_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        CoupledSandpileReactor(**kwargs)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"alpha": -0.1}, "alpha"),
+        ({"gamma": 1.1}, "gamma"),
+        ({"epsilon": float("nan")}, "epsilon"),
+        ({"n_states_turb": 0}, "n_states_turb"),
+        ({"n_states_flow": 0}, "n_states_flow"),
+        ({"n_actions": 0}, "n_actions"),
+    ],
+)
+def test_agent_rejects_invalid_constructor_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        FusionAIAgent(**kwargs)

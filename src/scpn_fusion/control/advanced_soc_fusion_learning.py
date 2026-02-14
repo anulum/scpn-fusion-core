@@ -53,12 +53,27 @@ class CoupledSandpileReactor:
         max_sub_steps: int = 50,
         flow_bounds: Tuple[float, float] = (0.0, 5.0),
     ) -> None:
-        self.size = max(int(size), 8)
+        size = int(size)
+        if size < 8:
+            raise ValueError("size must be >= 8.")
+        self.size = size
         self.z_crit_base = float(z_crit_base)
-        self.flow_generation = max(float(flow_generation), 0.0)
-        self.flow_damping = float(np.clip(flow_damping, 0.0, 0.999999))
-        self.shear_efficiency = max(float(shear_efficiency), 0.0)
-        self.max_sub_steps = max(int(max_sub_steps), 1)
+        flow_generation = float(flow_generation)
+        if not np.isfinite(flow_generation) or flow_generation < 0.0:
+            raise ValueError("flow_generation must be finite and >= 0.")
+        flow_damping = float(flow_damping)
+        if not np.isfinite(flow_damping) or flow_damping < 0.0 or flow_damping >= 1.0:
+            raise ValueError("flow_damping must be finite and in [0, 1).")
+        shear_efficiency = float(shear_efficiency)
+        if not np.isfinite(shear_efficiency) or shear_efficiency < 0.0:
+            raise ValueError("shear_efficiency must be finite and >= 0.")
+        max_sub_steps = int(max_sub_steps)
+        if max_sub_steps < 1:
+            raise ValueError("max_sub_steps must be >= 1.")
+        self.flow_generation = flow_generation
+        self.flow_damping = flow_damping
+        self.shear_efficiency = shear_efficiency
+        self.max_sub_steps = max_sub_steps
         self.flow_bounds = _normalize_bounds(flow_bounds, "flow_bounds")
 
         self.Z = np.zeros(self.size, dtype=np.float64)
@@ -111,12 +126,30 @@ class FusionAIAgent:
         n_states_flow: int = N_STATES_FLOW,
         n_actions: int = N_ACTIONS,
     ) -> None:
-        self.alpha = float(np.clip(alpha, 0.0, 1.0))
-        self.gamma = float(np.clip(gamma, 0.0, 1.0))
-        self.epsilon = float(np.clip(epsilon, 0.0, 1.0))
-        self.n_states_turb = max(int(n_states_turb), 1)
-        self.n_states_flow = max(int(n_states_flow), 1)
-        self.n_actions = max(int(n_actions), 1)
+        alpha = float(alpha)
+        if not np.isfinite(alpha) or alpha < 0.0 or alpha > 1.0:
+            raise ValueError("alpha must be finite and in [0, 1].")
+        gamma = float(gamma)
+        if not np.isfinite(gamma) or gamma < 0.0 or gamma > 1.0:
+            raise ValueError("gamma must be finite and in [0, 1].")
+        epsilon = float(epsilon)
+        if not np.isfinite(epsilon) or epsilon < 0.0 or epsilon > 1.0:
+            raise ValueError("epsilon must be finite and in [0, 1].")
+        n_states_turb = int(n_states_turb)
+        if n_states_turb < 1:
+            raise ValueError("n_states_turb must be >= 1.")
+        n_states_flow = int(n_states_flow)
+        if n_states_flow < 1:
+            raise ValueError("n_states_flow must be >= 1.")
+        n_actions = int(n_actions)
+        if n_actions < 1:
+            raise ValueError("n_actions must be >= 1.")
+        self.alpha = alpha
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.n_states_turb = n_states_turb
+        self.n_states_flow = n_states_flow
+        self.n_actions = n_actions
         self.q_table = np.zeros(
             (self.n_states_turb, self.n_states_flow, self.n_actions),
             dtype=np.float64,
