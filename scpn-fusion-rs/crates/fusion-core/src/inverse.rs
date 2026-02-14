@@ -93,25 +93,40 @@ fn pack_params(p: &ProfileParams, ff: &ProfileParams) -> [f64; N_PARAMS] {
     ]
 }
 
-fn sanitize_params(mut p: ProfileParams) -> ProfileParams {
-    p.ped_top = p.ped_top.abs().max(1e-3);
-    p.ped_width = p.ped_width.abs().max(1e-4);
-    p
+fn validate_profile_params(params: &ProfileParams, label: &str) -> FusionResult<()> {
+    if !params.ped_top.is_finite() || params.ped_top <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "{label}.ped_top must be finite and > 0, got {}",
+            params.ped_top
+        )));
+    }
+    if !params.ped_width.is_finite() || params.ped_width <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "{label}.ped_width must be finite and > 0, got {}",
+            params.ped_width
+        )));
+    }
+    if !params.ped_height.is_finite() || !params.core_alpha.is_finite() {
+        return Err(FusionError::ConfigError(format!(
+            "{label}.ped_height/core_alpha must be finite"
+        )));
+    }
+    Ok(())
 }
 
 fn unpack_params(x: &[f64; N_PARAMS]) -> (ProfileParams, ProfileParams) {
-    let p = sanitize_params(ProfileParams {
+    let p = ProfileParams {
         ped_height: x[0],
         ped_top: x[1],
         ped_width: x[2],
         core_alpha: x[3],
-    });
-    let ff = sanitize_params(ProfileParams {
+    };
+    let ff = ProfileParams {
         ped_height: x[4],
         ped_top: x[5],
         ped_width: x[6],
         core_alpha: x[7],
-    });
+    };
     (p, ff)
 }
 
@@ -147,9 +162,15 @@ fn probe_indices(grid: &Grid2D, probes_rz: &[(f64, f64)]) -> Vec<(usize, usize)>
         .collect()
 }
 
-fn mtanh_profile_dpsi_norm(psi_norm: f64, params: &ProfileParams) -> f64 {
-    let w = params.ped_width.abs().max(1e-8);
-    let ped_top = params.ped_top.abs().max(1e-8);
+fn mtanh_profile_dpsi_norm(psi_norm: f64, params: &ProfileParams, label: &str) -> FusionResult<f64> {
+    if !psi_norm.is_finite() {
+        return Err(FusionError::ConfigError(format!(
+            "{label}.psi_norm must be finite, got {psi_norm}"
+        )));
+    }
+    validate_profile_params(params, label)?;
+    let w = params.ped_width;
+    let ped_top = params.ped_top;
     let y = (params.ped_top - psi_norm) / w;
     let tanh_y = y.tanh();
     let sech2 = 1.0 - tanh_y * tanh_y;
@@ -160,7 +181,13 @@ fn mtanh_profile_dpsi_norm(psi_norm: f64, params: &ProfileParams) -> f64 {
     } else {
         0.0
     };
-    d_edge + d_core
+    let d = d_edge + d_core;
+    if !d.is_finite() {
+        return Err(FusionError::ConfigError(format!(
+            "{label}.d_profile_dpsi_norm became non-finite"
+        )));
+    }
+    Ok(d)
 }
 
 fn validate_inverse_config(config: &InverseConfig) -> FusionResult<()> {
@@ -213,6 +240,8 @@ fn kernel_forward_observables(
     kernel_cfg: &KernelInverseConfig,
 ) -> FusionResult<Vec<f64>> {
     validate_kernel_inverse_config(kernel_cfg)?;
+    validate_profile_params(&params_p, "params_p")?;
+    validate_profile_params(&params_ff, "params_ff")?;
     let mut cfg = reactor_config.clone();
     cfg.solver.max_iterations = kernel_cfg.kernel_max_iterations;
 
@@ -280,6 +309,8 @@ fn kernel_analytical_forward_and_jacobian(
     kernel_cfg: &KernelInverseConfig,
 ) -> FusionResult<(Vec<f64>, Vec<Vec<f64>>)> {
     validate_kernel_inverse_config(kernel_cfg)?;
+    validate_profile_params(&params_p, "params_p")?;
+    validate_profile_params(&params_ff, "params_ff")?;
     let mut cfg = reactor_config.clone();
     cfg.solver.max_iterations = kernel_cfg.kernel_max_iterations;
 
@@ -319,8 +350,8 @@ fn kernel_analytical_forward_and_jacobian(
             let r = grid.rr[[iz, ir]].abs().max(MIN_RADIUS);
             let p = mtanh_profile(psi_n, &params_p);
             let ff = mtanh_profile(psi_n, &params_ff);
-            let dp_dpsi = mtanh_profile_dpsi_norm(psi_n, &params_p);
-            let dff_dpsi = mtanh_profile_dpsi_norm(psi_n, &params_ff);
+            let dp_dpsi = mtanh_profile_dpsi_norm(psi_n, &params_p, "params_p")?;
+            let dff_dpsi = mtanh_profile_dpsi_norm(psi_n, &params_ff, "params_ff")?;
 
             raw[[iz, ir]] = SOURCE_BETA_MIX * r * p + (1.0 - SOURCE_BETA_MIX) * (ff / (mu0 * r));
             raw_dpsi_norm[[iz, ir]] =
@@ -440,11 +471,10 @@ pub fn reconstruct_equilibrium(
         )));
     }
     validate_inverse_config(config)?;
+    validate_profile_params(&initial_params_p, "initial_params_p")?;
+    validate_profile_params(&initial_params_ff, "initial_params_ff")?;
 
-    let mut x = pack_params(
-        &sanitize_params(initial_params_p),
-        &sanitize_params(initial_params_ff),
-    );
+    let mut x = pack_params(&initial_params_p, &initial_params_ff);
     let mut residual_history = Vec::with_capacity(config.max_iterations + 1);
     let mut converged = false;
     let mut iter_done = 0;
@@ -515,7 +545,12 @@ pub fn reconstruct_equilibrium(
                 x_trial[i] += local_damping * delta[i];
             }
             let (p_trial, ff_trial) = unpack_params(&x_trial);
-            let x_trial_sanitized = pack_params(&p_trial, &ff_trial);
+            if validate_profile_params(&p_trial, "params_p").is_err()
+                || validate_profile_params(&ff_trial, "params_ff").is_err()
+            {
+                local_damping *= 0.5;
+                continue;
+            }
             let pred_trial = forward_model_response(probe_psi_norm, &p_trial, &ff_trial)?;
             let residual_trial = (pred_trial
                 .iter()
@@ -526,7 +561,7 @@ pub fn reconstruct_equilibrium(
                 .sqrt();
 
             if residual_trial <= residual {
-                x = x_trial_sanitized;
+                x = x_trial;
                 damping = (local_damping * 1.2).min(1.0);
                 accepted = true;
                 break;
@@ -540,6 +575,8 @@ pub fn reconstruct_equilibrium(
     }
 
     let (params_p, params_ff) = unpack_params(&x);
+    validate_profile_params(&params_p, "params_p")?;
+    validate_profile_params(&params_ff, "params_ff")?;
     let prediction = forward_model_response(probe_psi_norm, &params_p, &params_ff)?;
     let final_residual = (prediction
         .iter()
@@ -584,11 +621,10 @@ pub fn reconstruct_equilibrium_with_kernel(
         )));
     }
     validate_kernel_inverse_config(kernel_cfg)?;
+    validate_profile_params(&initial_params_p, "initial_params_p")?;
+    validate_profile_params(&initial_params_ff, "initial_params_ff")?;
 
-    let mut x = pack_params(
-        &sanitize_params(initial_params_p),
-        &sanitize_params(initial_params_ff),
-    );
+    let mut x = pack_params(&initial_params_p, &initial_params_ff);
     let mut residual_history = Vec::with_capacity(kernel_cfg.inverse.max_iterations + 1);
     let mut converged = false;
     let mut iter_done = 0usize;
@@ -668,6 +704,12 @@ pub fn reconstruct_equilibrium_with_kernel(
                 x_trial[i] += local_damping * delta[i];
             }
             let (p_trial, ff_trial) = unpack_params(&x_trial);
+            if validate_profile_params(&p_trial, "params_p").is_err()
+                || validate_profile_params(&ff_trial, "params_ff").is_err()
+            {
+                local_damping *= 0.5;
+                continue;
+            }
             let pred_trial = kernel_forward_observables(
                 reactor_config,
                 probes_rz,
@@ -683,8 +725,7 @@ pub fn reconstruct_equilibrium_with_kernel(
                 / measurements.len() as f64)
                 .sqrt();
             if residual_trial <= residual {
-                let (p_s, ff_s) = unpack_params(&x_trial);
-                x = pack_params(&p_s, &ff_s);
+                x = x_trial;
                 damping = (local_damping * 1.1).min(1.0);
                 accepted = true;
                 break;
@@ -698,6 +739,8 @@ pub fn reconstruct_equilibrium_with_kernel(
     }
 
     let (params_p, params_ff) = unpack_params(&x);
+    validate_profile_params(&params_p, "params_p")?;
+    validate_profile_params(&params_ff, "params_ff")?;
     let prediction =
         kernel_forward_observables(reactor_config, probes_rz, params_p, params_ff, kernel_cfg)?;
     let final_residual = (prediction
@@ -857,6 +900,29 @@ mod tests {
     }
 
     #[test]
+    fn test_inverse_rejects_invalid_initial_profile_params() {
+        let probes: Vec<f64> = (0..8).map(|i| i as f64 / 7.0).collect();
+        let measurements = vec![0.1; probes.len()];
+        let bad_init = ProfileParams {
+            ped_top: 0.0,
+            ..ProfileParams::default()
+        };
+        let cfg = InverseConfig::default();
+        let err = reconstruct_equilibrium(
+            &probes,
+            &measurements,
+            bad_init,
+            ProfileParams::default(),
+            &cfg,
+        )
+        .expect_err("invalid initial profile params must error");
+        match err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("initial_params_p.ped_top")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
     fn test_kernel_inverse_api_input_validation() {
         let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
             .unwrap();
@@ -901,6 +967,30 @@ mod tests {
         .expect_err("invalid kernel config must error");
         match err {
             FusionError::ConfigError(msg) => assert!(msg.contains("kernel_max_iterations")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_kernel_inverse_rejects_invalid_initial_profile_params() {
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
+            .unwrap();
+        let kcfg = KernelInverseConfig::default();
+        let bad_init = ProfileParams {
+            ped_width: 0.0,
+            ..ProfileParams::default()
+        };
+        let err = reconstruct_equilibrium_with_kernel(
+            &cfg,
+            &[(6.2, 0.0), (6.3, 0.1)],
+            &[1.0, 1.0],
+            bad_init,
+            ProfileParams::default(),
+            &kcfg,
+        )
+        .expect_err("invalid kernel initial profile params must error");
+        match err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("initial_params_p.ped_width")),
             other => panic!("Unexpected error: {other:?}"),
         }
     }

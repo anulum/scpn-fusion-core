@@ -272,6 +272,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-045 | P1 | Runtime | Harden MPI decomposition/halo utilities with strict finite-data and metadata guards | `scpn-fusion-rs/crates/fusion-core/src/mpi_domain.rs` | MPI decomposition and halo/stitch/delta utilities now reject invalid runtime inputs (non-finite local/global array values, invalid slice bounds/metadata, malformed halo buffers, non-finite L2 inputs/outputs) via explicit `FusionError::PhysicsViolation` instead of silently propagating invalid values through exchange/stitch operations | `cargo test -p fusion-core mpi_domain::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-046 | P1 | Runtime | Harden VMEC interface import/export validation for modes and key semantics | `scpn-fusion-rs/crates/fusion-core/src/vmec_interface.rs` | VMEC interface paths now reject malformed runtime payloads (non-finite scalar/mode coefficients, invalid negative `m`, duplicate scalar keys, non-finite parsed float fields) via explicit `FusionError::PhysicsViolation` instead of silently accepting duplicate-key overrides or NaN/Inf coefficients in boundary states | `cargo test -p fusion-core vmec_interface::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-047 | P1 | Runtime | Harden Jacobian/forward-model APIs with strict probe and profile-parameter validation | `scpn-fusion-rs/crates/fusion-core/src/jacobian.rs`, `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Jacobian and forward-model paths now reject invalid runtime inputs (empty/out-of-range/non-finite probe vectors, malformed profile parameters, and non-finite Jacobian/response outputs) via explicit `FusionError::ConfigError`, and inverse reconstruction now propagates these failures through `FusionResult` instead of accepting silently sanitized profile parameter combinations | `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
+| H8-048 | P1 | Runtime | Remove silent inverse-profile sanitization and enforce strict parameter validation | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Inverse reconstruction now rejects invalid initial profile parameters explicitly, removes silent `abs/max` coercion from profile unpack/derivative paths, and treats invalid line-search trial parameters as rejected updates (not auto-sanitized), with regression coverage for both analytic and kernel inverse entrypoints | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 
 ## Task Accounting
 
@@ -279,7 +280,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 183
+- Post-S4 hardening tasks delivered: 184
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -486,4 +487,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-045`
 - Completed: `H8-046`
 - Completed: `H8-047`
+- Completed: `H8-048`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
