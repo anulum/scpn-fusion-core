@@ -131,8 +131,19 @@ def extract_features(
     for axis in axes:
         if axis.obs_key not in obs:
             raise KeyError(f"Missing observation key for feature extraction: {axis.obs_key}")
-        scale = axis.scale if abs(axis.scale) > 1e-12 else 1e-12
-        err = (axis.target - float(obs[axis.obs_key])) / scale
+        obs_value = float(obs[axis.obs_key])
+        if not math.isfinite(obs_value):
+            raise ValueError(
+                f"Observation value for feature extraction must be finite: {axis.obs_key}"
+            )
+        target = float(axis.target)
+        if not math.isfinite(target):
+            raise ValueError(f"Feature axis target must be finite: {axis.obs_key}")
+        scale_raw = float(axis.scale)
+        if not math.isfinite(scale_raw):
+            raise ValueError(f"Feature axis scale must be finite: {axis.obs_key}")
+        scale = scale_raw if abs(scale_raw) > 1e-12 else 1e-12
+        err = (target - obs_value) / scale
         err = max(-1.0, min(1.0, err))
         out[axis.pos_key] = _clip01(max(0.0, err))
         out[axis.neg_key] = _clip01(max(0.0, -err))
@@ -141,7 +152,10 @@ def extract_features(
         for key in passthrough_keys:
             if key not in obs:
                 raise KeyError(f"Missing observation key for passthrough: {key}")
-            out[key] = _clip01(float(obs[key]))
+            value = float(obs[key])
+            if not math.isfinite(value):
+                raise ValueError(f"Passthrough observation value must be finite: {key}")
+            out[key] = _clip01(value)
 
     return out
 

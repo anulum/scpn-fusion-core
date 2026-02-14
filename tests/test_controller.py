@@ -1266,6 +1266,40 @@ class TestContracts:
         assert "density_norm" in feats
         assert abs(feats["density_norm"] - 0.73) < 1e-12
 
+    def test_extract_features_rejects_nonfinite_axis_observation(self) -> None:
+        with pytest.raises(ValueError, match="must be finite"):
+            extract_features(
+                obs={"R_axis_m": float("nan"), "Z_axis_m": 0.0},
+                targets=ControlTargets(),
+                scales=ControlScales(),
+            )
+
+    def test_extract_features_rejects_nonfinite_passthrough_observation(self) -> None:
+        with pytest.raises(ValueError, match="must be finite"):
+            extract_features(
+                obs={"R_axis_m": 6.2, "Z_axis_m": 0.0, "density_norm": float("inf")},
+                targets=ControlTargets(),
+                scales=ControlScales(),
+                passthrough_keys=["density_norm"],
+            )
+
+    def test_extract_features_rejects_nonfinite_custom_axis_scale(self) -> None:
+        with pytest.raises(ValueError, match="scale must be finite"):
+            extract_features(
+                obs={"beta_n": 1.8},
+                targets=ControlTargets(),
+                scales=ControlScales(),
+                feature_axes=[
+                    FeatureAxisSpec(
+                        obs_key="beta_n",
+                        target=2.0,
+                        scale=float("nan"),
+                        pos_key="x_beta_pos",
+                        neg_key="x_beta_neg",
+                    )
+                ],
+            )
+
     def test_decode_actions_basic(self) -> None:
         marking = [0.0, 0.0, 0.0, 0.0, 0.8, 0.2, 0.7, 0.1]
         specs = [
