@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -98,7 +99,10 @@ class IcePelletFuelingController:
     """Hybrid Petri-to-SNN + PI fueling controller."""
 
     def __init__(self, target_density: float = 1.0) -> None:
-        self.target_density = float(target_density)
+        td = float(target_density)
+        if not np.isfinite(td) or td <= 0.0:
+            raise ValueError("target_density must be finite and > 0.")
+        self.target_density = td
         self.controller = _build_fueling_controller()
         self.integrator = 0.0
 
@@ -133,9 +137,16 @@ def simulate_iter_density_control(
     dt_s: float = 1e-3,
 ) -> FuelingSimResult:
     steps = max(int(steps), 8)
-    dt_s = max(float(dt_s), 1e-5)
+    raw_dt_s = float(dt_s)
     target_density = float(target_density)
     density = float(initial_density)
+    if not np.isfinite(target_density) or target_density <= 0.0:
+        raise ValueError("target_density must be finite and > 0.")
+    if not np.isfinite(density) or density < 0.0:
+        raise ValueError("initial_density must be finite and >= 0.")
+    if not np.isfinite(raw_dt_s) or raw_dt_s <= 0.0:
+        raise ValueError("dt_s must be finite and > 0.")
+    dt_s = max(raw_dt_s, 1e-5)
 
     ctrl = IcePelletFuelingController(target_density=target_density)
     history_density: list[float] = []
@@ -168,3 +179,36 @@ def simulate_iter_density_control(
         history_density=history_density,
         history_command=history_command,
     )
+
+
+def run_fueling_mode(
+    *,
+    target_density: float = 1.0,
+    initial_density: float = 0.82,
+    steps: int = 3000,
+    dt_s: float = 1e-3,
+) -> dict[str, Any]:
+    """
+    Run deterministic fueling simulation and return summary metrics.
+    """
+    result = simulate_iter_density_control(
+        target_density=target_density,
+        initial_density=initial_density,
+        steps=steps,
+        dt_s=dt_s,
+    )
+    dens = np.asarray(result.history_density, dtype=np.float64)
+    cmd = np.asarray(result.history_command, dtype=np.float64)
+    return {
+        "target_density": float(target_density),
+        "initial_density": float(initial_density),
+        "steps": int(result.steps),
+        "dt_s": float(result.dt_s),
+        "final_density": float(result.final_density),
+        "final_abs_error": float(result.final_abs_error),
+        "rmse": float(result.rmse),
+        "max_abs_command": float(np.max(np.abs(cmd))) if cmd.size else 0.0,
+        "min_density": float(np.min(dens)) if dens.size else 0.0,
+        "max_density": float(np.max(dens)) if dens.size else 0.0,
+        "passes_thresholds": bool(result.final_abs_error <= 1e-3),
+    }
