@@ -10,7 +10,7 @@ from __future__ import annotations
 import sys
 from collections import deque
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,21 +25,28 @@ except Exception:  # pragma: no cover - optional dependency path
     StochasticLIFNeuron = None
     QuantumEntropySource = None
 
-try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:
-    try:
-        from scpn_fusion.core.fusion_kernel import FusionKernel
-    except ImportError as exc:  # pragma: no cover - import-guard path
-        raise ImportError(
-            "Unable to import FusionKernel. Run with PYTHONPATH=src "
-            "or use `python -m scpn_fusion.control.neuro_cybernetic_controller`."
-        ) from exc
-
 # --- CONTROL PARAMETERS ---
 SHOT_DURATION = 100
 TARGET_R = 6.2
 TARGET_Z = 0.0
+
+
+def _resolve_fusion_kernel() -> Any:
+    """Resolve FusionKernel lazily to keep pool-only paths dependency-light."""
+    try:
+        from scpn_fusion.core._rust_compat import FusionKernel as _FusionKernel
+
+        return _FusionKernel
+    except Exception:
+        try:
+            from scpn_fusion.core.fusion_kernel import FusionKernel as _FusionKernel
+
+            return _FusionKernel
+        except Exception as exc:  # pragma: no cover - import-guard path
+            raise ImportError(
+                "Unable to import FusionKernel. Run with PYTHONPATH=src "
+                "or use `python -m scpn_fusion.control.neuro_cybernetic_controller`."
+            ) from exc
 
 
 class SpikingControllerPool:
@@ -175,7 +182,8 @@ class NeuroCyberneticController:
     """
 
     def __init__(self, config_file: str, seed: int = 42) -> None:
-        self.kernel = FusionKernel(config_file)
+        fusion_kernel_cls = _resolve_fusion_kernel()
+        self.kernel = fusion_kernel_cls(config_file)
         self.seed = int(seed)
         self.history: Dict[str, list[float]] = {
             "t": [],
