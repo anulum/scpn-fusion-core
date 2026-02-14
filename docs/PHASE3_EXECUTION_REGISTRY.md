@@ -218,6 +218,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-081 | P1 | SCPN | Harden artifact transition delay parsing with strict integer guardrails | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Artifact loading now rejects non-integer transition `delay_ticks` values with deterministic validation errors (no silent cast/floor coercion), while preserving delay semantics for valid integer artifacts | `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
 | H7-082 | P1 | SCPN | Harden artifact stream-length parsing with strict integer guardrails | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Artifact loading now rejects non-integer `meta.stream_length` values with deterministic validation errors (no silent cast/floor coercion), while preserving valid integer stream-length semantics and controller runtime behavior | `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
 | H7-083 | P1 | SCPN | Harden artifact control-timestep validation with finite-value guardrails | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Artifact loading now rejects non-finite `meta.dt_control_s` values (`NaN`/`Inf`) with deterministic validation errors, preventing invalid control timesteps from bypassing runtime checks | `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
+| H7-084 | P1 | SCPN | Harden artifact fixed-point metadata validation with strict type/range guardrails | `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py` | Artifact loading now rejects invalid fixed-point metadata (`data_width`, `fraction_bits`, `signed`) when types/ranges are inconsistent, preventing malformed control-word semantics from entering runtime | `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -225,7 +226,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 129
+- Post-S4 hardening tasks delivered: 130
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -378,4 +379,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-081`
 - Completed: `H7-082`
 - Completed: `H7-083`
+- Completed: `H7-084`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted).

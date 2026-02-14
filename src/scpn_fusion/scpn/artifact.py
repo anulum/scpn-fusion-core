@@ -280,6 +280,21 @@ def _validate(artifact: Artifact) -> None:
             f"got '{meta.firing_mode}'"
         )
 
+    if isinstance(meta.fixed_point.data_width, bool) or not isinstance(
+        meta.fixed_point.data_width, int
+    ):
+        raise ArtifactValidationError("fixed_point.data_width must be an integer >= 1")
+    if meta.fixed_point.data_width < 1:
+        raise ArtifactValidationError("fixed_point.data_width must be >= 1")
+    if isinstance(meta.fixed_point.fraction_bits, bool) or not isinstance(
+        meta.fixed_point.fraction_bits, int
+    ):
+        raise ArtifactValidationError("fixed_point.fraction_bits must be an integer >= 0")
+    if meta.fixed_point.fraction_bits < 0:
+        raise ArtifactValidationError("fixed_point.fraction_bits must be >= 0")
+    if not isinstance(meta.fixed_point.signed, bool):
+        raise ArtifactValidationError("fixed_point.signed must be a boolean")
+
     if isinstance(meta.stream_length, bool) or not isinstance(meta.stream_length, int):
         raise ArtifactValidationError("stream_length must be an integer >= 1")
     if meta.stream_length < 1:

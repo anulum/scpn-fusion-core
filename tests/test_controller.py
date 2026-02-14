@@ -406,6 +406,33 @@ class TestLevel0Static:
         finally:
             os.unlink(bad_path)
 
+    @pytest.mark.parametrize(
+        ("field_path", "value", "match"),
+        [
+            (("meta", "fixed_point", "data_width"), 16.5, "fixed_point.data_width"),
+            (("meta", "fixed_point", "fraction_bits"), -1, "fixed_point.fraction_bits"),
+            (("meta", "fixed_point", "signed"), "true", "fixed_point.signed"),
+        ],
+    )
+    def test_load_artifact_rejects_invalid_fixed_point_metadata(
+        self, artifact_path: str, field_path: tuple[str, ...], value: object, match: str
+    ) -> None:
+        obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
+        target: dict[str, object] = obj
+        for key in field_path[:-1]:
+            target = target[key]  # type: ignore[index]
+        target[field_path[-1]] = value
+        fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
+        os.close(fd)
+        try:
+            Path(bad_path).write_text(
+                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
+            )
+            with pytest.raises(ArtifactValidationError, match=match):
+                load_artifact(bad_path)
+        finally:
+            os.unlink(bad_path)
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Level 1 — Determinism
