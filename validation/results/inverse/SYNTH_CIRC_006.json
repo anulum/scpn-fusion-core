@@ -1,0 +1,20 @@
+{
+  "shot_id": "SYNTH_CIRC_006",
+  "category": "circular",
+  "A_true": -0.92147608,
+  "A_initial": -1.0391629710196841,
+  "A_recovered": -0.9216342015594127,
+  "perturbation_applied": 0.12771562233029854,
+  "iterations": 4,
+  "converged": true,
+  "residual_initial": 0.00019636182795919435,
+  "residual_final": 2.7277594172994836e-07,
+  "psi_rmse_initial": 0.013641320745891396,
+  "psi_rmse_final": 1.8949829807870594e-05,
+  "axis_error_m": 3.1250000009919177e-07,
+  "boundary_hausdorff_m": 0.060264733013739226,
+  "wall_time_s": 0.12950611114501953,
+  "A_relative_error": 0.00017159594572724925,
+  "improvement_ratio": 719.8650797499844,
+  "status": "OK"
+}

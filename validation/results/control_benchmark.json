@@ -1,0 +1,181 @@
+{
+  "generated_at_utc": "2026-02-14T19:41:09.947693+00:00",
+  "benchmark": "pid_vs_snn_head_to_head",
+  "n_scenarios": 6,
+  "formal_properties": {
+    "Boundedness proof": {
+      "pid": "No proof",
+      "snn": "PROVED"
+    },
+    "Liveness proof": {
+      "pid": "No proof",
+      "snn": "PROVED"
+    },
+    "Mutual exclusion proof": {
+      "pid": "No proof",
+      "snn": "PROVED"
+    },
+    "Deterministic routing": {
+      "pid": "N/A",
+      "snn": "PROVED"
+    }
+  },
+  "scenarios": [
+    {
+      "scenario": "step_5mm",
+      "description": "5mm instantaneous displacement, nominal plant",
+      "pid": {
+        "controller": "PID",
+        "scenario": "step_5mm",
+        "settling_time_ms": 4.6,
+        "max_overshoot_mm": 5.0125,
+        "steady_state_error_mm": 0.025850106565008402,
+        "rms_control_effort": 0.00027523880799089676,
+        "peak_control_effort": 0.002542300653032987,
+        "disrupted": false,
+        "wall_time_us_per_step": 23.331799999999998
+      },
+      "snn": {
+        "controller": "SNN",
+        "scenario": "step_5mm",
+        "settling_time_ms": 100.0,
+        "max_overshoot_mm": 5.4138171797149255,
+        "steady_state_error_mm": 1.8787693367121843,
+        "rms_control_effort": 0.006051676437031192,
+        "peak_control_effort": 0.0069,
+        "disrupted": false,
+        "wall_time_us_per_step": 63.8785
+      }
+    },
+    {
+      "scenario": "step_noisy",
+      "description": "5mm displacement with process and sensor noise",
+      "pid": {
+        "controller": "PID",
+        "scenario": "step_noisy",
+        "settling_time_ms": 4.6,
+        "max_overshoot_mm": 5.012500003047171,
+        "steady_state_error_mm": 0.025850226975584416,
+        "rms_control_effort": 0.00027523881575435195,
+        "peak_control_effort": 0.0025423006758867827,
+        "disrupted": false,
+        "wall_time_us_per_step": 23.8388
+      },
+      "snn": {
+        "controller": "SNN",
+        "scenario": "step_noisy",
+        "settling_time_ms": 100.0,
+        "max_overshoot_mm": 5.816453138670168,
+        "steady_state_error_mm": 3.7544183290591904,
+        "rms_control_effort": 0.006378646147121052,
+        "peak_control_effort": 0.0069,
+        "disrupted": false,
+        "wall_time_us_per_step": 82.1305
+      }
+    },
+    {
+      "scenario": "ramp_disturbance",
+      "description": "Ramp force disturbance (linearly increasing external force)",
+      "pid": {
+        "controller": "PID",
+        "scenario": "ramp_disturbance",
+        "settling_time_ms": 0.0,
+        "max_overshoot_mm": 0.0638696188367287,
+        "steady_state_error_mm": 0.026189133560852246,
+        "rms_control_effort": 5.277420832458923e-05,
+        "peak_control_effort": 0.00017899717212172,
+        "disrupted": false,
+        "wall_time_us_per_step": 34.2577
+      },
+      "snn": {
+        "controller": "SNN",
+        "scenario": "ramp_disturbance",
+        "settling_time_ms": 0.0,
+        "max_overshoot_mm": 0.0,
+        "steady_state_error_mm": 0.0,
+        "rms_control_effort": 0.0,
+        "peak_control_effort": 0.0,
+        "disrupted": false,
+        "wall_time_us_per_step": 62.0133
+      }
+    },
+    {
+      "scenario": "random_perturbation",
+      "description": "Continuous random Gaussian perturbations (10mm std)",
+      "pid": {
+        "controller": "PID",
+        "scenario": "random_perturbation",
+        "settling_time_ms": 0.0,
+        "max_overshoot_mm": 0.09591689005178111,
+        "steady_state_error_mm": 0.02080849804476863,
+        "rms_control_effort": 5.304081403507578e-05,
+        "peak_control_effort": 0.00017899549399592472,
+        "disrupted": false,
+        "wall_time_us_per_step": 23.310879999999997
+      },
+      "snn": {
+        "controller": "SNN",
+        "scenario": "random_perturbation",
+        "settling_time_ms": 500.0,
+        "max_overshoot_mm": 2.8631150337224525,
+        "steady_state_error_mm": 0.6483749592078568,
+        "rms_control_effort": 0.0038570426746281673,
+        "peak_control_effort": 0.0069,
+        "disrupted": false,
+        "wall_time_us_per_step": 87.70492
+      }
+    },
+    {
+      "scenario": "plant_uncertainty",
+      "description": "\u00b120% gamma, \u00b130% gain uncertainty",
+      "pid": {
+        "controller": "PID",
+        "scenario": "plant_uncertainty",
+        "settling_time_ms": 100.0,
+        "max_overshoot_mm": 31.02202053102999,
+        "steady_state_error_mm": 26.432538103532778,
+        "rms_control_effort": 0.008508676311466441,
+        "peak_control_effort": 0.015980062123549375,
+        "disrupted": false,
+        "wall_time_us_per_step": 55.5646
+      },
+      "snn": {
+        "controller": "SNN",
+        "scenario": "plant_uncertainty",
+        "settling_time_ms": 100.0,
+        "max_overshoot_mm": 5.809061366736953,
+        "steady_state_error_mm": 2.632380011681476,
+        "rms_control_effort": 0.006363881135466403,
+        "peak_control_effort": 0.0069,
+        "disrupted": false,
+        "wall_time_us_per_step": 69.61189999999999
+      }
+    },
+    {
+      "scenario": "sensor_dropout",
+      "description": "50ms sensor measurement dropout (stuck at last value)",
+      "pid": {
+        "controller": "PID",
+        "scenario": "sensor_dropout",
+        "settling_time_ms": 100.0,
+        "max_overshoot_mm": 1.463940018846928e+18,
+        "steady_state_error_mm": 1.500927713003981e+17,
+        "rms_control_effort": 8.100275623956772,
+        "peak_control_effort": 10.0,
+        "disrupted": true,
+        "wall_time_us_per_step": 109.43719999999999
+      },
+      "snn": {
+        "controller": "SNN",
+        "scenario": "sensor_dropout",
+        "settling_time_ms": 100.0,
+        "max_overshoot_mm": 1.321670996831336e+22,
+        "steady_state_error_mm": 1.355064142709728e+21,
+        "rms_control_effort": 0.0048790367901871785,
+        "peak_control_effort": 0.0069,
+        "disrupted": true,
+        "wall_time_us_per_step": 133.7359
+      }
+    }
+  ]
+}

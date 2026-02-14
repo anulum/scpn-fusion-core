@@ -1,0 +1,20 @@
+{
+  "shot_id": "SYNTH_ITER_011",
+  "category": "high_elongation",
+  "A_true": -0.75719621,
+  "A_initial": -0.8851938760376628,
+  "A_recovered": -0.7572375043747671,
+  "perturbation_applied": 0.16904160948938535,
+  "iterations": 5,
+  "converged": true,
+  "residual_initial": 0.0026486773164997425,
+  "residual_final": 8.672430115750243e-07,
+  "psi_rmse_initial": 0.024960785528954945,
+  "psi_rmse_final": 8.393629473164896e-06,
+  "axis_error_m": 1.2499999879622692e-07,
+  "boundary_hausdorff_m": 0.1832713488477621,
+  "wall_time_s": 0.21329212188720703,
+  "A_relative_error": 5.453589732980274e-05,
+  "improvement_ratio": 2973.777387810192,
+  "status": "OK"
+}

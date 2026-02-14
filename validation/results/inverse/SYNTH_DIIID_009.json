@@ -1,0 +1,20 @@
+{
+  "shot_id": "SYNTH_DIIID_009",
+  "category": "moderate_elongation",
+  "A_true": -0.85153778,
+  "A_initial": -0.8899281496688295,
+  "A_recovered": -0.8518516281767309,
+  "perturbation_applied": 0.04508357769966409,
+  "iterations": 3,
+  "converged": true,
+  "residual_initial": 4.257382974859165e-05,
+  "residual_final": 3.4652859525657375e-07,
+  "psi_rmse_initial": 0.008054758524280734,
+  "psi_rmse_final": 6.556150179438338e-05,
+  "axis_error_m": 1.2500000012849455e-07,
+  "boundary_hausdorff_m": 0.03628246440417075,
+  "wall_time_s": 0.11429476737976074,
+  "A_relative_error": 0.00036856635618781077,
+  "improvement_ratio": 122.8580539466956,
+  "status": "OK"
+}

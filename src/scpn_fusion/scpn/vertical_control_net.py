@@ -88,7 +88,11 @@ _DEFAULT_ERROR_SCALE_LARGE = 0.9
 _DEFAULT_ERROR_SCALE_SMALL = 0.4
 
 # Output gain scaling for converting marking difference to control signal.
-_DEFAULT_GAIN_SCALE = 1.0
+# Calibrated so peak SNN output (~3.3) maps to ~0.01 A, providing
+# sufficient authority for DIII-D-like plant (gamma=500, gain=1e6).
+# At 5mm: instability force = 250000*0.005 = 1250 m/s²,
+# SNN control force = 1e6*0.01 = 10000 m/s² (8:1 margin).
+_DEFAULT_GAIN_SCALE = 0.003
 
 
 # ── VerticalControlNet ──────────────────────────────────────────────────────

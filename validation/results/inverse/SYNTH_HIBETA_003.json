@@ -1,0 +1,20 @@
+{
+  "shot_id": "SYNTH_HIBETA_003",
+  "category": "high_beta",
+  "A_true": -0.6487259,
+  "A_initial": -0.71021362039967,
+  "A_recovered": -0.6491990929520572,
+  "perturbation_applied": 0.09478228077477702,
+  "iterations": 3,
+  "converged": true,
+  "residual_initial": 3.8238565403111254e-05,
+  "residual_final": 2.992454080643032e-07,
+  "psi_rmse_initial": 0.013508596881325762,
+  "psi_rmse_final": 0.0001073549077222797,
+  "axis_error_m": 1.2499999968440534e-07,
+  "boundary_hausdorff_m": 0.0885145070624186,
+  "wall_time_s": 0.07507872581481934,
+  "A_relative_error": 0.0007294189303329458,
+  "improvement_ratio": 125.8312001559504,
+  "status": "OK"
+}

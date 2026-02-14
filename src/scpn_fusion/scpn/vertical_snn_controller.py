@@ -131,10 +131,11 @@ class VerticalSNNController:
         # 1. Encode measurement into place marking dict.
         encoded: Dict[str, float] = self._vcn.encode_measurement(z_measured)
 
-        # Inject encoded tokens into the marking vector.
-        marking = self._marking.copy()
+        # Build marking vector from scratch each tick (stateless forward
+        # pass — the Petri net cycle runs to completion in one tick).
+        marking = np.zeros(self._n_places, dtype=np.float64)
         for i, pname in enumerate(self._place_names):
-            if pname in encoded and encoded[pname] > 0.0:
+            if pname in encoded:
                 marking[i] = encoded[pname]
 
         # 2. Forward through W_in: activations = W_in @ marking.

@@ -1,0 +1,20 @@
+{
+  "shot_id": "SYNTH_LOCUR_001",
+  "category": "low_current",
+  "A_true": -0.90733724,
+  "A_initial": -0.8925329971414832,
+  "A_recovered": -0.9067436624211398,
+  "perturbation_applied": -0.01631614156883604,
+  "iterations": 2,
+  "converged": true,
+  "residual_initial": 7.2411084326164495e-06,
+  "residual_final": 2.901954652675394e-07,
+  "psi_rmse_initial": 0.0025129999746810105,
+  "psi_rmse_final": 0.00010071127042448857,
+  "axis_error_m": 1.8749999997069722e-07,
+  "boundary_hausdorff_m": 0.03550926810710187,
+  "wall_time_s": 0.0765085220336914,
+  "A_relative_error": 0.000654197306902392,
+  "improvement_ratio": 24.952519852931566,
+  "status": "OK"
+}
