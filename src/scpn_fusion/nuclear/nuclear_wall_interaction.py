@@ -7,9 +7,10 @@
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
+from typing import Any, Callable, Optional
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
 from scpn_fusion.engineering.cad_raytrace import CADLoadReport, estimate_surface_loading
-import sys
 
 # --- MATERIALS DATABASE ---
 # Thresholds for neutron damage before replacement is needed
@@ -18,6 +19,11 @@ MATERIALS = {
     'Eurofer (Steel)': {'dpa_limit': 150.0, 'sigma_dpa': 500}, # Structural blanket
     'Beryllium (Be)': {'dpa_limit': 10.0, 'sigma_dpa': 200}, # First wall (old design)
 }
+
+
+def default_iter_config_path() -> str:
+    """Resolve repository-local default ITER configuration path."""
+    return str(Path(__file__).resolve().parents[3] / "iter_config.json")
 
 class NuclearEngineeringLab(FusionBurnPhysics):
     """
@@ -63,12 +69,23 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         
         return R_wall, Z_wall
 
-    def simulate_ash_poisoning(self, burn_time_sec=1000, tau_He_ratio=5.0):
+    def simulate_ash_poisoning(
+        self,
+        burn_time_sec: int = 1000,
+        tau_He_ratio: float = 5.0,
+        pumping_efficiency: float = 1.0,
+    ):
         """
         Simulates the drop in fusion power due to Helium buildup.
         tau_He_ratio: Ratio of Helium particle confinement to Energy confinement (tau_He / tau_E).
         If ratio > 10, the reactor chokes.
         """
+        burn_steps = max(int(burn_time_sec), 1)
+        tau_He_ratio = max(float(tau_He_ratio), 1e-6)
+        pumping_efficiency = float(pumping_efficiency)
+        if not np.isfinite(pumping_efficiency) or not (0.0 <= pumping_efficiency <= 1.0):
+            raise ValueError("pumping_efficiency must be finite and in [0, 1].")
+
         print(f"[Nuclear] Simulating Ash Poisoning (tau_He*/tau_E = {tau_He_ratio})...")
         
         # 1. Get Base Plasma State
@@ -84,7 +101,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         # Volume (Approximation)
         Vol = 800.0 # m^3
         
-        for t in range(int(burn_time_sec)):
+        for t in range(burn_steps):
             # A. Composition (Quasi-neutrality constraint)
             # n_e = n_D + n_T + 2*n_He + Z_imp*n_imp
             # Assume n_D = n_T
@@ -111,7 +128,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             tau_E = 3.0
             tau_He = tau_He_ratio * tau_E
             
-            dn_He = R_fus - (n_He / tau_He)
+            dn_He = R_fus - (pumping_efficiency * n_He / tau_He)
             
             # Update State
             n_He += dn_He * dt
@@ -254,15 +271,27 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             
         return results, MW_m2
 
-def run_nuclear_sim():
-    print("--- SCPN NUCLEAR ENGINEERING: Ash & Materials ---")
-    config_path = "03_CODE/SCPN-Fusion-Core/iter_config.json"
-    lab = NuclearEngineeringLab(config_path)
+def run_nuclear_sim(
+    config_path: Optional[str] = None,
+    *,
+    save_plot: bool = True,
+    output_path: str = "Nuclear_Engineering_Report.png",
+    verbose: bool = True,
+    lab_factory: Callable[[str], Any] = NuclearEngineeringLab,
+) -> dict[str, Any]:
+    if config_path is None:
+        config_path = default_iter_config_path()
+    config_path = str(config_path)
+
+    if verbose:
+        print("--- SCPN NUCLEAR ENGINEERING: Ash & Materials ---")
+        print(f"[Nuclear] Config: {config_path}")
+    lab = lab_factory(config_path)
     
     # 1. Ash Simulation
     # Simulate two scenarios: Good Pumping (tau=5) vs Bad Pumping (tau=15)
-    hist_good = lab.simulate_ash_poisoning(tau_He_ratio=5.0)
-    hist_bad = lab.simulate_ash_poisoning(tau_He_ratio=15.0)
+    hist_good = lab.simulate_ash_poisoning(tau_He_ratio=5.0, pumping_efficiency=1.0)
+    hist_bad = lab.simulate_ash_poisoning(tau_He_ratio=15.0, pumping_efficiency=0.5)
     
     # 2. Neutron Wall Load
     Rw, Zw, neutron_flux = lab.calculate_neutron_wall_loading()
@@ -270,56 +299,88 @@ def run_nuclear_sim():
     # 3. Material Analysis
     lifespans, mw_load = lab.analyze_materials(neutron_flux)
     
-    # --- VISUALIZATION ---
-    fig = plt.figure(figsize=(15, 10))
-    
-    # Plot A: Ash Poisoning
-    ax1 = fig.add_subplot(2, 2, 1)
-    ax1.plot(hist_good['time'], hist_good['P_fus'], 'g-', label='Good Pumping (Tau*=5)')
-    ax1.plot(hist_bad['time'], hist_bad['P_fus'], 'r--', label='Bad Pumping (Tau*=15)')
-    ax1.set_title("Fusion Power Evolution (Helium Poisoning)")
-    ax1.set_xlabel("Burn Time (s)")
-    ax1.set_ylabel("Power (MW)")
-    ax1.legend()
-    ax1.grid(True)
-    
-    # Plot B: Helium Fraction
-    ax2 = fig.add_subplot(2, 2, 2)
-    ax2.plot(hist_good['time'], np.array(hist_good['f_He'])*100, 'g-', label='He % (Good)')
-    ax2.plot(hist_bad['time'], np.array(hist_bad['f_He'])*100, 'r--', label='He % (Bad)')
-    ax2.axhline(10.0, color='k', linestyle=':', label='Dilution Limit (10%)')
-    ax2.set_title("Helium Ash Accumulation")
-    ax2.set_ylabel("He Concentration (%)")
-    ax2.legend()
-    ax2.grid(True)
-    
-    # Plot C: Neutron Wall Load (Heatmap on Wall)
-    ax3 = fig.add_subplot(2, 2, 3)
-    # Plot Plasma Core
-    ax3.contour(lab.RR, lab.ZZ, lab.Psi, levels=10, colors='gray', alpha=0.3)
-    # Plot Wall colored by Load
-    sc = ax3.scatter(Rw, Zw, c=mw_load, cmap='inferno', s=20)
-    plt.colorbar(sc, ax=ax3, label='Neutron Load (MW/m2)')
-    ax3.set_title("Neutron Flux Distribution (2D)")
-    ax3.axis('equal')
-    
-    # Plot D: Component Lifespan
-    ax4 = fig.add_subplot(2, 2, 4)
-    mats = list(lifespans.keys())
-    years = list(lifespans.values())
-    colors = ['gray', 'orange', 'green']
-    ax4.bar(mats, years, color=colors)
-    ax4.set_title("First Wall Component Lifespan (at Peak Flux)")
-    ax4.set_ylabel("Full Power Years (FPY)")
-    ax4.axhline(5.0, color='r', linestyle='--', label='Maintenance Cycle (5y)')
-    ax4.legend()
-    
-    plt.tight_layout()
-    plt.savefig("Nuclear_Engineering_Report.png")
-    print("\nResults saved: Nuclear_Engineering_Report.png")
-    print("Material Lifespan Estimates:")
-    for m, y in lifespans.items():
-        print(f"  {m}: {y:.1f} years")
+    plot_saved = False
+    plot_error: Optional[str] = None
+    if save_plot:
+        try:
+            fig = plt.figure(figsize=(15, 10))
+            
+            # Plot A: Ash Poisoning
+            ax1 = fig.add_subplot(2, 2, 1)
+            ax1.plot(hist_good['time'], hist_good['P_fus'], 'g-', label='Good Pumping (Tau*=5)')
+            ax1.plot(hist_bad['time'], hist_bad['P_fus'], 'r--', label='Bad Pumping (Tau*=15)')
+            ax1.set_title("Fusion Power Evolution (Helium Poisoning)")
+            ax1.set_xlabel("Burn Time (s)")
+            ax1.set_ylabel("Power (MW)")
+            ax1.legend()
+            ax1.grid(True)
+            
+            # Plot B: Helium Fraction
+            ax2 = fig.add_subplot(2, 2, 2)
+            ax2.plot(hist_good['time'], np.array(hist_good['f_He'])*100, 'g-', label='He % (Good)')
+            ax2.plot(hist_bad['time'], np.array(hist_bad['f_He'])*100, 'r--', label='He % (Bad)')
+            ax2.axhline(10.0, color='k', linestyle=':', label='Dilution Limit (10%)')
+            ax2.set_title("Helium Ash Accumulation")
+            ax2.set_ylabel("He Concentration (%)")
+            ax2.legend()
+            ax2.grid(True)
+            
+            # Plot C: Neutron Wall Load (Heatmap on Wall)
+            ax3 = fig.add_subplot(2, 2, 3)
+            # Plot Plasma Core
+            ax3.contour(lab.RR, lab.ZZ, lab.Psi, levels=10, colors='gray', alpha=0.3)
+            # Plot Wall colored by Load
+            sc = ax3.scatter(Rw, Zw, c=mw_load, cmap='inferno', s=20)
+            plt.colorbar(sc, ax=ax3, label='Neutron Load (MW/m2)')
+            ax3.set_title("Neutron Flux Distribution (2D)")
+            ax3.axis('equal')
+            
+            # Plot D: Component Lifespan
+            ax4 = fig.add_subplot(2, 2, 4)
+            mats = list(lifespans.keys())
+            years = list(lifespans.values())
+            colors = ['gray', 'orange', 'green']
+            ax4.bar(mats, years, color=colors)
+            ax4.set_title("First Wall Component Lifespan (at Peak Flux)")
+            ax4.set_ylabel("Full Power Years (FPY)")
+            ax4.axhline(5.0, color='r', linestyle='--', label='Maintenance Cycle (5y)')
+            ax4.legend()
+            
+            plt.tight_layout()
+            plt.savefig(output_path)
+            plot_saved = True
+        except Exception as exc:  # pragma: no cover - backend-dependent
+            plot_error = f"{exc.__class__.__name__}: {exc}"
+
+    if verbose:
+        if plot_saved:
+            print(f"\nResults saved: {output_path}")
+        print("Material Lifespan Estimates:")
+        for m, y in lifespans.items():
+            print(f"  {m}: {y:.1f} years")
+
+    good_f_he = float(hist_good["f_He"][-1]) if hist_good["f_He"] else 0.0
+    bad_f_he = float(hist_bad["f_He"][-1]) if hist_bad["f_He"] else 0.0
+    peak_load = float(np.max(mw_load)) if np.size(mw_load) else 0.0
+    avg_load = float(np.mean(mw_load)) if np.size(mw_load) else 0.0
+    lifespan_years = np.asarray(list(lifespans.values()), dtype=np.float64)
+    if lifespan_years.size == 0:
+        min_lifespan = 0.0
+        max_lifespan = 0.0
+    else:
+        min_lifespan = float(np.min(lifespan_years))
+        max_lifespan = float(np.max(lifespan_years))
+    return {
+        "config_path": config_path,
+        "good_final_f_he": good_f_he,
+        "bad_final_f_he": bad_f_he,
+        "peak_wall_load_mw_m2": peak_load,
+        "avg_wall_load_mw_m2": avg_load,
+        "min_material_lifespan_years": min_lifespan,
+        "max_material_lifespan_years": max_lifespan,
+        "plot_saved": bool(plot_saved),
+        "plot_error": plot_error,
+    }
 
 if __name__ == "__main__":
     run_nuclear_sim()

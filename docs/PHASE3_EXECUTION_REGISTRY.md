@@ -140,6 +140,8 @@ derive the imported 85-task Phase 3 backlog.
 | H7-003 | P1 | Control | Harden fusion-control-room runtime with deterministic non-interactive execution lane and optional kernel-backed Psi ingestion | `src/scpn_fusion/control/fusion_control_room.py`, `tests/test_fusion_control_room.py` | Control-room loop returns deterministic summary metrics in CI-safe mode, supports optional kernel-provided Psi fields, and keeps GIF/report export optional | `python -m pytest tests/test_fusion_control_room.py -v` |
 | H7-004 | P1 | Nuclear | Add rear-albedo reflection boundary control to blanket transport lane and validate monotonic TBR behavior | `src/scpn_fusion/nuclear/blanket_neutronics.py`, `tests/test_blanket_neutronics.py` | 1D transport accepts bounded rear albedo parameter, rejects invalid values, and tests lock expected TBR reflection trend | `python -m pytest tests/test_blanket_neutronics.py -v` |
 | H7-005 | P1 | Control | Add deterministic NumPy LIF fallback backend for neuro-cybernetic spiking pool when sc-neurocore is unavailable | `src/scpn_fusion/control/neuro_cybernetic_controller.py`, `tests/test_neuro_cybernetic_controller.py` | Spiking pool preserves push-pull control semantics with deterministic fallback dynamics and backend visibility without optional dependency hard-fail | `python -m pytest tests/test_neuro_cybernetic_controller.py -v` |
+| H7-006 | P1 | Control | Harden Director interface with deterministic built-in fallback oversight and CI-safe summary execution | `src/scpn_fusion/control/director_interface.py`, `tests/test_director_interface.py` | Director runtime no longer hard-fails when optional `DIRECTOR_AI` module is absent, fallback rule-based review remains deterministic, and mission runner supports non-plot summary mode | `python -m pytest tests/test_director_interface.py -v` |
+| H7-007 | P1 | Nuclear | Remove hardcoded config path from nuclear-wall runner and add explicit ash pumping-efficiency control | `src/scpn_fusion/nuclear/nuclear_wall_interaction.py`, `tests/test_nuclear_wall_interaction.py` | Nuclear wall runner resolves default repo-local config or explicit override, returns deterministic CI-safe summary in non-plot mode, and ash poisoning validates bounded pumping efficiency with expected monotonic behavior | `python -m pytest tests/test_nuclear_wall_interaction.py -v` |
 
 ## Task Accounting
 
@@ -147,8 +149,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 51
-- Remaining in deferred pool after queue selection: 62
+- Post-S4 hardening tasks delivered: 53
+- Remaining in deferred pool after queue selection: 60
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -222,4 +224,6 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-003`
 - Completed: `H7-004`
 - Completed: `H7-005`
-- Next active task: `H7-006` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-006`
+- Completed: `H7-007`
+- Next active task: `H7-008` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
