@@ -165,6 +165,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-028 | P1 | Control | Remove residual global NumPy RNG mutation from tearing-mode simulation fallback path | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_predictor_rng.py` | Tearing-mode simulation now always uses scoped RNG sampling (injected or local generator), avoids global `np.random` mutation in fallback calls, and adds regression coverage for global RNG state isolation | `python -m pytest tests/test_disruption_predictor_rng.py tests/test_disruption_toroidal_features.py tests/test_gneu_02_anomaly.py -v` |
 | H7-029 | P1 | Validation | Stabilize GNEU-01 benchmark episode synthesis with scoped per-episode RNG | `validation/gneu_01_benchmark.py`, `tests/test_gneu_01_benchmark.py` | GNEU-01 episode generation now uses deterministic seeded local generators passed into tearing-mode synthesis (no global seed coupling), restoring deterministic benchmark replay and eliminating global RNG side effects | `python -m pytest tests/test_gneu_01_benchmark.py tests/test_disruption_predictor_rng.py -v`, `python -m pytest tests/ -q -x` |
 | H7-030 | P1 | Diagnostics | Remove global NumPy RNG mutation from diagnostics demo runtime and use scoped sensor RNG wiring | `src/scpn_fusion/diagnostics/run_diagnostics.py`, `tests/test_run_diagnostics.py` | Diagnostics demo now uses a local seeded generator, routes RNG/seed into sensor factory when supported, avoids global `np.random` mutation, and adds regression coverage for global RNG state isolation | `python -m pytest tests/test_run_diagnostics.py tests/test_diagnostics.py -v` |
+| H7-031 | P1 | Validation | Remove global NumPy RNG mutation from SCPN PID/MPC benchmark runtime lane | `validation/scpn_pid_mpc_benchmark.py`, `tests/test_scpn_pid_mpc_benchmark.py` | PID/MPC benchmark campaign no longer mutates global `np.random` state in deterministic control-only execution, keeps seeded metadata explicit, and adds regression coverage proving global RNG isolation | `python -m pytest tests/test_scpn_pid_mpc_benchmark.py tests/test_controller.py tests/test_gneu_01_benchmark.py -v` |
 
 ## Task Accounting
 
@@ -172,8 +173,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 76
-- Remaining in deferred pool after queue selection: 37
+- Post-S4 hardening tasks delivered: 77
+- Remaining in deferred pool after queue selection: 36
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -272,4 +273,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-028`
 - Completed: `H7-029`
 - Completed: `H7-030`
-- Next active task: `H7-031` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-031`
+- Next active task: `H7-032` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

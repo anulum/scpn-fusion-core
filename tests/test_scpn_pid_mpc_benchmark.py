@@ -13,6 +13,7 @@ import importlib.util
 from pathlib import Path
 import sys
 
+import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "scpn_pid_mpc_benchmark.py"
@@ -66,3 +67,15 @@ def test_render_markdown_contains_sections() -> None:
     assert "RMSE" in text
     assert "Ratios" in text
     assert "Threshold Pass" in text
+
+
+def test_campaign_does_not_mutate_global_numpy_rng_state() -> None:
+    np.random.seed(531)
+    state = np.random.get_state()
+
+    scpn_pid_mpc_benchmark.run_campaign(seed=42, steps=120)
+
+    observed = float(np.random.random())
+    np.random.set_state(state)
+    expected = float(np.random.random())
+    assert observed == expected

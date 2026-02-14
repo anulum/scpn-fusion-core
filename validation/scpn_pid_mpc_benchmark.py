@@ -167,7 +167,7 @@ def run_campaign(
     scpn_runtime_profile: str = "traceable",
     scpn_runtime_backend: str = "auto",
 ) -> dict[str, Any]:
-    np.random.seed(int(seed))
+    seed_int = int(seed)
     steps = max(int(steps), 32)
     u_limit = 1.0
     dt = 0.05
@@ -237,7 +237,7 @@ def run_campaign(
     )
 
     return {
-        "seed": int(seed),
+        "seed": seed_int,
         "steps": int(steps),
         "runtime_lane": {
             "runtime_profile": scpn.runtime_profile_name,
