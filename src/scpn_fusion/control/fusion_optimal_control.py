@@ -287,7 +287,7 @@ def run_optimal_control(
     """
     Run bounded optimal-control shot and return deterministic summary.
     """
-    np.random.seed(int(seed))
+    seed_int = int(seed)
     if config_file is None:
         repo_root = Path(__file__).resolve().parents[3]
         config_file = str(repo_root / "iter_config.json")
@@ -307,7 +307,7 @@ def run_optimal_control(
         save_plot=save_plot,
         output_path=output_path,
     )
-    summary["seed"] = int(seed)
+    summary["seed"] = seed_int
     summary["config_path"] = str(config_file)
     return summary
 

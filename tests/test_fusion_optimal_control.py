@@ -145,3 +145,26 @@ def test_optimal_controller_enforces_correction_and_coil_limits() -> None:
     )
     assert summary["max_abs_coil_current"] <= 1.0 + 1e-9
     assert 8.0 <= summary["final_target_ip_ma"] <= 9.0
+
+
+def test_run_optimal_control_does_not_mutate_global_numpy_rng_state() -> None:
+    np.random.seed(1357)
+    state = np.random.get_state()
+
+    run_optimal_control(
+        config_file="dummy.json",
+        shot_steps=8,
+        target_r=6.02,
+        target_z=0.01,
+        seed=55,
+        save_plot=False,
+        verbose=False,
+        kernel_factory=_DummyKernel,
+        coil_current_limits=(-2.0, 2.0),
+        current_target_limits=(7.0, 9.0),
+    )
+
+    observed = float(np.random.random())
+    np.random.set_state(state)
+    expected = float(np.random.random())
+    assert observed == expected
