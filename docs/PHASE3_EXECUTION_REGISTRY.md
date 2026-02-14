@@ -250,6 +250,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-023 | P1 | Control | Harden optimal-control SVD and response-matrix builders with strict input/conditioning validation | `scpn-fusion-rs/crates/fusion-control/src/optimal.rs` | Optimal-control solvers now reject invalid dimensions/non-finite values and near-singular 2×N systems via explicit `FusionError::ConfigError` instead of panicking or silently returning zero corrections, and response-matrix construction now validates perturbation/base/evaluate outputs for finite, well-formed values | `cargo test -p fusion-control optimal::tests::test_svd_correction_rejects_invalid_inputs_and_singular_system -- --nocapture`, `cargo test -p fusion-control optimal::tests::test_build_response_matrix_rejects_invalid_inputs -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-024 | P1 | Control | Harden SPI mitigation constructor/runtime guards with strict finite-positive validation | `scpn-fusion-rs/crates/fusion-control/src/spi.rs` | SPI mitigation now rejects invalid constructor/runtime inputs (`w_th_mj`, `ip_ma`, `te_kev`, runtime `w_th/ip/te`) via explicit `FusionError::ConfigError`, preventing NaN/Inf/non-physical state propagation through disruption phase transitions | `cargo test -p fusion-control spi::tests::test_spi_rejects_invalid_constructor_and_runtime_inputs -- --nocapture`, `cargo test -p fusion-control spi::tests::test_spi_phases_sequential -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-025 | P1 | Control | Harden analytic Shafranov and coil-solve APIs with strict finite/conditioning validation | `scpn-fusion-rs/crates/fusion-control/src/analytic.rs`, `scpn-fusion-rs/crates/fusion-python/src/lib.rs` | Analytic control APIs now reject invalid geometry/current/Green-function inputs and near-zero-norm solve configurations via explicit `FusionError::ConfigError` (surfaced as `PyValueError` in Python bindings), replacing prior silent zero-current fallback and unchecked non-finite propagation | `cargo test -p fusion-control analytic::tests::test_analytic_rejects_invalid_inputs -- --nocapture`, `cargo test -p fusion-control analytic::tests::test_coil_currents_solve -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
+| H8-026 | P1 | Control | Harden SOC learning loop with strict finite/range/index validation | `scpn-fusion-rs/crates/fusion-control/src/soc_learning.rs` | SOC sandpile/agent paths now reject invalid runtime inputs and indices (`ext_shear`, turbulence/flow/reward, state/action bounds, `n_steps`) via explicit `FusionError::ConfigError`, preventing NaN/Inf/index propagation through Q-learning and avalanche-control coupling | `cargo test -p fusion-control soc_learning::tests::test_soc_rejects_invalid_inputs -- --nocapture`, `cargo test -p fusion-control soc_learning::tests::test_q_learning_runs -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 
 ## Task Accounting
 
@@ -257,7 +258,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 161
+- Post-S4 hardening tasks delivered: 162
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -442,4 +443,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-023`
 - Completed: `H8-024`
 - Completed: `H8-025`
+- Completed: `H8-026`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
