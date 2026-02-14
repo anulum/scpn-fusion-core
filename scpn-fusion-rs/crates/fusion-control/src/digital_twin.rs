@@ -60,13 +60,22 @@ pub struct NoiseInjectionLayer {
 }
 
 impl NoiseInjectionLayer {
-    pub fn new(theta: f64, sigma: f64, dt: f64) -> Self {
-        Self {
-            theta: theta.max(0.0),
-            sigma: sigma.max(0.0),
-            dt: dt.max(1e-9),
-            state: 0.0,
+    pub fn new(theta: f64, sigma: f64, dt: f64) -> Result<Self, String> {
+        if !theta.is_finite() || theta < 0.0 {
+            return Err("theta must be finite and >= 0.".to_string());
         }
+        if !sigma.is_finite() || sigma < 0.0 {
+            return Err("sigma must be finite and >= 0.".to_string());
+        }
+        if !dt.is_finite() || dt <= 0.0 {
+            return Err("dt must be finite and > 0.".to_string());
+        }
+        Ok(Self {
+            theta,
+            sigma,
+            dt,
+            state: 0.0,
+        })
     }
 
     pub fn step<R: Rng + ?Sized>(&mut self, rng: &mut R) -> f64 {
@@ -79,6 +88,7 @@ impl NoiseInjectionLayer {
 impl Default for NoiseInjectionLayer {
     fn default() -> Self {
         Self::new(DEFAULT_OU_THETA, DEFAULT_OU_SIGMA, DEFAULT_OU_DT)
+            .expect("default OU parameters must be valid")
     }
 }
 
@@ -89,11 +99,14 @@ pub struct VectorNoiseInjectionLayer {
 }
 
 impl VectorNoiseInjectionLayer {
-    pub fn new(n_channels: usize, theta: f64, sigma: f64, dt: f64) -> Self {
+    pub fn new(n_channels: usize, theta: f64, sigma: f64, dt: f64) -> Result<Self, String> {
+        if n_channels == 0 {
+            return Err("n_channels must be >= 1.".to_string());
+        }
         let channels = (0..n_channels)
             .map(|_| NoiseInjectionLayer::new(theta, sigma, dt))
-            .collect();
-        Self { channels }
+            .collect::<Result<Vec<_>, String>>()?;
+        Ok(Self { channels })
     }
 
     pub fn step<R: Rng + ?Sized>(&mut self, rng: &mut R) -> Array1<f64> {
@@ -114,17 +127,23 @@ pub struct ChaosMonkeyConfig {
 }
 
 impl ChaosMonkeyConfig {
-    pub fn new(dropout_prob: f64, gaussian_noise_std: f64) -> Self {
-        Self {
-            dropout_prob: dropout_prob.clamp(0.0, 1.0),
-            gaussian_noise_std: gaussian_noise_std.max(0.0),
+    pub fn new(dropout_prob: f64, gaussian_noise_std: f64) -> Result<Self, String> {
+        if !dropout_prob.is_finite() || !(0.0..=1.0).contains(&dropout_prob) {
+            return Err("dropout_prob must be finite and in [0, 1].".to_string());
         }
+        if !gaussian_noise_std.is_finite() || gaussian_noise_std < 0.0 {
+            return Err("gaussian_noise_std must be finite and >= 0.".to_string());
+        }
+        Ok(Self {
+            dropout_prob,
+            gaussian_noise_std,
+        })
     }
 }
 
 impl Default for ChaosMonkeyConfig {
     fn default() -> Self {
-        Self::new(0.0, 0.0)
+        Self::new(0.0, 0.0).expect("default chaos config must be valid")
     }
 }
 
@@ -134,7 +153,7 @@ pub fn apply_chaos_monkey<R: Rng + ?Sized>(
     cfg: ChaosMonkeyConfig,
     rng: &mut R,
 ) -> Array1<f64> {
-    let sigma = cfg.gaussian_noise_std.max(0.0);
+    let sigma = cfg.gaussian_noise_std;
     let noise_dist = if sigma > 0.0 {
         Some(rand_distr::Normal::new(0.0, sigma).expect("valid sigma"))
     } else {
@@ -163,13 +182,19 @@ pub struct ActuatorDelayLine {
 }
 
 impl ActuatorDelayLine {
-    pub fn new(n_actions: usize, delay_steps: usize, lag_alpha: f64) -> Self {
-        Self {
+    pub fn new(n_actions: usize, delay_steps: usize, lag_alpha: f64) -> Result<Self, String> {
+        if n_actions == 0 {
+            return Err("n_actions must be >= 1.".to_string());
+        }
+        if !lag_alpha.is_finite() || !(0.0..=1.0).contains(&lag_alpha) {
+            return Err("lag_alpha must be finite and in [0, 1].".to_string());
+        }
+        Ok(Self {
             delay_steps,
-            lag_alpha: lag_alpha.clamp(0.0, 1.0),
+            lag_alpha,
             queue: VecDeque::new(),
             last_applied: Array1::zeros(n_actions),
-        }
+        })
     }
 
     /// Push a command and return the delayed+lagged action applied this step.
@@ -488,8 +513,10 @@ mod tests {
     fn test_vector_ou_noise_deterministic_with_seed() {
         let mut rng1 = StdRng::seed_from_u64(7);
         let mut rng2 = StdRng::seed_from_u64(7);
-        let mut n1 = VectorNoiseInjectionLayer::new(4, 0.2, 0.03, 1.0);
-        let mut n2 = VectorNoiseInjectionLayer::new(4, 0.2, 0.03, 1.0);
+        let mut n1 = VectorNoiseInjectionLayer::new(4, 0.2, 0.03, 1.0)
+            .expect("valid vector OU config");
+        let mut n2 = VectorNoiseInjectionLayer::new(4, 0.2, 0.03, 1.0)
+            .expect("valid vector OU config");
         for _ in 0..16 {
             let a = n1.step(&mut rng1);
             let b = n2.step(&mut rng2);
@@ -501,7 +528,7 @@ mod tests {
 
     #[test]
     fn test_actuator_delay_line_enforces_delay() {
-        let mut delay = ActuatorDelayLine::new(1, 2, 1.0);
+        let mut delay = ActuatorDelayLine::new(1, 2, 1.0).expect("valid delay line");
         let a0 = delay.push(Array1::from_vec(vec![1.0]));
         let a1 = delay.push(Array1::from_vec(vec![2.0]));
         let a2 = delay.push(Array1::from_vec(vec![3.0]));
@@ -512,7 +539,7 @@ mod tests {
 
     #[test]
     fn test_actuator_delay_line_applies_lag() {
-        let mut delay = ActuatorDelayLine::new(1, 0, 0.5);
+        let mut delay = ActuatorDelayLine::new(1, 0, 0.5).expect("valid delay line");
         let a0 = delay.push(Array1::from_vec(vec![2.0]));
         let a1 = delay.push(Array1::from_vec(vec![2.0]));
         assert!((a0[0] - 1.0).abs() < 1e-12);
@@ -524,7 +551,7 @@ mod tests {
         let mut rng1 = StdRng::seed_from_u64(123);
         let mut rng2 = StdRng::seed_from_u64(123);
         let x = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0]);
-        let cfg = ChaosMonkeyConfig::new(0.25, 0.05);
+        let cfg = ChaosMonkeyConfig::new(0.25, 0.05).expect("valid chaos config");
         let a = apply_chaos_monkey(&x, cfg, &mut rng1);
         let b = apply_chaos_monkey(&x, cfg, &mut rng2);
         assert_eq!(a.len(), b.len());
@@ -537,7 +564,37 @@ mod tests {
     fn test_chaos_monkey_full_dropout_zeros_channels() {
         let mut rng = StdRng::seed_from_u64(777);
         let x = Array1::from_vec(vec![0.8, -0.2, 1.4]);
-        let y = apply_chaos_monkey(&x, ChaosMonkeyConfig::new(1.0, 0.0), &mut rng);
+        let cfg = ChaosMonkeyConfig::new(1.0, 0.0).expect("valid full-dropout config");
+        let y = apply_chaos_monkey(&x, cfg, &mut rng);
         assert!(y.iter().all(|v| v.abs() < 1e-12));
+    }
+
+    #[test]
+    fn test_noise_injection_layer_rejects_invalid_constructor_values() {
+        assert!(NoiseInjectionLayer::new(-0.1, 0.0, 1.0).is_err());
+        assert!(NoiseInjectionLayer::new(0.1, -0.1, 1.0).is_err());
+        assert!(NoiseInjectionLayer::new(0.1, 0.1, 0.0).is_err());
+        assert!(NoiseInjectionLayer::new(0.1, 0.1, f64::NAN).is_err());
+    }
+
+    #[test]
+    fn test_vector_ou_noise_rejects_invalid_channel_count() {
+        assert!(VectorNoiseInjectionLayer::new(0, 0.1, 0.1, 1.0).is_err());
+    }
+
+    #[test]
+    fn test_chaos_monkey_config_rejects_invalid_constructor_values() {
+        assert!(ChaosMonkeyConfig::new(-0.1, 0.0).is_err());
+        assert!(ChaosMonkeyConfig::new(1.1, 0.0).is_err());
+        assert!(ChaosMonkeyConfig::new(0.1, -0.1).is_err());
+        assert!(ChaosMonkeyConfig::new(0.1, f64::INFINITY).is_err());
+    }
+
+    #[test]
+    fn test_actuator_delay_line_rejects_invalid_constructor_values() {
+        assert!(ActuatorDelayLine::new(0, 0, 0.5).is_err());
+        assert!(ActuatorDelayLine::new(1, 0, -0.1).is_err());
+        assert!(ActuatorDelayLine::new(1, 0, 1.1).is_err());
+        assert!(ActuatorDelayLine::new(1, 0, f64::NAN).is_err());
     }
 }
