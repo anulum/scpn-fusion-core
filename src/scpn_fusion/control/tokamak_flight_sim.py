@@ -108,7 +108,9 @@ class IsoFluxController:
         save_plot: bool = True,
         output_path: str = "Tokamak_Flight_Report.png",
     ) -> Dict[str, Any]:
-        steps = max(int(shot_duration), 1)
+        steps = int(shot_duration)
+        if steps < 1:
+            raise ValueError("shot_duration must be >= 1.")
         self._log("--- INITIATING TOKAMAK FLIGHT SIMULATOR ---")
         self._log("Scenario: Current Ramp-Up & Divertor Formation")
         

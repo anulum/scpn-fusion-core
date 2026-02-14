@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.control.tokamak_flight_sim import run_flight_sim
 
@@ -121,3 +122,15 @@ def test_run_flight_sim_does_not_mutate_global_numpy_rng_state() -> None:
     np.random.set_state(state)
     expected = float(np.random.random())
     assert observed == expected
+
+
+def test_run_flight_sim_rejects_invalid_shot_duration() -> None:
+    with pytest.raises(ValueError, match="shot_duration"):
+        run_flight_sim(
+            config_file="dummy.json",
+            shot_duration=0,
+            seed=1,
+            save_plot=False,
+            verbose=False,
+            kernel_factory=_DummyKernel,
+        )
