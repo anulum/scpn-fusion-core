@@ -246,6 +246,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-019 | P1 | Control | Harden MPC constructor finite-value validation for model and target tensors | `scpn-fusion-rs/crates/fusion-control/src/mpc.rs` | MPC constructor now rejects non-finite values in `b_matrix` and `target` via explicit `FusionError::ConfigError`, preventing NaN/Inf propagation into optimization rollouts while preserving deterministic behavior for finite inputs | `cargo test -p fusion-control mpc::tests::test_mpc_constructor_rejects_non_finite_matrix_or_target_values -- --nocapture`, `cargo test -p fusion-control mpc::tests::test_mpc_moves_toward_target -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-020 | P1 | Control | Harden MPC runtime vector finite-value validation for delay-aware execution paths | `scpn-fusion-rs/crates/fusion-control/src/mpc.rs` | MPC runtime paths now reject non-finite values in state/action/bias/noise/delayed-action vectors via explicit `FusionError::ConfigError`, preventing NaN/Inf telemetry from silently propagating through surrogate rollout and delayed dynamics | `cargo test -p fusion-control mpc::tests::test_surrogate_predict_rejects_non_finite_state_or_action_values -- --nocapture`, `cargo test -p fusion-control mpc::tests::test_mpc_delay_paths_reject_non_finite_vectors -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-021 | P1 | Control | Harden PID and IsoFlux controllers with strict finite input validation | `scpn-fusion-rs/crates/fusion-control/src/pid.rs` | PID/IsoFlux constructors and runtime steps now reject non-finite gains, targets, and measurement/error inputs via explicit `FusionError::ConfigError`, preventing NaN/Inf propagation through control history while preserving deterministic control outputs for valid inputs | `cargo test -p fusion-control pid::tests::test_pid_rejects_non_finite_gains_and_error -- --nocapture`, `cargo test -p fusion-control pid::tests::test_isoflux_rejects_non_finite_targets_and_measurements -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
+| H8-022 | P1 | Control | Harden SNN controller finite/range input validation for constructor and runtime paths | `scpn-fusion-rs/crates/fusion-control/src/snn.rs` | SNN neuron, pool, and neuro-cybernetic controller paths now reject invalid constructor/runtime inputs (`n_neurons`, `window_size`, `gain`, `target`, `error`, `current`, `dt`, measured positions) via explicit `FusionError::ConfigError`, preventing NaN/Inf and zero-step propagation through spiking control state | `cargo test -p fusion-control snn::tests::test_snn_rejects_invalid_constructor_and_step_inputs -- --nocapture`, `cargo test -p fusion-control snn::tests::test_neuro_cybernetic_controller_rejects_non_finite_inputs -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 
 ## Task Accounting
 
@@ -253,7 +254,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 157
+- Post-S4 hardening tasks delivered: 158
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -434,4 +435,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-019`
 - Completed: `H8-020`
 - Completed: `H8-021`
+- Completed: `H8-022`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
