@@ -240,6 +240,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-013 | P1 | Runtime | Harden JIT compile-spec controls with strict finite/range validation (no silent sanitization) | `scpn-fusion-rs/crates/fusion-core/src/jit.rs` | Runtime JIT compile paths now reject invalid compile-spec inputs (`n_state`, `n_control`, `dt_s`, `unroll_factor`) via explicit `FusionError::ConfigError` results instead of silently coercing/flooring values, while preserving deterministic cache reuse and regime hot-swap behavior for valid specs | `cargo test -p fusion-core jit::tests::test_compile_for_regime_rejects_invalid_compile_specs -- --nocapture`, `cargo test -p fusion-core jit::tests::test_refresh_for_observation_compiles_once_per_regime -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-014 | P1 | Control | Harden delay-dynamics MPC actuator lag handling with strict finite-range validation (no silent clamping) | `scpn-fusion-rs/crates/fusion-control/src/mpc.rs` | Delay-dynamics MPC now rejects invalid `actuator_lag_alpha` values (`NaN`, outside `[0, 1]`) via explicit `FusionError::ConfigError` instead of silently clamping, while preserving deterministic delayed-action rollout semantics for valid lag coefficients | `cargo test -p fusion-control mpc::tests::test_mpc_delay_dynamics_rejects_invalid_actuator_lag_alpha -- --nocapture`, `cargo test -p fusion-control mpc::tests::test_mpc_delay_dynamics_path -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-015 | P1 | Physics | Harden finite-difference Jacobian step handling with strict finite-positive validation (no silent coercion) | `scpn-fusion-rs/crates/fusion-core/src/jacobian.rs`, `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | FD Jacobian construction now rejects invalid `fd_step` values (`NaN`, `<=0`) via explicit `FusionError::ConfigError` instead of silently coercing with `abs/max`, and inverse reconstruction propagates these validation errors deterministically when using finite-difference Jacobians | `cargo test -p fusion-core jacobian::tests::test_fd_jacobian_rejects_invalid_fd_step -- --nocapture`, `cargo test -p fusion-core jacobian::tests::test_analytical_vs_fd_jacobian -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
+| H8-016 | P1 | Runtime | Harden JIT observation refresh with strict finite-value guards | `scpn-fusion-rs/crates/fusion-core/src/jit.rs` | JIT observation-refresh path now rejects non-finite regime-observation inputs (`beta_n`, `q95`, `density_line_avg_1e20_m3`, `current_ramp_ma_s`) via explicit `FusionError::ConfigError`, preventing silent NaN/Inf routing while preserving deterministic compile-cache behavior for valid telemetry | `cargo test -p fusion-core jit::tests::test_refresh_for_observation_rejects_non_finite_inputs -- --nocapture`, `cargo test -p fusion-core jit::tests::test_refresh_for_observation_compiles_once_per_regime -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 
 ## Task Accounting
 
@@ -247,7 +248,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 151
+- Post-S4 hardening tasks delivered: 152
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -422,4 +423,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-013`
 - Completed: `H8-014`
 - Completed: `H8-015`
+- Completed: `H8-016`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

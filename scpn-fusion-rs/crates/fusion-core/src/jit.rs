@@ -55,6 +55,30 @@ pub fn detect_regime(observation: &RegimeObservation) -> PlasmaRegime {
     }
 }
 
+fn validate_observation(observation: &RegimeObservation) -> FusionResult<()> {
+    if !observation.beta_n.is_finite() {
+        return Err(FusionError::ConfigError(
+            "jit observation beta_n must be finite".to_string(),
+        ));
+    }
+    if !observation.q95.is_finite() {
+        return Err(FusionError::ConfigError(
+            "jit observation q95 must be finite".to_string(),
+        ));
+    }
+    if !observation.density_line_avg_1e20_m3.is_finite() {
+        return Err(FusionError::ConfigError(
+            "jit observation density_line_avg_1e20_m3 must be finite".to_string(),
+        ));
+    }
+    if !observation.current_ramp_ma_s.is_finite() {
+        return Err(FusionError::ConfigError(
+            "jit observation current_ramp_ma_s must be finite".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 /// Compile-time shape metadata for generated kernels.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct KernelCompileSpec {
@@ -207,6 +231,7 @@ impl RuntimeKernelJit {
         observation: &RegimeObservation,
         spec: KernelCompileSpec,
     ) -> FusionResult<(PlasmaRegime, u64)> {
+        validate_observation(observation)?;
         let regime = detect_regime(observation);
         let generation = self.compile_for_regime(regime, spec)?;
         Ok((regime, generation))
@@ -363,6 +388,19 @@ mod tests {
         assert!(jit
             .compile_for_regime(PlasmaRegime::LMode, bad_unroll)
             .is_err());
+        assert_eq!(jit.compile_events(), 0);
+        assert_eq!(jit.cache_size(), 0);
+    }
+
+    #[test]
+    fn test_refresh_for_observation_rejects_non_finite_inputs() {
+        let mut jit = RuntimeKernelJit::new();
+        let spec = KernelCompileSpec::default();
+        let bad = RegimeObservation {
+            beta_n: f64::NAN,
+            ..RegimeObservation::default()
+        };
+        assert!(jit.refresh_for_observation(&bad, spec).is_err());
         assert_eq!(jit.compile_events(), 0);
         assert_eq!(jit.cache_size(), 0);
     }
