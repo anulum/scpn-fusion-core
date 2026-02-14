@@ -105,22 +105,31 @@ impl MPController {
         measured_state: &Array1<f64>,
         delayed_actions: &[Array1<f64>],
         sensor_bias: Option<&Array1<f64>>,
-    ) -> Array1<f64> {
+    ) -> FusionResult<Array1<f64>> {
         let n_coils = self.model.b_matrix.ncols();
         let mut predicted_state = measured_state.clone();
         if let Some(bias) = sensor_bias {
-            if bias.len() == predicted_state.len() {
-                predicted_state = &predicted_state + bias;
+            if bias.len() != predicted_state.len() {
+                return Err(FusionError::ConfigError(format!(
+                    "mpc sensor_bias length mismatch: expected {}, got {}",
+                    predicted_state.len(),
+                    bias.len()
+                )));
             }
+            predicted_state = &predicted_state + bias;
         }
 
-        for action in delayed_actions {
-            if action.len() == n_coils {
-                predicted_state = self.model.predict(&predicted_state, action);
+        for (idx, action) in delayed_actions.iter().enumerate() {
+            if action.len() != n_coils {
+                return Err(FusionError::ConfigError(format!(
+                    "mpc delayed action[{idx}] length mismatch: expected {n_coils}, got {}",
+                    action.len()
+                )));
             }
+            predicted_state = self.model.predict(&predicted_state, action);
         }
 
-        self.plan(&predicted_state)
+        Ok(self.plan(&predicted_state))
     }
 
     /// Delay-aware MPC rollout with first-order actuator lag.
@@ -143,18 +152,27 @@ impl MPController {
         let n_coils = self.model.b_matrix.ncols();
         let mut predicted_state = measured_state.clone();
         if let Some(noise) = sensor_noise {
-            if noise.len() == predicted_state.len() {
-                predicted_state = &predicted_state + noise;
+            if noise.len() != predicted_state.len() {
+                return Err(FusionError::ConfigError(format!(
+                    "mpc sensor_noise length mismatch: expected {}, got {}",
+                    predicted_state.len(),
+                    noise.len()
+                )));
             }
+            predicted_state = &predicted_state + noise;
         }
 
         let mut delayed_applied = Array1::zeros(n_coils);
         let alpha = actuator_lag_alpha;
-        for action in delayed_actions {
-            if action.len() == n_coils {
-                delayed_applied = &delayed_applied * (1.0 - alpha) + action * alpha;
-                predicted_state = self.model.predict(&predicted_state, &delayed_applied);
+        for (idx, action) in delayed_actions.iter().enumerate() {
+            if action.len() != n_coils {
+                return Err(FusionError::ConfigError(format!(
+                    "mpc delayed action[{idx}] length mismatch: expected {n_coils}, got {}",
+                    action.len()
+                )));
             }
+            delayed_applied = &delayed_applied * (1.0 - alpha) + action * alpha;
+            predicted_state = self.model.predict(&predicted_state, &delayed_applied);
         }
 
         Ok(self.plan(&predicted_state))
@@ -218,7 +236,9 @@ mod tests {
         let measured = Array1::from_vec(vec![5.0, 1.0]);
         let delayed = vec![Array1::from_vec(vec![0.2, -0.1])];
         let bias = Array1::from_vec(vec![0.05, -0.02]);
-        let action = mpc.plan_with_delay_and_bias(&measured, &delayed, Some(&bias));
+        let action = mpc
+            .plan_with_delay_and_bias(&measured, &delayed, Some(&bias))
+            .expect("valid delayed action and bias sizes");
 
         assert!(
             action[0] > 0.0,
@@ -287,6 +307,42 @@ mod tests {
             .is_err());
         assert!(mpc
             .plan_with_delay_dynamics(&measured, &delayed, None, f64::NAN)
+            .is_err());
+    }
+
+    #[test]
+    fn test_mpc_delay_and_bias_rejects_mismatched_vector_lengths() {
+        let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
+        let model = NeuralSurrogate::new(b);
+        let target = Array1::from_vec(vec![6.0, 0.0]);
+        let mpc = MPController::new(model, target);
+        let measured = Array1::from_vec(vec![5.0, 1.0]);
+        let bad_bias = Array1::from_vec(vec![0.02, -0.01, 0.0]);
+        let bad_delayed = vec![Array1::from_vec(vec![0.1, -0.05, 0.01])];
+
+        assert!(mpc
+            .plan_with_delay_and_bias(&measured, &[], Some(&bad_bias))
+            .is_err());
+        assert!(mpc
+            .plan_with_delay_and_bias(&measured, &bad_delayed, None)
+            .is_err());
+    }
+
+    #[test]
+    fn test_mpc_delay_dynamics_rejects_mismatched_vector_lengths() {
+        let b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
+        let model = NeuralSurrogate::new(b);
+        let target = Array1::from_vec(vec![6.0, 0.0]);
+        let mpc = MPController::new(model, target);
+        let measured = Array1::from_vec(vec![5.0, 1.0]);
+        let bad_noise = Array1::from_vec(vec![0.01, -0.01, 0.0]);
+        let bad_delayed = vec![Array1::from_vec(vec![0.1, -0.05, 0.01])];
+
+        assert!(mpc
+            .plan_with_delay_dynamics(&measured, &[], Some(&bad_noise), 0.5)
+            .is_err());
+        assert!(mpc
+            .plan_with_delay_dynamics(&measured, &bad_delayed, None, 0.5)
             .is_err());
     }
 }
