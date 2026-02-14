@@ -49,3 +49,15 @@ def test_simulate_tearing_mode_without_rng_still_returns_valid_shape() -> None:
     assert sig.size > 0
     assert lbl in (0, 1)
     assert isinstance(ttd, (int, np.integer))
+
+
+def test_simulate_tearing_mode_without_rng_does_not_mutate_global_state() -> None:
+    np.random.seed(8642)
+    state = np.random.get_state()
+
+    simulate_tearing_mode(steps=128)
+
+    observed = float(np.random.random())
+    np.random.set_state(state)
+    expected = float(np.random.random())
+    assert observed == expected
