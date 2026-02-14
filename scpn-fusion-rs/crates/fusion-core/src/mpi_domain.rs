@@ -73,7 +73,10 @@ pub fn decompose_z(global_nz: usize, nranks: usize, halo: usize) -> FusionResult
     Ok(out)
 }
 
-pub fn pack_halo_rows(local: &Array2<f64>, halo: usize) -> FusionResult<(Array2<f64>, Array2<f64>)> {
+pub fn pack_halo_rows(
+    local: &Array2<f64>,
+    halo: usize,
+) -> FusionResult<(Array2<f64>, Array2<f64>)> {
     if halo == 0 {
         return Err(FusionError::PhysicsViolation(
             "Halo width must be >= 1".to_string(),
@@ -133,7 +136,10 @@ pub fn apply_halo_rows(
     Ok(())
 }
 
-pub fn split_with_halo(global: &Array2<f64>, slices: &[DomainSlice]) -> FusionResult<Vec<Array2<f64>>> {
+pub fn split_with_halo(
+    global: &Array2<f64>,
+    slices: &[DomainSlice],
+) -> FusionResult<Vec<Array2<f64>>> {
     let mut out = Vec::with_capacity(slices.len());
     for sdef in slices {
         let start = sdef.z_start.saturating_sub(sdef.halo);
@@ -184,7 +190,10 @@ pub fn stitch_without_halo(
     Ok(global)
 }
 
-pub fn serial_halo_exchange(locals: &mut [Array2<f64>], slices: &[DomainSlice]) -> FusionResult<()> {
+pub fn serial_halo_exchange(
+    locals: &mut [Array2<f64>],
+    slices: &[DomainSlice],
+) -> FusionResult<()> {
     if locals.len() != slices.len() {
         return Err(FusionError::PhysicsViolation(format!(
             "locals/slices mismatch: {} vs {}",
@@ -265,7 +274,10 @@ mod tests {
         serial_halo_exchange(&mut locals, &slices).expect("exchange");
         let stitched = stitch_without_halo(&locals, &slices, global.ncols()).expect("stitch");
         let delta = l2_norm_delta(&stitched, &global).expect("delta");
-        assert!(delta < 1e-12, "Serial halo exchange should preserve core rows");
+        assert!(
+            delta < 1e-12,
+            "Serial halo exchange should preserve core rows"
+        );
     }
 
     #[test]
@@ -284,8 +296,7 @@ mod tests {
     fn test_apply_halo_shape_guard() {
         let mut local = Array2::zeros((6, 4));
         let bad_top = Array2::zeros((2, 5));
-        let err =
-            apply_halo_rows(&mut local, 1, Some(&bad_top), None).expect_err("shape mismatch");
+        let err = apply_halo_rows(&mut local, 1, Some(&bad_top), None).expect_err("shape mismatch");
         match err {
             FusionError::PhysicsViolation(msg) => assert!(msg.contains("shape mismatch")),
             other => panic!("Unexpected error: {other:?}"),

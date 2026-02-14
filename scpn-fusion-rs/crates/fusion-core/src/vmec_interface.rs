@@ -155,12 +155,10 @@ pub fn import_vmec_like_text(text: &str) -> FusionResult<VmecBoundaryState> {
     }
 
     let state = VmecBoundaryState {
-        r_axis: r_axis.ok_or_else(|| {
-            FusionError::PhysicsViolation("Missing VMEC key: r_axis".to_string())
-        })?,
-        z_axis: z_axis.ok_or_else(|| {
-            FusionError::PhysicsViolation("Missing VMEC key: z_axis".to_string())
-        })?,
+        r_axis: r_axis
+            .ok_or_else(|| FusionError::PhysicsViolation("Missing VMEC key: r_axis".to_string()))?,
+        z_axis: z_axis
+            .ok_or_else(|| FusionError::PhysicsViolation("Missing VMEC key: z_axis".to_string()))?,
         a_minor: a_minor.ok_or_else(|| {
             FusionError::PhysicsViolation("Missing VMEC key: a_minor".to_string())
         })?,

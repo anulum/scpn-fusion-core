@@ -143,7 +143,10 @@ pub fn summarize_particle_population(
         };
     }
 
-    let mut energies: Vec<f64> = particles.iter().map(ChargedParticle::kinetic_energy_mev).collect();
+    let mut energies: Vec<f64> = particles
+        .iter()
+        .map(ChargedParticle::kinetic_energy_mev)
+        .collect();
     energies.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let count = energies.len();
     let mean_energy_mev = energies.iter().sum::<f64>() / (count as f64);
