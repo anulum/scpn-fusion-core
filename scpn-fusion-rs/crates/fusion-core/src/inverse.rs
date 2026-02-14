@@ -885,8 +885,10 @@ mod tests {
     fn test_kernel_inverse_rejects_invalid_kernel_iteration_config() {
         let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
             .unwrap();
-        let mut kcfg = KernelInverseConfig::default();
-        kcfg.kernel_max_iterations = 0;
+        let kcfg = KernelInverseConfig {
+            kernel_max_iterations: 0,
+            ..Default::default()
+        };
         let init = ProfileParams::default();
         let err = reconstruct_equilibrium_with_kernel(
             &cfg,
