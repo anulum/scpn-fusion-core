@@ -128,7 +128,11 @@ def predict_disruption_risk(signal, toroidal_observables=None):
 
 def apply_bit_flip_fault(value, bit_index):
     """Inject a deterministic single-bit fault into a float."""
-    bit = int(bit_index) % 64
+    if isinstance(bit_index, bool) or not isinstance(bit_index, (int, np.integer)):
+        raise ValueError("bit_index must be an integer in [0, 63].")
+    bit = int(bit_index)
+    if bit < 0 or bit > 63:
+        raise ValueError("bit_index must be an integer in [0, 63].")
     raw = np.array([float(value)], dtype=np.float64).view(np.uint64)[0]
     flipped = np.uint64(raw ^ (np.uint64(1) << np.uint64(bit)))
     out = np.array([flipped], dtype=np.uint64).view(np.float64)[0]

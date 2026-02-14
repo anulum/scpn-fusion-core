@@ -63,6 +63,12 @@ def test_apply_bit_flip_fault_returns_finite_value() -> None:
     assert flipped != value
 
 
+@pytest.mark.parametrize("bit_index", [-1, 64, 1.5, float("nan"), True])
+def test_apply_bit_flip_fault_rejects_invalid_bit_indices(bit_index: object) -> None:
+    with pytest.raises(ValueError, match="bit_index"):
+        apply_bit_flip_fault(0.75, bit_index)
+
+
 def test_fault_noise_campaign_metrics_and_thresholds() -> None:
     report = run_fault_noise_campaign(
         seed=123,
