@@ -142,6 +142,24 @@ fn to_array2(jac: Vec<Vec<f64>>) -> Array2<f64> {
     out
 }
 
+fn validate_flux_denom(flux_denom: f64) -> FusionResult<f64> {
+    if !flux_denom.is_finite() || flux_denom.abs() <= MIN_FLUX_DENOMINATOR {
+        return Err(FusionError::ConfigError(format!(
+            "kernel inverse flux denominator must be finite and |psi_boundary - psi_axis| > {MIN_FLUX_DENOMINATOR}, got {flux_denom}"
+        )));
+    }
+    Ok(flux_denom)
+}
+
+fn validate_radius(radius_m: f64, label: &str) -> FusionResult<f64> {
+    if !radius_m.is_finite() || radius_m <= MIN_RADIUS {
+        return Err(FusionError::ConfigError(format!(
+            "{label} must be finite and > {MIN_RADIUS}, got {radius_m}"
+        )));
+    }
+    Ok(radius_m)
+}
+
 fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
     let mut best_idx = 0usize;
     let mut best_dist = f64::INFINITY;
@@ -328,11 +346,18 @@ fn kernel_analytical_forward_and_jacobian(
     let psi = kernel.psi();
     let mu0 = kernel.config().physics.vacuum_permeability;
     let i_target = kernel.config().physics.plasma_current_target;
-
-    let mut flux_denom = solve_result.psi_boundary - solve_result.psi_axis;
-    if flux_denom.abs() < MIN_FLUX_DENOMINATOR {
-        flux_denom = MIN_FLUX_DENOMINATOR;
+    if !mu0.is_finite() || mu0 <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "kernel inverse mu0 must be finite and > 0, got {mu0}"
+        )));
     }
+    if !i_target.is_finite() {
+        return Err(FusionError::ConfigError(format!(
+            "kernel inverse i_target must be finite, got {i_target}"
+        )));
+    }
+
+    let flux_denom = validate_flux_denom(solve_result.psi_boundary - solve_result.psi_axis)?;
 
     let mut psi_norm = Array2::zeros((grid.nz, grid.nr));
     let mut inside = Array2::from_elem((grid.nz, grid.nr), false);
@@ -342,12 +367,17 @@ fn kernel_analytical_forward_and_jacobian(
     for iz in 0..grid.nz {
         for ir in 0..grid.nr {
             let psi_n = (psi[[iz, ir]] - solve_result.psi_axis) / flux_denom;
+            if !psi_n.is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "kernel inverse psi_norm must be finite, got {psi_n}"
+                )));
+            }
             psi_norm[[iz, ir]] = psi_n;
             if !(0.0..1.0).contains(&psi_n) {
                 continue;
             }
 
-            let r = grid.rr[[iz, ir]].abs().max(MIN_RADIUS);
+            let r = validate_radius(grid.rr[[iz, ir]], "kernel inverse in-plasma radius")?;
             let p = mtanh_profile(psi_n, &params_p);
             let ff = mtanh_profile(psi_n, &params_ff);
             let dp_dpsi = mtanh_profile_dpsi_norm(psi_n, &params_p, "params_p")?;
@@ -361,10 +391,17 @@ fn kernel_analytical_forward_and_jacobian(
     }
 
     let i_raw = raw.iter().sum::<f64>() * grid.dr * grid.dz;
-    if i_raw.abs() <= MIN_CURRENT_INTEGRAL {
-        return Ok((base_observables, vec![vec![0.0; N_PARAMS]; probes_rz.len()]));
+    if !i_raw.is_finite() || i_raw.abs() <= MIN_CURRENT_INTEGRAL {
+        return Err(FusionError::ConfigError(format!(
+            "kernel inverse raw current integral must be finite and |i_raw| > {MIN_CURRENT_INTEGRAL}, got {i_raw}"
+        )));
     }
     let scale = i_target / i_raw;
+    if !scale.is_finite() {
+        return Err(FusionError::ConfigError(
+            "kernel inverse source scaling became non-finite".to_string(),
+        ));
+    }
 
     // Approximate local dS/dPsi for linearized kernel solve.
     let mut ds_dpsi = Array2::zeros((grid.nz, grid.nr));
@@ -373,7 +410,7 @@ fn kernel_analytical_forward_and_jacobian(
             if !inside[[iz, ir]] {
                 continue;
             }
-            let r = grid.rr[[iz, ir]];
+            let r = validate_radius(grid.rr[[iz, ir]], "kernel inverse in-plasma radius")?;
             let dj_dpsi = scale * raw_dpsi_norm[[iz, ir]] / flux_denom;
             ds_dpsi[[iz, ir]] = -mu0 * r * dj_dpsi;
         }
@@ -392,7 +429,7 @@ fn kernel_analytical_forward_and_jacobian(
                 }
 
                 let psi_n = psi_norm[[iz, ir]];
-                let r = grid.rr[[iz, ir]].abs().max(MIN_RADIUS);
+                let r = validate_radius(grid.rr[[iz, ir]], "kernel inverse in-plasma radius")?;
                 if col < 4 {
                     let dp = mtanh_profile_derivatives(psi_n, &params_p)[col];
                     d_raw[[iz, ir]] = SOURCE_BETA_MIX * r * dp;
@@ -410,7 +447,7 @@ fn kernel_analytical_forward_and_jacobian(
                 if !inside[[iz, ir]] {
                     continue;
                 }
-                let r = grid.rr[[iz, ir]];
+                let r = validate_radius(grid.rr[[iz, ir]], "kernel inverse in-plasma radius")?;
                 let dj = scale * (d_raw[[iz, ir]] - raw[[iz, ir]] * d_i / i_raw);
                 ds_dx[[iz, ir]] = -mu0 * r * dj;
             }
@@ -920,6 +957,18 @@ mod tests {
             FusionError::ConfigError(msg) => assert!(msg.contains("initial_params_p.ped_top")),
             other => panic!("Unexpected error: {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_inverse_runtime_scalar_guards_reject_invalid_flux_and_radius() {
+        assert!(validate_flux_denom(0.0).is_err());
+        assert!(validate_flux_denom(f64::NAN).is_err());
+        assert!(validate_flux_denom(1e-3).is_ok());
+
+        assert!(validate_radius(0.0, "r").is_err());
+        assert!(validate_radius(-0.5, "r").is_err());
+        assert!(validate_radius(f64::INFINITY, "r").is_err());
+        assert!(validate_radius(0.25, "r").is_ok());
     }
 
     #[test]
