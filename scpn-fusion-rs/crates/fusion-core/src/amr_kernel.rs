@@ -9,6 +9,7 @@
 
 use fusion_math::amr::{estimate_error_field, AmrHierarchy};
 use fusion_math::sor::sor_solve;
+use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::Grid2D;
 use ndarray::Array2;
 
@@ -41,8 +42,23 @@ pub struct AmrKernelSolver {
 }
 
 impl AmrKernelSolver {
-    pub fn new(config: AmrKernelConfig) -> Self {
-        Self { config }
+    pub fn new(config: AmrKernelConfig) -> FusionResult<Self> {
+        if !config.blend.is_finite() || !(0.0..=1.0).contains(&config.blend) {
+            return Err(FusionError::ConfigError(
+                "AMR blend must be finite and in [0, 1]".to_string(),
+            ));
+        }
+        if !config.omega.is_finite() || config.omega <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "AMR omega must be finite and > 0".to_string(),
+            ));
+        }
+        if config.coarse_iters == 0 || config.patch_iters == 0 {
+            return Err(FusionError::ConfigError(
+                "AMR iteration counts must be >= 1".to_string(),
+            ));
+        }
+        Ok(Self { config })
     }
 
     pub fn solve(&self, base_grid: &Grid2D, source: &Array2<f64>) -> Array2<f64> {
@@ -108,7 +124,7 @@ impl AmrKernelSolver {
             );
         }
 
-        let blend = self.config.blend.clamp(0.0, 1.0);
+        let blend = self.config.blend;
         for patch in &hierarchy.patches {
             let scale = refinement_scale(patch.level);
             for iz in patch.bounds.0..=patch.bounds.1 {
@@ -130,7 +146,7 @@ impl AmrKernelSolver {
 
 impl Default for AmrKernelSolver {
     fn default() -> Self {
-        Self::new(AmrKernelConfig::default())
+        Self::new(AmrKernelConfig::default()).expect("default AMR config must be valid")
     }
 }
 
@@ -177,7 +193,7 @@ mod tests {
             refinement_threshold: f64::INFINITY,
             ..Default::default()
         };
-        let solver = AmrKernelSolver::new(coarse_cfg.clone());
+        let solver = AmrKernelSolver::new(coarse_cfg.clone()).expect("valid AMR config");
         let (amr_off, hierarchy) = solver.solve_with_hierarchy(&grid, &source);
         assert!(hierarchy.patches.is_empty());
 
@@ -201,7 +217,8 @@ mod tests {
             max_levels: 3,
             refinement_threshold: 0.05,
             ..Default::default()
-        });
+        })
+        .expect("valid AMR config");
 
         let (_psi, hierarchy) = solver.solve_with_hierarchy(&grid, &source);
         assert!(
@@ -212,5 +229,33 @@ mod tests {
             hierarchy.patches.iter().map(|p| p.level).max().unwrap_or(0),
             2
         );
+    }
+
+    #[test]
+    fn test_amr_kernel_rejects_invalid_constructor_config() {
+        for bad_blend in [f64::NAN, -0.1, 1.1] {
+            let err = AmrKernelSolver::new(AmrKernelConfig {
+                blend: bad_blend,
+                ..Default::default()
+            })
+            .expect_err("invalid blend must error");
+            match err {
+                FusionError::ConfigError(msg) => {
+                    assert!(msg.contains("blend"));
+                }
+                other => panic!("Unexpected error: {other:?}"),
+            }
+        }
+        let err = AmrKernelSolver::new(AmrKernelConfig {
+            omega: 0.0,
+            ..Default::default()
+        })
+        .expect_err("invalid omega must error");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("omega"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
     }
 }
