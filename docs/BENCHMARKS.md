@@ -2,14 +2,20 @@
 
 Comparison of SCPN Fusion Core against established fusion simulation codes.
 
+> **Transparency note:** Timings labelled "Rust" use the compiled Rust backend
+> with `opt-level = 3` and fat LTO. Timings labelled "Python" use the pure
+> NumPy/SciPy path. "Projected" values are estimates, not measurements.
+> Community code timings are from published literature (see references below).
+> We encourage independent reproduction — see [`benchmarks/`](../benchmarks/).
+
 ## Solver Performance
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | PROCESS |
 |--------|------------------------|---------------|-------|---------|
-| **Equilibrium solver** | Multigrid V-cycle + Picard | Jacobi + Picard | JAX autodiff | N/A (0-D) |
+| **Equilibrium solver** | Picard + Red-Black SOR (multigrid available but not yet wired into kernel) | Jacobi + Picard | JAX autodiff | N/A (0-D) |
 | **Stencil** | 5-pt GS with 1/R toroidal | 5-pt flat (legacy) | Spectral | N/A |
-| **128x128 equil. time** | ~1 s (release) | ~30 s | ~0.5 s (GPU) | N/A |
-| **65x65 equil. time** | ~0.1 s (release) | ~5 s | ~0.1 s | N/A |
+| **128x128 equil. time** | ~1 s (release, Picard+SOR) | ~30 s | ~0.5 s (GPU) | N/A |
+| **65x65 equil. time** | ~0.1 s (release, Picard+SOR) | ~5 s | ~0.1 s | N/A |
 | **Profile model** | L-mode linear + H-mode mtanh | L-mode linear | Neural QLKNN | IPB98(y,2) |
 | **Transport** | 1.5D radial diffusion | 1.5D radial | 1D flux-driven | 0-D scaling |
 | **Turbulence** | FNO spectral (12 modes) | FNO spectral | QLKNN surrogate | N/A |
@@ -51,17 +57,37 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 | DIII-D | 3 | 0.10–0.18 | 0.09–0.17 | 6–10% |
 | ASDEX-U | 3 | 0.05–0.12 | 0.05–0.11 | 4–9% |
 | C-Mod | 2 | 0.02–0.04 | 0.02–0.04 | 3–7% |
-| SPARC | 8 GEQDSK | B=12.2 T, I_p=8.7 MA | Equilibrium match | < 5% flux |
+| SPARC | 8 GEQDSK | B=12.2 T, I_p=8.7 MA | Topology checks pass | Axis pos., q monotonicity |
+
+> **Note on confinement accuracy:** The JET/DIII-D/ASDEX-U/C-Mod error
+> percentages above are computed by the IPB98(y,2) scaling law implementation
+> against the ITPA H-mode dataset. These are **scaling law errors**, not
+> full-profile RMSE comparisons. The SPARC validation checks equilibrium
+> topology (axis position, safety factor monotonicity, GS operator sign) but
+> does not compute point-wise RMSE against reference psi fields.
 
 ### Equilibrium Solver Convergence
 
-| Grid | Solver | Iterations | Residual | Time (release) |
-|------|--------|-----------|----------|----------------|
-| 33x33 | Multigrid | 5–8 V-cycles | < 1e-8 | 2 ms |
-| 65x65 | Multigrid | 8–12 V-cycles | < 1e-6 | 15 ms |
-| 128x128 | Multigrid | 10–15 V-cycles | < 1e-4 | 95 ms |
-| 33x33 | GMRES(30) | 15–25 iters | < 1e-8 | 5 ms |
-| 65x65 | GMRES(30) | 30–50 iters | < 1e-6 | 30 ms |
+**Current production path (Picard + Red-Black SOR):**
+
+| Grid | Solver | Picard Iters | Inner SOR Iters | Time (Rust release) |
+|------|--------|-------------|-----------------|---------------------|
+| 33x33 | Picard+SOR | 3–5 | 50/iter | ~50 ms |
+| 65x65 | Picard+SOR | 5–8 | 50/iter | ~100 ms |
+| 128x128 | Picard+SOR | 8–12 | 50/iter | ~1 s |
+
+**Multigrid V-cycle (implemented, not yet wired into kernel):**
+
+| Grid | Solver | V-cycles | Residual | Time (projected) |
+|------|--------|---------|----------|-----------------|
+| 33x33 | Multigrid | 5–8 | < 1e-8 | ~2 ms |
+| 65x65 | Multigrid | 8–12 | < 1e-6 | ~15 ms |
+| 128x128 | Multigrid | 10–15 | < 1e-4 | ~95 ms |
+
+> **TODO:** Wire multigrid into the main `FusionKernel` Picard loop and
+> benchmark end-to-end. The multigrid module passes unit tests on Poisson
+> problems but has not been validated on the full GS equation with source
+> terms.
 
 ## Inverse Reconstruction Performance
 
@@ -78,11 +104,15 @@ negligible overhead.
 | + Huber (δ=0.1) | same + IRLS weights | negligible overhead |
 | + σ weights | same + per-probe division | negligible overhead |
 | **Total (1 LM iter, 65×65, release)** | **~0.8 s** | dominated by forward solve |
-| **Full reconstruction (5 iters)** | **~4 s** | competitive with EFIT |
+| **Full reconstruction (5 iters)** | **~4 s** | see EFIT comparison below |
 
-### vs EFIT
+### vs EFIT (Literature Comparison)
 
-| Metric | SCPN Fusion Core (Rust) | EFIT |
+> **Note:** EFIT timings are from Lao et al. (1985) and are not direct
+> measurements on equivalent hardware. This is an order-of-magnitude
+> comparison for context, not a head-to-head benchmark.
+
+| Metric | SCPN Fusion Core (Rust) | EFIT (literature) |
 |--------|------------------------|------|
 | Forward solve (65×65) | ~0.1 s | ~50 ms |
 | 1 LM iteration | ~0.8 s | ~0.4 s (Picard) |
@@ -90,25 +120,45 @@ negligible overhead.
 | Regularisation | Tikhonov + Huber + σ | Von-Hagenow smoothing |
 | Profile model | mtanh (7 params) | Spline knots (~20 params) |
 
+SCPN is currently ~2× slower than reported EFIT timings. The gap is expected
+to close when the multigrid solver replaces Picard+SOR in the kernel.
+
 *Reference: Lao, L.L. et al. (1985). Nucl. Fusion 25, 1611.*
 
 ## Neural Transport Surrogate
 
-MLP surrogate (10→64→32→3 architecture) replaces gyrokinetic solvers at
-microsecond inference speed.  Pure NumPy — no TensorFlow/PyTorch overhead.
+MLP surrogate (10→64→32→3 architecture) for fast transport coefficient
+estimation.  Pure NumPy — no TensorFlow/PyTorch overhead.
+
+> **Important:** No physics-trained weights are shipped in this repository.
+> The benchmark timings below use synthetic weights for latency measurement.
+> To use the surrogate for actual physics, you must train weights on
+> gyrokinetic output (see training recipe in the notebook).
+
+**Latency measurements (synthetic weights, Criterion benchmark):**
 
 | Method | Single-point | 100-pt profile | 1000-pt profile |
 |--------|-------------|----------------|-----------------|
 | Critical-gradient (numpy) | ~2 µs | ~0.2 ms | ~2 ms |
 | MLP surrogate (numpy, H=64) | ~5 µs | ~0.05 ms | ~0.3 ms |
-| QuaLiKiz (gyrokinetic) | ~1 s | ~100 s | ~1000 s |
-| QLKNN (TensorFlow) | ~10 µs | ~0.1 ms | ~1 ms |
+
+**Literature reference (not direct comparison):**
+
+| Method | Single-point | Source |
+|--------|-------------|--------|
+| QuaLiKiz (gyrokinetic) | ~1 s | van de Plassche 2020 |
+| QLKNN (TensorFlow) | ~10 µs | van de Plassche 2020 |
+
+The latency gap between an MLP surrogate and a first-principles gyrokinetic
+solver is expected to be very large (orders of magnitude), but this is
+inherent to the surrogate approach — speed is traded for fidelity. The
+accuracy of the surrogate depends entirely on training data quality and
+has not been validated against gyrokinetic output in this repository.
 
 Key properties:
 - Vectorised `predict_profile()` gives ~100× speedup over point-by-point loop
 - SHA-256 weight checksums for reproducibility tracking
 - Transparent fallback to analytic model when no weights are available
-- ~2× faster than QLKNN due to zero framework overhead
 
 *Reference: van de Plassche, K.L. et al. (2020). Phys. Plasmas 27, 022310.*
 
@@ -129,8 +179,8 @@ single-shot values on contemporary hardware (2024–2025 publications).
 | **GENE** | Gyrokinetic | Nonlinear δf | 5D Vlasov | 128³×64v² | ~10⁶ CPU-h | Fortran/MPI |
 | **CGYRO** | Gyrokinetic | Nonlinear | 5D continuum | 256 radial | ~10⁵ CPU-h | Fortran/MPI |
 | **DREAM** | Disruption | RE kinetic + fluid | 0D–1D | 100 radial | ~1 s | C++ |
-| **SCPN (Rust)** | Full-stack | Multigrid + LM inverse | 1.5D + MLP surrogate | 65×65 | ~4 s recon | Rust+Python |
-| **SCPN (Python)** | Full-stack | Picard + SOR | 1.5D + crit-gradient | 65×65 | ~40 s recon | Python |
+| **SCPN (Rust)** | Full-stack | Picard+SOR + LM inverse | 1.5D + crit-gradient | 65×65 | ~4 s recon | Rust+Python |
+| **SCPN (Python)** | Full-stack | Picard + Jacobi | 1.5D + crit-gradient | 65×65 | ~40 s recon | Python |
 
 **References:**
 - Lao, L.L. et al. (1985). *Nucl. Fusion* 25, 1611 (EFIT).

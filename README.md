@@ -282,36 +282,57 @@ The `scpn-fusion-rs/` directory contains a 10-crate Rust workspace that mirrors 
 
 ## Benchmarks
 
-### Headline Performance
+### What's Validated
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| **Equilibrium solve** | **15 ms** @ 65×65 | Rust multigrid V-cycle, **50× faster** than Python |
-| **Inverse reconstruction** | **~4 s** full (5 LM iters) | Competitive with EFIT (Fortran) |
-| **Neural transport** | **5 µs/point** MLP inference | **200,000× faster** than gyrokinetic |
-| **Memory** | **0.7 MB** full equilibrium | 5 KFLOP for MLP inference |
-| **GPU (projected)** | **~2 ms** equilibrium | wgpu roadmap, RTX 4090-class |
+| Component | Status | Evidence |
+|-----------|--------|----------|
+| **Grad-Shafranov solver** | Converges on SPARC GEQDSK equilibria | `validation/validate_against_sparc.py` — axis position, q-profile, GS operator checks |
+| **IPB98(y,2) scaling** | Confinement time matches published law | `tests/test_uncertainty.py` — regression against ITPA 20-shot dataset |
+| **Inverse reconstruction** | Levenberg-Marquardt with Tikhonov + Huber | Criterion benchmarks: `inverse_bench.rs` (FD vs analytical Jacobian) |
+| **SOR solver** | Criterion-benchmarked | `sor_bench.rs` — 65×65 and 128×128 grid sizes |
+| **Property-based tests** | Hypothesis + proptest | Numerical invariants, topology preservation, convergence |
 
-### Community Comparison
+### Performance Estimates (Not Yet Independently Verified)
 
-Representative single-shot runtimes on contemporary hardware (2024-2025 publications):
+These numbers are internal measurements. We encourage you to reproduce them
+with `cargo bench` and `benchmarks/collect_results.sh` on your hardware.
 
-| Code | Category | Typical Runtime | Language |
-|------|----------|-----------------|----------|
-| **GENE** | 5D gyrokinetic | ~10⁶ CPU-h | Fortran/MPI |
-| **JINTRAC** | Integrated modelling | ~10 min/shot | Fortran/Python |
-| **CHEASE** | Fixed-boundary equilibrium | ~5 s | Fortran |
-| **EFIT** | Current-filament reconstruction | ~2 s | Fortran |
-| **TORAX** | Integrated (JAX) | ~30 s (GPU) | Python/JAX |
-| **DREAM** | Disruption / runaway electrons | ~1 s | C++ |
-| **P-EFIT** | GPU-accelerated reconstruction | <1 ms | Fortran+OpenACC |
-| **SCPN (Rust)** | **Full-stack** | **~4 s recon, 15 ms equil.** | **Rust+Python** |
+| Metric | Value | How Measured | Caveat |
+|--------|-------|-------------|--------|
+| **SOR step** @ 65×65 | µs-range | Criterion `sor_bench.rs` | Single relaxation step, not full solve |
+| **Full equil. (Picard+SOR)** | ~5 s (Python) | `profiling/profile_kernel.py` | Jacobi + Picard, not multigrid |
+| **Multigrid V-cycle** | Implemented, not yet benchmarked E2E | `fusion-math/src/multigrid.rs` | Not wired into main kernel path yet |
+| **Inverse reconstruction** | ~4 s (5 LM iters, Rust) | Criterion `inverse_bench.rs` | Dominated by forward solve time |
+| **Neural transport MLP** | ~5 µs/point (synthetic weights) | Criterion `neural_transport_bench.rs` | No physics-trained weights shipped; user must train |
+| **Memory** | ~0.7 MB (65×65 equil.) | Estimated from array sizes | — |
+
+> **Note on comparisons:** Earlier versions of this README cited "50× faster
+> than Python" and "200,000× faster than gyrokinetic." These comparisons mixed
+> different algorithms (multigrid vs SOR) and compared a microsecond-latency
+> MLP surrogate against first-principles gyrokinetic solvers — an apples-to-
+> oranges comparison. We've removed these headlines pending proper A/B
+> benchmarks and trained model validation.
+
+### Community Context
+
+For context, here are representative runtimes from published fusion codes
+(2024–2025 literature). These are not direct comparisons with SCPN.
+
+| Code | Category | Typical Runtime | Language | Reference |
+|------|----------|-----------------|----------|-----------|
+| GENE | 5D gyrokinetic | ~10⁶ CPU-h | Fortran/MPI | Jenko 2000 |
+| JINTRAC | Integrated modelling | ~10 min/shot | Fortran/Python | Romanelli 2014 |
+| CHEASE | Fixed-boundary equilibrium | ~5 s | Fortran | Lütjens 1996 |
+| EFIT | Current-filament reconstruction | ~2 s | Fortran | Lao 1985 |
+| TORAX | Integrated (JAX) | ~30 s (GPU) | Python/JAX | — |
+| DREAM | Disruption / runaway electrons | ~1 s | C++ | Hoppe 2021 |
 
 Struggling with convergence? See the [Solver Tuning Guide](docs/SOLVER_TUNING_GUIDE.md) + benchmarks notebook Part F.
 
 ### Resources
 
 - **Full comparison tables:** [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)
+- **Repro tooling:** [`benchmarks/`](benchmarks/) (Criterion collection + hardware metadata)
 - **Static figures for PDF/arXiv:** [`docs/BENCHMARK_FIGURES.md`](docs/BENCHMARK_FIGURES.md) (includes LaTeX table snippets)
 - **Interactive notebook:** [`examples/06_inverse_and_transport_benchmarks.ipynb`](examples/06_inverse_and_transport_benchmarks.ipynb)
 - **Pre-built HTML notebooks:** [`docs/notebooks/`](docs/notebooks/) (also served via [GitHub Pages](https://anulum.github.io/scpn-fusion-core/notebooks/))

@@ -70,14 +70,18 @@ and plasma shapes in tokamaks." Nucl. Fusion 25, 1611.*
 
 ---
 
-## Table 3: Neural Transport Surrogate Performance
+## Table 3: Neural Transport Surrogate Latency (Synthetic Weights)
+
+> MLP weights are not shipped in this repository. Timings below measure
+> inference latency only, not physics accuracy.
 
 | Method | Single-point | 100-pt profile | 1000-pt profile |
 |--------|-------------|----------------|-----------------|
 | Critical-gradient (numpy) | ~2 µs | ~0.2 ms | ~2 ms |
 | MLP surrogate (numpy, H=64/32) | ~5 µs | ~0.05 ms | ~0.3 ms |
-| QuaLiKiz (gyrokinetic) | ~1 s | ~100 s | ~1000 s |
-| QLKNN (TensorFlow) | ~10 µs | ~0.1 ms | ~1 ms |
+
+Literature reference (not direct comparison):
+QuaLiKiz ~1 s/point, QLKNN ~10 µs/point (van de Plassche 2020).
 
 ---
 
