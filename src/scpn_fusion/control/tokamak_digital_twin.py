@@ -7,6 +7,7 @@
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import Optional
 
 from scpn_fusion.io.imas_connector import digital_twin_summary_to_ids
 
@@ -23,7 +24,7 @@ R_MAJ = 2.0  # Major Radius
 R_MIN = 0.8  # Minor Radius
 
 
-def _resolve_rng(seed: int, rng: np.random.Generator | None) -> np.random.Generator:
+def _resolve_rng(seed: int, rng: Optional[np.random.Generator]) -> np.random.Generator:
     if rng is not None:
         if not isinstance(rng, np.random.Generator):
             raise TypeError("rng must be a numpy.random.Generator when provided")
@@ -213,7 +214,7 @@ def run_digital_twin(
     output_path="Tokamak_Digital_Twin.png",
     verbose=True,
     gyro_surrogate=None,
-    rng: np.random.Generator | None = None,
+    rng: Optional[np.random.Generator] = None,
 ):
     """
     Run deterministic digital-twin control simulation.
