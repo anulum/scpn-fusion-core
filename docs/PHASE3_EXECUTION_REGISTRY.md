@@ -147,6 +147,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-010 | P1 | Control | Harden SOTA MPC runner for deterministic non-interactive execution and bounded action/current lanes | `src/scpn_fusion/control/fusion_sota_mpc.py`, `tests/test_fusion_sota_mpc.py` | SOTA MPC runtime exposes deterministic summary-return API with injectable kernel, bounded action/current behavior, CI-safe non-plot mode, and regression coverage for determinism + clipping guarantees | `python -m pytest tests/test_fusion_sota_mpc.py -v` |
 | H7-011 | P1 | Control | Harden advanced SOC learning runner for deterministic non-interactive execution and bounded exploration/control lanes | `src/scpn_fusion/control/advanced_soc_fusion_learning.py`, `tests/test_advanced_soc_fusion_learning.py` | SOC+Q-learning runtime returns deterministic summary metrics with seed-scoped RNG, bounded external-shear control lane, optional non-plot mode, and regression coverage for determinism/learning updates | `python -m pytest tests/test_advanced_soc_fusion_learning.py -v` |
 | H7-012 | P1 | Control | Harden analytic equilibrium solver runner with deterministic summary API and optional non-writing CI path | `src/scpn_fusion/control/analytic_solver.py`, `tests/test_analytic_solver.py` | Analytic solver exposes typed summary-return runner, injectable kernel path, deterministic least-norm/ridge solve with explicit efficiency extraction, and optional config-write suppression for CI | `python -m pytest tests/test_analytic_solver.py -v` |
+| H7-013 | P1 | Diagnostics | Harden diagnostics demo runner with deterministic summary API and optional no-figure CI mode | `src/scpn_fusion/diagnostics/run_diagnostics.py`, `tests/test_run_diagnostics.py` | Diagnostics demo returns deterministic summary metrics with injectable kernel/sensor/tomography factories, robust phantom hotspot placement, and optional figure generation path that is fully bypassable in CI | `python -m pytest tests/test_run_diagnostics.py tests/test_diagnostics.py -v` |
 
 ## Task Accounting
 
@@ -154,8 +155,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 58
-- Remaining in deferred pool after queue selection: 55
+- Post-S4 hardening tasks delivered: 59
+- Remaining in deferred pool after queue selection: 54
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -236,4 +237,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-010`
 - Completed: `H7-011`
 - Completed: `H7-012`
-- Next active task: `H7-013` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-013`
+- Next active task: `H7-014` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
