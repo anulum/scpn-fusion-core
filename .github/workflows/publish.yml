@@ -51,6 +51,7 @@ jobs:
     name: Publish to TestPyPI
     needs: build
     runs-on: ubuntu-latest
+    continue-on-error: true  # TestPyPI is best-effort; don't fail the release
     environment:
       name: testpypi
       url: https://test.pypi.org/p/scpn-fusion
