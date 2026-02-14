@@ -223,7 +223,9 @@ class NeuroSymbolicController:
             else:
                 self._sc_binary_margin = 0.0
         else:
-            self._sc_binary_margin = float(max(0.0, sc_binary_margin))
+            self._sc_binary_margin = float(sc_binary_margin)
+            if not np.isfinite(self._sc_binary_margin) or self._sc_binary_margin < 0.0:
+                raise ValueError("sc_binary_margin must be finite and >= 0.")
 
         problem_size = int(self._nP * self._nT)
         rust_eligible = _HAS_RUST_SCPN_RUNTIME and (

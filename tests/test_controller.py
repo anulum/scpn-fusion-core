@@ -1004,6 +1004,8 @@ class TestIntegration:
                 {"rust_backend_min_problem_size": 2.5},
                 "rust_backend_min_problem_size",
             ),
+            ({"sc_binary_margin": -0.01}, "sc_binary_margin"),
+            ({"sc_binary_margin": float("nan")}, "sc_binary_margin"),
             ({"sc_antithetic_chunk_size": 0}, "sc_antithetic_chunk_size"),
             ({"sc_antithetic_chunk_size": 3.5}, "sc_antithetic_chunk_size"),
         ],
