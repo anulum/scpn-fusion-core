@@ -3,6 +3,14 @@
 Reference data for validating energy confinement time predictions against
 the IPB98(y,2) empirical scaling law.
 
+> **Disclaimer:** This directory contains a **20-row illustrative subset**
+> manually derived from published tables in the cited paper. It is **not**
+> the full ITPA global H-mode confinement database. The data is used
+> solely for regression testing of the IPB98(y,2) scaling law
+> implementation in SCPN Fusion Core. For the authoritative dataset,
+> contact the ITPA Confinement Database Working Group or download from
+> the Princeton DataSpace link below.
+
 ## Source
 
 Verdoolaege et al., "The updated ITPA global H-mode confinement database:
