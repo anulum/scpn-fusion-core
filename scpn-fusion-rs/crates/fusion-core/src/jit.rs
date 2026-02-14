@@ -4,6 +4,7 @@
 //! compilation. It keeps compilation/cache semantics explicit without external
 //! LLVM/JIT dependencies so CI remains bounded.
 
+use fusion_types::error::{FusionError, FusionResult};
 use ndarray::Array1;
 use std::collections::HashMap;
 
@@ -64,13 +65,28 @@ pub struct KernelCompileSpec {
 }
 
 impl KernelCompileSpec {
-    pub fn sanitized(self) -> Self {
-        Self {
-            n_state: self.n_state.max(1),
-            n_control: self.n_control.max(1),
-            dt_s: self.dt_s.max(MIN_DT_S),
-            unroll_factor: self.unroll_factor.max(1),
+    pub fn validated(self) -> FusionResult<Self> {
+        if self.n_state == 0 {
+            return Err(FusionError::ConfigError(
+                "jit kernel n_state must be > 0".to_string(),
+            ));
         }
+        if self.n_control == 0 {
+            return Err(FusionError::ConfigError(
+                "jit kernel n_control must be > 0".to_string(),
+            ));
+        }
+        if !self.dt_s.is_finite() || self.dt_s < MIN_DT_S {
+            return Err(FusionError::ConfigError(format!(
+                "jit kernel dt_s must be finite and >= {MIN_DT_S}"
+            )));
+        }
+        if self.unroll_factor == 0 {
+            return Err(FusionError::ConfigError(
+                "jit kernel unroll_factor must be > 0".to_string(),
+            ));
+        }
+        Ok(self)
     }
 }
 
@@ -164,12 +180,16 @@ impl RuntimeKernelJit {
     }
 
     /// Compile or reuse a kernel for the requested regime and activate it.
-    pub fn compile_for_regime(&mut self, regime: PlasmaRegime, spec: KernelCompileSpec) -> u64 {
-        let spec = spec.sanitized();
+    pub fn compile_for_regime(
+        &mut self,
+        regime: PlasmaRegime,
+        spec: KernelCompileSpec,
+    ) -> FusionResult<u64> {
+        let spec = spec.validated()?;
         if let Some(existing) = self.kernels.get(&regime) {
             if existing.spec == spec {
                 self.active = Some(regime);
-                return existing.generation;
+                return Ok(existing.generation);
             }
         }
 
@@ -178,7 +198,7 @@ impl RuntimeKernelJit {
         let compiled = CompiledKernel::from_regime(regime, spec, generation);
         self.kernels.insert(regime, compiled);
         self.active = Some(regime);
-        generation
+        Ok(generation)
     }
 
     /// Detect regime, compile if needed, and activate specialized kernel.
@@ -186,10 +206,10 @@ impl RuntimeKernelJit {
         &mut self,
         observation: &RegimeObservation,
         spec: KernelCompileSpec,
-    ) -> (PlasmaRegime, u64) {
+    ) -> FusionResult<(PlasmaRegime, u64)> {
         let regime = detect_regime(observation);
-        let generation = self.compile_for_regime(regime, spec);
-        (regime, generation)
+        let generation = self.compile_for_regime(regime, spec)?;
+        Ok((regime, generation))
     }
 
     pub fn active_regime(&self) -> Option<PlasmaRegime> {
@@ -246,8 +266,12 @@ mod tests {
     fn test_compile_cache_reuses_generation() {
         let mut jit = RuntimeKernelJit::new();
         let spec = KernelCompileSpec::default();
-        let gen1 = jit.compile_for_regime(PlasmaRegime::LMode, spec);
-        let gen2 = jit.compile_for_regime(PlasmaRegime::LMode, spec);
+        let gen1 = jit
+            .compile_for_regime(PlasmaRegime::LMode, spec)
+            .expect("valid compile spec");
+        let gen2 = jit
+            .compile_for_regime(PlasmaRegime::LMode, spec)
+            .expect("valid compile spec");
         assert_eq!(gen1, gen2);
         assert_eq!(jit.compile_events(), 1);
         assert_eq!(jit.cache_size(), 1);
@@ -260,10 +284,12 @@ mod tests {
         let state = Array1::from_vec(vec![0.7; spec.n_state]);
         let control = Array1::from_vec(vec![0.2; spec.n_control]);
 
-        jit.compile_for_regime(PlasmaRegime::LMode, spec);
+        jit.compile_for_regime(PlasmaRegime::LMode, spec)
+            .expect("valid compile spec");
         let l_step = jit.step_active(&state, &control);
 
-        jit.compile_for_regime(PlasmaRegime::HMode, spec);
+        jit.compile_for_regime(PlasmaRegime::HMode, spec)
+            .expect("valid compile spec");
         let h_step = jit.step_active(&state, &control);
 
         assert_eq!(jit.active_regime(), Some(PlasmaRegime::HMode));
@@ -284,10 +310,14 @@ mod tests {
             beta_n: 2.6,
             ..RegimeObservation::default()
         };
-        jit.refresh_for_observation(&obs_l, spec);
-        jit.refresh_for_observation(&obs_l, spec);
-        jit.refresh_for_observation(&obs_h, spec);
-        jit.refresh_for_observation(&obs_h, spec);
+        jit.refresh_for_observation(&obs_l, spec)
+            .expect("valid compile spec");
+        jit.refresh_for_observation(&obs_l, spec)
+            .expect("valid compile spec");
+        jit.refresh_for_observation(&obs_h, spec)
+            .expect("valid compile spec");
+        jit.refresh_for_observation(&obs_h, spec)
+            .expect("valid compile spec");
 
         assert_eq!(jit.compile_events(), 2);
         assert_eq!(jit.cache_size(), 2);
@@ -301,5 +331,39 @@ mod tests {
         let control = Array1::from_vec(vec![0.1, 0.1]);
         let next = jit.step_active(&state, &control);
         assert_eq!(next, state);
+    }
+
+    #[test]
+    fn test_compile_for_regime_rejects_invalid_compile_specs() {
+        let mut jit = RuntimeKernelJit::new();
+        let bad_n_state = KernelCompileSpec {
+            n_state: 0,
+            ..KernelCompileSpec::default()
+        };
+        let bad_n_control = KernelCompileSpec {
+            n_control: 0,
+            ..KernelCompileSpec::default()
+        };
+        let bad_dt = KernelCompileSpec {
+            dt_s: f64::NAN,
+            ..KernelCompileSpec::default()
+        };
+        let bad_unroll = KernelCompileSpec {
+            unroll_factor: 0,
+            ..KernelCompileSpec::default()
+        };
+
+        assert!(jit
+            .compile_for_regime(PlasmaRegime::LMode, bad_n_state)
+            .is_err());
+        assert!(jit
+            .compile_for_regime(PlasmaRegime::LMode, bad_n_control)
+            .is_err());
+        assert!(jit.compile_for_regime(PlasmaRegime::LMode, bad_dt).is_err());
+        assert!(jit
+            .compile_for_regime(PlasmaRegime::LMode, bad_unroll)
+            .is_err());
+        assert_eq!(jit.compile_events(), 0);
+        assert_eq!(jit.cache_size(), 0);
     }
 }
