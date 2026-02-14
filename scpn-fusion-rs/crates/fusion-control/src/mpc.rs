@@ -81,6 +81,16 @@ impl MPController {
                 target.len()
             )));
         }
+        if model.b_matrix.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "mpc b_matrix must contain only finite values".to_string(),
+            ));
+        }
+        if target.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "mpc target must contain only finite values".to_string(),
+            ));
+        }
         Ok(MPController {
             model,
             target,
@@ -395,5 +405,18 @@ mod tests {
         assert!(model
             .predict(&Array1::from_vec(vec![1.0, 2.0]), &bad_action)
             .is_err());
+    }
+
+    #[test]
+    fn test_mpc_constructor_rejects_non_finite_matrix_or_target_values() {
+        let bad_b = Array2::from_shape_vec((2, 2), vec![0.1, f64::NAN, 0.0, 0.1]).unwrap();
+        let model = NeuralSurrogate::new(bad_b);
+        let target = Array1::from_vec(vec![6.0, 0.0]);
+        assert!(MPController::new(model, target).is_err());
+
+        let good_b = Array2::from_shape_vec((2, 2), vec![0.1, 0.0, 0.0, 0.1]).unwrap();
+        let model = NeuralSurrogate::new(good_b);
+        let bad_target = Array1::from_vec(vec![6.0, f64::INFINITY]);
+        assert!(MPController::new(model, bad_target).is_err());
     }
 }
