@@ -52,7 +52,10 @@ class OptimalController:
         self.n_coils = len(self.kernel.cfg["coils"])
         self.coil_names = [str(c["name"]) for c in self.kernel.cfg["coils"]]
         self.response_matrix = np.zeros((2, self.n_coils), dtype=np.float64)
-        self.correction_limit = max(float(correction_limit), 1e-9)
+        correction_limit = float(correction_limit)
+        if not np.isfinite(correction_limit) or correction_limit <= 0.0:
+            raise ValueError("correction_limit must be finite and > 0.")
+        self.correction_limit = correction_limit
         self.coil_current_limits = _normalize_bounds(
             coil_current_limits, "coil_current_limits"
         )
@@ -82,7 +85,9 @@ class OptimalController:
         base_r, base_z = self.get_plasma_pos()
         self._log(f"  Base Position: R={base_r:.3f}, Z={base_z:.3f}")
 
-        p = max(float(perturbation), 1e-9)
+        p = float(perturbation)
+        if not np.isfinite(p) or p <= 0.0:
+            raise ValueError("perturbation must be finite and > 0.")
         for i in range(self.n_coils):
             orig_i = float(self.kernel.cfg["coils"][i].get("current", 0.0))
 
@@ -125,7 +130,9 @@ class OptimalController:
         error = tgt - cur
 
         u, s, vt = np.linalg.svd(self.response_matrix, full_matrices=False)
-        cut = max(float(regularization_limit), 0.0)
+        cut = float(regularization_limit)
+        if not np.isfinite(cut) or cut < 0.0:
+            raise ValueError("regularization_limit must be finite and >= 0.")
         s_inv = np.zeros_like(s, dtype=np.float64)
         nz = s > cut
         s_inv[nz] = 1.0 / s[nz]

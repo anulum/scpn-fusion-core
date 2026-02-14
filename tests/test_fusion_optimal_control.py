@@ -184,3 +184,27 @@ def test_run_optimal_control_rejects_invalid_shot_steps() -> None:
             coil_current_limits=(-2.0, 2.0),
             current_target_limits=(7.0, 9.0),
         )
+
+
+def test_optimal_controller_rejects_invalid_limits_and_knobs() -> None:
+    with pytest.raises(ValueError, match="correction_limit"):
+        OptimalController(
+            "dummy.json",
+            kernel_factory=_DummyKernel,
+            verbose=False,
+            correction_limit=0.0,
+        )
+
+    pilot = OptimalController(
+        "dummy.json",
+        kernel_factory=_DummyKernel,
+        verbose=False,
+    )
+    with pytest.raises(ValueError, match="perturbation"):
+        pilot.identify_system(perturbation=0.0)
+    with pytest.raises(ValueError, match="regularization_limit"):
+        pilot.compute_optimal_correction(
+            np.array([6.0, 0.0], dtype=np.float64),
+            np.array([6.0, 0.0], dtype=np.float64),
+            regularization_limit=-1.0,
+        )
