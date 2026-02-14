@@ -418,28 +418,50 @@ impl FusionKernel {
         self.solve_equilibrium()
     }
 
-    fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
+    fn nearest_index(axis: &Array1<f64>, value: f64) -> FusionResult<usize> {
+        if axis.is_empty() {
+            return Err(FusionError::ConfigError(
+                "sample axis must contain at least one coordinate".to_string(),
+            ));
+        }
+        if !value.is_finite() {
+            return Err(FusionError::ConfigError(format!(
+                "sample coordinate must be finite, got {value}"
+            )));
+        }
+
         let mut best_idx = 0usize;
         let mut best_dist = f64::INFINITY;
         for (idx, &x) in axis.iter().enumerate() {
+            if !x.is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "sample axis contains non-finite coordinate at index {idx}"
+                )));
+            }
             let d = (x - value).abs();
             if d < best_dist {
                 best_dist = d;
                 best_idx = idx;
             }
         }
-        best_idx
+        Ok(best_idx)
     }
 
     /// Sample solved flux at nearest grid point to (R, Z).
-    pub fn sample_psi_at(&self, r: f64, z: f64) -> f64 {
-        let ir = Self::nearest_index(&self.grid.r, r);
-        let iz = Self::nearest_index(&self.grid.z, z);
-        self.state.psi[[iz, ir]]
+    pub fn sample_psi_at(&self, r: f64, z: f64) -> FusionResult<f64> {
+        let ir = Self::nearest_index(&self.grid.r, r)?;
+        let iz = Self::nearest_index(&self.grid.z, z)?;
+        let psi = self.state.psi[[iz, ir]];
+        if !psi.is_finite() {
+            return Err(FusionError::ConfigError(
+                "sampled psi value is non-finite".to_string(),
+            ));
+        }
+        Ok(psi)
     }
 
     /// Sample solved flux at multiple probe coordinates.
-    pub fn sample_psi_at_probes(&self, probes: &[(f64, f64)]) -> Vec<f64> {
+    pub fn sample_psi_at_probes(&self, probes: &[(f64, f64)]) -> FusionResult<Vec<f64>> {
         probes
             .iter()
             .map(|&(r, z)| self.sample_psi_at(r, z))
@@ -527,6 +549,16 @@ mod tests {
             !kernel.psi().iter().any(|v| v.is_nan()),
             "No NaN in validated config solve"
         );
+    }
+
+    #[test]
+    fn test_sample_psi_rejects_non_finite_probe_coordinates() {
+        let kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        assert!(kernel.sample_psi_at(f64::NAN, 0.0).is_err());
+        assert!(kernel.sample_psi_at(6.2, f64::INFINITY).is_err());
+        assert!(kernel
+            .sample_psi_at_probes(&[(6.2, 0.0), (f64::NAN, 0.1)])
+            .is_err());
     }
 
     #[test]

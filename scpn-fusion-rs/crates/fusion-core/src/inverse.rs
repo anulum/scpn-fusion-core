@@ -225,7 +225,7 @@ fn kernel_forward_observables(
         });
     }
 
-    Ok(kernel.sample_psi_at_probes(probes_rz))
+    kernel.sample_psi_at_probes(probes_rz)
 }
 
 fn solve_linearized_sensitivity(
@@ -292,7 +292,7 @@ fn kernel_analytical_forward_and_jacobian(
         });
     }
 
-    let base_observables = kernel.sample_psi_at_probes(probes_rz);
+    let base_observables = kernel.sample_psi_at_probes(probes_rz)?;
     let grid = kernel.grid();
     let psi = kernel.psi();
     let mu0 = kernel.config().physics.vacuum_permeability;
