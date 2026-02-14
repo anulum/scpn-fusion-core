@@ -44,6 +44,11 @@ benchmarks/results/
 *.gif
 *.png
 !docs/**/*.png
+!paper/**/*.png
+
+# Generated PDFs (allow paper figures)
+*.pdf
+!paper/**/*.pdf
 
 # Streamlit
 .streamlit/
