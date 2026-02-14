@@ -14,6 +14,7 @@ from scpn_fusion.core.fno_training import train_fno
 from scpn_fusion.core.fno_turbulence_suppressor import (
     FNO_Controller,
     SpectralTurbulenceGenerator,
+    run_fno_simulation,
 )
 
 
@@ -78,3 +79,33 @@ def test_spectral_generator_does_not_mutate_global_numpy_rng_state() -> None:
     np.random.set_state(state)
     expected = float(np.random.random())
     assert observed == expected
+
+
+def test_run_fno_simulation_returns_finite_summary_without_plot() -> None:
+    summary = run_fno_simulation(time_steps=24, seed=7, save_plot=False, verbose=False)
+    for key in (
+        "seed",
+        "steps",
+        "loaded_weights",
+        "final_energy",
+        "mean_energy_last_20",
+        "max_energy",
+        "final_suppression",
+        "plot_saved",
+    ):
+        assert key in summary
+    assert summary["seed"] == 7
+    assert summary["steps"] == 24
+    assert summary["plot_saved"] is False
+    assert summary["plot_error"] is None
+    assert np.isfinite(summary["final_energy"])
+    assert np.isfinite(summary["mean_energy_last_20"])
+    assert np.isfinite(summary["max_energy"])
+
+
+def test_run_fno_simulation_is_deterministic_for_seed() -> None:
+    a = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
+    b = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
+    assert a["final_energy"] == b["final_energy"]
+    assert a["mean_energy_last_20"] == b["mean_energy_last_20"]
+    assert a["max_energy"] == b["max_energy"]

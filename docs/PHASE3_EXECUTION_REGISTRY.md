@@ -168,6 +168,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-031 | P1 | Validation | Remove global NumPy RNG mutation from SCPN PID/MPC benchmark runtime lane | `validation/scpn_pid_mpc_benchmark.py`, `tests/test_scpn_pid_mpc_benchmark.py` | PID/MPC benchmark campaign no longer mutates global `np.random` state in deterministic control-only execution, keeps seeded metadata explicit, and adds regression coverage proving global RNG isolation | `python -m pytest tests/test_scpn_pid_mpc_benchmark.py tests/test_controller.py tests/test_gneu_01_benchmark.py -v` |
 | H7-032 | P1 | Core/Validation | Remove global NumPy RNG mutation from global design scanner and GAI-03 campaign path | `src/scpn_fusion/core/global_design_scanner.py`, `validation/gai_03_heat_ml_shadow.py`, `tests/test_gai_03_heat_ml_shadow.py`, `tests/test_gmvr_01_compact_constraints.py` | Global design scans now use scoped generators (seeded when provided) without mutating global RNG state, GAI-03 scan wiring uses explicit seed passthrough, and regression tests lock global RNG isolation for both scanner and campaign lanes | `python -m pytest tests/test_gai_03_heat_ml_shadow.py tests/test_gmvr_01_compact_constraints.py -v`, `python -m pytest tests/ -q -x` |
 | H7-033 | P1 | Core | Remove global NumPy RNG mutation from FNO turbulence generator runtime lane | `src/scpn_fusion/core/fno_turbulence_suppressor.py`, `tests/test_fno_training.py` | FNO turbulence generator now uses scoped seeded/injected generators for initial fields and forcing terms, avoids global `np.random` mutation in simulation paths, and adds regression coverage for deterministic replay + global RNG isolation | `python -m pytest tests/test_fno_training.py -v`, `python -m pytest tests/ -q -x` |
+| H7-034 | P1 | Core | Harden FNO suppression runtime with deterministic summary-return API and CI-safe non-plot mode | `src/scpn_fusion/core/fno_turbulence_suppressor.py`, `tests/test_fno_training.py` | FNO runtime now exposes typed deterministic summary metrics (energy/suppression), supports optional non-plot execution for CI, preserves seeded replay behavior, and adds regression coverage for deterministic summary outputs | `python -m pytest tests/test_fno_training.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -175,8 +176,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 79
-- Remaining in deferred pool after queue selection: 34
+- Post-S4 hardening tasks delivered: 80
+- Remaining in deferred pool after queue selection: 33
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -278,4 +279,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-031`
 - Completed: `H7-032`
 - Completed: `H7-033`
-- Next active task: `H7-034` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-034`
+- Next active task: `H7-035` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

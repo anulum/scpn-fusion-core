@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -107,23 +107,27 @@ def run_fno_simulation(
     weights_path: Optional[str] = None,
     *,
     seed: int = 42,
-) -> None:
-    print("--- SCPN FNO: Spectral Turbulence Suppression ---")
+    save_plot: bool = True,
+    output_path: str = "FNO_Turbulence_Result.png",
+    verbose: bool = True,
+) -> dict[str, Any]:
+    if verbose:
+        print("--- SCPN FNO: Spectral Turbulence Suppression ---")
 
     sim = SpectralTurbulenceGenerator(seed=int(seed))
     ai = FNO_Controller(weights_path=weights_path)
 
-    if ai.loaded_weights:
-        print(f"Loaded trained FNO weights: {ai.weights_path}")
-    else:
-        print("No trained weights found. Using random initialization.")
-
-    plt.ion()
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    if verbose:
+        if ai.loaded_weights:
+            print(f"Loaded trained FNO weights: {ai.weights_path}")
+        else:
+            print("No trained weights found. Using random initialization.")
 
     history_energy = []
+    last_control = 0.0
 
-    print(f"Running {time_steps} steps of Gyro-Fluid dynamics...")
+    if verbose:
+        print(f"Running {time_steps} steps of Gyro-Fluid dynamics...")
 
     for t in range(time_steps):
         control = 0.0
@@ -131,6 +135,7 @@ def run_fno_simulation(
 
         if t > 50:
             control, prediction = ai.predict_and_suppress(sim.field)
+        last_control = float(control)
 
         field = sim.step(damping=control)
 
@@ -139,22 +144,50 @@ def run_fno_simulation(
         history_energy.append(turb_energy)
 
         if t % 20 == 0:
-            print(
-                f"Step {t}: Energy={turb_energy:.4f} | "
-                f"PredE={pred_energy:.4f} | Suppression={control:.2f}"
-            )
+            if verbose:
+                print(
+                    f"Step {t}: Energy={turb_energy:.4f} | "
+                    f"PredE={pred_energy:.4f} | Suppression={control:.2f}"
+                )
 
-    ax1.imshow(sim.field, cmap="RdBu", vmin=-0.5, vmax=0.5)
-    ax1.set_title(f"Turbulence Density (t={time_steps})")
+    plot_saved = False
+    plot_error: Optional[str] = None
+    if save_plot:
+        try:
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+            ax1.imshow(sim.field, cmap="RdBu", vmin=-0.5, vmax=0.5)
+            ax1.set_title(f"Turbulence Density (t={time_steps})")
 
-    ax2.plot(history_energy, "k-", label="Turbulence Energy")
-    ax2.axvline(50, color="r", linestyle="--", label="AI ON")
-    ax2.set_title("Suppression Performance")
-    ax2.set_xlabel("Time Step")
-    ax2.legend()
+            ax2.plot(history_energy, "k-", label="Turbulence Energy")
+            ax2.axvline(50, color="r", linestyle="--", label="AI ON")
+            ax2.set_title("Suppression Performance")
+            ax2.set_xlabel("Time Step")
+            ax2.legend()
 
-    plt.savefig("FNO_Turbulence_Result.png")
-    print("Analysis saved: FNO_Turbulence_Result.png")
+            plt.tight_layout()
+            plt.savefig(output_path)
+            plt.close(fig)
+            plot_saved = True
+            if verbose:
+                print(f"Analysis saved: {output_path}")
+        except Exception as exc:
+            plot_error = str(exc)
+            if verbose:
+                print(f"Simulation completed without plot artifact: {exc}")
+
+    hist = np.asarray(history_energy, dtype=np.float64)
+    return {
+        "seed": int(seed),
+        "steps": int(time_steps),
+        "loaded_weights": bool(ai.loaded_weights),
+        "final_energy": float(hist[-1]) if hist.size else 0.0,
+        "mean_energy_last_20": float(np.mean(hist[-20:])) if hist.size else 0.0,
+        "max_energy": float(np.max(hist)) if hist.size else 0.0,
+        "final_suppression": float(last_control),
+        "plot_saved": bool(plot_saved),
+        "plot_error": plot_error,
+        "output_path": str(output_path) if plot_saved else None,
+    }
 
 
 if __name__ == "__main__":
