@@ -305,7 +305,7 @@ def run_flight_sim(
     kernel_factory: Callable[[str], Any] = FusionKernel,
 ) -> Dict[str, Any]:
     """Run deterministic tokamak flight-sim control loop and return summary."""
-    np.random.seed(int(seed))
+    seed_int = int(seed)
     if config_file is None:
         repo_root = Path(__file__).resolve().parents[3]
         config_file = str(repo_root / "iter_config.json")
@@ -320,7 +320,7 @@ def run_flight_sim(
         save_plot=save_plot,
         output_path=output_path,
     )
-    summary["seed"] = int(seed)
+    summary["seed"] = seed_int
     summary["config_path"] = str(config_file)
     return summary
 

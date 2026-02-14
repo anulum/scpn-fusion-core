@@ -102,3 +102,22 @@ def test_run_flight_sim_is_deterministic_for_fixed_seed() -> None:
     assert a["mean_abs_z_error"] == b["mean_abs_z_error"]
     assert a["mean_abs_radial_actuator_lag"] == b["mean_abs_radial_actuator_lag"]
     assert a["mean_abs_vertical_actuator_lag"] == b["mean_abs_vertical_actuator_lag"]
+
+
+def test_run_flight_sim_does_not_mutate_global_numpy_rng_state() -> None:
+    np.random.seed(2468)
+    state = np.random.get_state()
+
+    run_flight_sim(
+        config_file="dummy.json",
+        shot_duration=10,
+        seed=55,
+        save_plot=False,
+        verbose=False,
+        kernel_factory=_DummyKernel,
+    )
+
+    observed = float(np.random.random())
+    np.random.set_state(state)
+    expected = float(np.random.random())
+    assert observed == expected
