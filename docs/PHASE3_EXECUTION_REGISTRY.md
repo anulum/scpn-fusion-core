@@ -128,14 +128,24 @@ starting points and upgraded to engineering-grade lanes below.
 | H6-008 | P2 | Performance | Add multi-node MPI domain-decomposition scaffolding for core grid solves | `scpn-fusion-rs/crates/fusion-core/Cargo.toml`, `scpn-fusion-rs/crates/fusion-core/src/mpi_domain.rs`, `src/scpn_fusion/hpc/HPC_MIGRATION_PLAN.md` | Optional MPI build path partitions grid/domain metadata and synchronizes halo boundaries with deterministic serial-equivalence smoke checks | `cargo test -p fusion-core mpi_domain`, `cargo clippy -p fusion-core --all-targets --all-features -- -D warnings` |
 | H6-009 | P2 | Performance | Add traceable control-loop runtime lane to reduce Python interpreter overhead in tight loops | `src/scpn_fusion/scpn/controller.py`, `src/scpn_fusion/scpn/compiler.py`, `validation/scpn_pid_mpc_benchmark.py`, `tests/test_scpn_pid_mpc_benchmark.py` | Traceable execution mode (JAX/TorchScript-ready graph boundary) preserves deterministic controller outputs while reducing per-step overhead in benchmark lane | `python -m pytest tests/test_scpn_pid_mpc_benchmark.py tests/test_controller.py -v`, `python validation/scpn_pid_mpc_benchmark.py --strict` |
 
+## Deferred Pool Activation Queue (Wave H7, 2026-02-14)
+
+These items are executed directly from the source enhancement plans used to
+derive the imported 85-task Phase 3 backlog.
+
+| ID | Priority | Track | Task | Target Files | Definition of Done | Validation |
+|---|---|---|---|---|---|---|
+| H7-001 | P1 | Control | Add reduced `Z_eff` impurity-dilution and calibrated CQ time-constant lane in SPI mitigation model | `src/scpn_fusion/control/spi_mitigation.py`, `tests/test_spi_mitigation.py` | SPI path exposes deterministic `Z_eff` + `tau_CQ` diagnostics, preserves existing demo behavior, and validates monotonic impurity/quench trends | `python -m pytest tests/test_spi_mitigation.py -v` |
+| H7-002 | P1 | Control | Add optional gyrokinetic-surrogate diffusivity hook in digital twin runtime | `src/scpn_fusion/control/tokamak_digital_twin.py`, `tests/test_tokamak_digital_twin.py` | Digital twin accepts deterministic surrogate correction map with strict shape guards and preserves default deterministic behavior when unset | `python -m pytest tests/test_tokamak_digital_twin.py tests/test_gdep_01_digital_twin_hook.py -v` |
+
 ## Task Accounting
 
 - Total imported tasks: 85
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 46
-- Remaining in deferred pool after queue selection: 67
+- Post-S4 hardening tasks delivered: 48
+- Remaining in deferred pool after queue selection: 65
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -204,4 +214,6 @@ starting points and upgraded to engineering-grade lanes below.
 - Completed: `H6-007`
 - Completed: `H6-008`
 - Completed: `H6-009`
-- Next active task: none (Sprint S4 queue baseline closed; H6 external intake queue delivered; deferred pool unchanged at 67 pending next sprint cut).
+- Completed: `H7-001`
+- Completed: `H7-002`
+- Next active task: `H7-003` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

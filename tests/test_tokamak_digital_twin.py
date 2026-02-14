@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.control.tokamak_digital_twin import run_digital_twin
 from scpn_fusion.io.imas_connector import (
@@ -63,3 +64,43 @@ def test_ids_roundtrip_preserves_core_digital_twin_fields() -> None:
     assert recovered["final_islands_px"] == summary["final_islands_px"]
     assert np.isfinite(recovered["final_avg_temp"])
     assert np.isfinite(recovered["final_reward"])
+
+
+def test_run_digital_twin_supports_deterministic_gyro_surrogate() -> None:
+    def surrogate(temp_map: np.ndarray, q_map: np.ndarray, danger: np.ndarray) -> np.ndarray:
+        _ = q_map
+        return np.where(danger, 1.35, 0.95 + 0.0005 * temp_map)
+
+    a = run_digital_twin(
+        time_steps=20,
+        seed=13,
+        save_plot=False,
+        verbose=False,
+        gyro_surrogate=surrogate,
+    )
+    b = run_digital_twin(
+        time_steps=20,
+        seed=13,
+        save_plot=False,
+        verbose=False,
+        gyro_surrogate=surrogate,
+    )
+    assert a["final_avg_temp"] == b["final_avg_temp"]
+    assert a["final_reward"] == b["final_reward"]
+    assert a["final_action"] == b["final_action"]
+
+
+def test_run_digital_twin_validates_gyro_surrogate_shape() -> None:
+    def bad_surrogate(temp_map: np.ndarray, q_map: np.ndarray, danger: np.ndarray) -> np.ndarray:
+        _ = q_map
+        _ = danger
+        return np.ones((temp_map.shape[0],), dtype=float)
+
+    with pytest.raises(ValueError, match="gyro_surrogate correction shape"):
+        run_digital_twin(
+            time_steps=4,
+            seed=7,
+            save_plot=False,
+            verbose=False,
+            gyro_surrogate=bad_surrogate,
+        )

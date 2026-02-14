@@ -72,10 +72,11 @@ class Plasma2D:
     """
     2D Diffusive-Reaction Model on a Poloidal Cross-section.
     """
-    def __init__(self, topology):
+    def __init__(self, topology, gyro_surrogate=None):
         self.topo = topology
         self.T = np.zeros((GRID_SIZE, GRID_SIZE)) # Temperature Map
         self.T_core_hist = []
+        self._gyro_surrogate = gyro_surrogate
         
     def step(self, action):
         """
@@ -98,6 +99,20 @@ class Plasma2D:
         
         diffusivity = np.ones_like(self.T) * D_base
         diffusivity[danger_zones] = D_turb # Islands are leaky!
+        if self._gyro_surrogate is not None:
+            # Optional reduced gyrokinetic surrogate hook.
+            # Must return a multiplicative map with same shape as T.
+            correction = np.asarray(
+                self._gyro_surrogate(self.T, self.topo.q_map, danger_zones),
+                dtype=float,
+            )
+            if correction.shape != self.T.shape:
+                raise ValueError(
+                    f"gyro_surrogate correction shape must be {self.T.shape}, got {correction.shape}"
+                )
+            correction = np.nan_to_num(correction, nan=1.0, posinf=2.0, neginf=0.5)
+            np.clip(correction, 0.2, 5.0, out=correction)
+            diffusivity *= correction
         
         # Laplacian (Finite Difference)
         T_up = np.roll(self.T, -1, axis=0)
@@ -181,6 +196,7 @@ def run_digital_twin(
     save_plot=True,
     output_path="Tokamak_Digital_Twin.png",
     verbose=True,
+    gyro_surrogate=None,
 ):
     """
     Run deterministic digital-twin control simulation.
@@ -194,7 +210,7 @@ def run_digital_twin(
         print("--- SCPN 2D TOKAMAK DIGITAL TWIN + NEURAL CONTROL ---")
     
     topo = TokamakTopoloy()
-    plasma = Plasma2D(topo)
+    plasma = Plasma2D(topo, gyro_surrogate=gyro_surrogate)
     
     # State: Simplified to radial profile samples (to keep NN small)
     # We take 40 points along the midplane
