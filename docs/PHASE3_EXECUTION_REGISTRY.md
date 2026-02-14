@@ -154,6 +154,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-017 | P1 | Control | Add deterministic session-level runtime API for digital twin ingest planning with optional chaos injection | `src/scpn_fusion/control/digital_twin_ingest.py`, `tests/test_digital_twin_ingest_runtime.py` | Digital twin ingest exposes typed non-interactive session summary runner with strict machine validation, deterministic chaos/dropout injection controls, and regression tests for determinism + invalid-machine guard behavior | `python -m pytest tests/test_digital_twin_ingest_runtime.py tests/test_gdep_01_digital_twin_hook.py -v` |
 | H7-018 | P1 | Diagnostics | Add strict forward-diagnostics input guards for grid/field shape and scalar physics constraints | `src/scpn_fusion/diagnostics/forward.py`, `tests/test_forward_diagnostics_guards.py` | Forward diagnostics now reject non-finite/mismatched field-grid inputs and invalid scalar parameters (`volume_element_m3`, detector efficiency, solid-angle fraction) with deterministic error semantics, while preserving existing valid-channel behavior | `python -m pytest tests/test_forward_diagnostics_guards.py tests/test_diagnostics.py tests/test_run_diagnostics.py tests/test_tomography.py tests/test_synthetic_sensors.py -v` |
 | H7-019 | P1 | Nuclear | Harden PWI erosion demo with deterministic summary-return runtime API and CI-safe non-plot mode | `src/scpn_fusion/nuclear/pwi_erosion.py`, `tests/test_pwi_erosion_runtime.py` | PWI erosion scan now exposes a typed non-interactive summary path with finite-input guards, deterministic result metrics, optional plot generation, and regression tests for determinism + invalid range handling | `python -m pytest tests/test_pwi_erosion.py tests/test_pwi_erosion_runtime.py -v` |
+| H7-020 | P1 | Nuclear | Harden TEMHD experiment runner with deterministic summary-return runtime API and CI-safe non-plot mode | `src/scpn_fusion/nuclear/temhd_peltier.py`, `tests/test_temhd_peltier_runtime.py` | TEMHD flux-ramp experiment now exposes typed non-interactive summary metrics with finite-range guards, deterministic runtime behavior, optional plot generation, and regression tests for determinism + invalid flux range handling | `python -m pytest tests/test_temhd_peltier.py tests/test_temhd_peltier_runtime.py -v` |
 
 ## Task Accounting
 
@@ -161,8 +162,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 65
-- Remaining in deferred pool after queue selection: 48
+- Post-S4 hardening tasks delivered: 66
+- Remaining in deferred pool after queue selection: 47
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -250,4 +251,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-017`
 - Completed: `H7-018`
 - Completed: `H7-019`
-- Next active task: `H7-020` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-020`
+- Next active task: `H7-021` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

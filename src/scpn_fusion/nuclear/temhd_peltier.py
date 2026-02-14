@@ -5,38 +5,36 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-import numpy as np
+from __future__ import annotations
+
+from typing import Any, Optional
+
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 class TEMHD_Stabilizer:
     """
-    Implicit 1D Heat Solver for TEMHD-stabilized Liquid Metal Divertors.
+    Implicit 1D heat solver for TEMHD-stabilized liquid-metal divertors.
     """
-    def __init__(self, layer_thickness_mm=5.0, B_field=10.0):
-        self.L = layer_thickness_mm / 1000.0
-        self.B0 = B_field
+
+    def __init__(self, layer_thickness_mm: float = 5.0, B_field: float = 10.0):
+        self.L = float(layer_thickness_mm) / 1000.0
+        self.B0 = float(B_field)
         self.N = 50
         self.z = np.linspace(0, self.L, self.N)
-        self.dz = self.z[1] - self.z[0]
+        self.dz = float(self.z[1] - self.z[0])
         self.rho = 500.0
         self.cp = 4200.0
         self.k_thermal = 50.0
         self.Seebeck = 20e-6
         self.sigma = 3e6
         self.viscosity = 1e-3
-        self.T = np.ones(self.N) * 300.0
+        self.T = np.ones(self.N, dtype=float) * 300.0
         self.T_wall = 300.0
 
     def solve_tridiagonal(self, a, b, c, d):
-        """Solve tridiagonal system Ax=d via Thomas algorithm.
-
-        Parameters
-        ----------
-        a : sub-diagonal (n-1)
-        b : diagonal (n)
-        c : super-diagonal (n-1)
-        d : rhs (n)
-        """
+        """Solve tridiagonal system Ax=d via Thomas algorithm."""
         a = np.asarray(a, dtype=float)
         b = np.asarray(b, dtype=float)
         c = np.asarray(c, dtype=float)
@@ -81,7 +79,7 @@ class TEMHD_Stabilizer:
             res[i] = d_prime[i] - c_prime[i] * res[i + 1]
         return res
 
-    def step(self, heat_flux_MW_m2, dt=0.1):
+    def step(self, heat_flux_MW_m2: float, dt: float = 0.1):
         dt = float(dt)
         heat_flux_MW_m2 = float(heat_flux_MW_m2)
         if not np.isfinite(dt) or dt <= 0.0:
@@ -96,45 +94,107 @@ class TEMHD_Stabilizer:
         grad_T = np.gradient(self.T, self.dz)
         J_te = -self.sigma * self.Seebeck * grad_T
         F_lorentz = np.abs(J_te * self.B0)
-        # Empirical scaling for TEMHD convection: k_eff = k * (1 + C * gradT * B)
-        # Based on Jaworski et al. (2013)
         v_conv = (F_lorentz * self.dz**2) / (self.viscosity + 1e-9)
         alpha = self.k_thermal / (self.rho * self.cp)
         Pe = np.clip(v_conv * self.dz / alpha, 0, 200.0)
         k_eff = np.maximum(self.k_thermal * (1.0 + 0.2 * Pe), 1e-9)
-        
+
         r = (k_eff * dt) / (self.rho * self.cp * self.dz**2)
         if not np.all(np.isfinite(r)):
             raise ValueError("Non-finite diffusion coefficients encountered.")
-        # Matrix diagonals
         b = 1.0 + 2.0 * r[1:]
-        a = -r[2:] # Sub
-        c = -r[1:-1] # Super
+        a = -r[2:]
+        c = -r[1:-1]
         d = self.T[1:].copy()
-        
-        # BCs
+
         d[0] += r[1] * self.T_wall
         b[-1] = 1.0 + r[-1]
         q_in = heat_flux_MW_m2 * 1e6
         d[-1] += r[-1] * (q_in * self.dz / k_eff[-1])
-        
-        self.T[1:] = self.solve_tridiagonal(a, b, c, d)
-        return self.T[-1], np.max(k_eff)
 
-def run_temhd_experiment():
-    sim_pel = TEMHD_Stabilizer(B_field=10.0)
-    flux_ramp = np.linspace(0, 100, 20)
-    
-    res_T = []
-    print(f"{'Flux':<10} | {'T_surf':<10}")
-    for q in flux_ramp:
-        for _ in range(20): T, _ = sim_pel.step(q, dt=0.5)
-        res_T.append(T)
-        if int(q) % 20 == 0: print(f"{q:<10.1f} | {T:<10.1f}")
-    
-    plt.plot(flux_ramp, res_T, 'r-')
-    plt.axhline(1342, color='k', ls='--')
-    plt.savefig("TEMHD_Corrected.png")
+        self.T[1:] = self.solve_tridiagonal(a, b, c, d)
+        return float(self.T[-1]), float(np.max(k_eff))
+
+
+def run_temhd_experiment(
+    *,
+    layer_thickness_mm: float = 5.0,
+    B_field: float = 10.0,
+    flux_min_MW_m2: float = 0.0,
+    flux_max_MW_m2: float = 100.0,
+    flux_points: int = 20,
+    settle_steps_per_flux: int = 20,
+    dt_s: float = 0.5,
+    save_plot: bool = True,
+    output_path: str = "TEMHD_Corrected.png",
+    verbose: bool = True,
+) -> dict[str, Any]:
+    """
+    Run deterministic TEMHD flux-ramp experiment and return summary metrics.
+    """
+    f_lo = float(flux_min_MW_m2)
+    f_hi = float(flux_max_MW_m2)
+    if not np.isfinite(f_lo) or not np.isfinite(f_hi) or f_lo >= f_hi:
+        raise ValueError(
+            "flux_min_MW_m2/flux_max_MW_m2 must be finite with flux_min_MW_m2 < flux_max_MW_m2."
+        )
+    n_flux = max(int(flux_points), 2)
+    settle_steps = max(int(settle_steps_per_flux), 1)
+    dt = float(dt_s)
+    if not np.isfinite(dt) or dt <= 0.0:
+        raise ValueError("dt_s must be finite and > 0.")
+
+    sim = TEMHD_Stabilizer(layer_thickness_mm=layer_thickness_mm, B_field=B_field)
+    flux_ramp = np.linspace(f_lo, f_hi, n_flux, dtype=np.float64)
+
+    res_T: list[float] = []
+    res_k: list[float] = []
+    if verbose:
+        print(f"{'Flux':<10} | {'T_surf':<10}")
+    cadence = max(n_flux // 5, 1)
+    for i, q in enumerate(flux_ramp):
+        t_surf = 0.0
+        k_eff = 0.0
+        for _ in range(settle_steps):
+            t_surf, k_eff = sim.step(float(q), dt=dt)
+        res_T.append(float(t_surf))
+        res_k.append(float(k_eff))
+        if verbose and (i % cadence == 0 or i == n_flux - 1):
+            print(f"{float(q):<10.1f} | {float(t_surf):<10.1f}")
+
+    t_arr = np.asarray(res_T, dtype=np.float64)
+    k_arr = np.asarray(res_k, dtype=np.float64)
+
+    plot_saved = False
+    plot_error: Optional[str] = None
+    if save_plot:
+        try:
+            fig, ax = plt.subplots()
+            ax.plot(flux_ramp, t_arr, "r-")
+            ax.axhline(1342.0, color="k", ls="--")
+            fig.savefig(output_path)
+            plt.close(fig)
+            plot_saved = True
+            if verbose:
+                print(f"Saved: {output_path}")
+        except Exception as exc:
+            plot_error = f"{exc.__class__.__name__}: {exc}"
+
+    return {
+        "layer_thickness_mm": float(layer_thickness_mm),
+        "B_field": float(B_field),
+        "flux_min_MW_m2": float(f_lo),
+        "flux_max_MW_m2": float(f_hi),
+        "flux_points": int(n_flux),
+        "settle_steps_per_flux": int(settle_steps),
+        "dt_s": float(dt),
+        "min_surface_temp_K": float(np.min(t_arr)) if t_arr.size else 0.0,
+        "max_surface_temp_K": float(np.max(t_arr)) if t_arr.size else 0.0,
+        "max_k_eff": float(np.max(k_arr)) if k_arr.size else 0.0,
+        "plot_saved": bool(plot_saved),
+        "plot_error": plot_error,
+    }
+
 
 if __name__ == "__main__":
     run_temhd_experiment()
