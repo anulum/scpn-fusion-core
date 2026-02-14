@@ -165,10 +165,30 @@ pub fn apply_chaos_monkey<R: Rng + ?Sized>(
     channels: &Array1<f64>,
     cfg: ChaosMonkeyConfig,
     rng: &mut R,
-) -> Array1<f64> {
+) -> FusionResult<Array1<f64>> {
+    if !cfg.dropout_prob.is_finite() || !(0.0..=1.0).contains(&cfg.dropout_prob) {
+        return Err(FusionError::ConfigError(format!(
+            "dropout_prob must be finite and in [0, 1], got {}",
+            cfg.dropout_prob
+        )));
+    }
+    if !cfg.gaussian_noise_std.is_finite() || cfg.gaussian_noise_std < 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "gaussian_noise_std must be finite and >= 0, got {}",
+            cfg.gaussian_noise_std
+        )));
+    }
+    if channels.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "chaos-monkey channels must contain only finite values".to_string(),
+        ));
+    }
+
     let sigma = cfg.gaussian_noise_std;
     let noise_dist = if sigma > 0.0 {
-        Some(rand_distr::Normal::new(0.0, sigma).expect("valid sigma"))
+        Some(rand_distr::Normal::new(0.0, sigma).map_err(|e| {
+            FusionError::ConfigError(format!("invalid Gaussian noise configuration: {e}"))
+        })?)
     } else {
         None
     };
@@ -182,7 +202,7 @@ pub fn apply_chaos_monkey<R: Rng + ?Sized>(
             *v += dist.sample(rng);
         }
     }
-    out
+    Ok(out)
 }
 
 /// Delay + lag line for actuator commands.
@@ -595,8 +615,8 @@ mod tests {
         let mut rng2 = StdRng::seed_from_u64(123);
         let x = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0]);
         let cfg = ChaosMonkeyConfig::new(0.25, 0.05).expect("valid chaos config");
-        let a = apply_chaos_monkey(&x, cfg, &mut rng1);
-        let b = apply_chaos_monkey(&x, cfg, &mut rng2);
+        let a = apply_chaos_monkey(&x, cfg, &mut rng1).expect("valid chaos-monkey input");
+        let b = apply_chaos_monkey(&x, cfg, &mut rng2).expect("valid chaos-monkey input");
         assert_eq!(a.len(), b.len());
         for i in 0..a.len() {
             assert!((a[i] - b[i]).abs() < 1e-12);
@@ -608,8 +628,27 @@ mod tests {
         let mut rng = StdRng::seed_from_u64(777);
         let x = Array1::from_vec(vec![0.8, -0.2, 1.4]);
         let cfg = ChaosMonkeyConfig::new(1.0, 0.0).expect("valid full-dropout config");
-        let y = apply_chaos_monkey(&x, cfg, &mut rng);
+        let y = apply_chaos_monkey(&x, cfg, &mut rng).expect("valid chaos-monkey input");
         assert!(y.iter().all(|v| v.abs() < 1e-12));
+    }
+
+    #[test]
+    fn test_chaos_monkey_rejects_invalid_runtime_inputs() {
+        let mut rng = StdRng::seed_from_u64(999);
+        let x = Array1::from_vec(vec![1.0, f64::NAN]);
+        let bad_dropout_cfg = ChaosMonkeyConfig {
+            dropout_prob: 1.5,
+            gaussian_noise_std: 0.1,
+        };
+        let bad_sigma_cfg = ChaosMonkeyConfig {
+            dropout_prob: 0.1,
+            gaussian_noise_std: -0.1,
+        };
+        let ok_cfg = ChaosMonkeyConfig::new(0.1, 0.0).expect("valid config");
+
+        assert!(apply_chaos_monkey(&Array1::from_vec(vec![1.0]), bad_dropout_cfg, &mut rng).is_err());
+        assert!(apply_chaos_monkey(&Array1::from_vec(vec![1.0]), bad_sigma_cfg, &mut rng).is_err());
+        assert!(apply_chaos_monkey(&x, ok_cfg, &mut rng).is_err());
     }
 
     #[test]
