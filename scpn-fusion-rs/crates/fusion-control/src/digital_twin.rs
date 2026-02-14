@@ -272,6 +272,7 @@ impl ActuatorDelayLine {
 
 /// Simple feedforward neural network: input → 64 (tanh) → 1 (tanh).
 pub struct SimpleMLP {
+    input_dim: usize,
     pub w1: Array2<f64>,
     pub b1: Array1<f64>,
     pub w2: Array2<f64>,
@@ -282,7 +283,13 @@ pub struct SimpleMLP {
 }
 
 impl SimpleMLP {
-    pub fn new(input_dim: usize) -> Self {
+    pub fn new(input_dim: usize) -> FusionResult<Self> {
+        if input_dim == 0 {
+            return Err(FusionError::ConfigError(
+                "SimpleMLP input_dim must be >= 1".to_string(),
+            ));
+        }
+
         let mut rng = rand::thread_rng();
         let scale1 = (1.0 / input_dim as f64).sqrt();
         let scale2 = (1.0 / HIDDEN as f64).sqrt();
@@ -296,27 +303,53 @@ impl SimpleMLP {
         });
         let b2 = Array1::zeros(1);
 
-        SimpleMLP {
+        Ok(SimpleMLP {
+            input_dim,
             w1,
             b1,
             w2,
             b2,
             z1: Array1::zeros(HIDDEN),
             a1: Array1::zeros(HIDDEN),
-        }
+        })
     }
 
     /// Forward pass. Returns scalar action in [-1, 1].
-    pub fn forward(&mut self, x: &Array1<f64>) -> f64 {
+    pub fn forward(&mut self, x: &Array1<f64>) -> FusionResult<f64> {
+        if x.len() != self.input_dim {
+            return Err(FusionError::ConfigError(format!(
+                "SimpleMLP input length mismatch: expected {}, got {}",
+                self.input_dim,
+                x.len()
+            )));
+        }
+        if x.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "SimpleMLP input vector must contain only finite values".to_string(),
+            ));
+        }
+
         self.z1 = x.dot(&self.w1) + &self.b1;
         self.a1 = self.z1.mapv(|v| v.tanh());
         let z2 = self.a1.dot(&self.w2) + &self.b2;
-        z2[0].tanh()
+        let out = z2[0].tanh();
+        if !out.is_finite() {
+            return Err(FusionError::ConfigError(
+                "SimpleMLP forward output became non-finite".to_string(),
+            ));
+        }
+        Ok(out)
     }
 
     /// Backprop with advantage-weighted gradient. Returns loss.
-    pub fn train_step(&mut self, x: &Array1<f64>, advantage: f64) -> f64 {
-        let out = self.forward(x);
+    pub fn train_step(&mut self, x: &Array1<f64>, advantage: f64) -> FusionResult<f64> {
+        if !advantage.is_finite() {
+            return Err(FusionError::ConfigError(
+                "SimpleMLP advantage must be finite".to_string(),
+            ));
+        }
+
+        let out = self.forward(x)?;
         let grad_out = -advantage;
 
         // Through output tanh
@@ -346,7 +379,17 @@ impl SimpleMLP {
         self.w2 = &self.w2 - &(&d_w2 * LR);
         self.b2 = &self.b2 - &(&d_b2 * LR);
 
-        grad_out.abs()
+        if self.w1.iter().any(|v| !v.is_finite())
+            || self.w2.iter().any(|v| !v.is_finite())
+            || self.b1.iter().any(|v| !v.is_finite())
+            || self.b2.iter().any(|v| !v.is_finite())
+        {
+            return Err(FusionError::ConfigError(
+                "SimpleMLP parameters became non-finite after update".to_string(),
+            ));
+        }
+
+        Ok(grad_out.abs())
     }
 }
 
@@ -481,9 +524,9 @@ mod tests {
 
     #[test]
     fn test_mlp_forward_bounded() {
-        let mut mlp = SimpleMLP::new(GRID);
+        let mut mlp = SimpleMLP::new(GRID).expect("valid MLP config");
         let x = Array1::zeros(GRID);
-        let out = mlp.forward(&x);
+        let out = mlp.forward(&x).expect("valid forward input");
         assert!(
             (-1.0..=1.0).contains(&out),
             "Output should be in [-1, 1]: {out}"
@@ -492,10 +535,22 @@ mod tests {
 
     #[test]
     fn test_mlp_train_step() {
-        let mut mlp = SimpleMLP::new(GRID);
+        let mut mlp = SimpleMLP::new(GRID).expect("valid MLP config");
         let x = Array1::from_elem(GRID, 0.5);
-        let loss = mlp.train_step(&x, 1.0);
+        let loss = mlp
+            .train_step(&x, 1.0)
+            .expect("valid training-step inputs");
         assert!(loss.is_finite(), "Loss should be finite: {loss}");
+    }
+
+    #[test]
+    fn test_mlp_rejects_invalid_constructor_and_runtime_inputs() {
+        assert!(SimpleMLP::new(0).is_err());
+
+        let mut mlp = SimpleMLP::new(GRID).expect("valid MLP config");
+        assert!(mlp.forward(&Array1::zeros(GRID - 1)).is_err());
+        assert!(mlp.forward(&Array1::from_elem(GRID, f64::NAN)).is_err());
+        assert!(mlp.train_step(&Array1::zeros(GRID), f64::NAN).is_err());
     }
 
     #[test]
