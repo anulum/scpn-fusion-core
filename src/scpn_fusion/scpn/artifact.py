@@ -400,6 +400,23 @@ def _validate(artifact: Artifact) -> None:
 
     # Readout consistency
     n_actions = len(artifact.readout.actions)
+    for action in artifact.readout.actions:
+        if isinstance(action.id, bool) or not isinstance(action.id, int) or action.id < 0:
+            raise ArtifactValidationError("readout.actions.id must be an integer >= 0")
+        if not isinstance(action.name, str) or not action.name:
+            raise ArtifactValidationError("readout.actions.name must be a non-empty string")
+        if isinstance(action.pos_place, bool) or not isinstance(action.pos_place, int):
+            raise ArtifactValidationError("readout.actions.pos_place must be an integer")
+        if isinstance(action.neg_place, bool) or not isinstance(action.neg_place, int):
+            raise ArtifactValidationError("readout.actions.neg_place must be an integer")
+        if action.pos_place < 0 or action.pos_place >= nP:
+            raise ArtifactValidationError(
+                f"readout.actions.pos_place {action.pos_place} out of bounds for nP={nP}"
+            )
+        if action.neg_place < 0 or action.neg_place >= nP:
+            raise ArtifactValidationError(
+                f"readout.actions.neg_place {action.neg_place} out of bounds for nP={nP}"
+            )
     if len(artifact.readout.gains) != n_actions:
         raise ArtifactValidationError("readout.gains length must equal number of actions")
     if len(artifact.readout.abs_max) != n_actions:

@@ -518,6 +518,44 @@ class TestLevel0Static:
     @pytest.mark.parametrize(
         ("field_path", "value", "match"),
         [
+            (("readout", "actions", 0, "id"), -1, "readout.actions.id"),
+            (("readout", "actions", 0, "pos_place"), 999, "readout.actions.pos_place"),
+            (("readout", "actions", 0, "neg_place"), "1", "readout.actions.neg_place"),
+            (("readout", "actions", 0, "name"), "", "readout.actions.name"),
+        ],
+    )
+    def test_load_artifact_rejects_invalid_readout_action_specs(
+        self,
+        artifact_path: str,
+        field_path: tuple[str | int, ...],
+        value: object,
+        match: str,
+    ) -> None:
+        obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
+        target: object = obj
+        for key in field_path[:-1]:
+            if isinstance(target, list):
+                target = target[key]  # type: ignore[index]
+            else:
+                target = target[key]  # type: ignore[index]
+        if isinstance(target, list):
+            target[field_path[-1]] = value  # type: ignore[index]
+        else:
+            target[field_path[-1]] = value  # type: ignore[index]
+        fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
+        os.close(fd)
+        try:
+            Path(bad_path).write_text(
+                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
+            )
+            with pytest.raises(ArtifactValidationError, match=match):
+                load_artifact(bad_path)
+        finally:
+            os.unlink(bad_path)
+
+    @pytest.mark.parametrize(
+        ("field_path", "value", "match"),
+        [
             (
                 ("initial_state", "place_injections", 0, "place_id"),
                 999,
