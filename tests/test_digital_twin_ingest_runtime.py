@@ -77,6 +77,7 @@ def test_run_realtime_twin_session_rejects_invalid_machine() -> None:
         ({"dt_ms": 0}, "dt_ms"),
         ({"horizon": 3}, "horizon"),
         ({"plan_every": 0}, "plan_every"),
+        ({"max_buffer": 8}, "max_buffer"),
         ({"chaos_dropout_prob": 1.5}, "chaos_dropout_prob"),
         ({"chaos_dropout_prob": float("nan")}, "chaos_dropout_prob"),
         ({"chaos_noise_std": -0.1}, "chaos_noise_std"),

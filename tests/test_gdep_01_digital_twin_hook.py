@@ -12,6 +12,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 from scpn_fusion.control.digital_twin_ingest import RealtimeTwinHook, generate_emulated_stream
 
 
@@ -39,6 +41,34 @@ def test_realtime_hook_scenario_plan_smoke() -> None:
     assert plan["safe_horizon_rate"] >= 0.90
     assert plan["mean_risk"] <= 0.75
     assert plan["latency_ms"] <= 6.0
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"samples": 16}, "samples"),
+        ({"dt_ms": 0}, "dt_ms"),
+    ],
+)
+def test_generate_emulated_stream_rejects_invalid_runtime_inputs(
+    kwargs: dict[str, int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        generate_emulated_stream("NSTX-U", seed=1, **kwargs)
+
+
+def test_realtime_hook_rejects_invalid_max_buffer() -> None:
+    with pytest.raises(ValueError, match="max_buffer"):
+        RealtimeTwinHook("SPARC", max_buffer=8, seed=1)
+
+
+def test_realtime_hook_rejects_invalid_horizon() -> None:
+    packets = generate_emulated_stream("SPARC", seed=9, samples=96)
+    hook = RealtimeTwinHook("SPARC", seed=9)
+    for packet in packets[:8]:
+        hook.ingest(packet)
+    with pytest.raises(ValueError, match="horizon"):
+        hook.scenario_plan(horizon=3)
 
 
 def test_gdep_01_campaign_passes_thresholds() -> None:

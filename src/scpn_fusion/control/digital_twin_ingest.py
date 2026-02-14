@@ -96,8 +96,12 @@ def generate_emulated_stream(
     machine_key = _normalize_machine(machine)
 
     rng = np.random.default_rng(int(seed))
-    samples = max(int(samples), 32)
-    dt_ms = max(int(dt_ms), 1)
+    samples = int(samples)
+    if samples < 32:
+        raise ValueError("samples must be >= 32.")
+    dt_ms = int(dt_ms)
+    if dt_ms < 1:
+        raise ValueError("dt_ms must be >= 1.")
 
     if machine_key == "NSTX-U":
         ip_base, beta_base, q95_base, dens_base = 1.2, 1.95, 4.7, 6.5
@@ -129,7 +133,10 @@ class RealtimeTwinHook:
 
     def __init__(self, machine: str, *, max_buffer: int = 512, seed: int = 42) -> None:
         self.machine = _normalize_machine(machine)
-        self.max_buffer = max(int(max_buffer), 64)
+        max_buffer = int(max_buffer)
+        if max_buffer < 64:
+            raise ValueError("max_buffer must be >= 64.")
+        self.max_buffer = max_buffer
         self.buffer: list[TelemetryPacket] = []
         self.seed = int(seed)
         self.controller = _build_snn_planner()
@@ -150,6 +157,9 @@ class RealtimeTwinHook:
     def scenario_plan(self, *, horizon: int = 24) -> dict[str, float | bool]:
         if not self.buffer:
             raise RuntimeError("No telemetry packets ingested.")
+        horizon = int(horizon)
+        if horizon < 4:
+            raise ValueError("horizon must be >= 4.")
 
         latest = self.buffer[-1]
         beta = float(latest.beta_n)
@@ -162,7 +172,7 @@ class RealtimeTwinHook:
         last_action = 0.0
 
         t0 = time.perf_counter()
-        for k in range(max(int(horizon), 4)):
+        for k in range(horizon):
             obs: ControlObservation = {"R_axis_m": beta, "Z_axis_m": 0.0}
             action = self.controller.step(obs, k)
             control = float(np.clip(action["dI_PF3_A"] / 3500.0, -0.8, 0.8))
@@ -196,8 +206,8 @@ class RealtimeTwinHook:
         wall_latency_ms = (time.perf_counter() - t0) * 1000.0
         # Deterministic latency estimate for CI gating (wall-clock jitter on shared
         # runners is tracked separately in `latency_wall_ms`).
-        latency_ms = 0.08 + 0.010 * max(int(horizon), 4)
-        safe_horizon_rate = float(safe_steps / max(int(horizon), 1))
+        latency_ms = 0.08 + 0.010 * horizon
+        safe_horizon_rate = float(safe_steps / horizon)
         mean_risk = float(np.mean(risks) if risks else 1.0)
         return {
             "safe_horizon_rate": safe_horizon_rate,
