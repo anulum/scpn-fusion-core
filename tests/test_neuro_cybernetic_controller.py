@@ -10,8 +10,16 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
+import scpn_fusion.control.neuro_cybernetic_controller as controller_mod
 from scpn_fusion.control.neuro_cybernetic_controller import SpikingControllerPool
+
+
+@pytest.fixture(autouse=True)
+def _force_numpy_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    # CI py3.11 lane does not bootstrap sc-neurocore; force same path locally.
+    monkeypatch.setattr(controller_mod, "SC_NEUROCORE_AVAILABLE", False)
 
 
 def test_spiking_pool_is_deterministic_for_same_seed() -> None:
@@ -53,4 +61,4 @@ def test_spiking_pool_push_pull_sign_response() -> None:
 
 def test_spiking_pool_exposes_backend_name() -> None:
     pool = SpikingControllerPool(n_neurons=8, gain=1.0, tau_window=4, seed=11)
-    assert pool.backend in {"sc_neurocore", "numpy_lif"}
+    assert pool.backend == "numpy_lif"

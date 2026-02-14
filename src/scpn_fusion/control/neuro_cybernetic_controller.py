@@ -125,7 +125,9 @@ class SpikingControllerPool:
         self._v_neg = np.zeros(self.n_neurons, dtype=np.float64)
         self._alpha = max(float(dt_s), 1.0e-9) / max(float(tau_mem_s), 1.0e-9)
         self._noise_std = max(float(noise_std), 0.0)
-        self._v_threshold = 1.0
+        # Reduced threshold keeps fallback lane responsive in low-current control
+        # regimes while preserving deterministic push-pull polarity.
+        self._v_threshold = 0.35
         self._v_reset = 0.0
 
     def _step_numpy_population(
