@@ -382,6 +382,21 @@ def _validate(artifact: Artifact) -> None:
             raise ArtifactValidationError(
                 f"initial marking {val} outside [0, 1]"
             )
+    for inj in artifact.initial_state.place_injections:
+        if isinstance(inj.place_id, bool) or not isinstance(inj.place_id, int):
+            raise ArtifactValidationError("place_injections.place_id must be an integer")
+        if inj.place_id < 0 or inj.place_id >= nP:
+            raise ArtifactValidationError(
+                f"place_injections.place_id {inj.place_id} out of bounds for nP={nP}"
+            )
+        if not isinstance(inj.source, str) or not inj.source:
+            raise ArtifactValidationError("place_injections.source must be a non-empty string")
+        if isinstance(inj.scale, bool) or not isinstance(inj.scale, (int, float)) or not math.isfinite(inj.scale):
+            raise ArtifactValidationError("place_injections.scale must be finite numeric")
+        if isinstance(inj.offset, bool) or not isinstance(inj.offset, (int, float)) or not math.isfinite(inj.offset):
+            raise ArtifactValidationError("place_injections.offset must be finite numeric")
+        if not isinstance(inj.clamp_0_1, bool):
+            raise ArtifactValidationError("place_injections.clamp_0_1 must be a boolean")
 
     # Readout consistency
     n_actions = len(artifact.readout.actions)
@@ -526,9 +541,9 @@ def load_artifact(path: Union[str, Path]) -> Artifact:
         PlaceInjection(
             place_id=inj["place_id"],
             source=inj["source"],
-            scale=float(inj["scale"]),
-            offset=float(inj["offset"]),
-            clamp_0_1=bool(inj["clamp_0_1"]),
+            scale=inj["scale"],
+            offset=inj["offset"],
+            clamp_0_1=inj["clamp_0_1"],
         )
         for inj in obj["initial_state"]["place_injections"]
     ]

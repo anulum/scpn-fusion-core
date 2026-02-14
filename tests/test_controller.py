@@ -515,6 +515,60 @@ class TestLevel0Static:
         finally:
             os.unlink(bad_path)
 
+    @pytest.mark.parametrize(
+        ("field_path", "value", "match"),
+        [
+            (
+                ("initial_state", "place_injections", 0, "place_id"),
+                999,
+                "place_injections.place_id",
+            ),
+            (
+                ("initial_state", "place_injections", 0, "scale"),
+                "1.0",
+                "place_injections.scale",
+            ),
+            (
+                ("initial_state", "place_injections", 0, "offset"),
+                float("nan"),
+                "place_injections.offset",
+            ),
+            (
+                ("initial_state", "place_injections", 0, "clamp_0_1"),
+                "true",
+                "place_injections.clamp_0_1",
+            ),
+        ],
+    )
+    def test_load_artifact_rejects_invalid_place_injection_fields(
+        self,
+        artifact_path: str,
+        field_path: tuple[str | int, ...],
+        value: object,
+        match: str,
+    ) -> None:
+        obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
+        target: object = obj
+        for key in field_path[:-1]:
+            if isinstance(target, list):
+                target = target[key]  # type: ignore[index]
+            else:
+                target = target[key]  # type: ignore[index]
+        if isinstance(target, list):
+            target[field_path[-1]] = value  # type: ignore[index]
+        else:
+            target[field_path[-1]] = value  # type: ignore[index]
+        fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
+        os.close(fd)
+        try:
+            Path(bad_path).write_text(
+                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
+            )
+            with pytest.raises(ArtifactValidationError, match=match):
+                load_artifact(bad_path)
+        finally:
+            os.unlink(bad_path)
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Level 1 — Determinism
