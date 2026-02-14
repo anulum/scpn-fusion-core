@@ -38,6 +38,29 @@ def test_build_disruption_feature_vector_includes_toroidal_terms() -> None:
     assert features[10] == 0.05
 
 
+@pytest.mark.parametrize("signal", [np.array([]), np.array([0.2, np.nan]), np.array([np.inf])])
+def test_build_disruption_feature_vector_rejects_invalid_signal(signal: np.ndarray) -> None:
+    with pytest.raises(ValueError, match="signal"):
+        build_disruption_feature_vector(signal, {})
+
+
+@pytest.mark.parametrize(
+    "observables",
+    [
+        {"toroidal_n1_amp": float("nan")},
+        {"toroidal_n2_amp": float("inf")},
+        {"toroidal_n3_amp": float("-inf")},
+        {"toroidal_asymmetry_index": float("nan")},
+        {"toroidal_radial_spread": float("inf")},
+    ],
+)
+def test_build_disruption_feature_vector_rejects_non_finite_toroidal_observables(
+    observables: dict[str, float]
+) -> None:
+    with pytest.raises(ValueError, match="toroidal observables"):
+        build_disruption_feature_vector(np.linspace(0.2, 1.0, 32), observables)
+
+
 def test_predict_disruption_risk_increases_with_toroidal_asymmetry() -> None:
     signal = np.full(128, 0.7, dtype=float)
     low = predict_disruption_risk(signal, {"toroidal_n1_amp": 0.0})

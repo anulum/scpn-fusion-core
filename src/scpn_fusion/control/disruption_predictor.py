@@ -97,6 +97,8 @@ def build_disruption_feature_vector(signal, toroidal_observables=None):
     sig = np.asarray(signal, dtype=float).reshape(-1)
     if sig.size == 0:
         raise ValueError("signal must contain at least one sample")
+    if not np.all(np.isfinite(sig)):
+        raise ValueError("signal must be finite.")
 
     mean = float(np.mean(sig))
     std = float(np.std(sig))
@@ -111,6 +113,8 @@ def build_disruption_feature_vector(signal, toroidal_observables=None):
     n3 = float(obs.get("toroidal_n3_amp", 0.0))
     asym = float(obs.get("toroidal_asymmetry_index", np.sqrt(n1 * n1 + n2 * n2 + n3 * n3)))
     spread = float(obs.get("toroidal_radial_spread", 0.0))
+    if not np.all(np.isfinite([n1, n2, n3, asym, spread])):
+        raise ValueError("toroidal observables must be finite.")
 
     return np.array(
         [mean, std, max_val, slope, energy, last, n1, n2, n3, asym, spread],

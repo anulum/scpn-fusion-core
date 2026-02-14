@@ -214,6 +214,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-077 | P1 | Control | Harden bit-flip fault injection helper with strict bit-index guardrails | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_toroidal_features.py` | Fault injection now rejects invalid/non-integer `bit_index` values outside `[0, 63]` (no silent modulo wrapping), while preserving deterministic finite-value bit flips for valid indices | `python -m pytest tests/test_disruption_toroidal_features.py tests/test_disruption_predictor_rng.py tests/test_gneu_02_anomaly.py -v`, `python -m pytest tests/ -q -x` |
 | H7-078 | P1 | Control | Harden disruption campaign/simulation integer inputs with strict type/range guards | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_predictor_rng.py`, `tests/test_disruption_toroidal_features.py`, `tests/test_gneu_02_anomaly.py` | Disruption simulation and campaign entry points now reject non-integer or out-of-range sizing inputs (`steps`, `seed`, `episodes`, `window`, `bit_flip_interval`, `recovery_window`) with deterministic errors (no silent float-to-int coercion), while preserving deterministic seeded metrics for valid runs | `python -m pytest tests/test_disruption_predictor_rng.py tests/test_disruption_toroidal_features.py tests/test_gneu_02_anomaly.py -v`, `python -m pytest tests/ -q -x` |
 | H7-079 | P1 | Control | Harden disruption predictor sequence/training integer knobs with strict type/range guards | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_model_checkpoint.py`, `tests/test_gneu_02_anomaly.py` | Predictor load/train paths now reject non-integer or out-of-range controls (`seq_len`, `n_shots`, `epochs`, `seed`) with deterministic errors (no silent float-to-int coercion), while preserving deterministic checkpoint fallback/training behavior for valid settings | `python -m pytest tests/test_disruption_model_checkpoint.py tests/test_gneu_02_anomaly.py -v`, `python -m pytest tests/ -q -x` |
+| H7-080 | P1 | Control | Harden disruption feature-vector inputs with finite signal/observable guards | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_toroidal_features.py` | Disruption feature extraction now rejects non-finite signal samples and non-finite toroidal observable terms with deterministic errors (no NaN/Inf propagation into risk scores), while preserving deterministic risk trends for valid channels | `python -m pytest tests/test_disruption_toroidal_features.py tests/test_disruption_predictor_rng.py tests/test_gneu_02_anomaly.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -221,7 +222,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 125
+- Post-S4 hardening tasks delivered: 126
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -370,4 +371,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-077`
 - Completed: `H7-078`
 - Completed: `H7-079`
+- Completed: `H7-080`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted).
