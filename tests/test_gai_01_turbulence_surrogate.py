@@ -49,3 +49,17 @@ def test_render_markdown_contains_key_sections() -> None:
     assert "GAI-01 Turbulence Surrogate Validation" in text
     assert "RMSE (% of mean target)" in text
     assert "Speedup vs GENE-like proxy" in text
+
+
+def test_campaign_does_not_mutate_global_numpy_rng_state() -> None:
+    np.random.seed(6060)
+    state = np.random.get_state()
+
+    _ = gai_01_turbulence_surrogate.run_campaign(
+        seed=5, train_samples=512, eval_samples=160, benchmark_samples=48
+    )
+
+    observed = float(np.random.random())
+    np.random.set_state(state)
+    expected = float(np.random.random())
+    assert observed == expected

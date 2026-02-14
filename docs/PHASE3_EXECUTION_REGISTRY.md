@@ -169,6 +169,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-032 | P1 | Core/Validation | Remove global NumPy RNG mutation from global design scanner and GAI-03 campaign path | `src/scpn_fusion/core/global_design_scanner.py`, `validation/gai_03_heat_ml_shadow.py`, `tests/test_gai_03_heat_ml_shadow.py`, `tests/test_gmvr_01_compact_constraints.py` | Global design scans now use scoped generators (seeded when provided) without mutating global RNG state, GAI-03 scan wiring uses explicit seed passthrough, and regression tests lock global RNG isolation for both scanner and campaign lanes | `python -m pytest tests/test_gai_03_heat_ml_shadow.py tests/test_gmvr_01_compact_constraints.py -v`, `python -m pytest tests/ -q -x` |
 | H7-033 | P1 | Core | Remove global NumPy RNG mutation from FNO turbulence generator runtime lane | `src/scpn_fusion/core/fno_turbulence_suppressor.py`, `tests/test_fno_training.py` | FNO turbulence generator now uses scoped seeded/injected generators for initial fields and forcing terms, avoids global `np.random` mutation in simulation paths, and adds regression coverage for deterministic replay + global RNG isolation | `python -m pytest tests/test_fno_training.py -v`, `python -m pytest tests/ -q -x` |
 | H7-034 | P1 | Core | Harden FNO suppression runtime with deterministic summary-return API and CI-safe non-plot mode | `src/scpn_fusion/core/fno_turbulence_suppressor.py`, `tests/test_fno_training.py` | FNO runtime now exposes typed deterministic summary metrics (energy/suppression), supports optional non-plot execution for CI, preserves seeded replay behavior, and adds regression coverage for deterministic summary outputs | `python -m pytest tests/test_fno_training.py -v`, `python -m pytest tests/ -q -x` |
+| H7-035 | P1 | Validation | Add global RNG isolation regression lock for GAI-01 turbulence surrogate campaign | `tests/test_gai_01_turbulence_surrogate.py` | GAI-01 campaign path now has explicit regression coverage proving no global `np.random` state mutation during deterministic training/eval/benchmark execution | `python -m pytest tests/test_gai_01_turbulence_surrogate.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -176,8 +177,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 80
-- Remaining in deferred pool after queue selection: 33
+- Post-S4 hardening tasks delivered: 81
+- Remaining in deferred pool after queue selection: 32
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -280,4 +281,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-032`
 - Completed: `H7-033`
 - Completed: `H7-034`
-- Next active task: `H7-035` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-035`
+- Next active task: `H7-036` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
