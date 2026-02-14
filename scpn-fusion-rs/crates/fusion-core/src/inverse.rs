@@ -452,7 +452,7 @@ pub fn reconstruct_equilibrium(
 
     for iter in 0..config.max_iterations {
         let (params_p, params_ff) = unpack_params(&x);
-        let prediction = forward_model_response(probe_psi_norm, &params_p, &params_ff);
+        let prediction = forward_model_response(probe_psi_norm, &params_p, &params_ff)?;
         let residual_vec: Vec<f64> = prediction
             .iter()
             .zip(measurements.iter())
@@ -469,11 +469,9 @@ pub fn reconstruct_equilibrium(
         }
 
         let jac = match config.jacobian_mode {
-            JacobianMode::Analytical => Ok(compute_analytical_jacobian(
-                &params_p,
-                &params_ff,
-                probe_psi_norm,
-            )),
+            JacobianMode::Analytical => {
+                compute_analytical_jacobian(&params_p, &params_ff, probe_psi_norm)
+            }
             JacobianMode::FiniteDifference => {
                 compute_fd_jacobian(&params_p, &params_ff, probe_psi_norm, config.fd_step)
             }
@@ -518,7 +516,7 @@ pub fn reconstruct_equilibrium(
             }
             let (p_trial, ff_trial) = unpack_params(&x_trial);
             let x_trial_sanitized = pack_params(&p_trial, &ff_trial);
-            let pred_trial = forward_model_response(probe_psi_norm, &p_trial, &ff_trial);
+            let pred_trial = forward_model_response(probe_psi_norm, &p_trial, &ff_trial)?;
             let residual_trial = (pred_trial
                 .iter()
                 .zip(measurements.iter())
@@ -542,7 +540,7 @@ pub fn reconstruct_equilibrium(
     }
 
     let (params_p, params_ff) = unpack_params(&x);
-    let prediction = forward_model_response(probe_psi_norm, &params_p, &params_ff);
+    let prediction = forward_model_response(probe_psi_norm, &params_p, &params_ff)?;
     let final_residual = (prediction
         .iter()
         .zip(measurements.iter())
@@ -753,7 +751,7 @@ mod tests {
             core_alpha: 0.15,
         };
         let probes: Vec<f64> = (0..60).map(|i| i as f64 / 59.0).collect();
-        let measurements = forward_model_response(&probes, &true_p, &true_ff);
+        let measurements = forward_model_response(&probes, &true_p, &true_ff).unwrap();
 
         let init_p = ProfileParams {
             ped_top: 0.75,
@@ -767,7 +765,7 @@ mod tests {
             ped_height: 0.6,
             core_alpha: 0.02,
         };
-        let init_prediction = forward_model_response(&probes, &init_p, &init_ff);
+        let init_prediction = forward_model_response(&probes, &init_p, &init_ff).unwrap();
         let init_residual = (init_prediction
             .iter()
             .zip(measurements.iter())
@@ -810,7 +808,7 @@ mod tests {
             core_alpha: 0.1,
         };
         let probes: Vec<f64> = (0..48).map(|i| i as f64 / 47.0).collect();
-        let measurements = forward_model_response(&probes, &true_p, &true_ff);
+        let measurements = forward_model_response(&probes, &true_p, &true_ff).unwrap();
 
         let init = ProfileParams {
             ped_top: 0.8,
