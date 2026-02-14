@@ -160,6 +160,39 @@ fn validate_radius(radius_m: f64, label: &str) -> FusionResult<f64> {
     Ok(radius_m)
 }
 
+fn validate_probe_psi_norm(probe_psi_norm: &[f64]) -> FusionResult<()> {
+    if probe_psi_norm
+        .iter()
+        .any(|psi| !psi.is_finite() || *psi < 0.0 || *psi > 1.0)
+    {
+        return Err(FusionError::ConfigError(
+            "probe_psi_norm values must be finite and within [0, 1]".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_probe_coordinates(probes_rz: &[(f64, f64)]) -> FusionResult<()> {
+    if probes_rz
+        .iter()
+        .any(|(r, z)| !r.is_finite() || !z.is_finite())
+    {
+        return Err(FusionError::ConfigError(
+            "probes_rz coordinates must be finite".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_measurements(measurements: &[f64]) -> FusionResult<()> {
+    if measurements.iter().any(|m| !m.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "measurements must be finite".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
     let mut best_idx = 0usize;
     let mut best_dist = f64::INFINITY;
@@ -260,6 +293,7 @@ fn kernel_forward_observables(
     validate_kernel_inverse_config(kernel_cfg)?;
     validate_profile_params(&params_p, "params_p")?;
     validate_profile_params(&params_ff, "params_ff")?;
+    validate_probe_coordinates(probes_rz)?;
     let mut cfg = reactor_config.clone();
     cfg.solver.max_iterations = kernel_cfg.kernel_max_iterations;
 
@@ -329,6 +363,7 @@ fn kernel_analytical_forward_and_jacobian(
     validate_kernel_inverse_config(kernel_cfg)?;
     validate_profile_params(&params_p, "params_p")?;
     validate_profile_params(&params_ff, "params_ff")?;
+    validate_probe_coordinates(probes_rz)?;
     let mut cfg = reactor_config.clone();
     cfg.solver.max_iterations = kernel_cfg.kernel_max_iterations;
 
@@ -508,6 +543,8 @@ pub fn reconstruct_equilibrium(
         )));
     }
     validate_inverse_config(config)?;
+    validate_probe_psi_norm(probe_psi_norm)?;
+    validate_measurements(measurements)?;
     validate_profile_params(&initial_params_p, "initial_params_p")?;
     validate_profile_params(&initial_params_ff, "initial_params_ff")?;
 
@@ -658,6 +695,8 @@ pub fn reconstruct_equilibrium_with_kernel(
         )));
     }
     validate_kernel_inverse_config(kernel_cfg)?;
+    validate_probe_coordinates(probes_rz)?;
+    validate_measurements(measurements)?;
     validate_profile_params(&initial_params_p, "initial_params_p")?;
     validate_profile_params(&initial_params_ff, "initial_params_ff")?;
 
@@ -1040,6 +1079,61 @@ mod tests {
         .expect_err("invalid kernel initial profile params must error");
         match err {
             FusionError::ConfigError(msg) => assert!(msg.contains("initial_params_p.ped_width")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_inverse_rejects_non_finite_measurements() {
+        let probes: Vec<f64> = (0..8).map(|i| i as f64 / 7.0).collect();
+        let mut measurements = vec![0.1; probes.len()];
+        measurements[3] = f64::NAN;
+        let err = reconstruct_equilibrium(
+            &probes,
+            &measurements,
+            ProfileParams::default(),
+            ProfileParams::default(),
+            &InverseConfig::default(),
+        )
+        .expect_err("non-finite measurements must error");
+        match err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("measurements must be finite")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_kernel_inverse_rejects_non_finite_measurements_or_probes() {
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
+            .unwrap();
+        let kcfg = KernelInverseConfig::default();
+        let bad_probe_err = reconstruct_equilibrium_with_kernel(
+            &cfg,
+            &[(6.2, 0.0), (f64::INFINITY, 0.1)],
+            &[1.0, 1.0],
+            ProfileParams::default(),
+            ProfileParams::default(),
+            &kcfg,
+        )
+        .expect_err("non-finite probe coordinates must error");
+        match bad_probe_err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("probes_rz coordinates must be finite"))
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        let bad_measurement_err = reconstruct_equilibrium_with_kernel(
+            &cfg,
+            &[(6.2, 0.0), (6.3, 0.1)],
+            &[1.0, f64::NAN],
+            ProfileParams::default(),
+            ProfileParams::default(),
+            &kcfg,
+        )
+        .expect_err("non-finite measurements must error");
+        match bad_measurement_err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("measurements must be finite")),
             other => panic!("Unexpected error: {other:?}"),
         }
     }
