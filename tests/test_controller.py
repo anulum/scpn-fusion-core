@@ -389,6 +389,23 @@ class TestLevel0Static:
         finally:
             os.unlink(bad_path)
 
+    @pytest.mark.parametrize("dt_control_s", [float("nan"), float("inf")])
+    def test_load_artifact_rejects_non_finite_dt_control(
+        self, artifact_path: str, dt_control_s: float
+    ) -> None:
+        obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
+        obj["meta"]["dt_control_s"] = dt_control_s
+        fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
+        os.close(fd)
+        try:
+            Path(bad_path).write_text(
+                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
+            )
+            with pytest.raises(ArtifactValidationError, match="dt_control_s"):
+                load_artifact(bad_path)
+        finally:
+            os.unlink(bad_path)
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Level 1 — Determinism

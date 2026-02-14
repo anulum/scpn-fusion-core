@@ -285,6 +285,8 @@ def _validate(artifact: Artifact) -> None:
     if meta.stream_length < 1:
         raise ArtifactValidationError("stream_length must be >= 1")
 
+    if not isinstance(meta.dt_control_s, (int, float)) or not math.isfinite(meta.dt_control_s):
+        raise ArtifactValidationError("dt_control_s must be finite and > 0")
     if meta.dt_control_s <= 0:
         raise ArtifactValidationError("dt_control_s must be > 0")
 
