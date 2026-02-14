@@ -991,6 +991,36 @@ class TestIntegration:
         )
         assert c.runtime_backend_name == "rust"
 
+    @pytest.mark.parametrize(
+        ("kwargs", "match"),
+        [
+            ({"sc_n_passes": 0}, "sc_n_passes"),
+            ({"sc_n_passes": 1.25}, "sc_n_passes"),
+            ({"sc_bitflip_rate": -0.1}, "sc_bitflip_rate"),
+            ({"sc_bitflip_rate": 1.1}, "sc_bitflip_rate"),
+            ({"sc_bitflip_rate": float("nan")}, "sc_bitflip_rate"),
+            ({"rust_backend_min_problem_size": 0}, "rust_backend_min_problem_size"),
+            (
+                {"rust_backend_min_problem_size": 2.5},
+                "rust_backend_min_problem_size",
+            ),
+            ({"sc_antithetic_chunk_size": 0}, "sc_antithetic_chunk_size"),
+            ({"sc_antithetic_chunk_size": 3.5}, "sc_antithetic_chunk_size"),
+        ],
+    )
+    def test_constructor_rejects_invalid_runtime_sampling_inputs(
+        self, artifact_path: str, kwargs: dict[str, object], match: str
+    ) -> None:
+        art = load_artifact(artifact_path)
+        with pytest.raises(ValueError, match=match):
+            NeuroSymbolicController(
+                artifact=art,
+                seed_base=232,
+                targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+                scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+                **kwargs,
+            )
+
     def test_traceable_step_matches_mapping_step(self, artifact_path: str) -> None:
         art = load_artifact(artifact_path)
         kwargs = dict(

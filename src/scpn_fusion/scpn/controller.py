@@ -84,12 +84,26 @@ class NeuroSymbolicController:
         rust_backend_min_problem_size: int = 1,
         sc_antithetic_chunk_size: int = 2048,
     ) -> None:
+        def _require_int_ge(name: str, value: object, minimum: int) -> int:
+            if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
+                raise ValueError(f"{name} must be an integer >= {minimum}.")
+            parsed = int(value)
+            if parsed < minimum:
+                raise ValueError(f"{name} must be an integer >= {minimum}.")
+            return parsed
+
         self.artifact = artifact
         self.seed_base = int(seed_base)
         self.targets = targets
         self.scales = scales
-        self._sc_n_passes = max(int(sc_n_passes), 1)
-        self._sc_bitflip_rate = float(np.clip(sc_bitflip_rate, 0.0, 1.0))
+        self._sc_n_passes = _require_int_ge("sc_n_passes", sc_n_passes, 1)
+        self._sc_bitflip_rate = float(sc_bitflip_rate)
+        if (
+            not np.isfinite(self._sc_bitflip_rate)
+            or self._sc_bitflip_rate < 0.0
+            or self._sc_bitflip_rate > 1.0
+        ):
+            raise ValueError("sc_bitflip_rate must be finite and in [0, 1].")
         self._runtime_profile = runtime_profile.strip().lower()
         if self._runtime_profile not in {"adaptive", "deterministic", "traceable"}:
             raise ValueError(
@@ -101,10 +115,12 @@ class NeuroSymbolicController:
         self._runtime_backend_request = runtime_backend.strip().lower()
         if self._runtime_backend_request not in {"auto", "numpy", "rust"}:
             raise ValueError("runtime_backend must be 'auto', 'numpy', or 'rust'")
-        self._rust_backend_min_problem_size = max(int(rust_backend_min_problem_size), 1)
-        if sc_antithetic_chunk_size <= 0:
-            raise ValueError("sc_antithetic_chunk_size must be > 0")
-        self._sc_antithetic_chunk_size = int(sc_antithetic_chunk_size)
+        self._rust_backend_min_problem_size = _require_int_ge(
+            "rust_backend_min_problem_size", rust_backend_min_problem_size, 1
+        )
+        self._sc_antithetic_chunk_size = _require_int_ge(
+            "sc_antithetic_chunk_size", sc_antithetic_chunk_size, 1
+        )
 
         if self._feature_axes is not None:
             axes = list(self._feature_axes)
