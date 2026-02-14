@@ -427,7 +427,13 @@ impl Plasma2D {
     }
 
     /// One physics step. Returns (core_temp, avg_temp).
-    pub fn step(&mut self, action: f64) -> (f64, f64) {
+    pub fn step(&mut self, action: f64) -> FusionResult<(f64, f64)> {
+        if !action.is_finite() {
+            return Err(FusionError::ConfigError(
+                "Plasma2D action must be finite".to_string(),
+            ));
+        }
+
         let n = GRID;
         let center = n / 2;
 
@@ -492,11 +498,26 @@ impl Plasma2D {
         let count = self.mask.iter().filter(|&&v| v > 0.5).count();
         let avg = if count > 0 { total / count as f64 } else { 0.0 };
 
-        (core_temp, avg)
+        if !core_temp.is_finite() || !avg.is_finite() {
+            return Err(FusionError::ConfigError(
+                "Plasma2D step produced non-finite temperatures".to_string(),
+            ));
+        }
+
+        Ok((core_temp, avg))
     }
 
     /// One step with additive process noise on central heating source.
-    pub fn step_with_process_noise(&mut self, action: f64, process_noise: f64) -> (f64, f64) {
+    pub fn step_with_process_noise(
+        &mut self,
+        action: f64,
+        process_noise: f64,
+    ) -> FusionResult<(f64, f64)> {
+        if !process_noise.is_finite() {
+            return Err(FusionError::ConfigError(
+                "Plasma2D process_noise must be finite".to_string(),
+            ));
+        }
         let center = GRID / 2;
         self.temp[[center, center]] =
             (self.temp[[center, center]] + process_noise).clamp(0.0, 100.0);
@@ -504,9 +525,20 @@ impl Plasma2D {
     }
 
     /// Sensor readout helper with additive measurement noise.
-    pub fn measure_core_temp(&self, measurement_noise: f64) -> f64 {
+    pub fn measure_core_temp(&self, measurement_noise: f64) -> FusionResult<f64> {
+        if !measurement_noise.is_finite() {
+            return Err(FusionError::ConfigError(
+                "Plasma2D measurement_noise must be finite".to_string(),
+            ));
+        }
         let center = GRID / 2;
-        (self.temp[[center, center]] + measurement_noise).clamp(0.0, 100.0)
+        let measured = (self.temp[[center, center]] + measurement_noise).clamp(0.0, 100.0);
+        if !measured.is_finite() {
+            return Err(FusionError::ConfigError(
+                "Plasma2D measurement became non-finite".to_string(),
+            ));
+        }
+        Ok(measured)
     }
 }
 
@@ -557,7 +589,7 @@ mod tests {
     fn test_plasma_heats_up() {
         let mut plasma = Plasma2D::new();
         for _ in 0..100 {
-            plasma.step(0.0);
+            plasma.step(0.0).expect("valid finite plasma action");
         }
         let core = plasma.temp[[GRID / 2, GRID / 2]];
         assert!(core > 0.0, "Core should heat up: {core}");
@@ -567,7 +599,7 @@ mod tests {
     fn test_plasma_bounded() {
         let mut plasma = Plasma2D::new();
         for _ in 0..500 {
-            plasma.step(0.0);
+            plasma.step(0.0).expect("valid finite plasma action");
         }
         for &t in plasma.temp.iter() {
             assert!((0.0..=100.0).contains(&t), "Temp out of bounds: {t}");
@@ -608,13 +640,25 @@ mod tests {
     fn test_plasma_noise_helpers_bounded() {
         let mut plasma = Plasma2D::new();
         for _ in 0..32 {
-            let _ = plasma.step_with_process_noise(0.0, 0.5);
+            let _ = plasma
+                .step_with_process_noise(0.0, 0.5)
+                .expect("valid finite plasma process noise");
         }
-        let meas = plasma.measure_core_temp(0.2);
+        let meas = plasma
+            .measure_core_temp(0.2)
+            .expect("valid finite plasma measurement noise");
         assert!(
             (0.0..=100.0).contains(&meas),
             "Measurement must remain bounded"
         );
+    }
+
+    #[test]
+    fn test_plasma_rejects_non_finite_runtime_inputs() {
+        let mut plasma = Plasma2D::new();
+        assert!(plasma.step(f64::NAN).is_err());
+        assert!(plasma.step_with_process_noise(0.0, f64::INFINITY).is_err());
+        assert!(plasma.measure_core_temp(f64::NAN).is_err());
     }
 
     #[test]
