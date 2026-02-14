@@ -156,6 +156,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-019 | P1 | Nuclear | Harden PWI erosion demo with deterministic summary-return runtime API and CI-safe non-plot mode | `src/scpn_fusion/nuclear/pwi_erosion.py`, `tests/test_pwi_erosion_runtime.py` | PWI erosion scan now exposes a typed non-interactive summary path with finite-input guards, deterministic result metrics, optional plot generation, and regression tests for determinism + invalid range handling | `python -m pytest tests/test_pwi_erosion.py tests/test_pwi_erosion_runtime.py -v` |
 | H7-020 | P1 | Nuclear | Harden TEMHD experiment runner with deterministic summary-return runtime API and CI-safe non-plot mode | `src/scpn_fusion/nuclear/temhd_peltier.py`, `tests/test_temhd_peltier_runtime.py` | TEMHD flux-ramp experiment now exposes typed non-interactive summary metrics with finite-range guards, deterministic runtime behavior, optional plot generation, and regression tests for determinism + invalid flux range handling | `python -m pytest tests/test_temhd_peltier.py tests/test_temhd_peltier_runtime.py -v` |
 | H7-021 | P1 | Control | Harden fueling-mode runner with deterministic summary-return runtime API and strict input guards | `src/scpn_fusion/control/fueling_mode.py`, `tests/test_fueling_mode_runtime.py` | Fueling mode now exposes a deterministic non-interactive summary path with bounded command/density diagnostics, preserves existing convergence behavior, and rejects invalid target/initial density and timestep inputs with explicit errors | `python -m pytest tests/test_gneu_03_fueling_mode.py tests/test_fueling_mode_runtime.py -v` |
+| H7-022 | P1 | Control | Harden SPI mitigation runner with deterministic summary-return runtime API and CI-safe non-plot mode | `src/scpn_fusion/control/spi_mitigation.py`, `tests/test_spi_mitigation_runtime.py` | SPI mitigation now exposes a typed non-interactive summary path with finite-input guards, optional plotting, deterministic CQ diagnostics, and regression tests for determinism + invalid parameter handling | `python -m pytest tests/test_spi_mitigation.py tests/test_spi_mitigation_runtime.py -v` |
 
 ## Task Accounting
 
@@ -163,8 +164,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 67
-- Remaining in deferred pool after queue selection: 46
+- Post-S4 hardening tasks delivered: 68
+- Remaining in deferred pool after queue selection: 45
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -254,4 +255,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-019`
 - Completed: `H7-020`
 - Completed: `H7-021`
-- Next active task: `H7-022` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-022`
+- Next active task: `H7-023` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
