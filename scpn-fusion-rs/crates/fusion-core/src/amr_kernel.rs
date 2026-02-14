@@ -43,6 +43,16 @@ pub struct AmrKernelSolver {
 
 impl AmrKernelSolver {
     pub fn new(config: AmrKernelConfig) -> FusionResult<Self> {
+        if config.max_levels == 0 {
+            return Err(FusionError::ConfigError(
+                "AMR max_levels must be >= 1".to_string(),
+            ));
+        }
+        if config.refinement_threshold.is_nan() || config.refinement_threshold.is_sign_negative() {
+            return Err(FusionError::ConfigError(
+                "AMR refinement_threshold must be >= 0 (or +inf)".to_string(),
+            ));
+        }
         if !config.blend.is_finite() || !(0.0..=1.0).contains(&config.blend) {
             return Err(FusionError::ConfigError(
                 "AMR blend must be finite and in [0, 1]".to_string(),
@@ -256,6 +266,32 @@ mod tests {
                 assert!(msg.contains("omega"));
             }
             other => panic!("Unexpected error: {other:?}"),
+        }
+
+        let err = AmrKernelSolver::new(AmrKernelConfig {
+            max_levels: 0,
+            ..Default::default()
+        })
+        .expect_err("invalid max_levels must error");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("max_levels"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        for bad_threshold in [f64::NAN, -0.01, f64::NEG_INFINITY] {
+            let err = AmrKernelSolver::new(AmrKernelConfig {
+                refinement_threshold: bad_threshold,
+                ..Default::default()
+            })
+            .expect_err("invalid refinement_threshold must error");
+            match err {
+                FusionError::ConfigError(msg) => {
+                    assert!(msg.contains("refinement_threshold"));
+                }
+                other => panic!("Unexpected error: {other:?}"),
+            }
         }
     }
 }
