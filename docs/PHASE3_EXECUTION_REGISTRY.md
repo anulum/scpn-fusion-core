@@ -107,6 +107,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | H5-034 | P1 | Validation | Shift PID/MPC SCPN campaign baseline from strict-binary thresholding to adaptive stochastic margin | `validation/scpn_pid_mpc_benchmark.py` | Benchmark controller now uses non-zero binary margin (`0.05`) so default lane reflects adaptive stochastic SCPN behavior while preserving deterministic replay and strict thresholds | `python -m pytest tests/test_scpn_pid_mpc_benchmark.py tests/test_controller.py tests/test_gneu_01_benchmark.py -q`, `python validation/scpn_pid_mpc_benchmark.py --strict` |
 | H5-035 | P1 | Validation | Add regression lock ensuring PID/MPC SCPN lane keeps non-zero adaptive binary margin | `tests/test_scpn_pid_mpc_benchmark.py` | Benchmark test suite asserts `_build_scpn_controller()` configures SCPN with non-zero `sc_binary_margin`, preventing silent reversion to strict-binary thresholding | `python -m pytest tests/test_scpn_pid_mpc_benchmark.py tests/test_controller.py tests/test_gneu_01_benchmark.py -q`, `python validation/scpn_pid_mpc_benchmark.py --strict` |
 | H5-036 | P1 | Validation | Pin GNEU-01 benchmark controller to adaptive non-zero binary margin and add regression lock | `validation/gneu_01_benchmark.py`, `tests/test_gneu_01_benchmark.py` | GNEU-01 controller construction explicitly sets `sc_binary_margin=0.05` and tests assert the benchmark lane preserves non-zero adaptive stochastic margin | `python -m pytest tests/test_gneu_01_benchmark.py tests/test_controller.py tests/test_scpn_pid_mpc_benchmark.py -q`, `python validation/gneu_01_benchmark.py --strict` |
+| H5-037 | P1 | Validation | Pin GNEU-03 fueling controller to adaptive non-zero binary margin and add regression lock | `src/scpn_fusion/control/fueling_mode.py`, `tests/test_gneu_03_fueling_mode.py` | Fueling controller construction explicitly sets `sc_binary_margin=0.05` and tests assert the controller lane preserves non-zero adaptive stochastic margin | `python -m pytest tests/test_gneu_03_fueling_mode.py tests/test_gneu_01_benchmark.py tests/test_scpn_pid_mpc_benchmark.py -q`, `python validation/gneu_03_fueling_mode.py --strict` |
 
 ## Task Accounting
 
@@ -114,7 +115,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 36
+- Post-S4 hardening tasks delivered: 37
 - Remaining in deferred pool after queue selection: 67
 
 ## Active Task
@@ -173,4 +174,5 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 - Completed: `H5-034`
 - Completed: `H5-035`
 - Completed: `H5-036`
+- Completed: `H5-037`
 - Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).

@@ -90,6 +90,7 @@ def _build_fueling_controller() -> NeuroSymbolicController:
         seed_base=987654321,
         targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
         scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+        sc_binary_margin=0.05,
     )
 
 

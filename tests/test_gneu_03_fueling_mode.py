@@ -12,7 +12,10 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
-from scpn_fusion.control.fueling_mode import simulate_iter_density_control
+from scpn_fusion.control.fueling_mode import (
+    _build_fueling_controller,
+    simulate_iter_density_control,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,6 +39,11 @@ def test_iter_density_control_is_deterministic() -> None:
     assert a.final_density == b.final_density
     assert a.final_abs_error == b.final_abs_error
     assert a.rmse == b.rmse
+
+
+def test_fueling_controller_uses_nonzero_binary_margin() -> None:
+    controller = _build_fueling_controller()
+    assert getattr(controller, "_sc_binary_margin", 0.0) > 0.0
 
 
 def test_validation_report_marks_threshold_pass() -> None:
