@@ -100,7 +100,10 @@ class BreedingBlanket:
         production_rate = self.Sigma_capture_Li6 * phi
         
         # Integrate over thickness (trapezoidal)
-        total_production = np.trapz(production_rate, self.x)
+        if hasattr(np, "trapezoid"):
+            total_production = np.trapezoid(production_rate, self.x)
+        else:  # pragma: no cover - legacy NumPy fallback
+            total_production = np.trapz(production_rate, self.x)
         
         # Incoming Current (Approx D * dPhi/dx at boundary, or simplified Incident Flux)
         # TBR is defined relative to 1 source neutron entering.
