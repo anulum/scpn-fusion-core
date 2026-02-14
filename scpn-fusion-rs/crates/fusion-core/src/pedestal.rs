@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────
 //! Simplified EPED-like pedestal model with ELM trigger logic.
 
+use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::RadialProfiles;
 
 const MIN_T_KEV: f64 = 0.05;
@@ -41,19 +42,44 @@ pub struct PedestalModel {
 }
 
 impl PedestalModel {
-    pub fn new(config: PedestalConfig) -> Self {
-        Self {
+    pub fn new(config: PedestalConfig) -> FusionResult<Self> {
+        if !config.beta_p_ped.is_finite() || config.beta_p_ped < 0.0 {
+            return Err(FusionError::ConfigError(
+                "pedestal beta_p_ped must be finite and >= 0".to_string(),
+            ));
+        }
+        if !config.rho_s.is_finite() || config.rho_s <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "pedestal rho_s must be finite and > 0".to_string(),
+            ));
+        }
+        if !config.r_major.is_finite() || config.r_major <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "pedestal r_major must be finite and > 0".to_string(),
+            ));
+        }
+        if !config.alpha_crit.is_finite() || config.alpha_crit <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "pedestal alpha_crit must be finite and > 0".to_string(),
+            ));
+        }
+        if !config.tau_elm.is_finite() || config.tau_elm <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "pedestal tau_elm must be finite and > 0".to_string(),
+            ));
+        }
+        Ok(Self {
             config,
             last_gradient: 0.0,
             elm_cooldown_s: 0.0,
-        }
+        })
     }
 
     /// EPED-inspired width scaling: Δ_ped ~ sqrt(beta_p,ped) * (rho_s / R)
     pub fn pedestal_width(&self) -> f64 {
-        let beta = self.config.beta_p_ped.max(0.0);
-        let rho_s = self.config.rho_s.abs().max(1e-7);
-        let r_major = self.config.r_major.abs().max(1e-3);
+        let beta = self.config.beta_p_ped;
+        let rho_s = self.config.rho_s;
+        let r_major = self.config.r_major;
         (beta.sqrt() * (rho_s / r_major)).clamp(0.03, 0.12)
     }
 
@@ -80,13 +106,13 @@ impl PedestalModel {
     pub fn apply_elm_crash(&mut self, profiles: &mut RadialProfiles) {
         let width = self.pedestal_width();
         let rho_start = (1.0 - width).clamp(0.75, 0.995);
-        let tau = self.config.tau_elm.max(1e-6);
+        let tau = self.config.tau_elm;
         let burst_fraction = (1.0 - (-1.0e-3 / tau).exp()).clamp(0.05, 0.95);
 
         for i in 0..profiles.rho.len() {
             let rho = profiles.rho[i];
             if rho >= rho_start {
-                let edge_w = ((rho - rho_start) / width.max(1e-5)).clamp(0.0, 1.0);
+                let edge_w = ((rho - rho_start) / width).clamp(0.0, 1.0);
                 let temperature_drop = (0.2 + 0.6 * edge_w * burst_fraction).clamp(0.0, 0.95);
                 let density_drop = 0.5 * temperature_drop;
 
@@ -106,7 +132,7 @@ impl PedestalModel {
 
 impl Default for PedestalModel {
     fn default() -> Self {
-        Self::new(PedestalConfig::default())
+        Self::new(PedestalConfig::default()).expect("default pedestal config must be valid")
     }
 }
 
@@ -139,7 +165,8 @@ mod tests {
             r_major: 6.0,
             alpha_crit: 2.5,
             tau_elm: 1.0e-3,
-        });
+        })
+        .expect("valid pedestal config");
         let width = model.pedestal_width();
         assert!(width > 0.0);
         assert!(width <= 0.12);
@@ -202,5 +229,40 @@ mod tests {
         assert!(profiles.te.iter().all(|v| *v >= MIN_T_KEV));
         assert!(profiles.ti.iter().all(|v| *v >= MIN_T_KEV));
         assert!(profiles.ne.iter().all(|v| *v >= MIN_NE));
+    }
+
+    #[test]
+    fn test_pedestal_constructor_rejects_invalid_config() {
+        let bad = [
+            PedestalConfig {
+                beta_p_ped: -1.0,
+                ..Default::default()
+            },
+            PedestalConfig {
+                rho_s: 0.0,
+                ..Default::default()
+            },
+            PedestalConfig {
+                r_major: 0.0,
+                ..Default::default()
+            },
+            PedestalConfig {
+                alpha_crit: 0.0,
+                ..Default::default()
+            },
+            PedestalConfig {
+                tau_elm: 0.0,
+                ..Default::default()
+            },
+        ];
+        for cfg in bad {
+            let err = PedestalModel::new(cfg).expect_err("invalid config must error");
+            match err {
+                FusionError::ConfigError(msg) => {
+                    assert!(msg.contains("pedestal"));
+                }
+                other => panic!("Unexpected error: {other:?}"),
+            }
+        }
     }
 }

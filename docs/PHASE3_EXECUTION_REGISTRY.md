@@ -236,6 +236,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-009 | P1 | Physics | Harden alpha-heating confinement-time handling with strict finite positive validation (no silent clamping) | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | Alpha-heating profile generation now rejects invalid `confinement_tau_s` values (`NaN`, `<=0`) via explicit `FusionError` results instead of silently clamping to a floor value, preserving deterministic heating behavior for valid confinement times | `cargo test -p fusion-core particles::tests::test_alpha_heating_profile_rejects_invalid_confinement_time -- --nocapture`, `cargo test -p fusion-core particles::tests::test_alpha_heating_profile_is_positive_when_particles_in_domain -- --nocapture`, `cargo test -p fusion-core particles::tests::test_seed_alpha_particles_matches_requested_energy_band -- --nocapture` |
 | H8-010 | P1 | Physics | Harden AMR constructor threshold/level controls with strict validity checks | `scpn-fusion-rs/crates/fusion-core/src/amr_kernel.rs` | AMR constructor now rejects invalid `max_levels` and `refinement_threshold` values (`0`, `NaN`, negative, `-inf`) via explicit `FusionError::ConfigError` instead of accepting undefined refinement settings, while preserving the `+inf` threshold no-refinement behavior | `cargo test -p fusion-core amr_kernel::tests::test_amr_kernel_rejects_invalid_constructor_config -- --nocapture`, `cargo test -p fusion-core amr_kernel::tests::test_amr_kernel_no_refinement_matches_coarse -- --nocapture` |
 | H8-011 | P1 | Tooling | Resolve Rust CI clippy regression in inverse-config hardening tests | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Refactored kernel-iteration guard regression test to use struct-literal initialization (`..Default::default()`) and removed post-default field reassignment, clearing `clippy::field_reassign_with_default` under `-D warnings` in `rust-tests` | `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test -p fusion-core inverse::tests::test_kernel_inverse_rejects_invalid_kernel_iteration_config -- --nocapture` |
+| H8-012 | P1 | Physics | Harden pedestal model constructor controls with strict finite-range validation | `scpn-fusion-rs/crates/fusion-core/src/pedestal.rs`, `scpn-fusion-rs/crates/fusion-core/src/transport.rs` | Pedestal model setup now rejects invalid configuration inputs (`beta_p_ped`, `rho_s`, `r_major`, `alpha_crit`, `tau_elm`) via explicit `FusionError::ConfigError`, replacing prior silent `abs/max` coercions in pedestal-width and ELM-time handling while preserving valid transport/pedestal behavior | `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test -p fusion-core pedestal::tests::test_pedestal_constructor_rejects_invalid_config -- --nocapture`, `cargo test -p fusion-core transport::tests::test_elm_crash_reduces_pedestal_temperature -- --nocapture` |
 
 ## Task Accounting
 
@@ -243,7 +244,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 147
+- Post-S4 hardening tasks delivered: 148
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -414,4 +415,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-009`
 - Completed: `H8-010`
 - Completed: `H8-011`
+- Completed: `H8-012`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

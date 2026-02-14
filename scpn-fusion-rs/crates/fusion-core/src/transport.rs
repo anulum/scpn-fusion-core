@@ -74,7 +74,8 @@ impl TransportSolver {
             r_major: 6.2,
             alpha_crit: 2.5,
             tau_elm: 1.0e-3,
-        });
+        })
+        .expect("default pedestal config must be valid");
 
         TransportSolver {
             profiles: RadialProfiles {
