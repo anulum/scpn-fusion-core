@@ -232,10 +232,20 @@ def run_advanced_learning_sim(
     """
     Run deterministic SOC+Q-learning control simulation and return summary metrics.
     """
-    steps = max(int(time_steps), 1)
+    steps = int(time_steps)
+    if steps < 1:
+        raise ValueError("time_steps must be >= 1.")
     lo_shear, hi_shear = _normalize_bounds(shear_bounds, "shear_bounds")
-    shear_step = max(float(shear_step), 0.0)
-    noise_probability = float(np.clip(noise_probability, 0.0, 1.0))
+    shear_step = float(shear_step)
+    if not np.isfinite(shear_step) or shear_step < 0.0:
+        raise ValueError("shear_step must be finite and >= 0.")
+    noise_probability = float(noise_probability)
+    if (
+        not np.isfinite(noise_probability)
+        or noise_probability < 0.0
+        or noise_probability > 1.0
+    ):
+        raise ValueError("noise_probability must be finite and in [0, 1].")
     rng = np.random.default_rng(int(seed))
 
     if verbose:

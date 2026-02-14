@@ -200,6 +200,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-063 | P1 | Control | Harden disruption-predictor sequence-length handling with strict guardrails | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_gneu_02_anomaly.py` | Predictor sequence handling now rejects invalid `seq_len` values with deterministic errors (no silent coercion to minimum), while preserving deterministic fallback/checkpoint behavior and risk-evaluation paths for valid sequence lengths | `python -m pytest tests/test_gneu_02_anomaly.py tests/test_disruption_predictor_rng.py tests/test_disruption_toroidal_features.py -v`, `python -m pytest tests/ -q -x` |
 | H7-064 | P1 | Control | Harden fallback-director constructor with strict entropy/window input guards | `src/scpn_fusion/control/director_interface.py`, `tests/test_director_interface.py` | Fallback director now rejects invalid/non-finite `entropy_threshold` and `history_window` values with deterministic errors (no silent coercion), while preserving deterministic mission-review behavior for valid settings | `python -m pytest tests/test_director_interface.py -v`, `python -m pytest tests/ -q -x` |
 | H7-065 | P1 | Control | Harden disruption-predictor training campaign with strict shot/epoch input guards | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_model_checkpoint.py` | Predictor training now rejects invalid `n_shots` and `epochs` values with deterministic errors (no silent coercion), while preserving deterministic checkpoint load/train behavior and fallback paths for valid inputs | `python -m pytest tests/test_disruption_model_checkpoint.py tests/test_gneu_02_anomaly.py tests/test_disruption_predictor_rng.py tests/test_disruption_toroidal_features.py -v`, `python -m pytest tests/ -q -x` |
+| H7-066 | P1 | Control | Harden advanced SOC runtime campaign with strict step/shear/noise input guards | `src/scpn_fusion/control/advanced_soc_fusion_learning.py`, `tests/test_advanced_soc_fusion_learning.py` | Advanced SOC runtime now rejects invalid/non-finite campaign parameters (`time_steps`, `shear_step`, `noise_probability`) with deterministic errors (no silent coercion/clipping), while preserving deterministic seeded learning dynamics for valid runs | `python -m pytest tests/test_advanced_soc_fusion_learning.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -207,8 +208,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 111
-- Remaining in deferred pool after queue selection: 2
+- Post-S4 hardening tasks delivered: 112
+- Remaining in deferred pool after queue selection: 1
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -342,4 +343,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-063`
 - Completed: `H7-064`
 - Completed: `H7-065`
-- Next active task: `H7-066` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-066`
+- Next active task: `H7-067` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

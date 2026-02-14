@@ -91,3 +91,28 @@ def test_agent_learn_updates_q_table_and_reward() -> None:
     assert after != before
     assert updated == after
     assert agent.total_reward == pytest.approx(2.5, rel=0.0, abs=0.0)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"time_steps": 0}, "time_steps"),
+        ({"shear_step": -0.1}, "shear_step"),
+        ({"shear_step": float("nan")}, "shear_step"),
+        ({"noise_probability": -0.1}, "noise_probability"),
+        ({"noise_probability": 1.1}, "noise_probability"),
+    ],
+)
+def test_run_advanced_learning_sim_rejects_invalid_runtime_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    params: dict[str, float | int | bool] = {
+        "size": 16,
+        "time_steps": 32,
+        "seed": 5,
+        "save_plot": False,
+        "verbose": False,
+    }
+    params.update(kwargs)
+    with pytest.raises(ValueError, match=match):
+        run_advanced_learning_sim(**params)
