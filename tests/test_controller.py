@@ -474,6 +474,47 @@ class TestLevel0Static:
         finally:
             os.unlink(bad_path)
 
+    @pytest.mark.parametrize(
+        ("field_path", "value", "match"),
+        [
+            (
+                ("readout", "limits", "per_action_abs_max", 0),
+                "10.0",
+                "readout.abs_max",
+            ),
+            (("readout", "limits", "slew_per_s", 0), -1.0, "readout.slew_per_s"),
+            (("readout", "gains", "per_action", 0), float("nan"), "readout.gains"),
+        ],
+    )
+    def test_load_artifact_rejects_invalid_readout_vectors(
+        self,
+        artifact_path: str,
+        field_path: tuple[str | int, ...],
+        value: object,
+        match: str,
+    ) -> None:
+        obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
+        target: object = obj
+        for key in field_path[:-1]:
+            if isinstance(target, list):
+                target = target[key]  # type: ignore[index]
+            else:
+                target = target[key]  # type: ignore[index]
+        if isinstance(target, list):
+            target[field_path[-1]] = value  # type: ignore[index]
+        else:
+            target[field_path[-1]] = value  # type: ignore[index]
+        fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
+        os.close(fd)
+        try:
+            Path(bad_path).write_text(
+                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
+            )
+            with pytest.raises(ArtifactValidationError, match=match):
+                load_artifact(bad_path)
+        finally:
+            os.unlink(bad_path)
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Level 1 — Determinism

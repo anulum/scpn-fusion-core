@@ -383,6 +383,38 @@ def _validate(artifact: Artifact) -> None:
                 f"initial marking {val} outside [0, 1]"
             )
 
+    # Readout consistency
+    n_actions = len(artifact.readout.actions)
+    if len(artifact.readout.gains) != n_actions:
+        raise ArtifactValidationError("readout.gains length must equal number of actions")
+    if len(artifact.readout.abs_max) != n_actions:
+        raise ArtifactValidationError("readout.abs_max length must equal number of actions")
+    if len(artifact.readout.slew_per_s) != n_actions:
+        raise ArtifactValidationError("readout.slew_per_s length must equal number of actions")
+    for val in artifact.readout.gains:
+        if isinstance(val, bool) or not isinstance(val, (int, float)) or not math.isfinite(val):
+            raise ArtifactValidationError("readout.gains must contain finite numeric values")
+    for val in artifact.readout.abs_max:
+        if (
+            isinstance(val, bool)
+            or not isinstance(val, (int, float))
+            or not math.isfinite(val)
+            or val < 0.0
+        ):
+            raise ArtifactValidationError(
+                "readout.abs_max must contain finite numeric values >= 0"
+            )
+    for val in artifact.readout.slew_per_s:
+        if (
+            isinstance(val, bool)
+            or not isinstance(val, (int, float))
+            or not math.isfinite(val)
+            or val < 0.0
+        ):
+            raise ArtifactValidationError(
+                "readout.slew_per_s must contain finite numeric values >= 0"
+            )
+
 
 # ── Load / Save ─────────────────────────────────────────────────────────────
 
@@ -484,9 +516,9 @@ def load_artifact(path: Union[str, Path]) -> Artifact:
     ]
     readout = Readout(
         actions=actions,
-        gains=list(map(float, obj["readout"]["gains"]["per_action"])),
-        abs_max=list(map(float, obj["readout"]["limits"]["per_action_abs_max"])),
-        slew_per_s=list(map(float, obj["readout"]["limits"]["slew_per_s"])),
+        gains=obj["readout"]["gains"]["per_action"],
+        abs_max=obj["readout"]["limits"]["per_action_abs_max"],
+        slew_per_s=obj["readout"]["limits"]["slew_per_s"],
     )
 
     # Initial state
