@@ -42,8 +42,14 @@ class _RuleBasedDirector:
     """Deterministic fallback director when external DIRECTOR_AI is unavailable."""
 
     def __init__(self, entropy_threshold: float = 0.3, history_window: int = 10) -> None:
-        self.entropy_threshold = max(float(entropy_threshold), 1e-6)
-        self.history_window = max(int(history_window), 1)
+        entropy_threshold = float(entropy_threshold)
+        if not np.isfinite(entropy_threshold) or entropy_threshold <= 0.0:
+            raise ValueError("entropy_threshold must be finite and > 0.")
+        history_window = int(history_window)
+        if history_window < 1:
+            raise ValueError("history_window must be >= 1.")
+        self.entropy_threshold = entropy_threshold
+        self.history_window = history_window
         self._scores: list[float] = []
 
     def review_action(self, prompt: str, proposed_action: str) -> tuple[bool, float]:

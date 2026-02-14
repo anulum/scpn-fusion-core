@@ -156,3 +156,27 @@ def test_directed_mission_rejects_invalid_runtime_inputs(
             verbose=False,
             **kwargs,
         )
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"entropy_threshold": 0.0}, "entropy_threshold"),
+        ({"entropy_threshold": float("nan")}, "entropy_threshold"),
+        ({"history_window": 0}, "history_window"),
+    ],
+)
+def test_director_fallback_rejects_invalid_constructor_inputs(
+    monkeypatch: pytest.MonkeyPatch,
+    kwargs: dict[str, float | int],
+    match: str,
+) -> None:
+    monkeypatch.setattr(director_mod, "DIRECTOR_AVAILABLE", False)
+    monkeypatch.setattr(director_mod, "DirectorModule", None)
+    with pytest.raises(ValueError, match=match):
+        DirectorInterface(
+            "dummy.json",
+            allow_fallback=True,
+            controller_factory=_DummyNeuroController,
+            **kwargs,
+        )
