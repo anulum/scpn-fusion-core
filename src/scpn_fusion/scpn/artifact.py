@@ -304,7 +304,11 @@ def _validate(artifact: Artifact) -> None:
             raise ArtifactValidationError(
                 f"threshold {t.threshold} for '{t.name}' outside [0, 1]"
             )
-        if int(t.delay_ticks) < 0:
+        if isinstance(t.delay_ticks, bool) or not isinstance(t.delay_ticks, int):
+            raise ArtifactValidationError(
+                f"delay_ticks {t.delay_ticks} for '{t.name}' must be an integer >= 0"
+            )
+        if t.delay_ticks < 0:
             raise ArtifactValidationError(
                 f"delay_ticks {t.delay_ticks} for '{t.name}' must be >= 0"
             )
@@ -381,7 +385,7 @@ def load_artifact(path: Union[str, Path]) -> Artifact:
             name=t["name"],
             threshold=float(t["threshold"]),
             margin=t.get("margin"),
-            delay_ticks=int(t.get("delay_ticks", 0)),
+            delay_ticks=t.get("delay_ticks", 0),
         )
         for t in obj["topology"]["transitions"]
     ]

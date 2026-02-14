@@ -357,6 +357,22 @@ class TestLevel0Static:
         finally:
             os.unlink(path2)
 
+    def test_load_artifact_rejects_non_integer_delay_ticks(
+        self, artifact_path: str
+    ) -> None:
+        obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
+        obj["topology"]["transitions"][0]["delay_ticks"] = 1.5
+        fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
+        os.close(fd)
+        try:
+            Path(bad_path).write_text(
+                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
+            )
+            with pytest.raises(ArtifactValidationError, match="delay_ticks"):
+                load_artifact(bad_path)
+        finally:
+            os.unlink(bad_path)
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Level 1 — Determinism
