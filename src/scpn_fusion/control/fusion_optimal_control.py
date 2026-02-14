@@ -157,7 +157,9 @@ class OptimalController:
         if identify_first:
             self.identify_system()
 
-        steps = max(int(shot_steps), 1)
+        steps = int(shot_steps)
+        if steps < 1:
+            raise ValueError("shot_steps must be >= 1.")
         target_vec = np.array([float(target_r), float(target_z)], dtype=np.float64)
         self.history = {k: [] for k in self.history}
 

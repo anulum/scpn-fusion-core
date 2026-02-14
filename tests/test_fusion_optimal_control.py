@@ -168,3 +168,19 @@ def test_run_optimal_control_does_not_mutate_global_numpy_rng_state() -> None:
     np.random.set_state(state)
     expected = float(np.random.random())
     assert observed == expected
+
+
+def test_run_optimal_control_rejects_invalid_shot_steps() -> None:
+    with pytest.raises(ValueError, match="shot_steps"):
+        run_optimal_control(
+            config_file="dummy.json",
+            shot_steps=0,
+            target_r=6.0,
+            target_z=0.0,
+            seed=1,
+            save_plot=False,
+            verbose=False,
+            kernel_factory=_DummyKernel,
+            coil_current_limits=(-2.0, 2.0),
+            current_target_limits=(7.0, 9.0),
+        )
