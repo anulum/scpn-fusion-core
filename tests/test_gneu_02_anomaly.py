@@ -93,8 +93,11 @@ def test_anomaly_alarm_campaign_outputs_expected_metrics() -> None:
 @pytest.mark.parametrize(
     ("kwargs", "match"),
     [
+        ({"seed": -1}, "seed"),
         ({"episodes": 0}, "episodes"),
+        ({"episodes": 1.25}, "episodes"),
         ({"window": 8}, "window"),
+        ({"window": 32.5}, "window"),
         ({"threshold": -0.1}, "threshold"),
         ({"threshold": 1.1}, "threshold"),
         ({"threshold": float("nan")}, "threshold"),

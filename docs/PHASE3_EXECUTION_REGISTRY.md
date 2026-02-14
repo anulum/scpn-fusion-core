@@ -212,6 +212,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-075 | P1 | SCPN | Harden controller runtime-sampling constructor knobs with strict numeric guards | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py` | SCPN controller constructor now rejects invalid/non-finite runtime-sampling controls (`sc_n_passes`, `sc_bitflip_rate`, `rust_backend_min_problem_size`, `sc_antithetic_chunk_size`) with deterministic errors (no silent coercion/clipping), while preserving deterministic backend and sampling behavior for valid settings | `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
 | H7-076 | P1 | SCPN | Harden controller binary-margin constructor knob with strict numeric guards | `src/scpn_fusion/scpn/controller.py`, `tests/test_controller.py` | SCPN controller constructor now rejects invalid/non-finite `sc_binary_margin` values (no silent floor-to-zero coercion), while preserving deterministic adaptive/traceable firing semantics for valid settings | `python -m mypy --strict src/scpn_fusion/scpn/controller.py`, `python -m pytest tests/test_controller.py -v`, `python -m pytest tests/ -q -x` |
 | H7-077 | P1 | Control | Harden bit-flip fault injection helper with strict bit-index guardrails | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_toroidal_features.py` | Fault injection now rejects invalid/non-integer `bit_index` values outside `[0, 63]` (no silent modulo wrapping), while preserving deterministic finite-value bit flips for valid indices | `python -m pytest tests/test_disruption_toroidal_features.py tests/test_disruption_predictor_rng.py tests/test_gneu_02_anomaly.py -v`, `python -m pytest tests/ -q -x` |
+| H7-078 | P1 | Control | Harden disruption campaign/simulation integer inputs with strict type/range guards | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_predictor_rng.py`, `tests/test_disruption_toroidal_features.py`, `tests/test_gneu_02_anomaly.py` | Disruption simulation and campaign entry points now reject non-integer or out-of-range sizing inputs (`steps`, `seed`, `episodes`, `window`, `bit_flip_interval`, `recovery_window`) with deterministic errors (no silent float-to-int coercion), while preserving deterministic seeded metrics for valid runs | `python -m pytest tests/test_disruption_predictor_rng.py tests/test_disruption_toroidal_features.py tests/test_gneu_02_anomaly.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -219,7 +220,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 123
+- Post-S4 hardening tasks delivered: 124
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -366,4 +367,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-075`
 - Completed: `H7-076`
 - Completed: `H7-077`
+- Completed: `H7-078`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted).

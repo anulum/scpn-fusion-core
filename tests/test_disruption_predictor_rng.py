@@ -63,6 +63,7 @@ def test_simulate_tearing_mode_without_rng_does_not_mutate_global_state() -> Non
     assert observed == expected
 
 
-def test_simulate_tearing_mode_rejects_invalid_steps() -> None:
+@pytest.mark.parametrize("steps", [0, 1.5, True])
+def test_simulate_tearing_mode_rejects_invalid_steps(steps: object) -> None:
     with pytest.raises(ValueError, match="steps"):
-        simulate_tearing_mode(steps=0)
+        simulate_tearing_mode(steps=steps)

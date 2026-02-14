@@ -24,6 +24,18 @@ except Exception:  # pragma: no cover - optional dependency path
 DEFAULT_SEQ_LEN = 100
 DEFAULT_MODEL_FILENAME = "disruption_model.pth"
 
+
+def _require_int(name: str, value: object, minimum: int | None = None) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
+        if minimum is None:
+            raise ValueError(f"{name} must be an integer.")
+        raise ValueError(f"{name} must be an integer >= {minimum}.")
+    parsed = int(value)
+    if minimum is not None and parsed < minimum:
+        raise ValueError(f"{name} must be an integer >= {minimum}.")
+    return parsed
+
+
 # --- PHYSICS: MODIFIED RUTHERFORD EQUATION ---
 def simulate_tearing_mode(
     steps=1000,
@@ -37,9 +49,7 @@ def simulate_tearing_mode(
         label (int): 1 if disrupted, 0 if safe
         time_to_disruption (array): Time remaining (or -1 if safe)
     """
-    steps = int(steps)
-    if steps < 1:
-        raise ValueError("steps must be >= 1.")
+    steps = _require_int("steps", steps, 1)
     dt = 0.01
     w = 0.01 # Island width
     local_rng = rng if rng is not None else np.random.default_rng()
@@ -156,24 +166,15 @@ def _normalize_fault_campaign_inputs(
     recovery_window,
     recovery_epsilon,
 ):
-    seed_i = int(seed)
-    episodes_i = int(episodes)
-    window_i = int(window)
+    seed_i = _require_int("seed", seed, 0)
+    episodes_i = _require_int("episodes", episodes, 1)
+    window_i = _require_int("window", window, 16)
     noise = float(noise_std)
-    bit_flip_i = int(bit_flip_interval)
-    recovery_window_i = int(recovery_window)
+    bit_flip_i = _require_int("bit_flip_interval", bit_flip_interval, 1)
+    recovery_window_i = _require_int("recovery_window", recovery_window, 1)
     recovery_eps = float(recovery_epsilon)
-
-    if episodes_i < 1:
-        raise ValueError("episodes must be >= 1.")
-    if window_i < 16:
-        raise ValueError("window must be >= 16.")
     if not np.isfinite(noise) or noise < 0.0:
         raise ValueError("noise_std must be finite and >= 0.")
-    if bit_flip_i < 1:
-        raise ValueError("bit_flip_interval must be >= 1.")
-    if recovery_window_i < 1:
-        raise ValueError("recovery_window must be >= 1.")
     if not np.isfinite(recovery_eps) or recovery_eps <= 0.0:
         raise ValueError("recovery_epsilon must be finite and > 0.")
 
@@ -386,14 +387,10 @@ def run_anomaly_alarm_campaign(
     """
     Deterministic anomaly-alarm campaign under random perturbations.
     """
-    seed_i = int(seed)
-    episodes_i = int(episodes)
-    window_i = int(window)
+    seed_i = _require_int("seed", seed, 0)
+    episodes_i = _require_int("episodes", episodes, 1)
+    window_i = _require_int("window", window, 16)
     threshold_f = float(threshold)
-    if episodes_i < 1:
-        raise ValueError("episodes must be >= 1.")
-    if window_i < 16:
-        raise ValueError("window must be >= 16.")
     if not np.isfinite(threshold_f) or threshold_f < 0.0 or threshold_f > 1.0:
         raise ValueError("threshold must be finite and in [0, 1].")
 

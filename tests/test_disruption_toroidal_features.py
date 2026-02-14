@@ -94,12 +94,17 @@ def test_fault_noise_campaign_metrics_and_thresholds() -> None:
 @pytest.mark.parametrize(
     ("kwargs", "match"),
     [
+        ({"seed": -1}, "seed"),
         ({"episodes": 0}, "episodes"),
+        ({"episodes": 2.5}, "episodes"),
         ({"window": 8}, "window"),
+        ({"window": 64.5}, "window"),
         ({"noise_std": -0.1}, "noise_std"),
         ({"noise_std": float("nan")}, "noise_std"),
         ({"bit_flip_interval": 0}, "bit_flip_interval"),
+        ({"bit_flip_interval": 3.5}, "bit_flip_interval"),
         ({"recovery_window": 0}, "recovery_window"),
+        ({"recovery_window": 4.5}, "recovery_window"),
         ({"recovery_epsilon": 0.0}, "recovery_epsilon"),
     ],
 )
