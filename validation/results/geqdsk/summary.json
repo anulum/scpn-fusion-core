@@ -1,0 +1,37 @@
+{
+  "n_files": 3,
+  "n_ok": 3,
+  "n_warn": 0,
+  "n_fail": 0,
+  "mean_psi_rmse": 9.056633489726416e-10,
+  "max_psi_rmse": 9.245347058637126e-10,
+  "mean_axis_dr_mm": 4.7350123821843226e-08,
+  "mean_axis_dz_mm": 2.6133498143288136e-08,
+  "total_solve_time_s": 22.523953437805176,
+  "files": [
+    {
+      "filename": "lmode_hv.geqdsk",
+      "psi_rmse": 9.245347058637126e-10,
+      "axis_dr_mm": 0.0,
+      "axis_dz_mm": 0.0,
+      "hausdorff_mm": 717.709183555633,
+      "status": "OK"
+    },
+    {
+      "filename": "lmode_vh.geqdsk",
+      "psi_rmse": 9.206994194731725e-10,
+      "axis_dr_mm": 0.0,
+      "axis_dz_mm": 5.4210413935606994e-08,
+      "hausdorff_mm": 736.4475131099088,
+      "status": "OK"
+    },
+    {
+      "filename": "lmode_vv.geqdsk",
+      "psi_rmse": 8.717559215810399e-10,
+      "axis_dr_mm": 1.4205037146552968e-07,
+      "axis_dz_mm": 2.4190080494257415e-08,
+      "hausdorff_mm": 710.9387191313435,
+      "status": "OK"
+    }
+  ]
+}

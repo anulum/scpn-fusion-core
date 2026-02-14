@@ -11,9 +11,9 @@
   "residual_final": 6.540726046704606e-07,
   "psi_rmse_initial": 0.011261845505644805,
   "psi_rmse_final": 0.011261845505644805,
-  "axis_error_m": 2.499999998128999e-07,
+  "axis_error_m": 0.003027249999999926,
   "boundary_hausdorff_m": 0.03495477239046017,
-  "wall_time_s": 0.06854414939880371,
+  "wall_time_s": 0.0764777660369873,
   "A_relative_error": 0.10284059783144799,
   "improvement_ratio": 1.0,
   "status": "WARN"

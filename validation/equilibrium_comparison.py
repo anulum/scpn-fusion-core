@@ -74,22 +74,51 @@ def axis_position_error(
     # that axis-0 corresponds to the first coordinate array (r_grid)
     # and axis-1 to the second (z_grid).  If the shape is transposed,
     # swap the grids to stay consistent.
-    if psi.shape == (len(z_grid), len(r_grid)):
+    # Note: when nR == nZ (square grid), we cannot distinguish layouts
+    # by shape alone — assume the caller provides (nR, nZ).
+    if len(r_grid) != len(z_grid) and psi.shape == (len(z_grid), len(r_grid)):
         # (nZ, nR) layout — transpose so axis-0 = R, axis-1 = Z
         psi = psi.T
-    elif psi.shape != (len(r_grid), len(z_grid)):
+    elif psi.shape != (len(r_grid), len(z_grid)) and len(r_grid) != len(z_grid):
         # Ambiguous shape: fall back to flat argmin without transposing
         pass
 
+    # psi is now in (nR, nZ) convention: axis-0=R, axis-1=Z
+    nr, nz = psi.shape if psi.ndim == 2 else (1, 1)
+
+    # Discrete extremum
     idx_flat = int(np.argmin(psi))
     if psi.ndim == 2:
-        ir, iz = np.unravel_index(idx_flat, psi.shape)
-        r_axis = float(r_grid[ir]) if ir < len(r_grid) else float(r_grid[-1])
-        z_axis = float(z_grid[iz]) if iz < len(z_grid) else float(z_grid[-1])
+        ir0, iz0 = np.unravel_index(idx_flat, psi.shape)
     else:
-        # 1-D fallback (shouldn't happen, but be safe)
-        r_axis = float(r_grid[0])
-        z_axis = float(z_grid[0])
+        ir0, iz0 = 0, 0
+
+    r_axis = float(r_grid[ir0]) if ir0 < len(r_grid) else float(r_grid[-1])
+    z_axis = float(z_grid[iz0]) if iz0 < len(z_grid) else float(z_grid[-1])
+
+    # Quadratic subgrid interpolation along R
+    if psi.ndim == 2 and 1 <= ir0 < nr - 1:
+        fL = psi[ir0 - 1, iz0]
+        fC = psi[ir0, iz0]
+        fR = psi[ir0 + 1, iz0]
+        dr_grid = float(r_grid[1] - r_grid[0])
+        denom = fR - 2.0 * fC + fL
+        if abs(denom) > 1e-30:
+            shift = -0.5 * (fR - fL) / denom
+            shift = max(-0.5, min(0.5, shift))
+            r_axis += shift * dr_grid
+
+    # Quadratic subgrid interpolation along Z
+    if psi.ndim == 2 and 1 <= iz0 < nz - 1:
+        fD = psi[ir0, iz0 - 1]
+        fC = psi[ir0, iz0]
+        fU = psi[ir0, iz0 + 1]
+        dz_grid = float(z_grid[1] - z_grid[0])
+        denom = fU - 2.0 * fC + fD
+        if abs(denom) > 1e-30:
+            shift = -0.5 * (fU - fD) / denom
+            shift = max(-0.5, min(0.5, shift))
+            z_axis += shift * dz_grid
 
     dr = r_axis - float(r_axis_ref)
     dz = z_axis - float(z_axis_ref)
@@ -201,7 +230,7 @@ def stored_energy_error(
     def _stored_energy(p: np.ndarray) -> float:
         """W = (3/2) * 2*pi * sum_ij p_ij * R_ij * dR * dZ."""
         # Ensure p has shape (nR, nZ)
-        if p.shape == (len(z_grid), len(r_grid)):
+        if len(r_grid) != len(z_grid) and p.shape == (len(z_grid), len(r_grid)):
             p = p.T
         return float(1.5 * 2.0 * np.pi * np.sum(p * R2d) * dr * dz)
 

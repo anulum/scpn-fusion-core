@@ -21,7 +21,7 @@
   "solver": "solovev_cerfon_freidberg_2010",
   "A_param": -0.8884602,
   "psi_axis": -0.6004072800000001,
-  "r_axis_m": 2.124264,
+  "r_axis_m": 2.125611,
   "z_axis_m": 0.0,
   "has_interior_minimum": true,
   "boundary_kappa_estimate": 1.5794,

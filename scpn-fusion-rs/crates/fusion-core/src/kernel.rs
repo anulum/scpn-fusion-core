@@ -5,9 +5,8 @@
 //! X-point detection, and convergence tracking.
 //!
 //! Two inner-solve strategies are available:
-//! - **PicardSor**: the original Jacobi / flat-Laplacian inner sweeps
-//!   (legacy path, does NOT include 1/R toroidal corrections in the inner
-//!   stencil — kept for backward compatibility).
+//! - **PicardSor**: Jacobi inner sweeps with the correct cylindrical GS
+//!   stencil including 1/R toroidal corrections.
 //! - **PicardMultigrid**: replaces the inner Jacobi loop with a multigrid
 //!   V-cycle that uses the correct Grad-Shafranov stencil including the
 //!   cylindrical 1/R terms via Red-Black SOR smoothing.  This is both
@@ -65,12 +64,12 @@ const LIMITER_FALLBACK_FACTOR: f64 = 0.1;
 /// than ~33x33 because of its O(N) convergence rate.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SolverMethod {
-    /// Original inner-solve path: flat-Laplacian Jacobi sweeps.
-    ///
-    /// NOTE: this stencil uses `0.25*(neighbours - dr²·source)` and does
-    /// **not** include the cylindrical 1/R correction terms present in
-    /// the true Grad-Shafranov operator.  It is retained for backward
-    /// compatibility and reproduces the Python reference implementation.
+    /// Inner-solve path using Jacobi sweeps with the correct cylindrical
+    /// GS 5-point stencil including 1/R toroidal correction terms:
+    ///   c_R+ = 1/dr² - 1/(2R·dr)
+    ///   c_R- = 1/dr² + 1/(2R·dr)
+    ///   c_Z  = 1/dz²
+    ///   center = 2/dr² + 2/dz²
     PicardSor,
 
     /// Multigrid V-cycle inner solver.
@@ -211,16 +210,23 @@ impl FusionKernel {
         }
 
         // Initial Jacobi solve (same for both methods — a quick bootstrap)
+        // Uses the correct cylindrical GS stencil with 1/R toroidal correction.
         let dr_sq = dr * dr;
+        let dz_sq = dz * dz;
+        let c_z = 1.0 / dz_sq;
+        let center = 2.0 / dr_sq + 2.0 / dz_sq;
         for _ in 0..INITIAL_JACOBI_ITERS {
             for iz in 1..nz - 1 {
                 for ir in 1..nr - 1 {
-                    self.state.psi[[iz, ir]] = 0.25
-                        * (self.state.psi[[iz - 1, ir]]
-                            + self.state.psi[[iz + 1, ir]]
-                            + self.state.psi[[iz, ir - 1]]
-                            + self.state.psi[[iz, ir + 1]]
-                            - dr_sq * source[[iz, ir]]);
+                    let r_val = self.grid.rr[[iz, ir]];
+                    let c_r_plus = 1.0 / dr_sq - 1.0 / (2.0 * r_val * dr);
+                    let c_r_minus = 1.0 / dr_sq + 1.0 / (2.0 * r_val * dr);
+                    self.state.psi[[iz, ir]] = (
+                        -source[[iz, ir]]
+                        + c_z * (self.state.psi[[iz - 1, ir]] + self.state.psi[[iz + 1, ir]])
+                        + c_r_plus * self.state.psi[[iz, ir + 1]]
+                        + c_r_minus * self.state.psi[[iz, ir - 1]]
+                    ) / center;
                 }
             }
         }
@@ -320,16 +326,19 @@ impl FusionKernel {
 
             match self.solver_method {
                 SolverMethod::PicardSor => {
-                    // Legacy path: flat-Laplacian Jacobi sweeps (no 1/R terms).
+                    // Correct cylindrical GS stencil with 1/R toroidal correction.
                     for _ in 0..INNER_SOLVE_ITERS {
                         for iz in 1..nz - 1 {
                             for ir in 1..nr - 1 {
-                                psi_new[[iz, ir]] = 0.25
-                                    * (psi_new[[iz - 1, ir]]
-                                        + psi_new[[iz + 1, ir]]
-                                        + psi_new[[iz, ir - 1]]
-                                        + psi_new[[iz, ir + 1]]
-                                        - dr_sq * source[[iz, ir]]);
+                                let r_val = self.grid.rr[[iz, ir]];
+                                let c_r_plus = 1.0 / dr_sq - 1.0 / (2.0 * r_val * dr);
+                                let c_r_minus = 1.0 / dr_sq + 1.0 / (2.0 * r_val * dr);
+                                psi_new[[iz, ir]] = (
+                                    -source[[iz, ir]]
+                                    + c_z * (psi_new[[iz - 1, ir]] + psi_new[[iz + 1, ir]])
+                                    + c_r_plus * psi_new[[iz, ir + 1]]
+                                    + c_r_minus * psi_new[[iz, ir - 1]]
+                                ) / center;
                             }
                         }
                     }
@@ -734,9 +743,9 @@ mod tests {
 
     #[test]
     fn test_sor_and_multigrid_both_produce_valid_equilibria() {
-        // The two solver paths use different inner stencils:
-        //   PicardSor       : flat-Laplacian Jacobi (no 1/R terms)
-        //   PicardMultigrid : full GS stencil with toroidal 1/R correction
+        // Both solver paths now use the correct cylindrical GS stencil:
+        //   PicardSor       : Jacobi sweeps with 1/R correction
+        //   PicardMultigrid : Multigrid V-cycle with SOR smoother
         //
         // Because the discrete operators differ, the converged equilibria
         // will differ quantitatively.  This test verifies that both paths

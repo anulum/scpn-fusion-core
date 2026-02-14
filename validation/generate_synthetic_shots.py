@@ -43,6 +43,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.optimize import minimize
 
 
 # ── Physical constants ────────────────────────────────────────────────
@@ -366,10 +367,37 @@ class SolovevEquilibrium:
         if psi_center_shifted > 0:
             psi_raw = -psi_raw
 
-        # Find the actual axis location (minimum of psi_raw)
+        # Find the actual axis location (minimum of psi_raw).
+        # Use scipy.optimize to find the true analytical minimum,
+        # giving machine-precision axis positions independent of grid.
         idx_min = np.unravel_index(np.argmin(psi_raw), psi_raw.shape)
-        self.r_axis = float(self.r_grid[idx_min[0]])
-        self.z_axis = float(self.z_grid[idx_min[1]])
+        r0_guess = float(self.r_grid[idx_min[0]])
+        z0_guess = float(self.z_grid[idx_min[1]])
+
+        # Build scalar psi evaluator using the analytical formula
+        sign = -1.0 if psi_center_shifted > 0 else 1.0
+
+        def _psi_point(rz: NDArray) -> float:
+            x = rz[0] / self.R0
+            y = rz[1] / self.R0
+            val = float(
+                _psi_particular_p(x, y)
+                + self.A_param * _psi_particular_ff(x, y)
+            )
+            for kk, psi_hk in enumerate(_HOMOGENEOUS):
+                val += float(self.coefficients[kk] * psi_hk(x, y))
+            val -= psi_boundary_mean
+            val *= sign  # apply sign convention so we minimise
+            return val
+
+        res = minimize(
+            _psi_point,
+            x0=np.array([r0_guess, z0_guess]),
+            method="Nelder-Mead",
+            options={"xatol": 1e-12, "fatol": 1e-15, "maxiter": 2000},
+        )
+        self.r_axis = float(res.x[0])
+        self.z_axis = float(res.x[1])
         self.psi_axis = float(psi_raw[idx_min[0], idx_min[1]])
         self.psi_boundary = 0.0
 

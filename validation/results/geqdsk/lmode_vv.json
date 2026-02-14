@@ -1,0 +1,13 @@
+{
+  "filename": "lmode_vv.geqdsk",
+  "grid": "129x129",
+  "axis_dr_mm": 1.4205037146552968e-07,
+  "axis_dz_mm": 2.4190080494257415e-08,
+  "psi_rmse": 8.717559215810399e-10,
+  "hausdorff_mm": 710.9387191313435,
+  "picard_iterations": 1,
+  "total_sor_iterations": 5200,
+  "converged": true,
+  "solve_time_s": 7.313068866729736,
+  "status": "OK"
+}
