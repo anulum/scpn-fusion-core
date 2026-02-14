@@ -14,6 +14,7 @@ from pathlib import Path
 import sys
 
 import numpy as np
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "scpn_pid_mpc_benchmark.py"
@@ -79,3 +80,9 @@ def test_campaign_does_not_mutate_global_numpy_rng_state() -> None:
     np.random.set_state(state)
     expected = float(np.random.random())
     assert observed == expected
+
+
+@pytest.mark.parametrize("steps", [0, 16, 31])
+def test_campaign_rejects_invalid_steps(steps: int) -> None:
+    with pytest.raises(ValueError, match="steps"):
+        scpn_pid_mpc_benchmark.run_campaign(seed=42, steps=steps)

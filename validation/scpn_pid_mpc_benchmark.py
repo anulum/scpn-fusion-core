@@ -168,7 +168,9 @@ def run_campaign(
     scpn_runtime_backend: str = "auto",
 ) -> dict[str, Any]:
     seed_int = int(seed)
-    steps = max(int(steps), 32)
+    steps = int(steps)
+    if steps < 32:
+        raise ValueError("steps must be >= 32.")
     u_limit = 1.0
     dt = 0.05
     x0 = 0.35
