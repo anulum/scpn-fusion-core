@@ -31,6 +31,8 @@ const HMODE_POWER_THRESHOLD: f64 = 30.0;
 
 /// Edge boundary temperature [keV]. Python line 125.
 const EDGE_TEMPERATURE: f64 = 0.1;
+/// Stability cap for explicit-euler temperature updates [keV].
+const MAX_TEMPERATURE: f64 = 100.0;
 
 /// Radiation cooling coefficient. Python line 105.
 const COOLING_FACTOR: f64 = 5.0;
@@ -149,13 +151,39 @@ impl TransportSolver {
     ///
     /// χ = χ_base + χ_turb · max(0, |∇T| - threshold)
     /// Pedestal barrier starts at ρ = 1 - Δ_ped and suppresses edge transport in H-mode.
-    pub fn update_transport_model(&mut self, p_aux_mw: f64) {
+    pub fn update_transport_model(&mut self, p_aux_mw: f64) -> FusionResult<()> {
+        if !p_aux_mw.is_finite() || p_aux_mw < 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "transport update requires finite p_aux_mw >= 0, got {p_aux_mw}"
+            )));
+        }
         let n = self.profiles.rho.len();
+        if n < 2 {
+            return Err(FusionError::ConfigError(
+                "transport update requires at least 2 radial points".to_string(),
+            ));
+        }
         let dr = if n > 1 { 1.0 / (n as f64 - 1.0) } else { 1.0 };
+        if !dr.is_finite() || dr <= 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "transport update produced invalid dr={dr}"
+            )));
+        }
         let ped_width = self.pedestal.pedestal_width();
+        if !ped_width.is_finite() || ped_width <= 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "transport pedestal width must be finite and > 0, got {ped_width}"
+            )));
+        }
         let barrier_rho = (1.0 - ped_width).clamp(0.75, 0.995);
 
         for i in 0..n {
+            if !self.profiles.te[i].is_finite() || !self.profiles.rho[i].is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "transport profile contains non-finite values at index {}",
+                    i
+                )));
+            }
             // Compute local temperature gradient
             let grad_t = if i == 0 {
                 (self.profiles.te[1] - self.profiles.te[0]) / dr
@@ -164,6 +192,12 @@ impl TransportSolver {
             } else {
                 (self.profiles.te[i + 1] - self.profiles.te[i - 1]) / (2.0 * dr)
             };
+            if !grad_t.is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "transport gradient became non-finite at index {}",
+                    i
+                )));
+            }
 
             // Bohm/Gyro-Bohm transport
             let excess = (-grad_t - CRIT_GRADIENT).max(0.0);
@@ -179,13 +213,23 @@ impl TransportSolver {
                 let factor = (1.0 - 0.92 * edge_weight).clamp(HMODE_CHI_MIN_FACTOR, 1.0);
                 self.chi[i] *= factor;
             }
+            if !self.chi[i].is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "transport chi became non-finite at index {}",
+                    i
+                )));
+            }
         }
+        Ok(())
     }
 
-    fn compute_pedestal_pressure_gradient(&self) -> f64 {
+    fn compute_pedestal_pressure_gradient(&self) -> FusionResult<f64> {
         let n = self.profiles.rho.len();
         if n < 3 {
-            return 0.0;
+            return Err(FusionError::ConfigError(
+                "transport pressure-gradient calculation requires at least 3 radial points"
+                    .to_string(),
+            ));
         }
 
         let dr = 1.0 / (n as f64 - 1.0);
@@ -202,43 +246,99 @@ impl TransportSolver {
             let grad = (pressure[i + 1] - pressure[i - 1]) / (2.0 * dr);
             max_grad = max_grad.max(grad.abs());
         }
-        max_grad
+        if !max_grad.is_finite() {
+            return Err(FusionError::ConfigError(
+                "transport pressure-gradient calculation produced non-finite result".to_string(),
+            ));
+        }
+        Ok(max_grad)
     }
 
     /// Evolve temperature profiles by one time step (explicit Euler).
     ///
     /// ∂T/∂t = (1/r)∂(r χ ∂T/∂r)/∂r + S_heat - S_rad
-    pub fn evolve_profiles(&mut self, p_aux_mw: f64) {
+    pub fn evolve_profiles(&mut self, p_aux_mw: f64) -> FusionResult<()> {
+        if !p_aux_mw.is_finite() || p_aux_mw < 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "transport evolve requires finite p_aux_mw >= 0, got {p_aux_mw}"
+            )));
+        }
         let n = self.profiles.rho.len();
+        if n < 2 {
+            return Err(FusionError::ConfigError(
+                "transport evolve requires at least 2 radial points".to_string(),
+            ));
+        }
         let dr = if n > 1 { 1.0 / (n as f64 - 1.0) } else { 1.0 };
         let dt = self.dt;
+        if !dt.is_finite() || dt <= 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "transport evolve requires finite dt > 0, got {dt}"
+            )));
+        }
 
         let te_old = self.profiles.te.clone();
 
         for i in 1..n - 1 {
-            let rho_i = self.profiles.rho[i].max(1e-6);
+            let rho_i = self.profiles.rho[i];
+            if !rho_i.is_finite() || rho_i <= 0.0 {
+                return Err(FusionError::ConfigError(format!(
+                    "transport evolve requires finite rho > 0 at interior index {}, got {}",
+                    i, rho_i
+                )));
+            }
 
             // Diffusion: (1/r)∂(r χ ∂T/∂r)/∂r via central differences
             let flux_plus =
                 0.5 * (self.chi[i] + self.chi[i + 1]) * (te_old[i + 1] - te_old[i]) / dr;
             let flux_minus =
                 0.5 * (self.chi[i - 1] + self.chi[i]) * (te_old[i] - te_old[i - 1]) / dr;
-            let rho_plus = (rho_i + 0.5 * dr).max(1e-6);
-            let rho_minus = (rho_i - 0.5 * dr).max(1e-6);
+            let rho_plus = rho_i + 0.5 * dr;
+            let rho_minus = rho_i - 0.5 * dr;
+            if rho_plus <= 0.0 || rho_minus <= 0.0 {
+                return Err(FusionError::ConfigError(format!(
+                    "transport evolve requires positive rho +/- dr/2 at index {}",
+                    i
+                )));
+            }
             let div_flux = (rho_plus * flux_plus - rho_minus * flux_minus) / (rho_i * dr);
+            if !div_flux.is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "transport evolve produced non-finite div_flux at index {}",
+                    i
+                )));
+            }
 
             // Heating source (Gaussian centered at axis)
             let s_heat = p_aux_mw * (-self.profiles.rho[i].powi(2) / HEATING_WIDTH).exp();
+            if !s_heat.is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "transport evolve produced non-finite heating source at index {}",
+                    i
+                )));
+            }
 
             // Radiation sink
             let s_rad = COOLING_FACTOR
                 * self.profiles.ne[i]
                 * self.profiles.n_impurity[i]
                 * te_old[i].abs().sqrt();
+            if !s_rad.is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "transport evolve produced non-finite radiation sink at index {}",
+                    i
+                )));
+            }
 
             // Euler step
-            self.profiles.te[i] =
-                (te_old[i] + dt * (div_flux + s_heat - s_rad)).max(EDGE_TEMPERATURE);
+            let te_new = te_old[i] + dt * (div_flux + s_heat - s_rad);
+            if !te_new.is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "transport evolve produced non-finite temperature at index {}",
+                    i
+                )));
+            }
+            self.profiles.te[i] = te_new.clamp(EDGE_TEMPERATURE, MAX_TEMPERATURE);
         }
 
         // Ti tracks Te (simplified)
@@ -249,10 +349,29 @@ impl TransportSolver {
         // Boundary conditions
         self.profiles.te[n - 1] = EDGE_TEMPERATURE;
         self.profiles.ti[n - 1] = EDGE_TEMPERATURE;
+        if self.profiles.te.iter().any(|v| !v.is_finite())
+            || self.profiles.ti.iter().any(|v| !v.is_finite())
+        {
+            return Err(FusionError::ConfigError(
+                "transport evolve produced non-finite profile outputs".to_string(),
+            ));
+        }
+        Ok(())
     }
 
     /// Inject impurities (erosion model). Python lines 39-66.
-    pub fn inject_impurities(&mut self, erosion_rate: f64) {
+    pub fn inject_impurities(&mut self, erosion_rate: f64) -> FusionResult<()> {
+        if !erosion_rate.is_finite() || erosion_rate < 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "transport impurity injection requires finite erosion_rate >= 0, got {erosion_rate}"
+            )));
+        }
+        if !self.dt.is_finite() || self.dt <= 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "transport impurity injection requires finite dt > 0, got {}",
+                self.dt
+            )));
+        }
         let n = self.profiles.rho.len();
         let dr = if n > 1 { 1.0 / (n as f64 - 1.0) } else { 1.0 };
 
@@ -268,16 +387,32 @@ impl TransportSolver {
             self.profiles.n_impurity[i] =
                 (n_imp_old[i] + D_IMPURITY * self.dt * laplacian).max(0.0);
         }
+        if self.profiles.n_impurity.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "transport impurity injection produced non-finite values".to_string(),
+            ));
+        }
+        Ok(())
     }
 
     /// Full transport step: update model, evolve, pedestal crash, inject.
-    pub fn step(&mut self, p_aux_mw: f64, erosion_rate: f64) {
+    pub fn step(&mut self, p_aux_mw: f64, erosion_rate: f64) -> FusionResult<()> {
+        if !p_aux_mw.is_finite() || p_aux_mw < 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "transport step requires finite p_aux_mw >= 0, got {p_aux_mw}"
+            )));
+        }
+        if !erosion_rate.is_finite() || erosion_rate < 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "transport step requires finite erosion_rate >= 0, got {erosion_rate}"
+            )));
+        }
         self.pedestal.advance(self.dt);
-        self.update_transport_model(p_aux_mw);
-        self.evolve_profiles(p_aux_mw);
+        self.update_transport_model(p_aux_mw)?;
+        self.evolve_profiles(p_aux_mw)?;
 
         if p_aux_mw > HMODE_POWER_THRESHOLD {
-            let grad_p = self.compute_pedestal_pressure_gradient();
+            let grad_p = self.compute_pedestal_pressure_gradient()?;
             self.pedestal.record_gradient(grad_p);
             if self.pedestal.is_elm_triggered(grad_p) {
                 self.pedestal.apply_elm_crash(&mut self.profiles);
@@ -291,7 +426,17 @@ impl TransportSolver {
             self.profiles.ti[n - 1] = EDGE_TEMPERATURE;
         }
 
-        self.inject_impurities(erosion_rate);
+        self.inject_impurities(erosion_rate)?;
+        if self.profiles.te.iter().any(|v| !v.is_finite())
+            || self.profiles.ti.iter().any(|v| !v.is_finite())
+            || self.profiles.n_impurity.iter().any(|v| !v.is_finite())
+            || self.chi.iter().any(|v| !v.is_finite())
+        {
+            return Err(FusionError::ConfigError(
+                "transport step produced non-finite runtime state".to_string(),
+            ));
+        }
+        Ok(())
     }
 }
 
@@ -315,7 +460,7 @@ mod tests {
     #[test]
     fn test_transport_step_no_panic() {
         let mut ts = TransportSolver::new();
-        ts.step(50.0, 1e14);
+        ts.step(50.0, 1e14).expect("valid transport step");
         // Should not panic and profiles should remain finite
         assert!(ts.profiles.te.iter().all(|v| v.is_finite()));
         assert!(ts.profiles.ti.iter().all(|v| v.is_finite()));
@@ -326,11 +471,13 @@ mod tests {
         let mut ts = TransportSolver::new();
 
         // Without H-mode
-        ts.update_transport_model(10.0);
+        ts.update_transport_model(10.0)
+            .expect("valid transport-model update");
         let chi_edge_no_hmode = ts.chi[48]; // near ρ=0.96
 
         // With H-mode
-        ts.update_transport_model(50.0);
+        ts.update_transport_model(50.0)
+            .expect("valid transport-model update");
         let chi_edge_hmode = ts.chi[48];
 
         assert!(
@@ -344,14 +491,18 @@ mod tests {
     #[test]
     fn test_toroidal_mode_coupling_disabled_by_default() {
         let mut baseline = TransportSolver::new();
-        baseline.update_transport_model(20.0);
+        baseline
+            .update_transport_model(20.0)
+            .expect("valid transport-model update");
         let baseline_chi = baseline.chi.clone();
 
         let mut coupled = TransportSolver::new();
         coupled
             .set_toroidal_mode_spectrum(&[0.2, 0.1, 0.05], 0.0)
             .expect("valid spectrum");
-        coupled.update_transport_model(20.0);
+        coupled
+            .update_transport_model(20.0)
+            .expect("valid transport-model update");
 
         let max_err = baseline_chi
             .iter()
@@ -367,7 +518,9 @@ mod tests {
     #[test]
     fn test_toroidal_mode_coupling_boosts_edge_more_than_core() {
         let mut baseline = TransportSolver::new();
-        baseline.update_transport_model(20.0);
+        baseline
+            .update_transport_model(20.0)
+            .expect("valid transport-model update");
         let base_edge = baseline.chi[48];
         let base_core = baseline.chi[4];
 
@@ -375,7 +528,9 @@ mod tests {
         coupled
             .set_toroidal_mode_spectrum(&[0.2, 0.1, 0.04], 0.7)
             .expect("valid spectrum");
-        coupled.update_transport_model(20.0);
+        coupled
+            .update_transport_model(20.0)
+            .expect("valid transport-model update");
         let edge_gain = coupled.chi[48] / base_edge.max(1e-12);
         let core_gain = coupled.chi[4] / base_core.max(1e-12);
 
@@ -434,7 +589,7 @@ mod tests {
     fn test_transport_edge_boundary() {
         let mut ts = TransportSolver::new();
         for _ in 0..10 {
-            ts.step(50.0, 0.0);
+            ts.step(50.0, 0.0).expect("valid transport step");
         }
         // Edge should stay at boundary temperature
         let last = ts.profiles.te.len() - 1;
@@ -463,7 +618,7 @@ mod tests {
 
         let edge_idx = ts.profiles.rho.len() - 2;
         let te_before = ts.profiles.te[edge_idx];
-        ts.step(60.0, 0.0);
+        ts.step(60.0, 0.0).expect("valid transport step");
         let te_after = ts.profiles.te[edge_idx];
 
         assert!(
@@ -471,5 +626,34 @@ mod tests {
             "ELM crash should reduce pedestal Te: before={te_before}, after={te_after}"
         );
         assert!(ts.pedestal.last_gradient() > 0.0);
+    }
+
+    #[test]
+    fn test_transport_rejects_invalid_runtime_inputs() {
+        let mut ts = TransportSolver::new();
+        let err = ts
+            .step(f64::NAN, 0.0)
+            .expect_err("non-finite p_aux must fail");
+        match err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("p_aux")),
+            other => panic!("Unexpected error variant: {other:?}"),
+        }
+
+        let err = ts
+            .step(50.0, -1.0)
+            .expect_err("negative erosion_rate must fail");
+        match err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("erosion_rate")),
+            other => panic!("Unexpected error variant: {other:?}"),
+        }
+
+        ts.dt = 0.0;
+        let err = ts
+            .evolve_profiles(20.0)
+            .expect_err("non-positive dt must fail");
+        match err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("dt")),
+            other => panic!("Unexpected error variant: {other:?}"),
+        }
     }
 }
