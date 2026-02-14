@@ -284,32 +284,50 @@ The `scpn-fusion-rs/` directory contains a 10-crate Rust workspace that mirrors 
 
 ### What's Validated
 
-| Component | Status | Evidence |
-|-----------|--------|----------|
-| **Grad-Shafranov solver** | Converges on SPARC GEQDSK equilibria | `validation/validate_against_sparc.py` — axis position, q-profile, GS operator checks |
-| **IPB98(y,2) scaling** | Confinement time matches published law | `tests/test_uncertainty.py` — regression against ITPA 20-shot dataset |
-| **Inverse reconstruction** | Levenberg-Marquardt with Tikhonov + Huber | Criterion benchmarks: `inverse_bench.rs` (FD vs analytical Jacobian) |
-| **SOR solver** | Criterion-benchmarked | `sor_bench.rs` — 65×65 and 128×128 grid sizes |
-| **Property-based tests** | Hypothesis + proptest | Numerical invariants, topology preservation, convergence |
+Validation results from 50 synthetic shots (2026-02-14). Raw data in
+`validation/results/`. We encourage independent reproduction.
 
-### Performance Estimates (Not Yet Independently Verified)
+| Component | Status | Key Result | Evidence |
+|-----------|--------|------------|----------|
+| **Forward GS solver** | 50/50 converge | Circular RMSE 0.028, shaped 0.13-0.56 | `validation/results/forward/summary.csv` |
+| **Inverse reconstruction** | 50/50 converge | 2489x mean RMSE improvement, 0.26 s/shot | `validation/results/inverse/summary.csv` |
+| **SNN vs PID control** | 6 scenarios | SNN 10x better under plant uncertainty | `validation/results/control_benchmark.json` |
+| **Controller latency** | Measured | PID 5 us, SNN 20 us (median) | `validation/results/latency_benchmark.json` |
+| **Formal properties** | SNN proved | Boundedness, liveness, mutual exclusion | Contract checker on compiled Petri net |
+| **IPB98(y,2) scaling** | Matches published law | 3-10% error vs ITPA dataset | `tests/test_uncertainty.py` |
+| **SPARC GEQDSK** | Topology checks pass | Axis position, q-profile monotonicity | `validation/validate_against_sparc.py` |
 
-These numbers are internal measurements. We encourage you to reproduce them
-with `cargo bench` and `benchmarks/collect_results.sh` on your hardware.
+**Honest limitations:**
+- Forward solver uses flat Laplacian stencil (no 1/R correction) in Python --
+  this is the primary cause of elevated RMSE on shaped plasmas (0.13-0.61)
+- Inverse results suffer from **inverse crime** (same model generates and
+  reconstructs data) -- real-world accuracy will be lower
+- SNN controller has higher latency than PID (20 us vs 5 us) and slower
+  settling on nominal plant (100 ms vs 4.6 ms)
+- Both controllers are disrupted by 50ms sensor dropout
 
-| Metric | Value | How Measured | Caveat |
-|--------|-------|-------------|--------|
-| **SOR step** @ 65×65 | µs-range | Criterion `sor_bench.rs` | Single relaxation step, not full solve |
-| **Full equil. (Picard+SOR)** | ~5 s (Python) | `profiling/profile_kernel.py` | Jacobi + Picard, not multigrid |
-| **Multigrid V-cycle** | Implemented, not yet benchmarked E2E | `fusion-math/src/multigrid.rs` | Not wired into main kernel path yet |
-| **Inverse reconstruction** | ~4 s (5 LM iters, Rust) | Criterion `inverse_bench.rs` | Dominated by forward solve time |
-| **Neural transport MLP** | ~5 µs/point (synthetic weights) | Criterion `neural_transport_bench.rs` | No physics-trained weights shipped; user must train |
-| **Memory** | ~0.7 MB (65×65 equil.) | Estimated from array sizes | — |
+### Measured Performance (50 Synthetic Shots)
 
-> **Note on comparisons:** Earlier versions of this README cited "50× faster
-> than Python" and "200,000× faster than gyrokinetic." These comparisons mixed
+These numbers are real measurements, not projections. Reproduce them with
+`python validation/run_forward_validation.py` and
+`python validation/run_inverse_validation.py`.
+
+| Metric | Measured Value | Notes |
+|--------|---------------|-------|
+| **Forward solve** (65x65, Python) | 0.45 s mean (0.25-1.44 s range) | 1200-1800 Picard iterations |
+| **Forward RMSE** (circular) | 0.028 mean | Best category; flat stencil sufficient |
+| **Forward RMSE** (shaped) | 0.13-0.56 | Flat stencil limitation; multigrid path improves this |
+| **Inverse reconstruction** | 0.26 s mean, 3.6 iterations | 50/50 converge, 2489x improvement |
+| **PID controller latency** | 5.1 us mean, 4.0 us median | Pure controller step, no plant sim |
+| **SNN controller latency** | 20.3 us mean, 15.8 us median | NumPy backend; Rust/HW path faster |
+| **PID steady-state error** (nominal) | 0.026 mm | Best-case tuned scenario |
+| **SNN steady-state error** (plant uncertainty) | 2.6 mm | 10x better than PID (26.4 mm) |
+| **Memory** | ~0.7 MB (65x65 equil.) | Estimated from array sizes |
+
+> **Note on comparisons:** Earlier versions of this README cited "50x faster
+> than Python" and "200,000x faster than gyrokinetic." These comparisons mixed
 > different algorithms (multigrid vs SOR) and compared a microsecond-latency
-> MLP surrogate against first-principles gyrokinetic solvers — an apples-to-
+> MLP surrogate against first-principles gyrokinetic solvers -- an apples-to-
 > oranges comparison. We've removed these headlines pending proper A/B
 > benchmarks and trained model validation.
 
