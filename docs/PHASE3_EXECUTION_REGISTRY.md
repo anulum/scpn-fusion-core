@@ -232,6 +232,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-005 | P1 | Physics | Harden particle runaway-threshold handling with strict finite non-negative validation (no silent clamping) | `scpn-fusion-rs/crates/fusion-core/src/particles.rs`, `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | Particle-population summary now rejects invalid `runaway_threshold_mev` values (`NaN`, negative) via explicit `FusionError` results instead of silently clamping to zero, and kernel population-feedback path propagates the validation error deterministically | `cargo test -p fusion-core particles::tests::test_population_summary_rejects_invalid_threshold -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_rejects_invalid_threshold -- --nocapture` |
 | H8-006 | P1 | Physics | Harden toroidal-mode spectrum setup with strict finite non-negative validation (no silent coercion) | `scpn-fusion-rs/crates/fusion-core/src/transport.rs` | Transport toroidal-spectrum setup now rejects invalid inputs (`gain`, mode amplitudes) via explicit `FusionError` results instead of silently applying `max(0)`/`abs()` coercions, while preserving edge-coupling cap dynamics for valid spectra | `cargo test -p fusion-core transport::tests::test_toroidal_mode_spectrum_rejects_invalid_inputs -- --nocapture`, `cargo test -p fusion-core transport::tests::test_toroidal_mode_coupling_boosts_edge_more_than_core -- --nocapture`, `cargo test -p fusion-core transport::tests::test_toroidal_mode_coupling_factor_is_clamped -- --nocapture` |
 | H8-007 | P1 | Physics | Harden AMR solver constructor controls with strict finite-range validation (no silent blend clamping) | `scpn-fusion-rs/crates/fusion-core/src/amr_kernel.rs` | AMR solver setup now rejects invalid constructor controls (`blend`, `omega`, iteration counts) via explicit `FusionError::ConfigError` results instead of silently clamping blend at solve time, while preserving multilevel refinement behavior for valid configs | `cargo test -p fusion-core amr_kernel::tests::test_amr_kernel_rejects_invalid_constructor_config -- --nocapture`, `cargo test -p fusion-core amr_kernel::tests::test_amr_kernel_no_refinement_matches_coarse -- --nocapture`, `cargo test -p fusion-core amr_kernel::tests::test_amr_kernel_runs_with_refinement -- --nocapture` |
+| H8-008 | P1 | Physics | Harden inverse solver configuration controls with strict finite-range validation (no silent clamping) | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Inverse reconstruction paths now reject invalid solver controls (`max_iterations`, `tolerance`, `damping`, `fd_step`, `tikhonov`, `kernel_max_iterations`) via explicit `FusionError::ConfigError` validation, replacing prior silent coercions (`clamp`/`max`/`abs`) in damping, finite-difference step, regularization, and kernel iteration setup | `cargo test -p fusion-core inverse::tests::test_inverse_rejects_invalid_solver_config -- --nocapture`, `cargo test -p fusion-core inverse::tests::test_kernel_inverse_rejects_invalid_kernel_iteration_config -- --nocapture`, `cargo test -p fusion-core inverse::tests::test_fd_and_analytical_modes_agree -- --nocapture` |
 
 ## Task Accounting
 
@@ -239,7 +240,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 143
+- Post-S4 hardening tasks delivered: 144
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -406,4 +407,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-005`
 - Completed: `H8-006`
 - Completed: `H8-007`
+- Completed: `H8-008`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

@@ -163,6 +163,48 @@ fn mtanh_profile_dpsi_norm(psi_norm: f64, params: &ProfileParams) -> f64 {
     d_edge + d_core
 }
 
+fn validate_inverse_config(config: &InverseConfig) -> FusionResult<()> {
+    if config.max_iterations == 0 {
+        return Err(FusionError::ConfigError(
+            "inverse.max_iterations must be >= 1".to_string(),
+        ));
+    }
+    if !config.tolerance.is_finite() || config.tolerance <= 0.0 {
+        return Err(FusionError::ConfigError(
+            "inverse.tolerance must be finite and > 0".to_string(),
+        ));
+    }
+    if !config.damping.is_finite()
+        || !(0.0..=1.0).contains(&config.damping)
+        || config.damping == 0.0
+    {
+        return Err(FusionError::ConfigError(
+            "inverse.damping must be finite and in (0, 1]".to_string(),
+        ));
+    }
+    if !config.fd_step.is_finite() || config.fd_step <= 0.0 {
+        return Err(FusionError::ConfigError(
+            "inverse.fd_step must be finite and > 0".to_string(),
+        ));
+    }
+    if !config.tikhonov.is_finite() || config.tikhonov <= 0.0 {
+        return Err(FusionError::ConfigError(
+            "inverse.tikhonov must be finite and > 0".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_kernel_inverse_config(kernel_cfg: &KernelInverseConfig) -> FusionResult<()> {
+    validate_inverse_config(&kernel_cfg.inverse)?;
+    if kernel_cfg.kernel_max_iterations == 0 {
+        return Err(FusionError::ConfigError(
+            "kernel_max_iterations must be >= 1".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 fn kernel_forward_observables(
     reactor_config: &ReactorConfig,
     probes_rz: &[(f64, f64)],
@@ -170,8 +212,9 @@ fn kernel_forward_observables(
     params_ff: ProfileParams,
     kernel_cfg: &KernelInverseConfig,
 ) -> FusionResult<Vec<f64>> {
+    validate_kernel_inverse_config(kernel_cfg)?;
     let mut cfg = reactor_config.clone();
-    cfg.solver.max_iterations = kernel_cfg.kernel_max_iterations.max(1);
+    cfg.solver.max_iterations = kernel_cfg.kernel_max_iterations;
 
     let mut kernel = FusionKernel::new(cfg);
     let result = kernel.solve_equilibrium_with_profiles(params_p, params_ff)?;
@@ -236,8 +279,9 @@ fn kernel_analytical_forward_and_jacobian(
     params_ff: ProfileParams,
     kernel_cfg: &KernelInverseConfig,
 ) -> FusionResult<(Vec<f64>, Vec<Vec<f64>>)> {
+    validate_kernel_inverse_config(kernel_cfg)?;
     let mut cfg = reactor_config.clone();
-    cfg.solver.max_iterations = kernel_cfg.kernel_max_iterations.max(1);
+    cfg.solver.max_iterations = kernel_cfg.kernel_max_iterations;
 
     let mut kernel = FusionKernel::new(cfg);
     let solve_result = kernel.solve_equilibrium_with_profiles(params_p, params_ff)?;
@@ -359,7 +403,8 @@ fn kernel_fd_jacobian_from_base(
     base: &[f64],
 ) -> FusionResult<Vec<Vec<f64>>> {
     let mut jac = vec![vec![0.0; N_PARAMS]; probes_rz.len()];
-    let h = kernel_cfg.inverse.fd_step.abs().max(1e-6);
+    validate_kernel_inverse_config(kernel_cfg)?;
+    let h = kernel_cfg.inverse.fd_step;
 
     for (col, _) in [(); N_PARAMS].iter().enumerate() {
         let mut x = pack_params(&params_p, &params_ff);
@@ -394,6 +439,7 @@ pub fn reconstruct_equilibrium(
             measurements.len()
         )));
     }
+    validate_inverse_config(config)?;
 
     let mut x = pack_params(
         &sanitize_params(initial_params_p),
@@ -402,7 +448,7 @@ pub fn reconstruct_equilibrium(
     let mut residual_history = Vec::with_capacity(config.max_iterations + 1);
     let mut converged = false;
     let mut iter_done = 0;
-    let mut damping = config.damping.clamp(1e-3, 1.0);
+    let mut damping = config.damping;
 
     for iter in 0..config.max_iterations {
         let (params_p, params_ff) = unpack_params(&x);
@@ -432,7 +478,7 @@ pub fn reconstruct_equilibrium(
         };
 
         let j = to_array2(jac);
-        let lambda = config.tikhonov.max(1e-10);
+        let lambda = config.tikhonov;
         let sqrt_lambda = lambda.sqrt();
 
         let mut j_aug = Array2::zeros((j.nrows() + N_PARAMS, N_PARAMS));
@@ -537,6 +583,7 @@ pub fn reconstruct_equilibrium_with_kernel(
             measurements.len()
         )));
     }
+    validate_kernel_inverse_config(kernel_cfg)?;
 
     let mut x = pack_params(
         &sanitize_params(initial_params_p),
@@ -545,7 +592,7 @@ pub fn reconstruct_equilibrium_with_kernel(
     let mut residual_history = Vec::with_capacity(kernel_cfg.inverse.max_iterations + 1);
     let mut converged = false;
     let mut iter_done = 0usize;
-    let mut damping = kernel_cfg.inverse.damping.clamp(1e-3, 1.0);
+    let mut damping = kernel_cfg.inverse.damping;
 
     for iter in 0..kernel_cfg.inverse.max_iterations {
         let (params_p, params_ff) = unpack_params(&x);
@@ -593,7 +640,7 @@ pub fn reconstruct_equilibrium_with_kernel(
 
         let j = to_array2(jac);
 
-        let lambda = kernel_cfg.inverse.tikhonov.max(1e-10);
+        let lambda = kernel_cfg.inverse.tikhonov;
         let sqrt_lambda = lambda.sqrt();
         let mut j_aug = Array2::zeros((j.nrows() + N_PARAMS, N_PARAMS));
         for i in 0..j.nrows() {
@@ -793,6 +840,23 @@ mod tests {
     }
 
     #[test]
+    fn test_inverse_rejects_invalid_solver_config() {
+        let probes: Vec<f64> = (0..8).map(|i| i as f64 / 7.0).collect();
+        let measurements = vec![0.1; probes.len()];
+        let init = ProfileParams::default();
+        let cfg = InverseConfig {
+            damping: 0.0,
+            ..Default::default()
+        };
+        let err = reconstruct_equilibrium(&probes, &measurements, init, init, &cfg)
+            .expect_err("invalid config must error");
+        match err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("inverse.damping")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
     fn test_kernel_inverse_api_input_validation() {
         let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
             .unwrap();
@@ -814,6 +878,28 @@ mod tests {
                 assert!(msg.contains("Length mismatch"), "Unexpected message: {msg}")
             }
             _ => panic!("Expected ConfigError for mismatched inputs"),
+        }
+    }
+
+    #[test]
+    fn test_kernel_inverse_rejects_invalid_kernel_iteration_config() {
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
+            .unwrap();
+        let mut kcfg = KernelInverseConfig::default();
+        kcfg.kernel_max_iterations = 0;
+        let init = ProfileParams::default();
+        let err = reconstruct_equilibrium_with_kernel(
+            &cfg,
+            &[(6.2, 0.0), (6.3, 0.1)],
+            &[1.0, 1.0],
+            init,
+            init,
+            &kcfg,
+        )
+        .expect_err("invalid kernel config must error");
+        match err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("kernel_max_iterations")),
+            other => panic!("Unexpected error: {other:?}"),
         }
     }
 
