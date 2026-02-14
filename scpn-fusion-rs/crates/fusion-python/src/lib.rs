@@ -380,15 +380,17 @@ impl PyPlantModel {
 
 /// Shafranov equilibrium calculator.
 #[pyfunction]
-fn shafranov_bv(r_geo: f64, a_min: f64, ip_ma: f64) -> (f64, f64, f64) {
-    let result = fusion_control::analytic::shafranov_bv(r_geo, a_min, ip_ma);
-    (result.bv_required, result.term_log, result.term_physics)
+fn shafranov_bv(r_geo: f64, a_min: f64, ip_ma: f64) -> PyResult<(f64, f64, f64)> {
+    let result = fusion_control::analytic::shafranov_bv(r_geo, a_min, ip_ma)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+    Ok((result.bv_required, result.term_log, result.term_physics))
 }
 
 /// Minimum-norm coil current solver.
 #[pyfunction]
-fn solve_coil_currents(green_func: Vec<f64>, target_bv: f64) -> Vec<f64> {
+fn solve_coil_currents(green_func: Vec<f64>, target_bv: f64) -> PyResult<Vec<f64>> {
     fusion_control::analytic::solve_coil_currents(&green_func, target_bv)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
 }
 
 // ─── Diagnostics ───
