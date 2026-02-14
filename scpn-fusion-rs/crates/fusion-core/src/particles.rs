@@ -208,13 +208,18 @@ pub fn estimate_alpha_heating_profile(
     particles: &[ChargedParticle],
     grid: &Grid2D,
     confinement_tau_s: f64,
-) -> Array2<f64> {
+) -> FusionResult<Array2<f64>> {
+    if !confinement_tau_s.is_finite() || confinement_tau_s <= 0.0 {
+        return Err(FusionError::PhysicsViolation(
+            "confinement_tau_s must be finite and > 0".to_string(),
+        ));
+    }
     let mut heat = Array2::zeros((grid.nz, grid.nr));
     if particles.is_empty() {
-        return heat;
+        return Ok(heat);
     }
 
-    let tau = confinement_tau_s.max(1e-6);
+    let tau = confinement_tau_s;
     let cell_volume = (grid.dr.abs() * grid.dz.abs() * 2.0 * PI).max(MIN_CELL_AREA_M2);
     let r_min = grid.r[0];
     let r_max = grid.r[grid.nr - 1];
@@ -233,7 +238,7 @@ pub fn estimate_alpha_heating_profile(
         let local_volume = (cell_volume * r.max(MIN_RADIUS_M)).max(MIN_CELL_AREA_M2);
         heat[[iz, ir]] += p_w / local_volume;
     }
-    heat
+    Ok(heat)
 }
 
 /// Advance one particle state using the Boris push.
@@ -515,10 +520,28 @@ mod tests {
         let grid = Grid2D::new(33, 33, 3.0, 9.0, -2.5, 2.5);
         let particles =
             seed_alpha_test_particles(16, 6.0, 0.1, 3.5, 0.4, 1.0e13).expect("valid seeds");
-        let heat = estimate_alpha_heating_profile(&particles, &grid, 0.25);
+        let heat =
+            estimate_alpha_heating_profile(&particles, &grid, 0.25).expect("valid confinement");
         let total = heat.iter().sum::<f64>();
         assert!(total > 0.0, "Expected positive deposited alpha heating");
         assert!(!heat.iter().any(|v| !v.is_finite()));
+    }
+
+    #[test]
+    fn test_alpha_heating_profile_rejects_invalid_confinement_time() {
+        let grid = Grid2D::new(17, 17, 3.0, 9.0, -1.5, 1.5);
+        let particles =
+            seed_alpha_test_particles(8, 6.0, 0.0, 3.5, 0.2, 1.0e12).expect("valid seeds");
+        for bad_tau in [0.0, f64::NAN] {
+            let err = estimate_alpha_heating_profile(&particles, &grid, bad_tau)
+                .expect_err("invalid confinement time must error");
+            match err {
+                FusionError::PhysicsViolation(msg) => {
+                    assert!(msg.contains("confinement_tau_s"));
+                }
+                other => panic!("Unexpected error: {other:?}"),
+            }
+        }
     }
 
     #[test]
