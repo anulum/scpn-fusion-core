@@ -21,11 +21,7 @@ from typing import Any
 
 import numpy as np
 
-import sys
-
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
 
 from scpn_fusion.core.eqdsk import GEqdsk, read_geqdsk
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics

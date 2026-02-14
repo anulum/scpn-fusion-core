@@ -20,11 +20,7 @@ from typing import Any, Callable, cast
 import numpy as np
 from numpy.typing import NDArray
 
-import sys
-
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
 
 from scpn_fusion.control.disruption_predictor import (
     apply_bit_flip_fault,

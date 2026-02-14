@@ -20,11 +20,7 @@ from typing import Any
 
 import numpy as np
 
-import sys
-
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
 
 from scpn_fusion.scpn.compiler import FusionCompiler
 from scpn_fusion.scpn.contracts import ControlScales, ControlTargets
