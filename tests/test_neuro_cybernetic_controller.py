@@ -91,6 +91,32 @@ def test_spiking_pool_exposes_backend_name() -> None:
     assert pool.backend == "numpy_lif"
 
 
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"n_neurons": 0}, "n_neurons"),
+        ({"tau_window": 0}, "tau_window"),
+        ({"gain": float("nan")}, "gain"),
+        ({"dt_s": 0.0}, "dt_s"),
+        ({"tau_mem_s": 0.0}, "tau_mem_s"),
+        ({"noise_std": -1.0e-3}, "noise_std"),
+    ],
+)
+def test_spiking_pool_rejects_invalid_constructor_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    params: dict[str, float | int | bool] = {
+        "n_neurons": 8,
+        "gain": 1.0,
+        "tau_window": 4,
+        "seed": 11,
+        "use_quantum": False,
+    }
+    params.update(kwargs)
+    with pytest.raises(ValueError, match=match):
+        SpikingControllerPool(**params)
+
+
 def test_run_neuro_cybernetic_control_returns_finite_summary_without_plot() -> None:
     summary = run_neuro_cybernetic_control(
         config_file="dummy.json",

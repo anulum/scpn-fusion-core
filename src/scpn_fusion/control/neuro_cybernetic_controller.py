@@ -7,6 +7,7 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import math
 import sys
 from collections import deque
 from pathlib import Path
@@ -70,9 +71,28 @@ class SpikingControllerPool:
         tau_mem_s: float = 15.0e-3,
         noise_std: float = 0.02,
     ) -> None:
-        self.n_neurons = max(int(n_neurons), 1)
-        self.gain = float(gain)
-        self.window_size = max(int(tau_window), 1)
+        n_neurons = int(n_neurons)
+        if n_neurons < 1:
+            raise ValueError("n_neurons must be >= 1.")
+        gain = float(gain)
+        if not math.isfinite(gain):
+            raise ValueError("gain must be finite.")
+        tau_window = int(tau_window)
+        if tau_window < 1:
+            raise ValueError("tau_window must be >= 1.")
+        dt_s = float(dt_s)
+        if not math.isfinite(dt_s) or dt_s <= 0.0:
+            raise ValueError("dt_s must be finite and > 0.")
+        tau_mem_s = float(tau_mem_s)
+        if not math.isfinite(tau_mem_s) or tau_mem_s <= 0.0:
+            raise ValueError("tau_mem_s must be finite and > 0.")
+        noise_std = float(noise_std)
+        if not math.isfinite(noise_std) or noise_std < 0.0:
+            raise ValueError("noise_std must be finite and >= 0.")
+
+        self.n_neurons = n_neurons
+        self.gain = gain
+        self.window_size = tau_window
         self.use_quantum = bool(use_quantum)
         self._i_scale = 5.0
         self._i_bias = 0.1
@@ -123,8 +143,8 @@ class SpikingControllerPool:
         self._rng_neg = np.random.default_rng(int(seed) + 100003)
         self._v_pos = np.zeros(self.n_neurons, dtype=np.float64)
         self._v_neg = np.zeros(self.n_neurons, dtype=np.float64)
-        self._alpha = max(float(dt_s), 1.0e-9) / max(float(tau_mem_s), 1.0e-9)
-        self._noise_std = max(float(noise_std), 0.0)
+        self._alpha = dt_s / tau_mem_s
+        self._noise_std = noise_std
         # Reduced threshold keeps fallback lane responsive in low-current control
         # regimes while preserving deterministic push-pull polarity.
         self._v_threshold = 0.35
