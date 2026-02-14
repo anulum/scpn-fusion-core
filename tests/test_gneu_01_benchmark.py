@@ -12,6 +12,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "gneu_01_benchmark.py"
@@ -51,3 +53,21 @@ def test_render_markdown_contains_key_sections() -> None:
     assert "## Metrics" in text
     assert "TORAX parity estimate" in text
     assert "oracle-vs-SC marking delta" in text
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"episodes": 0}, "episodes"),
+        ({"window": 8}, "window"),
+        ({"recovery_window_steps": 0}, "recovery_window_steps"),
+        ({"recovery_epsilon": 0.0}, "recovery_epsilon"),
+        ({"recovery_epsilon": float("nan")}, "recovery_epsilon"),
+        ({"dt_ms": 0.0}, "dt_ms"),
+    ],
+)
+def test_run_benchmark_rejects_invalid_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        gneu_01_benchmark.run_benchmark(**kwargs)

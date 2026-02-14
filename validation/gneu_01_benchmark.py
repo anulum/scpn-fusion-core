@@ -168,10 +168,21 @@ def run_benchmark(
     rng = np.random.default_rng(int(seed))
     controller = _build_controller()
 
-    episodes = max(int(episodes), 1)
-    window = max(int(window), 16)
-    recovery_window_steps = max(int(recovery_window_steps), 1)
-    recovery_epsilon = max(float(recovery_epsilon), 1e-6)
+    episodes = int(episodes)
+    if episodes < 1:
+        raise ValueError("episodes must be >= 1.")
+    window = int(window)
+    if window < 16:
+        raise ValueError("window must be >= 16.")
+    recovery_window_steps = int(recovery_window_steps)
+    if recovery_window_steps < 1:
+        raise ValueError("recovery_window_steps must be >= 1.")
+    recovery_epsilon = float(recovery_epsilon)
+    if not np.isfinite(recovery_epsilon) or recovery_epsilon <= 0.0:
+        raise ValueError("recovery_epsilon must be finite and > 0.")
+    dt_ms = float(dt_ms)
+    if not np.isfinite(dt_ms) or dt_ms <= 0.0:
+        raise ValueError("dt_ms must be finite and > 0.")
 
     agreement_flags = []
     abs_deltas = []
