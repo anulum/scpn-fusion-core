@@ -10,6 +10,8 @@
 //! Port of `spi_mitigation.py`.
 //! Models thermal quench via radiation and current quench via resistive decay.
 
+use fusion_types::error::{FusionError, FusionResult};
+
 /// Default thermal energy [MJ]. Python: 300.
 const W_TH_MJ: f64 = 300.0;
 
@@ -68,17 +70,48 @@ pub struct SPIMitigation {
 }
 
 impl SPIMitigation {
-    pub fn new(w_th_mj: f64, ip_ma: f64, te_kev: f64) -> Self {
-        SPIMitigation {
+    pub fn new(w_th_mj: f64, ip_ma: f64, te_kev: f64) -> FusionResult<Self> {
+        if !w_th_mj.is_finite() || w_th_mj <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "spi w_th_mj must be finite and > 0".to_string(),
+            ));
+        }
+        if !ip_ma.is_finite() || ip_ma <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "spi ip_ma must be finite and > 0".to_string(),
+            ));
+        }
+        if !te_kev.is_finite() || te_kev <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "spi te_kev must be finite and > 0".to_string(),
+            ));
+        }
+        Ok(SPIMitigation {
             w_th: w_th_mj * 1e6,
             ip: ip_ma * 1e6,
             te: te_kev,
             phase: Phase::Assimilation,
-        }
+        })
     }
 
     /// Run full SPI simulation. Returns time history.
-    pub fn run(&mut self) -> Vec<SPISnapshot> {
+    pub fn run(&mut self) -> FusionResult<Vec<SPISnapshot>> {
+        if !self.w_th.is_finite() || self.w_th < 0.0 {
+            return Err(FusionError::ConfigError(
+                "spi runtime w_th must be finite and >= 0".to_string(),
+            ));
+        }
+        if !self.ip.is_finite() || self.ip < 0.0 {
+            return Err(FusionError::ConfigError(
+                "spi runtime ip must be finite and >= 0".to_string(),
+            ));
+        }
+        if !self.te.is_finite() || self.te <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "spi runtime te must be finite and > 0".to_string(),
+            ));
+        }
+
         let n_steps = (T_TOTAL / DT) as usize;
         let mut history = Vec::with_capacity(n_steps);
         let mut t = 0.0;
@@ -125,13 +158,13 @@ impl SPIMitigation {
             t += DT;
         }
 
-        history
+        Ok(history)
     }
 }
 
 impl Default for SPIMitigation {
     fn default() -> Self {
-        Self::new(W_TH_MJ, IP_MA, TE_INIT)
+        Self::new(W_TH_MJ, IP_MA, TE_INIT).expect("default SPI config must be valid")
     }
 }
 
@@ -142,7 +175,7 @@ mod tests {
     #[test]
     fn test_spi_thermal_quench() {
         let mut spi = SPIMitigation::default();
-        let history = spi.run();
+        let history = spi.run().expect("valid SPI runtime");
         // Should reach current quench phase
         let reached_cq = history.iter().any(|s| s.phase == Phase::CurrentQuench);
         assert!(reached_cq, "Should reach current quench phase");
@@ -151,7 +184,7 @@ mod tests {
     #[test]
     fn test_spi_energy_decreases() {
         let mut spi = SPIMitigation::default();
-        let history = spi.run();
+        let history = spi.run().expect("valid SPI runtime");
         let first = history.first().unwrap().w_th_mj;
         let last = history.last().unwrap().w_th_mj;
         assert!(
@@ -163,7 +196,7 @@ mod tests {
     #[test]
     fn test_spi_current_decreases() {
         let mut spi = SPIMitigation::default();
-        let history = spi.run();
+        let history = spi.run().expect("valid SPI runtime");
         let first = history.first().unwrap().ip_ma;
         let last = history.last().unwrap().ip_ma;
         assert!(
@@ -175,7 +208,7 @@ mod tests {
     #[test]
     fn test_spi_phases_sequential() {
         let mut spi = SPIMitigation::default();
-        let history = spi.run();
+        let history = spi.run().expect("valid SPI runtime");
         // Phases should go: Assimilation → ThermalQuench → CurrentQuench
         let mut saw_tq = false;
         let mut saw_cq = false;
@@ -190,5 +223,16 @@ mod tests {
             }
         }
         assert!(saw_cq, "Should reach CQ");
+    }
+
+    #[test]
+    fn test_spi_rejects_invalid_constructor_and_runtime_inputs() {
+        assert!(SPIMitigation::new(0.0, 15.0, 20.0).is_err());
+        assert!(SPIMitigation::new(300.0, f64::NAN, 20.0).is_err());
+        assert!(SPIMitigation::new(300.0, 15.0, -1.0).is_err());
+
+        let mut spi = SPIMitigation::new(300.0, 15.0, 20.0).expect("valid constructor inputs");
+        spi.te = f64::NAN;
+        assert!(spi.run().is_err());
     }
 }
