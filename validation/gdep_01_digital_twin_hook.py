@@ -23,12 +23,55 @@ ROOT = Path(__file__).resolve().parents[1]
 from scpn_fusion.control.digital_twin_ingest import RealtimeTwinHook, generate_emulated_stream
 
 
-def _run_machine(machine: str, seed: int, samples: int) -> dict[str, Any]:
+def _apply_chaos_monkey(
+    packet,
+    *,
+    rng: np.random.Generator,
+    dropout_prob: float,
+    gaussian_noise_std: float,
+):
+    from scpn_fusion.control.digital_twin_ingest import TelemetryPacket
+
+    drop = float(np.clip(dropout_prob, 0.0, 1.0))
+    sigma = max(float(gaussian_noise_std), 0.0)
+
+    def channel(value: float) -> float:
+        if drop > 0.0 and float(rng.random()) < drop:
+            return 0.0
+        if sigma > 0.0:
+            return float(value + rng.normal(0.0, sigma))
+        return float(value)
+
+    return TelemetryPacket(
+        t_ms=int(packet.t_ms),
+        machine=str(packet.machine),
+        ip_ma=channel(packet.ip_ma),
+        beta_n=channel(packet.beta_n),
+        q95=channel(packet.q95),
+        density_1e19=max(0.0, channel(packet.density_1e19)),
+    )
+
+
+def _run_machine(
+    machine: str,
+    seed: int,
+    samples: int,
+    *,
+    chaos_dropout_prob: float = 0.0,
+    chaos_noise_std: float = 0.0,
+) -> dict[str, Any]:
     stream = generate_emulated_stream(machine, seed=seed, samples=samples, dt_ms=5)
     hook = RealtimeTwinHook(machine, seed=seed)
+    rng = np.random.default_rng(int(seed) + 2026)
     plans = []
     for i, packet in enumerate(stream):
-        hook.ingest(packet)
+        noisy_packet = _apply_chaos_monkey(
+            packet,
+            rng=rng,
+            dropout_prob=chaos_dropout_prob,
+            gaussian_noise_std=chaos_noise_std,
+        )
+        hook.ingest(noisy_packet)
         if i % 8 == 0 and i > 0:
             plans.append(hook.scenario_plan(horizon=24))
 
@@ -55,18 +98,38 @@ def _run_machine(machine: str, seed: int, samples: int) -> dict[str, Any]:
     }
 
 
-def run_campaign(*, seed: int = 42, samples_per_machine: int = 320) -> dict[str, Any]:
+def run_campaign(
+    *,
+    seed: int = 42,
+    samples_per_machine: int = 320,
+    chaos_dropout_prob: float = 0.0,
+    chaos_noise_std: float = 0.0,
+) -> dict[str, Any]:
     t0 = time.perf_counter()
     machines = ["NSTX-U", "SPARC"]
     per_machine = [
-        _run_machine(machines[0], seed=seed, samples=samples_per_machine),
-        _run_machine(machines[1], seed=seed + 1, samples=samples_per_machine),
+        _run_machine(
+            machines[0],
+            seed=seed,
+            samples=samples_per_machine,
+            chaos_dropout_prob=chaos_dropout_prob,
+            chaos_noise_std=chaos_noise_std,
+        ),
+        _run_machine(
+            machines[1],
+            seed=seed + 1,
+            samples=samples_per_machine,
+            chaos_dropout_prob=chaos_dropout_prob,
+            chaos_noise_std=chaos_noise_std,
+        ),
     ]
     passes = bool(all(m["passes_thresholds"] for m in per_machine))
 
     return {
         "seed": int(seed),
         "samples_per_machine": int(samples_per_machine),
+        "chaos_dropout_prob": float(np.clip(chaos_dropout_prob, 0.0, 1.0)),
+        "chaos_noise_std": float(max(chaos_noise_std, 0.0)),
         "thresholds": {
             "min_planning_success_rate": 0.90,
             "max_mean_risk": 0.75,
@@ -125,6 +188,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--samples-per-machine", type=int, default=320)
+    parser.add_argument("--chaos-dropout-prob", type=float, default=0.0)
+    parser.add_argument("--chaos-noise-std", type=float, default=0.0)
     parser.add_argument(
         "--output-json",
         default=str(ROOT / "validation" / "reports" / "gdep_01_digital_twin_hook.json"),
@@ -139,6 +204,8 @@ def main(argv: list[str] | None = None) -> int:
     report = generate_report(
         seed=args.seed,
         samples_per_machine=args.samples_per_machine,
+        chaos_dropout_prob=args.chaos_dropout_prob,
+        chaos_noise_std=args.chaos_noise_std,
     )
     out_json = Path(args.output_json)
     out_md = Path(args.output_md)

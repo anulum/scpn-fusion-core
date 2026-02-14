@@ -91,8 +91,10 @@ class NeuroSymbolicController:
         self._sc_n_passes = max(int(sc_n_passes), 1)
         self._sc_bitflip_rate = float(np.clip(sc_bitflip_rate, 0.0, 1.0))
         self._runtime_profile = runtime_profile.strip().lower()
-        if self._runtime_profile not in {"adaptive", "deterministic"}:
-            raise ValueError("runtime_profile must be 'adaptive' or 'deterministic'")
+        if self._runtime_profile not in {"adaptive", "deterministic", "traceable"}:
+            raise ValueError(
+                "runtime_profile must be 'adaptive', 'deterministic', or 'traceable'"
+            )
         self._sc_antithetic = bool(sc_antithetic)
         self._enable_oracle_diagnostics = bool(enable_oracle_diagnostics)
         self._feature_axes = list(feature_axes) if feature_axes is not None else None
@@ -225,6 +227,7 @@ class NeuroSymbolicController:
             if src not in produced_feature_keys and src not in passthrough_sources:
                 passthrough_sources.append(src)
         self._passthrough_sources = passthrough_sources
+        self._traceable_ready = len(self._passthrough_sources) == 0
         key_to_axis: Dict[str, Tuple[int, bool]] = {}
         for i, key in enumerate(self._axis_pos_keys):
             key_to_axis[key] = (i, True)
@@ -278,8 +281,11 @@ class NeuroSymbolicController:
         self._action_slew_per_s = np.asarray(
             artifact.readout.slew_per_s, dtype=np.float64
         )
+        self._action_count = len(self._action_names)
         self._dt = float(artifact.meta.dt_control_s)
-        self._prev_actions = np.zeros(len(self._action_names), dtype=np.float64)
+        self._action_max_delta = self._action_slew_per_s * self._dt
+        self._prev_actions = np.zeros(self._action_count, dtype=np.float64)
+        self._tmp_actions = np.zeros(self._action_count, dtype=np.float64)
         self.last_oracle_firing: List[float] = []
         self.last_sc_firing: List[float] = []
         self.last_oracle_marking: List[float] = self._marking.tolist()
@@ -308,6 +314,10 @@ class NeuroSymbolicController:
     @property
     def runtime_backend_name(self) -> str:
         return self._runtime_backend
+
+    @property
+    def runtime_profile_name(self) -> str:
+        return self._runtime_profile
 
     @property
     def marking(self) -> List[float]:
@@ -399,6 +409,70 @@ class NeuroSymbolicController:
         }
         return result
 
+    def step_traceable(
+        self,
+        obs_vector: Sequence[float],
+        k: int,
+        log_path: Optional[str] = None,
+    ) -> FloatArray:
+        """Execute one control tick from a fixed-order observation vector.
+
+        The vector order is ``self._axis_obs_keys``. This avoids per-step key
+        lookups/dict allocation in tight control loops.
+        """
+        if not self._traceable_ready:
+            raise RuntimeError(
+                "step_traceable requires axis-only injections (no passthrough sources)"
+            )
+
+        t0 = time.perf_counter()
+        pos_vals, neg_vals = self._compute_feature_components_vector(obs_vector)
+
+        m = self._tmp_marking_input
+        np.copyto(m, self._marking)
+        self._inject_places(m, {}, pos_vals, neg_vals)
+
+        if self._enable_oracle_diagnostics:
+            f_oracle, m_oracle = self._oracle_step(m)
+        else:
+            f_oracle = np.asarray([], dtype=np.float64)
+            m_oracle = np.asarray([], dtype=np.float64)
+
+        f_sc, m_sc = self._sc_step(m, k)
+
+        self.last_oracle_firing = f_oracle.tolist()
+        self.last_sc_firing = f_sc.tolist()
+        self.last_oracle_marking = (
+            m_oracle.tolist() if self._enable_oracle_diagnostics else []
+        )
+        self.last_sc_marking = m_sc.tolist()
+
+        np.copyto(self._marking, m_sc)
+        actions_vec = np.asarray(self._decode_actions_vector(m_sc), dtype=np.float64).copy()
+
+        t1 = time.perf_counter()
+        if log_path is not None:
+            obs_payload = {
+                key: float(value)
+                for key, value in zip(self._axis_obs_keys, obs_vector)
+            }
+            rec = {
+                "k": int(k),
+                "obs": obs_payload,
+                "features": self._build_feature_dict(obs_payload, pos_vals, neg_vals),
+                "f_oracle": f_oracle.tolist(),
+                "f_sc": f_sc.tolist(),
+                "marking": m_sc.tolist(),
+                "actions": {
+                    name: float(actions_vec[i]) for i, name in enumerate(self._action_names)
+                },
+                "timing_ms": (t1 - t0) * 1000.0,
+            }
+            with open(log_path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(rec) + "\n")
+
+        return actions_vec
+
     # ── Internal ─────────────────────────────────────────────────────────
 
     def _compute_feature_components(
@@ -414,6 +488,19 @@ class NeuroSymbolicController:
                     f"Missing observation key for feature extraction: {key}"
                 )
             obs_vals[i] = float(obs_map[key])
+        return self._compute_feature_components_vector(obs_vals)
+
+    def _compute_feature_components_vector(
+        self, obs_vector: Sequence[float] | FloatArray
+    ) -> Tuple[FloatArray, FloatArray]:
+        if self._axis_count == 0:
+            return self._empty, self._empty
+
+        obs_vals = np.asarray(obs_vector, dtype=np.float64)
+        if obs_vals.shape != (self._axis_count,):
+            raise ValueError(
+                f"obs_vector must have length {self._axis_count}, got {obs_vals.size}"
+            )
         np.subtract(self._axis_targets, obs_vals, out=self._tmp_feature_err)
         np.divide(self._tmp_feature_err, self._axis_scales, out=self._tmp_feature_err)
         np.clip(self._tmp_feature_err, -1.0, 1.0, out=self._tmp_feature_err)
@@ -664,20 +751,27 @@ class NeuroSymbolicController:
         return out
 
     def _decode_actions(self, marking: FloatArray) -> Dict[str, float]:
-        if not self._action_names:
+        actions = self._decode_actions_vector(marking)
+        if actions.size == 0:
             return {}
-
-        raw = (
-            (marking[self._action_pos_idx] - marking[self._action_neg_idx])
-            * self._action_gains
-        )
-        max_delta = self._action_slew_per_s * self._dt
-        raw = np.clip(raw, self._prev_actions - max_delta, self._prev_actions + max_delta)
-        raw = np.clip(raw, -self._action_abs_max, self._action_abs_max)
-        self._prev_actions = np.asarray(raw, dtype=np.float64)
         return {
-            name: float(self._prev_actions[i]) for i, name in enumerate(self._action_names)
+            name: float(actions[i]) for i, name in enumerate(self._action_names)
         }
+
+    def _decode_actions_vector(self, marking: FloatArray) -> FloatArray:
+        if self._action_count == 0:
+            return self._empty
+
+        raw = self._tmp_actions
+        np.subtract(marking[self._action_pos_idx], marking[self._action_neg_idx], out=raw)
+        raw *= self._action_gains
+        raw = np.clip(
+            raw,
+            self._prev_actions - self._action_max_delta,
+            self._prev_actions + self._action_max_delta,
+        )
+        np.clip(raw, -self._action_abs_max, self._action_abs_max, out=self._prev_actions)
+        return self._prev_actions
 
     def _apply_bit_flip_faults(
         self, values: FloatArray, rng: np.random.Generator

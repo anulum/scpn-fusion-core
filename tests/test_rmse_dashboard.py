@@ -80,8 +80,14 @@ def test_render_markdown_contains_sections() -> None:
             "count": 5,
             "axis_rmse_m": 0.01,
         },
+        "forward_diagnostics": {
+            "count_interferometer_channels": 3,
+            "phase_rmse_rad": 1e-4,
+            "neutron_rate_rel_error_pct": 2.0,
+        },
     }
     text = rmse_dashboard.render_markdown(report)
     assert "# SCPN RMSE Dashboard" in text
     assert "Confinement RMSE (ITPA H-mode)" in text
     assert "Beta_N RMSE (ITER + SPARC references)" in text
+    assert "Forward Diagnostics RMSE" in text

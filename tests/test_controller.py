@@ -991,6 +991,47 @@ class TestIntegration:
         )
         assert c.runtime_backend_name == "rust"
 
+    def test_traceable_step_matches_mapping_step(self, artifact_path: str) -> None:
+        art = load_artifact(artifact_path)
+        kwargs = dict(
+            artifact=art,
+            seed_base=230,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            runtime_profile="traceable",
+            runtime_backend="numpy",
+            enable_oracle_diagnostics=False,
+            sc_n_passes=1,
+            sc_bitflip_rate=0.0,
+        )
+        c_map = NeuroSymbolicController(**kwargs)
+        c_vec = NeuroSymbolicController(**kwargs)
+        assert c_vec.runtime_profile_name == "traceable"
+
+        obs = {"R_axis_m": 6.29, "Z_axis_m": -0.02}
+        obs_vec = (obs["R_axis_m"], obs["Z_axis_m"])
+        for k in range(10):
+            a_map = c_map.step(obs, k)
+            a_vec = c_vec.step_traceable(obs_vec, k)
+            assert a_map["dI_PF3_A"] == pytest.approx(float(a_vec[0]), rel=0.0, abs=0.0)
+            assert a_map["dI_PF_topbot_A"] == pytest.approx(
+                float(a_vec[1]), rel=0.0, abs=0.0
+            )
+
+    def test_traceable_step_validates_vector_length(self, artifact_path: str) -> None:
+        art = load_artifact(artifact_path)
+        c = NeuroSymbolicController(
+            artifact=art,
+            seed_base=231,
+            targets=ControlTargets(R_target_m=6.2, Z_target_m=0.0),
+            scales=ControlScales(R_scale_m=0.5, Z_scale_m=0.5),
+            runtime_profile="traceable",
+            enable_oracle_diagnostics=False,
+            runtime_backend="numpy",
+        )
+        with pytest.raises(ValueError, match="obs_vector"):
+            c.step_traceable((6.2,), 0)
+
     def test_antithetic_chunked_sampling_is_deterministic(
         self, artifact_path: str
     ) -> None:

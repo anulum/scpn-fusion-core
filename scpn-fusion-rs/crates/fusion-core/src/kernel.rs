@@ -5,7 +5,10 @@
 //! X-point detection, and convergence tracking.
 
 use crate::bfield::compute_b_field;
-use crate::particles::blend_particle_current;
+use crate::particles::{
+    blend_particle_current, deposit_toroidal_current_density, summarize_particle_population,
+    ChargedParticle, ParticlePopulationSummary,
+};
 use crate::source::{
     update_plasma_source_nonlinear, update_plasma_source_with_profiles, ProfileParams,
     SourceProfileContext,
@@ -387,6 +390,19 @@ impl FusionKernel {
         self.particle_feedback_coupling = 0.0;
     }
 
+    /// Build particle feedback map from macro-particle population and enable coupling.
+    pub fn set_particle_feedback_from_population(
+        &mut self,
+        particles: &[ChargedParticle],
+        coupling: f64,
+        runaway_threshold_mev: f64,
+    ) -> FusionResult<ParticlePopulationSummary> {
+        let summary = summarize_particle_population(particles, runaway_threshold_mev);
+        let particle_j_phi = deposit_toroidal_current_density(particles, &self.grid);
+        self.set_particle_current_feedback(particle_j_phi, coupling)?;
+        Ok(summary)
+    }
+
     /// Convenience wrapper to solve with temporary external profile parameters.
     pub fn solve_equilibrium_with_profiles(
         &mut self,
@@ -535,5 +551,29 @@ mod tests {
         kernel.clear_particle_current_feedback();
         assert!(kernel.particle_current_feedback.is_none());
         assert_eq!(kernel.particle_feedback_coupling, 0.0);
+    }
+
+    #[test]
+    fn test_particle_feedback_from_population_builds_summary() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let particles = vec![ChargedParticle {
+            x_m: 6.1,
+            y_m: 0.0,
+            z_m: 0.0,
+            vx_m_s: 0.0,
+            vy_m_s: 2.0e7,
+            vz_m_s: 0.0,
+            charge_c: 1.602_176_634e-19,
+            mass_kg: 1.672_621_923_69e-27,
+            weight: 3.0e16,
+        }];
+
+        let summary = kernel
+            .set_particle_feedback_from_population(&particles, 0.35, 0.5)
+            .expect("population feedback should be set");
+        assert_eq!(summary.count, 1);
+        assert!(summary.max_energy_mev > 0.5);
+        assert!(kernel.particle_current_feedback.is_some());
+        assert!((kernel.particle_feedback_coupling - 0.35).abs() < 1e-12);
     }
 }

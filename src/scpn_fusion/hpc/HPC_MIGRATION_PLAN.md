@@ -1,47 +1,33 @@
-# SCPN Migration Plan: From Workstation to Exascale
+# SCPN Migration Plan: From Workstation to Cluster/HPC
 
-This document outlines the roadmap for transitioning the SCPN Fusion Framework from a Python prototype to a C++/MPI High-Performance Computing (HPC) application.
+This roadmap tracks migration of SCPN core solves from single-node execution to
+distributed domain-decomposed execution while preserving deterministic behavior.
 
-## Phase 1: The Hybrid Era (Current State)
-We use Python for orchestration and C++ for compute-heavy kernels.
-- **Data:** Numpy arrays (Python) -> Pointers (C++).
-- **Kernels:** `solver.cpp` implements SOR solver.
-- **Benefit:** 10-50x speedup on single node.
+## Phase 1: Hybrid Baseline (Current)
+- Python orchestrates experiments and validation workflows.
+- Rust crates (`fusion-core`, `fusion-control`) host compute-heavy kernels.
+- Deterministic test/benchmark lanes remain the compatibility gate.
 
-## Phase 2: Domain Decomposition (MPI)
-To scale beyond one CPU, we must split the grid.
-1.  **Decomposition:** Divide the $(R, Z)$ grid into $N$ sub-domains.
-2.  **Ghost Cells:** Each sub-domain stores a layer of neighbors' data.
-3.  **Communication:** Use `MPI_Send` / `MPI_Recv` to sync Ghost Cells after every iteration.
+## Phase 2: MPI Domain-Decomposition Scaffolding (Delivered)
+Implemented in `scpn-fusion-rs/crates/fusion-core/src/mpi_domain.rs`:
+- `decompose_z(...)` for deterministic Z-slab partitioning.
+- Halo utilities: `pack_halo_rows(...)`, `apply_halo_rows(...)`.
+- Serial-equivalent exchange path: `serial_halo_exchange(...)`.
+- Merge helpers: `split_with_halo(...)`, `stitch_without_halo(...)`.
+- Equivalence metric helper: `l2_norm_delta(...)`.
 
-### C++ MPI Architecture Sketch
-```cpp
-MPI_Init(&argc, &argv);
-int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+This phase provides MPI-ready data movement semantics without forcing an MPI
+runtime dependency in default builds.
 
-// Each rank solves only its chunk
-Solver local_solver(global_config, rank);
+## Phase 3: Cluster Runtime Enablement (Next)
+- Add optional MPI backend wiring (e.g. `rsmpi`) behind a feature flag.
+- Replace serial halo exchange calls with communicator-backed exchange.
+- Add deterministic multi-rank smoke tests comparing stitched result to serial.
 
-while(error > tol) {
-    local_solver.step();
-    local_solver.sync_boundaries(); // MPI Communication
-    
-    // Global reduction for convergence check
-    double local_err = local_solver.get_error();
-    double global_err;
-    MPI_Allreduce(&local_err, &global_err, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-}
-```
-
-## Phase 3: GPU Acceleration (CUDA/HIP)
-The loop in `solver.cpp` is perfectly parallel.
-1.  **Direct Port:** Replace `for` loops with CUDA Kernels.
-2.  **Memory:** Copy `psi` and `j_phi` to GPU VRAM at start. Keep them there.
-3.  **Libraries:** Use `cuBLAS` or `AmgX` for linear algebra.
-
-## Phase 4: In-Situ Visualization
-Don't save all data (too big). Use **ParaView Catalyst** to render images *during* simulation on the cluster nodes.
+## Phase 4: Accelerator and In-Situ Tooling
+- GPU offload for sparse/dense hot loops once distributed path is stable.
+- In-situ diagnostics/visualization to reduce checkpoint IO overhead.
 
 ---
-**Status:** Phase 1 Prepared.
-**Next Step:** Deploy `solver.cpp` to a Linux environment with GCC/Clang.
+**Status (2026-02-14):** Phase 2 scaffolding delivered and validated via unit tests.
+**Next Step:** Wire optional communicator-backed exchange path under feature-gated MPI runtime lane.

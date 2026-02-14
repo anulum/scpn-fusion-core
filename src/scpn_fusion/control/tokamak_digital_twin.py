@@ -8,6 +8,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from scpn_fusion.io.imas_connector import digital_twin_summary_to_ids
+
 # --- HYPER-PARAMETERS ---
 GRID_SIZE = 40        # 40x40 Poloidal Cross-section
 TIME_STEPS = 10000    # Training duration (Increased)
@@ -310,6 +312,25 @@ def run_digital_twin(
         "plot_error": plot_error,
     }
     return summary
+
+
+def run_digital_twin_ids(
+    *,
+    machine: str = "ITER",
+    shot: int = 0,
+    run: int = 0,
+    **kwargs,
+):
+    """
+    Run digital twin and return IDS-like equilibrium payload.
+    """
+    summary = run_digital_twin(**kwargs)
+    return digital_twin_summary_to_ids(
+        summary,
+        machine=machine,
+        shot=shot,
+        run=run,
+    )
 
 if __name__ == "__main__":
     run_digital_twin()

@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 from scpn_fusion.core.eqdsk import GEqdsk, read_geqdsk
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
+from scpn_fusion.diagnostics.forward import generate_forward_channels
 
 
 def ipb98_tau_e(
@@ -237,6 +238,59 @@ def sparc_axis_rmse(sparc_dir: Path) -> dict[str, Any]:
     return {"count": len(errors), "axis_rmse_m": rmse(errors, [0.0] * len(errors)), "rows": rows}
 
 
+def forward_diagnostics_rmse() -> dict[str, Any]:
+    """Forward-model diagnostics error metrics (raw observable channels)."""
+    r = np.linspace(4.0, 8.0, 33)
+    z = np.linspace(-2.0, 2.0, 33)
+    rr, zz = np.meshgrid(r, z)
+    electron_density = 4.8e19 * np.exp(-((rr - 6.0) ** 2 + zz**2) / 0.8)
+    neutron_source = 7.5e15 * np.exp(-((rr - 6.0) ** 2 + zz**2) / 0.65)
+
+    chords = [
+        ((4.2, -0.8), (7.8, 0.8)),
+        ((4.2, 0.0), (7.8, 0.0)),
+        ((4.2, 0.8), (7.8, -0.8)),
+    ]
+    baseline = generate_forward_channels(
+        electron_density_m3=electron_density,
+        neutron_source_m3_s=neutron_source,
+        r_grid=r,
+        z_grid=z,
+        interferometer_chords=chords,
+        volume_element_m3=float((r[1] - r[0]) * (z[1] - z[0])),
+    )
+
+    # Surrogate "prediction" lane with slight profile bias to quantify channel RMSE.
+    pred = generate_forward_channels(
+        electron_density_m3=electron_density * 0.985,
+        neutron_source_m3_s=neutron_source * 1.03,
+        r_grid=r,
+        z_grid=z,
+        interferometer_chords=chords,
+        volume_element_m3=float((r[1] - r[0]) * (z[1] - z[0])),
+    )
+
+    phase_true = baseline.interferometer_phase_rad.tolist()
+    phase_pred = pred.interferometer_phase_rad.tolist()
+    phase_rmse = rmse(phase_true, phase_pred)
+    rate_true = baseline.neutron_count_rate_hz
+    rate_pred = pred.neutron_count_rate_hz
+    rate_rel_pct = abs(rate_pred - rate_true) / max(rate_true, 1e-12) * 100.0
+    return {
+        "count_interferometer_channels": len(chords),
+        "phase_rmse_rad": phase_rmse,
+        "neutron_rate_rel_error_pct": rate_rel_pct,
+        "rows": [
+            {
+                "channel": i,
+                "phase_true_rad": t,
+                "phase_pred_rad": p,
+            }
+            for i, (t, p) in enumerate(zip(phase_true, phase_pred))
+        ],
+    }
+
+
 def render_markdown(report: dict[str, Any]) -> str:
     lines: list[str] = []
     lines.append("# SCPN RMSE Dashboard")
@@ -274,6 +328,19 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append(f"- Files: `{sparc_axis['count']}`")
     lines.append(f"- Axis RMSE: `{sparc_axis['axis_rmse_m']:.6f} m`")
     lines.append("")
+
+    fwd = report.get("forward_diagnostics")
+    if isinstance(fwd, dict):
+        lines.append("## Forward Diagnostics RMSE")
+        lines.append("")
+        lines.append(
+            f"- Interferometer channels: `{fwd['count_interferometer_channels']}`"
+        )
+        lines.append(f"- Interferometer phase RMSE: `{fwd['phase_rmse_rad']:.6e} rad`")
+        lines.append(
+            f"- Neutron-count relative error: `{fwd['neutron_rate_rel_error_pct']:.3f}%`"
+        )
+        lines.append("")
 
     lines.append("## Notes")
     lines.append("")
@@ -316,6 +383,7 @@ def main() -> int:
         "confinement_iter_sparc": confinement_rmse_iter_sparc(reference_dir),
         "beta_iter_sparc": beta_rmse_iter_sparc(reference_dir, validation_dir),
         "sparc_axis": sparc_axis_rmse(sparc_eq_dir),
+        "forward_diagnostics": forward_diagnostics_rmse(),
     }
     report["runtime_seconds"] = time.perf_counter() - t0
 

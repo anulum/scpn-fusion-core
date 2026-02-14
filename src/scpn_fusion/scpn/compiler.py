@@ -447,6 +447,22 @@ class FusionCompiler:
             lif_refractory_period=lif_refractory_period,
         )
 
+    @staticmethod
+    def traceable_runtime_kwargs(
+        *,
+        runtime_backend: str = "auto",
+    ) -> Dict[str, Any]:
+        """Recommended controller kwargs for traceable runtime loops."""
+        backend = runtime_backend.strip().lower()
+        if backend not in {"auto", "numpy", "rust"}:
+            raise ValueError("runtime_backend must be 'auto', 'numpy', or 'rust'")
+        return {
+            "runtime_profile": "traceable",
+            "runtime_backend": backend,
+            "enable_oracle_diagnostics": False,
+            "sc_binary_margin": 0.0,
+        }
+
     def compile(
         self,
         net: StochasticPetriNet,

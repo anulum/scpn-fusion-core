@@ -134,9 +134,9 @@ starting points and upgraded to engineering-grade lanes below.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 37
+- Post-S4 hardening tasks delivered: 46
 - Remaining in deferred pool after queue selection: 67
-- External reactor-engineering intake tasks (H6 queue): 9
+- External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
 
@@ -195,4 +195,13 @@ starting points and upgraded to engineering-grade lanes below.
 - Completed: `H5-035`
 - Completed: `H5-036`
 - Completed: `H5-037`
-- Next active task: none (Sprint S4 queue baseline closed; deferred pool unchanged at 67 pending next sprint cut).
+- Completed: `H6-001`
+- Completed: `H6-002`
+- Completed: `H6-003`
+- Completed: `H6-004`
+- Completed: `H6-005`
+- Completed: `H6-006`
+- Completed: `H6-007`
+- Completed: `H6-008`
+- Completed: `H6-009`
+- Next active task: none (Sprint S4 queue baseline closed; H6 external intake queue delivered; deferred pool unchanged at 67 pending next sprint cut).

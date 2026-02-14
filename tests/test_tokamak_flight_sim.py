@@ -66,6 +66,8 @@ def test_run_flight_sim_returns_finite_summary_without_plot() -> None:
         "final_axis_z",
         "mean_abs_r_error",
         "mean_abs_z_error",
+        "mean_abs_radial_actuator_lag",
+        "mean_abs_vertical_actuator_lag",
         "plot_saved",
     ):
         assert key in summary
@@ -78,6 +80,8 @@ def test_run_flight_sim_returns_finite_summary_without_plot() -> None:
     assert np.isfinite(summary["final_axis_z"])
     assert np.isfinite(summary["mean_abs_r_error"])
     assert np.isfinite(summary["mean_abs_z_error"])
+    assert np.isfinite(summary["mean_abs_radial_actuator_lag"])
+    assert np.isfinite(summary["mean_abs_vertical_actuator_lag"])
 
 
 def test_run_flight_sim_is_deterministic_for_fixed_seed() -> None:
@@ -96,3 +100,5 @@ def test_run_flight_sim_is_deterministic_for_fixed_seed() -> None:
     assert a["final_axis_z"] == b["final_axis_z"]
     assert a["mean_abs_r_error"] == b["mean_abs_r_error"]
     assert a["mean_abs_z_error"] == b["mean_abs_z_error"]
+    assert a["mean_abs_radial_actuator_lag"] == b["mean_abs_radial_actuator_lag"]
+    assert a["mean_abs_vertical_actuator_lag"] == b["mean_abs_vertical_actuator_lag"]

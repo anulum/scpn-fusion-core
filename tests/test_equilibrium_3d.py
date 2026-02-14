@@ -131,3 +131,25 @@ def test_builder_vmec_like_from_axisymmetric_lcfs() -> None:
     )
     assert vertices.shape == (12 * 16, 3)
     assert faces.shape == (2 * 12 * 16, 3)
+
+
+def test_vmec_like_payload_roundtrip_preserves_modes() -> None:
+    eq = VMECStyleEquilibrium3D(
+        r_axis=2.1,
+        z_axis=0.03,
+        a_minor=0.44,
+        kappa=1.45,
+        triangularity=0.21,
+        nfp=2,
+        modes=[
+            FourierMode3D(m=1, n=1, r_cos=0.04, r_sin=0.01, z_sin=0.02),
+            FourierMode3D(m=2, n=1, r_cos=0.01, z_sin=0.01),
+        ],
+    )
+    payload = eq.to_vmec_like_dict()
+    rebuilt = VMECStyleEquilibrium3D.from_vmec_like_dict(payload)
+
+    assert rebuilt.nfp == 2
+    assert len(rebuilt.modes) == 2
+    assert rebuilt.r_axis == eq.r_axis
+    assert rebuilt.kappa == eq.kappa

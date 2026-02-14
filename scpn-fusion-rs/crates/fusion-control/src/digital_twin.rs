@@ -12,7 +12,7 @@
 
 use ndarray::{Array1, Array2};
 use rand::Rng;
-use rand_distr::StandardNormal;
+use rand_distr::{Distribution, StandardNormal};
 use std::collections::VecDeque;
 
 /// Grid size. Python: 40.
@@ -104,6 +104,53 @@ impl VectorNoiseInjectionLayer {
                 .collect(),
         )
     }
+}
+
+/// Deterministic domain-randomization fault injector for training/eval campaigns.
+#[derive(Debug, Clone, Copy)]
+pub struct ChaosMonkeyConfig {
+    pub dropout_prob: f64,
+    pub gaussian_noise_std: f64,
+}
+
+impl ChaosMonkeyConfig {
+    pub fn new(dropout_prob: f64, gaussian_noise_std: f64) -> Self {
+        Self {
+            dropout_prob: dropout_prob.clamp(0.0, 1.0),
+            gaussian_noise_std: gaussian_noise_std.max(0.0),
+        }
+    }
+}
+
+impl Default for ChaosMonkeyConfig {
+    fn default() -> Self {
+        Self::new(0.0, 0.0)
+    }
+}
+
+/// Apply channel dropout + Gaussian probe noise.
+pub fn apply_chaos_monkey<R: Rng + ?Sized>(
+    channels: &Array1<f64>,
+    cfg: ChaosMonkeyConfig,
+    rng: &mut R,
+) -> Array1<f64> {
+    let sigma = cfg.gaussian_noise_std.max(0.0);
+    let noise_dist = if sigma > 0.0 {
+        Some(rand_distr::Normal::new(0.0, sigma).expect("valid sigma"))
+    } else {
+        None
+    };
+    let mut out = channels.clone();
+    for v in out.iter_mut() {
+        if rng.gen::<f64>() < cfg.dropout_prob {
+            *v = 0.0;
+            continue;
+        }
+        if let Some(dist) = &noise_dist {
+            *v += dist.sample(rng);
+        }
+    }
+    out
 }
 
 /// Delay + lag line for actuator commands.
@@ -470,5 +517,27 @@ mod tests {
         let a1 = delay.push(Array1::from_vec(vec![2.0]));
         assert!((a0[0] - 1.0).abs() < 1e-12);
         assert!((a1[0] - 1.5).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_chaos_monkey_is_deterministic_for_seed() {
+        let mut rng1 = StdRng::seed_from_u64(123);
+        let mut rng2 = StdRng::seed_from_u64(123);
+        let x = Array1::from_vec(vec![1.0, 2.0, 3.0, 4.0]);
+        let cfg = ChaosMonkeyConfig::new(0.25, 0.05);
+        let a = apply_chaos_monkey(&x, cfg, &mut rng1);
+        let b = apply_chaos_monkey(&x, cfg, &mut rng2);
+        assert_eq!(a.len(), b.len());
+        for i in 0..a.len() {
+            assert!((a[i] - b[i]).abs() < 1e-12);
+        }
+    }
+
+    #[test]
+    fn test_chaos_monkey_full_dropout_zeros_channels() {
+        let mut rng = StdRng::seed_from_u64(777);
+        let x = Array1::from_vec(vec![0.8, -0.2, 1.4]);
+        let y = apply_chaos_monkey(&x, ChaosMonkeyConfig::new(1.0, 0.0), &mut rng);
+        assert!(y.iter().all(|v| v.abs() < 1e-12));
     }
 }

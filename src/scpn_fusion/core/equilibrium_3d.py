@@ -101,6 +101,59 @@ class VMECStyleEquilibrium3D:
             modes=modes,
         )
 
+    def to_vmec_like_dict(self) -> dict[str, object]:
+        """Export a deterministic VMEC-like boundary payload."""
+        return {
+            "format": "vmec_like_v1",
+            "r_axis": float(self.r_axis),
+            "z_axis": float(self.z_axis),
+            "a_minor": float(self.a_minor),
+            "kappa": float(self.kappa),
+            "triangularity": float(self.triangularity),
+            "nfp": int(self.nfp),
+            "modes": [
+                {
+                    "m": int(mode.m),
+                    "n": int(mode.n),
+                    "r_cos": float(mode.r_cos),
+                    "r_sin": float(mode.r_sin),
+                    "z_cos": float(mode.z_cos),
+                    "z_sin": float(mode.z_sin),
+                }
+                for mode in self.modes
+            ],
+        }
+
+    @classmethod
+    def from_vmec_like_dict(cls, payload: dict[str, object]) -> "VMECStyleEquilibrium3D":
+        """Rebuild reduced equilibrium from VMEC-like boundary payload."""
+        modes_payload = payload.get("modes", [])
+        modes: list[FourierMode3D] = []
+        if isinstance(modes_payload, list):
+            for row in modes_payload:
+                if not isinstance(row, dict):
+                    raise ValueError("VMEC mode entries must be dictionaries.")
+                modes.append(
+                    FourierMode3D(
+                        m=int(row.get("m", 0)),
+                        n=int(row.get("n", 0)),
+                        r_cos=float(row.get("r_cos", 0.0)),
+                        r_sin=float(row.get("r_sin", 0.0)),
+                        z_cos=float(row.get("z_cos", 0.0)),
+                        z_sin=float(row.get("z_sin", 0.0)),
+                    )
+                )
+
+        return cls(
+            r_axis=float(payload["r_axis"]),
+            z_axis=float(payload["z_axis"]),
+            a_minor=float(payload["a_minor"]),
+            kappa=float(payload.get("kappa", 1.0)),
+            triangularity=float(payload.get("triangularity", 0.0)),
+            nfp=int(payload.get("nfp", 1)),
+            modes=modes,
+        )
+
     @staticmethod
     def _broadcast(
         rho: float | np.ndarray,

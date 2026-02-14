@@ -13,6 +13,10 @@ import importlib.util
 from pathlib import Path
 import sys
 
+import numpy as np
+
+from scpn_fusion.engineering.cad_raytrace import estimate_surface_loading
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "src" / "scpn_fusion" / "nuclear" / "blanket_neutronics.py"
@@ -69,3 +73,30 @@ def test_higher_li6_enrichment_increases_volumetric_tbr() -> None:
     )
 
     assert high_report.tbr > low_report.tbr
+
+
+def test_cad_surface_loading_smoke() -> None:
+    vertices = np.asarray(
+        [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ],
+        dtype=np.float64,
+    )
+    faces = np.asarray(
+        [
+            [0, 1, 2],
+            [0, 1, 3],
+            [0, 2, 3],
+            [1, 2, 3],
+        ],
+        dtype=np.int64,
+    )
+    source_points = np.asarray([[2.0, 2.0, 2.0], [1.5, 2.0, 1.2]], dtype=np.float64)
+    source_strength = np.asarray([4.0e6, 2.0e6], dtype=np.float64)
+    report = estimate_surface_loading(vertices, faces, source_points, source_strength)
+    assert report.face_loading_w_m2.shape == (4,)
+    assert np.all(np.isfinite(report.face_loading_w_m2))
+    assert report.peak_loading_w_m2 >= report.mean_loading_w_m2 >= 0.0

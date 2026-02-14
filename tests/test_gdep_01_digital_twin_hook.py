@@ -44,3 +44,21 @@ def test_realtime_hook_scenario_plan_smoke() -> None:
 def test_gdep_01_campaign_passes_thresholds() -> None:
     out = gdep_01_digital_twin_hook.run_campaign(seed=42, samples_per_machine=220)
     assert out["passes_thresholds"] is True
+
+
+def test_gdep_01_chaos_campaign_is_deterministic_for_seed() -> None:
+    a = gdep_01_digital_twin_hook.run_campaign(
+        seed=11,
+        samples_per_machine=160,
+        chaos_dropout_prob=0.02,
+        chaos_noise_std=0.005,
+    )
+    b = gdep_01_digital_twin_hook.run_campaign(
+        seed=11,
+        samples_per_machine=160,
+        chaos_dropout_prob=0.02,
+        chaos_noise_std=0.005,
+    )
+    assert a["passes_thresholds"] == b["passes_thresholds"]
+    assert a["machines"][0]["planning_success_rate"] == b["machines"][0]["planning_success_rate"]
+    assert a["machines"][1]["mean_risk"] == b["machines"][1]["mean_risk"]

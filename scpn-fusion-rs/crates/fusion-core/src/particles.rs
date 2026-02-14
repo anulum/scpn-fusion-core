@@ -7,10 +7,14 @@
 use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::Grid2D;
 use ndarray::{Array1, Array2};
+use std::f64::consts::PI;
 
 const MIN_RADIUS_M: f64 = 1e-9;
 const MIN_CELL_AREA_M2: f64 = 1e-12;
 const MIN_CURRENT_INTEGRAL: f64 = 1e-9;
+const ELEMENTARY_CHARGE_C: f64 = 1.602_176_634e-19;
+const ALPHA_MASS_KG: f64 = 6.644_657_335_7e-27;
+const ALPHA_CHARGE_C: f64 = 2.0 * ELEMENTARY_CHARGE_C;
 
 /// Charged macro-particle state.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -37,6 +41,26 @@ impl ChargedParticle {
         let r = self.cylindrical_radius_m().max(MIN_RADIUS_M);
         (-self.y_m * self.vx_m_s + self.x_m * self.vy_m_s) / r
     }
+
+    /// Non-relativistic kinetic energy [J].
+    pub fn kinetic_energy_j(&self) -> f64 {
+        let v2 = self.vx_m_s * self.vx_m_s + self.vy_m_s * self.vy_m_s + self.vz_m_s * self.vz_m_s;
+        0.5 * self.mass_kg * v2
+    }
+
+    /// Non-relativistic kinetic energy [MeV].
+    pub fn kinetic_energy_mev(&self) -> f64 {
+        self.kinetic_energy_j() / (1.0e6 * ELEMENTARY_CHARGE_C)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ParticlePopulationSummary {
+    pub count: usize,
+    pub mean_energy_mev: f64,
+    pub p95_energy_mev: f64,
+    pub max_energy_mev: f64,
+    pub runaway_fraction: f64,
 }
 
 fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
@@ -62,6 +86,114 @@ fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
         }
     }
     best_idx
+}
+
+/// Create deterministic alpha test particles for hybrid kinetic-fluid overlays.
+pub fn seed_alpha_test_particles(
+    n_particles: usize,
+    major_radius_m: f64,
+    z_m: f64,
+    kinetic_energy_mev: f64,
+    pitch_cos: f64,
+    weight_per_particle: f64,
+) -> Vec<ChargedParticle> {
+    let n_particles = n_particles.max(1);
+    let r0 = major_radius_m.max(MIN_RADIUS_M);
+    let energy_j = kinetic_energy_mev.max(1e-6) * 1.0e6 * ELEMENTARY_CHARGE_C;
+    let speed = (2.0 * energy_j / ALPHA_MASS_KG).sqrt();
+    let pitch = pitch_cos.clamp(-0.999, 0.999);
+    let v_par = speed * pitch;
+    let v_perp = speed * (1.0 - pitch * pitch).sqrt();
+    let weight = weight_per_particle.max(1.0);
+
+    let mut out = Vec::with_capacity(n_particles);
+    for i in 0..n_particles {
+        let phi = 2.0 * PI * (i as f64) / (n_particles as f64);
+        let x = r0 * phi.cos();
+        let y = r0 * phi.sin();
+        let ex = -phi.sin();
+        let ey = phi.cos();
+        out.push(ChargedParticle {
+            x_m: x,
+            y_m: y,
+            z_m,
+            vx_m_s: v_perp * ex,
+            vy_m_s: v_perp * ey,
+            vz_m_s: v_par,
+            charge_c: ALPHA_CHARGE_C,
+            mass_kg: ALPHA_MASS_KG,
+            weight,
+        });
+    }
+    out
+}
+
+/// Summarize kinetic state of a particle population.
+pub fn summarize_particle_population(
+    particles: &[ChargedParticle],
+    runaway_threshold_mev: f64,
+) -> ParticlePopulationSummary {
+    if particles.is_empty() {
+        return ParticlePopulationSummary {
+            count: 0,
+            mean_energy_mev: 0.0,
+            p95_energy_mev: 0.0,
+            max_energy_mev: 0.0,
+            runaway_fraction: 0.0,
+        };
+    }
+
+    let mut energies: Vec<f64> = particles.iter().map(ChargedParticle::kinetic_energy_mev).collect();
+    energies.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let count = energies.len();
+    let mean_energy_mev = energies.iter().sum::<f64>() / (count as f64);
+    let p95_idx = ((count - 1) as f64 * 0.95).round() as usize;
+    let p95_energy_mev = energies[p95_idx.min(count - 1)];
+    let max_energy_mev = *energies.last().unwrap_or(&0.0);
+    let threshold = runaway_threshold_mev.max(0.0);
+    let n_runaway = energies.iter().filter(|&&e| e >= threshold).count();
+    let runaway_fraction = (n_runaway as f64) / (count as f64);
+
+    ParticlePopulationSummary {
+        count,
+        mean_energy_mev,
+        p95_energy_mev,
+        max_energy_mev,
+        runaway_fraction,
+    }
+}
+
+/// Estimate alpha-particle heating power density [W/m^3] on the R-Z grid.
+pub fn estimate_alpha_heating_profile(
+    particles: &[ChargedParticle],
+    grid: &Grid2D,
+    confinement_tau_s: f64,
+) -> Array2<f64> {
+    let mut heat = Array2::zeros((grid.nz, grid.nr));
+    if particles.is_empty() {
+        return heat;
+    }
+
+    let tau = confinement_tau_s.max(1e-6);
+    let cell_volume = (grid.dr.abs() * grid.dz.abs() * 2.0 * PI).max(MIN_CELL_AREA_M2);
+    let r_min = grid.r[0];
+    let r_max = grid.r[grid.nr - 1];
+    let z_min = grid.z[0];
+    let z_max = grid.z[grid.nz - 1];
+
+    for particle in particles {
+        let r = particle.cylindrical_radius_m();
+        let z = particle.z_m;
+        if r < r_min || r > r_max || z < z_min || z > z_max {
+            continue;
+        }
+        let ir = nearest_index(&grid.r, r);
+        let iz = nearest_index(&grid.z, z);
+        let p_w = particle.kinetic_energy_j() * particle.weight / tau;
+        let local_volume = (cell_volume * r.max(MIN_RADIUS_M)).max(MIN_CELL_AREA_M2);
+        heat[[iz, ir]] += p_w / local_volume;
+    }
+    heat
 }
 
 /// Advance one particle state using the Boris push.
@@ -290,5 +422,33 @@ mod tests {
             }
             other => panic!("Unexpected error: {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_seed_alpha_particles_matches_requested_energy_band() {
+        let particles = seed_alpha_test_particles(24, 6.2, 0.0, 3.5, 0.6, 5.0e12);
+        assert_eq!(particles.len(), 24);
+        let summary = summarize_particle_population(&particles, 2.0);
+        assert!(summary.mean_energy_mev > 3.0);
+        assert!(summary.max_energy_mev < 4.2);
+        assert!(summary.runaway_fraction > 0.9);
+    }
+
+    #[test]
+    fn test_alpha_heating_profile_is_positive_when_particles_in_domain() {
+        let grid = Grid2D::new(33, 33, 3.0, 9.0, -2.5, 2.5);
+        let particles = seed_alpha_test_particles(16, 6.0, 0.1, 3.5, 0.4, 1.0e13);
+        let heat = estimate_alpha_heating_profile(&particles, &grid, 0.25);
+        let total = heat.iter().sum::<f64>();
+        assert!(total > 0.0, "Expected positive deposited alpha heating");
+        assert!(!heat.iter().any(|v| !v.is_finite()));
+    }
+
+    #[test]
+    fn test_population_summary_empty_is_zero() {
+        let summary = summarize_particle_population(&[], 1.0);
+        assert_eq!(summary.count, 0);
+        assert_eq!(summary.mean_energy_mev, 0.0);
+        assert_eq!(summary.runaway_fraction, 0.0);
     }
 }

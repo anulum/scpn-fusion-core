@@ -6,5 +6,11 @@
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 # SCPN Diagnostics Module
+from .forward import (
+    ForwardDiagnosticChannels,
+    generate_forward_channels,
+    interferometer_phase_shift,
+    neutron_count_rate,
+)
 from .synthetic_sensors import SensorSuite
 from .tomography import PlasmaTomography

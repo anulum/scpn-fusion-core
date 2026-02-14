@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -28,7 +29,11 @@ from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn.structure import StochasticPetriNet
 
 
-def _build_scpn_controller() -> NeuroSymbolicController:
+def _build_scpn_controller(
+    *,
+    runtime_profile: str = "adaptive",
+    runtime_backend: str = "auto",
+) -> NeuroSymbolicController:
     net = StochasticPetriNet()
     net.add_place("x_R_pos", initial_tokens=0.0)
     net.add_place("x_R_neg", initial_tokens=0.0)
@@ -56,7 +61,7 @@ def _build_scpn_controller() -> NeuroSymbolicController:
     net.add_arc("T_Zn", "a_Z_neg", weight=1.0)
     net.compile(validate_topology=True)
 
-    compiled = FusionCompiler(
+    compiler = FusionCompiler(
         bitstream_length=512,
         seed=42,
         lif_tau_mem=10.0,
@@ -64,7 +69,8 @@ def _build_scpn_controller() -> NeuroSymbolicController:
         lif_dt=1.0,
         lif_resistance=1.0,
         lif_refractory_period=1,
-    ).compile(net, firing_mode="fractional", firing_margin=0.25)
+    )
+    compiled = compiler.compile(net, firing_mode="fractional", firing_margin=0.25)
     artifact = compiled.export_artifact(
         name="scpn_pid_mpc_benchmark",
         dt_control_s=0.05,
@@ -84,15 +90,28 @@ def _build_scpn_controller() -> NeuroSymbolicController:
             {"place_id": 3, "source": "x_Z_neg", "scale": 1.0, "offset": 0.0, "clamp_0_1": True},
         ],
     )
-    return NeuroSymbolicController(
-        artifact=artifact,
-        seed_base=123456,
-        targets=ControlTargets(R_target_m=0.0, Z_target_m=0.0),
-        scales=ControlScales(R_scale_m=1.0, Z_scale_m=1.0),
-        sc_n_passes=16,
-        sc_bitflip_rate=0.0,
-        sc_binary_margin=0.05,
-    )
+    runtime_profile_norm = runtime_profile.strip().lower()
+    controller_kwargs: dict[str, Any] = {
+        "artifact": artifact,
+        "seed_base": 123456,
+        "targets": ControlTargets(R_target_m=0.0, Z_target_m=0.0),
+        "scales": ControlScales(R_scale_m=1.0, Z_scale_m=1.0),
+        "sc_n_passes": 16,
+        "sc_bitflip_rate": 0.0,
+    }
+    if runtime_profile_norm == "traceable":
+        controller_kwargs.update(
+            FusionCompiler.traceable_runtime_kwargs(runtime_backend=runtime_backend)
+        )
+    else:
+        controller_kwargs.update(
+            {
+                "runtime_profile": runtime_profile_norm,
+                "runtime_backend": runtime_backend,
+                "sc_binary_margin": 0.05,
+            }
+        )
+    return NeuroSymbolicController(**controller_kwargs)
 
 
 @dataclass
@@ -132,7 +151,7 @@ def _mpc_action(x: float, k: int, steps: int, horizon: int, u_limit: float) -> f
     return best_u
 
 
-def _metrics(errors: np.ndarray, controls: np.ndarray) -> dict[str, float]:
+def _metrics(errors: NDArray[np.float64], controls: NDArray[np.float64]) -> dict[str, float]:
     return {
         "rmse": float(np.sqrt(np.mean(errors * errors))),
         "iae": float(np.mean(np.abs(errors))),
@@ -141,14 +160,23 @@ def _metrics(errors: np.ndarray, controls: np.ndarray) -> dict[str, float]:
     }
 
 
-def run_campaign(*, seed: int = 42, steps: int = 320) -> dict[str, Any]:
+def run_campaign(
+    *,
+    seed: int = 42,
+    steps: int = 320,
+    scpn_runtime_profile: str = "traceable",
+    scpn_runtime_backend: str = "auto",
+) -> dict[str, Any]:
     np.random.seed(int(seed))
     steps = max(int(steps), 32)
     u_limit = 1.0
     dt = 0.05
     x0 = 0.35
 
-    scpn = _build_scpn_controller()
+    scpn = _build_scpn_controller(
+        runtime_profile=scpn_runtime_profile,
+        runtime_backend=scpn_runtime_backend,
+    )
     pid = _PIDState(kp=1.15, ki=0.24, kd=0.04)
 
     x_scpn = float(x0)
@@ -172,8 +200,12 @@ def run_campaign(*, seed: int = 42, steps: int = 320) -> dict[str, Any]:
         u_mpc = _mpc_action(x_mpc, k, steps, horizon=6, u_limit=u_limit)
         x_mpc = 0.95 * x_mpc + 0.12 * u_mpc + d
 
-        action = scpn.step({"R_axis_m": float(x_scpn), "Z_axis_m": 0.0}, k)
-        u_scpn = float(np.clip(action["dI_PF3_A"], -u_limit, u_limit))
+        if scpn.runtime_profile_name == "traceable":
+            action_vec = scpn.step_traceable((float(x_scpn), 0.0), k)
+            u_scpn = float(np.clip(action_vec[0], -u_limit, u_limit))
+        else:
+            action = scpn.step({"R_axis_m": float(x_scpn), "Z_axis_m": 0.0}, k)
+            u_scpn = float(np.clip(action["dI_PF3_A"], -u_limit, u_limit))
         x_scpn = 0.95 * x_scpn + 0.12 * u_scpn + d
 
         e_pid[k] = -x_pid
@@ -207,6 +239,11 @@ def run_campaign(*, seed: int = 42, steps: int = 320) -> dict[str, Any]:
     return {
         "seed": int(seed),
         "steps": int(steps),
+        "runtime_lane": {
+            "runtime_profile": scpn.runtime_profile_name,
+            "runtime_backend": scpn.runtime_backend_name,
+            "uses_traceable_step": bool(scpn.runtime_profile_name == "traceable"),
+        },
         "pid": pid_metrics,
         "mpc": mpc_metrics,
         "scpn": scpn_metrics,
@@ -234,6 +271,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Generated: `{report['generated_at_utc']}`",
         f"- Runtime: `{report['runtime_seconds']:.3f} s`",
         f"- Steps: `{r['steps']}`",
+        f"- SCPN runtime profile: `{r['runtime_lane']['runtime_profile']}`",
+        f"- SCPN runtime backend: `{r['runtime_lane']['runtime_backend']}`",
+        f"- Traceable step API: `{'YES' if r['runtime_lane']['uses_traceable_step'] else 'NO'}`",
         "",
         "## RMSE",
         "",
@@ -259,6 +299,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--steps", type=int, default=320)
     parser.add_argument(
+        "--scpn-runtime-profile",
+        choices=["adaptive", "deterministic", "traceable"],
+        default="traceable",
+    )
+    parser.add_argument(
+        "--scpn-runtime-backend",
+        choices=["auto", "numpy", "rust"],
+        default="auto",
+    )
+    parser.add_argument(
         "--output-json",
         default=str(ROOT / "validation" / "reports" / "scpn_pid_mpc_benchmark.json"),
     )
@@ -269,7 +319,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)
 
-    report = generate_report(seed=args.seed, steps=args.steps)
+    report = generate_report(
+        seed=args.seed,
+        steps=args.steps,
+        scpn_runtime_profile=args.scpn_runtime_profile,
+        scpn_runtime_backend=args.scpn_runtime_backend,
+    )
     out_json = Path(args.output_json)
     out_md = Path(args.output_md)
     out_json.parent.mkdir(parents=True, exist_ok=True)

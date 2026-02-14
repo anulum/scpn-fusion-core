@@ -12,6 +12,10 @@ from __future__ import annotations
 import numpy as np
 
 from scpn_fusion.control.tokamak_digital_twin import run_digital_twin
+from scpn_fusion.io.imas_connector import (
+    digital_twin_summary_to_ids,
+    ids_to_digital_twin_summary,
+)
 
 
 def test_run_digital_twin_returns_finite_summary_without_plot() -> None:
@@ -48,3 +52,14 @@ def test_run_digital_twin_is_deterministic_for_fixed_seed() -> None:
     assert a["final_action"] == b["final_action"]
     assert a["final_islands_px"] == b["final_islands_px"]
     assert a["reward_mean_last_50"] == b["reward_mean_last_50"]
+
+
+def test_ids_roundtrip_preserves_core_digital_twin_fields() -> None:
+    summary = run_digital_twin(time_steps=18, seed=5, save_plot=False, verbose=False)
+    ids_payload = digital_twin_summary_to_ids(summary, machine="ITER", shot=101, run=2)
+    recovered = ids_to_digital_twin_summary(ids_payload)
+
+    assert recovered["steps"] == summary["steps"]
+    assert recovered["final_islands_px"] == summary["final_islands_px"]
+    assert np.isfinite(recovered["final_avg_temp"])
+    assert np.isfinite(recovered["final_reward"])

@@ -8,6 +8,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from scpn_fusion.diagnostics.forward import ForwardDiagnosticChannels, generate_forward_channels
+
 class SensorSuite:
     """
     Simulates physical diagnostics installed on the tokamak wall.
@@ -104,6 +106,31 @@ class SensorSuite:
             signals.append(integral)
             
         return np.array(signals)
+
+    def measure_forward_channels(
+        self,
+        electron_density_m3,
+        neutron_source_m3_s,
+        *,
+        detector_efficiency=0.12,
+        solid_angle_fraction=1.0e-4,
+        laser_wavelength_m=1.064e-6,
+    ) -> ForwardDiagnosticChannels:
+        """
+        Generate deterministic forward-model raw channels.
+        """
+        chords = [(tuple(start), tuple(end)) for start, end in self.bolo_chords]
+        return generate_forward_channels(
+            electron_density_m3=np.asarray(electron_density_m3, dtype=np.float64),
+            neutron_source_m3_s=np.asarray(neutron_source_m3_s, dtype=np.float64),
+            r_grid=np.asarray(self.kernel.R, dtype=np.float64),
+            z_grid=np.asarray(self.kernel.Z, dtype=np.float64),
+            interferometer_chords=chords,
+            volume_element_m3=float(self.kernel.dR * self.kernel.dZ),
+            detector_efficiency=float(detector_efficiency),
+            solid_angle_fraction=float(solid_angle_fraction),
+            laser_wavelength_m=float(laser_wavelength_m),
+        )
 
     def visualize_setup(self):
         fig, ax = plt.subplots()

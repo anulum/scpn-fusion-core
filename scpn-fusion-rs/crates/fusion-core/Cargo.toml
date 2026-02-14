@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 description = "SCPN Fusion Core - Grad-Shafranov kernel and equilibrium solver"
 
+[features]
+default = []
+mpi-domain = []
+
 [dependencies]
 fusion-types = { path = "../fusion-types" }
 fusion-math = { path = "../fusion-math" }

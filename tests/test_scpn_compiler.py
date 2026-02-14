@@ -445,6 +445,19 @@ class TestFusionCompiler:
         assert compiled.lif_tau_mem == 10.0
         assert compiled.lif_noise_std == 0.1
 
+    def test_traceable_runtime_kwargs(self) -> None:
+        cfg = FusionCompiler.traceable_runtime_kwargs()
+        assert cfg["runtime_profile"] == "traceable"
+        assert cfg["runtime_backend"] == "auto"
+        assert cfg["enable_oracle_diagnostics"] is False
+        assert cfg["sc_binary_margin"] == 0.0
+
+        cfg_numpy = FusionCompiler.traceable_runtime_kwargs(runtime_backend="numpy")
+        assert cfg_numpy["runtime_backend"] == "numpy"
+
+        with pytest.raises(ValueError, match="runtime_backend"):
+            FusionCompiler.traceable_runtime_kwargs(runtime_backend="cuda")
+
     @pytest.mark.skipif(
         not _HAS_SC_NEUROCORE, reason="sc_neurocore not installed"
     )

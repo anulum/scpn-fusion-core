@@ -23,6 +23,30 @@ TARGET_R = 6.2     # Target Major Radius
 TARGET_Z = 0.0     # Target Vertical Position
 TARGET_ELONGATION = 1.7 
 
+
+class FirstOrderActuator:
+    """Discrete first-order transfer function u_applied(s) = 1/(tau*s+1) * u_cmd."""
+
+    def __init__(
+        self,
+        *,
+        tau_s: float,
+        dt_s: float,
+        u_min: float = -1.0e9,
+        u_max: float = 1.0e9,
+    ) -> None:
+        self.tau_s = max(float(tau_s), 1e-9)
+        self.dt_s = max(float(dt_s), 1e-9)
+        self.u_min = float(u_min)
+        self.u_max = float(u_max)
+        self.state = 0.0
+
+    def step(self, command: float) -> float:
+        u_cmd = float(np.clip(command, self.u_min, self.u_max))
+        alpha = self.dt_s / (self.tau_s + self.dt_s)
+        self.state = float(np.clip(self.state + alpha * (u_cmd - self.state), self.u_min, self.u_max))
+        return self.state
+
 class IsoFluxController:
     """
     Simulates the Plasma Control System (PCS).
@@ -33,10 +57,23 @@ class IsoFluxController:
         config_file: str,
         kernel_factory: Callable[[str], Any] = FusionKernel,
         verbose: bool = True,
+        actuator_tau_s: float = 0.06,
+        control_dt_s: float = 0.05,
     ) -> None:
         self.kernel = kernel_factory(config_file)
         self.verbose = bool(verbose)
-        self.history = {'t': [], 'Ip': [], 'R_axis': [], 'Z_axis': [], 'X_point': []}
+        self.history = {
+            't': [],
+            'Ip': [],
+            'R_axis': [],
+            'Z_axis': [],
+            'X_point': [],
+            'ctrl_R_cmd': [],
+            'ctrl_R_applied': [],
+            'ctrl_Z_cmd': [],
+            'ctrl_Z_applied': [],
+        }
+        self.control_dt_s = max(float(control_dt_s), 1e-6)
         
         # PID Gains for Position Control
         # Radial Control (Horizontal) -> Controlled by Outer Coils (PF2, PF3, PF4)
@@ -44,6 +81,10 @@ class IsoFluxController:
         
         # Vertical Control (Z-pos) -> Controlled by Top/Bottom diff (PF1 vs PF5)
         self.pid_Z = {'Kp': 5.0, 'Ki': 0.2, 'Kd': 2.0, 'err_sum': 0, 'last_err': 0}
+
+        self._act_radial = FirstOrderActuator(tau_s=actuator_tau_s, dt_s=self.control_dt_s)
+        self._act_top = FirstOrderActuator(tau_s=actuator_tau_s, dt_s=self.control_dt_s)
+        self._act_bottom = FirstOrderActuator(tau_s=actuator_tau_s, dt_s=self.control_dt_s)
 
     def _log(self, message: str) -> None:
         if self.verbose:
@@ -101,8 +142,14 @@ class IsoFluxController:
             err_Z = TARGET_Z - curr_Z
             
             # Control Actions (Current Deltas)
-            ctrl_radial = self.pid_step(self.pid_R, err_R)
-            ctrl_vertical = self.pid_step(self.pid_Z, err_Z)
+            ctrl_radial_cmd = self.pid_step(self.pid_R, err_R)
+            ctrl_vertical_cmd = self.pid_step(self.pid_Z, err_Z)
+
+            # First-order actuator transfer layer (power-supply lag / inductance).
+            ctrl_radial = self._act_radial.step(ctrl_radial_cmd)
+            ctrl_vertical_top = self._act_top.step(-ctrl_vertical_cmd)
+            ctrl_vertical_bottom = self._act_bottom.step(ctrl_vertical_cmd)
+            ctrl_vertical_applied = 0.5 * (ctrl_vertical_bottom - ctrl_vertical_top)
             
             # 4. ACTUATE COILS (Map Control -> Coils)
             # Radial Correction: If R is too small (Inner), Push with Outer Coils
@@ -110,8 +157,8 @@ class IsoFluxController:
             self._add_coil_current(2, ctrl_radial)
             
             # Vertical Correction: Differential pull
-            self._add_coil_current(0, -ctrl_vertical) # Top
-            self._add_coil_current(4, ctrl_vertical) # Bottom
+            self._add_coil_current(0, ctrl_vertical_top) # Top
+            self._add_coil_current(4, ctrl_vertical_bottom) # Bottom
             
             # 5. SOLVE NEW EQUILIBRIUM
             # We use the previous solution as guess (hot start) -> Faster
@@ -123,6 +170,10 @@ class IsoFluxController:
             self.history['R_axis'].append(curr_R)
             self.history['Z_axis'].append(curr_Z)
             self.history['X_point'].append(xp_pos)
+            self.history['ctrl_R_cmd'].append(ctrl_radial_cmd)
+            self.history['ctrl_R_applied'].append(ctrl_radial)
+            self.history['ctrl_Z_cmd'].append(ctrl_vertical_cmd)
+            self.history['ctrl_Z_applied'].append(ctrl_vertical_applied)
             
             self._log(
                 f"Time {t}: Ip={target_Ip:.1f}MA | "
@@ -147,6 +198,30 @@ class IsoFluxController:
             if self.history['Z_axis']
             else 0.0
         )
+        mean_abs_radial_actuator_lag = (
+            float(
+                np.mean(
+                    np.abs(
+                        np.asarray(self.history['ctrl_R_cmd'], dtype=np.float64)
+                        - np.asarray(self.history['ctrl_R_applied'], dtype=np.float64)
+                    )
+                )
+            )
+            if self.history['ctrl_R_cmd']
+            else 0.0
+        )
+        mean_abs_vertical_actuator_lag = (
+            float(
+                np.mean(
+                    np.abs(
+                        np.asarray(self.history['ctrl_Z_cmd'], dtype=np.float64)
+                        - np.asarray(self.history['ctrl_Z_applied'], dtype=np.float64)
+                    )
+                )
+            )
+            if self.history['ctrl_Z_cmd']
+            else 0.0
+        )
         return {
             "steps": int(steps),
             "final_ip_ma": final_ip_ma,
@@ -154,6 +229,8 @@ class IsoFluxController:
             "final_axis_z": final_axis_z,
             "mean_abs_r_error": mean_abs_r_error,
             "mean_abs_z_error": mean_abs_z_error,
+            "mean_abs_radial_actuator_lag": mean_abs_radial_actuator_lag,
+            "mean_abs_vertical_actuator_lag": mean_abs_vertical_actuator_lag,
             "plot_saved": bool(plot_saved),
             "plot_error": plot_error,
         }

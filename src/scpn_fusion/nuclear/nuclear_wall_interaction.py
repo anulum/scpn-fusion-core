@@ -8,6 +8,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
+from scpn_fusion.engineering.cad_raytrace import CADLoadReport, estimate_surface_loading
 import sys
 
 # --- MATERIALS DATABASE ---
@@ -27,6 +28,25 @@ class NuclearEngineeringLab(FusionBurnPhysics):
     """
     def __init__(self, config_path):
         super().__init__(config_path)
+
+    def _build_neutron_source_map(self):
+        idx_max = np.argmax(self.Psi)
+        iz_ax, ir_ax = np.unravel_index(idx_max, self.Psi.shape)
+        psi_axis = self.Psi[iz_ax, ir_ax]
+        xp, psi_x = self.find_x_point(self.Psi)
+        _ = xp
+        psi_edge = psi_x
+        if abs(psi_edge - psi_axis) < 1.0:
+            psi_edge = np.min(self.Psi)
+
+        psi_norm = (self.Psi - psi_axis) / (psi_edge - psi_axis)
+        psi_norm = np.clip(psi_norm, 0, 1)
+        mask = psi_norm < 1.0
+
+        s_peak = 1e18
+        source_map = np.zeros_like(self.Psi)
+        source_map[mask] = s_peak * (1.0 - psi_norm[mask]) ** 2
+        return source_map
         
     def generate_first_wall(self):
         """
@@ -116,23 +136,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         # 1. Source: Plasma Grid (Fusion Power Density)
         # We reuse the thermodynamics calculation to get local emissivity
         # Recalculate power density profile
-        idx_max = np.argmax(self.Psi)
-        iz_ax, ir_ax = np.unravel_index(idx_max, self.Psi.shape)
-        Psi_axis = self.Psi[iz_ax, ir_ax]
-        xp, psi_x = self.find_x_point(self.Psi)
-        Psi_edge = psi_x
-        if abs(Psi_edge - Psi_axis) < 1.0: Psi_edge = np.min(self.Psi)
-        
-        Psi_norm = (self.Psi - Psi_axis) / (Psi_edge - Psi_axis)
-        Psi_norm = np.clip(Psi_norm, 0, 1)
-        mask = (Psi_norm < 1.0)
-        
-        # Emissivity Profile (Neutrons/s/m^3)
-        # S_n ~ n^2 * sigmav
-        # We simplify: Profile follows Pressure^2 ~ (1-psi)^2
-        S_peak = 1e18 # Neutrons/m^3/s (Approx for 500MW)
-        Source_Map = np.zeros_like(self.Psi)
-        Source_Map[mask] = S_peak * (1.0 - Psi_norm[mask])**2
+        Source_Map = self._build_neutron_source_map()
         
         # 2. Target: First Wall Segments
         Rw, Zw = self.generate_first_wall()
@@ -191,6 +195,39 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             wall_flux[i] = np.sum(flux_contrib)
             
         return Rw, Zw, wall_flux
+
+    def calculate_cad_wall_loading(
+        self,
+        vertices,
+        faces,
+        source_points_xyz=None,
+        source_strength_w=None,
+    ) -> CADLoadReport:
+        """
+        Reduced CAD loading estimate on imported STEP/STL meshes.
+        """
+        self.solve_equilibrium()
+        if source_points_xyz is None or source_strength_w is None:
+            source_map = self._build_neutron_source_map()
+            # Downsample source grid to keep raytrace cheap.
+            step = 5
+            rr = self.RR[::step, ::step].ravel()
+            zz = self.ZZ[::step, ::step].ravel()
+            ss = source_map[::step, ::step].ravel()
+            keep = ss > 0.0
+            source_points_xyz = np.stack(
+                [rr[keep], np.zeros(np.count_nonzero(keep)), zz[keep]], axis=1
+            )
+            # Convert neutron source proxy to Watts with 14.1 MeV per neutron.
+            e_j = 14.1e6 * 1.602e-19
+            cell_volume = self.dR * self.dZ * 2 * np.pi * np.maximum(rr[keep], 1e-3)
+            source_strength_w = ss[keep] * cell_volume * e_j
+        return estimate_surface_loading(
+            np.asarray(vertices, dtype=np.float64),
+            np.asarray(faces, dtype=np.int64),
+            np.asarray(source_points_xyz, dtype=np.float64),
+            np.asarray(source_strength_w, dtype=np.float64),
+        )
 
     def analyze_materials(self, wall_flux):
         """
