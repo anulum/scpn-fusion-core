@@ -325,10 +325,27 @@ def _validate(artifact: Artifact) -> None:
 
     # Threshold ranges
     for t in artifact.topology.transitions:
+        if isinstance(t.threshold, bool) or not isinstance(t.threshold, (int, float)):
+            raise ArtifactValidationError(
+                f"threshold {t.threshold} for '{t.name}' must be finite and in [0, 1]"
+            )
+        if not math.isfinite(t.threshold):
+            raise ArtifactValidationError(
+                f"threshold {t.threshold} for '{t.name}' must be finite and in [0, 1]"
+            )
         if not (0.0 <= t.threshold <= 1.0):
             raise ArtifactValidationError(
                 f"threshold {t.threshold} for '{t.name}' outside [0, 1]"
             )
+        if t.margin is not None:
+            if isinstance(t.margin, bool) or not isinstance(t.margin, (int, float)):
+                raise ArtifactValidationError(
+                    f"margin {t.margin} for '{t.name}' must be finite and >= 0"
+                )
+            if not math.isfinite(t.margin) or t.margin < 0.0:
+                raise ArtifactValidationError(
+                    f"margin {t.margin} for '{t.name}' must be finite and >= 0"
+                )
         if isinstance(t.delay_ticks, bool) or not isinstance(t.delay_ticks, int):
             raise ArtifactValidationError(
                 f"delay_ticks {t.delay_ticks} for '{t.name}' must be an integer >= 0"
@@ -408,7 +425,7 @@ def load_artifact(path: Union[str, Path]) -> Artifact:
         TransitionSpec(
             id=t["id"],
             name=t["name"],
-            threshold=float(t["threshold"]),
+            threshold=t["threshold"],
             margin=t.get("margin"),
             delay_ticks=t.get("delay_ticks", 0),
         )

@@ -436,6 +436,44 @@ class TestLevel0Static:
         finally:
             os.unlink(bad_path)
 
+    @pytest.mark.parametrize(
+        ("field_path", "value", "match"),
+        [
+            (("topology", "transitions", 0, "threshold"), "0.5", "threshold"),
+            (("topology", "transitions", 0, "threshold"), float("nan"), "threshold"),
+            (("topology", "transitions", 0, "margin"), -0.1, "margin"),
+            (("topology", "transitions", 0, "margin"), "0.1", "margin"),
+        ],
+    )
+    def test_load_artifact_rejects_invalid_transition_threshold_or_margin(
+        self,
+        artifact_path: str,
+        field_path: tuple[str | int, ...],
+        value: object,
+        match: str,
+    ) -> None:
+        obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
+        target: object = obj
+        for key in field_path[:-1]:
+            if isinstance(target, list):
+                target = target[key]  # type: ignore[index]
+            else:
+                target = target[key]  # type: ignore[index]
+        if isinstance(target, list):
+            target[field_path[-1]] = value  # type: ignore[index]
+        else:
+            target[field_path[-1]] = value  # type: ignore[index]
+        fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
+        os.close(fd)
+        try:
+            Path(bad_path).write_text(
+                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
+            )
+            with pytest.raises(ArtifactValidationError, match=match):
+                load_artifact(bad_path)
+        finally:
+            os.unlink(bad_path)
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Level 1 — Determinism
