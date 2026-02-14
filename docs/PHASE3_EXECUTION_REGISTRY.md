@@ -253,6 +253,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-026 | P1 | Control | Harden SOC learning loop with strict finite/range/index validation | `scpn-fusion-rs/crates/fusion-control/src/soc_learning.rs` | SOC sandpile/agent paths now reject invalid runtime inputs and indices (`ext_shear`, turbulence/flow/reward, state/action bounds, `n_steps`) via explicit `FusionError::ConfigError`, preventing NaN/Inf/index propagation through Q-learning and avalanche-control coupling | `cargo test -p fusion-control soc_learning::tests::test_soc_rejects_invalid_inputs -- --nocapture`, `cargo test -p fusion-control soc_learning::tests::test_q_learning_runs -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-027 | P1 | Physics | Harden ignition-rate and thermodynamics APIs with strict finite/domain validation | `scpn-fusion-rs/crates/fusion-core/src/ignition.rs`, `scpn-fusion-rs/crates/fusion-python/src/lib.rs` | Ignition Bosch-Hale and thermodynamics paths now reject invalid/non-physical inputs (`t_kev`, `p_aux_mw`, flux normalization denominator) via explicit `FusionError::ConfigError` (surfaced as `PyValueError` in Python bindings), replacing prior silent temperature/denominator coercions | `cargo test -p fusion-core ignition::tests::test_ignition_rejects_invalid_inputs -- --nocapture`, `cargo test -p fusion-core ignition::tests::test_thermodynamics_after_solve -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-028 | P1 | Operations | Harden actuator delay-line runtime command validation in digital twin control path | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs` | Actuator delay-line execution now rejects malformed command vectors (length mismatch/non-finite values) via explicit `FusionError::ConfigError` instead of silently replaying stale outputs, with deterministic guard coverage for invalid push inputs | `cargo test -p fusion-control digital_twin::tests::test_actuator_delay_line_rejects_invalid_push_inputs -- --nocapture`, `cargo test -p fusion-control digital_twin::tests::test_actuator_delay_line_enforces_delay -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
+| H8-029 | P1 | Operations | Harden digital-twin bit-flip fault injection with strict input/index validation | `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs` | Bit-flip fault injection now rejects invalid/non-finite source values and out-of-range bit indices (`bit_index >= 64`) via explicit `FusionError::ConfigError`, replacing prior silent modulo index wrapping and finite-fallback behavior | `cargo test -p fusion-control digital_twin::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 
 ## Task Accounting
 
@@ -260,7 +261,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 164
+- Post-S4 hardening tasks delivered: 165
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -448,4 +449,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-026`
 - Completed: `H8-027`
 - Completed: `H8-028`
+- Completed: `H8-029`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

@@ -41,13 +41,25 @@ const DEFAULT_OU_SIGMA: f64 = 0.05;
 const DEFAULT_OU_DT: f64 = 1.0;
 
 /// Single-bit floating-point fault injection.
-pub fn apply_bit_flip_fault(value: f64, bit_index: u8) -> f64 {
-    let bit = u32::from(bit_index % 64);
+pub fn apply_bit_flip_fault(value: f64, bit_index: u8) -> FusionResult<f64> {
+    if !value.is_finite() {
+        return Err(FusionError::ConfigError(
+            "bit-flip input value must be finite".to_string(),
+        ));
+    }
+    if bit_index >= 64 {
+        return Err(FusionError::ConfigError(format!(
+            "bit_index must be in [0, 63], got {bit_index}"
+        )));
+    }
+    let bit = u32::from(bit_index);
     let flipped = f64::from_bits(value.to_bits() ^ (1_u64 << bit));
     if flipped.is_finite() {
-        flipped
+        Ok(flipped)
     } else {
-        value
+        Err(FusionError::ConfigError(
+            "bit-flip produced non-finite value".to_string(),
+        ))
     }
 }
 
@@ -490,9 +502,15 @@ mod tests {
     #[test]
     fn test_bit_flip_fault_changes_value_or_preserves_finite() {
         let value = 0.75_f64;
-        let flipped = apply_bit_flip_fault(value, 7);
+        let flipped = apply_bit_flip_fault(value, 7).expect("valid bit-flip inputs");
         assert!(flipped.is_finite(), "Flipped value must remain finite");
         assert_ne!(flipped, value, "Bit flip should modify value for this case");
+    }
+
+    #[test]
+    fn test_bit_flip_fault_rejects_invalid_inputs() {
+        assert!(apply_bit_flip_fault(f64::NAN, 7).is_err());
+        assert!(apply_bit_flip_fault(0.75, 64).is_err());
     }
 
     #[test]
