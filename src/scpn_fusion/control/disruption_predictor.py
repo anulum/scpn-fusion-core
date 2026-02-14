@@ -37,7 +37,9 @@ def simulate_tearing_mode(
         label (int): 1 if disrupted, 0 if safe
         time_to_disruption (array): Time remaining (or -1 if safe)
     """
-    steps = max(int(steps), 1)
+    steps = int(steps)
+    if steps < 1:
+        raise ValueError("steps must be >= 1.")
     dt = 0.01
     w = 0.01 # Island width
     local_rng = rng if rng is not None else np.random.default_rng()

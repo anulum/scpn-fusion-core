@@ -196,6 +196,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-059 | P1 | Control | Harden SOTA-MPC controller constructor knobs with strict numeric guards | `src/scpn_fusion/control/fusion_sota_mpc.py`, `tests/test_fusion_sota_mpc.py` | MPC-controller constructor now rejects invalid/non-finite `prediction_horizon`, `learning_rate`, `iterations`, `action_limit`, and `action_regularization` values with deterministic errors (no silent coercion), while preserving deterministic bounded-action planning for valid settings | `python -m pytest tests/test_fusion_sota_mpc.py -v`, `python -m pytest tests/ -q -x` |
 | H7-060 | P1 | Control | Harden SOTA-MPC surrogate training with strict perturbation guard | `src/scpn_fusion/control/fusion_sota_mpc.py`, `tests/test_fusion_sota_mpc.py` | Surrogate training now rejects invalid/non-finite `perturbation` values with deterministic errors (no silent coercion), while preserving deterministic surrogate-response fitting and bounded-action campaign behavior for valid inputs | `python -m pytest tests/test_fusion_sota_mpc.py -v`, `python -m pytest tests/ -q -x` |
 | H7-061 | P1 | Control | Harden director-interface runtime mission with strict duration/glitch input guards | `src/scpn_fusion/control/director_interface.py`, `tests/test_director_interface.py` | Directed mission runtime now rejects invalid/non-finite mission parameters (`duration`, `glitch_start_step`, `glitch_std`) with deterministic errors (no silent coercion), while preserving deterministic fallback-director mission behavior for valid runs | `python -m pytest tests/test_director_interface.py -v`, `python -m pytest tests/ -q -x` |
+| H7-062 | P1 | Control | Harden tearing-mode simulation with strict step-count input guard | `src/scpn_fusion/control/disruption_predictor.py`, `tests/test_disruption_predictor_rng.py` | Tearing-mode simulator now rejects invalid `steps` values with deterministic errors (no silent coercion to minimum), while preserving deterministic RNG-scoped signal generation and anomaly-campaign behavior for valid runs | `python -m pytest tests/test_disruption_predictor_rng.py tests/test_disruption_toroidal_features.py tests/test_gneu_02_anomaly.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -203,8 +204,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 107
-- Remaining in deferred pool after queue selection: 6
+- Post-S4 hardening tasks delivered: 108
+- Remaining in deferred pool after queue selection: 5
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -334,4 +335,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-059`
 - Completed: `H7-060`
 - Completed: `H7-061`
-- Next active task: `H7-062` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-062`
+- Next active task: `H7-063` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
