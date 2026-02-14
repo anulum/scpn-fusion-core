@@ -80,8 +80,12 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         tau_He_ratio: Ratio of Helium particle confinement to Energy confinement (tau_He / tau_E).
         If ratio > 10, the reactor chokes.
         """
-        burn_steps = max(int(burn_time_sec), 1)
-        tau_He_ratio = max(float(tau_He_ratio), 1e-6)
+        burn_steps = int(burn_time_sec)
+        if burn_steps < 1:
+            raise ValueError("burn_time_sec must be >= 1.")
+        tau_He_ratio = float(tau_He_ratio)
+        if not np.isfinite(tau_He_ratio) or tau_He_ratio <= 0.0:
+            raise ValueError("tau_He_ratio must be finite and > 0.")
         pumping_efficiency = float(pumping_efficiency)
         if not np.isfinite(pumping_efficiency) or not (0.0 <= pumping_efficiency <= 1.0):
             raise ValueError("pumping_efficiency must be finite and in [0, 1].")

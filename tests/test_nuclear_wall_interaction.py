@@ -121,3 +121,31 @@ def test_pumping_efficiency_validation(
             tau_He_ratio=5.0,
             pumping_efficiency=1.1,
         )
+
+
+@pytest.mark.parametrize("burn_time_sec", [0, -5])
+def test_burn_time_validation(
+    monkeypatch: pytest.MonkeyPatch, burn_time_sec: int
+) -> None:
+    lab = NuclearEngineeringLab(default_iter_config_path())
+    monkeypatch.setattr(lab, "solve_equilibrium", lambda: None)
+    with pytest.raises(ValueError, match="burn_time_sec"):
+        lab.simulate_ash_poisoning(
+            burn_time_sec=burn_time_sec,
+            tau_He_ratio=5.0,
+            pumping_efficiency=1.0,
+        )
+
+
+@pytest.mark.parametrize("tau_He_ratio", [0.0, -1.0, float("nan")])
+def test_tau_he_ratio_validation(
+    monkeypatch: pytest.MonkeyPatch, tau_He_ratio: float
+) -> None:
+    lab = NuclearEngineeringLab(default_iter_config_path())
+    monkeypatch.setattr(lab, "solve_equilibrium", lambda: None)
+    with pytest.raises(ValueError, match="tau_He_ratio"):
+        lab.simulate_ash_poisoning(
+            burn_time_sec=10,
+            tau_He_ratio=tau_He_ratio,
+            pumping_efficiency=1.0,
+        )
