@@ -72,7 +72,9 @@ def _line_integral_nearest(
     end: tuple[float, float],
     samples: int = 96,
 ) -> float:
-    samples = max(int(samples), 8)
+    samples = int(samples)
+    if samples < 8:
+        raise ValueError("samples must be >= 8.")
     r_vals = np.linspace(float(start[0]), float(end[0]), samples)
     z_vals = np.linspace(float(start[1]), float(end[1]), samples)
     dl = float(np.hypot(end[0] - start[0], end[1] - start[1]) / samples)
@@ -95,9 +97,9 @@ def interferometer_phase_shift(
     samples: int = 96,
 ) -> FloatArray:
     """Predict line-integrated interferometer phase shift [rad]."""
-    wavelength = max(float(laser_wavelength_m), 1e-12)
-    if not np.isfinite(wavelength):
-        raise ValueError("laser_wavelength_m must be finite.")
+    wavelength = float(laser_wavelength_m)
+    if not np.isfinite(wavelength) or wavelength <= 0.0:
+        raise ValueError("laser_wavelength_m must be finite and > 0.")
     coeff = ELECTRON_RADIUS_M * wavelength
     ne, r, z = _validate_field_grid(
         np.asarray(electron_density_m3, dtype=np.float64),

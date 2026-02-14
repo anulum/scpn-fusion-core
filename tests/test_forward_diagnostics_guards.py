@@ -57,3 +57,25 @@ def test_generate_forward_channels_rejects_nonfinite_fields() -> None:
             interferometer_chords=[((4.2, 0.0), (7.8, 0.0))],
             volume_element_m3=0.02,
         )
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"samples": 4}, "samples"),
+        ({"laser_wavelength_m": 0.0}, "laser_wavelength_m"),
+        ({"laser_wavelength_m": float("nan")}, "laser_wavelength_m"),
+    ],
+)
+def test_interferometer_rejects_invalid_runtime_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    r, z, ne, _ = _make_fields()
+    chords = [((4.2, 0.0), (7.8, 0.0))]
+    params: dict[str, float | int] = {
+        "laser_wavelength_m": 1.064e-6,
+        "samples": 96,
+    }
+    params.update(kwargs)
+    with pytest.raises(ValueError, match=match):
+        interferometer_phase_shift(ne, r, z, chords, **params)
