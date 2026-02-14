@@ -62,3 +62,20 @@ def test_reconstruct_falls_back_when_lsq_linear_unavailable(
     out = tomo.reconstruct(np.linspace(0.1, 0.8, 8, dtype=np.float64))
     assert out.shape == (8, 8)
     assert np.min(out) >= 0.0
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"grid_res": 3}, "grid_res"),
+        ({"lambda_reg": -1.0e-6}, "lambda_reg"),
+        ({"lambda_reg": float("nan")}, "lambda_reg"),
+    ],
+)
+def test_constructor_rejects_invalid_inputs(
+    kwargs: dict[str, float | int], match: str
+) -> None:
+    params: dict[str, float | int | bool] = {"grid_res": 8, "lambda_reg": 0.1, "verbose": False}
+    params.update(kwargs)
+    with pytest.raises(ValueError, match=match):
+        PlasmaTomography(_SensorStub(), **params)

@@ -206,6 +206,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-069 | P1 | Diagnostics | Harden forward interferometer runtime with strict sample/wavelength guards | `src/scpn_fusion/diagnostics/forward.py`, `tests/test_forward_diagnostics_guards.py` | Forward interferometer path now rejects invalid/non-finite runtime controls (`samples`, `laser_wavelength_m`) with deterministic errors (no silent coercion/flooring), while preserving deterministic channel synthesis and diagnostics-suite compatibility for valid inputs | `python -m pytest tests/test_forward_diagnostics_guards.py tests/test_diagnostics.py tests/test_run_diagnostics.py tests/test_tomography.py tests/test_synthetic_sensors.py -v`, `python -m pytest tests/ -q -x` |
 | H7-070 | P1 | IO/Control | Harden IDS-to-digital-twin time-slice decoding with strict non-negative finite guards | `src/scpn_fusion/io/imas_connector.py`, `tests/test_tokamak_digital_twin.py` | IDS import path now rejects invalid/non-finite `time_slice.time_s` values with deterministic errors (no silent floor-to-zero coercion), while preserving deterministic IDS roundtrip semantics for valid payloads | `python -m pytest tests/test_tokamak_digital_twin.py -v`, `python -m pytest tests/ -q -x` |
 | H7-071 | P1 | Control | Harden spiking-controller constructor with strict neuron/window/timebase/noise guards | `src/scpn_fusion/control/neuro_cybernetic_controller.py`, `tests/test_neuro_cybernetic_controller.py` | Spiking controller pool now rejects invalid/non-finite constructor controls (`n_neurons`, `tau_window`, `gain`, `dt_s`, `tau_mem_s`, `noise_std`) with deterministic errors (no silent coercion/flooring), while preserving deterministic fallback/backend behavior for valid settings | `python -m pytest tests/test_neuro_cybernetic_controller.py -v`, `python -m pytest tests/ -q -x` |
+| H7-072 | P1 | Diagnostics | Harden tomography constructor with strict grid/regularization input guards | `src/scpn_fusion/diagnostics/tomography.py`, `tests/test_tomography.py` | Tomography constructor now rejects invalid/non-finite setup controls (`grid_res`, `lambda_reg`) with deterministic errors (no silent coercion/flooring), while preserving deterministic reconstruction and SciPy-fallback solve behavior for valid inputs | `python -m pytest tests/test_tomography.py tests/test_diagnostics.py tests/test_run_diagnostics.py tests/test_forward_diagnostics_guards.py tests/test_synthetic_sensors.py -v`, `python -m pytest tests/ -q -x` |
 
 ## Task Accounting
 
@@ -213,7 +214,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 117
+- Post-S4 hardening tasks delivered: 118
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -354,4 +355,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-069`
 - Completed: `H7-070`
 - Completed: `H7-071`
+- Completed: `H7-072`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted).

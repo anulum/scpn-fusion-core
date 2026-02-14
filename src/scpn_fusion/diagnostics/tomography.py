@@ -32,8 +32,15 @@ class PlasmaTomography:
         verbose: bool = True,
     ) -> None:
         self.sensors = sensors
-        self.res = max(int(grid_res), 4)
-        self.lambda_reg = max(float(lambda_reg), 0.0)
+        grid_res = int(grid_res)
+        if grid_res < 4:
+            raise ValueError("grid_res must be >= 4.")
+        lambda_reg = float(lambda_reg)
+        if not np.isfinite(lambda_reg) or lambda_reg < 0.0:
+            raise ValueError("lambda_reg must be finite and >= 0.")
+
+        self.res = grid_res
+        self.lambda_reg = lambda_reg
         self.verbose = bool(verbose)
 
         self.R_rec = np.linspace(sensors.kernel.R[0], sensors.kernel.R[-1], self.res)
