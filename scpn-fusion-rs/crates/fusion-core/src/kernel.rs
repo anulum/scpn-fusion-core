@@ -185,7 +185,7 @@ impl FusionKernel {
 
             // 4a. Find X-point
             let ((r_x, z_x), psi_x) =
-                find_x_point(&self.state.psi, &self.grid, self.config.dimensions.z_min);
+                find_x_point(&self.state.psi, &self.grid, self.config.dimensions.z_min)?;
             x_point_pos = (r_x, z_x);
             psi_boundary_val = psi_x;
 
@@ -304,7 +304,7 @@ impl FusionKernel {
         }
 
         // Finalize: compute B-field
-        let (b_r, b_z) = compute_b_field(&self.state.psi, &self.grid);
+        let (b_r, b_z) = compute_b_field(&self.state.psi, &self.grid)?;
         self.state.b_r = Some(b_r);
         self.state.b_z = Some(b_z);
         self.state.axis = Some(axis_position);

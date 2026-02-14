@@ -13,6 +13,7 @@
 //!   B_Z =  (1/R) ∂Ψ/∂R
 
 use fusion_math::interp::gradient_2d;
+use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::Grid2D;
 use ndarray::Array2;
 
@@ -30,7 +31,59 @@ const R_SAFE_MIN: f64 = 1e-6;
 /// NOTE: The Python code has swapped variable names (`dPsi_dR` is actually gradient
 /// along axis 0 = Z direction). The physics usage is correct because both assignments
 /// swap consistently. This Rust port uses correct naming from the start.
-pub fn compute_b_field(psi: &Array2<f64>, grid: &Grid2D) -> (Array2<f64>, Array2<f64>) {
+pub fn compute_b_field(
+    psi: &Array2<f64>,
+    grid: &Grid2D,
+) -> FusionResult<(Array2<f64>, Array2<f64>)> {
+    if grid.nz < 2 || grid.nr < 2 {
+        return Err(FusionError::ConfigError(format!(
+            "b-field grid requires nz,nr >= 2, got nz={} nr={}",
+            grid.nz, grid.nr
+        )));
+    }
+    if !grid.dr.is_finite()
+        || !grid.dz.is_finite()
+        || grid.dr.abs() <= f64::EPSILON
+        || grid.dz.abs() <= f64::EPSILON
+    {
+        return Err(FusionError::ConfigError(format!(
+            "b-field grid spacing must be finite and non-zero, got dr={} dz={}",
+            grid.dr, grid.dz
+        )));
+    }
+    if psi.nrows() != grid.nz || psi.ncols() != grid.nr {
+        return Err(FusionError::ConfigError(format!(
+            "b-field psi shape mismatch: expected ({}, {}), got ({}, {})",
+            grid.nz,
+            grid.nr,
+            psi.nrows(),
+            psi.ncols()
+        )));
+    }
+    if grid.rr.nrows() != grid.nz || grid.rr.ncols() != grid.nr {
+        return Err(FusionError::ConfigError(format!(
+            "b-field grid.rr shape mismatch: expected ({}, {}), got ({}, {})",
+            grid.nz,
+            grid.nr,
+            grid.rr.nrows(),
+            grid.rr.ncols()
+        )));
+    }
+    if grid.zz.nrows() != grid.nz || grid.zz.ncols() != grid.nr {
+        return Err(FusionError::ConfigError(format!(
+            "b-field grid.zz shape mismatch: expected ({}, {}), got ({}, {})",
+            grid.nz,
+            grid.nr,
+            grid.zz.nrows(),
+            grid.zz.ncols()
+        )));
+    }
+    if psi.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "b-field psi contains non-finite values".to_string(),
+        ));
+    }
+
     let (dpsi_dz, dpsi_dr) = gradient_2d(psi, grid);
 
     let nz = grid.nz;
@@ -40,13 +93,26 @@ pub fn compute_b_field(psi: &Array2<f64>, grid: &Grid2D) -> (Array2<f64>, Array2
 
     for iz in 0..nz {
         for ir in 0..nr {
-            let r_safe = grid.rr[[iz, ir]].max(R_SAFE_MIN);
-            b_r[[iz, ir]] = -(1.0 / r_safe) * dpsi_dz[[iz, ir]];
-            b_z[[iz, ir]] = (1.0 / r_safe) * dpsi_dr[[iz, ir]];
+            let r = grid.rr[[iz, ir]];
+            if !r.is_finite() || r <= 0.0 {
+                return Err(FusionError::ConfigError(format!(
+                    "b-field radius must be finite and > 0 at ({iz}, {ir}), got {r}"
+                )));
+            }
+            let inv_r = 1.0 / r.max(R_SAFE_MIN);
+            let br = -inv_r * dpsi_dz[[iz, ir]];
+            let bz = inv_r * dpsi_dr[[iz, ir]];
+            if !br.is_finite() || !bz.is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "b-field output became non-finite at ({iz}, {ir})"
+                )));
+            }
+            b_r[[iz, ir]] = br;
+            b_z[[iz, ir]] = bz;
         }
     }
 
-    (b_r, b_z)
+    Ok((b_r, b_z))
 }
 
 #[cfg(test)]
@@ -58,7 +124,7 @@ mod tests {
         // Uniform Ψ → zero B-field
         let grid = Grid2D::new(16, 16, 1.0, 9.0, -5.0, 5.0);
         let psi = Array2::from_elem((16, 16), 1.0);
-        let (b_r, b_z) = compute_b_field(&psi, &grid);
+        let (b_r, b_z) = compute_b_field(&psi, &grid).expect("valid b-field inputs");
 
         for iz in 0..16 {
             for ir in 0..16 {
@@ -83,8 +149,23 @@ mod tests {
             let z = grid.zz[[iz, ir]];
             (-(((r - 5.0).powi(2) + z.powi(2)) / 4.0)).exp()
         });
-        let (b_r, b_z) = compute_b_field(&psi, &grid);
+        let (b_r, b_z) = compute_b_field(&psi, &grid).expect("valid b-field inputs");
         assert!(!b_r.iter().any(|v| v.is_nan()), "B_R contains NaN");
         assert!(!b_z.iter().any(|v| v.is_nan()), "B_Z contains NaN");
+    }
+
+    #[test]
+    fn test_b_field_rejects_invalid_runtime_inputs() {
+        let mut grid = Grid2D::new(16, 16, 1.0, 9.0, -5.0, 5.0);
+        let psi = Array2::from_elem((16, 16), 1.0);
+
+        grid.rr[[0, 0]] = 0.0;
+        let err = compute_b_field(&psi, &grid).expect_err("non-positive radius must fail");
+        assert!(matches!(err, FusionError::ConfigError(_)));
+
+        let bad_shape = Array2::from_elem((15, 16), 0.0);
+        let err = compute_b_field(&bad_shape, &Grid2D::new(16, 16, 1.0, 9.0, -5.0, 5.0))
+            .expect_err("shape mismatch must fail");
+        assert!(matches!(err, FusionError::ConfigError(_)));
     }
 }
