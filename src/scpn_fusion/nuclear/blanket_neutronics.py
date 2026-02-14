@@ -50,6 +50,10 @@ class BreedingBlanket:
         Solves steady-state diffusion-reaction equation for neutron flux Phi(x).
         -D * d2Phi/dx2 + Sigma_abs * Phi = Source
         """
+        incident_flux = float(incident_flux)
+        if (not np.isfinite(incident_flux)) or incident_flux <= 0.0:
+            raise ValueError("incident_flux must be finite and > 0")
+
         rear_albedo = float(rear_albedo)
         if rear_albedo < 0.0 or rear_albedo >= 1.0:
             raise ValueError("rear_albedo must satisfy 0.0 <= rear_albedo < 1.0")
@@ -195,37 +199,82 @@ class BreedingBlanket:
             blanket_volume_m3=blanket_volume_m3,
         )
 
-def run_breeding_sim():
-    print("--- SCPN FUEL CYCLE: Tritium Breeding Ratio (TBR) ---")
-    
-    blanket = BreedingBlanket(thickness_cm=80)
-    phi = blanket.solve_transport()
+def run_breeding_sim(
+    *,
+    thickness_cm=80.0,
+    li6_enrichment=0.9,
+    incident_flux=1e14,
+    rear_albedo=0.0,
+    save_plot=True,
+    output_path="Tritium_Breeding_Result.png",
+    verbose=True,
+):
+    """Run deterministic blanket breeding simulation and return summary metrics."""
+    thickness_cm = float(thickness_cm)
+    if (not np.isfinite(thickness_cm)) or thickness_cm <= 0.0:
+        raise ValueError("thickness_cm must be finite and > 0")
+
+    li6_enrichment = float(li6_enrichment)
+    if (not np.isfinite(li6_enrichment)) or li6_enrichment < 0.0 or li6_enrichment > 1.0:
+        raise ValueError("li6_enrichment must satisfy 0.0 <= li6_enrichment <= 1.0")
+
+    if verbose:
+        print("--- SCPN FUEL CYCLE: Tritium Breeding Ratio (TBR) ---")
+
+    blanket = BreedingBlanket(thickness_cm=thickness_cm, li6_enrichment=li6_enrichment)
+    phi = blanket.solve_transport(incident_flux=incident_flux, rear_albedo=rear_albedo)
     tbr, prod_profile = blanket.calculate_tbr(phi)
-    
-    print(f"Design Thickness: {blanket.thickness} cm")
-    print(f"Calculated TBR: {tbr:.3f}")
-    
+
     status = "SUSTAINABLE" if tbr > 1.05 else "DYING REACTOR"
-    print(f"Status: {status}")
-    
-    # Visuals
-    fig, ax1 = plt.subplots(figsize=(10, 6))
-    
-    ax1.set_title(f"Neutron Flux & Tritium Production (TBR={tbr:.2f})")
-    ax1.set_xlabel("Distance from First Wall (cm)")
-    ax1.set_ylabel("Neutron Flux (n/cm2/s)", color='blue')
-    ax1.plot(blanket.x, phi, 'b-', label='Neutron Flux')
-    ax1.tick_params(axis='y', labelcolor='blue')
-    
-    ax2 = ax1.twinx()
-    ax2.set_ylabel("Tritium Production Rate", color='green')
-    ax2.plot(blanket.x, prod_profile, 'g--', label='T-Production')
-    ax2.fill_between(blanket.x, 0, prod_profile, color='green', alpha=0.1)
-    ax2.tick_params(axis='y', labelcolor='green')
-    
-    plt.tight_layout()
-    plt.savefig("Tritium_Breeding_Result.png")
-    print("Saved: Tritium_Breeding_Result.png")
+    if verbose:
+        print(f"Design Thickness: {blanket.thickness} cm")
+        print(f"Calculated TBR: {tbr:.3f}")
+        print(f"Status: {status}")
+
+    plot_saved = False
+    plot_error = None
+    if save_plot:
+        try:
+            fig, ax1 = plt.subplots(figsize=(10, 6))
+
+            ax1.set_title(f"Neutron Flux & Tritium Production (TBR={tbr:.2f})")
+            ax1.set_xlabel("Distance from First Wall (cm)")
+            ax1.set_ylabel("Neutron Flux (n/cm2/s)", color="blue")
+            ax1.plot(blanket.x, phi, "b-", label="Neutron Flux")
+            ax1.tick_params(axis="y", labelcolor="blue")
+
+            ax2 = ax1.twinx()
+            ax2.set_ylabel("Tritium Production Rate", color="green")
+            ax2.plot(blanket.x, prod_profile, "g--", label="T-Production")
+            ax2.fill_between(blanket.x, 0, prod_profile, color="green", alpha=0.1)
+            ax2.tick_params(axis="y", labelcolor="green")
+
+            plt.tight_layout()
+            plt.savefig(output_path)
+            plt.close(fig)
+            plot_saved = True
+            if verbose:
+                print(f"Saved: {output_path}")
+        except Exception as exc:
+            plot_error = str(exc)
+            if verbose:
+                print(f"Simulation completed without plot artifact: {exc}")
+
+    summary = {
+        "thickness_cm": float(blanket.thickness),
+        "li6_enrichment": float(blanket.li6_enrichment),
+        "incident_flux": float(incident_flux),
+        "rear_albedo": float(rear_albedo),
+        "tbr": float(tbr),
+        "status": status,
+        "flux_peak": float(np.max(phi)),
+        "flux_mean": float(np.mean(phi)),
+        "production_peak": float(np.max(prod_profile)),
+        "production_mean": float(np.mean(prod_profile)),
+        "plot_saved": bool(plot_saved),
+        "plot_error": plot_error,
+    }
+    return summary
 
 if __name__ == "__main__":
     run_breeding_sim()

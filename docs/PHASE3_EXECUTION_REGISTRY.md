@@ -159,6 +159,7 @@ derive the imported 85-task Phase 3 backlog.
 | H7-022 | P1 | Control | Harden SPI mitigation runner with deterministic summary-return runtime API and CI-safe non-plot mode | `src/scpn_fusion/control/spi_mitigation.py`, `tests/test_spi_mitigation_runtime.py` | SPI mitigation now exposes a typed non-interactive summary path with finite-input guards, optional plotting, deterministic CQ diagnostics, and regression tests for determinism + invalid parameter handling | `python -m pytest tests/test_spi_mitigation.py tests/test_spi_mitigation_runtime.py -v` |
 | H7-023 | P1 | Control | Decouple tokamak digital twin runtime from global NumPy RNG and add injected-generator replay path | `src/scpn_fusion/control/tokamak_digital_twin.py`, `tests/test_tokamak_digital_twin.py` | Digital twin runtime uses a scoped/injected RNG for network initialization and exploration noise, avoids global `np.random` state mutation, and preserves deterministic replay via fixed-seed injected generators | `python -m pytest tests/test_tokamak_digital_twin.py tests/test_gdep_01_digital_twin_hook.py -v` |
 | H7-024 | P1 | Control | Harden neuro-cybernetic controller runtime with deterministic summary-return API and CI-safe non-plot mode | `src/scpn_fusion/control/neuro_cybernetic_controller.py`, `tests/test_neuro_cybernetic_controller.py` | Neuro-cybernetic control now exposes non-interactive deterministic runtime summaries (classical/quantum lanes), supports injectable kernel factory for tests, tracks bounded control/error diagnostics, and validates non-positive duration guards without requiring plot generation | `python -m pytest tests/test_neuro_cybernetic_controller.py tests/test_director_interface.py -v` |
+| H7-025 | P1 | Nuclear | Harden blanket-neutronics runtime with deterministic summary-return API and strict incident-flux guards | `src/scpn_fusion/nuclear/blanket_neutronics.py`, `tests/test_blanket_neutronics.py` | Blanket runner now supports CI-safe non-plot execution with typed summary metrics, enforces finite positive incident-flux constraints, preserves rear-albedo validation semantics, and adds deterministic runtime regression coverage | `python -m pytest tests/test_blanket_neutronics.py -v` |
 
 ## Task Accounting
 
@@ -166,8 +167,8 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 70
-- Remaining in deferred pool after queue selection: 43
+- Post-S4 hardening tasks delivered: 71
+- Remaining in deferred pool after queue selection: 42
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
 ## Active Task
@@ -260,4 +261,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H7-022`
 - Completed: `H7-023`
 - Completed: `H7-024`
-- Next active task: `H7-025` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).
+- Completed: `H7-025`
+- Next active task: `H7-026` (deferred-pool execution wave active; continue control/hpc/nuclear/scpn source-plan extraction).

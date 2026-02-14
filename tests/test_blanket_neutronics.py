@@ -29,6 +29,7 @@ SPEC.loader.exec_module(blanket_neutronics)
 
 BreedingBlanket = blanket_neutronics.BreedingBlanket
 VolumetricBlanketReport = blanket_neutronics.VolumetricBlanketReport
+run_breeding_sim = blanket_neutronics.run_breeding_sim
 
 
 def test_volumetric_surrogate_returns_finite_positive_report() -> None:
@@ -91,6 +92,59 @@ def test_rear_albedo_requires_valid_range() -> None:
         blanket.solve_transport(rear_albedo=-0.1)
     with pytest.raises(ValueError, match="rear_albedo"):
         blanket.solve_transport(rear_albedo=1.0)
+
+
+def test_incident_flux_requires_positive_finite_value() -> None:
+    blanket = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.9)
+    with pytest.raises(ValueError, match="incident_flux"):
+        blanket.solve_transport(incident_flux=0.0)
+    with pytest.raises(ValueError, match="incident_flux"):
+        blanket.solve_transport(incident_flux=float("nan"))
+
+
+def test_run_breeding_sim_returns_finite_summary_without_plot() -> None:
+    summary = run_breeding_sim(
+        thickness_cm=80.0,
+        li6_enrichment=0.9,
+        incident_flux=1.0e14,
+        rear_albedo=0.5,
+        save_plot=False,
+        verbose=False,
+    )
+    for key in (
+        "thickness_cm",
+        "li6_enrichment",
+        "incident_flux",
+        "rear_albedo",
+        "tbr",
+        "status",
+        "flux_peak",
+        "flux_mean",
+        "production_peak",
+        "production_mean",
+        "plot_saved",
+    ):
+        assert key in summary
+    assert summary["plot_saved"] is False
+    assert np.isfinite(summary["tbr"])
+    assert np.isfinite(summary["flux_peak"])
+    assert np.isfinite(summary["production_peak"])
+
+
+def test_run_breeding_sim_is_deterministic_for_fixed_inputs() -> None:
+    kwargs = dict(
+        thickness_cm=85.0,
+        li6_enrichment=0.85,
+        incident_flux=9.0e13,
+        rear_albedo=0.4,
+        save_plot=False,
+        verbose=False,
+    )
+    a = run_breeding_sim(**kwargs)
+    b = run_breeding_sim(**kwargs)
+    assert a["tbr"] == b["tbr"]
+    assert a["flux_peak"] == b["flux_peak"]
+    assert a["production_peak"] == b["production_peak"]
 
 
 def test_cad_surface_loading_smoke() -> None:
