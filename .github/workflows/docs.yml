@@ -80,6 +80,7 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: [build-python-docs, build-rust-docs, build-notebook-html]
+    if: ${{ vars.DEPLOY_GH_PAGES == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
