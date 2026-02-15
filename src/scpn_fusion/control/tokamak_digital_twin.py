@@ -218,6 +218,9 @@ def run_digital_twin(
     output_path="Tokamak_Digital_Twin.png",
     verbose=True,
     gyro_surrogate=None,
+    chaos_monkey: bool = False,
+    sensor_dropout_prob: float = 0.0,
+    sensor_noise_std: float = 0.0,
     rng: Optional[np.random.Generator] = None,
 ):
     """
@@ -229,6 +232,13 @@ def run_digital_twin(
     steps = int(time_steps)
     if steps < 1:
         raise ValueError("time_steps must be >= 1.")
+    chaos_monkey = bool(chaos_monkey)
+    sensor_dropout_prob = float(sensor_dropout_prob)
+    sensor_noise_std = float(sensor_noise_std)
+    if not np.isfinite(sensor_dropout_prob) or sensor_dropout_prob < 0.0 or sensor_dropout_prob > 1.0:
+        raise ValueError("sensor_dropout_prob must be finite and in [0, 1].")
+    if not np.isfinite(sensor_noise_std) or sensor_noise_std < 0.0:
+        raise ValueError("sensor_noise_std must be finite and >= 0.")
     local_rng = _resolve_rng(seed=int(seed), rng=rng)
     if verbose:
         print("--- SCPN 2D TOKAMAK DIGITAL TWIN + NEURAL CONTROL ---")
@@ -243,6 +253,7 @@ def run_digital_twin(
     
     history_rewards = []
     history_actions = []
+    sensor_dropouts_total = 0
     
     if verbose:
         print(f"Training Neural Network for {steps} steps...")
@@ -250,7 +261,21 @@ def run_digital_twin(
     for t in range(steps):
         # 1. Observe State (Midplane Profile)
         midplane_idx = GRID_SIZE // 2
-        state_vector = plasma.T[midplane_idx, :].reshape(1, -1)
+        state_vector = np.asarray(plasma.T[midplane_idx, :], dtype=float).reshape(1, -1).copy()
+        if chaos_monkey:
+            if sensor_noise_std > 0.0:
+                state_vector += local_rng.normal(
+                    0.0, sensor_noise_std, size=state_vector.shape
+                )
+            if sensor_dropout_prob > 0.0:
+                dropout_mask = local_rng.random(state_vector.shape[1]) < sensor_dropout_prob
+                dropped = int(np.sum(dropout_mask, dtype=np.int64))
+                if dropped > 0:
+                    state_vector[0, dropout_mask] = 0.0
+                    sensor_dropouts_total += dropped
+            state_vector = np.nan_to_num(
+                state_vector, nan=0.0, posinf=100.0, neginf=0.0
+            )
         
         # 2. Action (Explore vs Exploit)
         # Add exploration noise
@@ -348,6 +373,11 @@ def run_digital_twin(
         "final_action": float(history_actions[-1]) if history_actions else 0.0,
         "final_islands_px": islands_final,
         "reward_mean_last_50": float(np.mean(history_rewards[-50:])) if history_rewards else 0.0,
+        "chaos_monkey": chaos_monkey,
+        "sensor_dropout_prob": sensor_dropout_prob,
+        "sensor_noise_std": sensor_noise_std,
+        "sensor_dropouts_total": int(sensor_dropouts_total),
+        "sensor_dropout_rate": float(sensor_dropouts_total / (steps * GRID_SIZE)),
         "plot_saved": bool(plot_saved),
         "plot_error": plot_error,
     }

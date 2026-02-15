@@ -352,6 +352,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-125 | P1 | Control/Interop | Add deterministic digital-twin IDS history export helper using sequence adapter contracts | `src/scpn_fusion/control/tokamak_digital_twin.py`, `tests/test_tokamak_digital_twin.py` | Added `run_digital_twin_ids_history(...)` to generate multi-horizon IDS payload sequences from digital-twin runs, with strict `history_steps`/seed ownership guards and deterministic replay semantics; regression tests cover valid sequence shape/index/time behavior, deterministic replay, and invalid-history input rejection | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 | H8-126 | P1 | Interop | Add pulse-style IDS history container helpers with strict metadata/slice consistency validation | `src/scpn_fusion/io/imas_connector.py`, `src/scpn_fusion/io/__init__.py`, `tests/test_imas_connector.py` | Added pulse-container API (`validate_ids_pulse_payload`, `digital_twin_history_to_ids_pulse`, `ids_pulse_to_digital_twin_history`) using schema `ids_equilibrium_pulse_v1`; validation enforces required pulse keys, non-empty `time_slices`, and exact `machine/shot/run` consistency between pulse metadata and embedded slice payloads while preserving existing sequence/single-payload contracts | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 | H8-127 | P1 | Control/Interop | Add direct digital-twin pulse export helper for IDS container workflows | `src/scpn_fusion/control/tokamak_digital_twin.py`, `tests/test_tokamak_digital_twin.py` | Added `run_digital_twin_ids_pulse(...)` for deterministic multi-horizon digital-twin execution returning pulse-style IDS container output (`ids_equilibrium_pulse_v1`), refactored shared snapshot generation for history/pulse modes, and added regression coverage for pulse validity, deterministic replay, and invalid history-step rejection | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
+| H8-128 | P1 | Control | Add deterministic chaos-monkey sensor dropout/noise lane for digital-twin runtime realism | `src/scpn_fusion/control/tokamak_digital_twin.py`, `tests/test_tokamak_digital_twin.py` | Added optional chaos controls (`chaos_monkey`, `sensor_dropout_prob`, `sensor_noise_std`) to inject deterministic sensor-channel dropout and Gaussian probe noise during state observation with strict scalar guards; runtime summary now reports dropout totals/rate for auditability, and regression tests lock deterministic replay, full-dropout accounting, and invalid-input rejection | `python -m pytest tests/test_tokamak_digital_twin.py tests/test_imas_connector.py -q` |
 
 ## Task Accounting
 
@@ -359,7 +360,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 263
+- Post-S4 hardening tasks delivered: 264
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -646,4 +647,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-125`
 - Completed: `H8-126`
 - Completed: `H8-127`
+- Completed: `H8-128`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

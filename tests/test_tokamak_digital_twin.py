@@ -42,6 +42,11 @@ def test_run_digital_twin_returns_finite_summary_without_plot() -> None:
         "final_action",
         "final_islands_px",
         "reward_mean_last_50",
+        "chaos_monkey",
+        "sensor_dropout_prob",
+        "sensor_noise_std",
+        "sensor_dropouts_total",
+        "sensor_dropout_rate",
         "plot_saved",
     ):
         assert key in summary
@@ -51,6 +56,62 @@ def test_run_digital_twin_returns_finite_summary_without_plot() -> None:
     assert np.isfinite(summary["final_reward"])
     assert np.isfinite(summary["final_action"])
     assert np.isfinite(summary["reward_mean_last_50"])
+    assert summary["chaos_monkey"] is False
+    assert summary["sensor_dropouts_total"] == 0
+
+
+def test_run_digital_twin_chaos_monkey_is_deterministic_for_fixed_seed() -> None:
+    kwargs = dict(
+        time_steps=20,
+        seed=77,
+        save_plot=False,
+        verbose=False,
+        chaos_monkey=True,
+        sensor_dropout_prob=0.25,
+        sensor_noise_std=0.05,
+    )
+    a = run_digital_twin(**kwargs)
+    b = run_digital_twin(**kwargs)
+    assert a == b
+
+
+def test_run_digital_twin_chaos_monkey_full_dropout_counts_all_channels() -> None:
+    steps = 7
+    summary = run_digital_twin(
+        time_steps=steps,
+        seed=9,
+        save_plot=False,
+        verbose=False,
+        chaos_monkey=True,
+        sensor_dropout_prob=1.0,
+        sensor_noise_std=0.0,
+    )
+    assert summary["sensor_dropouts_total"] == steps * 40
+    assert summary["sensor_dropout_rate"] == 1.0
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "msg"),
+    [
+        ({"sensor_dropout_prob": -0.1}, "sensor_dropout_prob"),
+        ({"sensor_dropout_prob": 1.1}, "sensor_dropout_prob"),
+        ({"sensor_dropout_prob": float("nan")}, "sensor_dropout_prob"),
+        ({"sensor_noise_std": -0.01}, "sensor_noise_std"),
+        ({"sensor_noise_std": float("inf")}, "sensor_noise_std"),
+    ],
+)
+def test_run_digital_twin_rejects_invalid_chaos_monkey_controls(
+    kwargs: dict[str, object], msg: str
+) -> None:
+    with pytest.raises(ValueError, match=msg):
+        run_digital_twin(
+            time_steps=4,
+            seed=3,
+            save_plot=False,
+            verbose=False,
+            chaos_monkey=True,
+            **kwargs,
+        )
 
 
 def test_run_digital_twin_is_deterministic_for_fixed_seed() -> None:

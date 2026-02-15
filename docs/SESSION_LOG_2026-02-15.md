@@ -340,6 +340,31 @@ Summary:
   - deterministic replay for fixed inputs
   - invalid history-step rejection paths
 
+### H8-128 (Control)
+Files:
+- `src/scpn_fusion/control/tokamak_digital_twin.py`
+- `tests/test_tokamak_digital_twin.py`
+
+Summary:
+- Added deterministic "Chaos Monkey" runtime controls for digital-twin sensor realism:
+  - `chaos_monkey: bool`
+  - `sensor_dropout_prob: float` (strict `[0, 1]`)
+  - `sensor_noise_std: float` (strict `>= 0`)
+- Sensor observation path now supports:
+  - per-channel stochastic dropouts (channel forced to zero)
+  - Gaussian sensor noise injection
+  - deterministic replay for fixed seed / injected RNG
+- Added summary observability fields:
+  - `chaos_monkey`
+  - `sensor_dropout_prob`
+  - `sensor_noise_std`
+  - `sensor_dropouts_total`
+  - `sensor_dropout_rate`
+- Added regression coverage for:
+  - deterministic replay with chaos controls enabled
+  - full-dropout accounting (`dropout_prob=1.0`)
+  - invalid chaos-parameter rejection semantics
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -353,6 +378,7 @@ Summary:
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after digital-twin history helper)
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after pulse-container extension)
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after digital-twin pulse helper)
+- `python -m pytest tests/test_tokamak_digital_twin.py tests/test_imas_connector.py -q` (after chaos-monkey sensor lane)
 
 Observed final outcomes on latest runs:
 - `30 passed` (CAD wave)
