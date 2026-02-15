@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import struct
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -50,6 +51,40 @@ def _parse_ascii_stl(path: Path) -> tuple[FloatArray, IntArray]:
     return np.asarray(vertices, dtype=np.float64), np.asarray(faces, dtype=np.int64)
 
 
+def _parse_binary_stl(path: Path) -> tuple[FloatArray, IntArray]:
+    with path.open("rb") as handle:
+        data = handle.read()
+    if len(data) < 84:
+        raise ValueError(f"Binary STL too short: {path}")
+
+    tri_count = struct.unpack_from("<I", data, 80)[0]
+    expected = 84 + tri_count * 50
+    if len(data) < expected:
+        raise ValueError(
+            f"Binary STL truncated: expected >= {expected} bytes, got {len(data)}"
+        )
+
+    vertices: list[list[float]] = []
+    faces: list[list[int]] = []
+    offset = 84
+    for _ in range(tri_count):
+        # Skip normal (3 x float32)
+        offset += 12
+        tri_idx: list[int] = []
+        for _corner in range(3):
+            x, y, z = struct.unpack_from("<fff", data, offset)
+            offset += 12
+            vertices.append([float(x), float(y), float(z)])
+            tri_idx.append(len(vertices) - 1)
+        # Skip attribute byte count (uint16)
+        offset += 2
+        faces.append(tri_idx)
+
+    if not faces:
+        raise ValueError(f"No triangles parsed from binary STL: {path}")
+    return np.asarray(vertices, dtype=np.float64), np.asarray(faces, dtype=np.int64)
+
+
 def load_cad_mesh(path: str | Path) -> tuple[FloatArray, IntArray]:
     """
     Load CAD mesh from STL/STEP using trimesh when available.
@@ -73,7 +108,10 @@ def load_cad_mesh(path: str | Path) -> tuple[FloatArray, IntArray]:
         return vertices, faces
 
     if suffix == ".stl":
-        vertices, faces = _parse_ascii_stl(mesh_path)
+        try:
+            vertices, faces = _parse_ascii_stl(mesh_path)
+        except ValueError:
+            vertices, faces = _parse_binary_stl(mesh_path)
         _validate_mesh(vertices, faces)
         return vertices, faces
     raise RuntimeError("STEP/STP loading requires trimesh backend.")

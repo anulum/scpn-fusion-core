@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import struct
 import sys
 
 import numpy as np
@@ -176,6 +177,48 @@ def test_load_cad_mesh_ascii_stl_fallback(monkeypatch: pytest.MonkeyPatch, tmp_p
     vertices, faces = load_cad_mesh(stl)
     assert vertices.shape == (3, 3)
     assert faces.shape == (1, 3)
+
+
+def test_load_cad_mesh_binary_stl_fallback(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    monkeypatch.setitem(sys.modules, "trimesh", None)
+    stl = tmp_path / "mesh_binary.stl"
+
+    header = b"binary-stl-test".ljust(80, b" ")
+    tri_count = 1
+    tri = struct.pack(
+        "<12fH",
+        0.0,
+        0.0,
+        1.0,  # normal
+        0.0,
+        0.0,
+        0.0,  # v1
+        1.0,
+        0.0,
+        0.0,  # v2
+        0.0,
+        1.0,
+        0.0,  # v3
+        0,  # attr byte count
+    )
+    stl.write_bytes(header + struct.pack("<I", tri_count) + tri)
+
+    vertices, faces = load_cad_mesh(stl)
+    assert vertices.shape == (3, 3)
+    assert faces.shape == (1, 3)
+
+
+def test_load_cad_mesh_binary_stl_truncated_rejected(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    monkeypatch.setitem(sys.modules, "trimesh", None)
+    stl = tmp_path / "mesh_binary_bad.stl"
+    # Header + tri_count=1 but no triangle payload.
+    stl.write_bytes(b"x" * 80 + struct.pack("<I", 1))
+    with pytest.raises(ValueError, match="Binary STL truncated"):
+        load_cad_mesh(stl)
 
 
 def test_load_cad_mesh_ascii_stl_rejects_non_finite_vertices(
