@@ -329,6 +329,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-102 | P1 | Interop | Require explicit nested IDS keys and core digital-twin summary keys in adapter contract | `src/scpn_fusion/io/imas_connector.py`, `tests/test_imas_connector.py` | `validate_ids_payload` now enforces required nested IDS keys (`time_slice.index/time_s`, `equilibrium.axis/islands_px`, `equilibrium.axis.r_m/z_m`, and performance scalars), and `digital_twin_summary_to_ids` now requires a mapping with core summary fields (`steps`, `final_islands_px`, `final_reward`, `reward_mean_last_50`, `final_avg_temp`) while keeping axis fields optional for backward compatibility; added regression coverage for missing nested-key and summary-key rejection | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 | H8-103 | P1 | Interop | Preserve digital-twin IDS adapter compatibility while enforcing core summary-key contract | `src/scpn_fusion/io/imas_connector.py`, `tests/test_imas_connector.py` | Refined `digital_twin_summary_to_ids` summary-key enforcement to require only stable core fields and keep `final_axis_r/z` optional, restoring compatibility with `run_digital_twin` outputs while retaining explicit nested-key validation in IDS payload checks; added regression coverage for non-mapping summaries and missing core summary keys | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 | H8-104 | P1 | Validation | Honor vectorized SOR tolerance and fix NaN-safe worst-file aggregation in ψ RMSE summary | `validation/psi_pointwise_rmse.py`, `tests/test_psi_pointwise_rmse.py` | `manufactured_solve_vectorised` now validates solver controls (`omega`, `max_iter`, `tol`) and stops early when GS residual meets tolerance; `validate_all_sparc` now computes `worst_file` from finite RMSE entries with index-safe mapping, avoiding NaN-induced misattribution; added regression coverage for early-stop behavior, invalid controls, and NaN-safe worst-file selection | `python -m pytest tests/test_psi_pointwise_rmse.py -q` |
+| H8-105 | P1 | Validation | Make ψ RMSE CLI output encoding-safe on Windows code pages | `validation/psi_pointwise_rmse.py`, `tests/test_psi_pointwise_rmse_cli.py` | Replaced non-ASCII glyphs in CLI `main()` output with ASCII-safe labels so strict `cp1250`/ASCII terminals no longer raise `UnicodeEncodeError`, and added CLI regression coverage with an ASCII-strict stdout sink to lock compatibility | `python -m pytest tests/test_psi_pointwise_rmse.py tests/test_psi_pointwise_rmse_cli.py -q`, `python validation/psi_pointwise_rmse.py` |
 
 ## Task Accounting
 
@@ -336,7 +337,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 240
+- Post-S4 hardening tasks delivered: 241
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -600,4 +601,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-102`
 - Completed: `H8-103`
 - Completed: `H8-104`
+- Completed: `H8-105`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

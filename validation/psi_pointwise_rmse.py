@@ -489,21 +489,21 @@ def sparc_psi_rmse(sparc_dir: Path) -> dict[str, Any]:
 
 def main() -> int:
     print("=" * 70)
-    print("SCPN Fusion Core — Point-wise ψ(R,Z) RMSE Validation")
+    print("SCPN Fusion Core - Point-wise psi(R,Z) RMSE Validation")
     print("=" * 70)
 
     summary = validate_all_sparc()
 
     print(f"\nFiles validated: {summary.count}")
-    print(f"Mean normalised ψ RMSE: {summary.mean_psi_rmse_norm:.6f}")
+    print(f"Mean normalized psi RMSE: {summary.mean_psi_rmse_norm:.6f}")
     print(f"Mean relative L2:       {summary.mean_psi_relative_l2:.6f}")
     print(f"Mean GS residual (L2):  {summary.mean_gs_residual_l2:.6f}")
     print(f"Worst file:             {summary.worst_file} "
-          f"(ψ_N RMSE = {summary.worst_psi_rmse_norm:.6f})")
+          f"(psi_N RMSE = {summary.worst_psi_rmse_norm:.6f})")
     print()
 
     # Per-file table
-    print(f"{'File':<22} {'Grid':<8} {'ψ_N RMSE':>10} {'Rel L2':>10} "
+    print(f"{'File':<22} {'Grid':<8} {'psi_N RMSE':>10} {'Rel L2':>10} "
           f"{'GS Res':>10} {'Iters':>6} {'Time(ms)':>10}")
     print("-" * 80)
     for r in summary.rows:
