@@ -130,16 +130,30 @@ fn unpack_params(x: &[f64; N_PARAMS]) -> (ProfileParams, ProfileParams) {
     (p, ff)
 }
 
-fn to_array2(jac: Vec<Vec<f64>>) -> Array2<f64> {
+fn to_array2(jac: &[Vec<f64>], expected_cols: usize, label: &str) -> FusionResult<Array2<f64>> {
+    if jac.is_empty() {
+        return Err(FusionError::ConfigError(format!(
+            "{label} must contain at least one row"
+        )));
+    }
+    if jac.iter().any(|row| row.len() != expected_cols) {
+        return Err(FusionError::ConfigError(format!(
+            "{label} column count mismatch: expected {expected_cols}"
+        )));
+    }
+    if jac.iter().flatten().any(|v| !v.is_finite()) {
+        return Err(FusionError::ConfigError(format!(
+            "{label} contains non-finite values"
+        )));
+    }
     let rows = jac.len();
-    let cols = jac.first().map(|r| r.len()).unwrap_or(0);
-    let mut out = Array2::zeros((rows, cols));
+    let mut out: Array2<f64> = Array2::zeros((rows, expected_cols));
     for i in 0..rows {
-        for j in 0..cols {
+        for j in 0..expected_cols {
             out[[i, j]] = jac[i][j];
         }
     }
-    out
+    Ok(out)
 }
 
 fn validate_flux_denom(flux_denom: f64) -> FusionResult<f64> {
@@ -707,7 +721,7 @@ pub fn reconstruct_equilibrium(
             }
         }?;
 
-        let j = to_array2(jac);
+        let j = to_array2(&jac, N_PARAMS, "inverse jacobian")?;
         let lambda = config.tikhonov;
         let sqrt_lambda = lambda.sqrt();
 
@@ -884,7 +898,7 @@ pub fn reconstruct_equilibrium_with_kernel(
             break;
         }
 
-        let j = to_array2(jac);
+        let j = to_array2(&jac, N_PARAMS, "kernel inverse jacobian")?;
 
         let lambda = kernel_cfg.inverse.tikhonov;
         let sqrt_lambda = lambda.sqrt();
@@ -1352,6 +1366,22 @@ mod tests {
         let small_grid = Grid2D::new(2, 2, 1.0, 2.0, -1.0, 1.0);
         let ds_small = Array2::zeros((2, 2));
         assert!(solve_linearized_sensitivity(&small_grid, &ds_small, &ds_small, 1).is_err());
+    }
+
+    #[test]
+    fn test_to_array2_rejects_invalid_shapes_or_values() {
+        let jac_ok = vec![vec![0.0; N_PARAMS]; 2];
+        assert!(to_array2(&jac_ok, N_PARAMS, "jac").is_ok());
+
+        let jac_jagged = vec![vec![0.0; N_PARAMS], vec![0.0; N_PARAMS - 1]];
+        assert!(to_array2(&jac_jagged, N_PARAMS, "jac").is_err());
+
+        let mut jac_bad = vec![vec![0.0; N_PARAMS]; 2];
+        jac_bad[1][2] = f64::NAN;
+        assert!(to_array2(&jac_bad, N_PARAMS, "jac").is_err());
+
+        let empty: Vec<Vec<f64>> = Vec::new();
+        assert!(to_array2(&empty, N_PARAMS, "jac").is_err());
     }
 
     #[test]
