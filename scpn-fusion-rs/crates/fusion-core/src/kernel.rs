@@ -145,6 +145,19 @@ impl FusionKernel {
                 self.grid.zz.dim()
             )));
         }
+        if self.grid.r.iter().any(|v| !v.is_finite()) || self.grid.z.iter().any(|v| !v.is_finite())
+        {
+            return Err(FusionError::ConfigError(
+                "grid axes must contain only finite coordinates".to_string(),
+            ));
+        }
+        if self.grid.rr.iter().any(|v| !v.is_finite())
+            || self.grid.zz.iter().any(|v| !v.is_finite())
+        {
+            return Err(FusionError::ConfigError(
+                "grid mesh coordinates must be finite".to_string(),
+            ));
+        }
         if !dr.is_finite() || !dz.is_finite() || dr <= 0.0 || dz <= 0.0 {
             return Err(FusionError::ConfigError(format!(
                 "grid spacing must be finite and > 0, got dr={dr}, dz={dz}"
@@ -1262,6 +1275,38 @@ mod tests {
         match err {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("mesh shape"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_solve_equilibrium_rejects_non_finite_grid_axes() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.r[3] = f64::NAN;
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("non-finite grid-axis coordinates must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("axes"));
+                assert!(msg.contains("finite"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_solve_equilibrium_rejects_non_finite_grid_mesh() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.rr[[0, 0]] = f64::INFINITY;
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("non-finite grid-mesh coordinates must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("mesh"));
+                assert!(msg.contains("finite"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
