@@ -820,6 +820,27 @@ mod tests {
     }
 
     #[test]
+    fn test_solver_method_default_and_setter() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        assert_eq!(kernel.solver_method(), SolverMethod::PicardSor);
+        kernel.set_solver_method(SolverMethod::PicardMultigrid);
+        assert_eq!(kernel.solver_method(), SolverMethod::PicardMultigrid);
+        kernel.set_solver_method(SolverMethod::PicardSor);
+        assert_eq!(kernel.solver_method(), SolverMethod::PicardSor);
+    }
+
+    #[test]
+    fn test_multigrid_solver_mode_smoke() {
+        let mut kernel =
+            FusionKernel::from_file(&config_path("validation/iter_validated_config.json")).unwrap();
+        kernel.set_solver_method(SolverMethod::PicardMultigrid);
+        let result = kernel.solve_equilibrium().unwrap();
+        assert!(result.iterations > 0);
+        assert!(result.residual.is_finite());
+        assert!(!kernel.psi().iter().any(|v| !v.is_finite()));
+    }
+
+    #[test]
     fn test_full_equilibrium_iter_config() {
         let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
         let result = kernel.solve_equilibrium().unwrap();
