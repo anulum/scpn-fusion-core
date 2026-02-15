@@ -1,0 +1,39 @@
+# -----------------------------------------------------------------------
+# SCPN Fusion Core — Dependabot Configuration
+# Automatically opens PRs for outdated dependencies
+# -----------------------------------------------------------------------
+version: 2
+
+updates:
+  # Python (pip) dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+
+  # Rust (cargo) dependencies
+  - package-ecosystem: "cargo"
+    directory: "/scpn-fusion-rs"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "rust"
+
+  # GitHub Actions versions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
