@@ -225,19 +225,24 @@ def _apply_chaos_monkey(
     rng: np.random.Generator,
     dropout_prob: float,
     gaussian_noise_std: float,
-) -> TelemetryPacket:
+) -> tuple[TelemetryPacket, int, int]:
     drop = float(np.clip(dropout_prob, 0.0, 1.0))
     sigma = max(float(gaussian_noise_std), 0.0)
+    dropouts = 0
+    noise_injections = 0
 
     def channel(value: float) -> float:
+        nonlocal dropouts, noise_injections
         out = float(value)
         if drop > 0.0 and float(rng.random()) < drop:
             out = 0.0
+            dropouts += 1
         if sigma > 0.0:
             out += float(rng.normal(0.0, sigma))
+            noise_injections += 1
         return out
 
-    return TelemetryPacket(
+    noisy_packet = TelemetryPacket(
         t_ms=int(packet.t_ms),
         machine=str(packet.machine),
         ip_ma=channel(packet.ip_ma),
@@ -245,6 +250,7 @@ def _apply_chaos_monkey(
         q95=channel(packet.q95),
         density_1e19=max(0.0, channel(packet.density_1e19)),
     )
+    return noisy_packet, int(dropouts), int(noise_injections)
 
 
 def run_realtime_twin_session(
@@ -292,16 +298,22 @@ def run_realtime_twin_session(
     chaos_rng = np.random.default_rng(int(seed) + 2026)
 
     plans: list[dict[str, float | bool]] = []
+    chaos_dropouts_total = 0
+    chaos_noise_injections_total = 0
     for i, packet in enumerate(stream):
-        noisy_packet = _apply_chaos_monkey(
+        noisy_packet, dropouts, noise_injections = _apply_chaos_monkey(
             packet,
             rng=chaos_rng,
             dropout_prob=dropout,
             gaussian_noise_std=noise_std,
         )
+        chaos_dropouts_total += int(dropouts)
+        chaos_noise_injections_total += int(noise_injections)
         hook.ingest(noisy_packet)
         if i % plan_every == 0 and i > 0:
             plans.append(hook.scenario_plan(horizon=horizon))
+
+    chaos_channels_total = int(samples * 4)
 
     if not plans:
         return {
@@ -312,6 +324,13 @@ def run_realtime_twin_session(
             "plan_every": int(plan_every),
             "chaos_dropout_prob": dropout,
             "chaos_noise_std": noise_std,
+            "chaos_channels_total": chaos_channels_total,
+            "chaos_dropouts_total": int(chaos_dropouts_total),
+            "chaos_dropout_rate": float(chaos_dropouts_total / max(chaos_channels_total, 1)),
+            "chaos_noise_injections_total": int(chaos_noise_injections_total),
+            "chaos_noise_injection_rate": float(
+                chaos_noise_injections_total / max(chaos_channels_total, 1)
+            ),
             "plan_count": 0,
             "planning_success_rate": 0.0,
             "mean_risk": 1.0,
@@ -331,6 +350,13 @@ def run_realtime_twin_session(
         "plan_every": int(plan_every),
         "chaos_dropout_prob": dropout,
         "chaos_noise_std": noise_std,
+        "chaos_channels_total": chaos_channels_total,
+        "chaos_dropouts_total": int(chaos_dropouts_total),
+        "chaos_dropout_rate": float(chaos_dropouts_total / max(chaos_channels_total, 1)),
+        "chaos_noise_injections_total": int(chaos_noise_injections_total),
+        "chaos_noise_injection_rate": float(
+            chaos_noise_injections_total / max(chaos_channels_total, 1)
+        ),
         "plan_count": int(len(plans)),
         "planning_success_rate": success_rate,
         "mean_risk": mean_risk,

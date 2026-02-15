@@ -408,6 +408,35 @@ Summary:
   - added regression parity test proving exact equality between
     `occlusion_broadphase=False` (legacy) and `True` (new default)
 
+### H8-131 (Control/Validation)
+Files:
+- `src/scpn_fusion/control/digital_twin_ingest.py`
+- `validation/gdep_01_digital_twin_hook.py`
+- `tests/test_digital_twin_ingest_runtime.py`
+- `tests/test_gdep_01_digital_twin_hook.py`
+
+Summary:
+- Extended chaos-monkey observability in realtime digital twin ingest runtime:
+  - `_apply_chaos_monkey(...)` now returns packet + deterministic counters
+    (`dropouts`, `noise_injections`) per packet.
+  - `run_realtime_twin_session(...)` now aggregates and reports:
+    - `chaos_channels_total`
+    - `chaos_dropouts_total`
+    - `chaos_dropout_rate`
+    - `chaos_noise_injections_total`
+    - `chaos_noise_injection_rate`
+- Removed duplicated chaos simulation path in GDEP-01 validation:
+  - `validation/gdep_01_digital_twin_hook.py` now delegates per-machine runs
+    to `run_realtime_twin_session(...)` with fixed campaign settings.
+  - Reduced control-plane drift risk between runtime helper and validation lane.
+- Extended GDEP markdown output to include per-machine chaos rates:
+  - dropout rate (%)
+  - noise injection rate (%)
+- Added regression coverage for:
+  - new chaos-summary keys and deterministic equality in runtime helper
+  - full-dropout channel accounting (`dropout_prob=1.0`)
+  - presence/determinism of chaos diagnostics in GDEP campaign output
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -424,6 +453,7 @@ Summary:
 - `python -m pytest tests/test_tokamak_digital_twin.py tests/test_imas_connector.py -q` (after chaos-monkey sensor lane)
 - `python -m pytest tests/test_tokamak_flight_sim.py -q` (after actuator realism extension)
 - `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` (after CAD occlusion broad-phase lane)
+- `python -m pytest tests/test_digital_twin_ingest_runtime.py tests/test_gdep_01_digital_twin_hook.py -q` (after chaos telemetry + GDEP unification)
 
 Observed final outcomes on latest runs:
 - `30 passed` (CAD wave)

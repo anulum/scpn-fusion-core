@@ -74,6 +74,12 @@ def test_realtime_hook_rejects_invalid_horizon() -> None:
 def test_gdep_01_campaign_passes_thresholds() -> None:
     out = gdep_01_digital_twin_hook.run_campaign(seed=42, samples_per_machine=220)
     assert out["passes_thresholds"] is True
+    for machine in out["machines"]:
+        assert "chaos_channels_total" in machine
+        assert "chaos_dropouts_total" in machine
+        assert "chaos_dropout_rate" in machine
+        assert "chaos_noise_injections_total" in machine
+        assert "chaos_noise_injection_rate" in machine
 
 
 def test_gdep_01_chaos_campaign_is_deterministic_for_seed() -> None:
@@ -92,6 +98,8 @@ def test_gdep_01_chaos_campaign_is_deterministic_for_seed() -> None:
     assert a["passes_thresholds"] == b["passes_thresholds"]
     assert a["machines"][0]["planning_success_rate"] == b["machines"][0]["planning_success_rate"]
     assert a["machines"][1]["mean_risk"] == b["machines"][1]["mean_risk"]
+    assert a["machines"][0]["chaos_dropouts_total"] == b["machines"][0]["chaos_dropouts_total"]
+    assert a["machines"][1]["chaos_noise_injections_total"] == b["machines"][1]["chaos_noise_injections_total"]
 
 
 @pytest.mark.parametrize(

@@ -20,40 +20,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from scpn_fusion.control.digital_twin_ingest import RealtimeTwinHook, generate_emulated_stream
-
-
-def _apply_chaos_monkey(
-    packet,
-    *,
-    rng: np.random.Generator,
-    dropout_prob: float,
-    gaussian_noise_std: float,
-):
-    from scpn_fusion.control.digital_twin_ingest import TelemetryPacket
-
-    drop = float(dropout_prob)
-    if not np.isfinite(drop) or drop < 0.0 or drop > 1.0:
-        raise ValueError("chaos_dropout_prob must be finite and in [0, 1].")
-    sigma = float(gaussian_noise_std)
-    if not np.isfinite(sigma) or sigma < 0.0:
-        raise ValueError("chaos_noise_std must be finite and >= 0.")
-
-    def channel(value: float) -> float:
-        if drop > 0.0 and float(rng.random()) < drop:
-            return 0.0
-        if sigma > 0.0:
-            return float(value + rng.normal(0.0, sigma))
-        return float(value)
-
-    return TelemetryPacket(
-        t_ms=int(packet.t_ms),
-        machine=str(packet.machine),
-        ip_ma=channel(packet.ip_ma),
-        beta_n=channel(packet.beta_n),
-        q95=channel(packet.q95),
-        density_1e19=max(0.0, channel(packet.density_1e19)),
-    )
+from scpn_fusion.control.digital_twin_ingest import run_realtime_twin_session
 
 
 def _run_machine(
@@ -64,42 +31,17 @@ def _run_machine(
     chaos_dropout_prob: float = 0.0,
     chaos_noise_std: float = 0.0,
 ) -> dict[str, Any]:
-    stream = generate_emulated_stream(machine, seed=seed, samples=samples, dt_ms=5)
-    hook = RealtimeTwinHook(machine, seed=seed)
-    rng = np.random.default_rng(int(seed) + 2026)
-    plans = []
-    for i, packet in enumerate(stream):
-        noisy_packet = _apply_chaos_monkey(
-            packet,
-            rng=rng,
-            dropout_prob=chaos_dropout_prob,
-            gaussian_noise_std=chaos_noise_std,
-        )
-        hook.ingest(noisy_packet)
-        if i % 8 == 0 and i > 0:
-            plans.append(hook.scenario_plan(horizon=24))
-
-    if not plans:
-        return {
-            "machine": machine,
-            "planning_success_rate": 0.0,
-            "mean_risk": 1.0,
-            "p95_latency_ms": 999.0,
-            "plan_count": 0,
-            "passes_thresholds": False,
-        }
-
-    success_rate = float(np.mean([1.0 if p["passes"] else 0.0 for p in plans]))
-    mean_risk = float(np.mean([float(p["mean_risk"]) for p in plans]))
-    p95_latency = float(np.percentile([float(p["latency_ms"]) for p in plans], 95))
-    return {
-        "machine": machine,
-        "planning_success_rate": success_rate,
-        "mean_risk": mean_risk,
-        "p95_latency_ms": p95_latency,
-        "plan_count": int(len(plans)),
-        "passes_thresholds": bool(success_rate >= 0.90 and p95_latency <= 6.0 and mean_risk <= 0.75),
-    }
+    return run_realtime_twin_session(
+        machine,
+        seed=int(seed),
+        samples=int(samples),
+        dt_ms=5,
+        horizon=24,
+        plan_every=8,
+        max_buffer=512,
+        chaos_dropout_prob=float(chaos_dropout_prob),
+        chaos_noise_std=float(chaos_noise_std),
+    )
 
 
 def run_campaign(
@@ -188,6 +130,8 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"- Planning success rate: `{machine['planning_success_rate']:.3f}`",
                 f"- Mean risk: `{machine['mean_risk']:.3f}`",
                 f"- P95 latency: `{machine['p95_latency_ms']:.4f} ms`",
+                f"- Chaos dropout rate: `{100.0 * machine['chaos_dropout_rate']:.2f}%`",
+                f"- Chaos noise injection rate: `{100.0 * machine['chaos_noise_injection_rate']:.2f}%`",
                 f"- Pass: `{'YES' if machine['passes_thresholds'] else 'NO'}`",
                 "",
             ]

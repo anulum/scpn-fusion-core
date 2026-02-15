@@ -29,6 +29,11 @@ def test_run_realtime_twin_session_returns_finite_summary() -> None:
         "samples",
         "horizon",
         "plan_every",
+        "chaos_channels_total",
+        "chaos_dropouts_total",
+        "chaos_dropout_rate",
+        "chaos_noise_injections_total",
+        "chaos_noise_injection_rate",
         "plan_count",
         "planning_success_rate",
         "mean_risk",
@@ -41,6 +46,9 @@ def test_run_realtime_twin_session_returns_finite_summary() -> None:
     assert 0.0 <= summary["planning_success_rate"] <= 1.0
     assert np.isfinite(summary["mean_risk"])
     assert np.isfinite(summary["p95_latency_ms"])
+    assert summary["chaos_channels_total"] == 96 * 4
+    assert summary["chaos_dropouts_total"] == 0
+    assert summary["chaos_noise_injections_total"] == 0
 
 
 def test_run_realtime_twin_session_is_deterministic_for_same_seed() -> None:
@@ -60,9 +68,28 @@ def test_run_realtime_twin_session_is_deterministic_for_same_seed() -> None:
         "planning_success_rate",
         "mean_risk",
         "p95_latency_ms",
+        "chaos_dropouts_total",
+        "chaos_dropout_rate",
+        "chaos_noise_injections_total",
+        "chaos_noise_injection_rate",
     ):
         assert a[key] == pytest.approx(b[key], rel=0.0, abs=0.0)
     assert a["passes_thresholds"] == b["passes_thresholds"]
+
+
+def test_run_realtime_twin_session_full_dropout_counts_channels() -> None:
+    summary = run_realtime_twin_session(
+        "SPARC",
+        seed=5,
+        samples=64,
+        horizon=24,
+        plan_every=8,
+        chaos_dropout_prob=1.0,
+        chaos_noise_std=0.0,
+    )
+    assert summary["chaos_channels_total"] == 64 * 4
+    assert summary["chaos_dropouts_total"] == 64 * 4
+    assert summary["chaos_dropout_rate"] == 1.0
 
 
 def test_run_realtime_twin_session_rejects_invalid_machine() -> None:
