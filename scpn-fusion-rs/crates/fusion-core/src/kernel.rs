@@ -416,6 +416,12 @@ impl FusionKernel {
         particle_j_phi: Array2<f64>,
         coupling: f64,
     ) -> FusionResult<()> {
+        if self.grid.nz == 0 || self.grid.nr == 0 {
+            return Err(FusionError::ConfigError(format!(
+                "particle feedback requires non-empty grid dimensions, got nz={}, nr={}",
+                self.grid.nz, self.grid.nr
+            )));
+        }
         let i_target = self.config.physics.plasma_current_target;
         if !i_target.is_finite() {
             return Err(FusionError::ConfigError(
@@ -901,6 +907,22 @@ mod tests {
         match err {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("grid spacing"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_rejects_empty_grid_dimensions() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.nz = 0;
+        let feedback = Array2::zeros((0, kernel.grid().nr));
+        let err = kernel
+            .set_particle_current_feedback(feedback, 0.2)
+            .expect_err("empty grid dimensions must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("non-empty grid dimensions"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
