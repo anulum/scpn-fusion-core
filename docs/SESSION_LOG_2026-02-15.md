@@ -457,6 +457,19 @@ Summary:
   - deterministic replay of aggregate counters
   - exact full-dropout aggregate accounting across both machines
 
+### H8-133 (Validation)
+Files:
+- `tests/test_gdep_01_digital_twin_hook.py`
+
+Summary:
+- Added explicit markdown-report contract regression for GDEP-01:
+  - verifies `render_markdown(...)` includes:
+    - `## Chaos Campaign`
+    - configured dropout line
+    - observed dropout-rate line
+    - observed noise-injection-rate line
+- This guards against silent report-schema drift when chaos diagnostics evolve.
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -475,6 +488,7 @@ Summary:
 - `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` (after CAD occlusion broad-phase lane)
 - `python -m pytest tests/test_digital_twin_ingest_runtime.py tests/test_gdep_01_digital_twin_hook.py -q` (after chaos telemetry + GDEP unification)
 - `python -m pytest tests/test_digital_twin_ingest_runtime.py tests/test_gdep_01_digital_twin_hook.py -q` (after GDEP campaign aggregate chaos diagnostics)
+- `python -m pytest tests/test_gdep_01_digital_twin_hook.py -q` (after markdown chaos-report contract coverage)
 
 Observed final outcomes on latest runs:
 - `30 passed` (CAD wave)

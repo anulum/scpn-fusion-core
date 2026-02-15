@@ -124,6 +124,20 @@ def test_gdep_01_campaign_full_dropout_counts_all_channels() -> None:
     assert out["chaos_dropout_rate"] == 1.0
 
 
+def test_gdep_01_render_markdown_includes_chaos_section() -> None:
+    report = gdep_01_digital_twin_hook.generate_report(
+        seed=8,
+        samples_per_machine=64,
+        chaos_dropout_prob=0.02,
+        chaos_noise_std=0.005,
+    )
+    text = gdep_01_digital_twin_hook.render_markdown(report)
+    assert "## Chaos Campaign" in text
+    assert "Config dropout probability" in text
+    assert "Observed dropout rate" in text
+    assert "Observed noise injection rate" in text
+
+
 @pytest.mark.parametrize(
     ("kwargs", "match"),
     [

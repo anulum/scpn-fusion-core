@@ -357,6 +357,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-130 | P1 | Engineering | Add broad-phase AABB culling lane for CAD occlusion ray checks | `src/scpn_fusion/engineering/cad_raytrace.py`, `tests/test_cad_raytrace.py` | Added optional occlusion broad-phase path (`occlusion_broadphase`, default enabled) that pre-filters candidate triangles by segment-vs-triangle AABB overlap before precise Moller-Trumbore checks, reducing unnecessary intersection tests while preserving physical loading outputs; regression tests lock exact parity with legacy no-broadphase occlusion behavior | `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
 | H8-131 | P1 | Control/Validation | Unify GDEP-01 chaos runtime with ingest helper and expose explicit chaos telemetry counters | `src/scpn_fusion/control/digital_twin_ingest.py`, `validation/gdep_01_digital_twin_hook.py`, `tests/test_digital_twin_ingest_runtime.py`, `tests/test_gdep_01_digital_twin_hook.py` | `run_realtime_twin_session` now reports deterministic chaos diagnostics (`chaos_channels_total`, `chaos_dropouts_total/rate`, `chaos_noise_injections_total/rate`), and GDEP-01 validation now delegates per-machine execution to the runtime helper instead of maintaining duplicate chaos simulation logic; markdown output now includes chaos dropout/noise rates and tests lock deterministic counter behavior plus full-dropout accounting | `python -m pytest tests/test_digital_twin_ingest_runtime.py tests/test_gdep_01_digital_twin_hook.py -q` |
 | H8-132 | P1 | Validation | Add campaign-level chaos aggregate diagnostics for GDEP-01 reporting | `validation/gdep_01_digital_twin_hook.py`, `tests/test_gdep_01_digital_twin_hook.py` | GDEP-01 campaign output now includes aggregate chaos counters/rates across machines (`chaos_channels_total`, `chaos_dropouts_total/rate`, `chaos_noise_injections_total/rate`) and markdown now reports configured vs observed chaos rates; tests lock aggregate-key presence, deterministic replay of aggregate counts, and full-dropout channel accounting | `python -m pytest tests/test_digital_twin_ingest_runtime.py tests/test_gdep_01_digital_twin_hook.py -q` |
+| H8-133 | P1 | Validation | Lock GDEP markdown chaos reporting contract with explicit regression coverage | `tests/test_gdep_01_digital_twin_hook.py` | Added markdown contract test ensuring `render_markdown(...)` always includes the chaos campaign section and configured/observed chaos lines, preventing silent reporting regressions when campaign telemetry schema evolves | `python -m pytest tests/test_gdep_01_digital_twin_hook.py -q` |
 
 ## Task Accounting
 
@@ -364,7 +365,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 268
+- Post-S4 hardening tasks delivered: 269
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -656,4 +657,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-130`
 - Completed: `H8-131`
 - Completed: `H8-132`
+- Completed: `H8-133`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
