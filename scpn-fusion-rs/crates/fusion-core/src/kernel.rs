@@ -527,6 +527,8 @@ impl FusionKernel {
         params_p: ProfileParams,
         params_ff: ProfileParams,
     ) -> FusionResult<EquilibriumResult> {
+        Self::validate_profile_params(&params_p, "params_p")?;
+        Self::validate_profile_params(&params_ff, "params_ff")?;
         let prev_mode = self.external_profile_mode;
         let prev_params_p = self.profile_params_p;
         let prev_params_ff = self.profile_params_ff;
@@ -1200,6 +1202,44 @@ mod tests {
         match err {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("max_iterations"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        assert!(kernel.external_profile_mode);
+        assert_eq!(kernel.profile_params_p, Some(prev_p));
+        assert_eq!(kernel.profile_params_ff, Some(prev_ff));
+    }
+
+    #[test]
+    fn test_solve_with_profiles_rejects_invalid_params_without_state_mutation() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let prev_p = ProfileParams {
+            ped_top: 0.85,
+            ped_width: 0.07,
+            ped_height: 0.95,
+            core_alpha: 0.22,
+        };
+        let prev_ff = ProfileParams {
+            ped_top: 0.92,
+            ped_width: 0.09,
+            ped_height: 1.05,
+            core_alpha: 0.18,
+        };
+        kernel.set_external_profiles(prev_p, prev_ff);
+
+        let bad_p = ProfileParams {
+            ped_top: 0.8,
+            ped_width: 0.0,
+            ped_height: 1.1,
+            core_alpha: 0.25,
+        };
+        let err = kernel
+            .solve_equilibrium_with_profiles(bad_p, ProfileParams::default())
+            .expect_err("invalid profile params must fail before state mutation");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("ped_width"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
