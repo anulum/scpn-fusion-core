@@ -27,6 +27,12 @@ from scpn_fusion.core.eqdsk import GEqdsk, read_geqdsk
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
 from scpn_fusion.diagnostics.forward import generate_forward_channels
 
+try:
+    from validation.psi_pointwise_rmse import sparc_psi_rmse as _sparc_psi_rmse
+    _HAS_PSI_RMSE = True
+except ImportError:
+    _HAS_PSI_RMSE = False
+
 
 def ipb98_tau_e(
     ip_ma: float,
@@ -329,6 +335,17 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append(f"- Axis RMSE: `{sparc_axis['axis_rmse_m']:.6f} m`")
     lines.append("")
 
+    psi_rmse = report.get("sparc_psi_rmse")
+    if isinstance(psi_rmse, dict) and "mean_psi_rmse_norm" in psi_rmse:
+        lines.append("## SPARC Point-wise ψ(R,Z) RMSE")
+        lines.append("")
+        lines.append(f"- Files: `{psi_rmse['count']}`")
+        lines.append(f"- Mean normalised ψ RMSE: `{psi_rmse['mean_psi_rmse_norm']:.6f}`")
+        lines.append(f"- Mean relative L2: `{psi_rmse['mean_psi_relative_l2']:.6f}`")
+        lines.append(f"- Mean GS residual (rel L2): `{psi_rmse['mean_gs_residual_l2']:.4f}`")
+        lines.append(f"- Worst file: `{psi_rmse['worst_file']}` (ψ_N RMSE = `{psi_rmse['worst_psi_rmse_norm']:.6f}`)")
+        lines.append("")
+
     fwd = report.get("forward_diagnostics")
     if isinstance(fwd, dict):
         lines.append("## Forward Diagnostics RMSE")
@@ -383,6 +400,7 @@ def main() -> int:
         "confinement_iter_sparc": confinement_rmse_iter_sparc(reference_dir),
         "beta_iter_sparc": beta_rmse_iter_sparc(reference_dir, validation_dir),
         "sparc_axis": sparc_axis_rmse(sparc_eq_dir),
+        "sparc_psi_rmse": _sparc_psi_rmse(sparc_eq_dir) if _HAS_PSI_RMSE else {"skipped": True},
         "forward_diagnostics": forward_diagnostics_rmse(),
     }
     report["runtime_seconds"] = time.perf_counter() - t0

@@ -10,6 +10,51 @@
 
 ## Unreleased
 
+### Point-Wise ψ RMSE Validation (All 8 SPARC GEQDSKs)
+
+- Added `validation/psi_pointwise_rmse.py` — self-contained module for point-wise
+  ψ(R,Z) reconstruction error metrics on real SPARC equilibrium data:
+  - `gs_operator()`: finite-difference Grad-Shafranov operator Δ*ψ
+  - `gs_residual()`: relative L2 and max-abs GS residual
+  - `manufactured_solve_vectorised()`: Red-Black SOR with reference boundary conditions
+  - `compute_psi_rmse()`: normalised ψ RMSE, plasma-region RMSE, max pointwise error
+  - `validate_file()` / `validate_all_sparc()`: per-file and aggregate runners
+  - `sparc_psi_rmse()`: drop-in for rmse_dashboard integration
+- Added `tests/test_psi_pointwise_rmse.py` — 17 tests covering GS operator
+  analytics, SPARC integration, manufactured solve, RMSE metrics
+- Integrated psi RMSE into `validation/rmse_dashboard.py` report output
+
+### Neural Equilibrium Rewrite & Mode Deprecation
+
+- Rewrote `src/scpn_fusion/core/neural_equilibrium.py` from 157 → 530 lines:
+  - Removed `sklearn` dependency → `MinimalPCA` (pure NumPy SVD)
+  - Removed `pickle` persistence → `.npz` save/load (`allow_pickle=False`)
+  - Added `SimpleMLP` with He initialisation, ReLU hidden layers, full backprop
+  - Added `train_from_geqdsk()`: trains on real SPARC GEQDSK data with profile
+    perturbations (8-dim input: I_p, B_t, R_axis, Z_axis, pprime_scale,
+    ffprime_scale, simag, sibry)
+  - Added `train_on_sparc()` convenience function for all 8 files
+  - Added `benchmark()` timing method
+- Added `tests/test_neural_equilibrium.py` — 19 tests (PCA round-trip, MLP shapes,
+  save/load, SPARC training integration, benchmark timing)
+- Moved "neural" mode from `PUBLIC_MODES` to `SURROGATE_MODES` in
+  `run_fusion_suite.py` — now behind `--surrogate` / `SCPN_SURROGATE=1` flag
+
+### Multi-Regime SPARC-Parameterized FNO Training
+
+- Added multi-regime turbulence data generator to `fno_training.py`:
+  - `SPARC_REGIMES` dict: ITG / TEM / ETG parameter ranges (adiabaticity α,
+    gradient drive κ, viscosity ν, nonlinear damping, spectral cutoff k_c)
+  - `_generate_multi_regime_pairs()`: modified Hasegawa-Wakatani with regime-
+    dependent dispersion ω = α·k_y/(α+k²), growth γ = κ·k_y·k²/(α+k²)² − ν·k⁴,
+    and spectral filtering
+  - `train_fno_multi_regime()`: full training loop with per-regime validation
+    breakdown and regime distribution logging
+- Added `tests/test_fno_multi_regime.py` — 18 tests (regime sampling, spectral
+  character verification, training smoke, weights round-trip)
+- Weights saved to `weights/fno_turbulence_sparc.npz` (multi-regime); legacy
+  single-regime weights at `weights/fno_turbulence.npz` preserved
+
 ### Documentation — README Repositioning
 
 - Repositioned project identity in README.md as a **neuro-symbolic control framework**

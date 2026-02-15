@@ -13,8 +13,15 @@ import sys
 PUBLIC_MODES = [
     "kernel", "flight", "optimal", "learning", "digital-twin", "control-room",
     "sandpile", "nuclear", "breeding", "safety", "optimizer", "divertor",
-    "diagnostics", "sawtooth", "neural", "geometry", "spi", "scanner",
+    "diagnostics", "sawtooth", "geometry", "spi", "scanner",
     "heating", "wdm", "neuro-control",
+]
+
+# Reduced-order surrogate modes — functional but not on the critical control
+# path.  Use for rapid design-space exploration and batch sweeps.
+# Unlocked with --surrogate or SCPN_SURROGATE=1.
+SURROGATE_MODES = [
+    "neural",  # PCA+MLP equilibrium surrogate (train with --train-sparc)
 ]
 
 # Experimental modes — require external SCPN components not shipped in this
@@ -58,35 +65,55 @@ SCRIPTS = {
 
 def main():
     experimental = os.environ.get("SCPN_EXPERIMENTAL", "0") == "1"
+    surrogate = os.environ.get("SCPN_SURROGATE", "0") == "1"
 
-    available = PUBLIC_MODES + (EXPERIMENTAL_MODES if experimental else [])
+    available = list(PUBLIC_MODES)
+    if surrogate:
+        available += SURROGATE_MODES
+    if experimental:
+        available += EXPERIMENTAL_MODES
 
     parser = argparse.ArgumentParser(
         description="SCPN Fusion Core - Simulation Suite",
-        epilog="Set --experimental or SCPN_EXPERIMENTAL=1 to unlock "
-               "experimental modes (quantum, vibrana, lazarus, director).",
+        epilog="Set --surrogate or SCPN_SURROGATE=1 to unlock reduced-order "
+               "surrogate modes.  Set --experimental or SCPN_EXPERIMENTAL=1 "
+               "to unlock experimental modes (quantum, vibrana, lazarus, director).",
     )
     parser.add_argument("mode", choices=available, help="Simulation mode to run")
+    parser.add_argument(
+        "--surrogate", action="store_true",
+        help="Unlock reduced-order surrogate modes (neural)",
+    )
     parser.add_argument(
         "--experimental", action="store_true",
         help="Unlock experimental modes that depend on external SCPN components",
     )
 
-    # Re-parse if --experimental was passed (need to rebuild choices).
+    # Re-parse if flags were passed (need to rebuild choices).
     argv = sys.argv[1:]
-    if "--experimental" in argv:
-        experimental = True
-        available = PUBLIC_MODES + EXPERIMENTAL_MODES
+    if "--experimental" in argv or "--surrogate" in argv:
+        if "--experimental" in argv:
+            experimental = True
+        if "--surrogate" in argv:
+            surrogate = True
+        available = list(PUBLIC_MODES)
+        if surrogate:
+            available += SURROGATE_MODES
+        if experimental:
+            available += EXPERIMENTAL_MODES
         parser = argparse.ArgumentParser(
-            description="SCPN Fusion Core - Simulation Suite [experimental]",
+            description="SCPN Fusion Core - Simulation Suite",
         )
         parser.add_argument("mode", choices=available, help="Simulation mode to run")
         parser.add_argument("--experimental", action="store_true")
+        parser.add_argument("--surrogate", action="store_true")
 
     args = parser.parse_args(argv)
 
     if args.mode in EXPERIMENTAL_MODES:
         print(f"[experimental] Running {args.mode} — requires external SCPN components.")
+    if args.mode in SURROGATE_MODES:
+        print(f"[surrogate] Running {args.mode} — reduced-order surrogate, not on critical path.")
 
     script_path = SCRIPTS.get(args.mode)
 
