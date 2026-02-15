@@ -497,6 +497,11 @@ pub fn deposit_toroidal_current_density(
     grid: &Grid2D,
 ) -> FusionResult<Array2<f64>> {
     validate_particle_projection_grid(grid, "particle current deposition")?;
+    if particles.is_empty() {
+        return Err(FusionError::PhysicsViolation(
+            "particles must be non-empty".to_string(),
+        ));
+    }
     let mut j_phi: Array2<f64> = Array2::zeros((grid.nz, grid.nr));
     let area = (grid.dr.abs() * grid.dz.abs()).max(MIN_CELL_AREA_M2);
     let r_min = grid.r[0].min(grid.r[grid.nr - 1]);
@@ -923,6 +928,19 @@ mod tests {
         match err {
             FusionError::PhysicsViolation(msg) => {
                 assert!(msg.contains("weight"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_toroidal_current_deposition_rejects_empty_population() {
+        let grid = Grid2D::new(17, 17, 1.0, 9.0, -4.0, 4.0);
+        let err = deposit_toroidal_current_density(&[], &grid)
+            .expect_err("empty particle population must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("non-empty"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
