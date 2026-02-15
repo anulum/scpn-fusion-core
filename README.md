@@ -266,7 +266,7 @@ python -c "from scpn_fusion.core.eqdsk import read_geqdsk; eq = read_geqdsk('val
 
 | Mode | Description | Limitation |
 |------|-------------|------------|
-| `neural` | Neural-network equilibrium solver (PCA + MLP) | Demo quality; no pre-trained weights shipped |
+| `neural` | Neural-network equilibrium solver (PCA + MLP) | Baseline pretrained bundles shipped (ITPA MLP + EUROfusion-proxy FNO); facility-specific retraining still recommended |
 | `geometry` | 3D flux-surface geometry (Fourier boundary) | Parameterization only; no force-balance solve |
 | `wdm` | Warm dense matter equation of state | Reduced EOS model |
 
@@ -379,7 +379,7 @@ with `cargo bench` and `benchmarks/collect_results.sh` on your hardware.
 | **Full equil. (Picard+SOR)** | ~5 s (Python) | `profiling/profile_kernel.py` | Jacobi + Picard, not multigrid |
 | **Multigrid V-cycle** | Implemented, not yet benchmarked E2E | `fusion-math/src/multigrid.rs` | Not wired into main kernel path yet |
 | **Inverse reconstruction** | ~4 s (5 LM iters, Rust) | Criterion `inverse_bench.rs` | Dominated by forward solve time |
-| **Neural transport MLP** | ~5 µs/point (synthetic weights) | Criterion `neural_transport_bench.rs` | No physics-trained weights shipped; user must train |
+| **Neural transport MLP** | ~5 µs/point (synthetic baseline weights) | Criterion `neural_transport_bench.rs` | Baseline pretrained bundle shipped; retrain for facility-specific regimes |
 | **Memory** | ~0.7 MB (65×65 equil.) | Estimated from array sizes | — |
 
 > **Note on comparisons:** Earlier versions of this README cited "50× faster
@@ -469,8 +469,8 @@ This project is honest about what it does and does not do.
 | **3D MHD / stellarator equilibrium** | VMEC interface + Fourier parameterization | `vmec_interface.rs` + `equilibrium_3d.py`; external VMEC binary required for full solve |
 | **Gyrokinetic turbulence** | Not planned | Use GENE/GS2 externally; SCPN provides surrogate coupling points |
 | **5D kinetic transport** | Not planned | Deliberately reduced-order for real-time control |
-| **GPU acceleration** | Roadmap ([GPU Roadmap](docs/GPU_ACCELERATION_ROADMAP.md)) | Mock benchmark only; CUDA kernels not yet implemented |
-| **Pre-trained neural weights** | Not shipped | Users must train on their own simulation data |
+| **GPU acceleration** | Deterministic runtime bridge + optional torch fallback ([GPU Roadmap](docs/GPU_ACCELERATION_ROADMAP.md)) | CUDA-native kernels remain roadmap work |
+| **Pre-trained neural weights** | Shipped (`weights/pretrained_mlp_itpa.npz`, `weights/pretrained_fno_eurofusion_jet.npz`) | Baseline quality shipped; retraining on site-specific data remains recommended |
 | **Point-wise RMSE validation** | Partial | Topology checks (axis, q-profile, GS sign) on 8 SPARC files; not yet point-wise psi comparison |
 
 ### What it does well

@@ -27,4 +27,5 @@ from .tokamak_archive import (
     load_cmod_reference_profiles,
     load_diiid_reference_profiles,
     load_machine_profiles,
+    poll_mdsplus_feed,
 )

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import csv
 import math
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
@@ -52,6 +53,14 @@ class TokamakProfile:
     toroidal_n2_amp: float
     toroidal_n3_amp: float
     disruption: bool
+
+
+def _profile_key(profile: TokamakProfile) -> tuple[str, int, int]:
+    return (
+        profile.machine,
+        int(profile.shot),
+        int(round(float(profile.time_ms))),
+    )
 
 
 def _normalize_machine(machine: str) -> str:
@@ -331,6 +340,89 @@ def fetch_mdsplus_profiles(
                 raise
             continue
     return out
+
+
+def poll_mdsplus_feed(
+    *,
+    machine: str,
+    host: str,
+    tree: str,
+    shots: list[int],
+    polls: int = 3,
+    poll_interval_ms: int = 100,
+    node_map: Mapping[str, str] | None = None,
+    contour_points: int = 64,
+    sensor_points: int = 96,
+    allow_partial: bool = True,
+    fallback_to_reference: bool = True,
+) -> tuple[list[TokamakProfile], dict[str, Any]]:
+    """
+    Poll live MDSplus feed snapshots with deterministic merge + fallback metadata.
+
+    Notes:
+    - This function performs immediate poll iterations without sleeping to keep
+      CI/runtime deterministic. `poll_interval_ms` is recorded as intent.
+    - If all live polls fail or are empty and `fallback_to_reference=True`,
+      reference data is returned so validation lanes remain runnable.
+    """
+    polls_i = _coerce_int("polls", polls, minimum=1)
+    interval_i = _coerce_int("poll_interval_ms", poll_interval_ms, minimum=1)
+    normalized_machine = _normalize_machine(machine)
+    merged: dict[tuple[str, int, int], TokamakProfile] = {}
+    poll_records: list[dict[str, Any]] = []
+
+    for poll_idx in range(polls_i):
+        rec: dict[str, Any] = {
+            "poll_index": int(poll_idx),
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+            "live_count": 0,
+            "error": None,
+        }
+        try:
+            live = fetch_mdsplus_profiles(
+                machine=normalized_machine,
+                host=host,
+                tree=tree,
+                shots=shots,
+                node_map=node_map,
+                contour_points=contour_points,
+                sensor_points=sensor_points,
+                allow_partial=allow_partial,
+            )
+            rec["live_count"] = int(len(live))
+            for row in live:
+                merged[_profile_key(row)] = row
+        except Exception as exc:
+            rec["error"] = str(exc)
+        poll_records.append(rec)
+
+    fallback_meta: dict[str, Any] | None = None
+    if not merged and fallback_to_reference:
+        fallback_rows, fallback_meta = load_machine_profiles(
+            machine=normalized_machine,
+            prefer_live=False,
+            contour_points=contour_points,
+            sensor_points=sensor_points,
+        )
+        for row in fallback_rows:
+            merged[_profile_key(row)] = row
+
+    rows = list(merged.values())
+    rows.sort(key=lambda r: (r.machine, int(r.shot), float(r.time_ms)))
+    total_live = int(sum(int(r["live_count"]) for r in poll_records))
+    source = "live_stream" if total_live > 0 else ("reference_fallback" if fallback_meta is not None else "empty")
+    return rows, {
+        "machine": normalized_machine,
+        "host": str(host),
+        "tree": str(tree),
+        "shots_requested": [int(s) for s in shots],
+        "polls": int(polls_i),
+        "poll_interval_ms": int(interval_i),
+        "live_total_profiles": total_live,
+        "poll_records": poll_records,
+        "fallback_meta": fallback_meta,
+        "source": source,
+    }
 
 
 def load_machine_profiles(

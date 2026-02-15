@@ -32,7 +32,11 @@ from numpy.typing import NDArray
 
 from scpn_fusion.control.disruption_predictor import predict_disruption_risk
 from scpn_fusion.core.fno_training import train_fno_multi_regime
-from scpn_fusion.io.tokamak_archive import TokamakProfile, load_machine_profiles
+from scpn_fusion.io.tokamak_archive import (
+    TokamakProfile,
+    load_machine_profiles,
+    poll_mdsplus_feed,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +56,8 @@ class EmpiricalScenario:
     toroidal_n1_amp: float
     toroidal_n2_amp: float
     toroidal_n3_amp: float
+    elm_severity: float
+    fault_injected: bool
     scenario_id: int
 
 
@@ -66,6 +72,9 @@ class ScenarioMetric:
     tau_rmse_pct: float
     disruption_risk: float
     high_beta: bool
+    fault_injected: bool
+    elm_stress: bool
+    stable: bool
 
 
 def _coerce_int(name: str, value: Any, minimum: int | None = None) -> int:
@@ -116,6 +125,9 @@ def _build_disruption_scenarios(
     seed: int,
     synthetic_high_beta_fraction: float,
     high_beta_threshold: float,
+    fault_injection_fraction: float,
+    elm_stress_fraction: float,
+    fault_noise_std: float,
 ) -> list[EmpiricalScenario]:
     rng = np.random.default_rng(int(seed))
     disruptive = [p for p in profiles if p.disruption]
@@ -146,6 +158,46 @@ def _build_disruption_scenarios(
 
         tau_scale = float(1.0 + rng.normal(0.0, 0.02))
         tau_e_ms = float(np.clip(base.tau_e_ms * tau_scale, 5.0, 1200.0))
+        fault_injected = bool(rng.random() < fault_injection_fraction)
+        elm_severity = (
+            float(rng.uniform(0.25, 1.0))
+            if rng.random() < elm_stress_fraction
+            else 0.0
+        )
+
+        if elm_severity > 0.0:
+            psi_axis = np.linspace(0.0, 1.0, psi_scenario.size, dtype=np.float64)
+            psi_burst = np.exp(-((psi_axis - 0.84) / 0.08) ** 2)
+            psi_scenario = np.clip(
+                psi_scenario + 0.035 * elm_severity * psi_burst,
+                0.0,
+                1.5,
+            )
+            trace_axis = np.linspace(
+                0.0, 1.0, trace_scenario.size, dtype=np.float64
+            )
+            trace_burst = np.exp(-((trace_axis - 0.86) / 0.07) ** 2)
+            trace_scenario = np.clip(
+                trace_scenario + 0.12 * elm_severity * trace_burst,
+                0.0,
+                5.0,
+            )
+
+        if fault_injected:
+            trace_scenario = np.clip(
+                trace_scenario
+                + rng.normal(0.0, fault_noise_std, size=trace_scenario.size),
+                0.0,
+                5.0,
+            )
+            drop_count = max(1, int(0.04 * trace_scenario.size))
+            drop_idx = rng.choice(trace_scenario.size, size=drop_count, replace=False)
+            trace_scenario[drop_idx] = 0.0
+            psi_scenario = np.clip(
+                psi_scenario + rng.normal(0.0, 0.004, size=psi_scenario.size),
+                0.0,
+                1.5,
+            )
 
         out.append(
             EmpiricalScenario(
@@ -161,6 +213,8 @@ def _build_disruption_scenarios(
                 toroidal_n1_amp=float(max(0.0, base.toroidal_n1_amp + rng.normal(0.0, 0.01))),
                 toroidal_n2_amp=float(max(0.0, base.toroidal_n2_amp + rng.normal(0.0, 0.008))),
                 toroidal_n3_amp=float(max(0.0, base.toroidal_n3_amp + rng.normal(0.0, 0.006))),
+                elm_severity=elm_severity,
+                fault_injected=fault_injected,
                 scenario_id=i,
             )
         )
@@ -181,6 +235,8 @@ def _build_disruption_scenarios(
             toroidal_n1_amp=s0.toroidal_n1_amp,
             toroidal_n2_amp=s0.toroidal_n2_amp,
             toroidal_n3_amp=s0.toroidal_n3_amp,
+            elm_severity=s0.elm_severity,
+            fault_injected=s0.fault_injected,
             scenario_id=s0.scenario_id,
         )
     return out
@@ -218,17 +274,23 @@ def _simulate_controller(
     risk = float(predict_disruption_risk(scenario.sensor_trace, toroidal))
     high_beta = bool(scenario.beta_n >= high_beta_threshold)
     beta_excess = float(max(scenario.beta_n - high_beta_threshold, 0.0))
+    elm_factor = float(1.0 + 0.30 * max(scenario.elm_severity, 0.0))
+    fault_factor = float(1.0 + (0.20 if scenario.fault_injected else 0.0))
 
     if ctrl == "mpc":
         err_scale = _coerce_finite("mpc_error_scale", mpc_error_scale, minimum=0.0)
         sigma = err_scale * (0.018 + 0.010 * risk + high_beta_penalty_scale * 0.010 * beta_excess)
         tau_bias = -0.006 + 0.012 * risk + high_beta_penalty_scale * 0.010 * beta_excess
+        tau_bias += 0.006 * float(scenario.elm_severity)
+        tau_bias += 0.005 if scenario.fault_injected else 0.0
     else:
         err_scale = _coerce_finite("rl_error_scale", rl_error_scale, minimum=0.0)
         sigma = err_scale * (0.024 + 0.014 * risk + high_beta_penalty_scale * 0.018 * beta_excess)
         tau_bias = 0.004 + 0.020 * risk + high_beta_penalty_scale * 0.016 * beta_excess
+        tau_bias += 0.010 * float(scenario.elm_severity)
+        tau_bias += 0.008 if scenario.fault_injected else 0.0
 
-    sigma = float(max(0.0, sigma))
+    sigma = float(max(0.0, sigma) * elm_factor * fault_factor)
     psi_truth = np.asarray(scenario.psi_contour, dtype=np.float64)
     psi_pred = psi_truth * (1.0 + rng.normal(0.0, sigma, size=psi_truth.size))
     psi_pred = np.clip(psi_pred, 0.0, 2.0)
@@ -242,6 +304,7 @@ def _simulate_controller(
         np.asarray([tau_truth], dtype=np.float64),
         np.asarray([tau_pred], dtype=np.float64),
     )
+    stable = bool(psi_rmse_pct <= 10.0 and tau_rmse_pct <= 10.0)
 
     return ScenarioMetric(
         controller=ctrl,
@@ -253,6 +316,9 @@ def _simulate_controller(
         tau_rmse_pct=float(tau_rmse_pct),
         disruption_risk=risk,
         high_beta=high_beta,
+        fault_injected=bool(scenario.fault_injected),
+        elm_stress=bool(scenario.elm_severity > 0.0),
+        stable=stable,
     )
 
 
@@ -267,11 +333,15 @@ def _summarize_metrics(
     tau = np.asarray([r.tau_rmse_pct for r in rows], dtype=np.float64)
     risk = np.asarray([r.disruption_risk for r in rows], dtype=np.float64)
     high_beta_mask = np.asarray([r.high_beta for r in rows], dtype=bool)
+    fault_mask = np.asarray([r.fault_injected for r in rows], dtype=bool)
+    elm_mask = np.asarray([r.elm_stress for r in rows], dtype=bool)
+    stable_mask = np.asarray([r.stable for r in rows], dtype=bool)
 
     mean_psi = float(np.mean(psi))
     p95_psi = float(np.percentile(psi, 95))
     mean_tau = float(np.mean(tau))
     p95_tau = float(np.percentile(tau, 95))
+    uptime_rate = float(np.mean(stable_mask))
 
     high_beta_count = int(np.sum(high_beta_mask))
     if high_beta_count > 0:
@@ -283,6 +353,24 @@ def _summarize_metrics(
         divergence_rate = 0.0
         high_beta_mean_psi = 0.0
         high_beta_mean_tau = 0.0
+
+    fault_count = int(np.sum(fault_mask))
+    if fault_count > 0:
+        fault_uptime_rate = float(np.mean(stable_mask[fault_mask]))
+        fault_mean_psi = float(np.mean(psi[fault_mask]))
+        fault_mean_tau = float(np.mean(tau[fault_mask]))
+    else:
+        fault_uptime_rate = 1.0
+        fault_mean_psi = 0.0
+        fault_mean_tau = 0.0
+
+    elm_count = int(np.sum(elm_mask))
+    if elm_count > 0:
+        elm_mean_psi = float(np.mean(psi[elm_mask]))
+        elm_mean_tau = float(np.mean(tau[elm_mask]))
+    else:
+        elm_mean_psi = 0.0
+        elm_mean_tau = 0.0
 
     passes_target = bool(mean_psi < 5.0 and mean_tau < 5.0)
     rewrite_required = bool(mean_psi > 10.0 or mean_tau > 10.0 or p95_psi > 10.0 or p95_tau > 10.0)
@@ -301,6 +389,14 @@ def _summarize_metrics(
         "mean_tau_rmse_pct": mean_tau,
         "p95_tau_rmse_pct": p95_tau,
         "mean_disruption_risk": float(np.mean(risk)),
+        "uptime_rate": uptime_rate,
+        "fault_samples": fault_count,
+        "fault_uptime_rate": fault_uptime_rate,
+        "fault_mean_psi_rmse_pct": fault_mean_psi,
+        "fault_mean_tau_rmse_pct": fault_mean_tau,
+        "elm_samples": elm_count,
+        "elm_mean_psi_rmse_pct": elm_mean_psi,
+        "elm_mean_tau_rmse_pct": elm_mean_tau,
         "high_beta_mean_psi_rmse_pct": high_beta_mean_psi,
         "high_beta_mean_tau_rmse_pct": high_beta_mean_tau,
         "high_beta_divergence_rate": divergence_rate,
@@ -340,10 +436,16 @@ def run_campaign(
     mpc_error_scale: float = 1.0,
     rl_error_scale: float = 1.0,
     high_beta_penalty_scale: float = 1.0,
+    fault_injection_fraction: float = 0.20,
+    elm_stress_fraction: float = 0.30,
+    fault_noise_std: float = 0.03,
     diiid_live_host: str = "atlas.gat.com",
     diiid_live_tree: str = "EFIT01",
     cmod_live_host: str = "alcdata.psfc.mit.edu",
     cmod_live_tree: str = "analysis",
+    live_polls: int = 3,
+    live_poll_interval_ms: int = 100,
+    live_shot_budget: int = 8,
     auto_retrain_fno: bool = False,
     fno_retrain_samples: int = 1024,
     fno_retrain_epochs: int = 12,
@@ -355,6 +457,14 @@ def run_campaign(
     high_beta = _coerce_finite("high_beta_threshold", high_beta_threshold, minimum=0.1)
     high_beta_frac = _coerce_fraction("synthetic_high_beta_fraction", synthetic_high_beta_fraction)
     penalty_scale = _coerce_finite("high_beta_penalty_scale", high_beta_penalty_scale, minimum=0.0)
+    fault_frac = _coerce_fraction("fault_injection_fraction", fault_injection_fraction)
+    elm_frac = _coerce_fraction("elm_stress_fraction", elm_stress_fraction)
+    fault_noise = _coerce_finite("fault_noise_std", fault_noise_std, minimum=0.0)
+    live_polls_i = _coerce_int("live_polls", live_polls, minimum=1)
+    live_poll_interval_i = _coerce_int(
+        "live_poll_interval_ms", live_poll_interval_ms, minimum=1
+    )
+    live_shot_budget_i = _coerce_int("live_shot_budget", live_shot_budget, minimum=1)
 
     controllers_norm = tuple(sorted({c.strip().lower() for c in controllers}))
     if not controllers_norm:
@@ -364,18 +474,54 @@ def run_campaign(
             raise ValueError(f"Unsupported controller: {c}")
 
     t0 = time.perf_counter()
-    d3d_profiles, d3d_meta = load_machine_profiles(
-        machine="DIII-D",
-        prefer_live=prefer_live_archives,
-        host=diiid_live_host,
-        tree=diiid_live_tree,
-    )
-    cmod_profiles, cmod_meta = load_machine_profiles(
-        machine="C-Mod",
-        prefer_live=prefer_live_archives,
-        host=cmod_live_host,
-        tree=cmod_live_tree,
-    )
+    if prefer_live_archives:
+        d3d_ref, d3d_ref_meta = load_machine_profiles(machine="DIII-D", prefer_live=False)
+        cmod_ref, cmod_ref_meta = load_machine_profiles(machine="C-Mod", prefer_live=False)
+        d3d_shots = [int(p.shot) for p in d3d_ref[:live_shot_budget_i]]
+        cmod_shots = [int(p.shot) for p in cmod_ref[:live_shot_budget_i]]
+        d3d_profiles, d3d_poll_meta = poll_mdsplus_feed(
+            machine="DIII-D",
+            host=diiid_live_host,
+            tree=diiid_live_tree,
+            shots=d3d_shots,
+            polls=live_polls_i,
+            poll_interval_ms=live_poll_interval_i,
+            fallback_to_reference=True,
+        )
+        cmod_profiles, cmod_poll_meta = poll_mdsplus_feed(
+            machine="C-Mod",
+            host=cmod_live_host,
+            tree=cmod_live_tree,
+            shots=cmod_shots,
+            polls=live_polls_i,
+            poll_interval_ms=live_poll_interval_i,
+            fallback_to_reference=True,
+        )
+        d3d_meta: dict[str, Any] = {
+            "mode": "poll",
+            "reference_meta": d3d_ref_meta,
+            "poll_meta": d3d_poll_meta,
+        }
+        cmod_meta = {
+            "mode": "poll",
+            "reference_meta": cmod_ref_meta,
+            "poll_meta": cmod_poll_meta,
+        }
+    else:
+        d3d_profiles, d3d_load_meta = load_machine_profiles(
+            machine="DIII-D",
+            prefer_live=False,
+            host=diiid_live_host,
+            tree=diiid_live_tree,
+        )
+        cmod_profiles, cmod_load_meta = load_machine_profiles(
+            machine="C-Mod",
+            prefer_live=False,
+            host=cmod_live_host,
+            tree=cmod_live_tree,
+        )
+        d3d_meta = {"mode": "load_machine_profiles", "load_meta": d3d_load_meta}
+        cmod_meta = {"mode": "load_machine_profiles", "load_meta": cmod_load_meta}
     all_profiles = d3d_profiles + cmod_profiles
     scenarios = _build_disruption_scenarios(
         all_profiles,
@@ -383,6 +529,9 @@ def run_campaign(
         seed=seed_i,
         synthetic_high_beta_fraction=high_beta_frac,
         high_beta_threshold=high_beta,
+        fault_injection_fraction=fault_frac,
+        elm_stress_fraction=elm_frac,
+        fault_noise_std=fault_noise,
     )
 
     rng = np.random.default_rng(seed_i + 901)
@@ -407,6 +556,7 @@ def run_campaign(
     passes_target = bool(all(v["passes_target"] for v in summaries.values()))
     rewrite_required = bool(any(v["rewrite_required"] for v in summaries.values()))
     pivot_to_hybrid_2d = bool(any(v["pivot_to_hybrid_2d"] for v in summaries.values()))
+    weak_fault_lane = bool(any(v["fault_uptime_rate"] < 0.99 for v in summaries.values()))
 
     recommendations: list[str] = []
     if rewrite_required:
@@ -416,6 +566,10 @@ def run_campaign(
     if pivot_to_hybrid_2d:
         recommendations.append(
             "High-beta divergence detected: admit 1.5D limit and pivot control validation to hybrid 2D equilibrium/transport coupling."
+        )
+    if weak_fault_lane:
+        recommendations.append(
+            "Fault-injected uptime is below 99% in at least one lane: tighten sensor-fault mitigation and retune robust control penalties."
         )
     if not recommendations:
         recommendations.append(
@@ -447,6 +601,12 @@ def run_campaign(
             "mpc_error_scale": float(mpc_error_scale),
             "rl_error_scale": float(rl_error_scale),
             "high_beta_penalty_scale": float(penalty_scale),
+            "fault_injection_fraction": float(fault_frac),
+            "elm_stress_fraction": float(elm_frac),
+            "fault_noise_std": float(fault_noise),
+            "live_polls": int(live_polls_i),
+            "live_poll_interval_ms": int(live_poll_interval_i),
+            "live_shot_budget": int(live_shot_budget_i),
         },
         "archive_sources": {
             "DIII-D": d3d_meta,
@@ -454,6 +614,8 @@ def run_campaign(
         },
         "scenarios_evaluated": len(scenarios),
         "disruption_scenarios_evaluated": len(scenarios),
+        "fault_injected_scenarios": int(sum(1 for s in scenarios if s.fault_injected)),
+        "elm_stress_scenarios": int(sum(1 for s in scenarios if s.elm_severity > 0.0)),
         "controller_metrics": summaries,
         "passes_target": passes_target,
         "rewrite_required": rewrite_required,
@@ -484,20 +646,23 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Generated: `{report['generated_at_utc']}`",
         f"- Runtime: `{report['runtime_seconds']:.3f} s`",
         f"- Disruption scenarios: `{report['disruption_scenarios_evaluated']}`",
+        f"- Fault-injected scenarios: `{report['fault_injected_scenarios']}`",
+        f"- ELM-stress scenarios: `{report['elm_stress_scenarios']}`",
         f"- Controllers: `{', '.join(cfg['controllers'])}`",
         f"- Live archive mode: `{'ON' if cfg['prefer_live_archives'] else 'OFF'}`",
         "",
         "## Controller Metrics",
         "",
-        "| Controller | Mean ψ RMSE % | Mean τE RMSE % | High-β Divergence Rate | Pass <5% | Rewrite >10% | Pivot 2D |",
-        "|---|---:|---:|---:|:---:|:---:|:---:|",
+        "| Controller | Mean ψ RMSE % | Mean τE RMSE % | Fault Uptime | High-β Divergence Rate | Pass <5% | Rewrite >10% | Pivot 2D |",
+        "|---|---:|---:|---:|---:|:---:|:---:|:---:|",
     ]
     for controller, metrics in report["controller_metrics"].items():
         lines.append(
-            "| {c} | {psi:.3f} | {tau:.3f} | {div:.3f} | {p} | {r} | {h} |".format(
+            "| {c} | {psi:.3f} | {tau:.3f} | {uptime:.3f} | {div:.3f} | {p} | {r} | {h} |".format(
                 c=controller.upper(),
                 psi=metrics["mean_psi_rmse_pct"],
                 tau=metrics["mean_tau_rmse_pct"],
+                uptime=metrics["fault_uptime_rate"],
                 div=metrics["high_beta_divergence_rate"],
                 p="YES" if metrics["passes_target"] else "NO",
                 r="YES" if metrics["rewrite_required"] else "NO",
@@ -520,6 +685,28 @@ def render_markdown(report: dict[str, Any]) -> str:
     )
     for rec in report["recommendations"]:
         lines.append(f"- {rec}")
+    lines.extend(
+        [
+            "",
+            "## Fault/ELM Lane Metrics",
+            "",
+        ]
+    )
+    for controller, metrics in report["controller_metrics"].items():
+        lines.append(f"### {controller.upper()}")
+        lines.append(
+            "- Fault samples: `{fault}` | Fault uptime: `{uptime:.3f}`".format(
+                fault=metrics["fault_samples"],
+                uptime=metrics["fault_uptime_rate"],
+            )
+        )
+        lines.append(
+            "- ELM samples: `{elm}` | ELM ψ RMSE: `{psi:.3f}%` | ELM τE RMSE: `{tau:.3f}%`".format(
+                elm=metrics["elm_samples"],
+                psi=metrics["elm_mean_psi_rmse_pct"],
+                tau=metrics["elm_mean_tau_rmse_pct"],
+            )
+        )
     return "\n".join(lines)
 
 
@@ -534,10 +721,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--mpc-error-scale", type=float, default=1.0)
     parser.add_argument("--rl-error-scale", type=float, default=1.0)
     parser.add_argument("--high-beta-penalty-scale", type=float, default=1.0)
+    parser.add_argument("--fault-injection-fraction", type=float, default=0.20)
+    parser.add_argument("--elm-stress-fraction", type=float, default=0.30)
+    parser.add_argument("--fault-noise-std", type=float, default=0.03)
     parser.add_argument("--diiid-live-host", default="atlas.gat.com")
     parser.add_argument("--diiid-live-tree", default="EFIT01")
     parser.add_argument("--cmod-live-host", default="alcdata.psfc.mit.edu")
     parser.add_argument("--cmod-live-tree", default="analysis")
+    parser.add_argument("--live-polls", type=int, default=3)
+    parser.add_argument("--live-poll-interval-ms", type=int, default=100)
+    parser.add_argument("--live-shot-budget", type=int, default=8)
     parser.add_argument("--auto-retrain-fno", action="store_true")
     parser.add_argument("--fno-retrain-samples", type=int, default=1024)
     parser.add_argument("--fno-retrain-epochs", type=int, default=12)
@@ -568,10 +761,16 @@ def main(argv: list[str] | None = None) -> int:
         mpc_error_scale=args.mpc_error_scale,
         rl_error_scale=args.rl_error_scale,
         high_beta_penalty_scale=args.high_beta_penalty_scale,
+        fault_injection_fraction=args.fault_injection_fraction,
+        elm_stress_fraction=args.elm_stress_fraction,
+        fault_noise_std=args.fault_noise_std,
         diiid_live_host=args.diiid_live_host,
         diiid_live_tree=args.diiid_live_tree,
         cmod_live_host=args.cmod_live_host,
         cmod_live_tree=args.cmod_live_tree,
+        live_polls=args.live_polls,
+        live_poll_interval_ms=args.live_poll_interval_ms,
+        live_shot_budget=args.live_shot_budget,
         auto_retrain_fno=args.auto_retrain_fno,
         fno_retrain_samples=args.fno_retrain_samples,
         fno_retrain_epochs=args.fno_retrain_epochs,

@@ -10,6 +10,7 @@ from pathlib import Path
 import sys
 
 import numpy as np
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,3 +93,52 @@ def test_campaign_does_not_mutate_global_numpy_rng_state() -> None:
     np.random.set_state(state)
     expected = float(np.random.random())
     assert observed == expected
+
+
+def test_campaign_reports_fault_and_elm_lane_metrics() -> None:
+    report = full_validation_pipeline.run_campaign(
+        seed=26,
+        scenario_count=120,
+        controllers=("mpc",),
+        prefer_live_archives=False,
+        fault_injection_fraction=0.45,
+        elm_stress_fraction=0.55,
+    )
+    metrics = report["controller_metrics"]["mpc"]
+    assert report["fault_injected_scenarios"] > 0
+    assert report["elm_stress_scenarios"] > 0
+    assert metrics["fault_samples"] > 0
+    assert metrics["elm_samples"] > 0
+    assert 0.0 <= metrics["fault_uptime_rate"] <= 1.0
+
+
+def test_campaign_live_archive_mode_uses_polling_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    def _fake_poll(**kwargs: object) -> tuple[list[object], dict[str, object]]:
+        machine = str(kwargs["machine"])
+        calls.append(machine)
+        rows, _meta = full_validation_pipeline.load_machine_profiles(
+            machine=machine,
+            prefer_live=False,
+        )
+        return rows[:4], {
+            "source": "live_stream",
+            "live_total_profiles": 4,
+            "polls": int(kwargs["polls"]),
+        }
+
+    monkeypatch.setattr(full_validation_pipeline, "poll_mdsplus_feed", _fake_poll)
+    report = full_validation_pipeline.run_campaign(
+        seed=27,
+        scenario_count=100,
+        controllers=("mpc",),
+        prefer_live_archives=True,
+        live_polls=2,
+        live_shot_budget=4,
+    )
+    assert calls == ["DIII-D", "C-Mod"]
+    assert report["archive_sources"]["DIII-D"]["mode"] == "poll"
+    assert report["archive_sources"]["DIII-D"]["poll_meta"]["source"] == "live_stream"
