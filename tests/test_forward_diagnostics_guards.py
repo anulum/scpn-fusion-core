@@ -16,6 +16,7 @@ from scpn_fusion.diagnostics.forward import (
     generate_forward_channels,
     interferometer_phase_shift,
     neutron_count_rate,
+    thomson_scattering_voltage,
 )
 
 
@@ -156,4 +157,76 @@ def test_generate_forward_channels_enforce_domain_bounds_rejects_out_of_domain_c
             interferometer_chords=[((3.0, 0.0), (9.0, 0.0))],
             volume_element_m3=0.02,
             enforce_chord_domain_bounds=True,
+        )
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"gain_v_per_m3": 0.0}, "gain_v_per_m3"),
+        ({"temp_sensitivity_per_kev": -0.1}, "temp_sensitivity_per_kev"),
+        ({"baseline_voltage_v": float("nan")}, "baseline_voltage_v"),
+    ],
+)
+def test_thomson_rejects_invalid_scalar_inputs(
+    kwargs: dict[str, float],
+    match: str,
+) -> None:
+    r, z, ne, _ = _make_fields()
+    rr, zz = np.meshgrid(r, z)
+    te = 12.0 * np.exp(-((rr - 6.0) ** 2 + zz**2) / 1.1)
+    params = {
+        "gain_v_per_m3": 2.5e-24,
+        "temp_sensitivity_per_kev": 0.08,
+        "baseline_voltage_v": 0.0,
+    }
+    params.update(kwargs)
+    with pytest.raises(ValueError, match=match):
+        thomson_scattering_voltage(
+            ne,
+            te,
+            r,
+            z,
+            [(6.0, 0.0)],
+            **params,
+        )
+
+
+@pytest.mark.parametrize(
+    ("points", "match"),
+    [
+        ([], "at least one point"),
+        ([(6.0,)], "2D"),
+        ([(6.0, 0.0), (float("nan"), 0.0)], "non-finite"),
+    ],
+)
+def test_thomson_rejects_invalid_sampling_points(points: object, match: str) -> None:
+    r, z, ne, _ = _make_fields()
+    rr, zz = np.meshgrid(r, z)
+    te = 12.0 * np.exp(-((rr - 6.0) ** 2 + zz**2) / 1.1)
+    with pytest.raises(ValueError, match=match):
+        thomson_scattering_voltage(ne, te, r, z, points)  # type: ignore[arg-type]
+
+
+def test_thomson_rejects_field_shape_mismatch() -> None:
+    r, z, ne, _ = _make_fields()
+    rr, zz = np.meshgrid(r, z)
+    te = 12.0 * np.exp(-((rr - 6.0) ** 2 + zz**2) / 1.1)
+    with pytest.raises(ValueError, match="field shape"):
+        thomson_scattering_voltage(ne[:, :-1], te, r, z, [(6.0, 0.0)])
+    with pytest.raises(ValueError, match="field shape"):
+        thomson_scattering_voltage(ne, te[:, :-1], r, z, [(6.0, 0.0)])
+
+
+def test_generate_forward_channels_rejects_invalid_thomson_temp_map() -> None:
+    r, z, ne, sn = _make_fields()
+    with pytest.raises(ValueError, match="field shape"):
+        generate_forward_channels(
+            electron_density_m3=ne,
+            electron_temp_keV=ne[:, :-1],
+            neutron_source_m3_s=sn,
+            r_grid=r,
+            z_grid=z,
+            interferometer_chords=[((4.2, 0.0), (7.8, 0.0))],
+            volume_element_m3=0.02,
         )

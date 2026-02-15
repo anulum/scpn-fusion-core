@@ -11,6 +11,7 @@ from .forward import (
     generate_forward_channels,
     interferometer_phase_shift,
     neutron_count_rate,
+    thomson_scattering_voltage,
 )
 from .synthetic_sensors import SensorSuite
 from .tomography import PlasmaTomography

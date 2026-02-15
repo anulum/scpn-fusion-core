@@ -246,6 +246,30 @@ Summary:
   - `ids_to_digital_twin_state(...)`
 - Preserved summary-only compatibility (`digital_twin_summary_to_ids`, `ids_to_digital_twin_summary`).
 
+### H8-123 (Diagnostics)
+Files:
+- `src/scpn_fusion/diagnostics/forward.py`
+- `src/scpn_fusion/diagnostics/__init__.py`
+- `tests/test_diagnostics.py`
+- `tests/test_forward_diagnostics_guards.py`
+- `validation/rmse_dashboard.py`
+- `tests/test_rmse_dashboard.py`
+
+Summary:
+- Added new forward-model channel:
+  - `thomson_scattering_voltage(...)` for pointwise raw-voltage prediction.
+- Extended forward-channel bundle with:
+  - `thomson_scattering_voltage_v`.
+- Added strict validation for Thomson path:
+  - sample-point geometry + finite checks
+  - scalar contract checks (`gain`, `temperature sensitivity`, `baseline`)
+  - grid/shape validation for density/temperature fields
+- Extended `generate_forward_channels(...)` with optional Thomson inputs:
+  - explicit electron-temperature map
+  - sample points and strict-domain toggle
+  - backward-compatible default points and density-derived temp proxy
+- Integrated Thomson metrics into `validation/rmse_dashboard.py` and markdown output.
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -254,6 +278,7 @@ Summary:
 - `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q`
 - `python -m pytest tests/test_jax_traceable_runtime.py -q`
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q`
+- `python -m pytest tests/test_diagnostics.py tests/test_forward_diagnostics_guards.py tests/test_rmse_dashboard.py tests/test_run_diagnostics.py -q`
 
 Observed final outcomes on latest runs:
 - `30 passed` (CAD wave)
@@ -304,7 +329,7 @@ All files in these ranges reported `:: True` parity.
 1. Confirm current head:
    - `git rev-parse --short HEAD` (expected `9706c1b` at log write time)
 2. Confirm registry counters/task entries:
-   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-122`, delivered count `258`.
+   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-123`, delivered count `259`.
 3. Re-run focused health checks if touching related areas:
    - `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q`
 4. If GitHub API rate-limited again, use badge/workflow-page fallback for CI confirmation.

@@ -58,6 +58,15 @@ def test_sparc_axis_rmse_smoke() -> None:
     assert len(result["rows"]) == result["count"]
 
 
+def test_forward_diagnostics_rmse_includes_thomson_metrics() -> None:
+    result = rmse_dashboard.forward_diagnostics_rmse()
+    assert result["count_interferometer_channels"] >= 1
+    assert result["count_thomson_channels"] >= 1
+    assert result["phase_rmse_rad"] >= 0.0
+    assert result["neutron_rate_rel_error_pct"] >= 0.0
+    assert result["thomson_voltage_rmse_v"] >= 0.0
+
+
 def test_render_markdown_contains_sections() -> None:
     report = {
         "generated_at_utc": "2026-02-12T00:00:00+00:00",
@@ -82,8 +91,10 @@ def test_render_markdown_contains_sections() -> None:
         },
         "forward_diagnostics": {
             "count_interferometer_channels": 3,
+            "count_thomson_channels": 3,
             "phase_rmse_rad": 1e-4,
             "neutron_rate_rel_error_pct": 2.0,
+            "thomson_voltage_rmse_v": 2e-3,
         },
     }
     text = rmse_dashboard.render_markdown(report)

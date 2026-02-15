@@ -24,6 +24,7 @@ ELECTRON_RADIUS_M = 2.8179403262e-15
 class ForwardDiagnosticChannels:
     interferometer_phase_rad: FloatArray
     neutron_count_rate_hz: float
+    thomson_scattering_voltage_v: FloatArray
 
 
 def _nearest_index(axis: FloatArray, value: float) -> int:
@@ -89,6 +90,37 @@ def _validate_chords(
                     f"chords[{i}] lies outside diagnostic domain bounds."
                 )
     return chords
+
+
+def _validate_points(
+    points: Sequence[tuple[float, float]],
+    *,
+    r_min: float | None = None,
+    r_max: float | None = None,
+    z_min: float | None = None,
+    z_max: float | None = None,
+    enforce_domain_bounds: bool = False,
+) -> Sequence[tuple[float, float]]:
+    if len(points) == 0:
+        raise ValueError("sample_points must contain at least one point.")
+    for i, point in enumerate(points):
+        if len(point) != 2:
+            raise ValueError(f"sample_points[{i}] must be a 2D (r, z) tuple.")
+        r_point = float(point[0])
+        z_point = float(point[1])
+        if not np.isfinite(r_point) or not np.isfinite(z_point):
+            raise ValueError(f"sample_points[{i}] has non-finite coordinates.")
+        if enforce_domain_bounds:
+            if (
+                r_point < float(r_min)
+                or r_point > float(r_max)
+                or z_point < float(z_min)
+                or z_point > float(z_max)
+            ):
+                raise ValueError(
+                    f"sample_points[{i}] lies outside diagnostic domain bounds."
+                )
+    return points
 
 
 def _line_integral_nearest(
@@ -183,6 +215,62 @@ def neutron_count_rate(
     return float(emitted_per_s * eff * omega)
 
 
+def thomson_scattering_voltage(
+    electron_density_m3: FloatArray,
+    electron_temp_keV: FloatArray,
+    r_grid: FloatArray,
+    z_grid: FloatArray,
+    sample_points: Sequence[tuple[float, float]],
+    *,
+    gain_v_per_m3: float = 2.5e-24,
+    temp_sensitivity_per_kev: float = 0.08,
+    baseline_voltage_v: float = 0.0,
+    enforce_domain_bounds: bool = False,
+) -> FloatArray:
+    """Predict Thomson-scattering detector voltage [V] at sample points."""
+    gain = float(gain_v_per_m3)
+    temp_sensitivity = float(temp_sensitivity_per_kev)
+    baseline = float(baseline_voltage_v)
+    if not np.isfinite(gain) or gain <= 0.0:
+        raise ValueError("gain_v_per_m3 must be finite and > 0.")
+    if not np.isfinite(temp_sensitivity) or temp_sensitivity < 0.0:
+        raise ValueError("temp_sensitivity_per_kev must be finite and >= 0.")
+    if not np.isfinite(baseline):
+        raise ValueError("baseline_voltage_v must be finite.")
+
+    ne, r, z = _validate_field_grid(
+        np.asarray(electron_density_m3, dtype=np.float64),
+        np.asarray(r_grid, dtype=np.float64),
+        np.asarray(z_grid, dtype=np.float64),
+        name="thomson_scattering_voltage.electron_density_m3",
+    )
+    te, _, _ = _validate_field_grid(
+        np.asarray(electron_temp_keV, dtype=np.float64),
+        r,
+        z,
+        name="thomson_scattering_voltage.electron_temp_keV",
+    )
+    _validate_points(
+        sample_points,
+        r_min=float(np.min(r)),
+        r_max=float(np.max(r)),
+        z_min=float(np.min(z)),
+        z_max=float(np.max(z)),
+        enforce_domain_bounds=bool(enforce_domain_bounds),
+    )
+
+    out = np.zeros(len(sample_points), dtype=np.float64)
+    for i, point in enumerate(sample_points):
+        ir = _nearest_index(r, float(point[0]))
+        iz = _nearest_index(z, float(point[1]))
+        ne_local = max(float(ne[iz, ir]), 0.0)
+        te_local = max(float(te[iz, ir]), 0.0)
+        out[i] = gain * ne_local * (1.0 + temp_sensitivity * te_local) + baseline
+    if not np.all(np.isfinite(out)):
+        raise ValueError("thomson_scattering_voltage produced non-finite values.")
+    return out
+
+
 def generate_forward_channels(
     *,
     electron_density_m3: FloatArray,
@@ -195,12 +283,36 @@ def generate_forward_channels(
     solid_angle_fraction: float = 1.0e-4,
     laser_wavelength_m: float = 1.064e-6,
     enforce_chord_domain_bounds: bool = False,
+    electron_temp_keV: FloatArray | None = None,
+    thomson_sample_points: Sequence[tuple[float, float]] | None = None,
+    thomson_gain_v_per_m3: float = 2.5e-24,
+    thomson_temp_sensitivity_per_kev: float = 0.08,
+    thomson_baseline_voltage_v: float = 0.0,
+    enforce_thomson_domain_bounds: bool = False,
 ) -> ForwardDiagnosticChannels:
     """Generate synthetic raw diagnostic channels from plasma state maps."""
+    ne = np.asarray(electron_density_m3, dtype=np.float64)
+    r = np.asarray(r_grid, dtype=np.float64)
+    z = np.asarray(z_grid, dtype=np.float64)
+    temp_map = (
+        np.asarray(electron_temp_keV, dtype=np.float64)
+        if electron_temp_keV is not None
+        else np.clip(ne / 1.0e19, 0.0, None)
+    )
+    if thomson_sample_points is None:
+        r_min = float(np.min(r))
+        r_max = float(np.max(r))
+        z_mid = 0.5 * (float(np.min(z)) + float(np.max(z)))
+        span = r_max - r_min
+        thomson_sample_points = (
+            (r_min + 0.25 * span, z_mid),
+            (r_min + 0.50 * span, z_mid),
+            (r_min + 0.75 * span, z_mid),
+        )
     phases = interferometer_phase_shift(
-        np.asarray(electron_density_m3, dtype=np.float64),
-        np.asarray(r_grid, dtype=np.float64),
-        np.asarray(z_grid, dtype=np.float64),
+        ne,
+        r,
+        z,
         interferometer_chords,
         laser_wavelength_m=laser_wavelength_m,
         enforce_domain_bounds=bool(enforce_chord_domain_bounds),
@@ -211,7 +323,19 @@ def generate_forward_channels(
         detector_efficiency=detector_efficiency,
         solid_angle_fraction=solid_angle_fraction,
     )
+    thomson = thomson_scattering_voltage(
+        ne,
+        temp_map,
+        r,
+        z,
+        thomson_sample_points,
+        gain_v_per_m3=thomson_gain_v_per_m3,
+        temp_sensitivity_per_kev=thomson_temp_sensitivity_per_kev,
+        baseline_voltage_v=thomson_baseline_voltage_v,
+        enforce_domain_bounds=bool(enforce_thomson_domain_bounds),
+    )
     return ForwardDiagnosticChannels(
         interferometer_phase_rad=phases,
         neutron_count_rate_hz=rate,
+        thomson_scattering_voltage_v=thomson,
     )

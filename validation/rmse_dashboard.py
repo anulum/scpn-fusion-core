@@ -250,6 +250,7 @@ def forward_diagnostics_rmse() -> dict[str, Any]:
     z = np.linspace(-2.0, 2.0, 33)
     rr, zz = np.meshgrid(r, z)
     electron_density = 4.8e19 * np.exp(-((rr - 6.0) ** 2 + zz**2) / 0.8)
+    electron_temp = 12.0 * np.exp(-((rr - 6.0) ** 2 + zz**2) / 1.0)
     neutron_source = 7.5e15 * np.exp(-((rr - 6.0) ** 2 + zz**2) / 0.65)
 
     chords = [
@@ -259,6 +260,7 @@ def forward_diagnostics_rmse() -> dict[str, Any]:
     ]
     baseline = generate_forward_channels(
         electron_density_m3=electron_density,
+        electron_temp_keV=electron_temp,
         neutron_source_m3_s=neutron_source,
         r_grid=r,
         z_grid=z,
@@ -269,6 +271,7 @@ def forward_diagnostics_rmse() -> dict[str, Any]:
     # Surrogate "prediction" lane with slight profile bias to quantify channel RMSE.
     pred = generate_forward_channels(
         electron_density_m3=electron_density * 0.985,
+        electron_temp_keV=electron_temp * 1.04,
         neutron_source_m3_s=neutron_source * 1.03,
         r_grid=r,
         z_grid=z,
@@ -282,10 +285,15 @@ def forward_diagnostics_rmse() -> dict[str, Any]:
     rate_true = baseline.neutron_count_rate_hz
     rate_pred = pred.neutron_count_rate_hz
     rate_rel_pct = abs(rate_pred - rate_true) / max(rate_true, 1e-12) * 100.0
+    thomson_true = baseline.thomson_scattering_voltage_v.tolist()
+    thomson_pred = pred.thomson_scattering_voltage_v.tolist()
+    thomson_rmse = rmse(thomson_true, thomson_pred)
     return {
         "count_interferometer_channels": len(chords),
+        "count_thomson_channels": len(thomson_true),
         "phase_rmse_rad": phase_rmse,
         "neutron_rate_rel_error_pct": rate_rel_pct,
+        "thomson_voltage_rmse_v": thomson_rmse,
         "rows": [
             {
                 "channel": i,
@@ -357,6 +365,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         lines.append(
             f"- Neutron-count relative error: `{fwd['neutron_rate_rel_error_pct']:.3f}%`"
         )
+        if "thomson_voltage_rmse_v" in fwd:
+            lines.append(f"- Thomson channels: `{fwd.get('count_thomson_channels', 0)}`")
+            lines.append(f"- Thomson voltage RMSE: `{fwd['thomson_voltage_rmse_v']:.6e} V`")
         lines.append("")
 
     lines.append("## Notes")

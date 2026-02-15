@@ -16,6 +16,7 @@ from scpn_fusion.diagnostics.forward import (
     generate_forward_channels,
     interferometer_phase_shift,
     neutron_count_rate,
+    thomson_scattering_voltage,
 )
 from scpn_fusion.diagnostics.synthetic_sensors import SensorSuite
 
@@ -60,12 +61,15 @@ def test_neutron_count_rate_positive_and_linear() -> None:
 
 def test_generate_forward_channels_and_sensor_suite_bridge() -> None:
     r, z, ne, sn = _make_fields()
+    rr, zz = np.meshgrid(r, z)
+    te = 12.0 * np.exp(-((rr - 6.0) ** 2 + zz**2) / 1.1)
     chords = [
         ((4.2, 0.0), (7.8, 0.0)),
         ((4.2, 0.8), (7.8, -0.8)),
     ]
     out = generate_forward_channels(
         electron_density_m3=ne,
+        electron_temp_keV=te,
         neutron_source_m3_s=sn,
         r_grid=r,
         z_grid=z,
@@ -75,8 +79,37 @@ def test_generate_forward_channels_and_sensor_suite_bridge() -> None:
     assert out.interferometer_phase_rad.shape == (2,)
     assert np.all(out.interferometer_phase_rad > 0.0)
     assert out.neutron_count_rate_hz > 0.0
+    assert out.thomson_scattering_voltage_v.shape == (3,)
+    assert np.all(out.thomson_scattering_voltage_v > 0.0)
 
     suite = SensorSuite(_KernelStub())
     from_suite = suite.measure_forward_channels(ne, sn)
     assert from_suite.interferometer_phase_rad.shape[0] == len(suite.bolo_chords)
     assert from_suite.neutron_count_rate_hz > 0.0
+    assert from_suite.thomson_scattering_voltage_v.shape == (3,)
+    assert np.all(from_suite.thomson_scattering_voltage_v > 0.0)
+
+
+def test_thomson_scattering_voltage_scales_with_density_and_temperature() -> None:
+    r, z, ne, _ = _make_fields()
+    rr, zz = np.meshgrid(r, z)
+    te = 10.0 * np.exp(-((rr - 6.0) ** 2 + zz**2) / 1.2)
+    points = [(5.0, 0.0), (6.0, 0.0), (7.0, 0.0)]
+
+    v_lo = thomson_scattering_voltage(
+        ne * 0.8,
+        te,
+        r,
+        z,
+        points,
+    )
+    v_hi = thomson_scattering_voltage(
+        ne * 1.2,
+        te * 1.3,
+        r,
+        z,
+        points,
+    )
+    assert v_lo.shape == (3,)
+    assert np.all(v_lo > 0.0)
+    assert np.all(v_hi > v_lo)
