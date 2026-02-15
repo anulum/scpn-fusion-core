@@ -452,8 +452,31 @@ impl FusionKernel {
         Ok(best_idx)
     }
 
+    fn axis_bounds(axis: &Array1<f64>, label: &str) -> FusionResult<(f64, f64)> {
+        if axis.is_empty() {
+            return Err(FusionError::ConfigError(format!(
+                "{label} axis must contain at least one coordinate"
+            )));
+        }
+        let first = axis[0];
+        let last = axis[axis.len() - 1];
+        if !first.is_finite() || !last.is_finite() {
+            return Err(FusionError::ConfigError(format!(
+                "{label} axis endpoints must be finite"
+            )));
+        }
+        Ok((first.min(last), first.max(last)))
+    }
+
     /// Sample solved flux at nearest grid point to (R, Z).
     pub fn sample_psi_at(&self, r: f64, z: f64) -> FusionResult<f64> {
+        let (r_min, r_max) = Self::axis_bounds(&self.grid.r, "sample R")?;
+        let (z_min, z_max) = Self::axis_bounds(&self.grid.z, "sample Z")?;
+        if r < r_min || r > r_max || z < z_min || z > z_max {
+            return Err(FusionError::ConfigError(format!(
+                "sample coordinate outside grid domain: (R={r}, Z={z}) not in R[{r_min}, {r_max}] Z[{z_min}, {z_max}]"
+            )));
+        }
         let ir = Self::nearest_index(&self.grid.r, r)?;
         let iz = Self::nearest_index(&self.grid.z, z)?;
         let psi = self.state.psi[[iz, ir]];
@@ -563,6 +586,23 @@ mod tests {
         assert!(kernel.sample_psi_at(6.2, f64::INFINITY).is_err());
         assert!(kernel
             .sample_psi_at_probes(&[(6.2, 0.0), (f64::NAN, 0.1)])
+            .is_err());
+    }
+
+    #[test]
+    fn test_sample_psi_rejects_out_of_domain_probe_coordinates() {
+        let kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let r_min = kernel.grid().r[0].min(kernel.grid().r[kernel.grid().nr - 1]);
+        let r_max = kernel.grid().r[0].max(kernel.grid().r[kernel.grid().nr - 1]);
+        let z_min = kernel.grid().z[0].min(kernel.grid().z[kernel.grid().nz - 1]);
+        let z_max = kernel.grid().z[0].max(kernel.grid().z[kernel.grid().nz - 1]);
+
+        assert!(kernel.sample_psi_at(r_min - 1.0e-6, 0.0).is_err());
+        assert!(kernel.sample_psi_at(r_max + 1.0e-6, 0.0).is_err());
+        assert!(kernel.sample_psi_at(6.2, z_min - 1.0e-6).is_err());
+        assert!(kernel.sample_psi_at(6.2, z_max + 1.0e-6).is_err());
+        assert!(kernel
+            .sample_psi_at_probes(&[(6.2, 0.0), (r_max + 1.0e-6, 0.1)])
             .is_err());
     }
 
