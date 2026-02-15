@@ -92,17 +92,43 @@ def gs_operator(
 
     Returns array of same shape with boundary values set to zero.
     """
-    nz, nr = psi.shape
-    dR = float(R[1] - R[0])
-    dZ = float(Z[1] - Z[0])
-    RR = R[np.newaxis, :]  # (1, nr)
+    psi_arr = np.asarray(psi, dtype=np.float64)
+    r_arr = np.asarray(R, dtype=np.float64)
+    z_arr = np.asarray(Z, dtype=np.float64)
 
-    result = np.zeros_like(psi)
+    if psi_arr.ndim != 2:
+        raise ValueError("psi must be a 2D array")
+    if r_arr.ndim != 1 or z_arr.ndim != 1:
+        raise ValueError("R and Z must be 1D arrays")
+
+    nz, nr = psi_arr.shape
+    if nz < 3 or nr < 3:
+        raise ValueError("psi grid must be at least 3x3")
+    if r_arr.size != nr or z_arr.size != nz:
+        raise ValueError(
+            f"R/Z axis lengths must match psi shape: got R={r_arr.size}, Z={z_arr.size}, "
+            f"psi={psi_arr.shape}"
+        )
+
+    if not np.all(np.isfinite(psi_arr)):
+        raise ValueError("psi must contain only finite values")
+    if not np.all(np.isfinite(r_arr)) or not np.all(np.isfinite(z_arr)):
+        raise ValueError("R and Z axes must contain only finite values")
+    if np.any(np.diff(r_arr) <= 0.0):
+        raise ValueError("R axis must be strictly increasing")
+    if np.any(np.diff(z_arr) <= 0.0):
+        raise ValueError("Z axis must be strictly increasing")
+
+    dR = float(r_arr[1] - r_arr[0])
+    dZ = float(z_arr[1] - z_arr[0])
+    RR = r_arr[np.newaxis, :]  # (1, nr)
+
+    result = np.zeros_like(psi_arr)
 
     # Interior finite differences
-    d2R = (psi[1:-1, 2:] - 2 * psi[1:-1, 1:-1] + psi[1:-1, :-2]) / dR**2
-    dR1 = (psi[1:-1, 2:] - psi[1:-1, :-2]) / (2 * dR)
-    d2Z = (psi[2:, 1:-1] - 2 * psi[1:-1, 1:-1] + psi[:-2, 1:-1]) / dZ**2
+    d2R = (psi_arr[1:-1, 2:] - 2 * psi_arr[1:-1, 1:-1] + psi_arr[1:-1, :-2]) / dR**2
+    dR1 = (psi_arr[1:-1, 2:] - psi_arr[1:-1, :-2]) / (2 * dR)
+    d2Z = (psi_arr[2:, 1:-1] - 2 * psi_arr[1:-1, 1:-1] + psi_arr[:-2, 1:-1]) / dZ**2
 
     R_interior = np.maximum(RR[:, 1:-1], 1e-6)
     result[1:-1, 1:-1] = d2R - dR1 / R_interior + d2Z

@@ -78,6 +78,46 @@ class TestGSOperator:
         result = gs_operator(psi, R, Z)
         assert result.shape == (45, 33)
 
+    @pytest.mark.parametrize(
+        ("psi_shape", "r_len", "z_len", "match"),
+        [
+            ((2, 3), 3, 2, "at least 3x3"),
+            ((45, 33), 32, 45, "axis lengths"),
+            ((45, 33), 33, 44, "axis lengths"),
+        ],
+    )
+    def test_rejects_invalid_grid_shapes(
+        self, psi_shape, r_len, z_len, match
+    ):
+        psi = np.zeros(psi_shape, dtype=np.float64)
+        R = np.linspace(1.0, 3.0, r_len)
+        Z = np.linspace(-1.0, 1.0, z_len)
+        with pytest.raises(ValueError, match=match):
+            gs_operator(psi, R, Z)
+
+    def test_rejects_non_monotonic_axes(self):
+        psi = np.zeros((5, 5), dtype=np.float64)
+        R = np.array([1.0, 1.5, 1.5, 2.0, 2.5], dtype=np.float64)
+        Z = np.linspace(-1.0, 1.0, 5)
+        with pytest.raises(ValueError, match="strictly increasing"):
+            gs_operator(psi, R, Z)
+
+    @pytest.mark.parametrize("bad_value", [np.nan, np.inf, -np.inf])
+    def test_rejects_non_finite_inputs(self, bad_value):
+        psi = np.zeros((5, 5), dtype=np.float64)
+        R = np.linspace(1.0, 3.0, 5)
+        Z = np.linspace(-1.0, 1.0, 5)
+
+        bad_psi = psi.copy()
+        bad_psi[2, 2] = bad_value
+        with pytest.raises(ValueError, match="finite"):
+            gs_operator(bad_psi, R, Z)
+
+        bad_R = R.copy()
+        bad_R[1] = bad_value
+        with pytest.raises(ValueError, match="finite"):
+            gs_operator(psi, bad_R, Z)
+
 
 # ── Integration tests on SPARC data ─────────────────────────────────
 
