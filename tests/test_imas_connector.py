@@ -53,6 +53,10 @@ def test_validate_ids_payload_accepts_nominal_payload() -> None:
             lambda p: p["time_slice"].__setitem__("time_s", -0.001),
             "time_slice.time_s",
         ),
+        (
+            lambda p: p["time_slice"].__setitem__("time_s", 0.0125),
+            "integer millisecond",
+        ),
         (lambda p: p["equilibrium"].__setitem__("axis", []), "equilibrium.axis"),
         (
             lambda p: p["equilibrium"]["axis"].__setitem__("r_m", float("nan")),
@@ -89,4 +93,3 @@ def test_validate_ids_payload_rejects_invalid_nested_fields(
 def test_validate_ids_payload_rejects_non_mapping_payload() -> None:
     with pytest.raises(ValueError, match="mapping"):
         validate_ids_payload([])  # type: ignore[arg-type]
-

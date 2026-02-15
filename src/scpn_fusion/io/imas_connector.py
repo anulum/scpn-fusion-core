@@ -80,7 +80,11 @@ def validate_ids_payload(payload: Mapping[str, Any]) -> None:
     performance = payload["performance"]
 
     _coerce_int("time_slice.index", time_slice.get("index", 0), minimum=0)
-    _coerce_finite_real("time_slice.time_s", time_slice.get("time_s", 0.0), minimum=0.0)
+    time_s = _coerce_finite_real("time_slice.time_s", time_slice.get("time_s", 0.0), minimum=0.0)
+    time_ms = time_s * 1.0e3
+    rounded_ms = round(time_ms)
+    if not math.isclose(time_ms, rounded_ms, rel_tol=0.0, abs_tol=1.0e-9):
+        raise ValueError("time_slice.time_s must map to an integer millisecond count.")
 
     axis = equilibrium.get("axis")
     if not isinstance(axis, Mapping):

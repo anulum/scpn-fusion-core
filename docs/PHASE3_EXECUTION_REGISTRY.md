@@ -323,6 +323,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-096 | P1 | Runtime | Harden VMEC boundary import/export against ambiguous mode duplicates and unsupported format headers | `scpn-fusion-rs/crates/fusion-core/src/vmec_interface.rs` | VMEC boundary validation now rejects duplicate Fourier mode indices `(m,n)` and import enforces `format=vmec_like_v1` with duplicate-format rejection; added regression coverage for duplicate modes, malformed mode column counts, unsupported format versions, and duplicate format keys | `cargo test -p fusion-core vmec_interface::tests -- --nocapture`, `cargo fmt --all -- --check` |
 | H8-097 | P1 | Interop | Tighten IDS validation contract for nested time-slice/equilibrium/performance fields | `src/scpn_fusion/io/imas_connector.py`, `tests/test_imas_connector.py` | `validate_ids_payload` now enforces nested mapping/value contracts (`time_slice.index/time_s`, `equilibrium.axis.r_m/z_m`, `equilibrium.islands_px`, and performance scalars) so malformed IDS payloads fail at validation boundary; added dedicated regression suite for nested-schema/type violations and nominal roundtrip acceptance | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 | H8-098 | P1 | Diagnostics | Enforce strictly increasing diagnostic grid axes before nearest-index forward modeling | `src/scpn_fusion/diagnostics/forward.py`, `tests/test_forward_diagnostics_guards.py` | Forward diagnostics now reject non-monotonic or duplicate `r_grid`/`z_grid` coordinates before nearest-index line integration, preventing silent channel corruption from malformed axis metadata; added regression coverage for non-monotonic and duplicate axis inputs in interferometer guards | `python -m pytest tests/test_forward_diagnostics_guards.py tests/test_diagnostics.py -q` |
+| H8-099 | P1 | Interop | Enforce millisecond-integral IDS times at validation boundary | `src/scpn_fusion/io/imas_connector.py`, `tests/test_imas_connector.py` | `validate_ids_payload` now rejects `time_slice.time_s` values that cannot map exactly to integer milliseconds, matching `ids_to_digital_twin_summary` conversion contract and preventing downstream late-fail payloads; added regression coverage for non-ms fractional time inputs | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 
 ## Task Accounting
 
@@ -330,7 +331,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 234
+- Post-S4 hardening tasks delivered: 235
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -588,4 +589,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-096`
 - Completed: `H8-097`
 - Completed: `H8-098`
+- Completed: `H8-099`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
