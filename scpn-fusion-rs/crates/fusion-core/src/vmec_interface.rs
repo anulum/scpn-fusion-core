@@ -561,7 +561,9 @@ pub fn vmec_fixed_boundary_solve(
     let n_angle_pts = (ntheta * nzeta) as f64;
 
     // Precompute angles
-    let theta_arr: Vec<f64> = (0..ntheta).map(|i| 2.0 * pi * i as f64 / ntheta as f64).collect();
+    let theta_arr: Vec<f64> = (0..ntheta)
+        .map(|i| 2.0 * pi * i as f64 / ntheta as f64)
+        .collect();
     let zeta_arr: Vec<f64> = (0..nzeta)
         .map(|i| 2.0 * pi * i as f64 / (nzeta as f64 * nfp.max(1) as f64))
         .collect();
@@ -587,8 +589,8 @@ pub fn vmec_fixed_boundary_solve(
         for js in 1..(ns - 1) {
             let p = pressure[js];
             let iota_s = iota[js];
-            let dp_ds = (pressure[(js + 1).min(ns - 1)] - pressure[js.saturating_sub(1)])
-                / (2.0 * ds);
+            let dp_ds =
+                (pressure[(js + 1).min(ns - 1)] - pressure[js.saturating_sub(1)]) / (2.0 * ds);
 
             let rmnc_s: Vec<f64> = (0..nmodes).map(|k| rmnc[[js, k]]).collect();
             let zmns_s: Vec<f64> = (0..nmodes).map(|k| zmns[[js, k]]).collect();
@@ -597,11 +599,8 @@ pub fn vmec_fixed_boundary_solve(
             let rmnc_m: Vec<f64> = (0..nmodes).map(|k| rmnc[[js - 1, k]]).collect();
             let zmns_m: Vec<f64> = (0..nmodes).map(|k| zmns[[js - 1, k]]).collect();
 
-            for it in 0..ntheta {
-                let theta = theta_arr[it];
-                for iz in 0..nzeta {
-                    let zeta = zeta_arr[iz];
-
+            for &theta in theta_arr.iter().take(ntheta) {
+                for &zeta in zeta_arr.iter().take(nzeta) {
                     let (r_val, _z_val) =
                         eval_surface_point(&rmnc_s, &zmns_s, theta, zeta, m_pol, n_tor, nfp);
                     let (r_p, _) =
@@ -926,7 +925,7 @@ nfp=1
         assert_eq!(vmec_mode_idx(3, 0, 6, 0), Some(3));
         assert_eq!(vmec_mode_idx(0, 1, 6, 0), None);
         assert_eq!(vmec_mode_idx(7, 0, 6, 0), None);
-        assert_eq!(vmec_mode_idx(1, -1, 3, 2), Some(1 * 5 + 1));
+        assert_eq!(vmec_mode_idx(1, -1, 3, 2), Some(6));
     }
 
     #[test]
@@ -1089,8 +1088,7 @@ nfp=1
         let dr_num = (r_p - r_m) / (2.0 * eps);
         let dz_num = (z_p - z_m) / (2.0 * eps);
 
-        let (dr_ana, dz_ana) =
-            eval_surface_deriv_theta(&rmnc, &zmns, theta, 0.0, m_pol, n_tor, 1);
+        let (dr_ana, dz_ana) = eval_surface_deriv_theta(&rmnc, &zmns, theta, 0.0, m_pol, n_tor, 1);
 
         assert!(
             (dr_ana - dr_num).abs() < 1e-5,

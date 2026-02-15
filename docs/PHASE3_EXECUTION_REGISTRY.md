@@ -335,6 +335,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-108 | P1 | Validation | Enforce GEQDSK payload contracts for GS source reconstruction | `validation/psi_pointwise_rmse.py`, `tests/test_psi_pointwise_rmse.py` | `compute_gs_source` now validates core GEQDSK payload integrity (positive `nw/nh`, finite axis flux scalars, `psirz` shape, `pprime/ffprime` lengths, finite profile/grid values, and strictly increasing `R/Z` axes) before interpolation, turning malformed-input numeric failures into explicit `ValueError` contracts; added regression coverage for profile-length mismatch, `psirz` shape mismatch, non-finite profiles, and non-monotonic axis rejection | `python -m pytest tests/test_psi_pointwise_rmse.py tests/test_psi_pointwise_rmse_cli.py -q` |
 | H8-109 | P1 | Tooling | Resolve Rust stable CI regression from upstream physics merge (fmt + clippy strict) | `scpn-fusion-rs/crates/fusion-core/src/particles.rs`, `scpn-fusion-rs/crates/fusion-core/src/transport.rs`, `scpn-fusion-rs/crates/fusion-gpu/src/lib.rs` | Applied workspace `cargo fmt` normalization and fixed strict clippy regressions (`manual_range_contains` in collision tests and `manual_div_ceil` in GPU workgroup sizing), restoring `Rust (stable)` pipeline compatibility after upstream merge drift | `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features` |
 | H8-110 | P1 | Validation | Harden DIII-D/JET validation runner contracts for GS operator and GEQDSK payload integrity | `validation/run_diiid_jet_validation.py`, `tests/test_diiid_jet_validation.py` | `gs_operator` now validates grid dimensionality, axis-length compatibility, finite inputs, and strict axis monotonicity; `validate_file` now enforces finite/consistent GEQDSK payloads (grid size, `psirz` shape, profile lengths, non-degenerate `simag/sibry`) before residual/RMSE metrics, converting malformed inputs into explicit `ValueError` contracts; added regression coverage for axis mismatch, monotonicity, non-finite values, profile mismatch, and degenerate flux range | `python -m pytest tests/test_diiid_jet_validation.py tests/test_psi_pointwise_rmse.py tests/test_psi_pointwise_rmse_cli.py -q` |
+| H8-111 | P1 | Tooling | Resolve Rust stable CI regression after VMEC/MPI upstream drop (fmt + clippy strict) | `scpn-fusion-rs/crates/fusion-core/src/bout_interface.rs`, `scpn-fusion-rs/crates/fusion-core/src/mpi_domain.rs`, `scpn-fusion-rs/crates/fusion-core/src/vmec_interface.rs` | Applied workspace `cargo fmt` normalization and fixed strict clippy regressions introduced by upstream VMEC/MPI changes (`manual_is_multiple_of`, `needless_range_loop`, `too_many_arguments`, and numeric expression simplification in tests), restoring green `Rust (stable)` behavior without altering physics/control contracts | `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features` |
 
 ## Task Accounting
 
@@ -342,7 +343,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 246
+- Post-S4 hardening tasks delivered: 247
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -612,4 +613,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-108`
 - Completed: `H8-109`
 - Completed: `H8-110`
+- Completed: `H8-111`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

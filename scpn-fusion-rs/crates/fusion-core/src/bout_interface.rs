@@ -168,7 +168,9 @@ pub fn generate_bout_grid(
 
     // Generate normalised flux surfaces
     let psi_n_surfaces: Vec<f64> = (0..nx)
-        .map(|i| config.psi_inner + (config.psi_outer - config.psi_inner) * i as f64 / (nx - 1) as f64)
+        .map(|i| {
+            config.psi_inner + (config.psi_outer - config.psi_inner) * i as f64 / (nx - 1) as f64
+        })
         .collect();
 
     let mut r_grid = Array2::zeros((nx, ny));
@@ -200,9 +202,7 @@ pub fn generate_bout_grid(
     let pi2 = 2.0 * std::f64::consts::PI;
     for ix in 0..nx {
         let psi_target = psi_axis + psi_n_surfaces[ix] * (psi_boundary - psi_axis);
-        let rho_est = psi_n_surfaces[ix].sqrt()
-            * 0.5
-            * (r_axis[nr_eq - 1] - r_axis[0]);
+        let rho_est = psi_n_surfaces[ix].sqrt() * 0.5 * (r_axis[nr_eq - 1] - r_axis[0]);
 
         for iy in 0..ny {
             let theta = pi2 * iy as f64 / ny as f64;
@@ -399,19 +399,24 @@ pub fn parse_bout_stability(text: &str) -> FusionResult<BoutStabilityResult> {
             continue;
         }
         if let Some(rest) = line.strip_prefix("n=") {
-            n_tor = Some(rest.trim().parse::<i32>().map_err(|e| {
-                FusionError::PhysicsViolation(format!("BOUT++ parse n: {e}"))
-            })?);
+            n_tor = Some(
+                rest.trim()
+                    .parse::<i32>()
+                    .map_err(|e| FusionError::PhysicsViolation(format!("BOUT++ parse n: {e}")))?,
+            );
         } else if let Some(rest) = line.strip_prefix("gamma=") {
-            gamma = Some(rest.trim().parse::<f64>().map_err(|e| {
-                FusionError::PhysicsViolation(format!("BOUT++ parse gamma: {e}"))
-            })?);
+            gamma =
+                Some(rest.trim().parse::<f64>().map_err(|e| {
+                    FusionError::PhysicsViolation(format!("BOUT++ parse gamma: {e}"))
+                })?);
         } else if let Some(rest) = line.strip_prefix("omega=") {
-            omega = Some(rest.trim().parse::<f64>().map_err(|e| {
-                FusionError::PhysicsViolation(format!("BOUT++ parse omega: {e}"))
-            })?);
+            omega =
+                Some(rest.trim().parse::<f64>().map_err(|e| {
+                    FusionError::PhysicsViolation(format!("BOUT++ parse omega: {e}"))
+                })?);
         } else if let Some(rest) = line.strip_prefix("amplitude=") {
-            let vals: Result<Vec<f64>, _> = rest.split(',').map(|s| s.trim().parse::<f64>()).collect();
+            let vals: Result<Vec<f64>, _> =
+                rest.split(',').map(|s| s.trim().parse::<f64>()).collect();
             amplitude = Some(vals.map_err(|e| {
                 FusionError::PhysicsViolation(format!("BOUT++ parse amplitude: {e}"))
             })?);
@@ -419,15 +424,12 @@ pub fn parse_bout_stability(text: &str) -> FusionResult<BoutStabilityResult> {
     }
 
     Ok(BoutStabilityResult {
-        n_toroidal: n_tor.ok_or_else(|| {
-            FusionError::PhysicsViolation("Missing BOUT++ field: n".into())
-        })?,
-        growth_rate: gamma.ok_or_else(|| {
-            FusionError::PhysicsViolation("Missing BOUT++ field: gamma".into())
-        })?,
-        real_frequency: omega.ok_or_else(|| {
-            FusionError::PhysicsViolation("Missing BOUT++ field: omega".into())
-        })?,
+        n_toroidal: n_tor
+            .ok_or_else(|| FusionError::PhysicsViolation("Missing BOUT++ field: n".into()))?,
+        growth_rate: gamma
+            .ok_or_else(|| FusionError::PhysicsViolation("Missing BOUT++ field: gamma".into()))?,
+        real_frequency: omega
+            .ok_or_else(|| FusionError::PhysicsViolation("Missing BOUT++ field: omega".into()))?,
         mode_amplitude: amplitude.ok_or_else(|| {
             FusionError::PhysicsViolation("Missing BOUT++ field: amplitude".into())
         })?,
@@ -507,8 +509,8 @@ mod tests {
             psi_inner: 0.2,
             psi_outer: 0.8,
         };
-        let grid = generate_bout_grid(&psi, &r_axis, &z_axis, psi_ax, psi_bnd, 5.3, &config)
-            .unwrap();
+        let grid =
+            generate_bout_grid(&psi, &r_axis, &z_axis, psi_ax, psi_bnd, 5.3, &config).unwrap();
         let text = export_bout_grid_text(&grid).expect("export should succeed");
         assert!(text.contains("nx=4"));
         assert!(text.contains("ny=8"));

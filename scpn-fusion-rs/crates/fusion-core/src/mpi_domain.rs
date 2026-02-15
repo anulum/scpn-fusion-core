@@ -395,22 +395,38 @@ impl CartesianTile {
     /// Total rows including halo (top + bottom).
     pub fn padded_nz(&self) -> usize {
         let top = if self.pz_idx > 0 { self.halo } else { 0 };
-        let bot = if self.pz_idx + 1 < self.pz { self.halo } else { 0 };
+        let bot = if self.pz_idx + 1 < self.pz {
+            self.halo
+        } else {
+            0
+        };
         self.local_nz() + top + bot
     }
     /// Total columns including halo (left + right).
     pub fn padded_nr(&self) -> usize {
         let left = if self.pr_idx > 0 { self.halo } else { 0 };
-        let right = if self.pr_idx + 1 < self.pr { self.halo } else { 0 };
+        let right = if self.pr_idx + 1 < self.pr {
+            self.halo
+        } else {
+            0
+        };
         self.local_nr() + left + right
     }
     /// Offset of the first owned row within the padded local array.
     pub fn core_z_offset(&self) -> usize {
-        if self.pz_idx > 0 { self.halo } else { 0 }
+        if self.pz_idx > 0 {
+            self.halo
+        } else {
+            0
+        }
     }
     /// Offset of the first owned column within the padded local array.
     pub fn core_r_offset(&self) -> usize {
-        if self.pr_idx > 0 { self.halo } else { 0 }
+        if self.pr_idx > 0 {
+            self.halo
+        } else {
+            0
+        }
     }
     pub fn has_neighbor_top(&self) -> bool {
         self.pz_idx > 0
@@ -469,15 +485,13 @@ pub fn decompose_2d(
 
     let mut tiles = Vec::with_capacity(pz * pr);
     let mut z_cursor = 0usize;
-    for iz in 0..pz {
-        let nz_local = z_splits[iz];
+    for (iz, nz_local) in z_splits.iter().copied().enumerate().take(pz) {
         let z_start = z_cursor;
         let z_end = z_start + nz_local;
         z_cursor = z_end;
 
         let mut r_cursor = 0usize;
-        for ir in 0..pr {
-            let nr_local = r_splits[ir];
+        for (ir, nr_local) in r_splits.iter().copied().enumerate().take(pr) {
             let r_start = r_cursor;
             let r_end = r_start + nr_local;
             r_cursor = r_end;
@@ -509,10 +523,7 @@ fn balanced_split(n: usize, k: usize) -> Vec<usize> {
 }
 
 /// Extract a padded local tile (with halo) from the global array.
-pub fn extract_tile(
-    global: &Array2<f64>,
-    tile: &CartesianTile,
-) -> FusionResult<Array2<f64>> {
+pub fn extract_tile(global: &Array2<f64>, tile: &CartesianTile) -> FusionResult<Array2<f64>> {
     let (gnz, gnr) = global.dim();
     if gnz != tile.global_nz || gnr != tile.global_nr {
         return Err(FusionError::PhysicsViolation(format!(
@@ -521,9 +532,21 @@ pub fn extract_tile(
         )));
     }
     let z0 = tile.z_start.saturating_sub(tile.core_z_offset());
-    let z1 = (tile.z_end + if tile.has_neighbor_bottom() { tile.halo } else { 0 }).min(gnz);
+    let z1 = (tile.z_end
+        + if tile.has_neighbor_bottom() {
+            tile.halo
+        } else {
+            0
+        })
+    .min(gnz);
     let r0 = tile.r_start.saturating_sub(tile.core_r_offset());
-    let r1 = (tile.r_end + if tile.has_neighbor_right() { tile.halo } else { 0 }).min(gnr);
+    let r1 = (tile.r_end
+        + if tile.has_neighbor_right() {
+            tile.halo
+        } else {
+            0
+        })
+    .min(gnr);
 
     let local = global.slice(s![z0..z1, r0..r1]).to_owned();
     if local.iter().any(|v| !v.is_finite()) {
@@ -778,7 +801,8 @@ pub fn distributed_gs_solve(
     }
     if cfg.omega <= 0.0 || cfg.omega >= 2.0 {
         return Err(FusionError::PhysicsViolation(format!(
-            "SOR omega must be in (0, 2), got {}", cfg.omega
+            "SOR omega must be in (0, 2), got {}",
+            cfg.omega
         )));
     }
     if !dr.is_finite() || !dz.is_finite() || dr <= 0.0 || dz <= 0.0 {
@@ -962,7 +986,7 @@ pub fn optimal_process_grid(nz: usize, nr: usize, nranks: usize) -> (usize, usiz
     let mut best_cost = f64::MAX;
 
     for pz in 1..=nranks {
-        if nranks % pz != 0 {
+        if !nranks.is_multiple_of(pz) {
             continue;
         }
         let pr = nranks / pz;
@@ -989,6 +1013,7 @@ pub fn optimal_process_grid(nz: usize, nr: usize, nranks: usize) -> (usize, usiz
 /// Detects the Rayon thread count and picks the optimal (pz, pr)
 /// factorisation. This is the top-level entry point for exascale-ready
 /// distributed equilibrium solving.
+#[allow(clippy::too_many_arguments)]
 pub fn auto_distributed_gs_solve(
     psi: &Array2<f64>,
     source: &Array2<f64>,
@@ -1107,7 +1132,7 @@ mod tests {
     fn test_decompose_2d_covers_full_domain() {
         let tiles = decompose_2d(32, 24, 4, 3, 1).expect("decompose_2d");
         assert_eq!(tiles.len(), 12); // 4*3
-        // Every global (iz, ir) must be owned by exactly one tile.
+                                     // Every global (iz, ir) must be owned by exactly one tile.
         let mut coverage = Array2::<u8>::zeros((32, 24));
         for t in &tiles {
             for iz in t.z_start..t.z_end {
@@ -1116,7 +1141,10 @@ mod tests {
                 }
             }
         }
-        assert!(coverage.iter().all(|&c| c == 1), "Every cell owned by exactly one tile");
+        assert!(
+            coverage.iter().all(|&c| c == 1),
+            "Every cell owned by exactly one tile"
+        );
     }
 
     #[test]
@@ -1159,16 +1187,17 @@ mod tests {
             inject_tile(&mut reconstructed, &local, t).expect("inject");
         }
         let delta = l2_norm_delta(&global, &reconstructed).expect("delta");
-        assert!(delta < 1e-12, "Extract→inject roundtrip must be lossless, got delta={delta}");
+        assert!(
+            delta < 1e-12,
+            "Extract→inject roundtrip must be lossless, got delta={delta}"
+        );
     }
 
     #[test]
     fn test_serial_halo_exchange_2d_correctness() {
         // Create a global array, split into tiles, exchange halos,
         // then verify that halo cells match the original global data.
-        let global = Array2::from_shape_fn((16, 16), |(i, j)| {
-            (i as f64) * 100.0 + j as f64
-        });
+        let global = Array2::from_shape_fn((16, 16), |(i, j)| (i as f64) * 100.0 + j as f64);
         let tiles = decompose_2d(16, 16, 2, 2, 1).expect("decompose");
         let mut locals: Vec<Array2<f64>> = tiles
             .iter()
@@ -1210,7 +1239,10 @@ mod tests {
     fn test_optimal_process_grid_rectangular() {
         // Tall grid (nz >> nr): should put more processes along Z.
         let (pz, pr) = optimal_process_grid(128, 32, 8);
-        assert!(pz >= pr, "Tall grid should bias toward Z decomposition: pz={pz}, pr={pr}");
+        assert!(
+            pz >= pr,
+            "Tall grid should bias toward Z decomposition: pz={pz}, pr={pr}"
+        );
         assert_eq!(pz * pr, 8);
     }
 
@@ -1245,7 +1277,10 @@ mod tests {
             }
         }
         let res = gs_residual_l2(&psi, &source, &r_axis, dr, dz);
-        assert!(res < 1e-10, "Residual should be ~0 for manufactured solution, got {res}");
+        assert!(
+            res < 1e-10,
+            "Residual should be ~0 for manufactured solution, got {res}"
+        );
     }
 
     #[test]
@@ -1265,7 +1300,7 @@ mod tests {
         let source = Array2::from_shape_fn((nz, nr), |(iz, ir)| {
             let rr = r_axis[ir] - r_mid;
             let zz = z_axis[iz] - z_mid;
-            -1.0 * (-(rr * rr + zz * zz) / (0.05 * 0.05)).exp()
+            -((-(rr * rr + zz * zz) / (0.05 * 0.05)).exp())
         });
 
         // Compute initial residual for comparison.
@@ -1290,7 +1325,10 @@ mod tests {
         );
         // Ψ should be non-trivial (negative source → negative interior values).
         let psi_absmax = result.psi.iter().map(|v| v.abs()).fold(0.0f64, f64::max);
-        assert!(psi_absmax > 1e-10, "Solution should be non-trivial, max |Ψ| = {psi_absmax}");
+        assert!(
+            psi_absmax > 1e-10,
+            "Solution should be non-trivial, max |Ψ| = {psi_absmax}"
+        );
     }
 
     #[test]
