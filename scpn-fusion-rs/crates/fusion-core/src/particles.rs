@@ -213,10 +213,26 @@ pub fn seed_alpha_test_particles(
 
     let r0 = major_radius_m;
     let energy_j = kinetic_energy_mev * 1.0e6 * ELEMENTARY_CHARGE_C;
+    if !energy_j.is_finite() || energy_j <= 0.0 {
+        return Err(FusionError::PhysicsViolation(format!(
+            "seeded particle energy_j must be finite and > 0, got {energy_j}"
+        )));
+    }
     let speed = (2.0 * energy_j / ALPHA_MASS_KG).sqrt();
+    if !speed.is_finite() || speed <= 0.0 {
+        return Err(FusionError::PhysicsViolation(format!(
+            "seeded particle speed must be finite and > 0, got {speed}"
+        )));
+    }
     let pitch = pitch_cos;
     let v_par = speed * pitch;
-    let v_perp = speed * (1.0 - pitch * pitch).sqrt();
+    let perp_factor = (1.0 - pitch * pitch).max(0.0);
+    let v_perp = speed * perp_factor.sqrt();
+    if !v_par.is_finite() || !v_perp.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "seeded particle velocity components became non-finite".to_string(),
+        ));
+    }
     let weight = weight_per_particle;
 
     let mut out = Vec::with_capacity(n_particles);
@@ -781,6 +797,18 @@ mod tests {
                 candidate.is_err(),
                 "Expected invalid seed parameters to return an error"
             );
+        }
+    }
+
+    #[test]
+    fn test_seed_alpha_particles_rejects_non_finite_kinematics() {
+        let err = seed_alpha_test_particles(4, 6.2, 0.0, f64::MAX, 0.6, 1.0)
+            .expect_err("overflowing kinetic seed should fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("energy_j") || msg.contains("speed"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
         }
     }
 
