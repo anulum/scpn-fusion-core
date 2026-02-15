@@ -294,6 +294,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-067 | P1 | Runtime | Guard kernel probe sampling against psi/grid shape mismatch before indexing | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | Public sampler now validates that solved `psi` shape matches configured grid dimensions before probe indexing, returning explicit `FusionError::ConfigError` instead of allowing panic-prone out-of-bounds access under corrupted or externally-mutated state | `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_non_finite_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_out_of_domain_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_state_shape_mismatch -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-068 | P1 | Runtime | Enforce non-empty probe batches for kernel multi-sample API | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `sample_psi_at_probes` now rejects empty probe arrays with explicit `FusionError::ConfigError` instead of silently returning empty output, tightening call-contract validation for diagnostics and inverse pre-processing paths | `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_non_finite_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_out_of_domain_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_empty_probe_list -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_state_shape_mismatch -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-069 | P1 | Runtime | Harden projection-grid validation with finite mesh-coordinate enforcement | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | Particle projection-grid validation now rejects non-finite `rr/zz` mesh coordinates in addition to shape/axis/spacing guards, preventing corrupted mesh metadata from silently passing into blending/heating/deposition paths; added regression coverage for non-finite grid mesh in blend path | `cargo test -p fusion-core particles::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
+| H8-070 | P1 | Runtime | Reject empty particle populations in kernel feedback synthesis | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `set_particle_feedback_from_population` now rejects empty particle arrays with explicit `FusionError::PhysicsViolation`, preventing invalid no-particle feedback synthesis from silently proceeding into deposition/coupling paths; added targeted regression coverage for empty populations | `cargo test -p fusion-core kernel::tests::test_particle_feedback_shape_guard -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_non_finite_map -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_builds_summary -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_rejects_invalid_threshold -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_rejects_empty_population -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 
 ## Task Accounting
 
@@ -301,7 +302,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 205
+- Post-S4 hardening tasks delivered: 206
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -530,4 +531,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-067`
 - Completed: `H8-068`
 - Completed: `H8-069`
+- Completed: `H8-070`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

@@ -407,6 +407,11 @@ impl FusionKernel {
         coupling: f64,
         runaway_threshold_mev: f64,
     ) -> FusionResult<ParticlePopulationSummary> {
+        if particles.is_empty() {
+            return Err(FusionError::PhysicsViolation(
+                "particle population must be non-empty".to_string(),
+            ));
+        }
         let summary = summarize_particle_population(particles, runaway_threshold_mev)?;
         let particle_j_phi = deposit_toroidal_current_density(particles, &self.grid)?;
         self.set_particle_current_feedback(particle_j_phi, coupling)?;
@@ -754,6 +759,20 @@ mod tests {
         match err {
             FusionError::PhysicsViolation(msg) => {
                 assert!(msg.contains("runaway_threshold_mev"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_from_population_rejects_empty_population() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let err = kernel
+            .set_particle_feedback_from_population(&[], 0.2, 0.5)
+            .expect_err("empty particle population must error");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("non-empty"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
