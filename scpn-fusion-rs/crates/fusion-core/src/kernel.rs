@@ -575,14 +575,18 @@ impl FusionKernel {
                 "{label} axis must contain at least one coordinate"
             )));
         }
-        let first = axis[0];
-        let last = axis[axis.len() - 1];
-        if !first.is_finite() || !last.is_finite() {
-            return Err(FusionError::ConfigError(format!(
-                "{label} axis endpoints must be finite"
-            )));
+        let mut min_x = f64::INFINITY;
+        let mut max_x = f64::NEG_INFINITY;
+        for (idx, &x) in axis.iter().enumerate() {
+            if !x.is_finite() {
+                return Err(FusionError::ConfigError(format!(
+                    "{label} axis contains non-finite coordinate at index {idx}"
+                )));
+            }
+            min_x = min_x.min(x);
+            max_x = max_x.max(x);
         }
-        Ok((first.min(last), first.max(last)))
+        Ok((min_x, max_x))
     }
 
     fn validate_profile_params(params: &ProfileParams, label: &str) -> FusionResult<()> {
@@ -746,6 +750,21 @@ mod tests {
         assert!(kernel
             .sample_psi_at_probes(&[(6.2, 0.0), (f64::NAN, 0.1)])
             .is_err());
+    }
+
+    #[test]
+    fn test_sample_psi_rejects_non_finite_axis_coordinates() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.r[10] = f64::NAN;
+        let err = kernel
+            .sample_psi_at(6.2, 0.0)
+            .expect_err("non-finite axis coordinate must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("non-finite coordinate"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
     }
 
     #[test]
