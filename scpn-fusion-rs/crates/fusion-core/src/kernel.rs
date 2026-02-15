@@ -403,6 +403,16 @@ impl FusionKernel {
         particle_j_phi: Array2<f64>,
         coupling: f64,
     ) -> FusionResult<()> {
+        if !self.grid.dr.is_finite()
+            || !self.grid.dz.is_finite()
+            || self.grid.dr == 0.0
+            || self.grid.dz == 0.0
+        {
+            return Err(FusionError::ConfigError(format!(
+                "particle feedback requires finite non-zero grid spacing, got dr={}, dz={}",
+                self.grid.dr, self.grid.dz
+            )));
+        }
         if particle_j_phi.dim() != (self.grid.nz, self.grid.nr) {
             return Err(FusionError::PhysicsViolation(format!(
                 "Particle feedback shape mismatch: expected ({}, {}), got {:?}",
@@ -792,6 +802,22 @@ mod tests {
         match err {
             FusionError::PhysicsViolation(msg) => {
                 assert!(msg.contains("finite values"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_rejects_invalid_grid_spacing() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
+        kernel.grid.dr = 0.0;
+        let err = kernel
+            .set_particle_current_feedback(feedback, 0.2)
+            .expect_err("invalid grid spacing must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("grid spacing"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }

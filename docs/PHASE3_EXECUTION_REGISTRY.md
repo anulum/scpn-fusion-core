@@ -302,6 +302,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-075 | P1 | Runtime | Add per-probe index context to multi-probe psi sampling errors | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `sample_psi_at_probes` now wraps underlying sampler `ConfigError` values with `probe[i]` context, making invalid diagnostics probe batches directly traceable without binary-searching coordinates; added regression coverage for indexed out-of-domain failure messages | `cargo test -p fusion-core kernel::tests::test_sample_psi_probe_errors_include_probe_index -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_out_of_domain_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_empty_probe_list -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-076 | P1 | Runtime | Fail fast on zero-integral full-coupling particle-feedback maps | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `set_particle_current_feedback` now validates deposited particle-current integral and rejects near-zero-integral maps when `coupling=1` and target plasma current is non-zero, preventing delayed blend-time failures and surfacing invalid feedback inputs at configuration time; added regression coverage for full-coupling rejection and partial-coupling acceptance | `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_zero_integral_with_full_coupling -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_set_and_clear -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_builds_summary -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-077 | P1 | Runtime | Propagate population-context diagnostics for particle-feedback setup failures | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `set_particle_feedback_from_population` now wraps downstream feedback-setup `PhysicsViolation` errors with population-context diagnostics, and rejects out-of-domain full-coupling populations with explicit setup-failure messaging, improving root-cause visibility for invalid particle overlays | `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_rejects_out_of_domain_full_coupling -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_zero_integral_with_full_coupling -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_builds_summary -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_rejects_empty_population -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
+| H8-078 | P1 | Runtime | Reject invalid kernel grid spacing during particle-feedback setup | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `set_particle_current_feedback` now enforces finite non-zero kernel grid spacing before accepting feedback maps, preventing delayed runtime failures when mutated/invalid grid metadata reaches blending; added regression coverage for invalid spacing rejection while preserving nominal feedback setup behavior | `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_invalid_grid_spacing -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_set_and_clear -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_zero_integral_with_full_coupling -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_builds_summary -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 
 ## Task Accounting
 
@@ -309,7 +310,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 213
+- Post-S4 hardening tasks delivered: 214
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -546,4 +547,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-075`
 - Completed: `H8-076`
 - Completed: `H8-077`
+- Completed: `H8-078`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
