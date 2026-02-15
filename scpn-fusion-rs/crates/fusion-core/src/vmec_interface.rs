@@ -12,6 +12,7 @@
 //! reduced Fourier boundary states with external VMEC-class workflows.
 
 use fusion_types::error::{FusionError, FusionResult};
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct VmecFourierMode {
@@ -61,6 +62,7 @@ impl VmecBoundaryState {
                 "VMEC boundary requires nfp >= 1".to_string(),
             ));
         }
+        let mut seen_modes: HashSet<(i32, i32)> = HashSet::with_capacity(self.modes.len());
         for (idx, mode) in self.modes.iter().enumerate() {
             if mode.m < 0 {
                 return Err(FusionError::PhysicsViolation(format!(
@@ -75,6 +77,13 @@ impl VmecBoundaryState {
             {
                 return Err(FusionError::PhysicsViolation(format!(
                     "VMEC boundary mode[{idx}] contains non-finite coefficients"
+                )));
+            }
+            let key = (mode.m, mode.n);
+            if !seen_modes.insert(key) {
+                return Err(FusionError::PhysicsViolation(format!(
+                    "VMEC boundary contains duplicate mode (m={}, n={})",
+                    mode.m, mode.n
                 )));
             }
         }
@@ -124,6 +133,7 @@ where
 }
 
 pub fn import_vmec_like_text(text: &str) -> FusionResult<VmecBoundaryState> {
+    let mut format_seen = false;
     let mut r_axis: Option<f64> = None;
     let mut z_axis: Option<f64> = None;
     let mut a_minor: Option<f64> = None;
@@ -137,7 +147,19 @@ pub fn import_vmec_like_text(text: &str) -> FusionResult<VmecBoundaryState> {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        if line.starts_with("format=") {
+        if let Some(format_name) = line.strip_prefix("format=") {
+            if format_seen {
+                return Err(FusionError::PhysicsViolation(
+                    "Duplicate VMEC key: format".to_string(),
+                ));
+            }
+            if format_name.trim() != "vmec_like_v1" {
+                return Err(FusionError::PhysicsViolation(format!(
+                    "Unsupported VMEC format: {}",
+                    format_name.trim()
+                )));
+            }
+            format_seen = true;
             continue;
         }
         if let Some(rest) = line.strip_prefix("mode,") {
@@ -335,6 +357,78 @@ nfp=1
         let err = import_vmec_like_text(dup_text).expect_err("duplicate keys must fail");
         match err {
             FusionError::PhysicsViolation(msg) => assert!(msg.contains("Duplicate VMEC key")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_vmec_rejects_duplicate_modes_and_bad_format() {
+        let mut state = sample_state();
+        state.modes.push(VmecFourierMode {
+            m: state.modes[0].m,
+            n: state.modes[0].n,
+            r_cos: 0.001,
+            r_sin: 0.0,
+            z_cos: 0.0,
+            z_sin: 0.001,
+        });
+        let err = export_vmec_like_text(&state).expect_err("duplicate mode index must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => assert!(msg.contains("duplicate mode")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        let bad_format = "\
+format=vmec_like_v2
+r_axis=6.2
+z_axis=0.0
+a_minor=2.0
+kappa=1.7
+triangularity=0.2
+nfp=1
+";
+        let err = import_vmec_like_text(bad_format).expect_err("unsupported format must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => assert!(msg.contains("Unsupported VMEC format")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_vmec_rejects_malformed_mode_and_duplicate_format() {
+        let malformed_mode = "\
+format=vmec_like_v1
+r_axis=6.2
+z_axis=0.0
+a_minor=2.0
+kappa=1.7
+triangularity=0.2
+nfp=1
+mode,1,1,0.1,0.0,0.2
+";
+        let err =
+            import_vmec_like_text(malformed_mode).expect_err("mode with wrong arity must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => assert!(msg.contains("exactly 6 columns")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        let duplicate_format = "\
+format=vmec_like_v1
+format=vmec_like_v1
+r_axis=6.2
+z_axis=0.0
+a_minor=2.0
+kappa=1.7
+triangularity=0.2
+nfp=1
+";
+        let err =
+            import_vmec_like_text(duplicate_format).expect_err("duplicate format key must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("Duplicate VMEC key: format"))
+            }
             other => panic!("Unexpected error: {other:?}"),
         }
     }
