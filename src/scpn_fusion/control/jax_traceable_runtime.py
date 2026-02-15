@@ -20,6 +20,14 @@ except Exception:
     jnp = None  # type: ignore[assignment]
     _HAS_JAX = False
 
+try:
+    import torch
+
+    _HAS_TORCH = True
+except Exception:
+    torch = None  # type: ignore[assignment]
+    _HAS_TORCH = False
+
 
 FloatArray = NDArray[np.float64]
 
@@ -101,6 +109,48 @@ def _simulate_jax(
     return np.asarray(hist, dtype=np.float64)
 
 
+if _HAS_TORCH:
+
+    @torch.jit.script
+    def _torchscript_rollout(
+        cmd: torch.Tensor,
+        initial_state: float,
+        alpha: float,
+        gain: float,
+        limit: float,
+    ) -> torch.Tensor:
+        n = cmd.numel()
+        out = torch.empty((n,), dtype=cmd.dtype, device=cmd.device)
+        state = torch.tensor(initial_state, dtype=cmd.dtype, device=cmd.device)
+        for i in range(n):
+            u = torch.clamp(cmd[i], -limit, limit)
+            state = state + alpha * ((gain * u) - state)
+            out[i] = state
+        return out
+
+else:
+    _torchscript_rollout = None
+
+
+def _simulate_torchscript(
+    commands: FloatArray, initial_state: float, spec: TraceableRuntimeSpec
+) -> FloatArray:
+    if not _HAS_TORCH or _torchscript_rollout is None:
+        raise RuntimeError("TorchScript backend requested but torch is not installed.")
+    assert torch is not None
+
+    cmd = torch.as_tensor(commands, dtype=torch.float64)
+    alpha = float(spec.dt_s / (spec.tau_s + spec.dt_s))
+    hist = _torchscript_rollout(
+        cmd,
+        float(initial_state),
+        alpha,
+        float(spec.gain),
+        float(spec.command_limit),
+    )
+    return np.asarray(hist.detach().cpu().numpy(), dtype=np.float64)
+
+
 def run_traceable_control_loop(
     commands: FloatArray,
     *,
@@ -111,7 +161,7 @@ def run_traceable_control_loop(
     """
     Run a reduced control loop suitable for optional JAX tracing/JIT.
 
-    `backend` can be `auto`, `numpy`, or `jax`.
+    `backend` can be `auto`, `numpy`, `jax`, or `torchscript`.
     """
     cmd_arr = np.asarray(commands, dtype=np.float64).reshape(-1)
     _validate_commands(cmd_arr)
@@ -122,10 +172,15 @@ def run_traceable_control_loop(
     _validate_spec(runtime_spec)
 
     b = str(backend).strip().lower()
-    if b not in {"auto", "numpy", "jax"}:
-        raise ValueError("backend must be one of: auto, numpy, jax.")
+    if b not in {"auto", "numpy", "jax", "torchscript"}:
+        raise ValueError("backend must be one of: auto, numpy, jax, torchscript.")
     if b == "auto":
-        b = "jax" if _HAS_JAX else "numpy"
+        if _HAS_JAX:
+            b = "jax"
+        elif _HAS_TORCH:
+            b = "torchscript"
+        else:
+            b = "numpy"
 
     if b == "jax":
         return TraceableRuntimeResult(
@@ -134,9 +189,17 @@ def run_traceable_control_loop(
             compiled=True,
         )
 
+    if b == "torchscript":
+        return TraceableRuntimeResult(
+            state_history=_simulate_torchscript(
+                cmd_arr, float(initial_state), runtime_spec
+            ),
+            backend_used="torchscript",
+            compiled=True,
+        )
+
     return TraceableRuntimeResult(
         state_history=_simulate_numpy(cmd_arr, float(initial_state), runtime_spec),
         backend_used="numpy",
         compiled=False,
     )
-

@@ -37,6 +37,7 @@ def test_traceable_runtime_auto_falls_back_to_numpy_without_jax(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(runtime, "_HAS_JAX", False)
+    monkeypatch.setattr(runtime, "_HAS_TORCH", False)
     commands = np.asarray([0.1, 0.2, 0.3], dtype=np.float64)
     out = runtime.run_traceable_control_loop(commands, backend="auto")
     assert out.backend_used == "numpy"
@@ -52,6 +53,32 @@ def test_traceable_runtime_jax_backend_raises_when_unavailable(
         runtime.run_traceable_control_loop(commands, backend="jax")
 
 
+def test_traceable_runtime_torchscript_backend_raises_when_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(runtime, "_HAS_TORCH", False)
+    commands = np.asarray([0.1, 0.2], dtype=np.float64)
+    with pytest.raises(RuntimeError, match="TorchScript backend requested"):
+        runtime.run_traceable_control_loop(commands, backend="torchscript")
+
+
+@pytest.mark.skipif(not runtime._HAS_TORCH, reason="torch unavailable")
+def test_traceable_runtime_torchscript_matches_numpy() -> None:
+    commands = np.asarray([0.3, -0.4, 0.5, 1.5], dtype=np.float64)
+    spec = runtime.TraceableRuntimeSpec(
+        dt_s=0.0025, tau_s=0.010, gain=1.5, command_limit=0.9
+    )
+    ref = runtime.run_traceable_control_loop(
+        commands, initial_state=0.1, spec=spec, backend="numpy"
+    )
+    out = runtime.run_traceable_control_loop(
+        commands, initial_state=0.1, spec=spec, backend="torchscript"
+    )
+    assert out.backend_used == "torchscript"
+    assert out.compiled is True
+    np.testing.assert_allclose(out.state_history, ref.state_history, rtol=0.0, atol=1e-8)
+
+
 def test_traceable_runtime_rejects_invalid_inputs() -> None:
     with pytest.raises(ValueError, match="non-empty 1D"):
         runtime.run_traceable_control_loop(np.asarray([], dtype=np.float64))
@@ -59,7 +86,7 @@ def test_traceable_runtime_rejects_invalid_inputs() -> None:
         runtime.run_traceable_control_loop(np.asarray([0.0, np.nan], dtype=np.float64))
     with pytest.raises(ValueError, match="backend must be one of"):
         runtime.run_traceable_control_loop(
-            np.asarray([0.0], dtype=np.float64), backend="torchscript"
+            np.asarray([0.0], dtype=np.float64), backend="flux"
         )
 
 
