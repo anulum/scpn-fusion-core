@@ -289,6 +289,23 @@ Summary:
   - when source snapshots have equal/non-increasing times, payload times are lifted to the next millisecond tick.
 - Preserved compatibility with existing single-payload summary/state APIs.
 
+### H8-125 (Control/Interop)
+Files:
+- `src/scpn_fusion/control/tokamak_digital_twin.py`
+- `tests/test_tokamak_digital_twin.py`
+
+Summary:
+- Added `run_digital_twin_ids_history(...)`:
+  - runs deterministic digital-twin snapshots for multiple horizons
+  - emits IDS payload sequence via `digital_twin_history_to_ids(...)`
+- Added strict history-mode guards:
+  - `history_steps` must be non-empty positive-integer sequence
+  - history mode owns `time_steps` and `seed` (explicit override rejection)
+- Added deterministic regression coverage:
+  - valid sequence shape/index/time behavior
+  - deterministic replay for fixed args
+  - invalid-history input rejection paths
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -299,6 +316,7 @@ Summary:
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q`
 - `python -m pytest tests/test_diagnostics.py tests/test_forward_diagnostics_guards.py tests/test_rmse_dashboard.py tests/test_run_diagnostics.py -q`
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after sequence-history extension)
+- `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after digital-twin history helper)
 
 Observed final outcomes on latest runs:
 - `30 passed` (CAD wave)
@@ -349,7 +367,7 @@ All files in these ranges reported `:: True` parity.
 1. Confirm current head:
    - `git rev-parse --short HEAD` (expected `9706c1b` at log write time)
 2. Confirm registry counters/task entries:
-   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-124`, delivered count `260`.
+   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-125`, delivered count `261`.
 3. Re-run focused health checks if touching related areas:
    - `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q`
 4. If GitHub API rate-limited again, use badge/workflow-page fallback for CI confirmation.

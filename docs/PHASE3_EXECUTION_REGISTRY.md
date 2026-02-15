@@ -349,6 +349,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-122 | P1 | Interop | Extend IDS adapter with optional 1D profile payloads and deterministic state roundtrip helpers | `src/scpn_fusion/io/imas_connector.py`, `src/scpn_fusion/io/__init__.py`, `tests/test_imas_connector.py` | IDS validation now enforces optional `equilibrium.profiles_1d` contracts (`rho_norm`, `electron_temp_keV`, `electron_density_1e20_m3`) including monotonicity/range/length checks, and new helpers (`digital_twin_state_to_ids`, `ids_to_digital_twin_state`) provide deterministic profile-aware state interchange without breaking summary-only payload compatibility | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 | H8-123 | P1 | Diagnostics | Add Thomson-scattering voltage forward channel and RMSE integration lane | `src/scpn_fusion/diagnostics/forward.py`, `src/scpn_fusion/diagnostics/__init__.py`, `tests/test_diagnostics.py`, `tests/test_forward_diagnostics_guards.py`, `validation/rmse_dashboard.py`, `tests/test_rmse_dashboard.py` | Forward diagnostics now produce a deterministic Thomson-scattering voltage channel with strict point/field/scalar validation, `generate_forward_channels` exposes profile-aware Thomson inputs (with backward-compatible defaults), and RMSE dashboard reporting includes Thomson-channel error metrics | `python -m pytest tests/test_diagnostics.py tests/test_forward_diagnostics_guards.py tests/test_rmse_dashboard.py tests/test_run_diagnostics.py -q` |
 | H8-124 | P1 | Interop | Add IDS sequence-history helpers with strict monotonic time/index and metadata consistency contracts | `src/scpn_fusion/io/imas_connector.py`, `src/scpn_fusion/io/__init__.py`, `tests/test_imas_connector.py` | Added sequence-level interop API (`validate_ids_payload_sequence`, `digital_twin_history_to_ids`, `ids_to_digital_twin_history`) enforcing same machine/shot/run across snapshots plus strictly increasing `time_slice.index` and `time_slice.time_s`; history export now normalizes duplicate/flat snapshot times onto a deterministic increasing millisecond grid while preserving single-payload adapter compatibility | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
+| H8-125 | P1 | Control/Interop | Add deterministic digital-twin IDS history export helper using sequence adapter contracts | `src/scpn_fusion/control/tokamak_digital_twin.py`, `tests/test_tokamak_digital_twin.py` | Added `run_digital_twin_ids_history(...)` to generate multi-horizon IDS payload sequences from digital-twin runs, with strict `history_steps`/seed ownership guards and deterministic replay semantics; regression tests cover valid sequence shape/index/time behavior, deterministic replay, and invalid-history input rejection | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 
 ## Task Accounting
 
@@ -356,7 +357,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 260
+- Post-S4 hardening tasks delivered: 261
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -640,4 +641,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-122`
 - Completed: `H8-123`
 - Completed: `H8-124`
+- Completed: `H8-125`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

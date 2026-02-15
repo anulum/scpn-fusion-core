@@ -7,9 +7,9 @@
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Optional
+from typing import Optional, Sequence
 
-from scpn_fusion.io.imas_connector import digital_twin_summary_to_ids
+from scpn_fusion.io.imas_connector import digital_twin_history_to_ids, digital_twin_summary_to_ids
 
 # --- HYPER-PARAMETERS ---
 GRID_SIZE = 40        # 40x40 Poloidal Cross-section
@@ -363,6 +363,49 @@ def run_digital_twin_ids(
     summary = run_digital_twin(**kwargs)
     return digital_twin_summary_to_ids(
         summary,
+        machine=machine,
+        shot=shot,
+        run=run,
+    )
+
+
+def run_digital_twin_ids_history(
+    history_steps: Sequence[int],
+    *,
+    machine: str = "ITER",
+    shot: int = 0,
+    run: int = 0,
+    seed: int = 42,
+    **kwargs,
+):
+    """
+    Run digital twin at multiple horizons and return IDS-like payload sequence.
+    """
+    if "time_steps" in kwargs:
+        raise ValueError("time_steps is controlled by history_steps in history mode.")
+    if "seed" in kwargs:
+        raise ValueError("seed is controlled by the seed argument in history mode.")
+    if isinstance(history_steps, (str, bytes, bytearray)) or not isinstance(history_steps, Sequence):
+        raise ValueError("history_steps must be a sequence of positive integers.")
+    if len(history_steps) == 0:
+        raise ValueError("history_steps must contain at least one step count.")
+
+    snapshots: list[dict[str, object]] = []
+    base_seed = int(seed)
+    for idx, step in enumerate(history_steps):
+        if isinstance(step, bool) or not isinstance(step, int):
+            raise ValueError("history_steps entries must be positive integers.")
+        if int(step) < 1:
+            raise ValueError("history_steps entries must be >= 1.")
+        summary = run_digital_twin(
+            time_steps=int(step),
+            seed=base_seed,
+            **kwargs,
+        )
+        snapshots.append(summary)
+
+    return digital_twin_history_to_ids(
+        snapshots,
         machine=machine,
         shot=shot,
         run=run,
