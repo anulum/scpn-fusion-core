@@ -38,6 +38,9 @@ def test_task6_campaign_passes_thresholds_smoke() -> None:
     assert g["metrics"]["optimized_config_count"] >= 10
     assert g["metrics"]["min_q"] >= 10.0
     assert g["metrics"]["min_tbr"] >= 1.05
+    assert g["metrics"]["mean_tbr_mc"] > 0.0
+    assert g["metrics"]["mean_rf_reflection_rate"] <= 0.55
+    assert g["metrics"]["mean_neutron_leakage_rate"] <= 0.50
 
 
 @pytest.mark.parametrize(

@@ -84,6 +84,83 @@ def _mcnp_lite_tbr(
     return float(base_tbr * factor), factor
 
 
+def _impurity_transport_response(
+    *,
+    neon_quantity_mol: float,
+    disturbance: float,
+    seed_shift: int,
+) -> dict[str, float]:
+    n_steps = 240
+    dt = 1.25e-4
+    t = np.arange(n_steps, dtype=np.float64) * dt
+    source = float(neon_quantity_mol) * np.exp(-t / 0.004)
+    sink_rate = 120.0 + 35.0 * float(disturbance)
+    n_imp = np.zeros_like(t)
+    n_imp[0] = source[0]
+    for i in range(1, n_steps):
+        dn = source[i] - sink_rate * n_imp[i - 1]
+        n_imp[i] = max(0.0, n_imp[i - 1] + dt * dn)
+    weighted = float(np.mean(n_imp[-80:]))
+    zeff_eff = float(1.05 + 42.0 * weighted + 0.22 * disturbance)
+    rad_mw = float((24.0 + 95.0 * weighted) * (1.0 + 0.15 * disturbance))
+    return {
+        "zeff_eff": zeff_eff,
+        "impurity_radiation_mw": rad_mw,
+        "impurity_decay_tau_ms": float(1e3 / max(sink_rate, 1e-9)),
+        "seed_shift": float(seed_shift),
+    }
+
+
+def _post_disruption_halo_runaway(
+    *,
+    pre_current_ma: float,
+    tau_cq_s: float,
+    disturbance: float,
+    mitigation_strength: float,
+    zeff_eff: float,
+) -> dict[str, float]:
+    dt = 1.0e-4
+    steps = 320
+    ip = float(pre_current_ma)
+    halo = 0.0
+    runaway = 0.0
+    halo_hist: list[float] = []
+    re_hist: list[float] = []
+
+    tau_ip = max(float(tau_cq_s), 0.004)
+    tau_halo = 0.006 + 0.008 * disturbance
+    for _ in range(steps):
+        d_ip = -ip / tau_ip
+        ip = max(0.0, ip + dt * d_ip)
+        e_norm = float(np.clip((-d_ip) / max(pre_current_ma / 0.01, 1e-9), 0.0, 8.0))
+        halo_drive = 0.28 * abs(d_ip) * (1.0 + 0.4 * disturbance)
+        halo = max(0.0, halo + dt * (halo_drive - halo / max(tau_halo, 1e-4)))
+
+        re_source = max(e_norm - 1.0, 0.0) * (1.0 + 0.7 * disturbance)
+        impurity_damping = (0.14 + 0.015 * zeff_eff) * (1.0 + 0.9 * mitigation_strength)
+        runaway = max(
+            0.0,
+            runaway
+            + dt
+            * (
+                0.22 * re_source
+                + 0.48 * runaway * max(e_norm - 0.6, 0.0)
+                - impurity_damping * runaway
+            ),
+        )
+        halo_hist.append(float(halo))
+        re_hist.append(float(runaway))
+
+    halo_arr = np.asarray(halo_hist, dtype=np.float64)
+    re_arr = np.asarray(re_hist, dtype=np.float64)
+    return {
+        "halo_current_ma": float(np.percentile(halo_arr, 95)),
+        "runaway_beam_ma": float(np.percentile(re_arr, 95)),
+        "halo_peak_ma": float(np.max(halo_arr)),
+        "runaway_peak_ma": float(np.max(re_arr)),
+    }
+
+
 def _run_episode(
     *,
     rng: np.random.Generator,
@@ -122,44 +199,34 @@ def _run_episode(
         dt_s=5e-5,
         verbose=False,
     )
-
-    zeff = float(spi_diag["z_eff"])
     tau_cq_s = float(spi_diag["tau_cq_ms_mean"]) * 1e-3
     final_current_ma = float(spi_diag["final_current_MA"])
     quench_fraction = float(np.clip((pre_current_ma - final_current_ma) / pre_current_ma, 0.0, 1.0))
-    impurity_radiation_mw = float(40.0 * zeff * (0.6 + quench_fraction))
-
-    halo_current_ma = float(
-        pre_current_ma
-        * np.clip(
-            0.06
-            + 0.18 * disturbance
-            + 0.12 * quench_fraction
-            - 0.025 * (10.0 * neon_quantity_mol),
-            0.03,
-            0.36,
-        )
-    )
-    runaway_beam_ma = float(
-        pre_current_ma
-        * np.clip(
-            0.02
-            + 0.045 * disturbance
-            + 0.02 * min(tau_cq_s / 0.02, 2.0)
-            - 0.10 * neon_quantity_mol
-            - 0.003 * zeff,
-            0.0,
-            0.075,
-        )
-    )
-
     mitigation_strength = float(
         np.clip(
-            1.60 * neon_quantity_mol + 0.03 * zeff + 0.10 * (rl_action_bias + 1.0),
+            1.60 * neon_quantity_mol + 0.03 * float(spi_diag["z_eff"]) + 0.10 * (rl_action_bias + 1.0),
             0.08,
             0.95,
         )
     )
+    impurity = _impurity_transport_response(
+        neon_quantity_mol=neon_quantity_mol,
+        disturbance=disturbance,
+        seed_shift=rl_action,
+    )
+    zeff = float(0.6 * float(spi_diag["z_eff"]) + 0.4 * impurity["zeff_eff"])
+    impurity_radiation_mw = float(
+        impurity["impurity_radiation_mw"] * (0.72 + 0.28 * quench_fraction)
+    )
+    post_dyn = _post_disruption_halo_runaway(
+        pre_current_ma=pre_current_ma,
+        tau_cq_s=tau_cq_s,
+        disturbance=disturbance,
+        mitigation_strength=mitigation_strength,
+        zeff_eff=zeff,
+    )
+    halo_current_ma = float(post_dyn["halo_current_ma"])
+    runaway_beam_ma = float(post_dyn["runaway_beam_ma"])
     post_toroidal = {
         "toroidal_n1_amp": float(max(0.0, toroidal["toroidal_n1_amp"] * (1.0 - 0.75 * mitigation_strength))),
         "toroidal_n2_amp": float(max(0.0, toroidal["toroidal_n2_amp"] * (1.0 - 0.70 * mitigation_strength))),
@@ -231,8 +298,11 @@ def _run_episode(
         "risk_after": risk_after,
         "neon_quantity_mol": neon_quantity_mol,
         "zeff": zeff,
+        "impurity_decay_tau_ms": float(impurity["impurity_decay_tau_ms"]),
         "halo_current_ma": halo_current_ma,
+        "halo_peak_ma": float(post_dyn["halo_peak_ma"]),
         "runaway_beam_ma": runaway_beam_ma,
+        "runaway_peak_ma": float(post_dyn["runaway_peak_ma"]),
         "impurity_radiation_mw": impurity_radiation_mw,
         "wall_damage_index": wall_damage_index,
         "q_proxy": q_proxy,
@@ -286,9 +356,12 @@ def run_campaign(
     qv = np.asarray([float(e["q_proxy"]) for e in episodes], dtype=np.float64)
     tv = np.asarray([float(e["tbr_proxy"]) for e in episodes], dtype=np.float64)
     halo = np.asarray([float(e["halo_current_ma"]) for e in episodes], dtype=np.float64)
+    halo_peak = np.asarray([float(e["halo_peak_ma"]) for e in episodes], dtype=np.float64)
     runaway = np.asarray([float(e["runaway_beam_ma"]) for e in episodes], dtype=np.float64)
+    runaway_peak = np.asarray([float(e["runaway_peak_ma"]) for e in episodes], dtype=np.float64)
     wall = np.asarray([float(e["wall_damage_index"]) for e in episodes], dtype=np.float64)
     zeff = np.asarray([float(e["zeff"]) for e in episodes], dtype=np.float64)
+    tau_imp = np.asarray([float(e["impurity_decay_tau_ms"]) for e in episodes], dtype=np.float64)
 
     hybrid = run_nstxu_torax_hybrid_campaign(
         seed=seed_i + 911,
@@ -301,11 +374,14 @@ def run_campaign(
         "disruption_prevention_rate": float(np.mean(prevented)),
         "mean_halo_current_ma": float(np.mean(halo)),
         "p95_halo_current_ma": float(np.percentile(halo, 95)),
+        "p95_halo_peak_ma": float(np.percentile(halo_peak, 95)),
         "mean_runaway_beam_ma": float(np.mean(runaway)),
         "p95_runaway_beam_ma": float(np.percentile(runaway, 95)),
+        "p95_runaway_peak_ma": float(np.percentile(runaway_peak, 95)),
         "mean_wall_damage_index": float(np.mean(wall)),
         "no_wall_damage_rate": float(np.mean(wall < 1.0)),
         "mean_zeff": float(np.mean(zeff)),
+        "mean_impurity_decay_tau_ms": float(np.mean(tau_imp)),
     }
     rl_summary = {
         "multiobjective_success_rate": float(np.mean(objective)),
@@ -325,7 +401,9 @@ def run_campaign(
     thresholds = {
         "min_disruption_prevention_rate": 0.90,
         "max_mean_halo_current_ma": 2.60,
+        "max_p95_halo_peak_ma": 3.40,
         "max_p95_runaway_beam_ma": 1.00,
+        "max_p95_runaway_peak_ma": 1.20,
         "min_mpc_elm_rejection_rate": 0.90,
         "min_multiobjective_success_rate": 0.75,
         "min_q_ge_10_rate": 0.90,
@@ -337,8 +415,12 @@ def run_campaign(
         failure_reasons.append("disruption_prevention_rate")
     if physics["mean_halo_current_ma"] > thresholds["max_mean_halo_current_ma"]:
         failure_reasons.append("mean_halo_current_ma")
+    if physics["p95_halo_peak_ma"] > thresholds["max_p95_halo_peak_ma"]:
+        failure_reasons.append("p95_halo_peak_ma")
     if physics["p95_runaway_beam_ma"] > thresholds["max_p95_runaway_beam_ma"]:
         failure_reasons.append("p95_runaway_beam_ma")
+    if physics["p95_runaway_peak_ma"] > thresholds["max_p95_runaway_peak_ma"]:
+        failure_reasons.append("p95_runaway_peak_ma")
     if mpc_summary["elm_rejection_rate"] < thresholds["min_mpc_elm_rejection_rate"]:
         failure_reasons.append("mpc_elm_rejection_rate")
     if rl_summary["multiobjective_success_rate"] < thresholds["min_multiobjective_success_rate"]:
@@ -386,7 +468,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         f"- Disruption prevention rate: `{p['disruption_prevention_rate']:.3f}` (threshold `>= {th['min_disruption_prevention_rate']:.2f}`)",
         f"- Mean halo current: `{p['mean_halo_current_ma']:.3f} MA` (threshold `<= {th['max_mean_halo_current_ma']:.2f} MA`)",
+        f"- P95 halo peak current: `{p['p95_halo_peak_ma']:.3f} MA` (threshold `<= {th['max_p95_halo_peak_ma']:.2f} MA`)",
         f"- P95 runaway beam: `{p['p95_runaway_beam_ma']:.3f} MA` (threshold `<= {th['max_p95_runaway_beam_ma']:.2f} MA`)",
+        f"- P95 runaway peak beam: `{p['p95_runaway_peak_ma']:.3f} MA` (threshold `<= {th['max_p95_runaway_peak_ma']:.2f} MA`)",
+        f"- Mean impurity decay tau: `{p['mean_impurity_decay_tau_ms']:.3f} ms`",
         f"- Mean wall-damage index: `{p['mean_wall_damage_index']:.3f}`",
         "",
         "## MPC ELM Disturbance Rejection",

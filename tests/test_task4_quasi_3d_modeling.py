@@ -35,8 +35,12 @@ def test_task4_campaign_passes_thresholds_smoke() -> None:
     )
     assert out["passes_thresholds"] is True
     assert out["quasi_3d"]["force_balance_rmse_pct"] <= 8.0
+    assert out["quasi_3d"]["force_residual_p95_pct"] <= 12.0
     assert out["divertor_two_fluid"]["two_fluid_index"] >= 0.10
+    assert out["divertor_two_fluid"]["two_fluid_temp_split_index"] > 0.0
     assert out["jet_heat_flux_validation"]["rmse_pct"] <= 15.0
+    assert out["jet_heat_flux_validation"]["jet_file_count"] >= 1
+    assert out["pwi_tbr_calibration"]["erosion_curve_rmse_pct"] <= 35.0
     assert out["pwi_tbr_calibration"]["calibrated_tbr"] <= 1.10
 
 

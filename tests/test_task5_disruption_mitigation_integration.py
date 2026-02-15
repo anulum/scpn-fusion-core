@@ -35,6 +35,9 @@ def test_task5_campaign_passes_thresholds_smoke() -> None:
     g = report["task5_disruption_mitigation"]
     assert g["passes_thresholds"] is True
     assert g["physics_mitigation"]["disruption_prevention_rate"] >= 0.90
+    assert g["physics_mitigation"]["p95_halo_peak_ma"] <= 3.40
+    assert g["physics_mitigation"]["p95_runaway_peak_ma"] <= 1.20
+    assert g["physics_mitigation"]["mean_impurity_decay_tau_ms"] > 0.0
     assert g["mpc_elm_lane"]["elm_rejection_rate"] >= 0.90
     assert g["rl_multiobjective"]["multiobjective_success_rate"] >= 0.75
 
