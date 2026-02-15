@@ -498,6 +498,11 @@ impl FusionKernel {
 
     /// Sample solved flux at multiple probe coordinates.
     pub fn sample_psi_at_probes(&self, probes: &[(f64, f64)]) -> FusionResult<Vec<f64>> {
+        if probes.is_empty() {
+            return Err(FusionError::ConfigError(
+                "sample probes list must be non-empty".to_string(),
+            ));
+        }
         probes
             .iter()
             .map(|&(r, z)| self.sample_psi_at(r, z))
@@ -612,6 +617,20 @@ mod tests {
         assert!(kernel
             .sample_psi_at_probes(&[(6.2, 0.0), (r_max + 1.0e-6, 0.1)])
             .is_err());
+    }
+
+    #[test]
+    fn test_sample_psi_rejects_empty_probe_list() {
+        let kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let err = kernel
+            .sample_psi_at_probes(&[])
+            .expect_err("empty probe list must error");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("non-empty"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
     }
 
     #[test]
