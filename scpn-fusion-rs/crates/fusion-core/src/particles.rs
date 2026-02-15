@@ -129,9 +129,9 @@ fn validate_particle_projection_grid(grid: &Grid2D, label: &str) -> FusionResult
             grid.nr
         )));
     }
-    if !grid.dr.is_finite() || !grid.dz.is_finite() || grid.dr <= 0.0 || grid.dz <= 0.0 {
+    if !grid.dr.is_finite() || !grid.dz.is_finite() || grid.dr == 0.0 || grid.dz == 0.0 {
         return Err(FusionError::PhysicsViolation(format!(
-            "{label} grid spacing must be finite and > 0, got dr={}, dz={}",
+            "{label} grid spacing must be finite and non-zero, got dr={}, dz={}",
             grid.dr, grid.dz
         )));
     }
@@ -338,10 +338,10 @@ pub fn estimate_alpha_heating_profile(
 
     let tau = confinement_tau_s;
     let cell_volume = (grid.dr.abs() * grid.dz.abs() * 2.0 * PI).max(MIN_CELL_AREA_M2);
-    let r_min = grid.r[0];
-    let r_max = grid.r[grid.nr - 1];
-    let z_min = grid.z[0];
-    let z_max = grid.z[grid.nz - 1];
+    let r_min = grid.r[0].min(grid.r[grid.nr - 1]);
+    let r_max = grid.r[0].max(grid.r[grid.nr - 1]);
+    let z_min = grid.z[0].min(grid.z[grid.nz - 1]);
+    let z_max = grid.z[0].max(grid.z[grid.nz - 1]);
 
     for (idx, particle) in particles.iter().enumerate() {
         validate_particle_state(particle, &format!("particle[{idx}]"))?;
@@ -484,10 +484,10 @@ pub fn deposit_toroidal_current_density(
     validate_particle_projection_grid(grid, "particle current deposition")?;
     let mut j_phi: Array2<f64> = Array2::zeros((grid.nz, grid.nr));
     let area = (grid.dr.abs() * grid.dz.abs()).max(MIN_CELL_AREA_M2);
-    let r_min = grid.r[0];
-    let r_max = grid.r[grid.nr - 1];
-    let z_min = grid.z[0];
-    let z_max = grid.z[grid.nz - 1];
+    let r_min = grid.r[0].min(grid.r[grid.nr - 1]);
+    let r_max = grid.r[0].max(grid.r[grid.nr - 1]);
+    let z_min = grid.z[0].min(grid.z[grid.nz - 1]);
+    let z_max = grid.z[0].max(grid.z[grid.nz - 1]);
 
     for (idx, particle) in particles.iter().enumerate() {
         validate_particle_state(particle, &format!("particle[{idx}]"))?;
@@ -735,6 +735,20 @@ mod tests {
     }
 
     #[test]
+    fn test_alpha_heating_profile_supports_descending_axes() {
+        let grid = Grid2D::new(33, 33, 9.0, 3.0, 2.5, -2.5);
+        let particles =
+            seed_alpha_test_particles(16, 6.0, 0.1, 3.5, 0.4, 1.0e13).expect("valid seeds");
+        let heat =
+            estimate_alpha_heating_profile(&particles, &grid, 0.25).expect("valid confinement");
+        let total = heat.iter().sum::<f64>();
+        assert!(
+            total > 0.0,
+            "Expected positive deposited alpha heating on descending axes"
+        );
+    }
+
+    #[test]
     fn test_alpha_heating_profile_rejects_invalid_confinement_time() {
         let grid = Grid2D::new(17, 17, 3.0, 9.0, -1.5, 1.5);
         let particles =
@@ -864,6 +878,29 @@ mod tests {
             }
             other => panic!("Unexpected error: {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_toroidal_current_deposition_supports_descending_axes() {
+        let grid = Grid2D::new(17, 17, 9.0, 1.0, 4.0, -4.0);
+        let particles = vec![ChargedParticle {
+            x_m: 5.0,
+            y_m: 0.0,
+            z_m: 0.0,
+            vx_m_s: 0.0,
+            vy_m_s: 100_000.0,
+            vz_m_s: 0.0,
+            charge_c: 1.602_176_634e-19,
+            mass_kg: 1.672_621_923_69e-27,
+            weight: 2.0e16,
+        }];
+        let j = deposit_toroidal_current_density(&particles, &grid)
+            .expect("descending axes should still deposit current");
+        let sum_abs = j.iter().map(|v| v.abs()).sum::<f64>();
+        assert!(
+            sum_abs > 0.0,
+            "Expected non-zero toroidal deposition on descending axes"
+        );
     }
 
     #[test]
