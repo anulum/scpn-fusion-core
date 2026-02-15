@@ -528,6 +528,11 @@ pub fn blend_particle_current(
             "i_target must be finite".to_string(),
         ));
     }
+    if fluid_j_phi.iter().any(|v| !v.is_finite()) || particle_j_phi.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "fluid_j_phi and particle_j_phi must be finite".to_string(),
+        ));
+    }
 
     let coupling = particle_coupling;
     let fluid_weight = 1.0 - coupling;
@@ -541,11 +546,30 @@ pub fn blend_particle_current(
     }
 
     let i_current = combined.iter().sum::<f64>() * grid.dr * grid.dz;
+    if !i_current.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "blended current integral became non-finite".to_string(),
+        ));
+    }
     if i_current.abs() > MIN_CURRENT_INTEGRAL {
         let scale = i_target / i_current;
+        if !scale.is_finite() {
+            return Err(FusionError::PhysicsViolation(
+                "blended current scale became non-finite".to_string(),
+            ));
+        }
         combined.mapv_inplace(|v| v * scale);
+    } else if i_target.abs() > MIN_CURRENT_INTEGRAL {
+        return Err(FusionError::PhysicsViolation(format!(
+            "cannot renormalize blended current: |i_current| <= {MIN_CURRENT_INTEGRAL} while |i_target| > {MIN_CURRENT_INTEGRAL}"
+        )));
     } else {
         combined.fill(0.0);
+    }
+    if combined.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "blended current map contains non-finite values".to_string(),
+        ));
     }
 
     Ok(combined)
@@ -708,6 +732,37 @@ mod tests {
                 }
                 other => panic!("Unexpected error: {other:?}"),
             }
+        }
+    }
+
+    #[test]
+    fn test_blend_particle_current_rejects_non_finite_maps() {
+        let grid = Grid2D::new(8, 8, 1.0, 5.0, -2.0, 2.0);
+        let mut fluid = Array2::from_elem((8, 8), 2.0);
+        let particle = Array2::from_elem((8, 8), 6.0);
+        fluid[[0, 0]] = f64::NAN;
+        let err = blend_particle_current(&fluid, &particle, &grid, 1.0, 0.5)
+            .expect_err("non-finite current map must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("must be finite"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_blend_particle_current_rejects_zero_integral_nonzero_target() {
+        let grid = Grid2D::new(8, 8, 1.0, 5.0, -2.0, 2.0);
+        let fluid = Array2::zeros((8, 8));
+        let particle = Array2::zeros((8, 8));
+        let err = blend_particle_current(&fluid, &particle, &grid, 1.0e6, 0.5)
+            .expect_err("non-zero target with zero blended current must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("cannot renormalize blended current"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
         }
     }
 
