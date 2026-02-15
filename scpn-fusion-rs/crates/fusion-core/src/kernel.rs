@@ -403,6 +403,12 @@ impl FusionKernel {
         particle_j_phi: Array2<f64>,
         coupling: f64,
     ) -> FusionResult<()> {
+        let i_target = self.config.physics.plasma_current_target;
+        if !i_target.is_finite() {
+            return Err(FusionError::ConfigError(
+                "particle feedback requires finite plasma_current_target".to_string(),
+            ));
+        }
         if !self.grid.dr.is_finite()
             || !self.grid.dz.is_finite()
             || self.grid.dr == 0.0
@@ -438,7 +444,7 @@ impl FusionKernel {
             ));
         }
         if coupling >= 1.0 - f64::EPSILON
-            && self.config.physics.plasma_current_target.abs() > MIN_CURRENT_INTEGRAL
+            && i_target.abs() > MIN_CURRENT_INTEGRAL
             && particle_integral.abs() <= MIN_CURRENT_INTEGRAL
         {
             return Err(FusionError::PhysicsViolation(
@@ -818,6 +824,22 @@ mod tests {
         match err {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("grid spacing"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_rejects_non_finite_plasma_current_target() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
+        kernel.config.physics.plasma_current_target = f64::NAN;
+        let err = kernel
+            .set_particle_current_feedback(feedback, 0.3)
+            .expect_err("non-finite plasma_current_target must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("plasma_current_target"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
