@@ -23,6 +23,14 @@ REQUIRED_IDS_KEYS = (
     "performance",
 )
 
+REQUIRED_IDS_PULSE_KEYS = (
+    "schema",
+    "machine",
+    "shot",
+    "run",
+    "time_slices",
+)
+
 REQUIRED_DIGITAL_TWIN_SUMMARY_KEYS = (
     "steps",
     "final_islands_px",
@@ -498,3 +506,68 @@ def ids_to_digital_twin_history(
         else:
             out.append(ids_to_digital_twin_summary(payload))
     return out
+
+
+def validate_ids_pulse_payload(pulse: Mapping[str, Any]) -> None:
+    """Validate pulse-style IDS container with a deterministic time-slice sequence."""
+    if isinstance(pulse, bool) or not isinstance(pulse, Mapping):
+        raise ValueError("IDS pulse payload must be a mapping.")
+    missing = _missing_required_keys(pulse, REQUIRED_IDS_PULSE_KEYS)
+    if missing:
+        raise ValueError(f"IDS pulse payload missing keys: {missing}")
+    if pulse.get("schema") != "ids_equilibrium_pulse_v1":
+        raise ValueError("Unsupported IDS pulse schema.")
+    machine = pulse.get("machine")
+    if not isinstance(machine, str) or not machine.strip():
+        raise ValueError("IDS pulse machine must be a non-empty string.")
+    shot = _coerce_int("pulse.shot", pulse.get("shot", 0), minimum=0)
+    run = _coerce_int("pulse.run", pulse.get("run", 0), minimum=0)
+
+    slices = pulse.get("time_slices")
+    if isinstance(slices, (str, bytes, bytearray)) or not isinstance(slices, Sequence):
+        raise ValueError("IDS pulse time_slices must be a sequence.")
+    if len(slices) == 0:
+        raise ValueError("IDS pulse time_slices must contain at least one payload.")
+
+    validate_ids_payload_sequence(slices)
+    for idx, payload in enumerate(slices):
+        if str(payload.get("machine")) != machine.strip():
+            raise ValueError(f"pulse.time_slices[{idx}] machine must match pulse.machine.")
+        if _coerce_int(f"pulse.time_slices[{idx}].shot", payload.get("shot", 0), minimum=0) != shot:
+            raise ValueError(f"pulse.time_slices[{idx}] shot must match pulse.shot.")
+        if _coerce_int(f"pulse.time_slices[{idx}].run", payload.get("run", 0), minimum=0) != run:
+            raise ValueError(f"pulse.time_slices[{idx}] run must match pulse.run.")
+
+
+def digital_twin_history_to_ids_pulse(
+    history: Sequence[Mapping[str, Any]],
+    *,
+    machine: str = "ITER",
+    shot: int = 0,
+    run: int = 0,
+) -> dict[str, Any]:
+    """Map digital-twin history snapshots to a pulse-style IDS container."""
+    payloads = digital_twin_history_to_ids(
+        history,
+        machine=machine,
+        shot=shot,
+        run=run,
+    )
+    pulse = {
+        "schema": "ids_equilibrium_pulse_v1",
+        "machine": str(machine).strip(),
+        "shot": int(shot),
+        "run": int(run),
+        "time_slices": payloads,
+    }
+    validate_ids_pulse_payload(pulse)
+    return pulse
+
+
+def ids_pulse_to_digital_twin_history(pulse: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Map pulse-style IDS container back to digital-twin history snapshots."""
+    validate_ids_pulse_payload(pulse)
+    slices = pulse["time_slices"]
+    if isinstance(slices, (str, bytes, bytearray)) or not isinstance(slices, Sequence):
+        raise ValueError("IDS pulse time_slices must be a sequence.")
+    return ids_to_digital_twin_history(slices)

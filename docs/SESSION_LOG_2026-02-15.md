@@ -306,6 +306,24 @@ Summary:
   - deterministic replay for fixed args
   - invalid-history input rejection paths
 
+### H8-126 (Interop)
+Files:
+- `src/scpn_fusion/io/imas_connector.py`
+- `src/scpn_fusion/io/__init__.py`
+- `tests/test_imas_connector.py`
+
+Summary:
+- Added pulse-style IDS container support:
+  - `validate_ids_pulse_payload(...)`
+  - `digital_twin_history_to_ids_pulse(...)`
+  - `ids_pulse_to_digital_twin_history(...)`
+- Pulse contract details:
+  - schema: `ids_equilibrium_pulse_v1`
+  - required keys: `schema`, `machine`, `shot`, `run`, `time_slices`
+  - non-empty `time_slices` required
+  - embedded slices must satisfy sequence validation and match top-level `machine/shot/run`.
+- Added regression coverage for pulse roundtrip, schema/missing-key rejection, metadata mismatch rejection, and empty-slice rejection.
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -317,6 +335,7 @@ Summary:
 - `python -m pytest tests/test_diagnostics.py tests/test_forward_diagnostics_guards.py tests/test_rmse_dashboard.py tests/test_run_diagnostics.py -q`
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after sequence-history extension)
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after digital-twin history helper)
+- `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after pulse-container extension)
 
 Observed final outcomes on latest runs:
 - `30 passed` (CAD wave)
@@ -367,7 +386,7 @@ All files in these ranges reported `:: True` parity.
 1. Confirm current head:
    - `git rev-parse --short HEAD` (expected `9706c1b` at log write time)
 2. Confirm registry counters/task entries:
-   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-125`, delivered count `261`.
+   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-126`, delivered count `262`.
 3. Re-run focused health checks if touching related areas:
    - `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q`
 4. If GitHub API rate-limited again, use badge/workflow-page fallback for CI confirmation.

@@ -13,11 +13,14 @@ import pytest
 
 from scpn_fusion.io.imas_connector import (
     digital_twin_history_to_ids,
+    digital_twin_history_to_ids_pulse,
     digital_twin_state_to_ids,
     digital_twin_summary_to_ids,
+    ids_pulse_to_digital_twin_history,
     ids_to_digital_twin_history,
     ids_to_digital_twin_state,
     ids_to_digital_twin_summary,
+    validate_ids_pulse_payload,
     validate_ids_payload_sequence,
     validate_ids_payload,
 )
@@ -283,3 +286,70 @@ def test_ids_history_helpers_reject_empty_sequences() -> None:
         digital_twin_history_to_ids([], machine="ITER", shot=1, run=1)  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="at least one"):
         validate_ids_payload_sequence([])  # type: ignore[arg-type]
+
+
+def test_ids_pulse_roundtrip_mixed_history() -> None:
+    summary = {
+        "steps": 12,
+        "final_axis_r": 6.2,
+        "final_axis_z": 0.03,
+        "final_islands_px": 4,
+        "final_reward": 1.1,
+        "reward_mean_last_50": 0.9,
+        "final_avg_temp": 14.0,
+    }
+    state = _sample_state()
+    pulse = digital_twin_history_to_ids_pulse(
+        [summary, state],
+        machine="ITER",
+        shot=44,
+        run=3,
+    )
+    validate_ids_pulse_payload(pulse)
+    recovered = ids_pulse_to_digital_twin_history(pulse)
+    assert len(recovered) == 2
+    assert recovered[0]["steps"] == summary["steps"]
+    assert recovered[1]["steps"] == state["steps"]
+    assert recovered[1]["rho_norm"] == state["rho_norm"]
+
+
+def test_validate_ids_pulse_rejects_invalid_schema_and_missing_keys() -> None:
+    pulse = digital_twin_history_to_ids_pulse(
+        [_sample_state()],
+        machine="ITER",
+        shot=1,
+        run=2,
+    )
+    pulse_bad_schema = dict(pulse)
+    pulse_bad_schema["schema"] = "ids_equilibrium_pulse_v2"
+    with pytest.raises(ValueError, match="Unsupported IDS pulse schema"):
+        validate_ids_pulse_payload(pulse_bad_schema)
+
+    pulse_missing = dict(pulse)
+    pulse_missing.pop("time_slices")
+    with pytest.raises(ValueError, match="missing keys"):
+        validate_ids_pulse_payload(pulse_missing)
+
+
+def test_validate_ids_pulse_rejects_slice_metadata_mismatch() -> None:
+    pulse = digital_twin_history_to_ids_pulse(
+        [_sample_state(), _sample_state()],
+        machine="ITER",
+        shot=8,
+        run=9,
+    )
+    pulse["time_slices"][1]["machine"] = "JET"  # type: ignore[index]
+    with pytest.raises(ValueError, match="same machine"):
+        validate_ids_pulse_payload(pulse)
+
+
+def test_ids_pulse_helpers_reject_empty_slices() -> None:
+    pulse = {
+        "schema": "ids_equilibrium_pulse_v1",
+        "machine": "ITER",
+        "shot": 1,
+        "run": 1,
+        "time_slices": [],
+    }
+    with pytest.raises(ValueError, match="at least one payload"):
+        validate_ids_pulse_payload(pulse)
