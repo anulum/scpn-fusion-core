@@ -14,7 +14,8 @@ on:
       - "papers/**"
       - "**.rst"
       - "src/scpn_fusion/**"
-      - "docs/sphinx/conf.py"
+      - ".github/workflows/docs.yml"
+      - ".readthedocs.yaml"
       - "pyproject.toml"
   workflow_dispatch:
 
@@ -37,7 +38,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install package
         run: pip install -e .
@@ -94,7 +95,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
@@ -115,12 +116,16 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: [build-python-docs, build-rust-docs, build-notebook-html]
-    if: ${{ vars.DEPLOY_GH_PAGES == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            docs/assets/repo_header.png
+
       - name: Download Python docs
         uses: actions/download-artifact@v4
         with:
@@ -139,30 +144,160 @@ jobs:
           name: notebook-html
           path: site/notebooks/
 
-      - name: Create index page
+      - name: Copy header image
+        run: |
+          mkdir -p site/assets
+          cp docs/assets/repo_header.png site/assets/ 2>/dev/null || true
+
+      - name: Create .nojekyll
+        run: touch site/.nojekyll
+
+      - name: Create landing page
         run: |
           cat > site/index.html << 'HTMLEOF'
           <!DOCTYPE html>
-          <html>
+          <html lang="en">
           <head>
-            <title>SCPN Fusion Core — API Documentation</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>SCPN Fusion Core — Documentation</title>
             <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 600px; margin: 80px auto; padding: 20px; }
-              h1 { border-bottom: 2px solid #0366d6; padding-bottom: 10px; }
-              a { color: #0366d6; text-decoration: none; font-size: 1.2em; }
-              a:hover { text-decoration: underline; }
-              .links { margin-top: 30px; }
-              .links a { display: block; margin: 15px 0; }
+              :root {
+                --bg: #00050a;
+                --card: #0a1628;
+                --border: #1a2a44;
+                --text: #c8d6e5;
+                --heading: #ffffff;
+                --accent: #00ccff;
+                --accent2: #ff00ff;
+                --link: #60a5fa;
+              }
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body {
+                font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+                background: var(--bg);
+                color: var(--text);
+                min-height: 100vh;
+              }
+              .hero {
+                text-align: center;
+                padding: 40px 20px 20px;
+              }
+              .hero img {
+                max-width: 960px;
+                width: 100%;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+              }
+              .hero h1 {
+                color: var(--heading);
+                font-size: 2em;
+                margin: 24px 0 8px;
+                letter-spacing: 0.05em;
+              }
+              .hero .subtitle {
+                color: var(--accent);
+                font-size: 1em;
+                margin-bottom: 8px;
+              }
+              .hero .tagline {
+                color: #6688aa;
+                font-size: 0.85em;
+                max-width: 700px;
+                margin: 0 auto 32px;
+                line-height: 1.5;
+              }
+              .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 20px;
+                max-width: 960px;
+                margin: 0 auto;
+                padding: 0 20px 60px;
+              }
+              .card {
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 24px;
+                transition: border-color 0.2s;
+                text-decoration: none;
+                display: block;
+              }
+              .card:hover {
+                border-color: var(--accent);
+              }
+              .card h2 {
+                color: var(--heading);
+                font-size: 1.1em;
+                margin-bottom: 8px;
+              }
+              .card .lang {
+                display: inline-block;
+                font-size: 0.7em;
+                padding: 2px 8px;
+                border-radius: 4px;
+                margin-bottom: 10px;
+              }
+              .card .lang.python { background: #1a3a5c; color: #60a5fa; }
+              .card .lang.rust { background: #3a1a1a; color: #ff8866; }
+              .card .lang.jupyter { background: #1a3a2a; color: #66cc88; }
+              .card .lang.github { background: #2a2a3a; color: #c8c8ff; }
+              .card p {
+                color: #8899aa;
+                font-size: 0.85em;
+                line-height: 1.5;
+              }
+              .footer {
+                text-align: center;
+                padding: 20px;
+                color: #445566;
+                font-size: 0.75em;
+                border-top: 1px solid var(--border);
+              }
+              .footer a { color: #6688aa; text-decoration: none; }
+              .footer a:hover { text-decoration: underline; }
             </style>
           </head>
           <body>
-            <h1>SCPN Fusion Core</h1>
-            <p>Tokamak plasma physics simulation and neuro-symbolic control suite.</p>
-            <div class="links">
-              <a href="python/">Python API Reference (Sphinx)</a>
-              <a href="rust/fusion_core/">Rust API Reference (rustdoc)</a>
-              <a href="notebooks/">Tutorial Notebooks (HTML)</a>
-              <a href="https://github.com/anulum/scpn-fusion-core">GitHub Repository</a>
+            <div class="hero">
+              <img src="assets/repo_header.png"
+                   alt="SCPN Fusion Core — Neuro-Symbolic Tokamak Control"
+                   onerror="this.style.display='none'">
+              <h1>SCPN Fusion Core</h1>
+              <div class="subtitle">Neuro-Symbolic Tokamak Control Framework</div>
+              <div class="tagline">
+                Dual-language (Python + Rust) open-source framework for tokamak plasma control.
+                Petri net &rarr; SNN compilation, Grad-Shafranov equilibrium, AI surrogates,
+                and real-time digital twins &mdash; validated against 8 SPARC GEQDSK equilibria.
+              </div>
+            </div>
+            <div class="grid">
+              <a class="card" href="python/">
+                <span class="lang python">Python</span>
+                <h2>Python API Reference</h2>
+                <p>Sphinx-generated documentation for all 46 Python modules: equilibrium, transport, control, nuclear, diagnostics, SCPN compiler.</p>
+              </a>
+              <a class="card" href="rust/fusion_core/">
+                <span class="lang rust">Rust</span>
+                <h2>Rust API Reference</h2>
+                <p>Rustdoc for the 10-crate workspace: fusion-core, fusion-math, fusion-control, fusion-physics, fusion-ml, and more.</p>
+              </a>
+              <a class="card" href="notebooks/">
+                <span class="lang jupyter">Jupyter</span>
+                <h2>Tutorial Notebooks</h2>
+                <p>6 interactive tutorials: compact reactor search, neuro-symbolic compiler, Grad-Shafranov equilibrium, divertor &amp; neutronics, validation, benchmarks.</p>
+              </a>
+              <a class="card" href="https://github.com/anulum/scpn-fusion-core">
+                <span class="lang github">GitHub</span>
+                <h2>Source Repository</h2>
+                <p>Clone, fork, or contribute. AGPL-3.0 licensed. 205+ Rust tests, 60+ Python tests. CI/CD with GitHub Actions.</p>
+              </a>
+            </div>
+            <div class="footer">
+              &copy; 1998&ndash;2026 Miroslav &Scaron;otek &middot;
+              <a href="https://www.anulum.li">anulum.li</a> &middot;
+              AGPL-3.0
             </div>
           </body>
           </html>
