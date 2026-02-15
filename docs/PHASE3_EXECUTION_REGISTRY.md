@@ -291,6 +291,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-064 | P1 | Runtime | Support descending-grid particle projection bounds without silent in-domain rejection | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | Particle heating/deposition bounds now derive axis limits via endpoint min/max and accept finite non-zero signed spacings, preserving correct in-domain projection on descending `R/Z` grids; added regression tests for descending-axis heating and toroidal current deposition paths | `cargo test -p fusion-core particles::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-065 | P1 | Runtime | Enforce projection-grid metadata validation in particle-current blending path | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | `blend_particle_current` now validates projection grid metadata (axis lengths/mesh shape/finiteness/non-zero spacing) before renormalization, closing a path where malformed grid descriptors could silently distort current scaling; added regression test for invalid grid spacing | `cargo test -p fusion-core particles::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-066 | P1 | Runtime | Enforce kernel probe-domain bounds in public sampler APIs to prevent edge snapping | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | Kernel probe sampling now rejects out-of-domain `(R,Z)` queries using explicit axis-bound checks (descending-axis safe) before nearest-index lookup, eliminating silent edge snapping for public `sample_psi_at`/`sample_psi_at_probes`; added regression test coverage for out-of-domain probes | `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_non_finite_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_out_of_domain_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_shape_guard -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_non_finite_map -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
+| H8-067 | P1 | Runtime | Guard kernel probe sampling against psi/grid shape mismatch before indexing | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | Public sampler now validates that solved `psi` shape matches configured grid dimensions before probe indexing, returning explicit `FusionError::ConfigError` instead of allowing panic-prone out-of-bounds access under corrupted or externally-mutated state | `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_non_finite_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_out_of_domain_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_state_shape_mismatch -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 
 ## Task Accounting
 
@@ -298,7 +299,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 202
+- Post-S4 hardening tasks delivered: 203
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -524,4 +525,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-064`
 - Completed: `H8-065`
 - Completed: `H8-066`
+- Completed: `H8-067`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

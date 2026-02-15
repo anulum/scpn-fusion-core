@@ -470,6 +470,14 @@ impl FusionKernel {
 
     /// Sample solved flux at nearest grid point to (R, Z).
     pub fn sample_psi_at(&self, r: f64, z: f64) -> FusionResult<f64> {
+        if self.state.psi.dim() != (self.grid.nz, self.grid.nr) {
+            return Err(FusionError::ConfigError(format!(
+                "sample psi grid/state shape mismatch: psi={:?}, grid=({}, {})",
+                self.state.psi.dim(),
+                self.grid.nz,
+                self.grid.nr
+            )));
+        }
         let (r_min, r_max) = Self::axis_bounds(&self.grid.r, "sample R")?;
         let (z_min, z_max) = Self::axis_bounds(&self.grid.z, "sample Z")?;
         if r < r_min || r > r_max || z < z_min || z > z_max {
@@ -604,6 +612,21 @@ mod tests {
         assert!(kernel
             .sample_psi_at_probes(&[(6.2, 0.0), (r_max + 1.0e-6, 0.1)])
             .is_err());
+    }
+
+    #[test]
+    fn test_sample_psi_rejects_state_shape_mismatch() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.state.psi = Array2::zeros((kernel.grid().nz - 1, kernel.grid().nr));
+        let err = kernel
+            .sample_psi_at(6.2, 0.0)
+            .expect_err("mismatched psi shape must error");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("shape mismatch"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
     }
 
     #[test]
