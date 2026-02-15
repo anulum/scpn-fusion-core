@@ -163,6 +163,14 @@ impl FusionKernel {
                 "grid spacing must be finite and > 0, got dr={dr}, dz={dz}"
             )));
         }
+        if self.state.j_phi.dim() != (nz, nr) {
+            return Err(FusionError::ConfigError(format!(
+                "state j_phi shape mismatch: j_phi={:?}, grid=({}, {})",
+                self.state.j_phi.dim(),
+                nz,
+                nr
+            )));
+        }
         let external_profiles: Option<(ProfileParams, ProfileParams)> =
             if self.external_profile_mode {
                 let params_p = self.profile_params_p.ok_or_else(|| {
@@ -1354,6 +1362,22 @@ mod tests {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("mesh"));
                 assert!(msg.contains("finite"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_solve_equilibrium_rejects_state_j_phi_shape_mismatch() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.state.j_phi = Array2::zeros((kernel.grid().nz - 1, kernel.grid().nr));
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("state j_phi shape mismatch must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("j_phi"));
+                assert!(msg.contains("shape mismatch"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
