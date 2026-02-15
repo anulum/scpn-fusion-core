@@ -10,6 +10,7 @@ members = [
     "crates/fusion-diagnostics",
     "crates/fusion-ml",
     "crates/fusion-python",
+    "crates/fusion-gpu",
 ]
 resolver = "2"
 

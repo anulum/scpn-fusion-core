@@ -16,6 +16,67 @@ try:
 except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel
 
+def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.5):
+    """
+    Chang-Hinton (1982) neoclassical ion thermal diffusivity profile [m²/s].
+
+    Parameters
+    ----------
+    rho : array  — normalised radius [0,1]
+    T_i : array  — ion temperature [keV]
+    n_e_19 : array  — electron density [10^19 m^-3]
+    q : array  — safety factor profile
+    R0 : float  — major radius [m]
+    a : float  — minor radius [m]
+    B0 : float  — toroidal field [T]
+    A_ion : float  — ion mass number (default 2 = deuterium)
+    Z_eff : float  — effective charge
+
+    Returns
+    -------
+    chi_nc : array  — neoclassical chi_i [m²/s]
+    """
+    e_charge = 1.602176634e-19
+    eps0 = 8.854187812e-12
+    m_p = 1.672621924e-27
+    m_e = 9.10938370e-31
+    m_i = A_ion * m_p
+
+    chi_nc = np.zeros_like(rho)
+    for i in range(len(rho)):
+        r = rho[i]
+        if r <= 0.0 or T_i[i] <= 0.0 or n_e_19[i] <= 0.0 or q[i] <= 0.0:
+            chi_nc[i] = 0.01
+            continue
+
+        epsilon = r * a / R0
+        if epsilon < 1e-6:
+            chi_nc[i] = 0.01
+            continue
+
+        T_J = T_i[i] * 1.602176634e-16  # keV -> J
+        v_ti = np.sqrt(2.0 * T_J / m_i)
+        rho_i = m_i * v_ti / (e_charge * B0)
+
+        # ion-ion collision frequency
+        n_e = n_e_19[i] * 1e19
+        ln_lambda = 17.0
+        nu_ii = (n_e * Z_eff**2 * e_charge**4 * ln_lambda
+                 / (12.0 * np.pi**1.5 * eps0**2 * m_i**0.5 * T_J**1.5))
+
+        eps32 = epsilon**1.5
+        nu_star = nu_ii * q[i] * R0 / (eps32 * v_ti)
+
+        alpha_sh = epsilon
+        chi_val = (0.66 * (1.0 + 1.54 * alpha_sh) * q[i]**2
+                   * rho_i**2 * nu_ii
+                   / (eps32 * (1.0 + 0.74 * nu_star**(2.0/3.0))))
+
+        chi_nc[i] = max(chi_val, 0.01) if np.isfinite(chi_val) else 0.01
+
+    return chi_nc
+
+
 class TransportSolver(FusionKernel):
     """
     1.5D Integrated Transport Code.
@@ -41,7 +102,23 @@ class TransportSolver(FusionKernel):
         self.D_n = np.ones(self.nr)   # Particle diffusivity
         
         # Impurity Profile (Tungsten density)
-        self.n_impurity = np.zeros(self.nr) 
+        self.n_impurity = np.zeros(self.nr)
+
+        # Neoclassical transport configuration (None = constant chi_base=0.5)
+        self.neoclassical_params = None
+
+    def set_neoclassical(self, R0, a, B0, A_ion=2.0, Z_eff=1.5, q0=1.0, q_edge=3.0):
+        """Configure Chang-Hinton neoclassical transport model.
+
+        When set, update_transport_model uses the Chang-Hinton formula instead
+        of the constant chi_base = 0.5.
+        """
+        q_profile = q0 + (q_edge - q0) * self.rho**2
+        self.neoclassical_params = {
+            'R0': R0, 'a': a, 'B0': B0,
+            'A_ion': A_ion, 'Z_eff': Z_eff,
+            'q_profile': q_profile,
+        }
 
     def inject_impurities(self, flux_from_wall_per_sec, dt):
         """
@@ -80,9 +157,17 @@ class TransportSolver(FusionKernel):
         grad_T = np.gradient(self.Ti, self.drho)
         threshold = 2.0
         
-        # Base Level
-        chi_base = 0.5
-        
+        # Base Level — use Chang-Hinton if configured, else constant
+        if self.neoclassical_params is not None:
+            p = self.neoclassical_params
+            chi_base = chang_hinton_chi_profile(
+                self.rho, self.Ti, self.ne,
+                p['q_profile'], p['R0'], p['a'], p['B0'],
+                p['A_ion'], p['Z_eff']
+            )
+        else:
+            chi_base = 0.5
+
         # Turbulent Level
         chi_turb = 5.0 * np.maximum(0, -grad_T - threshold)
         

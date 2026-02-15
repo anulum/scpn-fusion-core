@@ -11,8 +11,18 @@ use ndarray::Array1;
 /// Number of radial grid points. Python line 21.
 const TRANSPORT_NR: usize = 50;
 
-/// Base neoclassical thermal diffusivity [m²/s]. Python line 77.
-const CHI_BASE: f64 = 0.5;
+/// Default base thermal diffusivity [m²/s] when neoclassical is not configured.
+const CHI_BASE_DEFAULT: f64 = 0.5;
+
+/// Floor for neoclassical chi [m²/s] to prevent unphysical values.
+const CHI_NC_FLOOR: f64 = 0.01;
+
+/// Boltzmann constant in J/keV for neoclassical calculations.
+const NC_BOLTZMANN_J_PER_KEV: f64 = 1.602_176_634e-16;
+/// Elementary charge [C].
+const NC_ELEM_CHARGE: f64 = 1.602_176_634e-19;
+/// Proton mass [kg].
+const NC_PROTON_MASS: f64 = 1.672_621_923_69e-27;
 
 /// Turbulent transport multiplier. Python line 80.
 const CHI_TURB: f64 = 5.0;
@@ -43,6 +53,83 @@ const HEATING_WIDTH: f64 = 0.1;
 /// Cap for low-order toroidal-mode coupling multiplier.
 const TOROIDAL_COUPLING_MAX_FACTOR: f64 = 3.0;
 
+/// Parameters for the Chang-Hinton (1982) neoclassical transport model.
+#[derive(Debug, Clone, PartialEq)]
+pub struct NeoclassicalParams {
+    /// Tokamak major radius R₀ [m].
+    pub r_major: f64,
+    /// Minor radius a [m].
+    pub a_minor: f64,
+    /// Toroidal magnetic field B₀ [T].
+    pub b_toroidal: f64,
+    /// Ion mass number (e.g. 2 for deuterium).
+    pub a_ion: f64,
+    /// Effective charge Z_eff.
+    pub z_eff: f64,
+    /// Safety factor profile q(ρ) at each radial grid point.
+    pub q_profile: Array1<f64>,
+}
+
+/// Chang-Hinton (1982) neoclassical ion thermal diffusivity [m²/s].
+///
+/// χ_i^NC = 0.66 (1 + 1.54 α) q² ε^{-3/2} ρ_i² ν_ii / (1 + 0.74 ν*^{2/3})
+///
+/// where ε = r/R is the local inverse aspect ratio, ρ_i is the ion gyroradius,
+/// and ν* = ν_ii qR / (ε^{3/2} v_ti) is the collisionality parameter.
+pub fn chang_hinton_chi(
+    rho: f64,
+    t_i_kev: f64,
+    n_e_19: f64,
+    q: f64,
+    params: &NeoclassicalParams,
+) -> f64 {
+    if rho <= 0.0 || rho > 1.0 || t_i_kev <= 0.0 || n_e_19 <= 0.0 || q <= 0.0 {
+        return CHI_NC_FLOOR;
+    }
+    let epsilon = (rho * params.a_minor) / params.r_major;
+    if epsilon <= 1e-6 {
+        return CHI_NC_FLOOR;
+    }
+
+    let t_i_j = t_i_kev * NC_BOLTZMANN_J_PER_KEV;
+    let m_i = params.a_ion * NC_PROTON_MASS;
+    let n_e = n_e_19 * 1e19;
+
+    // Ion thermal velocity: v_ti = sqrt(2 T_i / m_i)
+    let v_ti = (2.0 * t_i_j / m_i).sqrt();
+    if !v_ti.is_finite() || v_ti <= 0.0 {
+        return CHI_NC_FLOOR;
+    }
+
+    // Ion gyroradius: ρ_i = m_i v_ti / (Z_i e B)
+    let rho_i = m_i * v_ti / (NC_ELEM_CHARGE * params.b_toroidal);
+
+    // Ion-ion collision frequency (simplified):
+    // ν_ii ≈ n_e Z_eff² e⁴ ln Λ / (12 π^{3/2} ε₀² m_i^{1/2} T_i^{3/2})
+    let ln_lambda = 17.0; // typical for fusion plasma
+    let eps0 = 8.854_187_812_8e-12;
+    let e4 = NC_ELEM_CHARGE.powi(4);
+    let nu_ii = n_e * params.z_eff * params.z_eff * e4 * ln_lambda
+        / (12.0 * std::f64::consts::PI.powf(1.5) * eps0 * eps0 * m_i.sqrt() * t_i_j.powf(1.5));
+
+    // Collisionality: ν* = ν_ii q R₀ / (ε^{3/2} v_ti)
+    let eps32 = epsilon.powf(1.5);
+    let nu_star = nu_ii * q * params.r_major / (eps32 * v_ti);
+
+    // α = (R/r) correction for Shafranov shift effects
+    let alpha = epsilon; // simplified
+
+    // Chang-Hinton formula
+    let chi = 0.66 * (1.0 + 1.54 * alpha) * q * q * rho_i * rho_i * nu_ii
+        / (eps32 * (1.0 + 0.74 * nu_star.powf(2.0 / 3.0)));
+
+    if chi.is_finite() && chi > 0.0 {
+        chi.max(CHI_NC_FLOOR)
+    } else {
+        CHI_NC_FLOOR
+    }
+}
+
 /// 1.5D radial transport solver.
 pub struct TransportSolver {
     pub profiles: RadialProfiles,
@@ -51,6 +138,8 @@ pub struct TransportSolver {
     pub pedestal: PedestalModel,
     pub toroidal_mode_amplitudes: Vec<f64>,
     pub toroidal_coupling_gain: f64,
+    /// Optional neoclassical transport model (replaces constant CHI_BASE).
+    pub neoclassical: Option<NeoclassicalParams>,
 }
 
 impl TransportSolver {
@@ -69,7 +158,7 @@ impl TransportSolver {
             10.0 * (1.0 - r * r).max(0.0) + 0.5
         });
         let n_impurity = Array1::zeros(TRANSPORT_NR);
-        let chi = Array1::from_elem(TRANSPORT_NR, CHI_BASE);
+        let chi = Array1::from_elem(TRANSPORT_NR, CHI_BASE_DEFAULT);
         let pedestal = PedestalModel::new(PedestalConfig {
             beta_p_ped: 0.35,
             rho_s: 2.0e-3,
@@ -92,7 +181,53 @@ impl TransportSolver {
             pedestal,
             toroidal_mode_amplitudes: vec![0.0; 3],
             toroidal_coupling_gain: 0.0,
+            neoclassical: None,
         }
+    }
+
+    /// Configure the neoclassical transport model (Chang-Hinton 1982).
+    ///
+    /// When set, replaces the constant CHI_BASE with q-profile-dependent neoclassical χ_i.
+    pub fn set_neoclassical(&mut self, params: NeoclassicalParams) -> FusionResult<()> {
+        if !params.r_major.is_finite() || params.r_major <= 0.0 {
+            return Err(FusionError::PhysicsViolation(
+                "neoclassical r_major must be finite and > 0".into(),
+            ));
+        }
+        if !params.a_minor.is_finite() || params.a_minor <= 0.0 {
+            return Err(FusionError::PhysicsViolation(
+                "neoclassical a_minor must be finite and > 0".into(),
+            ));
+        }
+        if !params.b_toroidal.is_finite() || params.b_toroidal <= 0.0 {
+            return Err(FusionError::PhysicsViolation(
+                "neoclassical b_toroidal must be finite and > 0".into(),
+            ));
+        }
+        if !params.a_ion.is_finite() || params.a_ion <= 0.0 {
+            return Err(FusionError::PhysicsViolation(
+                "neoclassical a_ion must be finite and > 0".into(),
+            ));
+        }
+        if !params.z_eff.is_finite() || params.z_eff < 1.0 {
+            return Err(FusionError::PhysicsViolation(
+                "neoclassical z_eff must be finite and >= 1".into(),
+            ));
+        }
+        if params.q_profile.len() != self.profiles.rho.len() {
+            return Err(FusionError::ConfigError(format!(
+                "neoclassical q_profile length {} must match radial grid {}",
+                params.q_profile.len(),
+                self.profiles.rho.len()
+            )));
+        }
+        if params.q_profile.iter().any(|v| !v.is_finite() || *v <= 0.0) {
+            return Err(FusionError::PhysicsViolation(
+                "neoclassical q_profile values must be finite and > 0".into(),
+            ));
+        }
+        self.neoclassical = Some(params);
+        Ok(())
     }
 
     /// Configure low-order toroidal mode spectrum `n=1..N` for reduced transport closure.
@@ -201,7 +336,16 @@ impl TransportSolver {
 
             // Bohm/Gyro-Bohm transport
             let excess = (-grad_t - CRIT_GRADIENT).max(0.0);
-            self.chi[i] = CHI_BASE + CHI_TURB * excess;
+            let chi_base = if let Some(ref nc) = self.neoclassical {
+                let rho_val = self.profiles.rho[i];
+                let t_i = self.profiles.ti[i].max(0.01);
+                let n_e_19 = self.profiles.ne[i].max(0.01);
+                let q = nc.q_profile[i];
+                chang_hinton_chi(rho_val, t_i, n_e_19, q, nc)
+            } else {
+                CHI_BASE_DEFAULT
+            };
+            self.chi[i] = chi_base + CHI_TURB * excess;
 
             // Reduced toroidal coupling closure from low-order n!=0 mode spectrum.
             self.chi[i] *= self.toroidal_mode_coupling_factor(self.profiles.rho[i]);
@@ -655,5 +799,101 @@ mod tests {
             FusionError::ConfigError(msg) => assert!(msg.contains("dt")),
             other => panic!("Unexpected error variant: {other:?}"),
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Neoclassical transport tests
+    // ═══════════════════════════════════════════════════════════════════
+
+    fn iter_neoclassical_params(n: usize) -> NeoclassicalParams {
+        let rho = Array1::linspace(0.0, 1.0, n);
+        let q_profile = Array1::from_shape_fn(n, |i| {
+            let r = rho[i];
+            1.0 + 2.0 * r * r // monotonic q-profile q(0)=1, q(1)=3
+        });
+        NeoclassicalParams {
+            r_major: 6.2,
+            a_minor: 2.0,
+            b_toroidal: 5.3,
+            a_ion: 2.0,
+            z_eff: 1.5,
+            q_profile,
+        }
+    }
+
+    #[test]
+    fn test_neoclassical_chi_positive() {
+        let nc = iter_neoclassical_params(50);
+        for i in 1..50 {
+            let rho = i as f64 / 49.0;
+            let chi = chang_hinton_chi(rho, 10.0, 10.0, 1.0 + 2.0 * rho * rho, &nc);
+            assert!(chi > 0.0, "chi must be > 0 at rho={rho}, got {chi}");
+            assert!(chi.is_finite(), "chi must be finite at rho={rho}");
+        }
+    }
+
+    #[test]
+    fn test_neoclassical_chi_increases_with_q() {
+        let nc = iter_neoclassical_params(50);
+        let chi_low_q = chang_hinton_chi(0.5, 10.0, 10.0, 1.0, &nc);
+        let chi_high_q = chang_hinton_chi(0.5, 10.0, 10.0, 3.0, &nc);
+        assert!(
+            chi_high_q > chi_low_q,
+            "Higher q should give larger chi: q=1→{chi_low_q}, q=3→{chi_high_q}"
+        );
+    }
+
+    #[test]
+    fn test_neoclassical_chi_floor_for_invalid() {
+        let nc = iter_neoclassical_params(50);
+        // rho=0 should return floor
+        let chi = chang_hinton_chi(0.0, 10.0, 10.0, 1.0, &nc);
+        assert!((chi - CHI_NC_FLOOR).abs() < 1e-12);
+        // negative temperature
+        let chi = chang_hinton_chi(0.5, -1.0, 10.0, 1.5, &nc);
+        assert!((chi - CHI_NC_FLOOR).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_neoclassical_step_no_panic() {
+        let mut ts = TransportSolver::new();
+        let nc = iter_neoclassical_params(50);
+        ts.set_neoclassical(nc).expect("valid neoclassical config");
+        ts.step(50.0, 1e14).expect("valid transport step with neoclassical");
+        assert!(ts.profiles.te.iter().all(|v| v.is_finite()));
+    }
+
+    #[test]
+    fn test_neoclassical_differs_from_constant() {
+        let mut ts_const = TransportSolver::new();
+        ts_const.update_transport_model(20.0).unwrap();
+        let chi_const = ts_const.chi.clone();
+
+        let mut ts_nc = TransportSolver::new();
+        let nc = iter_neoclassical_params(50);
+        ts_nc.set_neoclassical(nc).unwrap();
+        ts_nc.update_transport_model(20.0).unwrap();
+
+        let max_diff = chi_const
+            .iter()
+            .zip(ts_nc.chi.iter())
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0f64, f64::max);
+        assert!(
+            max_diff > 0.0,
+            "Neoclassical chi should differ from constant base"
+        );
+    }
+
+    #[test]
+    fn test_neoclassical_rejects_invalid_params() {
+        let mut ts = TransportSolver::new();
+        let mut nc = iter_neoclassical_params(50);
+        nc.r_major = -1.0;
+        assert!(ts.set_neoclassical(nc).is_err());
+
+        let mut nc2 = iter_neoclassical_params(50);
+        nc2.q_profile = Array1::zeros(10); // wrong length
+        assert!(ts.set_neoclassical(nc2).is_err());
     }
 }

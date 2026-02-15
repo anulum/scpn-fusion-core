@@ -16,6 +16,12 @@ const ELEMENTARY_CHARGE_C: f64 = 1.602_176_634e-19;
 const ALPHA_MASS_KG: f64 = 6.644_657_335_7e-27;
 const ALPHA_CHARGE_C: f64 = 2.0 * ELEMENTARY_CHARGE_C;
 
+// Coulomb collision constants
+const ELECTRON_MASS_KG: f64 = 9.109_383_701_5e-31;
+const PROTON_MASS_KG: f64 = 1.672_621_923_69e-27;
+const VACUUM_PERMITTIVITY: f64 = 8.854_187_812_8e-12;
+const BOLTZMANN_J_PER_KEV: f64 = 1.602_176_634e-16;
+
 /// Charged macro-particle state.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ChargedParticle {
@@ -612,6 +618,302 @@ pub fn blend_particle_current(
     Ok(combined)
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// Coulomb Collision Operator (Fokker-Planck Monte Carlo)
+// ═══════════════════════════════════════════════════════════════════════
+
+/// Parameters describing the background plasma for Coulomb collisions.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct CoulombCollisionParams {
+    /// Electron density [m^-3].
+    pub n_e: f64,
+    /// Electron temperature [keV].
+    pub t_e_kev: f64,
+    /// Ion temperature [keV].
+    pub t_i_kev: f64,
+    /// Ion mass number (e.g. 2 for deuterium).
+    pub a_i: f64,
+    /// Ion charge number.
+    pub z_i: f64,
+    /// Effective charge Z_eff.
+    pub z_eff: f64,
+}
+
+fn validate_collision_params(p: &CoulombCollisionParams) -> FusionResult<()> {
+    if !p.n_e.is_finite() || p.n_e <= 0.0 {
+        return Err(FusionError::PhysicsViolation("n_e must be finite and > 0".into()));
+    }
+    if !p.t_e_kev.is_finite() || p.t_e_kev <= 0.0 {
+        return Err(FusionError::PhysicsViolation("t_e_kev must be finite and > 0".into()));
+    }
+    if !p.t_i_kev.is_finite() || p.t_i_kev <= 0.0 {
+        return Err(FusionError::PhysicsViolation("t_i_kev must be finite and > 0".into()));
+    }
+    if !p.a_i.is_finite() || p.a_i <= 0.0 {
+        return Err(FusionError::PhysicsViolation("a_i must be finite and > 0".into()));
+    }
+    if !p.z_i.is_finite() || p.z_i <= 0.0 {
+        return Err(FusionError::PhysicsViolation("z_i must be finite and > 0".into()));
+    }
+    if !p.z_eff.is_finite() || p.z_eff < 1.0 {
+        return Err(FusionError::PhysicsViolation("z_eff must be finite and >= 1".into()));
+    }
+    Ok(())
+}
+
+/// Coulomb logarithm via NRL formula, clamped to [5, 30].
+pub fn coulomb_logarithm(n_e_m3: f64, t_e_kev: f64) -> FusionResult<f64> {
+    if !n_e_m3.is_finite() || n_e_m3 <= 0.0 {
+        return Err(FusionError::PhysicsViolation("n_e must be finite and > 0".into()));
+    }
+    if !t_e_kev.is_finite() || t_e_kev <= 0.0 {
+        return Err(FusionError::PhysicsViolation("t_e_kev must be finite and > 0".into()));
+    }
+    // NRL Formulary: ln Λ ≈ 24 − ln(sqrt(n_e) / T_e)  [T_e in eV]
+    let t_e_ev = t_e_kev * 1000.0;
+    let ln_lambda = 24.0 - (n_e_m3.sqrt() / t_e_ev).ln();
+    Ok(ln_lambda.clamp(5.0, 30.0))
+}
+
+/// Spitzer slowing-down time [s] for a test particle on field electrons.
+///
+/// τ_s = 3(2π)^{3/2} ε₀² m_a T_e^{3/2} / (n_e Z_a² e⁴ m_e^{1/2} ln Λ)
+pub fn spitzer_slowing_down_time(
+    mass_kg: f64,
+    charge_number: f64,
+    n_e_m3: f64,
+    t_e_kev: f64,
+    ln_lambda: f64,
+) -> FusionResult<f64> {
+    if !mass_kg.is_finite() || mass_kg <= 0.0 {
+        return Err(FusionError::PhysicsViolation("mass_kg must be finite and > 0".into()));
+    }
+    if !charge_number.is_finite() || charge_number <= 0.0 {
+        return Err(FusionError::PhysicsViolation("charge_number must be > 0".into()));
+    }
+    if !n_e_m3.is_finite() || n_e_m3 <= 0.0 {
+        return Err(FusionError::PhysicsViolation("n_e must be > 0".into()));
+    }
+    if !t_e_kev.is_finite() || t_e_kev <= 0.0 {
+        return Err(FusionError::PhysicsViolation("t_e_kev must be > 0".into()));
+    }
+    if !ln_lambda.is_finite() || ln_lambda <= 0.0 {
+        return Err(FusionError::PhysicsViolation("ln_lambda must be > 0".into()));
+    }
+    let t_e_j = t_e_kev * BOLTZMANN_J_PER_KEV;
+    let e = ELEMENTARY_CHARGE_C;
+    let numerator = 3.0 * (2.0 * PI).powf(1.5) * VACUUM_PERMITTIVITY * VACUUM_PERMITTIVITY
+        * mass_kg * t_e_j.powf(1.5);
+    let denominator = n_e_m3 * (charge_number * e).powi(2) * e * e
+        * ELECTRON_MASS_KG.sqrt() * ln_lambda;
+    let tau = numerator / denominator;
+    if !tau.is_finite() || tau <= 0.0 {
+        return Err(FusionError::PhysicsViolation(
+            format!("spitzer time became non-physical: {tau}")
+        ));
+    }
+    Ok(tau)
+}
+
+/// Critical velocity where electron drag equals ion drag [m/s].
+pub fn critical_velocity(t_e_kev: f64, a_i: f64, z_i: f64, z_eff: f64) -> FusionResult<f64> {
+    if !t_e_kev.is_finite() || t_e_kev <= 0.0 {
+        return Err(FusionError::PhysicsViolation("t_e_kev must be > 0".into()));
+    }
+    if !a_i.is_finite() || a_i <= 0.0 {
+        return Err(FusionError::PhysicsViolation("a_i must be > 0".into()));
+    }
+    if !z_i.is_finite() || z_i <= 0.0 {
+        return Err(FusionError::PhysicsViolation("z_i must be > 0".into()));
+    }
+    if !z_eff.is_finite() || z_eff < 1.0 {
+        return Err(FusionError::PhysicsViolation("z_eff must be >= 1".into()));
+    }
+    let t_e_j = t_e_kev * BOLTZMANN_J_PER_KEV;
+    let v_te = (2.0 * t_e_j / ELECTRON_MASS_KG).sqrt();
+    // v_c = v_te * (3 sqrt(π) m_e / (4 m_i))^{1/3} * Z_eff^{1/3}
+    let mass_ratio = ELECTRON_MASS_KG / (a_i * PROTON_MASS_KG);
+    let factor = (0.75 * PI.sqrt() * mass_ratio).powf(1.0 / 3.0);
+    let v_c = v_te * factor * z_eff.powf(1.0 / 3.0);
+    if !v_c.is_finite() || v_c <= 0.0 {
+        return Err(FusionError::PhysicsViolation(
+            format!("critical velocity non-physical: {v_c}")
+        ));
+    }
+    Ok(v_c)
+}
+
+/// Collision frequencies (ν_slow, ν_defl, ν_energy) for a test particle at given speed.
+pub fn collision_frequencies(
+    speed: f64,
+    params: &CoulombCollisionParams,
+    ln_lambda: f64,
+    tau_s: f64,
+    v_c: f64,
+) -> FusionResult<(f64, f64, f64)> {
+    if !speed.is_finite() || speed < 0.0 {
+        return Err(FusionError::PhysicsViolation("speed must be finite and >= 0".into()));
+    }
+    if !tau_s.is_finite() || tau_s <= 0.0 {
+        return Err(FusionError::PhysicsViolation("tau_s must be > 0".into()));
+    }
+    if !v_c.is_finite() || v_c <= 0.0 {
+        return Err(FusionError::PhysicsViolation("v_c must be > 0".into()));
+    }
+    let _ = ln_lambda; // used indirectly via tau_s
+    let _ = params;
+
+    let v_safe = speed.max(1e-6);
+    let x3 = (v_safe / v_c).powi(3);
+
+    // Slowing-down frequency: ν_s = (1 + x³) / τ_s  where x = v/v_c
+    let nu_slow = (1.0 + x3) / tau_s;
+
+    // Deflection (pitch-angle scattering): ν_d ≈ (1 + Z_eff/2) / (τ_s · x³)
+    let nu_defl = if x3 > 1e-30 {
+        1.0 / (tau_s * x3)
+    } else {
+        1.0 / (tau_s * 1e-30)
+    };
+
+    // Energy diffusion: ν_ε ≈ 2 T_e / (m v² τ_s)
+    let nu_energy = nu_slow * 0.5; // simplified
+
+    Ok((nu_slow, nu_defl, nu_energy))
+}
+
+/// XORshift64 PRNG: returns next state and a uniform f64 in [0, 1).
+fn xorshift_uniform(state: &mut u64) -> f64 {
+    let mut s = *state;
+    s ^= s << 13;
+    s ^= s >> 7;
+    s ^= s << 17;
+    *state = s;
+    (s as f64) / (u64::MAX as f64)
+}
+
+/// Box-Muller transform producing one standard normal variate from xorshift.
+fn xorshift_normal(state: &mut u64) -> f64 {
+    let u1 = xorshift_uniform(state).max(1e-300);
+    let u2 = xorshift_uniform(state);
+    (-2.0 * u1.ln()).sqrt() * (2.0 * PI * u2).cos()
+}
+
+/// Find an orthonormal basis (e1, e2) perpendicular to unit vector `v_hat`.
+fn perpendicular_basis(v_hat: [f64; 3]) -> ([f64; 3], [f64; 3]) {
+    // Choose the axis most perpendicular to v_hat
+    let abs_x = v_hat[0].abs();
+    let abs_y = v_hat[1].abs();
+    let abs_z = v_hat[2].abs();
+    let seed = if abs_x <= abs_y && abs_x <= abs_z {
+        [1.0, 0.0, 0.0]
+    } else if abs_y <= abs_z {
+        [0.0, 1.0, 0.0]
+    } else {
+        [0.0, 0.0, 1.0]
+    };
+
+    // e1 = normalize(seed × v_hat)
+    let raw = cross(seed, v_hat);
+    let norm = dot(raw, raw).sqrt().max(1e-30);
+    let e1 = [raw[0] / norm, raw[1] / norm, raw[2] / norm];
+
+    // e2 = v_hat × e1
+    let e2 = cross(v_hat, e1);
+    (e1, e2)
+}
+
+/// Apply Coulomb collision Monte Carlo kick to a single particle.
+///
+/// Uses Langevin approach: drag (slowing-down) + stochastic pitch-angle
+/// scattering and energy diffusion over timestep dt_s.
+pub fn collision_step(
+    particle: &mut ChargedParticle,
+    params: &CoulombCollisionParams,
+    dt_s: f64,
+    rng_state: &mut u64,
+) -> FusionResult<()> {
+    validate_particle_state(particle, "collision particle")?;
+    validate_collision_params(params)?;
+    if !dt_s.is_finite() || dt_s <= 0.0 {
+        return Err(FusionError::PhysicsViolation("dt_s must be > 0".into()));
+    }
+
+    let v = [particle.vx_m_s, particle.vy_m_s, particle.vz_m_s];
+    let speed = dot(v, v).sqrt();
+    if speed < 1e-10 {
+        return Ok(()); // particle at rest — no collision
+    }
+
+    let ln_lam = coulomb_logarithm(params.n_e, params.t_e_kev)?;
+    let za = (particle.charge_c / ELEMENTARY_CHARGE_C).abs();
+    let tau_s = spitzer_slowing_down_time(particle.mass_kg, za, params.n_e, params.t_e_kev, ln_lam)?;
+    let v_c = critical_velocity(params.t_e_kev, params.a_i, params.z_i, params.z_eff)?;
+    let (nu_slow, nu_defl, _nu_energy) = collision_frequencies(speed, params, ln_lam, tau_s, v_c)?;
+
+    // Unit velocity direction
+    let v_hat = [v[0] / speed, v[1] / speed, v[2] / speed];
+
+    // 1. Slowing-down drag: Δv_∥ = -ν_s · v · dt
+    let dv_par = -nu_slow * speed * dt_s;
+
+    // 2. Pitch-angle scattering: random perpendicular kick
+    //    σ_perp = v · sqrt(ν_d · dt)
+    let sigma_perp = speed * (nu_defl * dt_s).sqrt();
+    let kick1 = xorshift_normal(rng_state) * sigma_perp;
+    let kick2 = xorshift_normal(rng_state) * sigma_perp;
+
+    let (e1, e2) = perpendicular_basis(v_hat);
+
+    // New velocity = (v + dv_par) v_hat + kick1 e1 + kick2 e2
+    let new_speed_par = speed + dv_par;
+    // Ensure speed doesn't go negative (particle thermalized)
+    let new_speed_par = new_speed_par.max(0.0);
+
+    particle.vx_m_s = new_speed_par * v_hat[0] + kick1 * e1[0] + kick2 * e2[0];
+    particle.vy_m_s = new_speed_par * v_hat[1] + kick1 * e1[1] + kick2 * e2[1];
+    particle.vz_m_s = new_speed_par * v_hat[2] + kick1 * e1[2] + kick2 * e2[2];
+
+    if !particle.vx_m_s.is_finite() || !particle.vy_m_s.is_finite() || !particle.vz_m_s.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "collision step produced non-finite velocity".into(),
+        ));
+    }
+    Ok(())
+}
+
+/// Apply Coulomb collisions to all particles in a batch.
+pub fn apply_coulomb_collisions(
+    particles: &mut [ChargedParticle],
+    params: &CoulombCollisionParams,
+    dt_s: f64,
+    seed: u64,
+) -> FusionResult<()> {
+    validate_collision_params(params)?;
+    if particles.is_empty() {
+        return Ok(());
+    }
+    if !dt_s.is_finite() || dt_s <= 0.0 {
+        return Err(FusionError::PhysicsViolation("dt_s must be > 0".into()));
+    }
+    if seed == 0 {
+        return Err(FusionError::PhysicsViolation("seed must be != 0 for xorshift".into()));
+    }
+
+    for (idx, particle) in particles.iter_mut().enumerate() {
+        // Each particle gets a deterministic RNG state derived from seed + index
+        let mut rng = seed.wrapping_add(idx as u64).wrapping_mul(6364136223846793005).wrapping_add(1);
+        if rng == 0 { rng = 1; }
+        collision_step(particle, params, dt_s, &mut rng).map_err(|e| match e {
+            FusionError::PhysicsViolation(msg) => FusionError::PhysicsViolation(
+                format!("particle[{idx}] collision failed: {msg}"),
+            ),
+            other => other,
+        })?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1029,6 +1331,129 @@ mod tests {
                 assert!(msg.contains("steps"));
             }
             other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Coulomb collision tests
+    // ═══════════════════════════════════════════════════════════════════
+
+    fn default_collision_params() -> CoulombCollisionParams {
+        CoulombCollisionParams {
+            n_e: 1.0e20,
+            t_e_kev: 10.0,
+            t_i_kev: 8.0,
+            a_i: 2.0,  // deuterium
+            z_i: 1.0,
+            z_eff: 1.5,
+        }
+    }
+
+    #[test]
+    fn test_coulomb_logarithm_range() {
+        let ln_lam = coulomb_logarithm(1e20, 10.0).unwrap();
+        assert!(ln_lam >= 5.0 && ln_lam <= 30.0, "ln_lambda={ln_lam}");
+        // For fusion plasma, NRL formula gives ln Λ ≈ 10-20 range
+        assert!(ln_lam > 5.0 && ln_lam < 25.0, "fusion plasma ln_lambda={ln_lam}");
+    }
+
+    #[test]
+    fn test_coulomb_logarithm_clamp() {
+        // Very cold dense plasma -> clamped to 5
+        let low = coulomb_logarithm(1e30, 0.001).unwrap();
+        assert!((low - 5.0).abs() < 1e-12, "should clamp to 5, got {low}");
+        // Moderately hot tenuous plasma -> still within [5,30]
+        let mid = coulomb_logarithm(1e10, 1000.0).unwrap();
+        assert!(mid >= 5.0 && mid <= 30.0, "should be in [5,30], got {mid}");
+    }
+
+    #[test]
+    fn test_coulomb_logarithm_rejects_invalid() {
+        assert!(coulomb_logarithm(-1.0, 10.0).is_err());
+        assert!(coulomb_logarithm(1e20, 0.0).is_err());
+        assert!(coulomb_logarithm(1e20, f64::NAN).is_err());
+    }
+
+    #[test]
+    fn test_spitzer_slowing_down_time() {
+        let ln_lam = coulomb_logarithm(1e20, 10.0).unwrap();
+        let tau = spitzer_slowing_down_time(ALPHA_MASS_KG, 2.0, 1e20, 10.0, ln_lam).unwrap();
+        // For 3.5 MeV alpha in ITER plasma, τ_s ~ 0.1-1.0 s
+        assert!(tau > 0.01 && tau < 10.0, "spitzer time {tau} s out of range");
+    }
+
+    #[test]
+    fn test_critical_velocity() {
+        let v_c = critical_velocity(10.0, 2.0, 1.0, 1.5).unwrap();
+        // v_c should be much less than speed of light but significant
+        assert!(v_c > 1e5 && v_c < 1e8, "v_c={v_c} m/s");
+    }
+
+    #[test]
+    fn test_collision_frequencies_positive() {
+        let params = default_collision_params();
+        let ln_lam = coulomb_logarithm(params.n_e, params.t_e_kev).unwrap();
+        let tau_s = spitzer_slowing_down_time(ALPHA_MASS_KG, 2.0, params.n_e, params.t_e_kev, ln_lam).unwrap();
+        let v_c = critical_velocity(params.t_e_kev, params.a_i, params.z_i, params.z_eff).unwrap();
+        let speed = 1e7; // fast alpha
+        let (nu_s, nu_d, nu_e) = collision_frequencies(speed, &params, ln_lam, tau_s, v_c).unwrap();
+        assert!(nu_s > 0.0, "slowing-down frequency must be > 0");
+        assert!(nu_d > 0.0, "deflection frequency must be > 0");
+        assert!(nu_e > 0.0, "energy diffusion frequency must be > 0");
+    }
+
+    #[test]
+    fn test_collision_step_slows_alpha() {
+        let params = default_collision_params();
+        let mut particles = seed_alpha_test_particles(1, 6.2, 0.0, 3.5, 0.6, 1e12).unwrap();
+        let e0 = particles[0].kinetic_energy_mev();
+        let mut rng: u64 = 12345;
+        // Many small collision steps should reduce energy
+        for _ in 0..100 {
+            collision_step(&mut particles[0], &params, 1e-3, &mut rng).unwrap();
+        }
+        let e1 = particles[0].kinetic_energy_mev();
+        assert!(e1 < e0, "collisions should slow alpha: {e0} -> {e1} MeV");
+    }
+
+    #[test]
+    fn test_batch_collisions_deterministic() {
+        let params = default_collision_params();
+        let mut p1 = seed_alpha_test_particles(8, 6.2, 0.0, 3.5, 0.6, 1e12).unwrap();
+        let mut p2 = p1.clone();
+        apply_coulomb_collisions(&mut p1, &params, 1e-4, 42).unwrap();
+        apply_coulomb_collisions(&mut p2, &params, 1e-4, 42).unwrap();
+        for (a, b) in p1.iter().zip(p2.iter()) {
+            assert!((a.vx_m_s - b.vx_m_s).abs() < 1e-12, "determinism broken");
+            assert!((a.vy_m_s - b.vy_m_s).abs() < 1e-12, "determinism broken");
+            assert!((a.vz_m_s - b.vz_m_s).abs() < 1e-12, "determinism broken");
+        }
+    }
+
+    #[test]
+    fn test_collision_rejects_invalid_params() {
+        let mut bad = default_collision_params();
+        bad.n_e = -1.0;
+        let mut p = seed_alpha_test_particles(1, 6.2, 0.0, 3.5, 0.6, 1e12).unwrap();
+        assert!(apply_coulomb_collisions(&mut p, &bad, 1e-4, 42).is_err());
+    }
+
+    #[test]
+    fn test_perpendicular_basis_orthonormal() {
+        for v_hat in [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0],
+                      [0.577, 0.577, 0.577]] {
+            let norm = dot(v_hat, v_hat).sqrt();
+            let v_hat = [v_hat[0]/norm, v_hat[1]/norm, v_hat[2]/norm];
+            let (e1, e2) = perpendicular_basis(v_hat);
+            // e1 ⊥ v_hat
+            assert!(dot(e1, v_hat).abs() < 1e-10, "e1 not perp to v_hat");
+            // e2 ⊥ v_hat
+            assert!(dot(e2, v_hat).abs() < 1e-10, "e2 not perp to v_hat");
+            // e1 ⊥ e2
+            assert!(dot(e1, e2).abs() < 1e-10, "e1 not perp to e2");
+            // |e1| ≈ 1, |e2| ≈ 1
+            assert!((dot(e1, e1).sqrt() - 1.0).abs() < 1e-10);
+            assert!((dot(e2, e2).sqrt() - 1.0).abs() < 1e-10);
         }
     }
 }

@@ -1,0 +1,16 @@
+[package]
+name = "fusion-gpu"
+version = "0.1.0"
+edition = "2021"
+description = "GPU-accelerated GS solver via wgpu compute shaders"
+license = "AGPL-3.0-or-later"
+
+[dependencies]
+fusion-types = { path = "../fusion-types" }
+wgpu = "24"
+bytemuck = { version = "1", features = ["derive"] }
+pollster = "0.4"
+log = "0.4"
+
+[dev-dependencies]
+ndarray = "0.16"
