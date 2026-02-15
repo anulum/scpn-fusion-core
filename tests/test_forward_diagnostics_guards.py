@@ -59,6 +59,31 @@ def test_generate_forward_channels_rejects_nonfinite_fields() -> None:
         )
 
 
+@pytest.mark.parametrize("axis_name", ["r", "z"])
+def test_interferometer_rejects_non_monotonic_grids(axis_name: str) -> None:
+    r, z, ne, _ = _make_fields()
+    chords = [((4.2, 0.0), (7.8, 0.0))]
+    if axis_name == "r":
+        r_bad = np.array(r, copy=True)
+        r_bad[[7, 8]] = r_bad[[8, 7]]
+        with pytest.raises(ValueError, match="strictly increasing"):
+            interferometer_phase_shift(ne, r_bad, z, chords)
+    else:
+        z_bad = np.array(z, copy=True)
+        z_bad[[10, 11]] = z_bad[[11, 10]]
+        with pytest.raises(ValueError, match="strictly increasing"):
+            interferometer_phase_shift(ne, r, z_bad, chords)
+
+
+def test_interferometer_rejects_duplicate_grid_points() -> None:
+    r, z, ne, _ = _make_fields()
+    chords = [((4.2, 0.0), (7.8, 0.0))]
+    r_bad = np.array(r, copy=True)
+    r_bad[12] = r_bad[11]
+    with pytest.raises(ValueError, match="strictly increasing"):
+        interferometer_phase_shift(ne, r_bad, z, chords)
+
+
 @pytest.mark.parametrize(
     ("kwargs", "match"),
     [

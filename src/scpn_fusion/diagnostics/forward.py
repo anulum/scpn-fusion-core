@@ -51,6 +51,8 @@ def _validate_field_grid(
         )
     if not (np.all(np.isfinite(arr)) and np.all(np.isfinite(r)) and np.all(np.isfinite(z))):
         raise ValueError(f"{name}: field and grids must be finite.")
+    if not (np.all(np.diff(r) > 0.0) and np.all(np.diff(z) > 0.0)):
+        raise ValueError(f"{name}: r_grid and z_grid must be strictly increasing.")
     return arr, r, z
 
 
