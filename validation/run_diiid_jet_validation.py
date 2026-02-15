@@ -44,18 +44,43 @@ class ValidationResult:
 
 def gs_operator(psi, R, Z):
     """Compute Δ*ψ = ∂²ψ/∂R² - (1/R)∂ψ/∂R + ∂²ψ/∂Z²."""
-    nr = len(R)
-    nz = len(Z)
-    dR = R[1] - R[0] if nr > 1 else 1.0
-    dZ = Z[1] - Z[0] if nz > 1 else 1.0
-    result = np.zeros_like(psi)
+    psi_arr = np.asarray(psi, dtype=np.float64)
+    r_arr = np.asarray(R, dtype=np.float64)
+    z_arr = np.asarray(Z, dtype=np.float64)
+
+    if psi_arr.ndim != 2:
+        raise ValueError("psi must be a 2D array")
+    if r_arr.ndim != 1 or z_arr.ndim != 1:
+        raise ValueError("R and Z must be 1D arrays")
+
+    nz, nr = psi_arr.shape
+    if nz < 3 or nr < 3:
+        raise ValueError("psi grid must be at least 3x3")
+    if r_arr.size != nr or z_arr.size != nz:
+        raise ValueError(
+            f"R/Z axis lengths must match psi shape: got R={r_arr.size}, Z={z_arr.size}, "
+            f"psi={psi_arr.shape}"
+        )
+
+    if not np.all(np.isfinite(psi_arr)):
+        raise ValueError("psi must contain only finite values")
+    if not np.all(np.isfinite(r_arr)) or not np.all(np.isfinite(z_arr)):
+        raise ValueError("R and Z axes must contain only finite values")
+    if np.any(np.diff(r_arr) <= 0.0):
+        raise ValueError("R axis must be strictly increasing")
+    if np.any(np.diff(z_arr) <= 0.0):
+        raise ValueError("Z axis must be strictly increasing")
+
+    dR = float(r_arr[1] - r_arr[0])
+    dZ = float(z_arr[1] - z_arr[0])
+    result = np.zeros_like(psi_arr)
 
     for i in range(1, nz - 1):
         for j in range(1, nr - 1):
-            d2psi_dR2 = (psi[i, j+1] - 2*psi[i, j] + psi[i, j-1]) / dR**2
-            dpsi_dR = (psi[i, j+1] - psi[i, j-1]) / (2*dR)
-            d2psi_dZ2 = (psi[i+1, j] - 2*psi[i, j] + psi[i-1, j]) / dZ**2
-            r = R[j]
+            d2psi_dR2 = (psi_arr[i, j + 1] - 2 * psi_arr[i, j] + psi_arr[i, j - 1]) / dR**2
+            dpsi_dR = (psi_arr[i, j + 1] - psi_arr[i, j - 1]) / (2 * dR)
+            d2psi_dZ2 = (psi_arr[i + 1, j] - 2 * psi_arr[i, j] + psi_arr[i - 1, j]) / dZ**2
+            r = r_arr[j]
             if r > 0:
                 result[i, j] = d2psi_dR2 - dpsi_dR / r + d2psi_dZ2
             else:
@@ -66,9 +91,28 @@ def gs_operator(psi, R, Z):
 def validate_file(path: Path, device: str) -> ValidationResult:
     """Validate a single GEQDSK file."""
     eq = read_geqdsk(path)
+
+    if eq.nw < 5 or eq.nh < 5:
+        raise ValueError(f"grid must be at least 5x5, got {eq.nw}x{eq.nh}")
+    if not np.isfinite(eq.simag) or not np.isfinite(eq.sibry):
+        raise ValueError("eq.simag and eq.sibry must be finite")
+
     R = eq.r
     Z = eq.z
-    psi_ref = eq.psirz
+    psi_ref = np.asarray(eq.psirz, dtype=np.float64)
+    pprime = np.asarray(eq.pprime, dtype=np.float64)
+    ffprime = np.asarray(eq.ffprime, dtype=np.float64)
+
+    if psi_ref.shape != (eq.nh, eq.nw):
+        raise ValueError(f"eq.psirz shape must be ({eq.nh}, {eq.nw}), got {psi_ref.shape}")
+    if pprime.shape != (eq.nw,):
+        raise ValueError(f"eq.pprime length must be {eq.nw}, got {pprime.shape}")
+    if ffprime.shape != (eq.nw,):
+        raise ValueError(f"eq.ffprime length must be {eq.nw}, got {ffprime.shape}")
+    if not np.all(np.isfinite(psi_ref)):
+        raise ValueError("eq.psirz must contain only finite values")
+    if not np.all(np.isfinite(pprime)) or not np.all(np.isfinite(ffprime)):
+        raise ValueError("eq.pprime and eq.ffprime must contain only finite values")
 
     # Compute GS residual on the reference solution
     gs_res = gs_operator(psi_ref, R, Z)
@@ -76,7 +120,7 @@ def validate_file(path: Path, device: str) -> ValidationResult:
 
     psi_range = abs(eq.simag - eq.sibry)
     if psi_range < 1e-12:
-        psi_range = 1.0
+        raise ValueError("degenerate psi range: |simag - sibry| < 1e-12")
 
     gs_l2 = float(np.sqrt(np.mean(interior**2))) / psi_range
 
@@ -89,8 +133,8 @@ def validate_file(path: Path, device: str) -> ValidationResult:
 
     # Interpolate profiles
     psi_n_1d = np.linspace(0, 1, eq.nw)
-    pp = np.interp(psi_n_2d.ravel(), psi_n_1d, eq.pprime).reshape(psi_ref.shape)
-    ffp = np.interp(psi_n_2d.ravel(), psi_n_1d, eq.ffprime).reshape(psi_ref.shape)
+    pp = np.interp(psi_n_2d.ravel(), psi_n_1d, pprime).reshape(psi_ref.shape)
+    ffp = np.interp(psi_n_2d.ravel(), psi_n_1d, ffprime).reshape(psi_ref.shape)
 
     mu0 = 4e-7 * np.pi
     source = -mu0 * RR**2 * pp - ffp
