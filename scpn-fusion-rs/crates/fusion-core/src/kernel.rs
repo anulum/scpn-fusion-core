@@ -474,8 +474,21 @@ impl FusionKernel {
                 "particle population must be non-empty".to_string(),
             ));
         }
-        let summary = summarize_particle_population(particles, runaway_threshold_mev)?;
-        let particle_j_phi = deposit_toroidal_current_density(particles, &self.grid)?;
+        let summary = summarize_particle_population(particles, runaway_threshold_mev).map_err(
+            |err| match err {
+                FusionError::PhysicsViolation(msg) => FusionError::PhysicsViolation(format!(
+                    "particle population summary failed: {msg}"
+                )),
+                other => other,
+            },
+        )?;
+        let particle_j_phi =
+            deposit_toroidal_current_density(particles, &self.grid).map_err(|err| match err {
+                FusionError::PhysicsViolation(msg) => FusionError::PhysicsViolation(format!(
+                    "particle current deposition failed: {msg}"
+                )),
+                other => other,
+            })?;
         self.set_particle_current_feedback(particle_j_phi, coupling)
             .map_err(|err| match err {
                 FusionError::PhysicsViolation(msg) => FusionError::PhysicsViolation(format!(
@@ -907,6 +920,7 @@ mod tests {
             .expect_err("invalid runaway threshold must error");
         match err {
             FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("summary failed"));
                 assert!(msg.contains("runaway_threshold_mev"));
             }
             other => panic!("Unexpected error: {other:?}"),
@@ -948,6 +962,33 @@ mod tests {
             FusionError::PhysicsViolation(msg) => {
                 assert!(msg.contains("feedback setup failed"));
                 assert!(msg.contains("coupling=1") || msg.contains("near zero"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_from_population_wraps_deposition_errors() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.dr = 0.0;
+        let particles = vec![ChargedParticle {
+            x_m: 6.1,
+            y_m: 0.0,
+            z_m: 0.0,
+            vx_m_s: 0.0,
+            vy_m_s: 2.0e7,
+            vz_m_s: 0.0,
+            charge_c: 1.602_176_634e-19,
+            mass_kg: 1.672_621_923_69e-27,
+            weight: 3.0e16,
+        }];
+        let err = kernel
+            .set_particle_feedback_from_population(&particles, 0.3, 0.5)
+            .expect_err("invalid grid spacing must fail during deposition");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("deposition failed"));
+                assert!(msg.contains("grid spacing"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
