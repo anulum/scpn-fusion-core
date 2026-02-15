@@ -391,6 +391,23 @@ Summary:
   - invalid heating/limit control rejection
   - expected lag increase for slower heating actuator time constant
 
+### H8-130 (Engineering)
+Files:
+- `src/scpn_fusion/engineering/cad_raytrace.py`
+- `tests/test_cad_raytrace.py`
+
+Summary:
+- Extended CAD occlusion ray lane with broad-phase acceleration:
+  - new `estimate_surface_loading(..., occlusion_broadphase: bool = True)` switch
+  - broad-phase enabled by default for occlusion mode
+- Added segment-vs-triangle AABB filtering before precise intersection:
+  - precomputed triangle bounding boxes (`tri_bbox_min`, `tri_bbox_max`)
+  - per segment, candidate triangles selected by axis-aligned overlap
+  - precise Moller-Trumbore checks run only on filtered candidates
+- Preserved deterministic loading semantics:
+  - added regression parity test proving exact equality between
+    `occlusion_broadphase=False` (legacy) and `True` (new default)
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -406,6 +423,7 @@ Summary:
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after digital-twin pulse helper)
 - `python -m pytest tests/test_tokamak_digital_twin.py tests/test_imas_connector.py -q` (after chaos-monkey sensor lane)
 - `python -m pytest tests/test_tokamak_flight_sim.py -q` (after actuator realism extension)
+- `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` (after CAD occlusion broad-phase lane)
 
 Observed final outcomes on latest runs:
 - `30 passed` (CAD wave)

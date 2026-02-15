@@ -192,6 +192,7 @@ def estimate_surface_loading(
     source_strength_w: FloatArray,
     *,
     occlusion_cull: bool = False,
+    occlusion_broadphase: bool = True,
     occlusion_epsilon: float = 1e-9,
 ) -> CADLoadReport:
     """
@@ -219,6 +220,8 @@ def estimate_surface_loading(
     tri = vertices[faces]
     centroids = np.mean(tri, axis=1)
     normals, _areas = _triangle_normals_and_areas(vertices, faces)
+    tri_bbox_min = np.min(tri, axis=1)
+    tri_bbox_max = np.max(tri, axis=1)
 
     loading = np.zeros(faces.shape[0], dtype=np.float64)
     for p, power in zip(src, strength):
@@ -233,7 +236,16 @@ def estimate_surface_loading(
                 if not visible[i]:
                     continue
                 c = centroids[i]
-                for j in range(faces.shape[0]):
+                if occlusion_broadphase:
+                    seg_min = np.minimum(p, c) - occlusion_epsilon
+                    seg_max = np.maximum(p, c) + occlusion_epsilon
+                    candidate_idx = np.nonzero(
+                        np.all(tri_bbox_max >= seg_min[None, :], axis=1)
+                        & np.all(tri_bbox_min <= seg_max[None, :], axis=1)
+                    )[0]
+                else:
+                    candidate_idx = range(faces.shape[0])
+                for j in candidate_idx:
                     if i == j:
                         continue
                     if _segment_intersects_triangle(

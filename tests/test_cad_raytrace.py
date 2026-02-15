@@ -148,6 +148,39 @@ def test_estimate_surface_loading_occlusion_culls_shadowed_faces() -> None:
     assert report_cull.face_loading_w_m2[1] == pytest.approx(0.0, abs=1e-12)
 
 
+def test_estimate_surface_loading_broadphase_matches_legacy_occlusion_path() -> None:
+    vertices, faces = _tetra_mesh()
+    source_points, source_strength = _sources()
+    report_legacy = estimate_surface_loading(
+        vertices,
+        faces,
+        source_points,
+        source_strength,
+        occlusion_cull=True,
+        occlusion_broadphase=False,
+    )
+    report_broadphase = estimate_surface_loading(
+        vertices,
+        faces,
+        source_points,
+        source_strength,
+        occlusion_cull=True,
+        occlusion_broadphase=True,
+    )
+    np.testing.assert_allclose(
+        report_legacy.face_loading_w_m2,
+        report_broadphase.face_loading_w_m2,
+        rtol=0.0,
+        atol=0.0,
+    )
+    assert report_legacy.peak_loading_w_m2 == pytest.approx(
+        report_broadphase.peak_loading_w_m2, rel=0.0, abs=0.0
+    )
+    assert report_legacy.mean_loading_w_m2 == pytest.approx(
+        report_broadphase.mean_loading_w_m2, rel=0.0, abs=0.0
+    )
+
+
 def test_load_cad_mesh_rejects_invalid_extension(tmp_path) -> None:
     bad = tmp_path / "mesh.obj"
     bad.write_text("dummy")
