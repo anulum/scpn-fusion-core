@@ -373,27 +373,70 @@ fn solve_linearized_sensitivity(
     ds_dx: &Array2<f64>,
     ds_dpsi: &Array2<f64>,
     iterations: usize,
-) -> Array2<f64> {
-    let mut delta = Array2::zeros((grid.nz, grid.nr));
-    if grid.nz < 3 || grid.nr < 3 || iterations == 0 {
-        return delta;
+) -> FusionResult<Array2<f64>> {
+    if grid.nz < 3 || grid.nr < 3 {
+        return Err(FusionError::ConfigError(format!(
+            "sensitivity grid must be at least 3x3, got nz={}, nr={}",
+            grid.nz, grid.nr
+        )));
+    }
+    if iterations == 0 {
+        return Err(FusionError::ConfigError(
+            "sensitivity iterations must be >= 1".to_string(),
+        ));
+    }
+    if !grid.dr.is_finite() || !grid.dz.is_finite() || grid.dr <= 0.0 || grid.dz <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "sensitivity grid spacing must be finite and > 0, got dr={}, dz={}",
+            grid.dr, grid.dz
+        )));
+    }
+    if ds_dx.dim() != (grid.nz, grid.nr) || ds_dpsi.dim() != (grid.nz, grid.nr) {
+        return Err(FusionError::ConfigError(format!(
+            "sensitivity source shape mismatch: ds_dx={:?}, ds_dpsi={:?}, expected=({}, {})",
+            ds_dx.dim(),
+            ds_dpsi.dim(),
+            grid.nz,
+            grid.nr
+        )));
+    }
+    if ds_dx.iter().any(|v| !v.is_finite()) || ds_dpsi.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "sensitivity sources must be finite".to_string(),
+        ));
     }
 
+    let mut delta: Array2<f64> = Array2::zeros((grid.nz, grid.nr));
     let mut next = delta.clone();
-    let dr_sq = grid.dr * grid.dr;
+    let dr_sq: f64 = grid.dr * grid.dr;
 
     for _ in 0..iterations {
         for iz in 1..grid.nz - 1 {
             for ir in 1..grid.nr - 1 {
-                let coupled_rhs = ds_dpsi[[iz, ir]] * delta[[iz, ir]] + ds_dx[[iz, ir]];
-                let jacobi = 0.25
+                let coupled_rhs: f64 = ds_dpsi[[iz, ir]] * delta[[iz, ir]] + ds_dx[[iz, ir]];
+                if !coupled_rhs.is_finite() {
+                    return Err(FusionError::LinAlg(
+                        "sensitivity coupled RHS became non-finite".to_string(),
+                    ));
+                }
+                let jacobi: f64 = 0.25_f64
                     * (delta[[iz - 1, ir]]
                         + delta[[iz + 1, ir]]
                         + delta[[iz, ir - 1]]
                         + delta[[iz, ir + 1]]
                         - dr_sq * coupled_rhs);
+                if !jacobi.is_finite() {
+                    return Err(FusionError::LinAlg(
+                        "sensitivity jacobi update became non-finite".to_string(),
+                    ));
+                }
                 next[[iz, ir]] = (1.0 - SENSITIVITY_RELAXATION) * delta[[iz, ir]]
                     + SENSITIVITY_RELAXATION * jacobi;
+                if !next[[iz, ir]].is_finite() {
+                    return Err(FusionError::LinAlg(
+                        "sensitivity state update became non-finite".to_string(),
+                    ));
+                }
             }
         }
 
@@ -409,7 +452,12 @@ fn solve_linearized_sensitivity(
         std::mem::swap(&mut delta, &mut next);
     }
 
-    delta
+    if delta.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::LinAlg(
+            "sensitivity solution contains non-finite values".to_string(),
+        ));
+    }
+    Ok(delta)
 }
 
 fn kernel_analytical_forward_and_jacobian(
@@ -552,7 +600,7 @@ fn kernel_analytical_forward_and_jacobian(
             }
         }
 
-        let delta_psi = solve_linearized_sensitivity(grid, &ds_dx, &ds_dpsi, sens_iters);
+        let delta_psi = solve_linearized_sensitivity(grid, &ds_dx, &ds_dpsi, sens_iters)?;
         for (row, &(iz, ir)) in probe_idx.iter().enumerate() {
             jac[row][col] = delta_psi[[iz, ir]];
         }
@@ -938,7 +986,7 @@ mod tests {
     use super::*;
     use crate::jacobian::forward_model_response;
     use fusion_types::config::ReactorConfig;
-    use ndarray::Array1;
+    use ndarray::{Array1, Array2};
     use std::path::PathBuf;
 
     fn project_root() -> PathBuf {
@@ -1283,6 +1331,27 @@ mod tests {
             }
             other => panic!("Unexpected error: {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_sensitivity_solver_rejects_invalid_inputs() {
+        let grid = Grid2D::new(4, 4, 1.0, 2.0, -1.0, 1.0);
+        let ds = Array2::zeros((4, 4));
+        assert!(solve_linearized_sensitivity(&grid, &ds, &ds, 2).is_ok());
+
+        let bad_shape = Array2::zeros((3, 4));
+        assert!(solve_linearized_sensitivity(&grid, &bad_shape, &ds, 2).is_err());
+        assert!(solve_linearized_sensitivity(&grid, &ds, &bad_shape, 2).is_err());
+
+        let mut bad_values = Array2::zeros((4, 4));
+        bad_values[[1, 1]] = f64::NAN;
+        assert!(solve_linearized_sensitivity(&grid, &bad_values, &ds, 2).is_err());
+
+        assert!(solve_linearized_sensitivity(&grid, &ds, &ds, 0).is_err());
+
+        let small_grid = Grid2D::new(2, 2, 1.0, 2.0, -1.0, 1.0);
+        let ds_small = Array2::zeros((2, 2));
+        assert!(solve_linearized_sensitivity(&small_grid, &ds_small, &ds_small, 1).is_err());
     }
 
     #[test]
