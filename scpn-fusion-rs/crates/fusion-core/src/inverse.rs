@@ -260,6 +260,39 @@ fn validate_update_vector(delta: &Array1<f64>, label: &str) -> FusionResult<()> 
     Ok(())
 }
 
+fn compute_rmse(prediction: &[f64], measurements: &[f64], label: &str) -> FusionResult<f64> {
+    if prediction.is_empty() || measurements.is_empty() {
+        return Err(FusionError::ConfigError(format!(
+            "{label} vectors must be non-empty"
+        )));
+    }
+    if prediction.len() != measurements.len() {
+        return Err(FusionError::ConfigError(format!(
+            "{label} length mismatch: prediction={}, measurements={}",
+            prediction.len(),
+            measurements.len()
+        )));
+    }
+    if prediction.iter().any(|v| !v.is_finite()) || measurements.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::ConfigError(format!(
+            "{label} inputs must be finite"
+        )));
+    }
+    let rmse = (prediction
+        .iter()
+        .zip(measurements.iter())
+        .map(|(p, m)| (p - m).powi(2))
+        .sum::<f64>()
+        / measurements.len() as f64)
+        .sqrt();
+    if !rmse.is_finite() {
+        return Err(FusionError::LinAlg(format!(
+            "{label} rmse became non-finite"
+        )));
+    }
+    Ok(rmse)
+}
+
 fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
     let mut best_idx = 0usize;
     let mut best_dist = f64::INFINITY;
@@ -697,13 +730,7 @@ pub fn reconstruct_equilibrium(
             .zip(measurements.iter())
             .map(|(p, m)| p - m)
             .collect();
-        let residual =
-            (residual_vec.iter().map(|v| v * v).sum::<f64>() / residual_vec.len() as f64).sqrt();
-        if !residual.is_finite() {
-            return Err(FusionError::LinAlg(
-                "inverse residual became non-finite".to_string(),
-            ));
-        }
+        let residual = compute_rmse(&prediction, measurements, "inverse residual")?;
         residual_history.push(residual);
         iter_done = iter + 1;
 
@@ -760,17 +787,7 @@ pub fn reconstruct_equilibrium(
                 continue;
             }
             let pred_trial = forward_model_response(probe_psi_norm, &p_trial, &ff_trial)?;
-            let residual_trial = (pred_trial
-                .iter()
-                .zip(measurements.iter())
-                .map(|(p, m)| (p - m).powi(2))
-                .sum::<f64>()
-                / measurements.len() as f64)
-                .sqrt();
-            if !residual_trial.is_finite() {
-                local_damping *= 0.5;
-                continue;
-            }
+            let residual_trial = compute_rmse(&pred_trial, measurements, "inverse trial residual")?;
 
             if residual_trial <= residual {
                 x = x_trial;
@@ -790,18 +807,7 @@ pub fn reconstruct_equilibrium(
     validate_profile_params(&params_p, "params_p")?;
     validate_profile_params(&params_ff, "params_ff")?;
     let prediction = forward_model_response(probe_psi_norm, &params_p, &params_ff)?;
-    let final_residual = (prediction
-        .iter()
-        .zip(measurements.iter())
-        .map(|(p, m)| (p - m).powi(2))
-        .sum::<f64>()
-        / measurements.len() as f64)
-        .sqrt();
-    if !final_residual.is_finite() {
-        return Err(FusionError::LinAlg(
-            "inverse final residual became non-finite".to_string(),
-        ));
-    }
+    let final_residual = compute_rmse(&prediction, measurements, "inverse final residual")?;
 
     Ok(InverseResult {
         params_p,
@@ -883,13 +889,7 @@ pub fn reconstruct_equilibrium_with_kernel(
             .zip(measurements.iter())
             .map(|(p, m)| p - m)
             .collect();
-        let residual =
-            (residual_vec.iter().map(|v| v * v).sum::<f64>() / residual_vec.len() as f64).sqrt();
-        if !residual.is_finite() {
-            return Err(FusionError::LinAlg(
-                "kernel inverse residual became non-finite".to_string(),
-            ));
-        }
+        let residual = compute_rmse(&prediction, measurements, "kernel inverse residual")?;
         residual_history.push(residual);
         iter_done = iter + 1;
 
@@ -942,17 +942,8 @@ pub fn reconstruct_equilibrium_with_kernel(
                 ff_trial,
                 kernel_cfg,
             )?;
-            let residual_trial = (pred_trial
-                .iter()
-                .zip(measurements.iter())
-                .map(|(p, m)| (p - m).powi(2))
-                .sum::<f64>()
-                / measurements.len() as f64)
-                .sqrt();
-            if !residual_trial.is_finite() {
-                local_damping *= 0.5;
-                continue;
-            }
+            let residual_trial =
+                compute_rmse(&pred_trial, measurements, "kernel inverse trial residual")?;
             if residual_trial <= residual {
                 x = x_trial;
                 damping = (local_damping * 1.1).min(1.0);
@@ -972,18 +963,7 @@ pub fn reconstruct_equilibrium_with_kernel(
     validate_profile_params(&params_ff, "params_ff")?;
     let prediction =
         kernel_forward_observables(reactor_config, probes_rz, params_p, params_ff, kernel_cfg)?;
-    let final_residual = (prediction
-        .iter()
-        .zip(measurements.iter())
-        .map(|(p, m)| (p - m).powi(2))
-        .sum::<f64>()
-        / measurements.len() as f64)
-        .sqrt();
-    if !final_residual.is_finite() {
-        return Err(FusionError::LinAlg(
-            "kernel inverse final residual became non-finite".to_string(),
-        ));
-    }
+    let final_residual = compute_rmse(&prediction, measurements, "kernel inverse final residual")?;
 
     Ok(InverseResult {
         params_p,
@@ -1382,6 +1362,16 @@ mod tests {
 
         let empty: Vec<Vec<f64>> = Vec::new();
         assert!(to_array2(&empty, N_PARAMS, "jac").is_err());
+    }
+
+    #[test]
+    fn test_rmse_helper_rejects_invalid_inputs() {
+        assert!(compute_rmse(&[1.0, 2.0], &[1.0, 2.0], "rmse").is_ok());
+        assert!(compute_rmse(&[], &[1.0], "rmse").is_err());
+        assert!(compute_rmse(&[1.0], &[], "rmse").is_err());
+        assert!(compute_rmse(&[1.0], &[1.0, 2.0], "rmse").is_err());
+        assert!(compute_rmse(&[1.0, f64::NAN], &[1.0, 2.0], "rmse").is_err());
+        assert!(compute_rmse(&[1.0, 2.0], &[1.0, f64::INFINITY], "rmse").is_err());
     }
 
     #[test]
