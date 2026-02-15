@@ -104,3 +104,20 @@ def test_interferometer_rejects_invalid_runtime_inputs(
     params.update(kwargs)
     with pytest.raises(ValueError, match=match):
         interferometer_phase_shift(ne, r, z, chords, **params)
+
+
+@pytest.mark.parametrize(
+    ("chords", "match"),
+    [
+        ([((4.2, 0.0),)], "2-point chord"),
+        ([((4.2, 0.0, 1.0), (7.8, 0.0))], "2D"),
+        ([((4.2, 0.0), (7.8, 0.0, 1.0))], "2D"),
+    ],
+)
+def test_interferometer_rejects_malformed_chord_geometry(
+    chords: object,
+    match: str,
+) -> None:
+    r, z, ne, _ = _make_fields()
+    with pytest.raises(ValueError, match=match):
+        interferometer_phase_shift(ne, r, z, chords)  # type: ignore[arg-type]

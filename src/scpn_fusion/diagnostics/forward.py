@@ -59,7 +59,12 @@ def _validate_field_grid(
 def _validate_chords(
     chords: Sequence[tuple[tuple[float, float], tuple[float, float]]],
 ) -> Sequence[tuple[tuple[float, float], tuple[float, float]]]:
-    for i, (start, end) in enumerate(chords):
+    for i, chord in enumerate(chords):
+        if len(chord) != 2:
+            raise ValueError(f"chords[{i}] must be a 2-point chord.")
+        start, end = chord
+        if len(start) != 2 or len(end) != 2:
+            raise ValueError(f"chords[{i}] points must be 2D (r, z) tuples.")
         vals = [start[0], start[1], end[0], end[1]]
         if not np.all(np.isfinite(np.asarray(vals, dtype=np.float64))):
             raise ValueError(f"chords[{i}] has non-finite coordinates.")
