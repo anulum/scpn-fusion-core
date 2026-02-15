@@ -99,6 +99,31 @@ impl PyFusionKernel {
     fn grid_shape(&self) -> (usize, usize) {
         (self.inner.grid().nr, self.inner.grid().nz)
     }
+
+    /// Set inner linear solver: "sor" (default) or "multigrid".
+    fn set_solver_method(&mut self, method: &str) -> PyResult<()> {
+        let m = match method.to_ascii_lowercase().as_str() {
+            "sor" | "picard_sor" => fusion_core::kernel::SolverMethod::PicardSor,
+            "multigrid" | "picard_multigrid" | "mg" => {
+                fusion_core::kernel::SolverMethod::PicardMultigrid
+            }
+            _ => {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "Unknown solver method '{method}'. Use 'sor' or 'multigrid'."
+                )))
+            }
+        };
+        self.inner.set_solver_method(m);
+        Ok(())
+    }
+
+    /// Get current solver method name.
+    fn solver_method(&self) -> &str {
+        match self.inner.solver_method() {
+            fusion_core::kernel::SolverMethod::PicardSor => "sor",
+            fusion_core::kernel::SolverMethod::PicardMultigrid => "multigrid",
+        }
+    }
 }
 
 // ─── Neural transport ───

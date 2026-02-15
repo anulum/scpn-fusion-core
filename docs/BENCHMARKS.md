@@ -12,7 +12,7 @@ Comparison of SCPN Fusion Core against established fusion simulation codes.
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | PROCESS |
 |--------|------------------------|---------------|-------|---------|
-| **Equilibrium solver** | Picard + Red-Black SOR (multigrid available but not yet wired into kernel) | Jacobi + Picard | JAX autodiff | N/A (0-D) |
+| **Equilibrium solver** | Picard + Red-Black SOR (default) or Multigrid V-cycle (selectable) | Jacobi + Picard | JAX autodiff | N/A (0-D) |
 | **Stencil** | 5-pt GS with 1/R toroidal | 5-pt flat (legacy) | Spectral | N/A |
 | **128x128 equil. time** | ~1 s (release, Picard+SOR) | ~30 s | ~0.5 s (GPU) | N/A |
 | **65x65 equil. time** | ~0.1 s (release, Picard+SOR) | ~5 s | ~0.1 s | N/A |
@@ -76,7 +76,7 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 | 65x65 | Picard+SOR | 5–8 | 50/iter | ~100 ms |
 | 128x128 | Picard+SOR | 8–12 | 50/iter | ~1 s |
 
-**Multigrid V-cycle (implemented, not yet wired into kernel):**
+**Multigrid V-cycle (wired into kernel, selectable via `set_solver_method("multigrid")`):**
 
 | Grid | Solver | V-cycles | Residual | Time (projected) |
 |------|--------|---------|----------|-----------------|
@@ -84,10 +84,9 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 | 65x65 | Multigrid | 8–12 | < 1e-6 | ~15 ms |
 | 128x128 | Multigrid | 10–15 | < 1e-4 | ~95 ms |
 
-> **TODO:** Wire multigrid into the main `FusionKernel` Picard loop and
-> benchmark end-to-end. The multigrid module passes unit tests on Poisson
-> problems but has not been validated on the full GS equation with source
-> terms.
+> **Note:** The multigrid path is now available from Python via
+> `kernel.set_solver_method("multigrid")`. Run `validation/benchmark_solvers.py`
+> to compare SOR vs multigrid end-to-end on your hardware.
 
 ## Inverse Reconstruction Performance
 

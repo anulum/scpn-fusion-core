@@ -112,6 +112,14 @@ class RustAcceleratedKernel:
         """Calculate thermodynamics via Rust backend."""
         return self._rust.calculate_thermodynamics(p_aux_mw)
 
+    def set_solver_method(self, method: str) -> None:
+        """Set inner linear solver: 'sor' or 'multigrid'."""
+        self._rust.set_solver_method(method)
+
+    def solver_method(self) -> str:
+        """Get current solver method name."""
+        return self._rust.solver_method()
+
     def save_results(self, filename="equilibrium_nonlinear.npz"):
         """Save current state to .npz file."""
         np.savez(filename, R=self.R, Z=self.Z, Psi=self.Psi, J_phi=self.J_phi)

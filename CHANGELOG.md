@@ -10,6 +10,20 @@
 
 ## Unreleased
 
+### Multigrid Wiring and Experimental Validation
+
+- Wired geometric multigrid V-cycle solver into `FusionKernel` Picard loop:
+  - Added `SolverMethod` enum (`PicardSor`, `PicardMultigrid`) in `fusion-core/src/kernel.rs`
+  - Added `set_solver_method()` / `solver_method()` accessors on `FusionKernel`
+  - Exported `multigrid` module from `fusion-math/src/lib.rs`
+  - Inner Picard solve now dispatches to Red-Black SOR (default) or multigrid V-cycle
+- Exposed solver method control in PyO3 bindings:
+  - `PyFusionKernel.set_solver_method("sor" | "multigrid")` in `fusion-python/src/lib.rs`
+  - `RustAcceleratedKernel.set_solver_method()` / `.solver_method()` in `_rust_compat.py`
+- Added `validation/benchmark_solvers.py`: 3-way SOR vs Multigrid vs Python timing comparison
+- Added `validation/run_experimental_validation.py`: unified runner for all 8 SPARC equilibrium files
+  with topology checks (axis, q-profile, GS sign) and solver validation modes
+
 ### Cutting-Edge Release Staging
 
 - Prepared `v2.0-cutting-edge` release contract:

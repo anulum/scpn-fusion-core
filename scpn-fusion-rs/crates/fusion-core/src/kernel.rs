@@ -18,6 +18,8 @@ use crate::xpoint::find_x_point;
 use fusion_types::config::ReactorConfig;
 use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::{EquilibriumResult, Grid2D, PlasmaState};
+use fusion_math::multigrid::{multigrid_solve, MultigridConfig};
+use fusion_math::sor::sor_solve;
 use ndarray::{Array1, Array2};
 
 /// Picard relaxation factor (Python line 180: `alpha = 0.1`).
@@ -42,6 +44,15 @@ const MIN_PSI_SEPARATION: f64 = 0.1;
 const LIMITER_FALLBACK_FACTOR: f64 = 0.1;
 const MIN_CURRENT_INTEGRAL: f64 = 1e-9;
 
+/// Selects the inner linear solver used in Picard iteration.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SolverMethod {
+    /// Red-Black SOR inner solve (default, ω = 1.8).
+    PicardSor,
+    /// Geometric multigrid V-cycle inner solve.
+    PicardMultigrid,
+}
+
 /// The Grad-Shafranov equilibrium solver.
 pub struct FusionKernel {
     config: ReactorConfig,
@@ -52,6 +63,7 @@ pub struct FusionKernel {
     profile_params_ff: Option<ProfileParams>,
     particle_current_feedback: Option<Array2<f64>>,
     particle_feedback_coupling: f64,
+    solver_method: SolverMethod,
 }
 
 impl FusionKernel {
@@ -69,6 +81,7 @@ impl FusionKernel {
             profile_params_ff: None,
             particle_current_feedback: None,
             particle_feedback_coupling: 0.0,
+            solver_method: SolverMethod::PicardSor,
         }
     }
 
@@ -224,18 +237,18 @@ impl FusionKernel {
             }
         }
 
-        // Initial Jacobi solve
+        // Initial elliptic solve (SOR or multigrid)
         let dr_sq = dr * dr;
-        for _ in 0..INITIAL_JACOBI_ITERS {
-            for iz in 1..nz - 1 {
-                for ir in 1..nr - 1 {
-                    self.state.psi[[iz, ir]] = 0.25
-                        * (self.state.psi[[iz - 1, ir]]
-                            + self.state.psi[[iz + 1, ir]]
-                            + self.state.psi[[iz, ir - 1]]
-                            + self.state.psi[[iz, ir + 1]]
-                            - dr_sq * source[[iz, ir]]);
-                }
+        match self.solver_method {
+            SolverMethod::PicardSor => {
+                sor_solve(&mut self.state.psi, &source, &self.grid, 1.8, INITIAL_JACOBI_ITERS);
+            }
+            SolverMethod::PicardMultigrid => {
+                let mg_cfg = MultigridConfig::default();
+                let _ = multigrid_solve(
+                    &mut self.state.psi, &source, &self.grid, &mg_cfg,
+                    INITIAL_JACOBI_ITERS, 1e-6,
+                );
             }
         }
 
@@ -322,18 +335,18 @@ impl FusionKernel {
                 }
             }
 
-            // 4c. Jacobi elliptic solve
+            // 4c. Elliptic solve (SOR or multigrid)
             let mut psi_new = self.state.psi.clone();
-            for _ in 0..INNER_SOLVE_ITERS {
-                for iz in 1..nz - 1 {
-                    for ir in 1..nr - 1 {
-                        psi_new[[iz, ir]] = 0.25
-                            * (psi_new[[iz - 1, ir]]
-                                + psi_new[[iz + 1, ir]]
-                                + psi_new[[iz, ir - 1]]
-                                + psi_new[[iz, ir + 1]]
-                                - dr_sq * source[[iz, ir]]);
-                    }
+            match self.solver_method {
+                SolverMethod::PicardSor => {
+                    sor_solve(&mut psi_new, &source, &self.grid, 1.8, INNER_SOLVE_ITERS);
+                }
+                SolverMethod::PicardMultigrid => {
+                    let mg_cfg = MultigridConfig::default();
+                    let _ = multigrid_solve(
+                        &mut psi_new, &source, &self.grid, &mg_cfg,
+                        INNER_SOLVE_ITERS, 1e-8,
+                    );
                 }
             }
 
@@ -426,6 +439,16 @@ impl FusionKernel {
     /// Read-only access to the grid.
     pub fn grid(&self) -> &Grid2D {
         &self.grid
+    }
+
+    /// Set the inner linear solver method.
+    pub fn set_solver_method(&mut self, method: SolverMethod) {
+        self.solver_method = method;
+    }
+
+    /// Get the current inner linear solver method.
+    pub fn solver_method(&self) -> SolverMethod {
+        self.solver_method
     }
 
     /// Read-only access to the configuration.
