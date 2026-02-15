@@ -80,12 +80,24 @@ def run_campaign(
         ),
     ]
     passes = bool(all(m["passes_thresholds"] for m in per_machine))
+    chaos_channels_total = int(sum(int(m["chaos_channels_total"]) for m in per_machine))
+    chaos_dropouts_total = int(sum(int(m["chaos_dropouts_total"]) for m in per_machine))
+    chaos_noise_injections_total = int(
+        sum(int(m["chaos_noise_injections_total"]) for m in per_machine)
+    )
 
     return {
         "seed": int(seed),
         "samples_per_machine": int(samples_per_machine),
         "chaos_dropout_prob": dropout,
         "chaos_noise_std": noise_std,
+        "chaos_channels_total": chaos_channels_total,
+        "chaos_dropouts_total": chaos_dropouts_total,
+        "chaos_dropout_rate": float(chaos_dropouts_total / max(chaos_channels_total, 1)),
+        "chaos_noise_injections_total": chaos_noise_injections_total,
+        "chaos_noise_injection_rate": float(
+            chaos_noise_injections_total / max(chaos_channels_total, 1)
+        ),
         "thresholds": {
             "min_planning_success_rate": 0.90,
             "max_mean_risk": 0.75,
@@ -118,6 +130,13 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Planning success rate: `>= {th['min_planning_success_rate']:.2f}`",
         f"- Mean risk: `<= {th['max_mean_risk']:.2f}`",
         f"- P95 latency: `<= {th['max_p95_latency_ms']:.1f} ms`",
+        "",
+        "## Chaos Campaign",
+        "",
+        f"- Config dropout probability: `{100.0 * g['chaos_dropout_prob']:.2f}%`",
+        f"- Config noise std: `{g['chaos_noise_std']:.6f}`",
+        f"- Observed dropout rate: `{100.0 * g['chaos_dropout_rate']:.2f}%`",
+        f"- Observed noise injection rate: `{100.0 * g['chaos_noise_injection_rate']:.2f}%`",
         "",
     ]
 

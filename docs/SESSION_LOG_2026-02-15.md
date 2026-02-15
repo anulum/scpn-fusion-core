@@ -437,6 +437,26 @@ Summary:
   - full-dropout channel accounting (`dropout_prob=1.0`)
   - presence/determinism of chaos diagnostics in GDEP campaign output
 
+### H8-132 (Validation)
+Files:
+- `validation/gdep_01_digital_twin_hook.py`
+- `tests/test_gdep_01_digital_twin_hook.py`
+
+Summary:
+- Added campaign-level chaos aggregate diagnostics in GDEP-01 output:
+  - `chaos_channels_total`
+  - `chaos_dropouts_total`
+  - `chaos_dropout_rate`
+  - `chaos_noise_injections_total`
+  - `chaos_noise_injection_rate`
+- Extended markdown report to expose configured-vs-observed chaos metrics:
+  - configured dropout probability and noise std
+  - observed aggregate dropout/noise injection rates
+- Added regression coverage for:
+  - aggregate chaos key presence on campaign output
+  - deterministic replay of aggregate counters
+  - exact full-dropout aggregate accounting across both machines
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -454,6 +474,7 @@ Summary:
 - `python -m pytest tests/test_tokamak_flight_sim.py -q` (after actuator realism extension)
 - `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` (after CAD occlusion broad-phase lane)
 - `python -m pytest tests/test_digital_twin_ingest_runtime.py tests/test_gdep_01_digital_twin_hook.py -q` (after chaos telemetry + GDEP unification)
+- `python -m pytest tests/test_digital_twin_ingest_runtime.py tests/test_gdep_01_digital_twin_hook.py -q` (after GDEP campaign aggregate chaos diagnostics)
 
 Observed final outcomes on latest runs:
 - `30 passed` (CAD wave)
