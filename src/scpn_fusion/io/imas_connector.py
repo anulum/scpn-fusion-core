@@ -23,6 +23,10 @@ REQUIRED_IDS_KEYS = (
 )
 
 
+def _missing_required_keys(mapping: Mapping[str, Any], required: tuple[str, ...]) -> list[str]:
+    return [key for key in required if key not in mapping]
+
+
 def _coerce_int(
     name: str,
     value: Any,
@@ -79,6 +83,9 @@ def validate_ids_payload(payload: Mapping[str, Any]) -> None:
     equilibrium = payload["equilibrium"]
     performance = payload["performance"]
 
+    missing_time_slice = _missing_required_keys(time_slice, ("index", "time_s"))
+    if missing_time_slice:
+        raise ValueError(f"IDS time_slice missing keys: {missing_time_slice}")
     _coerce_int("time_slice.index", time_slice.get("index", 0), minimum=0)
     time_s = _coerce_finite_real("time_slice.time_s", time_slice.get("time_s", 0.0), minimum=0.0)
     time_ms = time_s * 1.0e3
@@ -86,13 +93,25 @@ def validate_ids_payload(payload: Mapping[str, Any]) -> None:
     if not math.isclose(time_ms, rounded_ms, rel_tol=0.0, abs_tol=1.0e-9):
         raise ValueError("time_slice.time_s must map to an integer millisecond count.")
 
+    missing_equilibrium = _missing_required_keys(equilibrium, ("axis", "islands_px"))
+    if missing_equilibrium:
+        raise ValueError(f"IDS equilibrium missing keys: {missing_equilibrium}")
     axis = equilibrium.get("axis")
     if not isinstance(axis, Mapping):
         raise ValueError("equilibrium.axis must be a mapping.")
+    missing_axis = _missing_required_keys(axis, ("r_m", "z_m"))
+    if missing_axis:
+        raise ValueError(f"IDS equilibrium.axis missing keys: {missing_axis}")
     _coerce_finite_real("equilibrium.axis.r_m", axis.get("r_m", 0.0))
     _coerce_finite_real("equilibrium.axis.z_m", axis.get("z_m", 0.0))
     _coerce_int("equilibrium.islands_px", equilibrium.get("islands_px", 0), minimum=0)
 
+    missing_performance = _missing_required_keys(
+        performance,
+        ("final_reward", "reward_mean_last_50", "final_avg_temp_keV"),
+    )
+    if missing_performance:
+        raise ValueError(f"IDS performance missing keys: {missing_performance}")
     _coerce_finite_real("performance.final_reward", performance.get("final_reward", 0.0))
     _coerce_finite_real(
         "performance.reward_mean_last_50",

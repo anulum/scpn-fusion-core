@@ -93,3 +93,20 @@ def test_validate_ids_payload_rejects_invalid_nested_fields(
 def test_validate_ids_payload_rejects_non_mapping_payload() -> None:
     with pytest.raises(ValueError, match="mapping"):
         validate_ids_payload([])  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("mutate", "msg"),
+    [
+        (lambda p: p["time_slice"].pop("time_s"), "time_slice missing keys"),
+        (lambda p: p["time_slice"].pop("index"), "time_slice missing keys"),
+        (lambda p: p["equilibrium"].pop("islands_px"), "equilibrium missing keys"),
+        (lambda p: p["equilibrium"]["axis"].pop("r_m"), "equilibrium.axis missing keys"),
+        (lambda p: p["performance"].pop("final_avg_temp_keV"), "performance missing keys"),
+    ],
+)
+def test_validate_ids_payload_rejects_missing_nested_keys(mutate, msg: str) -> None:
+    payload = _sample_payload()
+    mutate(payload)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match=msg):
+        validate_ids_payload(payload)
