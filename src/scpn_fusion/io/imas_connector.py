@@ -368,3 +368,133 @@ def ids_to_digital_twin_state(payload: Mapping[str, Any]) -> dict[str, Any]:
     out = dict(summary)
     out.update(_coerce_profiles_1d(profiles, name="equilibrium.profiles_1d"))
     return out
+
+
+def _has_all_keys(mapping: Mapping[str, Any], keys: tuple[str, ...]) -> bool:
+    return all(key in mapping for key in keys)
+
+
+def validate_ids_payload_sequence(payloads: Sequence[Mapping[str, Any]]) -> None:
+    """Validate a deterministic sequence of IDS-like payloads."""
+    if isinstance(payloads, (str, bytes, bytearray)) or not isinstance(payloads, Sequence):
+        raise ValueError("payloads must be a sequence of IDS payload mappings.")
+    if len(payloads) == 0:
+        raise ValueError("payloads must contain at least one IDS payload.")
+
+    baseline_machine: str | None = None
+    baseline_shot: int | None = None
+    baseline_run: int | None = None
+    prev_index: int | None = None
+    prev_time_s: float | None = None
+
+    for idx, payload in enumerate(payloads):
+        if isinstance(payload, bool) or not isinstance(payload, Mapping):
+            raise ValueError(f"payloads[{idx}] must be a mapping.")
+        validate_ids_payload(payload)
+
+        machine = str(payload.get("machine"))
+        shot = _coerce_int(f"payloads[{idx}].shot", payload.get("shot", 0), minimum=0)
+        run = _coerce_int(f"payloads[{idx}].run", payload.get("run", 0), minimum=0)
+        time_slice = payload.get("time_slice")
+        if not isinstance(time_slice, Mapping):
+            raise ValueError(f"payloads[{idx}].time_slice must be a mapping.")
+        time_index = _coerce_int(
+            f"payloads[{idx}].time_slice.index",
+            time_slice.get("index", 0),
+            minimum=0,
+        )
+        time_s = _coerce_finite_real(
+            f"payloads[{idx}].time_slice.time_s",
+            time_slice.get("time_s", 0.0),
+            minimum=0.0,
+        )
+
+        if baseline_machine is None:
+            baseline_machine = machine
+            baseline_shot = shot
+            baseline_run = run
+        else:
+            if machine != baseline_machine:
+                raise ValueError(
+                    "All IDS payloads in sequence must share the same machine."
+                )
+            if shot != baseline_shot:
+                raise ValueError("All IDS payloads in sequence must share the same shot.")
+            if run != baseline_run:
+                raise ValueError("All IDS payloads in sequence must share the same run.")
+
+        if prev_index is not None and time_index <= prev_index:
+            raise ValueError("IDS payload sequence requires strictly increasing time_slice.index.")
+        if prev_time_s is not None and time_s <= prev_time_s:
+            raise ValueError("IDS payload sequence requires strictly increasing time_slice.time_s.")
+        prev_index = time_index
+        prev_time_s = time_s
+
+
+def digital_twin_history_to_ids(
+    history: Sequence[Mapping[str, Any]],
+    *,
+    machine: str = "ITER",
+    shot: int = 0,
+    run: int = 0,
+) -> list[dict[str, Any]]:
+    """Map digital-twin history snapshots to an IDS-like payload sequence."""
+    if isinstance(history, (str, bytes, bytearray)) or not isinstance(history, Sequence):
+        raise ValueError("history must be a sequence of digital twin snapshots.")
+    if len(history) == 0:
+        raise ValueError("history must contain at least one snapshot.")
+
+    out: list[dict[str, Any]] = []
+    prev_time_ms: int | None = None
+    for idx, snapshot in enumerate(history):
+        if isinstance(snapshot, bool) or not isinstance(snapshot, Mapping):
+            raise ValueError(f"history[{idx}] must be a mapping.")
+        if _has_all_keys(snapshot, REQUIRED_PROFILE_1D_KEYS):
+            payload = digital_twin_state_to_ids(
+                snapshot,
+                machine=machine,
+                shot=shot,
+                run=run,
+            )
+        else:
+            payload = digital_twin_summary_to_ids(
+                snapshot,
+                machine=machine,
+                shot=shot,
+                run=run,
+            )
+        time_slice = payload.get("time_slice")
+        if not isinstance(time_slice, Mapping):
+            raise ValueError(f"history[{idx}] produced invalid IDS time_slice mapping.")
+        time_ms = round(
+            _coerce_finite_real(
+                f"history[{idx}].time_slice.time_s",
+                time_slice.get("time_s", 0.0),
+                minimum=0.0,
+            )
+            * 1.0e3
+        )
+        if prev_time_ms is not None and time_ms <= prev_time_ms:
+            time_ms = prev_time_ms + 1
+        payload["time_slice"]["index"] = idx
+        payload["time_slice"]["time_s"] = time_ms * 1.0e-3
+        prev_time_ms = time_ms
+        out.append(payload)
+
+    validate_ids_payload_sequence(out)
+    return out
+
+
+def ids_to_digital_twin_history(
+    payloads: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Map IDS payload sequence back to digital-twin history snapshots."""
+    validate_ids_payload_sequence(payloads)
+    out: list[dict[str, Any]] = []
+    for payload in payloads:
+        equilibrium = payload.get("equilibrium", {})
+        if isinstance(equilibrium, Mapping) and "profiles_1d" in equilibrium:
+            out.append(ids_to_digital_twin_state(payload))
+        else:
+            out.append(ids_to_digital_twin_summary(payload))
+    return out

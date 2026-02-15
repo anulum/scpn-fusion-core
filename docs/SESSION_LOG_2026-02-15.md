@@ -270,6 +270,25 @@ Summary:
   - backward-compatible default points and density-derived temp proxy
 - Integrated Thomson metrics into `validation/rmse_dashboard.py` and markdown output.
 
+### H8-124 (Interop)
+Files:
+- `src/scpn_fusion/io/imas_connector.py`
+- `src/scpn_fusion/io/__init__.py`
+- `tests/test_imas_connector.py`
+
+Summary:
+- Added sequence-level IDS interop helpers:
+  - `validate_ids_payload_sequence(...)`
+  - `digital_twin_history_to_ids(...)`
+  - `ids_to_digital_twin_history(...)`
+- Added strict multi-snapshot contracts:
+  - consistent `machine` / `shot` / `run` across sequence
+  - strictly increasing `time_slice.index`
+  - strictly increasing `time_slice.time_s`
+- Added deterministic time normalization in history export:
+  - when source snapshots have equal/non-increasing times, payload times are lifted to the next millisecond tick.
+- Preserved compatibility with existing single-payload summary/state APIs.
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -279,6 +298,7 @@ Summary:
 - `python -m pytest tests/test_jax_traceable_runtime.py -q`
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q`
 - `python -m pytest tests/test_diagnostics.py tests/test_forward_diagnostics_guards.py tests/test_rmse_dashboard.py tests/test_run_diagnostics.py -q`
+- `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after sequence-history extension)
 
 Observed final outcomes on latest runs:
 - `30 passed` (CAD wave)
@@ -329,7 +349,7 @@ All files in these ranges reported `:: True` parity.
 1. Confirm current head:
    - `git rev-parse --short HEAD` (expected `9706c1b` at log write time)
 2. Confirm registry counters/task entries:
-   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-123`, delivered count `259`.
+   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-124`, delivered count `260`.
 3. Re-run focused health checks if touching related areas:
    - `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q`
 4. If GitHub API rate-limited again, use badge/workflow-page fallback for CI confirmation.

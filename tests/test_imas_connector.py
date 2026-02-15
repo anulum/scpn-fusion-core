@@ -12,10 +12,13 @@ from __future__ import annotations
 import pytest
 
 from scpn_fusion.io.imas_connector import (
+    digital_twin_history_to_ids,
     digital_twin_state_to_ids,
     digital_twin_summary_to_ids,
+    ids_to_digital_twin_history,
     ids_to_digital_twin_state,
     ids_to_digital_twin_summary,
+    validate_ids_payload_sequence,
     validate_ids_payload,
 )
 
@@ -227,3 +230,56 @@ def test_digital_twin_state_to_ids_rejects_missing_profile_keys() -> None:
     state.pop("electron_density_1e20_m3")
     with pytest.raises(ValueError, match="digital twin state missing keys"):
         digital_twin_state_to_ids(state, machine="ITER", shot=7, run=3)
+
+
+def test_digital_twin_history_roundtrip_mixed_summary_and_state() -> None:
+    summary = {
+        "steps": 12,
+        "final_axis_r": 6.2,
+        "final_axis_z": 0.03,
+        "final_islands_px": 4,
+        "final_reward": 1.1,
+        "reward_mean_last_50": 0.9,
+        "final_avg_temp": 14.0,
+    }
+    state = _sample_state()
+    history = [summary, state]
+
+    payloads = digital_twin_history_to_ids(history, machine="ITER", shot=9, run=1)
+    validate_ids_payload_sequence(payloads)
+    recovered = ids_to_digital_twin_history(payloads)
+    assert len(recovered) == 2
+    assert recovered[0]["steps"] == summary["steps"]
+    assert recovered[1]["steps"] == state["steps"]
+    assert recovered[1]["rho_norm"] == state["rho_norm"]
+
+
+def test_validate_ids_payload_sequence_rejects_non_increasing_time() -> None:
+    payloads = digital_twin_history_to_ids(
+        [_sample_state(), _sample_state()],
+        machine="ITER",
+        shot=11,
+        run=4,
+    )
+    payloads[1]["time_slice"]["time_s"] = payloads[0]["time_slice"]["time_s"]  # type: ignore[index]
+    with pytest.raises(ValueError, match="strictly increasing time_slice.time_s"):
+        validate_ids_payload_sequence(payloads)
+
+
+def test_validate_ids_payload_sequence_rejects_machine_mismatch() -> None:
+    payloads = digital_twin_history_to_ids(
+        [_sample_state(), _sample_state()],
+        machine="ITER",
+        shot=11,
+        run=4,
+    )
+    payloads[1]["machine"] = "JET"
+    with pytest.raises(ValueError, match="same machine"):
+        validate_ids_payload_sequence(payloads)
+
+
+def test_ids_history_helpers_reject_empty_sequences() -> None:
+    with pytest.raises(ValueError, match="at least one"):
+        digital_twin_history_to_ids([], machine="ITER", shot=1, run=1)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="at least one"):
+        validate_ids_payload_sequence([])  # type: ignore[arg-type]
