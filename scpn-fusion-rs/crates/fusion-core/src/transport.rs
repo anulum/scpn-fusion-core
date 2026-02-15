@@ -859,7 +859,8 @@ mod tests {
         let mut ts = TransportSolver::new();
         let nc = iter_neoclassical_params(50);
         ts.set_neoclassical(nc).expect("valid neoclassical config");
-        ts.step(50.0, 1e14).expect("valid transport step with neoclassical");
+        ts.step(50.0, 1e14)
+            .expect("valid transport step with neoclassical");
         assert!(ts.profiles.te.iter().all(|v| v.is_finite()));
     }
 

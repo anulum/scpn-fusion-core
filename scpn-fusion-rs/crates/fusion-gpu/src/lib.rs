@@ -66,9 +66,7 @@ impl GpuGsSolver {
             compatible_surface: None,
             force_fallback_adapter: false,
         }))
-        .ok_or_else(|| {
-            FusionError::ConfigError("No suitable GPU adapter found".to_string())
-        })?;
+        .ok_or_else(|| FusionError::ConfigError("No suitable GPU adapter found".to_string()))?;
 
         let (device, queue) = pollster::block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
@@ -123,42 +121,41 @@ impl GpuGsSolver {
         });
 
         // Create bind group layout and pipeline
-        let bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                label: Some("gs_layout"),
-                entries: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStages::COMPUTE,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("gs_layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
                     },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStages::COMPUTE,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Storage { read_only: false },
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
                     },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 2,
-                        visibility: wgpu::ShaderStages::COMPUTE,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Storage { read_only: true },
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
                     },
-                ],
-            });
+                    count: None,
+                },
+            ],
+        });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("gs_pipeline_layout"),
@@ -238,8 +235,8 @@ impl GpuGsSolver {
         }
 
         // Workgroup dimensions: 16×16 threads per workgroup
-        let wg_x = ((self.nr - 2) as u32 + 15) / 16;
-        let wg_y = ((self.nz - 2) as u32 + 15) / 16;
+        let wg_x = ((self.nr - 2) as u32).div_ceil(16);
+        let wg_y = ((self.nz - 2) as u32).div_ceil(16);
 
         for _ in 0..iterations {
             for color in 0..2u32 {
@@ -253,23 +250,19 @@ impl GpuGsSolver {
                     color,
                     _pad: 0,
                 };
-                self.queue.write_buffer(
-                    &self.param_buffer,
-                    0,
-                    bytemuck::bytes_of(&params),
-                );
+                self.queue
+                    .write_buffer(&self.param_buffer, 0, bytemuck::bytes_of(&params));
 
-                let mut encoder = self
-                    .device
-                    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                        label: Some("gs_encoder"),
-                    });
-                {
-                    let mut pass =
-                        encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                            label: Some("gs_pass"),
-                            timestamp_writes: None,
+                let mut encoder =
+                    self.device
+                        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                            label: Some("gs_encoder"),
                         });
+                {
+                    let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                        label: Some("gs_pass"),
+                        timestamp_writes: None,
+                    });
                     pass.set_pipeline(&self.pipeline);
                     pass.set_bind_group(0, &self.bind_group, &[]);
                     pass.dispatch_workgroups(wg_x, wg_y, 1);

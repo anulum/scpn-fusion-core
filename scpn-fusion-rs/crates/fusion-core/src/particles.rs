@@ -641,22 +641,34 @@ pub struct CoulombCollisionParams {
 
 fn validate_collision_params(p: &CoulombCollisionParams) -> FusionResult<()> {
     if !p.n_e.is_finite() || p.n_e <= 0.0 {
-        return Err(FusionError::PhysicsViolation("n_e must be finite and > 0".into()));
+        return Err(FusionError::PhysicsViolation(
+            "n_e must be finite and > 0".into(),
+        ));
     }
     if !p.t_e_kev.is_finite() || p.t_e_kev <= 0.0 {
-        return Err(FusionError::PhysicsViolation("t_e_kev must be finite and > 0".into()));
+        return Err(FusionError::PhysicsViolation(
+            "t_e_kev must be finite and > 0".into(),
+        ));
     }
     if !p.t_i_kev.is_finite() || p.t_i_kev <= 0.0 {
-        return Err(FusionError::PhysicsViolation("t_i_kev must be finite and > 0".into()));
+        return Err(FusionError::PhysicsViolation(
+            "t_i_kev must be finite and > 0".into(),
+        ));
     }
     if !p.a_i.is_finite() || p.a_i <= 0.0 {
-        return Err(FusionError::PhysicsViolation("a_i must be finite and > 0".into()));
+        return Err(FusionError::PhysicsViolation(
+            "a_i must be finite and > 0".into(),
+        ));
     }
     if !p.z_i.is_finite() || p.z_i <= 0.0 {
-        return Err(FusionError::PhysicsViolation("z_i must be finite and > 0".into()));
+        return Err(FusionError::PhysicsViolation(
+            "z_i must be finite and > 0".into(),
+        ));
     }
     if !p.z_eff.is_finite() || p.z_eff < 1.0 {
-        return Err(FusionError::PhysicsViolation("z_eff must be finite and >= 1".into()));
+        return Err(FusionError::PhysicsViolation(
+            "z_eff must be finite and >= 1".into(),
+        ));
     }
     Ok(())
 }
@@ -664,10 +676,14 @@ fn validate_collision_params(p: &CoulombCollisionParams) -> FusionResult<()> {
 /// Coulomb logarithm via NRL formula, clamped to [5, 30].
 pub fn coulomb_logarithm(n_e_m3: f64, t_e_kev: f64) -> FusionResult<f64> {
     if !n_e_m3.is_finite() || n_e_m3 <= 0.0 {
-        return Err(FusionError::PhysicsViolation("n_e must be finite and > 0".into()));
+        return Err(FusionError::PhysicsViolation(
+            "n_e must be finite and > 0".into(),
+        ));
     }
     if !t_e_kev.is_finite() || t_e_kev <= 0.0 {
-        return Err(FusionError::PhysicsViolation("t_e_kev must be finite and > 0".into()));
+        return Err(FusionError::PhysicsViolation(
+            "t_e_kev must be finite and > 0".into(),
+        ));
     }
     // NRL Formulary: ln Λ ≈ 24 − ln(sqrt(n_e) / T_e)  [T_e in eV]
     let t_e_ev = t_e_kev * 1000.0;
@@ -686,10 +702,14 @@ pub fn spitzer_slowing_down_time(
     ln_lambda: f64,
 ) -> FusionResult<f64> {
     if !mass_kg.is_finite() || mass_kg <= 0.0 {
-        return Err(FusionError::PhysicsViolation("mass_kg must be finite and > 0".into()));
+        return Err(FusionError::PhysicsViolation(
+            "mass_kg must be finite and > 0".into(),
+        ));
     }
     if !charge_number.is_finite() || charge_number <= 0.0 {
-        return Err(FusionError::PhysicsViolation("charge_number must be > 0".into()));
+        return Err(FusionError::PhysicsViolation(
+            "charge_number must be > 0".into(),
+        ));
     }
     if !n_e_m3.is_finite() || n_e_m3 <= 0.0 {
         return Err(FusionError::PhysicsViolation("n_e must be > 0".into()));
@@ -698,19 +718,25 @@ pub fn spitzer_slowing_down_time(
         return Err(FusionError::PhysicsViolation("t_e_kev must be > 0".into()));
     }
     if !ln_lambda.is_finite() || ln_lambda <= 0.0 {
-        return Err(FusionError::PhysicsViolation("ln_lambda must be > 0".into()));
+        return Err(FusionError::PhysicsViolation(
+            "ln_lambda must be > 0".into(),
+        ));
     }
     let t_e_j = t_e_kev * BOLTZMANN_J_PER_KEV;
     let e = ELEMENTARY_CHARGE_C;
-    let numerator = 3.0 * (2.0 * PI).powf(1.5) * VACUUM_PERMITTIVITY * VACUUM_PERMITTIVITY
-        * mass_kg * t_e_j.powf(1.5);
-    let denominator = n_e_m3 * (charge_number * e).powi(2) * e * e
-        * ELECTRON_MASS_KG.sqrt() * ln_lambda;
+    let numerator = 3.0
+        * (2.0 * PI).powf(1.5)
+        * VACUUM_PERMITTIVITY
+        * VACUUM_PERMITTIVITY
+        * mass_kg
+        * t_e_j.powf(1.5);
+    let denominator =
+        n_e_m3 * (charge_number * e).powi(2) * e * e * ELECTRON_MASS_KG.sqrt() * ln_lambda;
     let tau = numerator / denominator;
     if !tau.is_finite() || tau <= 0.0 {
-        return Err(FusionError::PhysicsViolation(
-            format!("spitzer time became non-physical: {tau}")
-        ));
+        return Err(FusionError::PhysicsViolation(format!(
+            "spitzer time became non-physical: {tau}"
+        )));
     }
     Ok(tau)
 }
@@ -736,9 +762,9 @@ pub fn critical_velocity(t_e_kev: f64, a_i: f64, z_i: f64, z_eff: f64) -> Fusion
     let factor = (0.75 * PI.sqrt() * mass_ratio).powf(1.0 / 3.0);
     let v_c = v_te * factor * z_eff.powf(1.0 / 3.0);
     if !v_c.is_finite() || v_c <= 0.0 {
-        return Err(FusionError::PhysicsViolation(
-            format!("critical velocity non-physical: {v_c}")
-        ));
+        return Err(FusionError::PhysicsViolation(format!(
+            "critical velocity non-physical: {v_c}"
+        )));
     }
     Ok(v_c)
 }
@@ -752,7 +778,9 @@ pub fn collision_frequencies(
     v_c: f64,
 ) -> FusionResult<(f64, f64, f64)> {
     if !speed.is_finite() || speed < 0.0 {
-        return Err(FusionError::PhysicsViolation("speed must be finite and >= 0".into()));
+        return Err(FusionError::PhysicsViolation(
+            "speed must be finite and >= 0".into(),
+        ));
     }
     if !tau_s.is_finite() || tau_s <= 0.0 {
         return Err(FusionError::PhysicsViolation("tau_s must be > 0".into()));
@@ -847,7 +875,8 @@ pub fn collision_step(
 
     let ln_lam = coulomb_logarithm(params.n_e, params.t_e_kev)?;
     let za = (particle.charge_c / ELEMENTARY_CHARGE_C).abs();
-    let tau_s = spitzer_slowing_down_time(particle.mass_kg, za, params.n_e, params.t_e_kev, ln_lam)?;
+    let tau_s =
+        spitzer_slowing_down_time(particle.mass_kg, za, params.n_e, params.t_e_kev, ln_lam)?;
     let v_c = critical_velocity(params.t_e_kev, params.a_i, params.z_i, params.z_eff)?;
     let (nu_slow, nu_defl, _nu_energy) = collision_frequencies(speed, params, ln_lam, tau_s, v_c)?;
 
@@ -874,7 +903,8 @@ pub fn collision_step(
     particle.vy_m_s = new_speed_par * v_hat[1] + kick1 * e1[1] + kick2 * e2[1];
     particle.vz_m_s = new_speed_par * v_hat[2] + kick1 * e1[2] + kick2 * e2[2];
 
-    if !particle.vx_m_s.is_finite() || !particle.vy_m_s.is_finite() || !particle.vz_m_s.is_finite() {
+    if !particle.vx_m_s.is_finite() || !particle.vy_m_s.is_finite() || !particle.vz_m_s.is_finite()
+    {
         return Err(FusionError::PhysicsViolation(
             "collision step produced non-finite velocity".into(),
         ));
@@ -897,17 +927,24 @@ pub fn apply_coulomb_collisions(
         return Err(FusionError::PhysicsViolation("dt_s must be > 0".into()));
     }
     if seed == 0 {
-        return Err(FusionError::PhysicsViolation("seed must be != 0 for xorshift".into()));
+        return Err(FusionError::PhysicsViolation(
+            "seed must be != 0 for xorshift".into(),
+        ));
     }
 
     for (idx, particle) in particles.iter_mut().enumerate() {
         // Each particle gets a deterministic RNG state derived from seed + index
-        let mut rng = seed.wrapping_add(idx as u64).wrapping_mul(6364136223846793005).wrapping_add(1);
-        if rng == 0 { rng = 1; }
+        let mut rng = seed
+            .wrapping_add(idx as u64)
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1);
+        if rng == 0 {
+            rng = 1;
+        }
         collision_step(particle, params, dt_s, &mut rng).map_err(|e| match e {
-            FusionError::PhysicsViolation(msg) => FusionError::PhysicsViolation(
-                format!("particle[{idx}] collision failed: {msg}"),
-            ),
+            FusionError::PhysicsViolation(msg) => {
+                FusionError::PhysicsViolation(format!("particle[{idx}] collision failed: {msg}"))
+            }
             other => other,
         })?;
     }
@@ -1343,7 +1380,7 @@ mod tests {
             n_e: 1.0e20,
             t_e_kev: 10.0,
             t_i_kev: 8.0,
-            a_i: 2.0,  // deuterium
+            a_i: 2.0, // deuterium
             z_i: 1.0,
             z_eff: 1.5,
         }
@@ -1352,9 +1389,12 @@ mod tests {
     #[test]
     fn test_coulomb_logarithm_range() {
         let ln_lam = coulomb_logarithm(1e20, 10.0).unwrap();
-        assert!(ln_lam >= 5.0 && ln_lam <= 30.0, "ln_lambda={ln_lam}");
+        assert!((5.0..=30.0).contains(&ln_lam), "ln_lambda={ln_lam}");
         // For fusion plasma, NRL formula gives ln Λ ≈ 10-20 range
-        assert!(ln_lam > 5.0 && ln_lam < 25.0, "fusion plasma ln_lambda={ln_lam}");
+        assert!(
+            ln_lam > 5.0 && ln_lam < 25.0,
+            "fusion plasma ln_lambda={ln_lam}"
+        );
     }
 
     #[test]
@@ -1364,7 +1404,10 @@ mod tests {
         assert!((low - 5.0).abs() < 1e-12, "should clamp to 5, got {low}");
         // Moderately hot tenuous plasma -> still within [5,30]
         let mid = coulomb_logarithm(1e10, 1000.0).unwrap();
-        assert!(mid >= 5.0 && mid <= 30.0, "should be in [5,30], got {mid}");
+        assert!(
+            (5.0..=30.0).contains(&mid),
+            "should be in [5,30], got {mid}"
+        );
     }
 
     #[test]
@@ -1379,7 +1422,10 @@ mod tests {
         let ln_lam = coulomb_logarithm(1e20, 10.0).unwrap();
         let tau = spitzer_slowing_down_time(ALPHA_MASS_KG, 2.0, 1e20, 10.0, ln_lam).unwrap();
         // For 3.5 MeV alpha in ITER plasma, τ_s ~ 0.1-1.0 s
-        assert!(tau > 0.01 && tau < 10.0, "spitzer time {tau} s out of range");
+        assert!(
+            tau > 0.01 && tau < 10.0,
+            "spitzer time {tau} s out of range"
+        );
     }
 
     #[test]
@@ -1393,7 +1439,9 @@ mod tests {
     fn test_collision_frequencies_positive() {
         let params = default_collision_params();
         let ln_lam = coulomb_logarithm(params.n_e, params.t_e_kev).unwrap();
-        let tau_s = spitzer_slowing_down_time(ALPHA_MASS_KG, 2.0, params.n_e, params.t_e_kev, ln_lam).unwrap();
+        let tau_s =
+            spitzer_slowing_down_time(ALPHA_MASS_KG, 2.0, params.n_e, params.t_e_kev, ln_lam)
+                .unwrap();
         let v_c = critical_velocity(params.t_e_kev, params.a_i, params.z_i, params.z_eff).unwrap();
         let speed = 1e7; // fast alpha
         let (nu_s, nu_d, nu_e) = collision_frequencies(speed, &params, ln_lam, tau_s, v_c).unwrap();
@@ -1440,10 +1488,14 @@ mod tests {
 
     #[test]
     fn test_perpendicular_basis_orthonormal() {
-        for v_hat in [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0],
-                      [0.577, 0.577, 0.577]] {
+        for v_hat in [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [0.577, 0.577, 0.577],
+        ] {
             let norm = dot(v_hat, v_hat).sqrt();
-            let v_hat = [v_hat[0]/norm, v_hat[1]/norm, v_hat[2]/norm];
+            let v_hat = [v_hat[0] / norm, v_hat[1] / norm, v_hat[2] / norm];
             let (e1, e2) = perpendicular_basis(v_hat);
             // e1 ⊥ v_hat
             assert!(dot(e1, v_hat).abs() < 1e-10, "e1 not perp to v_hat");
