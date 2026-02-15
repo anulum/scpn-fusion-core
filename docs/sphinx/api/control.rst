@@ -29,6 +29,14 @@ Digital Twin Ingest
    :undoc-members:
    :show-inheritance:
 
+Traceable Runtime (JAX/TorchScript)
+-------------------------------------
+
+.. automodule:: scpn_fusion.control.jax_traceable_runtime
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Model-Predictive Control (Optimal)
 ------------------------------------
 
