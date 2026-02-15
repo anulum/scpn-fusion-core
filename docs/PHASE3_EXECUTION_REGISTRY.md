@@ -346,6 +346,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-119 | P2 | Docs | Expose traceable runtime API in Sphinx control reference | `docs/sphinx/api/control.rst` | Added `scpn_fusion.control.jax_traceable_runtime` to generated control API docs so JAX/TorchScript/Numpy traceable rollout interfaces are visible in published documentation navigation alongside existing control modules | `python -m pytest tests/test_jax_traceable_runtime.py -q`, `Documentation workflow on main` |
 | H8-120 | P1 | Performance | Add backend parity-report helpers and validation entrypoint for traceable runtime | `src/scpn_fusion/control/jax_traceable_runtime.py`, `src/scpn_fusion/control/__init__.py`, `tests/test_jax_traceable_runtime.py`, `validation/traceable_runtime_parity.py` | Added backend discovery/parity reporting (`available_traceable_backends`, `validate_traceable_backend_parity`) for single+batch runtime paths and introduced `validation/traceable_runtime_parity.py` CLI with strict mode plus JSON/Markdown outputs, enabling deterministic backend-equivalence checks on each host | `python -m pytest tests/test_jax_traceable_runtime.py -q`, `python validation/traceable_runtime_parity.py --strict --steps 24 --batch 4 --output-json artifacts/traceable_runtime_parity_h8120.json --output-md artifacts/traceable_runtime_parity_h8120.md` |
 | H8-121 | P1 | Performance | Add backend-subset filtering and CLI plumbing for traceable parity validation | `src/scpn_fusion/control/jax_traceable_runtime.py`, `validation/traceable_runtime_parity.py`, `tests/test_jax_traceable_runtime.py`, `tests/test_traceable_runtime_parity_cli.py` | Added explicit backend-set resolution for parity checks (`numpy`/`jax`/`torchscript`) with strict unsupported/unavailable guards, exposed repeatable `--backend` filtering in parity CLI, and added regression coverage for subset behavior, error handling, and strict-mode CLI exit semantics | `python -m pytest tests/test_jax_traceable_runtime.py tests/test_traceable_runtime_parity_cli.py -q`, `python validation/traceable_runtime_parity.py --strict --steps 24 --batch 4 --backend numpy --output-json artifacts/traceable_runtime_parity_h8121.json --output-md artifacts/traceable_runtime_parity_h8121.md` |
+| H8-122 | P1 | Interop | Extend IDS adapter with optional 1D profile payloads and deterministic state roundtrip helpers | `src/scpn_fusion/io/imas_connector.py`, `src/scpn_fusion/io/__init__.py`, `tests/test_imas_connector.py` | IDS validation now enforces optional `equilibrium.profiles_1d` contracts (`rho_norm`, `electron_temp_keV`, `electron_density_1e20_m3`) including monotonicity/range/length checks, and new helpers (`digital_twin_state_to_ids`, `ids_to_digital_twin_state`) provide deterministic profile-aware state interchange without breaking summary-only payload compatibility | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 
 ## Task Accounting
 
@@ -353,7 +354,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 257
+- Post-S4 hardening tasks delivered: 258
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -634,4 +635,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-119`
 - Completed: `H8-120`
 - Completed: `H8-121`
+- Completed: `H8-122`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

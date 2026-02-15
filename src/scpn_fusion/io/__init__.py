@@ -8,7 +8,9 @@
 """Data-interop adapters (IMAS/IDS and related exchange helpers)."""
 
 from .imas_connector import (
+    digital_twin_state_to_ids,
     ids_to_digital_twin_summary,
+    ids_to_digital_twin_state,
     validate_ids_payload,
     digital_twin_summary_to_ids,
 )

@@ -229,6 +229,23 @@ Summary:
 - Extended parity CLI with repeatable `--backend` filtering.
 - Added tests for subset behavior and CLI strict-mode exit semantics.
 
+### H8-122 (Interop)
+Files:
+- `src/scpn_fusion/io/imas_connector.py`
+- `src/scpn_fusion/io/__init__.py`
+- `tests/test_imas_connector.py`
+
+Summary:
+- Extended IDS validation to support optional `equilibrium.profiles_1d` payloads.
+- Added strict profile contracts:
+  - required keys: `rho_norm`, `electron_temp_keV`, `electron_density_1e20_m3`
+  - `rho_norm` finite, in `[0, 1]`, strictly increasing
+  - profile vectors finite, non-negative, equal-length
+- Added profile-aware helper APIs:
+  - `digital_twin_state_to_ids(...)`
+  - `ids_to_digital_twin_state(...)`
+- Preserved summary-only compatibility (`digital_twin_summary_to_ids`, `ids_to_digital_twin_summary`).
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -236,6 +253,7 @@ Summary:
 - `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q`
 - `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q`
 - `python -m pytest tests/test_jax_traceable_runtime.py -q`
+- `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q`
 
 Observed final outcomes on latest runs:
 - `30 passed` (CAD wave)
@@ -286,7 +304,7 @@ All files in these ranges reported `:: True` parity.
 1. Confirm current head:
    - `git rev-parse --short HEAD` (expected `9706c1b` at log write time)
 2. Confirm registry counters/task entries:
-   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-121`, delivered count `257`.
+   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-122`, delivered count `258`.
 3. Re-run focused health checks if touching related areas:
    - `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q`
 4. If GitHub API rate-limited again, use badge/workflow-page fallback for CI confirmation.

@@ -12,7 +12,9 @@ from __future__ import annotations
 import pytest
 
 from scpn_fusion.io.imas_connector import (
+    digital_twin_state_to_ids,
     digital_twin_summary_to_ids,
+    ids_to_digital_twin_state,
     ids_to_digital_twin_summary,
     validate_ids_payload,
 )
@@ -29,6 +31,22 @@ def _sample_payload() -> dict[str, object]:
         "final_avg_temp": 14.0,
     }
     return digital_twin_summary_to_ids(summary, machine="ITER", shot=1, run=2)
+
+
+def _sample_state() -> dict[str, object]:
+    state: dict[str, object] = {
+        "steps": 24,
+        "final_axis_r": 6.22,
+        "final_axis_z": -0.01,
+        "final_islands_px": 3,
+        "final_reward": 1.4,
+        "reward_mean_last_50": 1.1,
+        "final_avg_temp": 15.2,
+        "rho_norm": [0.0, 0.25, 0.5, 0.75, 1.0],
+        "electron_temp_keV": [18.0, 17.1, 15.4, 12.2, 8.8],
+        "electron_density_1e20_m3": [1.4, 1.35, 1.24, 1.11, 0.94],
+    }
+    return state
 
 
 def test_validate_ids_payload_accepts_nominal_payload() -> None:
@@ -128,3 +146,84 @@ def test_digital_twin_summary_to_ids_rejects_missing_required_summary_keys() -> 
     }
     with pytest.raises(ValueError, match="digital twin summary missing keys"):
         digital_twin_summary_to_ids(summary, machine="ITER", shot=1, run=2)
+
+
+def test_validate_ids_payload_accepts_profiles_1d_block() -> None:
+    payload = _sample_payload()
+    payload["equilibrium"]["profiles_1d"] = {  # type: ignore[index]
+        "rho_norm": [0.0, 0.5, 1.0],
+        "electron_temp_keV": [15.0, 12.0, 8.0],
+        "electron_density_1e20_m3": [1.2, 1.0, 0.8],
+    }
+    validate_ids_payload(payload)
+
+
+@pytest.mark.parametrize(
+    ("mutate", "msg"),
+    [
+        (
+            lambda p: p["equilibrium"].__setitem__("profiles_1d", []),
+            "equilibrium.profiles_1d must be a mapping",
+        ),
+        (
+            lambda p: p["equilibrium"]["profiles_1d"].pop("rho_norm"),
+            "equilibrium.profiles_1d missing keys",
+        ),
+        (
+            lambda p: p["equilibrium"]["profiles_1d"].__setitem__("rho_norm", [0.0, 0.0, 1.0]),
+            "strictly increasing",
+        ),
+        (
+            lambda p: p["equilibrium"]["profiles_1d"].__setitem__("rho_norm", [0.0, 1.2]),
+            "<= 1.0",
+        ),
+        (
+            lambda p: p["equilibrium"]["profiles_1d"].__setitem__("electron_temp_keV", [5.0, -1.0, 2.0]),
+            "electron_temp_keV",
+        ),
+        (
+            lambda p: p["equilibrium"]["profiles_1d"].__setitem__("electron_density_1e20_m3", [1.0, 0.8]),
+            "length must match",
+        ),
+        (
+            lambda p: p["equilibrium"]["profiles_1d"].__setitem__("electron_density_1e20_m3", [1.0, float("nan"), 0.8]),
+            "electron_density_1e20_m3",
+        ),
+    ],
+)
+def test_validate_ids_payload_rejects_invalid_profiles_1d(mutate, msg: str) -> None:
+    payload = _sample_payload()
+    payload["equilibrium"]["profiles_1d"] = {  # type: ignore[index]
+        "rho_norm": [0.0, 0.5, 1.0],
+        "electron_temp_keV": [15.0, 12.0, 8.0],
+        "electron_density_1e20_m3": [1.2, 1.0, 0.8],
+    }
+    mutate(payload)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match=msg):
+        validate_ids_payload(payload)
+
+
+def test_digital_twin_state_to_ids_roundtrip_with_profiles() -> None:
+    state = _sample_state()
+    payload = digital_twin_state_to_ids(state, machine="ITER", shot=7, run=3)
+    validate_ids_payload(payload)
+    recovered = ids_to_digital_twin_state(payload)
+    assert recovered["steps"] == state["steps"]
+    assert recovered["final_islands_px"] == state["final_islands_px"]
+    assert recovered["rho_norm"] == state["rho_norm"]
+    assert recovered["electron_temp_keV"] == state["electron_temp_keV"]
+    assert recovered["electron_density_1e20_m3"] == state["electron_density_1e20_m3"]
+
+
+def test_ids_to_digital_twin_state_without_profiles_returns_summary() -> None:
+    payload = _sample_payload()
+    recovered = ids_to_digital_twin_state(payload)
+    assert "rho_norm" not in recovered
+    assert recovered["steps"] == 12
+
+
+def test_digital_twin_state_to_ids_rejects_missing_profile_keys() -> None:
+    state = _sample_state()
+    state.pop("electron_density_1e20_m3")
+    with pytest.raises(ValueError, match="digital twin state missing keys"):
+        digital_twin_state_to_ids(state, machine="ITER", shot=7, run=3)

@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 import math
 import numbers
 from typing import Any, Mapping
@@ -29,6 +30,14 @@ REQUIRED_DIGITAL_TWIN_SUMMARY_KEYS = (
     "reward_mean_last_50",
     "final_avg_temp",
 )
+
+REQUIRED_PROFILE_1D_KEYS = (
+    "rho_norm",
+    "electron_temp_keV",
+    "electron_density_1e20_m3",
+)
+
+REQUIRED_DIGITAL_TWIN_STATE_KEYS = REQUIRED_DIGITAL_TWIN_SUMMARY_KEYS + REQUIRED_PROFILE_1D_KEYS
 
 
 def _missing_required_keys(mapping: Mapping[str, Any], required: tuple[str, ...]) -> list[str]:
@@ -63,6 +72,78 @@ def _coerce_finite_real(
     if minimum is not None and parsed < minimum:
         raise ValueError(f"{name} must be >= {minimum}.")
     return parsed
+
+
+def _coerce_finite_real_sequence(
+    name: str,
+    value: Any,
+    *,
+    minimum_len: int = 1,
+    minimum: float | None = None,
+    maximum: float | None = None,
+    strictly_increasing: bool = False,
+) -> list[float]:
+    if isinstance(value, (str, bytes, bytearray)) or not isinstance(value, Sequence):
+        raise ValueError(f"{name} must be a sequence of finite numbers.")
+    parsed: list[float] = []
+    for idx, item in enumerate(value):
+        parsed_item = _coerce_finite_real(f"{name}[{idx}]", item, minimum=minimum)
+        if maximum is not None and parsed_item > maximum:
+            raise ValueError(f"{name}[{idx}] must be <= {maximum}.")
+        parsed.append(parsed_item)
+    if len(parsed) < minimum_len:
+        raise ValueError(f"{name} must contain at least {minimum_len} values.")
+    if strictly_increasing:
+        for idx in range(1, len(parsed)):
+            if parsed[idx] <= parsed[idx - 1]:
+                raise ValueError(f"{name} must be strictly increasing.")
+    return parsed
+
+
+def _coerce_profiles_1d(
+    payload: Mapping[str, Any],
+    *,
+    name: str,
+) -> dict[str, list[float]]:
+    missing = _missing_required_keys(payload, REQUIRED_PROFILE_1D_KEYS)
+    if missing:
+        raise ValueError(f"{name} missing keys: {missing}")
+
+    rho = _coerce_finite_real_sequence(
+        f"{name}.rho_norm",
+        payload.get("rho_norm"),
+        minimum_len=2,
+        minimum=0.0,
+        maximum=1.0,
+        strictly_increasing=True,
+    )
+    temp = _coerce_finite_real_sequence(
+        f"{name}.electron_temp_keV",
+        payload.get("electron_temp_keV"),
+        minimum_len=2,
+        minimum=0.0,
+    )
+    dens = _coerce_finite_real_sequence(
+        f"{name}.electron_density_1e20_m3",
+        payload.get("electron_density_1e20_m3"),
+        minimum_len=2,
+        minimum=0.0,
+    )
+    n = len(rho)
+    if len(temp) != n:
+        raise ValueError(
+            f"{name}.electron_temp_keV length must match {name}.rho_norm."
+        )
+    if len(dens) != n:
+        raise ValueError(
+            f"{name}.electron_density_1e20_m3 length must match {name}.rho_norm."
+        )
+
+    return {
+        "rho_norm": rho,
+        "electron_temp_keV": temp,
+        "electron_density_1e20_m3": dens,
+    }
 
 
 def validate_ids_payload(payload: Mapping[str, Any]) -> None:
@@ -129,6 +210,11 @@ def validate_ids_payload(payload: Mapping[str, Any]) -> None:
         "performance.final_avg_temp_keV",
         performance.get("final_avg_temp_keV", 0.0),
     )
+    if "profiles_1d" in equilibrium:
+        profiles = equilibrium.get("profiles_1d")
+        if not isinstance(profiles, Mapping):
+            raise ValueError("equilibrium.profiles_1d must be a mapping.")
+        _coerce_profiles_1d(profiles, name="equilibrium.profiles_1d")
 
 
 def digital_twin_summary_to_ids(
@@ -195,6 +281,34 @@ def digital_twin_summary_to_ids(
     }
 
 
+def digital_twin_state_to_ids(
+    state: Mapping[str, Any],
+    *,
+    machine: str = "ITER",
+    shot: int = 0,
+    run: int = 0,
+) -> dict[str, Any]:
+    """Map detailed digital-twin state + profiles into IDS-like payload."""
+    if isinstance(state, bool) or not isinstance(state, Mapping):
+        raise ValueError("state must be a mapping.")
+    missing_state = _missing_required_keys(state, REQUIRED_DIGITAL_TWIN_STATE_KEYS)
+    if missing_state:
+        raise ValueError(f"digital twin state missing keys: {missing_state}")
+
+    payload = digital_twin_summary_to_ids(
+        state,
+        machine=machine,
+        shot=shot,
+        run=run,
+    )
+    payload["equilibrium"]["profiles_1d"] = _coerce_profiles_1d(
+        state,
+        name="state",
+    )
+    validate_ids_payload(payload)
+    return payload
+
+
 def ids_to_digital_twin_summary(payload: Mapping[str, Any]) -> dict[str, Any]:
     """Map IDS-like payload back to internal digital-twin summary shape."""
     validate_ids_payload(payload)
@@ -236,3 +350,21 @@ def ids_to_digital_twin_summary(payload: Mapping[str, Any]) -> dict[str, Any]:
         "reward_mean_last_50": reward_mean_last_50,
         "final_avg_temp": final_avg_temp,
     }
+
+
+def ids_to_digital_twin_state(payload: Mapping[str, Any]) -> dict[str, Any]:
+    """Map IDS payload back to detailed digital-twin state with optional profiles."""
+    summary = ids_to_digital_twin_summary(payload)
+    equilibrium = payload.get("equilibrium", {})
+    if not isinstance(equilibrium, Mapping):
+        raise ValueError("IDS equilibrium must be a mapping.")
+
+    profiles = equilibrium.get("profiles_1d")
+    if profiles is None:
+        return summary
+    if not isinstance(profiles, Mapping):
+        raise ValueError("equilibrium.profiles_1d must be a mapping.")
+
+    out = dict(summary)
+    out.update(_coerce_profiles_1d(profiles, name="equilibrium.profiles_1d"))
+    return out
