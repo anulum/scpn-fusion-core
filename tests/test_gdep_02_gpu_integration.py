@@ -63,3 +63,18 @@ def test_gpu_runtime_bridge_rejects_invalid_multigrid_iterations() -> None:
         bridge._gpu_sim_multigrid(field, iterations=0)
     with pytest.raises(ValueError, match="iterations"):
         bridge._cpu_multigrid(field, iterations=0)
+
+
+def test_equilibrium_latency_auto_backend_resolves_and_reports_fault_runs() -> None:
+    bridge = GPURuntimeBridge(seed=42)
+    out = bridge.benchmark_equilibrium_latency(
+        backend="auto",
+        trials=16,
+        grid_size=32,
+        fault_runs=10,
+        seed=123,
+    )
+    assert out.backend in {"gpu_sim", "torch_fallback"}
+    assert out.fault_runs == 10
+    assert out.p95_ms_est > 0.0
+    assert out.fault_p95_ms_est > 0.0

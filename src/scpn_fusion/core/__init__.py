@@ -21,7 +21,7 @@ from .heat_ml_shadow_surrogate import (
     rmse_percent as shadow_rmse_percent,
     synthetic_shadow_reference,
 )
-from .gpu_runtime import GPURuntimeBridge, RuntimeBenchmark
+from .gpu_runtime import EquilibriumLatencyBenchmark, GPURuntimeBridge, RuntimeBenchmark
 from .gyro_swin_surrogate import (
     GyroSwinLikeSurrogate,
     SpeedBenchmark,
@@ -31,4 +31,12 @@ from .gyro_swin_surrogate import (
     gene_proxy_predict,
     rmse_percent,
     synthetic_core_turbulence_target,
+)
+from .pretrained_surrogates import (
+    PretrainedMLPSurrogate,
+    bundle_pretrained_surrogates,
+    evaluate_pretrained_fno,
+    evaluate_pretrained_mlp,
+    load_pretrained_mlp,
+    save_pretrained_mlp,
 )

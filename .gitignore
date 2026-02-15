@@ -44,6 +44,8 @@ benchmarks/results/
 *.gif
 *.png
 !docs/**/*.png
+!weights/pretrained_mlp_itpa.npz
+!weights/pretrained_fno_eurofusion_jet.npz
 
 # Streamlit
 .streamlit/
