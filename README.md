@@ -1,5 +1,9 @@
 # SCPN Fusion Core
 
+<p align="center">
+  <img src="docs/assets/repo_header.png" alt="SCPN Fusion Core — Neuro-Symbolic Tokamak Control">
+</p>
+
 ![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg) ![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg) ![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-205%2B_Rust_%7C_60%2B_Python-green.svg)
 
 A **neuro-symbolic control framework for tokamak fusion reactors** with
