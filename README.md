@@ -1,21 +1,14 @@
 # SCPN Fusion Core
 
-[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml)
-[![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://anulum.github.io/scpn-fusion-core/)
-[![PyPI](https://img.shields.io/pypi/v/scpn-fusion.svg)](https://pypi.org/project/scpn-fusion/)
-[![PyPI Downloads](https://img.shields.io/pypi/dm/scpn-fusion.svg)](https://pypi.org/project/scpn-fusion/)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org/)
-[![codecov](https://codecov.io/gh/anulum/scpn-fusion-core/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core)
-[![DOI](https://img.shields.io/badge/DOI-Zenodo-blue.svg)](https://zenodo.org/)
+![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg) ![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg) ![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-205%2B_Rust_%7C_60%2B_Python-green.svg)
 
 A **neuro-symbolic control framework for tokamak fusion reactors** with
 physics-informed surrogate models and optional Rust acceleration. SCPN
 Fusion Core compiles plasma control logic — expressed as stochastic Petri
 nets — into spiking neural network controllers that run at sub-millisecond
-latency, backed by a Grad-Shafranov equilibrium solver, 1.5D radial
-transport, and AI surrogates for turbulence, disruption prediction, and
+latency, backed by a Grad-Shafranov equilibrium solver, VMEC 3D equilibrium
+interface, 2D MPI domain decomposition, 1.5D radial transport, BOUT++
+coupling, and AI surrogates for turbulence, disruption prediction, and
 real-time digital twins.
 
 **What makes it different:** Most fusion codes are physics-first (solve
@@ -38,7 +31,7 @@ real-time control loop closure at 1 kHz+ rates.
 |-----------|---------------|
 | **Control-first** | Petri net → SNN compilation pipeline is the core innovation, not an add-on |
 | **Graceful degradation** | Every module works without Rust, without SC-NeuroCore, without GPU |
-| **Explicit over silent** | 248 hardening tasks replaced silent clamping/coercion with explicit errors |
+| **Explicit over silent** | 263 hardening tasks replaced silent clamping/coercion with explicit errors |
 | **Real data validation** | 8 SPARC GEQDSK + 20-shot ITPA H-mode confinement database |
 | **Reduced-order by design** | Physics models are fast enough for real-time control (ms, not hours) |
 
@@ -92,7 +85,7 @@ scpn-fusion-core/
 │   │   └── hpc_bridge.py             C++/Rust FFI bridge
 │   └── ui/                    # Dashboard
 │       └── app.py                    Streamlit real-time dashboard
-├── scpn-fusion-rs/            # Rust workspace (10 crates)
+├── scpn-fusion-rs/            # Rust workspace (11 crates)
 │   ├── crates/
 │   │   ├── fusion-types/      # Shared data types
 │   │   ├── fusion-math/       # Linear algebra, FFT, interpolation
@@ -103,6 +96,7 @@ scpn-fusion-core/
 │   │   ├── fusion-control/    # PID, MPC, disruption predictor
 │   │   ├── fusion-diagnostics/ # Sensor models
 │   │   ├── fusion-ml/         # Inference engine
+│   │   ├── fusion-gpu/        # GPU abstraction layer
 │   │   └── fusion-python/     # PyO3 bindings → scpn_fusion_rs.pyd
 │   └── Cargo.toml             # Workspace manifest
 ├── tests/                     # Python test suite
@@ -348,10 +342,13 @@ except ImportError:
 
 ## Rust Workspace
 
-The `scpn-fusion-rs/` directory contains a 10-crate Rust workspace that mirrors the Python package structure. Key features:
+The `scpn-fusion-rs/` directory contains an 11-crate Rust workspace that mirrors the Python package structure. Key features:
 
 - **Performance**: `opt-level = 3`, fat LTO, single codegen unit for maximum optimization
 - **FFI**: `fusion-python` crate provides PyO3 bindings producing `scpn_fusion_rs.so/.pyd`
+- **2D MPI domain decomposition**: Additive Schwarz overlapping-domain solver with Rayon-parallel subdomain solves
+- **VMEC 3D equilibrium interface**: Fourier-mode stellarator/tokamak equilibrium coupling
+- **BOUT++ coupling**: Data exchange interface for edge/SOL turbulence codes
 - **Dependencies**: `ndarray`, `nalgebra`, `rayon` (parallelism), `rustfft`, `serde`
 - **No external runtime**: pure Rust with no C/Fortran dependencies
 
@@ -414,6 +411,7 @@ Struggling with convergence? See the [Solver Tuning Guide](docs/SOLVER_TUNING_GU
 
 ## Documentation
 
+- **[Sphinx API Reference](https://anulum.github.io/scpn-fusion-core/)** (auto-generated from docstrings, hosted on GitHub Pages)
 - [Solver Tuning Guide](docs/SOLVER_TUNING_GUIDE.md) (relaxation, Tikhonov, Huber, grid sizing, common pitfalls)
 - [Benchmarks & Comparisons](docs/BENCHMARKS.md)
 - [Benchmark Figures (static export)](docs/BENCHMARK_FIGURES.md)
@@ -429,11 +427,19 @@ Struggling with convergence? See the [Solver Tuning Guide](docs/SOLVER_TUNING_GU
 - [Profiling Quickstart](profiling/README.md)
 - [Comprehensive Technical Study](SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md) (30,000+ words)
 
+### Paper Manuscripts
+
+Two companion papers are in preparation:
+
+1. **Equilibrium Solver Paper** -- Grad-Shafranov + multigrid + inverse reconstruction, validated against 8 SPARC GEQDSK equilibria
+2. **SNN Controller Paper** -- Petri net to spiking neural network compilation pipeline with formal verification and deterministic replay
+
 ## Code Health & Hardening
 
-The codebase has undergone **8 systematic hardening waves** (248 tasks total, all
-completed) that replaced silent clamping, `unwrap()` calls, and implicit coercion
-with explicit `FusionResult<T>` error propagation throughout the Rust workspace.
+The codebase has undergone **8+ systematic hardening waves** (263 tasks total, all
+completed across S2-S4 and H5-H8 waves) that replaced silent clamping, `unwrap()`
+calls, and implicit coercion with explicit `FusionResult<T>` error propagation
+throughout the Rust workspace.
 
 | Wave | Scope | Tasks | Highlights |
 |------|-------|-------|------------|
@@ -456,7 +462,7 @@ This project is honest about what it does and does not do.
 
 | Gap | Status | Notes |
 |-----|--------|-------|
-| **3D MHD / stellarator equilibrium** | Interface only (`equilibrium_3d.py`) | Fourier-mode parameterization exists; no force-balance solve |
+| **3D MHD / stellarator equilibrium** | VMEC interface + Fourier parameterization | `vmec_interface.rs` + `equilibrium_3d.py`; external VMEC binary required for full solve |
 | **Gyrokinetic turbulence** | Not planned | Use GENE/GS2 externally; SCPN provides surrogate coupling points |
 | **5D kinetic transport** | Not planned | Deliberately reduced-order for real-time control |
 | **GPU acceleration** | Roadmap ([GPU Roadmap](docs/GPU_ACCELERATION_ROADMAP.md)) | Mock benchmark only; CUDA kernels not yet implemented |
@@ -470,7 +476,7 @@ This project is honest about what it does and does not do.
 | **Neuro-symbolic control pipeline** | Petri net → SNN compilation with formal verification (37 hardening tasks) |
 | **Surrogate modeling** | FNO turbulence (41 KB trained weights), neural transport MLP, neural equilibrium |
 | **Digital twin + RL** | In-situ Q-learning policy training with chaos monkey fault injection |
-| **Code health** | 248 hardening tasks, 100% explicit error handling in Rust, property-based tests |
+| **Code health** | 263 hardening tasks, 100% explicit error handling in Rust, property-based tests |
 | **Real data validation** | 8 SPARC GEQDSK files (CFS), 20-shot ITPA H-mode confinement database |
 | **Graceful degradation** | Every module works without Rust, without SC-NeuroCore, without GPU |
 

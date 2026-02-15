@@ -1,0 +1,6 @@
+# Sphinx documentation build dependencies
+# Install with: pip install -r docs/sphinx/requirements.txt
+sphinx>=7.0
+furo
+sphinx-copybutton
+sphinx-autodoc-typehints

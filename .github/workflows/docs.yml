@@ -1,8 +1,21 @@
+# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Documentation Build & GitHub Pages Deploy
+# (c) 1998-2026 Miroslav Sotek. All rights reserved.
+# Contact: www.anulum.li | protoscience@anulum.li
+# License: GNU AGPL v3 | Commercial licensing available
+# ──────────────────────────────────────────────────────────────────────
 name: Documentation
 
 on:
   push:
     branches: [main]
+    paths:
+      - "docs/**"
+      - "papers/**"
+      - "**.rst"
+      - "src/scpn_fusion/**"
+      - "docs/sphinx/conf.py"
+      - "pyproject.toml"
   workflow_dispatch:
 
 permissions:
@@ -20,18 +33,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - name: Install dependencies
-        run: |
-          pip install -e .
-          pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints myst-parser
+          python-version: "3.11"
+
+      - name: Install package
+        run: pip install -e .
+
+      - name: Install Sphinx dependencies
+        run: pip install -r docs/sphinx/requirements.txt
+
       - name: Build Sphinx docs
         run: |
           cd docs/sphinx
           make html
+
       - name: Upload Python docs
         uses: actions/upload-artifact@v4
         with:
@@ -43,11 +61,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            scpn-fusion-rs/target
+          key: ${{ runner.os }}-cargo-docs-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-docs-
+
       - name: Build rustdoc
         working-directory: scpn-fusion-rs
         run: cargo doc --no-deps --all-features
+
       - name: Upload Rust docs
         uses: actions/upload-artifact@v4
         with:
@@ -59,18 +90,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
+
       - name: Install dependencies
         run: |
           pip install -e .
           pip install nbconvert
+
       - name: Convert notebooks to HTML
         run: |
           mkdir -p docs/notebooks
           jupyter nbconvert --to html examples/*.ipynb --output-dir docs/notebooks/
+
       - name: Upload notebook HTML
         uses: actions/upload-artifact@v4
         with:
@@ -91,16 +126,19 @@ jobs:
         with:
           name: python-docs
           path: site/python/
+
       - name: Download Rust docs
         uses: actions/download-artifact@v4
         with:
           name: rust-docs
           path: site/rust/
+
       - name: Download notebook HTML
         uses: actions/download-artifact@v4
         with:
           name: notebook-html
           path: site/notebooks/
+
       - name: Create index page
         run: |
           cat > site/index.html << 'HTMLEOF'
@@ -129,12 +167,15 @@ jobs:
           </body>
           </html>
           HTMLEOF
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
+
       - name: Upload to Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: site/
+
       - name: Deploy to Pages
         id: deployment
         uses: actions/deploy-pages@v4

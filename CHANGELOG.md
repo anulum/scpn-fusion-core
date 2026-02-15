@@ -8,7 +8,150 @@
 
 # Changelog
 
-## Unreleased
+## [Unreleased] — 2026-02-15
+
+### Added
+
+#### 3D MHD and Exascale Readiness
+- VMEC fixed-boundary 3D equilibrium solver (Hirshman & Whitson 1983 variational approach)
+  in `fusion-core/src/vmec_interface.rs`
+- BOUT++ coupling interface with Newton-iteration flux surface tracing, field-aligned metric
+  tensors (`g^ij`, Jacobian, `|B|`), and stability result parsing
+- 2D Cartesian MPI domain decomposition with Additive Schwarz distributed GS solver
+  (Rayon thread-parallel) in `fusion-core/src/mpi_domain.rs`
+- Optimal process-grid factorisation (surface-to-volume minimisation)
+- 4-face halo exchange (serial reference, rsmpi-ready interface)
+- GS residual L2 norm for convergence monitoring
+
+#### Physics and Transport
+- Coulomb collision operator (Fokker-Planck Monte Carlo with NRL Coulomb logarithm,
+  Spitzer slowing-down time, critical velocity, pitch-angle Langevin scattering,
+  deterministic xorshift64 PRNG) in `fusion-core/src/particles.rs`
+- GPU equilibrium solver via wgpu compute shaders (WGSL Red-Black SOR on
+  DX12/Vulkan/Metal with R-singularity protection) in new `fusion-gpu` crate
+- Neoclassical transport closure (Chang-Hinton 1982 ion thermal diffusivity,
+  banana/plateau/PS regimes, bootstrap current) in Rust and Python
+
+#### Validation and Experimental Data
+- DIII-D shot 187070 and JET shot 92436 synthetic Solov'ev GEQDSK validation profiles
+  (10 files: L-mode, H-mode, negative triangularity, snowflake, DT, hybrid, high-Ip)
+  on 129x129 grids with generation script and validation runner
+- DIII-D/JET validation runner with strict GS-operator and GEQDSK payload integrity contracts
+
+#### Documentation and Community
+- Sphinx documentation site (26 files): Furo-themed conf.py with autodoc, napoleon,
+  mathjax, intersphinx; installation, quickstart, and 8 user guide chapters with
+  physics equations; API reference for all 59+ Python modules across 8 subpackages
+- Paper A LaTeX manuscript: GS equilibrium solver (840 lines, target Nuclear Fusion / CPC)
+- Paper B LaTeX manuscript: SNN vertical stability controller (939 lines, target FED / IEEE TPS)
+- Shared bibliography (55 BibTeX entries, 643 lines)
+- DOE ARPA-E convergence pitch document (785 lines): GAMOW, BETHE, FES, ASCR program
+  alignment matrices with 36-month milestone roadmap
+- GitHub PR template with testing/quality/physics checklists
+- Issue template config (security contact, blank issues disabled)
+- CONTRIBUTING.md comprehensive upgrade (426 lines: dev setup, style guide, PR process)
+- Security policy (SECURITY.md) expanded with version table, hardening summary, known limitations
+- Coverage badge, Docker quickstart, pure-Python install, and data licensing in README
+
+#### Reactor Engineering Elevation (H6 wave, 9 tasks)
+- VMEC IO bridge for non-axisymmetric equilibrium interoperability (`H6-001`)
+- Hybrid kinetic-fluid alpha/runaway test-particle tracker with orbit/energy statistics (`H6-002`)
+- Synthetic forward diagnostics (interferometer phase, neutron count channels) (`H6-003`)
+- IMAS/IDS adapter pattern for Digital Twin state interchange (`H6-004`)
+- CAD geometry integration lane (STEP/STL mesh ingestion for heat/neutron load tracing) (`H6-005`)
+- Explicit actuator transfer-function dynamics in flight simulation/control path (`H6-006`)
+- Domain-randomization chaos monkey for deterministic sensor dropout/noise injection (`H6-007`)
+- Multi-node MPI domain-decomposition scaffolding for core grid solves (`H6-008`)
+- Traceable control-loop runtime lane to reduce Python interpreter overhead (`H6-009`)
+
+### Changed
+
+#### SCPN Controller Optimisation (H5 wave)
+- Vectorized injection, action decode, and array-native stepping in SCPN controller
+- Internal marking state kept in NumPy arrays with compatibility accessors
+- Compiled feature-evaluation path removes per-tick dict churn
+- Preallocated dense/update work buffers for tick-loop allocation reduction
+- Binomial sampling replaces high-allocation mirrored-draw stochastic path
+- Rust stochastic-firing kernel bridge for optional backend offload
+- Default runtime profile changed to adaptive (binary probabilistic margin)
+- Expanded Rust offload eligibility and chunked antithetic sampling for large nets
+- Precomputed transition-delay indices remove per-tick timing mask churn
+
+#### README Repositioning
+- Repositioned project identity as a **neuro-symbolic control framework** rather than a
+  physics simulation suite competing with TRANSP/GENE/JINTRAC
+- Expanded Design Philosophy, Neuro-Symbolic Compiler section, simulation mode maturity
+  tiers, Code Health & Hardening section, and Known Limitations & Roadmap
+- Honest benchmark claims: separated validated from projected performance numbers
+
+#### Runtime and Configuration
+- Experimental modes gated behind `--experimental` flag
+- Removed `sys.path` hacks from 20+ core/validation/test modules (replaced with package imports)
+- Realtime simulation entrypoint resolves config relative to script root with `--config` support
+- Docker image hardened with prod-by-default dependency install and non-root user
+- HPC bridge restricts native solver library loading to trusted package paths with
+  explicit `SCPN_SOLVER_LIB` env override
+- Stabilized GAI-02 latency metric with deterministic hardware-normalized proxy
+- PID/MPC and GNEU benchmark controllers pinned to adaptive non-zero binary margin
+- NumPy 2.4 compatibility restored for blanket TBR integration (trapezoid fallback)
+- GitHub Pages deployment gated behind explicit `DEPLOY_GH_PAGES` repo variable
+
+#### Licensing and Legal
+- AGPL-3.0-or-later added to all package manifests
+- SPARC MIT license notice and ITPA provenance disclaimer added
+- TestPyPI publish made best-effort in CI
+
+### Fixed
+
+#### Hardening Waves (266 tasks completed across 8 waves)
+
+**S2 (8 tasks):** HPC bridge in-place solve paths, C++ SOR convergence guards,
+SCPN benchmark stochastic-vs-float equivalence gate, disruption predictor fallback,
+PWI angle-energy invariants and redeposition bounds, TEMHD solver edge-case regression,
+path mapping normalisation, release gate queue health.
+
+**S3 (6 tasks):** SCPN topology diagnostics for dead nodes and unseeded place cycles,
+inhibitor-arc support with explicit opt-in, compact artifact serialization mode,
+control simulation fallback entry points, HPC bridge edge-path validation,
+S3 queue health in release-readiness report.
+
+**S4 (4 tasks):** Compiler topology/inhibitor compile controls, deterministic compact
+artifact codec smoke checks, deterministic flight-sim CI path, S4 release gate lane.
+
+**H5 (37 tasks):** SCPN controller optimisation (vectorized injection, array-native
+stepping, Rust offload, binomial sampling, compiled feature evaluation, reusable scratch
+buffers); HPC library loading security (trusted-path restriction); artifact decompression
+bounds (zip-bomb prevention); solver fail-fast on divergence; Docker hardening (non-root);
+CI `sc-neurocore` pinning; strict py312 mypy typing; adaptive margin regression locks;
+`sys.path` removal across 20+ modules.
+
+**H6 (9 tasks):** Reactor engineering elevation -- VMEC IO, particle tracker, forward
+diagnostics, IMAS/IDS adapter, CAD raytrace, actuator dynamics, chaos monkey, MPI
+scaffolding, traceable control loop.
+
+**H7 (90 tasks):** Comprehensive Python runtime hardening -- deterministic non-interactive
+summary APIs for all control/nuclear/diagnostics modules; scoped RNG (elimination of
+global `np.random` mutation) across disruption predictor, digital twin, flight sim,
+optimal control, SOC learning, FNO turbulence, design scanner, diagnostics, and
+benchmark runners; strict input guards (finite/range/type validation) across all
+control, nuclear, diagnostics, validation, SCPN contract, HPC, and IO modules;
+NumPy LIF fallback for neuro-cybernetic controller; director interface fallback
+oversight; tomography non-SciPy solve path.
+
+**H8 (112 tasks):** Rust runtime hardening -- finite-value guards, shape validation,
+and domain bounds enforcement across all `fusion-core` crates (kernel, inverse,
+particles, transport, AMR, stability, RF heating, vacuum, B-field, X-point, memory
+transport, plasma source, VMEC interface, MPI domain, JIT, pedestal, ignition) and
+all `fusion-control` crates (MPC, PID, IsoFlux, SNN, optimal, SPI, analytic, SOC
+learning, digital twin with OU noise/chaos monkey/SimpleMLP/Plasma2D/actuator);
+explicit `FusionResult` error propagation replacing silent coercions/clamps/fallbacks;
+rustfmt and clippy CI fixes; Python-side IDS validation tightening, forward diagnostics
+grid-axis monotonicity enforcement, psi RMSE convergence/encoding/input contracts,
+solver-method bridge regression tests.
+
+---
+
+## Unreleased (Pre-Hardening)
 
 ### Point-Wise ψ RMSE Validation (All 8 SPARC GEQDSKs)
 
