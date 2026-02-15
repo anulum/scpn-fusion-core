@@ -463,6 +463,16 @@ pub fn advance_particles_boris(
     dt_s: f64,
     steps: usize,
 ) -> FusionResult<()> {
+    if particles.is_empty() {
+        return Err(FusionError::PhysicsViolation(
+            "particles must be non-empty".to_string(),
+        ));
+    }
+    if steps == 0 {
+        return Err(FusionError::PhysicsViolation(
+            "steps must be >= 1".to_string(),
+        ));
+    }
     if !dt_s.is_finite() || dt_s <= 0.0 {
         return Err(FusionError::PhysicsViolation(
             "dt_s must be finite and > 0".to_string(),
@@ -974,6 +984,31 @@ mod tests {
         match err {
             FusionError::PhysicsViolation(msg) => {
                 assert!(msg.contains("particle[0]"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_advance_particles_boris_rejects_empty_slice_and_zero_steps() {
+        let mut empty: Vec<ChargedParticle> = Vec::new();
+        let err = advance_particles_boris(&mut empty, [0.0, 0.0, 0.0], [0.0, 0.0, 2.5], 1e-9, 1)
+            .expect_err("empty particle slice must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("non-empty"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        let mut particles =
+            seed_alpha_test_particles(1, 6.2, 0.0, 3.5, 0.2, 1.0).expect("valid seeds");
+        let err =
+            advance_particles_boris(&mut particles, [0.0, 0.0, 0.0], [0.0, 0.0, 2.5], 1e-9, 0)
+                .expect_err("zero steps must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("steps"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
