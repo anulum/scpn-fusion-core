@@ -47,15 +47,14 @@ jobs:
         run: pip install -r docs/sphinx/requirements.txt
 
       - name: Build Sphinx docs
-        run: |
-          cd docs/sphinx
-          make html
+        run: sphinx-build -b html docs/sphinx docs/sphinx/_build/html
 
       - name: Upload Python docs
         uses: actions/upload-artifact@v4
         with:
           name: python-docs
           path: docs/sphinx/_build/html/
+          if-no-files-found: error
 
   build-rust-docs:
     name: Build Rust API docs (rustdoc)
@@ -85,6 +84,7 @@ jobs:
         with:
           name: rust-docs
           path: scpn-fusion-rs/target/doc/
+          if-no-files-found: error
 
   build-notebook-html:
     name: Build tutorial notebook HTML exports
@@ -112,6 +112,7 @@ jobs:
         with:
           name: notebook-html
           path: docs/notebooks/
+          if-no-files-found: error
 
   deploy:
     name: Deploy to GitHub Pages
