@@ -365,6 +365,32 @@ Summary:
   - full-dropout accounting (`dropout_prob=1.0`)
   - invalid chaos-parameter rejection semantics
 
+### H8-129 (Control)
+Files:
+- `src/scpn_fusion/control/tokamak_flight_sim.py`
+- `tests/test_tokamak_flight_sim.py`
+
+Summary:
+- Extended actuator realism in `IsoFluxController` with explicit controls:
+  - `heating_actuator_tau_s` (independent heating lag constant)
+  - `actuator_current_delta_limit` (bounded coil current delta command)
+  - `heating_beta_max` (bounded heating actuator command ceiling)
+- Added strict runtime guards for the new actuator controls:
+  - `heating_actuator_tau_s > 0`
+  - `actuator_current_delta_limit > 0`
+  - `heating_beta_max > 1.0`
+- Routed heating ramp through a first-order actuator:
+  - `beta_cmd = 1.0 + 0.05 * t`
+  - `beta_applied = actuator(beta_cmd)`
+  - exported into kernel physics config as `physics.beta_scale`
+- Extended summary diagnostics:
+  - `final_beta_scale`
+  - `mean_abs_heating_actuator_lag`
+- Added regression coverage for:
+  - new summary fields and deterministic replay
+  - invalid heating/limit control rejection
+  - expected lag increase for slower heating actuator time constant
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -379,6 +405,7 @@ Summary:
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after pulse-container extension)
 - `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` (after digital-twin pulse helper)
 - `python -m pytest tests/test_tokamak_digital_twin.py tests/test_imas_connector.py -q` (after chaos-monkey sensor lane)
+- `python -m pytest tests/test_tokamak_flight_sim.py -q` (after actuator realism extension)
 
 Observed final outcomes on latest runs:
 - `30 passed` (CAD wave)

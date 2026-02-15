@@ -64,6 +64,9 @@ class IsoFluxController:
         kernel_factory: Callable[[str], Any] = FusionKernel,
         verbose: bool = True,
         actuator_tau_s: float = 0.06,
+        heating_actuator_tau_s: Optional[float] = None,
+        actuator_current_delta_limit: float = 1.0e9,
+        heating_beta_max: float = 5.0,
         control_dt_s: float = 0.05,
     ) -> None:
         self.kernel = kernel_factory(config_file)
@@ -78,11 +81,27 @@ class IsoFluxController:
             'ctrl_R_applied': [],
             'ctrl_Z_cmd': [],
             'ctrl_Z_applied': [],
+            'beta_cmd': [],
+            'beta_applied': [],
         }
         control_dt_s = float(control_dt_s)
         if not np.isfinite(control_dt_s) or control_dt_s <= 0.0:
             raise ValueError("control_dt_s must be finite and > 0.")
         self.control_dt_s = control_dt_s
+        actuator_current_delta_limit = float(actuator_current_delta_limit)
+        if (
+            not np.isfinite(actuator_current_delta_limit)
+            or actuator_current_delta_limit <= 0.0
+        ):
+            raise ValueError("actuator_current_delta_limit must be finite and > 0.")
+        heating_beta_max = float(heating_beta_max)
+        if not np.isfinite(heating_beta_max) or heating_beta_max <= 1.0:
+            raise ValueError("heating_beta_max must be finite and > 1.0.")
+        if heating_actuator_tau_s is None:
+            heating_actuator_tau_s = float(actuator_tau_s)
+        heating_actuator_tau_s = float(heating_actuator_tau_s)
+        if not np.isfinite(heating_actuator_tau_s) or heating_actuator_tau_s <= 0.0:
+            raise ValueError("heating_actuator_tau_s must be finite and > 0.")
         
         # PID Gains for Position Control
         # Radial Control (Horizontal) -> Controlled by Outer Coils (PF2, PF3, PF4)
@@ -91,9 +110,30 @@ class IsoFluxController:
         # Vertical Control (Z-pos) -> Controlled by Top/Bottom diff (PF1 vs PF5)
         self.pid_Z = {'Kp': 5.0, 'Ki': 0.2, 'Kd': 2.0, 'err_sum': 0, 'last_err': 0}
 
-        self._act_radial = FirstOrderActuator(tau_s=actuator_tau_s, dt_s=self.control_dt_s)
-        self._act_top = FirstOrderActuator(tau_s=actuator_tau_s, dt_s=self.control_dt_s)
-        self._act_bottom = FirstOrderActuator(tau_s=actuator_tau_s, dt_s=self.control_dt_s)
+        self._act_radial = FirstOrderActuator(
+            tau_s=actuator_tau_s,
+            dt_s=self.control_dt_s,
+            u_min=-actuator_current_delta_limit,
+            u_max=actuator_current_delta_limit,
+        )
+        self._act_top = FirstOrderActuator(
+            tau_s=actuator_tau_s,
+            dt_s=self.control_dt_s,
+            u_min=-actuator_current_delta_limit,
+            u_max=actuator_current_delta_limit,
+        )
+        self._act_bottom = FirstOrderActuator(
+            tau_s=actuator_tau_s,
+            dt_s=self.control_dt_s,
+            u_min=-actuator_current_delta_limit,
+            u_max=actuator_current_delta_limit,
+        )
+        self._act_heating = FirstOrderActuator(
+            tau_s=heating_actuator_tau_s,
+            dt_s=self.control_dt_s,
+            u_min=1.0,
+            u_max=heating_beta_max,
+        )
 
     def _log(self, message: str) -> None:
         if self.verbose:
@@ -136,7 +176,9 @@ class IsoFluxController:
             
             # Increase Pressure (Heating) -> This pushes plasma outward (Shafranov Shift)
             # The controller must fight this drift!
-            beta_increase = 1.0 + (0.05 * t)
+            beta_cmd = 1.0 + (0.05 * t)
+            beta_applied = self._act_heating.step(beta_cmd)
+            physics_cfg['beta_scale'] = beta_applied
             
             # 2. MEASURE STATE (Diagnostics)
             # Find current axis
@@ -185,6 +227,8 @@ class IsoFluxController:
             self.history['ctrl_R_applied'].append(ctrl_radial)
             self.history['ctrl_Z_cmd'].append(ctrl_vertical_cmd)
             self.history['ctrl_Z_applied'].append(ctrl_vertical_applied)
+            self.history['beta_cmd'].append(beta_cmd)
+            self.history['beta_applied'].append(beta_applied)
             
             self._log(
                 f"Time {t}: Ip={target_Ip:.1f}MA | "
@@ -233,15 +277,32 @@ class IsoFluxController:
             if self.history['ctrl_Z_cmd']
             else 0.0
         )
+        mean_abs_heating_actuator_lag = (
+            float(
+                np.mean(
+                    np.abs(
+                        np.asarray(self.history['beta_cmd'], dtype=np.float64)
+                        - np.asarray(self.history['beta_applied'], dtype=np.float64)
+                    )
+                )
+            )
+            if self.history['beta_cmd']
+            else 0.0
+        )
+        final_beta_scale = (
+            float(self.history['beta_applied'][-1]) if self.history['beta_applied'] else 1.0
+        )
         return {
             "steps": int(steps),
             "final_ip_ma": final_ip_ma,
             "final_axis_r": final_axis_r,
             "final_axis_z": final_axis_z,
+            "final_beta_scale": final_beta_scale,
             "mean_abs_r_error": mean_abs_r_error,
             "mean_abs_z_error": mean_abs_z_error,
             "mean_abs_radial_actuator_lag": mean_abs_radial_actuator_lag,
             "mean_abs_vertical_actuator_lag": mean_abs_vertical_actuator_lag,
+            "mean_abs_heating_actuator_lag": mean_abs_heating_actuator_lag,
             "plot_saved": bool(plot_saved),
             "plot_error": plot_error,
         }
@@ -313,6 +374,11 @@ def run_flight_sim(
     save_plot: bool = True,
     output_path: str = "Tokamak_Flight_Report.png",
     verbose: bool = True,
+    actuator_tau_s: float = 0.06,
+    heating_actuator_tau_s: Optional[float] = None,
+    actuator_current_delta_limit: float = 1.0e9,
+    heating_beta_max: float = 5.0,
+    control_dt_s: float = 0.05,
     kernel_factory: Callable[[str], Any] = FusionKernel,
 ) -> Dict[str, Any]:
     """Run deterministic tokamak flight-sim control loop and return summary."""
@@ -325,6 +391,11 @@ def run_flight_sim(
         config_file=str(config_file),
         kernel_factory=kernel_factory,
         verbose=verbose,
+        actuator_tau_s=actuator_tau_s,
+        heating_actuator_tau_s=heating_actuator_tau_s,
+        actuator_current_delta_limit=actuator_current_delta_limit,
+        heating_beta_max=heating_beta_max,
+        control_dt_s=control_dt_s,
     )
     summary = sim.run_shot(
         shot_duration=shot_duration,

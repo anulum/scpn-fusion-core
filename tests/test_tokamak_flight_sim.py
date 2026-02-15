@@ -69,10 +69,12 @@ def test_run_flight_sim_returns_finite_summary_without_plot() -> None:
         "final_ip_ma",
         "final_axis_r",
         "final_axis_z",
+        "final_beta_scale",
         "mean_abs_r_error",
         "mean_abs_z_error",
         "mean_abs_radial_actuator_lag",
         "mean_abs_vertical_actuator_lag",
+        "mean_abs_heating_actuator_lag",
         "plot_saved",
     ):
         assert key in summary
@@ -83,10 +85,12 @@ def test_run_flight_sim_returns_finite_summary_without_plot() -> None:
     assert np.isfinite(summary["final_ip_ma"])
     assert np.isfinite(summary["final_axis_r"])
     assert np.isfinite(summary["final_axis_z"])
+    assert np.isfinite(summary["final_beta_scale"])
     assert np.isfinite(summary["mean_abs_r_error"])
     assert np.isfinite(summary["mean_abs_z_error"])
     assert np.isfinite(summary["mean_abs_radial_actuator_lag"])
     assert np.isfinite(summary["mean_abs_vertical_actuator_lag"])
+    assert np.isfinite(summary["mean_abs_heating_actuator_lag"])
 
 
 def test_run_flight_sim_is_deterministic_for_fixed_seed() -> None:
@@ -107,6 +111,8 @@ def test_run_flight_sim_is_deterministic_for_fixed_seed() -> None:
     assert a["mean_abs_z_error"] == b["mean_abs_z_error"]
     assert a["mean_abs_radial_actuator_lag"] == b["mean_abs_radial_actuator_lag"]
     assert a["mean_abs_vertical_actuator_lag"] == b["mean_abs_vertical_actuator_lag"]
+    assert a["final_beta_scale"] == b["final_beta_scale"]
+    assert a["mean_abs_heating_actuator_lag"] == b["mean_abs_heating_actuator_lag"]
 
 
 def test_run_flight_sim_does_not_mutate_global_numpy_rng_state() -> None:
@@ -155,3 +161,49 @@ def test_isoflux_controller_rejects_invalid_control_dt() -> None:
             verbose=False,
             control_dt_s=0.0,
         )
+
+
+def test_isoflux_controller_rejects_invalid_heating_and_limit_controls() -> None:
+    with pytest.raises(ValueError, match="heating_actuator_tau_s"):
+        IsoFluxController(
+            config_file="dummy.json",
+            kernel_factory=_DummyKernel,
+            verbose=False,
+            heating_actuator_tau_s=0.0,
+        )
+    with pytest.raises(ValueError, match="actuator_current_delta_limit"):
+        IsoFluxController(
+            config_file="dummy.json",
+            kernel_factory=_DummyKernel,
+            verbose=False,
+            actuator_current_delta_limit=0.0,
+        )
+    with pytest.raises(ValueError, match="heating_beta_max"):
+        IsoFluxController(
+            config_file="dummy.json",
+            kernel_factory=_DummyKernel,
+            verbose=False,
+            heating_beta_max=1.0,
+        )
+
+
+def test_run_flight_sim_heating_tau_controls_actuator_lag() -> None:
+    fast = run_flight_sim(
+        config_file="dummy.json",
+        shot_duration=18,
+        seed=10,
+        save_plot=False,
+        verbose=False,
+        heating_actuator_tau_s=0.002,
+        kernel_factory=_DummyKernel,
+    )
+    slow = run_flight_sim(
+        config_file="dummy.json",
+        shot_duration=18,
+        seed=10,
+        save_plot=False,
+        verbose=False,
+        heating_actuator_tau_s=0.5,
+        kernel_factory=_DummyKernel,
+    )
+    assert fast["mean_abs_heating_actuator_lag"] < slow["mean_abs_heating_actuator_lag"]
