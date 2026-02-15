@@ -15,11 +15,11 @@ use crate::source::{
 };
 use crate::vacuum::calculate_vacuum_field;
 use crate::xpoint::find_x_point;
+use fusion_math::multigrid::{multigrid_solve, MultigridConfig};
+use fusion_math::sor::sor_solve;
 use fusion_types::config::ReactorConfig;
 use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::{EquilibriumResult, Grid2D, PlasmaState};
-use fusion_math::multigrid::{multigrid_solve, MultigridConfig};
-use fusion_math::sor::sor_solve;
 use ndarray::{Array1, Array2};
 
 /// Picard relaxation factor (Python line 180: `alpha = 0.1`).
@@ -238,17 +238,35 @@ impl FusionKernel {
         }
 
         // Initial elliptic solve (SOR or multigrid)
-        let dr_sq = dr * dr;
         match self.solver_method {
             SolverMethod::PicardSor => {
-                sor_solve(&mut self.state.psi, &source, &self.grid, 1.8, INITIAL_JACOBI_ITERS);
+                sor_solve(
+                    &mut self.state.psi,
+                    &source,
+                    &self.grid,
+                    1.8,
+                    INITIAL_JACOBI_ITERS,
+                );
             }
             SolverMethod::PicardMultigrid => {
                 let mg_cfg = MultigridConfig::default();
-                let _ = multigrid_solve(
-                    &mut self.state.psi, &source, &self.grid, &mg_cfg,
-                    INITIAL_JACOBI_ITERS, 1e-6,
+                let mg_result = multigrid_solve(
+                    &mut self.state.psi,
+                    &source,
+                    &self.grid,
+                    &mg_cfg,
+                    INITIAL_JACOBI_ITERS,
+                    1e-6,
                 );
+                if !mg_result.converged {
+                    sor_solve(
+                        &mut self.state.psi,
+                        &source,
+                        &self.grid,
+                        1.8,
+                        INITIAL_JACOBI_ITERS,
+                    );
+                }
             }
         }
 
@@ -343,10 +361,17 @@ impl FusionKernel {
                 }
                 SolverMethod::PicardMultigrid => {
                     let mg_cfg = MultigridConfig::default();
-                    let _ = multigrid_solve(
-                        &mut psi_new, &source, &self.grid, &mg_cfg,
-                        INNER_SOLVE_ITERS, 1e-8,
+                    let mg_result = multigrid_solve(
+                        &mut psi_new,
+                        &source,
+                        &self.grid,
+                        &mg_cfg,
+                        INNER_SOLVE_ITERS,
+                        1e-8,
                     );
+                    if !mg_result.converged {
+                        sor_solve(&mut psi_new, &source, &self.grid, 1.8, INNER_SOLVE_ITERS);
+                    }
                 }
             }
 

@@ -752,7 +752,7 @@ fn kernel_analytical_forward_and_jacobian(
 
         let delta_psi = solve_linearized_sensitivity(grid, &ds_dx, &ds_dpsi, sens_iters)?;
         for (row, &(iz, ir)) in probe_idx.iter().enumerate() {
-            jac[row][col] = delta_psi[[iz, ir]];
+            jac[row][col] = -delta_psi[[iz, ir]];
         }
     }
 
