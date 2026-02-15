@@ -525,6 +525,7 @@ pub fn blend_particle_current(
     i_target: f64,
     particle_coupling: f64,
 ) -> FusionResult<Array2<f64>> {
+    validate_particle_projection_grid(grid, "particle current blend")?;
     let expected_shape = (grid.nz, grid.nr);
     if fluid_j_phi.dim() != expected_shape || particle_j_phi.dim() != expected_shape {
         return Err(FusionError::PhysicsViolation(format!(
@@ -791,6 +792,22 @@ mod tests {
         match err {
             FusionError::PhysicsViolation(msg) => {
                 assert!(msg.contains("cannot renormalize blended current"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_blend_particle_current_rejects_invalid_grid_spacing() {
+        let mut grid = Grid2D::new(8, 8, 1.0, 5.0, -2.0, 2.0);
+        grid.dr = 0.0;
+        let fluid = Array2::from_elem((8, 8), 2.0);
+        let particle = Array2::from_elem((8, 8), 6.0);
+        let err = blend_particle_current(&fluid, &particle, &grid, 1.0, 0.5)
+            .expect_err("invalid grid spacing must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("grid spacing"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }

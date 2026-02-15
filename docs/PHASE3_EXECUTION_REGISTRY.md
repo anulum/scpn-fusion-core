@@ -289,6 +289,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-062 | P1 | Runtime | Harden external particle-feedback map ingestion with strict finite-value guard | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `set_particle_current_feedback` now rejects non-finite external current maps via explicit `FusionError::PhysicsViolation` before storing feedback state, preventing NaN/Inf maps from entering subsequent equilibrium iterations; added targeted regression coverage | `cargo test -p fusion-core kernel::tests::test_particle_feedback_shape_guard -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_invalid_coupling -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_non_finite_map -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_builds_summary -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_rejects_invalid_threshold -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-063 | P1 | Runtime | Harden alpha seed generation against non-finite kinematic overflow states | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | Alpha seed generation now explicitly validates derived kinetic quantities (`energy_j`, `speed`, decomposed velocity components) for finite positive values and fails fast with `FusionError::PhysicsViolation` on overflow-driven non-finite states instead of propagating invalid particle seeds downstream | `cargo test -p fusion-core particles::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-064 | P1 | Runtime | Support descending-grid particle projection bounds without silent in-domain rejection | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | Particle heating/deposition bounds now derive axis limits via endpoint min/max and accept finite non-zero signed spacings, preserving correct in-domain projection on descending `R/Z` grids; added regression tests for descending-axis heating and toroidal current deposition paths | `cargo test -p fusion-core particles::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
+| H8-065 | P1 | Runtime | Enforce projection-grid metadata validation in particle-current blending path | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | `blend_particle_current` now validates projection grid metadata (axis lengths/mesh shape/finiteness/non-zero spacing) before renormalization, closing a path where malformed grid descriptors could silently distort current scaling; added regression test for invalid grid spacing | `cargo test -p fusion-core particles::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 
 ## Task Accounting
 
@@ -296,7 +297,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 200
+- Post-S4 hardening tasks delivered: 201
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -520,4 +521,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-062`
 - Completed: `H8-063`
 - Completed: `H8-064`
+- Completed: `H8-065`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
