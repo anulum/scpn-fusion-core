@@ -110,3 +110,21 @@ def test_validate_ids_payload_rejects_missing_nested_keys(mutate, msg: str) -> N
     mutate(payload)  # type: ignore[arg-type]
     with pytest.raises(ValueError, match=msg):
         validate_ids_payload(payload)
+
+
+def test_digital_twin_summary_to_ids_rejects_non_mapping_summary() -> None:
+    with pytest.raises(ValueError, match="summary must be a mapping"):
+        digital_twin_summary_to_ids([], machine="ITER", shot=1, run=2)  # type: ignore[arg-type]
+
+
+def test_digital_twin_summary_to_ids_rejects_missing_required_summary_keys() -> None:
+    summary = {
+        "steps": 12,
+        "final_axis_r": 6.2,
+        "final_axis_z": 0.03,
+        "final_islands_px": 4,
+        "final_reward": 1.1,
+        "reward_mean_last_50": 0.9,
+    }
+    with pytest.raises(ValueError, match="digital twin summary missing keys"):
+        digital_twin_summary_to_ids(summary, machine="ITER", shot=1, run=2)

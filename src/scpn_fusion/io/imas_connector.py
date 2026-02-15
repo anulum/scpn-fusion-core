@@ -22,6 +22,14 @@ REQUIRED_IDS_KEYS = (
     "performance",
 )
 
+REQUIRED_DIGITAL_TWIN_SUMMARY_KEYS = (
+    "steps",
+    "final_islands_px",
+    "final_reward",
+    "reward_mean_last_50",
+    "final_avg_temp",
+)
+
 
 def _missing_required_keys(mapping: Mapping[str, Any], required: tuple[str, ...]) -> list[str]:
     return [key for key in required if key not in mapping]
@@ -131,6 +139,12 @@ def digital_twin_summary_to_ids(
     run: int = 0,
 ) -> dict[str, Any]:
     """Map internal digital-twin summary into IDS-like payload."""
+    if isinstance(summary, bool) or not isinstance(summary, Mapping):
+        raise ValueError("summary must be a mapping.")
+    missing_summary = _missing_required_keys(summary, REQUIRED_DIGITAL_TWIN_SUMMARY_KEYS)
+    if missing_summary:
+        raise ValueError(f"digital twin summary missing keys: {missing_summary}")
+
     machine_name = str(machine).strip()
     if not machine_name:
         raise ValueError("machine must be a non-empty string.")

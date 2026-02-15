@@ -326,7 +326,8 @@ derive the imported 85-task Phase 3 backlog.
 | H8-099 | P1 | Interop | Enforce millisecond-integral IDS times at validation boundary | `src/scpn_fusion/io/imas_connector.py`, `tests/test_imas_connector.py` | `validate_ids_payload` now rejects `time_slice.time_s` values that cannot map exactly to integer milliseconds, matching `ids_to_digital_twin_summary` conversion contract and preventing downstream late-fail payloads; added regression coverage for non-ms fractional time inputs | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 | H8-100 | P1 | Diagnostics | Add explicit chord-geometry shape guards for forward interferometer channels | `src/scpn_fusion/diagnostics/forward.py`, `tests/test_forward_diagnostics_guards.py` | Forward diagnostics now validate each chord is exactly two 2D points before integration, converting malformed chord-arity inputs into deterministic `ValueError` contracts instead of unpack/index exceptions; added regression coverage for malformed chord and point dimensionality inputs | `python -m pytest tests/test_forward_diagnostics_guards.py tests/test_diagnostics.py -q` |
 | H8-101 | P1 | Diagnostics | Add optional strict chord-domain enforcement for forward-model interferometer channels | `src/scpn_fusion/diagnostics/forward.py`, `tests/test_forward_diagnostics_guards.py` | Added opt-in domain-bound enforcement (`enforce_domain_bounds` / `enforce_chord_domain_bounds`) so out-of-grid chord endpoints can be explicitly rejected when strict geometry validation is required, while preserving legacy clamp-based behavior by default; added regression coverage for strict rejection and default permissive mode | `python -m pytest tests/test_forward_diagnostics_guards.py tests/test_diagnostics.py -q` |
-| H8-102 | P1 | Interop | Require explicit nested IDS keys in validation contract | `src/scpn_fusion/io/imas_connector.py`, `tests/test_imas_connector.py` | `validate_ids_payload` now enforces presence of required nested keys (`time_slice.index/time_s`, `equilibrium.axis/islands_px`, `equilibrium.axis.r_m/z_m`, and performance scalars) instead of silently defaulting absent fields, tightening schema compatibility before downstream mapping; added regression coverage for missing nested-key rejection | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
+| H8-102 | P1 | Interop | Require explicit nested IDS keys and core digital-twin summary keys in adapter contract | `src/scpn_fusion/io/imas_connector.py`, `tests/test_imas_connector.py` | `validate_ids_payload` now enforces required nested IDS keys (`time_slice.index/time_s`, `equilibrium.axis/islands_px`, `equilibrium.axis.r_m/z_m`, and performance scalars), and `digital_twin_summary_to_ids` now requires a mapping with core summary fields (`steps`, `final_islands_px`, `final_reward`, `reward_mean_last_50`, `final_avg_temp`) while keeping axis fields optional for backward compatibility; added regression coverage for missing nested-key and summary-key rejection | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
+| H8-103 | P1 | Interop | Preserve digital-twin IDS adapter compatibility while enforcing core summary-key contract | `src/scpn_fusion/io/imas_connector.py`, `tests/test_imas_connector.py` | Refined `digital_twin_summary_to_ids` summary-key enforcement to require only stable core fields and keep `final_axis_r/z` optional, restoring compatibility with `run_digital_twin` outputs while retaining explicit nested-key validation in IDS payload checks; added regression coverage for non-mapping summaries and missing core summary keys | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 
 ## Task Accounting
 
@@ -334,7 +335,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 238
+- Post-S4 hardening tasks delivered: 239
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -596,4 +597,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-100`
 - Completed: `H8-101`
 - Completed: `H8-102`
+- Completed: `H8-103`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
