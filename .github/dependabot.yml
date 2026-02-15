@@ -1,33 +1,11 @@
 # -----------------------------------------------------------------------
 # SCPN Fusion Core — Dependabot Configuration
-# Automatically opens PRs for outdated dependencies
+# Only GitHub Actions versions — pip/cargo deps are bumped manually
+# to avoid silent numerical regressions in validated physics code.
 # -----------------------------------------------------------------------
 version: 2
 
 updates:
-  # Python (pip) dependencies
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "python"
-
-  # Rust (cargo) dependencies
-  - package-ecosystem: "cargo"
-    directory: "/scpn-fusion-rs"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "rust"
-
-  # GitHub Actions versions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
