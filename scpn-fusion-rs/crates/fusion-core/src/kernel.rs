@@ -129,6 +129,22 @@ impl FusionKernel {
                 "grid dimensions must be >= 2 in both axes, got nz={nz}, nr={nr}"
             )));
         }
+        if self.grid.r.len() != nr || self.grid.z.len() != nz {
+            return Err(FusionError::ConfigError(format!(
+                "grid axis lengths must match metadata, got r_len={}, nr={}, z_len={}, nz={}",
+                self.grid.r.len(),
+                nr,
+                self.grid.z.len(),
+                nz
+            )));
+        }
+        if self.grid.rr.dim() != (nz, nr) || self.grid.zz.dim() != (nz, nr) {
+            return Err(FusionError::ConfigError(format!(
+                "grid mesh shape mismatch: expected ({nz}, {nr}), rr={:?}, zz={:?}",
+                self.grid.rr.dim(),
+                self.grid.zz.dim()
+            )));
+        }
         if !dr.is_finite() || !dz.is_finite() || dr <= 0.0 || dz <= 0.0 {
             return Err(FusionError::ConfigError(format!(
                 "grid spacing must be finite and > 0, got dr={dr}, dz={dz}"
@@ -1216,6 +1232,36 @@ mod tests {
         match err {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("grid spacing"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_solve_equilibrium_rejects_grid_axis_length_mismatch() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.nr -= 1;
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("grid axis-length mismatch must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("axis lengths"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_solve_equilibrium_rejects_grid_mesh_shape_mismatch() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.rr = Array2::zeros((kernel.grid().nz - 1, kernel.grid().nr));
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("grid mesh-shape mismatch must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("mesh shape"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
