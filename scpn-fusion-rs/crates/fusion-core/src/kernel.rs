@@ -548,7 +548,15 @@ impl FusionKernel {
         }
         probes
             .iter()
-            .map(|&(r, z)| self.sample_psi_at(r, z))
+            .enumerate()
+            .map(|(idx, &(r, z))| {
+                self.sample_psi_at(r, z).map_err(|err| match err {
+                    FusionError::ConfigError(msg) => {
+                        FusionError::ConfigError(format!("probe[{idx}] {msg}"))
+                    }
+                    other => other,
+                })
+            })
             .collect()
     }
 }
@@ -660,6 +668,21 @@ mod tests {
         assert!(kernel
             .sample_psi_at_probes(&[(6.2, 0.0), (r_max + 1.0e-6, 0.1)])
             .is_err());
+    }
+
+    #[test]
+    fn test_sample_psi_probe_errors_include_probe_index() {
+        let kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let r_max = kernel.grid().r[0].max(kernel.grid().r[kernel.grid().nr - 1]);
+        let err = kernel
+            .sample_psi_at_probes(&[(6.2, 0.0), (r_max + 1.0e-6, 0.1)])
+            .expect_err("out-of-domain probe list must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("probe[1]"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
     }
 
     #[test]

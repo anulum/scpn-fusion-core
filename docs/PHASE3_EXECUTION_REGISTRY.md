@@ -299,6 +299,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-072 | P1 | Runtime | Preserve external-profile state across temporary profile solve wrappers | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `solve_equilibrium_with_profiles` now restores the prior external-profile mode and parameter set after each call (including failure paths), preventing temporary inverse/diagnostic profile solves from mutating subsequent kernel runtime behavior; added regression coverage for restoration with and without pre-existing profile mode | `cargo test -p fusion-core kernel::tests::test_solve_with_profiles_restores_profile_state_on_error -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_solve_with_profiles_restores_previous_external_profile_state -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_solve_equilibrium_rejects_invalid_runtime_controls -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-073 | P1 | Runtime | Harden Boris batch-advance entrypoint against empty-slice and zero-step no-op calls | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | `advance_particles_boris` now rejects empty particle slices and `steps=0` with explicit `FusionError::PhysicsViolation` instead of silently returning success on invalid no-op runtimes; added targeted regression coverage for both invalid entrypoint modes while preserving nominal Boris integration behavior | `cargo test -p fusion-core particles::tests::test_advance_particles_boris_rejects_empty_slice_and_zero_steps -- --nocapture`, `cargo test -p fusion-core particles::tests::test_advance_particles_boris_rejects_invalid_particle_state -- --nocapture`, `cargo test -p fusion-core particles::tests::test_boris_push_preserves_speed_without_electric_field -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-074 | P1 | Runtime | Reject empty particle populations in toroidal current deposition | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | `deposit_toroidal_current_density` now rejects empty particle populations with explicit `FusionError::PhysicsViolation` instead of silently returning zero-current maps, strengthening invalid-call detection for feedback synthesis and diagnostics staging paths; added regression coverage for empty-population deposition while preserving valid deposition behavior | `cargo test -p fusion-core particles::tests::test_toroidal_current_deposition_rejects_empty_population -- --nocapture`, `cargo test -p fusion-core particles::tests::test_toroidal_current_deposition_rejects_invalid_particle_state -- --nocapture`, `cargo test -p fusion-core particles::tests::test_toroidal_current_deposition_is_nonzero -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_rejects_empty_population -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
+| H8-075 | P1 | Runtime | Add per-probe index context to multi-probe psi sampling errors | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `sample_psi_at_probes` now wraps underlying sampler `ConfigError` values with `probe[i]` context, making invalid diagnostics probe batches directly traceable without binary-searching coordinates; added regression coverage for indexed out-of-domain failure messages | `cargo test -p fusion-core kernel::tests::test_sample_psi_probe_errors_include_probe_index -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_out_of_domain_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_empty_probe_list -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 
 ## Task Accounting
 
@@ -306,7 +307,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 210
+- Post-S4 hardening tasks delivered: 211
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -540,4 +541,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-072`
 - Completed: `H8-073`
 - Completed: `H8-074`
+- Completed: `H8-075`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
