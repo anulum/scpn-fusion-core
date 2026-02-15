@@ -28,6 +28,7 @@ def _summary_markdown(summary: dict[str, Any]) -> str:
     lines.append(f"- batch: `{summary['batch']}`")
     lines.append(f"- seed: `{summary['seed']}`")
     lines.append(f"- atol: `{summary['atol']}`")
+    lines.append(f"- requested_backends: `{summary['requested_backends']}`")
     lines.append(f"- available_backends: `{summary['available_backends']}`")
     lines.append("")
     lines.append("| backend | single_max_abs_err | batch_max_abs_err | single_within_tol | batch_within_tol |")
@@ -50,6 +51,7 @@ def run_parity_check(
     tau_s: float,
     gain: float,
     command_limit: float,
+    backends: list[str] | None = None,
 ) -> dict[str, Any]:
     spec = TraceableRuntimeSpec(
         dt_s=float(dt_s),
@@ -63,6 +65,7 @@ def run_parity_check(
         seed=int(seed),
         spec=spec,
         atol=float(atol),
+        backends=backends,
     )
     reports = [asdict(v) for _, v in sorted(reports_map.items(), key=lambda kv: kv[0])]
     strict_ok = all(bool(r["single_within_tol"] and r["batch_within_tol"]) for r in reports)
@@ -72,6 +75,7 @@ def run_parity_check(
         "batch": int(batch),
         "seed": int(seed),
         "atol": float(atol),
+        "requested_backends": list(backends) if backends is not None else None,
         "spec": asdict(spec),
         "available_backends": available_traceable_backends(),
         "reports": reports,
@@ -89,6 +93,13 @@ def main() -> int:
     parser.add_argument("--tau-s", type=float, default=5.0e-3)
     parser.add_argument("--gain", type=float, default=1.0)
     parser.add_argument("--command-limit", type=float, default=1.0)
+    parser.add_argument(
+        "--backend",
+        action="append",
+        default=None,
+        help="Backend to validate (repeatable): numpy, jax, torchscript. "
+        "Default validates all available backends.",
+    )
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--output-json", type=Path, default=None)
     parser.add_argument("--output-md", type=Path, default=None)
@@ -103,6 +114,7 @@ def main() -> int:
         tau_s=args.tau_s,
         gain=args.gain,
         command_limit=args.command_limit,
+        backends=args.backend,
     )
 
     print(json.dumps(summary, indent=2, sort_keys=True))
@@ -121,4 +133,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

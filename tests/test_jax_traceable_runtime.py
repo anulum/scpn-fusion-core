@@ -216,3 +216,40 @@ def test_validate_traceable_backend_parity_includes_only_available_backends() ->
     reports = runtime.validate_traceable_backend_parity(steps=8, batch=2, seed=11, atol=1e-8)
     expected = set(runtime.available_traceable_backends())
     assert set(reports.keys()) == expected
+
+
+def test_validate_traceable_backend_parity_respects_backend_subset() -> None:
+    reports = runtime.validate_traceable_backend_parity(
+        steps=10,
+        batch=2,
+        seed=5,
+        atol=1e-8,
+        backends=["numpy"],
+    )
+    assert set(reports.keys()) == {"numpy"}
+
+
+def test_validate_traceable_backend_parity_rejects_unsupported_backend() -> None:
+    with pytest.raises(ValueError, match="Unsupported backend"):
+        runtime.validate_traceable_backend_parity(
+            steps=8,
+            batch=2,
+            seed=11,
+            atol=1e-8,
+            backends=["cuda"],
+        )
+
+
+def test_validate_traceable_backend_parity_rejects_unavailable_backend(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(runtime, "_HAS_JAX", False)
+    monkeypatch.setattr(runtime, "_HAS_TORCH", False)
+    with pytest.raises(ValueError, match="not available"):
+        runtime.validate_traceable_backend_parity(
+            steps=8,
+            batch=2,
+            seed=11,
+            atol=1e-8,
+            backends=["jax"],
+        )

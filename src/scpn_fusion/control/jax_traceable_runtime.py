@@ -119,6 +119,28 @@ def available_traceable_backends() -> list[str]:
     return out
 
 
+def _resolve_backend_set(backends: list[str] | tuple[str, ...] | None) -> list[str]:
+    available = available_traceable_backends()
+    if backends is None:
+        return available
+    out: list[str] = []
+    seen: set[str] = set()
+    for raw in backends:
+        name = str(raw).strip().lower()
+        if name not in {"numpy", "jax", "torchscript"}:
+            raise ValueError(
+                f"Unsupported backend '{raw}'. Allowed: numpy, jax, torchscript."
+            )
+        if name not in available:
+            raise ValueError(f"Requested backend '{name}' is not available on this host.")
+        if name not in seen:
+            out.append(name)
+            seen.add(name)
+    if not out:
+        raise ValueError("backends must contain at least one backend when provided.")
+    return out
+
+
 def _simulate_numpy(
     commands: FloatArray, initial_state: float, spec: TraceableRuntimeSpec
 ) -> FloatArray:
@@ -385,6 +407,7 @@ def validate_traceable_backend_parity(
     seed: int = 42,
     spec: TraceableRuntimeSpec | None = None,
     atol: float = 1e-8,
+    backends: list[str] | tuple[str, ...] | None = None,
 ) -> dict[str, TraceableBackendParityReport]:
     """
     Compare available compiled backends to NumPy for single and batch rollouts.
@@ -413,7 +436,8 @@ def validate_traceable_backend_parity(
     ).state_history
 
     reports: dict[str, TraceableBackendParityReport] = {}
-    for backend in available_traceable_backends():
+    backend_list = _resolve_backend_set(backends)
+    for backend in backend_list:
         out_single = run_traceable_control_loop(
             single_cmd, initial_state=x0, spec=runtime_spec, backend=backend
         ).state_history
