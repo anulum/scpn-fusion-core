@@ -340,6 +340,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-113 | P1 | Engineering | Harden CAD raytrace mesh/source contracts with strict index/finiteness/non-degeneracy guards | `src/scpn_fusion/engineering/cad_raytrace.py`, `tests/test_cad_raytrace.py` | CAD mesh loading and surface-loading estimation now reject malformed geometry and source inputs (empty meshes, out-of-bounds/negative face indices, non-finite vertices/source values, degenerate triangles, negative source strengths) via explicit `ValueError` contracts instead of silent coercion/NaN propagation; added dedicated CAD raytrace regression suite covering STL fallback and malformed-input rejection paths | `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
 | H8-114 | P1 | Engineering | Add optional CAD triangle occlusion culling for line-of-sight ray loading | `src/scpn_fusion/engineering/cad_raytrace.py`, `tests/test_cad_raytrace.py` | Added optional segment-triangle occlusion culling (`occlusion_cull`) and strict `occlusion_epsilon` validation so CAD surface-load estimates can suppress shadowed faces in multi-surface geometries; added regression coverage proving blocked downstream faces are zeroed under occlusion while non-occluded mode preserves prior behavior | `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
 | H8-115 | P1 | Engineering | Add binary STL fallback parser for CAD ingestion without optional trimesh backend | `src/scpn_fusion/engineering/cad_raytrace.py`, `tests/test_cad_raytrace.py` | CAD mesh loading now supports binary STL parsing in fallback mode (header/triangle decoding with truncation checks) when `trimesh` is unavailable, expanding out-of-the-box interoperability for common CAD-export STL assets; added regression tests for successful binary STL load and truncated-binary rejection | `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
+| H8-116 | P1 | Performance | Add optional JAX-traceable reduced control-loop runtime with deterministic NumPy fallback | `src/scpn_fusion/control/jax_traceable_runtime.py`, `src/scpn_fusion/control/__init__.py`, `tests/test_jax_traceable_runtime.py` | Added `run_traceable_control_loop` with backend selection (`auto`/`numpy`/`jax`), strict runtime/spec guards, and JAX `lax.scan` + `jit` rollout path when JAX is available; preserves deterministic NumPy execution when JAX is absent, enabling a trace-friendly control-loop lane without mandatory new dependencies | `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
 
 ## Task Accounting
 
@@ -347,7 +348,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 251
+- Post-S4 hardening tasks delivered: 252
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -622,4 +623,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-113`
 - Completed: `H8-114`
 - Completed: `H8-115`
+- Completed: `H8-116`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
