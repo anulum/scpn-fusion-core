@@ -365,12 +365,25 @@ pub fn boris_push_step(
     electric_v_m: [f64; 3],
     magnetic_t: [f64; 3],
     dt_s: f64,
-) {
-    if particle.mass_kg <= 0.0 || !dt_s.is_finite() || dt_s <= 0.0 {
-        return;
+) -> FusionResult<()> {
+    validate_particle_state(particle, "particle")?;
+    if electric_v_m.iter().any(|v| !v.is_finite()) || magnetic_t.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "electric_v_m and magnetic_t must be finite vectors".to_string(),
+        ));
+    }
+    if !dt_s.is_finite() || dt_s <= 0.0 {
+        return Err(FusionError::PhysicsViolation(
+            "dt_s must be finite and > 0".to_string(),
+        ));
     }
 
     let qmdt2 = particle.charge_c * dt_s / (2.0 * particle.mass_kg);
+    if !qmdt2.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "boris qmdt2 became non-finite".to_string(),
+        ));
+    }
     let v_minus = [
         particle.vx_m_s + qmdt2 * electric_v_m[0],
         particle.vy_m_s + qmdt2 * electric_v_m[1],
@@ -401,6 +414,11 @@ pub fn boris_push_step(
     let vx_new = v_plus[0] + qmdt2 * electric_v_m[0];
     let vy_new = v_plus[1] + qmdt2 * electric_v_m[1];
     let vz_new = v_plus[2] + qmdt2 * electric_v_m[2];
+    if !vx_new.is_finite() || !vy_new.is_finite() || !vz_new.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "boris velocity update became non-finite".to_string(),
+        ));
+    }
 
     particle.vx_m_s = vx_new;
     particle.vy_m_s = vy_new;
@@ -408,6 +426,12 @@ pub fn boris_push_step(
     particle.x_m += vx_new * dt_s;
     particle.y_m += vy_new * dt_s;
     particle.z_m += vz_new * dt_s;
+    if !particle.x_m.is_finite() || !particle.y_m.is_finite() || !particle.z_m.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "boris position update became non-finite".to_string(),
+        ));
+    }
+    Ok(())
 }
 
 /// Advance a particle set for a fixed number of Boris steps.
@@ -417,12 +441,23 @@ pub fn advance_particles_boris(
     magnetic_t: [f64; 3],
     dt_s: f64,
     steps: usize,
-) {
+) -> FusionResult<()> {
+    if !dt_s.is_finite() || dt_s <= 0.0 {
+        return Err(FusionError::PhysicsViolation(
+            "dt_s must be finite and > 0".to_string(),
+        ));
+    }
     for _ in 0..steps {
-        for particle in particles.iter_mut() {
-            boris_push_step(particle, electric_v_m, magnetic_t, dt_s);
+        for (idx, particle) in particles.iter_mut().enumerate() {
+            boris_push_step(particle, electric_v_m, magnetic_t, dt_s).map_err(|err| match err {
+                FusionError::PhysicsViolation(msg) => FusionError::PhysicsViolation(format!(
+                    "particle[{idx}] boris push failed: {msg}"
+                )),
+                other => other,
+            })?;
         }
     }
+    Ok(())
 }
 
 /// Deposit particle toroidal current density J_phi on the GS R-Z grid.
@@ -536,7 +571,8 @@ mod tests {
         let speed_0 =
             (particle.vx_m_s.powi(2) + particle.vy_m_s.powi(2) + particle.vz_m_s.powi(2)).sqrt();
         let mut particles = vec![particle];
-        advance_particles_boris(&mut particles, [0.0, 0.0, 0.0], [0.0, 0.0, 2.5], 5e-10, 600);
+        advance_particles_boris(&mut particles, [0.0, 0.0, 0.0], [0.0, 0.0, 2.5], 5e-10, 600)
+            .expect("valid boris advance should succeed");
         let updated = particles[0];
         let speed_1 =
             (updated.vx_m_s.powi(2) + updated.vy_m_s.powi(2) + updated.vz_m_s.powi(2)).sqrt();
@@ -742,6 +778,44 @@ mod tests {
         match err {
             FusionError::PhysicsViolation(msg) => {
                 assert!(msg.contains("weight"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_boris_push_rejects_invalid_runtime_inputs() {
+        let mut particle =
+            seed_alpha_test_particles(1, 6.2, 0.0, 3.5, 0.2, 1.0).expect("valid seeds")[0];
+        let err = boris_push_step(&mut particle, [0.0, 0.0, f64::NAN], [0.0, 0.0, 2.5], 1e-9)
+            .expect_err("non-finite electric field must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("electric_v_m"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+        let err = boris_push_step(&mut particle, [0.0, 0.0, 0.0], [0.0, 0.0, 2.5], 0.0)
+            .expect_err("non-positive dt must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("dt_s"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_advance_particles_boris_rejects_invalid_particle_state() {
+        let mut particles =
+            seed_alpha_test_particles(2, 6.2, 0.0, 3.5, 0.2, 1.0).expect("valid seeds");
+        particles[0].mass_kg = 0.0;
+        let err =
+            advance_particles_boris(&mut particles, [0.0, 0.0, 0.0], [0.0, 0.0, 2.5], 1e-9, 1)
+                .expect_err("invalid particle mass must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("particle[0]"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
