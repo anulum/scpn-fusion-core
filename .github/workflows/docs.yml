@@ -145,6 +145,70 @@ jobs:
           name: notebook-html
           path: site/notebooks/
 
+      - name: Create notebook index page
+        run: |
+          cat > site/notebooks/index.html << 'NBEOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Tutorial Notebooks — SCPN Fusion Core</title>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { font-family: 'SF Mono', 'Fira Code', monospace; background: #00050a; color: #c8d6e5; min-height: 100vh; }
+              .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+              h1 { color: #fff; font-size: 1.6em; margin-bottom: 8px; }
+              .subtitle { color: #00ccff; font-size: 0.9em; margin-bottom: 24px; }
+              .back { color: #60a5fa; text-decoration: none; font-size: 0.85em; display: inline-block; margin-bottom: 24px; }
+              .back:hover { text-decoration: underline; }
+              .nb { display: block; background: #0a1628; border: 1px solid #1a2a44; border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; text-decoration: none; transition: border-color 0.2s; }
+              .nb:hover { border-color: #00ccff; }
+              .nb h2 { color: #fff; font-size: 1em; margin-bottom: 4px; }
+              .nb p { color: #6688aa; font-size: 0.8em; }
+              .badge { display: inline-block; font-size: 0.65em; padding: 2px 8px; border-radius: 4px; background: #1a3a2a; color: #66cc88; margin-right: 6px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <a class="back" href="../">&larr; Back to documentation</a>
+              <h1>Tutorial Notebooks</h1>
+              <div class="subtitle">Interactive Jupyter tutorials with Colab &amp; Binder badges</div>
+              <a class="nb" href="01_compact_reactor_search.html">
+                <span class="badge">01</span>
+                <h2>Compact Reactor Search</h2>
+                <p>Design-point scanning for compact tokamak configurations with global optimiser.</p>
+              </a>
+              <a class="nb" href="02_neuro_symbolic_compiler.html">
+                <span class="badge">02</span>
+                <h2>Neuro-Symbolic Compiler</h2>
+                <p>Petri net &rarr; SNN compilation pipeline with formal verification.</p>
+              </a>
+              <a class="nb" href="03_grad_shafranov_equilibrium.html">
+                <span class="badge">03</span>
+                <h2>Grad-Shafranov Equilibrium</h2>
+                <p>Picard iteration + SOR/multigrid solver validated against SPARC GEQDSK.</p>
+              </a>
+              <a class="nb" href="04_divertor_and_neutronics.html">
+                <span class="badge">04</span>
+                <h2>Divertor &amp; Neutronics</h2>
+                <p>Eich heat-flux model, blanket neutronics, tritium breeding ratio.</p>
+              </a>
+              <a class="nb" href="05_validation_against_experiments.html">
+                <span class="badge">05</span>
+                <h2>Validation Against Experiments</h2>
+                <p>SPARC, ITER 15 MA, ITPA H-mode database benchmarks.</p>
+              </a>
+              <a class="nb" href="06_inverse_and_transport_benchmarks.html">
+                <span class="badge">06</span>
+                <h2>Inverse &amp; Transport Benchmarks</h2>
+                <p>Inverse equilibrium reconstruction and 1.5D transport solver convergence.</p>
+              </a>
+            </div>
+          </body>
+          </html>
+          NBEOF
+
       - name: Copy header image
         run: |
           mkdir -p site/assets
