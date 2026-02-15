@@ -422,6 +422,24 @@ impl FusionKernel {
                 self.grid.nz, self.grid.nr
             )));
         }
+        let expected_shape = (self.grid.nz, self.grid.nr);
+        if self.grid.r.len() != self.grid.nr || self.grid.z.len() != self.grid.nz {
+            return Err(FusionError::ConfigError(format!(
+                "particle feedback requires grid axis lengths to match metadata, got r_len={}, nr={}, z_len={}, nz={}",
+                self.grid.r.len(),
+                self.grid.nr,
+                self.grid.z.len(),
+                self.grid.nz
+            )));
+        }
+        if self.grid.rr.dim() != expected_shape || self.grid.zz.dim() != expected_shape {
+            return Err(FusionError::ConfigError(format!(
+                "particle feedback requires grid mesh shape {:?}, got rr={:?}, zz={:?}",
+                expected_shape,
+                self.grid.rr.dim(),
+                self.grid.zz.dim()
+            )));
+        }
         let i_target = self.config.physics.plasma_current_target;
         if !i_target.is_finite() {
             return Err(FusionError::ConfigError(
@@ -438,11 +456,11 @@ impl FusionKernel {
                 self.grid.dr, self.grid.dz
             )));
         }
-        if particle_j_phi.dim() != (self.grid.nz, self.grid.nr) {
+        if particle_j_phi.dim() != expected_shape {
             return Err(FusionError::PhysicsViolation(format!(
                 "Particle feedback shape mismatch: expected ({}, {}), got {:?}",
-                self.grid.nz,
-                self.grid.nr,
+                expected_shape.0,
+                expected_shape.1,
                 particle_j_phi.dim(),
             )));
         }
@@ -920,6 +938,38 @@ mod tests {
         match err {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("grid spacing"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_rejects_grid_axis_length_mismatch() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.nr -= 1;
+        let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
+        let err = kernel
+            .set_particle_current_feedback(feedback, 0.2)
+            .expect_err("grid axis-length mismatch must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("axis lengths"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_rejects_grid_mesh_shape_mismatch() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.rr = Array2::zeros((kernel.grid().nz - 1, kernel.grid().nr));
+        let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
+        let err = kernel
+            .set_particle_current_feedback(feedback, 0.2)
+            .expect_err("grid mesh-shape mismatch must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("mesh shape"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }

@@ -311,6 +311,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-084 | P1 | Runtime | Harden axis-domain bounds against interior non-finite coordinates | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | Probe-domain bounds now scan full axis vectors (not just endpoints), reject non-finite interior coordinates explicitly, and compute true min/max bounds for robust sampling-domain checks under non-monotonic/edited axes; added regression coverage for non-finite axis coordinates while preserving existing probe-domain guards | `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_non_finite_axis_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_non_finite_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_out_of_domain_probe_coordinates -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-085 | P1 | Runtime | Reject malformed zero-sized grid dimensions in feedback setup path | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `set_particle_current_feedback` now rejects zero-sized grid dimensions before shape/coupling checks, preventing malformed runtime grid mutation from silently passing feedback setup; added regression coverage for empty-dimension rejection while preserving existing feedback guard behavior | `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_empty_grid_dimensions -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_set_and_clear -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_invalid_grid_spacing -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-086 | P1 | Runtime | Require strictly positive grid spacing in solver and feedback setup | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `solve_equilibrium` and `set_particle_current_feedback` now reject non-positive (`<=0`) spacing so negative mutated grid metadata fails fast instead of being treated as valid non-zero geometry; added regression coverage for negative-`dz` rejection in both runtime-control and feedback setup paths | `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_invalid_grid_spacing -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_solve_equilibrium_rejects_invalid_runtime_controls -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_set_and_clear -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
+| H8-087 | P1 | Runtime | Validate grid axis/mesh metadata consistency during feedback setup | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `set_particle_current_feedback` now fails fast when grid axis lengths (`r/z`) or mesh shapes (`rr/zz`) diverge from `(nz,nr)` metadata, preventing corrupted runtime grid mutation from silently accepting feedback maps before later solver-stage faults; added regression coverage for axis-length and mesh-shape mismatch rejection | `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_grid_axis_length_mismatch -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_grid_mesh_shape_mismatch -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_invalid_grid_spacing -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_set_and_clear -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 
 ## Task Accounting
 
@@ -318,7 +319,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 222
+- Post-S4 hardening tasks delivered: 223
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -564,4 +565,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-084`
 - Completed: `H8-085`
 - Completed: `H8-086`
+- Completed: `H8-087`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
