@@ -282,6 +282,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-055 | P1 | Runtime | Harden inverse Jacobian matrix-to-array conversion with explicit shape/finite guards | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Jacobian conversion now rejects empty, jagged, or non-finite matrices via explicit `FusionError::ConfigError` before ndarray projection, replacing prior panic-prone row indexing assumptions in analytic/kernel LM solve paths | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-056 | P1 | Runtime | Centralize inverse RMSE computation with strict vector-length and finite-value validation | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Replaced duplicated residual math with a validated RMSE helper that enforces non-empty equal-length finite prediction/measurement vectors and rejects non-finite RMSE outputs, tightening both analytic and kernel LM residual/trial/final evaluation paths | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-057 | P1 | Runtime | Enforce kernel inverse probe-domain bounds to prevent silent edge snapping | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Kernel inverse forward/analytical paths now validate probe coordinates against solved grid bounds and reject out-of-domain probes via explicit `FusionError::ConfigError`, preventing nearest-neighbor edge fallback from masking invalid diagnostic geometry | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
+| H8-058 | P1 | Runtime | Centralize LM update construction with strict Jacobian/residual/regularization validation | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Added shared `compute_lm_delta` helper for analytic and kernel inverse loops to enforce Jacobian/residual shape and finiteness, positive finite Tikhonov regularization, finite augmented system/pseudo-inverse/update vectors, and validated clamped update dimensions before line search | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 
 ## Task Accounting
 
@@ -289,7 +290,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 193
+- Post-S4 hardening tasks delivered: 194
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -506,4 +507,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-055`
 - Completed: `H8-056`
 - Completed: `H8-057`
+- Completed: `H8-058`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

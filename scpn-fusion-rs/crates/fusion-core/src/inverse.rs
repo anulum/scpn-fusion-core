@@ -313,6 +313,87 @@ fn compute_rmse(prediction: &[f64], measurements: &[f64], label: &str) -> Fusion
     Ok(rmse)
 }
 
+fn compute_lm_delta(
+    j: &Array2<f64>,
+    residual_vec: &[f64],
+    lambda: f64,
+    label: &str,
+) -> FusionResult<Array1<f64>> {
+    if j.nrows() == 0 || j.ncols() != N_PARAMS {
+        return Err(FusionError::LinAlg(format!(
+            "{label} jacobian shape mismatch: got ({}, {}), expected (_, {N_PARAMS})",
+            j.nrows(),
+            j.ncols()
+        )));
+    }
+    if residual_vec.len() != j.nrows() {
+        return Err(FusionError::LinAlg(format!(
+            "{label} residual length mismatch: residual={}, jacobian_rows={}",
+            residual_vec.len(),
+            j.nrows()
+        )));
+    }
+    if !lambda.is_finite() || lambda <= 0.0 {
+        return Err(FusionError::LinAlg(format!(
+            "{label} lambda must be finite and > 0, got {lambda}"
+        )));
+    }
+    if j.iter().any(|v| !v.is_finite()) || residual_vec.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::LinAlg(format!(
+            "{label} jacobian/residual inputs must be finite"
+        )));
+    }
+
+    let sqrt_lambda = lambda.sqrt();
+    if !sqrt_lambda.is_finite() || sqrt_lambda <= 0.0 {
+        return Err(FusionError::LinAlg(format!(
+            "{label} sqrt(lambda) must be finite and > 0, got {sqrt_lambda}"
+        )));
+    }
+
+    let mut j_aug: Array2<f64> = Array2::zeros((j.nrows() + N_PARAMS, N_PARAMS));
+    for i in 0..j.nrows() {
+        for k in 0..N_PARAMS {
+            j_aug[[i, k]] = j[[i, k]];
+        }
+    }
+    for k in 0..N_PARAMS {
+        j_aug[[j.nrows() + k, k]] = sqrt_lambda;
+    }
+    if j_aug.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::LinAlg(format!(
+            "{label} augmented jacobian contains non-finite values"
+        )));
+    }
+
+    let mut r_aug: Array1<f64> = Array1::zeros(j.nrows() + N_PARAMS);
+    for i in 0..j.nrows() {
+        r_aug[i] = residual_vec[i];
+    }
+    if r_aug.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::LinAlg(format!(
+            "{label} augmented residual contains non-finite values"
+        )));
+    }
+
+    let pinv = pinv_svd(&j_aug, 1e-12);
+    if pinv.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::LinAlg(format!(
+            "{label} pseudo-inverse contains non-finite values"
+        )));
+    }
+
+    let delta_raw = pinv.dot(&r_aug).mapv(|v| -v);
+    if delta_raw.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::LinAlg(format!(
+            "{label} raw update vector contains non-finite values"
+        )));
+    }
+    let delta = delta_raw.mapv(|v| v.clamp(-0.5, 0.5));
+    validate_update_vector(&delta, label)?;
+    Ok(delta)
+}
+
 fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
     let mut best_idx = 0usize;
     let mut best_dist = f64::INFINITY;
@@ -771,28 +852,7 @@ pub fn reconstruct_equilibrium(
         }?;
 
         let j = to_array2(&jac, N_PARAMS, "inverse jacobian")?;
-        let lambda = config.tikhonov;
-        let sqrt_lambda = lambda.sqrt();
-
-        let mut j_aug = Array2::zeros((j.nrows() + N_PARAMS, N_PARAMS));
-        for i in 0..j.nrows() {
-            for k in 0..N_PARAMS {
-                j_aug[[i, k]] = j[[i, k]];
-            }
-        }
-        for k in 0..N_PARAMS {
-            j_aug[[j.nrows() + k, k]] = sqrt_lambda;
-        }
-
-        let mut r_aug = Array1::zeros(j.nrows() + N_PARAMS);
-        for i in 0..j.nrows() {
-            r_aug[i] = residual_vec[i];
-        }
-
-        let pinv = pinv_svd(&j_aug, 1e-12);
-        let delta_raw = pinv.dot(&r_aug).mapv(|v| -v);
-        let delta = delta_raw.mapv(|v| v.clamp(-0.5, 0.5));
-        validate_update_vector(&delta, "inverse.delta")?;
+        let delta = compute_lm_delta(&j, &residual_vec, config.tikhonov, "inverse.delta")?;
 
         let mut accepted = false;
         let mut local_damping = damping;
@@ -921,27 +981,12 @@ pub fn reconstruct_equilibrium_with_kernel(
         }
 
         let j = to_array2(&jac, N_PARAMS, "kernel inverse jacobian")?;
-
-        let lambda = kernel_cfg.inverse.tikhonov;
-        let sqrt_lambda = lambda.sqrt();
-        let mut j_aug = Array2::zeros((j.nrows() + N_PARAMS, N_PARAMS));
-        for i in 0..j.nrows() {
-            for k in 0..N_PARAMS {
-                j_aug[[i, k]] = j[[i, k]];
-            }
-        }
-        for k in 0..N_PARAMS {
-            j_aug[[j.nrows() + k, k]] = sqrt_lambda;
-        }
-        let mut r_aug = Array1::zeros(j.nrows() + N_PARAMS);
-        for i in 0..j.nrows() {
-            r_aug[i] = residual_vec[i];
-        }
-
-        let pinv = pinv_svd(&j_aug, 1e-12);
-        let delta_raw = pinv.dot(&r_aug).mapv(|v| -v);
-        let delta = delta_raw.mapv(|v| v.clamp(-0.5, 0.5));
-        validate_update_vector(&delta, "kernel_inverse.delta")?;
+        let delta = compute_lm_delta(
+            &j,
+            &residual_vec,
+            kernel_cfg.inverse.tikhonov,
+            "kernel_inverse.delta",
+        )?;
 
         let mut accepted = false;
         let mut local_damping = damping;
@@ -1414,6 +1459,22 @@ mod tests {
         assert!(compute_rmse(&[1.0], &[1.0, 2.0], "rmse").is_err());
         assert!(compute_rmse(&[1.0, f64::NAN], &[1.0, 2.0], "rmse").is_err());
         assert!(compute_rmse(&[1.0, 2.0], &[1.0, f64::INFINITY], "rmse").is_err());
+    }
+
+    #[test]
+    fn test_lm_delta_helper_rejects_invalid_inputs() {
+        let j_ok = Array2::zeros((2, N_PARAMS));
+        assert!(compute_lm_delta(&j_ok, &[0.1, -0.2], 1e-4, "delta").is_ok());
+
+        assert!(compute_lm_delta(&j_ok, &[0.1], 1e-4, "delta").is_err());
+        assert!(compute_lm_delta(&j_ok, &[0.1, -0.2], 0.0, "delta").is_err());
+
+        let mut j_bad = Array2::zeros((2, N_PARAMS));
+        j_bad[[0, 3]] = f64::NAN;
+        assert!(compute_lm_delta(&j_bad, &[0.1, -0.2], 1e-4, "delta").is_err());
+
+        let j_bad_shape = Array2::zeros((2, N_PARAMS - 1));
+        assert!(compute_lm_delta(&j_bad_shape, &[0.1, -0.2], 1e-4, "delta").is_err());
     }
 
     #[test]
