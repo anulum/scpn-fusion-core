@@ -15,9 +15,12 @@ from .torax_hybrid_loop import (
 )
 from .tokamak_flight_sim import IsoFluxController
 from .jax_traceable_runtime import (
+    TraceableBackendParityReport,
     TraceableRuntimeBatchResult,
     TraceableRuntimeResult,
     TraceableRuntimeSpec,
+    available_traceable_backends,
     run_traceable_control_batch,
     run_traceable_control_loop,
+    validate_traceable_backend_parity,
 )

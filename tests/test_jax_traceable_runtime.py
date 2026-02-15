@@ -180,3 +180,39 @@ def test_traceable_runtime_batch_torchscript_matches_numpy() -> None:
     assert out.backend_used == "torchscript"
     assert out.compiled is True
     np.testing.assert_allclose(out.state_history, ref.state_history, rtol=0.0, atol=1e-8)
+
+
+def test_available_traceable_backends_contains_numpy() -> None:
+    names = runtime.available_traceable_backends()
+    assert "numpy" in names
+
+
+def test_validate_traceable_backend_parity_invalid_args() -> None:
+    with pytest.raises(ValueError, match="steps"):
+        runtime.validate_traceable_backend_parity(steps=0)
+    with pytest.raises(ValueError, match="batch"):
+        runtime.validate_traceable_backend_parity(batch=0)
+    with pytest.raises(ValueError, match="atol"):
+        runtime.validate_traceable_backend_parity(atol=-1.0)
+
+
+def test_validate_traceable_backend_parity_reports_numpy() -> None:
+    reports = runtime.validate_traceable_backend_parity(
+        steps=12,
+        batch=3,
+        seed=7,
+        atol=1e-10,
+    )
+    assert "numpy" in reports
+    np_report = reports["numpy"]
+    assert np_report.backend == "numpy"
+    assert np_report.single_within_tol is True
+    assert np_report.batch_within_tol is True
+    assert np_report.single_max_abs_err == pytest.approx(0.0, abs=0.0)
+    assert np_report.batch_max_abs_err == pytest.approx(0.0, abs=0.0)
+
+
+def test_validate_traceable_backend_parity_includes_only_available_backends() -> None:
+    reports = runtime.validate_traceable_backend_parity(steps=8, batch=2, seed=11, atol=1e-8)
+    expected = set(runtime.available_traceable_backends())
+    assert set(reports.keys()) == expected

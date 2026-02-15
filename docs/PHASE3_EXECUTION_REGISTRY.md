@@ -344,6 +344,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-117 | P1 | Performance | Extend traceable runtime with optional TorchScript backend and deterministic backend routing | `src/scpn_fusion/control/jax_traceable_runtime.py`, `tests/test_jax_traceable_runtime.py` | Added optional `torchscript` backend with scripted rollout path and runtime guards, updated `auto` backend routing (`jax` -> `torchscript` -> `numpy`) while preserving zero-dependency fallback behavior; added regression coverage for missing-torch error path, auto-fallback semantics, and TorchScript parity with NumPy | `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
 | H8-118 | P1 | Performance | Add batched traceable control-loop rollout API with JAX/TorchScript/Numpy backend parity | `src/scpn_fusion/control/jax_traceable_runtime.py`, `src/scpn_fusion/control/__init__.py`, `tests/test_jax_traceable_runtime.py` | Added `run_traceable_control_batch` for `(batch, steps)` command tensors with strict batch/initial-state validation and deterministic backend execution (`auto`/`numpy`/`jax`/`torchscript`), including JAX scan-based and TorchScript scripted batch kernels plus parity/fallback regression coverage | `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
 | H8-119 | P2 | Docs | Expose traceable runtime API in Sphinx control reference | `docs/sphinx/api/control.rst` | Added `scpn_fusion.control.jax_traceable_runtime` to generated control API docs so JAX/TorchScript/Numpy traceable rollout interfaces are visible in published documentation navigation alongside existing control modules | `python -m pytest tests/test_jax_traceable_runtime.py -q`, `Documentation workflow on main` |
+| H8-120 | P1 | Performance | Add backend parity-report helpers and validation entrypoint for traceable runtime | `src/scpn_fusion/control/jax_traceable_runtime.py`, `src/scpn_fusion/control/__init__.py`, `tests/test_jax_traceable_runtime.py`, `validation/traceable_runtime_parity.py` | Added backend discovery/parity reporting (`available_traceable_backends`, `validate_traceable_backend_parity`) for single+batch runtime paths and introduced `validation/traceable_runtime_parity.py` CLI with strict mode plus JSON/Markdown outputs, enabling deterministic backend-equivalence checks on each host | `python -m pytest tests/test_jax_traceable_runtime.py -q`, `python validation/traceable_runtime_parity.py --strict --steps 24 --batch 4 --output-json artifacts/traceable_runtime_parity_h8120.json --output-md artifacts/traceable_runtime_parity_h8120.md` |
 
 ## Task Accounting
 
@@ -351,7 +352,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 255
+- Post-S4 hardening tasks delivered: 256
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -630,4 +631,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-117`
 - Completed: `H8-118`
 - Completed: `H8-119`
+- Completed: `H8-120`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

@@ -60,6 +60,17 @@ class TraceableRuntimeBatchResult:
     compiled: bool
 
 
+@dataclass(frozen=True)
+class TraceableBackendParityReport:
+    """Parity metrics against NumPy reference backend."""
+
+    backend: str
+    single_max_abs_err: float
+    batch_max_abs_err: float
+    single_within_tol: bool
+    batch_within_tol: bool
+
+
 def _validate_spec(spec: TraceableRuntimeSpec) -> None:
     if not np.isfinite(spec.dt_s) or spec.dt_s <= 0.0:
         raise ValueError("dt_s must be finite and > 0.")
@@ -96,6 +107,16 @@ def _resolve_backend(backend: str) -> str:
             return "torchscript"
         return "numpy"
     return b
+
+
+def available_traceable_backends() -> list[str]:
+    """Return available runtime backends on this machine."""
+    out = ["numpy"]
+    if _HAS_JAX:
+        out.append("jax")
+    if _HAS_TORCH:
+        out.append("torchscript")
+    return out
 
 
 def _simulate_numpy(
@@ -355,3 +376,58 @@ def run_traceable_control_batch(
         backend_used="numpy",
         compiled=False,
     )
+
+
+def validate_traceable_backend_parity(
+    *,
+    steps: int = 64,
+    batch: int = 8,
+    seed: int = 42,
+    spec: TraceableRuntimeSpec | None = None,
+    atol: float = 1e-8,
+) -> dict[str, TraceableBackendParityReport]:
+    """
+    Compare available compiled backends to NumPy for single and batch rollouts.
+    """
+    if steps <= 0:
+        raise ValueError("steps must be > 0.")
+    if batch <= 0:
+        raise ValueError("batch must be > 0.")
+    if not np.isfinite(atol) or atol < 0.0:
+        raise ValueError("atol must be finite and >= 0.")
+
+    runtime_spec = spec if spec is not None else TraceableRuntimeSpec()
+    _validate_spec(runtime_spec)
+
+    rng = np.random.default_rng(int(seed))
+    single_cmd = np.asarray(rng.normal(0.0, 1.0, size=steps), dtype=np.float64)
+    batch_cmd = np.asarray(rng.normal(0.0, 1.0, size=(batch, steps)), dtype=np.float64)
+    batch_x0 = np.asarray(rng.normal(0.0, 0.2, size=batch), dtype=np.float64)
+    x0 = float(rng.normal(0.0, 0.2))
+
+    ref_single = run_traceable_control_loop(
+        single_cmd, initial_state=x0, spec=runtime_spec, backend="numpy"
+    ).state_history
+    ref_batch = run_traceable_control_batch(
+        batch_cmd, initial_state=batch_x0, spec=runtime_spec, backend="numpy"
+    ).state_history
+
+    reports: dict[str, TraceableBackendParityReport] = {}
+    for backend in available_traceable_backends():
+        out_single = run_traceable_control_loop(
+            single_cmd, initial_state=x0, spec=runtime_spec, backend=backend
+        ).state_history
+        out_batch = run_traceable_control_batch(
+            batch_cmd, initial_state=batch_x0, spec=runtime_spec, backend=backend
+        ).state_history
+
+        s_err = float(np.max(np.abs(out_single - ref_single)))
+        b_err = float(np.max(np.abs(out_batch - ref_batch)))
+        reports[backend] = TraceableBackendParityReport(
+            backend=backend,
+            single_max_abs_err=s_err,
+            batch_max_abs_err=b_err,
+            single_within_tol=bool(s_err <= atol),
+            batch_within_tol=bool(b_err <= atol),
+        )
+    return reports
