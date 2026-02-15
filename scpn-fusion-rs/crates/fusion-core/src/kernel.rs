@@ -40,6 +40,7 @@ const MIN_PSI_SEPARATION: f64 = 0.1;
 
 /// Fallback factor when axis/boundary too close (Python line 226: `0.1`).
 const LIMITER_FALLBACK_FACTOR: f64 = 0.1;
+const MIN_CURRENT_INTEGRAL: f64 = 1e-9;
 
 /// The Grad-Shafranov equilibrium solver.
 pub struct FusionKernel {
@@ -420,6 +421,20 @@ impl FusionKernel {
                 "particle feedback map must contain only finite values".to_string(),
             ));
         }
+        let particle_integral = particle_j_phi.iter().sum::<f64>() * self.grid.dr * self.grid.dz;
+        if !particle_integral.is_finite() {
+            return Err(FusionError::PhysicsViolation(
+                "particle feedback integral became non-finite".to_string(),
+            ));
+        }
+        if coupling >= 1.0 - f64::EPSILON
+            && self.config.physics.plasma_current_target.abs() > MIN_CURRENT_INTEGRAL
+            && particle_integral.abs() <= MIN_CURRENT_INTEGRAL
+        {
+            return Err(FusionError::PhysicsViolation(
+                "particle feedback integral is near zero for coupling=1 with non-zero plasma current target".to_string(),
+            ));
+        }
         self.particle_current_feedback = Some(particle_j_phi);
         self.particle_feedback_coupling = coupling;
         Ok(())
@@ -774,6 +789,25 @@ mod tests {
             }
             other => panic!("Unexpected error: {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_particle_feedback_rejects_zero_integral_with_full_coupling() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let zero_feedback = Array2::zeros((kernel.grid().nz, kernel.grid().nr));
+        let err = kernel
+            .set_particle_current_feedback(zero_feedback.clone(), 1.0)
+            .expect_err("zero-integral full-coupling feedback must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("coupling=1") || msg.contains("near zero"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        kernel
+            .set_particle_current_feedback(zero_feedback, 0.5)
+            .expect("partial-coupling zero feedback should remain valid");
     }
 
     #[test]
