@@ -330,6 +330,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-103 | P1 | Interop | Preserve digital-twin IDS adapter compatibility while enforcing core summary-key contract | `src/scpn_fusion/io/imas_connector.py`, `tests/test_imas_connector.py` | Refined `digital_twin_summary_to_ids` summary-key enforcement to require only stable core fields and keep `final_axis_r/z` optional, restoring compatibility with `run_digital_twin` outputs while retaining explicit nested-key validation in IDS payload checks; added regression coverage for non-mapping summaries and missing core summary keys | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 | H8-104 | P1 | Validation | Honor vectorized SOR tolerance and fix NaN-safe worst-file aggregation in ψ RMSE summary | `validation/psi_pointwise_rmse.py`, `tests/test_psi_pointwise_rmse.py` | `manufactured_solve_vectorised` now validates solver controls (`omega`, `max_iter`, `tol`) and stops early when GS residual meets tolerance; `validate_all_sparc` now computes `worst_file` from finite RMSE entries with index-safe mapping, avoiding NaN-induced misattribution; added regression coverage for early-stop behavior, invalid controls, and NaN-safe worst-file selection | `python -m pytest tests/test_psi_pointwise_rmse.py -q` |
 | H8-105 | P1 | Validation | Make ψ RMSE CLI output encoding-safe on Windows code pages | `validation/psi_pointwise_rmse.py`, `tests/test_psi_pointwise_rmse_cli.py` | Replaced non-ASCII glyphs in CLI `main()` output with ASCII-safe labels so strict `cp1250`/ASCII terminals no longer raise `UnicodeEncodeError`, and added CLI regression coverage with an ASCII-strict stdout sink to lock compatibility | `python -m pytest tests/test_psi_pointwise_rmse.py tests/test_psi_pointwise_rmse_cli.py -q`, `python validation/psi_pointwise_rmse.py` |
+| H8-106 | P1 | Validation | Enforce strict ψ RMSE input-shape and finite-value contracts | `validation/psi_pointwise_rmse.py`, `tests/test_psi_pointwise_rmse.py` | `compute_psi_rmse` now rejects shape-mismatched solver fields and non-finite values in solver/reference ψ inputs with explicit `ValueError` contracts, preventing silent broadcasting or NaN/Inf contamination of aggregate RMSE metrics; added regression coverage for shape mismatch and non-finite solver values | `python -m pytest tests/test_psi_pointwise_rmse.py tests/test_psi_pointwise_rmse_cli.py -q` |
 
 ## Task Accounting
 
@@ -337,7 +338,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 241
+- Post-S4 hardening tasks delivered: 242
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -602,4 +603,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-103`
 - Completed: `H8-104`
 - Completed: `H8-105`
+- Completed: `H8-106`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

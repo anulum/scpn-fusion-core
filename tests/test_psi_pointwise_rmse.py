@@ -165,6 +165,20 @@ class TestComputePsiRMSE:
         assert metrics["psi_rmse_wb"] < 1e-3
         assert metrics["psi_relative_l2"] < 0.01
 
+    def test_rejects_shape_mismatch(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        bad = np.zeros((eq.psirz.shape[0] - 1, eq.psirz.shape[1]))
+        with pytest.raises(ValueError, match="shape"):
+            compute_psi_rmse(eq, bad)
+
+    @pytest.mark.parametrize("bad_value", [np.nan, np.inf, -np.inf])
+    def test_rejects_non_finite_solver_values(self, bad_value):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        bad = eq.psirz.copy()
+        bad[0, 0] = bad_value
+        with pytest.raises(ValueError, match="finite"):
+            compute_psi_rmse(eq, bad)
+
 
 class TestValidateFile:
     """End-to-end per-file validation."""

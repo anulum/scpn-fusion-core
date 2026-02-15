@@ -331,6 +331,15 @@ def compute_psi_rmse(
     Reports metrics in both raw (Wb/rad) and normalised coordinates.
     """
     ref = eq.psirz
+    if solver_psi.shape != ref.shape:
+        raise ValueError(
+            f"solver_psi shape {solver_psi.shape} does not match reference {ref.shape}"
+        )
+    if not np.all(np.isfinite(solver_psi)):
+        raise ValueError("solver_psi must contain only finite values")
+    if not np.all(np.isfinite(ref)):
+        raise ValueError("reference psi contains non-finite values")
+
     diff = solver_psi - ref
 
     # Raw RMSE
