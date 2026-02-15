@@ -321,6 +321,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-094 | P1 | Runtime | Add Python bridge regression tests for solver-method aliasing and invalid input handling | `tests/test_rust_compat_solver_method.py` | Added guarded (`scpn_fusion_rs`-available) pytest coverage to verify `PyFusionKernel.set_solver_method` alias round-trips (`sor`/`picard_sor` and `multigrid`/`picard_multigrid`/`mg`) and to assert unknown solver methods raise `ValueError`, keeping the PyO3-facing control surface contract under test | `python -m pytest tests/test_rust_compat_solver_method.py -q` |
 | H8-095 | P1 | Runtime | Add backend-agnostic wrapper tests for solver-method forwarding in `_rust_compat` | `tests/test_rust_compat_wrapper.py` | Added monkeypatched wrapper-level tests that validate `RustAcceleratedKernel.set_solver_method` forwarding and error propagation without requiring a compiled Rust extension, ensuring alias-path behavior remains covered in pure-Python CI environments | `python -m pytest tests/test_rust_compat_wrapper.py -q`, `python -m pytest tests/test_rust_compat_solver_method.py -q` |
 | H8-096 | P1 | Runtime | Harden VMEC boundary import/export against ambiguous mode duplicates and unsupported format headers | `scpn-fusion-rs/crates/fusion-core/src/vmec_interface.rs` | VMEC boundary validation now rejects duplicate Fourier mode indices `(m,n)` and import enforces `format=vmec_like_v1` with duplicate-format rejection; added regression coverage for duplicate modes, malformed mode column counts, unsupported format versions, and duplicate format keys | `cargo test -p fusion-core vmec_interface::tests -- --nocapture`, `cargo fmt --all -- --check` |
+| H8-097 | P1 | Interop | Tighten IDS validation contract for nested time-slice/equilibrium/performance fields | `src/scpn_fusion/io/imas_connector.py`, `tests/test_imas_connector.py` | `validate_ids_payload` now enforces nested mapping/value contracts (`time_slice.index/time_s`, `equilibrium.axis.r_m/z_m`, `equilibrium.islands_px`, and performance scalars) so malformed IDS payloads fail at validation boundary; added dedicated regression suite for nested-schema/type violations and nominal roundtrip acceptance | `python -m pytest tests/test_imas_connector.py tests/test_tokamak_digital_twin.py -q` |
 
 ## Task Accounting
 
@@ -328,7 +329,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 232
+- Post-S4 hardening tasks delivered: 233
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -584,4 +585,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-094`
 - Completed: `H8-095`
 - Completed: `H8-096`
+- Completed: `H8-097`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

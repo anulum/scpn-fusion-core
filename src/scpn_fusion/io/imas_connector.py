@@ -54,6 +54,8 @@ def _coerce_finite_real(
 
 
 def validate_ids_payload(payload: Mapping[str, Any]) -> None:
+    if isinstance(payload, bool) or not isinstance(payload, Mapping):
+        raise ValueError("IDS payload must be a mapping.")
     missing = [key for key in REQUIRED_IDS_KEYS if key not in payload]
     if missing:
         raise ValueError(f"IDS payload missing keys: {missing}")
@@ -72,6 +74,30 @@ def validate_ids_payload(payload: Mapping[str, Any]) -> None:
         raise ValueError("IDS equilibrium must be a mapping.")
     if not isinstance(payload.get("performance"), Mapping):
         raise ValueError("IDS performance must be a mapping.")
+
+    time_slice = payload["time_slice"]
+    equilibrium = payload["equilibrium"]
+    performance = payload["performance"]
+
+    _coerce_int("time_slice.index", time_slice.get("index", 0), minimum=0)
+    _coerce_finite_real("time_slice.time_s", time_slice.get("time_s", 0.0), minimum=0.0)
+
+    axis = equilibrium.get("axis")
+    if not isinstance(axis, Mapping):
+        raise ValueError("equilibrium.axis must be a mapping.")
+    _coerce_finite_real("equilibrium.axis.r_m", axis.get("r_m", 0.0))
+    _coerce_finite_real("equilibrium.axis.z_m", axis.get("z_m", 0.0))
+    _coerce_int("equilibrium.islands_px", equilibrium.get("islands_px", 0), minimum=0)
+
+    _coerce_finite_real("performance.final_reward", performance.get("final_reward", 0.0))
+    _coerce_finite_real(
+        "performance.reward_mean_last_50",
+        performance.get("reward_mean_last_50", 0.0),
+    )
+    _coerce_finite_real(
+        "performance.final_avg_temp_keV",
+        performance.get("final_avg_temp_keV", 0.0),
+    )
 
 
 def digital_twin_summary_to_ids(
