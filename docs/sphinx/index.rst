@@ -90,6 +90,13 @@ Key Features
 
 .. toctree::
    :maxdepth: 1
+   :caption: Reference
+
+   workflows
+   gpu_roadmap
+
+.. toctree::
+   :maxdepth: 1
    :caption: Project
 
    contributing

@@ -51,6 +51,8 @@ extensions = [
     "sphinx.ext.todo",          # .. todo:: directive support
     "sphinx.ext.ifconfig",      # conditional content
     "sphinx.ext.githubpages",   # .nojekyll for GitHub Pages deployment
+    "sphinx_autodoc_typehints", # render type annotations in docs
+    "sphinx_copybutton",        # copy button on code blocks
 ]
 
 # ---------------------------------------------------------------------------
