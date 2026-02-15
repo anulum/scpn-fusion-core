@@ -9,7 +9,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import Optional, Sequence
 
-from scpn_fusion.io.imas_connector import digital_twin_history_to_ids, digital_twin_summary_to_ids
+from scpn_fusion.io.imas_connector import (
+    digital_twin_history_to_ids,
+    digital_twin_history_to_ids_pulse,
+    digital_twin_summary_to_ids,
+)
 
 # --- HYPER-PARAMETERS ---
 GRID_SIZE = 40        # 40x40 Poloidal Cross-section
@@ -390,19 +394,11 @@ def run_digital_twin_ids_history(
     if len(history_steps) == 0:
         raise ValueError("history_steps must contain at least one step count.")
 
-    snapshots: list[dict[str, object]] = []
-    base_seed = int(seed)
-    for idx, step in enumerate(history_steps):
-        if isinstance(step, bool) or not isinstance(step, int):
-            raise ValueError("history_steps entries must be positive integers.")
-        if int(step) < 1:
-            raise ValueError("history_steps entries must be >= 1.")
-        summary = run_digital_twin(
-            time_steps=int(step),
-            seed=base_seed,
-            **kwargs,
-        )
-        snapshots.append(summary)
+    snapshots = _run_digital_twin_history_snapshots(
+        history_steps=history_steps,
+        seed=seed,
+        **kwargs,
+    )
 
     return digital_twin_history_to_ids(
         snapshots,
@@ -410,6 +406,63 @@ def run_digital_twin_ids_history(
         shot=shot,
         run=run,
     )
+
+
+def run_digital_twin_ids_pulse(
+    history_steps: Sequence[int],
+    *,
+    machine: str = "ITER",
+    shot: int = 0,
+    run: int = 0,
+    seed: int = 42,
+    **kwargs,
+):
+    """
+    Run digital twin at multiple horizons and return pulse-style IDS container.
+    """
+    if "time_steps" in kwargs:
+        raise ValueError("time_steps is controlled by history_steps in pulse mode.")
+    if "seed" in kwargs:
+        raise ValueError("seed is controlled by the seed argument in pulse mode.")
+
+    snapshots = _run_digital_twin_history_snapshots(
+        history_steps=history_steps,
+        seed=seed,
+        **kwargs,
+    )
+    return digital_twin_history_to_ids_pulse(
+        snapshots,
+        machine=machine,
+        shot=shot,
+        run=run,
+    )
+
+
+def _run_digital_twin_history_snapshots(
+    *,
+    history_steps: Sequence[int],
+    seed: int,
+    **kwargs,
+) -> list[dict[str, object]]:
+    if isinstance(history_steps, (str, bytes, bytearray)) or not isinstance(history_steps, Sequence):
+        raise ValueError("history_steps must be a sequence of positive integers.")
+    if len(history_steps) == 0:
+        raise ValueError("history_steps must contain at least one step count.")
+
+    snapshots: list[dict[str, object]] = []
+    base_seed = int(seed)
+    for idx, step in enumerate(history_steps):
+        if isinstance(step, bool) or not isinstance(step, int):
+            raise ValueError(f"history_steps[{idx}] must be a positive integer.")
+        if int(step) < 1:
+            raise ValueError(f"history_steps[{idx}] must be >= 1.")
+        summary = run_digital_twin(
+            time_steps=int(step),
+            seed=base_seed,
+            **kwargs,
+        )
+        snapshots.append(summary)
+    return snapshots
 
 if __name__ == "__main__":
     run_digital_twin()

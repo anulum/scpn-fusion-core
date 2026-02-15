@@ -12,11 +12,17 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from scpn_fusion.control.tokamak_digital_twin import run_digital_twin, run_digital_twin_ids_history
+from scpn_fusion.control.tokamak_digital_twin import (
+    run_digital_twin,
+    run_digital_twin_ids_history,
+    run_digital_twin_ids_pulse,
+)
 from scpn_fusion.io.imas_connector import (
     digital_twin_summary_to_ids,
+    ids_pulse_to_digital_twin_history,
     ids_to_digital_twin_history,
     ids_to_digital_twin_summary,
+    validate_ids_pulse_payload,
     validate_ids_payload_sequence,
 )
 
@@ -265,10 +271,58 @@ def test_run_digital_twin_ids_history_is_deterministic() -> None:
     assert a == b
 
 
+def test_run_digital_twin_ids_pulse_returns_valid_container() -> None:
+    pulse = run_digital_twin_ids_pulse(
+        [6, 12, 18],
+        machine="ITER",
+        shot=42,
+        run=7,
+        seed=21,
+        save_plot=False,
+        verbose=False,
+    )
+    validate_ids_pulse_payload(pulse)
+    recovered = ids_pulse_to_digital_twin_history(pulse)
+    assert pulse["schema"] == "ids_equilibrium_pulse_v1"
+    assert pulse["machine"] == "ITER"
+    assert pulse["shot"] == 42
+    assert pulse["run"] == 7
+    assert len(pulse["time_slices"]) == 3
+    assert len(recovered) == 3
+
+
+def test_run_digital_twin_ids_pulse_is_deterministic() -> None:
+    kwargs = dict(
+        history_steps=[5, 10],
+        machine="ITER",
+        shot=1,
+        run=2,
+        seed=31,
+        save_plot=False,
+        verbose=False,
+    )
+    a = run_digital_twin_ids_pulse(**kwargs)
+    b = run_digital_twin_ids_pulse(**kwargs)
+    assert a == b
+
+
 @pytest.mark.parametrize("history_steps", [[], [0, 2], [3.0, 6]])  # type: ignore[list-item]
 def test_run_digital_twin_ids_history_rejects_invalid_history_steps(history_steps) -> None:
     with pytest.raises(ValueError, match="history_steps"):
         run_digital_twin_ids_history(
+            history_steps,
+            machine="ITER",
+            shot=1,
+            run=2,
+            save_plot=False,
+            verbose=False,
+        )
+
+
+@pytest.mark.parametrize("history_steps", [[], [0, 2], [3.0, 6]])  # type: ignore[list-item]
+def test_run_digital_twin_ids_pulse_rejects_invalid_history_steps(history_steps) -> None:
+    with pytest.raises(ValueError, match="history_steps"):
+        run_digital_twin_ids_pulse(
             history_steps,
             machine="ITER",
             shot=1,
