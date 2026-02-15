@@ -193,6 +193,44 @@ fn validate_measurements(measurements: &[f64]) -> FusionResult<()> {
     Ok(())
 }
 
+fn validate_observables(observables: &[f64], expected_len: usize, label: &str) -> FusionResult<()> {
+    if observables.len() != expected_len {
+        return Err(FusionError::ConfigError(format!(
+            "{label} length mismatch: got {}, expected {expected_len}",
+            observables.len()
+        )));
+    }
+    if observables.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::ConfigError(format!("{label} must be finite")));
+    }
+    Ok(())
+}
+
+fn validate_jacobian_matrix(
+    jac: &[Vec<f64>],
+    expected_rows: usize,
+    expected_cols: usize,
+    label: &str,
+) -> FusionResult<()> {
+    if jac.len() != expected_rows {
+        return Err(FusionError::ConfigError(format!(
+            "{label} row count mismatch: got {}, expected {expected_rows}",
+            jac.len()
+        )));
+    }
+    if jac.iter().any(|row| row.len() != expected_cols) {
+        return Err(FusionError::ConfigError(format!(
+            "{label} column count mismatch: expected {expected_cols}"
+        )));
+    }
+    if jac.iter().flatten().any(|v| !v.is_finite()) {
+        return Err(FusionError::ConfigError(format!(
+            "{label} contains non-finite values"
+        )));
+    }
+    Ok(())
+}
+
 fn validate_update_vector(delta: &Array1<f64>, label: &str) -> FusionResult<()> {
     if delta.len() != N_PARAMS {
         return Err(FusionError::LinAlg(format!(
@@ -325,7 +363,9 @@ fn kernel_forward_observables(
         });
     }
 
-    kernel.sample_psi_at_probes(probes_rz)
+    let observables = kernel.sample_psi_at_probes(probes_rz)?;
+    validate_observables(&observables, probes_rz.len(), "kernel forward observables")?;
+    Ok(observables)
 }
 
 fn solve_linearized_sensitivity(
@@ -396,6 +436,11 @@ fn kernel_analytical_forward_and_jacobian(
     }
 
     let base_observables = kernel.sample_psi_at_probes(probes_rz)?;
+    validate_observables(
+        &base_observables,
+        probes_rz.len(),
+        "kernel analytical observables",
+    )?;
     let grid = kernel.grid();
     let psi = kernel.psi();
     let mu0 = kernel.config().physics.vacuum_permeability;
@@ -513,6 +558,12 @@ fn kernel_analytical_forward_and_jacobian(
         }
     }
 
+    validate_jacobian_matrix(
+        &jac,
+        probes_rz.len(),
+        N_PARAMS,
+        "kernel analytical jacobian",
+    )?;
     Ok((base_observables, jac))
 }
 
@@ -526,6 +577,8 @@ fn kernel_fd_jacobian_from_base(
 ) -> FusionResult<Vec<Vec<f64>>> {
     let mut jac = vec![vec![0.0; N_PARAMS]; probes_rz.len()];
     validate_kernel_inverse_config(kernel_cfg)?;
+    validate_probe_coordinates(probes_rz)?;
+    validate_observables(base, probes_rz.len(), "kernel fd base observables")?;
     let h = kernel_cfg.inverse.fd_step;
 
     for (col, _) in [(); N_PARAMS].iter().enumerate() {
@@ -538,6 +591,7 @@ fn kernel_fd_jacobian_from_base(
             jac[i][col] = (pert[i] - base[i]) / h;
         }
     }
+    validate_jacobian_matrix(&jac, probes_rz.len(), N_PARAMS, "kernel fd jacobian")?;
     Ok(jac)
 }
 
@@ -583,6 +637,11 @@ pub fn reconstruct_equilibrium(
             .collect();
         let residual =
             (residual_vec.iter().map(|v| v * v).sum::<f64>() / residual_vec.len() as f64).sqrt();
+        if !residual.is_finite() {
+            return Err(FusionError::LinAlg(
+                "inverse residual became non-finite".to_string(),
+            ));
+        }
         residual_history.push(residual);
         iter_done = iter + 1;
 
@@ -646,6 +705,10 @@ pub fn reconstruct_equilibrium(
                 .sum::<f64>()
                 / measurements.len() as f64)
                 .sqrt();
+            if !residual_trial.is_finite() {
+                local_damping *= 0.5;
+                continue;
+            }
 
             if residual_trial <= residual {
                 x = x_trial;
@@ -672,6 +735,11 @@ pub fn reconstruct_equilibrium(
         .sum::<f64>()
         / measurements.len() as f64)
         .sqrt();
+    if !final_residual.is_finite() {
+        return Err(FusionError::LinAlg(
+            "inverse final residual became non-finite".to_string(),
+        ));
+    }
 
     Ok(InverseResult {
         params_p,
@@ -755,6 +823,11 @@ pub fn reconstruct_equilibrium_with_kernel(
             .collect();
         let residual =
             (residual_vec.iter().map(|v| v * v).sum::<f64>() / residual_vec.len() as f64).sqrt();
+        if !residual.is_finite() {
+            return Err(FusionError::LinAlg(
+                "kernel inverse residual became non-finite".to_string(),
+            ));
+        }
         residual_history.push(residual);
         iter_done = iter + 1;
 
@@ -814,6 +887,10 @@ pub fn reconstruct_equilibrium_with_kernel(
                 .sum::<f64>()
                 / measurements.len() as f64)
                 .sqrt();
+            if !residual_trial.is_finite() {
+                local_damping *= 0.5;
+                continue;
+            }
             if residual_trial <= residual {
                 x = x_trial;
                 damping = (local_damping * 1.1).min(1.0);
@@ -840,6 +917,11 @@ pub fn reconstruct_equilibrium_with_kernel(
         .sum::<f64>()
         / measurements.len() as f64)
         .sqrt();
+    if !final_residual.is_finite() {
+        return Err(FusionError::LinAlg(
+            "kernel inverse final residual became non-finite".to_string(),
+        ));
+    }
 
     Ok(InverseResult {
         params_p,
@@ -1039,6 +1121,26 @@ mod tests {
     }
 
     #[test]
+    fn test_inverse_observable_and_jacobian_validation_guards() {
+        assert!(validate_observables(&[1.0, 2.0], 2, "obs").is_ok());
+        assert!(validate_observables(&[1.0, f64::NAN], 2, "obs").is_err());
+        assert!(validate_observables(&[1.0], 2, "obs").is_err());
+
+        let jac_ok = vec![vec![0.0; N_PARAMS]; 2];
+        assert!(validate_jacobian_matrix(&jac_ok, 2, N_PARAMS, "jac").is_ok());
+
+        let jac_bad_rows = vec![vec![0.0; N_PARAMS]; 1];
+        assert!(validate_jacobian_matrix(&jac_bad_rows, 2, N_PARAMS, "jac").is_err());
+
+        let jac_bad_cols = vec![vec![0.0; N_PARAMS - 1]; 2];
+        assert!(validate_jacobian_matrix(&jac_bad_cols, 2, N_PARAMS, "jac").is_err());
+
+        let mut jac_bad_vals = vec![vec![0.0; N_PARAMS]; 2];
+        jac_bad_vals[0][3] = f64::INFINITY;
+        assert!(validate_jacobian_matrix(&jac_bad_vals, 2, N_PARAMS, "jac").is_err());
+    }
+
+    #[test]
     fn test_kernel_inverse_api_input_validation() {
         let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
             .unwrap();
@@ -1162,6 +1264,23 @@ mod tests {
         .expect_err("non-finite measurements must error");
         match bad_measurement_err {
             FusionError::ConfigError(msg) => assert!(msg.contains("measurements must be finite")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_kernel_fd_jacobian_rejects_base_length_mismatch() {
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
+            .unwrap();
+        let probes = vec![(6.2, 0.0), (6.3, 0.1)];
+        let kcfg = KernelInverseConfig::default();
+        let params = ProfileParams::default();
+        let err = kernel_fd_jacobian_from_base(&cfg, &probes, params, params, &kcfg, &[0.1])
+            .expect_err("base observables length mismatch must error");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("kernel fd base observables length mismatch"))
+            }
             other => panic!("Unexpected error: {other:?}"),
         }
     }

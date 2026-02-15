@@ -277,6 +277,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-050 | P1 | Runtime | Harden inverse API boundaries for finite probe/measurement validation | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Inverse entrypoints now reject non-finite measurement vectors and malformed probe inputs (non-finite `probes_rz` coordinates or normalized probe samples outside `[0,1]`) before solver iterations, and kernel forward paths apply the same probe-coordinate guards to prevent late-stage NaN/Inf propagation | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-051 | P1 | Runtime | Harden inverse LM update-vector validation in analytic and kernel reconstruction loops | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Both inverse reconstruction paths now enforce explicit LM update-vector guards (expected parameter dimension and finite values) before line-search application, surfacing `FusionError::LinAlg` instead of allowing malformed/non-finite update vectors to propagate into trial parameter updates | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings` |
 | H8-052 | P1 | Tooling | Restore Rust(stable) CI lane by applying canonical rustfmt after inverse hardening edits | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Applied workspace `cargo fmt` normalization to clear Rust(stable) `cargo fmt --all -- --check` gate failures introduced by recent inverse-runtime hardening patches; revalidated with inverse/jacobian tests, clippy, and fmt-check | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
+| H8-053 | P1 | Runtime | Harden inverse kernel observable/Jacobian boundaries with explicit shape-finite guards | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Kernel inverse paths now validate observable vector lengths/finiteness, Jacobian matrix shape/finiteness, and residual scalar finiteness at analytic/FD and LM-loop boundaries, rejecting malformed or non-finite intermediates via explicit `FusionError` instead of allowing silent propagation into updates | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 
 ## Task Accounting
 
@@ -284,7 +285,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 188
+- Post-S4 hardening tasks delivered: 189
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -496,4 +497,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-050`
 - Completed: `H8-051`
 - Completed: `H8-052`
+- Completed: `H8-053`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
