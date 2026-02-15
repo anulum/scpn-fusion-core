@@ -384,17 +384,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "displaydoc"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97369cbbc041bc366949bc74d34658d6cda5621039731c6310521892a3a20ae0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "document-features"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -437,8 +426,8 @@ version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "843fba2746e448b37e26a819579957415c8cef339bf08564fe8b7ddbd959573c"
 dependencies = [
- "crc32fast",
  "miniz_oxide",
+ "zlib-rs",
 ]
 
 [[package]]
@@ -487,7 +476,7 @@ dependencies = [
  "fusion-core",
  "fusion-math",
  "fusion-types",
- "ndarray",
+ "ndarray 0.16.1",
  "rand 0.8.5",
  "rand_distr",
 ]
@@ -500,7 +489,7 @@ dependencies = [
  "fusion-math",
  "fusion-types",
  "log",
- "ndarray",
+ "ndarray 0.16.1",
  "rayon",
 ]
 
@@ -510,7 +499,7 @@ version = "0.1.0"
 dependencies = [
  "fusion-math",
  "fusion-types",
- "ndarray",
+ "ndarray 0.16.1",
  "rand 0.8.5",
  "rand_distr",
 ]
@@ -521,7 +510,7 @@ version = "0.2.0"
 dependencies = [
  "fusion-types",
  "log",
- "ndarray",
+ "ndarray 0.16.1",
  "serde",
 ]
 
@@ -532,7 +521,7 @@ dependencies = [
  "bytemuck",
  "fusion-types",
  "log",
- "ndarray",
+ "ndarray 0.16.1",
  "pollster",
  "wgpu",
 ]
@@ -544,7 +533,7 @@ dependencies = [
  "approx",
  "criterion",
  "fusion-types",
- "ndarray",
+ "ndarray 0.16.1",
  "num-complex",
  "proptest",
  "rayon",
@@ -558,7 +547,7 @@ dependencies = [
  "criterion",
  "fusion-math",
  "fusion-types",
- "ndarray",
+ "ndarray 0.16.1",
  "ndarray-npy",
  "proptest",
  "rand 0.8.5",
@@ -572,7 +561,7 @@ version = "0.1.0"
 dependencies = [
  "fusion-math",
  "fusion-types",
- "ndarray",
+ "ndarray 0.16.1",
 ]
 
 [[package]]
@@ -581,7 +570,7 @@ version = "0.1.0"
 dependencies = [
  "fusion-math",
  "fusion-types",
- "ndarray",
+ "ndarray 0.16.1",
  "ndarray-npy",
  "num-complex",
  "rand 0.8.5",
@@ -593,7 +582,7 @@ dependencies = [
 name = "fusion-types"
 version = "0.1.0"
 dependencies = [
- "ndarray",
+ "ndarray 0.16.1",
  "proptest",
  "serde",
  "serde_json",
@@ -1035,13 +1024,28 @@ dependencies = [
 ]
 
 [[package]]
-name = "ndarray-npy"
-version = "0.9.1"
+name = "ndarray"
+version = "0.17.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b313788c468c49141a9d9b6131fc15f403e6ef4e8446a0b2e18f664ddb278a9"
+checksum = "520080814a7a6b4a6e9070823bb24b4531daac8c4627e08ba5de8c5ef2f2752d"
+dependencies = [
+ "matrixmultiply",
+ "num-complex",
+ "num-integer",
+ "num-traits",
+ "portable-atomic",
+ "portable-atomic-util",
+ "rawpointer",
+]
+
+[[package]]
+name = "ndarray-npy"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "58e8a348bca0075000d999d750420d74434fd0d3e0993b456554f885e7657a11"
 dependencies = [
  "byteorder",
- "ndarray",
+ "ndarray 0.17.2",
  "num-complex",
  "num-traits",
  "py_literal",
@@ -1102,7 +1106,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7cfbf3f0feededcaa4d289fe3079b03659e85c5b5a177f4ba6fb01ab4fb3e39"
 dependencies = [
  "libc",
- "ndarray",
+ "ndarray 0.16.1",
  "num-complex",
  "num-integer",
  "num-traits",
@@ -1684,7 +1688,7 @@ dependencies = [
  "fusion-nuclear",
  "fusion-physics",
  "fusion-types",
- "ndarray",
+ "ndarray 0.16.1",
  "numpy",
  "pyo3",
  "rand 0.8.5",
@@ -2490,20 +2494,23 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "2.4.2"
+version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fabe6324e908f85a1c52063ce7aa26b68dcb7eb6dbc83a2d148403c9bc3eba50"
+checksum = "eb2a05c7c36fde6c09b08576c9f7fb4cda705990f73b58fe011abf7dfb24168b"
 dependencies = [
  "arbitrary",
  "crc32fast",
- "crossbeam-utils",
- "displaydoc",
  "flate2",
  "indexmap",
  "memchr",
- "thiserror 2.0.18",
  "zopfli",
 ]
+
+[[package]]
+name = "zlib-rs"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7948af682ccbc3342b6e9420e8c51c1fe5d7bf7756002b4a3c6cabfe96a7e3c"
 
 [[package]]
 name = "zmij"
