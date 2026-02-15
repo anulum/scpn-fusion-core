@@ -4,7 +4,7 @@
   <img src="docs/assets/repo_header.png" alt="SCPN Fusion Core — Neuro-Symbolic Tokamak Control">
 </p>
 
-![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg) ![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg) ![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-205%2B_Rust_%7C_60%2B_Python-green.svg)
+[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-205%2B_Rust_%7C_60%2B_Python-green.svg)
 
 A **neuro-symbolic control framework for tokamak fusion reactors** with
 physics-informed surrogate models and optional Rust acceleration. SCPN
@@ -415,7 +415,29 @@ Struggling with convergence? See the [Solver Tuning Guide](docs/SOLVER_TUNING_GU
 
 ## Documentation
 
-- **[Sphinx API Reference](https://anulum.github.io/scpn-fusion-core/)** (auto-generated from docstrings, hosted on GitHub Pages)
+Full documentation is hosted on **[GitHub Pages](https://anulum.github.io/scpn-fusion-core/)**.
+
+| Resource | Description |
+|----------|-------------|
+| [Python API Reference](https://anulum.github.io/scpn-fusion-core/python/) | Sphinx-generated docs for all Python modules |
+| [Rust API Reference](https://anulum.github.io/scpn-fusion-core/rust/fusion_core/) | Rustdoc for the 10-crate workspace |
+| [Tutorial Notebooks](https://anulum.github.io/scpn-fusion-core/notebooks/) | 6 interactive Jupyter tutorials |
+
+### User Guides (on GitHub Pages)
+
+| Guide | Topics |
+|-------|--------|
+| [Equilibrium Solver](https://anulum.github.io/scpn-fusion-core/python/userguide/equilibrium.html) | Grad-Shafranov, boundary conditions, GEQDSK I/O |
+| [Transport & Stability](https://anulum.github.io/scpn-fusion-core/python/userguide/transport.html) | 1.5D transport, IPB98 scaling, MHD stability |
+| [Control Systems](https://anulum.github.io/scpn-fusion-core/python/userguide/control.html) | PID, MPC, SNN controllers, digital twin, SOC learning |
+| [Nuclear Engineering](https://anulum.github.io/scpn-fusion-core/python/userguide/nuclear.html) | Blanket neutronics, PWI, divertor, TEMHD |
+| [Diagnostics](https://anulum.github.io/scpn-fusion-core/python/userguide/diagnostics.html) | Synthetic sensors, forward models, SXR tomography |
+| [Neuro-Symbolic Compiler](https://anulum.github.io/scpn-fusion-core/python/userguide/scpn_compiler.html) | Petri net → SNN 5-stage pipeline |
+| [HPC / Rust Acceleration](https://anulum.github.io/scpn-fusion-core/python/userguide/hpc.html) | 10-crate workspace, FFI, GPU roadmap |
+| [Validation](https://anulum.github.io/scpn-fusion-core/python/userguide/validation.html) | SPARC, ITER, ITPA benchmarks |
+
+### Technical Documents
+
 - [Solver Tuning Guide](docs/SOLVER_TUNING_GUIDE.md) (relaxation, Tikhonov, Huber, grid sizing, common pitfalls)
 - [Benchmarks & Comparisons](docs/BENCHMARKS.md)
 - [Benchmark Figures (static export)](docs/BENCHMARK_FIGURES.md)
