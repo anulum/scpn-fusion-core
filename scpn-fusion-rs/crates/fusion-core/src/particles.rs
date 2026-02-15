@@ -129,6 +129,11 @@ fn validate_particle_projection_grid(grid: &Grid2D, label: &str) -> FusionResult
             grid.nr
         )));
     }
+    if grid.rr.iter().any(|v| !v.is_finite()) || grid.zz.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label} grid mesh coordinates must be finite"
+        )));
+    }
     if !grid.dr.is_finite() || !grid.dz.is_finite() || grid.dr == 0.0 || grid.dz == 0.0 {
         return Err(FusionError::PhysicsViolation(format!(
             "{label} grid spacing must be finite and non-zero, got dr={}, dz={}",
@@ -863,6 +868,22 @@ mod tests {
                 }
                 other => panic!("Unexpected error: {other:?}"),
             }
+        }
+    }
+
+    #[test]
+    fn test_blend_particle_current_rejects_non_finite_grid_mesh() {
+        let mut grid = Grid2D::new(8, 8, 1.0, 5.0, -2.0, 2.0);
+        grid.rr[[0, 0]] = f64::NAN;
+        let fluid = Array2::from_elem((8, 8), 2.0);
+        let particle = Array2::from_elem((8, 8), 6.0);
+        let err = blend_particle_current(&fluid, &particle, &grid, 1.0, 0.5)
+            .expect_err("non-finite grid mesh must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("mesh coordinates"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
         }
     }
 
