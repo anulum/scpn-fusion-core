@@ -283,6 +283,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-056 | P1 | Runtime | Centralize inverse RMSE computation with strict vector-length and finite-value validation | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Replaced duplicated residual math with a validated RMSE helper that enforces non-empty equal-length finite prediction/measurement vectors and rejects non-finite RMSE outputs, tightening both analytic and kernel LM residual/trial/final evaluation paths | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-057 | P1 | Runtime | Enforce kernel inverse probe-domain bounds to prevent silent edge snapping | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Kernel inverse forward/analytical paths now validate probe coordinates against solved grid bounds and reject out-of-domain probes via explicit `FusionError::ConfigError`, preventing nearest-neighbor edge fallback from masking invalid diagnostic geometry | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-058 | P1 | Runtime | Centralize LM update construction with strict Jacobian/residual/regularization validation | `scpn-fusion-rs/crates/fusion-core/src/inverse.rs` | Added shared `compute_lm_delta` helper for analytic and kernel inverse loops to enforce Jacobian/residual shape and finiteness, positive finite Tikhonov regularization, finite augmented system/pseudo-inverse/update vectors, and validated clamped update dimensions before line search | `cargo test -p fusion-core inverse::tests:: -- --nocapture`, `cargo test -p fusion-core jacobian::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
+| H8-059 | P1 | Runtime | Harden particle summary/deposition paths with strict particle-grid finite validation | `scpn-fusion-rs/crates/fusion-core/src/particles.rs`, `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | Particle runtime paths now enforce explicit charged-particle and projection-grid validation (finite state, positive mass/weight, finite grid axes/spacing/mesh shapes), replace NaN-tolerant energy-sort fallback with validated ordering, and propagate deposition failures through kernel population-feedback setup instead of silent fallback behavior | `cargo test -p fusion-core particles::tests:: -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_builds_summary -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_rejects_invalid_threshold -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 
 ## Task Accounting
 
@@ -290,7 +291,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 194
+- Post-S4 hardening tasks delivered: 195
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -508,4 +509,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-056`
 - Completed: `H8-057`
 - Completed: `H8-058`
+- Completed: `H8-059`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

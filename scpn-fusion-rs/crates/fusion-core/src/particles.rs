@@ -75,17 +75,100 @@ fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
-fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
+fn validate_particle_state(particle: &ChargedParticle, label: &str) -> FusionResult<()> {
+    if !particle.x_m.is_finite() || !particle.y_m.is_finite() || !particle.z_m.is_finite() {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label} position components must be finite"
+        )));
+    }
+    if !particle.vx_m_s.is_finite() || !particle.vy_m_s.is_finite() || !particle.vz_m_s.is_finite()
+    {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label} velocity components must be finite"
+        )));
+    }
+    if !particle.charge_c.is_finite() {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label}.charge_c must be finite"
+        )));
+    }
+    if !particle.mass_kg.is_finite() || particle.mass_kg <= 0.0 {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label}.mass_kg must be finite and > 0"
+        )));
+    }
+    if !particle.weight.is_finite() || particle.weight <= 0.0 {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label}.weight must be finite and > 0"
+        )));
+    }
+    Ok(())
+}
+
+fn validate_particle_projection_grid(grid: &Grid2D, label: &str) -> FusionResult<()> {
+    if grid.nr == 0 || grid.nz == 0 {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label} requires non-empty grid dimensions"
+        )));
+    }
+    if grid.r.len() != grid.nr || grid.z.len() != grid.nz {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label} grid axis length mismatch: r_len={}, nr={}, z_len={}, nz={}",
+            grid.r.len(),
+            grid.nr,
+            grid.z.len(),
+            grid.nz
+        )));
+    }
+    if grid.rr.dim() != (grid.nz, grid.nr) || grid.zz.dim() != (grid.nz, grid.nr) {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label} grid mesh shape mismatch: rr={:?}, zz={:?}, expected=({}, {})",
+            grid.rr.dim(),
+            grid.zz.dim(),
+            grid.nz,
+            grid.nr
+        )));
+    }
+    if !grid.dr.is_finite() || !grid.dz.is_finite() || grid.dr <= 0.0 || grid.dz <= 0.0 {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label} grid spacing must be finite and > 0, got dr={}, dz={}",
+            grid.dr, grid.dz
+        )));
+    }
+    if grid.r.iter().any(|v| !v.is_finite()) || grid.z.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label} grid axes must be finite"
+        )));
+    }
+    Ok(())
+}
+
+fn nearest_index(axis: &Array1<f64>, value: f64, label: &str) -> FusionResult<usize> {
+    if axis.is_empty() {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label} axis must be non-empty"
+        )));
+    }
+    if !value.is_finite() {
+        return Err(FusionError::PhysicsViolation(format!(
+            "{label} lookup coordinate must be finite"
+        )));
+    }
     let mut best_idx = 0usize;
     let mut best_dist = f64::INFINITY;
     for (idx, x) in axis.iter().copied().enumerate() {
+        if !x.is_finite() {
+            return Err(FusionError::PhysicsViolation(format!(
+                "{label} axis contains non-finite coordinate at index {idx}"
+            )));
+        }
         let dist = (x - value).abs();
         if dist < best_dist {
             best_dist = dist;
             best_idx = idx;
         }
     }
-    best_idx
+    Ok(best_idx)
 }
 
 /// Create deterministic alpha test particles for hybrid kinetic-fluid overlays.
@@ -178,21 +261,38 @@ pub fn summarize_particle_population(
         });
     }
 
-    let mut energies: Vec<f64> = particles
-        .iter()
-        .map(ChargedParticle::kinetic_energy_mev)
-        .collect();
-    energies.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let mut energies: Vec<f64> = Vec::with_capacity(particles.len());
+    for (idx, particle) in particles.iter().enumerate() {
+        validate_particle_state(particle, &format!("particle[{idx}]"))?;
+        let energy = particle.kinetic_energy_mev();
+        if !energy.is_finite() || energy < 0.0 {
+            return Err(FusionError::PhysicsViolation(format!(
+                "particle[{idx}] kinetic energy must be finite and >= 0, got {energy}"
+            )));
+        }
+        energies.push(energy);
+    }
+    energies.sort_by(f64::total_cmp);
     let count = energies.len();
     let mean_energy_mev = energies.iter().sum::<f64>() / (count as f64);
+    if !mean_energy_mev.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "mean particle energy became non-finite".to_string(),
+        ));
+    }
     let p95_idx = ((count - 1) as f64 * 0.95).round() as usize;
     let p95_energy_mev = energies[p95_idx.min(count - 1)];
-    let max_energy_mev = *energies.last().unwrap_or(&0.0);
+    let max_energy_mev = energies[count - 1];
     let n_runaway = energies
         .iter()
         .filter(|&&e| e >= runaway_threshold_mev)
         .count();
     let runaway_fraction = (n_runaway as f64) / (count as f64);
+    if !runaway_fraction.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "runaway fraction became non-finite".to_string(),
+        ));
+    }
 
     Ok(ParticlePopulationSummary {
         count,
@@ -214,6 +314,7 @@ pub fn estimate_alpha_heating_profile(
             "confinement_tau_s must be finite and > 0".to_string(),
         ));
     }
+    validate_particle_projection_grid(grid, "alpha heating profile")?;
     let mut heat = Array2::zeros((grid.nz, grid.nr));
     if particles.is_empty() {
         return Ok(heat);
@@ -226,17 +327,34 @@ pub fn estimate_alpha_heating_profile(
     let z_min = grid.z[0];
     let z_max = grid.z[grid.nz - 1];
 
-    for particle in particles {
+    for (idx, particle) in particles.iter().enumerate() {
+        validate_particle_state(particle, &format!("particle[{idx}]"))?;
         let r = particle.cylindrical_radius_m();
         let z = particle.z_m;
         if r < r_min || r > r_max || z < z_min || z > z_max {
             continue;
         }
-        let ir = nearest_index(&grid.r, r);
-        let iz = nearest_index(&grid.z, z);
+        let ir = nearest_index(&grid.r, r, "alpha heating R-axis")?;
+        let iz = nearest_index(&grid.z, z, "alpha heating Z-axis")?;
         let p_w = particle.kinetic_energy_j() * particle.weight / tau;
+        if !p_w.is_finite() {
+            return Err(FusionError::PhysicsViolation(format!(
+                "particle[{idx}] deposited heating power became non-finite"
+            )));
+        }
         let local_volume = (cell_volume * r.max(MIN_RADIUS_M)).max(MIN_CELL_AREA_M2);
-        heat[[iz, ir]] += p_w / local_volume;
+        let contribution = p_w / local_volume;
+        if !contribution.is_finite() {
+            return Err(FusionError::PhysicsViolation(format!(
+                "particle[{idx}] heating contribution became non-finite"
+            )));
+        }
+        heat[[iz, ir]] += contribution;
+    }
+    if heat.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "alpha heating profile contains non-finite values".to_string(),
+        ));
     }
     Ok(heat)
 }
@@ -311,29 +429,41 @@ pub fn advance_particles_boris(
 pub fn deposit_toroidal_current_density(
     particles: &[ChargedParticle],
     grid: &Grid2D,
-) -> Array2<f64> {
-    let mut j_phi = Array2::zeros((grid.nz, grid.nr));
+) -> FusionResult<Array2<f64>> {
+    validate_particle_projection_grid(grid, "particle current deposition")?;
+    let mut j_phi: Array2<f64> = Array2::zeros((grid.nz, grid.nr));
     let area = (grid.dr.abs() * grid.dz.abs()).max(MIN_CELL_AREA_M2);
     let r_min = grid.r[0];
     let r_max = grid.r[grid.nr - 1];
     let z_min = grid.z[0];
     let z_max = grid.z[grid.nz - 1];
 
-    for particle in particles {
+    for (idx, particle) in particles.iter().enumerate() {
+        validate_particle_state(particle, &format!("particle[{idx}]"))?;
         let r = particle.cylindrical_radius_m();
         let z = particle.z_m;
         if r < r_min || r > r_max || z < z_min || z > z_max {
             continue;
         }
 
-        let ir = nearest_index(&grid.r, r);
-        let iz = nearest_index(&grid.z, z);
+        let ir = nearest_index(&grid.r, r, "particle current R-axis")?;
+        let iz = nearest_index(&grid.z, z, "particle current Z-axis")?;
         let v_phi = particle.toroidal_velocity_m_s();
         let j_contrib = particle.charge_c * particle.weight * v_phi / area;
+        if !j_contrib.is_finite() {
+            return Err(FusionError::PhysicsViolation(format!(
+                "particle[{idx}] toroidal current contribution became non-finite"
+            )));
+        }
         j_phi[[iz, ir]] += j_contrib;
     }
 
-    j_phi
+    if j_phi.iter().any(|v| !v.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "deposited particle current contains non-finite values".to_string(),
+        ));
+    }
+    Ok(j_phi)
 }
 
 /// Blend fluid and particle current maps and renormalize integral to `i_target`.
@@ -442,7 +572,8 @@ mod tests {
             },
         ];
 
-        let j = deposit_toroidal_current_density(&particles, &grid);
+        let j = deposit_toroidal_current_density(&particles, &grid)
+            .expect("valid particles/grid should deposit current");
         let sum_abs = j.iter().map(|v| v.abs()).sum::<f64>();
         assert!(
             sum_abs > 0.0,
@@ -582,6 +713,37 @@ mod tests {
                 }
                 other => panic!("Unexpected error: {other:?}"),
             }
+        }
+    }
+
+    #[test]
+    fn test_population_summary_rejects_non_finite_particle_state() {
+        let mut particles =
+            seed_alpha_test_particles(4, 6.2, 0.0, 3.5, 0.2, 1.0).expect("valid seeds");
+        particles[0].vx_m_s = f64::INFINITY;
+        let err = summarize_particle_population(&particles, 1.0)
+            .expect_err("non-finite particle state must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("velocity"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_toroidal_current_deposition_rejects_invalid_particle_state() {
+        let grid = Grid2D::new(17, 17, 1.0, 9.0, -4.0, 4.0);
+        let mut particles =
+            seed_alpha_test_particles(4, 6.2, 0.0, 3.5, 0.2, 1.0).expect("valid seeds");
+        particles[1].weight = f64::NAN;
+        let err = deposit_toroidal_current_density(&particles, &grid)
+            .expect_err("invalid particle state must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("weight"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
         }
     }
 }

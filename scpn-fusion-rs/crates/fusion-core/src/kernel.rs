@@ -403,7 +403,7 @@ impl FusionKernel {
         runaway_threshold_mev: f64,
     ) -> FusionResult<ParticlePopulationSummary> {
         let summary = summarize_particle_population(particles, runaway_threshold_mev)?;
-        let particle_j_phi = deposit_toroidal_current_density(particles, &self.grid);
+        let particle_j_phi = deposit_toroidal_current_density(particles, &self.grid)?;
         self.set_particle_current_feedback(particle_j_phi, coupling)?;
         Ok(summary)
     }
