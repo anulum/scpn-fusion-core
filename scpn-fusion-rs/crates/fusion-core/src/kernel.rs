@@ -384,6 +384,11 @@ impl FusionKernel {
                 "particle feedback coupling must be finite and in [0, 1]".to_string(),
             ));
         }
+        if particle_j_phi.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::PhysicsViolation(
+                "particle feedback map must contain only finite values".to_string(),
+            ));
+        }
         self.particle_current_feedback = Some(particle_j_phi);
         self.particle_feedback_coupling = coupling;
         Ok(())
@@ -604,6 +609,22 @@ mod tests {
                 }
                 other => panic!("Unexpected error: {other:?}"),
             }
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_rejects_non_finite_map() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let mut feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
+        feedback[[0, 0]] = f64::NAN;
+        let err = kernel
+            .set_particle_current_feedback(feedback, 0.2)
+            .expect_err("non-finite feedback map must error");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("finite values"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
         }
     }
 

@@ -286,6 +286,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-059 | P1 | Runtime | Harden particle summary/deposition paths with strict particle-grid finite validation | `scpn-fusion-rs/crates/fusion-core/src/particles.rs`, `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | Particle runtime paths now enforce explicit charged-particle and projection-grid validation (finite state, positive mass/weight, finite grid axes/spacing/mesh shapes), replace NaN-tolerant energy-sort fallback with validated ordering, and propagate deposition failures through kernel population-feedback setup instead of silent fallback behavior | `cargo test -p fusion-core particles::tests:: -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_builds_summary -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_rejects_invalid_threshold -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-060 | P1 | Runtime | Remove silent Boris no-op by enforcing explicit particle-step runtime validation | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | Boris particle-step APIs now return `FusionResult` and reject invalid runtime inputs (non-finite E/B vectors, invalid `dt_s`, invalid particle state, non-finite velocity/position updates) instead of silently returning on invalid mass/timestep; batch advance now reports indexed particle failures with regression tests | `cargo test -p fusion-core particles::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-061 | P1 | Runtime | Harden particle-current blending by rejecting non-finite maps and zero-integral renormalization traps | `scpn-fusion-rs/crates/fusion-core/src/particles.rs` | Particle/fluid current blending now enforces finite input maps and integral/scale validity, and returns explicit `FusionError::PhysicsViolation` when `i_target` is non-zero but blended current integral is effectively zero instead of silently zero-filling; added regression tests for non-finite maps and zero-integral/non-zero-target cases | `cargo test -p fusion-core particles::tests:: -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
+| H8-062 | P1 | Runtime | Harden external particle-feedback map ingestion with strict finite-value guard | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `set_particle_current_feedback` now rejects non-finite external current maps via explicit `FusionError::PhysicsViolation` before storing feedback state, preventing NaN/Inf maps from entering subsequent equilibrium iterations; added targeted regression coverage | `cargo test -p fusion-core kernel::tests::test_particle_feedback_shape_guard -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_invalid_coupling -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_rejects_non_finite_map -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_builds_summary -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_from_population_rejects_invalid_threshold -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 
 ## Task Accounting
 
@@ -293,7 +294,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 197
+- Post-S4 hardening tasks delivered: 198
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -514,4 +515,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-059`
 - Completed: `H8-060`
 - Completed: `H8-061`
+- Completed: `H8-062`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
