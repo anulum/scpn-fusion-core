@@ -103,6 +103,37 @@ impl FusionKernel {
         let dr = self.grid.dr;
         let dz = self.grid.dz;
 
+        if !mu0.is_finite() || mu0 <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "physics.vacuum_permeability must be finite and > 0".to_string(),
+            ));
+        }
+        if !i_target.is_finite() {
+            return Err(FusionError::PhysicsViolation(
+                "physics.plasma_current_target must be finite".to_string(),
+            ));
+        }
+        if max_iter == 0 {
+            return Err(FusionError::ConfigError(
+                "solver.max_iterations must be >= 1".to_string(),
+            ));
+        }
+        if !tol.is_finite() || tol <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "solver.convergence_threshold must be finite and > 0".to_string(),
+            ));
+        }
+        if nz < 2 || nr < 2 {
+            return Err(FusionError::ConfigError(format!(
+                "grid dimensions must be >= 2 in both axes, got nz={nz}, nr={nr}"
+            )));
+        }
+        if !dr.is_finite() || !dz.is_finite() || dr == 0.0 || dz == 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "grid spacing must be finite and non-zero, got dr={dr}, dz={dz}"
+            )));
+        }
+
         // 1. Compute vacuum field
         let psi_vac = calculate_vacuum_field(&self.grid, &self.config.coils, mu0)?;
         self.state.psi = psi_vac.clone();
@@ -773,6 +804,45 @@ mod tests {
         match err {
             FusionError::PhysicsViolation(msg) => {
                 assert!(msg.contains("non-empty"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_solve_equilibrium_rejects_invalid_runtime_controls() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.config.solver.max_iterations = 0;
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("zero max_iterations must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("max_iterations"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.config.solver.convergence_threshold = 0.0;
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("non-positive convergence_threshold must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("convergence_threshold"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.dr = 0.0;
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("zero grid spacing must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("grid spacing"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
