@@ -455,8 +455,15 @@ impl FusionKernel {
         params_p: ProfileParams,
         params_ff: ProfileParams,
     ) -> FusionResult<EquilibriumResult> {
+        let prev_mode = self.external_profile_mode;
+        let prev_params_p = self.profile_params_p;
+        let prev_params_ff = self.profile_params_ff;
         self.set_external_profiles(params_p, params_ff);
-        self.solve_equilibrium()
+        let result = self.solve_equilibrium();
+        self.external_profile_mode = prev_mode;
+        self.profile_params_p = prev_params_p;
+        self.profile_params_ff = prev_params_ff;
+        result
     }
 
     fn nearest_index(axis: &Array1<f64>, value: f64) -> FusionResult<usize> {
@@ -846,5 +853,73 @@ mod tests {
             }
             other => panic!("Unexpected error: {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_solve_with_profiles_restores_profile_state_on_error() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.config.solver.max_iterations = 0;
+        assert!(!kernel.external_profile_mode);
+        assert!(kernel.profile_params_p.is_none());
+        assert!(kernel.profile_params_ff.is_none());
+
+        let err = kernel
+            .solve_equilibrium_with_profiles(ProfileParams::default(), ProfileParams::default())
+            .expect_err("invalid runtime control must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("max_iterations"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        assert!(!kernel.external_profile_mode);
+        assert!(kernel.profile_params_p.is_none());
+        assert!(kernel.profile_params_ff.is_none());
+    }
+
+    #[test]
+    fn test_solve_with_profiles_restores_previous_external_profile_state() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let prev_p = ProfileParams {
+            ped_top: 0.85,
+            ped_width: 0.07,
+            ped_height: 0.95,
+            core_alpha: 0.22,
+        };
+        let prev_ff = ProfileParams {
+            ped_top: 0.92,
+            ped_width: 0.09,
+            ped_height: 1.05,
+            core_alpha: 0.18,
+        };
+        kernel.set_external_profiles(prev_p, prev_ff);
+        kernel.config.solver.max_iterations = 0;
+
+        let next_p = ProfileParams {
+            ped_top: 0.80,
+            ped_width: 0.06,
+            ped_height: 1.10,
+            core_alpha: 0.25,
+        };
+        let next_ff = ProfileParams {
+            ped_top: 0.95,
+            ped_width: 0.10,
+            ped_height: 0.90,
+            core_alpha: 0.15,
+        };
+        let err = kernel
+            .solve_equilibrium_with_profiles(next_p, next_ff)
+            .expect_err("invalid runtime control must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("max_iterations"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        assert!(kernel.external_profile_mode);
+        assert_eq!(kernel.profile_params_p, Some(prev_p));
+        assert_eq!(kernel.profile_params_ff, Some(prev_ff));
     }
 }
