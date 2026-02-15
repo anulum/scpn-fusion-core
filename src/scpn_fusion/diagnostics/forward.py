@@ -58,6 +58,12 @@ def _validate_field_grid(
 
 def _validate_chords(
     chords: Sequence[tuple[tuple[float, float], tuple[float, float]]],
+    *,
+    r_min: float | None = None,
+    r_max: float | None = None,
+    z_min: float | None = None,
+    z_max: float | None = None,
+    enforce_domain_bounds: bool = False,
 ) -> Sequence[tuple[tuple[float, float], tuple[float, float]]]:
     for i, chord in enumerate(chords):
         if len(chord) != 2:
@@ -68,6 +74,20 @@ def _validate_chords(
         vals = [start[0], start[1], end[0], end[1]]
         if not np.all(np.isfinite(np.asarray(vals, dtype=np.float64))):
             raise ValueError(f"chords[{i}] has non-finite coordinates.")
+        if enforce_domain_bounds:
+            if (
+                float(start[0]) < float(r_min)
+                or float(start[0]) > float(r_max)
+                or float(end[0]) < float(r_min)
+                or float(end[0]) > float(r_max)
+                or float(start[1]) < float(z_min)
+                or float(start[1]) > float(z_max)
+                or float(end[1]) < float(z_min)
+                or float(end[1]) > float(z_max)
+            ):
+                raise ValueError(
+                    f"chords[{i}] lies outside diagnostic domain bounds."
+                )
     return chords
 
 
@@ -102,6 +122,7 @@ def interferometer_phase_shift(
     *,
     laser_wavelength_m: float = 1.064e-6,
     samples: int = 96,
+    enforce_domain_bounds: bool = False,
 ) -> FloatArray:
     """Predict line-integrated interferometer phase shift [rad]."""
     wavelength = float(laser_wavelength_m)
@@ -114,7 +135,14 @@ def interferometer_phase_shift(
         np.asarray(z_grid, dtype=np.float64),
         name="interferometer_phase_shift",
     )
-    _validate_chords(chords)
+    _validate_chords(
+        chords,
+        r_min=float(np.min(r)),
+        r_max=float(np.max(r)),
+        z_min=float(np.min(z)),
+        z_max=float(np.max(z)),
+        enforce_domain_bounds=bool(enforce_domain_bounds),
+    )
     phases = np.zeros(len(chords), dtype=np.float64)
     for i, (start, end) in enumerate(chords):
         line_ne = _line_integral_nearest(
@@ -166,6 +194,7 @@ def generate_forward_channels(
     detector_efficiency: float = 0.12,
     solid_angle_fraction: float = 1.0e-4,
     laser_wavelength_m: float = 1.064e-6,
+    enforce_chord_domain_bounds: bool = False,
 ) -> ForwardDiagnosticChannels:
     """Generate synthetic raw diagnostic channels from plasma state maps."""
     phases = interferometer_phase_shift(
@@ -174,6 +203,7 @@ def generate_forward_channels(
         np.asarray(z_grid, dtype=np.float64),
         interferometer_chords,
         laser_wavelength_m=laser_wavelength_m,
+        enforce_domain_bounds=bool(enforce_chord_domain_bounds),
     )
     rate = neutron_count_rate(
         np.asarray(neutron_source_m3_s, dtype=np.float64),

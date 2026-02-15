@@ -121,3 +121,39 @@ def test_interferometer_rejects_malformed_chord_geometry(
     r, z, ne, _ = _make_fields()
     with pytest.raises(ValueError, match=match):
         interferometer_phase_shift(ne, r, z, chords)  # type: ignore[arg-type]
+
+
+def test_interferometer_enforce_domain_bounds_rejects_out_of_domain_chords() -> None:
+    r, z, ne, _ = _make_fields()
+    chords = [((3.0, 0.0), (9.0, 0.0))]
+    with pytest.raises(ValueError, match="outside diagnostic domain"):
+        interferometer_phase_shift(
+            ne,
+            r,
+            z,
+            chords,
+            enforce_domain_bounds=True,
+        )
+
+
+def test_interferometer_default_allows_out_of_domain_chords_via_clamping() -> None:
+    r, z, ne, _ = _make_fields()
+    chords = [((3.0, 0.0), (9.0, 0.0))]
+    phases = interferometer_phase_shift(ne, r, z, chords)
+    assert phases.shape == (1,)
+    assert np.isfinite(phases[0])
+    assert phases[0] > 0.0
+
+
+def test_generate_forward_channels_enforce_domain_bounds_rejects_out_of_domain_chords() -> None:
+    r, z, ne, sn = _make_fields()
+    with pytest.raises(ValueError, match="outside diagnostic domain"):
+        generate_forward_channels(
+            electron_density_m3=ne,
+            neutron_source_m3_s=sn,
+            r_grid=r,
+            z_grid=z,
+            interferometer_chords=[((3.0, 0.0), (9.0, 0.0))],
+            volume_element_m3=0.02,
+            enforce_chord_domain_bounds=True,
+        )
