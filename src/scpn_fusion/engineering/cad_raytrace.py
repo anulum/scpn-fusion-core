@@ -69,12 +69,13 @@ def load_cad_mesh(path: str | Path) -> tuple[FloatArray, IntArray]:
         mesh = trimesh.load(mesh_path, force="mesh")
         vertices = np.asarray(mesh.vertices, dtype=np.float64)
         faces = np.asarray(mesh.faces, dtype=np.int64)
-        if vertices.size == 0 or faces.size == 0:
-            raise ValueError(f"Mesh load failed or empty geometry: {mesh_path}")
+        _validate_mesh(vertices, faces)
         return vertices, faces
 
     if suffix == ".stl":
-        return _parse_ascii_stl(mesh_path)
+        vertices, faces = _parse_ascii_stl(mesh_path)
+        _validate_mesh(vertices, faces)
+        return vertices, faces
     raise RuntimeError("STEP/STP loading requires trimesh backend.")
 
 
@@ -90,6 +91,29 @@ def _triangle_normals_and_areas(
     areas = 0.5 * area2
     normals = cross / np.maximum(area2[:, None], 1e-12)
     return normals, areas
+
+
+def _validate_mesh(vertices: FloatArray, faces: IntArray) -> None:
+    if vertices.ndim != 2 or vertices.shape[1] != 3:
+        raise ValueError("vertices must have shape (M, 3)")
+    if faces.ndim != 2 or faces.shape[1] != 3:
+        raise ValueError("faces must have shape (K, 3)")
+    if vertices.shape[0] == 0:
+        raise ValueError("vertices must contain at least one point.")
+    if faces.shape[0] == 0:
+        raise ValueError("faces must contain at least one triangle.")
+    if not np.all(np.isfinite(vertices)):
+        raise ValueError("vertices must contain only finite values.")
+    if np.any(faces < 0):
+        raise ValueError("faces must use non-negative vertex indices.")
+    if np.any(faces >= vertices.shape[0]):
+        raise ValueError("faces contain out-of-bounds vertex indices.")
+
+    _, areas = _triangle_normals_and_areas(vertices, faces)
+    if not np.all(np.isfinite(areas)):
+        raise ValueError("triangle areas must be finite.")
+    if np.any(areas <= 0.0):
+        raise ValueError("faces must define non-degenerate triangles.")
 
 
 def estimate_surface_loading(
@@ -109,10 +133,14 @@ def estimate_surface_loading(
         raise ValueError("source_points_xyz must have shape (N, 3)")
     if strength.size != src.shape[0]:
         raise ValueError("source_strength_w length must match source_points_xyz rows")
-    if vertices.ndim != 2 or vertices.shape[1] != 3:
-        raise ValueError("vertices must have shape (M, 3)")
-    if faces.ndim != 2 or faces.shape[1] != 3:
-        raise ValueError("faces must have shape (K, 3)")
+    if src.size and not np.all(np.isfinite(src)):
+        raise ValueError("source_points_xyz must contain only finite values.")
+    if not np.all(np.isfinite(strength)):
+        raise ValueError("source_strength_w must contain only finite values.")
+    if np.any(strength < 0.0):
+        raise ValueError("source_strength_w must be non-negative.")
+
+    _validate_mesh(vertices, faces)
 
     tri = vertices[faces]
     centroids = np.mean(tri, axis=1)
@@ -125,7 +153,7 @@ def estimate_surface_loading(
         dist = np.sqrt(np.maximum(dist2, 1e-12))
         dirs = ray / dist[:, None]
         cos_incidence = np.clip(np.sum(normals * dirs, axis=1), 0.0, 1.0)
-        loading += float(max(power, 0.0)) * cos_incidence / (4.0 * np.pi * np.maximum(dist2, 1e-12))
+        loading += float(power) * cos_incidence / (4.0 * np.pi * np.maximum(dist2, 1e-12))
 
     return CADLoadReport(
         face_loading_w_m2=loading,
