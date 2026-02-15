@@ -469,6 +469,19 @@ impl FusionKernel {
                 self.grid.zz.dim()
             )));
         }
+        if self.grid.r.iter().any(|v| !v.is_finite()) || self.grid.z.iter().any(|v| !v.is_finite())
+        {
+            return Err(FusionError::ConfigError(
+                "particle feedback requires finite grid axis coordinates".to_string(),
+            ));
+        }
+        if self.grid.rr.iter().any(|v| !v.is_finite())
+            || self.grid.zz.iter().any(|v| !v.is_finite())
+        {
+            return Err(FusionError::ConfigError(
+                "particle feedback requires finite grid mesh coordinates".to_string(),
+            ));
+        }
         let i_target = self.config.physics.plasma_current_target;
         if !i_target.is_finite() {
             return Err(FusionError::ConfigError(
@@ -999,6 +1012,40 @@ mod tests {
         match err {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("mesh shape"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_rejects_non_finite_grid_axes() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.r[7] = f64::NAN;
+        let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
+        let err = kernel
+            .set_particle_current_feedback(feedback, 0.2)
+            .expect_err("non-finite grid-axis coordinates must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("axis"));
+                assert!(msg.contains("finite"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_rejects_non_finite_grid_mesh() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.zz[[0, 0]] = f64::INFINITY;
+        let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
+        let err = kernel
+            .set_particle_current_feedback(feedback, 0.2)
+            .expect_err("non-finite grid-mesh coordinates must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("mesh"));
+                assert!(msg.contains("finite"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
