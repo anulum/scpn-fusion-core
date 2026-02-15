@@ -119,6 +119,36 @@ class TestGSOperator:
             gs_operator(psi, bad_R, Z)
 
 
+class TestComputeGSSource:
+    """Validate GS source input contracts."""
+
+    def test_rejects_profile_length_mismatch(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        eq.pprime = eq.pprime[:-1]
+        with pytest.raises(ValueError, match="pprime"):
+            compute_gs_source(eq)
+
+    def test_rejects_psirz_shape_mismatch(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        eq.psirz = eq.psirz[:, :-1]
+        with pytest.raises(ValueError, match="psirz"):
+            compute_gs_source(eq)
+
+    @pytest.mark.parametrize("bad_value", [np.nan, np.inf, -np.inf])
+    def test_rejects_non_finite_profiles(self, bad_value):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        eq.ffprime = eq.ffprime.copy()
+        eq.ffprime[0] = bad_value
+        with pytest.raises(ValueError, match="finite"):
+            compute_gs_source(eq)
+
+    def test_rejects_non_monotonic_axes(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        eq.rdim = -abs(eq.rdim)
+        with pytest.raises(ValueError, match="strictly increasing"):
+            compute_gs_source(eq)
+
+
 # ── Integration tests on SPARC data ─────────────────────────────────
 
 

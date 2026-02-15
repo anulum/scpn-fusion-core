@@ -145,21 +145,55 @@ def compute_gs_source(
 
     Returns -μ₀·R·J_ϕ = -(μ₀·R²·p' + FF') which is the RHS of Δ*ψ = RHS.
     """
+    if eq.nw <= 0 or eq.nh <= 0:
+        raise ValueError("eq.nw and eq.nh must be positive")
+    if not np.isfinite(eq.simag) or not np.isfinite(eq.sibry):
+        raise ValueError("eq.simag and eq.sibry must be finite")
+
+    psirz = np.asarray(eq.psirz, dtype=np.float64)
+    pprime = np.asarray(eq.pprime, dtype=np.float64)
+    ffprime = np.asarray(eq.ffprime, dtype=np.float64)
+    R = np.asarray(eq.r, dtype=np.float64)
+    Z = np.asarray(eq.z, dtype=np.float64)
+
+    if psirz.shape != (eq.nh, eq.nw):
+        raise ValueError(
+            f"eq.psirz shape must be ({eq.nh}, {eq.nw}), got {psirz.shape}"
+        )
+    if pprime.shape != (eq.nw,):
+        raise ValueError(f"eq.pprime length must be {eq.nw}, got {pprime.shape}")
+    if ffprime.shape != (eq.nw,):
+        raise ValueError(f"eq.ffprime length must be {eq.nw}, got {ffprime.shape}")
+    if R.shape != (eq.nw,) or Z.shape != (eq.nh,):
+        raise ValueError(
+            f"R/Z axis lengths must match nw/nh ({eq.nw}, {eq.nh}), "
+            f"got R={R.shape}, Z={Z.shape}"
+        )
+
+    if not np.all(np.isfinite(psirz)):
+        raise ValueError("eq.psirz must contain only finite values")
+    if not np.all(np.isfinite(pprime)) or not np.all(np.isfinite(ffprime)):
+        raise ValueError("eq.pprime and eq.ffprime must contain only finite values")
+    if not np.all(np.isfinite(R)) or not np.all(np.isfinite(Z)):
+        raise ValueError("R and Z axes must contain only finite values")
+    if np.any(np.diff(R) <= 0.0):
+        raise ValueError("R axis must be strictly increasing")
+    if np.any(np.diff(Z) <= 0.0):
+        raise ValueError("Z axis must be strictly increasing")
+
     psi_norm_1d = np.linspace(0.0, 1.0, eq.nw)
-    R = eq.r
-    Z = eq.z
     RR, _ = np.meshgrid(R, Z)
 
     # Normalise reference psi
     denom = eq.sibry - eq.simag
     if abs(denom) < 1e-12:
         return np.zeros((eq.nh, eq.nw))
-    psi_n = (eq.psirz - eq.simag) / denom
+    psi_n = (psirz - eq.simag) / denom
 
     # Interpolate 1D profiles onto 2D grid
     psi_n_clipped = np.clip(psi_n, 0.0, 1.0)
-    pprime_2d = np.interp(psi_n_clipped.ravel(), psi_norm_1d, eq.pprime).reshape(eq.nh, eq.nw)
-    ffprime_2d = np.interp(psi_n_clipped.ravel(), psi_norm_1d, eq.ffprime).reshape(eq.nh, eq.nw)
+    pprime_2d = np.interp(psi_n_clipped.ravel(), psi_norm_1d, pprime).reshape(eq.nh, eq.nw)
+    ffprime_2d = np.interp(psi_n_clipped.ravel(), psi_norm_1d, ffprime).reshape(eq.nh, eq.nw)
 
     # Zero outside plasma
     outside = (psi_n < 0) | (psi_n >= 1.0)

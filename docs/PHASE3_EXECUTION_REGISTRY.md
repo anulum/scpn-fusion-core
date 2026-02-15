@@ -332,6 +332,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-105 | P1 | Validation | Make ψ RMSE CLI output encoding-safe on Windows code pages | `validation/psi_pointwise_rmse.py`, `tests/test_psi_pointwise_rmse_cli.py` | Replaced non-ASCII glyphs in CLI `main()` output with ASCII-safe labels so strict `cp1250`/ASCII terminals no longer raise `UnicodeEncodeError`, and added CLI regression coverage with an ASCII-strict stdout sink to lock compatibility | `python -m pytest tests/test_psi_pointwise_rmse.py tests/test_psi_pointwise_rmse_cli.py -q`, `python validation/psi_pointwise_rmse.py` |
 | H8-106 | P1 | Validation | Enforce strict ψ RMSE input-shape and finite-value contracts | `validation/psi_pointwise_rmse.py`, `tests/test_psi_pointwise_rmse.py` | `compute_psi_rmse` now rejects shape-mismatched solver fields and non-finite values in solver/reference ψ inputs with explicit `ValueError` contracts, preventing silent broadcasting or NaN/Inf contamination of aggregate RMSE metrics; added regression coverage for shape mismatch and non-finite solver values | `python -m pytest tests/test_psi_pointwise_rmse.py tests/test_psi_pointwise_rmse_cli.py -q` |
 | H8-107 | P1 | Validation | Enforce GS operator grid-axis contracts before finite-difference evaluation | `validation/psi_pointwise_rmse.py`, `tests/test_psi_pointwise_rmse.py` | `gs_operator` now rejects malformed inputs (`psi` not 2D, undersized grids, axis-length mismatch, non-finite values, non-monotonic `R/Z` axes) via explicit `ValueError` contracts, preventing divide-by-zero and invalid-stencil propagation into residual/solver validation paths; added regression coverage for grid shape, monotonicity, and non-finite input rejection | `python -m pytest tests/test_psi_pointwise_rmse.py tests/test_psi_pointwise_rmse_cli.py -q` |
+| H8-108 | P1 | Validation | Enforce GEQDSK payload contracts for GS source reconstruction | `validation/psi_pointwise_rmse.py`, `tests/test_psi_pointwise_rmse.py` | `compute_gs_source` now validates core GEQDSK payload integrity (positive `nw/nh`, finite axis flux scalars, `psirz` shape, `pprime/ffprime` lengths, finite profile/grid values, and strictly increasing `R/Z` axes) before interpolation, turning malformed-input numeric failures into explicit `ValueError` contracts; added regression coverage for profile-length mismatch, `psirz` shape mismatch, non-finite profiles, and non-monotonic axis rejection | `python -m pytest tests/test_psi_pointwise_rmse.py tests/test_psi_pointwise_rmse_cli.py -q` |
 
 ## Task Accounting
 
@@ -339,7 +340,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 243
+- Post-S4 hardening tasks delivered: 244
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -606,4 +607,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-105`
 - Completed: `H8-106`
 - Completed: `H8-107`
+- Completed: `H8-108`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
