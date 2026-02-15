@@ -6,12 +6,12 @@ This log captures the autonomous execution wave that hardened validation/runtime
 Date: 2026-02-15 (Europe/Prague, UTC+01:00)
 Repository: `03_CODE/_remote/scpn-fusion-core`
 Mirror target: `03_CODE/SCPN-Fusion-Core`
-Final head at log time: `a7e8f09`
+Final head at log time: `9706c1b`
 
 ## High-Level Outcome
-- Post-S4 hardening tasks delivered increased to `256`.
-- New tasks delivered in this wave: `H8-108` through `H8-120` (with upstream merges in between).
-- Main branch CI and Documentation workflows are green for latest head (`a7e8f09`).
+- Post-S4 hardening tasks delivered increased to `257`.
+- New tasks delivered in this wave: `H8-108` through `H8-121` (with upstream merges in between).
+- Main branch CI and Documentation workflows are green for latest head (`9706c1b`).
 - Local mirror sync was performed after each push with per-file SHA256 parity checks.
 
 ## Chronological Timeline (Commits and Intent)
@@ -51,6 +51,10 @@ Ordered from earliest relevant baseline in this wave:
     - Added this comprehensive autonomous session handover log.
 17. `a7e8f09` (`H8-120`)
     - Added traceable runtime backend parity checker utilities and validation CLI.
+18. `cb74b5b`
+    - Refreshed session log with then-current autonomous tasks and head metadata.
+19. `9706c1b` (`H8-121`)
+    - Added backend-subset filtering for parity validation + CLI plumbing/tests.
 
 ## Task Map (H8 Wave Delivered Here)
 
@@ -210,6 +214,21 @@ Summary:
   - JSON + Markdown output generation
 - Added tests for backend discovery, parity reporting, and argument guards.
 
+### H8-121 (Performance/Validation)
+Files:
+- `src/scpn_fusion/control/jax_traceable_runtime.py`
+- `validation/traceable_runtime_parity.py`
+- `tests/test_jax_traceable_runtime.py`
+- `tests/test_traceable_runtime_parity_cli.py`
+
+Summary:
+- Added backend-subset resolution for parity checks with strict guards:
+  - unsupported backend names rejected
+  - unavailable requested backends rejected
+  - empty provided backend list rejected
+- Extended parity CLI with repeatable `--backend` filtering.
+- Added tests for subset behavior and CLI strict-mode exit semantics.
+
 ## Validation and Verification Performed
 
 ### Python tests (targeted)
@@ -234,7 +253,7 @@ All passed locally for the CI-fix commits (`H8-109`, `H8-111`).
 - GitHub REST API job/run endpoints frequently returned unauthenticated rate limits and, for some log endpoints, admin-rights restrictions.
 - Workaround used:
   - workflow badges and workflow HTML pages under `actions/workflows/*.yml?query=branch:main`.
-- For latest head `a7e8f09`, workflow pages showed:
+- For latest head `9706c1b`, workflow pages showed:
   - CI: `completed/success`
   - Documentation: `completed/success`
 
@@ -253,6 +272,8 @@ Completed ranges:
 - `ddee3c0..1b27ed8`
 - `1b27ed8..6906169`
 - `6906169..a7e8f09`
+- `a7e8f09..cb74b5b`
+- `cb74b5b..9706c1b`
 
 All files in these ranges reported `:: True` parity.
 
@@ -263,9 +284,9 @@ All files in these ranges reported `:: True` parity.
 
 ## Resume Checklist For Next Agent
 1. Confirm current head:
-   - `git rev-parse --short HEAD` (expected `a7e8f09` at log write time)
+   - `git rev-parse --short HEAD` (expected `9706c1b` at log write time)
 2. Confirm registry counters/task entries:
-   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-120`, delivered count `256`.
+   - `docs/PHASE3_EXECUTION_REGISTRY.md` contains `H8-121`, delivered count `257`.
 3. Re-run focused health checks if touching related areas:
    - `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q`
 4. If GitHub API rate-limited again, use badge/workflow-page fallback for CI confirmation.
