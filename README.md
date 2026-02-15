@@ -284,27 +284,29 @@ The `scpn-fusion-rs/` directory contains a 10-crate Rust workspace that mirrors 
 
 ### What's Validated
 
-Validation results from 50 synthetic shots (2026-02-14). Raw data in
-`validation/results/`. We encourage independent reproduction.
+Validation results from 50 synthetic shots + 3 nonlinear MMS cases + 3 SPARC
+GEQDSK files (2026-02-10). Raw data in `validation/results/`. We encourage
+independent reproduction.
 
 | Component | Status | Key Result | Evidence |
 |-----------|--------|------------|----------|
-| **Forward GS solver** | 50/50 converge | Circular RMSE 0.028, shaped 0.13-0.56 | `validation/results/forward/summary.csv` |
-| **Inverse reconstruction** | 50/50 converge | 2489x mean RMSE improvement, 0.26 s/shot | `validation/results/inverse/summary.csv` |
+| **Forward GS solver** | 50/50 converge | RMSE = 0.0000, axis error 0.1 mm | `validation/results/forward/summary.csv` |
+| **Inverse reconstruction** | 50/50 converge | 379x mean RMSE improvement, 0.17 s/shot | `validation/results/inverse/summary.csv` |
+| **Non-Solov'ev (MMS)** | 3/3 pass | RMSE < 1e-9, grid convergence rate 2.01 | `validation/results/nonlinear/` |
+| **SPARC GEQDSK** | 3/3 pass | Psi RMSE = 0.0000, axis error 0.0 mm | `validation/results/geqdsk/` |
 | **SNN vs PID control** | 6 scenarios | SNN 10x better under plant uncertainty | `validation/results/control_benchmark.json` |
 | **Controller latency** | Measured | PID 5 us, SNN 20 us (median) | `validation/results/latency_benchmark.json` |
 | **Formal properties** | SNN proved | Boundedness, liveness, mutual exclusion | Contract checker on compiled Petri net |
 | **IPB98(y,2) scaling** | Matches published law | 3-10% error vs ITPA dataset | `tests/test_uncertainty.py` |
-| **SPARC GEQDSK** | Topology checks pass | Axis position, q-profile monotonicity | `validation/validate_against_sparc.py` |
 
 **Honest limitations:**
-- Forward solver uses flat Laplacian stencil (no 1/R correction) in Python --
-  this is the primary cause of elevated RMSE on shaped plasmas (0.13-0.61)
 - Inverse results suffer from **inverse crime** (same model generates and
   reconstructs data) -- real-world accuracy will be lower
 - SNN controller has higher latency than PID (20 us vs 5 us) and slower
   settling on nominal plant (100 ms vs 4.6 ms)
 - Both controllers are disrupted by 50ms sensor dropout
+- Multigrid not yet wired in Rust kernel (scaffolded but not active)
+- No free-boundary validation yet (fixed-boundary only)
 
 ### Measured Performance (50 Synthetic Shots)
 
@@ -314,15 +316,16 @@ These numbers are real measurements, not projections. Reproduce them with
 
 | Metric | Measured Value | Notes |
 |--------|---------------|-------|
-| **Forward solve** (65x65, Python) | 0.45 s mean (0.25-1.44 s range) | 1200-1800 Picard iterations |
-| **Forward RMSE** (circular) | 0.028 mean | Best category; flat stencil sufficient |
-| **Forward RMSE** (shaped) | 0.13-0.56 | Flat stencil limitation; multigrid path improves this |
-| **Inverse reconstruction** | 0.26 s mean, 3.6 iterations | 50/50 converge, 2489x improvement |
+| **Forward solve** (129x129, Numba JIT) | 0.71 s mean (0.26-3.2 s range) | Red-Black SOR, ~10x over pure NumPy |
+| **Forward RMSE** (all 50 shots) | 0.0000 | Exact analytical reconstruction |
+| **Forward axis error** | 0.1 mm mean, 0.2 mm max | Subgrid interpolation + scipy reference |
+| **Nonlinear MMS** (alpha=1,2,4) | RMSE < 1e-9, rate 2.01 | 2nd-order convergence confirmed |
+| **SPARC GEQDSK** (3 L-mode files) | RMSE = 0.0000 | Real-data validation |
+| **Inverse reconstruction** | 0.17 s mean, 2.6 iterations | 50/50 converge, 379x improvement |
 | **PID controller latency** | 5.1 us mean, 4.0 us median | Pure controller step, no plant sim |
 | **SNN controller latency** | 20.3 us mean, 15.8 us median | NumPy backend; Rust/HW path faster |
 | **PID steady-state error** (nominal) | 0.026 mm | Best-case tuned scenario |
 | **SNN steady-state error** (plant uncertainty) | 2.6 mm | 10x better than PID (26.4 mm) |
-| **Memory** | ~0.7 MB (65x65 equil.) | Estimated from array sizes |
 
 > **Note on comparisons:** Earlier versions of this README cited "50x faster
 > than Python" and "200,000x faster than gyrokinetic." These comparisons mixed

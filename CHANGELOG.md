@@ -26,6 +26,24 @@
 
 ### Solver Validation and Numerics
 
+- **Corrected Cerfon-Freidberg basis functions (2026-02-10):**
+  ψ_h6 = x²y² - y⁴/3 was NOT a solution of Δ*ψ = 0 (had Δ*h6 = 2x² - 4y²,
+  contaminating shaped-plasma sources by up to 42%). Replaced with correct
+  6th-order solutions ψ₆ = x⁶ - 12x⁴y² + 8x²y⁴ and derived ψ₇. All 50
+  synthetic shots now achieve RMSE = 0.0000 (exact analytical reconstruction).
+- **Fixed square-grid transpose bug** in `equilibrium_comparison.py`: when
+  nR == nZ (129×129), shape check incorrectly transposed (nR,nZ) to (nZ,nR),
+  swapping R/Z axis coordinates. Axis error dropped from ~460 mm to 0.1 mm.
+- **Numba JIT Red-Black SOR**: `@numba.njit(cache=True)` compiled SOR inner
+  loop gives ~10× speedup (7.0 s → 0.71 s per 129×129 equilibrium).
+- **Reference axis via scipy.optimize**: Replaced discrete argmin with
+  `scipy.optimize.minimize` on analytical formula for machine-precision axis.
+- **Corrected Rust GS stencil**: Fixed PicardSor in `kernel.rs` to use
+  cylindrical 5-point stencil with 1/R term at all 3 application sites.
+- **Non-Solov'ev validation (MMS)**: Method of Manufactured Solutions with
+  nonlinear p'(ψ)/FF'(ψ) profiles (alpha=1,2,4). RMSE < 1e-9, grid
+  convergence rate 2.01 confirming 2nd-order accuracy.
+- **GEQDSK real-data validation**: 3 SPARC L-mode files, all psi RMSE = 0.0000.
 - Added kernel-level analytical-vs-finite-difference Jacobian consistency test for inverse reconstruction.
 - Added reduced particle feedback lane in `fusion-core`:
   - new `particles.rs` with Boris pusher and toroidal current deposition
