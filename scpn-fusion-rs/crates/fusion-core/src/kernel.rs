@@ -134,6 +134,24 @@ impl FusionKernel {
                 "grid spacing must be finite and non-zero, got dr={dr}, dz={dz}"
             )));
         }
+        let external_profiles: Option<(ProfileParams, ProfileParams)> =
+            if self.external_profile_mode {
+                let params_p = self.profile_params_p.ok_or_else(|| {
+                    FusionError::ConfigError(
+                        "external profile mode requires params_p to be set".to_string(),
+                    )
+                })?;
+                let params_ff = self.profile_params_ff.ok_or_else(|| {
+                    FusionError::ConfigError(
+                        "external profile mode requires params_ff to be set".to_string(),
+                    )
+                })?;
+                Self::validate_profile_params(&params_p, "params_p")?;
+                Self::validate_profile_params(&params_ff, "params_ff")?;
+                Some((params_p, params_ff))
+            } else {
+                None
+            };
 
         // 1. Compute vacuum field
         let psi_vac = calculate_vacuum_field(&self.grid, &self.config.coils, mu0)?;
@@ -227,24 +245,19 @@ impl FusionKernel {
             }
 
             // 4b. Update nonlinear source
-            if self.external_profile_mode {
-                if let (Some(params_p), Some(params_ff)) = (
-                    self.profile_params_p.as_ref(),
-                    self.profile_params_ff.as_ref(),
-                ) {
-                    self.state.j_phi = update_plasma_source_with_profiles(
-                        SourceProfileContext {
-                            psi: &self.state.psi,
-                            grid: &self.grid,
-                            psi_axis: psi_axis_val,
-                            psi_boundary: psi_boundary_val,
-                            mu0,
-                            i_target,
-                        },
-                        params_p,
-                        params_ff,
-                    )?;
-                }
+            if let Some((params_p, params_ff)) = external_profiles {
+                self.state.j_phi = update_plasma_source_with_profiles(
+                    SourceProfileContext {
+                        psi: &self.state.psi,
+                        grid: &self.grid,
+                        psi_axis: psi_axis_val,
+                        psi_boundary: psi_boundary_val,
+                        mu0,
+                        i_target,
+                    },
+                    &params_p,
+                    &params_ff,
+                )?;
             } else {
                 self.state.j_phi = update_plasma_source_nonlinear(
                     &self.state.psi,
@@ -568,6 +581,27 @@ impl FusionKernel {
             )));
         }
         Ok((first.min(last), first.max(last)))
+    }
+
+    fn validate_profile_params(params: &ProfileParams, label: &str) -> FusionResult<()> {
+        if !params.ped_top.is_finite() || params.ped_top <= 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "{label}.ped_top must be finite and > 0, got {}",
+                params.ped_top
+            )));
+        }
+        if !params.ped_width.is_finite() || params.ped_width <= 0.0 {
+            return Err(FusionError::ConfigError(format!(
+                "{label}.ped_width must be finite and > 0, got {}",
+                params.ped_width
+            )));
+        }
+        if !params.ped_height.is_finite() || !params.core_alpha.is_finite() {
+            return Err(FusionError::ConfigError(format!(
+                "{label}.ped_height/core_alpha must be finite"
+            )));
+        }
+        Ok(())
     }
 
     /// Sample solved flux at nearest grid point to (R, Z).
@@ -1064,6 +1098,44 @@ mod tests {
         match err {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("grid spacing"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_solve_equilibrium_rejects_external_profile_mode_without_params() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.external_profile_mode = true;
+        kernel.profile_params_p = None;
+        kernel.profile_params_ff = None;
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("external profile mode without params must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("requires params_p"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_solve_equilibrium_rejects_invalid_external_profile_params() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let bad_p = ProfileParams {
+            ped_top: 0.9,
+            ped_width: 0.0,
+            ped_height: 1.0,
+            core_alpha: 0.2,
+        };
+        kernel.set_external_profiles(bad_p, ProfileParams::default());
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("invalid external profile params must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("ped_width"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
