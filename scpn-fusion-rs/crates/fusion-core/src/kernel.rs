@@ -694,6 +694,15 @@ impl FusionKernel {
                 self.grid.nr
             )));
         }
+        if self.grid.r.len() != self.grid.nr || self.grid.z.len() != self.grid.nz {
+            return Err(FusionError::ConfigError(format!(
+                "sample psi requires grid axis lengths to match metadata, got r_len={}, nr={}, z_len={}, nz={}",
+                self.grid.r.len(),
+                self.grid.nr,
+                self.grid.z.len(),
+                self.grid.nz
+            )));
+        }
         let (r_min, r_max) = Self::axis_bounds(&self.grid.r, "sample R")?;
         let (z_min, z_max) = Self::axis_bounds(&self.grid.z, "sample Z")?;
         if r < r_min || r > r_max || z < z_min || z > z_max {
@@ -897,6 +906,22 @@ mod tests {
         match err {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("shape mismatch"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_sample_psi_rejects_grid_axis_length_mismatch() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.nr -= 1;
+        kernel.state.psi = Array2::zeros((kernel.grid().nz, kernel.grid().nr));
+        let err = kernel
+            .sample_psi_at(6.2, 0.0)
+            .expect_err("grid axis-length mismatch must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("axis lengths"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
