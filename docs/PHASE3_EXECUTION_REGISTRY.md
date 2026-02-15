@@ -342,6 +342,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-115 | P1 | Engineering | Add binary STL fallback parser for CAD ingestion without optional trimesh backend | `src/scpn_fusion/engineering/cad_raytrace.py`, `tests/test_cad_raytrace.py` | CAD mesh loading now supports binary STL parsing in fallback mode (header/triangle decoding with truncation checks) when `trimesh` is unavailable, expanding out-of-the-box interoperability for common CAD-export STL assets; added regression tests for successful binary STL load and truncated-binary rejection | `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
 | H8-116 | P1 | Performance | Add optional JAX-traceable reduced control-loop runtime with deterministic NumPy fallback | `src/scpn_fusion/control/jax_traceable_runtime.py`, `src/scpn_fusion/control/__init__.py`, `tests/test_jax_traceable_runtime.py` | Added `run_traceable_control_loop` with backend selection (`auto`/`numpy`/`jax`), strict runtime/spec guards, and JAX `lax.scan` + `jit` rollout path when JAX is available; preserves deterministic NumPy execution when JAX is absent, enabling a trace-friendly control-loop lane without mandatory new dependencies | `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
 | H8-117 | P1 | Performance | Extend traceable runtime with optional TorchScript backend and deterministic backend routing | `src/scpn_fusion/control/jax_traceable_runtime.py`, `tests/test_jax_traceable_runtime.py` | Added optional `torchscript` backend with scripted rollout path and runtime guards, updated `auto` backend routing (`jax` -> `torchscript` -> `numpy`) while preserving zero-dependency fallback behavior; added regression coverage for missing-torch error path, auto-fallback semantics, and TorchScript parity with NumPy | `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
+| H8-118 | P1 | Performance | Add batched traceable control-loop rollout API with JAX/TorchScript/Numpy backend parity | `src/scpn_fusion/control/jax_traceable_runtime.py`, `src/scpn_fusion/control/__init__.py`, `tests/test_jax_traceable_runtime.py` | Added `run_traceable_control_batch` for `(batch, steps)` command tensors with strict batch/initial-state validation and deterministic backend execution (`auto`/`numpy`/`jax`/`torchscript`), including JAX scan-based and TorchScript scripted batch kernels plus parity/fallback regression coverage | `python -m pytest tests/test_jax_traceable_runtime.py tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
 
 ## Task Accounting
 
@@ -349,7 +350,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 253
+- Post-S4 hardening tasks delivered: 254
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -626,4 +627,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-115`
 - Completed: `H8-116`
 - Completed: `H8-117`
+- Completed: `H8-118`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

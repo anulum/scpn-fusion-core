@@ -51,6 +51,15 @@ class TraceableRuntimeResult:
     compiled: bool
 
 
+@dataclass(frozen=True)
+class TraceableRuntimeBatchResult:
+    """Result of batched traceable control-loop rollout."""
+
+    state_history: FloatArray
+    backend_used: str
+    compiled: bool
+
+
 def _validate_spec(spec: TraceableRuntimeSpec) -> None:
     if not np.isfinite(spec.dt_s) or spec.dt_s <= 0.0:
         raise ValueError("dt_s must be finite and > 0.")
@@ -67,6 +76,26 @@ def _validate_commands(commands: FloatArray) -> None:
         raise ValueError("commands must be a non-empty 1D array.")
     if not np.all(np.isfinite(commands)):
         raise ValueError("commands must contain only finite values.")
+
+
+def _validate_batch_commands(commands: FloatArray) -> None:
+    if commands.ndim != 2 or commands.shape[0] == 0 or commands.shape[1] == 0:
+        raise ValueError("commands must have shape (batch, steps) with non-zero sizes.")
+    if not np.all(np.isfinite(commands)):
+        raise ValueError("commands must contain only finite values.")
+
+
+def _resolve_backend(backend: str) -> str:
+    b = str(backend).strip().lower()
+    if b not in {"auto", "numpy", "jax", "torchscript"}:
+        raise ValueError("backend must be one of: auto, numpy, jax, torchscript.")
+    if b == "auto":
+        if _HAS_JAX:
+            return "jax"
+        if _HAS_TORCH:
+            return "torchscript"
+        return "numpy"
+    return b
 
 
 def _simulate_numpy(
@@ -128,8 +157,27 @@ if _HAS_TORCH:
             out[i] = state
         return out
 
+    @torch.jit.script
+    def _torchscript_rollout_batch(
+        cmd: torch.Tensor,
+        initial_state: torch.Tensor,
+        alpha: float,
+        gain: float,
+        limit: float,
+    ) -> torch.Tensor:
+        batch = cmd.size(0)
+        steps = cmd.size(1)
+        out = torch.empty((batch, steps), dtype=cmd.dtype, device=cmd.device)
+        state = initial_state.clone()
+        for t in range(steps):
+            u = torch.clamp(cmd[:, t], -limit, limit)
+            state = state + alpha * ((gain * u) - state)
+            out[:, t] = state
+        return out
+
 else:
     _torchscript_rollout = None
+    _torchscript_rollout_batch = None
 
 
 def _simulate_torchscript(
@@ -144,6 +192,67 @@ def _simulate_torchscript(
     hist = _torchscript_rollout(
         cmd,
         float(initial_state),
+        alpha,
+        float(spec.gain),
+        float(spec.command_limit),
+    )
+    return np.asarray(hist.detach().cpu().numpy(), dtype=np.float64)
+
+
+def _simulate_numpy_batch(
+    commands: FloatArray, initial_state: FloatArray, spec: TraceableRuntimeSpec
+) -> FloatArray:
+    alpha = float(spec.dt_s / (spec.tau_s + spec.dt_s))
+    state = np.asarray(initial_state, dtype=np.float64).copy()
+    out = np.empty_like(commands, dtype=np.float64)
+    for t in range(commands.shape[1]):
+        u = np.clip(commands[:, t], -spec.command_limit, spec.command_limit)
+        state = state + alpha * ((spec.gain * u) - state)
+        out[:, t] = state
+    return out
+
+
+def _simulate_jax_batch(
+    commands: FloatArray, initial_state: FloatArray, spec: TraceableRuntimeSpec
+) -> FloatArray:
+    if not _HAS_JAX:
+        raise RuntimeError("JAX backend requested but JAX is not installed.")
+    assert jnp is not None
+    assert jax is not None
+
+    cmd = jnp.asarray(commands, dtype=jnp.float64)
+    x0 = jnp.asarray(initial_state, dtype=jnp.float64)
+    alpha = jnp.asarray(spec.dt_s / (spec.tau_s + spec.dt_s), dtype=jnp.float64)
+    gain = jnp.asarray(spec.gain, dtype=jnp.float64)
+    limit = jnp.asarray(spec.command_limit, dtype=jnp.float64)
+
+    def _step(state, u_t):
+        u_clip = jnp.clip(u_t, -limit, limit)
+        next_state = state + alpha * ((gain * u_clip) - state)
+        return next_state, next_state
+
+    @jax.jit
+    def _rollout_batch(batch_x0, batch_u):
+        _, hist_tb = jax.lax.scan(_step, batch_x0, jnp.swapaxes(batch_u, 0, 1))
+        return jnp.swapaxes(hist_tb, 0, 1)
+
+    hist = _rollout_batch(x0, cmd)
+    return np.asarray(hist, dtype=np.float64)
+
+
+def _simulate_torchscript_batch(
+    commands: FloatArray, initial_state: FloatArray, spec: TraceableRuntimeSpec
+) -> FloatArray:
+    if not _HAS_TORCH or _torchscript_rollout_batch is None:
+        raise RuntimeError("TorchScript backend requested but torch is not installed.")
+    assert torch is not None
+
+    cmd = torch.as_tensor(commands, dtype=torch.float64)
+    x0 = torch.as_tensor(initial_state, dtype=torch.float64)
+    alpha = float(spec.dt_s / (spec.tau_s + spec.dt_s))
+    hist = _torchscript_rollout_batch(
+        cmd,
+        x0,
         alpha,
         float(spec.gain),
         float(spec.command_limit),
@@ -171,16 +280,7 @@ def run_traceable_control_loop(
     runtime_spec = spec if spec is not None else TraceableRuntimeSpec()
     _validate_spec(runtime_spec)
 
-    b = str(backend).strip().lower()
-    if b not in {"auto", "numpy", "jax", "torchscript"}:
-        raise ValueError("backend must be one of: auto, numpy, jax, torchscript.")
-    if b == "auto":
-        if _HAS_JAX:
-            b = "jax"
-        elif _HAS_TORCH:
-            b = "torchscript"
-        else:
-            b = "numpy"
+    b = _resolve_backend(backend)
 
     if b == "jax":
         return TraceableRuntimeResult(
@@ -200,6 +300,58 @@ def run_traceable_control_loop(
 
     return TraceableRuntimeResult(
         state_history=_simulate_numpy(cmd_arr, float(initial_state), runtime_spec),
+        backend_used="numpy",
+        compiled=False,
+    )
+
+
+def run_traceable_control_batch(
+    commands: FloatArray,
+    *,
+    initial_state: FloatArray | float | None = None,
+    spec: TraceableRuntimeSpec | None = None,
+    backend: str = "auto",
+) -> TraceableRuntimeBatchResult:
+    """
+    Run batched reduced control loops with optional JAX/TorchScript backends.
+
+    `commands` shape: (batch, steps)
+    """
+    cmd_arr = np.asarray(commands, dtype=np.float64)
+    _validate_batch_commands(cmd_arr)
+
+    batch = int(cmd_arr.shape[0])
+    if initial_state is None:
+        x0 = np.zeros(batch, dtype=np.float64)
+    else:
+        arr = np.asarray(initial_state, dtype=np.float64)
+        if arr.ndim == 0:
+            x0 = np.full(batch, float(arr), dtype=np.float64)
+        else:
+            x0 = arr.reshape(-1)
+        if x0.size != batch:
+            raise ValueError("initial_state length must match commands batch dimension.")
+        if not np.all(np.isfinite(x0)):
+            raise ValueError("initial_state must contain only finite values.")
+
+    runtime_spec = spec if spec is not None else TraceableRuntimeSpec()
+    _validate_spec(runtime_spec)
+    b = _resolve_backend(backend)
+
+    if b == "jax":
+        return TraceableRuntimeBatchResult(
+            state_history=_simulate_jax_batch(cmd_arr, x0, runtime_spec),
+            backend_used="jax",
+            compiled=True,
+        )
+    if b == "torchscript":
+        return TraceableRuntimeBatchResult(
+            state_history=_simulate_torchscript_batch(cmd_arr, x0, runtime_spec),
+            backend_used="torchscript",
+            compiled=True,
+        )
+    return TraceableRuntimeBatchResult(
+        state_history=_simulate_numpy_batch(cmd_arr, x0, runtime_spec),
         backend_used="numpy",
         compiled=False,
     )
