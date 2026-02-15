@@ -45,6 +45,8 @@ def test_bundle_pretrained_surrogates_creates_artifacts(tmp_path) -> None:
     assert manifest["version"] == "task2-pretrained-v1"
     assert "mlp" in manifest["metrics"]
     assert "fno" in manifest["metrics"]
+    assert "coverage" in manifest
+    assert manifest["coverage"]["coverage_percent"] > 0.0
 
 
 def test_pretrained_mlp_eval_and_load(tmp_path) -> None:

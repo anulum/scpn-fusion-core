@@ -40,6 +40,10 @@ def test_task2_campaign_passes_thresholds() -> None:
     assert out["equilibrium_latency"]["p95_ms_est"] < 1.0
     assert out["equilibrium_latency"]["fault_p95_ms_est"] < 1.0
     assert out["equilibrium_latency"]["fault_runs"] == 10.0
+    assert out["disruption_auc_publication"]["published"] is True
+    assert out["surrogate_coverage"]["coverage_percent"] > 0.0
+    assert len(out["surrogate_coverage"]["requires_user_training"]) >= 1
+    assert len(out["consumer_latency_profiles"]["profiles"]) >= 3
 
 
 def test_task2_auc_benchmark_rejects_invalid_inputs() -> None:
@@ -68,3 +72,4 @@ def test_task2_markdown_contains_required_sections() -> None:
     assert "# Task 2 Surrogate + Benchmark Report" in text
     assert "Disruption Predictor AUC" in text
     assert "Equilibrium Latency (10x Fault Runs)" in text
+    assert "Consumer Hardware Latency Profiles" in text

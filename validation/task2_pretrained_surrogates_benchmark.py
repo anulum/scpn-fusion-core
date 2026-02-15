@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,6 +25,7 @@ from scpn_fusion.core.pretrained_surrogates import (
     bundle_pretrained_surrogates,
     evaluate_pretrained_fno,
     evaluate_pretrained_mlp,
+    get_pretrained_surrogate_coverage,
 )
 
 
@@ -147,6 +149,82 @@ def run_disruption_auc_benchmark(
     }
 
 
+def _project_consumer_latency_profiles(
+    *,
+    grid_size: int,
+    iterations: int,
+    measured_latency: dict[str, float | bool | str],
+) -> dict[str, Any]:
+    n = _require_int("grid_size", grid_size, 16)
+    iters = _require_int("iterations", iterations, 1)
+    ops = float(n * n * iters * 9)
+    p95_scale = 1.04
+
+    # Throughput values are deterministic model constants (ops/ms), not direct measurements.
+    throughput_profiles = [
+        (
+            "cpu_reference_model",
+            "model_projection",
+            2.0e6,
+            "Deterministic reference throughput used by GPURuntimeBridge CPU estimate.",
+        ),
+        (
+            "gpu_sim_reference_model",
+            "model_projection",
+            2.5e7,
+            "Deterministic reference throughput used by GPURuntimeBridge GPU-sim estimate.",
+        ),
+        (
+            "consumer_rtx_3060_projected",
+            "model_projection",
+            5.5e7,
+            "Projected throughput for consumer RTX 3060-class hardware.",
+        ),
+        (
+            "consumer_rtx_4090_projected",
+            "model_projection",
+            1.6e8,
+            "Projected throughput for consumer RTX 4090-class hardware.",
+        ),
+    ]
+
+    rows: list[dict[str, Any]] = [
+        {
+            "profile": "host_measured_runtime",
+            "kind": "measured_host",
+            "p95_ms_est": float(measured_latency["p95_ms_est"]),
+            "p95_ms_wall": float(measured_latency["p95_ms_wall"]),
+            "fault_p95_ms_est": float(measured_latency["fault_p95_ms_est"]),
+            "fault_p95_ms_wall": float(measured_latency["fault_p95_ms_wall"]),
+            "backend": str(measured_latency["backend"]),
+            "source": "Benchmark run on current host.",
+        }
+    ]
+    for name, kind, throughput_ops_per_ms, source in throughput_profiles:
+        rows.append(
+            {
+                "profile": name,
+                "kind": kind,
+                "p95_ms_est": float(ops * p95_scale / throughput_ops_per_ms),
+                "fault_p95_ms_est": float(ops * 1.11 / throughput_ops_per_ms),
+                "throughput_ops_per_ms": float(throughput_ops_per_ms),
+                "source": source,
+            }
+        )
+
+    return {
+        "grid_size": int(n),
+        "iterations": int(iters),
+        "host_context": {
+            "platform": platform.platform(),
+            "python_version": platform.python_version(),
+            "machine": platform.machine(),
+            "processor": platform.processor(),
+        },
+        "profiles": rows,
+    }
+
+
 def run_campaign(
     *,
     seed: int = 42,
@@ -166,6 +244,7 @@ def run_campaign(
         force_retrain=bool(force_retrain),
         seed=seed_i,
     )
+    surrogate_coverage = get_pretrained_surrogate_coverage(manifest)
     mlp_eval = evaluate_pretrained_mlp()
     fno_eval = evaluate_pretrained_fno(max_samples=16)
 
@@ -209,6 +288,18 @@ def run_campaign(
         "sub_ms_target_pass": bool(latency.sub_ms_target_pass),
         "latency_spike_over_10ms": bool(latency.latency_spike_over_10ms),
     }
+    consumer_latency_profiles = _project_consumer_latency_profiles(
+        grid_size=grid_size,
+        iterations=4,
+        measured_latency=latency_out,
+    )
+    disruption_auc_publication = {
+        "published": True,
+        "standard": "TM1/TokamakNET proxy",
+        "tm1_auc": float(tm1["auc"]),
+        "tokamaknet_auc": float(tokamaknet["auc"]),
+        "min_required_auc": 0.95,
+    }
 
     thresholds = {
         "min_auc_tm1": 0.95,
@@ -234,13 +325,16 @@ def run_campaign(
     return {
         "seed": seed_i,
         "surrogates_manifest": manifest,
+        "surrogate_coverage": surrogate_coverage,
         "mlp_evaluation": mlp_eval,
         "fno_evaluation": fno_eval,
+        "disruption_auc_publication": disruption_auc_publication,
         "disruption_auc": {
             "tm1_proxy": tm1,
             "tokamaknet_proxy": tokamaknet,
         },
         "equilibrium_latency": latency_out,
+        "consumer_latency_profiles": consumer_latency_profiles,
         "thresholds": thresholds,
         "passes_thresholds": passes,
         "runtime_seconds": float(time.perf_counter() - t0),
@@ -260,6 +354,9 @@ def render_markdown(report: dict[str, Any]) -> str:
     tm1 = g["disruption_auc"]["tm1_proxy"]
     tn = g["disruption_auc"]["tokamaknet_proxy"]
     lat = g["equilibrium_latency"]
+    cov = g["surrogate_coverage"]
+    pub = g["disruption_auc_publication"]
+    profiles = g["consumer_latency_profiles"]["profiles"]
     lines = [
         "# Task 2 Surrogate + Benchmark Report",
         "",
@@ -271,11 +368,14 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         f"- TM1 proxy AUC: `{tm1['auc']:.4f}` (threshold `>= {th['min_auc_tm1']:.2f}`)",
         f"- TokamakNET proxy AUC: `{tn['auc']:.4f}` (threshold `>= {th['min_auc_tokamaknet']:.2f}`)",
+        f"- Published standard: `{pub['standard']}` (published=`{pub['published']}`)",
         "",
         "## Pretrained Surrogates",
         "",
         f"- MLP RMSE: `{g['mlp_evaluation']['rmse_pct']:.3f}%` (threshold `<= {th['max_mlp_rmse_pct']:.1f}%`)",
         f"- FNO eval relative L2: `{g['fno_evaluation']['eval_relative_l2_mean']:.4f}` (threshold `<= {th['max_fno_eval_relative_l2_mean']:.2f}`)",
+        f"- Pretrained coverage: `{cov['coverage_percent']:.1f}%` of listed surrogate lanes",
+        f"- Surrogates requiring user training: `{len(cov['requires_user_training'])}`",
         "",
         "## Equilibrium Latency (10x Fault Runs)",
         "",
@@ -285,7 +385,19 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- P95 wall latency: `{lat['p95_ms_wall']:.4f} ms` (threshold `<= {th['max_equilibrium_p95_ms_wall']:.1f} ms`)",
         f"- Fault P95 wall latency: `{lat['fault_p95_ms_wall']:.4f} ms` (threshold `<= {th['max_equilibrium_p95_ms_wall']:.1f} ms`)",
         "",
+        "## Consumer Hardware Latency Profiles",
+        "",
     ]
+    for row in profiles:
+        if row["kind"] == "measured_host":
+            lines.append(
+                f"- `{row['profile']}` backend=`{row['backend']}` p95_est=`{row['p95_ms_est']:.4f} ms` p95_wall=`{row['p95_ms_wall']:.4f} ms`"
+            )
+        else:
+            lines.append(
+                f"- `{row['profile']}` projected p95_est=`{row['p95_ms_est']:.4f} ms` source=`{row['source']}`"
+            )
+    lines.append("")
     return "\n".join(lines)
 
 

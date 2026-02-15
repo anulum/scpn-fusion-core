@@ -389,6 +389,22 @@ with `cargo bench` and `benchmarks/collect_results.sh` on your hardware.
 > oranges comparison. We've removed these headlines pending proper A/B
 > benchmarks and trained model validation.
 
+### Published Task-2 Surrogate Snapshot
+
+Task-2 includes a reproducible benchmark lane that publishes:
+- TM1 and TokamakNET proxy disruption AUC metrics (`AUC >= 0.95` gate)
+- host-measured latency metrics (estimate + wall clock)
+- consumer-hardware latency projections (RTX 3060/4090 class, model-based)
+- explicit pretrained-surrogate coverage vs lanes that still need user training
+
+```bash
+python validation/task2_pretrained_surrogates_benchmark.py --strict
+```
+
+Outputs:
+- `validation/reports/task2_pretrained_surrogates_benchmark.json`
+- `validation/reports/task2_pretrained_surrogates_benchmark.md`
+
 ### Community Context
 
 For context, here are representative runtimes from published fusion codes
@@ -492,7 +508,7 @@ This project is honest about what it does and does not do.
 | **Gyrokinetic turbulence** | Not planned | Use GENE/GS2 externally; SCPN provides surrogate coupling points |
 | **5D kinetic transport** | Not planned | Deliberately reduced-order for real-time control |
 | **GPU acceleration** | Deterministic runtime bridge + optional torch fallback ([GPU Roadmap](docs/GPU_ACCELERATION_ROADMAP.md)) | CUDA-native kernels remain roadmap work |
-| **Pre-trained neural weights** | Shipped (`weights/pretrained_mlp_itpa.npz`, `weights/pretrained_fno_eurofusion_jet.npz`) | Baseline quality shipped; retraining on site-specific data remains recommended |
+| **Pre-trained neural weights** | Partially shipped (`weights/pretrained_mlp_itpa.npz`, `weights/pretrained_fno_eurofusion_jet.npz`) | Baseline MLP+FNO bundles are included; several surrogate lanes still require site-specific user training |
 | **Point-wise RMSE validation** | Partial | Topology checks (axis, q-profile, GS sign) on 8 SPARC files; not yet point-wise psi comparison |
 
 ### What it does well

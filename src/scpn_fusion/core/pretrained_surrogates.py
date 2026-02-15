@@ -35,6 +35,43 @@ DEFAULT_MANIFEST_PATH = DEFAULT_WEIGHTS_DIR / "pretrained_surrogates_manifest.js
 FloatArray = NDArray[np.float64]
 
 
+def _default_surrogate_coverage() -> dict[str, Any]:
+    shipped = [
+        "scpn_fusion.core.pretrained_surrogates:mlp_itpa",
+        "scpn_fusion.core.pretrained_surrogates:fno_eurofusion_jet",
+    ]
+    requires_user_training = [
+        "scpn_fusion.core.neural_equilibrium",
+        "scpn_fusion.core.neural_transport",
+        "scpn_fusion.core.heat_ml_shadow_surrogate",
+        "scpn_fusion.core.gyro_swin_surrogate",
+        "scpn_fusion.core.turbulence_oracle",
+    ]
+    total = len(shipped) + len(requires_user_training)
+    return {
+        "pretrained_shipped": shipped,
+        "requires_user_training": requires_user_training,
+        "coverage_fraction": float(len(shipped) / max(total, 1)),
+        "coverage_percent": float(100.0 * len(shipped) / max(total, 1)),
+        "notes": (
+            "Baseline pretrained artifacts are bundled for MLP+FNO lanes only. "
+            "Facility-specific surrogates and alternate neural lanes still require local training."
+        ),
+    }
+
+
+def get_pretrained_surrogate_coverage(manifest: dict[str, Any] | None = None) -> dict[str, Any]:
+    default_cov = _default_surrogate_coverage()
+    if not manifest:
+        return default_cov
+    cov = manifest.get("coverage")
+    if not isinstance(cov, dict):
+        return default_cov
+    merged = dict(default_cov)
+    merged.update(cov)
+    return merged
+
+
 def _as_repo_relative(path: Path) -> str:
     p = Path(path)
     try:
@@ -452,6 +489,7 @@ def bundle_pretrained_surrogates(
             "mlp": mlp_metrics,
             "fno": fno_metrics,
         },
+        "coverage": _default_surrogate_coverage(),
     }
     weights_dir.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
