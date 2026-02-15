@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: mailto:protoscience@anulum.li?subject=[SECURITY]%20SCPN%20Fusion%20Core
+    about: Do not open a public issue. Report security vulnerabilities via email.
+  - name: Documentation
+    url: https://github.com/anulum/scpn-fusion-core/tree/main/docs
+    about: Browse the documentation before opening an issue.

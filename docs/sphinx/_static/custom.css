@@ -1,0 +1,23 @@
+/* SCPN-Fusion-Core Sphinx documentation custom styles */
+
+/* Equations: add a subtle background to displayed math blocks */
+.math {
+    padding: 0.5em 1em;
+    border-radius: 4px;
+}
+
+/* Code blocks: slightly more prominent */
+div.highlight {
+    border-left: 3px solid var(--color-brand-primary);
+}
+
+/* Admonitions: tighter spacing */
+.admonition {
+    margin: 1em 0;
+}
+
+/* Tables: ensure consistent padding */
+table.docutils td,
+table.docutils th {
+    padding: 0.4em 0.8em;
+}

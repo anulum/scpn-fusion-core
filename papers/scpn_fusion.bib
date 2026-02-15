@@ -1,0 +1,643 @@
+% =========================================================================
+% SCPN-Fusion-Core Paper Bibliography
+% Shared references for Paper A (Equilibrium Solver) and Paper B (SNN Controller)
+% =========================================================================
+
+% --- Grad-Shafranov Equation: Foundational ---
+@inproceedings{Grad1958,
+  author    = {H. Grad and H. Rubin},
+  title     = {Hydromagnetic Equilibria and Force-Free Fields},
+  booktitle = {Proceedings of the 2nd United Nations International Conference
+               on the Peaceful Uses of Atomic Energy},
+  volume    = {31},
+  pages     = {190--197},
+  year      = {1958},
+  address   = {Geneva}
+}
+
+@incollection{Shafranov1966,
+  author    = {V. D. Shafranov},
+  title     = {Plasma Equilibrium in a Magnetic Field},
+  booktitle = {Reviews of Plasma Physics},
+  volume    = {2},
+  pages     = {103--151},
+  publisher = {Consultants Bureau},
+  address   = {New York},
+  year      = {1966}
+}
+
+% --- Equilibrium Reconstruction ---
+@article{Lao1985,
+  author  = {L. L. Lao and H. {St. John} and R. D. Stambaugh and
+             A. G. Kellman and W. Pfeiffer},
+  title   = {Reconstruction of current profile parameters and plasma shapes
+             in tokamaks},
+  journal = {Nuclear Fusion},
+  volume  = {25},
+  number  = {11},
+  pages   = {1611--1622},
+  year    = {1985},
+  doi     = {10.1088/0029-5515/25/11/007}
+}
+
+@article{Lao1990,
+  author  = {L. L. Lao and J. R. Ferron and R. J. Groebner and
+             W. Howl and H. {St. John} and E. J. Strait and T. S. Taylor},
+  title   = {Equilibrium analysis of current profiles in tokamaks},
+  journal = {Nuclear Fusion},
+  volume  = {30},
+  number  = {6},
+  pages   = {1035--1049},
+  year    = {1990},
+  doi     = {10.1088/0029-5515/30/6/006}
+}
+
+@article{Sabbagh2023,
+  author  = {S. A. Sabbagh and others},
+  title   = {{GPU}-accelerated equilibrium reconstruction for real-time
+             tokamak control},
+  journal = {Preprint},
+  year    = {2023},
+  note    = {P-EFIT}
+}
+
+% --- FREEGS ---
+@misc{FREEGS2019,
+  author       = {B. Dudson},
+  title        = {{FreeGS}: Free boundary {G}rad-{S}hafranov solver},
+  year         = {2019},
+  howpublished = {\url{https://github.com/freegs-plasma/freegs}},
+  note         = {Open-source Python equilibrium solver}
+}
+
+% --- CORSICA ---
+@article{Crotinger1997,
+  author  = {J. A. Crotinger and L. LoDestro and L. D. Pearlstein and
+             A. Tarditi and T. A. Casper and E. B. Hooper},
+  title   = {{CORSICA}: {A} comprehensive simulation of toroidal
+             magnetic-fusion devices},
+  journal = {Lawrence Livermore National Laboratory Report},
+  number  = {UCRL-ID-126284},
+  year    = {1997}
+}
+
+% --- CHEASE / HELENA ---
+@article{Lutjens1996,
+  author  = {H. L{\"u}tjens and A. Bondeson and O. Sauter},
+  title   = {The {CHEASE} code for toroidal {MHD} equilibria},
+  journal = {Computer Physics Communications},
+  volume  = {97},
+  number  = {3},
+  pages   = {219--260},
+  year    = {1996},
+  doi     = {10.1016/0010-4655(96)00046-X}
+}
+
+@inproceedings{Huysmans1991,
+  author    = {G. T. A. Huysmans and J. P. Goedbloed and W. Kerner},
+  title     = {Isoparametric bicubic {H}ermite elements for solution of the
+               {G}rad-{S}hafranov equation},
+  booktitle = {Proceedings of the CP90 Conference on Computational Physics},
+  pages     = {371--376},
+  year      = {1991}
+}
+
+% --- Confinement Scaling ---
+@article{ITER1999,
+  author  = {{ITER Physics Basis Editors} and {ITER Physics Expert Group
+             Chairs and Co-Chairs} and {ITER Joint Central Team} and
+             {Physics Integration Unit}},
+  title   = {Chapter 2: {P}lasma confinement and transport},
+  journal = {Nuclear Fusion},
+  volume  = {39},
+  number  = {12},
+  pages   = {2175--2249},
+  year    = {1999},
+  doi     = {10.1088/0029-5515/39/12/302}
+}
+
+@article{Verdoolaege2021,
+  author  = {G. Verdoolaege and G. Kaye and F. Scheibl and G. Tartarini and
+             others},
+  title   = {The updated {ITPA} global {H}-mode confinement database:
+             description and analysis},
+  journal = {Nuclear Fusion},
+  volume  = {61},
+  number  = {7},
+  pages   = {076006},
+  year    = {2021},
+  doi     = {10.1088/1741-4326/abdb91}
+}
+
+% --- SPARC / ARC ---
+@article{Creely2020,
+  author  = {A. J. Creely and M. J. Greenwald and S. B. Ballinger and
+             D. Brunner and J. Canik and J. Doody and T. F{\"u}l{\"o}p and
+             D. T. Garnier and R. Granetz and T. K. Gray and others},
+  title   = {Overview of the {SPARC} tokamak},
+  journal = {Journal of Plasma Physics},
+  volume  = {86},
+  number  = {5},
+  pages   = {865860502},
+  year    = {2020},
+  doi     = {10.1017/S0022377820001257}
+}
+
+@article{Sorbom2015,
+  author  = {B. N. Sorbom and J. Ball and T. R. Palmer and F. J. Mangiarotti
+             and J. M. Sierchio and P. Bonoli and C. Kasten and
+             D. A. Sutherland and H. S. Barnard and C. B. Haakonsen and
+             others},
+  title   = {{ARC}: {A} compact, high-field, fusion nuclear science facility
+             and demonstration power plant with demountable magnets},
+  journal = {Fusion Engineering and Design},
+  volume  = {100},
+  pages   = {378--405},
+  year    = {2015},
+  doi     = {10.1016/j.fusengdes.2015.07.008}
+}
+
+@article{Whyte2016,
+  author  = {D. G. Whyte and J. Minervini and B. LaBombard and
+             E. Marmar and L. Bromberg and M. Greenwald},
+  title   = {Smaller \& Sooner: Exploiting High Magnetic Fields from
+             New Superconducting Technologies},
+  journal = {Journal of Fusion Energy},
+  volume  = {35},
+  number  = {1},
+  pages   = {41--53},
+  year    = {2016},
+  doi     = {10.1007/s10894-015-0050-1}
+}
+
+% --- Numerical Methods ---
+@book{Briggs2000,
+  author    = {W. L. Briggs and V. E. Henson and S. F. McCormick},
+  title     = {A Multigrid Tutorial},
+  edition   = {2nd},
+  publisher = {Society for Industrial and Applied Mathematics ({SIAM})},
+  address   = {Philadelphia},
+  year      = {2000},
+  doi       = {10.1137/1.9780898719505}
+}
+
+@article{Saad1986,
+  author  = {Y. Saad and M. H. Schultz},
+  title   = {{GMRES}: {A} Generalized Minimal Residual Algorithm for
+             Solving Nonsymmetric Linear Systems},
+  journal = {{SIAM} Journal on Scientific and Statistical Computing},
+  volume  = {7},
+  number  = {3},
+  pages   = {856--869},
+  year    = {1986},
+  doi     = {10.1137/0907058}
+}
+
+@article{Solovev1968,
+  author  = {L. S. Solov'ev},
+  title   = {The theory of hydromagnetic stability of toroidal plasma
+             configurations},
+  journal = {Soviet Physics {JETP}},
+  volume  = {26},
+  number  = {2},
+  pages   = {400--407},
+  year    = {1968}
+}
+
+@article{Levenberg1944,
+  author  = {K. Levenberg},
+  title   = {A method for the solution of certain non-linear problems in
+             least squares},
+  journal = {Quarterly of Applied Mathematics},
+  volume  = {2},
+  number  = {2},
+  pages   = {164--168},
+  year    = {1944}
+}
+
+@article{Marquardt1963,
+  author  = {D. W. Marquardt},
+  title   = {An algorithm for least-squares estimation of nonlinear
+             parameters},
+  journal = {Journal of the Society for Industrial and Applied Mathematics},
+  volume  = {11},
+  number  = {2},
+  pages   = {431--441},
+  year    = {1963},
+  doi     = {10.1137/0111030}
+}
+
+% --- Neural Operators / ML in Fusion ---
+@inproceedings{Li2021,
+  author    = {Z. Li and N. Kovachki and K. Azizzadenesheli and B. Liu and
+               K. Bhatt and A. Stuart and A. Anandkumar},
+  title     = {Fourier Neural Operator for Parametric Partial Differential
+               Equations},
+  booktitle = {Proceedings of the International Conference on Learning
+               Representations ({ICLR})},
+  year      = {2021},
+  note      = {arXiv: 2010.08895}
+}
+
+@article{vanDePlassche2020,
+  author  = {K. L. {van de Plassche} and J. Citrin and C. Bourdelle and
+             Y. Camenen and F. J. Casson and V. I. Dagnelie and
+             F. Felici and A. Ho and S. {Van Mulders} and JET Contributors},
+  title   = {Fast modeling of turbulent transport in fusion plasmas using
+             neural networks},
+  journal = {Physics of Plasmas},
+  volume  = {27},
+  pages   = {022310},
+  year    = {2020},
+  doi     = {10.1063/1.5134126}
+}
+
+@article{Kates-Harbeck2019,
+  author  = {J. Kates-Harbeck and A. Svyatkovskiy and W. Tang},
+  title   = {Predicting disruptive instabilities in controlled fusion plasmas
+             through deep learning},
+  journal = {Nature},
+  volume  = {568},
+  pages   = {526--531},
+  year    = {2019},
+  doi     = {10.1038/s41586-019-1116-4}
+}
+
+@article{Degrave2022,
+  author  = {J. Degrave and F. Felici and J. Buchli and M. Neunert and
+             B. Tracey and F. Carpanese and T. Ewalds and
+             R. Hafner and A. Abdolmaleki and D. de~Las~Casas and others},
+  title   = {Magnetic control of tokamak plasmas through deep reinforcement
+             learning},
+  journal = {Nature},
+  volume  = {602},
+  pages   = {414--419},
+  year    = {2022},
+  doi     = {10.1038/s41586-021-04301-9}
+}
+
+% --- TORAX ---
+@article{TORAX2024,
+  author  = {{TORAX Team}},
+  title   = {{TORAX}: {A} differentiable tokamak transport simulator in
+             {JAX}},
+  journal = {arXiv preprint},
+  note    = {arXiv:2406.06718},
+  year    = {2024}
+}
+
+% --- JINTRAC ---
+@article{Romanelli2014,
+  author  = {M. Romanelli and G. Corrigan and V. Parail and S. Wiesen and
+             R. Ambrosino and P. {Da Silva Aresta Belo} and
+             L. Garzotti and D. Harting and F. K{\"o}chl and T. Koskela and
+             others},
+  title   = {JINTRAC: {A} system of codes for integrated simulation of
+             tokamak scenarios},
+  journal = {Plasma and Fusion Research},
+  volume  = {9},
+  pages   = {3403023},
+  year    = {2014},
+  doi     = {10.1585/pfr.9.3403023}
+}
+
+% --- MHD and Stability ---
+@article{Kadomtsev1975,
+  author  = {B. B. Kadomtsev},
+  title   = {Disruptive instability in tokamaks},
+  journal = {Soviet Journal of Plasma Physics},
+  volume  = {1},
+  number  = {5},
+  pages   = {389--391},
+  year    = {1975}
+}
+
+@book{Huba2019,
+  author    = {J. D. Huba},
+  title     = {{NRL} Plasma Formulary},
+  publisher = {Naval Research Laboratory},
+  address   = {Washington, DC},
+  year      = {2019},
+  note      = {Report No.\ NRL/PU/6790--19-640}
+}
+
+@article{Greenwald2002,
+  author  = {M. Greenwald},
+  title   = {Density limits in toroidal plasmas},
+  journal = {Plasma Physics and Controlled Fusion},
+  volume  = {44},
+  number  = {8},
+  pages   = {R27--R53},
+  year    = {2002},
+  doi     = {10.1088/0741-3335/44/8/201}
+}
+
+% --- Divertor and Heating ---
+@article{Eich2013,
+  author  = {T. Eich and A. W. Leonard and R. A. Pitts and W. Fundamenski
+             and R. J. Goldston and T. K. Gray and A. Herrmann and
+             A. Kirk and A. Kallenbach and O. Kardaun and others},
+  title   = {Scaling of the tokamak near the scrape-off layer {H}-mode
+             power width and implications for {ITER}},
+  journal = {Nuclear Fusion},
+  volume  = {53},
+  number  = {9},
+  pages   = {093031},
+  year    = {2013},
+  doi     = {10.1088/0029-5515/53/9/093031}
+}
+
+% --- Disruption Mitigation ---
+@article{Commaux2016,
+  author  = {N. Commaux and L. R. Baylor and T. C. Jernigan and
+             E. M. Hollmann and P. B. Parks and D. A. Humphreys and
+             J. C. Wesley and J. H. Yu},
+  title   = {Demonstration of rapid shutdown using large shattered deuterium
+             pellet injection in {DIII-D}},
+  journal = {Nuclear Fusion},
+  volume  = {56},
+  number  = {4},
+  pages   = {046007},
+  year    = {2016},
+  doi     = {10.1088/0029-5515/56/4/046007}
+}
+
+% --- Vertical Stability ---
+@article{Lazarus1990,
+  author  = {E. A. Lazarus and J. B. Lister and G. H. Neilson},
+  title   = {Control of the vertical instability in tokamaks},
+  journal = {Nuclear Fusion},
+  volume  = {30},
+  number  = {1},
+  pages   = {111--141},
+  year    = {1990},
+  doi     = {10.1088/0029-5515/30/1/010}
+}
+
+@article{Humphreys2015,
+  author  = {D. A. Humphreys and G. Ambrosino and P. de~Vries and
+             F. Felici and S. H. Kim and G. Jackson and A. Kallenbach and
+             E. Kolemen and J. R. Lister and D. Moreau and A. Pironti},
+  title   = {Novel aspects of plasma control in {ITER}},
+  journal = {Physics of Plasmas},
+  volume  = {22},
+  number  = {2},
+  pages   = {021806},
+  year    = {2015},
+  doi     = {10.1063/1.4907901}
+}
+
+@article{Kolemen2014,
+  author  = {E. Kolemen and D. A. Gates and C. W. Rowley and
+             N. J. Kasdin and J. Bialek and A. H. Boozer and others},
+  title   = {Plasma control system design and configuration for {KSTAR}},
+  journal = {Fusion Engineering and Design},
+  volume  = {89},
+  pages   = {515--522},
+  year    = {2014}
+}
+
+% --- Neuromorphic Computing ---
+@article{Maass1997,
+  author  = {W. Maass},
+  title   = {Networks of spiking neurons: The third generation of neural
+             network models},
+  journal = {Neural Networks},
+  volume  = {10},
+  number  = {9},
+  pages   = {1659--1671},
+  year    = {1997},
+  doi     = {10.1016/S0893-6080(97)00011-7}
+}
+
+@article{Davies2018,
+  author  = {M. Davies and N. Srinivasa and T.-H. Lin and G. Chinya and
+             Y. Cao and S. H. Choday and G. Dimou and P. Joshi and
+             N. Imam and S. Jain and others},
+  title   = {Loihi: A Neuromorphic Manycore Processor with On-Chip
+             Learning},
+  journal = {{IEEE} Micro},
+  volume  = {38},
+  number  = {1},
+  pages   = {82--99},
+  year    = {2018},
+  doi     = {10.1109/MM.2018.112130359}
+}
+
+@article{Furber2014,
+  author  = {S. B. Furber and F. Galluppi and S. Temple and
+             L. A. Plana},
+  title   = {The {SpiNNaker} Project},
+  journal = {Proceedings of the {IEEE}},
+  volume  = {102},
+  number  = {5},
+  pages   = {652--665},
+  year    = {2014},
+  doi     = {10.1109/JPROC.2014.2304638}
+}
+
+% --- Petri Nets ---
+@phdthesis{Petri1962,
+  author  = {C. A. Petri},
+  title   = {{K}ommunikation mit {A}utomaten},
+  school  = {Universit{\"a}t Hamburg},
+  year    = {1962}
+}
+
+@book{Murata1989,
+  author  = {T. Murata},
+  title   = {Petri nets: Properties, analysis and applications},
+  journal = {Proceedings of the {IEEE}},
+  volume  = {77},
+  number  = {4},
+  pages   = {541--580},
+  year    = {1989},
+  doi     = {10.1109/5.24143}
+}
+
+@article{Zurawski1994,
+  author  = {R. Zurawski and M. C. Zhou},
+  title   = {Petri nets and industrial applications: A tutorial},
+  journal = {{IEEE} Transactions on Industrial Electronics},
+  volume  = {41},
+  number  = {6},
+  pages   = {567--583},
+  year    = {1994},
+  doi     = {10.1109/41.334574}
+}
+
+% --- Stochastic Computing ---
+@article{Gaines1969,
+  author  = {B. R. Gaines},
+  title   = {Stochastic computing systems},
+  journal = {Advances in Information Systems Science},
+  volume  = {2},
+  pages   = {37--172},
+  year    = {1969},
+  doi     = {10.1007/978-1-4899-5841-9_2}
+}
+
+@article{Alaghi2013,
+  author  = {A. Alaghi and J. P. Hayes},
+  title   = {Survey of stochastic computing},
+  journal = {{ACM} Transactions on Embedded Computing Systems},
+  volume  = {12},
+  number  = {2s},
+  pages   = {92:1--92:19},
+  year    = {2013},
+  doi     = {10.1145/2465787.2465794}
+}
+
+% --- Rust / Systems Programming ---
+@misc{Klabnik2023,
+  author       = {S. Klabnik and C. Nichols},
+  title        = {The {R}ust Programming Language},
+  year         = {2023},
+  howpublished = {\url{https://doc.rust-lang.org/book/}},
+  note         = {Accessed 2026}
+}
+
+@misc{PyO3,
+  author       = {{PyO3 Contributors}},
+  title        = {{PyO3}: {R}ust bindings for {P}ython},
+  year         = {2024},
+  howpublished = {\url{https://pyo3.rs/}},
+  note         = {Accessed 2026}
+}
+
+% --- BOUT++ ---
+@article{Dudson2009,
+  author  = {B. D. Dudson and M. V. Umansky and X. Q. Xu and
+             P. B. Snyder and H. R. Wilson},
+  title   = {{BOUT++}: {A} framework for parallel plasma fluid simulations},
+  journal = {Computer Physics Communications},
+  volume  = {180},
+  number  = {9},
+  pages   = {1467--1480},
+  year    = {2009},
+  doi     = {10.1016/j.cpc.2009.03.008}
+}
+
+% --- Gyrokinetic Codes ---
+@article{Jenko2000,
+  author  = {F. Jenko and W. Dorland and M. Kotschenreuther and
+             B. N. Rogers},
+  title   = {Electron temperature gradient driven turbulence},
+  journal = {Physics of Plasmas},
+  volume  = {7},
+  number  = {5},
+  pages   = {1904--1910},
+  year    = {2000},
+  doi     = {10.1063/1.874014}
+}
+
+@article{Belli2008,
+  author  = {E. A. Belli and J. Candy},
+  title   = {Kinetic calculation of neoclassical transport including
+             self-consistent electron and impurity dynamics},
+  journal = {Physics of Plasmas},
+  volume  = {15},
+  pages   = {092510},
+  year    = {2008},
+  doi     = {10.1063/1.2961079}
+}
+
+% --- Disruption Prediction ---
+@article{Hoppe2021,
+  author  = {M. Hoppe and O. Embreus and T. F{\"u}l{\"o}p},
+  title   = {{DREAM}: {A} 1D--2D code for disruption runaway electron
+             analysis and mitigation},
+  journal = {Computer Physics Communications},
+  volume  = {268},
+  pages   = {108098},
+  year    = {2021},
+  doi     = {10.1016/j.cpc.2021.108098}
+}
+
+% --- Sauter Bootstrap ---
+@article{Sauter1999,
+  author  = {O. Sauter and C. Angioni and Y. R. Lin-Liu},
+  title   = {Neoclassical conductivity and bootstrap current formulas for
+             general axisymmetric equilibria and arbitrary collisionality
+             regime},
+  journal = {Physics of Plasmas},
+  volume  = {6},
+  number  = {7},
+  pages   = {2834--2839},
+  year    = {1999},
+  doi     = {10.1063/1.873240}
+}
+
+% --- Modified Rutherford Equation ---
+@article{Rutherford1973,
+  author  = {P. H. Rutherford},
+  title   = {Nonlinear growth of the tearing mode},
+  journal = {Physics of Fluids},
+  volume  = {16},
+  number  = {11},
+  pages   = {1903--1908},
+  year    = {1973},
+  doi     = {10.1063/1.1694232}
+}
+
+% --- Pedestal / mtanh ---
+@article{Groebner2001,
+  author  = {R. J. Groebner and T. H. Osborne},
+  title   = {Scaling studies of the high mode pedestal},
+  journal = {Physics of Plasmas},
+  volume  = {5},
+  number  = {5},
+  pages   = {1800--1806},
+  year    = {1998},
+  doi     = {10.1063/1.872849}
+}
+
+% --- National Academies ---
+@techreport{NAS2021,
+  author      = {{National Academies of Sciences, Engineering, and Medicine}},
+  title       = {Bringing Fusion to the {U.S.} Grid},
+  institution = {The National Academies Press},
+  address     = {Washington, DC},
+  year        = {2021},
+  doi         = {10.17226/25991}
+}
+
+% --- GEQDSK format ---
+@techreport{GEQDSK,
+  author      = {{General Atomics}},
+  title       = {{EFIT} Equilibrium Fitting Code and {GEQDSK} File Format},
+  institution = {General Atomics},
+  year        = {1985},
+  note        = {Internal documentation}
+}
+
+% --- Model Predictive Control ---
+@book{Camacho2007,
+  author    = {E. F. Camacho and C. Bordons},
+  title     = {Model Predictive Control},
+  edition   = {2nd},
+  publisher = {Springer},
+  year      = {2007},
+  doi       = {10.1007/978-0-85729-398-5}
+}
+
+% --- Tikhonov Regularization ---
+@book{Tikhonov1977,
+  author    = {A. N. Tikhonov and V. Y. Arsenin},
+  title     = {Solutions of Ill-Posed Problems},
+  publisher = {V. H. Winston \& Sons},
+  address   = {Washington, DC},
+  year      = {1977}
+}
+
+% --- Huber Loss ---
+@article{Huber1964,
+  author  = {P. J. Huber},
+  title   = {Robust estimation of a location parameter},
+  journal = {The Annals of Mathematical Statistics},
+  volume  = {35},
+  number  = {1},
+  pages   = {73--101},
+  year    = {1964},
+  doi     = {10.1214/aoms/1177703732}
+}
