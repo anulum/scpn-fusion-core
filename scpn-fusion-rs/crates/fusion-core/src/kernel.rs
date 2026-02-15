@@ -129,9 +129,9 @@ impl FusionKernel {
                 "grid dimensions must be >= 2 in both axes, got nz={nz}, nr={nr}"
             )));
         }
-        if !dr.is_finite() || !dz.is_finite() || dr == 0.0 || dz == 0.0 {
+        if !dr.is_finite() || !dz.is_finite() || dr <= 0.0 || dz <= 0.0 {
             return Err(FusionError::ConfigError(format!(
-                "grid spacing must be finite and non-zero, got dr={dr}, dz={dz}"
+                "grid spacing must be finite and > 0, got dr={dr}, dz={dz}"
             )));
         }
         let external_profiles: Option<(ProfileParams, ProfileParams)> =
@@ -430,11 +430,11 @@ impl FusionKernel {
         }
         if !self.grid.dr.is_finite()
             || !self.grid.dz.is_finite()
-            || self.grid.dr == 0.0
-            || self.grid.dz == 0.0
+            || self.grid.dr <= 0.0
+            || self.grid.dz <= 0.0
         {
             return Err(FusionError::ConfigError(format!(
-                "particle feedback requires finite non-zero grid spacing, got dr={}, dz={}",
+                "particle feedback requires finite grid spacing > 0, got dr={}, dz={}",
                 self.grid.dr, self.grid.dz
             )));
         }
@@ -910,6 +910,19 @@ mod tests {
             }
             other => panic!("Unexpected error: {other:?}"),
         }
+
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let feedback = Array2::from_elem((kernel.grid().nz, kernel.grid().nr), 1.0);
+        kernel.grid.dz = -kernel.grid.dz.abs();
+        let err = kernel
+            .set_particle_current_feedback(feedback, 0.2)
+            .expect_err("negative grid spacing must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("grid spacing"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
     }
 
     #[test]
@@ -1138,6 +1151,18 @@ mod tests {
         let err = kernel
             .solve_equilibrium()
             .expect_err("zero grid spacing must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("grid spacing"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.grid.dz = -kernel.grid.dz.abs();
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("negative grid spacing must fail");
         match err {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("grid spacing"));
