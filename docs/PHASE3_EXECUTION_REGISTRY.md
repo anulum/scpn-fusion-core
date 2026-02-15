@@ -338,6 +338,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-111 | P1 | Tooling | Resolve Rust stable CI regression after VMEC/MPI upstream drop (fmt + clippy strict) | `scpn-fusion-rs/crates/fusion-core/src/bout_interface.rs`, `scpn-fusion-rs/crates/fusion-core/src/mpi_domain.rs`, `scpn-fusion-rs/crates/fusion-core/src/vmec_interface.rs` | Applied workspace `cargo fmt` normalization and fixed strict clippy regressions introduced by upstream VMEC/MPI changes (`manual_is_multiple_of`, `needless_range_loop`, `too_many_arguments`, and numeric expression simplification in tests), restoring green `Rust (stable)` behavior without altering physics/control contracts | `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features` |
 | H8-112 | P1 | Tooling | Gate GitHub Pages deployment behind explicit repo variable to avoid false-red docs runs | `.github/workflows/docs.yml` | Added deploy-job condition `vars.DEPLOY_GH_PAGES == 'true'` so docs build jobs still run on every `main` push while Pages publish executes only when explicitly enabled; this prevents deploy-stage failures on repos/environments without active Pages admin configuration | `rg -n "if:\\s*\\$\\{\\{ vars\\.DEPLOY_GH_PAGES == 'true' \\}\\}" .github/workflows/docs.yml`, `GitHub Actions Documentation workflow rerun on main` |
 | H8-113 | P1 | Engineering | Harden CAD raytrace mesh/source contracts with strict index/finiteness/non-degeneracy guards | `src/scpn_fusion/engineering/cad_raytrace.py`, `tests/test_cad_raytrace.py` | CAD mesh loading and surface-loading estimation now reject malformed geometry and source inputs (empty meshes, out-of-bounds/negative face indices, non-finite vertices/source values, degenerate triangles, negative source strengths) via explicit `ValueError` contracts instead of silent coercion/NaN propagation; added dedicated CAD raytrace regression suite covering STL fallback and malformed-input rejection paths | `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
+| H8-114 | P1 | Engineering | Add optional CAD triangle occlusion culling for line-of-sight ray loading | `src/scpn_fusion/engineering/cad_raytrace.py`, `tests/test_cad_raytrace.py` | Added optional segment-triangle occlusion culling (`occlusion_cull`) and strict `occlusion_epsilon` validation so CAD surface-load estimates can suppress shadowed faces in multi-surface geometries; added regression coverage proving blocked downstream faces are zeroed under occlusion while non-occluded mode preserves prior behavior | `python -m pytest tests/test_cad_raytrace.py tests/test_blanket_neutronics.py -q` |
 
 ## Task Accounting
 
@@ -345,7 +346,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 249
+- Post-S4 hardening tasks delivered: 250
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -618,4 +619,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-111`
 - Completed: `H8-112`
 - Completed: `H8-113`
+- Completed: `H8-114`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).

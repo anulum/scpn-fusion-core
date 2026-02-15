@@ -96,6 +96,57 @@ def test_estimate_surface_loading_rejects_degenerate_triangles() -> None:
         estimate_surface_loading(vertices, faces, source_points, source_strength)
 
 
+def test_estimate_surface_loading_rejects_invalid_occlusion_epsilon() -> None:
+    vertices, faces = _tetra_mesh()
+    source_points, source_strength = _sources()
+    with pytest.raises(ValueError, match="occlusion_epsilon"):
+        estimate_surface_loading(
+            vertices,
+            faces,
+            source_points,
+            source_strength,
+            occlusion_cull=True,
+            occlusion_epsilon=0.0,
+        )
+
+
+def test_estimate_surface_loading_occlusion_culls_shadowed_faces() -> None:
+    vertices = np.asarray(
+        [
+            [0.0, -1.0, -1.0],
+            [0.0, 1.0, -1.0],
+            [0.0, -1.0, 1.0],
+            [1.0, -1.0, -1.0],
+            [1.0, 1.0, -1.0],
+            [1.0, -1.0, 1.0],
+        ],
+        dtype=np.float64,
+    )
+    faces = np.asarray([[0, 1, 2], [3, 4, 5]], dtype=np.int64)
+    source_points = np.asarray([[-2.0, 0.0, 0.0]], dtype=np.float64)
+    source_strength = np.asarray([1.0e6], dtype=np.float64)
+
+    report_no_cull = estimate_surface_loading(
+        vertices,
+        faces,
+        source_points,
+        source_strength,
+        occlusion_cull=False,
+    )
+    report_cull = estimate_surface_loading(
+        vertices,
+        faces,
+        source_points,
+        source_strength,
+        occlusion_cull=True,
+    )
+
+    assert report_no_cull.face_loading_w_m2[0] > 0.0
+    assert report_no_cull.face_loading_w_m2[1] > 0.0
+    assert report_cull.face_loading_w_m2[0] > 0.0
+    assert report_cull.face_loading_w_m2[1] == pytest.approx(0.0, abs=1e-12)
+
+
 def test_load_cad_mesh_rejects_invalid_extension(tmp_path) -> None:
     bad = tmp_path / "mesh.obj"
     bad.write_text("dummy")

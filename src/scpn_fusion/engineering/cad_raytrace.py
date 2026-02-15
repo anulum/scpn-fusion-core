@@ -93,6 +93,37 @@ def _triangle_normals_and_areas(
     return normals, areas
 
 
+def _segment_intersects_triangle(
+    p0: FloatArray,
+    p1: FloatArray,
+    tri: FloatArray,
+    *,
+    epsilon: float,
+) -> bool:
+    """
+    Segment-triangle intersection using Moller-Trumbore parameterization.
+    Returns True only when the intersection lies strictly inside (p0, p1).
+    """
+    d = p1 - p0
+    edge1 = tri[1] - tri[0]
+    edge2 = tri[2] - tri[0]
+    h = np.cross(d, edge2)
+    a = float(np.dot(edge1, h))
+    if abs(a) <= epsilon:
+        return False
+    f = 1.0 / a
+    s = p0 - tri[0]
+    u = f * float(np.dot(s, h))
+    if u < 0.0 or u > 1.0:
+        return False
+    q = np.cross(s, edge1)
+    v = f * float(np.dot(d, q))
+    if v < 0.0 or (u + v) > 1.0:
+        return False
+    t = f * float(np.dot(edge2, q))
+    return epsilon < t < (1.0 - epsilon)
+
+
 def _validate_mesh(vertices: FloatArray, faces: IntArray) -> None:
     if vertices.ndim != 2 or vertices.shape[1] != 3:
         raise ValueError("vertices must have shape (M, 3)")
@@ -121,6 +152,9 @@ def estimate_surface_loading(
     faces: IntArray,
     source_points_xyz: FloatArray,
     source_strength_w: FloatArray,
+    *,
+    occlusion_cull: bool = False,
+    occlusion_epsilon: float = 1e-9,
 ) -> CADLoadReport:
     """
     Compute reduced line-of-sight heat loading on CAD triangles.
@@ -139,6 +173,8 @@ def estimate_surface_loading(
         raise ValueError("source_strength_w must contain only finite values.")
     if np.any(strength < 0.0):
         raise ValueError("source_strength_w must be non-negative.")
+    if not np.isfinite(occlusion_epsilon) or occlusion_epsilon <= 0.0:
+        raise ValueError("occlusion_epsilon must be finite and > 0.")
 
     _validate_mesh(vertices, faces)
 
@@ -153,6 +189,24 @@ def estimate_surface_loading(
         dist = np.sqrt(np.maximum(dist2, 1e-12))
         dirs = ray / dist[:, None]
         cos_incidence = np.clip(np.sum(normals * dirs, axis=1), 0.0, 1.0)
+        if occlusion_cull:
+            visible = cos_incidence > 0.0
+            for i in range(faces.shape[0]):
+                if not visible[i]:
+                    continue
+                c = centroids[i]
+                for j in range(faces.shape[0]):
+                    if i == j:
+                        continue
+                    if _segment_intersects_triangle(
+                        p,
+                        c,
+                        tri[j],
+                        epsilon=occlusion_epsilon,
+                    ):
+                        visible[i] = False
+                        break
+            cos_incidence = np.where(visible, cos_incidence, 0.0)
         loading += float(power) * cos_incidence / (4.0 * np.pi * np.maximum(dist2, 1e-12))
 
     return CADLoadReport(
