@@ -318,6 +318,7 @@ derive the imported 85-task Phase 3 backlog.
 | H8-091 | P1 | Runtime | Guard solver preflight against `state.j_phi` shape corruption | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `solve_equilibrium` now validates `state.j_phi` shape against `(nz,nr)` before seed/source writes, converting mutated-state shape corruption from panic-prone indexing into explicit `ConfigError`; added regression coverage for mismatched `j_phi` state dimensions while preserving existing runtime-control guards | `cargo test -p fusion-core kernel::tests::test_solve_equilibrium_rejects_state_j_phi_shape_mismatch -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_solve_equilibrium_rejects_non_finite_grid_mesh -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_solve_equilibrium_rejects_invalid_runtime_controls -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_set_and_clear -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-092 | P1 | Runtime | Validate sampler grid-axis metadata consistency before nearest-index lookup | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | `sample_psi_at` now requires `r/z` axis lengths to match `(nr,nz)` metadata before domain/nearest-index operations, preventing out-of-bounds risk under mutated axis metadata; added regression coverage for axis-length mismatch alongside existing sampler guards | `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_grid_axis_length_mismatch -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_state_shape_mismatch -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_sample_psi_rejects_out_of_domain_probe_coordinates -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_particle_feedback_set_and_clear -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
 | H8-093 | P1 | Runtime | Add explicit regression coverage for solver-mode switching and multigrid solve path | `scpn-fusion-rs/crates/fusion-core/src/kernel.rs` | Added unit coverage for default/explicit `solver_method` transitions (`PicardSor` ↔ `PicardMultigrid`) and a validated-config multigrid solve smoke test to keep PyO3-exposed backend selection and multigrid integration under CI guardrails | `cargo test -p fusion-core kernel::tests::test_solver_method_default_and_setter -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_multigrid_solver_mode_smoke -- --nocapture`, `cargo test -p fusion-core kernel::tests::test_full_equilibrium_iter_config -- --nocapture`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo fmt --all -- --check` |
+| H8-094 | P1 | Runtime | Add Python bridge regression tests for solver-method aliasing and invalid input handling | `tests/test_rust_compat_solver_method.py` | Added guarded (`scpn_fusion_rs`-available) pytest coverage to verify `PyFusionKernel.set_solver_method` alias round-trips (`sor`/`picard_sor` and `multigrid`/`picard_multigrid`/`mg`) and to assert unknown solver methods raise `ValueError`, keeping the PyO3-facing control surface contract under test | `python -m pytest tests/test_rust_compat_solver_method.py -q` |
 
 ## Task Accounting
 
@@ -325,7 +326,7 @@ derive the imported 85-task Phase 3 backlog.
 - Tasks currently queued for Sprint S2: 8
 - Tasks currently queued for Sprint S3: 6
 - Tasks currently queued for Sprint S4: 4
-- Post-S4 hardening tasks delivered: 229
+- Post-S4 hardening tasks delivered: 230
 - Remaining in deferred pool after queue selection: 0
 - External reactor-engineering intake tasks (H6 queue): 0 (all 9 delivered)
 
@@ -578,4 +579,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-091`
 - Completed: `H8-092`
 - Completed: `H8-093`
+- Completed: `H8-094`
 - Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
