@@ -10,7 +10,37 @@
 [![codecov](https://codecov.io/gh/anulum/scpn-fusion-core/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core)
 [![DOI](https://img.shields.io/badge/DOI-Zenodo-blue.svg)](https://zenodo.org/)
 
-A comprehensive tokamak plasma physics simulation and control suite with neuro-symbolic compilation. SCPN Fusion Core models the full lifecycle of a fusion reactor — from Grad-Shafranov equilibrium and MHD stability through transport, heating, neutronics, and real-time disruption prediction — with optional Rust acceleration via PyO3 and an optional bridge to [SC-NeuroCore](https://github.com/anulum/sc-neurocore) spiking neural networks.
+A **neuro-symbolic control framework for tokamak fusion reactors** with
+physics-informed surrogate models and optional Rust acceleration. SCPN
+Fusion Core compiles plasma control logic — expressed as stochastic Petri
+nets — into spiking neural network controllers that run at sub-millisecond
+latency, backed by a Grad-Shafranov equilibrium solver, 1.5D radial
+transport, and AI surrogates for turbulence, disruption prediction, and
+real-time digital twins.
+
+**What makes it different:** Most fusion codes are physics-first (solve
+equations, then bolt on control). SCPN Fusion Core is **control-first** —
+it provides a formally verified neuro-symbolic compilation pipeline where
+plasma control policies are expressed as Petri nets, compiled to stochastic
+LIF neurons, and executed against physics-informed plant models. The physics
+modules are deliberately reduced-order (not gyrokinetic) to enable
+real-time control loop closure at 1 kHz+ rates.
+
+> **Honest scope:** This is not a replacement for TRANSP, JINTRAC, or GENE.
+> It does not solve 5D gyrokinetics or full 3D MHD. It is a
+> **control-algorithm development and surrogate-modeling framework** with
+> enough physics fidelity to validate reactor control strategies against
+> real equilibrium data (8 SPARC GEQDSK files, ITPA H-mode database).
+
+## Design Philosophy
+
+| Principle | Implementation |
+|-----------|---------------|
+| **Control-first** | Petri net → SNN compilation pipeline is the core innovation, not an add-on |
+| **Graceful degradation** | Every module works without Rust, without SC-NeuroCore, without GPU |
+| **Explicit over silent** | 248 hardening tasks replaced silent clamping/coercion with explicit errors |
+| **Real data validation** | 8 SPARC GEQDSK + 20-shot ITPA H-mode confinement database |
+| **Reduced-order by design** | Physics models are fast enough for real-time control (ms, not hours) |
 
 ## Architecture
 
@@ -204,41 +234,53 @@ python validation/validate_against_sparc.py
 python -c "from scpn_fusion.core.eqdsk import read_geqdsk; eq = read_geqdsk('validation/reference_data/sparc/lmode_vv.geqdsk'); print(f'B={eq.bcentr:.1f}T, Ip={eq.current/1e6:.1f}MA')"
 ```
 
-## 21 Simulation Modes
+## Simulation Modes (Tiered by Maturity)
 
-| Mode | Description |
-|------|-------------|
-| `kernel` | Grad-Shafranov equilibrium + coupled transport |
-| `flight` | Real-time tokamak flight simulator |
-| `optimal` | Model-predictive optimal control |
-| `learning` | Self-organized criticality reinforcement learning |
-| `digital-twin` | Live digital twin with telemetry |
-| `control-room` | Integrated control room simulation |
-| `sandpile` | SOC sandpile criticality model |
-| `nuclear` | Plasma-wall interaction & first-wall damage |
-| `breeding` | Tritium breeding blanket neutronics |
-| `safety` | ML disruption predictor + early warning |
-| `optimizer` | Compact reactor design search (MVR-0.96) |
-| `divertor` | Divertor thermal load simulation |
-| `diagnostics` | Synthetic diagnostic instrument suite |
-| `sawtooth` | MHD sawtooth crash dynamics |
-| `neural` | Neural-network equilibrium solver |
-| `geometry` | 3D flux-surface geometry |
-| `spi` | Shattered pellet injection mitigation |
-| `scanner` | Multi-objective global design scanner |
-| `heating` | RF heating (ICRH / ECRH / LHCD) |
-| `wdm` | Warm dense matter equation of state |
-| `neuro-control` | SNN-based cybernetic controller |
+### Production — Hardened, CI-gated, validated against real data
 
-Additional experimental modes (quantum, vibrana, lazarus, director) are
-available for SCPN framework integration work. These require external
-components not shipped in this repo:
+| Mode | Description | Tests | Hardening |
+|------|-------------|-------|-----------|
+| `kernel` | Grad-Shafranov equilibrium (Picard+SOR/Multigrid) + coupled 1.5D transport | Converges on 8 SPARC GEQDSKs | H8: 94 Rust validation tasks |
+| `neuro-control` | SNN-based cybernetic controller (SC-NeuroCore or NumPy LIF fallback) | Deterministic replay, fault injection | H5: 37 SCPN controller tasks |
+| `optimal` | Model-predictive controller with gradient-descent trajectory optimization | Disturbance rejection, bounded actions | H7+H8: strict input guards |
+| `flight` | Real-time tokamak flight simulator with actuator lag dynamics | Deterministic summary API | H7: RNG isolation + guards |
+| `digital-twin` | Live digital twin with RL-trained MLP policy + chaos monkey faults | Fault campaigns, bit-flip resilience | H6+H7+H8: 20+ tasks |
+| `safety` | ML disruption predictor (deterministic scoring + optional Transformer) | Anomaly campaigns, checkpoint fallback | H7: scoped RNG + guards |
+| `control-room` | Integrated control room with analytic/kernel-backed equilibrium | CI-safe non-plot mode | H7: deterministic runtime |
+
+### Validated — Real implementations, tested, but not yet hardened to production level
+
+| Mode | Description | Status |
+|------|-------------|--------|
+| `optimizer` | Compact reactor design search (MVR-0.96) | Multi-objective, validated constraints |
+| `breeding` | Tritium breeding blanket neutronics (1D transport) | Real albedo model, TBR trends |
+| `nuclear` | Plasma-wall interaction & first-wall erosion | PWI angle-energy invariants tested |
+| `diagnostics` | Synthetic sensors + soft X-ray tomographic inversion | Forward models, SciPy fallback |
+| `spi` | Shattered pellet injection mitigation | Z_eff + CQ time constant |
+| `learning` | Self-organized criticality RL (SOC sandpile + Q-learning) | Bounded exploration, seeded replay |
+| `divertor` | Divertor thermal load simulation | TEMHD Peltier effects |
+| `heating` | RF heating (ICRH / ECRH / LHCD ray tracing) | Resonance layer + deposition |
+| `sawtooth` | MHD sawtooth crash dynamics | Spectral solver |
+| `scanner` | Multi-objective global design scanner | Scoped RNG |
+| `sandpile` | SOC sandpile criticality model | Avalanche dynamics |
+
+### Reduced-order / Surrogate — Functional but limited physics scope
+
+| Mode | Description | Limitation |
+|------|-------------|------------|
+| `neural` | Neural-network equilibrium solver (PCA + MLP) | Demo quality; no pre-trained weights shipped |
+| `geometry` | 3D flux-surface geometry (Fourier boundary) | Parameterization only; no force-balance solve |
+| `wdm` | Warm dense matter equation of state | Reduced EOS model |
+
+### Experimental — Requires external SCPN framework components
 
 ```bash
 python run_fusion_suite.py --experimental quantum
-# or
 SCPN_EXPERIMENTAL=1 python run_fusion_suite.py vibrana
 ```
+
+These modes (quantum, vibrana, lazarus, director) are integration bridges
+to external components not shipped in this repo.
 
 ## Minimum Viable Reactor (MVR-0.96)
 
@@ -252,12 +294,45 @@ The compact reactor optimizer (`python run_fusion_suite.py optimizer`) performs 
 
 ## Neuro-Symbolic Compiler
 
-The `scpn/` subpackage implements a **Petri net → stochastic neuron** compiler:
+The `scpn/` subpackage implements a **Petri net → stochastic neuron** compiler —
+the core innovation that distinguishes SCPN Fusion Core from conventional fusion codes.
 
-1. **Petri Net Definition** — plasma control logic expressed as place/transition nets with formal contracts
-2. **Compilation** — Petri net transitions mapped to stochastic LIF neurons (using [SC-NeuroCore](https://github.com/anulum/sc-neurocore) when available, NumPy fallback otherwise)
-3. **Execution** — SNN-driven real-time plasma control with sub-millisecond latency
-4. **Verification** — formal contract checking on compiled artifacts
+### Pipeline
+
+```
+Petri Net (places + transitions + contracts)
+    │
+    ▼  compiler.py — structure-preserving mapping
+Stochastic LIF Network (neurons + synapses + thresholds)
+    │
+    ▼  controller.py — closed-loop execution
+Real-Time Plasma Control (sub-ms latency, deterministic replay)
+    │
+    ▼  artifact.py — versioned, signed compilation artifact
+Deployment Package (JSON + schema version + git SHA)
+```
+
+### Stages
+
+1. **Petri Net Definition** — plasma control logic expressed as place/transition nets with formal contracts (`structure.py`, `contracts.py`)
+2. **Compilation** — Petri net transitions mapped to stochastic LIF neurons using [SC-NeuroCore](https://github.com/anulum/sc-neurocore) when available, NumPy fallback otherwise (`compiler.py`)
+3. **Execution** — SNN-driven real-time plasma control with sub-millisecond latency and deterministic replay (`controller.py`)
+4. **Verification** — formal contract checking ensures compiled artifacts preserve Petri net invariants (boundedness, liveness, reachability)
+5. **Artifact Export** — versioned compilation artifacts with package version, schema version, and git SHA stamping (`artifact.py`)
+
+### Why This Matters
+
+Most fusion control systems bolt a PID or MPC controller onto a physics code.
+SCPN Fusion Core inverts this: **control logic is the primary artifact**, expressed
+in a formally verifiable Petri net formalism, then compiled to a spiking neural
+network that executes at hardware-compatible latencies. The physics modules exist
+to provide a realistic plant model for the controller to operate against.
+
+This architecture enables:
+- **Formal verification** of control policies before deployment
+- **Hardware targeting** — the same Petri net compiles to NumPy (simulation), SC-NeuroCore (FPGA-accurate), or future neuromorphic silicon
+- **Graceful degradation** — every path has a pure-Python fallback
+- **Deterministic replay** — identical inputs produce identical outputs across platforms (37 dedicated hardening tasks in H5 wave)
 
 ## SC-NeuroCore Integration
 
@@ -353,6 +428,63 @@ Struggling with convergence? See the [Solver Tuning Guide](docs/SOLVER_TUNING_GU
 - [Next Sprint Execution Queue](docs/NEXT_SPRINT_EXECUTION_QUEUE.md)
 - [Profiling Quickstart](profiling/README.md)
 - [Comprehensive Technical Study](SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md) (30,000+ words)
+
+## Code Health & Hardening
+
+The codebase has undergone **8 systematic hardening waves** (248 tasks total, all
+completed) that replaced silent clamping, `unwrap()` calls, and implicit coercion
+with explicit `FusionResult<T>` error propagation throughout the Rust workspace.
+
+| Wave | Scope | Tasks | Highlights |
+|------|-------|-------|------------|
+| **S2** | Scaffold integrity | 8 | Module wiring, import consistency |
+| **S3** | CI pipeline | 6 | `cargo fmt --check`, `clippy`, test gates |
+| **S4** | Baseline coverage | 4 | Property-based tests (Hypothesis + proptest) |
+| **H5** | SCPN compiler & controller | 37 | Deterministic replay, fault injection, contract verification |
+| **H6** | Digital twin + RL | 9 | Chaos monkey campaigns, bit-flip resilience |
+| **H7** | Control + diagnostics | 90 | Scoped RNG isolation, sensor model guards, MPC input validation |
+| **H8** | All 10 Rust crates | 94 | Every `unwrap()` → `FusionResult`, input validation guards, shape checks |
+
+Every production-path module now returns structured errors rather than panicking.
+The full task registry is at [`docs/PHASE3_EXECUTION_REGISTRY.md`](docs/PHASE3_EXECUTION_REGISTRY.md).
+
+## Known Limitations & Roadmap
+
+This project is honest about what it does and does not do.
+
+### What it does not do (yet)
+
+| Gap | Status | Notes |
+|-----|--------|-------|
+| **3D MHD / stellarator equilibrium** | Interface only (`equilibrium_3d.py`) | Fourier-mode parameterization exists; no force-balance solve |
+| **Gyrokinetic turbulence** | Not planned | Use GENE/GS2 externally; SCPN provides surrogate coupling points |
+| **5D kinetic transport** | Not planned | Deliberately reduced-order for real-time control |
+| **GPU acceleration** | Roadmap ([GPU Roadmap](docs/GPU_ACCELERATION_ROADMAP.md)) | Mock benchmark only; CUDA kernels not yet implemented |
+| **Pre-trained neural weights** | Not shipped | Users must train on their own simulation data |
+| **Point-wise RMSE validation** | Partial | Topology checks (axis, q-profile, GS sign) on 8 SPARC files; not yet point-wise psi comparison |
+
+### What it does well
+
+| Strength | Evidence |
+|----------|----------|
+| **Neuro-symbolic control pipeline** | Petri net → SNN compilation with formal verification (37 hardening tasks) |
+| **Surrogate modeling** | FNO turbulence (41 KB trained weights), neural transport MLP, neural equilibrium |
+| **Digital twin + RL** | In-situ Q-learning policy training with chaos monkey fault injection |
+| **Code health** | 248 hardening tasks, 100% explicit error handling in Rust, property-based tests |
+| **Real data validation** | 8 SPARC GEQDSK files (CFS), 20-shot ITPA H-mode confinement database |
+| **Graceful degradation** | Every module works without Rust, without SC-NeuroCore, without GPU |
+
+### Alignment with DOE Fusion S&T Roadmap
+
+The project's control-first architecture aligns with DOE priorities for:
+- **Plasma control systems** needed for ITER and pilot plant operations
+- **AI/ML integration** in fusion (surrogate models, disruption prediction, real-time optimization)
+- **Digital twin** capabilities for reactor design validation
+- **Workforce development** — accessible Python+Rust codebase with 6 tutorial notebooks
+
+Physics-first capabilities (gyrokinetics, 3D MHD, kinetic transport) are explicitly
+deferred to established codes. SCPN Fusion Core is designed to **consume** their
+outputs as training data for surrogates, not to **replace** them.
 
 ## Validation Data Licensing
 

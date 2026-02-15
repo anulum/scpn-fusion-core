@@ -10,6 +10,20 @@
 
 ## Unreleased
 
+### Documentation — README Repositioning
+
+- Repositioned project identity in README.md as a **neuro-symbolic control framework**
+  rather than a physics simulation suite competing with TRANSP/GENE/JINTRAC.
+- Added Design Philosophy table (control-first, graceful degradation, explicit errors,
+  real data validation, reduced-order by design).
+- Expanded Neuro-Symbolic Compiler section from 7 lines to ~40 lines with pipeline
+  diagram, 5-stage description, and "Why This Matters" rationale.
+- Reorganised simulation modes into 4 maturity tiers (Production / Validated /
+  Reduced-order / Experimental) with hardening task counts.
+- Added Code Health & Hardening section documenting all 8 hardening waves (248 tasks).
+- Added Known Limitations & Roadmap section with honest gap table, strengths table,
+  and DOE Fusion S&T Roadmap alignment.
+
 ### Multigrid Wiring and Experimental Validation
 
 - Wired geometric multigrid V-cycle solver into `FusionKernel` Picard loop:
