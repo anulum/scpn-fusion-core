@@ -254,6 +254,13 @@ def manufactured_solve_vectorised(
 
     Much faster than the scalar version for grids > 30×30.
     """
+    if not np.isfinite(omega) or omega <= 0.0 or omega >= 2.0:
+        raise ValueError("omega must be finite and in (0, 2)")
+    if max_iter <= 0:
+        raise ValueError("max_iter must be > 0")
+    if not np.isfinite(tol) or tol < 0.0:
+        raise ValueError("tol must be finite and >= 0")
+
     R, Z = eq.r, eq.z
     nz, nr = eq.nh, eq.nw
     dR = float(R[1] - R[0])
@@ -301,11 +308,12 @@ def manufactured_solve_vectorised(
 
         # Convergence check (every 10 iterations to save time)
         if (it + 1) % 10 == 0 or it == max_iter - 1:
-            diff = np.max(np.abs(psi[1:-1, 1:-1] - eq.psirz[1:-1, 1:-1]))
             # Use the GS residual as convergence metric
             L_psi = gs_operator(psi, R, Z)
             res_field = L_psi[1:-1, 1:-1] - source[1:-1, 1:-1]
             final_res = float(np.max(np.abs(res_field)))
+            if final_res <= tol:
+                break
 
     solve_ms = (time.perf_counter() - t0) * 1000.0
     return psi, it + 1, final_res, solve_ms
@@ -437,18 +445,29 @@ def validate_all_sparc(sparc_dir: Path | None = None) -> PsiRMSESummary:
 
     rows = [asdict(r) for r in results]
 
-    norms = [r.psi_rmse_norm for r in results if not np.isnan(r.psi_rmse_norm)]
+    finite_norm_entries = [
+        (idx, r.psi_rmse_norm)
+        for idx, r in enumerate(results)
+        if np.isfinite(r.psi_rmse_norm)
+    ]
+    norms = [norm for _, norm in finite_norm_entries]
     rel_l2s = [r.psi_relative_l2 for r in results]
     gs_l2s = [r.gs_residual_l2 for r in results]
 
-    worst_idx = int(np.argmax(norms)) if norms else 0
+    if finite_norm_entries:
+        worst_idx, worst_norm = max(finite_norm_entries, key=lambda item: item[1])
+        worst_file = results[worst_idx].file
+    else:
+        worst_norm = float("nan")
+        worst_file = ""
+
     return PsiRMSESummary(
         count=len(results),
         mean_psi_rmse_norm=float(np.mean(norms)) if norms else float("nan"),
         mean_psi_relative_l2=float(np.mean(rel_l2s)),
         mean_gs_residual_l2=float(np.mean(gs_l2s)),
-        worst_psi_rmse_norm=float(np.max(norms)) if norms else float("nan"),
-        worst_file=results[worst_idx].file if results else "",
+        worst_psi_rmse_norm=float(worst_norm),
+        worst_file=worst_file,
         rows=rows,
     )
 

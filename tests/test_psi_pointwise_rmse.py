@@ -24,8 +24,10 @@ pytestmark = pytest.mark.skipif(
     reason="SPARC reference data not available",
 )
 
+import validation.psi_pointwise_rmse as psi_rmse_mod
 from scpn_fusion.core.eqdsk import read_geqdsk
 from validation.psi_pointwise_rmse import (
+    PsiRMSEResult,
     compute_gs_source,
     compute_psi_rmse,
     gs_operator,
@@ -120,6 +122,30 @@ class TestManufacturedSolve:
         )
         assert np.isfinite(metrics["psi_rmse_norm"])
 
+    def test_vectorised_solver_honours_tolerance_for_early_stop(self):
+        """Very loose tolerance should stop at first convergence checkpoint."""
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        _, iters, _, _ = manufactured_solve_vectorised(
+            eq, omega=1.3, max_iter=40, tol=1e12,
+        )
+        assert iters == 10
+
+    @pytest.mark.parametrize(
+        ("kwargs", "match"),
+        [
+            ({"omega": 0.0}, "omega"),
+            ({"omega": 2.0}, "omega"),
+            ({"omega": float("nan")}, "omega"),
+            ({"max_iter": 0}, "max_iter"),
+            ({"tol": -1e-9}, "tol"),
+            ({"tol": float("inf")}, "tol"),
+        ],
+    )
+    def test_vectorised_solver_rejects_invalid_controls(self, kwargs, match):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        with pytest.raises(ValueError, match=match):
+            manufactured_solve_vectorised(eq, **kwargs)
+
 
 class TestComputePsiRMSE:
     """RMSE computation correctness."""
@@ -180,3 +206,46 @@ class TestValidateAllSPARC:
         assert np.isfinite(summary.mean_psi_relative_l2)
         assert np.isfinite(summary.mean_gs_residual_l2)
         assert summary.worst_file != ""
+
+    def test_worst_file_ignores_nan_rmse_entries(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        # Create placeholder file names to drive deterministic sort order.
+        f_nan = tmp_path / "a_nan.geqdsk"
+        f_good = tmp_path / "b_good.geqdsk"
+        f_nan.write_text("placeholder", encoding="utf-8")
+        f_good.write_text("placeholder", encoding="utf-8")
+
+        def _row(
+            name: str,
+            psi_rmse_norm: float,
+        ) -> PsiRMSEResult:
+            return PsiRMSEResult(
+                file=name,
+                grid="3x3",
+                gs_residual_l2=0.1,
+                gs_residual_max=0.2,
+                psi_rmse_wb=1e-3,
+                psi_rmse_norm=psi_rmse_norm,
+                psi_rmse_plasma_wb=1e-3,
+                psi_max_error_wb=2e-3,
+                psi_relative_l2=0.01,
+                sor_iterations=10,
+                sor_residual=1e-4,
+                solve_time_ms=1.0,
+            )
+
+        fake_rows = {
+            f_nan.name: _row(f_nan.name, float("nan")),
+            f_good.name: _row(f_good.name, 0.25),
+        }
+
+        def _fake_validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
+            del warm_start
+            return fake_rows[path.name]
+
+        monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)
+        summary = psi_rmse_mod.validate_all_sparc(tmp_path)
+        assert summary.count == 2
+        assert summary.worst_file == f_good.name
+        assert summary.worst_psi_rmse_norm == pytest.approx(0.25)
