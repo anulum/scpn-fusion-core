@@ -460,7 +460,13 @@ impl FusionKernel {
         }
         let summary = summarize_particle_population(particles, runaway_threshold_mev)?;
         let particle_j_phi = deposit_toroidal_current_density(particles, &self.grid)?;
-        self.set_particle_current_feedback(particle_j_phi, coupling)?;
+        self.set_particle_current_feedback(particle_j_phi, coupling)
+            .map_err(|err| match err {
+                FusionError::PhysicsViolation(msg) => FusionError::PhysicsViolation(format!(
+                    "particle population feedback setup failed: {msg}"
+                )),
+                other => other,
+            })?;
         Ok(summary)
     }
 
@@ -868,6 +874,32 @@ mod tests {
         match err {
             FusionError::PhysicsViolation(msg) => {
                 assert!(msg.contains("non-empty"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_particle_feedback_from_population_rejects_out_of_domain_full_coupling() {
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        let particles = vec![ChargedParticle {
+            x_m: 100.0,
+            y_m: 0.0,
+            z_m: 100.0,
+            vx_m_s: 0.0,
+            vy_m_s: 2.0e7,
+            vz_m_s: 0.0,
+            charge_c: 1.602_176_634e-19,
+            mass_kg: 1.672_621_923_69e-27,
+            weight: 3.0e16,
+        }];
+        let err = kernel
+            .set_particle_feedback_from_population(&particles, 1.0, 0.5)
+            .expect_err("out-of-domain population with full coupling must fail");
+        match err {
+            FusionError::PhysicsViolation(msg) => {
+                assert!(msg.contains("feedback setup failed"));
+                assert!(msg.contains("coupling=1") || msg.contains("near zero"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
