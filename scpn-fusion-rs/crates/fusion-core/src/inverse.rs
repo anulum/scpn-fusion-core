@@ -198,6 +198,26 @@ fn validate_probe_coordinates(probes_rz: &[(f64, f64)]) -> FusionResult<()> {
     Ok(())
 }
 
+fn validate_probe_domain(probes_rz: &[(f64, f64)], grid: &Grid2D) -> FusionResult<()> {
+    if grid.nr == 0 || grid.nz == 0 {
+        return Err(FusionError::ConfigError(
+            "probe-domain validation requires non-empty grid".to_string(),
+        ));
+    }
+    let r_min = grid.r[0].min(grid.r[grid.nr - 1]);
+    let r_max = grid.r[0].max(grid.r[grid.nr - 1]);
+    let z_min = grid.z[0].min(grid.z[grid.nz - 1]);
+    let z_max = grid.z[0].max(grid.z[grid.nz - 1]);
+    for (idx, (r, z)) in probes_rz.iter().enumerate() {
+        if *r < r_min || *r > r_max || *z < z_min || *z > z_max {
+            return Err(FusionError::ConfigError(format!(
+                "probe {idx} is outside grid bounds: (R={r}, Z={z}) not in R[{r_min}, {r_max}] Z[{z_min}, {z_max}]"
+            )));
+        }
+    }
+    Ok(())
+}
+
 fn validate_measurements(measurements: &[f64]) -> FusionResult<()> {
     if measurements.iter().any(|m| !m.is_finite()) {
         return Err(FusionError::ConfigError(
@@ -410,6 +430,7 @@ fn kernel_forward_observables(
         });
     }
 
+    validate_probe_domain(probes_rz, kernel.grid())?;
     let observables = kernel.sample_psi_at_probes(probes_rz)?;
     validate_observables(&observables, probes_rz.len(), "kernel forward observables")?;
     Ok(observables)
@@ -530,6 +551,7 @@ fn kernel_analytical_forward_and_jacobian(
         });
     }
 
+    validate_probe_domain(probes_rz, kernel.grid())?;
     let base_observables = kernel.sample_psi_at_probes(probes_rz)?;
     validate_observables(
         &base_observables,
@@ -1306,6 +1328,26 @@ mod tests {
         .expect_err("non-finite measurements must error");
         match bad_measurement_err {
             FusionError::ConfigError(msg) => assert!(msg.contains("measurements must be finite")),
+            other => panic!("Unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_kernel_inverse_rejects_out_of_domain_probes() {
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
+            .unwrap();
+        let kcfg = KernelInverseConfig::default();
+        let err = reconstruct_equilibrium_with_kernel(
+            &cfg,
+            &[(100.0, 0.0), (6.3, 0.1)],
+            &[1.0, 1.0],
+            ProfileParams::default(),
+            ProfileParams::default(),
+            &kcfg,
+        )
+        .expect_err("out-of-domain probes must error");
+        match err {
+            FusionError::ConfigError(msg) => assert!(msg.contains("outside grid bounds")),
             other => panic!("Unexpected error: {other:?}"),
         }
     }
