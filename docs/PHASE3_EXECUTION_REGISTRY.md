@@ -680,4 +680,5 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-142`
 - Completed: `H8-143`
 - Completed: `H8-144`
-- Next active task: none (deferred-pool execution wave complete; post-S4 hardening queue exhausted; H8 hardening wave open by direct execution).
+- Active: `H8-145` (Harden Director interface with strict finite-value telemetry guards and mission envelope validation)
+- Next active task: none.

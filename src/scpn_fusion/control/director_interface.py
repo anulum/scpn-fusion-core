@@ -132,13 +132,27 @@ class DirectorInterface:
         """
         Translate physical telemetry into a semantic prompt for the Director.
         """
+        ip = float(ip)
+        err_r = float(err_r)
+        err_z = float(err_z)
+        brain_activity_arr = np.asarray(brain_activity, dtype=np.float64)
+
+        if not np.isfinite(ip):
+            raise ValueError("ip must be finite.")
+        if not np.isfinite(err_r):
+            raise ValueError("err_r must be finite.")
+        if not np.isfinite(err_z):
+            raise ValueError("err_z must be finite.")
+        if not np.all(np.isfinite(brain_activity_arr)):
+            raise ValueError("brain_activity must contain finite values.")
+
         stability = "Stable"
         if abs(err_r) > 0.1 or abs(err_z) > 0.1:
             stability = "Unstable"
         if abs(err_r) > 0.5:
             stability = "Critical"
 
-        neural_entropy = float(np.std(np.asarray(brain_activity, dtype=np.float64)))
+        neural_entropy = float(np.std(brain_activity_arr))
         return (
             f"Time={t}, Ip={ip:.1f}, Stability={stability}, "
             f"BrainEntropy={neural_entropy:.2f}"
