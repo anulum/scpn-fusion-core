@@ -14,7 +14,7 @@ import copy
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
-    from scpn_fusion.core.fusion_kernel import FusionKernel
+    from scpn_fusion.core.fusion_kernel import FusionKernel  # type: ignore[assignment]
 
 def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.5):
     """

@@ -94,7 +94,7 @@ class BreedingBlanket:
         # Solve
         phi = np.linalg.solve(A, b)
         
-        return phi
+        return phi  # type: ignore[return-value,unused-ignore]
 
     def calculate_tbr(self, phi: NDArray[np.float64]) -> tuple[float, NDArray[np.float64]]:
         """
@@ -108,7 +108,7 @@ class BreedingBlanket:
         if hasattr(np, "trapezoid"):
             total_production = np.trapezoid(production_rate, self.x)
         else:  # pragma: no cover - legacy NumPy fallback
-            total_production = np.trapz(production_rate, self.x)
+            total_production = np.trapz(production_rate, self.x)  # type: ignore[attr-defined,unused-ignore]
         
         # Incoming Current (Approx D * dPhi/dx at boundary, or simplified Incident Flux)
         # TBR is defined relative to 1 source neutron entering.
@@ -453,7 +453,7 @@ class MultiGroupBlanket:
         prod_g3 = self.sigma_capture_g3 * phi_g3
         total_prod = prod_g1 + prod_g2 + prod_g3
 
-        trap = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
+        trap = np.trapezoid if hasattr(np, "trapezoid") else np.trapz  # type: ignore[attr-defined,unused-ignore]
         total_tritium = trap(total_prod, self.x)
         # Incident partial current: J⁺ = φ(0)/4 for isotropic diffuse source
         # (standard diffusion theory; the single-group model above uses φ/2
