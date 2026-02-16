@@ -671,6 +671,7 @@ fn py_advance_boris(
 }
 
 /// Get alpha heating power density profile on R-Z grid.
+#[allow(clippy::too_many_arguments)]
 #[pyfunction]
 fn py_get_heating_profile<'py>(
     py: Python<'py>,
