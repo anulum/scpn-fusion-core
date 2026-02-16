@@ -16,12 +16,42 @@ fn make_grid(nz: usize, nr: usize) -> Grid2D {
 
 fn iter_coils() -> Vec<CoilConfig> {
     vec![
-        CoilConfig { name: "CS1".into(), r: 2.0, z: 2.0, current: 40e6 },
-        CoilConfig { name: "CS2".into(), r: 2.0, z: -2.0, current: 40e6 },
-        CoilConfig { name: "PF1".into(), r: 8.5, z: 5.0, current: -10e6 },
-        CoilConfig { name: "PF2".into(), r: 8.5, z: -5.0, current: -10e6 },
-        CoilConfig { name: "PF3".into(), r: 4.0, z: 7.5, current: -5e6 },
-        CoilConfig { name: "PF4".into(), r: 4.0, z: -7.5, current: -5e6 },
+        CoilConfig {
+            name: "CS1".into(),
+            r: 2.0,
+            z: 2.0,
+            current: 40e6,
+        },
+        CoilConfig {
+            name: "CS2".into(),
+            r: 2.0,
+            z: -2.0,
+            current: 40e6,
+        },
+        CoilConfig {
+            name: "PF1".into(),
+            r: 8.5,
+            z: 5.0,
+            current: -10e6,
+        },
+        CoilConfig {
+            name: "PF2".into(),
+            r: 8.5,
+            z: -5.0,
+            current: -10e6,
+        },
+        CoilConfig {
+            name: "PF3".into(),
+            r: 4.0,
+            z: 7.5,
+            current: -5e6,
+        },
+        CoilConfig {
+            name: "PF4".into(),
+            r: 4.0,
+            z: -7.5,
+            current: -5e6,
+        },
     ]
 }
 

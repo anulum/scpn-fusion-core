@@ -27,10 +27,30 @@ fn iter_like_config(nz: usize, nr: usize) -> ReactorConfig {
             profiles: None,
         },
         coils: vec![
-            CoilConfig { name: "CS1".into(), r: 2.0, z: 2.0, current: 40e6 },
-            CoilConfig { name: "CS2".into(), r: 2.0, z: -2.0, current: 40e6 },
-            CoilConfig { name: "PF1".into(), r: 8.5, z: 5.0, current: -10e6 },
-            CoilConfig { name: "PF2".into(), r: 8.5, z: -5.0, current: -10e6 },
+            CoilConfig {
+                name: "CS1".into(),
+                r: 2.0,
+                z: 2.0,
+                current: 40e6,
+            },
+            CoilConfig {
+                name: "CS2".into(),
+                r: 2.0,
+                z: -2.0,
+                current: 40e6,
+            },
+            CoilConfig {
+                name: "PF1".into(),
+                r: 8.5,
+                z: 5.0,
+                current: -10e6,
+            },
+            CoilConfig {
+                name: "PF2".into(),
+                r: 8.5,
+                z: -5.0,
+                current: -10e6,
+            },
         ],
         solver: SolverConfig {
             max_iterations: 10,

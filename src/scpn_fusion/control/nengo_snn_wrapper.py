@@ -303,7 +303,7 @@ class NengoSNNController:
             safe_label = label.replace(" ", "_").replace(">", "to")
             payload[f"weight_{safe_label}"] = w
 
-        np.savez(path, **payload)
+        np.savez(str(path), **payload)
         logger.info("Exported FPGA weights to %s", path)
 
     def export_loihi(self, filename: str | Path) -> None:
@@ -339,7 +339,7 @@ class NengoSNNController:
             "format": np.array([1]),  # version marker
         }
 
-        np.savez(path, **payload)
+        np.savez(str(path), **payload)
         loihi_sim.close()
         logger.info("Exported Loihi configuration to %s", path)
 
