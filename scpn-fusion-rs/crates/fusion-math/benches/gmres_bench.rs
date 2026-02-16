@@ -62,5 +62,10 @@ fn bench_gmres_vs_sor_65(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, bench_gmres_33, bench_gmres_65, bench_gmres_vs_sor_65);
+criterion_group!(
+    benches,
+    bench_gmres_33,
+    bench_gmres_65,
+    bench_gmres_vs_sor_65
+);
 criterion_main!(benches);

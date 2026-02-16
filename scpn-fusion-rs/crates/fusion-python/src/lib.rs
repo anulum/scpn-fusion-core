@@ -17,13 +17,13 @@ use fusion_core::particles::{
     summarize_particle_population, ChargedParticle,
 };
 use fusion_core::source::ProfileParams;
-use fusion_types::state::Grid2D;
 use fusion_engineering::blanket::neutron_wall_loading;
 use fusion_engineering::layout::{
     aries_cost_scaling, cost_of_electricity as engineering_coe, scan_major_radius,
 };
 use fusion_engineering::tritium::tritium_breeding_ratio;
 use fusion_ml::neural_transport::NeuralTransportModel;
+use fusion_types::state::Grid2D;
 // ReactorConfig used internally by FusionKernel::from_file
 
 // ─── Equilibrium solver ───
