@@ -36,7 +36,7 @@ rand_distr = "0.4"
 pyo3 = { version = "0.24", features = ["extension-module"] }
 numpy = "0.24"
 ndarray-npy = "0.9.1"
-criterion = { version = "0.5" }
+criterion = { version = "0.8" }
 proptest = "1.4"
 
 [profile.release]
