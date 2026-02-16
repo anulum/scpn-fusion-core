@@ -603,6 +603,7 @@ dependencies = [
 name = "fusion-physics"
 version = "0.1.0"
 dependencies = [
+ "criterion",
  "fusion-math",
  "fusion-types",
  "ndarray",

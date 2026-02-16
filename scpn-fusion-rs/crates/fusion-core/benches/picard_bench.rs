@@ -55,6 +55,7 @@ fn iter_like_config(nz: usize, nr: usize) -> ReactorConfig {
         solver: SolverConfig {
             max_iterations: 10,
             convergence_threshold: 1e-6,
+            relaxation_factor: 1.0,
         },
     }
 }
@@ -70,7 +71,7 @@ fn bench_picard_sor(c: &mut Criterion) {
                 let config = iter_like_config(nz, nr);
                 let mut kernel = FusionKernel::new(config);
                 let result = kernel.solve_equilibrium().expect("solve should succeed");
-                black_box(result.convergence_history.len());
+                black_box(result.iterations);
             })
         });
     }
@@ -91,7 +92,7 @@ fn bench_picard_multigrid(c: &mut Criterion) {
                 let mut kernel = FusionKernel::new(config);
                 kernel.set_solver_method(SolverMethod::PicardMultigrid);
                 let result = kernel.solve_equilibrium().expect("solve should succeed");
-                black_box(result.convergence_history.len());
+                black_box(result.iterations);
             })
         });
     }

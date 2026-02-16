@@ -14,7 +14,7 @@ fn bench_transport_step(c: &mut Criterion) {
 
     group.bench_function("lmode_single_step", |b| {
         b.iter_batched(
-            || TransportSolver::new(),
+            TransportSolver::new,
             |mut solver| {
                 solver.step(30.0, 0.0).expect("step should succeed");
                 black_box(solver.profiles.te[0]);
@@ -25,7 +25,7 @@ fn bench_transport_step(c: &mut Criterion) {
 
     group.bench_function("lmode_100_steps", |b| {
         b.iter_batched(
-            || TransportSolver::new(),
+            TransportSolver::new,
             |mut solver| {
                 for _ in 0..100 {
                     solver.step(30.0, 0.0).expect("step should succeed");

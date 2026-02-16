@@ -332,7 +332,7 @@ class NengoSNNController:
             self._network, dt=self.cfg.dt, progress_bar=False,
         )
 
-        payload = {
+        payload: dict[str, Any] = {
             "n_neurons": np.array([self.cfg.n_neurons]),
             "n_channels": np.array([self.cfg.n_channels]),
             "dt": np.array([self.cfg.dt]),
