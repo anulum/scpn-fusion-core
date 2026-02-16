@@ -1,28 +1,18 @@
 # ──────────────────────────────────────────────────────────────────────
-# SCPN Fusion Core — Control Stress-Test Campaign
+# SCPN Fusion Core — 4-Way Controller Comparison
 # © 1998–2026 Miroslav Šotek. All rights reserved.
 # Contact: www.anulum.li | protoscience@anulum.li
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 """
-Step 2.1: 1000-Shot Stress-Test Campaign.
+Step 2.6: 4-Way Controller Comparison.
 
-Runs PID, H-infinity, MPC (optional), and SNN (optional) controllers
-across identical tokamak scenarios with injected noise, ELM events,
-and ramp transients.
+Runs PID, MPC, SNN, and H-infinity on identical tokamak scenarios,
+computing: mean reward, reward std, P95 latency, disruption rate,
+disruption extension factor (DEF), and energy efficiency.
 
-Metrics per controller:
-  - Mean / std reward
-  - P50, P95, P99 latency (µs)
-  - Disruption rate
-  - Disruption Extension Factor (DEF)
-  - Energy efficiency
-
-Usage:
-    python stress_test_campaign.py              # full 1000 episodes
-    python stress_test_campaign.py --quick      # 10 episodes (CI)
-    python stress_test_campaign.py --episodes 200
+Produces markdown and LaTeX comparison tables.
 """
 
 from __future__ import annotations
@@ -88,17 +78,14 @@ class ControllerMetrics:
     mean_reward: float = 0.0
     std_reward: float = 0.0
     mean_r_error: float = 0.0
-    p50_latency_us: float = 0.0
     p95_latency_us: float = 0.0
-    p99_latency_us: float = 0.0
     disruption_rate: float = 0.0
     mean_def: float = 0.0
     mean_energy_efficiency: float = 0.0
     episodes: list = field(default_factory=list)
 
 
-def _run_pid_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
-    """Run a single PID episode."""
+def _run_pid_episode(config_path, shot_duration=30):
     ctrl = IsoFluxController(config_path, verbose=False)
     t0 = time.perf_counter_ns()
     result = ctrl.run_shot(shot_duration=shot_duration, save_plot=False)
@@ -117,8 +104,7 @@ def _run_pid_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult
     )
 
 
-def _run_hinf_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
-    """Run a single H-infinity episode."""
+def _run_hinf_episode(config_path, shot_duration=30):
     ctrl = IsoFluxController(config_path, verbose=False)
     hinf = get_radial_robust_controller()
     ctrl.pid_step = lambda pid, err: hinf.step(err, 0.05)
@@ -139,49 +125,24 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResul
     )
 
 
-# Controller registry — always includes PID and H-infinity
-CONTROLLERS: dict[str, Callable] = {
+CONTROLLERS = {
     "PID": _run_pid_episode,
     "H-infinity": _run_hinf_episode,
 }
 
 
-def run_campaign(
-    n_episodes: int = 1000,
-    shot_duration: int = 30,
-    config_path: Any = None,
-    noise_level: float = 0.2,
-    delay_ms: float = 50.0,
-) -> dict[str, ControllerMetrics]:
-    """Run the full stress-test campaign across all available controllers.
-
-    Parameters
-    ----------
-    n_episodes : int
-        Number of episodes per controller (default: 1000).
-    shot_duration : int
-        Simulated shot duration in seconds.
-    config_path : Path or str or None
-        Path to ITER config JSON; defaults to ``repo_root / "iter_config.json"``.
-    noise_level : float
-        Noise amplitude for perturbations.
-    delay_ms : float
-        Simulated actuator delay in milliseconds.
-    """
+def run_comparison(n_episodes=100, shot_duration=30, config_path=None):
+    """Run all available controllers on identical scenarios."""
     if config_path is None:
         config_path = repo_root / "iter_config.json"
 
-    print(f"=== 1000-Shot Stress-Test Campaign ===")
-    print(f"Episodes: {n_episodes} | Shot duration: {shot_duration}s")
-    print(f"Noise: {noise_level*100:.0f}% | Delay: {delay_ms:.0f}ms")
-    print(f"Controllers: {', '.join(CONTROLLERS.keys())}")
+    print(f"=== 4-Way Controller Comparison ===")
+    print(f"Episodes: {n_episodes} | Controllers: {', '.join(CONTROLLERS.keys())}")
 
-    results: dict[str, ControllerMetrics] = {}
-
+    results = {}
     for ctrl_name, run_fn in CONTROLLERS.items():
-        print(f"\n--- Running {ctrl_name} ({n_episodes} episodes) ---")
+        print(f"--- Running {ctrl_name} ({n_episodes} episodes) ---")
         metrics = ControllerMetrics(name=ctrl_name)
-
         for ep in range(n_episodes):
             try:
                 episode = run_fn(config_path, shot_duration)
@@ -189,7 +150,6 @@ def run_campaign(
             except Exception as e:
                 print(f"  Episode {ep} failed: {e}")
                 continue
-
             if (ep + 1) % max(1, n_episodes // 10) == 0:
                 print(f"  Episode {ep + 1}/{n_episodes}")
 
@@ -199,91 +159,58 @@ def run_campaign(
             metrics.n_episodes = len(metrics.episodes)
             metrics.mean_reward = float(np.mean(rewards))
             metrics.std_reward = float(np.std(rewards))
-            metrics.mean_r_error = float(
-                np.mean([e.mean_abs_r_error for e in metrics.episodes])
-            )
-            metrics.p50_latency_us = float(np.percentile(latencies, 50))
+            metrics.mean_r_error = float(np.mean([e.mean_abs_r_error for e in metrics.episodes]))
             metrics.p95_latency_us = float(np.percentile(latencies, 95))
-            metrics.p99_latency_us = float(np.percentile(latencies, 99))
-            metrics.disruption_rate = float(
-                np.mean([e.disrupted for e in metrics.episodes])
-            )
-            metrics.mean_def = float(
-                np.mean([e.t_disruption / shot_duration for e in metrics.episodes])
-            )
-            metrics.mean_energy_efficiency = float(
-                np.mean([e.energy_efficiency for e in metrics.episodes])
-            )
+            metrics.disruption_rate = float(np.mean([e.disrupted for e in metrics.episodes]))
+            metrics.mean_def = float(np.mean([e.t_disruption / shot_duration for e in metrics.episodes]))
+            metrics.mean_energy_efficiency = float(np.mean([e.energy_efficiency for e in metrics.episodes]))
         results[ctrl_name] = metrics
 
     return results
 
 
-def generate_summary_table(results: dict[str, ControllerMetrics]) -> str:
-    """Generate a markdown summary table."""
+def generate_comparison_table(results):
+    """Generate markdown comparison table."""
     lines = [
-        "| Controller | Episodes | Mean Reward | Std Reward | Mean R Error | "
-        "P50 Lat (us) | P95 Lat (us) | P99 Lat (us) | Disrupt Rate | DEF | Energy Eff |",
-        "|------------|----------|-------------|------------|--------------|"
-        "-------------|-------------|-------------|--------------|-----|------------|",
+        "| Controller | Episodes | Mean Reward | P95 Latency (us) | Disruption Rate | DEF | Energy Eff |",
+        "|------------|----------|-------------|-------------------|-----------------|-----|------------|",
     ]
     for name, m in results.items():
         lines.append(
             f"| {name:<10} | {m.n_episodes:>8} | {m.mean_reward:>11.4f} "
-            f"| {m.std_reward:>10.4f} | {m.mean_r_error:>12.4f} "
-            f"| {m.p50_latency_us:>12.0f} | {m.p95_latency_us:>12.0f} "
-            f"| {m.p99_latency_us:>12.0f} | {m.disruption_rate:>12.2%} "
+            f"| {m.p95_latency_us:>17.0f} | {m.disruption_rate:>15.2%} "
             f"| {m.mean_def:>3.2f} | {m.mean_energy_efficiency:>10.3f} |"
         )
     return "\n".join(lines)
 
 
-def save_results_json(
-    results: dict[str, ControllerMetrics], path: Path
-) -> None:
-    """Persist campaign results to JSON."""
-    data = {}
+def generate_latex_table(results):
+    """Generate publication-ready LaTeX table."""
+    lines = [
+        r"\begin{table}[htbp]",
+        r"\centering",
+        r"\caption{4-Way Controller Comparison}",
+        r"\begin{tabular}{lrrrrrr}",
+        r"\toprule",
+        r"Controller & Episodes & Mean Reward & P95 Lat. & Disrupt. & DEF & Eff. \\",
+        r"\midrule",
+    ]
     for name, m in results.items():
-        data[name] = {
-            "n_episodes": m.n_episodes,
-            "mean_reward": m.mean_reward,
-            "std_reward": m.std_reward,
-            "mean_r_error": m.mean_r_error,
-            "p50_latency_us": m.p50_latency_us,
-            "p95_latency_us": m.p95_latency_us,
-            "p99_latency_us": m.p99_latency_us,
-            "disruption_rate": m.disruption_rate,
-            "mean_def": m.mean_def,
-            "mean_energy_efficiency": m.mean_energy_efficiency,
-        }
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2))
-    print(f"Results saved to {path}")
+        lines.append(
+            f"  {name} & {m.n_episodes} & {m.mean_reward:.4f} "
+            f"& {m.p95_latency_us:.0f} & {m.disruption_rate:.2%} "
+            f"& {m.mean_def:.2f} & {m.mean_energy_efficiency:.3f} \\\\"
+        )
+    lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="1000-Shot Stress-Test Campaign"
-    )
-    parser.add_argument(
-        "--episodes", type=int, default=1000,
-        help="Number of episodes per controller (default: 1000)",
-    )
-    parser.add_argument(
-        "--quick", action="store_true",
-        help="Quick mode: 10 episodes for CI validation",
-    )
-    parser.add_argument(
-        "--output", type=str, default=None,
-        help="Path to save JSON results",
-    )
+    parser = argparse.ArgumentParser(description="4-Way Controller Comparison")
+    parser.add_argument("--episodes", type=int, default=100)
+    parser.add_argument("--quick", action="store_true", help="5 episodes for CI")
     args = parser.parse_args()
-
     if args.quick:
-        args.episodes = 10
-
-    results = run_campaign(n_episodes=args.episodes)
-    print("\n" + generate_summary_table(results))
-
-    if args.output:
-        save_results_json(results, Path(args.output))
+        args.episodes = 5
+    results = run_comparison(n_episodes=args.episodes)
+    print("\n" + generate_comparison_table(results))

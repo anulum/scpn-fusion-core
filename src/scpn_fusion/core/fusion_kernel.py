@@ -36,6 +36,15 @@ logger = logging.getLogger(__name__)
 # ── Type aliases ──────────────────────────────────────────────────────
 FloatArray = NDArray[np.float64]
 
+from dataclasses import dataclass, field
+
+@dataclass
+class CoilSet:
+    """External coil set for free-boundary solve."""
+    positions: list[tuple[float, float]] = field(default_factory=list)
+    currents: NDArray[np.float64] = field(default_factory=lambda: np.array([]))
+    turns: list[int] = field(default_factory=list)
+
 
 class FusionKernel:
     """Non-linear free-boundary Grad-Shafranov equilibrium solver.
@@ -966,8 +975,67 @@ class FusionKernel:
         """Derive the magnetic field components from the solved Psi."""
         dPsi_dR, dPsi_dZ = np.gradient(self.Psi, self.dR, self.dZ)
         R_safe = np.maximum(self.RR, 1e-6)
-        self.B_R: FloatArray = -(1.0 / R_safe) * dPsi_dZ
-        self.B_Z: FloatArray = (1.0 / R_safe) * dPsi_dR
+        self.B_R = -(1.0 / R_safe) * dPsi_dZ
+        self.B_Z = (1.0 / R_safe) * dPsi_dR
+
+    @staticmethod
+    def _green_function(R_src, Z_src, R_obs, Z_obs):
+        """Toroidal Green's function using elliptic integrals."""
+        mu0 = 4e-7 * np.pi
+        denom = (R_obs + R_src)**2 + (Z_obs - Z_src)**2
+        if denom < 1e-30:
+            return 0.0
+        k2 = 4.0 * R_obs * R_src / denom
+        k2 = np.clip(k2, 1e-9, 0.999999)
+        k = np.sqrt(k2)
+        from scipy.special import ellipk, ellipe
+        K_val = ellipk(k2)
+        E_val = ellipe(k2)
+        prefactor = mu0 / (2.0 * np.pi) * np.sqrt(R_obs * R_src)
+        psi = prefactor * ((2.0 - k2) * K_val - 2.0 * E_val) / k
+        return float(psi)
+
+    def _compute_external_flux(self, coils):
+        """Sum Green's function contributions on boundary from CoilSet."""
+        NR, NZ = len(self.R), len(self.Z)
+        psi_ext = np.zeros((NZ, NR))
+        for idx, (pos, current) in enumerate(zip(coils.positions, coils.currents)):
+            R_c, Z_c = pos
+            turns = coils.turns[idx] if idx < len(coils.turns) else 1
+            I_eff = current * turns
+            for iz in range(NZ):
+                for ir in range(NR):
+                    psi_ext[iz, ir] += I_eff * self._green_function(
+                        R_c, Z_c, self.R[ir], self.Z[iz]
+                    )
+        return psi_ext
+
+    def solve_free_boundary(self, coils, max_outer_iter=20, tol=1e-4):
+        """Free-boundary GS solve with external coil currents.
+
+        Iterates between updating boundary flux from coils and
+        solving the internal GS equation.
+        """
+        psi_ext = self._compute_external_flux(coils)
+
+        for outer in range(max_outer_iter):
+            # Apply external flux as boundary condition
+            self.Psi[0, :] = psi_ext[0, :]
+            self.Psi[-1, :] = psi_ext[-1, :]
+            self.Psi[:, 0] = psi_ext[:, 0]
+            self.Psi[:, -1] = psi_ext[:, -1]
+
+            # Inner GS solve (use existing Picard iteration)
+            psi_old = self.Psi.copy()
+            self.solve_equilibrium()
+
+            # Check convergence
+            diff = np.max(np.abs(self.Psi - psi_old))
+            if diff < tol:
+                logger.info("Free-boundary converged at outer iter %d (diff=%.2e)", outer, diff)
+                break
+
+        return {'outer_iterations': outer + 1, 'final_diff': float(diff)}
 
     def save_results(self, filename: str = "equilibrium_nonlinear.npz") -> None:
         """Save the equilibrium state to a compressed NumPy archive.

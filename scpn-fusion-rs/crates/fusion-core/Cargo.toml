@@ -22,3 +22,15 @@ criterion = { workspace = true }
 [[bench]]
 name = "inverse_bench"
 harness = false
+
+[[bench]]
+name = "picard_bench"
+harness = false
+
+[[bench]]
+name = "vacuum_bench"
+harness = false
+
+[[bench]]
+name = "transport_bench"
+harness = false

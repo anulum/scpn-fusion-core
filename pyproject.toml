@@ -39,6 +39,9 @@ dev = [
     "hypothesis>=6.0",
     "mypy>=1.10",
 ]
+snn = [
+    "nengo>=4.0",
+]
 
 [project.scripts]
 scpn-dashboard = "scpn_fusion.ui.app:main"
@@ -73,13 +76,15 @@ files = [
     "src/scpn_fusion/nuclear/blanket_neutronics.py",
     "src/scpn_fusion/nuclear/pwi_erosion.py",
     "src/scpn_fusion/nuclear/temhd_peltier.py",
-    # core/ (selected)
+    # core/
     "src/scpn_fusion/core/eqdsk.py",
     "src/scpn_fusion/core/stability_mhd.py",
     "src/scpn_fusion/core/integrated_transport_solver.py",
+    "src/scpn_fusion/core/tglf_interface.py",
     # control/
     "src/scpn_fusion/control/halo_re_physics.py",
     "src/scpn_fusion/control/h_infinity_controller.py",
+    "src/scpn_fusion/control/nengo_snn_wrapper.py",
     "src/scpn_fusion/control/__init__.py",
 ]
 
@@ -105,4 +110,8 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["streamlit", "streamlit.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["nengo", "nengo.*", "nengo_loihi", "nengo_loihi.*"]
 ignore_missing_imports = true

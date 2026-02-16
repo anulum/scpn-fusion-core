@@ -42,7 +42,7 @@ _rust_sample_firing: Optional[
 ] = None
 
 try:
-    from scpn_fusion_rs import (
+    from scpn_fusion_rs import (  # type: ignore[import-not-found]
         scpn_dense_activations as _rust_dense_activations_impl,
         scpn_marking_update as _rust_marking_update_impl,
         scpn_sample_firing as _rust_sample_firing_impl,

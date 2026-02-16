@@ -728,6 +728,60 @@ def predict_disruption_risk_safe(
         out_meta["reason"] = f"inference_failed:{exc.__class__.__name__}"
         return base_risk, out_meta
 
+def evaluate_predictor(
+    model: Any,
+    X_test: Any,
+    y_test: Any,
+    times_test: Any = None,
+    threshold: float = 0.5,
+) -> dict[str, Any]:
+    """Evaluate disruption predictor on test set.
+
+    Returns dict with accuracy, precision, recall, F1, confusion matrix,
+    and recall@T for T in [10, 20, 30, 50, 100] ms.
+    """
+    pred_list: list[int] = []
+    for seq in X_test:
+        pred = model.predict(seq)
+        pred_list.append(1 if pred > threshold else 0)
+    predictions = np.array(pred_list)
+    y_true = np.array(y_test)
+
+    tp = np.sum((predictions == 1) & (y_true == 1))
+    fp = np.sum((predictions == 1) & (y_true == 0))
+    tn = np.sum((predictions == 0) & (y_true == 0))
+    fn = np.sum((predictions == 0) & (y_true == 1))
+
+    accuracy = (tp + tn) / max(len(y_true), 1)
+    precision = tp / max(tp + fp, 1)
+    recall = tp / max(tp + fn, 1)
+    f1 = 2 * precision * recall / max(precision + recall, 1e-10)
+    fpr = fp / max(fp + tn, 1)
+
+    result = {
+        'accuracy': float(accuracy),
+        'precision': float(precision),
+        'recall': float(recall),
+        'f1': float(f1),
+        'false_positive_rate': float(fpr),
+        'confusion_matrix': {'tp': int(tp), 'fp': int(fp), 'tn': int(tn), 'fn': int(fn)},
+    }
+
+    # Recall@T metrics
+    if times_test is not None:
+        for T_ms in [10, 20, 30, 50, 100]:
+            T_s = T_ms / 1000.0
+            early_enough = np.array(times_test) >= T_s
+            mask = (y_true == 1) & early_enough
+            if mask.sum() > 0:
+                recall_at_t = np.sum(predictions[mask] == 1) / mask.sum()
+            else:
+                recall_at_t = 0.0
+            result[f'recall_at_{T_ms}ms'] = float(recall_at_t)
+
+    return result
+
+
 if __name__ == "__main__":
     import argparse
 

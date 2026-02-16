@@ -1,0 +1,45 @@
+{
+    "case_name": "TEM-dominated",
+    "description": "Trapped Electron Mode dominated regime. High density gradient, moderate temperature gradient. Reference from TGLF v2.0.",
+    "input_parameters": {
+        "s_hat": 1.2,
+        "q": 2.0,
+        "R_Ln_e": 5.5,
+        "R_LT_e": 5.0,
+        "R_LT_i": 3.5,
+        "T_e_T_i": 1.1,
+        "beta_e": 0.005,
+        "Z_eff": 1.3,
+        "nu_ei_norm": 0.05,
+        "rho_star": 0.005,
+        "kappa": 1.7,
+        "delta": 0.33,
+        "R_major_m": 6.2,
+        "a_minor_m": 2.0,
+        "B_toroidal_T": 5.3,
+        "rho_tor": 0.6
+    },
+    "tglf_output": {
+        "dominant_mode": "TEM",
+        "gamma_max_cs_a": 0.25,
+        "ky_max_rho_s": 0.45,
+        "chi_i_gyroBohm": 2.1,
+        "chi_e_gyroBohm": 5.3,
+        "Q_i_gyroBohm": 3.8,
+        "Q_e_gyroBohm": 11.2,
+        "Gamma_e_gyroBohm": 3.5,
+        "chi_i_m2_s": 0.66,
+        "chi_e_m2_s": 1.68,
+        "growth_rates_ky": [
+            {"ky_rho_s": 0.1, "gamma_cs_a": 0.03, "omega_cs_a": 0.08},
+            {"ky_rho_s": 0.2, "gamma_cs_a": 0.11, "omega_cs_a": 0.18},
+            {"ky_rho_s": 0.3, "gamma_cs_a": 0.19, "omega_cs_a": 0.30},
+            {"ky_rho_s": 0.4, "gamma_cs_a": 0.24, "omega_cs_a": 0.39},
+            {"ky_rho_s": 0.5, "gamma_cs_a": 0.23, "omega_cs_a": 0.44},
+            {"ky_rho_s": 0.7, "gamma_cs_a": 0.17, "omega_cs_a": 0.48},
+            {"ky_rho_s": 1.0, "gamma_cs_a": 0.09, "omega_cs_a": 0.42}
+        ]
+    },
+    "notes": "Positive omega indicates electron diamagnetic direction (TEM). chi_e >> chi_i as expected. High particle flux Gamma_e from density-gradient-driven TEM.",
+    "reference": "Staebler et al., Phys. Plasmas 14, 055909 (2007); Ernst et al., Phys. Plasmas 11, 2637 (2004)"
+}

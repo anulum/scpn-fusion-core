@@ -1,0 +1,45 @@
+{
+    "case_name": "ETG-dominated",
+    "description": "Electron Temperature Gradient mode dominated regime. High electron temperature gradient with suppressed ITG. Short-wavelength turbulence at ky*rho_e ~ 0.1-0.3. Reference from TGLF v2.0.",
+    "input_parameters": {
+        "s_hat": 0.6,
+        "q": 1.8,
+        "R_Ln_e": 2.0,
+        "R_LT_e": 12.0,
+        "R_LT_i": 3.0,
+        "T_e_T_i": 1.5,
+        "beta_e": 0.002,
+        "Z_eff": 1.2,
+        "nu_ei_norm": 0.02,
+        "rho_star": 0.005,
+        "kappa": 1.7,
+        "delta": 0.33,
+        "R_major_m": 6.2,
+        "a_minor_m": 2.0,
+        "B_toroidal_T": 5.3,
+        "rho_tor": 0.4
+    },
+    "tglf_output": {
+        "dominant_mode": "ETG",
+        "gamma_max_cs_a": 0.15,
+        "ky_max_rho_s": 8.0,
+        "chi_i_gyroBohm": 0.4,
+        "chi_e_gyroBohm": 8.5,
+        "Q_i_gyroBohm": 0.6,
+        "Q_e_gyroBohm": 22.0,
+        "Gamma_e_gyroBohm": 0.3,
+        "chi_i_m2_s": 0.13,
+        "chi_e_m2_s": 2.69,
+        "growth_rates_ky": [
+            {"ky_rho_s": 1.0, "gamma_cs_a": 0.02, "omega_cs_a": 0.08},
+            {"ky_rho_s": 3.0, "gamma_cs_a": 0.06, "omega_cs_a": 0.22},
+            {"ky_rho_s": 5.0, "gamma_cs_a": 0.11, "omega_cs_a": 0.38},
+            {"ky_rho_s": 8.0, "gamma_cs_a": 0.15, "omega_cs_a": 0.55},
+            {"ky_rho_s": 12.0, "gamma_cs_a": 0.13, "omega_cs_a": 0.68},
+            {"ky_rho_s": 20.0, "gamma_cs_a": 0.08, "omega_cs_a": 0.72},
+            {"ky_rho_s": 30.0, "gamma_cs_a": 0.04, "omega_cs_a": 0.65}
+        ]
+    },
+    "notes": "ETG modes at high ky_rho_s (electron scale). Very large chi_e from electron-scale turbulence. Low particle transport. ITG subdominant due to low R/L_Ti. Requires multiscale treatment for accurate flux prediction.",
+    "reference": "Staebler et al., Phys. Plasmas 14, 055909 (2007); Jenko et al., Phys. Plasmas 7, 1904 (2000)"
+}

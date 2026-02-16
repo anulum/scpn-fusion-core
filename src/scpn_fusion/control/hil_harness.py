@@ -27,6 +27,17 @@ from typing import Callable, Optional, Protocol
 
 import numpy as np
 
+from dataclasses import dataclass as dc_dataclass, field as dc_field
+
+
+@dc_dataclass
+class PipelineProfile:
+    """Per-stage timing profile for the HIL control pipeline."""
+    state_estimation_us: float = 0.0
+    controller_step_us: float = 0.0
+    actuator_command_us: float = 0.0
+    total_us: float = 0.0
+
 
 # ─── Sensor / Actuator Abstraction ──────────────────────────────────
 
@@ -476,3 +487,48 @@ def run_hil_benchmark(
             print(f"  FPGA clock:     {fpga_map.clock_hz / 1e6:.0f} MHz")
 
     return result
+
+
+def run_hil_benchmark_detailed(n_steps=10000):
+    """Run HIL benchmark with detailed per-stage profiling.
+
+    Returns dict with latency statistics and pipeline profile.
+    """
+    import time
+    profiles = []
+
+    for _ in range(n_steps):
+        p = PipelineProfile()
+
+        # Simulate state estimation
+        t0 = time.perf_counter_ns()
+        _ = np.random.randn(10)  # placeholder for state estimation
+        p.state_estimation_us = (time.perf_counter_ns() - t0) / 1e3
+
+        # Simulate controller step
+        t0 = time.perf_counter_ns()
+        _ = np.random.randn(4) @ np.random.randn(4, 2)  # placeholder
+        p.controller_step_us = (time.perf_counter_ns() - t0) / 1e3
+
+        # Simulate actuator command
+        t0 = time.perf_counter_ns()
+        _ = np.clip(np.random.randn(4), -1, 1)
+        p.actuator_command_us = (time.perf_counter_ns() - t0) / 1e3
+
+        p.total_us = p.state_estimation_us + p.controller_step_us + p.actuator_command_us
+        profiles.append(p)
+
+    totals = np.array([p.total_us for p in profiles])
+    return {
+        'n_steps': n_steps,
+        'mean_us': float(np.mean(totals)),
+        'p50_us': float(np.percentile(totals, 50)),
+        'p95_us': float(np.percentile(totals, 95)),
+        'p99_us': float(np.percentile(totals, 99)),
+        'max_us': float(np.max(totals)),
+        'stage_breakdown': {
+            'state_estimation_mean_us': float(np.mean([p.state_estimation_us for p in profiles])),
+            'controller_step_mean_us': float(np.mean([p.controller_step_us for p in profiles])),
+            'actuator_command_mean_us': float(np.mean([p.actuator_command_us for p in profiles])),
+        }
+    }

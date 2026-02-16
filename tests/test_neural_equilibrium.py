@@ -27,6 +27,7 @@ from scpn_fusion.core.neural_equilibrium import (
     NeuralEqConfig,
     NeuralEquilibriumAccelerator,
     SimpleMLP,
+    TrainingResult,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -129,7 +130,7 @@ class TestAcceleratorUnit:
     def test_predict_before_train_raises(self):
         accel = NeuralEquilibriumAccelerator()
         with pytest.raises(RuntimeError, match="not trained"):
-            accel.predict(np.zeros(8))
+            accel.predict(np.zeros(12))
 
     def test_save_load_round_trip(self, tmp_path):
         """Train on synthetic data, save, load, verify predictions match."""
@@ -199,8 +200,78 @@ class TestAcceleratorUnit:
         cfg = NeuralEqConfig()
         assert cfg.n_components == 20
         assert cfg.hidden_sizes == (128, 64, 32)
-        assert cfg.n_input_features == 8
+        assert cfg.n_input_features == 12
         assert cfg.grid_shape == (129, 129)
+        assert cfg.lambda_gs == 0.1
+
+    def test_training_result_new_fields(self):
+        """TrainingResult has val_loss, test_mse, test_max_error with nan defaults."""
+        result = TrainingResult(
+            n_samples=100,
+            n_components=10,
+            explained_variance=0.95,
+            final_loss=0.01,
+            train_time_s=1.0,
+            weights_path="",
+        )
+        assert np.isnan(result.val_loss)
+        assert np.isnan(result.test_mse)
+        assert np.isnan(result.test_max_error)
+
+    def test_gs_residual_loss_smooth_field(self):
+        """GS residual should be small for a smooth quadratic field."""
+        accel = NeuralEquilibriumAccelerator()
+        # Smooth quadratic psi: Laplacian is constant → low residual
+        nh, nw = 20, 20
+        r, z = np.meshgrid(np.linspace(0, 1, nw), np.linspace(0, 1, nh))
+        psi_smooth = r**2 + z**2
+        res = accel._gs_residual_loss(psi_smooth.ravel(), (nh, nw))
+        assert res > 0  # Not zero because Laplacian of r^2+z^2 = 4 everywhere
+        assert np.isfinite(res)
+
+    def test_gs_residual_loss_zero_field(self):
+        """GS residual should be zero for a zero field."""
+        accel = NeuralEquilibriumAccelerator()
+        psi = np.zeros(10 * 10)
+        res = accel._gs_residual_loss(psi, (10, 10))
+        assert res == 0.0
+
+    def test_evaluate_surrogate_before_train_raises(self):
+        """evaluate_surrogate should raise if not trained."""
+        accel = NeuralEquilibriumAccelerator()
+        with pytest.raises(RuntimeError, match="Not trained"):
+            accel.evaluate_surrogate(np.zeros((5, 4)), np.zeros((5, 100)))
+
+    def test_evaluate_surrogate_returns_metrics(self):
+        """evaluate_surrogate should return dict with mse, max_error, gs_residual."""
+        cfg = NeuralEqConfig(
+            n_components=3,
+            hidden_sizes=(8,),
+            n_input_features=4,
+            grid_shape=(10, 10),
+        )
+        accel = NeuralEquilibriumAccelerator(cfg)
+
+        rng = np.random.default_rng(99)
+        X = rng.standard_normal((20, 4))
+        Y = rng.standard_normal((20, 100))
+
+        accel._input_mean = X.mean(axis=0)
+        accel._input_std = np.ones(4)
+        accel.pca.fit(Y)
+        accel.mlp = SimpleMLP([4, 8, 3], seed=99)
+        accel.is_trained = True
+
+        metrics = accel.evaluate_surrogate(X[:5], Y[:5])
+        assert "mse" in metrics
+        assert "max_error" in metrics
+        assert "gs_residual" in metrics
+        assert np.isfinite(metrics["mse"])
+        assert np.isfinite(metrics["max_error"])
+        assert np.isfinite(metrics["gs_residual"])
+        assert metrics["mse"] >= 0
+        assert metrics["max_error"] >= 0
+        assert metrics["gs_residual"] >= 0
 
 
 # ── Integration tests: SPARC training ────────────────────────────────
@@ -238,16 +309,32 @@ class TestSPARCTraining:
         assert result.explained_variance > 0.5  # PCA should retain > 50%
         assert np.isfinite(result.final_loss)
         assert result.train_time_s > 0
+        # New fields from A2 hardening
+        assert np.isfinite(result.val_loss)
+        assert np.isfinite(result.test_mse)
+        assert np.isfinite(result.test_max_error)
+        assert result.val_loss >= 0
+        assert result.test_mse >= 0
+        assert result.test_max_error >= 0
 
     def test_predict_shape_matches_grid(self, trained_model):
         accel, _, _ = trained_model
         from scpn_fusion.core.eqdsk import read_geqdsk
 
         eq = read_geqdsk(next(SPARC_DIR.glob("*.geqdsk")))
+        kappa_t = 1.7
+        q95_t = 3.0
+        if hasattr(eq, 'rbbbs') and eq.rbbbs is not None and len(eq.rbbbs) > 3:
+            r_span = eq.rbbbs.max() - eq.rbbbs.min()
+            kappa_t = (eq.zbbbs.max() - eq.zbbbs.min()) / max(r_span, 0.01)
+        if hasattr(eq, 'qpsi') and eq.qpsi is not None and len(eq.qpsi) > 0:
+            idx_95 = int(0.95 * len(eq.qpsi))
+            q95_t = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
         features = np.array([
             eq.current / 1e6, eq.bcentr,
             eq.rmaxis, eq.zmaxis,
             1.0, 1.0, eq.simag, eq.sibry,
+            kappa_t, 0.3, 0.3, q95_t,
         ])
         psi = accel.predict(features)
         assert psi.ndim == 2
@@ -260,10 +347,19 @@ class TestSPARCTraining:
         from scpn_fusion.core.eqdsk import read_geqdsk
 
         eq = read_geqdsk(next(SPARC_DIR.glob("*.geqdsk")))
+        kappa_t = 1.7
+        q95_t = 3.0
+        if hasattr(eq, 'rbbbs') and eq.rbbbs is not None and len(eq.rbbbs) > 3:
+            r_span = eq.rbbbs.max() - eq.rbbbs.min()
+            kappa_t = (eq.zbbbs.max() - eq.zbbbs.min()) / max(r_span, 0.01)
+        if hasattr(eq, 'qpsi') and eq.qpsi is not None and len(eq.qpsi) > 0:
+            idx_95 = int(0.95 * len(eq.qpsi))
+            q95_t = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
         features = np.array([
             eq.current / 1e6, eq.bcentr,
             eq.rmaxis, eq.zmaxis,
             1.0, 1.0, eq.simag, eq.sibry,
+            kappa_t, 0.3, 0.3, q95_t,
         ])
         psi = accel.predict(features)
         assert np.all(np.isfinite(psi))
@@ -273,10 +369,19 @@ class TestSPARCTraining:
         from scpn_fusion.core.eqdsk import read_geqdsk
 
         eq = read_geqdsk(next(SPARC_DIR.glob("*.geqdsk")))
+        kappa_t = 1.7
+        q95_t = 3.0
+        if hasattr(eq, 'rbbbs') and eq.rbbbs is not None and len(eq.rbbbs) > 3:
+            r_span = eq.rbbbs.max() - eq.rbbbs.min()
+            kappa_t = (eq.zbbbs.max() - eq.zbbbs.min()) / max(r_span, 0.01)
+        if hasattr(eq, 'qpsi') and eq.qpsi is not None and len(eq.qpsi) > 0:
+            idx_95 = int(0.95 * len(eq.qpsi))
+            q95_t = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
         features = np.array([
             eq.current / 1e6, eq.bcentr,
             eq.rmaxis, eq.zmaxis,
             1.0, 1.0, eq.simag, eq.sibry,
+            kappa_t, 0.3, 0.3, q95_t,
         ])
 
         pred_before = accel.predict(features).copy()

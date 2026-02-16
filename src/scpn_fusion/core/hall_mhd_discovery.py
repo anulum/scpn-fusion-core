@@ -16,6 +16,13 @@ L = 2 * np.pi
 DT = 0.005
 STEPS = 2000
 
+def spitzer_resistivity(T_e_eV, Z_eff=1.0, ln_lambda=17.0):
+    """Spitzer resistivity [Ohm*m]. eta = 1.65e-9 * Z_eff * ln_lambda / T_e^1.5"""
+    if T_e_eV <= 0:
+        return 1e-4
+    return 1.65e-9 * Z_eff * ln_lambda / (T_e_eV ** 1.5)
+
+
 class HallMHD:
     """
     3D-like Reduced Hall-MHD.
@@ -26,7 +33,7 @@ class HallMHD:
       U   (Vorticity)
       J   (Current Density)
     """
-    def __init__(self, N=GRID):
+    def __init__(self, N=GRID, eta=None, nu=None):
         self.N = N
         k = np.fft.fftfreq(N, d=L/(2*np.pi*N))
         self.kx, self.ky = np.meshgrid(k, k)
@@ -46,7 +53,10 @@ class HallMHD:
         self.rho_s = 0.1  # Larmor radius (Hall scale)
         self.beta = 0.01  # Plasma Beta
         self.nu = 1e-4    # Viscosity
+        if nu is not None: self.nu = nu
         self.eta = 1e-4   # Resistivity
+        if eta is not None: self.eta = eta
+        self.energy_history = []
 
     def poisson_bracket(self, A_k, B_k):
         # [A, B] = dxA dyB - dyA dxB
@@ -108,8 +118,46 @@ class HallMHD:
         zonal_energy = np.sum(np.abs(self.phi_k[zonal_mask])**2)
         
         total_energy = np.sum(np.abs(self.phi_k)**2)
-        
+        self.energy_history.append(total_energy)
+
         return total_energy, zonal_energy
+
+    def parameter_sweep(self, eta_range, nu_range, n_steps=5, sim_steps=200):
+        """Run grid of simulations varying eta and nu. Returns dict with growth rates."""
+        results = {'eta': [], 'nu': [], 'growth_rate': []}
+        for eta_val in np.linspace(eta_range[0], eta_range[1], n_steps):
+            for nu_val in np.linspace(nu_range[0], nu_range[1], n_steps):
+                sim = HallMHD(self.N, eta=eta_val, nu=nu_val)
+                for _ in range(sim_steps):
+                    sim.step()
+                if len(sim.energy_history) > 10:
+                    e = np.array(sim.energy_history[-10:])
+                    growth = np.mean(np.diff(np.log(np.maximum(e, 1e-30))))
+                else:
+                    growth = 0.0
+                results['eta'].append(eta_val)
+                results['nu'].append(nu_val)
+                results['growth_rate'].append(growth)
+        return results
+
+    def find_tearing_threshold(self, eta_range=(1e-6, 1e-2), n_bisect=10, sim_steps=500):
+        """Bisection search for marginal tearing stability threshold."""
+        lo, hi = eta_range
+        for _ in range(n_bisect):
+            mid = np.sqrt(lo * hi)  # geometric mean
+            sim = HallMHD(self.N, eta=mid)
+            for _ in range(sim_steps):
+                sim.step()
+            if len(sim.energy_history) > 20:
+                e = np.array(sim.energy_history[-20:])
+                growth = np.mean(np.diff(np.log(np.maximum(e, 1e-30))))
+            else:
+                growth = 0.0
+            if growth > 0:
+                hi = mid
+            else:
+                lo = mid
+        return {'threshold_eta': np.sqrt(lo * hi), 'lo': lo, 'hi': hi}
 
 def run_discovery_sim():
     print("--- SCPN HALL-MHD: ZONAL FLOW DISCOVERY ---")

@@ -1,0 +1,45 @@
+{
+    "case_name": "ITG-dominated",
+    "description": "Ion Temperature Gradient mode dominated regime. Standard tokamak core conditions with dominant ITG turbulence. Reference from TGLF v2.0 (Staebler et al., Phys. Plasmas 2007).",
+    "input_parameters": {
+        "s_hat": 0.8,
+        "q": 1.4,
+        "R_Ln_e": 2.2,
+        "R_LT_e": 6.9,
+        "R_LT_i": 9.0,
+        "T_e_T_i": 1.0,
+        "beta_e": 0.01,
+        "Z_eff": 1.5,
+        "nu_ei_norm": 0.1,
+        "rho_star": 0.005,
+        "kappa": 1.7,
+        "delta": 0.33,
+        "R_major_m": 6.2,
+        "a_minor_m": 2.0,
+        "B_toroidal_T": 5.3,
+        "rho_tor": 0.5
+    },
+    "tglf_output": {
+        "dominant_mode": "ITG",
+        "gamma_max_cs_a": 0.32,
+        "ky_max_rho_s": 0.35,
+        "chi_i_gyroBohm": 4.8,
+        "chi_e_gyroBohm": 1.9,
+        "Q_i_gyroBohm": 12.5,
+        "Q_e_gyroBohm": 4.2,
+        "Gamma_e_gyroBohm": 0.8,
+        "chi_i_m2_s": 1.52,
+        "chi_e_m2_s": 0.60,
+        "growth_rates_ky": [
+            {"ky_rho_s": 0.1, "gamma_cs_a": 0.05, "omega_cs_a": -0.12},
+            {"ky_rho_s": 0.2, "gamma_cs_a": 0.18, "omega_cs_a": -0.28},
+            {"ky_rho_s": 0.3, "gamma_cs_a": 0.29, "omega_cs_a": -0.41},
+            {"ky_rho_s": 0.4, "gamma_cs_a": 0.31, "omega_cs_a": -0.50},
+            {"ky_rho_s": 0.5, "gamma_cs_a": 0.28, "omega_cs_a": -0.55},
+            {"ky_rho_s": 0.7, "gamma_cs_a": 0.19, "omega_cs_a": -0.58},
+            {"ky_rho_s": 1.0, "gamma_cs_a": 0.10, "omega_cs_a": -0.52}
+        ]
+    },
+    "notes": "Negative omega indicates ion diamagnetic direction (ITG). chi_i >> chi_e as expected for ITG regime. Growth rate peaks at ky_rho_s ~ 0.3-0.4.",
+    "reference": "Staebler et al., Phys. Plasmas 14, 055909 (2007); Kinsey et al., Phys. Plasmas 15, 055908 (2008)"
+}

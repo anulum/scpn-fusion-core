@@ -14,6 +14,12 @@ Machine parameters sourced from:
   R0=1.67m, a=0.67m, B0=2.19T, Ip=1.0-2.0MA, κ=1.8, δ=0.7
 - JET:   Romanelli et al., Nucl. Fusion 53 (2013) 104002
   R0=2.96m, a=1.25m, B0=3.45T, Ip=1.5-4.8MA, κ=1.7, δ=0.33
+- EAST:  Wan et al., Nucl. Fusion 57 (2017) 102019
+  R0=1.85m, a=0.45m, B0=3.5T, Ip=0.4-1.0MA, κ=1.7-1.9, δ=0.4-0.6
+- KSTAR: Lee et al., Nucl. Fusion 60 (2020) 086002
+  R0=1.8m, a=0.5m, B0=3.5T, Ip=0.5-1.0MA, κ=1.7-2.0, δ=0.3-0.7
+- ASDEX-U: Zohm et al., Nucl. Fusion 55 (2015) 104010
+  R0=1.65m, a=0.5m, B0=2.5T, Ip=0.8-1.2MA, κ=1.6-1.8, δ=0.3-0.5
 
 Each file contains a self-consistent Solov'ev ψ(R,Z) with derived
 profiles p'(ψ), FF'(ψ), q(ψ), suitable for validation and benchmarking
@@ -236,50 +242,195 @@ JET_SHOTS = [
      "desc": "JET maximum current 4.8 MA"},
 ]
 
+EAST_SHOTS = [
+    {"name": "east_lmode_400kA", "Ip_MA": 0.4, "kappa": 1.7, "delta": 0.40,
+     "desc": "EAST L-mode 400 kA standard"},
+    {"name": "east_hmode_600kA", "Ip_MA": 0.6, "kappa": 1.8, "delta": 0.50,
+     "desc": "EAST H-mode 600 kA ELMy"},
+    {"name": "east_long_pulse", "Ip_MA": 0.5, "kappa": 1.75, "delta": 0.45,
+     "desc": "EAST long-pulse 500 kA steady-state"},
+    {"name": "east_high_beta", "Ip_MA": 0.8, "kappa": 1.9, "delta": 0.55,
+     "desc": "EAST high-beta 800 kA advanced"},
+    {"name": "east_negdelta", "Ip_MA": 0.5, "kappa": 1.7, "delta": -0.30,
+     "desc": "EAST negative triangularity 500 kA"},
+]
+
+KSTAR_SHOTS = [
+    {"name": "kstar_lmode_600kA", "Ip_MA": 0.6, "kappa": 1.7, "delta": 0.30,
+     "desc": "KSTAR L-mode 600 kA standard"},
+    {"name": "kstar_hmode_700kA", "Ip_MA": 0.7, "kappa": 1.8, "delta": 0.50,
+     "desc": "KSTAR H-mode 700 kA ELMy"},
+    {"name": "kstar_steady_state", "Ip_MA": 0.5, "kappa": 1.75, "delta": 0.40,
+     "desc": "KSTAR steady-state 500 kA"},
+    {"name": "kstar_high_kappa", "Ip_MA": 0.8, "kappa": 2.0, "delta": 0.60,
+     "desc": "KSTAR high-elongation 800 kA"},
+    {"name": "kstar_internal_kink", "Ip_MA": 1.0, "kappa": 1.7, "delta": 0.35,
+     "desc": "KSTAR 1.0 MA q0 < 1 scenario"},
+]
+
+ASDEXU_SHOTS = [
+    {"name": "asdexu_lmode_800kA", "Ip_MA": 0.8, "kappa": 1.6, "delta": 0.30,
+     "desc": "ASDEX-U L-mode 800 kA standard"},
+    {"name": "asdexu_hmode_1MA", "Ip_MA": 1.0, "kappa": 1.7, "delta": 0.40,
+     "desc": "ASDEX-U H-mode 1.0 MA baseline"},
+    {"name": "asdexu_improved_hmode", "Ip_MA": 1.0, "kappa": 1.8, "delta": 0.50,
+     "desc": "ASDEX-U improved H-mode 1.0 MA"},
+    {"name": "asdexu_qh_mode", "Ip_MA": 0.8, "kappa": 1.65, "delta": 0.35,
+     "desc": "ASDEX-U QH-mode ELM-free 800 kA"},
+    {"name": "asdexu_high_delta", "Ip_MA": 1.2, "kappa": 1.7, "delta": 0.50,
+     "desc": "ASDEX-U high-delta 1.2 MA"},
+]
+
+# ── Machine configurations for sweep generation ──────────────────────
+
+MACHINE_CONFIGS = {
+    "diiid": {"R0": 1.67, "a": 0.67, "B0": 2.19, "base_Ip_MA": 1.5, "base_kappa": 1.8, "base_delta": 0.5},
+    "jet": {"R0": 2.96, "a": 1.25, "B0": 3.45, "base_Ip_MA": 3.0, "base_kappa": 1.7, "base_delta": 0.33},
+    "east": {"R0": 1.85, "a": 0.45, "B0": 3.5, "base_Ip_MA": 0.5, "base_kappa": 1.75, "base_delta": 0.45},
+    "kstar": {"R0": 1.8, "a": 0.5, "B0": 3.5, "base_Ip_MA": 0.7, "base_kappa": 1.8, "base_delta": 0.45},
+    "asdexu": {"R0": 1.65, "a": 0.5, "B0": 2.5, "base_Ip_MA": 1.0, "base_kappa": 1.7, "base_delta": 0.4},
+}
+
+# ── Fixed-shot lists keyed by machine name ────────────────────────────
+
+FIXED_SHOTS = {
+    "diiid": DIIID_SHOTS,
+    "jet": JET_SHOTS,
+    "east": EAST_SHOTS,
+    "kstar": KSTAR_SHOTS,
+    "asdexu": ASDEXU_SHOTS,
+}
+
+
+def generate_parameter_sweep(
+    machine_name: str,
+    R0: float,
+    a: float,
+    B0: float,
+    base_Ip_MA: float,
+    base_kappa: float,
+    base_delta: float,
+    n_per_param: int = 5,
+) -> list[dict]:
+    """Generate parameter sweep shots for a given machine.
+
+    Sweeps: Ip (0.5x-1.5x), kappa (0.9x-1.1x), delta (0.5x-1.5x), beta_p via Ip.
+    Returns list of shot dicts.
+    """
+    shots = []
+    # Ip sweep
+    for i, ip_frac in enumerate(np.linspace(0.5, 1.5, n_per_param)):
+        shots.append({
+            "name": f"{machine_name}_sweep_ip_{i:02d}",
+            "R0": R0, "a": a, "B0": B0,
+            "Ip_MA": base_Ip_MA * ip_frac,
+            "kappa": base_kappa,
+            "delta": base_delta,
+            "desc": f"{machine_name} Ip sweep {base_Ip_MA * ip_frac:.2f} MA",
+        })
+    # Kappa sweep
+    for i, k_frac in enumerate(np.linspace(0.9, 1.1, n_per_param)):
+        shots.append({
+            "name": f"{machine_name}_sweep_kappa_{i:02d}",
+            "R0": R0, "a": a, "B0": B0,
+            "Ip_MA": base_Ip_MA,
+            "kappa": base_kappa * k_frac,
+            "delta": base_delta,
+            "desc": f"{machine_name} kappa sweep {base_kappa * k_frac:.2f}",
+        })
+    # Delta sweep
+    for i, d_frac in enumerate(np.linspace(-0.3, 0.7, n_per_param)):
+        shots.append({
+            "name": f"{machine_name}_sweep_delta_{i:02d}",
+            "R0": R0, "a": a, "B0": B0,
+            "Ip_MA": base_Ip_MA,
+            "kappa": base_kappa,
+            "delta": d_frac,
+            "desc": f"{machine_name} delta sweep {d_frac:.2f}",
+        })
+    return shots
+
 
 def generate_all():
-    """Generate all DIII-D and JET GEQDSK files."""
+    """Generate GEQDSK files for all 5 tokamaks (fixed shots + parameter sweeps).
+
+    Fixed shots:  5 machines x 5 shots = 25
+    Sweep shots:  5 machines x 3 params x 5 samples = 75
+    Total: 100 GEQDSK files.
+    """
     root = Path(__file__).resolve().parent / "reference_data"
-
-    diiid_dir = root / "diiid"
-    jet_dir = root / "jet"
-    diiid_dir.mkdir(parents=True, exist_ok=True)
-    jet_dir.mkdir(parents=True, exist_ok=True)
-
     results = []
 
-    for shot in DIIID_SHOTS:
-        eq = solovev_equilibrium(
-            R0=1.67, a=0.67, B0=2.19,
-            Ip_MA=shot["Ip_MA"],
-            kappa=shot["kappa"],
-            delta=shot["delta"],
-            nw=65, nh=65,
-            description=shot["desc"],
-        )
-        path = diiid_dir / f"{shot['name']}.geqdsk"
-        write_geqdsk(eq, path)
-        results.append((path.name, eq.nw, eq.nh, shot["Ip_MA"]))
-        print(f"  [DIII-D] {path.name}: {eq.nw}x{eq.nh}, Ip={shot['Ip_MA']} MA")
+    # ── Fixed shots for every machine ─────────────────────────────────
+    machine_labels = {
+        "diiid": "DIII-D",
+        "jet": "JET",
+        "east": "EAST",
+        "kstar": "KSTAR",
+        "asdexu": "ASDEX-U",
+    }
+    for machine_name, cfg in MACHINE_CONFIGS.items():
+        out_dir = root / machine_name
+        out_dir.mkdir(parents=True, exist_ok=True)
 
-    for shot in JET_SHOTS:
-        eq = solovev_equilibrium(
-            R0=2.96, a=1.25, B0=3.45,
-            Ip_MA=shot["Ip_MA"],
-            kappa=shot["kappa"],
-            delta=shot["delta"],
-            nw=65, nh=65,
-            description=shot["desc"],
-        )
-        path = jet_dir / f"{shot['name']}.geqdsk"
-        write_geqdsk(eq, path)
-        results.append((path.name, eq.nw, eq.nh, shot["Ip_MA"]))
-        print(f"  [JET]   {path.name}: {eq.nw}x{eq.nh}, Ip={shot['Ip_MA']} MA")
+        label = machine_labels.get(machine_name, machine_name.upper())
+        shots = FIXED_SHOTS[machine_name]
 
-    print(f"\nGenerated {len(results)} GEQDSK files total.")
+        for shot in shots:
+            # Fixed shots may override R0/a/B0 in the dict; fall back to cfg
+            R0 = shot.get("R0", cfg["R0"])
+            a = shot.get("a", cfg["a"])
+            B0 = shot.get("B0", cfg["B0"])
+
+            eq = solovev_equilibrium(
+                R0=R0, a=a, B0=B0,
+                Ip_MA=shot["Ip_MA"],
+                kappa=shot["kappa"],
+                delta=shot["delta"],
+                nw=65, nh=65,
+                description=shot["desc"],
+            )
+            path = out_dir / f"{shot['name']}.geqdsk"
+            write_geqdsk(eq, path)
+            results.append((path.name, eq.nw, eq.nh, shot["Ip_MA"]))
+            print(f"  [{label:8s}] {path.name}: {eq.nw}x{eq.nh}, Ip={shot['Ip_MA']:.2f} MA")
+
+    # ── Parameter sweeps for every machine ────────────────────────────
+    for machine_name, cfg in MACHINE_CONFIGS.items():
+        out_dir = root / machine_name
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        label = machine_labels.get(machine_name, machine_name.upper())
+        sweep_shots = generate_parameter_sweep(
+            machine_name=machine_name,
+            R0=cfg["R0"],
+            a=cfg["a"],
+            B0=cfg["B0"],
+            base_Ip_MA=cfg["base_Ip_MA"],
+            base_kappa=cfg["base_kappa"],
+            base_delta=cfg["base_delta"],
+            n_per_param=5,
+        )
+
+        for shot in sweep_shots:
+            eq = solovev_equilibrium(
+                R0=shot["R0"], a=shot["a"], B0=shot["B0"],
+                Ip_MA=shot["Ip_MA"],
+                kappa=shot["kappa"],
+                delta=shot["delta"],
+                nw=65, nh=65,
+                description=shot["desc"],
+            )
+            path = out_dir / f"{shot['name']}.geqdsk"
+            write_geqdsk(eq, path)
+            results.append((path.name, eq.nw, eq.nh, shot["Ip_MA"]))
+            print(f"  [{label:8s}] {path.name}: {eq.nw}x{eq.nh}, Ip={shot['Ip_MA']:.2f} MA")
+
+    print(f"\nGenerated {len(results)} GEQDSK files total "
+          f"(25 fixed + 75 sweep = 100).")
     return results
 
 
 if __name__ == "__main__":
-    print("Generating synthetic DIII-D and JET equilibria...")
+    print("Generating synthetic DIII-D / JET / EAST / KSTAR / ASDEX-U equilibria...")
     generate_all()

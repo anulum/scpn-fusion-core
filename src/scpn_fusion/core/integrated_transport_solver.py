@@ -10,18 +10,13 @@ import matplotlib.pyplot as plt
 import sys
 import os
 import copy
-from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union, List, cast
 
 try:
-    from numpy.typing import NDArray
+    from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
-    NDArray = Any # type: ignore
+    from scpn_fusion.core.fusion_kernel import FusionKernel
 
-from scpn_fusion.core._rust_compat import FusionKernel
-
-def chang_hinton_chi_profile(rho: NDArray[Any], T_i: NDArray[Any], n_e_19: NDArray[Any], q: NDArray[Any], R0: float, a: float, B0: float, A_ion: float = 2.0, Z_eff: float = 1.5) -> NDArray[Any]:
-
+def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.5):
     """
     Chang-Hinton (1982) neoclassical ion thermal diffusivity profile [m²/s].
 
@@ -82,41 +77,123 @@ def chang_hinton_chi_profile(rho: NDArray[Any], T_i: NDArray[Any], n_e_19: NDArr
     return chi_nc
 
 
-class TransportSolver(FusionKernel):  # type: ignore[misc]
+def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff=1.5):
+    """Full Sauter bootstrap current model (Sauter et al., Phys. Plasmas 6, 1999).
+
+    Parameters
+    ----------
+    rho : array — normalised radius [0,1]
+    Te : array — electron temperature [keV]
+    Ti : array — ion temperature [keV]
+    ne : array — electron density [10^19 m^-3]
+    q : array — safety factor profile
+    R0 : float — major radius [m]
+    a : float — minor radius [m]
+    B0 : float — toroidal field [T]
+    Z_eff : float — effective charge
+
+    Returns
+    -------
+    j_bs : array — bootstrap current density [A/m^2]
+    """
+    n = len(rho)
+    j_bs = np.zeros(n)
+    e_charge = 1.602176634e-19
+    m_e = 9.10938370e-31
+    eps0 = 8.854187812e-12
+
+    for i in range(1, n - 1):
+        eps = rho[i] * a / R0
+        if eps < 1e-6 or Te[i] <= 0 or ne[i] <= 0 or q[i] <= 0:
+            continue
+
+        # Trapped fraction (Sauter formula)
+        f_t = 1.0 - (1.0 - eps)**2 / (np.sqrt(1.0 - eps**2) * (1.0 + 1.46 * np.sqrt(eps)))
+        f_t = max(0.0, min(f_t, 1.0))
+
+        # Electron thermal velocity
+        T_e_J = Te[i] * 1e3 * e_charge
+        v_te = np.sqrt(2.0 * T_e_J / m_e)
+
+        # Collision frequency
+        n_e = ne[i] * 1e19
+        ln_lambda = 17.0
+        nu_ei = n_e * Z_eff * e_charge**4 * ln_lambda / (
+            12.0 * np.pi**1.5 * eps0**2 * m_e**0.5 * T_e_J**1.5
+        )
+
+        # Collisionality
+        nu_star_e = nu_ei * q[i] * R0 / (eps**1.5 * v_te) if v_te > 0 else 1e6
+
+        # Sauter L31 coefficient
+        alpha_31 = 1.0 / (1.0 + 0.36 / Z_eff)
+        L31 = f_t * (1.0 + (1.0 - 0.1 * f_t) * np.sqrt(nu_star_e) +
+               0.5 * (1.0 - f_t) * nu_star_e / Z_eff)
+        L31 = f_t * alpha_31 / (1.0 + alpha_31 * np.sqrt(nu_star_e) +
+               0.25 * nu_star_e * (1.0 - f_t)**2)
+
+        # Sauter L32 coefficient
+        L32 = f_t * (0.05 + 0.62 * Z_eff) / (Z_eff * (1.0 + 0.44 * Z_eff))
+        L32 /= (1.0 + 0.22 * np.sqrt(nu_star_e) + 0.19 * nu_star_e * (1.0 - f_t))
+
+        # Sauter L34 coefficient (ion contribution)
+        L34 = L31 * Ti[i] / max(Te[i], 0.01)
+
+        # Gradients (central differences)
+        dr = (rho[i+1] - rho[i-1]) * a
+        if abs(dr) < 1e-12:
+            continue
+        dn_dr = (ne[i+1] - ne[i-1]) * 1e19 / dr
+        dTe_dr = (Te[i+1] - Te[i-1]) * 1e3 * e_charge / dr
+        dTi_dr = (Ti[i+1] - Ti[i-1]) * 1e3 * e_charge / dr
+
+        # Poloidal field
+        B_pol = B0 * eps / max(q[i], 0.1)
+        if B_pol < 1e-10:
+            continue
+
+        # Bootstrap current
+        p_e = n_e * T_e_J
+        j_bs[i] = -(p_e / B_pol) * (
+            L31 * dn_dr / max(n_e, 1e10) +
+            L32 * dTe_dr / max(T_e_J, 1e-30) +
+            L34 * dTi_dr / max(Ti[i] * 1e3 * e_charge, 1e-30)
+        )
+
+    return j_bs
+
+
+class TransportSolver(FusionKernel):
     """
     1.5D Integrated Transport Code.
     Solves Heat and Particle diffusion equations on flux surfaces,
     coupled self-consistently with the 2D Grad-Shafranov equilibrium.
     """
-    def __init__(self, config_path: Union[str, Path]) -> None:
+    def __init__(self, config_path):
         super().__init__(config_path)
         self.external_profile_mode = True # Tell Kernel to respect our calculated profiles
         self.nr = 50 # Radial grid points (normalized radius rho)
-        self.rho: NDArray[Any] = np.linspace(0, 1, self.nr)
+        self.rho = np.linspace(0, 1, self.nr)
         self.drho = 1.0 / (self.nr - 1)
         
         # PROFILES (Evolving state variables)
         # Te = Electron Temp (keV), Ti = Ion Temp (keV), ne = Density (10^19 m-3)
-        self.Te: NDArray[Any] = 1.0 * (1 - self.rho**2) # Initial guess
-        self.Ti: NDArray[Any] = 1.0 * (1 - self.rho**2)
-        self.ne: NDArray[Any] = 5.0 * (1 - self.rho**2)**0.5
+        self.Te = 1.0 * (1 - self.rho**2) # Initial guess
+        self.Ti = 1.0 * (1 - self.rho**2)
+        self.ne = 5.0 * (1 - self.rho**2)**0.5
         
         # Transport Coefficients (Anomalous Transport Models)
-        self.chi_e: NDArray[Any] = np.ones(self.nr) # Electron diffusivity
-        self.chi_i: NDArray[Any] = np.ones(self.nr) # Ion diffusivity
-        self.D_n: NDArray[Any] = np.ones(self.nr)   # Particle diffusivity
+        self.chi_e = np.ones(self.nr) # Electron diffusivity
+        self.chi_i = np.ones(self.nr) # Ion diffusivity
+        self.D_n = np.ones(self.nr)   # Particle diffusivity
         
         # Impurity Profile (Tungsten density)
-        self.n_impurity: NDArray[Any] = np.zeros(self.nr)
-
-        # 2D attributes
-        self.Pressure_2D: NDArray[Any] = np.zeros((self.NZ, self.NR))
-        self.J_phi: NDArray[Any] = np.zeros((self.NZ, self.NR))
+        self.n_impurity = np.zeros(self.nr)
 
         # Neoclassical transport configuration (None = constant chi_base=0.5)
-        self.neoclassical_params: Optional[Dict[str, Any]] = None
+        self.neoclassical_params = None
 
-    def set_neoclassical(self, R0: float, a: float, B0: float, A_ion: float = 2.0, Z_eff: float = 1.5, q0: float = 1.0, q_edge: float = 3.0) -> None:
+    def set_neoclassical(self, R0, a, B0, A_ion=2.0, Z_eff=1.5, q0=1.0, q_edge=3.0):
         """Configure Chang-Hinton neoclassical transport model.
 
         When set, update_transport_model uses the Chang-Hinton formula instead
@@ -129,7 +206,7 @@ class TransportSolver(FusionKernel):  # type: ignore[misc]
             'q_profile': q_profile,
         }
 
-    def inject_impurities(self, flux_from_wall_per_sec: float, dt: float) -> None:
+    def inject_impurities(self, flux_from_wall_per_sec, dt):
         """
         Models impurity influx from PWI erosion.
         Simple diffusion model: Source at edge, diffuses inward.
@@ -158,7 +235,7 @@ class TransportSolver(FusionKernel):  # type: ignore[misc]
         
         self.n_impurity = np.maximum(0, new_imp)
 
-    def calculate_bootstrap_current(self, R0: float, B_pol: float) -> NDArray[Any]:
+    def calculate_bootstrap_current_simple(self, R0, B_pol):
         """
         Calculates the neoclassical bootstrap current density [A/m2]
         using a simplified Sauter model.
@@ -167,24 +244,36 @@ class TransportSolver(FusionKernel):  # type: ignore[misc]
         # Simplified Sauter model coefficients
         # In a real model, these depend on collisionality and trapped fraction
         f_trapped = 1.46 * np.sqrt(self.rho * (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / (2 * R0))
-        
+
         # Pressure gradient in SI
         P = self.ne * 1e19 * (self.Ti + self.Te) * 1.602e-16 # J/m3
         dP_drho = np.gradient(P, self.drho)
-        
+
         # Scaling constant for J_bs
         # J_bs ~ f_trapped / B_pol * dP/dr
-        B_pol_val = max(B_pol, 0.1) # Avoid div by zero at axis
-        
-        J_bs = 1.2 * (f_trapped / B_pol_val) * dP_drho / (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"])
-        
+        B_pol = np.maximum(B_pol, 0.1) # Avoid div by zero at axis
+
+        J_bs = 1.2 * (f_trapped / B_pol) * dP_drho / (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"])
+
         # Ensure it's zero at axis and edge
-        J_bs[0] = 0.0
-        J_bs[-1] = 0.0
-        
+        J_bs[0] = 0
+        J_bs[-1] = 0
+
         return J_bs
 
-    def update_transport_model(self, P_aux: float) -> None:
+    def calculate_bootstrap_current(self, R0, B_pol):
+        """Calculate bootstrap current. Uses full Sauter if neoclassical params set."""
+        if hasattr(self, 'neoclassical_params') and self.neoclassical_params is not None:
+            return calculate_sauter_bootstrap_current_full(
+                self.rho, self.Te, self.Ti, self.ne,
+                self.neoclassical_params.get('q_profile', np.linspace(1, 4, len(self.rho))),
+                R0, self.neoclassical_params.get('a', 2.0),
+                self.neoclassical_params.get('B0', 5.3),
+                self.neoclassical_params.get('Z_eff', 1.5),
+            )
+        return self.calculate_bootstrap_current_simple(R0, B_pol)
+
+    def update_transport_model(self, P_aux):
         """
         Bohm / Gyro-Bohm Transport Model.
         """
@@ -193,7 +282,6 @@ class TransportSolver(FusionKernel):  # type: ignore[misc]
         threshold = 2.0
         
         # Base Level — use Chang-Hinton if configured, else constant
-        chi_base: Union[float, NDArray[Any]]
         if self.neoclassical_params is not None:
             p = self.neoclassical_params
             chi_base = chang_hinton_chi_profile(
@@ -264,7 +352,7 @@ class TransportSolver(FusionKernel):  # type: ignore[misc]
 
     # ── Crank-Nicolson helpers ───────────────────────────────────────
 
-    def _explicit_diffusion_rhs(self, T: NDArray[Any], chi: NDArray[Any]) -> NDArray[Any]:
+    def _explicit_diffusion_rhs(self, T, chi):
         """Compute explicit diffusion operator L_h(T) = (1/r) d/dr(r chi dT/dr).
 
         Uses half-grid diffusivities and central differences on the
@@ -289,7 +377,7 @@ class TransportSolver(FusionKernel):  # type: ignore[misc]
 
         return Lh
 
-    def _build_cn_tridiag(self, chi: NDArray[Any], dt: float) -> Tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    def _build_cn_tridiag(self, chi, dt):
         """Build tridiagonal coefficients for the Crank-Nicolson LHS.
 
         The implicit system is:
@@ -323,7 +411,7 @@ class TransportSolver(FusionKernel):  # type: ignore[misc]
 
     # ── Main evolution (Crank-Nicolson) ──────────────────────────────
 
-    def evolve_profiles(self, dt: float, P_aux: float) -> Tuple[float, float]:
+    def evolve_profiles(self, dt, P_aux):
         """Advance Ti by one time step using Crank-Nicolson implicit diffusion.
 
         The scheme is unconditionally stable, allowing dt up to ~1.0 s
@@ -358,9 +446,9 @@ class TransportSolver(FusionKernel):  # type: ignore[misc]
         self.Ti = np.maximum(0.01, new_Ti)
         self.Te = self.Ti  # Assume equilibrated
 
-        return float(np.mean(self.Ti)), float(self.Ti[0])
+        return np.mean(self.Ti), self.Ti[0]
 
-    def map_profiles_to_2d(self) -> None:
+    def map_profiles_to_2d(self):
         """
         Projects the 1D radial profiles back onto the 2D Grad-Shafranov grid,
         including neoclassical bootstrap current.
@@ -371,7 +459,7 @@ class TransportSolver(FusionKernel):  # type: ignore[misc]
         Psi_axis = self.Psi[iz_ax, ir_ax]
         xp, psi_x = self.find_x_point(self.Psi)
         Psi_edge = psi_x
-        if abs(Psi_edge - Psi_axis) < 1.0: Psi_edge = float(np.min(self.Psi))
+        if abs(Psi_edge - Psi_axis) < 1.0: Psi_edge = np.min(self.Psi)
         
         # 2. Calculate Rho for every 2D point
         denom = Psi_edge - Psi_axis
@@ -381,10 +469,10 @@ class TransportSolver(FusionKernel):  # type: ignore[misc]
         Rho_2D = np.sqrt(Psi_norm)
         
         # 3. Calculate 1D Bootstrap Current
-        R0 = cast(float, (self.cfg["dimensions"]["R_min"] + self.cfg["dimensions"]["R_max"]) / 2.0)
+        R0 = (self.cfg["dimensions"]["R_min"] + self.cfg["dimensions"]["R_max"]) / 2.0
         # Estimate B_pol from Ip
         I_target = self.cfg['physics']['plasma_current_target']
-        B_pol_est = cast(float, (1.256e-6 * I_target) / (2 * np.pi * 0.5 * (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"])))
+        B_pol_est = (1.256e-6 * I_target) / (2 * np.pi * 0.5 * (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]))
         J_bs_1d = self.calculate_bootstrap_current(R0, B_pol_est)
         
         # 4. Interpolate 1D profiles to 2D
@@ -451,7 +539,7 @@ class TransportSolver(FusionKernel):  # type: ignore[misc]
         dt: float = 0.01,
         adaptive: bool = False,
         tol: float = 1e-3,
-    ) -> Dict[str, Any]:
+    ) -> dict:
         """Run transport evolution until approximate steady state.
 
         Parameters

@@ -14,18 +14,13 @@ plasma response model (e.g. Shafranov shift variations).
 
 from __future__ import annotations
 import numpy as np
-from typing import Any, Union
-try:
-    from numpy.typing import NDArray
-except ImportError:
-    NDArray = Any # type: ignore
 
 class HInfinityController:
     """
     Robust H-Infinity controller using a state-space representation.
     Addresses Step 2.2: 'Implement H-infinity for robustness against uncertainties'.
     """
-    def __init__(self, A: NDArray[Any], B: NDArray[Any], C: NDArray[Any], D: Union[float, NDArray[Any]] = 0.0, gamma: float = 1.0) -> None:
+    def __init__(self, A, B, C, D=0.0, gamma=1.0):
         # State space: dx/dt = Ax + Bu, y = Cx + Du
         self.A = np.asarray(A)
         self.B = np.asarray(B)
@@ -34,9 +29,9 @@ class HInfinityController:
         self.gamma = gamma
         
         self.n_states = self.A.shape[0]
-        self.state: NDArray[Any] = np.zeros(self.n_states)
+        self.state = np.zeros(self.n_states)
         
-    def step(self, error: float, dt: float) -> float:
+    def step(self, error, dt):
         """
         Compute control action based on observed error.
         This is a simplified observer-based controller.
@@ -54,7 +49,7 @@ class HInfinityController:
         
         return float(u)
 
-def get_radial_robust_controller() -> HInfinityController:
+def get_radial_robust_controller():
     """Returns an H-infinity controller tuned for radial position."""
     # Simplified mass-spring-damper analogy for plasma radial drift
     A = np.array([[-0.1, 1.0], [-2.0, -0.5]])
