@@ -49,7 +49,7 @@ References:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional, Dict, List, Union
 
 import numpy as np
 
@@ -102,7 +102,7 @@ class DisruptionMitigationReport:
     p95_re_peak_ma: float
     mean_tpf_product: float
     passes_iter_limits: bool
-    per_run_details: list[dict]
+    per_run_details: list[dict[str, Any]]
 
 
 class HaloCurrentModel:
@@ -464,7 +464,7 @@ def run_disruption_ensemble(
     """
     rng = np.random.default_rng(seed)
 
-    per_run: list[dict] = []
+    per_run: list[dict[str, Any]] = []
     prevented_count = 0
 
     for run_idx in range(ensemble_runs):

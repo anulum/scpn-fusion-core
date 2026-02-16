@@ -10,13 +10,21 @@ import matplotlib.pyplot as plt
 import sys
 import os
 import copy
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple, Union, List
+
+try:
+    from numpy.typing import NDArray
+except ImportError:
+    NDArray = Any # type: ignore
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel
 
-def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.5):
+
+def chang_hinton_chi_profile(rho: NDArray[Any], T_i: NDArray[Any], n_e_19: NDArray[Any], q: NDArray[Any], R0: float, a: float, B0: float, A_ion: float = 2.0, Z_eff: float = 1.5) -> NDArray[Any]:
     """
     Chang-Hinton (1982) neoclassical ion thermal diffusivity profile [m²/s].
 
@@ -83,31 +91,31 @@ class TransportSolver(FusionKernel):
     Solves Heat and Particle diffusion equations on flux surfaces,
     coupled self-consistently with the 2D Grad-Shafranov equilibrium.
     """
-    def __init__(self, config_path):
+    def __init__(self, config_path: Union[str, Path]) -> None:
         super().__init__(config_path)
         self.external_profile_mode = True # Tell Kernel to respect our calculated profiles
         self.nr = 50 # Radial grid points (normalized radius rho)
-        self.rho = np.linspace(0, 1, self.nr)
+        self.rho: NDArray[Any] = np.linspace(0, 1, self.nr)
         self.drho = 1.0 / (self.nr - 1)
         
         # PROFILES (Evolving state variables)
         # Te = Electron Temp (keV), Ti = Ion Temp (keV), ne = Density (10^19 m-3)
-        self.Te = 1.0 * (1 - self.rho**2) # Initial guess
-        self.Ti = 1.0 * (1 - self.rho**2)
-        self.ne = 5.0 * (1 - self.rho**2)**0.5
+        self.Te: NDArray[Any] = 1.0 * (1 - self.rho**2) # Initial guess
+        self.Ti: NDArray[Any] = 1.0 * (1 - self.rho**2)
+        self.ne: NDArray[Any] = 5.0 * (1 - self.rho**2)**0.5
         
         # Transport Coefficients (Anomalous Transport Models)
-        self.chi_e = np.ones(self.nr) # Electron diffusivity
-        self.chi_i = np.ones(self.nr) # Ion diffusivity
-        self.D_n = np.ones(self.nr)   # Particle diffusivity
+        self.chi_e: NDArray[Any] = np.ones(self.nr) # Electron diffusivity
+        self.chi_i: NDArray[Any] = np.ones(self.nr) # Ion diffusivity
+        self.D_n: NDArray[Any] = np.ones(self.nr)   # Particle diffusivity
         
         # Impurity Profile (Tungsten density)
-        self.n_impurity = np.zeros(self.nr)
+        self.n_impurity: NDArray[Any] = np.zeros(self.nr)
 
         # Neoclassical transport configuration (None = constant chi_base=0.5)
-        self.neoclassical_params = None
+        self.neoclassical_params: Optional[Dict[str, Any]] = None
 
-    def set_neoclassical(self, R0, a, B0, A_ion=2.0, Z_eff=1.5, q0=1.0, q_edge=3.0):
+    def set_neoclassical(self, R0: float, a: float, B0: float, A_ion: float = 2.0, Z_eff: float = 1.5, q0: float = 1.0, q_edge: float = 3.0) -> None:
         """Configure Chang-Hinton neoclassical transport model.
 
         When set, update_transport_model uses the Chang-Hinton formula instead
@@ -120,7 +128,7 @@ class TransportSolver(FusionKernel):
             'q_profile': q_profile,
         }
 
-    def inject_impurities(self, flux_from_wall_per_sec, dt):
+    def inject_impurities(self, flux_from_wall_per_sec: float, dt: float) -> None:
         """
         Models impurity influx from PWI erosion.
         Simple diffusion model: Source at edge, diffuses inward.
@@ -149,7 +157,7 @@ class TransportSolver(FusionKernel):
         
         self.n_impurity = np.maximum(0, new_imp)
 
-    def calculate_bootstrap_current(self, R0, B_pol):
+    def calculate_bootstrap_current(self, R0: float, B_pol: float) -> NDArray[Any]:
         """
         Calculates the neoclassical bootstrap current density [A/m2]
         using a simplified Sauter model.
@@ -165,17 +173,17 @@ class TransportSolver(FusionKernel):
         
         # Scaling constant for J_bs
         # J_bs ~ f_trapped / B_pol * dP/dr
-        B_pol = np.maximum(B_pol, 0.1) # Avoid div by zero at axis
+        B_pol_val = max(B_pol, 0.1) # Avoid div by zero at axis
         
-        J_bs = 1.2 * (f_trapped / B_pol) * dP_drho / (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"])
+        J_bs = 1.2 * (f_trapped / B_pol_val) * dP_drho / (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"])
         
         # Ensure it's zero at axis and edge
-        J_bs[0] = 0
-        J_bs[-1] = 0
+        J_bs[0] = 0.0
+        J_bs[-1] = 0.0
         
         return J_bs
 
-    def update_transport_model(self, P_aux):
+    def update_transport_model(self, P_aux: float) -> None:
         """
         Bohm / Gyro-Bohm Transport Model.
         """
@@ -254,7 +262,7 @@ class TransportSolver(FusionKernel):
 
     # ── Crank-Nicolson helpers ───────────────────────────────────────
 
-    def _explicit_diffusion_rhs(self, T, chi):
+    def _explicit_diffusion_rhs(self, T: NDArray[Any], chi: NDArray[Any]) -> NDArray[Any]:
         """Compute explicit diffusion operator L_h(T) = (1/r) d/dr(r chi dT/dr).
 
         Uses half-grid diffusivities and central differences on the
@@ -279,7 +287,7 @@ class TransportSolver(FusionKernel):
 
         return Lh
 
-    def _build_cn_tridiag(self, chi, dt):
+    def _build_cn_tridiag(self, chi: NDArray[Any], dt: float) -> Tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
         """Build tridiagonal coefficients for the Crank-Nicolson LHS.
 
         The implicit system is:
@@ -313,7 +321,7 @@ class TransportSolver(FusionKernel):
 
     # ── Main evolution (Crank-Nicolson) ──────────────────────────────
 
-    def evolve_profiles(self, dt, P_aux):
+    def evolve_profiles(self, dt: float, P_aux: float) -> Tuple[float, float]:
         """Advance Ti by one time step using Crank-Nicolson implicit diffusion.
 
         The scheme is unconditionally stable, allowing dt up to ~1.0 s
@@ -348,9 +356,9 @@ class TransportSolver(FusionKernel):
         self.Ti = np.maximum(0.01, new_Ti)
         self.Te = self.Ti  # Assume equilibrated
 
-        return np.mean(self.Ti), self.Ti[0]
+        return float(np.mean(self.Ti)), float(self.Ti[0])
 
-    def map_profiles_to_2d(self):
+    def map_profiles_to_2d(self) -> None:
         """
         Projects the 1D radial profiles back onto the 2D Grad-Shafranov grid,
         including neoclassical bootstrap current.
@@ -441,7 +449,7 @@ class TransportSolver(FusionKernel):
         dt: float = 0.01,
         adaptive: bool = False,
         tol: float = 1e-3,
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """Run transport evolution until approximate steady state.
 
         Parameters
