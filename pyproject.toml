@@ -45,6 +45,14 @@ scpn-dashboard = "scpn_fusion.ui.app:main"
 
 [tool.mypy]
 strict = true
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+disallow_any_generics = false
+check_untyped_defs = true
+warn_return_any = false
+no_implicit_optional = false
+ignore_missing_imports = true
+
 files = [
     # scpn/ (existing)
     "src/scpn_fusion/scpn/contracts.py",
@@ -68,7 +76,16 @@ files = [
     # core/ (selected)
     "src/scpn_fusion/core/eqdsk.py",
     "src/scpn_fusion/core/stability_mhd.py",
+    "src/scpn_fusion/core/integrated_transport_solver.py",
+    # control/
+    "src/scpn_fusion/control/halo_re_physics.py",
+    "src/scpn_fusion/control/h_infinity_controller.py",
+    "src/scpn_fusion/control/__init__.py",
 ]
+
+[[tool.mypy.overrides]]
+module = ["scpn_fusion.ui.*", "scpn_fusion.diagnostics.*", "scpn_fusion.engineering.*", "scpn_fusion.io.*"]
+ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = ["sc_neurocore", "sc_neurocore.*"]

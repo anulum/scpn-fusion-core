@@ -92,8 +92,8 @@ class BreedingBlanket:
         b[-1] = 0.0
         
         # Solve
-        phi = np.linalg.solve(A, b)
-        
+        phi: NDArray[np.float64] = np.asarray(np.linalg.solve(A, b), dtype=np.float64)
+
         return phi
 
     def calculate_tbr(self, phi: NDArray[np.float64]) -> tuple[float, NDArray[np.float64]]:
@@ -105,10 +105,8 @@ class BreedingBlanket:
         production_rate = self.Sigma_capture_Li6 * phi
         
         # Integrate over thickness (trapezoidal)
-        if hasattr(np, "trapezoid"):
-            total_production = np.trapezoid(production_rate, self.x)
-        else:  # pragma: no cover - legacy NumPy fallback
-            total_production = np.trapz(production_rate, self.x)
+        _trapz = getattr(np, "trapezoid", None) or getattr(np, "trapz")
+        total_production = _trapz(production_rate, self.x)
         
         # Incoming Current (Approx D * dPhi/dx at boundary, or simplified Incident Flux)
         # TBR is defined relative to 1 source neutron entering.
@@ -453,8 +451,8 @@ class MultiGroupBlanket:
         prod_g3 = self.sigma_capture_g3 * phi_g3
         total_prod = prod_g1 + prod_g2 + prod_g3
 
-        trap = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
-        total_tritium = trap(total_prod, self.x)
+        _trapz = getattr(np, "trapezoid", None) or getattr(np, "trapz")
+        total_tritium = _trapz(total_prod, self.x)
         # Incident partial current: J⁺ = φ(0)/4 for isotropic diffuse source
         # (standard diffusion theory; the single-group model above uses φ/2
         # which is a pencil-beam approximation, but for a volumetric plasma
@@ -472,9 +470,9 @@ class MultiGroupBlanket:
             "total_production": total_prod,
             "tbr": float(tbr),
             "tbr_by_group": {
-                "fast": float(trap(prod_g1, self.x) / max(incident_current, 1e-12)),
-                "epithermal": float(trap(prod_g2, self.x) / max(incident_current, 1e-12)),
-                "thermal": float(trap(prod_g3, self.x) / max(incident_current, 1e-12)),
+                "fast": float(_trapz(prod_g1, self.x) / max(incident_current, 1e-12)),
+                "epithermal": float(_trapz(prod_g2, self.x) / max(incident_current, 1e-12)),
+                "thermal": float(_trapz(prod_g3, self.x) / max(incident_current, 1e-12)),
             },
         }
 

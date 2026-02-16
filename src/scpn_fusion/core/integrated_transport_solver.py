@@ -11,20 +11,17 @@ import sys
 import os
 import copy
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union, List
+from typing import Any, Dict, Optional, Tuple, Union, List, cast
 
 try:
     from numpy.typing import NDArray
 except ImportError:
     NDArray = Any # type: ignore
 
-try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:
-    from scpn_fusion.core.fusion_kernel import FusionKernel
-
+from scpn_fusion.core._rust_compat import FusionKernel
 
 def chang_hinton_chi_profile(rho: NDArray[Any], T_i: NDArray[Any], n_e_19: NDArray[Any], q: NDArray[Any], R0: float, a: float, B0: float, A_ion: float = 2.0, Z_eff: float = 1.5) -> NDArray[Any]:
+
     """
     Chang-Hinton (1982) neoclassical ion thermal diffusivity profile [m²/s].
 
@@ -85,7 +82,7 @@ def chang_hinton_chi_profile(rho: NDArray[Any], T_i: NDArray[Any], n_e_19: NDArr
     return chi_nc
 
 
-class TransportSolver(FusionKernel):
+class TransportSolver(FusionKernel):  # type: ignore[misc]
     """
     1.5D Integrated Transport Code.
     Solves Heat and Particle diffusion equations on flux surfaces,
@@ -111,6 +108,10 @@ class TransportSolver(FusionKernel):
         
         # Impurity Profile (Tungsten density)
         self.n_impurity: NDArray[Any] = np.zeros(self.nr)
+
+        # 2D attributes
+        self.Pressure_2D: NDArray[Any] = np.zeros((self.NZ, self.NR))
+        self.J_phi: NDArray[Any] = np.zeros((self.NZ, self.NR))
 
         # Neoclassical transport configuration (None = constant chi_base=0.5)
         self.neoclassical_params: Optional[Dict[str, Any]] = None
@@ -192,6 +193,7 @@ class TransportSolver(FusionKernel):
         threshold = 2.0
         
         # Base Level — use Chang-Hinton if configured, else constant
+        chi_base: Union[float, NDArray[Any]]
         if self.neoclassical_params is not None:
             p = self.neoclassical_params
             chi_base = chang_hinton_chi_profile(
@@ -369,7 +371,7 @@ class TransportSolver(FusionKernel):
         Psi_axis = self.Psi[iz_ax, ir_ax]
         xp, psi_x = self.find_x_point(self.Psi)
         Psi_edge = psi_x
-        if abs(Psi_edge - Psi_axis) < 1.0: Psi_edge = np.min(self.Psi)
+        if abs(Psi_edge - Psi_axis) < 1.0: Psi_edge = float(np.min(self.Psi))
         
         # 2. Calculate Rho for every 2D point
         denom = Psi_edge - Psi_axis
@@ -379,10 +381,10 @@ class TransportSolver(FusionKernel):
         Rho_2D = np.sqrt(Psi_norm)
         
         # 3. Calculate 1D Bootstrap Current
-        R0 = (self.cfg["dimensions"]["R_min"] + self.cfg["dimensions"]["R_max"]) / 2.0
+        R0 = cast(float, (self.cfg["dimensions"]["R_min"] + self.cfg["dimensions"]["R_max"]) / 2.0)
         # Estimate B_pol from Ip
         I_target = self.cfg['physics']['plasma_current_target']
-        B_pol_est = (1.256e-6 * I_target) / (2 * np.pi * 0.5 * (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]))
+        B_pol_est = cast(float, (1.256e-6 * I_target) / (2 * np.pi * 0.5 * (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"])))
         J_bs_1d = self.calculate_bootstrap_current(R0, B_pol_est)
         
         # 4. Interpolate 1D profiles to 2D
