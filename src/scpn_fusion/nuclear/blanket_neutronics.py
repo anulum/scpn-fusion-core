@@ -290,5 +290,193 @@ def run_breeding_sim(
     }
     return summary
 
+class MultiGroupBlanket:
+    """3-group neutron transport for tritium breeding ratio calculation.
+
+    Energy groups:
+        Group 1 (fast):       E > 1 MeV  (source: 14.1 MeV D-T neutrons)
+        Group 2 (epithermal): 1 eV < E < 1 MeV  (down-scattered)
+        Group 3 (thermal):    E < 1 eV  (thermalised, main Li-6 capture)
+
+    Includes:
+        - Energy-dependent cross sections per group
+        - Down-scatter from fast → epithermal → thermal
+        - Beryllium (n,2n) multiplication in fast group
+        - Li-6(n,t) capture in all groups (dominant in thermal)
+
+    This is a significant upgrade over the single-group BreedingBlanket above.
+    """
+
+    def __init__(
+        self,
+        thickness_cm: float = 80.0,
+        li6_enrichment: float = 0.9,
+        n_cells: int = 100,
+    ) -> None:
+        self.thickness = float(thickness_cm)
+        # Ensure at least 2.5 cells/cm for consistent spatial resolution
+        # across different blanket thicknesses.
+        self.n_cells = max(int(n_cells), int(self.thickness * 2.5))
+        self.x = np.linspace(0.0, self.thickness, self.n_cells)
+        self.dx = self.x[1] - self.x[0]
+        self.li6_enrich = float(np.clip(li6_enrichment, 0.0, 1.0))
+
+        # ── Cross sections (cm^-1) per group ─────────────────────────
+        # Group 1: fast (14 MeV)
+        # Li-6(n,t) at 14 MeV is small (~25 mb); Be(n,2n) threshold ~1.8 MeV.
+        self.sigma_capture_g1 = 0.005 * self.li6_enrich  # Li-6 capture at 14 MeV (small)
+        self.sigma_scatter_g1 = 0.20  # elastic scatter
+        self.sigma_multiply_g1 = 0.10  # Be (n,2n) at 14 MeV
+        self.sigma_downscatter_12 = 0.20  # fast → epithermal (inelastic)
+        self.sigma_parasitic_g1 = 0.005  # structural parasitic
+
+        # Group 2: epithermal (keV–MeV)
+        # Li-6 has resonance capture in the keV range.
+        self.sigma_capture_g2 = 0.05 * self.li6_enrich  # Li-6 resonance capture
+        self.sigma_scatter_g2 = 0.15
+        self.sigma_downscatter_23 = 0.18  # epithermal → thermal (moderation)
+        self.sigma_parasitic_g2 = 0.01
+
+        # Group 3: thermal (< 1 eV)
+        # Li-6(n,t) at thermal: ~940 barns, dominant capture pathway.
+        # LiPb atom density × micro-sigma → macro ~0.8 cm^-1 at 90% enrichment.
+        self.sigma_capture_g3 = 0.80 * self.li6_enrich  # Li-6 dominant at thermal
+        self.sigma_scatter_g3 = 0.05
+        self.sigma_parasitic_g3 = 0.01
+
+        self.multiplier_gain = 1.8  # Be(n,2n) neutron gain
+
+    def solve_transport(self, incident_flux: float = 1e14) -> dict:
+        """Solve 3-group steady-state neutron diffusion.
+
+        Returns dict with phi_g1, phi_g2, phi_g3 flux arrays and TBR.
+        """
+        incident_flux = float(incident_flux)
+        N = self.n_cells
+        dx = self.dx
+
+        # --- Group 1 (fast) ---
+        sigma_tot_1 = (
+            self.sigma_capture_g1
+            + self.sigma_scatter_g1
+            + self.sigma_multiply_g1
+            + self.sigma_downscatter_12
+            + self.sigma_parasitic_g1
+        )
+        D1 = 1.0 / (3.0 * sigma_tot_1)
+        sigma_rem_1 = (
+            self.sigma_capture_g1
+            + self.sigma_downscatter_12
+            + self.sigma_parasitic_g1
+            - self.sigma_multiply_g1 * (self.multiplier_gain - 1.0)
+        )
+
+        A1 = np.zeros((N, N))
+        b1 = np.zeros(N)
+        coeff1 = D1 / dx**2
+        for i in range(1, N - 1):
+            A1[i, i - 1] = -coeff1
+            A1[i, i] = 2.0 * coeff1 + sigma_rem_1
+            A1[i, i + 1] = -coeff1
+        A1[0, 0] = 1.0
+        b1[0] = incident_flux
+        A1[-1, -1] = 1.0
+        b1[-1] = 0.0
+
+        phi_g1 = np.linalg.solve(A1, b1)
+        phi_g1 = np.maximum(phi_g1, 0.0)
+
+        # --- Group 2 (epithermal) — source from down-scatter of group 1 ---
+        sigma_tot_2 = (
+            self.sigma_capture_g2
+            + self.sigma_scatter_g2
+            + self.sigma_downscatter_23
+            + self.sigma_parasitic_g2
+        )
+        D2 = 1.0 / (3.0 * sigma_tot_2)
+        sigma_rem_2 = (
+            self.sigma_capture_g2 + self.sigma_downscatter_23 + self.sigma_parasitic_g2
+        )
+
+        A2 = np.zeros((N, N))
+        b2 = np.zeros(N)
+        coeff2 = D2 / dx**2
+        for i in range(1, N - 1):
+            A2[i, i - 1] = -coeff2
+            A2[i, i] = 2.0 * coeff2 + sigma_rem_2
+            A2[i, i + 1] = -coeff2
+            b2[i] = self.sigma_downscatter_12 * phi_g1[i]  # source from group 1
+        # Reflective (Neumann) BC at x=0: dphi/dx = 0 → phi[0] = phi[1]
+        # Epithermal neutrons are born inside the blanket from fast down-scatter;
+        # a zero-flux BC here would non-physically suppress near-wall production.
+        A2[0, 0] = 1.0
+        A2[0, 1] = -1.0
+        b2[0] = 0.0
+        # Vacuum BC at x=L (rear shield)
+        A2[-1, -1] = 1.0
+        b2[-1] = 0.0
+
+        phi_g2 = np.linalg.solve(A2, b2)
+        phi_g2 = np.maximum(phi_g2, 0.0)
+
+        # --- Group 3 (thermal) — source from down-scatter of group 2 ---
+        sigma_tot_3 = (
+            self.sigma_capture_g3 + self.sigma_scatter_g3 + self.sigma_parasitic_g3
+        )
+        D3 = 1.0 / (3.0 * sigma_tot_3)
+        sigma_rem_3 = self.sigma_capture_g3 + self.sigma_parasitic_g3
+
+        A3 = np.zeros((N, N))
+        b3 = np.zeros(N)
+        coeff3 = D3 / dx**2
+        for i in range(1, N - 1):
+            A3[i, i - 1] = -coeff3
+            A3[i, i] = 2.0 * coeff3 + sigma_rem_3
+            A3[i, i + 1] = -coeff3
+            b3[i] = self.sigma_downscatter_23 * phi_g2[i]  # source from group 2
+        # Reflective (Neumann) BC at x=0: dphi/dx = 0
+        # Thermal neutrons are produced by moderation throughout the blanket.
+        A3[0, 0] = 1.0
+        A3[0, 1] = -1.0
+        b3[0] = 0.0
+        # Vacuum BC at x=L
+        A3[-1, -1] = 1.0
+        b3[-1] = 0.0
+
+        phi_g3 = np.linalg.solve(A3, b3)
+        phi_g3 = np.maximum(phi_g3, 0.0)
+
+        # --- TBR from all 3 groups ---
+        prod_g1 = self.sigma_capture_g1 * phi_g1
+        prod_g2 = self.sigma_capture_g2 * phi_g2
+        prod_g3 = self.sigma_capture_g3 * phi_g3
+        total_prod = prod_g1 + prod_g2 + prod_g3
+
+        trap = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
+        total_tritium = trap(total_prod, self.x)
+        # Incident partial current: J⁺ = φ(0)/4 for isotropic diffuse source
+        # (standard diffusion theory; the single-group model above uses φ/2
+        # which is a pencil-beam approximation, but for a volumetric plasma
+        # neutron source illuminating the blanket, φ/4 is more appropriate).
+        incident_current = phi_g1[0] / 4.0
+        tbr = total_tritium / max(incident_current, 1e-12)
+
+        return {
+            "phi_g1": phi_g1,
+            "phi_g2": phi_g2,
+            "phi_g3": phi_g3,
+            "production_g1": prod_g1,
+            "production_g2": prod_g2,
+            "production_g3": prod_g3,
+            "total_production": total_prod,
+            "tbr": float(tbr),
+            "tbr_by_group": {
+                "fast": float(trap(prod_g1, self.x) / max(incident_current, 1e-12)),
+                "epithermal": float(trap(prod_g2, self.x) / max(incident_current, 1e-12)),
+                "thermal": float(trap(prod_g3, self.x) / max(incident_current, 1e-12)),
+            },
+        }
+
+
 if __name__ == "__main__":
     run_breeding_sim()

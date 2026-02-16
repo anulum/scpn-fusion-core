@@ -248,3 +248,254 @@ class VMECStyleEquilibrium3D:
                 faces.append([b, d, c])
 
         return vertices.astype(float), np.asarray(faces, dtype=np.int64)
+
+
+# ──────────────────────────────────────────────────────────────────────
+# 3D Force-Balance Solver (Reduced-Order Spectral Variational)
+# ──────────────────────────────────────────────────────────────────────
+
+
+@dataclass
+class ForceBalanceResult:
+    """Result of reduced-order 3D force-balance solve."""
+
+    converged: bool
+    iterations: int
+    residual_norm: float
+    initial_residual: float
+    modes: list[FourierMode3D]
+    force_residual_history: list[float]
+
+
+class ForceBalance3D:
+    r"""Reduced-order 3D force-balance solver via spectral variational method.
+
+    Takes a 2D Grad-Shafranov base equilibrium (Psi, pressure, current profiles)
+    and iterates 3D Fourier mode coefficients to minimize the MHD force residual:
+
+        ||J x B - nabla p||^2
+
+    evaluated on a (rho, theta, phi) sampling grid. This is NOT a full 3D VMEC
+    solver but provides a genuine force-balance closure by coupling the Fourier
+    boundary parameterization to the MHD equilibrium condition.
+
+    The method is a spectral Galerkin projection: compute the force residual on a
+    3D sampling grid, project onto each Fourier mode via inner product, and update
+    the mode amplitudes by gradient descent with Armijo line search.
+    """
+
+    def __init__(
+        self,
+        eq: VMECStyleEquilibrium3D,
+        *,
+        b0_tesla: float = 5.3,
+        r0_major: float = 6.2,
+        p0_pa: float = 5e5,
+        j0_ma_m2: float = 1.0,
+        pressure_exp: float = 2.0,
+        current_exp: float = 1.5,
+    ) -> None:
+        self.eq = eq
+        self.b0 = float(b0_tesla)
+        self.r0 = float(r0_major)
+        self.p0 = float(p0_pa)
+        self.j0 = float(j0_ma_m2) * 1e6  # MA/m^2 -> A/m^2
+        self.pressure_exp = float(pressure_exp)
+        self.current_exp = float(current_exp)
+
+    def _pressure_profile(self, rho: np.ndarray) -> np.ndarray:
+        """p(rho) = p0 * (1 - rho^2)^alpha, clamped to [0, 1]."""
+        rho_c = np.clip(rho, 0.0, 1.0)
+        return self.p0 * (1.0 - rho_c**2) ** self.pressure_exp
+
+    def _current_profile(self, rho: np.ndarray) -> np.ndarray:
+        """J_phi(rho) = j0 * (1 - rho^2)^beta."""
+        rho_c = np.clip(rho, 0.0, 1.0)
+        return self.j0 * (1.0 - rho_c**2) ** self.current_exp
+
+    def _magnetic_field(
+        self, R: np.ndarray, Z: np.ndarray, rho: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Approximate (B_R, B_Z, B_phi) at given points.
+
+        Toroidal field: B_phi = B0 * R0 / R.
+        Poloidal field: derived from current profile via Ampere's law (cylindrical
+        approximation): B_theta ~ mu0 * J_phi * a * rho / 2.
+        """
+        mu0 = 4.0 * np.pi * 1e-7
+        B_phi = self.b0 * self.r0 / np.maximum(R, 0.1)
+        J_phi = self._current_profile(rho)
+        B_theta = mu0 * J_phi * self.eq.a_minor * np.clip(rho, 0.0, 1.0) / 2.0
+        # Project B_theta into (R, Z) components via poloidal angle
+        theta_approx = np.arctan2(Z - self.eq.z_axis, R - self.eq.r_axis)
+        B_R = -B_theta * np.sin(theta_approx)
+        B_Z = B_theta * np.cos(theta_approx)
+        return B_R, B_Z, B_phi
+
+    def compute_force_residual(
+        self,
+        n_rho: int = 12,
+        n_theta: int = 24,
+        n_phi: int = 16,
+    ) -> float:
+        r"""Compute ||J x B - nabla p||^2 on a (rho, theta, phi) grid.
+
+        Returns the volume-averaged L2 norm of the force residual.
+        """
+        rho_pts = np.linspace(0.05, 0.95, n_rho)
+        theta_pts = np.linspace(0.0, 2.0 * np.pi, n_theta, endpoint=False)
+        phi_pts = np.linspace(0.0, 2.0 * np.pi, n_phi, endpoint=False)
+        rho_g, theta_g, phi_g = np.meshgrid(rho_pts, theta_pts, phi_pts, indexing="ij")
+
+        R, Z, _ = self.eq.flux_to_cylindrical(rho_g, theta_g, phi_g)
+        rho_flat = rho_g.ravel()
+        R_flat = R.ravel()
+        Z_flat = Z.ravel()
+
+        # Pressure gradient (radial in flux coordinates)
+        drho = 0.01
+        p_plus = self._pressure_profile(rho_flat + drho)
+        p_minus = self._pressure_profile(rho_flat - drho)
+        dp_drho = (p_plus - p_minus) / (2.0 * drho)
+
+        # Map dp/drho to (R, Z) via chain rule: dp/dR ~ dp/drho * drho/dR
+        # drho/dR ~ cos(theta) / a_minor, drho/dZ ~ sin(theta) / (kappa * a_minor)
+        theta_flat = theta_g.ravel()
+        grad_p_R = dp_drho * np.cos(theta_flat) / max(self.eq.a_minor, 1e-6)
+        grad_p_Z = dp_drho * np.sin(theta_flat) / max(
+            self.eq.kappa * self.eq.a_minor, 1e-6
+        )
+
+        # Current density and magnetic field
+        B_R, B_Z, B_phi = self._magnetic_field(R_flat, Z_flat, rho_flat)
+        J_phi = self._current_profile(rho_flat)
+
+        # J x B (only phi-component of J, so J x B has R and Z components)
+        # J = (0, 0, J_phi) in cylindrical
+        # J x B = (J_phi * B_Z, -J_phi * B_R, 0) -- but we want radial force balance
+        JxB_R = J_phi * B_Z
+        JxB_Z = -J_phi * B_R
+
+        # Force residual: F = J x B - grad(p)
+        F_R = JxB_R - grad_p_R
+        F_Z = JxB_Z - grad_p_Z
+
+        residual = float(np.sqrt(np.mean(F_R**2 + F_Z**2)))
+        return residual
+
+    def _mode_gradient(
+        self,
+        mode_idx: int,
+        component: str,
+        epsilon: float = 1e-5,
+        n_rho: int = 12,
+        n_theta: int = 24,
+        n_phi: int = 16,
+    ) -> float:
+        """Finite-difference gradient of residual w.r.t. a mode coefficient."""
+        mode = self.eq.modes[mode_idx]
+        orig_val = getattr(mode, component)
+
+        # Perturb +epsilon
+        kwargs = {
+            "m": mode.m, "n": mode.n,
+            "r_cos": mode.r_cos, "r_sin": mode.r_sin,
+            "z_cos": mode.z_cos, "z_sin": mode.z_sin,
+        }
+        kwargs[component] = orig_val + epsilon
+        self.eq.modes[mode_idx] = FourierMode3D(**kwargs)
+        res_plus = self.compute_force_residual(n_rho, n_theta, n_phi)
+
+        # Perturb -epsilon
+        kwargs[component] = orig_val - epsilon
+        self.eq.modes[mode_idx] = FourierMode3D(**kwargs)
+        res_minus = self.compute_force_residual(n_rho, n_theta, n_phi)
+
+        # Restore
+        kwargs[component] = orig_val
+        self.eq.modes[mode_idx] = FourierMode3D(**kwargs)
+
+        return (res_plus - res_minus) / (2.0 * epsilon)
+
+    def solve(
+        self,
+        *,
+        max_iterations: int = 200,
+        tolerance: float = 1e-4,
+        learning_rate: float = 0.01,
+        armijo_c: float = 1e-4,
+        n_rho: int = 12,
+        n_theta: int = 24,
+        n_phi: int = 16,
+    ) -> ForceBalanceResult:
+        """Iterate Fourier coefficients to minimise force residual.
+
+        Uses gradient descent with Armijo back-tracking line search. If the
+        equilibrium has no modes, a default set (m=0..2, n=0..1) is seeded.
+        """
+        if not self.eq.modes:
+            seed_modes = []
+            for m in range(3):
+                for n in range(2):
+                    seed_modes.append(FourierMode3D(m=m, n=n))
+            self.eq.modes = seed_modes
+
+        initial_residual = self.compute_force_residual(n_rho, n_theta, n_phi)
+        history = [initial_residual]
+
+        components = ["r_cos", "r_sin", "z_cos", "z_sin"]
+
+        for iteration in range(max_iterations):
+            current_residual = history[-1]
+            if current_residual < tolerance:
+                break
+
+            # Compute gradient for all mode coefficients
+            gradients: list[tuple[int, str, float]] = []
+            for idx in range(len(self.eq.modes)):
+                for comp in components:
+                    g = self._mode_gradient(idx, comp, n_rho=n_rho, n_theta=n_theta, n_phi=n_phi)
+                    gradients.append((idx, comp, g))
+
+            # Gradient norm for Armijo
+            grad_norm_sq = sum(g * g for _, _, g in gradients)
+            if grad_norm_sq < 1e-20:
+                break
+
+            # Armijo line search
+            step = learning_rate
+            for _ in range(8):
+                # Apply trial step
+                saved = list(self.eq.modes)
+                for idx, comp, g in gradients:
+                    mode = self.eq.modes[idx]
+                    kwargs = {
+                        "m": mode.m, "n": mode.n,
+                        "r_cos": mode.r_cos, "r_sin": mode.r_sin,
+                        "z_cos": mode.z_cos, "z_sin": mode.z_sin,
+                    }
+                    kwargs[comp] = kwargs[comp] - step * g
+                    self.eq.modes[idx] = FourierMode3D(**kwargs)
+
+                trial_residual = self.compute_force_residual(n_rho, n_theta, n_phi)
+                if trial_residual <= current_residual - armijo_c * step * grad_norm_sq:
+                    break
+                # Revert and halve step
+                self.eq.modes = saved
+                step *= 0.5
+            else:
+                # Accept last trial even if Armijo not fully satisfied
+                pass
+
+            new_residual = self.compute_force_residual(n_rho, n_theta, n_phi)
+            history.append(new_residual)
+
+        final_residual = history[-1]
+        return ForceBalanceResult(
+            converged=final_residual < tolerance,
+            iterations=len(history) - 1,
+            residual_norm=final_residual,
+            initial_residual=initial_residual,
+            modes=list(self.eq.modes),
+            force_residual_history=history,
+        )
