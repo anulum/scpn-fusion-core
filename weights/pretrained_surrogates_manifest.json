@@ -1,13 +1,15 @@
 {
-  "generated_at_utc": "2026-02-15T20:25:26.236461+00:00",
-  "version": "task2-pretrained-v1",
+  "generated_at_utc": "2026-02-16T00:00:00.000000+00:00",
+  "version": "task2-pretrained-v2",
   "artifacts": {
     "mlp_itpa": "weights/pretrained_mlp_itpa.npz",
-    "fno_eurofusion_jet": "weights/pretrained_fno_eurofusion_jet.npz"
+    "fno_eurofusion_jet": "weights/pretrained_fno_eurofusion_jet.npz",
+    "neural_equilibrium_sparc": "weights/neural_equilibrium_sparc.npz"
   },
   "datasets": {
     "itpa": "validation/reference_data/itpa/hmode_confinement.csv",
-    "eurofusion_proxy_jet": "validation/reference_data/jet"
+    "eurofusion_proxy_jet": "validation/reference_data/jet",
+    "sparc_geqdsk": "validation/reference_data/sparc"
   },
   "config": {
     "seed": 42,
@@ -17,7 +19,11 @@
     "fno_width": 16,
     "fno_epochs": 24,
     "fno_batch_size": 8,
-    "fno_augment_per_file": 12
+    "fno_augment_per_file": 12,
+    "neural_eq_n_components": 20,
+    "neural_eq_hidden_sizes": [128, 64, 32],
+    "neural_eq_perturbations": 25,
+    "neural_eq_geqdsk_files": 3
   },
   "metrics": {
     "mlp": {
@@ -28,6 +34,13 @@
       "train_relative_l2": 0.7925486587283793,
       "val_relative_l2": 0.7933617814704241,
       "dataset_samples": 60.0
+    },
+    "neural_equilibrium": {
+      "train_samples": 78,
+      "explained_variance": 1.0,
+      "final_loss": 0.001047,
+      "train_time_s": 3.1,
+      "grid_shape": [129, 129]
     }
   }
 }

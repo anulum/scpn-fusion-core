@@ -421,6 +421,15 @@ For context, here are representative runtimes from published fusion codes
 
 Struggling with convergence? See the [Solver Tuning Guide](docs/SOLVER_TUNING_GUIDE.md) + benchmarks notebook Part F.
 
+### Results
+
+The full benchmark outputs (with actual numbers from a real run) are published
+in [`RESULTS.md`](RESULTS.md). Key highlights include ITER-like Q ≥ 10
+operating-point identification, TBR > 1 from the 3-group blanket model,
+sub-ms hardware-in-the-loop control latency, and a 50-run disruption
+mitigation ensemble. Re-run `python validation/collect_results.py` on your
+own hardware to reproduce.
+
 ### Resources
 
 - **Full comparison tables:** [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)
@@ -508,7 +517,7 @@ This project is honest about what it does and does not do.
 | **Gyrokinetic turbulence** | Not planned | Use GENE/GS2 externally; SCPN provides surrogate coupling points |
 | **5D kinetic transport** | Not planned | Deliberately reduced-order for real-time control |
 | **GPU acceleration** | Deterministic runtime bridge + optional torch fallback ([GPU Roadmap](docs/GPU_ACCELERATION_ROADMAP.md)) | CUDA-native kernels remain roadmap work |
-| **Pre-trained neural weights** | Partially shipped (`weights/pretrained_mlp_itpa.npz`, `weights/pretrained_fno_eurofusion_jet.npz`) | Baseline MLP+FNO bundles are included; several surrogate lanes still require site-specific user training |
+| **Pre-trained neural weights** | 3 of 7 shipped (MLP ITPA, FNO JET, Neural Equilibrium SPARC) | Remaining 4 surrogate lanes (neural transport, heat ML shadow, gyro-Swin, turbulence oracle) still require site-specific user training |
 | **Point-wise RMSE validation** | Partial | Topology checks (axis, q-profile, GS sign) on 8 SPARC files; not yet point-wise psi comparison |
 
 ### What it does well

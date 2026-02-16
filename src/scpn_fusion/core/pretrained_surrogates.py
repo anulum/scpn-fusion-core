@@ -39,9 +39,9 @@ def _default_surrogate_coverage() -> dict[str, Any]:
     shipped = [
         "scpn_fusion.core.pretrained_surrogates:mlp_itpa",
         "scpn_fusion.core.pretrained_surrogates:fno_eurofusion_jet",
+        "scpn_fusion.core.neural_equilibrium:sparc",
     ]
     requires_user_training = [
-        "scpn_fusion.core.neural_equilibrium",
         "scpn_fusion.core.neural_transport",
         "scpn_fusion.core.heat_ml_shadow_surrogate",
         "scpn_fusion.core.gyro_swin_surrogate",
@@ -54,8 +54,9 @@ def _default_surrogate_coverage() -> dict[str, Any]:
         "coverage_fraction": float(len(shipped) / max(total, 1)),
         "coverage_percent": float(100.0 * len(shipped) / max(total, 1)),
         "notes": (
-            "Baseline pretrained artifacts are bundled for MLP+FNO lanes only. "
-            "Facility-specific surrogates and alternate neural lanes still require local training."
+            "Pretrained artifacts are bundled for MLP (ITPA), FNO (JET), and "
+            "neural equilibrium (SPARC GEQDSK). Remaining surrogate lanes "
+            "still require facility-specific user training."
         ),
     }
 
