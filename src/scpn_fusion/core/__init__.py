@@ -40,3 +40,9 @@ from .pretrained_surrogates import (
     load_pretrained_mlp,
     save_pretrained_mlp,
 )
+from .scaling_laws import (
+    TransportBenchmarkResult,
+    compute_h_factor,
+    ipb98y2_tau_e,
+    load_ipb98y2_coefficients,
+)

@@ -430,6 +430,22 @@ sub-ms hardware-in-the-loop control latency, and a 50-run disruption
 mitigation ensemble. Re-run `python validation/collect_results.py` on your
 own hardware to reproduce.
 
+### Physics Model Limitations (Honest Assessment)
+
+This section documents the **actual** fidelity of each physics module.
+Run `pytest tests/test_ipb98y2_benchmark.py -v` and
+`pytest tests/test_gs_convergence.py -v` to reproduce the numbers below.
+
+| Module | What It Is | What It Is Not |
+|--------|-----------|----------------|
+| **Equilibrium** | Picard iteration + Red-Black SOR (+ optional Anderson acceleration). Converges on 3 SPARC L-mode GEQDSKs. Default 65×65 grid. | Not EFIT-quality inverse reconstruction. Not free-boundary (coil currents are fixed). No multigrid in the Python path (Rust multigrid exists but is not wired to the main kernel). |
+| **Transport** | 1.5D Bohm/gyro-Bohm critical-gradient model with Chang-Hinton neoclassical option. Explicit time-stepping. IPB98(y,2) confinement time evaluation. | No ITG/TEM/ETG turbulent transport channels. No NBI slowing-down. No impurity transport (beyond simple diffusion). No sawtooth mixing in transport. Actual RMSE vs IPB98(y,2) on the 20-shot ITPA dataset is printed by `test_ipb98y2_benchmark.py`. |
+| **Stability** | Vertical n-index stability analysis. | No kink mode analysis. No peeling-ballooning (no access to edge bootstrap current calculation). No Mercier criterion. No resistive wall modes. |
+| **Neural Equilibrium** | PCA + MLP surrogate trained on 78 samples (3 SPARC L-mode configs at varying currents). | 78 training samples is far below what is needed for generalization. The surrogate is useful for fast controller prototyping on the specific SPARC L-mode family it was trained on, not for arbitrary equilibria. |
+| **FNO Turbulence** | Fourier Neural Operator trained on synthetic data (not real gyrokinetic output). | Not a replacement for GENE/GS2. The FNO learns a proxy mapping, not real turbulent transport coefficients. |
+| **Neural Transport MLP** | 20-row illustrative dataset from ITPA. Baseline pretrained bundle shipped. | 20 rows cannot capture the full H-mode confinement parameter space. Facility-specific retraining is mandatory for any quantitative use. |
+| **Grid Resolution** | Default 65×65 for prototyping. 129×129 and 257×257 tested in edge-case suite. | Production equilibrium codes use 257+ with multigrid. Our 65×65 default is appropriate for control-loop closure testing, not for publication-quality equilibrium reconstruction. |
+
 ### Resources
 
 - **Full comparison tables:** [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)

@@ -251,3 +251,83 @@ class TransportSolver(FusionKernel):
         I_target = self.cfg['physics']['plasma_current_target']
         if I_curr > 1e-9:
             self.J_phi *= (I_target / I_curr)
+
+    # ── Confinement time ───────────────────────────────────────────────
+
+    def compute_confinement_time(self, P_loss_MW: float) -> float:
+        """Compute the energy confinement time from stored energy.
+
+        τ_E = W_stored / P_loss, where W_stored = ∫ 3/2 n (Ti+Te) dV
+        and the volume element is estimated from the 1D radial profiles
+        using cylindrical approximation.
+
+        Parameters
+        ----------
+        P_loss_MW : float
+            Total loss power [MW].  Must be > 0.
+
+        Returns
+        -------
+        float
+            Energy confinement time [s].
+        """
+        if P_loss_MW <= 0:
+            return float("inf")
+
+        # Stored energy: W = ∫ 3/2 n_e (T_i + T_e) dV
+        # In 1D with cylindrical approx: dV ≈ 2πR₀ · 2π · r · a² · dρ
+        # Units: n_e is in 10^19 m^-3, T in keV → W in MJ
+        e_keV = 1.602176634e-16  # J per keV
+        dims = self.cfg["dimensions"]
+        R0 = (dims["R_min"] + dims["R_max"]) / 2.0
+        a = (dims["R_max"] - dims["R_min"]) / 2.0
+
+        # Volume element per rho bin: dV = 2π R₀ · 2π ρ a² dρ
+        rho_mid = self.rho
+        dV = 2.0 * np.pi * R0 * 2.0 * np.pi * rho_mid * a**2 * self.drho
+
+        # Energy density: 3/2 * n_e * (Ti + Te) [10^19 m^-3 * keV]
+        energy_density = 1.5 * (self.ne * 1e19) * (self.Ti + self.Te) * e_keV
+        W_stored_J = float(np.sum(energy_density * dV))
+        W_stored_MW = W_stored_J / 1e6  # J → MJ → MW·s
+
+        return W_stored_MW / P_loss_MW
+
+    def run_to_steady_state(
+        self,
+        P_aux: float,
+        n_steps: int = 500,
+        dt: float = 0.01,
+    ) -> dict:
+        """Run transport evolution until approximate steady state.
+
+        Parameters
+        ----------
+        P_aux : float
+            Auxiliary heating power [MW].
+        n_steps : int
+            Number of evolution steps.
+        dt : float
+            Time step [s].
+
+        Returns
+        -------
+        dict
+            ``{"T_avg": float, "T_core": float, "tau_e": float,
+            "n_steps": int, "Ti_profile": ndarray,
+            "ne_profile": ndarray}``
+        """
+        for _ in range(n_steps):
+            self.update_transport_model(P_aux)
+            T_avg, T_core = self.evolve_profiles(dt, P_aux)
+
+        tau_e = self.compute_confinement_time(P_aux)
+
+        return {
+            "T_avg": float(T_avg),
+            "T_core": float(T_core),
+            "tau_e": tau_e,
+            "n_steps": n_steps,
+            "Ti_profile": self.Ti.copy(),
+            "ne_profile": self.ne.copy(),
+        }

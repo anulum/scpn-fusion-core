@@ -338,6 +338,137 @@ class FusionKernel:
         )
         return Psi_new
 
+    def _sor_step(
+        self,
+        Psi: FloatArray,
+        Source: FloatArray,
+        omega: float = 1.6,
+    ) -> FloatArray:
+        """Vectorised Red-Black SOR iteration with toroidal 1/R stencil.
+
+        The GS* operator in cylindrical (R, Z) coordinates is:
+
+            ∂²ψ/∂R² - (1/R) ∂ψ/∂R + ∂²ψ/∂Z² = Source
+
+        Discretised with central differences this gives R-dependent
+        coefficients a_E, a_W (east/west neighbours in R) and constant
+        a_N, a_S (north/south neighbours in Z).
+
+        Parameters
+        ----------
+        Psi : FloatArray
+            Current flux estimate.
+        Source : FloatArray
+            Right-hand-side source term ``-mu0 R J_phi``.
+        omega : float
+            Over-relaxation factor.  Must satisfy 1.0 <= omega < 2.0.
+
+        Returns
+        -------
+        FloatArray
+            Updated flux array after one full red-black sweep.
+        """
+        Psi_new = Psi.copy()
+        NZ, NR = Psi.shape
+        dR2 = self.dR ** 2
+        dZ2 = self.dZ ** 2
+
+        # Toroidal stencil coefficients (arrays over interior grid)
+        R_int = self.RR[1:-1, 1:-1]
+        R_safe = np.maximum(R_int, 1e-10)
+        a_E = 1.0 / dR2 + 1.0 / (2.0 * R_safe * self.dR)  # (NZ-2, NR-2)
+        a_W = 1.0 / dR2 - 1.0 / (2.0 * R_safe * self.dR)  # (NZ-2, NR-2)
+        a_NS = 1.0 / dZ2  # scalar — same for north and south
+        a_C = 2.0 / dR2 + 2.0 / dZ2  # scalar
+
+        # Checkerboard mask for interior points
+        ii, jj = np.mgrid[1:NZ - 1, 1:NR - 1]
+
+        for parity in (0, 1):  # 0 = red, 1 = black
+            mask = ((ii + jj) % 2) == parity
+            gs_update = (
+                a_E[mask] * Psi_new[1:-1, 2:][mask]
+                + a_W[mask] * Psi_new[1:-1, 0:-2][mask]
+                + a_NS * Psi_new[0:-2, 1:-1][mask]
+                + a_NS * Psi_new[2:, 1:-1][mask]
+                - Source[1:-1, 1:-1][mask]
+            ) / a_C
+
+            old_vals = Psi_new[1:-1, 1:-1][mask]
+            interior = Psi_new[1:-1, 1:-1]
+            interior[mask] = (1.0 - omega) * old_vals + omega * gs_update
+            Psi_new[1:-1, 1:-1] = interior
+
+        return Psi_new
+
+    def _anderson_step(
+        self,
+        psi_history: list[FloatArray],
+        res_history: list[FloatArray],
+        m: int = 5,
+    ) -> FloatArray:
+        """Anderson acceleration (mixing) for the Picard iterate sequence.
+
+        Computes optimal coefficients from the last *m* residuals via a
+        least-squares solve, then returns the mixed iterate.
+
+        Parameters
+        ----------
+        psi_history : list[FloatArray]
+            List of recent Psi iterates.
+        res_history : list[FloatArray]
+            Corresponding residuals ``Psi_{k+1} - Psi_k`` for each iterate.
+        m : int
+            Mixing depth (number of previous iterates to use).
+
+        Returns
+        -------
+        FloatArray
+            Anderson-mixed Psi iterate.
+        """
+        k = len(res_history)
+        mk = min(m, k)
+
+        if mk < 2:
+            # Not enough history — fall back to latest iterate
+            return psi_history[-1].copy()
+
+        # Stack the last mk residuals as column vectors
+        res_cols = [r.ravel() for r in res_history[-mk:]]
+        F = np.column_stack(res_cols)  # (N, mk)
+
+        # Solve min ||F @ alpha||^2 s.t. sum(alpha) = 1
+        # via: delta_F[:,j] = F[:,j+1] - F[:,j], then solve normal equations
+        dF = np.diff(F, axis=1)  # (N, mk-1)
+        rhs = F[:, -1]           # latest residual
+
+        # Tikhonov regularisation for numerical stability
+        gram = dF.T @ dF
+        gram += 1e-10 * np.eye(gram.shape[0])
+        try:
+            gamma = np.linalg.solve(gram, dF.T @ rhs)
+        except np.linalg.LinAlgError:
+            return psi_history[-1].copy()
+
+        # Reconstruct alpha from gamma
+        alpha = np.zeros(mk)
+        alpha[-1] = 1.0 - np.sum(gamma)
+        alpha[:-1] -= gamma  # alpha_j -= gamma_j
+        # But alpha must sum to 1; fix via normalisation
+        alpha_sum = np.sum(alpha)
+        if abs(alpha_sum) < 1e-12:
+            return psi_history[-1].copy()
+        alpha /= alpha_sum
+
+        # Mix iterates
+        shape = psi_history[-1].shape
+        mixed = np.zeros_like(psi_history[-1])
+        psi_cols = psi_history[-mk:]
+        for j in range(mk):
+            mixed += alpha[j] * psi_cols[j]
+
+        return mixed
+
     def _apply_boundary_conditions(
         self, Psi: FloatArray, Psi_bc: FloatArray
     ) -> None:
@@ -360,6 +491,14 @@ class FusionKernel:
     ) -> FloatArray:
         """Run the inner elliptic solve (HPC or Python fallback).
 
+        The solver method is chosen from the config key
+        ``solver.solver_method``:
+
+        - ``"jacobi"`` — legacy single Jacobi sweep (fastest per step,
+          slowest convergence).
+        - ``"sor"`` — Red-Black SOR with toroidal 1/R stencil (default).
+        - ``"anderson"`` — SOR + Anderson acceleration (best convergence).
+
         Parameters
         ----------
         Source : FloatArray
@@ -378,8 +517,15 @@ class FusionKernel:
                 self._apply_boundary_conditions(Psi_acc, Psi_bc)
                 return Psi_acc
 
-        # Python fallback: single Jacobi sweep
-        Psi_new = self._jacobi_step(self.Psi, Source)
+        method = self.cfg["solver"].get("solver_method", "sor")
+        omega = self.cfg["solver"].get("sor_omega", 1.6)
+
+        if method == "jacobi":
+            Psi_new = self._jacobi_step(self.Psi, Source)
+        else:
+            # Both "sor" and "anderson" use SOR as the inner sweep
+            Psi_new = self._sor_step(self.Psi, Source, omega=omega)
+
         self._apply_boundary_conditions(Psi_new, Psi_bc)
         return Psi_new
 
@@ -411,12 +557,23 @@ class FusionKernel:
 
     # ── main solver ───────────────────────────────────────────────────
 
-    def solve_equilibrium(self) -> None:
+    def solve_equilibrium(self) -> dict[str, Any]:
         """Run the full Picard-iteration equilibrium solver.
 
         Iterates: topology analysis -> source update -> elliptic solve ->
         under-relaxation until the residual drops below the configured
         convergence threshold or the maximum iteration count is reached.
+
+        When ``solver.solver_method`` is ``"anderson"``, Anderson
+        acceleration is applied every few Picard steps to speed up
+        convergence.
+
+        Returns
+        -------
+        dict[str, Any]
+            ``{"psi": FloatArray, "converged": bool, "iterations": int,
+            "residual": float, "residual_history": list[float],
+            "wall_time_s": float, "solver_method": str}``
 
         Raises
         ------
@@ -435,14 +592,24 @@ class FusionKernel:
             self.cfg["solver"].get("fail_on_diverge", False)
         )
         mu0: float = self.cfg["physics"]["vacuum_permeability"]
+        method: str = self.cfg["solver"].get("solver_method", "sor")
+        anderson_m: int = self.cfg["solver"].get("anderson_depth", 5)
 
         x_point_pos: tuple[float, float] = (0.0, 0.0)
         Psi_best = self.Psi.copy()
         diff_best: float = 1e9
+        residual_history: list[float] = []
+        converged = False
+
+        # Anderson acceleration history buffers
+        psi_history: list[FloatArray] = []
+        res_history: list[FloatArray] = []
 
         self._seed_plasma(mu0)
 
+        final_iter = 0
         for k in range(max_iter):
+            final_iter = k
             # 1. Topology
             _, _, Psi_axis = self._find_magnetic_axis()
             x_point_pos, Psi_boundary = self.find_x_point(self.Psi)
@@ -475,7 +642,23 @@ class FusionKernel:
 
             # 4. Under-relaxation
             diff = float(np.mean(np.abs(Psi_new - self.Psi)))
+            residual_history.append(diff)
             self.Psi = (1.0 - alpha) * self.Psi + alpha * Psi_new
+
+            # 5. Anderson acceleration (optional)
+            if method == "anderson":
+                psi_history.append(self.Psi.copy())
+                res_history.append(Psi_new - self.Psi)
+                if len(psi_history) >= 3 and k % 3 == 0:
+                    mixed = self._anderson_step(
+                        psi_history, res_history, m=anderson_m
+                    )
+                    self._apply_boundary_conditions(mixed, Psi_vac_boundary)
+                    self.Psi = mixed
+                # Trim history to avoid unbounded memory growth
+                if len(psi_history) > anderson_m + 2:
+                    psi_history.pop(0)
+                    res_history.pop(0)
 
             if diff < diff_best:
                 diff_best = diff
@@ -483,6 +666,7 @@ class FusionKernel:
 
             if diff < tol:
                 logger.info("Converged at iter %d.  Residual: %.6e", k, diff)
+                converged = True
                 break
 
             if k % 100 == 0:
@@ -500,11 +684,22 @@ class FusionKernel:
         self.compute_b_field()
         elapsed = time.time() - t0
         logger.info(
-            "Solved in %.2fs.  X-point: R=%.2f, Z=%.2f",
+            "Solved in %.2fs (%s).  X-point: R=%.2f, Z=%.2f",
             elapsed,
+            method,
             x_point_pos[0],
             x_point_pos[1],
         )
+
+        return {
+            "psi": self.Psi,
+            "converged": converged,
+            "iterations": final_iter + 1,
+            "residual": diff_best,
+            "residual_history": residual_history,
+            "wall_time_s": elapsed,
+            "solver_method": method,
+        }
 
     # ── post-processing ───────────────────────────────────────────────
 
