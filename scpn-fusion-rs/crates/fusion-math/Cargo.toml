@@ -20,3 +20,11 @@ proptest = { workspace = true }
 [[bench]]
 name = "sor_bench"
 harness = false
+
+[[bench]]
+name = "gmres_bench"
+harness = false
+
+[[bench]]
+name = "multigrid_bench"
+harness = false

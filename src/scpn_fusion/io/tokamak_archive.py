@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.eqdsk import read_geqdsk
 
@@ -92,7 +93,7 @@ def _coerce_finite(name: str, value: Any, minimum: float | None = None) -> float
     return out
 
 
-def _resample_1d(vec: np.ndarray, points: int) -> np.ndarray:
+def _resample_1d(vec: NDArray[np.float64], points: int) -> NDArray[np.float64]:
     if vec.ndim != 1 or vec.size < 2:
         raise ValueError("Expected a 1D array with at least 2 values.")
     x = np.linspace(0.0, 1.0, vec.size, dtype=np.float64)
@@ -100,7 +101,7 @@ def _resample_1d(vec: np.ndarray, points: int) -> np.ndarray:
     return np.interp(x_new, x, vec).astype(np.float64)
 
 
-def _build_sensor_trace(psi_contour: np.ndarray, points: int, seed: int) -> np.ndarray:
+def _build_sensor_trace(psi_contour: NDArray[np.float64], points: int, seed: int) -> NDArray[np.float64]:
     rng = np.random.default_rng(int(seed))
     grad = np.gradient(psi_contour)
     base = np.concatenate((psi_contour, grad), axis=0)
@@ -109,7 +110,7 @@ def _build_sensor_trace(psi_contour: np.ndarray, points: int, seed: int) -> np.n
     mod = 0.08 * np.sin(2.0 * np.pi * 4.0 * t + 0.3)
     noise = rng.normal(0.0, 0.01, size=base.size)
     out = np.clip(base + mod + noise, 0.0, 2.5)
-    return out.astype(np.float64)
+    return np.asarray(out, dtype=np.float64)
 
 
 def _profile_from_geqdsk(path: Path, *, shot: int, time_ms: float, contour_points: int, sensor_points: int) -> TokamakProfile:
@@ -184,13 +185,13 @@ def _stable_shot_from_text(text: str) -> int:
     return 100_000 + acc
 
 
-def _synthetic_cmod_psi_contour(kappa: float, delta: float, points: int) -> np.ndarray:
+def _synthetic_cmod_psi_contour(kappa: float, delta: float, points: int) -> NDArray[np.float64]:
     theta = np.linspace(0.0, 2.0 * np.pi, int(points), endpoint=False, dtype=np.float64)
     r = 0.55 + 0.20 * np.cos(theta + 0.35 * delta) + 0.08 * np.sin(2.0 * theta)
     z = 0.45 * kappa * np.sin(theta)
     psi = np.sqrt((r - np.mean(r)) ** 2 + (z - np.mean(z)) ** 2)
     psi_norm = (psi - np.min(psi)) / (np.max(psi) - np.min(psi) + 1e-12)
-    return psi_norm.astype(np.float64)
+    return np.asarray(psi_norm, dtype=np.float64)
 
 
 def load_cmod_reference_profiles(
@@ -261,7 +262,7 @@ def _to_scalar(value: Any) -> float:
     return float(finite[-1])
 
 
-def _to_trace(value: Any, points: int) -> np.ndarray:
+def _to_trace(value: Any, points: int) -> NDArray[np.float64]:
     arr = np.asarray(value, dtype=np.float64)
     if arr.ndim == 0:
         arr = np.repeat(arr.reshape(1), 8)
@@ -287,7 +288,7 @@ def fetch_mdsplus_profiles(
     if not shots:
         raise ValueError("shots must be non-empty.")
     try:
-        import MDSplus  # type: ignore
+        import MDSplus
     except Exception as exc:  # pragma: no cover - optional dependency path
         raise RuntimeError("MDSplus is not available in this environment.") from exc
 

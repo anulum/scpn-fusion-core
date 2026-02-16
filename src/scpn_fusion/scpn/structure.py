@@ -22,7 +22,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy import sparse  # type: ignore[import-untyped]
+from scipy import sparse  # noqa: F401
 
 FloatArray = NDArray[np.float64]
 

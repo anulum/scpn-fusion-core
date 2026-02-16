@@ -11,6 +11,7 @@ from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 
 
 class TEMHD_Stabilizer:
@@ -33,7 +34,7 @@ class TEMHD_Stabilizer:
         self.T = np.ones(self.N, dtype=float) * 300.0
         self.T_wall = 300.0
 
-    def solve_tridiagonal(self, a, b, c, d):
+    def solve_tridiagonal(self, a: object, b: object, c: object, d: object) -> NDArray[np.float64]:
         """Solve tridiagonal system Ax=d via Thomas algorithm."""
         a = np.asarray(a, dtype=float)
         b = np.asarray(b, dtype=float)
@@ -79,7 +80,7 @@ class TEMHD_Stabilizer:
             res[i] = d_prime[i] - c_prime[i] * res[i + 1]
         return res
 
-    def step(self, heat_flux_MW_m2: float, dt: float = 0.1):
+    def step(self, heat_flux_MW_m2: float, dt: float = 0.1) -> tuple[float, float]:
         dt = float(dt)
         heat_flux_MW_m2 = float(heat_flux_MW_m2)
         if not np.isfinite(dt) or dt <= 0.0:

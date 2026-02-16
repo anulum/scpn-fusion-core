@@ -175,7 +175,7 @@ def mercier_stability(qp: QProfile) -> MercierResult:
             break
 
     return MercierResult(
-        rho=qp.rho, D_M=D_M, stable=stable,
+        rho=qp.rho, D_M=D_M.astype(np.float64), stable=stable,
         first_unstable_rho=first_unstable_rho,
     )
 

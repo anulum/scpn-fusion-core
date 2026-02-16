@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 
 
 @dataclass(frozen=True)
@@ -27,7 +28,7 @@ class BreedingBlanket:
     1D Neutronics Transport Code for Tritium Breeding Ratio (TBR) calculation.
     Simulates neutron attenuation and Li-6 capture in a Liquid Metal Blanket (LiPb).
     """
-    def __init__(self, thickness_cm=100, li6_enrichment=1.0):
+    def __init__(self, thickness_cm: float = 100, li6_enrichment: float = 1.0) -> None:
         self.thickness = thickness_cm
         self.points = 100
         self.x = np.linspace(0, thickness_cm, self.points)
@@ -45,7 +46,7 @@ class BreedingBlanket:
         # Multiplier gain (neutrons per (n,2n) reaction)
         self.multiplier_gain = 1.8 
 
-    def solve_transport(self, incident_flux=1e14, rear_albedo=0.0):
+    def solve_transport(self, incident_flux: float = 1e14, rear_albedo: float = 0.0) -> NDArray[np.float64]:
         """
         Solves steady-state diffusion-reaction equation for neutron flux Phi(x).
         -D * d2Phi/dx2 + Sigma_abs * Phi = Source
@@ -95,7 +96,7 @@ class BreedingBlanket:
         
         return phi
 
-    def calculate_tbr(self, phi):
+    def calculate_tbr(self, phi: NDArray[np.float64]) -> tuple[float, NDArray[np.float64]]:
         """
         Integrates Tritium production over the blanket volume.
         TBR = (Rate of Tritium Production) / (Rate of Incoming Neutrons)
@@ -126,14 +127,14 @@ class BreedingBlanket:
 
     def calculate_volumetric_tbr(
         self,
-        major_radius_m=6.2,
-        minor_radius_m=2.0,
-        elongation=1.7,
-        radial_cells=24,
-        poloidal_cells=72,
-        toroidal_cells=48,
-        incident_flux=1e14,
-    ):
+        major_radius_m: float = 6.2,
+        minor_radius_m: float = 2.0,
+        elongation: float = 1.7,
+        radial_cells: int = 24,
+        poloidal_cells: int = 72,
+        toroidal_cells: int = 48,
+        incident_flux: float = 1e14,
+    ) -> VolumetricBlanketReport:
         """
         Reduced 3D blanket-volume surrogate built on top of the 1D transport profile.
 
@@ -215,14 +216,14 @@ class BreedingBlanket:
 
 def run_breeding_sim(
     *,
-    thickness_cm=80.0,
-    li6_enrichment=0.9,
-    incident_flux=1e14,
-    rear_albedo=0.0,
-    save_plot=True,
-    output_path="Tritium_Breeding_Result.png",
-    verbose=True,
-):
+    thickness_cm: float = 80.0,
+    li6_enrichment: float = 0.9,
+    incident_flux: float = 1e14,
+    rear_albedo: float = 0.0,
+    save_plot: bool = True,
+    output_path: str = "Tritium_Breeding_Result.png",
+    verbose: bool = True,
+) -> dict[str, object]:
     """Run deterministic blanket breeding simulation and return summary metrics."""
     thickness_cm = float(thickness_cm)
     if (not np.isfinite(thickness_cm)) or thickness_cm <= 0.0:
@@ -346,7 +347,7 @@ class MultiGroupBlanket:
 
         self.multiplier_gain = 1.8  # Be(n,2n) neutron gain
 
-    def solve_transport(self, incident_flux: float = 1e14) -> dict:
+    def solve_transport(self, incident_flux: float = 1e14) -> dict[str, object]:
         """Solve 3-group steady-state neutron diffusion.
 
         Returns dict with phi_g1, phi_g2, phi_g3 flux arrays and TBR.

@@ -8,9 +8,12 @@
 # SCPN Diagnostics Module
 from .forward import (
     ForwardDiagnosticChannels,
+    bolometer_power_density,
+    ece_radiometer_temperature,
     generate_forward_channels,
     interferometer_phase_shift,
     neutron_count_rate,
+    soft_xray_brightness,
     thomson_scattering_voltage,
 )
 from .synthetic_sensors import SensorSuite

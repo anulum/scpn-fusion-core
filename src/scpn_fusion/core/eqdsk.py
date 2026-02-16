@@ -34,7 +34,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Union
+from typing import IO, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -65,45 +65,45 @@ class GEqdsk:
     current: float = 0.0     # plasma current (A)
 
     # 1-D profile arrays (length nw)
-    fpol: NDArray = field(default_factory=lambda: np.array([]))
-    pres: NDArray = field(default_factory=lambda: np.array([]))
-    ffprime: NDArray = field(default_factory=lambda: np.array([]))
-    pprime: NDArray = field(default_factory=lambda: np.array([]))
-    qpsi: NDArray = field(default_factory=lambda: np.array([]))
+    fpol: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
+    pres: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
+    ffprime: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
+    pprime: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
+    qpsi: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
 
     # 2-D flux map (nh × nw)
-    psirz: NDArray = field(default_factory=lambda: np.array([]))
+    psirz: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
 
     # Boundary and limiter contours
-    rbdry: NDArray = field(default_factory=lambda: np.array([]))
-    zbdry: NDArray = field(default_factory=lambda: np.array([]))
-    rlim: NDArray = field(default_factory=lambda: np.array([]))
-    zlim: NDArray = field(default_factory=lambda: np.array([]))
+    rbdry: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
+    zbdry: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
+    rlim: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
+    zlim: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
 
     # ── Derived grids ─────────────────────────────────────────────────
 
     @property
-    def r(self) -> NDArray:
+    def r(self) -> NDArray[np.float64]:
         """1-D array of R grid values."""
         return np.linspace(self.rleft, self.rleft + self.rdim, self.nw)
 
     @property
-    def z(self) -> NDArray:
+    def z(self) -> NDArray[np.float64]:
         """1-D array of Z grid values."""
         return np.linspace(
             self.zmid - self.zdim / 2, self.zmid + self.zdim / 2, self.nh
         )
 
     @property
-    def psi_norm(self) -> NDArray:
+    def psi_norm(self) -> NDArray[np.float64]:
         """Normalised poloidal flux ψ_N ∈ [0, 1] (axis=0, boundary=1)."""
         return np.linspace(0.0, 1.0, self.nw)
 
-    def psi_to_norm(self, psi: NDArray) -> NDArray:
+    def psi_to_norm(self, psi: NDArray[np.float64]) -> NDArray[np.float64]:
         """Map raw ψ to normalised ψ_N."""
         return (psi - self.simag) / (self.sibry - self.simag)
 
-    def to_config(self, name: str = "eqdsk") -> dict:
+    def to_config(self, name: str = "eqdsk") -> dict[str, object]:
         """Convert to FusionKernel JSON config dict (approximate)."""
         r = self.r
         z = self.z
@@ -144,7 +144,7 @@ def _split_fortran(line: str) -> list[str]:
     return _FORTRAN_FLOAT_RE.findall(line)
 
 
-def _parse_header(line: str):
+def _parse_header(line: str) -> tuple[str, int, int]:
     """Parse the first line: 48-char description + idum nw nh."""
     parts = line.split()
     nh = int(parts[-1])
@@ -191,7 +191,7 @@ def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
         idx += 1
         return val
 
-    def _read_array(n: int) -> NDArray:
+    def _read_array(n: int) -> NDArray[np.float64]:
         nonlocal idx
         arr = np.array(
             [float(tokens[idx + i].replace("D", "E").replace("d", "e"))
@@ -296,7 +296,7 @@ def write_geqdsk(eq: GEqdsk, path: Union[str, Path]) -> None:
     def _fmt(val: float) -> str:
         return f"{val:16.9e}"
 
-    def _write_array(f, arr: NDArray) -> None:
+    def _write_array(f: "IO[str]", arr: NDArray[np.float64]) -> None:
         for i, v in enumerate(arr.ravel()):
             f.write(_fmt(v))
             if (i + 1) % 5 == 0:

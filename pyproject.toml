@@ -46,14 +46,46 @@ scpn-dashboard = "scpn_fusion.ui.app:main"
 [tool.mypy]
 strict = true
 files = [
+    # scpn/ (existing)
     "src/scpn_fusion/scpn/contracts.py",
     "src/scpn_fusion/scpn/controller.py",
     "src/scpn_fusion/scpn/structure.py",
     "src/scpn_fusion/scpn/artifact.py",
     "src/scpn_fusion/scpn/compiler.py",
     "src/scpn_fusion/scpn/__init__.py",
+    # io/
+    "src/scpn_fusion/io/__init__.py",
+    "src/scpn_fusion/io/imas_connector.py",
+    "src/scpn_fusion/io/tokamak_archive.py",
+    # diagnostics/
+    "src/scpn_fusion/diagnostics/__init__.py",
+    "src/scpn_fusion/diagnostics/forward.py",
+    # nuclear/
+    "src/scpn_fusion/nuclear/__init__.py",
+    "src/scpn_fusion/nuclear/blanket_neutronics.py",
+    "src/scpn_fusion/nuclear/pwi_erosion.py",
+    "src/scpn_fusion/nuclear/temhd_peltier.py",
+    # core/ (selected)
+    "src/scpn_fusion/core/eqdsk.py",
+    "src/scpn_fusion/core/stability_mhd.py",
 ]
 
 [[tool.mypy.overrides]]
 module = ["sc_neurocore", "sc_neurocore.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["matplotlib", "matplotlib.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["MDSplus", "MDSplus.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["scipy", "scipy.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["streamlit", "streamlit.*"]
 ignore_missing_imports = true

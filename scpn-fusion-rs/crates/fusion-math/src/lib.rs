@@ -4,6 +4,7 @@ pub mod amr;
 pub mod chebyshev;
 pub mod elliptic;
 pub mod fft;
+pub mod gmres;
 pub mod iga;
 pub mod interp;
 pub mod linalg;

@@ -25,6 +25,9 @@ class ForwardDiagnosticChannels:
     interferometer_phase_rad: FloatArray
     neutron_count_rate_hz: float
     thomson_scattering_voltage_v: FloatArray
+    ece_temperature_kev: FloatArray | None = None
+    sxr_brightness_w_m2: FloatArray | None = None
+    bolometer_power_w_m2_sr: FloatArray | None = None
 
 
 def _nearest_index(axis: FloatArray, value: float) -> int:
@@ -76,6 +79,8 @@ def _validate_chords(
         if not np.all(np.isfinite(np.asarray(vals, dtype=np.float64))):
             raise ValueError(f"chords[{i}] has non-finite coordinates.")
         if enforce_domain_bounds:
+            assert r_min is not None and r_max is not None
+            assert z_min is not None and z_max is not None
             if (
                 float(start[0]) < float(r_min)
                 or float(start[0]) > float(r_max)
@@ -111,6 +116,8 @@ def _validate_points(
         if not np.isfinite(r_point) or not np.isfinite(z_point):
             raise ValueError(f"sample_points[{i}] has non-finite coordinates.")
         if enforce_domain_bounds:
+            assert r_min is not None and r_max is not None
+            assert z_min is not None and z_max is not None
             if (
                 r_point < float(r_min)
                 or r_point > float(r_max)
@@ -339,3 +346,156 @@ def generate_forward_channels(
         neutron_count_rate_hz=rate,
         thomson_scattering_voltage_v=thomson,
     )
+
+
+# ── Extended diagnostics: ECE, SXR, Bolometry ────────────────────────
+
+
+def ece_radiometer_temperature(
+    electron_temp_keV: FloatArray,
+    r_grid: FloatArray,
+    z_grid: FloatArray,
+    channel_r_positions: Sequence[float],
+    *,
+    z_observation: float = 0.0,
+    optical_depth_factor: float = 1.0,
+) -> FloatArray:
+    """Predict ECE radiometer Te [keV] at specified R channel positions.
+
+    Assumes optically thick plasma: signal = Te(R_ch, z_obs) * optical_depth_factor.
+    """
+    if not channel_r_positions:
+        raise ValueError("channel_r_positions must be non-empty.")
+    odf = float(optical_depth_factor)
+    if not np.isfinite(odf) or odf <= 0.0:
+        raise ValueError("optical_depth_factor must be finite and > 0.")
+    z_obs = float(z_observation)
+    if not np.isfinite(z_obs):
+        raise ValueError("z_observation must be finite.")
+
+    te, r, z = _validate_field_grid(
+        np.asarray(electron_temp_keV, dtype=np.float64),
+        np.asarray(r_grid, dtype=np.float64),
+        np.asarray(z_grid, dtype=np.float64),
+        name="ece_radiometer_temperature",
+    )
+
+    iz = _nearest_index(z, z_obs)
+    out = np.zeros(len(channel_r_positions), dtype=np.float64)
+    for i, r_ch in enumerate(channel_r_positions):
+        r_val = float(r_ch)
+        if not np.isfinite(r_val):
+            raise ValueError(f"channel_r_positions[{i}] must be finite.")
+        ir = _nearest_index(r, r_val)
+        out[i] = max(float(te[iz, ir]), 0.0) * odf
+    return out
+
+
+def soft_xray_brightness(
+    electron_density_m3: FloatArray,
+    electron_temp_keV: FloatArray,
+    r_grid: FloatArray,
+    z_grid: FloatArray,
+    chords: Sequence[tuple[tuple[float, float], tuple[float, float]]],
+    *,
+    z_eff: float = 1.5,
+    filter_energy_kev: float = 1.0,
+    samples: int = 96,
+    enforce_domain_bounds: bool = False,
+) -> FloatArray:
+    """Predict soft X-ray line-integrated brightness [W/m^2].
+
+    Emissivity model: epsilon = ne^2 * sqrt(Te) * Z_eff * exp(-E_filter / Te).
+    """
+    z_eff_val = float(z_eff)
+    e_filter = float(filter_energy_kev)
+    if not np.isfinite(z_eff_val) or z_eff_val < 1.0:
+        raise ValueError("z_eff must be finite and >= 1.0.")
+    if not np.isfinite(e_filter) or e_filter <= 0.0:
+        raise ValueError("filter_energy_kev must be finite and > 0.")
+
+    ne, r, z = _validate_field_grid(
+        np.asarray(electron_density_m3, dtype=np.float64),
+        np.asarray(r_grid, dtype=np.float64),
+        np.asarray(z_grid, dtype=np.float64),
+        name="soft_xray_brightness.ne",
+    )
+    te, _, _ = _validate_field_grid(
+        np.asarray(electron_temp_keV, dtype=np.float64),
+        r,
+        z,
+        name="soft_xray_brightness.te",
+    )
+    _validate_chords(
+        chords,
+        r_min=float(np.min(r)),
+        r_max=float(np.max(r)),
+        z_min=float(np.min(z)),
+        z_max=float(np.max(z)),
+        enforce_domain_bounds=bool(enforce_domain_bounds),
+    )
+
+    # Compute 2D emissivity field
+    te_safe = np.clip(te, 0.01, None)  # avoid log(0) / div-by-zero
+    emissivity = ne**2 * np.sqrt(te_safe) * z_eff_val * np.exp(-e_filter / te_safe)
+
+    out = np.zeros(len(chords), dtype=np.float64)
+    for i, (start, end) in enumerate(chords):
+        out[i] = _line_integral_nearest(emissivity, r, z, start, end, samples=samples)
+    return out
+
+
+def bolometer_power_density(
+    electron_density_m3: FloatArray,
+    electron_temp_keV: FloatArray,
+    r_grid: FloatArray,
+    z_grid: FloatArray,
+    chords: Sequence[tuple[tuple[float, float], tuple[float, float]]],
+    *,
+    z_eff: float = 1.5,
+    impurity_fraction: float = 0.02,
+    samples: int = 96,
+    enforce_domain_bounds: bool = False,
+) -> FloatArray:
+    """Predict bolometer line-integrated radiated power [W/m^2/sr].
+
+    Radiation model: P_rad = ne^2 * L_z(Te) where L_z = C_rad * Z_eff^2 * sqrt(Te).
+    C_rad ~ 1e-31 W m^3 (coronal equilibrium approximation).
+    """
+    z_eff_val = float(z_eff)
+    imp_frac = float(impurity_fraction)
+    if not np.isfinite(z_eff_val) or z_eff_val < 1.0:
+        raise ValueError("z_eff must be finite and >= 1.0.")
+    if not np.isfinite(imp_frac) or imp_frac < 0.0:
+        raise ValueError("impurity_fraction must be finite and >= 0.")
+
+    ne, r, z = _validate_field_grid(
+        np.asarray(electron_density_m3, dtype=np.float64),
+        np.asarray(r_grid, dtype=np.float64),
+        np.asarray(z_grid, dtype=np.float64),
+        name="bolometer_power_density.ne",
+    )
+    te, _, _ = _validate_field_grid(
+        np.asarray(electron_temp_keV, dtype=np.float64),
+        r,
+        z,
+        name="bolometer_power_density.te",
+    )
+    _validate_chords(
+        chords,
+        r_min=float(np.min(r)),
+        r_max=float(np.max(r)),
+        z_min=float(np.min(z)),
+        z_max=float(np.max(z)),
+        enforce_domain_bounds=bool(enforce_domain_bounds),
+    )
+
+    C_rad = 1.0e-31  # W m^3 (coronal equilibrium)
+    te_safe = np.clip(te, 0.01, None)
+    # P_rad = ne^2 * C_rad * Z_eff^2 * sqrt(Te) * (1 + impurity_fraction)
+    p_rad = ne**2 * C_rad * z_eff_val**2 * np.sqrt(te_safe) * (1.0 + imp_frac)
+
+    out = np.zeros(len(chords), dtype=np.float64)
+    for i, (start, end) in enumerate(chords):
+        out[i] = _line_integral_nearest(p_rad, r, z, start, end, samples=samples)
+    return out

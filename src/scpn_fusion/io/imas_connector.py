@@ -571,3 +571,319 @@ def ids_pulse_to_digital_twin_history(pulse: Mapping[str, Any]) -> list[dict[str
     if isinstance(slices, (str, bytes, bytearray)) or not isinstance(slices, Sequence):
         raise ValueError("IDS pulse time_slices must be a sequence.")
     return ids_to_digital_twin_history(slices)
+
+
+# ──────────────────────────────────────────────────────────────────────
+# IMAS Data Dictionary v3 compliant converters
+# ──────────────────────────────────────────────────────────────────────
+
+import json
+from pathlib import Path
+
+import numpy as np
+from numpy.typing import NDArray
+
+from scpn_fusion.core.eqdsk import GEqdsk
+
+
+# Required top-level keys for IMAS DD-compliant IDS dictionaries
+IMAS_DD_EQUILIBRIUM_KEYS = (
+    "ids_properties",
+    "time",
+    "time_slice",
+)
+IMAS_DD_CORE_PROFILES_KEYS = (
+    "ids_properties",
+    "time",
+    "profiles_1d",
+)
+IMAS_DD_SUMMARY_KEYS = (
+    "ids_properties",
+    "time",
+    "global_quantities",
+)
+
+
+def geqdsk_to_imas_equilibrium(
+    eq: GEqdsk,
+    *,
+    time_s: float = 0.0,
+    shot: int = 0,
+    run: int = 0,
+) -> dict[str, Any]:
+    """Convert a GEqdsk equilibrium to an IMAS Data Dictionary ``equilibrium`` IDS.
+
+    The output follows the IMAS DD v3 structure:
+    - ``ids_properties`` with ``homogeneous_time`` and ``comment``
+    - ``time`` array (single time point)
+    - ``time_slice[0]`` with ``global_quantities``, ``profiles_1d``, ``profiles_2d``
+    """
+    if eq.nw < 2 or eq.nh < 2:
+        raise ValueError("GEqdsk must have nw >= 2 and nh >= 2 for IMAS conversion.")
+    if eq.psirz.size == 0:
+        raise ValueError("GEqdsk psirz must be non-empty for IMAS conversion.")
+
+    time_val = float(time_s)
+    r_grid = eq.r.tolist()
+    z_grid = eq.z.tolist()
+    psi_norm = eq.psi_norm.tolist()
+
+    # Midplane slice of psirz for 1D psi profile
+    midplane_idx = eq.nh // 2
+    psi_1d = eq.psirz[midplane_idx, :].tolist()
+
+    return {
+        "ids_properties": {
+            "homogeneous_time": 1,
+            "comment": f"SCPN Fusion Core IMAS export (shot={shot}, run={run})",
+        },
+        "time": [time_val],
+        "time_slice": [
+            {
+                "time": time_val,
+                "global_quantities": {
+                    "ip": float(eq.current),
+                    "magnetic_axis": {
+                        "r": float(eq.rmaxis),
+                        "z": float(eq.zmaxis),
+                    },
+                    "psi_axis": float(eq.simag),
+                    "psi_boundary": float(eq.sibry),
+                    "vacuum_toroidal_field": {
+                        "r0": float(eq.rcentr),
+                        "b0": float(eq.bcentr),
+                    },
+                },
+                "profiles_1d": {
+                    "psi": psi_1d,
+                    "q": eq.qpsi.tolist() if eq.qpsi.size > 0 else [],
+                    "pressure": eq.pres.tolist() if eq.pres.size > 0 else [],
+                    "f": eq.fpol.tolist() if eq.fpol.size > 0 else [],
+                    "psi_norm": psi_norm,
+                },
+                "profiles_2d": [
+                    {
+                        "psi": eq.psirz.tolist(),
+                        "grid": {
+                            "dim1": r_grid,
+                            "dim2": z_grid,
+                        },
+                        "grid_type": {"index": 1, "name": "rectangular"},
+                    }
+                ],
+                "boundary": {
+                    "outline": {
+                        "r": eq.rbdry.tolist() if eq.rbdry.size > 0 else [],
+                        "z": eq.zbdry.tolist() if eq.zbdry.size > 0 else [],
+                    }
+                },
+            }
+        ],
+        "code": {
+            "name": "SCPN-Fusion-Core",
+            "version": "1.0.2",
+        },
+    }
+
+
+def imas_equilibrium_to_geqdsk(ids: Mapping[str, Any]) -> GEqdsk:
+    """Convert an IMAS Data Dictionary ``equilibrium`` IDS back to a GEqdsk.
+
+    Expects the structure produced by :func:`geqdsk_to_imas_equilibrium`.
+    """
+    missing = _missing_required_keys(ids, IMAS_DD_EQUILIBRIUM_KEYS)
+    if missing:
+        raise ValueError(f"IMAS equilibrium IDS missing keys: {missing}")
+
+    time_slices = ids["time_slice"]
+    if not isinstance(time_slices, Sequence) or len(time_slices) == 0:
+        raise ValueError("IMAS equilibrium must have at least one time_slice.")
+
+    ts = time_slices[0]
+    gq = ts.get("global_quantities", {})
+    p1d = ts.get("profiles_1d", {})
+    p2d_list = ts.get("profiles_2d", [])
+    boundary = ts.get("boundary", {})
+
+    axis = gq.get("magnetic_axis", {})
+    vtf = gq.get("vacuum_toroidal_field", {})
+
+    # Extract 2D grid
+    if not p2d_list:
+        raise ValueError("IMAS equilibrium must have at least one profiles_2d entry.")
+    p2d = p2d_list[0]
+    grid = p2d.get("grid", {})
+    r_grid = np.asarray(grid.get("dim1", []), dtype=np.float64)
+    z_grid = np.asarray(grid.get("dim2", []), dtype=np.float64)
+    psirz = np.asarray(p2d.get("psi", []), dtype=np.float64)
+
+    nw = r_grid.size
+    nh = z_grid.size
+    if nw < 2 or nh < 2:
+        raise ValueError("IMAS profiles_2d grid must have at least 2 points per dimension.")
+    if psirz.ndim != 2 or psirz.shape != (nh, nw):
+        raise ValueError(
+            f"IMAS profiles_2d psi shape {psirz.shape} does not match grid ({nh}, {nw})."
+        )
+
+    rdim = float(r_grid[-1] - r_grid[0])
+    zdim = float(z_grid[-1] - z_grid[0])
+    rleft = float(r_grid[0])
+    zmid = float(0.5 * (z_grid[0] + z_grid[-1]))
+
+    outline = boundary.get("outline", {})
+
+    return GEqdsk(
+        description="IMAS import",
+        nw=nw,
+        nh=nh,
+        rdim=rdim,
+        zdim=zdim,
+        rcentr=float(vtf.get("r0", 0.0)),
+        rleft=rleft,
+        zmid=zmid,
+        rmaxis=float(axis.get("r", 0.0)),
+        zmaxis=float(axis.get("z", 0.0)),
+        simag=float(gq.get("psi_axis", 0.0)),
+        sibry=float(gq.get("psi_boundary", 0.0)),
+        bcentr=float(vtf.get("b0", 0.0)),
+        current=float(gq.get("ip", 0.0)),
+        fpol=np.asarray(p1d.get("f", []), dtype=np.float64),
+        pres=np.asarray(p1d.get("pressure", []), dtype=np.float64),
+        ffprime=np.zeros(nw, dtype=np.float64),
+        pprime=np.zeros(nw, dtype=np.float64),
+        qpsi=np.asarray(p1d.get("q", []), dtype=np.float64),
+        psirz=psirz,
+        rbdry=np.asarray(outline.get("r", []), dtype=np.float64),
+        zbdry=np.asarray(outline.get("z", []), dtype=np.float64),
+        rlim=np.array([], dtype=np.float64),
+        zlim=np.array([], dtype=np.float64),
+    )
+
+
+def state_to_imas_core_profiles(
+    state: Mapping[str, Any],
+    *,
+    time_s: float = 0.0,
+) -> dict[str, Any]:
+    """Convert a plasma state dict to an IMAS ``core_profiles`` IDS.
+
+    Expects keys: ``rho_norm``, ``electron_temp_keV``, ``electron_density_1e20_m3``.
+    Converts units: keV -> eV, 1e20 m^-3 -> m^-3.
+    """
+    profiles = _coerce_profiles_1d(state, name="state")
+    rho = profiles["rho_norm"]
+    te_kev = profiles["electron_temp_keV"]
+    ne_1e20 = profiles["electron_density_1e20_m3"]
+
+    # Unit conversions
+    te_ev = [v * 1.0e3 for v in te_kev]
+    ne_m3 = [v * 1.0e20 for v in ne_1e20]
+
+    return {
+        "ids_properties": {
+            "homogeneous_time": 1,
+            "comment": "SCPN Fusion Core core_profiles export",
+        },
+        "time": [float(time_s)],
+        "profiles_1d": [
+            {
+                "time": float(time_s),
+                "grid": {
+                    "rho_tor_norm": rho,
+                },
+                "electrons": {
+                    "temperature": te_ev,
+                    "density": ne_m3,
+                },
+            }
+        ],
+    }
+
+
+def state_to_imas_summary(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Convert a performance/state dict to an IMAS ``summary`` IDS.
+
+    Accepts optional keys: ``power_fusion_MW``, ``q_sci``, ``beta_n``,
+    ``li``, ``plasma_current_MA``, ``confinement_time_s``.
+    """
+    if isinstance(state, bool) or not isinstance(state, Mapping):
+        raise ValueError("state must be a mapping.")
+
+    gq: dict[str, Any] = {}
+    for key, imas_key in [
+        ("power_fusion_MW", "power_fusion"),
+        ("q_sci", "q"),
+        ("beta_n", "beta_n"),
+        ("li", "li"),
+        ("plasma_current_MA", "ip"),
+        ("confinement_time_s", "tau_e"),
+    ]:
+        val = state.get(key)
+        if val is not None:
+            gq[imas_key] = float(val)
+
+    return {
+        "ids_properties": {
+            "homogeneous_time": 0,
+            "comment": "SCPN Fusion Core summary export",
+        },
+        "time": [0.0],
+        "global_quantities": gq,
+    }
+
+
+# ── File-level IDS I/O ────────────────────────────────────────────────
+
+_VALID_IDS_TYPES = ("equilibrium", "core_profiles", "summary")
+
+
+def _numpy_serializer(obj: Any) -> Any:
+    """JSON serializer for numpy types."""
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
+def write_ids(ids_dict: Mapping[str, Any], path: str | Path) -> None:
+    """Write an IDS dict to a JSON file with schema validation.
+
+    The dict must contain ``ids_properties`` with a valid ``homogeneous_time`` field.
+    """
+    if not isinstance(ids_dict, Mapping):
+        raise ValueError("ids_dict must be a mapping.")
+    if "ids_properties" not in ids_dict:
+        raise ValueError("ids_dict must contain 'ids_properties' key.")
+    props = ids_dict["ids_properties"]
+    if not isinstance(props, Mapping) or "homogeneous_time" not in props:
+        raise ValueError("ids_properties must contain 'homogeneous_time'.")
+
+    path = Path(path)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(dict(ids_dict), f, indent=2, default=_numpy_serializer)
+
+
+def read_ids(path: str | Path) -> dict[str, Any]:
+    """Read an IDS JSON file and validate minimal schema.
+
+    Returns the parsed dict. Raises ValueError on corrupt or invalid data.
+    """
+    path = Path(path)
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Corrupt IDS JSON file: {exc}") from exc
+
+    if not isinstance(data, dict):
+        raise ValueError("IDS file must contain a JSON object at top level.")
+    if "ids_properties" not in data:
+        raise ValueError("IDS file missing 'ids_properties' key.")
+    props = data["ids_properties"]
+    if not isinstance(props, dict) or "homogeneous_time" not in props:
+        raise ValueError("ids_properties must contain 'homogeneous_time'.")
+    return data

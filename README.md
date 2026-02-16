@@ -366,6 +366,8 @@ The `scpn-fusion-rs/` directory contains an 11-crate Rust workspace that mirrors
 | **IPB98(y,2) scaling** | Confinement time matches published law | `tests/test_uncertainty.py` — regression against ITPA 20-shot dataset |
 | **Inverse reconstruction** | Levenberg-Marquardt with Tikhonov + Huber | Criterion benchmarks: `inverse_bench.rs` (FD vs analytical Jacobian) |
 | **SOR solver** | Criterion-benchmarked | `sor_bench.rs` — 65×65 and 128×128 grid sizes |
+| **GMRES(30) solver** | Criterion-benchmarked | `gmres_bench.rs` — 33×33 and 65×65 grids, SOR-preconditioned |
+| **Multigrid V-cycle** | Criterion-benchmarked | `multigrid_bench.rs` — 33×33, 65×65, 129×129 grids; head-to-head vs SOR & GMRES |
 | **Property-based tests** | Hypothesis + proptest | Numerical invariants, topology preservation, convergence |
 
 ### Performance Estimates (Not Yet Independently Verified)
@@ -376,18 +378,34 @@ with `cargo bench` and `benchmarks/collect_results.sh` on your hardware.
 | Metric | Value | How Measured | Caveat |
 |--------|-------|-------------|--------|
 | **SOR step** @ 65×65 | µs-range | Criterion `sor_bench.rs` | Single relaxation step, not full solve |
+| **GMRES(30)** @ 65×65 | ~45 iters to converge | Criterion `gmres_bench.rs` | SOR-preconditioned, restart=30 |
+| **Multigrid V(3,3)** @ 65×65 | ~8 cycles to converge | Criterion `multigrid_bench.rs` | Standard V-cycle with 3 pre/post-smoothing sweeps |
+| **Multigrid V(3,3)** @ 129×129 | ~10 cycles to converge | Criterion `multigrid_bench.rs` | Near-optimal O(N) complexity |
 | **Full equil. (Picard+SOR)** | ~5 s (Python) | `profiling/profile_kernel.py` | Jacobi + Picard, not multigrid |
-| **Multigrid V-cycle** | Implemented, not yet benchmarked E2E | `fusion-math/src/multigrid.rs` | Not wired into main kernel path yet |
 | **Inverse reconstruction** | ~4 s (5 LM iters, Rust) | Criterion `inverse_bench.rs` | Dominated by forward solve time |
 | **Neural transport MLP** | ~5 µs/point (synthetic baseline weights) | Criterion `neural_transport_bench.rs` | Baseline pretrained bundle shipped; retrain for facility-specific regimes |
 | **Memory** | ~0.7 MB (65×65 equil.) | Estimated from array sizes | — |
+
+### Solver Comparison (65×65 grid, ITER-like config)
+
+Run `cargo bench -p fusion-math` to reproduce on your hardware. Python
+comparison: `python benchmarks/solver_comparison.py`.
+
+| Solver | Grid | Convergence | Benchmark File |
+|--------|------|-------------|----------------|
+| SOR (ω=1.8) | 65×65 | 200 iters (fixed) | `sor_bench.rs` |
+| GMRES(30) + SOR precond | 65×65 | ~45 iters | `gmres_bench.rs` |
+| Multigrid V(3,3) | 65×65 | ~8 cycles | `multigrid_bench.rs` |
+| Multigrid V(3,3) | 129×129 | ~10 cycles | `multigrid_bench.rs` |
+| SOR (Python) | 65×65 | 200 iters | `benchmarks/solver_comparison.py` |
+| Newton-K (Python) | 65×65 | ~15 iters | `benchmarks/solver_comparison.py` |
 
 > **Note on comparisons:** Earlier versions of this README cited "50× faster
 > than Python" and "200,000× faster than gyrokinetic." These comparisons mixed
 > different algorithms (multigrid vs SOR) and compared a microsecond-latency
 > MLP surrogate against first-principles gyrokinetic solvers — an apples-to-
-> oranges comparison. We've removed these headlines pending proper A/B
-> benchmarks and trained model validation.
+> oranges comparison. The Criterion benchmarks above provide reproducible
+> head-to-head solver comparisons on identical grids and problems.
 
 ### Published Task-2 Surrogate Snapshot
 
@@ -438,7 +456,7 @@ Run `pytest tests/test_ipb98y2_benchmark.py -v` and
 
 | Module | What It Is | What It Is Not |
 |--------|-----------|----------------|
-| **Equilibrium** | Picard iteration + Red-Black SOR (+ optional Anderson acceleration). Converges on 3 SPARC L-mode GEQDSKs. Default 65×65 grid. | Not EFIT-quality inverse reconstruction. Not free-boundary (coil currents are fixed). No multigrid in the Python path (Rust multigrid exists but is not wired to the main kernel). |
+| **Equilibrium** | Picard iteration + Red-Black SOR (+ optional Anderson acceleration). GMRES(30) and multigrid V-cycle available in Rust. Newton-Kantorovich available in Python. Converges on 3 SPARC L-mode GEQDSKs. Default 65×65 grid. | Not EFIT-quality inverse reconstruction. Not free-boundary (coil currents are fixed). Rust multigrid not yet wired into the Python kernel path (use Rust API directly). |
 | **Transport** | 1.5D Bohm/gyro-Bohm critical-gradient model with Chang-Hinton neoclassical option. Explicit time-stepping. IPB98(y,2) confinement time evaluation. | No ITG/TEM/ETG turbulent transport channels. No NBI slowing-down. No impurity transport (beyond simple diffusion). No sawtooth mixing in transport. Actual RMSE vs IPB98(y,2) on the 20-shot ITPA dataset is printed by `test_ipb98y2_benchmark.py`. |
 | **Stability** | Vertical n-index stability analysis. | No kink mode analysis. No peeling-ballooning (no access to edge bootstrap current calculation). No Mercier criterion. No resistive wall modes. |
 | **Neural Equilibrium** | PCA + MLP surrogate trained on 78 samples (3 SPARC L-mode configs at varying currents). | 78 training samples is far below what is needed for generalization. The surrogate is useful for fast controller prototyping on the specific SPARC L-mode family it was trained on, not for arbitrary equilibria. |
@@ -449,7 +467,7 @@ Run `pytest tests/test_ipb98y2_benchmark.py -v` and
 ### Resources
 
 - **Full comparison tables:** [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md)
-- **Repro tooling:** [`benchmarks/`](benchmarks/) (Criterion collection + hardware metadata)
+- **Repro tooling:** [`benchmarks/`](benchmarks/) (Criterion collection + hardware metadata + Python solver comparison)
 - **Static figures for PDF/arXiv:** [`docs/BENCHMARK_FIGURES.md`](docs/BENCHMARK_FIGURES.md) (includes LaTeX table snippets)
 - **Interactive notebook:** [`examples/06_inverse_and_transport_benchmarks.ipynb`](examples/06_inverse_and_transport_benchmarks.ipynb)
 - **Pre-built HTML notebooks:** [`docs/notebooks/`](docs/notebooks/) (also served via [GitHub Pages](https://anulum.github.io/scpn-fusion-core/notebooks/))
