@@ -1,0 +1,57 @@
+{
+  "generated_at_utc": "2026-02-15T22:58:37.666154+00:00",
+  "task4_quasi_3d_modeling": {
+    "seed": 42,
+    "quasi_3d": {
+      "nfp": 4,
+      "force_balance_rmse_pct": 2.7767506852104757,
+      "force_residual_mean_pct": 1.1732992900708878,
+      "force_residual_p95_pct": 3.10485673146258,
+      "asymmetry_index": 0.17566389659092857,
+      "radial_spread_m": 0.6226703444712596
+    },
+    "divertor_two_fluid": {
+      "hall_backend": "hall_mhd",
+      "hall_zonal_ratio": 0.08250476784565663,
+      "two_fluid_index": 0.15925105590387914,
+      "two_fluid_temp_split_index": 0.4444444444444444,
+      "electron_temp_mean_kev": 45.0,
+      "ion_temp_mean_kev": 65.0,
+      "hartmann_number": 279.0612835919738,
+      "temhd_cooling_gain_pct": 1.0000000000000318,
+      "surface_temperature_c": 887.341968231756,
+      "surface_heat_flux_w_m2": 15526964.487485249
+    },
+    "jet_heat_flux_validation": {
+      "jet_file_count": 5,
+      "mean_q95_reference": 4.5859375,
+      "rmse_pct": 11.373352397664513,
+      "mean_reference_w_m2": 954399.6368570648,
+      "mean_predicted_w_m2": 944855.6404884938,
+      "max_reference_w_m2": 1144603.654892129,
+      "max_predicted_w_m2": 958621.1540332326
+    },
+    "pwi_tbr_calibration": {
+      "particle_flux_m2_s": 1.5747594008141564e+21,
+      "estimated_erosion_mm_year": 0.026480106554689874,
+      "asdex_reference_erosion_mm_year": 0.25,
+      "raw_tbr": 1.1359870734075335,
+      "calibration_factor": 0.8640326100228146,
+      "calibrated_tbr": 0.9815298759884898,
+      "erosion_curve_rmse_pct": 33.99184749429634,
+      "calibration_triggered": true
+    },
+    "thresholds": {
+      "max_force_balance_rmse_pct": 8.0,
+      "max_force_residual_p95_pct": 12.0,
+      "min_two_fluid_index": 0.1,
+      "min_temhd_cooling_gain_pct": 1.0,
+      "max_jet_heat_flux_rmse_pct": 15.0,
+      "max_erosion_curve_rmse_pct": 35.0,
+      "max_calibrated_tbr": 1.1
+    },
+    "failure_reasons": [],
+    "passes_thresholds": true,
+    "runtime_seconds": 0.9638375999638811
+  }
+}

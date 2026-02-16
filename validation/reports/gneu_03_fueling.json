@@ -1,0 +1,15 @@
+{
+  "generated_at_utc": "2026-02-14T00:57:20.274759+00:00",
+  "runtime_seconds": 0.7029687999747694,
+  "gneu_03": {
+    "target_density": 1.0,
+    "initial_density": 0.82,
+    "steps": 3000,
+    "dt_s": 0.001,
+    "final_density": 0.9992084460530163,
+    "final_abs_error": 0.0007915539469837141,
+    "rmse": 0.039945692156841794,
+    "threshold_final_abs_error": 0.001,
+    "passes_thresholds": true
+  }
+}

@@ -680,5 +680,6 @@ derive the imported 85-task Phase 3 backlog.
 - Completed: `H8-142`
 - Completed: `H8-143`
 - Completed: `H8-144`
-- Active: `H8-145` (Harden Director interface with strict finite-value telemetry guards and mission envelope validation)
+- Completed: `H8-145` (Harden Director interface with strict finite-value telemetry guards and mission envelope validation)
+- Completed: `H8-146` (Operation Aegis: Implement Back-EMF physics and Closed-Loop Disruption Mitigation)
 - Next active task: none.

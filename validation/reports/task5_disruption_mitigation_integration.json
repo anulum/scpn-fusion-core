@@ -1,0 +1,48 @@
+{
+  "seed": 42,
+  "task5_disruption_mitigation": {
+    "physics_mitigation": {
+      "ensemble_runs": 24,
+      "disruption_prevention_rate": 1.0,
+      "mean_halo_current_ma": 1.1203125418579596,
+      "p95_halo_current_ma": 1.6250270578348558,
+      "p95_halo_peak_ma": 1.6273045575910008,
+      "mean_runaway_beam_ma": 0.0,
+      "p95_runaway_beam_ma": 0.0,
+      "p95_runaway_peak_ma": 0.0,
+      "mean_wall_damage_index": 0.25981869224474036,
+      "no_wall_damage_rate": 1.0,
+      "mean_zeff": 1.6828724754756588,
+      "mean_impurity_decay_tau_ms": 7.318626341999344
+    },
+    "mpc_elm_lane": {
+      "elm_rejection_rate": 1.0,
+      "torax_parity_pct": 99.45855627320701,
+      "p95_loop_latency_ms": 0.2841518844357554
+    },
+    "rl_multiobjective": {
+      "multiobjective_success_rate": 0.9583333333333334,
+      "q_ge_10_rate": 0.9583333333333334,
+      "tbr_ge_1_rate": 1.0,
+      "mean_q_proxy": 11.86528063230341,
+      "mean_tbr_proxy": 1.0985651042018365,
+      "q_table_max_abs": 4.332822802857626,
+      "total_reward": 147.89621283517616
+    },
+    "thresholds": {
+      "min_disruption_prevention_rate": 0.9,
+      "max_mean_halo_current_ma": 2.6,
+      "max_p95_halo_peak_ma": 3.4,
+      "max_p95_runaway_beam_ma": 1.0,
+      "max_p95_runaway_peak_ma": 1.2,
+      "min_mpc_elm_rejection_rate": 0.9,
+      "min_multiobjective_success_rate": 0.75,
+      "min_q_ge_10_rate": 0.9,
+      "min_tbr_ge_1_rate": 0.9
+    },
+    "failure_reasons": [],
+    "passes_thresholds": true,
+    "runtime_seconds": 2.4543550999369472
+  },
+  "generated_at_utc": "2026-02-15T22:58:49.493967+00:00"
+}

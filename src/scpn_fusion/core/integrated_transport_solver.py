@@ -149,6 +149,32 @@ class TransportSolver(FusionKernel):
         
         self.n_impurity = np.maximum(0, new_imp)
 
+    def calculate_bootstrap_current(self, R0, B_pol):
+        """
+        Calculates the neoclassical bootstrap current density [A/m2]
+        using a simplified Sauter model.
+        J_bs = - (R/B_pol) * [ L31 * (dP/dpsi) + ... ]
+        """
+        # Simplified Sauter model coefficients
+        # In a real model, these depend on collisionality and trapped fraction
+        f_trapped = 1.46 * np.sqrt(self.rho * (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / (2 * R0))
+        
+        # Pressure gradient in SI
+        P = self.ne * 1e19 * (self.Ti + self.Te) * 1.602e-16 # J/m3
+        dP_drho = np.gradient(P, self.drho)
+        
+        # Scaling constant for J_bs
+        # J_bs ~ f_trapped / B_pol * dP/dr
+        B_pol = np.maximum(B_pol, 0.1) # Avoid div by zero at axis
+        
+        J_bs = 1.2 * (f_trapped / B_pol) * dP_drho / (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"])
+        
+        # Ensure it's zero at axis and edge
+        J_bs[0] = 0
+        J_bs[-1] = 0
+        
+        return J_bs
+
     def update_transport_model(self, P_aux):
         """
         Bohm / Gyro-Bohm Transport Model.
@@ -326,7 +352,8 @@ class TransportSolver(FusionKernel):
 
     def map_profiles_to_2d(self):
         """
-        Projects the 1D radial profiles back onto the 2D Grad-Shafranov grid.
+        Projects the 1D radial profiles back onto the 2D Grad-Shafranov grid,
+        including neoclassical bootstrap current.
         """
         # 1. Get Flux Topology
         idx_max = np.argmax(self.Psi)
@@ -337,21 +364,32 @@ class TransportSolver(FusionKernel):
         if abs(Psi_edge - Psi_axis) < 1.0: Psi_edge = np.min(self.Psi)
         
         # 2. Calculate Rho for every 2D point
-        Psi_norm = (self.Psi - Psi_axis) / (Psi_edge - Psi_axis)
+        denom = Psi_edge - Psi_axis
+        if abs(denom) < 1e-9: denom = 1e-9
+        Psi_norm = (self.Psi - Psi_axis) / denom
         Psi_norm = np.clip(Psi_norm, 0, 1)
-        # Rho is approx sqrt(Psi_norm)
         Rho_2D = np.sqrt(Psi_norm)
         
-        # 3. Interpolate 1D profiles to 2D
+        # 3. Calculate 1D Bootstrap Current
+        R0 = (self.cfg["dimensions"]["R_min"] + self.cfg["dimensions"]["R_max"]) / 2.0
+        # Estimate B_pol from Ip
+        I_target = self.cfg['physics']['plasma_current_target']
+        B_pol_est = (1.256e-6 * I_target) / (2 * np.pi * 0.5 * (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]))
+        J_bs_1d = self.calculate_bootstrap_current(R0, B_pol_est)
+        
+        # 4. Interpolate 1D profiles to 2D
         self.Pressure_2D = np.interp(Rho_2D.flatten(), self.rho, self.ne * (self.Ti + self.Te))
         self.Pressure_2D = self.Pressure_2D.reshape(self.Psi.shape)
         
-        # 4. Update J_phi based on new Pressure
-        self.J_phi = self.Pressure_2D * self.RR 
+        J_bs_2D = np.interp(Rho_2D.flatten(), self.rho, J_bs_1d)
+        J_bs_2D = J_bs_2D.reshape(self.Psi.shape)
+        
+        # 5. Update J_phi (Pressure driven + Bootstrap)
+        # J_phi = R p' + J_bs
+        self.J_phi = (self.Pressure_2D * self.RR) + J_bs_2D
         
         # Normalize to target current
         I_curr = np.sum(self.J_phi) * self.dR * self.dZ
-        I_target = self.cfg['physics']['plasma_current_target']
         if I_curr > 1e-9:
             self.J_phi *= (I_target / I_curr)
 

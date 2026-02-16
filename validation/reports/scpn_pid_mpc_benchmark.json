@@ -1,0 +1,37 @@
+{
+  "generated_at_utc": "2026-02-14T00:54:21.195123+00:00",
+  "runtime_seconds": 0.10419380001258105,
+  "scpn_pid_mpc_benchmark": {
+    "seed": 42,
+    "steps": 320,
+    "pid": {
+      "rmse": 0.1210404268498177,
+      "iae": 0.09759544683016294,
+      "peak_abs_error": 0.28531448530827447,
+      "mean_abs_control": 0.18447573127042033
+    },
+    "mpc": {
+      "rmse": 0.046445314666178975,
+      "iae": 0.036610712981964125,
+      "peak_abs_error": 0.27649999999999997,
+      "mean_abs_control": 0.20875
+    },
+    "scpn": {
+      "rmse": 0.05020127909325868,
+      "iae": 0.04140324039886297,
+      "peak_abs_error": 0.21249999999999997,
+      "mean_abs_control": 0.20882248876611667
+    },
+    "ratios": {
+      "scpn_vs_pid_rmse_ratio": 0.41474803418816836,
+      "scpn_vs_mpc_rmse_ratio": 1.080868532252937
+    },
+    "thresholds": {
+      "max_scpn_vs_pid_rmse_ratio": 1.1,
+      "max_scpn_vs_mpc_rmse_ratio": 1.35,
+      "max_scpn_peak_abs_error": 0.65,
+      "require_mpc_beats_pid": true
+    },
+    "passes_thresholds": true
+  }
+}
