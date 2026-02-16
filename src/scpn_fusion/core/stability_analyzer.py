@@ -151,6 +151,56 @@ class StabilityAnalyzer:
 
         self.plot_stability_landscape(R_target, Z_target)
 
+    def analyze_mhd_stability(
+        self,
+        R0: float = 6.2,
+        a: float = 2.0,
+        B0: float = 5.3,
+        Ip_MA: float = 15.0,
+        transport_solver=None,
+    ) -> dict:
+        """Run Mercier and ballooning stability analysis.
+
+        Uses either profiles from *transport_solver* (if provided) or
+        default parabolic profiles.
+
+        Parameters
+        ----------
+        R0 : float — major radius [m]
+        a : float — minor radius [m]
+        B0 : float — toroidal field [T]
+        Ip_MA : float — plasma current [MA]
+        transport_solver : TransportSolver, optional
+            If given, uses its rho/ne/Ti/Te profiles.
+
+        Returns
+        -------
+        dict with keys ``q_profile``, ``mercier``, ``ballooning``
+        """
+        from scpn_fusion.core.stability_mhd import (
+            compute_q_profile,
+            mercier_stability,
+            ballooning_stability,
+        )
+
+        if transport_solver is not None:
+            rho = transport_solver.rho
+            ne = transport_solver.ne
+            Ti = transport_solver.Ti
+            Te = transport_solver.Te
+        else:
+            nr = 50
+            rho = np.linspace(0, 1, nr)
+            ne = 10.0 * (1 - rho**2) ** 0.5
+            Ti = 10.0 * (1 - rho**2) ** 1.5
+            Te = Ti.copy()
+
+        qp = compute_q_profile(rho, ne, Ti, Te, R0, a, B0, Ip_MA)
+        mr = mercier_stability(qp)
+        br = ballooning_stability(qp)
+
+        return {"q_profile": qp, "mercier": mr, "ballooning": br}
+
     def plot_stability_landscape(self, R0, Z0):
         # Scan grid around target
         r_range = np.linspace(R0-2, R0+2, 50)

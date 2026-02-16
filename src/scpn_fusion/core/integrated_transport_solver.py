@@ -183,42 +183,145 @@ class TransportSolver(FusionKernel):
         self.chi_i = chi_base + chi_turb
         self.D_n = 0.1 * self.chi_e
 
+    # ── Tridiagonal (Thomas) solver ─────────────────────────────────
+
+    @staticmethod
+    def _thomas_solve(a, b, c, d):
+        """O(n) tridiagonal solver (Thomas algorithm).
+
+        Solves  A x = d  where A is tridiagonal with sub-diagonal *a*,
+        main diagonal *b*, and super-diagonal *c*.
+
+        Parameters
+        ----------
+        a : array, length n-1  — sub-diagonal
+        b : array, length n    — main diagonal
+        c : array, length n-1  — super-diagonal
+        d : array, length n    — right-hand side
+
+        Returns
+        -------
+        x : array, length n
+        """
+        n = len(d)
+        # Work on copies to avoid mutating input
+        cp = np.empty(n - 1)
+        dp = np.empty(n)
+
+        cp[0] = c[0] / b[0]
+        dp[0] = d[0] / b[0]
+
+        for i in range(1, n):
+            m = b[i] - a[i - 1] * (cp[i - 1] if i - 1 < len(cp) else 0.0)
+            if abs(m) < 1e-30:
+                m = 1e-30
+            dp[i] = (d[i] - a[i - 1] * dp[i - 1]) / m
+            if i < n - 1:
+                cp[i] = c[i] / m
+
+        x = np.empty(n)
+        x[-1] = dp[-1]
+        for i in range(n - 2, -1, -1):
+            x[i] = dp[i] - cp[i] * x[i + 1]
+
+        return x
+
+    # ── Crank-Nicolson helpers ───────────────────────────────────────
+
+    def _explicit_diffusion_rhs(self, T, chi):
+        """Compute explicit diffusion operator L_h(T) = (1/r) d/dr(r chi dT/dr).
+
+        Uses half-grid diffusivities and central differences on the
+        interior, returning an array of the same length as *T*.
+        """
+        n = len(T)
+        Lh = np.zeros(n)
+        dr = self.drho
+
+        for i in range(1, n - 1):
+            r = self.rho[i]
+            # half-grid chi
+            chi_ip = 0.5 * (chi[i] + chi[i + 1])
+            chi_im = 0.5 * (chi[i] + chi[i - 1])
+            r_ip = r + 0.5 * dr
+            r_im = r - 0.5 * dr
+
+            flux_ip = chi_ip * r_ip * (T[i + 1] - T[i]) / dr
+            flux_im = chi_im * r_im * (T[i] - T[i - 1]) / dr
+
+            Lh[i] = (flux_ip - flux_im) / (r * dr)
+
+        return Lh
+
+    def _build_cn_tridiag(self, chi, dt):
+        """Build tridiagonal coefficients for the Crank-Nicolson LHS.
+
+        The implicit system is:
+            (I - 0.5*dt*L_h) T^{n+1} = (I + 0.5*dt*L_h) T^n + dt*(S - Sink)
+
+        Returns (a, b, c) sub/main/super diagonals for the interior points,
+        padded to full grid size (BCs applied separately).
+        """
+        n = len(self.rho)
+        dr = self.drho
+        a = np.zeros(n - 1)  # sub-diagonal
+        b = np.ones(n)       # main diagonal
+        c = np.zeros(n - 1)  # super-diagonal
+
+        for i in range(1, n - 1):
+            r = self.rho[i]
+            chi_ip = 0.5 * (chi[i] + chi[i + 1])
+            chi_im = 0.5 * (chi[i] + chi[i - 1])
+            r_ip = r + 0.5 * dr
+            r_im = r - 0.5 * dr
+
+            coeff_ip = chi_ip * r_ip / (r * dr * dr)
+            coeff_im = chi_im * r_im / (r * dr * dr)
+
+            # LHS: (I - 0.5*dt*L_h) => diag entries are *subtracted*
+            b[i] = 1.0 + 0.5 * dt * (coeff_ip + coeff_im)
+            c[i] = -0.5 * dt * coeff_ip       # T_{i+1} coefficient
+            a[i - 1] = -0.5 * dt * coeff_im   # T_{i-1} coefficient
+
+        return a, b, c
+
+    # ── Main evolution (Crank-Nicolson) ──────────────────────────────
+
     def evolve_profiles(self, dt, P_aux):
+        """Advance Ti by one time step using Crank-Nicolson implicit diffusion.
+
+        The scheme is unconditionally stable, allowing dt up to ~1.0 s
+        without NaN.  The full equation solved is:
+
+            (T^{n+1} - T^n)/dt = 0.5*[L_h(T^{n+1}) + L_h(T^n)] + S - Sink
         """
-        Solves dW/dt = Diffusion + Source - Sink
-        """
-        # Sources
-        # Gaussian heating centered at rho=0
+        # ── Sources ──
         heating_profile = np.exp(-self.rho**2 / 0.1)
         S_heat = (P_aux / np.sum(heating_profile)) * heating_profile
-        
-        # SINKS: Radiation Cooling (Bremsstrahlung + Line)
-        # P_rad = n_e * n_imp * L_z(T)
-        cooling_factor = 5.0 
+
+        # ── Sinks (radiation) ──
+        cooling_factor = 5.0
         S_rad = cooling_factor * self.ne * self.n_impurity * np.sqrt(self.Te + 0.1)
-        
-        # Explicit Step (Simplified for stability in this demo)
-        new_Ti = self.Ti.copy()
-        
-        # Fluxes
-        grad_Ti = np.gradient(self.Ti, self.drho)
-        flux_Ti = -self.chi_i * grad_Ti
-        
-        # Divergence (Cylindrical approx)
-        r_flux = self.rho * flux_Ti
-        div_flux = np.gradient(r_flux, self.drho) / (self.rho + 1e-6)
-        
-        # Update
-        dT_dt = -div_flux + S_heat - S_rad
-        new_Ti += dT_dt * dt
-        
-        # Boundary Conditions
-        new_Ti[0] = new_Ti[1] # Zero gradient at core
-        new_Ti[-1] = 0.1      # Cold edge (Separatrix temp)
-        
-        self.Ti = np.maximum(0.01, new_Ti) # Prevent negative temp
-        self.Te = self.Ti # Assume equilibrated
-        
+
+        net_source = S_heat - S_rad
+
+        # ── Explicit half: RHS = T^n + 0.5*dt*L_h(T^n) + dt*net_source ──
+        Lh_explicit = self._explicit_diffusion_rhs(self.Ti, self.chi_i)
+        rhs = self.Ti + 0.5 * dt * Lh_explicit + dt * net_source
+
+        # ── Implicit half: build tridiagonal for (I - 0.5*dt*L_h) ──
+        a, b, c = self._build_cn_tridiag(self.chi_i, dt)
+
+        # ── Solve ──
+        new_Ti = self._thomas_solve(a, b, c, rhs)
+
+        # ── Boundary Conditions ──
+        new_Ti[0] = new_Ti[1]    # Neumann at core
+        new_Ti[-1] = 0.1         # Dirichlet at edge
+
+        self.Ti = np.maximum(0.01, new_Ti)
+        self.Te = self.Ti  # Assume equilibrated
+
         return np.mean(self.Ti), self.Ti[0]
 
     def map_profiles_to_2d(self):
@@ -298,6 +401,8 @@ class TransportSolver(FusionKernel):
         P_aux: float,
         n_steps: int = 500,
         dt: float = 0.01,
+        adaptive: bool = False,
+        tol: float = 1e-3,
     ) -> dict:
         """Run transport evolution until approximate steady state.
 
@@ -308,7 +413,11 @@ class TransportSolver(FusionKernel):
         n_steps : int
             Number of evolution steps.
         dt : float
-            Time step [s].
+            Time step [s] (initial value when adaptive=True).
+        adaptive : bool
+            Use Richardson-extrapolation adaptive time stepping.
+        tol : float
+            Error tolerance for adaptive stepping.
 
         Returns
         -------
@@ -316,13 +425,37 @@ class TransportSolver(FusionKernel):
             ``{"T_avg": float, "T_core": float, "tau_e": float,
             "n_steps": int, "Ti_profile": ndarray,
             "ne_profile": ndarray}``
+            When adaptive=True, also includes ``dt_final``,
+            ``dt_history``, ``error_history``.
         """
-        for _ in range(n_steps):
+        if not adaptive:
+            for _ in range(n_steps):
+                self.update_transport_model(P_aux)
+                T_avg, T_core = self.evolve_profiles(dt, P_aux)
+
+            tau_e = self.compute_confinement_time(P_aux)
+            return {
+                "T_avg": float(T_avg),
+                "T_core": float(T_core),
+                "tau_e": tau_e,
+                "n_steps": n_steps,
+                "Ti_profile": self.Ti.copy(),
+                "ne_profile": self.ne.copy(),
+            }
+
+        # ── Adaptive time stepping ──
+        atc = AdaptiveTimeController(dt_init=dt, tol=tol)
+
+        for step in range(n_steps):
             self.update_transport_model(P_aux)
-            T_avg, T_core = self.evolve_profiles(dt, P_aux)
+            error = atc.estimate_error(self, P_aux)
+            atc.adapt_dt(error)
+
+            # Take the accepted step (full step already applied inside estimate_error)
+            T_avg = float(np.mean(self.Ti))
+            T_core = float(self.Ti[0])
 
         tau_e = self.compute_confinement_time(P_aux)
-
         return {
             "T_avg": float(T_avg),
             "T_core": float(T_core),
@@ -330,4 +463,97 @@ class TransportSolver(FusionKernel):
             "n_steps": n_steps,
             "Ti_profile": self.Ti.copy(),
             "ne_profile": self.ne.copy(),
+            "dt_final": atc.dt,
+            "dt_history": atc.dt_history.copy(),
+            "error_history": atc.error_history.copy(),
         }
+
+
+class AdaptiveTimeController:
+    """Richardson-extrapolation adaptive time controller for CN transport.
+
+    Compares one full CN step vs. two half-steps to estimate the local
+    truncation error, then uses a PI controller to adjust dt.
+
+    Parameters
+    ----------
+    dt_init : float — initial time step [s]
+    dt_min : float — minimum allowed dt
+    dt_max : float — maximum allowed dt
+    tol : float — target local error tolerance
+    safety : float — safety factor (< 1) for step adjustment
+    """
+
+    def __init__(
+        self,
+        dt_init: float = 0.01,
+        dt_min: float = 1e-5,
+        dt_max: float = 1.0,
+        tol: float = 1e-3,
+        safety: float = 0.9,
+    ):
+        self.dt = dt_init
+        self.dt_min = dt_min
+        self.dt_max = dt_max
+        self.tol = tol
+        self.safety = safety
+        self.p = 2  # CN is second-order
+
+        self.dt_history: list[float] = []
+        self.error_history: list[float] = []
+        self._err_prev: float = tol  # initialise for PI controller
+
+    def estimate_error(self, solver: "TransportSolver", P_aux: float) -> float:
+        """Estimate local error via Richardson extrapolation.
+
+        Takes one full CN step of size dt and two half-steps of size dt/2,
+        then compares.  The solver state is advanced by the *half-step*
+        result (more accurate).
+
+        Returns the estimated error norm.
+        """
+        Ti_save = solver.Ti.copy()
+        Te_save = solver.Te.copy()
+
+        # One full step
+        solver.Ti = Ti_save.copy()
+        solver.Te = Te_save.copy()
+        solver.evolve_profiles(self.dt, P_aux)
+        T_full = solver.Ti.copy()
+
+        # Two half steps
+        solver.Ti = Ti_save.copy()
+        solver.Te = Te_save.copy()
+        solver.evolve_profiles(self.dt / 2.0, P_aux)
+        solver.evolve_profiles(self.dt / 2.0, P_aux)
+        T_half = solver.Ti.copy()
+
+        # Richardson error estimate: ||T_full - T_half|| / (2^p - 1)
+        error = float(np.linalg.norm(T_full - T_half)) / (2**self.p - 1)
+        error = max(error, 1e-15)
+
+        # Accept the half-step result (more accurate)
+        solver.Ti = T_half
+        solver.Te = T_half.copy()
+
+        return error
+
+    def adapt_dt(self, error: float) -> None:
+        """Adjust dt using a PI controller.
+
+        dt *= min(2, safety * (tol/err)^(0.7/p) * (err_prev/err)^(0.4/p))
+        """
+        self.error_history.append(error)
+        self.dt_history.append(self.dt)
+
+        ratio_i = (self.tol / error) ** (0.7 / self.p)
+        ratio_p = (self._err_prev / error) ** (0.4 / self.p)
+        factor = self.safety * ratio_i * ratio_p
+        factor = min(factor, 2.0)
+        factor = max(factor, 0.1)  # don't shrink too aggressively
+
+        self.dt *= factor
+        self.dt = max(self.dt, self.dt_min)
+        self.dt = min(self.dt, self.dt_max)
+
+        self._err_prev = error

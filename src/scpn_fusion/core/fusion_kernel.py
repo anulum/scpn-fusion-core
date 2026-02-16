@@ -59,6 +59,7 @@ class FusionKernel:
     # ── construction ──────────────────────────────────────────────────
 
     def __init__(self, config_path: str | Path) -> None:
+        self._config_path = str(config_path)
         self.load_config(config_path)
         self.initialize_grid()
         self.setup_accelerator()
@@ -555,6 +556,256 @@ class FusionKernel:
         for _ in range(50):
             self.Psi = self._jacobi_step(self.Psi, Source)
 
+    # ── Newton-Kantorovich equilibrium solver ────────────────────────
+
+    def _compute_gs_residual(self, Source: FloatArray) -> FloatArray:
+        """Compute the GS residual r = L*[psi] - Source on interior points.
+
+        The toroidal GS* operator is:
+            L* = d2/dR2 - (1/R) d/dR + d2/dZ2
+        """
+        Psi = self.Psi
+        NZ, NR = Psi.shape
+        dR2 = self.dR ** 2
+        dZ2 = self.dZ ** 2
+
+        residual = np.zeros_like(Psi)
+        R_int = self.RR[1:-1, 1:-1]
+        R_safe = np.maximum(R_int, 1e-10)
+
+        # 5-point toroidal stencil
+        d2R = (Psi[1:-1, 2:] - 2.0 * Psi[1:-1, 1:-1] + Psi[1:-1, 0:-2]) / dR2
+        d1R = (Psi[1:-1, 2:] - Psi[1:-1, 0:-2]) / (2.0 * self.dR)
+        d2Z = (Psi[2:, 1:-1] - 2.0 * Psi[1:-1, 1:-1] + Psi[0:-2, 1:-1]) / dZ2
+
+        Lpsi = d2R - d1R / R_safe + d2Z
+        residual[1:-1, 1:-1] = Lpsi - Source[1:-1, 1:-1]
+        return residual
+
+    def _apply_gs_operator(self, v: FloatArray) -> FloatArray:
+        """Apply the discrete GS* operator to array *v*.
+
+        Used as the matvec in the GMRES LinearOperator for Newton.
+        """
+        NZ, NR = v.shape
+        dR2 = self.dR ** 2
+        dZ2 = self.dZ ** 2
+
+        result = np.zeros_like(v)
+        R_int = self.RR[1:-1, 1:-1]
+        R_safe = np.maximum(R_int, 1e-10)
+
+        d2R = (v[1:-1, 2:] - 2.0 * v[1:-1, 1:-1] + v[1:-1, 0:-2]) / dR2
+        d1R = (v[1:-1, 2:] - v[1:-1, 0:-2]) / (2.0 * self.dR)
+        d2Z = (v[2:, 1:-1] - 2.0 * v[1:-1, 1:-1] + v[0:-2, 1:-1]) / dZ2
+
+        result[1:-1, 1:-1] = d2R - d1R / R_safe + d2Z
+        return result
+
+    def _compute_profile_jacobian(
+        self, Psi_axis: float, Psi_boundary: float, mu0: float
+    ) -> FloatArray:
+        """Compute dJ_phi/dpsi as a 2D diagonal scaling field.
+
+        For L-mode linear profiles:
+            p'(psi_norm) = const => J_phi ∝ (1 - psi_norm) * R
+            dJ_phi/dpsi = -c / (Psi_boundary - Psi_axis) for points inside plasma
+
+        Returns a 2D array of the same shape as self.Psi.
+        """
+        denom = Psi_boundary - Psi_axis
+        if abs(denom) < 1e-9:
+            denom = 1e-9
+
+        Psi_norm = (self.Psi - Psi_axis) / denom
+        mask_plasma = (Psi_norm >= 0) & (Psi_norm < 1.0)
+
+        # For the linear L-mode profile: Source = -mu0 * R * J_phi
+        # J_phi = c * (1 - psi_norm) * R  =>  dJ_phi/dpsi_norm = -c * R
+        # dJ_phi/dpsi = dJ_phi/dpsi_norm * dpsi_norm/dpsi = -c * R / denom
+        # We compute c from the current normalisation
+        I_target = self.cfg["physics"]["plasma_current_target"]
+        # Approximate: I = integral(J_phi) dA ≈ c * sum_plasma((1-psi_norm)*R) * dR*dZ
+        s = float(np.sum(np.where(mask_plasma, (1 - Psi_norm) * self.RR, 0.0))) * self.dR * self.dZ
+        c = I_target / max(abs(s), 1e-9)
+
+        dJ_dpsi = np.zeros_like(self.Psi)
+        dJ_dpsi[mask_plasma] = -c * self.RR[mask_plasma] / denom
+
+        return dJ_dpsi
+
+    def _newton_solve_dispatch(self) -> dict[str, Any]:
+        """Newton-Kantorovich equilibrium solver with Picard warmup.
+
+        1. Run 15 Picard warmup steps to get a reasonable initial guess.
+        2. Switch to Newton: at each step solve J_k * delta = -r_k via
+           scipy GMRES, then update psi += alpha * delta.
+
+        Returns the standard result dict.
+        """
+        from scipy.sparse.linalg import LinearOperator, gmres
+
+        t0 = time.time()
+        self.Psi = self.calculate_vacuum_field()
+        Psi_vac_boundary = self.Psi.copy()
+
+        max_iter: int = self.cfg["solver"]["max_iterations"]
+        tol: float = self.cfg["solver"]["convergence_threshold"]
+        picard_alpha: float = self.cfg["solver"].get("relaxation_factor", 0.1)
+        fail_on_diverge: bool = bool(self.cfg["solver"].get("fail_on_diverge", False))
+        mu0: float = self.cfg["physics"]["vacuum_permeability"]
+        warmup_steps: int = min(15, max_iter // 2)
+        newton_alpha: float = 0.5  # damped Newton
+
+        residual_history: list[float] = []
+        converged = False
+        final_iter = 0
+
+        self._seed_plasma(mu0)
+
+        # ── Phase A: Picard warmup ──
+        for k in range(warmup_steps):
+            final_iter = k
+            _, _, Psi_axis = self._find_magnetic_axis()
+            _, Psi_boundary = self.find_x_point(self.Psi)
+            if abs(Psi_axis - Psi_boundary) < 0.1:
+                Psi_boundary = Psi_axis * 0.1
+
+            if not getattr(self, "external_profile_mode", False):
+                self.J_phi = self.update_plasma_source_nonlinear(Psi_axis, Psi_boundary)
+
+            Source = -mu0 * self.RR * self.J_phi
+            Psi_new = self._elliptic_solve(Source, Psi_vac_boundary)
+
+            if np.isnan(Psi_new).any() or np.isinf(Psi_new).any():
+                if fail_on_diverge:
+                    raise RuntimeError(f"Newton warmup diverged at iter={k}")
+                break
+
+            diff = float(np.mean(np.abs(Psi_new - self.Psi)))
+            residual_history.append(diff)
+            self.Psi = (1.0 - picard_alpha) * self.Psi + picard_alpha * Psi_new
+            self._apply_boundary_conditions(self.Psi, Psi_vac_boundary)
+
+            if diff < tol:
+                converged = True
+                break
+
+        # ── Phase B: Newton iterations ──
+        if not converged:
+            NZ, NR_grid = self.Psi.shape
+            n_interior = (NZ - 2) * (NR_grid - 2)
+
+            for k in range(warmup_steps, max_iter):
+                final_iter = k
+
+                _, _, Psi_axis = self._find_magnetic_axis()
+                _, Psi_boundary = self.find_x_point(self.Psi)
+                if abs(Psi_axis - Psi_boundary) < 0.1:
+                    Psi_boundary = Psi_axis * 0.1
+
+                if not getattr(self, "external_profile_mode", False):
+                    self.J_phi = self.update_plasma_source_nonlinear(Psi_axis, Psi_boundary)
+
+                # Residual: r_k = L[psi] + mu0*R*J_phi  (Source = -mu0*R*J)
+                Source = -mu0 * self.RR * self.J_phi
+                r_k = self._compute_gs_residual(Source)
+                res_norm = float(np.sqrt(np.sum(r_k[1:-1, 1:-1] ** 2)))
+                residual_history.append(res_norm)
+
+                if res_norm < tol:
+                    converged = True
+                    break
+
+                # Build Jacobian operator: J_k = L + mu0*R*dJ/dpsi
+                dJ_dpsi = self._compute_profile_jacobian(Psi_axis, Psi_boundary, mu0)
+                diag_term = -mu0 * self.RR * dJ_dpsi  # the source derivative
+
+                def matvec(v_flat: np.ndarray) -> np.ndarray:
+                    v2d = np.zeros((NZ, NR_grid))
+                    v2d[1:-1, 1:-1] = v_flat.reshape(NZ - 2, NR_grid - 2)
+                    Lv = self._apply_gs_operator(v2d)
+                    Lv[1:-1, 1:-1] -= diag_term[1:-1, 1:-1] * v2d[1:-1, 1:-1]
+                    return Lv[1:-1, 1:-1].ravel()
+
+                J_op = LinearOperator(
+                    shape=(n_interior, n_interior),
+                    matvec=matvec,
+                    dtype=np.float64,
+                )
+
+                # Solve J_k * delta = -r_k
+                rhs = -r_k[1:-1, 1:-1].ravel()
+                delta_flat, info = gmres(J_op, rhs, maxiter=100, restart=50,
+                                         atol=1e-8, rtol=1e-6)
+
+                if info != 0:
+                    logger.warning("GMRES did not converge at Newton iter %d (info=%d)", k, info)
+
+                delta = np.zeros_like(self.Psi)
+                delta[1:-1, 1:-1] = delta_flat.reshape(NZ - 2, NR_grid - 2)
+
+                # Damped Newton update
+                self.Psi += newton_alpha * delta
+                self._apply_boundary_conditions(self.Psi, Psi_vac_boundary)
+
+                # NaN check
+                if np.isnan(self.Psi).any() or np.isinf(self.Psi).any():
+                    logger.warning("Newton diverged at iter %d", k)
+                    if fail_on_diverge:
+                        raise RuntimeError(f"Newton solver diverged at iter={k}")
+                    break
+
+        self.compute_b_field()
+        elapsed = time.time() - t0
+        logger.info("Newton solved in %.2fs, %d iters", elapsed, final_iter + 1)
+
+        return {
+            "psi": self.Psi,
+            "converged": converged,
+            "iterations": final_iter + 1,
+            "residual": residual_history[-1] if residual_history else float("inf"),
+            "residual_history": residual_history,
+            "wall_time_s": elapsed,
+            "solver_method": "newton",
+        }
+
+    # ── Rust multigrid delegation ────────────────────────────────────
+
+    def _solve_via_rust_multigrid(self) -> dict[str, Any]:
+        """Delegate the full equilibrium solve to the Rust multigrid backend.
+
+        Falls back to Python SOR if the Rust extension is not installed.
+        """
+        from scpn_fusion.core._rust_compat import _rust_available, RustAcceleratedKernel
+
+        if not _rust_available():
+            logger.warning("Rust unavailable; falling back to Python SOR.")
+            self.cfg["solver"]["solver_method"] = "sor"
+            return self.solve_equilibrium()
+
+        t0 = time.time()
+        rk = RustAcceleratedKernel(self._config_path)
+        rk.set_solver_method("multigrid")
+        rust_result = rk.solve_equilibrium()
+
+        # Sync state back
+        self.Psi = rk.Psi
+        self.J_phi = rk.J_phi
+        self.B_R = rk.B_R
+        self.B_Z = rk.B_Z
+
+        elapsed = time.time() - t0
+        return {
+            "psi": self.Psi,
+            "converged": rust_result.converged,
+            "iterations": rust_result.iterations,
+            "residual": rust_result.residual,
+            "residual_history": [],
+            "wall_time_s": elapsed,
+            "solver_method": "rust_multigrid",
+        }
+
     # ── main solver ───────────────────────────────────────────────────
 
     def solve_equilibrium(self) -> dict[str, Any]:
@@ -582,6 +833,15 @@ class FusionKernel:
             is enabled in the active configuration.
         """
         t0 = time.time()
+
+        method: str = self.cfg["solver"].get("solver_method", "sor")
+
+        # ── Fast-path dispatches ──
+        if method == "rust_multigrid":
+            return self._solve_via_rust_multigrid()
+        if method == "newton":
+            return self._newton_solve_dispatch()
+
         self.Psi = self.calculate_vacuum_field()
         Psi_vac_boundary = self.Psi.copy()
 
@@ -592,7 +852,6 @@ class FusionKernel:
             self.cfg["solver"].get("fail_on_diverge", False)
         )
         mu0: float = self.cfg["physics"]["vacuum_permeability"]
-        method: str = self.cfg["solver"].get("solver_method", "sor")
         anderson_m: int = self.cfg["solver"].get("anderson_depth", 5)
 
         x_point_pos: tuple[float, float] = (0.0, 0.0)
