@@ -51,6 +51,16 @@ IPB98_SIGMA = {
 }
 
 
+def _validate_n_samples(n_samples: int) -> int:
+    """Validate Monte Carlo sample count and normalise to int."""
+    if isinstance(n_samples, bool) or not isinstance(n_samples, (int, np.integer)):
+        raise ValueError("n_samples must be an integer >= 1")
+    parsed = int(n_samples)
+    if parsed < 1:
+        raise ValueError("n_samples must be an integer >= 1")
+    return parsed
+
+
 @dataclass
 class PlasmaScenario:
     """Input plasma parameters for a confinement prediction."""
@@ -230,10 +240,7 @@ def quantify_full_chain(
     FullChainUQResult
         Bands at [5%, 50%, 95%] for psi_nrmse, tau_E, P_fusion, Q, beta_N.
     """
-    if isinstance(n_samples, bool) or not isinstance(n_samples, (int, np.integer)):
-        raise ValueError("n_samples must be an integer >= 1")
-    if n_samples < 1:
-        raise ValueError("n_samples must be an integer >= 1")
+    n_samples = _validate_n_samples(n_samples)
 
     def _validate_sigma(name: str, value: float) -> float:
         try:
@@ -423,6 +430,7 @@ def quantify_uncertainty(scenario: PlasmaScenario,
     -------
     UQResult — central estimates + error bars + percentiles.
     """
+    n_samples = _validate_n_samples(n_samples)
     rng = np.random.default_rng(seed)
 
     tau_samples = np.zeros(n_samples)

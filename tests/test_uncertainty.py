@@ -109,3 +109,8 @@ class TestUQ:
         # but they should be in the same ballpark (within 50%)
         ratio = r_small.tau_E_sigma / r_large.tau_E_sigma
         assert 0.5 < ratio < 2.0, f"Sigma ratio = {ratio}"
+
+    @pytest.mark.parametrize("n_samples", [0, -5, 2.5, "100", True])
+    def test_invalid_n_samples_rejected(self, n_samples):
+        with pytest.raises(ValueError, match="n_samples"):
+            quantify_uncertainty(ITER_SCENARIO, n_samples=n_samples, seed=1)
