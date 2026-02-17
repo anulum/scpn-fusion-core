@@ -632,23 +632,34 @@ def load_or_train_predictor(
     kwargs = dict(train_kwargs or {})
 
     if path.exists() and not force_retrain:
-        checkpoint = torch.load(path, map_location="cpu")
-        if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
-            state_dict = checkpoint["state_dict"]
-            loaded_seq_len = _normalize_seq_len(checkpoint.get("seq_len", seq_len))
-        else:
-            state_dict = checkpoint
-            loaded_seq_len = seq_len
+        try:
+            checkpoint = torch.load(path, map_location="cpu")
+            if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
+                state_dict = checkpoint["state_dict"]
+                loaded_seq_len = _normalize_seq_len(checkpoint.get("seq_len", seq_len))
+            else:
+                state_dict = checkpoint
+                loaded_seq_len = seq_len
 
-        model = DisruptionTransformer(seq_len=loaded_seq_len)
-        model.load_state_dict(state_dict)
-        model.eval()
-        return model, {
-            "trained": False,
-            "fallback": False,
-            "model_path": str(path),
-            "seq_len": int(loaded_seq_len),
-        }
+            model = DisruptionTransformer(seq_len=loaded_seq_len)
+            model.load_state_dict(state_dict)
+            model.eval()
+            return model, {
+                "trained": False,
+                "fallback": False,
+                "model_path": str(path),
+                "seq_len": int(loaded_seq_len),
+            }
+        except Exception as exc:
+            if not allow_fallback:
+                raise
+            return None, {
+                "trained": False,
+                "fallback": True,
+                "reason": f"checkpoint_load_failed:{exc.__class__.__name__}",
+                "model_path": str(path),
+                "seq_len": int(seq_len),
+            }
 
     if not train_if_missing and not force_retrain:
         if allow_fallback:

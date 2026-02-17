@@ -12,6 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 import warnings
 
+import numpy as np
 import pytest
 
 import scpn_fusion.control.disruption_predictor as dp
@@ -66,6 +67,51 @@ def test_load_or_train_reuses_existing_checkpoint(tmp_path: Path) -> None:
     assert meta["trained"] is False
     assert meta["seq_len"] == 24
     assert Path(meta["model_path"]) == model_path
+
+
+def test_load_or_train_returns_fallback_on_corrupted_checkpoint(tmp_path: Path) -> None:
+    model_path = tmp_path / "corrupted_model.pth"
+    model_path.write_bytes(b"not a valid torch checkpoint")
+
+    model, meta = dp.load_or_train_predictor(
+        model_path=model_path,
+        seq_len=32,
+        train_if_missing=False,
+        allow_fallback=True,
+    )
+
+    assert model is None
+    assert meta["trained"] is False
+    assert meta["fallback"] is True
+    assert meta["reason"].startswith("checkpoint_load_failed:")
+    assert meta["seq_len"] == 32
+
+
+def test_predict_disruption_risk_safe_falls_back_on_corrupted_checkpoint(tmp_path: Path) -> None:
+    model_path = tmp_path / "corrupted_model.pth"
+    model_path.write_bytes(b"still not a valid torch checkpoint")
+
+    signal = np.linspace(0.25, 0.95, 80)
+    toroidal = {
+        "toroidal_n1_amp": 0.16,
+        "toroidal_n2_amp": 0.07,
+        "toroidal_n3_amp": 0.03,
+        "toroidal_asymmetry_index": 0.177,
+        "toroidal_radial_spread": 0.02,
+    }
+    expected = dp.predict_disruption_risk(signal, toroidal)
+
+    risk, meta = dp.predict_disruption_risk_safe(
+        signal,
+        toroidal,
+        model_path=model_path,
+        train_if_missing=False,
+    )
+
+    assert abs(risk - expected) < 1e-12
+    assert meta["mode"] == "fallback"
+    assert meta["risk_source"] == "predict_disruption_risk"
+    assert meta["reason"].startswith("checkpoint_load_failed:")
 
 
 def test_disruption_transformer_uses_batch_first_attention() -> None:
