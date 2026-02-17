@@ -488,7 +488,12 @@ if torch is not None:
             self.seq_len = _normalize_seq_len(seq_len)
             self.embedding = nn.Linear(1, 32)
             self.pos_encoder = nn.Parameter(torch.zeros(1, self.seq_len, 32))
-            encoder_layer = nn.TransformerEncoderLayer(d_model=32, nhead=4, dim_feedforward=64)
+            encoder_layer = nn.TransformerEncoderLayer(
+                d_model=32,
+                nhead=4,
+                dim_feedforward=64,
+                batch_first=True,
+            )
             self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=2)
             self.classifier = nn.Linear(32, 1)
             self.sigmoid = nn.Sigmoid()
@@ -499,9 +504,8 @@ if torch is not None:
                     f"Input sequence length {src.shape[1]} exceeds configured seq_len {self.seq_len}."
                 )
             x = self.embedding(src) + self.pos_encoder[:, :src.shape[1], :]
-            x = x.permute(1, 0, 2)
             output = self.transformer(x)
-            last_step = output[-1, :, :]
+            last_step = output[:, -1, :]
             return self.sigmoid(self.classifier(last_step))
 else:  # pragma: no cover - only used without torch installed
     class DisruptionTransformer:  # type: ignore[no-redef]
