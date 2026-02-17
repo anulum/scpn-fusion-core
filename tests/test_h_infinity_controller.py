@@ -89,6 +89,14 @@ def test_h_infinity_strict_mode_rejects_infeasible_solution() -> None:
         )
 
 
+def test_h_infinity_non_strict_mode_logs_infeasible_warning(caplog: pytest.LogCaptureFixture) -> None:
+    A, B1, B2, C1, C2 = _reference_plant()
+    with caplog.at_level("WARNING", logger="scpn_fusion.control.h_infinity_controller"):
+        ctrl = HInfinityController(A, B1, B2, C1, C2)
+    assert ctrl.robust_feasible is False
+    assert "spectral feasibility condition failed" in caplog.text
+
+
 def test_h_infinity_strict_mode_accepts_feasible_synthesis(monkeypatch: pytest.MonkeyPatch) -> None:
     def _feasible_synthesize(
         self: HInfinityController, gamma: float
