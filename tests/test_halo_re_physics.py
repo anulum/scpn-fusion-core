@@ -108,6 +108,24 @@ class TestRunawayElectronModel:
         with pytest.raises(ValueError):
             model.simulate(dt_s=0.1, duration_s=0.01)
 
+    def test_extreme_conditions_remain_finite(self):
+        model = RunawayElectronModel(n_e=5e20, T_e_keV=25.0, z_eff=3.0, neon_mol=0.8)
+        result = model.simulate(
+            plasma_current_ma=20.0,
+            tau_cq_s=5e-4,
+            T_e_quench_keV=0.02,
+            neon_z_eff=8.0,
+            neon_mol=2.0,
+            duration_s=2e-3,
+            dt_s=1e-5,
+            seed_re_fraction=1e-4,
+        )
+        assert np.isfinite(result.peak_re_current_ma)
+        assert np.isfinite(result.final_re_current_ma)
+        assert all(np.isfinite(result.runaway_current_ma))
+        assert all(np.isfinite(result.dreicer_rate_per_s))
+        assert all(np.isfinite(result.avalanche_rate_per_s))
+
 
 class TestDisruptionEnsemble:
     def test_ensemble_runs(self):

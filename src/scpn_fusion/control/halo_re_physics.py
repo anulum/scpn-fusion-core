@@ -375,6 +375,8 @@ class RunawayElectronModel:
 
         Based on Connor-Hastie (1975) asymptotic formula.
         """
+        if not np.isfinite(E) or not np.isfinite(T_e_keV):
+            return 0.0
         if E <= 0 or T_e_keV <= 0.01:
             return 0.0
 
@@ -387,21 +389,27 @@ class RunawayElectronModel:
         )
 
         ratio = E_D / max(E, 1e-6)
+        if not np.isfinite(ratio) or ratio <= 0.0:
+            return 0.0
         if ratio > 200.0:  # negligible generation
             return 0.0
 
         # Connor-Hastie: h(Z_eff) = 3(Z_eff+1)/16
         h_z = 3.0 * (self.Z_eff + 1.0) / 16.0
         # nu_eff = sqrt((1+Z_eff) * E_D / (2 * E))
-        nu_eff = np.sqrt((1.0 + self.Z_eff) * ratio / 2.0)
+        nu_eff = float(np.sqrt(max((1.0 + self.Z_eff) * ratio / 2.0, 0.0)))
 
         C_D = 0.35  # numerical prefactor
+        ratio_term = float(np.exp(-h_z * np.log(max(ratio, 1e-20))))
+        exp_arg = float(np.clip(-ratio / 4.0 - nu_eff, -700.0, 0.0))
         rate = (
             (self.n_e_free / max(self.tau_coll, 1e-20))
             * C_D
-            * ratio ** (-h_z)
-            * np.exp(-ratio / 4.0 - nu_eff)
+            * ratio_term
+            * np.exp(exp_arg)
         )
+        if not np.isfinite(rate):
+            return 0.0
         return max(float(rate), 0.0)
 
     def _avalanche_rate(self, E: float, n_re: float) -> float:
@@ -409,6 +417,8 @@ class RunawayElectronModel:
 
         Based on Rosenbluth-Putvinski (1997).
         """
+        if not np.isfinite(E) or not np.isfinite(n_re):
+            return 0.0
         if E <= self.E_c or n_re <= 0:
             return 0.0
 
@@ -420,6 +430,8 @@ class RunawayElectronModel:
             # print(f"  [Aegis] RE Avalanche suppressed by 99.9% (Neon={self.neon_mol:.2f})")
 
         growth = n_re * (E / self.E_c - 1.0) / (max(self.tau_av, 1e-20) * _LN_LAMBDA)
+        if not np.isfinite(growth):
+            return 0.0
         return max(float(growth * deconfinement_factor), 0.0)
 
     def _fokker_planck_generation(self, E: float, n_re: float) -> float:
@@ -428,7 +440,9 @@ class RunawayElectronModel:
         Models the diffusion into the runaway region of momentum space.
         dn/dt ~ (E/Ec - 1) * n_re / tau_sync + D_pp * d2n/dp2
         """
-        if E <= self.E_c:
+        if not np.isfinite(E) or not np.isfinite(n_re):
+            return 0.0
+        if E <= self.E_c or n_re <= 0.0:
             return 0.0
 
         # Effective diffusion coefficient in momentum space
@@ -436,7 +450,9 @@ class RunawayElectronModel:
         e_ratio = E / self.E_c
 
         # Empirical FP-like growth term
-        fp_rate = n_re * (e_ratio - 1.0) ** 1.5 / (self.tau_av * 5.0)
+        fp_rate = n_re * max(e_ratio - 1.0, 0.0) ** 1.5 / max(self.tau_av * 5.0, 1e-20)
+        if not np.isfinite(fp_rate):
+            return 0.0
         return float(max(fp_rate, 0.0))
 
     def simulate(
@@ -518,14 +534,22 @@ class RunawayElectronModel:
             loss_rate = (
                 n_re / max(self.tau_av * 5.0, 1e-12) if E_tor < self.E_c else 0.0
             )
+            if not np.isfinite(loss_rate):
+                loss_rate = 0.0
 
             # 5. Evolution
             dn_re = (gamma_D + gamma_av + gamma_FP - loss_rate) * dt
+            if not np.isfinite(dn_re):
+                dn_re = 0.0
             n_re = max(n_re + dn_re, 0.0)
+            if not np.isfinite(n_re):
+                n_re = 0.0
 
             # 6. Current conversion
             I_re_val = _E_CHARGE * n_re * _C_LIGHT * np.pi * 2.0**2
             # BACK-EMF Limit: RE current cannot exceed total plasma current
+            if not np.isfinite(I_re_val):
+                I_re_val = Ip0
             I_re_val = min(I_re_val, Ip0)
             re_current_ma.append(I_re_val / 1e6)
 
