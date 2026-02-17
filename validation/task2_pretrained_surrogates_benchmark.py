@@ -309,6 +309,8 @@ def run_campaign(
         "max_equilibrium_p95_ms_est": 1.0,
         "max_equilibrium_fault_p95_ms_est": 1.0,
         "max_equilibrium_p95_ms_wall_advisory": 10.0,
+        # Backward-compatible alias for existing report consumers.
+        "max_equilibrium_p95_ms_wall": 10.0,
     }
 
     wall_latency_advisory_pass = bool(

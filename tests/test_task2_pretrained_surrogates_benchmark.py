@@ -41,6 +41,11 @@ def test_task2_campaign_passes_thresholds() -> None:
     assert out["equilibrium_latency"]["fault_p95_ms_est"] < 1.0
     assert out["equilibrium_latency"]["fault_runs"] == 10.0
     assert isinstance(out["wall_latency_advisory_pass"], bool)
+    assert out["thresholds"]["max_equilibrium_p95_ms_wall"] == 10.0
+    assert (
+        out["thresholds"]["max_equilibrium_p95_ms_wall"]
+        == out["thresholds"]["max_equilibrium_p95_ms_wall_advisory"]
+    )
     assert out["disruption_auc_publication"]["published"] is True
     assert out["surrogate_coverage"]["coverage_percent"] > 0.0
     assert len(out["surrogate_coverage"]["requires_user_training"]) >= 1
