@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 import importlib.util
 from pathlib import Path
 
@@ -81,3 +82,34 @@ def test_task2_markdown_contains_required_sections() -> None:
     assert "Consumer Hardware Latency Profiles" in text
     assert "Wall-latency advisory pass" in text
     assert "advisory `<= " in text
+
+
+def test_task2_hard_thresholds_ignore_wall_latency_spikes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original = task2_bench.GPURuntimeBridge.benchmark_equilibrium_latency
+
+    def _inject_wall_spike(self, **kwargs):
+        out = original(self, **kwargs)
+        return replace(
+            out,
+            p95_ms_wall=99.0,
+            fault_p95_ms_wall=120.0,
+            latency_spike_over_10ms=True,
+        )
+
+    monkeypatch.setattr(
+        task2_bench.GPURuntimeBridge,
+        "benchmark_equilibrium_latency",
+        _inject_wall_spike,
+    )
+    out = task2_bench.run_campaign(
+        seed=42,
+        force_retrain=False,
+        latency_backend="auto",
+        latency_trials=48,
+        latency_grid_size=56,
+        latency_fault_runs=10,
+    )
+    assert out["passes_thresholds"] is True
+    assert out["wall_latency_advisory_pass"] is False
