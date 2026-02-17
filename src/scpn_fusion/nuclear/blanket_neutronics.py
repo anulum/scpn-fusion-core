@@ -22,6 +22,7 @@ class VolumetricBlanketReport:
     total_production_per_s: float
     incident_neutrons_per_s: float
     blanket_volume_m3: float
+    tbr_ideal: float = 0.0
 
 class BreedingBlanket:
     """
@@ -134,6 +135,9 @@ class BreedingBlanket:
         poloidal_cells: int = 72,
         toroidal_cells: int = 48,
         incident_flux: float = 1e14,
+        port_coverage_factor: float = 0.80,
+        streaming_factor: float = 0.85,
+        blanket_fill_factor: float = 1.0,
     ) -> VolumetricBlanketReport:
         """
         Reduced 3D blanket-volume surrogate built on top of the 1D transport profile.
@@ -164,6 +168,16 @@ class BreedingBlanket:
         incident_flux = float(incident_flux)
         if (not np.isfinite(incident_flux)) or incident_flux < 1.0:
             raise ValueError("incident_flux must be finite and >= 1.0.")
+
+        port_coverage_factor = float(port_coverage_factor)
+        if not (0.0 < port_coverage_factor <= 1.0):
+            raise ValueError("port_coverage_factor must be in (0, 1].")
+        streaming_factor = float(streaming_factor)
+        if not (0.0 < streaming_factor <= 1.0):
+            raise ValueError("streaming_factor must be in (0, 1].")
+        blanket_fill_factor = float(blanket_fill_factor)
+        if not (0.0 < blanket_fill_factor <= 1.0):
+            raise ValueError("blanket_fill_factor must be in (0, 1].")
 
         # Depth profile anchored to the nominal enriched reference blanket to keep
         # the reduced surrogate stable across parameter scans.
@@ -205,13 +219,21 @@ class BreedingBlanket:
 
         first_wall_area_m2 = 4.0 * np.pi**2 * major_radius_m * minor_radius_m * elongation
         incident_neutrons = incident_flux * first_wall_area_m2 * 1e4  # m^2 -> cm^2
-        tbr_vol = total_production / max(incident_neutrons, 1e-9)
+        tbr_ideal = total_production / max(incident_neutrons, 1e-9)
+
+        # Apply 3D correction factors (Fischer et al. 2015, DEMO blanket studies):
+        # - port_coverage_factor: fraction of first wall covered by blanket modules
+        #   (~80% for ITER/DEMO; rest is heating, diagnostic, maintenance ports)
+        # - streaming_factor: neutron streaming losses through inter-module gaps
+        # - blanket_fill_factor: optional breeding material packing fraction
+        tbr_vol = tbr_ideal * port_coverage_factor * streaming_factor * blanket_fill_factor
 
         return VolumetricBlanketReport(
             tbr=tbr_vol,
             total_production_per_s=total_production,
             incident_neutrons_per_s=incident_neutrons,
             blanket_volume_m3=blanket_volume_m3,
+            tbr_ideal=tbr_ideal,
         )
 
 def run_breeding_sim(
@@ -347,7 +369,12 @@ class MultiGroupBlanket:
 
         self.multiplier_gain = 1.8  # Be(n,2n) neutron gain
 
-    def solve_transport(self, incident_flux: float = 1e14) -> dict[str, object]:
+    def solve_transport(
+        self,
+        incident_flux: float = 1e14,
+        port_coverage_factor: float = 0.80,
+        streaming_factor: float = 0.85,
+    ) -> dict[str, object]:
         """Solve 3-group steady-state neutron diffusion.
 
         Returns dict with phi_g1, phi_g2, phi_g3 flux arrays and TBR.
@@ -460,7 +487,10 @@ class MultiGroupBlanket:
         # which is a pencil-beam approximation, but for a volumetric plasma
         # neutron source illuminating the blanket, φ/4 is more appropriate).
         incident_current = phi_g1[0] / 4.0
-        tbr = total_tritium / max(incident_current, 1e-12)
+        tbr_ideal = total_tritium / max(incident_current, 1e-12)
+
+        # Apply 3D correction factors (Fischer et al. 2015)
+        tbr = tbr_ideal * port_coverage_factor * streaming_factor
 
         return {
             "phi_g1": phi_g1,
@@ -471,10 +501,11 @@ class MultiGroupBlanket:
             "production_g3": prod_g3,
             "total_production": total_prod,
             "tbr": float(tbr),
+            "tbr_ideal": float(tbr_ideal),
             "tbr_by_group": {
-                "fast": float(trap(prod_g1, self.x) / max(incident_current, 1e-12)),
-                "epithermal": float(trap(prod_g2, self.x) / max(incident_current, 1e-12)),
-                "thermal": float(trap(prod_g3, self.x) / max(incident_current, 1e-12)),
+                "fast": float(trap(prod_g1, self.x) / max(incident_current, 1e-12) * port_coverage_factor * streaming_factor),
+                "epithermal": float(trap(prod_g2, self.x) / max(incident_current, 1e-12) * port_coverage_factor * streaming_factor),
+                "thermal": float(trap(prod_g3, self.x) / max(incident_current, 1e-12) * port_coverage_factor * streaming_factor),
             },
         }
 

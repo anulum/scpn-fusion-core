@@ -1,0 +1,50 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for SCPN Fusion Core
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature. All physics-related requests
+        **must** include a reference paper and equation number so the team
+        can verify the underlying model.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: A clear description of what problem this feature solves.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe how you would like this to work.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative approaches you have thought about.
+    validations:
+      required: false
+  - type: textarea
+    id: physics-reference
+    attributes:
+      label: Physics Reference (required)
+      description: |
+        Citation (DOI or arXiv ID) and equation number for the physics
+        claim. For example: "Greenwald 2002 (doi:10.1088/0741-3335/44/8/201),
+        Eq. 1 — Greenwald density limit n_GW = I_p / (pi a^2)."
+      placeholder: "Author(s) Year (DOI/arXiv), Eq. N — brief description"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other context, diagrams, or references.
+    validations:
+      required: false

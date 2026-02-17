@@ -5,6 +5,8 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
+import warnings
+
 import numpy as np
 import matplotlib.pyplot as plt
 from .fusion_kernel import FusionKernel
@@ -365,7 +367,13 @@ class DynamicBurnModel:
 
             # Temperature from stored energy
             T = W_thermal / (1.5 * n_e * 1e3 * 1.602e-19 * self.V_plasma)
-            T = float(np.clip(T, 0.1, 100.0))
+            if T > 25.0:
+                warnings.warn(
+                    f"Temperature {T:.1f} keV exceeds 25 keV physical limit; "
+                    "clamping (0-D model artifact).",
+                    stacklevel=2,
+                )
+            T = float(np.clip(T, 0.1, 25.0))
 
             # He ash accumulation
             # Source: fusion rate, Sink: pumping
@@ -375,8 +383,9 @@ class DynamicBurnModel:
             f_he += dn_he / (n_e * self.V_plasma)
             f_he = float(np.clip(f_he, 0.0, 0.5))
 
-            # Q factor
-            Q = P_fus / max(P_aux_mw * 1e6, 1.0)
+            # Q factor (capped at 15 to avoid 0-D burn model artifacts)
+            Q_raw = P_fus / max(P_aux_mw * 1e6, 1.0)
+            Q = min(Q_raw, 15.0)
 
             P_fus_hist.append(P_fus / 1e6)
             P_alpha_hist.append(P_alpha / 1e6)
@@ -424,8 +433,21 @@ class DynamicBurnModel:
 
         Returns the scan results including the optimal P_aux for Q=10.
         """
+        # Greenwald density limit (Greenwald 1988): n_GW = I_p / (pi * a^2)
+        # in units of 10^20 m^-3
+        n_greenwald = I_p / (np.pi * a**2)
+
         results = []
         for n_e20 in [0.8, 1.0, 1.2]:
+            # Skip densities above 1.2x Greenwald limit
+            if n_e20 > 1.2 * n_greenwald:
+                warnings.warn(
+                    f"Density n_e20={n_e20:.2f} exceeds 1.2x Greenwald limit "
+                    f"({n_greenwald:.2f}); skipping.",
+                    stacklevel=2,
+                )
+                continue
+
             for P_aux in np.arange(10.0, 80.0, 5.0):
                 model = DynamicBurnModel(
                     R0=R0, a=a, B_t=B_t, I_p=I_p, kappa=kappa, n_e20=n_e20
@@ -443,12 +465,29 @@ class DynamicBurnModel:
                 })
 
         # Find best Q operating point
+        if not results:
+            return {
+                "scan_results": [],
+                "best": None,
+                "q10_achieved": False,
+                "n_greenwald": n_greenwald,
+            }
+
         q_values = [r["Q_final"] for r in results]
         best_idx = int(np.argmax(q_values))
+
+        if results[best_idx]["Q_final"] > 15.0:
+            warnings.warn(
+                f"Best Q={results[best_idx]['Q_final']:.1f} exceeds 15; "
+                "likely a 0-D model artifact.",
+                stacklevel=2,
+            )
+
         return {
             "scan_results": results,
             "best": results[best_idx],
             "q10_achieved": results[best_idx]["Q_final"] >= 10.0,
+            "n_greenwald": n_greenwald,
         }
 
 

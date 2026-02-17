@@ -23,6 +23,10 @@ except ImportError:
 
 _logger = logging.getLogger(__name__)
 
+
+class PhysicsError(RuntimeError):
+    """Raised when a physics constraint is violated."""
+
 # ── Gyro-Bohm coefficient loader ─────────────────────────────────────
 
 _GYRO_BOHM_COEFF_PATH = (
@@ -243,6 +247,9 @@ class TransportSolver(FusionKernel):
 
         # Neoclassical transport configuration (None = constant chi_base=0.5)
         self.neoclassical_params = None
+
+        # Energy conservation diagnostic (updated each evolve_profiles call)
+        self._last_conservation_error: float = 0.0
 
     def set_neoclassical(self, R0, a, B0, A_ion=2.0, Z_eff=1.5, q0=1.0, q_edge=3.0):
         """Configure Chang-Hinton neoclassical transport model.
@@ -557,14 +564,26 @@ class TransportSolver(FusionKernel):
 
     # ── Main evolution (Crank-Nicolson) ──────────────────────────────
 
-    def evolve_profiles(self, dt, P_aux):
+    def evolve_profiles(self, dt, P_aux, enforce_conservation: bool = False):
         """Advance Ti by one time step using Crank-Nicolson implicit diffusion.
 
         The scheme is unconditionally stable, allowing dt up to ~1.0 s
         without NaN.  The full equation solved is:
 
             (T^{n+1} - T^n)/dt = 0.5*[L_h(T^{n+1}) + L_h(T^n)] + S - Sink
+
+        Parameters
+        ----------
+        dt : float
+            Time step [s].
+        P_aux : float
+            Auxiliary heating power [MW].
+        enforce_conservation : bool
+            When True, raise :class:`PhysicsError` if the per-step energy
+            conservation error exceeds 1%.
         """
+        Ti_old = self.Ti.copy()
+
         # ── Sources ──
         heating_profile = np.exp(-self.rho**2 / 0.1)
         S_heat = (P_aux / np.sum(heating_profile)) * heating_profile
@@ -591,6 +610,30 @@ class TransportSolver(FusionKernel):
 
         self.Ti = np.maximum(0.01, new_Ti)
         self.Te = self.Ti  # Assume equilibrated
+
+        # ── Energy conservation diagnostic ──
+        e_keV_J = 1.602176634e-16  # J per keV
+        dims = self.cfg["dimensions"]
+        R0 = (dims["R_min"] + dims["R_max"]) / 2.0
+        a_minor = (dims["R_max"] - dims["R_min"]) / 2.0
+        dV = 2.0 * np.pi * R0 * 2.0 * np.pi * self.rho * a_minor**2 * self.drho
+
+        W_before = 1.5 * np.sum(self.ne * 1e19 * Ti_old * e_keV_J * dV)
+        W_after = 1.5 * np.sum(self.ne * 1e19 * self.Ti * e_keV_J * dV)
+        dW_source = dt * 1.5 * np.sum(self.ne * 1e19 * net_source * e_keV_J * dV)
+
+        dW_actual = W_after - W_before
+        self._last_conservation_error = (
+            abs(dW_actual - dW_source) / max(abs(W_before), 1e-10)
+        )
+
+        if enforce_conservation and self._last_conservation_error > 0.01:
+            raise PhysicsError(
+                f"Energy conservation violated: relative error "
+                f"{self._last_conservation_error:.4e} > 1% threshold. "
+                f"W_before={W_before:.4e} J, W_after={W_after:.4e} J, "
+                f"dW_source={dW_source:.4e} J."
+            )
 
         return np.mean(self.Ti), self.Ti[0]
 
