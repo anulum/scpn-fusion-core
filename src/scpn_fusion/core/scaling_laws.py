@@ -29,7 +29,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -43,6 +43,17 @@ _DEFAULT_COEFF_PATH = (
     / "reference_data"
     / "itpa"
     / "ipb98y2_coefficients.json"
+)
+
+_REQUIRED_EXPONENT_KEYS = (
+    "Ip_MA",
+    "BT_T",
+    "ne19_1e19m3",
+    "Ploss_MW",
+    "R_m",
+    "kappa",
+    "epsilon",
+    "M_AMU",
 )
 
 
@@ -71,6 +82,65 @@ def _require_positive_finite(name: str, value: float) -> float:
     return value_f
 
 
+def _require_finite_number(name: str, value: Any) -> float:
+    """Validate generic numeric metadata loaded from coefficient files."""
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be numeric, got {value!r}") from exc
+    if not np.isfinite(parsed):
+        raise ValueError(f"{name} must be finite, got {value!r}")
+    return parsed
+
+
+def _validate_ipb98y2_coefficients(raw: Any) -> dict[str, Any]:
+    """Validate and normalize an IPB98(y,2) coefficient mapping."""
+    if not isinstance(raw, dict):
+        raise ValueError("IPB98(y,2) coefficients must be a JSON object")
+
+    if "C" not in raw:
+        raise ValueError("IPB98(y,2) coefficients missing required key 'C'")
+    C = _require_finite_number("C", raw["C"])
+    if C <= 0.0:
+        raise ValueError(f"C must be > 0, got {C!r}")
+
+    exp_raw = raw.get("exponents")
+    if not isinstance(exp_raw, dict):
+        raise ValueError("IPB98(y,2) coefficients key 'exponents' must be an object")
+
+    exponents: dict[str, float] = {}
+    for key in _REQUIRED_EXPONENT_KEYS:
+        if key not in exp_raw:
+            raise ValueError(f"IPB98(y,2) coefficients missing exponent key '{key}'")
+        exponents[key] = _require_finite_number(f"exponents.{key}", exp_raw[key])
+
+    normalized: dict[str, Any] = dict(raw)
+    normalized["C"] = C
+    normalized["exponents"] = exponents
+
+    if "sigma_lnC" in normalized:
+        sigma_lnc = _require_finite_number("sigma_lnC", normalized["sigma_lnC"])
+        if sigma_lnc < 0.0:
+            raise ValueError(f"sigma_lnC must be >= 0, got {sigma_lnc!r}")
+        normalized["sigma_lnC"] = sigma_lnc
+
+    if "exponent_uncertainties" in normalized:
+        unc_raw = normalized["exponent_uncertainties"]
+        if not isinstance(unc_raw, dict):
+            raise ValueError("exponent_uncertainties must be an object")
+        uncertainties: dict[str, float] = {}
+        for key, value in unc_raw.items():
+            sigma = _require_finite_number(f"exponent_uncertainties.{key}", value)
+            if sigma < 0.0:
+                raise ValueError(
+                    f"exponent_uncertainties.{key} must be >= 0, got {sigma!r}"
+                )
+            uncertainties[key] = sigma
+        normalized["exponent_uncertainties"] = uncertainties
+
+    return normalized
+
+
 def load_ipb98y2_coefficients(
     path: Optional[str | Path] = None,
 ) -> dict:
@@ -87,8 +157,9 @@ def load_ipb98y2_coefficients(
         Parsed JSON with keys ``"C"``, ``"exponents"``, etc.
     """
     p = Path(path) if path else _DEFAULT_COEFF_PATH
-    with open(p) as f:
-        return json.load(f)
+    with open(p, encoding="utf-8") as f:
+        raw = json.load(f)
+    return _validate_ipb98y2_coefficients(raw)
 
 
 def ipb98y2_tau_e(
@@ -147,6 +218,8 @@ def ipb98y2_tau_e(
 
     if coefficients is None:
         coefficients = load_ipb98y2_coefficients()
+    else:
+        coefficients = _validate_ipb98y2_coefficients(coefficients)
 
     C = coefficients["C"]
     exp = coefficients["exponents"]

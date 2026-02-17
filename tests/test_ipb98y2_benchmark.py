@@ -19,6 +19,7 @@ Tests cover:
 from __future__ import annotations
 
 import csv
+import json
 import logging
 import warnings
 from pathlib import Path
@@ -82,6 +83,41 @@ class TestIPB98y2Formula:
         assert coeff["C"] == pytest.approx(0.0562, abs=0.001)
         assert coeff["exponents"]["Ip_MA"] == pytest.approx(0.93, abs=0.01)
         assert coeff["exponents"]["Ploss_MW"] == pytest.approx(-0.69, abs=0.01)
+
+    def test_load_coefficients_rejects_non_finite_c(self, tmp_path: Path):
+        """Coefficient loader should reject non-finite scale factor C."""
+        coeff = load_ipb98y2_coefficients(_COEFF_PATH)
+        coeff["C"] = float("nan")
+        path = tmp_path / "bad_coeff_nan_c.json"
+        path.write_text(json.dumps(coeff), encoding="utf-8")
+        with pytest.raises(ValueError, match="C"):
+            load_ipb98y2_coefficients(path)
+
+    def test_load_coefficients_rejects_missing_exponent_key(self, tmp_path: Path):
+        """Coefficient loader should reject incomplete exponent mappings."""
+        coeff = load_ipb98y2_coefficients(_COEFF_PATH)
+        del coeff["exponents"]["Ip_MA"]
+        path = tmp_path / "bad_coeff_missing_key.json"
+        path.write_text(json.dumps(coeff), encoding="utf-8")
+        with pytest.raises(ValueError, match="missing exponent key 'Ip_MA'"):
+            load_ipb98y2_coefficients(path)
+
+    def test_tau_rejects_negative_sigma_lnc_in_custom_coefficients(self):
+        """Runtime evaluator should validate custom uncertainty metadata."""
+        coeff = load_ipb98y2_coefficients(_COEFF_PATH)
+        coeff["sigma_lnC"] = -0.1
+        with pytest.raises(ValueError, match="sigma_lnC"):
+            ipb98y2_tau_e(
+                Ip=15.0,
+                BT=5.3,
+                ne19=10.1,
+                Ploss=87.0,
+                R=6.2,
+                kappa=1.70,
+                epsilon=2.0 / 6.2,
+                M=2.5,
+                coefficients=coeff,
+            )
 
     def test_tau_monotonic_in_ip(self):
         """τ_E should increase with plasma current (positive exponent)."""
