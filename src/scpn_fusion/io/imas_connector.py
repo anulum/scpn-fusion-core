@@ -681,7 +681,7 @@ def geqdsk_to_imas_equilibrium(
         ],
         "code": {
             "name": "SCPN-Fusion-Core",
-            "version": "1.0.2",
+            "version": "2.0.0a1",
         },
     }
 

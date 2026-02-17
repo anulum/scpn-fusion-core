@@ -1,0 +1,16 @@
+{
+  "name": "gyro_bohm_transport_coefficient",
+  "description": "Calibrated gyro-Bohm anomalous transport coefficient c_gB. chi_gB = c_gB * rho_s^2 * c_s / (a * q * R). Fitted against ITPA H-mode confinement database.",
+  "c_gB": 2.583223,
+  "c_gB_uncertainty": 2.188806,
+  "rmse_s": 0.26872,
+  "rmse_percent": 59.7621,
+  "rmse_relative": 0.597621,
+  "mean_measured_tau_s": 0.44965,
+  "n_shots": 20,
+  "calibration_date": "2026-02-17T10:02:05Z",
+  "method": "scipy.optimize.minimize_scalar (bounded, log-space)",
+  "transport_model": "gyro_bohm + chang_hinton_neoclassical",
+  "profile_model": "parabolic T and n profiles, self-consistent T0 iteration",
+  "reference": "ITPA H-mode confinement database (hmode_confinement.csv)"
+}

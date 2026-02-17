@@ -24,6 +24,7 @@ from scpn_fusion.core.eqdsk import read_geqdsk
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DIIID_DIR = REPO_ROOT / "validation" / "reference_data" / "diiid"
+DEFAULT_DISRUPTION_DIR = DEFAULT_DIIID_DIR / "disruption_shots"
 DEFAULT_ITPA_CSV = REPO_ROOT / "validation" / "reference_data" / "itpa" / "hmode_confinement.csv"
 
 DEFAULT_MDSPLUS_NODE_MAP: dict[str, str] = {
@@ -491,3 +492,95 @@ def load_machine_profiles(
         "live_attempted": live_attempted,
         "live_error": live_error,
     }
+
+
+# ---------------------------------------------------------------------------
+# Disruption shot NPZ loaders (synthetic DIII-D reference data)
+# ---------------------------------------------------------------------------
+
+def list_disruption_shots(
+    *,
+    disruption_dir: Path | None = None,
+) -> list[str]:
+    """
+    Return the names of all available disruption shot NPZ files.
+
+    Each name corresponds to a file in ``disruption_dir`` (default:
+    ``validation/reference_data/diiid/disruption_shots/``).  The returned
+    names are *without* the ``.npz`` extension and sorted alphabetically.
+
+    Example::
+
+        >>> names = list_disruption_shots()
+        >>> names
+        ['shot_154406_hybrid', 'shot_155916_locked_mode', ...]
+    """
+    d = disruption_dir if disruption_dir is not None else DEFAULT_DISRUPTION_DIR
+    d = Path(d)
+    if not d.is_dir():
+        return []
+    return sorted(p.stem for p in d.glob("*.npz"))
+
+
+def load_disruption_shot(
+    shot_name_or_path: str | Path,
+    *,
+    disruption_dir: Path | None = None,
+) -> dict[str, Any]:
+    """
+    Load a single disruption shot NPZ file and return its contents as a dict.
+
+    Parameters
+    ----------
+    shot_name_or_path
+        Either a bare shot name (e.g. ``"shot_155916_locked_mode"``) which
+        is resolved relative to *disruption_dir*, or an absolute/relative
+        path to a ``.npz`` file.
+    disruption_dir
+        Directory containing NPZ files.  Defaults to
+        ``validation/reference_data/diiid/disruption_shots/``.
+
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary with keys: ``time_s``, ``Ip_MA``, ``BT_T``, ``beta_N``,
+        ``q95``, ``ne_1e19``, ``n1_amp``, ``n2_amp``, ``locked_mode_amp``,
+        ``dBdt_gauss_per_s``, ``vertical_position_m`` (all ``NDArray[float64]``
+        of shape ``(1000,)``), plus scalar metadata ``is_disruption`` (bool),
+        ``disruption_time_idx`` (int), and ``disruption_type`` (str).
+
+    Raises
+    ------
+    FileNotFoundError
+        If the NPZ file does not exist.
+    ValueError
+        If the file is missing required keys.
+    """
+    p = Path(shot_name_or_path)
+    if not p.suffix:
+        d = disruption_dir if disruption_dir is not None else DEFAULT_DISRUPTION_DIR
+        p = Path(d) / f"{p.name}.npz"
+    if not p.exists():
+        raise FileNotFoundError(f"Disruption shot file not found: {p}")
+
+    raw = np.load(str(p), allow_pickle=True)
+
+    required_array_keys = {
+        "time_s", "Ip_MA", "BT_T", "beta_N", "q95", "ne_1e19",
+        "n1_amp", "n2_amp", "locked_mode_amp", "dBdt_gauss_per_s",
+        "vertical_position_m",
+    }
+    required_scalar_keys = {"is_disruption", "disruption_time_idx", "disruption_type"}
+    all_required = required_array_keys | required_scalar_keys
+    present = set(raw.files)
+    missing = all_required - present
+    if missing:
+        raise ValueError(f"NPZ file {p.name} missing keys: {sorted(missing)}")
+
+    result: dict[str, Any] = {}
+    for k in required_array_keys:
+        result[k] = np.asarray(raw[k], dtype=np.float64)
+    result["is_disruption"] = bool(raw["is_disruption"])
+    result["disruption_time_idx"] = int(raw["disruption_time_idx"])
+    result["disruption_type"] = str(raw["disruption_type"])
+    return result

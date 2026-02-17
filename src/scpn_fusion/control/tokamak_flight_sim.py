@@ -25,7 +25,31 @@ TARGET_ELONGATION = 1.7
 
 
 class FirstOrderActuator:
-    """Discrete first-order transfer function u_applied(s) = 1/(tau*s+1) * u_cmd."""
+    """Discrete first-order actuator with rate limits, noise, and delay.
+
+    Models a realistic coil power supply for tokamak control:
+    - First-order lag: u_applied(s) = 1/(tau*s+1) * u_cmd
+    - Coil current rate limit: |du/dt| <= rate_limit [A/s]
+    - Sensor noise: additive Gaussian on measurement
+    - Measurement delay: pure transport delay on feedback signal
+
+    Parameters
+    ----------
+    tau_s : float
+        Actuator time constant [s].
+    dt_s : float
+        Simulation timestep [s].
+    u_min, u_max : float
+        Saturation limits.
+    rate_limit : float
+        Maximum current rate of change [A/s]. Default 1e6 (1 MA/s, ITER PF spec).
+    sensor_noise_std : float
+        Standard deviation of additive sensor noise. Default 0.0 (disabled).
+    delay_steps : int
+        Number of timesteps of measurement delay. Default 0.
+    rng_seed : int or None
+        Random seed for reproducible noise (None = random).
+    """
 
     def __init__(
         self,
@@ -34,6 +58,10 @@ class FirstOrderActuator:
         dt_s: float,
         u_min: float = -1.0e9,
         u_max: float = 1.0e9,
+        rate_limit: float = 1.0e6,
+        sensor_noise_std: float = 0.0,
+        delay_steps: int = 0,
+        rng_seed: Optional[int] = None,
     ) -> None:
         tau_s = float(tau_s)
         dt_s = float(dt_s)
@@ -45,13 +73,42 @@ class FirstOrderActuator:
         self.dt_s = dt_s
         self.u_min = float(u_min)
         self.u_max = float(u_max)
+        self.rate_limit = float(rate_limit)
+        self.sensor_noise_std = float(sensor_noise_std)
+        self.delay_steps = int(delay_steps)
+        self._rng = np.random.default_rng(rng_seed)
         self.state = 0.0
+        self._delay_buffer: list[float] = [0.0] * max(self.delay_steps, 1)
 
     def step(self, command: float) -> float:
+        """Apply command through actuator dynamics with rate limiting."""
         u_cmd = float(np.clip(command, self.u_min, self.u_max))
         alpha = self.dt_s / (self.tau_s + self.dt_s)
-        self.state = float(np.clip(self.state + alpha * (u_cmd - self.state), self.u_min, self.u_max))
+        u_new = self.state + alpha * (u_cmd - self.state)
+
+        # Rate limiting (coil current slew rate)
+        du = u_new - self.state
+        max_du = self.rate_limit * self.dt_s
+        if abs(du) > max_du:
+            du = np.sign(du) * max_du
+            u_new = self.state + du
+
+        self.state = float(np.clip(u_new, self.u_min, self.u_max))
+
+        # Update delay buffer
+        self._delay_buffer.append(self.state)
+
         return self.state
+
+    def get_measurement(self) -> float:
+        """Return delayed, noisy measurement of actuator output."""
+        idx = max(0, len(self._delay_buffer) - 1 - self.delay_steps)
+        delayed = self._delay_buffer[idx]
+
+        if self.sensor_noise_std > 0:
+            noise = float(self._rng.normal(0.0, self.sensor_noise_std))
+            return delayed + noise
+        return delayed
 
 class IsoFluxController:
     """

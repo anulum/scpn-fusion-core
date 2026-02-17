@@ -463,3 +463,110 @@ class StochasticPetriNet:
                 f"nnz={self.W_out.nnz}"
             )
         return "\n".join(lines)
+
+    # ── Formal verification ───────────────────────────────────────────────
+
+    def verify_boundedness(self, n_steps: int = 500, n_trials: int = 100) -> Dict[str, object]:
+        """Verify that markings stay in [0, 1] under random firing.
+
+        Runs *n_trials* random trajectories of *n_steps* each,
+        checking that all markings remain in [0, 1] at every step.
+
+        Returns
+        -------
+        dict
+            {"bounded": bool, "max_marking": float, "min_marking": float,
+             "n_trials": int, "n_steps": int}
+        """
+        if not self._compiled:
+            raise RuntimeError("Net must be compiled before verification.")
+
+        rng = np.random.default_rng(42)
+        max_seen = -np.inf
+        min_seen = np.inf
+        bounded = True
+
+        for _ in range(n_trials):
+            marking = self.get_initial_marking().copy()
+            for _ in range(n_steps):
+                # Stochastic firing
+                W_in_dense = self.W_in.toarray() if hasattr(self.W_in, 'toarray') else np.asarray(self.W_in)
+                W_out_dense = self.W_out.toarray() if hasattr(self.W_out, 'toarray') else np.asarray(self.W_out)
+
+                # Check enabling
+                thresholds = self.get_thresholds()
+                enabled = np.all(W_in_dense <= marking[np.newaxis, :] + 1e-9, axis=1)
+                enabled &= (rng.random(len(thresholds)) < thresholds)
+
+                # Fire enabled transitions
+                for t in np.where(enabled)[0]:
+                    marking -= W_in_dense[t, :]
+                    marking += W_out_dense[:, t]
+
+                # Clamp (as the controller does)
+                marking = np.clip(marking, 0.0, 1.0)
+
+                max_seen = max(max_seen, float(np.max(marking)))
+                min_seen = min(min_seen, float(np.min(marking)))
+
+                if np.any(marking < -1e-9) or np.any(marking > 1.0 + 1e-9):
+                    bounded = False
+
+        return {
+            "bounded": bounded,
+            "max_marking": float(max_seen),
+            "min_marking": float(min_seen),
+            "n_trials": n_trials,
+            "n_steps": n_steps,
+        }
+
+    def verify_liveness(self, n_steps: int = 200, n_trials: int = 1000) -> Dict[str, object]:
+        """Verify that all transitions fire at least once in random campaigns.
+
+        Returns
+        -------
+        dict
+            {"live": bool, "transition_fire_pct": dict[str, float],
+             "min_fire_pct": float}
+        """
+        if not self._compiled:
+            raise RuntimeError("Net must be compiled before verification.")
+
+        rng = np.random.default_rng(42)
+        n_T = self.n_transitions
+        fire_counts = np.zeros(n_T, dtype=int)
+
+        W_in_dense = self.W_in.toarray() if hasattr(self.W_in, 'toarray') else np.asarray(self.W_in)
+        W_out_dense = self.W_out.toarray() if hasattr(self.W_out, 'toarray') else np.asarray(self.W_out)
+        thresholds = self.get_thresholds()
+
+        for _ in range(n_trials):
+            marking = self.get_initial_marking().copy()
+            fired_this_trial = np.zeros(n_T, dtype=bool)
+
+            for _ in range(n_steps):
+                enabled = np.all(W_in_dense <= marking[np.newaxis, :] + 1e-9, axis=1)
+                enabled &= (rng.random(n_T) < thresholds)
+
+                for t in np.where(enabled)[0]:
+                    marking -= W_in_dense[t, :]
+                    marking += W_out_dense[:, t]
+                    fired_this_trial[t] = True
+
+                marking = np.clip(marking, 0.0, 1.0)
+
+            fire_counts += fired_this_trial.astype(int)
+
+        fire_pct = {
+            name: round(float(fire_counts[i]) / n_trials, 4)
+            for i, name in enumerate(self._transitions)
+        }
+        min_pct = float(np.min(fire_counts)) / n_trials
+
+        return {
+            "live": min_pct >= 0.99,
+            "transition_fire_pct": fire_pct,
+            "min_fire_pct": round(min_pct, 4),
+            "n_trials": n_trials,
+            "n_steps": n_steps,
+        }

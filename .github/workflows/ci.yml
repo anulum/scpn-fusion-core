@@ -17,6 +17,7 @@ jobs:
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
@@ -139,6 +140,8 @@ jobs:
                   raise SystemExit(f"Missing key: {key}")
           print("RMSE dashboard smoke OK")
           PY
+      - name: RMSE regression gate
+        run: python tools/ci_rmse_gate.py
       - name: Upload RMSE artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -146,6 +149,30 @@ jobs:
           path: |
             artifacts/rmse_dashboard_ci.json
             artifacts/rmse_dashboard_ci.md
+
+  real-shot-validation:
+    name: Real-Shot Validation Gate
+    runs-on: ubuntu-latest
+    needs: [python-tests]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Run real-shot validation
+        run: python validation/validate_real_shots.py
+      - name: Upload validation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-shot-validation
+          path: |
+            artifacts/real_shot_validation.json
+            artifacts/real_shot_validation.md
 
   rust-tests:
     name: Rust (stable)
@@ -172,8 +199,8 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
-      - name: Run tests
-        run: cargo test --all-features
+      - name: Run tests (including proptest)
+        run: cargo test --all-features -- --test-threads=1
 
   rust-coverage:
     name: Rust Coverage (tarpaulin)

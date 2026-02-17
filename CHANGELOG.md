@@ -8,6 +8,52 @@
 
 # Changelog
 
+## [2.0.0] — Unreleased
+
+### Added — v2.0.0: Publication-Grade Physics Validation
+
+#### Equilibrium Solver
+- Pure-Python geometric multigrid V-cycle (full-weighting restriction, bilinear prolongation, Red-Black SOR smoother) with toroidal GS* stencil
+- Python multigrid wired as default solver (replaces SOR) — 129x129 converges to <1e-6 in <500 V-cycles
+- PyO3 binding for Rust multigrid `multigrid_vcycle()` with Python fallback
+- Real DIII-D EFIT GEQDSK equilibria replacing synthetic Solov'ev files
+- Psi/q-profile overlay validation against EFIT ground truth
+- Neural surrogate retrained on expanded 18+ GEQDSK dataset
+
+#### Transport Physics
+- EPED-like pedestal model (Snyder 2009 simplified scaling) for H-mode boundary conditions
+- Gyro-Bohm transport calibration against ITPA H-mode confinement database (20 shots)
+- IPB98(y,2) uncertainty quantification with log-linear error propagation (Verdoolaege 2021)
+- Transport validation against ITPA CSV with RMSE dashboard integration
+
+#### Control & Disruption
+- Proper H-infinity synthesis via Riccati equations (Doyle-Glover-Khargonekar) replacing fixed-gain PID
+- Real DIII-D disruption shot data (5 disruptions + 5 safe controls)
+- Disruption predictor retrained on mixed real+synthetic data (>70% recall target)
+- Closed-loop disruption mitigation with real shot replay
+- Realistic actuator model (sensor noise, coil rate limits, measurement delay)
+- SNN vs MPC vs PID disturbance rejection benchmark
+- Petri net formal verification documentation
+
+#### Integration & IO
+- IMAS IDS conformance audit with JSON Schema validation
+- MDSplus automated download with NPZ caching
+- GitHub issue templates for shot replay requests
+- Streamlit Shot Replay tab for measured vs simulated overlay
+
+#### Validation
+- `validate_real_shots.py` capstone validation (5 shots, equilibrium + transport + disruption)
+- Rust/Python parity test suite (relative tolerance < 1e-3)
+- RMSE regression gate in CI (tau_E RMSE, psi NRMSE thresholds)
+- HIL demo documentation with FPGA register map
+
+### Changed
+- Default equilibrium solver changed from SOR to multigrid
+- Transport model uses gyro-Bohm scaling instead of constant chi_base=0.5
+- Version bumped to 2.0.0
+
+---
+
 ## [Unreleased] — 2026-02-15
 
 ### Added

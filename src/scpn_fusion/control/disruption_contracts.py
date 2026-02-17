@@ -315,6 +315,149 @@ def run_disruption_episode(
     }
 
 
+def run_real_shot_replay(
+    *,
+    shot_data: dict[str, np.ndarray],
+    rl_agent: FusionAIAgent,
+    base_tbr: float = 1.15,
+    risk_threshold: float = 0.65,
+    spi_trigger_risk: float = 0.80,
+    window_size: int = 128,
+) -> dict[str, Any]:
+    """Replay a real tokamak shot through the disruption mitigation pipeline.
+
+    Parameters
+    ----------
+    shot_data : dict
+        NPZ-loaded shot data with keys: time_s, Ip_MA, BT_T, beta_N, q95,
+        ne_1e19, n1_amp, n2_amp, locked_mode_amp, dBdt_gauss_per_s,
+        vertical_position_m, is_disruption, disruption_time_idx, disruption_type.
+    rl_agent : FusionAIAgent
+        Reinforcement learning agent for SPI action selection.
+    base_tbr : float
+        Baseline tritium breeding ratio.
+    risk_threshold : float
+        Risk level above which alarm is raised.
+    spi_trigger_risk : float
+        Risk level above which SPI mitigation is triggered.
+    window_size : int
+        Sliding window size for disruption predictor.
+
+    Returns
+    -------
+    dict with replay results including risk time-series and mitigation outcomes.
+    """
+    time_s = np.asarray(shot_data.get("time_s", []), dtype=np.float64)
+    n1_amp = np.asarray(shot_data.get("n1_amp", np.zeros_like(time_s)), dtype=np.float64)
+    n2_amp = np.asarray(shot_data.get("n2_amp", np.zeros_like(time_s)), dtype=np.float64)
+    n3_amp = n2_amp * 0.4  # approximate n3 from n2
+    dBdt = np.asarray(shot_data.get("dBdt_gauss_per_s", np.zeros_like(time_s)), dtype=np.float64)
+    beta_N = np.asarray(shot_data.get("beta_N", np.ones_like(time_s) * 2.0), dtype=np.float64)
+    Ip_MA = np.asarray(shot_data.get("Ip_MA", np.ones_like(time_s) * 1.0), dtype=np.float64)
+
+    is_disruption = bool(shot_data.get("is_disruption", False))
+    disruption_time_idx = int(shot_data.get("disruption_time_idx", -1))
+    n_steps = time_s.size
+
+    risk_series = np.zeros(n_steps, dtype=np.float64)
+    alarm_series = np.zeros(n_steps, dtype=bool)
+    first_alarm_idx = -1
+    spi_triggered = False
+    spi_trigger_idx = -1
+
+    # Slide through the shot
+    for t in range(min(window_size, n_steps), n_steps):
+        # Build signal window from dB/dt
+        signal_window = dBdt[t - window_size:t] if t >= window_size else dBdt[:t]
+        if signal_window.size < 8:
+            continue
+
+        toroidal = {
+            "toroidal_n1_amp": float(np.clip(n1_amp[t], 0, 10)),
+            "toroidal_n2_amp": float(np.clip(n2_amp[t], 0, 10)),
+            "toroidal_n3_amp": float(np.clip(n3_amp[t], 0, 10)),
+            "toroidal_asymmetry_index": float(np.sqrt(
+                n1_amp[t] ** 2 + n2_amp[t] ** 2 + n3_amp[t] ** 2
+            )),
+            "toroidal_radial_spread": float(0.02 + 0.05 * n1_amp[t]),
+        }
+
+        risk = float(predict_disruption_risk(signal_window, toroidal))
+        risk_series[t] = risk
+
+        if risk > risk_threshold:
+            alarm_series[t] = True
+            if first_alarm_idx < 0:
+                first_alarm_idx = t
+
+        # SPI mitigation trigger
+        if risk > spi_trigger_risk and not spi_triggered:
+            spi_triggered = True
+            spi_trigger_idx = t
+
+    # Compute mitigation outcome
+    if spi_triggered:
+        pre_energy_mj = float(np.clip(300 + 50 * np.mean(beta_N), 200, 500))
+        pre_current_ma = float(np.clip(np.mean(Ip_MA), 0.5, 20))
+        neon_mol = float(np.clip(0.05 + 0.12 * risk_series[spi_trigger_idx], 0.03, 0.24))
+
+        spi = ShatteredPelletInjection(
+            Plasma_Energy_MJ=pre_energy_mj,
+            Plasma_Current_MA=pre_current_ma,
+        )
+        _, _, _, spi_diag = spi.trigger_mitigation(
+            neon_quantity_mol=neon_mol,
+            return_diagnostics=True,
+            duration_s=0.03,
+            dt_s=5e-5,
+            verbose=False,
+        )
+        tau_cq_ms = float(spi_diag["tau_cq_ms_mean"])
+        final_current = float(spi_diag["final_current_MA"])
+        z_eff = float(spi_diag["z_eff"])
+    else:
+        tau_cq_ms = 0.0
+        final_current = float(np.mean(Ip_MA))
+        z_eff = 1.0
+        neon_mol = 0.0
+
+    # Detection timing
+    detection_lead_ms = -1.0
+    if is_disruption and disruption_time_idx > 0 and first_alarm_idx > 0:
+        dt_arr = time_s if time_s.size > 0 else np.arange(n_steps) * 0.001
+        detection_lead_ms = float(
+            (dt_arr[disruption_time_idx] - dt_arr[first_alarm_idx]) * 1000
+        )
+
+    # Prevention determination
+    prevented = False
+    if is_disruption:
+        if spi_triggered and spi_trigger_idx < disruption_time_idx:
+            # SPI triggered before disruption — check if it mitigated
+            post_risk = np.mean(risk_series[spi_trigger_idx:min(spi_trigger_idx + 50, n_steps)])
+            prevented = bool(post_risk < 0.88 and tau_cq_ms > 0)
+    else:
+        prevented = not spi_triggered  # For safe shots, not triggering SPI = correct
+
+    return {
+        "n_steps": n_steps,
+        "is_disruption": is_disruption,
+        "disruption_time_idx": disruption_time_idx,
+        "first_alarm_idx": first_alarm_idx,
+        "spi_triggered": spi_triggered,
+        "spi_trigger_idx": spi_trigger_idx,
+        "detection_lead_ms": round(detection_lead_ms, 1),
+        "prevented": prevented,
+        "neon_mol": round(neon_mol, 4),
+        "tau_cq_ms": round(tau_cq_ms, 2),
+        "final_current_MA": round(final_current, 3),
+        "z_eff": round(z_eff, 2),
+        "peak_risk": round(float(np.max(risk_series)), 4),
+        "mean_risk": round(float(np.mean(risk_series)), 4),
+        "risk_series": risk_series.tolist(),
+    }
+
+
 __all__ = [
     "impurity_transport_response",
     "mcnp_lite_tbr",
@@ -322,5 +465,6 @@ __all__ = [
     "require_fraction",
     "require_int",
     "run_disruption_episode",
+    "run_real_shot_replay",
     "synthetic_disruption_signal",
 ]

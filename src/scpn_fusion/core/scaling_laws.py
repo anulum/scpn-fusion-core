@@ -156,6 +156,76 @@ def ipb98y2_tau_e(
     return float(tau)
 
 
+def ipb98y2_with_uncertainty(
+    Ip: float,
+    BT: float,
+    ne19: float,
+    Ploss: float,
+    R: float,
+    kappa: float,
+    epsilon: float,
+    M: float = 2.5,
+    *,
+    coefficients: Optional[dict] = None,
+) -> tuple[float, float]:
+    """Evaluate IPB98(y,2) with log-linear error propagation.
+
+    Uses published exponent uncertainties from Verdoolaege et al.,
+    Nuclear Fusion 61, 076006 (2021) for 95% confidence interval
+    estimation via log-linear error propagation.
+
+    Parameters
+    ----------
+    (same as ipb98y2_tau_e)
+
+    Returns
+    -------
+    tuple[float, float]
+        (tau_E, sigma_tau_E) — predicted confinement time and its
+        1-sigma uncertainty [s].
+    """
+    tau = ipb98y2_tau_e(Ip, BT, ne19, Ploss, R, kappa, epsilon, M,
+                        coefficients=coefficients)
+
+    if coefficients is None:
+        coefficients = load_ipb98y2_coefficients()
+
+    # Published exponent uncertainties (Verdoolaege et al. NF 2021)
+    # These are 1-sigma uncertainties on the log-space exponents.
+    exp_unc = coefficients.get("exponent_uncertainties", {
+        "Ip_MA": 0.02,
+        "BT_T": 0.04,
+        "ne19_1e19m3": 0.03,
+        "Ploss_MW": 0.02,
+        "R_m": 0.09,
+        "kappa": 0.08,
+        "epsilon": 0.07,
+        "M_AMU": 0.04,
+    })
+
+    # Log-linear error propagation:
+    # ln(tau) = ln(C) + sum_k alpha_k * ln(x_k)
+    # sigma_ln_tau^2 = sum_k (ln(x_k))^2 * sigma_alpha_k^2 + sigma_ln_C^2
+    sigma_lnC = float(coefficients.get("sigma_lnC", 0.14))
+
+    inputs = {
+        "Ip_MA": Ip, "BT_T": BT, "ne19_1e19m3": ne19,
+        "Ploss_MW": Ploss, "R_m": R, "kappa": kappa,
+        "epsilon": epsilon, "M_AMU": M,
+    }
+
+    var_ln_tau = sigma_lnC ** 2
+    for key, val in inputs.items():
+        if val > 0 and key in exp_unc:
+            var_ln_tau += (np.log(val) * exp_unc[key]) ** 2
+
+    sigma_ln_tau = np.sqrt(var_ln_tau)
+    # Convert from log-space: sigma_tau ≈ tau * sigma_ln_tau
+    sigma_tau = float(tau * sigma_ln_tau)
+
+    return float(tau), sigma_tau
+
+
 def compute_h_factor(tau_actual: float, tau_predicted: float) -> float:
     """Compute the H-factor (enhancement factor over scaling law).
 

@@ -40,6 +40,7 @@ from .pretrained_surrogates import (
     load_pretrained_mlp,
     save_pretrained_mlp,
 )
+from .integrated_transport_solver import _load_gyro_bohm_coefficient as load_gyro_bohm_coefficient
 from .scaling_laws import (
     TransportBenchmarkResult,
     compute_h_factor,

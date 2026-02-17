@@ -5,16 +5,65 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
+import json
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import os
 import copy
+from pathlib import Path
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel  # type: ignore[assignment]
+
+_logger = logging.getLogger(__name__)
+
+# ── Gyro-Bohm coefficient loader ─────────────────────────────────────
+
+_GYRO_BOHM_COEFF_PATH = (
+    Path(__file__).resolve().parents[3]
+    / "validation"
+    / "reference_data"
+    / "itpa"
+    / "gyro_bohm_coefficients.json"
+)
+
+_GYRO_BOHM_DEFAULT = 0.1  # Fallback if JSON not found
+
+
+def _load_gyro_bohm_coefficient(
+    path: Path | str | None = None,
+) -> float:
+    """Load the calibrated gyro-Bohm coefficient c_gB from JSON.
+
+    Parameters
+    ----------
+    path : Path or str, optional
+        Override path.  Defaults to the file shipped in
+        ``validation/reference_data/itpa/gyro_bohm_coefficients.json``.
+
+    Returns
+    -------
+    float
+        The calibrated c_gB value, or 0.1 if the file is not found.
+    """
+    p = Path(path) if path else _GYRO_BOHM_COEFF_PATH
+    try:
+        with open(p, encoding="utf-8") as f:
+            data = json.load(f)
+        c_gB = float(data["c_gB"])
+        _logger.debug("Loaded c_gB = %.6f from %s", c_gB, p)
+        return c_gB
+    except (FileNotFoundError, KeyError, json.JSONDecodeError, TypeError) as exc:
+        _logger.warning(
+            "Could not load c_gB from %s (%s), using default %.4f",
+            p, exc, _GYRO_BOHM_DEFAULT,
+        )
+        return _GYRO_BOHM_DEFAULT
+
 
 def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.5):
     """
@@ -273,36 +322,131 @@ class TransportSolver(FusionKernel):
             )
         return self.calculate_bootstrap_current_simple(R0, B_pol)
 
+    def _gyro_bohm_chi(self) -> np.ndarray:
+        """Gyro-Bohm anomalous transport diffusivity [m^2/s].
+
+        chi_gB = c_gB * rho_s^2 * c_s / (a * q * R)
+
+        where rho_s = sqrt(T_i m_i) / (e B), c_s = sqrt(T_e / m_i).
+
+        The calibration coefficient c_gB is loaded from
+        ``validation/reference_data/itpa/gyro_bohm_coefficients.json``
+        if available (calibrated against the ITPA H-mode confinement
+        database by ``tools/calibrate_gyro_bohm.py``).  Falls back to
+        the value in ``neoclassical_params['c_gB']`` if explicitly set,
+        or to the module-level default (0.1) otherwise.
+        """
+        if self.neoclassical_params is None:
+            return np.full_like(self.rho, 0.5)
+
+        p = self.neoclassical_params
+        R0 = p['R0']
+        a = p['a']
+        B0 = p['B0']
+        A_ion = p.get('A_ion', 2.0)
+        q = p['q_profile']
+
+        # Load c_gB: explicit param > JSON file > default
+        if 'c_gB' in p:
+            c_gB = p['c_gB']
+        else:
+            c_gB = _load_gyro_bohm_coefficient()
+
+        e_charge = 1.602176634e-19
+        m_i = A_ion * 1.672621924e-27
+
+        chi_gB = np.zeros_like(self.rho)
+        for i in range(len(self.rho)):
+            Ti_keV = max(self.Ti[i], 0.01)
+            Te_keV = max(self.Te[i], 0.01)
+            qi = max(q[i], 0.5)
+
+            T_i_J = Ti_keV * 1e3 * e_charge
+            T_e_J = Te_keV * 1e3 * e_charge
+
+            rho_s = np.sqrt(T_i_J * m_i) / (e_charge * B0)
+            c_s = np.sqrt(T_e_J / m_i)
+
+            chi_val = c_gB * rho_s**2 * c_s / max(a * qi * R0, 1e-6)
+            chi_gB[i] = max(chi_val, 0.01) if np.isfinite(chi_val) else 0.01
+
+        return chi_gB
+
     def update_transport_model(self, P_aux):
         """
-        Bohm / Gyro-Bohm Transport Model.
+        Gyro-Bohm + neoclassical transport model with EPED-like pedestal.
+
+        When neoclassical params are set, uses:
+        - Chang-Hinton neoclassical chi as additive floor
+        - Gyro-Bohm anomalous transport (calibrated c_gB)
+        - EPED-like pedestal model for H-mode boundary condition
+
+        Falls back to constant chi_base=0.5 when neoclassical is not configured.
         """
         # 1. Critical Gradient Model
         grad_T = np.gradient(self.Ti, self.drho)
         threshold = 2.0
-        
-        # Base Level — use Chang-Hinton if configured, else constant
+
+        # Base Level: neoclassical + gyro-Bohm, or constant fallback
         if self.neoclassical_params is not None:
             p = self.neoclassical_params
-            chi_base = chang_hinton_chi_profile(
+            chi_nc = chang_hinton_chi_profile(
                 self.rho, self.Ti, self.ne,
                 p['q_profile'], p['R0'], p['a'], p['B0'],
                 p['A_ion'], p['Z_eff']
             )
+            chi_gB = self._gyro_bohm_chi()
+            chi_base = chi_nc + chi_gB
         else:
-            chi_base = 0.5
+            chi_base = np.full_like(self.rho, 0.5)
 
-        # Turbulent Level
+        # Turbulent Level (critical gradient excess)
         chi_turb = 5.0 * np.maximum(0, -grad_T - threshold)
-        
-        # H-Mode Barrier Logic
-        is_H_mode = P_aux > 30.0 # MW
-        
-        if is_H_mode:
-            # Suppress turbulence at edge (rho > 0.9)
+
+        # H-Mode detection and EPED-like pedestal model
+        is_H_mode = P_aux > 30.0  # MW
+
+        if is_H_mode and self.neoclassical_params is not None:
+            try:
+                from scpn_fusion.core.eped_pedestal import EpedPedestalModel
+
+                p = self.neoclassical_params
+                eped = EpedPedestalModel(
+                    R0=p['R0'], a=p['a'], B0=p['B0'],
+                    Ip_MA=p.get('Ip_MA', 15.0),
+                    kappa=p.get('kappa', 1.7),
+                    A_ion=p.get('A_ion', 2.0),
+                    Z_eff=p.get('Z_eff', 1.5),
+                )
+                # Use current edge density for pedestal prediction
+                n_ped = max(float(self.ne[-5]), 1.0)
+                ped = eped.predict(n_ped)
+
+                # Apply pedestal: suppress transport inside pedestal region
+                ped_start = 1.0 - ped.Delta_ped
+                edge_mask = self.rho > ped_start
+                chi_turb[edge_mask] *= 0.05  # Strong transport barrier
+
+                # Set pedestal boundary conditions on profiles
+                ped_idx = np.searchsorted(self.rho, ped_start)
+                if ped_idx < len(self.Te):
+                    self.Te[ped_idx:] = np.minimum(
+                        self.Te[ped_idx:],
+                        ped.T_ped_keV * np.linspace(1.0, 0.1, len(self.Te[ped_idx:]))
+                    )
+                    self.Ti[ped_idx:] = np.minimum(
+                        self.Ti[ped_idx:],
+                        ped.T_ped_keV * np.linspace(1.0, 0.1, len(self.Ti[ped_idx:]))
+                    )
+            except Exception:
+                # Fallback: simple edge suppression
+                edge_mask = self.rho > 0.9
+                chi_turb[edge_mask] *= 0.1
+        elif is_H_mode:
+            # No neoclassical params — simple suppression
             edge_mask = self.rho > 0.9
-            chi_turb[edge_mask] *= 0.1 # Transport Barrier
-            
+            chi_turb[edge_mask] *= 0.1
+
         self.chi_e = chi_base + chi_turb
         self.chi_i = chi_base + chi_turb
         self.D_n = 0.1 * self.chi_e

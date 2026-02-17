@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IMAS Equilibrium IDS v3 (subset)",
+  "description": "JSON Schema for the IMAS equilibrium IDS fields used by SCPN Fusion Core. Based on IMAS Data Dictionary v3. Only covers fields produced by our geqdsk_to_imas_equilibrium() converter.",
+  "type": "object",
+  "required": ["ids_properties", "time_slice"],
+  "properties": {
+    "ids_properties": {
+      "type": "object",
+      "required": ["comment", "homogeneous_time"],
+      "properties": {
+        "comment": {"type": "string"},
+        "homogeneous_time": {"type": "integer", "enum": [1]},
+        "creation_date": {"type": "string"}
+      }
+    },
+    "time_slice": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["time", "global_quantities", "profiles_1d", "profiles_2d"],
+        "properties": {
+          "time": {"type": "number"},
+          "global_quantities": {
+            "type": "object",
+            "properties": {
+              "magnetic_axis": {
+                "type": "object",
+                "properties": {
+                  "r": {"type": "number", "description": "Major radius of magnetic axis [m]"},
+                  "z": {"type": "number", "description": "Vertical position of magnetic axis [m]"}
+                },
+                "required": ["r", "z"]
+              },
+              "psi_axis": {"type": "number", "description": "Poloidal flux at magnetic axis [Wb]"},
+              "psi_boundary": {"type": "number", "description": "Poloidal flux at boundary [Wb]"},
+              "ip": {"type": "number", "description": "Plasma current [A]"},
+              "q_95": {"type": "number", "description": "Safety factor at 95% flux surface"},
+              "q_min": {"type": "number", "description": "Minimum safety factor"},
+              "li_3": {"type": "number", "description": "Normalised internal inductance"},
+              "beta_pol": {"type": "number", "description": "Poloidal beta"},
+              "beta_tor": {"type": "number", "description": "Toroidal beta"},
+              "beta_normal": {"type": "number", "description": "Normalised beta"},
+              "elongation": {"type": "number"},
+              "triangularity_upper": {"type": "number"},
+              "triangularity_lower": {"type": "number"},
+              "volume": {"type": "number", "description": "Plasma volume [m^3]"},
+              "area": {"type": "number", "description": "Plasma cross-section area [m^2]"}
+            }
+          },
+          "profiles_1d": {
+            "type": "object",
+            "properties": {
+              "psi": {
+                "type": "array",
+                "items": {"type": "number"},
+                "description": "Poloidal flux [Wb]"
+              },
+              "rho_tor_norm": {
+                "type": "array",
+                "items": {"type": "number"},
+                "description": "Normalised toroidal flux coordinate"
+              },
+              "q": {
+                "type": "array",
+                "items": {"type": "number"},
+                "description": "Safety factor profile"
+              },
+              "pressure": {
+                "type": "array",
+                "items": {"type": "number"},
+                "description": "Pressure profile [Pa]"
+              },
+              "f": {
+                "type": "array",
+                "items": {"type": "number"},
+                "description": "Poloidal current function F = R B_tor [T m]"
+              },
+              "dpressure_dpsi": {
+                "type": "array",
+                "items": {"type": "number"},
+                "description": "dp/dpsi [Pa / Wb]"
+              },
+              "f_df_dpsi": {
+                "type": "array",
+                "items": {"type": "number"},
+                "description": "F dF/dpsi [T^2 m^2 / Wb]"
+              }
+            }
+          },
+          "profiles_2d": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "grid_type": {
+                  "type": "object",
+                  "properties": {
+                    "index": {"type": "integer", "description": "1 = rectangular"}
+                  }
+                },
+                "grid": {
+                  "type": "object",
+                  "properties": {
+                    "dim1": {
+                      "type": "array",
+                      "items": {"type": "number"},
+                      "description": "R grid [m]"
+                    },
+                    "dim2": {
+                      "type": "array",
+                      "items": {"type": "number"},
+                      "description": "Z grid [m]"
+                    }
+                  }
+                },
+                "psi": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": {"type": "number"}
+                  },
+                  "description": "Poloidal flux on 2D grid [Wb]"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

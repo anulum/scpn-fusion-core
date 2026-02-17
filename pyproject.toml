@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scpn-fusion"
-version = "1.0.2"
+version = "2.0.0a1"
 description = "SCPN Fusion Core - Advanced Plasma Physics & Control Suite"
 authors = [
     {name = "Miroslav Sotek"},
@@ -121,3 +121,7 @@ addopts = "--strict-markers"
 markers = [
     "slow: marks long-running regression tests",
 ]
+filterwarnings = [
+    "error::DeprecationWarning",
+]
+xfail_strict = true

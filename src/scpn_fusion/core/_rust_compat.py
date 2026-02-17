@@ -154,3 +154,37 @@ else:
 
     def rust_simulate_tearing_mode(*args, **kwargs):
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
+
+
+def rust_multigrid_vcycle(
+    source: np.ndarray,
+    psi_bc: np.ndarray,
+    r_min: float,
+    r_max: float,
+    z_min: float,
+    z_max: float,
+    nr: int,
+    nz: int,
+    tol: float = 1e-6,
+    max_cycles: int = 500,
+) -> tuple[np.ndarray, float, int, bool]:
+    """Call Rust multigrid V-cycle if available, else raise ImportError.
+
+    Returns
+    -------
+    tuple of (psi, residual, n_cycles, converged)
+    """
+    if not _RUST_AVAILABLE:
+        raise ImportError(
+            "scpn_fusion_rs not installed — Rust multigrid unavailable. "
+            "Use Python multigrid fallback in FusionKernel._multigrid_vcycle()."
+        )
+    # Delegate to Rust PyO3 binding (when available in fusion-python crate)
+    try:
+        from scpn_fusion_rs import multigrid_vcycle as _rust_mg  # type: ignore
+        return _rust_mg(source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol, max_cycles)
+    except ImportError:
+        raise ImportError(
+            "Rust multigrid_vcycle not exposed via PyO3. "
+            "Use Python multigrid fallback."
+        )
