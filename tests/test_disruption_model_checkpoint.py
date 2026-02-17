@@ -134,6 +134,23 @@ def test_disruption_transformer_forward_preserves_output_contract() -> None:
     assert float(y.max()) <= 1.0
 
 
+@pytest.mark.parametrize(
+    ("shape", "match"),
+    [
+        ((20, 1), "shape"),
+        ((2, 0, 1), "sequence length"),
+        ((2, 20, 2), "feature dimension"),
+    ],
+)
+def test_disruption_transformer_rejects_invalid_input_shapes(
+    shape: tuple[int, ...], match: str
+) -> None:
+    model = dp.DisruptionTransformer(seq_len=20)
+    bad_input = dp.torch.zeros(shape, dtype=dp.torch.float32)
+    with pytest.raises(ValueError, match=match):
+        model(bad_input)
+
+
 def test_train_predictor_does_not_emit_nested_tensor_warning(tmp_path: Path) -> None:
     model_path = tmp_path / "warning_check.pth"
     with warnings.catch_warnings(record=True) as captured:

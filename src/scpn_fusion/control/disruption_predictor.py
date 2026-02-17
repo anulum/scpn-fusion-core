@@ -499,6 +499,16 @@ if torch is not None:
             self.sigmoid = nn.Sigmoid()
 
         def forward(self, src):
+            if src.ndim != 3:
+                raise ValueError(
+                    f"Input tensor must have shape [batch, seq, 1]; got rank {src.ndim}."
+                )
+            if src.shape[1] < 1:
+                raise ValueError("Input sequence length must be >= 1.")
+            if src.shape[2] != 1:
+                raise ValueError(
+                    f"Input feature dimension must be 1; got {src.shape[2]}."
+                )
             if src.shape[1] > self.seq_len:
                 raise ValueError(
                     f"Input sequence length {src.shape[1]} exceeds configured seq_len {self.seq_len}."
