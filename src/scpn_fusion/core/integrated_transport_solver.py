@@ -678,6 +678,117 @@ class TransportSolver(FusionKernel):
 
         return W_stored_MW / P_loss_MW
 
+    # ── GS ↔ transport self-consistency loop ─────────────────────────
+
+    def run_self_consistent(
+        self,
+        P_aux: float,
+        n_inner: int = 100,
+        n_outer: int = 10,
+        dt: float = 0.01,
+        psi_tol: float = 1e-3,
+    ) -> dict:
+        """Run self-consistent GS <-> transport iteration.
+
+        This implements the standard integrated-modelling loop used by
+        codes such as ASTRA and JINTRAC: evolve the 1D transport for
+        *n_inner* steps, project profiles onto the 2D grid, re-solve the
+        Grad-Shafranov equilibrium, and repeat until the poloidal-flux
+        change drops below *psi_tol*.
+
+        Algorithm
+        ---------
+        1. Run transport for *n_inner* steps (evolve Ti/Te/ne).
+        2. Call :meth:`map_profiles_to_2d` to update ``J_phi`` on the 2D grid.
+        3. Re-solve the Grad-Shafranov equilibrium with the updated source.
+        4. Check psi convergence:
+           ``||Psi_new - Psi_old|| / ||Psi_old|| < psi_tol``.
+        5. Repeat until converged or *n_outer* iterations exhausted.
+
+        Parameters
+        ----------
+        P_aux : float
+            Auxiliary heating power [MW].
+        n_inner : int
+            Number of transport evolution steps per outer iteration.
+        n_outer : int
+            Maximum number of outer (GS re-solve) iterations.
+        dt : float
+            Transport time step [s].
+        psi_tol : float
+            Relative psi convergence tolerance.
+
+        Returns
+        -------
+        dict
+            ``{"T_avg": float, "T_core": float, "tau_e": float,
+            "n_outer_converged": int, "psi_residuals": list[float],
+            "Ti_profile": ndarray, "ne_profile": ndarray,
+            "converged": bool}``
+        """
+        psi_residuals: list[float] = []
+        converged = False
+        n_outer_converged = 0
+
+        for outer in range(n_outer):
+            # Save Psi before this outer iteration
+            Psi_old = self.Psi.copy()
+            psi_old_norm = float(np.linalg.norm(Psi_old))
+            if psi_old_norm < 1e-30:
+                psi_old_norm = 1.0  # avoid division by zero on first call
+
+            # 1. Run n_inner transport steps
+            for _ in range(n_inner):
+                self.update_transport_model(P_aux)
+                self.evolve_profiles(dt, P_aux)
+
+            # 2. Project 1D profiles onto 2D GS grid (updates self.J_phi)
+            self.map_profiles_to_2d()
+
+            # 3. Re-solve Grad-Shafranov equilibrium
+            #    external_profile_mode=True ensures solve_equilibrium uses
+            #    the J_phi we just set (no internal source update).
+            self.solve_equilibrium()
+
+            # 4. Compute psi convergence metric
+            psi_residual = float(
+                np.linalg.norm(self.Psi - Psi_old) / psi_old_norm
+            )
+            psi_residuals.append(psi_residual)
+            n_outer_converged = outer + 1
+
+            _logger.info(
+                "GS-transport outer iter %d/%d: psi_residual=%.4e",
+                outer + 1, n_outer, psi_residual,
+            )
+
+            # 5. Convergence check
+            if psi_residual < psi_tol:
+                converged = True
+                _logger.info(
+                    "GS-transport converged after %d outer iterations "
+                    "(residual %.4e < tol %.4e).",
+                    outer + 1, psi_residual, psi_tol,
+                )
+                break
+
+        T_avg = float(np.mean(self.Ti))
+        T_core = float(self.Ti[0])
+        tau_e = self.compute_confinement_time(P_aux)
+
+        return {
+            "T_avg": T_avg,
+            "T_core": T_core,
+            "tau_e": tau_e,
+            "n_outer_converged": n_outer_converged,
+            "psi_residuals": psi_residuals,
+            "Ti_profile": self.Ti.copy(),
+            "ne_profile": self.ne.copy(),
+            "converged": converged,
+        }
+
+    # ── Fast one-shot transport path ──────────────────────────────────
+
     def run_to_steady_state(
         self,
         P_aux: float,
@@ -685,6 +796,10 @@ class TransportSolver(FusionKernel):
         dt: float = 0.01,
         adaptive: bool = False,
         tol: float = 1e-3,
+        self_consistent: bool = False,
+        sc_n_inner: int = 100,
+        sc_n_outer: int = 10,
+        sc_psi_tol: float = 1e-3,
     ) -> dict:
         """Run transport evolution until approximate steady state.
 
@@ -700,6 +815,16 @@ class TransportSolver(FusionKernel):
             Use Richardson-extrapolation adaptive time stepping.
         tol : float
             Error tolerance for adaptive stepping.
+        self_consistent : bool
+            When True, delegate to :meth:`run_self_consistent` which
+            iterates GS <-> transport to convergence.  The remaining
+            ``sc_*`` parameters are forwarded.
+        sc_n_inner : int
+            Transport steps per outer GS iteration (self-consistent mode).
+        sc_n_outer : int
+            Maximum outer GS iterations (self-consistent mode).
+        sc_psi_tol : float
+            Relative psi convergence tolerance (self-consistent mode).
 
         Returns
         -------
@@ -709,7 +834,19 @@ class TransportSolver(FusionKernel):
             "ne_profile": ndarray}``
             When adaptive=True, also includes ``dt_final``,
             ``dt_history``, ``error_history``.
+            When self_consistent=True, returns the
+            :meth:`run_self_consistent` dict instead.
         """
+        # ── Self-consistent GS↔transport mode ──
+        if self_consistent:
+            return self.run_self_consistent(
+                P_aux=P_aux,
+                n_inner=sc_n_inner,
+                n_outer=sc_n_outer,
+                dt=dt,
+                psi_tol=sc_psi_tol,
+            )
+
         if not adaptive:
             for _ in range(n_steps):
                 self.update_transport_model(P_aux)

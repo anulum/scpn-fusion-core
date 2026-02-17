@@ -132,9 +132,13 @@ def predict_disruption_risk(signal, toroidal_observables=None):
     features = build_disruption_feature_vector(signal, toroidal_observables)
     mean, std, max_val, slope, energy, last, n1, n2, n3, asym, spread = features
 
-    thermal_term = 0.55 * max_val + 0.35 * std + 0.10 * energy + 0.25 * slope
+    # v2.1 weights: down-weight amplitude-dependent features (max_val, energy,
+    # mean, last) which scale with the operating point and cause false alarms
+    # on high-power safe shots.  Up-weight instability indicators (std, slope)
+    # which distinguish genuinely unstable plasmas.
+    thermal_term = 0.03 * max_val + 0.55 * std + 0.005 * energy + 0.50 * slope
     asym_term = 1.10 * n1 + 0.70 * n2 + 0.45 * n3 + 0.50 * asym + 0.15 * spread
-    state_term = 0.15 * mean + 0.20 * last
+    state_term = 0.02 * mean + 0.02 * last
 
     logits = -4.0 + thermal_term + asym_term + state_term
     return float(1.0 / (1.0 + np.exp(-logits)))
@@ -343,7 +347,7 @@ class HybridAnomalyDetector:
     - Unsupervised term: online z-score novelty on recent risk stream.
     """
 
-    def __init__(self, threshold=0.65, ema=0.05):
+    def __init__(self, threshold=0.50, ema=0.05):
         threshold_f = float(threshold)
         ema_f = float(ema)
         if not np.isfinite(threshold_f) or threshold_f < 0.0 or threshold_f > 1.0:
@@ -386,7 +390,7 @@ def run_anomaly_alarm_campaign(
     seed=42,
     episodes=32,
     window=128,
-    threshold=0.65,
+    threshold=0.50,
 ):
     """
     Deterministic anomaly-alarm campaign under random perturbations.

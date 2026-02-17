@@ -262,7 +262,7 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
 
         # Run predictor on sliding windows
         window_size = min(128, signal.size)
-        risk_threshold = 0.65
+        risk_threshold = 0.50
         detection_idx = -1
 
         for t in range(window_size, signal.size):

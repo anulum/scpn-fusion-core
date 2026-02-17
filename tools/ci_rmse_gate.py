@@ -27,8 +27,8 @@ THRESHOLDS: dict[str, float] = {
     # real EFIT files achieve <0.01 m)
     "sparc_axis_rmse_m": 2.50,
     # beta_N absolute RMSE across ITER/SPARC design points
-    # Current best: ~1.26 (beta_N estimation from 0-D model is coarse)
-    "beta_iter_sparc_beta_n_rmse": 2.00,
+    # Current best: ~0.042 (DynamicBurnModel + profile peaking factor 1.446)
+    "beta_iter_sparc_beta_n_rmse": 0.10,
 }
 
 

@@ -42,6 +42,9 @@ dev = [
 snn = [
     "nengo>=4.0",
 ]
+benchmark = [
+    "freegs>=0.6",
+]
 
 [project.scripts]
 scpn-dashboard = "scpn_fusion.ui.app:main"
