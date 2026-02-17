@@ -25,6 +25,9 @@ env/
 htmlcov/
 .tox/
 
+# Local operational handovers (must never be pushed)
+.handovers/
+
 # IDE
 .idea/
 .vscode/

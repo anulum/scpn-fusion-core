@@ -237,6 +237,16 @@ Your PR will not be merged until all CI checks pass.
 
 ---
 
+## Local Operational Artifacts
+
+Operational handover notes under `.handovers/` are strictly local-only working
+artifacts and must not be committed or pushed to public remotes.
+
+If you generate local handover notes, keep them under `.handovers/` and verify
+they are excluded from `git status` before committing.
+
+---
+
 ## Branch Naming Conventions
 
 Use descriptive branch names with the following prefixes:
