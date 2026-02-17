@@ -126,6 +126,46 @@ def test_run_real_shot_replay_rejects_bad_vector_lengths_and_indices() -> None:
             window_size=96,
         )
 
+
+def test_run_disruption_episode_rejects_nonpositive_base_tbr() -> None:
+    rng = np.random.default_rng(42)
+    agent = FusionAIAgent(epsilon=0.05)
+    explorer = GlobalDesignExplorer("dummy")
+    with pytest.raises(ValueError, match="base_tbr must be > 0"):
+        run_disruption_episode(
+            rng=rng,
+            rl_agent=agent,
+            base_tbr=0.0,
+            explorer=explorer,
+        )
+
+
+def test_run_real_shot_replay_rejects_nonpositive_base_tbr() -> None:
+    agent = FusionAIAgent(epsilon=0.05)
+    with pytest.raises(ValueError, match="base_tbr must be > 0"):
+        run_real_shot_replay(
+            shot_data=_build_replay_shot(),
+            rl_agent=agent,
+            base_tbr=0.0,
+            risk_threshold=0.55,
+            spi_trigger_risk=0.72,
+            window_size=96,
+        )
+
+
+def test_run_real_shot_replay_rejects_window_larger_than_shot() -> None:
+    agent = FusionAIAgent(epsilon=0.05)
+    shot_data = _build_replay_shot(n=64)
+    shot_data["disruption_time_idx"] = 48
+    with pytest.raises(ValueError, match="window_size must be <= number of samples"):
+        run_real_shot_replay(
+            shot_data=shot_data,
+            rl_agent=agent,
+            risk_threshold=0.55,
+            spi_trigger_risk=0.72,
+            window_size=96,
+        )
+
     shot_data = _build_replay_shot()
     shot_data["disruption_time_idx"] = 1000
     with pytest.raises(ValueError, match="disruption_time_idx must be < number of samples"):

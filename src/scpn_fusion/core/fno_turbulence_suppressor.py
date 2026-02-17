@@ -5,10 +5,21 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ─────────────────────────────────────────────────────────────────────
-"""Inference wrapper for multi-layer FNO turbulence suppression."""
+"""Inference wrapper for multi-layer FNO turbulence suppression.
+
+.. warning::
+
+    **EXPERIMENTAL** — The FNO turbulence surrogate has a relative L2 error
+    of ~0.79, which means it explains only ~21% of the variance.  It is
+    trained on 60 synthetic Hasegawa-Wakatani samples and has **not** been
+    validated against production gyrokinetic codes (GENE, GS2, QuaLiKiz).
+    Use for exploratory/research purposes only.  See ``fno_training.py``
+    for details.
+"""
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
@@ -84,6 +95,12 @@ class FNO_Controller:
         width: int = WIDTH,
         weights_path: Optional[str] = None,
     ) -> None:
+        warnings.warn(
+            "FNO turbulence surrogate is EXPERIMENTAL (relative L2 ~ 0.79). "
+            "Results are not validated against gyrokinetic codes (GENE/GS2/QuaLiKiz). "
+            "See fno_training.py for details.",
+            stacklevel=2,
+        )
         self.model = MultiLayerFNO(modes=modes, width=width, n_layers=4)
         self.weights_path = Path(weights_path) if weights_path else Path(DEFAULT_WEIGHTS_PATH)
         self.loaded_weights = False

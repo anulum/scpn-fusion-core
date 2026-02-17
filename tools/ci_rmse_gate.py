@@ -77,6 +77,21 @@ def main() -> int:
         else:
             print(f"PASS  beta_iter_sparc: beta_N RMSE {beta_rmse:.4f} <= {thresh:.4f}")
 
+    # ── disruption FPR (soft gate: warn, don't fail) ──────────────────
+    real_shot_artifact = Path("artifacts/real_shot_validation.json")
+    if real_shot_artifact.exists():
+        rs_data = json.loads(real_shot_artifact.read_text(encoding="utf-8"))
+        dis = rs_data.get("disruption", {})
+        fpr = dis.get("false_positive_rate", 0.0)
+        fpr_thresh = 0.40
+        if fpr > fpr_thresh:
+            print(
+                f"WARN  disruption FPR: {fpr:.2f} > {fpr_thresh:.2f} "
+                f"(soft gate — does not fail CI; tuning planned for v2.1)"
+            )
+        else:
+            print(f"PASS  disruption FPR: {fpr:.2f} <= {fpr_thresh:.2f}")
+
     if failures:
         print("\nFAILED RMSE regression gate:")
         for f in failures:

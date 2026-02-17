@@ -8,7 +8,7 @@
 
 # Changelog
 
-## [2.0.0] — Unreleased
+## [2.0.0] — 2026-02-17
 
 ### Added — v2.0.0: Publication-Grade Physics Validation
 
@@ -39,7 +39,7 @@
 - IMAS IDS conformance audit with JSON Schema validation
 - MDSplus automated download with NPZ caching
 - GitHub issue templates for shot replay requests
-- Streamlit Shot Replay tab for measured vs simulated overlay
+- GitHub issue template for shot replay requests (`shot_replay_request.md`); Streamlit Shot Replay tab planned for v2.1
 
 #### Validation
 - `validate_real_shots.py` capstone validation (5 shots, equilibrium + transport + disruption)
@@ -54,7 +54,7 @@
 
 ---
 
-## [Unreleased] — 2026-02-15
+## [2.0.0-pre] — 2026-02-15 (Pre-release hardening)
 
 ### Added
 
@@ -197,7 +197,7 @@ solver-method bridge regression tests.
 
 ---
 
-## Unreleased (Pre-Hardening)
+## [2.0.0-pre] — Pre-Hardening
 
 ### Point-Wise ψ RMSE Validation (All 8 SPARC GEQDSKs)
 

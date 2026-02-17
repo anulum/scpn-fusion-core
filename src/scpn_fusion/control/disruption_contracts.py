@@ -23,6 +23,13 @@ def require_finite_float(name: str, value: Any) -> float:
     return out
 
 
+def require_positive_float(name: str, value: Any) -> float:
+    out = require_finite_float(name, value)
+    if out <= 0.0:
+        raise ValueError(f"{name} must be > 0.")
+    return out
+
+
 def require_int(name: str, value: Any, minimum: int) -> int:
     if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
         raise ValueError(f"{name} must be an integer >= {minimum}.")
@@ -88,6 +95,12 @@ def mcnp_lite_tbr(
     be_multiplier_fraction: float,
     reflector_albedo: float,
 ) -> tuple[float, float]:
+    base_tbr = require_positive_float("base_tbr", base_tbr)
+    li6_enrichment = require_finite_float("li6_enrichment", li6_enrichment)
+    be_multiplier_fraction = require_finite_float(
+        "be_multiplier_fraction", be_multiplier_fraction
+    )
+    reflector_albedo = require_finite_float("reflector_albedo", reflector_albedo)
     factor = float(
         1.15
         + 0.20 * float(np.clip(be_multiplier_fraction, 0.0, 1.0))
@@ -203,11 +216,18 @@ def run_disruption_episode(
     base_tbr: float,
     explorer: GlobalDesignExplorer,
 ) -> dict[str, float | bool]:
+    base_tbr = require_positive_float("base_tbr", base_tbr)
     disturbance = float(rng.uniform(0.0, 1.0))
     pre_energy_mj = float(rng.uniform(240.0, 420.0))
     pre_current_ma = float(rng.uniform(11.0, 16.5))
     signal, toroidal = synthetic_disruption_signal(rng=rng, disturbance=disturbance)
-    risk_before = float(predict_disruption_risk(signal, toroidal))
+    risk_before = float(
+        np.clip(
+            require_finite_float("risk_before", predict_disruption_risk(signal, toroidal)),
+            0.0,
+            1.0,
+        )
+    )
 
     rl_state = rl_agent.discretize_state(12.0 * risk_before, 4.0 * disturbance)
     rl_action = int(rl_agent.choose_action(rl_state, rng))
@@ -294,7 +314,15 @@ def run_disruption_episode(
         ),
     }
     post_signal = np.clip(signal * (1.0 - 0.60 * mitigation_strength), 0.01, None)
-    risk_after_model = float(predict_disruption_risk(post_signal, post_toroidal))
+    risk_after_model = float(
+        np.clip(
+            require_finite_float(
+                "risk_after_model", predict_disruption_risk(post_signal, post_toroidal)
+            ),
+            0.0,
+            1.0,
+        )
+    )
     risk_after = float(
         np.clip(
             0.45 * risk_after_model
@@ -406,17 +434,26 @@ def run_real_shot_replay(
     -------
     dict with replay results including risk time-series and mitigation outcomes.
     """
+    _ = require_positive_float("base_tbr", base_tbr)
     risk_threshold = require_fraction("risk_threshold", risk_threshold)
     spi_trigger_risk = require_fraction("spi_trigger_risk", spi_trigger_risk)
     if spi_trigger_risk < risk_threshold:
         raise ValueError("spi_trigger_risk must be >= risk_threshold.")
     window_size = require_int("window_size", window_size, 8)
 
-    time_s = require_1d_array("shot_data.time_s", shot_data.get("time_s", []), minimum_size=16)
+    time_s = require_1d_array(
+        "shot_data.time_s",
+        shot_data.get("time_s", []),
+        minimum_size=16,
+    )
     if np.any(np.diff(time_s) <= 0.0):
         raise ValueError("shot_data.time_s must be strictly increasing.")
 
     n_steps = int(time_s.size)
+    if window_size > n_steps:
+        raise ValueError(
+            f"window_size must be <= number of samples ({n_steps}), got {window_size}."
+        )
     n1_amp = require_1d_array(
         "shot_data.n1_amp",
         shot_data.get("n1_amp", np.zeros(n_steps, dtype=np.float64)),
@@ -476,7 +513,15 @@ def run_real_shot_replay(
             "toroidal_radial_spread": float(0.02 + 0.05 * n1_amp[t]),
         }
 
-        risk = float(predict_disruption_risk(signal_window, toroidal))
+        risk = float(
+            np.clip(
+                require_finite_float(
+                    "replay_risk", predict_disruption_risk(signal_window, toroidal)
+                ),
+                0.0,
+                1.0,
+            )
+        )
         risk_series[t] = risk
 
         if risk > risk_threshold:

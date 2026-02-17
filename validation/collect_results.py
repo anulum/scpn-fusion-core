@@ -237,7 +237,12 @@ def generate_results_md(
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     sections: list[str] = []
 
-    sections.append(f"""# SCPN Fusion Core — Benchmark Results
+    try:
+        from scpn_fusion import __version__ as _ver
+    except Exception:
+        _ver = "unknown"
+
+    sections.append(f"""# SCPN Fusion Core — Benchmark Results (v{_ver})
 
 > **Auto-generated** by `validation/collect_results.py` on {now}.
 > Re-run the script to refresh these numbers on your hardware.
@@ -245,6 +250,7 @@ def generate_results_md(
 ## Environment
 
 {hw}
+- **Version:** {_ver}
 - **Generated:** {now}
 - **Wall-clock:** {elapsed_s:.0f}s
 """)
@@ -319,7 +325,7 @@ def generate_results_md(
             rows_s.append(f"| MLP (ITPA H-mode) RMSE | {_fmt(surrogates['mlp_rmse_s'], '.4f')} | s | τ_E confinement time |")
             rows_s.append(f"| MLP (ITPA H-mode) RMSE % | {_fmt(surrogates['mlp_rmse_pct'], '.1f')} | % | {int(surrogates.get('mlp_samples', 0))} samples |")
         if surrogates.get("fno_rel_l2_mean") is not None:
-            rows_s.append(f"| FNO (EUROfusion JET) relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | ψ(R,Z) reconstruction |")
+            rows_s.append(f"| FNO (EUROfusion JET) relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | ψ(R,Z) reconstruction (**EXPERIMENTAL**) |")
             rows_s.append(f"| FNO (EUROfusion JET) relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | {int(surrogates.get('fno_samples', 0))} samples |")
 
     if rows_s:
@@ -327,6 +333,11 @@ def generate_results_md(
         sections.append("| Metric | Value | Unit | Notes |")
         sections.append("|--------|-------|------|-------|")
         sections.extend(rows_s)
+        if surrogates and surrogates.get("fno_rel_l2_mean") is not None:
+            sections.append("")
+            sections.append("> **EXPERIMENTAL — FNO turbulence surrogate:** Relative L2 ~ 0.79 means the model")
+            sections.append("> explains only ~21% of the variance. Trained on 60 synthetic samples; NOT validated")
+            sections.append("> against production gyrokinetic codes. See `fno_training.py` for details.")
         sections.append("")
 
     # ── Footer ──

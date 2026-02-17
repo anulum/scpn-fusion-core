@@ -28,7 +28,7 @@ if not os.path.exists(CONFIG_PATH):
     CONFIG_PATH = "iter_config.json"
 
 st.title("⚛️ SCPN Fusion Reactor Control Room")
-st.markdown("### Digital Twin & Engineering Suite v1.0")
+st.markdown("### Digital Twin & Engineering Suite v2.0.0")
 
 # --- SIDEBAR CONFIGURATION ---
 st.sidebar.header("Reactor Parameters")
@@ -36,10 +36,7 @@ reactor_size = st.sidebar.slider("Major Radius (m)", 3.0, 9.0, 6.2)
 plasma_current = st.sidebar.slider("Target Current (MA)", 1.0, 20.0, 15.0)
 aux_heating = st.sidebar.slider("Auxiliary Heating (MW)", 0.0, 100.0, 50.0)
 
-# Modify Config in memory (Simulated)
-# In real app we would write back to JSON or create object directly
-# Here we hack the config file path because our classes read from file
-# Ideally classes should accept dicts. Refactor opportunity for v1.1.
+# Modify Config in memory (simulated — classes read from file)
 
 # --- TABS ---
 tab1, tab2, tab3, tab4 = st.tabs(["Plasma Physics", "Ignition & Q", "Nuclear Engineering", "Power Plant"])

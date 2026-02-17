@@ -11,7 +11,7 @@
 - **Python:** 3.12.5
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
-- **Version:** 2.0.0a1
+- **Version:** 2.0.0
 
 ## What Changed in v2.0.0
 
@@ -93,27 +93,38 @@
 |--------|-------|------|-------|
 | MLP (ITPA H-mode) RMSE | 0.0607 | s | tau_E confinement time |
 | MLP (ITPA H-mode) RMSE % | 13.5 | % | 20 samples |
-| FNO (EUROfusion JET) relative L2 (mean) | 0.7925 | — | psi(R,Z) reconstruction (experimental) |
+| FNO (EUROfusion JET) relative L2 (mean) | 0.7925 | — | psi(R,Z) reconstruction (**EXPERIMENTAL**) |
 | FNO (EUROfusion JET) relative L2 (P95) | 0.7933 | — | 16 samples |
 
-> **Note:** FNO relative L2 remains high (0.79). This is marked as experimental.
-> FNO quality depends on training data diversity; improvement requires real EFIT data.
+> **EXPERIMENTAL — FNO turbulence surrogate:** Relative L2 = 0.79 means the model
+> explains only ~21% of the variance. Trained on 60 synthetic Hasegawa-Wakatani samples;
+> NOT validated against production gyrokinetic codes (GENE, GS2, QuaLiKiz). A runtime
+> `warnings.warn()` fires on import. Use for exploratory/research purposes only.
+> Retraining on real gyrokinetic data or retirement planned for v3.0.
 
 ---
 
 ## External Validation
 
-Comparison of our equilibrium solver against published ITER/DIII-D/JET reference values.
+Comparison of our solver outputs against published ITER/DIII-D/JET reference values.
 
 | Metric | Our Value | Published | Source | Agreement |
 |--------|-----------|-----------|--------|-----------|
-| ITER beta_N at Q=10 | 1.8 | 1.8 | ITER Physics Basis (1999) | Exact |
+| ITER beta_N (0-D estimator) | 0.070 | 1.8 | ITER Physics Basis (1999) | **-96% (miscalibrated)** |
+| SPARC beta_N (0-D estimator) | 0.583 | 1.0 | Creely et al., JPP 86 (2020) | **-42% (miscalibrated)** |
 | ITER q95 | 3.0 | 3.0 | Shimada et al., NF 47 (2007) | Exact |
 | DIII-D elongation kappa | 1.80 | 1.80 | Luxon, NF 42 (2002) | Exact |
 | JET DTE2 Pfus | 58 MW (scaled) | 59 MW | JET Team, NF (2022) | 1.7% |
 | Bootstrap fraction (ITER) | 0.34 | 0.30-0.40 | Sauter et al., PP 6 (1999) | Within range |
 | Spitzer eta at 1keV | 1.65e-8 Ohm.m | 1.65e-8 Ohm.m | Spitzer (1962) | Exact |
 | TBR (Li-ceramic) | 1.67 | 1.15-1.35 | Fischer et al., FED (2015) | High (ideal geometry) |
+
+> **Known issue — beta_N:** The 0-D `FusionBurnPhysics` estimator catastrophically
+> underestimates beta_N for both ITER (-96%) and SPARC (-42%). Root cause: the
+> transport solver runs one-shot without GS-Transport self-consistency, producing an
+> unconverged pressure profile that yields a beta_t far too low. Fix requires the
+> outer self-consistency loop (v2.1, Task 2.3) and recalibration of the beta_N
+> formula against the ITPA dataset.
 
 ## IPB98(y,2) Confinement Scaling (v2.0.0)
 
@@ -122,9 +133,15 @@ Comparison of our equilibrium solver against published ITER/DIII-D/JET reference
 | Scaling law | IPB98(y,2) | ITER Physics Basis, NF 39 (1999) |
 | Uncertainty method | Log-linear error propagation | Verdoolaege et al., NF 61 (2021) |
 | ITPA H-mode shots | 20 | Across 11 machines |
-| tau_E RMSE (overall) | <15% | Calibrated with gyro-Bohm c_gB |
-| tau_E 2-sigma coverage | >=90% | Measured values within 95% CI band |
-| ITER design point tau_E RMSE | <5% | Specific validation target |
+| ITER design-point relative error | -0.96% | Single best-matched point |
+| ITPA 20-shot mean abs. relative error | 32.5% | Full dataset; dominated by edge cases |
+| tau_E 2-sigma coverage | >=80% | Measured values within 95% CI band |
+
+> **Honesty note:** The 32.5% overall RMSE is the honest figure across all 20 ITPA
+> shots. The ITER design point (-0.96% error) is excellent but not representative of
+> the full dataset. Gyro-Bohm calibration improves ITER-class conditions but does not
+> fully capture the multi-machine scatter. Improvement planned for v2.1 via GS-Transport
+> self-consistency loop (see CHANGELOG).
 
 ## Solver Performance
 
@@ -198,6 +215,8 @@ See `artifacts/benchmark_disturbance_rejection.json` for detailed results.
 
 Enhanced predictor with real + synthetic shot data.
 
+### Synthetic Test Set (held-out from training distribution)
+
 | Metric | Value |
 |--------|-------|
 | Training data | 10,000 synthetic + 10 reference shots |
@@ -207,8 +226,23 @@ Enhanced predictor with real + synthetic shot data.
 | Recall@100ms | 0.96 |
 | False positive rate | 0.08 |
 | AUC-ROC | 0.94 |
-| Real-shot prevention rate (SNN) | >60% |
-| Real-shot prevention rate (PID) | ~40% |
+
+### Real-Shot Replay (16 DIII-D reference profiles)
+
+| Metric | Value |
+|--------|-------|
+| Shots tested | 16 (6 disruptions, 10 safe) |
+| Recall | >= 60% |
+| **False positive rate** | **90%** |
+| Prevention rate (SNN) | >60% |
+| Prevention rate (PID) | ~40% |
+| Validation status | PARTIAL_PASS |
+
+> **Honesty note:** The synthetic-test FPR (0.08) does NOT transfer to real shots.
+> On the 16-shot DIII-D reference set, the predictor fires on 9 of 10 safe shots
+> (FPR = 90%), indicating the risk threshold is too aggressive. The predictor's recall
+> on actual disruptions is acceptable, but its specificity is operationally unusable.
+> Threshold tuning (target: FPR < 30%) is planned for v2.1.
 
 ### Disruption Shot Database (v2.0.0)
 
@@ -251,6 +285,10 @@ Equilibrium database: 100+ shots across 5 tokamaks + 8 SPARC EFIT.
 
 Each synthetic shot: Solov'ev analytic equilibrium with self-consistent psi(R,Z), p'(psi), FF'(psi), q(psi).
 SPARC shots: Real EFIT reconstructions from CFS public dataset.
+
+> **Note on SPARC axis RMSE:** The reported value of ~1.595 m is dominated by synthetic
+> L-mode GEQDSK files where the analytic axis differs from the EFIT convention. On the
+> 8 real SPARC EFIT files, axis location RMSE is 2-9 mm.
 
 ## TGLF Comparison
 
@@ -314,6 +352,19 @@ See `docs/formal_verification.md` for full proofs and arguments.
 | Rust/Python parity | 4+ | pytest | rtol=1e-3, skip if no Rust |
 
 ---
+
+## Known Limitations (v2.0.0)
+
+| Issue | Severity | Status | Fix Target |
+|-------|----------|--------|------------|
+| beta_N estimator: ITER -96%, SPARC -42% | Critical | Known | v2.1 (GS-Transport loop) |
+| Disruption predictor FPR = 90% on real shots | High | PARTIAL_PASS | v2.1 (threshold tuning) |
+| tau_E ITPA 20-shot RMSE = 32.5% | Medium | Known | v2.1 (self-consistent transport) |
+| FNO L2 = 0.79 (21% variance explained) | Medium | Experimental | v3.0 (retrain or retire) |
+| GS-Transport: one-shot, no outer loop | Medium | Known | v2.1 |
+| Rust SNN not exposed via PyO3 | Low | Documented | v3.0 |
+| MHD stability: Mercier + ballooning only | Low | Known | v2.1 (add kink, NTM, Troyon) |
+| SPARC axis RMSE: 1.595m (synthetic-dominated) | Low | Known | Real EFIT: 2-9mm |
 
 *All benchmarks run on the environment listed above.
 Timings are wall-clock and may vary between machines.

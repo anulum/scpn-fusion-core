@@ -42,6 +42,7 @@ THRESHOLDS = {
     "q95_pass_fraction": 0.60,            # >= 60% of shots
     "tau_e_2sigma_fraction": 0.80,        # >= 80% of shots within 2-sigma
     "disruption_recall_min": 0.60,        # > 60% recall
+    "disruption_fpr_max": 0.40,           # FPR <= 40% for full PASS
     "disruption_detection_ms": 50.0,      # within 50ms of TQ
 }
 
@@ -328,7 +329,22 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
         "true_negatives": true_negatives,
         "recall": round(recall, 2),
         "false_positive_rate": round(fpr, 2),
-        "passes": bool(recall >= THRESHOLDS["disruption_recall_min"]),
+        "recall_ok": bool(recall >= THRESHOLDS["disruption_recall_min"]),
+        "fpr_ok": bool(fpr <= THRESHOLDS["disruption_fpr_max"]),
+        "passes": bool(
+            recall >= THRESHOLDS["disruption_recall_min"]
+            and fpr <= THRESHOLDS["disruption_fpr_max"]
+        ),
+        "partial_pass": bool(
+            recall >= THRESHOLDS["disruption_recall_min"]
+            and fpr > THRESHOLDS["disruption_fpr_max"]
+        ),
+        "fpr_note": (
+            f"FPR {fpr:.0%} exceeds operational threshold "
+            f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1"
+            if fpr > THRESHOLDS["disruption_fpr_max"]
+            else None
+        ),
         "shots": results,
     }
 
@@ -375,11 +391,19 @@ def render_markdown(report: dict[str, Any]) -> str:
 
     # Disruption
     dis = report["disruption"]
+    if dis.get("partial_pass"):
+        dis_status = "PARTIAL_PASS"
+    elif dis["passes"]:
+        dis_status = "PASS"
+    else:
+        dis_status = "FAIL"
     lines.append("## 3. Disruption Prediction")
     lines.append(f"- Shots: {dis['n_shots']} ({dis.get('n_disruptions', 0)} disruptions, {dis.get('n_safe', 0)} safe)")
     lines.append(f"- Recall: {dis.get('recall', 0):.0%}")
     lines.append(f"- FPR: {dis.get('false_positive_rate', 0):.0%}")
-    lines.append(f"- **Status**: {'PASS' if dis['passes'] else 'FAIL'}")
+    lines.append(f"- **Status**: {dis_status}")
+    if dis.get("fpr_note"):
+        lines.append(f"- **Note**: {dis['fpr_note']}")
     lines.append("")
 
     # Summary
@@ -390,7 +414,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append(f"| Equilibrium | {'PASS' if eq['passes'] else 'FAIL'} | Psi NRMSE pass {eq['psi_pass_fraction']:.0%} |")
     tr_metric = f"2-sigma {tr.get('within_2sigma_fraction', 0):.0%}" if isinstance(tr.get('within_2sigma_fraction'), float) else "N/A"
     lines.append(f"| Transport | {'PASS' if tr['passes'] else 'FAIL'} | {tr_metric} |")
-    lines.append(f"| Disruption | {'PASS' if dis['passes'] else 'FAIL'} | Recall {dis.get('recall', 0):.0%} |")
+    lines.append(f"| Disruption | {dis_status} | Recall {dis.get('recall', 0):.0%}, FPR {dis.get('false_positive_rate', 0):.0%} |")
     lines.append("")
 
     return "\n".join(lines)
@@ -449,13 +473,22 @@ def main(
     print("\n[Lane 3] Disruption prediction...")
     if disruption_dir.exists() and any(disruption_dir.glob("*.npz")):
         dis_result = validate_disruption(disruption_dir)
-        status = "PASS" if dis_result["passes"] else "FAIL"
+        if dis_result.get("partial_pass"):
+            status = "PARTIAL_PASS"
+        elif dis_result["passes"]:
+            status = "PASS"
+        else:
+            status = "FAIL"
         print(f"  {status}: Recall={dis_result.get('recall', 0):.0%}, FPR={dis_result.get('false_positive_rate', 0):.0%}")
+        if dis_result.get("fpr_note"):
+            print(f"  NOTE: {dis_result['fpr_note']}")
     else:
-        dis_result = {"n_shots": 0, "passes": False, "error": "No disruption data"}
+        dis_result = {"n_shots": 0, "passes": False, "partial_pass": False, "error": "No disruption data"}
         print("  SKIP: No disruption NPZ files")
 
-    overall = eq_result["passes"] and tr_result["passes"] and dis_result["passes"]
+    # PARTIAL_PASS on disruption does NOT block the release — it's a known limitation
+    dis_acceptable = dis_result["passes"] or dis_result.get("partial_pass", False)
+    overall = eq_result["passes"] and tr_result["passes"] and dis_acceptable
     runtime = time.perf_counter() - t0
 
     report = {
