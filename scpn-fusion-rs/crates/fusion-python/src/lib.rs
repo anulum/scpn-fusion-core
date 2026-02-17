@@ -9,6 +9,7 @@ use pyo3::prelude::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
+use fusion_control::snn::{NeuroCyberneticController, SpikingControllerPool};
 use fusion_core::ignition::calculate_thermodynamics;
 use fusion_core::inverse::{reconstruct_equilibrium, InverseConfig, JacobianMode};
 use fusion_core::kernel::FusionKernel;
@@ -16,7 +17,6 @@ use fusion_core::particles::{
     advance_particles_boris, estimate_alpha_heating_profile, seed_alpha_test_particles,
     summarize_particle_population, ChargedParticle,
 };
-use fusion_control::snn::{NeuroCyberneticController, SpikingControllerPool};
 use fusion_core::source::ProfileParams;
 use fusion_engineering::blanket::neutron_wall_loading;
 use fusion_engineering::layout::{
