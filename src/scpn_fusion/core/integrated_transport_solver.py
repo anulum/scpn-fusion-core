@@ -5,6 +5,8 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
+from __future__ import annotations
+
 import json
 import logging
 import numpy as np
