@@ -71,7 +71,13 @@ jobs:
     name: Publish to PyPI
     needs: [build-wheels, build-sdist]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Opt-in publish gate:
+    # - avoids failing releases when trusted publisher is configured only for
+    #   publish.yml (different workflow identity than wheels.yml)
+    # - keep building wheel artifacts on every release tag
+    # Enable by setting repository variable WHEELS_PUBLISH_ENABLED=true and
+    # configuring a matching trusted publisher for this workflow.
+    if: startsWith(github.ref, 'refs/tags/v') && vars.WHEELS_PUBLISH_ENABLED == 'true'
     environment:
       name: pypi
       url: https://pypi.org/p/scpn-fusion
