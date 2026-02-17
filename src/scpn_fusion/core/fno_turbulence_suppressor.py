@@ -7,14 +7,16 @@
 # ─────────────────────────────────────────────────────────────────────
 """Inference wrapper for multi-layer FNO turbulence suppression.
 
-.. warning::
+.. deprecated:: 2.1.0
 
-    **EXPERIMENTAL** — The FNO turbulence surrogate has a relative L2 error
-    of ~0.79, which means it explains only ~21% of the variance.  It is
-    trained on 60 synthetic Hasegawa-Wakatani samples and has **not** been
-    validated against production gyrokinetic codes (GENE, GS2, QuaLiKiz).
-    Use for exploratory/research purposes only.  See ``fno_training.py``
-    for details.
+    **DEPRECATED / EXPERIMENTAL** — The FNO turbulence surrogate has a
+    relative L2 error of ~0.79, which means it explains only ~21% of the
+    variance.  It is trained on 60 synthetic Hasegawa-Wakatani samples and
+    has **not** been validated against production gyrokinetic codes (GENE,
+    GS2, QuaLiKiz).  This module is removed from the default pipeline as
+    of v2.1.0 and will be retired in v3.0.0 unless real gyrokinetic
+    training data becomes available.  Use for exploratory/research purposes
+    only.  See ``fno_training.py`` for details.
 """
 
 from __future__ import annotations
@@ -96,9 +98,11 @@ class FNO_Controller:
         weights_path: Optional[str] = None,
     ) -> None:
         warnings.warn(
-            "FNO turbulence surrogate is EXPERIMENTAL (relative L2 ~ 0.79). "
+            "FNO turbulence surrogate is DEPRECATED (relative L2 ~ 0.79). "
             "Results are not validated against gyrokinetic codes (GENE/GS2/QuaLiKiz). "
+            "Removed from default pipeline in v2.1.0; will be retired in v3.0.0. "
             "See fno_training.py for details.",
+            FutureWarning,
             stacklevel=2,
         )
         self.model = MultiLayerFNO(modes=modes, width=width, n_layers=4)

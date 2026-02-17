@@ -8,13 +8,15 @@
 """
 Pure-NumPy training for a multi-layer Fourier Neural Operator turbulence model.
 
-.. warning::
+.. deprecated:: 2.1.0
 
-    **EXPERIMENTAL** — Trained on 60 synthetic Hasegawa-Wakatani samples.
-    Not validated against production gyrokinetic codes (GENE, GS2, QuaLiKiz).
-    Current relative L2 error is ~0.79 (explains ~21% of variance).
-    The trained FNO can be hot-swapped when real simulation data becomes
-    available without changing the model architecture.
+    **DEPRECATED / EXPERIMENTAL** — Trained on 60 synthetic Hasegawa-Wakatani
+    samples.  Not validated against production gyrokinetic codes (GENE, GS2,
+    QuaLiKiz).  Current relative L2 error is ~0.79 (explains ~21% of variance).
+    Removed from default pipeline in v2.1.0; will be retired in v3.0.0 unless
+    real gyrokinetic training data becomes available.  The trained FNO can be
+    hot-swapped when real simulation data becomes available without changing
+    the model architecture.
 
 Supports two data generation modes:
 

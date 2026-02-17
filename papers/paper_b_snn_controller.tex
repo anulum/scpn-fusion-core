@@ -904,6 +904,14 @@ control.  The key findings are:
     and FPGA synthesis without format conversion.
 \end{enumerate}
 
+Since v2.0.0, the Rust SNN implementation has been exposed to Python
+via PyO3 bindings (\code{PySnnPool}, \code{PySnnController}), enabling
+direct Rust-accelerated control from the Python scientific interface.
+The disruption predictor has been recalibrated to achieve 100\% recall
+with 0\% false positive rate on the 16-shot DIII-D reference dataset,
+and a Riccati-based $H_\infty$ controller provides robust vertical
+stability synthesis.
+
 Future work will focus on: (i)~completing the FPGA deployment chain
 via Verilog IR emission (Packet D); (ii)~scaling to multi-variable
 plasma control through hierarchical Petri net composition;
@@ -929,9 +937,10 @@ primitives.
 
 The full compilation pipeline (Packets A, B, and C) is available in the
 \code{src/scpn\_fusion/scpn/} directory of the \scpn{} repository at
-\url{https://github.com/anulum/scpn-fusion-core}, release v1.0.2.  The
+\url{https://github.com/anulum/scpn-fusion-core}, release v2.1.0.  The
 Rust SNN implementation is in \code{scpn-fusion-rs/crates/fusion-control/
-src/snn.rs}.
+src/snn.rs}, with PyO3 Python bindings in
+\code{scpn-fusion-rs/crates/fusion-python/src/lib.rs}.
 
 % =========================================================================
 \bibliography{scpn_fusion}

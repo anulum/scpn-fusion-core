@@ -156,6 +156,76 @@ else:
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
 
+class RustSnnPool:
+    """Python wrapper for Rust SpikingControllerPool (LIF neuron population).
+
+    Falls back with ImportError if the Rust extension is not compiled.
+
+    Parameters
+    ----------
+    n_neurons : int
+        Number of LIF neurons per sub-population (positive/negative).
+    gain : float
+        Output scaling factor.
+    window_size : int
+        Sliding window length for rate-code averaging.
+    """
+
+    def __init__(self, n_neurons: int = 50, gain: float = 10.0, window_size: int = 20):
+        from scpn_fusion_rs import PySnnPool  # type: ignore[import-untyped]
+
+        self._inner = PySnnPool(n_neurons, gain, window_size)
+
+    def step(self, error: float) -> float:
+        """Process *error* through SNN pool and return scalar control output."""
+        return self._inner.step(error)
+
+    @property
+    def n_neurons(self) -> int:
+        return self._inner.n_neurons
+
+    @property
+    def gain(self) -> float:
+        return self._inner.gain
+
+    def __repr__(self) -> str:
+        return f"RustSnnPool(n_neurons={self.n_neurons}, gain={self.gain})"
+
+
+class RustSnnController:
+    """Python wrapper for Rust NeuroCyberneticController (dual R+Z SNN pools).
+
+    Falls back with ImportError if the Rust extension is not compiled.
+
+    Parameters
+    ----------
+    target_r : float
+        Target major-radius position [m].
+    target_z : float
+        Target vertical position [m].
+    """
+
+    def __init__(self, target_r: float = 6.2, target_z: float = 0.0):
+        from scpn_fusion_rs import PySnnController  # type: ignore[import-untyped]
+
+        self._inner = PySnnController(target_r, target_z)
+
+    def step(self, measured_r: float, measured_z: float) -> tuple[float, float]:
+        """Process measured (R, Z) position and return (ctrl_R, ctrl_Z)."""
+        return self._inner.step(measured_r, measured_z)
+
+    @property
+    def target_r(self) -> float:
+        return self._inner.target_r
+
+    @property
+    def target_z(self) -> float:
+        return self._inner.target_z
+
+    def __repr__(self) -> str:
+        return f"RustSnnController(target_r={self.target_r}, target_z={self.target_z})"
+
+
 def rust_multigrid_vcycle(
     source: np.ndarray,
     psi_bc: np.ndarray,

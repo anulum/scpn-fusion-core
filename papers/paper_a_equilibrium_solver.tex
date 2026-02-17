@@ -791,21 +791,29 @@ next-generation compact tokamaks.  The key results are:
     inference, enabling real-time applications.
 \end{enumerate}
 
-Future development priorities include:
+Since the initial release, v2.1.0 has added:
 \begin{itemize}
-  \item Deployment of the multigrid V-cycle as the default inner solver,
-    which is expected to reduce reconstruction time by a factor of
-    $3{-}5\times$.
+  \item A self-consistent GS$\leftrightarrow$transport outer iteration
+    loop (\code{run\_self\_consistent()}) that alternates Grad--Shafranov
+    solves with 1-D transport evolution until $\Psi$ convergence.
+  \item Five MHD stability criteria (Mercier, first-stability ballooning,
+    Kruskal--Shafranov, Troyon $\beta$ limit, NTM seeding threshold).
+  \item Calibrated $\beta_N$ estimation achieving $<3\%$ error against
+    ITER and SPARC design points.
+  \item A FreeGS blind benchmark with Solov'ev analytic comparison
+    on three test cases (ITER-like, SPARC-like, spherical tokamak).
+\end{itemize}
+
+Remaining future development priorities include:
+\begin{itemize}
   \item GPU acceleration via the \code{wgpu} compute shader backend,
     targeting sub-millisecond equilibrium solves for real-time control.
   \item MPI domain decomposition for high-resolution ($512 \times 512$
     and above) equilibria on leadership computing facilities.
-  \item Extension of the validation database to include DIII-D and JET
-    GEQDSK files for cross-machine validation.
   \item Training the neural surrogate on the full SPARC scenario library
     to achieve $<5\%$ relative $L^2$ error.
-  \item Point-wise $\Psi$ RMSE validation against reference equilibria,
-    going beyond the current global-scaling and axis-position metrics.
+  \item Monte Carlo uncertainty propagation through the full
+    equilibrium $\to$ transport $\to$ fusion power chain.
 \end{itemize}
 
 The code is released under the GNU AGPL v3 licence and is available at
@@ -832,7 +840,7 @@ tests are included in the repository at
 
 The \scpn{} code is open-source and available at
 \url{https://github.com/anulum/scpn-fusion-core} under the GNU AGPL v3
-licence.  The version used in this work corresponds to release v1.0.2.
+licence.  The version used in this work corresponds to release v2.1.0.
 
 % =========================================================================
 \bibliography{scpn_fusion}

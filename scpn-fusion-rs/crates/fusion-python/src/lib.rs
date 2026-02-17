@@ -16,6 +16,7 @@ use fusion_core::particles::{
     advance_particles_boris, estimate_alpha_heating_profile, seed_alpha_test_particles,
     summarize_particle_population, ChargedParticle,
 };
+use fusion_control::snn::{NeuroCyberneticController, SpikingControllerPool};
 use fusion_core::source::ProfileParams;
 use fusion_engineering::blanket::neutron_wall_loading;
 use fusion_engineering::layout::{
@@ -709,6 +710,89 @@ fn py_particle_population_summary(
     })
 }
 
+// ─── SNN controller ───
+
+/// Python-accessible spiking controller pool (LIF neuron population).
+#[pyclass]
+struct PySnnPool {
+    inner: SpikingControllerPool,
+}
+
+#[pymethods]
+impl PySnnPool {
+    #[new]
+    #[pyo3(signature = (n_neurons=50, gain=10.0, window_size=20))]
+    fn new(n_neurons: usize, gain: f64, window_size: usize) -> PyResult<Self> {
+        let inner = SpikingControllerPool::new(n_neurons, gain, window_size)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        Ok(PySnnPool { inner })
+    }
+
+    /// Process error signal through SNN population. Returns control output.
+    fn step(&mut self, error: f64) -> PyResult<f64> {
+        self.inner
+            .step(error)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
+    }
+
+    #[getter]
+    fn n_neurons(&self) -> usize {
+        self.inner.n_neurons
+    }
+
+    #[getter]
+    fn gain(&self) -> f64 {
+        self.inner.gain
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "PySnnPool(n_neurons={}, gain={:.1})",
+            self.inner.n_neurons, self.inner.gain
+        )
+    }
+}
+
+/// Python-accessible neuro-cybernetic controller (dual R+Z SNN pools).
+#[pyclass]
+struct PySnnController {
+    inner: NeuroCyberneticController,
+}
+
+#[pymethods]
+impl PySnnController {
+    #[new]
+    fn new(target_r: f64, target_z: f64) -> PyResult<Self> {
+        let inner = NeuroCyberneticController::new(target_r, target_z)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        Ok(PySnnController { inner })
+    }
+
+    /// Process measured (R, Z) position. Returns (ctrl_R, ctrl_Z).
+    fn step(&mut self, measured_r: f64, measured_z: f64) -> PyResult<(f64, f64)> {
+        self.inner
+            .step(measured_r, measured_z)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
+    }
+
+    #[getter]
+    fn target_r(&self) -> f64 {
+        self.inner.target_r
+    }
+
+    #[getter]
+    fn target_z(&self) -> f64 {
+        self.inner.target_z
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "PySnnController(target_r={:.3}, target_z={:.3})",
+            self.inner.target_r, self.inner.target_z
+        )
+    }
+}
+
 // ─── Module registration ───
 
 /// SCPN Fusion Core — Rust-accelerated plasma physics.
@@ -735,5 +819,8 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_advance_boris, m)?)?;
     m.add_function(wrap_pyfunction!(py_get_heating_profile, m)?)?;
     m.add_function(wrap_pyfunction!(py_particle_population_summary, m)?)?;
+    // SNN controller bridge
+    m.add_class::<PySnnPool>()?;
+    m.add_class::<PySnnController>()?;
     Ok(())
 }
