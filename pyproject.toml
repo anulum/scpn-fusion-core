@@ -115,3 +115,8 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["nengo", "nengo.*", "nengo_loihi", "nengo_loihi.*"]
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks long-running regression tests",
+]
