@@ -15,7 +15,7 @@ authors:
     orcid: "https://orcid.org/0009-0009-3560-0851"
   - family-names: "Reiprich"
     given-names: "Michal"
-version: "2.0.0"
+version: "2.1.0"
 date-released: "2026-02-17"
 license: "AGPL-3.0-or-later"
 repository-code: "https://github.com/anulum/scpn-fusion-core"

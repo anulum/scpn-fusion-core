@@ -28,7 +28,7 @@ if not os.path.exists(CONFIG_PATH):
     CONFIG_PATH = "iter_config.json"
 
 st.title("⚛️ SCPN Fusion Reactor Control Room")
-st.markdown("### Digital Twin & Engineering Suite v2.0.0")
+st.markdown("### Digital Twin & Engineering Suite v2.1.0")
 
 # --- SIDEBAR CONFIGURATION ---
 st.sidebar.header("Reactor Parameters")
