@@ -191,6 +191,9 @@ following template:
 # Run the full test suite
 pytest tests/ -v
 
+# Run strict typing with CI-parity settings
+python tools/run_mypy_strict.py
+
 # Run a specific test file
 pytest tests/test_physics.py -v
 
@@ -224,6 +227,7 @@ cargo bench
 
 The CI pipeline runs on every push and pull request. It checks:
 - `black --check` and `ruff check` (Python formatting/linting)
+- `python tools/run_mypy_strict.py` (strict Python typing)
 - `cargo fmt --check` and `cargo clippy` (Rust formatting/linting)
 - `pytest tests/` (Python test suite)
 - `cargo test` (Rust test suite)

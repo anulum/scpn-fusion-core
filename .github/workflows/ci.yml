@@ -63,9 +63,7 @@ jobs:
         run: pytest tests/test_hypothesis_properties.py -v --hypothesis-seed=0
       - name: Static typing (SCPN strict)
         if: matrix.python-version == '3.12'
-        env:
-          PYTHONPATH: src
-        run: python -m mypy
+        run: python tools/run_mypy_strict.py
 
   geometry-3d-smoke:
     name: Geometry 3D Smoke
