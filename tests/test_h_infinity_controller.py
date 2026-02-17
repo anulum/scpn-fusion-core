@@ -93,6 +93,14 @@ def test_h_infinity_strict_mode_rejects_infeasible_solution() -> None:
         )
 
 
+def test_h_infinity_factory_strict_mode_rejects_infeasible_solution() -> None:
+    with pytest.raises(ValueError, match="spectral feasibility condition failed"):
+        get_radial_robust_controller(
+            gamma_growth=100.0,
+            enforce_robust_feasibility=True,
+        )
+
+
 def test_h_infinity_non_strict_mode_logs_infeasible_warning(caplog: pytest.LogCaptureFixture) -> None:
     A, B1, B2, C1, C2 = _reference_plant()
     with caplog.at_level("WARNING", logger="scpn_fusion.control.h_infinity_controller"):
