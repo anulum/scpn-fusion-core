@@ -123,5 +123,7 @@ markers = [
 ]
 filterwarnings = [
     "error::DeprecationWarning",
+    "ignore::pyparsing.warnings.PyparsingDeprecationWarning",
+    "default::UserWarning",
 ]
 xfail_strict = true
