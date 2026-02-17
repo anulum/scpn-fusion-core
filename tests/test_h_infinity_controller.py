@@ -58,6 +58,10 @@ def test_h_infinity_exposes_feasibility_diagnostics() -> None:
     assert np.isfinite(ctrl.spectral_radius_xy)
     assert ctrl.spectral_radius_xy >= 0.0
     assert ctrl.robust_feasible == bool(ctrl.spectral_radius_xy < ctrl.gamma**2)
+    margin = ctrl.robust_feasibility_margin()
+    assert np.isfinite(margin)
+    assert np.isclose(margin, ctrl.gamma**2 - ctrl.spectral_radius_xy)
+    assert (margin > 0.0) == ctrl.robust_feasible
 
 
 def test_h_infinity_rejects_invalid_gamma() -> None:
@@ -119,3 +123,4 @@ def test_h_infinity_strict_mode_accepts_feasible_synthesis(monkeypatch: pytest.M
     )
     assert ctrl.robust_feasible is True
     assert ctrl.spectral_radius_xy == 0.0
+    assert ctrl.robust_feasibility_margin() > 0.0

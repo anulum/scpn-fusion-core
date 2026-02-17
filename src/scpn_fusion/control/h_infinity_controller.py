@@ -308,6 +308,10 @@ class HInfinityController:
             np.linalg.norm(res_y, ord="fro")
         )
 
+    def robust_feasibility_margin(self) -> float:
+        """Return gamma^2 - rho(XY); positive values satisfy the strict test."""
+        return float(self.gamma ** 2 - self.spectral_radius_xy)
+
     def reset(self) -> None:
         """Reset controller state to zero."""
         self.state = np.zeros(self.n)
