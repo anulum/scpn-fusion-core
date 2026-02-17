@@ -50,6 +50,13 @@ class TestHaloCurrentModel:
         # With neon mitigation, TPF product should be in a reasonable range
         assert result.peak_tpf_product < 5.0  # sanity
 
+    def test_rejects_invalid_runtime_inputs(self):
+        model = HaloCurrentModel(plasma_current_ma=15.0)
+        with pytest.raises(ValueError):
+            model.simulate(duration_s=0.0)
+        with pytest.raises(ValueError):
+            model.simulate(dt_s=0.1, duration_s=0.01)
+
 
 class TestRunawayElectronModel:
     def test_basic_simulation(self):
@@ -68,7 +75,9 @@ class TestRunawayElectronModel:
         result_low_z = RunawayElectronModel(z_eff=1.0).simulate(neon_z_eff=1.0)
         result_high_z = RunawayElectronModel(z_eff=5.0).simulate(neon_z_eff=5.0)
         # Higher Z_eff increases collisional drag → less RE
-        assert result_high_z.peak_re_current_ma <= result_low_z.peak_re_current_ma * 10.0
+        assert (
+            result_high_z.peak_re_current_ma <= result_low_z.peak_re_current_ma * 10.0
+        )
 
     def test_avalanche_gain_finite(self):
         model = RunawayElectronModel()
@@ -81,6 +90,23 @@ class TestRunawayElectronModel:
         result = model.simulate(plasma_current_ma=15.0)
         # RE current cannot exceed original plasma current
         assert result.peak_re_current_ma <= 15.0
+
+    def test_neon_override_recomputes_impurity_state(self):
+        model = RunawayElectronModel(n_e=1e20, T_e_keV=20.0, z_eff=2.0, neon_mol=0.0)
+        baseline_ec = model.E_c
+        baseline = model.simulate(plasma_current_ma=15.0, neon_mol=0.0, neon_z_eff=2.0)
+        mitigated = model.simulate(plasma_current_ma=15.0, neon_mol=1.0, neon_z_eff=5.0)
+        assert model.E_c > baseline_ec
+        assert mitigated.peak_re_current_ma <= baseline.peak_re_current_ma
+
+    def test_rejects_invalid_inputs(self):
+        with pytest.raises(ValueError):
+            RunawayElectronModel(n_e=0.0)
+        model = RunawayElectronModel()
+        with pytest.raises(ValueError):
+            model.simulate(seed_re_fraction=0.0)
+        with pytest.raises(ValueError):
+            model.simulate(dt_s=0.1, duration_s=0.01)
 
 
 class TestDisruptionEnsemble:
@@ -121,3 +147,11 @@ class TestDisruptionEnsemble:
         assert "wall_force_mn_m" in run
         assert "avalanche_gain" in run
         assert "prevented" in run
+
+    def test_rejects_invalid_ranges(self):
+        with pytest.raises(ValueError):
+            run_disruption_ensemble(ensemble_runs=0)
+        with pytest.raises(ValueError):
+            run_disruption_ensemble(plasma_current_range=(16.0, 12.0))
+        with pytest.raises(ValueError):
+            run_disruption_ensemble(neon_range=(-0.1, 0.2))

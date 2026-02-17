@@ -63,6 +63,43 @@ _EPSILON0 = 8.854e-12  # F/m
 _LN_LAMBDA = 15.0  # Coulomb logarithm (typical tokamak)
 
 
+def _as_finite_float(name: str, value: float) -> float:
+    """Return finite ``float`` value or raise ``ValueError``."""
+    out = float(value)
+    if not np.isfinite(out):
+        raise ValueError(f"{name} must be finite, got {value!r}")
+    return out
+
+
+def _as_positive_float(name: str, value: float) -> float:
+    """Return positive finite ``float`` value or raise ``ValueError``."""
+    out = _as_finite_float(name, value)
+    if out <= 0.0:
+        raise ValueError(f"{name} must be > 0, got {value!r}")
+    return out
+
+
+def _as_non_negative_float(name: str, value: float) -> float:
+    """Return non-negative finite ``float`` value or raise ``ValueError``."""
+    out = _as_finite_float(name, value)
+    if out < 0.0:
+        raise ValueError(f"{name} must be >= 0, got {value!r}")
+    return out
+
+
+def _as_range(
+    name: str, value: tuple[float, float], *, min_allowed: float = -np.inf
+) -> tuple[float, float]:
+    """Validate a numeric range tuple as finite ascending bounds."""
+    low = _as_finite_float(f"{name}[0]", value[0])
+    high = _as_finite_float(f"{name}[1]", value[1])
+    if low < min_allowed:
+        raise ValueError(f"{name}[0] must be >= {min_allowed}, got {low}")
+    if high <= low:
+        raise ValueError(f"{name} must satisfy low < high, got ({low}, {high})")
+    return (low, high)
+
+
 @dataclass
 class HaloCurrentResult:
     """Time-resolved halo current simulation output."""
@@ -136,18 +173,36 @@ class HaloCurrentModel:
         tpf: float = 2.0,
         contact_fraction: float = 0.3,
     ) -> None:
-        self.Ip0 = float(plasma_current_ma) * 1e6  # A
-        self.a = float(minor_radius_m)
-        self.R0 = float(major_radius_m)
-        self.eta_wall = float(wall_resistivity_ohm_m)
-        self.d_wall = float(wall_thickness_m)
-        self.tpf = float(tpf)
-        self.f_contact = float(np.clip(contact_fraction, 0.01, 1.0))
+        plasma_current_ma = _as_positive_float("plasma_current_ma", plasma_current_ma)
+        minor_radius_m = _as_positive_float("minor_radius_m", minor_radius_m)
+        major_radius_m = _as_positive_float("major_radius_m", major_radius_m)
+        wall_resistivity_ohm_m = _as_positive_float(
+            "wall_resistivity_ohm_m", wall_resistivity_ohm_m
+        )
+        wall_thickness_m = _as_positive_float("wall_thickness_m", wall_thickness_m)
+        tpf = _as_positive_float("tpf", tpf)
+        contact_fraction = _as_finite_float("contact_fraction", contact_fraction)
+        if not (0.0 < contact_fraction <= 1.0):
+            raise ValueError(
+                f"contact_fraction must be in (0, 1], got {contact_fraction!r}"
+            )
+
+        self.Ip0 = plasma_current_ma * 1e6  # A
+        self.a = minor_radius_m
+        self.R0 = major_radius_m
+        self.eta_wall = wall_resistivity_ohm_m
+        self.d_wall = wall_thickness_m
+        self.tpf = tpf
+        self.f_contact = contact_fraction
 
         # Derived circuit parameters
         # Halo resistance: R_h = eta * 2*pi*R0 / (d_wall * a * f_contact)
-        self.R_h = self.eta_wall * 2.0 * np.pi * self.R0 / (
-            self.d_wall * self.a * max(self.f_contact, 0.01)
+        self.R_h = (
+            self.eta_wall
+            * 2.0
+            * np.pi
+            * self.R0
+            / (self.d_wall * self.a * max(self.f_contact, 0.01))
         )
         # Halo inductance: L_h ~ mu0 * R0 * (ln(8R0/a) - 2 + li/2)
         self.L_h = _MU0 * self.R0 * (np.log(8.0 * self.R0 / self.a) - 1.5)
@@ -174,8 +229,13 @@ class HaloCurrentModel:
         dt_s : float
             Time step (s).
         """
-        n_steps = max(int(duration_s / dt_s), 10)
-        dt = float(dt_s)
+        tau_cq_s = _as_positive_float("tau_cq_s", tau_cq_s)
+        duration_s = _as_positive_float("duration_s", duration_s)
+        dt = _as_positive_float("dt_s", dt_s)
+        if dt > duration_s:
+            raise ValueError(f"dt_s ({dt}) must be <= duration_s ({duration_s})")
+
+        n_steps = max(int(duration_s / dt), 10)
 
         Ip = self.Ip0
         Ih = 0.0
@@ -189,7 +249,7 @@ class HaloCurrentModel:
             time_ms.append(t * 1e3)
 
             # Plasma current decay (exponential + linear tail)
-            dIp_dt = -Ip / max(tau_cq_s, 1e-6)
+            dIp_dt = -Ip / tau_cq_s
             Ip += dIp_dt * dt
             Ip = max(Ip, 0.0)
 
@@ -252,40 +312,63 @@ class RunawayElectronModel:
         major_radius_m: float = 6.2,
         neon_mol: float = 0.0,
     ) -> None:
-        # Account for total electron density (free + bound)
-        # Aegis Upgrade: Use a much higher scaling for massive SPI injection
-        # In a real 800m3 vessel (ITER), 0.5 mol is ~3e23 atoms.
-        n_neon = float(neon_mol) * 5.0e21 
-        self.n_e_free = float(n_e)
-        self.n_e_tot = self.n_e_free + n_neon
-        
-        self.T_e0 = float(T_e_keV)
-        self.Z_eff = float(z_eff)
-        self.R0 = float(major_radius_m)
-        self.neon_mol = float(neon_mol)
+        self.n_e_free = _as_positive_float("n_e", n_e)
+        self.T_e0 = _as_positive_float("T_e_keV", T_e_keV)
+        self.R0 = _as_positive_float("major_radius_m", major_radius_m)
 
         # Collision time: based on free electrons
         v_th = np.sqrt(2.0 * self.T_e0 * 1e3 * _E_CHARGE / _M_ELECTRON)
         self.tau_coll = (
-            6.0 * np.pi**2 * _EPSILON0**2 * _M_ELECTRON**2 * v_th**3
+            6.0
+            * np.pi**2
+            * _EPSILON0**2
+            * _M_ELECTRON**2
+            * v_th**3
             / (self.n_e_free * _E_CHARGE**4 * _LN_LAMBDA)
-        )
-
-        # Critical field E_c depends on TOTAL electron density (free + bound)
-        self.E_c = (
-            self.n_e_tot * _E_CHARGE**3 * _LN_LAMBDA
-            / (4.0 * np.pi * _EPSILON0**2 * _M_ELECTRON * _C_LIGHT**2)
         )
 
         # Dreicer field E_D depends on FREE electron density
         T_e_joules = self.T_e0 * 1e3 * _E_CHARGE
         self.E_D = (
-            self.n_e_free * _E_CHARGE**3 * _LN_LAMBDA
+            self.n_e_free
+            * _E_CHARGE**3
+            * _LN_LAMBDA
             / (4.0 * np.pi * _EPSILON0**2 * T_e_joules)
         )
 
-        # Avalanche time constant: slows with Z_eff and density
-        self.tau_av = (_M_ELECTRON * _C_LIGHT / (_E_CHARGE * max(self.E_c, 1e-6)) * _LN_LAMBDA) * (1.0 + 1.5 * (self.Z_eff - 1.0))
+        self.neon_mol = 0.0
+        self.n_e_tot = self.n_e_free
+        self.Z_eff = 1.0
+        self.E_c = 0.0
+        self.tau_av = 0.0
+        self._update_impurity_state(neon_mol=neon_mol, z_eff=z_eff)
+
+    def _update_impurity_state(self, *, neon_mol: float, z_eff: float) -> None:
+        """Update impurity-dependent fields used by avalanche dynamics."""
+        neon_mol = _as_non_negative_float("neon_mol", neon_mol)
+        z_eff = _as_finite_float("z_eff", z_eff)
+        if z_eff < 1.0:
+            raise ValueError(f"z_eff must be >= 1.0, got {z_eff!r}")
+
+        # Account for total electron density (free + bound).
+        # In a real 800 m^3 vessel (ITER), 0.5 mol is ~3e23 atoms.
+        n_neon = neon_mol * 5.0e21
+        self.neon_mol = neon_mol
+        self.n_e_tot = self.n_e_free + n_neon
+        self.Z_eff = z_eff
+
+        # Critical field E_c depends on TOTAL electron density (free + bound).
+        self.E_c = (
+            self.n_e_tot
+            * _E_CHARGE**3
+            * _LN_LAMBDA
+            / (4.0 * np.pi * _EPSILON0**2 * _M_ELECTRON * _C_LIGHT**2)
+        )
+
+        # Avalanche time constant: slows with Z_eff and density.
+        self.tau_av = (
+            _M_ELECTRON * _C_LIGHT / (_E_CHARGE * max(self.E_c, 1e-6)) * _LN_LAMBDA
+        ) * (1.0 + 1.5 * (self.Z_eff - 1.0))
 
     def _dreicer_rate(self, E: float, T_e_keV: float) -> float:
         """Primary (Dreicer) runaway generation rate (s^{-1} m^{-3}).
@@ -297,7 +380,9 @@ class RunawayElectronModel:
 
         T_joules = T_e_keV * 1e3 * _E_CHARGE
         E_D = (
-            self.n_e_free * _E_CHARGE**3 * _LN_LAMBDA
+            self.n_e_free
+            * _E_CHARGE**3
+            * _LN_LAMBDA
             / (4.0 * np.pi * _EPSILON0**2 * T_joules)
         )
 
@@ -311,8 +396,11 @@ class RunawayElectronModel:
         nu_eff = np.sqrt((1.0 + self.Z_eff) * ratio / 2.0)
 
         C_D = 0.35  # numerical prefactor
-        rate = (self.n_e_free / max(self.tau_coll, 1e-20)) * C_D * ratio**(-h_z) * np.exp(
-            -ratio / 4.0 - nu_eff
+        rate = (
+            (self.n_e_free / max(self.tau_coll, 1e-20))
+            * C_D
+            * ratio ** (-h_z)
+            * np.exp(-ratio / 4.0 - nu_eff)
         )
         return max(float(rate), 0.0)
 
@@ -328,7 +416,7 @@ class RunawayElectronModel:
         # via RMP/Magnetic perturbations which reduces effective growth rate.
         deconfinement_factor = 1.0
         if self.neon_mol > 0.3:
-            deconfinement_factor = 0.001 # 99.9% reduction in avalanche efficiency
+            deconfinement_factor = 0.001  # 99.9% reduction in avalanche efficiency
             # print(f"  [Aegis] RE Avalanche suppressed by 99.9% (Neon={self.neon_mol:.2f})")
 
         growth = n_re * (E / self.E_c - 1.0) / (max(self.tau_av, 1e-20) * _LN_LAMBDA)
@@ -342,13 +430,13 @@ class RunawayElectronModel:
         """
         if E <= self.E_c:
             return 0.0
-            
+
         # Effective diffusion coefficient in momentum space
         # Highly sensitive to E-field over critical field
         e_ratio = E / self.E_c
-        
+
         # Empirical FP-like growth term
-        fp_rate = n_re * (e_ratio - 1.0)**1.5 / (self.tau_av * 5.0)
+        fp_rate = n_re * (e_ratio - 1.0) ** 1.5 / (self.tau_av * 5.0)
         return float(max(fp_rate, 0.0))
 
     def simulate(
@@ -357,7 +445,7 @@ class RunawayElectronModel:
         tau_cq_s: float = 0.01,
         T_e_quench_keV: float = 0.5,
         neon_z_eff: float = 3.0,
-        neon_mol: float = 0.0,
+        neon_mol: Optional[float] = None,
         duration_s: float = 0.05,
         dt_s: float = 1e-5,
         seed_re_fraction: float = 1e-8,
@@ -367,17 +455,34 @@ class RunawayElectronModel:
         The toroidal electric field E is derived from Faraday's law:
             E = (L_p / (2*pi*R0)) * dI_p/dt
         """
-        n_steps = max(int(duration_s / dt_s), 10)
-        dt = float(dt_s)
+        plasma_current_ma = _as_positive_float("plasma_current_ma", plasma_current_ma)
+        tau_cq_s = _as_positive_float("tau_cq_s", tau_cq_s)
+        T_e = _as_positive_float("T_e_quench_keV", T_e_quench_keV)
+        duration_s = _as_positive_float("duration_s", duration_s)
+        dt = _as_positive_float("dt_s", dt_s)
+        if dt > duration_s:
+            raise ValueError(f"dt_s ({dt}) must be <= duration_s ({duration_s})")
 
-        Ip = float(plasma_current_ma) * 1e6  # A
+        seed_re_fraction = _as_finite_float("seed_re_fraction", seed_re_fraction)
+        if not (0.0 < seed_re_fraction <= 1.0):
+            raise ValueError(
+                f"seed_re_fraction must be in (0, 1], got {seed_re_fraction!r}"
+            )
+        neon_mol_eff = (
+            self.neon_mol
+            if neon_mol is None
+            else _as_non_negative_float("neon_mol", neon_mol)
+        )
+        self._update_impurity_state(neon_mol=neon_mol_eff, z_eff=neon_z_eff)
+
+        n_steps = max(int(duration_s / dt), 10)
+
+        Ip = plasma_current_ma * 1e6  # A
         Ip0 = Ip
         L_p = _MU0 * self.R0 * (np.log(8.0 * self.R0 / 2.0) - 2.0 + 0.5)
 
         # Seed runaway population
-        n_re = self.n_e_free * float(seed_re_fraction)
-        T_e = float(T_e_quench_keV)  # post-thermal-quench temperature
-        self.Z_eff = float(neon_z_eff)
+        n_re = self.n_e_free * seed_re_fraction
 
         time_ms: list[float] = []
         re_current_ma: list[float] = []
@@ -394,8 +499,8 @@ class RunawayElectronModel:
             # In a real quench with REs, the total current Ip = I_ohmic + I_re.
             # Only the Ohmic part produces the E-field that drives the quenches.
             I_ohmic = max(Ip - (re_current_ma[-1] * 1e6 if re_current_ma else 0.0), 0.0)
-            dI_ohmic_dt = -I_ohmic / max(tau_cq_s, 1e-6)
-            
+            dI_ohmic_dt = -I_ohmic / tau_cq_s
+
             # 2. Toroidal electric field (Back-EMF included)
             # E_tor is driven by dI_ohmic/dt. As I_ohmic -> 0 (replaced by I_re), E_tor -> 0.
             E_tor = L_p * abs(dI_ohmic_dt) / (2.0 * np.pi * self.R0)
@@ -410,25 +515,29 @@ class RunawayElectronModel:
             fp_rates.append(gamma_FP)
 
             # 4. Collisional loss
-            loss_rate = n_re / max(self.tau_av * 5.0, 1e-12) if E_tor < self.E_c else 0.0
+            loss_rate = (
+                n_re / max(self.tau_av * 5.0, 1e-12) if E_tor < self.E_c else 0.0
+            )
 
             # 5. Evolution
             dn_re = (gamma_D + gamma_av + gamma_FP - loss_rate) * dt
             n_re = max(n_re + dn_re, 0.0)
 
             # 6. Current conversion
-            I_re_val = _E_CHARGE * n_re * _C_LIGHT * np.pi * 2.0**2 
+            I_re_val = _E_CHARGE * n_re * _C_LIGHT * np.pi * 2.0**2
             # BACK-EMF Limit: RE current cannot exceed total plasma current
             I_re_val = min(I_re_val, Ip0)
             re_current_ma.append(I_re_val / 1e6)
-            
+
             # Total plasma current evolution (slowed by RE conversion)
             Ip += dI_ohmic_dt * dt
             Ip = max(Ip, 0.0)
 
         peak_re = max(re_current_ma) if re_current_ma else 0.0
         final_re = re_current_ma[-1] if re_current_ma else 0.0
-        avalanche_gain = n_re / max(self.n_e_free * seed_re_fraction, 1e-30) if n_re > 0 else 1.0
+        avalanche_gain = (
+            n_re / max(self.n_e_free * seed_re_fraction, 1e-30) if n_re > 0 else 1.0
+        )
 
         return RunawayElectronResult(
             time_ms=time_ms,
@@ -462,6 +571,21 @@ def run_disruption_ensemble(
         - I_RE_peak ≤ 1.0 MA
         - Halo peak ≤ 3.0 MA
     """
+    if ensemble_runs <= 0:
+        raise ValueError(f"ensemble_runs must be > 0, got {ensemble_runs!r}")
+    plasma_current_range = _as_range(
+        "plasma_current_range", plasma_current_range, min_allowed=0.0
+    )
+    plasma_energy_range = _as_range(
+        "plasma_energy_range", plasma_energy_range, min_allowed=0.0
+    )
+    neon_range = _as_range("neon_range", neon_range, min_allowed=0.0)
+
+    low_risk_neon = float(
+        np.clip(neon_range[0] + 0.25 * (neon_range[1] - neon_range[0]), *neon_range)
+    )
+    high_risk_neon = neon_range[1]
+
     rng = np.random.default_rng(seed)
 
     per_run: list[dict] = []
@@ -472,23 +596,23 @@ def run_disruption_ensemble(
         Ip_ma = rng.uniform(*plasma_current_range)
         W_mj = rng.uniform(*plasma_energy_range)
         disturbance = rng.uniform(0.0, 1.0)
-        
+
         # --- AEGIS CONTROL LOOP (Simulated) ---
         # 1. Sense: Predict risk based on current state and disturbance
         # 15MA machines are inherently high risk.
         risk_score = 0.4 * (Ip_ma / 15.0) + 0.6 * disturbance
-        
+
         # 2. Act: Decide on mitigation strategy
-        if risk_score > 0.5: # More sensitive trigger
+        if risk_score > 0.5:  # More sensitive trigger
             # High Risk! Trigger AEGIS SPI (Targeted injection)
-            neon_mol = 1.0 # Max dose
+            neon_mol = high_risk_neon
             mitigation_triggered = True
-            seed_re_fraction = 1e-15 # Near-total seed suppression
-            tpf_suppression = 0.4 
-            tau_cq_base = 1.2 # Very soft quench
+            seed_re_fraction = 1e-15  # Near-total seed suppression
+            tpf_suppression = 0.4
+            tau_cq_base = 1.2  # Very soft quench
         else:
             # Low Risk: Standard safety injection
-            neon_mol = 0.2 # Increased baseline
+            neon_mol = low_risk_neon
             mitigation_triggered = False
             seed_re_fraction = 1e-10
             tpf_suppression = 0.8
