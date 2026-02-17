@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import warnings
 
 import pytest
 
@@ -85,6 +86,24 @@ def test_disruption_transformer_forward_preserves_output_contract() -> None:
     assert bool(dp.torch.isfinite(y).all())
     assert float(y.min()) >= 0.0
     assert float(y.max()) <= 1.0
+
+
+def test_train_predictor_does_not_emit_nested_tensor_warning(tmp_path: Path) -> None:
+    model_path = tmp_path / "warning_check.pth"
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always")
+        dp.train_predictor(
+            seq_len=24,
+            n_shots=8,
+            epochs=1,
+            model_path=model_path,
+            seed=19,
+            save_plot=False,
+        )
+
+    assert model_path.exists()
+    messages = [str(w.message) for w in captured]
+    assert not any("enable_nested_tensor" in msg for msg in messages)
 
 
 @pytest.mark.parametrize(
