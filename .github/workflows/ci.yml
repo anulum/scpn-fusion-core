@@ -22,6 +22,15 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
+      - name: Enforce local-only handovers exclusion
+        if: matrix.python-version == '3.12'
+        run: |
+          tracked="$(git ls-files -- '.handovers/**')"
+          if [ -n "$tracked" ]; then
+            echo "::error::.handovers/ is local-only and must not be tracked."
+            echo "$tracked"
+            exit 1
+          fi
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
