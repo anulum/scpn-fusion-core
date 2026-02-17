@@ -36,6 +36,19 @@ _M_P = 1.672621924e-27       # kg
 _EPS0 = 8.854187812e-12      # F/m
 
 
+def _require_positive_finite(name: str, value: float) -> float:
+    """Parse and validate a finite, strictly positive scalar input."""
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be finite and > 0, got {value!r}")
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be finite and > 0, got {value!r}") from exc
+    if not np.isfinite(parsed) or parsed <= 0.0:
+        raise ValueError(f"{name} must be finite and > 0, got {value!r}")
+    return parsed
+
+
 @dataclass
 class PedestalResult:
     """Result of EPED-like pedestal prediction."""
@@ -78,19 +91,19 @@ class EpedPedestalModel:
         A_ion: float = 2.0,
         Z_eff: float = 1.5,
     ) -> None:
-        self.R0 = R0
-        self.a = a
-        self.B0 = B0
-        self.Ip_MA = Ip_MA
-        self.kappa = kappa
-        self.A_ion = A_ion
-        self.Z_eff = Z_eff
+        self.R0 = _require_positive_finite("R0", R0)
+        self.a = _require_positive_finite("a", a)
+        self.B0 = _require_positive_finite("B0", B0)
+        self.Ip_MA = _require_positive_finite("Ip_MA", Ip_MA)
+        self.kappa = _require_positive_finite("kappa", kappa)
+        self.A_ion = _require_positive_finite("A_ion", A_ion)
+        self.Z_eff = _require_positive_finite("Z_eff", Z_eff)
 
         # Derived
-        self.epsilon = a / R0
+        self.epsilon = self.a / self.R0
         mu0 = 4.0 * np.pi * 1e-7
-        self.B_pol = mu0 * Ip_MA * 1e6 / (2.0 * np.pi * a * np.sqrt(
-            (1.0 + kappa**2) / 2.0
+        self.B_pol = mu0 * self.Ip_MA * 1e6 / (2.0 * np.pi * self.a * np.sqrt(
+            (1.0 + self.kappa**2) / 2.0
         ))
 
     def predict(self, n_ped_1e19: float, T_ped_guess_keV: float = 3.0) -> PedestalResult:
@@ -108,10 +121,8 @@ class EpedPedestalModel:
         PedestalResult
             Pedestal predictions.
         """
-        if n_ped_1e19 <= 0:
-            raise ValueError(f"n_ped must be > 0, got {n_ped_1e19}")
-        if T_ped_guess_keV <= 0:
-            raise ValueError(f"T_ped_guess must be > 0, got {T_ped_guess_keV}")
+        n_ped_1e19 = _require_positive_finite("n_ped_1e19", n_ped_1e19)
+        T_ped_guess_keV = _require_positive_finite("T_ped_guess_keV", T_ped_guess_keV)
 
         m_i = self.A_ion * _M_P
         n_e = n_ped_1e19 * 1e19  # m^-3
