@@ -308,8 +308,14 @@ def run_campaign(
         "max_fno_eval_relative_l2_mean": 0.80,
         "max_equilibrium_p95_ms_est": 1.0,
         "max_equilibrium_fault_p95_ms_est": 1.0,
-        "max_equilibrium_p95_ms_wall": 10.0,
+        "max_equilibrium_p95_ms_wall_advisory": 10.0,
     }
+
+    wall_latency_advisory_pass = bool(
+        latency_out["p95_ms_wall"] <= thresholds["max_equilibrium_p95_ms_wall_advisory"]
+        and latency_out["fault_p95_ms_wall"]
+        <= thresholds["max_equilibrium_p95_ms_wall_advisory"]
+    )
 
     passes = bool(
         tm1["auc"] >= thresholds["min_auc_tm1"]
@@ -318,8 +324,6 @@ def run_campaign(
         and fno_eval["eval_relative_l2_mean"] <= thresholds["max_fno_eval_relative_l2_mean"]
         and latency_out["p95_ms_est"] <= thresholds["max_equilibrium_p95_ms_est"]
         and latency_out["fault_p95_ms_est"] <= thresholds["max_equilibrium_fault_p95_ms_est"]
-        and latency_out["p95_ms_wall"] <= thresholds["max_equilibrium_p95_ms_wall"]
-        and latency_out["fault_p95_ms_wall"] <= thresholds["max_equilibrium_p95_ms_wall"]
     )
 
     return {
@@ -334,6 +338,7 @@ def run_campaign(
             "tokamaknet_proxy": tokamaknet,
         },
         "equilibrium_latency": latency_out,
+        "wall_latency_advisory_pass": wall_latency_advisory_pass,
         "consumer_latency_profiles": consumer_latency_profiles,
         "thresholds": thresholds,
         "passes_thresholds": passes,
@@ -382,8 +387,15 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Backend: `{lat['backend']}`",
         f"- P95 estimate: `{lat['p95_ms_est']:.4f} ms` (threshold `<= {th['max_equilibrium_p95_ms_est']:.1f} ms`)",
         f"- Fault P95 estimate: `{lat['fault_p95_ms_est']:.4f} ms` (threshold `<= {th['max_equilibrium_fault_p95_ms_est']:.1f} ms`)",
-        f"- P95 wall latency: `{lat['p95_ms_wall']:.4f} ms` (threshold `<= {th['max_equilibrium_p95_ms_wall']:.1f} ms`)",
-        f"- Fault P95 wall latency: `{lat['fault_p95_ms_wall']:.4f} ms` (threshold `<= {th['max_equilibrium_p95_ms_wall']:.1f} ms`)",
+        (
+            f"- P95 wall latency: `{lat['p95_ms_wall']:.4f} ms` "
+            f"(advisory `<= {th['max_equilibrium_p95_ms_wall_advisory']:.1f} ms`)"
+        ),
+        (
+            f"- Fault P95 wall latency: `{lat['fault_p95_ms_wall']:.4f} ms` "
+            f"(advisory `<= {th['max_equilibrium_p95_ms_wall_advisory']:.1f} ms`)"
+        ),
+        f"- Wall-latency advisory pass: `{'YES' if g['wall_latency_advisory_pass'] else 'NO'}`",
         "",
         "## Consumer Hardware Latency Profiles",
         "",

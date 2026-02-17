@@ -64,6 +64,8 @@ class HInfinityController:
         Feedthrough from control to performance. Default: identity-like.
     D21 : array_like, optional
         Feedthrough from disturbance to measurement. Default: identity-like.
+    enforce_robust_feasibility : bool, optional
+        If True, raise ValueError unless rho(XY) < gamma^2 after synthesis.
     """
 
     def __init__(
@@ -76,6 +78,7 @@ class HInfinityController:
         gamma: Optional[float] = None,
         D12: "Optional[npt.ArrayLike]" = None,
         D21: "Optional[npt.ArrayLike]" = None,
+        enforce_robust_feasibility: bool = False,
     ) -> None:
         self.A = np.atleast_2d(np.asarray(A, dtype=float))
         self.B1 = np.atleast_2d(np.asarray(B1, dtype=float))
@@ -155,14 +158,27 @@ class HInfinityController:
 
         # Solve Riccati equations and compute gains
         self.X, self.Y, self.F, self.L_gain = self._synthesize(self.gamma)
+        self.spectral_radius_xy = float(np.max(np.abs(np.linalg.eigvals(self.X @ self.Y))))
+        self.robust_feasible = bool(self.spectral_radius_xy < self.gamma ** 2)
+        if not self.robust_feasible:
+            msg = (
+                "H-infinity spectral feasibility condition failed: "
+                f"rho(XY)={self.spectral_radius_xy:.6g} >= gamma^2={self.gamma ** 2:.6g}."
+            )
+            if enforce_robust_feasibility:
+                raise ValueError(msg)
+            logger.warning(msg)
 
         # Controller state
         self.state = np.zeros(self.n)
         self._converged = True
 
         logger.info(
-            "H-inf controller: n=%d, m=%d, gamma=%.4f",
-            self.n, self.m, self.gamma,
+            "H-inf controller: n=%d, m=%d, gamma=%.4f, robust_feasible=%s",
+            self.n,
+            self.m,
+            self.gamma,
+            self.robust_feasible,
         )
 
     def _synthesize(self, gamma: float) -> "tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]":
@@ -306,6 +322,8 @@ class HInfinityController:
 
 def get_radial_robust_controller(
     gamma_growth: float = 100.0,
+    *,
+    enforce_robust_feasibility: bool = False,
 ) -> HInfinityController:
     """Return an H-infinity controller for tokamak vertical stability.
 
@@ -314,6 +332,8 @@ def get_radial_robust_controller(
     gamma_growth : float
         Vertical instability growth rate [1/s].
         Default 100/s (ITER-like). SPARC: ~1000/s.
+    enforce_robust_feasibility : bool, optional
+        If True, require rho(XY) < gamma^2 and raise on infeasible synthesis.
 
     Returns
     -------
@@ -344,4 +364,11 @@ def get_radial_robust_controller(
     # Measurement: noisy position sensor
     C2 = np.array([[1.0, 0.0]])
 
-    return HInfinityController(A, B1, B2, C1, C2)
+    return HInfinityController(
+        A,
+        B1,
+        B2,
+        C1,
+        C2,
+        enforce_robust_feasibility=enforce_robust_feasibility,
+    )

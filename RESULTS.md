@@ -83,7 +83,7 @@
 |--------|-------|-------|
 | Synthesis method | Doyle-Glover-Khargonekar ARE | Two Riccati equations via scipy.linalg.solve_continuous_are |
 | Plant model | Linearised vertical stability | A = [[0,1],[gamma^2,0]], gamma from published data |
-| Guaranteed robustness | <=20% multiplicative plant uncertainty | Verified by perturbation campaign |
+| Closed-loop robustness evidence | Stable under perturbation campaign | Strict H-infinity feasibility tracked via `rho(XY) < gamma^2` diagnostic |
 | Gamma (attenuation level) | Bisection search | Optimal gamma found automatically |
 | Outperforms PID on VDE | Yes | Lower ISE, faster settling |
 | Verification artifact | `tests/test_h_infinity_controller.py` | Riccati residual + stability regression lock |

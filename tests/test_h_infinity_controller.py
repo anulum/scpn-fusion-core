@@ -52,6 +52,13 @@ def test_h_infinity_step_stays_finite() -> None:
     assert np.all(np.isfinite(ctrl.state))
 
 
+def test_h_infinity_exposes_feasibility_diagnostics() -> None:
+    ctrl = get_radial_robust_controller(gamma_growth=100.0)
+    assert isinstance(ctrl.robust_feasible, bool)
+    assert np.isfinite(ctrl.spectral_radius_xy)
+    assert ctrl.spectral_radius_xy >= 0.0
+
+
 def test_h_infinity_rejects_invalid_gamma() -> None:
     A, B1, B2, C1, C2 = _reference_plant()
     with pytest.raises(ValueError, match="gamma must be finite and > 1.0"):
@@ -67,3 +74,15 @@ def test_h_infinity_rejects_nonfinite_runtime_inputs() -> None:
     with pytest.raises(ValueError, match="dt must be finite and > 0"):
         ctrl.step(0.1, dt=0.0)
 
+
+def test_h_infinity_strict_mode_rejects_infeasible_solution() -> None:
+    A, B1, B2, C1, C2 = _reference_plant()
+    with pytest.raises(ValueError, match="spectral feasibility condition failed"):
+        HInfinityController(
+            A,
+            B1,
+            B2,
+            C1,
+            C2,
+            enforce_robust_feasibility=True,
+        )
