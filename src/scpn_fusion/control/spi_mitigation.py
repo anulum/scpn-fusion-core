@@ -18,7 +18,9 @@ class ShatteredPelletInjection:
     Reduced SPI mitigation model for thermal/current quench campaigns.
     """
 
-    def __init__(self, Plasma_Energy_MJ: float = 300.0, Plasma_Current_MA: float = 15.0):
+    def __init__(
+        self, Plasma_Energy_MJ: float = 300.0, Plasma_Current_MA: float = 15.0
+    ):
         w_mj = float(Plasma_Energy_MJ)
         ip_ma = float(Plasma_Current_MA)
         if not np.isfinite(w_mj) or w_mj <= 0.0:
@@ -32,12 +34,93 @@ class ShatteredPelletInjection:
         self.last_tau_cq_s = 0.02
 
     @staticmethod
+    def _require_non_negative(name: str, value: float) -> float:
+        out = float(value)
+        if not np.isfinite(out) or out < 0.0:
+            raise ValueError(f"{name} must be finite and >= 0.")
+        return out
+
+    @staticmethod
     def estimate_z_eff(neon_quantity_mol: float) -> float:
-        neon = max(float(neon_quantity_mol), 0.0)
-        impurity_fraction = np.clip((neon / 0.12) * 0.015, 0.0, 0.12)
-        z_imp = 10.0
-        zeff = (1.0 - impurity_fraction) * 1.0 + impurity_fraction * (z_imp**2)
+        return ShatteredPelletInjection.estimate_z_eff_cocktail(
+            neon_quantity_mol=neon_quantity_mol,
+            argon_quantity_mol=0.0,
+            xenon_quantity_mol=0.0,
+        )
+
+    @staticmethod
+    def estimate_z_eff_cocktail(
+        *,
+        neon_quantity_mol: float = 0.0,
+        argon_quantity_mol: float = 0.0,
+        xenon_quantity_mol: float = 0.0,
+    ) -> float:
+        neon = ShatteredPelletInjection._require_non_negative(
+            "neon_quantity_mol", neon_quantity_mol
+        )
+        argon = ShatteredPelletInjection._require_non_negative(
+            "argon_quantity_mol", argon_quantity_mol
+        )
+        xenon = ShatteredPelletInjection._require_non_negative(
+            "xenon_quantity_mol", xenon_quantity_mol
+        )
+
+        # Empirical weighting: higher-Z gases radiate/ionize more efficiently per mol.
+        weighted_moles = 1.00 * neon + 1.35 * argon + 1.90 * xenon
+        impurity_fraction = np.clip((weighted_moles / 0.12) * 0.015, 0.0, 0.12)
+
+        species_weight = np.array([neon, argon, xenon], dtype=np.float64)
+        z2 = np.array([10.0**2, 18.0**2, 36.0**2], dtype=np.float64)
+        denom = float(np.sum(species_weight))
+        z2_eff = float(np.dot(species_weight, z2) / denom) if denom > 0.0 else 1.0
+        zeff = (1.0 - impurity_fraction) * 1.0 + impurity_fraction * z2_eff
         return float(np.clip(zeff, 1.0, 12.0))
+
+    @staticmethod
+    def estimate_mitigation_cocktail(
+        *,
+        risk_score: float,
+        disturbance: float,
+        action_bias: float = 0.0,
+    ) -> dict[str, float]:
+        risk_raw = float(risk_score)
+        dist_raw = float(disturbance)
+        action_raw = float(action_bias)
+        if not np.isfinite(risk_raw):
+            raise ValueError("risk_score must be finite.")
+        if not np.isfinite(dist_raw):
+            raise ValueError("disturbance must be finite.")
+        if not np.isfinite(action_raw):
+            raise ValueError("action_bias must be finite.")
+
+        risk = float(np.clip(risk_raw, 0.0, 1.0))
+        dist = float(np.clip(dist_raw, 0.0, 1.0))
+        action = float(np.clip(action_raw, -1.0, 1.0))
+
+        total_mol = float(
+            np.clip(
+                0.05 + 0.15 * risk + 0.07 * dist + 0.02 * action,
+                0.03,
+                0.24,
+            )
+        )
+        heavy_drive = float(
+            np.clip(0.55 * risk + 0.45 * dist + 0.20 * max(action, 0.0), 0.0, 1.0)
+        )
+        xenon_frac = 0.05 + 0.30 * heavy_drive
+        argon_frac = 0.15 + 0.25 * heavy_drive
+        neon_frac = max(0.0, 1.0 - xenon_frac - argon_frac)
+        frac_sum = neon_frac + argon_frac + xenon_frac
+        neon_frac /= frac_sum
+        argon_frac /= frac_sum
+        xenon_frac /= frac_sum
+
+        return {
+            "neon_quantity_mol": float(total_mol * neon_frac),
+            "argon_quantity_mol": float(total_mol * argon_frac),
+            "xenon_quantity_mol": float(total_mol * xenon_frac),
+            "total_quantity_mol": float(total_mol),
+        }
 
     @staticmethod
     def estimate_tau_cq(te_keV: float, z_eff: float) -> float:
@@ -49,15 +132,18 @@ class ShatteredPelletInjection:
     def trigger_mitigation(
         self,
         neon_quantity_mol: float = 0.1,
+        argon_quantity_mol: float = 0.0,
+        xenon_quantity_mol: float = 0.0,
         return_diagnostics: bool = False,
         *,
         duration_s: float = 0.05,
         dt_s: float = 1e-5,
         verbose: bool = True,
     ):
-        neon = float(neon_quantity_mol)
-        if not np.isfinite(neon) or neon < 0.0:
-            raise ValueError("neon_quantity_mol must be finite and >= 0.")
+        neon = self._require_non_negative("neon_quantity_mol", neon_quantity_mol)
+        argon = self._require_non_negative("argon_quantity_mol", argon_quantity_mol)
+        xenon = self._require_non_negative("xenon_quantity_mol", xenon_quantity_mol)
+        total_impurity = neon + argon + xenon
         duration = float(duration_s)
         dt = float(dt_s)
         if not np.isfinite(duration) or duration <= 0.0:
@@ -66,7 +152,10 @@ class ShatteredPelletInjection:
             raise ValueError("dt_s must be finite and > 0.")
 
         if verbose:
-            print(f"--- DISRUPTION DETECTED! TRIGGERING SPI ({neon} mol Neon) ---")
+            print(
+                "--- DISRUPTION DETECTED! TRIGGERING SPI "
+                f"(Ne={neon:.3f} mol, Ar={argon:.3f} mol, Xe={xenon:.3f} mol) ---"
+            )
 
         t_mix = 0.002
         time_axis: list[float] = []
@@ -82,7 +171,11 @@ class ShatteredPelletInjection:
 
         while t < duration:
             if t > t_mix:
-                self.Z_eff = self.estimate_z_eff(neon)
+                self.Z_eff = self.estimate_z_eff_cocktail(
+                    neon_quantity_mol=neon,
+                    argon_quantity_mol=argon,
+                    xenon_quantity_mol=xenon,
+                )
                 P_rad = 1e9 * (self.Z_eff**0.5) * (self.Te / 1.0) ** 0.5
                 dW = -P_rad * dt
                 prev_W = self.W_th
@@ -116,10 +209,18 @@ class ShatteredPelletInjection:
         if return_diagnostics:
             diagnostics = {
                 "z_eff": float(self.Z_eff),
-                "tau_cq_ms_mean": float(np.mean(history_tau_cq)) if history_tau_cq else 0.0,
-                "tau_cq_ms_p95": float(np.percentile(history_tau_cq, 95)) if history_tau_cq else 0.0,
+                "tau_cq_ms_mean": (
+                    float(np.mean(history_tau_cq)) if history_tau_cq else 0.0
+                ),
+                "tau_cq_ms_p95": (
+                    float(np.percentile(history_tau_cq, 95)) if history_tau_cq else 0.0
+                ),
                 "final_current_MA": float(self.Ip / 1e6),
                 "final_temperature_keV": float(self.Te),
+                "neon_quantity_mol": float(neon),
+                "argon_quantity_mol": float(argon),
+                "xenon_quantity_mol": float(xenon),
+                "total_impurity_mol": float(total_impurity),
                 "duration_ms": float(duration * 1000.0),
             }
             return time_axis, history_W, history_I, diagnostics
@@ -131,6 +232,8 @@ def run_spi_mitigation(
     plasma_energy_mj: float = 300.0,
     plasma_current_ma: float = 15.0,
     neon_quantity_mol: float = 0.1,
+    argon_quantity_mol: float = 0.0,
+    xenon_quantity_mol: float = 0.0,
     duration_s: float = 0.05,
     dt_s: float = 1e-5,
     save_plot: bool = True,
@@ -146,6 +249,8 @@ def run_spi_mitigation(
     )
     t, w, i, diag = spi.trigger_mitigation(
         neon_quantity_mol=neon_quantity_mol,
+        argon_quantity_mol=argon_quantity_mol,
+        xenon_quantity_mol=xenon_quantity_mol,
         return_diagnostics=True,
         duration_s=duration_s,
         dt_s=dt_s,
@@ -185,6 +290,9 @@ def run_spi_mitigation(
         "plasma_energy_mj": float(plasma_energy_mj),
         "plasma_current_ma": float(plasma_current_ma),
         "neon_quantity_mol": float(neon_quantity_mol),
+        "argon_quantity_mol": float(argon_quantity_mol),
+        "xenon_quantity_mol": float(xenon_quantity_mol),
+        "total_impurity_mol": float(diag["total_impurity_mol"]),
         "duration_s": float(duration_s),
         "dt_s": float(dt_s),
         "samples": int(t_arr.size),

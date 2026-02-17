@@ -19,6 +19,8 @@ def test_run_spi_mitigation_returns_finite_summary_without_plot() -> None:
         plasma_energy_mj=300.0,
         plasma_current_ma=15.0,
         neon_quantity_mol=0.1,
+        argon_quantity_mol=0.01,
+        xenon_quantity_mol=0.005,
         duration_s=0.05,
         dt_s=1e-5,
         save_plot=False,
@@ -32,6 +34,9 @@ def test_run_spi_mitigation_returns_finite_summary_without_plot() -> None:
         "final_current_ma",
         "z_eff",
         "tau_cq_ms_mean",
+        "argon_quantity_mol",
+        "xenon_quantity_mol",
+        "total_impurity_mol",
         "plot_saved",
     ):
         assert key in summary
@@ -47,6 +52,8 @@ def test_run_spi_mitigation_is_deterministic_for_fixed_inputs() -> None:
         plasma_energy_mj=280.0,
         plasma_current_ma=14.0,
         neon_quantity_mol=0.12,
+        argon_quantity_mol=0.015,
+        xenon_quantity_mol=0.003,
         duration_s=0.03,
         dt_s=1e-5,
         save_plot=False,
@@ -69,5 +76,7 @@ def test_run_spi_mitigation_rejects_invalid_inputs() -> None:
         run_spi_mitigation(plasma_energy_mj=0.0, save_plot=False, verbose=False)
     with pytest.raises(ValueError, match="neon_quantity_mol"):
         run_spi_mitigation(neon_quantity_mol=-0.1, save_plot=False, verbose=False)
+    with pytest.raises(ValueError, match="argon_quantity_mol"):
+        run_spi_mitigation(argon_quantity_mol=-0.1, save_plot=False, verbose=False)
     with pytest.raises(ValueError, match="dt_s"):
         run_spi_mitigation(dt_s=0.0, save_plot=False, verbose=False)

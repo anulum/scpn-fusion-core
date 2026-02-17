@@ -8,7 +8,10 @@ from __future__ import annotations
 import numpy as np
 
 from scpn_fusion.control.advanced_soc_fusion_learning import FusionAIAgent
-from scpn_fusion.control.disruption_contracts import run_disruption_episode
+from scpn_fusion.control.disruption_contracts import (
+    run_disruption_episode,
+    run_real_shot_replay,
+)
 from scpn_fusion.core.global_design_scanner import GlobalDesignExplorer
 from scpn_fusion.nuclear.blanket_neutronics import BreedingBlanket
 
@@ -41,3 +44,37 @@ def test_run_disruption_episode_contract_smoke() -> None:
     assert float(out["tbr_proxy"]) > 0.0
     assert float(out["halo_current_ma"]) >= 0.0
     assert float(out["runaway_beam_ma"]) >= 0.0
+    assert float(out["argon_quantity_mol"]) >= 0.0
+    assert float(out["xenon_quantity_mol"]) >= 0.0
+    assert float(out["total_impurity_mol"]) >= float(out["neon_quantity_mol"])
+
+
+def test_run_real_shot_replay_reports_impurity_cocktail_fields() -> None:
+    agent = FusionAIAgent(epsilon=0.05)
+    n = 220
+    t = np.linspace(0.0, 0.22, n, dtype=np.float64)
+    dBdt = 0.45 + 0.10 * np.sin(2.0 * np.pi * 5.0 * t)
+    dBdt += 0.35 * np.exp(-(((t - 0.18) / 0.018) ** 2))
+    n1 = 0.20 + 0.55 * np.exp(-(((t - 0.18) / 0.020) ** 2))
+    n2 = 0.08 + 0.20 * np.exp(-(((t - 0.18) / 0.022) ** 2))
+    shot_data = {
+        "time_s": t,
+        "Ip_MA": np.full(n, 12.0, dtype=np.float64),
+        "beta_N": np.full(n, 2.2, dtype=np.float64),
+        "n1_amp": n1,
+        "n2_amp": n2,
+        "dBdt_gauss_per_s": dBdt,
+        "is_disruption": True,
+        "disruption_time_idx": 200,
+    }
+    out = run_real_shot_replay(
+        shot_data=shot_data,
+        rl_agent=agent,
+        risk_threshold=0.55,
+        spi_trigger_risk=0.72,
+        window_size=96,
+    )
+    assert "argon_mol" in out
+    assert "xenon_mol" in out
+    assert "total_impurity_mol" in out
+    assert float(out["total_impurity_mol"]) >= float(out["neon_mol"])

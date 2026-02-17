@@ -39,7 +39,7 @@ def synthetic_disruption_signal(
 ) -> tuple[np.ndarray, dict[str, float]]:
     t = np.linspace(0.0, 1.0, int(window), dtype=np.float64)
     base = 0.68 + 0.10 * np.sin(2.0 * np.pi * 2.4 * t + rng.uniform(-0.4, 0.4))
-    elm = disturbance * (0.30 * np.exp(-((t - 0.78) / 0.10) ** 2))
+    elm = disturbance * (0.30 * np.exp(-(((t - 0.78) / 0.10) ** 2)))
     signal = np.clip(base + elm + rng.normal(0.0, 0.018, size=t.shape), 0.01, None)
     n1 = float(0.08 + 0.55 * disturbance + rng.uniform(0.00, 0.05))
     n2 = float(0.05 + 0.32 * disturbance + rng.uniform(0.00, 0.04))
@@ -73,26 +73,48 @@ def mcnp_lite_tbr(
 def impurity_transport_response(
     *,
     neon_quantity_mol: float,
+    argon_quantity_mol: float,
+    xenon_quantity_mol: float,
     disturbance: float,
     seed_shift: int,
 ) -> dict[str, float]:
     n_steps = 240
     dt = 1.25e-4
     t = np.arange(n_steps, dtype=np.float64) * dt
-    source = float(neon_quantity_mol) * np.exp(-t / 0.004)
-    sink_rate = 120.0 + 35.0 * float(disturbance)
+    neon = max(float(neon_quantity_mol), 0.0)
+    argon = max(float(argon_quantity_mol), 0.0)
+    xenon = max(float(xenon_quantity_mol), 0.0)
+    source_strength = float(1.00 * neon + 1.35 * argon + 1.90 * xenon)
+    source = source_strength * np.exp(-t / 0.004)
+    sink_rate = 120.0 + 35.0 * float(disturbance) + 45.0 * (argon + 1.2 * xenon)
     n_imp = np.zeros_like(t)
     n_imp[0] = source[0]
     for i in range(1, n_steps):
         dn = source[i] - sink_rate * n_imp[i - 1]
         n_imp[i] = max(0.0, n_imp[i - 1] + dt * dn)
     weighted = float(np.mean(n_imp[-80:]))
-    zeff_eff = float(1.05 + 42.0 * weighted + 0.22 * disturbance)
-    rad_mw = float((24.0 + 95.0 * weighted) * (1.0 + 0.15 * disturbance))
+    cocktail_zeff = ShatteredPelletInjection.estimate_z_eff_cocktail(
+        neon_quantity_mol=neon,
+        argon_quantity_mol=argon,
+        xenon_quantity_mol=xenon,
+    )
+    zeff_eff = float(
+        np.clip(
+            0.65 * cocktail_zeff + 0.35 * (1.05 + 42.0 * weighted + 0.22 * disturbance),
+            1.0,
+            12.0,
+        )
+    )
+    rad_mw = float(
+        (24.0 + 95.0 * weighted)
+        * (1.0 + 0.15 * disturbance)
+        * (1.0 + 0.035 * max(cocktail_zeff - 1.0, 0.0))
+    )
     return {
         "zeff_eff": zeff_eff,
         "impurity_radiation_mw": rad_mw,
         "impurity_decay_tau_ms": float(1e3 / max(sink_rate, 1e-9)),
+        "total_impurity_mol": float(neon + argon + xenon),
         "seed_shift": float(seed_shift),
     }
 
@@ -164,22 +186,23 @@ def run_disruption_episode(
     rl_action = int(rl_agent.choose_action(rl_state, rng))
     rl_action_bias = {-1: -1.0, 0: 0.0, 1: 1.0}[rl_action - 1]
 
-    neon_quantity_mol = float(
-        np.clip(
-            0.05
-            + 0.15 * risk_before
-            + 0.07 * disturbance
-            + 0.02 * rl_action_bias,
-            0.03,
-            0.24,
-        )
+    cocktail = ShatteredPelletInjection.estimate_mitigation_cocktail(
+        risk_score=risk_before,
+        disturbance=disturbance,
+        action_bias=rl_action_bias,
     )
+    neon_quantity_mol = float(cocktail["neon_quantity_mol"])
+    argon_quantity_mol = float(cocktail["argon_quantity_mol"])
+    xenon_quantity_mol = float(cocktail["xenon_quantity_mol"])
+    total_impurity_mol = float(cocktail["total_quantity_mol"])
     spi = ShatteredPelletInjection(
         Plasma_Energy_MJ=pre_energy_mj,
         Plasma_Current_MA=pre_current_ma,
     )
     _, _, _, spi_diag = spi.trigger_mitigation(
         neon_quantity_mol=neon_quantity_mol,
+        argon_quantity_mol=argon_quantity_mol,
+        xenon_quantity_mol=xenon_quantity_mol,
         return_diagnostics=True,
         duration_s=0.03,
         dt_s=5e-5,
@@ -192,7 +215,7 @@ def run_disruption_episode(
     )
     mitigation_strength = float(
         np.clip(
-            1.60 * neon_quantity_mol
+            1.60 * total_impurity_mol
             + 0.03 * float(spi_diag["z_eff"])
             + 0.10 * (rl_action_bias + 1.0),
             0.08,
@@ -201,6 +224,8 @@ def run_disruption_episode(
     )
     impurity = impurity_transport_response(
         neon_quantity_mol=neon_quantity_mol,
+        argon_quantity_mol=argon_quantity_mol,
+        xenon_quantity_mol=xenon_quantity_mol,
         disturbance=disturbance,
         seed_shift=rl_action,
     )
@@ -230,11 +255,15 @@ def run_disruption_episode(
         "toroidal_asymmetry_index": float(
             max(
                 0.0,
-                toroidal["toroidal_asymmetry_index"] * (1.0 - 0.72 * mitigation_strength),
+                toroidal["toroidal_asymmetry_index"]
+                * (1.0 - 0.72 * mitigation_strength),
             )
         ),
         "toroidal_radial_spread": float(
-            max(0.0, toroidal["toroidal_radial_spread"] * (1.0 - 0.60 * mitigation_strength))
+            max(
+                0.0,
+                toroidal["toroidal_radial_spread"] * (1.0 - 0.60 * mitigation_strength),
+            )
         ),
     }
     post_signal = np.clip(signal * (1.0 - 0.60 * mitigation_strength), 0.01, None)
@@ -299,6 +328,9 @@ def run_disruption_episode(
         "risk_before": risk_before,
         "risk_after": risk_after,
         "neon_quantity_mol": neon_quantity_mol,
+        "argon_quantity_mol": argon_quantity_mol,
+        "xenon_quantity_mol": xenon_quantity_mol,
+        "total_impurity_mol": total_impurity_mol,
         "zeff": zeff,
         "impurity_decay_tau_ms": float(impurity["impurity_decay_tau_ms"]),
         "halo_current_ma": halo_current_ma,
@@ -348,12 +380,22 @@ def run_real_shot_replay(
     dict with replay results including risk time-series and mitigation outcomes.
     """
     time_s = np.asarray(shot_data.get("time_s", []), dtype=np.float64)
-    n1_amp = np.asarray(shot_data.get("n1_amp", np.zeros_like(time_s)), dtype=np.float64)
-    n2_amp = np.asarray(shot_data.get("n2_amp", np.zeros_like(time_s)), dtype=np.float64)
+    n1_amp = np.asarray(
+        shot_data.get("n1_amp", np.zeros_like(time_s)), dtype=np.float64
+    )
+    n2_amp = np.asarray(
+        shot_data.get("n2_amp", np.zeros_like(time_s)), dtype=np.float64
+    )
     n3_amp = n2_amp * 0.4  # approximate n3 from n2
-    dBdt = np.asarray(shot_data.get("dBdt_gauss_per_s", np.zeros_like(time_s)), dtype=np.float64)
-    beta_N = np.asarray(shot_data.get("beta_N", np.ones_like(time_s) * 2.0), dtype=np.float64)
-    Ip_MA = np.asarray(shot_data.get("Ip_MA", np.ones_like(time_s) * 1.0), dtype=np.float64)
+    dBdt = np.asarray(
+        shot_data.get("dBdt_gauss_per_s", np.zeros_like(time_s)), dtype=np.float64
+    )
+    beta_N = np.asarray(
+        shot_data.get("beta_N", np.ones_like(time_s) * 2.0), dtype=np.float64
+    )
+    Ip_MA = np.asarray(
+        shot_data.get("Ip_MA", np.ones_like(time_s) * 1.0), dtype=np.float64
+    )
 
     is_disruption = bool(shot_data.get("is_disruption", False))
     disruption_time_idx = int(shot_data.get("disruption_time_idx", -1))
@@ -368,7 +410,7 @@ def run_real_shot_replay(
     # Slide through the shot
     for t in range(min(window_size, n_steps), n_steps):
         # Build signal window from dB/dt
-        signal_window = dBdt[t - window_size:t] if t >= window_size else dBdt[:t]
+        signal_window = dBdt[t - window_size : t] if t >= window_size else dBdt[:t]
         if signal_window.size < 8:
             continue
 
@@ -376,9 +418,9 @@ def run_real_shot_replay(
             "toroidal_n1_amp": float(np.clip(n1_amp[t], 0, 10)),
             "toroidal_n2_amp": float(np.clip(n2_amp[t], 0, 10)),
             "toroidal_n3_amp": float(np.clip(n3_amp[t], 0, 10)),
-            "toroidal_asymmetry_index": float(np.sqrt(
-                n1_amp[t] ** 2 + n2_amp[t] ** 2 + n3_amp[t] ** 2
-            )),
+            "toroidal_asymmetry_index": float(
+                np.sqrt(n1_amp[t] ** 2 + n2_amp[t] ** 2 + n3_amp[t] ** 2)
+            ),
             "toroidal_radial_spread": float(0.02 + 0.05 * n1_amp[t]),
         }
 
@@ -399,7 +441,17 @@ def run_real_shot_replay(
     if spi_triggered:
         pre_energy_mj = float(np.clip(300 + 50 * np.mean(beta_N), 200, 500))
         pre_current_ma = float(np.clip(np.mean(Ip_MA), 0.5, 20))
-        neon_mol = float(np.clip(0.05 + 0.12 * risk_series[spi_trigger_idx], 0.03, 0.24))
+        risk_now = float(np.clip(risk_series[spi_trigger_idx], 0.0, 1.0))
+        disturbance_now = float(np.clip(risk_now + 0.10 * np.mean(n1_amp), 0.0, 1.0))
+        cocktail = ShatteredPelletInjection.estimate_mitigation_cocktail(
+            risk_score=risk_now,
+            disturbance=disturbance_now,
+            action_bias=0.0,
+        )
+        neon_mol = float(cocktail["neon_quantity_mol"])
+        argon_mol = float(cocktail["argon_quantity_mol"])
+        xenon_mol = float(cocktail["xenon_quantity_mol"])
+        total_impurity_mol = float(cocktail["total_quantity_mol"])
 
         spi = ShatteredPelletInjection(
             Plasma_Energy_MJ=pre_energy_mj,
@@ -407,6 +459,8 @@ def run_real_shot_replay(
         )
         _, _, _, spi_diag = spi.trigger_mitigation(
             neon_quantity_mol=neon_mol,
+            argon_quantity_mol=argon_mol,
+            xenon_quantity_mol=xenon_mol,
             return_diagnostics=True,
             duration_s=0.03,
             dt_s=5e-5,
@@ -420,6 +474,9 @@ def run_real_shot_replay(
         final_current = float(np.mean(Ip_MA))
         z_eff = 1.0
         neon_mol = 0.0
+        argon_mol = 0.0
+        xenon_mol = 0.0
+        total_impurity_mol = 0.0
 
     # Detection timing
     detection_lead_ms = -1.0
@@ -434,7 +491,9 @@ def run_real_shot_replay(
     if is_disruption:
         if spi_triggered and spi_trigger_idx < disruption_time_idx:
             # SPI triggered before disruption — check if it mitigated
-            post_risk = np.mean(risk_series[spi_trigger_idx:min(spi_trigger_idx + 50, n_steps)])
+            post_risk = np.mean(
+                risk_series[spi_trigger_idx : min(spi_trigger_idx + 50, n_steps)]
+            )
             prevented = bool(post_risk < 0.88 and tau_cq_ms > 0)
     else:
         prevented = not spi_triggered  # For safe shots, not triggering SPI = correct
@@ -449,6 +508,9 @@ def run_real_shot_replay(
         "detection_lead_ms": round(detection_lead_ms, 1),
         "prevented": prevented,
         "neon_mol": round(neon_mol, 4),
+        "argon_mol": round(argon_mol, 4),
+        "xenon_mol": round(xenon_mol, 4),
+        "total_impurity_mol": round(total_impurity_mol, 4),
         "tau_cq_ms": round(tau_cq_ms, 2),
         "final_current_MA": round(final_current, 3),
         "z_eff": round(z_eff, 2),

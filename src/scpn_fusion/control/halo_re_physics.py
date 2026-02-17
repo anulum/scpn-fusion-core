@@ -605,11 +605,6 @@ def run_disruption_ensemble(
     )
     neon_range = _as_range("neon_range", neon_range, min_allowed=0.0)
 
-    low_risk_neon = float(
-        np.clip(neon_range[0] + 0.25 * (neon_range[1] - neon_range[0]), *neon_range)
-    )
-    high_risk_neon = neon_range[1]
-
     rng = np.random.default_rng(seed)
 
     per_run: list[dict] = []
@@ -628,24 +623,35 @@ def run_disruption_ensemble(
 
         # 2. Act: Decide on mitigation strategy
         if risk_score > 0.5:  # More sensitive trigger
-            # High Risk! Trigger AEGIS SPI (Targeted injection)
-            neon_mol = high_risk_neon
             mitigation_triggered = True
             seed_re_fraction = 1e-15  # Near-total seed suppression
             tpf_suppression = 0.4
             tau_cq_base = 1.2  # Very soft quench
         else:
-            # Low Risk: Standard safety injection
-            neon_mol = low_risk_neon
             mitigation_triggered = False
             seed_re_fraction = 1e-10
             tpf_suppression = 0.8
             tau_cq_base = 0.6
 
-        # SPI Z_eff from neon quantity
+        # SPI Z_eff from impurity cocktail (Ne/Ar/Xe)
         from scpn_fusion.control.spi_mitigation import ShatteredPelletInjection
 
-        z_eff = ShatteredPelletInjection.estimate_z_eff(neon_mol)
+        cocktail = ShatteredPelletInjection.estimate_mitigation_cocktail(
+            risk_score=risk_score,
+            disturbance=disturbance,
+            action_bias=1.0 if mitigation_triggered else -0.5,
+        )
+        impurity_total_mol = float(np.clip(cocktail["total_quantity_mol"], *neon_range))
+        scale = impurity_total_mol / max(float(cocktail["total_quantity_mol"]), 1e-12)
+        neon_mol = float(cocktail["neon_quantity_mol"] * scale)
+        argon_mol = float(cocktail["argon_quantity_mol"] * scale)
+        xenon_mol = float(cocktail["xenon_quantity_mol"] * scale)
+
+        z_eff = ShatteredPelletInjection.estimate_z_eff_cocktail(
+            neon_quantity_mol=neon_mol,
+            argon_quantity_mol=argon_mol,
+            xenon_quantity_mol=xenon_mol,
+        )
         tau_cq = ShatteredPelletInjection.estimate_tau_cq(tau_cq_base, z_eff)
 
         # TPF varies with disturbance (1.5-2.5)
@@ -664,16 +670,16 @@ def run_disruption_ensemble(
             n_e=1e20,
             T_e_keV=20.0,
             z_eff=z_eff,
-            neon_mol=neon_mol,
+            neon_mol=impurity_total_mol,
         )
         # Thermal quench temperature scaling
-        T_e_post = max(0.02, 1.0 * (1.0 - 0.98 * min(neon_mol / 0.8, 1.0)))
+        T_e_post = max(0.02, 1.0 * (1.0 - 0.98 * min(impurity_total_mol / 0.8, 1.0)))
         re_result = re_model.simulate(
             plasma_current_ma=Ip_ma,
             tau_cq_s=tau_cq,
             T_e_quench_keV=T_e_post,
             neon_z_eff=z_eff,
-            neon_mol=neon_mol,
+            neon_mol=impurity_total_mol,
             seed_re_fraction=seed_re_fraction,
         )
 
@@ -691,6 +697,9 @@ def run_disruption_ensemble(
             "Ip_ma": Ip_ma,
             "W_mj": W_mj,
             "neon_mol": neon_mol,
+            "argon_mol": argon_mol,
+            "xenon_mol": xenon_mol,
+            "total_impurity_mol": impurity_total_mol,
             "disturbance": disturbance,
             "mitigation_triggered": mitigation_triggered,
             "z_eff": z_eff,
@@ -709,7 +718,7 @@ def run_disruption_ensemble(
         if verbose:
             status = "PREVENTED" if prevented else "FAILED"
             print(
-                f"  Run {run_idx:3d}: Ip={Ip_ma:.1f}MA neon={neon_mol:.3f}mol "
+                f"  Run {run_idx:3d}: Ip={Ip_ma:.1f}MA impurities={impurity_total_mol:.3f}mol "
                 f"halo={halo_result.peak_halo_ma:.2f}MA "
                 f"RE={re_result.peak_re_current_ma:.3f}MA → {status}"
             )

@@ -164,6 +164,9 @@ class TestDisruptionEnsemble:
         assert "tpf_product" in run
         assert "wall_force_mn_m" in run
         assert "avalanche_gain" in run
+        assert "argon_mol" in run
+        assert "xenon_mol" in run
+        assert "total_impurity_mol" in run
         assert "prevented" in run
 
     def test_rejects_invalid_ranges(self):
