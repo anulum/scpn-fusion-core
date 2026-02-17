@@ -79,3 +79,5 @@ def test_task2_markdown_contains_required_sections() -> None:
     assert "Disruption Predictor AUC" in text
     assert "Equilibrium Latency (10x Fault Runs)" in text
     assert "Consumer Hardware Latency Profiles" in text
+    assert "Wall-latency advisory pass" in text
+    assert "advisory `<= " in text

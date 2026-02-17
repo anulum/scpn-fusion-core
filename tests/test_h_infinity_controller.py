@@ -57,6 +57,7 @@ def test_h_infinity_exposes_feasibility_diagnostics() -> None:
     assert isinstance(ctrl.robust_feasible, bool)
     assert np.isfinite(ctrl.spectral_radius_xy)
     assert ctrl.spectral_radius_xy >= 0.0
+    assert ctrl.robust_feasible == bool(ctrl.spectral_radius_xy < ctrl.gamma**2)
 
 
 def test_h_infinity_rejects_invalid_gamma() -> None:
