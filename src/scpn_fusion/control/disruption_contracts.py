@@ -8,11 +8,19 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.control.advanced_soc_fusion_learning import FusionAIAgent
 from scpn_fusion.control.disruption_predictor import predict_disruption_risk
 from scpn_fusion.control.spi_mitigation import ShatteredPelletInjection
 from scpn_fusion.core.global_design_scanner import GlobalDesignExplorer
+
+
+def require_finite_float(name: str, value: Any) -> float:
+    out = float(value)
+    if not np.isfinite(out):
+        raise ValueError(f"{name} must be finite.")
+    return out
 
 
 def require_int(name: str, value: Any, minimum: int) -> int:
@@ -25,10 +33,29 @@ def require_int(name: str, value: Any, minimum: int) -> int:
 
 
 def require_fraction(name: str, value: Any) -> float:
-    out = float(value)
+    out = require_finite_float(name, value)
     if not np.isfinite(out) or out < 0.0 or out > 1.0:
         raise ValueError(f"{name} must be finite and in [0, 1].")
     return out
+
+
+def require_1d_array(
+    name: str,
+    value: Any,
+    *,
+    minimum_size: int = 1,
+    expected_size: int | None = None,
+) -> NDArray[np.float64]:
+    arr = np.asarray(value, dtype=np.float64)
+    if arr.ndim != 1:
+        raise ValueError(f"{name} must be a 1D array.")
+    if arr.size < minimum_size:
+        raise ValueError(f"{name} must have at least {minimum_size} samples.")
+    if expected_size is not None and arr.size != expected_size:
+        raise ValueError(f"{name} must have {expected_size} samples (got {arr.size}).")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain only finite values.")
+    return arr
 
 
 def synthetic_disruption_signal(
@@ -36,7 +63,7 @@ def synthetic_disruption_signal(
     rng: np.random.Generator,
     disturbance: float,
     window: int = 220,
-) -> tuple[np.ndarray, dict[str, float]]:
+) -> tuple[NDArray[np.float64], dict[str, float]]:
     t = np.linspace(0.0, 1.0, int(window), dtype=np.float64)
     base = 0.68 + 0.10 * np.sin(2.0 * np.pi * 2.4 * t + rng.uniform(-0.4, 0.4))
     elm = disturbance * (0.30 * np.exp(-(((t - 0.78) / 0.10) ** 2)))
@@ -349,7 +376,7 @@ def run_disruption_episode(
 
 def run_real_shot_replay(
     *,
-    shot_data: dict[str, np.ndarray],
+    shot_data: dict[str, Any],
     rl_agent: FusionAIAgent,
     base_tbr: float = 1.15,
     risk_threshold: float = 0.65,
@@ -379,27 +406,52 @@ def run_real_shot_replay(
     -------
     dict with replay results including risk time-series and mitigation outcomes.
     """
-    time_s = np.asarray(shot_data.get("time_s", []), dtype=np.float64)
-    n1_amp = np.asarray(
-        shot_data.get("n1_amp", np.zeros_like(time_s)), dtype=np.float64
+    risk_threshold = require_fraction("risk_threshold", risk_threshold)
+    spi_trigger_risk = require_fraction("spi_trigger_risk", spi_trigger_risk)
+    if spi_trigger_risk < risk_threshold:
+        raise ValueError("spi_trigger_risk must be >= risk_threshold.")
+    window_size = require_int("window_size", window_size, 8)
+
+    time_s = require_1d_array("shot_data.time_s", shot_data.get("time_s", []), minimum_size=16)
+    if np.any(np.diff(time_s) <= 0.0):
+        raise ValueError("shot_data.time_s must be strictly increasing.")
+
+    n_steps = int(time_s.size)
+    n1_amp = require_1d_array(
+        "shot_data.n1_amp",
+        shot_data.get("n1_amp", np.zeros(n_steps, dtype=np.float64)),
+        expected_size=n_steps,
     )
-    n2_amp = np.asarray(
-        shot_data.get("n2_amp", np.zeros_like(time_s)), dtype=np.float64
+    n2_amp = require_1d_array(
+        "shot_data.n2_amp",
+        shot_data.get("n2_amp", np.zeros(n_steps, dtype=np.float64)),
+        expected_size=n_steps,
+    )
+    dBdt = require_1d_array(
+        "shot_data.dBdt_gauss_per_s",
+        shot_data.get("dBdt_gauss_per_s", np.zeros(n_steps, dtype=np.float64)),
+        expected_size=n_steps,
+    )
+    beta_N = require_1d_array(
+        "shot_data.beta_N",
+        shot_data.get("beta_N", np.ones(n_steps, dtype=np.float64) * 2.0),
+        expected_size=n_steps,
+    )
+    Ip_MA = require_1d_array(
+        "shot_data.Ip_MA",
+        shot_data.get("Ip_MA", np.ones(n_steps, dtype=np.float64)),
+        expected_size=n_steps,
     )
     n3_amp = n2_amp * 0.4  # approximate n3 from n2
-    dBdt = np.asarray(
-        shot_data.get("dBdt_gauss_per_s", np.zeros_like(time_s)), dtype=np.float64
-    )
-    beta_N = np.asarray(
-        shot_data.get("beta_N", np.ones_like(time_s) * 2.0), dtype=np.float64
-    )
-    Ip_MA = np.asarray(
-        shot_data.get("Ip_MA", np.ones_like(time_s) * 1.0), dtype=np.float64
-    )
 
     is_disruption = bool(shot_data.get("is_disruption", False))
     disruption_time_idx = int(shot_data.get("disruption_time_idx", -1))
-    n_steps = time_s.size
+    if disruption_time_idx >= n_steps:
+        raise ValueError(
+            f"disruption_time_idx must be < number of samples ({n_steps}), got {disruption_time_idx}."
+        )
+    if disruption_time_idx < -1:
+        raise ValueError("disruption_time_idx must be >= -1.")
 
     risk_series = np.zeros(n_steps, dtype=np.float64)
     alarm_series = np.zeros(n_steps, dtype=bool)
