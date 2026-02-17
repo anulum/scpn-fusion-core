@@ -108,6 +108,43 @@ class TestRunawayElectronModel:
         with pytest.raises(ValueError):
             model.simulate(dt_s=0.1, duration_s=0.01)
 
+    def test_relativistic_losses_reduce_runaway_peak(self):
+        baseline = RunawayElectronModel(
+            n_e=2e20,
+            T_e_keV=20.0,
+            z_eff=2.0,
+            magnetic_field_t=5.3,
+            enable_relativistic_losses=False,
+            neon_mol=0.2,
+        ).simulate(
+            plasma_current_ma=15.0,
+            tau_cq_s=0.003,
+            T_e_quench_keV=0.05,
+            neon_z_eff=3.0,
+            neon_mol=0.2,
+            duration_s=0.02,
+            dt_s=1e-5,
+            seed_re_fraction=1e-5,
+        )
+        damped = RunawayElectronModel(
+            n_e=2e20,
+            T_e_keV=20.0,
+            z_eff=2.0,
+            magnetic_field_t=5.3,
+            enable_relativistic_losses=True,
+            neon_mol=0.2,
+        ).simulate(
+            plasma_current_ma=15.0,
+            tau_cq_s=0.003,
+            T_e_quench_keV=0.05,
+            neon_z_eff=3.0,
+            neon_mol=0.2,
+            duration_s=0.02,
+            dt_s=1e-5,
+            seed_re_fraction=1e-5,
+        )
+        assert damped.peak_re_current_ma <= baseline.peak_re_current_ma
+
     def test_extreme_conditions_remain_finite(self):
         model = RunawayElectronModel(n_e=5e20, T_e_keV=25.0, z_eff=3.0, neon_mol=0.8)
         result = model.simulate(

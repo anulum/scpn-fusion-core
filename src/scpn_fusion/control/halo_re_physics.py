@@ -310,11 +310,15 @@ class RunawayElectronModel:
         T_e_keV: float = 20.0,
         z_eff: float = 1.0,
         major_radius_m: float = 6.2,
+        magnetic_field_t: float = 5.3,
+        enable_relativistic_losses: bool = True,
         neon_mol: float = 0.0,
     ) -> None:
         self.n_e_free = _as_positive_float("n_e", n_e)
         self.T_e0 = _as_positive_float("T_e_keV", T_e_keV)
         self.R0 = _as_positive_float("major_radius_m", major_radius_m)
+        self.B_t = _as_positive_float("magnetic_field_t", magnetic_field_t)
+        self.enable_relativistic_losses = bool(enable_relativistic_losses)
 
         # Collision time: based on free electrons
         v_th = np.sqrt(2.0 * self.T_e0 * 1e3 * _E_CHARGE / _M_ELECTRON)
@@ -455,6 +459,29 @@ class RunawayElectronModel:
             return 0.0
         return float(max(fp_rate, 0.0))
 
+    def _relativistic_loss_rate(self, *, E: float, n_re: float) -> float:
+        """Approximate synchrotron + bremsstrahlung damping rate (s^-1 m^-3)."""
+        if not self.enable_relativistic_losses:
+            return 0.0
+        if not np.isfinite(E) or not np.isfinite(n_re):
+            return 0.0
+        if n_re <= 0.0:
+            return 0.0
+
+        e_ratio = max(E / max(self.E_c, 1e-9), 0.0)
+        gamma_eff = 1.0 + 4.0 * max(e_ratio - 1.0, 0.0)
+
+        # Empirical loss time scales chosen for deterministic damping behavior.
+        tau_sync = 0.08 / max(self.B_t * self.B_t * gamma_eff, 1e-12)
+        tau_brem = 0.12 / max(
+            (1.0 + 0.08 * self.Z_eff) * (self.n_e_tot / 1e20) * gamma_eff, 1e-12
+        )
+        tau_rel = max(min(tau_sync, tau_brem), 1e-6)
+        loss = n_re / tau_rel
+        if not np.isfinite(loss):
+            return 0.0
+        return float(max(loss, 0.0))
+
     def simulate(
         self,
         plasma_current_ma: float = 15.0,
@@ -529,6 +556,7 @@ class RunawayElectronModel:
             avalanche_rates.append(gamma_av)
             gamma_FP = self._fokker_planck_generation(E_tor, n_re)
             fp_rates.append(gamma_FP)
+            relativistic_loss = self._relativistic_loss_rate(E=E_tor, n_re=n_re)
 
             # 4. Collisional loss
             loss_rate = (
@@ -538,7 +566,7 @@ class RunawayElectronModel:
                 loss_rate = 0.0
 
             # 5. Evolution
-            dn_re = (gamma_D + gamma_av + gamma_FP - loss_rate) * dt
+            dn_re = (gamma_D + gamma_av + gamma_FP - loss_rate - relativistic_loss) * dt
             if not np.isfinite(dn_re):
                 dn_re = 0.0
             n_re = max(n_re + dn_re, 0.0)
