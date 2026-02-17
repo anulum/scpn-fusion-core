@@ -50,43 +50,33 @@ the IPB98(y,2) scaling law (ITER Physics Basis, Nuclear Fusion 39, 1999):
             \; P_\text{loss}^{-0.69} \; R^{1.97} \; \kappa^{0.78}
             \; \varepsilon^{0.58} \; M^{0.19}
 
-Validated accuracy against the ITPA H-mode database:
+Validated accuracy against the ITPA H-mode database (20-shot subset):
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 15 25 25 15
+   :widths: 45 20 35
 
-   * - Machine
-     - Shots
-     - :math:`\tau_E` measured (s)
-     - :math:`\tau_E` predicted (s)
-     - Error
-   * - JET
-     - 3
-     - 0.15--0.85
-     - 0.14--0.82
-     - 5--8%
-   * - DIII-D
-     - 3
-     - 0.10--0.18
-     - 0.09--0.17
-     - 6--10%
-   * - ASDEX-U
-     - 3
-     - 0.05--0.12
-     - 0.05--0.11
-     - 4--9%
-   * - C-Mod
-     - 2
-     - 0.02--0.04
-     - 0.02--0.04
-     - 3--7%
+   * - Metric
+     - Value
+     - Source
+   * - :math:`\tau_E` RMSE
+     - ``0.1287 s``
+     - ``validation/validate_transport_itpa.py``
+   * - :math:`\tau_E` relative RMSE
+     - ``28.6%``
+     - ``validation/validate_transport_itpa.py``
+   * - :math:`\tau_E` mean abs. relative error
+     - ``32.5%``
+     - ``validation/reports/rmse_dashboard.json``
+   * - 2-sigma coverage
+     - ``95%`` (19/20 shots)
+     - ``validation/validate_transport_itpa.py``
 
 .. note::
 
-   These are **scaling law errors**, not full-profile RMSE comparisons.
-   The confinement time is computed from the 0D IPB98(y,2) formula
-   applied to the ITPA H-mode dataset entries.
+   The ``13.5%`` value reported for the neural transport MLP is a
+   surrogate-fit metric and is **not** the same as full physics-transport
+   validation on the 20-shot ITPA lane.
 
 SPARC Equilibrium Topology Validation
 ---------------------------------------

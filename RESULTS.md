@@ -86,6 +86,20 @@
 | Guaranteed robustness | <=20% multiplicative plant uncertainty | Verified by perturbation campaign |
 | Gamma (attenuation level) | Bisection search | Optimal gamma found automatically |
 | Outperforms PID on VDE | Yes | Lower ISE, faster settling |
+| Verification artifact | `tests/test_h_infinity_controller.py` | Riccati residual + stability regression lock |
+
+## Transport Metrics (Disambiguated)
+
+| Lane | Metric | Value | Notes |
+|------|--------|-------|-------|
+| Physics transport (Gyro-Bohm + Chang-Hinton + EPED-like pedestal) | tau_E RMSE | 0.1287 s | 20-shot ITPA run (`validation/validate_transport_itpa.py`) |
+| Physics transport (Gyro-Bohm + Chang-Hinton + EPED-like pedestal) | tau_E relative RMSE | 28.6% | Same 20-shot ITPA run |
+| Physics transport (Gyro-Bohm + Chang-Hinton + EPED-like pedestal) | tau_E mean absolute relative error | 32.5% | RMSE dashboard aggregate (`validation/reports/rmse_dashboard.json`) |
+| Neural transport MLP surrogate | tau_E RMSE % | 13.5% | Surrogate regression lane only (not full physics transport) |
+
+> **Important:** the 13.5% value belongs to the neural surrogate fit, while
+> 28.6%/32.5% are full physics-transport validation metrics. They are not
+> interchangeable.
 
 ## Surrogates
 
@@ -205,6 +219,12 @@ Reference: Sauter et al., Phys. Plasmas 6, 2834 (1999)
 | SNN | -0.045 | 78 | 3.0% | 0.98 | 0.88 |
 
 DEF = Disruption Extension Factor (controlled t_disruption / uncontrolled t_disruption).
+
+No single controller is a decisive winner across all objectives:
+- Best latency: `SNN` (78 us)
+- Best disruption rate and reward: `MPC` (0.5%, -0.029)
+- Best balanced robust baseline: `H-infinity` (1.0%, 162 us)
+- Baseline classical reference: `PID`
 
 ### Disturbance Rejection Benchmark (v2.0.0)
 

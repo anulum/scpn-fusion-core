@@ -55,7 +55,7 @@ scpn-fusion-core/
 │   │   ├── rf_heating.py             ICRH/ECRH/LHCD heating models
 │   │   ├── divertor_thermal_sim.py   Divertor heat-flux solver
 │   │   ├── hall_mhd_discovery.py     Hall-MHD two-fluid effects
-│   │   ├── sandpile_fusion_reactor   SOC criticality model
+│   │   ├── sandpile_fusion_reactor   Legacy SOC research lane (not in validated transport path)
 │   │   ├── neural_equilibrium.py     Neural-network equilibrium solver
 │   │   ├── fno_turbulence_suppressor Fourier Neural Operator turbulence model
 │   │   ├── turbulence_oracle.py      ITG/TEM turbulence predictor
@@ -72,7 +72,7 @@ scpn-fusion-core/
 │   │   ├── spi_mitigation.py         Shattered pellet injection
 │   │   ├── fusion_control_room.py    Integrated control room sim
 │   │   ├── neuro_cybernetic_controller  SNN-based feedback controller
-│   │   └── advanced_soc_fusion_learning Self-organized criticality RL
+│   │   └── advanced_soc_fusion_learning Legacy SOC RL utilities
 │   ├── nuclear/               # Nuclear engineering
 │   │   ├── blanket_neutronics.py     Tritium breeding ratio solver
 │   │   ├── nuclear_wall_interaction  PMI / first-wall damage
@@ -270,12 +270,12 @@ python -c "from scpn_fusion.core.eqdsk import read_geqdsk; eq = read_geqdsk('val
 | `nuclear` | Plasma-wall interaction & first-wall erosion | PWI angle-energy invariants tested |
 | `diagnostics` | Synthetic sensors + soft X-ray tomographic inversion | Forward models, SciPy fallback |
 | `spi` | Shattered pellet injection mitigation | Z_eff + CQ time constant |
-| `learning` | Self-organized criticality RL (SOC sandpile + Q-learning) | Bounded exploration, seeded replay |
+| `learning` | Legacy self-organized criticality RL utilities | Maintained for research reproducibility |
 | `divertor` | Divertor thermal load simulation | TEMHD Peltier effects |
 | `heating` | RF heating (ICRH / ECRH / LHCD ray tracing) | Resonance layer + deposition |
 | `sawtooth` | MHD sawtooth crash dynamics | Spectral solver |
 | `scanner` | Multi-objective global design scanner | Scoped RNG |
-| `sandpile` | SOC sandpile criticality model | Avalanche dynamics |
+| `sandpile` | Legacy SOC sandpile criticality model | Not part of release-gated transport metrics |
 
 ### Reduced-order / Surrogate — Functional but limited physics scope
 
@@ -463,6 +463,10 @@ sub-ms hardware-in-the-loop control latency, and a 50-run disruption
 mitigation ensemble. Re-run `python validation/collect_results.py` on your
 own hardware to reproduce.
 
+Controller benchmark interpretation is trade-off based:
+SNN is best on latency, MPC is best on disruption rate/reward, H-infinity is
+the strongest robust middle ground, and PID remains the classical baseline.
+
 ### Physics Model Limitations (Honest Assessment)
 
 This section documents the **actual** fidelity of each physics module.
@@ -515,6 +519,7 @@ Full documentation is hosted on **[GitHub Pages](https://anulum.github.io/scpn-f
 - [Solver Tuning Guide](docs/SOLVER_TUNING_GUIDE.md) (relaxation, Tikhonov, Huber, grid sizing, common pitfalls)
 - [Benchmarks & Comparisons](docs/BENCHMARKS.md)
 - [Benchmark Figures (static export)](docs/BENCHMARK_FIGURES.md)
+- [HIL Demo Register Map & Latency Budget](docs/hil_demo.md)
 - [Compact Reactor Findings](docs/COMPACT_REACTOR_FINDINGS.md)
 - [Physics Methods](docs/PHYSICS_METHODS_COMPLETE.md)
 - [ITER Validation](docs/VALIDATION_AGAINST_ITER.md)

@@ -143,14 +143,13 @@ The ``stability_analyzer`` module provides:
 - **Vertical stability** index (decay index :math:`n = -R/B_z \cdot \partial B_z/\partial R`) for positional control
 - **Beta limits** (:math:`\beta_N` Troyon limit, :math:`\beta_p` critical)
 
-Self-Organised Criticality
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Self-Organised Criticality (Legacy Research Lane)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``sandpile_fusion_reactor`` module models the plasma as a
-self-organised critical (SOC) system where the gradient-driven
-turbulent transport exhibits avalanche dynamics.  The sandpile model
-captures the bursty, intermittent nature of edge turbulence and can
-predict the onset of large transport events (ELMs).
+The ``sandpile_fusion_reactor`` module is retained as a legacy SOC
+research lane for reproducibility and exploratory avalanche studies.
+It is not part of the release-gated transport validation path (which is
+based on Gyro-Bohm + Chang-Hinton + EPED-like boundary scaling).
 
 Fusion Ignition and Burn Physics
 ----------------------------------
@@ -194,6 +193,6 @@ Related Modules
 - :mod:`scpn_fusion.core.mhd_sawtooth` -- sawtooth crash model
 - :mod:`scpn_fusion.core.hall_mhd_discovery` -- Hall-MHD effects
 - :mod:`scpn_fusion.core.stability_analyzer` -- stability margins
-- :mod:`scpn_fusion.core.sandpile_fusion_reactor` -- SOC criticality
+- :mod:`scpn_fusion.core.sandpile_fusion_reactor` -- SOC criticality (legacy lane)
 - :mod:`scpn_fusion.core.fusion_ignition_sim` -- ignition/burn physics
 - :mod:`scpn_fusion.core.wdm_engine` -- warm dense matter EOS

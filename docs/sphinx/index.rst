@@ -69,6 +69,7 @@ Key Features
    userguide/equilibrium
    userguide/transport
    userguide/control
+   userguide/hil
    userguide/nuclear
    userguide/diagnostics
    userguide/scpn_compiler

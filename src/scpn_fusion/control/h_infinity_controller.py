@@ -83,6 +83,11 @@ class HInfinityController:
         self.C1 = np.atleast_2d(np.asarray(C1, dtype=float))
         self.C2 = np.atleast_2d(np.asarray(C2, dtype=float))
 
+        if self.A.ndim != 2 or self.A.shape[0] != self.A.shape[1]:
+            raise ValueError("A must be a finite square matrix.")
+        if not np.all(np.isfinite(self.A)):
+            raise ValueError("A must contain only finite values.")
+
         # Ensure B1, B2 are column-shaped if 1D
         if self.B1.shape[0] == 1 and self.A.shape[0] > 1:
             self.B1 = self.B1.T
@@ -99,6 +104,23 @@ class HInfinityController:
         self.q = self.C1.shape[0]  # performance outputs
         self.l = self.C2.shape[0]  # measurement outputs
 
+        if self.B1.shape[0] != self.n:
+            raise ValueError("B1 must have the same number of rows as A.")
+        if self.B2.shape[0] != self.n:
+            raise ValueError("B2 must have the same number of rows as A.")
+        if self.C1.shape[1] != self.n:
+            raise ValueError("C1 must have the same number of columns as A.")
+        if self.C2.shape[1] != self.n:
+            raise ValueError("C2 must have the same number of columns as A.")
+        if not np.all(np.isfinite(self.B1)):
+            raise ValueError("B1 must contain only finite values.")
+        if not np.all(np.isfinite(self.B2)):
+            raise ValueError("B2 must contain only finite values.")
+        if not np.all(np.isfinite(self.C1)):
+            raise ValueError("C1 must contain only finite values.")
+        if not np.all(np.isfinite(self.C2)):
+            raise ValueError("C2 must contain only finite values.")
+
         # D12, D21 defaults
         if D12 is not None:
             self.D12 = np.atleast_2d(np.asarray(D12, dtype=float))
@@ -114,11 +136,22 @@ class HInfinityController:
             min_dim = min(self.l, self.p)
             self.D21[:min_dim, :min_dim] = np.eye(min_dim)
 
+        if self.D12.shape != (self.q, self.m):
+            raise ValueError("D12 must have shape (C1 rows, B2 columns).")
+        if self.D21.shape != (self.l, self.p):
+            raise ValueError("D21 must have shape (C2 rows, B1 columns).")
+        if not np.all(np.isfinite(self.D12)):
+            raise ValueError("D12 must contain only finite values.")
+        if not np.all(np.isfinite(self.D21)):
+            raise ValueError("D21 must contain only finite values.")
+
         # Find or use gamma
         if gamma is None:
             self.gamma = self._find_optimal_gamma()
         else:
             self.gamma = float(gamma)
+            if not np.isfinite(self.gamma) or self.gamma <= 1.0:
+                raise ValueError("gamma must be finite and > 1.0.")
 
         # Solve Riccati equations and compute gains
         self.X, self.Y, self.F, self.L_gain = self._synthesize(self.gamma)
@@ -139,27 +172,44 @@ class HInfinityController:
             F = -B2^T X  (state feedback gain)
             L = -Y C2^T  (observer gain)
         """
+        if not np.isfinite(gamma) or gamma <= 1.0:
+            raise ValueError("gamma must be finite and > 1.0.")
         g2 = gamma ** 2
 
-        # State feedback ARE:
-        # A^T X + X A - X (B2 B2^T - B1 B1^T / gamma^2) X + C1^T C1 = 0
-        R_x = self.B2 @ self.B2.T - self.B1 @ self.B1.T / g2
+        # State-feedback H-infinity ARE solved as an indefinite CARE:
+        # A^T X + X A - X (B2 B2^T - B1 B1^T / gamma^2) X + C1^T C1 = 0.
+        # Use B_aug = [B2, B1/gamma] and R_aug = diag(I, -I) so that:
+        # -X B_aug R_aug^{-1} B_aug^T X == -X(B2B2^T - B1B1^T/gamma^2)X.
+        B_aug_x = np.hstack((self.B2, self.B1 / gamma))
+        R_aug_x = np.block(
+            [
+                [np.eye(self.m), np.zeros((self.m, self.p))],
+                [np.zeros((self.p, self.m)), -np.eye(self.p)],
+            ]
+        )
         Q_x = self.C1.T @ self.C1
+        X = solve_continuous_are(self.A, B_aug_x, Q_x, R_aug_x)
+        X = 0.5 * (X + X.T)
 
-        X = solve_continuous_are(self.A, np.eye(self.n), Q_x, -R_x)
-
-        # Observer ARE:
-        # A Y + Y A^T - Y (C2^T C2 - C1^T C1 / gamma^2) Y + B1 B1^T = 0
-        # Rewrite as: A^T Z + Z A - Z (C2^T C2 / 1 - C1^T C1 / gamma^2) Z + B1 B1^T = 0
-        # where Z = Y, transposed form
-        R_y = self.C2.T @ self.C2 - self.C1.T @ self.C1 / g2
+        # Observer H-infinity ARE (dual form) solved as an indefinite CARE:
+        # A Y + Y A^T - Y (C2^T C2 - C1^T C1 / gamma^2) Y + B1 B1^T = 0.
+        B_aug_y = np.hstack((self.C2.T, self.C1.T / gamma))
+        R_aug_y = np.block(
+            [
+                [np.eye(self.l), np.zeros((self.l, self.q))],
+                [np.zeros((self.q, self.l)), -np.eye(self.q)],
+            ]
+        )
         Q_y = self.B1 @ self.B1.T
-
-        Y = solve_continuous_are(self.A.T, np.eye(self.n), Q_y, -R_y)
+        Y = solve_continuous_are(self.A.T, B_aug_y, Q_y, R_aug_y)
+        Y = 0.5 * (Y + Y.T)
 
         # Controller gains
         F = -self.B2.T @ X       # shape (m, n)
         L = -Y @ self.C2.T       # shape (n, l)
+
+        if not np.all(np.isfinite(F)) or not np.all(np.isfinite(L)):
+            raise ValueError("Riccati synthesis produced non-finite gains.")
 
         return X, Y, F, L
 
@@ -204,6 +254,10 @@ class HInfinityController:
         float
             Control action u.
         """
+        if not np.isfinite(error):
+            raise ValueError("error must be finite.")
+        if not np.isfinite(dt) or dt <= 0.0:
+            raise ValueError("dt must be finite and > 0.")
         y = np.atleast_1d(np.asarray(error, dtype=float))
 
         # Observer dynamics: dx_hat/dt = A x_hat + B2 u + L (y - C2 x_hat)
@@ -218,6 +272,25 @@ class HInfinityController:
         self.state = self.state + dx * dt
 
         return float(u[0]) if u.size > 1 else float(u.item())
+
+    def riccati_residual_norms(self) -> "tuple[float, float]":
+        """Return Frobenius norms of the two H-infinity Riccati residuals."""
+        g2 = self.gamma ** 2
+        res_x = (
+            self.A.T @ self.X
+            + self.X @ self.A
+            - self.X @ (self.B2 @ self.B2.T - self.B1 @ self.B1.T / g2) @ self.X
+            + self.C1.T @ self.C1
+        )
+        res_y = (
+            self.A @ self.Y
+            + self.Y @ self.A.T
+            - self.Y @ (self.C2.T @ self.C2 - self.C1.T @ self.C1 / g2) @ self.Y
+            + self.B1 @ self.B1.T
+        )
+        return float(np.linalg.norm(res_x, ord="fro")), float(
+            np.linalg.norm(res_y, ord="fro")
+        )
 
     def reset(self) -> None:
         """Reset controller state to zero."""
