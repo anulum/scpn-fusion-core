@@ -13,6 +13,7 @@ import argparse
 import csv
 import json
 import math
+import os
 import statistics
 import time
 from datetime import datetime, timezone
@@ -665,8 +666,17 @@ def main() -> int:
     # Generate plots into artifacts/
     plot_dir = ROOT / "artifacts"
     saved_plots = render_plots(report, plot_dir)
-    # Use relative path from MD file to plots directory
-    plot_rel = str(plot_dir.relative_to(md_path.parent)) if saved_plots else None
+    # Use a robust relative path from the markdown directory to the plots directory.
+    plot_rel = (
+        Path(
+            os.path.relpath(
+                plot_dir.resolve(),
+                start=md_path.parent.resolve(),
+            )
+        ).as_posix()
+        if saved_plots
+        else None
+    )
 
     with json_path.open("w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2)
