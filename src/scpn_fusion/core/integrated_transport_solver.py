@@ -635,7 +635,7 @@ class TransportSolver(FusionKernel):
                 f"dW_source={dW_source:.4e} J."
             )
 
-        return np.mean(self.Ti), self.Ti[0]
+        return float(np.mean(self.Ti)), float(self.Ti[0])
 
     def map_profiles_to_2d(self):
         """
