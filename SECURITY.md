@@ -4,12 +4,14 @@
 
 | Version | Supported          | Notes |
 |---------|--------------------|-------|
-| 1.0.2   | :white_check_mark: | Current stable — PyPI + GitHub release |
-| 1.0.1   | :x:                | Superseded (missing license metadata) |
-| 1.0.0   | :x:                | Superseded (initial release) |
+| 3.1.0   | :white_check_mark: | Current stable — Phase 0 physics hardening |
+| 3.0.0   | :white_check_mark: | Previous stable — Rust SNN, full-chain UQ, shot replay |
+| 2.0.0   | :x:                | Superseded (multigrid, gyro-Bohm, H-inf controller) |
+| 2.1.0   | :x:                | Superseded (GEQDSK, Sauter bootstrap, Spitzer) |
+| 1.0.2   | :x:                | Superseded (initial public release) |
 | < 1.0   | :x:                | Pre-release / unreleased |
 
-Only the latest `1.0.x` patch receives security fixes. Upgrade with:
+Only the latest `3.x` release receives security fixes. Upgrade with:
 
 ```bash
 pip install --upgrade scpn-fusion
@@ -41,11 +43,19 @@ configuration. Security concerns are primarily:
 
 ## Hardening Measures in Place
 
-### Input Validation (v1.0.2)
+### Input Validation (v1.0.2 — v3.1.0)
 Over 30 hardening commits add runtime guards across all physics and control
 modules: array shape/dtype checks, non-finite rejection, range clamping,
 and constructor parameter validation. See the git log for commits prefixed
 with `Harden`.
+
+### Physics Constraint Enforcement (v3.1.0)
+- Greenwald density limit rejects unphysical density points in Q-scan
+- Temperature capped at 25 keV with warning emission
+- Q factor capped at 15 to prevent 0-D model artifacts
+- Energy conservation diagnostic in transport solver with optional `PhysicsError`
+- TBR correction factors enforce realistic [1.0, 1.4] range
+- CI gates: hard fail on FPR > 15%, TBR outside range, Q > 15
 
 ### Dependency Auditing
 - **Rust:** `cargo audit` runs in CI on every push (added in commit `a582ef13`).
@@ -81,3 +91,7 @@ analysis integration, audit reports) are welcome.
 | 2026-02-12 | `cargo audit` added to CI |
 | 2026-02-13–14 | Input hardening sprint (30+ commits) |
 | 2026-02-14 | v1.0.2 released with full license metadata |
+| 2026-02-15 | v2.0.0 released — multigrid solver, H-infinity controller |
+| 2026-02-16 | v2.1.0 released — GEQDSK expansion, Sauter bootstrap |
+| 2026-02-17 | v3.0.0 released — Rust SNN PyO3, full-chain UQ, shot replay |
+| 2026-02-17 | v3.1.0 released — Phase 0 physics hardening (Greenwald, TBR, conservation) |

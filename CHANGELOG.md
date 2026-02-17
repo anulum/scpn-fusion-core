@@ -8,6 +8,53 @@
 
 # Changelog
 
+## [3.1.0] — 2026-02-17
+
+### Changed — v3.1.0: Phase 0 Physics Hardening
+
+#### P0.1 — TBR Realism (blanket_neutronics.py)
+- Added `port_coverage_factor` (default 0.80), `streaming_factor` (default 0.85), and `blanket_fill_factor` (default 1.0) to `calculate_volumetric_tbr()` and `MultiGroupBlanket.solve_transport()`
+- Corrected TBR now falls in Fischer/DEMO range [1.0, 1.4] instead of ideal 1.67
+- New `tbr_ideal` field preserved on `VolumetricBlanketReport` and 3-group result dicts
+- Validation against Fischer et al. (2015) and DEMO blanket studies
+
+#### P0.2 — Q-Scan Greenwald & Temperature Limits (fusion_ignition_sim.py)
+- Greenwald density limit enforced: `n_GW = I_p / (pi * a^2)`, scan points above 1.2x n_GW skipped
+- Temperature hard cap at 25 keV with `UserWarning` emission (was 100 keV)
+- Q ceiling at 15 (was unbounded, producing Q=98 artifacts from 0-D model)
+- `find_q10_operating_point()` now returns `n_greenwald` in result dict
+
+#### P0.6 — Energy Conservation Enforcement (integrated_transport_solver.py)
+- Per-timestep conservation diagnostic after Crank-Nicolson solve
+- `_last_conservation_error` attribute stores relative energy balance error
+- `enforce_conservation=True` parameter raises `PhysicsError` if error > 1%
+- New `PhysicsError(RuntimeError)` exception class
+
+#### P0.3 — Dashboard Auto-Flagging + Plots (rmse_dashboard.py)
+- `THRESHOLDS` dict with PASS/WARN/FAIL auto-flags for tau_E, beta_N, axis RMSE, FPR, TBR, Q
+- Auto-flag summary table at top of rendered markdown report
+- `render_plots()` generates matplotlib scatter plots (tau_E, beta_N) and bar charts (SPARC axis error)
+- Plots saved to `artifacts/` and embedded as relative links in markdown
+
+#### P0.4 — CI Gate Hardening (ci_rmse_gate.py)
+- Disruption FPR promoted from soft warn to hard fail (threshold 0.15, was 0.40)
+- TBR gate: fail if outside [1.0, 1.4] (new)
+- Q gate: fail if Q_peak > 15 (new)
+
+#### P0.5 — Issue Templates (.github/ISSUE_TEMPLATE/)
+- `feature_request.md` and `bug_report.md` converted to YAML form format (`.yml`)
+- Mandatory "Physics Reference" field (`required: true`) with DOI/arXiv + equation number
+- Old markdown templates removed
+
+#### Tests
+- 24 new tests in `tests/test_phase0_physics_fixes.py` across 3 classes:
+  - `TestTBRCorrection` (11 tests): correction ratios, unit factors, fill factor, invalid inputs
+  - `TestQScanLimits` (7 tests): Q ceiling, T cap, Greenwald limit, extreme low current
+  - `TestEnergyConservation` (6 tests): conservation attribute, zero-heating monotonic cooling, PhysicsError
+- Total: 1141 tests passing (57 skipped, 1 pre-existing stochastic failure)
+
+---
+
 ## [3.0.0] — 2026-02-17
 
 ### Added — v3.0.0: Rust SNN Bindings, Full-Chain UQ, Shot Replay

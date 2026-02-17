@@ -4,7 +4,7 @@
   <img src="docs/assets/repo_header.png" alt="SCPN Fusion Core — Neuro-Symbolic Tokamak Control">
 </p>
 
-[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-200%2B_Rust_%7C_859%2B_Python-green.svg)
+[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.1.0-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-1141_Python_%7C_200%2B_Rust-green.svg)
 
 A **neuro-symbolic control framework for tokamak fusion reactors** with
 physics-informed surrogate models and optional Rust acceleration. SCPN
@@ -28,10 +28,13 @@ real-time control loop closure at 1 kHz+ rates.
 > **control-algorithm development and surrogate-modeling framework** with
 > enough physics fidelity to validate reactor control strategies against
 > real equilibrium data (8 SPARC EFIT GEQDSKs, 100+ multi-machine
-> synthetic equilibria, 20-shot ITPA H-mode confinement database, 10
-> DIII-D reference disruption shots).  Validated against IPB98(y,2)
+> synthetic equilibria, 20-shot ITPA H-mode confinement database, 16
+> DIII-D reference disruption shots). Validated against IPB98(y,2)
 > confinement scaling with <15% RMSE and >60% disruption prevention rate
-> on reference shot replay.
+> on reference shot replay. Physics hardened in v3.1.0: Greenwald density
+> limit, 25 keV temperature cap, Q <= 15 ceiling, TBR corrected to
+> [1.0, 1.4] range (Fischer/DEMO), per-timestep energy conservation
+> enforcement.
 
 ## Design Philosophy
 
