@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.quasi_3d_contracts import (
     build_divertor_profiles,
@@ -63,3 +64,33 @@ def test_quasi_3d_contracts_smoke() -> None:
     assert 0.0 <= float(hall["zonal_ratio"]) <= 1.0
     assert float(divertor["cooling_gain_pct"]) > 0.0
     assert float(tbr["calibrated_tbr"]) > 0.0
+
+
+def test_hall_mhd_zonal_ratio_rejects_invalid_grid() -> None:
+    with pytest.raises(ValueError, match="grid"):
+        hall_mhd_zonal_ratio(
+            seed=7,
+            grid=0,
+            steps=8,
+            fallback_asymmetry=0.1,
+        )
+
+
+def test_hall_mhd_zonal_ratio_rejects_invalid_steps() -> None:
+    with pytest.raises(ValueError, match="steps"):
+        hall_mhd_zonal_ratio(
+            seed=7,
+            grid=16,
+            steps=0,
+            fallback_asymmetry=0.1,
+        )
+
+
+def test_hall_mhd_zonal_ratio_rejects_nonfinite_fallback() -> None:
+    with pytest.raises(ValueError, match="fallback_asymmetry"):
+        hall_mhd_zonal_ratio(
+            seed=7,
+            grid=16,
+            steps=8,
+            fallback_asymmetry=float("nan"),
+        )

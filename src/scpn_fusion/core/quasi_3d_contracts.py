@@ -35,6 +35,16 @@ def _require_int(name: str, value: Any, minimum: int) -> int:
     return out
 
 
+def _require_finite_float(name: str, value: Any) -> float:
+    try:
+        out = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be finite.") from exc
+    if not np.isfinite(out):
+        raise ValueError(f"{name} must be finite.")
+    return out
+
+
 def _rmse_percent(truth: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
     if truth.shape != pred.shape or truth.size == 0:
         raise ValueError("truth/pred arrays must be non-empty and same shape.")
@@ -163,18 +173,22 @@ def hall_mhd_zonal_ratio(
     steps: int,
     fallback_asymmetry: float,
 ) -> dict[str, Any]:
+    grid_n = _require_int("grid", grid, 8)
+    steps_n = _require_int("steps", steps, 1)
+    fallback = _require_finite_float("fallback_asymmetry", fallback_asymmetry)
+
     try:
         from scpn_fusion.core.hall_mhd_discovery import HallMHD
     except Exception:
-        ratio = float(np.clip(0.06 + 0.40 * abs(fallback_asymmetry), 0.0, 0.9))
+        ratio = float(np.clip(0.06 + 0.40 * abs(fallback), 0.0, 0.9))
         return {"backend": "proxy", "zonal_ratio": ratio}
 
     state = np.random.get_state()
     try:
         np.random.seed(int(seed))
-        sim = HallMHD(N=int(grid))
+        sim = HallMHD(N=grid_n)
         ratios: list[float] = []
-        for _ in range(int(steps)):
+        for _ in range(steps_n):
             e_tot, e_zonal = sim.step()
             denom = max(float(e_tot), 1e-12)
             ratios.append(float(e_zonal) / denom)
@@ -183,7 +197,7 @@ def hall_mhd_zonal_ratio(
 
     ratio = float(np.mean(np.asarray(ratios, dtype=np.float64)))
     if not np.isfinite(ratio) or ratio <= 0.0:
-        ratio = float(np.clip(0.06 + 0.40 * abs(fallback_asymmetry), 0.0, 0.9))
+        ratio = float(np.clip(0.06 + 0.40 * abs(fallback), 0.0, 0.9))
         return {"backend": "proxy", "zonal_ratio": ratio}
     return {"backend": "hall_mhd", "zonal_ratio": ratio}
 
