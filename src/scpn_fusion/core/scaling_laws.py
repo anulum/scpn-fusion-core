@@ -62,6 +62,15 @@ class TransportBenchmarkResult:
 
 # ── Core functions ────────────────────────────────────────────────────
 
+
+def _require_positive_finite(name: str, value: float) -> float:
+    """Validate scalar inputs for confinement scaling calculations."""
+    value_f = float(value)
+    if not np.isfinite(value_f) or value_f <= 0:
+        raise ValueError(f"{name} must be finite and > 0, got {value!r}")
+    return value_f
+
+
 def load_ipb98y2_coefficients(
     path: Optional[str | Path] = None,
 ) -> dict:
@@ -125,16 +134,16 @@ def ipb98y2_tau_e(
     Raises
     ------
     ValueError
-        If any input is non-positive.
+        If any input is non-finite or non-positive.
     """
-    if Ploss <= 0:
-        raise ValueError(f"Ploss must be > 0, got {Ploss}")
-    if any(v <= 0 for v in (Ip, BT, ne19, R, kappa, epsilon, M)):
-        raise ValueError(
-            "All IPB98(y,2) inputs must be positive: "
-            f"Ip={Ip}, BT={BT}, ne19={ne19}, R={R}, "
-            f"kappa={kappa}, epsilon={epsilon}, M={M}"
-        )
+    Ip = _require_positive_finite("Ip", Ip)
+    BT = _require_positive_finite("BT", BT)
+    ne19 = _require_positive_finite("ne19", ne19)
+    Ploss = _require_positive_finite("Ploss", Ploss)
+    R = _require_positive_finite("R", R)
+    kappa = _require_positive_finite("kappa", kappa)
+    epsilon = _require_positive_finite("epsilon", epsilon)
+    M = _require_positive_finite("M", M)
 
     if coefficients is None:
         coefficients = load_ipb98y2_coefficients()
@@ -153,7 +162,13 @@ def ipb98y2_tau_e(
         * epsilon ** exp["epsilon"]
         * M ** exp["M_AMU"]
     )
-    return float(tau)
+    tau_f = float(tau)
+    if not np.isfinite(tau_f) or tau_f <= 0:
+        raise ValueError(
+            "Computed IPB98(y,2) confinement time is invalid "
+            f"(tau={tau_f!r}) for supplied inputs."
+        )
+    return tau_f
 
 
 def ipb98y2_with_uncertainty(

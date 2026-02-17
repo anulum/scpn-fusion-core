@@ -13,7 +13,7 @@ Tests cover:
   - RMSE against the 20-shot ITPA H-mode confinement dataset
   - Per-machine error breakdown
   - H-factor computation
-  - Input validation (negative values rejected)
+  - Input validation (non-physical and non-finite values rejected)
 """
 
 from __future__ import annotations
@@ -104,6 +104,39 @@ class TestIPB98y2Formula:
         with pytest.raises(ValueError, match="Ploss"):
             ipb98y2_tau_e(Ip=2.0, BT=5.0, ne19=8.0, Ploss=-1.0,
                           R=3.0, kappa=1.7, epsilon=0.3)
+
+    @pytest.mark.parametrize(
+        ("field", "bad_value"),
+        [
+            ("Ip", float("nan")),
+            ("BT", float("inf")),
+            ("ne19", 0.0),
+            ("Ploss", float("nan")),
+            ("R", -1.0),
+            ("kappa", float("-inf")),
+            ("epsilon", 0.0),
+            ("M", float("nan")),
+        ],
+    )
+    def test_non_finite_or_non_positive_inputs_rejected(
+        self,
+        field: str,
+        bad_value: float,
+    ):
+        """All scaling-law inputs must be finite and strictly positive."""
+        params = dict(
+            Ip=2.0,
+            BT=5.0,
+            ne19=8.0,
+            Ploss=10.0,
+            R=3.0,
+            kappa=1.7,
+            epsilon=0.3,
+            M=2.5,
+        )
+        params[field] = bad_value
+        with pytest.raises(ValueError, match=field):
+            ipb98y2_tau_e(**params)
 
 
 # ── ITPA 20-shot benchmark ──────────────────────────────────────────
