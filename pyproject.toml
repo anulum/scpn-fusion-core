@@ -123,7 +123,7 @@ markers = [
 ]
 filterwarnings = [
     "error::DeprecationWarning",
-    "ignore:.*oneOf.*deprecated.*:DeprecationWarning",
+    "ignore:.*oneOf.*[dD]eprecated.*:Warning",
     "default::UserWarning",
 ]
 xfail_strict = true
