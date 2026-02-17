@@ -625,7 +625,7 @@ If you use SCPN Fusion Core in your research, please cite using the [CITATION.cf
   author  = {Sotek, Miroslav and Reiprich, Michal},
   year    = {2026},
   url     = {https://github.com/anulum/scpn-fusion-core},
-  version = {2.1.0}
+  version = {3.0.0}
 }
 ```
 

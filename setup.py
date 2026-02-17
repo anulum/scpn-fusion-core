@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="scpn-fusion",
-    version="2.1.0",
+    version="3.0.0",
     license="AGPL-3.0-or-later",
     package_dir={"": "src"},
     packages=find_packages(where="src"),

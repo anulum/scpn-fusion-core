@@ -8,6 +8,46 @@
 
 # Changelog
 
+## [3.0.0] — 2026-02-17
+
+### Added — v3.0.0: Rust SNN Bindings, Full-Chain UQ, Shot Replay
+
+#### Rust SNN via PyO3 (Task 3.1)
+- `PySnnPool` wrapping `SpikingControllerPool` with `step(error)`, `n_neurons`, `gain`, `window_size` getters
+- `PySnnController` wrapping `NeuroCyberneticController` with `step(measured_r, measured_z)`, `target_r/z` getters
+- Python-side wrappers in `_rust_compat.py`: `RustSnnPool`, `RustSnnController` with graceful fallback
+- 19 tests in `tests/test_snn_pyo3_bridge.py` (skip when Rust extension not compiled)
+
+#### Monte Carlo UQ Through Full Solver Chain (Task 3.2)
+- `quantify_full_chain(scenario, n_samples, seed, chi_gB_sigma, pedestal_sigma, boundary_sigma)`
+  propagates uncertainty through equilibrium → transport → fusion power
+- `EquilibriumUncertainty`, `TransportUncertainty`, `FullChainUQResult` dataclasses
+- `summarize_uq()` for JSON-serializable output with p5/p50/p95 bands
+- Backward-compatible: `quantify_uncertainty()` preserved for IPB98-only UQ
+- 12 tests in `tests/test_uq_full_chain.py`
+
+#### FNO Turbulence Surrogate Deprecated (Task 3.3)
+- Module docstrings updated: EXPERIMENTAL → DEPRECATED/EXPERIMENTAL
+- Runtime `FutureWarning` on `FNO_Controller` initialization
+- Removed from default pipeline; will be retired in v4.0 unless real gyrokinetic data available
+- Trained on 60 synthetic Hasegawa-Wakatani samples only (relative L2 = 0.79)
+
+#### Shot Replay Streamlit Tab (Task 3.5)
+- 5th tab "Shot Replay" in `app.py` for measured vs simulated diagnostic overlay
+- Loads DIII-D disruption NPZ files from `validation/reference_data/disruption_shots/`
+- Plots Ip, ne, Te time traces with disruption predictor risk overlay
+- Disruption time marker and status display
+
+#### Paper Manuscripts Updated (Task 3.4)
+- Paper A (equilibrium solver): version refs v2.1.0, added v2.1.0 improvements section
+- Paper B (SNN controller): version refs v2.1.0, PyO3 bindings note, disruption recalibration note
+
+### Changed
+- Version bumped to 3.0.0
+- FNO warning category changed from `UserWarning` to `FutureWarning`
+
+---
+
 ## [2.1.0] — 2026-02-17
 
 ### Added — v2.1.0: Physics Hardening & Self-Consistent Transport
