@@ -86,3 +86,27 @@ def test_h_infinity_strict_mode_rejects_infeasible_solution() -> None:
             C2,
             enforce_robust_feasibility=True,
         )
+
+
+def test_h_infinity_strict_mode_accepts_feasible_synthesis(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _feasible_synthesize(
+        self: HInfinityController, gamma: float
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        x = np.zeros((self.n, self.n), dtype=float)
+        y = np.zeros((self.n, self.n), dtype=float)
+        f = np.zeros((self.m, self.n), dtype=float)
+        l_gain = np.zeros((self.n, self.p), dtype=float)
+        return x, y, f, l_gain
+
+    monkeypatch.setattr(HInfinityController, "_synthesize", _feasible_synthesize)
+    A, B1, B2, C1, C2 = _reference_plant()
+    ctrl = HInfinityController(
+        A,
+        B1,
+        B2,
+        C1,
+        C2,
+        enforce_robust_feasibility=True,
+    )
+    assert ctrl.robust_feasible is True
+    assert ctrl.spectral_radius_xy == 0.0
