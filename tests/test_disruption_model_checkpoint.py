@@ -67,6 +67,26 @@ def test_load_or_train_reuses_existing_checkpoint(tmp_path: Path) -> None:
     assert Path(meta["model_path"]) == model_path
 
 
+def test_disruption_transformer_uses_batch_first_attention() -> None:
+    model = dp.DisruptionTransformer(seq_len=16)
+    layer = model.transformer.layers[0]
+    assert layer.self_attn.batch_first is True
+
+
+def test_disruption_transformer_forward_preserves_output_contract() -> None:
+    model = dp.DisruptionTransformer(seq_len=20)
+    x = dp.torch.rand((3, 20, 1), dtype=dp.torch.float32)
+
+    model.eval()
+    with dp.torch.no_grad():
+        y = model(x)
+
+    assert y.shape == (3, 1)
+    assert bool(dp.torch.isfinite(y).all())
+    assert float(y.min()) >= 0.0
+    assert float(y.max()) <= 1.0
+
+
 @pytest.mark.parametrize(
     ("kwargs", "match"),
     [
