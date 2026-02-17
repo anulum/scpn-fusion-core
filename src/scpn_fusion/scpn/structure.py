@@ -486,12 +486,16 @@ class StochasticPetriNet:
         min_seen = np.inf
         bounded = True
 
+        _W_in = self.W_in
+        _W_out = self.W_out
+        if _W_in is None or _W_out is None:
+            raise RuntimeError("Net must be compiled before verification.")
+        W_in_dense: np.ndarray = _W_in.toarray() if hasattr(_W_in, 'toarray') else np.asarray(_W_in)
+        W_out_dense: np.ndarray = _W_out.toarray() if hasattr(_W_out, 'toarray') else np.asarray(_W_out)
+
         for _ in range(n_trials):
             marking = self.get_initial_marking().copy()
             for _ in range(n_steps):
-                # Stochastic firing
-                W_in_dense = self.W_in.toarray() if hasattr(self.W_in, 'toarray') else np.asarray(self.W_in)
-                W_out_dense = self.W_out.toarray() if hasattr(self.W_out, 'toarray') else np.asarray(self.W_out)
 
                 # Check enabling
                 thresholds = self.get_thresholds()
@@ -536,8 +540,12 @@ class StochasticPetriNet:
         n_T = self.n_transitions
         fire_counts = np.zeros(n_T, dtype=int)
 
-        W_in_dense = self.W_in.toarray() if hasattr(self.W_in, 'toarray') else np.asarray(self.W_in)
-        W_out_dense = self.W_out.toarray() if hasattr(self.W_out, 'toarray') else np.asarray(self.W_out)
+        _W_in = self.W_in
+        _W_out = self.W_out
+        if _W_in is None or _W_out is None:
+            raise RuntimeError("Net must be compiled before verification.")
+        W_in_dense: np.ndarray = _W_in.toarray() if hasattr(_W_in, 'toarray') else np.asarray(_W_in)
+        W_out_dense: np.ndarray = _W_out.toarray() if hasattr(_W_out, 'toarray') else np.asarray(_W_out)
         thresholds = self.get_thresholds()
 
         for _ in range(n_trials):

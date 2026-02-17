@@ -37,6 +37,7 @@ import logging
 from typing import Optional
 
 import numpy as np
+import numpy.typing as npt
 from scipy.linalg import solve_continuous_are
 
 logger = logging.getLogger(__name__)
@@ -67,15 +68,15 @@ class HInfinityController:
 
     def __init__(
         self,
-        A,
-        B1,
-        B2,
-        C1,
-        C2,
+        A: "npt.ArrayLike",
+        B1: "npt.ArrayLike",
+        B2: "npt.ArrayLike",
+        C1: "npt.ArrayLike",
+        C2: "npt.ArrayLike",
         gamma: Optional[float] = None,
-        D12=None,
-        D21=None,
-    ):
+        D12: "Optional[npt.ArrayLike]" = None,
+        D21: "Optional[npt.ArrayLike]" = None,
+    ) -> None:
         self.A = np.atleast_2d(np.asarray(A, dtype=float))
         self.B1 = np.atleast_2d(np.asarray(B1, dtype=float))
         self.B2 = np.atleast_2d(np.asarray(B2, dtype=float))
@@ -131,7 +132,7 @@ class HInfinityController:
             self.n, self.m, self.gamma,
         )
 
-    def _synthesize(self, gamma: float):
+    def _synthesize(self, gamma: float) -> "tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]":
         """Solve the two Riccati equations and extract gains.
 
         Returns (X, Y, F, L) where:
