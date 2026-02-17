@@ -7,6 +7,7 @@
 # ─────────────────────────────────────────────────────────────────────
 
 from pathlib import Path
+import warnings
 
 import numpy as np
 
@@ -50,7 +51,13 @@ def test_fno_controller_loads_saved_weights(tmp_path):
         patience=1,
     )
 
-    controller = FNO_Controller(modes=4, width=4, weights_path=str(output))
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="FNO turbulence surrogate.*",
+            category=Warning,
+        )
+        controller = FNO_Controller(modes=4, width=4, weights_path=str(output))
     suppression, prediction = controller.predict_and_suppress(np.zeros((64, 64), dtype=np.float64))
 
     assert controller.loaded_weights
@@ -82,7 +89,13 @@ def test_spectral_generator_does_not_mutate_global_numpy_rng_state() -> None:
 
 
 def test_run_fno_simulation_returns_finite_summary_without_plot() -> None:
-    summary = run_fno_simulation(time_steps=24, seed=7, save_plot=False, verbose=False)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="FNO turbulence surrogate.*",
+            category=Warning,
+        )
+        summary = run_fno_simulation(time_steps=24, seed=7, save_plot=False, verbose=False)
     for key in (
         "seed",
         "steps",
@@ -104,8 +117,14 @@ def test_run_fno_simulation_returns_finite_summary_without_plot() -> None:
 
 
 def test_run_fno_simulation_is_deterministic_for_seed() -> None:
-    a = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
-    b = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="FNO turbulence surrogate.*",
+            category=Warning,
+        )
+        a = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
+        b = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
     assert a["final_energy"] == b["final_energy"]
     assert a["mean_energy_last_20"] == b["mean_energy_last_20"]
     assert a["max_energy"] == b["max_energy"]
