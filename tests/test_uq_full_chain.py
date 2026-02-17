@@ -160,6 +160,29 @@ class TestSampleConsistency:
         assert 0.5 < ratio < 2.0, f"tau_E sigma ratio = {ratio:.3f}"
 
 
+class TestInputValidation:
+
+    @pytest.mark.parametrize("n_samples", [0, -5, 2.5, "100", True])
+    def test_invalid_n_samples_rejected(self, n_samples):
+        with pytest.raises(ValueError, match="n_samples"):
+            quantify_full_chain(ITER_SCENARIO, n_samples=n_samples, seed=1)
+
+    @pytest.mark.parametrize(
+        ("kwargs", "field"),
+        [
+            ({"chi_gB_sigma": -0.01}, "chi_gB_sigma"),
+            ({"pedestal_sigma": -0.01}, "pedestal_sigma"),
+            ({"boundary_sigma": -0.01}, "boundary_sigma"),
+            ({"chi_gB_sigma": np.nan}, "chi_gB_sigma"),
+            ({"pedestal_sigma": np.inf}, "pedestal_sigma"),
+            ({"boundary_sigma": -np.inf}, "boundary_sigma"),
+        ],
+    )
+    def test_invalid_sigma_inputs_rejected(self, kwargs, field):
+        with pytest.raises(ValueError, match=field):
+            quantify_full_chain(ITER_SCENARIO, n_samples=64, seed=1, **kwargs)
+
+
 class TestChiUncertaintyEffect:
 
     def test_chi_uncertainty_widens_tau_e_band(self):

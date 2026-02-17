@@ -230,6 +230,24 @@ def quantify_full_chain(
     FullChainUQResult
         Bands at [5%, 50%, 95%] for psi_nrmse, tau_E, P_fusion, Q, beta_N.
     """
+    if isinstance(n_samples, bool) or not isinstance(n_samples, (int, np.integer)):
+        raise ValueError("n_samples must be an integer >= 1")
+    if n_samples < 1:
+        raise ValueError("n_samples must be an integer >= 1")
+
+    def _validate_sigma(name: str, value: float) -> float:
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"{name} must be finite and >= 0") from exc
+        if not np.isfinite(parsed) or parsed < 0.0:
+            raise ValueError(f"{name} must be finite and >= 0")
+        return parsed
+
+    chi_gB_sigma = _validate_sigma("chi_gB_sigma", chi_gB_sigma)
+    pedestal_sigma = _validate_sigma("pedestal_sigma", pedestal_sigma)
+    boundary_sigma = _validate_sigma("boundary_sigma", boundary_sigma)
+
     rng = np.random.default_rng(seed)
 
     tau_samples = np.zeros(n_samples)
@@ -320,14 +338,20 @@ def quantify_full_chain(
         tau_E_sigma=float(np.std(tau_samples)),
         P_fusion_sigma=float(np.std(pfus_samples)),
         Q_sigma=float(np.std(q_samples)),
-        psi_nrmse_bands=np.percentile(psi_nrmse_samples, band_pcts),
-        tau_E_bands=np.percentile(tau_samples, band_pcts),
-        P_fusion_bands=np.percentile(pfus_samples, band_pcts),
-        Q_bands=np.percentile(q_samples, band_pcts),
-        beta_N_bands=np.percentile(beta_n_samples, band_pcts),
-        tau_E_percentiles=np.percentile(tau_samples, full_pcts),
-        P_fusion_percentiles=np.percentile(pfus_samples, full_pcts),
-        Q_percentiles=np.percentile(q_samples, full_pcts),
+        psi_nrmse_bands=np.asarray(
+            np.percentile(psi_nrmse_samples, band_pcts), dtype=float,
+        ),
+        tau_E_bands=np.asarray(np.percentile(tau_samples, band_pcts), dtype=float),
+        P_fusion_bands=np.asarray(
+            np.percentile(pfus_samples, band_pcts), dtype=float,
+        ),
+        Q_bands=np.asarray(np.percentile(q_samples, band_pcts), dtype=float),
+        beta_N_bands=np.asarray(np.percentile(beta_n_samples, band_pcts), dtype=float),
+        tau_E_percentiles=np.asarray(np.percentile(tau_samples, full_pcts), dtype=float),
+        P_fusion_percentiles=np.asarray(
+            np.percentile(pfus_samples, full_pcts), dtype=float,
+        ),
+        Q_percentiles=np.asarray(np.percentile(q_samples, full_pcts), dtype=float),
         n_samples=n_samples,
     )
 
@@ -436,8 +460,10 @@ def quantify_uncertainty(scenario: PlasmaScenario,
         tau_E_sigma=float(np.std(tau_samples)),
         P_fusion_sigma=float(np.std(pfus_samples)),
         Q_sigma=float(np.std(q_samples)),
-        tau_E_percentiles=np.percentile(tau_samples, pcts),
-        P_fusion_percentiles=np.percentile(pfus_samples, pcts),
-        Q_percentiles=np.percentile(q_samples, pcts),
+        tau_E_percentiles=np.asarray(np.percentile(tau_samples, pcts), dtype=float),
+        P_fusion_percentiles=np.asarray(
+            np.percentile(pfus_samples, pcts), dtype=float,
+        ),
+        Q_percentiles=np.asarray(np.percentile(q_samples, pcts), dtype=float),
         n_samples=n_samples,
     )
