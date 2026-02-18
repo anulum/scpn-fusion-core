@@ -47,16 +47,16 @@ fn bench_neural_transport_predict_profile_analytic(c: &mut Criterion) {
     let inputs: Array2<f64> = Array2::from_shape_fn((50, 10), |(i, j)| {
         let rho = (i as f64 + 1.0) / 50.0; // 0.02 … 1.00
         match j {
-            0 => 4.0 + 2.0 * (1.0 - rho),  // grad_ti: peaks at core
-            1 => 3.5 + 1.5 * (1.0 - rho),  // grad_te: peaks at core
-            2 => 2.5 + 1.0 * (1.0 - rho),  // grad_ne: peaks at core
-            3 => 0.1 + 0.4 * rho,           // shear: increases toward edge
-            4 => 0.02 + 0.1 * rho,          // collisionality: increases toward edge
-            5 => 1.2 + 0.3 * rho,           // zeff: slight impurity gradient
-            6 => 3.0 + 0.5 * rho,           // q95: increases toward edge
-            7 => 1.5 * (1.0 - rho),         // beta_n: peaks at core
-            8 => rho,                        // rho itself
-            _ => 3.0,                        // aspect_ratio: constant
+            0 => 4.0 + 2.0 * (1.0 - rho), // grad_ti: peaks at core
+            1 => 3.5 + 1.5 * (1.0 - rho), // grad_te: peaks at core
+            2 => 2.5 + 1.0 * (1.0 - rho), // grad_ne: peaks at core
+            3 => 0.1 + 0.4 * rho,         // shear: increases toward edge
+            4 => 0.02 + 0.1 * rho,        // collisionality: increases toward edge
+            5 => 1.2 + 0.3 * rho,         // zeff: slight impurity gradient
+            6 => 3.0 + 0.5 * rho,         // q95: increases toward edge
+            7 => 1.5 * (1.0 - rho),       // beta_n: peaks at core
+            8 => rho,                     // rho itself
+            _ => 3.0,                     // aspect_ratio: constant
         }
     });
 

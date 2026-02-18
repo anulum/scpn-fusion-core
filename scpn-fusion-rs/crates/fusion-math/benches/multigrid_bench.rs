@@ -63,5 +63,9 @@ fn bench_multigrid_65x65(c: &mut Criterion) {
     });
 }
 
-criterion_group!(multigrid_benches, bench_multigrid_33x33, bench_multigrid_65x65,);
+criterion_group!(
+    multigrid_benches,
+    bench_multigrid_33x33,
+    bench_multigrid_65x65,
+);
 criterion_main!(multigrid_benches);

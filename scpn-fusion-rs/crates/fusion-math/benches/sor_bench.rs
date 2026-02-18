@@ -95,11 +95,7 @@ fn bench_sor_residual_65x65(c: &mut Criterion) {
 
     c.bench_function("sor_residual_65x65", |b| {
         b.iter(|| {
-            let res = sor_residual(
-                black_box(&psi),
-                black_box(&source),
-                black_box(&grid),
-            );
+            let res = sor_residual(black_box(&psi), black_box(&source), black_box(&grid));
             black_box(res);
         })
     });
