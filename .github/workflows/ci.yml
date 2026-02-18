@@ -67,6 +67,9 @@ jobs:
           if result.returncode != 0:
               print("Optional sc-neurocore bootstrap failed; continuing with fallback path.")
           PY
+      - name: Python preflight gate (mypy + release regressions)
+        if: matrix.python-version == '3.12'
+        run: python tools/run_python_preflight.py
       - name: Run tests
         run: pytest tests/ -v
       - name: Generate Python coverage report
@@ -74,9 +77,6 @@ jobs:
         run: pytest tests/ -q --cov=scpn_fusion --cov-report=xml:coverage-python.xml
       - name: Run property-based tests (Hypothesis)
         run: pytest tests/test_hypothesis_properties.py -v --hypothesis-seed=0
-      - name: Static typing (mypy gate)
-        if: matrix.python-version == '3.12'
-        run: python tools/run_mypy_strict.py
       - name: Upload Python coverage to Codecov
         if: matrix.python-version == '3.12'
         uses: codecov/codecov-action@v4
