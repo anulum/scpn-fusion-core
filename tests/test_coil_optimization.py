@@ -210,6 +210,26 @@ def test_solve_free_boundary_basic(kernel: FusionKernel):
     assert result["outer_iterations"] >= 1
 
 
+def test_solve_equilibrium_preserves_explicit_boundary(kernel: FusionKernel):
+    """Explicit boundary maps should be preserved during GS iteration."""
+    psi_boundary = np.zeros_like(kernel.Psi)
+    psi_boundary[0, :] = 3.0
+    psi_boundary[-1, :] = -2.0
+    psi_boundary[:, 0] = 1.5
+    psi_boundary[:, -1] = -1.5
+
+    kernel.Psi[1:-1, 1:-1] = 0.123  # non-trivial interior state
+    kernel.solve_equilibrium(
+        preserve_initial_state=True,
+        boundary_flux=psi_boundary,
+    )
+
+    np.testing.assert_allclose(kernel.Psi[0, :], psi_boundary[0, :], atol=1e-12)
+    np.testing.assert_allclose(kernel.Psi[-1, :], psi_boundary[-1, :], atol=1e-12)
+    np.testing.assert_allclose(kernel.Psi[:, 0], psi_boundary[:, 0], atol=1e-12)
+    np.testing.assert_allclose(kernel.Psi[:, -1], psi_boundary[:, -1], atol=1e-12)
+
+
 def test_solve_free_boundary_with_optimization(kernel: FusionKernel):
     """solve_free_boundary with optimize_shape should update coil currents."""
     coils = _make_coils(4)
@@ -224,6 +244,18 @@ def test_solve_free_boundary_with_optimization(kernel: FusionKernel):
     assert not np.allclose(result["coil_currents"], I_before), (
         "Coil currents were not updated during shape optimisation"
     )
+
+
+def test_solve_free_boundary_enforces_external_boundary_flux(kernel: FusionKernel):
+    """Outer free-boundary loop must keep external coil boundary flux."""
+    coils = _make_coils(4)
+    psi_ext = kernel._compute_external_flux(coils)
+    kernel.solve_free_boundary(coils, max_outer_iter=1, tol=0.0)
+
+    np.testing.assert_allclose(kernel.Psi[0, :], psi_ext[0, :], atol=1e-12)
+    np.testing.assert_allclose(kernel.Psi[-1, :], psi_ext[-1, :], atol=1e-12)
+    np.testing.assert_allclose(kernel.Psi[:, 0], psi_ext[:, 0], atol=1e-12)
+    np.testing.assert_allclose(kernel.Psi[:, -1], psi_ext[:, -1], atol=1e-12)
 
 
 def test_solve_free_boundary_runs_multiple_iters(kernel: FusionKernel):

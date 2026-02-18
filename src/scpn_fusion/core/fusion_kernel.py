@@ -824,6 +824,47 @@ class FusionKernel:
         for _ in range(50):
             self.Psi = self._jacobi_step(self.Psi, Source)
 
+    def _prepare_initial_flux(
+        self,
+        preserve_initial_state: bool,
+        boundary_flux: FloatArray | None,
+    ) -> FloatArray:
+        """Prepare initial Psi and boundary map for iterative GS solves.
+
+        Parameters
+        ----------
+        preserve_initial_state : bool
+            When True, keep the existing interior ``self.Psi`` values and only
+            enforce the provided boundary map.
+        boundary_flux : FloatArray | None
+            Explicit boundary map to enforce. Must match ``self.Psi.shape``
+            when provided.
+
+        Returns
+        -------
+        FloatArray
+            Boundary flux map used by boundary-condition enforcement.
+        """
+        if boundary_flux is not None:
+            psi_boundary = np.asarray(boundary_flux, dtype=np.float64)
+            if psi_boundary.shape != self.Psi.shape:
+                raise ValueError(
+                    f"boundary_flux shape {psi_boundary.shape} "
+                    f"must match Psi shape {self.Psi.shape}"
+                )
+            psi_boundary = psi_boundary.copy()
+        elif preserve_initial_state:
+            psi_boundary = self.Psi.copy()
+        else:
+            psi_boundary = self.calculate_vacuum_field()
+
+        if preserve_initial_state:
+            self._apply_boundary_conditions(self.Psi, psi_boundary)
+        else:
+            self.Psi = psi_boundary.copy()
+
+        return psi_boundary
+
     # ── Newton-Kantorovich equilibrium solver ────────────────────────
 
     def _compute_gs_residual(self, Source: FloatArray) -> FloatArray:
@@ -902,7 +943,11 @@ class FusionKernel:
 
         return dJ_dpsi
 
-    def _newton_solve_dispatch(self) -> dict[str, Any]:
+    def _newton_solve_dispatch(
+        self,
+        preserve_initial_state: bool = False,
+        boundary_flux: FloatArray | None = None,
+    ) -> dict[str, Any]:
         """Newton-Kantorovich equilibrium solver with Picard warmup.
 
         1. Run 15 Picard warmup steps to get a reasonable initial guess.
@@ -914,8 +959,10 @@ class FusionKernel:
         from scipy.sparse.linalg import LinearOperator, gmres
 
         t0 = time.time()
-        self.Psi = self.calculate_vacuum_field()
-        Psi_vac_boundary = self.Psi.copy()
+        Psi_vac_boundary = self._prepare_initial_flux(
+            preserve_initial_state=preserve_initial_state,
+            boundary_flux=boundary_flux,
+        )
 
         max_iter: int = self.cfg["solver"]["max_iterations"]
         tol: float = self.cfg["solver"]["convergence_threshold"]
@@ -1040,17 +1087,40 @@ class FusionKernel:
 
     # ── Rust multigrid delegation ────────────────────────────────────
 
-    def _solve_via_rust_multigrid(self) -> dict[str, Any]:
+    def _solve_via_rust_multigrid(
+        self,
+        preserve_initial_state: bool = False,
+        boundary_flux: FloatArray | None = None,
+    ) -> dict[str, Any]:
         """Delegate the full equilibrium solve to the Rust multigrid backend.
 
         Falls back to Python SOR if the Rust extension is not installed.
         """
         from scpn_fusion.core._rust_compat import _rust_available, RustAcceleratedKernel
 
+        if preserve_initial_state or boundary_flux is not None:
+            logger.warning(
+                "Boundary-constrained solve requested with rust_multigrid; "
+                "falling back to Python SOR."
+            )
+            prior_method = self.cfg["solver"].get("solver_method", "rust_multigrid")
+            self.cfg["solver"]["solver_method"] = "sor"
+            try:
+                return self.solve_equilibrium(
+                    preserve_initial_state=preserve_initial_state,
+                    boundary_flux=boundary_flux,
+                )
+            finally:
+                self.cfg["solver"]["solver_method"] = prior_method
+
         if not _rust_available():
             logger.warning("Rust unavailable; falling back to Python SOR.")
+            prior_method = self.cfg["solver"].get("solver_method", "rust_multigrid")
             self.cfg["solver"]["solver_method"] = "sor"
-            return self.solve_equilibrium()
+            try:
+                return self.solve_equilibrium()
+            finally:
+                self.cfg["solver"]["solver_method"] = prior_method
 
         t0 = time.time()
         rk = RustAcceleratedKernel(self._config_path)
@@ -1076,7 +1146,11 @@ class FusionKernel:
 
     # ── main solver ───────────────────────────────────────────────────
 
-    def solve_equilibrium(self) -> dict[str, Any]:
+    def solve_equilibrium(
+        self,
+        preserve_initial_state: bool = False,
+        boundary_flux: FloatArray | None = None,
+    ) -> dict[str, Any]:
         """Run the full Picard-iteration equilibrium solver.
 
         Iterates: topology analysis -> source update -> elliptic solve ->
@@ -1094,6 +1168,15 @@ class FusionKernel:
             "residual": float, "residual_history": list[float],
             "wall_time_s": float, "solver_method": str}``
 
+        Parameters
+        ----------
+        preserve_initial_state : bool, optional
+            Keep current interior ``self.Psi`` values and only enforce boundary
+            conditions before the iterative solve. Default is ``False``.
+        boundary_flux : FloatArray | None, optional
+            Explicit boundary map to enforce during solve. Must have shape
+            ``(NZ, NR)`` when provided.
+
         Raises
         ------
         RuntimeError
@@ -1106,12 +1189,20 @@ class FusionKernel:
 
         # ── Fast-path dispatches ──
         if method == "rust_multigrid":
-            return self._solve_via_rust_multigrid()
+            return self._solve_via_rust_multigrid(
+                preserve_initial_state=preserve_initial_state,
+                boundary_flux=boundary_flux,
+            )
         if method == "newton":
-            return self._newton_solve_dispatch()
+            return self._newton_solve_dispatch(
+                preserve_initial_state=preserve_initial_state,
+                boundary_flux=boundary_flux,
+            )
 
-        self.Psi = self.calculate_vacuum_field()
-        Psi_vac_boundary = self.Psi.copy()
+        Psi_vac_boundary = self._prepare_initial_flux(
+            preserve_initial_state=preserve_initial_state,
+            boundary_flux=boundary_flux,
+        )
 
         max_iter: int = self.cfg["solver"]["max_iterations"]
         tol: float = self.cfg["solver"]["convergence_threshold"]
@@ -1404,7 +1495,10 @@ class FusionKernel:
 
             # Inner GS solve (use existing Picard iteration)
             psi_old = self.Psi.copy()
-            self.solve_equilibrium()
+            self.solve_equilibrium(
+                preserve_initial_state=True,
+                boundary_flux=psi_ext,
+            )
 
             # Optional: optimise coil currents to match target shape
             if optimize_shape and coils.target_flux_points is not None:
