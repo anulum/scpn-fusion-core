@@ -28,6 +28,22 @@
 
 ---
 
+## [3.3.0] — 2026-02-18 (Historical Backfill)
+
+### Added / Changed — v3.3.0: Phase 1+2+3 Integration Wave
+
+- Integrated multi-ion transport lane and coupled physics guardrails from the Phase 1+2 train.
+- Added coil-optimization and extended physics-invariant coverage in the main suite.
+- Advanced OMAS/TGLF coupling scaffolding and related interoperability paths.
+- Updated publication/paper artifacts in the Phase 3 documentation wave.
+
+### Notes
+
+- `v3.3.0` was developed and merged on 2026-02-18, but was not tagged at the time; release/tag were backfilled later for historical continuity.
+- `v3.2.0` was not published as an official release tag.
+
+---
+
 ## [3.1.0] — 2026-02-17
 
 ### Changed — v3.1.0: Phase 0 Physics Hardening
