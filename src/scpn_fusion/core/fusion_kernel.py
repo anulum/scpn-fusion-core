@@ -891,6 +891,14 @@ class FusionKernel:
         residual[1:-1, 1:-1] = Lpsi - Source[1:-1, 1:-1]
         return residual
 
+    def _compute_gs_residual_rms(self, Source: FloatArray) -> float:
+        """Return RMS GS residual over interior points."""
+        residual = self._compute_gs_residual(Source)
+        interior = residual[1:-1, 1:-1]
+        if interior.size == 0:
+            return 0.0
+        return float(np.sqrt(np.mean(interior * interior)))
+
     def _apply_gs_operator(self, v: FloatArray) -> FloatArray:
         """Apply the discrete GS* operator to array *v*.
 
@@ -1166,6 +1174,8 @@ class FusionKernel:
         dict[str, Any]
             ``{"psi": FloatArray, "converged": bool, "iterations": int,
             "residual": float, "residual_history": list[float],
+            "gs_residual": float, "gs_residual_best": float,
+            "gs_residual_history": list[float],
             "wall_time_s": float, "solver_method": str}``
 
         Parameters
@@ -1210,6 +1220,12 @@ class FusionKernel:
         fail_on_diverge: bool = bool(
             self.cfg["solver"].get("fail_on_diverge", False)
         )
+        require_gs_residual: bool = bool(
+            self.cfg["solver"].get("require_gs_residual", False)
+        )
+        gs_tol: float = float(self.cfg["solver"].get("gs_residual_threshold", tol))
+        if require_gs_residual and gs_tol <= 0.0:
+            raise ValueError("solver.gs_residual_threshold must be > 0")
         mu0: float = self.cfg["physics"]["vacuum_permeability"]
         anderson_m: int = self.cfg["solver"].get("anderson_depth", 5)
 
@@ -1217,7 +1233,10 @@ class FusionKernel:
         Psi_best = self.Psi.copy()
         diff_best: float = 1e9
         residual_history: list[float] = []
+        gs_residual_history: list[float] = []
         converged = False
+        gs_best: float = float("inf")
+        final_source: FloatArray | None = None
 
         # Anderson acceleration history buffers
         psi_history: list[FloatArray] = []
@@ -1243,6 +1262,7 @@ class FusionKernel:
 
             # 3. Elliptic solve
             Source = -mu0 * self.RR * self.J_phi
+            final_source = Source
             Psi_new = self._elliptic_solve(Source, Psi_vac_boundary)
 
             # Divergence check
@@ -1278,12 +1298,24 @@ class FusionKernel:
                     psi_history.pop(0)
                     res_history.pop(0)
 
+            gs_residual = self._compute_gs_residual_rms(Source)
+            gs_residual_history.append(gs_residual)
+            if gs_residual < gs_best:
+                gs_best = gs_residual
+
             if diff < diff_best:
                 diff_best = diff
                 Psi_best = self.Psi.copy()
 
-            if diff < tol:
-                logger.info("Converged at iter %d.  Residual: %.6e", k, diff)
+            update_converged = diff < tol
+            gs_converged = (not require_gs_residual) or (gs_residual < gs_tol)
+            if update_converged and gs_converged:
+                logger.info(
+                    "Converged at iter %d.  Update residual: %.6e | GS RMS: %.6e",
+                    k,
+                    diff,
+                    gs_residual,
+                )
                 converged = True
                 break
 
@@ -1298,6 +1330,16 @@ class FusionKernel:
                     x_point_pos[0],
                     x_point_pos[1],
                 )
+
+        if final_source is None:
+            gs_final = float("inf")
+            gs_best_out = float("inf")
+        elif gs_residual_history:
+            gs_final = gs_residual_history[-1]
+            gs_best_out = gs_best
+        else:
+            gs_final = self._compute_gs_residual_rms(final_source)
+            gs_best_out = gs_final
 
         self.compute_b_field()
         elapsed = time.time() - t0
@@ -1315,6 +1357,9 @@ class FusionKernel:
             "iterations": final_iter + 1,
             "residual": diff_best,
             "residual_history": residual_history,
+            "gs_residual": gs_final,
+            "gs_residual_best": gs_best_out,
+            "gs_residual_history": gs_residual_history,
             "wall_time_s": elapsed,
             "solver_method": method,
         }
