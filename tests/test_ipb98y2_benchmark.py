@@ -138,6 +138,23 @@ class TestIPB98y2Formula:
         assert np.isfinite(tau) and tau > 0.0
         assert np.isfinite(sigma) and sigma >= 0.0
 
+    def test_with_uncertainty_rejects_non_finite_propagated_sigma(self):
+        """Propagated uncertainty must stay finite; overflow should hard-fail."""
+        coeff = load_ipb98y2_coefficients(_COEFF_PATH)
+        coeff["exponent_uncertainties"] = {"Ip_MA": 1e308}
+        with pytest.raises(ValueError, match="sigma_tau"):
+            ipb98y2_with_uncertainty(
+                Ip=15.0,
+                BT=5.3,
+                ne19=10.1,
+                Ploss=87.0,
+                R=6.2,
+                kappa=1.70,
+                epsilon=2.0 / 6.2,
+                M=2.5,
+                coefficients=coeff,
+            )
+
     def test_load_coefficients_rejects_negative_exponent_uncertainty(
         self,
         tmp_path: Path,

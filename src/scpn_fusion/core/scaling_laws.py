@@ -314,13 +314,30 @@ def ipb98y2_with_uncertainty(
     }
 
     var_ln_tau = sigma_lnC ** 2
+    max_f64 = np.finfo(np.float64).max
     for key, val in inputs.items():
         if val > 0 and key in exp_unc:
-            var_ln_tau += (np.log(val) * exp_unc[key]) ** 2
+            log_val = abs(float(np.log(val)))
+            sigma_alpha = abs(float(exp_unc[key]))
+            if not np.isfinite(log_val) or not np.isfinite(sigma_alpha):
+                var_ln_tau = float("inf")
+                break
+
+            # Avoid runtime overflow warnings in extreme uncertainty metadata.
+            if log_val > 0.0 and sigma_alpha > np.sqrt(max_f64) / log_val:
+                var_ln_tau = float("inf")
+                break
+
+            var_ln_tau += (log_val * sigma_alpha) ** 2
 
     sigma_ln_tau = np.sqrt(var_ln_tau)
     # Convert from log-space: sigma_tau ≈ tau * sigma_ln_tau
     sigma_tau = float(tau * sigma_ln_tau)
+    if not np.isfinite(sigma_tau) or sigma_tau < 0.0:
+        raise ValueError(
+            "Computed IPB98(y,2) uncertainty is invalid "
+            f"(sigma_tau={sigma_tau!r}) for supplied inputs."
+        )
 
     return float(tau), sigma_tau
 
