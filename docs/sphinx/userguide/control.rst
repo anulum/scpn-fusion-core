@@ -37,7 +37,7 @@ real-time flight simulator with:
 
 Usage::
 
-    python run_fusion_suite.py flight
+    scpn-fusion flight
 
 The flight simulator runs the plant model at configurable time steps
 (default :math:`\Delta t = 1\,\text{ms}`) with real-time feedback from

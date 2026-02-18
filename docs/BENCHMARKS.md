@@ -316,7 +316,7 @@ python profiling/profile_geometry_3d.py --toroidal 48 --poloidal 48 --top 50
 python validation/validate_against_sparc.py
 
 # Full 26-mode regression
-python run_fusion_suite.py all
+scpn-fusion all --surrogate --experimental
 ```
 
 After running `cargo bench`, raw Criterion data is stored in

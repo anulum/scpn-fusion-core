@@ -69,11 +69,23 @@ jobs:
           PY
       - name: Run tests
         run: pytest tests/ -v
+      - name: Generate Python coverage report
+        if: matrix.python-version == '3.12'
+        run: pytest tests/ -q --cov=scpn_fusion --cov-report=xml:coverage-python.xml
       - name: Run property-based tests (Hypothesis)
         run: pytest tests/test_hypothesis_properties.py -v --hypothesis-seed=0
-      - name: Static typing (SCPN strict)
+      - name: Static typing (mypy gate)
         if: matrix.python-version == '3.12'
         run: python tools/run_mypy_strict.py
+      - name: Upload Python coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage-python.xml
+          flags: python
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   geometry-3d-smoke:
     name: Geometry 3D Smoke

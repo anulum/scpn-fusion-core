@@ -123,7 +123,7 @@ After installation, verify that the package loads correctly::
 
 Run a quick equilibrium solve to confirm numerical correctness::
 
-    python run_fusion_suite.py kernel
+    scpn-fusion kernel
 
 Expected output: a converged Grad-Shafranov equilibrium with magnetic
 axis position, safety factor profile, and plasma current reported to

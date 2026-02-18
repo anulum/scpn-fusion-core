@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Run mypy with CI-parity settings for deterministic local type checks."""
+"""Run mypy with CI-parity settings for deterministic local type-gate checks."""
 
 from __future__ import annotations
 

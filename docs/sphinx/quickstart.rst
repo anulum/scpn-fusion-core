@@ -9,10 +9,10 @@ launching the neuro-symbolic compiler.
 Solve a Grad-Shafranov Equilibrium
 -----------------------------------
 
-The primary entry point is ``run_fusion_suite.py``, which dispatches to
+The primary entry point is ``scpn-fusion``, which dispatches to
 the appropriate simulation mode::
 
-    python run_fusion_suite.py kernel
+    scpn-fusion kernel
 
 This invokes the Picard-iteration Grad-Shafranov solver on a default
 ITER-class configuration.  The solver iterates the nonlinear elliptic
@@ -70,7 +70,7 @@ Run a Compact Reactor Search
 The ``optimizer`` mode performs a multi-objective design-space exploration
 to find the smallest tokamak that achieves :math:`Q \geq 10` ignition::
 
-    python run_fusion_suite.py optimizer
+    scpn-fusion optimizer
 
 The optimizer sweeps major/minor radius, elongation, triangularity,
 magnetic field strength, plasma current, and heating power allocation
@@ -84,7 +84,7 @@ Launch the Tokamak Flight Simulator
 The flight simulator provides a real-time control loop with actuator
 lag dynamics::
 
-    python run_fusion_suite.py flight
+    scpn-fusion flight
 
 This mode demonstrates PID and MPC controllers maintaining plasma
 position, current, and shape against perturbations.
@@ -95,7 +95,7 @@ Compile a Petri Net to an SNN Controller
 The neuro-symbolic compiler is the core innovation of SCPN-Fusion-Core.
 A simple example::
 
-    python run_fusion_suite.py neuro-control
+    scpn-fusion neuro-control
 
 This compiles a plasma control policy (expressed as a stochastic Petri
 net) into a population of leaky integrate-and-fire (LIF) neurons and

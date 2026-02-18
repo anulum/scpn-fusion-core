@@ -4,7 +4,7 @@
   <img src="docs/assets/repo_header.png" alt="SCPN Fusion Core — Neuro-Symbolic Tokamak Control">
 </p>
 
-[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.1.0-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-1141_Python_%7C_200%2B_Rust-green.svg)
+[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![Zenodo](https://img.shields.io/badge/Zenodo-DOI_pending-lightgrey)](https://zenodo.org/) [![arXiv](https://img.shields.io/badge/arXiv-coming-lightgrey)](https://arxiv.org/) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.4.0-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-1141_Python_%7C_200%2B_Rust-green.svg)
 
 A **neuro-symbolic control framework for tokamak fusion reactors** with
 physics-informed surrogate models and optional Rust acceleration. SCPN
@@ -128,10 +128,11 @@ cd scpn-fusion-core
 pip install -e .
 
 # Run a simulation
-python run_fusion_suite.py kernel       # Grad-Shafranov equilibrium
-python run_fusion_suite.py optimizer    # Compact reactor search (MVR-0.96)
-python run_fusion_suite.py flight       # Tokamak flight simulator
-python run_fusion_suite.py neural       # Neural equilibrium solver
+scpn-fusion kernel       # Grad-Shafranov equilibrium
+scpn-fusion optimizer    # Compact reactor search (MVR-0.96)
+scpn-fusion flight       # Tokamak flight simulator
+scpn-fusion neural --surrogate  # Neural equilibrium surrogate
+scpn-fusion all --surrogate --experimental  # one command for full unlocked suite
 python examples/run_3d_flux_quickstart.py --toroidal 24 --poloidal 24
 python examples/run_3d_flux_quickstart.py --toroidal 24 --poloidal 24 --preview-png artifacts/SCPN_Plasma_3D_quickstart.png
 
@@ -147,8 +148,8 @@ The 3D quickstart writes an OBJ mesh to `artifacts/SCPN_Plasma_3D_quickstart.obj
 ### Docker (One-Click Run)
 
 ```bash
-# Run the Streamlit dashboard
-docker compose up
+# One-click dashboard
+docker compose up --build
 
 # Or build and run manually
 docker build -t scpn-fusion-core .
@@ -159,15 +160,27 @@ docker build --build-arg INSTALL_DEV=1 -t scpn-fusion-core:dev .
 docker run scpn-fusion-core:dev pytest tests/ -v
 ```
 
+### Public Demo (Shot Replay)
+
+- Demo playbook: [`docs/STREAMLIT_DEMO_PLAYBOOK.md`](docs/STREAMLIT_DEMO_PLAYBOOK.md)
+- One-click container launch: `docker compose up --build`
+- YouTube embed: pending upload for v3.4.0 release notes
+
 ### Pure Python (No Rust Toolchain Required)
 
 The entire simulation suite works without Rust. Every module auto-detects the
 Rust extension and falls back to NumPy/SciPy:
 
 ```bash
-pip install scpn-fusion          # from PyPI (pre-built wheels include Rust)
+pip install "scpn-fusion[full]"  # from PyPI (pulls optional physics + Rust wheel)
 # OR
 pip install -e .                 # from source (pure Python, no cargo needed)
+```
+
+Legacy wrapper remains available:
+
+```bash
+python run_fusion_suite.py kernel
 ```
 
 If the Rust extension is not available, you'll see a one-time info message at
@@ -291,8 +304,8 @@ python -c "from scpn_fusion.core.eqdsk import read_geqdsk; eq = read_geqdsk('val
 ### Experimental — Requires external SCPN framework components
 
 ```bash
-python run_fusion_suite.py --experimental quantum
-SCPN_EXPERIMENTAL=1 python run_fusion_suite.py vibrana
+scpn-fusion quantum --experimental
+SCPN_EXPERIMENTAL=1 scpn-fusion vibrana
 ```
 
 These modes (quantum, vibrana, lazarus, director) are integration bridges
@@ -300,7 +313,7 @@ to external components not shipped in this repo.
 
 ## Minimum Viable Reactor (MVR-0.96)
 
-The compact reactor optimizer (`python run_fusion_suite.py optimizer`) performs multi-objective design-space exploration to find the smallest tokamak configuration that achieves Q >= 10 ignition. The "0.96" refers to the normalized minor radius target. Key parameters explored:
+The compact reactor optimizer (`scpn-fusion optimizer`) performs multi-objective design-space exploration to find the smallest tokamak configuration that achieves Q >= 10 ignition. The "0.96" refers to the normalized minor radius target. Key parameters explored:
 
 - Major/minor radius, elongation, triangularity
 - Magnetic field strength, plasma current

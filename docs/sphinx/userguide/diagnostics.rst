@@ -103,7 +103,7 @@ The ``run_diagnostics`` module (``run_diagnostics.py``) provides a
 convenience function for running a full diagnostic suite against a
 plasma state.  This is used in the ``diagnostics`` simulation mode::
 
-    python run_fusion_suite.py diagnostics
+    scpn-fusion diagnostics
 
 The runner generates synthetic measurements, applies noise, performs
 tomographic inversion, and reports reconstruction quality metrics.
