@@ -8,6 +8,26 @@
 
 # Changelog
 
+## [3.4.0] — 2026-02-18
+
+### Changed — v3.4.0: Unified CLI + Release Surface Hardening
+
+- Replaced legacy `os.system` launcher with structured `click` CLI (`scpn-fusion`) and `subprocess` execution.
+- Added single-command suite execution via `scpn-fusion all --surrogate --experimental`.
+- Kept `run_fusion_suite.py` as compatibility wrapper forwarding to the new CLI.
+- Added CLI regression tests in `tests/test_cli_launcher.py`.
+- Aligned release metadata to `3.4.0` across `pyproject.toml`, `setup.py`, `src/scpn_fusion/__init__.py`, and `CITATION.cff`.
+- Added coverage upload lane to CI and updated README badges/quickstart docs.
+- Added Streamlit demo runbook: `docs/STREAMLIT_DEMO_PLAYBOOK.md`.
+- Clarified type-checking lane wording from "strict" claim to explicit "mypy gate" where configured.
+
+### Notes
+
+- `v3.2.0` and `v3.3.0` were internal development trains and were not published as official git tags/releases.
+- `v3.4.0` is the next official tagged release after `v3.1.0`.
+
+---
+
 ## [3.1.0] — 2026-02-17
 
 ### Changed — v3.1.0: Phase 0 Physics Hardening
