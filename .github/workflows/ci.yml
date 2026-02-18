@@ -242,8 +242,24 @@ jobs:
             scpn-fusion-rs/target
           key: ${{ runner.os }}-tarpaulin-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-tarpaulin-
+      - name: Install cargo-binstall
+        uses: taiki-e/install-action@cargo-binstall
       - name: Install cargo-tarpaulin
-        run: cargo install cargo-tarpaulin
+        run: |
+          set -euo pipefail
+          if cargo binstall --no-confirm --force cargo-tarpaulin; then
+            exit 0
+          fi
+          echo "cargo-binstall path failed, retrying locked source build..."
+          for attempt in 1 2 3; do
+            if cargo install cargo-tarpaulin --locked; then
+              exit 0
+            fi
+            echo "cargo install attempt ${attempt}/3 failed."
+            sleep $((attempt * 10))
+          done
+          echo "cargo-tarpaulin install failed after retries."
+          exit 1
       - name: Generate coverage
         run: cargo tarpaulin --packages fusion-types fusion-math fusion-physics fusion-nuclear fusion-engineering fusion-control fusion-diagnostics fusion-ml --run-types Lib --timeout 300 --out xml --output-dir coverage
       - name: Upload coverage to Codecov
