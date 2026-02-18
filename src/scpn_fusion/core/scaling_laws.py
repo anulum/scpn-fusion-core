@@ -272,15 +272,26 @@ def ipb98y2_with_uncertainty(
         (tau_E, sigma_tau_E) — predicted confinement time and its
         1-sigma uncertainty [s].
     """
-    tau = ipb98y2_tau_e(Ip, BT, ne19, Ploss, R, kappa, epsilon, M,
-                        coefficients=coefficients)
-
     if coefficients is None:
-        coefficients = load_ipb98y2_coefficients()
+        coeff = load_ipb98y2_coefficients()
+    else:
+        coeff = _validate_ipb98y2_coefficients(coefficients)
+
+    tau = ipb98y2_tau_e(
+        Ip,
+        BT,
+        ne19,
+        Ploss,
+        R,
+        kappa,
+        epsilon,
+        M,
+        coefficients=coeff,
+    )
 
     # Published exponent uncertainties (Verdoolaege et al. NF 2021)
     # These are 1-sigma uncertainties on the log-space exponents.
-    exp_unc = coefficients.get("exponent_uncertainties", {
+    exp_unc = coeff.get("exponent_uncertainties", {
         "Ip_MA": 0.02,
         "BT_T": 0.04,
         "ne19_1e19m3": 0.03,
@@ -294,7 +305,7 @@ def ipb98y2_with_uncertainty(
     # Log-linear error propagation:
     # ln(tau) = ln(C) + sum_k alpha_k * ln(x_k)
     # sigma_ln_tau^2 = sum_k (ln(x_k))^2 * sigma_alpha_k^2 + sigma_ln_C^2
-    sigma_lnC = float(coefficients.get("sigma_lnC", 0.14))
+    sigma_lnC = float(coeff.get("sigma_lnC", 0.14))
 
     inputs = {
         "Ip_MA": Ip, "BT_T": BT, "ne19_1e19m3": ne19,

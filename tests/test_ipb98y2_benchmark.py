@@ -31,6 +31,7 @@ from scpn_fusion.core.scaling_laws import (
     TransportBenchmarkResult,
     compute_h_factor,
     ipb98y2_tau_e,
+    ipb98y2_with_uncertainty,
     load_ipb98y2_coefficients,
 )
 
@@ -118,6 +119,24 @@ class TestIPB98y2Formula:
                 M=2.5,
                 coefficients=coeff,
             )
+
+    def test_with_uncertainty_normalizes_numeric_string_uncertainties(self):
+        """Uncertainty path should normalize numeric-string metadata safely."""
+        coeff = load_ipb98y2_coefficients(_COEFF_PATH)
+        coeff["exponent_uncertainties"] = {"Ip_MA": "0.02"}
+        tau, sigma = ipb98y2_with_uncertainty(
+            Ip=15.0,
+            BT=5.3,
+            ne19=10.1,
+            Ploss=87.0,
+            R=6.2,
+            kappa=1.70,
+            epsilon=2.0 / 6.2,
+            M=2.5,
+            coefficients=coeff,
+        )
+        assert np.isfinite(tau) and tau > 0.0
+        assert np.isfinite(sigma) and sigma >= 0.0
 
     def test_load_coefficients_rejects_negative_exponent_uncertainty(
         self,
