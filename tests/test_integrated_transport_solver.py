@@ -186,6 +186,43 @@ class TestEvolveProfiles:
         # Temperature should have changed (either up or stabilized)
         assert T_end != T_start
 
+    def test_evolve_rejects_nonpositive_or_nonfinite_dt(self, solver: TransportSolver) -> None:
+        """dt must be finite and strictly positive."""
+        with pytest.raises(ValueError):
+            solver.evolve_profiles(dt=0.0, P_aux=50.0)
+        with pytest.raises(ValueError):
+            solver.evolve_profiles(dt=-0.01, P_aux=50.0)
+        with pytest.raises(ValueError):
+            solver.evolve_profiles(dt=float("nan"), P_aux=50.0)
+
+    def test_evolve_rejects_nonfinite_heating(self, solver: TransportSolver) -> None:
+        """P_aux must be finite."""
+        with pytest.raises(ValueError):
+            solver.evolve_profiles(dt=0.01, P_aux=float("nan"))
+        with pytest.raises(ValueError):
+            solver.evolve_profiles(dt=0.01, P_aux=float("inf"))
+
+    def test_evolve_recovers_nonfinite_state(self, solver: TransportSolver) -> None:
+        """Non-finite profile/transport state is repaired before CN stepping."""
+        solver.Ti[3] = float("nan")
+        solver.Te[5] = float("inf")
+        solver.ne[7] = float("nan")
+        solver.chi_i[11] = float("inf")
+        solver.chi_e[13] = float("nan")
+        solver.n_impurity[17] = float("inf")
+
+        avg_t, core_t = solver.evolve_profiles(dt=0.01, P_aux=50.0)
+
+        assert np.isfinite(avg_t)
+        assert np.isfinite(core_t)
+        assert np.all(np.isfinite(solver.Ti))
+        assert np.all(np.isfinite(solver.Te))
+        assert np.all(np.isfinite(solver.ne))
+        assert np.all(np.isfinite(solver.chi_i))
+        assert np.all(np.isfinite(solver.chi_e))
+        assert np.all(np.isfinite(solver.n_impurity))
+        assert solver._last_numerical_recovery_count > 0
+
 
 # ── 3. Multi-Ion Species ──────────────────────────────────────────────
 

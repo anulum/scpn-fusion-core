@@ -279,6 +279,9 @@ class TransportSolver(FusionKernel):
         # Z_eff tracking (updated every evolve step in multi-ion mode)
         self._Z_eff: float = 1.5
 
+        # Numerical hardening telemetry (non-finite replacements per step)
+        self._last_numerical_recovery_count: int = 0
+
     def set_neoclassical(self, R0: float, a: float, B0: float, A_ion: float = 2.0, Z_eff: float = 1.5, q0: float = 1.0, q_edge: float = 3.0) -> None:
         """Configure Chang-Hinton neoclassical transport model.
 
@@ -513,21 +516,32 @@ class TransportSolver(FusionKernel):
         cp = np.empty(n - 1)
         dp = np.empty(n)
 
-        cp[0] = c[0] / b[0]
-        dp[0] = d[0] / b[0]
+        b0 = float(b[0])
+        if (not np.isfinite(b0)) or abs(b0) < 1e-30:
+            b0 = 1e-30
+        cp0 = float(c[0]) / b0
+        dp0 = float(d[0]) / b0
+        cp[0] = cp0 if np.isfinite(cp0) else 0.0
+        dp[0] = dp0 if np.isfinite(dp0) else 0.0
 
         for i in range(1, n):
             m = b[i] - a[i - 1] * (cp[i - 1] if i - 1 < len(cp) else 0.0)
-            if abs(m) < 1e-30:
+            if (not np.isfinite(m)) or abs(m) < 1e-30:
                 m = 1e-30
-            dp[i] = (d[i] - a[i - 1] * dp[i - 1]) / m
+            numer = d[i] - a[i - 1] * dp[i - 1]
+            if not np.isfinite(numer):
+                numer = 0.0
+            dp_i = numer / m
+            dp[i] = dp_i if np.isfinite(dp_i) else 0.0
             if i < n - 1:
-                cp[i] = c[i] / m
+                cp_i = c[i] / m
+                cp[i] = cp_i if np.isfinite(cp_i) else 0.0
 
         x = np.empty(n)
         x[-1] = dp[-1]
         for i in range(n - 2, -1, -1):
-            x[i] = dp[i] - cp[i] * x[i + 1]
+            x_i = dp[i] - cp[i] * x[i + 1]
+            x[i] = x_i if np.isfinite(x_i) else 0.0
 
         return x
 
@@ -589,6 +603,80 @@ class TransportSolver(FusionKernel):
             a[i - 1] = -0.5 * dt * coeff_im   # T_{i-1} coefficient
 
         return a, b, c
+
+    @staticmethod
+    def _sanitize_with_fallback(
+        arr: np.ndarray,
+        fallback: np.ndarray,
+        *,
+        floor: float | None = None,
+        ceil: float | None = None,
+    ) -> tuple[np.ndarray, int]:
+        """Replace non-finite entries and enforce optional lower/upper bounds."""
+        out = np.asarray(arr, dtype=np.float64).copy()
+        fb = np.asarray(fallback, dtype=np.float64)
+        bad = ~np.isfinite(out)
+        recovered = int(np.count_nonzero(bad))
+        if recovered > 0:
+            out[bad] = fb[bad]
+        if floor is not None:
+            np.maximum(out, floor, out=out)
+        if ceil is not None:
+            np.minimum(out, ceil, out=out)
+        return out, recovered
+
+    def _sanitize_runtime_state(self) -> int:
+        """Keep runtime profiles and coefficients finite during transport stepping."""
+        recovered_total = 0
+
+        ti_fb = np.where(np.isfinite(self.Ti), self.Ti, 1.0)
+        self.Ti, n_ti = self._sanitize_with_fallback(self.Ti, ti_fb, floor=0.01, ceil=1e3)
+        recovered_total += n_ti
+
+        te_fb = np.where(np.isfinite(self.Te), self.Te, 1.0)
+        self.Te, n_te = self._sanitize_with_fallback(self.Te, te_fb, floor=0.01, ceil=1e3)
+        recovered_total += n_te
+
+        ne_fb = np.where(np.isfinite(self.ne), self.ne, 5.0)
+        self.ne, n_ne = self._sanitize_with_fallback(self.ne, ne_fb, floor=0.1, ceil=1e3)
+        recovered_total += n_ne
+
+        chi_i_fb = np.where(np.isfinite(self.chi_i), self.chi_i, 0.5)
+        self.chi_i, n_chi_i = self._sanitize_with_fallback(
+            self.chi_i, chi_i_fb, floor=0.01, ceil=1e4
+        )
+        recovered_total += n_chi_i
+
+        chi_e_fb = np.where(np.isfinite(self.chi_e), self.chi_e, 0.5)
+        self.chi_e, n_chi_e = self._sanitize_with_fallback(
+            self.chi_e, chi_e_fb, floor=0.01, ceil=1e4
+        )
+        recovered_total += n_chi_e
+
+        dn_fb = np.where(np.isfinite(self.D_n), self.D_n, 0.1)
+        self.D_n, n_dn = self._sanitize_with_fallback(self.D_n, dn_fb, floor=0.0, ceil=1e4)
+        recovered_total += n_dn
+
+        imp_fb = np.where(np.isfinite(self.n_impurity), self.n_impurity, 0.0)
+        self.n_impurity, n_imp = self._sanitize_with_fallback(
+            self.n_impurity, imp_fb, floor=0.0, ceil=1e3
+        )
+        recovered_total += n_imp
+
+        if self.n_D is not None:
+            n_d_fb = np.where(np.isfinite(self.n_D), self.n_D, 0.5)
+            self.n_D, n_d = self._sanitize_with_fallback(self.n_D, n_d_fb, floor=0.001, ceil=1e3)
+            recovered_total += n_d
+        if self.n_T is not None:
+            n_t_fb = np.where(np.isfinite(self.n_T), self.n_T, 0.5)
+            self.n_T, n_t = self._sanitize_with_fallback(self.n_T, n_t_fb, floor=0.001, ceil=1e3)
+            recovered_total += n_t
+        if self.n_He is not None:
+            n_he_fb = np.where(np.isfinite(self.n_He), self.n_He, 0.0)
+            self.n_He, n_he = self._sanitize_with_fallback(self.n_He, n_he_fb, floor=0.0, ceil=1e3)
+            recovered_total += n_he
+
+        return recovered_total
 
     # ── Multi-ion helpers (P1.1) ────────────────────────────────────
 
@@ -737,6 +825,12 @@ class TransportSolver(FusionKernel):
             When True, raise :class:`PhysicsError` if the per-step energy
             conservation error exceeds 1%.
         """
+        if (not np.isfinite(dt)) or dt <= 0.0:
+            raise ValueError(f"dt must be finite and > 0, got {dt!r}")
+        if not np.isfinite(P_aux):
+            raise ValueError(f"P_aux must be finite, got {P_aux!r}")
+
+        self._last_numerical_recovery_count = self._sanitize_runtime_state()
         Ti_old = self.Ti.copy()
         Te_old = self.Te.copy()
 
@@ -762,16 +856,31 @@ class TransportSolver(FusionKernel):
             S_rad_i = cooling_factor * self.ne * self.n_impurity * np.sqrt(self.Te + 0.1)
 
         net_source_i = S_heat_i - S_rad_i
+        net_source_i, n_src_i = self._sanitize_with_fallback(
+            net_source_i,
+            np.zeros_like(net_source_i),
+        )
+        self._last_numerical_recovery_count += n_src_i
 
         # ── Ion temperature CN step ──
         Lh_explicit = self._explicit_diffusion_rhs(self.Ti, self.chi_i)
+        Lh_explicit, n_lh_i = self._sanitize_with_fallback(
+            Lh_explicit,
+            np.zeros_like(Lh_explicit),
+        )
+        self._last_numerical_recovery_count += n_lh_i
         rhs = self.Ti + 0.5 * dt * Lh_explicit + dt * net_source_i
+        rhs, n_rhs_i = self._sanitize_with_fallback(rhs, Ti_old, floor=0.01, ceil=1e3)
+        self._last_numerical_recovery_count += n_rhs_i
         a, b, c = self._build_cn_tridiag(self.chi_i, dt)
         new_Ti = self._thomas_solve(a, b, c, rhs)
 
         new_Ti[0] = new_Ti[1]    # Neumann at core
         new_Ti[-1] = 0.1         # Dirichlet at edge
-        self.Ti = np.maximum(0.01, new_Ti)
+        self.Ti, n_ti_new = self._sanitize_with_fallback(
+            new_Ti, Ti_old, floor=0.01, ceil=1e3
+        )
+        self._last_numerical_recovery_count += n_ti_new
 
         # ── Electron temperature ──
         if self.multi_ion:
@@ -791,17 +900,47 @@ class TransportSolver(FusionKernel):
             S_equil = (self.Ti - Te_old) / tau_eq
 
             net_source_e = S_heat_e - S_rad_e - S_brem_e + S_equil
+            net_source_e, n_src_e = self._sanitize_with_fallback(
+                net_source_e,
+                np.zeros_like(net_source_e),
+            )
+            self._last_numerical_recovery_count += n_src_e
 
             Lh_explicit_e = self._explicit_diffusion_rhs(Te_old, self.chi_e)
+            Lh_explicit_e, n_lh_e = self._sanitize_with_fallback(
+                Lh_explicit_e,
+                np.zeros_like(Lh_explicit_e),
+            )
+            self._last_numerical_recovery_count += n_lh_e
             rhs_e = Te_old + 0.5 * dt * Lh_explicit_e + dt * net_source_e
+            rhs_e, n_rhs_e = self._sanitize_with_fallback(rhs_e, Te_old, floor=0.01, ceil=1e3)
+            self._last_numerical_recovery_count += n_rhs_e
             a_e, b_e, c_e = self._build_cn_tridiag(self.chi_e, dt)
             new_Te = self._thomas_solve(a_e, b_e, c_e, rhs_e)
 
             new_Te[0] = new_Te[1]
             new_Te[-1] = 0.08  # cooler edge electrons
-            self.Te = np.maximum(0.01, new_Te)
+            self.Te, n_te_new = self._sanitize_with_fallback(
+                new_Te, Te_old, floor=0.01, ceil=1e3
+            )
+            self._last_numerical_recovery_count += n_te_new
         else:
             self.Te = self.Ti.copy()  # Assume equilibrated (legacy)
+
+        # No auxiliary heating: forbid unphysical mean-temperature growth due to
+        # numerical overshoot in the diffusion solve on coarse toy grids.
+        if P_aux <= 0.0:
+            mean_ti_old = float(np.mean(Ti_old))
+            mean_ti_new = float(np.mean(self.Ti))
+            if np.isfinite(mean_ti_old) and np.isfinite(mean_ti_new) and mean_ti_new > mean_ti_old:
+                scale = mean_ti_old / max(mean_ti_new, 1e-12)
+                self.Ti *= scale
+                self.Ti[0] = self.Ti[1]
+                self.Ti[-1] = 0.1
+                self.Ti = np.maximum(0.01, self.Ti)
+                if not self.multi_ion:
+                    self.Te = self.Ti.copy()
+                self._last_numerical_recovery_count += 1
 
         # ── Energy conservation diagnostic ──
         if not self.multi_ion:
@@ -819,6 +958,8 @@ class TransportSolver(FusionKernel):
         self._last_conservation_error = (
             abs(dW_actual - dW_source) / max(abs(W_before), 1e-10)
         )
+        if not np.isfinite(self._last_conservation_error):
+            self._last_conservation_error = float("inf")
 
         if enforce_conservation and self._last_conservation_error > 0.01:
             raise PhysicsError(
@@ -828,6 +969,7 @@ class TransportSolver(FusionKernel):
                 f"dW_source={dW_source:.4e} J."
             )
 
+        self._last_numerical_recovery_count += self._sanitize_runtime_state()
         avg_ti: float = np.mean(self.Ti).item()
         core_ti: float = self.Ti[0].item()
         return avg_ti, core_ti
