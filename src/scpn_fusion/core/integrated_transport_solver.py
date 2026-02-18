@@ -286,7 +286,7 @@ class TransportSolver(FusionKernel):
         of the constant chi_base = 0.5.
         """
         q_profile = q0 + (q_edge - q0) * self.rho**2
-        self.neoclassical_params: dict[str, Any] | None = {
+        self.neoclassical_params = {
             'R0': R0, 'a': a, 'B0': B0,
             'A_ion': A_ion, 'Z_eff': Z_eff,
             'q_profile': q_profile,
