@@ -222,6 +222,16 @@ increases with the strength of the input above threshold.
 \end{equation}
 The clip operation ensures densities remain in the valid $[0,1]$ range.
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/fig_petri_net.pdf}
+\caption{The 8-place, 4-transition Petri net for vertical stability
+control. Sensor places (left) receive normalised error signals;
+transitions fire when activation exceeds threshold; action places
+(right) provide signed-pair control outputs.}
+\label{fig:petri-net}
+\end{figure}
+
 \subsection{Token Conservation}
 
 A Petri net is \emph{conservative} if the total token mass is preserved
@@ -264,6 +274,16 @@ The entire $W_{\mathrm{in}} \cdot \mathbf{m}$ matrix--vector product
 reduces to: \textbf{encode $\to$ AND $\to$ popcount $\to$ normalise}.
 No multipliers, no floating-point units --- only logic gates and bit
 counters.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_compilation_pipeline.pdf}
+\caption{Three-stage compilation pipeline: (A)~builder API constructs
+the Petri net topology; (B)~compiler maps places to LIF neurons and
+encodes weights as pre-packed bitstreams; (C)~runtime controller
+closes the loop with safety-constrained action decoding.}
+\label{fig:compilation-pipeline}
+\end{figure}
 
 \subsection{Packet A: StochasticPetriNet Builder}
 
@@ -310,6 +330,16 @@ eliminates temporal leak, and the zero noise standard deviation ensures
 deterministic operation.  Combined with resetting state before every
 step, this makes the neuron a stateless threshold comparator: it fires
 if and only if the input current exceeds the threshold.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/fig_lif_neuron.pdf}
+\caption{Leaky integrate-and-fire neuron response. With
+$\tau_{\mathrm{mem}} = 10^6$ (no leak), the neuron acts as a pure
+threshold comparator: it fires when the input current exceeds
+$V_{\mathrm{th}}$ and resets immediately.}
+\label{fig:lif-neuron}
+\end{figure}
 
 \paragraph{Step 3: Bitstream Pre-Encoding.}
 Each element of $W_{\mathrm{in}}$ and $W_{\mathrm{out}}$ is encoded as
@@ -488,8 +518,7 @@ controller architectures considered in this work.
 
 \begin{table}[htbp]
 \centering
-\caption{Controller latency comparison.  SNN latency on FPGA is the
-projected per-spike time for a Xilinx Alveo U250 operating at
+\caption{Controller latency comparison.  SNN latency on FPGA is a \textbf{projected} per-spike estimate (not yet measured on hardware) for a Xilinx Alveo U250 operating at
 \SI{250}{\mega\hertz}.  CPU timings are measured on an AMD Ryzen 9
 7950X.}
 \label{tab:latency}
@@ -508,6 +537,16 @@ SNN (SC)     & Neuromorphic (Loihi) & \SI{<100}{\nano\second}  & \SI{<1}{\watt} 
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/fig_latency_comparison.pdf}
+\caption{Per-update latency comparison across controller architectures
+and platforms. The stochastic computing (SC) SNN on FPGA achieves
+$\sim$100~ns latency, approximately $10{,}000\times$ faster than
+CPU-based MPC.}
+\label{fig:latency-comparison}
+\end{figure}
 
 
 % =========================================================================
@@ -593,6 +632,16 @@ SNN (SC, FPGA) & \SI{\sim 12}{\milli\second} & \SI{0.5}{\milli\metre} &
 \end{tabular}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/fig_vertical_stability.pdf}
+\caption{Vertical displacement response to a 5~mm step disturbance at
+$t = 10$~ms. All three controllers (PID, MPC, SNN) stabilise the
+displacement within $\sim$15~ms. MPC achieves the fastest settling
+with minimal overshoot; SNN performance is comparable to PID.}
+\label{fig:vertical-stability}
+\end{figure}
+
 \subsection{Radiation Tolerance}
 
 A critical advantage of the stochastic computing path is inherent
@@ -625,6 +674,16 @@ Bit Flips per Tick & Value Error & Settling Time Increase \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/fig_radiation_tolerance.pdf}
+\caption{Settling time degradation as a function of simulated bit-flip
+rate in the stochastic bitstreams ($L = 1024$ bits). The SNN
+controller degrades gracefully, maintaining stabilisation even at 100
+flips per tick.}
+\label{fig:radiation-tolerance}
+\end{figure}
 
 Even at 100 flips per tick (a flux of $\sim 10^5$ bit-flips/s,
 corresponding to an extreme radiation environment), the SNN controller
@@ -847,6 +906,10 @@ Test Suite & Scope & Tests \\
 \end{tabular}
 \end{table}
 
+As of v3.3.0, the full \scpn{} test suite comprises 1419 passing tests
+across equilibrium, transport, control, nuclear, diagnostic, and
+validation modules, all enforced by continuous integration.
+
 The canonical traffic-light test (3-place cyclic net) verifies:
 \begin{itemize}
   \item Correct period-3 state cycling over 10 steps.
@@ -866,6 +929,56 @@ The 8-place plasma controller fixture verifies:
   \item Deterministic replay from JSONL audit logs.
   \item Artifact save/load roundtrip integrity.
 \end{itemize}
+
+
+% =========================================================================
+\section{Limitations}
+\label{sec:limitations}
+
+Several limitations should be noted:
+
+\begin{enumerate}
+  \item \textbf{FPGA latency is projected, not measured.}  The
+    \SI{\sim 100}{\nano\second} per-spike latency for the stochastic
+    computing SNN (Table~\ref{tab:latency}) is a projected estimate
+    based on gate counts and clock rates for a Xilinx Alveo U250.
+    Actual FPGA synthesis and hardware measurement have not yet been
+    performed.  The Verilog IR emission stage (Packet~D) that would
+    enable this is planned but not yet implemented.
+
+  \item \textbf{Simplified plant model.}  The vertical stability
+    benchmark uses a linearised single-mode model
+    (equation~\ref{eq:vertical-eom}) with fixed parameters.  A
+    production deployment would require coupling to a nonlinear MHD
+    model with time-varying equilibrium, wall eddy current dynamics,
+    and realistic sensor noise spectra.
+
+  \item \textbf{Fixed Petri net topology.}  The current compiler
+    supports only static net topologies defined at compile time.
+    Online topology adaptation --- adding or removing places and
+    transitions during operation --- is not yet supported.  This
+    limits the controller's ability to handle unanticipated operating
+    regimes without recompilation.
+
+  \item \textbf{No online learning.}  The bitstream weights are
+    fixed at compile time.  Spike-timing-dependent plasticity (STDP)
+    or other online learning rules are not yet integrated, preventing
+    the controller from adapting to slowly varying plasma conditions
+    during a discharge.
+
+  \item \textbf{Radiation tolerance is simulated.}  The bit-flip
+    results in Table~\ref{tab:radiation} are based on software
+    simulation of random bit flips, not irradiation testing of
+    physical hardware.  Real radiation environments produce correlated
+    multi-bit upsets, latch-up events, and total ionising dose
+    effects that are not captured by the random bit-flip model.
+
+  \item \textbf{Limited multi-variable control.}  The 8-place
+    controller demonstrates vertical stability (SISO) control only.
+    Scaling to full multi-variable plasma control ($\sim$10--20 coupled
+    variables) via hierarchical Petri net composition is architecturally
+    supported but not yet validated.
+\end{enumerate}
 
 
 % =========================================================================
@@ -904,13 +1017,17 @@ control.  The key findings are:
     and FPGA synthesis without format conversion.
 \end{enumerate}
 
-Since v2.0.0, the Rust SNN implementation has been exposed to Python
+Since the initial release, the framework has grown to v3.3.0 with
+1419 passing tests.  The Rust SNN implementation is exposed to Python
 via PyO3 bindings (\code{PySnnPool}, \code{PySnnController}), enabling
 direct Rust-accelerated control from the Python scientific interface.
-The disruption predictor has been recalibrated to achieve 100\% recall
-with 0\% false positive rate on the 16-shot DIII-D reference dataset,
-and a Riccati-based $H_\infty$ controller provides robust vertical
-stability synthesis.
+The disruption predictor achieves 100\% recall with 0\% false positive
+rate on the 16-shot DIII-D reference dataset~\citep{Kates-Harbeck2019},
+a Riccati-based $H_\infty$ controller provides robust vertical
+stability synthesis, and physics invariant
+contracts~\citep{Boozer2015} enforce hard safety constraints
+($q_{\min} > 1$, $\beta_N < \beta_{N,\mathrm{crit}}$) with
+automatic disruption mitigation gating.
 
 Future work will focus on: (i)~completing the FPGA deployment chain
 via Verilog IR emission (Packet D); (ii)~scaling to multi-variable
@@ -937,7 +1054,7 @@ primitives.
 
 The full compilation pipeline (Packets A, B, and C) is available in the
 \code{src/scpn\_fusion/scpn/} directory of the \scpn{} repository at
-\url{https://github.com/anulum/scpn-fusion-core}, release v2.1.0.  The
+\url{https://github.com/anulum/scpn-fusion-core}, release v3.3.0.  The
 Rust SNN implementation is in \code{scpn-fusion-rs/crates/fusion-control/
 src/snn.rs}, with PyO3 Python bindings in
 \code{scpn-fusion-rs/crates/fusion-python/src/lib.rs}.

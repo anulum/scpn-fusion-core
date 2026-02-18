@@ -430,6 +430,16 @@ Tikhonov + Huber overhead     & $<$\SI{1}{\milli\second} & $<$0.1\% \\
 \end{tabular}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/fig_inverse_reconstruction.pdf}
+\caption{Inverse reconstruction of the SPARC flat-top equilibrium from
+24 synthetic magnetic probes. Left: recovered poloidal flux. Centre:
+probe residuals. Right: convergence of the Levenberg--Marquardt
+algorithm with Huber robust loss.}
+\label{fig:inverse-reconstruction}
+\end{figure}
+
 
 % =========================================================================
 \section{Neural Equilibrium Surrogate}
@@ -480,6 +490,15 @@ Model weights are persisted as \code{.npz} files with
 \code{allow\_pickle=False} for security and cross-platform
 reproducibility.  A SHA-256 checksum is stored alongside the weights
 for integrity verification.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/fig_neural_surrogate.pdf}
+\caption{Neural equilibrium surrogate: (a)~training loss convergence;
+(b)~predicted vs.\ true PCA coefficients on the validation set.  The
+MLP achieves relative $L^2$ error $< 5\%$ after 200 epochs.}
+\label{fig:neural-surrogate}
+\end{figure}
 
 \subsection{Inference and Fallback}
 
@@ -552,6 +571,15 @@ lmode\_vv   & $129\times129$ & $-12.16$ & $-8.5$ & 0.209 & 2.411 & 3.08 \\
 \end{tabular}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_sparc_equilibrium.pdf}
+\caption{Poloidal flux contours for four SPARC equilibria spanning
+ramp-up ($I_p = 0.2$~MA) to flat-top ($I_p = 8.7$~MA). Contour
+spacing is 0.05~Wb; the separatrix is shown in bold.}
+\label{fig:sparc-equilibrium}
+\end{figure}
+
 \subsection{ITER 15~MA Baseline}
 
 The solver is validated against the ITER baseline scenario~\citep{ITER1999}
@@ -587,6 +615,16 @@ C-Mod      & 2 & 0.02--0.04 & 3--7\% \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/fig_validation_rmse.pdf}
+\caption{Predicted vs.\ measured energy confinement time for the ITPA
+H-mode validation shots (JET, DIII-D, ASDEX Upgrade, Alcator C-Mod).
+The dashed line indicates perfect agreement; error bars reflect 20\%
+uncertainty in the IPB98(y,2) scaling.}
+\label{fig:validation-rmse}
+\end{figure}
 
 \subsection{Compact High-Field Advantage}
 
@@ -634,6 +672,15 @@ $128\times128$ & \SI{\sim 30}{\second}  & \SI{\sim 1}{\second}         & $\sim 3
 \end{tabular}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/fig_performance_scaling.pdf}
+\caption{Wall-clock time vs.\ grid resolution for the Rust and Python
+backends. The Rust backend achieves $30$--$400\times$ speedup
+depending on grid size.}
+\label{fig:performance-scaling}
+\end{figure}
+
 The super-linear speedup at coarse resolution reflects the overhead of
 Python interpreter dispatch and NumPy array allocation, which dominate
 at small problem sizes.  At $128 \times 128$, the speedup converges
@@ -650,6 +697,16 @@ convergence requires 8--12 cycles with projected times of
 \SI{\sim 15}{\milli\second}.  These projections are based on the known
 $\mathcal{O}(N)$ complexity of multigrid iteration and the measured
 per-cycle cost.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/fig_gs_convergence.pdf}
+\caption{Picard iteration convergence for the $65 \times 65$ grid on
+the SPARC flat-top equilibrium. The relative $L^2$ residual decreases
+monotonically, reaching $10^{-6}$ in approximately 40 iterations with
+SOR and 12 iterations with multigrid V-cycles.}
+\label{fig:gs-convergence}
+\end{figure}
 
 \subsection{Inverse Reconstruction}
 
@@ -701,8 +758,9 @@ a full iterative solve, enabling real-time inner-loop applications.
 
 A red-black SOR compute shader (\code{gs\_solver.wgsl}) has been
 implemented using the \code{wgpu} crate, targeting the WebGPU/Vulkan/
-Metal/D3D12 abstraction layer for cross-vendor GPU portability.  Projected
-speedups on RTX 4090-class hardware are $20{-}50\times$ for
+Metal/D3D12 abstraction layer for cross-vendor GPU portability.  These are
+projected estimates, not measured hardware benchmarks. Projected speedups
+on RTX 4090-class hardware are $20{-}50\times$ for
 $65 \times 65$ grids and $100{-}200\times$ for $256 \times 256$ grids,
 which would bring the full inverse reconstruction below
 \SI{200}{\milli\second} --- approaching the P-EFIT performance regime
@@ -762,6 +820,57 @@ reference data files (\code{iter\_reference.json},
 
 
 % =========================================================================
+\section{Limitations}
+\label{sec:limitations}
+
+Several limitations of the current implementation should be noted:
+
+\begin{enumerate}
+  \item \textbf{Reduced-order model.}  The solver is a 2D axisymmetric
+    equilibrium code, not a 3D MHD simulation.  It cannot capture
+    toroidal asymmetries, 3D field effects, or turbulent fluctuations.
+    The 1D transport module uses a gyro-Bohm diffusivity model
+    calibrated against IPB98(y,2), not a first-principles gyrokinetic
+    calculation.
+
+  \item \textbf{Solov'ev-derived boundary conditions.}  The
+    fixed-boundary solver assumes an externally specified plasma
+    boundary.  While the free-boundary extension (v3.3.0) computes
+    self-consistent coil currents, it uses a simplified vacuum Green's
+    function model rather than a full electromagnetic circuit model.
+
+  \item \textbf{Limited real-shot validation.}  Validation against
+    experimental data is based on 8 SPARC GEQDSK files and the ITPA
+    H-mode database global parameters (not profile-resolved data).  The
+    DIII-D disruption dataset comprises 16 shots.  Broader validation
+    against multi-machine profile databases (e.g., DIII-D profile
+    database, EAST MDSplus) is in progress.
+
+  \item \textbf{Projected FPGA/GPU performance.}  The GPU speedup
+    estimates in Section~\ref{sec:performance} and the FPGA latency
+    projections are based on computational models and published
+    literature, not measured hardware benchmarks.  Actual performance
+    will depend on memory bandwidth, kernel occupancy, and
+    hardware-specific factors.
+
+  \item \textbf{Neural surrogate fidelity.}  The MLP surrogate is
+    trained on a limited set of GEQDSK equilibria.  Extrapolation
+    outside the training distribution (e.g., novel machine geometries)
+    may produce physically inconsistent results.  The automatic
+    fallback to the iterative solver mitigates this risk but at the
+    cost of latency.
+
+  \item \textbf{TBR 3D correction factors.}  The tritium breeding
+    ratio is corrected using scalar port-coverage and streaming factors
+    ($\eta_{\mathrm{port}} = 0.80$, $\eta_{\mathrm{stream}} = 0.85$)
+    rather than a full 3D neutronics calculation (e.g., MCNP/Serpent).
+    The corrected TBR of $\sim 1.14$ is within the
+    Fischer~\citep{Fischer2015} range but should be independently
+    verified.
+\end{enumerate}
+
+
+% =========================================================================
 \section{Conclusions and Outlook}
 \label{sec:conclusions}
 
@@ -791,29 +900,46 @@ next-generation compact tokamaks.  The key results are:
     inference, enabling real-time applications.
 \end{enumerate}
 
-Since the initial release, v2.1.0 has added:
+Since the initial release, the codebase has grown substantially through
+v3.3.0, incorporating:
 \begin{itemize}
   \item A self-consistent GS$\leftrightarrow$transport outer iteration
-    loop (\code{run\_self\_consistent()}) that alternates Grad--Shafranov
-    solves with 1-D transport evolution until $\Psi$ convergence.
+    loop with Crank--Nicolson time stepping and CFL-adaptive
+    sub-stepping.
   \item Five MHD stability criteria (Mercier, first-stability ballooning,
-    Kruskal--Shafranov, Troyon $\beta$ limit, NTM seeding threshold).
-  \item Calibrated $\beta_N$ estimation achieving $<3\%$ error against
-    ITER and SPARC design points.
-  \item A FreeGS blind benchmark with Solov'ev analytic comparison
-    on three test cases (ITER-like, SPARC-like, spherical tokamak).
+    Kruskal--Shafranov~\citep{Kadomtsev1975}, Troyon $\beta$
+    limit~\citep{Troyon1984}, NTM seeding threshold).
+  \item Multi-ion species transport (D, T, He-ash, impurity) with
+    independent $T_e$ evolution, Bremsstrahlung radiation, and coronal
+    equilibrium tungsten cooling~\citep{Putterich2010}.
+  \item Greenwald density limit~\citep{Greenwald2002} enforcement in
+    the operating-point scanner.
+  \item Sauter bootstrap current~\citep{Sauter1999} and Spitzer
+    resistivity modules.
+  \item Free-boundary GS solver with coil current optimisation via
+    Tikhonov-regularised least-squares.
+  \item OMAS~\citep{FREEGS2019} and TGLF interface stubs for
+    interoperability with the IMAS ecosystem.
+  \item Physics invariant contracts (q$_{\min} > 1$,
+    $\beta_N < \beta_{N,\mathrm{crit}}$, $n_e < 1.2 \, n_{\mathrm{GW}}$)
+    with disruption mitigation gating.
+  \item Monte Carlo uncertainty quantification through the full
+    equilibrium $\to$ transport $\to$ fusion power chain.
+  \item 1419 passing tests (CI-enforced) across equilibrium, transport,
+    control, nuclear, and diagnostic modules.
 \end{itemize}
 
 Remaining future development priorities include:
 \begin{itemize}
   \item GPU acceleration via the \code{wgpu} compute shader backend,
     targeting sub-millisecond equilibrium solves for real-time control.
-  \item MPI domain decomposition for high-resolution ($512 \times 512$
-    and above) equilibria on leadership computing facilities.
-  \item Training the neural surrogate on the full SPARC scenario library
-    to achieve $<5\%$ relative $L^2$ error.
-  \item Monte Carlo uncertainty propagation through the full
-    equilibrium $\to$ transport $\to$ fusion power chain.
+    \emph{Note: GPU performance numbers in Section~\ref{sec:performance}
+    are projected estimates, not yet measured on hardware.}
+  \item Full TGLF binary coupling for turbulent transport benchmarking.
+  \item Training the neural surrogate on the expanded 50+ shot synthetic
+    database to achieve $<5\%$ relative $L^2$ error.
+  \item Publication of validation against the expanded ITPA dataset and
+    DIII-D/EAST real-shot profiles.
 \end{itemize}
 
 The code is released under the GNU AGPL v3 licence and is available at
@@ -840,7 +966,7 @@ tests are included in the repository at
 
 The \scpn{} code is open-source and available at
 \url{https://github.com/anulum/scpn-fusion-core} under the GNU AGPL v3
-licence.  The version used in this work corresponds to release v2.1.0.
+licence.  The version described in this work corresponds to release v3.3.0.
 
 % =========================================================================
 \bibliography{scpn_fusion}

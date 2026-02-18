@@ -1,0 +1,104 @@
+% =========================================================================
+% Conference Abstract: IAEA FEC 2026 / EPS DPP Contributed Talk
+% Title: Stochastic Petri Net Control of Tokamak Plasmas: Validation on
+%        SPARC/ITPA/DIII-D Reduced-Order Models
+% =========================================================================
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{siunitx}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue]{hyperref}
+
+\pagestyle{empty}
+
+\title{Stochastic Petri Net Control of Tokamak Plasmas:\\
+       Validation on SPARC/ITPA/DIII-D Reduced-Order Models}
+
+\author{
+  Miroslav \v{S}otek \\[2pt]
+  {\small Anulum Research, \url{www.anulum.li}} \\
+  {\small ORCID: 0009-0009-3560-0851}
+}
+
+\date{}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\noindent\textbf{Topic:} Plasma Control and Integrated Modelling (FEC
+Topic TH/P, EPS DPP Topic 9)
+
+\bigskip
+
+\noindent\textbf{Abstract.}
+We present SCPN-Fusion-Core (v3.3.0), an open-source hybrid
+Rust--Python framework that integrates a Grad--Shafranov equilibrium
+solver, 1-D multi-ion transport, MHD stability assessment, disruption
+prediction, and neuromorphic plasma control within a single,
+CI-validated codebase (1419 tests, all passing).
+
+The equilibrium solver employs Picard iteration with selectable
+red-black SOR or geometric multigrid V-cycle inner solvers.  It is
+validated against eight SPARC GEQDSK equilibria from Commonwealth
+Fusion Systems, achieving magnetic axis position errors of 2--7~mm on
+full-current scenarios ($I_p = 5$--$8.7$~MA).  Confinement scaling is
+verified against the ITPA H-mode database (JET, DIII-D, ASDEX Upgrade,
+Alcator C-Mod) with 3--10\% error relative to IPB98(y,2).  The Rust
+backend delivers a $50\times$ speedup over pure Python, solving a
+$65 \times 65$ equilibrium in $\sim$\SI{100}{\milli\second}.
+
+A key innovation is the neuro-symbolic control pipeline: tokamak
+control policies are expressed as stochastic Petri nets with
+continuous token densities in $[0,1]$, compiled into populations of
+leaky integrate-and-fire spiking neurons via bitwise AND and
+population-count operations.  This ``Tokens are Bits'' isomorphism
+eliminates floating-point arithmetic from the control loop, enabling:
+(i)~projected \SI{\sim 100}{\nano\second} per-tick latency on FPGA
+hardware; (ii)~inherent radiation tolerance (single-bit-flip graceful
+degradation); and (iii)~formal verification of boundedness, token
+conservation, and safety invariants at the symbolic level.  We
+benchmark the SNN controller against PID, MPC, and $H_\infty$
+controllers on vertical displacement event suppression with
+SPARC-relevant parameters, demonstrating comparable disturbance
+rejection.
+
+New in v3.3.0:
+\begin{itemize}
+  \item Multi-ion transport (D, T, He-ash, impurity) with independent
+    $T_e$/$T_i$ evolution and coronal tungsten radiation cooling.
+  \item Free-boundary GS solver with Tikhonov-regularised coil current
+    optimisation.
+  \item Physics invariant contracts ($q_{\min} > 1$,
+    $\beta_N < \beta_{N,\mathrm{crit}}$, Greenwald density limit)
+    enforced at every transport time step.
+  \item Disruption predictor with 100\% recall and 0\% false positive
+    rate on 16 DIII-D reference shots.
+  \item OMAS/IMAS interoperability and TGLF interface stubs.
+  \item Monte Carlo uncertainty quantification through the full
+    equilibrium $\to$ transport $\to$ fusion power chain.
+\end{itemize}
+
+\noindent\textbf{Limitations.}
+The framework is a reduced-order model (2D axisymmetric equilibrium,
+1D transport with gyro-Bohm diffusivity), not a first-principles 3D
+MHD or gyrokinetic code.  FPGA latency and GPU speedup figures are
+projected estimates.  Validation covers 8 SPARC GEQDSKs, the ITPA
+global database, and 16 DIII-D disruption shots; broader multi-machine
+profile-resolved validation is in progress.
+
+\medskip
+\noindent\textbf{Keywords:}
+Grad--Shafranov, spiking neural network, Petri net, tokamak control,
+neuromorphic computing, SPARC, stochastic computing, disruption
+prediction
+
+\medskip
+\noindent\textbf{Code:}
+Open-source (GNU AGPL v3) at
+\url{https://github.com/anulum/scpn-fusion-core}
+
+\end{document}
