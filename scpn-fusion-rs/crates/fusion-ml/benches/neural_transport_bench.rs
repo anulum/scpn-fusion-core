@@ -1,123 +1,73 @@
 // ─────────────────────────────────────────────────────────────────────
-// SCPN Fusion Core — Neural Transport Benchmarks
+// SCPN Fusion Core — Neural Transport Benchmark
 // © 1998–2026 Miroslav Šotek. All rights reserved.
 // Contact: www.anulum.li | protoscience@anulum.li
-// ORCID: https://orcid.org/0009-0009-3560-0851
 // License: GNU AGPL v3 | Commercial licensing available
 // ─────────────────────────────────────────────────────────────────────
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use fusion_ml::neural_transport::NeuralTransportModel;
-use ndarray::{array, Array1, Array2};
-use ndarray_npy::NpzWriter;
-use std::hint::black_box;
-use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
+use ndarray::{Array1, Array2};
 
-const INPUT_DIM: usize = 10;
-const HIDDEN1: usize = 64;
-const HIDDEN2: usize = 32;
-const OUTPUT_DIM: usize = 3;
+/// Benchmark: single-input predict via analytic fallback.
+///
+/// Input features (10 elements):
+///   [grad_ti, grad_te, grad_ne, shear, collisionality, zeff, q95, beta_n, rho, aspect_ratio]
+fn bench_neural_transport_predict_analytic(c: &mut Criterion) {
+    let model = NeuralTransportModel::new();
 
-fn make_npz_path() -> PathBuf {
-    let ts = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    std::env::temp_dir().join(format!(
-        "fusion_neural_transport_bench_{}_{}.npz",
-        std::process::id(),
-        ts
-    ))
+    // Physically reasonable input values for the analytic (critical-gradient) fallback.
+    let input: Array1<f64> = Array1::from_vec(vec![
+        5.0,  // grad_ti      — ion temperature gradient (above critical ~4.0)
+        4.2,  // grad_te      — electron temperature gradient (above critical ~3.5)
+        3.1,  // grad_ne      — electron density gradient (above critical ~2.5)
+        0.3,  // shear        — magnetic shear (stabilises turbulence)
+        0.05, // collisionality — normalised collision frequency
+        1.5,  // zeff         — effective ion charge (>= 1.0)
+        3.2,  // q95          — safety factor at 95% flux surface
+        1.0,  // beta_n       — normalised plasma pressure
+        0.6,  // rho          — normalised minor radius [0, 1]
+        3.0,  // aspect_ratio — R/a torus aspect ratio
+    ]);
+
+    c.bench_function("bench_neural_transport_predict_analytic", |b| {
+        b.iter(|| std::hint::black_box(model.predict(&input)))
+    });
 }
 
-fn build_neural_model() -> NeuralTransportModel {
-    let path = make_npz_path();
-    let file = std::fs::File::create(&path).expect("create npz");
-    let mut writer = NpzWriter::new(file);
+/// Benchmark: batch predict_profile over 50 radial points via analytic fallback.
+///
+/// The profile matrix has shape (50, 10); each row encodes one radial station
+/// with the same feature ordering as above, swept across the minor radius.
+fn bench_neural_transport_predict_profile_analytic(c: &mut Criterion) {
+    let model = NeuralTransportModel::new();
 
-    // Deterministic sparse-ish weights for benchmark consistency.
-    let mut w1 = Array2::<f64>::zeros((INPUT_DIM, HIDDEN1));
-    let b1 = Array1::<f64>::zeros(HIDDEN1);
-    let mut w2 = Array2::<f64>::zeros((HIDDEN1, HIDDEN2));
-    let b2 = Array1::<f64>::zeros(HIDDEN2);
-    let mut w3 = Array2::<f64>::zeros((HIDDEN2, OUTPUT_DIM));
-    let b3 = Array1::<f64>::zeros(OUTPUT_DIM);
+    // Build a 50-point radial profile sweep.
+    // rho runs from 0.02 (core) to 1.00 (edge); other features vary gently.
+    let inputs: Array2<f64> = Array2::from_shape_fn((50, 10), |(i, j)| {
+        let rho = (i as f64 + 1.0) / 50.0; // 0.02 … 1.00
+        match j {
+            0 => 4.0 + 2.0 * (1.0 - rho),  // grad_ti: peaks at core
+            1 => 3.5 + 1.5 * (1.0 - rho),  // grad_te: peaks at core
+            2 => 2.5 + 1.0 * (1.0 - rho),  // grad_ne: peaks at core
+            3 => 0.1 + 0.4 * rho,           // shear: increases toward edge
+            4 => 0.02 + 0.1 * rho,          // collisionality: increases toward edge
+            5 => 1.2 + 0.3 * rho,           // zeff: slight impurity gradient
+            6 => 3.0 + 0.5 * rho,           // q95: increases toward edge
+            7 => 1.5 * (1.0 - rho),         // beta_n: peaks at core
+            8 => rho,                        // rho itself
+            _ => 3.0,                        // aspect_ratio: constant
+        }
+    });
 
-    for i in 0..INPUT_DIM.min(HIDDEN1) {
-        w1[[i, i]] = 0.2 + i as f64 * 0.01;
-    }
-    for i in 0..HIDDEN2 {
-        w2[[i % HIDDEN1, i]] = 0.15;
-    }
-    for i in 0..OUTPUT_DIM {
-        w3[[i, i]] = 0.3;
-    }
-
-    writer.add_array("w1", &w1).unwrap();
-    writer.add_array("b1", &b1).unwrap();
-    writer.add_array("w2", &w2).unwrap();
-    writer.add_array("b2", &b2).unwrap();
-    writer.add_array("w3", &w3).unwrap();
-    writer.add_array("b3", &b3).unwrap();
-    writer
-        .add_array("input_mean", &Array1::<f64>::zeros(INPUT_DIM))
-        .unwrap();
-    writer
-        .add_array("input_std", &Array1::<f64>::ones(INPUT_DIM))
-        .unwrap();
-    writer
-        .add_array("output_scale", &array![1.0, 1.0, 1.0])
-        .unwrap();
-    writer.finish().unwrap();
-
-    let model = NeuralTransportModel::from_npz(path.to_str().unwrap()).expect("load model");
-    std::fs::remove_file(path).ok();
-    model
+    c.bench_function("bench_neural_transport_predict_profile_analytic", |b| {
+        b.iter(|| std::hint::black_box(model.predict_profile(&inputs)))
+    });
 }
 
-fn bench_neural_vs_analytical_transport(c: &mut Criterion) {
-    let neural_model = build_neural_model();
-    let analytical_model = NeuralTransportModel::new();
-
-    let input = array![5.0, 4.0, 3.0, 0.2, 0.1, 1.5, 3.2, 1.0, 0.6, 3.0];
-    let batch_inputs = Array2::from_shape_fn((50, INPUT_DIM), |(i, j)| {
-        0.2 + (i as f64) * 0.01 + (j as f64) * 0.05
-    });
-
-    let mut group = c.benchmark_group("neural_vs_analytical_transport");
-    group.sample_size(20);
-
-    group.bench_function("neural_single_predict", |b| {
-        b.iter(|| {
-            let out = neural_model.predict(black_box(&input));
-            black_box(out);
-        })
-    });
-
-    group.bench_function("analytical_single_predict", |b| {
-        b.iter(|| {
-            let out = analytical_model.predict(black_box(&input));
-            black_box(out);
-        })
-    });
-
-    group.bench_function("neural_batch_predict_50", |b| {
-        b.iter(|| {
-            let out = neural_model.predict_profile(black_box(&batch_inputs));
-            black_box(out);
-        })
-    });
-
-    group.bench_function("analytical_batch_predict_50", |b| {
-        b.iter(|| {
-            let out = analytical_model.predict_profile(black_box(&batch_inputs));
-            black_box(out);
-        })
-    });
-
-    group.finish();
-}
-
-criterion_group!(benches, bench_neural_vs_analytical_transport);
+criterion_group!(
+    benches,
+    bench_neural_transport_predict_analytic,
+    bench_neural_transport_predict_profile_analytic,
+);
 criterion_main!(benches);

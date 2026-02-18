@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────
-// SCPN Fusion Core — Picard Iteration Benchmark
+// SCPN Fusion Core — Picard Iteration Benchmarks
 // © 1998–2026 Miroslav Šotek. All rights reserved.
+// Contact: www.anulum.li | protoscience@anulum.li
 // License: GNU AGPL v3 | Commercial licensing available
 // ─────────────────────────────────────────────────────────────────────
 
@@ -11,9 +12,14 @@ use fusion_types::config::{
 };
 use std::hint::black_box;
 
+/// Build an ITER-like ReactorConfig with the given grid dimensions.
+///
+/// The coil set (4 coils) is sufficient to produce a non-trivial vacuum field
+/// that seeds the Picard iteration. `max_iterations` is kept small (10) so the
+/// benchmark measures per-iteration cost rather than full convergence time.
 fn iter_like_config(nz: usize, nr: usize) -> ReactorConfig {
     ReactorConfig {
-        reactor_name: "bench_iter".to_string(),
+        reactor_name: "bench-iter-like".to_string(),
         grid_resolution: [nz, nr],
         dimensions: GridDimensions {
             r_min: 4.0,
@@ -60,45 +66,48 @@ fn iter_like_config(nz: usize, nr: usize) -> ReactorConfig {
     }
 }
 
-fn bench_picard_sor(c: &mut Criterion) {
+/// Benchmark FusionKernel::solve_equilibrium with SOR on a 33x33 grid.
+fn bench_picard_sor_33x33(c: &mut Criterion) {
     let mut group = c.benchmark_group("picard_gs_solve");
     group.sample_size(10);
 
-    for &(nz, nr) in &[(33, 33), (65, 65)] {
-        let label = format!("sor_{}x{}", nz, nr);
-        group.bench_function(&label, |b| {
-            b.iter(|| {
-                let config = iter_like_config(nz, nr);
-                let mut kernel = FusionKernel::new(config);
-                let result = kernel.solve_equilibrium().expect("solve should succeed");
-                black_box(result.iterations);
-            })
-        });
-    }
+    group.bench_function("sor_33x33", |b| {
+        b.iter(|| {
+            let config = iter_like_config(33, 33);
+            let mut kernel = FusionKernel::new(config);
+            let result = kernel
+                .solve_equilibrium()
+                .expect("SOR solve should succeed on 33x33");
+            black_box(result.iterations);
+        })
+    });
 
     group.finish();
 }
 
-fn bench_picard_multigrid(c: &mut Criterion) {
+/// Benchmark FusionKernel::solve_equilibrium with multigrid on a 33x33 grid.
+fn bench_picard_multigrid_33x33(c: &mut Criterion) {
     let mut group = c.benchmark_group("picard_multigrid_solve");
     group.sample_size(10);
 
-    for &(nz, nr) in &[(33, 33), (65, 65)] {
-        let label = format!("mg_{}x{}", nz, nr);
-        group.bench_function(&label, |b| {
-            b.iter(|| {
-                let mut config = iter_like_config(nz, nr);
-                config.solver.max_iterations = 10;
-                let mut kernel = FusionKernel::new(config);
-                kernel.set_solver_method(SolverMethod::PicardMultigrid);
-                let result = kernel.solve_equilibrium().expect("solve should succeed");
-                black_box(result.iterations);
-            })
-        });
-    }
+    group.bench_function("multigrid_33x33", |b| {
+        b.iter(|| {
+            let config = iter_like_config(33, 33);
+            let mut kernel = FusionKernel::new(config);
+            kernel.set_solver_method(SolverMethod::PicardMultigrid);
+            let result = kernel
+                .solve_equilibrium()
+                .expect("multigrid solve should succeed on 33x33");
+            black_box(result.iterations);
+        })
+    });
 
     group.finish();
 }
 
-criterion_group!(benches, bench_picard_sor, bench_picard_multigrid);
+criterion_group!(
+    benches,
+    bench_picard_sor_33x33,
+    bench_picard_multigrid_33x33
+);
 criterion_main!(benches);

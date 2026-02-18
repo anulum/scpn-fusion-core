@@ -261,7 +261,7 @@ jobs:
           echo "cargo-tarpaulin install failed after retries."
           exit 1
       - name: Generate coverage
-        run: cargo tarpaulin --packages fusion-types fusion-math fusion-physics fusion-nuclear fusion-engineering fusion-control fusion-diagnostics fusion-ml --run-types Lib --timeout 300 --out xml --output-dir coverage
+        run: cargo tarpaulin --packages fusion-types fusion-math fusion-core fusion-physics fusion-nuclear fusion-engineering fusion-control fusion-diagnostics fusion-ml --run-types Lib --timeout 300 --out xml --output-dir coverage
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:

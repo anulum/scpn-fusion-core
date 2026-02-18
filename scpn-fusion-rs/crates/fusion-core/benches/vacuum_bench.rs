@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────
-// SCPN Fusion Core — Vacuum Field Benchmark
+// SCPN Fusion Core — Vacuum Field Benchmarks
 // © 1998–2026 Miroslav Šotek. All rights reserved.
+// Contact: www.anulum.li | protoscience@anulum.li
 // License: GNU AGPL v3 | Commercial licensing available
 // ─────────────────────────────────────────────────────────────────────
 
@@ -10,11 +11,8 @@ use fusion_types::config::CoilConfig;
 use fusion_types::state::Grid2D;
 use std::hint::black_box;
 
-fn make_grid(nz: usize, nr: usize) -> Grid2D {
-    Grid2D::new(nr, nz, 4.0, 8.4, -4.6, 4.6)
-}
-
-fn iter_coils() -> Vec<CoilConfig> {
+/// ITER-like 6-coil set covering the poloidal cross-section.
+fn iter_coils_6() -> Vec<CoilConfig> {
     vec![
         CoilConfig {
             name: "CS1".into(),
@@ -55,25 +53,44 @@ fn iter_coils() -> Vec<CoilConfig> {
     ]
 }
 
-fn bench_vacuum_field(c: &mut Criterion) {
-    let mu0 = 1.256_637_062e-6;
-    let coils = iter_coils();
-    let mut group = c.benchmark_group("vacuum_field");
+/// Physical vacuum permeability μ₀ [H/m].
+const MU0: f64 = 1.256_637_062e-6;
 
-    for &(nz, nr) in &[(33, 33), (65, 65), (129, 129)] {
-        let grid = make_grid(nz, nr);
-        let label = format!("{}x{}_{}coils", nz, nr, coils.len());
-        group.bench_function(&label, |b| {
-            b.iter(|| {
-                let psi = calculate_vacuum_field(&grid, &coils, mu0)
-                    .expect("vacuum field should succeed");
-                black_box(psi[[nz / 2, nr / 2]]);
-            })
-        });
-    }
+/// Benchmark vacuum field computation from 6 ITER-like coils on a 33x33 grid.
+///
+/// `Grid2D::new(nr, nz, r_min, r_max, z_min, z_max)` — the ITER cross-section spans
+/// R ∈ [4.0, 8.4] m, Z ∈ [-4.6, 4.6] m.
+fn bench_vacuum_field_33x33_6coils(c: &mut Criterion) {
+    let grid = Grid2D::new(33, 33, 4.0, 8.4, -4.6, 4.6);
+    let coils = iter_coils_6();
 
-    group.finish();
+    c.bench_function("vacuum_field_33x33_6coils", |b| {
+        b.iter(|| {
+            let psi = calculate_vacuum_field(&grid, &coils, MU0)
+                .expect("vacuum field should succeed on 33x33");
+            // Prevent the result from being optimised away.
+            black_box(psi[[16, 16]]);
+        })
+    });
 }
 
-criterion_group!(benches, bench_vacuum_field);
+/// Benchmark vacuum field computation from 6 ITER-like coils on a 65x65 grid.
+fn bench_vacuum_field_65x65_6coils(c: &mut Criterion) {
+    let grid = Grid2D::new(65, 65, 4.0, 8.4, -4.6, 4.6);
+    let coils = iter_coils_6();
+
+    c.bench_function("vacuum_field_65x65_6coils", |b| {
+        b.iter(|| {
+            let psi = calculate_vacuum_field(&grid, &coils, MU0)
+                .expect("vacuum field should succeed on 65x65");
+            black_box(psi[[32, 32]]);
+        })
+    });
+}
+
+criterion_group!(
+    benches,
+    bench_vacuum_field_33x33_6coils,
+    bench_vacuum_field_65x65_6coils
+);
 criterion_main!(benches);
