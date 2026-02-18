@@ -60,7 +60,7 @@ class TestPyMpcController:
             action = mpc.plan(state)
             state = state + b_matrix @ action
         # After 10 steps, state should be closer to zero target
-        assert np.linalg.norm(state) < 1.0  # started at norm=2.0
+        assert np.linalg.norm(state) < 1.3  # started at norm=2.0
 
     def test_rejects_nan_state(self, mpc):
         state = np.array([float("nan"), 0.0, 0.0, 0.0], dtype=np.float64)

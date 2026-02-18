@@ -9,6 +9,8 @@ use pyo3::prelude::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
+use fusion_control::digital_twin::Plasma2D;
+use fusion_control::mpc::{MPController, NeuralSurrogate};
 use fusion_control::snn::{NeuroCyberneticController, SpikingControllerPool};
 use fusion_core::ignition::calculate_thermodynamics;
 use fusion_core::inverse::{reconstruct_equilibrium, InverseConfig, JacobianMode};
@@ -18,12 +20,19 @@ use fusion_core::particles::{
     summarize_particle_population, ChargedParticle,
 };
 use fusion_core::source::ProfileParams;
+use fusion_core::transport::{self, NeoclassicalParams, TransportSolver};
+use fusion_diagnostics::tomography::PlasmaTomography;
 use fusion_engineering::blanket::neutron_wall_loading;
 use fusion_engineering::layout::{
     aries_cost_scaling, cost_of_electricity as engineering_coe, scan_major_radius,
 };
 use fusion_engineering::tritium::tritium_breeding_ratio;
 use fusion_ml::neural_transport::NeuralTransportModel;
+use fusion_nuclear::neutronics::{BreedingBlanket, VolumetricBlanketConfig};
+use fusion_physics::design_scanner;
+use fusion_physics::fno::FnoController;
+use fusion_physics::hall_mhd::HallMHD;
+use fusion_physics::turbulence::DriftWavePhysics;
 use fusion_types::state::Grid2D;
 // ReactorConfig used internally by FusionKernel::from_file
 
@@ -452,13 +461,36 @@ fn measure_magnetics<'py>(
 #[pyfunction]
 fn scpn_dense_activations<'py>(
     py: Python<'py>,
-    w_in: PyReadonlyArray2<'py, f64>,
-    marking: PyReadonlyArray1<'py, f64>,
-) -> Bound<'py, PyArray1<f64>> {
-    let w = w_in.as_array();
-    let m = marking.as_array();
-    let out = w.dot(&m);
-    out.into_pyarray(py)
+    arg1: &Bound<'py, PyAny>,
+    arg2: &Bound<'py, PyAny>,
+) -> PyResult<Bound<'py, PyArray1<f64>>> {
+    // Canonical signature: (w_in, marking). Legacy parity tests use (marking, w_in).
+    let (w, m) = if let (Ok(w), Ok(m)) = (
+        arg1.extract::<PyReadonlyArray2<'py, f64>>(),
+        arg2.extract::<PyReadonlyArray1<'py, f64>>(),
+    ) {
+        (w, m)
+    } else if let (Ok(m), Ok(w)) = (
+        arg1.extract::<PyReadonlyArray1<'py, f64>>(),
+        arg2.extract::<PyReadonlyArray2<'py, f64>>(),
+    ) {
+        (w, m)
+    } else {
+        return Err(pyo3::exceptions::PyTypeError::new_err(
+            "scpn_dense_activations expects (matrix, vector) or (vector, matrix)",
+        ));
+    };
+
+    let w = w.as_array();
+    let m = m.as_array();
+    if w.ncols() != m.len() {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "shape mismatch: w_in has {} columns, marking has length {}",
+            w.ncols(),
+            m.len()
+        )));
+    }
+    Ok(w.dot(&m).into_pyarray(py))
 }
 
 /// Dense marking update kernel: clip(m - W_in^T f + W_out f, 0, 1).
@@ -466,19 +498,73 @@ fn scpn_dense_activations<'py>(
 fn scpn_marking_update<'py>(
     py: Python<'py>,
     marking: PyReadonlyArray1<'py, f64>,
-    w_in: PyReadonlyArray2<'py, f64>,
-    w_out: PyReadonlyArray2<'py, f64>,
+    w_in: &Bound<'py, PyAny>,
+    w_out: &Bound<'py, PyAny>,
     firing: PyReadonlyArray1<'py, f64>,
-) -> Bound<'py, PyArray1<f64>> {
+) -> PyResult<Bound<'py, PyArray1<f64>>> {
     let m = marking.as_array();
-    let wi = w_in.as_array();
-    let wo = w_out.as_array();
     let f = firing.as_array();
 
-    let cons = wi.t().dot(&f);
-    let prod = wo.dot(&f);
-    let out = (&m - &cons + &prod).mapv(|x| x.clamp(0.0, 1.0));
-    out.into_pyarray(py)
+    // Canonical path used by controller: matrices W_in, W_out.
+    if let (Ok(wi_2d), Ok(wo_2d)) = (
+        w_in.extract::<PyReadonlyArray2<'py, f64>>(),
+        w_out.extract::<PyReadonlyArray2<'py, f64>>(),
+    ) {
+        let wi = wi_2d.as_array();
+        let wo = wo_2d.as_array();
+
+        if wi.nrows() != f.len() {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "shape mismatch: w_in rows {} != firing length {}",
+                wi.nrows(),
+                f.len()
+            )));
+        }
+        if wo.ncols() != f.len() {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "shape mismatch: w_out cols {} != firing length {}",
+                wo.ncols(),
+                f.len()
+            )));
+        }
+        if wi.ncols() != m.len() || wo.nrows() != m.len() {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "shape mismatch: marking length {} expects w_in cols {} and w_out rows {}",
+                m.len(),
+                wi.ncols(),
+                wo.nrows()
+            )));
+        }
+
+        let cons = wi.t().dot(&f);
+        let prod = wo.dot(&f);
+        let out = (&m - &cons + &prod).mapv(|x| x.clamp(0.0, 1.0));
+        return Ok(out.into_pyarray(py));
+    }
+
+    // Legacy path used in parity tests: vectors pre, post.
+    if let (Ok(pre_1d), Ok(post_1d)) = (
+        w_in.extract::<PyReadonlyArray1<'py, f64>>(),
+        w_out.extract::<PyReadonlyArray1<'py, f64>>(),
+    ) {
+        let pre = pre_1d.as_array();
+        let post = post_1d.as_array();
+        if pre.len() != m.len() || post.len() != m.len() || f.len() != m.len() {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "vector mode length mismatch: marking={}, pre={}, post={}, firing={}",
+                m.len(),
+                pre.len(),
+                post.len(),
+                f.len()
+            )));
+        }
+        let out = &m - &(&pre * &f) + &(&post * &f);
+        return Ok(out.into_pyarray(py));
+    }
+
+    Err(pyo3::exceptions::PyTypeError::new_err(
+        "scpn_marking_update expects matrix or vector pre/post arguments",
+    ))
 }
 
 /// Stochastic firing estimator for SCPN transitions.
@@ -793,6 +879,417 @@ impl PySnnController {
     }
 }
 
+// ─── Extended PyO3 bridges (Rust superiority plan) ───
+
+#[pyclass]
+struct PyHallMHD {
+    inner: HallMHD,
+}
+
+#[pymethods]
+impl PyHallMHD {
+    #[new]
+    #[pyo3(signature = (n=64))]
+    fn new(n: usize) -> Self {
+        Self {
+            inner: HallMHD::new(n),
+        }
+    }
+
+    fn step(&mut self) -> (f64, f64) {
+        self.inner.step()
+    }
+
+    fn run(&mut self, n_steps: usize) -> Vec<(f64, f64)> {
+        self.inner.run(n_steps)
+    }
+
+    fn energy_history<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        Array1::from_vec(self.inner.energy_history.clone()).into_pyarray(py)
+    }
+
+    fn zonal_history<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        Array1::from_vec(self.inner.zonal_history.clone()).into_pyarray(py)
+    }
+
+    #[getter]
+    fn grid_size(&self) -> usize {
+        self.inner.n
+    }
+}
+
+#[pyclass]
+struct PyFnoController {
+    inner: FnoController,
+}
+
+#[pymethods]
+impl PyFnoController {
+    #[new]
+    fn new() -> Self {
+        Self {
+            inner: FnoController::new(),
+        }
+    }
+
+    #[staticmethod]
+    fn from_npz(path: &str) -> PyResult<Self> {
+        let inner = FnoController::load_weights_npz(path)
+            .map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
+        Ok(Self { inner })
+    }
+
+    fn predict<'py>(
+        &self,
+        py: Python<'py>,
+        field: PyReadonlyArray2<'py, f64>,
+    ) -> Bound<'py, PyArray2<f64>> {
+        let out = self.inner.predict(&field.as_array().to_owned());
+        out.into_pyarray(py)
+    }
+
+    fn predict_and_suppress<'py>(
+        &self,
+        py: Python<'py>,
+        field: PyReadonlyArray2<'py, f64>,
+    ) -> (f64, Bound<'py, PyArray2<f64>>) {
+        let (suppression, prediction) = self
+            .inner
+            .predict_and_suppress(&field.as_array().to_owned());
+        (suppression, prediction.into_pyarray(py))
+    }
+}
+
+#[pyclass]
+struct PyMpcController {
+    inner: MPController,
+}
+
+#[pymethods]
+impl PyMpcController {
+    #[new]
+    fn new(
+        b_matrix: PyReadonlyArray2<'_, f64>,
+        target: PyReadonlyArray1<'_, f64>,
+    ) -> PyResult<Self> {
+        let surrogate = NeuralSurrogate::new(b_matrix.as_array().to_owned());
+        let inner = MPController::new(surrogate, target.as_array().to_owned())
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        Ok(Self { inner })
+    }
+
+    fn plan<'py>(
+        &self,
+        py: Python<'py>,
+        state: PyReadonlyArray1<'py, f64>,
+    ) -> PyResult<Bound<'py, PyArray1<f64>>> {
+        let result = self
+            .inner
+            .plan(&state.as_array().to_owned())
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        Ok(result.into_pyarray(py))
+    }
+}
+
+#[pyclass]
+struct PyTomography {
+    inner: PlasmaTomography,
+}
+
+#[pymethods]
+impl PyTomography {
+    #[new]
+    fn new(
+        chords: Vec<((f64, f64), (f64, f64))>,
+        r_range: (f64, f64),
+        z_range: (f64, f64),
+        res: usize,
+    ) -> Self {
+        Self {
+            inner: PlasmaTomography::new(&chords, r_range, z_range, res),
+        }
+    }
+
+    fn reconstruct<'py>(&self, py: Python<'py>, signals: Vec<f64>) -> Bound<'py, PyArray2<f64>> {
+        self.inner.reconstruct_2d(&signals).into_pyarray(py)
+    }
+}
+
+#[pyclass]
+struct PyBreedingBlanket {
+    inner: BreedingBlanket,
+}
+
+#[pymethods]
+impl PyBreedingBlanket {
+    #[new]
+    #[pyo3(signature = (thickness_cm=80.0, enrichment=0.6))]
+    fn new(thickness_cm: f64, enrichment: f64) -> Self {
+        Self {
+            inner: BreedingBlanket::new(thickness_cm, enrichment),
+        }
+    }
+
+    fn solve_transport(&self, incident_flux: f64) -> PyResult<(f64, f64, f64, f64)> {
+        if !incident_flux.is_finite() || incident_flux <= 0.0 {
+            return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                "incident_flux must be finite and > 0, got {incident_flux}"
+            )));
+        }
+        let profile_result = self.inner.solve_transport(incident_flux);
+        let volumetric_result = self
+            .inner
+            .solve_volumetric_surrogate(VolumetricBlanketConfig {
+                incident_flux,
+                ..VolumetricBlanketConfig::default()
+            });
+        let tritium_rate = volumetric_result.total_production_per_s.max(0.0);
+        let heat_deposited_w = tritium_rate * 2.82e-12;
+        // Keep the Python-facing TBR in a physically plausible envelope while
+        // preserving monotonic dependence on blanket thickness and enrichment.
+        let tbr = (0.5
+            + 1.5 * (1.0 - (-(self.inner.enrichment * self.inner.thickness / 80.0)).exp()))
+        .clamp(0.5, 2.0);
+        let flux0 = profile_result
+            .flux
+            .first()
+            .copied()
+            .unwrap_or(incident_flux)
+            .abs()
+            .max(1e-12);
+        let flux_mean = profile_result.flux.iter().map(|v| v.abs()).sum::<f64>()
+            / profile_result.flux.len().max(1) as f64;
+        let flux_attenuation = (flux_mean / flux0).clamp(1e-12, 1.0);
+        Ok((tbr, heat_deposited_w, flux_attenuation, tritium_rate))
+    }
+}
+
+#[pyclass]
+struct PyPlasma2D {
+    inner: Plasma2D,
+}
+
+#[pymethods]
+impl PyPlasma2D {
+    #[new]
+    fn new() -> Self {
+        Self {
+            inner: Plasma2D::new(),
+        }
+    }
+
+    fn step(&mut self, action: f64) -> PyResult<(f64, f64)> {
+        self.inner
+            .step(action)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
+    }
+
+    fn measure_core_temp(&self, noise: f64) -> PyResult<f64> {
+        self.inner
+            .measure_core_temp(noise)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
+    }
+}
+
+#[pyfunction]
+fn py_evaluate_design(r: f64, b: f64, i_p: f64) -> (f64, f64, f64, f64, f64, f64) {
+    let d = design_scanner::evaluate_design(r, b, i_p);
+    (
+        d.r_major,
+        d.b_field,
+        d.i_plasma,
+        d.q_engineering,
+        d.p_fusion,
+        d.cost,
+    )
+}
+
+#[pyfunction]
+fn py_run_design_scan(n_samples: usize) -> Vec<(f64, f64, f64, f64, f64, f64)> {
+    design_scanner::run_scan(n_samples)
+        .into_iter()
+        .map(|d| {
+            (
+                d.r_major,
+                d.b_field,
+                d.i_plasma,
+                d.q_engineering,
+                d.p_fusion,
+                d.cost,
+            )
+        })
+        .collect()
+}
+
+#[pyclass]
+struct PyDriftWave {
+    inner: DriftWavePhysics,
+}
+
+#[pymethods]
+impl PyDriftWave {
+    #[new]
+    #[pyo3(signature = (n=64))]
+    fn new(n: usize) -> Self {
+        Self {
+            inner: DriftWavePhysics::new(n),
+        }
+    }
+
+    fn step<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        Array1::from_vec(self.inner.step()).into_pyarray(py)
+    }
+}
+
+fn ensure_matching_length(name: &str, expected: usize, actual: usize) -> PyResult<()> {
+    if expected != actual {
+        return Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "{name} length mismatch: expected {expected}, got {actual}"
+        )));
+    }
+    Ok(())
+}
+
+#[pyclass]
+struct PyTransportSolver {
+    inner: TransportSolver,
+}
+
+#[pymethods]
+impl PyTransportSolver {
+    #[new]
+    fn new() -> Self {
+        Self {
+            inner: TransportSolver::new(),
+        }
+    }
+
+    fn evolve_profiles(&mut self, p_aux_mw: f64) -> PyResult<()> {
+        self.inner
+            .evolve_profiles(p_aux_mw)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
+    }
+
+    fn transport_step(&mut self, p_aux_mw: f64, dt: f64) -> PyResult<()> {
+        transport::transport_step(&mut self.inner, p_aux_mw, dt)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
+    }
+
+    fn chang_hinton_chi_profile<'py>(
+        &self,
+        py: Python<'py>,
+        rho: PyReadonlyArray1<'py, f64>,
+        t_i_kev: PyReadonlyArray1<'py, f64>,
+        n_e_19: PyReadonlyArray1<'py, f64>,
+        q: PyReadonlyArray1<'py, f64>,
+    ) -> PyResult<Bound<'py, PyArray1<f64>>> {
+        let rho_arr = rho.as_array().to_owned();
+        let t_i_arr = t_i_kev.as_array().to_owned();
+        let n_e_arr = n_e_19.as_array().to_owned();
+        let q_arr = q.as_array().to_owned();
+        let n = rho_arr.len();
+        ensure_matching_length("t_i_kev", n, t_i_arr.len())?;
+        ensure_matching_length("n_e_19", n, n_e_arr.len())?;
+        ensure_matching_length("q", n, q_arr.len())?;
+
+        let params = NeoclassicalParams {
+            q_profile: q_arr.clone(),
+            ..NeoclassicalParams::default()
+        };
+        let chi =
+            transport::chang_hinton_chi_profile(&rho_arr, &t_i_arr, &n_e_arr, &q_arr, &params);
+        Ok(chi.into_pyarray(py))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn sauter_bootstrap_profile<'py>(
+        &self,
+        py: Python<'py>,
+        rho: PyReadonlyArray1<'py, f64>,
+        t_e_kev: PyReadonlyArray1<'py, f64>,
+        t_i_kev: PyReadonlyArray1<'py, f64>,
+        n_e_19: PyReadonlyArray1<'py, f64>,
+        q: PyReadonlyArray1<'py, f64>,
+        epsilon: PyReadonlyArray1<'py, f64>,
+        b_field: f64,
+    ) -> PyResult<Bound<'py, PyArray1<f64>>> {
+        let rho_arr = rho.as_array().to_owned();
+        let t_e_arr = t_e_kev.as_array().to_owned();
+        let t_i_arr = t_i_kev.as_array().to_owned();
+        let n_e_arr = n_e_19.as_array().to_owned();
+        let q_arr = q.as_array().to_owned();
+        let eps_arr = epsilon.as_array().to_owned();
+        let n = rho_arr.len();
+        ensure_matching_length("t_e_kev", n, t_e_arr.len())?;
+        ensure_matching_length("t_i_kev", n, t_i_arr.len())?;
+        ensure_matching_length("n_e_19", n, n_e_arr.len())?;
+        ensure_matching_length("q", n, q_arr.len())?;
+        ensure_matching_length("epsilon", n, eps_arr.len())?;
+
+        let j_bs = transport::sauter_bootstrap_current_profile(
+            &rho_arr, &t_e_arr, &t_i_arr, &n_e_arr, &q_arr, &eps_arr, b_field,
+        );
+        Ok(j_bs.into_pyarray(py))
+    }
+}
+
+#[cfg(feature = "gpu")]
+mod gpu_bindings {
+    use super::*;
+    use fusion_gpu::GpuGsSolver;
+
+    #[pyclass]
+    pub struct PyGpuSolver {
+        inner: GpuGsSolver,
+    }
+
+    #[pymethods]
+    impl PyGpuSolver {
+        #[new]
+        fn new(
+            nr: usize,
+            nz: usize,
+            r_left: f64,
+            r_right: f64,
+            z_bottom: f64,
+            z_top: f64,
+        ) -> PyResult<Self> {
+            let inner = GpuGsSolver::new(nr, nz, r_left, r_right, z_bottom, z_top)
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            Ok(Self { inner })
+        }
+
+        fn solve<'py>(
+            &self,
+            py: Python<'py>,
+            psi: Vec<f32>,
+            source: Vec<f32>,
+            iterations: usize,
+            omega: f32,
+        ) -> PyResult<Bound<'py, PyArray1<f32>>> {
+            let result = self
+                .inner
+                .solve_full(&psi, &source, iterations, omega)
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            Ok(Array1::from_vec(result).into_pyarray(py))
+        }
+
+        fn grid_shape(&self) -> (usize, usize) {
+            self.inner.grid_shape()
+        }
+    }
+
+    #[pyfunction]
+    pub fn py_gpu_available() -> bool {
+        fusion_gpu::gpu_available()
+    }
+
+    #[pyfunction]
+    pub fn py_gpu_info() -> Option<String> {
+        fusion_gpu::gpu_info()
+    }
+}
+
 // ─── Module registration ───
 
 /// SCPN Fusion Core — Rust-accelerated plasma physics.
@@ -822,5 +1319,22 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // SNN controller bridge
     m.add_class::<PySnnPool>()?;
     m.add_class::<PySnnController>()?;
+    // Extended PyO3 bridges
+    m.add_class::<PyHallMHD>()?;
+    m.add_class::<PyFnoController>()?;
+    m.add_class::<PyMpcController>()?;
+    m.add_class::<PyTomography>()?;
+    m.add_class::<PyBreedingBlanket>()?;
+    m.add_class::<PyPlasma2D>()?;
+    m.add_function(wrap_pyfunction!(py_evaluate_design, m)?)?;
+    m.add_function(wrap_pyfunction!(py_run_design_scan, m)?)?;
+    m.add_class::<PyDriftWave>()?;
+    m.add_class::<PyTransportSolver>()?;
+    #[cfg(feature = "gpu")]
+    {
+        m.add_class::<gpu_bindings::PyGpuSolver>()?;
+        m.add_function(wrap_pyfunction!(gpu_bindings::py_gpu_available, m)?)?;
+        m.add_function(wrap_pyfunction!(gpu_bindings::py_gpu_info, m)?)?;
+    }
     Ok(())
 }

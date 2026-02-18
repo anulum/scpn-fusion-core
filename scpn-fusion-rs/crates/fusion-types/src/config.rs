@@ -98,6 +98,7 @@ impl Default for PedestalParams {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoilConfig {
+    #[serde(default)]
     pub name: String,
     pub r: f64,
     pub z: f64,
@@ -109,6 +110,12 @@ pub struct SolverConfig {
     pub max_iterations: usize,
     pub convergence_threshold: f64,
     pub relaxation_factor: f64,
+    #[serde(default = "default_sor_omega")]
+    pub sor_omega: f64,
+}
+
+fn default_sor_omega() -> f64 {
+    1.6
 }
 
 impl ReactorConfig {

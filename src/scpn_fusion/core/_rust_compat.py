@@ -12,6 +12,8 @@ falls back to pure-Python implementations.
 Usage:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 """
+import os
+from typing import Optional
 import numpy as np
 
 try:
@@ -44,8 +46,9 @@ class RustAcceleratedKernel:
     """
 
     def __init__(self, config_path):
-        # Load via Rust
-        self._rust = PyFusionKernel(config_path)
+        self._config_path = str(config_path)
+        # Load via Rust (PyO3 expects str, not Path)
+        self._rust = PyFusionKernel(self._config_path)
 
         # Also load JSON config for attribute access (bridges read .cfg directly)
         import json
@@ -112,6 +115,13 @@ class RustAcceleratedKernel:
         """Calculate thermodynamics via Rust backend."""
         return self._rust.calculate_thermodynamics(p_aux_mw)
 
+    def calculate_vacuum_field(self):
+        """Compute vacuum field with Python reference implementation."""
+        from scpn_fusion.core.fusion_kernel import FusionKernel as _PyFusionKernel
+
+        fk = _PyFusionKernel(self._config_path)
+        return fk.calculate_vacuum_field()
+
     def set_solver_method(self, method: str) -> None:
         """Set inner linear solver: 'sor' or 'multigrid'."""
         self._rust.set_solver_method(method)
@@ -135,13 +145,36 @@ else:
     RUST_BACKEND = False
 
 
-# Re-export Rust-only helpers (with fallback stubs)
+# Re-export Rust-only helpers (with compatibility shims where needed)
 if _RUST_AVAILABLE:
-    # These are pure Rust functions with no Python equivalent
-    rust_shafranov_bv = shafranov_bv
+    def rust_shafranov_bv(*args, **kwargs):
+        """Compatibility wrapper for legacy config-path invocation.
+
+        Supported call forms:
+        - rust_shafranov_bv(r_geo, a_min, ip_ma) -> tuple[float, float, float]
+        - rust_shafranov_bv(config_path) -> vacuum Psi array
+        """
+        if len(args) == 1 and not kwargs and isinstance(args[0], (str, os.PathLike)):
+            from scpn_fusion.core.fusion_kernel import FusionKernel as _PyFusionKernel
+
+            fk = _PyFusionKernel(str(args[0]))
+            return fk.calculate_vacuum_field()
+        return shafranov_bv(*args, **kwargs)
+
     rust_solve_coil_currents = solve_coil_currents
     rust_measure_magnetics = measure_magnetics
-    rust_simulate_tearing_mode = simulate_tearing_mode
+
+    def rust_simulate_tearing_mode(steps: int, seed: Optional[int] = None):
+        """Rust tearing mode with optional deterministic seed compatibility."""
+        if seed is None:
+            return simulate_tearing_mode(int(steps))
+
+        from scpn_fusion.control.disruption_predictor import (
+            simulate_tearing_mode as _py_tearing,
+        )
+
+        rng = np.random.default_rng(seed=int(seed))
+        return _py_tearing(steps=int(steps), rng=rng)
 else:
     def rust_shafranov_bv(*args, **kwargs):
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")

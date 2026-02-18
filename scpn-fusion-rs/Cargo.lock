@@ -1697,6 +1697,7 @@ dependencies = [
  "fusion-core",
  "fusion-diagnostics",
  "fusion-engineering",
+ "fusion-gpu",
  "fusion-math",
  "fusion-ml",
  "fusion-nuclear",

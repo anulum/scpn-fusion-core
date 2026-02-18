@@ -309,6 +309,45 @@ class TransportSolver(FusionKernel):
             'q_profile': q_profile,
         }
 
+    def chang_hinton_chi_profile(self) -> np.ndarray:
+        """Backward-compatible Chang-Hinton profile helper.
+
+        Older parity tests call this no-arg method on a partially-initialized
+        transport object. Keep the method as a thin adapter over the module
+        function so those tests remain stable.
+        """
+        rho = np.asarray(getattr(self, "rho"), dtype=np.float64)
+
+        t_i_raw = getattr(self, "t_i", None)
+        if t_i_raw is None:
+            t_i_raw = getattr(self, "Ti")
+        t_i = np.asarray(t_i_raw, dtype=np.float64)
+
+        n_e_raw = getattr(self, "n_e", None)
+        if n_e_raw is None:
+            n_e_raw = getattr(self, "ne")
+        n_e = np.asarray(n_e_raw, dtype=np.float64)
+        q_profile = np.asarray(
+            getattr(self, "q_profile", np.linspace(1.0, 3.0, len(rho))),
+            dtype=np.float64,
+        )
+
+        params = getattr(self, "neoclassical_params", None)
+        if not isinstance(params, dict):
+            params = {}
+        R0 = float(params.get("R0", 6.2))
+        a = float(params.get("a", 2.0))
+        B0 = float(params.get("B0", 5.3))
+        A_ion = float(params.get("A_ion", 2.0))
+        Z_eff = float(params.get("Z_eff", 1.5))
+
+        if q_profile.shape != rho.shape:
+            q_profile = np.linspace(1.0, 3.0, len(rho), dtype=np.float64)
+
+        return chang_hinton_chi_profile(
+            rho, t_i, n_e, q_profile, R0, a, B0, A_ion=A_ion, Z_eff=Z_eff
+        )
+
     def inject_impurities(self, flux_from_wall_per_sec, dt):
         """
         Models impurity influx from PWI erosion.
@@ -1441,3 +1480,7 @@ class AdaptiveTimeController:
         self.dt = min(self.dt, self.dt_max)
 
         self._err_prev = error
+
+
+# Backward-compatible public alias used by parity and bridge tests.
+IntegratedTransportSolver = TransportSolver

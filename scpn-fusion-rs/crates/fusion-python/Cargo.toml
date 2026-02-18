@@ -10,6 +10,10 @@ description = "SCPN Fusion Core - Python bindings via PyO3"
 name = "scpn_fusion_rs"
 crate-type = ["cdylib"]
 
+[features]
+default = []
+gpu = ["fusion-gpu"]
+
 [dependencies]
 fusion-types = { path = "../fusion-types" }
 fusion-math = { path = "../fusion-math" }
@@ -20,6 +24,7 @@ fusion-engineering = { path = "../fusion-engineering" }
 fusion-control = { path = "../fusion-control" }
 fusion-diagnostics = { path = "../fusion-diagnostics" }
 fusion-ml = { path = "../fusion-ml" }
+fusion-gpu = { path = "../fusion-gpu", optional = true }
 pyo3 = { workspace = true }
 numpy = { workspace = true }
 ndarray = { workspace = true }

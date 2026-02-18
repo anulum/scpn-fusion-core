@@ -62,6 +62,7 @@ fn iter_like_config(nz: usize, nr: usize) -> ReactorConfig {
             max_iterations: 10,
             convergence_threshold: 1e-6,
             relaxation_factor: 1.0,
+            sor_omega: 1.6,
         },
     }
 }

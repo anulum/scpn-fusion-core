@@ -22,16 +22,12 @@ use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::{EquilibriumResult, Grid2D, PlasmaState};
 use ndarray::{Array1, Array2};
 
-/// Picard relaxation factor (Python line 180: `alpha = 0.1`).
-const DEFAULT_PICARD_RELAXATION: f64 = 0.1;
-
 /// Gaussian sigma for seed current distribution (Python line 193: `sigma = 1.0`).
 const SEED_GAUSSIAN_SIGMA: f64 = 1.0;
 
 /// Number of Jacobi iterations for initial elliptic solve (Python line 204: `range(50)`).
 const INITIAL_JACOBI_ITERS: usize = 50;
-
-/// Number of inner SOR iterations per Picard step.
+/// Number of inner iterations for profile-sensitive solves (inverse workflows).
 const INNER_SOLVE_ITERS: usize = 50;
 
 /// Minimum Ψ_axis to avoid normalization singularity (Python line 218: `1e-6`).
@@ -43,6 +39,51 @@ const MIN_PSI_SEPARATION: f64 = 0.1;
 /// Fallback factor when axis/boundary too close (Python line 226: `0.1`).
 const LIMITER_FALLBACK_FACTOR: f64 = 0.1;
 const MIN_CURRENT_INTEGRAL: f64 = 1e-9;
+
+/// Single Jacobi sweep matching Python fusion_kernel._jacobi_step().
+fn jacobi_step_python(psi: &Array2<f64>, source: &Array2<f64>, dr: f64) -> Array2<f64> {
+    let (nz, nr) = psi.dim();
+    let mut psi_new = psi.clone();
+    let dr2 = dr * dr;
+    for iz in 1..nz - 1 {
+        for ir in 1..nr - 1 {
+            psi_new[[iz, ir]] = 0.25
+                * (psi[[iz - 1, ir]] + psi[[iz + 1, ir]] + psi[[iz, ir - 1]] + psi[[iz, ir + 1]]
+                    - dr2 * source[[iz, ir]]);
+        }
+    }
+    psi_new
+}
+
+/// One red-black SOR sweep matching Python fusion_kernel._sor_step().
+fn sor_step_python(psi: &mut Array2<f64>, source: &Array2<f64>, grid: &Grid2D, omega: f64) {
+    let (nz, nr) = psi.dim();
+    let dr2 = grid.dr * grid.dr;
+    let dz2 = grid.dz * grid.dz;
+    let a_ns = 1.0 / dz2;
+    let a_c = 2.0 / dr2 + 2.0 / dz2;
+
+    for parity in [0_usize, 1_usize] {
+        for iz in 1..nz - 1 {
+            for ir in 1..nr - 1 {
+                if (iz + ir) % 2 != parity {
+                    continue;
+                }
+                let r = grid.rr[[iz, ir]].max(1e-10);
+                let a_e = 1.0 / dr2 + 1.0 / (2.0 * r * grid.dr);
+                let a_w = 1.0 / dr2 - 1.0 / (2.0 * r * grid.dr);
+                let gs_update = (a_e * psi[[iz, ir + 1]]
+                    + a_w * psi[[iz, ir - 1]]
+                    + a_ns * psi[[iz - 1, ir]]
+                    + a_ns * psi[[iz + 1, ir]]
+                    - source[[iz, ir]])
+                    / a_c;
+                let old = psi[[iz, ir]];
+                psi[[iz, ir]] = (1.0 - omega) * old + omega * gs_update;
+            }
+        }
+    }
+}
 
 /// Selects the inner linear solver used in Picard iteration.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -110,7 +151,8 @@ impl FusionKernel {
         let i_target = self.config.physics.plasma_current_target;
         let max_iter = self.config.solver.max_iterations;
         let tol = self.config.solver.convergence_threshold;
-        let alpha = DEFAULT_PICARD_RELAXATION;
+        let alpha = self.config.solver.relaxation_factor;
+        let sor_omega = self.config.solver.sor_omega;
 
         let nz = self.grid.nz;
         let nr = self.grid.nr;
@@ -136,6 +178,16 @@ impl FusionKernel {
             return Err(FusionError::ConfigError(
                 "solver.convergence_threshold must be finite and > 0".to_string(),
             ));
+        }
+        if !alpha.is_finite() || alpha <= 0.0 || alpha > 1.0 {
+            return Err(FusionError::ConfigError(format!(
+                "solver.relaxation_factor must be finite and in (0,1], got {alpha}"
+            )));
+        }
+        if !sor_omega.is_finite() || sor_omega <= 0.0 || sor_omega >= 2.0 {
+            return Err(FusionError::ConfigError(format!(
+                "solver.sor_omega must be finite and in (0,2), got {sor_omega}"
+            )));
         }
         if nz < 2 || nr < 2 {
             return Err(FusionError::ConfigError(format!(
@@ -202,6 +254,14 @@ impl FusionKernel {
             } else {
                 None
             };
+        // In inverse/profile workflows we need a tighter inner solve so local
+        // sensitivities are informative; standard runtime keeps Python parity.
+        let inner_sweeps = if external_profiles.is_some() {
+            INNER_SOLVE_ITERS
+        } else {
+            1
+        };
+        let inner_omega = if inner_sweeps > 1 { 1.8 } else { sor_omega };
 
         // 1. Compute vacuum field
         let psi_vac = calculate_vacuum_field(&self.grid, &self.config.coils, mu0)?;
@@ -237,36 +297,20 @@ impl FusionKernel {
             }
         }
 
-        // Initial elliptic solve (SOR or multigrid)
-        match self.solver_method {
-            SolverMethod::PicardSor => {
-                sor_solve(
-                    &mut self.state.psi,
-                    &source,
-                    &self.grid,
-                    1.8,
-                    INITIAL_JACOBI_ITERS,
-                );
-            }
-            SolverMethod::PicardMultigrid => {
-                let mg_cfg = MultigridConfig::default();
-                let mg_result = multigrid_solve(
-                    &mut self.state.psi,
-                    &source,
-                    &self.grid,
-                    &mg_cfg,
-                    INITIAL_JACOBI_ITERS,
-                    1e-6,
-                );
-                if !mg_result.converged {
-                    sor_solve(
-                        &mut self.state.psi,
-                        &source,
-                        &self.grid,
-                        1.8,
-                        INITIAL_JACOBI_ITERS,
-                    );
-                }
+        // Initial warm-up:
+        // - Python-parity path uses Jacobi seed sweeps.
+        // - Inverse/profile path keeps stronger SOR warm-up for sensitivity quality.
+        if inner_sweeps > 1 {
+            sor_solve(
+                &mut self.state.psi,
+                &source,
+                &self.grid,
+                inner_omega,
+                INITIAL_JACOBI_ITERS,
+            );
+        } else {
+            for _ in 0..INITIAL_JACOBI_ITERS {
+                self.state.psi = jacobi_step_python(&self.state.psi, &source, dr);
             }
         }
 
@@ -357,20 +401,31 @@ impl FusionKernel {
             let mut psi_new = self.state.psi.clone();
             match self.solver_method {
                 SolverMethod::PicardSor => {
-                    sor_solve(&mut psi_new, &source, &self.grid, 1.8, INNER_SOLVE_ITERS);
+                    if inner_sweeps > 1 {
+                        sor_solve(&mut psi_new, &source, &self.grid, inner_omega, inner_sweeps);
+                    } else {
+                        sor_step_python(&mut psi_new, &source, &self.grid, inner_omega);
+                    }
                 }
                 SolverMethod::PicardMultigrid => {
-                    let mg_cfg = MultigridConfig::default();
-                    let mg_result = multigrid_solve(
-                        &mut psi_new,
-                        &source,
-                        &self.grid,
-                        &mg_cfg,
-                        INNER_SOLVE_ITERS,
-                        1e-8,
-                    );
-                    if !mg_result.converged {
-                        sor_solve(&mut psi_new, &source, &self.grid, 1.8, INNER_SOLVE_ITERS);
+                    let mg_cfg = MultigridConfig {
+                        omega: inner_omega,
+                        ..MultigridConfig::default()
+                    };
+                    if inner_sweeps > 1 {
+                        let mg_result = multigrid_solve(
+                            &mut psi_new,
+                            &source,
+                            &self.grid,
+                            &mg_cfg,
+                            inner_sweeps,
+                            1e-8,
+                        );
+                        if !mg_result.converged {
+                            sor_solve(&mut psi_new, &source, &self.grid, inner_omega, inner_sweeps);
+                        }
+                    } else {
+                        let _ = multigrid_solve(&mut psi_new, &source, &self.grid, &mg_cfg, 1, 0.0);
                     }
                 }
             }

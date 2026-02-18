@@ -4,6 +4,7 @@
 //! Solves heat and particle diffusion on radial grid ρ ∈ [0, 1].
 
 use crate::pedestal::{PedestalConfig, PedestalModel};
+use fusion_math::tridiag::thomas_solve;
 use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::RadialProfiles;
 use ndarray::Array1;
@@ -70,6 +71,19 @@ pub struct NeoclassicalParams {
     pub q_profile: Array1<f64>,
 }
 
+impl Default for NeoclassicalParams {
+    fn default() -> Self {
+        Self {
+            r_major: 6.2,
+            a_minor: 2.0,
+            b_toroidal: 5.3,
+            a_ion: 2.0,
+            z_eff: 1.5,
+            q_profile: Array1::linspace(1.0, 3.0, TRANSPORT_NR),
+        }
+    }
+}
+
 /// Chang-Hinton (1982) neoclassical ion thermal diffusivity [m²/s].
 ///
 /// χ_i^NC = 0.66 (1 + 1.54 α) q² ε^{-3/2} ρ_i² ν_ii / (1 + 0.74 ν*^{2/3})
@@ -128,6 +142,236 @@ pub fn chang_hinton_chi(
     } else {
         CHI_NC_FLOOR
     }
+}
+
+/// Vectorized Chang-Hinton ion thermal diffusivity over radial grid.
+pub fn chang_hinton_chi_profile(
+    rho: &Array1<f64>,
+    t_i_kev: &Array1<f64>,
+    n_e_19: &Array1<f64>,
+    q: &Array1<f64>,
+    params: &NeoclassicalParams,
+) -> Array1<f64> {
+    if rho.len() != t_i_kev.len() || rho.len() != n_e_19.len() || rho.len() != q.len() {
+        return Array1::from_elem(rho.len(), CHI_NC_FLOOR);
+    }
+    Array1::from_iter(
+        (0..rho.len()).map(|i| chang_hinton_chi(rho[i], t_i_kev[i], n_e_19[i], q[i], params)),
+    )
+}
+
+/// Vectorized gyro-Bohm diffusivity over radial grid.
+pub fn gyro_bohm_chi_profile(
+    rho: &Array1<f64>,
+    t_i_kev: &Array1<f64>,
+    b_field: f64,
+    mass_amu: f64,
+    chi_gb_coeff: f64,
+) -> Array1<f64> {
+    let n = rho.len();
+    if n == 0 || t_i_kev.len() != n {
+        return Array1::zeros(n);
+    }
+    if !b_field.is_finite() || b_field.abs() < 1e-12 || !mass_amu.is_finite() || mass_amu <= 0.0 {
+        return Array1::from_elem(n, CHI_NC_FLOOR);
+    }
+    let b2 = b_field * b_field;
+    let mass_term = mass_amu.sqrt();
+    let coeff = chi_gb_coeff.abs().max(1e-9);
+    Array1::from_iter((0..n).map(|i| {
+        let t = t_i_kev[i].max(0.01);
+        let r = rho[i].clamp(0.0, 1.0);
+        let chi = coeff * (t.powf(1.5) / b2) * (1.0 + r) / mass_term;
+        if chi.is_finite() && chi > 0.0 {
+            chi.max(CHI_NC_FLOOR)
+        } else {
+            CHI_NC_FLOOR
+        }
+    }))
+}
+
+/// Sauter bootstrap current density over radial grid.
+pub fn sauter_bootstrap_current_profile(
+    rho: &Array1<f64>,
+    t_e_kev: &Array1<f64>,
+    t_i_kev: &Array1<f64>,
+    n_e_19: &Array1<f64>,
+    q: &Array1<f64>,
+    epsilon: &Array1<f64>,
+    b_field: f64,
+) -> Array1<f64> {
+    let n = rho.len();
+    if n < 3
+        || t_e_kev.len() != n
+        || t_i_kev.len() != n
+        || n_e_19.len() != n
+        || q.len() != n
+        || epsilon.len() != n
+        || !b_field.is_finite()
+        || b_field <= 0.0
+    {
+        return Array1::zeros(n);
+    }
+
+    let e_charge = NC_ELEM_CHARGE;
+    let m_e = 9.109_383_70e-31;
+    let eps0: f64 = 8.854_187_812e-12;
+    let z_eff = 1.5;
+    let mut j_bs = Array1::zeros(n);
+
+    for i in 1..(n - 1) {
+        let eps = epsilon[i];
+        let te = t_e_kev[i];
+        let ti = t_i_kev[i];
+        let ne19 = n_e_19[i];
+        let qi = q[i];
+        if eps < 1e-6 || te <= 0.0 || ti <= 0.0 || ne19 <= 0.0 || qi <= 0.0 {
+            continue;
+        }
+
+        let eps_sq = (eps * eps).clamp(0.0, 0.999_999);
+        let trapped_denom = (1.0 - eps_sq).sqrt() * (1.0 + 1.46 * eps.sqrt());
+        if trapped_denom <= 1e-12 {
+            continue;
+        }
+        let mut f_t = 1.0 - (1.0 - eps).powi(2) / trapped_denom;
+        f_t = f_t.clamp(0.0, 1.0);
+
+        let t_e_j = te * 1e3 * e_charge;
+        if !t_e_j.is_finite() || t_e_j <= 0.0 {
+            continue;
+        }
+        let v_te = (2.0 * t_e_j / m_e).sqrt();
+        if !v_te.is_finite() || v_te <= 0.0 {
+            continue;
+        }
+
+        let n_e = ne19 * 1e19;
+        let ln_lambda = 17.0;
+        let nu_ei = n_e * z_eff * e_charge.powi(4) * ln_lambda
+            / (12.0 * std::f64::consts::PI.powf(1.5) * eps0.powi(2) * m_e.sqrt() * t_e_j.powf(1.5));
+        if !nu_ei.is_finite() || nu_ei <= 0.0 {
+            continue;
+        }
+        let nu_star_e = nu_ei * qi / (eps.powf(1.5).max(1e-9) * v_te);
+        let alpha_31 = 1.0 / (1.0 + 0.36 / z_eff);
+        let l31 = f_t * alpha_31
+            / (1.0 + alpha_31 * nu_star_e.sqrt() + 0.25 * nu_star_e * (1.0 - f_t).powi(2));
+        let mut l32 = f_t * (0.05 + 0.62 * z_eff) / (z_eff * (1.0 + 0.44 * z_eff));
+        l32 /= 1.0 + 0.22 * nu_star_e.sqrt() + 0.19 * nu_star_e * (1.0 - f_t);
+        let l34 = l31 * ti / te.max(0.01);
+
+        let dr = (rho[i + 1] - rho[i - 1]).abs().max(1e-12);
+        let dn_dr = (n_e_19[i + 1] - n_e_19[i - 1]) * 1e19 / dr;
+        let dte_dr = (t_e_kev[i + 1] - t_e_kev[i - 1]) * 1e3 * e_charge / dr;
+        let dti_dr = (t_i_kev[i + 1] - t_i_kev[i - 1]) * 1e3 * e_charge / dr;
+
+        let b_pol = (b_field * eps / qi.max(0.1)).max(1e-10);
+        let p_e = n_e * t_e_j;
+        let denom_ti = (ti * 1e3 * e_charge).max(1e-30);
+        let j_val = -(p_e / b_pol)
+            * (l31 * dn_dr / n_e.max(1e10)
+                + l32 * dte_dr / t_e_j.max(1e-30)
+                + l34 * dti_dr / denom_ti);
+        if j_val.is_finite() {
+            j_bs[i] = j_val;
+        }
+    }
+    j_bs
+}
+
+/// Build Crank-Nicolson tridiagonal coefficients for 1D diffusion.
+///
+/// Returns `(a, b, c, d)` where `a/b/c` are sub/main/super diagonals for
+/// `fusion_math::tridiag::thomas_solve` and `d` is a zero-initialized RHS
+/// template that callers may fill with source terms.
+pub fn build_cn_tridiag(
+    chi: &Array1<f64>,
+    rho: &Array1<f64>,
+    dt: f64,
+) -> (Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>) {
+    let n = rho.len();
+    let mut a = vec![0.0; n];
+    let mut b = vec![1.0; n];
+    let mut c = vec![0.0; n];
+    let mut d = vec![0.0; n];
+    if n < 3 || chi.len() != n || !dt.is_finite() || dt <= 0.0 {
+        return (a, b, c, d);
+    }
+
+    let dr = (rho[1] - rho[0]).abs().max(1e-12);
+    for i in 1..(n - 1) {
+        let r = rho[i].abs().max(1e-6);
+        let chi_i = chi[i].max(0.0);
+        let chi_ip = 0.5 * (chi_i + chi[i + 1].max(0.0));
+        let chi_im = 0.5 * (chi_i + chi[i - 1].max(0.0));
+        let r_ip = r + 0.5 * dr;
+        let r_im = (r - 0.5 * dr).max(1e-6);
+        let coeff_ip = chi_ip * r_ip / (r * dr * dr);
+        let coeff_im = chi_im * r_im / (r * dr * dr);
+
+        b[i] = 1.0 + 0.5 * dt * (coeff_ip + coeff_im);
+        c[i] = -0.5 * dt * coeff_ip;
+        a[i] = -0.5 * dt * coeff_im;
+    }
+    d[0] = EDGE_TEMPERATURE;
+    d[n - 1] = EDGE_TEMPERATURE;
+    (a, b, c, d)
+}
+
+/// Single transport timestep helper with explicit dt control.
+pub fn transport_step(solver: &mut TransportSolver, p_aux_mw: f64, dt: f64) -> FusionResult<()> {
+    if !p_aux_mw.is_finite() || p_aux_mw < 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "transport step requires finite p_aux_mw >= 0, got {p_aux_mw}"
+        )));
+    }
+    if !dt.is_finite() || dt <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "transport step requires finite dt > 0, got {dt}"
+        )));
+    }
+
+    let dt_prev = solver.dt;
+    solver.dt = dt;
+    let step_result = (|| -> FusionResult<()> {
+        solver.update_transport_model(p_aux_mw)?;
+        let te_before = solver.profiles.te.clone();
+        solver.evolve_profiles(p_aux_mw)?;
+
+        // CN smoothing pass using current diffusivity for added robustness.
+        let (a, b, c, mut d) = build_cn_tridiag(&solver.chi, &solver.profiles.rho, dt);
+        let n = solver.profiles.te.len();
+        if n >= 3 {
+            for (i, d_i) in d.iter_mut().enumerate().skip(1).take(n - 2) {
+                *d_i = solver.profiles.te[i];
+            }
+            let solved = thomas_solve(&a, &b, &c, &d);
+            for i in 1..(n - 1) {
+                let val = solved[i];
+                solver.profiles.te[i] = if val.is_finite() {
+                    val.clamp(EDGE_TEMPERATURE, MAX_TEMPERATURE)
+                } else {
+                    te_before[i]
+                };
+                solver.profiles.ti[i] = solver.profiles.te[i];
+            }
+            solver.profiles.te[n - 1] = EDGE_TEMPERATURE;
+            solver.profiles.ti[n - 1] = EDGE_TEMPERATURE;
+        }
+
+        if solver.profiles.te.iter().any(|v| !v.is_finite())
+            || solver.profiles.ti.iter().any(|v| !v.is_finite())
+            || solver.profiles.ne.iter().any(|v| !v.is_finite())
+        {
+            return Err(FusionError::ConfigError(
+                "transport step produced non-finite profile outputs".to_string(),
+            ));
+        }
+        Ok(())
+    })();
+    solver.dt = dt_prev;
+    step_result
 }
 
 /// 1.5D radial transport solver.
@@ -896,5 +1140,133 @@ mod tests {
         let mut nc2 = iter_neoclassical_params(50);
         nc2.q_profile = Array1::zeros(10); // wrong length
         assert!(ts.set_neoclassical(nc2).is_err());
+    }
+
+    #[test]
+    fn test_chang_hinton_profile_vectorized_matches_scalar() {
+        let n = 50;
+        let rho = Array1::linspace(0.02, 1.0, n);
+        let t_i = Array1::from_shape_fn(n, |i| {
+            let r = rho[i];
+            12.0_f64 * (1.0_f64 - r * r).max(0.05_f64)
+        });
+        let n_e = Array1::from_shape_fn(n, |i| 8.0 * (1.0 - 0.6 * rho[i] * rho[i]) + 0.5);
+        let q = Array1::from_shape_fn(n, |i| 1.0 + 2.5 * rho[i] * rho[i]);
+        let params = NeoclassicalParams {
+            q_profile: q.clone(),
+            ..NeoclassicalParams::default()
+        };
+
+        let vectorized = chang_hinton_chi_profile(&rho, &t_i, &n_e, &q, &params);
+        for i in 0..n {
+            let scalar = chang_hinton_chi(rho[i], t_i[i], n_e[i], q[i], &params);
+            assert!(
+                (vectorized[i] - scalar).abs() < 1e-12,
+                "vectorized and scalar mismatch at i={i}: vec={}, scalar={scalar}",
+                vectorized[i]
+            );
+        }
+    }
+
+    #[test]
+    fn test_gyro_bohm_profile_positive_and_scaling() {
+        let rho = Array1::linspace(0.02, 1.0, 32);
+        let t_base = Array1::from_elem(32, 4.0);
+        let t_hot = Array1::from_elem(32, 8.0);
+
+        let chi_base = gyro_bohm_chi_profile(&rho, &t_base, 5.0, 2.0, 0.1);
+        let chi_hot = gyro_bohm_chi_profile(&rho, &t_hot, 5.0, 2.0, 0.1);
+        let chi_high_b = gyro_bohm_chi_profile(&rho, &t_hot, 10.0, 2.0, 0.1);
+
+        assert!(chi_base.iter().all(|v| v.is_finite() && *v > 0.0));
+        let ratio_t = chi_hot[10] / chi_base[10].max(1e-12);
+        let ratio_b = chi_hot[10] / chi_high_b[10].max(1e-12);
+
+        assert!(
+            ratio_t > 2.6,
+            "Expected T^(3/2) scaling (>2.6 for 4->8 keV), got {ratio_t}"
+        );
+        assert!(
+            ratio_b > 3.5,
+            "Expected ~B^-2 scaling (>3.5 for 5T->10T), got {ratio_b}"
+        );
+    }
+
+    #[test]
+    fn test_sauter_bootstrap_profile_is_mostly_positive() {
+        let n = 60;
+        let rho = Array1::linspace(0.01, 1.0, n);
+        let t_i = Array1::from_shape_fn(n, |i| {
+            let r = rho[i];
+            12.0_f64 * (1.0_f64 - r * r).max(0.05_f64) + 0.5_f64
+        });
+        let t_e = Array1::from_shape_fn(n, |i| {
+            let r = rho[i];
+            10.0_f64 * (1.0_f64 - r * r).max(0.05_f64) + 0.3_f64
+        });
+        let n_e = Array1::from_shape_fn(n, |i| {
+            let r = rho[i];
+            9.0_f64 * (1.0_f64 - 0.7_f64 * r * r) + 1.0_f64
+        });
+        let q = Array1::from_shape_fn(n, |i| {
+            let r = rho[i];
+            1.0_f64 + 2.5_f64 * r * r
+        });
+        let epsilon = rho.mapv(|r| r * 0.32);
+
+        let j_bs = sauter_bootstrap_current_profile(&rho, &t_e, &t_i, &n_e, &q, &epsilon, 5.3);
+        let positive_fraction =
+            j_bs.iter().filter(|v| **v > 0.0).count() as f64 / j_bs.len() as f64;
+        assert!(
+            positive_fraction > 0.75,
+            "Expected mostly positive bootstrap current, fraction={positive_fraction:.3}"
+        );
+    }
+
+    #[test]
+    fn test_cn_tridiag_diagonal_dominance() {
+        let n = 50;
+        let rho = Array1::linspace(0.0, 1.0, n);
+        let chi = Array1::from_elem(n, 0.5);
+        let (a, b, c, _) = build_cn_tridiag(&chi, &rho, 0.01);
+
+        for i in 1..(n - 1) {
+            let dominance = b[i].abs() - (a[i].abs() + c[i].abs());
+            assert!(
+                dominance > 0.0,
+                "Expected strict diagonal dominance at i={i}: b={}, a={}, c={}",
+                b[i],
+                a[i],
+                c[i]
+            );
+        }
+    }
+
+    fn thermal_energy_proxy(ts: &TransportSolver) -> f64 {
+        ts.profiles
+            .rho
+            .iter()
+            .zip(ts.profiles.ne.iter())
+            .zip(ts.profiles.ti.iter())
+            .map(|((r, n_e), t_i)| r.max(0.0) * n_e.max(0.0) * t_i.max(0.0))
+            .sum::<f64>()
+    }
+
+    #[test]
+    fn test_transport_step_conserves_energy_proxy() {
+        let mut ts = TransportSolver::new();
+        let p_aux = 20.0;
+        let dt = 0.01;
+        let before = thermal_energy_proxy(&ts);
+        transport_step(&mut ts, p_aux, dt).expect("valid transport step");
+        let after = thermal_energy_proxy(&ts);
+
+        let delta = (after - before).abs();
+        // Transport update is numerically diffusive; allow generous source-scaled bound.
+        let bound = p_aux * dt * 5e4;
+        assert!(
+            delta <= bound,
+            "Energy proxy change too large: delta={delta}, bound={bound}"
+        );
     }
 }

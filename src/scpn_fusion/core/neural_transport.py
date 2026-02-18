@@ -440,3 +440,7 @@ class NeuralTransportModel:
         d_e_out = chi_e_out / 3.0
 
         return chi_e_out, chi_i_out, d_e_out
+
+
+# Backward-compatible class name used by older interop/parity tests.
+NeuralTransportSurrogate = NeuralTransportModel
