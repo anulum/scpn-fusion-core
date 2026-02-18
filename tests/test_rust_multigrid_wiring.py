@@ -110,5 +110,6 @@ def test_rust_multigrid_result_keys(tmp_path: Path):
     fk = FusionKernel(str(p))
     result = fk.solve_equilibrium()
     expected = {"psi", "converged", "iterations", "residual",
-                "residual_history", "wall_time_s", "solver_method"}
+                "residual_history", "gs_residual", "gs_residual_best",
+                "gs_residual_history", "wall_time_s", "solver_method"}
     assert expected.issubset(result.keys()), f"Missing keys: {expected - result.keys()}"

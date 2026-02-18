@@ -143,3 +143,16 @@ def test_newton_picard_warmup_runs(newton_cfg: Path):
     result = fk.solve_equilibrium()
     # Warmup should have added entries to residual_history
     assert len(result["residual_history"]) >= 1, "No residual history entries"
+
+
+def test_newton_reports_gs_residual_metrics(newton_cfg: Path):
+    """Newton result should include GS residual telemetry."""
+    fk = FusionKernel(str(newton_cfg))
+    result = fk.solve_equilibrium()
+
+    assert "gs_residual" in result
+    assert "gs_residual_best" in result
+    assert "gs_residual_history" in result
+    assert np.isfinite(result["gs_residual"])
+    assert np.isfinite(result["gs_residual_best"])
+    assert len(result["gs_residual_history"]) >= 1

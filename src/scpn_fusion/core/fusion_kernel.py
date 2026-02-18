@@ -976,13 +976,22 @@ class FusionKernel:
         tol: float = self.cfg["solver"]["convergence_threshold"]
         picard_alpha: float = self.cfg["solver"].get("relaxation_factor", 0.1)
         fail_on_diverge: bool = bool(self.cfg["solver"].get("fail_on_diverge", False))
+        require_gs_residual: bool = bool(
+            self.cfg["solver"].get("require_gs_residual", False)
+        )
+        gs_tol: float = float(self.cfg["solver"].get("gs_residual_threshold", tol))
+        if require_gs_residual and gs_tol <= 0.0:
+            raise ValueError("solver.gs_residual_threshold must be > 0")
         mu0: float = self.cfg["physics"]["vacuum_permeability"]
         warmup_steps: int = min(15, max_iter // 2)
         newton_alpha: float = 0.5  # damped Newton
 
         residual_history: list[float] = []
+        gs_residual_history: list[float] = []
         converged = False
         final_iter = 0
+        gs_best: float = float("inf")
+        final_source: FloatArray | None = None
 
         self._seed_plasma(mu0)
 
@@ -998,6 +1007,7 @@ class FusionKernel:
                 self.J_phi = self.update_plasma_source_nonlinear(Psi_axis, Psi_boundary)
 
             Source = -mu0 * self.RR * self.J_phi
+            final_source = Source
             Psi_new = self._elliptic_solve(Source, Psi_vac_boundary)
 
             if np.isnan(Psi_new).any() or np.isinf(Psi_new).any():
@@ -1009,8 +1019,14 @@ class FusionKernel:
             residual_history.append(diff)
             self.Psi = (1.0 - picard_alpha) * self.Psi + picard_alpha * Psi_new
             self._apply_boundary_conditions(self.Psi, Psi_vac_boundary)
+            gs_residual = self._compute_gs_residual_rms(Source)
+            gs_residual_history.append(gs_residual)
+            if gs_residual < gs_best:
+                gs_best = gs_residual
 
-            if diff < tol:
+            update_converged = diff < tol
+            gs_converged = (not require_gs_residual) or (gs_residual < gs_tol)
+            if update_converged and gs_converged:
                 converged = True
                 break
 
@@ -1032,11 +1048,18 @@ class FusionKernel:
 
                 # Residual: r_k = L[psi] + mu0*R*J_phi  (Source = -mu0*R*J)
                 Source = -mu0 * self.RR * self.J_phi
+                final_source = Source
                 r_k = self._compute_gs_residual(Source)
                 res_norm = float(np.sqrt(np.sum(r_k[1:-1, 1:-1] ** 2)))
+                gs_residual = float(np.sqrt(np.mean(r_k[1:-1, 1:-1] ** 2)))
                 residual_history.append(res_norm)
+                gs_residual_history.append(gs_residual)
+                if gs_residual < gs_best:
+                    gs_best = gs_residual
 
-                if res_norm < tol:
+                update_converged = res_norm < tol
+                gs_converged = (not require_gs_residual) or (gs_residual < gs_tol)
+                if update_converged and gs_converged:
                     converged = True
                     break
 
@@ -1079,6 +1102,16 @@ class FusionKernel:
                         raise RuntimeError(f"Newton solver diverged at iter={k}")
                     break
 
+        if final_source is None:
+            gs_final = float("inf")
+            gs_best_out = float("inf")
+        elif gs_residual_history:
+            gs_final = gs_residual_history[-1]
+            gs_best_out = gs_best
+        else:
+            gs_final = self._compute_gs_residual_rms(final_source)
+            gs_best_out = gs_final
+
         self.compute_b_field()
         elapsed = time.time() - t0
         logger.info("Newton solved in %.2fs, %d iters", elapsed, final_iter + 1)
@@ -1089,6 +1122,9 @@ class FusionKernel:
             "iterations": final_iter + 1,
             "residual": residual_history[-1] if residual_history else float("inf"),
             "residual_history": residual_history,
+            "gs_residual": gs_final,
+            "gs_residual_best": gs_best_out,
+            "gs_residual_history": gs_residual_history,
             "wall_time_s": elapsed,
             "solver_method": "newton",
         }
@@ -1141,6 +1177,9 @@ class FusionKernel:
         self.B_R = rk.B_R
         self.B_Z = rk.B_Z
 
+        mu0: float = self.cfg["physics"]["vacuum_permeability"]
+        source = -mu0 * self.RR * self.J_phi
+        gs_residual = self._compute_gs_residual_rms(source)
         elapsed = time.time() - t0
         return {
             "psi": self.Psi,
@@ -1148,6 +1187,9 @@ class FusionKernel:
             "iterations": rust_result.iterations,
             "residual": rust_result.residual,
             "residual_history": [],
+            "gs_residual": gs_residual,
+            "gs_residual_best": gs_residual,
+            "gs_residual_history": [],
             "wall_time_s": elapsed,
             "solver_method": "rust_multigrid",
         }
