@@ -25,8 +25,9 @@ env/
 htmlcov/
 .tox/
 
-# Local operational handovers (must never be pushed)
+# Local operational data (must never be pushed)
 .handovers/
+.coordination/
 
 # IDE
 .idea/
