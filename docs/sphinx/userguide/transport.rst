@@ -34,6 +34,24 @@ The anomalous transport coefficients :math:`D` and :math:`\chi` are
 derived from the turbulence oracle (see below) or from prescribed
 scaling laws.
 
+Auxiliary Heating Source Normalisation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The auxiliary-heating source in ``TransportSolver.evolve_profiles`` is
+power-normalised in physical units:
+
+1. input auxiliary power :math:`P_\mathrm{aux}` [MW] is converted to W,
+2. a radial deposition shape is volume-normalised with :math:`dV(\rho)`,
+3. volumetric power density is mapped to temperature source terms using
+   :math:`\frac{3}{2} n \frac{dT}{dt} = P`.
+
+This enforces an explicit MW->keV/s consistency path and provides
+per-step telemetry in ``_last_aux_heating_balance`` with target and
+reconstructed injected powers for ion/electron channels.
+
+A reproducible benchmark lane for this contract is available at:
+``validation/benchmark_transport_power_balance.py``.
+
 IPB98(y,2) Confinement Scaling
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

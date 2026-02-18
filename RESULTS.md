@@ -112,6 +112,7 @@
 | Physics transport (Gyro-Bohm + Chang-Hinton + EPED-like pedestal) | tau_E RMSE | 0.1287 s | 20-shot ITPA run (`validation/validate_transport_itpa.py`) |
 | Physics transport (Gyro-Bohm + Chang-Hinton + EPED-like pedestal) | tau_E relative RMSE | 28.6% | Same 20-shot ITPA run |
 | Physics transport (Gyro-Bohm + Chang-Hinton + EPED-like pedestal) | tau_E mean absolute relative error | 32.5% | RMSE dashboard aggregate (`validation/reports/rmse_dashboard.json`) |
+| Physics transport source contract | Auxiliary MW->keV/s max relative power-balance error | 2.4e-16 | 8-case benchmark (`validation/benchmark_transport_power_balance.py`) |
 | Neural transport MLP surrogate | tau_E RMSE % | 13.5% | Surrogate regression lane only (not full physics transport) |
 
 > **Important:** the 13.5% value belongs to the neural surrogate fit, while

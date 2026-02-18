@@ -1,0 +1,99 @@
+{
+  "transport_power_balance_benchmark": {
+    "n_cases": 8,
+    "max_relative_error": 2.3684757858670006e-16,
+    "mean_relative_error": 5.921189464667501e-17,
+    "threshold_max_relative_error": 1e-06,
+    "passes_thresholds": true,
+    "cases": [
+      {
+        "mode": "single_ion",
+        "p_aux_mw": 10.0,
+        "target_total_mw": 10.0,
+        "reconstructed_total_mw": 10.0,
+        "target_ion_mw": 10.0,
+        "target_electron_mw": 0.0,
+        "reconstructed_ion_mw": 10.0,
+        "reconstructed_electron_mw": 0.0,
+        "relative_error": 0.0
+      },
+      {
+        "mode": "multi_ion",
+        "p_aux_mw": 10.0,
+        "target_total_mw": 10.0,
+        "reconstructed_total_mw": 10.0,
+        "target_ion_mw": 5.0,
+        "target_electron_mw": 5.0,
+        "reconstructed_ion_mw": 5.0,
+        "reconstructed_electron_mw": 5.0,
+        "relative_error": 0.0
+      },
+      {
+        "mode": "single_ion",
+        "p_aux_mw": 30.0,
+        "target_total_mw": 30.0,
+        "reconstructed_total_mw": 30.000000000000007,
+        "target_ion_mw": 30.0,
+        "target_electron_mw": 0.0,
+        "reconstructed_ion_mw": 30.000000000000007,
+        "reconstructed_electron_mw": 0.0,
+        "relative_error": 2.3684757858670006e-16
+      },
+      {
+        "mode": "multi_ion",
+        "p_aux_mw": 30.0,
+        "target_total_mw": 30.0,
+        "reconstructed_total_mw": 30.000000000000007,
+        "target_ion_mw": 15.0,
+        "target_electron_mw": 15.0,
+        "reconstructed_ion_mw": 15.000000000000004,
+        "reconstructed_electron_mw": 15.000000000000004,
+        "relative_error": 2.3684757858670006e-16
+      },
+      {
+        "mode": "single_ion",
+        "p_aux_mw": 50.0,
+        "target_total_mw": 50.0,
+        "reconstructed_total_mw": 50.0,
+        "target_ion_mw": 50.0,
+        "target_electron_mw": 0.0,
+        "reconstructed_ion_mw": 50.0,
+        "reconstructed_electron_mw": 0.0,
+        "relative_error": 0.0
+      },
+      {
+        "mode": "multi_ion",
+        "p_aux_mw": 50.0,
+        "target_total_mw": 50.0,
+        "reconstructed_total_mw": 50.0,
+        "target_ion_mw": 25.0,
+        "target_electron_mw": 25.0,
+        "reconstructed_ion_mw": 25.0,
+        "reconstructed_electron_mw": 25.0,
+        "relative_error": 0.0
+      },
+      {
+        "mode": "single_ion",
+        "p_aux_mw": 100.0,
+        "target_total_mw": 100.0,
+        "reconstructed_total_mw": 100.0,
+        "target_ion_mw": 100.0,
+        "target_electron_mw": 0.0,
+        "reconstructed_ion_mw": 100.0,
+        "reconstructed_electron_mw": 0.0,
+        "relative_error": 0.0
+      },
+      {
+        "mode": "multi_ion",
+        "p_aux_mw": 100.0,
+        "target_total_mw": 100.0,
+        "reconstructed_total_mw": 100.0,
+        "target_ion_mw": 50.0,
+        "target_electron_mw": 50.0,
+        "reconstructed_ion_mw": 50.0,
+        "reconstructed_electron_mw": 50.0,
+        "relative_error": 0.0
+      }
+    ]
+  }
+}

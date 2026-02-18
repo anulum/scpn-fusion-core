@@ -124,8 +124,7 @@ def test_cn_matches_euler_small_dt(tmp_path: Path):
 
     # Compute Euler step manually
     Lh = ts_fe._explicit_diffusion_rhs(ts_fe.Ti, ts_fe.chi_i)
-    heating = np.exp(-ts_fe.rho**2 / 0.1)
-    S_heat = (P_aux / np.sum(heating)) * heating
+    S_heat, _ = ts_fe._compute_aux_heating_sources(P_aux)
     S_rad = 5.0 * ts_fe.ne * ts_fe.n_impurity * np.sqrt(ts_fe.Te + 0.1)
     euler_Ti = ts_fe.Ti + dt * (Lh + S_heat - S_rad)
     euler_Ti[0] = euler_Ti[1]

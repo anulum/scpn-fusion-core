@@ -66,11 +66,14 @@ Validated accuracy against the ITPA H-mode database (20-shot subset):
      - ``28.6%``
      - ``validation/validate_transport_itpa.py``
    * - :math:`\tau_E` mean abs. relative error
-     - ``32.5%``
-     - ``validation/reports/rmse_dashboard.json``
+      - ``32.5%``
+      - ``validation/reports/rmse_dashboard.json``
+   * - Aux MW->keV/s source max rel. error
+      - ``2.4e-16``
+      - ``validation/benchmark_transport_power_balance.py``
    * - 2-sigma coverage
-     - ``95%`` (19/20 shots)
-     - ``validation/validate_transport_itpa.py``
+      - ``95%`` (19/20 shots)
+      - ``validation/validate_transport_itpa.py``
 
 .. note::
 
@@ -136,6 +139,10 @@ Generate an RMSE dashboard report::
 This writes JSON and Markdown reports to ``validation/reports/``
 containing confinement time accuracy, beta normalised surrogate RMSE,
 SPARC axis position errors, and point-wise :math:`\psi` RMSE.
+
+Benchmark transport-source power-balance reconstruction::
+
+    python validation/benchmark_transport_power_balance.py
 
 Validate against SPARC GEQDSK files::
 

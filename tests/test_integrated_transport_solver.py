@@ -223,6 +223,31 @@ class TestEvolveProfiles:
         assert np.all(np.isfinite(solver.n_impurity))
         assert solver._last_numerical_recovery_count > 0
 
+    def test_aux_heating_source_power_balance_single_ion(self, solver: TransportSolver) -> None:
+        """Integrated heating source must reconstruct the requested total MW."""
+        s_i, s_e = solver._compute_aux_heating_sources(50.0)
+        assert np.all(s_e == 0.0)  # single-ion lane has no separate electron channel
+        assert np.all(np.isfinite(s_i))
+
+        dV = solver._rho_volume_element()
+        e_keV_J = 1.602176634e-16
+        ne_m3 = np.maximum(solver.ne, 0.1) * 1e19
+        rec_w = 1.5 * np.sum(ne_m3 * s_i * e_keV_J * dV)
+        rec_mw = rec_w / 1e6
+        assert rec_mw == pytest.approx(50.0, rel=1e-6, abs=1e-6)
+        assert solver._last_aux_heating_balance["reconstructed_total_MW"] == pytest.approx(
+            50.0,
+            rel=1e-6,
+            abs=1e-6,
+        )
+
+    def test_aux_heating_source_zero_power(self, solver: TransportSolver) -> None:
+        """Zero auxiliary power must return zero source terms."""
+        s_i, s_e = solver._compute_aux_heating_sources(0.0)
+        assert np.all(s_i == 0.0)
+        assert np.all(s_e == 0.0)
+        assert solver._last_aux_heating_balance["reconstructed_total_MW"] == 0.0
+
 
 # ── 3. Multi-Ion Species ──────────────────────────────────────────────
 
@@ -256,6 +281,27 @@ class TestMultiIon:
             solver_multi.evolve_profiles(dt=0.01, P_aux=50.0)
         t_final = np.sum(solver_multi.n_T)
         assert t_final < t_initial
+
+    def test_aux_heating_source_power_split_multi_ion(self, solver_multi: TransportSolver) -> None:
+        """Multi-ion lane should split auxiliary power between ions/electrons."""
+        solver_multi.aux_heating_electron_fraction = 0.5
+        s_i, s_e = solver_multi._compute_aux_heating_sources(40.0)
+        assert np.all(np.isfinite(s_i))
+        assert np.all(np.isfinite(s_e))
+
+        dV = solver_multi._rho_volume_element()
+        e_keV_J = 1.602176634e-16
+        ne_m3 = np.maximum(solver_multi.ne, 0.1) * 1e19
+
+        rec_i = 1.5 * np.sum(ne_m3 * s_i * e_keV_J * dV) / 1e6
+        rec_e = 1.5 * np.sum(ne_m3 * s_e * e_keV_J * dV) / 1e6
+        assert rec_i == pytest.approx(20.0, rel=1e-6, abs=1e-6)
+        assert rec_e == pytest.approx(20.0, rel=1e-6, abs=1e-6)
+        assert solver_multi._last_aux_heating_balance["reconstructed_total_MW"] == pytest.approx(
+            40.0,
+            rel=1e-6,
+            abs=1e-6,
+        )
 
     def test_multi_ion_quasineutrality(self, solver_multi: TransportSolver) -> None:
         """After evolving, ne should be updated from quasineutrality."""

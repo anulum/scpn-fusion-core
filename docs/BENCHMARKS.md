@@ -66,6 +66,17 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 > topology (axis position, safety factor monotonicity, GS operator sign) but
 > does not compute point-wise RMSE against reference psi fields.
 
+### Transport Source Power-Balance Contract
+
+Auxiliary-heating source normalisation (MW -> volumetric W/m^3 -> keV/s)
+is benchmarked with deterministic reconstruction checks:
+
+| Metric | Value | Command |
+|--------|-------|---------|
+| Cases | 8 (single-ion + multi-ion, 4 powers) | `python validation/benchmark_transport_power_balance.py` |
+| Max relative power-balance error | 2.4e-16 | same |
+| Threshold | <= 1e-6 | same |
+
 ### Equilibrium Solver Convergence
 
 **Current production path (Picard + Red-Black SOR):**
@@ -314,6 +325,7 @@ python profiling/profile_geometry_3d.py --toroidal 48 --poloidal 48 --top 50
 
 # Python validation suite
 python validation/validate_against_sparc.py
+python validation/benchmark_transport_power_balance.py
 
 # Full 26-mode regression
 scpn-fusion all --surrogate --experimental
@@ -341,4 +353,5 @@ pip install -e ".[dev]"
 cd scpn-fusion-rs && cargo bench && cd ..
 python validation/validate_against_sparc.py
 python validation/rmse_dashboard.py --output-json artifacts/rmse.json
+python validation/benchmark_transport_power_balance.py
 ```

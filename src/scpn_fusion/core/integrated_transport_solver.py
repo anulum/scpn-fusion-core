@@ -279,6 +279,20 @@ class TransportSolver(FusionKernel):
         # Z_eff tracking (updated every evolve step in multi-ion mode)
         self._Z_eff: float = 1.5
 
+        # Auxiliary-heating source model parameters
+        self.aux_heating_profile_width: float = 0.1
+        self.aux_heating_electron_fraction: float = 0.5
+
+        # Last-step auxiliary-heating power-balance telemetry
+        self._last_aux_heating_balance: dict[str, float] = {
+            "target_total_MW": 0.0,
+            "target_ion_MW": 0.0,
+            "target_electron_MW": 0.0,
+            "reconstructed_ion_MW": 0.0,
+            "reconstructed_electron_MW": 0.0,
+            "reconstructed_total_MW": 0.0,
+        }
+
         # Numerical hardening telemetry (non-finite replacements per step)
         self._last_numerical_recovery_count: int = 0
 
@@ -678,6 +692,81 @@ class TransportSolver(FusionKernel):
 
         return recovered_total
 
+    def _rho_volume_element(self) -> np.ndarray:
+        """Toroidal volume element per radial cell [m^3]."""
+        dims = self.cfg["dimensions"]
+        r0 = (dims["R_min"] + dims["R_max"]) / 2.0
+        a_minor = (dims["R_max"] - dims["R_min"]) / 2.0
+        return 2.0 * np.pi * r0 * 2.0 * np.pi * self.rho * a_minor**2 * self.drho
+
+    def _compute_aux_heating_sources(self, P_aux_MW: float) -> tuple[np.ndarray, np.ndarray]:
+        """Return ion/electron auxiliary-heating sources in keV/s.
+
+        The source is power-normalised against the radial cell volumes to ensure
+        that reconstructed injected power matches ``P_aux_MW`` by construction.
+        """
+        if (not np.isfinite(P_aux_MW)) or P_aux_MW <= 0.0:
+            zeros = np.zeros(self.nr, dtype=np.float64)
+            self._last_aux_heating_balance = {
+                "target_total_MW": float(max(P_aux_MW, 0.0)) if np.isfinite(P_aux_MW) else 0.0,
+                "target_ion_MW": 0.0,
+                "target_electron_MW": 0.0,
+                "reconstructed_ion_MW": 0.0,
+                "reconstructed_electron_MW": 0.0,
+                "reconstructed_total_MW": 0.0,
+            }
+            return zeros, zeros
+
+        profile_width = max(self.aux_heating_profile_width, 1e-6)
+        shape = np.exp(-(self.rho**2) / profile_width)
+        dV = self._rho_volume_element()
+        norm = float(np.sum(shape * dV))
+        if (not np.isfinite(norm)) or norm <= 0.0:
+            shape = np.ones_like(self.rho)
+            norm = float(np.sum(shape * dV))
+        if (not np.isfinite(norm)) or norm <= 0.0:
+            zeros = np.zeros(self.nr, dtype=np.float64)
+            self._last_aux_heating_balance = {
+                "target_total_MW": float(P_aux_MW),
+                "target_ion_MW": 0.0,
+                "target_electron_MW": 0.0,
+                "reconstructed_ion_MW": 0.0,
+                "reconstructed_electron_MW": 0.0,
+                "reconstructed_total_MW": 0.0,
+            }
+            return zeros, zeros
+
+        e_keV_J = 1.602176634e-16
+        ne_safe = np.maximum(self.ne, 0.1) * 1e19  # m^-3
+
+        electron_frac = (
+            float(np.clip(self.aux_heating_electron_fraction, 0.0, 1.0))
+            if self.multi_ion
+            else 0.0
+        )
+        ion_frac = 1.0 - electron_frac
+        p_aux_w = float(P_aux_MW) * 1e6
+
+        p_i_wm3 = ion_frac * p_aux_w * shape / norm
+        p_e_wm3 = electron_frac * p_aux_w * shape / norm
+
+        # (3/2) n dT/dt = P  => dT/dt = (2/3) * P / (n e_keV)
+        s_heat_i = (2.0 / 3.0) * p_i_wm3 / (ne_safe * e_keV_J)
+        s_heat_e = (2.0 / 3.0) * p_e_wm3 / (ne_safe * e_keV_J)
+
+        rec_i_w = 1.5 * np.sum(ne_safe * s_heat_i * e_keV_J * dV)
+        rec_e_w = 1.5 * np.sum(ne_safe * s_heat_e * e_keV_J * dV)
+        self._last_aux_heating_balance = {
+            "target_total_MW": float(P_aux_MW),
+            "target_ion_MW": ion_frac * float(P_aux_MW),
+            "target_electron_MW": electron_frac * float(P_aux_MW),
+            "reconstructed_ion_MW": float(rec_i_w / 1e6),
+            "reconstructed_electron_MW": float(rec_e_w / 1e6),
+            "reconstructed_total_MW": float((rec_i_w + rec_e_w) / 1e6),
+        }
+
+        return s_heat_i, s_heat_e
+
     # ── Multi-ion helpers (P1.1) ────────────────────────────────────
 
     @staticmethod
@@ -840,9 +929,8 @@ class TransportSolver(FusionKernel):
         else:
             P_rad_line_Wm3 = np.zeros(self.nr)
 
-        # ── Sources (ion channel) ──
-        heating_profile = np.exp(-self.rho**2 / 0.1)
-        S_heat_i = (P_aux / np.sum(heating_profile)) * heating_profile
+        # ── Sources (ion/electron channels) ──
+        S_heat_i, S_heat_e_aux = self._compute_aux_heating_sources(P_aux)
 
         # ── Sinks (ion channel radiation) ──
         if self.multi_ion:
@@ -885,8 +973,8 @@ class TransportSolver(FusionKernel):
         # ── Electron temperature ──
         if self.multi_ion:
             # Independent electron temperature evolution
-            # Electrons receive half the aux heating, all the Bremsstrahlung loss
-            S_heat_e = (P_aux / np.sum(heating_profile)) * heating_profile * 0.5
+            # Electrons receive configured auxiliary-heating split.
+            S_heat_e = S_heat_e_aux
             P_brem = self._bremsstrahlung_power_density(self.ne, Te_old, self._Z_eff)
             ne_safe_e = np.maximum(self.ne, 0.1) * 1e19
             S_brem_e = P_brem / (ne_safe_e * e_keV_J)
@@ -945,10 +1033,7 @@ class TransportSolver(FusionKernel):
         # ── Energy conservation diagnostic ──
         if not self.multi_ion:
             e_keV_J = 1.602176634e-16
-        dims = self.cfg["dimensions"]
-        R0 = (dims["R_min"] + dims["R_max"]) / 2.0
-        a_minor = (dims["R_max"] - dims["R_min"]) / 2.0
-        dV = 2.0 * np.pi * R0 * 2.0 * np.pi * self.rho * a_minor**2 * self.drho
+        dV = self._rho_volume_element()
 
         W_before = 1.5 * np.sum(self.ne * 1e19 * Ti_old * e_keV_J * dV)
         W_after = 1.5 * np.sum(self.ne * 1e19 * self.Ti * e_keV_J * dV)

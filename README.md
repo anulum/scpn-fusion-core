@@ -141,6 +141,9 @@ pytest tests/ -v
 
 # Generate validation RMSE dashboard
 python validation/rmse_dashboard.py
+
+# Benchmark transport source MW->keV/s power-balance contract
+python validation/benchmark_transport_power_balance.py
 ```
 
 The 3D quickstart writes an OBJ mesh to `artifacts/SCPN_Plasma_3D_quickstart.obj` and can optionally render a PNG preview.
@@ -255,6 +258,9 @@ python validation/validate_real_shots.py
 
 # Generate RMSE dashboard
 python validation/rmse_dashboard.py
+
+# Benchmark transport source MW->keV/s power-balance contract
+python validation/benchmark_transport_power_balance.py
 
 # Run disturbance rejection benchmark
 python validation/benchmark_disturbance_rejection.py
@@ -492,7 +498,7 @@ Run `pytest tests/test_ipb98y2_benchmark.py -v` and
 | Module | What It Is | What It Is Not |
 |--------|-----------|----------------|
 | **Equilibrium** | Picard iteration + Red-Black SOR (+ optional Anderson acceleration). GMRES(30) and multigrid V-cycle available in Rust. Newton-Kantorovich available in Python. Converges on 3 SPARC L-mode GEQDSKs. Default 65×65 grid. | Not EFIT-quality inverse reconstruction. Not free-boundary (coil currents are fixed). Rust multigrid not yet wired into the Python kernel path (use Rust API directly). |
-| **Transport** | 1.5D Bohm/gyro-Bohm critical-gradient model with Chang-Hinton neoclassical option. Explicit time-stepping. IPB98(y,2) confinement time evaluation. | No ITG/TEM/ETG turbulent transport channels. No NBI slowing-down. No impurity transport (beyond simple diffusion). No sawtooth mixing in transport. Actual RMSE vs IPB98(y,2) on the 20-shot ITPA dataset is printed by `test_ipb98y2_benchmark.py`. |
+| **Transport** | 1.5D Bohm/gyro-Bohm critical-gradient model with Chang-Hinton neoclassical option. CN temperature evolution. Unit-consistent MW->keV/s auxiliary source normalisation with per-step power-balance telemetry (`_last_aux_heating_balance`). IPB98(y,2) confinement time evaluation. | No ITG/TEM/ETG turbulent transport channels. No NBI slowing-down. No impurity transport (beyond simple diffusion). No sawtooth mixing in transport. Actual RMSE vs IPB98(y,2) on the 20-shot ITPA dataset is printed by `test_ipb98y2_benchmark.py`; source-power contract benchmark is `validation/benchmark_transport_power_balance.py`. |
 | **Stability** | Vertical n-index stability analysis. | No kink mode analysis. No peeling-ballooning (no access to edge bootstrap current calculation). No Mercier criterion. No resistive wall modes. |
 | **Neural Equilibrium** | PCA + MLP surrogate trained on 78 samples (3 SPARC L-mode configs at varying currents). | 78 training samples is far below what is needed for generalization. The surrogate is useful for fast controller prototyping on the specific SPARC L-mode family it was trained on, not for arbitrary equilibria. |
 | **FNO Turbulence** | Fourier Neural Operator trained on synthetic data (not real gyrokinetic output). | Not a replacement for GENE/GS2. The FNO learns a proxy mapping, not real turbulent transport coefficients. |
