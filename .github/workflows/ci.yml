@@ -247,22 +247,30 @@ jobs:
             scpn-fusion-rs/target
           key: ${{ runner.os }}-interop-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-interop-
-      - name: Install Python package
+      - name: Create virtualenv and install Python package
         run: |
+          python -m venv .venv
+          source .venv/bin/activate
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
           pip install maturin
       - name: Build Rust extension
-        run: cd scpn-fusion-rs/crates/fusion-python && maturin develop --release
+        run: |
+          source .venv/bin/activate
+          cd scpn-fusion-rs/crates/fusion-python && maturin develop --release
       - name: Verify Rust extension loads
-        run: python -c "import scpn_fusion_rs; print('Rust extension loaded OK')"
+        run: |
+          source .venv/bin/activate
+          python -c "import scpn_fusion_rs; print('Rust extension loaded OK')"
       - name: Run interop tests
         run: |
+          source .venv/bin/activate
           pytest tests/test_boris_pyo3_bridge.py tests/test_snn_pyo3_bridge.py \
                  tests/test_rust_python_parity.py tests/test_rust_compat_wrapper.py \
                  tests/test_rust_multigrid_wiring.py -v --tb=short
       - name: Run new binding tests
         run: |
+          source .venv/bin/activate
           pytest tests/test_pyo3_physics_bridge.py tests/test_pyo3_control_bridge.py \
                  tests/test_pyo3_nuclear_bridge.py tests/test_pyo3_transport_bridge.py -v --tb=short
 
