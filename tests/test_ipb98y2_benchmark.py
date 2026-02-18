@@ -173,6 +173,29 @@ class TestIPB98y2Formula:
                           R=3.0, kappa=1.7, epsilon=0.3)
 
     @pytest.mark.parametrize(
+        ("tau_actual", "tau_predicted", "match"),
+        [
+            (float("nan"), 1.0, "tau_actual"),
+            (1.0, float("nan"), "tau_predicted"),
+            (1.0, float("inf"), "tau_predicted"),
+        ],
+    )
+    def test_h_factor_rejects_non_finite_inputs(
+        self,
+        tau_actual: float,
+        tau_predicted: float,
+        match: str,
+    ):
+        """H-factor helper should reject non-finite inputs deterministically."""
+        with pytest.raises(ValueError, match=match):
+            compute_h_factor(tau_actual, tau_predicted)
+
+    def test_h_factor_preserves_non_positive_denominator_behavior(self):
+        """Historical behavior: non-positive τ_predicted returns +∞ sentinel."""
+        assert compute_h_factor(3.0, 0.0) == float("inf")
+        assert compute_h_factor(3.0, -1.0) == float("inf")
+
+    @pytest.mark.parametrize(
         ("field", "bad_value"),
         [
             ("Ip", float("nan")),

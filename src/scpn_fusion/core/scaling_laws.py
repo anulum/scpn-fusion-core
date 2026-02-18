@@ -340,6 +340,9 @@ def compute_h_factor(tau_actual: float, tau_predicted: float) -> float:
     float
         H98(y,2) = tau_actual / tau_predicted.
     """
-    if tau_predicted <= 0:
+    tau_actual_f = _require_finite_number("tau_actual", tau_actual)
+    tau_predicted_f = _require_finite_number("tau_predicted", tau_predicted)
+
+    if tau_predicted_f <= 0:
         return float("inf")
-    return tau_actual / tau_predicted
+    return tau_actual_f / tau_predicted_f
