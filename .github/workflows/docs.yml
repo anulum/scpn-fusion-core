@@ -204,6 +204,26 @@ jobs:
                 <h2>Inverse &amp; Transport Benchmarks</h2>
                 <p>Inverse equilibrium reconstruction and 1.5D transport solver convergence.</p>
               </a>
+              <a class="nb" href="07_multi_ion_transport.html">
+                <span class="badge">07</span>
+                <h2>Multi-Ion Transport</h2>
+                <p>D/T fuel, He-ash, independent Te, coronal radiation, Bremsstrahlung.</p>
+              </a>
+              <a class="nb" href="08_mhd_stability.html">
+                <span class="badge">08</span>
+                <h2>MHD Stability</h2>
+                <p>Mercier, ballooning, Kruskal-Shafranov, Troyon, and NTM criteria.</p>
+              </a>
+              <a class="nb" href="09_coil_optimization.html">
+                <span class="badge">09</span>
+                <h2>Coil Optimization</h2>
+                <p>Free-boundary GS with Tikhonov-regularised coil current optimisation.</p>
+              </a>
+              <a class="nb" href="10_uncertainty_quantification.html">
+                <span class="badge">10</span>
+                <h2>Uncertainty Quantification</h2>
+                <p>Full-chain Monte Carlo UQ through equilibrium &rarr; transport &rarr; fusion power.</p>
+              </a>
             </div>
           </body>
           </html>
@@ -351,7 +371,7 @@ jobs:
               <a class="card" href="notebooks/">
                 <span class="lang jupyter">Jupyter</span>
                 <h2>Tutorial Notebooks</h2>
-                <p>6 interactive tutorials: compact reactor search, neuro-symbolic compiler, Grad-Shafranov equilibrium, divertor &amp; neutronics, validation, benchmarks.</p>
+                <p>10 interactive tutorials: reactor search, neuro-symbolic compiler, GS equilibrium, neutronics, validation, benchmarks, multi-ion transport, MHD stability, coil optimisation, UQ.</p>
               </a>
               <a class="card" href="https://github.com/anulum/scpn-fusion-core">
                 <span class="lang github">GitHub</span>

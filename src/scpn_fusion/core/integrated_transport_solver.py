@@ -279,14 +279,14 @@ class TransportSolver(FusionKernel):
         # Z_eff tracking (updated every evolve step in multi-ion mode)
         self._Z_eff: float = 1.5
 
-    def set_neoclassical(self, R0, a, B0, A_ion=2.0, Z_eff=1.5, q0=1.0, q_edge=3.0):
+    def set_neoclassical(self, R0: float, a: float, B0: float, A_ion: float = 2.0, Z_eff: float = 1.5, q0: float = 1.0, q_edge: float = 3.0) -> None:
         """Configure Chang-Hinton neoclassical transport model.
 
         When set, update_transport_model uses the Chang-Hinton formula instead
         of the constant chi_base = 0.5.
         """
         q_profile = q0 + (q_edge - q0) * self.rho**2
-        self.neoclassical_params = {
+        self.neoclassical_params: dict[str, Any] | None = {
             'R0': R0, 'a': a, 'B0': B0,
             'A_ion': A_ion, 'Z_eff': Z_eff,
             'q_profile': q_profile,
@@ -828,8 +828,8 @@ class TransportSolver(FusionKernel):
                 f"dW_source={dW_source:.4e} J."
             )
 
-        avg_ti = float(np.mean(self.Ti))
-        core_ti = float(self.Ti[0])
+        avg_ti: float = np.mean(self.Ti).item()
+        core_ti: float = self.Ti[0].item()
         return avg_ti, core_ti
 
     def map_profiles_to_2d(self):
