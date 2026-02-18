@@ -17,7 +17,7 @@ real-time digital twins.
 
 **What makes it different:** Most fusion codes are physics-first (solve
 equations, then bolt on control). SCPN Fusion Core is **control-first** —
-it provides a formally verified neuro-symbolic compilation pipeline where
+it provides a contract-checked neuro-symbolic compilation pipeline where
 plasma control policies are expressed as Petri nets, compiled to stochastic
 LIF neurons, and executed against physics-informed plant models. The physics
 modules are deliberately reduced-order (not gyrokinetic) to enable
@@ -30,8 +30,9 @@ real-time control loop closure at 1 kHz+ rates.
 > real equilibrium data (8 SPARC EFIT GEQDSKs, 100+ multi-machine
 > synthetic equilibria, 20-shot ITPA H-mode confinement database, 16
 > DIII-D reference disruption shots). Validated against IPB98(y,2)
-> confinement scaling with <15% RMSE and >60% disruption prevention rate
-> on reference shot replay. Physics hardened in v3.1.0: Greenwald density
+> confinement scaling with 28.6% full-physics relative RMSE
+> (13.5% neural-surrogate fit lane) and >60% disruption prevention rate on
+> 10-shot reference replay. Physics hardened in v3.1.0: Greenwald density
 > limit, 25 keV temperature cap, Q <= 15 ceiling, TBR corrected to
 > [1.0, 1.4] range (Fischer/DEMO), per-timestep energy conservation
 > enforcement.

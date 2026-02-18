@@ -6,7 +6,7 @@ The SCPN neuro-symbolic compiler is the core innovation that
 distinguishes SCPN-Fusion-Core from conventional fusion simulation
 codes.  It compiles plasma control policies -- expressed as stochastic
 Petri nets -- into spiking neural network controllers that execute at
-sub-millisecond latency with formal verification guarantees.
+sub-millisecond latency with explicit topology/type contract checks.
 
 Compilation Pipeline
 ---------------------

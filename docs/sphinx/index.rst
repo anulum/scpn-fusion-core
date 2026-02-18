@@ -22,7 +22,7 @@ prediction, and real-time digital twins.
 
 **What makes it different:** Most fusion codes are physics-first (solve
 equations, then bolt on control).  SCPN-Fusion-Core is **control-first**
--- it provides a formally verified neuro-symbolic compilation pipeline
+-- it provides a contract-checked neuro-symbolic compilation pipeline
 where plasma control policies are expressed as Petri nets, compiled to
 stochastic LIF neurons, and executed against physics-informed plant models.
 
