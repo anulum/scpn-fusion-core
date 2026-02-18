@@ -40,10 +40,28 @@ from dataclasses import dataclass, field
 
 @dataclass
 class CoilSet:
-    """External coil set for free-boundary solve."""
+    """External coil set for free-boundary solve.
+
+    Attributes
+    ----------
+    positions : list of (R, Z) tuples
+        Coil centre coordinates [m].
+    currents : NDArray
+        Current per coil [A].
+    turns : list of int
+        Number of turns per coil.
+    current_limits : NDArray or None
+        Per-coil maximum absolute current [A].  Shape ``(n_coils,)``.
+        When set, ``optimize_coil_currents`` enforces these bounds.
+    target_flux_points : NDArray or None
+        Points ``(R, Z)`` on the desired separatrix for shape optimisation.
+        Shape ``(n_pts, 2)``.
+    """
     positions: list[tuple[float, float]] = field(default_factory=list)
     currents: NDArray[np.float64] = field(default_factory=lambda: np.array([]))
     turns: list[int] = field(default_factory=list)
+    current_limits: NDArray[np.float64] | None = None
+    target_flux_points: NDArray[np.float64] | None = None
 
 
 class FusionKernel:
@@ -1251,11 +1269,129 @@ class FusionKernel:
                     )
         return psi_ext
 
-    def solve_free_boundary(self, coils, max_outer_iter=20, tol=1e-4):
+    def _build_mutual_inductance_matrix(
+        self,
+        coils: CoilSet,
+        obs_points: FloatArray,
+    ) -> FloatArray:
+        """Build mutual-inductance matrix M[k, p] for coil optimisation.
+
+        ``M[k, p]`` is the flux at observation point *p* due to unit current
+        in coil *k*.  Uses the toroidal Green's function.
+
+        Parameters
+        ----------
+        coils : CoilSet
+            Coil geometry.
+        obs_points : FloatArray, shape (n_pts, 2)
+            Observation points ``(R, Z)`` — typically the target separatrix.
+
+        Returns
+        -------
+        FloatArray, shape (n_coils, n_pts)
+        """
+        n_coils = len(coils.positions)
+        n_pts = obs_points.shape[0]
+        M = np.zeros((n_coils, n_pts))
+
+        for k, (Rc, Zc) in enumerate(coils.positions):
+            turns = coils.turns[k] if k < len(coils.turns) else 1
+            for p in range(n_pts):
+                R_obs, Z_obs = obs_points[p]
+                M[k, p] = turns * self._green_function(Rc, Zc, R_obs, Z_obs)
+
+        return M
+
+    def optimize_coil_currents(
+        self,
+        coils: CoilSet,
+        target_flux: FloatArray,
+        tikhonov_alpha: float = 1e-4,
+    ) -> FloatArray:
+        """Find coil currents that best reproduce *target_flux* at the control points.
+
+        Solves the bounded linear least-squares problem:
+
+            min_I || M^T I - target_flux ||^2 + alpha * ||I||^2
+            s.t.  -I_max <= I <= I_max  (per coil)
+
+        where ``M`` is the mutual-inductance matrix.
+
+        Parameters
+        ----------
+        coils : CoilSet
+            Must have ``target_flux_points`` set (shape ``(n_pts, 2)``).
+        target_flux : FloatArray, shape (n_pts,)
+            Desired poloidal flux at each control point.
+        tikhonov_alpha : float
+            Regularisation strength to penalise large currents.
+
+        Returns
+        -------
+        FloatArray, shape (n_coils,)
+            Optimised coil currents [A].
+        """
+        from scipy.optimize import lsq_linear
+
+        if coils.target_flux_points is None:
+            raise ValueError("CoilSet.target_flux_points must be set for optimisation.")
+
+        obs = coils.target_flux_points
+        M = self._build_mutual_inductance_matrix(coils, obs)  # (n_coils, n_pts)
+
+        # Build augmented system: [M^T; sqrt(alpha)*I] I = [target; 0]
+        n_coils = M.shape[0]
+        A = np.vstack([M.T, np.sqrt(tikhonov_alpha) * np.eye(n_coils)])
+        b = np.concatenate([target_flux, np.zeros(n_coils)])
+
+        # Bounds
+        if coils.current_limits is not None:
+            lb = -np.abs(coils.current_limits)
+            ub = np.abs(coils.current_limits)
+        else:
+            lb = -np.inf * np.ones(n_coils)
+            ub = np.inf * np.ones(n_coils)
+
+        result = lsq_linear(A, b, bounds=(lb, ub), method='trf')
+        logger.info(
+            "Coil optimisation: cost=%.4e, status=%d (%s)",
+            result.cost, result.status, result.message,
+        )
+        return result.x.astype(np.float64)
+
+    def solve_free_boundary(
+        self,
+        coils: CoilSet,
+        max_outer_iter: int = 20,
+        tol: float = 1e-4,
+        optimize_shape: bool = False,
+        tikhonov_alpha: float = 1e-4,
+    ) -> dict[str, Any]:
         """Free-boundary GS solve with external coil currents.
 
-        Iterates between updating boundary flux from coils and
-        solving the internal GS equation.
+        Iterates between updating boundary flux from coils and solving the
+        internal GS equation.  When ``optimize_shape=True`` and the coil set
+        has ``target_flux_points``, an additional outer loop optimises the
+        coil currents to match the desired plasma boundary shape.
+
+        Parameters
+        ----------
+        coils : CoilSet
+            External coil set.
+        max_outer_iter : int
+            Maximum free-boundary iterations.
+        tol : float
+            Convergence tolerance on max |delta psi|.
+        optimize_shape : bool
+            When True, run coil-current optimisation at each outer step.
+        tikhonov_alpha : float
+            Tikhonov regularisation for coil optimisation.
+
+        Returns
+        -------
+        dict
+            ``{"outer_iterations": int, "final_diff": float,
+            "coil_currents": NDArray}``
         """
         psi_ext = self._compute_external_flux(coils)
 
@@ -1270,13 +1406,54 @@ class FusionKernel:
             psi_old = self.Psi.copy()
             self.solve_equilibrium()
 
+            # Optional: optimise coil currents to match target shape
+            if optimize_shape and coils.target_flux_points is not None:
+                obs = coils.target_flux_points
+                # Extract current flux at target points via interpolation
+                target_psi = np.array([
+                    float(self._interp_psi(R_t, Z_t))
+                    for R_t, Z_t in obs
+                ])
+                new_currents = self.optimize_coil_currents(
+                    coils, target_psi, tikhonov_alpha=tikhonov_alpha,
+                )
+                coils.currents = new_currents
+                psi_ext = self._compute_external_flux(coils)
+
             # Check convergence
-            diff = np.max(np.abs(self.Psi - psi_old))
+            diff = float(np.max(np.abs(self.Psi - psi_old)))
             if diff < tol:
                 logger.info("Free-boundary converged at outer iter %d (diff=%.2e)", outer, diff)
                 break
 
-        return {'outer_iterations': outer + 1, 'final_diff': float(diff)}
+        return {
+            'outer_iterations': outer + 1,
+            'final_diff': diff,
+            'coil_currents': coils.currents.copy(),
+        }
+
+    def _interp_psi(self, R_pt: float, Z_pt: float) -> float:
+        """Bilinear interpolation of Psi at an arbitrary (R, Z) point."""
+        # Find enclosing cell
+        ir = np.searchsorted(self.R, R_pt) - 1
+        iz = np.searchsorted(self.Z, Z_pt) - 1
+        ir = max(0, min(ir, self.NR - 2))
+        iz = max(0, min(iz, self.NZ - 2))
+
+        # Local coordinates
+        t_r = (R_pt - self.R[ir]) / self.dR
+        t_z = (Z_pt - self.Z[iz]) / self.dZ
+        t_r = max(0.0, min(1.0, t_r))
+        t_z = max(0.0, min(1.0, t_z))
+
+        # Bilinear
+        psi = (
+            (1 - t_r) * (1 - t_z) * self.Psi[iz, ir]
+            + t_r * (1 - t_z) * self.Psi[iz, ir + 1]
+            + (1 - t_r) * t_z * self.Psi[iz + 1, ir]
+            + t_r * t_z * self.Psi[iz + 1, ir + 1]
+        )
+        return float(psi)
 
     def save_results(self, filename: str = "equilibrium_nonlinear.npz") -> None:
         """Save the equilibrium state to a compressed NumPy archive.

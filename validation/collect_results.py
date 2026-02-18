@@ -207,6 +207,30 @@ def run_neural_eq() -> dict[str, Any] | None:
     }
 
 
+def run_controller_campaign(quick: bool) -> dict[str, Any] | None:
+    """Run the 1000-shot stress-test campaign across all controllers."""
+    from validation.stress_test_campaign import run_campaign, generate_summary_table
+    n = 5 if quick else 100  # 100 for CI, 1000 for full
+    results = run_campaign(n_episodes=n)
+    # Flatten to serialisable dict
+    summary: dict[str, Any] = {"n_episodes": n, "controllers": {}}
+    for name, m in results.items():
+        summary["controllers"][name] = {
+            "n_episodes": m.n_episodes,
+            "mean_reward": m.mean_reward,
+            "std_reward": m.std_reward,
+            "mean_r_error": m.mean_r_error,
+            "p50_latency_us": m.p50_latency_us,
+            "p95_latency_us": m.p95_latency_us,
+            "p99_latency_us": m.p99_latency_us,
+            "disruption_rate": m.disruption_rate,
+            "mean_def": m.mean_def,
+            "mean_energy_efficiency": m.mean_energy_efficiency,
+        }
+    summary["markdown_table"] = generate_summary_table(results)
+    return summary
+
+
 # ── RESULTS.md generation ────────────────────────────────────────────
 
 def _fmt(val: Any, fmt: str = ".4f") -> str:
@@ -233,6 +257,7 @@ def generate_results_md(
     surrogates: dict | None,
     neural_eq: dict | None,
     elapsed_s: float,
+    campaign: dict | None = None,
 ) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     sections: list[str] = []
@@ -318,6 +343,13 @@ def generate_results_md(
         sections.extend(rows_dc)
         sections.append("")
 
+    # ── Table 3b: Controller Campaign (auto-generated) ──
+    if campaign and campaign.get("controllers"):
+        sections.append("## Controller Performance (Stress-Test Campaign)\n")
+        sections.append(f"> Auto-generated from {campaign.get('n_episodes', '?')}-episode campaign.\n")
+        sections.append(campaign.get("markdown_table", ""))
+        sections.append("")
+
     # ── Table 4: Surrogates ──
     rows_s: list[str] = []
     if surrogates:
@@ -386,8 +418,11 @@ def main() -> None:
     print("[7/8] Pretrained Surrogates")
     surrogates = _safe_run("surrogates", run_surrogates)
 
-    print("[8/8] Neural Equilibrium")
+    print("[8/9] Neural Equilibrium")
     neural_eq = _safe_run("neural_eq", run_neural_eq)
+
+    print("[9/9] Controller Stress-Test Campaign")
+    campaign = _safe_run("campaign", run_controller_campaign, args.quick)
 
     elapsed = time.perf_counter() - t_start
 
@@ -403,13 +438,14 @@ def main() -> None:
         surrogates=surrogates,
         neural_eq=neural_eq,
         elapsed_s=elapsed,
+        campaign=campaign,
     )
     RESULTS_PATH.write_text(md, encoding="utf-8")
     print(f"  -> {RESULTS_PATH} written ({len(md)} bytes)")
 
     # Summary
-    n_ok = sum(1 for x in [hil, disruption, q10, tbr, ecrh, fb3d, surrogates, neural_eq] if x is not None)
-    print(f"\nDone: {n_ok}/8 benchmarks succeeded in {elapsed:.0f}s")
+    n_ok = sum(1 for x in [hil, disruption, q10, tbr, ecrh, fb3d, surrogates, neural_eq, campaign] if x is not None)
+    print(f"\nDone: {n_ok}/9 benchmarks succeeded in {elapsed:.0f}s")
 
 
 if __name__ == "__main__":

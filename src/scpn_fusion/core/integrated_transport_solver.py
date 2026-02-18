@@ -15,6 +15,7 @@ import sys
 import os
 import copy
 from pathlib import Path
+from typing import cast
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
@@ -223,25 +224,32 @@ class TransportSolver(FusionKernel):
     1.5D Integrated Transport Code.
     Solves Heat and Particle diffusion equations on flux surfaces,
     coupled self-consistently with the 2D Grad-Shafranov equilibrium.
+
+    When ``multi_ion=True``, the solver evolves separate D/T fuel densities,
+    He-ash transport with pumping (configurable ``tau_He``), independent
+    electron temperature Te, coronal-equilibrium tungsten radiation
+    (Pütterich et al. 2010), and per-cell Bremsstrahlung.
     """
-    def __init__(self, config_path):
+    def __init__(self, config_path, *, multi_ion: bool = False):
         super().__init__(config_path)
         self.external_profile_mode = True # Tell Kernel to respect our calculated profiles
         self.nr = 50 # Radial grid points (normalized radius rho)
         self.rho = np.linspace(0, 1, self.nr)
         self.drho = 1.0 / (self.nr - 1)
-        
+
+        self.multi_ion: bool = multi_ion
+
         # PROFILES (Evolving state variables)
         # Te = Electron Temp (keV), Ti = Ion Temp (keV), ne = Density (10^19 m-3)
         self.Te = 1.0 * (1 - self.rho**2) # Initial guess
         self.Ti = 1.0 * (1 - self.rho**2)
         self.ne = 5.0 * (1 - self.rho**2)**0.5
-        
+
         # Transport Coefficients (Anomalous Transport Models)
         self.chi_e = np.ones(self.nr) # Electron diffusivity
         self.chi_i = np.ones(self.nr) # Ion diffusivity
         self.D_n = np.ones(self.nr)   # Particle diffusivity
-        
+
         # Impurity Profile (Tungsten density)
         self.n_impurity = np.zeros(self.nr)
 
@@ -250,6 +258,26 @@ class TransportSolver(FusionKernel):
 
         # Energy conservation diagnostic (updated each evolve_profiles call)
         self._last_conservation_error: float = 0.0
+
+        # ── Multi-ion species (P1.1) ──
+        # Densities in 10^19 m^-3 (same units as ne)
+        if self.multi_ion:
+            self.n_D = 0.5 * self.ne.copy()       # Deuterium
+            self.n_T = 0.5 * self.ne.copy()       # Tritium
+            self.n_He = np.zeros(self.nr)          # He-4 ash
+        else:
+            self.n_D = None  # type: ignore[assignment]
+            self.n_T = None  # type: ignore[assignment]
+            self.n_He = None  # type: ignore[assignment]
+
+        # He-ash pumping time (default 5 * tau_E, ITER design baseline)
+        self.tau_He_factor: float = 5.0
+
+        # Particle diffusivity for species transport
+        self.D_species: float = 0.3  # m^2/s (typical for ITER)
+
+        # Z_eff tracking (updated every evolve step in multi-ion mode)
+        self._Z_eff: float = 1.5
 
     def set_neoclassical(self, R0, a, B0, A_ion=2.0, Z_eff=1.5, q0=1.0, q_edge=3.0):
         """Configure Chang-Hinton neoclassical transport model.
@@ -562,6 +590,133 @@ class TransportSolver(FusionKernel):
 
         return a, b, c
 
+    # ── Multi-ion helpers (P1.1) ────────────────────────────────────
+
+    @staticmethod
+    def _bosch_hale_sigmav(T_keV: np.ndarray) -> np.ndarray:
+        """D-T <sigma*v> [m^3/s] using NRL Plasma Formulary fit (Bosch & Hale 1992).
+
+        Valid for 0.2 < T < 100 keV.
+        """
+        T = np.maximum(T_keV, 0.2)
+        return 3.68e-18 / (T ** (2.0 / 3.0)) * np.exp(-19.94 / (T ** (1.0 / 3.0)))
+
+    @staticmethod
+    def _tungsten_radiation_rate(Te_keV: np.ndarray) -> np.ndarray:
+        r"""Coronal equilibrium radiation rate coefficient L_z(Te) for tungsten [W·m^3].
+
+        Piecewise power-law fit to Pütterich et al. (2010) / ADAS data:
+          - Te < 1 keV: L_z ~ 5e-31 * Te^0.5   (line radiation dominant)
+          - 1 <= Te < 5: L_z ~ 5e-31             (plateau, shell opening)
+          - 5 <= Te < 20: L_z ~ 2e-31 * Te^0.3  (rising continuum)
+          - Te >= 20:     L_z ~ 8e-31            (fully ionised Bremsstrahlung)
+        """
+        Te = np.maximum(Te_keV, 0.01)
+        Lz = np.where(
+            Te < 1.0,
+            5.0e-31 * np.sqrt(Te),
+            np.where(
+                Te < 5.0,
+                5.0e-31 * np.ones_like(Te),
+                np.where(
+                    Te < 20.0,
+                    2.0e-31 * Te ** 0.3,
+                    8.0e-31 * np.ones_like(Te),
+                ),
+            ),
+        )
+        return Lz
+
+    @staticmethod
+    def _bremsstrahlung_power_density(ne_1e19: np.ndarray, Te_keV: np.ndarray, Z_eff: float) -> np.ndarray:
+        """Bremsstrahlung power density [W/m^3].
+
+        P_brem = 5.35e-37 * Z_eff * ne^2 * sqrt(Te)
+        with ne in m^-3 and Te in keV.
+        """
+        ne_m3 = ne_1e19 * 1e19
+        Te = np.maximum(Te_keV, 0.01)
+        return 5.35e-37 * Z_eff * ne_m3 ** 2 * np.sqrt(Te)
+
+    def _evolve_species(self, dt: float) -> tuple[np.ndarray, np.ndarray]:
+        """Evolve D, T, He-ash densities for one time-step (explicit diffusion + sources).
+
+        Uses internal sub-stepping to respect the CFL stability limit of the
+        explicit diffusion scheme:  dt_CFL = drho^2 / (2 * D_species).
+
+        Returns (S_He_source, P_rad_line):
+          S_He_source — He-ash production rate [10^19 m^-3 / s]
+          P_rad_line  — line radiation power density from tungsten [keV / s per 10^19]
+        """
+        if not self.multi_ion or self.n_D is None:
+            return np.zeros(self.nr), np.zeros(self.nr)
+
+        # Fusion source: S_fus = n_D * n_T * <sigma_v> (reactions per m^3 per s)
+        # n_D, n_T are in 10^19 m^-3 => multiply by (1e19)^2
+        sigmav = self._bosch_hale_sigmav(self.Ti)
+        S_fus = (self.n_D * 1e19) * (self.n_T * 1e19) * sigmav  # reactions/m^3/s
+
+        # He-ash source (in 10^19 m^-3 / s) — one He per fusion reaction
+        S_He = S_fus / 1e19
+
+        # He-ash sink: pumping with tau_He (default 5 * tau_E)
+        tau_E = self.compute_confinement_time(1.0)  # rough estimate
+        tau_He = max(self.tau_He_factor * tau_E, 0.5)  # floor at 0.5 s
+        S_He_pump = self.n_He / tau_He
+
+        # D and T consumption rate (in 10^19 / s)
+        S_fuel = S_fus / 1e19
+
+        # Diffusion operator (explicit, simple Laplacian)
+        def _diffuse(n: np.ndarray) -> np.ndarray:
+            d2n = np.zeros_like(n)
+            d2n[1:-1] = (n[2:] - 2.0 * n[1:-1] + n[:-2]) / (self.drho ** 2)
+            return self.D_species * d2n
+
+        # CFL sub-stepping for explicit diffusion stability
+        dt_cfl = 0.4 * self.drho ** 2 / max(self.D_species, 1e-10)
+        n_sub = max(1, int(np.ceil(dt / dt_cfl)))
+        dt_sub = dt / n_sub
+
+        for _ in range(n_sub):
+            # Evolve D
+            new_D = self.n_D + dt_sub * (_diffuse(self.n_D) - S_fuel)
+            new_D[0] = new_D[1]   # Neumann at axis
+            new_D[-1] = 0.01      # edge recycling floor
+            self.n_D = np.maximum(0.001, new_D)
+
+            # Evolve T
+            new_T = self.n_T + dt_sub * (_diffuse(self.n_T) - S_fuel)
+            new_T[0] = new_T[1]
+            new_T[-1] = 0.01
+            self.n_T = np.maximum(0.001, new_T)
+
+            # Evolve He-ash
+            new_He = self.n_He + dt_sub * (_diffuse(self.n_He) + S_He - S_He_pump)
+            new_He[0] = new_He[1]
+            new_He[-1] = 0.0
+            self.n_He = np.maximum(0.0, new_He)
+
+        # Recompute ne from quasineutrality: ne = n_D + n_T + 2*n_He + Z_imp*n_imp
+        Z_W = 10.0  # effective charge state for tungsten (simplified)
+        self.ne = self.n_D + self.n_T + 2.0 * self.n_He + Z_W * np.maximum(self.n_impurity, 0.0)
+        self.ne = np.maximum(self.ne, 0.1)
+
+        # Z_eff
+        ne_m3 = self.ne * 1e19
+        ne_safe = np.maximum(ne_m3, 1e10)
+        sum_nZ2 = (self.n_D * 1e19 * 1.0 + self.n_T * 1e19 * 1.0
+                   + self.n_He * 1e19 * 4.0
+                   + np.maximum(self.n_impurity, 0.0) * 1e19 * Z_W ** 2)
+        self._Z_eff = float(np.clip(np.mean(sum_nZ2 / ne_safe), 1.0, 10.0))
+
+        # Tungsten line radiation [W/m^3]
+        Lz = self._tungsten_radiation_rate(self.Te)
+        n_W_m3 = np.maximum(self.n_impurity, 0.0) * 1e19
+        P_rad_line = ne_m3 * n_W_m3 * Lz  # W/m^3
+
+        return S_He, P_rad_line
+
     # ── Main evolution (Crank-Nicolson) ──────────────────────────────
 
     def evolve_profiles(self, dt: float, P_aux: float, enforce_conservation: bool = False) -> tuple[float, float]:
@@ -583,36 +738,74 @@ class TransportSolver(FusionKernel):
             conservation error exceeds 1%.
         """
         Ti_old = self.Ti.copy()
+        Te_old = self.Te.copy()
 
-        # ── Sources ──
+        # ── Multi-ion: evolve species and get radiation ──
+        if self.multi_ion:
+            _S_He, P_rad_line_Wm3 = self._evolve_species(dt)
+        else:
+            P_rad_line_Wm3 = np.zeros(self.nr)
+
+        # ── Sources (ion channel) ──
         heating_profile = np.exp(-self.rho**2 / 0.1)
-        S_heat = (P_aux / np.sum(heating_profile)) * heating_profile
+        S_heat_i = (P_aux / np.sum(heating_profile)) * heating_profile
 
-        # ── Sinks (radiation) ──
-        cooling_factor = 5.0
-        S_rad = cooling_factor * self.ne * self.n_impurity * np.sqrt(self.Te + 0.1)
+        # ── Sinks (ion channel radiation) ──
+        if self.multi_ion:
+            # Use coronal tungsten radiation (already in W/m^3)
+            # Convert to keV / s per 10^19:  P [W/m^3] / (n_e [10^19 m^-3] * 1e19 * e_keV_J)
+            e_keV_J = 1.602176634e-16
+            ne_safe = np.maximum(self.ne, 0.1) * 1e19
+            S_rad_i = P_rad_line_Wm3 / (ne_safe * e_keV_J) * 0.5  # half to ions
+        else:
+            cooling_factor = 5.0
+            S_rad_i = cooling_factor * self.ne * self.n_impurity * np.sqrt(self.Te + 0.1)
 
-        net_source = S_heat - S_rad
+        net_source_i = S_heat_i - S_rad_i
 
-        # ── Explicit half: RHS = T^n + 0.5*dt*L_h(T^n) + dt*net_source ──
+        # ── Ion temperature CN step ──
         Lh_explicit = self._explicit_diffusion_rhs(self.Ti, self.chi_i)
-        rhs = self.Ti + 0.5 * dt * Lh_explicit + dt * net_source
-
-        # ── Implicit half: build tridiagonal for (I - 0.5*dt*L_h) ──
+        rhs = self.Ti + 0.5 * dt * Lh_explicit + dt * net_source_i
         a, b, c = self._build_cn_tridiag(self.chi_i, dt)
-
-        # ── Solve ──
         new_Ti = self._thomas_solve(a, b, c, rhs)
 
-        # ── Boundary Conditions ──
         new_Ti[0] = new_Ti[1]    # Neumann at core
         new_Ti[-1] = 0.1         # Dirichlet at edge
-
         self.Ti = np.maximum(0.01, new_Ti)
-        self.Te = self.Ti  # Assume equilibrated
+
+        # ── Electron temperature ──
+        if self.multi_ion:
+            # Independent electron temperature evolution
+            # Electrons receive half the aux heating, all the Bremsstrahlung loss
+            S_heat_e = (P_aux / np.sum(heating_profile)) * heating_profile * 0.5
+            P_brem = self._bremsstrahlung_power_density(self.ne, Te_old, self._Z_eff)
+            ne_safe_e = np.maximum(self.ne, 0.1) * 1e19
+            S_brem_e = P_brem / (ne_safe_e * e_keV_J)
+            # Tungsten radiation on electrons (other half)
+            S_rad_e = P_rad_line_Wm3 / (ne_safe_e * e_keV_J) * 0.5
+
+            # Electron-ion coupling (collisional equilibration)
+            # nu_ei_eq ~ n_e * Z^2 * ln_lambda / (T_e^1.5 * m_i)
+            # Simplified: S_eq = (Ti - Te) / tau_eq, tau_eq ~ 0.1 s for ITER
+            tau_eq = 0.1  # s
+            S_equil = (self.Ti - Te_old) / tau_eq
+
+            net_source_e = S_heat_e - S_rad_e - S_brem_e + S_equil
+
+            Lh_explicit_e = self._explicit_diffusion_rhs(Te_old, self.chi_e)
+            rhs_e = Te_old + 0.5 * dt * Lh_explicit_e + dt * net_source_e
+            a_e, b_e, c_e = self._build_cn_tridiag(self.chi_e, dt)
+            new_Te = self._thomas_solve(a_e, b_e, c_e, rhs_e)
+
+            new_Te[0] = new_Te[1]
+            new_Te[-1] = 0.08  # cooler edge electrons
+            self.Te = np.maximum(0.01, new_Te)
+        else:
+            self.Te = self.Ti.copy()  # Assume equilibrated (legacy)
 
         # ── Energy conservation diagnostic ──
-        e_keV_J = 1.602176634e-16  # J per keV
+        if not self.multi_ion:
+            e_keV_J = 1.602176634e-16
         dims = self.cfg["dimensions"]
         R0 = (dims["R_min"] + dims["R_max"]) / 2.0
         a_minor = (dims["R_max"] - dims["R_min"]) / 2.0
@@ -620,7 +813,7 @@ class TransportSolver(FusionKernel):
 
         W_before = 1.5 * np.sum(self.ne * 1e19 * Ti_old * e_keV_J * dV)
         W_after = 1.5 * np.sum(self.ne * 1e19 * self.Ti * e_keV_J * dV)
-        dW_source = dt * 1.5 * np.sum(self.ne * 1e19 * net_source * e_keV_J * dV)
+        dW_source = dt * 1.5 * np.sum(self.ne * 1e19 * net_source_i * e_keV_J * dV)
 
         dW_actual = W_after - W_before
         self._last_conservation_error = (
@@ -635,7 +828,9 @@ class TransportSolver(FusionKernel):
                 f"dW_source={dW_source:.4e} J."
             )
 
-        return float(np.mean(self.Ti)), float(self.Ti[0])
+        avg_ti = cast(float, float(np.mean(self.Ti)))
+        core_ti = cast(float, float(self.Ti[0]))
+        return avg_ti, core_ti
 
     def map_profiles_to_2d(self):
         """

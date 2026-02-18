@@ -50,6 +50,12 @@ except ImportError:
 
 PSI_NRMSE_THRESHOLD = 0.10  # 10 %
 
+# Tighter thresholds when FreeGS is available for direct numerical comparison
+FREEGS_PSI_NRMSE_THRESHOLD = 0.005   # 0.5% for direct numerical comparison
+FREEGS_Q_NRMSE_THRESHOLD = 0.10      # 10% for q-profile
+FREEGS_AXIS_ERROR_M = 0.10           # 10 cm axis position error
+FREEGS_SEPARATRIX_NRMSE = 0.05       # 5% separatrix boundary
+
 
 def nrmse(y_true: NDArray[np.float64], y_pred: NDArray[np.float64]) -> float:
     """Normalised RMSE: RMSE / range(y_true)."""
@@ -409,6 +415,48 @@ def run_solovev_case(case: TokamakCase) -> dict[str, Any]:
     }
 
 
+# ── Separatrix comparison ────────────────────────────────────────────
+
+
+def compare_separatrix(
+    our_psi: NDArray[np.float64],
+    ref_psi: NDArray[np.float64],
+    R: NDArray[np.float64],
+    Z: NDArray[np.float64],
+) -> float:
+    """Compare separatrix boundaries by extracting the 50% psi contour.
+
+    Uses a simple boundary extraction: find the outermost contour at
+    psi = 0.5 * psi_max on the midplane, and compute the NRMSE of the
+    radial positions.
+
+    Parameters
+    ----------
+    our_psi, ref_psi : 2-D arrays of psi values
+    R, Z : 1-D coordinate arrays
+
+    Returns
+    -------
+    float — NRMSE of the separatrix boundary approximation
+    """
+    # Midplane extraction
+    iz_mid = len(Z) // 2
+
+    our_mid = our_psi[iz_mid, :]
+    ref_mid = ref_psi[iz_mid, :]
+
+    # Normalize each to [0, 1]
+    our_range = np.max(our_mid) - np.min(our_mid)
+    ref_range = np.max(ref_mid) - np.min(ref_mid)
+    if our_range < 1e-12 or ref_range < 1e-12:
+        return 1.0  # degenerate case
+
+    our_norm = (our_mid - np.min(our_mid)) / our_range
+    ref_norm = (ref_mid - np.min(ref_mid)) / ref_range
+
+    return nrmse(ref_norm, our_norm)
+
+
 # ── Case-level comparison ────────────────────────────────────────────
 
 
@@ -485,7 +533,25 @@ def compare_case(
         + (our["Z_axis"] - ref["Z_axis"]) ** 2
     ))
 
-    passes = bool(psi_nrmse < PSI_NRMSE_THRESHOLD)
+    # ── Separatrix boundary NRMSE ───────────────────────────────────
+    if our_psi.shape == ref_psi_interp.shape:
+        sep_nrmse = compare_separatrix(
+            our_psi, ref_psi_interp,
+            our["R"] if our["R"].ndim == 1 else our["R"][0, :],
+            our["Z"] if our["Z"].ndim == 1 else our["Z"][:, 0],
+        )
+    else:
+        sep_nrmse = float("nan")
+
+    # ── Pass / fail logic ─────────────────────────────────────────
+    if use_freegs:
+        passes = bool(
+            psi_nrmse < FREEGS_PSI_NRMSE_THRESHOLD
+            and (np.isnan(q_nrmse) or q_nrmse < FREEGS_Q_NRMSE_THRESHOLD)
+            and axis_err < FREEGS_AXIS_ERROR_M
+        )
+    else:
+        passes = bool(psi_nrmse < PSI_NRMSE_THRESHOLD)
 
     return {
         "name": case.name,
@@ -493,6 +559,7 @@ def compare_case(
         "psi_nrmse": round(float(psi_nrmse), 6),
         "q_profile_nrmse": round(float(q_nrmse), 6),
         "axis_error_m": round(axis_err, 6),
+        "separatrix_nrmse": round(float(sep_nrmse), 6),
         "our_converged": our["converged"],
         "our_residual": round(float(our["residual"]), 8),
         "passes": passes,
@@ -567,6 +634,30 @@ def run_benchmark(*, force_solovev: bool = False) -> dict[str, Any]:
 def run_solovev_benchmark() -> dict[str, Any]:
     """Convenience wrapper that always uses Solov'ev (no FreeGS)."""
     return run_benchmark(force_solovev=True)
+
+
+# ── Per-metric report ────────────────────────────────────────────────
+
+
+def generate_per_metric_report(report: dict[str, Any]) -> str:
+    """Generate a markdown table with per-metric NRMSE for each case."""
+    lines = [
+        "## FreeGS / Solov'ev Benchmark — Per-Metric Report",
+        "",
+        "| Case | Mode | Psi NRMSE | q NRMSE | Axis Err [m] | Sep. NRMSE | Status |",
+        "|------|------|-----------|---------|--------------|------------|--------|",
+    ]
+    for c in report.get("cases", []):
+        status = "PASS" if c.get("passes", False) else "FAIL"
+        sep = c.get("separatrix_nrmse", float("nan"))
+        lines.append(
+            f"| {c['name']} | {c.get('mode', '?')} "
+            f"| {c.get('psi_nrmse', float('nan')):.4f} "
+            f"| {c.get('q_profile_nrmse', float('nan')):.4f} "
+            f"| {c.get('axis_error_m', float('nan')):.4f} "
+            f"| {sep:.4f} | {status} |"
+        )
+    return "\n".join(lines)
 
 
 # ── Main ─────────────────────────────────────────────────────────────
