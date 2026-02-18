@@ -119,6 +119,18 @@ class TestIPB98y2Formula:
                 coefficients=coeff,
             )
 
+    def test_load_coefficients_rejects_negative_exponent_uncertainty(
+        self,
+        tmp_path: Path,
+    ):
+        """Coefficient loader should reject negative exponent uncertainty."""
+        coeff = load_ipb98y2_coefficients(_COEFF_PATH)
+        coeff["exponent_uncertainties"] = {"Ip_MA": -0.01}
+        path = tmp_path / "bad_coeff_negative_uncertainty.json"
+        path.write_text(json.dumps(coeff), encoding="utf-8")
+        with pytest.raises(ValueError, match="exponent_uncertainties.Ip_MA"):
+            load_ipb98y2_coefficients(path)
+
     def test_tau_monotonic_in_ip(self):
         """τ_E should increase with plasma current (positive exponent)."""
         base = dict(BT=5.0, ne19=8.0, Ploss=10.0, R=3.0,
