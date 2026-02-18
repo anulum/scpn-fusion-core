@@ -15,7 +15,7 @@ import sys
 import os
 import copy
 from pathlib import Path
-from typing import cast
+from typing import Any
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
@@ -230,7 +230,7 @@ class TransportSolver(FusionKernel):
     electron temperature Te, coronal-equilibrium tungsten radiation
     (Pütterich et al. 2010), and per-cell Bremsstrahlung.
     """
-    def __init__(self, config_path, *, multi_ion: bool = False):
+    def __init__(self, config_path: str | Path, *, multi_ion: bool = False) -> None:
         super().__init__(config_path)
         self.external_profile_mode = True # Tell Kernel to respect our calculated profiles
         self.nr = 50 # Radial grid points (normalized radius rho)
@@ -254,7 +254,7 @@ class TransportSolver(FusionKernel):
         self.n_impurity = np.zeros(self.nr)
 
         # Neoclassical transport configuration (None = constant chi_base=0.5)
-        self.neoclassical_params = None
+        self.neoclassical_params: dict[str, Any] | None = None
 
         # Energy conservation diagnostic (updated each evolve_profiles call)
         self._last_conservation_error: float = 0.0
@@ -828,8 +828,8 @@ class TransportSolver(FusionKernel):
                 f"dW_source={dW_source:.4e} J."
             )
 
-        avg_ti = cast(float, float(np.mean(self.Ti)))
-        core_ti = cast(float, float(self.Ti[0]))
+        avg_ti = float(np.mean(self.Ti))
+        core_ti = float(self.Ti[0])
         return avg_ti, core_ti
 
     def map_profiles_to_2d(self):
