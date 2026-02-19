@@ -158,6 +158,30 @@ membrane potential, :math:`V_\text{rest}` is the resting potential,
 :math:`R_m` is the membrane resistance, and :math:`I_\text{syn}` is
 the total synaptic input current.
 
+Safety Interlocks (v3.5.0)
+-----------------------------
+
+The neuro-cybernetic lane now integrates a canonical inhibitor-arc
+safety net (``scpn_fusion.scpn.safety_interlocks``).  Five safety places
+map to five control transitions:
+
+- ``thermal_limit``   -> inhibits ``heat_ramp``
+- ``density_limit``   -> inhibits ``density_ramp``
+- ``beta_limit``      -> inhibits ``power_ramp``
+- ``current_limit``   -> inhibits ``current_ramp``
+- ``vertical_limit``  -> inhibits ``position_move``
+
+At runtime, ``SafetyInterlockRuntime`` derives binary safety tokens from
+the state vector and computes deterministic transition enablement under
+inhibitor semantics.  The controller summary now includes:
+
+- ``safety_position_allow_rate``
+- ``safety_interlock_trips``
+- ``safety_contract_violations``
+
+These metrics make control-lane safety behavior auditable in validation
+campaigns and notebook demos.
+
 Self-Organised Criticality Learning
 --------------------------------------
 
@@ -194,6 +218,7 @@ Related Modules
 - :mod:`scpn_fusion.control.tokamak_digital_twin` -- digital twin
 - :mod:`scpn_fusion.control.fusion_control_room` -- integrated control room
 - :mod:`scpn_fusion.control.neuro_cybernetic_controller` -- SNN controller
+- :mod:`scpn_fusion.scpn.safety_interlocks` -- inhibitor-arc safety runtime
 - :mod:`scpn_fusion.control.advanced_soc_fusion_learning` -- SOC + RL
 - :mod:`scpn_fusion.control.analytic_solver` -- closed-form solutions
 - :mod:`scpn_fusion.control.director_interface` -- external director API

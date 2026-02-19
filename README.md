@@ -4,7 +4,7 @@
   <img src="docs/assets/repo_header.png" alt="SCPN Fusion Core — Neuro-Symbolic Tokamak Control">
 </p>
 
-[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![Zenodo](https://img.shields.io/badge/Zenodo-DOI_pending-lightgrey)](https://zenodo.org/) [![arXiv](https://img.shields.io/badge/arXiv-coming-lightgrey)](https://arxiv.org/) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.4.0-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-1141_Python_%7C_200%2B_Rust-green.svg)
+[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![Zenodo](https://img.shields.io/badge/Zenodo-DOI_pending-lightgrey)](https://zenodo.org/) [![arXiv](https://img.shields.io/badge/arXiv-coming-lightgrey)](https://arxiv.org/) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.5.0-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-1708_Python_%7C_200%2B_Rust-green.svg)
 
 A **neuro-symbolic control framework for tokamak fusion reactors** with
 physics-informed surrogate models and optional Rust acceleration. SCPN
@@ -44,6 +44,7 @@ real-time control loop closure at 1 kHz+ rates.
 | **Control-first** | Petri net → SNN compilation pipeline is the core innovation, not an add-on |
 | **Graceful degradation** | Every module works without Rust, without SC-NeuroCore, without GPU |
 | **Explicit over silent** | 263 hardening tasks replaced silent clamping/coercion with explicit errors |
+| **Formal safety interlocks** | Inhibitor-arc safety net disables control transitions on hard-limit violations |
 | **Real data validation** | 8 SPARC EFIT + 100 multi-machine GEQDSKs + 20-shot ITPA database + 10 disruption shots |
 | **Reduced-order by design** | Physics models are fast enough for real-time control (ms, not hours) |
 
@@ -92,6 +93,7 @@ scpn-fusion-core/
 │   │   ├── controller.py             SNN-driven plasma control
 │   │   ├── structure.py              Petri net data structures
 │   │   ├── contracts.py              Formal verification contracts
+│   │   ├── safety_interlocks.py      Inhibitor-arc safety interlock runtime
 │   │   └── artifact.py               Compilation artifact storage
 │   ├── hpc/                   # High-performance computing
 │   │   └── hpc_bridge.py             C++/Rust FFI bridge
@@ -168,7 +170,7 @@ docker run scpn-fusion-core:dev pytest tests/ -v
 
 - Demo playbook: [`docs/STREAMLIT_DEMO_PLAYBOOK.md`](docs/STREAMLIT_DEMO_PLAYBOOK.md)
 - One-click container launch: `docker compose up --build`
-- YouTube embed: pending upload for v3.4.0 release notes
+- YouTube embed: pending upload for v3.5.0 release notes
 
 ### Pure Python (No Rust Toolchain Required)
 

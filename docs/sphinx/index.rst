@@ -40,6 +40,8 @@ Key Features
 
 - **Neuro-symbolic compiler** -- Petri net to SNN compilation with formal
   verification (37 hardening tasks)
+- **Safety interlocks** -- inhibitor-arc hard-stop channels with
+  contract-proof checks for thermal/density/beta/current/vertical limits
 - **Grad-Shafranov equilibrium** -- Picard + Red-Black SOR or multigrid
   V-cycle, validated on 8 SPARC GEQDSK files
 - **1.5D radial transport** -- coupled energy/particle transport with

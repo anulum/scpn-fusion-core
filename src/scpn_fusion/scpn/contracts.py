@@ -463,3 +463,50 @@ def should_trigger_mitigation(
     massive gas injection, current quench, or safe ramp-down).
     """
     return any(v.severity == "critical" for v in violations)
+
+
+# ── Safety Interlock Contracts ─────────────────────────────────────────────
+
+
+@dataclass(frozen=True)
+class SafetyContract:
+    """Symbolic safety contract linking a limit place to a control transition.
+
+    When ``safety_place`` has tokens > 0, ``control_transition`` must be
+    disabled by inhibitor-arc semantics.
+    """
+
+    safety_place: str
+    control_transition: str
+
+
+DEFAULT_SAFETY_CONTRACTS: tuple[SafetyContract, ...] = (
+    SafetyContract("thermal_limit", "heat_ramp"),
+    SafetyContract("density_limit", "density_ramp"),
+    SafetyContract("beta_limit", "power_ramp"),
+    SafetyContract("current_limit", "current_ramp"),
+    SafetyContract("vertical_limit", "position_move"),
+)
+
+
+def verify_safety_contracts(
+    *,
+    safety_tokens: Mapping[str, float],
+    transition_enabled: Mapping[str, bool],
+    contracts: Sequence[SafetyContract] = DEFAULT_SAFETY_CONTRACTS,
+) -> list[str]:
+    """Return textual violations of inhibitor safety contracts.
+
+    A contract is violated iff:
+    ``safety_tokens[safety_place] > 0`` and ``transition_enabled[control_transition]``
+    is True.
+    """
+    violations: list[str] = []
+    for contract in contracts:
+        token = float(safety_tokens.get(contract.safety_place, 0.0))
+        enabled = bool(transition_enabled.get(contract.control_transition, False))
+        if token > 0.0 and enabled:
+            violations.append(
+                f"{contract.safety_place} inhibits {contract.control_transition}"
+            )
+    return violations

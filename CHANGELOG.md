@@ -8,6 +8,38 @@
 
 # Changelog
 
+## [3.5.0] — 2026-02-19
+
+### Added — v3.5.0: Peer-Review Upgrade Phase Kickoff
+
+- Added canonical inhibitor-arc safety interlock lane in `scpn.safety_interlocks`:
+  - `build_safety_net()` with 5 safety channels (`thermal`, `density`, `beta`, `current`, `vertical`)
+  - deterministic runtime evaluator (`SafetyInterlockRuntime`)
+  - state-to-token safety mapping and contract-proof hooks
+- Added formal safety contract surface in `scpn.contracts`:
+  - `SafetyContract`
+  - `DEFAULT_SAFETY_CONTRACTS`
+  - `verify_safety_contracts(...)`
+- Integrated safety interlocks into `NeuroCyberneticController`:
+  - per-step safety checks
+  - control-command inhibition on safety trips
+  - summary metrics for interlock trips and contract violations
+- Added safety test suite `tests/test_safety_interlocks.py` covering:
+  - inhibitor compile path
+  - per-channel inhibition behavior
+  - combined trip behavior
+  - formal contract violation detection
+
+### Changed
+
+- Version bumped to `3.5.0` across release metadata:
+  - `pyproject.toml`
+  - `setup.py`
+  - `src/scpn_fusion/__init__.py`
+  - `CITATION.cff`
+
+---
+
 ## [3.4.0] — 2026-02-18
 
 ### Changed — v3.4.0: Unified CLI + Release Surface Hardening

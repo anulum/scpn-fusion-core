@@ -26,11 +26,22 @@ from .contracts import (
     ControlAction,
     ControlTargets,
     ControlScales,
+    SafetyContract,
+    DEFAULT_SAFETY_CONTRACTS,
     extract_features,
     decode_actions,
+    verify_safety_contracts,
 )
 from .artifact import Artifact, load_artifact, save_artifact
 from .controller import NeuroSymbolicController
+from .safety_interlocks import (
+    CONTROL_TRANSITIONS,
+    SAFETY_CHANNELS,
+    SafetyInterlockRuntime,
+    SafetyLimits,
+    build_safety_net,
+    safety_tokens_from_state,
+)
 
 __all__ = [
     # Packet A
@@ -43,8 +54,18 @@ __all__ = [
     "ControlAction",
     "ControlTargets",
     "ControlScales",
+    "SafetyContract",
+    "DEFAULT_SAFETY_CONTRACTS",
     "extract_features",
     "decode_actions",
+    "verify_safety_contracts",
+    # Packet C — safety interlocks
+    "SAFETY_CHANNELS",
+    "CONTROL_TRANSITIONS",
+    "SafetyLimits",
+    "SafetyInterlockRuntime",
+    "build_safety_net",
+    "safety_tokens_from_state",
     # Packet C — artifact
     "Artifact",
     "load_artifact",

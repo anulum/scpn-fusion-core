@@ -61,9 +61,17 @@ contracts that compiled artifacts must satisfy:
   marking
 - **Invariant preservation** -- place/transition invariants from the
   source Petri net are preserved in the compiled SNN
+- **Safety interlocks** -- inhibitor-arc contracts proving that limit
+  places (thermal, density, beta, current, vertical) disable their
+  paired control transitions when violated
 
 These contracts are checked both at compile time and at runtime during
 controller execution.
+
+The safety runtime helper ``safety_interlocks.py`` provides a canonical
+interlock net (`build_safety_net`) and a deterministic evaluator
+(`SafetyInterlockRuntime`) for proving inhibitor behavior in closed-loop
+campaigns and notebooks.
 
 Stage 3: Compilation
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -179,6 +187,7 @@ Related Modules
 
 - :mod:`scpn_fusion.scpn.structure` -- Petri net data structures
 - :mod:`scpn_fusion.scpn.contracts` -- formal verification contracts
+- :mod:`scpn_fusion.scpn.safety_interlocks` -- inhibitor-arc safety net
 - :mod:`scpn_fusion.scpn.compiler` -- Petri net to SNN compiler
 - :mod:`scpn_fusion.scpn.controller` -- SNN-driven plasma controller
 - :mod:`scpn_fusion.scpn.artifact` -- compilation artifact storage

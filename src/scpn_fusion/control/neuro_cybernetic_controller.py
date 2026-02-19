@@ -15,6 +15,7 @@ from typing import Any, Callable, Dict, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scpn_fusion.scpn.safety_interlocks import SafetyInterlockRuntime
 
 try:
     from sc_neurocore.neurons.stochastic_lif import StochasticLIFNeuron
@@ -220,6 +221,7 @@ class NeuroCyberneticController:
         self.history: Dict[str, list[float]] = {}
         self.brain_R: Optional[SpikingControllerPool] = None
         self.brain_Z: Optional[SpikingControllerPool] = None
+        self.safety_runtime = SafetyInterlockRuntime()
         self._reset_history()
 
     def _reset_history(self) -> None:
@@ -233,7 +235,13 @@ class NeuroCyberneticController:
             "Control_R": [],
             "Control_Z": [],
             "Spike_Rates": [],
+            "Safety_Position_Allowed": [],
+            "Safety_Contract_Violations": [],
         }
+
+    def _check_safety(self, state: Dict[str, float]) -> Dict[str, bool]:
+        allowed = self.safety_runtime.update_from_state(state)
+        return allowed
 
     def initialize_brains(self, use_quantum: bool = False) -> None:
         self.brain_R = SpikingControllerPool(
@@ -308,6 +316,17 @@ class NeuroCyberneticController:
             coils.append({})
         for coil in coils:
             coil.setdefault("current", 0.0)
+        prev_z: Optional[float] = None
+
+        def _mean_profile_or_zero(value: Any) -> float:
+            try:
+                arr = np.asarray(value, dtype=np.float64)
+            except Exception:
+                return 0.0
+            if arr.size == 0:
+                return 0.0
+            arr = np.nan_to_num(arr, nan=0.0, posinf=0.0, neginf=0.0)
+            return float(np.mean(arr))
 
         for t in range(self.shot_duration):
             target_ip = 5.0 + (10.0 * t / self.shot_duration)
@@ -323,6 +342,25 @@ class NeuroCyberneticController:
 
             ctrl_r = float(self.brain_R.step(err_r))
             ctrl_z = float(self.brain_Z.step(err_z))
+
+            dz_dt = 0.0 if prev_z is None else float(curr_z - prev_z)
+            prev_z = curr_z
+            state = {
+                "T_e": _mean_profile_or_zero(getattr(self.kernel, "Te", np.zeros(1))),
+                "n_e": _mean_profile_or_zero(getattr(self.kernel, "ne", np.zeros(1))),
+                "beta_N": float(physics_cfg.get("beta_N", physics_cfg.get("beta_n", 0.0))),
+                "I_p": float(target_ip),
+                "dZ_dt": float(dz_dt),
+            }
+            allowed = self._check_safety(state)
+            if (
+                not allowed.get("heat_ramp", True)
+                or not allowed.get("power_ramp", True)
+                or not allowed.get("current_ramp", True)
+            ):
+                ctrl_r = 0.0
+            if not allowed.get("position_move", True):
+                ctrl_z = 0.0
 
             coils[2]["current"] = float(coils[2]["current"]) + ctrl_r
             coils[0]["current"] = float(coils[0]["current"]) - ctrl_z
@@ -340,6 +378,12 @@ class NeuroCyberneticController:
             self.history["Control_Z"].append(ctrl_z)
             self.history["Spike_Rates"].append(
                 float(self.brain_R.last_rate_pos - self.brain_R.last_rate_neg)
+            )
+            self.history["Safety_Position_Allowed"].append(
+                1.0 if allowed.get("position_move", True) else 0.0
+            )
+            self.history["Safety_Contract_Violations"].append(
+                float(len(self.safety_runtime.last_contract_violations))
             )
 
             if verbose:
@@ -364,6 +408,12 @@ class NeuroCyberneticController:
         err_z = np.asarray(self.history["Err_Z"], dtype=np.float64)
         ctrl_r = np.asarray(self.history["Control_R"], dtype=np.float64)
         ctrl_z = np.asarray(self.history["Control_Z"], dtype=np.float64)
+        safety_position_allowed = np.asarray(
+            self.history["Safety_Position_Allowed"], dtype=np.float64
+        )
+        safety_contract_violations = np.asarray(
+            self.history["Safety_Contract_Violations"], dtype=np.float64
+        )
         summary: Dict[str, Any] = {
             "seed": self.seed,
             "steps": int(self.shot_duration),
@@ -377,6 +427,15 @@ class NeuroCyberneticController:
             "max_abs_control_r": float(np.max(np.abs(ctrl_r))),
             "max_abs_control_z": float(np.max(np.abs(ctrl_z))),
             "mean_spike_imbalance": float(np.mean(self.history["Spike_Rates"])),
+            "safety_position_allow_rate": float(
+                np.mean(safety_position_allowed)
+                if safety_position_allowed.size
+                else 1.0
+            ),
+            "safety_interlock_trips": int(
+                np.count_nonzero(safety_position_allowed < 0.5)
+            ),
+            "safety_contract_violations": int(np.sum(safety_contract_violations)),
             "plot_saved": bool(plot_saved),
             "plot_error": plot_error,
         }
