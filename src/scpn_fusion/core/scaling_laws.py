@@ -30,6 +30,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
+import warnings
 
 import numpy as np
 
@@ -55,6 +56,17 @@ _REQUIRED_EXPONENT_KEYS = (
     "epsilon",
     "M_AMU",
 )
+
+_IPB98Y2_TRAINING_DOMAIN = {
+    "Ip": (0.4, 22.0),
+    "BT": (0.3, 14.0),
+    "ne19": (0.5, 25.0),
+    "Ploss": (0.5, 220.0),
+    "R": (0.45, 8.5),
+    "kappa": (1.0, 3.0),
+    "epsilon": (0.08, 0.9),
+    "M": (1.0, 3.0),
+}
 
 
 # ── Data container ────────────────────────────────────────────────────
@@ -162,6 +174,48 @@ def load_ipb98y2_coefficients(
     return _validate_ipb98y2_coefficients(raw)
 
 
+def assess_ipb98y2_domain(
+    *,
+    Ip: float,
+    BT: float,
+    ne19: float,
+    Ploss: float,
+    R: float,
+    kappa: float,
+    epsilon: float,
+    M: float = 2.5,
+) -> dict[str, Any]:
+    """Assess whether parameters lie within IPB98(y,2) training domain."""
+    values = {
+        "Ip": _require_positive_finite("Ip", Ip),
+        "BT": _require_positive_finite("BT", BT),
+        "ne19": _require_positive_finite("ne19", ne19),
+        "Ploss": _require_positive_finite("Ploss", Ploss),
+        "R": _require_positive_finite("R", R),
+        "kappa": _require_positive_finite("kappa", kappa),
+        "epsilon": _require_positive_finite("epsilon", epsilon),
+        "M": _require_positive_finite("M", M),
+    }
+    extrapolated_dimensions: list[str] = []
+    frac_extrapolation: dict[str, float] = {}
+    for key, val in values.items():
+        lo, hi = _IPB98Y2_TRAINING_DOMAIN[key]
+        if val < lo:
+            extrapolated_dimensions.append(key)
+            frac_extrapolation[key] = float((lo - val) / max(lo, 1e-12))
+        elif val > hi:
+            extrapolated_dimensions.append(key)
+            frac_extrapolation[key] = float((val - hi) / max(hi, 1e-12))
+    return {
+        "in_training_domain": len(extrapolated_dimensions) == 0,
+        "extrapolated_dimensions": extrapolated_dimensions,
+        "fractional_extrapolation": frac_extrapolation,
+        "max_fractional_extrapolation": float(
+            max(frac_extrapolation.values(), default=0.0)
+        ),
+    }
+
+
 def ipb98y2_tau_e(
     Ip: float,
     BT: float,
@@ -173,6 +227,8 @@ def ipb98y2_tau_e(
     M: float = 2.5,
     *,
     coefficients: Optional[dict] = None,
+    enforce_training_domain: bool = False,
+    warn_if_extrapolated: bool = False,
 ) -> float:
     """Evaluate the IPB98(y,2) confinement time scaling law.
 
@@ -196,6 +252,12 @@ def ipb98y2_tau_e(
         Effective ion mass [AMU].  Default 2.5 (D-T).
     coefficients : dict, optional
         Pre-loaded coefficient dict.  If *None*, loaded from disk.
+    enforce_training_domain : bool
+        When True, raises if any input is outside the supported training
+        envelope of the empirical fit.
+    warn_if_extrapolated : bool
+        When True, emits a warning when any input is outside the training
+        envelope.
 
     Returns
     -------
@@ -215,6 +277,20 @@ def ipb98y2_tau_e(
     kappa = _require_positive_finite("kappa", kappa)
     epsilon = _require_positive_finite("epsilon", epsilon)
     M = _require_positive_finite("M", M)
+    domain = assess_ipb98y2_domain(
+        Ip=Ip, BT=BT, ne19=ne19, Ploss=Ploss, R=R, kappa=kappa, epsilon=epsilon, M=M
+    )
+    if enforce_training_domain and not domain["in_training_domain"]:
+        dims = ", ".join(domain["extrapolated_dimensions"])
+        raise ValueError(
+            "IPB98(y,2) inputs outside training domain: " f"{dims}"
+        )
+    if warn_if_extrapolated and not domain["in_training_domain"]:
+        warnings.warn(
+            "IPB98(y,2) extrapolation beyond training domain for: "
+            + ", ".join(domain["extrapolated_dimensions"]),
+            stacklevel=2,
+        )
 
     if coefficients is None:
         coefficients = load_ipb98y2_coefficients()
@@ -242,6 +318,42 @@ def ipb98y2_tau_e(
             f"(tau={tau_f!r}) for supplied inputs."
         )
     return tau_f
+
+
+def ipb98y2_tau_e_with_metadata(
+    Ip: float,
+    BT: float,
+    ne19: float,
+    Ploss: float,
+    R: float,
+    kappa: float,
+    epsilon: float,
+    M: float = 2.5,
+    *,
+    coefficients: Optional[dict] = None,
+    enforce_training_domain: bool = False,
+    warn_if_extrapolated: bool = False,
+) -> tuple[float, dict[str, Any]]:
+    """Evaluate confinement time and return training-domain metadata."""
+    metadata = assess_ipb98y2_domain(
+        Ip=Ip, BT=BT, ne19=ne19, Ploss=Ploss, R=R, kappa=kappa, epsilon=epsilon, M=M
+    )
+    tau = ipb98y2_tau_e(
+        Ip=Ip,
+        BT=BT,
+        ne19=ne19,
+        Ploss=Ploss,
+        R=R,
+        kappa=kappa,
+        epsilon=epsilon,
+        M=M,
+        coefficients=coefficients,
+        enforce_training_domain=enforce_training_domain,
+        warn_if_extrapolated=warn_if_extrapolated,
+    )
+    metadata = dict(metadata)
+    metadata["tau_e_s"] = float(tau)
+    return float(tau), metadata
 
 
 def ipb98y2_with_uncertainty(

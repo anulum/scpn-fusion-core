@@ -43,8 +43,10 @@ from .pretrained_surrogates import (
 from .integrated_transport_solver import _load_gyro_bohm_coefficient as load_gyro_bohm_coefficient
 from .scaling_laws import (
     TransportBenchmarkResult,
+    assess_ipb98y2_domain,
     compute_h_factor,
     ipb98y2_tau_e,
+    ipb98y2_tau_e_with_metadata,
     load_ipb98y2_coefficients,
 )
 from .stability_mhd import (

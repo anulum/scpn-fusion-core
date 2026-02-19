@@ -29,8 +29,10 @@ import pytest
 
 from scpn_fusion.core.scaling_laws import (
     TransportBenchmarkResult,
+    assess_ipb98y2_domain,
     compute_h_factor,
     ipb98y2_tau_e,
+    ipb98y2_tau_e_with_metadata,
     ipb98y2_with_uncertainty,
     load_ipb98y2_coefficients,
 )
@@ -244,6 +246,65 @@ class TestIPB98y2Formula:
         params[field] = bad_value
         with pytest.raises(ValueError, match=field):
             ipb98y2_tau_e(**params)
+
+    def test_domain_assessment_iter_design_in_domain(self):
+        domain = assess_ipb98y2_domain(
+            Ip=15.0,
+            BT=5.3,
+            ne19=10.1,
+            Ploss=87.0,
+            R=6.2,
+            kappa=1.70,
+            epsilon=2.0 / 6.2,
+            M=2.5,
+        )
+        assert domain["in_training_domain"] is True
+        assert domain["extrapolated_dimensions"] == []
+        assert domain["max_fractional_extrapolation"] == 0.0
+
+    def test_domain_assessment_flags_extrapolation(self):
+        domain = assess_ipb98y2_domain(
+            Ip=50.0,
+            BT=5.3,
+            ne19=10.1,
+            Ploss=87.0,
+            R=6.2,
+            kappa=1.70,
+            epsilon=2.0 / 6.2,
+            M=2.5,
+        )
+        assert domain["in_training_domain"] is False
+        assert "Ip" in domain["extrapolated_dimensions"]
+        assert domain["max_fractional_extrapolation"] > 0.0
+
+    def test_tau_with_metadata_reports_domain_and_tau(self):
+        tau, meta = ipb98y2_tau_e_with_metadata(
+            Ip=15.0,
+            BT=5.3,
+            ne19=10.1,
+            Ploss=87.0,
+            R=6.2,
+            kappa=1.70,
+            epsilon=2.0 / 6.2,
+            M=2.5,
+        )
+        assert np.isfinite(tau) and tau > 0.0
+        assert meta["in_training_domain"] is True
+        assert meta["tau_e_s"] == pytest.approx(tau)
+
+    def test_enforce_training_domain_raises_for_extrapolated_inputs(self):
+        with pytest.raises(ValueError, match="outside training domain"):
+            ipb98y2_tau_e(
+                Ip=50.0,
+                BT=5.3,
+                ne19=10.1,
+                Ploss=87.0,
+                R=6.2,
+                kappa=1.70,
+                epsilon=2.0 / 6.2,
+                M=2.5,
+                enforce_training_domain=True,
+            )
 
 
 # ── ITPA 20-shot benchmark ──────────────────────────────────────────

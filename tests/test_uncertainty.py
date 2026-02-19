@@ -57,6 +57,43 @@ class TestIPB98Scaling:
         tau_default = ipb98_tau_e(ITER_SCENARIO)
         assert tau_custom > tau_default
 
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            ("I_p", 0.0),
+            ("B_t", float("nan")),
+            ("P_heat", -1.0),
+            ("n_e", float("inf")),
+            ("R", 0.0),
+            ("A", -2.0),
+            ("kappa", 0.0),
+            ("M", float("nan")),
+        ],
+    )
+    def test_invalid_scenario_rejected(self, field, value):
+        params = dict(
+            I_p=ITER_SCENARIO.I_p,
+            B_t=ITER_SCENARIO.B_t,
+            P_heat=ITER_SCENARIO.P_heat,
+            n_e=ITER_SCENARIO.n_e,
+            R=ITER_SCENARIO.R,
+            A=ITER_SCENARIO.A,
+            kappa=ITER_SCENARIO.kappa,
+            M=ITER_SCENARIO.M,
+        )
+        params[field] = value
+        scenario = PlasmaScenario(**params)
+        with pytest.raises(ValueError, match=f"scenario\\.{field}"):
+            ipb98_tau_e(scenario)
+
+    def test_extreme_scenario_overflow_hard_fails(self):
+        scenario = PlasmaScenario(
+            I_p=1e150, B_t=1e150, P_heat=1e-150, n_e=1e150,
+            R=1e150, A=1e-150, kappa=1e150, M=1e150,
+        )
+        with pytest.raises(ValueError, match="numerically stable range"):
+            ipb98_tau_e(scenario)
+
 
 class TestFusionPower:
 
@@ -114,3 +151,8 @@ class TestUQ:
     def test_invalid_n_samples_rejected(self, n_samples):
         with pytest.raises(ValueError, match="n_samples"):
             quantify_uncertainty(ITER_SCENARIO, n_samples=n_samples, seed=1)
+
+    @pytest.mark.parametrize("seed", [-1, 1.5, True, "7"])
+    def test_invalid_seed_rejected(self, seed):
+        with pytest.raises(ValueError, match="seed"):
+            quantify_uncertainty(ITER_SCENARIO, n_samples=16, seed=seed)

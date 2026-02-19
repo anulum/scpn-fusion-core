@@ -5,6 +5,8 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
+from __future__ import annotations
+
 """
 Bayesian uncertainty quantification for fusion performance predictions.
 
@@ -21,6 +23,10 @@ References
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional
+
+
+_SAFE_LOG_MAX = 700.0
+_SAFE_LOG_MIN = -745.0
 
 
 # IPB98(y,2) scaling: τ_E = C · I_p^α_I · B^α_B · P^α_P · n^α_n · R^α_R · A^α_A · κ^α_κ · M^α_M
@@ -59,6 +65,52 @@ def _validate_n_samples(n_samples: int) -> int:
     if parsed < 1:
         raise ValueError("n_samples must be an integer >= 1")
     return parsed
+
+
+def _validate_seed(seed: Optional[int]) -> Optional[int]:
+    """Validate optional RNG seed."""
+    if seed is None:
+        return None
+    if isinstance(seed, bool) or not isinstance(seed, (int, np.integer)):
+        raise ValueError("seed must be an integer >= 0 or None")
+    parsed = int(seed)
+    if parsed < 0:
+        raise ValueError("seed must be an integer >= 0 or None")
+    return parsed
+
+
+def _require_positive_finite(name: str, value: float) -> float:
+    parsed = float(value)
+    if not np.isfinite(parsed) or parsed <= 0.0:
+        raise ValueError(f"{name} must be finite and > 0")
+    return parsed
+
+
+def _validate_scenario(scenario: PlasmaScenario) -> PlasmaScenario:
+    """Validate that all scenario parameters are finite and physically positive."""
+    scenario.I_p = _require_positive_finite("scenario.I_p", scenario.I_p)
+    scenario.B_t = _require_positive_finite("scenario.B_t", scenario.B_t)
+    scenario.P_heat = _require_positive_finite("scenario.P_heat", scenario.P_heat)
+    scenario.n_e = _require_positive_finite("scenario.n_e", scenario.n_e)
+    scenario.R = _require_positive_finite("scenario.R", scenario.R)
+    scenario.A = _require_positive_finite("scenario.A", scenario.A)
+    scenario.kappa = _require_positive_finite("scenario.kappa", scenario.kappa)
+    scenario.M = _require_positive_finite("scenario.M", scenario.M)
+    return scenario
+
+
+def _safe_exp_from_log(log_value: float, *, name: str) -> float:
+    """Exponentiate bounded log value; raise when outside stable float range."""
+    if not np.isfinite(log_value):
+        raise ValueError(f"{name} became non-finite in log space")
+    if log_value > _SAFE_LOG_MAX or log_value < _SAFE_LOG_MIN:
+        raise ValueError(
+            f"{name} outside numerically stable range (log={log_value:.2f})"
+        )
+    out = float(np.exp(log_value))
+    if not np.isfinite(out) or out <= 0.0:
+        raise ValueError(f"{name} is non-finite after exponentiation")
+    return out
 
 
 @dataclass
@@ -112,18 +164,40 @@ def ipb98_tau_e(scenario: PlasmaScenario,
     -------
     float — confinement time in seconds.
     """
+    scenario = _validate_scenario(scenario)
     p = params or IPB98_CENTRAL
-    return (
-        p['C']
-        * scenario.I_p ** p['alpha_I']
-        * scenario.B_t ** p['alpha_B']
-        * scenario.P_heat ** p['alpha_P']
-        * scenario.n_e ** p['alpha_n']
-        * scenario.R ** p['alpha_R']
-        * scenario.A ** p['alpha_A']
-        * scenario.kappa ** p['alpha_kappa']
-        * scenario.M ** p['alpha_M']
+    required = (
+        "C",
+        "alpha_I",
+        "alpha_B",
+        "alpha_P",
+        "alpha_n",
+        "alpha_R",
+        "alpha_A",
+        "alpha_kappa",
+        "alpha_M",
     )
+    for key in required:
+        if key not in p:
+            raise ValueError(f"params missing required key '{key}'")
+        if not np.isfinite(float(p[key])):
+            raise ValueError(f"params.{key} must be finite")
+    c = float(p["C"])
+    if c <= 0.0:
+        raise ValueError("params.C must be finite and > 0")
+
+    log_tau = (
+        np.log(c)
+        + float(p['alpha_I']) * np.log(scenario.I_p)
+        + float(p['alpha_B']) * np.log(scenario.B_t)
+        + float(p['alpha_P']) * np.log(scenario.P_heat)
+        + float(p['alpha_n']) * np.log(scenario.n_e)
+        + float(p['alpha_R']) * np.log(scenario.R)
+        + float(p['alpha_A']) * np.log(scenario.A)
+        + float(p['alpha_kappa']) * np.log(scenario.kappa)
+        + float(p['alpha_M']) * np.log(scenario.M)
+    )
+    return _safe_exp_from_log(float(log_tau), name="ipb98_tau_e")
 
 
 def fusion_power_from_tau(scenario: PlasmaScenario, tau_E: float) -> float:
@@ -138,12 +212,22 @@ def fusion_power_from_tau(scenario: PlasmaScenario, tau_E: float) -> float:
 
     The constant C_fus is calibrated to ITER Q=10 scenario.
     """
+    scenario = _validate_scenario(scenario)
+    tau_E = _require_positive_finite("tau_E", tau_E)
+
     # Simplified fusion power model calibrated to ITER:
     # ITER: n=10.1e19, tau=3.7s, R=6.2, A=3.1, kappa=1.7 → P_fus=500 MW
-    C_fus = 500.0 / (10.1**2 * 3.7**2 * 6.2**3 / 3.1**2 * 1.7)
+    C_fus = float(500.0 / (10.1**2 * 3.7**2 * 6.2**3 / 3.1**2 * 1.7))
     n19 = scenario.n_e  # already in 10^19 m^-3
-    V_factor = scenario.R**3 / scenario.A**2 * scenario.kappa
-    return C_fus * n19**2 * tau_E**2 * V_factor
+    log_pfus = (
+        np.log(C_fus)
+        + 2.0 * np.log(n19)
+        + 2.0 * np.log(tau_E)
+        + 3.0 * np.log(scenario.R)
+        - 2.0 * np.log(scenario.A)
+        + np.log(scenario.kappa)
+    )
+    return _safe_exp_from_log(float(log_pfus), name="fusion_power_from_tau")
 
 
 @dataclass
@@ -240,7 +324,9 @@ def quantify_full_chain(
     FullChainUQResult
         Bands at [5%, 50%, 95%] for psi_nrmse, tau_E, P_fusion, Q, beta_N.
     """
+    scenario = _validate_scenario(scenario)
     n_samples = _validate_n_samples(n_samples)
+    seed = _validate_seed(seed)
 
     def _validate_sigma(name: str, value: float) -> float:
         try:
@@ -313,6 +399,8 @@ def quantify_full_chain(
 
         # --- (g) Compute Q ---
         q = pfus / scenario.P_heat if scenario.P_heat > 0 else 0.0
+        if not np.isfinite(q):
+            q = 0.0
 
         # --- (h) Compute normalised beta ---
         # beta_t = (n_e * 1e19 * k_B * T_i) / (B^2 / 2mu0)
@@ -430,7 +518,9 @@ def quantify_uncertainty(scenario: PlasmaScenario,
     -------
     UQResult — central estimates + error bars + percentiles.
     """
+    scenario = _validate_scenario(scenario)
     n_samples = _validate_n_samples(n_samples)
+    seed = _validate_seed(seed)
     rng = np.random.default_rng(seed)
 
     tau_samples = np.zeros(n_samples)
@@ -454,6 +544,8 @@ def quantify_uncertainty(scenario: PlasmaScenario,
         pfus = max(pfus, 0.0)
 
         q = pfus / scenario.P_heat if scenario.P_heat > 0 else 0.0
+        if not np.isfinite(q):
+            q = 0.0
 
         tau_samples[i] = tau
         pfus_samples[i] = pfus

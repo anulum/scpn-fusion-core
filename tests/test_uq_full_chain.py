@@ -167,6 +167,11 @@ class TestInputValidation:
         with pytest.raises(ValueError, match="n_samples"):
             quantify_full_chain(ITER_SCENARIO, n_samples=n_samples, seed=1)
 
+    @pytest.mark.parametrize("seed", [-1, 3.5, True, "11"])
+    def test_invalid_seed_rejected(self, seed):
+        with pytest.raises(ValueError, match="seed"):
+            quantify_full_chain(ITER_SCENARIO, n_samples=64, seed=seed)
+
     @pytest.mark.parametrize(
         ("kwargs", "field"),
         [
@@ -181,6 +186,14 @@ class TestInputValidation:
     def test_invalid_sigma_inputs_rejected(self, kwargs, field):
         with pytest.raises(ValueError, match=field):
             quantify_full_chain(ITER_SCENARIO, n_samples=64, seed=1, **kwargs)
+
+    def test_invalid_scenario_rejected(self):
+        bad = PlasmaScenario(
+            I_p=15.0, B_t=5.3, P_heat=0.0, n_e=10.1,
+            R=6.2, A=3.1, kappa=1.7, M=2.5,
+        )
+        with pytest.raises(ValueError, match="scenario\\.P_heat"):
+            quantify_full_chain(bad, n_samples=64, seed=1)
 
 
 class TestChiUncertaintyEffect:
