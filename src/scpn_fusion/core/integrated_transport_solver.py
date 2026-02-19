@@ -1304,6 +1304,9 @@ class TransportSolver(FusionKernel):
         n_outer: int = 10,
         dt: float = 0.01,
         psi_tol: float = 1e-3,
+        *,
+        enforce_numerical_recovery: bool = False,
+        max_numerical_recoveries: int | None = None,
     ) -> dict:
         """Run self-consistent GS <-> transport iteration.
 
@@ -1334,6 +1337,11 @@ class TransportSolver(FusionKernel):
             Transport time step [s].
         psi_tol : float
             Relative psi convergence tolerance.
+        enforce_numerical_recovery : bool
+            Forwarded to :meth:`evolve_profiles` for strict numerical budget
+            enforcement during each transport sub-step.
+        max_numerical_recoveries : int or None
+            Optional per-call override for recovery budget.
 
         Returns
         -------
@@ -1357,7 +1365,12 @@ class TransportSolver(FusionKernel):
             # 1. Run n_inner transport steps
             for _ in range(n_inner):
                 self.update_transport_model(P_aux)
-                self.evolve_profiles(dt, P_aux)
+                self.evolve_profiles(
+                    dt,
+                    P_aux,
+                    enforce_numerical_recovery=enforce_numerical_recovery,
+                    max_numerical_recoveries=max_numerical_recoveries,
+                )
 
             # 2. Project 1D profiles onto 2D GS grid (updates self.J_phi)
             self.map_profiles_to_2d()
@@ -1417,6 +1430,9 @@ class TransportSolver(FusionKernel):
         sc_n_inner: int = 100,
         sc_n_outer: int = 10,
         sc_psi_tol: float = 1e-3,
+        *,
+        enforce_numerical_recovery: bool = False,
+        max_numerical_recoveries: int | None = None,
     ) -> dict:
         """Run transport evolution until approximate steady state.
 
@@ -1442,6 +1458,11 @@ class TransportSolver(FusionKernel):
             Maximum outer GS iterations (self-consistent mode).
         sc_psi_tol : float
             Relative psi convergence tolerance (self-consistent mode).
+        enforce_numerical_recovery : bool
+            Forwarded to :meth:`evolve_profiles` for strict numerical budget
+            enforcement.
+        max_numerical_recoveries : int or None
+            Optional per-call override for recovery budget.
 
         Returns
         -------
@@ -1462,12 +1483,19 @@ class TransportSolver(FusionKernel):
                 n_outer=sc_n_outer,
                 dt=dt,
                 psi_tol=sc_psi_tol,
+                enforce_numerical_recovery=enforce_numerical_recovery,
+                max_numerical_recoveries=max_numerical_recoveries,
             )
 
         if not adaptive:
             for _ in range(n_steps):
                 self.update_transport_model(P_aux)
-                T_avg, T_core = self.evolve_profiles(dt, P_aux)
+                T_avg, T_core = self.evolve_profiles(
+                    dt,
+                    P_aux,
+                    enforce_numerical_recovery=enforce_numerical_recovery,
+                    max_numerical_recoveries=max_numerical_recoveries,
+                )
 
             tau_e = self.compute_confinement_time(P_aux)
             return {
@@ -1484,7 +1512,12 @@ class TransportSolver(FusionKernel):
 
         for step in range(n_steps):
             self.update_transport_model(P_aux)
-            error = atc.estimate_error(self, P_aux)
+            error = atc.estimate_error(
+                self,
+                P_aux,
+                enforce_numerical_recovery=enforce_numerical_recovery,
+                max_numerical_recoveries=max_numerical_recoveries,
+            )
             atc.adapt_dt(error)
 
             # Take the accepted step (full step already applied inside estimate_error)
@@ -1539,7 +1572,14 @@ class AdaptiveTimeController:
         self.error_history: list[float] = []
         self._err_prev: float = tol  # initialise for PI controller
 
-    def estimate_error(self, solver: "TransportSolver", P_aux: float) -> float:
+    def estimate_error(
+        self,
+        solver: "TransportSolver",
+        P_aux: float,
+        *,
+        enforce_numerical_recovery: bool = False,
+        max_numerical_recoveries: int | None = None,
+    ) -> float:
         """Estimate local error via Richardson extrapolation.
 
         Takes one full CN step of size dt and two half-steps of size dt/2,
@@ -1554,14 +1594,29 @@ class AdaptiveTimeController:
         # One full step
         solver.Ti = Ti_save.copy()
         solver.Te = Te_save.copy()
-        solver.evolve_profiles(self.dt, P_aux)
+        solver.evolve_profiles(
+            self.dt,
+            P_aux,
+            enforce_numerical_recovery=enforce_numerical_recovery,
+            max_numerical_recoveries=max_numerical_recoveries,
+        )
         T_full = solver.Ti.copy()
 
         # Two half steps
         solver.Ti = Ti_save.copy()
         solver.Te = Te_save.copy()
-        solver.evolve_profiles(self.dt / 2.0, P_aux)
-        solver.evolve_profiles(self.dt / 2.0, P_aux)
+        solver.evolve_profiles(
+            self.dt / 2.0,
+            P_aux,
+            enforce_numerical_recovery=enforce_numerical_recovery,
+            max_numerical_recoveries=max_numerical_recoveries,
+        )
+        solver.evolve_profiles(
+            self.dt / 2.0,
+            P_aux,
+            enforce_numerical_recovery=enforce_numerical_recovery,
+            max_numerical_recoveries=max_numerical_recoveries,
+        )
         T_half = solver.Ti.copy()
 
         # Richardson error estimate: ||T_full - T_half|| / (2^p - 1)

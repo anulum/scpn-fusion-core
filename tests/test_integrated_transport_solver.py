@@ -381,6 +381,46 @@ class TestSteadyState:
         assert tau_e > 0
         assert np.isfinite(tau_e)
 
+    def test_run_to_steady_state_propagates_recovery_budget(self, solver: TransportSolver) -> None:
+        """Steady-state driver should honor strict numerical-recovery settings."""
+        solver.Ti[1] = float("nan")
+        with pytest.raises(PhysicsError, match="Numerical recovery budget exceeded"):
+            solver.run_to_steady_state(
+                P_aux=50.0,
+                n_steps=1,
+                dt=0.01,
+                enforce_numerical_recovery=True,
+                max_numerical_recoveries=0,
+            )
+
+    def test_run_self_consistent_propagates_recovery_budget(self, solver: TransportSolver) -> None:
+        """Self-consistent GS↔transport loop should honor strict recovery budget."""
+        solver.Ti[2] = float("nan")
+        with pytest.raises(PhysicsError, match="Numerical recovery budget exceeded"):
+            solver.run_self_consistent(
+                P_aux=20.0,
+                n_inner=1,
+                n_outer=1,
+                dt=0.01,
+                psi_tol=1e-3,
+                enforce_numerical_recovery=True,
+                max_numerical_recoveries=0,
+            )
+
+    def test_adaptive_driver_propagates_recovery_budget(self, solver: TransportSolver) -> None:
+        """Adaptive time-step path should enforce recovery budgets via controller."""
+        solver.Ti[3] = float("nan")
+        with pytest.raises(PhysicsError, match="Numerical recovery budget exceeded"):
+            solver.run_to_steady_state(
+                P_aux=20.0,
+                n_steps=1,
+                adaptive=True,
+                dt=0.01,
+                tol=1e-3,
+                enforce_numerical_recovery=True,
+                max_numerical_recoveries=0,
+            )
+
 
 # ── 5. Neoclassical Transport ─────────────────────────────────────────
 
