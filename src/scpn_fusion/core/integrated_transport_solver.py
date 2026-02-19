@@ -41,6 +41,38 @@ _GYRO_BOHM_COEFF_PATH = (
 _GYRO_BOHM_DEFAULT = 0.1  # Fallback if JSON not found
 
 
+def _require_positive_finite_scalar(name: str, value: Any) -> float:
+    """Validate finite-positive scalar inputs for transport kernels."""
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be numeric, got {value!r}") from exc
+    if (not np.isfinite(parsed)) or parsed <= 0.0:
+        raise ValueError(f"{name} must be finite and > 0, got {value!r}")
+    return parsed
+
+
+def _coerce_matching_1d_profiles(**profiles: Any) -> dict[str, np.ndarray]:
+    """Coerce profile-like inputs to matching 1-D float64 arrays."""
+    out: dict[str, np.ndarray] = {}
+    expected_shape: tuple[int, ...] | None = None
+    for name, values in profiles.items():
+        arr = np.asarray(values, dtype=np.float64)
+        if arr.ndim != 1:
+            raise ValueError(f"{name} must be a 1-D array, got shape {arr.shape}")
+        if arr.size == 0:
+            raise ValueError(f"{name} must not be empty")
+        if expected_shape is None:
+            expected_shape = arr.shape
+        elif arr.shape != expected_shape:
+            raise ValueError(
+                f"All profiles must have the same shape; {name} has {arr.shape}, "
+                f"expected {expected_shape}"
+            )
+        out[name] = arr
+    return out
+
+
 def _load_gyro_bohm_coefficient(
     path: Path | str | None = None,
 ) -> float:
@@ -62,9 +94,11 @@ def _load_gyro_bohm_coefficient(
         with open(p, encoding="utf-8") as f:
             data = json.load(f)
         c_gB = float(data["c_gB"])
+        if (not np.isfinite(c_gB)) or c_gB <= 0.0:
+            raise ValueError(f"Invalid c_gB={c_gB!r}")
         _logger.debug("Loaded c_gB = %.6f from %s", c_gB, p)
         return c_gB
-    except (FileNotFoundError, KeyError, json.JSONDecodeError, TypeError) as exc:
+    except (FileNotFoundError, KeyError, json.JSONDecodeError, TypeError, ValueError) as exc:
         _logger.warning(
             "Could not load c_gB from %s (%s), using default %.4f",
             p, exc, _GYRO_BOHM_DEFAULT,
@@ -92,39 +126,63 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
     -------
     chi_nc : array  — neoclassical chi_i [m²/s]
     """
+    prof = _coerce_matching_1d_profiles(rho=rho, T_i=T_i, n_e_19=n_e_19, q=q)
+    rho_arr = np.clip(
+        np.nan_to_num(prof["rho"], nan=0.0, posinf=1.0, neginf=0.0),
+        0.0,
+        1.0,
+    )
+    T_i_arr = np.maximum(
+        np.nan_to_num(prof["T_i"], nan=0.01, posinf=1e3, neginf=0.01),
+        0.01,
+    )
+    n_e_arr = np.maximum(
+        np.nan_to_num(prof["n_e_19"], nan=0.1, posinf=1e3, neginf=0.1),
+        0.1,
+    )
+    q_arr = np.maximum(
+        np.nan_to_num(prof["q"], nan=1.0, posinf=10.0, neginf=0.1),
+        0.1,
+    )
+
+    r0 = _require_positive_finite_scalar("R0", R0)
+    a_minor = _require_positive_finite_scalar("a", a)
+    b0 = _require_positive_finite_scalar("B0", B0)
+    a_ion = _require_positive_finite_scalar("A_ion", A_ion)
+    z_eff = _require_positive_finite_scalar("Z_eff", Z_eff)
+
     e_charge = 1.602176634e-19
     eps0 = 8.854187812e-12
     m_p = 1.672621924e-27
-    m_e = 9.10938370e-31
-    m_i = A_ion * m_p
+    m_i = a_ion * m_p
 
-    chi_nc = np.zeros_like(rho)
-    for i in range(len(rho)):
-        r = rho[i]
-        if r <= 0.0 or T_i[i] <= 0.0 or n_e_19[i] <= 0.0 or q[i] <= 0.0:
+    chi_nc = np.zeros_like(rho_arr)
+    for i in range(len(rho_arr)):
+        r = rho_arr[i]
+        if r <= 0.0 or T_i_arr[i] <= 0.0 or n_e_arr[i] <= 0.0 or q_arr[i] <= 0.0:
             chi_nc[i] = 0.01
             continue
 
-        epsilon = r * a / R0
+        epsilon = r * a_minor / r0
         if epsilon < 1e-6:
             chi_nc[i] = 0.01
             continue
 
-        T_J = T_i[i] * 1.602176634e-16  # keV -> J
+        T_J = T_i_arr[i] * 1.602176634e-16  # keV -> J
         v_ti = np.sqrt(2.0 * T_J / m_i)
-        rho_i = m_i * v_ti / (e_charge * B0)
+        rho_i = m_i * v_ti / (e_charge * b0)
 
         # ion-ion collision frequency
-        n_e = n_e_19[i] * 1e19
+        n_e = n_e_arr[i] * 1e19
         ln_lambda = 17.0
-        nu_ii = (n_e * Z_eff**2 * e_charge**4 * ln_lambda
+        nu_ii = (n_e * z_eff**2 * e_charge**4 * ln_lambda
                  / (12.0 * np.pi**1.5 * eps0**2 * m_i**0.5 * T_J**1.5))
 
         eps32 = epsilon**1.5
-        nu_star = nu_ii * q[i] * R0 / (eps32 * v_ti)
+        nu_star = nu_ii * q_arr[i] * r0 / (eps32 * v_ti)
 
         alpha_sh = epsilon
-        chi_val = (0.66 * (1.0 + 1.54 * alpha_sh) * q[i]**2
+        chi_val = (0.66 * (1.0 + 1.54 * alpha_sh) * q_arr[i]**2
                    * rho_i**2 * nu_ii
                    / (eps32 * (1.0 + 0.74 * nu_star**(2.0/3.0))))
 
@@ -152,70 +210,106 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
     -------
     j_bs : array — bootstrap current density [A/m^2]
     """
-    n = len(rho)
+    prof = _coerce_matching_1d_profiles(rho=rho, Te=Te, Ti=Ti, ne=ne, q=q)
+    rho_arr = np.clip(
+        np.nan_to_num(prof["rho"], nan=0.0, posinf=1.0, neginf=0.0),
+        0.0,
+        1.0,
+    )
+    te_arr = np.maximum(
+        np.nan_to_num(prof["Te"], nan=0.01, posinf=1e3, neginf=0.01),
+        0.01,
+    )
+    ti_arr = np.maximum(
+        np.nan_to_num(prof["Ti"], nan=0.01, posinf=1e3, neginf=0.01),
+        0.01,
+    )
+    ne_arr = np.maximum(
+        np.nan_to_num(prof["ne"], nan=0.1, posinf=1e3, neginf=0.1),
+        0.1,
+    )
+    q_arr = np.maximum(
+        np.nan_to_num(prof["q"], nan=1.0, posinf=10.0, neginf=0.1),
+        0.1,
+    )
+
+    r0 = _require_positive_finite_scalar("R0", R0)
+    a_minor = _require_positive_finite_scalar("a", a)
+    b0 = _require_positive_finite_scalar("B0", B0)
+    z_eff = _require_positive_finite_scalar("Z_eff", Z_eff)
+
+    n = len(rho_arr)
     j_bs = np.zeros(n)
     e_charge = 1.602176634e-19
     m_e = 9.10938370e-31
     eps0 = 8.854187812e-12
 
     for i in range(1, n - 1):
-        eps = rho[i] * a / R0
-        if eps < 1e-6 or Te[i] <= 0 or ne[i] <= 0 or q[i] <= 0:
+        eps = float(np.clip(rho_arr[i] * a_minor / r0, 1e-6, 0.999999))
+        if te_arr[i] <= 0 or ne_arr[i] <= 0 or q_arr[i] <= 0:
             continue
 
         # Trapped fraction (Sauter formula)
-        f_t = 1.0 - (1.0 - eps)**2 / (np.sqrt(1.0 - eps**2) * (1.0 + 1.46 * np.sqrt(eps)))
+        sqrt_trap = np.sqrt(max(1.0 - eps**2, 1e-12))
+        f_t = 1.0 - (1.0 - eps)**2 / (sqrt_trap * (1.0 + 1.46 * np.sqrt(eps)))
         f_t = max(0.0, min(f_t, 1.0))
 
         # Electron thermal velocity
-        T_e_J = Te[i] * 1e3 * e_charge
+        T_e_J = te_arr[i] * 1e3 * e_charge
         v_te = np.sqrt(2.0 * T_e_J / m_e)
 
         # Collision frequency
-        n_e = ne[i] * 1e19
+        n_e = ne_arr[i] * 1e19
         ln_lambda = 17.0
-        nu_ei = n_e * Z_eff * e_charge**4 * ln_lambda / (
+        nu_ei = n_e * z_eff * e_charge**4 * ln_lambda / (
             12.0 * np.pi**1.5 * eps0**2 * m_e**0.5 * T_e_J**1.5
         )
+        if (not np.isfinite(nu_ei)) or nu_ei < 0.0:
+            continue
 
         # Collisionality
-        nu_star_e = nu_ei * q[i] * R0 / (eps**1.5 * v_te) if v_te > 0 else 1e6
+        nu_star_e = nu_ei * q_arr[i] * r0 / (eps**1.5 * v_te) if v_te > 0 else 1e6
+        if (not np.isfinite(nu_star_e)) or nu_star_e < 0.0:
+            nu_star_e = 1e6
 
         # Sauter L31 coefficient
-        alpha_31 = 1.0 / (1.0 + 0.36 / Z_eff)
-        L31 = f_t * (1.0 + (1.0 - 0.1 * f_t) * np.sqrt(nu_star_e) +
-               0.5 * (1.0 - f_t) * nu_star_e / Z_eff)
+        alpha_31 = 1.0 / (1.0 + 0.36 / z_eff)
         L31 = f_t * alpha_31 / (1.0 + alpha_31 * np.sqrt(nu_star_e) +
                0.25 * nu_star_e * (1.0 - f_t)**2)
 
         # Sauter L32 coefficient
-        L32 = f_t * (0.05 + 0.62 * Z_eff) / (Z_eff * (1.0 + 0.44 * Z_eff))
+        L32 = f_t * (0.05 + 0.62 * z_eff) / (z_eff * (1.0 + 0.44 * z_eff))
         L32 /= (1.0 + 0.22 * np.sqrt(nu_star_e) + 0.19 * nu_star_e * (1.0 - f_t))
 
         # Sauter L34 coefficient (ion contribution)
-        L34 = L31 * Ti[i] / max(Te[i], 0.01)
+        L34 = L31 * ti_arr[i] / max(te_arr[i], 0.01)
 
         # Gradients (central differences)
-        dr = (rho[i+1] - rho[i-1]) * a
+        dr = (rho_arr[i+1] - rho_arr[i-1]) * a_minor
         if abs(dr) < 1e-12:
             continue
-        dn_dr = (ne[i+1] - ne[i-1]) * 1e19 / dr
-        dTe_dr = (Te[i+1] - Te[i-1]) * 1e3 * e_charge / dr
-        dTi_dr = (Ti[i+1] - Ti[i-1]) * 1e3 * e_charge / dr
+        dn_dr = (ne_arr[i+1] - ne_arr[i-1]) * 1e19 / dr
+        dTe_dr = (te_arr[i+1] - te_arr[i-1]) * 1e3 * e_charge / dr
+        dTi_dr = (ti_arr[i+1] - ti_arr[i-1]) * 1e3 * e_charge / dr
 
         # Poloidal field
-        B_pol = B0 * eps / max(q[i], 0.1)
+        B_pol = b0 * eps / max(q_arr[i], 0.1)
         if B_pol < 1e-10:
             continue
 
         # Bootstrap current
         p_e = n_e * T_e_J
-        j_bs[i] = -(p_e / B_pol) * (
+        j_val = -(p_e / B_pol) * (
             L31 * dn_dr / max(n_e, 1e10) +
             L32 * dTe_dr / max(T_e_J, 1e-30) +
-            L34 * dTi_dr / max(Ti[i] * 1e3 * e_charge, 1e-30)
+            L34 * dTi_dr / max(ti_arr[i] * 1e3 * e_charge, 1e-30)
         )
+        if np.isfinite(j_val):
+            j_bs[i] = j_val
 
+    j_bs = np.nan_to_num(j_bs, nan=0.0, posinf=0.0, neginf=0.0)
+    j_bs[0] = 0.0
+    j_bs[-1] = 0.0
     return j_bs
 
 
@@ -371,10 +465,20 @@ class TransportSolver(FusionKernel):
         When set, update_transport_model uses the Chang-Hinton formula instead
         of the constant chi_base = 0.5.
         """
-        q_profile = q0 + (q_edge - q0) * self.rho**2
+        r0 = _require_positive_finite_scalar("R0", R0)
+        a_minor = _require_positive_finite_scalar("a", a)
+        b0 = _require_positive_finite_scalar("B0", B0)
+        a_ion = _require_positive_finite_scalar("A_ion", A_ion)
+        z_eff = _require_positive_finite_scalar("Z_eff", Z_eff)
+        q0_f = _require_positive_finite_scalar("q0", q0)
+        q_edge_f = _require_positive_finite_scalar("q_edge", q_edge)
+
+        q_profile = q0_f + (q_edge_f - q0_f) * self.rho**2
+        if (not np.all(np.isfinite(q_profile))) or np.any(q_profile <= 0.0):
+            raise ValueError("Generated q_profile contains invalid values")
         self.neoclassical_params = {
-            'R0': R0, 'a': a, 'B0': B0,
-            'A_ion': A_ion, 'Z_eff': Z_eff,
+            'R0': r0, 'a': a_minor, 'B0': b0,
+            'A_ion': a_ion, 'Z_eff': z_eff,
             'q_profile': q_profile,
         }
 
@@ -813,9 +917,24 @@ class TransportSolver(FusionKernel):
     def _rho_volume_element(self) -> np.ndarray:
         """Toroidal volume element per radial cell [m^3]."""
         dims = self.cfg["dimensions"]
-        r0 = (dims["R_min"] + dims["R_max"]) / 2.0
-        a_minor = (dims["R_max"] - dims["R_min"]) / 2.0
-        return 2.0 * np.pi * r0 * 2.0 * np.pi * self.rho * a_minor**2 * self.drho
+        r_min = float(dims["R_min"])
+        r_max = float(dims["R_max"])
+        r0 = 0.5 * (r_min + r_max)
+        a_minor = 0.5 * (r_max - r_min)
+        if (not np.isfinite(r0)) or r0 <= 0.0:
+            raise PhysicsError(f"Invalid major radius from config: r0={r0!r}")
+        if (not np.isfinite(a_minor)) or a_minor <= 0.0:
+            raise PhysicsError(f"Invalid minor radius from config: a={a_minor!r}")
+
+        rho = np.clip(
+            np.nan_to_num(np.asarray(self.rho, dtype=np.float64), nan=0.0, posinf=1.0, neginf=0.0),
+            0.0,
+            1.0,
+        )
+        d_v = 2.0 * np.pi * r0 * 2.0 * np.pi * rho * a_minor**2 * self.drho
+        if (not np.all(np.isfinite(d_v))) or np.any(d_v < 0.0):
+            raise PhysicsError("Invalid toroidal volume element computed from rho grid")
+        return d_v
 
     def _compute_aux_heating_sources(self, P_aux_MW: float) -> tuple[np.ndarray, np.ndarray]:
         """Return ion/electron auxiliary-heating sources in keV/s.
@@ -1273,27 +1392,44 @@ class TransportSolver(FusionKernel):
         float
             Energy confinement time [s].
         """
-        if P_loss_MW <= 0:
+        p_loss = float(P_loss_MW)
+        if not np.isfinite(p_loss):
+            raise ValueError(f"P_loss_MW must be finite, got {P_loss_MW!r}")
+        if p_loss <= 0:
             return float("inf")
 
         # Stored energy: W = ∫ 3/2 n_e (T_i + T_e) dV
         # In 1D with cylindrical approx: dV ≈ 2πR₀ · 2π · r · a² · dρ
         # Units: n_e is in 10^19 m^-3, T in keV → W in MJ
         e_keV = 1.602176634e-16  # J per keV
-        dims = self.cfg["dimensions"]
-        R0 = (dims["R_min"] + dims["R_max"]) / 2.0
-        a = (dims["R_max"] - dims["R_min"]) / 2.0
-
-        # Volume element per rho bin: dV = 2π R₀ · 2π ρ a² dρ
-        rho_mid = self.rho
-        dV = 2.0 * np.pi * R0 * 2.0 * np.pi * rho_mid * a**2 * self.drho
+        dV = self._rho_volume_element()
+        ne_safe = np.clip(
+            np.nan_to_num(np.asarray(self.ne, dtype=np.float64), nan=0.0, posinf=1e3, neginf=0.0),
+            0.0,
+            1e3,
+        )
+        ti_safe = np.clip(
+            np.nan_to_num(np.asarray(self.Ti, dtype=np.float64), nan=0.0, posinf=1e3, neginf=0.0),
+            0.0,
+            1e3,
+        )
+        te_safe = np.clip(
+            np.nan_to_num(np.asarray(self.Te, dtype=np.float64), nan=0.0, posinf=1e3, neginf=0.0),
+            0.0,
+            1e3,
+        )
+        if ne_safe.shape != dV.shape or ti_safe.shape != dV.shape or te_safe.shape != dV.shape:
+            raise PhysicsError("Profile and geometry shape mismatch in confinement-time estimate")
 
         # Energy density: 3/2 * n_e * (Ti + Te) [10^19 m^-3 * keV]
-        energy_density = 1.5 * (self.ne * 1e19) * (self.Ti + self.Te) * e_keV
+        energy_density = 1.5 * (ne_safe * 1e19) * (ti_safe + te_safe) * e_keV
         W_stored_J = float(np.sum(energy_density * dV))
+        if (not np.isfinite(W_stored_J)) or W_stored_J < 0.0:
+            return float("inf")
         W_stored_MW = W_stored_J / 1e6  # J → MJ → MW·s
 
-        return W_stored_MW / P_loss_MW
+        tau = W_stored_MW / p_loss
+        return float(tau) if np.isfinite(tau) and tau >= 0.0 else float("inf")
 
     # ── GS ↔ transport self-consistency loop ─────────────────────────
 

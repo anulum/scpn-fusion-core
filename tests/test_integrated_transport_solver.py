@@ -17,6 +17,7 @@ import pytest
 from scpn_fusion.core.integrated_transport_solver import (
     TransportSolver,
     PhysicsError,
+    _load_gyro_bohm_coefficient,
     chang_hinton_chi_profile,
     calculate_sauter_bootstrap_current_full,
 )
@@ -381,6 +382,21 @@ class TestSteadyState:
         assert tau_e > 0
         assert np.isfinite(tau_e)
 
+    @pytest.mark.parametrize("bad_p", [float("nan"), float("inf"), float("-inf")])
+    def test_confinement_time_rejects_non_finite_loss_power(
+        self, solver: TransportSolver, bad_p: float
+    ) -> None:
+        with pytest.raises(ValueError, match="P_loss_MW"):
+            solver.compute_confinement_time(bad_p)
+
+    def test_confinement_time_sanitizes_non_finite_profiles(self, solver: TransportSolver) -> None:
+        solver.Ti[2] = float("nan")
+        solver.Te[4] = float("inf")
+        solver.ne[6] = float("nan")
+        tau_e = solver.compute_confinement_time(20.0)
+        assert np.isfinite(tau_e)
+        assert tau_e >= 0.0
+
     def test_run_to_steady_state_propagates_recovery_budget(self, solver: TransportSolver) -> None:
         """Steady-state driver should honor strict numerical-recovery settings."""
         solver.Ti[1] = float("nan")
@@ -434,6 +450,34 @@ class TestNeoclassical:
         assert solver.neoclassical_params["a"] == 2.0
         assert solver.neoclassical_params["B0"] == 5.3
 
+    @pytest.mark.parametrize(
+        ("overrides", "field"),
+        [
+            ({"R0": float("nan")}, "R0"),
+            ({"a": 0.0}, "a"),
+            ({"B0": -1.0}, "B0"),
+            ({"A_ion": 0.0}, "A_ion"),
+            ({"Z_eff": float("inf")}, "Z_eff"),
+            ({"q0": -0.1}, "q0"),
+            ({"q_edge": 0.0}, "q_edge"),
+        ],
+    )
+    def test_set_neoclassical_rejects_invalid_inputs(
+        self, solver: TransportSolver, overrides: dict[str, float], field: str
+    ) -> None:
+        params = {
+            "R0": 6.2,
+            "a": 2.0,
+            "B0": 5.3,
+            "A_ion": 2.0,
+            "Z_eff": 1.5,
+            "q0": 1.0,
+            "q_edge": 3.0,
+        }
+        params.update(overrides)
+        with pytest.raises(ValueError, match=field):
+            solver.set_neoclassical(**params)
+
     def test_chang_hinton_profile_shape(self) -> None:
         """Chang-Hinton neoclassical chi should match input rho shape."""
         rho = np.linspace(0, 1, 50)
@@ -444,6 +488,22 @@ class TestNeoclassical:
         assert chi.shape == (50,)
         assert np.all(np.isfinite(chi))
         assert np.all(chi >= 0.01)  # floor applied
+
+    def test_chang_hinton_rejects_profile_shape_mismatch(self) -> None:
+        rho = np.linspace(0, 1, 50)
+        Ti = np.ones(49)
+        ne = np.ones(50)
+        q = np.ones(50)
+        with pytest.raises(ValueError, match="same shape"):
+            chang_hinton_chi_profile(rho, Ti, ne, q, R0=6.2, a=2.0, B0=5.3)
+
+    def test_chang_hinton_rejects_invalid_geometry(self) -> None:
+        rho = np.linspace(0, 1, 50)
+        Ti = np.ones(50)
+        ne = np.ones(50)
+        q = np.ones(50)
+        with pytest.raises(ValueError, match="B0"):
+            chang_hinton_chi_profile(rho, Ti, ne, q, R0=6.2, a=2.0, B0=0.0)
 
     def test_bootstrap_current_shape(self) -> None:
         """Sauter bootstrap current profile should match rho shape."""
@@ -460,6 +520,26 @@ class TestNeoclassical:
         # Should be zero at the boundary (j_bs[0] and j_bs[-1])
         assert j_bs[0] == 0.0
         assert j_bs[-1] == 0.0
+
+    def test_bootstrap_rejects_invalid_geometry(self) -> None:
+        rho = np.linspace(0, 1, 50)
+        Te = np.ones(50)
+        Ti = np.ones(50)
+        ne = np.ones(50)
+        q = np.ones(50)
+        with pytest.raises(ValueError, match="R0"):
+            calculate_sauter_bootstrap_current_full(
+                rho, Te, Ti, ne, q, R0=float("nan"), a=2.0, B0=5.3
+            )
+
+
+class TestGyroBohmLoader:
+
+    def test_invalid_cgb_falls_back_to_default(self, tmp_path: Path) -> None:
+        bad = tmp_path / "bad_cgb.json"
+        bad.write_text(json.dumps({"c_gB": "nan"}), encoding="utf-8")
+        c_gb = _load_gyro_bohm_coefficient(bad)
+        assert c_gb == pytest.approx(0.1)
 
 
 # ── 6. Thomas Solver ─────────────────────────────────────────────────
