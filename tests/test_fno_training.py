@@ -10,6 +10,7 @@ from pathlib import Path
 import warnings
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.fno_training import train_fno
 from scpn_fusion.core.fno_turbulence_suppressor import (
@@ -17,6 +18,8 @@ from scpn_fusion.core.fno_turbulence_suppressor import (
     SpectralTurbulenceGenerator,
     run_fno_simulation,
 )
+
+pytestmark = pytest.mark.experimental
 
 
 def test_fno_training_smoke(tmp_path):

@@ -20,6 +20,8 @@ from scpn_fusion.core.fno_training import (
     train_fno_multi_regime,
 )
 
+pytestmark = pytest.mark.experimental
+
 
 # ── Regime parameter sampling ────────────────────────────────────────
 

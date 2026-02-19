@@ -41,6 +41,16 @@
   - `mcnp_lite_tbr(..., return_uncertainty=True)` now returns `tbr_sigma` and p95 bounds
   - `run_disruption_episode()` now reports uncertainty-envelope metrics (`risk_p95_*`, `wall_damage_p95_*`, `tbr_p95_*`, `uncertainty_envelope`)
   - Added disruption-contract tests covering uncertainty-mode bounds and episode-envelope consistency
+- Added autonomous hardening-governance tooling:
+  - `tools/generate_underdeveloped_register.py` + generated `UNDERDEVELOPED_REGISTER.md`
+  - `tools/claims_audit.py` + `validation/claims_manifest.json`
+  - `tools/run_python_preflight.py` now includes claims-evidence audit check
+  - `docs/V3_6_MILESTONE_BOARD.md` with prioritized v3.6 top-20 hardening tasks
+- Split release vs research validation gates (A03):
+  - Added gate profiles in `tools/run_python_preflight.py` (`--gate release|research|all`)
+  - Added research-only pytest marker contract (`@pytest.mark.experimental`)
+  - Added CI split lane `python-research-gate` and release-only pytest execution (`-m "not experimental"`)
+  - Added gate matrix documentation in `docs/VALIDATION_GATE_MATRIX.md`
 
 ---
 

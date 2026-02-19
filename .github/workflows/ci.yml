@@ -67,14 +67,14 @@ jobs:
           if result.returncode != 0:
               print("Optional sc-neurocore bootstrap failed; continuing with fallback path.")
           PY
-      - name: Python preflight gate (mypy + release regressions)
+      - name: Python preflight release gate
         if: matrix.python-version == '3.12'
-        run: python tools/run_python_preflight.py
-      - name: Run tests
-        run: pytest tests/ -v
+        run: python tools/run_python_preflight.py --gate release
+      - name: Run release test suite (exclude experimental-only lanes)
+        run: pytest tests/ -v -m "not experimental"
       - name: Generate Python coverage report
         if: matrix.python-version == '3.12'
-        run: pytest tests/ -q --cov=scpn_fusion --cov-report=xml:coverage-python.xml
+        run: pytest tests/ -q -m "not experimental" --cov=scpn_fusion --cov-report=xml:coverage-python.xml
       - name: Run property-based tests (Hypothesis)
         run: pytest tests/test_hypothesis_properties.py -v --hypothesis-seed=0
       - name: Upload Python coverage to Codecov
@@ -86,6 +86,50 @@ jobs:
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  python-research-gate:
+    name: Python Research Gate
+    runs-on: ubuntu-latest
+    needs: [python-tests]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Bootstrap optional sc-neurocore modules
+        run: |
+          python - <<'PY'
+          import importlib.util
+          import shutil
+          import subprocess
+          import sys
+
+          if importlib.util.find_spec("sc_neurocore") is not None:
+              print("sc_neurocore already available.")
+              raise SystemExit(0)
+
+          if shutil.which("rustc") is None:
+              print("rustc not available in this lane; continuing with numpy fallback path.")
+              raise SystemExit(0)
+
+          cmd = [
+              sys.executable,
+              "-m",
+              "pip",
+              "install",
+              "git+https://github.com/anulum/sc-neurocore.git@df81aa28fd2db55665cacd87c3c4a62b7d8e077f#subdirectory=bridge",
+          ]
+          result = subprocess.run(cmd, check=False)
+          if result.returncode != 0:
+              print("Optional sc-neurocore bootstrap failed; continuing with fallback path.")
+          PY
+      - name: Python preflight research gate
+        run: python tools/run_python_preflight.py --gate research
 
   geometry-3d-smoke:
     name: Geometry 3D Smoke
@@ -423,4 +467,4 @@ jobs:
       - name: IPB98 confinement scaling validation
         run: pytest tests/test_uncertainty.py -v --tb=short
       - name: Full regression suite
-        run: pytest tests/ -v --tb=short -x
+        run: pytest tests/ -v --tb=short -x -m "not experimental"

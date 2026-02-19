@@ -11,10 +11,13 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import sys
 
 import pytest
 
 from scpn_fusion.control.torax_hybrid_loop import run_nstxu_torax_hybrid_campaign
+
+pytestmark = pytest.mark.experimental
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,12 +25,14 @@ VALIDATION_PATH = ROOT / "validation" / "gai_02_torax_hybrid.py"
 VALIDATION_SPEC = importlib.util.spec_from_file_location("gai_02_torax_hybrid", VALIDATION_PATH)
 assert VALIDATION_SPEC and VALIDATION_SPEC.loader
 gai_02_torax_hybrid = importlib.util.module_from_spec(VALIDATION_SPEC)
+sys.modules[VALIDATION_SPEC.name] = gai_02_torax_hybrid
 VALIDATION_SPEC.loader.exec_module(gai_02_torax_hybrid)
 
 RUNTIME_PATH = ROOT / "run_realtime_simulation.py"
 RUNTIME_SPEC = importlib.util.spec_from_file_location("run_realtime_simulation", RUNTIME_PATH)
 assert RUNTIME_SPEC and RUNTIME_SPEC.loader
 run_realtime_simulation = importlib.util.module_from_spec(RUNTIME_SPEC)
+sys.modules[RUNTIME_SPEC.name] = run_realtime_simulation
 RUNTIME_SPEC.loader.exec_module(run_realtime_simulation)
 
 

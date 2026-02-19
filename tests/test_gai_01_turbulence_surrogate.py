@@ -11,10 +11,14 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import sys
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.gyro_swin_surrogate import generate_synthetic_gyrokinetic_dataset
+
+pytestmark = pytest.mark.experimental
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,6 +26,7 @@ MODULE_PATH = ROOT / "validation" / "gai_01_turbulence_surrogate.py"
 SPEC = importlib.util.spec_from_file_location("gai_01_turbulence_surrogate", MODULE_PATH)
 assert SPEC and SPEC.loader
 gai_01_turbulence_surrogate = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = gai_01_turbulence_surrogate
 SPEC.loader.exec_module(gai_01_turbulence_surrogate)
 
 

@@ -11,11 +11,15 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+import sys
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.global_design_scanner import GlobalDesignExplorer
 from scpn_fusion.core.heat_ml_shadow_surrogate import generate_shadow_dataset
+
+pytestmark = pytest.mark.experimental
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +27,7 @@ MODULE_PATH = ROOT / "validation" / "gai_03_heat_ml_shadow.py"
 SPEC = importlib.util.spec_from_file_location("gai_03_heat_ml_shadow", MODULE_PATH)
 assert SPEC and SPEC.loader
 gai_03_heat_ml_shadow = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = gai_03_heat_ml_shadow
 SPEC.loader.exec_module(gai_03_heat_ml_shadow)
 
 

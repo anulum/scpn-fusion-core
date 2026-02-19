@@ -1,0 +1,101 @@
+{
+  "version": "claims-audit-v1",
+  "claims": [
+    {
+      "id": "readme_full_physics_transport_rmse",
+      "source_file": "README.md",
+      "source_pattern": "28\\.6% full-physics relative RMSE",
+      "evidence_files": [
+        "RESULTS.md",
+        "validation/reports/rmse_dashboard.json",
+        "validation/validate_transport_itpa.py"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "RESULTS.md",
+          "pattern": "tau_E relative RMSE \\| 28\\.6%"
+        },
+        {
+          "file": "validation/reports/rmse_dashboard.json",
+          "pattern": "\"tau_mae_rel_pct\"\\s*:\\s*32\\.531"
+        }
+      ]
+    },
+    {
+      "id": "readme_neural_surrogate_rmse",
+      "source_file": "README.md",
+      "source_pattern": "\\(13\\.5% neural-surrogate fit lane\\)",
+      "evidence_files": [
+        "RESULTS.md",
+        "validation/reports/task2_pretrained_surrogates_benchmark.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "RESULTS.md",
+          "pattern": "Neural transport MLP surrogate \\| tau_E RMSE % \\| 13\\.5%"
+        },
+        {
+          "file": "validation/reports/task2_pretrained_surrogates_benchmark.json",
+          "pattern": "\"rmse_pct\"\\s*:\\s*13\\.489"
+        }
+      ]
+    },
+    {
+      "id": "readme_disruption_prevention_claim",
+      "source_file": "README.md",
+      "source_pattern": ">60% disruption prevention rate",
+      "evidence_files": [
+        "RESULTS.md",
+        "validation/reports/task5_disruption_mitigation_integration.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "RESULTS.md",
+          "pattern": "Disruption prevention rate \\(SNN\\) \\| >60"
+        },
+        {
+          "file": "validation/reports/task5_disruption_mitigation_integration.json",
+          "pattern": "\"disruption_prevention_rate\"\\s*:\\s*1\\.0"
+        }
+      ]
+    },
+    {
+      "id": "readme_pretrained_coverage_claim",
+      "source_file": "README.md",
+      "source_pattern": "3 of 7 shipped",
+      "evidence_files": [
+        "validation/reports/task2_pretrained_surrogates_benchmark.json",
+        "validation/reports/task2_pretrained_surrogates_benchmark.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "validation/reports/task2_pretrained_surrogates_benchmark.json",
+          "pattern": "\"coverage_percent\"\\s*:\\s*28\\.5714"
+        },
+        {
+          "file": "validation/reports/task2_pretrained_surrogates_benchmark.md",
+          "pattern": "Pretrained coverage: `28\\.6%`"
+        }
+      ]
+    },
+    {
+      "id": "results_fno_deprecated_status",
+      "source_file": "RESULTS.md",
+      "source_pattern": "EXPERIMENTAL — FNO turbulence surrogate",
+      "evidence_files": [
+        "src/scpn_fusion/core/fno_turbulence_suppressor.py",
+        "src/scpn_fusion/core/fno_training.py"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "src/scpn_fusion/core/fno_turbulence_suppressor.py",
+          "pattern": "DEPRECATED / EXPERIMENTAL"
+        },
+        {
+          "file": "src/scpn_fusion/core/fno_training.py",
+          "pattern": "DEPRECATED / EXPERIMENTAL"
+        }
+      ]
+    }
+  ]
+}

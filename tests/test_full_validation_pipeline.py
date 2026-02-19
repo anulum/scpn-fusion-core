@@ -12,6 +12,8 @@ import sys
 import numpy as np
 import pytest
 
+pytestmark = pytest.mark.experimental
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "full_validation_pipeline.py"

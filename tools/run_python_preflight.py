@@ -10,9 +10,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def _build_checks(
+def _build_release_checks(
     *,
     skip_version_metadata: bool,
+    skip_claims_audit: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -28,6 +29,16 @@ def _build_checks(
                     "pytest",
                     "tests/test_version_metadata.py",
                     "-q",
+                ],
+            )
+        )
+    if not skip_claims_audit:
+        checks.append(
+            (
+                "Claims evidence audit",
+                [
+                    sys.executable,
+                    "tools/claims_audit.py",
                 ],
             )
         )
@@ -63,6 +74,46 @@ def _build_checks(
     return checks
 
 
+def _build_research_checks(*, skip_research_suite: bool) -> list[tuple[str, list[str]]]:
+    checks: list[tuple[str, list[str]]] = []
+    if not skip_research_suite:
+        checks.append(
+            (
+                "Experimental-only pytest suite",
+                [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"],
+            )
+        )
+    return checks
+
+
+def _build_checks(
+    *,
+    gate: str,
+    skip_version_metadata: bool,
+    skip_claims_audit: bool,
+    skip_notebook_quality: bool,
+    skip_threshold_smoke: bool,
+    skip_mypy: bool,
+    skip_research_suite: bool,
+) -> list[tuple[str, list[str]]]:
+    checks: list[tuple[str, list[str]]] = []
+    if gate in {"release", "all"}:
+        checks.extend(
+            _build_release_checks(
+                skip_version_metadata=skip_version_metadata,
+                skip_claims_audit=skip_claims_audit,
+                skip_notebook_quality=skip_notebook_quality,
+                skip_threshold_smoke=skip_threshold_smoke,
+                skip_mypy=skip_mypy,
+            )
+        )
+    if gate in {"research", "all"}:
+        checks.extend(
+            _build_research_checks(skip_research_suite=skip_research_suite)
+        )
+    return checks
+
+
 def _run_check(name: str, cmd: list[str]) -> int:
     rendered = " ".join(shlex.quote(part) for part in cmd)
     print(f"[preflight] {name}: {rendered}")
@@ -72,9 +123,20 @@ def _run_check(name: str, cmd: list[str]) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Run fast local/CI Python preflight checks "
-            "(version metadata, Golden notebook gate, threshold smokes, mypy strict)."
+            "Run local/CI Python preflight checks with gate profiles "
+            "(release, research, or both)."
         )
+    )
+    parser.add_argument(
+        "--gate",
+        choices=("release", "research", "all"),
+        default="release",
+        help=(
+            "Gate profile to run. "
+            "'release' excludes experimental-only lanes, "
+            "'research' runs experimental-only lanes, "
+            "'all' runs both."
+        ),
     )
     parser.add_argument(
         "--skip-version-metadata",
@@ -85,6 +147,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-notebook-quality",
         action="store_true",
         help="Skip tests/test_neuro_symbolic_control_demo_notebook.py",
+    )
+    parser.add_argument(
+        "--skip-claims-audit",
+        action="store_true",
+        help="Skip tools/claims_audit.py",
     )
     parser.add_argument(
         "--skip-threshold-smoke",
@@ -100,13 +167,21 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Skip tools/run_mypy_strict.py",
     )
+    parser.add_argument(
+        "--skip-research-suite",
+        action="store_true",
+        help="Skip pytest experimental-only lane (tests/ -m experimental).",
+    )
     args = parser.parse_args(argv)
 
     checks = _build_checks(
+        gate=args.gate,
         skip_version_metadata=args.skip_version_metadata,
+        skip_claims_audit=args.skip_claims_audit,
         skip_notebook_quality=args.skip_notebook_quality,
         skip_threshold_smoke=args.skip_threshold_smoke,
         skip_mypy=args.skip_mypy,
+        skip_research_suite=args.skip_research_suite,
     )
     if not checks:
         print("[preflight] No checks selected.")

@@ -140,6 +140,7 @@ ignore_missing_imports = true
 addopts = "--strict-markers"
 markers = [
     "slow: marks long-running regression tests",
+    "experimental: marks experimental/research-only validation lanes",
 ]
 filterwarnings = [
     "error::DeprecationWarning",
