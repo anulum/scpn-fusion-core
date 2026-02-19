@@ -87,10 +87,22 @@ def _as_non_negative_float(name: str, value: float) -> float:
     return out
 
 
+def _as_int(name: str, value: int, *, minimum: int = 0) -> int:
+    """Return integer value with lower-bound contract."""
+    if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
+        raise ValueError(f"{name} must be an integer >= {minimum}, got {value!r}")
+    out = int(value)
+    if out < minimum:
+        raise ValueError(f"{name} must be an integer >= {minimum}, got {value!r}")
+    return out
+
+
 def _as_range(
     name: str, value: tuple[float, float], *, min_allowed: float = -np.inf
 ) -> tuple[float, float]:
     """Validate a numeric range tuple as finite ascending bounds."""
+    if not isinstance(value, tuple) or len(value) != 2:
+        raise ValueError(f"{name} must be a tuple(low, high).")
     low = _as_finite_float(f"{name}[0]", value[0])
     high = _as_finite_float(f"{name}[1]", value[1])
     if low < min_allowed:
@@ -623,8 +635,8 @@ def run_disruption_ensemble(
         - I_RE_peak ≤ 1.0 MA
         - Halo peak ≤ 3.0 MA
     """
-    if ensemble_runs <= 0:
-        raise ValueError(f"ensemble_runs must be > 0, got {ensemble_runs!r}")
+    ensemble_runs = _as_int("ensemble_runs", ensemble_runs, minimum=1)
+    seed = _as_int("seed", seed, minimum=0)
     plasma_current_range = _as_range(
         "plasma_current_range", plasma_current_range, min_allowed=0.0
     )

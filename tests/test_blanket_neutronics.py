@@ -32,6 +32,22 @@ VolumetricBlanketReport = blanket_neutronics.VolumetricBlanketReport
 run_breeding_sim = blanket_neutronics.run_breeding_sim
 
 
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"thickness_cm": 0.0}, "thickness_cm"),
+        ({"thickness_cm": float("nan")}, "thickness_cm"),
+        ({"li6_enrichment": -0.1}, "li6_enrichment"),
+        ({"li6_enrichment": 1.1}, "li6_enrichment"),
+    ],
+)
+def test_breeding_blanket_constructor_rejects_invalid_inputs(
+    kwargs: dict[str, float], match: str
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        BreedingBlanket(**kwargs)
+
+
 def test_volumetric_surrogate_returns_finite_positive_report() -> None:
     blanket = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.9)
     report = blanket.calculate_volumetric_tbr(

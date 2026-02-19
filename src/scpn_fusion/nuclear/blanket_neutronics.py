@@ -24,17 +24,49 @@ class VolumetricBlanketReport:
     blanket_volume_m3: float
     tbr_ideal: float = 0.0
 
+
+def _require_finite_float(
+    name: str,
+    value: float,
+    *,
+    min_value: float | None = None,
+    max_value: float | None = None,
+) -> float:
+    out = float(value)
+    if not np.isfinite(out):
+        raise ValueError(f"{name} must be finite.")
+    if min_value is not None and out < min_value:
+        raise ValueError(f"{name} must be >= {min_value}.")
+    if max_value is not None and out > max_value:
+        raise ValueError(f"{name} must be <= {max_value}.")
+    return out
+
+
+def _require_int(name: str, value: int, minimum: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
+        raise ValueError(f"{name} must be an integer >= {minimum}.")
+    out = int(value)
+    if out < minimum:
+        raise ValueError(f"{name} must be an integer >= {minimum}.")
+    return out
+
+
 class BreedingBlanket:
     """
     1D Neutronics Transport Code for Tritium Breeding Ratio (TBR) calculation.
     Simulates neutron attenuation and Li-6 capture in a Liquid Metal Blanket (LiPb).
     """
     def __init__(self, thickness_cm: float = 100, li6_enrichment: float = 1.0) -> None:
-        self.thickness = thickness_cm
+        self.thickness = _require_finite_float("thickness_cm", thickness_cm, min_value=0.1)
+        self.li6_enrichment = _require_finite_float(
+            "li6_enrichment",
+            li6_enrichment,
+            min_value=0.0,
+            max_value=1.0,
+        )
         self.points = 100
-        self.x = np.linspace(0, thickness_cm, self.points)
+        self.x = np.linspace(0.0, self.thickness, self.points)
         self.dx = self.x[1] - self.x[0]
-        self.li6_enrichment = float(np.clip(li6_enrichment, 0.0, 1.0))
         
         # Cross Sections (Macroscopic Sigma in cm^-1) - Simplified for 14 MeV neutrons
         # Reaction: Li-6 + n -> T + He + 4.8 MeV
@@ -336,13 +368,18 @@ class MultiGroupBlanket:
         li6_enrichment: float = 0.9,
         n_cells: int = 100,
     ) -> None:
-        self.thickness = float(thickness_cm)
+        self.thickness = _require_finite_float("thickness_cm", thickness_cm, min_value=0.1)
+        self.li6_enrich = _require_finite_float(
+            "li6_enrichment",
+            li6_enrichment,
+            min_value=0.0,
+            max_value=1.0,
+        )
         # Ensure at least 2.5 cells/cm for consistent spatial resolution
         # across different blanket thicknesses.
-        self.n_cells = max(int(n_cells), int(self.thickness * 2.5))
+        self.n_cells = max(_require_int("n_cells", n_cells, 3), int(self.thickness * 2.5))
         self.x = np.linspace(0.0, self.thickness, self.n_cells)
         self.dx = self.x[1] - self.x[0]
-        self.li6_enrich = float(np.clip(li6_enrichment, 0.0, 1.0))
 
         # ── Cross sections (cm^-1) per group ─────────────────────────
         # Group 1: fast (14 MeV)
@@ -379,7 +416,24 @@ class MultiGroupBlanket:
 
         Returns dict with phi_g1, phi_g2, phi_g3 flux arrays and TBR.
         """
-        incident_flux = float(incident_flux)
+        incident_flux = _require_finite_float("incident_flux", incident_flux, min_value=1.0)
+        port_coverage_factor = _require_finite_float(
+            "port_coverage_factor",
+            port_coverage_factor,
+            min_value=0.0,
+            max_value=1.0,
+        )
+        streaming_factor = _require_finite_float(
+            "streaming_factor",
+            streaming_factor,
+            min_value=0.0,
+            max_value=1.0,
+        )
+        if port_coverage_factor <= 0.0:
+            raise ValueError("port_coverage_factor must be in (0, 1].")
+        if streaming_factor <= 0.0:
+            raise ValueError("streaming_factor must be in (0, 1].")
+
         N = self.n_cells
         dx = self.dx
 
@@ -412,6 +466,9 @@ class MultiGroupBlanket:
         b1[-1] = 0.0
 
         phi_g1 = np.linalg.solve(A1, b1)
+        if not np.all(np.isfinite(phi_g1)):
+            raise FloatingPointError("Group-1 flux solve produced non-finite values.")
+        neg_g1 = int(np.count_nonzero(phi_g1 < 0.0))
         phi_g1 = np.maximum(phi_g1, 0.0)
 
         # --- Group 2 (epithermal) — source from down-scatter of group 1 ---
@@ -445,6 +502,9 @@ class MultiGroupBlanket:
         b2[-1] = 0.0
 
         phi_g2 = np.linalg.solve(A2, b2)
+        if not np.all(np.isfinite(phi_g2)):
+            raise FloatingPointError("Group-2 flux solve produced non-finite values.")
+        neg_g2 = int(np.count_nonzero(phi_g2 < 0.0))
         phi_g2 = np.maximum(phi_g2, 0.0)
 
         # --- Group 3 (thermal) — source from down-scatter of group 2 ---
@@ -472,6 +532,9 @@ class MultiGroupBlanket:
         b3[-1] = 0.0
 
         phi_g3 = np.linalg.solve(A3, b3)
+        if not np.all(np.isfinite(phi_g3)):
+            raise FloatingPointError("Group-3 flux solve produced non-finite values.")
+        neg_g3 = int(np.count_nonzero(phi_g3 < 0.0))
         phi_g3 = np.maximum(phi_g3, 0.0)
 
         # --- TBR from all 3 groups ---
@@ -502,6 +565,13 @@ class MultiGroupBlanket:
             "total_production": total_prod,
             "tbr": float(tbr),
             "tbr_ideal": float(tbr_ideal),
+            "incident_current_cm2_s": float(incident_current),
+            "flux_clamp_total": int(neg_g1 + neg_g2 + neg_g3),
+            "flux_clamp_events": {
+                "fast": int(neg_g1),
+                "epithermal": int(neg_g2),
+                "thermal": int(neg_g3),
+            },
             "tbr_by_group": {
                 "fast": float(trap(prod_g1, self.x) / max(incident_current, 1e-12) * port_coverage_factor * streaming_factor),
                 "epithermal": float(trap(prod_g2, self.x) / max(incident_current, 1e-12) * port_coverage_factor * streaming_factor),

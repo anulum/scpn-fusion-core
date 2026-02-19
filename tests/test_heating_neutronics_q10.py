@@ -44,6 +44,42 @@ class TestECRHHeating:
         # (approximate since binning is discrete)
         assert np.sum(P_dep) > 0.0
 
+    @pytest.mark.parametrize(
+        ("kwargs", "match"),
+        [
+            ({"harmonic": 0}, "harmonic"),
+            ({"freq_ghz": 0.0}, "freq_ghz"),
+            ({"b0_tesla": -1.0}, "b0_tesla"),
+            ({"r0_major": 0.0}, "r0_major"),
+        ],
+    )
+    def test_constructor_rejects_invalid_inputs(self, kwargs, match):
+        with pytest.raises(ValueError, match=match):
+            ECRHHeatingSystem(**kwargs)
+
+    @pytest.mark.parametrize(
+        ("kwargs", "match"),
+        [
+            ({"P_ecrh_mw": -1.0}, "P_ecrh_mw"),
+            ({"n_radial_bins": 4}, "n_radial_bins"),
+            ({"n_radial_bins": 32.5}, "n_radial_bins"),
+            ({"T_e_keV": 0.0}, "T_e_keV"),
+            ({"n_e": 0.0}, "n_e"),
+            ({"launch_angle_deg": 90.0}, "launch_angle_deg"),
+        ],
+    )
+    def test_compute_deposition_rejects_invalid_inputs(self, kwargs, match):
+        ecrh = ECRHHeatingSystem()
+        with pytest.raises(ValueError, match=match):
+            ecrh.compute_deposition(**kwargs)
+
+    def test_off_resonance_second_harmonic_reduces_absorption(self):
+        on_axis = ECRHHeatingSystem(harmonic=1)
+        off_axis = ECRHHeatingSystem(harmonic=2)
+        _, _, eff_on = on_axis.compute_deposition(P_ecrh_mw=20.0, n_e=1e20)
+        _, _, eff_off = off_axis.compute_deposition(P_ecrh_mw=20.0, n_e=1e20)
+        assert eff_off < eff_on
+
 
 class TestMultiGroupBlanket:
     def test_3group_solve(self):
@@ -93,6 +129,41 @@ class TestMultiGroupBlanket:
         result = blanket.solve_transport()
         # Thermal flux should be non-zero even though no direct source
         assert np.max(result["phi_g3"]) > 0.0
+
+    @pytest.mark.parametrize(
+        ("kwargs", "match"),
+        [
+            ({"thickness_cm": 0.0}, "thickness_cm"),
+            ({"li6_enrichment": 1.2}, "li6_enrichment"),
+            ({"n_cells": 2.5}, "n_cells"),
+        ],
+    )
+    def test_constructor_rejects_invalid_inputs(self, kwargs, match):
+        with pytest.raises(ValueError, match=match):
+            MultiGroupBlanket(**kwargs)
+
+    @pytest.mark.parametrize(
+        ("kwargs", "match"),
+        [
+            ({"incident_flux": 0.0}, "incident_flux"),
+            ({"port_coverage_factor": 0.0}, "port_coverage_factor"),
+            ({"streaming_factor": 1.2}, "streaming_factor"),
+        ],
+    )
+    def test_solve_transport_rejects_invalid_runtime_inputs(self, kwargs, match):
+        blanket = MultiGroupBlanket()
+        with pytest.raises(ValueError, match=match):
+            blanket.solve_transport(**kwargs)
+
+    def test_solve_transport_reports_flux_clamp_telemetry(self):
+        blanket = MultiGroupBlanket()
+        result = blanket.solve_transport()
+        assert "flux_clamp_total" in result
+        assert "flux_clamp_events" in result
+        assert "incident_current_cm2_s" in result
+        assert result["flux_clamp_total"] >= 0
+        assert result["incident_current_cm2_s"] > 0.0
+        assert set(result["flux_clamp_events"]) == {"fast", "epithermal", "thermal"}
 
 
 class TestDynamicBurnModel:

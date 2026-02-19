@@ -210,6 +210,14 @@ class TestDisruptionEnsemble:
         with pytest.raises(ValueError):
             run_disruption_ensemble(ensemble_runs=0)
         with pytest.raises(ValueError):
+            run_disruption_ensemble(ensemble_runs=True)
+        with pytest.raises(ValueError):
+            run_disruption_ensemble(seed=-1)
+        with pytest.raises(ValueError):
+            run_disruption_ensemble(seed=3.14)  # type: ignore[arg-type]
+        with pytest.raises(ValueError):
+            run_disruption_ensemble(neon_range=[0.1, 0.2])  # type: ignore[arg-type]
+        with pytest.raises(ValueError):
             run_disruption_ensemble(plasma_current_range=(16.0, 12.0))
         with pytest.raises(ValueError):
             run_disruption_ensemble(neon_range=(-0.1, 0.2))

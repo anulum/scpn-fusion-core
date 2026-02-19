@@ -322,3 +322,65 @@ class TestNeuralTransportModel:
         assert all(chi_e > 0)  # softplus ensures positivity
         assert all(chi_i > 0)
         assert all(d_e > 0)
+
+    @pytest.mark.parametrize(
+        ("kwargs", "match"),
+        [
+            (
+                {
+                    "rho": np.array([0.0, 0.5, 0.4, 1.0]),
+                    "te": np.array([5.0, 4.0, 3.0, 2.0]),
+                    "ti": np.array([5.0, 4.0, 3.0, 2.0]),
+                    "ne": np.array([5.0, 4.0, 3.0, 2.0]),
+                    "q_profile": np.array([1.0, 1.2, 1.4, 1.6]),
+                    "s_hat_profile": np.array([0.1, 0.2, 0.3, 0.4]),
+                },
+                "rho must be strictly increasing",
+            ),
+            (
+                {
+                    "rho": np.linspace(0.0, 1.0, 10),
+                    "te": np.ones(9),
+                    "ti": np.ones(10),
+                    "ne": np.ones(10),
+                    "q_profile": np.ones(10),
+                    "s_hat_profile": np.ones(10),
+                },
+                "identical length",
+            ),
+            (
+                {
+                    "rho": np.linspace(0.0, 1.0, 10),
+                    "te": np.array([np.nan] * 10),
+                    "ti": np.ones(10),
+                    "ne": np.ones(10),
+                    "q_profile": np.ones(10),
+                    "s_hat_profile": np.ones(10),
+                },
+                "te must contain finite values",
+            ),
+        ],
+    )
+    def test_predict_profile_rejects_invalid_profile_inputs(self, kwargs, match):
+        model = NeuralTransportModel()
+        with pytest.raises(ValueError, match=match):
+            model.predict_profile(**kwargs)
+
+    def test_predict_profile_exposes_gradient_clip_telemetry(self):
+        model = NeuralTransportModel()
+        rho = np.linspace(0.0, 1.0, 64)
+        te = 12.0 * np.exp(-15.0 * rho) + 0.05
+        ti = 10.0 * np.exp(-13.0 * rho) + 0.05
+        ne = 9.0 * np.exp(-10.0 * rho) + 0.2
+        q = 1.0 + 2.5 * rho**2
+        s_hat = 4.0 * rho
+        model.predict_profile(rho, te, ti, ne, q, s_hat)
+        counts = model._last_gradient_clip_counts
+        assert set(counts) == {"grad_te", "grad_ti", "grad_ne"}
+        assert counts["grad_te"] >= 0
+        assert counts["grad_ti"] >= 0
+        assert counts["grad_ne"] >= 0
+        contract = model._last_profile_contract
+        assert contract["n_points"] == 64
+        assert contract["rho_min"] == pytest.approx(0.0)
+        assert contract["rho_max"] == pytest.approx(1.0)

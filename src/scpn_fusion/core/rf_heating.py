@@ -16,6 +16,32 @@ try:
 except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel
 
+
+def _require_finite_float(
+    name: str,
+    value: float,
+    *,
+    min_value: float | None = None,
+    max_value: float | None = None,
+) -> float:
+    out = float(value)
+    if not np.isfinite(out):
+        raise ValueError(f"{name} must be finite.")
+    if min_value is not None and out < min_value:
+        raise ValueError(f"{name} must be >= {min_value}.")
+    if max_value is not None and out > max_value:
+        raise ValueError(f"{name} must be <= {max_value}.")
+    return out
+
+
+def _require_int(name: str, value: int, minimum: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
+        raise ValueError(f"{name} must be an integer >= {minimum}.")
+    out = int(value)
+    if out < minimum:
+        raise ValueError(f"{name} must be an integer >= {minimum}.")
+    return out
+
 class RFHeatingSystem:
     """
     Simulates Ion Cyclotron Resonance Heating (ICRH).
@@ -314,11 +340,11 @@ class ECRHHeatingSystem:
         freq_ghz: float = 170.0,
         harmonic: int = 1,
     ):
-        self.B0 = float(b0_tesla)
-        self.R0 = float(r0_major)
-        self.freq = float(freq_ghz) * 1e9
+        self.B0 = _require_finite_float("b0_tesla", b0_tesla, min_value=0.1)
+        self.R0 = _require_finite_float("r0_major", r0_major, min_value=0.1)
+        self.freq = _require_finite_float("freq_ghz", freq_ghz, min_value=0.1) * 1e9
         self.omega = 2.0 * np.pi * self.freq
-        self.harmonic = int(harmonic)
+        self.harmonic = _require_int("harmonic", harmonic, 1)
         self.m_e = 9.109e-31
         self.q_e = 1.602e-19
 
@@ -349,14 +375,27 @@ class ECRHHeatingSystem:
         absorption_efficiency : float
             Fraction absorbed (0–1).
         """
+        P_ecrh_mw = _require_finite_float("P_ecrh_mw", P_ecrh_mw, min_value=0.0)
+        n_radial_bins = _require_int("n_radial_bins", n_radial_bins, 8)
+        T_e_keV = _require_finite_float("T_e_keV", T_e_keV, min_value=0.01)
+        n_e = _require_finite_float("n_e", n_e, min_value=1e16)
+        launch_angle_deg = _require_finite_float(
+            "launch_angle_deg",
+            launch_angle_deg,
+            min_value=-85.0,
+            max_value=85.0,
+        )
+
         a = 2.0  # minor radius
         R_res = self.resonance_radius()
         rho_res = abs(R_res - self.R0) / a
 
         # Thermal speed for Doppler width
         v_the = np.sqrt(2.0 * T_e_keV * 1e3 * self.q_e / self.m_e)
+        theta = np.deg2rad(launch_angle_deg)
+        obliquity = float(np.clip(np.cos(theta) ** 2, 0.05, 1.0))
         # Doppler width in rho: delta_rho ~ v_the / (omega * a)
-        delta_rho = max(v_the / (self.omega * a) * 50.0, 0.02)
+        delta_rho = max(v_the / (self.omega * a) * 50.0 * (1.0 + 0.35 * abs(np.sin(theta))), 0.02)
 
         rho_bins = np.linspace(0.0, 1.0, n_radial_bins)
         P_dep = np.zeros(n_radial_bins)
@@ -374,8 +413,9 @@ class ECRHHeatingSystem:
         # Single-pass absorption: eta ~ 1 - exp(-tau_opt)
         # Optical depth for O-mode: tau ~ (omega_pe / omega)^2 * (n_e * L / ...)
         omega_pe = np.sqrt(n_e * self.q_e**2 / (self.m_e * 8.854e-12))
-        tau_opt = (omega_pe / self.omega) ** 2 * 20.0 * self.harmonic
-        efficiency = float(np.clip(1.0 - np.exp(-tau_opt), 0.1, 0.99))
+        resonance_overlap = 1.0 if rho_res <= 1.0 else float(np.exp(-((rho_res - 1.0) / 0.18) ** 2))
+        tau_opt = (omega_pe / self.omega) ** 2 * 20.0 * self.harmonic * obliquity * resonance_overlap
+        efficiency = float(np.clip(1.0 - np.exp(-tau_opt), 0.01, 0.99))
 
         total_dep = np.sum(P_dep)
         if total_dep > 1e-12:

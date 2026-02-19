@@ -260,6 +260,8 @@ class NeuralTransportModel:
         self.is_neural: bool = False
         self.weights_path: Optional[Path] = None
         self.weights_checksum: Optional[str] = None
+        self._last_gradient_clip_counts: dict[str, int] = {"grad_te": 0, "grad_ti": 0, "grad_ne": 0}
+        self._last_profile_contract: dict[str, float | int] = {"n_points": 0}
 
         if weights_path is not None:
             self.weights_path = Path(weights_path)
@@ -405,7 +407,39 @@ class NeuralTransportModel:
         chi_e, chi_i, d_e : FloatArray
             Transport coefficient profiles, each shape ``(N,)``.
         """
-        n = len(rho)
+        rho = np.asarray(rho, dtype=np.float64)
+        te = np.asarray(te, dtype=np.float64)
+        ti = np.asarray(ti, dtype=np.float64)
+        ne = np.asarray(ne, dtype=np.float64)
+        q_profile = np.asarray(q_profile, dtype=np.float64)
+        s_hat_profile = np.asarray(s_hat_profile, dtype=np.float64)
+
+        if any(arr.ndim != 1 for arr in (rho, te, ti, ne, q_profile, s_hat_profile)):
+            raise ValueError("rho/te/ti/ne/q_profile/s_hat_profile must all be 1D arrays.")
+        n = int(rho.size)
+        if n < 3:
+            raise ValueError("profile arrays must contain at least 3 points.")
+        if any(arr.size != n for arr in (te, ti, ne, q_profile, s_hat_profile)):
+            raise ValueError("profile arrays must all have identical length.")
+        if not np.all(np.isfinite(rho)):
+            raise ValueError("rho must contain finite values.")
+        if not np.all(np.isfinite(te)):
+            raise ValueError("te must contain finite values.")
+        if not np.all(np.isfinite(ti)):
+            raise ValueError("ti must contain finite values.")
+        if not np.all(np.isfinite(ne)):
+            raise ValueError("ne must contain finite values.")
+        if not np.all(np.isfinite(q_profile)):
+            raise ValueError("q_profile must contain finite values.")
+        if not np.all(np.isfinite(s_hat_profile)):
+            raise ValueError("s_hat_profile must contain finite values.")
+        if not np.all(np.diff(rho) > 0.0):
+            raise ValueError("rho must be strictly increasing.")
+        if rho[0] < 0.0 or rho[-1] > 1.2:
+            raise ValueError("rho must satisfy 0 <= rho <= 1.2.")
+        r_major = float(r_major)
+        if (not np.isfinite(r_major)) or r_major <= 0.0:
+            raise ValueError("r_major must be finite and > 0.")
 
         # Normalised gradients: R/L_X = -R * (1/X) * dX/dr
         def norm_grad(x: FloatArray) -> FloatArray:
@@ -413,10 +447,25 @@ class NeuralTransportModel:
             safe_x = np.maximum(np.abs(x), 1e-6)
             return -r_major * dx / safe_x
 
-        grad_te = np.clip(norm_grad(te), 0, 50)
-        grad_ti = np.clip(norm_grad(ti), 0, 50)
-        grad_ne = np.clip(norm_grad(ne), -10, 30)
+        grad_te_raw = norm_grad(te)
+        grad_ti_raw = norm_grad(ti)
+        grad_ne_raw = norm_grad(ne)
+        grad_te = np.clip(grad_te_raw, 0, 50)
+        grad_ti = np.clip(grad_ti_raw, 0, 50)
+        grad_ne = np.clip(grad_ne_raw, -10, 30)
         beta_e = 4.03e-3 * ne * te
+
+        self._last_gradient_clip_counts = {
+            "grad_te": int(np.count_nonzero((grad_te_raw < 0.0) | (grad_te_raw > 50.0))),
+            "grad_ti": int(np.count_nonzero((grad_ti_raw < 0.0) | (grad_ti_raw > 50.0))),
+            "grad_ne": int(np.count_nonzero((grad_ne_raw < -10.0) | (grad_ne_raw > 30.0))),
+        }
+        self._last_profile_contract = {
+            "n_points": int(n),
+            "rho_min": float(rho[0]),
+            "rho_max": float(rho[-1]),
+            "r_major": float(r_major),
+        }
 
         # ── Neural path: single batched forward pass ─────────────
         if self.is_neural and self._weights is not None:
