@@ -229,6 +229,86 @@ def validate_transport(itpa_csv: Path) -> dict[str, Any]:
 
 # ── Lane 3: Disruption Validation ────────────────────────────────────
 
+def load_disruption_shot_payload(npz_path: Path) -> dict[str, Any]:
+    """Load and validate disruption-shot payload schema."""
+    with np.load(npz_path, allow_pickle=True) as data:
+        signal_key: str | None = None
+        if "dBdt_gauss_per_s" in data:
+            signal_key = "dBdt_gauss_per_s"
+        elif "n1_amp" in data:
+            signal_key = "n1_amp"
+        if signal_key is None:
+            raise ValueError(
+                f"{npz_path.name}: missing signal key "
+                "(expected dBdt_gauss_per_s or n1_amp)"
+            )
+
+        signal = np.asarray(data[signal_key], dtype=np.float64).reshape(-1)
+        if signal.size < 2:
+            raise ValueError(f"{npz_path.name}: signal must contain >= 2 samples")
+        if not np.all(np.isfinite(signal)):
+            raise ValueError(f"{npz_path.name}: signal contains non-finite values")
+
+        n1_amp = (
+            np.asarray(data["n1_amp"], dtype=np.float64).reshape(-1)
+            if "n1_amp" in data
+            else signal.copy()
+        )
+        if n1_amp.size != signal.size:
+            raise ValueError(
+                f"{npz_path.name}: n1_amp length {n1_amp.size} "
+                f"does not match signal length {signal.size}"
+            )
+        if not np.all(np.isfinite(n1_amp)):
+            raise ValueError(f"{npz_path.name}: n1_amp contains non-finite values")
+
+        n2_amp: np.ndarray | None = None
+        if "n2_amp" in data:
+            n2_arr = np.asarray(data["n2_amp"], dtype=np.float64).reshape(-1)
+            if n2_arr.size != signal.size:
+                raise ValueError(
+                    f"{npz_path.name}: n2_amp length {n2_arr.size} "
+                    f"does not match signal length {signal.size}"
+                )
+            if not np.all(np.isfinite(n2_arr)):
+                raise ValueError(f"{npz_path.name}: n2_amp contains non-finite values")
+            n2_amp = n2_arr
+
+        is_disruption = bool(data.get("is_disruption", False))
+        disruption_time_idx = int(data.get("disruption_time_idx", -1))
+        if is_disruption:
+            if disruption_time_idx <= 0 or disruption_time_idx >= signal.size:
+                raise ValueError(
+                    f"{npz_path.name}: disruption_time_idx={disruption_time_idx} "
+                    f"must satisfy 0 < idx < signal length ({signal.size})"
+                )
+
+        time_s: np.ndarray | None = None
+        if "time_s" in data:
+            time_arr = np.asarray(data["time_s"], dtype=np.float64).reshape(-1)
+            if time_arr.size != signal.size:
+                raise ValueError(
+                    f"{npz_path.name}: time_s length {time_arr.size} "
+                    f"does not match signal length {signal.size}"
+                )
+            if not np.all(np.isfinite(time_arr)):
+                raise ValueError(f"{npz_path.name}: time_s contains non-finite values")
+            if np.any(np.diff(time_arr) <= 0.0):
+                raise ValueError(
+                    f"{npz_path.name}: time_s must be strictly increasing"
+                )
+            time_s = time_arr
+
+        return {
+            "is_disruption": is_disruption,
+            "disruption_time_idx": disruption_time_idx,
+            "signal": signal,
+            "n1_amp": n1_amp,
+            "n2_amp": n2_amp,
+            "time_s": time_s,
+        }
+
+
 def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
     """Validate disruption predictor on reference disruption shots."""
     from scpn_fusion.control.disruption_predictor import predict_disruption_risk
@@ -248,17 +328,20 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
     true_negatives = 0
 
     for npz_path in npz_files:
-        data = np.load(npz_path, allow_pickle=True)
-        is_disruption = bool(data.get("is_disruption", False))
-        disruption_time_idx = int(data.get("disruption_time_idx", -1))
-        signal = np.asarray(data.get("dBdt_gauss_per_s", data.get("n1_amp", [])))
-
-        if signal.size == 0:
+        try:
+            payload = load_disruption_shot_payload(npz_path)
+        except ValueError as exc:
             results.append({
                 "file": npz_path.name,
-                "error": "No signal data",
+                "error": str(exc),
             })
             continue
+        is_disruption = bool(payload["is_disruption"])
+        disruption_time_idx = int(payload["disruption_time_idx"])
+        signal = np.asarray(payload["signal"], dtype=np.float64)
+        n1_amp = np.asarray(payload["n1_amp"], dtype=np.float64)
+        n2_amp = payload["n2_amp"]
+        time_arr = payload["time_s"]
 
         # Run predictor on sliding windows
         window_size = min(128, signal.size)
@@ -268,8 +351,8 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
         for t in range(window_size, signal.size):
             window = signal[t - window_size:t]
             # Build toroidal observables from available data
-            n1 = float(data["n1_amp"][t]) if "n1_amp" in data else 0.1
-            n2 = float(data["n2_amp"][t]) if "n2_amp" in data else 0.05
+            n1 = float(n1_amp[t])
+            n2 = float(n2_amp[t]) if n2_amp is not None else 0.05
             toroidal = {
                 "toroidal_n1_amp": n1,
                 "toroidal_n2_amp": n2,
@@ -287,10 +370,8 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
         if is_disruption and disruption_time_idx > 0:
             if detected:
                 # Time between detection and actual disruption
-                time_arr = data.get("time_s", None)
-                if time_arr is not None and hasattr(time_arr, "__len__") and len(time_arr) > max(disruption_time_idx, detection_idx):
-                    dt_arr = np.asarray(time_arr, dtype=np.float64)
-                    detection_ms = float((dt_arr[disruption_time_idx] - dt_arr[detection_idx]) * 1000)
+                if time_arr is not None and len(time_arr) > max(disruption_time_idx, detection_idx):
+                    detection_ms = float((time_arr[disruption_time_idx] - time_arr[detection_idx]) * 1000)
                 else:
                     detection_ms = float(disruption_time_idx - detection_idx) * 3.0  # ~3ms per index at 1kHz
                 within_threshold = bool(
