@@ -295,6 +295,75 @@ class TransportSolver(FusionKernel):
 
         # Numerical hardening telemetry (non-finite replacements per step)
         self._last_numerical_recovery_count: int = 0
+        self._last_numerical_recovery_breakdown: dict[str, int] = {}
+        self._last_numerical_recovery_limit: int | None = None
+
+        # Optional hard cap for non-finite/clamped recovery operations per step.
+        # None means telemetry-only mode (legacy behavior).
+        raw_recovery_cap = self.cfg.get("solver", {}).get("max_numerical_recoveries_per_step")
+        if raw_recovery_cap is None:
+            self.max_numerical_recoveries_per_step: int | None = None
+        else:
+            if isinstance(raw_recovery_cap, bool) or int(raw_recovery_cap) < 0:
+                raise ValueError(
+                    "solver.max_numerical_recoveries_per_step must be a non-negative integer."
+                )
+            self.max_numerical_recoveries_per_step = int(raw_recovery_cap)
+
+    def set_numerical_recovery_limit(self, max_recoveries: int | None) -> None:
+        """Set optional per-step numerical-recovery cap.
+
+        Parameters
+        ----------
+        max_recoveries : int or None
+            Maximum allowed recoveries per evolve step.  ``None`` disables
+            budget enforcement and keeps telemetry-only behavior.
+        """
+        if max_recoveries is None:
+            self.max_numerical_recoveries_per_step = None
+            return
+        if isinstance(max_recoveries, bool) or int(max_recoveries) < 0:
+            raise ValueError("max_recoveries must be a non-negative integer or None.")
+        self.max_numerical_recoveries_per_step = int(max_recoveries)
+
+    def _record_recovery(self, label: str, count: int) -> None:
+        """Track recoveries by category for per-step diagnostics."""
+        if count <= 0:
+            return
+        self._last_numerical_recovery_breakdown[label] = (
+            self._last_numerical_recovery_breakdown.get(label, 0) + int(count)
+        )
+
+    def _resolve_recovery_limit(self, override: int | None) -> int | None:
+        """Resolve and validate an optional per-step recovery cap override."""
+        if override is None:
+            return self.max_numerical_recoveries_per_step
+        if isinstance(override, bool) or int(override) < 0:
+            raise ValueError("max_numerical_recoveries must be a non-negative integer or None.")
+        return int(override)
+
+    def _enforce_recovery_budget(
+        self,
+        *,
+        enforce_numerical_recovery: bool,
+        max_numerical_recoveries: int | None,
+    ) -> None:
+        """Fail fast when recovery volume exceeds configured hardening budget."""
+        limit = self._resolve_recovery_limit(max_numerical_recoveries)
+        self._last_numerical_recovery_limit = limit
+        if not enforce_numerical_recovery or limit is None:
+            return
+        if self._last_numerical_recovery_count <= limit:
+            return
+
+        details = ", ".join(
+            f"{name}={count}" for name, count in sorted(self._last_numerical_recovery_breakdown.items())
+        ) or "no breakdown"
+        raise PhysicsError(
+            "Numerical recovery budget exceeded: "
+            f"{self._last_numerical_recovery_count} > {limit}. "
+            f"Breakdown: {details}"
+        )
 
     def set_neoclassical(self, R0: float, a: float, B0: float, A_ion: float = 2.0, Z_eff: float = 1.5, q0: float = 1.0, q_edge: float = 3.0) -> None:
         """Configure Chang-Hinton neoclassical transport model.
@@ -678,56 +747,66 @@ class TransportSolver(FusionKernel):
             np.minimum(out, ceil, out=out)
         return out, recovered
 
-    def _sanitize_runtime_state(self) -> int:
+    def _sanitize_runtime_state(self, *, label_prefix: str) -> int:
         """Keep runtime profiles and coefficients finite during transport stepping."""
         recovered_total = 0
 
         ti_fb = np.where(np.isfinite(self.Ti), self.Ti, 1.0)
         self.Ti, n_ti = self._sanitize_with_fallback(self.Ti, ti_fb, floor=0.01, ceil=1e3)
         recovered_total += n_ti
+        self._record_recovery(f"{label_prefix}.Ti", n_ti)
 
         te_fb = np.where(np.isfinite(self.Te), self.Te, 1.0)
         self.Te, n_te = self._sanitize_with_fallback(self.Te, te_fb, floor=0.01, ceil=1e3)
         recovered_total += n_te
+        self._record_recovery(f"{label_prefix}.Te", n_te)
 
         ne_fb = np.where(np.isfinite(self.ne), self.ne, 5.0)
         self.ne, n_ne = self._sanitize_with_fallback(self.ne, ne_fb, floor=0.1, ceil=1e3)
         recovered_total += n_ne
+        self._record_recovery(f"{label_prefix}.ne", n_ne)
 
         chi_i_fb = np.where(np.isfinite(self.chi_i), self.chi_i, 0.5)
         self.chi_i, n_chi_i = self._sanitize_with_fallback(
             self.chi_i, chi_i_fb, floor=0.01, ceil=1e4
         )
         recovered_total += n_chi_i
+        self._record_recovery(f"{label_prefix}.chi_i", n_chi_i)
 
         chi_e_fb = np.where(np.isfinite(self.chi_e), self.chi_e, 0.5)
         self.chi_e, n_chi_e = self._sanitize_with_fallback(
             self.chi_e, chi_e_fb, floor=0.01, ceil=1e4
         )
         recovered_total += n_chi_e
+        self._record_recovery(f"{label_prefix}.chi_e", n_chi_e)
 
         dn_fb = np.where(np.isfinite(self.D_n), self.D_n, 0.1)
         self.D_n, n_dn = self._sanitize_with_fallback(self.D_n, dn_fb, floor=0.0, ceil=1e4)
         recovered_total += n_dn
+        self._record_recovery(f"{label_prefix}.D_n", n_dn)
 
         imp_fb = np.where(np.isfinite(self.n_impurity), self.n_impurity, 0.0)
         self.n_impurity, n_imp = self._sanitize_with_fallback(
             self.n_impurity, imp_fb, floor=0.0, ceil=1e3
         )
         recovered_total += n_imp
+        self._record_recovery(f"{label_prefix}.n_impurity", n_imp)
 
         if self.n_D is not None:
             n_d_fb = np.where(np.isfinite(self.n_D), self.n_D, 0.5)
             self.n_D, n_d = self._sanitize_with_fallback(self.n_D, n_d_fb, floor=0.001, ceil=1e3)
             recovered_total += n_d
+            self._record_recovery(f"{label_prefix}.n_D", n_d)
         if self.n_T is not None:
             n_t_fb = np.where(np.isfinite(self.n_T), self.n_T, 0.5)
             self.n_T, n_t = self._sanitize_with_fallback(self.n_T, n_t_fb, floor=0.001, ceil=1e3)
             recovered_total += n_t
+            self._record_recovery(f"{label_prefix}.n_T", n_t)
         if self.n_He is not None:
             n_he_fb = np.where(np.isfinite(self.n_He), self.n_He, 0.0)
             self.n_He, n_he = self._sanitize_with_fallback(self.n_He, n_he_fb, floor=0.0, ceil=1e3)
             recovered_total += n_he
+            self._record_recovery(f"{label_prefix}.n_He", n_he)
 
         return recovered_total
 
@@ -935,7 +1014,15 @@ class TransportSolver(FusionKernel):
 
     # ── Main evolution (Crank-Nicolson) ──────────────────────────────
 
-    def evolve_profiles(self, dt: float, P_aux: float, enforce_conservation: bool = False) -> tuple[float, float]:
+    def evolve_profiles(
+        self,
+        dt: float,
+        P_aux: float,
+        enforce_conservation: bool = False,
+        *,
+        enforce_numerical_recovery: bool = False,
+        max_numerical_recoveries: int | None = None,
+    ) -> tuple[float, float]:
         """Advance Ti by one time step using Crank-Nicolson implicit diffusion.
 
         The scheme is unconditionally stable, allowing dt up to ~1.0 s
@@ -952,13 +1039,24 @@ class TransportSolver(FusionKernel):
         enforce_conservation : bool
             When True, raise :class:`PhysicsError` if the per-step energy
             conservation error exceeds 1%.
+        enforce_numerical_recovery : bool
+            When True, raise :class:`PhysicsError` if recoveries exceed the
+            configured budget (`max_numerical_recoveries_per_step` or explicit
+            `max_numerical_recoveries`).
+        max_numerical_recoveries : int or None
+            Optional per-call override for recovery budget.  ``None`` uses the
+            solver-level default.
         """
         if (not np.isfinite(dt)) or dt <= 0.0:
             raise ValueError(f"dt must be finite and > 0, got {dt!r}")
         if not np.isfinite(P_aux):
             raise ValueError(f"P_aux must be finite, got {P_aux!r}")
 
-        self._last_numerical_recovery_count = self._sanitize_runtime_state()
+        self._last_numerical_recovery_count = 0
+        self._last_numerical_recovery_breakdown = {}
+        self._last_numerical_recovery_count += self._sanitize_runtime_state(
+            label_prefix="pre"
+        )
         Ti_old = self.Ti.copy()
         Te_old = self.Te.copy()
 
@@ -988,6 +1086,7 @@ class TransportSolver(FusionKernel):
             np.zeros_like(net_source_i),
         )
         self._last_numerical_recovery_count += n_src_i
+        self._record_recovery("cn.ion_net_source", n_src_i)
 
         # ── Ion temperature CN step ──
         Lh_explicit = self._explicit_diffusion_rhs(self.Ti, self.chi_i)
@@ -996,9 +1095,11 @@ class TransportSolver(FusionKernel):
             np.zeros_like(Lh_explicit),
         )
         self._last_numerical_recovery_count += n_lh_i
+        self._record_recovery("cn.ion_diffusion_rhs", n_lh_i)
         rhs = self.Ti + 0.5 * dt * Lh_explicit + dt * net_source_i
         rhs, n_rhs_i = self._sanitize_with_fallback(rhs, Ti_old, floor=0.01, ceil=1e3)
         self._last_numerical_recovery_count += n_rhs_i
+        self._record_recovery("cn.ion_rhs", n_rhs_i)
         a, b, c = self._build_cn_tridiag(self.chi_i, dt)
         new_Ti = self._thomas_solve(a, b, c, rhs)
 
@@ -1008,6 +1109,7 @@ class TransportSolver(FusionKernel):
             new_Ti, Ti_old, floor=0.01, ceil=1e3
         )
         self._last_numerical_recovery_count += n_ti_new
+        self._record_recovery("cn.ion_solution", n_ti_new)
 
         # ── Electron temperature ──
         if self.multi_ion:
@@ -1032,6 +1134,7 @@ class TransportSolver(FusionKernel):
                 np.zeros_like(net_source_e),
             )
             self._last_numerical_recovery_count += n_src_e
+            self._record_recovery("cn.electron_net_source", n_src_e)
 
             Lh_explicit_e = self._explicit_diffusion_rhs(Te_old, self.chi_e)
             Lh_explicit_e, n_lh_e = self._sanitize_with_fallback(
@@ -1039,9 +1142,11 @@ class TransportSolver(FusionKernel):
                 np.zeros_like(Lh_explicit_e),
             )
             self._last_numerical_recovery_count += n_lh_e
+            self._record_recovery("cn.electron_diffusion_rhs", n_lh_e)
             rhs_e = Te_old + 0.5 * dt * Lh_explicit_e + dt * net_source_e
             rhs_e, n_rhs_e = self._sanitize_with_fallback(rhs_e, Te_old, floor=0.01, ceil=1e3)
             self._last_numerical_recovery_count += n_rhs_e
+            self._record_recovery("cn.electron_rhs", n_rhs_e)
             a_e, b_e, c_e = self._build_cn_tridiag(self.chi_e, dt)
             new_Te = self._thomas_solve(a_e, b_e, c_e, rhs_e)
 
@@ -1051,6 +1156,7 @@ class TransportSolver(FusionKernel):
                 new_Te, Te_old, floor=0.01, ceil=1e3
             )
             self._last_numerical_recovery_count += n_te_new
+            self._record_recovery("cn.electron_solution", n_te_new)
         else:
             self.Te = self.Ti.copy()  # Assume equilibrated (legacy)
 
@@ -1068,6 +1174,7 @@ class TransportSolver(FusionKernel):
                 if not self.multi_ion:
                     self.Te = self.Ti.copy()
                 self._last_numerical_recovery_count += 1
+                self._record_recovery("stability.zero_aux_overshoot_rescale", 1)
 
         # ── Energy conservation diagnostic ──
         if not self.multi_ion:
@@ -1093,7 +1200,13 @@ class TransportSolver(FusionKernel):
                 f"dW_source={dW_source:.4e} J."
             )
 
-        self._last_numerical_recovery_count += self._sanitize_runtime_state()
+        self._last_numerical_recovery_count += self._sanitize_runtime_state(
+            label_prefix="post"
+        )
+        self._enforce_recovery_budget(
+            enforce_numerical_recovery=enforce_numerical_recovery,
+            max_numerical_recoveries=max_numerical_recoveries,
+        )
         avg_ti: float = np.mean(self.Ti).item()
         core_ti: float = self.Ti[0].item()
         return avg_ti, core_ti

@@ -223,6 +223,38 @@ class TestEvolveProfiles:
         assert np.all(np.isfinite(solver.n_impurity))
         assert solver._last_numerical_recovery_count > 0
 
+    def test_evolve_records_recovery_breakdown(self, solver: TransportSolver) -> None:
+        """Recovery telemetry exposes category-level counts for hardening audits."""
+        solver.Ti[2] = float("nan")
+        solver.chi_i[4] = float("inf")
+        solver.evolve_profiles(dt=0.01, P_aux=30.0)
+        breakdown = solver._last_numerical_recovery_breakdown
+        assert isinstance(breakdown, dict)
+        assert sum(breakdown.values()) == solver._last_numerical_recovery_count
+        assert any(key.startswith("pre.") for key in breakdown)
+
+    def test_evolve_recovery_budget_can_raise(self, solver: TransportSolver) -> None:
+        """Strict numerical budget mode should fail fast on excessive recoveries."""
+        solver.Ti[1] = float("nan")
+        with pytest.raises(PhysicsError, match="Numerical recovery budget exceeded"):
+            solver.evolve_profiles(
+                dt=0.01,
+                P_aux=50.0,
+                enforce_numerical_recovery=True,
+                max_numerical_recoveries=0,
+            )
+
+    def test_set_numerical_recovery_limit_validates_input(self, solver: TransportSolver) -> None:
+        """Recovery limit setter rejects invalid values and accepts non-negative ints."""
+        solver.set_numerical_recovery_limit(3)
+        assert solver.max_numerical_recoveries_per_step == 3
+        solver.set_numerical_recovery_limit(None)
+        assert solver.max_numerical_recoveries_per_step is None
+        with pytest.raises(ValueError):
+            solver.set_numerical_recovery_limit(-1)
+        with pytest.raises(ValueError):
+            solver.set_numerical_recovery_limit(True)  # type: ignore[arg-type]
+
     def test_aux_heating_source_power_balance_single_ion(self, solver: TransportSolver) -> None:
         """Integrated heating source must reconstruct the requested total MW."""
         s_i, s_e = solver._compute_aux_heating_sources(50.0)
