@@ -12,6 +12,8 @@ longer trigger false alarms.
 
 from __future__ import annotations
 
+import importlib.util
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -25,6 +27,15 @@ from scpn_fusion.control.disruption_predictor import (
 
 ROOT = Path(__file__).resolve().parents[1]
 DISRUPTION_DIR = ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots"
+VALIDATE_MODULE_PATH = ROOT / "validation" / "validate_real_shots.py"
+VALIDATE_SPEC = importlib.util.spec_from_file_location(
+    "validate_real_shots_threshold_sweep",
+    VALIDATE_MODULE_PATH,
+)
+assert VALIDATE_SPEC and VALIDATE_SPEC.loader
+validate_real_shots = importlib.util.module_from_spec(VALIDATE_SPEC)
+sys.modules[VALIDATE_SPEC.name] = validate_real_shots
+VALIDATE_SPEC.loader.exec_module(validate_real_shots)
 
 
 def _has_reference_data() -> bool:
@@ -43,22 +54,25 @@ def _run_sliding_window_detection(
     true_negatives = 0
 
     for npz_path in npz_files:
-        data = np.load(str(npz_path), allow_pickle=True)
-        is_disruption = bool(data.get("is_disruption", False))
-        disruption_time_idx = int(data.get("disruption_time_idx", -1))
-        signal = np.asarray(
-            data.get("dBdt_gauss_per_s", data.get("n1_amp", []))
-        )
-        if signal.size == 0:
-            continue
+        try:
+            payload = validate_real_shots.load_disruption_shot_payload(npz_path)
+        except ValueError as exc:
+            raise AssertionError(
+                f"Malformed disruption payload in threshold sweep: {npz_path.name}: {exc}"
+            ) from exc
+        is_disruption = bool(payload["is_disruption"])
+        disruption_time_idx = int(payload["disruption_time_idx"])
+        signal = np.asarray(payload["signal"], dtype=np.float64)
+        n1_amp = np.asarray(payload["n1_amp"], dtype=np.float64)
+        n2_amp = payload["n2_amp"]
 
         ws = min(window_size, signal.size)
         detection_idx = -1
 
         for t in range(ws, signal.size):
             window = signal[t - ws : t]
-            n1 = float(data["n1_amp"][t]) if "n1_amp" in data else 0.1
-            n2 = float(data["n2_amp"][t]) if "n2_amp" in data else 0.05
+            n1 = float(n1_amp[t])
+            n2 = float(n2_amp[t]) if n2_amp is not None else 0.05
             toroidal = {
                 "toroidal_n1_amp": n1,
                 "toroidal_n2_amp": n2,

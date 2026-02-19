@@ -68,6 +68,10 @@
 - Added disruption shot split leakage gate (A05):
   - Added `validation/reference_data/diiid/disruption_shot_splits.json` and `tools/check_disruption_shot_splits.py`.
   - Added release preflight gate to fail on train/val/test overlap or missing shot coverage vs manifest.
+- Hardened disruption replay ingest contracts (A06):
+  - Added strict payload-schema loader `load_disruption_shot_payload()` in `validation/validate_real_shots.py`.
+  - `validate_disruption()` now emits explicit per-shot schema failures for malformed payloads (signal keys, finite checks, timebase monotonicity, disruption-index bounds).
+  - Added `tests/test_validate_real_shots_payload.py` and aligned `tests/test_disruption_threshold_sweep.py` to use the same payload contract.
 
 ---
 
