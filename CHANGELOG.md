@@ -65,6 +65,9 @@
 - Added disruption shot provenance manifest gate (A04):
   - Added `tools/generate_disruption_shot_manifest.py` and generated `validation/reference_data/diiid/disruption_shots_manifest.json`.
   - Added preflight `--check` gate to enforce hash-locked shot manifest freshness in release lanes.
+- Added disruption shot split leakage gate (A05):
+  - Added `validation/reference_data/diiid/disruption_shot_splits.json` and `tools/check_disruption_shot_splits.py`.
+  - Added release preflight gate to fail on train/val/test overlap or missing shot coverage vs manifest.
 
 ---
 

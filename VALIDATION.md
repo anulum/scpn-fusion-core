@@ -16,6 +16,9 @@ This document covers data provenance and validation notes for:
 - Provenance manifest (versioned, hash-locked):
   - `validation/reference_data/diiid/disruption_shots_manifest.json`
   - Generated/verified by `tools/generate_disruption_shot_manifest.py` with per-file `sha256`, byte size, scenario label, source type, and license fields.
+- Split hygiene contract:
+  - `validation/reference_data/diiid/disruption_shot_splits.json`
+  - Validated by `tools/check_disruption_shot_splits.py` (no train/val/test overlap, no missing manifest shots).
 
 ## Validation Script Linkage
 
@@ -63,6 +66,7 @@ Regenerate or verify provenance manifest:
 ```powershell
 python tools/generate_disruption_shot_manifest.py
 python tools/generate_disruption_shot_manifest.py --check
+python tools/check_disruption_shot_splits.py
 ```
 
 ## Data License And Copyright Context

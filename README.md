@@ -596,6 +596,7 @@ This project is honest about what it does and does not do.
 - Claim-evidence manifest (audited in preflight): [`validation/claims_manifest.json`](validation/claims_manifest.json)
 - Claim-to-artifact map (generated): [`docs/CLAIMS_EVIDENCE_MAP.md`](docs/CLAIMS_EVIDENCE_MAP.md)
 - DIII-D disruption shot provenance manifest: [`validation/reference_data/diiid/disruption_shots_manifest.json`](validation/reference_data/diiid/disruption_shots_manifest.json)
+- DIII-D train/val/test split contract: [`validation/reference_data/diiid/disruption_shot_splits.json`](validation/reference_data/diiid/disruption_shot_splits.json)
 - Release vs research gate matrix: [`docs/VALIDATION_GATE_MATRIX.md`](docs/VALIDATION_GATE_MATRIX.md)
 - Release acceptance checklist: [`docs/RELEASE_ACCEPTANCE_CHECKLIST.md`](docs/RELEASE_ACCEPTANCE_CHECKLIST.md)
 

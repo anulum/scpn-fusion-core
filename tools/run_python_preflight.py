@@ -17,6 +17,7 @@ def _build_release_checks(
     skip_claims_map: bool,
     skip_release_checklist: bool,
     skip_shot_manifest: bool,
+    skip_shot_splits: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -77,6 +78,16 @@ def _build_release_checks(
                 ],
             )
         )
+    if not skip_shot_splits:
+        checks.append(
+            (
+                "Disruption shot split leakage check",
+                [
+                    sys.executable,
+                    "tools/check_disruption_shot_splits.py",
+                ],
+            )
+        )
     if not skip_notebook_quality:
         checks.append(
             (
@@ -129,6 +140,7 @@ def _build_checks(
     skip_claims_map: bool,
     skip_release_checklist: bool,
     skip_shot_manifest: bool,
+    skip_shot_splits: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -143,6 +155,7 @@ def _build_checks(
                 skip_claims_map=skip_claims_map,
                 skip_release_checklist=skip_release_checklist,
                 skip_shot_manifest=skip_shot_manifest,
+                skip_shot_splits=skip_shot_splits,
                 skip_notebook_quality=skip_notebook_quality,
                 skip_threshold_smoke=skip_threshold_smoke,
                 skip_mypy=skip_mypy,
@@ -210,6 +223,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip tools/generate_disruption_shot_manifest.py --check",
     )
     parser.add_argument(
+        "--skip-shot-splits",
+        action="store_true",
+        help="Skip tools/check_disruption_shot_splits.py",
+    )
+    parser.add_argument(
         "--skip-threshold-smoke",
         action="store_true",
         help=(
@@ -237,6 +255,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_claims_map=args.skip_claims_map,
         skip_release_checklist=args.skip_release_checklist,
         skip_shot_manifest=args.skip_shot_manifest,
+        skip_shot_splits=args.skip_shot_splits,
         skip_notebook_quality=args.skip_notebook_quality,
         skip_threshold_smoke=args.skip_threshold_smoke,
         skip_mypy=args.skip_mypy,
