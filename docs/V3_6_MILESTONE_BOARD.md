@@ -29,7 +29,7 @@ This board tracks the first 20 high-impact hardening tasks to move SCPN Fusion C
 | A15 | Neutronics | P1 | Calibrate reduced neutronics surrogate against reference lane | Calibration artifact + error breakdown | TBR bias/error gate documented and enforced | Nuclear WG | Backlog |
 | A16 | Runtime | P1 | Reduce fallback usage in critical runtime lanes | Fallback hit-rate telemetry | Fallback usage trend published and bounded | Runtime WG | Backlog |
 | A17 | Runtime | P1 | Add deterministic parity checks across Python/Rust kernels | Expanded parity tests with stricter tolerances | Parity suite passes on release branch | Runtime WG | Backlog |
-| A18 | Documentation | P0 | Reconcile README/RESULTS/VALIDATION version consistency | Versioned claim tables with artifact pointers | Zero stale version tags in release docs | Docs WG | Backlog |
+| A18 | Documentation | P0 | Reconcile README/RESULTS/VALIDATION version consistency | Versioned claim tables with artifact pointers | Zero stale version tags in release docs | Docs WG | Completed |
 | A19 | Documentation | P1 | Add claim-to-artifact map page for all headline metrics | `docs/CLAIMS_EVIDENCE_MAP.md` | Every tracked claim resolves to artifact path | Docs WG | Completed |
 | A20 | Release | P0 | Define v3.6 release acceptance checklist | Release checklist doc + CI release job | Checklist green required before tag publish | Architecture WG | Backlog |
 

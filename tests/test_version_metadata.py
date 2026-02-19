@@ -20,6 +20,10 @@ PYPROJECT_PATH = ROOT / "pyproject.toml"
 SETUP_PATH = ROOT / "setup.py"
 CITATION_PATH = ROOT / "CITATION.cff"
 SPHINX_CONF_PATH = ROOT / "docs" / "sphinx" / "conf.py"
+README_PATH = ROOT / "README.md"
+RESULTS_PATH = ROOT / "RESULTS.md"
+VALIDATION_PATH = ROOT / "VALIDATION.md"
+CHANGELOG_PATH = ROOT / "CHANGELOG.md"
 
 
 def _extract_version(pattern: str, text: str, label: str) -> str:
@@ -68,3 +72,31 @@ def test_release_metadata_versions_are_consistent() -> None:
     assert setup_version == package_version
     assert citation_version == package_version
     assert sphinx_release == package_version
+
+
+def test_release_docs_reference_current_version() -> None:
+    pyproject_text = PYPROJECT_PATH.read_text(encoding="utf-8")
+    package_version = _extract_version(
+        r'(?m)^version\s*=\s*"([^"]+)"',
+        pyproject_text,
+        "pyproject.toml",
+    )
+
+    readme_text = README_PATH.read_text(encoding="utf-8")
+    assert f"Version-{package_version}" in readme_text
+
+    results_text = RESULTS_PATH.read_text(encoding="utf-8")
+    assert f"(v{package_version})" in results_text
+    assert re.search(
+        rf"\*\*Version:\*\*\s*{re.escape(package_version)}",
+        results_text,
+    )
+
+    validation_text = VALIDATION_PATH.read_text(encoding="utf-8")
+    assert f"(v{package_version})" in validation_text
+
+    changelog_text = CHANGELOG_PATH.read_text(encoding="utf-8")
+    assert re.search(
+        rf"(?m)^## \[{re.escape(package_version)}\]\s+—\s+",
+        changelog_text,
+    )

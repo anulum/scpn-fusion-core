@@ -57,6 +57,8 @@
 - Fixed CI claims-audit stability:
   - Replaced untracked RMSE dashboard artifact dependency in `validation/claims_manifest.json` with tracked evidence sources.
   - Hardened `tools/claims_audit.py` to require evidence files/pattern files be git-tracked.
+- Added release docs version-consistency gate (A18):
+  - `tests/test_version_metadata.py` now enforces current-version references in `README.md`, `RESULTS.md`, `VALIDATION.md`, and `CHANGELOG.md`.
 
 ---
 
