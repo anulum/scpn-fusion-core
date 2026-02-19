@@ -13,6 +13,56 @@
 - **RAM:** 31.8 GB
 - **Version:** 3.1.0
 
+## Silver Base Notebook Results (2026-02-19)
+
+Source notebook:
+- `examples/neuro_symbolic_control_demo_silver_base.ipynb`
+
+Run configuration:
+- Disturbance profile: `shot_166000_beta_limit.npz`
+- Horizon: `240` steps
+- Controllers: `SNN`, `PID`, `MPC-lite` (single-step linear-quadratic baseline)
+
+### Controller Metrics (Exact)
+
+| Controller | rmse_ne | rmse_ip | rmse_beta | mse_total | latency_p95_ms | latency_mean_ms | latency_e2e_p95_ms | latency_e2e_mean_ms | gs_solve_p95_ms | gs_solve_mean_ms | violations_total | critical_total | mitigation_steps |
+|------|------|------|------|------|------|------|------|------|------|------|------|------|------|
+| SNN | 0.4804897502595943 | 0.5226237369529722 | 0.5679231592381624 | 0.27551422844342394 | 0.5854349059518419 | 0.2556491609235915 | 27.589204959804178 | 14.128783332610814 | 24.329684977419657 | 13.35996791603975 | 202 | 165 | 165 |
+| PID | 0.0005233557890869828 | 0.07149268430363057 | 0.06635562386795918 | 0.0031715155430422103 | 0.12872493243776245 | 0.05017250029292578 | 29.1848600434605 | 14.859170417670006 | 28.207194956485175 | 14.272219166256642 | 16 | 0 | 0 |
+| MPC-lite | 0.0013536826218344578 | 0.06789817194433366 | 0.06470035789657742 | 0.0029327101739893883 | 0.3856700146570798 | 0.19188875012332574 | 20.616749924374737 | 12.593969161389396 | 19.940984924323853 | 11.924760835730316 | 10 | 0 | 0 |
+
+Additional invariant aggregates:
+
+| Controller | q_min_min | gs_residual_p95 | energy_err_p95 |
+|------|------|------|------|
+| SNN | 1.6600000000000004 | 2.19334069702352e-06 | 0.008202363917460738 |
+| PID | 1.6600000000000004 | 2.199147099513694e-06 | 0.006737359071037118 |
+| MPC-lite | 1.6600000000000004 | 2.199147656848889e-06 | 0.006716524129188436 |
+
+### 3456x3456 Dense Scaling Benchmark (Exact)
+
+| Metric | Value |
+|------|------|
+| Shape | [3456, 3456] |
+| Runs | 6 |
+| mean_ms | 6.1621167114935815 |
+| p95_ms | 8.362575026694685 |
+| min_ms | 4.362800042144954 |
+| max_ms | 8.59640003181994 |
+| y_l2 | 3457.764404296875 |
+
+### Deterministic Replay (Exact)
+
+| Field | Value |
+|------|------|
+| artifact_sha256 | a5b438e70df85038ad922cbc3f948bf9d3df4a2a89ba874ec5f4e9d1273e25e5 |
+| run_hash_a | 076ac93f12b971ea9611633dd3174188be2273420824d31671128ba4b244a9c5 |
+| run_hash_b | 076ac93f12b971ea9611633dd3174188be2273420824d31671128ba4b244a9c5 |
+| hash_equal | true |
+| state_equal | true |
+| action_equal | true |
+| replay_proof_sha256 | af4c402ad8d15df4234ed50926be00c37b1a94107ba0fe4b64f1d68fb3825d27 |
+
 ## What Changed in v3.1.0 (Phase 0 Physics Hardening)
 
 | Area | v3.0.0 | v3.1.0 | Impact |
