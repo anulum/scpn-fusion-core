@@ -599,7 +599,7 @@ print("GOLDEN_BASE_METRICS_JSON_END")
             del cell["id"]
 
     nbf.write(nb, dst)
-    print(f"Wrote Golden Base notebook: {dst}")
+    print(f"Wrote Golden Base v2 notebook: {dst}")
 
 
 if __name__ == "__main__":

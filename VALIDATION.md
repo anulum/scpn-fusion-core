@@ -2,7 +2,8 @@
 
 This document covers data provenance and validation notes for:
 
-- `examples/neuro_symbolic_control_demo.ipynb`
+- `examples/neuro_symbolic_control_demo_v2.ipynb` (active release)
+- `examples/neuro_symbolic_control_demo.ipynb` (legacy frozen published base)
 
 ## DIII-D Shot Provenance
 

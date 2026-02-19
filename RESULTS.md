@@ -16,7 +16,8 @@
 ## Golden Base Notebook Results (2026-02-19)
 
 Source notebook:
-- `examples/neuro_symbolic_control_demo.ipynb`
+- `examples/neuro_symbolic_control_demo_v2.ipynb`
+- Legacy frozen notebook: `examples/neuro_symbolic_control_demo.ipynb`
 
 Run configuration:
 - Disturbance profile: `shot_166000_beta_limit.npz`

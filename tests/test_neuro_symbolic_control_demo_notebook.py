@@ -73,6 +73,19 @@ def test_golden_notebook_exists_and_replaces_legacy_silver_file() -> None:
     assert not LEGACY_SILVER_PATH.exists()
 
 
+def test_versioned_release_does_not_overwrite_published_base_notebook() -> None:
+    v2_text = NOTEBOOK_PATH.read_text(encoding="utf-8")
+    base_text = PUBLISHED_NOTEBOOK_PATH.read_text(encoding="utf-8")
+
+    assert "# Neuro-Symbolic Control Demo (Golden Base v2)" in v2_text
+    assert "Version: v2 (2026-02-19)" in v2_text
+    assert "examples/neuro_symbolic_control_demo_v2.ipynb" in v2_text
+
+    assert "# Neuro-Symbolic Control Demo (Golden Base)" in base_text
+    assert "Version: v2 (2026-02-19)" not in base_text
+    assert "examples/neuro_symbolic_control_demo.ipynb" in base_text
+
+
 def test_golden_notebook_has_required_contract_text() -> None:
     nb = _load_notebook()
     text = NOTEBOOK_PATH.read_text(encoding="utf-8")

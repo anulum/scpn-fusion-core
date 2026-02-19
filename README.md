@@ -229,6 +229,7 @@ The test suites include property-based tests powered by [Hypothesis](https://hyp
 |----------|-------------|
 | `01_compact_reactor_search` | MVR-0.96 compact reactor optimizer walkthrough |
 | `02_neuro_symbolic_compiler` | Petri net → stochastic neuron compilation pipeline |
+| `neuro_symbolic_control_demo_v2` | Golden Base v2 hero control demo (formal proofs + closed-loop + replay) |
 | `03_grad_shafranov_equilibrium` | Free-boundary equilibrium solver tutorial |
 | `04_divertor_and_neutronics` | Divertor heat flux & tritium breeding ratio |
 | `05_validation_against_experiments` | Cross-validation vs SPARC GEQDSK & ITPA scaling |
