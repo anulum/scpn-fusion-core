@@ -1,8 +1,8 @@
-# Silver Base Validation Notes
+# Golden Base Validation Notes
 
 This document covers data provenance and validation notes for:
 
-- `examples/neuro_symbolic_control_demo_silver_base.ipynb`
+- `examples/neuro_symbolic_control_demo.ipynb`
 
 ## DIII-D Shot Provenance
 
@@ -12,6 +12,17 @@ This document covers data provenance and validation notes for:
 - Generation source:
   - `tools/generate_disruption_profiles.py`
   - The script defines a deterministic manifest of disruption/safe scenarios and seeds each shot with `np.random.default_rng(shot_number)` for reproducibility.
+
+## Validation Script Linkage
+
+The Golden Base notebook disturbance lane is intentionally linked to existing validation workflows:
+
+- `validation/validate_real_shots.py`
+  - Disruption validation lane reads from `validation/reference_data/diiid/disruption_shots/`
+- `validation/full_validation_pipeline.py`
+  - Multi-lane empirical validation runner
+
+In notebook code this appears as `VALIDATION_SCRIPT` and `FULL_PIPELINE_SCRIPT` path checks, and `load_shot(...)` points at the same reference-data directory.
 
 ## If The Shot File Is Missing
 
@@ -43,6 +54,11 @@ python tools/generate_disruption_profiles.py --verify-only
   - shot list,
   - processing steps,
   - applicable data rights/attribution terms.
+
+## SPARC / EFIT Replay Note
+
+- Golden Base currently demonstrates disturbance replay against DIII-D-like reference profiles in repo.
+- SPARC EFIT replay and broader equilibrium replay workflows are handled by the validation stack (e.g. `validation/validate_real_equilibria.py`) and can be integrated into notebook control loops as a follow-up step.
 
 ## Copyright Clarity
 

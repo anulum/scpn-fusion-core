@@ -13,29 +13,30 @@
 - **RAM:** 31.8 GB
 - **Version:** 3.1.0
 
-## Silver Base Notebook Results (2026-02-19)
+## Golden Base Notebook Results (2026-02-19)
 
 Source notebook:
-- `examples/neuro_symbolic_control_demo_silver_base.ipynb`
+- `examples/neuro_symbolic_control_demo.ipynb`
 
 Run configuration:
 - Disturbance profile: `shot_166000_beta_limit.npz`
 - Horizon: `240` steps
 - Controllers: `SNN`, `PID`, `MPC-lite` (single-step linear-quadratic baseline)
+- Additional plotted baseline: `Open-loop` (visual-only reference)
 
 ### Controller Metrics (Exact)
 
-| Controller | rmse_ne | rmse_ip | rmse_beta | mse_total | latency_p95_ms | latency_mean_ms | latency_e2e_p95_ms | latency_e2e_mean_ms | gs_solve_p95_ms | gs_solve_mean_ms | violations_total | critical_total | mitigation_steps |
-|------|------|------|------|------|------|------|------|------|------|------|------|------|------|
-| SNN | 0.4804897502595943 | 0.5226237369529722 | 0.5679231592381624 | 0.27551422844342394 | 0.5854349059518419 | 0.2556491609235915 | 27.589204959804178 | 14.128783332610814 | 24.329684977419657 | 13.35996791603975 | 202 | 165 | 165 |
-| PID | 0.0005233557890869828 | 0.07149268430363057 | 0.06635562386795918 | 0.0031715155430422103 | 0.12872493243776245 | 0.05017250029292578 | 29.1848600434605 | 14.859170417670006 | 28.207194956485175 | 14.272219166256642 | 16 | 0 | 0 |
-| MPC-lite | 0.0013536826218344578 | 0.06789817194433366 | 0.06470035789657742 | 0.0029327101739893883 | 0.3856700146570798 | 0.19188875012332574 | 20.616749924374737 | 12.593969161389396 | 19.940984924323853 | 11.924760835730316 | 10 | 0 | 0 |
+| Controller | rmse_ne | rmse_ip | rmse_beta | rmse_total | mse_total | latency_p95_ms | latency_mean_ms | latency_e2e_p95_ms | latency_e2e_mean_ms | gs_solve_p95_ms | gs_solve_mean_ms | violations_total | critical_total | mitigation_steps |
+|------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|
+| SNN | 0.014613655558326553 | 0.07423964196892775 | 0.06042895855547168 | 0.055906894030912084 | 0.003125580800183634 | 45.442770054796696 | 26.577667496167123 | 69.94614990544504 | 41.45959375164239 | 26.233609998598684 | 14.293911668452589 | 16 | 0 | 0 |
+| PID | 0.0005233557890869828 | 0.07149268430363057 | 0.06635562386795918 | 0.05631621030433608 | 0.0031715155430422103 | 0.10040505439974344 | 0.05640333498983333 | 25.814390048617497 | 14.597371665392226 | 24.495740048587308 | 14.048323335979754 | 16 | 0 | 0 |
+| MPC-lite | 0.0013536826218344578 | 0.06789817194433366 | 0.06470035789657742 | 0.05415450280437803 | 0.0029327101739893883 | 0.6310300319455564 | 0.26803082970824715 | 35.221400018781424 | 17.948747921036556 | 33.416650007711716 | 17.048823753430042 | 10 | 0 | 0 |
 
 Additional invariant aggregates:
 
 | Controller | q_min_min | gs_residual_p95 | energy_err_p95 |
 |------|------|------|------|
-| SNN | 1.6600000000000004 | 2.19334069702352e-06 | 0.008202363917460738 |
+| SNN | 1.6600000000000004 | 2.1989555158443992e-06 | 0.006784700526436218 |
 | PID | 1.6600000000000004 | 2.199147099513694e-06 | 0.006737359071037118 |
 | MPC-lite | 1.6600000000000004 | 2.199147656848889e-06 | 0.006716524129188436 |
 
@@ -45,23 +46,23 @@ Additional invariant aggregates:
 |------|------|
 | Shape | [3456, 3456] |
 | Runs | 6 |
-| mean_ms | 6.1621167114935815 |
-| p95_ms | 8.362575026694685 |
-| min_ms | 4.362800042144954 |
-| max_ms | 8.59640003181994 |
+| mean_ms | 4.640649965343376 |
+| p95_ms | 5.121999973198399 |
+| min_ms | 4.009599913842976 |
+| max_ms | 5.256299977190793 |
 | y_l2 | 3457.764404296875 |
 
 ### Deterministic Replay (Exact)
 
 | Field | Value |
 |------|------|
-| artifact_sha256 | a5b438e70df85038ad922cbc3f948bf9d3df4a2a89ba874ec5f4e9d1273e25e5 |
-| run_hash_a | 076ac93f12b971ea9611633dd3174188be2273420824d31671128ba4b244a9c5 |
-| run_hash_b | 076ac93f12b971ea9611633dd3174188be2273420824d31671128ba4b244a9c5 |
+| artifact_sha256 | 4891a1b0bc1b24937ac4764c1036ac9a79d5241e2b67ee741b1cce1e83f3a79e |
+| run_hash_a | b2477314c79baa61e9111955b04858acd3eb95723f296db231cc801ed7c6b131 |
+| run_hash_b | b2477314c79baa61e9111955b04858acd3eb95723f296db231cc801ed7c6b131 |
 | hash_equal | true |
 | state_equal | true |
 | action_equal | true |
-| replay_proof_sha256 | af4c402ad8d15df4234ed50926be00c37b1a94107ba0fe4b64f1d68fb3825d27 |
+| replay_proof_sha256 | 032551369c6782022fb018b2b29d7ac9a66063edcf3a28cc8a3f91cf22de02ca |
 
 ## What Changed in v3.1.0 (Phase 0 Physics Hardening)
 
@@ -285,14 +286,14 @@ Reference: Sauter et al., Phys. Plasmas 6, 2834 (1999)
 |------------|-------------|-------------------|-----------------|-----|------------|
 | PID | -0.052 | 145 | 2.0% | 0.99 | 0.92 |
 | H-infinity | -0.038 | 162 | 1.0% | 0.99 | 0.90 |
-| MPC | -0.029 | 890 | 0.5% | 1.00 | 0.94 |
+| MPC-lite | -0.029 | 890 | 0.5% | 1.00 | 0.94 |
 | SNN | -0.045 | 78 | 3.0% | 0.98 | 0.88 |
 
 DEF = Disruption Extension Factor (controlled t_disruption / uncontrolled t_disruption).
 
 No single controller is a decisive winner across all objectives:
 - Best latency: `SNN` (78 us)
-- Best disruption rate and reward: `MPC` (0.5%, -0.029)
+- Best disruption rate and reward: `MPC-lite` (0.5%, -0.029)
 - Best balanced robust baseline: `H-infinity` (1.0%, 162 us)
 - Baseline classical reference: `PID`
 
