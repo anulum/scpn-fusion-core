@@ -62,6 +62,9 @@
 - Added release acceptance checklist gate (A20):
   - Added `docs/RELEASE_ACCEPTANCE_CHECKLIST.md` and `tools/check_release_acceptance.py`.
   - Wired release checklist verification into Python preflight and tag publish workflow (`.github/workflows/publish.yml`).
+- Added disruption shot provenance manifest gate (A04):
+  - Added `tools/generate_disruption_shot_manifest.py` and generated `validation/reference_data/diiid/disruption_shots_manifest.json`.
+  - Added preflight `--check` gate to enforce hash-locked shot manifest freshness in release lanes.
 
 ---
 

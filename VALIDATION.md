@@ -13,6 +13,9 @@ This document covers data provenance and validation notes for:
 - Generation source:
   - `tools/generate_disruption_profiles.py`
   - The script defines a deterministic manifest of disruption/safe scenarios and seeds each shot with `np.random.default_rng(shot_number)` for reproducibility.
+- Provenance manifest (versioned, hash-locked):
+  - `validation/reference_data/diiid/disruption_shots_manifest.json`
+  - Generated/verified by `tools/generate_disruption_shot_manifest.py` with per-file `sha256`, byte size, scenario label, source type, and license fields.
 
 ## Validation Script Linkage
 
@@ -53,6 +56,13 @@ Verification-only pass:
 
 ```powershell
 python tools/generate_disruption_profiles.py --verify-only
+```
+
+Regenerate or verify provenance manifest:
+
+```powershell
+python tools/generate_disruption_shot_manifest.py
+python tools/generate_disruption_shot_manifest.py --check
 ```
 
 ## Data License And Copyright Context

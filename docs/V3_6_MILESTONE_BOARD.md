@@ -15,7 +15,7 @@ This board tracks the first 20 high-impact hardening tasks to move SCPN Fusion C
 | A01 | Governance | P0 | Maintain machine-generated underdeveloped register | `UNDERDEVELOPED_REGISTER.md` + generator script | Register regenerated in CI with no script drift | Architecture WG | In progress |
 | A02 | Governance | P0 | Enforce claim-evidence linkage for public metrics | `tools/claims_audit.py` + manifest | CI fails on missing evidence for tracked claims | Docs WG | In progress |
 | A03 | Governance | P0 | Split release-gate vs research-gate validations | New gate matrix in docs + CI workflow updates | Release gate excludes experimental-only lanes | Validation WG | Completed |
-| A04 | Data | P0 | Expand disruption real-shot manifest and provenance fields | Versioned shot manifest with source/license/proc hash | Provenance audit passes for all shots | Validation WG | Backlog |
+| A04 | Data | P0 | Expand disruption real-shot manifest and provenance fields | Versioned shot manifest with source/license/proc hash | Provenance audit passes for all shots | Validation WG | Completed |
 | A05 | Data | P1 | Add leakage checks for train/val/test shot splits | Deterministic split checker in `validation/` | CI fails on shot overlap across splits | Validation WG | Backlog |
 | A06 | Data | P1 | Normalize real-shot replay ingest contracts | Stricter schema + failure diagnostics | Replay pipeline rejects malformed payloads with explicit errors | Diagnostics/IO WG | Backlog |
 | A07 | Control | P0 | Replace simplified disruption-risk weighting with calibrated lane | Calibrated predictor config + reproducible report | Holdout recall/FPR gates pass | Control WG | Backlog |

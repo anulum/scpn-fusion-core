@@ -1,0 +1,187 @@
+{
+  "data_license": "synthetic-v1",
+  "dataset": "diiid_disruption_shots",
+  "dataset_root": "validation/reference_data/diiid/disruption_shots",
+  "generator_reference": "tools/generate_disruption_profiles.py",
+  "manifest_version": "diiid-disruption-shots-v2",
+  "real_data_notice": "Bundled files are synthetic DIII-D-like profiles. Real DIII-D data access/reuse follows DOE/GA facility terms.",
+  "shot_count": 16,
+  "shots": [
+    {
+      "file": "shot_154406_hybrid.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "disruptive",
+      "license": "synthetic-v1",
+      "scenario": "hybrid",
+      "sha256": "dc2bf59f133489a100cbbb83fb29c931ed4137ed0b24224490ab8b46946db5cd",
+      "shot": 154406,
+      "size_bytes": 78406,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_154406_hybrid_safe.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "safe",
+      "license": "synthetic-v1",
+      "scenario": "hybrid_safe",
+      "sha256": "6e1308cfb59713922cfb4eca6db72e7872bf1cc7f228fffb3667934f1c539206",
+      "shot": 154406,
+      "size_bytes": 79744,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_155916_locked_mode.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "disruptive",
+      "license": "synthetic-v1",
+      "scenario": "locked_mode",
+      "sha256": "47b43d504d480f0247033a23711335215d80d45f4fc68028c8caf7461c5475c9",
+      "shot": 155916,
+      "size_bytes": 74389,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_160409_density_limit.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "disruptive",
+      "license": "synthetic-v1",
+      "scenario": "density_limit",
+      "sha256": "bacdf35d11545ee8b919600d884f4bf2cdf855df0717ac8590dca14f6d13f4a4",
+      "shot": 160409,
+      "size_bytes": 74626,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_161598_vde.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "disruptive",
+      "license": "synthetic-v1",
+      "scenario": "vde",
+      "sha256": "ceac9e0ec3623f46f758c729760326d51f1df5caf922961a9245ba406bc324a7",
+      "shot": 161598,
+      "size_bytes": 73300,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_163303_hmode.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "disruptive",
+      "license": "synthetic-v1",
+      "scenario": "hmode",
+      "sha256": "b828cdcfa5c5785deddb06c42ba01378e18d438596d97d7fbdfb116160675d0b",
+      "shot": 163303,
+      "size_bytes": 64920,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_163303_hmode_safe.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "safe",
+      "license": "synthetic-v1",
+      "scenario": "hmode_safe",
+      "sha256": "6abcd7c669d3a28ba9159f8b89e1aa4a9fd4ec546ecc6b276d63246f0ddf4284",
+      "shot": 163303,
+      "size_bytes": 79685,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_164965_tearing.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "disruptive",
+      "license": "synthetic-v1",
+      "scenario": "tearing",
+      "sha256": "40181bf90bcfd7afd708b3d5573adf2daa23552d6a4974167ca7117c2a979ced",
+      "shot": 164965,
+      "size_bytes": 77065,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_166000_beta_limit.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "disruptive",
+      "license": "synthetic-v1",
+      "scenario": "beta_limit",
+      "sha256": "ab3776278446c9a3e12ccb4f754de7c00b0b11d560bbfd6e0a93a67cd614ba60",
+      "shot": 166000,
+      "size_bytes": 74546,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_166549_snowflake.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "disruptive",
+      "license": "synthetic-v1",
+      "scenario": "snowflake",
+      "sha256": "1149d197344c4856e5c4ae8d99d8fcb9f2151338da28a7d9b2c122b9a943fd63",
+      "shot": 166549,
+      "size_bytes": 64877,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_166549_snowflake_safe.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "safe",
+      "license": "synthetic-v1",
+      "scenario": "snowflake_safe",
+      "sha256": "1ef21254d828961ecc00fdf6bfda4f82c42f8dd6d137d96663d3c7f6d44609a1",
+      "shot": 166549,
+      "size_bytes": 79667,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_170000_beta_limit.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "disruptive",
+      "license": "synthetic-v1",
+      "scenario": "beta_limit",
+      "sha256": "97380c4ec12b23018cdcd9222ce5f275e1934113cc66e909686a89043344bdbb",
+      "shot": 170000,
+      "size_bytes": 60590,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_175970_negdelta.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "disruptive",
+      "license": "synthetic-v1",
+      "scenario": "negdelta",
+      "sha256": "28de602c9732c29f6436940f6cbd3c9b82b3bcbc356c5d02e74fa56abcdaee18",
+      "shot": 175970,
+      "size_bytes": 78039,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_175970_negdelta_safe.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "safe",
+      "license": "synthetic-v1",
+      "scenario": "negdelta_safe",
+      "sha256": "5798e69236459a38e2038e043041699213e25db349cfb44ec88f1a04f1fcfb5d",
+      "shot": 175970,
+      "size_bytes": 79307,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_176673_highbeta.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "disruptive",
+      "license": "synthetic-v1",
+      "scenario": "highbeta",
+      "sha256": "7c134771cfa58839943de6ad4e201be85b8ef7daa68d595e06cdf242e6bff477",
+      "shot": 176673,
+      "size_bytes": 71693,
+      "source_type": "synthetic_diiid_like"
+    },
+    {
+      "file": "shot_176673_highbeta_safe.npz",
+      "generator": "tools/generate_disruption_profiles.py",
+      "label": "safe",
+      "license": "synthetic-v1",
+      "scenario": "highbeta_safe",
+      "sha256": "63001811bf69872d3c69195de6eeb2487606aa7e4f33e04e45d18d0e047cdc67",
+      "shot": 176673,
+      "size_bytes": 79686,
+      "source_type": "synthetic_diiid_like"
+    }
+  ]
+}

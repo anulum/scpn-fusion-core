@@ -70,6 +70,14 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
+                "tools/generate_disruption_shot_manifest.py",
+                "--check",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
                 "-m",
                 "pytest",
                 "tests/test_neuro_symbolic_control_demo_notebook.py",
@@ -112,6 +120,7 @@ def test_main_honors_skip_flags(monkeypatch):
             "--skip-version-metadata",
             "--skip-claims-map",
             "--skip-release-checklist",
+            "--skip-shot-manifest",
             "--skip-notebook-quality",
             "--skip-threshold-smoke",
         ],
