@@ -38,6 +38,30 @@ FloatArray = NDArray[np.float64]
 
 from dataclasses import dataclass, field
 
+
+_NUMERIC_SANITIZE_CAP = 1.0e250
+
+
+def _sanitize_numeric_array(arr: FloatArray, *, cap: float = _NUMERIC_SANITIZE_CAP) -> FloatArray:
+    """Return finite array with values clipped to ``[-cap, cap]``."""
+    out = np.nan_to_num(np.asarray(arr, dtype=np.float64), nan=0.0, posinf=cap, neginf=-cap)
+    if np.max(np.abs(out), initial=0.0) > cap:
+        out = np.clip(out, -cap, cap)
+    return out
+
+
+def _stable_rms(arr: FloatArray) -> float:
+    """Compute RMS without overflow from squaring very large magnitudes."""
+    vals = _sanitize_numeric_array(arr)
+    if vals.size == 0:
+        return 0.0
+    max_abs = float(np.max(np.abs(vals), initial=0.0))
+    if max_abs <= 0.0:
+        return 0.0
+    scaled = vals / max_abs
+    return float(max_abs * np.sqrt(np.mean(scaled * scaled)))
+
+
 @dataclass
 class CoilSet:
     """External coil set for free-boundary solve.
@@ -218,7 +242,8 @@ class FusionKernel:
             X-point.
         """
         dPsi_dR, dPsi_dZ = np.gradient(Psi, self.dR, self.dZ)
-        B_mag = np.sqrt(dPsi_dR**2 + dPsi_dZ**2)
+        # ``hypot`` avoids overflow/underflow in extreme gradient excursions.
+        B_mag = np.hypot(dPsi_dR, dPsi_dZ)
 
         mask_divertor = self.ZZ < (self.cfg["dimensions"]["Z_min"] * 0.5)
         if np.any(mask_divertor):
@@ -396,7 +421,8 @@ class FusionKernel:
         FloatArray
             Updated flux array after one full red-black sweep.
         """
-        Psi_new = Psi.copy()
+        Psi_new = _sanitize_numeric_array(Psi)
+        Source = _sanitize_numeric_array(Source)
         NZ, NR = Psi.shape
         dR2 = self.dR ** 2
         dZ2 = self.dZ ** 2
@@ -425,6 +451,7 @@ class FusionKernel:
             old_vals = Psi_new[1:-1, 1:-1][mask]
             interior = Psi_new[1:-1, 1:-1]
             interior[mask] = (1.0 - omega) * old_vals + omega * gs_update
+            interior[mask] = np.clip(interior[mask], -_NUMERIC_SANITIZE_CAP, _NUMERIC_SANITIZE_CAP)
             Psi_new[1:-1, 1:-1] = interior
 
         return Psi_new
@@ -897,7 +924,7 @@ class FusionKernel:
         interior = residual[1:-1, 1:-1]
         if interior.size == 0:
             return 0.0
-        return float(np.sqrt(np.mean(interior * interior)))
+        return _stable_rms(interior)
 
     def _apply_gs_operator(self, v: FloatArray) -> FloatArray:
         """Apply the discrete GS* operator to array *v*.

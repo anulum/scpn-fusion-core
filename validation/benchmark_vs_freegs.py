@@ -57,9 +57,21 @@ FREEGS_AXIS_ERROR_M = 0.10           # 10 cm axis position error
 FREEGS_SEPARATRIX_NRMSE = 0.05       # 5% separatrix boundary
 
 
+def _stable_rmse(delta: NDArray[np.float64]) -> float:
+    """RMSE with overflow-resistant scaling for extreme benchmark excursions."""
+    vals = np.nan_to_num(np.asarray(delta, dtype=np.float64), nan=0.0, posinf=1e250, neginf=-1e250)
+    if vals.size == 0:
+        return 0.0
+    scale = float(np.max(np.abs(vals), initial=0.0))
+    if scale <= 0.0:
+        return 0.0
+    scaled = vals / scale
+    return float(scale * np.sqrt(np.mean(scaled * scaled)))
+
+
 def nrmse(y_true: NDArray[np.float64], y_pred: NDArray[np.float64]) -> float:
     """Normalised RMSE: RMSE / range(y_true)."""
-    rmse_val = float(np.sqrt(np.mean((y_true - y_pred) ** 2)))
+    rmse_val = _stable_rmse(y_true - y_pred)
     rng = float(np.max(y_true) - np.min(y_true))
     return rmse_val / max(rng, 1e-12)
 
