@@ -8,6 +8,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 NOTEBOOK_PATH = REPO_ROOT / "examples" / "neuro_symbolic_control_demo_v2.ipynb"
 PUBLISHED_NOTEBOOK_PATH = REPO_ROOT / "examples" / "neuro_symbolic_control_demo.ipynb"
 LEGACY_SILVER_PATH = REPO_ROOT / "examples" / "neuro_symbolic_control_demo_silver_base.ipynb"
+README_PATH = REPO_ROOT / "README.md"
+RESULTS_PATH = REPO_ROOT / "RESULTS.md"
+VALIDATION_PATH = REPO_ROOT / "VALIDATION.md"
 
 
 def _load_notebook() -> dict:
@@ -84,6 +87,18 @@ def test_versioned_release_does_not_overwrite_published_base_notebook() -> None:
     assert "# Neuro-Symbolic Control Demo (Golden Base)" in base_text
     assert "Version: v2 (2026-02-19)" not in base_text
     assert "examples/neuro_symbolic_control_demo.ipynb" in base_text
+
+
+def test_release_docs_reference_v2_and_legacy_paths() -> None:
+    readme_text = README_PATH.read_text(encoding="utf-8")
+    results_text = RESULTS_PATH.read_text(encoding="utf-8")
+    validation_text = VALIDATION_PATH.read_text(encoding="utf-8")
+
+    assert "neuro_symbolic_control_demo_v2" in readme_text
+    assert "examples/neuro_symbolic_control_demo_v2.ipynb" in results_text
+    assert "legacy frozen notebook" in results_text.lower()
+    assert "examples/neuro_symbolic_control_demo_v2.ipynb" in validation_text
+    assert "legacy frozen published base" in validation_text.lower()
 
 
 def test_golden_notebook_has_required_contract_text() -> None:
