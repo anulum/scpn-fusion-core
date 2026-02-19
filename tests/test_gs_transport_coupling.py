@@ -230,9 +230,15 @@ def test_run_to_steady_state_self_consistent_delegates(
             sc_n_outer=2,
             sc_psi_tol=1e-3,
         )
-        mock_sc.assert_called_once_with(
-            P_aux=30.0, n_inner=5, n_outer=2, dt=0.01, psi_tol=1e-3,
-        )
+        mock_sc.assert_called_once()
+        _, kwargs = mock_sc.call_args
+        assert kwargs["P_aux"] == 30.0
+        assert kwargs["n_inner"] == 5
+        assert kwargs["n_outer"] == 2
+        assert kwargs["dt"] == 0.01
+        assert kwargs["psi_tol"] == 1e-3
+        assert kwargs["enforce_numerical_recovery"] is False
+        assert kwargs["max_numerical_recoveries"] is None
     # Result should have self-consistent keys
     assert "psi_residuals" in result
     assert "converged" in result
