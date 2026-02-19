@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Upgrade the Silver Base notebook into canonical Golden Base."""
+"""Upgrade the published notebook into versioned Golden Base v2."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ def _replace_once(src: str, old: str, new: str) -> str:
 
 
 def main() -> None:
-    dst = Path("examples/neuro_symbolic_control_demo.ipynb")
+    dst = Path("examples/neuro_symbolic_control_demo_v2.ipynb")
     source_candidates = [Path("examples/neuro_symbolic_control_demo.ipynb")]
     src = None
     for candidate in source_candidates:
@@ -29,7 +29,9 @@ def main() -> None:
     nb = nbf.read(src, as_version=4)
 
     # --- markdown cells ---
-    nb.cells[0].source = """# Neuro-Symbolic Control Demo (Golden Base)
+    nb.cells[0].source = """# Neuro-Symbolic Control Demo (Golden Base v2)
+
+Version: v2 (2026-02-19)
 
 Canonical hero notebook for SCPN-Fusion-Core control:
 
@@ -49,8 +51,8 @@ Copyright clarity:
 - License: GNU AGPL v3
 """
 
-    nb.cells[1].source = """[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/anulum/scpn-fusion-core/blob/main/examples/neuro_symbolic_control_demo.ipynb)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/anulum/scpn-fusion-core/main?labpath=examples%2Fneuro_symbolic_control_demo.ipynb)
+    nb.cells[1].source = """[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/anulum/scpn-fusion-core/blob/main/examples/neuro_symbolic_control_demo_v2.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/anulum/scpn-fusion-core/main?labpath=examples%2Fneuro_symbolic_control_demo_v2.ipynb)
 
 ---
 """

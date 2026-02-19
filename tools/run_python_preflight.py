@@ -13,6 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def _build_checks(
     *,
     skip_version_metadata: bool,
+    skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
 ) -> list[tuple[str, list[str]]]:
@@ -26,6 +27,19 @@ def _build_checks(
                     "-m",
                     "pytest",
                     "tests/test_version_metadata.py",
+                    "-q",
+                ],
+            )
+        )
+    if not skip_notebook_quality:
+        checks.append(
+            (
+                "Golden notebook quality gate",
+                [
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    "tests/test_neuro_symbolic_control_demo_notebook.py",
                     "-q",
                 ],
             )
@@ -59,13 +73,18 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Run fast local/CI Python preflight checks "
-            "(version metadata, threshold smokes, mypy strict)."
+            "(version metadata, Golden notebook gate, threshold smokes, mypy strict)."
         )
     )
     parser.add_argument(
         "--skip-version-metadata",
         action="store_true",
         help="Skip tests/test_version_metadata.py",
+    )
+    parser.add_argument(
+        "--skip-notebook-quality",
+        action="store_true",
+        help="Skip tests/test_neuro_symbolic_control_demo_notebook.py",
     )
     parser.add_argument(
         "--skip-threshold-smoke",
@@ -85,6 +104,7 @@ def main(argv: list[str] | None = None) -> int:
 
     checks = _build_checks(
         skip_version_metadata=args.skip_version_metadata,
+        skip_notebook_quality=args.skip_notebook_quality,
         skip_threshold_smoke=args.skip_threshold_smoke,
         skip_mypy=args.skip_mypy,
     )
