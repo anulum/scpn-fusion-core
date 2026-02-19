@@ -50,6 +50,7 @@ EXCLUDED_PATHS = {
     "tools/generate_underdeveloped_register.py",
     "validation/claims_manifest.json",
     "docs/V3_6_MILESTONE_BOARD.md",
+    "docs/CLAIMS_EVIDENCE_MAP.md",
 }
 
 

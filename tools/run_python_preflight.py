@@ -14,6 +14,7 @@ def _build_release_checks(
     *,
     skip_version_metadata: bool,
     skip_claims_audit: bool,
+    skip_claims_map: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -39,6 +40,17 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "tools/claims_audit.py",
+                ],
+            )
+        )
+    if not skip_claims_map:
+        checks.append(
+            (
+                "Claims evidence map drift check",
+                [
+                    sys.executable,
+                    "tools/generate_claims_evidence_map.py",
+                    "--check",
                 ],
             )
         )
@@ -91,6 +103,7 @@ def _build_checks(
     gate: str,
     skip_version_metadata: bool,
     skip_claims_audit: bool,
+    skip_claims_map: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -102,6 +115,7 @@ def _build_checks(
             _build_release_checks(
                 skip_version_metadata=skip_version_metadata,
                 skip_claims_audit=skip_claims_audit,
+                skip_claims_map=skip_claims_map,
                 skip_notebook_quality=skip_notebook_quality,
                 skip_threshold_smoke=skip_threshold_smoke,
                 skip_mypy=skip_mypy,
@@ -154,6 +168,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip tools/claims_audit.py",
     )
     parser.add_argument(
+        "--skip-claims-map",
+        action="store_true",
+        help="Skip tools/generate_claims_evidence_map.py --check",
+    )
+    parser.add_argument(
         "--skip-threshold-smoke",
         action="store_true",
         help=(
@@ -178,6 +197,7 @@ def main(argv: list[str] | None = None) -> int:
         gate=args.gate,
         skip_version_metadata=args.skip_version_metadata,
         skip_claims_audit=args.skip_claims_audit,
+        skip_claims_map=args.skip_claims_map,
         skip_notebook_quality=args.skip_notebook_quality,
         skip_threshold_smoke=args.skip_threshold_smoke,
         skip_mypy=args.skip_mypy,

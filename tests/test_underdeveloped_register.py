@@ -24,6 +24,7 @@ def test_collect_entries_returns_actionable_findings() -> None:
     assert len(entries) > 0
     assert any(entry.path.startswith("src/scpn_fusion/") for entry in entries)
     assert any(entry.marker in {"DEPRECATED", "EXPERIMENTAL", "SIMPLIFIED"} for entry in entries)
+    assert all(entry.path != "docs/CLAIMS_EVIDENCE_MAP.md" for entry in entries)
 
 
 def test_render_markdown_contains_priority_sections() -> None:

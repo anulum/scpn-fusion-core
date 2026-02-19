@@ -51,6 +51,9 @@
   - Added research-only pytest marker contract (`@pytest.mark.experimental`)
   - Added CI split lane `python-research-gate` and release-only pytest execution (`-m "not experimental"`)
   - Added gate matrix documentation in `docs/VALIDATION_GATE_MATRIX.md`
+- Added claims evidence map generation (A19):
+  - Added `tools/generate_claims_evidence_map.py` and generated `docs/CLAIMS_EVIDENCE_MAP.md`
+  - Added preflight drift check to keep map synchronized with `validation/claims_manifest.json`
 
 ---
 

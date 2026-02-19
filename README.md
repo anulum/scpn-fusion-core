@@ -594,6 +594,7 @@ This project is honest about what it does and does not do.
 - Underdeveloped register (auto-generated): [`UNDERDEVELOPED_REGISTER.md`](UNDERDEVELOPED_REGISTER.md)
 - v3.6 execution board (top 20 hardening tasks): [`docs/V3_6_MILESTONE_BOARD.md`](docs/V3_6_MILESTONE_BOARD.md)
 - Claim-evidence manifest (audited in preflight): [`validation/claims_manifest.json`](validation/claims_manifest.json)
+- Claim-to-artifact map (generated): [`docs/CLAIMS_EVIDENCE_MAP.md`](docs/CLAIMS_EVIDENCE_MAP.md)
 - Release vs research gate matrix: [`docs/VALIDATION_GATE_MATRIX.md`](docs/VALIDATION_GATE_MATRIX.md)
 
 ### What it does not do (yet)

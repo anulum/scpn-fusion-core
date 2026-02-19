@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-02-19T18:36:55.320442+00:00`
+- Generated at: `2026-02-19T18:43:52.707249+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -49,13 +49,13 @@
 | P0 | 97 | `core_physics` | `EXPERIMENTAL` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:12` | Core Physics WG | Gate behind explicit flag and define validation exit criteria. | **DEPRECATED / EXPERIMENTAL** — The FNO turbulence surrogate has a |
 | P0 | 95 | `core_physics` | `NOT_VALIDATED` | `src/scpn_fusion/core/fno_training.py:14` | Core Physics WG | Add real-data validation campaign and publish error bars. | samples. Not validated against production gyrokinetic codes (GENE, GS2, |
 | P0 | 95 | `core_physics` | `NOT_VALIDATED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:102` | Core Physics WG | Add real-data validation campaign and publish error bars. | "Results are not validated against gyrokinetic codes (GENE/GS2/QuaLiKiz). " |
-| P0 | 95 | `other` | `DEPRECATED` | `CHANGELOG.md:158` | Architecture WG | Replace default path or remove lane before next major release. | #### FNO Turbulence Surrogate Deprecated (Task 3.3) |
-| P0 | 95 | `other` | `DEPRECATED` | `CHANGELOG.md:159` | Architecture WG | Replace default path or remove lane before next major release. | - Module docstrings updated: EXPERIMENTAL → DEPRECATED/EXPERIMENTAL |
-| P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:82` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
-| P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:83` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:136` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
-| P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:137` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
-| P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:173` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
+| P0 | 95 | `other` | `DEPRECATED` | `CHANGELOG.md:161` | Architecture WG | Replace default path or remove lane before next major release. | #### FNO Turbulence Surrogate Deprecated (Task 3.3) |
+| P0 | 95 | `other` | `DEPRECATED` | `CHANGELOG.md:162` | Architecture WG | Replace default path or remove lane before next major release. | - Module docstrings updated: EXPERIMENTAL → DEPRECATED/EXPERIMENTAL |
+| P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:94` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
+| P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:95` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
+| P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:150` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
+| P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:151` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
+| P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:192` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
 | P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/collect_results.py:360` | Validation WG | Gate behind explicit flag and define validation exit criteria. | rows_s.append(f"| FNO (EUROfusion JET) relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | ψ(R,Z) reconstruction (**E... |
 | P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/collect_results.py:370` | Validation WG | Gate behind explicit flag and define validation exit criteria. | sections.append("> **EXPERIMENTAL — FNO turbulence surrogate:** Relative L2 ~ 0.79 means the model") |
 | P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/full_validation_pipeline.py:12` | Validation WG | Gate behind explicit flag and define validation exit criteria. | - MPC/RL controller metrics vs experimental-profile proxies |
@@ -69,12 +69,12 @@
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/sphinx/changelog.rst:27` | Docs WG | Replace default path or remove lane before next major release. | - FNO turbulence surrogate deprecated (runtime ``FutureWarning``) |
 | P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:51` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
 | P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:52` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added CI split lane `python-research-gate` and release-only pytest execution (`-m "not experimental"`) |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:62` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added single-command suite execution via `scpn-fusion all --surrogate --experimental`. |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:159` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Module docstrings updated: EXPERIMENTAL → DEPRECATED/EXPERIMENTAL |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:298` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | #### Validation and Experimental Data |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:351` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Experimental modes gated behind `--experimental` flag |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:473` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | Reduced-order / Experimental) with hardening task counts. |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:478` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | ### Multigrid Wiring and Experimental Validation |
+| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:65` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added single-command suite execution via `scpn-fusion all --surrogate --experimental`. |
+| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:162` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Module docstrings updated: EXPERIMENTAL → DEPRECATED/EXPERIMENTAL |
+| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:301` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | #### Validation and Experimental Data |
+| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:354` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Experimental modes gated behind `--experimental` flag |
+| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:476` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | Reduced-order / Experimental) with hardening task counts. |
+| P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:481` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | ### Multigrid Wiring and Experimental Validation |
 | P1 | 88 | `other` | `EXPERIMENTAL` | `VALIDATION.md:61` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
 | P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:64` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | # Experimental modes (opt-in). |
 | P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:65` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | "quantum": ModeSpec("scpn_fusion.core.quantum_bridge", "experimental", "Quantum bridge"), |
@@ -134,13 +134,13 @@
 | P0 | `core_physics` | `EXPERIMENTAL` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:12` | **DEPRECATED / EXPERIMENTAL** — The FNO turbulence surrogate has a |
 | P0 | `core_physics` | `NOT_VALIDATED` | `src/scpn_fusion/core/fno_training.py:14` | samples. Not validated against production gyrokinetic codes (GENE, GS2, |
 | P0 | `core_physics` | `NOT_VALIDATED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:102` | "Results are not validated against gyrokinetic codes (GENE/GS2/QuaLiKiz). " |
-| P0 | `other` | `DEPRECATED` | `CHANGELOG.md:158` | #### FNO Turbulence Surrogate Deprecated (Task 3.3) |
-| P0 | `other` | `DEPRECATED` | `CHANGELOG.md:159` | - Module docstrings updated: EXPERIMENTAL → DEPRECATED/EXPERIMENTAL |
-| P1 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:82` | "Experimental-only pytest suite", |
-| P1 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:83` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P1 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:136` | "'release' excludes experimental-only lanes, " |
-| P1 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:137` | "'research' runs experimental-only lanes, " |
-| P1 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:173` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
+| P0 | `other` | `DEPRECATED` | `CHANGELOG.md:161` | #### FNO Turbulence Surrogate Deprecated (Task 3.3) |
+| P0 | `other` | `DEPRECATED` | `CHANGELOG.md:162` | - Module docstrings updated: EXPERIMENTAL → DEPRECATED/EXPERIMENTAL |
+| P1 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:94` | "Experimental-only pytest suite", |
+| P1 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:95` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
+| P1 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:150` | "'release' excludes experimental-only lanes, " |
+| P1 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:151` | "'research' runs experimental-only lanes, " |
+| P1 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:192` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
 | P1 | `validation` | `EXPERIMENTAL` | `validation/collect_results.py:360` | rows_s.append(f"| FNO (EUROfusion JET) relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | ψ(R,Z) reconstruction (**E... |
 | P1 | `validation` | `EXPERIMENTAL` | `validation/collect_results.py:370` | sections.append("> **EXPERIMENTAL — FNO turbulence surrogate:** Relative L2 ~ 0.79 means the model") |
 | P1 | `validation` | `EXPERIMENTAL` | `validation/full_validation_pipeline.py:12` | - MPC/RL controller metrics vs experimental-profile proxies |
@@ -154,12 +154,12 @@
 | P1 | `docs_claims` | `DEPRECATED` | `docs/sphinx/changelog.rst:27` | - FNO turbulence surrogate deprecated (runtime ``FutureWarning``) |
 | P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:51` | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
 | P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:52` | - Added CI split lane `python-research-gate` and release-only pytest execution (`-m "not experimental"`) |
-| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:62` | - Added single-command suite execution via `scpn-fusion all --surrogate --experimental`. |
-| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:159` | - Module docstrings updated: EXPERIMENTAL → DEPRECATED/EXPERIMENTAL |
-| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:298` | #### Validation and Experimental Data |
-| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:351` | - Experimental modes gated behind `--experimental` flag |
-| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:473` | Reduced-order / Experimental) with hardening task counts. |
-| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:478` | ### Multigrid Wiring and Experimental Validation |
+| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:65` | - Added single-command suite execution via `scpn-fusion all --surrogate --experimental`. |
+| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:162` | - Module docstrings updated: EXPERIMENTAL → DEPRECATED/EXPERIMENTAL |
+| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:301` | #### Validation and Experimental Data |
+| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:354` | - Experimental modes gated behind `--experimental` flag |
+| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:476` | Reduced-order / Experimental) with hardening task counts. |
+| P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:481` | ### Multigrid Wiring and Experimental Validation |
 | P1 | `other` | `EXPERIMENTAL` | `VALIDATION.md:61` | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
 | P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:64` | # Experimental modes (opt-in). |
 | P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:65` | "quantum": ModeSpec("scpn_fusion.core.quantum_bridge", "experimental", "Quantum bridge"), |
@@ -289,8 +289,8 @@
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/quasi_3d_contracts.py:183` | ratio = float(np.clip(0.06 + 0.40 * abs(fallback), 0.0, 0.9)) |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/quasi_3d_contracts.py:200` | ratio = float(np.clip(0.06 + 0.40 * abs(fallback), 0.0, 0.9)) |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/tglf_interface.py:451` | # Fallback: check for JSON output |
-| P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:202` | - NTM seeding: simplified Modified Rutherford equation with bootstrap-drive marginal island width |
-| P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:241` | - EPED-like pedestal model (Snyder 2009 simplified scaling) for H-mode boundary conditions |
+| P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:205` | - NTM seeding: simplified Modified Rutherford equation with bootstrap-drive marginal island width |
+| P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:244` | - EPED-like pedestal model (Snyder 2009 simplified scaling) for H-mode boundary conditions |
 | P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/compiler.py:14` | - Float-path fallback when sc_neurocore is not installed. |
 | P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/compiler.py:36` | # ── sc_neurocore import (graceful fallback) ────────────────────────────────── |
 | P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/compiler.py:125` | Holds both the dense float matrices (for validation / fallback) and |
@@ -314,13 +314,13 @@
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/assets/generate_header.py:27` | # Simplified Grad-Shafranov flux function with Shafranov shift + triangularity |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/control.rst:197` | simplified equilibrium and transport problems, used primarily for: |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/transport.rst:82` | using simplified ray-tracing: |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:147` | - Python-side wrappers in `_rust_compat.py`: `RustSnnPool`, `RustSnnController` with graceful fallback |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:214` | - `validation/benchmark_vs_freegs.py` with Solov'ev analytic fallback (no freegs dependency) |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:235` | - PyO3 binding for Rust multigrid `multigrid_vcycle()` with Python fallback |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:359` | - NumPy 2.4 compatibility restored for blanket TBR integration (trapezoid fallback) |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:372` | SCPN benchmark stochastic-vs-float equivalence gate, disruption predictor fallback, |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:378` | control simulation fallback entry points, HPC bridge edge-path validation, |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:401` | NumPy LIF fallback for neuro-cybernetic controller; director interface fallback |
+| P3 | `other` | `FALLBACK` | `CHANGELOG.md:150` | - Python-side wrappers in `_rust_compat.py`: `RustSnnPool`, `RustSnnController` with graceful fallback |
+| P3 | `other` | `FALLBACK` | `CHANGELOG.md:217` | - `validation/benchmark_vs_freegs.py` with Solov'ev analytic fallback (no freegs dependency) |
+| P3 | `other` | `FALLBACK` | `CHANGELOG.md:238` | - PyO3 binding for Rust multigrid `multigrid_vcycle()` with Python fallback |
+| P3 | `other` | `FALLBACK` | `CHANGELOG.md:362` | - NumPy 2.4 compatibility restored for blanket TBR integration (trapezoid fallback) |
+| P3 | `other` | `FALLBACK` | `CHANGELOG.md:375` | SCPN benchmark stochastic-vs-float equivalence gate, disruption predictor fallback, |
+| P3 | `other` | `FALLBACK` | `CHANGELOG.md:381` | control simulation fallback entry points, HPC bridge edge-path validation, |
+| P3 | `other` | `FALLBACK` | `CHANGELOG.md:404` | NumPy LIF fallback for neuro-cybernetic controller; director interface fallback |
 | P3 | `other` | `FALLBACK` | `src/scpn_fusion/ui/app.py:28` | # Fallback for dev mode |
 | P3 | `validation` | `PLANNED` | `validation/validate_real_shots.py:344` | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
 | P3 | `docs_claims` | `FALLBACK` | `README.md:283` | | `neuro-control` | SNN-based cybernetic controller (SC-NeuroCore or NumPy LIF fallback) | Deterministic replay, fault injection | H5: 37... |
@@ -329,7 +329,7 @@
 | P3 | `docs_claims` | `FALLBACK` | `README.md:357` | 2. **Compilation** — Petri net transitions mapped to stochastic LIF neurons using [SC-NeuroCore](https://github.com/anulum/sc-neurocore) ... |
 | P3 | `docs_claims` | `FALLBACK` | `README.md:373` | - **Graceful degradation** — every path has a pure-Python fallback |
 | P3 | `docs_claims` | `FALLBACK` | `README.md:385` | _HAS_SC_NEUROCORE = False # NumPy float-path fallback |
-| P3 | `docs_claims` | `FALLBACK` | `README.md:606` | | **GPU acceleration** | Deterministic runtime bridge + optional torch fallback ([GPU Roadmap](docs/GPU_ACCELERATION_ROADMAP.md)) | CUDA-... |
+| P3 | `docs_claims` | `FALLBACK` | `README.md:607` | | **GPU acceleration** | Deterministic runtime bridge + optional torch fallback ([GPU Roadmap](docs/GPU_ACCELERATION_ROADMAP.md)) | CUDA-... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/3d_gaps.md:92` | - fallback if external dependency is unavailable. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:171` | - Transparent fallback to analytic model when no weights are available |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:263` | with fallback to CPU SIMD for systems without GPU support. |
