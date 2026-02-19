@@ -15,6 +15,7 @@ def _build_release_checks(
     skip_version_metadata: bool,
     skip_claims_audit: bool,
     skip_claims_map: bool,
+    skip_release_checklist: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -51,6 +52,16 @@ def _build_release_checks(
                     sys.executable,
                     "tools/generate_claims_evidence_map.py",
                     "--check",
+                ],
+            )
+        )
+    if not skip_release_checklist:
+        checks.append(
+            (
+                "Release acceptance checklist gate",
+                [
+                    sys.executable,
+                    "tools/check_release_acceptance.py",
                 ],
             )
         )
@@ -104,6 +115,7 @@ def _build_checks(
     skip_version_metadata: bool,
     skip_claims_audit: bool,
     skip_claims_map: bool,
+    skip_release_checklist: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -116,6 +128,7 @@ def _build_checks(
                 skip_version_metadata=skip_version_metadata,
                 skip_claims_audit=skip_claims_audit,
                 skip_claims_map=skip_claims_map,
+                skip_release_checklist=skip_release_checklist,
                 skip_notebook_quality=skip_notebook_quality,
                 skip_threshold_smoke=skip_threshold_smoke,
                 skip_mypy=skip_mypy,
@@ -173,6 +186,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip tools/generate_claims_evidence_map.py --check",
     )
     parser.add_argument(
+        "--skip-release-checklist",
+        action="store_true",
+        help="Skip tools/check_release_acceptance.py",
+    )
+    parser.add_argument(
         "--skip-threshold-smoke",
         action="store_true",
         help=(
@@ -198,6 +216,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_version_metadata=args.skip_version_metadata,
         skip_claims_audit=args.skip_claims_audit,
         skip_claims_map=args.skip_claims_map,
+        skip_release_checklist=args.skip_release_checklist,
         skip_notebook_quality=args.skip_notebook_quality,
         skip_threshold_smoke=args.skip_threshold_smoke,
         skip_mypy=args.skip_mypy,

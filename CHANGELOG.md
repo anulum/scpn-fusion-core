@@ -59,6 +59,9 @@
   - Hardened `tools/claims_audit.py` to require evidence files/pattern files be git-tracked.
 - Added release docs version-consistency gate (A18):
   - `tests/test_version_metadata.py` now enforces current-version references in `README.md`, `RESULTS.md`, `VALIDATION.md`, and `CHANGELOG.md`.
+- Added release acceptance checklist gate (A20):
+  - Added `docs/RELEASE_ACCEPTANCE_CHECKLIST.md` and `tools/check_release_acceptance.py`.
+  - Wired release checklist verification into Python preflight and tag publish workflow (`.github/workflows/publish.yml`).
 
 ---
 

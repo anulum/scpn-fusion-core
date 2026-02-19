@@ -19,6 +19,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Release acceptance checklist gate
+        run: python tools/check_release_acceptance.py --expected-version "${GITHUB_REF_NAME}"
       - name: Install build tools
         run: python -m pip install --upgrade pip build
       - name: Build sdist and wheel
