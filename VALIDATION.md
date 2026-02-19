@@ -25,6 +25,16 @@ The Golden Base notebook disturbance lane is intentionally linked to existing va
 
 In notebook code this appears as `VALIDATION_SCRIPT` and `FULL_PIPELINE_SCRIPT` path checks, and `load_shot(...)` points at the same reference-data directory.
 
+## Task-5 Proxy Hardening (v3.5.0)
+
+- `src/scpn_fusion/control/disruption_contracts.py` now exposes uncertainty-aware outputs for disruption-lane surrogates:
+  - `mcnp_lite_tbr(..., return_uncertainty=True)` returns `tbr_sigma`, `tbr_rel_sigma`, and p95 bounds.
+  - `run_disruption_episode()` returns p95 bounds for risk, wall damage, and TBR plus a scalar `uncertainty_envelope`.
+- The synthetic disturbance signal remains a contract-test surrogate:
+  - stochastic and deterministic-replay friendly,
+  - bounded to a documented disturbance domain,
+  - not a direct substitute for facility-grade real-shot waveform reconstruction.
+
 ## If The Shot File Is Missing
 
 Generate or regenerate the bundled disruption profiles from repo root:

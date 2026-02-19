@@ -69,9 +69,10 @@ values that violate physical constraints (coil current limits, rate
 limits, plasma current ramp rates).
 
 **Verification**: The `disruption_contracts.py:run_disruption_episode()`
-function enforces actuator clamps at every step. The
+lane enforces bounded state/risk signals and computes p95 uncertainty
+intervals for risk, wall-damage index, and TBR proxy. The
 `stress_test_campaign.py` runs 100+ episodes verifying constraint
-satisfaction.
+satisfaction under stochastic disturbances.
 
 **Status**: VERIFIED (by simulation).
 

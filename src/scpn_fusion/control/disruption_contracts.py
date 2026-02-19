@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal, overload
 
 import numpy as np
 from numpy.typing import NDArray
@@ -67,12 +67,42 @@ def require_1d_array(
     return arr
 
 
+def gaussian_interval(
+    *,
+    mean: float,
+    sigma: float,
+    lower_bound: float | None = None,
+    upper_bound: float | None = None,
+    z_score: float = 1.96,
+) -> tuple[float, float]:
+    mean_f = require_finite_float("mean", mean)
+    sigma_f = abs(require_finite_float("sigma", sigma))
+    z_f = require_positive_float("z_score", z_score)
+    lo = float(mean_f - z_f * sigma_f)
+    hi = float(mean_f + z_f * sigma_f)
+    if lower_bound is not None:
+        lo = max(lo, float(lower_bound))
+    if upper_bound is not None:
+        hi = min(hi, float(upper_bound))
+    if lo > hi:
+        lo = hi
+    return lo, hi
+
+
 def synthetic_disruption_signal(
     *,
     rng: np.random.Generator,
     disturbance: float,
     window: int = 220,
 ) -> tuple[NDArray[np.float64], dict[str, float]]:
+    """Generate a reduced synthetic disruption precursor for control-loop contracts.
+
+    Notes
+    -----
+    This surrogate is intentionally lightweight and stochastic. It is useful for
+    contract stress tests, but it is not a direct reconstruction of a measured
+    shot waveform and should not be used as a certification-grade plant model.
+    """
     t = np.linspace(0.0, 1.0, int(window), dtype=np.float64)
     base = 0.68 + 0.10 * np.sin(2.0 * np.pi * 2.4 * t + rng.uniform(-0.4, 0.4))
     elm = disturbance * (0.30 * np.exp(-(((t - 0.78) / 0.10) ** 2)))
@@ -86,8 +116,36 @@ def synthetic_disruption_signal(
         "toroidal_n3_amp": n3,
         "toroidal_asymmetry_index": float(np.sqrt(n1 * n1 + n2 * n2 + n3 * n3)),
         "toroidal_radial_spread": float(0.02 + 0.08 * disturbance),
+        "proxy_signal_noise_sigma": 0.018,
+        "proxy_disturbance_min": 0.0,
+        "proxy_disturbance_max": 1.0,
+        "proxy_is_synthetic": 1.0,
     }
     return signal, toroidal
+
+
+@overload
+def mcnp_lite_tbr(
+    *,
+    base_tbr: float,
+    li6_enrichment: float,
+    be_multiplier_fraction: float,
+    reflector_albedo: float,
+    return_uncertainty: Literal[False] = False,
+) -> tuple[float, float]:
+    ...
+
+
+@overload
+def mcnp_lite_tbr(
+    *,
+    base_tbr: float,
+    li6_enrichment: float,
+    be_multiplier_fraction: float,
+    reflector_albedo: float,
+    return_uncertainty: Literal[True],
+) -> tuple[float, float, dict[str, float]]:
+    ...
 
 
 def mcnp_lite_tbr(
@@ -96,22 +154,58 @@ def mcnp_lite_tbr(
     li6_enrichment: float,
     be_multiplier_fraction: float,
     reflector_albedo: float,
-) -> tuple[float, float]:
+    return_uncertainty: bool = False,
+) -> tuple[float, float] | tuple[float, float, dict[str, float]]:
     base_tbr = require_positive_float("base_tbr", base_tbr)
     li6_enrichment = require_finite_float("li6_enrichment", li6_enrichment)
     be_multiplier_fraction = require_finite_float(
         "be_multiplier_fraction", be_multiplier_fraction
     )
     reflector_albedo = require_finite_float("reflector_albedo", reflector_albedo)
+    li6_clip = float(np.clip(li6_enrichment, 0.0, 1.0))
+    be_clip = float(np.clip(be_multiplier_fraction, 0.0, 1.0))
+    alb_clip = float(np.clip(reflector_albedo, 0.0, 1.0))
     factor = float(
         1.15
-        + 0.20 * float(np.clip(be_multiplier_fraction, 0.0, 1.0))
-        + 0.10 * float(np.clip(li6_enrichment, 0.0, 1.0))
-        + 0.05 * float(np.clip(reflector_albedo, 0.0, 1.0))
+        + 0.20 * be_clip
+        + 0.10 * li6_clip
+        + 0.05 * alb_clip
     )
     # Keep Task-5 gates aligned with engineering-equivalent TBR scale
     # while using conservative volumetric transport surrogates.
-    return float(base_tbr * factor * _TBR_EQUIVALENCE_SCALE), factor
+    tbr_proxy = float(base_tbr * factor * _TBR_EQUIVALENCE_SCALE)
+    if not return_uncertainty:
+        return tbr_proxy, factor
+
+    rel_distance = float(
+        np.mean(
+            np.asarray(
+                [
+                    abs(li6_clip - 0.92) / 0.92,
+                    abs(be_clip - 0.65) / 0.65,
+                    abs(alb_clip - 0.60) / 0.60,
+                ],
+                dtype=np.float64,
+            )
+        )
+    )
+    tbr_rel_sigma = float(np.clip(0.025 + 0.12 * rel_distance, 0.025, 0.18))
+    tbr_sigma = float(max(tbr_proxy * tbr_rel_sigma, 1e-6))
+    tbr_p95_low, tbr_p95_high = gaussian_interval(
+        mean=tbr_proxy,
+        sigma=tbr_sigma,
+        lower_bound=0.0,
+    )
+    return (
+        tbr_proxy,
+        factor,
+        {
+            "tbr_sigma": tbr_sigma,
+            "tbr_rel_sigma": tbr_rel_sigma,
+            "tbr_p95_low": tbr_p95_low,
+            "tbr_p95_high": tbr_p95_high,
+        },
+    )
 
 
 def impurity_transport_response(
@@ -220,6 +314,11 @@ def run_disruption_episode(
     base_tbr: float,
     explorer: GlobalDesignExplorer,
 ) -> dict[str, float | bool]:
+    """Execute one synthetic disruption-mitigation episode.
+
+    Returns bounded episode metrics used by Task-5 integration gates, including
+    lightweight uncertainty-envelope diagnostics for risk, wall loading, and TBR.
+    """
     base_tbr = require_positive_float("base_tbr", base_tbr)
     disturbance = float(rng.uniform(0.0, 1.0))
     pre_energy_mj = float(rng.uniform(240.0, 420.0))
@@ -358,16 +457,55 @@ def run_disruption_episode(
     li6_enrichment = float(rng.uniform(0.85, 1.0))
     be_multiplier_fraction = float(rng.uniform(0.35, 0.95))
     reflector_albedo = float(rng.uniform(0.30, 0.90))
-    tbr_proxy, _ = mcnp_lite_tbr(
+    tbr_proxy, _, tbr_uncertainty = mcnp_lite_tbr(
         base_tbr=base_tbr,
         li6_enrichment=li6_enrichment,
         be_multiplier_fraction=be_multiplier_fraction,
         reflector_albedo=reflector_albedo,
+        return_uncertainty=True,
+    )
+
+    risk_sigma = float(
+        np.clip(
+            0.020 + 0.080 * disturbance + 0.060 * (1.0 - mitigation_strength),
+            0.020,
+            0.25,
+        )
+    )
+    risk_p95_low, risk_p95_high = gaussian_interval(
+        mean=risk_after,
+        sigma=risk_sigma,
+        lower_bound=0.0,
+        upper_bound=1.0,
+    )
+    wall_damage_sigma = float(
+        np.clip(
+            0.025 + 0.12 * disturbance + 0.035 * (1.0 - mitigation_strength),
+            0.02,
+            0.40,
+        )
+    )
+    wall_damage_p95_low, wall_damage_p95_high = gaussian_interval(
+        mean=wall_damage_index,
+        sigma=wall_damage_sigma,
+        lower_bound=0.0,
+        upper_bound=3.0,
+    )
+    uncertainty_envelope = float(
+        max(
+            risk_p95_high - risk_p95_low,
+            wall_damage_p95_high - wall_damage_p95_low,
+            float(tbr_uncertainty["tbr_p95_high"]) - float(tbr_uncertainty["tbr_p95_low"]),
+        )
     )
 
     no_wall_damage = bool(wall_damage_index < 1.10)
     objective_success = bool(q_proxy >= 10.0 and tbr_proxy >= 1.0 and no_wall_damage)
     prevented = bool(risk_after < 0.88 and no_wall_damage and runaway_beam_ma < 1.00)
+    no_wall_damage_robust = bool(wall_damage_p95_high < 1.10)
+    prevented_robust = bool(
+        risk_p95_high < 0.88 and no_wall_damage_robust and runaway_beam_ma < 1.00
+    )
 
     reward = (
         2.0 * float(q_proxy >= 10.0)
@@ -398,11 +536,24 @@ def run_disruption_episode(
         "runaway_peak_ma": float(post_dyn["runaway_peak_ma"]),
         "impurity_radiation_mw": impurity_radiation_mw,
         "wall_damage_index": wall_damage_index,
+        "wall_damage_sigma": wall_damage_sigma,
+        "wall_damage_p95_low": wall_damage_p95_low,
+        "wall_damage_p95_high": wall_damage_p95_high,
         "q_proxy": q_proxy,
         "tbr_proxy": tbr_proxy,
+        "tbr_sigma": float(tbr_uncertainty["tbr_sigma"]),
+        "tbr_rel_sigma": float(tbr_uncertainty["tbr_rel_sigma"]),
+        "tbr_p95_low": float(tbr_uncertainty["tbr_p95_low"]),
+        "tbr_p95_high": float(tbr_uncertainty["tbr_p95_high"]),
+        "risk_sigma": risk_sigma,
+        "risk_p95_low": risk_p95_low,
+        "risk_p95_high": risk_p95_high,
+        "uncertainty_envelope": uncertainty_envelope,
         "no_wall_damage": no_wall_damage,
+        "no_wall_damage_robust": no_wall_damage_robust,
         "objective_success": objective_success,
         "prevented": prevented,
+        "prevented_robust": prevented_robust,
     }
 
 

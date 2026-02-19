@@ -11,6 +11,7 @@ from numpy.typing import NDArray
 
 from scpn_fusion.control.advanced_soc_fusion_learning import FusionAIAgent
 from scpn_fusion.control.disruption_contracts import (
+    mcnp_lite_tbr,
     run_disruption_episode,
     run_real_shot_replay,
 )
@@ -67,6 +68,30 @@ def test_run_disruption_episode_contract_smoke() -> None:
     assert float(out["argon_quantity_mol"]) >= 0.0
     assert float(out["xenon_quantity_mol"]) >= 0.0
     assert float(out["total_impurity_mol"]) >= float(out["neon_quantity_mol"])
+    assert float(out["risk_p95_low"]) <= float(out["risk_after"]) <= float(
+        out["risk_p95_high"]
+    )
+    assert float(out["tbr_p95_low"]) <= float(out["tbr_proxy"]) <= float(
+        out["tbr_p95_high"]
+    )
+    assert float(out["wall_damage_p95_low"]) <= float(out["wall_damage_index"]) <= float(
+        out["wall_damage_p95_high"]
+    )
+    assert float(out["uncertainty_envelope"]) > 0.0
+
+
+def test_mcnp_lite_tbr_uncertainty_mode_bounds_proxy() -> None:
+    tbr_proxy, factor, uncertainty = mcnp_lite_tbr(
+        base_tbr=0.96,
+        li6_enrichment=0.92,
+        be_multiplier_fraction=0.70,
+        reflector_albedo=0.60,
+        return_uncertainty=True,
+    )
+    assert factor > 0.0
+    assert uncertainty["tbr_sigma"] > 0.0
+    assert uncertainty["tbr_rel_sigma"] > 0.0
+    assert uncertainty["tbr_p95_low"] <= tbr_proxy <= uncertainty["tbr_p95_high"]
 
 
 def test_run_real_shot_replay_reports_impurity_cocktail_fields() -> None:

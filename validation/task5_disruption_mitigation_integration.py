@@ -73,6 +73,10 @@ def run_campaign(
     wall = np.asarray([float(e["wall_damage_index"]) for e in episodes], dtype=np.float64)
     zeff = np.asarray([float(e["zeff"]) for e in episodes], dtype=np.float64)
     tau_imp = np.asarray([float(e["impurity_decay_tau_ms"]) for e in episodes], dtype=np.float64)
+    risk_hi = np.asarray([float(e["risk_p95_high"]) for e in episodes], dtype=np.float64)
+    wall_hi = np.asarray([float(e["wall_damage_p95_high"]) for e in episodes], dtype=np.float64)
+    unc = np.asarray([float(e["uncertainty_envelope"]) for e in episodes], dtype=np.float64)
+    prevented_robust = np.asarray([float(e["prevented_robust"]) for e in episodes], dtype=np.float64)
 
     hybrid = run_nstxu_torax_hybrid_campaign(
         seed=seed_i + 911,
@@ -93,6 +97,9 @@ def run_campaign(
         "no_wall_damage_rate": float(np.mean(wall < 1.0)),
         "mean_zeff": float(np.mean(zeff)),
         "mean_impurity_decay_tau_ms": float(np.mean(tau_imp)),
+        "p95_risk_upper": float(np.percentile(risk_hi, 95)),
+        "p95_wall_damage_upper": float(np.percentile(wall_hi, 95)),
+        "mean_uncertainty_envelope": float(np.mean(unc)),
     }
     rl_summary = {
         "multiobjective_success_rate": float(np.mean(objective)),
@@ -100,6 +107,7 @@ def run_campaign(
         "tbr_ge_1_rate": float(np.mean(tv >= 1.0)),
         "mean_q_proxy": float(np.mean(qv)),
         "mean_tbr_proxy": float(np.mean(tv)),
+        "robust_prevention_rate": float(np.mean(prevented_robust)),
         "q_table_max_abs": float(np.max(np.abs(rl_agent.q_table))),
         "total_reward": float(rl_agent.total_reward),
     }
@@ -184,6 +192,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- P95 runaway peak beam: `{p['p95_runaway_peak_ma']:.3f} MA` (threshold `<= {th['max_p95_runaway_peak_ma']:.2f} MA`)",
         f"- Mean impurity decay tau: `{p['mean_impurity_decay_tau_ms']:.3f} ms`",
         f"- Mean wall-damage index: `{p['mean_wall_damage_index']:.3f}`",
+        f"- P95 risk upper bound: `{p['p95_risk_upper']:.3f}`",
+        f"- P95 wall-damage upper bound: `{p['p95_wall_damage_upper']:.3f}`",
+        f"- Mean uncertainty envelope: `{p['mean_uncertainty_envelope']:.3f}`",
         "",
         "## MPC ELM Disturbance Rejection",
         "",
@@ -196,6 +207,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Success rate (`Q>10`, `TBR>1`, no wall damage): `{r['multiobjective_success_rate']:.3f}` (threshold `>= {th['min_multiobjective_success_rate']:.2f}`)",
         f"- Q>=10 rate: `{r['q_ge_10_rate']:.3f}` (threshold `>= {th['min_q_ge_10_rate']:.2f}`)",
         f"- TBR>=1 rate: `{r['tbr_ge_1_rate']:.3f}` (threshold `>= {th['min_tbr_ge_1_rate']:.2f}`)",
+        f"- Robust prevention rate (p95 bounds): `{r['robust_prevention_rate']:.3f}`",
         f"- Mean Q proxy: `{r['mean_q_proxy']:.3f}`",
         f"- Mean TBR proxy: `{r['mean_tbr_proxy']:.3f}`",
         "",

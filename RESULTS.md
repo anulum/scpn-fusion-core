@@ -1,4 +1,4 @@
-# SCPN Fusion Core — Benchmark Results (v3.1.0)
+# SCPN Fusion Core — Benchmark Results (v3.5.0)
 
 > **Auto-generated** by `validation/collect_results.py` on 2026-02-17 UTC.
 > Re-run the script to refresh these numbers on your hardware.
@@ -11,7 +11,7 @@
 - **Python:** 3.12.5
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
-- **Version:** 3.1.0
+- **Version:** 3.5.0
 
 ## Golden Base Notebook Results (2026-02-19)
 
@@ -64,6 +64,19 @@ Additional invariant aggregates:
 | state_equal | true |
 | action_equal | true |
 | replay_proof_sha256 | 032551369c6782022fb018b2b29d7ac9a66063edcf3a28cc8a3f91cf22de02ca |
+
+### Task-5 Uncertainty Hardening (v3.5.0)
+
+- `run_disruption_episode()` now returns p95 uncertainty bounds for:
+  - disruption risk (`risk_p95_low`, `risk_p95_high`)
+  - wall-damage proxy (`wall_damage_p95_low`, `wall_damage_p95_high`)
+  - TBR proxy (`tbr_p95_low`, `tbr_p95_high`)
+- `mcnp_lite_tbr(..., return_uncertainty=True)` now exposes `tbr_sigma` and `tbr_rel_sigma`.
+- Task-5 integration markdown now reports:
+  - `P95 risk upper bound`
+  - `P95 wall-damage upper bound`
+  - `Mean uncertainty envelope`
+  - `Robust prevention rate (p95 bounds)`
 
 ## What Changed in v3.1.0 (Phase 0 Physics Hardening)
 
@@ -436,7 +449,7 @@ See `docs/formal_verification.md` for full proofs and arguments.
 
 | Suite | Count | Framework | Notes |
 |-------|-------|-----------|-------|
-| Python unit tests | 859+ | pytest | All passing |
+| Python unit tests | 1709+ | pytest | All passing (20 skipped) |
 | Python property tests | 15+ | Hypothesis | Seed=0 deterministic |
 | Rust unit tests | 200+ | cargo test | All passing |
 | Rust property tests | 30+ | proptest | Deterministic |

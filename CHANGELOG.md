@@ -37,6 +37,10 @@
   - `setup.py`
   - `src/scpn_fusion/__init__.py`
   - `CITATION.cff`
+- Hardened Task-5 disruption contracts with uncertainty-aware proxies:
+  - `mcnp_lite_tbr(..., return_uncertainty=True)` now returns `tbr_sigma` and p95 bounds
+  - `run_disruption_episode()` now reports uncertainty-envelope metrics (`risk_p95_*`, `wall_damage_p95_*`, `tbr_p95_*`, `uncertainty_envelope`)
+  - Added disruption-contract tests covering uncertainty-mode bounds and episode-envelope consistency
 
 ---
 
