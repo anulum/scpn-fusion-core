@@ -134,6 +134,25 @@ def test_predict_disruption_risk_safe_fallback_when_checkpoint_missing(
     assert "reason" in meta
 
 
+def test_predict_disruption_risk_safe_can_disable_fallback(tmp_path: Path) -> None:
+    signal = np.linspace(0.25, 0.95, 80)
+    toroidal = {
+        "toroidal_n1_amp": 0.16,
+        "toroidal_n2_amp": 0.07,
+        "toroidal_n3_amp": 0.03,
+        "toroidal_asymmetry_index": 0.177,
+        "toroidal_radial_spread": 0.02,
+    }
+    with pytest.raises((RuntimeError, FileNotFoundError)):
+        predict_disruption_risk_safe(
+            signal,
+            toroidal,
+            model_path=tmp_path / "missing_model.pth",
+            train_if_missing=False,
+            allow_fallback=False,
+        )
+
+
 def test_load_or_train_predictor_can_return_fallback_metadata_when_missing(
     tmp_path: Path,
 ) -> None:

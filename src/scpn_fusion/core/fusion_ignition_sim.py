@@ -12,6 +12,11 @@ import matplotlib.pyplot as plt
 from .fusion_kernel import FusionKernel
 import sys
 
+
+class BurnPhysicsError(RuntimeError):
+    """Raised when strict 0-D burn physics contracts are violated."""
+
+
 class FusionBurnPhysics(FusionKernel):
     """
     Extends the Grad-Shafranov Solver with Thermonuclear Physics.
@@ -285,6 +290,11 @@ class DynamicBurnModel:
         f_he_initial: float = 0.02,
         tau_he_factor: float = 5.0,
         pumping_efficiency: float = 0.8,
+        *,
+        enforce_temperature_limit: bool = False,
+        max_temperature_clamp_events: int | None = None,
+        warn_on_temperature_cap: bool = True,
+        emit_repeated_temperature_warnings: bool = False,
     ) -> dict:
         """Run dynamic burn simulation.
 
@@ -304,6 +314,16 @@ class DynamicBurnModel:
             He confinement / energy confinement ratio.
         pumping_efficiency : float
             He pumping efficiency (0–1).
+        enforce_temperature_limit : bool
+            When True, raise :class:`BurnPhysicsError` instead of clamping
+            temperatures above 25 keV.
+        max_temperature_clamp_events : int or None
+            Optional cap on number of clamp events.  If exceeded, raises
+            :class:`BurnPhysicsError`.
+        warn_on_temperature_cap : bool
+            Emit warning when a cap event occurs.
+        emit_repeated_temperature_warnings : bool
+            Emit warning for every cap event when True; otherwise warn once.
 
         Returns
         -------
@@ -311,6 +331,17 @@ class DynamicBurnModel:
         """
         n_steps = int(duration_s / dt_s)
         n_e = self.n_e20 * 1e20  # m^-3
+        t_cap_keV = 25.0
+        if max_temperature_clamp_events is not None:
+            if (
+                isinstance(max_temperature_clamp_events, bool)
+                or not isinstance(max_temperature_clamp_events, (int, np.integer))
+                or int(max_temperature_clamp_events) < 0
+            ):
+                raise ValueError(
+                    "max_temperature_clamp_events must be a non-negative integer or None."
+                )
+            max_temperature_clamp_events = int(max_temperature_clamp_events)
 
         # State variables
         T = float(T_initial_keV)
@@ -328,6 +359,8 @@ class DynamicBurnModel:
         f_he_hist = []
         tau_e_hist = []
         W_hist = []
+        temperature_cap_events = 0
+        temperature_cap_warning_emitted = False
 
         for step in range(n_steps):
             t = step * dt_s
@@ -367,13 +400,27 @@ class DynamicBurnModel:
 
             # Temperature from stored energy
             T = W_thermal / (1.5 * n_e * 1e3 * 1.602e-19 * self.V_plasma)
-            if T > 25.0:
-                warnings.warn(
-                    f"Temperature {T:.1f} keV exceeds 25 keV physical limit; "
-                    "clamping (0-D model artifact).",
-                    stacklevel=2,
-                )
-            T = float(np.clip(T, 0.1, 25.0))
+            if T > t_cap_keV:
+                temperature_cap_events += 1
+                if enforce_temperature_limit:
+                    raise BurnPhysicsError(
+                        f"Temperature {T:.2f} keV exceeds {t_cap_keV:.1f} keV physical limit."
+                    )
+                if max_temperature_clamp_events is not None and temperature_cap_events > max_temperature_clamp_events:
+                    raise BurnPhysicsError(
+                        "Temperature cap events exceeded limit: "
+                        f"{temperature_cap_events} > {max_temperature_clamp_events}."
+                    )
+                if warn_on_temperature_cap and (
+                    emit_repeated_temperature_warnings or not temperature_cap_warning_emitted
+                ):
+                    warnings.warn(
+                        f"Temperature {T:.1f} keV exceeds {t_cap_keV:.1f} keV physical limit; "
+                        "clamping (0-D model artifact).",
+                        stacklevel=2,
+                    )
+                    temperature_cap_warning_emitted = True
+            T = float(np.clip(T, 0.1, t_cap_keV))
 
             # He ash accumulation
             # Source: fusion rate, Sink: pumping
@@ -419,6 +466,9 @@ class DynamicBurnModel:
             "h_mode_threshold_MW": self.h_mode_threshold_mw(),
             "P_aux_MW": P_aux_mw,
             "ignition": Q_final > 10.0,
+            "temperature_cap_events": int(temperature_cap_events),
+            "temperature_cap_limit_keV": float(t_cap_keV),
+            "temperature_cap_warning_emitted": bool(temperature_cap_warning_emitted),
         }
 
     @staticmethod
@@ -452,7 +502,12 @@ class DynamicBurnModel:
                 model = DynamicBurnModel(
                     R0=R0, a=a, B_t=B_t, I_p=I_p, kappa=kappa, n_e20=n_e20
                 )
-                sim = model.simulate(P_aux_mw=P_aux, duration_s=50.0, dt_s=0.05)
+                sim = model.simulate(
+                    P_aux_mw=P_aux,
+                    duration_s=50.0,
+                    dt_s=0.05,
+                    warn_on_temperature_cap=False,
+                )
                 results.append({
                     "n_e20": n_e20,
                     "P_aux_MW": P_aux,

@@ -712,6 +712,7 @@ def predict_disruption_risk_safe(
     model_path=None,
     seq_len=DEFAULT_SEQ_LEN,
     train_if_missing=False,
+    allow_fallback: bool = True,
 ) -> tuple[float, dict[str, Any]]:
     """
     Predict disruption risk with checkpoint path if available, else deterministic fallback.
@@ -721,6 +722,9 @@ def predict_disruption_risk_safe(
     risk, metadata
         ``risk`` is always a bounded float in ``[0, 1]``.
         ``metadata`` includes whether fallback mode was used.
+    allow_fallback
+        If ``False``, this API raises on missing/broken checkpoints or inference
+        failures instead of returning fallback risk from ``predict_disruption_risk``.
     """
     base_risk = float(np.clip(predict_disruption_risk(signal, toroidal_observables), 0.0, 1.0))
 
@@ -730,10 +734,16 @@ def predict_disruption_risk_safe(
         force_retrain=False,
         train_kwargs={"seq_len": _normalize_seq_len(seq_len), "save_plot": False},
         train_if_missing=bool(train_if_missing),
-        allow_fallback=True,
+        allow_fallback=bool(allow_fallback),
     )
 
     if model is None or torch is None:
+        if not allow_fallback:
+            reason = meta.get("reason", "model_unavailable")
+            raise RuntimeError(
+                "predict_disruption_risk_safe fallback disabled: "
+                f"disruption model unavailable ({reason})."
+            )
         out_meta = dict(meta)
         out_meta["mode"] = "fallback"
         out_meta["risk_source"] = "predict_disruption_risk"
@@ -751,6 +761,11 @@ def predict_disruption_risk_safe(
         out_meta["risk_source"] = "transformer"
         return model_risk, out_meta
     except Exception as exc:
+        if not allow_fallback:
+            raise RuntimeError(
+                "predict_disruption_risk_safe fallback disabled: "
+                f"transformer inference failed ({exc.__class__.__name__})."
+            ) from exc
         out_meta = dict(meta)
         out_meta["mode"] = "fallback"
         out_meta["risk_source"] = "predict_disruption_risk"

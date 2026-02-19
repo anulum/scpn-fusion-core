@@ -24,7 +24,7 @@ from scpn_fusion.nuclear.blanket_neutronics import (
     MultiGroupBlanket,
     VolumetricBlanketReport,
 )
-from scpn_fusion.core.fusion_ignition_sim import DynamicBurnModel
+from scpn_fusion.core.fusion_ignition_sim import BurnPhysicsError, DynamicBurnModel
 
 
 # ════════════════════════════════════════════════════════════════════════
@@ -157,8 +157,69 @@ class TestQScanLimits:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             model.simulate(P_aux_mw=70.0, duration_s=50.0, dt_s=0.05)
-            temp_warnings = [x for x in w if "25 keV" in str(x.message)]
+            temp_warnings = [x for x in w if "physical limit" in str(x.message)]
             assert len(temp_warnings) > 0
+
+    def test_temperature_cap_telemetry_present(self):
+        """Result includes deterministic temperature-cap telemetry fields."""
+        model = DynamicBurnModel(
+            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, n_e20=1.0,
+        )
+        result = model.simulate(
+            P_aux_mw=70.0,
+            duration_s=50.0,
+            dt_s=0.05,
+            warn_on_temperature_cap=False,
+        )
+        assert "temperature_cap_events" in result
+        assert "temperature_cap_limit_keV" in result
+        assert "temperature_cap_warning_emitted" in result
+        assert isinstance(result["temperature_cap_events"], int)
+        assert result["temperature_cap_events"] >= 1
+        assert result["temperature_cap_limit_keV"] == 25.0
+        assert result["temperature_cap_warning_emitted"] is False
+
+    def test_enforce_temperature_limit_raises_in_strict_mode(self):
+        """Strict mode should fail-fast when 25 keV cap is crossed."""
+        model = DynamicBurnModel(
+            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, n_e20=1.0,
+        )
+        with pytest.raises(BurnPhysicsError, match="exceeds 25.0 keV"):
+            model.simulate(
+                P_aux_mw=70.0,
+                duration_s=50.0,
+                dt_s=0.05,
+                enforce_temperature_limit=True,
+                warn_on_temperature_cap=False,
+            )
+
+    def test_temperature_clamp_budget_raises_when_exceeded(self):
+        """Clamp-event budget should raise when cap events exceed threshold."""
+        model = DynamicBurnModel(
+            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, n_e20=1.0,
+        )
+        with pytest.raises(BurnPhysicsError, match="cap events exceeded limit"):
+            model.simulate(
+                P_aux_mw=70.0,
+                duration_s=50.0,
+                dt_s=0.05,
+                max_temperature_clamp_events=0,
+                warn_on_temperature_cap=False,
+            )
+
+    @pytest.mark.parametrize("bad_limit", [-1, 1.5, True])
+    def test_temperature_clamp_budget_rejects_invalid_inputs(self, bad_limit):
+        """Clamp-event budget must be non-negative integer or None."""
+        model = DynamicBurnModel(
+            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, n_e20=1.0,
+        )
+        with pytest.raises(ValueError, match="max_temperature_clamp_events"):
+            model.simulate(
+                P_aux_mw=70.0,
+                duration_s=0.1,
+                dt_s=0.05,
+                max_temperature_clamp_events=bad_limit,
+            )
 
     def test_q_scan_with_iter_params_q_below_15(self):
         """Full Q-scan with ITER parameters should produce Q <= 15."""
