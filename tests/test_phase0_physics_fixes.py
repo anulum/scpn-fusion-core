@@ -229,6 +229,16 @@ class TestQScanLimits:
         assert result["best"] is not None
         assert result["best"]["Q_final"] <= 15.0
 
+    def test_q_scan_suppresses_temperature_cap_warning_spam(self):
+        """Q-scan should avoid repeated cap warnings to keep logs deterministic."""
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            DynamicBurnModel.find_q10_operating_point(
+                R0=6.2, a=2.0, B_t=5.3, I_p=15.0, kappa=1.7,
+            )
+        cap_warnings = [w for w in caught if "physical limit" in str(w.message)]
+        assert len(cap_warnings) == 0
+
     def test_greenwald_limit_skip(self):
         """Greenwald limit correctly computed and applied."""
         result = DynamicBurnModel.find_q10_operating_point(
