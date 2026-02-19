@@ -54,6 +54,9 @@
 - Added claims evidence map generation (A19):
   - Added `tools/generate_claims_evidence_map.py` and generated `docs/CLAIMS_EVIDENCE_MAP.md`
   - Added preflight drift check to keep map synchronized with `validation/claims_manifest.json`
+- Fixed CI claims-audit stability:
+  - Replaced untracked RMSE dashboard artifact dependency in `validation/claims_manifest.json` with tracked evidence sources.
+  - Hardened `tools/claims_audit.py` to require evidence files/pattern files be git-tracked.
 
 ---
 

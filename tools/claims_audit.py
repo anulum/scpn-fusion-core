@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -107,8 +108,32 @@ def _read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="ignore")
 
 
-def run_audit(claims: tuple[ClaimSpec, ...], repo_root: Path) -> list[str]:
+def _git_tracked_files(repo_root: Path) -> set[str] | None:
+    try:
+        result = subprocess.run(
+            ["git", "ls-files"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return {
+        line.strip().replace("\\", "/")
+        for line in result.stdout.splitlines()
+        if line.strip()
+    }
+
+
+def run_audit(
+    claims: tuple[ClaimSpec, ...],
+    repo_root: Path,
+    *,
+    tracked_files: set[str] | None = None,
+) -> list[str]:
     errors: list[str] = []
+    tracked = tracked_files if tracked_files is not None else _git_tracked_files(repo_root)
     for claim in claims:
         source = repo_root / claim.source_file
         if not source.exists():
@@ -128,12 +153,23 @@ def run_audit(claims: tuple[ClaimSpec, ...], repo_root: Path) -> list[str]:
                 errors.append(
                     f"[{claim.claim_id}] evidence file missing: {evidence_file}"
                 )
+                continue
+            if tracked is not None and evidence_file.replace("\\", "/") not in tracked:
+                errors.append(
+                    f"[{claim.claim_id}] evidence file not tracked by git: {evidence_file}"
+                )
 
         for pattern_check in claim.evidence_patterns:
             evidence = repo_root / pattern_check.file
             if not evidence.exists():
                 errors.append(
                     f"[{claim.claim_id}] evidence pattern file missing: "
+                    f"{pattern_check.file}"
+                )
+                continue
+            if tracked is not None and pattern_check.file.replace("\\", "/") not in tracked:
+                errors.append(
+                    f"[{claim.claim_id}] evidence pattern file not tracked by git: "
                     f"{pattern_check.file}"
                 )
                 continue

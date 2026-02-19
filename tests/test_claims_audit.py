@@ -63,3 +63,10 @@ def test_claims_audit_reports_missing_source_pattern(tmp_path: Path) -> None:
     claims = claims_audit.load_manifest(path)
     errors = claims_audit.run_audit(claims, ROOT)
     assert any("source pattern not found" in err for err in errors)
+
+
+def test_claims_audit_reports_untracked_evidence_file() -> None:
+    manifest = ROOT / "validation" / "claims_manifest.json"
+    claims = claims_audit.load_manifest(manifest)
+    errors = claims_audit.run_audit(claims, ROOT, tracked_files=set())
+    assert any("evidence file not tracked by git" in err for err in errors)

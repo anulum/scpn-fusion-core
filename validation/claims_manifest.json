@@ -7,8 +7,8 @@
       "source_pattern": "28\\.6% full-physics relative RMSE",
       "evidence_files": [
         "RESULTS.md",
-        "validation/reports/rmse_dashboard.json",
-        "validation/validate_transport_itpa.py"
+        "validation/validate_transport_itpa.py",
+        "validation/reference_data/itpa/hmode_confinement.csv"
       ],
       "evidence_patterns": [
         {
@@ -16,8 +16,8 @@
           "pattern": "tau_E relative RMSE \\| 28\\.6%"
         },
         {
-          "file": "validation/reports/rmse_dashboard.json",
-          "pattern": "\"tau_mae_rel_pct\"\\s*:\\s*32\\.531"
+          "file": "validation/validate_transport_itpa.py",
+          "pattern": "\"rmse_relative\": round\\(rmse_rel, 4\\)"
         }
       ]
     },

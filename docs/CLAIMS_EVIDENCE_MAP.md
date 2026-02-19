@@ -25,15 +25,15 @@ to concrete evidence files and patterns.
 
 Evidence files:
 - `RESULTS.md`
-- `validation/reports/rmse_dashboard.json`
 - `validation/validate_transport_itpa.py`
+- `validation/reference_data/itpa/hmode_confinement.csv`
 
 Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
 | `RESULTS.md` | `tau_E relative RMSE \\| 28\.6%` |
-| `validation/reports/rmse_dashboard.json` | `"tau_mae_rel_pct"\s*:\s*32\.531` |
+| `validation/validate_transport_itpa.py` | `"rmse_relative": round\(rmse_rel, 4\)` |
 
 ### `readme_neural_surrogate_rmse`
 
