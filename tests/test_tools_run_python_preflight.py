@@ -93,6 +93,14 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
+                "validation/benchmark_disruption_replay_pipeline.py",
+                "--strict",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
                 "validation/benchmark_eped_domain_contract.py",
                 "--strict",
             ],
@@ -154,6 +162,7 @@ def test_main_honors_skip_flags(monkeypatch):
             "--skip-shot-manifest",
             "--skip-shot-splits",
             "--skip-disruption-calibration",
+            "--skip-disruption-replay-pipeline",
             "--skip-eped-domain-contract",
             "--skip-end-to-end-latency",
             "--skip-notebook-quality",

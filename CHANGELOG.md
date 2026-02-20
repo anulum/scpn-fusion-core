@@ -95,6 +95,17 @@
     - `validation/reports/scpn_end_to_end_latency.md`
   - Added release preflight wiring for `validation/scpn_end_to_end_latency.py --strict`.
   - Added tests for latency-lane determinism, thresholds, markdown output, and CLI artifact generation.
+- Added default disruption replay pipeline contracts (A10):
+  - Added replay pipeline module `src/scpn_fusion/control/replay_pipeline.py` with validated defaults for sensor preprocessing and actuator lag toggles.
+  - Wired replay pipeline preprocessing/lag into real-shot replay and disruption validation:
+    - `src/scpn_fusion/control/disruption_contracts.py`
+    - `validation/validate_real_shots.py`
+  - Added replay-pipeline benchmark lane + release artifacts:
+    - `validation/benchmark_disruption_replay_pipeline.py`
+    - `validation/reports/disruption_replay_pipeline_benchmark.json`
+    - `validation/reports/disruption_replay_pipeline_benchmark.md`
+  - Added release preflight wiring for `validation/benchmark_disruption_replay_pipeline.py --strict`.
+  - Added contract tests for replay-pipeline config validation, deterministic behavior, and disabled-lane invariants.
 
 ---
 

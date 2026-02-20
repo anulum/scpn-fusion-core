@@ -108,6 +108,30 @@ def test_run_real_shot_replay_reports_impurity_cocktail_fields() -> None:
     assert "xenon_mol" in out
     assert "total_impurity_mol" in out
     assert float(out["total_impurity_mol"]) >= float(out["neon_mol"])
+    assert "pipeline" in out
+    assert out["pipeline"]["sensor_preprocess_enabled"] is True
+    assert out["pipeline"]["actuator_lag_enabled"] is True
+    assert float(out["pipeline"]["mean_abs_sensor_delta"]) >= 0.0
+    assert float(out["pipeline"]["mean_abs_actuator_lag"]) >= 0.0
+
+
+def test_run_real_shot_replay_allows_pipeline_disable_override() -> None:
+    agent = FusionAIAgent(epsilon=0.05)
+    out = run_real_shot_replay(
+        shot_data=_build_replay_shot(),
+        rl_agent=agent,
+        risk_threshold=0.55,
+        spi_trigger_risk=0.72,
+        window_size=96,
+        replay_pipeline={
+            "sensor_preprocess_enabled": False,
+            "actuator_lag_enabled": False,
+        },
+    )
+    assert out["pipeline"]["sensor_preprocess_enabled"] is False
+    assert out["pipeline"]["actuator_lag_enabled"] is False
+    assert float(out["pipeline"]["mean_abs_sensor_delta"]) == 0.0
+    assert float(out["pipeline"]["mean_abs_actuator_lag"]) == 0.0
 
 
 def test_run_real_shot_replay_rejects_trigger_below_threshold() -> None:
@@ -200,4 +224,17 @@ def test_run_real_shot_replay_rejects_window_larger_than_shot() -> None:
             risk_threshold=0.55,
             spi_trigger_risk=0.72,
             window_size=96,
+        )
+
+
+def test_run_real_shot_replay_rejects_invalid_pipeline_config() -> None:
+    agent = FusionAIAgent(epsilon=0.05)
+    with pytest.raises(ValueError, match="sensor_alpha"):
+        run_real_shot_replay(
+            shot_data=_build_replay_shot(),
+            rl_agent=agent,
+            risk_threshold=0.55,
+            spi_trigger_risk=0.72,
+            window_size=96,
+            replay_pipeline={"sensor_alpha": 1.5},
         )

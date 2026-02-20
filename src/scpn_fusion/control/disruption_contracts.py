@@ -12,6 +12,11 @@ from numpy.typing import NDArray
 
 from scpn_fusion.control.advanced_soc_fusion_learning import FusionAIAgent
 from scpn_fusion.control.disruption_predictor import predict_disruption_risk
+from scpn_fusion.control.replay_pipeline import (
+    apply_actuator_lag,
+    load_replay_pipeline_config,
+    preprocess_sensor_trace,
+)
 from scpn_fusion.control.spi_mitigation import ShatteredPelletInjection
 from scpn_fusion.core.global_design_scanner import GlobalDesignExplorer
 
@@ -565,6 +570,7 @@ def run_real_shot_replay(
     risk_threshold: float = 0.65,
     spi_trigger_risk: float = 0.80,
     window_size: int = 128,
+    replay_pipeline: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Replay a real tokamak shot through the disruption mitigation pipeline.
 
@@ -584,6 +590,8 @@ def run_real_shot_replay(
         Risk level above which SPI mitigation is triggered.
     window_size : int
         Sliding window size for disruption predictor.
+    replay_pipeline : dict, optional
+        Optional sensor/actuator replay pipeline override.
 
     Returns
     -------
@@ -595,6 +603,7 @@ def run_real_shot_replay(
     if spi_trigger_risk < risk_threshold:
         raise ValueError("spi_trigger_risk must be >= risk_threshold.")
     window_size = require_int("window_size", window_size, 8)
+    pipeline_cfg = load_replay_pipeline_config(replay_pipeline)
 
     time_s = require_1d_array(
         "shot_data.time_s",
@@ -635,6 +644,10 @@ def run_real_shot_replay(
         expected_size=n_steps,
     )
     n3_amp = n2_amp * 0.4  # approximate n3 from n2
+    signal_proc, mean_abs_sensor_delta = preprocess_sensor_trace(
+        dBdt.astype(np.float64),
+        config=pipeline_cfg,
+    )
 
     is_disruption = bool(shot_data.get("is_disruption", False))
     disruption_time_idx = int(shot_data.get("disruption_time_idx", -1))
@@ -645,16 +658,13 @@ def run_real_shot_replay(
     if disruption_time_idx < -1:
         raise ValueError("disruption_time_idx must be >= -1.")
 
-    risk_series = np.zeros(n_steps, dtype=np.float64)
-    alarm_series = np.zeros(n_steps, dtype=bool)
-    first_alarm_idx = -1
-    spi_triggered = False
-    spi_trigger_idx = -1
+    risk_raw_series = np.zeros(n_steps, dtype=np.float64)
 
-    # Slide through the shot
+    # Slide through the shot and build raw risk profile.
     for t in range(min(window_size, n_steps), n_steps):
-        # Build signal window from dB/dt
-        signal_window = dBdt[t - window_size : t] if t >= window_size else dBdt[:t]
+        signal_window = (
+            signal_proc[t - window_size : t] if t >= window_size else signal_proc[:t]
+        )
         if signal_window.size < 8:
             continue
 
@@ -668,7 +678,7 @@ def run_real_shot_replay(
             "toroidal_radial_spread": float(0.02 + 0.05 * n1_amp[t]),
         }
 
-        risk = float(
+        risk_raw = float(
             np.clip(
                 require_finite_float(
                     "replay_risk", predict_disruption_risk(signal_window, toroidal)
@@ -677,17 +687,23 @@ def run_real_shot_replay(
                 1.0,
             )
         )
-        risk_series[t] = risk
+        risk_raw_series[t] = risk_raw
 
-        if risk > risk_threshold:
-            alarm_series[t] = True
-            if first_alarm_idx < 0:
-                first_alarm_idx = t
+    # Actuator path applies first-order lag/slew to mitigation command.
+    dt_nominal_s = 3e-3
+    if time_s.size > 1:
+        dt_nominal_s = float(np.median(np.diff(time_s)))
+    risk_series, mean_abs_actuator_lag = apply_actuator_lag(
+        risk_raw_series,
+        dt_s=max(dt_nominal_s, 1e-6),
+        config=pipeline_cfg,
+    )
 
-        # SPI mitigation trigger
-        if risk > spi_trigger_risk and not spi_triggered:
-            spi_triggered = True
-            spi_trigger_idx = t
+    alarm_series = risk_series > risk_threshold
+    first_alarm_idx = int(np.argmax(alarm_series)) if bool(np.any(alarm_series)) else -1
+    spi_mask = risk_series > spi_trigger_risk
+    spi_triggered = bool(np.any(spi_mask))
+    spi_trigger_idx = int(np.argmax(spi_mask)) if spi_triggered else -1
 
     # Compute mitigation outcome
     if spi_triggered:
@@ -767,7 +783,15 @@ def run_real_shot_replay(
         "final_current_MA": round(final_current, 3),
         "z_eff": round(z_eff, 2),
         "peak_risk": round(float(np.max(risk_series)), 4),
+        "peak_risk_raw": round(float(np.max(risk_raw_series)), 4),
         "mean_risk": round(float(np.mean(risk_series)), 4),
+        "pipeline": {
+            "config": dict(pipeline_cfg),
+            "sensor_preprocess_enabled": bool(pipeline_cfg["sensor_preprocess_enabled"]),
+            "actuator_lag_enabled": bool(pipeline_cfg["actuator_lag_enabled"]),
+            "mean_abs_sensor_delta": round(float(mean_abs_sensor_delta), 6),
+            "mean_abs_actuator_lag": round(float(mean_abs_actuator_lag), 6),
+        },
         "risk_series": risk_series.tolist(),
     }
 

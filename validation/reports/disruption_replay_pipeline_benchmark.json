@@ -1,0 +1,49 @@
+{
+  "disruption_replay_pipeline_benchmark": {
+    "disruption_dir": "C:\\aaa_God_of_the_Math_Collection\\03_CODE\\SCPN-Fusion-Core\\validation\\reference_data\\diiid\\disruption_shots",
+    "default_deterministic_pass": true,
+    "enabled_flags_pass": true,
+    "disabled_flags_pass": true,
+    "enabled_metrics_pass": true,
+    "disabled_invariants_pass": true,
+    "passes_thresholds": true,
+    "default": {
+      "recall": 1.0,
+      "false_positive_rate": 0.0,
+      "pipeline": {
+        "config": {
+          "sensor_preprocess_enabled": true,
+          "sensor_alpha": 0.12,
+          "sensor_derivative_gain": 0.08,
+          "sensor_clip_sigma": 4.5,
+          "actuator_lag_enabled": true,
+          "actuator_tau_s": 0.006,
+          "actuator_slew_per_s": 260.0
+        },
+        "sensor_preprocess_enabled": true,
+        "actuator_lag_enabled": true,
+        "mean_abs_sensor_delta": 3.368383,
+        "mean_abs_actuator_lag": 0.006291
+      }
+    },
+    "disabled": {
+      "recall": 1.0,
+      "false_positive_rate": 0.0,
+      "pipeline": {
+        "config": {
+          "sensor_preprocess_enabled": false,
+          "sensor_alpha": 0.12,
+          "sensor_derivative_gain": 0.08,
+          "sensor_clip_sigma": 4.5,
+          "actuator_lag_enabled": false,
+          "actuator_tau_s": 0.006,
+          "actuator_slew_per_s": 260.0
+        },
+        "sensor_preprocess_enabled": false,
+        "actuator_lag_enabled": false,
+        "mean_abs_sensor_delta": 0.0,
+        "mean_abs_actuator_lag": 0.0
+      }
+    }
+  }
+}

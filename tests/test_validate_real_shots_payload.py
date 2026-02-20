@@ -154,3 +154,49 @@ def test_load_disruption_risk_calibration_rejects_invalid_threshold(tmp_path: Pa
     )
     with pytest.raises(ValueError, match="risk_threshold"):
         validate_real_shots.load_disruption_risk_calibration(calibration_path)
+
+
+def test_validate_disruption_reports_pipeline_contract_metadata(tmp_path: Path) -> None:
+    n = 160
+    t = np.linspace(0.0, 0.159, n, dtype=np.float64)
+    base = 0.35 + 0.03 * np.sin(2.0 * np.pi * 4.0 * t)
+    spike = 0.35 * np.exp(-(((t - 0.145) / 0.010) ** 2))
+    shot_dir = tmp_path / "shots"
+    shot_dir.mkdir(parents=True, exist_ok=True)
+
+    np.savez(
+        shot_dir / "shot_disrupt.npz",
+        time_s=t,
+        dBdt_gauss_per_s=base + spike,
+        n1_amp=0.18 + 0.45 * spike,
+        n2_amp=0.05 + 0.15 * spike,
+        is_disruption=np.array(True),
+        disruption_time_idx=np.array(145),
+    )
+    np.savez(
+        shot_dir / "shot_safe.npz",
+        time_s=t,
+        dBdt_gauss_per_s=base,
+        n1_amp=np.full(n, 0.12, dtype=np.float64),
+        n2_amp=np.full(n, 0.04, dtype=np.float64),
+        is_disruption=np.array(False),
+        disruption_time_idx=np.array(-1),
+    )
+
+    disabled = validate_real_shots.validate_disruption(
+        shot_dir,
+        replay_pipeline={
+            "sensor_preprocess_enabled": False,
+            "actuator_lag_enabled": False,
+        },
+    )
+    assert disabled["pipeline"]["sensor_preprocess_enabled"] is False
+    assert disabled["pipeline"]["actuator_lag_enabled"] is False
+    assert float(disabled["pipeline"]["mean_abs_sensor_delta"]) == 0.0
+    assert float(disabled["pipeline"]["mean_abs_actuator_lag"]) == 0.0
+
+    enabled = validate_real_shots.validate_disruption(shot_dir)
+    assert enabled["pipeline"]["sensor_preprocess_enabled"] is True
+    assert enabled["pipeline"]["actuator_lag_enabled"] is True
+    assert float(enabled["pipeline"]["mean_abs_sensor_delta"]) >= 0.0
+    assert float(enabled["pipeline"]["mean_abs_actuator_lag"]) >= 0.0

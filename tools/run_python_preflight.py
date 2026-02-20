@@ -19,6 +19,7 @@ def _build_release_checks(
     skip_shot_manifest: bool,
     skip_shot_splits: bool,
     skip_disruption_calibration: bool,
+    skip_disruption_replay_pipeline: bool,
     skip_eped_domain_contract: bool,
     skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
@@ -102,6 +103,17 @@ def _build_release_checks(
                 ],
             )
         )
+    if not skip_disruption_replay_pipeline:
+        checks.append(
+            (
+                "Disruption replay pipeline contract benchmark",
+                [
+                    sys.executable,
+                    "validation/benchmark_disruption_replay_pipeline.py",
+                    "--strict",
+                ],
+            )
+        )
     if not skip_eped_domain_contract:
         checks.append(
             (
@@ -178,6 +190,7 @@ def _build_checks(
     skip_shot_manifest: bool,
     skip_shot_splits: bool,
     skip_disruption_calibration: bool,
+    skip_disruption_replay_pipeline: bool,
     skip_eped_domain_contract: bool,
     skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
@@ -196,6 +209,7 @@ def _build_checks(
                 skip_shot_manifest=skip_shot_manifest,
                 skip_shot_splits=skip_shot_splits,
                 skip_disruption_calibration=skip_disruption_calibration,
+                skip_disruption_replay_pipeline=skip_disruption_replay_pipeline,
                 skip_eped_domain_contract=skip_eped_domain_contract,
                 skip_end_to_end_latency=skip_end_to_end_latency,
                 skip_notebook_quality=skip_notebook_quality,
@@ -275,6 +289,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip tools/generate_disruption_risk_calibration.py --check",
     )
     parser.add_argument(
+        "--skip-disruption-replay-pipeline",
+        action="store_true",
+        help="Skip validation/benchmark_disruption_replay_pipeline.py --strict",
+    )
+    parser.add_argument(
         "--skip-eped-domain-contract",
         action="store_true",
         help="Skip validation/benchmark_eped_domain_contract.py --strict",
@@ -314,6 +333,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_shot_manifest=args.skip_shot_manifest,
         skip_shot_splits=args.skip_shot_splits,
         skip_disruption_calibration=args.skip_disruption_calibration,
+        skip_disruption_replay_pipeline=args.skip_disruption_replay_pipeline,
         skip_eped_domain_contract=args.skip_eped_domain_contract,
         skip_end_to_end_latency=args.skip_end_to_end_latency,
         skip_notebook_quality=args.skip_notebook_quality,

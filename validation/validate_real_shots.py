@@ -32,6 +32,11 @@ from scpn_fusion.core.scaling_laws import (
     ipb98y2_with_uncertainty,
     load_ipb98y2_coefficients,
 )
+from scpn_fusion.control.replay_pipeline import (
+    apply_actuator_lag,
+    load_replay_pipeline_config,
+    preprocess_sensor_trace,
+)
 
 # ── Thresholds ────────────────────────────────────────────────────────
 
@@ -351,11 +356,16 @@ def load_disruption_shot_payload(npz_path: Path) -> dict[str, Any]:
         }
 
 
-def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
+def validate_disruption(
+    disruption_dir: Path,
+    *,
+    replay_pipeline: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Validate disruption predictor on reference disruption shots."""
     from scpn_fusion.control.disruption_predictor import predict_disruption_risk
 
     calibration = load_disruption_risk_calibration()
+    pipeline_cfg = load_replay_pipeline_config(replay_pipeline)
     risk_threshold = float(calibration["risk_threshold"])
     bias_delta = float(calibration["bias_delta"])
 
@@ -372,6 +382,8 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
     false_negatives = 0
     false_positives = 0
     true_negatives = 0
+    sensor_deltas: list[float] = []
+    actuator_lags: list[float] = []
 
     for npz_path in npz_files:
         try:
@@ -388,13 +400,18 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
         n1_amp = np.asarray(payload["n1_amp"], dtype=np.float64)
         n2_amp = payload["n2_amp"]
         time_arr = payload["time_s"]
+        signal_proc, mean_abs_sensor_delta = preprocess_sensor_trace(
+            signal.astype(np.float64),
+            config=pipeline_cfg,
+        )
+        sensor_deltas.append(float(mean_abs_sensor_delta))
 
         # Run predictor on sliding windows
         window_size = min(128, signal.size)
-        detection_idx = -1
+        risk_raw_series = np.zeros(signal.size, dtype=np.float64)
 
         for t in range(window_size, signal.size):
-            window = signal[t - window_size:t]
+            window = signal_proc[t - window_size:t]
             # Build toroidal observables from available data
             n1 = float(n1_amp[t])
             n2 = float(n2_amp[t]) if n2_amp is not None else 0.05
@@ -403,10 +420,21 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
                 "toroidal_n2_amp": n2,
                 "toroidal_n3_amp": 0.02,
             }
-            risk = predict_disruption_risk(window, toroidal, bias_delta=bias_delta)
-            if risk > risk_threshold:
-                detection_idx = t
-                break
+            risk_raw = predict_disruption_risk(window, toroidal, bias_delta=bias_delta)
+            risk_raw_series[t] = float(np.clip(risk_raw, 0.0, 1.0))
+
+        dt_nominal_s = 3e-3
+        if time_arr is not None and time_arr.size > 1:
+            dt_nominal_s = float(np.median(np.diff(time_arr)))
+        risk_series, mean_abs_actuator_lag = apply_actuator_lag(
+            risk_raw_series,
+            dt_s=max(dt_nominal_s, 1e-6),
+            config=pipeline_cfg,
+        )
+        actuator_lags.append(float(mean_abs_actuator_lag))
+        detection_idx = int(np.argmax(risk_series > risk_threshold))
+        if not bool(np.any(risk_series > risk_threshold)):
+            detection_idx = -1
 
         detected = detection_idx >= 0
         detection_ms = -1.0
@@ -438,6 +466,8 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
             "detection_idx": detection_idx,
             "detection_lead_ms": round(detection_ms, 1),
             "within_threshold": within_threshold,
+            "peak_risk_raw": round(float(np.max(risk_raw_series)), 4),
+            "peak_risk": round(float(np.max(risk_series)), 4),
         })
 
     n_disruptions = true_positives + false_negatives
@@ -472,6 +502,23 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
             else None
         ),
         "calibration": calibration,
+        "pipeline": {
+            "config": dict(pipeline_cfg),
+            "sensor_preprocess_enabled": bool(pipeline_cfg["sensor_preprocess_enabled"]),
+            "actuator_lag_enabled": bool(pipeline_cfg["actuator_lag_enabled"]),
+            "mean_abs_sensor_delta": round(
+                float(np.mean(np.asarray(sensor_deltas, dtype=np.float64)))
+                if sensor_deltas
+                else 0.0,
+                6,
+            ),
+            "mean_abs_actuator_lag": round(
+                float(np.mean(np.asarray(actuator_lags, dtype=np.float64)))
+                if actuator_lags
+                else 0.0,
+                6,
+            ),
+        },
         "shots": results,
     }
 
@@ -535,6 +582,17 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Calibration: `{calibration.get('source', 'default-v2.1')}` "
             f"(threshold={calibration.get('risk_threshold', 0.50):.2f}, "
             f"bias_delta={calibration.get('bias_delta', 0.0):.2f})"
+        )
+    pipeline = dis.get("pipeline", {})
+    if isinstance(pipeline, dict):
+        lines.append(
+            f"- Replay pipeline: sensor_preprocess="
+            f"{'ON' if pipeline.get('sensor_preprocess_enabled', False) else 'OFF'}, "
+            f"actuator_lag={'ON' if pipeline.get('actuator_lag_enabled', False) else 'OFF'}"
+        )
+        lines.append(
+            f"  (mean |sensor delta|={pipeline.get('mean_abs_sensor_delta', 0.0):.6f}, "
+            f"mean |actuator lag|={pipeline.get('mean_abs_actuator_lag', 0.0):.6f})"
         )
     if dis.get("fpr_note"):
         lines.append(f"- **Note**: {dis['fpr_note']}")
