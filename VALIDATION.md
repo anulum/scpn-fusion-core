@@ -27,6 +27,10 @@ This document covers data provenance and validation notes for:
   - `validation/reports/eped_domain_contract_benchmark.json`
   - `validation/reports/eped_domain_contract_benchmark.md`
   - Generated/checked by `validation/benchmark_eped_domain_contract.py`.
+- End-to-end control latency contract (surrogate vs full-physics mode):
+  - `validation/reports/scpn_end_to_end_latency.json`
+  - `validation/reports/scpn_end_to_end_latency.md`
+  - Generated/checked by `validation/scpn_end_to_end_latency.py`.
 
 ## Validation Script Linkage
 
@@ -78,6 +82,7 @@ python tools/check_disruption_shot_splits.py
 python tools/generate_disruption_risk_calibration.py
 python tools/generate_disruption_risk_calibration.py --check
 python validation/benchmark_eped_domain_contract.py --strict
+python validation/scpn_end_to_end_latency.py --strict
 ```
 
 ## Data License And Copyright Context

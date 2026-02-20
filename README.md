@@ -600,6 +600,7 @@ This project is honest about what it does and does not do.
 - DIII-D disruption-risk calibration artifact (train/val + holdout gate): [`validation/reference_data/diiid/disruption_risk_calibration.json`](validation/reference_data/diiid/disruption_risk_calibration.json)
 - Disruption calibration report (deterministic): [`validation/reports/disruption_risk_holdout_report.md`](validation/reports/disruption_risk_holdout_report.md)
 - EPED domain-contract benchmark report: [`validation/reports/eped_domain_contract_benchmark.md`](validation/reports/eped_domain_contract_benchmark.md)
+- End-to-end control latency report: [`validation/reports/scpn_end_to_end_latency.md`](validation/reports/scpn_end_to_end_latency.md)
 - Release vs research gate matrix: [`docs/VALIDATION_GATE_MATRIX.md`](docs/VALIDATION_GATE_MATRIX.md)
 - Release acceptance checklist: [`docs/RELEASE_ACCEPTANCE_CHECKLIST.md`](docs/RELEASE_ACCEPTANCE_CHECKLIST.md)
 

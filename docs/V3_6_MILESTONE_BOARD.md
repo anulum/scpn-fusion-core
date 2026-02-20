@@ -20,7 +20,7 @@ This board tracks the first 20 high-impact hardening tasks to move SCPN Fusion C
 | A06 | Data | P1 | Normalize real-shot replay ingest contracts | Stricter schema + failure diagnostics | Replay pipeline rejects malformed payloads with explicit errors | Diagnostics/IO WG | Completed |
 | A07 | Control | P0 | Replace simplified disruption-risk weighting with calibrated lane | Calibrated predictor config + reproducible report | Holdout recall/FPR gates pass | Control WG | Completed |
 | A08 | Control | P0 | Upgrade SNN objective so it is not dominated by baselines | New reward/constraint shaping + benchmark table | SNN objective gap <= 5% vs strongest baseline | Control WG | Backlog |
-| A09 | Control | P1 | Add full end-to-end latency accounting | End-to-end latency artifact + notebook plots | p95 loop latency published for surrogate/full modes | Control WG | Backlog |
+| A09 | Control | P1 | Add full end-to-end latency accounting | End-to-end latency artifact + notebook plots | p95 loop latency published for surrogate/full modes | Control WG | Completed |
 | A10 | Control | P1 | Add actuator lag + sensor preprocessing as default replay lane | Integrated replay path with toggles and contracts | Contract tests pass on lag/preprocess invariants | Control WG | Backlog |
 | A11 | Physics-Transport | P0 | Advance from single-fluid assumptions to multi-ion D/T/He-ash default | Multi-ion solver path in integrated transport | Particle+energy conservation gates hold | Core Physics WG | Backlog |
 | A12 | Physics-Transport | P1 | Tighten EPED-like domain validity contracts | Domain metadata + bounded extrapolation penalties | Out-of-domain usage flagged in reports | Core Physics WG | Completed |

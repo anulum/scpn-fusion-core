@@ -12,7 +12,7 @@ This document defines the split between release-grade validation and research-on
 
 | Profile | Scope | Command |
 |---|---|---|
-| `release` | Version/claims integrity, disruption data provenance + split + calibration holdout checks, EPED domain-contract benchmark, notebook quality gate, Task 5/6 threshold smoke, strict typing; excludes experimental tests from global pytest runs. | `python tools/run_python_preflight.py --gate release` |
+| `release` | Version/claims integrity, disruption data provenance + split + calibration holdout checks, EPED domain-contract benchmark, end-to-end latency benchmark, notebook quality gate, Task 5/6 threshold smoke, strict typing; excludes experimental tests from global pytest runs. | `python tools/run_python_preflight.py --gate release` |
 | `research` | Experimental-only pytest lane (`pytest -m experimental`). | `python tools/run_python_preflight.py --gate research` |
 | `all` | Release + research profiles in sequence. | `python tools/run_python_preflight.py --gate all` |
 

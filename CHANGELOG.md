@@ -88,6 +88,13 @@
     - `validation/reports/eped_domain_contract_benchmark.json`
     - `validation/reports/eped_domain_contract_benchmark.md`
   - Added release preflight wiring for `validation/benchmark_eped_domain_contract.py --strict`.
+- Added end-to-end closed-loop latency accounting (A09):
+  - Added deterministic latency benchmark lane `validation/scpn_end_to_end_latency.py`.
+  - Added release artifacts:
+    - `validation/reports/scpn_end_to_end_latency.json`
+    - `validation/reports/scpn_end_to_end_latency.md`
+  - Added release preflight wiring for `validation/scpn_end_to_end_latency.py --strict`.
+  - Added tests for latency-lane determinism, thresholds, markdown output, and CLI artifact generation.
 
 ---
 

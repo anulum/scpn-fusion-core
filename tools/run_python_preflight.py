@@ -20,6 +20,7 @@ def _build_release_checks(
     skip_shot_splits: bool,
     skip_disruption_calibration: bool,
     skip_eped_domain_contract: bool,
+    skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -112,6 +113,17 @@ def _build_release_checks(
                 ],
             )
         )
+    if not skip_end_to_end_latency:
+        checks.append(
+            (
+                "SCPN end-to-end latency benchmark",
+                [
+                    sys.executable,
+                    "validation/scpn_end_to_end_latency.py",
+                    "--strict",
+                ],
+            )
+        )
     if not skip_notebook_quality:
         checks.append(
             (
@@ -167,6 +179,7 @@ def _build_checks(
     skip_shot_splits: bool,
     skip_disruption_calibration: bool,
     skip_eped_domain_contract: bool,
+    skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -184,6 +197,7 @@ def _build_checks(
                 skip_shot_splits=skip_shot_splits,
                 skip_disruption_calibration=skip_disruption_calibration,
                 skip_eped_domain_contract=skip_eped_domain_contract,
+                skip_end_to_end_latency=skip_end_to_end_latency,
                 skip_notebook_quality=skip_notebook_quality,
                 skip_threshold_smoke=skip_threshold_smoke,
                 skip_mypy=skip_mypy,
@@ -266,6 +280,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip validation/benchmark_eped_domain_contract.py --strict",
     )
     parser.add_argument(
+        "--skip-end-to-end-latency",
+        action="store_true",
+        help="Skip validation/scpn_end_to_end_latency.py --strict",
+    )
+    parser.add_argument(
         "--skip-threshold-smoke",
         action="store_true",
         help=(
@@ -296,6 +315,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_shot_splits=args.skip_shot_splits,
         skip_disruption_calibration=args.skip_disruption_calibration,
         skip_eped_domain_contract=args.skip_eped_domain_contract,
+        skip_end_to_end_latency=args.skip_end_to_end_latency,
         skip_notebook_quality=args.skip_notebook_quality,
         skip_threshold_smoke=args.skip_threshold_smoke,
         skip_mypy=args.skip_mypy,
