@@ -100,7 +100,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -e .
-          pip install nbconvert
+          pip install nbconvert jax<0.5.0 jaxlib<0.5.0
 
       - name: Convert notebooks to HTML
         run: |
@@ -128,19 +128,19 @@ jobs:
             docs/assets/repo_header.png
 
       - name: Download Python docs
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           name: python-docs
           path: site/python/
 
       - name: Download Rust docs
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           name: rust-docs
           path: site/rust/
 
       - name: Download notebook HTML
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v4
         with:
           name: notebook-html
           path: site/notebooks/
