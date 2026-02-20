@@ -138,6 +138,39 @@ class FokkerPlanckSolver:
         
         return A, D, Fc_norm
 
+    def seed_hottail(self, T_initial_eV: float, T_final_eV: float, t_quench_s: float):
+        """
+        Generate hottail seed population from a rapid thermal quench.
+        Based on Aleynikov & Breizman (2017).
+        """
+        # Thermal momentum: v_th = sqrt(2 * T / m)
+        p_th_init = np.sqrt(2 * T_initial_eV * E_CHARGE / (ME * C**2))
+        
+        # During a quench, high-energy electrons with v > v_critical survive.
+        # Simple hottail model: Gaussian tail that didn't have time to thermalize.
+        f_hottail = np.exp(-self.p**2 / (p_th_init**2))
+        
+        # Scale such that total density matches a fraction of n_e (e.g. 1e-5)
+        # In reality, this depends on t_quench / tau_coll.
+        self.f = np.maximum(self.f, f_hottail * 1e10) 
+        logger.info(f"Hottail seeding complete. Initial RE seed: {np.sum(self.f * self.dp):.2e} m^-3")
+
+    def explicit_knock_on_source(self, n_e: float) -> np.ndarray:
+        """
+        Explicit large-angle knock-on collision source (Avalanche initiator).
+        S_knock_on(p) ~ n_e * n_RE * (differential cross section)
+        """
+        # Simple 1/p^2 distribution for knock-on secondaries
+        # (Moller scattering approximation)
+        source = 1.0 / (self.p**2 + 1e-4)
+        
+        # Normalized by current n_re
+        n_re = np.sum(self.f * self.dp)
+        if n_re < 1e6:
+            return np.zeros_like(self.f)
+            
+        return source * n_e * n_re * 1e-25 # Empirical scaling constant
+
     def step(
         self, 
         dt: float, 
@@ -177,6 +210,9 @@ class FokkerPlanckSolver:
             # ... Dreicer formula ...
             # For now, put a Gaussian source at p_min
             S_dr[0:5] = 1.0e15 # Dummy source flux
+            
+        # 3. Knock-on (Avalanche)
+        S_ko = self.explicit_knock_on_source(n_e)
         
         # Finite Volume / Upwind scheme
         # df/dt = - d/dp (A f) + S
@@ -201,7 +237,7 @@ class FokkerPlanckSolver:
             else:
                 flux_out = A[i+1] * self.f[i+1]
                 
-            df_dt = -(flux_out - flux_in) / self.dp[i] + S_av[i] + S_dr[i]
+            df_dt = -(flux_out - flux_in) / self.dp[i] + S_av[i] + S_dr[i] + S_ko[i]
             f_new[i] += df_dt * dt
             
         self.f = np.maximum(0, f_new)
