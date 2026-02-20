@@ -386,6 +386,14 @@ class TransportSolver(FusionKernel):
             "reconstructed_electron_MW": 0.0,
             "reconstructed_total_MW": 0.0,
         }
+        self._last_pedestal_contract: dict[str, Any] = {
+            "used": False,
+            "in_domain": True,
+            "extrapolation_score": 0.0,
+            "extrapolation_penalty": 1.0,
+            "domain_violations": [],
+            "fallback_used": False,
+        }
 
         # Numerical hardening telemetry (non-finite replacements per step)
         self._last_numerical_recovery_count: int = 0
@@ -671,6 +679,14 @@ class TransportSolver(FusionKernel):
 
         # H-Mode detection and EPED-like pedestal model
         is_H_mode = P_aux > 30.0  # MW
+        self._last_pedestal_contract = {
+            "used": False,
+            "in_domain": True,
+            "extrapolation_score": 0.0,
+            "extrapolation_penalty": 1.0,
+            "domain_violations": [],
+            "fallback_used": False,
+        }
 
         if is_H_mode and self.neoclassical_params is not None:
             try:
@@ -687,6 +703,15 @@ class TransportSolver(FusionKernel):
                 # Use current edge density for pedestal prediction
                 n_ped = max(float(self.ne[-5]), 1.0)
                 ped = eped.predict(n_ped)
+                self._last_pedestal_contract = {
+                    "used": True,
+                    "in_domain": bool(ped.in_domain),
+                    "extrapolation_score": float(ped.extrapolation_score),
+                    "extrapolation_penalty": float(ped.extrapolation_penalty),
+                    "domain_violations": list(ped.domain_violations),
+                    "fallback_used": False,
+                    "n_ped_1e19": float(n_ped),
+                }
 
                 # Apply pedestal: suppress transport inside pedestal region
                 ped_start = 1.0 - ped.Delta_ped
@@ -704,14 +729,30 @@ class TransportSolver(FusionKernel):
                         self.Ti[ped_idx:],
                         ped.T_ped_keV * np.linspace(1.0, 0.1, len(self.Ti[ped_idx:]))
                     )
-            except Exception:
+            except Exception as exc:
                 # Fallback: simple edge suppression
                 edge_mask = self.rho > 0.9
                 chi_turb[edge_mask] *= 0.1
+                self._last_pedestal_contract = {
+                    "used": False,
+                    "in_domain": False,
+                    "extrapolation_score": 0.0,
+                    "extrapolation_penalty": 1.0,
+                    "domain_violations": [f"eped_failure:{exc}"],
+                    "fallback_used": True,
+                }
         elif is_H_mode:
             # No neoclassical params — simple suppression
             edge_mask = self.rho > 0.9
             chi_turb[edge_mask] *= 0.1
+            self._last_pedestal_contract = {
+                "used": False,
+                "in_domain": False,
+                "extrapolation_score": 0.0,
+                "extrapolation_penalty": 1.0,
+                "domain_violations": ["neoclassical_params_missing"],
+                "fallback_used": True,
+            }
 
         self.chi_e = chi_base + chi_turb
         self.chi_i = chi_base + chi_turb

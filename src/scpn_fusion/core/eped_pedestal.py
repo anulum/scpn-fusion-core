@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import Dict, Tuple
 
 import numpy as np
 
@@ -34,6 +35,21 @@ logger = logging.getLogger(__name__)
 _E_CHARGE = 1.602176634e-19  # C
 _M_P = 1.672621924e-27       # kg
 _EPS0 = 8.854187812e-12      # F/m
+
+_EPED_DOMAIN_BOUNDS: Dict[str, Tuple[float, float, str]] = {
+    "R0": (1.0, 10.0, "m"),
+    "a": (0.3, 3.5, "m"),
+    "B0": (1.5, 12.0, "T"),
+    "Ip_MA": (0.5, 25.0, "MA"),
+    "kappa": (1.2, 2.4, "-"),
+    "A_ion": (1.0, 3.5, "-"),
+    "Z_eff": (1.0, 3.5, "-"),
+    "epsilon": (0.15, 0.50, "-"),
+    "n_ped_1e19": (2.0, 15.0, "1e19 m^-3"),
+    "T_ped_guess_keV": (0.2, 8.0, "keV"),
+}
+_EXTRAPOLATION_PENALTY_SLOPE = 0.35
+_MIN_EXTRAPOLATION_PENALTY = 0.65
 
 
 def _require_positive_finite(name: str, value: float) -> float:
@@ -49,6 +65,26 @@ def _require_positive_finite(name: str, value: float) -> float:
     return parsed
 
 
+def _normalized_domain_violation(value: float, *, lower: float, upper: float) -> float:
+    """Return zero in-domain, else normalized distance outside [lower, upper]."""
+    span = max(upper - lower, 1e-12)
+    if value < lower:
+        return float((lower - value) / span)
+    if value > upper:
+        return float((value - upper) / span)
+    return 0.0
+
+
+@dataclass(frozen=True)
+class PedestalDomainAssessment:
+    """Domain-validity check for one pedestal prediction request."""
+
+    in_domain: bool
+    max_violation: float
+    extrapolation_penalty: float
+    violations: tuple[str, ...]
+
+
 @dataclass
 class PedestalResult:
     """Result of EPED-like pedestal prediction."""
@@ -58,6 +94,10 @@ class PedestalResult:
     Delta_ped: float       # normalised pedestal width (in psi_N)
     beta_p_ped: float      # poloidal beta at pedestal
     nu_star_ped: float     # pedestal collisionality
+    in_domain: bool = True
+    extrapolation_score: float = 0.0
+    extrapolation_penalty: float = 1.0
+    domain_violations: tuple[str, ...] = ()
 
 
 class EpedPedestalModel:
@@ -106,7 +146,64 @@ class EpedPedestalModel:
             (1.0 + self.kappa**2) / 2.0
         ))
 
-    def predict(self, n_ped_1e19: float, T_ped_guess_keV: float = 3.0) -> PedestalResult:
+    @classmethod
+    def domain_metadata(cls) -> dict[str, dict[str, object]]:
+        """Return applicability bounds for the EPED-like surrogate."""
+        return {
+            name: {"min": lo, "max": hi, "units": units}
+            for name, (lo, hi, units) in _EPED_DOMAIN_BOUNDS.items()
+        }
+
+    def assess_domain(
+        self,
+        *,
+        n_ped_1e19: float,
+        T_ped_guess_keV: float,
+    ) -> PedestalDomainAssessment:
+        """Assess whether a query lies inside the calibrated EPED-like domain."""
+        values = {
+            "R0": self.R0,
+            "a": self.a,
+            "B0": self.B0,
+            "Ip_MA": self.Ip_MA,
+            "kappa": self.kappa,
+            "A_ion": self.A_ion,
+            "Z_eff": self.Z_eff,
+            "epsilon": self.epsilon,
+            "n_ped_1e19": n_ped_1e19,
+            "T_ped_guess_keV": T_ped_guess_keV,
+        }
+        max_violation = 0.0
+        violations: list[str] = []
+        for name, value in values.items():
+            lo, hi, units = _EPED_DOMAIN_BOUNDS[name]
+            violation = _normalized_domain_violation(value, lower=lo, upper=hi)
+            if violation > 0.0:
+                violations.append(
+                    f"{name}={value:.4g} outside [{lo:.4g}, {hi:.4g}] {units}"
+                )
+            max_violation = max(max_violation, violation)
+        penalty = float(
+            np.clip(
+                1.0 - _EXTRAPOLATION_PENALTY_SLOPE * max_violation,
+                _MIN_EXTRAPOLATION_PENALTY,
+                1.0,
+            )
+        )
+        return PedestalDomainAssessment(
+            in_domain=bool(max_violation <= 0.0),
+            max_violation=float(max_violation),
+            extrapolation_penalty=penalty,
+            violations=tuple(violations),
+        )
+
+    def predict(
+        self,
+        n_ped_1e19: float,
+        T_ped_guess_keV: float = 3.0,
+        *,
+        domain_mode: str = "warn",
+    ) -> PedestalResult:
         """Predict pedestal parameters for given pedestal density.
 
         Parameters
@@ -123,6 +220,24 @@ class EpedPedestalModel:
         """
         n_ped_1e19 = _require_positive_finite("n_ped_1e19", n_ped_1e19)
         T_ped_guess_keV = _require_positive_finite("T_ped_guess_keV", T_ped_guess_keV)
+        domain_mode_norm = domain_mode.strip().lower()
+        if domain_mode_norm not in {"warn", "raise", "ignore"}:
+            raise ValueError("domain_mode must be 'warn', 'raise', or 'ignore'.")
+
+        domain = self.assess_domain(
+            n_ped_1e19=n_ped_1e19,
+            T_ped_guess_keV=T_ped_guess_keV,
+        )
+        if not domain.in_domain:
+            msg = (
+                "EPED-like pedestal query outside calibrated domain; "
+                + "; ".join(domain.violations)
+                + f". Applying extrapolation_penalty={domain.extrapolation_penalty:.3f}."
+            )
+            if domain_mode_norm == "raise":
+                raise ValueError(msg)
+            if domain_mode_norm == "warn":
+                logger.warning(msg)
 
         m_i = self.A_ion * _M_P
         n_e = n_ped_1e19 * 1e19  # m^-3
@@ -159,6 +274,7 @@ class EpedPedestalModel:
             # Clamp nu_star to avoid blowup at very low collisionality
             nu_star_safe = max(nu_star_ped, 0.001)
             Delta_ped = 0.076 * np.sqrt(max(beta_p_ped, 0.001)) * nu_star_safe**(-0.2)
+            Delta_ped *= domain.extrapolation_penalty
             Delta_ped = np.clip(Delta_ped, 0.01, 0.15)
 
             # Pressure gradient constraint (simplified KBM limit):
@@ -168,6 +284,7 @@ class EpedPedestalModel:
             alpha_crit = 2.5
             T_ped_max = (alpha_crit * self.B0**2 * Delta_ped * self.a /
                          (mu0 * self.R0 * q_ped**2 * 2.0 * n_e))
+            T_ped_max *= domain.extrapolation_penalty
             T_ped_max_keV = T_ped_max / (1e3 * _E_CHARGE)
 
             T_ped_new = min(T_ped, T_ped_max_keV)
@@ -187,4 +304,8 @@ class EpedPedestalModel:
             Delta_ped=float(Delta_ped),
             beta_p_ped=float(beta_p_ped),
             nu_star_ped=float(nu_star_ped),
+            in_domain=domain.in_domain,
+            extrapolation_score=domain.max_violation,
+            extrapolation_penalty=domain.extrapolation_penalty,
+            domain_violations=domain.violations,
         )

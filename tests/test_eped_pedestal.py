@@ -23,6 +23,13 @@ def _valid_model_kwargs() -> dict[str, float]:
     }
 
 
+def test_domain_metadata_contains_expected_bounds() -> None:
+    metadata = EpedPedestalModel.domain_metadata()
+    for key in ("R0", "a", "B0", "Ip_MA", "kappa", "n_ped_1e19", "T_ped_guess_keV"):
+        assert key in metadata
+        assert float(metadata[key]["max"]) > float(metadata[key]["min"])
+
+
 def test_predict_returns_physical_finite_outputs() -> None:
     model = EpedPedestalModel(**_valid_model_kwargs())
     res = model.predict(n_ped_1e19=8.0, T_ped_guess_keV=3.0)
@@ -34,6 +41,31 @@ def test_predict_returns_physical_finite_outputs() -> None:
     assert np.isfinite(res.nu_star_ped) and res.nu_star_ped > 0.0
     # Model clips pedestal width to this physical range by design.
     assert 0.01 <= res.Delta_ped <= 0.15
+
+
+def test_predict_in_domain_marks_contract_clean() -> None:
+    model = EpedPedestalModel(**_valid_model_kwargs())
+    res = model.predict(n_ped_1e19=8.0, T_ped_guess_keV=3.0)
+    assert res.in_domain is True
+    assert res.extrapolation_score == 0.0
+    assert res.extrapolation_penalty == 1.0
+    assert res.domain_violations == ()
+
+
+def test_predict_out_of_domain_reports_penalty_and_flags() -> None:
+    model = EpedPedestalModel(**_valid_model_kwargs())
+    res = model.predict(n_ped_1e19=24.0, T_ped_guess_keV=3.0, domain_mode="ignore")
+    assert res.in_domain is False
+    assert res.extrapolation_score > 0.0
+    assert 0.65 <= res.extrapolation_penalty < 1.0
+    assert len(res.domain_violations) >= 1
+    assert "n_ped_1e19" in res.domain_violations[0]
+
+
+def test_predict_out_of_domain_can_raise_with_strict_domain_mode() -> None:
+    model = EpedPedestalModel(**_valid_model_kwargs())
+    with pytest.raises(ValueError, match="outside calibrated domain"):
+        model.predict(n_ped_1e19=8.0, T_ped_guess_keV=12.0, domain_mode="raise")
 
 
 @pytest.mark.parametrize(
@@ -69,3 +101,9 @@ def test_predict_rejects_invalid_runtime_inputs(n_ped_1e19, T_ped_guess_keV, fie
     model = EpedPedestalModel(**_valid_model_kwargs())
     with pytest.raises(ValueError, match=field):
         model.predict(n_ped_1e19=n_ped_1e19, T_ped_guess_keV=T_ped_guess_keV)
+
+
+def test_predict_rejects_invalid_domain_mode() -> None:
+    model = EpedPedestalModel(**_valid_model_kwargs())
+    with pytest.raises(ValueError, match="domain_mode"):
+        model.predict(n_ped_1e19=8.0, T_ped_guess_keV=3.0, domain_mode="bad")

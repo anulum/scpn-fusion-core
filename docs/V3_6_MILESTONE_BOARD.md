@@ -23,7 +23,7 @@ This board tracks the first 20 high-impact hardening tasks to move SCPN Fusion C
 | A09 | Control | P1 | Add full end-to-end latency accounting | End-to-end latency artifact + notebook plots | p95 loop latency published for surrogate/full modes | Control WG | Backlog |
 | A10 | Control | P1 | Add actuator lag + sensor preprocessing as default replay lane | Integrated replay path with toggles and contracts | Contract tests pass on lag/preprocess invariants | Control WG | Backlog |
 | A11 | Physics-Transport | P0 | Advance from single-fluid assumptions to multi-ion D/T/He-ash default | Multi-ion solver path in integrated transport | Particle+energy conservation gates hold | Core Physics WG | Backlog |
-| A12 | Physics-Transport | P1 | Tighten EPED-like domain validity contracts | Domain metadata + bounded extrapolation penalties | Out-of-domain usage flagged in reports | Core Physics WG | Backlog |
+| A12 | Physics-Transport | P1 | Tighten EPED-like domain validity contracts | Domain metadata + bounded extrapolation penalties | Out-of-domain usage flagged in reports | Core Physics WG | Completed |
 | A13 | Physics-Transport | P1 | Publish uncertainty envelopes for transport metrics | p95 bands in transport reports | Uncertainty contracts validated in tests | Core Physics WG | Backlog |
 | A14 | Turbulence | P0 | Remove deprecated FNO from default execution paths | Default lane switch + explicit opt-in for deprecated path | No deprecated lane in release default run | Core Physics WG | Backlog |
 | A15 | Neutronics | P1 | Calibrate reduced neutronics surrogate against reference lane | Calibration artifact + error breakdown | TBR bias/error gate documented and enforced | Nuclear WG | Backlog |

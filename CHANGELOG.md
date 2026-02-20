@@ -79,6 +79,15 @@
     - `validation/reports/disruption_risk_holdout_report.md`
   - Added release preflight gate wiring for calibration holdout checks.
   - `validation/validate_real_shots.py` disruption lane now consumes calibrated threshold/bias settings from the calibration artifact.
+- Tightened EPED-like domain validity contracts (A12):
+  - Added calibrated-domain metadata + explicit domain assessment to `src/scpn_fusion/core/eped_pedestal.py`.
+  - Added bounded extrapolation penalties and strict/warn/ignore domain modes for `predict(...)`.
+  - Added transport telemetry surfacing (`_last_pedestal_contract`) in `src/scpn_fusion/core/integrated_transport_solver.py`.
+  - Added benchmark artifact/report gate:
+    - `validation/benchmark_eped_domain_contract.py`
+    - `validation/reports/eped_domain_contract_benchmark.json`
+    - `validation/reports/eped_domain_contract_benchmark.md`
+  - Added release preflight wiring for `validation/benchmark_eped_domain_contract.py --strict`.
 
 ---
 

@@ -1,0 +1,136 @@
+{
+  "eped_domain_contract_benchmark": {
+    "n_cases": 5,
+    "in_domain_case_count": 2,
+    "out_of_domain_case_count": 3,
+    "in_domain_pass": true,
+    "out_domain_flag_pass": true,
+    "penalty_bounds_pass": true,
+    "passes_thresholds": true,
+    "domain_metadata": {
+      "R0": {
+        "min": 1.0,
+        "max": 10.0,
+        "units": "m"
+      },
+      "a": {
+        "min": 0.3,
+        "max": 3.5,
+        "units": "m"
+      },
+      "B0": {
+        "min": 1.5,
+        "max": 12.0,
+        "units": "T"
+      },
+      "Ip_MA": {
+        "min": 0.5,
+        "max": 25.0,
+        "units": "MA"
+      },
+      "kappa": {
+        "min": 1.2,
+        "max": 2.4,
+        "units": "-"
+      },
+      "A_ion": {
+        "min": 1.0,
+        "max": 3.5,
+        "units": "-"
+      },
+      "Z_eff": {
+        "min": 1.0,
+        "max": 3.5,
+        "units": "-"
+      },
+      "epsilon": {
+        "min": 0.15,
+        "max": 0.5,
+        "units": "-"
+      },
+      "n_ped_1e19": {
+        "min": 2.0,
+        "max": 15.0,
+        "units": "1e19 m^-3"
+      },
+      "T_ped_guess_keV": {
+        "min": 0.2,
+        "max": 8.0,
+        "units": "keV"
+      }
+    },
+    "cases": [
+      {
+        "case_id": "in_ref",
+        "label": "ITER-like in-domain reference",
+        "n_ped_1e19": 8.0,
+        "T_ped_guess_keV": 3.0,
+        "in_domain": true,
+        "extrapolation_score": 0.0,
+        "extrapolation_penalty": 1.0,
+        "domain_violations": [],
+        "Delta_ped": 0.01,
+        "T_ped_keV": 0.1,
+        "p_ped_kPa": 2.5634826144
+      },
+      {
+        "case_id": "in_compact",
+        "label": "compact high-field in-domain",
+        "n_ped_1e19": 10.0,
+        "T_ped_guess_keV": 4.0,
+        "in_domain": true,
+        "extrapolation_score": 0.0,
+        "extrapolation_penalty": 1.0,
+        "domain_violations": [],
+        "Delta_ped": 0.01,
+        "T_ped_keV": 0.1,
+        "p_ped_kPa": 3.2043532679999998
+      },
+      {
+        "case_id": "out_density",
+        "label": "density extrapolation",
+        "n_ped_1e19": 22.0,
+        "T_ped_guess_keV": 3.0,
+        "in_domain": false,
+        "extrapolation_score": 0.5384615384615384,
+        "extrapolation_penalty": 0.8115384615384615,
+        "domain_violations": [
+          "n_ped_1e19=22 outside [2, 15] 1e19 m^-3"
+        ],
+        "Delta_ped": 0.01,
+        "T_ped_keV": 0.1,
+        "p_ped_kPa": 7.0495771896
+      },
+      {
+        "case_id": "out_temperature",
+        "label": "temperature extrapolation",
+        "n_ped_1e19": 9.0,
+        "T_ped_guess_keV": 12.0,
+        "in_domain": false,
+        "extrapolation_score": 0.5128205128205129,
+        "extrapolation_penalty": 0.8205128205128205,
+        "domain_violations": [
+          "T_ped_guess_keV=12 outside [0.2, 8] keV"
+        ],
+        "Delta_ped": 0.01,
+        "T_ped_keV": 0.1,
+        "p_ped_kPa": 2.8839179412
+      },
+      {
+        "case_id": "out_shape",
+        "label": "shape extrapolation (kappa)",
+        "n_ped_1e19": 8.0,
+        "T_ped_guess_keV": 3.0,
+        "in_domain": false,
+        "extrapolation_score": 0.33333333333333326,
+        "extrapolation_penalty": 0.8833333333333334,
+        "domain_violations": [
+          "kappa=2.8 outside [1.2, 2.4] -"
+        ],
+        "Delta_ped": 0.01,
+        "T_ped_keV": 0.1,
+        "p_ped_kPa": 2.5634826144
+      }
+    ]
+  }
+}

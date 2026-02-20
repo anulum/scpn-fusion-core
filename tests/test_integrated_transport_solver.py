@@ -130,6 +130,15 @@ class TestInitialization:
         ts = TransportSolver(str(config_file), multi_ion=True)
         assert ts.D_species == 0.3
 
+    def test_hmode_without_neoclassical_sets_pedestal_contract_fallback(
+        self, solver: TransportSolver
+    ) -> None:
+        """H-mode without neoclassical params must expose explicit fallback metadata."""
+        contract = solver._last_pedestal_contract
+        assert contract["used"] is False
+        assert contract["fallback_used"] is True
+        assert "neoclassical_params_missing" in contract["domain_violations"]
+
 
 # ── 2. Profile Evolution ─────────────────────────────────────────────
 
@@ -449,6 +458,17 @@ class TestNeoclassical:
         assert solver.neoclassical_params["R0"] == 6.2
         assert solver.neoclassical_params["a"] == 2.0
         assert solver.neoclassical_params["B0"] == 5.3
+
+    def test_hmode_with_neoclassical_records_eped_domain_contract(
+        self, solver: TransportSolver
+    ) -> None:
+        solver.set_neoclassical(R0=6.2, a=2.0, B0=5.3)
+        solver.update_transport_model(50.0)
+        contract = solver._last_pedestal_contract
+        assert contract["used"] is True
+        assert contract["fallback_used"] is False
+        assert 0.65 <= float(contract["extrapolation_penalty"]) <= 1.0
+        assert isinstance(contract["domain_violations"], list)
 
     @pytest.mark.parametrize(
         ("overrides", "field"),

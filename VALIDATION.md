@@ -23,6 +23,10 @@ This document covers data provenance and validation notes for:
   - `validation/reference_data/diiid/disruption_risk_calibration.json`
   - `validation/reports/disruption_risk_holdout_report.md`
   - Generated/checked by `tools/generate_disruption_risk_calibration.py`.
+- EPED domain-validity contract (bounded extrapolation + report gate):
+  - `validation/reports/eped_domain_contract_benchmark.json`
+  - `validation/reports/eped_domain_contract_benchmark.md`
+  - Generated/checked by `validation/benchmark_eped_domain_contract.py`.
 
 ## Validation Script Linkage
 
@@ -73,6 +77,7 @@ python tools/generate_disruption_shot_manifest.py --check
 python tools/check_disruption_shot_splits.py
 python tools/generate_disruption_risk_calibration.py
 python tools/generate_disruption_risk_calibration.py --check
+python validation/benchmark_eped_domain_contract.py --strict
 ```
 
 ## Data License And Copyright Context

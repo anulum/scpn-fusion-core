@@ -19,6 +19,7 @@ def _build_release_checks(
     skip_shot_manifest: bool,
     skip_shot_splits: bool,
     skip_disruption_calibration: bool,
+    skip_eped_domain_contract: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -100,6 +101,17 @@ def _build_release_checks(
                 ],
             )
         )
+    if not skip_eped_domain_contract:
+        checks.append(
+            (
+                "EPED domain contract benchmark",
+                [
+                    sys.executable,
+                    "validation/benchmark_eped_domain_contract.py",
+                    "--strict",
+                ],
+            )
+        )
     if not skip_notebook_quality:
         checks.append(
             (
@@ -154,6 +166,7 @@ def _build_checks(
     skip_shot_manifest: bool,
     skip_shot_splits: bool,
     skip_disruption_calibration: bool,
+    skip_eped_domain_contract: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -170,6 +183,7 @@ def _build_checks(
                 skip_shot_manifest=skip_shot_manifest,
                 skip_shot_splits=skip_shot_splits,
                 skip_disruption_calibration=skip_disruption_calibration,
+                skip_eped_domain_contract=skip_eped_domain_contract,
                 skip_notebook_quality=skip_notebook_quality,
                 skip_threshold_smoke=skip_threshold_smoke,
                 skip_mypy=skip_mypy,
@@ -247,6 +261,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip tools/generate_disruption_risk_calibration.py --check",
     )
     parser.add_argument(
+        "--skip-eped-domain-contract",
+        action="store_true",
+        help="Skip validation/benchmark_eped_domain_contract.py --strict",
+    )
+    parser.add_argument(
         "--skip-threshold-smoke",
         action="store_true",
         help=(
@@ -276,6 +295,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_shot_manifest=args.skip_shot_manifest,
         skip_shot_splits=args.skip_shot_splits,
         skip_disruption_calibration=args.skip_disruption_calibration,
+        skip_eped_domain_contract=args.skip_eped_domain_contract,
         skip_notebook_quality=args.skip_notebook_quality,
         skip_threshold_smoke=args.skip_threshold_smoke,
         skip_mypy=args.skip_mypy,
