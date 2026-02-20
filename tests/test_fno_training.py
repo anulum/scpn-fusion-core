@@ -47,18 +47,13 @@ def test_fno_training_smoke(tmp_path):
 
 
 def test_fno_controller_loads_saved_weights(tmp_path):
+    from scpn_fusion.core.fno_jax_training import init_fno_params, MODES, WIDTH
+    from jax import random as jrandom
+
     output = tmp_path / "fno_controller.npz"
-    train_fno(
-        n_samples=8,
-        epochs=1,
-        lr=1e-3,
-        modes=4,
-        width=4,
-        save_path=output,
-        batch_size=2,
-        seed=13,
-        patience=1,
-    )
+    key = jrandom.PRNGKey(13)
+    params = init_fno_params(key, MODES, WIDTH)
+    np.savez(output, **{k: np.array(v) for k, v in params.items()})
 
     with warnings.catch_warnings():
         warnings.filterwarnings(
