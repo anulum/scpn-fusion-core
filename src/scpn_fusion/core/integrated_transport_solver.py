@@ -22,6 +22,8 @@ try:
 except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel  # type: ignore[assignment]
 
+from scpn_fusion.core.eped_pedestal import EpedPedestalModel
+
 _logger = logging.getLogger(__name__)
 
 
@@ -346,6 +348,17 @@ class TransportSolver(FusionKernel):
 
         # Impurity Profile (Tungsten density)
         self.n_impurity = np.zeros(self.nr)
+        
+        # Boundary Condition (Pedestal Top)
+        self.T_edge_keV = 0.08
+        self.pedestal_model = None
+        if self.cfg.get("physics", {}).get("pedestal_mode") == "eped":
+            self.pedestal_model = EpedPedestalModel(
+                R0=(self.cfg["dimensions"]["R_min"] + self.cfg["dimensions"]["R_max"]) / 2.0,
+                a=(self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / 2.0,
+                B0=5.3, # Should pull from coils/config but defaulting for now
+                Ip_MA=self.cfg.get("physics", {}).get("plasma_current_target", 5.0),
+            )
 
         # Neoclassical transport configuration (None = constant chi_base=0.5)
         self.neoclassical_params: dict[str, Any] | None = None
@@ -1174,6 +1187,24 @@ class TransportSolver(FusionKernel):
 
     # ── Main evolution (Crank-Nicolson) ──────────────────────────────
 
+    def update_pedestal_bc(self):
+        """Update T_edge_keV using EPED model if active."""
+        if self.pedestal_model is None:
+            return
+
+        # Use density at rho ~ 0.95 as proxy for pedestal density
+        n_ped_idx = int(0.95 * self.nr)
+        n_ped = float(self.ne[n_ped_idx])
+        
+        # Predict
+        try:
+            result = self.pedestal_model.predict(n_ped, T_ped_guess_keV=self.T_edge_keV)
+            if result.in_domain or result.extrapolation_penalty > 0.5:
+                # Relax towards new value to avoid shocks
+                self.T_edge_keV = 0.8 * self.T_edge_keV + 0.2 * result.T_ped_keV
+        except ValueError:
+            pass # Keep previous BC on failure
+
     def evolve_profiles(
         self,
         dt: float,
@@ -1207,6 +1238,9 @@ class TransportSolver(FusionKernel):
             Optional per-call override for recovery budget.  ``None`` uses the
             solver-level default.
         """
+        # Update EPED boundary condition first
+        self.update_pedestal_bc()
+
         if (not np.isfinite(dt)) or dt <= 0.0:
             raise ValueError(f"dt must be finite and > 0, got {dt!r}")
         if not np.isfinite(P_aux):
@@ -1311,7 +1345,7 @@ class TransportSolver(FusionKernel):
             new_Te = self._thomas_solve(a_e, b_e, c_e, rhs_e)
 
             new_Te[0] = new_Te[1]
-            new_Te[-1] = 0.08  # cooler edge electrons
+            new_Te[-1] = self.T_edge_keV  # EPED boundary condition
             self.Te, n_te_new = self._sanitize_with_fallback(
                 new_Te, Te_old, floor=0.01, ceil=1e3
             )
@@ -1329,7 +1363,7 @@ class TransportSolver(FusionKernel):
                 scale = mean_ti_old / max(mean_ti_new, 1e-12)
                 self.Ti *= scale
                 self.Ti[0] = self.Ti[1]
-                self.Ti[-1] = 0.1
+                self.Ti[-1] = max(0.1, self.T_edge_keV)
                 self.Ti = np.maximum(0.01, self.Ti)
                 if not self.multi_ion:
                     self.Te = self.Ti.copy()
