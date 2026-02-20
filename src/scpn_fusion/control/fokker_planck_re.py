@@ -158,7 +158,10 @@ class FokkerPlanckSolver:
     def explicit_knock_on_source(self, n_e: float) -> np.ndarray:
         """
         Explicit large-angle knock-on collision source (Avalanche initiator).
-        S_knock_on(p) ~ n_e * n_RE * (differential cross section)
+        
+        NOTE: Uses approximate Moller cross-section (1/p^2 scaling).
+        For full relativistic QED, use the Rosenbluth-Putvinski kernel or 
+        explicit Monte-Carlo collision operators (e.g. Chiu 1998).
         """
         # Simple 1/p^2 distribution for knock-on secondaries
         # (Moller scattering approximation)

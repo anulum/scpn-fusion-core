@@ -94,11 +94,21 @@ def update_step(params, m, v, x_batch, y_batch, lr, t):
     )
     return new_params, m, v, loss
 
-# ── Data Generation (GENE-like Physics Informed) ──────────────────────
+# ── Data Generation (Physics-Informed GENE-like) ──────────────────────
+
+def load_gene_binary(file_path: str):
+    """
+    Placeholder for actual GENE binary output ingestion.
+    Use this to replace synthetic fields with real gyrokinetic data (Roadmap G4).
+    """
+    raise NotImplementedError("Actual GENE binary ingestion requires the GA-TGLF/GENE tools.")
 
 def generate_gene_like_field(grid_size, regime, key):
     """
-    Generates a turbulent field with GENE-like structures.
+    Generates a turbulent field with GENE-like structures (Blobs/Streamers).
+    
+    NOTE: As of v3.8.2, this is a physics-informed synthetic generator modeling
+    GENE spectral character. It is not the direct output of a GENE binary run.
     """
     k = jnp.fft.fftfreq(grid_size)
     kx, ky = jnp.meshgrid(k, k)

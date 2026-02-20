@@ -75,15 +75,16 @@ class TokamakEnv(gym.Env):
         )
 
         # Observation: [R, Z, Ip, Beta, dR, dZ, XP_R, XP_Z]
-        # Limits based on ITER-like geometry
-        obs_low = np.array([2.0, -6.0, 0.0, 0.0, -5.0, -5.0, 0.0, -10.0], dtype=np.float32)
-        obs_high = np.array([10.0, 6.0, 20.0, 10.0, 5.0, 5.0, 10.0, 0.0], dtype=np.float32)
+        # Expanded limits to ensure compliance with noisy/perturbed states
+        obs_low = np.array([0.0, -10.0, 0.0, 0.0, -10.0, -10.0, 0.0, -15.0], dtype=np.float32)
+        obs_high = np.array([15.0, 10.0, 30.0, 20.0, 10.0, 10.0, 15.0, 5.0], dtype=np.float32)
         self.observation_space = spaces.Box(low=obs_low, high=obs_high, dtype=np.float32)
 
-        # Action: Continuous current deltas [A] and Beta power
-        # PF coil deltas ~ 10kA per step, Heating delta ~ 0.1 beta units
-        act_limit = np.array([1e5, 1e5, 1e5, 0.5], dtype=np.float32)
-        self.action_space = spaces.Box(low=-act_limit, high=act_limit, dtype=np.float32)
+        # Action: Normalized [-1, 1] mapped to physical deltas
+        # [PF1_delta, PF3_delta, PF5_delta, Heating_delta]
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(4,), dtype=np.float32)
+        # Scaling factor for actions (1.0 in RL -> 100kA in physical sim)
+        self._action_scale = np.array([1e5, 1e5, 1e5, 0.5], dtype=np.float32)
 
         self.current_step = 0
         self.state = None
@@ -137,8 +138,9 @@ class TokamakEnv(gym.Env):
     def step(
         self, action: np.ndarray
     ) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
-        # Apply Actions
-        pf1_delta, pf3_delta, pf5_delta, heating_delta = action
+        # Map normalized [-1, 1] to physical deltas
+        scaled_action = action * self._action_scale
+        pf1_delta, pf3_delta, pf5_delta, heating_delta = scaled_action
 
         # Map actions to actuators (with lag if we reuse FirstOrderActuator)
         # For RL, we can either control raw currents or go through actuators.
