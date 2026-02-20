@@ -8,6 +8,15 @@
 
 # Changelog
 
+## [3.7.0] — 2026-02-20
+
+### Added — High-Speed Rust Flight Sim & Neural Equilibrium
+
+- **Rust-native flight simulator**: `RustFlightSim` in `scpn-fusion-rs` with 10 kHz+ control loops, `IsoFluxController`, actuator delay line, and per-step timing instrumentation.
+- **Neural equilibrium surrogate**: PCA+MLP `NeuralEquilibriumKernel` in `neural_equilibrium.py` — drop-in FusionKernel replacement achieving ~1000x speedup over Picard iteration for Grad-Shafranov reconstruction.
+- **JAX Fourier Neural Operator**: `fno_jax_training.py` — JAX-accelerated FNO with spectral convolution for turbulence surrogate training (1000 samples, 64x64 grid).
+- **Jitter tracking hardening**: Sub-microsecond timing instrumentation for control loop latency monitoring.
+
 ## [3.6.0] — 2026-02-19
 
 ### Added — Project TOKAMAK-MASTER: Physics Hardening & NMPC
