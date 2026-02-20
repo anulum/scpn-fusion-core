@@ -15,13 +15,16 @@ from typing import Any, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-import jax
-import jax.numpy as jnp
-
 try:
-    from .fno_jax_training import fno_layer, model_forward
+    import jax
+    import jax.numpy as jnp
+    try:
+        from .fno_jax_training import fno_layer, model_forward
+    except ImportError:
+        from fno_jax_training import fno_layer, model_forward
+    _HAS_JAX = True
 except ImportError:
-    from fno_jax_training import fno_layer, model_forward
+    _HAS_JAX = False
 
 DEFAULT_JAX_WEIGHTS = Path("weights/fno_turbulence_jax.npz")
 
@@ -103,12 +106,10 @@ class FNO_Controller:
 
     def predict_and_suppress(self, field: np.ndarray) -> Tuple[float, np.ndarray]:
         # Inference using JAX model
-        x_jax = jnp.array(field).reshape(GRID_SIZE, GRID_SIZE, 1)
-        
-        # We use model_forward from fno_jax_training
-        # If no weights, we return zero suppression
-        if not self.loaded_weights:
+        if not _HAS_JAX or not self.loaded_weights:
             return 0.0, field
+
+        x_jax = jnp.array(field).reshape(GRID_SIZE, GRID_SIZE, 1)
             
         prediction_val = model_forward(self.params, x_jax)
         # Simple suppression law: tanh of predicted intensity

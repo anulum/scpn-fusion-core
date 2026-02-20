@@ -19,7 +19,13 @@ from scpn_fusion.core.fno_turbulence_suppressor import (
     run_fno_simulation,
 )
 
-pytestmark = pytest.mark.experimental
+try:
+    import jax
+    HAS_JAX = True
+except ImportError:
+    HAS_JAX = False
+
+pytestmark = [pytest.mark.experimental, pytest.mark.skipif(not HAS_JAX, reason="JAX not installed")]
 
 
 def test_fno_training_smoke(tmp_path):
@@ -60,7 +66,7 @@ def test_fno_controller_loads_saved_weights(tmp_path):
             message="FNO turbulence surrogate.*",
             category=Warning,
         )
-        controller = FNO_Controller(modes=4, width=4, weights_path=str(output))
+        controller = FNO_Controller(weights_path=str(output))
     suppression, prediction = controller.predict_and_suppress(np.zeros((64, 64), dtype=np.float64))
 
     assert controller.loaded_weights

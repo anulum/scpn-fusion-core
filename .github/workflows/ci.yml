@@ -39,7 +39,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e \".[dev]\"
-          pip install jax jaxlib
+          pip install \"jax[cpu]\"
 
       - name: Bootstrap optional sc-neurocore modules (Python 3.12 lane)
         if: matrix.python-version == '3.12'
@@ -103,7 +103,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e \".[dev]\"
-          pip install jax jaxlib
+          pip install \"jax[cpu]\"
 
       - name: Bootstrap optional sc-neurocore modules
         run: |
@@ -149,7 +149,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e \".[dev]\"
-          pip install jax jaxlib
+          pip install \"jax[cpu]\"
 
       - name: Run 3D quickstart smoke
         run: |
@@ -191,7 +191,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e \".[dev]\"
-          pip install jax jaxlib
+          pip install \"jax[cpu]\"
 
       - name: Generate RMSE dashboard
         run: |
@@ -237,7 +237,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e \".[dev]\"
-          pip install jax jaxlib
+          pip install \"jax[cpu]\"
 
       - name: Run real-shot validation
         run: python validation/validate_real_shots.py
@@ -447,7 +447,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e \".[dev]\"
-          pip install jax jaxlib
+          pip install \"jax[cpu]\"
 
       - name: Bootstrap optional sc-neurocore modules
         run: |

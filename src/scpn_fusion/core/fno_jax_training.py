@@ -10,7 +10,6 @@ from pathlib import Path
 import time
 import logging
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ── FNO Hyperparameters ──────────────────────────────────────────────
@@ -104,6 +103,7 @@ def update_step(params, opt_state, x_batch, y_batch, lr):
     return new_params, loss
 
 def train_fno_jax():
+    logging.basicConfig(level=logging.INFO)
     logger.info("Generating synthetic turbulence dataset (JAX)...")
     key = random.PRNGKey(42)
 

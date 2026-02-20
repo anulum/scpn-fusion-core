@@ -6,13 +6,13 @@ import sys
 from pathlib import Path
 import argparse
 
-try:
-    import scpn_fusion_rs
-except ImportError:
-    print("Error: scpn_fusion_rs extension not found. Build with cargo first.")
-    sys.exit(1)
-
 def run():
+    try:
+        import scpn_fusion_rs
+    except ImportError:
+        print("Error: scpn_fusion_rs extension not found. Build with cargo first.")
+        sys.exit(1)
+
     parser = argparse.ArgumentParser(description="Rust-Native High-Speed Flight Sim")
     parser.add_argument("--hz", type=float, default=10000.0, help="Control frequency (Hz)")
     parser.add_argument("--duration", type=float, default=30.0, help="Shot duration (s)")
