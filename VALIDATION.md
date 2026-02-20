@@ -39,6 +39,10 @@ This document covers data provenance and validation notes for:
   - `validation/reports/transport_uncertainty_envelope_benchmark.json`
   - `validation/reports/transport_uncertainty_envelope_benchmark.md`
   - Generated/checked by `validation/benchmark_transport_uncertainty_envelope.py`.
+- Multi-ion transport conservation contract (D/T/He-ash quasi-neutrality + late-energy stability):
+  - `validation/reports/multi_ion_transport_conservation_benchmark.json`
+  - `validation/reports/multi_ion_transport_conservation_benchmark.md`
+  - Generated/checked by `validation/benchmark_multi_ion_transport_conservation.py`.
 
 ## Validation Script Linkage
 
@@ -92,6 +96,7 @@ python tools/generate_disruption_risk_calibration.py --check
 python validation/benchmark_disruption_replay_pipeline.py --strict
 python validation/benchmark_eped_domain_contract.py --strict
 python validation/benchmark_transport_uncertainty_envelope.py --strict
+python validation/benchmark_multi_ion_transport_conservation.py --strict
 python validation/scpn_end_to_end_latency.py --strict
 ```
 

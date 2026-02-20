@@ -22,6 +22,7 @@ def _build_release_checks(
     skip_disruption_replay_pipeline: bool,
     skip_eped_domain_contract: bool,
     skip_transport_uncertainty: bool,
+    skip_multi_ion_conservation: bool,
     skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
@@ -137,6 +138,17 @@ def _build_release_checks(
                 ],
             )
         )
+    if not skip_multi_ion_conservation:
+        checks.append(
+            (
+                "Multi-ion transport conservation benchmark",
+                [
+                    sys.executable,
+                    "validation/benchmark_multi_ion_transport_conservation.py",
+                    "--strict",
+                ],
+            )
+        )
     if not skip_end_to_end_latency:
         checks.append(
             (
@@ -205,6 +217,7 @@ def _build_checks(
     skip_disruption_replay_pipeline: bool,
     skip_eped_domain_contract: bool,
     skip_transport_uncertainty: bool,
+    skip_multi_ion_conservation: bool,
     skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
@@ -225,6 +238,7 @@ def _build_checks(
                 skip_disruption_replay_pipeline=skip_disruption_replay_pipeline,
                 skip_eped_domain_contract=skip_eped_domain_contract,
                 skip_transport_uncertainty=skip_transport_uncertainty,
+                skip_multi_ion_conservation=skip_multi_ion_conservation,
                 skip_end_to_end_latency=skip_end_to_end_latency,
                 skip_notebook_quality=skip_notebook_quality,
                 skip_threshold_smoke=skip_threshold_smoke,
@@ -318,6 +332,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip validation/benchmark_transport_uncertainty_envelope.py --strict",
     )
     parser.add_argument(
+        "--skip-multi-ion-conservation",
+        action="store_true",
+        help="Skip validation/benchmark_multi_ion_transport_conservation.py --strict",
+    )
+    parser.add_argument(
         "--skip-end-to-end-latency",
         action="store_true",
         help="Skip validation/scpn_end_to_end_latency.py --strict",
@@ -355,6 +374,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_disruption_replay_pipeline=args.skip_disruption_replay_pipeline,
         skip_eped_domain_contract=args.skip_eped_domain_contract,
         skip_transport_uncertainty=args.skip_transport_uncertainty,
+        skip_multi_ion_conservation=args.skip_multi_ion_conservation,
         skip_end_to_end_latency=args.skip_end_to_end_latency,
         skip_notebook_quality=args.skip_notebook_quality,
         skip_threshold_smoke=args.skip_threshold_smoke,

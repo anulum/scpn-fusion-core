@@ -1,0 +1,29 @@
+{
+  "multi_ion_transport_conservation_benchmark": {
+    "config_path": "iter_config.json",
+    "steps": 30,
+    "dt_s": 0.1,
+    "p_aux_mw": 30.0,
+    "finite_pass": true,
+    "positivity_pass": true,
+    "quasineutral_pass": true,
+    "late_energy_pass": true,
+    "he_ash_pass": true,
+    "passes_thresholds": true,
+    "thresholds": {
+      "max_quasineutral_residual": 1e-10,
+      "max_late_energy_error_p95": 2.0,
+      "min_he_ash_peak": 0.0001
+    },
+    "metrics": {
+      "quasineutral_residual": 0.0,
+      "late_energy_error_mean": 0.2884991214976853,
+      "late_energy_error_p95": 0.6548878012304503,
+      "he_ash_peak_1e19m3": 0.021704675832668798,
+      "n_D_min": 0.01,
+      "n_T_min": 0.01,
+      "n_He_min": 0.0,
+      "z_eff_final": 1.0229739960733333
+    }
+  }
+}

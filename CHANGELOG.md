@@ -114,6 +114,14 @@
     - `validation/reports/transport_uncertainty_envelope_benchmark.md`
   - Added release preflight wiring for `validation/benchmark_transport_uncertainty_envelope.py --strict`.
   - Added tests for envelope contract fields, benchmark strict mode, markdown output, and preflight command ordering.
+- Added multi-ion transport conservation contracts (A11):
+  - Added strict benchmark lane for D/T/He-ash transport integrity:
+    - `validation/benchmark_multi_ion_transport_conservation.py`
+    - `validation/reports/multi_ion_transport_conservation_benchmark.json`
+    - `validation/reports/multi_ion_transport_conservation_benchmark.md`
+  - Benchmark enforces finite/positive species state, quasineutral closure residual bounds, late-window energy-error stability, and He-ash accumulation.
+  - Added release preflight wiring for `validation/benchmark_multi_ion_transport_conservation.py --strict`.
+  - Added benchmark tests and updated preflight command-order/skip-flag tests.
 
 ---
 
