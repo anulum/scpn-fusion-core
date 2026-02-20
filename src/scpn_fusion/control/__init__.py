@@ -1,26 +1,9 @@
 # ──────────────────────────────────────────────────────────────────────
-# SCPN Fusion Core — Control Package Init
+# SCPN Fusion Core — Control Module
 # © 1998–2026 Miroslav Šotek. All rights reserved.
 # Contact: www.anulum.li | protoscience@anulum.li
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-from .fusion_sota_mpc import ModelPredictiveController, NeuralSurrogate
-from .fueling_mode import IcePelletFuelingController, FuelingSimResult, simulate_iter_density_control
-from .digital_twin_ingest import RealtimeTwinHook, TelemetryPacket, generate_emulated_stream
-from .torax_hybrid_loop import (
-    ToraxHybridCampaignResult,
-    ToraxPlasmaState,
-    run_nstxu_torax_hybrid_campaign,
-)
-from .tokamak_flight_sim import IsoFluxController
-from .jax_traceable_runtime import (
-    TraceableBackendParityReport,
-    TraceableRuntimeBatchResult,
-    TraceableRuntimeResult,
-    TraceableRuntimeSpec,
-    available_traceable_backends,
-    run_traceable_control_batch,
-    run_traceable_control_loop,
-    validate_traceable_backend_parity,
-)
+from .fusion_sota_mpc import run_sota_simulation, ModelPredictiveController
+from .fusion_nmpc_jax import get_nmpc_controller, NonlinearMPC

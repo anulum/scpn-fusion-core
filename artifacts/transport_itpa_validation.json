@@ -1,0 +1,189 @@
+{
+  "n_shots": 20,
+  "rmse_s": 0.1287,
+  "rmse_relative": 0.2862,
+  "mean_measured_s": 0.4496,
+  "within_2sigma_fraction": 0.95,
+  "shots": [
+    {
+      "machine": "ITER",
+      "shot": "design",
+      "tau_measured_s": 3.7,
+      "tau_predicted_s": 3.606,
+      "sigma_s": 0.9951,
+      "relative_error": -0.0254,
+      "within_2sigma": true
+    },
+    {
+      "machine": "JET",
+      "shot": "92436",
+      "tau_measured_s": 0.41,
+      "tau_predicted_s": 0.5201,
+      "sigma_s": 0.1108,
+      "relative_error": 0.2687,
+      "within_2sigma": true
+    },
+    {
+      "machine": "JET",
+      "shot": "84794",
+      "tau_measured_s": 0.45,
+      "tau_predicted_s": 0.5598,
+      "sigma_s": 0.1194,
+      "relative_error": 0.2439,
+      "within_2sigma": true
+    },
+    {
+      "machine": "JET",
+      "shot": "DTE2",
+      "tau_measured_s": 0.27,
+      "tau_predicted_s": 0.3554,
+      "sigma_s": 0.0789,
+      "relative_error": 0.3164,
+      "within_2sigma": true
+    },
+    {
+      "machine": "DIII-D",
+      "shot": "163303",
+      "tau_measured_s": 0.18,
+      "tau_predicted_s": 0.1495,
+      "sigma_s": 0.0277,
+      "relative_error": -0.1692,
+      "within_2sigma": true
+    },
+    {
+      "machine": "DIII-D",
+      "shot": "154406",
+      "tau_measured_s": 0.14,
+      "tau_predicted_s": 0.1197,
+      "sigma_s": 0.0219,
+      "relative_error": -0.1449,
+      "within_2sigma": true
+    },
+    {
+      "machine": "DIII-D",
+      "shot": "hybrid",
+      "tau_measured_s": 0.16,
+      "tau_predicted_s": 0.1313,
+      "sigma_s": 0.0242,
+      "relative_error": -0.1793,
+      "within_2sigma": true
+    },
+    {
+      "machine": "ASDEX-U",
+      "shot": "33616",
+      "tau_measured_s": 0.1,
+      "tau_predicted_s": 0.1144,
+      "sigma_s": 0.0219,
+      "relative_error": 0.1436,
+      "within_2sigma": true
+    },
+    {
+      "machine": "ASDEX-U",
+      "shot": "improved",
+      "tau_measured_s": 0.12,
+      "tau_predicted_s": 0.1002,
+      "sigma_s": 0.0191,
+      "relative_error": -0.1653,
+      "within_2sigma": true
+    },
+    {
+      "machine": "C-Mod",
+      "shot": "1120815",
+      "tau_measured_s": 0.035,
+      "tau_predicted_s": 0.0469,
+      "sigma_s": 0.0097,
+      "relative_error": 0.3412,
+      "within_2sigma": true
+    },
+    {
+      "machine": "C-Mod",
+      "shot": "high_field",
+      "tau_measured_s": 0.033,
+      "tau_predicted_s": 0.0574,
+      "sigma_s": 0.0125,
+      "relative_error": 0.7399,
+      "within_2sigma": true
+    },
+    {
+      "machine": "JT-60U",
+      "shot": "48158",
+      "tau_measured_s": 0.38,
+      "tau_predicted_s": 0.3732,
+      "sigma_s": 0.0828,
+      "relative_error": -0.0179,
+      "within_2sigma": true
+    },
+    {
+      "machine": "JT-60U",
+      "shot": "high_betap",
+      "tau_measured_s": 0.35,
+      "tau_predicted_s": 0.399,
+      "sigma_s": 0.0881,
+      "relative_error": 0.1401,
+      "within_2sigma": true
+    },
+    {
+      "machine": "NSTX",
+      "shot": "141340",
+      "tau_measured_s": 0.035,
+      "tau_predicted_s": 0.0389,
+      "sigma_s": 0.0065,
+      "relative_error": 0.1102,
+      "within_2sigma": true
+    },
+    {
+      "machine": "MAST",
+      "shot": "22254",
+      "tau_measured_s": 0.01,
+      "tau_predicted_s": 0.0357,
+      "sigma_s": 0.0057,
+      "relative_error": 2.5655,
+      "within_2sigma": false
+    },
+    {
+      "machine": "KSTAR",
+      "shot": "18594",
+      "tau_measured_s": 0.13,
+      "tau_predicted_s": 0.1109,
+      "sigma_s": 0.021,
+      "relative_error": -0.147,
+      "within_2sigma": true
+    },
+    {
+      "machine": "KSTAR",
+      "shot": "high_perf",
+      "tau_measured_s": 0.14,
+      "tau_predicted_s": 0.1088,
+      "sigma_s": 0.0205,
+      "relative_error": -0.2229,
+      "within_2sigma": true
+    },
+    {
+      "machine": "EAST",
+      "shot": "high_betaN",
+      "tau_measured_s": 0.08,
+      "tau_predicted_s": 0.0768,
+      "sigma_s": 0.0151,
+      "relative_error": -0.0402,
+      "within_2sigma": true
+    },
+    {
+      "machine": "SPARC",
+      "shot": "design",
+      "tau_measured_s": 0.77,
+      "tau_predicted_s": 0.6295,
+      "sigma_s": 0.1482,
+      "relative_error": -0.1824,
+      "within_2sigma": true
+    },
+    {
+      "machine": "ARC",
+      "shot": "design",
+      "tau_measured_s": 1.5,
+      "tau_predicted_s": 2.0131,
+      "sigma_s": 0.492,
+      "relative_error": 0.3421,
+      "within_2sigma": true
+    }
+  ]
+}

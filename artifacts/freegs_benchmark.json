@@ -1,0 +1,40 @@
+{
+  "generated_at_utc": "2026-02-17T16:58:04.499647+00:00",
+  "mode": "solovev_analytic",
+  "psi_nrmse_threshold": 0.1,
+  "cases": [
+    {
+      "name": "ITER-like",
+      "mode": "solovev",
+      "psi_nrmse": 8.85627,
+      "q_profile_nrmse": 0.543793,
+      "axis_error_m": 5.683433,
+      "our_converged": false,
+      "our_residual": 0.0220527,
+      "passes": false
+    },
+    {
+      "name": "SPARC-like",
+      "mode": "solovev",
+      "psi_nrmse": 2.165554,
+      "q_profile_nrmse": 0.539196,
+      "axis_error_m": 1.75433,
+      "our_converged": false,
+      "our_residual": 0.00411585,
+      "passes": false
+    },
+    {
+      "name": "Spherical-tokamak",
+      "mode": "solovev",
+      "psi_nrmse": 0.915895,
+      "q_profile_nrmse": 0.711402,
+      "axis_error_m": 1.829399,
+      "our_converged": false,
+      "our_residual": 1000000000.0,
+      "passes": false
+    }
+  ],
+  "overall_psi_nrmse": 3.97924,
+  "passes": false,
+  "runtime_s": 44.015
+}

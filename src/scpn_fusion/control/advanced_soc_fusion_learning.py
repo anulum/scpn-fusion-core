@@ -52,12 +52,14 @@ class CoupledSandpileReactor:
         shear_efficiency: float = SHEAR_EFFICIENCY,
         max_sub_steps: int = 50,
         flow_bounds: Tuple[float, float] = (0.0, 5.0),
+        energy_per_topple_mj: float = 0.05, # Physical calibration
     ) -> None:
         size = int(size)
         if size < 8:
             raise ValueError("size must be >= 8.")
         self.size = size
         self.z_crit_base = float(z_crit_base)
+        self.energy_per_topple_mj = float(energy_per_topple_mj)
         flow_generation = float(flow_generation)
         if not np.isfinite(flow_generation) or flow_generation < 0.0:
             raise ValueError("flow_generation must be finite and >= 0.")
@@ -109,6 +111,10 @@ class CoupledSandpileReactor:
     def get_profile_energy(self) -> float:
         self.h = np.cumsum(self.Z[::-1])[::-1]
         return float(self.h[0] if self.h.size else 0.0)
+
+    def get_elm_energy_mj(self, topple_count: int) -> float:
+        """Calculate real energy release from topple count."""
+        return float(topple_count) * self.energy_per_topple_mj
 
 
 class FusionAIAgent:

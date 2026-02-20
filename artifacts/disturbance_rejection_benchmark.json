@@ -1,0 +1,112 @@
+{
+  "benchmark": "disturbance_rejection",
+  "timestamp": "2026-02-17T09:22:04.469797+00:00",
+  "iter_params": {
+    "Ip_MA": 15.0,
+    "BT_T": 5.3,
+    "R0_m": 6.2,
+    "a_m": 2.0,
+    "kappa": 1.7,
+    "n_GW_1e20m3": 1.0
+  },
+  "scenarios": {
+    "VDE": {
+      "duration_s": 0.2,
+      "dt_s": 0.0001,
+      "description": "Vertical Displacement Event: gamma=100/s instability, impulsive kick.  Must stabilise within 50 ms."
+    },
+    "Density ramp": {
+      "duration_s": 3.0,
+      "dt_s": 0.001,
+      "description": "Linear density ramp 0.5 to 1.2 Greenwald fraction over 2 s.  Overshoot must be < 20%."
+    },
+    "ELM pacing": {
+      "duration_s": 0.5,
+      "dt_s": 0.0001,
+      "description": "ELM pacing at 10 Hz, 5% beta_N drop per burst.  Must recover within 30 ms per burst."
+    }
+  },
+  "results": [
+    {
+      "controller": "SNN (H-inf)",
+      "scenario": "VDE",
+      "ise": 4.844435988778582e-06,
+      "settling_time_s": 0.0545,
+      "peak_overshoot": 0.016697094181881873,
+      "control_effort": 6.887473337349277,
+      "stable": true
+    },
+    {
+      "controller": "PID",
+      "scenario": "VDE",
+      "ise": 13.582049448191368,
+      "settling_time_s": 0.19990000000000002,
+      "peak_overshoot": 10.038278365142057,
+      "control_effort": 278.88355144025036,
+      "stable": false
+    },
+    {
+      "controller": "MPC",
+      "scenario": "VDE",
+      "ise": 13.684355680739607,
+      "settling_time_s": 0.19990000000000002,
+      "peak_overshoot": 10.056839006696373,
+      "control_effort": 21.551566215703897,
+      "stable": false
+    },
+    {
+      "controller": "SNN (H-inf)",
+      "scenario": "Density ramp",
+      "ise": 4.461413506745817e-05,
+      "settling_time_s": 2.999,
+      "peak_overshoot": 0.007903533437071647,
+      "control_effort": 161.9987151330883,
+      "stable": true
+    },
+    {
+      "controller": "PID",
+      "scenario": "Density ramp",
+      "ise": 263.7372211112212,
+      "settling_time_s": 2.999,
+      "peak_overshoot": 10.411012622845393,
+      "control_effort": 5064.182374217537,
+      "stable": false
+    },
+    {
+      "controller": "MPC",
+      "scenario": "Density ramp",
+      "ise": 248.33287332561872,
+      "settling_time_s": 2.999,
+      "peak_overshoot": 10.10846084123519,
+      "control_effort": 432.38890414343996,
+      "stable": false
+    },
+    {
+      "controller": "SNN (H-inf)",
+      "scenario": "ELM pacing",
+      "ise": 2.0711840330467415e-07,
+      "settling_time_s": 0.4597,
+      "peak_overshoot": 0.0014867136026635835,
+      "control_effort": 3.3111710729604424,
+      "stable": true
+    },
+    {
+      "controller": "PID",
+      "scenario": "ELM pacing",
+      "ise": 40.68672655641202,
+      "settling_time_s": 0.4999,
+      "peak_overshoot": 10.067337518588687,
+      "control_effort": 812.388232827448,
+      "stable": false
+    },
+    {
+      "controller": "MPC",
+      "scenario": "ELM pacing",
+      "ise": 40.943039277074185,
+      "settling_time_s": 0.4999,
+      "peak_overshoot": 10.089442997255691,
+      "control_effort": 62.70948705756642,
+      "stable": false
+    }
+  ]
+}

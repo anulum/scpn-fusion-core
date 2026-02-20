@@ -1,0 +1,41 @@
+{
+  "config": {
+    "threshold_range": [
+      0.05,
+      0.99,
+      0.01
+    ],
+    "bias_values": [
+      -4.0,
+      -4.5,
+      -5.0,
+      -5.5,
+      -6.0,
+      -6.5,
+      -7.0,
+      -7.5,
+      -8.0
+    ],
+    "target_fpr_max": 0.3,
+    "target_recall_min": 0.8,
+    "n_shots": 16,
+    "n_disruptions": 6,
+    "n_safe": 10
+  },
+  "optimal": {
+    "bias": -5.0,
+    "threshold": 0.99,
+    "true_positives": 6,
+    "false_negatives": 0,
+    "false_positives": 5,
+    "true_negatives": 5,
+    "n_disruptions": 6,
+    "n_safe": 10,
+    "recall": 1.0,
+    "fpr": 0.5,
+    "selection": "pareto",
+    "pareto_score": 0.6
+  },
+  "best_per_bias": {},
+  "all_results_count": 855
+}

@@ -1,0 +1,277 @@
+{
+  "generated_at_utc": "2026-02-17T22:55:26.565818+00:00",
+  "confinement_itpa": {
+    "count": 20,
+    "tau_rmse_s": 0.12869867798102505,
+    "tau_mae_rel_pct": 32.53107628886907,
+    "h98_rmse": 0.19828979839532448,
+    "rows": [
+      {
+        "machine": "ITER",
+        "shot": "design",
+        "tau_measured_s": 3.7,
+        "tau_pred_s": 3.6060077194126654,
+        "h98_measured": 1.0,
+        "h98_pred": 1.0260654684906343
+      },
+      {
+        "machine": "JET",
+        "shot": "92436",
+        "tau_measured_s": 0.41,
+        "tau_pred_s": 0.5201485510391346,
+        "h98_measured": 0.95,
+        "h98_pred": 0.7882363589803649
+      },
+      {
+        "machine": "JET",
+        "shot": "84794",
+        "tau_measured_s": 0.45,
+        "tau_pred_s": 0.5597695611105319,
+        "h98_measured": 0.94,
+        "h98_pred": 0.8039022327459909
+      },
+      {
+        "machine": "JET",
+        "shot": "DTE2",
+        "tau_measured_s": 0.27,
+        "tau_pred_s": 0.3554189801488458,
+        "h98_measured": 0.97,
+        "h98_pred": 0.759666801944361
+      },
+      {
+        "machine": "DIII-D",
+        "shot": "163303",
+        "tau_measured_s": 0.18,
+        "tau_pred_s": 0.14954297145632342,
+        "h98_measured": 1.1,
+        "h98_pred": 1.203667402399932
+      },
+      {
+        "machine": "DIII-D",
+        "shot": "154406",
+        "tau_measured_s": 0.14,
+        "tau_pred_s": 0.11971096830206253,
+        "h98_measured": 1.05,
+        "h98_pred": 1.1694834816367274
+      },
+      {
+        "machine": "DIII-D",
+        "shot": "hybrid",
+        "tau_measured_s": 0.16,
+        "tau_pred_s": 0.1313112255425987,
+        "h98_measured": 1.15,
+        "h98_pred": 1.2184792224644525
+      },
+      {
+        "machine": "ASDEX-U",
+        "shot": "33616",
+        "tau_measured_s": 0.1,
+        "tau_pred_s": 0.11436036148372862,
+        "h98_measured": 0.95,
+        "h98_pred": 0.8744288554406867
+      },
+      {
+        "machine": "ASDEX-U",
+        "shot": "improved",
+        "tau_measured_s": 0.12,
+        "tau_pred_s": 0.10016557470863807,
+        "h98_measured": 1.05,
+        "h98_pred": 1.1980163878563703
+      },
+      {
+        "machine": "C-Mod",
+        "shot": "1120815",
+        "tau_measured_s": 0.035,
+        "tau_pred_s": 0.04694265936310885,
+        "h98_measured": 0.9,
+        "h98_pred": 0.7455904815547304
+      },
+      {
+        "machine": "C-Mod",
+        "shot": "high_field",
+        "tau_measured_s": 0.033,
+        "tau_pred_s": 0.05741769649521605,
+        "h98_measured": 0.85,
+        "h98_pred": 0.5747357002165614
+      },
+      {
+        "machine": "JT-60U",
+        "shot": "48158",
+        "tau_measured_s": 0.38,
+        "tau_pred_s": 0.3731905085223489,
+        "h98_measured": 0.9,
+        "h98_pred": 1.018246689886657
+      },
+      {
+        "machine": "JT-60U",
+        "shot": "high_betap",
+        "tau_measured_s": 0.35,
+        "tau_pred_s": 0.39904073489855046,
+        "h98_measured": 1.05,
+        "h98_pred": 0.8771034367931928
+      },
+      {
+        "machine": "NSTX",
+        "shot": "141340",
+        "tau_measured_s": 0.035,
+        "tau_pred_s": 0.038857823333809105,
+        "h98_measured": 1.0,
+        "h98_pred": 0.9007195204767808
+      },
+      {
+        "machine": "MAST",
+        "shot": "22254",
+        "tau_measured_s": 0.01,
+        "tau_pred_s": 0.035655346746255936,
+        "h98_measured": 0.8,
+        "h98_pred": 0.28046284533889915
+      },
+      {
+        "machine": "KSTAR",
+        "shot": "18594",
+        "tau_measured_s": 0.13,
+        "tau_pred_s": 0.11088750700048482,
+        "h98_measured": 1.0,
+        "h98_pred": 1.172359299225941
+      },
+      {
+        "machine": "KSTAR",
+        "shot": "high_perf",
+        "tau_measured_s": 0.14,
+        "tau_pred_s": 0.108800523891326,
+        "h98_measured": 1.1,
+        "h98_pred": 1.2867585099115626
+      },
+      {
+        "machine": "EAST",
+        "shot": "high_betaN",
+        "tau_measured_s": 0.08,
+        "tau_pred_s": 0.07678083881225782,
+        "h98_measured": 0.85,
+        "h98_pred": 1.0419266217657972
+      },
+      {
+        "machine": "SPARC",
+        "shot": "design",
+        "tau_measured_s": 0.77,
+        "tau_pred_s": 0.6295299603713291,
+        "h98_measured": 1.0,
+        "h98_pred": 1.2231347965485462
+      },
+      {
+        "machine": "ARC",
+        "shot": "design",
+        "tau_measured_s": 1.5,
+        "tau_pred_s": 2.0130768506371286,
+        "h98_measured": 1.0,
+        "h98_pred": 0.7451280359839505
+      }
+    ]
+  },
+  "confinement_iter_sparc": {
+    "count": 2,
+    "tau_rmse_s": 0.029861524497002717,
+    "rows": [
+      {
+        "scenario": "ITER_15MA_baseline",
+        "tau_measured_s": 3.7,
+        "tau_pred_s": 3.6643409641578857,
+        "relative_error_pct": -0.9637577254625539
+      },
+      {
+        "scenario": "SPARC_V2C",
+        "tau_measured_s": 0.77,
+        "tau_pred_s": 0.792624200613082,
+        "relative_error_pct": 2.938207871828833
+      }
+    ]
+  },
+  "beta_iter_sparc": {
+    "count": 2,
+    "beta_n_rmse": 0.04167435988081988,
+    "rows": [
+      {
+        "scenario": "ITER_15MA_baseline",
+        "beta_n_measured": 1.8,
+        "beta_n_estimated": 1.7490850894772474,
+        "relative_error_pct": -2.828606140152925,
+        "model_q": 15.0,
+        "model_p_fusion_mw": 1981.3839738814313
+      },
+      {
+        "scenario": "SPARC_V2C",
+        "beta_n_measured": 1.0,
+        "beta_n_estimated": 1.0296846160394955,
+        "relative_error_pct": 2.968461603949546,
+        "model_q": 15.0,
+        "model_p_fusion_mw": 492.94063756798107
+      }
+    ]
+  },
+  "sparc_axis": {
+    "count": 8,
+    "axis_rmse_m": 1.594950287483129,
+    "rows": [
+      {
+        "file": "lmode_hv.geqdsk",
+        "axis_error_m": 2.366652626156462
+      },
+      {
+        "file": "lmode_vh.geqdsk",
+        "axis_error_m": 2.4457894588195397
+      },
+      {
+        "file": "lmode_vv.geqdsk",
+        "axis_error_m": 2.42002240404174
+      },
+      {
+        "file": "sparc_1300.eqdsk",
+        "axis_error_m": 1.706259476147753
+      },
+      {
+        "file": "sparc_1305.eqdsk",
+        "axis_error_m": 0.007472862024166274
+      },
+      {
+        "file": "sparc_1310.eqdsk",
+        "axis_error_m": 0.0020941887952169963
+      },
+      {
+        "file": "sparc_1315.eqdsk",
+        "axis_error_m": 0.004451652138767841
+      },
+      {
+        "file": "sparc_1349.eqdsk",
+        "axis_error_m": 0.009525967971450331
+      }
+    ]
+  },
+  "sparc_psi_rmse": {
+    "skipped": true
+  },
+  "forward_diagnostics": {
+    "count_interferometer_channels": 3,
+    "count_thomson_channels": 3,
+    "phase_rmse_rad": 0.003378620403779573,
+    "neutron_rate_rel_error_pct": 2.9999999999999907,
+    "thomson_voltage_rmse_v": 6.105161114730882e-07,
+    "rows": [
+      {
+        "channel": 0,
+        "phase_true_rad": 0.2253495833639684,
+        "phase_pred_rad": 0.22196933961350898
+      },
+      {
+        "channel": 1,
+        "phase_true_rad": 0.2250247578819935,
+        "phase_pred_rad": 0.22164938651376348
+      },
+      {
+        "channel": 2,
+        "phase_true_rad": 0.2253495833639684,
+        "phase_pred_rad": 0.22196933961350898
+      }
+    ]
+  },
+  "runtime_seconds": 1.1293097999878228
+}

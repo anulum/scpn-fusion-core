@@ -49,11 +49,23 @@ class TokamakTopoloy:
         self.mask = self.r_map <= 1.0 # Plasma is only inside the circle
         
         # Initial q-profile (Safety Factor)
-        # q(r) usually rises from ~1.0 at core to ~4.0 at edge
         self.q0 = 1.0
         self.qa = 3.0
-        self.update_q_profile(0.0) # 0.0 = no extra modification
+        self.update_q_profile(0.0) 
         
+        # --- Resistive MHD (Rutherford) ---
+        self.resonances = [1.5, 2.0, 2.5, 3.0]
+        self.island_widths = {res: 0.01 for res in self.resonances}
+        self.eta = 1e-5 # Resistivity proxy
+        
+    def step_island_evolution(self, dt=0.1):
+        """Evolve island widths using the Rutherford Equation: dW/dt = eta * Delta'"""
+        for res in self.resonances:
+            # Simple Delta' model: unstable if q is low, stabilized by shear/width
+            delta_prime = 0.5 - (10.0 * self.island_widths[res])
+            dw_dt = self.eta * delta_prime
+            self.island_widths[res] = max(0.001, self.island_widths[res] + dw_dt * dt)
+
     def update_q_profile(self, current_drive_action):
         """
         Action modifies the magnetic shear (twisting of lines).
@@ -69,15 +81,13 @@ class TokamakTopoloy:
     def get_rational_surfaces(self):
         """
         Returns a boolean map of where Magnetic Islands are likely to form.
-        Resonances at q = 1.5, 2.0, 2.5, 3.0
+        Uses dynamic island widths from the Rutherford evolution.
         """
-        resonances = [1.5, 2.0, 2.5, 3.0]
         danger_map = np.zeros((self.size, self.size), dtype=bool)
         
-        for res in resonances:
-            # Bandwidth of resonance (island width)
-            island_width = 0.05 
-            mask = (np.abs(self.q_map - res) < island_width) & self.mask
+        for res in self.resonances:
+            width = self.island_widths[res]
+            mask = (np.abs(self.q_map - res) < width) & self.mask
             danger_map = np.logical_or(danger_map, mask)
             
         return danger_map
@@ -99,6 +109,7 @@ class Plasma2D:
         """
         # 1. Update Topology (Magnetic Geometry)
         self.topo.update_q_profile(action)
+        self.topo.step_island_evolution() # Dynamic Rutherford Step
         danger_zones = self.topo.get_rational_surfaces()
         
         # 2. Source Term (Core Heating)

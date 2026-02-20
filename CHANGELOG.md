@@ -8,6 +8,25 @@
 
 # Changelog
 
+## [3.6.0] — 2026-02-19
+
+### Added — Project TOKAMAK-MASTER: Physics Hardening & NMPC
+
+- **Nonlinear MPC (NMPC)**: Implemented a new `NonlinearMPC` controller in `src/scpn_fusion/control/fusion_nmpc_jax.py`:
+  - Uses a **Neural ODE** surrogate model ($dx/dt = f_{\theta}(x, u)$) for high-fidelity nonlinear prediction.
+  - Full **JAX integration** with JIT-compiled gradients, achieving **17.4x speedup** over SciPy baseline (13.18 ms vs 229 ms).
+  - Robust fallback to SciPy L-BFGS-B when JAX is unavailable.
+- **Resistive MHD (Rutherford)**: Upgraded magnetic island modeling in the Digital Twin (`tokamak_digital_twin.py`):
+  - Implemented the **Rutherford Equation** ($dW/dt = \eta \Delta'$) for dynamic island width evolution.
+  - Replaced static q-surface masking with physically evolved island growth and saturation.
+- **SOC Physical Calibration**: Hardened the sandpile reactor model (`advanced_soc_fusion_learning.py`):
+  - Mapped abstract "topples" to real **physical energy units (Megajoules)**.
+  - Added `energy_per_topple_mj` calibration (default 0.05 MJ) for quantitative ELM energy analysis.
+- **Unified State Space**: Introduced `FusionState` dataclass in `src/scpn_fusion/core/state_space.py`:
+  - Standardized representation of axis position, global physics (Ip, beta), and topological danger zones.
+  - Direct construction from physics kernels and easy vectorization for ML/MPC pipelines.
+- **Validation**: Added `validation/validate_superior_core.py` and `validation/benchmark_nmpc.py` to confirm integration and quantify performance gains.
+
 ## [3.5.0] — 2026-02-19
 
 ### Added — v3.5.0: Peer-Review Upgrade Phase Kickoff
