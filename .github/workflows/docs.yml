@@ -224,6 +224,11 @@ jobs:
                 <h2>Uncertainty Quantification</h2>
                 <p>Full-chain Monte Carlo UQ through equilibrium &rarr; transport &rarr; fusion power.</p>
               </a>
+              <a class="nb" href="platinum_standard_demo_v1.html" style="border-color: #ff00ff;">
+                <span class="badge" style="background: #3a1a3a; color: #ff66ff;">MASTER</span>
+                <h2>Platinum Standard Demo</h2>
+                <p><b>Project TOKAMAK-MASTER:</b> JAX-accelerated NMPC, Rutherford resistive MHD, and quantitative SOC calibration.</p>
+              </a>
             </div>
           </body>
           </html>
