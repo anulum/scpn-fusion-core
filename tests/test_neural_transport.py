@@ -144,11 +144,22 @@ class TestMLPForward:
 
 class TestNeuralTransportModel:
     def test_fallback_mode(self):
-        model = NeuralTransportModel()
+        """Explicitly testing fallback mode by passing None."""
+        model = NeuralTransportModel(weights_path=None)
+        # Note: In production, it might load default weights if file exists.
+        # But we want to ensure it CAN run in fallback.
+        # We use a non-existent path to force fallback for this test.
+        model = NeuralTransportModel("/tmp/missing.npz")
         assert not model.is_neural
         inp = TransportInputs(grad_ti=8.0)
         fluxes = model.predict(inp)
         assert fluxes.chi_i > 0
+
+    def test_qlknn_mode_loads_by_default(self):
+        """Default constructor should now load the shipped QLKNN weights."""
+        model = NeuralTransportModel()
+        # Since we just shipped weights/neural_transport_qlknn.npz, this should be True
+        assert model.is_neural
 
     def test_missing_weights_file(self):
         model = NeuralTransportModel("/nonexistent/path.npz")
@@ -181,7 +192,7 @@ class TestNeuralTransportModel:
 
     def test_predict_profile(self):
         """Profile prediction should return correct shapes."""
-        model = NeuralTransportModel()  # fallback mode
+        model = NeuralTransportModel("/tmp/fallback.npz")  # force fallback mode
         n = 50
         rho = np.linspace(0, 1, n)
         te = 10.0 * (1 - rho ** 2) + 0.1
@@ -200,7 +211,7 @@ class TestNeuralTransportModel:
 
     def test_fallback_matches_direct(self):
         """Fallback model.predict() should match critical_gradient_model()."""
-        model = NeuralTransportModel()
+        model = NeuralTransportModel("/tmp/fallback.npz") # force fallback
         inp = TransportInputs(grad_ti=7.0, grad_te=6.5)
 
         via_model = model.predict(inp)
@@ -212,7 +223,7 @@ class TestNeuralTransportModel:
 
     def test_vectorised_profile_matches_pointwise(self):
         """Vectorised predict_profile must match point-by-point fallback."""
-        model = NeuralTransportModel()  # fallback mode
+        model = NeuralTransportModel("/tmp/fallback.npz")  # force fallback mode
         n = 30
         rho = np.linspace(0.01, 0.99, n)
         te = 8.0 * (1 - rho ** 2) + 0.2
@@ -362,12 +373,12 @@ class TestNeuralTransportModel:
         ],
     )
     def test_predict_profile_rejects_invalid_profile_inputs(self, kwargs, match):
-        model = NeuralTransportModel()
+        model = NeuralTransportModel("/tmp/fallback.npz")
         with pytest.raises(ValueError, match=match):
             model.predict_profile(**kwargs)
 
     def test_predict_profile_exposes_gradient_clip_telemetry(self):
-        model = NeuralTransportModel()
+        model = NeuralTransportModel("/tmp/fallback.npz")
         rho = np.linspace(0.0, 1.0, 64)
         te = 12.0 * np.exp(-15.0 * rho) + 0.05
         ti = 10.0 * np.exp(-13.0 * rho) + 0.05
