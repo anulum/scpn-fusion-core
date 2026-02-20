@@ -124,7 +124,7 @@ class IsoFluxController:
         heating_actuator_tau_s: Optional[float] = None,
         actuator_current_delta_limit: float = 1.0e9,
         heating_beta_max: float = 5.0,
-        control_dt_s: float = 0.05,
+        control_dt_s: float = 0.01,
     ) -> None:
         self.kernel = kernel_factory(config_file)
         self.verbose = bool(verbose)
@@ -210,39 +210,55 @@ class IsoFluxController:
 
     def run_shot(
         self,
-        shot_duration: int = SHOT_DURATION,
+        shot_duration: float = 30.0,
         save_plot: bool = True,
         output_path: str = "Tokamak_Flight_Report.png",
     ) -> Dict[str, Any]:
-        steps = int(shot_duration)
+        """
+        Run a simulated tokamak shot.
+
+        Parameters
+        ----------
+        shot_duration : float
+            Simulated duration in seconds. Default 30.0s.
+        save_plot : bool
+            Whether to generate a summary plot.
+        output_path : str
+            Filename for the plot.
+        """
+        steps = int(shot_duration / self.control_dt_s)
         if steps < 1:
-            raise ValueError("shot_duration must be >= 1.")
-        self._log("--- INITIATING TOKAMAK FLIGHT SIMULATOR ---")
-        self._log("Scenario: Current Ramp-Up & Divertor Formation")
+            raise ValueError("shot_duration must be >= control_dt_s.")
+        self._log(f"--- INITIATING TOKAMAK FLIGHT SIMULATOR ({steps} steps) ---")
+        self._log(f"Scenario: Current Ramp-Up & Divertor Formation (dt={self.control_dt_s}s)")
         
         # Initial Solve
         self.kernel.solve_equilibrium()
         
         # Physics Evolution Loop
         for t in range(steps):
+            time_s = t * self.control_dt_s
             # 1. EVOLVE PHYSICS (Scenario)
             # Ramp up plasma current
-            target_Ip = 5.0 + (10.0 * t / steps) # 5MA -> 15MA
+            target_Ip = 5.0 + (10.0 * time_s / shot_duration) # 5MA -> 15MA
             physics_cfg = self.kernel.cfg.setdefault("physics", {})
             physics_cfg['plasma_current_target'] = target_Ip
             
             # Increase Pressure (Heating) -> This pushes plasma outward (Shafranov Shift)
             # The controller must fight this drift!
-            beta_cmd = 1.0 + (0.05 * t)
+            beta_cmd = 1.0 + (0.05 * time_s)
             beta_applied = self._act_heating.step(beta_cmd)
             physics_cfg['beta_scale'] = beta_applied
             
             # 2. MEASURE STATE (Diagnostics)
             # Find current axis
-            idx_max = np.argmax(self.kernel.Psi)
-            iz, ir = np.unravel_index(idx_max, self.kernel.Psi.shape)
-            curr_R = self.kernel.R[ir]
-            curr_Z = self.kernel.Z[iz]
+            if hasattr(self.kernel, "find_magnetic_axis"):
+                curr_R, curr_Z, _ = self.kernel.find_magnetic_axis()
+            else:
+                idx_max = np.argmax(self.kernel.Psi)
+                iz, ir = np.unravel_index(idx_max, self.kernel.Psi.shape)
+                curr_R = self.kernel.R[ir]
+                curr_Z = self.kernel.Z[iz]
             
             # Find X-point (Divertor)
             xp_pos, _ = self.kernel.find_x_point(self.kernel.Psi)
@@ -288,8 +304,8 @@ class IsoFluxController:
             self.history['beta_applied'].append(beta_applied)
             
             self._log(
-                f"Time {t}: Ip={target_Ip:.1f}MA | "
-                f"Axis=({curr_R:.2f}, {curr_Z:.2f}) | Ctrl_R={ctrl_radial:.2f}"
+                f"Time {time_s:.2f}s (Step {t}): Ip={target_Ip:.1f}MA | "
+                f"Axis=({curr_R:.2f}, {curr_Z:.2f}) | XP=({xp_pos[0]:.2f}, {xp_pos[1]:.2f}) | Ctrl_R={ctrl_radial:.2f} | Psi_max={np.max(self.kernel.Psi):.2f}"
             )
 
         plot_saved = False

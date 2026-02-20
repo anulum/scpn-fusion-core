@@ -59,8 +59,18 @@ MODE_SPECS: dict[str, ModeSpec] = {
         "public",
         "Neuro-cybernetic controller",
     ),
+    "rust-flight": ModeSpec(
+        "scpn_fusion.control.rust_flight_sim_wrapper",
+        "public",
+        "Rust-native 10kHz flight simulator",
+    ),
     # Surrogate modes (opt-in).
     "neural": ModeSpec("scpn_fusion.core.neural_equilibrium", "surrogate", "Neural equilibrium surrogate"),
+    "fno-training": ModeSpec(
+        "scpn_fusion.core.fno_jax_training",
+        "surrogate",
+        "JAX-accelerated FNO training",
+    ),
     # Experimental modes (opt-in).
     "quantum": ModeSpec("scpn_fusion.core.quantum_bridge", "experimental", "Quantum bridge"),
     "q-control": ModeSpec("scpn_fusion.core.quantum_bridge", "experimental", "Quantum control bridge"),

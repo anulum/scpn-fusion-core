@@ -6,46 +6,12 @@
 # License: GNU AGPL v3 | Commercial licensing available
 # ─────────────────────────────────────────────────────────────────────
 """
-Pure-NumPy training for a multi-layer Fourier Neural Operator turbulence model.
+Pure-NumPy training for a multi-layer Fourier Neural Operator turbulence model (LEGACY).
 
-.. deprecated:: 2.1.0
-
-    **DEPRECATED / EXPERIMENTAL** — Trained on 60 synthetic Hasegawa-Wakatani
-    samples.  Not validated against production gyrokinetic codes (GENE, GS2,
-    QuaLiKiz).  Current relative L2 error is ~0.79 (explains ~21% of variance).
-    Removed from default pipeline in v2.1.0; will be retired in v3.0.0 unless
-    real gyrokinetic training data becomes available.  The trained FNO can be
-    hot-swapped when real simulation data becomes available without changing
-    the model architecture.
-
-Supports two data generation modes:
-
-1. **Single-regime Hasegawa-Wakatani** (legacy) — fixed adiabaticity, one
-   damping parameter.  Uses ``_generate_training_pairs()``.
-
-2. **Multi-regime SPARC-parameterized** — samples from ITG / TEM / ETG
-   regimes with SPARC-relevant adiabaticity α, gradient drive κ, viscosity ν,
-   and spectral cutoff k_c.  Uses ``_generate_multi_regime_pairs()``.
-
-The multi-regime generator produces modified Hasegawa-Wakatani-like drift-wave
-fields whose spectral character matches the three dominant tokamak micro-
-instability channels:
-
-    ITG — long-wavelength, low adiabaticity, strong ∇T_i drive
-    TEM — intermediate wavelength, moderate-to-high adiabaticity
-    ETG — short-wavelength, high adiabaticity, strong ∇T_e drive
-
-This is a first-principles proxy for real gyrokinetic data (GENE, GS2,
-QuaLiKiz).  The trained FNO can be hot-swapped when real simulation data
-becomes available without changing the model architecture.
-
-References
-----------
-.. [1] Hasegawa, A. & Wakatani, M. (1983). Phys. Rev. Lett. 50, 682.
-.. [2] Li, Z. et al. (2021). "Fourier Neural Operator for Parametric PDEs."
-       ICLR 2021.
-.. [3] Howard, N.T. et al. (2021). "Multi-scale gyrokinetic simulation of
-       tokamak plasmas." Phys. Plasmas 28, 072505.
+.. note::
+    As of v3.6.0, this module is superseded by the JAX-accelerated version
+    in ``fno_jax_training.py``, which provides 100x faster training and
+    higher accuracy (~0.001 loss).
 """
 
 from __future__ import annotations

@@ -10,6 +10,7 @@ use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
 use fusion_control::digital_twin::Plasma2D;
+use fusion_control::flight_sim::{RustFlightSim, SimulationReport};
 use fusion_control::mpc::{MPController, NeuralSurrogate};
 use fusion_control::snn::{NeuroCyberneticController, SpikingControllerPool};
 use fusion_core::ignition::calculate_thermodynamics;
@@ -182,6 +183,59 @@ impl PyNeuralTransport {
 
     fn is_neural(&self) -> bool {
         self.inner.is_neural()
+    }
+}
+
+// ─── High-speed Flight Simulator ───
+
+#[pyclass]
+struct PySimulationReport {
+    #[pyo3(get)]
+    pub steps: usize,
+    #[pyo3(get)]
+    pub duration_s: f64,
+    #[pyo3(get)]
+    pub wall_time_ms: f64,
+    #[pyo3(get)]
+    pub mean_abs_r_error: f64,
+    #[pyo3(get)]
+    pub mean_abs_z_error: f64,
+    #[pyo3(get)]
+    pub disrupted: bool,
+    #[pyo3(get)]
+    pub r_history: Vec<f64>,
+    #[pyo3(get)]
+    pub z_history: Vec<f64>,
+}
+
+#[pyclass]
+struct PyRustFlightSim {
+    inner: RustFlightSim,
+}
+
+#[pymethods]
+impl PyRustFlightSim {
+    #[new]
+    #[pyo3(signature = (target_r=6.2, target_z=0.0, control_hz=10000.0))]
+    fn new(target_r: f64, target_z: f64, control_hz: f64) -> PyResult<Self> {
+        let inner = RustFlightSim::new(target_r, target_z, control_hz)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        Ok(Self { inner })
+    }
+
+    fn run_shot(&mut self, shot_duration_s: f64) -> PyResult<PySimulationReport> {
+        let report = self.inner.run_shot(shot_duration_s)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        Ok(PySimulationReport {
+            steps: report.steps,
+            duration_s: report.duration_s,
+            wall_time_ms: report.wall_time_ms,
+            mean_abs_r_error: report.mean_abs_r_error,
+            mean_abs_z_error: report.mean_abs_z_error,
+            disrupted: report.disrupted,
+            r_history: report.r_history,
+            z_history: report.z_history,
+        })
     }
 }
 
@@ -1302,6 +1356,8 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyInverseSolver>()?;
     m.add_class::<PyInverseResult>()?;
     m.add_class::<PyPlantModel>()?;
+    m.add_class::<PyRustFlightSim>()?;
+    m.add_class::<PySimulationReport>()?;
     m.add_function(wrap_pyfunction!(shafranov_bv, m)?)?;
     m.add_function(wrap_pyfunction!(solve_coil_currents, m)?)?;
     m.add_function(wrap_pyfunction!(measure_magnetics, m)?)?;

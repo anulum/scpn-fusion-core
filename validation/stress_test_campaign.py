@@ -43,6 +43,7 @@ sys.path.insert(0, str(repo_root / "src"))
 
 from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
 from scpn_fusion.control.h_infinity_controller import get_radial_robust_controller
+from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumKernel
 
 # Optional controller imports
 _mpc_available = False
@@ -106,9 +107,10 @@ class ControllerMetrics:
     episodes: list = field(default_factory=list)
 
 
-def _run_pid_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+def _run_pid_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
     """Run a single PID episode."""
-    ctrl = IsoFluxController(config_path, verbose=False)
+    factory = NeuralEquilibriumKernel if surrogate else None
+    ctrl = IsoFluxController(config_path, verbose=True, kernel_factory=factory)
     t0 = time.perf_counter_ns()
     result = ctrl.run_shot(shot_duration=shot_duration, save_plot=False)
     total_us = (time.perf_counter_ns() - t0) / 1e3
@@ -126,9 +128,10 @@ def _run_pid_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult
     )
 
 
-def _run_hinf_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
     """Run a single H-infinity episode."""
-    ctrl = IsoFluxController(config_path, verbose=False)
+    factory = NeuralEquilibriumKernel if surrogate else None
+    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory)
     hinf = get_radial_robust_controller()
     ctrl.pid_step = lambda pid, err: hinf.step(err, 0.05)
     t0 = time.perf_counter_ns()
@@ -148,9 +151,10 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResul
     )
 
 
-def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
     """Run a single Nonlinear MPC (JAX) episode."""
-    ctrl = IsoFluxController(config_path, verbose=False)
+    factory = NeuralEquilibriumKernel if surrogate else None
+    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory)
     # NMPC setup: state_dim=4, action_dim=len(coils)
     n_coils = len(ctrl.kernel.cfg["coils"])
     nmpc = get_nmpc_controller(state_dim=4, action_dim=n_coils, horizon=10)
@@ -209,6 +213,7 @@ def run_campaign(
     config_path: Any = None,
     noise_level: float = 0.2,
     delay_ms: float = 50.0,
+    surrogate: bool = False,
 ) -> dict[str, ControllerMetrics]:
     """Run the full stress-test campaign across all available controllers.
 
@@ -224,6 +229,8 @@ def run_campaign(
         Noise amplitude for perturbations.
     delay_ms : float
         Simulated actuator delay in milliseconds.
+    surrogate : bool
+        Whether to use the neural equilibrium surrogate (fast-path).
     """
     if config_path is None:
         config_path = repo_root / "iter_config.json"
@@ -231,6 +238,7 @@ def run_campaign(
     print(f"=== 1000-Shot Stress-Test Campaign ===")
     print(f"Episodes: {n_episodes} | Shot duration: {shot_duration}s")
     print(f"Noise: {noise_level*100:.0f}% | Delay: {delay_ms:.0f}ms")
+    print(f"Surrogate: {'Enabled' if surrogate else 'Disabled'}")
     print(f"Controllers: {', '.join(CONTROLLERS.keys())}")
 
     results: dict[str, ControllerMetrics] = {}
@@ -241,7 +249,7 @@ def run_campaign(
 
         for ep in range(n_episodes):
             try:
-                episode = run_fn(config_path, shot_duration)
+                episode = run_fn(config_path, shot_duration, surrogate=surrogate)
                 metrics.episodes.append(episode)
             except Exception as e:
                 print(f"  Episode {ep} failed: {e}")
@@ -331,6 +339,10 @@ if __name__ == "__main__":
         help="Quick mode: 10 episodes for CI validation",
     )
     parser.add_argument(
+        "--surrogate", action="store_true",
+        help="Use neural equilibrium surrogate for ~1000x faster loop",
+    )
+    parser.add_argument(
         "--output", type=str, default=None,
         help="Path to save JSON results",
     )
@@ -339,7 +351,7 @@ if __name__ == "__main__":
     if args.quick:
         args.episodes = 10
 
-    results = run_campaign(n_episodes=args.episodes)
+    results = run_campaign(n_episodes=args.episodes, surrogate=args.surrogate)
     print("\n" + generate_summary_table(results))
 
     if args.output:

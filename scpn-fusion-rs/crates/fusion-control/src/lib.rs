@@ -11,6 +11,7 @@
 
 pub mod analytic;
 pub mod digital_twin;
+pub mod flight_sim;
 pub mod mpc;
 pub mod optimal;
 pub mod pid;
