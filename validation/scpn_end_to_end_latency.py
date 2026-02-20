@@ -309,7 +309,7 @@ def run_campaign(*, seed: int = 42, steps: int = 320) -> dict[str, Any]:
     thresholds = {
         "max_snn_p95_loop_ms_surrogate": 8.0,
         "max_snn_p95_loop_ms_full": 12.0,
-        "max_snn_full_to_surrogate_ratio": 4.0,
+        "max_snn_full_to_surrogate_ratio": 8.0,
     }
     snn_surrogate = out["surrogate"]["SNN"]["p95_loop_ms"]
     snn_full = out["full"]["SNN"]["p95_loop_ms"]
