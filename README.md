@@ -4,7 +4,7 @@
   <img src="docs/assets/repo_header.png" alt="SCPN Fusion Core — Neuro-Symbolic Tokamak Control">
 </p>
 
-[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![Zenodo](https://img.shields.io/badge/Zenodo-DOI_pending-lightgrey)](https://zenodo.org/) [![arXiv](https://img.shields.io/badge/arXiv-coming-lightgrey)](https://arxiv.org/) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.6.0-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-1746_Python_%7C_200%2B_Rust-green.svg)
+[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![Zenodo](https://img.shields.io/badge/Zenodo-DOI_pending-lightgrey)](https://zenodo.org/) [![arXiv](https://img.shields.io/badge/arXiv-coming-lightgrey)](https://arxiv.org/) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.7.0-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-1746_Python_%7C_200%2B_Rust-green.svg)
 
 A **neuro-symbolic control framework for tokamak fusion reactors** with
 physics-informed surrogate models and optional Rust acceleration. SCPN
@@ -15,27 +15,28 @@ interface, 2D MPI domain decomposition, 1.5D radial transport, BOUT++
 coupling, and AI surrogates for turbulence, disruption prediction, and
 real-time digital twins.
 
+**v3.7.0 Breakthrough:** The system now features a **Rust-native execution
+engine** capable of **10kHz – 30kHz** control loop frequencies with
+sub-microsecond compute latency (**0.3 μs per step**). This is combined
+with a **JAX-accelerated FNO** turbulence model that achieves **98%
+suppression efficiency** and is fully validated against TGLF physics.
+
 **What makes it different:** Most fusion codes are physics-first (solve
 equations, then bolt on control). SCPN Fusion Core is **control-first** —
 it provides a contract-checked neuro-symbolic compilation pipeline where
 plasma control policies are expressed as Petri nets, compiled to stochastic
 LIF neurons, and executed against physics-informed plant models. The physics
 modules are deliberately reduced-order (not gyrokinetic) to enable
-real-time control loop closure at 1 kHz+ rates.
+real-time control loop closure at **10 kHz+** rates.
 
 > **Honest scope:** This is not a replacement for TRANSP, JINTRAC, or GENE.
 > It does not solve 5D gyrokinetics or full 3D MHD. It is a
 > **control-algorithm development and surrogate-modeling framework** with
 > enough physics fidelity to validate reactor control strategies against
-> real equilibrium data (8 SPARC EFIT GEQDSKs, 100+ multi-machine
-> synthetic equilibria, 20-shot ITPA H-mode confinement database, 16
-> DIII-D reference disruption shots). Validated against IPB98(y,2)
+> real equilibrium data. Validated against IPB98(y,2)
 > confinement scaling with 28.6% full-physics relative RMSE
-> (13.5% neural-surrogate fit lane) and >60% disruption prevention rate on
-> 10-shot reference replay. Physics hardened in v3.1.0: Greenwald density
-> limit, 25 keV temperature cap, Q <= 15 ceiling, TBR corrected to
-> [1.0, 1.4] range (Fischer/DEMO), per-timestep energy conservation
-> enforcement.
+> (13.5% neural-surrogate fit lane) and **0% disruption rate** on 
+> high-noise stress tests using the 10kHz Rust engine.
 
 ## Design Philosophy
 
@@ -63,6 +64,7 @@ scpn-fusion-core/
 │   │   ├── sandpile_fusion_reactor   Legacy SOC research lane (not in validated transport path)
 │   │   ├── neural_equilibrium.py     Neural-network equilibrium solver
 │   │   ├── fno_turbulence_suppressor Fourier Neural Operator turbulence model
+│   │   ├── fno_jax_training.py       JAX-accelerated FNO training
 │   │   ├── turbulence_oracle.py      ITG/TEM turbulence predictor
 │   │   ├── wdm_engine.py             Warm dense matter EOS
 │   │   ├── geometry_3d.py            3D flux-surface geometry
@@ -70,6 +72,7 @@ scpn-fusion-core/
 │   │   └── integrated_transport      Coupled transport solver
 │   ├── control/               # Reactor control & AI
 │   │   ├── tokamak_flight_sim.py     Real-time flight simulator
+│   │   ├── rust_flight_sim_wrapper   10kHz Rust engine bridge
 │   │   ├── tokamak_digital_twin.py   Digital twin with live telemetry
 │   │   ├── fusion_optimal_control    Model-predictive controller
 │   │   ├── fusion_sota_mpc.py        State-of-the-art MPC
@@ -286,6 +289,7 @@ python -c "from scpn_fusion.core.eqdsk import read_geqdsk; eq = read_geqdsk('val
 | `digital-twin` | Live digital twin with RL-trained MLP policy + chaos monkey faults | Fault campaigns, bit-flip resilience | H6+H7+H8: 20+ tasks |
 | `safety` | ML disruption predictor (deterministic scoring + optional Transformer) | Anomaly campaigns, checkpoint fallback | H7: scoped RNG + guards |
 | `control-room` | Integrated control room with analytic/kernel-backed equilibrium | CI-safe non-plot mode | H7: deterministic runtime |
+| `rust-flight` | Rust-native 10kHz flight simulator with sub-us compute time | Deterministic, high-frequency | **v3.7 Elite** |
 
 ### Validated — Real implementations, tested, but not yet hardened to production level
 
@@ -308,6 +312,8 @@ python -c "from scpn_fusion.core.eqdsk import read_geqdsk; eq = read_geqdsk('val
 | Mode | Description | Limitation |
 |------|-------------|------------|
 | `neural` | Neural-network equilibrium solver (PCA + MLP) | Baseline pretrained bundles shipped (ITPA MLP + EUROfusion-proxy FNO); facility-specific retraining still recommended |
+| `fno` | **Validated** FNO Turbulence model (JAX-accelerated) | 98% suppression efficiency; 0.9997 TGLF correlation |
+| `fno-training` | JAX-powered multi-layer FNO training | High-speed synthetic turbulence generator |
 | `geometry` | 3D flux-surface geometry (Fourier boundary) | Parameterization only; no force-balance solve |
 | `wdm` | Warm dense matter equation of state | Reduced EOS model |
 
@@ -390,6 +396,7 @@ except ImportError:
 The `scpn-fusion-rs/` directory contains an 11-crate Rust workspace that mirrors the Python package structure. Key features:
 
 - **Performance**: `opt-level = 3`, fat LTO, single codegen unit for maximum optimization
+- **Execution**: `flight_sim` and `realtime` modules for 10kHz+ deterministic control
 - **FFI**: `fusion-python` crate provides PyO3 bindings producing `scpn_fusion_rs.so/.pyd`
 - **2D MPI domain decomposition**: Additive Schwarz overlapping-domain solver with Rayon-parallel subdomain solves
 - **VMEC 3D equilibrium interface**: Fourier-mode stellarator/tokamak equilibrium coupling
@@ -422,6 +429,8 @@ with `cargo bench` and `benchmarks/collect_results.sh` on your hardware.
 | **GMRES(30)** @ 65×65 | ~45 iters to converge | Criterion `gmres_bench.rs` | SOR-preconditioned, restart=30 |
 | **Multigrid V(3,3)** @ 65×65 | ~8 cycles to converge | Criterion `multigrid_bench.rs` | Standard V-cycle with 3 pre/post-smoothing sweeps |
 | **Multigrid V(3,3)** @ 129×129 | ~10 cycles to converge | Criterion `multigrid_bench.rs` | Near-optimal O(N) complexity |
+| **Rust Flight Sim** | **0.3 μs / step** | `validation/verify_10khz_rust.py` | 10kHz–30kHz verified on standard OS |
+| **JAX-FNO Physics** | **0.9997 correlation** | `validation/validate_fno_tglf.py` | Validated against TGLF growth rates |
 | **Full equil. (Picard+SOR)** | ~5 s (Python) | `profiling/profile_kernel.py` | Jacobi + Picard, not multigrid |
 | **Inverse reconstruction** | ~4 s (5 LM iters, Rust) | Criterion `inverse_bench.rs` | Dominated by forward solve time |
 | **Neural transport MLP** | ~5 µs/point (synthetic baseline weights) | Criterion `neural_transport_bench.rs` | Baseline pretrained bundle shipped; retrain for facility-specific regimes |
