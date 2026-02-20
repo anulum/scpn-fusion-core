@@ -260,9 +260,10 @@ Crit-gradient (1000-pt) & 0.02\,MFLOP & 0.06 & 0.0003 & Vectorised \\
 
 ```
 Runtime (seconds, log scale)
-                    1e-3  1e-2  0.1   1     10    100   1e3   1e4   ...  1e9
+                    1e-6  1e-3  0.1   1     10    100   1e3   1e4   ...  1e9
                     │     │     │     │     │     │     │     │          │
-P-EFIT (GPU)        █ 1 ms
+SCPN Rust (10kHz)   █ 0.3 us
+P-EFIT (GPU)        █████ 1 ms
 DREAM (disruption)  ██████████████████ 1 s
 EFIT (recon.)       █████████████████████████ 2 s
 SCPN Rust (recon.)  ██████████████████████████████ 4 s
