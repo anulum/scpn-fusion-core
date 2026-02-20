@@ -15,6 +15,7 @@ pub mod flight_sim;
 pub mod mpc;
 pub mod optimal;
 pub mod pid;
+pub mod realtime;
 pub mod snn;
 pub mod soc_learning;
 pub mod spi;

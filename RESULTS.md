@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.6.0)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-02-20 14:51 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-02-20 15:13 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.6.0
-- **Generated:** 2026-02-20 14:51 UTC
-- **Wall-clock:** 490s
+- **Generated:** 2026-02-20 15:13 UTC
+- **Wall-clock:** 251s
 
 ## Equilibrium & Transport
 
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.29 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.46 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.39 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 1.04 | ms | 129x129 grid |
 
 ## Heating & Neutronics
 
@@ -50,10 +50,10 @@
 | Mean RE current peak | 14.057 | MA | |
 | P95 RE current peak | 15.430 | MA | |
 | Passes ITER limits | No | — | Halo + RE constraints |
-| HIL control-loop P50 latency | 21.8 | μs | 200 iterations |
-| HIL control-loop P95 latency | 81.4 | μs | |
-| HIL control-loop P99 latency | 218.7 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 32.9 μs |
+| HIL control-loop P50 latency | 11.9 | μs | 200 iterations |
+| HIL control-loop P95 latency | 21.1 | μs | |
+| HIL control-loop P99 latency | 23.9 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 13.7 μs |
 
 ## Controller Performance (Stress-Test Campaign)
 
@@ -61,9 +61,9 @@
 
 | Controller | Episodes | Mean Reward | Std Reward | Mean R Error | P50 Lat (us) | P95 Lat (us) | P99 Lat (us) | Disrupt Rate | DEF | Energy Eff |
 |------------|----------|-------------|------------|--------------|-------------|-------------|-------------|--------------|-----|------------|
-| PID        |        5 |     -0.0000 |     0.0000 |       0.0000 |         2262 |         2607 |         2675 |        0.00% | 1.00 |      1.000 |
-| H-infinity |        5 |    -10.1478 |     0.0000 |       4.1115 |         2452 |         2709 |         2709 |      100.00% | 0.50 |        nan |
-| NMPC-JAX   |        5 |     -0.0012 |     0.0000 |       0.0002 |        25762 |        28359 |        28562 |        0.00% | 1.00 |      0.997 |
+| PID        |        5 |     -0.0000 |     0.0000 |       0.0000 |         1304 |         1522 |         1551 |        0.00% | 1.00 |      1.000 |
+| H-infinity |        5 |    -10.1331 |     0.0000 |       4.1058 |         1048 |         1139 |         1156 |      100.00% | 0.50 |        nan |
+| NMPC-JAX   |        5 |     -0.0007 |     0.0000 |       0.0001 |        13411 |        14139 |        14162 |        0.00% | 1.00 |      0.996 |
 
 ## Surrogates
 

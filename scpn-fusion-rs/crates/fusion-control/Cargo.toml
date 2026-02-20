@@ -13,4 +13,4 @@ fusion-core = { path = "../fusion-core" }
 ndarray = { workspace = true }
 rand = { workspace = true }
 rand_distr = { workspace = true }
-serde = { workspace = true, optional = true }
+serde = { workspace = true }

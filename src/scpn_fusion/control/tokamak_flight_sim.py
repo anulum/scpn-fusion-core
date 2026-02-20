@@ -124,7 +124,7 @@ class IsoFluxController:
         heating_actuator_tau_s: Optional[float] = None,
         actuator_current_delta_limit: float = 1.0e9,
         heating_beta_max: float = 5.0,
-        control_dt_s: float = 0.01,
+        control_dt_s: float = 0.05,
     ) -> None:
         self.kernel = kernel_factory(config_file)
         self.verbose = bool(verbose)
@@ -210,7 +210,7 @@ class IsoFluxController:
 
     def run_shot(
         self,
-        shot_duration: float = 30.0,
+        shot_duration: int = 30,
         save_plot: bool = True,
         output_path: str = "Tokamak_Flight_Report.png",
     ) -> Dict[str, Any]:
@@ -219,16 +219,16 @@ class IsoFluxController:
 
         Parameters
         ----------
-        shot_duration : float
-            Simulated duration in seconds. Default 30.0s.
+        shot_duration : int
+            Number of simulation steps. Default 30.
         save_plot : bool
             Whether to generate a summary plot.
         output_path : str
             Filename for the plot.
         """
-        steps = int(shot_duration / self.control_dt_s)
+        steps = int(shot_duration)
         if steps < 1:
-            raise ValueError("shot_duration must be >= control_dt_s.")
+            raise ValueError("shot_duration must be >= 1.")
         self._log(f"--- INITIATING TOKAMAK FLIGHT SIMULATOR ({steps} steps) ---")
         self._log(f"Scenario: Current Ramp-Up & Divertor Formation (dt={self.control_dt_s}s)")
         
@@ -240,14 +240,15 @@ class IsoFluxController:
             time_s = t * self.control_dt_s
             # 1. EVOLVE PHYSICS (Scenario)
             # Ramp up plasma current
-            target_Ip = 5.0 + (10.0 * time_s / shot_duration) # 5MA -> 15MA
+            target_Ip = 5.0 + (10.0 * t / steps) # 5MA -> 15MA
             physics_cfg = self.kernel.cfg.setdefault("physics", {})
             physics_cfg['plasma_current_target'] = target_Ip
-            
+
             # Increase Pressure (Heating) -> This pushes plasma outward (Shafranov Shift)
             # The controller must fight this drift!
-            beta_cmd = 1.0 + (0.05 * time_s)
+            beta_cmd = 1.0 + (0.01 * t)
             beta_applied = self._act_heating.step(beta_cmd)
+
             physics_cfg['beta_scale'] = beta_applied
             
             # 2. MEASURE STATE (Diagnostics)

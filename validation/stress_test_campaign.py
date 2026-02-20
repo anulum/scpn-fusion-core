@@ -110,9 +110,11 @@ class ControllerMetrics:
 def _run_pid_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
     """Run a single PID episode."""
     factory = NeuralEquilibriumKernel if surrogate else None
-    ctrl = IsoFluxController(config_path, verbose=True, kernel_factory=factory)
+    dt = 0.01 if surrogate else 0.05
+    steps = int(shot_duration / dt)
+    ctrl = IsoFluxController(config_path, verbose=True, kernel_factory=factory, control_dt_s=dt)
     t0 = time.perf_counter_ns()
-    result = ctrl.run_shot(shot_duration=shot_duration, save_plot=False)
+    result = ctrl.run_shot(shot_duration=steps, save_plot=False)
     total_us = (time.perf_counter_ns() - t0) / 1e3
     per_step_us = total_us / max(result["steps"], 1)
     r_err = result["mean_abs_r_error"]
@@ -131,11 +133,13 @@ def _run_pid_episode(config_path: Any, shot_duration: int = 30, surrogate: bool 
 def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
     """Run a single H-infinity episode."""
     factory = NeuralEquilibriumKernel if surrogate else None
-    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory)
+    dt = 0.01 if surrogate else 0.05
+    steps = int(shot_duration / dt)
+    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
     hinf = get_radial_robust_controller()
-    ctrl.pid_step = lambda pid, err: hinf.step(err, 0.05)
+    ctrl.pid_step = lambda pid, err: hinf.step(err, dt)
     t0 = time.perf_counter_ns()
-    result = ctrl.run_shot(shot_duration=shot_duration, save_plot=False)
+    result = ctrl.run_shot(shot_duration=steps, save_plot=False)
     total_us = (time.perf_counter_ns() - t0) / 1e3
     per_step_us = total_us / max(result["steps"], 1)
     r_err = result["mean_abs_r_error"]
@@ -154,7 +158,8 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool
 def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
     """Run a single Nonlinear MPC (JAX) episode."""
     factory = NeuralEquilibriumKernel if surrogate else None
-    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory)
+    dt = 0.01 if surrogate else 0.05
+    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
     # NMPC setup: state_dim=4, action_dim=len(coils)
     n_coils = len(ctrl.kernel.cfg["coils"])
     nmpc = get_nmpc_controller(state_dim=4, action_dim=n_coils, horizon=10)
@@ -179,7 +184,8 @@ def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30, surrogate: 
     ctrl.pid_step = nmpc_step
     
     t0 = time.perf_counter_ns()
-    result = ctrl.run_shot(shot_duration=shot_duration, save_plot=False)
+    steps = int(shot_duration / dt)
+    result = ctrl.run_shot(shot_duration=steps, save_plot=False)
     total_us = (time.perf_counter_ns() - t0) / 1e3
     per_step_us = total_us / max(result["steps"], 1)
     
