@@ -1405,13 +1405,15 @@ class TransportSolver(FusionKernel):
         J_bs_2D = np.interp(Rho_2D.flatten(), self.rho, J_bs_1d)
         J_bs_2D = J_bs_2D.reshape(self.Psi.shape)
         
-        # 5. Update J_phi (Pressure driven + Bootstrap)
-        # J_phi = R p' + J_bs
+        # 5. Update J_phi (Grad-Shafranov consistency)
+        # J_phi = R p' + J_non_inductive
+        # Here we model the non-inductive part as primarily bootstrap
         self.J_phi = (self.Pressure_2D * self.RR) + J_bs_2D
         
-        # Normalize to target current
+        # Normalize to target current to prevent divergence
+        I_target = self.cfg['physics']['plasma_current_target']
         I_curr = np.sum(self.J_phi) * self.dR * self.dZ
-        if I_curr > 1e-9:
+        if abs(I_curr) > 1e-9:
             self.J_phi *= (I_target / I_curr)
 
     # ── Confinement time ───────────────────────────────────────────────

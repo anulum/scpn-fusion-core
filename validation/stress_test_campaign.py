@@ -58,6 +58,15 @@ except ImportError:
     pass
 
 try:
+    from scpn_fusion.control.fusion_nmpc_jax import (
+        get_nmpc_controller,
+        NonlinearMPC,
+    )
+    _nmpc_jax_available = True
+except ImportError:
+    _nmpc_jax_available = False
+
+try:
     from scpn_fusion.control.nengo_snn_wrapper import (
         NengoSNNController,
         NengoSNNConfig,
@@ -139,11 +148,59 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResul
     )
 
 
+def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    """Run a single Nonlinear MPC (JAX) episode."""
+    ctrl = IsoFluxController(config_path, verbose=False)
+    # NMPC setup: state_dim=4, action_dim=len(coils)
+    n_coils = len(ctrl.kernel.cfg["coils"])
+    nmpc = get_nmpc_controller(state_dim=4, action_dim=n_coils, horizon=10)
+    
+    # Target state (axis R, Z and X-point R, Z)
+    target = np.array([6.0, 0.0, 5.0, -3.5])
+    
+    def nmpc_step(current_err: float, dt: float) -> float:
+        # Get full state for NMPC
+        idx_max = int(np.argmax(ctrl.kernel.Psi))
+        iz, ir = np.unravel_index(idx_max, ctrl.kernel.Psi.shape)
+        r_ax = float(ctrl.kernel.R[ir])
+        z_ax = float(ctrl.kernel.Z[iz])
+        xp_pos, _ = ctrl.kernel.find_x_point(ctrl.kernel.Psi)
+        state = np.array([r_ax, z_ax, float(xp_pos[0]), float(xp_pos[1])])
+        
+        u_opt = nmpc.plan_trajectory(state, target)
+        # For simplicity in this wrapper, we return the first scalar action
+        # mapping to the primary radial coil (index 0)
+        return float(u_opt[0])
+
+    ctrl.pid_step = nmpc_step
+    
+    t0 = time.perf_counter_ns()
+    result = ctrl.run_shot(shot_duration=shot_duration, save_plot=False)
+    total_us = (time.perf_counter_ns() - t0) / 1e3
+    per_step_us = total_us / max(result["steps"], 1)
+    
+    r_err = result["mean_abs_r_error"]
+    z_err = result["mean_abs_z_error"]
+    actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
+    disrupted = r_err > 0.5 or z_err > 0.5
+    
+    return EpisodeResult(
+        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
+        reward=-(r_err + z_err), latency_us=per_step_us,
+        disrupted=disrupted,
+        t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
+        energy_efficiency=1.0 / (1.0 + actuator_effort),
+    )
+
+
 # Controller registry — always includes PID and H-infinity
 CONTROLLERS: dict[str, Callable] = {
     "PID": _run_pid_episode,
     "H-infinity": _run_hinf_episode,
 }
+
+if _nmpc_jax_available:
+    CONTROLLERS["NMPC-JAX"] = _run_nmpc_jax_episode
 
 
 def run_campaign(
