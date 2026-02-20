@@ -14,7 +14,7 @@ to concrete evidence files and patterns.
 | `readme_neural_surrogate_rmse` | `README.md` | 2 | 2 |
 | `readme_disruption_prevention_claim` | `README.md` | 2 | 2 |
 | `readme_pretrained_coverage_claim` | `README.md` | 2 | 2 |
-| `results_fno_deprecated_status` | `RESULTS.md` | 2 | 2 |
+| `results_fno_validated_status` | `RESULTS.md` | 2 | 2 |
 
 ## Claim Details
 
@@ -83,10 +83,10 @@ Evidence pattern checks:
 | `validation/reports/task2_pretrained_surrogates_benchmark.json` | `"coverage_percent"\s*:\s*28\.5714` |
 | `validation/reports/task2_pretrained_surrogates_benchmark.md` | `Pretrained coverage: \`28\.6%\`` |
 
-### `results_fno_deprecated_status`
+### `results_fno_validated_status`
 
 - Source file: `RESULTS.md`
-- Source pattern: `EXPERIMENTAL — FNO turbulence surrogate`
+- Source pattern: `NEW — JAX FNO turbulence surrogate`
 
 Evidence files:
 - `src/scpn_fusion/core/fno_turbulence_suppressor.py`
@@ -96,5 +96,5 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `src/scpn_fusion/core/fno_turbulence_suppressor.py` | `DEPRECATED / EXPERIMENTAL` |
-| `src/scpn_fusion/core/fno_training.py` | `DEPRECATED / EXPERIMENTAL` |
+| `src/scpn_fusion/core/fno_turbulence_suppressor.py` | `JAX-FNO` |
+| `src/scpn_fusion/core/fno_training.py` | `JAX-accelerated version` |
