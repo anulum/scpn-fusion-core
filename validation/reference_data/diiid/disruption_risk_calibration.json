@@ -99,10 +99,10 @@
   },
   "sources": {
     "ingest_contract_module": "validation/validate_real_shots.py",
-    "manifest": "validation\\reference_data\\diiid\\disruption_shots_manifest.json",
+    "manifest": "validation/reference_data/diiid/disruption_shots_manifest.json",
     "predictor_module": "src/scpn_fusion/control/disruption_predictor.py",
-    "shot_dir": "validation\\reference_data\\diiid\\disruption_shots",
-    "splits": "validation\\reference_data\\diiid\\disruption_shot_splits.json"
+    "shot_dir": "validation/reference_data/diiid/disruption_shots",
+    "splits": "validation/reference_data/diiid/disruption_shot_splits.json"
   },
   "targets": {
     "false_positive_rate_max": 0.3,

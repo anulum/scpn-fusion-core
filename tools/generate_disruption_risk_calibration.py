@@ -54,9 +54,9 @@ def _resolve_repo_path(raw: str) -> Path:
 
 def _display_path(path: Path) -> str:
     try:
-        return str(path.relative_to(REPO_ROOT))
+        return path.relative_to(REPO_ROOT).as_posix()
     except ValueError:
-        return str(path)
+        return path.as_posix()
 
 
 def _parse_split_ids(name: str, value: Any) -> list[int]:
