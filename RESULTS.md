@@ -1,6 +1,8 @@
-# SCPN Fusion Core — Benchmark Results (v3.5.0)
+# SCPN Fusion Core — Benchmark Results (v3.6.0)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-02-20 10:28 UTC.
+**Version:** 3.6.0
+
+> **Auto-generated** by `validation/collect_results.py` on 2026-02-20 10:56 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -11,9 +13,9 @@
 - **Python:** 3.12.5
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
-- **Version:** 3.5.0
-- **Generated:** 2026-02-20 10:28 UTC
-- **Wall-clock:** 235s
+- **Version:** 3.6.0
+- **Generated:** 2026-02-20 10:56 UTC
+- **Wall-clock:** 313s
 
 ## Equilibrium & Transport
 
@@ -22,8 +24,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.24 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.33 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.37 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 0.78 | ms | 129x129 grid |
 
 ## Heating & Neutronics
 
@@ -50,10 +52,10 @@
 | Mean RE current peak | 14.057 | MA | |
 | P95 RE current peak | 15.430 | MA | |
 | Passes ITER limits | No | — | Halo + RE constraints |
-| HIL control-loop P50 latency | 24.3 | μs | 200 iterations |
-| HIL control-loop P95 latency | 150.0 | μs | |
-| HIL control-loop P99 latency | 875.4 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 56.9 μs |
+| HIL control-loop P50 latency | 20.5 | μs | 200 iterations |
+| HIL control-loop P95 latency | 41.1 | μs | |
+| HIL control-loop P99 latency | 365.3 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 34.1 μs |
 
 ## Controller Performance (Stress-Test Campaign)
 
@@ -61,9 +63,9 @@
 
 | Controller | Episodes | Mean Reward | Std Reward | Mean R Error | P50 Lat (us) | P95 Lat (us) | P99 Lat (us) | Disrupt Rate | DEF | Energy Eff |
 |------------|----------|-------------|------------|--------------|-------------|-------------|-------------|--------------|-----|------------|
-| PID        |        5 |     -9.1921 |     0.0000 |       3.1921 |       447613 |       487241 |       494015 |      100.00% | 0.50 |      0.616 |
-| H-infinity |        5 |     -9.1921 |     0.0000 |       3.1921 |       494066 |       575199 |       589306 |      100.00% | 0.50 |      0.000 |
-| NMPC-JAX   |        5 |     -9.1921 |     0.0000 |       3.1921 |       515704 |       561226 |       565400 |      100.00% | 0.50 |      0.934 |
+| PID        |        5 |     -9.1921 |     0.0000 |       3.1921 |       716107 |       873292 |       878192 |      100.00% | 0.50 |      0.616 |
+| H-infinity |        5 |     -9.1921 |     0.0000 |       3.1921 |       584034 |       679804 |       686066 |      100.00% | 0.50 |      0.000 |
+| NMPC-JAX   |        5 |     -9.1921 |     0.0000 |       3.1921 |       655393 |       712597 |       717860 |      100.00% | 0.50 |      0.934 |
 
 ## Surrogates
 

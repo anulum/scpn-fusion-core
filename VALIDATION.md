@@ -1,4 +1,4 @@
-# Golden Base Validation Notes
+# Golden Base Validation Notes (v3.6.0)
 
 This document covers data provenance and validation notes for:
 
