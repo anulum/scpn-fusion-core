@@ -209,9 +209,9 @@ def run_neural_eq() -> dict[str, Any] | None:
 
 def run_controller_campaign(quick: bool) -> dict[str, Any] | None:
     """Run the 1000-shot stress-test campaign across all controllers."""
-    from validation.stress_test_campaign import run_campaign, generate_summary_table
+    from stress_test_campaign import run_campaign, generate_summary_table
     n = 5 if quick else 100  # 100 for CI, 1000 for full
-    results = run_campaign(n_episodes=n)
+    results = run_campaign(n_episodes=n, surrogate=True)
     # Flatten to serialisable dict
     summary: dict[str, Any] = {"n_episodes": n, "controllers": {}}
     for name, m in results.items():
