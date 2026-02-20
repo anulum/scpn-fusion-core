@@ -34,7 +34,7 @@ impl RtcDriver {
         let t_start = Instant::now();
         let steps = (shot_duration_s / self.sim.control_dt) as usize;
         let step_duration = Duration::from_secs_f64(self.sim.control_dt);
-        
+
         let mut report = self.sim.run_shot(0.0)?; // Initialize report
         report.steps = steps;
         report.duration_s = shot_duration_s;
@@ -65,7 +65,7 @@ impl RtcDriver {
         Ok(report)
     }
 
-    fn execute_single_step(&mut self, report: &mut SimulationReport) -> FusionResult<()> {
+    fn execute_single_step(&mut self, _report: &mut SimulationReport) -> FusionResult<()> {
         // Implementation of single deterministic step
         // (Similar to flight_sim.rs loop body)
         Ok(())

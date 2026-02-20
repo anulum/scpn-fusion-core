@@ -104,3 +104,33 @@ class TestPyPlasma2D:
         for _ in range(20):
             temp_hot, _ = plasma.step(1.0)
         assert temp_hot > temp_cold
+
+
+# ── High-speed Flight Simulator ─────────────────────────────────────
+
+
+class TestPyRustFlightSim:
+    """Tests for RustFlightSim binding (fusion-control/flight_sim.rs)."""
+
+    def test_construction(self):
+        sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, 10000.0)
+        assert sim is not None
+
+    def test_run_shot_returns_valid_report(self):
+        sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, 10000.0)
+        report = sim.run_shot(0.1)  # 0.1s @ 10kHz = 1000 steps
+        assert report.steps == 1000
+        assert report.duration_s == pytest.approx(0.1)
+        assert report.wall_time_ms > 0
+        assert np.isfinite(report.mean_abs_r_error)
+        assert np.isfinite(report.mean_abs_z_error)
+        assert isinstance(report.disrupted, bool)
+        assert len(report.r_history) == 1000
+        assert len(report.z_history) == 1000
+
+    def test_30khz_stability(self):
+        sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, 30000.0)
+        report = sim.run_shot(0.05)
+        assert report.steps == 1500
+        assert not report.disrupted  # Baseline should be stable
+        assert report.max_step_time_us > 0

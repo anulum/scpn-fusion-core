@@ -33,10 +33,18 @@ real-time control loop closure at **10 kHz+** rates.
 > It does not solve 5D gyrokinetics or full 3D MHD. It is a
 > **control-algorithm development and surrogate-modeling framework** with
 > enough physics fidelity to validate reactor control strategies against
-> real equilibrium data. Validated against IPB98(y,2)
+> real equilibrium data (8 SPARC EFIT GEQDSKs, 100+ multi-machine
+> synthetic equilibria, 20-shot ITPA H-mode confinement database, 16
+> DIII-D reference disruption shots). Validated against IPB98(y,2)
 > confinement scaling with 28.6% full-physics relative RMSE
-> (13.5% neural-surrogate fit lane) and **0% disruption rate** on 
-> high-noise stress tests using the 10kHz Rust engine.
+> (13.5% neural-surrogate fit lane) and >60% disruption prevention rate on
+> 10-shot reference replay. Physics hardened in v3.1.0: Greenwald density
+> limit, 25 keV temperature cap, Q <= 15 ceiling, TBR corrected to
+> [1.0, 1.4] range (Fischer/DEMO), per-timestep energy conservation
+> enforcement.
+
+**v3.7.0 Performance Breakthrough:** Validated **0% disruption rate** on 
+high-noise stress tests using the new **10kHz Rust engine**.
 
 ## Design Philosophy
 

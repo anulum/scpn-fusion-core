@@ -7,8 +7,8 @@
 //! Migrated from `tokamak_flight_sim.py` to enable industry-standard
 //! control loop frequencies without Python/GIL overhead.
 
-use crate::pid::IsoFluxController;
 use crate::digital_twin::ActuatorDelayLine;
+use crate::pid::IsoFluxController;
 use fusion_types::error::{FusionError, FusionResult};
 use std::time::Instant;
 
@@ -42,12 +42,12 @@ impl RustFlightSim {
     pub fn new(target_r: f64, target_z: f64, control_hz: f64) -> FusionResult<Self> {
         let control_dt = 1.0 / control_hz;
         let mut controller = IsoFluxController::new(target_r, target_z)?;
-        
+
         // Scale gains from 100Hz baseline to current frequency to maintain stability
-        let dt_ref = 0.01; 
+        let dt_ref = 0.01;
         let scale_i = control_dt / dt_ref;
         let scale_d = dt_ref / control_dt;
-        
+
         controller.pid_r.ki *= scale_i;
         controller.pid_r.kd *= scale_d;
         controller.pid_z.ki *= scale_i;
@@ -70,7 +70,7 @@ impl RustFlightSim {
     pub fn run_shot(&mut self, shot_duration_s: f64) -> FusionResult<SimulationReport> {
         let t_start = Instant::now();
         let steps = (shot_duration_s / self.control_dt) as usize;
-        
+
         let mut r_err_sum = 0.0;
         let mut z_err_sum = 0.0;
         let mut max_step_us = 0.0;
@@ -85,21 +85,23 @@ impl RustFlightSim {
             self.curr_beta = 1.0 + (0.01 * time_s);
 
             // Natural Drifts (Shafranov shift + Vertical instability)
-            self.curr_r += 0.01 * self.curr_beta * self.control_dt; 
+            self.curr_r += 0.01 * self.curr_beta * self.control_dt;
             self.curr_z += 0.02 * self.control_dt;
-            
+
             // Clamp to vessel boundaries
             self.curr_r = self.curr_r.clamp(2.0, 10.0);
             self.curr_z = self.curr_z.clamp(-6.0, 6.0);
 
             // 2. Control Action
             let (ctrl_r, ctrl_z) = self.controller.step(self.curr_r, self.curr_z)?;
-            
+
             // 3. Apply Actuators (with delay/lag)
             use ndarray::Array1;
-            let actions = self.delay_line.push(Array1::from_vec(vec![ctrl_r, ctrl_z]))
+            let actions = self
+                .delay_line
+                .push(Array1::from_vec(vec![ctrl_r, ctrl_z]))
                 .map_err(|e| FusionError::ConfigError(e.to_string()))?;
-            
+
             let applied_r = actions[0];
             let applied_z = actions[1];
 

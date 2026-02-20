@@ -10,7 +10,7 @@ use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
 use fusion_control::digital_twin::Plasma2D;
-use fusion_control::flight_sim::{RustFlightSim, SimulationReport};
+use fusion_control::flight_sim::RustFlightSim;
 use fusion_control::mpc::{MPController, NeuralSurrogate};
 use fusion_control::snn::{NeuroCyberneticController, SpikingControllerPool};
 use fusion_core::ignition::calculate_thermodynamics;
@@ -226,7 +226,9 @@ impl PyRustFlightSim {
     }
 
     fn run_shot(&mut self, shot_duration_s: f64) -> PyResult<PySimulationReport> {
-        let report = self.inner.run_shot(shot_duration_s)
+        let report = self
+            .inner
+            .run_shot(shot_duration_s)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
         Ok(PySimulationReport {
             steps: report.steps,
