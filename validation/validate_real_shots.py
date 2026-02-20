@@ -45,6 +45,9 @@ THRESHOLDS = {
     "disruption_fpr_max": 0.40,           # FPR <= 40% for full PASS
     "disruption_detection_ms": 50.0,      # within 50ms of TQ
 }
+DISRUPTION_CALIBRATION_PATH = (
+    ROOT / "validation" / "reference_data" / "diiid" / "disruption_risk_calibration.json"
+)
 
 
 # ── Lane 1: Equilibrium Validation ───────────────────────────────────
@@ -229,6 +232,45 @@ def validate_transport(itpa_csv: Path) -> dict[str, Any]:
 
 # ── Lane 3: Disruption Validation ────────────────────────────────────
 
+def load_disruption_risk_calibration(
+    calibration_path: Path = DISRUPTION_CALIBRATION_PATH,
+) -> dict[str, Any]:
+    """Load calibrated disruption-risk threshold and bias settings."""
+    calibration = {
+        "path": str(calibration_path),
+        "source": "default-v2.1",
+        "risk_threshold": 0.50,
+        "bias_delta": 0.0,
+        "gates_overall_pass": None,
+    }
+    if not calibration_path.exists():
+        return calibration
+
+    data = json.loads(calibration_path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"{calibration_path}: calibration JSON must be an object")
+    selection = data.get("selection", {})
+    if not isinstance(selection, dict):
+        selection = {}
+    gates = data.get("gates", {})
+    if not isinstance(gates, dict):
+        gates = {}
+
+    risk_threshold = float(selection.get("risk_threshold", calibration["risk_threshold"]))
+    bias_delta = float(selection.get("bias_delta", calibration["bias_delta"]))
+    if not np.isfinite(risk_threshold) or not (0.0 < risk_threshold < 1.0):
+        raise ValueError(f"{calibration_path}: selection.risk_threshold must be finite in (0, 1)")
+    if not np.isfinite(bias_delta):
+        raise ValueError(f"{calibration_path}: selection.bias_delta must be finite")
+
+    calibration["source"] = str(data.get("version", "unknown"))
+    calibration["risk_threshold"] = risk_threshold
+    calibration["bias_delta"] = bias_delta
+    if "overall_pass" in gates:
+        calibration["gates_overall_pass"] = bool(gates["overall_pass"])
+    return calibration
+
+
 def load_disruption_shot_payload(npz_path: Path) -> dict[str, Any]:
     """Load and validate disruption-shot payload schema."""
     with np.load(npz_path, allow_pickle=True) as data:
@@ -313,6 +355,10 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
     """Validate disruption predictor on reference disruption shots."""
     from scpn_fusion.control.disruption_predictor import predict_disruption_risk
 
+    calibration = load_disruption_risk_calibration()
+    risk_threshold = float(calibration["risk_threshold"])
+    bias_delta = float(calibration["bias_delta"])
+
     npz_files = sorted(disruption_dir.glob("*.npz"))
     if not npz_files:
         return {
@@ -345,7 +391,6 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
 
         # Run predictor on sliding windows
         window_size = min(128, signal.size)
-        risk_threshold = 0.50
         detection_idx = -1
 
         for t in range(window_size, signal.size):
@@ -358,7 +403,7 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
                 "toroidal_n2_amp": n2,
                 "toroidal_n3_amp": 0.02,
             }
-            risk = predict_disruption_risk(window, toroidal)
+            risk = predict_disruption_risk(window, toroidal, bias_delta=bias_delta)
             if risk > risk_threshold:
                 detection_idx = t
                 break
@@ -426,6 +471,7 @@ def validate_disruption(disruption_dir: Path) -> dict[str, Any]:
             if fpr > THRESHOLDS["disruption_fpr_max"]
             else None
         ),
+        "calibration": calibration,
         "shots": results,
     }
 
@@ -483,6 +529,13 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append(f"- Recall: {dis.get('recall', 0):.0%}")
     lines.append(f"- FPR: {dis.get('false_positive_rate', 0):.0%}")
     lines.append(f"- **Status**: {dis_status}")
+    calibration = dis.get("calibration", {})
+    if isinstance(calibration, dict):
+        lines.append(
+            f"- Calibration: `{calibration.get('source', 'default-v2.1')}` "
+            f"(threshold={calibration.get('risk_threshold', 0.50):.2f}, "
+            f"bias_delta={calibration.get('bias_delta', 0.0):.2f})"
+        )
     if dis.get("fpr_note"):
         lines.append(f"- **Note**: {dis['fpr_note']}")
     lines.append("")
@@ -561,6 +614,14 @@ def main(
         else:
             status = "FAIL"
         print(f"  {status}: Recall={dis_result.get('recall', 0):.0%}, FPR={dis_result.get('false_positive_rate', 0):.0%}")
+        cal = dis_result.get("calibration", {})
+        if isinstance(cal, dict):
+            print(
+                "  Calibration: "
+                f"{cal.get('source', 'default-v2.1')} "
+                f"(threshold={cal.get('risk_threshold', 0.50):.2f}, "
+                f"bias_delta={cal.get('bias_delta', 0.0):.2f})"
+            )
         if dis_result.get("fpr_note"):
             print(f"  NOTE: {dis_result['fpr_note']}")
     else:

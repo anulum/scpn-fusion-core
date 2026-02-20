@@ -85,6 +85,14 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
+                "tools/generate_disruption_risk_calibration.py",
+                "--check",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
                 "-m",
                 "pytest",
                 "tests/test_neuro_symbolic_control_demo_notebook.py",
@@ -129,6 +137,7 @@ def test_main_honors_skip_flags(monkeypatch):
             "--skip-release-checklist",
             "--skip-shot-manifest",
             "--skip-shot-splits",
+            "--skip-disruption-calibration",
             "--skip-notebook-quality",
             "--skip-threshold-smoke",
         ],

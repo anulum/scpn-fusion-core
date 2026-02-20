@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -112,3 +113,44 @@ def test_load_payload_rejects_non_monotonic_timebase(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="time_s must be strictly increasing"):
         validate_real_shots.load_disruption_shot_payload(shot_path)
+
+
+def test_load_disruption_risk_calibration_defaults_when_missing(tmp_path: Path) -> None:
+    calibration = validate_real_shots.load_disruption_risk_calibration(
+        tmp_path / "missing_calibration.json"
+    )
+    assert calibration["source"] == "default-v2.1"
+    assert calibration["risk_threshold"] == 0.50
+    assert calibration["bias_delta"] == 0.0
+
+
+def test_load_disruption_risk_calibration_reads_selected_values(tmp_path: Path) -> None:
+    calibration_path = tmp_path / "calibration.json"
+    calibration_path.write_text(
+        json.dumps(
+            {
+                "version": "diiid-disruption-risk-calibration-v1",
+                "selection": {
+                    "risk_threshold": 0.58,
+                    "bias_delta": -0.12,
+                },
+                "gates": {"overall_pass": True},
+            }
+        ),
+        encoding="utf-8",
+    )
+    calibration = validate_real_shots.load_disruption_risk_calibration(calibration_path)
+    assert calibration["source"] == "diiid-disruption-risk-calibration-v1"
+    assert calibration["risk_threshold"] == 0.58
+    assert calibration["bias_delta"] == -0.12
+    assert calibration["gates_overall_pass"] is True
+
+
+def test_load_disruption_risk_calibration_rejects_invalid_threshold(tmp_path: Path) -> None:
+    calibration_path = tmp_path / "bad_calibration.json"
+    calibration_path.write_text(
+        json.dumps({"selection": {"risk_threshold": 1.5, "bias_delta": 0.0}}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="risk_threshold"):
+        validate_real_shots.load_disruption_risk_calibration(calibration_path)

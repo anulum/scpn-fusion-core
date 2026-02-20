@@ -1,0 +1,112 @@
+{
+  "dataset": {
+    "all": {
+      "disruptive_files": 6,
+      "files": 16,
+      "safe_files": 10
+    },
+    "holdout_test": {
+      "disruptive_files": 1,
+      "files": 3,
+      "safe_files": 2
+    },
+    "train_val": {
+      "disruptive_files": 5,
+      "files": 13,
+      "safe_files": 8
+    }
+  },
+  "gates": {
+    "holdout_test_pass": true,
+    "overall_pass": true,
+    "train_val_pass": true
+  },
+  "grid": {
+    "bias_delta_max": 0.5,
+    "bias_delta_min": -0.5,
+    "bias_delta_step": 0.05,
+    "risk_threshold_max": 0.8,
+    "risk_threshold_min": 0.2,
+    "risk_threshold_step": 0.01,
+    "window_size": 128
+  },
+  "metrics": {
+    "baseline_holdout_test": {
+      "false_negatives": 0,
+      "false_positive_rate": 0.0,
+      "false_positives": 0,
+      "n_disruptions": 1,
+      "n_safe": 2,
+      "recall": 1.0,
+      "true_negatives": 2,
+      "true_positives": 1
+    },
+    "baseline_train_val": {
+      "false_negatives": 0,
+      "false_positive_rate": 0.0,
+      "false_positives": 0,
+      "n_disruptions": 5,
+      "n_safe": 8,
+      "recall": 1.0,
+      "true_negatives": 8,
+      "true_positives": 5
+    },
+    "selected_holdout_test": {
+      "false_negatives": 0,
+      "false_positive_rate": 0.0,
+      "false_positives": 0,
+      "n_disruptions": 1,
+      "n_safe": 2,
+      "recall": 1.0,
+      "true_negatives": 2,
+      "true_positives": 1
+    },
+    "selected_train_val": {
+      "false_negatives": 0,
+      "false_positive_rate": 0.0,
+      "false_positives": 0,
+      "n_disruptions": 5,
+      "n_safe": 8,
+      "recall": 1.0,
+      "true_negatives": 8,
+      "true_positives": 5
+    }
+  },
+  "model": {
+    "base_bias": -4.0,
+    "baseline_risk_threshold": 0.5,
+    "linear_weights": {
+      "asym": 0.5,
+      "energy": 0.005,
+      "last": 0.02,
+      "max_val": 0.03,
+      "mean": 0.02,
+      "n1": 1.1,
+      "n2": 0.7,
+      "n3": 0.45,
+      "slope": 0.5,
+      "spread": 0.15,
+      "std": 0.55
+    }
+  },
+  "selection": {
+    "bias_delta": -0.0,
+    "candidate_count": 1281,
+    "effective_bias": -4.0,
+    "feasible_count": 1247,
+    "mode": "feasible",
+    "risk_threshold": 0.5
+  },
+  "sources": {
+    "ingest_contract_module": "validation/validate_real_shots.py",
+    "manifest": "validation\\reference_data\\diiid\\disruption_shots_manifest.json",
+    "predictor_module": "src/scpn_fusion/control/disruption_predictor.py",
+    "shot_dir": "validation\\reference_data\\diiid\\disruption_shots",
+    "splits": "validation\\reference_data\\diiid\\disruption_shot_splits.json"
+  },
+  "targets": {
+    "false_positive_rate_max": 0.3,
+    "recall_min": 0.8
+  },
+  "version": "diiid-disruption-risk-calibration-v1"
+}

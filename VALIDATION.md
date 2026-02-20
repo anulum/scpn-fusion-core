@@ -19,6 +19,10 @@ This document covers data provenance and validation notes for:
 - Split hygiene contract:
   - `validation/reference_data/diiid/disruption_shot_splits.json`
   - Validated by `tools/check_disruption_shot_splits.py` (no train/val/test overlap, no missing manifest shots).
+- Calibration contract (train/val selection + holdout gate):
+  - `validation/reference_data/diiid/disruption_risk_calibration.json`
+  - `validation/reports/disruption_risk_holdout_report.md`
+  - Generated/checked by `tools/generate_disruption_risk_calibration.py`.
 
 ## Validation Script Linkage
 
@@ -67,6 +71,8 @@ Regenerate or verify provenance manifest:
 python tools/generate_disruption_shot_manifest.py
 python tools/generate_disruption_shot_manifest.py --check
 python tools/check_disruption_shot_splits.py
+python tools/generate_disruption_risk_calibration.py
+python tools/generate_disruption_risk_calibration.py --check
 ```
 
 ## Data License And Copyright Context

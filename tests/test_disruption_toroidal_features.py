@@ -13,6 +13,7 @@ import numpy as np
 import pytest
 
 from scpn_fusion.control.disruption_predictor import (
+    apply_disruption_logit_bias,
     apply_bit_flip_fault,
     build_disruption_feature_vector,
     predict_disruption_risk,
@@ -84,6 +85,29 @@ def test_apply_bit_flip_fault_returns_finite_value() -> None:
     flipped = apply_bit_flip_fault(value, 7)
     assert np.isfinite(flipped)
     assert flipped != value
+
+
+def test_apply_disruption_logit_bias_is_directional() -> None:
+    base = 0.50
+    higher = apply_disruption_logit_bias(base, 0.25)
+    lower = apply_disruption_logit_bias(base, -0.25)
+    assert 0.0 < lower < base < higher < 1.0
+
+
+@pytest.mark.parametrize(
+    ("risk", "bias_delta", "match"),
+    [
+        (float("nan"), 0.1, "risk"),
+        (0.4, float("nan"), "bias_delta"),
+    ],
+)
+def test_apply_disruption_logit_bias_rejects_non_finite_inputs(
+    risk: float,
+    bias_delta: float,
+    match: str,
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        apply_disruption_logit_bias(risk, bias_delta)
 
 
 @pytest.mark.parametrize("bit_index", [-1, 64, 1.5, float("nan"), True])

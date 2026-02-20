@@ -18,6 +18,7 @@ def _build_release_checks(
     skip_release_checklist: bool,
     skip_shot_manifest: bool,
     skip_shot_splits: bool,
+    skip_disruption_calibration: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -88,6 +89,17 @@ def _build_release_checks(
                 ],
             )
         )
+    if not skip_disruption_calibration:
+        checks.append(
+            (
+                "Disruption risk calibration holdout check",
+                [
+                    sys.executable,
+                    "tools/generate_disruption_risk_calibration.py",
+                    "--check",
+                ],
+            )
+        )
     if not skip_notebook_quality:
         checks.append(
             (
@@ -141,6 +153,7 @@ def _build_checks(
     skip_release_checklist: bool,
     skip_shot_manifest: bool,
     skip_shot_splits: bool,
+    skip_disruption_calibration: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
@@ -156,6 +169,7 @@ def _build_checks(
                 skip_release_checklist=skip_release_checklist,
                 skip_shot_manifest=skip_shot_manifest,
                 skip_shot_splits=skip_shot_splits,
+                skip_disruption_calibration=skip_disruption_calibration,
                 skip_notebook_quality=skip_notebook_quality,
                 skip_threshold_smoke=skip_threshold_smoke,
                 skip_mypy=skip_mypy,
@@ -228,6 +242,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip tools/check_disruption_shot_splits.py",
     )
     parser.add_argument(
+        "--skip-disruption-calibration",
+        action="store_true",
+        help="Skip tools/generate_disruption_risk_calibration.py --check",
+    )
+    parser.add_argument(
         "--skip-threshold-smoke",
         action="store_true",
         help=(
@@ -256,6 +275,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_release_checklist=args.skip_release_checklist,
         skip_shot_manifest=args.skip_shot_manifest,
         skip_shot_splits=args.skip_shot_splits,
+        skip_disruption_calibration=args.skip_disruption_calibration,
         skip_notebook_quality=args.skip_notebook_quality,
         skip_threshold_smoke=args.skip_threshold_smoke,
         skip_mypy=args.skip_mypy,

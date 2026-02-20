@@ -72,6 +72,13 @@
   - Added strict payload-schema loader `load_disruption_shot_payload()` in `validation/validate_real_shots.py`.
   - `validate_disruption()` now emits explicit per-shot schema failures for malformed payloads (signal keys, finite checks, timebase monotonicity, disruption-index bounds).
   - Added `tests/test_validate_real_shots_payload.py` and aligned `tests/test_disruption_threshold_sweep.py` to use the same payload contract.
+- Added calibrated disruption-risk holdout lane (A07):
+  - Added `tools/generate_disruption_risk_calibration.py` with deterministic `--check` drift mode.
+  - Added calibrated artifact + report:
+    - `validation/reference_data/diiid/disruption_risk_calibration.json`
+    - `validation/reports/disruption_risk_holdout_report.md`
+  - Added release preflight gate wiring for calibration holdout checks.
+  - `validation/validate_real_shots.py` disruption lane now consumes calibrated threshold/bias settings from the calibration artifact.
 
 ---
 

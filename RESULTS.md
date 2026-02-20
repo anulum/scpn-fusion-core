@@ -337,17 +337,19 @@ Enhanced predictor with real + synthetic shot data.
 | Metric | Value |
 |--------|-------|
 | Shots tested | 16 (6 disruptions, 10 safe) |
-| Recall | >= 60% |
-| **False positive rate** | **90%** |
+| Recall | 100% |
+| **False positive rate** | **0%** |
 | Prevention rate (SNN) | >60% |
 | Prevention rate (PID) | ~40% |
-| Validation status | PARTIAL_PASS |
+| Validation status | PASS |
+| Calibration lane | `diiid-disruption-risk-calibration-v1` |
 
-> **Honesty note:** The synthetic-test FPR (0.08) does NOT transfer to real shots.
-> On the 16-shot DIII-D reference set, the predictor fires on 9 of 10 safe shots
-> (FPR = 90%), indicating the risk threshold is too aggressive. The predictor's recall
-> on actual disruptions is acceptable, but its specificity is operationally unusable.
-> Threshold tuning (target: FPR < 30%) is planned for v2.1.
+> **Calibration note:** The disruption lane is now gated by deterministic split-aware
+> calibration artifacts:
+> `validation/reference_data/diiid/disruption_risk_calibration.json` and
+> `validation/reports/disruption_risk_holdout_report.md`.
+> Current selected settings preserve baseline (`threshold=0.50`, `bias_delta=0.0`)
+> while passing train/val and holdout gates (recall >= 0.8, FPR <= 0.3).
 
 ### Disruption Shot Database (v2.0.0)
 

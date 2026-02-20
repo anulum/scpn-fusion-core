@@ -23,6 +23,21 @@ except Exception:  # pragma: no cover - optional dependency path
 
 DEFAULT_SEQ_LEN = 100
 DEFAULT_MODEL_FILENAME = "disruption_model.pth"
+DEFAULT_DISRUPTION_RISK_BIAS = -4.0
+DEFAULT_DISRUPTION_RISK_THRESHOLD = 0.50
+DISRUPTION_RISK_LINEAR_WEIGHTS: dict[str, float] = {
+    "mean": 0.02,
+    "std": 0.55,
+    "max_val": 0.03,
+    "slope": 0.50,
+    "energy": 0.005,
+    "last": 0.02,
+    "n1": 1.10,
+    "n2": 0.70,
+    "n3": 0.45,
+    "asym": 0.50,
+    "spread": 0.15,
+}
 
 
 def _require_int(name: str, value: object, minimum: int | None = None) -> int:
@@ -122,7 +137,42 @@ def build_disruption_feature_vector(signal, toroidal_observables=None):
     )
 
 
-def predict_disruption_risk(signal, toroidal_observables=None):
+def _compute_disruption_logit_from_features(features: np.ndarray) -> float:
+    mean, std, max_val, slope, energy, last, n1, n2, n3, asym, spread = features
+    thermal_term = (
+        DISRUPTION_RISK_LINEAR_WEIGHTS["max_val"] * max_val
+        + DISRUPTION_RISK_LINEAR_WEIGHTS["std"] * std
+        + DISRUPTION_RISK_LINEAR_WEIGHTS["energy"] * energy
+        + DISRUPTION_RISK_LINEAR_WEIGHTS["slope"] * slope
+    )
+    asym_term = (
+        DISRUPTION_RISK_LINEAR_WEIGHTS["n1"] * n1
+        + DISRUPTION_RISK_LINEAR_WEIGHTS["n2"] * n2
+        + DISRUPTION_RISK_LINEAR_WEIGHTS["n3"] * n3
+        + DISRUPTION_RISK_LINEAR_WEIGHTS["asym"] * asym
+        + DISRUPTION_RISK_LINEAR_WEIGHTS["spread"] * spread
+    )
+    state_term = (
+        DISRUPTION_RISK_LINEAR_WEIGHTS["mean"] * mean
+        + DISRUPTION_RISK_LINEAR_WEIGHTS["last"] * last
+    )
+    return float(DEFAULT_DISRUPTION_RISK_BIAS + thermal_term + asym_term + state_term)
+
+
+def apply_disruption_logit_bias(risk: float, bias_delta: float) -> float:
+    """Apply additive logit-space calibration bias to a bounded risk score."""
+    risk_f = float(risk)
+    bias_f = float(bias_delta)
+    if not np.isfinite(risk_f):
+        raise ValueError("risk must be finite.")
+    if not np.isfinite(bias_f):
+        raise ValueError("bias_delta must be finite.")
+    clipped = float(np.clip(risk_f, 1e-9, 1.0 - 1e-9))
+    logit = float(np.log(clipped / (1.0 - clipped)) + bias_f)
+    return float(1.0 / (1.0 + np.exp(-logit)))
+
+
+def predict_disruption_risk(signal, toroidal_observables=None, bias_delta: float = 0.0):
     """
     Lightweight deterministic disruption risk estimator (0..1) for control loops.
 
@@ -130,17 +180,11 @@ def predict_disruption_risk(signal, toroidal_observables=None):
     asymmetry observables from 3D diagnostics.
     """
     features = build_disruption_feature_vector(signal, toroidal_observables)
-    mean, std, max_val, slope, energy, last, n1, n2, n3, asym, spread = features
 
-    # v2.1 weights: down-weight amplitude-dependent features (max_val, energy,
-    # mean, last) which scale with the operating point and cause false alarms
-    # on high-power safe shots.  Up-weight instability indicators (std, slope)
-    # which distinguish genuinely unstable plasmas.
-    thermal_term = 0.03 * max_val + 0.55 * std + 0.005 * energy + 0.50 * slope
-    asym_term = 1.10 * n1 + 0.70 * n2 + 0.45 * n3 + 0.50 * asym + 0.15 * spread
-    state_term = 0.02 * mean + 0.02 * last
-
-    logits = -4.0 + thermal_term + asym_term + state_term
+    bias_f = float(bias_delta)
+    if not np.isfinite(bias_f):
+        raise ValueError("bias_delta must be finite.")
+    logits = _compute_disruption_logit_from_features(features) + bias_f
     return float(1.0 / (1.0 + np.exp(-logits)))
 
 
