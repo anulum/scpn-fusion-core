@@ -26,11 +26,18 @@ pub struct GpuGsSolver {
     device: wgpu::Device,
     queue: wgpu::Queue,
     pipeline: wgpu::ComputePipeline,
+    pipeline_residual: wgpu::ComputePipeline,
+    pipeline_restrict: wgpu::ComputePipeline,
+    pipeline_prolong: wgpu::ComputePipeline,
     param_buffer: wgpu::Buffer,
     psi_buffer: wgpu::Buffer,
     source_buffer: wgpu::Buffer,
+    residual_buffer: wgpu::Buffer,
+    coarse_psi_buffer: wgpu::Buffer,
+    coarse_source_buffer: wgpu::Buffer,
     staging_buffer: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
+    bind_group_mg: wgpu::BindGroup,
     nr: usize,
     nz: usize,
     dr: f32,
@@ -154,6 +161,39 @@ impl GpuGsSolver {
                     },
                     count: None,
                 },
+                // Binding 3: Residual buffer
+                wgpu::BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                // Binding 4: Coarse source (for restriction)
+                wgpu::BindGroupLayoutEntry {
+                    binding: 4,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                // Binding 5: Coarse destination (for restriction/prolongation)
+                wgpu::BindGroupLayoutEntry {
+                    binding: 5,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
             ],
         });
 
@@ -172,6 +212,60 @@ impl GpuGsSolver {
             cache: None,
         });
 
+        let pipeline_residual = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("gs_residual_pipeline"),
+            layout: Some(&pipeline_layout),
+            module: &shader_module,
+            entry_point: Some("calculate_residual"),
+            compilation_options: Default::default(),
+            cache: None,
+        });
+
+        let pipeline_restrict = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("gs_restrict_pipeline"),
+            layout: Some(&pipeline_layout),
+            module: &shader_module,
+            entry_point: Some("restrict_to_coarse"),
+            compilation_options: Default::default(),
+            cache: None,
+        });
+
+        let pipeline_prolong = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            label: Some("gs_prolong_pipeline"),
+            layout: Some(&pipeline_layout),
+            module: &shader_module,
+            entry_point: Some("prolong_and_add"),
+            compilation_options: Default::default(),
+            cache: None,
+        });
+
+        // Residual and Coarse buffers
+        let nr_c = (nr - 1) / 2 + 1;
+        let nz_c = (nz - 1) / 2 + 1;
+        let coarse_grid_size = nr_c * nz_c;
+        let coarse_buf_size = (coarse_grid_size * std::mem::size_of::<f32>()) as u64;
+
+        let residual_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("residual"),
+            size: buf_size,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        let coarse_psi_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("coarse_psi"),
+            size: coarse_buf_size,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        let coarse_source_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("coarse_source"),
+            size: coarse_buf_size,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("gs_bind_group"),
             layout: &bind_group_layout,
@@ -188,6 +282,49 @@ impl GpuGsSolver {
                     binding: 2,
                     resource: source_buffer.as_entire_binding(),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: residual_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: coarse_source_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: coarse_psi_buffer.as_entire_binding(),
+                },
+            ],
+        });
+
+        let bind_group_mg = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("gs_mg_bind_group"),
+            layout: &bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: param_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: coarse_psi_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: coarse_source_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: residual_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: source_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: psi_buffer.as_entire_binding(),
+                },
             ],
         });
 
@@ -195,11 +332,18 @@ impl GpuGsSolver {
             device,
             queue,
             pipeline,
+            pipeline_residual,
+            pipeline_restrict,
+            pipeline_prolong,
             param_buffer,
             psi_buffer,
             source_buffer,
+            residual_buffer,
+            coarse_psi_buffer,
+            coarse_source_buffer,
             staging_buffer,
             bind_group,
+            bind_group_mg,
             nr,
             nz,
             dr: dr as f32,
@@ -318,6 +462,109 @@ impl GpuGsSolver {
         self.upload(psi_init, source)?;
         self.solve(iterations, omega)?;
         self.download()
+    }
+
+    /// Run a 2-level V-cycle on the GPU.
+    pub fn vcycle(&self, pre_sweeps: usize, post_sweeps: usize, omega: f32) -> FusionResult<()> {
+        let nr_c = (self.nr - 1) / 2 + 1;
+        let nz_c = (self.nz - 1) / 2 + 1;
+        
+        let wg_x_f = ((self.nr - 2) as u32).div_ceil(16);
+        let wg_y_f = ((self.nz - 2) as u32).div_ceil(16);
+        let wg_x_c = (nr_c as u32).div_ceil(16);
+        let wg_y_c = (nz_c as u32).div_ceil(16);
+
+        // 1. Pre-smoothing (Fine grid)
+        self.solve(pre_sweeps, omega)?;
+
+        // 2. Residual calculation (Fine grid)
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("mg_residual") });
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: None });
+            pass.set_pipeline(&self.pipeline_residual);
+            pass.set_bind_group(0, &self.bind_group, &[]);
+            pass.dispatch_workgroups(wg_x_f, wg_y_f, 1);
+        }
+        self.queue.submit(Some(encoder.finish()));
+
+        // 3. Restriction (Fine -> Coarse)
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("mg_restrict") });
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: None });
+            pass.set_pipeline(&self.pipeline_restrict);
+            pass.set_bind_group(0, &self.bind_group, &[]);
+            pass.dispatch_workgroups(wg_x_c, wg_y_c, 1);
+        }
+        // Copy restricted residual to coarse source buffer
+        // Note: The restrict kernel writes to coarse_psi_buffer (binding 5) which is coarse_dest
+        // But for the coarse solve, it needs to be in coarse_source_buffer
+        // Wait, the restrict kernel writes to binding 5 (coarse_dest). 
+        // We need to copy binding 5 -> coarse_source_buffer.
+        self.queue.submit(Some(encoder.finish()));
+        
+        let coarse_grid_size = nr_c * nz_c;
+        let coarse_buf_size = (coarse_grid_size * std::mem::size_of::<f32>()) as u64;
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("mg_copy") });
+        encoder.copy_buffer_to_buffer(&self.coarse_psi_buffer, 0, &self.coarse_source_buffer, 0, coarse_buf_size);
+        self.queue.submit(Some(encoder.finish()));
+        
+        // Clear coarse psi for the error solve
+        let zeros = vec![0.0f32; coarse_grid_size];
+        self.queue.write_buffer(&self.coarse_psi_buffer, 0, bytemuck::cast_slice(&zeros));
+
+        // 4. Coarse solve (using bind_group_mg which points to coarse buffers)
+        // We use a few more sweeps on the coarse grid
+        for _ in 0..10 {
+            for color in 0..2u32 {
+                let params = GpuParams {
+                    nr: nr_c as u32,
+                    nz: nz_c as u32,
+                    dr: self.dr * 2.0,
+                    dz: self.dz * 2.0,
+                    r_left: self.r_left,
+                    omega: 1.0, // usually 1.0 for coarse solve
+                    color,
+                    _pad: 0,
+                };
+                self.queue.write_buffer(&self.param_buffer, 0, bytemuck::bytes_of(&params));
+                let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+                {
+                    let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: None });
+                    pass.set_pipeline(&self.pipeline);
+                    pass.set_bind_group(0, &self.bind_group_mg, &[]);
+                    pass.dispatch_workgroups(wg_x_c, wg_y_c, 1);
+                }
+                self.queue.submit(Some(encoder.finish()));
+            }
+        }
+
+        // 5. Prolongation and Addition (Coarse -> Fine)
+        // Restore fine params
+        let fine_params = GpuParams {
+            nr: self.nr as u32,
+            nz: self.nz as u32,
+            dr: self.dr,
+            dz: self.dz,
+            r_left: self.r_left,
+            omega,
+            color: 0,
+            _pad: 0,
+        };
+        self.queue.write_buffer(&self.param_buffer, 0, bytemuck::bytes_of(&fine_params));
+        
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("mg_prolong") });
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: None });
+            pass.set_pipeline(&self.pipeline_prolong);
+            pass.set_bind_group(0, &self.bind_group, &[]);
+            pass.dispatch_workgroups(wg_x_f, wg_y_f, 1);
+        }
+        self.queue.submit(Some(encoder.finish()));
+
+        // 6. Post-smoothing (Fine grid)
+        self.solve(post_sweeps, omega)?;
+
+        Ok(())
     }
 
     /// Grid dimensions.

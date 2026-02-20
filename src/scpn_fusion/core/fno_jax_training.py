@@ -16,125 +16,128 @@ logger = logging.getLogger(__name__)
 MODES = 16
 WIDTH = 64
 LEARNING_RATE = 1e-3
-BATCH_SIZE = 16
-EPOCHS = 100
+BATCH_SIZE = 32
+EPOCHS = 50
 
 # ── Model Definition ─────────────────────────────────────────────────
 
 def init_fno_params(key, modes, width):
     k1, k2, k3, k4 = random.split(key, 4)
+    
+    def xavier(k, shape):
+        return random.normal(k, shape) * jnp.sqrt(2.0 / (shape[0] + shape[1]))
 
-    # Simple 2-layer FNO
     params = {
-        "w1_real": random.normal(k1, (width, width, modes, modes)) * 0.02,
-        "w1_imag": random.normal(k2, (width, width, modes, modes)) * 0.02,
+        "w1_real": xavier(k1, (width, width, modes, modes)) * 0.1,
+        "w1_imag": xavier(k2, (width, width, modes, modes)) * 0.1,
         "b1": jnp.zeros(width),
-        "linear1": random.normal(k3, (width, width)) * 0.02,
-
-        "fc1": random.normal(k4, (width, 128)) * 0.02,
-        "fc2": random.normal(random.split(k4)[0], (128, 1)) * 0.02,
+        "linear1": xavier(k3, (width, width)),
+        
+        "fc1": xavier(k4, (width, 128)),
+        "fc2": random.normal(random.split(k4)[0], (128, 1)) * 0.01,
     }
     return params
 
 @jit
 def fno_layer(x, w_real, w_imag, linear, b):
     # x: (grid, grid, width)
-    # 1. Fourier Transform
     x_ft = jnp.fft.rfft2(x, axes=(0, 1))
-
-    # 2. Spectral Convolution
-    # x_ft shape: (grid, grid//2 + 1, width)
-    # weights shape: (width, width, modes, modes)
-
-    # We want out_ft[width_out, i, j] = sum_width_in x_ft[width_in, i, j] * w[width_out, width_in, i, j]
-    # For simplicity, we use einsum for the spectral multiplication
-    # We only take the top modes
     modes = w_real.shape[2]
-
-    # Extract modes from x_ft
-    # rfft2 result is (N, N//2 + 1, C)
+    
+    # Extract modes
     x_ft_low = x_ft[:modes, :modes, :]
-
-    # weights shape: (width_out, width_in, modes, modes)
-    # x_ft_low shape: (modes, modes, width_in)
-    # Target shape: (modes, modes, width_out)
-    # Logic: for each (m1, m2), we do Matrix-Vector multiply (W_out, W_in) @ (W_in)
     weights = w_real + 1j * w_imag
-
-    # Correct einsum for (O, I, M1, M2) x (M1, M2, I) -> (M1, M2, O)
+    
+    # Spectral convolution
     out_ft_low = jnp.einsum("oimj,mji->mjo", weights, x_ft_low)
-    # Pad back to full Fourier size
-
+    
+    # Pad back
     out_ft = jnp.zeros_like(x_ft)
     out_ft = out_ft.at[:modes, :modes, :].set(out_ft_low)
-
-    # 3. Inverse Fourier
+    
     x_out = jnp.fft.irfft2(out_ft, axes=(0, 1), s=x.shape[:2])
-
-    # 4. Spatial linear (channel mixing)
     return jax.nn.gelu(jnp.dot(x, linear) + b + x_out)
+
 def model_forward(params, x):
-    # x: (grid, grid, 1) -> input turbulence field
-    # Project to width
+    # x: (grid, grid, 1)
     x = jnp.repeat(x, WIDTH, axis=-1)
-
-    # FNO Layer 1
     x = fno_layer(x, params["w1_real"], params["w1_imag"], params["linear1"], params["b1"])
-
-    # Global average pooling for turbulence intensity prediction
+    
     z = jnp.mean(x, axis=(0, 1))
-
-    # MLP head
     z = jax.nn.relu(jnp.dot(z, params["fc1"]))
     z = jnp.dot(z, params["fc2"])
     return z[0]
 
-# ── Training Loop ────────────────────────────────────────────────────
+# ── Training Loop (Adam) ─────────────────────────────────────────────
 
 def mse_loss(params, x_batch, y_batch):
     preds = vmap(lambda x: model_forward(params, x))(x_batch)
     return jnp.mean((preds - y_batch)**2)
 
 @jit
-def update_step(params, opt_state, x_batch, y_batch, lr):
+def update_step(params, m, v, x_batch, y_batch, lr, t):
+    b1, b2, eps = 0.9, 0.999, 1e-8
     loss, grads = value_and_grad(mse_loss)(params, x_batch, y_batch)
-    # Simple SGD-like update for brevity
-    new_params = jax.tree_util.tree_map(lambda p, g: p - lr * g, params, grads)
-    return new_params, loss
+    
+    # Clipping
+    grads = jax.tree_util.tree_map(lambda g: jnp.clip(g, -1.0, 1.0), grads)
+    
+    m = jax.tree_util.tree_map(lambda mi, g: b1 * mi + (1 - b1) * g, m, grads)
+    v = jax.tree_util.tree_map(lambda vi, g: b2 * vi + (1 - b2) * (g**2), v, grads)
+    
+    m_hat = jax.tree_util.tree_map(lambda mi: mi / (1 - b1**t), m)
+    v_hat = jax.tree_util.tree_map(lambda vi: vi / (1 - b2**t), v)
+    
+    new_params = jax.tree_util.tree_map(
+        lambda p, mh, vh: p - lr * mh / (jnp.sqrt(vh) + eps),
+        params, m_hat, v_hat
+    )
+    return new_params, m, v, loss
 
-def train_fno_jax():
+def train_fno_jax(data_path=None):
     logging.basicConfig(level=logging.INFO)
-    logger.info("Generating synthetic turbulence dataset (JAX)...")
+    
+    if data_path and Path(data_path).exists():
+        logger.info(f"Loading dataset from {data_path}...")
+        data = np.load(data_path)
+        X, Y = jnp.array(data["X"]), jnp.array(data["Y"])
+        n_samples = X.shape[0]
+    else:
+        logger.info("Generating synthetic turbulence dataset (JAX)...")
+        key = random.PRNGKey(42)
+        n_samples = 1000
+        grid_size = 64
+        X = random.normal(key, (n_samples, grid_size, grid_size, 1))
+        Y = jnp.std(X, axis=(1, 2, 3)) * 5.0
+    
     key = random.PRNGKey(42)
-
-    # Generate 1000 samples (vs 60 in NumPy version)
-    n_samples = 1000
-    grid_size = 64
-    X = random.normal(key, (n_samples, grid_size, grid_size, 1))
-    # Synthetic target: turbulence intensity correlated with spatial variance
-    Y = jnp.std(X, axis=(1, 2, 3)) * 5.0 + random.normal(key, (n_samples,)) * 0.1
-
     params = init_fno_params(key, MODES, WIDTH)
-
-    logger.info("Starting training loop...")
+    m = jax.tree_util.tree_map(jnp.zeros_like, params)
+    v = jax.tree_util.tree_map(jnp.zeros_like, params)
+    
+    logger.info("Starting training loop (Adam)...")
+    t_step = 1
     for epoch in range(EPOCHS):
         t0 = time.perf_counter()
-
-        # Mini-batching
         idx = np.random.permutation(n_samples)
         epoch_loss = 0
         for i in range(0, n_samples, BATCH_SIZE):
             batch_idx = idx[i:i+BATCH_SIZE]
-            params, loss = update_step(params, None, X[batch_idx], Y[batch_idx], LEARNING_RATE)
+            if len(batch_idx) < BATCH_SIZE: continue
+            params, m, v, loss = update_step(params, m, v, X[batch_idx], Y[batch_idx], LEARNING_RATE, t_step)
             epoch_loss += loss
-
-        if epoch % 10 == 0:
+            t_step += 1
+            
+        if epoch % 5 == 0:
             dt = time.perf_counter() - t0
-            logger.info(f"Epoch {epoch}: Loss={epoch_loss/n_samples:.6f} ({dt:.2f}s)")
+            logger.info(f"Epoch {epoch}: Loss={epoch_loss/(n_samples/BATCH_SIZE):.6f} ({dt:.2f}s)")
 
     logger.info("Training complete. Saving JAX-FNO weights...")
     np.savez("weights/fno_turbulence_jax.npz", **params)
 
 if __name__ == "__main__":
-    train_fno_jax()
-
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data", default=None, help="Path to .npz dataset")
+    args = parser.parse_args()
+    train_fno_jax(data_path=args.data)

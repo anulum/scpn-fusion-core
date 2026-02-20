@@ -243,21 +243,16 @@ class NeuralTransportModel:
         Path to a ``.npz`` file containing MLP weights.  The file must
         contain arrays: ``w1, b1, w2, b2, w3, b3, input_mean,
         input_std, output_scale``.
-
-    Examples
-    --------
-    >>> model = NeuralTransportModel()          # fallback mode
-    >>> inp = TransportInputs(grad_ti=8.0)
-    >>> fluxes = model.predict(inp)
-    >>> fluxes.chi_i > 0
-    True
-    >>> model.is_neural
-    False
     """
 
     def __init__(self, weights_path: Optional[str | Path] = None) -> None:
         self._weights: Optional[MLPWeights] = None
         self.is_neural: bool = False
+        
+        # Default to bundled QLKNN-10D weights if not specified
+        if weights_path is None:
+            weights_path = Path(__file__).resolve().parents[3] / "weights" / "neural_transport_qlknn.npz"
+            
         self.weights_path: Optional[Path] = None
         self.weights_checksum: Optional[str] = None
         self._last_gradient_clip_counts: dict[str, int] = {"grad_te": 0, "grad_ti": 0, "grad_ne": 0}

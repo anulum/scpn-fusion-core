@@ -1336,6 +1336,24 @@ mod gpu_bindings {
         fn grid_shape(&self) -> (usize, usize) {
             self.inner.grid_shape()
         }
+
+        fn vcycle<'py>(
+            &self,
+            py: Python<'py>,
+            psi: Vec<f32>,
+            source: Vec<f32>,
+            pre_sweeps: usize,
+            post_sweeps: usize,
+            omega: f32,
+        ) -> PyResult<Bound<'py, PyArray1<f32>>> {
+            self.inner.upload(&psi, &source)
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            self.inner.vcycle(pre_sweeps, post_sweeps, omega)
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            let result = self.inner.download()
+                .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+            Ok(Array1::from_vec(result).into_pyarray(py))
+        }
     }
 
     #[pyfunction]

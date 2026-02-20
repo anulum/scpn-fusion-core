@@ -82,3 +82,99 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
     psi[idx(iz, ir)] = psi_new;
 }
+
+// ── Multigrid Kernels ──────────────────────────────────────────────
+
+@group(0) @binding(3) var<storage, read_write> residual_buf: array<f32>;
+
+// 1. Residual calculation: r = S - Delta* psi
+@compute @workgroup_size(16, 16)
+fn calculate_residual(@builtin(global_invocation_id) gid: vec3<u32>) {
+    let ir = gid.x + 1u;
+    let iz = gid.y + 1u;
+
+    if (ir >= params.nr - 1u || iz >= params.nz - 1u) {
+        return;
+    }
+
+    let dr = params.dr;
+    let dz = params.dz;
+    let R = params.r_left + f32(ir) * dr;
+    let inv_R = 1.0 / max(R, 1e-6);
+
+    let c_center = -2.0 / (dr * dr) - 2.0 / (dz * dz);
+    let c_right = 1.0 / (dr * dr) + inv_R / (2.0 * dr);
+    let c_left = 1.0 / (dr * dr) - inv_R / (2.0 * dr);
+    let c_up = 1.0 / (dz * dz);
+    let c_down = 1.0 / (dz * dz);
+
+    let p_c = psi[idx(iz, ir)];
+    let p_r = psi[idx(iz, ir + 1u)];
+    let p_l = psi[idx(iz, ir - 1u)];
+    let p_u = psi[idx(iz + 1u, ir)];
+    let p_d = psi[idx(iz - 1u, ir)];
+    let rhs = source[idx(iz, ir)];
+
+    // r = S - (c_c*p_c + c_r*p_r + c_l*p_l + c_u*p_u + c_d*p_d)
+    residual_buf[idx(iz, ir)] = rhs - (c_center * p_c + c_right * p_r + c_left * p_l + c_up * p_u + c_down * p_d);
+}
+
+// 2. Restriction: Fine -> Coarse (Half-weight injection)
+// Expects fine grid in source, coarse grid in residual_buf
+@group(0) @binding(4) var<storage, read> coarse_source: array<f32>;
+@group(0) @binding(5) var<storage, read_write> coarse_dest: array<f32>;
+
+@compute @workgroup_size(16, 16)
+fn restrict_to_coarse(@builtin(global_invocation_id) gid: vec3<u32>) {
+    let ir_c = gid.x;
+    let iz_c = gid.y;
+    
+    // Coarse grid size is (nr-1)/2 + 1
+    let nr_c = (params.nr - 1u) / 2u + 1u;
+    let nz_c = (params.nz - 1u) / 2u + 1u;
+
+    if (ir_c >= nr_c || iz_c >= nz_c) {
+        return;
+    }
+
+    let ir_f = ir_c * 2u;
+    let iz_f = iz_c * 2u;
+    
+    // Simple injection for now
+    coarse_dest[iz_c * nr_c + ir_c] = residual_buf[iz_f * params.nr + ir_f];
+}
+
+// 3. Prolongation: Coarse -> Fine (Bilinear interpolation)
+// Adds coarse correction to fine solution
+@compute @workgroup_size(16, 16)
+fn prolong_and_add(@builtin(global_invocation_id) gid: vec3<u32>) {
+    let ir_f = gid.x;
+    let iz_f = gid.y;
+
+    if (ir_f >= params.nr || iz_f >= params.nz) {
+        return;
+    }
+
+    let nr_c = (params.nr - 1u) / 2u + 1u;
+    
+    // Coarse indices (floor)
+    let ir_c = ir_f / 2u;
+    let iz_c = iz_f / 2u;
+    
+    // Fractions
+    let fr = f32(ir_f % 2u) * 0.5;
+    let fz = f32(iz_f % 2u) * 0.5;
+
+    // Bilinear from coarse_dest
+    let c00 = coarse_dest[iz_c * nr_c + ir_c];
+    let c10 = coarse_dest[iz_c * nr_c + min(ir_c + 1u, nr_c - 1u)];
+    let c01 = coarse_dest[min(iz_c + 1u, nz_c - 1u) * nr_c + ir_c];
+    let c11 = coarse_dest[min(iz_c + 1u, nz_c - 1u) * nr_c + min(ir_c + 1u, nr_c - 1u)];
+
+    let correction = (1.0 - fr) * (1.0 - fz) * c00 + 
+                     fr * (1.0 - fz) * c10 + 
+                     (1.0 - fr) * fz * c01 + 
+                     fr * fz * c11;
+
+    psi[idx(iz_f, ir_f)] += correction;
+}

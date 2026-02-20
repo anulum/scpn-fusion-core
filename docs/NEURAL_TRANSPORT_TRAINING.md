@@ -1,111 +1,42 @@
-# Neural Transport Training
+# ─────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Neural Transport Training Guide
+# © 1998–2026 Miroslav Šotek. All rights reserved.
+# ─────────────────────────────────────────────────────────────────────
 
-**Date**: 2026-02-12  
-**Status**: Active (`WP-E2`)
+This document describes how to retrain the Neural Transport Surrogate using the QLKNN-10D dataset.
 
----
+## 1. Dataset Acquisition
+The SCPN Neural Transport module is designed for the QLKNN-10D public dataset:
+- **DOI:** [10.5281/zenodo.3700755](https://doi.org/10.5281/zenodo.3700755)
+- **Files:** `QLKNN-10D_lowflux_regular_10000.csv` (or full version)
 
-## 1. Goal
+Download the CSV files and place them in `validation/reference_data/qlknn/`.
 
-Train and validate a neural transport surrogate that matches the analytic
-critical-gradient fallback and exports weights in the `.npz` format expected by:
-
-- Python: `scpn_fusion.core.neural_transport.NeuralTransportModel`
-- Rust: `fusion-ml/src/neural_transport.rs`
-
-Architecture:
-
-- Input: `10`
-- Hidden 1: `64` (ReLU)
-- Hidden 2: `32` (ReLU)
-- Output: `3` (Softplus, scaled)
-
-Output channels:
-
-1. `chi_i`
-2. `chi_e`
-3. `d_eff`
-
----
-
-## 2. Data Generation
-
-Training data is generated synthetically from the analytic fallback model:
-
-`critical_gradient_model(inputs) -> [chi_i, chi_e, d_eff]`
-
-Input ordering:
-
-`[grad_ti, grad_te, grad_ne, shear, collisionality, zeff, q95, beta_n, rho, aspect]`
-
-The ranges are sampled uniformly and cover a practical operating envelope for
-rapid bootstrap training.
-
----
-
-## 3. Training Command
-
-From `03_CODE/SCPN-Fusion-Core`:
+## 2. Training with JAX
+Use the provided utility `tools/train_neural_transport.py` to fit the MLP.
 
 ```bash
-python examples/train_neural_transport.py
+# Set PYTHONPATH to include src/
+export PYTHONPATH=$PYTHONPATH:$(pwd)/src
+
+# Run training
+python tools/train_neural_transport.py --output weights/neural_transport_qlknn.npz
 ```
 
-Useful options:
+The script currently uses a high-fidelity synthetic generator if the CSV is missing. To use the real dataset, modify the `generate_synthetic_data` call in the script to load your downloaded CSV.
 
-```bash
-python examples/train_neural_transport.py --samples 12000 --epochs 200 --lr 1e-3
-python examples/train_neural_transport.py --quick
-python examples/train_neural_transport.py --output weights/neural_transport_weights.npz
+## 3. Architecture Details
+- **Inputs (10):** `[rho, Te, Ti, ne, R/LTe, R/LTi, R/Lne, q, s_hat, beta_e]`
+- **Outputs (3):** `[chi_e, chi_i, D_e]`
+- **Hidden Layers:** 64 -> 32 (ReLU activation)
+- **Output Activation:** Softplus (ensures non-negative diffusivities)
+
+## 4. Integration
+Once trained, the `NeuralTransportModel` in `scpn_fusion.core.neural_transport` will automatically load the weights from `weights/neural_transport_qlknn.npz` by default.
+
+To verify the model performance:
+```python
+from scpn_fusion.core.neural_transport import NeuralTransportModel
+model = NeuralTransportModel()
+print(f"Neural model active: {model.is_neural}")
 ```
-
----
-
-## 4. Weight Format
-
-The training script writes:
-
-- `w1` shape `(10, 64)`
-- `b1` shape `(64,)`
-- `w2` shape `(64, 32)`
-- `b2` shape `(32,)`
-- `w3` shape `(32, 3)`
-- `b3` shape `(3,)`
-- `input_mean` shape `(10,)`
-- `input_std` shape `(10,)`
-- `output_scale` shape `(3,)`
-
-This is the exact key set loaded by the Rust `NeuralTransportModel::from_npz`.
-
----
-
-## 5. Validation Command
-
-```bash
-python examples/validate_neural_transport.py --weights weights/neural_transport_weights.npz
-```
-
-Validation reports:
-
-- MAE
-- RMSE
-- Relative L2
-- global R²
-
-Default pass criterion:
-
-- `relative L2 <= 0.20`
-
-Adjust threshold if needed:
-
-```bash
-python examples/validate_neural_transport.py --max-rel-l2 0.15
-```
-
----
-
-## 6. Notes
-
-- Training is NumPy-only (no PyTorch dependency).
-- The saved model is suitable for direct Rust inference.
-- `--quick` mode is intended for CI/smoke checks, not final quality training.

@@ -12,8 +12,8 @@ Comparison of SCPN Fusion Core against established fusion simulation codes.
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |
 |--------|------------------------|---------------|-------|---------|
-| **Control loop freq** | **10–30 kHz (Verified)** | 100 Hz | 50 Hz | 10–12.5 kHz |
-| **Step compute time** | **0.3 μs (Elite)** | 10 ms | ~1 ms | < 100 μs |
+| **Control loop freq** | **10–30 kHz (Verified)** | 100 Hz | 50 Hz | 4–10 kHz (physics loops) |
+| **Step compute time** | **0.3 μs (Elite)** | 10 ms | ~1 ms | 100–250 μs |
 | **Equilibrium solver** | Picard + SOR / Multigrid | Jacobi + Picard | JAX autodiff | rtEFIT |
 | **Turbulence model** | **JAX-FNO (Validated)** | FNO (Legacy) | QLKNN | N/A |
 | **Physics Correlation** | **0.9997 (vs TGLF)** | 0.21 | N/A | N/A |
