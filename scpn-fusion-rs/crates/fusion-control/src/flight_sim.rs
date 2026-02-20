@@ -18,6 +18,7 @@ pub struct SimulationReport {
     pub steps: usize,
     pub duration_s: f64,
     pub wall_time_ms: f64,
+    pub max_step_time_us: f64,
     pub mean_abs_r_error: f64,
     pub mean_abs_z_error: f64,
     pub disrupted: bool,
@@ -72,9 +73,11 @@ impl RustFlightSim {
         
         let mut r_err_sum = 0.0;
         let mut z_err_sum = 0.0;
+        let mut max_step_us = 0.0;
         let mut disrupted = false;
 
         for t in 0..steps {
+            let t_step_start = Instant::now();
             let time_s = t as f64 * self.control_dt;
 
             // 1. Physics Evolution (Plant)
@@ -82,7 +85,6 @@ impl RustFlightSim {
             self.curr_beta = 1.0 + (0.01 * time_s);
 
             // Natural Drifts (Shafranov shift + Vertical instability)
-            // Stable drift rates: 1cm/s radial, 2cm/s vertical
             self.curr_r += 0.01 * self.curr_beta * self.control_dt; 
             self.curr_z += 0.02 * self.control_dt;
             
@@ -102,7 +104,6 @@ impl RustFlightSim {
             let applied_z = actions[1];
 
             // 4. Update state based on applied control
-            // Sensitivity: 1 unit of control = 1m/s velocity
             self.curr_r += applied_r * self.control_dt;
             self.curr_z += applied_z * self.control_dt;
 
@@ -115,6 +116,11 @@ impl RustFlightSim {
             if r_err > 0.5 || z_err > 0.5 {
                 disrupted = true;
             }
+
+            let step_us = t_step_start.elapsed().as_secs_f64() * 1_000_000.0;
+            if step_us > max_step_us {
+                max_step_us = step_us;
+            }
         }
 
         let wall_time = t_start.elapsed().as_secs_f64() * 1000.0;
@@ -123,6 +129,7 @@ impl RustFlightSim {
             steps,
             duration_s: shot_duration_s,
             wall_time_ms: wall_time,
+            max_step_time_us: max_step_us,
             mean_abs_r_error: r_err_sum / steps as f64,
             mean_abs_z_error: z_err_sum / steps as f64,
             disrupted,

@@ -197,6 +197,8 @@ struct PySimulationReport {
     #[pyo3(get)]
     pub wall_time_ms: f64,
     #[pyo3(get)]
+    pub max_step_time_us: f64,
+    #[pyo3(get)]
     pub mean_abs_r_error: f64,
     #[pyo3(get)]
     pub mean_abs_z_error: f64,
@@ -230,6 +232,7 @@ impl PyRustFlightSim {
             steps: report.steps,
             duration_s: report.duration_s,
             wall_time_ms: report.wall_time_ms,
+            max_step_time_us: report.max_step_time_us,
             mean_abs_r_error: report.mean_abs_r_error,
             mean_abs_z_error: report.mean_abs_z_error,
             disrupted: report.disrupted,

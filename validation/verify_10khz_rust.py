@@ -53,6 +53,7 @@ def run_verification():
     print(f"  Steps executed: {report.steps}")
     print(f"  Total Wall Time: {report.wall_time_ms:.2f} ms")
     print(f"  Avg Latency per step: {(report.wall_time_ms * 1000 / report.steps):.2f} μs")
+    print(f"  Max Jitter (Step Time): {report.max_step_time_us:.2f} μs")
     print(f"  Mean R Error: {report.mean_abs_r_error:.6f}")
     print(f"  Disrupted: {report.disrupted}")
     
@@ -65,6 +66,7 @@ def run_verification():
     print(f"  Steps executed: {report30.steps}")
     print(f"  Total Wall Time: {report30.wall_time_ms:.2f} ms")
     print(f"  Avg Latency per step: {(report30.wall_time_ms * 1000 / report30.steps):.2f} μs")
+    print(f"  Max Jitter (Step Time): {report30.max_step_time_us:.2f} μs")
     
     if HAS_RUST:
         print("\n[SUCCESS] Rust-native 10kHz simulation verified.")
