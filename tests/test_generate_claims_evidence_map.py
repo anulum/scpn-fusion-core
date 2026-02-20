@@ -27,7 +27,7 @@ def test_render_markdown_includes_summary_and_claim_ids() -> None:
     assert "# Claims Evidence Map" in rendered
     assert "## Summary" in rendered
     assert "readme_full_physics_transport_rmse" in rendered
-    assert "results_fno_deprecated_status" in rendered
+    assert "results_fno_validated_status" in rendered
 
 
 def test_check_mode_reports_stale_output(tmp_path: Path) -> None:
