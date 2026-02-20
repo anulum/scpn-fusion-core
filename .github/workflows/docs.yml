@@ -101,7 +101,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -e .
-          pip install jupyter nbconvert jax<0.5.0 jaxlib<0.5.0
+          pip install jupyter nbconvert "jax<0.5.0" "jaxlib<0.5.0"
 
       - name: Convert notebooks to HTML
         run: |
