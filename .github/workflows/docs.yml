@@ -99,13 +99,14 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip install --upgrade pip
           pip install -e .
-          pip install nbconvert jax<0.5.0 jaxlib<0.5.0
+          pip install jupyter nbconvert jax<0.5.0 jaxlib<0.5.0
 
       - name: Convert notebooks to HTML
         run: |
           mkdir -p docs/notebooks
-          jupyter nbconvert --to html examples/*.ipynb --output-dir docs/notebooks/
+          python -m jupyter nbconvert --to html examples/*.ipynb --output-dir docs/notebooks/
 
       - name: Upload notebook HTML
         uses: actions/upload-artifact@v4
@@ -397,7 +398,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Upload to Pages
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
           path: site/
 
