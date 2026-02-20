@@ -35,6 +35,10 @@ This document covers data provenance and validation notes for:
   - `validation/reports/disruption_replay_pipeline_benchmark.json`
   - `validation/reports/disruption_replay_pipeline_benchmark.md`
   - Generated/checked by `validation/benchmark_disruption_replay_pipeline.py`.
+- Transport uncertainty-envelope contract (p95 transport residual/error bands):
+  - `validation/reports/transport_uncertainty_envelope_benchmark.json`
+  - `validation/reports/transport_uncertainty_envelope_benchmark.md`
+  - Generated/checked by `validation/benchmark_transport_uncertainty_envelope.py`.
 
 ## Validation Script Linkage
 
@@ -87,6 +91,7 @@ python tools/generate_disruption_risk_calibration.py
 python tools/generate_disruption_risk_calibration.py --check
 python validation/benchmark_disruption_replay_pipeline.py --strict
 python validation/benchmark_eped_domain_contract.py --strict
+python validation/benchmark_transport_uncertainty_envelope.py --strict
 python validation/scpn_end_to_end_latency.py --strict
 ```
 

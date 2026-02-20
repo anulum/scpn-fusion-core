@@ -21,6 +21,7 @@ def _build_release_checks(
     skip_disruption_calibration: bool,
     skip_disruption_replay_pipeline: bool,
     skip_eped_domain_contract: bool,
+    skip_transport_uncertainty: bool,
     skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
@@ -125,6 +126,17 @@ def _build_release_checks(
                 ],
             )
         )
+    if not skip_transport_uncertainty:
+        checks.append(
+            (
+                "Transport uncertainty envelope benchmark",
+                [
+                    sys.executable,
+                    "validation/benchmark_transport_uncertainty_envelope.py",
+                    "--strict",
+                ],
+            )
+        )
     if not skip_end_to_end_latency:
         checks.append(
             (
@@ -192,6 +204,7 @@ def _build_checks(
     skip_disruption_calibration: bool,
     skip_disruption_replay_pipeline: bool,
     skip_eped_domain_contract: bool,
+    skip_transport_uncertainty: bool,
     skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
@@ -211,6 +224,7 @@ def _build_checks(
                 skip_disruption_calibration=skip_disruption_calibration,
                 skip_disruption_replay_pipeline=skip_disruption_replay_pipeline,
                 skip_eped_domain_contract=skip_eped_domain_contract,
+                skip_transport_uncertainty=skip_transport_uncertainty,
                 skip_end_to_end_latency=skip_end_to_end_latency,
                 skip_notebook_quality=skip_notebook_quality,
                 skip_threshold_smoke=skip_threshold_smoke,
@@ -299,6 +313,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip validation/benchmark_eped_domain_contract.py --strict",
     )
     parser.add_argument(
+        "--skip-transport-uncertainty",
+        action="store_true",
+        help="Skip validation/benchmark_transport_uncertainty_envelope.py --strict",
+    )
+    parser.add_argument(
         "--skip-end-to-end-latency",
         action="store_true",
         help="Skip validation/scpn_end_to_end_latency.py --strict",
@@ -335,6 +354,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_disruption_calibration=args.skip_disruption_calibration,
         skip_disruption_replay_pipeline=args.skip_disruption_replay_pipeline,
         skip_eped_domain_contract=args.skip_eped_domain_contract,
+        skip_transport_uncertainty=args.skip_transport_uncertainty,
         skip_end_to_end_latency=args.skip_end_to_end_latency,
         skip_notebook_quality=args.skip_notebook_quality,
         skip_threshold_smoke=args.skip_threshold_smoke,

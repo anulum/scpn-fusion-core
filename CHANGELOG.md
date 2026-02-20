@@ -106,6 +106,14 @@
     - `validation/reports/disruption_replay_pipeline_benchmark.md`
   - Added release preflight wiring for `validation/benchmark_disruption_replay_pipeline.py --strict`.
   - Added contract tests for replay-pipeline config validation, deterministic behavior, and disabled-lane invariants.
+- Added transport uncertainty-envelope contracts (A13):
+  - `validation/validate_real_shots.py` transport lane now emits p50/p95 uncertainty-envelope metrics for absolute relative error, residual spread, sigma spread, and z-score coverage.
+  - Added benchmark gate + release artifacts:
+    - `validation/benchmark_transport_uncertainty_envelope.py`
+    - `validation/reports/transport_uncertainty_envelope_benchmark.json`
+    - `validation/reports/transport_uncertainty_envelope_benchmark.md`
+  - Added release preflight wiring for `validation/benchmark_transport_uncertainty_envelope.py --strict`.
+  - Added tests for envelope contract fields, benchmark strict mode, markdown output, and preflight command ordering.
 
 ---
 

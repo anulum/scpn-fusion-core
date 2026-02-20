@@ -200,3 +200,83 @@ def test_validate_disruption_reports_pipeline_contract_metadata(tmp_path: Path) 
     assert enabled["pipeline"]["actuator_lag_enabled"] is True
     assert float(enabled["pipeline"]["mean_abs_sensor_delta"]) >= 0.0
     assert float(enabled["pipeline"]["mean_abs_actuator_lag"]) >= 0.0
+
+
+def test_validate_transport_reports_uncertainty_envelope_contract(tmp_path: Path) -> None:
+    import csv
+
+    fields = [
+        "machine",
+        "shot",
+        "Ip_MA",
+        "BT_T",
+        "ne19_1e19m3",
+        "Ploss_MW",
+        "R_m",
+        "a_m",
+        "kappa",
+        "M_AMU",
+        "tau_E_s",
+    ]
+    rows: list[dict[str, str]] = []
+    coeffs = validate_real_shots.load_ipb98y2_coefficients()
+    scenarios = [
+        ("TEST", "001", 8.0, 5.3, 8.0, 50.0, 6.2, 2.0, 1.7, 2.5, 0.00),
+        ("TEST", "002", 6.0, 3.2, 5.2, 14.0, 1.8, 0.6, 1.8, 2.0, -0.12),
+        ("TEST", "003", 0.8, 2.1, 3.0, 4.0, 0.9, 0.32, 1.6, 2.0, 0.10),
+    ]
+    for machine, shot, ip_ma, bt_t, ne19, ploss_mw, r_m, a_m, kappa, m_amu, rel_offset in scenarios:
+        tau_pred = validate_real_shots.ipb98y2_tau_e(
+            ip_ma,
+            bt_t,
+            ne19,
+            ploss_mw,
+            r_m,
+            kappa,
+            a_m / r_m,
+            m_amu,
+            coefficients=coeffs,
+        )
+        tau_measured = tau_pred * (1.0 + rel_offset)
+        rows.append(
+            {
+                "machine": machine,
+                "shot": shot,
+                "Ip_MA": f"{ip_ma:.6f}",
+                "BT_T": f"{bt_t:.6f}",
+                "ne19_1e19m3": f"{ne19:.6f}",
+                "Ploss_MW": f"{ploss_mw:.6f}",
+                "R_m": f"{r_m:.6f}",
+                "a_m": f"{a_m:.6f}",
+                "kappa": f"{kappa:.6f}",
+                "M_AMU": f"{m_amu:.6f}",
+                "tau_E_s": f"{tau_measured:.10f}",
+            }
+        )
+
+    itpa_csv = tmp_path / "itpa_test.csv"
+    with itpa_csv.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    out = validate_real_shots.validate_transport(itpa_csv)
+    env = out["uncertainty_envelope"]
+    required = {
+        "abs_relative_error_p50",
+        "abs_relative_error_p95",
+        "residual_s_p05",
+        "residual_s_p50",
+        "residual_s_p95",
+        "sigma_s_p50",
+        "sigma_s_p95",
+        "zscore_p50",
+        "zscore_p95",
+        "within_1sigma_fraction",
+        "within_2sigma_fraction",
+    }
+    assert required.issubset(env.keys())
+    assert out["within_2sigma_fraction"] == env["within_2sigma_fraction"]
+    assert float(env["abs_relative_error_p95"]) >= float(env["abs_relative_error_p50"]) >= 0.0
+    assert float(env["sigma_s_p95"]) >= float(env["sigma_s_p50"]) > 0.0
+    assert float(env["zscore_p95"]) >= float(env["zscore_p50"]) >= 0.0

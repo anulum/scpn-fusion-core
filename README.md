@@ -601,6 +601,7 @@ This project is honest about what it does and does not do.
 - Disruption calibration report (deterministic): [`validation/reports/disruption_risk_holdout_report.md`](validation/reports/disruption_risk_holdout_report.md)
 - Disruption replay pipeline benchmark report: [`validation/reports/disruption_replay_pipeline_benchmark.md`](validation/reports/disruption_replay_pipeline_benchmark.md)
 - EPED domain-contract benchmark report: [`validation/reports/eped_domain_contract_benchmark.md`](validation/reports/eped_domain_contract_benchmark.md)
+- Transport uncertainty-envelope benchmark report: [`validation/reports/transport_uncertainty_envelope_benchmark.md`](validation/reports/transport_uncertainty_envelope_benchmark.md)
 - End-to-end control latency report: [`validation/reports/scpn_end_to_end_latency.md`](validation/reports/scpn_end_to_end_latency.md)
 - Release vs research gate matrix: [`docs/VALIDATION_GATE_MATRIX.md`](docs/VALIDATION_GATE_MATRIX.md)
 - Release acceptance checklist: [`docs/RELEASE_ACCEPTANCE_CHECKLIST.md`](docs/RELEASE_ACCEPTANCE_CHECKLIST.md)

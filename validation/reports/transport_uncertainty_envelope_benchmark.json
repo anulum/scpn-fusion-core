@@ -1,0 +1,35 @@
+{
+  "transport_uncertainty_envelope_benchmark": {
+    "itpa_csv": "validation/reference_data/itpa/hmode_confinement.csv",
+    "n_shots": 20,
+    "transport_pass": true,
+    "envelope_fields_pass": true,
+    "coverage_pass": true,
+    "abs_relative_p95_pass": true,
+    "zscore_p95_pass": true,
+    "passes_thresholds": true,
+    "thresholds": {
+      "min_within_2sigma_fraction": 0.8,
+      "max_abs_relative_error_p95": 1.0,
+      "max_zscore_p95": 2.5
+    },
+    "transport_summary": {
+      "rmse_s": 0.1287,
+      "rmse_relative": 0.2862,
+      "within_2sigma_fraction": 0.95,
+      "uncertainty_envelope": {
+        "abs_relative_error_p50": 0.1743,
+        "abs_relative_error_p95": 0.8312,
+        "residual_s_p05": -0.0963,
+        "residual_s_p50": 0.0003,
+        "residual_s_p95": 0.1303,
+        "sigma_s_p50": 0.0231,
+        "sigma_s_p95": 0.5172,
+        "zscore_p50": 0.9708,
+        "zscore_p95": 2.0736,
+        "within_1sigma_fraction": 0.55,
+        "within_2sigma_fraction": 0.95
+      }
+    }
+  }
+}

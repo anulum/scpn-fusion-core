@@ -109,6 +109,14 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
+                "validation/benchmark_transport_uncertainty_envelope.py",
+                "--strict",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
                 "validation/scpn_end_to_end_latency.py",
                 "--strict",
             ],
@@ -164,6 +172,7 @@ def test_main_honors_skip_flags(monkeypatch):
             "--skip-disruption-calibration",
             "--skip-disruption-replay-pipeline",
             "--skip-eped-domain-contract",
+            "--skip-transport-uncertainty",
             "--skip-end-to-end-latency",
             "--skip-notebook-quality",
             "--skip-threshold-smoke",

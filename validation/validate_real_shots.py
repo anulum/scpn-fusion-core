@@ -173,6 +173,10 @@ def validate_transport(itpa_csv: Path) -> dict[str, Any]:
     results = []
     tau_measured = []
     tau_predicted = []
+    tau_sigma = []
+    abs_relative_errors = []
+    z_scores = []
+    within_1sigma = 0
     within_2sigma = 0
 
     with open(itpa_csv, newline="", encoding="utf-8") as f:
@@ -198,22 +202,31 @@ def validate_transport(itpa_csv: Path) -> dict[str, Any]:
                 coefficients=coefficients,
             )
 
-            in_2sig = bool(abs(tau_pred - tau_meas) <= 2.0 * sigma)
+            error_s = float(tau_pred - tau_meas)
+            sigma_s = float(sigma)
+            in_1sig = bool(abs(error_s) <= sigma_s)
+            in_2sig = bool(abs(error_s) <= 2.0 * sigma_s)
+            if in_1sig:
+                within_1sigma += 1
             if in_2sig:
                 within_2sigma += 1
 
-            rel_error = (tau_pred - tau_meas) / max(tau_meas, 1e-9)
+            rel_error = error_s / max(tau_meas, 1e-9)
+            z_score = abs(error_s) / max(sigma_s, 1e-12)
             results.append({
                 "machine": row["machine"],
                 "shot": row["shot"],
                 "tau_measured_s": tau_meas,
                 "tau_predicted_s": round(tau_pred, 4),
-                "sigma_s": round(sigma, 4),
+                "sigma_s": round(sigma_s, 4),
                 "relative_error": round(rel_error, 4),
                 "within_2sigma": in_2sig,
             })
             tau_measured.append(tau_meas)
             tau_predicted.append(tau_pred)
+            tau_sigma.append(sigma_s)
+            abs_relative_errors.append(abs(rel_error))
+            z_scores.append(z_score)
 
     n = len(tau_measured)
     if n == 0:
@@ -223,13 +236,32 @@ def validate_transport(itpa_csv: Path) -> dict[str, Any]:
     rmse_val = math.sqrt(sum((m - p) ** 2 for m, p in zip(tau_measured, tau_predicted)) / n)
     mean_meas = sum(tau_measured) / n
     rmse_rel = rmse_val / max(mean_meas, 1e-9)
+    residuals = np.asarray(tau_predicted, dtype=np.float64) - np.asarray(tau_measured, dtype=np.float64)
+    sigma_arr = np.asarray(tau_sigma, dtype=np.float64)
+    abs_rel_arr = np.asarray(abs_relative_errors, dtype=np.float64)
+    zscore_arr = np.asarray(z_scores, dtype=np.float64)
+    w1s_frac = within_1sigma / n
     w2s_frac = within_2sigma / n
+    uncertainty_envelope = {
+        "abs_relative_error_p50": round(float(np.percentile(abs_rel_arr, 50)), 4),
+        "abs_relative_error_p95": round(float(np.percentile(abs_rel_arr, 95)), 4),
+        "residual_s_p05": round(float(np.percentile(residuals, 5)), 4),
+        "residual_s_p50": round(float(np.percentile(residuals, 50)), 4),
+        "residual_s_p95": round(float(np.percentile(residuals, 95)), 4),
+        "sigma_s_p50": round(float(np.percentile(sigma_arr, 50)), 4),
+        "sigma_s_p95": round(float(np.percentile(sigma_arr, 95)), 4),
+        "zscore_p50": round(float(np.percentile(zscore_arr, 50)), 4),
+        "zscore_p95": round(float(np.percentile(zscore_arr, 95)), 4),
+        "within_1sigma_fraction": round(w1s_frac, 2),
+        "within_2sigma_fraction": round(w2s_frac, 2),
+    }
 
     return {
         "n_shots": n,
         "rmse_s": round(rmse_val, 4),
         "rmse_relative": round(rmse_rel, 4),
         "within_2sigma_fraction": round(w2s_frac, 2),
+        "uncertainty_envelope": uncertainty_envelope,
         "passes": bool(w2s_frac >= THRESHOLDS["tau_e_2sigma_fraction"]),
         "shots": results,
     }
@@ -560,6 +592,14 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append(f"- Shots: {tr['n_shots']}")
     lines.append(f"- RMSE: {tr.get('rmse_s', 'N/A')} s ({tr.get('rmse_relative', 'N/A'):.1%} relative)" if isinstance(tr.get('rmse_relative'), float) else f"- RMSE: N/A")
     lines.append(f"- Within 2-sigma: {tr.get('within_2sigma_fraction', 'N/A'):.0%}" if isinstance(tr.get('within_2sigma_fraction'), float) else f"- Within 2-sigma: N/A")
+    tr_env = tr.get("uncertainty_envelope", {})
+    if isinstance(tr_env, dict):
+        lines.append(
+            "- Uncertainty envelope: "
+            f"|rel error| p95={tr_env.get('abs_relative_error_p95', 0.0):.2f}, "
+            f"z-score p95={tr_env.get('zscore_p95', 0.0):.2f}, "
+            f"coverage 1sigma={tr_env.get('within_1sigma_fraction', 0.0):.0%}"
+        )
     lines.append(f"- **Status**: {'PASS' if tr['passes'] else 'FAIL'}")
     lines.append("")
 
