@@ -248,21 +248,27 @@ impl GpuGsSolver {
         let residual_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("residual"),
             size: buf_size,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC
+                | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
         let coarse_psi_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("coarse_psi"),
             size: coarse_buf_size,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC
+                | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
         let coarse_source_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("coarse_source"),
             size: coarse_buf_size,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC
+                | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
@@ -468,7 +474,7 @@ impl GpuGsSolver {
     pub fn vcycle(&self, pre_sweeps: usize, post_sweeps: usize, omega: f32) -> FusionResult<()> {
         let nr_c = (self.nr - 1) / 2 + 1;
         let nz_c = (self.nz - 1) / 2 + 1;
-        
+
         let wg_x_f = ((self.nr - 2) as u32).div_ceil(16);
         let wg_y_f = ((self.nz - 2) as u32).div_ceil(16);
         let wg_x_c = (nr_c as u32).div_ceil(16);
@@ -478,9 +484,16 @@ impl GpuGsSolver {
         self.solve(pre_sweeps, omega)?;
 
         // 2. Residual calculation (Fine grid)
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("mg_residual") });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("mg_residual"),
+            });
         {
-            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: None });
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: None,
+                timestamp_writes: None,
+            });
             pass.set_pipeline(&self.pipeline_residual);
             pass.set_bind_group(0, &self.bind_group, &[]);
             pass.dispatch_workgroups(wg_x_f, wg_y_f, 1);
@@ -488,9 +501,16 @@ impl GpuGsSolver {
         self.queue.submit(Some(encoder.finish()));
 
         // 3. Restriction (Fine -> Coarse)
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("mg_restrict") });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("mg_restrict"),
+            });
         {
-            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: None });
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: None,
+                timestamp_writes: None,
+            });
             pass.set_pipeline(&self.pipeline_restrict);
             pass.set_bind_group(0, &self.bind_group, &[]);
             pass.dispatch_workgroups(wg_x_c, wg_y_c, 1);
@@ -498,19 +518,30 @@ impl GpuGsSolver {
         // Copy restricted residual to coarse source buffer
         // Note: The restrict kernel writes to coarse_psi_buffer (binding 5) which is coarse_dest
         // But for the coarse solve, it needs to be in coarse_source_buffer
-        // Wait, the restrict kernel writes to binding 5 (coarse_dest). 
+        // Wait, the restrict kernel writes to binding 5 (coarse_dest).
         // We need to copy binding 5 -> coarse_source_buffer.
         self.queue.submit(Some(encoder.finish()));
-        
+
         let coarse_grid_size = nr_c * nz_c;
         let coarse_buf_size = (coarse_grid_size * std::mem::size_of::<f32>()) as u64;
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("mg_copy") });
-        encoder.copy_buffer_to_buffer(&self.coarse_psi_buffer, 0, &self.coarse_source_buffer, 0, coarse_buf_size);
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("mg_copy"),
+            });
+        encoder.copy_buffer_to_buffer(
+            &self.coarse_psi_buffer,
+            0,
+            &self.coarse_source_buffer,
+            0,
+            coarse_buf_size,
+        );
         self.queue.submit(Some(encoder.finish()));
-        
+
         // Clear coarse psi for the error solve
         let zeros = vec![0.0f32; coarse_grid_size];
-        self.queue.write_buffer(&self.coarse_psi_buffer, 0, bytemuck::cast_slice(&zeros));
+        self.queue
+            .write_buffer(&self.coarse_psi_buffer, 0, bytemuck::cast_slice(&zeros));
 
         // 4. Coarse solve (using bind_group_mg which points to coarse buffers)
         // We use a few more sweeps on the coarse grid
@@ -526,10 +557,16 @@ impl GpuGsSolver {
                     color,
                     _pad: 0,
                 };
-                self.queue.write_buffer(&self.param_buffer, 0, bytemuck::bytes_of(&params));
-                let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+                self.queue
+                    .write_buffer(&self.param_buffer, 0, bytemuck::bytes_of(&params));
+                let mut encoder = self
+                    .device
+                    .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
                 {
-                    let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: None });
+                    let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                        label: None,
+                        timestamp_writes: None,
+                    });
                     pass.set_pipeline(&self.pipeline);
                     pass.set_bind_group(0, &self.bind_group_mg, &[]);
                     pass.dispatch_workgroups(wg_x_c, wg_y_c, 1);
@@ -550,11 +587,19 @@ impl GpuGsSolver {
             color: 0,
             _pad: 0,
         };
-        self.queue.write_buffer(&self.param_buffer, 0, bytemuck::bytes_of(&fine_params));
-        
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("mg_prolong") });
+        self.queue
+            .write_buffer(&self.param_buffer, 0, bytemuck::bytes_of(&fine_params));
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("mg_prolong"),
+            });
         {
-            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None, timestamp_writes: None });
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: None,
+                timestamp_writes: None,
+            });
             pass.set_pipeline(&self.pipeline_prolong);
             pass.set_bind_group(0, &self.bind_group, &[]);
             pass.dispatch_workgroups(wg_x_f, wg_y_f, 1);

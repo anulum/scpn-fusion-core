@@ -1346,11 +1346,15 @@ mod gpu_bindings {
             post_sweeps: usize,
             omega: f32,
         ) -> PyResult<Bound<'py, PyArray1<f32>>> {
-            self.inner.upload(&psi, &source)
+            self.inner
+                .upload(&psi, &source)
                 .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-            self.inner.vcycle(pre_sweeps, post_sweeps, omega)
+            self.inner
+                .vcycle(pre_sweeps, post_sweeps, omega)
                 .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-            let result = self.inner.download()
+            let result = self
+                .inner
+                .download()
                 .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
             Ok(Array1::from_vec(result).into_pyarray(py))
         }
