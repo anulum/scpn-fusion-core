@@ -4,9 +4,9 @@ build-backend = "maturin"
 
 [project]
 name = "scpn-fusion-rs"
-version = "3.4.0"
+version = "3.8.3"
 description = "SCPN Fusion Core - Rust-accelerated plasma physics"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]

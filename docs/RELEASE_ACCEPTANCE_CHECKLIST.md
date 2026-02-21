@@ -1,6 +1,6 @@
 # Release Acceptance Checklist
 
-Release Version: `v3.5.0`  
+Release Version: `v3.8.3`  
 Checklist State: `ready`
 
 This checklist must be fully green before publishing a release tag.
