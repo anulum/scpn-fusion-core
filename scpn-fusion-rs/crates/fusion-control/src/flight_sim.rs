@@ -9,6 +9,7 @@
 
 use crate::digital_twin::ActuatorDelayLine;
 use crate::pid::IsoFluxController;
+use crate::telemetry::TelemetrySuite;
 use fusion_types::error::{FusionError, FusionResult};
 use std::time::Instant;
 
@@ -24,12 +25,14 @@ pub struct SimulationReport {
     pub disrupted: bool,
     pub r_history: Vec<f64>,
     pub z_history: Vec<f64>,
+    pub ip_history: Vec<f64>,
 }
 
 /// High-speed simulation engine.
 pub struct RustFlightSim {
     pub controller: IsoFluxController,
     pub delay_line: ActuatorDelayLine,
+    pub telemetry: TelemetrySuite,
     pub control_dt: f64,
     // Simulated state (Simplified Physics Model for high-speed loop)
     pub curr_r: f64,
@@ -58,6 +61,7 @@ impl RustFlightSim {
             // 50ms delay @ control_hz
             delay_line: ActuatorDelayLine::new(2, (0.05 * control_hz) as usize, 0.5)
                 .map_err(|e| FusionError::ConfigError(e.to_string()))?,
+            telemetry: TelemetrySuite::new(1_000_000), // 1M points capacity
             control_dt,
             curr_r: target_r,
             curr_z: target_z,
@@ -125,6 +129,9 @@ impl RustFlightSim {
             self.curr_r += applied_r * self.control_dt;
             self.curr_z += applied_z * self.control_dt;
 
+            // Record Telemetry (Zero Allocation)
+            self.telemetry.record(self.curr_r, self.curr_z, self.curr_ip_ma, self.curr_beta);
+
             // 5. Metrics
             let r_err = (self.curr_r - self.controller.target_r).abs();
             let z_err = (self.curr_z - self.controller.target_z).abs();
@@ -153,8 +160,9 @@ impl RustFlightSim {
             mean_abs_r_error: r_err_sum / steps as f64,
             mean_abs_z_error: z_err_sum / steps as f64,
             disrupted,
-            r_history: self.controller.r_history.clone(),
-            z_history: self.controller.z_history.clone(),
+            r_history: self.telemetry.r_axis.get_view(),
+            z_history: self.telemetry.z_axis.get_view(),
+            ip_history: self.telemetry.ip_ma.get_view(),
         })
     }
 }

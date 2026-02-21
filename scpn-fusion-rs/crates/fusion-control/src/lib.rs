@@ -19,3 +19,4 @@ pub mod realtime;
 pub mod snn;
 pub mod soc_learning;
 pub mod spi;
+pub mod telemetry;

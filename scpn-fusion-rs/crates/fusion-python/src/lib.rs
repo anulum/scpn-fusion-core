@@ -208,6 +208,8 @@ struct PySimulationReport {
     pub r_history: Vec<f64>,
     #[pyo3(get)]
     pub z_history: Vec<f64>,
+    #[pyo3(get)]
+    pub ip_history: Vec<f64>,
 }
 
 #[pyclass]
@@ -245,6 +247,7 @@ impl PyRustFlightSim {
             disrupted: report.disrupted,
             r_history: report.r_history,
             z_history: report.z_history,
+            ip_history: report.ip_history,
         })
     }
 }

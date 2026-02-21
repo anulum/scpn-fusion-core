@@ -35,7 +35,8 @@ impl RtcDriver {
         let steps = (shot_duration_s / self.sim.control_dt) as usize;
         let step_duration = Duration::from_secs_f64(self.sim.control_dt);
 
-        let mut report = self.sim.run_shot(0.0)?; // Initialize report
+        let mut report = self.sim.run_shot(0.0, self.config.use_busy_wait)?; // Initialize report
+
         report.steps = steps;
         report.duration_s = shot_duration_s;
 

@@ -30,6 +30,7 @@ from numpy.typing import NDArray
 from scipy.special import ellipe, ellipk
 
 from scpn_fusion.hpc.hpc_bridge import HPCBridge
+from scpn_fusion.core.config_schema import validate_config
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +125,12 @@ class FusionKernel:
             Filesystem path to the configuration JSON.
         """
         with open(path, "r") as f:
-            self.cfg: dict[str, Any] = json.load(f)
+            raw_cfg = json.load(f)
+        
+        # Hardening: Strict schema validation at the entry point
+        validated_cfg = validate_config(raw_cfg)
+        self.cfg = validated_cfg.model_dump()
+        
         logger.info("Loaded configuration for: %s", self.cfg["reactor_name"])
 
     def initialize_grid(self) -> None:
