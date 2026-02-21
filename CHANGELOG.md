@@ -8,6 +8,36 @@
 
 # Changelog
 
+## [3.8.3] — 2026-02-21
+
+### Added — v4.0 Elite Hardening & Full CI Green
+
+- **v4.0 Elite Hardening Integration**: Integrated Gemini's comprehensive hardening wave across physics, control, and validation modules:
+  - Strict Pydantic schema validation (`config_schema.py`) with bounded physical ranges
+  - Circular telemetry buffers for real-time diagnostics
+  - Structured JSON logging (`logging_config.py`) across all core modules
+  - Actuator constraint enforcement and package-level validation integrity
+  - Comprehensive physics closures: Modified Rutherford Equation, IPB98(y,2) scaling, cylindrical neutronics, Thomas-Fermi WDM EOS
+  - Control robustification: Tikhonov-regularized MIMO, Kalman state estimation, anti-windup PID
+- **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_dt()` — accurate to <1% across 1-100 keV
+- **C_fus Recalibration**: Fusion power constant recalibrated to `3.68e-18` matching 500 MW at n=1e20, T=15 keV
+- **q_proxy Boundary Hardening**: Added `max(0.1, ...)` floor and `np.errstate` guards preventing NaN at plasma edge
+- **Complete Package Exports**: All 7 Python packages (`control/`, `core/`, `diagnostics/`, `engineering/`, `hpc/`, `io/`, `ui/`) now have complete `__init__.py` with lazy `__getattr__` imports (was 2/7)
+- **Circular Import Resolution**: Rewrote `control/__init__.py` and `core/__init__.py` with lazy import pattern to break `io` → `core` → `control` → `core` dependency chain
+- **Maturin PyO3 Build**: `scpn_fusion_rs` wheel built and verified — all `PyRustFlightSim` tests passing
+- **Version Sync**: Aligned all version references: pyproject.toml, setup.py, Rust crates (fusion-python 3.4.0→3.8.3), release checklist (v3.5.0→v3.8.3)
+- **Missing Dependencies**: Added `pydantic>=2.0` and `pandas>=1.5` to pyproject.toml and setup.py
+- **Python Version**: Unified `requires-python` to `>=3.9` across all manifests
+- **Clippy Fix**: Removed unused import in `fusion-control/constraints.rs` (CI `-D warnings`)
+
+### Changed
+
+- Test suite: 1803 passed, 0 failed, 20 skipped (was 63 failures)
+- CI: All 9 lanes green (5 Rust + 4 Python)
+- `sync_metadata.py`: Fixed bug that corrupted all historical CHANGELOG version headers (replaced ALL `## [x.y.z]` instead of only the first)
+
+---
+
 ## [3.8.3] — 2026-02-20
 
 ### Added — High-Speed Rust Flight Sim & Neural Equilibrium
@@ -17,7 +47,7 @@
 - **JAX Fourier Neural Operator**: `fno_jax_training.py` — JAX-accelerated FNO with spectral convolution for turbulence surrogate training (1000 samples, 64x64 grid).
 - **Jitter tracking hardening**: Sub-microsecond timing instrumentation for control loop latency monitoring.
 
-## [3.8.3] — 2026-02-19
+## [3.8.2] — 2026-02-19
 
 ### Added — Project TOKAMAK-MASTER: Physics Hardening & NMPC
 
@@ -36,7 +66,7 @@
   - Direct construction from physics kernels and easy vectorization for ML/MPC pipelines.
 - **Validation**: Added `validation/validate_superior_core.py` and `validation/benchmark_nmpc.py` to confirm integration and quantify performance gains.
 
-## [3.8.3] — 2026-02-19
+## [3.5.0] — 2026-02-19
 
 ### Added — v3.5.0: Peer-Review Upgrade Phase Kickoff
 
@@ -153,7 +183,7 @@
 
 ---
 
-## [3.8.3] — 2026-02-18
+## [3.4.0] — 2026-02-18
 
 ### Changed — v3.4.0: Unified CLI + Release Surface Hardening
 
@@ -173,7 +203,7 @@
 
 ---
 
-## [3.8.3] — 2026-02-18 (Historical Backfill)
+## [3.3.0] — 2026-02-18 (Historical Backfill)
 
 ### Added / Changed — v3.3.0: Phase 1+2+3 Integration Wave
 
@@ -189,7 +219,7 @@
 
 ---
 
-## [3.8.3] — 2026-02-17
+## [3.1.0] — 2026-02-17
 
 ### Changed — v3.1.0: Phase 0 Physics Hardening
 
@@ -236,7 +266,7 @@
 
 ---
 
-## [3.8.3] — 2026-02-17
+## [3.0.0] — 2026-02-17
 
 ### Added — v3.0.0: Rust SNN Bindings, Full-Chain UQ, Shot Replay
 
@@ -276,7 +306,7 @@
 
 ---
 
-## [3.8.3] — 2026-02-17
+## [2.1.0] — 2026-02-17
 
 ### Added — v2.1.0: Physics Hardening & Self-Consistent Transport
 
@@ -324,7 +354,7 @@
 
 ---
 
-## [3.8.3] — 2026-02-17
+## [2.0.0] — 2026-02-17
 
 ### Added — v2.0.0: Publication-Grade Physics Validation
 

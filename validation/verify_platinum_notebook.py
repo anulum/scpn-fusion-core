@@ -16,13 +16,18 @@ repo_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(repo_root / "src"))
 
 from scpn_fusion.core.state_space import FusionState
+from scpn_fusion.core.fusion_ignition_sim import DynamicBurnModel
 from scpn_fusion.control.fusion_nmpc_jax import get_nmpc_controller
 from scpn_fusion.control.tokamak_digital_twin import TokamakTopoloy, Plasma2D
 from scpn_fusion.control.advanced_soc_fusion_learning import CoupledSandpileReactor
 
 def test_platinum_logic():
-    print("--- VERIFYING PLATINUM STANDARD LOGIC ---")
-    
+    print("--- VERIFYING PLATINUM STANDARD LOGIC (v2) ---")
+
+    # 0. Version Check
+    import scpn_fusion
+    print(f"SCPN Fusion Core v{scpn_fusion.__version__}")
+
     # 1. Environment Check
     try:
         import jax
@@ -76,7 +81,25 @@ def test_platinum_logic():
     assert energy_mj >= 0, "Negative energy detected!"
     print("  Quantitative SOC: VERIFIED")
 
-    print("\nPLATINUM STATUS: ALL CORE LOGIC FUNCTIONAL.")
+    # 5. Section 4: Bosch-Hale D-T Reactivity (v3.8.3)
+    print("\nSection 4: Bosch-Hale D-T Reactivity...")
+    sv = DynamicBurnModel.bosch_hale_dt(15.0)  # ITER operating point
+    E_fus_J = 17.6e6 * 1.602e-19
+    P_fus_est = (1e20 / 2)**2 * sv * E_fus_J * 830.0 / 1e6  # MW
+    print(f"  sigma_v(15 keV) = {sv:.3e} m^3/s")
+    print(f"  P_fusion estimate = {P_fus_est:.1f} MW")
+    assert 100 < P_fus_est < 2000, f"Fusion power {P_fus_est} MW out of plausible range!"
+    print("  Bosch-Hale D-T: VERIFIED")
+
+    # 6. Lazy Import Check (v3.8.3)
+    print("\nSection 5: Lazy Import Verification...")
+    from scpn_fusion.control import HybridAnomalyDetector, HInfinityController
+    from scpn_fusion.core import ReactorConfig
+    print(f"  control: {HybridAnomalyDetector.__name__}, {HInfinityController.__name__}")
+    print(f"  core: {ReactorConfig.__name__}")
+    print("  Lazy Imports: VERIFIED")
+
+    print("\nPLATINUM STATUS: ALL CORE LOGIC FUNCTIONAL (v2).")
 
 if __name__ == "__main__":
     test_platinum_logic()

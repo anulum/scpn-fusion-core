@@ -26,7 +26,7 @@ This document defines the split between release-grade validation and research-on
 
 ## Experimental Marker Contract
 
-Tests marked with `@pytest.mark.experimental` are considered research-only and are excluded from release acceptance runs. As of v3.5.x this includes:
+Tests marked with `@pytest.mark.experimental` are considered research-only and are excluded from release acceptance runs. As of v3.8.x this includes:
 
 - `tests/test_fno_training.py`
 - `tests/test_fno_multi_regime.py`

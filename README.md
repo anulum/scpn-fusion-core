@@ -183,7 +183,7 @@ docker run scpn-fusion-core:dev pytest tests/ -v
 
 - Demo playbook: [`docs/STREAMLIT_DEMO_PLAYBOOK.md`](docs/STREAMLIT_DEMO_PLAYBOOK.md)
 - One-click container launch: `docker compose up --build`
-- YouTube embed: pending upload for v3.5.0 release notes
+- YouTube embed: pending upload for v3.8.3 release notes
 
 ### Pure Python (No Rust Toolchain Required)
 

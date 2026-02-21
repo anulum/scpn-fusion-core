@@ -93,13 +93,52 @@ def sync():
             f'**Version:** {version}'
         )
 
-    # 7. CHANGELOG.md (Update [Unreleased] or top header)
-    # This is trickier, but let's at least update the top version if it's there
+    # 7. docs/ version references
+    # competitive_analysis.md header
     update_file(
-        REPO_ROOT / "CHANGELOG.md",
-        r'## \[\d+\.\d+\.\d+\]',
-        f'## [{version}]'
+        REPO_ROOT / "docs" / "competitive_analysis.md",
+        r'SCPN Fusion Core v\d+\.\d+\.\d+',
+        f'SCPN Fusion Core v{version}'
     )
+    # STREAMLIT_DEMO_PLAYBOOK.md
+    update_file(
+        REPO_ROOT / "docs" / "STREAMLIT_DEMO_PLAYBOOK.md",
+        r'SCPN Fusion Core v\d+\.\d+\.\d+',
+        f'SCPN Fusion Core v{version}'
+    )
+    # VALIDATION_GATE_MATRIX.md
+    update_file(
+        REPO_ROOT / "docs" / "VALIDATION_GATE_MATRIX.md",
+        r'As of v\d+\.\d+\.x',
+        f'As of v{".".join(version.split(".")[:2])}.x'
+    )
+    # README.md YouTube reference
+    update_file(
+        REPO_ROOT / "README.md",
+        r'pending upload for v\d+\.\d+\.\d+ release notes',
+        f'pending upload for v{version} release notes'
+    )
+    # RELEASE_ACCEPTANCE_CHECKLIST.md
+    update_file(
+        REPO_ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md",
+        r'v\d+\.\d+\.\d+ Release Acceptance',
+        f'v{version} Release Acceptance'
+    )
+
+    # 8. CHANGELOG.md — only update the FIRST version header (latest release)
+    # NOTE: Do NOT use update_file() here because re.sub replaces ALL matches,
+    # which would corrupt historical version headers.
+    changelog = REPO_ROOT / "CHANGELOG.md"
+    if changelog.exists():
+        text = changelog.read_text(encoding="utf-8")
+        new_text = re.sub(r'## \[\d+\.\d+\.\d+\]', f'## [{version}]', text, count=1)
+        if new_text != text:
+            changelog.write_text(new_text, encoding="utf-8")
+            print(f"Updated {changelog.relative_to(REPO_ROOT)} (first header only)")
+        else:
+            print(f"No change needed for {changelog.relative_to(REPO_ROOT)}")
+    else:
+        print(f"Warning: {changelog} not found, skipping.")
 
     print("--- Synchronization Complete ---")
 
