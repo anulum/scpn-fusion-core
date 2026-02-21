@@ -207,6 +207,34 @@ def run_neural_eq() -> dict[str, Any] | None:
     }
 
 
+def run_fokker_planck() -> dict[str, Any] | None:
+    """Run Kinetic RE solver benchmark."""
+    from scpn_fusion.control.fokker_planck_re import FokkerPlanckSolver
+    solver = FokkerPlanckSolver()
+    solver.seed_hottail(T_initial_eV=10000.0, T_final_eV=100.0, t_quench_s=1e-3)
+    state = solver.step(dt=1e-3, E_field=1.0, n_e=5e19, T_e_eV=100.0, Z_eff=1.5)
+    return {
+        "re_density": state.n_re,
+        "re_current_ma": state.current_re / 1e6,
+        "grid_points": len(state.p_grid),
+    }
+
+
+def run_spi_ablation() -> dict[str, Any] | None:
+    """Run Multi-fragment SPI ablation benchmark."""
+    from scpn_fusion.control.spi_ablation import SpiAblationSolver
+    solver = SpiAblationSolver(n_fragments=50, total_mass_kg=0.005)
+    r_grid = np.linspace(0, 2.0, 50)
+    ne = np.ones(50) * 10.0
+    te = np.ones(50) * 5.0
+    dep = solver.step(dt=5e-3, plasma_ne_profile=ne, plasma_te_profile=te, r_grid=r_grid)
+    return {
+        "fragments": 50,
+        "ablation_rate_peak": np.max(dep),
+        "total_deposition": np.sum(dep),
+    }
+
+
 def run_controller_campaign(quick: bool) -> dict[str, Any] | None:
     """Run the 1000-shot stress-test campaign across all controllers."""
     try:
@@ -259,6 +287,8 @@ def generate_results_md(
     fb3d: dict | None,
     surrogates: dict | None,
     neural_eq: dict | None,
+    fokker_planck: dict | None,
+    spi_ablation: dict | None,
     elapsed_s: float,
     campaign: dict | None = None,
 ) -> str:
@@ -336,6 +366,12 @@ def generate_results_md(
         rows_dc.append(f"| Mean RE current peak | {_fmt(disruption['mean_re_ma'], '.3f')} | MA | |")
         rows_dc.append(f"| P95 RE current peak | {_fmt(disruption['p95_re_ma'], '.3f')} | MA | |")
         rows_dc.append(f"| Passes ITER limits | {_fmt(disruption['passes_iter'])} | — | Halo + RE constraints |")
+    if fokker_planck:
+        rows_dc.append(f"| Kinetic RE current (G7) | {_fmt(fokker_planck['re_current_ma'], '.3f')} | MA | Seeded hottail @ 1ms |")
+        rows_dc.append(f"| Kinetic RE grid resolution | {fokker_planck['grid_points']} | pts | Momentum space resolution |")
+    if spi_ablation:
+        rows_dc.append(f"| SPI fragments tracked (G8) | {spi_ablation['fragments']} | — | Multi-fragment Lagrangian tracking |")
+        rows_dc.append(f"| SPI ablation rate peak | {_fmt(spi_ablation['ablation_rate_peak'], '.2e')} | m⁻³s⁻¹ | Parks ablation model |")
     if hil:
         rows_dc.append(f"| HIL control-loop P50 latency | {_fmt(hil['p50_us'], '.1f')} | μs | {hil['iterations']} iterations |")
         rows_dc.append(f"| HIL control-loop P95 latency | {_fmt(hil['p95_us'], '.1f')} | μs | |")
@@ -436,10 +472,16 @@ def main() -> None:
     print("[7/8] Pretrained Surrogates")
     surrogates = _safe_run("surrogates", run_surrogates)
 
-    print("[8/9] Neural Equilibrium")
+    print("[8/10] Neural Equilibrium")
     neural_eq = _safe_run("neural_eq", run_neural_eq)
 
-    print("[9/9] Controller Stress-Test Campaign")
+    print("[9/10] Kinetic Fokker-Planck")
+    fokker_planck = _safe_run("fokker_planck", run_fokker_planck)
+
+    print("[10/10] SPI Ablation")
+    spi_ablation = _safe_run("spi_ablation", run_spi_ablation)
+
+    print("[Controller Stress-Test Campaign]")
     campaign = _safe_run("campaign", run_controller_campaign, args.quick)
 
     elapsed = time.perf_counter() - t_start
@@ -455,6 +497,8 @@ def main() -> None:
         fb3d=fb3d,
         surrogates=surrogates,
         neural_eq=neural_eq,
+        fokker_planck=fokker_planck,
+        spi_ablation=spi_ablation,
         elapsed_s=elapsed,
         campaign=campaign,
     )
@@ -462,8 +506,8 @@ def main() -> None:
     print(f"  -> {RESULTS_PATH} written ({len(md)} bytes)")
 
     # Summary
-    n_ok = sum(1 for x in [hil, disruption, q10, tbr, ecrh, fb3d, surrogates, neural_eq, campaign] if x is not None)
-    print(f"\nDone: {n_ok}/9 benchmarks succeeded in {elapsed:.0f}s")
+    n_ok = sum(1 for x in [hil, disruption, q10, tbr, ecrh, fb3d, surrogates, neural_eq, fokker_planck, spi_ablation, campaign] if x is not None)
+    print(f"\nDone: {n_ok}/11 benchmarks succeeded in {elapsed:.0f}s")
 
 
 if __name__ == "__main__":

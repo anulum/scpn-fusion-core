@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.7.0)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-02-20 19:35 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-02-21 10:10 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.7.0
-- **Generated:** 2026-02-20 19:35 UTC
-- **Wall-clock:** 228s
+- **Generated:** 2026-02-21 10:10 UTC
+- **Wall-clock:** 515s
 
 ## Equilibrium & Transport
 
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.26 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.53 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.20 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 0.33 | ms | 129x129 grid |
 
 ## Heating & Neutronics
 
@@ -50,10 +50,14 @@
 | Mean RE current peak | 14.057 | MA | |
 | P95 RE current peak | 15.430 | MA | |
 | Passes ITER limits | No | — | Halo + RE constraints |
-| HIL control-loop P50 latency | 12.8 | μs | 200 iterations |
-| HIL control-loop P95 latency | 20.5 | μs | |
-| HIL control-loop P99 latency | 33.8 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 14.5 μs |
+| Kinetic RE current (G7) | 0.000 | MA | Seeded hottail @ 1ms |
+| Kinetic RE grid resolution | 200 | pts | Momentum space resolution |
+| SPI fragments tracked (G8) | 50 | — | Multi-fragment Lagrangian tracking |
+| SPI ablation rate peak | 0.00e+00 | m⁻³s⁻¹ | Parks ablation model |
+| HIL control-loop P50 latency | 39.5 | μs | 200 iterations |
+| HIL control-loop P95 latency | 134.7 | μs | |
+| HIL control-loop P99 latency | 362.0 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 69.5 μs |
 
 ## Controller Performance (Stress-Test Campaign)
 
@@ -61,9 +65,9 @@
 
 | Controller | Episodes | Mean Reward | Std Reward | Mean R Error | P50 Lat (us) | P95 Lat (us) | P99 Lat (us) | Disrupt Rate | DEF | Energy Eff |
 |------------|----------|-------------|------------|--------------|-------------|-------------|-------------|--------------|-----|------------|
-| PID        |        5 |     -0.0000 |     0.0000 |       0.0000 |         1194 |         1232 |         1236 |        0.00% | 1.00 |      1.000 |
-| H-infinity |        5 |    -10.1331 |     0.0000 |       4.1058 |          899 |         1075 |         1103 |      100.00% | 0.50 |        nan |
-| NMPC-JAX   |        5 |     -0.0007 |     0.0000 |       0.0001 |        12219 |        12761 |        12793 |        0.00% | 1.00 |      0.996 |
+| PID        |        5 |     -0.0000 |     0.0000 |       0.0000 |         1616 |         1702 |         1711 |        0.00% | 1.00 |      1.000 |
+| H-infinity |        5 |    -10.1331 |     0.0000 |       4.1058 |         1290 |         1434 |         1458 |      100.00% | 0.50 |        nan |
+| NMPC-JAX   |        5 |     -0.0007 |     0.0000 |       0.0001 |        26975 |        38282 |        38411 |        0.00% | 1.00 |      0.996 |
 
 ## Surrogates
 
