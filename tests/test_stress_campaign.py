@@ -163,20 +163,23 @@ def test_generate_results_md_includes_campaign():
         },
         "markdown_table": "| PID | 5 | ... |",
     }
+    results = {
+        "hil": None,
+        "disruption": None,
+        "q10": None,
+        "tbr": None,
+        "ecrh": None,
+        "fb3d": None,
+        "surrogates": None,
+        "neural_eq": None,
+        "fokker_planck": None,
+        "spi_ablation": None,
+        "campaign": campaign,
+    }
     md = generate_results_md(
         hw="Test HW",
-        hil=None,
-        disruption=None,
-        q10=None,
-        tbr=None,
-        ecrh=None,
-        fb3d=None,
-        surrogates=None,
-        neural_eq=None,
-        fokker_planck=None,
-        spi_ablation=None,
+        results=results,
         elapsed_s=10.0,
-        campaign=campaign,
     )
     assert "Controller Performance" in md
     assert "PID" in md
@@ -185,20 +188,23 @@ def test_generate_results_md_includes_campaign():
 def test_generate_results_md_without_campaign():
     """generate_results_md without campaign should not fail."""
     from validation.collect_results import generate_results_md
+    results = {
+        "hil": None,
+        "disruption": None,
+        "q10": None,
+        "tbr": None,
+        "ecrh": None,
+        "fb3d": None,
+        "surrogates": None,
+        "neural_eq": None,
+        "fokker_planck": None,
+        "spi_ablation": None,
+        "campaign": None,
+    }
     md = generate_results_md(
         hw="Test HW",
-        hil=None,
-        disruption=None,
-        q10=None,
-        tbr=None,
-        ecrh=None,
-        fb3d=None,
-        surrogates=None,
-        neural_eq=None,
-        fokker_planck=None,
-        spi_ablation=None,
+        results=results,
         elapsed_s=10.0,
-        campaign=None,
     )
     assert "SCPN Fusion Core" in md
     assert "Controller Performance" not in md

@@ -16,11 +16,14 @@ def run():
     parser = argparse.ArgumentParser(description="Rust-Native High-Speed Flight Sim")
     parser.add_argument("--hz", type=float, default=10000.0, help="Control frequency (Hz)")
     parser.add_argument("--duration", type=float, default=30.0, help="Shot duration (s)")
+    parser.add_argument("--deterministic", action="store_true", help="Enable high-precision busy-wait loop")
     args = parser.parse_args()
 
     print(f"--- Initiating Rust-Native Flight Sim ({args.hz} Hz) ---")
+    if args.deterministic:
+        print("  [HARDENED] Deterministic timing enabled (Busy-wait mode)")
     sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, args.hz)
-    report = sim.run_shot(args.duration)
+    report = sim.run_shot(args.duration, deterministic=args.deterministic)
     
     print(f"Shot Complete:")
     print(f"  Steps: {report.steps}")

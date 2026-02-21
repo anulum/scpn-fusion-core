@@ -279,21 +279,24 @@ def _fmt(val: Any, fmt: str = ".4f") -> str:
 
 def generate_results_md(
     hw: str,
-    hil: dict | None,
-    disruption: dict | None,
-    q10: dict | None,
-    tbr: dict | None,
-    ecrh: dict | None,
-    fb3d: dict | None,
-    surrogates: dict | None,
-    neural_eq: dict | None,
-    fokker_planck: dict | None,
-    spi_ablation: dict | None,
+    results: dict[str, Any],
     elapsed_s: float,
-    campaign: dict | None = None,
 ) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     sections: list[str] = []
+
+    # Extract specific results for easier access
+    hil = results.get("hil")
+    disruption = results.get("disruption")
+    q10 = results.get("q10")
+    tbr = results.get("tbr")
+    ecrh = results.get("ecrh")
+    fb3d = results.get("fb3d")
+    surrogates = results.get("surrogates")
+    neural_eq = results.get("neural_eq")
+    fokker_planck = results.get("fokker_planck")
+    spi_ablation = results.get("spi_ablation")
+    campaign = results.get("campaign")
 
     try:
         from scpn_fusion import __version__ as _ver
@@ -450,64 +453,55 @@ def main() -> None:
 
     t_start = time.perf_counter()
     hw = _hw_header()
+    results: dict[str, Any] = {}
 
     print("\n[1/8] HIL Control Loop")
-    hil = _safe_run("hil", run_hil, args.quick)
+    results["hil"] = _safe_run("hil", run_hil, args.quick)
 
     print("[2/8] Disruption Ensemble")
-    disruption = _safe_run("disruption", run_disruption, args.quick)
+    results["disruption"] = _safe_run("disruption", run_disruption, args.quick)
 
     print("[3/8] Q-10 Operating Point Scan")
-    q10 = _safe_run("q10", run_q10)
+    results["q10"] = _safe_run("q10", run_q10)
 
     print("[4/8] 3-Group Tritium Breeding")
-    tbr = _safe_run("tbr", run_tbr)
+    results["tbr"] = _safe_run("tbr", run_tbr)
 
     print("[5/8] ECRH Absorption")
-    ecrh = _safe_run("ecrh", run_ecrh)
+    results["ecrh"] = _safe_run("ecrh", run_ecrh)
 
     print("[6/8] 3D Force Balance")
-    fb3d = _safe_run("fb3d", run_force_balance_3d)
+    results["fb3d"] = _safe_run("fb3d", run_force_balance_3d)
 
     print("[7/8] Pretrained Surrogates")
-    surrogates = _safe_run("surrogates", run_surrogates)
+    results["surrogates"] = _safe_run("surrogates", run_surrogates)
 
     print("[8/10] Neural Equilibrium")
-    neural_eq = _safe_run("neural_eq", run_neural_eq)
+    results["neural_eq"] = _safe_run("neural_eq", run_neural_eq)
 
     print("[9/10] Kinetic Fokker-Planck")
-    fokker_planck = _safe_run("fokker_planck", run_fokker_planck)
+    results["fokker_planck"] = _safe_run("fokker_planck", run_fokker_planck)
 
     print("[10/10] SPI Ablation")
-    spi_ablation = _safe_run("spi_ablation", run_spi_ablation)
+    results["spi_ablation"] = _safe_run("spi_ablation", run_spi_ablation)
 
     print("[Controller Stress-Test Campaign]")
-    campaign = _safe_run("campaign", run_controller_campaign, args.quick)
+    results["campaign"] = _safe_run("campaign", run_controller_campaign, args.quick)
 
     elapsed = time.perf_counter() - t_start
 
     print(f"\nGenerating {RESULTS_PATH.name}...")
     md = generate_results_md(
         hw=hw,
-        hil=hil,
-        disruption=disruption,
-        q10=q10,
-        tbr=tbr,
-        ecrh=ecrh,
-        fb3d=fb3d,
-        surrogates=surrogates,
-        neural_eq=neural_eq,
-        fokker_planck=fokker_planck,
-        spi_ablation=spi_ablation,
+        results=results,
         elapsed_s=elapsed,
-        campaign=campaign,
     )
     RESULTS_PATH.write_text(md, encoding="utf-8")
     print(f"  -> {RESULTS_PATH} written ({len(md)} bytes)")
 
     # Summary
-    n_ok = sum(1 for x in [hil, disruption, q10, tbr, ecrh, fb3d, surrogates, neural_eq, fokker_planck, spi_ablation, campaign] if x is not None)
-    print(f"\nDone: {n_ok}/11 benchmarks succeeded in {elapsed:.0f}s")
+    n_ok = sum(1 for x in results.values() if x is not None)
+    print(f"\nDone: {n_ok}/{len(results)} benchmarks succeeded in {elapsed:.0f}s")
 
 
 if __name__ == "__main__":

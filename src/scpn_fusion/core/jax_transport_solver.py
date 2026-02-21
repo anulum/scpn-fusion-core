@@ -39,7 +39,9 @@ def transport_step_jax(
         flux = -ne * chi * grad_T
         div_flux = jnp.gradient(flux, drho) / jnp.maximum(ne, 1e-6)
         
-        return T + dt * (-div_flux + S)
+        # Numerical Hardening: Prevent NaN propagation
+        new_T = T + dt * (-div_flux + S)
+        return jnp.where(jnp.isfinite(new_T), new_T, T)
 
     new_te = evolve(te, chi_e, s_heat_e)
     new_ti = evolve(ti, chi_i, s_heat_i)

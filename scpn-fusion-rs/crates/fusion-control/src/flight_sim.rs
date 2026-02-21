@@ -67,16 +67,32 @@ impl RustFlightSim {
     }
 
     /// Execute a shot at the target frequency.
-    pub fn run_shot(&mut self, shot_duration_s: f64) -> FusionResult<SimulationReport> {
+    ///
+    /// If `deterministic` is true, uses a high-precision busy-wait loop
+    /// to ensure sub-microsecond timing accuracy (at the cost of CPU usage).
+    pub fn run_shot(
+        &mut self,
+        shot_duration_s: f64,
+        deterministic: bool,
+    ) -> FusionResult<SimulationReport> {
         let t_start = Instant::now();
         let steps = (shot_duration_s / self.control_dt) as usize;
+        let step_duration = std::time::Duration::from_secs_f64(self.control_dt);
 
         let mut r_err_sum = 0.0;
         let mut z_err_sum = 0.0;
         let mut max_step_us = 0.0;
         let mut disrupted = false;
 
+        let mut next_tick = Instant::now();
+
         for t in 0..steps {
+            if deterministic {
+                while Instant::now() < next_tick {
+                    std::hint::spin_loop();
+                }
+            }
+
             let t_step_start = Instant::now();
             let time_s = t as f64 * self.control_dt;
 
@@ -123,6 +139,8 @@ impl RustFlightSim {
             if step_us > max_step_us {
                 max_step_us = step_us;
             }
+
+            next_tick += step_duration;
         }
 
         let wall_time = t_start.elapsed().as_secs_f64() * 1000.0;

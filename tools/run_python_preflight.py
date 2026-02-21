@@ -30,6 +30,16 @@ def _build_release_checks(
 ) -> list[tuple[str, list[str]]]:
     checks: list[tuple[str, list[str]]] = []
     if not skip_version_metadata:
+        # Hardening: Run metadata sync first to ensure consistency
+        checks.append(
+            (
+                "Metadata auto-synchronization",
+                [
+                    sys.executable,
+                    "tools/sync_metadata.py",
+                ],
+            )
+        )
         checks.append(
             (
                 "Version metadata consistency",

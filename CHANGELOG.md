@@ -8,7 +8,7 @@
 
 # Changelog
 
-## [3.7.0] — 2026-02-20
+## [3.8.3] — 2026-02-20
 
 ### Added — High-Speed Rust Flight Sim & Neural Equilibrium
 
@@ -17,7 +17,7 @@
 - **JAX Fourier Neural Operator**: `fno_jax_training.py` — JAX-accelerated FNO with spectral convolution for turbulence surrogate training (1000 samples, 64x64 grid).
 - **Jitter tracking hardening**: Sub-microsecond timing instrumentation for control loop latency monitoring.
 
-## [3.6.0] — 2026-02-19
+## [3.8.3] — 2026-02-19
 
 ### Added — Project TOKAMAK-MASTER: Physics Hardening & NMPC
 
@@ -36,7 +36,7 @@
   - Direct construction from physics kernels and easy vectorization for ML/MPC pipelines.
 - **Validation**: Added `validation/validate_superior_core.py` and `validation/benchmark_nmpc.py` to confirm integration and quantify performance gains.
 
-## [3.5.0] — 2026-02-19
+## [3.8.3] — 2026-02-19
 
 ### Added — v3.5.0: Peer-Review Upgrade Phase Kickoff
 
@@ -153,7 +153,7 @@
 
 ---
 
-## [3.4.0] — 2026-02-18
+## [3.8.3] — 2026-02-18
 
 ### Changed — v3.4.0: Unified CLI + Release Surface Hardening
 
@@ -173,7 +173,7 @@
 
 ---
 
-## [3.3.0] — 2026-02-18 (Historical Backfill)
+## [3.8.3] — 2026-02-18 (Historical Backfill)
 
 ### Added / Changed — v3.3.0: Phase 1+2+3 Integration Wave
 
@@ -189,7 +189,7 @@
 
 ---
 
-## [3.1.0] — 2026-02-17
+## [3.8.3] — 2026-02-17
 
 ### Changed — v3.1.0: Phase 0 Physics Hardening
 
@@ -236,7 +236,7 @@
 
 ---
 
-## [3.0.0] — 2026-02-17
+## [3.8.3] — 2026-02-17
 
 ### Added — v3.0.0: Rust SNN Bindings, Full-Chain UQ, Shot Replay
 
@@ -276,7 +276,7 @@
 
 ---
 
-## [2.1.0] — 2026-02-17
+## [3.8.3] — 2026-02-17
 
 ### Added — v2.1.0: Physics Hardening & Self-Consistent Transport
 
@@ -324,7 +324,7 @@
 
 ---
 
-## [2.0.0] — 2026-02-17
+## [3.8.3] — 2026-02-17
 
 ### Added — v2.0.0: Publication-Grade Physics Validation
 

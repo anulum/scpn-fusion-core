@@ -225,10 +225,15 @@ impl PyRustFlightSim {
         Ok(Self { inner })
     }
 
-    fn run_shot(&mut self, shot_duration_s: f64) -> PyResult<PySimulationReport> {
+    #[pyo3(signature = (shot_duration_s, deterministic=false))]
+    fn run_shot(
+        &mut self,
+        shot_duration_s: f64,
+        deterministic: bool,
+    ) -> PyResult<PySimulationReport> {
         let report = self
             .inner
-            .run_shot(shot_duration_s)
+            .run_shot(shot_duration_s, deterministic)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
         Ok(PySimulationReport {
             steps: report.steps,

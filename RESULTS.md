@@ -1,6 +1,6 @@
-# SCPN Fusion Core — Benchmark Results (v3.7.0)
+# SCPN Fusion Core — Benchmark Results (v3.8.3)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-02-21 10:10 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-02-21 11:15 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -11,9 +11,9 @@
 - **Python:** 3.12.5
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
-- **Version:** 3.7.0
-- **Generated:** 2026-02-21 10:10 UTC
-- **Wall-clock:** 515s
+- **Version:** 3.8.3
+- **Generated:** 2026-02-21 11:15 UTC
+- **Wall-clock:** 323s
 
 ## Equilibrium & Transport
 
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.20 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.33 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.17 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 0.26 | ms | 129x129 grid |
 
 ## Heating & Neutronics
 
@@ -54,10 +54,10 @@
 | Kinetic RE grid resolution | 200 | pts | Momentum space resolution |
 | SPI fragments tracked (G8) | 50 | — | Multi-fragment Lagrangian tracking |
 | SPI ablation rate peak | 0.00e+00 | m⁻³s⁻¹ | Parks ablation model |
-| HIL control-loop P50 latency | 39.5 | μs | 200 iterations |
-| HIL control-loop P95 latency | 134.7 | μs | |
-| HIL control-loop P99 latency | 362.0 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 69.5 μs |
+| HIL control-loop P50 latency | 16.4 | μs | 200 iterations |
+| HIL control-loop P95 latency | 44.0 | μs | |
+| HIL control-loop P99 latency | 91.7 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 29.9 μs |
 
 ## Controller Performance (Stress-Test Campaign)
 
@@ -65,9 +65,9 @@
 
 | Controller | Episodes | Mean Reward | Std Reward | Mean R Error | P50 Lat (us) | P95 Lat (us) | P99 Lat (us) | Disrupt Rate | DEF | Energy Eff |
 |------------|----------|-------------|------------|--------------|-------------|-------------|-------------|--------------|-----|------------|
-| PID        |        5 |     -0.0000 |     0.0000 |       0.0000 |         1616 |         1702 |         1711 |        0.00% | 1.00 |      1.000 |
-| H-infinity |        5 |    -10.1331 |     0.0000 |       4.1058 |         1290 |         1434 |         1458 |      100.00% | 0.50 |        nan |
-| NMPC-JAX   |        5 |     -0.0007 |     0.0000 |       0.0001 |        26975 |        38282 |        38411 |        0.00% | 1.00 |      0.996 |
+| PID        |        5 |     -0.0000 |     0.0000 |       0.0000 |         1180 |         1357 |         1376 |        0.00% | 1.00 |      1.000 |
+| H-infinity |        5 |    -10.1331 |     0.0000 |       4.1058 |         1008 |         1136 |         1144 |      100.00% | 0.50 |        nan |
+| NMPC-JAX   |        5 |     -0.0007 |     0.0000 |       0.0001 |        18432 |        21131 |        21593 |        0.00% | 1.00 |      0.996 |
 
 ## Surrogates
 
