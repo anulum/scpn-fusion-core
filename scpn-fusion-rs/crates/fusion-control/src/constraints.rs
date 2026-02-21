@@ -5,8 +5,6 @@
 //! Physical safety constraints for tokamak actuators.
 //! Enforces current limits and slew rates (voltage limits).
 
-use fusion_types::error::FusionResult;
-
 /// Physical constraints for a single coil or heating system.
 #[derive(Debug, Clone, Copy)]
 pub struct PhysicalConstraint {
