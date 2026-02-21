@@ -32,6 +32,7 @@ pub struct GpuGsSolver {
     param_buffer: wgpu::Buffer,
     psi_buffer: wgpu::Buffer,
     source_buffer: wgpu::Buffer,
+    #[allow(dead_code)]
     _residual_buffer: wgpu::Buffer,
     coarse_psi_buffer: wgpu::Buffer,
     coarse_source_buffer: wgpu::Buffer,

@@ -173,6 +173,8 @@ def test_generate_results_md_includes_campaign():
         fb3d=None,
         surrogates=None,
         neural_eq=None,
+        fokker_planck=None,
+        spi_ablation=None,
         elapsed_s=10.0,
         campaign=campaign,
     )
@@ -193,6 +195,8 @@ def test_generate_results_md_without_campaign():
         fb3d=None,
         surrogates=None,
         neural_eq=None,
+        fokker_planck=None,
+        spi_ablation=None,
         elapsed_s=10.0,
         campaign=None,
     )
