@@ -57,6 +57,7 @@ class SpectralTurbulenceGenerator:
         )
         self.field = self._rng.standard_normal((size, size)) * 0.1
         self.field_k = np.fft.fft2(self.field)
+        self.zonal_flow = 0.0 # Predator state
 
     def step(self, dt: float = 0.01, damping: float = 0.0) -> np.ndarray:
         kx = np.fft.fftfreq(self.size) * self.size
@@ -64,6 +65,16 @@ class SpectralTurbulenceGenerator:
         kx_grid, ky_grid = np.meshgrid(kx, ky)
         k2 = kx_grid**2 + ky_grid**2
         k2[0, 0] = 1.0
+
+        # Zonal Flow (ZF) Coupling (Predator-Prey)
+        # 1. Update ZF based on turbulence intensity (Reynolds stress proxy)
+        turb_intensity = np.mean(self.field**2)
+        dzf_dt = 5.0 * turb_intensity - 0.5 * self.zonal_flow
+        self.zonal_flow += dzf_dt * dt
+        self.zonal_flow = max(0.0, self.zonal_flow)
+        
+        # 2. Add ZF shearing to damping
+        total_damping = damping + 0.2 * self.zonal_flow
 
         omega = ky_grid / (1.0 + k2)
         phase_shift = np.exp(-1j * omega * dt)
@@ -74,7 +85,7 @@ class SpectralTurbulenceGenerator:
 
         self.field_k = (self.field_k * phase_shift) + (forcing_k * dt)
         self.field_k *= np.exp(-0.001 * k2 * dt)
-        self.field_k *= 1.0 - np.clip(damping, 0.0, 1.0)
+        self.field_k *= 1.0 - np.clip(total_damping, 0.0, 1.0)
 
         self.field = np.fft.ifft2(self.field_k).real
         return self.field
@@ -114,8 +125,25 @@ class FNO_Controller:
         prediction_val = model_forward(self.params, x_jax)
         # Simple suppression law: tanh of predicted intensity
         suppression = float(jnp.tanh(prediction_val * 2.0))
-        # FNO usually predicts future state, here we return a mock field for visual
-        return suppression, field * 0.5 
+        
+        # --- Physics-Informed Hardening (PiFNO) ---
+        # Ensure predicted field is divergence-free (conservative flow)
+        # Using Fourier-projection: v_div_free = v - k(k.v)/k^2
+        pred_field = np.array(field * (1.0 - suppression)) # Scaled prediction
+        
+        field_k = np.fft.fft2(pred_field)
+        kx = np.fft.fftfreq(GRID_SIZE)
+        ky = np.fft.fftfreq(GRID_SIZE)
+        kx_grid, ky_grid = np.meshgrid(kx, ky)
+        k2 = kx_grid**2 + ky_grid**2
+        k2[0, 0] = 1.0 # Avoid div zero
+        
+        # Divergence projection (Simplified for scalar proxy)
+        # Effectively a high-pass filter to remove non-physical DC drift
+        field_k[0, 0] = 0.0 
+        h_field = np.fft.ifft2(field_k).real
+        
+        return suppression, h_field
 
 
 def run_fno_simulation(

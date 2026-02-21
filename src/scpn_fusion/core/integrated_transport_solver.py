@@ -1125,63 +1125,51 @@ class TransportSolver(FusionKernel):
         return 5.35e-37 * Z_eff * ne_m3 ** 2 * np.sqrt(Te)
 
     def _evolve_species(self, dt: float) -> tuple[np.ndarray, np.ndarray]:
-        """Evolve D, T, He-ash densities for one time-step (explicit diffusion + sources).
-
-        Uses internal sub-stepping to respect the CFL stability limit of the
-        explicit diffusion scheme:  dt_CFL = drho^2 / (2 * D_species).
-
-        Returns (S_He_source, P_rad_line):
-          S_He_source — He-ash production rate [10^19 m^-3 / s]
-          P_rad_line  — line radiation power density from tungsten [keV / s per 10^19]
+        """Evolve D, T, He-ash densities for one time-step using Crank-Nicolson.
+        Implicit evolution ensures stability without CFL constraints.
         """
         if not self.multi_ion or self.n_D is None:
             return np.zeros(self.nr), np.zeros(self.nr)
 
         # Fusion source: S_fus = n_D * n_T * <sigma_v> (reactions per m^3 per s)
-        # n_D, n_T are in 10^19 m^-3 => multiply by (1e19)^2
         sigmav = self._bosch_hale_sigmav(self.Ti)
         S_fus = (self.n_D * 1e19) * (self.n_T * 1e19) * sigmav  # reactions/m^3/s
-
-        # He-ash source (in 10^19 m^-3 / s) — one He per fusion reaction
+        S_fuel = S_fus / 1e19
         S_He = S_fus / 1e19
 
-        # He-ash sink: pumping with tau_He (default 5 * tau_E)
-        tau_E = self.compute_confinement_time(1.0)  # rough estimate
-        tau_He = max(self.tau_He_factor * tau_E, 0.5)  # floor at 0.5 s
-        S_He_pump = self.n_He / tau_He
+        # He-ash sink: pumping
+        tau_E = self.compute_confinement_time(1.0)
+        tau_He = max(self.tau_He_factor * tau_E, 0.5)
+        S_He_pump_rate = 1.0 / tau_He
 
-        # D and T consumption rate (in 10^19 / s)
-        S_fuel = S_fus / 1e19
+        # Use unified CN solver for all species
+        # 1. Evolve D
+        L_D_exp = self._explicit_diffusion_rhs(self.n_D, self.D_species * np.ones(self.nr))
+        rhs_D = self.n_D + 0.5 * dt * L_D_exp - dt * S_fuel
+        a, b, c = self._build_cn_tridiag(self.D_species * np.ones(self.nr), dt)
+        self.n_D = self._thomas_solve(a, b, c, rhs_D)
+        self.n_D[0] = self.n_D[1]
+        self.n_D[-1] = 0.01
+        self.n_D = np.maximum(0.001, self.n_D)
 
-        # Diffusion operator (explicit, simple Laplacian)
-        def _diffuse(n: np.ndarray) -> np.ndarray:
-            d2n = np.zeros_like(n)
-            d2n[1:-1] = (n[2:] - 2.0 * n[1:-1] + n[:-2]) / (self.drho ** 2)
-            return self.D_species * d2n
+        # 2. Evolve T
+        L_T_exp = self._explicit_diffusion_rhs(self.n_T, self.D_species * np.ones(self.nr))
+        rhs_T = self.n_T + 0.5 * dt * L_T_exp - dt * S_fuel
+        self.n_T = self._thomas_solve(a, b, c, rhs_T)
+        self.n_T[0] = self.n_T[1]
+        self.n_T[-1] = 0.01
+        self.n_T = np.maximum(0.001, self.n_T)
 
-        # CFL sub-stepping for explicit diffusion stability
-        dt_cfl = 0.4 * self.drho ** 2 / max(self.D_species, 1e-10)
-        n_sub = max(1, int(np.ceil(dt / dt_cfl)))
-        dt_sub = dt / n_sub
-
-        for _ in range(n_sub):
-            # Evolve D
-            new_D = self.n_D + dt_sub * (_diffuse(self.n_D) - S_fuel)
-            new_D[0] = new_D[1]   # Neumann at axis
-            new_D[-1] = 0.01      # edge recycling floor
-            self.n_D = np.maximum(0.001, new_D)
-
-            # Evolve T
-            new_T = self.n_T + dt_sub * (_diffuse(self.n_T) - S_fuel)
-            new_T[0] = new_T[1]
-            new_T[-1] = 0.01
-            self.n_T = np.maximum(0.001, new_T)
-
-            # Evolve He-ash
-            new_He = self.n_He + dt_sub * (_diffuse(self.n_He) + S_He - S_He_pump)
-            new_He[0] = new_He[1]
-            new_He[-1] = 0.0
-            self.n_He = np.maximum(0.0, new_He)
+        # 3. Evolve He
+        L_He_exp = self._explicit_diffusion_rhs(self.n_He, self.D_species * np.ones(self.nr))
+        # He has linear sink (pump): - n_He / tau_He
+        # We can handle this by adding S_He_pump_rate to the 'b' diagonal if needed,
+        # but for simplicity we treat it as an explicit sink here or half-implicit.
+        rhs_He = self.n_He + 0.5 * dt * L_He_exp + dt * (S_He - S_He_pump_rate * self.n_He)
+        self.n_He = self._thomas_solve(a, b, c, rhs_He)
+        self.n_He[0] = self.n_He[1]
+        self.n_He[-1] = 0.0
+        self.n_He = np.maximum(0.0, self.n_He)
 
         # Recompute ne from quasineutrality: ne = n_D + n_T + 2*n_He + Z_imp*n_imp
         # Z_W (effective charge state for tungsten) - Harden with Te-dependence

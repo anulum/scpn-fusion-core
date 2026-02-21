@@ -366,6 +366,10 @@ class DynamicBurnModel:
         T = float(T_initial_keV)
         f_he = float(f_he_initial)
         W_thermal = 1.5 * n_e * T * 1e3 * 1.602e-19 * self.V_plasma  # J
+        
+        # Delayed Alpha Heating Buffer (Slowing down heuristic)
+        # alpha_power_buffer[t] holds power generated at t that will be dumped later
+        alpha_power_delay_buffer = []
 
         # Histories
         time_s = []
@@ -395,12 +399,23 @@ class DynamicBurnModel:
             # Fusion power
             sigmav = self.bosch_hale_dt(T)
             P_fus = n_d * n_t * sigmav * 17.6e6 * 1.602e-19 * self.V_plasma  # W
-            P_alpha = 0.2 * P_fus  # 3.5 MeV / 17.6 MeV
+            P_alpha_born = 0.2 * P_fus  # 3.5 MeV / 17.6 MeV
+            
+            # --- Hardened Alpha Heating (Slowing Down) ---
+            # tau_s approx 0.01 * Te^1.5 / (ne/1e19)
+            tau_s_alpha = 0.012 * (max(T, 0.1)**1.5) / (self.n_e20 * 10.0)
+            tau_s_alpha = np.clip(tau_s_alpha, 0.01, 2.0)
+            
+            # Simple First-Order delay for P_alpha_deposited
+            if step == 0:
+                P_alpha_dep = P_alpha_born
+            else:
+                # dP_dep/dt = (P_born - P_dep) / tau_s
+                # P_dep_new = P_dep + dt * (P_born - P_dep) / tau_s
+                P_alpha_dep = P_alpha_hist[-1]*1e6 + dt_s * (P_alpha_born - P_alpha_hist[-1]*1e6) / tau_s_alpha
 
             # Losses
-            # Confinement: need P_loss estimate for tau_E (circular dependency)
-            # Use previous step's P_loss or initial estimate
-            P_total_heating = P_alpha + P_aux_mw * 1e6
+            P_total_heating = P_alpha_dep + P_aux_mw * 1e6
             tau_E = self.iter98y2_tau_e(P_total_heating / 1e6)
             P_transport = W_thermal / max(tau_E, 0.01)
 
@@ -414,7 +429,7 @@ class DynamicBurnModel:
             P_loss = P_transport + P_rad
 
             # Energy evolution
-            dW = (P_alpha + P_aux_mw * 1e6 - P_loss) * dt_s
+            dW = (P_alpha_dep + P_aux_mw * 1e6 - P_loss) * dt_s
             W_thermal = max(W_thermal + dW, 1e3)
 
             # Temperature from stored energy
@@ -442,7 +457,6 @@ class DynamicBurnModel:
             T = float(np.clip(T, 0.1, t_cap_keV))
 
             # He ash accumulation
-            # Source: fusion rate, Sink: pumping
             R_fus = n_d * n_t * sigmav * self.V_plasma  # reactions/s
             tau_he = tau_he_factor * tau_E
             dn_he = (R_fus - pumping_efficiency * f_he * n_e * self.V_plasma / tau_he) * dt_s
@@ -454,7 +468,7 @@ class DynamicBurnModel:
             Q = min(Q_raw, 15.0)
 
             P_fus_hist.append(P_fus / 1e6)
-            P_alpha_hist.append(P_alpha / 1e6)
+            P_alpha_hist.append(P_alpha_dep / 1e6)
             P_loss_hist.append(P_loss / 1e6)
             P_rad_hist.append(P_rad / 1e6)
             Q_hist.append(Q)

@@ -37,8 +37,19 @@ class FusionState:
     # Instabilities (Resistive MHD Island Widths)
     island_widths: Dict[float, float] = field(default_factory=dict)
     
+    # Bootstrap fraction
+    f_bs: float = 0.0
+    
     # Timestamp
     time_s: float = 0.0
+
+    def compute_bootstrap_fraction(self, epsilon: float = 0.32) -> float:
+        """
+        Estimates the bootstrap current fraction using Sauter-like scaling.
+        f_bs ~ 0.4 * beta_p * sqrt(epsilon)
+        """
+        self.f_bs = float(np.clip(0.4 * self.beta_p * np.sqrt(epsilon), 0.0, 0.9))
+        return self.f_bs
 
     def to_vector(self) -> np.ndarray:
         """Convert scalar features to a vector for ML/MPC use."""

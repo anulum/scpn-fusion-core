@@ -179,6 +179,64 @@ class SensorSuite:
             
         return np.array(signals)
 
+    def measure_interferometer(self, density_profile_19):
+        """
+        Simulates Multi-Chord Interferometer.
+        Measures Phase Shift phi = lambda * r_e * Integral(n_e dl).
+        Harden with Phase Wrapping (modulo 2pi) and Refraction noise.
+        """
+        signals_phase = []
+        lambda_laser = 10.6e-6 # CO2 laser (10.6 um)
+        r_e = 2.817e-15 # Classical electron radius
+        
+        # Grid coordinates
+        RR = self.kernel.RR
+        ZZ = self.kernel.ZZ
+        
+        for start, end in self.bolo_chords: # Reuse geometry for now
+            # Ray marching
+            num_samples = 100
+            dl = np.linalg.norm(end - start) / num_samples
+            
+            integral_ne = 0.0
+            
+            # Refraction "walk-off" accumulator
+            # Density gradients bend the beam, missing the detector slightly
+            # Modeled as signal attenuation
+            refraction_loss = 1.0
+            
+            for k in range(num_samples):
+                alpha = k / num_samples
+                r = (1-alpha)*start[0] + alpha*end[0]
+                z = (1-alpha)*start[1] + alpha*end[1]
+                
+                ir = int((r - self.kernel.R[0]) / self.kernel.dR)
+                iz = int((z - self.kernel.Z[0]) / self.kernel.dZ)
+                
+                if 0 <= ir < self.kernel.NR-1 and 0 <= iz < self.kernel.NZ-1:
+                    ne_val = density_profile_19[iz, ir] * 1e19
+                    integral_ne += ne_val * dl
+                    
+                    # Simple refraction heuristic: proportional to density
+                    if ne_val > 1e20:
+                        refraction_loss *= 0.995 # 0.5% loss per high-density step
+            
+            # Phase Shift (radians)
+            phi = lambda_laser * r_e * integral_ne
+            
+            # Apply refraction loss (simulated fringe jump risk)
+            phi_measured = phi * refraction_loss
+            
+            # Add Noise
+            phi_measured += self._noise(0.1) # 0.1 rad noise
+            
+            # Phase Wrapping
+            phi_wrapped = phi_measured % (2 * np.pi)
+            
+            signals_phase.append(phi_wrapped)
+            
+        return np.array(signals_phase)
+
     def measure_forward_channels(
         self,
         electron_density_m3,

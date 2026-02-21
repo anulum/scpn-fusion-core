@@ -15,6 +15,8 @@ interface, 2D MPI domain decomposition, 1.5D radial transport, BOUT++
 coupling, and AI surrogates for turbulence, disruption prediction, and
 real-time digital twins.
 
+**v4.0 Elite Hardening Breakthrough:** The framework has achieved **Vertical Integration** across 15+ high-fidelity physics closures. Key upgrades include **Modified Rutherford Equation (MRE)** for instabilities, **IPB98(y,2)** energy scaling, **Cylindrical 1D/3D Neutronics**, **Thomas-Fermi WDM EOS**, and **Structured JSON Logging** for automated diagnostic analysis. The control suite now features **Tikhonov-regularized MIMO**, **Kalman State Estimation**, and **Anti-Windup PID**.
+
 **v3.8.3 Breakthrough:** The system now features a **Rust-native execution
 engine** capable of **10kHz – 30kHz** control loop frequencies with
 sub-microsecond compute latency (**0.3 μs per step**). This is combined

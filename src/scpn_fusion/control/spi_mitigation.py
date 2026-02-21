@@ -168,15 +168,39 @@ class ShatteredPelletInjection:
         phase = "Thermal Quench"
         self.Z_eff = 1.0
         self.last_tau_cq_s = 0.02
-
+        
+        # NGPS Ablation Parameters
+        # Modeled as an ensemble of fragments
+        n_fragments = 50
+        pellet_radius_m = 0.002 
+        # Total Moles -> Atoms
+        total_atoms = total_impurity * 6.022e23
+        atoms_per_fragment = total_atoms / n_fragments
+        
+        # Current plasma state (local to SPI)
+        ne_local = 1.0e20 # Initial
+        
         while t < duration:
             if t > t_mix:
+                # NGPS Ablation Rate: dN/dt ~ n_e^(1/3) * T_e^(1.64) * r_p^(4/3)
+                # Ref: Parks et al., Phys. Plasmas 5, 1024 (1998)
+                ablation_rate = 1.2e16 * (ne_local**0.33) * (self.Te**1.64) * (pellet_radius_m**1.33)
+                
+                # Atoms released
+                d_atoms = ablation_rate * dt * n_fragments
+                
+                # Self-consistent density increase
+                vol_plasma = 800.0 # ITER-like
+                ne_local += d_atoms / vol_plasma
+                
                 self.Z_eff = self.estimate_z_eff_cocktail(
                     neon_quantity_mol=neon,
                     argon_quantity_mol=argon,
                     xenon_quantity_mol=xenon,
                 )
-                P_rad = 1e9 * (self.Z_eff**0.5) * (self.Te / 1.0) ** 0.5
+                
+                # Enhanced radiation from density increase
+                P_rad = 1e9 * (self.Z_eff**0.5) * (self.Te / 1.0)**0.5 * (ne_local / 1e20)
                 dW = -P_rad * dt
                 prev_W = self.W_th
                 self.W_th += dW

@@ -259,14 +259,43 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             np.asarray(source_strength_w, dtype=np.float64),
         )
 
+    def calculate_sputtering_yield(self, material_name, E_inc_eV=100.0, angle_deg=45.0):
+        """
+        Roth-Bohdansky Sputtering Yield (Y).
+        Y = Q * (1 - (E_th/E)^(2/3)) * (1 - E_th/E)^2
+        """
+        # Material Parameters (Simplified for D on Target)
+        # Threshold Energy (E_th), Yield Factor (Q)
+        props = {
+            'Tungsten (W)': {'E_th': 200.0, 'Q': 0.004}, # High threshold, low yield
+            'Beryllium (Be)': {'E_th': 10.0, 'Q': 0.03}, # Low threshold, high yield
+            'Eurofer (Steel)': {'E_th': 30.0, 'Q': 0.015}
+        }
+        
+        if material_name not in props:
+            return 0.0
+            
+        p = props[material_name]
+        E_th = p['E_th']
+        
+        # Angular dependence (Yamamura)
+        # f(alpha) ~ 1 / cos(alpha) -> simplified enhancement
+        f_angle = 1.0 + (angle_deg / 90.0) 
+        
+        if E_inc_eV < E_th:
+            return 0.0
+            
+        ratio = E_th / E_inc_eV
+        Y = p['Q'] * (1.0 - ratio**(2.0/3.0)) * (1.0 - ratio)**2 * f_angle
+        
+        return max(Y, 0.0)
+
     def analyze_materials(self, wall_flux):
         """
-        Calculates lifespan for different materials.
+        Calculates lifespan using Sputtering + DPA.
         """
         # Convert Flux (n/m2/s) to MW/m2 (14 MeV per neutron)
-        # 1 MeV = 1.6e-13 J
-        # Flux * 14 * 1.6e-13 = Watts/m2
-        MW_m2 = wall_flux * 14.1 * 1.602e-13 / 1e6 # MW/m2
+        MW_m2 = wall_flux * 14.1 * 1.602e-13 / 1e6 
         
         peak_load = np.max(MW_m2)
         avg_load = np.mean(MW_m2)
@@ -274,12 +303,27 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         print(f"[Nuclear] Wall Loading: Peak={peak_load:.2f} MW/m2, Avg={avg_load:.2f} MW/m2")
         
         results = {}
+        # Particle Flux estimate (D/T/He ions)
+        # Gamma_i ~ 1e23 ions/m2/s (High flux)
+        Gamma_ion = 1e23 
+        
         for mat_name, props in MATERIALS.items():
-            # DPA accumulation per year
-            # Rule of thumb: 1 MW/m2 ~ 10 DPA/fpy (Full Power Year)
+            # 1. Neutron Damage (DPA)
             dpa_per_year = peak_load * 10.0 
+            life_dpa = props['dpa_limit'] / dpa_per_year if dpa_per_year > 0 else 999.0
             
-            lifespan = props['dpa_limit'] / dpa_per_year if dpa_per_year > 0 else 999.0
+            # 2. Erosion (Sputtering)
+            # Erosion Rate = Y * Gamma_ion / atomic_density
+            Y = self.calculate_sputtering_yield(mat_name, E_inc_eV=50.0) # Typical edge energy
+            n_atom = 6.3e28 # atoms/m3 (W)
+            erosion_rate_m_s = Y * Gamma_ion / n_atom
+            erosion_mm_year = erosion_rate_m_s * 1000 * 3.15e7
+            
+            # Allowable erosion depth (e.g. 5 mm)
+            life_erosion = 5.0 / erosion_mm_year if erosion_mm_year > 0 else 999.0
+            
+            # Limited by the worst mechanism
+            lifespan = min(life_dpa, life_erosion)
             results[mat_name] = lifespan
             
         return results, MW_m2

@@ -175,6 +175,56 @@ def _run_mode(
     return int(result.returncode)
 
 
+def _system_health_check() -> None:
+    """Validate system resources and library versions."""
+    LOGGER.info("Performing system health check...")
+    
+    # 1. Hardware Resources
+    cpu_count = os.cpu_count() or 1
+    if cpu_count < 2:
+        LOGGER.warning("Low CPU core count (%d). Simulations may be slow.", cpu_count)
+    
+    try:
+        import psutil
+        mem = psutil.virtual_memory()
+        total_gb = mem.total / (1024**3)
+        avail_gb = mem.available / (1024**3)
+        if total_gb < 8.0:
+            LOGGER.warning("System RAM < 8GB (%.1f GB). Large grids may OOM.", total_gb)
+        if avail_gb < 2.0:
+            LOGGER.warning("Low available RAM (%.1f GB).", avail_gb)
+    except ImportError:
+        LOGGER.debug("psutil not installed; skipping memory check.")
+
+    # 2. Library Versions
+    try:
+        import numpy as np
+        if int(np.__version__.split('.')[0]) < 1:
+            LOGGER.error("NumPy version too old: %s", np.__version__)
+    except ImportError:
+        LOGGER.critical("NumPy not found! Core physics will fail.")
+
+    try:
+        import scipy
+        LOGGER.debug("SciPy version: %s", scipy.__version__)
+    except ImportError:
+        LOGGER.warning("SciPy not found. Some solvers will be unavailable.")
+
+    # 3. Acceleration
+    gpu_available = False
+    try:
+        import jax
+        devices = jax.devices()
+        gpu_available = any(d.platform == 'gpu' for d in devices)
+    except ImportError:
+        pass
+    
+    LOGGER.info(
+        "Health check complete: CPUs=%d, GPU=%s",
+        cpu_count, "YES" if gpu_available else "NO"
+    )
+
+
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
 @click.argument("mode", required=False, default="all")
 @click.argument("script_args", nargs=-1, type=click.UNPROCESSED)
@@ -184,6 +234,7 @@ def _run_mode(
 @click.option("--continue-on-error", is_flag=True, help="Continue running remaining modes after a failure.")
 @click.option("--dry-run", is_flag=True, help="Print the launch plan without executing.")
 @click.option("--list-modes", is_flag=True, help="List available modes and lock state, then exit.")
+@click.option("--skip-health-check", is_flag=True, help="Skip startup system validation.")
 @click.option(
     "--log-level",
     default="INFO",
@@ -200,6 +251,7 @@ def cli(
     continue_on_error: bool,
     dry_run: bool,
     list_modes: bool,
+    skip_health_check: bool,
     log_level: str,
 ) -> None:
     """Unified SCPN Fusion launcher.
@@ -210,6 +262,9 @@ def cli(
     include_surrogate = surrogate or _env_enabled("SCPN_SURROGATE")
     include_experimental = experimental or _env_enabled("SCPN_EXPERIMENTAL")
     _configure_logging(log_level)
+
+    if not skip_health_check and not dry_run and not list_modes:
+        _system_health_check()
 
     if list_modes:
         click.echo("mode | maturity | unlocked | description")

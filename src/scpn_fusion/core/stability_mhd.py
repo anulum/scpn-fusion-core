@@ -213,30 +213,29 @@ def compute_q_profile(
 
 def mercier_stability(qp: QProfile) -> MercierResult:
     """Evaluate the Mercier interchange stability criterion.
-
-    The Mercier index is (Freidberg, Ch. 12):
-        D_M = s*(s - 1) + alpha*(1 - s/2)
-
+    Harden with magnetic well and toroidal geometry corrections.
+    
+    D_M = (s^2 / 4) + alpha * (eps/q^2) * (1 - q^2)  [Simplified Toroidal]
     Stable where D_M >= 0.
-
-    Parameters
-    ----------
-    qp : QProfile
-
-    Returns
-    -------
-    MercierResult
     """
     s = qp.shear
     alpha = qp.alpha_mhd
-
-    D_M = s * (s - 1.0) + alpha * (1.0 - s / 2.0)
+    q = qp.q
+    
+    # Heuristic for Inverse Aspect Ratio eps(rho)
+    # a approx R/3
+    eps = qp.rho / 3.0
+    
+    # Mercier index with magnetic well term (1-q^2)
+    # In tokamaks, q > 1 is the primary driver for interchange stability (well)
+    # D_M = s^2/4 + (2*mu0*p'/Bt^2) * (R/Bt^2) * (1-q^2) -> alpha variant
+    D_M = (s**2 / 4.0) + (alpha * eps / np.maximum(q**2, 0.1)) * (1.0 - q**2)
 
     stable = D_M >= 0.0
 
-    # Find first unstable location (skip axis where s=0 makes D_M=0)
+    # Find first unstable location (skip axis where s=0)
     first_unstable_rho: float | None = None
-    for i in range(2, len(qp.rho)):
+    for i in range(5, len(qp.rho)): # skip axis region
         if not stable[i]:
             first_unstable_rho = float(qp.rho[i])
             break

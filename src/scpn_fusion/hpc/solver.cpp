@@ -89,10 +89,12 @@ public:
         #pragma omp parallel for collapse(2) reduction(max:red_max_delta)
         #endif
         for (int z = 1; z < cfg.nz - 1; ++z) {
+            #pragma GCC ivdep
+            #pragma GCC optimize("unroll-loops")
             for (int r = 1; r < cfg.nr - 1; ++r) {
                 if ((z + r) % 2 == 0) {
                     const double delta = update_point(z, r, omega);
-                    red_max_delta = std::max(red_max_delta, delta);
+                    if (delta > red_max_delta) red_max_delta = delta;
                 }
             }
         }
@@ -103,15 +105,17 @@ public:
         #pragma omp parallel for collapse(2) reduction(max:black_max_delta)
         #endif
         for (int z = 1; z < cfg.nz - 1; ++z) {
+            #pragma GCC ivdep
+            #pragma GCC optimize("unroll-loops")
             for (int r = 1; r < cfg.nr - 1; ++r) {
                 if ((z + r) % 2 != 0) {
                     const double delta = update_point(z, r, omega);
-                    black_max_delta = std::max(black_max_delta, delta);
+                    if (delta > black_max_delta) black_max_delta = delta;
                 }
             }
         }
 
-        return std::max(red_max_delta, black_max_delta);
+        return (red_max_delta > black_max_delta) ? red_max_delta : black_max_delta;
     }
 
     void set_current_profile(const double *j_in, size_t size) {

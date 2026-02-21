@@ -57,12 +57,50 @@ class CompactReactorArchitect:
         plt.title(f'Compact Fusion Design Space - {label}')
         plt.savefig(f"Compact_Space_{label}.png")
 
+    def calculate_economics(self, d):
+        """
+        Calculates Cost of Electricity (CoE) [$/MWh].
+        Sheffield model: CoE ~ (C_cap * F_cap + C_om) / (8760 * P_net * f_avail)
+        """
+        P_fus = d['P_fus']
+        R = d['R']
+        B_coil = d['B_coil']
+        
+        # 1. Direct Capital Costs (Estimate in M$)
+        # Magnet cost scales with Volume * B^2
+        vol_coil = d['Vol'] * 0.5 # Proxy for coil volume
+        C_magnet = 0.5 * vol_coil * (B_coil/10.0)**2 
+        
+        # Blanket/Vessel cost scales with First Wall Area
+        area_wall = 4 * np.pi**2 * R * d['a']
+        C_blanket = 0.2 * area_wall
+        
+        # Balance of Plant (BoP) scales with Power
+        C_bop = 1.2 * (P_fus * 0.4) # 0.4 efficiency
+        
+        total_cap_m_usd = (C_magnet + C_blanket + C_bop) * 1.5 # Multiplier for engineering
+        
+        # 2. CoE Calculation
+        f_avail = 0.75 # High availability goal
+        p_net_mw = P_fus * 0.4 * 0.9 # Thermal efficiency * recirculating power
+        
+        # Annualized capital cost (10% fixed charge rate)
+        annual_cap = total_cap_m_usd * 0.10 * 1e6
+        # O&M (3% of capital)
+        annual_om = total_cap_m_usd * 0.03 * 1e6
+        
+        coe = (annual_cap + annual_om) / (8760.0 * p_net_mw * f_avail)
+        
+        return coe, total_cap_m_usd
+
     def report_design(self, d):
+        coe, cap = self.calculate_economics(d)
         print("\n=== MINIMUM VIABLE REACTOR FOUND ===")
         print(f"Geometry:      R = {d['R']:.3f} m, a = {d['a']:.3f} m (A={d['R']/d['a']:.1f})")
         print(f"Magnetics:     B0 = {d['B0']:.1f} T (Plasma), B_max = {d['B_coil']:.1f} T (Coil)")
         print(f"Performance:   P_fusion = {d['P_fus']:.1f} MW")
         print(f"Heat Loads:    Divertor = {d['q_div']:.1f} MW/m2, Wall = {d['q_wall']:.2f} MW/m2")
+        print(f"Economics:     CoE = {coe:.1f} $/MWh, CapEx = {cap:.0f} M$")
         print(f"Plasma Vol:    {d['Vol']:.1f} m3")
         print("Technology:    REBCO HTS, TEMHD Liquid Divertor, Detached Mode")
         print("====================================")

@@ -110,11 +110,39 @@ class OptimalController:
 
         self._log("[OptControl] System Identification Complete.")
 
+    def get_shafranov_shift(self) -> float:
+        """
+        Calculates the Shafranov Shift (Delta R) heuristic.
+        Delta R ~ (a^2 / 2R) * (beta_p + li/2)
+        """
+        # Estimates from kernel config/state
+        # Minor radius a, Major radius R
+        r_min = self.kernel.cfg['dimensions']['R_min']
+        r_max = self.kernel.cfg['dimensions']['R_max']
+        a = (r_max - r_min) / 2.0
+        R0 = (r_max + r_min) / 2.0
+        
+        beta_p = self.kernel.cfg['physics'].get('beta_p', 0.5)
+        li = 0.8 # Internal inductance proxy
+        
+        shift = (a**2 / (2.0 * R0)) * (beta_p + li/2.0)
+        return float(shift)
+
     def get_plasma_pos(self) -> np.ndarray:
-        """Return current plasma-axis position [R, Z]."""
+        """
+        Return current magnetic-axis position [R, Z].
+        Harden with Shafranov Shift correction for high-beta states.
+        """
         idx_max = int(np.argmax(self.kernel.Psi))
         iz, ir = np.unravel_index(idx_max, self.kernel.Psi.shape)
-        return np.array([self.kernel.R[ir], self.kernel.Z[iz]], dtype=np.float64)
+        
+        r_geo = self.kernel.R[ir]
+        z_geo = self.kernel.Z[iz]
+        
+        # Apply shift if beta_p is significant
+        delta_r = self.get_shafranov_shift()
+        
+        return np.array([r_geo + delta_r, z_geo], dtype=np.float64)
 
     def compute_optimal_correction(
         self,

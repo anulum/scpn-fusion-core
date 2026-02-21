@@ -30,6 +30,41 @@ class WholeDeviceModel:
         # Initialize
         self.transport.solve_equilibrium()
         
+    def thomas_fermi_pressure(self, n_e_m3, T_eV):
+        """
+        Hardened Thomas-Fermi Equation of State (EOS) heuristic.
+        Accounts for electron degeneracy pressure in the WDM regime.
+        P_total = P_ideal + P_deg
+        """
+        # 1. Ideal Gas Term (Boltzmann)
+        # P = n * k * T
+        p_ideal = n_e_m3 * (T_eV * 1.602e-19)
+        
+        # 2. Degeneracy Term (Thomas-Fermi / Fermi-Dirac limit)
+        # P_deg ~ (h_bar^2 / m_e) * n_e^(5/3)
+        h_bar = 1.054e-34
+        m_e = 9.109e-31
+        p_deg = (h_bar**2 / m_e) * (n_e_m3**(5.0/3.0))
+        
+        # 3. Interpolation (Smooth transition)
+        # We use a simple additive model which is a common WDM baseline
+        return p_ideal + p_deg
+
+    def calculate_redeposition_fraction(self, T_edge_eV, B_field_T):
+        """
+        Estimates the fraction of sputtered atoms that are promptly redeposited.
+        Redeposition fraction f_redep ~ 1 - (lambda_ion / rho_L)
+        For heavy impurities (W) in high B-field, redeposition can exceed 90%.
+        """
+        # Ionization mean free path lambda_ion ~ v_thermal / (n_e * <sigma_v>_ion)
+        # Larmor radius rho_L = m*v / qB
+        # Heuristic for W: f_redep increases with density and B-field
+        n_e_edge = self.transport.ne[-1] * 1e19
+        
+        # Scaling based on impurity transport benchmarks
+        f_redep = 0.95 * (1.0 - np.exp(-(B_field_T / 5.0) * (n_e_edge / 1e19)))
+        return float(np.clip(f_redep, 0.0, 0.99))
+
     def run_discharge(self, duration_sec=10.0):
         print(f"--- SCPN WDM: WHOLE DEVICE SIMULATION ({duration_sec}s) ---")
         
@@ -45,24 +80,28 @@ class WholeDeviceModel:
         print("-" * 50)
         
         for t in range(steps):
-            # 1. Transport Step (Evolve T, n)
-            # This now includes Radiation Cooling!
+            # 1. Transport Step
             avg_T, core_T = self.transport.evolve_profiles(dt, P_aux)
             
             # 2. PWI Step (Calculate Erosion)
-            # Flux to wall ~ Particle Density at Edge * Sound Speed
             n_edge = self.transport.ne[-1] * 1e19
             T_edge = self.transport.Te[-1] * 1000 # eV
-            flux_wall = n_edge * np.sqrt((T_edge + T_edge)/ (2*1.67e-27)) # Gamma * n * cs
+            B_edge = 5.0 # Tesla approx
             
-            # Erosion
+            # Sound speed at edge
+            cs = np.sqrt((T_edge + T_edge) / (2 * 1.67e-27))
+            flux_wall = n_edge * cs
+            
+            # Gross Erosion
             erosion = self.pwi.calculate_erosion_rate(flux_wall, T_edge)
-            impurity_flux = erosion['Impurity_Source'] # Atoms/s/m2
+            gross_impurity_flux = erosion['Impurity_Source']
+            
+            # Net Erosion (Hardened with Redeposition)
+            f_redep = self.calculate_redeposition_fraction(T_edge, B_edge)
+            net_impurity_flux = gross_impurity_flux * (1.0 - f_redep)
             
             # 3. Impurity Transport (Inject into Plasma)
-            # Total atoms = Flux * Area (approx 500 m2)
-            total_atoms_sec = impurity_flux * 500.0
-            # Scale down for demo stability (real W is deadly)
+            total_atoms_sec = net_impurity_flux * 500.0
             self.transport.inject_impurities(total_atoms_sec * 1e-4, dt)
             
             # 4. Equilibrium Coupling (Rare update)

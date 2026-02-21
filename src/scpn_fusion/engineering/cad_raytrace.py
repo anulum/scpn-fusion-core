@@ -229,13 +229,22 @@ def estimate_surface_loading(
         dist2 = np.sum(ray * ray, axis=1)
         dist = np.sqrt(np.maximum(dist2, 1e-12))
         dirs = ray / dist[:, None]
-        cos_incidence = np.clip(np.sum(normals * dirs, axis=1), 0.0, 1.0)
+        
+        # 1. Back-face culling: dot(n, dir) < 0
+        # For a convex hull, only one face is visible.
+        cos_incidence = np.sum(normals * dirs, axis=1)
+        # Note: direction is src->target, so cos > 0 means pointing AWAY from src?
+        # ray = centroids - src.  Normal pointing OUT. 
+        # If normal . ray > 0, it's a back face (looking from inside).
+        # We need Normal . (-ray) > 0 for front face.
+        cos_front = -cos_incidence 
+        visible = cos_front > 0.0
+        
+        # 2. Occlusion (Self-Shadowing)
         if occlusion_cull:
-            visible = cos_incidence > 0.0
-            for i in range(faces.shape[0]):
-                if not visible[i]:
-                    continue
+            for i in np.nonzero(visible)[0]:
                 c = centroids[i]
+                # Broad-phase test
                 if occlusion_broadphase:
                     seg_min = np.minimum(p, c) - occlusion_epsilon
                     seg_max = np.maximum(p, c) + occlusion_epsilon
@@ -244,20 +253,16 @@ def estimate_surface_loading(
                         & np.all(tri_bbox_min <= seg_max[None, :], axis=1)
                     )[0]
                 else:
-                    candidate_idx = range(faces.shape[0])
+                    candidate_idx = np.arange(faces.shape[0])
+                
                 for j in candidate_idx:
-                    if i == j:
-                        continue
-                    if _segment_intersects_triangle(
-                        p,
-                        c,
-                        tri[j],
-                        epsilon=occlusion_epsilon,
-                    ):
+                    if i == j: continue
+                    if _segment_intersects_triangle(p, c, tri[j], epsilon=occlusion_epsilon):
                         visible[i] = False
                         break
-            cos_incidence = np.where(visible, cos_incidence, 0.0)
-        loading += float(power) * cos_incidence / (4.0 * np.pi * np.maximum(dist2, 1e-12))
+        
+        final_cos = np.where(visible, cos_front, 0.0)
+        loading += float(power) * final_cos / (4.0 * np.pi * np.maximum(dist2, 1e-12))
 
     return CADLoadReport(
         face_loading_w_m2=loading,

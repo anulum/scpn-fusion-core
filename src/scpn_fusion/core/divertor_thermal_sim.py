@@ -28,23 +28,58 @@ class DivertorLab:
         print(f"Power to Divertor: {self.P_sol} MW")
         print(f"Eich Width (lambda_q): {self.lambda_q_mm:.3f} mm")
         
-    def calculate_heat_load(self, expansion_factor=10.0):
+    def solve_2point_transport(self, expansion_factor=10.0, f_rad=0.5):
         """
-        Calculates Peak Heat Flux on the target plate.
-        expansion_factor: Magnetic flux expansion (fx) * Target tilt (sin theta).
-        Typically 10-20 for advanced divertors (Super-X).
+        Two-Point Model (2PM) for SOL Transport.
+        Balances upstream pressure with target flux constraints.
+        T_u = (7/2 * L_c * q_par / kappa0)^(2/7)
+        n_u determines if we are in sheath-limited or conduction-limited regime.
         """
-        # Parallel Heat Flux (q_par)
-        # P_sol = 2 * pi * R * lambda_q * q_par (approx for single null)
-        # q_par = P_sol / (2 * pi * R * lambda_q)
+        # Connection Length (L_c ~ q * R * pi)
+        # q95 approx 3.0
+        q95 = 3.0
+        L_c = np.pi * self.R * q95
         
-        # Note: 4*pi*R for Double Null. Assuming Single Null (DN is better but harder).
+        # Parallel Heat Flux (q_par)
+        # q_par = P_sol / (4 * pi * R * lambda_q) (Double Null approx, or 2*pi for SN)
+        # Using 2*pi for conservative Single Null
         self.q_parallel = (self.P_sol * 1e6) / (2 * np.pi * self.R * self.lambda_q)
         
-        # Target Heat Flux (q_target) = q_par / expansion_factor
-        self.q_target_solid = self.q_parallel / expansion_factor
+        # Upstream Temperature (T_u) - Conduction dominated
+        # T_u = (3.5 * q_par * L_c / k0)^(2/7)
+        k0 = 2000.0 # Spitzer
+        T_u_eV = (3.5 * self.q_parallel * L_c / k0)**(2.0/7.0)
+        
+        # Target Physics
+        # q_target = gamma * n_t * c_s * T_t
+        # Momentum balance: 2 * n_t * T_t = n_u * T_u (High recycling: pressure loss factor f_p < 1)
+        # Simplified Sheath-Limited: T_t ~ T_u
+        # Conduction-Limited (High Recycling): T_t << T_u
+        
+        # We solve for Target Temperature (T_t) assuming High Recycling
+        # q_target = q_par * (1 - f_rad) / expansion_factor
+        q_target = self.q_parallel * (1.0 - f_rad) / expansion_factor
+        
+        # Estimate T_t using scaling (Stangeby)
+        # T_t decreases as density^2
+        # For this sim, we use a robust closure:
+        # T_t = q_target^2 / (gamma * n_u * ... ) -> too complex 
+        # Simplified 2PM relation: T_t = T_u * (q_target_eff / q_par)^2 (Approx)
+        T_t_eV = T_u_eV * ((1.0 - f_rad) * 0.1)**2 # Heuristic drop
+        T_t_eV = max(T_t_eV, 1.0) # Floor at 1eV
+        
+        self.q_target_solid = q_target
+        return T_u_eV, T_t_eV
+
+    def calculate_heat_load(self, expansion_factor=10.0):
+        """
+        Calculates Peak Heat Flux using 2-Point Model Physics.
+        """
+        T_u, T_t = self.solve_2point_transport(expansion_factor, f_rad=0.0) # Unmitigated
         
         print(f"Parallel Heat Flux: {self.q_parallel/1e9:.1f} GW/m2")
+        print(f"Upstream Temp (T_u): {T_u:.1f} eV")
+        print(f"Target Temp (T_t): {T_t:.1f} eV")
         print(f"Unmitigated Target Flux: {self.q_target_solid/1e6:.1f} MW/m2")
         
         return self.q_target_solid

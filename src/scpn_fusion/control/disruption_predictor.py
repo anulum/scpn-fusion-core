@@ -803,16 +803,29 @@ def predict_disruption_risk_safe(
         return base_risk, out_meta
 
     try:
-        model.eval()
+        model.train() # Enable Dropout for Monte Carlo sampling
         model_seq_len = int(meta.get("seq_len", _normalize_seq_len(seq_len)))
         input_sig = _prepare_signal_window(signal, model_seq_len)
         input_tensor = torch.tensor(input_sig, dtype=torch.float32).reshape(1, -1, 1)
+        
+        # MC-Dropout: Run 10 forward passes
+        n_mc = 10
+        mc_risks = []
         with torch.no_grad():
-            model_risk = float(np.clip(float(model(input_tensor).item()), 0.0, 1.0))
+            for _ in range(n_mc):
+                mc_risks.append(float(model(input_tensor).item()))
+        
+        risk_mean = float(np.mean(mc_risks))
+        risk_std = float(np.std(mc_risks))
+        confidence = float(np.clip(1.0 - 2.0 * risk_std, 0.0, 1.0))
+        
         out_meta = dict(meta)
         out_meta["mode"] = "checkpoint"
-        out_meta["risk_source"] = "transformer"
-        return model_risk, out_meta
+        out_meta["risk_source"] = "transformer_mc_dropout"
+        out_meta["uncertainty_std"] = risk_std
+        out_meta["confidence_score"] = confidence
+        
+        return float(np.clip(risk_mean, 0.0, 1.0)), out_meta
     except Exception as exc:
         if not allow_fallback:
             raise RuntimeError(

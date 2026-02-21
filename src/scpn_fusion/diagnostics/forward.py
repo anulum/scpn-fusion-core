@@ -28,6 +28,8 @@ class ForwardDiagnosticChannels:
     ece_temperature_kev: FloatArray | None = None
     sxr_brightness_w_m2: FloatArray | None = None
     bolometer_power_w_m2_sr: FloatArray | None = None
+    cxrs_ti_kev: FloatArray | None = None
+    cxrs_rotation_km_s: FloatArray | None = None
 
 
 def _nearest_index(axis: FloatArray, value: float) -> int:
@@ -499,3 +501,48 @@ def bolometer_power_density(
     for i, (start, end) in enumerate(chords):
         out[i] = _line_integral_nearest(p_rad, r, z, start, end, samples=samples)
     return out
+
+
+def cxrs_ion_diagnostics(
+    ion_temp_keV: FloatArray,
+    rotation_km_s: FloatArray,
+    r_grid: FloatArray,
+    z_grid: FloatArray,
+    chords: Sequence[tuple[tuple[float, float], tuple[float, float]]],
+    *,
+    beam_r_center: float = 6.2,
+    beam_width: float = 0.1,
+    samples: int = 96,
+) -> tuple[FloatArray, FloatArray]:
+    """Predict CXRS ion temperature and toroidal rotation.
+    
+    Weights signals by a Gaussian beam-emission profile centered at beam_r_center.
+    """
+    ti, r, z = _validate_field_grid(
+        np.asarray(ion_temp_keV, dtype=np.float64),
+        np.asarray(r_grid, dtype=np.float64),
+        np.asarray(z_grid, dtype=np.float64),
+        name="cxrs.ti",
+    )
+    vphi, _, _ = _validate_field_grid(
+        np.asarray(rotation_km_s, dtype=np.float64),
+        r,
+        z,
+        name="cxrs.vphi",
+    )
+    
+    # Emission weight: exp(-(R - R_beam)^2 / w^2)
+    rr_mesh, _ = np.meshgrid(r, z)
+    weight_map = np.exp(-((rr_mesh - beam_r_center)**2) / (beam_width**2))
+    
+    ti_out = np.zeros(len(chords), dtype=np.float64)
+    vphi_out = np.zeros(len(chords), dtype=np.float64)
+    
+    for i, (start, end) in enumerate(chords):
+        # Weighted integrals
+        sum_w = _line_integral_nearest(weight_map, r, z, start, end, samples=samples)
+        if sum_w > 1e-9:
+            ti_out[i] = _line_integral_nearest(ti * weight_map, r, z, start, end, samples=samples) / sum_w
+            vphi_out[i] = _line_integral_nearest(vphi * weight_map, r, z, start, end, samples=samples) / sum_w
+            
+    return ti_out, vphi_out

@@ -170,23 +170,50 @@ class KalmanObserver:
 
 
 class NeuralController:
-    """PID-style control policy for vertical stabilization."""
+    """Hardened PID control policy for vertical stabilization."""
 
-    def __init__(self) -> None:
+    def __init__(self, dt: float = 0.1) -> None:
+        self.dt = dt
         self.integral_error = 0.0
         self.prev_error = 0.0
+        self.filtered_derivative = 0.0
+        
+        # PID Gains (Hardened defaults)
+        self.kp = 5.0
+        self.ki = 0.5
+        self.kd = 2.0
+        
+        # Filter constant for derivative (tau_d)
+        # Prevents noise spikes from being amplified
+        self.tau_d = 0.05 
+        
+        # Anti-windup limit
+        self.integral_limit = 2.0
 
     def compute_action(self, measured_z: float) -> tuple[float, float]:
-        kp = 5.0
-        ki = 0.1
-        kd = 8.0
-
         error = -float(measured_z)
-        self.integral_error += error
-        derivative = error - self.prev_error
+        
+        # 1. Proportional
+        p_term = self.kp * error
+        
+        # 2. Integral with Anti-Windup (Clamping)
+        self.integral_error += error * self.dt
+        self.integral_error = np.clip(self.integral_error, -self.integral_limit, self.integral_limit)
+        i_term = self.ki * self.integral_error
+        
+        # 3. Filtered Derivative
+        # d_err/dt approx (err - prev_err) / dt
+        raw_derivative = (error - self.prev_error) / self.dt
+        # Low-pass filter: y(t) = alpha * x(t) + (1-alpha) * y(t-dt)
+        alpha = self.dt / (self.tau_d + self.dt)
+        self.filtered_derivative = alpha * raw_derivative + (1.0 - alpha) * self.filtered_derivative
+        d_term = self.kd * self.filtered_derivative
+        
         self.prev_error = error
 
-        pid_out = (kp * error) + (ki * self.integral_error) + (kd * derivative)
+        pid_out = p_term + i_term + d_term
+        
+        # Actuator Saturation (tanh)
         force = float(np.tanh(pid_out))
         if force > 0.0:
             return 0.0, abs(force)
