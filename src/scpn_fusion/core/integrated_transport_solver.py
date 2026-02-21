@@ -1184,7 +1184,12 @@ class TransportSolver(FusionKernel):
             self.n_He = np.maximum(0.0, new_He)
 
         # Recompute ne from quasineutrality: ne = n_D + n_T + 2*n_He + Z_imp*n_imp
-        Z_W = 10.0  # effective charge state for tungsten (simplified)
+        # Z_W (effective charge state for tungsten) - Harden with Te-dependence
+        # Coronal equilibrium polynomial fit for W
+        # Z_W ~ 15 + 10 * log10(Te_keV) for Te > 0.1
+        log_te = np.log10(np.maximum(self.Te, 0.1))
+        Z_W = np.clip(15.0 + 12.0 * log_te, 10.0, 50.0)
+        
         self.ne = self.n_D + self.n_T + 2.0 * self.n_He + Z_W * np.maximum(self.n_impurity, 0.0)
         self.ne = np.maximum(self.ne, 0.1)
 
@@ -1335,9 +1340,10 @@ class TransportSolver(FusionKernel):
             S_rad_e = P_rad_line_Wm3 / (ne_safe_e * e_keV_J) * 0.5
 
             # Electron-ion coupling (collisional equilibration)
-            # nu_ei_eq ~ n_e * Z^2 * ln_lambda / (T_e^1.5 * m_i)
-            # Simplified: S_eq = (Ti - Te) / tau_eq, tau_eq ~ 0.1 s for ITER
-            tau_eq = 0.1  # s
+            # tau_eq ~ 3e18 * Te^1.5 / (ne * ln_lambda)
+            # Calibrated to approx 0.1s for ne=1e20, Te=10keV
+            tau_eq = 0.01 * (Te_old**1.5) / np.maximum(self.ne / 10.0, 0.1)
+            tau_eq = np.clip(tau_eq, 0.001, 1.0)
             S_equil = (self.Ti - Te_old) / tau_eq
 
             net_source_e = S_heat_e - S_rad_e - S_brem_e + S_equil
@@ -1619,17 +1625,24 @@ class TransportSolver(FusionKernel):
             n_outer_converged = outer + 1
 
             _logger.info(
-                "GS-transport outer iter %d/%d: psi_residual=%.4e",
-                outer + 1, n_outer, psi_residual,
+                "GS-transport outer iteration progress",
+                extra={"physics_context": {
+                    "outer_iteration": outer + 1,
+                    "max_outer": n_outer,
+                    "psi_residual": psi_residual
+                }}
             )
 
             # 5. Convergence check
             if psi_residual < psi_tol:
                 converged = True
                 _logger.info(
-                    "GS-transport converged after %d outer iterations "
-                    "(residual %.4e < tol %.4e).",
-                    outer + 1, psi_residual, psi_tol,
+                    "GS-transport converged",
+                    extra={"physics_context": {
+                        "iterations": outer + 1,
+                        "final_residual": psi_residual,
+                        "tolerance": psi_tol
+                    }}
                 )
                 break
 

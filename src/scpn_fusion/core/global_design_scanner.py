@@ -56,9 +56,26 @@ class GlobalDesignExplorer:
         Vol = 2 * np.pi**2 * R_maj * a_min**2
         
         # Stability Limit (Greenwald / Troyon)
-        # beta_max ~ I / aB
-        beta_N = 2.5
-        max_pressure = beta_N * (I_plasma / (a_min * B_field)) * (B_field**2) # Simplified
+        # beta_max [%] = beta_N * I_MA / (a_m * B_T)
+        # beta = 2 * mu0 * <p> / B^2
+        # => <p>_max = beta_max/100 * B^2 / (2 * mu0)
+        
+        # Shaping corrections for beta_N (H-mode scaling)
+        # Higher kappa/delta allows higher beta_N
+        kappa, delta = 1.7, 0.33
+        beta_N_nominal = 2.8 
+        # Shaping benefit: beta_N ~ (1 + kappa^2) * (1 + delta) ? 
+        # Actually simplified scaling: beta_N_eff = beta_N_nominal * (1 + 0.2*(kappa-1.5))
+        beta_N_eff = beta_N_nominal * (1.0 + 0.2 * (kappa - 1.5))
+        
+        I_N = I_plasma / (a_min * B_field)
+        beta_limit_pct = beta_N_eff * I_N
+        
+        mu0 = 4.0 * np.pi * 1e-7
+        # Pressure limit in Pa (N/m2)
+        # beta = 2 mu0 p / B^2  -> p = beta * B^2 / (2 mu0)
+        # beta_limit is in %, so divide by 100
+        max_pressure = (beta_limit_pct / 100.0) * (B_field**2) / (2.0 * mu0)
         
         # Fusion Power ~ Vol * Pressure^2
         # Calibrated constant C (Optimistic H-Mode)

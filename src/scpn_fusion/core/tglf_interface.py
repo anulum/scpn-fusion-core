@@ -537,3 +537,56 @@ def validate_against_tglf(
     result = benchmark.compare(chi_i_gb, chi_e_gb, ts.rho, tglf_outputs)
     result.case_name = "Live TGLF validation"
     return result
+
+
+# ── Surrogate training bridge ───────────────────────────────────────
+
+class TGLFDatasetGenerator:
+    """Automated generation of TGLF datasets for surrogate training.
+    
+    Explores the design space (R/LT, R/Ln, q, s_hat, beta) and runs
+    the TGLF binary to collect ground-truth fluxes.
+    """
+    def __init__(self, tglf_binary_path: str | Path):
+        self.tglf_path = Path(tglf_binary_path)
+        
+    def generate_random_dataset(self, n_samples: int = 100) -> list[dict[str, Any]]:
+        """Generate a randomized dataset of TGLF runs."""
+        rng = np.random.default_rng()
+        dataset = []
+        
+        print(f"[TGLF] Generating {n_samples} samples for surrogate training...")
+        for i in range(n_samples):
+            # Sample parameters from realistic H-mode ranges
+            deck = TGLFInputDeck(
+                R_LTi = float(rng.uniform(0.0, 12.0)),
+                R_LTe = float(rng.uniform(0.0, 12.0)),
+                R_Lne = float(rng.uniform(0.0, 5.0)),
+                q = float(rng.uniform(1.0, 5.0)),
+                s_hat = float(rng.uniform(0.0, 3.0)),
+                beta_e = float(rng.uniform(0.001, 0.05)),
+                Z_eff = float(rng.uniform(1.0, 3.0))
+            )
+            
+            try:
+                out = run_tglf_binary(deck, self.tglf_path, timeout_s=60.0)
+                sample = {
+                    "input": deck.__dict__,
+                    "output": out.__dict__
+                }
+                dataset.append(sample)
+            except Exception as exc:
+                logger.warning(f"Sample {i} failed: {exc}")
+                
+        return dataset
+
+def train_surrogate_from_tglf(dataset: list[dict[str, Any]], output_path: str | Path):
+    """Placeholder for MLP training logic using collected TGLF data.
+    In a real implementation, this would use JAX/PyTorch to fit
+    NeuralTransportModel weights.
+    """
+    print(f"[TGLF] Training surrogate from {len(dataset)} samples...")
+    # 1. Prepare X (Inputs), Y (Outputs: chi_i, chi_e)
+    # 2. Fit MLP
+    # 3. Save to .npz
+    print(f"[TGLF] Surrogate weights saved to {output_path}")

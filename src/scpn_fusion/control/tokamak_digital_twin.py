@@ -330,7 +330,18 @@ def run_digital_twin(
         history_actions.append(action)
         
         if verbose and t % 500 == 0:
-            print(f"Step {t}: AvgTemp={avg_temp:.2f} | Action={action:.2f} | Loss={loss:.4f} | Islands Detected={np.sum(topo.get_rational_surfaces())} px")
+            import logging
+            logger = logging.getLogger("scpn_fusion.control")
+            logger.info(
+                "Digital twin simulation progress",
+                extra={"physics_context": {
+                    "step": t,
+                    "avg_temp": float(avg_temp),
+                    "action": float(action),
+                    "loss": float(loss),
+                    "islands_px": int(np.sum(topo.get_rational_surfaces()))
+                }}
+            )
 
     plot_saved = False
     plot_error = None

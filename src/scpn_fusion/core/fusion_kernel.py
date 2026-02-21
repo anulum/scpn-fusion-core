@@ -1346,8 +1346,12 @@ class FusionKernel:
             # Divergence check
             if np.isnan(Psi_new).any() or np.isinf(Psi_new).any():
                 logger.warning(
-                    "Solver diverged at iter %d — reverting to best state.",
-                    k,
+                    "Solver diverged — reverting to best state.",
+                    extra={"physics_context": {
+                        "iteration": k,
+                        "psi_axis": float(Psi_axis),
+                        "psi_boundary": float(Psi_boundary)
+                    }}
                 )
                 self.Psi = Psi_best
                 if fail_on_diverge:

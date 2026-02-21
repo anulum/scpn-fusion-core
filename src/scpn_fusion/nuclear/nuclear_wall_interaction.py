@@ -205,12 +205,21 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             dist_sq = vec_r**2 + vec_z**2
             dist = np.sqrt(dist_sq)
             
-            # Cosine incidence (Dot product with normal)
-            # We assume toroidal symmetry, so we treat it as line source mostly
-            # Simplified flux: Flux ~ Source / Distance (Cylindrical decay approx)
-            # Correct Spherical: Source / Distance^2
+            # Toroidal View-Factor Correction (P1.1)
+            # Neutrons from a toroidal source ring at (src_r, src_z)
+            # The flux at (wx, wz) scales with 1/dist but also depends on 
+            # the toroidal integral. For large R, it approaches spherical 1/r2.
+            # For small R, the "inner" wall sees more flux due to curvature.
+            toroidal_correction = src_r / wx # Flux enhancement on inner wall
             
-            flux_contrib = src_S / (4 * np.pi * dist_sq)
+            # Cosine incidence (Dot product with normal)
+            # normal is [nr, nz], vec is [vec_r, vec_z]
+            # normalize vec
+            unit_vec_r = vec_r / dist
+            unit_vec_z = vec_z / dist
+            cos_theta = np.maximum(0.0, (unit_vec_r * normal[0] + unit_vec_z * normal[1]))
+            
+            flux_contrib = (src_S * toroidal_correction * cos_theta) / (4.0 * np.pi * dist_sq)
             
             # Sum up
             wall_flux[i] = np.sum(flux_contrib)

@@ -135,33 +135,24 @@ _STIFFNESS = 2.0  # Transport stiffness exponent
 
 def critical_gradient_model(inp: TransportInputs) -> TransportFluxes:
     """Analytic critical-gradient transport model (fallback).
-
-    Implements a stiff critical-gradient model:
-
-        chi_i = chi_GB * max(0, R/L_Ti - crit_ITG)^stiffness
-        chi_e = chi_GB * max(0, R/L_Te - crit_TEM)^stiffness
-        D_e   = chi_e / 3  (simplified Ware pinch)
-
-    This is the same physics as the Rust ``TransportSolver`` but
-    parameterised in terms of normalised gradients rather than raw
-    temperature differences.
-
-    Parameters
-    ----------
-    inp : TransportInputs
-        Local plasma parameters.
-
-    Returns
-    -------
-    TransportFluxes
-        Predicted fluxes with dominant channel identification.
+    Harden with local epsilon scaling for trapped-particle effects.
     """
+    # Inverse aspect ratio estimate (heuristic if not provided)
+    eps = inp.rho / 3.1 # Assuming A=3.1 (ITER-like)
+    
+    # TEM threshold increases with epsilon (trapped fraction)
+    # R/L_Te threshold ~ 4.0 * (1 + 2*eps)
+    crit_tem = 4.0 * (1.0 + 2.0 * eps)
+    
     excess_itg = max(0.0, inp.grad_ti - _CRIT_ITG)
-    excess_tem = max(0.0, inp.grad_te - _CRIT_TEM)
+    excess_tem = max(0.0, inp.grad_te - crit_tem)
 
     chi_i = _CHI_GB * excess_itg ** _STIFFNESS
     chi_e = _CHI_GB * excess_tem ** _STIFFNESS
-    d_e = chi_e / 3.0
+    
+    # D_e (Particle diffusivity) - Ware pinch and trapped-particle scaling
+    # D_e ~ chi_e * (0.1 + 0.5 * sqrt(eps))
+    d_e = chi_e * (0.1 + 0.5 * np.sqrt(eps))
 
     if chi_i > chi_e and chi_i > 0:
         channel = "ITG"
@@ -476,12 +467,19 @@ class NeuralTransportModel:
             return chi_e_out, chi_i_out, d_e_out
 
         # ── Fallback: vectorised critical-gradient model ─────────
+        # Inverse aspect ratio eps(rho)
+        eps = rho / (r_major / 2.0) # a approx R/2
+        eps = np.clip(eps, 0.0, 0.5)
+        
+        crit_tem = 4.0 * (1.0 + 2.0 * eps)
+        
         excess_itg = np.maximum(0.0, grad_ti - _CRIT_ITG)
-        excess_tem = np.maximum(0.0, grad_te - _CRIT_TEM)
+        excess_tem = np.maximum(0.0, grad_te - crit_tem)
 
         chi_i_out = _CHI_GB * excess_itg ** _STIFFNESS
         chi_e_out = _CHI_GB * excess_tem ** _STIFFNESS
-        d_e_out = chi_e_out / 3.0
+        
+        d_e_out = chi_e_out * (0.1 + 0.5 * np.sqrt(eps))
 
         return chi_e_out, chi_i_out, d_e_out
 

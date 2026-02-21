@@ -78,20 +78,69 @@ class SensorSuite:
         for i in range(len(self.wall_R)):
             r, z = self.wall_R[i], self.wall_Z[i]
             
-            # Simple Nearest Neighbor (for speed) or Bilinear
+            # Bilinear Interpolation for higher accuracy
             ir = int((r - self.kernel.R[0]) / self.kernel.dR)
             iz = int((z - self.kernel.Z[0]) / self.kernel.dZ)
             
-            # Bounds check
-            ir = np.clip(ir, 0, self.kernel.NR-1)
-            iz = np.clip(iz, 0, self.kernel.NZ-1)
-            
-            val = self.kernel.Psi[iz, ir]
+            if 0 <= ir < self.kernel.NR-1 and 0 <= iz < self.kernel.NZ-1:
+                # Interpolation weights
+                wr = (r - self.kernel.R[ir]) / self.kernel.dR
+                wz = (z - self.kernel.Z[iz]) / self.kernel.dZ
+                
+                v00 = self.kernel.Psi[iz, ir]
+                v10 = self.kernel.Psi[iz, ir+1]
+                v01 = self.kernel.Psi[iz+1, ir]
+                v11 = self.kernel.Psi[iz+1, ir+1]
+                
+                val = (1-wr)*(1-wz)*v00 + wr*(1-wz)*v10 + (1-wr)*wz*v01 + wr*wz*v11
+            else:
+                val = self.kernel.Psi[np.clip(iz, 0, self.kernel.NZ-1), np.clip(ir, 0, self.kernel.NR-1)]
+                
             # Add Sensor Noise
             val += self._noise(0.01)
             measurements.append(val)
             
         return np.array(measurements)
+
+    def measure_b_field(self):
+        """
+        Calculates local B_field (Br, Bz) at sensor locations using Biot-Savart.
+        Harden with toroidal filament integration.
+        """
+        mu0 = 4.0 * np.pi * 1e-7
+        Br = np.zeros(len(self.wall_R))
+        Bz = np.zeros(len(self.wall_R))
+        
+        # Plasma filaments from J map
+        # Optimization: Downsample J for BS-integration
+        step = 4
+        J_sub = self.kernel.J[::step, ::step]
+        R_sub = self.kernel.RR[::step, ::step]
+        Z_sub = self.kernel.ZZ[::step, ::step]
+        dA = (self.kernel.dR * step) * (self.kernel.dZ * step)
+        
+        fil_r = R_sub.flatten()
+        fil_z = Z_sub.flatten()
+        fil_I = J_sub.flatten() * dA
+        
+        for i in range(len(self.wall_R)):
+            wr, wz = self.wall_R[i], self.wall_Z[i]
+            
+            # Simple 2D Green's function for toroidal current filaments (Infinite line approx or elliptic)
+            # Br = -mu0/2pi * sum( I_j * (wz - fil_z) / dist^2 )
+            # Bz =  mu0/2pi * sum( I_j * (wr - fil_r) / dist^2 )
+            dr = wr - fil_r
+            dz = wz - fil_z
+            dist_sq = dr**2 + dz**2 + 1e-6
+            
+            Br[i] = - (mu0 / (2*np.pi)) * np.sum(fil_I * dz / dist_sq)
+            Bz[i] = (mu0 / (2*np.pi)) * np.sum(fil_I * dr / dist_sq)
+            
+            # Add Noise
+            Br[i] += self._noise(0.005)
+            Bz[i] += self._noise(0.005)
+            
+        return Br, Bz
 
     def measure_bolometer(self, emission_profile):
         """

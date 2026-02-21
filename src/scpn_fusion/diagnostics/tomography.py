@@ -78,25 +78,66 @@ class PlasmaTomography:
 
     def reconstruct(self, signals: np.ndarray) -> np.ndarray:
         """
-        Solve non-negative regularized inversion from chord signals.
+        Solve inversion problem Ax=b with regularization.
+        Uses Phillips-Twomey (Laplacian smoothing) in the fallback path.
         """
         b = np.asarray(signals, dtype=np.float64).reshape(-1)
         if b.size != self.A.shape[0]:
             raise ValueError(
                 f"signals length mismatch: expected {self.A.shape[0]}, got {b.size}."
             )
-        if not np.all(np.isfinite(b)):
-            raise ValueError("signals must be finite.")
-
-        lam = self.lambda_reg
-        A_aug = np.vstack([self.A, np.sqrt(lam) * np.eye(self.n_pixels, dtype=np.float64)])
-        b_aug = np.concatenate([b, np.zeros(self.n_pixels, dtype=np.float64)])
+        # Condition signals: clip negative noise, replace non-finite
+        b = np.nan_to_num(b, nan=0.0, posinf=0.0, neginf=0.0)
+        b = np.maximum(b, 0.0)
 
         if lsq_linear is not None:
+            # SciPy Path: Tikhonov regularization via augmented system
+            # min ||Ax - b||^2 + lambda ||x||^2 s.t. x >= 0
+            lam = self.lambda_reg
+            A_aug = np.vstack([self.A, np.sqrt(lam) * np.eye(self.n_pixels, dtype=np.float64)])
+            b_aug = np.concatenate([b, np.zeros(self.n_pixels, dtype=np.float64)])
             res = lsq_linear(A_aug, b_aug, bounds=(0.0, np.inf), tol=1e-4)
             x = np.asarray(res.x, dtype=np.float64)
         else:
-            x, *_ = np.linalg.lstsq(A_aug, b_aug, rcond=None)
+            # Fallback Path: Phillips-Twomey (Ridge) Smoothing (Analytic)
+            # Solves (A.T @ A + lambda * L) x = A.T @ b
+            # Where L is discrete Laplacian smoothing matrix
+            lam = self.lambda_reg
+            
+            # Construct Laplacian smoothing operator L (2D grid)
+            L = np.eye(self.n_pixels, dtype=np.float64) * 4.0
+            # Neighbors: Left, Right, Up, Down
+            # This is a simplified L for speed (sparse structure handled densely here)
+            # Row-major: -1 (Left), +1 (Right), -res (Down), +res (Up)
+            idx = np.arange(self.n_pixels)
+            
+            # Left neighbor
+            mask_l = (idx % self.res) > 0
+            L[idx[mask_l], idx[mask_l]-1] = -1.0
+            
+            # Right neighbor
+            mask_r = (idx % self.res) < (self.res - 1)
+            L[idx[mask_r], idx[mask_r]+1] = -1.0
+            
+            # Down neighbor
+            mask_d = idx >= self.res
+            L[idx[mask_d], idx[mask_d]-self.res] = -1.0
+            
+            # Up neighbor
+            mask_u = idx < (self.n_pixels - self.res)
+            L[idx[mask_u], idx[mask_u]+self.res] = -1.0
+            
+            # Normal Equations: (A^T A + lambda * L^T L) x = A^T b
+            # Note: L is symmetric, so L^T L = L^2
+            lhs = self.A.T @ self.A + lam * (L.T @ L)
+            rhs = self.A.T @ b
+            
+            try:
+                x = np.linalg.solve(lhs, rhs)
+            except np.linalg.LinAlgError:
+                # Last resort: simple pinv
+                x = np.linalg.lstsq(lhs, rhs, rcond=None)[0]
+                
             x = np.clip(np.asarray(x, dtype=np.float64), 0.0, np.inf)
 
         return x.reshape((self.res, self.res))

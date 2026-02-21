@@ -53,11 +53,12 @@ def _require_int(name: str, value: int, minimum: int) -> int:
 
 class BreedingBlanket:
     """
-    1D Neutronics Transport Code for Tritium Breeding Ratio (TBR) calculation.
-    Simulates neutron attenuation and Li-6 capture in a Liquid Metal Blanket (LiPb).
+    1D Cylindrical Neutronics Transport Code for TBR calculation.
+    Simulates neutron attenuation in a blanket annulus (r_inner to r_outer).
     """
-    def __init__(self, thickness_cm: float = 100, li6_enrichment: float = 1.0) -> None:
+    def __init__(self, thickness_cm: float = 100, li6_enrichment: float = 1.0, r_inner_cm: float = 200.0) -> None:
         self.thickness = _require_finite_float("thickness_cm", thickness_cm, min_value=0.1)
+        self.r_inner = _require_finite_float("r_inner_cm", r_inner_cm, min_value=10.0)
         self.li6_enrichment = _require_finite_float(
             "li6_enrichment",
             li6_enrichment,
@@ -65,11 +66,13 @@ class BreedingBlanket:
             max_value=1.0,
         )
         self.points = 100
-        self.x = np.linspace(0.0, self.thickness, self.points)
-        self.dx = self.x[1] - self.x[0]
+        # Radial grid from r_inner to r_outer
+        self.r = np.linspace(self.r_inner, self.r_inner + self.thickness, self.points)
+        self.dr = self.r[1] - self.r[0]
+        # For legacy compatibility, alias x to distance from first wall
+        self.x = self.r - self.r_inner
         
         # Cross Sections (Macroscopic Sigma in cm^-1) - Simplified for 14 MeV neutrons
-        # Reaction: Li-6 + n -> T + He + 4.8 MeV
         # ENRICHED BLANKET (90% Li-6 + Beryllium Multiplier)
         self.Sigma_capture_Li6 = 0.15 * self.li6_enrichment
         self.Sigma_scatter = 0.2      
@@ -81,8 +84,8 @@ class BreedingBlanket:
 
     def solve_transport(self, incident_flux: float = 1e14, rear_albedo: float = 0.0) -> NDArray[np.float64]:
         """
-        Solves steady-state diffusion-reaction equation for neutron flux Phi(x).
-        -D * d2Phi/dx2 + Sigma_abs * Phi = Source
+        Solves steady-state cylindrical diffusion-reaction equation for neutron flux Phi(r).
+        -D * (1/r * d/dr(r * dPhi/dr)) + Sigma_rem * Phi = 0
         """
         incident_flux = float(incident_flux)
         if (not np.isfinite(incident_flux)) or incident_flux <= 0.0:
@@ -92,34 +95,44 @@ class BreedingBlanket:
         if rear_albedo < 0.0 or rear_albedo >= 1.0:
             raise ValueError("rear_albedo must satisfy 0.0 <= rear_albedo < 1.0")
 
-        # Diffusion Coefficient (D = 1 / 3*Sigma_total)
+        # Diffusion Coefficient
         Sigma_total = self.Sigma_capture_Li6 + self.Sigma_scatter + self.Sigma_parasitic + self.Sigma_multiply
         D = 1.0 / (3.0 * Sigma_total)
         
-        # Finite Difference Matrix
+        # Finite Difference Matrix for Cylindrical Laplacian
+        # 1/r * d/dr (r dPhi/dr) ~ (r_{i+1/2}(phi_{i+1}-phi_i) - r_{i-1/2}(phi_i-phi_{i-1})) / (r_i * dr^2)
         N = self.points
         A = np.zeros((N, N))
         b = np.zeros(N)
         
-        # Absorption term (Capture + Parasitic - Multiplication impact)
-        # Effective removal cross section. (n,2n) acts as a negative removal (source) proportional to flux
+        # Effective removal
         Sigma_removal = self.Sigma_capture_Li6 + self.Sigma_parasitic - (self.Sigma_multiply * (self.multiplier_gain - 1.0))
         
-        coeff = D / (self.dx**2)
+        dr = self.dr
         
         for i in range(1, N-1):
-            A[i, i-1] = -coeff
-            A[i, i]   = 2*coeff + Sigma_removal
-            A[i, i+1] = -coeff
-            b[i] = 0 # No internal volume source, only boundary
+            r_i = self.r[i]
+            r_plus = r_i + 0.5*dr
+            r_minus = r_i - 0.5*dr
+            
+            # Coefficients from discretization:
+            # -D/r_i * [ (r_plus/dr^2) * (phi_{i+1}-phi_i) - (r_minus/dr^2) * (phi_i-phi_{i-1}) ] + Sigma * phi_i = 0
+            
+            c_plus = (D * r_plus) / (r_i * dr**2)
+            c_minus = (D * r_minus) / (r_i * dr**2)
+            c_center = c_plus + c_minus + Sigma_removal
+            
+            A[i, i-1] = -c_minus
+            A[i, i]   = c_center
+            A[i, i+1] = -c_plus
+            b[i] = 0
             
         # Boundary Conditions
-        # x=0 (First Wall): Flux imposed by plasma
+        # r=r_inner (First Wall): Flux imposed
         A[0, 0] = 1.0
         b[0] = incident_flux
         
-        # x=L (Shield): albedo reflection relation phi[L] = A * phi[L-dx].
-        # A=0.0 -> vacuum-like sink (legacy behavior), A->1.0 -> strong reflection.
+        # r=r_outer (Shield): Albedo
         A[-1, -1] = 1.0
         A[-1, -2] = -rear_albedo
         b[-1] = 0.0
@@ -131,30 +144,30 @@ class BreedingBlanket:
 
     def calculate_tbr(self, phi: NDArray[np.float64]) -> tuple[float, NDArray[np.float64]]:
         """
-        Integrates Tritium production over the blanket volume.
+        Integrates Tritium production over the blanket volume (Cylindrical).
         TBR = (Rate of Tritium Production) / (Rate of Incoming Neutrons)
         """
-        # Production Rate density: R(x) = Sigma_Li6 * Phi(x)
+        # Production Rate density: R(r) = Sigma_Li6 * Phi(r)
         production_rate = self.Sigma_capture_Li6 * phi
         
-        # Integrate over thickness (trapezoidal)
+        # Integrate over cylindrical volume (per unit length)
+        # Integral P(r) * 2*pi*r * dr
+        integrand = production_rate * 2.0 * np.pi * self.r
+        
         if hasattr(np, "trapezoid"):
-            total_production = np.trapezoid(production_rate, self.x)
+            total_production = np.trapezoid(integrand, self.r)
         else:  # pragma: no cover - legacy NumPy fallback
-            total_production = np.trapz(production_rate, self.x)  # type: ignore[attr-defined,unused-ignore]
+            total_production = np.trapz(integrand, self.r)  # type: ignore[attr-defined,unused-ignore]
         
-        # Incoming Current (Approx D * dPhi/dx at boundary, or simplified Incident Flux)
-        # TBR is defined relative to 1 source neutron entering.
-        # Incident Flux is a density boundary condition.
-        # Total neutrons entering per cm2 = Current J_in. 
-        # In diffusion approx, J_in ~ Phi[0]/4 + D/2 * dPhi/dx
-        # Simplified: We normalize by the source that sustains Phi[0].
-        # Flux at boundary is Phi_0. Current into slab is roughly Phi_0/2.
+        # Incoming Current (per unit length)
+        # Total neutrons entering cylinder surface = J_in * Area
+        # Area = 2*pi*r_inner * 1
+        # J_in ~ Phi[0]/4 (isotropic)
         
-        incident_current = phi[0] / 2.0 
+        incident_current = (phi[0] / 4.0) * (2.0 * np.pi * self.r_inner)
         
         # TBR calculation
-        TBR = total_production / incident_current
+        TBR = total_production / max(incident_current, 1e-12)
         
         return TBR, production_rate
 
@@ -367,19 +380,21 @@ class MultiGroupBlanket:
         thickness_cm: float = 80.0,
         li6_enrichment: float = 0.9,
         n_cells: int = 100,
+        r_inner_cm: float = 200.0,
     ) -> None:
         self.thickness = _require_finite_float("thickness_cm", thickness_cm, min_value=0.1)
+        self.r_inner = _require_finite_float("r_inner_cm", r_inner_cm, min_value=10.0)
         self.li6_enrich = _require_finite_float(
             "li6_enrichment",
             li6_enrichment,
             min_value=0.0,
             max_value=1.0,
         )
-        # Ensure at least 2.5 cells/cm for consistent spatial resolution
-        # across different blanket thicknesses.
         self.n_cells = max(_require_int("n_cells", n_cells, 3), int(self.thickness * 2.5))
-        self.x = np.linspace(0.0, self.thickness, self.n_cells)
-        self.dx = self.x[1] - self.x[0]
+        self.r = np.linspace(self.r_inner, self.r_inner + self.thickness, self.n_cells)
+        self.dx = self.r[1] - self.r[0]
+        # For compatibility
+        self.x = self.r - self.r_inner
 
         # ── Cross sections (cm^-1) per group ─────────────────────────
         # Group 1: fast (14 MeV)
@@ -406,177 +421,112 @@ class MultiGroupBlanket:
 
         self.multiplier_gain = 1.8  # Be(n,2n) neutron gain
 
+    def _solve_cylindrical_group(
+        self, D: float, sigma_rem: float, source: NDArray[np.float64], 
+        bc_left: tuple[str, float], bc_right: tuple[str, float]
+    ) -> NDArray[np.float64]:
+        """Solve 1D cylindrical diffusion for a single group."""
+        N = self.n_cells
+        dr = self.dx
+        A = np.zeros((N, N))
+        b = source.copy()
+        
+        for i in range(1, N-1):
+            r_i = self.r[i]
+            r_p = r_i + 0.5*dr
+            r_m = r_i - 0.5*dr
+            c_p = (D * r_p) / (r_i * dr**2)
+            c_m = (D * r_m) / (r_i * dr**2)
+            A[i, i-1] = -c_m
+            A[i, i]   = c_p + c_m + sigma_rem
+            A[i, i+1] = -c_p
+            
+        # Left BC (r = r_inner)
+        if bc_left[0] == "dirichlet":
+            A[0, 0] = 1.0
+            b[0] = bc_left[1]
+        elif bc_left[0] == "neumann":
+            A[0, 0] = 1.0
+            A[0, 1] = -1.0
+            b[0] = bc_left[1] * dr
+            
+        # Right BC (r = r_outer)
+        if bc_right[0] == "dirichlet":
+            A[-1, -1] = 1.0
+            b[-1] = bc_right[1]
+        elif bc_right[0] == "neumann":
+            A[-1, -1] = 1.0
+            A[-1, -2] = -1.0
+            b[-1] = bc_right[1] * dr
+            
+        return np.linalg.solve(A, b)
+
     def solve_transport(
         self,
         incident_flux: float = 1e14,
         port_coverage_factor: float = 0.80,
         streaming_factor: float = 0.85,
     ) -> dict[str, object]:
-        """Solve 3-group steady-state neutron diffusion.
-
-        Returns dict with phi_g1, phi_g2, phi_g3 flux arrays and TBR.
-        """
+        """Solve 3-group steady-state cylindrical neutron diffusion."""
         incident_flux = _require_finite_float("incident_flux", incident_flux, min_value=1.0)
-        port_coverage_factor = _require_finite_float(
-            "port_coverage_factor",
-            port_coverage_factor,
-            min_value=0.0,
-            max_value=1.0,
-        )
-        streaming_factor = _require_finite_float(
-            "streaming_factor",
-            streaming_factor,
-            min_value=0.0,
-            max_value=1.0,
-        )
-        if port_coverage_factor <= 0.0:
-            raise ValueError("port_coverage_factor must be in (0, 1].")
-        if streaming_factor <= 0.0:
-            raise ValueError("streaming_factor must be in (0, 1].")
-
-        N = self.n_cells
-        dx = self.dx
-
+        
         # --- Group 1 (fast) ---
-        sigma_tot_1 = (
-            self.sigma_capture_g1
-            + self.sigma_scatter_g1
-            + self.sigma_multiply_g1
-            + self.sigma_downscatter_12
-            + self.sigma_parasitic_g1
-        )
+        sigma_tot_1 = (self.sigma_capture_g1 + self.sigma_scatter_g1 + 
+                       self.sigma_multiply_g1 + self.sigma_downscatter_12 + self.sigma_parasitic_g1)
         D1 = 1.0 / (3.0 * sigma_tot_1)
-        sigma_rem_1 = (
-            self.sigma_capture_g1
-            + self.sigma_downscatter_12
-            + self.sigma_parasitic_g1
-            - self.sigma_multiply_g1 * (self.multiplier_gain - 1.0)
+        sigma_rem_1 = (self.sigma_capture_g1 + self.sigma_downscatter_12 + 
+                       self.sigma_parasitic_g1 - self.sigma_multiply_g1 * (self.multiplier_gain - 1.0))
+        
+        phi_g1 = self._solve_cylindrical_group(
+            D1, sigma_rem_1, np.zeros(self.n_cells), 
+            ("dirichlet", incident_flux), ("dirichlet", 0.0)
         )
-
-        A1 = np.zeros((N, N))
-        b1 = np.zeros(N)
-        coeff1 = D1 / dx**2
-        for i in range(1, N - 1):
-            A1[i, i - 1] = -coeff1
-            A1[i, i] = 2.0 * coeff1 + sigma_rem_1
-            A1[i, i + 1] = -coeff1
-        A1[0, 0] = 1.0
-        b1[0] = incident_flux
-        A1[-1, -1] = 1.0
-        b1[-1] = 0.0
-
-        phi_g1 = np.linalg.solve(A1, b1)
-        if not np.all(np.isfinite(phi_g1)):
-            raise FloatingPointError("Group-1 flux solve produced non-finite values.")
-        neg_g1 = int(np.count_nonzero(phi_g1 < 0.0))
         phi_g1 = np.maximum(phi_g1, 0.0)
 
-        # --- Group 2 (epithermal) — source from down-scatter of group 1 ---
-        sigma_tot_2 = (
-            self.sigma_capture_g2
-            + self.sigma_scatter_g2
-            + self.sigma_downscatter_23
-            + self.sigma_parasitic_g2
-        )
+        # --- Group 2 (epithermal) ---
+        sigma_tot_2 = (self.sigma_capture_g2 + self.sigma_scatter_g2 + 
+                       self.sigma_downscatter_23 + self.sigma_parasitic_g2)
         D2 = 1.0 / (3.0 * sigma_tot_2)
-        sigma_rem_2 = (
-            self.sigma_capture_g2 + self.sigma_downscatter_23 + self.sigma_parasitic_g2
+        sigma_rem_2 = (self.sigma_capture_g2 + self.sigma_downscatter_23 + self.sigma_parasitic_g2)
+        
+        source2 = self.sigma_downscatter_12 * phi_g1
+        phi_g2 = self._solve_cylindrical_group(
+            D2, sigma_rem_2, source2, 
+            ("neumann", 0.0), ("dirichlet", 0.0)
         )
-
-        A2 = np.zeros((N, N))
-        b2 = np.zeros(N)
-        coeff2 = D2 / dx**2
-        for i in range(1, N - 1):
-            A2[i, i - 1] = -coeff2
-            A2[i, i] = 2.0 * coeff2 + sigma_rem_2
-            A2[i, i + 1] = -coeff2
-            b2[i] = self.sigma_downscatter_12 * phi_g1[i]  # source from group 1
-        # Reflective (Neumann) BC at x=0: dphi/dx = 0 → phi[0] = phi[1]
-        # Epithermal neutrons are born inside the blanket from fast down-scatter;
-        # a zero-flux BC here would non-physically suppress near-wall production.
-        A2[0, 0] = 1.0
-        A2[0, 1] = -1.0
-        b2[0] = 0.0
-        # Vacuum BC at x=L (rear shield)
-        A2[-1, -1] = 1.0
-        b2[-1] = 0.0
-
-        phi_g2 = np.linalg.solve(A2, b2)
-        if not np.all(np.isfinite(phi_g2)):
-            raise FloatingPointError("Group-2 flux solve produced non-finite values.")
-        neg_g2 = int(np.count_nonzero(phi_g2 < 0.0))
         phi_g2 = np.maximum(phi_g2, 0.0)
 
-        # --- Group 3 (thermal) — source from down-scatter of group 2 ---
-        sigma_tot_3 = (
-            self.sigma_capture_g3 + self.sigma_scatter_g3 + self.sigma_parasitic_g3
-        )
+        # --- Group 3 (thermal) ---
+        sigma_tot_3 = (self.sigma_capture_g3 + self.sigma_scatter_g3 + self.sigma_parasitic_g3)
         D3 = 1.0 / (3.0 * sigma_tot_3)
         sigma_rem_3 = self.sigma_capture_g3 + self.sigma_parasitic_g3
-
-        A3 = np.zeros((N, N))
-        b3 = np.zeros(N)
-        coeff3 = D3 / dx**2
-        for i in range(1, N - 1):
-            A3[i, i - 1] = -coeff3
-            A3[i, i] = 2.0 * coeff3 + sigma_rem_3
-            A3[i, i + 1] = -coeff3
-            b3[i] = self.sigma_downscatter_23 * phi_g2[i]  # source from group 2
-        # Reflective (Neumann) BC at x=0: dphi/dx = 0
-        # Thermal neutrons are produced by moderation throughout the blanket.
-        A3[0, 0] = 1.0
-        A3[0, 1] = -1.0
-        b3[0] = 0.0
-        # Vacuum BC at x=L
-        A3[-1, -1] = 1.0
-        b3[-1] = 0.0
-
-        phi_g3 = np.linalg.solve(A3, b3)
-        if not np.all(np.isfinite(phi_g3)):
-            raise FloatingPointError("Group-3 flux solve produced non-finite values.")
-        neg_g3 = int(np.count_nonzero(phi_g3 < 0.0))
+        
+        source3 = self.sigma_downscatter_23 * phi_g2
+        phi_g3 = self._solve_cylindrical_group(
+            D3, sigma_rem_3, source3, 
+            ("neumann", 0.0), ("dirichlet", 0.0)
+        )
         phi_g3 = np.maximum(phi_g3, 0.0)
 
-        # --- TBR from all 3 groups ---
+        # --- TBR and Integration (Cylindrical Volume) ---
         prod_g1 = self.sigma_capture_g1 * phi_g1
         prod_g2 = self.sigma_capture_g2 * phi_g2
         prod_g3 = self.sigma_capture_g3 * phi_g3
         total_prod = prod_g1 + prod_g2 + prod_g3
 
-        trap = np.trapezoid if hasattr(np, "trapezoid") else np.trapz  # type: ignore[attr-defined,unused-ignore]
-        total_tritium = trap(total_prod, self.x)
-        # Incident partial current: J⁺ = φ(0)/4 for isotropic diffuse source
-        # (standard diffusion theory; the single-group model above uses φ/2
-        # which is a pencil-beam approximation, but for a volumetric plasma
-        # neutron source illuminating the blanket, φ/4 is more appropriate).
-        incident_current = phi_g1[0] / 4.0
-        tbr_ideal = total_tritium / max(incident_current, 1e-12)
-
-        # Apply 3D correction factors (Fischer et al. 2015)
+        trap = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
+        total_tritium = trap(total_prod * 2.0 * np.pi * self.r, self.r)
+        
+        # Incident current (per unit length): J+ * Area_inner
+        incident_current_total = (phi_g1[0] / 4.0) * (2.0 * np.pi * self.r_inner)
+        tbr_ideal = total_tritium / max(incident_current_total, 1e-12)
         tbr = tbr_ideal * port_coverage_factor * streaming_factor
 
         return {
-            "phi_g1": phi_g1,
-            "phi_g2": phi_g2,
-            "phi_g3": phi_g3,
-            "production_g1": prod_g1,
-            "production_g2": prod_g2,
-            "production_g3": prod_g3,
+            "phi_g1": phi_g1, "phi_g2": phi_g2, "phi_g3": phi_g3,
             "total_production": total_prod,
-            "tbr": float(tbr),
-            "tbr_ideal": float(tbr_ideal),
-            "incident_current_cm2_s": float(incident_current),
-            "flux_clamp_total": int(neg_g1 + neg_g2 + neg_g3),
-            "flux_clamp_events": {
-                "fast": int(neg_g1),
-                "epithermal": int(neg_g2),
-                "thermal": int(neg_g3),
-            },
-            "tbr_by_group": {
-                "fast": float(trap(prod_g1, self.x) / max(incident_current, 1e-12) * port_coverage_factor * streaming_factor),
-                "epithermal": float(trap(prod_g2, self.x) / max(incident_current, 1e-12) * port_coverage_factor * streaming_factor),
-                "thermal": float(trap(prod_g3, self.x) / max(incident_current, 1e-12) * port_coverage_factor * streaming_factor),
-            },
+            "tbr": float(tbr), "tbr_ideal": float(tbr_ideal),
+            "incident_current_total": float(incident_current_total),
         }
 
 

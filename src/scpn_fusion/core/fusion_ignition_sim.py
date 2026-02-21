@@ -97,11 +97,28 @@ class FusionBurnPhysics(FusionKernel):
         # Alphas carry 20% of fusion energy (3.5 MeV / 17.6 MeV)
         P_alpha = P_fusion_total * 0.2
         
-        # 4. Losses (Simplified Confinement scaling)
-        # Tau_E (Energy Confinement Time) ~ ITER98y2 scaling
-        # Simplified: Fixed loss + Bremsstrahlung
+        # 4. Losses (IPB98(y,2) Confinement scaling)
+        # Tau_E = 0.0562 * Ip^0.93 * Bt^0.15 * n19^0.41 * P^-0.69 * R^1.97 * eps^0.58 * kappa^0.78 * M^0.19
         W_thermal = np.sum(3 * n * (T * 1.602e-16) * dV) # Thermal energy in Joules
-        Tau_E = 3.0 # seconds (Good H-mode)
+        
+        # Extraction of parameters for scaling
+        Ip_MA = self.cfg["physics"].get("plasma_current_target", 15.0e6) / 1e6
+        Bt = self.cfg["dimensions"].get("B0", 5.3) # Nominal
+        n19 = n_peak / 1e19
+        R = self.cfg["dimensions"].get("R0", 6.2)
+        a = (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / 2.0
+        eps = a / R
+        kappa = self.cfg["dimensions"].get("kappa", 1.7)
+        M_eff = 2.5 # D-T
+        
+        # Power for scaling (Loss power)
+        P_loss_scaling_MW = max((P_aux_MW + P_alpha/1e6), 1.0)
+        
+        Tau_E = (0.0562 * Ip_MA**0.93 * Bt**0.15 * n19**0.41 * 
+                 P_loss_scaling_MW**(-0.69) * R**1.97 * eps**0.58 * 
+                 kappa**0.78 * M_eff**0.19)
+        
+        Tau_E = np.clip(Tau_E, 0.1, 10.0) # Physical bounds
         P_loss = W_thermal / Tau_E
         
         # 5. Global Balance

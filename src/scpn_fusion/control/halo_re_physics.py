@@ -450,26 +450,34 @@ class RunawayElectronModel:
             return 0.0
         return max(float(growth * deconfinement_factor), 0.0)
 
-    def _fokker_planck_generation(self, E: float, n_re: float) -> float:
+    def _fokker_planck_generation(self, E: float, n_re: float, T_e_keV: float = 0.5) -> float:
         """
-        Simplified Relativistic Fokker-Planck generation rate.
-        Models the diffusion into the runaway region of momentum space.
-        dn/dt ~ (E/Ec - 1) * n_re / tau_sync + D_pp * d2n/dp2
+        Hardened Hot-tail generation heuristic.
+        Models the residual high-energy tail of the Maxwellian distribution
+        remaining after a rapid thermal quench.
         """
         if not np.isfinite(E) or not np.isfinite(n_re):
             return 0.0
-        if E <= self.E_c or n_re <= 0.0:
+        if E <= self.E_c or T_e_keV <= 0.01:
             return 0.0
 
-        # Effective diffusion coefficient in momentum space
-        # Highly sensitive to E-field over critical field
-        e_ratio = E / self.E_c
-
-        # Empirical FP-like growth term
-        fp_rate = n_re * max(e_ratio - 1.0, 0.0) ** 1.5 / max(self.tau_av * 5.0, 1e-20)
-        if not np.isfinite(fp_rate):
-            return 0.0
-        return float(max(fp_rate, 0.0))
+        # Critical velocity for runaway: v_c/v_th = sqrt(E_D / E)
+        T_joules = T_e_keV * 1e3 * _E_CHARGE
+        E_D = (self.n_e_free * _E_CHARGE**3 * _LN_LAMBDA / 
+               (4.0 * np.pi * _EPSILON0**2 * T_joules))
+        
+        u_c_sq = E_D / max(E, 1e-6)
+        
+        # Hot-tail fraction: n_ht ~ n_e * exp(-u_c^2)
+        # Using a more robust scaling for quenching plasmas
+        # dn/dt_ht ~ (n_e / tau_coll) * exp(-E_D / (2*E))
+        # Note: 2*E rather than 4*E (Dreicer) to account for non-Maxwellian tail
+        exp_arg = -u_c_sq / 2.0
+        if exp_arg < -700.0: return 0.0
+        
+        rate = (self.n_e_free / max(self.tau_coll, 1e-20)) * np.exp(exp_arg)
+        
+        return float(max(rate, 0.0))
 
     def _relativistic_loss_rate(self, *, E: float, n_re: float) -> float:
         """Approximate synchrotron + bremsstrahlung damping rate (s^-1 m^-3)."""
@@ -566,7 +574,7 @@ class RunawayElectronModel:
             dreicer_rates.append(gamma_D)
             gamma_av = self._avalanche_rate(E_tor, n_re)
             avalanche_rates.append(gamma_av)
-            gamma_FP = self._fokker_planck_generation(E_tor, n_re)
+            gamma_FP = self._fokker_planck_generation(E_tor, n_re, T_e_keV=T_e)
             fp_rates.append(gamma_FP)
             relativistic_loss = self._relativistic_loss_rate(E=E_tor, n_re=n_re)
 
