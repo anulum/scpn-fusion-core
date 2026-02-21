@@ -1,6 +1,6 @@
 # Streamlit Demo Playbook (3 Minutes)
 
-This playbook standardizes a public demo run for SCPN Fusion Core v3.8.3.
+This playbook standardizes a public demo run for SCPN Fusion Core v3.9.0.
 
 ## Goal
 

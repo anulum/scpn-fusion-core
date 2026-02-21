@@ -1,4 +1,4 @@
-# Competitive Analysis — SCPN Fusion Core v3.8.3
+# Competitive Analysis — SCPN Fusion Core v3.9.0
 
 > **Last updated:** 2026-02-20.
 > Community code timings are from published literature (references at end).

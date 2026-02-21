@@ -8,6 +8,30 @@
 
 # Changelog
 
+## [3.9.0] — 2026-02-21
+
+### Added — QLKNN-10D Real-Data Training Pipeline
+
+- **QLKNN-10D Data Acquisition**: `tools/download_qlknn10d.py` — downloads 300M QuaLiKiz flux calculations from Zenodo (DOI: 10.5281/zenodo.3497066) with SHA256 checksum verification and resume support
+- **Data Pipeline**: `tools/qlknn10d_to_npz.py` — converts QLKNN-10D HDF5 to training `.npz` files with column mapping, gyro-Bohm → physical conversion, regime classification (ITG/TEM/stable), and stratified 90/5/5 splits
+- **MLP Training on Real Data**: `tools/train_neural_transport_qlknn.py` — JAX trainer with Adam + cosine annealing, verification gates (refuses to save if test_relative_l2 >= 0.05), and GPU auto-detection
+- **FNO Spatial Data Generation**: `tools/generate_fno_qlknn_spatial.py` — uses trained QLKNN MLP as oracle to generate (equilibrium, transport_field) spatial pairs for FNO training
+- **FNO Training on Real Data**: `tools/train_fno_qlknn_spatial.py` — JAX FNO training on spatial transport data with spectral convolution, targeting relative L2 < 0.10 (down from 0.79 on synthetic data)
+- **GPU Diagnostic**: `tools/check_gpu.py` — reports JAX GPU, PyTorch CUDA, and Rust wgpu availability with device details
+- **Validation Suite**: `validation/validate_transport_qlknn.py` — validates trained MLP against held-out QLKNN test set with per-output and per-regime metrics, compares against published benchmarks
+- **Published Benchmarks**: `validation/reference_data/qlknn10d_published_benchmarks.json` — van de Plassche et al., *Phys. Plasmas* 27, 022310 (2020) accuracy figures
+- **Variable-Depth MLP Loader**: `neural_transport.py` auto-detects MLP depth from `.npz` keys (w1/b1, w2/b2, ..., wN/bN), supporting 2+ layer architectures while maintaining backward compatibility with existing 3-layer weights
+- **GELU Activation**: MLP forward pass uses GELU (matching JAX/PyTorch training) instead of ReLU for hidden layers
+- **GPU Optional Dependency**: `pyproject.toml` adds `gpu = ["jax[cuda12]>=0.4.20"]`
+
+### Fixed
+
+- Removed inflated FNO claims: "0.9997 TGLF correlation" (was based on 3 synthetic data points) and "98% suppression efficiency" (was hardcoded, never measured) from README.md, RESULTS.md, BENCHMARKS.md, and DOE pitch
+- Fixed corrupted UTF-16 encoded entries in `.gitignore`
+- `validation/collect_results.py` now reads actual metrics from manifest instead of hardcoding values
+
+---
+
 ## [3.8.3] — 2026-02-21
 
 ### Added — v4.0 Elite Hardening & Full CI Green
