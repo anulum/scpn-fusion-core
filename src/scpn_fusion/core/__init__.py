@@ -65,3 +65,35 @@ from .stability_mhd import (
     ntm_stability,
     run_full_stability_check,
 )
+# Additional modules available via lazy import to avoid circular deps
+_LAZY_IMPORTS: dict[str, tuple[str, str]] = {
+    "CompactReactorArchitect": (".compact_reactor_optimizer", "CompactReactorArchitect"),
+    "ReactorConfig": (".config_schema", "ReactorConfig"),
+    "DivertorLab": (".divertor_thermal_sim", "DivertorLab"),
+    "EpedPedestalModel": (".eped_pedestal", "EpedPedestalModel"),
+    "PedestalResult": (".eped_pedestal", "PedestalResult"),
+    "GEqdsk": (".eqdsk", "GEqdsk"),
+    "read_geqdsk": (".eqdsk", "read_geqdsk"),
+    "write_geqdsk": (".eqdsk", "write_geqdsk"),
+    "GlobalDesignExplorer": (".global_design_scanner", "GlobalDesignExplorer"),
+    "NeuralEqConfig": (".neural_equilibrium", "NeuralEqConfig"),
+    "NeuralTransportModel": (".neural_transport", "NeuralTransportModel"),
+    "RFHeatingSystem": (".rf_heating", "RFHeatingSystem"),
+    "ECRHHeatingSystem": (".rf_heating", "ECRHHeatingSystem"),
+    "StabilityAnalyzer": (".stability_analyzer", "StabilityAnalyzer"),
+    "FusionState": (".state_space", "FusionState"),
+    "PlasmaScenario": (".uncertainty", "PlasmaScenario"),
+    "UQResult": (".uncertainty", "UQResult"),
+    "WholeDeviceModel": (".wdm_engine", "WholeDeviceModel"),
+}
+
+
+def __getattr__(name: str):
+    if name in _LAZY_IMPORTS:
+        module_path, attr = _LAZY_IMPORTS[name]
+        import importlib
+        mod = importlib.import_module(module_path, __name__)
+        val = getattr(mod, attr)
+        globals()[name] = val
+        return val
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

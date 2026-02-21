@@ -8,3 +8,4 @@
 # SCPN Engineering Module
 from .balance_of_plant import PowerPlantModel
 from .cad_raytrace import CADLoadReport, estimate_surface_loading, load_cad_mesh
+from .thermal_hydraulics import CoolantLoop

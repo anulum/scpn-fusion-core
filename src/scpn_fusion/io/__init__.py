@@ -26,6 +26,7 @@ from .imas_connector import (
     write_ids,
     read_ids,
 )
+from .logging_config import FusionJSONFormatter, setup_fusion_logging
 from .tokamak_archive import (
     TokamakProfile,
     DEFAULT_MDSPLUS_NODE_MAP,
