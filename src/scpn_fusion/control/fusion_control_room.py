@@ -126,6 +126,49 @@ class DiagnosticSystem:
         return float(true_z + self._rng.normal(0.0, 0.05))
 
 
+class KalmanObserver:
+    """
+    Linear Kalman Filter for robust plasma position state estimation.
+    Harden state estimation against sensor noise and dropout.
+    """
+    def __init__(self, dt: float = 0.1):
+        # State: [z, v_z]
+        self.x = np.array([0.0, 0.0])
+        self.P = np.eye(2) * 0.1
+        
+        # Transition Matrix (Linear drift model)
+        self.A = np.array([[1.0, dt],
+                           [0.0, 0.9]]) # 0.9 matches drift damping in engine
+        
+        # Measurement Matrix (We only measure position z)
+        self.H = np.array([[1.0, 0.0]])
+        
+        # Covariance Matrices
+        self.Q = np.eye(2) * 0.01 # Process Noise
+        self.R = np.array([[0.05]]) # Measurement Noise
+        
+    def update(self, measured_z: float, dropout: bool = False) -> float:
+        """Perform Predict-Correct cycle. Returns filtered Z-position."""
+        # 1. Predict
+        self.x = self.A @ self.x
+        self.P = self.A @ self.P @ self.A.T + self.Q
+        
+        # 2. Correct (Skip if dropout detected)
+        if not dropout and np.isfinite(measured_z):
+            # Innovation
+            y = measured_z - (self.H @ self.x)
+            S = self.H @ self.P @ self.H.T + self.R
+            K = self.P @ self.H.T @ np.linalg.inv(S)
+            
+            self.x = self.x + K @ y
+            self.P = (np.eye(2) - K @ self.H) @ self.P
+        else:
+            # Covariance Inflation on dropout to represent increased uncertainty
+            self.P *= 1.2
+            
+        return float(self.x[0])
+
+
 class NeuralController:
     """PID-style control policy for vertical stabilization."""
 
@@ -318,9 +361,11 @@ def run_control_room(
 
     reactor = TokamakPhysicsEngine(seed=seed, kernel=kernel)
     sensors = DiagnosticSystem(rng=rng)
+    observer = KalmanObserver()
     ai = NeuralController()
 
     history_z: list[float] = []
+    history_z_measured: list[float] = []
     history_top: list[float] = []
     history_bot: list[float] = []
     frames: list[dict[str, Any]] = []
@@ -346,12 +391,19 @@ def run_control_room(
 
         true_z = reactor.step_dynamics(top_action, bot_action)
         density, psi = reactor.solve_flux_surfaces()
-        measured_z = sensors.measure_position(true_z)
-        top_action, bot_action = ai.compute_action(measured_z)
+        
+        # Sensor measurement with potential dropout
+        raw_measured_z = sensors.measure_position(true_z)
+        dropout = (frame % 20 == 0) # Simulate periodic glitch
+        
+        # State estimation
+        filtered_z = observer.update(raw_measured_z, dropout=dropout)
+        
+        # AI uses filtered state
+        top_action, bot_action = ai.compute_action(filtered_z)
 
         history_z.append(float(true_z))
-        history_top.append(float(top_action))
-        history_bot.append(float(bot_action))
+        history_z_measured.append(float(raw_measured_z))
         frames.append(
             {
                 "density": np.asarray(density, dtype=np.float64).copy(),

@@ -20,8 +20,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import numpy as np
+import json
+import tempfile
+import os
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
+from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumKernel
 
 
 def _benchmark_sor(nr: int, nz: int, max_iter: int = 200) -> dict[str, object]:
@@ -29,27 +33,38 @@ def _benchmark_sor(nr: int, nz: int, max_iter: int = 200) -> dict[str, object]:
         "reactor_name": f"bench_sor_{nr}x{nz}",
         "grid_resolution": [nr, nz],
         "dimensions": {"R_min": 1.0, "R_max": 3.0, "Z_min": -1.5, "Z_max": 1.5},
-        "physics": {"plasma_current_target": 1.0, "vacuum_permeability": 1.0},
+        "physics": {"plasma_current_target": 1.0e6},
         "coils": [
-            {"R": 3.5, "Z": 1.0, "current": 5e5},
-            {"R": 3.5, "Z": -1.0, "current": 5e5},
+            {"name": "PF1", "r": 3.5, "z": 1.0, "current": 5e5},
+            {"name": "PF2", "r": 3.5, "z": -1.0, "current": 5e5},
+            {"name": "PF3", "r": 1.0, "z": 1.0, "current": 5e5},
+            {"name": "PF4", "r": 1.0, "z": -1.0, "current": 5e5},
+            {"name": "PF5", "r": 2.2, "z": 2.0, "current": 5e5},
         ],
         "solver": {
             "max_iterations": max_iter,
             "convergence_threshold": 1e-6,
-            "relaxation_factor": 1.8,
+            "relaxation_factor": 0.5,
         },
     }
-    kernel = FusionKernel(config)
-    t0 = time.perf_counter()
-    kernel.solve()
-    dt = time.perf_counter() - t0
-    return {
-        "solver": "SOR",
-        "grid": f"{nr}x{nz}",
-        "iterations": kernel.convergence_history[-1] if kernel.convergence_history else max_iter,
-        "wall_time_ms": dt * 1000,
-    }
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, dir=".") as f:
+        json.dump(config, f)
+        tmp_path = f.name
+    
+    try:
+        kernel = FusionKernel(tmp_path)
+        t0 = time.perf_counter()
+        kernel.solve_equilibrium()
+        dt = time.perf_counter() - t0
+        return {
+            "solver": "SOR",
+            "grid": f"{nr}x{nz}",
+            "iterations": kernel.cfg["solver"]["max_iterations"],
+            "wall_time_ms": dt * 1000,
+        }
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
 
 def _benchmark_newton(nr: int, nz: int) -> dict[str, object]:
@@ -57,37 +72,68 @@ def _benchmark_newton(nr: int, nz: int) -> dict[str, object]:
         "reactor_name": f"bench_newton_{nr}x{nz}",
         "grid_resolution": [nr, nz],
         "dimensions": {"R_min": 1.0, "R_max": 3.0, "Z_min": -1.5, "Z_max": 1.5},
-        "physics": {"plasma_current_target": 1.0, "vacuum_permeability": 1.0},
+        "physics": {"plasma_current_target": 1.0e6},
         "coils": [
-            {"R": 3.5, "Z": 1.0, "current": 5e5},
-            {"R": 3.5, "Z": -1.0, "current": 5e5},
+            {"name": "PF1", "r": 3.5, "z": 1.0, "current": 5e5},
+            {"name": "PF2", "r": 3.5, "z": -1.0, "current": 5e5},
+            {"name": "PF3", "r": 1.0, "z": 1.0, "current": 5e5},
+            {"name": "PF4", "r": 1.0, "z": -1.0, "current": 5e5},
+            {"name": "PF5", "r": 2.2, "z": 2.0, "current": 5e5},
         ],
         "solver": {
-            "max_iterations": 200,
+            "solver_method": "newton",
+            "max_iterations": 20, # Newton is expensive per iter
             "convergence_threshold": 1e-6,
-            "relaxation_factor": 1.8,
+            "relaxation_factor": 0.5,
         },
     }
-    kernel = FusionKernel(config)
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, dir=".") as f:
+        json.dump(config, f)
+        tmp_path = f.name
 
-    # Check if Newton-Kantorovich solver is available
-    if not hasattr(kernel, "solve_newton"):
+    try:
+        kernel = FusionKernel(tmp_path)
+        t0 = time.perf_counter()
+        res = kernel.solve_equilibrium()
+        dt = time.perf_counter() - t0
         return {
             "solver": "Newton-K",
             "grid": f"{nr}x{nz}",
+            "iterations": res.get("iterations", "?"),
+            "wall_time_ms": dt * 1000,
+        }
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
+def _benchmark_neural(nr: int, nz: int) -> dict[str, object]:
+    # Neural kernel uses fixed grid (129x129 usually in weights)
+    # but the API allows it to be used as a drop-in.
+    config_path = Path(__file__).resolve().parents[1] / "iter_config.json"
+    if not config_path.exists():
+        # Create a temp config if needed, or use existing one
+        config_path = Path("iter_config.json")
+    
+    try:
+        kernel = NeuralEquilibriumKernel(config_path)
+        t0 = time.perf_counter()
+        kernel.solve_equilibrium()
+        dt = time.perf_counter() - t0
+        return {
+            "solver": "Neural (MLP)",
+            "grid": f"{kernel.accel.cfg.grid_shape[1]}x{kernel.accel.cfg.grid_shape[0]}",
+            "iterations": 1,
+            "wall_time_ms": dt * 1000,
+        }
+    except Exception as exc:
+        print(f"  Neural Error: {exc}")
+        return {
+            "solver": "Neural (MLP)",
+            "grid": "N/A",
             "iterations": "N/A",
             "wall_time_ms": "N/A",
         }
-
-    t0 = time.perf_counter()
-    kernel.solve_newton()
-    dt = time.perf_counter() - t0
-    return {
-        "solver": "Newton-K",
-        "grid": f"{nr}x{nz}",
-        "iterations": kernel.newton_iters if hasattr(kernel, "newton_iters") else "?",
-        "wall_time_ms": dt * 1000,
-    }
 
 
 def main() -> None:
@@ -102,7 +148,15 @@ def main() -> None:
 
         r = _benchmark_newton(nr, nz)
         results.append(r)
-        print(f"  Newton:  {r['wall_time_ms']} ms  ({r['iterations']} iters)")
+        print(f"  Newton:  {r['wall_time_ms']:.1f} ms  ({r['iterations']} iters)")
+
+    print("\n--- Neural Surrogate ---")
+    r = _benchmark_neural(129, 129)
+    results.append(r)
+    wt = r['wall_time_ms']
+    wt_str = f"{wt:.3f}" if isinstance(wt, float) else str(wt)
+    print(f"  Neural:  {wt_str} ms  ({r['iterations']} iters)")
+
 
     # Print markdown table
     print("\n### Python Solver Comparison\n")

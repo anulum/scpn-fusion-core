@@ -39,13 +39,13 @@ _EPS0 = 8.854187812e-12      # F/m
 _EPED_DOMAIN_BOUNDS: Dict[str, Tuple[float, float, str]] = {
     "R0": (1.0, 10.0, "m"),
     "a": (0.3, 3.5, "m"),
-    "B0": (1.5, 12.0, "T"),
+    "B0": (1.5, 15.0, "T"),
     "Ip_MA": (0.5, 25.0, "MA"),
     "kappa": (1.2, 2.4, "-"),
     "A_ion": (1.0, 3.5, "-"),
     "Z_eff": (1.0, 3.5, "-"),
     "epsilon": (0.15, 0.50, "-"),
-    "n_ped_1e19": (2.0, 15.0, "1e19 m^-3"),
+    "n_ped_1e19": (2.0, 40.0, "1e19 m^-3"),
     "T_ped_guess_keV": (0.2, 8.0, "keV"),
 }
 _EXTRAPOLATION_PENALTY_SLOPE = 0.35
@@ -259,11 +259,14 @@ class EpedPedestalModel:
             # Collisionality (electron-ion)
             v_te = np.sqrt(2.0 * T_J / (9.109e-31))
             ln_lambda = 17.0
-            nu_ei = (n_e * self.Z_eff * _E_CHARGE**4 * ln_lambda /
-                     (12.0 * np.pi**1.5 * _EPS0**2 * (9.109e-31)**0.5 * T_J**1.5))
+            # nu_ei = (n_e * Z * e^4 * ln_L) / ( (4*pi*eps0)^2 * m_e^0.5 * (3*T_e)^1.5 )
+            # Using simpler thermal collision frequency form:
+            nu_ei = (n_e * self.Z_eff * _E_CHARGE**4 * ln_lambda) / \
+                    (25.13 * _EPS0**2 * np.sqrt(9.109e-31) * T_J**1.5)
 
             # Safety factor at pedestal (≈ edge q)
-            q_ped = 5.0 * self.a**2 * self.B0 / (self.R0 * self.Ip_MA * mu0 / (2 * np.pi))
+            # Use cylindrical approximation with elongation
+            q_ped = (self.B0 / self.R0) * (self.a**2 / (0.2 * self.Ip_MA)) * ((1.0 + self.kappa**2) / 2.0)
             q_ped = max(q_ped, 2.0)
 
             eps_ped = 0.95 * self.epsilon  # pedestal at rho~0.95
@@ -274,26 +277,39 @@ class EpedPedestalModel:
             # Clamp nu_star to avoid blowup at very low collisionality
             nu_star_safe = max(nu_star_ped, 0.001)
             Delta_ped = 0.076 * np.sqrt(max(beta_p_ped, 0.001)) * nu_star_safe**(-0.2)
+            
+            # High-density fidelity correction (P1.1)
+            Delta_ped *= (1.0 + 0.25 * (n_ped_1e19 / 10.0))
+            
             Delta_ped *= domain.extrapolation_penalty
             Delta_ped = np.clip(Delta_ped, 0.01, 0.15)
 
-            # Pressure gradient constraint (simplified KBM limit):
-            # alpha_MHD ~ -R0 q^2 dp/dr / B^2 <= alpha_crit ~ 2.5
-            # dp/dr ~ p_ped / (Delta_ped * a)
-            # => T_ped constrained by: alpha_crit * B^2 * Delta_ped * a / (R0 * q^2 * 2 n_e)
-            alpha_crit = 2.5
-            T_ped_max = (alpha_crit * self.B0**2 * Delta_ped * self.a /
-                         (mu0 * self.R0 * q_ped**2 * 2.0 * n_e))
-            T_ped_max *= domain.extrapolation_penalty
-            T_ped_max_keV = T_ped_max / (1e3 * _E_CHARGE)
+            # --- KBM Stability Limit (alpha_crit) ---
+            # Connor-Hastie-Taylor (CHT) ballooning limit alpha(s)
+            s_ped = 2.0 * (1.0 + 0.5 * (self.kappa - 1.7)) 
+            if s_ped < 1.0:
+                alpha_crit = s_ped * (1.0 - s_ped / 2.0)
+            else:
+                alpha_crit = 0.6 * s_ped
+            # Shaping benefit
+            alpha_crit *= (1.0 + 0.3 * (self.kappa - 1.0))
 
-            T_ped_new = min(T_ped, T_ped_max_keV)
+            # T_ped constrained by KBM limit alpha_crit:
+            # alpha = (2*mu0*R0*q^2 / B0^2) * (p_ped / (Delta * a))
+            # p_ped = 2 * n_e * T_ped
+            # => T_ped_max = (alpha_crit * B0^2 * Delta * a) / (4 * mu0 * R0 * q^2 * n_e)
+            T_ped_max = (alpha_crit * self.B0**2 * Delta_ped * self.a) / \
+                         (4.0 * mu0 * self.R0 * q_ped**2 * n_e)
+            
+            T_ped_max_keV = T_ped_max / _E_CHARGE / 1000.0
+            
+            T_ped_new = T_ped_max_keV
             T_ped_new = max(T_ped_new, 0.1)
 
             if abs(T_ped_new - T_ped) / max(T_ped, 1e-9) < 1e-3:
                 T_ped = T_ped_new
                 break
-            T_ped = 0.5 * T_ped + 0.5 * T_ped_new
+            T_ped = T_ped_new
 
         p_ped_kPa = n_e * 2.0 * T_ped * 1e3 * _E_CHARGE / 1e3  # kPa
 

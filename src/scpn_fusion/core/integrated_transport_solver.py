@@ -574,22 +574,40 @@ class TransportSolver(FusionKernel):
     def calculate_bootstrap_current_simple(self, R0, B_pol):
         """
         Calculates the neoclassical bootstrap current density [A/m2]
-        using a simplified Sauter model.
-        J_bs = - (R/B_pol) * [ L31 * (dP/dpsi) + ... ]
+        using a calibrated-heuristic Sauter model.
+        J_bs = - (R/B_pol) * [ L31 * dP/dpsi + L32 * n*dTe/dpsi + L34 * n*dTi/dpsi ]
         """
-        # Simplified Sauter model coefficients
-        # In a real model, these depend on collisionality and trapped fraction
-        f_trapped = 1.46 * np.sqrt(self.rho * (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / (2 * R0))
+        a = (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / 2.0
+        r = self.rho * a
+        epsilon = r / R0
+        
+        # Trapped fraction (approximate)
+        f_trapped = 1.46 * np.sqrt(epsilon)
+        
+        # Gradients (SI units: J/m3 per m)
+        e_charge = 1.602e-16 # keV to J
+        n_e = self.ne * 1e19
+        dn_dr = np.gradient(n_e, self.drho * a)
+        dTe_dr = np.gradient(self.Te * e_charge, self.drho * a)
+        dTi_dr = np.gradient(self.Ti * e_charge, self.drho * a)
 
-        # Pressure gradient in SI
-        P = self.ne * 1e19 * (self.Ti + self.Te) * 1.602e-16 # J/m3
-        dP_drho = np.gradient(P, self.drho)
+        # Effective B_pol for toroidal geometry
+        B_pol = np.maximum(B_pol, 0.1) 
 
-        # Scaling constant for J_bs
-        # J_bs ~ f_trapped / B_pol * dP/dr
-        B_pol = np.maximum(B_pol, 0.1) # Avoid div by zero at axis
+        # Sauter coefficients approximations (L-mode, low collisionality)
+        L31 = f_trapped / (1.0 + 0.3 * np.sqrt(epsilon))
+        L32 = 0.5 * L31
+        L34 = -0.1 * L31 # often stabilizing/negative in simplified models
 
-        J_bs = 1.2 * (f_trapped / B_pol) * dP_drho / (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"])
+        # J_bs ~ -(1/B_pol) * [ L31 * (Te+Ti) * dn/dr + L32 * n * dTe/dr + L34 * n * dTi/dr ]
+        J_bs = -(1.0 / B_pol) * (
+            L31 * (self.Te + self.Ti) * e_charge * dn_dr +
+            L32 * n_e * dTe_dr +
+            L34 * n_e * dTi_dr
+        )
+
+        # Scale to match global empirical observations (calibration factor)
+        J_bs *= 1.4 
 
         # Ensure it's zero at axis and edge
         J_bs[0] = 0

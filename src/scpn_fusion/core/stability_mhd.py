@@ -102,14 +102,26 @@ class NTMResult:
 
 
 @dataclass
+class RWMResult:
+    """Resistive Wall Mode stability result."""
+
+    beta_N: float
+    beta_N_crit_nowall: float
+    beta_N_crit_wall: float
+    stable: bool
+    mode_growth_rate: float # 1/tau_wall units
+
+
+@dataclass
 class StabilitySummary:
-    """Combined result from all five MHD stability criteria."""
+    """Combined result from all MHD stability criteria."""
 
     mercier: MercierResult
     ballooning: BallooningResult
     kruskal_shafranov: KruskalShafranovResult
-    troyon: TroyonResult | None      # None if beta_t not provided
-    ntm: NTMResult | None            # None if j_bs not provided
+    troyon: TroyonResult | None
+    ntm: NTMResult | None
+    rwm: RWMResult | None
     n_criteria_checked: int
     n_criteria_stable: int
     overall_stable: bool
@@ -446,6 +458,48 @@ def ntm_stability(
     )
 
 
+# ── RWM stability ──────────────────────────────────────────────────
+
+def rwm_stability(
+    beta_N: float,
+    g_nowall: float = 2.8,
+    g_wall: float = 3.5,
+) -> RWMResult:
+    """Evaluate Resistive Wall Mode (RWM) stability.
+
+    The RWM occurs when beta_N exceeds the no-wall limit but remains
+    below the ideal-wall limit.  The mode grows on the resistive
+    time-scale of the wall (tau_wall).
+
+    Parameters
+    ----------
+    beta_N : float — normalised beta [% m T / MA]
+    g_nowall : float — Troyon no-wall limit (default 2.8)
+    g_wall : float — Troyon ideal-wall limit (default 3.5)
+
+    Returns
+    -------
+    RWMResult
+    """
+    stable = beta_N < g_nowall
+    
+    # Growth rate estimate (heuristic dispersion relation)
+    # gamma * tau_w ~ (beta - beta_nowall) / (beta_wall - beta)
+    if beta_N > g_nowall:
+        denom = max(g_wall - beta_N, 0.01)
+        growth_rate = (beta_N - g_nowall) / denom
+    else:
+        growth_rate = 0.0
+
+    return RWMResult(
+        beta_N=beta_N,
+        beta_N_crit_nowall=g_nowall,
+        beta_N_crit_wall=g_wall,
+        stable=stable,
+        mode_growth_rate=float(growth_rate),
+    )
+
+
 # ── Full stability check (all 5 criteria) ──────────────────────────
 
 def run_full_stability_check(
@@ -515,6 +569,14 @@ def run_full_stability_check(
         if not np.any(ntm_result.ntm_unstable):
             n_stable += 1
 
+    # --- RWM (optional, derived from Troyon) ---
+    rwm_result: RWMResult | None = None
+    if troyon_result is not None:
+        rwm_result = rwm_stability(troyon_result.beta_N)
+        n_checked += 1
+        if rwm_result.stable:
+            n_stable += 1
+
     overall = n_stable == n_checked
 
     return StabilitySummary(
@@ -523,6 +585,7 @@ def run_full_stability_check(
         kruskal_shafranov=ks,
         troyon=troyon_result,
         ntm=ntm_result,
+        rwm=rwm_result,
         n_criteria_checked=n_checked,
         n_criteria_stable=n_stable,
         overall_stable=overall,

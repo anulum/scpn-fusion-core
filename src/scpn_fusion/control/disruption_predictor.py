@@ -78,17 +78,26 @@ def simulate_tearing_mode(
     delta_prime = -0.5
     w_history = []
     
+    # MRE Coefficients (Hardened)
+    beta_p = 0.8  # Poloidal beta proxy
+    w_crit = 0.05 # Small island stabilization threshold (seed)
+    
     for t in range(steps):
-        # Trigger Instability
+        # Trigger Instability (Simulate a seeding event like a saw-tooth)
         if t > trigger_time:
-            delta_prime = 0.5 # Become unstable
+            delta_prime = -0.1 # Still classically stable but less so
+            # Seed the island
+            if w < 0.1: w = 0.15
             
-        # Rutherford Equation: dw/dt = Delta' + Const/w (simplified)
-        # Saturated growth: dw/dt = Delta' * (1 - w/w_sat)
-        dw = (delta_prime * (1 - w/10.0)) * dt
+        # Modified Rutherford Equation: dw/dt = Delta' + Delta'_BS
+        # Delta'_BS = beta_p * w / (w^2 + w_crit^2)
+        f_bs = beta_p * (w / (w**2 + w_crit**2))
+        
+        # Saturated growth with BS drive
+        dw = (delta_prime + f_bs) * (1.0 - w/12.0) * dt
         w += dw
-        w += float(local_rng.normal(0.0, 0.05)) # Measurement noise
-        w = max(w, 0.01)
+        w += float(local_rng.normal(0.0, 0.02)) # Reduced noise for better signal
+        w = max(w, 0.001)
         
         w_history.append(w)
         

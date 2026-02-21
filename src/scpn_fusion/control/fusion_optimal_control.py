@@ -120,22 +120,24 @@ class OptimalController:
         self,
         current_pos: np.ndarray,
         target_pos: np.ndarray,
-        regularization_limit: float = 1e-2,
+        regularization_lambda: float = 0.05,
     ) -> np.ndarray:
         """
-        Solve Error = J * Delta_I using damped pseudoinverse.
+        Solve Error = J * Delta_I using Tikhonov-regularized (damped) SVD.
+        Provides smoother control than hard-cutoff SVD near singularities.
         """
         cur = np.asarray(current_pos, dtype=np.float64).reshape(2)
         tgt = np.asarray(target_pos, dtype=np.float64).reshape(2)
         error = tgt - cur
 
         u, s, vt = np.linalg.svd(self.response_matrix, full_matrices=False)
-        cut = float(regularization_limit)
-        if not np.isfinite(cut) or cut < 0.0:
-            raise ValueError("regularization_limit must be finite and >= 0.")
-        s_inv = np.zeros_like(s, dtype=np.float64)
-        nz = s > cut
-        s_inv[nz] = 1.0 / s[nz]
+        lam = float(regularization_lambda)
+        if not np.isfinite(lam) or lam < 0.0:
+            raise ValueError("regularization_lambda must be finite and >= 0.")
+        
+        # Tikhonov Damping: s_inv = s / (s^2 + lambda^2)
+        s_inv = s / (s**2 + lam**2)
+        
         j_inv = vt.T @ np.diag(s_inv) @ u.T
         delta_currents = np.asarray(j_inv @ error, dtype=np.float64)
         return np.clip(delta_currents, -self.correction_limit, self.correction_limit)

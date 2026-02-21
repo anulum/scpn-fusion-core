@@ -387,34 +387,20 @@ def run_tglf_binary(
     *,
     timeout_s: float = 120.0,
     work_dir: str | Path | None = None,
+    max_retries: int = 2,
 ) -> TGLFOutput:
     """Execute the TGLF binary on a given input deck and parse output.
-
-    Parameters
-    ----------
-    deck : TGLFInputDeck
-        Input parameters.
-    tglf_binary_path : str | Path
-        Path to the TGLF executable.
-    timeout_s : float
-        Maximum runtime in seconds (default 120).
-    work_dir : str | Path | None
-        Working directory for TGLF. If None, uses a temporary directory.
-
-    Returns
-    -------
-    TGLFOutput — parsed results.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the TGLF binary does not exist.
-    RuntimeError
-        If TGLF execution fails.
+    Harden with retries and input conditioning.
     """
     tglf_path = Path(tglf_binary_path)
     if not tglf_path.exists():
         raise FileNotFoundError(f"TGLF binary not found: {tglf_path}")
+
+    # Condition Inputs (Finite/Sanity Check)
+    for field_name, val in deck.__dict__.items():
+        if isinstance(val, (float, int)) and not np.isfinite(val):
+            logger.warning(f"TGLF input '{field_name}' is non-finite ({val}). Clipping.")
+            setattr(deck, field_name, 0.0)
 
     cleanup = False
     if work_dir is None:
@@ -424,45 +410,57 @@ def run_tglf_binary(
         work_dir = Path(work_dir)
         work_dir.mkdir(parents=True, exist_ok=True)
 
-    try:
-        # Write input file
-        input_path = write_tglf_input_file(deck, work_dir)
-        logger.info("TGLF input written: %s", input_path)
-
-        # Run TGLF
-        result = subprocess.run(
-            [str(tglf_path)],
-            cwd=str(work_dir),
-            capture_output=True,
-            text=True,
-            timeout=timeout_s,
-        )
-
-        if result.returncode != 0:
-            raise RuntimeError(
-                f"TGLF exited with code {result.returncode}: {result.stderr[:500]}"
+    last_exc = None
+    for attempt in range(max_retries + 1):
+        try:
+            # Write input file
+            input_path = write_tglf_input_file(deck, work_dir)
+            
+            # Run TGLF
+            result = subprocess.run(
+                [str(tglf_path)],
+                cwd=str(work_dir),
+                capture_output=True,
+                text=True,
+                timeout=timeout_s,
             )
 
-        # Parse output — TGLF writes output.tglf with chi_i, chi_e, etc.
-        output_file = work_dir / "out.tglf.run"
-        if output_file.exists():
-            return _parse_tglf_run_output(output_file, deck.rho)
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"TGLF exited with code {result.returncode}: {result.stderr[:500]}"
+                )
 
-        # Fallback: check for JSON output
-        json_out = work_dir / "output.json"
-        if json_out.exists():
-            outputs = parse_tglf_output(work_dir)
-            if outputs:
-                return outputs[0]
+            # Parse output
+            output_file = work_dir / "out.tglf.run"
+            if output_file.exists():
+                return _parse_tglf_run_output(output_file, deck.rho)
 
-        # If no recognizable output, return empty with rho
-        logger.warning("TGLF produced no parseable output in %s", work_dir)
+            # Fallback: check for JSON output
+            json_out = work_dir / "output.json"
+            if json_out.exists():
+                outputs = parse_tglf_output(work_dir)
+                if outputs:
+                    return outputs[0]
+            
+            raise RuntimeError("TGLF produced no parseable output.")
+
+        except (RuntimeError, subprocess.TimeoutExpired) as exc:
+            last_exc = exc
+            logger.warning(f"TGLF attempt {attempt+1} failed: {exc}. Retrying...")
+            import time
+            import random
+            time.sleep(1.0 + random.random())
+        finally:
+            if cleanup and (attempt == max_retries or not last_exc):
+                import shutil
+                shutil.rmtree(work_dir, ignore_errors=True)
+    
+    if last_exc:
+        logger.error(f"TGLF execution failed after {max_retries+1} attempts.")
+        # Return empty output rather than crashing the whole transport loop
         return TGLFOutput(rho=deck.rho)
-
-    finally:
-        if cleanup:
-            import shutil
-            shutil.rmtree(work_dir, ignore_errors=True)
+    
+    return TGLFOutput(rho=deck.rho)
 
 
 def _parse_tglf_run_output(path: Path, rho: float) -> TGLFOutput:

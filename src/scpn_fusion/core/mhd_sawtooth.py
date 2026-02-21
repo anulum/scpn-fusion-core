@@ -116,25 +116,54 @@ class ReducedMHD:
         return amplitude, crash
 
     def solve_poisson(self, U):
-        # Solves Del^2 phi = U for phi
-        # Trivial approx: phi ~ -U * r^2 (very rough)
-        # Better: Tridiagonal solve.
-        # Construct Matrix A
+        """
+        Solves Del^2 phi = U for phi using the Thomas Algorithm (O(N)).
+        Optimized for tridiagonal Laplacian in cylindrical coordinates.
+        """
         N = self.nr
-        A = np.zeros((N, N), dtype=complex)
+        # A_i * phi_{i-1} + B_i * phi_i + C_i * phi_{i+1} = U_i
+        # Using the same discretization as in the manual setup:
+        # B_i = -2*coeff - 1.0/(r^2)
+        # A_i = coeff - 1.0/(2*r*dr)
+        # C_i = coeff + 1.0/(2*r*dr)
         
-        coeff = 1.0 / self.dr**2
+        dr = self.dr
+        coeff = 1.0 / dr**2
+        
+        a = np.zeros(N, dtype=complex)
+        b = np.ones(N, dtype=complex) # Boundary B_0=1
+        c = np.zeros(N, dtype=complex)
+        d = U.copy()
+        
+        # Dirichlet at r=0 and r=1
+        d[0] = 0.0
+        d[-1] = 0.0
         
         for i in range(1, N-1):
-            r = self.r[i]
-            A[i, i-1] = coeff - 1.0/(2*r*self.dr)
-            A[i, i]   = -2*coeff - 1.0/(r**2)
-            A[i, i+1] = coeff + 1.0/(2*r*self.dr)
+            r = max(self.r[i], 1e-10)
+            a[i] = coeff - 1.0/(2*r*dr)
+            b[i] = -2*coeff - 1.0/(r**2)
+            c[i] = coeff + 1.0/(2*r*dr)
             
-        # Boundary
-        A[0,0] = 1; A[-1,-1] = 1
+        # Thomas Algorithm
+        c_prime = np.zeros(N, dtype=complex)
+        d_prime = np.zeros(N, dtype=complex)
         
-        res = np.linalg.solve(A, U)
+        c_prime[0] = c[0] / b[0]
+        d_prime[0] = d[0] / b[0]
+        
+        for i in range(1, N):
+            m = b[i] - a[i] * c_prime[i-1]
+            if i < N-1:
+                c_prime[i] = c[i] / m
+            d_prime[i] = (d[i] - a[i] * d_prime[i-1]) / m
+            
+        # Back substitution
+        res = np.zeros(N, dtype=complex)
+        res[N-1] = d_prime[N-1]
+        for i in range(N-2, -1, -1):
+            res[i] = d_prime[i] - c_prime[i] * res[i+1]
+            
         return res
 
 def run_sawtooth_sim():

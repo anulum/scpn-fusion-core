@@ -59,11 +59,21 @@ class TokamakTopoloy:
         self.eta = 1e-5 # Resistivity proxy
         
     def step_island_evolution(self, dt=0.1):
-        """Evolve island widths using the Rutherford Equation: dW/dt = eta * Delta'"""
+        """Evolve island widths using the Modified Rutherford Equation (MRE)."""
+        # Neoclassical Bootstrap drive (important for NTMs)
+        beta_p = 0.6 # Proxy for poloidal beta
+        w_crit = 0.05 # Threshold for small-island suppression
+        
         for res in self.resonances:
-            # Simple Delta' model: unstable if q is low, stabilized by shear/width
-            delta_prime = 0.5 - (10.0 * self.island_widths[res])
-            dw_dt = self.eta * delta_prime
+            # Classical Delta' index: destabilizing if shear is low at resonance
+            # Delta' ~ -1/w for stable modes, positive for unstable ones.
+            # Heuristic: base stability - saturation term
+            delta_prime = -0.2 - (5.0 * self.island_widths[res])
+            
+            # Bootstrap current drive: Delta'_BS = beta_p * w / (w^2 + w_crit^2)
+            f_bs = beta_p * (self.island_widths[res] / (self.island_widths[res]**2 + w_crit**2))
+            
+            dw_dt = self.eta * (delta_prime + f_bs)
             self.island_widths[res] = max(0.001, self.island_widths[res] + dw_dt * dt)
 
     def update_q_profile(self, current_drive_action):
@@ -148,9 +158,16 @@ class Plasma2D:
         laplacian = (T_up + T_down + T_left + T_right - 4*self.T)
         
         # Update T
-        # Radiation Loss (Stabilization) - Stefan-Boltzmann-like cooling
-        radiation = 0.0001 * (self.T**2) # Simplified T^2 for numeric stability
-        self.T += diffusivity * laplacian - radiation
+        # Radiation Loss (Stabilization) - Bremsstrahlung (P ~ n^2 * sqrt(T))
+        # Assuming n ~ 10^20 m-3 at 1.0 peak
+        # Bremsstrahlung power loss is proportional to sqrt(T)
+        radiation = 0.002 * np.sqrt(self.T + 1e-6) 
+        
+        # Coronal Impurity Radiation (W-tomography) - Heuristic T-peak
+        # Tungsten radiation peaks around 1-3 keV.
+        tungsten_rad = 0.05 * np.exp(-((self.T - 2.0)**2) / 0.5)
+        
+        self.T += diffusivity * laplacian - radiation - tungsten_rad
         
         # Boundary Condition (Cold Walls)
         self.T[~self.topo.mask] = 0.0

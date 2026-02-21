@@ -99,22 +99,30 @@ class RFHeatingSystem:
     def dispersion_relation(self, R, Z, k_R, k_Z):
         """
         Calculates the local dispersion D(w, k) = 0.
-        Simplified Cold Plasma (Alfven wave approx).
-        k^2 = (omega/v_A)^2
+        Harden with Warm Plasma thermal corrections for ICRH.
         """
         B_mod, n_e, _, _ = self.get_plasma_params(R, Z)
         
         if n_e < 1e18: return 1.0 # Vacuum
         
-        # Alfven speed
+        # 1. Alfven speed (Cold Limit)
         mu0 = 4*np.pi*1e-7
         v_A = B_mod / np.sqrt(mu0 * n_e * self.m_D)
         
+        # 2. Thermal correction (Warm Plasma)
+        # For ICRH, thermal effects modify the k_perp dispersion
+        T_ion_keV = 10.0 # Heuristic local Ti
+        v_thi = np.sqrt(2.0 * T_ion_keV * 1.602e-16 / self.m_D)
+        
+        # Finite Larmor Radius (FLR) correction factor
+        # omega^2 = k^2 * v_A^2 * (1 + 3/4 * (k_perp * rho_i)^2)
+        rho_i = self.m_D * v_thi / (self.q_D * B_mod)
         k_sq = k_R**2 + k_Z**2
         
-        # Dispersion: omega^2 = k^2 * v_A^2
-        # D = k^2 * v_A^2 - omega^2
-        D = k_sq * v_A**2 - self.omega_wave**2
+        flr_correction = 1.0 + 0.75 * (k_sq * rho_i**2)
+        
+        # Dispersion: D = k^2 * v_A^2 * flr_correction - omega^2
+        D = k_sq * v_A**2 * flr_correction - self.omega_wave**2
         
         return D
 

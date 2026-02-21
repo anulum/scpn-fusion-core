@@ -20,6 +20,12 @@ from numpy.typing import NDArray
 logger = logging.getLogger(__name__)
 
 
+try:
+    from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumKernel
+except ImportError:
+    NeuralEquilibriumKernel = None
+
+
 def _as_contiguous_f64(array: NDArray[np.floating]) -> NDArray[np.float64]:
     """Return ``array`` as C-contiguous ``float64`` with minimal copying."""
     if isinstance(array, np.ndarray) and array.dtype == np.float64 and array.flags.c_contiguous:
@@ -270,6 +276,28 @@ class HPCBridge:
             int(iterations),
         )
         return psi_target
+
+    def solve_neural(self, config_path: Optional[str | Path] = None) -> Optional[NDArray[np.float64]]:
+        """
+        Run the O(1) Neural Equilibrium Surrogate.
+        Requires NeuralEquilibriumKernel (JAX/NPZ weights).
+        """
+        if NeuralEquilibriumKernel is None:
+            logger.warning("NeuralEquilibriumKernel not available (ImportError).")
+            return None
+            
+        try:
+            # Note: NeuralEquilibriumKernel needs a config for grid sizing
+            # default to iter_config.json in root if not provided
+            if config_path is None:
+                config_path = Path(__file__).resolve().parents[3] / "iter_config.json"
+            
+            kernel = NeuralEquilibriumKernel(config_path)
+            res = kernel.solve_equilibrium()
+            return res.get("Psi")
+        except Exception as exc:
+            logger.error("Neural surrogate inference failed: %s", exc)
+            return None
 
     def solve_until_converged(
         self,

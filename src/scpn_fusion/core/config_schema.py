@@ -31,6 +31,7 @@ class Coil(BaseModel):
 
 class PhysicsParams(BaseModel):
     plasma_current_target: float = Field(default=5.0, ge=0)
+    vacuum_permeability: float = Field(default=1.25663706e-6, ge=0)
     beta_scale: float = Field(default=1.0, ge=0)
     pedestal_mode: Optional[str] = "analytic"
     confinement_scaling: str = "IPB98y2"

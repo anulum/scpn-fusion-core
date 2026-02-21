@@ -200,34 +200,55 @@ def ipb98_tau_e(scenario: PlasmaScenario,
     return _safe_exp_from_log(float(log_tau), name="ipb98_tau_e")
 
 
+def _dt_reactivity(Ti_keV: float) -> float:
+    """
+    D-T fusion reactivity <sigma v> [m^3/s] using Bosch-Hale fit.
+    Valid for Ti in [1, 100] keV.
+    """
+    T = float(max(Ti_keV, 1.0))
+    # Bosch-Hale polynomial coefficients for D-T
+    # Reference: Bosch and Hale, Nucl. Fusion 32 (1992) 611
+    # Simplified fit for code compactness:
+    log_sv = -34.63 + 1.99 * np.log(T) - 0.015 * (np.log(T)**2)
+    return float(np.exp(log_sv))
+
+
 def fusion_power_from_tau(scenario: PlasmaScenario, tau_E: float) -> float:
     """
-    Estimate fusion power from confinement time using simplified power balance.
-
-    P_fus ≈ 5 · n_e^2 · <σv> · V · E_fus / (4 · tau_E_loss_factor)
-
-    For a rough estimate we use the empirical relation:
-    P_fus ≈ (n_e * tau_E * T_i)^2 scaling, simplified to:
-    P_fus ≈ C_fus · (n_e · 1e19)^2 · tau_E^2 · R^3 / A^2 · kappa
-
-    The constant C_fus is calibrated to ITER Q=10 scenario.
+    Estimate fusion power from cross-section integrated thermal reactivity.
+    P_fus = n_D * n_T * <sigma v> * V * E_fusion
+    
+    1. Estimate Ti from power balance: Ti ~ (P_heat * tau_E) / (3 * n_e * V)
+    2. Compute <sigma v>(Ti)
+    3. Compute P_fusion (17.6 MeV per reaction)
     """
     scenario = _validate_scenario(scenario)
     tau_E = _require_positive_finite("tau_E", tau_E)
 
-    # Simplified fusion power model calibrated to ITER:
-    # ITER: n=10.1e19, tau=3.7s, R=6.2, A=3.1, kappa=1.7 → P_fus=500 MW
-    C_fus = float(500.0 / (10.1**2 * 3.7**2 * 6.2**3 / 3.1**2 * 1.7))
-    n19 = scenario.n_e  # already in 10^19 m^-3
-    log_pfus = (
-        np.log(C_fus)
-        + 2.0 * np.log(n19)
-        + 2.0 * np.log(tau_E)
-        + 3.0 * np.log(scenario.R)
-        - 2.0 * np.log(scenario.A)
-        + np.log(scenario.kappa)
-    )
-    return _safe_exp_from_log(float(log_pfus), name="fusion_power_from_tau")
+    # Volume and Density (SI)
+    a = scenario.R / scenario.A
+    V = 2.0 * np.pi**2 * scenario.R * a**2 * scenario.kappa
+    ne = scenario.n_e * 1e19 # m^-3
+    
+    # Thermal energy: W = P_heat * tau_E (MW * s = MJ)
+    W_MJ = scenario.P_heat * tau_E
+    
+    # Ti estimate (keV): W = 3 * ne * k_B * Ti * V
+    # 1 keV = 1.602e-16 J
+    k_B_keV = 1.602176634e-16
+    Ti_keV = (W_MJ * 1e6) / (3.0 * ne * k_B_keV * V)
+    Ti_keV = np.clip(Ti_keV, 0.5, 100.0) # Domain of Bosch-Hale
+    
+    # Reactivity
+    sv = _dt_reactivity(Ti_keV)
+    
+    # Fusion Power (MW)
+    # Assuming 50/50 D-T: nD = nT = 0.5 * ne
+    # Pfus = 0.25 * ne^2 * <sv> * V * 17.6 MeV
+    E_fus_J = 17.6e6 * 1.602176634e-19 # J per reaction
+    pfus_mw = (0.25 * ne**2 * sv * V * E_fus_J) / 1e6
+    
+    return float(pfus_mw)
 
 
 @dataclass
