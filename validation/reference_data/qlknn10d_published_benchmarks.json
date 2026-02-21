@@ -1,0 +1,33 @@
+{
+  "source": "van de Plassche et al., Phys. Plasmas 27, 022310 (2020)",
+  "doi": "10.1063/1.5134126",
+  "description": "Published accuracy figures for the QLKNN-10D neural network surrogate trained on ~300M QuaLiKiz v2.4.0 calculations.",
+  "notes": "These are the target benchmarks. Our surrogate should achieve RMSE% within 2x of these published values.",
+  "metrics": {
+    "efi_GB": {
+      "description": "Ion energy flux (gyro-Bohm units)",
+      "rmse_pct": 4.8,
+      "r2": 0.97,
+      "notes": "Dominant transport channel for ITG-driven turbulence"
+    },
+    "efe_GB": {
+      "description": "Electron energy flux (gyro-Bohm units)",
+      "rmse_pct": 6.2,
+      "r2": 0.95,
+      "notes": "Dominant transport channel for TEM/ETG-driven turbulence"
+    },
+    "pfe_GB": {
+      "description": "Particle flux (gyro-Bohm units)",
+      "rmse_pct": 8.1,
+      "r2": 0.92,
+      "notes": "Hardest channel to predict due to sign changes and turbulent pinch effects"
+    }
+  },
+  "training_details": {
+    "architecture": "10-input MLP with multiple hidden layers",
+    "training_samples": "~300 million QuaLiKiz calculations",
+    "input_space": ["Ati", "Ate", "An", "q", "smag", "x", "Ti_Te", "Zeff", "alpha", "Machtor"],
+    "output_space": ["efi_GB", "efe_GB", "pfe_GB"],
+    "speedup": "3-5 orders of magnitude faster than full QuaLiKiz"
+  }
+}

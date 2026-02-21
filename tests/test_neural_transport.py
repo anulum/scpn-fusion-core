@@ -98,12 +98,16 @@ class TestMLPForward:
         """Weights that approximately pass through (for testing)."""
         hidden = 16
         return MLPWeights(
-            w1=np.random.RandomState(42).randn(10, hidden) * 0.1,
-            b1=np.zeros(hidden),
-            w2=np.random.RandomState(43).randn(hidden, hidden) * 0.1,
-            b2=np.zeros(hidden),
-            w3=np.random.RandomState(44).randn(hidden, 3) * 0.1,
-            b3=np.zeros(3),
+            layers_w=[
+                np.random.RandomState(42).randn(10, hidden) * 0.1,
+                np.random.RandomState(43).randn(hidden, hidden) * 0.1,
+                np.random.RandomState(44).randn(hidden, 3) * 0.1,
+            ],
+            layers_b=[
+                np.zeros(hidden),
+                np.zeros(hidden),
+                np.zeros(3),
+            ],
             input_mean=np.zeros(10),
             input_std=np.ones(10),
             output_scale=np.ones(3),

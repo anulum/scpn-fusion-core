@@ -56,6 +56,9 @@ full-physics = [
     "freegs>=0.6",
     "omas>=0.70",
 ]
+gpu = [
+    "jax[cuda12]>=0.4.20",
+]
 full = [
     "scpn-fusion-rs>=0.1.0",
     "nengo>=4.0",

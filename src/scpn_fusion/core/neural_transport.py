@@ -168,21 +168,50 @@ def critical_gradient_model(inp: TransportInputs) -> TransportFluxes:
 
 @dataclass
 class MLPWeights:
-    """Stored weights for a simple feedforward MLP.
+    """Stored weights for a variable-depth feedforward MLP.
 
-    Architecture: input(10) → hidden1 → hidden2 → output(3)
-    Activation: ReLU on hidden layers, softplus on output (ensures chi > 0).
+    Architecture: input(10) → hidden1 → [hidden2 → ...] → output(3)
+    Activation: GELU on hidden layers, softplus on output (ensures chi > 0).
+
+    Supports 2+ layer architectures.  The number of layers is
+    auto-detected from the ``.npz`` keys at load time (w1/b1, w2/b2, ...).
+    Legacy 3-layer weights (w1→w2→w3) load without modification.
     """
 
-    w1: FloatArray = field(default_factory=lambda: np.zeros((0, 0)))
-    b1: FloatArray = field(default_factory=lambda: np.zeros(0))
-    w2: FloatArray = field(default_factory=lambda: np.zeros((0, 0)))
-    b2: FloatArray = field(default_factory=lambda: np.zeros(0))
-    w3: FloatArray = field(default_factory=lambda: np.zeros((0, 0)))
-    b3: FloatArray = field(default_factory=lambda: np.zeros(0))
+    layers_w: list[FloatArray] = field(default_factory=list)
+    layers_b: list[FloatArray] = field(default_factory=list)
     input_mean: FloatArray = field(default_factory=lambda: np.zeros(10))
     input_std: FloatArray = field(default_factory=lambda: np.ones(10))
     output_scale: FloatArray = field(default_factory=lambda: np.ones(3))
+
+    # --- Backward-compatible properties for code that accesses w1/b1 etc. ---
+    @property
+    def w1(self) -> FloatArray:
+        return self.layers_w[0] if self.layers_w else np.zeros((0, 0))
+
+    @property
+    def b1(self) -> FloatArray:
+        return self.layers_b[0] if self.layers_b else np.zeros(0)
+
+    @property
+    def w2(self) -> FloatArray:
+        return self.layers_w[1] if len(self.layers_w) > 1 else np.zeros((0, 0))
+
+    @property
+    def b2(self) -> FloatArray:
+        return self.layers_b[1] if len(self.layers_b) > 1 else np.zeros(0)
+
+    @property
+    def w3(self) -> FloatArray:
+        return self.layers_w[2] if len(self.layers_w) > 2 else np.zeros((0, 0))
+
+    @property
+    def b3(self) -> FloatArray:
+        return self.layers_b[2] if len(self.layers_b) > 2 else np.zeros(0)
+
+    @property
+    def n_layers(self) -> int:
+        return len(self.layers_w)
 
 
 def _relu(x: FloatArray) -> FloatArray:
@@ -193,15 +222,20 @@ def _softplus(x: FloatArray) -> FloatArray:
     return np.log1p(np.exp(np.clip(x, -20.0, 20.0)))
 
 
+def _gelu(x: FloatArray) -> FloatArray:
+    """Gaussian Error Linear Unit (matches JAX/PyTorch training)."""
+    return x * 0.5 * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * x ** 3)))
+
+
 def _mlp_forward(x: FloatArray, weights: MLPWeights) -> FloatArray:
-    """Forward pass through the 3-layer MLP.
+    """Forward pass through a variable-depth MLP.
 
     Parameters
     ----------
     x : FloatArray
         Input vector of shape ``(10,)`` or ``(batch, 10)``.
     weights : MLPWeights
-        Network parameters.
+        Network parameters (auto-detected depth).
 
     Returns
     -------
@@ -210,11 +244,14 @@ def _mlp_forward(x: FloatArray, weights: MLPWeights) -> FloatArray:
         representing ``[chi_e, chi_i, D_e]``.
     """
     # Normalise inputs
-    x_norm = (x - weights.input_mean) / np.maximum(weights.input_std, 1e-8)
+    h = (x - weights.input_mean) / np.maximum(weights.input_std, 1e-8)
 
-    h1 = _relu(x_norm @ weights.w1 + weights.b1)
-    h2 = _relu(h1 @ weights.w2 + weights.b2)
-    out = _softplus(h2 @ weights.w3 + weights.b3)
+    # Hidden layers (all except last): GELU activation
+    for i in range(weights.n_layers - 1):
+        h = _gelu(h @ weights.layers_w[i] + weights.layers_b[i])
+
+    # Output layer: softplus (ensures chi > 0)
+    out = _softplus(h @ weights.layers_w[-1] + weights.layers_b[-1])
 
     return out * weights.output_scale
 
@@ -232,8 +269,8 @@ class NeuralTransportModel:
     ----------
     weights_path : str or Path, optional
         Path to a ``.npz`` file containing MLP weights.  The file must
-        contain arrays: ``w1, b1, w2, b2, w3, b3, input_mean,
-        input_std, output_scale``.
+        contain arrays ``w1, b1, ..., wN, bN, input_mean, input_std,
+        output_scale``.  The number of layers N is auto-detected.
     """
 
     def __init__(self, weights_path: Optional[str | Path] = None) -> None:
@@ -265,9 +302,20 @@ class NeuralTransportModel:
 
         try:
             data = np.load(self.weights_path)
-            required = ["w1", "b1", "w2", "b2", "w3", "b3",
-                        "input_mean", "input_std", "output_scale"]
-            for key in required:
+
+            # Auto-detect MLP depth from keys: w1/b1, w2/b2, ...
+            n_layers = 0
+            while f"w{n_layers + 1}" in data and f"b{n_layers + 1}" in data:
+                n_layers += 1
+
+            if n_layers < 2:
+                logger.warning(
+                    "Weight file has only %d layer(s) (need >=2) — falling back",
+                    n_layers,
+                )
+                return
+
+            for key in ("input_mean", "input_std", "output_scale"):
                 if key not in data:
                     logger.warning(
                         "Weight file missing key '%s' — falling back", key
@@ -284,13 +332,12 @@ class NeuralTransportModel:
                 )
                 return
 
+            layers_w = [data[f"w{i+1}"] for i in range(n_layers)]
+            layers_b = [data[f"b{i+1}"] for i in range(n_layers)]
+
             self._weights = MLPWeights(
-                w1=data["w1"],
-                b1=data["b1"],
-                w2=data["w2"],
-                b2=data["b2"],
-                w3=data["w3"],
-                b3=data["b3"],
+                layers_w=layers_w,
+                layers_b=layers_b,
                 input_mean=data["input_mean"],
                 input_std=data["input_std"],
                 output_scale=data["output_scale"],
@@ -304,13 +351,18 @@ class NeuralTransportModel:
             )
             self.weights_checksum = hashlib.sha256(raw).hexdigest()[:16]
 
+            # Build architecture description string
+            dims = [str(layers_w[0].shape[0])]
+            for w in layers_w:
+                dims.append(str(w.shape[1]))
+            arch_str = "→".join(dims)
+
             logger.info(
                 "Loaded neural transport weights from %s "
-                "(layers: %s→%s→%s→3, version=%d, sha256=%s)",
+                "(architecture: %s, %d layers, version=%d, sha256=%s)",
                 self.weights_path,
-                self._weights.w1.shape[0],
-                self._weights.w1.shape[1],
-                self._weights.w2.shape[1],
+                arch_str,
+                n_layers,
                 version,
                 self.weights_checksum,
             )
