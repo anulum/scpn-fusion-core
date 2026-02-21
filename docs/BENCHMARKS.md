@@ -15,8 +15,7 @@ Comparison of SCPN Fusion Core against established fusion simulation codes.
 | **Control loop freq** | **10–30 kHz (Verified)** | 100 Hz | 50 Hz | 4–10 kHz (physics loops) |
 | **Step compute time** | **0.3 μs (Elite)** | 10 ms | ~1 ms | 100–250 μs |
 | **Equilibrium solver** | Picard + SOR / Multigrid | Jacobi + Picard | JAX autodiff | rtEFIT |
-| **Turbulence model** | **JAX-FNO (Validated)** | FNO (Legacy) | QLKNN | N/A |
-| **Physics Correlation** | **0.9997 (vs TGLF)** | 0.21 | N/A | N/A |
+| **Turbulence model** | JAX-FNO (synthetic-data surrogate) | FNO (Legacy) | QLKNN | N/A |
 | **Language** | Rust + Python | Python | Python/JAX | C / Fortran |
 
 ## Feature Comparison
@@ -33,7 +32,7 @@ Comparison of SCPN Fusion Core against established fusion simulation codes.
 | Divertor thermal | Eich λ_q model | No | Eich model | No |
 | RF heating (ICRH/ECRH) | Ray-tracing | No | Power balance | No |
 | Neuro-symbolic control | SNN compiler | No | No | No |
-| FNO turbulence | Yes (spectral) | No | QLKNN | No |
+| FNO turbulence | Yes (synthetic surrogate) | No | QLKNN | No |
 | Sawtooth / MHD | Kadomtsev model | No | No | No |
 | Digital twin | Real-time | No | No | No |
 | Compact reactor optimizer | MVR-0.96 | No | Yes (DEMO) | No |

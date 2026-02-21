@@ -406,8 +406,8 @@ def generate_results_md(
             # Pattern for claims_audit: Neural transport MLP surrogate | tau_E RMSE % | 13.5%
             rows_s.append(f"| Neural transport MLP surrogate | tau_E RMSE % | 13.5% ({_fmt(surrogates['mlp_rmse_pct'], '.1f')}%) | {int(surrogates.get('mlp_samples', 0))} samples |")
         if surrogates.get("fno_rel_l2_mean") is not None:
-            rows_s.append(f"| FNO (JAX-accelerated) relative L2 (mean) | {_fmt(0.0010, '.4f')} | — | Turbulence reconstruction (**Validated**) |")
-            rows_s.append(f"| FNO (JAX-accelerated) relative L2 (P95) | {_fmt(0.0012, '.4f')} | — | 1000 samples |")
+            rows_s.append(f"| FNO (JAX-accelerated) relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | Synthetic-data surrogate (not validated against gyrokinetic output) |")
+            rows_s.append(f"| FNO (JAX-accelerated) relative L2 (P95) | {_fmt(surrogates.get('fno_rel_l2_p95', 0.0), '.4f')} | — | Requires TGLF/GENE training data for production use |")
 
     if rows_s:
         sections.append("## Surrogates\n")
@@ -416,8 +416,8 @@ def generate_results_md(
         sections.extend(rows_s)
         if surrogates and surrogates.get("fno_rel_l2_mean") is not None:
             sections.append("")
-            sections.append("> **NEW — JAX FNO turbulence surrogate:** Supersedes the legacy NumPy version.")
-            sections.append("> Achieves ~0.001 relative L2 loss and 98% suppression efficiency.")
+            sections.append("> **JAX FNO turbulence surrogate:** Supersedes the legacy NumPy version.")
+            sections.append("> Trained on synthetic turbulence data. Requires retraining on gyrokinetic output (TGLF/GENE) for physics-grade predictions.")
         sections.append("")
 
     # ── Footer ──

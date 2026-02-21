@@ -322,7 +322,7 @@ python -c "from scpn_fusion.core.eqdsk import read_geqdsk; eq = read_geqdsk('val
 | Mode | Description | Limitation |
 |------|-------------|------------|
 | `neural` | Neural-network equilibrium solver (PCA + MLP) | Baseline pretrained bundles shipped (ITPA MLP + EUROfusion-proxy FNO); facility-specific retraining still recommended |
-| `fno` | **Validated** FNO Turbulence model (JAX-accelerated) | 98% suppression efficiency; 0.9997 TGLF correlation |
+| `fno` | FNO Turbulence surrogate (JAX-accelerated) | Trained on synthetic data only; not validated against gyrokinetic codes |
 | `fno-training` | JAX-powered multi-layer FNO training | High-speed synthetic turbulence generator |
 | `geometry` | 3D flux-surface geometry (Fourier boundary) | Parameterization only; no force-balance solve |
 | `wdm` | Warm dense matter equation of state | Reduced EOS model |
@@ -440,7 +440,7 @@ with `cargo bench` and `benchmarks/collect_results.sh` on your hardware.
 | **Multigrid V(3,3)** @ 65×65 | ~8 cycles to converge | Criterion `multigrid_bench.rs` | Standard V-cycle with 3 pre/post-smoothing sweeps |
 | **Multigrid V(3,3)** @ 129×129 | ~10 cycles to converge | Criterion `multigrid_bench.rs` | Near-optimal O(N) complexity |
 | **Rust Flight Sim** | **0.3 μs / step** | `validation/verify_10khz_rust.py` | 10kHz–30kHz verified on standard OS |
-| **JAX-FNO Physics** | **0.9997 correlation** | `validation/validate_fno_tglf.py` | Validated against TGLF growth rates |
+| **JAX-FNO Physics** | Synthetic-data surrogate | `validation/validate_fno_tglf.py` | Not validated against gyrokinetic output; requires TGLF training data for production use |
 | **Full equil. (Picard+SOR)** | ~5 s (Python) | `profiling/profile_kernel.py` | Jacobi + Picard, not multigrid |
 | **Inverse reconstruction** | ~4 s (5 LM iters, Rust) | Criterion `inverse_bench.rs` | Dominated by forward solve time |
 | **Neural transport MLP** | ~5 µs/point (synthetic baseline weights) | Criterion `neural_transport_bench.rs` | Baseline pretrained bundle shipped; retrain for facility-specific regimes |

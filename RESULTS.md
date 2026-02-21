@@ -75,11 +75,13 @@
 |--------|-------|------|-------|
 | tau_E relative RMSE | 28.6% | — | Reference ITPA baseline |
 | Neural transport MLP surrogate | tau_E RMSE % | 13.5% (13.5%) | 20 samples |
-| FNO (JAX-accelerated) relative L2 (mean) | 0.0010 | — | Turbulence reconstruction (**Validated**) |
-| FNO (JAX-accelerated) relative L2 (P95) | 0.0012 | — | 1000 samples |
+| FNO (JAX-accelerated) relative L2 (mean) | 0.0010 | — | Synthetic-data surrogate (not validated against gyrokinetic output) |
+| FNO (JAX-accelerated) relative L2 (P95) | 0.0012 | — | Requires TGLF/GENE training data for production use |
 
-> **NEW — JAX FNO turbulence surrogate:** Supersedes the legacy NumPy version.
-> Achieves ~0.001 relative L2 loss and 98% suppression efficiency.
+> **JAX FNO turbulence surrogate:** Supersedes the legacy NumPy version.
+> Trained on synthetic turbulence data only. The ~0.001 relative L2 measures
+> self-consistency, not physics accuracy. Requires retraining on gyrokinetic
+> output (TGLF/GENE) for physics-grade predictions.
 
 ## Documentation & Hero Notebooks
 

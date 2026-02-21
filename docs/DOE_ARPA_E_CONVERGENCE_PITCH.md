@@ -490,7 +490,7 @@ This preserves the computational efficiency of SCPN-FC for real-time control whi
 | License | AGPL-3.0 | Restricted | DOE-only | DOE-only | Open | Apache-2.0 | Apache-2.0 |
 | Equilibrium solver | Picard+SOR/MG | Current filaments | Fixed-boundary | Spectral | Wrappers | JAX spectral | Picard |
 | Neural equilibrium | Yes (MLP) | No | No | No | No | No | No |
-| FNO turbulence | Yes (spectral) | No | No | TGLF coupling | TGLF wrapper | QLKNN | No |
+| FNO turbulence | Yes (synthetic surrogate) | No | No | TGLF coupling | TGLF wrapper | QLKNN | No |
 | Disruption prediction | Transformer+MRE | No | No | No | DL models | No | No |
 | SNN controller | LIF populations | No | No | No | No | No | No |
 | Digital twin | Real-time | No | No | No | No | No | No |
