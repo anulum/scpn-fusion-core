@@ -32,10 +32,10 @@ def sync():
     version = get_version()
     print(f"--- Synchronizing Metadata to v{version} ---")
 
-    # 1. pyproject.toml
+    # 1. pyproject.toml (under [project] section — multiline aware)
     update_file(
         REPO_ROOT / "pyproject.toml",
-        r'^version = ".*?"',
+        r'(?m)^version = ".*?"',
         f'version = "{version}"'
     )
 
@@ -56,12 +56,40 @@ def sync():
     # 4. CITATION.cff
     update_file(
         REPO_ROOT / "CITATION.cff",
-        r'^version: ".*?"',
+        r'(?m)^version: ".*?"',
         f'version: "{version}"'
     )
 
+    # 4b. validation/__init__.py
+    update_file(
+        REPO_ROOT / "validation" / "__init__.py",
+        r'__version__ = ".*?"',
+        f'__version__ = "{version}"'
+    )
+
+    # 4c. scpn-fusion-rs/crates/fusion-python/pyproject.toml
+    update_file(
+        REPO_ROOT / "scpn-fusion-rs" / "crates" / "fusion-python" / "pyproject.toml",
+        r'(?m)^version = ".*?"',
+        f'version = "{version}"'
+    )
+
+    # 4d. docs/RELEASE_ACCEPTANCE_CHECKLIST.md
+    update_file(
+        REPO_ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md",
+        r'Release Version: `v\d+\.\d+\.\d+`',
+        f'Release Version: `v{version}`'
+    )
+
+    # 4e. docs/competitive_analysis.md table rows
+    update_file(
+        REPO_ROOT / "docs" / "competitive_analysis.md",
+        r'SCPN v\d+\.\d+\.\d+',
+        f'SCPN v{version}'
+    )
+
     # 5. README.md badges
-    # Matches ![Version](...version-3.8.3...)
+    # Matches ![Version](...version-X.Y.Z...)
     update_file(
         REPO_ROOT / "README.md",
         r'Version-\d+\.\d+\.\d+-brightgreen',
