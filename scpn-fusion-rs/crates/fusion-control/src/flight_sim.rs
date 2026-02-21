@@ -10,6 +10,7 @@
 use crate::digital_twin::ActuatorDelayLine;
 use crate::pid::IsoFluxController;
 use crate::telemetry::TelemetrySuite;
+use crate::constraints::SafetyEnvelope;
 use fusion_types::error::{FusionError, FusionResult};
 use std::time::Instant;
 
@@ -33,12 +34,15 @@ pub struct RustFlightSim {
     pub controller: IsoFluxController,
     pub delay_line: ActuatorDelayLine,
     pub telemetry: TelemetrySuite,
+    pub constraints: SafetyEnvelope,
     pub control_dt: f64,
     // Simulated state (Simplified Physics Model for high-speed loop)
     pub curr_r: f64,
     pub curr_z: f64,
     pub curr_ip_ma: f64,
     pub curr_beta: f64,
+    // Actuator States (for slew rate tracking)
+    pub pf_states: Vec<f64>, 
 }
 
 impl RustFlightSim {
@@ -62,11 +66,13 @@ impl RustFlightSim {
             delay_line: ActuatorDelayLine::new(2, (0.05 * control_hz) as usize, 0.5)
                 .map_err(|e| FusionError::ConfigError(e.to_string()))?,
             telemetry: TelemetrySuite::new(1_000_000), // 1M points capacity
+            constraints: SafetyEnvelope::default(),
             control_dt,
             curr_r: target_r,
             curr_z: target_z,
             curr_ip_ma: 5.0,
             curr_beta: 1.0,
+            pf_states: vec![0.0, 0.0], // R, Z actuators
         })
     }
 
@@ -113,8 +119,16 @@ impl RustFlightSim {
             self.curr_z = self.curr_z.clamp(-6.0, 6.0);
 
             // 2. Control Action
-            let (ctrl_r, ctrl_z) = self.controller.step(self.curr_r, self.curr_z)?;
+            let (requested_r, requested_z) = self.controller.step(self.curr_r, self.curr_z)?;
+            
+            // 2b. Safety Enforcement (Hardening Task 1)
+            let ctrl_r = self.constraints.pf_coils.enforce(requested_r, self.pf_states[0], self.control_dt);
+            let ctrl_z = self.constraints.pf_coils.enforce(requested_z, self.pf_states[1], self.control_dt);
+            self.pf_states[0] = ctrl_r;
+            self.pf_states[1] = ctrl_z;
 
+            // TODO: Enforce heating constraints when heating control is active
+            
             // 3. Apply Actuators (with delay/lag)
             use ndarray::Array1;
             let actions = self

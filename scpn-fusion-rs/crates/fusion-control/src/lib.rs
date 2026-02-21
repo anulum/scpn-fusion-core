@@ -10,6 +10,7 @@
 //! Stage 7: PID, optimal, MPC, SNN, digital twin, SPI, SOC-learning, analytic.
 
 pub mod analytic;
+pub mod constraints;
 pub mod digital_twin;
 pub mod flight_sim;
 pub mod mpc;

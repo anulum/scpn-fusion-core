@@ -61,6 +61,10 @@ full = [
     "omas>=0.70",
 ]
 
+[tool.setuptools]
+packages = ["scpn_fusion", "validation"]
+package-dir = {"" = "src", "validation": "validation"}
+
 [project.scripts]
 scpn-fusion = "scpn_fusion.cli:main"
 scpn-dashboard = "scpn_fusion.ui.dashboard_launcher:main"

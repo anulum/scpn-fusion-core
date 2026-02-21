@@ -117,8 +117,10 @@ impl IsoFluxController {
         let err_z = self.target_z - measured_z;
         let ctrl_r = self.pid_r.step(err_r)?;
         let ctrl_z = self.pid_z.step(err_z)?;
-        self.r_history.push(measured_r);
-        self.z_history.push(measured_z);
+        
+        // Note: history is now handled by the circular buffer in flight_sim.rs
+        // to prevent large Vec allocations in the 10kHz loop.
+        
         Ok((ctrl_r, ctrl_z))
     }
 }
