@@ -230,7 +230,7 @@ class HInfinityController:
         return X, Y, F, L
 
     def _find_optimal_gamma(
-        self, gamma_min: float = 1.01, gamma_max: float = 100.0, tol: float = 0.01
+        self, gamma_min: float = 1.01, gamma_max: float = 1e6, tol: float = 0.01
     ) -> float:
         """Bisection search for the smallest feasible gamma."""
         best_gamma = gamma_max
@@ -286,6 +286,9 @@ class HInfinityController:
         # State update
         dx = self.A @ self.state + self.B2 @ u + self.L_gain @ innovation
         self.state = self.state + dx * dt
+        
+        # Hardening: Clamp state to prevent explosion in high-noise/unstable scenarios
+        self.state = np.clip(self.state, -1e6, 1e6)
 
         return float(u[0]) if u.size > 1 else float(u.item())
 
