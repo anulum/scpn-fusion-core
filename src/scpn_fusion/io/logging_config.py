@@ -3,6 +3,8 @@
 # © 1998–2026 Miroslav Šotek. All rights reserved.
 # Contact: www.anulum.li | protoscience@anulum.li
 # ──────────────────────────────────────────────────────────────────────
+from __future__ import annotations
+
 import json
 import logging
 import sys

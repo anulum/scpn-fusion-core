@@ -457,7 +457,7 @@ def run_disruption_episode(
     ip = float(rng.uniform(3.5, 8.0))
     design = explorer.evaluate_design(r_maj, b_t, ip)
     q_proxy = float(
-        7.5 + 0.10 * np.sqrt(max(float(design["Q"]), 0.0)) * (1.0 - 0.25 * disturbance)
+        7.5 + 1.2 * max(float(design["Q"]), 0.0) * (1.0 - 0.25 * disturbance)
     )
     li6_enrichment = float(rng.uniform(0.85, 1.0))
     be_multiplier_fraction = float(rng.uniform(0.35, 0.95))

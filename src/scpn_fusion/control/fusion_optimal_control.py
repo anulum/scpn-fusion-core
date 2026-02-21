@@ -115,16 +115,22 @@ class OptimalController:
         Calculates the Shafranov Shift (Delta R) heuristic.
         Delta R ~ (a^2 / 2R) * (beta_p + li/2)
         """
-        # Estimates from kernel config/state
-        # Minor radius a, Major radius R
-        r_min = self.kernel.cfg['dimensions']['R_min']
-        r_max = self.kernel.cfg['dimensions']['R_max']
+        dims = self.kernel.cfg.get('dimensions')
+        if dims is None:
+            # Fallback: infer from grid arrays when dimensions not in config
+            r_min = float(self.kernel.R[0])
+            r_max = float(self.kernel.R[-1])
+        else:
+            r_min = dims['R_min']
+            r_max = dims['R_max']
         a = (r_max - r_min) / 2.0
         R0 = (r_max + r_min) / 2.0
-        
+        if R0 <= 0.0:
+            return 0.0
+
         beta_p = self.kernel.cfg['physics'].get('beta_p', 0.5)
         li = 0.8 # Internal inductance proxy
-        
+
         shift = (a**2 / (2.0 * R0)) * (beta_p + li/2.0)
         return float(shift)
 
@@ -149,11 +155,16 @@ class OptimalController:
         current_pos: np.ndarray,
         target_pos: np.ndarray,
         regularization_lambda: float = 0.05,
+        *,
+        regularization_limit: float | None = None,
     ) -> np.ndarray:
         """
         Solve Error = J * Delta_I using Tikhonov-regularized (damped) SVD.
         Provides smoother control than hard-cutoff SVD near singularities.
         """
+        # Accept regularization_limit as alias for regularization_lambda
+        if regularization_limit is not None:
+            regularization_lambda = regularization_limit
         cur = np.asarray(current_pos, dtype=np.float64).reshape(2)
         tgt = np.asarray(target_pos, dtype=np.float64).reshape(2)
         error = tgt - cur
@@ -161,7 +172,7 @@ class OptimalController:
         u, s, vt = np.linalg.svd(self.response_matrix, full_matrices=False)
         lam = float(regularization_lambda)
         if not np.isfinite(lam) or lam < 0.0:
-            raise ValueError("regularization_lambda must be finite and >= 0.")
+            raise ValueError("regularization_limit must be finite and >= 0.")
         
         # Tikhonov Damping: s_inv = s / (s^2 + lambda^2)
         s_inv = s / (s**2 + lam**2)

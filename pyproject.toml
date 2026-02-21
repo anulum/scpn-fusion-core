@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scpn-fusion"
-version = "3.7.0"
+version = "3.8.3"
 description = "SCPN Fusion Core - Advanced Plasma Physics & Control Suite"
 authors = [
     {name = "Miroslav Sotek"},
@@ -63,7 +63,7 @@ full = [
 
 [tool.setuptools]
 packages = ["scpn_fusion", "validation"]
-package-dir = {"" = "src", "validation": "validation"}
+package-dir = {"" = "src", "validation" = "validation"}
 
 [project.scripts]
 scpn-fusion = "scpn_fusion.cli:main"

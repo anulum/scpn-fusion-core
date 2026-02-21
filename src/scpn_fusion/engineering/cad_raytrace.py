@@ -229,22 +229,16 @@ def estimate_surface_loading(
         dist2 = np.sum(ray * ray, axis=1)
         dist = np.sqrt(np.maximum(dist2, 1e-12))
         dirs = ray / dist[:, None]
-        
-        # 1. Back-face culling: dot(n, dir) < 0
-        # For a convex hull, only one face is visible.
-        cos_incidence = np.sum(normals * dirs, axis=1)
-        # Note: direction is src->target, so cos > 0 means pointing AWAY from src?
-        # ray = centroids - src.  Normal pointing OUT. 
-        # If normal . ray > 0, it's a back face (looking from inside).
-        # We need Normal . (-ray) > 0 for front face.
-        cos_front = -cos_incidence 
-        visible = cos_front > 0.0
-        
-        # 2. Occlusion (Self-Shadowing)
+
+        # Absolute cosine of incidence — radiation loads both sides of
+        # thin surfaces (neutron/photon transport, not optics).
+        cos_abs = np.abs(np.sum(normals * dirs, axis=1))
+        visible = cos_abs > 0.0
+
+        # Occlusion (Self-Shadowing)
         if occlusion_cull:
             for i in np.nonzero(visible)[0]:
                 c = centroids[i]
-                # Broad-phase test
                 if occlusion_broadphase:
                     seg_min = np.minimum(p, c) - occlusion_epsilon
                     seg_max = np.maximum(p, c) + occlusion_epsilon
@@ -254,14 +248,14 @@ def estimate_surface_loading(
                     )[0]
                 else:
                     candidate_idx = np.arange(faces.shape[0])
-                
+
                 for j in candidate_idx:
                     if i == j: continue
                     if _segment_intersects_triangle(p, c, tri[j], epsilon=occlusion_epsilon):
                         visible[i] = False
                         break
-        
-        final_cos = np.where(visible, cos_front, 0.0)
+
+        final_cos = np.where(visible, cos_abs, 0.0)
         loading += float(power) * final_cos / (4.0 * np.pi * np.maximum(dist2, 1e-12))
 
     return CADLoadReport(

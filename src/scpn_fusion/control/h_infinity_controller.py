@@ -159,7 +159,11 @@ class HInfinityController:
         # Solve Riccati equations and compute gains
         self.X, self.Y, self.F, self.L_gain = self._synthesize(self.gamma)
         self.spectral_radius_xy = float(np.max(np.abs(np.linalg.eigvals(self.X @ self.Y))))
-        self.robust_feasible = bool(self.spectral_radius_xy < self.gamma ** 2)
+        # Require a meaningful relative margin (1e-4) to avoid declaring
+        # borderline numerical solutions as "feasible"
+        self.robust_feasible = bool(
+            self.spectral_radius_xy < self.gamma ** 2 * (1.0 - 1e-4)
+        )
         if not self.robust_feasible:
             msg = (
                 "H-infinity spectral feasibility condition failed: "

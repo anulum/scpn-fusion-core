@@ -431,6 +431,8 @@ def run_control_room(
 
         history_z.append(float(true_z))
         history_z_measured.append(float(raw_measured_z))
+        history_top.append(float(top_action))
+        history_bot.append(float(bot_action))
         frames.append(
             {
                 "density": np.asarray(density, dtype=np.float64).copy(),

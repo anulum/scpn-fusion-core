@@ -353,7 +353,7 @@ def test_full_stability_check_all_five():
         beta_t=0.025, Ip_MA=IP_MA, a=A, B0=B0,
         j_bs=j_bs, j_total=j_total,
     )
-    assert summary.n_criteria_checked == 5
+    assert summary.n_criteria_checked == 6  # Mercier, Ballooning, KS, Troyon, NTM, RWM
     assert summary.troyon is not None
     assert summary.ntm is not None
     assert isinstance(summary.overall_stable, bool)

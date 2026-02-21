@@ -212,24 +212,16 @@ def compute_q_profile(
 # ── Mercier criterion ────────────────────────────────────────────────
 
 def mercier_stability(qp: QProfile) -> MercierResult:
-    """Evaluate the Mercier interchange stability criterion.
-    Harden with magnetic well and toroidal geometry corrections.
-    
-    D_M = (s^2 / 4) + alpha * (eps/q^2) * (1 - q^2)  [Simplified Toroidal]
+    """Evaluate the Mercier interchange stability criterion (Suydam form).
+
+    D_M = s^2 / 4 - alpha_mhd
     Stable where D_M >= 0.
     """
     s = qp.shear
     alpha = qp.alpha_mhd
-    q = qp.q
-    
-    # Heuristic for Inverse Aspect Ratio eps(rho)
-    # a approx R/3
-    eps = qp.rho / 3.0
-    
-    # Mercier index with magnetic well term (1-q^2)
-    # In tokamaks, q > 1 is the primary driver for interchange stability (well)
-    # D_M = s^2/4 + (2*mu0*p'/Bt^2) * (R/Bt^2) * (1-q^2) -> alpha variant
-    D_M = (s**2 / 4.0) + (alpha * eps / np.maximum(q**2, 0.1)) * (1.0 - q**2)
+
+    # Suydam/Mercier index: shear stabilisation vs pressure-gradient drive
+    D_M = (s**2 / 4.0) - alpha
 
     stable = D_M >= 0.0
 

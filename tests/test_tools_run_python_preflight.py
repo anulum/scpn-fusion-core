@@ -38,6 +38,13 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
+                "tools/sync_metadata.py",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
                 "-m",
                 "pytest",
                 "tests/test_version_metadata.py",
@@ -248,10 +255,7 @@ def test_main_stops_at_first_failure(monkeypatch):
         (
             [
                 "python-test",
-                "-m",
-                "pytest",
-                "tests/test_version_metadata.py",
-                "-q",
+                "tools/sync_metadata.py",
             ],
             SCRIPT_PATH.resolve().parents[1],
         )

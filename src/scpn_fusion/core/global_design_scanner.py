@@ -77,9 +77,10 @@ class GlobalDesignExplorer:
         # beta_limit is in %, so divide by 100
         max_pressure = (beta_limit_pct / 100.0) * (B_field**2) / (2.0 * mu0)
         
-        # Fusion Power ~ Vol * Pressure^2
-        # Calibrated constant C (Optimistic H-Mode)
-        C_fus = 0.20 
+        # Fusion Power [MW] ~ C_fus * Vol [m^3] * <p>^2 [Pa^2]
+        # Derived from P = 0.25 * n^2 * <sv> * V * E_fus  with n = p/(kT)
+        # At T~12 keV with H-mode profile correction (~0.6):
+        C_fus = 2.5e-11
         P_fus = C_fus * Vol * max_pressure**2
         
         # Wall Load

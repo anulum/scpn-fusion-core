@@ -7,10 +7,10 @@
 //! Migrated from `tokamak_flight_sim.py` to enable industry-standard
 //! control loop frequencies without Python/GIL overhead.
 
+use crate::constraints::SafetyEnvelope;
 use crate::digital_twin::ActuatorDelayLine;
 use crate::pid::IsoFluxController;
 use crate::telemetry::TelemetrySuite;
-use crate::constraints::SafetyEnvelope;
 use fusion_types::error::{FusionError, FusionResult};
 use std::time::Instant;
 
@@ -42,7 +42,7 @@ pub struct RustFlightSim {
     pub curr_ip_ma: f64,
     pub curr_beta: f64,
     // Actuator States (for slew rate tracking)
-    pub pf_states: Vec<f64>, 
+    pub pf_states: Vec<f64>,
 }
 
 impl RustFlightSim {
@@ -120,15 +120,21 @@ impl RustFlightSim {
 
             // 2. Control Action
             let (requested_r, requested_z) = self.controller.step(self.curr_r, self.curr_z)?;
-            
+
             // 2b. Safety Enforcement (Hardening Task 1)
-            let ctrl_r = self.constraints.pf_coils.enforce(requested_r, self.pf_states[0], self.control_dt);
-            let ctrl_z = self.constraints.pf_coils.enforce(requested_z, self.pf_states[1], self.control_dt);
+            let ctrl_r =
+                self.constraints
+                    .pf_coils
+                    .enforce(requested_r, self.pf_states[0], self.control_dt);
+            let ctrl_z =
+                self.constraints
+                    .pf_coils
+                    .enforce(requested_z, self.pf_states[1], self.control_dt);
             self.pf_states[0] = ctrl_r;
             self.pf_states[1] = ctrl_z;
 
             // TODO: Enforce heating constraints when heating control is active
-            
+
             // 3. Apply Actuators (with delay/lag)
             use ndarray::Array1;
             let actions = self
@@ -144,7 +150,8 @@ impl RustFlightSim {
             self.curr_z += applied_z * self.control_dt;
 
             // Record Telemetry (Zero Allocation)
-            self.telemetry.record(self.curr_r, self.curr_z, self.curr_ip_ma, self.curr_beta);
+            self.telemetry
+                .record(self.curr_r, self.curr_z, self.curr_ip_ma, self.curr_beta);
 
             // 5. Metrics
             let r_err = (self.curr_r - self.controller.target_r).abs();

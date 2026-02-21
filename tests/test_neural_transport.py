@@ -81,10 +81,12 @@ class TestCriticalGradient:
             chi_prev = fluxes.chi_i
 
     def test_particle_diffusivity_relation(self):
-        """D_e should be chi_e / 3."""
+        """D_e follows Ware pinch scaling: chi_e * (0.1 + 0.5*sqrt(eps))."""
         inp = TransportInputs(grad_te=10.0)
         fluxes = critical_gradient_model(inp)
-        assert abs(fluxes.d_e - fluxes.chi_e / 3.0) < 1e-12
+        eps = inp.rho / 3.1
+        expected = fluxes.chi_e * (0.1 + 0.5 * np.sqrt(eps))
+        assert abs(fluxes.d_e - expected) < 1e-12
 
 
 # ── MLP forward pass ─────────────────────────────────────────────────
@@ -245,7 +247,7 @@ class TestNeuralTransportModel:
             safe_ti = np.maximum(np.abs(ti), 1e-6)
             grad_ti_i = float(np.clip(-6.2 * dx_ti[i] / safe_ti[i], 0, 50))
 
-            inp = TransportInputs(grad_te=grad_te_i, grad_ti=grad_ti_i)
+            inp = TransportInputs(grad_te=grad_te_i, grad_ti=grad_ti_i, rho=float(rho[i]))
             fluxes = critical_gradient_model(inp)
             np.testing.assert_allclose(chi_e[i], fluxes.chi_e, rtol=1e-10)
             np.testing.assert_allclose(chi_i[i], fluxes.chi_i, rtol=1e-10)

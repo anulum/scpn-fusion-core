@@ -469,6 +469,12 @@ class MultiGroupBlanket:
     ) -> dict[str, object]:
         """Solve 3-group steady-state cylindrical neutron diffusion."""
         incident_flux = _require_finite_float("incident_flux", incident_flux, min_value=1.0)
+        port_coverage_factor = float(port_coverage_factor)
+        if not (0.0 < port_coverage_factor <= 1.0):
+            raise ValueError("port_coverage_factor must be in (0, 1].")
+        streaming_factor = float(streaming_factor)
+        if not (0.0 < streaming_factor <= 1.0):
+            raise ValueError("streaming_factor must be in (0, 1].")
         
         # --- Group 1 (fast) ---
         sigma_tot_1 = (self.sigma_capture_g1 + self.sigma_scatter_g1 + 
@@ -481,6 +487,7 @@ class MultiGroupBlanket:
             D1, sigma_rem_1, np.zeros(self.n_cells), 
             ("dirichlet", incident_flux), ("dirichlet", 0.0)
         )
+        n_clamped_g1 = int(np.sum(phi_g1 < 0))
         phi_g1 = np.maximum(phi_g1, 0.0)
 
         # --- Group 2 (epithermal) ---
@@ -494,6 +501,7 @@ class MultiGroupBlanket:
             D2, sigma_rem_2, source2, 
             ("neumann", 0.0), ("dirichlet", 0.0)
         )
+        n_clamped_g2 = int(np.sum(phi_g2 < 0))
         phi_g2 = np.maximum(phi_g2, 0.0)
 
         # --- Group 3 (thermal) ---
@@ -506,6 +514,7 @@ class MultiGroupBlanket:
             D3, sigma_rem_3, source3, 
             ("neumann", 0.0), ("dirichlet", 0.0)
         )
+        n_clamped_g3 = int(np.sum(phi_g3 < 0))
         phi_g3 = np.maximum(phi_g3, 0.0)
 
         # --- TBR and Integration (Cylindrical Volume) ---
@@ -522,11 +531,37 @@ class MultiGroupBlanket:
         tbr_ideal = total_tritium / max(incident_current_total, 1e-12)
         tbr = tbr_ideal * port_coverage_factor * streaming_factor
 
+        # Per-group TBR breakdown (with same correction factors as total)
+        corr = port_coverage_factor * streaming_factor
+        tbr_g1 = trap(prod_g1 * 2.0 * np.pi * self.r, self.r) / max(incident_current_total, 1e-12) * corr
+        tbr_g2 = trap(prod_g2 * 2.0 * np.pi * self.r, self.r) / max(incident_current_total, 1e-12) * corr
+        tbr_g3 = trap(prod_g3 * 2.0 * np.pi * self.r, self.r) / max(incident_current_total, 1e-12) * corr
+
+        # Flux clamping telemetry (tracked before np.maximum above)
+        flux_clamp_total = n_clamped_g1 + n_clamped_g2 + n_clamped_g3
+        clamp_events = {
+            "fast": n_clamped_g1,
+            "epithermal": n_clamped_g2,
+            "thermal": n_clamped_g3,
+        }
+
+        # Incident current density (cm^-2 s^-1)
+        area_cm2 = 2.0 * np.pi * self.r_inner * 1e4
+        incident_current_cm2_s = float(incident_current_total / max(area_cm2, 1e-12))
+
         return {
             "phi_g1": phi_g1, "phi_g2": phi_g2, "phi_g3": phi_g3,
             "total_production": total_prod,
             "tbr": float(tbr), "tbr_ideal": float(tbr_ideal),
+            "tbr_by_group": {
+                "fast": float(tbr_g1),
+                "epithermal": float(tbr_g2),
+                "thermal": float(tbr_g3),
+            },
             "incident_current_total": float(incident_current_total),
+            "incident_current_cm2_s": incident_current_cm2_s,
+            "flux_clamp_total": flux_clamp_total,
+            "flux_clamp_events": clamp_events,
         }
 
 

@@ -438,3 +438,18 @@ If you have questions about licensing, please ask before submitting your contrib
 - Email the maintainer at protoscience@anulum.li.
 
 Thank you for helping improve fusion plasma simulation and control.
+
+---
+
+## Session Logs & Handovers
+
+All session logs and handover documents for this project are stored permanently in the monorepo's canonical location:
+
+- **Session logs:** `.coordination/sessions/SCPN-Fusion-Core/`
+- **Handovers:** `.coordination/handovers/SCPN-Fusion-Core/`
+
+**Do not** place session logs or handovers inside this project directory. They will be moved during consolidation.
+
+These files are **permanent records** and must never be deleted, even if outdated.
+
+See [`.coordination/SESSION_AND_HANDOVER_POLICY.md`](../../.coordination/SESSION_AND_HANDOVER_POLICY.md) for naming conventions, templates, and the full policy.

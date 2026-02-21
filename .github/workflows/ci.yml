@@ -40,7 +40,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
           pip install "jax[cpu]" gymnasium
- gymnasium
 
       - name: Bootstrap optional sc-neurocore modules (Python 3.12 lane)
         if: matrix.python-version == '3.12'

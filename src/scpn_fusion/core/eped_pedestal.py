@@ -45,7 +45,7 @@ _EPED_DOMAIN_BOUNDS: Dict[str, Tuple[float, float, str]] = {
     "A_ion": (1.0, 3.5, "-"),
     "Z_eff": (1.0, 3.5, "-"),
     "epsilon": (0.15, 0.50, "-"),
-    "n_ped_1e19": (2.0, 40.0, "1e19 m^-3"),
+    "n_ped_1e19": (2.0, 16.0, "1e19 m^-3"),
     "T_ped_guess_keV": (0.2, 8.0, "keV"),
 }
 _EXTRAPOLATION_PENALTY_SLOPE = 0.35

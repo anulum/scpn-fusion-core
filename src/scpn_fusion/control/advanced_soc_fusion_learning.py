@@ -133,7 +133,24 @@ class FusionAIAgent:
         n_actions: int = N_ACTIONS,
         entropy_beta: float = 0.05,
     ) -> None:
-        # ... (validation omitted for brevity, same as original)
+        alpha = float(alpha)
+        if not np.isfinite(alpha) or alpha < 0.0 or alpha > 1.0:
+            raise ValueError("alpha must be finite and in [0, 1].")
+        gamma = float(gamma)
+        if not np.isfinite(gamma) or gamma < 0.0 or gamma > 1.0:
+            raise ValueError("gamma must be finite and in [0, 1].")
+        epsilon = float(epsilon)
+        if not np.isfinite(epsilon) or epsilon < 0.0 or epsilon > 1.0:
+            raise ValueError("epsilon must be finite and in [0, 1].")
+        n_states_turb = int(n_states_turb)
+        if n_states_turb < 1:
+            raise ValueError("n_states_turb must be >= 1.")
+        n_states_flow = int(n_states_flow)
+        if n_states_flow < 1:
+            raise ValueError("n_states_flow must be >= 1.")
+        n_actions = int(n_actions)
+        if n_actions < 1:
+            raise ValueError("n_actions must be >= 1.")
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon

@@ -177,9 +177,9 @@ class TestGammaFeasibility:
         assert np.isfinite(margin)
 
     def test_robust_feasible_property(self) -> None:
-        """robust_feasible flag should be consistent with spectral radius."""
+        """robust_feasible flag should be consistent with spectral radius (with margin)."""
         ctrl = get_radial_robust_controller(gamma_growth=100.0)
-        expected = ctrl.spectral_radius_xy < ctrl.gamma ** 2
+        expected = ctrl.spectral_radius_xy < ctrl.gamma ** 2 * (1.0 - 1e-4)
         assert ctrl.robust_feasible == expected
 
 

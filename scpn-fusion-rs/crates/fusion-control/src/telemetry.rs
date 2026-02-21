@@ -48,8 +48,14 @@ impl CircularChannel {
     }
 
     pub fn latest(&self) -> f64 {
-        if self.count == 0 { return 0.0; }
-        let idx = if self.head == 0 { self.capacity - 1 } else { self.head - 1 };
+        if self.count == 0 {
+            return 0.0;
+        }
+        let idx = if self.head == 0 {
+            self.capacity - 1
+        } else {
+            self.head - 1
+        };
         self.data[idx]
     }
 }
