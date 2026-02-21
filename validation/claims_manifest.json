@@ -81,7 +81,7 @@
     {
       "id": "results_fno_validated_status",
       "source_file": "RESULTS.md",
-      "source_pattern": "NEW — JAX FNO turbulence surrogate",
+      "source_pattern": "JAX FNO turbulence surrogate",
       "evidence_files": [
         "src/scpn_fusion/core/fno_turbulence_suppressor.py",
         "src/scpn_fusion/core/fno_training.py"

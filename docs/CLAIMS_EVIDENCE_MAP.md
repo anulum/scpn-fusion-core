@@ -86,7 +86,7 @@ Evidence pattern checks:
 ### `results_fno_validated_status`
 
 - Source file: `RESULTS.md`
-- Source pattern: `NEW — JAX FNO turbulence surrogate`
+- Source pattern: `JAX FNO turbulence surrogate`
 
 Evidence files:
 - `src/scpn_fusion/core/fno_turbulence_suppressor.py`
