@@ -1,23 +1,37 @@
 {
   "PID": {
-    "p50_latency_us": 5377.535866666666,
-    "p95_latency_us": 5826.524506666667,
-    "p99_latency_us": 5832.720368,
+    "p50_latency_us": 3431.3758333333335,
+    "p95_latency_us": 3624.2502600000003,
+    "p99_latency_us": 3658.4025853333337,
     "mean_reward": -2.3962572185574615e-06,
     "disruption_rate": 0.0
   },
   "H-infinity": {
-    "p50_latency_us": 5823.5856,
-    "p95_latency_us": 5998.004766666666,
-    "p99_latency_us": 6000.532126666666,
-    "mean_reward": -10.133066725813705,
+    "p50_latency_us": 3227.1453666666666,
+    "p95_latency_us": 3606.87718,
+    "p99_latency_us": 3619.5501026666666,
+    "mean_reward": -10.133066725805051,
     "disruption_rate": 1.0
   },
   "NMPC-JAX": {
-    "p50_latency_us": 38205.5769,
-    "p95_latency_us": 39682.48265333333,
-    "p99_latency_us": 39795.581463999995,
+    "p50_latency_us": 45450.299933333336,
+    "p95_latency_us": 49773.09164666667,
+    "p99_latency_us": 50582.80854266667,
     "mean_reward": -0.000739435007268416,
+    "disruption_rate": 0.0
+  },
+  "Nengo-SNN": {
+    "p50_latency_us": 23573.10943333333,
+    "p95_latency_us": 24736.161493333333,
+    "p99_latency_us": 24889.725312,
+    "mean_reward": -8.32701267471202e-06,
+    "disruption_rate": 0.0
+  },
+  "Rust-PID": {
+    "p50_latency_us": 0.522531,
+    "p95_latency_us": 0.6702369333333333,
+    "p99_latency_us": 0.69889832,
+    "mean_reward": -0.00014380206684172647,
     "disruption_rate": 0.0
   }
 }
