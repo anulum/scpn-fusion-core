@@ -55,6 +55,7 @@ class TestChangHintonProfile:
 
     def test_matches_python_implementation(self):
         """Rust profile must match Python scalar loop within 0.1% relative."""
+        import scpn_fusion.core.integrated_transport_solver as its_mod
         from scpn_fusion.core.integrated_transport_solver import (
             IntegratedTransportSolver,
         )
@@ -62,13 +63,18 @@ class TestChangHintonProfile:
         n = 50
         rho, t_i, _, n_e, q, _ = _iter_like_profiles(n)
 
-        # Python path
-        solver_py = IntegratedTransportSolver.__new__(IntegratedTransportSolver)
-        solver_py.rho = rho
-        solver_py.t_i = t_i
-        solver_py.n_e = n_e
-        solver_py.q_profile = q
-        chi_py = solver_py.chang_hinton_chi_profile()
+        # Python path — disable Rust fast-path to exercise the scalar loop
+        saved = its_mod._rust_transport_available
+        its_mod._rust_transport_available = False
+        try:
+            solver_py = IntegratedTransportSolver.__new__(IntegratedTransportSolver)
+            solver_py.rho = rho
+            solver_py.t_i = t_i
+            solver_py.n_e = n_e
+            solver_py.q_profile = q
+            chi_py = solver_py.chang_hinton_chi_profile()
+        finally:
+            its_mod._rust_transport_available = saved
 
         # Rust path
         solver_rs = scpn_fusion_rs.PyTransportSolver()
@@ -100,6 +106,7 @@ class TestTransportPerformance:
 
     def test_rust_chi_faster_than_python(self):
         """Rust vectorized chi must be at least 5x faster than Python scalar loop."""
+        import scpn_fusion.core.integrated_transport_solver as its_mod
         from scpn_fusion.core.integrated_transport_solver import (
             IntegratedTransportSolver,
         )
@@ -108,16 +115,22 @@ class TestTransportPerformance:
         rho, t_i, _, n_e, q, _ = _iter_like_profiles(n)
         n_reps = 100
 
-        # Time Python
-        solver_py = IntegratedTransportSolver.__new__(IntegratedTransportSolver)
-        solver_py.rho = rho
-        solver_py.t_i = t_i
-        solver_py.n_e = n_e
-        solver_py.q_profile = q
-        t0 = time.perf_counter()
-        for _ in range(n_reps):
-            solver_py.chang_hinton_chi_profile()
-        t_py = time.perf_counter() - t0
+        # Time Python — temporarily disable Rust fast-path so the
+        # method exercises the actual Python for-loop.
+        saved = its_mod._rust_transport_available
+        its_mod._rust_transport_available = False
+        try:
+            solver_py = IntegratedTransportSolver.__new__(IntegratedTransportSolver)
+            solver_py.rho = rho
+            solver_py.t_i = t_i
+            solver_py.n_e = n_e
+            solver_py.q_profile = q
+            t0 = time.perf_counter()
+            for _ in range(n_reps):
+                solver_py.chang_hinton_chi_profile()
+            t_py = time.perf_counter() - t0
+        finally:
+            its_mod._rust_transport_available = saved
 
         # Time Rust
         solver_rs = scpn_fusion_rs.PyTransportSolver()

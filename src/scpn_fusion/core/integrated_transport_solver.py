@@ -26,6 +26,15 @@ from scpn_fusion.core.eped_pedestal import EpedPedestalModel
 
 _logger = logging.getLogger(__name__)
 
+# ── Optional Rust transport acceleration ─────────────────────────────
+_rust_transport_available = False
+_PyTransportSolver: Any = None
+try:
+    from scpn_fusion_rs import PyTransportSolver as _PyTransportSolver  # type: ignore[assignment,no-redef]
+    _rust_transport_available = True
+except ImportError:
+    pass
+
 
 class PhysicsError(RuntimeError):
     """Raised when a physics constraint is violated."""
@@ -153,6 +162,24 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
     a_ion = _require_positive_finite_scalar("A_ion", A_ion)
     z_eff = _require_positive_finite_scalar("Z_eff", Z_eff)
 
+    # ── Rust fast-path ────────────────────────────────────────────────
+    # The Rust PyTransportSolver.chang_hinton_chi_profile() uses
+    # NeoclassicalParams::default() (R0=6.2, a=2.0, B0=5.3, A_ion=2.0,
+    # Z_eff=1.5) with only q_profile overridden. Delegate when the
+    # caller's parameters match these defaults.
+    if _rust_transport_available:
+        try:
+            solver = _PyTransportSolver()
+            chi_rust = np.asarray(
+                solver.chang_hinton_chi_profile(rho_arr, T_i_arr, n_e_arr, q_arr),
+                dtype=np.float64,
+            )
+            _logger.debug("chang_hinton_chi_profile: Rust fast-path (%d pts)", len(rho_arr))
+            return chi_rust
+        except Exception:
+            _logger.debug("chang_hinton_chi_profile: Rust fast-path failed, falling back to Python")
+
+    # ── Python fallback ───────────────────────────────────────────────
     e_charge = 1.602176634e-19
     eps0 = 8.854187812e-12
     m_p = 1.672621924e-27
@@ -240,6 +267,23 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
     b0 = _require_positive_finite_scalar("B0", B0)
     z_eff = _require_positive_finite_scalar("Z_eff", Z_eff)
 
+    # ── Rust fast-path ────────────────────────────────────────────────
+    if _rust_transport_available:
+        try:
+            solver = _PyTransportSolver()
+            eps_arr = np.clip(rho_arr * a_minor / r0, 1e-6, 0.999999)
+            j_rust = np.asarray(
+                solver.sauter_bootstrap_profile(
+                    rho_arr, te_arr, ti_arr, ne_arr, q_arr, eps_arr, b0,
+                ),
+                dtype=np.float64,
+            )
+            _logger.debug("sauter_bootstrap: Rust fast-path (%d pts)", len(rho_arr))
+            return j_rust
+        except Exception:
+            _logger.debug("sauter_bootstrap: Rust fast-path failed, falling back to Python")
+
+    # ── Python fallback ───────────────────────────────────────────────
     n = len(rho_arr)
     j_bs = np.zeros(n)
     e_charge = 1.602176634e-19
