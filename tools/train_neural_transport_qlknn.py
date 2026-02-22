@@ -92,7 +92,8 @@ def _train_jax(
     # Normalization stats from training data
     input_mean = jnp.array(np.mean(X_train, axis=0))
     input_std = jnp.array(np.std(X_train, axis=0))
-    output_scale = jnp.ones(OUTPUT_DIM)
+    output_scale = jnp.array(np.mean(Y_train, axis=0))
+    output_scale = jnp.maximum(output_scale, 1.0)  # safety floor
 
     params["input_mean"] = input_mean
     params["input_std"] = input_std
@@ -113,6 +114,7 @@ def _train_jax(
     @jit
     def loss_fn(params, x_batch, y_batch):
         preds = vmap(lambda x: forward(params, x))(x_batch)
+        # Revert to standard MSE to align with relative L2 metric
         return jnp.mean((preds - y_batch) ** 2)
 
     @jit
@@ -159,7 +161,7 @@ def _train_jax(
             beta1, beta2, eps = 0.9, 0.999, 1e-8
 
             for k in list(adam_m.keys()):
-                g = jnp.clip(grads[k], -1.0, 1.0)  # gradient clipping
+                g = jnp.clip(grads[k], -10.0, 10.0)  # increased gradient clipping
                 adam_m[k] = beta1 * adam_m[k] + (1 - beta1) * g
                 adam_v[k] = beta2 * adam_v[k] + (1 - beta2) * g ** 2
                 m_hat = adam_m[k] / (1 - beta1 ** t)
@@ -184,7 +186,7 @@ def _train_jax(
         else:
             no_improve += 1
 
-        if epoch % 10 == 0 or epoch == epochs - 1:
+        if epoch % 1 == 0 or epoch == epochs - 1:
             elapsed = time.monotonic() - t_start
             print(
                 f"  Epoch {epoch:4d}/{epochs} | "
@@ -245,18 +247,28 @@ def verify_and_save(
     all_pass = True
 
     # Gate 1: test relative L2 < 0.05
-    # Quick NumPy inference for test set
-    def np_forward(params, x):
-        h = (x - params["input_mean"]) / np.maximum(params["input_std"], 1e-8)
-        for i in range(n_layers):
-            h = np.maximum(0, h @ params[f"w{i+1}"] + params[f"b{i+1}"])  # GELU approx as ReLU for numpy
-            # Note: actual GELU would be h * 0.5 * (1 + erf(h/sqrt(2)))
-            # Using ReLU here is a slight approximation for the gate check
-        pre_act = h @ params[f"w{n_layers+1}"] + params[f"b{n_layers+1}"]
-        out = np.log1p(np.exp(np.clip(pre_act, -20, 20)))  # softplus
+    import jax
+    import jax.numpy as jnp
+    from jax import vmap
+
+    # Define the exact same forward function as in _train_jax
+    def jax_forward(params, x):
+        h = (x - params["input_mean"]) / jnp.maximum(params["input_std"], 1e-8)
+        n_layers_local = (len([k for k in params if k.startswith("w")])) - 1
+        for i in range(n_layers_local):
+            h = jax.nn.gelu(h @ params[f"w{i+1}"] + params[f"b{i+1}"])
+        out = jax.nn.softplus(h @ params[f"w{n_layers_local+1}"] + params[f"b{n_layers_local+1}"])
         return out * params["output_scale"]
 
-    preds_test = np_forward(params, X_test)
+    # Convert test data to JAX
+    params_jax = {k: jnp.array(v) for k, v in params.items()}
+    X_test_jax = jnp.array(X_test)
+    Y_test_jax = jnp.array(Y_test)
+
+    # Batched inference
+    preds_test_jax = vmap(lambda x: jax_forward(params_jax, x))(X_test_jax)
+    preds_test = np.array(preds_test_jax)
+    
     test_rel_l2 = np.sqrt(np.sum((preds_test - Y_test) ** 2) / max(np.sum(Y_test ** 2), 1e-8))
 
     if test_rel_l2 >= 0.05:
