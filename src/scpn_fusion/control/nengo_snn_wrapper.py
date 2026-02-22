@@ -97,6 +97,7 @@ class NengoSNNController:
         self._built = False
         self._step_count = 0
         self._last_output = np.zeros(self.cfg.n_channels)
+        self._error_value: NDArray[np.float64] = np.zeros(self.cfg.n_channels)
 
         self.build_network()
 
