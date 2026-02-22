@@ -138,13 +138,48 @@ def _run_pid_episode(config_path: Any, shot_duration: int = 30, surrogate: bool 
 
 
 def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
-    """Run a single H-infinity episode."""
+    """Run a single H-infinity episode.
+
+    Uses two *independent* H-inf controllers (one per axis) to avoid
+    observer state corruption when ``pid_step`` is called for both
+    the radial and vertical channels.
+
+    The H-inf DARE gains are synthesised for the internal plant model
+    (growth rate 100/s) whose actuator scale differs from the flight
+    simulator's coil-current interface.  We normalise the output so
+    that a unit position error produces the same control magnitude as
+    the PID's proportional term (Kp).
+    """
     factory = NeuralEquilibriumKernel if surrogate else None
     dt = 0.01 if surrogate else 0.05
     steps = int(shot_duration / dt)
     ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
-    hinf = get_radial_robust_controller()
-    ctrl.pid_step = lambda pid, err: hinf.step(err, dt)
+
+    # Separate controllers — each maintains its own observer state.
+    hinf_R = get_radial_robust_controller()
+    hinf_Z = get_radial_robust_controller()
+
+    # Force DARE gains to be computed for the current dt.
+    hinf_R.step(0.0, dt); hinf_R.reset()
+    hinf_Z.step(0.0, dt); hinf_Z.reset()
+
+    # Gain normalisation: H-inf DARE gain Fd[0,0] maps unit position
+    # error to a control output.  We scale so that the effective
+    # proportional gain matches the PID's Kp.
+    kp_R = ctrl.pid_R['Kp']
+    kp_Z = ctrl.pid_Z['Kp']
+    scale_R = kp_R / max(abs(float(hinf_R._Fd[0, 0])), 1e-12)
+    scale_Z = kp_Z / max(abs(float(hinf_Z._Fd[0, 0])), 1e-12)
+
+    pid_R_id = id(ctrl.pid_R)
+
+    def hinf_step(pid: Any, err: float) -> float:
+        if id(pid) == pid_R_id:
+            return scale_R * hinf_R.step(err, dt)
+        return scale_Z * hinf_Z.step(err, dt)
+
+    ctrl.pid_step = hinf_step
+
     t0 = time.perf_counter_ns()
     result = ctrl.run_shot(shot_duration=steps, save_plot=False)
     total_us = (time.perf_counter_ns() - t0) / 1e3
