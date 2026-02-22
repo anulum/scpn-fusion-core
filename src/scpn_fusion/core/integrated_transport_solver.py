@@ -1055,8 +1055,9 @@ class TransportSolver(FusionKernel):
         The result is cached after the first call since the grid
         geometry (rho, R0, a) does not change during a simulation.
         """
-        if hasattr(self, "_dV_cache"):
-            return self._dV_cache
+        cached: np.ndarray | None = getattr(self, "_dV_cache", None)
+        if cached is not None:
+            return cached
 
         dims = self.cfg["dimensions"]
         r_min = float(dims["R_min"])
