@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.9.1)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-02-22 12:31 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-02-22 18:50 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.9.1
-- **Generated:** 2026-02-22 12:31 UTC
-- **Wall-clock:** 17714s
+- **Generated:** 2026-02-22 18:50 UTC
+- **Wall-clock:** 293s
 
 ## Equilibrium & Transport
 
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.32 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.78 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 1.28 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 4.61 | ms | 129x129 grid |
 
 ## Heating & Neutronics
 
@@ -44,31 +44,32 @@
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
-| Disruption prevention rate (SNN) | >60 (0.0%) | % | 50-run ensemble |
-| Mean halo current peak | 2.242 | MA | |
-| P95 halo current peak | 3.328 | MA | |
-| Mean RE current peak | 13.726 | MA | |
-| P95 RE current peak | 15.495 | MA | |
+| Disruption prevention rate (SNN) | >60 (0.0%) | % | 10-run ensemble |
+| Mean halo current peak | 2.610 | MA | |
+| P95 halo current peak | 3.541 | MA | |
+| Mean RE current peak | 14.057 | MA | |
+| P95 RE current peak | 15.430 | MA | |
 | Passes ITER limits | No | — | Halo + RE constraints |
 | Kinetic RE current (G7) | 0.000 | MA | Seeded hottail @ 1ms |
 | Kinetic RE grid resolution | 200 | pts | Momentum space resolution |
 | SPI fragments tracked (G8) | 50 | — | Multi-fragment Lagrangian tracking |
 | SPI ablation rate peak | 0.00e+00 | m⁻³s⁻¹ | Parks ablation model |
-| HIL control-loop P50 latency | 25.2 | μs | 1000 iterations |
-| HIL control-loop P95 latency | 64.6 | μs | |
-| HIL control-loop P99 latency | 473.5 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 40.3 μs |
+| HIL control-loop P50 latency | 22.0 | μs | 200 iterations |
+| HIL control-loop P95 latency | 198.3 | μs | |
+| HIL control-loop P99 latency | 814.9 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 68.8 μs |
 
 ## Controller Performance (Stress-Test Campaign)
 
-> Auto-generated from 100-episode campaign.
+> Auto-generated from 5-episode campaign.
 
 | Controller | Episodes | Mean Reward | Std Reward | Mean R Error | P50 Lat (us) | P95 Lat (us) | P99 Lat (us) | Disrupt Rate | DEF | Energy Eff |
 |------------|----------|-------------|------------|--------------|-------------|-------------|-------------|--------------|-----|------------|
-| PID        |      100 |     -0.0000 |     0.0000 |       0.0000 |         3460 |         4854 |         5263 |        0.00% | 1.00 |      1.000 |
-| H-infinity |      100 |    -10.1331 |     0.0000 |       4.1058 |         3295 |         4534 |         5682 |      100.00% | 0.50 |      0.000 |
-| NMPC-JAX   |      100 |     -0.0007 |     0.0000 |       0.0001 |        35607 |        48923 |        53616 |        0.00% | 1.00 |      0.996 |
-| Nengo-SNN  |      100 |     -0.0000 |     0.0000 |       0.0000 |        17148 |        25352 |        25810 |        0.00% | 1.00 |      0.994 |
+| PID        |        5 |     -0.0000 |     0.0000 |       0.0000 |         1917 |         2236 |         2271 |        0.00% | 1.00 |      1.000 |
+| H-infinity |        5 |    -10.1331 |     0.0000 |       4.1058 |         2142 |         2355 |         2389 |      100.00% | 0.50 |      0.000 |
+| NMPC-JAX   |        5 |     -0.0007 |     0.0000 |       0.0001 |         9708 |        12619 |        13167 |        0.00% | 1.00 |      0.996 |
+| Nengo-SNN  |        5 |     -0.0000 |     0.0000 |       0.0000 |         4586 |         4908 |         4936 |        0.00% | 1.00 |      0.994 |
+| Rust-PID   |        5 |     -0.0001 |     0.0000 |       0.0001 |            0 |            0 |            0 |        0.00% | 0.00 |      0.950 |
 
 ### Controller Latency Distribution
 
