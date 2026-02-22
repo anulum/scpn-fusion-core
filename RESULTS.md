@@ -1,4 +1,4 @@
-# SCPN Fusion Core — Benchmark Results (v3.9.0)
+# SCPN Fusion Core — Benchmark Results (v3.9.1)
 
 > **Auto-generated** by `validation/collect_results.py` on 2026-02-22 12:31 UTC.
 > Re-run the script to refresh these numbers on your hardware.
@@ -11,7 +11,7 @@
 - **Python:** 3.12.5
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
-- **Version:** 3.9.0
+- **Version:** 3.9.1
 - **Generated:** 2026-02-22 12:31 UTC
 - **Wall-clock:** 17714s
 

@@ -8,6 +8,22 @@
 
 # Changelog
 
+## [3.9.1] — 2026-02-22
+
+### Added — Rust Acceleration + Performance Optimizations
+
+- **Rust Flight Sim in Stress Campaign**: `Rust-PID` controller at **0.52 us P50** vs Python PID 3,431 us (**6,600x faster**); all 5 controllers registered (PID, H-inf, NMPC-JAX, Nengo-SNN, Rust-PID)
+- **Rust Transport Delegation**: `chang_hinton_chi_profile()` → Rust fast-path (4.7x speedup), `calculate_sauter_bootstrap_current_full()` → Rust fast-path (13.1x speedup) with transparent Python fallback
+- **Benchmark Plot Generation**: `tools/generate_benchmark_plots.py` produces controller latency comparison, FNO suppression, and SNN trajectory plots in `docs/assets/`
+- **Vectorized Transport Solver**: `_gyro_bohm_chi`, `_explicit_diffusion_rhs`, and `_build_cn_tridiag` replaced Python for-loops with NumPy array operations
+- **Caching Quick Wins**: `_load_gyro_bohm_coefficient` singleton cache (avoids JSON file I/O every transport step), `_rho_volume_element` instance cache (avoids recomputing static geometry), `EpedPedestalModel` reuse in H-mode transport (avoids re-instantiation every step)
+- **Numerical Stability**: Preemptive `max(nu_star, 0.0)` in Chang-Hinton to prevent NaN from negative `nu_star**(2/3)`
+
+### Fixed
+
+- `test_pyo3_transport_bridge.py`: Fixed Rust-vs-Python benchmarks to correctly isolate Python baseline by temporarily disabling `_rust_transport_available` flag
+- mypy `no-redef` suppression for Rust transport import pattern
+
 ## [3.9.0] — 2026-02-21
 
 ### Added — QLKNN-10D Real-Data Training Pipeline

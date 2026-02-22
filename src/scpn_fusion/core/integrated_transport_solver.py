@@ -117,6 +117,17 @@ def _load_gyro_bohm_coefficient(
         return _GYRO_BOHM_DEFAULT
 
 
+_gyro_bohm_cache: float | None = None
+
+
+def _load_gyro_bohm_coefficient_cached() -> float:
+    """Return the default-path c_gB value, reading the file at most once."""
+    global _gyro_bohm_cache  # noqa: PLW0603
+    if _gyro_bohm_cache is None:
+        _gyro_bohm_cache = _load_gyro_bohm_coefficient()
+    return _gyro_bohm_cache
+
+
 def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.5):
     """
     Chang-Hinton (1982) neoclassical ion thermal diffusivity profile [m²/s].
@@ -208,7 +219,7 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
                  / (12.0 * np.pi**1.5 * eps0**2 * m_i**0.5 * T_J**1.5))
 
         eps32 = epsilon**1.5
-        nu_star = nu_ii * q_arr[i] * r0 / (eps32 * v_ti)
+        nu_star = max(nu_ii * q_arr[i] * r0 / (eps32 * v_ti), 0.0)
 
         alpha_sh = epsilon
         chi_val = (0.66 * (1.0 + 1.54 * alpha_sh) * q_arr[i]**2
@@ -695,29 +706,29 @@ class TransportSolver(FusionKernel):
         A_ion = p.get('A_ion', 2.0)
         q = p['q_profile']
 
-        # Load c_gB: explicit param > JSON file > default
+        # Load c_gB: explicit param > cached JSON file > default
         if 'c_gB' in p:
-            c_gB = p['c_gB']
+            c_gB = float(p['c_gB'])
         else:
-            c_gB = _load_gyro_bohm_coefficient()
+            c_gB = _load_gyro_bohm_coefficient_cached()
 
         e_charge = 1.602176634e-19
         m_i = A_ion * 1.672621924e-27
 
-        chi_gB = np.zeros_like(self.rho)
-        for i in range(len(self.rho)):
-            Ti_keV = max(self.Ti[i], 0.01)
-            Te_keV = max(self.Te[i], 0.01)
-            qi = max(q[i], 0.5)
+        # Vectorised gyro-Bohm chi (replaces per-point Python for-loop)
+        Ti_keV = np.maximum(self.Ti, 0.01)
+        Te_keV = np.maximum(self.Te, 0.01)
+        qi = np.maximum(q, 0.5)
 
-            T_i_J = Ti_keV * 1e3 * e_charge
-            T_e_J = Te_keV * 1e3 * e_charge
+        T_i_J = Ti_keV * 1e3 * e_charge
+        T_e_J = Te_keV * 1e3 * e_charge
 
-            rho_s = np.sqrt(T_i_J * m_i) / (e_charge * B0)
-            c_s = np.sqrt(T_e_J / m_i)
+        rho_s = np.sqrt(T_i_J * m_i) / (e_charge * B0)
+        c_s = np.sqrt(T_e_J / m_i)
 
-            chi_val = c_gB * rho_s**2 * c_s / max(a * qi * R0, 1e-6)
-            chi_gB[i] = max(chi_val, 0.01) if np.isfinite(chi_val) else 0.01
+        denom = np.maximum(a * qi * R0, 1e-6)
+        chi_gB = c_gB * rho_s**2 * c_s / denom
+        chi_gB = np.where(np.isfinite(chi_gB), np.maximum(chi_gB, 0.01), 0.01)
 
         return chi_gB
 
@@ -768,13 +779,22 @@ class TransportSolver(FusionKernel):
                 from scpn_fusion.core.eped_pedestal import EpedPedestalModel
 
                 p = self.neoclassical_params
-                eped = EpedPedestalModel(
-                    R0=p['R0'], a=p['a'], B0=p['B0'],
-                    Ip_MA=p.get('Ip_MA', 15.0),
-                    kappa=p.get('kappa', 1.7),
-                    A_ion=p.get('A_ion', 2.0),
-                    Z_eff=p.get('Z_eff', 1.5),
-                )
+                # Reuse cached pedestal model if parameters match; avoids
+                # re-instantiation every H-mode transport step.
+                if self.pedestal_model is None or getattr(
+                    self.pedestal_model, '_neo_params_hash', None
+                ) != id(self.neoclassical_params):
+                    eped = EpedPedestalModel(
+                        R0=p['R0'], a=p['a'], B0=p['B0'],
+                        Ip_MA=p.get('Ip_MA', 15.0),
+                        kappa=p.get('kappa', 1.7),
+                        A_ion=p.get('A_ion', 2.0),
+                        Z_eff=p.get('Z_eff', 1.5),
+                    )
+                    eped._neo_params_hash = id(self.neoclassical_params)  # type: ignore[attr-defined]
+                    self.pedestal_model = eped
+                else:
+                    eped = self.pedestal_model
                 # Use current edge density for pedestal prediction
                 n_ped = max(float(self.ne[-5]), 1.0)
                 ped = eped.predict(n_ped)
@@ -899,18 +919,17 @@ class TransportSolver(FusionKernel):
         Lh = np.zeros(n)
         dr = self.drho
 
-        for i in range(1, n - 1):
-            r = self.rho[i]
-            # half-grid chi
-            chi_ip = 0.5 * (chi[i] + chi[i + 1])
-            chi_im = 0.5 * (chi[i] + chi[i - 1])
-            r_ip = r + 0.5 * dr
-            r_im = r - 0.5 * dr
+        # Vectorised interior (i = 1 .. n-2)
+        r = self.rho[1:n - 1]
+        chi_ip = 0.5 * (chi[1:n - 1] + chi[2:n])
+        chi_im = 0.5 * (chi[1:n - 1] + chi[0:n - 2])
+        r_ip = r + 0.5 * dr
+        r_im = r - 0.5 * dr
 
-            flux_ip = chi_ip * r_ip * (T[i + 1] - T[i]) / dr
-            flux_im = chi_im * r_im * (T[i] - T[i - 1]) / dr
+        flux_ip = chi_ip * r_ip * (T[2:n] - T[1:n - 1]) / dr
+        flux_im = chi_im * r_im * (T[1:n - 1] - T[0:n - 2]) / dr
 
-            Lh[i] = (flux_ip - flux_im) / (r * dr)
+        Lh[1:n - 1] = (flux_ip - flux_im) / (r * dr)
 
         return Lh
 
@@ -929,20 +948,20 @@ class TransportSolver(FusionKernel):
         b = np.ones(n)       # main diagonal
         c = np.zeros(n - 1)  # super-diagonal
 
-        for i in range(1, n - 1):
-            r = self.rho[i]
-            chi_ip = 0.5 * (chi[i] + chi[i + 1])
-            chi_im = 0.5 * (chi[i] + chi[i - 1])
-            r_ip = r + 0.5 * dr
-            r_im = r - 0.5 * dr
+        # Vectorised interior (i = 1 .. n-2)
+        r = self.rho[1:n - 1]
+        chi_ip = 0.5 * (chi[1:n - 1] + chi[2:n])
+        chi_im = 0.5 * (chi[1:n - 1] + chi[0:n - 2])
+        r_ip = r + 0.5 * dr
+        r_im = r - 0.5 * dr
 
-            coeff_ip = chi_ip * r_ip / (r * dr * dr)
-            coeff_im = chi_im * r_im / (r * dr * dr)
+        coeff_ip = chi_ip * r_ip / (r * dr * dr)
+        coeff_im = chi_im * r_im / (r * dr * dr)
 
-            # LHS: (I - 0.5*dt*L_h) => diag entries are *subtracted*
-            b[i] = 1.0 + 0.5 * dt * (coeff_ip + coeff_im)
-            c[i] = -0.5 * dt * coeff_ip       # T_{i+1} coefficient
-            a[i - 1] = -0.5 * dt * coeff_im   # T_{i-1} coefficient
+        # LHS: (I - 0.5*dt*L_h) => diag entries are *subtracted*
+        b[1:n - 1] = 1.0 + 0.5 * dt * (coeff_ip + coeff_im)
+        c[1:n - 1] = -0.5 * dt * coeff_ip       # T_{i+1} coefficient
+        a[0:n - 2] = -0.5 * dt * coeff_im        # T_{i-1} coefficient
 
         return a, b, c
 
@@ -1031,7 +1050,14 @@ class TransportSolver(FusionKernel):
         return recovered_total
 
     def _rho_volume_element(self) -> np.ndarray:
-        """Toroidal volume element per radial cell [m^3]."""
+        """Toroidal volume element per radial cell [m^3].
+
+        The result is cached after the first call since the grid
+        geometry (rho, R0, a) does not change during a simulation.
+        """
+        if hasattr(self, "_dV_cache"):
+            return self._dV_cache
+
         dims = self.cfg["dimensions"]
         r_min = float(dims["R_min"])
         r_max = float(dims["R_max"])
@@ -1050,6 +1076,7 @@ class TransportSolver(FusionKernel):
         d_v = 2.0 * np.pi * r0 * 2.0 * np.pi * rho * a_minor**2 * self.drho
         if (not np.all(np.isfinite(d_v))) or np.any(d_v < 0.0):
             raise PhysicsError("Invalid toroidal volume element computed from rho grid")
+        self._dV_cache = d_v
         return d_v
 
     def _compute_aux_heating_sources(self, P_aux_MW: float) -> tuple[np.ndarray, np.ndarray]:
