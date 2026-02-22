@@ -512,6 +512,10 @@ Controller benchmark interpretation is trade-off based:
 SNN is best on latency, MPC is best on disruption rate/reward, H-infinity is
 the strongest robust middle ground, and PID remains the classical baseline.
 
+![Controller latency comparison](docs/assets/controller_latency_comparison.png)
+
+![SNN trajectory tracking](docs/assets/snn_trajectory.png)
+
 ### Physics Model Limitations (Honest Assessment)
 
 This section documents the **actual** fidelity of each physics module.

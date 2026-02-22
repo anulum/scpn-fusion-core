@@ -112,7 +112,7 @@ def _run_pid_episode(config_path: Any, shot_duration: int = 30, surrogate: bool 
     factory = NeuralEquilibriumKernel if surrogate else None
     dt = 0.01 if surrogate else 0.05
     steps = int(shot_duration / dt)
-    ctrl = IsoFluxController(config_path, verbose=True, kernel_factory=factory, control_dt_s=dt)
+    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
     t0 = time.perf_counter_ns()
     result = ctrl.run_shot(shot_duration=steps, save_plot=False)
     total_us = (time.perf_counter_ns() - t0) / 1e3
@@ -211,6 +211,44 @@ CONTROLLERS: dict[str, Callable] = {
 
 if _nmpc_jax_available:
     CONTROLLERS["NMPC-JAX"] = _run_nmpc_jax_episode
+
+
+def _run_snn_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
+    """Run a single Nengo-SNN episode."""
+    factory = NeuralEquilibriumKernel if surrogate else None
+    dt = 0.01 if surrogate else 0.05
+    steps = int(shot_duration / dt)
+    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
+    snn = NengoSNNController(NengoSNNConfig(n_neurons=200, n_channels=2))
+
+    def snn_step(pid: Any, err: float) -> float:
+        # pid_step signature is (pid_dict, error_float) — ignore pid dict
+        # SNN takes [r_error, z_error]; use err for radial, 0 for Z
+        error_vec = np.array([err, 0.0])
+        out = snn.step(error_vec)
+        return float(out[0])
+
+    ctrl.pid_step = snn_step
+
+    t0 = time.perf_counter_ns()
+    result = ctrl.run_shot(shot_duration=steps, save_plot=False)
+    total_us = (time.perf_counter_ns() - t0) / 1e3
+    per_step_us = total_us / max(result["steps"], 1)
+    r_err = result["mean_abs_r_error"]
+    z_err = result["mean_abs_z_error"]
+    actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
+    disrupted = r_err > 0.5 or z_err > 0.5
+    return EpisodeResult(
+        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
+        reward=-(r_err + z_err), latency_us=per_step_us,
+        disrupted=disrupted,
+        t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
+        energy_efficiency=1.0 / (1.0 + actuator_effort),
+    )
+
+
+if _snn_available:
+    CONTROLLERS["Nengo-SNN"] = _run_snn_episode
 
 
 def run_campaign(

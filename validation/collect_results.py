@@ -394,6 +394,12 @@ def generate_results_md(
         sections.append(f"> Auto-generated from {campaign.get('n_episodes', '?')}-episode campaign.\n")
         sections.append(campaign.get("markdown_table", ""))
         sections.append("")
+        sections.append("### Controller Latency Distribution\n")
+        sections.append("![Controller latency comparison](docs/assets/controller_latency_comparison.png)\n")
+        sections.append("### FNO Turbulence Suppression\n")
+        sections.append("![FNO turbulence suppression](docs/assets/fno_suppression.png)\n")
+        sections.append("### SNN Trajectory Tracking\n")
+        sections.append("![SNN trajectory tracking](docs/assets/snn_trajectory.png)\n")
 
     # ── Table 4: Surrogates ──
     rows_s: list[str] = []

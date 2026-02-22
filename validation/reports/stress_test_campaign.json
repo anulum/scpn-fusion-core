@@ -1,0 +1,23 @@
+{
+  "PID": {
+    "p50_latency_us": 5377.535866666666,
+    "p95_latency_us": 5826.524506666667,
+    "p99_latency_us": 5832.720368,
+    "mean_reward": -2.3962572185574615e-06,
+    "disruption_rate": 0.0
+  },
+  "H-infinity": {
+    "p50_latency_us": 5823.5856,
+    "p95_latency_us": 5998.004766666666,
+    "p99_latency_us": 6000.532126666666,
+    "mean_reward": -10.133066725813705,
+    "disruption_rate": 1.0
+  },
+  "NMPC-JAX": {
+    "p50_latency_us": 38205.5769,
+    "p95_latency_us": 39682.48265333333,
+    "p99_latency_us": 39795.581463999995,
+    "mean_reward": -0.000739435007268416,
+    "disruption_rate": 0.0
+  }
+}

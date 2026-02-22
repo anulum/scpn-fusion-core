@@ -112,10 +112,14 @@ class NengoSNNController:
         cfg = self.cfg
         self._network = nengo.Network(seed=cfg.seed, label="SNN_Controller")
 
+        # Mutable container for external input — read by the input node callable
+        self._error_value = np.zeros(cfg.n_channels)
+
         with self._network:
-            # Input node: receives error vector
+            # Input node: callable output for nengo 4.x compatibility
             self._input_node = nengo.Node(
-                size_in=cfg.n_channels,
+                output=lambda t: self._error_value,
+                size_out=cfg.n_channels,
                 label="error_input",
             )
 
@@ -228,8 +232,8 @@ class NengoSNNController:
         # Feed error into input node
         error = np.asarray(state, dtype=float).ravel()[:self.cfg.n_channels]
 
-        # Set input node value
-        self._input_node.output = error
+        # Set input value (read by the input node callable)
+        self._error_value[:] = error
 
         # Step the simulator
         self._simulator.step()
@@ -246,6 +250,7 @@ class NengoSNNController:
             self._simulator.reset()
         self._step_count = 0
         self._last_output = np.zeros(self.cfg.n_channels)
+        self._error_value[:] = 0.0
 
     def get_spike_data(self) -> dict[str, NDArray]:
         """Return probe data from the simulation."""
