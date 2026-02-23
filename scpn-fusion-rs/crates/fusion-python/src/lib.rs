@@ -13,6 +13,7 @@ use fusion_control::digital_twin::Plasma2D;
 use fusion_control::flight_sim::RustFlightSim;
 use fusion_control::mpc::{MPController, NeuralSurrogate};
 use fusion_control::snn::{NeuroCyberneticController, SpikingControllerPool};
+use fusion_control::spi_ablation::SpiAblationSolver;
 use fusion_core::ignition::calculate_thermodynamics;
 use fusion_core::inverse::{reconstruct_equilibrium, InverseConfig, JacobianMode};
 use fusion_core::kernel::FusionKernel;
@@ -36,7 +37,6 @@ use fusion_physics::fokker_planck::FokkerPlanckSolver;
 use fusion_physics::hall_mhd::HallMHD;
 use fusion_physics::sawtooth::ReducedMHD;
 use fusion_physics::turbulence::DriftWavePhysics;
-use fusion_control::spi_ablation::SpiAblationSolver;
 use fusion_types::state::Grid2D;
 // ReactorConfig used internally by FusionKernel::from_file
 
@@ -1233,7 +1233,15 @@ impl PyFokkerPlanckSolver {
         (state.n_re, state.current_re)
     }
 
-    fn run(&mut self, n_steps: usize, dt: f64, e_field: f64, n_e: f64, t_e_ev: f64, z_eff: f64) -> Vec<(f64, f64)> {
+    fn run(
+        &mut self,
+        n_steps: usize,
+        dt: f64,
+        e_field: f64,
+        n_e: f64,
+        t_e_ev: f64,
+        z_eff: f64,
+    ) -> Vec<(f64, f64)> {
         self.inner
             .run(n_steps, dt, e_field, n_e, t_e_ev, z_eff)
             .into_iter()
@@ -1274,7 +1282,12 @@ struct PySpiAblationSolver {
 impl PySpiAblationSolver {
     #[new]
     #[pyo3(signature = (n_fragments=100, total_mass_kg=0.01, velocity_mps=200.0, dispersion=0.1))]
-    fn new(n_fragments: usize, total_mass_kg: f64, velocity_mps: f64, dispersion: f64) -> PyResult<Self> {
+    fn new(
+        n_fragments: usize,
+        total_mass_kg: f64,
+        velocity_mps: f64,
+        dispersion: f64,
+    ) -> PyResult<Self> {
         let inner = SpiAblationSolver::new(n_fragments, total_mass_kg, velocity_mps, dispersion)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
         Ok(Self { inner })
@@ -1288,7 +1301,9 @@ impl PySpiAblationSolver {
         plasma_te: Vec<f64>,
         r_grid: Vec<f64>,
     ) -> PyResult<Bound<'py, PyArray1<f64>>> {
-        let dep = self.inner.step(dt, &plasma_ne, &plasma_te, &r_grid)
+        let dep = self
+            .inner
+            .step(dt, &plasma_ne, &plasma_te, &r_grid)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
         Ok(Array1::from_vec(dep).into_pyarray(py))
     }

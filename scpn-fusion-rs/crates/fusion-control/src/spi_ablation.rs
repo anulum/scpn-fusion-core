@@ -65,12 +65,12 @@ impl SpiAblationSolver {
         let r_frag = (3.0 * vol / (4.0 * PI)).cbrt();
 
         let mut rng = StdRng::seed_from_u64(42);
-        let dir_noise = Normal::new(0.0, 1.0)
-            .map_err(|e| FusionError::ConfigError(e.to_string()))?;
-        let vel_noise = Normal::new(1.0, 0.1)
-            .map_err(|e| FusionError::ConfigError(e.to_string()))?;
-        let pos_noise = Normal::new(0.0, 0.05)
-            .map_err(|e| FusionError::ConfigError(e.to_string()))?;
+        let dir_noise =
+            Normal::new(0.0, 1.0).map_err(|e| FusionError::ConfigError(e.to_string()))?;
+        let vel_noise =
+            Normal::new(1.0, 0.1).map_err(|e| FusionError::ConfigError(e.to_string()))?;
+        let pos_noise =
+            Normal::new(0.0, 0.05).map_err(|e| FusionError::ConfigError(e.to_string()))?;
 
         let mut solver = SpiAblationSolver {
             n_fragments,
@@ -142,9 +142,8 @@ impl SpiAblationSolver {
 
             let r_loc = (self.pos_x[i].powi(2) + self.pos_y[i].powi(2)).sqrt();
             let z_loc = self.pos_z[i];
-            let rho_loc = (((r_loc - R_MAJOR) / A_MINOR).powi(2)
-                + (z_loc / ELONGATION).powi(2))
-            .sqrt();
+            let rho_loc =
+                (((r_loc - R_MAJOR) / A_MINOR).powi(2) + (z_loc / ELONGATION).powi(2)).sqrt();
 
             if !(0.0..=1.2).contains(&rho_loc) {
                 continue;
@@ -160,8 +159,7 @@ impl SpiAblationSolver {
             // Parks ablation, Parks NF 57 (2017) Eq. 8
             let ne_20 = (n_e / 10.0).max(0.0);
             let rp_cm = self.radius[i] * 100.0;
-            let dm_dt_g =
-                PARKS_COEFFICIENT * ne_20.powf(0.33) * t_e.powf(1.64) * rp_cm.powf(1.33);
+            let dm_dt_g = PARKS_COEFFICIENT * ne_20.powf(0.33) * t_e.powf(1.64) * rp_cm.powf(1.33);
             let dm_dt_kg = dm_dt_g / 1000.0;
 
             let mut delta_m = dm_dt_kg * dt;

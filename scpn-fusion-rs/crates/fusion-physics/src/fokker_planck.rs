@@ -89,15 +89,13 @@ impl FokkerPlanckSolver {
         let f_acc = (E_CHARGE * e_field) / MC;
 
         // Connor-Hastie critical field
-        let ec = (n_e * E_CHARGE.powi(3) * COULOMB_LOG)
-            / (4.0 * PI * EPS0.powi(2) * ME * C * C);
+        let ec = (n_e * E_CHARGE.powi(3) * COULOMB_LOG) / (4.0 * PI * EPS0.powi(2) * ME * C * C);
         let fc_norm = (E_CHARGE * ec) / MC;
 
         let p_thermal_sq = (t_e_ev / 511e3).max(1e-6);
 
         // Synchrotron radiation timescale, Aleynikov & Breizman PRL 114 (2015) Eq. 3
-        let tau_rad =
-            (6.0 * PI * EPS0 * MC.powi(3)) / (E_CHARGE.powi(4) * B_TOROIDAL * B_TOROIDAL);
+        let tau_rad = (6.0 * PI * EPS0 * MC.powi(3)) / (E_CHARGE.powi(4) * B_TOROIDAL * B_TOROIDAL);
 
         let n = self.np_grid;
         let mut a = Vec::with_capacity(n);
@@ -128,14 +126,7 @@ impl FokkerPlanckSolver {
     }
 
     /// Advance f(p,t) by dt using MUSCL-Hancock advection + diffusion.
-    pub fn step(
-        &mut self,
-        dt: f64,
-        e_field: f64,
-        n_e: f64,
-        t_e_ev: f64,
-        z_eff: f64,
-    ) -> REState {
+    pub fn step(&mut self, dt: f64, e_field: f64, n_e: f64, t_e_ev: f64, z_eff: f64) -> REState {
         let (a, d, fc) = self.compute_coefficients(e_field, n_e, z_eff, t_e_ev);
         let n = self.np_grid;
 
