@@ -250,7 +250,7 @@ def test_run_digital_twin_validates_gyro_surrogate_shape() -> None:
         _ = danger
         return np.ones((temp_map.shape[0],), dtype=float)
 
-    with pytest.raises(ValueError, match="gyro_surrogate correction shape"):
+    with pytest.raises(ValueError, match="gyro_surrogate shape must be"):
         run_digital_twin(
             time_steps=4,
             seed=7,

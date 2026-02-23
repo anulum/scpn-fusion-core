@@ -211,6 +211,7 @@ def test_load_or_train_raises_without_fallback_no_torch(
         )
 
 
+@pytest.mark.skipif(dp.torch is None, reason="torch required for checkpoint path")
 def test_load_or_train_raises_without_fallback_missing_checkpoint(
     tmp_path: Path,
 ) -> None:
@@ -223,6 +224,7 @@ def test_load_or_train_raises_without_fallback_missing_checkpoint(
         )
 
 
+@pytest.mark.skipif(dp.torch is None, reason="torch required for checkpoint path")
 def test_load_or_train_fallback_corrupt_checkpoint(tmp_path: Path) -> None:
     corrupt = tmp_path / "corrupt.pth"
     corrupt.write_bytes(b"NOT_A_VALID_CHECKPOINT_123456")
