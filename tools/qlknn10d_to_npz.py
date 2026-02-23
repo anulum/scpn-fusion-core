@@ -103,7 +103,7 @@ def _classify_regime(ati: np.ndarray, ate: np.ndarray) -> np.ndarray:
     return regime
 
 
-def process(input_dir: Path, output_dir: Path, max_samples: int = 5_000_000, seed: int = 42, regime_balanced: bool = False) -> None:
+def process(input_dir: Path, output_dir: Path, max_samples: int = 5_000_000, seed: int = 42, regime_balanced: bool = False, gb_normalized: bool = True) -> None:
     rng = np.random.default_rng(seed)
     fmt, files = _detect_format(input_dir)
     total_rows = sum(_get_total_rows_hdf5(f) for f in files)
@@ -159,10 +159,17 @@ def process(input_dir: Path, output_dir: Path, max_samples: int = 5_000_000, see
     ne_19 = rng.uniform(*NE_RANGE, size=N)
 
     X = np.column_stack([x, te_kev, ti_kev, ne_19, ate, ati, an, q, smag, 4.03e-3 * ne_19 * te_kev])
-    chi_gb = _gyrobohm_chi(te_kev)
-    chi_i, chi_e = raw_fluxes[:, 0] * chi_gb, raw_fluxes[:, 1] * chi_gb
-    d_e = np.abs(raw_fluxes[:, 2]) * chi_gb
-    Y = np.column_stack([np.clip(chi_e, 0, 500), np.clip(chi_i, 0, 500), np.clip(d_e, 0, 200)])
+
+    if gb_normalized:
+        # Save raw GB-normalized fluxes — no chi_gb multiplication.
+        # Column mapping: efi_GB → chi_i, efe_GB → chi_e, pfe_GB → D_e
+        # Non-negative efi/efe already enforced by the valid filter above.
+        Y = np.column_stack([raw_fluxes[:, 1], raw_fluxes[:, 0], np.abs(raw_fluxes[:, 2])])
+    else:
+        chi_gb = _gyrobohm_chi(te_kev)
+        chi_i, chi_e = raw_fluxes[:, 0] * chi_gb, raw_fluxes[:, 1] * chi_gb
+        d_e = np.abs(raw_fluxes[:, 2]) * chi_gb
+        Y = np.column_stack([np.clip(chi_e, 0, 500), np.clip(chi_i, 0, 500), np.clip(d_e, 0, 200)])
 
     regimes = _classify_regime(ati, ate)
     perm = rng.permutation(N)
@@ -170,16 +177,21 @@ def process(input_dir: Path, output_dir: Path, max_samples: int = 5_000_000, see
     
     n_train, n_val = int(N * 0.9), int(N * 0.05)
     output_dir.mkdir(parents=True, exist_ok=True)
-    np.savez(output_dir / "train.npz", X=X[:n_train], Y=Y[:n_train], regimes=regimes[:n_train])
-    np.savez(output_dir / "val.npz", X=X[n_train:n_train+n_val], Y=Y[n_train:n_train+n_val], regimes=regimes[n_train:n_train+n_val])
-    np.savez(output_dir / "test.npz", X=X[n_train+n_val:], Y=Y[n_train+n_val:], regimes=regimes[n_train+n_val:])
-    print(f"\nDone. Saved {N} samples.")
+    _meta = {"gb_normalized": np.array(1 if gb_normalized else 0)}
+    np.savez(output_dir / "train.npz", X=X[:n_train], Y=Y[:n_train], regimes=regimes[:n_train], **_meta)
+    np.savez(output_dir / "val.npz", X=X[n_train:n_train+n_val], Y=Y[n_train:n_train+n_val], regimes=regimes[n_train:n_train+n_val], **_meta)
+    np.savez(output_dir / "test.npz", X=X[n_train+n_val:], Y=Y[n_train+n_val:], regimes=regimes[n_train+n_val:], **_meta)
+    mode_str = "GB-normalized" if gb_normalized else "physical (m^2/s)"
+    print(f"\nDone. Saved {N} samples ({mode_str}).")
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-samples", type=int, default=500000)
+    parser.add_argument("--no-gb-normalized", dest="gb_normalized", action="store_false",
+                        help="Save physical fluxes (m^2/s) instead of GB-normalized")
+    parser.set_defaults(gb_normalized=True)
     args = parser.parse_args()
-    process(DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_DIR, args.max_samples)
+    process(DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_DIR, args.max_samples, gb_normalized=args.gb_normalized)
 
 if __name__ == "__main__": main()
