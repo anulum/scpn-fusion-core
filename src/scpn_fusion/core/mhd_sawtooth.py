@@ -5,6 +5,8 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
+from __future__ import annotations
+
 import logging
 import os
 import sys
@@ -27,7 +29,7 @@ class ReducedMHD:
     Solves Reduced MHD equations in cylindrical geometry.
     Demonstrates Magnetic Reconnection (Kadomtsev Model).
     """
-    def __init__(self, nr=100):
+    def __init__(self, nr: int = 100) -> None:
         self.nr = nr
         self.r = np.linspace(0, 1, nr)
         self.dr = self.r[1] - self.r[0]
@@ -43,7 +45,7 @@ class ReducedMHD:
 
         self.psi_11 = 1e-4 * self.r * (1 - self.r) * (1+1j)
 
-    def laplacian(self, f, m=1):
+    def laplacian(self, f: np.ndarray, m: int = 1) -> np.ndarray:
         """Radial Laplacian: 1/r d/dr (r df/dr) - m^2/r^2 f"""
         # Finite difference
         d2f = np.zeros_like(f)
@@ -61,7 +63,7 @@ class ReducedMHD:
         res[1:-1] = term1[1:-1] + term2 + term3
         return res
 
-    def step(self, dt=0.01):
+    def step(self, dt: float = 0.01) -> tuple[float, bool]:
         """
         Time integration (Semi-Implicit)
         Equations:
@@ -102,7 +104,7 @@ class ReducedMHD:
         
         return amplitude, crash
 
-    def solve_poisson(self, U):
+    def solve_poisson(self, U: np.ndarray) -> np.ndarray:
         """
         Solves Del^2 phi = U for phi using the Thomas Algorithm (O(N)).
         Optimized for tridiagonal Laplacian in cylindrical coordinates.
@@ -153,13 +155,13 @@ class ReducedMHD:
             
         return res
 
-def run_sawtooth_sim():
+def run_sawtooth_sim() -> None:
     logger.info("--- SCPN 3D MHD: SAWTOOTH INSTABILITY ---")
     
     sim = ReducedMHD()
     
-    history_amp = []
-    frames = []
+    history_amp: list[float] = []
+    frames: list[list[float]] = []
     
     fig, ax = plt.subplots()
     ax.set_title("Mode Amplitude (m=1, n=1)")

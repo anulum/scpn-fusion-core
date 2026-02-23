@@ -15,7 +15,7 @@ and minimises tracking cost via gradient descent (JAX) or L-BFGS-B (NumPy fallba
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -62,7 +62,7 @@ class DynamicsMLP:
         dxdt = self.W2 @ h + self.b2
         return dxdt
 
-    def forward_jax(self, params, x, u):
+    def forward_jax(self, params: list[Any], x: Any, u: Any) -> Any:
         W1, b1, W2, b2 = params
         xu = jnp.concatenate([x, u])
         h = jnp.tanh(jnp.dot(W1, xu) + b1)
@@ -95,14 +95,14 @@ class NonlinearMPC:
         self._jax_grad_fn = None
         self._compile_jax()
 
-    def _compile_jax(self):
+    def _compile_jax(self) -> None:
         if not _HAS_JAX:
             return
 
-        def loss_fn(U_flat, x0, target, params):
+        def loss_fn(U_flat: Any, x0: Any, target: Any, params: Any) -> Any:
             U = U_flat.reshape((self.horizon, self.dynamics.action_dim))
-            
-            def body_fun(carry, u):
+
+            def body_fun(carry: Any, u: Any) -> Any:
                 x, cost = carry
                 dxdt = self.dynamics.forward_jax(params, x, u)
                 x_next = x + dxdt * self.dt
@@ -159,7 +159,7 @@ class NonlinearMPC:
     def _plan_numpy(self, x0: FloatArray, target: FloatArray, U: FloatArray) -> FloatArray:
         from scipy.optimize import minimize
 
-        def np_loss(U_flat):
+        def np_loss(U_flat: FloatArray) -> float:
             U_mat = U_flat.reshape(self.horizon, self.dynamics.action_dim)
             x = x0.copy()
             cost = 0.0

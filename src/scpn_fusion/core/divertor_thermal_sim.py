@@ -5,6 +5,8 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
+from __future__ import annotations
+
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,7 +19,7 @@ class DivertorLab:
     Simulates Heat Exhaust in a Compact Fusion Reactor.
     Compares Solid Tungsten vs. Liquid Lithium Vapor Shielding.
     """
-    def __init__(self, P_sol_MW=50.0, R_major=2.1, B_pol=2.0):
+    def __init__(self, P_sol_MW: float = 50.0, R_major: float = 2.1, B_pol: float = 2.0) -> None:
         self.P_sol = P_sol_MW
         self.R = R_major
         self.B_pol = B_pol
@@ -30,7 +32,7 @@ class DivertorLab:
         print(f"Power to Divertor: {self.P_sol} MW")
         print(f"Eich Width (lambda_q): {self.lambda_q_mm:.3f} mm")
         
-    def solve_2point_transport(self, expansion_factor=10.0, f_rad=0.5):
+    def solve_2point_transport(self, expansion_factor: float = 10.0, f_rad: float = 0.5) -> tuple[float, float]:
         """
         Two-Point Model (2PM) for SOL Transport.
         Balances upstream pressure with target flux constraints.
@@ -56,7 +58,7 @@ class DivertorLab:
         self.q_target_solid = q_target
         return T_u_eV, T_t_eV
 
-    def calculate_heat_load(self, expansion_factor=10.0):
+    def calculate_heat_load(self, expansion_factor: float = 10.0) -> float:
         """
         Calculates Peak Heat Flux using 2-Point Model Physics.
         """
@@ -69,7 +71,7 @@ class DivertorLab:
         
         return self.q_target_solid
 
-    def simulate_tungsten(self):
+    def simulate_tungsten(self) -> tuple[float, str]:
         """
         1D Thermal limit of Tungsten Monoblock.
         Simple conduction model: T_surf = q * d / k + T_coolant
@@ -88,7 +90,7 @@ class DivertorLab:
 
     def simulate_lithium_vapor(
         self, *, relaxation: float = 0.7, max_iter: int = 50, tol: float = 0.1,
-    ):
+    ) -> tuple[float, float, float]:
         """
         Self-Consistent Vapor Shielding Physics.
 
@@ -138,13 +140,13 @@ class DivertorLab:
 
     def calculate_mhd_pressure_loss(
         self,
-        flow_velocity_m_s,
-        channel_length_m=1.2,
-        channel_half_gap_m=0.012,
-        density_kg_m3=510.0,
-        viscosity_pa_s=2.5e-3,
-        conductivity_s_m=8.0e5,
-    ):
+        flow_velocity_m_s: float,
+        channel_length_m: float = 1.2,
+        channel_half_gap_m: float = 0.012,
+        density_kg_m3: float = 510.0,
+        viscosity_pa_s: float = 2.5e-3,
+        conductivity_s_m: float = 8.0e5,
+    ) -> dict[str, float]:
         """
         Reduced TEMHD pressure-loss model using a Hartmann-flow correction.
 
@@ -169,7 +171,7 @@ class DivertorLab:
             "pressure_loss_pa": float(dp_total),
         }
 
-    def estimate_evaporation_rate(self, surface_temp_c, flow_velocity_m_s):
+    def estimate_evaporation_rate(self, surface_temp_c: float, flow_velocity_m_s: float) -> float:
         """
         Velocity-dependent lithium evaporation estimate [kg m^-2 s^-1].
         """
@@ -179,7 +181,7 @@ class DivertorLab:
         flow_relief = 1.0 / (1.0 + 0.45 * np.sqrt(v))
         return float(2.0e-6 * thermal_drive * flow_relief)
 
-    def simulate_temhd_liquid_metal(self, flow_velocity_m_s, expansion_factor=15.0):
+    def simulate_temhd_liquid_metal(self, flow_velocity_m_s: float, expansion_factor: float = 15.0) -> dict[str, object]:
         """
         Reduced TEMHD divertor state including MHD pressure loss and evaporation.
         """
@@ -207,7 +209,7 @@ class DivertorLab:
             "is_stable": is_stable,
         }
 
-def run_divertor_sim():
+def run_divertor_sim() -> None:
     print("\n--- SCPN HEAT EXHAUST: The Lithium Solution ---")
     
     lab = DivertorLab(P_sol_MW=80.0, R_major=2.1, B_pol=2.5) # Compact Pilot parameters

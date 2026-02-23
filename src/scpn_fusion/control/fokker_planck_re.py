@@ -73,7 +73,7 @@ class FokkerPlanckSolver:
         n_e: float,
         Z_eff: float,
         T_e_eV: float
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray, float]:
         """Compute advection (A), diffusion (D), and critical field (Fc) coefficients.
 
         A = F_acc - F_drag - F_synch, per Hesslow et al. J. Plasma Phys. 85 (2019).
@@ -106,7 +106,7 @@ class FokkerPlanckSolver:
 
         return A, D, Fc_norm
 
-    def seed_hottail(self, T_initial_eV: float, T_final_eV: float, t_quench_s: float):
+    def seed_hottail(self, T_initial_eV: float, T_final_eV: float, t_quench_s: float) -> None:
         """Seed hottail RE population from thermal quench.
 
         Gaussian tail model per Aleynikov & Breizman, PRL 114 (2015).
@@ -130,7 +130,7 @@ class FokkerPlanckSolver:
         return source * n_e * n_re * 1e-25
 
     @staticmethod
-    def _minmod(a, b):
+    def _minmod(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         """Minmod slope limiter (vectorized)."""
         return np.where(
             a * b > 0,

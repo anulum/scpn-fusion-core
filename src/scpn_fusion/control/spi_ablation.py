@@ -111,9 +111,9 @@ class SpiAblationSolver:
                 continue
 
             # Parks ablation scaling, Parks NF 57 (2017) Eq. 8
-            ne_20 = max(n_e / 10.0, 0.0)
+            ne_20 = max(float(n_e) / 10.0, 0.0)
             rp_cm = frag.radius * 100.0
-            dm_dt_g = _PARKS_COEFFICIENT * (ne_20**0.33) * (T_e**1.64) * (rp_cm**1.33)
+            dm_dt_g = _PARKS_COEFFICIENT * (ne_20**0.33) * (float(T_e)**1.64) * (rp_cm**1.33)
             dm_dt_kg = dm_dt_g / 1000.0
 
             delta_m = dm_dt_kg * dt

@@ -41,7 +41,7 @@ def _check_finite(mat: np.ndarray, name: str) -> None:
         raise ValueError(f"{name} must contain only finite values.")
 
 
-def _zoh_discretize(A: np.ndarray, B: np.ndarray, dt: float):
+def _zoh_discretize(A: np.ndarray, B: np.ndarray, dt: float) -> tuple[np.ndarray, np.ndarray]:
     """Exact zero-order-hold discretisation via matrix exponential.
 
     Returns (Ad, Bd) such that  x_{k+1} = Ad x_k + Bd u_k.
