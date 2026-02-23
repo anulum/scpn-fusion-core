@@ -506,4 +506,10 @@ jobs:
           pip install -e ".[dev]"
           pip install "jax[cpu]" gymnasium
       - name: Run stress tests
-        run: pytest tests/ -v -m "stress" --timeout=600
+        run: |
+          pytest tests/ -v -m "stress" --timeout=600 || rc=$?
+          if [ "${rc:-0}" -eq 5 ]; then
+            echo "No stress-marked tests collected — skipping."
+            exit 0
+          fi
+          exit "${rc:-0}"
