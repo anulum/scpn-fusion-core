@@ -841,6 +841,14 @@ class FusionKernel:
         mu0 : float
             Vacuum permeability.
         """
+        I_target: float = self.cfg["physics"]["plasma_current_target"]
+        if abs(I_target) < 1e-12:
+            # No plasma current — keep Psi at the vacuum field set by
+            # _prepare_initial_flux; Jacobi steps with the flat-Laplacian
+            # stencil would corrupt the toroidal vacuum solution.
+            self.J_phi = np.zeros_like(self.Psi)
+            return
+
         R_center = (
             self.cfg["dimensions"]["R_min"]
             + self.cfg["dimensions"]["R_max"]
@@ -849,7 +857,6 @@ class FusionKernel:
         self.J_phi = np.exp(-dist_sq / 2.0)
 
         I_seed = float(np.sum(self.J_phi)) * self.dR * self.dZ
-        I_target: float = self.cfg["physics"]["plasma_current_target"]
         if I_seed > 0:
             self.J_phi *= I_target / I_seed
 
@@ -1286,6 +1293,28 @@ class FusionKernel:
                 preserve_initial_state=preserve_initial_state,
                 boundary_flux=boundary_flux,
             )
+
+        # Zero-current short-circuit: the vacuum field is the exact
+        # equilibrium; iterating the discrete stencil would only drift
+        # toward the discretised vacuum (different from analytical).
+        I_target: float = self.cfg["physics"]["plasma_current_target"]
+        if abs(I_target) < 1e-12 and not preserve_initial_state:
+            self.Psi = self.calculate_vacuum_field()
+            self.J_phi = np.zeros_like(self.Psi)
+            self.compute_b_field()
+            elapsed = time.time() - t0
+            return {
+                "psi": self.Psi,
+                "converged": True,
+                "iterations": 0,
+                "residual": 0.0,
+                "residual_history": [],
+                "gs_residual": 0.0,
+                "gs_residual_best": 0.0,
+                "gs_residual_history": [],
+                "wall_time_s": elapsed,
+                "solver_method": method,
+            }
 
         Psi_vac_boundary = self._prepare_initial_flux(
             preserve_initial_state=preserve_initial_state,
