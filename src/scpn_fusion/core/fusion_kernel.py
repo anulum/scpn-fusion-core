@@ -217,7 +217,7 @@ class FusionKernel:
             R_plus_Rc_sq = (self.RR + Rc) ** 2
 
             k2 = (4.0 * self.RR * Rc) / (R_plus_Rc_sq + dZ**2)
-            k2 = np.clip(k2, 1e-9, 0.999999)
+            k2 = np.clip(k2, 1e-12, 1.0 - 1e-12)
 
             K = ellipk(k2)
             E = ellipe(k2)
@@ -1463,7 +1463,7 @@ class FusionKernel:
         if denom < 1e-30:
             return 0.0
         k2 = 4.0 * R_obs * R_src / denom
-        k2 = np.clip(k2, 1e-9, 0.999999)
+        k2 = np.clip(k2, 1e-12, 1.0 - 1e-12)
         k = np.sqrt(k2)
         from scipy.special import ellipk, ellipe
         K_val = ellipk(k2)

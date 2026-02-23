@@ -15,6 +15,12 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 
 logger = logging.getLogger(__name__)
 
+# Kadomtsev (1975) sawtooth crash model parameters
+_CRASH_THRESHOLD = 0.1     # psi_11 amplitude triggering reconnection
+_CRASH_REDUCTION = 0.01    # post-crash amplitude multiplier (99% reduction, inside q<1 only)
+_Q_RECOVERY_RATE = 0.05    # exponential relaxation rate toward equilibrium q-profile
+
+
 class ReducedMHD:
     """
     Simulates the internal m=1, n=1 Kink Mode (Sawtooth Instability).
@@ -80,17 +86,19 @@ class ReducedMHD:
         U_11 += dU_dt * dt
         self.phi_11 = self.solve_poisson(U_11)  # Del^2 phi = U (Thomas O(N))
 
-        # Kadomtsev crash: amplitude saturates → q-profile flattens
+        # Kadomtsev crash: reduce perturbation inside q=1 surface, flatten q-profile
         amplitude = np.max(np.abs(self.psi_11))
         crash = False
-        if amplitude > 0.1:
+        if amplitude > _CRASH_THRESHOLD:
             logger.warning("SAWTOOTH CRASH")
-            self.psi_11 *= 0.1 # Collapse
-            self.q[self.r < 0.4] = 1.05 # Flatten q-profile (Reconnection)
+            inside_q1 = self.q < 1.0
+            self.psi_11[inside_q1] *= _CRASH_REDUCTION
+            self.phi_11[inside_q1] *= _CRASH_REDUCTION
+            self.q[self.r < 0.4] = 1.05
             crash = True
-            
-        # q-profile recovery (Heating)
-        self.q = self.q - (self.q - (0.8 + 2.0*self.r**2)) * 0.05
+
+        # q-profile recovery toward equilibrium
+        self.q = self.q - (self.q - (0.8 + 2.0 * self.r ** 2)) * _Q_RECOVERY_RATE
         
         return amplitude, crash
 

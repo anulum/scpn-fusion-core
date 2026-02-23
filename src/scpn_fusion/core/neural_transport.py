@@ -126,15 +126,24 @@ class TransportFluxes:
 _CRIT_ITG = 4.0   # R/L_Ti threshold for ITG
 _CRIT_TEM = 5.0   # R/L_Te threshold for TEM (simplified)
 _CHI_GB = 1.0     # Gyro-Bohm normalisation [m^2/s]
-_STIFFNESS = 2.0  # Transport stiffness exponent
+
+# Transport stiffness exponent.  Physical range 1.5–4.0 (Dimits PoP 2000,
+# Citrin NF 2015); values outside [1.0, 6.0] are non-physical.
+_STIFFNESS = 2.0
+_STIFFNESS_MIN = 1.0
+_STIFFNESS_MAX = 6.0
 
 
-def critical_gradient_model(inp: TransportInputs) -> TransportFluxes:
-    """Analytic critical-gradient transport model (fallback).
-    Harden with local epsilon scaling for trapped-particle effects.
-    """
-    # Inverse aspect ratio estimate (heuristic if not provided)
-    eps = inp.rho / 3.1 # Assuming A=3.1 (ITER-like)
+def critical_gradient_model(
+    inp: TransportInputs, *, stiffness: float = _STIFFNESS,
+) -> TransportFluxes:
+    """Analytic critical-gradient transport model (fallback)."""
+    if not (_STIFFNESS_MIN <= stiffness <= _STIFFNESS_MAX):
+        raise ValueError(
+            f"stiffness={stiffness} outside physical range "
+            f"[{_STIFFNESS_MIN}, {_STIFFNESS_MAX}]"
+        )
+    eps = inp.rho / 3.1
     
     # TEM threshold increases with epsilon (trapped fraction)
     # R/L_Te threshold ~ 4.0 * (1 + 2*eps)
@@ -143,11 +152,9 @@ def critical_gradient_model(inp: TransportInputs) -> TransportFluxes:
     excess_itg = max(0.0, inp.grad_ti - _CRIT_ITG)
     excess_tem = max(0.0, inp.grad_te - crit_tem)
 
-    chi_i = _CHI_GB * excess_itg ** _STIFFNESS
-    chi_e = _CHI_GB * excess_tem ** _STIFFNESS
-    
-    # D_e (Particle diffusivity) - Ware pinch and trapped-particle scaling
-    # D_e ~ chi_e * (0.1 + 0.5 * sqrt(eps))
+    chi_i = _CHI_GB * excess_itg ** stiffness
+    chi_e = _CHI_GB * excess_tem ** stiffness
+
     d_e = chi_e * (0.1 + 0.5 * np.sqrt(eps))
 
     if chi_i > chi_e and chi_i > 0:

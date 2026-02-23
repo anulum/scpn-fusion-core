@@ -187,43 +187,41 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
         except Exception:
             _logger.debug("chang_hinton_chi_profile: Rust fast-path failed, falling back to Python")
 
-    # Python fallback
+    # Vectorized Python fallback
     e_charge = 1.602176634e-19
     eps0 = 8.854187812e-12
     m_p = 1.672621924e-27
     m_i = a_ion * m_p
 
-    chi_nc = np.zeros_like(rho_arr)
-    for i in range(len(rho_arr)):
-        r = rho_arr[i]
-        if r <= 0.0 or T_i_arr[i] <= 0.0 or n_e_arr[i] <= 0.0 or q_arr[i] <= 0.0:
-            chi_nc[i] = 0.01
-            continue
+    chi_nc = np.full_like(rho_arr, 0.01)
 
-        epsilon = r * a_minor / r0
-        if epsilon < 1e-6:
-            chi_nc[i] = 0.01
-            continue
+    # Mask: valid points only
+    valid = (rho_arr > 0.0) & (T_i_arr > 0.0) & (n_e_arr > 0.0) & (q_arr > 0.0)
+    epsilon = rho_arr * a_minor / r0
+    valid &= epsilon >= 1e-6
 
-        T_J = T_i_arr[i] * 1.602176634e-16  # keV -> J
-        v_ti = np.sqrt(2.0 * T_J / m_i)
-        rho_i = m_i * v_ti / (e_charge * b0)
+    if not np.any(valid):
+        return chi_nc
 
-        # ion-ion collision frequency
-        n_e = n_e_arr[i] * 1e19
-        ln_lambda = 17.0
-        nu_ii = (n_e * z_eff**2 * e_charge**4 * ln_lambda
-                 / (12.0 * np.pi**1.5 * eps0**2 * m_i**0.5 * T_J**1.5))
+    eps_v = epsilon[valid]
+    T_J = T_i_arr[valid] * 1.602176634e-16
+    v_ti = np.sqrt(2.0 * T_J / m_i)
+    rho_i = m_i * v_ti / (e_charge * b0)
 
-        eps32 = epsilon**1.5
-        nu_star = max(nu_ii * q_arr[i] * r0 / (eps32 * v_ti), 0.0)
+    n_e = n_e_arr[valid] * 1e19
+    ln_lambda = 17.0
+    nu_ii = (n_e * z_eff ** 2 * e_charge ** 4 * ln_lambda
+             / (12.0 * np.pi ** 1.5 * eps0 ** 2 * m_i ** 0.5 * T_J ** 1.5))
 
-        alpha_sh = epsilon
-        chi_val = (0.66 * (1.0 + 1.54 * alpha_sh) * q_arr[i]**2
-                   * rho_i**2 * nu_ii
-                   / (eps32 * (1.0 + 0.74 * nu_star**(2.0/3.0))))
+    eps32 = eps_v ** 1.5
+    nu_star = np.maximum(nu_ii * q_arr[valid] * r0 / (eps32 * v_ti), 0.0)
 
-        chi_nc[i] = max(chi_val, 0.01) if np.isfinite(chi_val) else 0.01
+    chi_val = (0.66 * (1.0 + 1.54 * eps_v) * q_arr[valid] ** 2
+               * rho_i ** 2 * nu_ii
+               / (eps32 * (1.0 + 0.74 * nu_star ** (2.0 / 3.0))))
+
+    chi_val = np.where(np.isfinite(chi_val), np.maximum(chi_val, 0.01), 0.01)
+    chi_nc[valid] = chi_val
 
     return chi_nc
 
@@ -290,79 +288,79 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
         except Exception:
             _logger.debug("sauter_bootstrap: Rust fast-path failed, falling back to Python")
 
-    # Python fallback
+    # Vectorized Python fallback
     n = len(rho_arr)
     j_bs = np.zeros(n)
     e_charge = 1.602176634e-19
     m_e = 9.10938370e-31
     eps0 = 8.854187812e-12
 
-    for i in range(1, n - 1):
-        eps = float(np.clip(rho_arr[i] * a_minor / r0, 1e-6, 0.999999))
-        if te_arr[i] <= 0 or ne_arr[i] <= 0 or q_arr[i] <= 0:
-            continue
+    # Interior points only (i=1..n-2) — boundary derivatives undefined
+    sl = slice(1, n - 1)
+    eps = np.clip(rho_arr[sl] * a_minor / r0, 1e-6, 0.999999)
+    valid = (te_arr[sl] > 0) & (ne_arr[sl] > 0) & (q_arr[sl] > 0)
 
-        # Trapped fraction (Sauter formula)
-        sqrt_trap = np.sqrt(max(1.0 - eps**2, 1e-12))
-        f_t = 1.0 - (1.0 - eps)**2 / (sqrt_trap * (1.0 + 1.46 * np.sqrt(eps)))
-        f_t = max(0.0, min(f_t, 1.0))
+    if not np.any(valid):
+        return j_bs
 
-        # Electron thermal velocity
-        T_e_J = te_arr[i] * 1e3 * e_charge
-        v_te = np.sqrt(2.0 * T_e_J / m_e)
+    eps_v = eps[valid]
+    te_v = te_arr[sl][valid]
+    ti_v = ti_arr[sl][valid]
+    ne_v = ne_arr[sl][valid]
+    q_v = q_arr[sl][valid]
 
-        # Collision frequency
-        n_e = ne_arr[i] * 1e19
-        ln_lambda = 17.0
-        nu_ei = n_e * z_eff * e_charge**4 * ln_lambda / (
-            12.0 * np.pi**1.5 * eps0**2 * m_e**0.5 * T_e_J**1.5
-        )
-        if (not np.isfinite(nu_ei)) or nu_ei < 0.0:
-            continue
+    # Trapped fraction (Sauter)
+    sqrt_trap = np.sqrt(np.maximum(1.0 - eps_v ** 2, 1e-12))
+    f_t = 1.0 - (1.0 - eps_v) ** 2 / (sqrt_trap * (1.0 + 1.46 * np.sqrt(eps_v)))
+    f_t = np.clip(f_t, 0.0, 1.0)
 
-        # Collisionality
-        nu_star_e = nu_ei * q_arr[i] * r0 / (eps**1.5 * v_te) if v_te > 0 else 1e6
-        if (not np.isfinite(nu_star_e)) or nu_star_e < 0.0:
-            nu_star_e = 1e6
+    T_e_J = te_v * 1e3 * e_charge
+    v_te = np.sqrt(2.0 * T_e_J / m_e)
+    n_e = ne_v * 1e19
+    ln_lambda = 17.0
+    nu_ei = n_e * z_eff * e_charge ** 4 * ln_lambda / (
+        12.0 * np.pi ** 1.5 * eps0 ** 2 * m_e ** 0.5 * T_e_J ** 1.5
+    )
+    nu_ei = np.where(np.isfinite(nu_ei) & (nu_ei >= 0.0), nu_ei, 0.0)
 
-        # Sauter L31 coefficient
-        alpha_31 = 1.0 / (1.0 + 0.36 / z_eff)
-        L31 = f_t * alpha_31 / (1.0 + alpha_31 * np.sqrt(nu_star_e) +
-               0.25 * nu_star_e * (1.0 - f_t)**2)
+    nu_star_e = np.where(
+        v_te > 0,
+        nu_ei * q_v * r0 / (eps_v ** 1.5 * v_te),
+        1e6,
+    )
+    nu_star_e = np.where(np.isfinite(nu_star_e) & (nu_star_e >= 0.0), nu_star_e, 1e6)
 
-        # Sauter L32 coefficient
-        L32 = f_t * (0.05 + 0.62 * z_eff) / (z_eff * (1.0 + 0.44 * z_eff))
-        L32 /= (1.0 + 0.22 * np.sqrt(nu_star_e) + 0.19 * nu_star_e * (1.0 - f_t))
+    alpha_31 = 1.0 / (1.0 + 0.36 / z_eff)
+    L31 = f_t * alpha_31 / (1.0 + alpha_31 * np.sqrt(nu_star_e) +
+           0.25 * nu_star_e * (1.0 - f_t) ** 2)
+    L32 = f_t * (0.05 + 0.62 * z_eff) / (z_eff * (1.0 + 0.44 * z_eff))
+    L32 /= (1.0 + 0.22 * np.sqrt(nu_star_e) + 0.19 * nu_star_e * (1.0 - f_t))
+    L34 = L31 * ti_v / np.maximum(te_v, 0.01)
 
-        # Sauter L34 coefficient (ion contribution)
-        L34 = L31 * ti_arr[i] / max(te_arr[i], 0.01)
+    # Central-difference gradients at interior points
+    idx_valid = np.where(valid)[0]  # indices into the interior array
+    i_full = idx_valid + 1  # indices into the full array
+    dr = (rho_arr[i_full + 1] - rho_arr[i_full - 1]) * a_minor
+    dr_ok = np.abs(dr) >= 1e-12
 
-        # Gradients (central differences)
-        dr = (rho_arr[i+1] - rho_arr[i-1]) * a_minor
-        if abs(dr) < 1e-12:
-            continue
-        dn_dr = (ne_arr[i+1] - ne_arr[i-1]) * 1e19 / dr
-        dTe_dr = (te_arr[i+1] - te_arr[i-1]) * 1e3 * e_charge / dr
-        dTi_dr = (ti_arr[i+1] - ti_arr[i-1]) * 1e3 * e_charge / dr
+    dn_dr = np.where(dr_ok, (ne_arr[i_full + 1] - ne_arr[i_full - 1]) * 1e19 / np.where(dr_ok, dr, 1.0), 0.0)
+    dTe_dr = np.where(dr_ok, (te_arr[i_full + 1] - te_arr[i_full - 1]) * 1e3 * e_charge / np.where(dr_ok, dr, 1.0), 0.0)
+    dTi_dr = np.where(dr_ok, (ti_arr[i_full + 1] - ti_arr[i_full - 1]) * 1e3 * e_charge / np.where(dr_ok, dr, 1.0), 0.0)
 
-        # Poloidal field
-        B_pol = b0 * eps / max(q_arr[i], 0.1)
-        if B_pol < 1e-10:
-            continue
+    B_pol = b0 * eps_v / np.maximum(q_v, 0.1)
+    B_ok = B_pol >= 1e-10
 
-        # Bootstrap current
-        # Temperature floor: 10 eV (~1.6e-18 J) prevents dT/T blow-up
-        # at the edge where T_e -> 0. The original 1e-30 J floor was
-        # ~280 orders of magnitude below any physical temperature.
-        _T_FLOOR_J = 10.0 * e_charge  # 10 eV = 1.602e-18 J
-        p_e = n_e * T_e_J
-        j_val = -(p_e / B_pol) * (
-            L31 * dn_dr / max(n_e, 1e10) +
-            L32 * dTe_dr / max(T_e_J, _T_FLOOR_J) +
-            L34 * dTi_dr / max(ti_arr[i] * 1e3 * e_charge, _T_FLOOR_J)
-        )
-        if np.isfinite(j_val):
-            j_bs[i] = j_val
+    # Temperature floor: 10 eV
+    _T_FLOOR_J = 10.0 * e_charge
+    p_e = n_e * T_e_J
+    j_val = -(p_e / np.where(B_ok, B_pol, 1.0)) * (
+        L31 * dn_dr / np.maximum(n_e, 1e10) +
+        L32 * dTe_dr / np.maximum(T_e_J, _T_FLOOR_J) +
+        L34 * dTi_dr / np.maximum(ti_v * 1e3 * e_charge, _T_FLOOR_J)
+    )
+
+    j_val = np.where(dr_ok & B_ok & np.isfinite(j_val), j_val, 0.0)
+    j_bs[i_full] = j_val
 
     j_bs = np.nan_to_num(j_bs, nan=0.0, posinf=0.0, neginf=0.0)
     j_bs[0] = 0.0

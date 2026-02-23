@@ -27,6 +27,7 @@ BATCH_SIZE = 32
 MEMORY_SIZE = 1000
 R_MAJ = 2.0   # major radius [m]
 R_MIN = 0.8   # minor radius [m]
+_GRID_SPACING = 1.0  # cell size for 2D diffusion stencil [arbitrary]
 
 
 def _resolve_rng(seed: int, rng: Optional[np.random.Generator]) -> np.random.Generator:
@@ -115,17 +116,26 @@ class Plasma2D:
             np.clip(correction, 0.2, 5.0, out=correction)
             diffusivity *= correction
 
-        T_up = np.roll(self.T, -1, axis=0)
-        T_down = np.roll(self.T, 1, axis=0)
-        T_left = np.roll(self.T, -1, axis=1)
-        T_right = np.roll(self.T, 1, axis=1)
-        laplacian = (T_up + T_down + T_left + T_right - 4*self.T)
+        # CFL stability: dt_cfl = dx^2 / (4 * D_max) for 2D explicit Euler
+        D_max = float(np.max(diffusivity))
+        dt_cfl = _GRID_SPACING ** 2 / (4.0 * max(D_max, 1e-12))
+        dt_phys = 1.0
+        n_sub = max(1, int(np.ceil(dt_phys / dt_cfl)))
+        dt_sub = dt_phys / n_sub
 
-        # Bremsstrahlung ~ sqrt(T); tungsten line radiation peaks at ~2 keV
-        radiation = 0.002 * np.sqrt(self.T + 1e-6)
-        tungsten_rad = 0.05 * np.exp(-((self.T - 2.0)**2) / 0.5)
+        for _ in range(n_sub):
+            T_up = np.roll(self.T, -1, axis=0)
+            T_down = np.roll(self.T, 1, axis=0)
+            T_left = np.roll(self.T, -1, axis=1)
+            T_right = np.roll(self.T, 1, axis=1)
+            laplacian = (T_up + T_down + T_left + T_right - 4 * self.T)
 
-        self.T += diffusivity * laplacian - radiation - tungsten_rad
+            radiation = 0.002 * np.sqrt(np.maximum(self.T, 0.0) + 1e-6)
+            tungsten_rad = 0.05 * np.exp(-((self.T - 2.0) ** 2) / 0.5)
+
+            self.T += dt_sub * (diffusivity * laplacian - radiation - tungsten_rad)
+            np.maximum(self.T, 0.0, out=self.T)
+
         self.T[~self.topo.mask] = 0.0
         self.T = np.clip(self.T, 0, 100.0)
 

@@ -30,6 +30,11 @@ AMU = 1.66e-27             # atomic mass unit [kg]
 M_NEON = 20.18 * AMU       # neon atom mass [kg]
 RHO_NEON_SOLID = 1444.0    # solid neon density [kg/m^3], CRC Handbook
 
+# Parks ablation rate prefactor [g/s] in code units (ne in 10^20 m^-3, Te in keV, rp in cm).
+# Derived from Parks NF 57 (2017) Eq. 8: C_P = 1.25e16 (CGS), converted to mixed units
+# via dimensional analysis: C_P_mixed = C_P * (1e20)^{-1/3} * keV^{-1.64} * cm^{-1.33} ≈ 2.0.
+_PARKS_COEFFICIENT = 2.0
+
 # Tokamak geometry (ITER-like)
 R_MAJOR = 6.2              # major radius [m]
 A_MINOR = 2.0              # minor radius [m]
@@ -108,7 +113,7 @@ class SpiAblationSolver:
             # Parks ablation scaling, Parks NF 57 (2017) Eq. 8
             ne_20 = max(n_e / 10.0, 0.0)
             rp_cm = frag.radius * 100.0
-            dm_dt_g = 2.0 * (ne_20**0.33) * (T_e**1.64) * (rp_cm**1.33)
+            dm_dt_g = _PARKS_COEFFICIENT * (ne_20**0.33) * (T_e**1.64) * (rp_cm**1.33)
             dm_dt_kg = dm_dt_g / 1000.0
 
             delta_m = dm_dt_kg * dt

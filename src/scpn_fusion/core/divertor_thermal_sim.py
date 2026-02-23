@@ -5,9 +5,12 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+
+logger = logging.getLogger(__name__)
 
 class DivertorLab:
     """
@@ -83,44 +86,54 @@ class DivertorLab:
         status = "MELTED" if T_surf > 3422 else "OK"
         return T_surf, status
 
-    def simulate_lithium_vapor(self, *, relaxation: float = 0.7):
+    def simulate_lithium_vapor(
+        self, *, relaxation: float = 0.7, max_iter: int = 50, tol: float = 0.1,
+    ):
         """
         Self-Consistent Vapor Shielding Physics.
-        Lithium evaporates based on P_sat(T), forming a dense cloud.
-        The cloud radiates energy back to the SOL and walls, shielding the target.
 
         Parameters
         ----------
         relaxation : float
             Under-relaxation factor in (0, 1) for iterative convergence.
+        max_iter : int
+            Maximum Picard iterations.
+        tol : float
+            Absolute temperature convergence tolerance [°C].
         """
         if not (0.0 < relaxation < 1.0):
             raise ValueError("relaxation must be in (0, 1).")
-        T_surf = 500.0  # initial guess [°C]
+        T_surf = 500.0
 
         # Li vapour pressure (Alcock et al. 1984): log10(P) = A − B/T_K
         A_li, B_li = 10.0, 8000.0
-        
-        for i in range(50):
+
+        for i in range(max_iter):
             T_K = T_surf + 273.15
             P_sat = 10**(A_li - B_li / T_K)
 
-            tau = P_sat / 10.0  # optical depth ∝ P_sat
+            tau = P_sat / 10.0
             f_rad = 0.98 * (1.0 - np.exp(-tau))
             q_surf = self.q_target_solid * (1.0 - f_rad)
 
             k_eff = 150.0
-            d = 0.005   # 5 mm layer
+            d = 0.005
             T_back = 300.0
-            
+
             T_new = T_back + (q_surf * d) / k_eff
-            
-            if abs(T_new - T_surf) < 0.1:
+            residual = abs(T_new - T_surf)
+
+            if residual < tol:
                 T_surf = T_new
                 break
-                
+
             T_surf = relaxation * T_surf + (1.0 - relaxation) * T_new
-            
+        else:
+            logger.warning(
+                "Li vapor shielding did not converge after %d iterations "
+                "(residual=%.2f °C)", max_iter, residual,
+            )
+
         return T_surf, q_surf, f_rad
 
     def calculate_mhd_pressure_loss(

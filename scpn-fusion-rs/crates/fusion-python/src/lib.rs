@@ -32,8 +32,11 @@ use fusion_ml::neural_transport::NeuralTransportModel;
 use fusion_nuclear::neutronics::{BreedingBlanket, VolumetricBlanketConfig};
 use fusion_physics::design_scanner;
 use fusion_physics::fno::FnoController;
+use fusion_physics::fokker_planck::FokkerPlanckSolver;
 use fusion_physics::hall_mhd::HallMHD;
+use fusion_physics::sawtooth::ReducedMHD;
 use fusion_physics::turbulence::DriftWavePhysics;
+use fusion_control::spi_ablation::SpiAblationSolver;
 use fusion_types::state::Grid2D;
 // ReactorConfig used internally by FusionKernel::from_file
 
@@ -1208,6 +1211,131 @@ impl PyDriftWave {
     }
 }
 
+// ─── Fokker-Planck RE solver ───
+
+#[pyclass]
+struct PyFokkerPlanckSolver {
+    inner: FokkerPlanckSolver,
+}
+
+#[pymethods]
+impl PyFokkerPlanckSolver {
+    #[new]
+    #[pyo3(signature = (np_grid=200, p_max=100.0))]
+    fn new(np_grid: usize, p_max: f64) -> Self {
+        Self {
+            inner: FokkerPlanckSolver::new(np_grid, p_max),
+        }
+    }
+
+    fn step(&mut self, dt: f64, e_field: f64, n_e: f64, t_e_ev: f64, z_eff: f64) -> (f64, f64) {
+        let state = self.inner.step(dt, e_field, n_e, t_e_ev, z_eff);
+        (state.n_re, state.current_re)
+    }
+
+    fn run(&mut self, n_steps: usize, dt: f64, e_field: f64, n_e: f64, t_e_ev: f64, z_eff: f64) -> Vec<(f64, f64)> {
+        self.inner
+            .run(n_steps, dt, e_field, n_e, t_e_ev, z_eff)
+            .into_iter()
+            .map(|s| (s.n_re, s.current_re))
+            .collect()
+    }
+
+    fn get_f<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        Array1::from_vec(self.inner.f.clone()).into_pyarray(py)
+    }
+
+    fn set_f(&mut self, values: Vec<f64>) {
+        self.inner.f = values;
+    }
+
+    fn get_p<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        Array1::from_vec(self.inner.p.clone()).into_pyarray(py)
+    }
+
+    fn get_dp<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        Array1::from_vec(self.inner.dp.clone()).into_pyarray(py)
+    }
+
+    #[getter]
+    fn time(&self) -> f64 {
+        self.inner.time
+    }
+}
+
+// ─── SPI Fragment Ablation ───
+
+#[pyclass]
+struct PySpiAblationSolver {
+    inner: SpiAblationSolver,
+}
+
+#[pymethods]
+impl PySpiAblationSolver {
+    #[new]
+    #[pyo3(signature = (n_fragments=100, total_mass_kg=0.01, velocity_mps=200.0, dispersion=0.1))]
+    fn new(n_fragments: usize, total_mass_kg: f64, velocity_mps: f64, dispersion: f64) -> PyResult<Self> {
+        let inner = SpiAblationSolver::new(n_fragments, total_mass_kg, velocity_mps, dispersion)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        Ok(Self { inner })
+    }
+
+    fn step<'py>(
+        &mut self,
+        py: Python<'py>,
+        dt: f64,
+        plasma_ne: Vec<f64>,
+        plasma_te: Vec<f64>,
+        r_grid: Vec<f64>,
+    ) -> PyResult<Bound<'py, PyArray1<f64>>> {
+        let dep = self.inner.step(dt, &plasma_ne, &plasma_te, &r_grid)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        Ok(Array1::from_vec(dep).into_pyarray(py))
+    }
+
+    fn n_active(&self) -> usize {
+        self.inner.n_active()
+    }
+
+    fn total_mass(&self) -> f64 {
+        self.inner.total_mass()
+    }
+}
+
+// ─── Reduced MHD Sawtooth ───
+
+#[pyclass]
+struct PyReducedMHD {
+    inner: ReducedMHD,
+}
+
+#[pymethods]
+impl PyReducedMHD {
+    #[new]
+    fn new() -> Self {
+        Self {
+            inner: ReducedMHD::new(),
+        }
+    }
+
+    fn step(&mut self, dt: f64) -> (f64, bool) {
+        self.inner.step(dt)
+    }
+
+    fn run(&mut self, n_steps: usize) -> Vec<(f64, bool)> {
+        self.inner.run(n_steps)
+    }
+
+    #[getter]
+    fn crash_count(&self) -> usize {
+        self.inner.crash_count
+    }
+
+    fn amplitude_history<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        Array1::from_vec(self.inner.amplitude_history.clone()).into_pyarray(py)
+    }
+}
+
 fn ensure_matching_length(name: &str, expected: usize, actual: usize) -> PyResult<()> {
     if expected != actual {
         return Err(pyo3::exceptions::PyValueError::new_err(format!(
@@ -1421,6 +1549,9 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_run_design_scan, m)?)?;
     m.add_class::<PyDriftWave>()?;
     m.add_class::<PyTransportSolver>()?;
+    m.add_class::<PyFokkerPlanckSolver>()?;
+    m.add_class::<PySpiAblationSolver>()?;
+    m.add_class::<PyReducedMHD>()?;
     #[cfg(feature = "gpu")]
     {
         m.add_class::<gpu_bindings::PyGpuSolver>()?;

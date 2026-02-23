@@ -13,6 +13,7 @@
 pub mod compact_optimizer;
 pub mod design_scanner;
 pub mod fno;
+pub mod fokker_planck;
 pub mod hall_mhd;
 pub mod sandpile;
 pub mod sawtooth;

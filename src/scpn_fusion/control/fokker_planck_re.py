@@ -129,47 +129,87 @@ class FokkerPlanckSolver:
             return np.zeros_like(self.f)
         return source * n_e * n_re * 1e-25
 
+    @staticmethod
+    def _minmod(a, b):
+        """Minmod slope limiter (vectorized)."""
+        return np.where(
+            a * b > 0,
+            np.sign(a) * np.minimum(np.abs(a), np.abs(b)),
+            0.0,
+        )
+
     def step(
         self,
         dt: float,
         E_field: float,
         n_e: float,
         T_e_eV: float,
-        Z_eff: float
+        Z_eff: float,
     ) -> RunawayElectronState:
-        """Advance distribution function by dt using first-order upwind."""
+        """Advance f(p,t) by dt using MUSCL-Hancock advection + diffusion.
+
+        Advection: 2nd-order MUSCL with minmod limiter (Toro Ch. 13).
+        Diffusion: central difference operator-split half-step.
+        """
         A, D, Fc = self.compute_coefficients(E_field, n_e, Z_eff, T_e_eV)
 
-        # Avalanche source: Rosenbluth-Putvinski, Nucl. Fusion 37 (1997) Eq. 19
-        E_crit = (Fc * MC / E_CHARGE)
+        # CFL advisory
+        dp_min = np.min(self.dp)
+        A_max = np.max(np.abs(A))
+        if A_max > 0 and dt > dp_min / A_max:
+            logger.debug("FP step dt=%.2e exceeds advective CFL=%.2e", dt, dp_min / A_max)
+
+        # Avalanche source, Rosenbluth-Putvinski NF 37 (1997) Eq. 19
+        E_crit = Fc * MC / E_CHARGE
         gamma_av = 0.0
         if E_field > E_crit:
             gamma_av = (E_field / E_crit - 1.0) * np.sqrt(np.pi * (Z_eff + 1) / 2)
             gamma_av *= AVALANCHE_RATE
         S_av = gamma_av * self.f
 
-        # Dreicer source: inject at low-p bins when E > 0.05 E_c
         S_dr = np.zeros_like(self.f)
         if E_field > 0.05 * E_crit:
             S_dr[0:5] = DREICER_SOURCE
 
         S_ko = self.explicit_knock_on_source(n_e)
 
-        # First-order upwind advection
-        f_new = self.f.copy()
-        for i in range(1, self.np_grid - 1):
-            flux_in = A[i-1] * self.f[i-1] if A[i-1] > 0 else A[i] * self.f[i]
-            flux_out = A[i] * self.f[i] if A[i] > 0 else A[i+1] * self.f[i+1]
-            df_dt = -(flux_out - flux_in) / self.dp[i] + S_av[i] + S_dr[i] + S_ko[i]
-            f_new[i] += df_dt * dt
+        # ── MUSCL-Hancock advection (vectorized) ────────────────────
+        f = self.f
+        N = self.np_grid
+
+        # Slopes via minmod limiter
+        df_fwd = np.zeros(N)
+        df_bwd = np.zeros(N)
+        df_fwd[:-1] = f[1:] - f[:-1]
+        df_bwd[1:] = f[1:] - f[:-1]
+        slope = self._minmod(df_fwd, df_bwd)
+
+        # Left/right reconstructed states at cell faces i+1/2
+        f_L = f + 0.5 * slope        # left state at right face
+        f_R = np.roll(f - 0.5 * slope, -1)  # right state at right face
+
+        # Upwind flux at each face: F_{i+1/2}
+        flux = np.where(A >= 0, A * f_L, A * f_R)
+
+        # Conservative update: f_new[i] -= dt/dp * (flux[i] - flux[i-1])
+        f_new = f.copy()
+        f_new[1:N - 1] -= (dt / self.dp[1:N - 1]) * (flux[1:N - 1] - flux[0:N - 2])
+
+        # ── Diffusion half-step (central difference) ────────────────
+        dp2 = self.dp ** 2
+        f_new[1:N - 1] += dt * D[1:N - 1] * (
+            f[2:N] - 2.0 * f[1:N - 1] + f[0:N - 2]
+        ) / dp2[1:N - 1]
+
+        # Sources
+        f_new[1:N - 1] += dt * (S_av[1:N - 1] + S_dr[1:N - 1] + S_ko[1:N - 1])
 
         self.f = np.maximum(0, f_new)
         self.time += dt
 
-        # Moments: density and current
         dp = self.dp
         n_re = np.sum(self.f * dp)
-        gamma = np.sqrt(1 + self.p**2)
+        gamma = np.sqrt(1 + self.p ** 2)
         v = C * self.p / gamma
         j_re = E_CHARGE * np.sum(self.f * v * dp)
 
@@ -178,5 +218,5 @@ class FokkerPlanckSolver:
             p_grid=self.p,
             time=self.time,
             n_re=n_re,
-            current_re=j_re
+            current_re=j_re,
         )

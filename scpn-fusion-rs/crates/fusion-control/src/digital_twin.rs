@@ -492,23 +492,33 @@ impl Plasma2D {
         // Source: core heating
         self.temp[[center, center]] += 5.0;
 
-        // Laplacian (periodic boundary via wrapping)
-        let mut laplacian = Array2::zeros((n, n));
-        for i in 0..n {
-            for j in 0..n {
-                let up = self.temp[[(i + n - 1) % n, j]];
-                let down = self.temp[[(i + 1) % n, j]];
-                let left = self.temp[[i, (j + n - 1) % n]];
-                let right = self.temp[[i, (j + 1) % n]];
-                laplacian[[i, j]] = up + down + left + right - 4.0 * self.temp[[i, j]];
+        // CFL stability: dt_cfl = dx^2 / (4 * D_max) for 2D explicit Euler
+        let d_max = diffusivity.iter().cloned().fold(0.0_f64, f64::max);
+        let dt_cfl = 1.0 / (4.0 * d_max.max(1e-12));
+        let dt_phys = 1.0;
+        let n_sub = ((dt_phys / dt_cfl).ceil() as usize).max(1);
+        let dt_sub = dt_phys / n_sub as f64;
+
+        for _ in 0..n_sub {
+            // Laplacian (periodic boundary via wrapping)
+            let mut laplacian = Array2::zeros((n, n));
+            for i in 0..n {
+                for j in 0..n {
+                    let up = self.temp[[(i + n - 1) % n, j]];
+                    let down = self.temp[[(i + 1) % n, j]];
+                    let left = self.temp[[i, (j + n - 1) % n]];
+                    let right = self.temp[[i, (j + 1) % n]];
+                    laplacian[[i, j]] = up + down + left + right - 4.0 * self.temp[[i, j]];
+                }
             }
+
+            // Radiation cooling
+            let radiation = self.temp.mapv(|t| 0.0001 * t * t);
+
+            // Update with sub-step
+            self.temp = &self.temp + &((&diffusivity * &laplacian - &radiation) * dt_sub);
+            self.temp.mapv_inplace(|t| t.max(0.0));
         }
-
-        // Radiation cooling
-        let radiation = self.temp.mapv(|t| 0.0001 * t * t);
-
-        // Update
-        self.temp = &self.temp + &(&diffusivity * &laplacian) - &radiation;
 
         // Boundary
         for i in 0..n {
