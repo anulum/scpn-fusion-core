@@ -187,7 +187,10 @@ class TokamakEnv(gym.Env):
         if self.render_mode == "human":
             # For now, just log state. In future, trigger visualize_flight.
             obs = self._get_obs()
-            print(f"Step {self.current_step}: R={obs[0]:.2f}, Z={obs[1]:.2f}, Reward={-np.sqrt(obs[4]**2+obs[5]**2):.4f}")
+            logger.info(
+                "Step %d: R=%.2f, Z=%.2f, Reward=%.4f",
+                self.current_step, obs[0], obs[1], -np.sqrt(obs[4]**2 + obs[5]**2),
+            )
 
 # Registration
 def register():

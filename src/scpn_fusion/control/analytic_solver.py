@@ -8,10 +8,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
@@ -43,7 +46,7 @@ class AnalyticEquilibriumSolver:
 
     def _log(self, message: str) -> None:
         if self.verbose:
-            print(message)
+            logger.info(message)
 
     def calculate_required_Bv(
         self,

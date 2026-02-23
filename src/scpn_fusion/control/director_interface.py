@@ -7,12 +7,15 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 import re
 from typing import Any, Callable, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 try:
     from director_module import DirectorModule
@@ -182,9 +185,9 @@ class DirectorInterface:
         rng = np.random.default_rng(int(rng_seed))
 
         if verbose:
-            print("--- DIRECTOR-GHOSTED FUSION MISSION ---")
-            print("Layer 16 (Director) is now overseeing Layer 2 (Neurocore).")
-            print(f"Director backend: {self.director_backend}")
+            logger.info("--- DIRECTOR-GHOSTED FUSION MISSION ---")
+            logger.info("Layer 16 (Director) is now overseeing Layer 2 (Neurocore).")
+            logger.info("Director backend: %s", self.director_backend)
 
         self.nc.kernel.solve_equilibrium()
         self.nc.initialize_brains(use_quantum=bool(use_quantum))
@@ -226,16 +229,16 @@ class DirectorInterface:
 
                 if verbose:
                     status = "APPROVED" if approved else "DENIED"
-                    print(
-                        f"[Director] T={t} | State: {prompt} | Proposal: "
-                        f"{proposed_action} -> {status} (SEC={sec_score:.2f})"
+                    logger.info(
+                        "[Director] T=%d | State: %s | Proposal: %s -> %s (SEC=%.2f)",
+                        t, prompt, proposed_action, status, sec_score,
                     )
 
                 if approved:
                     current_target_ip += 1.0
                 else:
                     if verbose:
-                        print("[Director] INTERVENTION: Reducing Power to restore Coherence.")
+                        logger.warning("[Director] INTERVENTION: Reducing Power to restore Coherence.")
                     current_target_ip = max(1.0, current_target_ip - 2.0)
 
             self.nc.kernel.solve_equilibrium()

@@ -7,10 +7,13 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class ShatteredPelletInjection:
@@ -152,9 +155,9 @@ class ShatteredPelletInjection:
             raise ValueError("dt_s must be finite and > 0.")
 
         if verbose:
-            print(
-                "--- DISRUPTION DETECTED! TRIGGERING SPI "
-                f"(Ne={neon:.3f} mol, Ar={argon:.3f} mol, Xe={xenon:.3f} mol) ---"
+            logger.warning(
+                "DISRUPTION DETECTED! TRIGGERING SPI (Ne=%.3f mol, Ar=%.3f mol, Xe=%.3f mol)",
+                neon, argon, xenon,
             )
 
         t_mix = 0.002
@@ -210,9 +213,9 @@ class ShatteredPelletInjection:
                 if self.Te < 5.0 and phase == "Thermal Quench":
                     phase = "Current Quench"
                     if verbose:
-                        print(
-                            f"  [t={t*1000:.1f}ms] Thermal Quench Complete. "
-                            "Entering Current Quench."
+                        logger.info(
+                            "[t=%.1fms] Thermal Quench Complete. Entering Current Quench.",
+                            t * 1000,
                         )
 
             if phase == "Current Quench":
@@ -306,7 +309,7 @@ def run_spi_mitigation(
             plt.close(fig)
             plot_saved = True
             if verbose:
-                print(f"Saved: {output_path}")
+                logger.info("Saved: %s", output_path)
         except Exception as exc:
             plot_error = f"{exc.__class__.__name__}: {exc}"
 

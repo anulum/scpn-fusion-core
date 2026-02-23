@@ -363,7 +363,7 @@ def generate_results_md(
         # Pattern for claims_audit: Disruption prevention rate (SNN) | >60
         # We use a combined label to satisfy the regex while showing real rate.
         rate_pct = disruption['prevention_rate'] * 100
-        rows_dc.append(f"| Disruption prevention rate (SNN) | >60 ({_fmt(rate_pct, '.1f')}%) | % | {n}-run ensemble |")
+        rows_dc.append(f"| Disruption prevention rate (SNN) | {_fmt(rate_pct, '.1f')} | % | {n}-run ensemble |")
         rows_dc.append(f"| Mean halo current peak | {_fmt(disruption['mean_halo_ma'], '.3f')} | MA | |")
         rows_dc.append(f"| P95 halo current peak | {_fmt(disruption['p95_halo_ma'], '.3f')} | MA | |")
         rows_dc.append(f"| Mean RE current peak | {_fmt(disruption['mean_re_ma'], '.3f')} | MA | |")
