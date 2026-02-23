@@ -192,6 +192,9 @@ void *create_solver(int nr, int nz,
                     double rmin, double rmax,
                     double zmin, double zmax)
 {
+    if (nr < 2 || nz < 2) return nullptr;
+    if (rmin >= rmax || zmin >= zmax) return nullptr;
+
     PlasmaConfig cfg;
     cfg.nr = nr;
     cfg.nz = nz;

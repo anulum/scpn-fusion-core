@@ -178,3 +178,106 @@ def test_load_or_train_predictor_rejects_invalid_seq_len(
             train_if_missing=False,
             allow_fallback=True,
         )
+
+
+# --- S2-004: Disruption predictor fallback/raise-path coverage ---
+
+
+def test_load_or_train_fallback_torch_unavailable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(dp, "torch", None)
+    model, meta = dp.load_or_train_predictor(
+        model_path=tmp_path / "m.pth",
+        seq_len=32,
+        train_if_missing=False,
+        allow_fallback=True,
+    )
+    assert model is None
+    assert meta["fallback"] is True
+    assert meta["reason"] == "torch_unavailable"
+
+
+def test_load_or_train_raises_without_fallback_no_torch(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(dp, "torch", None)
+    with pytest.raises(RuntimeError, match="Torch is required"):
+        dp.load_or_train_predictor(
+            model_path=tmp_path / "m.pth",
+            seq_len=32,
+            train_if_missing=False,
+            allow_fallback=False,
+        )
+
+
+def test_load_or_train_raises_without_fallback_missing_checkpoint(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(FileNotFoundError, match="Checkpoint not found"):
+        dp.load_or_train_predictor(
+            model_path=tmp_path / "nonexistent.pth",
+            seq_len=32,
+            train_if_missing=False,
+            allow_fallback=False,
+        )
+
+
+def test_load_or_train_fallback_corrupt_checkpoint(tmp_path: Path) -> None:
+    corrupt = tmp_path / "corrupt.pth"
+    corrupt.write_bytes(b"NOT_A_VALID_CHECKPOINT_123456")
+    model, meta = dp.load_or_train_predictor(
+        model_path=corrupt,
+        seq_len=32,
+        train_if_missing=False,
+        allow_fallback=True,
+    )
+    assert model is None
+    assert meta["fallback"] is True
+    assert "checkpoint_load_failed" in meta["reason"]
+
+
+def test_predict_safe_fallback_returns_valid_risk_no_torch(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(dp, "torch", None)
+    signal = np.linspace(0.25, 0.95, 80)
+    toroidal = {
+        "toroidal_n1_amp": 0.16,
+        "toroidal_n2_amp": 0.07,
+        "toroidal_n3_amp": 0.03,
+        "toroidal_asymmetry_index": 0.177,
+        "toroidal_radial_spread": 0.02,
+    }
+    risk, meta = predict_disruption_risk_safe(
+        signal,
+        toroidal,
+        model_path=tmp_path / "m.pth",
+        train_if_missing=False,
+    )
+    assert isinstance(risk, float)
+    assert 0.0 <= risk <= 1.0
+    assert meta["mode"] == "fallback"
+    assert meta["risk_source"] == "predict_disruption_risk"
+
+
+def test_predict_safe_raises_without_fallback_no_torch(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setattr(dp, "torch", None)
+    signal = np.linspace(0.25, 0.95, 80)
+    toroidal = {
+        "toroidal_n1_amp": 0.16,
+        "toroidal_n2_amp": 0.07,
+        "toroidal_n3_amp": 0.03,
+        "toroidal_asymmetry_index": 0.177,
+        "toroidal_radial_spread": 0.02,
+    }
+    with pytest.raises(RuntimeError, match="Torch is required"):
+        predict_disruption_risk_safe(
+            signal,
+            toroidal,
+            model_path=tmp_path / "m.pth",
+            train_if_missing=False,
+            allow_fallback=False,
+        )

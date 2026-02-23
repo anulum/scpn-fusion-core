@@ -37,6 +37,7 @@ def test_run_benchmark_meets_thresholds_on_smoke_config() -> None:
     assert out["agreement"] >= 0.95
     assert out["mean_abs_delta"] <= 0.08
     assert out["oracle_sc_mean_abs_delta"] <= 0.05
+    assert out["oracle_sc_firing_mean_abs_delta"] <= 0.05
     assert out["recovery_ms_p95"] <= 1.0
     assert out["passes_thresholds"] is True
 
@@ -53,6 +54,7 @@ def test_render_markdown_contains_key_sections() -> None:
     assert "## Metrics" in text
     assert "TORAX parity estimate" in text
     assert "oracle-vs-SC marking delta" in text
+    assert "oracle-vs-SC firing delta" in text
 
 
 @pytest.mark.parametrize(
@@ -71,3 +73,10 @@ def test_run_benchmark_rejects_invalid_inputs(
 ) -> None:
     with pytest.raises(ValueError, match=match):
         gneu_01_benchmark.run_benchmark(**kwargs)
+
+
+def test_run_benchmark_firing_vector_metric_present() -> None:
+    out = gneu_01_benchmark.run_benchmark(seed=42, episodes=4, window=48)
+    assert "oracle_sc_firing_mean_abs_delta" in out
+    assert isinstance(out["oracle_sc_firing_mean_abs_delta"], float)
+    assert out["oracle_sc_firing_mean_abs_delta"] <= 0.05

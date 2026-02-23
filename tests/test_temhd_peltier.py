@@ -98,3 +98,50 @@ def test_step_low_viscosity_path_remains_finite() -> None:
     assert np.isfinite(t_surface)
     assert np.isfinite(k_eff_max)
     assert k_eff_max > 0.0
+
+
+# --- S2-006: TEMHD solver pathological edge cases ---
+
+
+def test_tridiagonal_empty_system() -> None:
+    sim = TEMHD_Stabilizer()
+    result = sim.solve_tridiagonal(
+        a=np.array([], dtype=float),
+        b=np.array([], dtype=float),
+        c=np.array([], dtype=float),
+        d=np.array([], dtype=float),
+    )
+    assert result.size == 0
+
+
+def test_tridiagonal_scalar_system() -> None:
+    sim = TEMHD_Stabilizer()
+    result = sim.solve_tridiagonal(
+        a=np.array([], dtype=float),
+        b=np.array([3.0]),
+        c=np.array([], dtype=float),
+        d=np.array([6.0]),
+    )
+    assert result.shape == (1,)
+    assert abs(result[0] - 2.0) < 1e-12
+
+
+def test_B_field_zero_gives_base_conductivity() -> None:
+    sim = TEMHD_Stabilizer(B_field=0.0)
+    _, k_eff_max = sim.step(heat_flux_MW_m2=10.0, dt=0.1)
+    assert abs(k_eff_max - sim.k_thermal) < 1e-6
+
+
+def test_zero_flux_temperature_near_wall() -> None:
+    sim = TEMHD_Stabilizer(B_field=10.0)
+    t_surface = 0.0
+    for _ in range(20):
+        t_surface, _ = sim.step(heat_flux_MW_m2=0.0, dt=0.1)
+    assert abs(t_surface - sim.T_wall) < 1.0
+
+
+def test_large_dt_remains_finite() -> None:
+    sim = TEMHD_Stabilizer(B_field=10.0)
+    t_surface, k_eff_max = sim.step(heat_flux_MW_m2=20.0, dt=10.0)
+    assert np.isfinite(t_surface)
+    assert np.isfinite(k_eff_max)

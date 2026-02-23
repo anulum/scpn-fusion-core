@@ -346,3 +346,27 @@ def test_compile_cpp_builds_in_package_bin(monkeypatch: pytest.MonkeyPatch) -> N
     assert calls["check"] is True
     assert isinstance(calls["cmd"], list)
     assert calls["cmd"][0] == "g++"
+
+
+def test_initialize_rejects_degenerate_grid_nr_1() -> None:
+    bridge = _make_bridge()
+    with pytest.raises(ValueError, match="nr and nz must be >= 2"):
+        bridge.initialize(nr=1, nz=10, r_range=(2.0, 10.0), z_range=(-5.0, 5.0))
+
+
+def test_initialize_rejects_zero_nz() -> None:
+    bridge = _make_bridge()
+    with pytest.raises(ValueError, match="nr and nz must be >= 2"):
+        bridge.initialize(nr=10, nz=0, r_range=(2.0, 10.0), z_range=(-5.0, 5.0))
+
+
+def test_initialize_rejects_inverted_r_range() -> None:
+    bridge = _make_bridge()
+    with pytest.raises(ValueError, match="r_range/z_range must have min < max"):
+        bridge.initialize(nr=10, nz=10, r_range=(10.0, 2.0), z_range=(-5.0, 5.0))
+
+
+def test_initialize_rejects_inverted_z_range() -> None:
+    bridge = _make_bridge()
+    with pytest.raises(ValueError, match="r_range/z_range must have min < max"):
+        bridge.initialize(nr=10, nz=10, r_range=(2.0, 10.0), z_range=(5.0, -5.0))

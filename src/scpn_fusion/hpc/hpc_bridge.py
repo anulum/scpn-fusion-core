@@ -218,6 +218,10 @@ class HPCBridge:
         """Create the C++ solver instance for the given grid dimensions."""
         if not self.loaded:
             return
+        if nr < 2 or nz < 2:
+            raise ValueError("nr and nz must be >= 2.")
+        if r_range[0] >= r_range[1] or z_range[0] >= z_range[1]:
+            raise ValueError("r_range/z_range must have min < max.")
         self.nr = nr
         self.nz = nz
         self.solver_ptr = self.lib.create_solver(

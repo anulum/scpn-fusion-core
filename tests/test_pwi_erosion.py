@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.nuclear.pwi_erosion import SputteringPhysics
 
@@ -81,3 +82,39 @@ def test_erosion_outputs_finite_and_nonnegative() -> None:
     assert out["Yield"] >= 0.0
     assert out["Net_Flux"] >= 0.0
     assert out["Erosion_mm_year"] >= 0.0
+
+
+# --- S2-005: PWI erosion angle-energy invariants and redeposition bounds ---
+
+
+def test_f_alpha_capped_at_5() -> None:
+    pwi = SputteringPhysics("Tungsten")
+    y_normal = pwi.calculate_yield(900.0, angle_deg=0.0)
+    y_grazing = pwi.calculate_yield(900.0, angle_deg=89.0)
+    assert y_normal > 0.0
+    assert y_grazing / y_normal <= 5.0 + 1e-9
+
+
+def test_yield_zero_at_threshold_energy() -> None:
+    pwi = SputteringPhysics("Tungsten")
+    assert pwi.calculate_yield(200.0) == 0.0
+
+
+def test_redeposition_zero_identity() -> None:
+    pwi = SputteringPhysics("Tungsten", redeposition_factor=0.0)
+    flux = 1e24
+    out = pwi.calculate_erosion_rate(flux, T_ion_eV=60.0)
+    expected_net = out["Yield"] * flux
+    assert abs(out["Net_Flux"] - expected_net) < 1e-6
+
+
+def test_yield_rejects_nonfinite_energy() -> None:
+    pwi = SputteringPhysics("Tungsten")
+    with pytest.raises(ValueError, match="E_ion_eV must be finite"):
+        pwi.calculate_yield(np.nan)
+
+
+def test_yield_rejects_nonfinite_angle() -> None:
+    pwi = SputteringPhysics("Tungsten")
+    with pytest.raises(ValueError, match="angle_deg must be finite"):
+        pwi.calculate_yield(500.0, angle_deg=np.inf)
