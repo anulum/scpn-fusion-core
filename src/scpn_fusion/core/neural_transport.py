@@ -58,8 +58,6 @@ FloatArray = NDArray[np.float64]
 _WEIGHTS_FORMAT_VERSION = 1
 
 
-# ── Data containers ───────────────────────────────────────────────────
-
 @dataclass
 class TransportInputs:
     """Local plasma parameters at a single radial location.
@@ -124,8 +122,6 @@ class TransportFluxes:
     channel: str = "stable"
 
 
-# ── Analytic fallback (critical-gradient model) ──────────────────────
-
 # Critical gradient thresholds (Dimits shift included)
 _CRIT_ITG = 4.0   # R/L_Ti threshold for ITG
 _CRIT_TEM = 5.0   # R/L_Te threshold for TEM (simplified)
@@ -164,8 +160,6 @@ def critical_gradient_model(inp: TransportInputs) -> TransportFluxes:
     return TransportFluxes(chi_e=chi_e, chi_i=chi_i, d_e=d_e, channel=channel)
 
 
-# ── MLP inference engine ─────────────────────────────────────────────
-
 @dataclass
 class MLPWeights:
     """Stored weights for a variable-depth feedforward MLP.
@@ -183,8 +177,10 @@ class MLPWeights:
     input_mean: FloatArray = field(default_factory=lambda: np.zeros(10))
     input_std: FloatArray = field(default_factory=lambda: np.ones(10))
     output_scale: FloatArray = field(default_factory=lambda: np.ones(3))
+    log_transform: bool = False
+    gb_scale: bool = False
+    gated: bool = False
 
-    # --- Backward-compatible properties for code that accesses w1/b1 etc. ---
     @property
     def w1(self) -> FloatArray:
         return self.layers_w[0] if self.layers_w else np.zeros((0, 0))
@@ -250,13 +246,34 @@ def _mlp_forward(x: FloatArray, weights: MLPWeights) -> FloatArray:
     for i in range(weights.n_layers - 1):
         h = _gelu(h @ weights.layers_w[i] + weights.layers_b[i])
 
-    # Output layer: softplus (ensures chi > 0)
-    out = _softplus(h @ weights.layers_w[-1] + weights.layers_b[-1])
+    # Output layer
+    raw = h @ weights.layers_w[-1] + weights.layers_b[-1]
+    if weights.gated:
+        # Gated: first 3 outputs are flux logits, last 3 are gate logits
+        flux = _softplus(raw[..., :3]) * weights.output_scale
+        gate = 1.0 / (1.0 + np.exp(-np.clip(raw[..., 3:], -20.0, 20.0)))  # sigmoid
+        out = gate * flux
+    else:
+        out = _softplus(raw) * weights.output_scale
 
-    return out * weights.output_scale
+    # If trained in log-space, convert: output = exp(log(1+Y)) - 1 = Y
+    if weights.log_transform:
+        out = np.expm1(np.clip(out, 0.0, 20.0))
 
+    # Gyro-Bohm skip connection: multiply by chi_gb(Te)
+    if weights.gb_scale:
+        te = x[..., 1]  # Te_keV is column 1
+        te_j = te * 1e3 * 1.602e-19
+        cs = np.sqrt(te_j / 3.344e-27)
+        rho_s = np.sqrt(3.344e-27 * te_j) / (1.602e-19 * 5.3)
+        chi_gb = rho_s ** 2 * cs / 6.2
+        if chi_gb.ndim == 0:
+            out = out * float(chi_gb)
+        else:
+            out = out * chi_gb[..., np.newaxis]
 
-# ── Main transport surrogate ─────────────────────────────────────────
+    return out
+
 
 class NeuralTransportModel:
     """Neural transport surrogate with analytic fallback.
@@ -335,12 +352,22 @@ class NeuralTransportModel:
             layers_w = [data[f"w{i+1}"] for i in range(n_layers)]
             layers_b = [data[f"b{i+1}"] for i in range(n_layers)]
 
+            # Check for log-space transform flag
+            log_transform = bool(int(data["log_transform"])) if "log_transform" in data else False
+            # Check for gyro-Bohm skip connection flag
+            gb_scale = bool(int(data["gb_scale"])) if "gb_scale" in data else False
+            # Check for gated output architecture flag
+            gated = bool(int(data["gated"])) if "gated" in data else False
+
             self._weights = MLPWeights(
                 layers_w=layers_w,
                 layers_b=layers_b,
                 input_mean=data["input_mean"],
                 input_std=data["input_std"],
                 output_scale=data["output_scale"],
+                log_transform=log_transform,
+                gb_scale=gb_scale,
+                gated=gated,
             )
             self.is_neural = True
 
@@ -393,6 +420,18 @@ class NeuralTransportModel:
             inp.grad_te, inp.grad_ti, inp.grad_ne,
             inp.q, inp.s_hat, inp.beta_e,
         ])
+        # Append derived features if model expects >10D input
+        expected_dim = self._weights.layers_w[0].shape[0]
+        if expected_dim >= 12:
+            itg_excess = max(0.0, inp.grad_ti - _CRIT_ITG)
+            tem_excess = max(0.0, inp.grad_te - _CRIT_TEM)
+            x = np.append(x, [itg_excess, tem_excess])
+        if expected_dim >= 13:
+            te_j = inp.te_kev * 1e3 * 1.602e-19
+            cs = np.sqrt(te_j / 3.344e-27)
+            rho_s = np.sqrt(3.344e-27 * te_j) / (1.602e-19 * 5.3)
+            chi_gb = rho_s ** 2 * cs / 6.2
+            x = np.append(x, [np.log(max(chi_gb, 1e-10))])
         out = _mlp_forward(x, self._weights)
 
         chi_e = float(out[0])
@@ -505,20 +544,31 @@ class NeuralTransportModel:
             "r_major": float(r_major),
         }
 
-        # ── Neural path: single batched forward pass ─────────────
         if self.is_neural and self._weights is not None:
             x_batch = np.column_stack([
                 rho, te, ti, ne,
                 grad_te, grad_ti, grad_ne,
                 q_profile, s_hat_profile, beta_e,
             ])  # (N, 10)
+            # Append derived features if model expects >10D input
+            expected_dim = self._weights.layers_w[0].shape[0]
+            if expected_dim >= 12:
+                itg_excess = np.maximum(0.0, grad_ti - _CRIT_ITG)
+                tem_excess = np.maximum(0.0, grad_te - _CRIT_TEM)
+                x_batch = np.column_stack([x_batch, itg_excess, tem_excess])
+            if expected_dim >= 13:
+                te_j = te * 1e3 * 1.602e-19
+                cs = np.sqrt(te_j / 3.344e-27)
+                rho_s = np.sqrt(3.344e-27 * te_j) / (1.602e-19 * 5.3)
+                chi_gb = rho_s ** 2 * cs / 6.2
+                log_chi_gb = np.log(np.maximum(chi_gb, 1e-10))
+                x_batch = np.column_stack([x_batch, log_chi_gb])
             out = _mlp_forward(x_batch, self._weights)  # (N, 3)
             chi_e_out = out[:, 0]
             chi_i_out = out[:, 1]
             d_e_out = out[:, 2]
             return chi_e_out, chi_i_out, d_e_out
 
-        # ── Fallback: vectorised critical-gradient model ─────────
         # Inverse aspect ratio eps(rho)
         eps = rho / (r_major / 2.0) # a approx R/2
         eps = np.clip(eps, 0.0, 0.5)

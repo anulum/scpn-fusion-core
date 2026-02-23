@@ -126,9 +126,7 @@ class FNO_Controller:
         # Simple suppression law: tanh of predicted intensity
         suppression = float(jnp.tanh(prediction_val * 2.0))
         
-        # --- Physics-Informed Hardening (PiFNO) ---
-        # Ensure predicted field is divergence-free (conservative flow)
-        # Using Fourier-projection: v_div_free = v - k(k.v)/k^2
+        # Fourier-project to divergence-free field: v - k(k·v)/k²
         pred_field = np.array(field * (1.0 - suppression)) # Scaled prediction
         
         field_k = np.fft.fft2(pred_field)

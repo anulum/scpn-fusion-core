@@ -522,7 +522,6 @@ def run_full_stability_check(
     -------
     StabilitySummary
     """
-    # --- Always-on criteria ---
     mr = mercier_stability(qp)
     br = ballooning_stability(qp)
     ks = kruskal_shafranov_stability(qp)
@@ -544,7 +543,6 @@ def run_full_stability_check(
     if ks.stable:
         n_stable += 1
 
-    # --- Troyon (optional) ---
     troyon_result: TroyonResult | None = None
     if beta_t is not None and Ip_MA is not None and a is not None and B0 is not None:
         troyon_result = troyon_beta_limit(beta_t, Ip_MA, a, B0)
@@ -552,7 +550,6 @@ def run_full_stability_check(
         if troyon_result.stable_nowall:
             n_stable += 1
 
-    # --- NTM (optional) ---
     ntm_result: NTMResult | None = None
     if j_bs is not None and j_total is not None and a is not None:
         ntm_result = ntm_stability(qp, j_bs, j_total, a)
@@ -560,7 +557,6 @@ def run_full_stability_check(
         if not np.any(ntm_result.ntm_unstable):
             n_stable += 1
 
-    # --- RWM (optional, derived from Troyon) ---
     rwm_result: RWMResult | None = None
     if troyon_result is not None:
         rwm_result = rwm_stability(troyon_result.beta_N)

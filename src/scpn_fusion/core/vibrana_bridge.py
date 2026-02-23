@@ -108,23 +108,18 @@ class VibranaFusionBridge:
         self.nc.kernel.solve_equilibrium()
         self.nc.initialize_brains(use_quantum=True)
         
-        # We will generate audio metrics log instead of real-time audio 
-        # because we are in a CLI without speakers.
         audio_log = []
         
         current_target_Ip = 5.0
         
         for t in range(duration_steps):
-            # 1. Evolve Physics
             self.nc.kernel.cfg['physics']['plasma_current_target'] = current_target_Ip
-            current_target_Ip += 0.1 # Ramp up
-            
-            # Inject Instability at t=50
-            if t == 50:
+            current_target_Ip += 0.1
+
+            if t == 50:  # inject instability
                 print(">> INJECTING TURBULENCE <<")
                 self.nc.kernel.cfg['coils'][2]['current'] += 2000.0
             
-            # 2. Measure
             idx_max = np.argmax(self.nc.kernel.Psi)
             iz, ir = np.unravel_index(idx_max, self.nc.kernel.Psi.shape)
             curr_R = self.nc.kernel.R[ir]
@@ -133,7 +128,6 @@ class VibranaFusionBridge:
             err_R = 6.2 - curr_R
             err_Z = 0.0 - curr_Z
             
-            # 3. Neuro Control
             ctrl_R = self.nc.brain_R.step(err_R)
             ctrl_Z = self.nc.brain_Z.step(err_Z)
             
@@ -143,7 +137,6 @@ class VibranaFusionBridge:
             
             self.nc.kernel.solve_equilibrium()
             
-            # 4. SONIFY
             audio_params = self.map_physics_to_audio(t, current_target_Ip, err_R, err_Z, self.nc.kernel.Psi)
             
             print(f"T={t} | Err={err_R:.3f} | Audio: {audio_params['Carrier']:.0f}Hz + {audio_params['Beat']}Hz Beat | Chaos={audio_params['Chaos']:.2f}")

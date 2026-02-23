@@ -7,10 +7,13 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 try:
     import torch
@@ -51,7 +54,6 @@ def _require_int(name: str, value: object, minimum: int | None = None) -> int:
     return parsed
 
 
-# --- PHYSICS: MODIFIED RUTHERFORD EQUATION ---
 def simulate_tearing_mode(
     steps=1000,
     *,
@@ -69,41 +71,33 @@ def simulate_tearing_mode(
     w = 0.01 # Island width
     local_rng = rng if rng is not None else np.random.default_rng()
     
-    # Physics Parameters
-    # Stable shot: Delta' < 0
-    # Disruptive shot: Delta' > 0 (Triggered at random time)
     is_disruptive = float(local_rng.random()) > 0.5
     trigger_time = int(local_rng.integers(200, 800)) if is_disruptive else 9999
     
     delta_prime = -0.5
     w_history = []
     
-    # MRE Coefficients (Hardened)
-    beta_p = 0.8  # Poloidal beta proxy
-    w_crit = 0.05 # Small island stabilization threshold (seed)
+    beta_p = 0.8   # poloidal beta proxy
+    w_crit = 0.05  # island stabilisation threshold
     
     for t in range(steps):
-        # Trigger Instability (Simulate a seeding event like a saw-tooth)
         if t > trigger_time:
-            delta_prime = -0.1 # Still classically stable but less so
-            # Seed the island
-            if w < 0.1: w = 0.15
+            delta_prime = -0.1
+            if w < 0.1: w = 0.15  # seed island
             
         # Modified Rutherford Equation: dw/dt = Delta' + Delta'_BS
         # Delta'_BS = beta_p * w / (w^2 + w_crit^2)
         f_bs = beta_p * (w / (w**2 + w_crit**2))
         
-        # Saturated growth with BS drive
         dw = (delta_prime + f_bs) * (1.0 - w/12.0) * dt
         w += dw
-        w += float(local_rng.normal(0.0, 0.02)) # Reduced noise for better signal
+        w += float(local_rng.normal(0.0, 0.02))
         w = max(w, 0.001)
         
         w_history.append(w)
         
-        # Disruption Condition: Mode Lock
+        # Mode lock → disruption
         if w > 8.0:
-            # Locked mode! Signal goes silent or explodes
             return np.array(w_history), 1, (t - trigger_time)
             
     return np.array(w_history), 0, -1
@@ -537,7 +531,6 @@ def _prepare_signal_window(signal, seq_len):
         return flat[:seq_len]
     return np.pad(flat, (0, seq_len - flat.size), mode="edge")
 
-# --- AI: TRANSFORMER MODEL ---
 if torch is not None:
     class DisruptionTransformer(nn.Module):
         def __init__(self, seq_len=DEFAULT_SEQ_LEN):
@@ -601,10 +594,10 @@ def train_predictor(
     model_path = Path(model_path) if model_path is not None else default_model_path()
     model_path.parent.mkdir(parents=True, exist_ok=True)
 
-    print("--- SCPN SAFETY AI: Disruption Prediction (Transformer) ---")
-    print(f"Sequence length: {seq_len} | Shots: {n_shots} | Epochs: {epochs}")
+    logger.info("--- SCPN SAFETY AI: Disruption Prediction (Transformer) ---")
+    logger.info("Sequence length: %d | Shots: %d | Epochs: %d", seq_len, n_shots, epochs)
 
-    print("Generating synthetic shots (Rutherford Physics)...")
+    logger.info("Generating synthetic shots (Rutherford Physics)...")
     X_train = []
     y_train = []
 
@@ -622,7 +615,7 @@ def train_predictor(
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.BCELoss()
 
-    print("Training Transformer...")
+    logger.info("Training Transformer...")
     losses = []
     for epoch in range(epochs):
         optimizer.zero_grad()
@@ -633,9 +626,9 @@ def train_predictor(
         losses.append(loss.item())
 
         if epoch % 10 == 0 or epoch == epochs - 1:
-            print(f"Epoch {epoch}: Loss={loss.item():.4f}")
+            logger.info("Epoch %d: Loss=%.4f", epoch, loss.item())
 
-    print("Validating on a new shot...")
+    logger.info("Validating on a new shot...")
     test_sig, test_lbl, _ = simulate_tearing_mode(steps=sim_steps, rng=eval_rng)
     input_sig = _prepare_signal_window(test_sig, seq_len)
     input_tensor = torch.tensor(input_sig, dtype=torch.float32).reshape(1, -1, 1)
@@ -644,11 +637,11 @@ def train_predictor(
     with torch.no_grad():
         risk = model(input_tensor).item()
 
-    print(f"Test Shot Ground Truth: {'DISRUPTIVE' if test_lbl else 'SAFE'}")
-    print(f"AI Prediction Risk: {risk * 100:.1f}%")
+    logger.info("Test Shot Ground Truth: %s", 'DISRUPTIVE' if test_lbl else 'SAFE')
+    logger.info("AI Prediction Risk: %.1f%%", risk * 100)
 
     torch.save({"state_dict": model.state_dict(), "seq_len": int(seq_len)}, model_path)
-    print(f"Saved model: {model_path}")
+    logger.info("Saved model: %s", model_path)
 
     plot_path = _repo_root() / "artifacts" / "Disruption_AI_Result.png"
     if save_plot:
@@ -662,7 +655,7 @@ def train_predictor(
         plt.tight_layout()
         plt.savefig(plot_path)
         plt.close(fig)
-        print(f"Saved: {plot_path}")
+        logger.info("Saved: %s", plot_path)
 
     return model, {
         "seq_len": int(seq_len),

@@ -15,14 +15,13 @@ class DivertorLab:
     Compares Solid Tungsten vs. Liquid Lithium Vapor Shielding.
     """
     def __init__(self, P_sol_MW=50.0, R_major=2.1, B_pol=2.0):
-        self.P_sol = P_sol_MW # Power entering Scrape-Off Layer
+        self.P_sol = P_sol_MW
         self.R = R_major
         self.B_pol = B_pol
-        
-        # Eich Scaling for Heat Flux Width (lambda_q)
-        # lambda_q (mm) = 0.63 * B_pol^(-1.19)
+
+        # Eich scaling: lambda_q [mm] = 0.63 * B_pol^(-1.19)
         self.lambda_q_mm = 0.63 * (B_pol**(-1.19))
-        self.lambda_q = self.lambda_q_mm / 1000.0 # meters
+        self.lambda_q = self.lambda_q_mm / 1000.0
         
         print(f"--- DIVERTOR PHYSICS ---")
         print(f"Power to Divertor: {self.P_sol} MW")
@@ -35,38 +34,21 @@ class DivertorLab:
         T_u = (7/2 * L_c * q_par / kappa0)^(2/7)
         n_u determines if we are in sheath-limited or conduction-limited regime.
         """
-        # Connection Length (L_c ~ q * R * pi)
-        # q95 approx 3.0
         q95 = 3.0
         L_c = np.pi * self.R * q95
         
-        # Parallel Heat Flux (q_par)
-        # q_par = P_sol / (4 * pi * R * lambda_q) (Double Null approx, or 2*pi for SN)
-        # Using 2*pi for conservative Single Null
+        # q_par for single-null: P_sol / (2π R λ_q)
         self.q_parallel = (self.P_sol * 1e6) / (2 * np.pi * self.R * self.lambda_q)
-        
-        # Upstream Temperature (T_u) - Conduction dominated
-        # T_u = (3.5 * q_par * L_c / k0)^(2/7)
-        k0 = 2000.0 # Spitzer
+
+        # Upstream T: T_u = (3.5 q_par L_c / κ_0)^(2/7)
+        k0 = 2000.0  # Spitzer conductivity
         T_u_eV = (3.5 * self.q_parallel * L_c / k0)**(2.0/7.0)
         
-        # Target Physics
-        # q_target = gamma * n_t * c_s * T_t
-        # Momentum balance: 2 * n_t * T_t = n_u * T_u (High recycling: pressure loss factor f_p < 1)
-        # Simplified Sheath-Limited: T_t ~ T_u
-        # Conduction-Limited (High Recycling): T_t << T_u
-        
-        # We solve for Target Temperature (T_t) assuming High Recycling
-        # q_target = q_par * (1 - f_rad) / expansion_factor
         q_target = self.q_parallel * (1.0 - f_rad) / expansion_factor
-        
-        # Estimate T_t using scaling (Stangeby)
-        # T_t decreases as density^2
-        # For this sim, we use a robust closure:
-        # T_t = q_target^2 / (gamma * n_u * ... ) -> too complex 
-        # Simplified 2PM relation: T_t = T_u * (q_target_eff / q_par)^2 (Approx)
-        T_t_eV = T_u_eV * ((1.0 - f_rad) * 0.1)**2 # Heuristic drop
-        T_t_eV = max(T_t_eV, 1.0) # Floor at 1eV
+
+        # Stangeby 2PM heuristic: T_t = T_u * ((1-f_rad) * 0.1)^2
+        T_t_eV = T_u_eV * ((1.0 - f_rad) * 0.1)**2
+        T_t_eV = max(T_t_eV, 1.0)
         
         self.q_target_solid = q_target
         return T_u_eV, T_t_eV
@@ -89,9 +71,9 @@ class DivertorLab:
         1D Thermal limit of Tungsten Monoblock.
         Simple conduction model: T_surf = q * d / k + T_coolant
         """
-        k_W = 100.0 # W/mK (Thermal conductivity)
-        d_block = 0.01 # 1 cm to cooling channel
-        T_coolant = 100.0 # C (Water)
+        k_W = 100.0      # W/(m·K)
+        d_block = 0.01   # 1 cm to cooling channel
+        T_coolant = 100.0 # °C (water)
         
         q = self.q_target_solid
         
@@ -101,53 +83,43 @@ class DivertorLab:
         status = "MELTED" if T_surf > 3422 else "OK"
         return T_surf, status
 
-    def simulate_lithium_vapor(self):
+    def simulate_lithium_vapor(self, *, relaxation: float = 0.7):
         """
         Self-Consistent Vapor Shielding Physics.
         Lithium evaporates based on P_sat(T), forming a dense cloud.
         The cloud radiates energy back to the SOL and walls, shielding the target.
+
+        Parameters
+        ----------
+        relaxation : float
+            Under-relaxation factor in (0, 1) for iterative convergence.
         """
-        # Iterative solution for self-consistent State
-        T_surf = 500.0 # Initial guess (C)
-        
-        # Physical constants
-        # Lithium vapor pressure (Antoine-like): log10(P_Pa) = A - B / (T_K)
-        # Reference: Alcock et al. (1984)
-        A_li, B_li = 10.0, 8000.0 
+        if not (0.0 < relaxation < 1.0):
+            raise ValueError("relaxation must be in (0, 1).")
+        T_surf = 500.0  # initial guess [°C]
+
+        # Li vapour pressure (Alcock et al. 1984): log10(P) = A − B/T_K
+        A_li, B_li = 10.0, 8000.0
         
         for i in range(50):
             T_K = T_surf + 273.15
-            P_sat = 10**(A_li - B_li / T_K) # Saturation pressure in Pa
-            
-            # Estimate Vapor Cloud Optical Depth (tau)
-            # Cloud density proportional to P_sat
-            # Heuristic: tau ~ P_sat / P_reference
-            tau = P_sat / 10.0 
-            
-            # Radiated Power Fraction (f_rad)
-            # Based on power-balance in a shielding layer
-            # f_rad ~ 1 - exp(-tau)
+            P_sat = 10**(A_li - B_li / T_K)
+
+            tau = P_sat / 10.0  # optical depth ∝ P_sat
             f_rad = 0.98 * (1.0 - np.exp(-tau))
-            
-            # New q at surface (Mitigated)
             q_surf = self.q_target_solid * (1.0 - f_rad)
-            
-            # Surface Temp (including power to evaporate)
-            # q_surf = q_cond + q_evap
-            # q_cond = k * (T_surf - T_back) / d
-            k_eff = 150.0 
-            d = 0.005 # 5mm layer
+
+            k_eff = 150.0
+            d = 0.005   # 5 mm layer
             T_back = 300.0
             
             T_new = T_back + (q_surf * d) / k_eff
             
-            # Convergence check
             if abs(T_new - T_surf) < 0.1:
                 T_surf = T_new
                 break
                 
-            # Relaxation
-            T_surf = 0.7*T_surf + 0.3*T_new
+            T_surf = relaxation * T_surf + (1.0 - relaxation) * T_new
             
         return T_surf, q_surf, f_rad
 
@@ -227,22 +199,18 @@ def run_divertor_sim():
     
     lab = DivertorLab(P_sol_MW=80.0, R_major=2.1, B_pol=2.5) # Compact Pilot parameters
     
-    # 1. Unmitigated Load
-    q_solid = lab.calculate_heat_load(expansion_factor=15.0) # Advanced geometry
-    
-    # 2. Tungsten Test
+    q_solid = lab.calculate_heat_load(expansion_factor=15.0)
+
     Tw, status_w = lab.simulate_tungsten()
     print(f"Tungsten Divertor: {Tw:.0f} degC -> {status_w}!")
     
-    # 3. Lithium Test
     Tli, q_li, shielding = lab.simulate_lithium_vapor()
     print(f"Liquid Li Divertor: {Tli:.0f} degC (Shielding: {shielding*100:.1f}%)")
     
-    # --- VISUALIZATION ---
     fig, ax = plt.subplots(figsize=(8, 6))
     materials = ['Tungsten (Solid)', 'Lithium (Vapor Shield)']
     temps = [Tw, Tli]
-    limits = [3422, 1342] # Melting / Boiling
+    limits = [3422, 1342]
     colors = ['gray', 'purple']
     
     bars = ax.bar(materials, temps, color=colors)

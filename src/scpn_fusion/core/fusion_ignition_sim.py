@@ -176,7 +176,6 @@ def run_ignition_experiment():
         
         print(f"{P_aux:<10.1f} | {metrics['P_fusion_MW']:<12.1f} | {metrics['P_alpha_MW']:<10.1f} | {metrics['Q']:<8.2f} | {status}")
 
-    # --- VISUALIZATION ---
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     
     # Q-Curve
@@ -401,8 +400,7 @@ class DynamicBurnModel:
             P_fus = n_d * n_t * sigmav * 17.6e6 * 1.602e-19 * self.V_plasma  # W
             P_alpha_born = 0.2 * P_fus  # 3.5 MeV / 17.6 MeV
             
-            # --- Hardened Alpha Heating (Slowing Down) ---
-            # tau_s approx 0.01 * Te^1.5 / (ne/1e19)
+            # Alpha slowing-down time: tau_s ~ 0.012 * Te^1.5 / (ne/1e19)
             tau_s_alpha = 0.012 * (max(T, 0.1)**1.5) / (self.n_e20 * 10.0)
             tau_s_alpha = np.clip(tau_s_alpha, 0.01, 2.0)
             

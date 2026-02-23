@@ -376,30 +376,30 @@ def quantify_full_chain(
     a_nominal = scenario.R / scenario.A  # minor radius (m)
 
     for i in range(n_samples):
-        # --- (a) Perturb IPB98 scaling-law coefficients ---
+        # (a) Perturb IPB98 scaling-law coefficients
         params = {}
         for key in IPB98_CENTRAL:
             params[key] = rng.normal(IPB98_CENTRAL[key], IPB98_SIGMA[key])
         params['C'] = max(params['C'], 1e-4)
         params['alpha_P'] = min(params['alpha_P'], -0.1)
 
-        # --- (b) Perturb gyro-Bohm transport coefficient ---
+        # (b) Perturb gyro-Bohm transport coefficient
         chi_factor = rng.lognormal(0.0, chi_gB_sigma)
 
-        # --- (c) Perturb pedestal height ---
+        # (c) Perturb pedestal height
         ped_factor = rng.normal(1.0, pedestal_sigma)
         ped_factor = max(ped_factor, 0.1)  # floor to 10% of nominal
 
-        # --- (d) Perturb equilibrium boundary (major radius) ---
+        # (d) Perturb equilibrium boundary (major radius)
         R_pert = scenario.R * (1.0 + rng.normal(0.0, boundary_sigma))
         R_pert = max(R_pert, 0.5)  # physical floor
 
-        # --- (i) psi NRMSE from boundary perturbation ---
+        # (i) psi NRMSE from boundary perturbation
         # Boundary displacement maps roughly linearly to psi reconstruction error
         psi_nrmse = abs(R_pert - scenario.R) / scenario.R
         psi_nrmse_samples[i] = psi_nrmse
 
-        # --- (e) Compute tau_E with perturbed chi applied multiplicatively ---
+        # (e) Compute tau_E with perturbed chi
         # Use perturbed R for the scaling law
         pert_scenario = PlasmaScenario(
             I_p=scenario.I_p,
@@ -417,16 +417,16 @@ def quantify_full_chain(
         tau = tau * ped_factor / chi_factor
         tau = max(tau, 1e-6)
 
-        # --- (f) Compute P_fusion from perturbed tau_E ---
+        # (f) Compute P_fusion from perturbed tau_E
         pfus = fusion_power_from_tau(pert_scenario, tau)
         pfus = max(pfus, 0.0)
 
-        # --- (g) Compute Q ---
+        # (g) Compute Q
         q = pfus / scenario.P_heat if scenario.P_heat > 0 else 0.0
         if not np.isfinite(q):
             q = 0.0
 
-        # --- (h) Compute normalised beta ---
+        # (h) Compute normalised beta
         # beta_t = (n_e * 1e19 * k_B * T_i) / (B^2 / 2mu0)
         # For a rough estimate, T_i ~ tau_E * P_heat / (n_e * V) gives
         # beta_t ~ C * n_e * tau_E * P_heat / (B^2 * V)

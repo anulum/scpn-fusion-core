@@ -48,13 +48,15 @@ References:
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
 
+logger = logging.getLogger(__name__)
 
-# ─── Physical constants ─────────────────────────────────────────────
+
 _E_CHARGE = 1.602e-19  # C
 _M_ELECTRON = 9.109e-31  # kg
 _C_LIGHT = 2.998e8  # m/s
@@ -558,18 +560,14 @@ class RunawayElectronModel:
             t = step * dt
             time_ms.append(t * 1e3)
 
-            # 1. Plasma current decay (Ohmic component)
-            # In a real quench with REs, the total current Ip = I_ohmic + I_re.
-            # Only the Ohmic part produces the E-field that drives the quenches.
+            # Ohmic component: total Ip = I_ohmic + I_re
             I_ohmic = max(Ip - (re_current_ma[-1] * 1e6 if re_current_ma else 0.0), 0.0)
             dI_ohmic_dt = -I_ohmic / tau_cq_s
 
-            # 2. Toroidal electric field (Back-EMF included)
-            # E_tor is driven by dI_ohmic/dt. As I_ohmic -> 0 (replaced by I_re), E_tor -> 0.
+            # E_tor from Faraday's law; vanishes as I_ohmic → 0
             E_tor = L_p * abs(dI_ohmic_dt) / (2.0 * np.pi * self.R0)
             e_field_list.append(E_tor)
 
-            # 3. Generation rates
             gamma_D = self._dreicer_rate(E_tor, T_e)
             dreicer_rates.append(gamma_D)
             gamma_av = self._avalanche_rate(E_tor, n_re)
@@ -578,14 +576,12 @@ class RunawayElectronModel:
             fp_rates.append(gamma_FP)
             relativistic_loss = self._relativistic_loss_rate(E=E_tor, n_re=n_re)
 
-            # 4. Collisional loss
             loss_rate = (
                 n_re / max(self.tau_av * 5.0, 1e-12) if E_tor < self.E_c else 0.0
             )
             if not np.isfinite(loss_rate):
                 loss_rate = 0.0
 
-            # 5. Evolution
             dn_re = (gamma_D + gamma_av + gamma_FP - loss_rate - relativistic_loss) * dt
             if not np.isfinite(dn_re):
                 dn_re = 0.0
@@ -593,9 +589,8 @@ class RunawayElectronModel:
             if not np.isfinite(n_re):
                 n_re = 0.0
 
-            # 6. Current conversion
             I_re_val = _E_CHARGE * n_re * _C_LIGHT * np.pi * 2.0**2
-            # BACK-EMF Limit: RE current cannot exceed total plasma current
+            # RE current capped at pre-disruption Ip (back-EMF limit)
             if not np.isfinite(I_re_val):
                 I_re_val = Ip0
             I_re_val = min(I_re_val, Ip0)
@@ -664,13 +659,9 @@ def run_disruption_ensemble(
         W_mj = rng.uniform(*plasma_energy_range)
         disturbance = rng.uniform(0.0, 1.0)
 
-        # --- AEGIS CONTROL LOOP (Simulated) ---
-        # 1. Sense: Predict risk based on current state and disturbance
-        # 15MA machines are inherently high risk.
         risk_score = 0.4 * (Ip_ma / 15.0) + 0.6 * disturbance
 
-        # 2. Act: Decide on mitigation strategy
-        if risk_score > 0.5:  # More sensitive trigger
+        if risk_score > 0.5:
             mitigation_triggered = True
             seed_re_fraction = 1e-15  # Near-total seed suppression
             tpf_suppression = 0.4
@@ -765,10 +756,10 @@ def run_disruption_ensemble(
 
         if verbose:
             status = "PREVENTED" if prevented else "FAILED"
-            print(
-                f"  Run {run_idx:3d}: Ip={Ip_ma:.1f}MA impurities={impurity_total_mol:.3f}mol "
-                f"halo={halo_result.peak_halo_ma:.2f}MA "
-                f"RE={re_result.peak_re_current_ma:.3f}MA → {status}"
+            logger.info(
+                "  Run %3d: Ip=%.1fMA impurities=%.3fmol halo=%.2fMA RE=%.3fMA -> %s",
+                run_idx, Ip_ma, impurity_total_mol,
+                halo_result.peak_halo_ma, re_result.peak_re_current_ma, status,
             )
 
     prevention_rate = prevented_count / max(ensemble_runs, 1)

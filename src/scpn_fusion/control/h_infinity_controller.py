@@ -36,6 +36,11 @@ from scipy.linalg import solve_continuous_are, solve_discrete_are, expm
 logger = logging.getLogger(__name__)
 
 
+def _check_finite(mat: np.ndarray, name: str) -> None:
+    if not np.all(np.isfinite(mat)):
+        raise ValueError(f"{name} must contain only finite values.")
+
+
 def _zoh_discretize(A: np.ndarray, B: np.ndarray, dt: float):
     """Exact zero-order-hold discretisation via matrix exponential.
 
@@ -77,14 +82,14 @@ class HInfinityController:
 
     def __init__(
         self,
-        A: "npt.ArrayLike",
-        B1: "npt.ArrayLike",
-        B2: "npt.ArrayLike",
-        C1: "npt.ArrayLike",
-        C2: "npt.ArrayLike",
+        A: npt.ArrayLike,
+        B1: npt.ArrayLike,
+        B2: npt.ArrayLike,
+        C1: npt.ArrayLike,
+        C2: npt.ArrayLike,
         gamma: Optional[float] = None,
-        D12: "Optional[npt.ArrayLike]" = None,
-        D21: "Optional[npt.ArrayLike]" = None,
+        D12: Optional[npt.ArrayLike] = None,
+        D21: Optional[npt.ArrayLike] = None,
         enforce_robust_feasibility: bool = False,
     ) -> None:
         self.A = np.atleast_2d(np.asarray(A, dtype=float))
@@ -95,10 +100,9 @@ class HInfinityController:
 
         if self.A.ndim != 2 or self.A.shape[0] != self.A.shape[1]:
             raise ValueError("A must be a finite square matrix.")
-        if not np.all(np.isfinite(self.A)):
-            raise ValueError("A must contain only finite values.")
+        _check_finite(self.A, "A")
 
-        # Ensure B1, B2 are column-shaped if 1D
+        # Auto-transpose 1D inputs to column vectors
         if self.B1.shape[0] == 1 and self.A.shape[0] > 1:
             self.B1 = self.B1.T
         if self.B2.shape[0] == 1 and self.A.shape[0] > 1:
@@ -109,51 +113,27 @@ class HInfinityController:
             self.C2 = self.C2.T
 
         self.n = self.A.shape[0]
-        self.m = self.B2.shape[1]  # control inputs
-        self.p = self.B1.shape[1]  # disturbance inputs
-        self.q = self.C1.shape[0]  # performance outputs
-        self.l = self.C2.shape[0]  # measurement outputs
+        self.m = self.B2.shape[1]
+        self.p = self.B1.shape[1]
+        self.q = self.C1.shape[0]
+        self.l = self.C2.shape[0]
 
-        if self.B1.shape[0] != self.n:
-            raise ValueError("B1 must have the same number of rows as A.")
-        if self.B2.shape[0] != self.n:
-            raise ValueError("B2 must have the same number of rows as A.")
-        if self.C1.shape[1] != self.n:
-            raise ValueError("C1 must have the same number of columns as A.")
-        if self.C2.shape[1] != self.n:
-            raise ValueError("C2 must have the same number of columns as A.")
-        if not np.all(np.isfinite(self.B1)):
-            raise ValueError("B1 must contain only finite values.")
-        if not np.all(np.isfinite(self.B2)):
-            raise ValueError("B2 must contain only finite values.")
-        if not np.all(np.isfinite(self.C1)):
-            raise ValueError("C1 must contain only finite values.")
-        if not np.all(np.isfinite(self.C2)):
-            raise ValueError("C2 must contain only finite values.")
+        # Validate dimensions and finiteness
+        for name, mat, expected_rows, expected_cols in [
+            ("B1", self.B1, self.n, None),
+            ("B2", self.B2, self.n, None),
+            ("C1", self.C1, None, self.n),
+            ("C2", self.C2, None, self.n),
+        ]:
+            _check_finite(mat, name)
+            if expected_rows is not None and mat.shape[0] != expected_rows:
+                raise ValueError(f"{name} row count must match A ({expected_rows}).")
+            if expected_cols is not None and mat.shape[1] != expected_cols:
+                raise ValueError(f"{name} column count must match A ({expected_cols}).")
 
-        # D12, D21 defaults
-        if D12 is not None:
-            self.D12 = np.atleast_2d(np.asarray(D12, dtype=float))
-        else:
-            self.D12 = np.zeros((self.q, self.m))
-            min_dim = min(self.q, self.m)
-            self.D12[:min_dim, :min_dim] = np.eye(min_dim)
-
-        if D21 is not None:
-            self.D21 = np.atleast_2d(np.asarray(D21, dtype=float))
-        else:
-            self.D21 = np.zeros((self.l, self.p))
-            min_dim = min(self.l, self.p)
-            self.D21[:min_dim, :min_dim] = np.eye(min_dim)
-
-        if self.D12.shape != (self.q, self.m):
-            raise ValueError("D12 must have shape (C1 rows, B2 columns).")
-        if self.D21.shape != (self.l, self.p):
-            raise ValueError("D21 must have shape (C2 rows, B1 columns).")
-        if not np.all(np.isfinite(self.D12)):
-            raise ValueError("D12 must contain only finite values.")
-        if not np.all(np.isfinite(self.D21)):
-            raise ValueError("D21 must contain only finite values.")
+        # D12, D21 defaults (identity-like)
+        self.D12 = self._make_feedthrough(D12, self.q, self.m, "D12")
+        self.D21 = self._make_feedthrough(D21, self.l, self.p, "D21")
 
         # Find or use gamma
         if gamma is None:
@@ -200,7 +180,22 @@ class HInfinityController:
             self.robust_feasible,
         )
 
-    def _synthesize(self, gamma: float) -> "tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]":
+    @staticmethod
+    def _make_feedthrough(
+        value: Optional[npt.ArrayLike], rows: int, cols: int, name: str,
+    ) -> np.ndarray:
+        if value is not None:
+            mat = np.atleast_2d(np.asarray(value, dtype=float))
+        else:
+            mat = np.zeros((rows, cols))
+            min_dim = min(rows, cols)
+            mat[:min_dim, :min_dim] = np.eye(min_dim)
+        if mat.shape != (rows, cols):
+            raise ValueError(f"{name} must have shape ({rows}, {cols}).")
+        _check_finite(mat, name)
+        return mat
+
+    def _synthesize(self, gamma: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Solve the two continuous Riccati equations and extract gains.
 
         Returns (X, Y, F, L) where:
@@ -340,18 +335,21 @@ class HInfinityController:
         u_raw = self._Fd @ self.state
         u = np.clip(u_raw, -self.u_max, self.u_max)
 
-        # Observer update:
-        #   x_hat_{k+1} = Ad x_hat + Bd u_applied + Ld (y - C2 x_hat)
+        # Observer update with anti-windup back-calculation:
+        #   x_hat_{k+1} = Ad x_hat + Bd u + Ld (y - C2 x_hat) + Bd (u - u_raw)
+        # The last term corrects for integrator wind-up when the output saturates.
         innovation = y - self.C2 @ self.state
+        aw_correction = self._Bd_u @ (u - u_raw)
         self.state = (
             self._Ad @ self.state
             + self._Bd_u @ u
             + self._Ld @ innovation
+            + aw_correction
         )
 
         return float(u[0]) if u.size > 1 else float(u.item())
 
-    def riccati_residual_norms(self) -> "tuple[float, float]":
+    def riccati_residual_norms(self) -> tuple[float, float]:
         """Return Frobenius norms of the two H-infinity Riccati residuals."""
         g2 = self.gamma ** 2
         res_x = (
@@ -401,10 +399,33 @@ class HInfinityController:
         margin_ratio = -max_cl_real / max_ol_real
         return float(20.0 * np.log10(1.0 + margin_ratio))
 
+    @property
+    def phase_margin_deg(self) -> float:
+        """Phase margin in degrees via loop transfer function L(jw).
+
+        Sweeps frequency to find the gain crossover (|L(jw)| = 1)
+        and returns 180 + angle(L(jw)) at that point.
+        """
+        freqs = np.logspace(-2, 4, 2000)
+        crossed = False
+        prev_gain = float("inf")
+        for w in freqs:
+            sI_A_inv = np.linalg.solve(
+                1j * w * np.eye(self.n) - self.A, self.B2
+            )
+            L_jw = self.F @ sI_A_inv
+            gain = float(np.abs(L_jw).max())
+            if prev_gain > 1.0 >= gain:
+                phase = float(np.angle(L_jw.ravel()[0], deg=True))
+                return 180.0 + phase
+            prev_gain = gain
+        return 0.0
+
 
 def get_radial_robust_controller(
     gamma_growth: float = 100.0,
     *,
+    damping: float = 10.0,
     enforce_robust_feasibility: bool = False,
 ) -> HInfinityController:
     """Return an H-infinity controller for tokamak vertical stability.
@@ -414,6 +435,8 @@ def get_radial_robust_controller(
     gamma_growth : float
         Vertical instability growth rate [1/s].
         Default 100/s (ITER-like). SPARC: ~1000/s.
+    damping : float
+        Passive damping coefficient [1/s]. Default 10.0.
     enforce_robust_feasibility : bool, optional
         If True, require rho(XY) < gamma^2 and raise on infeasible synthesis.
 
@@ -422,9 +445,11 @@ def get_radial_robust_controller(
     HInfinityController
         Riccati-synthesized robust controller.
     """
+    if not np.isfinite(damping) or damping <= 0.0:
+        raise ValueError("damping must be a finite positive value.")
     A = np.array([
         [0.0, 1.0],
-        [gamma_growth**2, -10.0],
+        [gamma_growth**2, -damping],
     ])
     B2 = np.array([[0.0], [1.0]])
     B1 = np.array([[0.0], [0.5]])

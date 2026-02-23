@@ -7,12 +7,14 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-# --- ADVANCED PHYSICS PARAMETERS ---
+logger = logging.getLogger(__name__)
+
 L = 60
 TIME_STEPS = 10000
 Z_CRIT_BASE = 6.0
@@ -20,7 +22,6 @@ FLOW_GENERATION = 0.2
 FLOW_DAMPING = 0.05
 SHEAR_EFFICIENCY = 3.0
 
-# --- Q-LEARNING PARAMETERS ---
 ALPHA = 0.1
 GAMMA = 0.95
 EPSILON = 0.1
@@ -193,19 +194,15 @@ class FusionAIAgent:
         Q(s,a) = R + gamma * [ max Q(s',a') + beta * Entropy ]
         """
         old_q = float(self.q_table[state][int(action)])
-        
-        # 1. Standard Max Future Q
+
         future_qs = self.q_table[new_state]
         max_future_q = float(np.max(future_qs))
-        
-        # 2. Entropy term (Heuristic Soft-Q)
-        # Using -sum(p * log p) variant or simplified log-sum-exp
-        # For tabular Q, we penalize 'spiky' distributions
-        probs = np.exp(future_qs - max_future_q) # Shift for stability
+
+        # Entropy regularisation (soft-Q)
+        probs = np.exp(future_qs - max_future_q)
         probs /= np.sum(probs)
         entropy = -np.sum(probs * np.log(probs + 1e-9))
-        
-        # 3. Soft Update
+
         target = float(reward) + self.gamma * (max_future_q + self.entropy_beta * entropy)
         new_q = old_q + self.alpha * (target - old_q)
         
@@ -311,7 +308,7 @@ def run_advanced_learning_sim(
     rng = np.random.default_rng(int(seed))
 
     if verbose:
-        print("--- SCPN MASTERPIECE: Predator-Prey Physics + Q-Learning Control ---")
+        logger.info("--- SCPN MASTERPIECE: Predator-Prey Physics + Q-Learning Control ---")
 
     reactor = CoupledSandpileReactor(size=int(size))
     brain = FusionAIAgent(epsilon=float(epsilon))
@@ -358,10 +355,9 @@ def run_advanced_learning_sim(
         h_shear_total.append(float(total_shear))
 
         if verbose and (t % cadence == 0 or t == steps - 1):
-            print(
-                f"Step {t}: Temp={core_temp:.2f} | Flow={flow_val:.3f} | "
-                f"Turb={av_size} | AI_Shear={current_ext_shear:.3f} | "
-                f"Q-Avg={float(np.mean(brain.q_table)):.4f}"
+            logger.info(
+                "Step %d: Temp=%.2f | Flow=%.3f | Turb=%s | AI_Shear=%.3f | Q-Avg=%.4f",
+                t, core_temp, flow_val, av_size, current_ext_shear, float(np.mean(brain.q_table))
             )
 
     turb_arr = np.asarray(h_turb, dtype=np.float64)
@@ -382,7 +378,7 @@ def run_advanced_learning_sim(
             output_path,
         )
         if verbose and plot_saved:
-            print(f"Simulation complete. Analysis saved: {output_path}")
+            logger.info("Simulation complete. Analysis saved: %s", output_path)
 
     return {
         "seed": int(seed),

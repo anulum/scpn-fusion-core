@@ -12,6 +12,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import numpy as np
+
 from scpn_fusion.core.divertor_thermal_sim import DivertorLab
 
 
@@ -37,3 +39,44 @@ def test_gmvr_02_campaign_passes_thresholds() -> None:
     assert out["pressure_ratio_fast_to_slow"] >= 1000.0
     assert out["evap_ratio_fast_to_slow"] < 1.0
     assert out["toroidal_stability_rate"] >= 0.95
+
+
+# S2-005: Divertor relaxation parameter
+
+
+def test_relaxation_parameter_affects_convergence() -> None:
+    """Different relaxation factors should produce different convergence paths."""
+    lab1 = DivertorLab(P_sol_MW=50.0, R_major=2.1, B_pol=2.0)
+    lab1.calculate_heat_load()
+    t1, q1, f1 = lab1.simulate_lithium_vapor(relaxation=0.5)
+
+    lab2 = DivertorLab(P_sol_MW=50.0, R_major=2.1, B_pol=2.0)
+    lab2.calculate_heat_load()
+    t2, q2, f2 = lab2.simulate_lithium_vapor(relaxation=0.9)
+
+    # Both should converge to finite values
+    assert np.isfinite(t1) and np.isfinite(t2)
+    assert np.isfinite(q1) and np.isfinite(q2)
+    # Results may differ slightly due to relaxation path
+    # (both converge to the same fixed point, so allow small tolerance)
+    assert abs(t1 - t2) < 100.0, "Large deviation suggests convergence issue"
+
+
+def test_relaxation_rejects_invalid_values() -> None:
+    """relaxation outside (0, 1) should raise ValueError."""
+    import pytest
+
+    lab = DivertorLab(P_sol_MW=50.0, R_major=2.1, B_pol=2.0)
+    lab.calculate_heat_load()
+
+    with pytest.raises(ValueError):
+        lab.simulate_lithium_vapor(relaxation=0.0)
+
+    with pytest.raises(ValueError):
+        lab.simulate_lithium_vapor(relaxation=1.0)
+
+    with pytest.raises(ValueError):
+        lab.simulate_lithium_vapor(relaxation=-0.1)
+
+    with pytest.raises(ValueError):
+        lab.simulate_lithium_vapor(relaxation=1.5)

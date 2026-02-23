@@ -84,7 +84,7 @@ def test_erosion_outputs_finite_and_nonnegative() -> None:
     assert out["Erosion_mm_year"] >= 0.0
 
 
-# --- S2-005: PWI erosion angle-energy invariants and redeposition bounds ---
+# S2-005: PWI erosion angle-energy invariants and redeposition bounds
 
 
 def test_f_alpha_capped_at_5() -> None:

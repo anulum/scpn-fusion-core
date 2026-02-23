@@ -7,6 +7,7 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import logging
 import time
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
@@ -14,12 +15,13 @@ from typing import Any, Callable, Dict, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel
 
-# --- SOTA PARAMETERS ---
 PREDICTION_HORIZON = 10
 SHOT_LENGTH = 100
 
@@ -44,7 +46,7 @@ class NeuralSurrogate:
 
     def _log(self, message: str) -> None:
         if self.verbose:
-            print(message)
+            logger.info(message)
 
     def train_on_kernel(self, kernel: Any, perturbation: float = 1.0) -> None:
         self._log("[SOTA] Training Neural Surrogate on Physics Kernel...")
@@ -207,7 +209,7 @@ def run_sota_simulation(
         target_vec = np.asarray(target_vector, dtype=np.float64).reshape(4)
 
     if verbose:
-        print("\n--- SCPN FUSION SOTA: Neural-MPC Hybrid Control ---")
+        logger.info("--- SCPN FUSION SOTA: Neural-MPC Hybrid Control ---")
 
     kernel = kernel_factory(str(config_file))
     surrogate = NeuralSurrogate(
@@ -237,7 +239,7 @@ def run_sota_simulation(
     physics_cfg["plasma_current_target"] = target_ip_ma
 
     if verbose:
-        print(f"Starting {steps} step simulation with MPC Horizon={prediction_horizon}...")
+        logger.info("Starting %d step simulation with MPC Horizon=%d...", steps, prediction_horizon)
     start_time = time.time()
     for t in range(steps):
         curr_state = surrogate.get_state(kernel)
@@ -274,14 +276,14 @@ def run_sota_simulation(
         h_error.append(err)
 
         if verbose and t % 10 == 0:
-            print(
-                f"Step {t}: R={curr_state[0]:.2f}, Z={curr_state[1]:.2f} | "
-                f"X-Point=({curr_state[2]:.2f},{curr_state[3]:.2f}) | Err={err:.3f}"
+            logger.info(
+                "Step %d: R=%.2f, Z=%.2f | X-Point=(%.2f,%.2f) | Err=%.3f",
+                t, curr_state[0], curr_state[1], curr_state[2], curr_state[3], err,
             )
 
     runtime_s = float(time.time() - start_time)
     if verbose:
-        print(f"Simulation finished in {runtime_s:.2f}s")
+        logger.info("Simulation finished in %.2fs", runtime_s)
 
     plot_saved = False
     plot_error: Optional[str] = None
@@ -295,7 +297,7 @@ def run_sota_simulation(
             output_path,
         )
         if verbose and plot_saved:
-            print(f"SOTA Analysis saved: {output_path}")
+            logger.info("SOTA Analysis saved: %s", output_path)
 
     return {
         "config_path": str(config_file),

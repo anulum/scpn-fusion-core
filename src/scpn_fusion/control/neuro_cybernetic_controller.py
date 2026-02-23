@@ -7,6 +7,7 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import logging
 import math
 import sys
 from collections import deque
@@ -15,6 +16,8 @@ from typing import Any, Callable, Dict, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+logger = logging.getLogger(__name__)
 from scpn_fusion.scpn.safety_interlocks import SafetyInterlockRuntime
 
 try:
@@ -27,7 +30,6 @@ except Exception:  # pragma: no cover - optional dependency path
     StochasticLIFNeuron = None
     QuantumEntropySource = None
 
-# --- CONTROL PARAMETERS ---
 SHOT_DURATION = 100
 TARGET_R = 6.2
 TARGET_Z = 0.0
@@ -302,9 +304,9 @@ class NeuroCyberneticController:
     ) -> Dict[str, Any]:
         assert self.brain_R is not None and self.brain_Z is not None
         if verbose:
-            print(f"--- {title.upper()} PLASMA INTERFACE ---")
-            print("Initializing Stochastic Neural Network (SNN)...")
-            print(f"Neurons: {self.brain_R.n_neurons * 4} (Push-Pull Configuration)")
+            logger.info("--- %s PLASMA INTERFACE ---", title.upper())
+            logger.info("Initializing Stochastic Neural Network (SNN)...")
+            logger.info("Neurons: %d (Push-Pull Configuration)", self.brain_R.n_neurons * 4)
 
         self._reset_history()
 
@@ -387,10 +389,9 @@ class NeuroCyberneticController:
             )
 
             if verbose:
-                print(
-                    f"T={t}: Pos=({curr_r:.2f}, {curr_z:.2f}) | "
-                    f"Err=({err_r:.3f}, {err_z:.3f}) | "
-                    f"Brain_Out=({ctrl_r:.3f}, {ctrl_z:.3f})"
+                logger.info(
+                    "T=%d: Pos=(%.2f, %.2f) | Err=(%.3f, %.3f) | Brain_Out=(%.3f, %.3f)",
+                    t, curr_r, curr_z, err_r, err_z, ctrl_r, ctrl_z,
                 )
 
         plot_saved = False
@@ -402,7 +403,7 @@ class NeuroCyberneticController:
             except Exception as exc:
                 plot_error = str(exc)
                 if verbose:
-                    print(f"Plot export skipped due to error: {exc}")
+                    logger.warning("Plot export skipped due to error: %s", exc)
 
         err_r = np.asarray(self.history["Err_R"], dtype=np.float64)
         err_z = np.asarray(self.history["Err_Z"], dtype=np.float64)
@@ -474,7 +475,7 @@ class NeuroCyberneticController:
         plt.savefig(filename)
         plt.close(fig)
         if verbose:
-            print(f"Analysis saved: {filename}")
+            logger.info("Analysis saved: %s", filename)
         return filename
 
 

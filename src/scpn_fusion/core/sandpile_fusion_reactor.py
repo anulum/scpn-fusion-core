@@ -11,7 +11,6 @@ from matplotlib.colors import LogNorm
 import sys
 import os
 
-# --- SANDPILE PHYSICS PARAMETERS ---
 L = 100            # System size (Radial points from Core to Edge)
 Z_CRIT_BASE = 4.0  # Base Critical Gradient (Stability threshold)
 DRIVE_RATE = 1     # Grains added per step
@@ -135,20 +134,14 @@ def run_sandpile_simulation():
     print(f"Simulating {TIME_STEPS} transport steps...")
     
     for t in range(TIME_STEPS):
-        # 1. Drive (Heating)
         reactor.drive()
-        
-        # 2. Control Action
-        # Based on *previous* state
+
         last_av = history_avalanches[-1] if len(history_avalanches) > 0 else 0
         core_temp = reactor.h[0] if t > 0 else 0
         
         action_shear = controller.act(last_av, core_temp)
         
-        # 3. Physics (Relaxation)
         av_size = reactor.relax(suppression_strength=action_shear)
-        
-        # 4. Update & Record
         profile = reactor.calculate_profile()
         
         history_map[t, :] = reactor.Z # Store gradients (instability map)
@@ -159,11 +152,8 @@ def run_sandpile_simulation():
         if t % 500 == 0:
             print(f"Step {t}: Core Temp={profile[0]}, Avalanche={av_size}, Control={action_shear:.2f}")
 
-    # --- VISUALIZATION ---
     fig = plt.figure(figsize=(12, 10))
-    
-    # 1. Spatiotemporal Evolution (The "Waterfall" Plot)
-    # Shows avalanches moving from Left (Core) to Right (Edge) over time
+
     ax1 = fig.add_subplot(2, 2, 1)
     im = ax1.imshow(history_map.T, aspect='auto', cmap='magma', origin='lower',
                    norm=LogNorm(vmin=1, vmax=np.max(history_map)))
@@ -172,7 +162,6 @@ def run_sandpile_simulation():
     ax1.set_ylabel("Radial Position (Core -> Edge)")
     plt.colorbar(im, ax=ax1, label='Gradient Z (Log Scale)')
 
-    # 2. Core Temperature (Confinement Quality)
     ax2 = fig.add_subplot(2, 2, 2)
     ax2.plot(history_core_E, color='orange', label='Core Energy (Temperature)')
     ax2.set_title("Confinement Performance")
@@ -181,8 +170,6 @@ def run_sandpile_simulation():
     ax2.grid(True, alpha=0.3)
     ax2.legend()
 
-    # 3. Avalanche Sizes (PDF)
-    # Validates SOC nature (should follow power law)
     ax3 = fig.add_subplot(2, 2, 3)
     counts, bins = np.histogram(history_avalanches, bins=50)
     centers = (bins[:-1] + bins[1:]) / 2
@@ -192,7 +179,6 @@ def run_sandpile_simulation():
     ax3.set_ylabel("Count N(S)")
     ax3.grid(True, which="both", ls="-", alpha=0.2)
     
-    # 4. Control Action
     ax4 = fig.add_subplot(2, 2, 4)
     ax4.plot(history_control, color='blue', alpha=0.7)
     ax4.set_title("HJB Controller Action (Magnetic Shear)")

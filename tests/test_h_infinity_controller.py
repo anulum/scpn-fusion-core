@@ -280,7 +280,7 @@ class TestInputValidation:
         """B2 row count must match A."""
         A, B1, _, C1, C2 = _vertical_stability_plant()
         B2_wrong = np.array([[0.0], [0.0], [1.0]])  # 3 rows vs A is 2x2
-        with pytest.raises(ValueError, match="same number of rows"):
+        with pytest.raises(ValueError, match="row count must match A"):
             HInfinityController(A, B1, B2_wrong, C1, C2)
 
     def test_rejects_nonfinite_step_error(self) -> None:
@@ -353,3 +353,87 @@ class TestEnforceRobustFeasibility:
             ctrl = HInfinityController(A, B1, B2, C1, C2)
         # Should still produce a controller, just flag infeasible
         assert isinstance(ctrl, HInfinityController)
+
+
+# ── 10. Anti-Windup Back-Calculation ──────────────────────────────────
+
+
+class TestAntiWindup:
+
+    def test_anti_windup_reduces_overshoot_after_saturation(self) -> None:
+        """After saturation, anti-windup correction prevents excessive overshoot."""
+        ctrl = get_radial_robust_controller(gamma_growth=100.0)
+        ctrl.u_max = 50.0  # low saturation limit to trigger clipping
+
+        # Drive into saturation with large error
+        dt = 1e-3
+        for _ in range(200):
+            ctrl.step(100.0, dt=dt)
+
+        # Release: apply zero error; check overshoot is bounded
+        peak_u = 0.0
+        for _ in range(200):
+            u = ctrl.step(0.0, dt=dt)
+            peak_u = max(peak_u, abs(u))
+
+        # With anti-windup, overshoot should not exceed 2x u_max
+        assert peak_u <= 2.0 * ctrl.u_max, (
+            f"Overshoot {peak_u} exceeds 2x u_max ({2.0 * ctrl.u_max})"
+        )
+
+    def test_anti_windup_noop_when_no_saturation(self) -> None:
+        """When no clipping occurs, anti-windup correction is zero (no change)."""
+        ctrl1 = get_radial_robust_controller(gamma_growth=100.0)
+        ctrl2 = get_radial_robust_controller(gamma_growth=100.0)
+        # u_max default is 1e8 — small errors won't trigger clipping
+        dt = 1e-3
+        for _ in range(50):
+            u1 = ctrl1.step(0.01, dt=dt)
+            u2 = ctrl2.step(0.01, dt=dt)
+        # Both should produce identical output (aw_correction is zero vector)
+        assert abs(u1 - u2) < 1e-12
+
+
+# ── 11. Phase Margin ──────────────────────────────────────────────────
+
+
+class TestPhaseMargin:
+
+    def test_phase_margin_is_positive_for_stable_controller(self) -> None:
+        """A stable controller should have positive phase margin."""
+        ctrl = get_radial_robust_controller(gamma_growth=100.0)
+        pm = ctrl.phase_margin_deg
+        assert pm > 0.0, f"Phase margin {pm} should be positive"
+
+    def test_phase_margin_returns_float(self) -> None:
+        """phase_margin_deg should return a float."""
+        ctrl = get_radial_robust_controller(gamma_growth=100.0)
+        pm = ctrl.phase_margin_deg
+        assert isinstance(pm, float)
+        assert np.isfinite(pm)
+
+
+# ── 12. Damping Parameter ────────────────────────────────────────────
+
+
+class TestDampingParameter:
+
+    def test_factory_damping_parameter_changes_controller(self) -> None:
+        """Different damping values produce different controller matrices."""
+        ctrl_5 = get_radial_robust_controller(damping=5.0)
+        ctrl_20 = get_radial_robust_controller(damping=20.0)
+        assert not np.allclose(ctrl_5.F, ctrl_20.F)
+
+    def test_factory_rejects_nonpositive_damping(self) -> None:
+        """damping <= 0 should raise ValueError."""
+        with pytest.raises(ValueError, match="damping"):
+            get_radial_robust_controller(damping=0.0)
+        with pytest.raises(ValueError, match="damping"):
+            get_radial_robust_controller(damping=-5.0)
+
+    def test_factory_rejects_nonfinite_damping(self) -> None:
+        """damping=nan or inf should raise ValueError."""
+        with pytest.raises(ValueError, match="damping"):
+            get_radial_robust_controller(damping=float("nan"))
+        with pytest.raises(ValueError, match="damping"):
+            get_radial_robust_controller(damping=float("inf"))

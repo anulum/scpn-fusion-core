@@ -7,18 +7,20 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel
 
-# --- FLIGHT PARAMETERS ---
-SHOT_DURATION = 50 # Time steps
+SHOT_DURATION = 50
 TARGET_R = 6.2     # Target Major Radius
 TARGET_Z = 0.0     # Target Vertical Position
 TARGET_ELONGATION = 1.7 
@@ -194,7 +196,7 @@ class IsoFluxController:
 
     def _log(self, message: str) -> None:
         if self.verbose:
-            print(message)
+            logger.info(message)
 
     def pid_step(self, pid: Dict[str, float], error: float) -> float:
         pid['err_sum'] += error
@@ -238,21 +240,17 @@ class IsoFluxController:
         # Physics Evolution Loop
         for t in range(steps):
             time_s = t * self.control_dt_s
-            # 1. EVOLVE PHYSICS (Scenario)
-            # Ramp up plasma current
-            target_Ip = 5.0 + (10.0 * t / steps) # 5MA -> 15MA
+            target_Ip = 5.0 + (10.0 * t / steps)  # 5 → 15 MA ramp
             physics_cfg = self.kernel.cfg.setdefault("physics", {})
             physics_cfg['plasma_current_target'] = target_Ip
 
-            # Increase Pressure (Heating) -> This pushes plasma outward (Shafranov Shift)
-            # The controller must fight this drift!
+            # Heating ramp — drives outward Shafranov shift
             beta_cmd = 1.0 + (0.01 * t)
             beta_applied = self._act_heating.step(beta_cmd)
 
             physics_cfg['beta_scale'] = beta_applied
             
-            # 2. MEASURE STATE (Diagnostics)
-            # Find current axis
+            # Find current magnetic axis
             if hasattr(self.kernel, "find_magnetic_axis"):
                 curr_R, curr_Z, _ = self.kernel.find_magnetic_axis()
             else:
@@ -261,14 +259,11 @@ class IsoFluxController:
                 curr_R = self.kernel.R[ir]
                 curr_Z = self.kernel.Z[iz]
             
-            # Find X-point (Divertor)
             xp_pos, _ = self.kernel.find_x_point(self.kernel.Psi)
-            
-            # 3. COMPUTE CONTROL (Iso-Flux)
+
             err_R = TARGET_R - curr_R
             err_Z = TARGET_Z - curr_Z
-            
-            # Control Actions (Current Deltas)
+
             ctrl_radial_cmd = self.pid_step(self.pid_R, err_R)
             ctrl_vertical_cmd = self.pid_step(self.pid_Z, err_Z)
 
@@ -278,20 +273,12 @@ class IsoFluxController:
             ctrl_vertical_bottom = self._act_bottom.step(ctrl_vertical_cmd)
             ctrl_vertical_applied = 0.5 * (ctrl_vertical_bottom - ctrl_vertical_top)
             
-            # 4. ACTUATE COILS (Map Control -> Coils)
-            # Radial Correction: If R is too small (Inner), Push with Outer Coils
-            # PF3 is the main pusher
-            self._add_coil_current(2, ctrl_radial)
+            self._add_coil_current(2, ctrl_radial)       # PF3 radial correction
+            self._add_coil_current(0, ctrl_vertical_top)   # top coil
+            self._add_coil_current(4, ctrl_vertical_bottom) # bottom coil
             
-            # Vertical Correction: Differential pull
-            self._add_coil_current(0, ctrl_vertical_top) # Top
-            self._add_coil_current(4, ctrl_vertical_bottom) # Bottom
-            
-            # 5. SOLVE NEW EQUILIBRIUM
-            # We use the previous solution as guess (hot start) -> Faster
             self.kernel.solve_equilibrium()
-            
-            # Log
+
             self.history['t'].append(t)
             self.history['Ip'].append(target_Ip)
             self.history['R_axis'].append(curr_R)
@@ -392,12 +379,10 @@ class IsoFluxController:
         try:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
-            # 1. Trajectory Plot
             ax1.set_title("Plasma Trajectory Control")
             ax1.plot(self.history['t'], self.history['R_axis'], 'b-', label='R Axis (Radial)')
             ax1.plot(self.history['t'], self.history['Z_axis'], 'r-', label='Z Axis (Vertical)')
 
-            # Targets
             ax1.axhline(TARGET_R, color='b', linestyle='--', alpha=0.5, label='Target R')
             ax1.axhline(TARGET_Z, color='r', linestyle='--', alpha=0.5, label='Target Z')
 
@@ -406,7 +391,6 @@ class IsoFluxController:
             ax1.legend()
             ax1.grid(True)
 
-            # 2. X-Point Evolution (Divertor Stability)
             rx = [p[0] for p in self.history['X_point']]
             rz = [p[1] for p in self.history['X_point']]
 

@@ -26,7 +26,6 @@ from scpn_fusion.core.eped_pedestal import EpedPedestalModel
 
 _logger = logging.getLogger(__name__)
 
-# ── Optional Rust transport acceleration ─────────────────────────────
 _rust_transport_available = False
 _PyTransportSolver: Any = None
 try:
@@ -38,8 +37,6 @@ except ImportError:
 
 class PhysicsError(RuntimeError):
     """Raised when a physics constraint is violated."""
-
-# ── Gyro-Bohm coefficient loader ─────────────────────────────────────
 
 _GYRO_BOHM_COEFF_PATH = (
     Path(__file__).resolve().parents[3]
@@ -173,7 +170,7 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
     a_ion = _require_positive_finite_scalar("A_ion", A_ion)
     z_eff = _require_positive_finite_scalar("Z_eff", Z_eff)
 
-    # ── Rust fast-path ────────────────────────────────────────────────
+    # Rust fast-path (parameters must match NeoclassicalParams::default())
     # The Rust PyTransportSolver.chang_hinton_chi_profile() uses
     # NeoclassicalParams::default() (R0=6.2, a=2.0, B0=5.3, A_ion=2.0,
     # Z_eff=1.5) with only q_profile overridden. Delegate when the
@@ -190,7 +187,7 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
         except Exception:
             _logger.debug("chang_hinton_chi_profile: Rust fast-path failed, falling back to Python")
 
-    # ── Python fallback ───────────────────────────────────────────────
+    # Python fallback
     e_charge = 1.602176634e-19
     eps0 = 8.854187812e-12
     m_p = 1.672621924e-27
@@ -278,8 +275,7 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
     b0 = _require_positive_finite_scalar("B0", B0)
     z_eff = _require_positive_finite_scalar("Z_eff", Z_eff)
 
-    # ── Rust fast-path ────────────────────────────────────────────────
-    if _rust_transport_available:
+    if _rust_transport_available:  # Rust fast-path
         try:
             solver = _PyTransportSolver()
             eps_arr = np.clip(rho_arr * a_minor / r0, 1e-6, 0.999999)
@@ -294,7 +290,7 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
         except Exception:
             _logger.debug("sauter_bootstrap: Rust fast-path failed, falling back to Python")
 
-    # ── Python fallback ───────────────────────────────────────────────
+    # Python fallback
     n = len(rho_arr)
     j_bs = np.zeros(n)
     e_charge = 1.602176634e-19
@@ -355,11 +351,15 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
             continue
 
         # Bootstrap current
+        # Temperature floor: 10 eV (~1.6e-18 J) prevents dT/T blow-up
+        # at the edge where T_e -> 0. The original 1e-30 J floor was
+        # ~280 orders of magnitude below any physical temperature.
+        _T_FLOOR_J = 10.0 * e_charge  # 10 eV = 1.602e-18 J
         p_e = n_e * T_e_J
         j_val = -(p_e / B_pol) * (
             L31 * dn_dr / max(n_e, 1e10) +
-            L32 * dTe_dr / max(T_e_J, 1e-30) +
-            L34 * dTi_dr / max(ti_arr[i] * 1e3 * e_charge, 1e-30)
+            L32 * dTe_dr / max(T_e_J, _T_FLOOR_J) +
+            L34 * dTi_dr / max(ti_arr[i] * 1e3 * e_charge, _T_FLOOR_J)
         )
         if np.isfinite(j_val):
             j_bs[i] = j_val
@@ -421,8 +421,7 @@ class TransportSolver(FusionKernel):
         # Energy conservation diagnostic (updated each evolve_profiles call)
         self._last_conservation_error: float = 0.0
 
-        # ── Multi-ion species (P1.1) ──
-        # Densities in 10^19 m^-3 (same units as ne)
+        # Multi-ion species densities [10^19 m^-3]
         if self.multi_ion:
             self.n_D = 0.5 * self.ne.copy()       # Deuterium
             self.n_T = 0.5 * self.ne.copy()       # Tritium
@@ -626,6 +625,38 @@ class TransportSolver(FusionKernel):
         
         self.n_impurity = np.maximum(0, new_imp)
 
+    def _evolve_impurity(self, dt: float) -> None:
+        """Autonomous impurity evolution with edge source and diffusion.
+
+        Models a small constant edge influx (sputtering) and diffuses
+        inward.  Updates ``self.n_impurity`` in place and recomputes
+        ``self._Z_eff`` for non-multi-ion feedback.
+        """
+        # Edge source: small constant sputtering influx [10^19 m^-3 / s]
+        edge_source_rate = 0.01  # modest influx
+        self.n_impurity[-1] += edge_source_rate * dt
+
+        # Diffuse inward (explicit step, same scheme as inject_impurities)
+        D_imp = 1.0  # m^2/s
+        grad = np.gradient(self.n_impurity, self.drho)
+        flux = -D_imp * grad
+        div = np.gradient(flux, self.drho) / (self.rho + 1e-6)
+        self.n_impurity += (-div) * dt
+
+        # Boundary conditions
+        self.n_impurity[0] = self.n_impurity[1]  # axis symmetry
+        self.n_impurity = np.maximum(0.0, self.n_impurity)
+
+        # Update Z_eff (non-multi-ion path: light impurity model)
+        # Assume carbon-like impurity with Z_imp ~ 6
+        Z_imp = 6.0
+        ne_safe = np.maximum(self.ne, 0.1) * 1e19
+        n_imp_m3 = self.n_impurity * 1e19
+        # Z_eff = (n_e * 1 + n_imp * Z^2) / (n_e + n_imp * Z)  ≈ simplified
+        sum_nZ2 = ne_safe + n_imp_m3 * Z_imp ** 2
+        sum_nZ = ne_safe + n_imp_m3 * Z_imp
+        self._Z_eff = float(np.clip(np.mean(sum_nZ2 / np.maximum(sum_nZ, 1e10)), 1.0, 10.0))
+
     def calculate_bootstrap_current_simple(self, R0, B_pol):
         """
         Calculates the neoclassical bootstrap current density [A/m2]
@@ -743,7 +774,6 @@ class TransportSolver(FusionKernel):
 
         Falls back to constant chi_base=0.5 when neoclassical is not configured.
         """
-        # 1. Critical Gradient Model
         grad_T = np.gradient(self.Ti, self.drho)
         threshold = 2.0
 
@@ -853,8 +883,6 @@ class TransportSolver(FusionKernel):
         self.chi_i = chi_base + chi_turb
         self.D_n = 0.1 * self.chi_e
 
-    # ── Tridiagonal (Thomas) solver ─────────────────────────────────
-
     @staticmethod
     def _thomas_solve(a, b, c, d):
         """O(n) tridiagonal solver (Thomas algorithm).
@@ -906,8 +934,6 @@ class TransportSolver(FusionKernel):
             x[i] = x_i if np.isfinite(x_i) else 0.0
 
         return x
-
-    # ── Crank-Nicolson helpers ───────────────────────────────────────
 
     def _explicit_diffusion_rhs(self, T, chi):
         """Compute explicit diffusion operator L_h(T) = (1/r) d/dr(r chi dT/dr).
@@ -1148,7 +1174,6 @@ class TransportSolver(FusionKernel):
 
         return s_heat_i, s_heat_e
 
-    # ── Multi-ion helpers (P1.1) ────────────────────────────────────
 
     @staticmethod
     def _bosch_hale_sigmav(T_keV: np.ndarray) -> np.ndarray:
@@ -1215,7 +1240,6 @@ class TransportSolver(FusionKernel):
         S_He_pump_rate = 1.0 / tau_He
 
         # Use unified CN solver for all species
-        # 1. Evolve D
         L_D_exp = self._explicit_diffusion_rhs(self.n_D, self.D_species * np.ones(self.nr))
         rhs_D = self.n_D + 0.5 * dt * L_D_exp - dt * S_fuel
         a, b, c = self._build_cn_tridiag(self.D_species * np.ones(self.nr), dt)
@@ -1224,7 +1248,6 @@ class TransportSolver(FusionKernel):
         self.n_D[-1] = 0.01
         self.n_D = np.maximum(0.001, self.n_D)
 
-        # 2. Evolve T
         L_T_exp = self._explicit_diffusion_rhs(self.n_T, self.D_species * np.ones(self.nr))
         rhs_T = self.n_T + 0.5 * dt * L_T_exp - dt * S_fuel
         self.n_T = self._thomas_solve(a, b, c, rhs_T)
@@ -1232,7 +1255,6 @@ class TransportSolver(FusionKernel):
         self.n_T[-1] = 0.01
         self.n_T = np.maximum(0.001, self.n_T)
 
-        # 3. Evolve He
         L_He_exp = self._explicit_diffusion_rhs(self.n_He, self.D_species * np.ones(self.nr))
         # He has linear sink (pump): - n_He / tau_He
         # We can handle this by adding S_He_pump_rate to the 'b' diagonal if needed,
@@ -1267,8 +1289,6 @@ class TransportSolver(FusionKernel):
         P_rad_line = ne_m3 * n_W_m3 * Lz  # W/m^3
 
         return S_He, P_rad_line
-
-    # ── Main evolution (Crank-Nicolson) ──────────────────────────────
 
     def update_pedestal_bc(self):
         """Update T_edge_keV using EPED model if active."""
@@ -1337,17 +1357,15 @@ class TransportSolver(FusionKernel):
         Ti_old = self.Ti.copy()
         Te_old = self.Te.copy()
 
-        # ── Multi-ion: evolve species and get radiation ──
         if self.multi_ion:
             _S_He, P_rad_line_Wm3 = self._evolve_species(dt)
         else:
+            self._evolve_impurity(dt)
             P_rad_line_Wm3 = np.zeros(self.nr)
 
-        # ── Sources (ion/electron channels) ──
         S_heat_i, S_heat_e_aux = self._compute_aux_heating_sources(P_aux)
 
-        # ── Sinks (ion channel radiation) ──
-        if self.multi_ion:
+        if self.multi_ion:  # radiation sinks
             # Use coronal tungsten radiation (already in W/m^3)
             # Convert to keV / s per 10^19:  P [W/m^3] / (n_e [10^19 m^-3] * 1e19 * e_keV_J)
             e_keV_J = 1.602176634e-16
@@ -1365,7 +1383,6 @@ class TransportSolver(FusionKernel):
         self._last_numerical_recovery_count += n_src_i
         self._record_recovery("cn.ion_net_source", n_src_i)
 
-        # ── Ion temperature CN step ──
         Lh_explicit = self._explicit_diffusion_rhs(self.Ti, self.chi_i)
         Lh_explicit, n_lh_i = self._sanitize_with_fallback(
             Lh_explicit,
@@ -1388,8 +1405,7 @@ class TransportSolver(FusionKernel):
         self._last_numerical_recovery_count += n_ti_new
         self._record_recovery("cn.ion_solution", n_ti_new)
 
-        # ── Electron temperature ──
-        if self.multi_ion:
+        if self.multi_ion:  # electron temperature evolution
             # Independent electron temperature evolution
             # Electrons receive configured auxiliary-heating split.
             S_heat_e = S_heat_e_aux
@@ -1454,7 +1470,7 @@ class TransportSolver(FusionKernel):
                 self._last_numerical_recovery_count += 1
                 self._record_recovery("stability.zero_aux_overshoot_rescale", 1)
 
-        # ── Energy conservation diagnostic ──
+        # Energy conservation diagnostic
         if not self.multi_ion:
             e_keV_J = 1.602176634e-16
         dV = self._rho_volume_element()
@@ -1494,7 +1510,6 @@ class TransportSolver(FusionKernel):
         Projects the 1D radial profiles back onto the 2D Grad-Shafranov grid,
         including neoclassical bootstrap current.
         """
-        # 1. Get Flux Topology
         idx_max = np.argmax(self.Psi)
         iz_ax, ir_ax = np.unravel_index(idx_max, self.Psi.shape)
         Psi_axis = self.Psi[iz_ax, ir_ax]
@@ -1502,30 +1517,25 @@ class TransportSolver(FusionKernel):
         Psi_edge = psi_x
         if abs(Psi_edge - Psi_axis) < 1.0: Psi_edge = np.min(self.Psi)
         
-        # 2. Calculate Rho for every 2D point
         denom = Psi_edge - Psi_axis
         if abs(denom) < 1e-9: denom = 1e-9
         Psi_norm = (self.Psi - Psi_axis) / denom
         Psi_norm = np.clip(Psi_norm, 0, 1)
         Rho_2D = np.sqrt(Psi_norm)
         
-        # 3. Calculate 1D Bootstrap Current
         R0 = (self.cfg["dimensions"]["R_min"] + self.cfg["dimensions"]["R_max"]) / 2.0
         # Estimate B_pol from Ip
         I_target = self.cfg['physics']['plasma_current_target']
         B_pol_est = (1.256e-6 * I_target) / (2 * np.pi * 0.5 * (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]))
         J_bs_1d = self.calculate_bootstrap_current(R0, B_pol_est)
         
-        # 4. Interpolate 1D profiles to 2D
         self.Pressure_2D = np.interp(Rho_2D.flatten(), self.rho, self.ne * (self.Ti + self.Te))
         self.Pressure_2D = self.Pressure_2D.reshape(self.Psi.shape)
         
         J_bs_2D = np.interp(Rho_2D.flatten(), self.rho, J_bs_1d)
         J_bs_2D = J_bs_2D.reshape(self.Psi.shape)
         
-        # 5. Update J_phi (Grad-Shafranov consistency)
-        # J_phi = R p' + J_non_inductive
-        # Here we model the non-inductive part as primarily bootstrap
+        # J_phi = R p' + J_bootstrap (GS consistency)
         self.J_phi = (self.Pressure_2D * self.RR) + J_bs_2D
         
         # Normalize to target current to prevent divergence
@@ -1533,8 +1543,6 @@ class TransportSolver(FusionKernel):
         I_curr = np.sum(self.J_phi) * self.dR * self.dZ
         if abs(I_curr) > 1e-9:
             self.J_phi *= (I_target / I_curr)
-
-    # ── Confinement time ───────────────────────────────────────────────
 
     def compute_confinement_time(self, P_loss_MW: float) -> float:
         """Compute the energy confinement time from stored energy.
@@ -1591,8 +1599,6 @@ class TransportSolver(FusionKernel):
 
         tau = W_stored_MW / p_loss
         return float(tau) if np.isfinite(tau) and tau >= 0.0 else float("inf")
-
-    # ── GS ↔ transport self-consistency loop ─────────────────────────
 
     def run_self_consistent(
         self,
@@ -1659,7 +1665,6 @@ class TransportSolver(FusionKernel):
             if psi_old_norm < 1e-30:
                 psi_old_norm = 1.0  # avoid division by zero on first call
 
-            # 1. Run n_inner transport steps
             for _ in range(n_inner):
                 self.update_transport_model(P_aux)
                 self.evolve_profiles(
@@ -1669,15 +1674,10 @@ class TransportSolver(FusionKernel):
                     max_numerical_recoveries=max_numerical_recoveries,
                 )
 
-            # 2. Project 1D profiles onto 2D GS grid (updates self.J_phi)
             self.map_profiles_to_2d()
 
-            # 3. Re-solve Grad-Shafranov equilibrium
-            #    external_profile_mode=True ensures solve_equilibrium uses
-            #    the J_phi we just set (no internal source update).
             self.solve_equilibrium()
 
-            # 4. Compute psi convergence metric
             psi_residual = float(
                 np.linalg.norm(self.Psi - Psi_old) / psi_old_norm
             )
@@ -1693,7 +1693,6 @@ class TransportSolver(FusionKernel):
                 }}
             )
 
-            # 5. Convergence check
             if psi_residual < psi_tol:
                 converged = True
                 _logger.info(
@@ -1720,8 +1719,6 @@ class TransportSolver(FusionKernel):
             "ne_profile": self.ne.copy(),
             "converged": converged,
         }
-
-    # ── Fast one-shot transport path ──────────────────────────────────
 
     def run_to_steady_state(
         self,
@@ -1779,7 +1776,6 @@ class TransportSolver(FusionKernel):
             When self_consistent=True, returns the
             :meth:`run_self_consistent` dict instead.
         """
-        # ── Self-consistent GS↔transport mode ──
         if self_consistent:
             return self.run_self_consistent(
                 P_aux=P_aux,
@@ -1811,7 +1807,6 @@ class TransportSolver(FusionKernel):
                 "ne_profile": self.ne.copy(),
             }
 
-        # ── Adaptive time stepping ──
         atc = AdaptiveTimeController(dt_init=dt, tol=tol)
 
         for step in range(n_steps):

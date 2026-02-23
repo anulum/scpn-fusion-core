@@ -135,8 +135,6 @@ class RustAcceleratedKernel:
         np.savez(filename, R=self.R, Z=self.Z, Psi=self.Psi, J_phi=self.J_phi)
 
 
-# ─── Public API ─────────────────────────────────────────────────────
-
 if _RUST_AVAILABLE:
     FusionKernel = RustAcceleratedKernel
     RUST_BACKEND = True

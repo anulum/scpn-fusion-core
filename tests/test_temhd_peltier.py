@@ -100,7 +100,7 @@ def test_step_low_viscosity_path_remains_finite() -> None:
     assert k_eff_max > 0.0
 
 
-# --- S2-006: TEMHD solver pathological edge cases ---
+# S2-006: TEMHD solver pathological edge cases
 
 
 def test_tridiagonal_empty_system() -> None:

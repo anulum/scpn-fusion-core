@@ -12,8 +12,7 @@ from typing import Any, Callable, Optional
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
 from scpn_fusion.engineering.cad_raytrace import CADLoadReport, estimate_surface_loading
 
-# --- MATERIALS DATABASE ---
-# Thresholds for neutron damage before replacement is needed
+# Neutron damage thresholds (DPA limit before replacement)
 MATERIALS = {
     'Tungsten (W)': {'dpa_limit': 50.0, 'sigma_dpa': 1000}, # Divertor armor
     'Eurofer (Steel)': {'dpa_limit': 150.0, 'sigma_dpa': 500}, # Structural blanket
@@ -92,10 +91,8 @@ class NuclearEngineeringLab(FusionBurnPhysics):
 
         print(f"[Nuclear] Simulating Ash Poisoning (tau_He*/tau_E = {tau_He_ratio})...")
         
-        # 1. Get Base Plasma State
         self.solve_equilibrium()
-        
-        # Initial Conditions
+
         n_e_target = 1.0e20 # Electron density (Greenwald Limit constant)
         f_He = 0.0 # Helium fraction
         dt = 1.0 # Second
@@ -154,20 +151,12 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         """
         print("[Nuclear] Calculating Neutron Wall Loading (NWL)...")
         
-        # 1. Source: Plasma Grid (Fusion Power Density)
-        # We reuse the thermodynamics calculation to get local emissivity
-        # Recalculate power density profile
         Source_Map = self._build_neutron_source_map()
         
-        # 2. Target: First Wall Segments
         Rw, Zw = self.generate_first_wall()
         wall_flux = np.zeros(len(Rw))
         
-        # 3. Ray Tracing Integration (Line-of-Sight)
-        # For every point on wall, sum contrib from every point in plasma
-        # Flux = Sum( Source_i * dV_i / (4*pi*r^2) ) * cos(incidence)
-        
-        # Optimization: Downsample plasma grid for ray tracing
+        # Line-of-sight ray tracing (downsampled)
         step = 4
         RR_sub = self.RR[::step, ::step]
         ZZ_sub = self.ZZ[::step, ::step]
@@ -308,13 +297,10 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         Gamma_ion = 1e23 
         
         for mat_name, props in MATERIALS.items():
-            # 1. Neutron Damage (DPA)
             dpa_per_year = peak_load * 10.0 
             life_dpa = props['dpa_limit'] / dpa_per_year if dpa_per_year > 0 else 999.0
             
-            # 2. Erosion (Sputtering)
-            # Erosion Rate = Y * Gamma_ion / atomic_density
-            Y = self.calculate_sputtering_yield(mat_name, E_inc_eV=50.0) # Typical edge energy
+            Y = self.calculate_sputtering_yield(mat_name, E_inc_eV=50.0)
             n_atom = 6.3e28 # atoms/m3 (W)
             erosion_rate_m_s = Y * Gamma_ion / n_atom
             erosion_mm_year = erosion_rate_m_s * 1000 * 3.15e7
@@ -345,15 +331,11 @@ def run_nuclear_sim(
         print(f"[Nuclear] Config: {config_path}")
     lab = lab_factory(config_path)
     
-    # 1. Ash Simulation
-    # Simulate two scenarios: Good Pumping (tau=5) vs Bad Pumping (tau=15)
     hist_good = lab.simulate_ash_poisoning(tau_He_ratio=5.0, pumping_efficiency=1.0)
     hist_bad = lab.simulate_ash_poisoning(tau_He_ratio=15.0, pumping_efficiency=0.5)
     
-    # 2. Neutron Wall Load
     Rw, Zw, neutron_flux = lab.calculate_neutron_wall_loading()
     
-    # 3. Material Analysis
     lifespans, mw_load = lab.analyze_materials(neutron_flux)
     
     plot_saved = False

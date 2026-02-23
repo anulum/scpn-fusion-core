@@ -34,3 +34,31 @@ def test_spi_ablation_step():
     
     # Check if fragments moved
     assert solver.fragments[0].pos[0] < 10.0
+
+
+# S2-002: Parks SPI Ablation negative density guard
+
+
+def test_ablation_survives_negative_density_interpolation():
+    """ne_20**0.33 must not produce NaN when local n_e goes negative."""
+    solver = SpiAblationSolver(
+        n_fragments=5,
+        total_mass_kg=0.001,
+        velocity_mps=200.0,
+    )
+
+    nr = 50
+    r_grid = np.linspace(0, 1, nr)
+
+    # Craft a density profile with negative values near the edge
+    ne_profile = 5.0 * (1 - r_grid ** 2)
+    ne_profile[-5:] = -1.0  # Negative densities (unphysical but possible from interp)
+
+    te_profile = 5.0 * (1 - r_grid ** 2)
+
+    # This should not raise or produce NaN
+    deposition = solver.step(dt=1e-4, plasma_ne_profile=ne_profile,
+                             plasma_te_profile=te_profile, r_grid=r_grid)
+
+    assert np.all(np.isfinite(deposition)), "Deposition has NaN/Inf with negative n_e"
+    assert deposition.shape == r_grid.shape

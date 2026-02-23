@@ -7,18 +7,20 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
     from scpn_fusion.core.fusion_kernel import FusionKernel
 
-# --- MISSION PARAMETERS ---
 TARGET_R = 6.0
 TARGET_Z = 0.0
 SHOT_STEPS = 50
@@ -74,7 +76,7 @@ class OptimalController:
 
     def _log(self, message: str) -> None:
         if self.verbose:
-            print(message)
+            logger.info(message)
 
     def identify_system(self, perturbation: float = 0.5) -> None:
         """

@@ -680,8 +680,6 @@ def run_scenario(
 
     wall_clock = time.perf_counter() - t_wall_start
 
-    # --- Compute metrics ---
-
     ise = float(np.trapz(errors ** 2, times))
 
     ref_amp = max(
@@ -1124,8 +1122,6 @@ def main(output_dir: Optional[str] = None) -> None:
     print(table_str)
     print()
 
-    # --- Write artifacts ---
-
     # JSON
     json_path = out_path / "benchmark_disturbance_rejection.json"
     json_data = generate_json_results(all_metrics)
@@ -1148,7 +1144,6 @@ def main(output_dir: Optional[str] = None) -> None:
         print(f"  {len(saved_plots)} plot(s) saved to {out_path}")
     print()
 
-    # --- Summary verdict ---
     print("=" * 72)
     print("  VERDICT SUMMARY")
     print("=" * 72)

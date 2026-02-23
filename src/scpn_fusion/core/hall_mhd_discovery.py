@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from scipy.fftpack import fft2, ifft2
 import sys
 
-# --- HALL-MHD PARAMETERS ---
 GRID = 64
 L = 2 * np.pi
 DT = 0.005

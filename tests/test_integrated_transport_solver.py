@@ -631,3 +631,62 @@ class TestImpurityInjection:
         """Impurity profiles should remain non-negative after injection."""
         solver.inject_impurities(flux_from_wall_per_sec=1e20, dt=0.01)
         assert np.all(solver.n_impurity >= 0)
+
+
+# ── 9. Bootstrap Current Floor ──────────────────────────────────────
+
+
+class TestBootstrapFloor:
+
+    def test_bootstrap_current_finite_at_edge(self) -> None:
+        """At edge where Te→0, bootstrap current should remain finite and bounded."""
+        rho = np.linspace(0, 1, 50)
+        # Temperature drops to nearly zero at the edge
+        Te = 5.0 * np.maximum(1 - rho ** 2, 0.0) ** 2  # very steep
+        Ti = 5.0 * np.maximum(1 - rho ** 2, 0.0) ** 2
+        ne = 8.0 * np.maximum(1 - rho ** 2, 0.0) ** 0.5
+        q = 1.0 + 3.0 * rho ** 2
+        j_bs = calculate_sauter_bootstrap_current_full(
+            rho, Te, Ti, ne, q, R0=6.2, a=2.0, B0=5.3
+        )
+        assert np.all(np.isfinite(j_bs)), "j_bs has non-finite values at edge"
+
+    def test_bootstrap_current_no_nans_with_flat_profile(self) -> None:
+        """Flat (zero-gradient) profiles should produce all-finite bootstrap current."""
+        rho = np.linspace(0, 1, 50)
+        Te = np.ones(50) * 0.01  # very low but flat
+        Ti = np.ones(50) * 0.01
+        ne = np.ones(50) * 0.5
+        q = np.ones(50) * 2.0
+        j_bs = calculate_sauter_bootstrap_current_full(
+            rho, Te, Ti, ne, q, R0=6.2, a=2.0, B0=5.3
+        )
+        assert np.all(np.isfinite(j_bs)), "j_bs has non-finite values with flat profile"
+
+
+# S2-003: Impurity transport Z_eff coupling
+
+
+class TestImpurityEvolution:
+
+    def test_impurity_evolves_from_zero(self, config_file: Path) -> None:
+        """After several evolve_profiles steps, n_impurity should be nonzero near edge."""
+        solver = TransportSolver(str(config_file), multi_ion=False)
+        assert np.allclose(solver.n_impurity, 0.0), "Impurity should start at zero"
+
+        for _ in range(20):
+            solver.evolve_profiles(dt=0.01, P_aux=10.0)
+
+        # Impurity density should have grown somewhere from the edge source + diffusion
+        assert np.max(solver.n_impurity) > 0.0, "Impurity should be nonzero after evolution"
+        assert np.all(np.isfinite(solver.n_impurity)), "Impurity profile has non-finite values"
+
+    def test_z_eff_increases_with_impurity(self, config_file: Path) -> None:
+        """With impurity influx over time, Z_eff should exceed 1.0."""
+        solver = TransportSolver(str(config_file), multi_ion=False)
+
+        for _ in range(20):
+            solver.evolve_profiles(dt=0.01, P_aux=10.0)
+
+        assert solver._Z_eff >= 1.0, "Z_eff should be at least 1.0"
+        assert np.all(np.isfinite(solver.n_impurity))

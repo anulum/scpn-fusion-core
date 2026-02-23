@@ -27,7 +27,6 @@ class WholeDeviceModel:
         self.transport = TransportSolver(config_path)
         self.pwi = SputteringPhysics("Tungsten")
         
-        # Initialize
         self.transport.solve_equilibrium()
         
     def thomas_fermi_pressure(self, n_e_m3, T_eV):
@@ -36,18 +35,12 @@ class WholeDeviceModel:
         Accounts for electron degeneracy pressure in the WDM regime.
         P_total = P_ideal + P_deg
         """
-        # 1. Ideal Gas Term (Boltzmann)
-        # P = n * k * T
-        p_ideal = n_e_m3 * (T_eV * 1.602e-19)
-        
-        # 2. Degeneracy Term (Thomas-Fermi / Fermi-Dirac limit)
-        # P_deg ~ (h_bar^2 / m_e) * n_e^(5/3)
+        p_ideal = n_e_m3 * (T_eV * 1.602e-19)  # Boltzmann
+
         h_bar = 1.054e-34
         m_e = 9.109e-31
-        p_deg = (h_bar**2 / m_e) * (n_e_m3**(5.0/3.0))
-        
-        # 3. Interpolation (Smooth transition)
-        # We use a simple additive model which is a common WDM baseline
+        p_deg = (h_bar**2 / m_e) * (n_e_m3**(5.0/3.0))  # Fermi degeneracy
+
         return p_ideal + p_deg
 
     def calculate_redeposition_fraction(self, T_edge_eV, B_field_T):
@@ -73,48 +66,38 @@ class WholeDeviceModel:
         
         history = []
         
-        # Scenario: Constant Heating, but Wall degrades
-        P_aux = 50.0 # MW
+        P_aux = 50.0  # MW
         
         print(f"{'Time':<6} | {'Te_core':<8} | {'Impurity':<8} | {'Status'}")
         print("-" * 50)
         
         for t in range(steps):
-            # 1. Transport Step
             avg_T, core_T = self.transport.evolve_profiles(dt, P_aux)
-            
-            # 2. PWI Step (Calculate Erosion)
+
             n_edge = self.transport.ne[-1] * 1e19
-            T_edge = self.transport.Te[-1] * 1000 # eV
-            B_edge = 5.0 # Tesla approx
+            T_edge = self.transport.Te[-1] * 1000  # eV
+            B_edge = 5.0  # T
             
             # Sound speed at edge
             cs = np.sqrt((T_edge + T_edge) / (2 * 1.67e-27))
             flux_wall = n_edge * cs
             
-            # Gross Erosion
             erosion = self.pwi.calculate_erosion_rate(flux_wall, T_edge)
             gross_impurity_flux = erosion['Impurity_Source']
-            
-            # Net Erosion (Hardened with Redeposition)
+
             f_redep = self.calculate_redeposition_fraction(T_edge, B_edge)
             net_impurity_flux = gross_impurity_flux * (1.0 - f_redep)
-            
-            # 3. Impurity Transport (Inject into Plasma)
+
             total_atoms_sec = net_impurity_flux * 500.0
             self.transport.inject_impurities(total_atoms_sec * 1e-4, dt)
-            
-            # 4. Equilibrium Coupling (Rare update)
-            if t % 100 == 0:
+
+            if t % 100 == 0:  # re-solve equilibrium periodically
                 self.transport.map_profiles_to_2d()
                 self.transport.solve_equilibrium()
                 
-            # 5. Check Survival
-            # If Core Temp drops too low -> Radiative Collapse
             status = "OK"
             if core_T < 0.5: status = "COLLAPSE"
             
-            # Log
             state = {
                 'time': t*dt,
                 'Te_core': core_T,

@@ -5,9 +5,13 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-import numpy as np
-import matplotlib.pyplot as plt
+import logging
 from typing import Optional, Sequence
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+logger = logging.getLogger(__name__)
 
 from scpn_fusion.io.imas_connector import (
     digital_twin_history_to_ids,
@@ -15,17 +19,14 @@ from scpn_fusion.io.imas_connector import (
     digital_twin_summary_to_ids,
 )
 
-# --- HYPER-PARAMETERS ---
-GRID_SIZE = 40        # 40x40 Poloidal Cross-section
-TIME_STEPS = 10000    # Training duration (Increased)
-LEARNING_RATE = 0.0001 # Reduced for stability
+GRID_SIZE = 40
+TIME_STEPS = 10000
+LEARNING_RATE = 0.0001
 HIDDEN_SIZE = 64
 BATCH_SIZE = 32
 MEMORY_SIZE = 1000
-
-# Physics Constants
-R_MAJ = 2.0  # Major Radius
-R_MIN = 0.8  # Minor Radius
+R_MAJ = 2.0   # major radius [m]
+R_MIN = 0.8   # minor radius [m]
 
 
 def _resolve_rng(seed: int, rng: Optional[np.random.Generator]) -> np.random.Generator:
@@ -37,154 +38,105 @@ def _resolve_rng(seed: int, rng: Optional[np.random.Generator]) -> np.random.Gen
 
 
 class TokamakTopoloy:
-    """
-    Handles the magnetic geometry (Safety Factor q-profile).
-    Instabilities occur at 'Rational Surfaces' (q = 2, q = 3, q = 1.5).
-    """
+    """Magnetic geometry: q-profile and island evolution via Modified Rutherford Equation."""
+
     def __init__(self, size=GRID_SIZE):
         self.size = size
-        # Create coordinate grid (centered)
         y, x = np.ogrid[-size/2:size/2, -size/2:size/2]
-        self.r_map = np.sqrt(x**2 + y**2) / (size/2) # Normalized radius 0.0-1.0
-        self.mask = self.r_map <= 1.0 # Plasma is only inside the circle
-        
-        # Initial q-profile (Safety Factor)
+        self.r_map = np.sqrt(x**2 + y**2) / (size/2)
+        self.mask = self.r_map <= 1.0
+
         self.q0 = 1.0
         self.qa = 3.0
-        self.update_q_profile(0.0) 
-        
-        # --- Resistive MHD (Rutherford) ---
+        self.update_q_profile(0.0)
+
         self.resonances = [1.5, 2.0, 2.5, 3.0]
         self.island_widths = {res: 0.01 for res in self.resonances}
-        self.eta = 1e-5 # Resistivity proxy
-        
+        self.eta = 1e-5
+
     def step_island_evolution(self, dt=0.1):
-        """Evolve island widths using the Modified Rutherford Equation (MRE)."""
-        # Neoclassical Bootstrap drive (important for NTMs)
-        beta_p = 0.6 # Proxy for poloidal beta
-        w_crit = 0.05 # Threshold for small-island suppression
-        
+        """Evolve island widths via MRE with neoclassical bootstrap drive."""
+        beta_p = 0.6
+        w_crit = 0.05
         for res in self.resonances:
-            # Classical Delta' index: destabilizing if shear is low at resonance
-            # Delta' ~ -1/w for stable modes, positive for unstable ones.
-            # Heuristic: base stability - saturation term
             delta_prime = -0.2 - (5.0 * self.island_widths[res])
-            
-            # Bootstrap current drive: Delta'_BS = beta_p * w / (w^2 + w_crit^2)
             f_bs = beta_p * (self.island_widths[res] / (self.island_widths[res]**2 + w_crit**2))
-            
             dw_dt = self.eta * (delta_prime + f_bs)
             self.island_widths[res] = max(0.001, self.island_widths[res] + dw_dt * dt)
 
     def update_q_profile(self, current_drive_action):
-        """
-        Action modifies the magnetic shear (twisting of lines).
-        current_drive: -1.0 to 1.0 (Non-inductive current drive)
-        """
-        # Physical effect: Current drive changes q at the center/edge
+        """Update parabolic q(r) = q0 + (qa-q0)*r^2 with current drive modulation."""
         mod_q0 = self.q0 - (0.2 * current_drive_action)
         mod_qa = self.qa + (0.5 * current_drive_action)
-        
-        # Parabolic q-profile: q(r) = q0 + (qa-q0)*r^2
         self.q_map = mod_q0 + (mod_qa - mod_q0) * (self.r_map**2)
-        
+
     def get_rational_surfaces(self):
-        """
-        Returns a boolean map of where Magnetic Islands are likely to form.
-        Uses dynamic island widths from the Rutherford evolution.
-        """
+        """Boolean map of rational-surface islands from current MRE widths."""
         danger_map = np.zeros((self.size, self.size), dtype=bool)
-        
         for res in self.resonances:
             width = self.island_widths[res]
             mask = (np.abs(self.q_map - res) < width) & self.mask
             danger_map = np.logical_or(danger_map, mask)
-            
         return danger_map
 
 class Plasma2D:
-    """
-    2D Diffusive-Reaction Model on a Poloidal Cross-section.
-    """
+    """2D diffusion-reaction model on a poloidal cross-section."""
+
     def __init__(self, topology, gyro_surrogate=None):
         self.topo = topology
-        self.T = np.zeros((GRID_SIZE, GRID_SIZE)) # Temperature Map
+        self.T = np.zeros((GRID_SIZE, GRID_SIZE))
         self.T_core_hist = []
         self._gyro_surrogate = gyro_surrogate
-        
+
     def step(self, action):
-        """
-        Evolves plasma for one time step.
-        action: Control signal for current drive (modifies q-profile).
-        """
-        # 1. Update Topology (Magnetic Geometry)
+        """Evolve plasma one timestep with current drive action in [-1, 1]."""
         self.topo.update_q_profile(action)
-        self.topo.step_island_evolution() # Dynamic Rutherford Step
+        self.topo.step_island_evolution()
         danger_zones = self.topo.get_rational_surfaces()
-        
-        # 2. Source Term (Core Heating)
-        # Gaussian heating at center
+
         center = GRID_SIZE // 2
         self.T[center, center] += 5.0
-        
-        # 3. Diffusion with Topological Instability
-        # D = D_base + D_turb (where q is rational)
+
         D_base = 0.01
-        D_turb = 0.5 # High diffusion in islands
-        
+        D_turb = 0.5
         diffusivity = np.ones_like(self.T) * D_base
-        diffusivity[danger_zones] = D_turb # Islands are leaky!
+        diffusivity[danger_zones] = D_turb
+
         if self._gyro_surrogate is not None:
-            # Optional reduced gyrokinetic surrogate hook.
-            # Must return a multiplicative map with same shape as T.
             correction = np.asarray(
                 self._gyro_surrogate(self.T, self.topo.q_map, danger_zones),
                 dtype=float,
             )
             if correction.shape != self.T.shape:
                 raise ValueError(
-                    f"gyro_surrogate correction shape must be {self.T.shape}, got {correction.shape}"
+                    f"gyro_surrogate shape must be {self.T.shape}, got {correction.shape}"
                 )
             correction = np.nan_to_num(correction, nan=1.0, posinf=2.0, neginf=0.5)
             np.clip(correction, 0.2, 5.0, out=correction)
             diffusivity *= correction
-        
-        # Laplacian (Finite Difference)
+
         T_up = np.roll(self.T, -1, axis=0)
         T_down = np.roll(self.T, 1, axis=0)
         T_left = np.roll(self.T, -1, axis=1)
         T_right = np.roll(self.T, 1, axis=1)
-        
         laplacian = (T_up + T_down + T_left + T_right - 4*self.T)
-        
-        # Update T
-        # Radiation Loss (Stabilization) - Bremsstrahlung (P ~ n^2 * sqrt(T))
-        # Assuming n ~ 10^20 m-3 at 1.0 peak
-        # Bremsstrahlung power loss is proportional to sqrt(T)
-        radiation = 0.002 * np.sqrt(self.T + 1e-6) 
-        
-        # Coronal Impurity Radiation (W-tomography) - Heuristic T-peak
-        # Tungsten radiation peaks around 1-3 keV.
+
+        # Bremsstrahlung ~ sqrt(T); tungsten line radiation peaks at ~2 keV
+        radiation = 0.002 * np.sqrt(self.T + 1e-6)
         tungsten_rad = 0.05 * np.exp(-((self.T - 2.0)**2) / 0.5)
-        
+
         self.T += diffusivity * laplacian - radiation - tungsten_rad
-        
-        # Boundary Condition (Cold Walls)
         self.T[~self.topo.mask] = 0.0
-        self.T = np.clip(self.T, 0, 100.0) # Saturation limit (Physical Ceiling)
-        
-        # Metrics
+        self.T = np.clip(self.T, 0, 100.0)
+
         core_temp = self.T[center, center]
         avg_temp = np.mean(self.T[self.topo.mask])
         self.T_core_hist.append(core_temp)
-        
         return self.T.flatten(), avg_temp
 
 class SimpleNeuralNet:
-    """
-    A lightweight Multi-Layer Perceptron (MLP) written in numpy.
-    Implements a Policy Network for Continuous Control.
-    """
+    """NumPy MLP policy network for continuous control."""
+
     def __init__(
         self,
         input_size: int,
@@ -193,50 +145,36 @@ class SimpleNeuralNet:
         *,
         rng: np.random.Generator,
     ) -> None:
-        # Xavier Initialization
         self.W1 = rng.standard_normal((input_size, hidden_size)) * np.sqrt(1 / input_size)
         self.b1 = np.zeros((1, hidden_size))
         self.W2 = rng.standard_normal((hidden_size, output_size)) * np.sqrt(1 / hidden_size)
         self.b2 = np.zeros((1, output_size))
         
     def forward(self, x):
-        # x shape: (batch, input)
         self.z1 = np.dot(x, self.W1) + self.b1
-        self.a1 = np.tanh(self.z1) # Activation
+        self.a1 = np.tanh(self.z1)
         self.z2 = np.dot(self.a1, self.W2) + self.b2
-        self.out = np.tanh(self.z2) # Output -1 to 1 (Action)
+        self.out = np.tanh(self.z2)
         return self.out
-    
+
     def train_step(self, x, target_action, advantage):
-        """
-        Simplified Policy Gradient update (REINFORCE-like).
-        We want to move the output closer to 'target_action' scaled by 'advantage'.
-        """
-        # Forward pass
+        """REINFORCE-like policy gradient step."""
         pred = self.forward(x)
-        
-        # Gradient of MSE loss: L = (pred - target)^2
-        # But for RL, we treat 'target' as (pred + noise * advantage)
-        # Simplified: We want to push 'pred' in direction of Advantage
-        
-        grad_out = -(advantage) # If advantage > 0, increase output
-        
-        # Backprop through tanh output
+        grad_out = -(advantage)
+
         d_z2 = grad_out * (1 - self.out**2)
         d_W2 = np.dot(self.a1.T, d_z2)
         d_b2 = np.sum(d_z2, axis=0, keepdims=True)
-        
+
         d_a1 = np.dot(d_z2, self.W2.T)
         d_z1 = d_a1 * (1 - self.a1**2)
         d_W1 = np.dot(x.T, d_z1)
         d_b1 = np.sum(d_z1, axis=0, keepdims=True)
-        
-        # Update Weights
+
         self.W1 -= LEARNING_RATE * d_W1
         self.b1 -= LEARNING_RATE * d_b1
         self.W2 -= LEARNING_RATE * d_W2
         self.b2 -= LEARNING_RATE * d_b2
-        
         return np.mean(np.abs(grad_out))
 
 def run_digital_twin(
@@ -251,12 +189,7 @@ def run_digital_twin(
     sensor_noise_std: float = 0.0,
     rng: Optional[np.random.Generator] = None,
 ):
-    """
-    Run deterministic digital-twin control simulation.
-
-    Returns a summary dict so callers can use the simulation without relying on
-    console text or plot artifacts.
-    """
+    """Run digital-twin control simulation, return summary dict."""
     steps = int(time_steps)
     if steps < 1:
         raise ValueError("time_steps must be >= 1.")
@@ -269,14 +202,12 @@ def run_digital_twin(
         raise ValueError("sensor_noise_std must be finite and >= 0.")
     local_rng = _resolve_rng(seed=int(seed), rng=rng)
     if verbose:
-        print("--- SCPN 2D TOKAMAK DIGITAL TWIN + NEURAL CONTROL ---")
+        logger.info("--- SCPN 2D TOKAMAK DIGITAL TWIN + NEURAL CONTROL ---")
     
     topo = TokamakTopoloy()
     plasma = Plasma2D(topo, gyro_surrogate=gyro_surrogate)
     
-    # State: Simplified to radial profile samples (to keep NN small)
-    # We take 40 points along the midplane
-    state_dim = GRID_SIZE 
+    state_dim = GRID_SIZE
     brain = SimpleNeuralNet(state_dim, HIDDEN_SIZE, 1, rng=local_rng)
     
     history_rewards = []
@@ -284,10 +215,9 @@ def run_digital_twin(
     sensor_dropouts_total = 0
     
     if verbose:
-        print(f"Training Neural Network for {steps} steps...")
+        logger.info("Training Neural Network for %d steps...", steps)
     
     for t in range(steps):
-        # 1. Observe State (Midplane Profile)
         midplane_idx = GRID_SIZE // 2
         state_vector = np.asarray(plasma.T[midplane_idx, :], dtype=float).reshape(1, -1).copy()
         if chaos_monkey:
@@ -305,24 +235,18 @@ def run_digital_twin(
                 state_vector, nan=0.0, posinf=100.0, neginf=0.0
             )
         
-        # 2. Action (Explore vs Exploit)
-        # Add exploration noise
         noise = float(local_rng.normal(0.0, 0.2))
         raw_action = brain.forward(state_vector)
         action = float(np.clip(raw_action + noise, -1.0, 1.0)[0, 0])
-        
-        # 3. Physics Step
+
         _, avg_temp = plasma.step(action)
-        
-        # 4. Reward
-        # We want High Temp, but we lose points for instability (implicit in low temp)
+
         islands_area = np.sum(topo.get_rational_surfaces())
         reward = avg_temp - (islands_area * 0.05)
-        
-        # 5. Learn (On-Policy / Immediate)
-        # If reward is better than recent average, encourage this action direction
+
         baseline = np.mean(history_rewards[-50:]) if len(history_rewards) > 50 else 0
-        advantage = (reward - baseline) * noise # Simple derivative-free estimator trick
+        # Derivative-free policy gradient estimator
+        advantage = (reward - baseline) * noise
         
         loss = brain.train_step(state_vector, None, advantage)
         
@@ -330,8 +254,6 @@ def run_digital_twin(
         history_actions.append(action)
         
         if verbose and t % 500 == 0:
-            import logging
-            logger = logging.getLogger("scpn_fusion.control")
             logger.info(
                 "Digital twin simulation progress",
                 extra={"physics_context": {
@@ -347,39 +269,32 @@ def run_digital_twin(
     plot_error = None
     if save_plot:
         try:
-            # --- VISUALIZATION ---
             fig = plt.figure(figsize=(15, 6))
-
-            # 1. 2D Plasma Cross-Section (Heatmap)
             ax1 = fig.add_subplot(1, 3, 1)
             im = ax1.imshow(plasma.T, cmap='inferno', origin='lower')
             ax1.set_title("Final Plasma Cross-Section (2D)")
             plt.colorbar(im, ax=ax1, label='Temperature (keV)')
 
-            # Overlay Magnetic Islands
             islands = topo.get_rational_surfaces()
             ax1.contour(islands, colors='cyan', levels=[0.5], linewidths=1, alpha=0.5)
             ax1.text(2, 2, "Cyan = q-Resonance (Islands)", color='cyan', fontsize=8)
 
-            # 2. Learning Curve
             ax2 = fig.add_subplot(1, 3, 2)
             ax2.plot(history_rewards, color='orange', alpha=0.6)
             # Moving average
             if len(history_rewards) > 50:
                 mov_avg = np.convolve(history_rewards, np.ones(50)/50, mode='valid')
                 ax2.plot(range(len(mov_avg)), mov_avg, 'r-', linewidth=2, label='Moving Avg')
-            ax2.set_title("Neural Network Learning Curve")
+            ax2.set_title("Learning Curve")
             ax2.set_xlabel("Steps")
             ax2.set_ylabel("Reward (Confinement)")
             ax2.legend()
 
-            # 3. q-Profile and Stability
             ax3 = fig.add_subplot(1, 3, 3)
-            r_axis = np.linspace(0, 1, GRID_SIZE//2) # Fix: Match slice size
-            q_axis = topo.q_map[GRID_SIZE//2, GRID_SIZE//2:] # Radial slice
+            r_axis = np.linspace(0, 1, GRID_SIZE//2)
+            q_axis = topo.q_map[GRID_SIZE//2, GRID_SIZE//2:]
             ax3.plot(r_axis, q_axis, 'b-', linewidth=2, label='Safety Factor q(r)')
 
-            # Draw Danger Zones
             for q_res in [1.5, 2.0, 2.5, 3.0]:
                 ax3.axhline(q_res, color='red', linestyle='--', alpha=0.3)
                 ax3.text(0.1, q_res, f"q={q_res}", color='red', fontsize=8)
@@ -394,13 +309,11 @@ def run_digital_twin(
             plt.close(fig)
             plot_saved = True
             if verbose:
-                print(
-                    f"\nDigital Twin Simulation Complete. Snapshot saved: {output_path}"
-                )
+                logger.info("Digital Twin Simulation Complete. Snapshot saved: %s", output_path)
         except Exception as exc:
             plot_error = str(exc)
             if verbose:
-                print(f"\nDigital Twin completed without plot artifact: {exc}")
+                logger.warning("Digital Twin completed without plot artifact: %s", exc)
 
     islands_final = int(np.sum(topo.get_rational_surfaces()))
     final_avg_temp = float(history_rewards[-1] + islands_final * 0.05) if history_rewards else 0.0

@@ -19,7 +19,6 @@ from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
 from scpn_fusion.nuclear.nuclear_wall_interaction import NuclearEngineeringLab
 from scpn_fusion.engineering.balance_of_plant import PowerPlantModel
 
-# --- CONFIG ---
 st.set_page_config(page_title="SCPN Fusion Reactor", layout="wide", page_icon="⚛️")
 
 # Helper to find config
@@ -31,7 +30,6 @@ if not os.path.exists(CONFIG_PATH):
 st.title("⚛️ SCPN Fusion Reactor Control Room")
 st.markdown("### Digital Twin & Engineering Suite v3.4.0")
 
-# --- SIDEBAR CONFIGURATION ---
 st.sidebar.header("Reactor Parameters")
 reactor_size = st.sidebar.slider("Major Radius (m)", 3.0, 9.0, 6.2)
 plasma_current = st.sidebar.slider("Target Current (MA)", 1.0, 20.0, 15.0)
@@ -39,7 +37,6 @@ aux_heating = st.sidebar.slider("Auxiliary Heating (MW)", 0.0, 100.0, 50.0)
 
 # Modify Config in memory (simulated — classes read from file)
 
-# --- TABS ---
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Plasma Physics", "Ignition & Q", "Nuclear Engineering",
     "Power Plant", "Shot Replay"
@@ -161,7 +158,6 @@ with tab5:
         selected_shot = st.selectbox("Select Shot", shot_names, index=0)
 
         if st.button("Load & Replay"):
-            # --- Import IO loader and disruption predictor inside this block ---
             from scpn_fusion.io.tokamak_archive import load_disruption_shot
             from scpn_fusion.control.disruption_predictor import predict_disruption_risk
 
@@ -177,7 +173,6 @@ with tab5:
                 disruption_idx = shot_data["disruption_time_idx"]
                 disruption_type = shot_data["disruption_type"]
 
-                # --- Metadata ---
                 st.subheader("Shot Metadata")
                 mc1, mc2, mc3 = st.columns(3)
                 mc1.metric("Shot Name", selected_shot)
@@ -187,7 +182,6 @@ with tab5:
                 # Disruption time marker (in seconds)
                 disruption_time_s = float(time_s[disruption_idx]) if is_disruption and 0 <= disruption_idx < len(time_s) else None
 
-                # --- 2x2 time-series subplot grid ---
                 st.subheader("Time Series Overview")
                 fig1, axes = plt.subplots(2, 2, figsize=(12, 8), sharex=True)
 
@@ -213,7 +207,6 @@ with tab5:
                 st.pyplot(fig1)
                 plt.close(fig1)
 
-                # --- Toroidal mode amplitudes ---
                 st.subheader("Toroidal Mode Amplitudes")
                 fig2, ax2 = plt.subplots(figsize=(12, 4))
                 ax2.plot(time_s, shot_data["n1_amp"], label="n=1 amplitude", linewidth=0.9)
@@ -230,7 +223,6 @@ with tab5:
                 st.pyplot(fig2)
                 plt.close(fig2)
 
-                # --- Disruption risk score via sliding window ---
                 st.subheader("Disruption Risk Score (Sliding Window)")
                 window_size = 50  # samples per window
                 n_samples = len(time_s)
@@ -266,7 +258,6 @@ with tab5:
                 st.pyplot(fig3)
                 plt.close(fig3)
 
-                # --- Summary statistics table ---
                 st.subheader("Signal Summary Statistics")
                 stat_keys = [
                     ("dBdt_gauss_per_s", "dB/dt (Gauss/s)"),

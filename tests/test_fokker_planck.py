@@ -32,3 +32,29 @@ def test_fokker_planck_step_conserves_positivity():
     assert np.all(state.f >= 0.0)
     assert state.n_re > 0.0
     assert state.current_re > 0.0
+
+
+# S2-001: Fokker-Planck 1/p² divergence guard
+
+
+def test_drag_finite_near_zero_momentum():
+    """With thermal regularization, drag should be finite even near p → 0."""
+    solver = FokkerPlanckSolver(np_grid=100, p_max=10.0)
+    A, D, Fc = solver.compute_coefficients(
+        E_field=1.0, n_e=5e19, Z_eff=1.5, T_e_eV=5000.0
+    )
+    assert np.all(np.isfinite(A)), "Advection has non-finite values near p=0"
+    assert np.all(np.isfinite(D)), "Diffusion has non-finite values near p=0"
+
+
+def test_drag_regularized_at_thermal_speed():
+    """Drag at the smallest momentum should be bounded (not divergent)."""
+    solver = FokkerPlanckSolver(np_grid=200, p_max=10.0)
+    A, D, Fc = solver.compute_coefficients(
+        E_field=1.0, n_e=5e19, Z_eff=1.5, T_e_eV=100.0  # lower Te
+    )
+    # At the first grid point (smallest p), drag should be large but finite
+    assert np.isfinite(A[0])
+    # The total advection (drag + synchrotron) should be bounded, not divergent
+    # With regularization the value is O(10^5) rather than Inf
+    assert abs(A[0]) < 1e8, f"A[0]={A[0]:.2e} is unreasonably large"

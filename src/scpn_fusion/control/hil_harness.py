@@ -21,11 +21,14 @@ format provides the register map and port definitions.
 
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Protocol
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 from dataclasses import dataclass as dc_dataclass, field as dc_field
 
@@ -37,9 +40,6 @@ class PipelineProfile:
     controller_step_us: float = 0.0
     actuator_command_us: float = 0.0
     total_us: float = 0.0
-
-
-# ─── Sensor / Actuator Abstraction ──────────────────────────────────
 
 
 @dataclass(frozen=True)
@@ -130,9 +130,6 @@ class SensorInterface:
         voltage = target_ka * (10.0 / 50.0)
         output_v = self.write_dac(voltage, dt_us)
         return output_v * (50.0 / 10.0)
-
-
-# ─── Real-Time Control Loop ─────────────────────────────────────────
 
 
 @dataclass
@@ -257,9 +254,6 @@ class HILControlLoop:
             overrun_fraction=overruns / max(iterations, 1),
             sub_ms_achieved=float(np.percentile(dt_arr, 95)) < 1000.0,
         )
-
-
-# ─── FPGA SNN Export ─────────────────────────────────────────────────
 
 
 @dataclass
@@ -392,9 +386,6 @@ class FPGASNNExport:
         return "\n".join(lines)
 
 
-# ─── HIL Benchmark ───────────────────────────────────────────────────
-
-
 @dataclass
 class HILBenchmarkResult:
     """Benchmark result for HIL sub-ms timing validation."""
@@ -471,20 +462,20 @@ def run_hil_benchmark(
     )
 
     if verbose:
-        print("=== HIL Benchmark Results ===")
-        print(f"  Iterations:     {metrics.iterations}")
-        print(f"  Target rate:    {target_rate_hz:.0f} Hz ({metrics.target_dt_us:.0f} us)")
-        print(f"  P50 latency:    {metrics.p50_latency_us:.1f} us")
-        print(f"  P95 latency:    {metrics.p95_latency_us:.1f} us")
-        print(f"  P99 latency:    {metrics.p99_latency_us:.1f} us")
-        print(f"  Max latency:    {metrics.max_latency_us:.1f} us")
-        print(f"  Jitter (std):   {metrics.jitter_std_us:.1f} us")
-        print(f"  Overruns:       {metrics.overrun_count} ({metrics.overrun_fraction*100:.1f}%)")
-        print(f"  Sub-ms (P95):   {'PASS' if metrics.sub_ms_achieved else 'FAIL'}")
-        print(f"  1 kHz capable:  {'PASS' if result.passes_1khz else 'FAIL'}")
+        logger.info("=== HIL Benchmark Results ===")
+        logger.info("  Iterations:     %d", metrics.iterations)
+        logger.info("  Target rate:    %.0f Hz (%.0f us)", target_rate_hz, metrics.target_dt_us)
+        logger.info("  P50 latency:    %.1f us", metrics.p50_latency_us)
+        logger.info("  P95 latency:    %.1f us", metrics.p95_latency_us)
+        logger.info("  P99 latency:    %.1f us", metrics.p99_latency_us)
+        logger.info("  Max latency:    %.1f us", metrics.max_latency_us)
+        logger.info("  Jitter (std):   %.1f us", metrics.jitter_std_us)
+        logger.info("  Overruns:       %d (%.1f%%)", metrics.overrun_count, metrics.overrun_fraction * 100)
+        logger.info("  Sub-ms (P95):   %s", "PASS" if metrics.sub_ms_achieved else "FAIL")
+        logger.info("  1 kHz capable:  %s", "PASS" if result.passes_1khz else "FAIL")
         if fpga_map:
-            print(f"  FPGA neurons:   {fpga_map.n_neurons}")
-            print(f"  FPGA clock:     {fpga_map.clock_hz / 1e6:.0f} MHz")
+            logger.info("  FPGA neurons:   %d", fpga_map.n_neurons)
+            logger.info("  FPGA clock:     %.0f MHz", fpga_map.clock_hz / 1e6)
 
     return result
 
@@ -532,9 +523,6 @@ def run_hil_benchmark_detailed(n_steps=10000):
             'actuator_command_mean_us': float(np.mean([p.actuator_command_us for p in profiles])),
         }
     }
-
-
-# ─── HIL Demo Runner (Software FPGA Register Simulation) ─────────────
 
 
 class HILDemoRunner:

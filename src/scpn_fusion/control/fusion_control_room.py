@@ -7,12 +7,15 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any, Callable, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation, PillowWriter
+
+logger = logging.getLogger(__name__)
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
@@ -22,7 +25,6 @@ except ImportError:
     except Exception:  # pragma: no cover - optional kernel path
         FusionKernel = None
 
-# --- CONTROL ROOM PARAMETERS ---
 RESOLUTION = 60
 SIM_DURATION = 200
 FPS = 10
@@ -148,23 +150,19 @@ class KalmanObserver:
         self.R = np.array([[0.05]]) # Measurement Noise
         
     def update(self, measured_z: float, dropout: bool = False) -> float:
-        """Perform Predict-Correct cycle. Returns filtered Z-position."""
-        # 1. Predict
+        """Predict-correct cycle. Returns filtered Z-position."""
         self.x = self.A @ self.x
         self.P = self.A @ self.P @ self.A.T + self.Q
-        
-        # 2. Correct (Skip if dropout detected)
+
         if not dropout and np.isfinite(measured_z):
-            # Innovation
-            y = measured_z - (self.H @ self.x)
+            y = measured_z - (self.H @ self.x)  # innovation
             S = self.H @ self.P @ self.H.T + self.R
             K = self.P @ self.H.T @ np.linalg.inv(S)
             
             self.x = self.x + K @ y
             self.P = (np.eye(2) - K @ self.H) @ self.P
         else:
-            # Covariance Inflation on dropout to represent increased uncertainty
-            self.P *= 1.2
+            self.P *= 1.2  # covariance inflation on dropout
             
         return float(self.x[0])
 
@@ -192,19 +190,15 @@ class NeuralController:
 
     def compute_action(self, measured_z: float) -> tuple[float, float]:
         error = -float(measured_z)
-        
-        # 1. Proportional
+
         p_term = self.kp * error
-        
-        # 2. Integral with Anti-Windup (Clamping)
+
         self.integral_error += error * self.dt
         self.integral_error = np.clip(self.integral_error, -self.integral_limit, self.integral_limit)
         i_term = self.ki * self.integral_error
-        
-        # 3. Filtered Derivative
-        # d_err/dt approx (err - prev_err) / dt
+
+        # d/dt low-pass: y(t) = α·x(t) + (1-α)·y(t-dt)
         raw_derivative = (error - self.prev_error) / self.dt
-        # Low-pass filter: y(t) = alpha * x(t) + (1-alpha) * y(t-dt)
         alpha = self.dt / (self.tau_d + self.dt)
         self.filtered_derivative = alpha * raw_derivative + (1.0 - alpha) * self.filtered_derivative
         d_term = self.kd * self.filtered_derivative
@@ -380,11 +374,11 @@ def run_control_room(
             psi_source = "analytic"
 
     if verbose:
-        print("--- SCPN FUSION CONTROL ROOM: Grad-Shafranov VDE Simulation ---")
+        logger.info("--- SCPN FUSION CONTROL ROOM: Grad-Shafranov VDE Simulation ---")
         if psi_source == "kernel":
-            print("Using kernel-backed Psi source.")
+            logger.info("Using kernel-backed Psi source.")
         elif kernel_error:
-            print(f"Kernel init failed, fallback to analytic Psi: {kernel_error}")
+            logger.warning("Kernel init failed, fallback to analytic Psi: %s", kernel_error)
 
     reactor = TokamakPhysicsEngine(seed=seed, kernel=kernel)
     sensors = DiagnosticSystem(rng=rng)

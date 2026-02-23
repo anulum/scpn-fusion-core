@@ -12,7 +12,6 @@ from scipy.linalg import solve
 import sys
 import os
 
-# --- HASEGAWA-WAKATANI PARAMETERS ---
 GRID = 64
 L = 10.0
 ALPHA = 0.1  # Adiabaticity parameter
@@ -171,12 +170,9 @@ class OracleESN:
 def run_turbulence_oracle():
     print("--- SCPN TURBULENCE ORACLE: PREDICTING CHAOS ---")
     
-    # 1. Generate Chaos (Ground Truth)
     hw = DriftWavePhysics()
-    
-    # Warmup physics
-    for _ in range(100): hw.step()
-    
+    for _ in range(100): hw.step()  # warmup
+
     print("Generating Training Data (Hasegawa-Wakatani)...")
     data_phi = []
     
@@ -196,11 +192,9 @@ def run_turbulence_oracle():
     X_train = data[:train_len]
     Y_train = data[1:train_len+1] # Next step target
     
-    # 2. Train Oracle
     oracle = OracleESN(input_dim=16)
     oracle.train(X_train, Y_train)
-    
-    # 3. Test Prediction Horizon
+
     print("Testing Prediction Horizon...")
     start_state = data[train_len]
     horizon = 150
@@ -211,8 +205,6 @@ def run_turbulence_oracle():
     # AI Future (Hallucination)
     prediction = oracle.predict(start_state, steps=horizon)
     
-    # 4. Analysis
-    # Calculate Divergence (Lyapunov)
     mse = np.mean((truth - prediction)**2, axis=1)
     
     # Find "Trust Horizon" (where error exceeds threshold)

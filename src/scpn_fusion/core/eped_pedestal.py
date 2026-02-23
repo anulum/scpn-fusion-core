@@ -284,8 +284,7 @@ class EpedPedestalModel:
             Delta_ped *= domain.extrapolation_penalty
             Delta_ped = np.clip(Delta_ped, 0.01, 0.15)
 
-            # --- KBM Stability Limit (alpha_crit) ---
-            # Connor-Hastie-Taylor (CHT) ballooning limit alpha(s)
+            # Connor-Hastie-Taylor ballooning limit alpha(s)
             s_ped = 2.0 * (1.0 + 0.5 * (self.kappa - 1.7)) 
             if s_ped < 1.0:
                 alpha_crit = s_ped * (1.0 - s_ped / 2.0)

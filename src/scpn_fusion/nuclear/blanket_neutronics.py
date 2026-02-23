@@ -476,7 +476,7 @@ class MultiGroupBlanket:
         if not (0.0 < streaming_factor <= 1.0):
             raise ValueError("streaming_factor must be in (0, 1].")
         
-        # --- Group 1 (fast) ---
+        # Group 1 (fast)
         sigma_tot_1 = (self.sigma_capture_g1 + self.sigma_scatter_g1 + 
                        self.sigma_multiply_g1 + self.sigma_downscatter_12 + self.sigma_parasitic_g1)
         D1 = 1.0 / (3.0 * sigma_tot_1)
@@ -490,7 +490,7 @@ class MultiGroupBlanket:
         n_clamped_g1 = int(np.sum(phi_g1 < 0))
         phi_g1 = np.maximum(phi_g1, 0.0)
 
-        # --- Group 2 (epithermal) ---
+        # Group 2 (epithermal)
         sigma_tot_2 = (self.sigma_capture_g2 + self.sigma_scatter_g2 + 
                        self.sigma_downscatter_23 + self.sigma_parasitic_g2)
         D2 = 1.0 / (3.0 * sigma_tot_2)
@@ -504,7 +504,7 @@ class MultiGroupBlanket:
         n_clamped_g2 = int(np.sum(phi_g2 < 0))
         phi_g2 = np.maximum(phi_g2, 0.0)
 
-        # --- Group 3 (thermal) ---
+        # Group 3 (thermal)
         sigma_tot_3 = (self.sigma_capture_g3 + self.sigma_scatter_g3 + self.sigma_parasitic_g3)
         D3 = 1.0 / (3.0 * sigma_tot_3)
         sigma_rem_3 = self.sigma_capture_g3 + self.sigma_parasitic_g3
@@ -517,7 +517,6 @@ class MultiGroupBlanket:
         n_clamped_g3 = int(np.sum(phi_g3 < 0))
         phi_g3 = np.maximum(phi_g3, 0.0)
 
-        # --- TBR and Integration (Cylindrical Volume) ---
         prod_g1 = self.sigma_capture_g1 * phi_g1
         prod_g2 = self.sigma_capture_g2 * phi_g2
         prod_g3 = self.sigma_capture_g3 * phi_g3

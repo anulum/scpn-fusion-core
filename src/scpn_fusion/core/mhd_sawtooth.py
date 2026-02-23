@@ -5,11 +5,15 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation, PillowWriter
-import sys
+import logging
 import os
+import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.animation import FuncAnimation, PillowWriter
+
+logger = logging.getLogger(__name__)
 
 class ReducedMHD:
     """
@@ -22,22 +26,15 @@ class ReducedMHD:
         self.r = np.linspace(0, 1, nr)
         self.dr = self.r[1] - self.r[0]
         
-        # State Variables (Perturbations)
-        # psi_11: Magnetic Flux perturbation (complex, for m=1, n=1 mode)
-        # phi_11: Stream Function perturbation (velocity)
-        self.psi_11 = np.zeros(nr, dtype=complex)
-        self.phi_11 = np.zeros(nr, dtype=complex)
-        
-        # Equilibrium Profiles (Background)
-        # q-profile: Safety factor. Instability requires q(0) < 1.
-        self.q = 0.8 + 2.0 * self.r**2 
-        
-        # Physics Parameters
-        self.S = 1e4  # Lundquist Number (Resistivity^-1). Real plasma S ~ 10^8 (too slow for demo)
-        self.eta = 1.0 / self.S # Resistivity
-        self.nu = 1e-4 # Viscosity
-        
-        # Initialize small perturbation
+        self.psi_11 = np.zeros(nr, dtype=complex)  # m=1,n=1 flux perturbation
+        self.phi_11 = np.zeros(nr, dtype=complex)  # stream function perturbation
+
+        # q(0) < 1 required for internal kink instability
+        self.q = 0.8 + 2.0 * self.r**2
+        self.S = 1e4       # Lundquist number (real tokamak ~1e8)
+        self.eta = 1.0 / self.S
+        self.nu = 1e-4     # viscosity
+
         self.psi_11 = 1e-4 * self.r * (1 - self.r) * (1+1j)
 
     def laplacian(self, f, m=1):
@@ -65,47 +62,29 @@ class ReducedMHD:
         1. d(W_11)/dt = [J_eq, psi_11] + [J_11, psi_eq] + Dissipation
         2. d(psi_11)/dt = B_parallel * phi_11 + eta * J_11
         """
-        # 1. Equilibrium Quantities
-        # J_eq_z ~ 1/r d/dr (r B_theta) ~ 1/r d/dr (r^2/q)
-        # Simplified linear growth rate drive:
-        # gamma ~ (1/q - 1)
-        
+        # Linear growth drive: γ ~ (1/q - 1)
         growth_drive = (1.0 / self.q - 1.0)
-        
-        # 2. Field Evolution (Ohm's Law)
-        # dpsi/dt = k_parallel * phi - eta * J
-        # k_parallel = (1/q - 1) * (m/R) approx
-        
+
+        # k_∥ ≈ (1/q - 1)(m/R)
         k_par = (1.0 / self.q - 1.0)
-        
-        # Current perturbation J = -Del^2 psi
-        J_11 = -self.laplacian(self.psi_11)
-        
-        dpsi_dt = (k_par * self.phi_11) + (self.eta * J_11)
-        
-        # 3. Vorticity Evolution (Equation of Motion)
-        # U = Del^2 phi
-        # dU/dt = k_par * J + Viscosity
+
+        J_11 = -self.laplacian(self.psi_11)  # current perturbation
+        dpsi_dt = (k_par * self.phi_11) + (self.eta * J_11)  # Ohm's law
+
+        # Vorticity: dU/dt = k_∥ J + instability source
         U_11 = self.laplacian(self.phi_11)
         
-        dU_dt = (k_par * J_11) + (growth_drive * self.psi_11) # Instability source
-        
-        # Update
+        dU_dt = (k_par * J_11) + (growth_drive * self.psi_11)
+
         self.psi_11 += dpsi_dt * dt
         U_11 += dU_dt * dt
-        
-        # Invert U -> Phi (Poisson Solver)
-        # Del^2 phi = U.  Using simplified relaxation or direct solve.
-        # Since Laplacian matrix is Tridiagonal, we can solve fast.
-        # Here we use spectral relaxation for code compactness
-        self.phi_11 = self.solve_poisson(U_11)
-        
-        # Nonlinear Saturation (The Crash)
-        # If amplitude gets too large, it flattens the profile (simulated)
+        self.phi_11 = self.solve_poisson(U_11)  # Del^2 phi = U (Thomas O(N))
+
+        # Kadomtsev crash: amplitude saturates → q-profile flattens
         amplitude = np.max(np.abs(self.psi_11))
         crash = False
         if amplitude > 0.1:
-            print("  >>> SAWTOOTH CRASH! <<<")
+            logger.warning("SAWTOOTH CRASH")
             self.psi_11 *= 0.1 # Collapse
             self.q[self.r < 0.4] = 1.05 # Flatten q-profile (Reconnection)
             crash = True
@@ -167,7 +146,7 @@ class ReducedMHD:
         return res
 
 def run_sawtooth_sim():
-    print("--- SCPN 3D MHD: SAWTOOTH INSTABILITY ---")
+    logger.info("--- SCPN 3D MHD: SAWTOOTH INSTABILITY ---")
     
     sim = ReducedMHD()
     
@@ -186,7 +165,7 @@ def run_sawtooth_sim():
         history_amp.append(amp)
         
         if crash:
-            print(f"Time {t}: RECONNECTION EVENT")
+            logger.warning("Time %d: RECONNECTION EVENT", t)
             
         if t % 5 == 0:
             line.set_data(range(len(history_amp)), history_amp)
@@ -198,7 +177,7 @@ def run_sawtooth_sim():
     plt.title("Sawtooth Cycles (Growth -> Crash -> Recovery)")
     plt.grid(True)
     plt.savefig("MHD_Sawtooth.png")
-    print("Saved: MHD_Sawtooth.png")
+    logger.info("Saved: MHD_Sawtooth.png")
     
     # 2D Reconstruction of the Island
     # Psi_total = Psi_eq(r) + Re[ Psi_11(r) * exp(i(theta - phi)) ]
@@ -213,7 +192,7 @@ def run_sawtooth_sim():
     plt.title("m=1 Magnetic Island Structure")
     plt.colorbar()
     plt.savefig("Magnetic_Island_2D.png")
-    print("Saved: Magnetic_Island_2D.png")
+    logger.info("Saved: Magnetic_Island_2D.png")
 
 if __name__ == "__main__":
     run_sawtooth_sim()
