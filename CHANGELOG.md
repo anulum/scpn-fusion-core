@@ -8,6 +8,17 @@
 
 # Changelog
 
+## [3.9.2] — 2026-02-24
+
+### Fixed
+- Vacuum test: `_seed_plasma` early return + `solve_equilibrium` short-circuit for zero plasma current
+- CI stress test: install `pytest-timeout`, handle exit code 5 (no tests collected)
+
+### Changed
+- Documentation: version refs, test count badge (1888 passed, 21 skipped)
+
+---
+
 ## [3.9.1] — 2026-02-22
 
 ### Added — Rust Acceleration + Performance Optimizations
@@ -72,7 +83,7 @@
 
 ### Changed
 
-- Test suite: 1803 passed, 0 failed, 20 skipped (was 63 failures)
+- Test suite: 1888 passed, 0 failed, 21 skipped (was 63 failures)
 - CI: All 9 lanes green (5 Rust + 4 Python)
 - `sync_metadata.py`: Fixed bug that corrupted all historical CHANGELOG version headers (replaced ALL `## [x.y.z]` instead of only the first)
 

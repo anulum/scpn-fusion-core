@@ -7,7 +7,7 @@
   <img src="docs/assets/repo_header.png" alt="SCPN Fusion Core — Neuro-Symbolic Tokamak Control">
 </p>
 
-[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![Zenodo](https://img.shields.io/badge/Zenodo-DOI_pending-lightgrey)](https://zenodo.org/) [![arXiv](https://img.shields.io/badge/arXiv-coming-lightgrey)](https://arxiv.org/) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.9.1-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-1803_Python_%7C_200%2B_Rust-green.svg)
+[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![Zenodo](https://img.shields.io/badge/Zenodo-DOI_pending-lightgrey)](https://zenodo.org/) [![arXiv](https://img.shields.io/badge/arXiv-coming-lightgrey)](https://arxiv.org/) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.9.2-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-1888_Python_%7C_200%2B_Rust-green.svg)
 
 A **neuro-symbolic control framework for tokamak fusion reactors** with
 physics-informed surrogate models and optional Rust acceleration. SCPN
@@ -18,7 +18,7 @@ interface, 2D MPI domain decomposition, 1.5D radial transport, BOUT++
 coupling, and AI surrogates for turbulence, disruption prediction, and
 real-time digital twins.
 
-**v3.9.1 — QLKNN-10D Real-Data + Rust 0.3 μs Benches:** The system now
+**v3.9.2 — QLKNN-10D Real-Data + Rust 0.3 μs Benches:** The system now
 features a **Rust-native execution engine** at **0.52 μs P50 latency**
 (6,600x faster than Python PID), **QLKNN-10D real-gyrokinetic transport
 surrogates**, and a **5-controller stress-test campaign** (PID, H-infinity,
@@ -184,7 +184,7 @@ docker run scpn-fusion-core:dev pytest tests/ -v
 
 - Demo playbook: [`docs/STREAMLIT_DEMO_PLAYBOOK.md`](docs/STREAMLIT_DEMO_PLAYBOOK.md)
 - One-click container launch: `docker compose up --build`
-- YouTube embed: pending upload for v3.9.1 release notes
+- YouTube embed: pending upload for v3.9.2 release notes
 
 ### Pure Python (No Rust Toolchain Required)
 

@@ -1,4 +1,4 @@
-# Golden Base Validation Notes (v3.9.1)
+# Golden Base Validation Notes (v3.9.2)
 
 This document covers data provenance and validation notes for:
 
@@ -55,7 +55,7 @@ The Golden Base notebook disturbance lane is intentionally linked to existing va
 
 In notebook code this appears as `VALIDATION_SCRIPT` and `FULL_PIPELINE_SCRIPT` path checks, and `load_shot(...)` points at the same reference-data directory.
 
-## Task-5 Proxy Hardening (v3.9.1)
+## Task-5 Proxy Hardening (v3.9.2)
 
 - `src/scpn_fusion/control/disruption_contracts.py` now exposes uncertainty-aware outputs for disruption-lane surrogates:
   - `mcnp_lite_tbr(..., return_uncertainty=True)` returns `tbr_sigma`, `tbr_rel_sigma`, and p95 bounds.
