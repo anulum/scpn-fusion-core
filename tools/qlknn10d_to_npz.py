@@ -132,8 +132,10 @@ def process(input_dir: Path, output_dir: Path, max_samples: int = 5_000_000, see
                 inputs, fluxes = inputs[mask], fluxes[mask]
 
             valid = np.all(np.isfinite(inputs), axis=1) & np.all(np.isfinite(fluxes), axis=1)
-            valid &= (fluxes[:, 0] >= 0) & (fluxes[:, 1] >= 0)
             inputs, fluxes = inputs[valid], fluxes[valid]
+            # Clip negative fluxes to 0 (stable regime) instead of dropping.
+            # Keeping these samples teaches the model the ITG/TEM onset threshold.
+            fluxes = np.clip(fluxes, 0.0, None)
 
             if len(inputs) > 0:
                 all_inputs.append(inputs); all_fluxes.append(fluxes); loaded += len(inputs)
