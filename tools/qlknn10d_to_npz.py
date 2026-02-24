@@ -5,15 +5,15 @@
 """
 Convert QLKNN-10D Zenodo HDF5 data to training-ready .npz files.
 
-Input contract (from QLKNN-10D HDF5):
-  10 input columns: Ati, Ate, An, q, smag, x, Ti_Te, Zeff, alpha, Machtor
-  3 flux outputs:   efi_GB, efe_GB, pfe_GB  (gyro-Bohm normalised)
+Input contract (from QLKNN-9D HDF5, gen5_9D variant):
+  9 input columns: Ati, Ate, An, q, smag, x, Ti_Te, Zeff(=1), Nustar
+  3 flux outputs:  efi_GB, efe_GB, pfe_GB  (gyro-Bohm normalised)
 
 Output contract (for NeuralTransportModel):
-  X: shape (N, 10), dtype float64
-     [rho, Te, Ti, ne, R/LTe, R/LTi, R/Lne, q, s_hat, beta_e]
+  X: shape (N, 12), dtype float64
+     [rho, Te, Ti, ne, R/LTe, R/LTi, R/Lne, q, s_hat, beta_e, Ti_Te, Nustar]
   Y: shape (N, 3),  dtype float64
-     [chi_e, chi_i, D_e]  in m^2/s
+     [chi_e, chi_i, D_e]  (GB-normalised or physical m^2/s)
 """
 
 from __future__ import annotations
@@ -34,8 +34,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT_DIR = REPO_ROOT / "data" / "qlknn10d"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "data" / "qlknn10d_processed"
 
-# QLKNN-10D column names (expected in HDF5)
-QLKNN_INPUT_COLS = ["Ati", "Ate", "An", "q", "smag", "x", "Ti_Te", "Zeff", "alpha", "Machtor"]
+# QLKNN input column names (maps by name from HDF5 DataFrame columns).
+# The gen5_9D file has: [Zeff, Ati, Ate, An, q, smag, x, Ti_Te, Nustar].
+# Columns absent from HDF5 are zero-filled.
+QLKNN_INPUT_COLS = ["Ati", "Ate", "An", "q", "smag", "x", "Ti_Te", "Zeff", "Nustar"]
 QLKNN_FLUX_COLS = ["efi_GB", "efe_GB", "pfe_GB"]
 
 # Physical sampling ranges for augmentation
@@ -85,7 +87,7 @@ def _load_chunk_hdf5(path: Path, start: int, count: int) -> tuple[np.ndarray, np
                     with h5py.File(path, "r") as f_loc:
                         if out_key in f_loc: fluxes[:, i] = f_loc[out_key][start:start+len(df_in)]
             return inputs, fluxes, list(df_in.columns)
-    return np.zeros((0, 10)), np.zeros((0, 3)), []
+    return np.zeros((0, len(QLKNN_INPUT_COLS))), np.zeros((0, 3)), []
 
 
 def _get_total_rows_hdf5(path: Path) -> int:
@@ -154,13 +156,13 @@ def process(input_dir: Path, output_dir: Path, max_samples: int = 5_000_000, see
     N = len(raw_inputs)
 
     ati, ate, an, q, smag, x, ti_te = raw_inputs[:, 0], raw_inputs[:, 1], raw_inputs[:, 2], raw_inputs[:, 3], raw_inputs[:, 4], raw_inputs[:, 5], raw_inputs[:, 6]
-    alpha = raw_inputs[:, 8]
+    nustar = raw_inputs[:, 8]
 
     te_kev = np.exp(rng.uniform(np.log(TE_RANGE[0]), np.log(TE_RANGE[1]), size=N))
     ti_kev = te_kev * np.clip(ti_te, 0.5, 3.0)
     ne_19 = rng.uniform(*NE_RANGE, size=N)
 
-    X = np.column_stack([x, te_kev, ti_kev, ne_19, ate, ati, an, q, smag, 4.03e-3 * ne_19 * te_kev])
+    X = np.column_stack([x, te_kev, ti_kev, ne_19, ate, ati, an, q, smag, 4.03e-3 * ne_19 * te_kev, ti_te, nustar])
 
     if gb_normalized:
         # Save raw GB-normalized fluxes — no chi_gb multiplication.

@@ -282,6 +282,43 @@ def _mlp_forward(x: FloatArray, weights: MLPWeights) -> FloatArray:
     return out
 
 
+def _compute_nustar(te_kev: float, ne_19: float, q: float, rho: float,
+                     r_major: float = 6.2, z_eff: float = 1.0) -> float:
+    """Electron collisionality nu_star (Wesson Ch.14).
+
+    nu* = 6.921e-18 * ne * q * R * Zeff^2 * ln(Lambda) / (Te^2 * eps^1.5)
+    with eps = rho * a / R, a ≈ R/3.1 (ITER-like aspect ratio).
+    """
+    ln_lambda = 15.2  # Coulomb logarithm, Wesson Ch.14
+    ne_m3 = ne_19 * 1e19
+    te_ev = te_kev * 1e3
+    eps = max(rho * r_major / 3.1 / r_major, 1e-4)
+    return 6.921e-18 * ne_m3 * q * r_major * z_eff ** 2 * ln_lambda / (
+        max(te_ev, 1.0) ** 2 * eps ** 1.5)
+
+
+def _append_derived(x: FloatArray, inp, expected_dim: int) -> FloatArray:
+    """Append Ti_Te, Nustar, ITG/TEM excess, log(chi_gb) as needed."""
+    if expected_dim <= 10:
+        return x
+    # 12D base: append Ti_Te and Nustar first
+    if expected_dim >= 12:
+        ti_te = inp.ti_kev / max(inp.te_kev, 1e-6)
+        nustar = _compute_nustar(inp.te_kev, inp.ne_19, inp.q, inp.rho)
+        x = np.append(x, [ti_te, nustar])
+    if expected_dim >= 14:
+        itg_excess = max(0.0, inp.grad_ti - _CRIT_ITG)
+        tem_excess = max(0.0, inp.grad_te - _CRIT_TEM)
+        x = np.append(x, [itg_excess, tem_excess])
+    if expected_dim >= 15:
+        te_j = inp.te_kev * 1e3 * 1.602e-19
+        cs = np.sqrt(te_j / 3.344e-27)
+        rho_s = np.sqrt(3.344e-27 * te_j) / (1.602e-19 * 5.3)
+        chi_gb = rho_s ** 2 * cs / 6.2
+        x = np.append(x, [np.log(max(chi_gb, 1e-10))])
+    return x
+
+
 class NeuralTransportModel:
     """Neural transport surrogate with analytic fallback.
 
@@ -427,18 +464,8 @@ class NeuralTransportModel:
             inp.grad_te, inp.grad_ti, inp.grad_ne,
             inp.q, inp.s_hat, inp.beta_e,
         ])
-        # Append derived features if model expects >10D input
         expected_dim = self._weights.layers_w[0].shape[0]
-        if expected_dim >= 12:
-            itg_excess = max(0.0, inp.grad_ti - _CRIT_ITG)
-            tem_excess = max(0.0, inp.grad_te - _CRIT_TEM)
-            x = np.append(x, [itg_excess, tem_excess])
-        if expected_dim >= 13:
-            te_j = inp.te_kev * 1e3 * 1.602e-19
-            cs = np.sqrt(te_j / 3.344e-27)
-            rho_s = np.sqrt(3.344e-27 * te_j) / (1.602e-19 * 5.3)
-            chi_gb = rho_s ** 2 * cs / 6.2
-            x = np.append(x, [np.log(max(chi_gb, 1e-10))])
+        x = _append_derived(x, inp, expected_dim)
         out = _mlp_forward(x, self._weights)
 
         chi_e = float(out[0])
@@ -557,13 +584,19 @@ class NeuralTransportModel:
                 grad_te, grad_ti, grad_ne,
                 q_profile, s_hat_profile, beta_e,
             ])  # (N, 10)
-            # Append derived features if model expects >10D input
             expected_dim = self._weights.layers_w[0].shape[0]
             if expected_dim >= 12:
+                ti_te = ti / np.maximum(te, 1e-6)
+                nustar = np.array([
+                    _compute_nustar(te[i], ne[i], q_profile[i], rho[i], r_major)
+                    for i in range(n)
+                ])
+                x_batch = np.column_stack([x_batch, ti_te, nustar])
+            if expected_dim >= 14:
                 itg_excess = np.maximum(0.0, grad_ti - _CRIT_ITG)
                 tem_excess = np.maximum(0.0, grad_te - _CRIT_TEM)
                 x_batch = np.column_stack([x_batch, itg_excess, tem_excess])
-            if expected_dim >= 13:
+            if expected_dim >= 15:
                 te_j = te * 1e3 * 1.602e-19
                 cs = np.sqrt(te_j / 3.344e-27)
                 rho_s = np.sqrt(3.344e-27 * te_j) / (1.602e-19 * 5.3)

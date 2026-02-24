@@ -57,13 +57,14 @@ _E_CHARGE = 1.602e-19
 
 
 def _add_derived_features(X: np.ndarray, include_log_chi_gb: bool = False) -> np.ndarray:
-    """Append threshold-excess features to the 10D base input array.
+    """Append threshold-excess features to the base input array.
 
-    Base columns: [rho, te, ti, ne, ate, ati, an, q, smag, beta_e]
+    Base columns (10D legacy): [rho, te, ti, ne, ate, ati, an, q, smag, beta_e]
+    Base columns (12D):        [rho, te, ti, ne, ate, ati, an, q, smag, beta_e, ti_te, nustar]
     Added:
-      col 10: max(0, R/LTi - 4.0)  — ITG threshold excess
-      col 11: max(0, R/LTe - 5.0)  — TEM threshold excess
-      col 12 (optional): log(chi_gb(Te)) — only for physical-space targets
+      ITG excess: max(0, R/LTi - 4.0)
+      TEM excess: max(0, R/LTe - 5.0)
+      log(chi_gb(Te)) (optional, for physical-space targets)
     """
     grad_te = X[:, 4]
     grad_ti = X[:, 5]
@@ -734,14 +735,18 @@ def main() -> None:
     if data_gb_normalized:
         print(f"\nData is GB-normalized (raw gyro-Bohm fluxes, no chi_gb multiplication)")
 
-    # Append threshold-excess features (log_chi_gb omitted for GB targets — it's noise)
-    if X_train.shape[1] == 10:
+    # Append threshold-excess features.  log_chi_gb is only useful for
+    # physical-space targets (for GB targets Te is uncorrelated with Y).
+    base_dim = X_train.shape[1]
+    if base_dim in (10, 12):
         include_log = not data_gb_normalized
         X_train = _add_derived_features(X_train, include_log_chi_gb=include_log)
         X_val = _add_derived_features(X_val, include_log_chi_gb=include_log)
         X_test = _add_derived_features(X_test, include_log_chi_gb=include_log)
         feat_list = "ITG excess, TEM excess" + (", log(chi_gb)" if include_log else "")
         print(f"Added derived features: {feat_list} -> {X_train.shape[1]}D input")
+        if base_dim == 12:
+            print(f"  Base input includes Ti_Te (col 10) and Nustar (col 11)")
 
     if args.quick:
         print("\n--- QUICK SMOKE TEST MODE ---")
