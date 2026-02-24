@@ -114,6 +114,8 @@ def _train_jax(
     gb_scale: bool = False,
     gated: bool = False,
     hybrid_log: bool = False,
+    align_metric: bool = False,
+    X_train_raw: np.ndarray | None = None,
 ) -> dict:
     """Train using JAX with Adam and cosine annealing."""
     import jax
@@ -308,8 +310,15 @@ def _train_jax(
     X_v = jnp.array(X_val)
     Y_v = jnp.array(Y_val)
 
-    # Uniform sample weights (standard MSE — all samples equal)
-    _sample_weights_jax = jnp.ones(len(Y_train))
+    if align_metric and gb_scale:
+        _chi_gb_train = _chi_gb_np(np.array(X_train[:, 1]))
+        _sw = _chi_gb_train ** 2
+        _sw /= np.mean(_sw)
+        _sample_weights_jax = jnp.array(_sw)
+        print(f"  Align-metric: sample weights by chi_gb^2 "
+              f"(min={_sw.min():.3f}, median={np.median(_sw):.3f}, max={_sw.max():.3f})")
+    else:
+        _sample_weights_jax = jnp.ones(len(Y_train))
 
     best_val_rel = float("inf")
     best_params = None
@@ -612,6 +621,9 @@ def main() -> None:
     parser.add_argument("--hybrid-log", action="store_true",
                         help="Hybrid log-MSE loss: 0.5*MSE(raw) + 0.5*MSE(log1p). "
                              "Balances threshold accuracy with flux magnitude.")
+    parser.add_argument("--align-metric", action="store_true",
+                        help="Weight sample MSE by chi_gb(Te)^2 to align loss with "
+                             "physical-space relative-L2 metric (GB-normalized data only)")
     parser.add_argument("--quick", action="store_true",
                         help="Quick smoke test (100 samples, 10 epochs)")
     args = parser.parse_args()
@@ -750,6 +762,8 @@ def main() -> None:
         gb_scale=use_gb_scale,
         gated=args.gated,
         hybrid_log=args.hybrid_log,
+        align_metric=args.align_metric,
+        X_train_raw=X_train,
     )
 
     print(f"\nTraining complete in {result['training_time_s']:.1f}s")
