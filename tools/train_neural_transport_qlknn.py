@@ -113,6 +113,7 @@ def _train_jax(
     Y_val_linear: np.ndarray | None = None,
     gb_scale: bool = False,
     gated: bool = False,
+    hybrid_log: bool = False,
 ) -> dict:
     """Train using JAX with Adam and cosine annealing."""
     import jax
@@ -243,6 +244,19 @@ def _train_jax(
 
             l2_penalty = sum(jnp.sum(params[k] ** 2) for k in params if k.startswith("w"))
             return 2.0 * bce + flux_mse + weight_decay * l2_penalty
+    elif hybrid_log:
+        @jit
+        def loss_fn(params, x_batch, y_batch, w_batch):
+            """Hybrid log-MSE: equal weight on raw and log(1+x) space.
+
+            Raw MSE captures large-flux magnitude; log-space MSE captures
+            threshold location where fluxes transition from ~0 to large.
+            """
+            preds = forward(params, x_batch)
+            mse_raw = jnp.mean(w_batch[:, None] * (preds - y_batch) ** 2)
+            mse_log = jnp.mean(w_batch[:, None] * (jnp.log1p(preds) - jnp.log1p(y_batch)) ** 2)
+            l2_penalty = sum(jnp.sum(params[k] ** 2) for k in params if k.startswith("w"))
+            return 0.5 * mse_raw + 0.5 * mse_log + weight_decay * l2_penalty
     else:
         @jit
         def loss_fn(params, x_batch, y_batch, w_batch):
@@ -416,6 +430,7 @@ def _train_jax(
         "log_transform": log_transform,
         "gb_scale": gb_scale,
         "gated": gated,
+        "hybrid_log": hybrid_log,
     }
 
 
@@ -594,6 +609,9 @@ def main() -> None:
     parser.add_argument("--gated", action="store_true",
                         help="Gated output: sigmoid gate * softplus flux, allows exact-zero "
                              "predictions for stable (sub-threshold) samples")
+    parser.add_argument("--hybrid-log", action="store_true",
+                        help="Hybrid log-MSE loss: 0.5*MSE(raw) + 0.5*MSE(log1p). "
+                             "Balances threshold accuracy with flux magnitude.")
     parser.add_argument("--quick", action="store_true",
                         help="Quick smoke test (100 samples, 10 epochs)")
     args = parser.parse_args()
@@ -731,6 +749,7 @@ def main() -> None:
         Y_val_linear=Y_val_linear,
         gb_scale=use_gb_scale,
         gated=args.gated,
+        hybrid_log=args.hybrid_log,
     )
 
     print(f"\nTraining complete in {result['training_time_s']:.1f}s")
