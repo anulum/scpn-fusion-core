@@ -84,6 +84,35 @@ def _add_derived_features(X: np.ndarray, include_log_chi_gb: bool = False) -> np
     return np.column_stack([X, itg_excess, tem_excess, log_chi_gb])
 
 
+def _compute_stiff_baseline(X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Stiff-transport baseline: flux ∝ max(0, gradient - threshold).
+
+    Returns (Y_base, coefficients) where:
+      Y_base[:, 0] = C_e * max(0, Ate - 5.0)  (chi_e)
+      Y_base[:, 1] = C_i * max(0, Ati - 4.0)  (chi_i)
+      Y_base[:, 2] = C_d * max(0, An  - 2.0)  (D_e)
+    Coefficients are fit from training data (least-squares on nonzero samples).
+    """
+    ate = X[:, 4]
+    ati = X[:, 5]
+    an = X[:, 6]
+    itg_excess = np.maximum(0.0, ati - _CRIT_ITG)
+    tem_excess = np.maximum(0.0, ate - _CRIT_TEM)
+    an_excess = np.maximum(0.0, an - 2.0)
+    return np.column_stack([tem_excess, itg_excess, an_excess])
+
+
+def _fit_stiff_coefficients(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+    """Fit stiffness coefficients C = [C_e, C_i, C_d] by least-squares."""
+    base = _compute_stiff_baseline(X)
+    coeffs = np.ones(OUTPUT_DIM)
+    for i in range(OUTPUT_DIM):
+        nz = base[:, i] > 0.01
+        if nz.sum() > 100:
+            coeffs[i] = np.sum(Y[nz, i] * base[nz, i]) / np.sum(base[nz, i] ** 2)
+    return coeffs
+
+
 # ── JAX Training Backend ────────────────────────────────────────────
 
 def _chi_gb_np(te_kev: np.ndarray) -> np.ndarray:
@@ -116,6 +145,8 @@ def _train_jax(
     hybrid_log: bool = False,
     align_metric: bool = False,
     X_train_raw: np.ndarray | None = None,
+    residual: bool = False,
+    stiff_coeffs: np.ndarray | None = None,
 ) -> dict:
     """Train using JAX with Adam and cosine annealing."""
     import jax
@@ -152,21 +183,26 @@ def _train_jax(
     input_mean = jnp.array(np.mean(X_train, axis=0))
     input_std = jnp.array(np.std(X_train, axis=0))
 
-    # Output scale: P90 of non-zero values
-    # (When gb_scale, Y_train has already been pre-divided by chi_gb in main())
-    _output_scale = np.ones(OUTPUT_DIM)
-    for _i in range(OUTPUT_DIM):
-        _nz = Y_train[:, _i][Y_train[:, _i] > 0.01]
-        if len(_nz) > 100:
-            _output_scale[_i] = np.percentile(_nz, 90)
-    _output_scale = np.maximum(_output_scale, 1.0)
+    if residual:
+        _output_scale = np.std(Y_train, axis=0)
+        _output_scale = np.maximum(_output_scale, 1e-4)
+        print(f"  Output scale (std, residual): {_output_scale}")
+    else:
+        _output_scale = np.ones(OUTPUT_DIM)
+        for _i in range(OUTPUT_DIM):
+            _nz = Y_train[:, _i][Y_train[:, _i] > 0.01]
+            if len(_nz) > 100:
+                _output_scale[_i] = np.percentile(_nz, 90)
+        _output_scale = np.maximum(_output_scale, 1.0)
+        print(f"  Output scale (P90): {_output_scale}")
     output_scale = jnp.array(_output_scale)
-    print(f"  Output scale (P90): {_output_scale}")
 
-    # Output bias: initialise so softplus(bias)*scale ≈ mean(Y_target).
     _y_mean = np.mean(Y_train, axis=0)
-    _target_sp = np.clip(_y_mean / _output_scale, 1e-4, 10.0)
-    _init_bias = np.log(np.exp(_target_sp) - 1.0)  # inv_softplus
+    if residual:
+        _init_bias = np.zeros(OUTPUT_DIM)
+    else:
+        _target_sp = np.clip(_y_mean / _output_scale, 1e-4, 10.0)
+        _init_bias = np.log(np.exp(_target_sp) - 1.0)  # inv_softplus
     if gated:
         # For gated: first 3 are flux biases, last 3 are gate biases
         # Init gate bias to ~0 (sigmoid(0)=0.5, since ~36% of data is unstable)
@@ -198,18 +234,14 @@ def _train_jax(
 
     @jit
     def forward(params, x):
-        """MLP forward pass. Outputs transport fluxes (3 values).
-
-        When gated=True, last layer outputs 6 values:
-          flux = softplus(raw[:3]) * output_scale
-          gate = sigmoid(raw[3:6])
-          output = gate * flux
-        """
+        """MLP forward pass. Outputs transport fluxes (3 values)."""
         raw = _backbone(params, x)
         if gated:
             flux = jax.nn.softplus(raw[..., :OUTPUT_DIM]) * params["output_scale"]
             gate = jax.nn.sigmoid(raw[..., OUTPUT_DIM:])
             return gate * flux
+        if residual:
+            return raw * params["output_scale"]
         return jax.nn.softplus(raw) * params["output_scale"]
 
     # Weight decay for L2 regularisation
@@ -286,10 +318,37 @@ def _train_jax(
         rho_s = jnp.sqrt(_jax_M * te_j) / (_jax_E * _jax_B)
         return rho_s ** 2 * cs / _jax_R
 
+    _stiff_coeffs_jax = jnp.array(stiff_coeffs) if stiff_coeffs is not None else None
+    _crit_itg_j = jnp.float64(_CRIT_ITG)
+    _crit_tem_j = jnp.float64(_CRIT_TEM)
+
+    @jit
+    def _stiff_baseline_jax(x):
+        """Stiff-transport baseline in JAX (for residual mode eval)."""
+        ate = x[..., 4]
+        ati = x[..., 5]
+        an = x[..., 6]
+        base = jnp.stack([
+            jnp.maximum(0.0, ate - _crit_tem_j),
+            jnp.maximum(0.0, ati - _crit_itg_j),
+            jnp.maximum(0.0, an - 2.0),
+        ], axis=-1)
+        return base * _stiff_coeffs_jax
+
     @jit
     def relative_l2(params, x, y):
         """Compute relative L2 in linear space regardless of training transform."""
         preds = forward(params, x)
+        if residual:
+            y_base = _stiff_baseline_jax(x)
+            preds_full = jnp.maximum(0.0, y_base + preds)
+            y_full = y_base + y
+            if gb_scale:
+                chi_gb_v = _chi_gb_jax(x[..., 1])
+                return jnp.sqrt(
+                    jnp.sum(chi_gb_v[:, jnp.newaxis] ** 2 * (preds_full - y_full) ** 2) /
+                    jnp.maximum(jnp.sum(chi_gb_v[:, jnp.newaxis] ** 2 * y_full ** 2), 1e-8))
+            return jnp.sqrt(jnp.sum((preds_full - y_full) ** 2) / jnp.maximum(jnp.sum(y_full ** 2), 1e-8))
         if gb_scale:
             chi_gb_v = _chi_gb_jax(x[..., 1])
             preds_lin = preds * chi_gb_v[..., jnp.newaxis]
@@ -405,7 +464,11 @@ def _train_jax(
 
     # Per-output relative L2 (in linear space)
     preds_val_raw = forward(final_params_jax, X_v)
-    if gb_scale and Y_val_linear is not None:
+    if residual:
+        y_base_v = _stiff_baseline_jax(X_v)
+        preds_val_lin = jnp.maximum(0.0, y_base_v + preds_val_raw)
+        Y_v_lin = y_base_v + Y_v
+    elif gb_scale and Y_val_linear is not None:
         chi_gb_val = jnp.array(_chi_gb_np(np.array(X_val[:, 1])))
         preds_val_lin = preds_val_raw * chi_gb_val[:, jnp.newaxis]
         Y_v_lin = jnp.array(Y_val_linear)
@@ -440,6 +503,8 @@ def _train_jax(
         "gb_scale": gb_scale,
         "gated": gated,
         "hybrid_log": hybrid_log,
+        "residual": residual,
+        "stiff_coeffs": stiff_coeffs,
     }
 
 
@@ -458,6 +523,8 @@ def verify_and_save(
     log_transform = result.get("log_transform", False)
     gb_scale = result.get("gb_scale", False)
     gated = result.get("gated", False)
+    is_residual = result.get("residual", False)
+    stiff_coeffs = result.get("stiff_coeffs")
     output_names = ["chi_e", "chi_i", "D_e"]
 
     print("\n=== VERIFICATION GATE ===")
@@ -467,7 +534,6 @@ def verify_and_save(
     import jax
     import jax.numpy as jnp
 
-    # Define the exact same forward function as in _train_jax
     def jax_forward(params, x):
         h = (x - params["input_mean"]) / jnp.maximum(params["input_std"], 1e-8)
         n_layers_local = (len([k for k in params if k.startswith("w")])) - 1
@@ -478,18 +544,19 @@ def verify_and_save(
             flux = jax.nn.softplus(raw[..., :OUTPUT_DIM]) * params["output_scale"]
             gate = jax.nn.sigmoid(raw[..., OUTPUT_DIM:])
             return gate * flux
+        if is_residual:
+            return raw * params["output_scale"]
         return jax.nn.softplus(raw) * params["output_scale"]
 
-    # Convert test data to JAX
     params_jax = {k: jnp.array(v) for k, v in params.items()}
     X_test_jax = jnp.array(X_test)
-
-    # Batched inference (forward supports batch natively)
     preds_test_raw = np.array(jax_forward(params_jax, X_test_jax))
 
-    # Convert to linear space for metrics
-    if gb_scale and Y_test_linear is not None:
-        # GB-normalised preds → linear: multiply by chi_gb(Te)
+    if is_residual:
+        base_test = _compute_stiff_baseline(X_test) * stiff_coeffs
+        preds_test = np.maximum(0.0, base_test + preds_test_raw)
+        Y_test_lin = base_test + Y_test
+    elif gb_scale and Y_test_linear is not None:
         chi_gb_test = _chi_gb_np(np.array(X_test[:, 1]))
         preds_test = preds_test_raw * chi_gb_test[:, None]
         Y_test_lin = Y_test_linear
@@ -553,7 +620,10 @@ def verify_and_save(
         "log_transform": np.array(1 if log_transform else 0),
         "gb_scale": np.array(1 if gb_scale else 0),
         "gated": np.array(1 if gated else 0),
+        "residual": np.array(1 if is_residual else 0),
     }
+    if is_residual and stiff_coeffs is not None:
+        save_dict["stiff_coeffs"] = stiff_coeffs
     for i in range(n_layers + 1):
         save_dict[f"w{i+1}"] = params[f"w{i+1}"]
         save_dict[f"b{i+1}"] = params[f"b{i+1}"]
@@ -624,6 +694,9 @@ def main() -> None:
     parser.add_argument("--align-metric", action="store_true",
                         help="Weight sample MSE by chi_gb(Te)^2 to align loss with "
                              "physical-space relative-L2 metric (GB-normalized data only)")
+    parser.add_argument("--residual", action="store_true",
+                        help="Residual learning: subtract stiff-transport baseline, "
+                             "MLP predicts only the correction (linear output)")
     parser.add_argument("--quick", action="store_true",
                         help="Quick smoke test (100 samples, 10 epochs)")
     args = parser.parse_args()
@@ -746,6 +819,25 @@ def main() -> None:
           f"[{Y_train[:,1].min():.3f}, {Y_train[:,1].max():.3f}], "
           f"[{Y_train[:,2].min():.3f}, {Y_train[:,2].max():.3f}]")
 
+    # Residual learning: subtract stiff-transport baseline
+    _stiff_coeffs = None
+    if args.residual:
+        _stiff_coeffs = _fit_stiff_coefficients(X_train, Y_train)
+        base_train = _compute_stiff_baseline(X_train) * _stiff_coeffs
+        base_val = _compute_stiff_baseline(X_val) * _stiff_coeffs
+        base_test = _compute_stiff_baseline(X_test) * _stiff_coeffs
+        Y_train = Y_train - base_train
+        Y_val = Y_val - base_val
+        Y_test = Y_test - base_test
+        print(f"\nResidual mode: stiff coefficients = {_stiff_coeffs}")
+        print(f"  Baseline explains: "
+              f"chi_e={1 - np.var(Y_train[:,0]) / max(np.var(Y_train[:,0] + base_train[:,0]), 1e-8):.1%}, "
+              f"chi_i={1 - np.var(Y_train[:,1]) / max(np.var(Y_train[:,1] + base_train[:,1]), 1e-8):.1%}, "
+              f"D_e={1 - np.var(Y_train[:,2]) / max(np.var(Y_train[:,2] + base_train[:,2]), 1e-8):.1%}")
+        print(f"  Residual ranges: [{Y_train[:,0].min():.2f}, {Y_train[:,0].max():.2f}], "
+              f"[{Y_train[:,1].min():.2f}, {Y_train[:,1].max():.2f}], "
+              f"[{Y_train[:,2].min():.2f}, {Y_train[:,2].max():.2f}]")
+
     # Train
     print("\n--- Training ---")
     result = _train_jax(
@@ -764,6 +856,8 @@ def main() -> None:
         hybrid_log=args.hybrid_log,
         align_metric=args.align_metric,
         X_train_raw=X_train,
+        residual=args.residual,
+        stiff_coeffs=_stiff_coeffs,
     )
 
     print(f"\nTraining complete in {result['training_time_s']:.1f}s")
