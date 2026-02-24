@@ -1,0 +1,256 @@
+=== SCPN Fusion Core — Neural Transport Training (QLKNN-10D) ===
+Data:    data/qlknn10d_processed
+Output:  weights/neural_transport_qlknn.npz
+Arch:    auto -> 512 -> 512 -> 256 -> 3
+Epochs:  1000
+LR:      0.0001
+Batch:   8192
+
+Data is GB-normalized (raw gyro-Bohm fluxes, no chi_gb multiplication)
+Added derived features: ITG excess, TEM excess -> 12D input
+
+Data loaded: train=(179966, 12), val=(9998, 12), test=(9999, 12)
+Y ranges: chi_e=[0.00, 418.90], chi_i=[0.00, 800.28], D_e=[0.00, 69.41]
+
+Training on GB-normalized targets (loss in GB space, eval in physical space)
+Y train ranges: [0.000, 418.899], [0.000, 800.280], [0.000, 69.411]
+
+--- Training ---
+JAX backend: GPU (cuda:0)
+  Output scale (P90): [42.80950356 73.08514481  7.18222504]
+  Output bias init: [-1.85946451 -2.03796686 -2.41203553] (target mean: [6.19687627 8.95126372 0.61652672])
+  Epoch    0/1000 | train_loss=483.6495 | val_loss=453.9523 | rel_l2=0.9983 | best=0.9983 | lr=1.00e-05 | pat=0/100 | 5s
+  Epoch    1/1000 | train_loss=407.5502 | val_loss=347.7349 | rel_l2=0.8972 | best=0.8972 | lr=2.00e-05 | pat=0/100 | 6s
+  Epoch    2/1000 | train_loss=301.9826 | val_loss=253.3128 | rel_l2=0.7285 | best=0.7285 | lr=3.00e-05 | pat=0/100 | 6s
+  Epoch    3/1000 | train_loss=235.2564 | val_loss=212.0396 | rel_l2=0.6410 | best=0.6410 | lr=4.00e-05 | pat=0/100 | 6s
+  Epoch    4/1000 | train_loss=201.7073 | val_loss=186.5567 | rel_l2=0.6086 | best=0.6086 | lr=5.00e-05 | pat=0/100 | 6s
+  Epoch    5/1000 | train_loss=178.8804 | val_loss=167.8480 | rel_l2=0.5832 | best=0.5832 | lr=6.00e-05 | pat=0/100 | 7s
+  Epoch    6/1000 | train_loss=162.2009 | val_loss=155.9298 | rel_l2=0.5617 | best=0.5617 | lr=7.00e-05 | pat=0/100 | 7s
+  Epoch    7/1000 | train_loss=150.2460 | val_loss=145.0348 | rel_l2=0.5347 | best=0.5347 | lr=8.00e-05 | pat=0/100 | 7s
+  Epoch    8/1000 | train_loss=141.6391 | val_loss=138.9070 | rel_l2=0.5189 | best=0.5189 | lr=9.00e-05 | pat=0/100 | 8s
+  Epoch    9/1000 | train_loss=133.3202 | val_loss=129.3827 | rel_l2=0.5027 | best=0.5027 | lr=1.00e-04 | pat=0/100 | 8s
+  Epoch   10/1000 | train_loss=126.6254 | val_loss=122.9631 | rel_l2=0.4888 | best=0.4888 | lr=1.00e-04 | pat=0/100 | 8s
+  Epoch   11/1000 | train_loss=123.1981 | val_loss=121.8729 | rel_l2=0.5080 | best=0.4888 | lr=1.00e-04 | pat=1/100 | 9s
+  Epoch   12/1000 | train_loss=118.5978 | val_loss=120.0597 | rel_l2=0.5004 | best=0.4888 | lr=1.00e-04 | pat=2/100 | 9s
+  Epoch   13/1000 | train_loss=115.6114 | val_loss=114.4920 | rel_l2=0.4735 | best=0.4735 | lr=1.00e-04 | pat=0/100 | 9s
+  Epoch   14/1000 | train_loss=113.2619 | val_loss=111.4459 | rel_l2=0.4605 | best=0.4605 | lr=1.00e-04 | pat=0/100 | 9s
+  Epoch   15/1000 | train_loss=111.5626 | val_loss=110.1128 | rel_l2=0.4605 | best=0.4605 | lr=1.00e-04 | pat=0/100 | 10s
+  Epoch   16/1000 | train_loss=108.3891 | val_loss=108.7373 | rel_l2=0.4624 | best=0.4605 | lr=1.00e-04 | pat=1/100 | 10s
+  Epoch   17/1000 | train_loss=107.7065 | val_loss=106.3986 | rel_l2=0.4498 | best=0.4498 | lr=1.00e-04 | pat=0/100 | 10s
+  Epoch   18/1000 | train_loss=105.8278 | val_loss=105.3302 | rel_l2=0.4540 | best=0.4498 | lr=1.00e-04 | pat=1/100 | 10s
+  Epoch   19/1000 | train_loss=103.1488 | val_loss=105.0469 | rel_l2=0.4551 | best=0.4498 | lr=1.00e-04 | pat=2/100 | 11s
+  Epoch   20/1000 | train_loss=102.4908 | val_loss=103.2017 | rel_l2=0.4393 | best=0.4393 | lr=1.00e-04 | pat=0/100 | 11s
+  Epoch   21/1000 | train_loss=100.3597 | val_loss=100.6918 | rel_l2=0.4299 | best=0.4299 | lr=1.00e-04 | pat=0/100 | 11s
+  Epoch   22/1000 | train_loss=100.4289 | val_loss=101.6652 | rel_l2=0.4352 | best=0.4299 | lr=1.00e-04 | pat=1/100 | 12s
+  Epoch   23/1000 | train_loss=97.8411 | val_loss=100.3679 | rel_l2=0.4328 | best=0.4299 | lr=1.00e-04 | pat=2/100 | 12s
+  Epoch   24/1000 | train_loss=96.2480 | val_loss=98.2886 | rel_l2=0.4267 | best=0.4267 | lr=1.00e-04 | pat=0/100 | 12s
+  Epoch   25/1000 | train_loss=97.1908 | val_loss=99.1903 | rel_l2=0.4177 | best=0.4177 | lr=9.99e-05 | pat=0/100 | 12s
+  Epoch   26/1000 | train_loss=95.7523 | val_loss=100.1439 | rel_l2=0.4280 | best=0.4177 | lr=9.99e-05 | pat=1/100 | 13s
+  Epoch   27/1000 | train_loss=95.4469 | val_loss=97.4983 | rel_l2=0.4099 | best=0.4099 | lr=9.99e-05 | pat=0/100 | 13s
+  Epoch   28/1000 | train_loss=92.9152 | val_loss=94.8808 | rel_l2=0.4131 | best=0.4099 | lr=9.99e-05 | pat=1/100 | 13s
+  Epoch   29/1000 | train_loss=91.8657 | val_loss=94.4170 | rel_l2=0.4106 | best=0.4099 | lr=9.99e-05 | pat=2/100 | 13s
+  Epoch   30/1000 | train_loss=91.2084 | val_loss=94.1922 | rel_l2=0.4166 | best=0.4099 | lr=9.99e-05 | pat=3/100 | 14s
+  Epoch   31/1000 | train_loss=90.7231 | val_loss=95.1116 | rel_l2=0.4172 | best=0.4099 | lr=9.99e-05 | pat=4/100 | 14s
+  Epoch   32/1000 | train_loss=89.0169 | val_loss=92.9975 | rel_l2=0.4030 | best=0.4030 | lr=9.99e-05 | pat=0/100 | 14s
+  Epoch   33/1000 | train_loss=87.8446 | val_loss=92.2853 | rel_l2=0.4110 | best=0.4030 | lr=9.99e-05 | pat=1/100 | 15s
+  Epoch   34/1000 | train_loss=87.4214 | val_loss=90.9665 | rel_l2=0.4056 | best=0.4030 | lr=9.99e-05 | pat=2/100 | 15s
+  Epoch   35/1000 | train_loss=86.1918 | val_loss=90.0636 | rel_l2=0.3949 | best=0.3949 | lr=9.98e-05 | pat=0/100 | 15s
+  Epoch   36/1000 | train_loss=85.7306 | val_loss=89.8748 | rel_l2=0.3973 | best=0.3949 | lr=9.98e-05 | pat=1/100 | 15s
+  Epoch   37/1000 | train_loss=83.8509 | val_loss=89.7900 | rel_l2=0.3969 | best=0.3949 | lr=9.98e-05 | pat=2/100 | 16s
+  Epoch   38/1000 | train_loss=84.5889 | val_loss=88.6574 | rel_l2=0.3873 | best=0.3873 | lr=9.98e-05 | pat=0/100 | 16s
+  Epoch   39/1000 | train_loss=83.6265 | val_loss=89.2762 | rel_l2=0.3950 | best=0.3873 | lr=9.98e-05 | pat=1/100 | 16s
+  Epoch   40/1000 | train_loss=82.1992 | val_loss=88.2114 | rel_l2=0.3989 | best=0.3873 | lr=9.98e-05 | pat=2/100 | 17s
+  Epoch   41/1000 | train_loss=81.7900 | val_loss=88.3175 | rel_l2=0.3970 | best=0.3873 | lr=9.98e-05 | pat=3/100 | 17s
+  Epoch   42/1000 | train_loss=81.6483 | val_loss=86.8533 | rel_l2=0.3829 | best=0.3829 | lr=9.97e-05 | pat=0/100 | 17s
+  Epoch   43/1000 | train_loss=79.4880 | val_loss=85.4328 | rel_l2=0.3816 | best=0.3816 | lr=9.97e-05 | pat=0/100 | 17s
+  Epoch   44/1000 | train_loss=79.0577 | val_loss=85.4980 | rel_l2=0.3847 | best=0.3816 | lr=9.97e-05 | pat=1/100 | 18s
+  Epoch   45/1000 | train_loss=79.0202 | val_loss=84.1905 | rel_l2=0.3809 | best=0.3809 | lr=9.97e-05 | pat=0/100 | 18s
+  Epoch   46/1000 | train_loss=78.2379 | val_loss=86.4995 | rel_l2=0.4066 | best=0.3809 | lr=9.97e-05 | pat=1/100 | 18s
+  Epoch   47/1000 | train_loss=78.5606 | val_loss=83.0142 | rel_l2=0.3712 | best=0.3712 | lr=9.97e-05 | pat=0/100 | 19s
+  Epoch   48/1000 | train_loss=76.7260 | val_loss=81.6454 | rel_l2=0.3710 | best=0.3710 | lr=9.96e-05 | pat=0/100 | 19s
+  Epoch   49/1000 | train_loss=75.7883 | val_loss=82.4176 | rel_l2=0.3687 | best=0.3687 | lr=9.96e-05 | pat=0/100 | 19s
+  Epoch   50/1000 | train_loss=75.5126 | val_loss=82.0194 | rel_l2=0.3723 | best=0.3687 | lr=9.96e-05 | pat=1/100 | 19s
+  Epoch   51/1000 | train_loss=74.7881 | val_loss=82.7672 | rel_l2=0.3782 | best=0.3687 | lr=9.96e-05 | pat=2/100 | 20s
+  Epoch   52/1000 | train_loss=73.6369 | val_loss=81.6238 | rel_l2=0.3701 | best=0.3687 | lr=9.96e-05 | pat=3/100 | 20s
+  Epoch   53/1000 | train_loss=73.1618 | val_loss=79.1833 | rel_l2=0.3620 | best=0.3620 | lr=9.95e-05 | pat=0/100 | 20s
+  Epoch   54/1000 | train_loss=72.4041 | val_loss=79.8608 | rel_l2=0.3681 | best=0.3620 | lr=9.95e-05 | pat=1/100 | 20s
+  Epoch   55/1000 | train_loss=71.5326 | val_loss=78.6308 | rel_l2=0.3617 | best=0.3617 | lr=9.95e-05 | pat=0/100 | 21s
+  Epoch   56/1000 | train_loss=71.2778 | val_loss=78.2345 | rel_l2=0.3609 | best=0.3609 | lr=9.95e-05 | pat=0/100 | 21s
+  Epoch   57/1000 | train_loss=70.7752 | val_loss=81.2871 | rel_l2=0.3873 | best=0.3609 | lr=9.94e-05 | pat=1/100 | 21s
+  Epoch   58/1000 | train_loss=70.3397 | val_loss=77.0292 | rel_l2=0.3503 | best=0.3503 | lr=9.94e-05 | pat=0/100 | 22s
+  Epoch   59/1000 | train_loss=69.4532 | val_loss=77.8174 | rel_l2=0.3619 | best=0.3503 | lr=9.94e-05 | pat=1/100 | 22s
+  Epoch   60/1000 | train_loss=68.8070 | val_loss=77.0514 | rel_l2=0.3549 | best=0.3503 | lr=9.94e-05 | pat=2/100 | 22s
+  Epoch   61/1000 | train_loss=68.3306 | val_loss=76.0977 | rel_l2=0.3626 | best=0.3503 | lr=9.93e-05 | pat=3/100 | 22s
+  Epoch   62/1000 | train_loss=67.6377 | val_loss=74.7629 | rel_l2=0.3466 | best=0.3466 | lr=9.93e-05 | pat=0/100 | 23s
+  Epoch   63/1000 | train_loss=67.5887 | val_loss=75.2479 | rel_l2=0.3571 | best=0.3466 | lr=9.93e-05 | pat=1/100 | 23s
+  Epoch   64/1000 | train_loss=67.3493 | val_loss=78.6889 | rel_l2=0.3805 | best=0.3466 | lr=9.93e-05 | pat=2/100 | 23s
+  Epoch   65/1000 | train_loss=66.6361 | val_loss=74.4374 | rel_l2=0.3521 | best=0.3466 | lr=9.92e-05 | pat=3/100 | 24s
+  Epoch   66/1000 | train_loss=66.0043 | val_loss=75.3921 | rel_l2=0.3496 | best=0.3466 | lr=9.92e-05 | pat=4/100 | 24s
+  Epoch   67/1000 | train_loss=65.9500 | val_loss=74.7850 | rel_l2=0.3550 | best=0.3466 | lr=9.92e-05 | pat=5/100 | 24s
+  Epoch   68/1000 | train_loss=65.3274 | val_loss=73.0544 | rel_l2=0.3409 | best=0.3409 | lr=9.92e-05 | pat=0/100 | 24s
+  Epoch   69/1000 | train_loss=64.7941 | val_loss=75.3162 | rel_l2=0.3471 | best=0.3409 | lr=9.91e-05 | pat=1/100 | 25s
+  Epoch   70/1000 | train_loss=64.4648 | val_loss=73.3660 | rel_l2=0.3485 | best=0.3409 | lr=9.91e-05 | pat=2/100 | 25s
+  Epoch   71/1000 | train_loss=63.9038 | val_loss=74.0647 | rel_l2=0.3600 | best=0.3409 | lr=9.91e-05 | pat=3/100 | 25s
+  Epoch   72/1000 | train_loss=63.5836 | val_loss=72.8872 | rel_l2=0.3511 | best=0.3409 | lr=9.90e-05 | pat=4/100 | 25s
+  Epoch   73/1000 | train_loss=62.8419 | val_loss=72.6432 | rel_l2=0.3486 | best=0.3409 | lr=9.90e-05 | pat=5/100 | 26s
+  Epoch   74/1000 | train_loss=63.0993 | val_loss=73.6976 | rel_l2=0.3558 | best=0.3409 | lr=9.90e-05 | pat=6/100 | 26s
+  Epoch   75/1000 | train_loss=62.7740 | val_loss=72.0463 | rel_l2=0.3390 | best=0.3390 | lr=9.89e-05 | pat=0/100 | 26s
+  Epoch   76/1000 | train_loss=61.6525 | val_loss=75.2808 | rel_l2=0.3749 | best=0.3390 | lr=9.89e-05 | pat=1/100 | 27s
+  Epoch   77/1000 | train_loss=61.5292 | val_loss=72.5401 | rel_l2=0.3447 | best=0.3390 | lr=9.89e-05 | pat=2/100 | 27s
+  Epoch   78/1000 | train_loss=61.0531 | val_loss=72.4586 | rel_l2=0.3510 | best=0.3390 | lr=9.88e-05 | pat=3/100 | 27s
+  Epoch   79/1000 | train_loss=60.4983 | val_loss=71.6469 | rel_l2=0.3455 | best=0.3390 | lr=9.88e-05 | pat=4/100 | 27s
+  Epoch   80/1000 | train_loss=60.8467 | val_loss=71.9354 | rel_l2=0.3460 | best=0.3390 | lr=9.88e-05 | pat=5/100 | 28s
+  Epoch   81/1000 | train_loss=60.1845 | val_loss=73.5596 | rel_l2=0.3562 | best=0.3390 | lr=9.87e-05 | pat=6/100 | 28s
+  Epoch   82/1000 | train_loss=60.3728 | val_loss=70.0072 | rel_l2=0.3380 | best=0.3380 | lr=9.87e-05 | pat=0/100 | 28s
+  Epoch   83/1000 | train_loss=59.4931 | val_loss=72.1029 | rel_l2=0.3551 | best=0.3380 | lr=9.87e-05 | pat=1/100 | 28s
+  Epoch   84/1000 | train_loss=59.1507 | val_loss=70.0259 | rel_l2=0.3386 | best=0.3380 | lr=9.86e-05 | pat=2/100 | 29s
+  Epoch   85/1000 | train_loss=58.9722 | val_loss=69.6117 | rel_l2=0.3405 | best=0.3380 | lr=9.86e-05 | pat=3/100 | 29s
+  Epoch   86/1000 | train_loss=58.4437 | val_loss=72.2596 | rel_l2=0.3549 | best=0.3380 | lr=9.86e-05 | pat=4/100 | 29s
+  Epoch   87/1000 | train_loss=58.4565 | val_loss=70.8418 | rel_l2=0.3464 | best=0.3380 | lr=9.85e-05 | pat=5/100 | 29s
+  Epoch   88/1000 | train_loss=57.8396 | val_loss=69.6092 | rel_l2=0.3481 | best=0.3380 | lr=9.85e-05 | pat=6/100 | 30s
+  Epoch   89/1000 | train_loss=57.5377 | val_loss=70.1067 | rel_l2=0.3478 | best=0.3380 | lr=9.84e-05 | pat=7/100 | 30s
+  Epoch   90/1000 | train_loss=57.2875 | val_loss=69.8334 | rel_l2=0.3395 | best=0.3380 | lr=9.84e-05 | pat=8/100 | 30s
+  Epoch   91/1000 | train_loss=57.0612 | val_loss=70.4163 | rel_l2=0.3574 | best=0.3380 | lr=9.84e-05 | pat=9/100 | 31s
+  Epoch   92/1000 | train_loss=57.0969 | val_loss=71.1982 | rel_l2=0.3566 | best=0.3380 | lr=9.83e-05 | pat=10/100 | 31s
+  Epoch   93/1000 | train_loss=56.1882 | val_loss=69.4568 | rel_l2=0.3370 | best=0.3370 | lr=9.83e-05 | pat=0/100 | 31s
+  Epoch   94/1000 | train_loss=56.5998 | val_loss=70.6245 | rel_l2=0.3360 | best=0.3360 | lr=9.82e-05 | pat=0/100 | 31s
+  Epoch   95/1000 | train_loss=56.5697 | val_loss=69.6884 | rel_l2=0.3470 | best=0.3360 | lr=9.82e-05 | pat=1/100 | 32s
+  Epoch   96/1000 | train_loss=55.2940 | val_loss=70.6504 | rel_l2=0.3556 | best=0.3360 | lr=9.81e-05 | pat=2/100 | 32s
+  Epoch   97/1000 | train_loss=55.5648 | val_loss=69.4514 | rel_l2=0.3468 | best=0.3360 | lr=9.81e-05 | pat=3/100 | 32s
+  Epoch   98/1000 | train_loss=55.7872 | val_loss=74.6855 | rel_l2=0.3730 | best=0.3360 | lr=9.81e-05 | pat=4/100 | 32s
+  Epoch   99/1000 | train_loss=56.2452 | val_loss=73.2802 | rel_l2=0.3731 | best=0.3360 | lr=9.80e-05 | pat=5/100 | 33s
+  Epoch  100/1000 | train_loss=56.0620 | val_loss=69.9336 | rel_l2=0.3532 | best=0.3360 | lr=9.80e-05 | pat=6/100 | 33s
+  Epoch  101/1000 | train_loss=55.5199 | val_loss=68.0357 | rel_l2=0.3334 | best=0.3334 | lr=9.79e-05 | pat=0/100 | 33s
+  Epoch  102/1000 | train_loss=55.0976 | val_loss=69.0489 | rel_l2=0.3288 | best=0.3288 | lr=9.79e-05 | pat=0/100 | 33s
+  Epoch  103/1000 | train_loss=54.7213 | val_loss=68.2239 | rel_l2=0.3345 | best=0.3288 | lr=9.78e-05 | pat=1/100 | 34s
+  Epoch  104/1000 | train_loss=54.6461 | val_loss=69.5517 | rel_l2=0.3462 | best=0.3288 | lr=9.78e-05 | pat=2/100 | 34s
+  Epoch  105/1000 | train_loss=53.5436 | val_loss=69.2227 | rel_l2=0.3531 | best=0.3288 | lr=9.77e-05 | pat=3/100 | 34s
+  Epoch  106/1000 | train_loss=53.8025 | val_loss=70.6278 | rel_l2=0.3642 | best=0.3288 | lr=9.77e-05 | pat=4/100 | 35s
+  Epoch  107/1000 | train_loss=53.2540 | val_loss=67.2296 | rel_l2=0.3351 | best=0.3288 | lr=9.76e-05 | pat=5/100 | 35s
+  Epoch  108/1000 | train_loss=53.1359 | val_loss=69.3014 | rel_l2=0.3491 | best=0.3288 | lr=9.76e-05 | pat=6/100 | 35s
+  Epoch  109/1000 | train_loss=53.5061 | val_loss=69.8582 | rel_l2=0.3437 | best=0.3288 | lr=9.76e-05 | pat=7/100 | 35s
+  Epoch  110/1000 | train_loss=53.1141 | val_loss=68.4978 | rel_l2=0.3486 | best=0.3288 | lr=9.75e-05 | pat=8/100 | 36s
+  Epoch  111/1000 | train_loss=52.6520 | val_loss=69.0321 | rel_l2=0.3512 | best=0.3288 | lr=9.75e-05 | pat=9/100 | 36s
+  Epoch  112/1000 | train_loss=52.1023 | val_loss=69.4058 | rel_l2=0.3591 | best=0.3288 | lr=9.74e-05 | pat=10/100 | 36s
+  Epoch  113/1000 | train_loss=52.2764 | val_loss=70.0415 | rel_l2=0.3577 | best=0.3288 | lr=9.74e-05 | pat=11/100 | 36s
+  Epoch  114/1000 | train_loss=51.9870 | val_loss=68.2774 | rel_l2=0.3398 | best=0.3288 | lr=9.73e-05 | pat=12/100 | 37s
+  Epoch  115/1000 | train_loss=52.3292 | val_loss=67.3804 | rel_l2=0.3403 | best=0.3288 | lr=9.73e-05 | pat=13/100 | 37s
+  Epoch  116/1000 | train_loss=52.1625 | val_loss=67.8094 | rel_l2=0.3418 | best=0.3288 | lr=9.72e-05 | pat=14/100 | 37s
+  Epoch  117/1000 | train_loss=51.4581 | val_loss=66.1247 | rel_l2=0.3275 | best=0.3275 | lr=9.71e-05 | pat=0/100 | 37s
+  Epoch  118/1000 | train_loss=51.4465 | val_loss=69.1517 | rel_l2=0.3628 | best=0.3275 | lr=9.71e-05 | pat=1/100 | 38s
+  Epoch  119/1000 | train_loss=50.8952 | val_loss=70.2106 | rel_l2=0.3585 | best=0.3275 | lr=9.70e-05 | pat=2/100 | 38s
+  Epoch  120/1000 | train_loss=50.9706 | val_loss=68.5194 | rel_l2=0.3514 | best=0.3275 | lr=9.70e-05 | pat=3/100 | 38s
+  Epoch  121/1000 | train_loss=50.5834 | val_loss=68.8867 | rel_l2=0.3517 | best=0.3275 | lr=9.69e-05 | pat=4/100 | 39s
+  Epoch  122/1000 | train_loss=50.4582 | val_loss=67.7097 | rel_l2=0.3425 | best=0.3275 | lr=9.69e-05 | pat=5/100 | 39s
+  Epoch  123/1000 | train_loss=50.4343 | val_loss=69.0469 | rel_l2=0.3567 | best=0.3275 | lr=9.68e-05 | pat=6/100 | 39s
+  Epoch  124/1000 | train_loss=50.4286 | val_loss=68.2831 | rel_l2=0.3452 | best=0.3275 | lr=9.68e-05 | pat=7/100 | 39s
+  Epoch  125/1000 | train_loss=49.9977 | val_loss=68.0250 | rel_l2=0.3429 | best=0.3275 | lr=9.67e-05 | pat=8/100 | 40s
+  Epoch  126/1000 | train_loss=50.5592 | val_loss=67.6803 | rel_l2=0.3434 | best=0.3275 | lr=9.67e-05 | pat=9/100 | 40s
+  Epoch  127/1000 | train_loss=50.2905 | val_loss=68.0551 | rel_l2=0.3464 | best=0.3275 | lr=9.66e-05 | pat=10/100 | 40s
+  Epoch  128/1000 | train_loss=49.9460 | val_loss=68.3825 | rel_l2=0.3533 | best=0.3275 | lr=9.65e-05 | pat=11/100 | 40s
+  Epoch  129/1000 | train_loss=49.8887 | val_loss=67.3303 | rel_l2=0.3465 | best=0.3275 | lr=9.65e-05 | pat=12/100 | 41s
+  Epoch  130/1000 | train_loss=49.4280 | val_loss=67.7639 | rel_l2=0.3476 | best=0.3275 | lr=9.64e-05 | pat=13/100 | 41s
+  Epoch  131/1000 | train_loss=49.5511 | val_loss=68.0680 | rel_l2=0.3487 | best=0.3275 | lr=9.64e-05 | pat=14/100 | 41s
+  Epoch  132/1000 | train_loss=49.3013 | val_loss=68.3257 | rel_l2=0.3506 | best=0.3275 | lr=9.63e-05 | pat=15/100 | 42s
+  Epoch  133/1000 | train_loss=48.3828 | val_loss=66.2959 | rel_l2=0.3385 | best=0.3275 | lr=9.62e-05 | pat=16/100 | 42s
+  Epoch  134/1000 | train_loss=48.8088 | val_loss=67.8394 | rel_l2=0.3406 | best=0.3275 | lr=9.62e-05 | pat=17/100 | 42s
+  Epoch  135/1000 | train_loss=48.4005 | val_loss=69.1572 | rel_l2=0.3664 | best=0.3275 | lr=9.61e-05 | pat=18/100 | 42s
+  Epoch  136/1000 | train_loss=48.2939 | val_loss=67.5998 | rel_l2=0.3354 | best=0.3275 | lr=9.61e-05 | pat=19/100 | 43s
+  Epoch  137/1000 | train_loss=48.3766 | val_loss=68.0443 | rel_l2=0.3502 | best=0.3275 | lr=9.60e-05 | pat=20/100 | 43s
+  Epoch  138/1000 | train_loss=47.8942 | val_loss=70.3927 | rel_l2=0.3732 | best=0.3275 | lr=9.59e-05 | pat=21/100 | 43s
+  Epoch  139/1000 | train_loss=48.0970 | val_loss=68.6267 | rel_l2=0.3579 | best=0.3275 | lr=9.59e-05 | pat=22/100 | 43s
+  Epoch  140/1000 | train_loss=47.9917 | val_loss=68.5392 | rel_l2=0.3529 | best=0.3275 | lr=9.58e-05 | pat=23/100 | 44s
+  Epoch  141/1000 | train_loss=47.6448 | val_loss=70.6335 | rel_l2=0.3647 | best=0.3275 | lr=9.57e-05 | pat=24/100 | 44s
+  Epoch  142/1000 | train_loss=48.0951 | val_loss=70.3499 | rel_l2=0.3666 | best=0.3275 | lr=9.57e-05 | pat=25/100 | 44s
+  Epoch  143/1000 | train_loss=47.9089 | val_loss=68.2863 | rel_l2=0.3570 | best=0.3275 | lr=9.56e-05 | pat=26/100 | 45s
+  Epoch  144/1000 | train_loss=47.5512 | val_loss=67.4712 | rel_l2=0.3483 | best=0.3275 | lr=9.55e-05 | pat=27/100 | 45s
+  Epoch  145/1000 | train_loss=47.0530 | val_loss=68.1615 | rel_l2=0.3529 | best=0.3275 | lr=9.55e-05 | pat=28/100 | 45s
+  Epoch  146/1000 | train_loss=47.3223 | val_loss=66.2680 | rel_l2=0.3390 | best=0.3275 | lr=9.54e-05 | pat=29/100 | 45s
+  Epoch  147/1000 | train_loss=46.7016 | val_loss=65.7566 | rel_l2=0.3337 | best=0.3275 | lr=9.53e-05 | pat=30/100 | 46s
+  Epoch  148/1000 | train_loss=46.4067 | val_loss=67.0416 | rel_l2=0.3355 | best=0.3275 | lr=9.53e-05 | pat=31/100 | 46s
+  Epoch  149/1000 | train_loss=46.5784 | val_loss=68.8791 | rel_l2=0.3597 | best=0.3275 | lr=9.52e-05 | pat=32/100 | 46s
+  Epoch  150/1000 | train_loss=46.7368 | val_loss=68.2824 | rel_l2=0.3608 | best=0.3275 | lr=9.51e-05 | pat=33/100 | 46s
+  Epoch  151/1000 | train_loss=46.3094 | val_loss=65.7469 | rel_l2=0.3405 | best=0.3275 | lr=9.51e-05 | pat=34/100 | 47s
+  Epoch  152/1000 | train_loss=46.5176 | val_loss=67.1786 | rel_l2=0.3446 | best=0.3275 | lr=9.50e-05 | pat=35/100 | 47s
+  Epoch  153/1000 | train_loss=46.0591 | val_loss=67.5214 | rel_l2=0.3551 | best=0.3275 | lr=9.49e-05 | pat=36/100 | 47s
+  Epoch  154/1000 | train_loss=45.7502 | val_loss=67.5137 | rel_l2=0.3504 | best=0.3275 | lr=9.49e-05 | pat=37/100 | 48s
+  Epoch  155/1000 | train_loss=45.3772 | val_loss=68.3846 | rel_l2=0.3573 | best=0.3275 | lr=9.48e-05 | pat=38/100 | 48s
+  Epoch  156/1000 | train_loss=45.8018 | val_loss=66.8445 | rel_l2=0.3516 | best=0.3275 | lr=9.47e-05 | pat=39/100 | 48s
+  Epoch  157/1000 | train_loss=45.5839 | val_loss=67.4332 | rel_l2=0.3442 | best=0.3275 | lr=9.47e-05 | pat=40/100 | 48s
+  Epoch  158/1000 | train_loss=45.2616 | val_loss=67.4020 | rel_l2=0.3580 | best=0.3275 | lr=9.46e-05 | pat=41/100 | 49s
+  Epoch  159/1000 | train_loss=45.5184 | val_loss=67.4449 | rel_l2=0.3460 | best=0.3275 | lr=9.45e-05 | pat=42/100 | 49s
+  Epoch  160/1000 | train_loss=45.2569 | val_loss=68.4089 | rel_l2=0.3615 | best=0.3275 | lr=9.44e-05 | pat=43/100 | 49s
+  Epoch  161/1000 | train_loss=45.1477 | val_loss=65.9644 | rel_l2=0.3425 | best=0.3275 | lr=9.44e-05 | pat=44/100 | 49s
+  Epoch  162/1000 | train_loss=44.9187 | val_loss=68.0520 | rel_l2=0.3551 | best=0.3275 | lr=9.43e-05 | pat=45/100 | 50s
+  Epoch  163/1000 | train_loss=44.5997 | val_loss=67.0146 | rel_l2=0.3547 | best=0.3275 | lr=9.42e-05 | pat=46/100 | 50s
+  Epoch  164/1000 | train_loss=44.4118 | val_loss=66.0702 | rel_l2=0.3426 | best=0.3275 | lr=9.41e-05 | pat=47/100 | 50s
+  Epoch  165/1000 | train_loss=45.1195 | val_loss=67.3833 | rel_l2=0.3443 | best=0.3275 | lr=9.41e-05 | pat=48/100 | 50s
+  Epoch  166/1000 | train_loss=44.1257 | val_loss=68.3882 | rel_l2=0.3648 | best=0.3275 | lr=9.40e-05 | pat=49/100 | 51s
+  Epoch  167/1000 | train_loss=44.5364 | val_loss=67.8020 | rel_l2=0.3568 | best=0.3275 | lr=9.39e-05 | pat=50/100 | 51s
+  Epoch  168/1000 | train_loss=44.0444 | val_loss=66.5271 | rel_l2=0.3469 | best=0.3275 | lr=9.38e-05 | pat=51/100 | 51s
+  Epoch  169/1000 | train_loss=44.1018 | val_loss=65.4160 | rel_l2=0.3294 | best=0.3275 | lr=9.38e-05 | pat=52/100 | 52s
+  Epoch  170/1000 | train_loss=44.4052 | val_loss=67.0601 | rel_l2=0.3386 | best=0.3275 | lr=9.37e-05 | pat=53/100 | 52s
+  Epoch  171/1000 | train_loss=44.1492 | val_loss=67.9231 | rel_l2=0.3666 | best=0.3275 | lr=9.36e-05 | pat=54/100 | 52s
+  Epoch  172/1000 | train_loss=44.2930 | val_loss=68.4479 | rel_l2=0.3580 | best=0.3275 | lr=9.35e-05 | pat=55/100 | 52s
+  Epoch  173/1000 | train_loss=43.3343 | val_loss=66.3544 | rel_l2=0.3491 | best=0.3275 | lr=9.35e-05 | pat=56/100 | 53s
+  Epoch  174/1000 | train_loss=43.3824 | val_loss=68.0032 | rel_l2=0.3657 | best=0.3275 | lr=9.34e-05 | pat=57/100 | 53s
+  Epoch  175/1000 | train_loss=43.5035 | val_loss=67.3856 | rel_l2=0.3535 | best=0.3275 | lr=9.33e-05 | pat=58/100 | 53s
+  Epoch  176/1000 | train_loss=43.3226 | val_loss=67.7389 | rel_l2=0.3612 | best=0.3275 | lr=9.32e-05 | pat=59/100 | 53s
+  Epoch  177/1000 | train_loss=42.9344 | val_loss=68.2275 | rel_l2=0.3565 | best=0.3275 | lr=9.31e-05 | pat=60/100 | 54s
+  Epoch  178/1000 | train_loss=42.9967 | val_loss=67.4246 | rel_l2=0.3504 | best=0.3275 | lr=9.31e-05 | pat=61/100 | 54s
+  Epoch  179/1000 | train_loss=43.2021 | val_loss=69.6872 | rel_l2=0.3763 | best=0.3275 | lr=9.30e-05 | pat=62/100 | 54s
+  Epoch  180/1000 | train_loss=42.8086 | val_loss=66.2663 | rel_l2=0.3442 | best=0.3275 | lr=9.29e-05 | pat=63/100 | 55s
+  Epoch  181/1000 | train_loss=42.7301 | val_loss=67.4164 | rel_l2=0.3487 | best=0.3275 | lr=9.28e-05 | pat=64/100 | 55s
+  Epoch  182/1000 | train_loss=42.6338 | val_loss=66.9205 | rel_l2=0.3498 | best=0.3275 | lr=9.27e-05 | pat=65/100 | 55s
+  Epoch  183/1000 | train_loss=42.6090 | val_loss=67.7080 | rel_l2=0.3563 | best=0.3275 | lr=9.27e-05 | pat=66/100 | 55s
+  Epoch  184/1000 | train_loss=43.4175 | val_loss=69.4304 | rel_l2=0.3712 | best=0.3275 | lr=9.26e-05 | pat=67/100 | 56s
+  Epoch  185/1000 | train_loss=42.2355 | val_loss=65.9100 | rel_l2=0.3464 | best=0.3275 | lr=9.25e-05 | pat=68/100 | 56s
+  Epoch  186/1000 | train_loss=42.1743 | val_loss=68.3291 | rel_l2=0.3593 | best=0.3275 | lr=9.24e-05 | pat=69/100 | 56s
+  Epoch  187/1000 | train_loss=42.2864 | val_loss=66.8337 | rel_l2=0.3461 | best=0.3275 | lr=9.23e-05 | pat=70/100 | 56s
+  Epoch  188/1000 | train_loss=42.0542 | val_loss=67.6562 | rel_l2=0.3529 | best=0.3275 | lr=9.22e-05 | pat=71/100 | 57s
+  Epoch  189/1000 | train_loss=41.6108 | val_loss=67.3389 | rel_l2=0.3598 | best=0.3275 | lr=9.21e-05 | pat=72/100 | 57s
+  Epoch  190/1000 | train_loss=41.8333 | val_loss=66.9030 | rel_l2=0.3484 | best=0.3275 | lr=9.21e-05 | pat=73/100 | 57s
+  Epoch  191/1000 | train_loss=41.9994 | val_loss=66.3789 | rel_l2=0.3446 | best=0.3275 | lr=9.20e-05 | pat=74/100 | 58s
+  Epoch  192/1000 | train_loss=42.3476 | val_loss=65.9168 | rel_l2=0.3365 | best=0.3275 | lr=9.19e-05 | pat=75/100 | 58s
+  Epoch  193/1000 | train_loss=41.7597 | val_loss=68.7409 | rel_l2=0.3790 | best=0.3275 | lr=9.18e-05 | pat=76/100 | 58s
+  Epoch  194/1000 | train_loss=41.3324 | val_loss=67.2409 | rel_l2=0.3531 | best=0.3275 | lr=9.17e-05 | pat=77/100 | 58s
+  Epoch  195/1000 | train_loss=41.1142 | val_loss=65.9548 | rel_l2=0.3485 | best=0.3275 | lr=9.16e-05 | pat=78/100 | 59s
+  Epoch  196/1000 | train_loss=40.9971 | val_loss=65.8360 | rel_l2=0.3461 | best=0.3275 | lr=9.15e-05 | pat=79/100 | 59s
+  Epoch  197/1000 | train_loss=40.9167 | val_loss=66.5074 | rel_l2=0.3455 | best=0.3275 | lr=9.15e-05 | pat=80/100 | 59s
+  Epoch  198/1000 | train_loss=41.0577 | val_loss=66.7852 | rel_l2=0.3576 | best=0.3275 | lr=9.14e-05 | pat=81/100 | 59s
+  Epoch  199/1000 | train_loss=41.1929 | val_loss=68.5490 | rel_l2=0.3597 | best=0.3275 | lr=9.13e-05 | pat=82/100 | 60s
+  Epoch  200/1000 | train_loss=41.1818 | val_loss=66.6869 | rel_l2=0.3447 | best=0.3275 | lr=9.12e-05 | pat=83/100 | 60s
+  Epoch  201/1000 | train_loss=40.6872 | val_loss=66.6238 | rel_l2=0.3499 | best=0.3275 | lr=9.11e-05 | pat=84/100 | 60s
+  Epoch  202/1000 | train_loss=40.4366 | val_loss=67.8952 | rel_l2=0.3584 | best=0.3275 | lr=9.10e-05 | pat=85/100 | 61s
+  Epoch  203/1000 | train_loss=40.3095 | val_loss=67.6636 | rel_l2=0.3615 | best=0.3275 | lr=9.09e-05 | pat=86/100 | 61s
+  Epoch  204/1000 | train_loss=40.1077 | val_loss=66.8994 | rel_l2=0.3599 | best=0.3275 | lr=9.08e-05 | pat=87/100 | 61s
+  Epoch  205/1000 | train_loss=40.5626 | val_loss=65.9726 | rel_l2=0.3421 | best=0.3275 | lr=9.07e-05 | pat=88/100 | 61s
+  Epoch  206/1000 | train_loss=40.6342 | val_loss=69.2246 | rel_l2=0.3730 | best=0.3275 | lr=9.06e-05 | pat=89/100 | 62s
+  Epoch  207/1000 | train_loss=40.2909 | val_loss=66.5836 | rel_l2=0.3429 | best=0.3275 | lr=9.05e-05 | pat=90/100 | 62s
+  Epoch  208/1000 | train_loss=40.5699 | val_loss=66.7965 | rel_l2=0.3552 | best=0.3275 | lr=9.05e-05 | pat=91/100 | 62s
+  Epoch  209/1000 | train_loss=39.9247 | val_loss=66.2570 | rel_l2=0.3450 | best=0.3275 | lr=9.04e-05 | pat=92/100 | 63s
+  Epoch  210/1000 | train_loss=40.0178 | val_loss=66.2758 | rel_l2=0.3434 | best=0.3275 | lr=9.03e-05 | pat=93/100 | 63s
+  Epoch  211/1000 | train_loss=40.2237 | val_loss=68.0418 | rel_l2=0.3593 | best=0.3275 | lr=9.02e-05 | pat=94/100 | 63s
+  Epoch  212/1000 | train_loss=39.5095 | val_loss=65.5260 | rel_l2=0.3382 | best=0.3275 | lr=9.01e-05 | pat=95/100 | 63s
+  Epoch  213/1000 | train_loss=39.4900 | val_loss=66.3554 | rel_l2=0.3464 | best=0.3275 | lr=9.00e-05 | pat=96/100 | 64s
+  Epoch  214/1000 | train_loss=39.5459 | val_loss=66.3892 | rel_l2=0.3382 | best=0.3275 | lr=8.99e-05 | pat=97/100 | 64s
+  Epoch  215/1000 | train_loss=39.4606 | val_loss=68.1799 | rel_l2=0.3624 | best=0.3275 | lr=8.98e-05 | pat=98/100 | 64s
+  Epoch  216/1000 | train_loss=39.7153 | val_loss=65.3917 | rel_l2=0.3402 | best=0.3275 | lr=8.97e-05 | pat=99/100 | 64s
+  Epoch  217/1000 | train_loss=39.7736 | val_loss=68.2020 | rel_l2=0.3690 | best=0.3275 | lr=8.96e-05 | pat=100/100 | 65s
+  Early stopping at epoch 217 (no improvement for 100 epochs)
+
+Training complete in 65.8s
+  val_relative_l2:   0.3275
+  train_relative_l2: 0.2951
+
+=== VERIFICATION GATE ===
+  WARN: test_relative_l2 = 0.4839 >= 0.05
+  FAIL: test_relative_l2 = 0.4839 >= 0.10 (hard fail)
+  PASS: no severe overfitting (val/train = 1.71)
+  WARN: chi_e relative_l2 = 0.5188 >= 0.10
+  WARN: chi_i relative_l2 = 0.4675 >= 0.10
+  WARN: D_e relative_l2 = 0.6560 >= 0.10
+  PASS: all predictions finite and non-negative
+
+  VERIFICATION FAILED — weights NOT saved.
+  Try: --epochs 1000 --lr 1e-4 --hidden-dims 512,256
