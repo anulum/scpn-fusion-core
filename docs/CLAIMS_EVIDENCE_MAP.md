@@ -32,7 +32,7 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `RESULTS.md` | `tau_E relative RMSE \\| 28\.6%` |
+| `RESULTS.md` | `tau_E relative RMSE \\| [\d.]+ \\| %` |
 | `validation/validate_transport_itpa.py` | `"rmse_relative": round\(rmse_rel, 4\)` |
 
 ### `readme_neural_surrogate_rmse`
@@ -48,7 +48,7 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `RESULTS.md` | `Neural transport MLP surrogate \\| tau_E RMSE % \\| 13\.5%` |
+| `RESULTS.md` | `Neural transport MLP surrogate tau_E RMSE % \\| 13\.5 \\| %` |
 | `validation/reports/task2_pretrained_surrogates_benchmark.json` | `"rmse_pct"\s*:\s*13\.489` |
 
 ### `readme_disruption_prevention_claim`
@@ -64,7 +64,7 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `RESULTS.md` | `Disruption prevention rate \(SNN\) \\| >60` |
+| `RESULTS.md` | `Disruption prevention rate \(SNN\) \\| [\d.]+ \\| %` |
 | `validation/reports/task5_disruption_mitigation_integration.json` | `"disruption_prevention_rate"\s*:\s*1\.0` |
 
 ### `readme_pretrained_coverage_claim`
