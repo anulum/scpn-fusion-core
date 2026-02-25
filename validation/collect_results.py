@@ -261,26 +261,69 @@ def load_disruption_threshold() -> dict[str, Any] | None:
     return _load_artifact(ARTIFACTS / "disruption_threshold_sweep.json")
 
 
+# ── Controller campaign (backward-compat API for test_stress_campaign) ──
+
+def run_controller_campaign(quick: bool = False) -> dict[str, Any] | None:
+    from validation.stress_test_campaign import run_campaign, generate_summary_table
+    n = 5 if quick else 20
+    results = run_campaign(n_episodes=n)
+    table = generate_summary_table(results)
+    controllers: dict[str, dict] = {}
+    for name, m in results.items():
+        controllers[name] = {
+            "n_episodes": m.n_episodes,
+            "mean_reward": m.mean_reward,
+            "std_reward": m.std_reward,
+            "mean_r_error": m.mean_r_error,
+            "p50_latency_us": m.p50_latency_us,
+            "p95_latency_us": m.p95_latency_us,
+            "p99_latency_us": m.p99_latency_us,
+            "disruption_rate": m.disruption_rate,
+            "mean_def": m.mean_def,
+            "mean_energy_efficiency": m.mean_energy_efficiency,
+        }
+    return {"n_episodes": n, "controllers": controllers, "markdown_table": table}
+
+
 # ── RESULTS.md generation ────────────────────────────────────────────
 
 def generate_results_md(
     hw: str,
-    hil: dict | None,
-    disruption: dict | None,
-    q10: dict | None,
-    tbr: dict | None,
-    ecrh: dict | None,
-    fb3d: dict | None,
-    surrogates: dict | None,
-    neural_eq: dict | None,
-    qlknn: dict | None,
-    real_shots: dict | None,
-    confinement: dict | None,
-    disturbance: dict | None,
-    freegs: dict | None,
-    threshold_sweep: dict | None,
-    elapsed_s: float,
+    hil: dict | None = None,
+    disruption: dict | None = None,
+    q10: dict | None = None,
+    tbr: dict | None = None,
+    ecrh: dict | None = None,
+    fb3d: dict | None = None,
+    surrogates: dict | None = None,
+    neural_eq: dict | None = None,
+    qlknn: dict | None = None,
+    real_shots: dict | None = None,
+    confinement: dict | None = None,
+    disturbance: dict | None = None,
+    freegs: dict | None = None,
+    threshold_sweep: dict | None = None,
+    elapsed_s: float = 0.0,
+    *,
+    results: dict | None = None,
+    campaign: dict | None = None,
 ) -> str:
+    if results is not None:
+        hil = hil or results.get("hil")
+        disruption = disruption or results.get("disruption")
+        q10 = q10 or results.get("q10")
+        tbr = tbr or results.get("tbr")
+        ecrh = ecrh or results.get("ecrh")
+        fb3d = fb3d or results.get("fb3d")
+        surrogates = surrogates or results.get("surrogates")
+        neural_eq = neural_eq or results.get("neural_eq")
+        qlknn = qlknn or results.get("qlknn")
+        real_shots = real_shots or results.get("real_shots")
+        confinement = confinement or results.get("confinement")
+        disturbance = disturbance or results.get("disturbance")
+        freegs = freegs or results.get("freegs")
+        threshold_sweep = threshold_sweep or results.get("threshold_sweep")
+        campaign = campaign or results.get("campaign")
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     version = VERSION_FILE.read_text(encoding="utf-8").strip() if VERSION_FILE.exists() else "0.0.0"
     sections: list[str] = []
@@ -545,6 +588,12 @@ def generate_results_md(
     _lane("FNO EUROfusion", {"passes": surrogates and surrogates.get("fno_rel_l2_mean") is not None and surrogates["fno_rel_l2_mean"] < 0.10} if surrogates else None, "passes",
           f"rel_L2 = {surrogates['fno_rel_l2_mean']:.4f}" if surrogates and surrogates.get("fno_rel_l2_mean") is not None else "—")
     sections.append("")
+
+    # ── Controller Performance (campaign) ──
+    if campaign and campaign.get("markdown_table"):
+        sections.append("## Controller Performance\n")
+        sections.append(campaign["markdown_table"])
+        sections.append("")
 
     # ── Documentation & Hero Notebooks ──
     sections.append("""## Documentation & Hero Notebooks

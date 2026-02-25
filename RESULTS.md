@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.9.2)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-02-25 12:33 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-02-25 12:58 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.9.2
-- **Generated:** 2026-02-25 12:33 UTC
-- **Wall-clock:** 11s
+- **Generated:** 2026-02-25 12:58 UTC
+- **Wall-clock:** 16s
 
 ## Equilibrium & Transport
 
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.30 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.48 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.54 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 1.18 | ms | 129x129 grid |
 
 ## QLKNN Neural Transport Surrogate
 
@@ -81,10 +81,10 @@
 | Mean RE current peak | 12.535 | MA | |
 | P95 RE current peak | 14.578 | MA | |
 | Passes ITER limits | No | — | Halo + RE constraints |
-| HIL control-loop P50 latency | 20.3 | μs | 200 iterations |
-| HIL control-loop P95 latency | 37.6 | μs | |
-| HIL control-loop P99 latency | 168.3 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 24.7 μs |
+| HIL control-loop P50 latency | 11.1 | μs | 200 iterations |
+| HIL control-loop P95 latency | 29.3 | μs | |
+| HIL control-loop P99 latency | 54.6 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 17.4 μs |
 
 ## Real-Shot Validation
 
@@ -157,7 +157,7 @@
 | TBR > 1.05 | PASS | TBR = 1.6684 |
 | ECRH absorption | RUN | 99.0% |
 | Disruption detection | PASS | recall=100% |
-| HIL sub-ms | PASS | P50 = 20.3 μs |
+| HIL sub-ms | PASS | P50 = 11.1 μs |
 | FreeGS analytic | FAIL | ψ NRMSE = 3.979 |
 | FNO EUROfusion | FAIL | rel_L2 = 0.7925 |
 
