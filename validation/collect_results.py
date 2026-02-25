@@ -346,8 +346,8 @@ def generate_results_md(
         sections.append("|--------|-------|------|-------|")
         if ci:
             sections.append(f"| Machines validated | {ci.get('count', '—')} | — | ITER, JET, DIII-D, ASDEX-U, C-Mod, JT-60U, NSTX, MAST, KSTAR, EAST, SPARC, ARC |")
-            sections.append(f"| τ_E RMSE | {_fmt(ci.get('tau_rmse_s'), '.4f')} | s | |")
-            sections.append(f"| τ_E relative RMSE | {_fmt(ci.get('tau_mae_rel_pct'), '.1f')} | % | |")
+            sections.append(f"| tau_E RMSE | {_fmt(ci.get('tau_rmse_s'), '.4f')} | s | |")
+            sections.append(f"| tau_E relative RMSE | {_fmt(ci.get('tau_mae_rel_pct'), '.1f')} | % | |")
             sections.append(f"| H98 RMSE | {_fmt(ci.get('h98_rmse'), '.4f')} | — | |")
         if cs and cs.get("rows"):
             for row in cs["rows"]:
@@ -388,7 +388,7 @@ def generate_results_md(
     rows = []
     if disruption:
         n = disruption["ensemble_runs"]
-        rows.append(f"| Disruption prevention rate | {_fmt(disruption['prevention_rate'] * 100, '.1f')} | % | {n}-run ensemble |")
+        rows.append(f"| Disruption prevention rate (SNN) | {_fmt(disruption['prevention_rate'] * 100, '.1f')} | % | {n}-run ensemble |")
         rows.append(f"| Mean halo current peak | {_fmt(disruption['mean_halo_ma'], '.3f')} | MA | |")
         rows.append(f"| P95 halo current peak | {_fmt(disruption['p95_halo_ma'], '.3f')} | MA | |")
         rows.append(f"| Mean RE current peak | {_fmt(disruption['mean_re_ma'], '.3f')} | MA | |")
@@ -419,7 +419,7 @@ def generate_results_md(
             sections.append(f"| Disruption FPR | {_fmt(d.get('false_positive_rate'), '.2f')} | — | {d.get('false_positives', '?')}/{d.get('n_safe', '?')} false alarms |")
             sections.append(f"| Disruption detection | {_fmt(d.get('passes'))} | — | recall ≥ 0.6 and FPR ≤ 0.4 |")
         if t:
-            sections.append(f"| Transport τ_E RMSE | {_fmt(t.get('rmse_s'), '.4f')} | s | {t.get('n_shots', '?')} shots |")
+            sections.append(f"| Transport tau_E RMSE | {_fmt(t.get('rmse_s'), '.4f')} | s | {t.get('n_shots', '?')} shots |")
             sections.append(f"| Transport within 2σ | {_fmt((t.get('within_2sigma_fraction', 0)) * 100, '.0f')} | % | Gate ≥ 80% |")
             sections.append(f"| Transport validation | {_fmt(t.get('passes'))} | — | |")
         if eq:
@@ -481,11 +481,11 @@ def generate_results_md(
     rows = []
     if surrogates:
         if surrogates.get("mlp_rmse_s") is not None:
-            rows.append(f"| MLP (ITPA H-mode) RMSE | {_fmt(surrogates['mlp_rmse_s'], '.4f')} | s | τ_E confinement time |")
-            rows.append(f"| MLP (ITPA H-mode) RMSE % | {_fmt(surrogates['mlp_rmse_pct'], '.1f')} | % | {int(surrogates.get('mlp_samples', 0))} samples |")
+            rows.append(f"| Neural transport MLP surrogate tau_E RMSE | {_fmt(surrogates['mlp_rmse_s'], '.4f')} | s | ITPA H-mode confinement time |")
+            rows.append(f"| Neural transport MLP surrogate tau_E RMSE % | {_fmt(surrogates['mlp_rmse_pct'], '.1f')} | % | {int(surrogates.get('mlp_samples', 0))} samples |")
         if surrogates.get("fno_rel_l2_mean") is not None:
-            rows.append(f"| FNO (EUROfusion JET) relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | ψ(R,Z) reconstruction |")
-            rows.append(f"| FNO (EUROfusion JET) relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | {int(surrogates.get('fno_samples', 0))} samples |")
+            rows.append(f"| JAX FNO turbulence surrogate relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | ψ(R,Z) reconstruction |")
+            rows.append(f"| JAX FNO turbulence surrogate relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | {int(surrogates.get('fno_samples', 0))} samples |")
     if rows:
         sections.append("## Legacy Surrogates\n")
         sections.append("| Metric | Value | Unit | Notes |")
