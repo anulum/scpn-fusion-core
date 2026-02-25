@@ -33,6 +33,7 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 RESULTS_PATH = REPO_ROOT / "RESULTS.md"
 ARTIFACTS = REPO_ROOT / "artifacts"
 WEIGHTS = REPO_ROOT / "weights"
+VERSION_FILE = REPO_ROOT / "src" / "scpn_fusion" / "VERSION"
 
 
 # ── Utility ──────────────────────────────────────────────────────────
@@ -281,9 +282,10 @@ def generate_results_md(
     elapsed_s: float,
 ) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    version = VERSION_FILE.read_text(encoding="utf-8").strip() if VERSION_FILE.exists() else "0.0.0"
     sections: list[str] = []
 
-    sections.append(f"""# SCPN Fusion Core — Benchmark Results
+    sections.append(f"""# SCPN Fusion Core — Benchmark Results (v{version})
 
 > **Auto-generated** by `validation/collect_results.py` on {now}.
 > Re-run the script to refresh these numbers on your hardware.
@@ -291,6 +293,7 @@ def generate_results_md(
 ## Environment
 
 {hw}
+- **Version:** {version}
 - **Generated:** {now}
 - **Wall-clock:** {elapsed_s:.0f}s
 """)
