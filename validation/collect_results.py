@@ -546,6 +546,17 @@ def generate_results_md(
           f"rel_L2 = {surrogates['fno_rel_l2_mean']:.4f}" if surrogates and surrogates.get("fno_rel_l2_mean") is not None else "—")
     sections.append("")
 
+    # ── Documentation & Hero Notebooks ──
+    sections.append("""## Documentation & Hero Notebooks
+
+Official performance demonstrations and tutorial paths:
+- `examples/neuro_symbolic_control_demo_v2.ipynb` (Golden Base v2)
+- `examples/platinum_standard_demo_v1.ipynb` (Platinum Standard - Project TOKAMAK-MASTER)
+
+Legacy frozen notebooks:
+- `examples/neuro_symbolic_control_demo.ipynb` (v1)
+""")
+
     # ── Footer ──
     sections.append("""---
 
