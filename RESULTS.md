@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.9.2)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-02-25 12:58 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-02-25 14:25 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.9.2
-- **Generated:** 2026-02-25 12:58 UTC
-- **Wall-clock:** 16s
+- **Generated:** 2026-02-25 14:25 UTC
+- **Wall-clock:** 21s
 
 ## Equilibrium & Transport
 
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.54 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 1.18 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.18 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 0.27 | ms | 129x129 grid |
 
 ## QLKNN Neural Transport Surrogate
 
@@ -75,16 +75,16 @@
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
-| Disruption prevention rate (SNN) | 0.0 | % | 10-run ensemble |
-| Mean halo current peak | 2.547 | MA | |
-| P95 halo current peak | 3.541 | MA | |
-| Mean RE current peak | 12.535 | MA | |
-| P95 RE current peak | 14.578 | MA | |
+| Disruption prevention rate (SNN) | 0.0 | % | 50-run ensemble |
+| Mean halo current peak | 2.165 | MA | |
+| P95 halo current peak | 3.328 | MA | |
+| Mean RE current peak | 12.239 | MA | |
+| P95 RE current peak | 14.450 | MA | |
 | Passes ITER limits | No | — | Halo + RE constraints |
-| HIL control-loop P50 latency | 11.1 | μs | 200 iterations |
-| HIL control-loop P95 latency | 29.3 | μs | |
-| HIL control-loop P99 latency | 54.6 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 17.4 μs |
+| HIL control-loop P50 latency | 23.0 | μs | 1000 iterations |
+| HIL control-loop P95 latency | 57.9 | μs | |
+| HIL control-loop P99 latency | 191.1 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 30.2 μs |
 
 ## Real-Shot Validation
 
@@ -157,7 +157,7 @@
 | TBR > 1.05 | PASS | TBR = 1.6684 |
 | ECRH absorption | RUN | 99.0% |
 | Disruption detection | PASS | recall=100% |
-| HIL sub-ms | PASS | P50 = 11.1 μs |
+| HIL sub-ms | PASS | P50 = 23.0 μs |
 | FreeGS analytic | FAIL | ψ NRMSE = 3.979 |
 | FNO EUROfusion | FAIL | rel_L2 = 0.7925 |
 
