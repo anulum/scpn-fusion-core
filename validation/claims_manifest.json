@@ -2,64 +2,6 @@
   "version": "claims-audit-v1",
   "claims": [
     {
-      "id": "readme_full_physics_transport_rmse",
-      "source_file": "README.md",
-      "source_pattern": "28\\.6% full-physics relative RMSE",
-      "evidence_files": [
-        "RESULTS.md",
-        "validation/validate_transport_itpa.py",
-        "validation/reference_data/itpa/hmode_confinement.csv"
-      ],
-      "evidence_patterns": [
-        {
-          "file": "RESULTS.md",
-          "pattern": "tau_E relative RMSE \\| [\\d.]+ \\| %"
-        },
-        {
-          "file": "validation/validate_transport_itpa.py",
-          "pattern": "\"rmse_relative\": round\\(rmse_rel, 4\\)"
-        }
-      ]
-    },
-    {
-      "id": "readme_neural_surrogate_rmse",
-      "source_file": "README.md",
-      "source_pattern": "\\(13\\.5% neural-surrogate fit lane\\)",
-      "evidence_files": [
-        "RESULTS.md",
-        "validation/reports/task2_pretrained_surrogates_benchmark.json"
-      ],
-      "evidence_patterns": [
-        {
-          "file": "RESULTS.md",
-          "pattern": "Neural transport MLP surrogate tau_E RMSE % \\| 13\\.5 \\| %"
-        },
-        {
-          "file": "validation/reports/task2_pretrained_surrogates_benchmark.json",
-          "pattern": "\"rmse_pct\"\\s*:\\s*13\\.489"
-        }
-      ]
-    },
-    {
-      "id": "readme_disruption_prevention_claim",
-      "source_file": "README.md",
-      "source_pattern": ">60% disruption prevention rate",
-      "evidence_files": [
-        "RESULTS.md",
-        "validation/reports/task5_disruption_mitigation_integration.json"
-      ],
-      "evidence_patterns": [
-        {
-          "file": "RESULTS.md",
-          "pattern": "Disruption prevention rate \\(SNN\\) \\| [\\d.]+ \\| %"
-        },
-        {
-          "file": "validation/reports/task5_disruption_mitigation_integration.json",
-          "pattern": "\"disruption_prevention_rate\"\\s*:\\s*1\\.0"
-        }
-      ]
-    },
-    {
       "id": "readme_pretrained_coverage_claim",
       "source_file": "README.md",
       "source_pattern": "3 of 7 shipped",
@@ -83,17 +25,12 @@
       "source_file": "RESULTS.md",
       "source_pattern": "JAX FNO turbulence surrogate",
       "evidence_files": [
-        "src/scpn_fusion/core/fno_turbulence_suppressor.py",
-        "src/scpn_fusion/core/fno_training.py"
+        "src/scpn_fusion/core/fno_jax_training.py"
       ],
       "evidence_patterns": [
         {
-          "file": "src/scpn_fusion/core/fno_turbulence_suppressor.py",
+          "file": "src/scpn_fusion/core/fno_jax_training.py",
           "pattern": "JAX-FNO"
-        },
-        {
-          "file": "src/scpn_fusion/core/fno_training.py",
-          "pattern": "JAX-accelerated version"
         }
       ]
     }

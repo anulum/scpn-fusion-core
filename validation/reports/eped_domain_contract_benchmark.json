@@ -20,7 +20,7 @@
       },
       "B0": {
         "min": 1.5,
-        "max": 12.0,
+        "max": 15.0,
         "units": "T"
       },
       "Ip_MA": {
@@ -50,7 +50,7 @@
       },
       "n_ped_1e19": {
         "min": 2.0,
-        "max": 15.0,
+        "max": 16.0,
         "units": "1e19 m^-3"
       },
       "T_ped_guess_keV": {
@@ -70,8 +70,8 @@
         "extrapolation_penalty": 1.0,
         "domain_violations": [],
         "Delta_ped": 0.01,
-        "T_ped_keV": 0.1,
-        "p_ped_kPa": 2.5634826144
+        "T_ped_keV": 0.395356077598502,
+        "p_ped_kPa": 10.134884314211371
       },
       {
         "case_id": "in_compact",
@@ -82,9 +82,9 @@
         "extrapolation_score": 0.0,
         "extrapolation_penalty": 1.0,
         "domain_violations": [],
-        "Delta_ped": 0.01,
-        "T_ped_keV": 0.1,
-        "p_ped_kPa": 3.2043532679999998
+        "Delta_ped": 0.15,
+        "T_ped_keV": 19.65912219437666,
+        "p_ped_kPa": 629.9477244956217
       },
       {
         "case_id": "out_density",
@@ -92,14 +92,14 @@
         "n_ped_1e19": 22.0,
         "T_ped_guess_keV": 3.0,
         "in_domain": false,
-        "extrapolation_score": 0.5384615384615384,
-        "extrapolation_penalty": 0.8115384615384615,
+        "extrapolation_score": 0.42857142857142855,
+        "extrapolation_penalty": 0.85,
         "domain_violations": [
-          "n_ped_1e19=22 outside [2, 15] 1e19 m^-3"
+          "n_ped_1e19=22 outside [2, 16] 1e19 m^-3"
         ],
         "Delta_ped": 0.01,
-        "T_ped_keV": 0.1,
-        "p_ped_kPa": 7.0495771896
+        "T_ped_keV": 0.14376584639945528,
+        "p_ped_kPa": 10.134884314211371
       },
       {
         "case_id": "out_temperature",
@@ -113,8 +113,8 @@
           "T_ped_guess_keV=12 outside [0.2, 8] keV"
         ],
         "Delta_ped": 0.01,
-        "T_ped_keV": 0.1,
-        "p_ped_kPa": 2.8839179412
+        "T_ped_keV": 0.3514276245320018,
+        "p_ped_kPa": 10.134884314211371
       },
       {
         "case_id": "out_shape",
@@ -128,8 +128,8 @@
           "kappa=2.8 outside [1.2, 2.4] -"
         ],
         "Delta_ped": 0.01,
-        "T_ped_keV": 0.1,
-        "p_ped_kPa": 2.5634826144
+        "T_ped_keV": 0.15873149338661183,
+        "p_ped_kPa": 4.06905423654328
       }
     ]
   }
