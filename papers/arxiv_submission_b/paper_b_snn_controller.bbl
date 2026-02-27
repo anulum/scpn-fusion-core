@@ -1,0 +1,109 @@
+\begin{thebibliography}{14}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Lazarus et~al.(1990)Lazarus, Lister, and Neilson]{Lazarus1990}
+E.~A. Lazarus, J.~B. Lister, and G.~H. Neilson.
+\newblock Control of the vertical instability in tokamaks.
+\newblock \emph{Nuclear Fusion}, 30\penalty0 (1):\penalty0 111--141, 1990.
+\newblock \doi{10.1088/0029-5515/30/1/010}.
+
+\bibitem[Creely et~al.(2020)Creely, Greenwald, Ballinger, Brunner, Canik,
+  Doody, F{\"u}l{\"o}p, Garnier, Granetz, Gray, et~al.]{Creely2020}
+A.~J. Creely, M.~J. Greenwald, S.~B. Ballinger, D.~Brunner, J.~Canik, J.~Doody,
+  T.~F{\"u}l{\"o}p, D.~T. Garnier, R.~Granetz, T.~K. Gray, et~al.
+\newblock Overview of the {SPARC} tokamak.
+\newblock \emph{Journal of Plasma Physics}, 86\penalty0 (5):\penalty0
+  865860502, 2020.
+\newblock \doi{10.1017/S0022377820001257}.
+
+\bibitem[Sorbom et~al.(2015)Sorbom, Ball, Palmer, Mangiarotti, Sierchio,
+  Bonoli, Kasten, Sutherland, Barnard, Haakonsen, et~al.]{Sorbom2015}
+B.~N. Sorbom, J.~Ball, T.~R. Palmer, F.~J. Mangiarotti, J.~M. Sierchio,
+  P.~Bonoli, C.~Kasten, D.~A. Sutherland, H.~S. Barnard, C.~B. Haakonsen,
+  et~al.
+\newblock {ARC}: {A} compact, high-field, fusion nuclear science facility and
+  demonstration power plant with demountable magnets.
+\newblock \emph{Fusion Engineering and Design}, 100:\penalty0 378--405, 2015.
+\newblock \doi{10.1016/j.fusengdes.2015.07.008}.
+
+\bibitem[Humphreys et~al.(2015)Humphreys, Ambrosino, de~Vries, Felici, Kim,
+  Jackson, Kallenbach, Kolemen, Lister, Moreau, and Pironti]{Humphreys2015}
+D.~A. Humphreys, G.~Ambrosino, P.~de~Vries, F.~Felici, S.~H. Kim, G.~Jackson,
+  A.~Kallenbach, E.~Kolemen, J.~R. Lister, D.~Moreau, and A.~Pironti.
+\newblock Novel aspects of plasma control in {ITER}.
+\newblock \emph{Physics of Plasmas}, 22\penalty0 (2):\penalty0 021806, 2015.
+\newblock \doi{10.1063/1.4907901}.
+
+\bibitem[Kolemen et~al.(2014)Kolemen, Gates, Rowley, Kasdin, Bialek, Boozer,
+  et~al.]{Kolemen2014}
+E.~Kolemen, D.~A. Gates, C.~W. Rowley, N.~J. Kasdin, J.~Bialek, A.~H. Boozer,
+  et~al.
+\newblock Plasma control system design and configuration for {KSTAR}.
+\newblock \emph{Fusion Engineering and Design}, 89:\penalty0 515--522, 2014.
+
+\bibitem[Degrave et~al.(2022)Degrave, Felici, Buchli, Neunert, Tracey,
+  Carpanese, Ewalds, Hafner, Abdolmaleki, de~Las~Casas, et~al.]{Degrave2022}
+J.~Degrave, F.~Felici, J.~Buchli, M.~Neunert, B.~Tracey, F.~Carpanese,
+  T.~Ewalds, R.~Hafner, A.~Abdolmaleki, D.~de~Las~Casas, et~al.
+\newblock Magnetic control of tokamak plasmas through deep reinforcement
+  learning.
+\newblock \emph{Nature}, 602:\penalty0 414--419, 2022.
+\newblock \doi{10.1038/s41586-021-04301-9}.
+
+\bibitem[Petri(1962)]{Petri1962}
+C.~A. Petri.
+\newblock \emph{{K}ommunikation mit {A}utomaten}.
+\newblock PhD thesis, Universit{\"a}t Hamburg, 1962.
+
+\bibitem[Murata(1989)]{Murata1989}
+T.~Murata.
+\newblock \emph{Petri nets: Properties, analysis and applications}, volume~77.
+\newblock 1989.
+\newblock \doi{10.1109/5.24143}.
+
+\bibitem[Maass(1997)]{Maass1997}
+W.~Maass.
+\newblock Networks of spiking neurons: The third generation of neural network
+  models.
+\newblock \emph{Neural Networks}, 10\penalty0 (9):\penalty0 1659--1671, 1997.
+\newblock \doi{10.1016/S0893-6080(97)00011-7}.
+
+\bibitem[Gaines(1969)]{Gaines1969}
+B.~R. Gaines.
+\newblock Stochastic computing systems.
+\newblock \emph{Advances in Information Systems Science}, 2:\penalty0 37--172,
+  1969.
+\newblock \doi{10.1007/978-1-4899-5841-9_2}.
+
+\bibitem[Alaghi and Hayes(2013)]{Alaghi2013}
+A.~Alaghi and J.~P. Hayes.
+\newblock Survey of stochastic computing.
+\newblock \emph{{ACM} Transactions on Embedded Computing Systems}, 12\penalty0
+  (2s):\penalty0 92:1--92:19, 2013.
+\newblock \doi{10.1145/2465787.2465794}.
+
+\bibitem[Camacho and Bordons(2007)]{Camacho2007}
+E.~F. Camacho and C.~Bordons.
+\newblock \emph{Model Predictive Control}.
+\newblock Springer, 2nd edition, 2007.
+\newblock \doi{10.1007/978-0-85729-398-5}.
+
+\bibitem[Kates-Harbeck et~al.(2019)Kates-Harbeck, Svyatkovskiy, and
+  Tang]{Kates-Harbeck2019}
+J.~Kates-Harbeck, A.~Svyatkovskiy, and W.~Tang.
+\newblock Predicting disruptive instabilities in controlled fusion plasmas
+  through deep learning.
+\newblock \emph{Nature}, 568:\penalty0 526--531, 2019.
+\newblock \doi{10.1038/s41586-019-1116-4}.
+
+\bibitem[Boozer(2015)]{Boozer2015}
+A.~H. Boozer.
+\newblock Theory of tokamak disruptions.
+\newblock \emph{Physics of Plasmas}, 22:\penalty0 032504, 2015.
+\newblock \doi{10.1063/1.4915293}.
+
+\end{thebibliography}

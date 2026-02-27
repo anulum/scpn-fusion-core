@@ -406,11 +406,11 @@ We especially welcome contributions in these areas:
 Look for issues tagged [`good first issue`](https://github.com/anulum/scpn-fusion-core/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 on our issue tracker. Some ideas:
 
-- Expand docstrings on public API functions.
-- Add new GEQDSK test cases from publicly available tokamak data.
-- Implement additional elliptic integral identities in proptest.
-- Add `%timeit` benchmarks to existing Jupyter notebooks.
-- Improve error messages in input validation guards.
+- Add GEQDSK test cases from publicly available tokamak data (MAST-U, W7-X).
+- Add Hypothesis property tests for numerical routines in `core/`.
+- Write a new tutorial notebook demonstrating a specific physics module.
+- Reduce underdeveloped flags in [`UNDERDEVELOPED_REGISTER.md`](UNDERDEVELOPED_REGISTER.md) (312 flags, 114 P0/P1).
+- Contribute real experimental validation data (equilibria, confinement profiles).
 
 ---
 
@@ -437,8 +437,9 @@ If you have questions about licensing, please ask before submitting your contrib
 ## Questions?
 
 - Check the [documentation](docs/) and [README](README.md) first.
-- Open a [Question issue](https://github.com/anulum/scpn-fusion-core/issues/new/choose)
-  on GitHub.
+- Ask in [GitHub Discussions](https://github.com/anulum/scpn-fusion-core/discussions)
+  (Q&A category).
+- Open a [bug report or feature request](https://github.com/anulum/scpn-fusion-core/issues/new/choose).
 - Email the maintainer at protoscience@anulum.li.
 
 Thank you for helping improve fusion plasma simulation and control.
