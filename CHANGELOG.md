@@ -22,6 +22,7 @@
 - Tooling hardening: claims audit git file discovery now uses a bounded subprocess timeout with safe fallback.
 - CI hardening: `run_python_preflight.py` and `run_mypy_strict.py` now enforce bounded subprocess timeouts with explicit timeout exit handling.
 - Tooling hardening: notebook upgrade bootstrap now bounds `pip install -e` subprocess runtime.
+- Repo policy: local Claude command-permission settings (`.claude/settings.local.json`) are now explicitly local-only and git-ignored.
 
 ### Added
 - Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).

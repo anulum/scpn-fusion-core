@@ -28,6 +28,8 @@ htmlcov/
 # Local operational data (must never be pushed)
 .handovers/
 .coordination/
+# Local command permission policy (machine-specific)
+.claude/settings.local.json
 
 # IDE
 .idea/

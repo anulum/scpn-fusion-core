@@ -73,6 +73,9 @@ with `Harden`.
   explicit subprocess timeouts to avoid indefinite process hangs.
 - **CI pipeline resilience:** Python preflight and strict-mypy tool runners
   now treat hung subprocesses as deterministic timeout failures.
+- **Local command policy:** `.claude/settings.local.json` is treated as
+  machine-local command-permission policy and is excluded from version
+  control.
 
 ### RNG Isolation
 Global NumPy RNG state is never mutated by library code. All stochastic
