@@ -35,6 +35,16 @@ DEFAULT_DATA_DIR = REPO_ROOT / "data" / "fno_qlknn_spatial"
 DEFAULT_OUTPUT = REPO_ROOT / "weights" / "fno_turbulence_jax.npz"
 
 
+def _load_spatial_split(path: Path) -> tuple[np.ndarray, np.ndarray]:
+    """Load a spatial split .npz with secure defaults."""
+    with np.load(path, allow_pickle=False) as data:
+        if "X" not in data or "Y" not in data:
+            raise KeyError(f"{path} missing required NPZ keys: X, Y")
+        x = data["X"]
+        y = data["Y"]
+    return x, y
+
+
 def train_fno(
     data_dir: Path,
     output_path: Path,
@@ -58,13 +68,13 @@ def train_fno(
         jax.config.update("jax_platform_name", "cpu")
 
     # Load data
-    train_data = np.load(data_dir / "train.npz")
-    val_data = np.load(data_dir / "val.npz")
+    train_x, train_y = _load_spatial_split(data_dir / "train.npz")
+    val_x, val_y = _load_spatial_split(data_dir / "val.npz")
 
-    X_train = jnp.array(train_data["X"])  # (N, 64, 64)
-    Y_train = jnp.array(train_data["Y"])
-    X_val = jnp.array(val_data["X"])
-    Y_val = jnp.array(val_data["Y"])
+    X_train = jnp.array(train_x)  # (N, 64, 64)
+    Y_train = jnp.array(train_y)
+    X_val = jnp.array(val_x)
+    Y_val = jnp.array(val_y)
 
     grid_size = X_train.shape[1]
     n_train = len(X_train)

@@ -18,6 +18,8 @@
 - Runtime hardening: unified CLI now enforces per-mode subprocess timeout via `--mode-timeout-seconds` to prevent indefinite hangs.
 - Runtime hardening: compiler git SHA probe now uses bounded subprocess timeout with deterministic fallback.
 - Runtime hardening: native C++ solver compilation now uses a bounded subprocess timeout and timeout-aware failure handling.
+- Tooling hardening: QLKNN training scripts now enforce secure `.npz` loading (`allow_pickle=False`) with required-key validation.
+- Tooling hardening: claims audit git file discovery now uses a bounded subprocess timeout with safe fallback.
 
 ### Added
 - Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).

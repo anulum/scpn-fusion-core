@@ -65,8 +65,11 @@ with `Harden`.
   `streamlit`). No `pickle.load` of untrusted data in any module.
 - **Checkpoint hygiene:** disruption-model checkpoint loading prefers
   `torch.load(..., weights_only=True)` where supported.
+- **Secure NumPy loading:** runtime, validation, and QLKNN training tooling
+  paths use `np.load(..., allow_pickle=False)` with required-key checks.
 - **Bounded subprocesses:** CLI mode launches, compiler git-SHA probe,
-  quantum bridge script orchestration, and native C++ compile calls use
+  quantum bridge script orchestration, native C++ compile calls, and claims
+  audit git file discovery use
   explicit subprocess timeouts to avoid indefinite process hangs.
 
 ### RNG Isolation

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -70,3 +71,25 @@ def test_claims_audit_reports_untracked_evidence_file() -> None:
     claims = claims_audit.load_manifest(manifest)
     errors = claims_audit.run_audit(claims, ROOT, tracked_files=set())
     assert any("evidence file not tracked by git" in err for err in errors)
+
+
+def test_git_tracked_files_uses_timeout(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def _fake_run(*args, **kwargs):  # type: ignore[no-untyped-def]
+        calls.append(kwargs)
+        return subprocess.CompletedProcess(args[0], 0, stdout="README.md\n", stderr="")
+
+    monkeypatch.setattr(claims_audit.subprocess, "run", _fake_run)
+    tracked = claims_audit._git_tracked_files(ROOT)
+    assert tracked == {"README.md"}
+    assert len(calls) == 1
+    assert calls[0]["timeout"] == claims_audit._GIT_LS_FILES_TIMEOUT_SECONDS
+
+
+def test_git_tracked_files_returns_none_on_timeout(monkeypatch) -> None:
+    def _fake_run(*args, **kwargs):  # type: ignore[no-untyped-def]
+        raise subprocess.TimeoutExpired(cmd=args[0], timeout=kwargs.get("timeout", 0.0))
+
+    monkeypatch.setattr(claims_audit.subprocess, "run", _fake_run)
+    assert claims_audit._git_tracked_files(ROOT) is None

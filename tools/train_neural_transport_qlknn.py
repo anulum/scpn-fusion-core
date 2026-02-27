@@ -56,6 +56,19 @@ _MI_KG = 3.344e-27  # deuterium
 _E_CHARGE = 1.602e-19
 
 
+def _load_npz_required(path: Path, *, required_keys: tuple[str, ...]) -> dict[str, np.ndarray]:
+    """Load a .npz file with secure defaults and key validation."""
+    with np.load(path, allow_pickle=False) as data:
+        missing = [key for key in required_keys if key not in data]
+        if missing:
+            missing_text = ", ".join(missing)
+            raise KeyError(f"{path} missing required NPZ keys: {missing_text}")
+        out = {key: data[key] for key in required_keys}
+        if "gb_normalized" in data:
+            out["gb_normalized"] = data["gb_normalized"]
+    return out
+
+
 def _add_derived_features(X: np.ndarray, include_log_chi_gb: bool = False) -> np.ndarray:
     """Append threshold-excess features to the base input array.
 
@@ -633,11 +646,11 @@ def verify_and_save(
     np.savez(output_path, **save_dict)
 
     # Gate 5: verify saved file loads correctly
-    loaded = np.load(output_path)
-    for key in ["w1", "b1", "w2", "b2", "w3", "b3", "input_mean", "input_std", "output_scale"]:
-        if key not in loaded:
-            print(f"  FAIL: saved file missing key '{key}'")
-            return False
+    with np.load(output_path, allow_pickle=False) as loaded:
+        for key in ["w1", "b1", "w2", "b2", "w3", "b3", "input_mean", "input_std", "output_scale"]:
+            if key not in loaded:
+                print(f"  FAIL: saved file missing key '{key}'")
+                return False
     print(f"  PASS: saved weights load correctly ({output_path})")
 
     # Save training metrics alongside
@@ -722,9 +735,13 @@ def main() -> None:
             print(f"ERROR: {p} not found. Run tools/qlknn10d_to_npz.py first.")
             sys.exit(1)
 
-    train_data = np.load(train_path)
-    val_data = np.load(val_path)
-    test_data = np.load(test_path)
+    try:
+        train_data = _load_npz_required(train_path, required_keys=("X", "Y"))
+        val_data = _load_npz_required(val_path, required_keys=("X", "Y"))
+        test_data = _load_npz_required(test_path, required_keys=("X", "Y"))
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"ERROR: failed to load .npz datasets securely: {exc}")
+        sys.exit(1)
 
     X_train, Y_train = train_data["X"], train_data["Y"]
     X_val, Y_val = val_data["X"], val_data["Y"]

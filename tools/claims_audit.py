@@ -14,6 +14,7 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = REPO_ROOT / "validation" / "claims_manifest.json"
+_GIT_LS_FILES_TIMEOUT_SECONDS = 5.0
 
 
 @dataclass(frozen=True)
@@ -116,6 +117,7 @@ def _git_tracked_files(repo_root: Path) -> set[str] | None:
             capture_output=True,
             text=True,
             check=True,
+            timeout=_GIT_LS_FILES_TIMEOUT_SECONDS,
         )
     except (OSError, subprocess.SubprocessError):
         return None
