@@ -8,6 +8,17 @@
 
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Security hardening: disruption predictor checkpoint loading now prefers `torch.load(..., weights_only=True)` when available, with compatibility fallback for legacy torch versions.
+- Security hardening: remaining `.npz` loaders in runtime/validation paths now use `allow_pickle=False` and context-managed reads (`tokamak_archive`, `neural_transport`, `fno_turbulence_suppressor`, `fno_jax_training`, `validate_real_shots`, `validate_fno_tglf`, `validate_transport_qlknn`).
+
+### Added
+- Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).
+
+---
+
 ## [3.9.2] — 2026-02-24
 
 ### Fixed

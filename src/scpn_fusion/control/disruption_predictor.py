@@ -531,6 +531,26 @@ def _prepare_signal_window(signal, seq_len):
         return flat[:seq_len]
     return np.pad(flat, (0, seq_len - flat.size), mode="edge")
 
+
+def _safe_torch_checkpoint_load(path: Path) -> Any:
+    """Load checkpoint with safest available torch semantics.
+
+    Prefers ``weights_only=True`` to avoid arbitrary object deserialization.
+    On older torch versions that do not support this keyword, falls back to
+    legacy loading for compatibility.
+    """
+    if torch is None:
+        raise RuntimeError("Torch is required for checkpoint loading.")
+    try:
+        return torch.load(path, map_location="cpu", weights_only=True)
+    except TypeError as exc:
+        if "weights_only" not in str(exc):
+            raise
+        logger.warning(
+            "torch.load(weights_only=True) unsupported; using legacy checkpoint load for compatibility."
+        )
+        return torch.load(path, map_location="cpu")
+
 if torch is not None:
     class DisruptionTransformer(nn.Module):
         def __init__(self, seq_len=DEFAULT_SEQ_LEN):
@@ -693,13 +713,16 @@ def load_or_train_predictor(
 
     if path.exists() and not force_retrain:
         try:
-            checkpoint = torch.load(path, map_location="cpu")
+            checkpoint = _safe_torch_checkpoint_load(path)
             if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
                 state_dict = checkpoint["state_dict"]
                 loaded_seq_len = _normalize_seq_len(checkpoint.get("seq_len", seq_len))
             else:
                 state_dict = checkpoint
                 loaded_seq_len = seq_len
+
+            if not isinstance(state_dict, dict):
+                raise ValueError("checkpoint state_dict must be a mapping.")
 
             model = DisruptionTransformer(seq_len=loaded_seq_len)
             model.load_state_dict(state_dict)

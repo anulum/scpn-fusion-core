@@ -63,6 +63,8 @@ with `Harden`.
   pyo3 0.24.
 - **Python:** Dependencies are minimal (`numpy`, `scipy`, `matplotlib`,
   `streamlit`). No `pickle.load` of untrusted data in any module.
+- **Checkpoint hygiene:** disruption-model checkpoint loading prefers
+  `torch.load(..., weights_only=True)` where supported.
 
 ### RNG Isolation
 Global NumPy RNG state is never mutated by library code. All stochastic

@@ -87,6 +87,59 @@ def test_load_or_train_returns_fallback_on_corrupted_checkpoint(tmp_path: Path) 
     assert meta["seq_len"] == 32
 
 
+def test_load_or_train_prefers_weights_only_checkpoint_loading(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model_path = tmp_path / "checkpoint.pth"
+    model_path.write_bytes(b"placeholder")
+    calls: list[dict[str, object]] = []
+
+    def _fake_load(path: Path, **kwargs: object) -> object:
+        _ = path
+        calls.append(dict(kwargs))
+        raise RuntimeError("synthetic load failure")
+
+    monkeypatch.setattr(dp.torch, "load", _fake_load)
+
+    model, meta = dp.load_or_train_predictor(
+        model_path=model_path,
+        seq_len=32,
+        train_if_missing=False,
+        allow_fallback=True,
+    )
+
+    assert model is None
+    assert meta["fallback"] is True
+    assert meta["reason"].startswith("checkpoint_load_failed:")
+    assert calls
+    assert calls[0].get("weights_only") is True
+
+
+def test_load_or_train_rejects_non_mapping_checkpoint_payload(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model_path = tmp_path / "checkpoint.pth"
+    model_path.write_bytes(b"placeholder")
+
+    def _fake_load(path: Path, **kwargs: object) -> object:
+        _ = (path, kwargs)
+        return ["not", "a", "mapping"]
+
+    monkeypatch.setattr(dp.torch, "load", _fake_load)
+
+    model, meta = dp.load_or_train_predictor(
+        model_path=model_path,
+        seq_len=32,
+        train_if_missing=False,
+        allow_fallback=True,
+    )
+    assert model is None
+    assert meta["fallback"] is True
+    assert "checkpoint_load_failed:ValueError" == meta["reason"]
+
+
 def test_predict_disruption_risk_safe_falls_back_on_corrupted_checkpoint(tmp_path: Path) -> None:
     model_path = tmp_path / "corrupted_model.pth"
     model_path.write_bytes(b"still not a valid torch checkpoint")

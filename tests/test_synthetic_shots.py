@@ -77,7 +77,7 @@ def test_npz_has_required_keys(tmp_path: Path) -> None:
         "q95", "beta_N", "disruption_label", "machine",
     }
     for npz_path in tmp_path.glob("*.npz"):
-        with np.load(str(npz_path), allow_pickle=True) as data:
+        with np.load(str(npz_path), allow_pickle=False) as data:
             present = set(data.files)
             missing = required - present
             assert not missing, f"{npz_path.name} missing keys: {missing}"
@@ -88,10 +88,10 @@ def test_array_shapes(tmp_path: Path) -> None:
     generate_synthetic_shot_database(output_dir=tmp_path, n_shots=10, seed=99)
     array_keys = {"time_s", "Ip_MA", "BT_T", "ne_1e19", "Te_keV", "Ti_keV", "q95", "beta_N"}
     for npz_path in tmp_path.glob("*.npz"):
-        data = np.load(str(npz_path), allow_pickle=True)
-        for k in array_keys:
-            arr = np.asarray(data[k], dtype=np.float64)
-            assert arr.shape == (1000,), f"{npz_path.name}[{k}] shape {arr.shape}"
+        with np.load(str(npz_path), allow_pickle=False) as data:
+            for k in array_keys:
+                arr = np.asarray(data[k], dtype=np.float64)
+                assert arr.shape == (1000,), f"{npz_path.name}[{k}] shape {arr.shape}"
 
 
 def test_four_machines_represented(tmp_path: Path) -> None:
@@ -165,6 +165,27 @@ def test_load_synthetic_shot_missing_raises(tmp_path: Path) -> None:
     """FileNotFoundError for a shot that does not exist."""
     with pytest.raises(FileNotFoundError):
         load_synthetic_shot("nonexistent_shot_999", synthetic_dir=tmp_path)
+
+
+def test_load_synthetic_shot_rejects_object_array_payload(tmp_path: Path) -> None:
+    """Loader should reject object-array NPZ payloads under secure defaults."""
+    bad_path = tmp_path / "bad_object_payload.npz"
+    zeros = np.zeros(1000, dtype=np.float64)
+    np.savez(
+        bad_path,
+        time_s=zeros,
+        Ip_MA=zeros,
+        BT_T=zeros,
+        ne_1e19=zeros,
+        Te_keV=zeros,
+        Ti_keV=zeros,
+        q95=zeros,
+        beta_N=zeros,
+        disruption_label=np.array([True], dtype=object),
+        machine=np.array(["ITER"], dtype=object),
+    )
+    with pytest.raises(ValueError):
+        load_synthetic_shot(bad_path)
 
 
 def test_list_synthetic_shots_empty_dir(tmp_path: Path) -> None:

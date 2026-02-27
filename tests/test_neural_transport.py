@@ -401,3 +401,21 @@ class TestNeuralTransportModel:
         assert contract["n_points"] == 64
         assert contract["rho_min"] == pytest.approx(0.0)
         assert contract["rho_max"] == pytest.approx(1.0)
+
+
+def test_neural_transport_rejects_object_array_weight_payload(tmp_path: Path) -> None:
+    """Object-array NPZ payloads should be rejected under secure defaults."""
+    bad_weights = tmp_path / "bad_weights.npz"
+    np.savez(
+        bad_weights,
+        version=np.array(1),
+        w1=np.array([{"bad": 1}], dtype=object),
+        b1=np.zeros(1),
+        w2=np.zeros((1, 3)),
+        b2=np.zeros(3),
+        input_mean=np.zeros(10),
+        input_std=np.ones(10),
+        output_scale=np.ones(3),
+    )
+    model = NeuralTransportModel(bad_weights)
+    assert model.is_neural is False

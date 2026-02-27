@@ -70,6 +70,15 @@ def test_fno_controller_loads_saved_weights(tmp_path):
     assert 0.0 <= suppression <= 1.0
 
 
+def test_load_fno_params_rejects_object_array_payload(tmp_path: Path) -> None:
+    from scpn_fusion.core.fno_jax_training import load_fno_params
+
+    bad = tmp_path / "bad_fno_params.npz"
+    np.savez(bad, w1_real=np.array([{"bad": 1}], dtype=object))
+    with pytest.raises(ValueError):
+        load_fno_params(str(bad))
+
+
 def test_spectral_generator_is_deterministic_for_seed() -> None:
     g1 = SpectralTurbulenceGenerator(size=24, seed=77)
     g2 = SpectralTurbulenceGenerator(size=24, seed=77)

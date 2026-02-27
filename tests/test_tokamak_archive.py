@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -299,3 +301,37 @@ def test_fetch_mdsplus_profiles_cmod_machine(monkeypatch: pytest.MonkeyPatch) ->
     )
     assert len(rows) == 1
     assert rows[0].machine == "C-Mod"
+
+
+def test_load_disruption_shot_rejects_object_array_payload(tmp_path: Path) -> None:
+    """Disruption shot loader should reject object arrays under secure defaults."""
+    path = tmp_path / "bad_disruption.npz"
+    zeros = np.zeros(1000, dtype=np.float64)
+    np.savez(
+        path,
+        time_s=zeros,
+        Ip_MA=zeros,
+        BT_T=zeros,
+        beta_N=zeros,
+        q95=zeros,
+        ne_1e19=zeros,
+        n1_amp=zeros,
+        n2_amp=zeros,
+        locked_mode_amp=zeros,
+        dBdt_gauss_per_s=zeros,
+        vertical_position_m=zeros,
+        is_disruption=np.array([True], dtype=object),
+        disruption_time_idx=np.array([500], dtype=object),
+        disruption_type=np.array(["locked_mode"], dtype=object),
+    )
+    with pytest.raises(ValueError):
+        archive.load_disruption_shot(path)
+
+
+def test_shot_loaders_reject_non_npz_extension(tmp_path: Path) -> None:
+    bad = tmp_path / "not_npz.txt"
+    bad.write_text("x", encoding="utf-8")
+    with pytest.raises(ValueError, match="\\.npz"):
+        archive.load_synthetic_shot(bad)
+    with pytest.raises(ValueError, match="\\.npz"):
+        archive.load_disruption_shot(bad)

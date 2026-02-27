@@ -56,6 +56,7 @@ FloatArray = NDArray[np.float64]
 
 # Weight file format version expected by this loader.
 _WEIGHTS_FORMAT_VERSION = 1
+_MAX_WEIGHTS_FILE_BYTES = 128 * 1024 * 1024
 
 
 @dataclass
@@ -361,82 +362,101 @@ class NeuralTransportModel:
             )
             return
 
+        if self.weights_path.suffix.lower() != ".npz":
+            logger.warning(
+                "Neural transport weights must be a .npz file (got %s) — falling back",
+                self.weights_path,
+            )
+            return
+
         try:
-            data = np.load(self.weights_path)
+            file_size = int(self.weights_path.stat().st_size)
+        except OSError:
+            logger.exception("Failed to stat neural transport weights file")
+            return
+        if file_size <= 0 or file_size > _MAX_WEIGHTS_FILE_BYTES:
+            logger.warning(
+                "Neural transport weights size %d bytes outside allowed range (1..%d) — falling back",
+                file_size,
+                _MAX_WEIGHTS_FILE_BYTES,
+            )
+            return
 
-            # Auto-detect MLP depth from keys: w1/b1, w2/b2, ...
-            n_layers = 0
-            while f"w{n_layers + 1}" in data and f"b{n_layers + 1}" in data:
-                n_layers += 1
+        try:
+            with np.load(self.weights_path, allow_pickle=False) as data:
+                # Auto-detect MLP depth from keys: w1/b1, w2/b2, ...
+                n_layers = 0
+                while f"w{n_layers + 1}" in data and f"b{n_layers + 1}" in data:
+                    n_layers += 1
 
-            if n_layers < 2:
-                logger.warning(
-                    "Weight file has only %d layer(s) (need >=2) — falling back",
-                    n_layers,
-                )
-                return
-
-            for key in ("input_mean", "input_std", "output_scale"):
-                if key not in data:
+                if n_layers < 2:
                     logger.warning(
-                        "Weight file missing key '%s' — falling back", key
+                        "Weight file has only %d layer(s) (need >=2) — falling back",
+                        n_layers,
                     )
                     return
 
-            # Version check (optional key, defaults to 1)
-            version = int(data["version"]) if "version" in data else 1
-            if version != _WEIGHTS_FORMAT_VERSION:
-                logger.warning(
-                    "Weight file version %d != expected %d — falling back",
-                    version,
-                    _WEIGHTS_FORMAT_VERSION,
+                for key in ("input_mean", "input_std", "output_scale"):
+                    if key not in data:
+                        logger.warning(
+                            "Weight file missing key '%s' — falling back", key
+                        )
+                        return
+
+                # Version check (optional key, defaults to 1)
+                version = int(data["version"]) if "version" in data else 1
+                if version != _WEIGHTS_FORMAT_VERSION:
+                    logger.warning(
+                        "Weight file version %d != expected %d — falling back",
+                        version,
+                        _WEIGHTS_FORMAT_VERSION,
+                    )
+                    return
+
+                layers_w = [data[f"w{i+1}"] for i in range(n_layers)]
+                layers_b = [data[f"b{i+1}"] for i in range(n_layers)]
+
+                # Check for log-space transform flag
+                log_transform = bool(int(data["log_transform"])) if "log_transform" in data else False
+                # Check for gyro-Bohm skip connection flag
+                gb_scale = bool(int(data["gb_scale"])) if "gb_scale" in data else False
+                # Check for gated output architecture flag
+                gated = bool(int(data["gated"])) if "gated" in data else False
+
+                self._weights = MLPWeights(
+                    layers_w=layers_w,
+                    layers_b=layers_b,
+                    input_mean=data["input_mean"],
+                    input_std=data["input_std"],
+                    output_scale=data["output_scale"],
+                    log_transform=log_transform,
+                    gb_scale=gb_scale,
+                    gated=gated,
                 )
-                return
+                self.is_neural = True
 
-            layers_w = [data[f"w{i+1}"] for i in range(n_layers)]
-            layers_b = [data[f"b{i+1}"] for i in range(n_layers)]
+                # Compute checksum for reproducibility tracking
+                raw = b"".join(
+                    data[k].tobytes() for k in sorted(data.files)
+                    if k != "version"
+                )
+                self.weights_checksum = hashlib.sha256(raw).hexdigest()[:16]
 
-            # Check for log-space transform flag
-            log_transform = bool(int(data["log_transform"])) if "log_transform" in data else False
-            # Check for gyro-Bohm skip connection flag
-            gb_scale = bool(int(data["gb_scale"])) if "gb_scale" in data else False
-            # Check for gated output architecture flag
-            gated = bool(int(data["gated"])) if "gated" in data else False
+                # Build architecture description string
+                dims = [str(layers_w[0].shape[0])]
+                for w in layers_w:
+                    dims.append(str(w.shape[1]))
+                arch_str = "→".join(dims)
 
-            self._weights = MLPWeights(
-                layers_w=layers_w,
-                layers_b=layers_b,
-                input_mean=data["input_mean"],
-                input_std=data["input_std"],
-                output_scale=data["output_scale"],
-                log_transform=log_transform,
-                gb_scale=gb_scale,
-                gated=gated,
-            )
-            self.is_neural = True
-
-            # Compute checksum for reproducibility tracking
-            raw = b"".join(
-                data[k].tobytes() for k in sorted(data.files)
-                if k != "version"
-            )
-            self.weights_checksum = hashlib.sha256(raw).hexdigest()[:16]
-
-            # Build architecture description string
-            dims = [str(layers_w[0].shape[0])]
-            for w in layers_w:
-                dims.append(str(w.shape[1]))
-            arch_str = "→".join(dims)
-
-            logger.info(
-                "Loaded neural transport weights from %s "
-                "(architecture: %s, %d layers, version=%d, sha256=%s)",
-                self.weights_path,
-                arch_str,
-                n_layers,
-                version,
-                self.weights_checksum,
-            )
+                logger.info(
+                    "Loaded neural transport weights from %s "
+                    "(architecture: %s, %d layers, version=%d, sha256=%s)",
+                    self.weights_path,
+                    arch_str,
+                    n_layers,
+                    version,
+                    self.weights_checksum,
+                )
         except Exception:
             logger.exception("Failed to load neural transport weights")
 

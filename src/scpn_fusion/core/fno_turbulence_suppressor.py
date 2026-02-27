@@ -123,8 +123,8 @@ class FNO_Controller:
             logger.warning(f"JAX weights not found at {self.weights_path}. Simulation will use unit params.")
 
     def load_weights(self, path: str) -> None:
-        data = np.load(path)
-        self.params = {k: jnp.array(v) for k, v in data.items()}
+        with np.load(path, allow_pickle=False) as data:
+            self.params = {k: jnp.array(data[k]) for k in data.files}
         self.loaded_weights = True
 
     def predict_and_suppress(self, field: np.ndarray) -> Tuple[float, np.ndarray]:

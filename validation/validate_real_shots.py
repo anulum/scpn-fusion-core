@@ -310,7 +310,7 @@ def load_disruption_risk_calibration(
 
 def load_disruption_shot_payload(npz_path: Path) -> dict[str, Any]:
     """Load and validate disruption-shot payload schema."""
-    with np.load(npz_path, allow_pickle=True) as data:
+    with np.load(npz_path, allow_pickle=False) as data:
         signal_key: str | None = None
         if "dBdt_gauss_per_s" in data:
             signal_key = "dBdt_gauss_per_s"

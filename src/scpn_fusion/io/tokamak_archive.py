@@ -560,30 +560,31 @@ def load_disruption_shot(
     if not p.suffix:
         d = disruption_dir if disruption_dir is not None else DEFAULT_DISRUPTION_DIR
         p = Path(d) / f"{p.name}.npz"
+    if p.suffix.lower() != ".npz":
+        raise ValueError(f"Disruption shot file must be .npz: {p}")
     if not p.exists():
         raise FileNotFoundError(f"Disruption shot file not found: {p}")
 
-    raw = np.load(str(p), allow_pickle=True)
+    with np.load(str(p), allow_pickle=False) as raw:
+        required_array_keys = {
+            "time_s", "Ip_MA", "BT_T", "beta_N", "q95", "ne_1e19",
+            "n1_amp", "n2_amp", "locked_mode_amp", "dBdt_gauss_per_s",
+            "vertical_position_m",
+        }
+        required_scalar_keys = {"is_disruption", "disruption_time_idx", "disruption_type"}
+        all_required = required_array_keys | required_scalar_keys
+        present = set(raw.files)
+        missing = all_required - present
+        if missing:
+            raise ValueError(f"NPZ file {p.name} missing keys: {sorted(missing)}")
 
-    required_array_keys = {
-        "time_s", "Ip_MA", "BT_T", "beta_N", "q95", "ne_1e19",
-        "n1_amp", "n2_amp", "locked_mode_amp", "dBdt_gauss_per_s",
-        "vertical_position_m",
-    }
-    required_scalar_keys = {"is_disruption", "disruption_time_idx", "disruption_type"}
-    all_required = required_array_keys | required_scalar_keys
-    present = set(raw.files)
-    missing = all_required - present
-    if missing:
-        raise ValueError(f"NPZ file {p.name} missing keys: {sorted(missing)}")
-
-    result: dict[str, Any] = {}
-    for k in required_array_keys:
-        result[k] = np.asarray(raw[k], dtype=np.float64)
-    result["is_disruption"] = bool(raw["is_disruption"])
-    result["disruption_time_idx"] = int(raw["disruption_time_idx"])
-    result["disruption_type"] = str(raw["disruption_type"])
-    return result
+        result: dict[str, Any] = {}
+        for k in required_array_keys:
+            result[k] = np.asarray(raw[k], dtype=np.float64)
+        result["is_disruption"] = bool(np.asarray(raw["is_disruption"]).reshape(()).item())
+        result["disruption_time_idx"] = int(np.asarray(raw["disruption_time_idx"]).reshape(()).item())
+        result["disruption_type"] = str(np.asarray(raw["disruption_type"]).reshape(()).item())
+        return result
 
 
 # ---------------------------------------------------------------------------
@@ -829,25 +830,26 @@ def load_synthetic_shot(
     if not p.suffix:
         d = Path(synthetic_dir) if synthetic_dir is not None else DEFAULT_SYNTHETIC_DIR
         p = d / f"{p.name}.npz"
+    if p.suffix.lower() != ".npz":
+        raise ValueError(f"Synthetic shot file must be .npz: {p}")
     if not p.exists():
         raise FileNotFoundError(f"Synthetic shot file not found: {p}")
 
-    raw = np.load(str(p), allow_pickle=True)
+    with np.load(str(p), allow_pickle=False) as raw:
+        required_array_keys = {
+            "time_s", "Ip_MA", "BT_T", "ne_1e19", "Te_keV", "Ti_keV",
+            "q95", "beta_N",
+        }
+        required_scalar_keys = {"disruption_label", "machine"}
+        all_required = required_array_keys | required_scalar_keys
+        present = set(raw.files)
+        missing = all_required - present
+        if missing:
+            raise ValueError(f"NPZ file {p.name} missing keys: {sorted(missing)}")
 
-    required_array_keys = {
-        "time_s", "Ip_MA", "BT_T", "ne_1e19", "Te_keV", "Ti_keV",
-        "q95", "beta_N",
-    }
-    required_scalar_keys = {"disruption_label", "machine"}
-    all_required = required_array_keys | required_scalar_keys
-    present = set(raw.files)
-    missing = all_required - present
-    if missing:
-        raise ValueError(f"NPZ file {p.name} missing keys: {sorted(missing)}")
-
-    result: dict[str, Any] = {}
-    for k in required_array_keys:
-        result[k] = np.asarray(raw[k], dtype=np.float64)
-    result["disruption_label"] = bool(raw["disruption_label"])
-    result["machine"] = str(raw["machine"])
-    return result
+        result: dict[str, Any] = {}
+        for k in required_array_keys:
+            result[k] = np.asarray(raw[k], dtype=np.float64)
+        result["disruption_label"] = bool(np.asarray(raw["disruption_label"]).reshape(()).item())
+        result["machine"] = str(np.asarray(raw["machine"]).reshape(()).item())
+        return result

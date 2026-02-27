@@ -143,9 +143,9 @@ def train_fno_jax(data_path=None):
     
     if data_path and Path(data_path).exists():
         logger.info(f"Loading REAL GENE/TGLF dataset from {data_path}...")
-        data = np.load(data_path)
-        X, Y = jnp.array(data["X"]), jnp.array(data["Y"])
-        n_samples = X.shape[0]
+        with np.load(data_path, allow_pickle=False) as data:
+            X, Y = jnp.array(data["X"]), jnp.array(data["Y"])
+            n_samples = X.shape[0]
     else:
         logger.info("Generating Physics-Informed GENE-like dataset (G4 Roadmap)...")
         n_samples = 2000 # Increased for better fidelity
@@ -221,8 +221,8 @@ def fno_predict_jit(params, x):
 
 def load_fno_params(path="weights/fno_turbulence_jax.npz"):
     """Load FNO params from .npz into JAX arrays."""
-    data = np.load(path, allow_pickle=True)
-    return {k: jnp.asarray(data[k]) for k in data.files}
+    with np.load(path, allow_pickle=False) as data:
+        return {k: jnp.asarray(data[k]) for k in data.files}
 
 
 if __name__ == "__main__":

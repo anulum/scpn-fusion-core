@@ -18,8 +18,8 @@ def run_tglf_validation():
         return
 
     # Load JAX weights
-    data = np.load(weights_path)
-    params = {k: jnp.array(v) for k, v in data.items()}
+    with np.load(weights_path, allow_pickle=False) as data:
+        params = {k: jnp.array(data[k]) for k in data.files}
     
     # Reference cases
     cases = ["itg_dominated.json", "tem_dominated.json", "etg_dominated.json"]

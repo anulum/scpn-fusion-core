@@ -70,10 +70,10 @@ def validate(
         print("  Run: python tools/qlknn10d_to_npz.py")
         return False
 
-    test_data = np.load(test_path)
-    X_test = test_data["X"]
-    Y_test = test_data["Y"]
-    regimes = test_data.get("regimes", np.zeros(len(X_test), dtype=np.int32))
+    with np.load(test_path, allow_pickle=False) as test_data:
+        X_test = test_data["X"]
+        Y_test = test_data["Y"]
+        regimes = test_data.get("regimes", np.zeros(len(X_test), dtype=np.int32))
 
     print(f"Test data: {X_test.shape[0]:,} samples\n")
 
