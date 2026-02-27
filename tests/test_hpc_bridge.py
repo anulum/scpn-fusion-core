@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
 
 import numpy as np
 import pytest
@@ -331,9 +332,10 @@ def test_compile_cpp_requires_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_compile_cpp_builds_in_package_bin(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def _fake_run(cmd, check):  # type: ignore[no-untyped-def]
+    def _fake_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
         calls["cmd"] = list(cmd)
         calls["check"] = check
+        calls["timeout"] = timeout
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
     monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Linux")
@@ -344,8 +346,21 @@ def test_compile_cpp_builds_in_package_bin(monkeypatch: pytest.MonkeyPatch) -> N
     assert Path(out).name == "libscpn_solver.so"
     assert Path(out).parent.name == "bin"
     assert calls["check"] is True
+    assert calls["timeout"] == hpc_mod._CPP_BUILD_TIMEOUT_SECONDS
     assert isinstance(calls["cmd"], list)
     assert calls["cmd"][0] == "g++"
+
+
+def test_compile_cpp_returns_none_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _fake_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
+        _ = (check, timeout)
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
+
+    monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
+    monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(hpc_mod.subprocess, "run", _fake_run)
+
+    assert hpc_mod.compile_cpp() is None
 
 
 def test_initialize_rejects_degenerate_grid_nr_1() -> None:

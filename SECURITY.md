@@ -65,6 +65,9 @@ with `Harden`.
   `streamlit`). No `pickle.load` of untrusted data in any module.
 - **Checkpoint hygiene:** disruption-model checkpoint loading prefers
   `torch.load(..., weights_only=True)` where supported.
+- **Bounded subprocesses:** CLI mode launches, compiler git-SHA probe,
+  quantum bridge script orchestration, and native C++ compile calls use
+  explicit subprocess timeouts to avoid indefinite process hangs.
 
 ### RNG Isolation
 Global NumPy RNG state is never mutated by library code. All stochastic

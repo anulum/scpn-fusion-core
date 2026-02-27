@@ -20,6 +20,7 @@ import click
 
 LOGGER = logging.getLogger("scpn_fusion.cli")
 REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_MODE_TIMEOUT_SECONDS = 1800.0
 
 
 @dataclass(frozen=True)
@@ -97,6 +98,15 @@ def _configure_logging(level: str) -> None:
     )
 
 
+def _normalize_mode_timeout_seconds(timeout_s: float) -> float:
+    timeout = float(timeout_s)
+    if timeout <= 0.0:
+        raise click.ClickException("--mode-timeout-seconds must be finite and > 0.")
+    if timeout != timeout or timeout == float("inf") or timeout == float("-inf"):
+        raise click.ClickException("--mode-timeout-seconds must be finite and > 0.")
+    return timeout
+
+
 def _available_modes(
     *,
     include_surrogate: bool,
@@ -158,6 +168,7 @@ def _run_mode(
     *,
     python_bin: str,
     script_args: Sequence[str],
+    mode_timeout_seconds: float,
     dry_run: bool,
 ) -> int:
     spec = MODE_SPECS[mode]
@@ -171,7 +182,20 @@ def _run_mode(
     )
     if dry_run:
         return 0
-    result = subprocess.run(cmd, cwd=str(REPO_ROOT), check=False)
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=str(REPO_ROOT),
+            check=False,
+            timeout=float(mode_timeout_seconds),
+        )
+    except subprocess.TimeoutExpired:
+        LOGGER.error(
+            "Mode timed out: %s (timeout=%.1fs)",
+            mode,
+            float(mode_timeout_seconds),
+        )
+        return 124
     return int(result.returncode)
 
 
@@ -231,6 +255,13 @@ def _system_health_check() -> None:
 @click.option("--surrogate", is_flag=True, help="Unlock surrogate modes.")
 @click.option("--experimental", is_flag=True, help="Unlock experimental modes.")
 @click.option("--python-bin", default=sys.executable, show_default=True, help="Python executable for subprocesses.")
+@click.option(
+    "--mode-timeout-seconds",
+    default=DEFAULT_MODE_TIMEOUT_SECONDS,
+    show_default=True,
+    type=float,
+    help="Per-mode subprocess timeout in seconds.",
+)
 @click.option("--continue-on-error", is_flag=True, help="Continue running remaining modes after a failure.")
 @click.option("--dry-run", is_flag=True, help="Print the launch plan without executing.")
 @click.option("--list-modes", is_flag=True, help="List available modes and lock state, then exit.")
@@ -248,6 +279,7 @@ def cli(
     surrogate: bool,
     experimental: bool,
     python_bin: str,
+    mode_timeout_seconds: float,
     continue_on_error: bool,
     dry_run: bool,
     list_modes: bool,
@@ -261,6 +293,7 @@ def cli(
     """
     include_surrogate = surrogate or _env_enabled("SCPN_SURROGATE")
     include_experimental = experimental or _env_enabled("SCPN_EXPERIMENTAL")
+    mode_timeout_seconds = _normalize_mode_timeout_seconds(mode_timeout_seconds)
     _configure_logging(log_level)
 
     if not skip_health_check and not dry_run and not list_modes:
@@ -295,6 +328,7 @@ def cli(
             planned_mode,
             python_bin=python_bin,
             script_args=script_args,
+            mode_timeout_seconds=mode_timeout_seconds,
             dry_run=dry_run,
         )
         if code != 0:
@@ -325,4 +359,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

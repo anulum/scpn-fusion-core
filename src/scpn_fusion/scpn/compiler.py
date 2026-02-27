@@ -52,6 +52,7 @@ except ImportError:
 
 FloatArray = NDArray[np.float64]
 UInt64Array = NDArray[np.uint64]
+_GIT_SHA_TIMEOUT_SECONDS = 2.0
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -71,11 +72,12 @@ def _resolve_git_sha() -> str:
             check=True,
             capture_output=True,
             text=True,
+            timeout=_GIT_SHA_TIMEOUT_SECONDS,
         )
         sha = result.stdout.strip()
         if sha:
             return sha[:7]
-    except Exception:
+    except (subprocess.SubprocessError, OSError, ValueError):
         pass
 
     return "0000000"

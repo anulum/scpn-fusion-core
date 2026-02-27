@@ -13,6 +13,11 @@
 ### Changed
 - Security hardening: disruption predictor checkpoint loading now prefers `torch.load(..., weights_only=True)` when available, with compatibility fallback for legacy torch versions.
 - Security hardening: remaining `.npz` loaders in runtime/validation paths now use `allow_pickle=False` and context-managed reads (`tokamak_archive`, `neural_transport`, `fno_turbulence_suppressor`, `fno_jax_training`, `validate_real_shots`, `validate_fno_tglf`, `validate_transport_qlknn`).
+- Runtime hardening: quantum bridge now validates required script presence and fails fast on non-zero subprocess exits instead of silently continuing.
+- Runtime hardening: quantum bridge script launches now use bounded per-script timeouts with deterministic timeout errors.
+- Runtime hardening: unified CLI now enforces per-mode subprocess timeout via `--mode-timeout-seconds` to prevent indefinite hangs.
+- Runtime hardening: compiler git SHA probe now uses bounded subprocess timeout with deterministic fallback.
+- Runtime hardening: native C++ solver compilation now uses a bounded subprocess timeout and timeout-aware failure handling.
 
 ### Added
 - Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).

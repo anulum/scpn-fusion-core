@@ -20,6 +20,7 @@ from typing import Optional
 from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
+_CPP_BUILD_TIMEOUT_SECONDS = 300.0
 
 
 try:
@@ -444,8 +445,15 @@ def compile_cpp() -> Optional[str]:
 
     logger.info("Executing: %s", " ".join(cmd))
     try:
-        subprocess.run(cmd, check=True)
-    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        subprocess.run(cmd, check=True, timeout=_CPP_BUILD_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired as exc:
+        logger.error(
+            "Compilation timed out after %.1fs: %s",
+            _CPP_BUILD_TIMEOUT_SECONDS,
+            exc,
+        )
+        return None
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError) as exc:
         logger.error("Compilation failed: %s", exc)
         return None
 
