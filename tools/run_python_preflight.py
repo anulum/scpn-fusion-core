@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import shlex
 import subprocess
 import sys
@@ -8,6 +9,14 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CHECK_TIMEOUT_SECONDS = 1800.0
+
+
+def _normalize_check_timeout_seconds(timeout_s: float) -> float:
+    timeout = float(timeout_s)
+    if not math.isfinite(timeout) or timeout <= 0.0:
+        raise ValueError("check_timeout_seconds must be finite and > 0.")
+    return timeout
 
 
 def _build_release_checks(
@@ -262,10 +271,26 @@ def _build_checks(
     return checks
 
 
-def _run_check(name: str, cmd: list[str]) -> int:
+def _run_check(name: str, cmd: list[str], *, timeout_seconds: float) -> int:
     rendered = " ".join(shlex.quote(part) for part in cmd)
     print(f"[preflight] {name}: {rendered}")
-    return subprocess.call(cmd, cwd=REPO_ROOT)
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=REPO_ROOT,
+            check=False,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired:
+        print(
+            (
+                f"[preflight] TIMEOUT at '{name}' "
+                f"after {timeout_seconds:.1f}s."
+            ),
+            file=sys.stderr,
+        )
+        return 124
+    return int(result.returncode)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -370,7 +395,19 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Skip pytest experimental-only lane (tests/ -m experimental).",
     )
+    parser.add_argument(
+        "--check-timeout-seconds",
+        type=float,
+        default=DEFAULT_CHECK_TIMEOUT_SECONDS,
+        help="Per-check subprocess timeout in seconds.",
+    )
     args = parser.parse_args(argv)
+    try:
+        check_timeout_seconds = _normalize_check_timeout_seconds(
+            args.check_timeout_seconds
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
 
     checks = _build_checks(
         gate=args.gate,
@@ -396,7 +433,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     for name, cmd in checks:
-        rc = _run_check(name, cmd)
+        rc = _run_check(name, cmd, timeout_seconds=check_timeout_seconds)
         if rc != 0:
             print(
                 f"[preflight] FAILED at '{name}' with exit code {rc}.",

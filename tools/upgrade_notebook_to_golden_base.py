@@ -171,6 +171,8 @@ print(f"Repo root: {REPO_ROOT}")
 print(f"Matplotlib available: {HAS_MPL}")
 print(f"Pandas available: {HAS_PANDAS}")
 
+_SC_NEUROCORE_EDITABLE_INSTALL_TIMEOUT_SECONDS = 600.0
+
 
 def bootstrap_sc_neurocore(repo_root: Path) -> dict:
     status = {
@@ -207,7 +209,11 @@ def bootstrap_sc_neurocore(repo_root: Path) -> dict:
             if not ((candidate / "pyproject.toml").exists() or (candidate / "setup.py").exists()):
                 continue
             try:
-                subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", str(candidate)])
+                subprocess.run(
+                    [sys.executable, "-m", "pip", "install", "-e", str(candidate)],
+                    check=True,
+                    timeout=_SC_NEUROCORE_EDITABLE_INSTALL_TIMEOUT_SECONDS,
+                )
                 status["installed_editable"] = True
                 mod = _try_import()
                 if mod is not None:

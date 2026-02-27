@@ -71,6 +71,8 @@ with `Harden`.
   quantum bridge script orchestration, native C++ compile calls, and claims
   audit git file discovery use
   explicit subprocess timeouts to avoid indefinite process hangs.
+- **CI pipeline resilience:** Python preflight and strict-mypy tool runners
+  now treat hung subprocesses as deterministic timeout failures.
 
 ### RNG Isolation
 Global NumPy RNG state is never mutated by library code. All stochastic

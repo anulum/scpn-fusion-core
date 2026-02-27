@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import os
 from pathlib import Path
+import subprocess
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -24,13 +25,15 @@ def test_main_sets_pythonpath_when_missing(monkeypatch):
 
     recorded: dict[str, object] = {}
 
-    def fake_call(cmd, cwd, env):
+    def fake_run(cmd, cwd, env, check, timeout):
         recorded["cmd"] = cmd
         recorded["cwd"] = cwd
         recorded["env"] = env
-        return 0
+        recorded["check"] = check
+        recorded["timeout"] = timeout
+        return subprocess.CompletedProcess(cmd, 0)
 
-    monkeypatch.setattr(module.subprocess, "call", fake_call)
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
     monkeypatch.setattr(module.sys, "argv", ["run_mypy_strict.py"])
     monkeypatch.setattr(module.sys, "executable", "python-test")
 
@@ -48,6 +51,8 @@ def test_main_sets_pythonpath_when_missing(monkeypatch):
         "--no-incremental",
         "--no-warn-unused-configs",
     ]
+    assert recorded["check"] is False
+    assert recorded["timeout"] == module.DEFAULT_MYPY_TIMEOUT_SECONDS
     assert recorded["env"]["PYTHONPATH"] == expected_src
 
 
@@ -57,13 +62,15 @@ def test_main_preserves_existing_pythonpath_and_args(monkeypatch):
 
     recorded: dict[str, object] = {}
 
-    def fake_call(cmd, cwd, env):
+    def fake_run(cmd, cwd, env, check, timeout):
         recorded["cmd"] = cmd
         recorded["cwd"] = cwd
         recorded["env"] = env
-        return 7
+        recorded["check"] = check
+        recorded["timeout"] = timeout
+        return subprocess.CompletedProcess(cmd, 7)
 
-    monkeypatch.setattr(module.subprocess, "call", fake_call)
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
     monkeypatch.setattr(
         module.sys,
         "argv",
@@ -86,4 +93,30 @@ def test_main_preserves_existing_pythonpath_and_args(monkeypatch):
         "--no-warn-unused-configs",
         "src/scpn_fusion/control/__init__.py",
     ]
+    assert recorded["check"] is False
+    assert recorded["timeout"] == module.DEFAULT_MYPY_TIMEOUT_SECONDS
     assert recorded["env"]["PYTHONPATH"] == f"{expected_src}{os.pathsep}existing_path"
+
+
+def test_main_returns_timeout_exit_code(monkeypatch):
+    module = _load_module()
+
+    def fake_run(cmd, cwd, env, check, timeout):  # type: ignore[no-untyped-def]
+        _ = (cmd, cwd, env, check, timeout)
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
+
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+    monkeypatch.setattr(module.sys, "argv", ["run_mypy_strict.py", "--timeout-seconds", "0.01"])
+    monkeypatch.setattr(module.sys, "executable", "python-test")
+
+    rc = module.main()
+    assert rc == 124
+
+
+def test_main_rejects_invalid_timeout(monkeypatch):
+    module = _load_module()
+    monkeypatch.setattr(module.sys, "argv", ["run_mypy_strict.py", "--timeout-seconds", "0"])
+    monkeypatch.setattr(module.sys, "executable", "python-test")
+
+    rc = module.main()
+    assert rc == 2
