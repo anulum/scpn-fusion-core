@@ -350,8 +350,8 @@ def load_shot(shot_ref: str = "shot_166000_beta_limit"):
         raise FileNotFoundError(f"Shot not found for ref '{shot_ref}'. Tried: {candidates}")
 
     if chosen.suffix == ".npz":
-        npz = np.load(chosen, allow_pickle=True)
-        raw = {k: npz[k] for k in npz.files}
+        with np.load(chosen, allow_pickle=False) as npz:
+            raw = {k: npz[k] for k in npz.files}
     elif chosen.suffix == ".h5":
         if not HAS_H5PY:
             raise RuntimeError("h5py not available for .h5 shot loading.")

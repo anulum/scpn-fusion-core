@@ -848,20 +848,20 @@ def verify_all(output_dir: Path | str | None = None) -> None:
     for name, shot_number, _ in SHOT_MANIFEST:
         path = out_dir / f"{name}.npz"
         assert path.exists(), f"Missing: {path}"
-        data = np.load(str(path), allow_pickle=True)
-        keys = set(data.files)
-        missing = required_keys - keys
-        assert not missing, f"{name}: missing keys {missing}"
+        with np.load(str(path), allow_pickle=False) as data:
+            keys = set(data.files)
+            missing = required_keys - keys
+            assert not missing, f"{name}: missing keys {missing}"
 
-        for k in array_keys:
-            arr = data[k]
-            assert arr.shape == (N_STEPS,), f"{name}/{k}: shape {arr.shape}"
-            assert arr.dtype == np.float64, f"{name}/{k}: dtype {arr.dtype}"
-            assert np.all(np.isfinite(arr)), f"{name}/{k}: non-finite values"
+            for k in array_keys:
+                arr = data[k]
+                assert arr.shape == (N_STEPS,), f"{name}/{k}: shape {arr.shape}"
+                assert arr.dtype == np.float64, f"{name}/{k}: dtype {arr.dtype}"
+                assert np.all(np.isfinite(arr)), f"{name}/{k}: non-finite values"
 
-        is_disrupt = bool(data["is_disruption"])
-        disrupt_idx = int(data["disruption_time_idx"])
-        disrupt_type = str(data["disruption_type"])
+            is_disrupt = bool(np.asarray(data["is_disruption"]).reshape(()).item())
+            disrupt_idx = int(np.asarray(data["disruption_time_idx"]).reshape(()).item())
+            disrupt_type = str(np.asarray(data["disruption_type"]).reshape(()).item())
 
         if is_disrupt:
             assert 0 <= disrupt_idx < N_STEPS, (

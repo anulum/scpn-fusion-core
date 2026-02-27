@@ -54,18 +54,46 @@ def load_shots(disruption_dir: Path) -> list[dict[str, Any]]:
     npz_files = sorted(disruption_dir.glob("*.npz"))
     shots = []
     for npz_path in npz_files:
-        data = np.load(str(npz_path), allow_pickle=True)
-        is_disruption = bool(data.get("is_disruption", False))
-        disruption_time_idx = int(data.get("disruption_time_idx", -1))
-        signal = np.asarray(data.get("dBdt_gauss_per_s", data.get("n1_amp", [])))
-        if signal.size == 0:
+        with np.load(str(npz_path), allow_pickle=False) as data:
+            is_disruption = (
+                bool(np.asarray(data["is_disruption"]).reshape(()).item())
+                if "is_disruption" in data
+                else False
+            )
+            disruption_time_idx = (
+                int(np.asarray(data["disruption_time_idx"]).reshape(()).item())
+                if "disruption_time_idx" in data
+                else -1
+            )
+            if "dBdt_gauss_per_s" in data:
+                signal = np.asarray(data["dBdt_gauss_per_s"], dtype=np.float64).reshape(-1)
+            elif "n1_amp" in data:
+                signal = np.asarray(data["n1_amp"], dtype=np.float64).reshape(-1)
+            else:
+                continue
+            if signal.size == 0:
+                continue
+            n1_amp = (
+                np.asarray(data["n1_amp"], dtype=np.float64).reshape(-1)
+                if "n1_amp" in data
+                else None
+            )
+            n2_amp = (
+                np.asarray(data["n2_amp"], dtype=np.float64).reshape(-1)
+                if "n2_amp" in data
+                else None
+            )
+        if n1_amp is not None and n1_amp.size != signal.size:
+            continue
+        if n2_amp is not None and n2_amp.size != signal.size:
             continue
         shots.append({
             "file": npz_path.name,
             "is_disruption": is_disruption,
             "disruption_time_idx": disruption_time_idx,
             "signal": signal,
-            "data": data,
+            "n1_amp": n1_amp,
+            "n2_amp": n2_amp,
         })
     return shots
 
@@ -83,14 +111,15 @@ def precompute_unbiased_logits(shots: list[dict[str, Any]]) -> list[dict[str, An
     precomputed = []
     for shot in shots:
         signal = shot["signal"]
-        data = shot["data"]
+        n1_amp = shot["n1_amp"]
+        n2_amp = shot["n2_amp"]
         window_size = min(WINDOW_SIZE, signal.size)
 
         unbiased_logits = []
         for t in range(window_size, signal.size):
             window = signal[t - window_size:t]
-            n1 = float(data["n1_amp"][t]) if "n1_amp" in data else 0.1
-            n2 = float(data["n2_amp"][t]) if "n2_amp" in data else 0.05
+            n1 = float(n1_amp[t]) if n1_amp is not None else 0.1
+            n2 = float(n2_amp[t]) if n2_amp is not None else 0.05
             toroidal = {
                 "toroidal_n1_amp": n1,
                 "toroidal_n2_amp": n2,
