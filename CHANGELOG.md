@@ -18,6 +18,7 @@
 - Runtime hardening: unified CLI now enforces per-mode subprocess timeout via `--mode-timeout-seconds` to prevent indefinite hangs.
 - Runtime hardening: compiler git SHA probe now uses bounded subprocess timeout with deterministic fallback.
 - Runtime hardening: native C++ solver compilation now uses a bounded subprocess timeout and timeout-aware failure handling.
+- Runtime hardening: TGLF binary execution now validates finite positive timeouts and non-negative integer retry counts, and uses deterministic retry backoff.
 - Tooling hardening: QLKNN training scripts now enforce secure `.npz` loading (`allow_pickle=False`) with required-key validation.
 - Tooling hardening: claims audit git file discovery now uses a bounded subprocess timeout with safe fallback.
 - CI hardening: `run_python_preflight.py` and `run_mypy_strict.py` now enforce bounded subprocess timeouts with explicit timeout exit handling.

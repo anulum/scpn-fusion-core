@@ -22,6 +22,7 @@ import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+import math
 
 import numpy as np
 from numpy.typing import NDArray
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TGLF_REF_DIR = REPO_ROOT / "validation" / "tglf_reference"
+_TGLF_RETRY_BACKOFF_SECONDS = 1.0
 
 
 # ── Data containers ──────────────────────────────────────────────────
@@ -328,6 +330,22 @@ import subprocess
 import tempfile
 
 
+def _normalize_tglf_timeout_seconds(timeout_s: float) -> float:
+    timeout = float(timeout_s)
+    if not math.isfinite(timeout) or timeout <= 0.0:
+        raise ValueError("timeout_s must be finite and > 0.")
+    return timeout
+
+
+def _normalize_tglf_max_retries(max_retries: int) -> int:
+    if isinstance(max_retries, bool) or not isinstance(max_retries, int):
+        raise ValueError("max_retries must be an integer >= 0.")
+    retries = int(max_retries)
+    if retries < 0:
+        raise ValueError("max_retries must be an integer >= 0.")
+    return retries
+
+
 def write_tglf_input_file(deck: TGLFInputDeck, output_dir: str | Path) -> Path:
     """Write a TGLF input.tglf file from a TGLFInputDeck.
 
@@ -392,6 +410,8 @@ def run_tglf_binary(
     """Execute the TGLF binary on a given input deck and parse output.
     Harden with retries and input conditioning.
     """
+    timeout_s = _normalize_tglf_timeout_seconds(timeout_s)
+    max_retries = _normalize_tglf_max_retries(max_retries)
     tglf_path = Path(tglf_binary_path)
     if not tglf_path.exists():
         raise FileNotFoundError(f"TGLF binary not found: {tglf_path}")
@@ -448,8 +468,7 @@ def run_tglf_binary(
             last_exc = exc
             logger.warning(f"TGLF attempt {attempt+1} failed: {exc}. Retrying...")
             import time
-            import random
-            time.sleep(1.0 + random.random())
+            time.sleep(_TGLF_RETRY_BACKOFF_SECONDS)
         finally:
             if cleanup and (attempt == max_retries or not last_exc):
                 import shutil

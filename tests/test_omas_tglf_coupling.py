@@ -24,6 +24,7 @@ from scpn_fusion.core.tglf_interface import (
     TGLFOutput,
     TGLFComparisonResult,
     TGLFBenchmark,
+    run_tglf_binary,
     write_tglf_input_file,
     _parse_tglf_run_output,
 )
@@ -153,11 +154,29 @@ class TestTGLFOutputParser:
 
 class TestTGLFBinaryExecution:
     def test_run_tglf_binary_not_found(self):
-        from scpn_fusion.core.tglf_interface import run_tglf_binary
-
         deck = TGLFInputDeck()
         with pytest.raises(FileNotFoundError, match="TGLF binary not found"):
             run_tglf_binary(deck, "/nonexistent/path/to/tglf")
+
+    @pytest.mark.parametrize("timeout_s", [0.0, -1.0, float("inf"), float("nan")])
+    def test_run_tglf_binary_rejects_invalid_timeout(self, timeout_s):
+        deck = TGLFInputDeck()
+        with pytest.raises(ValueError, match="timeout_s must be finite and > 0."):
+            run_tglf_binary(
+                deck,
+                "/nonexistent/path/to/tglf",
+                timeout_s=timeout_s,
+            )
+
+    @pytest.mark.parametrize("max_retries", [-1, 1.5, True])
+    def test_run_tglf_binary_rejects_invalid_max_retries(self, max_retries):
+        deck = TGLFInputDeck()
+        with pytest.raises(ValueError, match="max_retries must be an integer >= 0."):
+            run_tglf_binary(
+                deck,
+                "/nonexistent/path/to/tglf",
+                max_retries=max_retries,
+            )
 
 
 # ── TGLFBenchmark comparison ──────────────────────────────────────────
