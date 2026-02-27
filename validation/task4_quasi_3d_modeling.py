@@ -26,6 +26,7 @@ from scpn_fusion.core.quasi_3d_contracts import (
 
 ROOT = Path(__file__).resolve().parents[1]
 JET_REFERENCE_DIR = ROOT / "validation" / "reference_data" / "jet"
+_THRESHOLD_COMPARISON_EPS = 1e-9
 
 
 def _require_int(name: str, value: Any, minimum: int) -> int:
@@ -128,19 +129,33 @@ def run_campaign(
     }
 
     failure_reasons: list[str] = []
-    if float(quasi["force_balance_rmse_pct"]) > thresholds["max_force_balance_rmse_pct"]:
+    if float(quasi["force_balance_rmse_pct"]) > (
+        thresholds["max_force_balance_rmse_pct"] + _THRESHOLD_COMPARISON_EPS
+    ):
         failure_reasons.append("force_balance_rmse_pct")
-    if float(force_residual["force_residual_p95_pct"]) > thresholds["max_force_residual_p95_pct"]:
+    if float(force_residual["force_residual_p95_pct"]) > (
+        thresholds["max_force_residual_p95_pct"] + _THRESHOLD_COMPARISON_EPS
+    ):
         failure_reasons.append("force_residual_p95_pct")
-    if two_fluid_index < thresholds["min_two_fluid_index"]:
+    if two_fluid_index < (
+        thresholds["min_two_fluid_index"] - _THRESHOLD_COMPARISON_EPS
+    ):
         failure_reasons.append("two_fluid_index")
-    if float(divertor["cooling_gain_pct"]) < thresholds["min_temhd_cooling_gain_pct"]:
+    if float(divertor["cooling_gain_pct"]) < (
+        thresholds["min_temhd_cooling_gain_pct"] - _THRESHOLD_COMPARISON_EPS
+    ):
         failure_reasons.append("temhd_cooling_gain_pct")
-    if jet_rmse_pct > thresholds["max_jet_heat_flux_rmse_pct"]:
+    if jet_rmse_pct > (
+        thresholds["max_jet_heat_flux_rmse_pct"] + _THRESHOLD_COMPARISON_EPS
+    ):
         failure_reasons.append("jet_heat_flux_rmse_pct")
-    if float(tbr["erosion_curve_rmse_pct"]) > thresholds["max_erosion_curve_rmse_pct"]:
+    if float(tbr["erosion_curve_rmse_pct"]) > (
+        thresholds["max_erosion_curve_rmse_pct"] + _THRESHOLD_COMPARISON_EPS
+    ):
         failure_reasons.append("erosion_curve_rmse_pct")
-    if float(tbr["calibrated_tbr"]) > thresholds["max_calibrated_tbr"]:
+    if float(tbr["calibrated_tbr"]) > (
+        thresholds["max_calibrated_tbr"] + _THRESHOLD_COMPARISON_EPS
+    ):
         failure_reasons.append("calibrated_tbr")
 
     return {

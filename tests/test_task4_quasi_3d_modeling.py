@@ -78,3 +78,95 @@ def test_task4_render_markdown_contains_required_sections() -> None:
     assert "Hall-MHD + TEMHD Coupling" in text
     assert "JET / SOLPS-ITER Proxy Heat Flux" in text
     assert "Erosion-Calibrated TBR Guard" in text
+
+
+def test_task4_campaign_tolerates_boundary_rounding(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    eps = 5e-10
+
+    monkeypatch.setattr(
+        task4_quasi_3d_modeling,
+        "build_quasi_3d_force_balance",
+        lambda **_: {
+            "nfp": 4,
+            "force_balance_rmse_pct": 8.0 + eps,
+            "asymmetry_index": 0.1,
+            "radial_spread_m": 0.5,
+            "n1_amp": 0.2,
+            "n2_amp": 0.1,
+            "z_n1_amp": 0.05,
+        },
+    )
+    monkeypatch.setattr(
+        task4_quasi_3d_modeling,
+        "solve_quasi_3d_force_residual",
+        lambda **_: {
+            "force_residual_mean_pct": 1.0,
+            "force_residual_p95_pct": 12.0 + eps,
+        },
+    )
+    monkeypatch.setattr(
+        task4_quasi_3d_modeling,
+        "hall_mhd_zonal_ratio",
+        lambda **_: {"backend": "hall_mhd", "zonal_ratio": 0.1},
+    )
+    monkeypatch.setattr(
+        task4_quasi_3d_modeling,
+        "load_jet_solps_reference_profile",
+        lambda **_: (
+            [1.0] * 24,
+            {"jet_file_count": 1, "mean_q95": 4.5},
+        ),
+    )
+    monkeypatch.setattr(
+        task4_quasi_3d_modeling,
+        "build_divertor_profiles",
+        lambda **_: {
+            "reference_profile_w_m2": [1.0] * 24,
+            "predicted_profile_w_m2": [1.0] * 24,
+            "cooling_gain_pct": 1.0 - eps,
+            "two_fluid_diag": {
+                "two_fluid_temp_split_index": 0.25,
+                "electron_temp_mean_kev": 20.0,
+                "ion_temp_mean_kev": 25.0,
+            },
+            "divertor_state": {
+                "hartmann_number": 0.0,
+                "stability_index": 0.0,
+                "surface_temperature_c": 800.0,
+                "surface_heat_flux_w_m2": 2.0e7,
+            },
+        },
+    )
+    monkeypatch.setattr(
+        task4_quasi_3d_modeling,
+        "_rmse_percent",
+        lambda truth, pred: 15.0 + eps,  # noqa: ARG005
+    )
+    monkeypatch.setattr(
+        task4_quasi_3d_modeling,
+        "calibrate_tbr_with_erosion",
+        lambda **_: {
+            "particle_flux_m2_s": 1.0e21,
+            "estimated_erosion_mm_year": 0.02,
+            "asdex_reference_erosion_mm_year": 0.25,
+            "raw_tbr": 0.8,
+            "calibration_factor": 0.9,
+            "calibrated_tbr": 1.1 + eps,
+            "erosion_curve_rmse_pct": 35.0 + eps,
+            "calibration_triggered": False,
+        },
+    )
+
+    out = task4_quasi_3d_modeling.run_campaign(
+        seed=42,
+        quasi_3d_samples=256,
+        hall_grid=16,
+        hall_steps=24,
+        toroidal_points=24,
+        tbr_thickness_cm=260.0,
+        asdex_erosion_ref_mm_year=0.25,
+    )
+    assert out["passes_thresholds"] is True
+    assert out["failure_reasons"] == []
