@@ -10,15 +10,15 @@ to concrete evidence files and patterns.
 
 | Claim ID | Source | Evidence Files | Pattern Checks |
 |---|---|---:|---:|
-| `readme_pretrained_coverage_claim` | `README.md` | 3 | 1 |
+| `readme_pretrained_coverage_claim` | `docs/HONEST_SCOPE.md` | 3 | 1 |
 | `results_fno_validated_status` | `RESULTS.md` | 1 | 1 |
 
 ## Claim Details
 
 ### `readme_pretrained_coverage_claim`
 
-- Source file: `README.md`
-- Source pattern: `4 of 7 shipped`
+- Source file: `docs/HONEST_SCOPE.md`
+- Source pattern: `4 of 7 surrogate lanes ship pretrained`
 
 Evidence files:
 - `validation/reports/task2_pretrained_surrogates_benchmark.json`
