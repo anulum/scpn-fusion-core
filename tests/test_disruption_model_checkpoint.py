@@ -116,6 +116,57 @@ def test_load_or_train_prefers_weights_only_checkpoint_loading(
     assert calls[0].get("weights_only") is True
 
 
+def test_safe_checkpoint_load_blocks_legacy_mode_without_explicit_opt_in(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model_path = tmp_path / "checkpoint.pth"
+    model_path.write_bytes(b"placeholder")
+    calls: list[dict[str, object]] = []
+
+    def _fake_load(path: Path, **kwargs: object) -> object:
+        _ = path
+        calls.append(dict(kwargs))
+        if kwargs.get("weights_only") is True:
+            raise TypeError("torch.load() got an unexpected keyword argument 'weights_only'")
+        return {"state_dict": {}, "seq_len": 32}
+
+    monkeypatch.delenv(dp._ALLOW_INSECURE_TORCH_LOAD_ENV, raising=False)
+    monkeypatch.setattr(dp.torch, "load", _fake_load)
+
+    with pytest.raises(RuntimeError, match="Legacy torch checkpoint loading is disabled"):
+        dp._safe_torch_checkpoint_load(model_path)
+
+    assert len(calls) == 1
+    assert calls[0].get("weights_only") is True
+
+
+def test_safe_checkpoint_load_allows_legacy_mode_with_explicit_opt_in(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model_path = tmp_path / "checkpoint.pth"
+    model_path.write_bytes(b"placeholder")
+    calls: list[dict[str, object]] = []
+
+    def _fake_load(path: Path, **kwargs: object) -> object:
+        _ = path
+        calls.append(dict(kwargs))
+        if kwargs.get("weights_only") is True:
+            raise TypeError("torch.load() got an unexpected keyword argument 'weights_only'")
+        return {"state_dict": {}, "seq_len": 32}
+
+    monkeypatch.setenv(dp._ALLOW_INSECURE_TORCH_LOAD_ENV, "1")
+    monkeypatch.setattr(dp.torch, "load", _fake_load)
+
+    checkpoint = dp._safe_torch_checkpoint_load(model_path)
+
+    assert checkpoint == {"state_dict": {}, "seq_len": 32}
+    assert len(calls) == 2
+    assert calls[0].get("weights_only") is True
+    assert "weights_only" not in calls[1]
+
+
 def test_load_or_train_rejects_non_mapping_checkpoint_payload(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

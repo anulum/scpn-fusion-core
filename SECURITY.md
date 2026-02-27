@@ -63,8 +63,10 @@ with `Harden`.
   pyo3 0.24.
 - **Python:** Dependencies are minimal (`numpy`, `scipy`, `matplotlib`,
   `streamlit`). No `pickle.load` of untrusted data in any module.
-- **Checkpoint hygiene:** disruption-model checkpoint loading prefers
-  `torch.load(..., weights_only=True)` where supported.
+- **Checkpoint hygiene:** disruption-model checkpoint loading requires
+  `torch.load(..., weights_only=True)` by default; legacy torch fallback
+  deserialization is disabled unless
+  `SCPN_ALLOW_INSECURE_TORCH_LOAD=1` is set for trusted checkpoints.
 - **Secure NumPy loading:** runtime, validation, and QLKNN training tooling
   paths use `np.load(..., allow_pickle=False)` with required-key checks.
 - **Bounded subprocesses:** CLI mode launches, compiler git-SHA probe,

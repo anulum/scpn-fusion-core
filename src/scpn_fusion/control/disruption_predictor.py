@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
@@ -41,6 +42,7 @@ DISRUPTION_RISK_LINEAR_WEIGHTS: dict[str, float] = {
     "asym": 0.50,
     "spread": 0.15,
 }
+_ALLOW_INSECURE_TORCH_LOAD_ENV = "SCPN_ALLOW_INSECURE_TORCH_LOAD"
 
 
 def _require_int(name: str, value: object, minimum: int | None = None) -> int:
@@ -546,8 +548,18 @@ def _safe_torch_checkpoint_load(path: Path) -> Any:
     except TypeError as exc:
         if "weights_only" not in str(exc):
             raise
+        allow_insecure_legacy_load = str(
+            os.environ.get(_ALLOW_INSECURE_TORCH_LOAD_ENV, "")
+        ).strip().lower() in {"1", "true", "yes", "on"}
+        if not allow_insecure_legacy_load:
+            raise RuntimeError(
+                "Legacy torch checkpoint loading is disabled because weights_only=True "
+                f"is unavailable. Set {_ALLOW_INSECURE_TORCH_LOAD_ENV}=1 only for "
+                "trusted checkpoints."
+            ) from exc
         logger.warning(
-            "torch.load(weights_only=True) unsupported; using legacy checkpoint load for compatibility."
+            "torch.load(weights_only=True) unsupported; using legacy checkpoint load "
+            "because SCPN_ALLOW_INSECURE_TORCH_LOAD is enabled."
         )
         return torch.load(path, map_location="cpu")
 

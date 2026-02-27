@@ -11,7 +11,7 @@
 ## [Unreleased]
 
 ### Changed
-- Security hardening: disruption predictor checkpoint loading now prefers `torch.load(..., weights_only=True)` when available, with compatibility fallback for legacy torch versions.
+- Security hardening: disruption predictor checkpoint loading now fails closed when `weights_only=True` is unavailable; insecure legacy torch deserialization is opt-in via `SCPN_ALLOW_INSECURE_TORCH_LOAD=1` for trusted checkpoints only.
 - Security hardening: remaining `.npz` loaders in runtime/validation paths now use `allow_pickle=False` and context-managed reads (`tokamak_archive`, `neural_transport`, `fno_turbulence_suppressor`, `fno_jax_training`, `validate_real_shots`, `validate_fno_tglf`, `validate_transport_qlknn`).
 - Runtime hardening: quantum bridge now validates required script presence and fails fast on non-zero subprocess exits instead of silently continuing.
 - Runtime hardening: quantum bridge script launches now use bounded per-script timeouts with deterministic timeout errors.
