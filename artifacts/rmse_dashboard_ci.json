@@ -1,10 +1,10 @@
 {
   "generated_at_utc": "2026-02-17T22:55:26.565818+00:00",
   "confinement_itpa": {
-    "count": 20,
-    "tau_rmse_s": 0.12869867798102505,
-    "tau_mae_rel_pct": 32.53107628886907,
-    "h98_rmse": 0.19828979839532448,
+    "count": 53,
+    "tau_rmse_s": 0.09690193155298907,
+    "tau_mae_rel_pct": 50.09349665880682,
+    "h98_rmse": 0.6517967715097016,
     "rows": [
       {
         "machine": "ITER",
@@ -12,7 +12,7 @@
         "tau_measured_s": 3.7,
         "tau_pred_s": 3.6060077194126654,
         "h98_measured": 1.0,
-        "h98_pred": 1.0260654684906343
+        "h98_pred": 0.974596680922342
       },
       {
         "machine": "JET",
@@ -20,7 +20,7 @@
         "tau_measured_s": 0.41,
         "tau_pred_s": 0.5201485510391346,
         "h98_measured": 0.95,
-        "h98_pred": 0.7882363589803649
+        "h98_pred": 1.205222252407751
       },
       {
         "machine": "JET",
@@ -28,7 +28,7 @@
         "tau_measured_s": 0.45,
         "tau_pred_s": 0.5597695611105319,
         "h98_measured": 0.94,
-        "h98_pred": 0.8039022327459909
+        "h98_pred": 1.1692964165419997
       },
       {
         "machine": "JET",
@@ -36,7 +36,7 @@
         "tau_measured_s": 0.27,
         "tau_pred_s": 0.3554189801488458,
         "h98_measured": 0.97,
-        "h98_pred": 0.759666801944361
+        "h98_pred": 1.276875595349557
       },
       {
         "machine": "DIII-D",
@@ -44,7 +44,7 @@
         "tau_measured_s": 0.18,
         "tau_pred_s": 0.14954297145632342,
         "h98_measured": 1.1,
-        "h98_pred": 1.203667402399932
+        "h98_pred": 0.91387371445531
       },
       {
         "machine": "DIII-D",
@@ -52,7 +52,7 @@
         "tau_measured_s": 0.14,
         "tau_pred_s": 0.11971096830206253,
         "h98_measured": 1.05,
-        "h98_pred": 1.1694834816367274
+        "h98_pred": 0.8978322622654689
       },
       {
         "machine": "DIII-D",
@@ -60,7 +60,7 @@
         "tau_measured_s": 0.16,
         "tau_pred_s": 0.1313112255425987,
         "h98_measured": 1.15,
-        "h98_pred": 1.2184792224644525
+        "h98_pred": 0.943799433587428
       },
       {
         "machine": "ASDEX-U",
@@ -68,7 +68,7 @@
         "tau_measured_s": 0.1,
         "tau_pred_s": 0.11436036148372862,
         "h98_measured": 0.95,
-        "h98_pred": 0.8744288554406867
+        "h98_pred": 1.0864234340954217
       },
       {
         "machine": "ASDEX-U",
@@ -76,7 +76,7 @@
         "tau_measured_s": 0.12,
         "tau_pred_s": 0.10016557470863807,
         "h98_measured": 1.05,
-        "h98_pred": 1.1980163878563703
+        "h98_pred": 0.8764487787005831
       },
       {
         "machine": "C-Mod",
@@ -84,7 +84,7 @@
         "tau_measured_s": 0.035,
         "tau_pred_s": 0.04694265936310885,
         "h98_measured": 0.9,
-        "h98_pred": 0.7455904815547304
+        "h98_pred": 1.2070969550513704
       },
       {
         "machine": "C-Mod",
@@ -92,7 +92,7 @@
         "tau_measured_s": 0.033,
         "tau_pred_s": 0.05741769649521605,
         "h98_measured": 0.85,
-        "h98_pred": 0.5747357002165614
+        "h98_pred": 1.4789406673010195
       },
       {
         "machine": "JT-60U",
@@ -100,7 +100,7 @@
         "tau_measured_s": 0.38,
         "tau_pred_s": 0.3731905085223489,
         "h98_measured": 0.9,
-        "h98_pred": 1.018246689886657
+        "h98_pred": 0.8838722570266159
       },
       {
         "machine": "JT-60U",
@@ -108,7 +108,7 @@
         "tau_measured_s": 0.35,
         "tau_pred_s": 0.39904073489855046,
         "h98_measured": 1.05,
-        "h98_pred": 0.8771034367931928
+        "h98_pred": 1.1971222046956516
       },
       {
         "machine": "NSTX",
@@ -116,7 +116,7 @@
         "tau_measured_s": 0.035,
         "tau_pred_s": 0.038857823333809105,
         "h98_measured": 1.0,
-        "h98_pred": 0.9007195204767808
+        "h98_pred": 1.1102235238231173
       },
       {
         "machine": "MAST",
@@ -124,7 +124,7 @@
         "tau_measured_s": 0.01,
         "tau_pred_s": 0.035655346746255936,
         "h98_measured": 0.8,
-        "h98_pred": 0.28046284533889915
+        "h98_pred": 2.852427739700475
       },
       {
         "machine": "KSTAR",
@@ -132,7 +132,7 @@
         "tau_measured_s": 0.13,
         "tau_pred_s": 0.11088750700048482,
         "h98_measured": 1.0,
-        "h98_pred": 1.172359299225941
+        "h98_pred": 0.8529808230806524
       },
       {
         "machine": "KSTAR",
@@ -140,7 +140,7 @@
         "tau_measured_s": 0.14,
         "tau_pred_s": 0.108800523891326,
         "h98_measured": 1.1,
-        "h98_pred": 1.2867585099115626
+        "h98_pred": 0.8548612591461329
       },
       {
         "machine": "EAST",
@@ -148,7 +148,7 @@
         "tau_measured_s": 0.08,
         "tau_pred_s": 0.07678083881225782,
         "h98_measured": 0.85,
-        "h98_pred": 1.0419266217657972
+        "h98_pred": 0.8157964123802394
       },
       {
         "machine": "SPARC",
@@ -156,7 +156,7 @@
         "tau_measured_s": 0.77,
         "tau_pred_s": 0.6295299603713291,
         "h98_measured": 1.0,
-        "h98_pred": 1.2231347965485462
+        "h98_pred": 0.8175713771056222
       },
       {
         "machine": "ARC",
@@ -164,7 +164,271 @@
         "tau_measured_s": 1.5,
         "tau_pred_s": 2.0130768506371286,
         "h98_measured": 1.0,
-        "h98_pred": 0.7451280359839505
+        "h98_pred": 1.3420512337580857
+      },
+      {
+        "machine": "JET",
+        "shot": "96482",
+        "tau_measured_s": 0.38,
+        "tau_pred_s": 0.46302384389066836,
+        "h98_measured": 1.02,
+        "h98_pred": 1.2428534757065308
+      },
+      {
+        "machine": "JET",
+        "shot": "92398",
+        "tau_measured_s": 0.36,
+        "tau_pred_s": 0.528494863070471,
+        "h98_measured": 0.91,
+        "h98_pred": 1.3359175705392463
+      },
+      {
+        "machine": "JET",
+        "shot": "hybrid_high",
+        "tau_measured_s": 0.31,
+        "tau_pred_s": 0.3908995066542049,
+        "h98_measured": 0.96,
+        "h98_pred": 1.2105275044775377
+      },
+      {
+        "machine": "JET",
+        "shot": "96482b",
+        "tau_measured_s": 0.4,
+        "tau_pred_s": 0.5230645060923734,
+        "h98_measured": 0.92,
+        "h98_pred": 1.2030483640124587
+      },
+      {
+        "machine": "JET",
+        "shot": "96994",
+        "tau_measured_s": 0.38,
+        "tau_pred_s": 0.6099040386265583,
+        "h98_measured": 0.88,
+        "h98_pred": 1.4124093526088717
+      },
+      {
+        "machine": "DIII-D",
+        "shot": "171322",
+        "tau_measured_s": 0.15,
+        "tau_pred_s": 0.1251074101373138,
+        "h98_measured": 1.02,
+        "h98_pred": 0.8507303889337339
+      },
+      {
+        "machine": "DIII-D",
+        "shot": "ITER_baseline",
+        "tau_measured_s": 0.17,
+        "tau_pred_s": 0.13726599759483973,
+        "h98_measured": 1.08,
+        "h98_pred": 0.87204280824957
+      },
+      {
+        "machine": "ASDEX-U",
+        "shot": "36190",
+        "tau_measured_s": 0.11,
+        "tau_pred_s": 0.12096191411788369,
+        "h98_measured": 1.0,
+        "h98_pred": 1.0996537647080336
+      },
+      {
+        "machine": "ASDEX-U",
+        "shot": "high_tri",
+        "tau_measured_s": 0.13,
+        "tau_pred_s": 0.13019708295987634,
+        "h98_measured": 1.08,
+        "h98_pred": 1.081637304589742
+      },
+      {
+        "machine": "ASDEX-U",
+        "shot": "37718",
+        "tau_measured_s": 0.08,
+        "tau_pred_s": 0.1056217578886982,
+        "h98_measured": 0.93,
+        "h98_pred": 1.2278529354561165
+      },
+      {
+        "machine": "ASDEX-U",
+        "shot": "37720",
+        "tau_measured_s": 0.07,
+        "tau_pred_s": 0.10410570450432341,
+        "h98_measured": 0.9,
+        "h98_pred": 1.3385019150555866
+      },
+      {
+        "machine": "TFTR",
+        "shot": "supershot",
+        "tau_measured_s": 0.2,
+        "tau_pred_s": 0.11379323933438232,
+        "h98_measured": 0.89,
+        "h98_pred": 0.5063799150380013
+      },
+      {
+        "machine": "TFTR",
+        "shot": "DT_record",
+        "tau_measured_s": 0.18,
+        "tau_pred_s": 0.12455531870231516,
+        "h98_measured": 0.82,
+        "h98_pred": 0.5674186740883247
+      },
+      {
+        "machine": "TFTR",
+        "shot": "high_Ip",
+        "tau_measured_s": 0.17,
+        "tau_pred_s": 0.10430179544624625,
+        "h98_measured": 0.85,
+        "h98_pred": 0.5215089772312312
+      },
+      {
+        "machine": "WEST",
+        "shot": "53688",
+        "tau_measured_s": 0.07,
+        "tau_pred_s": 0.12803279147923635,
+        "h98_measured": 0.75,
+        "h98_pred": 1.3717799087061038
+      },
+      {
+        "machine": "WEST",
+        "shot": "54200",
+        "tau_measured_s": 0.08,
+        "tau_pred_s": 0.13905791170146353,
+        "h98_measured": 0.8,
+        "h98_pred": 1.3905791170146353
+      },
+      {
+        "machine": "WEST",
+        "shot": "55000",
+        "tau_measured_s": 0.07,
+        "tau_pred_s": 0.14182000271206235,
+        "h98_measured": 0.72,
+        "h98_pred": 1.4587200278954982
+      },
+      {
+        "machine": "TCV",
+        "shot": "64770",
+        "tau_measured_s": 0.015,
+        "tau_pred_s": 0.019728585172227708,
+        "h98_measured": 0.9,
+        "h98_pred": 1.1837151103336625
+      },
+      {
+        "machine": "TCV",
+        "shot": "65340",
+        "tau_measured_s": 0.018,
+        "tau_pred_s": 0.01939709661865803,
+        "h98_measured": 0.95,
+        "h98_pred": 1.0237356548736183
+      },
+      {
+        "machine": "TCV",
+        "shot": "NBI_H",
+        "tau_measured_s": 0.013,
+        "tau_pred_s": 0.017726431557623493,
+        "h98_measured": 0.82,
+        "h98_pred": 1.1181287597885587
+      },
+      {
+        "machine": "HL-2A",
+        "shot": "standard",
+        "tau_measured_s": 0.04,
+        "tau_pred_s": 0.042917449896140436,
+        "h98_measured": 0.8,
+        "h98_pred": 0.8583489979228087
+      },
+      {
+        "machine": "HL-2M",
+        "shot": "first_plasma",
+        "tau_measured_s": 0.09,
+        "tau_pred_s": 0.1614924681558717,
+        "h98_measured": 0.88,
+        "h98_pred": 1.5790374664129678
+      },
+      {
+        "machine": "COMPASS",
+        "shot": "11889",
+        "tau_measured_s": 0.005,
+        "tau_pred_s": 0.013717936236339094,
+        "h98_measured": 0.82,
+        "h98_pred": 2.2497415427596112
+      },
+      {
+        "machine": "COMPASS",
+        "shot": "H_mode",
+        "tau_measured_s": 0.004,
+        "tau_pred_s": 0.012599607982491075,
+        "h98_measured": 0.75,
+        "h98_pred": 2.3624264967170765
+      },
+      {
+        "machine": "JT-60SA",
+        "shot": "design",
+        "tau_measured_s": 0.6,
+        "tau_pred_s": 0.5745785292454519,
+        "h98_measured": 1.0,
+        "h98_pred": 0.9576308820757533
+      },
+      {
+        "machine": "JT-60SA",
+        "shot": "half_Ip",
+        "tau_measured_s": 0.35,
+        "tau_pred_s": 0.48149057851627597,
+        "h98_measured": 0.92,
+        "h98_pred": 1.2656323778142111
+      },
+      {
+        "machine": "SST-1",
+        "shot": "standard",
+        "tau_measured_s": 0.008,
+        "tau_pred_s": 0.015035036387907099,
+        "h98_measured": 0.7,
+        "h98_pred": 1.315565683941871
+      },
+      {
+        "machine": "Aditya-U",
+        "shot": "H_mode",
+        "tau_measured_s": 0.006,
+        "tau_pred_s": 0.01908314542303099,
+        "h98_measured": 0.75,
+        "h98_pred": 2.385393177878874
+      },
+      {
+        "machine": "Globus-M2",
+        "shot": "standard",
+        "tau_measured_s": 0.003,
+        "tau_pred_s": 0.005968406935545785,
+        "h98_measured": 0.85,
+        "h98_pred": 1.6910486317379723
+      },
+      {
+        "machine": "NSTX-U",
+        "shot": "design",
+        "tau_measured_s": 0.045,
+        "tau_pred_s": 0.0495907737174382,
+        "h98_measured": 1.05,
+        "h98_pred": 1.1571180534068914
+      },
+      {
+        "machine": "MAST-U",
+        "shot": "conv_div",
+        "tau_measured_s": 0.012,
+        "tau_pred_s": 0.04438243088243018,
+        "h98_measured": 0.85,
+        "h98_pred": 3.143755520838804
+      },
+      {
+        "machine": "EAST",
+        "shot": "long_pulse",
+        "tau_measured_s": 0.1,
+        "tau_pred_s": 0.0907395381735219,
+        "h98_measured": 0.92,
+        "h98_pred": 0.8348037511964015
+      },
+      {
+        "machine": "KSTAR",
+        "shot": "long_pulse",
+        "tau_measured_s": 0.12,
+        "tau_pred_s": 0.08166946065427806,
+        "h98_measured": 0.95,
+        "h98_pred": 0.646549896846368
       }
     ]
   },

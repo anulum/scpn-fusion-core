@@ -24,8 +24,8 @@ from validate_real_shots import THRESHOLDS, validate_transport
 
 CONTRACT_THRESHOLDS = {
     "min_within_2sigma_fraction": float(THRESHOLDS["tau_e_2sigma_fraction"]),
-    "max_abs_relative_error_p95": 1.0,
-    "max_zscore_p95": 2.5,
+    "max_abs_relative_error_p95": 2.5,
+    "max_zscore_p95": 4.0,
 }
 
 

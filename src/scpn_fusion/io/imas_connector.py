@@ -835,7 +835,139 @@ def state_to_imas_summary(state: Mapping[str, Any]) -> dict[str, Any]:
 
 # ── File-level IDS I/O ────────────────────────────────────────────────
 
-_VALID_IDS_TYPES = ("equilibrium", "core_profiles", "summary")
+def state_to_imas_core_transport(
+    state: Mapping[str, Any],
+    *,
+    time_s: float = 0.0,
+) -> dict[str, Any]:
+    """Convert a plasma state dict to an IMAS ``core_transport`` IDS.
+
+    Parameters
+    ----------
+    state : Mapping
+        Must contain ``rho_norm`` (array), and optionally ``chi_e``
+        (electron thermal diffusivity, m^2/s), ``chi_i`` (ion thermal
+        diffusivity, m^2/s), ``d_e`` (particle diffusivity, m^2/s).
+    time_s : float
+        Time stamp for this IDS slice [s].
+
+    Returns
+    -------
+    dict — IMAS DD-compliant ``core_transport`` IDS dict.
+    """
+    if isinstance(state, bool) or not isinstance(state, Mapping):
+        raise ValueError("state must be a mapping.")
+
+    rho_raw = state.get("rho_norm")
+    if rho_raw is None:
+        raise ValueError("state must contain 'rho_norm'.")
+    rho = _coerce_finite_real_sequence(
+        "state.rho_norm", rho_raw, minimum_len=2,
+        minimum=0.0, maximum=1.0, strictly_increasing=True,
+    )
+
+    transport_1d: dict[str, Any] = {
+        "grid_d": {"rho_tor_norm": rho},
+    }
+
+    def _set_nested(root: dict, path: str, value: list[float]) -> None:
+        parts = path.split(".")
+        d = root
+        for p in parts[:-1]:
+            d = d.setdefault(p, {})
+        d[parts[-1]] = value
+
+    for key, setter in [
+        ("chi_e", lambda v: _set_nested(transport_1d, "electrons.energy.d", v)),
+        ("d_e", lambda v: _set_nested(transport_1d, "electrons.particles.d", v)),
+    ]:
+        val = state.get(key)
+        if val is not None:
+            vals = _coerce_finite_real_sequence(
+                f"state.{key}", val, minimum_len=2, minimum=0.0,
+            )
+            if len(vals) != len(rho):
+                raise ValueError(f"state.{key} length must match state.rho_norm.")
+            setter(vals)
+
+    chi_i_raw = state.get("chi_i")
+    if chi_i_raw is not None:
+        chi_i_vals = _coerce_finite_real_sequence(
+            "state.chi_i", chi_i_raw, minimum_len=2, minimum=0.0,
+        )
+        if len(chi_i_vals) != len(rho):
+            raise ValueError("state.chi_i length must match state.rho_norm.")
+        transport_1d["ion"] = [{"energy": {"d": chi_i_vals}}]
+
+    return {
+        "ids_properties": {
+            "homogeneous_time": 1,
+            "comment": "SCPN Fusion Core core_transport export",
+        },
+        "time": [float(time_s)],
+        "model": [
+            {
+                "time": float(time_s),
+                "identifier": {
+                    "name": "scpn_fusion_transport",
+                    "description": "SCPN Fusion Core reduced-order transport",
+                },
+                "profiles_1d": [transport_1d],
+            }
+        ],
+    }
+
+
+def imas_core_transport_to_state(ids: Mapping[str, Any]) -> dict[str, Any]:
+    """Convert an IMAS ``core_transport`` IDS back to a state dict.
+
+    Parameters
+    ----------
+    ids : Mapping
+        IMAS DD-compliant ``core_transport`` IDS dict.
+
+    Returns
+    -------
+    dict with keys ``rho_norm``, ``chi_e``, ``chi_i``, ``d_e`` (when present).
+    """
+    if not isinstance(ids, Mapping):
+        raise ValueError("ids must be a mapping.")
+    models = ids.get("model")
+    if not isinstance(models, Sequence) or len(models) == 0:
+        raise ValueError("core_transport IDS must contain at least one model.")
+
+    m = models[0]
+    profiles = m.get("profiles_1d")
+    if not isinstance(profiles, Sequence) or len(profiles) == 0:
+        raise ValueError("core_transport model must have profiles_1d.")
+    p1d = profiles[0]
+
+    grid = p1d.get("grid_d", {})
+    rho = grid.get("rho_tor_norm")
+    if rho is None:
+        raise ValueError("core_transport profiles_1d must contain grid_d.rho_tor_norm.")
+
+    out: dict[str, Any] = {"rho_norm": list(rho)}
+
+    electrons = p1d.get("electrons", {})
+    chi_e = electrons.get("energy", {}).get("d")
+    if chi_e is not None:
+        out["chi_e"] = list(chi_e)
+
+    d_e = electrons.get("particles", {}).get("d")
+    if d_e is not None:
+        out["d_e"] = list(d_e)
+
+    ions = p1d.get("ion", [])
+    if isinstance(ions, Sequence) and len(ions) > 0:
+        chi_i = ions[0].get("energy", {}).get("d") if isinstance(ions[0], Mapping) else None
+        if chi_i is not None:
+            out["chi_i"] = list(chi_i)
+
+    return out
+
+
+_VALID_IDS_TYPES = ("equilibrium", "core_profiles", "core_transport", "summary")
 
 
 def _numpy_serializer(obj: Any) -> Any:

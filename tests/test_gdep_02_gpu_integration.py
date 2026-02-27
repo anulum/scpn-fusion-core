@@ -74,7 +74,7 @@ def test_equilibrium_latency_auto_backend_resolves_and_reports_fault_runs() -> N
         fault_runs=10,
         seed=123,
     )
-    assert out.backend in {"gpu_sim", "torch_fallback"}
+    assert out.backend in {"jax", "gpu_sim", "torch_fallback"}
     assert out.fault_runs == 10
     assert out.p95_ms_est > 0.0
     assert out.fault_p95_ms_est > 0.0

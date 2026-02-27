@@ -189,7 +189,7 @@ def run_surrogates() -> dict[str, Any] | None:
     )
     results: dict[str, Any] = {}
     try:
-        mlp = evaluate_pretrained_mlp()
+        mlp = evaluate_pretrained_mlp(max_samples=20)
         results["mlp_rmse_s"] = mlp["rmse_s"]
         results["mlp_rmse_pct"] = mlp["rmse_pct"]
         results["mlp_samples"] = mlp["samples"]
@@ -378,7 +378,7 @@ def generate_results_md(
             sections.append(f"| Backup test relative L2 | {_fmt(b['test_relative_l2'])} | — | {bdims} architecture |")
         sections.append("")
 
-    # ── Confinement ITPA (20 machines) ──
+    # ── Confinement ITPA ──
     if confinement:
         ci = confinement.get("confinement_itpa", {})
         cs = confinement.get("confinement_iter_sparc", {})
@@ -388,7 +388,8 @@ def generate_results_md(
         sections.append("| Metric | Value | Unit | Notes |")
         sections.append("|--------|-------|------|-------|")
         if ci:
-            sections.append(f"| Machines validated | {ci.get('count', '—')} | — | ITER, JET, DIII-D, ASDEX-U, C-Mod, JT-60U, NSTX, MAST, KSTAR, EAST, SPARC, ARC |")
+            machines = "ITER, JET, DIII-D, ASDEX-U, C-Mod, JT-60U, NSTX, MAST, KSTAR, EAST, SPARC, ARC, TFTR, WEST, TCV, HL-2A, HL-2M, COMPASS, JT-60SA, SST-1, Aditya-U, Globus-M2, NSTX-U, MAST-U"
+            sections.append(f"| Machines validated | {ci.get('count', '—')} | — | {machines} |")
             sections.append(f"| tau_E RMSE | {_fmt(ci.get('tau_rmse_s'), '.4f')} | s | |")
             sections.append(f"| tau_E relative RMSE | {_fmt(ci.get('tau_mae_rel_pct'), '.1f')} | % | |")
             sections.append(f"| H98 RMSE | {_fmt(ci.get('h98_rmse'), '.4f')} | — | |")

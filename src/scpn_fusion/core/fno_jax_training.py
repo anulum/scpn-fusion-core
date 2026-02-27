@@ -202,6 +202,29 @@ def train_fno_jax(data_path=None):
     logger.info("Training complete. Saving JAX-FNO weights...")
     np.savez("weights/fno_turbulence_jax.npz", **params)
 
+def fno_predict_jit(params, x):
+    """JIT-compiled single-sample FNO inference.
+
+    Parameters
+    ----------
+    params : dict
+        FNO parameter dict (as returned by ``init_fno_params`` or loaded from .npz).
+    x : jax array, shape (grid, grid, 1)
+        Input field.
+
+    Returns
+    -------
+    float — predicted scalar output.
+    """
+    return jit(model_forward)(params, x)
+
+
+def load_fno_params(path="weights/fno_turbulence_jax.npz"):
+    """Load FNO params from .npz into JAX arrays."""
+    data = np.load(path, allow_pickle=True)
+    return {k: jnp.asarray(data[k]) for k in data.files}
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()

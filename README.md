@@ -40,7 +40,7 @@ real-time control loop closure at **10 kHz+** rates.
 > **control-algorithm development and surrogate-modeling framework** with
 > enough physics fidelity to validate reactor control strategies against
 > real equilibrium data (8 SPARC EFIT GEQDSKs, 100+ multi-machine
-> synthetic equilibria, 20-shot ITPA H-mode confinement database, 16
+> synthetic equilibria, 52-shot ITPA H-mode confinement database, 16
 > DIII-D reference disruption shots). Validated against IPB98(y,2)
 > confinement scaling with 28.6% full-physics relative RMSE
 > (13.5% neural-surrogate fit lane) and >60% disruption prevention rate on
@@ -57,7 +57,7 @@ real-time control loop closure at **10 kHz+** rates.
 | **Graceful degradation** | Every module works without Rust, without SC-NeuroCore, without GPU |
 | **Explicit over silent** | 263 hardening tasks replaced silent clamping/coercion with explicit errors |
 | **Formal safety interlocks** | Inhibitor-arc safety net disables control transitions on hard-limit violations |
-| **Real data validation** | 8 SPARC EFIT + 100 multi-machine GEQDSKs + 20-shot ITPA database + 10 disruption shots |
+| **Real data validation** | 8 SPARC EFIT + 100 multi-machine GEQDSKs + 52-shot ITPA database + 10 disruption shots |
 | **Reduced-order by design** | Physics models are fast enough for real-time control (ms, not hours) |
 
 ## Architecture
@@ -259,7 +259,7 @@ The `validation/` directory contains reference data from real tokamaks for cross
 |---------|--------|----------|
 | **SPARC GEQDSK** | [SPARCPublic](https://github.com/cfs-energy/SPARCPublic) | 8 EFIT equilibrium files (B=12.2 T, I_p up to 8.7 MA) |
 | **Multi-machine GEQDSK** | Synthetic Solov'ev | 100 equilibria across DIII-D, JET, EAST, KSTAR, ASDEX-U |
-| **ITPA H-mode** | Verdoolaege et al., NF 61 (2021) | Confinement data from 11 tokamaks, 20 shots |
+| **ITPA H-mode** | Verdoolaege et al., NF 61 (2021) | Confinement data from 26 machines, 52 shots |
 | **IPB98(y,2)** | ITER Physics Basis | Scaling law coefficients + published uncertainties |
 | **DIII-D disruption shots** | Reference profiles (10 shots) | 5 disruptions + 5 safe, locked mode/VDE/tearing/density/beta |
 | **ITER configs** | Internal | 4 coil-optimised ITER configurations |
@@ -422,7 +422,7 @@ The `scpn-fusion-rs/` directory contains an 11-crate Rust workspace that mirrors
 | Component | Status | Evidence |
 |-----------|--------|----------|
 | **Grad-Shafranov solver** | Converges on SPARC GEQDSK equilibria | `validation/validate_against_sparc.py` — axis position, q-profile, GS operator checks |
-| **IPB98(y,2) scaling** | Confinement time matches published law | `tests/test_uncertainty.py` — regression against ITPA 20-shot dataset |
+| **IPB98(y,2) scaling** | Confinement time matches published law | `tests/test_uncertainty.py` — regression against ITPA 52-shot dataset |
 | **Inverse reconstruction** | Levenberg-Marquardt with Tikhonov + Huber | Criterion benchmarks: `inverse_bench.rs` (FD vs analytical Jacobian) |
 | **SOR solver** | Criterion-benchmarked | `sor_bench.rs` — 65×65 and 128×128 grid sizes |
 | **GMRES(30) solver** | Criterion-benchmarked | `gmres_bench.rs` — 33×33 and 65×65 grids, SOR-preconditioned |
@@ -542,11 +542,11 @@ Run `pytest tests/test_ipb98y2_benchmark.py -v` and
 | Module | What It Is | What It Is Not |
 |--------|-----------|----------------|
 | **Equilibrium** | Picard iteration + Red-Black SOR (+ optional Anderson acceleration). GMRES(30) and multigrid V-cycle available in Rust. Newton-Kantorovich available in Python. Converges on 3 SPARC L-mode GEQDSKs. Default 65×65 grid. | Not EFIT-quality inverse reconstruction. Not free-boundary (coil currents are fixed). Rust multigrid not yet wired into the Python kernel path (use Rust API directly). |
-| **Transport** | 1.5D Bohm/gyro-Bohm critical-gradient model with Chang-Hinton neoclassical option. CN temperature evolution. Unit-consistent MW->keV/s auxiliary source normalisation with per-step power-balance telemetry (`_last_aux_heating_balance`). IPB98(y,2) confinement time evaluation. | No ITG/TEM/ETG turbulent transport channels. No NBI slowing-down. No impurity transport (beyond simple diffusion). No sawtooth mixing in transport. Actual RMSE vs IPB98(y,2) on the 20-shot ITPA dataset is printed by `test_ipb98y2_benchmark.py`; source-power contract benchmark is `validation/benchmark_transport_power_balance.py`. |
+| **Transport** | 1.5D Bohm/gyro-Bohm critical-gradient model with Chang-Hinton neoclassical option. CN temperature evolution. Unit-consistent MW->keV/s auxiliary source normalisation with per-step power-balance telemetry (`_last_aux_heating_balance`). IPB98(y,2) confinement time evaluation. | No ITG/TEM/ETG turbulent transport channels. No NBI slowing-down. No impurity transport (beyond simple diffusion). No sawtooth mixing in transport. Actual RMSE vs IPB98(y,2) on the 52-shot ITPA dataset is printed by `test_ipb98y2_benchmark.py`; source-power contract benchmark is `validation/benchmark_transport_power_balance.py`. |
 | **Stability** | Vertical n-index stability analysis. | No kink mode analysis. No peeling-ballooning (no access to edge bootstrap current calculation). No Mercier criterion. No resistive wall modes. |
 | **Neural Equilibrium** | PCA + MLP surrogate trained on 78 samples (3 SPARC L-mode configs at varying currents). | 78 training samples is far below what is needed for generalization. The surrogate is useful for fast controller prototyping on the specific SPARC L-mode family it was trained on, not for arbitrary equilibria. |
 | **FNO Turbulence** | Fourier Neural Operator trained on synthetic data (not real gyrokinetic output). | Not a replacement for GENE/GS2. The FNO learns a proxy mapping, not real turbulent transport coefficients. |
-| **Neural Transport MLP** | 20-row illustrative dataset from ITPA. Baseline pretrained bundle shipped. | 20 rows cannot capture the full H-mode confinement parameter space. Facility-specific retraining is mandatory for any quantitative use. |
+| **Neural Transport MLP** | 52-row illustrative dataset from ITPA. Baseline pretrained bundle shipped. | 52 rows cannot capture the full H-mode confinement parameter space. Facility-specific retraining is mandatory for any quantitative use. |
 | **Grid Resolution** | Default 65×65 for prototyping. 129×129 and 257×257 tested in edge-case suite. | Production equilibrium codes use 257+ with multigrid. Our 65×65 default is appropriate for control-loop closure testing, not for publication-quality equilibrium reconstruction. |
 
 ### Resources
@@ -655,7 +655,7 @@ This project is honest about what it does and does not do.
 | **Gyrokinetic turbulence** | Not planned | Use GENE/GS2 externally; SCPN provides surrogate coupling points |
 | **5D kinetic transport** | Not planned | Deliberately reduced-order for real-time control |
 | **GPU acceleration** | Deterministic runtime bridge + optional torch fallback ([GPU Roadmap](docs/GPU_ACCELERATION_ROADMAP.md)) | CUDA-native kernels remain roadmap work |
-| **Pre-trained neural weights** | 3 of 7 shipped (MLP ITPA, FNO JET, Neural Equilibrium SPARC) | Remaining 4 surrogate lanes (neural transport, heat ML shadow, gyro-Swin, turbulence oracle) still require site-specific user training |
+| **Pre-trained neural weights** | 4 of 7 shipped (MLP ITPA, FNO JET, Neural Equilibrium SPARC, QLKNN Transport) | Remaining 3 surrogate lanes (heat ML shadow, gyro-Swin, turbulence oracle) still require site-specific user training |
 | **Point-wise RMSE validation** | Partial | Topology checks (axis, q-profile, GS sign) on 8 SPARC files; not yet point-wise psi comparison |
 
 ### What it does well
@@ -666,7 +666,7 @@ This project is honest about what it does and does not do.
 | **Surrogate modeling** | FNO turbulence (41 KB trained weights), neural transport MLP, neural equilibrium |
 | **Digital twin + RL** | In-situ Q-learning policy training with chaos monkey fault injection |
 | **Code health** | 263 hardening tasks, 100% explicit error handling in Rust, property-based tests |
-| **Real data validation** | 8 SPARC GEQDSK files (CFS), 20-shot ITPA H-mode confinement database |
+| **Real data validation** | 8 SPARC GEQDSK files (CFS), 52-shot ITPA H-mode confinement database |
 | **Graceful degradation** | Every module works without Rust, without SC-NeuroCore, without GPU |
 
 ### Alignment with DOE Fusion S&T Roadmap
@@ -689,7 +689,7 @@ exclusively for regression testing. Each dataset has its own licensing terms:
 | Dataset | License / Source | Redistribution |
 |---------|-----------------|----------------|
 | **SPARC GEQDSK** | MIT ([cfs-energy/SPARCPublic](https://github.com/cfs-energy/SPARCPublic)) | See `validation/reference_data/sparc/LICENSE` |
-| **ITPA H-mode** | 20-row illustrative subset from Verdoolaege et al., NF 61 (2021) | See `validation/reference_data/itpa/README.md` |
+| **ITPA H-mode** | 52-row illustrative subset from Verdoolaege et al., NF 61 (2021) | See `validation/reference_data/itpa/README.md` |
 | **ITER configs** | Internally generated from published parameters | No restrictions |
 | **JET / DIII-D** | Manually constructed from published literature | No restrictions |
 | **EU-DEMO / K-DEMO** | Synthetic reference configurations | No restrictions |

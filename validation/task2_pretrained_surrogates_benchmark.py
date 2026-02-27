@@ -245,7 +245,7 @@ def run_campaign(
         seed=seed_i,
     )
     surrogate_coverage = get_pretrained_surrogate_coverage(manifest)
-    mlp_eval = evaluate_pretrained_mlp()
+    mlp_eval = evaluate_pretrained_mlp(max_samples=20)
     fno_eval = evaluate_pretrained_fno(max_samples=16)
 
     tm1 = run_disruption_auc_benchmark(

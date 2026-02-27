@@ -38,18 +38,18 @@
     "surrogate_coverage": {
       "pretrained_shipped": [
         "scpn_fusion.core.pretrained_surrogates:mlp_itpa",
-        "scpn_fusion.core.pretrained_surrogates:fno_eurofusion_jet"
+        "scpn_fusion.core.pretrained_surrogates:fno_eurofusion_jet",
+        "scpn_fusion.core.neural_equilibrium:sparc",
+        "scpn_fusion.core.neural_transport:qlknn"
       ],
       "requires_user_training": [
-        "scpn_fusion.core.neural_equilibrium",
-        "scpn_fusion.core.neural_transport",
         "scpn_fusion.core.heat_ml_shadow_surrogate",
         "scpn_fusion.core.gyro_swin_surrogate",
         "scpn_fusion.core.turbulence_oracle"
       ],
-      "coverage_fraction": 0.2857142857142857,
-      "coverage_percent": 28.571428571428573,
-      "notes": "Baseline pretrained artifacts are bundled for MLP+FNO lanes only. Facility-specific surrogates and alternate neural lanes still require local training."
+      "coverage_fraction": 0.5714285714285714,
+      "coverage_percent": 57.1428,
+      "notes": "4 of 7 pretrained surrogates shipped: MLP-ITPA, FNO-JET, Neural Equilibrium (SPARC), QLKNN Transport. Remaining 3 require local training."
     },
     "mlp_evaluation": {
       "rmse_s": 0.06065391091166174,

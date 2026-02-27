@@ -95,6 +95,8 @@ CASES: list[TokamakCase] = [
     TokamakCase(name="ITER-like",            R0=6.2,  a=2.0,  B0=5.3,  Ip=15.0,  kappa=1.7),
     TokamakCase(name="SPARC-like",           R0=1.85, a=0.57, B0=12.2, Ip=8.7,   kappa=1.97),
     TokamakCase(name="Spherical-tokamak",    R0=0.85, a=0.55, B0=0.5,  Ip=1.0,   kappa=2.5),
+    TokamakCase(name="KSTAR-like",           R0=1.80, a=0.50, B0=3.5,  Ip=2.0,   kappa=1.83),
+    TokamakCase(name="SPARC-high-kappa",     R0=1.85, a=0.57, B0=12.2, Ip=9.0,   kappa=2.20),
 ]
 
 # ── Solov'ev analytic equilibrium ────────────────────────────────────

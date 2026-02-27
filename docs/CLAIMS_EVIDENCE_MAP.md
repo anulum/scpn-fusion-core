@@ -10,7 +10,7 @@ to concrete evidence files and patterns.
 
 | Claim ID | Source | Evidence Files | Pattern Checks |
 |---|---|---:|---:|
-| `readme_pretrained_coverage_claim` | `README.md` | 2 | 2 |
+| `readme_pretrained_coverage_claim` | `README.md` | 3 | 1 |
 | `results_fno_validated_status` | `RESULTS.md` | 1 | 1 |
 
 ## Claim Details
@@ -18,18 +18,18 @@ to concrete evidence files and patterns.
 ### `readme_pretrained_coverage_claim`
 
 - Source file: `README.md`
-- Source pattern: `3 of 7 shipped`
+- Source pattern: `4 of 7 shipped`
 
 Evidence files:
 - `validation/reports/task2_pretrained_surrogates_benchmark.json`
 - `validation/reports/task2_pretrained_surrogates_benchmark.md`
+- `weights/neural_transport_qlknn.npz`
 
 Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `validation/reports/task2_pretrained_surrogates_benchmark.json` | `"coverage_percent"\s*:\s*28\.5714` |
-| `validation/reports/task2_pretrained_surrogates_benchmark.md` | `Pretrained coverage: \`28\.6%\`` |
+| `validation/reports/task2_pretrained_surrogates_benchmark.json` | `"coverage_percent"\s*:\s*57\.1428` |
 
 ### `results_fno_validated_status`
 

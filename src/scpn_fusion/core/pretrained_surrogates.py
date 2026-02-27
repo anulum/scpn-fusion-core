@@ -40,9 +40,9 @@ def _default_surrogate_coverage() -> dict[str, Any]:
         "scpn_fusion.core.pretrained_surrogates:mlp_itpa",
         "scpn_fusion.core.pretrained_surrogates:fno_eurofusion_jet",
         "scpn_fusion.core.neural_equilibrium:sparc",
+        "scpn_fusion.core.neural_transport:qlknn",
     ]
     requires_user_training = [
-        "scpn_fusion.core.neural_transport",
         "scpn_fusion.core.heat_ml_shadow_surrogate",
         "scpn_fusion.core.gyro_swin_surrogate",
         "scpn_fusion.core.turbulence_oracle",
@@ -54,9 +54,10 @@ def _default_surrogate_coverage() -> dict[str, Any]:
         "coverage_fraction": float(len(shipped) / max(total, 1)),
         "coverage_percent": float(100.0 * len(shipped) / max(total, 1)),
         "notes": (
-            "Pretrained artifacts are bundled for MLP (ITPA), FNO (JET), and "
-            "neural equilibrium (SPARC GEQDSK). Remaining surrogate lanes "
-            "still require facility-specific user training."
+            "Pretrained artifacts are bundled for MLP (ITPA), FNO (JET), "
+            "neural equilibrium (SPARC GEQDSK), and QLKNN transport. "
+            "Remaining surrogate lanes still require facility-specific "
+            "user training."
         ),
     }
 
@@ -396,9 +397,13 @@ def evaluate_pretrained_mlp(
     *,
     model_path: Path = DEFAULT_MLP_PATH,
     csv_path: Path = DEFAULT_ITPA_CSV,
+    max_samples: int = 0,
 ) -> dict[str, float]:
     model = load_pretrained_mlp(path=model_path)
     x, y = _load_itpa_training_data(csv_path)
+    if max_samples > 0:
+        x = x[:max_samples]
+        y = y[:max_samples]
     pred = model.predict(x)
     rmse = float(np.sqrt(np.mean((pred - y) ** 2)))
     rmse_pct = float(100.0 * rmse / (np.mean(np.abs(y)) + 1e-12))

@@ -19,6 +19,14 @@ try:
 except Exception:  # pragma: no cover - optional dependency path
     torch = None  # type: ignore[assignment]
 
+try:
+    import jax
+    jax.config.update("jax_enable_x64", True)
+    import jax.numpy as jnp
+except Exception:  # pragma: no cover - optional dependency path
+    jax = None  # type: ignore[assignment]
+    jnp = None  # type: ignore[assignment]
+
 from scpn_fusion.control.disruption_predictor import apply_bit_flip_fault
 
 
@@ -118,11 +126,36 @@ class GPURuntimeBridge:
             )
         return np.asarray(u.detach().cpu().numpy(), dtype=np.float64)
 
+    def _jax_multigrid(self, field: np.ndarray, iterations: int = 4) -> np.ndarray:
+        if jax is None:
+            raise RuntimeError("JAX backend requested but jax is not installed.")
+        iterations = self._require_int_at_least(
+            iterations, name="iterations", minimum=1
+        )
+        u = jnp.asarray(field, dtype=jnp.float64)
+
+        @jax.jit
+        def _step(u: jnp.ndarray) -> jnp.ndarray:
+            return 0.2 * (
+                u
+                + jnp.roll(u, 1, axis=0)
+                + jnp.roll(u, -1, axis=0)
+                + jnp.roll(u, 1, axis=1)
+                + jnp.roll(u, -1, axis=1)
+            )
+
+        for _ in range(iterations):
+            u = _step(u)
+        return np.asarray(u, dtype=np.float64)
+
     @staticmethod
     def available_equilibrium_backends() -> tuple[str, ...]:
-        if torch is None:
-            return ("cpu", "gpu_sim")
-        return ("cpu", "gpu_sim", "torch_fallback")
+        backends = ["cpu", "gpu_sim"]
+        if torch is not None:
+            backends.append("torch_fallback")
+        if jax is not None:
+            backends.append("jax")
+        return tuple(backends)
 
     def _cpu_snn(self, features: np.ndarray) -> np.ndarray:
         out = np.zeros((features.shape[0], self.w2.shape[1]), dtype=np.float64)
@@ -249,19 +282,25 @@ class GPURuntimeBridge:
         bit_flips_per_run: int = 3,
         seed: int = 42,
     ) -> EquilibriumLatencyBenchmark:
-        if backend not in {"auto", "cpu", "gpu_sim", "torch_fallback"}:
+        if backend not in {"auto", "cpu", "gpu_sim", "torch_fallback", "jax"}:
             raise ValueError(
-                "backend must be one of: auto, cpu, gpu_sim, torch_fallback."
+                "backend must be one of: auto, cpu, gpu_sim, torch_fallback, jax."
             )
-        resolved_backend = (
-            "torch_fallback" if backend == "auto" and torch is not None else "gpu_sim"
-        )
-        if backend in {"cpu", "gpu_sim", "torch_fallback"}:
+        if backend == "auto":
+            if jax is not None:
+                resolved_backend = "jax"
+            elif torch is not None:
+                resolved_backend = "torch_fallback"
+            else:
+                resolved_backend = "gpu_sim"
+        else:
             resolved_backend = backend
         if resolved_backend == "torch_fallback" and torch is None:
             raise RuntimeError(
                 "PyTorch fallback requested but torch is not installed."
             )
+        if resolved_backend == "jax" and jax is None:
+            raise RuntimeError("JAX backend requested but jax is not installed.")
         trials_i = self._require_int_at_least(trials, name="trials", minimum=8)
         n = self._require_int_at_least(grid_size, name="grid_size", minimum=16)
         iter_i = self._require_int_at_least(iterations, name="iterations", minimum=1)
@@ -279,9 +318,16 @@ class GPURuntimeBridge:
         elif resolved_backend == "gpu_sim":
             throughput = 2.5e7
             solver = self._gpu_sim_multigrid
+        elif resolved_backend == "jax":
+            throughput = 5.0e7
+            solver = self._jax_multigrid
         else:
             throughput = 4.0e7
             solver = self._torch_fallback_multigrid
+
+        # JIT warmup: exclude compilation from latency measurements
+        if resolved_backend == "jax":
+            _ = solver(base_field, iterations=iter_i)
 
         wall_ms: list[float] = []
         est_ms: list[float] = []

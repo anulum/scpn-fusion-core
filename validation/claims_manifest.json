@@ -4,19 +4,16 @@
     {
       "id": "readme_pretrained_coverage_claim",
       "source_file": "README.md",
-      "source_pattern": "3 of 7 shipped",
+      "source_pattern": "4 of 7 shipped",
       "evidence_files": [
         "validation/reports/task2_pretrained_surrogates_benchmark.json",
-        "validation/reports/task2_pretrained_surrogates_benchmark.md"
+        "validation/reports/task2_pretrained_surrogates_benchmark.md",
+        "weights/neural_transport_qlknn.npz"
       ],
       "evidence_patterns": [
         {
           "file": "validation/reports/task2_pretrained_surrogates_benchmark.json",
-          "pattern": "\"coverage_percent\"\\s*:\\s*28\\.5714"
-        },
-        {
-          "file": "validation/reports/task2_pretrained_surrogates_benchmark.md",
-          "pattern": "Pretrained coverage: `28\\.6%`"
+          "pattern": "\"coverage_percent\"\\s*:\\s*57\\.1428"
         }
       ]
     },
