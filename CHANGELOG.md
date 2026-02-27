@@ -23,6 +23,7 @@
 - CI hardening: `run_python_preflight.py` and `run_mypy_strict.py` now enforce bounded subprocess timeouts with explicit timeout exit handling.
 - Tooling hardening: notebook upgrade bootstrap now bounds `pip install -e` subprocess runtime.
 - Repo policy: local Claude command-permission settings (`.claude/settings.local.json`) are now explicitly local-only and git-ignored.
+- CI compatibility: `quantum_bridge` now uses postponed annotation evaluation to keep Python 3.9 import-safe while retaining modern union type hints.
 
 ### Added
 - Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).
