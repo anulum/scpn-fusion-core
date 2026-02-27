@@ -5,11 +5,23 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ─────────────────────────────────────────────────────────────────────
-"""Inference wrapper for multi-layer JAX-FNO turbulence suppression."""
+"""DEPRECATED: FNO turbulence surrogate (synthetic-only, rel_L2=0.79).
+
+Trained on 60 Hasegawa-Wakatani samples; not validated against gyrokinetics.
+Use QLKNN-10D neural transport (weights/neural_transport_qlknn.npz) instead.
+Will be removed in v4.0.
+"""
 
 from __future__ import annotations
 
 import warnings
+
+warnings.warn(
+    "fno_turbulence_suppressor is deprecated (rel_L2=0.79, synthetic-only). "
+    "Use neural_transport with QLKNN-10D weights instead. Removal in v4.0.",
+    FutureWarning,
+    stacklevel=2,
+)
 from pathlib import Path
 from typing import Any, Optional, Tuple
 

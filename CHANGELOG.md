@@ -61,15 +61,10 @@
 
 ## [3.8.3] — 2026-02-21
 
-### Added — v4.0 Elite Hardening & Full CI Green
+### Added
 
-- **v4.0 Elite Hardening Integration**: Integrated Gemini's comprehensive hardening wave across physics, control, and validation modules:
-  - Strict Pydantic schema validation (`config_schema.py`) with bounded physical ranges
-  - Circular telemetry buffers for real-time diagnostics
-  - Structured JSON logging (`logging_config.py`) across all core modules
-  - Actuator constraint enforcement and package-level validation integrity
-  - Comprehensive physics closures: Modified Rutherford Equation, IPB98(y,2) scaling, cylindrical neutronics, Thomas-Fermi WDM EOS
-  - Control robustification: Tikhonov-regularized MIMO, Kalman state estimation, anti-windup PID
+- **Physics hardening**: Pydantic schema validation, Modified Rutherford Equation, IPB98(y,2) scaling, cylindrical neutronics, Thomas-Fermi WDM EOS, Tikhonov-regularized MIMO, Kalman state estimation, anti-windup PID
+- **Telemetry**: Circular buffers, structured JSON logging across all core modules
 - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_dt()` — accurate to <1% across 1-100 keV
 - **C_fus Recalibration**: Fusion power constant recalibrated to `3.68e-18` matching 500 MW at n=1e20, T=15 keV
 - **q_proxy Boundary Hardening**: Added `max(0.1, ...)` floor and `np.errstate` guards preventing NaN at plasma edge
@@ -87,16 +82,12 @@
 - CI: All 9 lanes green (5 Rust + 4 Python)
 - `sync_metadata.py`: Fixed bug that corrupted all historical CHANGELOG version headers (replaced ALL `## [x.y.z]` instead of only the first)
 
----
+### Also included (from 2026-02-20 pre-release)
 
-## [3.8.3] — 2026-02-20
-
-### Added — High-Speed Rust Flight Sim & Neural Equilibrium
-
-- **Rust-native flight simulator**: `RustFlightSim` in `scpn-fusion-rs` with 10 kHz+ control loops, `IsoFluxController`, actuator delay line, and per-step timing instrumentation.
-- **Neural equilibrium surrogate**: PCA+MLP `NeuralEquilibriumKernel` in `neural_equilibrium.py` — drop-in FusionKernel replacement achieving ~1000x speedup over Picard iteration for Grad-Shafranov reconstruction.
-- **JAX Fourier Neural Operator**: `fno_jax_training.py` — JAX-accelerated FNO with spectral convolution for turbulence surrogate training (1000 samples, 64x64 grid).
-- **Jitter tracking hardening**: Sub-microsecond timing instrumentation for control loop latency monitoring.
+- **Rust-native flight simulator**: `RustFlightSim` with 10 kHz+ control loops, `IsoFluxController`, actuator delay line, per-step timing
+- **Neural equilibrium surrogate**: PCA+MLP `NeuralEquilibriumKernel` — ~1000x speedup over Picard iteration
+- **JAX FNO**: `fno_jax_training.py` — spectral convolution for turbulence surrogate training (1000 samples, 64x64)
+- **Jitter tracking**: Sub-microsecond timing instrumentation for control loop latency
 
 ## [3.8.2] — 2026-02-19
 

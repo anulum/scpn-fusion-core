@@ -528,8 +528,8 @@ def generate_results_md(
             rows.append(f"| Neural transport MLP surrogate tau_E RMSE | {_fmt(surrogates['mlp_rmse_s'], '.4f')} | s | ITPA H-mode confinement time |")
             rows.append(f"| Neural transport MLP surrogate tau_E RMSE % | {_fmt(surrogates['mlp_rmse_pct'], '.1f')} | % | {int(surrogates.get('mlp_samples', 0))} samples |")
         if surrogates.get("fno_rel_l2_mean") is not None:
-            rows.append(f"| JAX FNO turbulence surrogate relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | ψ(R,Z) reconstruction |")
-            rows.append(f"| JAX FNO turbulence surrogate relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | {int(surrogates.get('fno_samples', 0))} samples |")
+            rows.append(f"| JAX FNO turbulence surrogate relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | DEPRECATED — synthetic-only, removal in v4.0 |")
+            rows.append(f"| JAX FNO turbulence surrogate relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | DEPRECATED — use QLKNN-10D instead |")
     if rows:
         sections.append("## Legacy Surrogates\n")
         sections.append("| Metric | Value | Unit | Notes |")
@@ -586,8 +586,8 @@ def generate_results_md(
           f"P50 = {hil['p50_us']:.1f} μs" if hil else "—")
     _lane("FreeGS analytic", freegs, "passes",
           f"ψ NRMSE = {freegs['overall_psi_nrmse']:.3f}" if freegs else "—")
-    _lane("FNO EUROfusion", {"passes": surrogates and surrogates.get("fno_rel_l2_mean") is not None and surrogates["fno_rel_l2_mean"] < 0.10} if surrogates else None, "passes",
-          f"rel_L2 = {surrogates['fno_rel_l2_mean']:.4f}" if surrogates and surrogates.get("fno_rel_l2_mean") is not None else "—")
+    fno_metric = f"rel_L2 = {surrogates['fno_rel_l2_mean']:.4f} (synthetic-only, removal in v4.0)" if surrogates and surrogates.get("fno_rel_l2_mean") is not None else "—"
+    sections.append(f"| FNO EUROfusion | DEPRECATED | {fno_metric} |")
     sections.append("")
 
     # ── Controller Performance (campaign) ──

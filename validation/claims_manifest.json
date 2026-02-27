@@ -3,8 +3,8 @@
   "claims": [
     {
       "id": "readme_pretrained_coverage_claim",
-      "source_file": "README.md",
-      "source_pattern": "4 of 7 shipped",
+      "source_file": "docs/HONEST_SCOPE.md",
+      "source_pattern": "4 of 7 surrogate lanes ship pretrained",
       "evidence_files": [
         "validation/reports/task2_pretrained_surrogates_benchmark.json",
         "validation/reports/task2_pretrained_surrogates_benchmark.md",
