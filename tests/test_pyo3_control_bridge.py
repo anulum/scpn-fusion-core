@@ -128,6 +128,8 @@ class TestPyRustFlightSim:
         assert len(report.r_history) == 1000
         assert len(report.z_history) == 1000
         assert 0 <= report.vessel_contact_events <= report.steps
+        assert 0 <= report.pf_constraint_events <= report.steps
+        assert 0 <= report.heating_constraint_events <= report.steps
         assert report.retained_steps == report.steps
         assert report.history_truncated is False
 
@@ -154,6 +156,8 @@ class TestPyRustFlightSim:
         assert 0.0 <= report.final_heating_mw <= 100.0
         assert 0.0 <= report.max_heating_mw <= 100.0
         assert report.max_heating_mw >= report.final_heating_mw
+        assert 0 <= report.pf_constraint_events <= report.steps
+        assert 0 <= report.heating_constraint_events <= report.steps
 
     def test_prepare_and_step_once_api(self):
         sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, 10000.0)
@@ -173,7 +177,20 @@ class TestPyRustFlightSim:
             assert 0.2 <= step.beta <= 10.0
             assert 0.0 <= step.heating_mw <= 100.0
             assert isinstance(step.vessel_contact, bool)
+            assert isinstance(step.pf_constraint_active, bool)
+            assert isinstance(step.heating_constraint_active, bool)
 
         assert first.heating_mw <= mid.heating_mw <= last.heating_mw
         with pytest.raises(RuntimeError):
             sim.step_once(steps, 0.01)
+
+    def test_reset_plasma_state_restores_nominal(self):
+        sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, 10000.0)
+        sim.run_shot(0.01)
+        sim.reset_plasma_state()
+        state = sim.plasma_state()
+        assert state.r == pytest.approx(6.2)
+        assert state.z == pytest.approx(0.0)
+        assert state.ip_ma == pytest.approx(5.0)
+        assert state.beta == pytest.approx(1.0)
+        assert state.heating_mw == pytest.approx(20.0)

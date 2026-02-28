@@ -29,6 +29,8 @@ pub struct SimulationReport {
     pub max_beta: f64,
     pub max_heating_mw: f64,
     pub vessel_contact_events: usize,
+    pub pf_constraint_events: usize,
+    pub heating_constraint_events: usize,
     pub retained_steps: usize,
     pub history_truncated: bool,
     pub disrupted: bool,
@@ -46,6 +48,8 @@ pub struct StepMetrics {
     pub beta: f64,
     pub heating_mw: f64,
     pub vessel_contact: bool,
+    pub pf_constraint_active: bool,
+    pub heating_constraint_active: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -57,6 +61,8 @@ pub struct ShotAggregate {
     pub max_beta: f64,
     pub max_heating_mw: f64,
     pub vessel_contact_events: usize,
+    pub pf_constraint_events: usize,
+    pub heating_constraint_events: usize,
 }
 
 /// High-speed simulation engine.
@@ -174,6 +180,25 @@ impl RustFlightSim {
         self.pf_states.fill(0.0);
     }
 
+    pub fn reset_plasma_state(&mut self) {
+        self.reset_for_shot();
+        self.curr_r = self.controller.target_r;
+        self.curr_z = self.controller.target_z;
+        self.curr_ip_ma = 5.0;
+        self.curr_beta = 1.0;
+        self.curr_heating_mw = 20.0;
+    }
+
+    pub fn plasma_state(&self) -> (f64, f64, f64, f64, f64) {
+        (
+            self.curr_r,
+            self.curr_z,
+            self.curr_ip_ma,
+            self.curr_beta,
+            self.curr_heating_mw,
+        )
+    }
+
     pub fn prepare_shot(&mut self, shot_duration_s: f64) -> FusionResult<usize> {
         let steps = self.validate_shot_duration(shot_duration_s)?;
         self.validate_runtime_state()?;
@@ -217,6 +242,7 @@ impl RustFlightSim {
             self.curr_heating_mw,
             self.control_dt,
         );
+        let heating_constraint_active = (self.curr_heating_mw - heating_request_mw).abs() > 1e-12;
         let beta_target = 0.6 + 0.03 * self.curr_heating_mw;
         self.curr_beta += 0.5 * (beta_target - self.curr_beta) * self.control_dt;
         self.curr_beta = self.curr_beta.clamp(0.2, 10.0);
@@ -241,6 +267,8 @@ impl RustFlightSim {
             self.constraints
                 .pf_coils
                 .enforce(requested_z, self.pf_states[1], self.control_dt);
+        let pf_constraint_active =
+            (ctrl_r - requested_r).abs() > 1e-12 || (ctrl_z - requested_z).abs() > 1e-12;
         self.pf_states[0] = ctrl_r;
         self.pf_states[1] = ctrl_z;
 
@@ -280,6 +308,8 @@ impl RustFlightSim {
             beta: self.curr_beta,
             heating_mw: self.curr_heating_mw,
             vessel_contact,
+            pf_constraint_active,
+            heating_constraint_active,
         })
     }
 
@@ -308,6 +338,8 @@ impl RustFlightSim {
             max_beta: aggregate.max_beta,
             max_heating_mw: aggregate.max_heating_mw,
             vessel_contact_events: aggregate.vessel_contact_events,
+            pf_constraint_events: aggregate.pf_constraint_events,
+            heating_constraint_events: aggregate.heating_constraint_events,
             retained_steps,
             history_truncated,
             disrupted: aggregate.disrupted,
@@ -338,6 +370,8 @@ impl RustFlightSim {
             max_beta: self.curr_beta,
             max_heating_mw: self.curr_heating_mw,
             vessel_contact_events: 0,
+            pf_constraint_events: 0,
+            heating_constraint_events: 0,
         };
 
         let mut next_tick = Instant::now();
@@ -355,6 +389,8 @@ impl RustFlightSim {
             aggregate.max_beta = aggregate.max_beta.max(step.beta);
             aggregate.max_heating_mw = aggregate.max_heating_mw.max(step.heating_mw);
             aggregate.vessel_contact_events += usize::from(step.vessel_contact);
+            aggregate.pf_constraint_events += usize::from(step.pf_constraint_active);
+            aggregate.heating_constraint_events += usize::from(step.heating_constraint_active);
             next_tick += step_duration;
         }
 
@@ -400,6 +436,8 @@ mod tests {
         assert!(report.max_heating_mw >= report.final_heating_mw);
         assert!((0.0..=100.0).contains(&sim.curr_heating_mw));
         assert!(report.vessel_contact_events <= report.steps);
+        assert!(report.pf_constraint_events <= report.steps);
+        assert!(report.heating_constraint_events <= report.steps);
         assert_eq!(report.retained_steps, report.steps);
         assert!(!report.history_truncated);
     }
@@ -440,5 +478,18 @@ mod tests {
         assert_eq!(report.retained_steps, 16);
         assert!(report.history_truncated);
         assert_eq!(report.r_history.len(), 16);
+    }
+
+    #[test]
+    fn test_reset_plasma_state_restores_nominal_values() {
+        let mut sim = RustFlightSim::new(6.2, 0.0, 10_000.0).expect("valid sim");
+        let _ = sim.run_shot(0.01, false).expect("shot should run");
+        sim.reset_plasma_state();
+        let (r, z, ip, beta, heating) = sim.plasma_state();
+        assert!((r - 6.2).abs() < 1e-12);
+        assert!(z.abs() < 1e-12);
+        assert!((ip - 5.0).abs() < 1e-12);
+        assert!((beta - 1.0).abs() < 1e-12);
+        assert!((heating - 20.0).abs() < 1e-12);
     }
 }

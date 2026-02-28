@@ -216,6 +216,10 @@ struct PySimulationReport {
     #[pyo3(get)]
     pub vessel_contact_events: usize,
     #[pyo3(get)]
+    pub pf_constraint_events: usize,
+    #[pyo3(get)]
+    pub heating_constraint_events: usize,
+    #[pyo3(get)]
     pub retained_steps: usize,
     #[pyo3(get)]
     pub history_truncated: bool,
@@ -245,6 +249,24 @@ struct PyStepMetrics {
     pub heating_mw: f64,
     #[pyo3(get)]
     pub vessel_contact: bool,
+    #[pyo3(get)]
+    pub pf_constraint_active: bool,
+    #[pyo3(get)]
+    pub heating_constraint_active: bool,
+}
+
+#[pyclass]
+struct PyFlightState {
+    #[pyo3(get)]
+    pub r: f64,
+    #[pyo3(get)]
+    pub z: f64,
+    #[pyo3(get)]
+    pub ip_ma: f64,
+    #[pyo3(get)]
+    pub beta: f64,
+    #[pyo3(get)]
+    pub heating_mw: f64,
 }
 
 fn to_py_simulation_report(
@@ -262,6 +284,8 @@ fn to_py_simulation_report(
         max_beta: report.max_beta,
         max_heating_mw: report.max_heating_mw,
         vessel_contact_events: report.vessel_contact_events,
+        pf_constraint_events: report.pf_constraint_events,
+        heating_constraint_events: report.heating_constraint_events,
         retained_steps: report.retained_steps,
         history_truncated: report.history_truncated,
         disrupted: report.disrupted,
@@ -280,6 +304,18 @@ fn to_py_step_metrics(step: fusion_control::flight_sim::StepMetrics) -> PyStepMe
         beta: step.beta,
         heating_mw: step.heating_mw,
         vessel_contact: step.vessel_contact,
+        pf_constraint_active: step.pf_constraint_active,
+        heating_constraint_active: step.heating_constraint_active,
+    }
+}
+
+fn to_py_flight_state(state: (f64, f64, f64, f64, f64)) -> PyFlightState {
+    PyFlightState {
+        r: state.0,
+        z: state.1,
+        ip_ma: state.2,
+        beta: state.3,
+        heating_mw: state.4,
     }
 }
 
@@ -319,6 +355,14 @@ impl PyRustFlightSim {
 
     fn reset_for_shot(&mut self) {
         self.inner.reset_for_shot();
+    }
+
+    fn reset_plasma_state(&mut self) {
+        self.inner.reset_plasma_state();
+    }
+
+    fn plasma_state(&self) -> PyFlightState {
+        to_py_flight_state(self.inner.plasma_state())
     }
 
     fn step_once(&mut self, step_index: usize, shot_duration_s: f64) -> PyResult<PyStepMetrics> {
@@ -1612,6 +1656,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyRustFlightSim>()?;
     m.add_class::<PySimulationReport>()?;
     m.add_class::<PyStepMetrics>()?;
+    m.add_class::<PyFlightState>()?;
     m.add_function(wrap_pyfunction!(shafranov_bv, m)?)?;
     m.add_function(wrap_pyfunction!(solve_coil_currents, m)?)?;
     m.add_function(wrap_pyfunction!(measure_magnetics, m)?)?;

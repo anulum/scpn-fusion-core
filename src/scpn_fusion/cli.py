@@ -241,7 +241,7 @@ def _system_health_check() -> None:
         devices = jax.devices()
         gpu_available = any(d.platform == 'gpu' for d in devices)
     except ImportError:
-        pass
+        LOGGER.debug("JAX not installed; skipping accelerator device probe.")
     
     LOGGER.info(
         "Health check complete: CPUs=%d, GPU=%s",
