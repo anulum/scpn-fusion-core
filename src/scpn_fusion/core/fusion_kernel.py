@@ -81,12 +81,17 @@ class CoilSet:
     target_flux_points : NDArray or None
         Points ``(R, Z)`` on the desired separatrix for shape optimisation.
         Shape ``(n_pts, 2)``.
+    target_flux_values : NDArray or None
+        Optional target flux values [Wb] at ``target_flux_points``.
+        Shape ``(n_pts,)``. When omitted, ``solve_free_boundary`` uses an
+        isoflux target inferred from current interpolation.
     """
     positions: list[tuple[float, float]] = field(default_factory=list)
     currents: NDArray[np.float64] = field(default_factory=lambda: np.array([]))
     turns: list[int] = field(default_factory=list)
     current_limits: NDArray[np.float64] | None = None
     target_flux_points: NDArray[np.float64] | None = None
+    target_flux_values: NDArray[np.float64] | None = None
 
 
 class FusionKernel:
@@ -1582,19 +1587,49 @@ class FusionKernel:
 
         if coils.target_flux_points is None:
             raise ValueError("CoilSet.target_flux_points must be set for optimisation.")
+        if len(coils.positions) == 0:
+            raise ValueError("CoilSet.positions must contain at least one coil.")
+        if len(coils.currents) != len(coils.positions):
+            raise ValueError(
+                "CoilSet.currents length must match number of coil positions."
+            )
+        if not np.isfinite(tikhonov_alpha) or tikhonov_alpha < 0.0:
+            raise ValueError("tikhonov_alpha must be finite and non-negative.")
 
-        obs = coils.target_flux_points
+        obs = np.asarray(coils.target_flux_points, dtype=np.float64)
+        if obs.ndim != 2 or obs.shape[1] != 2 or obs.shape[0] == 0:
+            raise ValueError("target_flux_points must have shape (n_points, 2) with n_points > 0.")
+        if not np.all(np.isfinite(obs)):
+            raise ValueError("target_flux_points must contain finite values only.")
+
+        target = np.asarray(target_flux, dtype=np.float64).reshape(-1)
+        if target.shape[0] != obs.shape[0]:
+            raise ValueError(
+                "target_flux must have the same length as target_flux_points."
+            )
+        if not np.all(np.isfinite(target)):
+            raise ValueError("target_flux must contain finite values only.")
+
         M = self._build_mutual_inductance_matrix(coils, obs)  # (n_coils, n_pts)
+        if not np.all(np.isfinite(M)):
+            raise ValueError("Mutual inductance matrix contains non-finite entries.")
 
         # Build augmented system: [M^T; sqrt(alpha)*I] I = [target; 0]
         n_coils = M.shape[0]
         A = np.vstack([M.T, np.sqrt(tikhonov_alpha) * np.eye(n_coils)])
-        b = np.concatenate([target_flux, np.zeros(n_coils)])
+        b = np.concatenate([target, np.zeros(n_coils)])
 
         # Bounds
         if coils.current_limits is not None:
-            lb = -np.abs(coils.current_limits)
-            ub = np.abs(coils.current_limits)
+            limits = np.asarray(coils.current_limits, dtype=np.float64).reshape(-1)
+            if limits.shape[0] != n_coils:
+                raise ValueError(
+                    "current_limits must have one entry per coil."
+                )
+            if not np.all(np.isfinite(limits)):
+                raise ValueError("current_limits must contain finite values only.")
+            lb = -np.abs(limits)
+            ub = np.abs(limits)
         else:
             lb = -np.inf * np.ones(n_coils)
             ub = np.inf * np.ones(n_coils)
@@ -1605,6 +1640,38 @@ class FusionKernel:
             result.cost, result.status, result.message,
         )
         return result.x.astype(np.float64)
+
+    def _resolve_shape_target_flux(self, coils: CoilSet) -> FloatArray:
+        """Resolve target flux vector for shape optimisation control points.
+
+        Priority:
+        1) ``coils.target_flux_values`` if provided and valid.
+        2) Inferred isoflux target from current interpolation over
+           ``coils.target_flux_points``.
+        """
+        if coils.target_flux_points is None:
+            raise ValueError("CoilSet.target_flux_points must be set for shape optimisation.")
+
+        obs = np.asarray(coils.target_flux_points, dtype=np.float64)
+        n_pts = int(obs.shape[0])
+        if obs.ndim != 2 or obs.shape[1] != 2 or n_pts == 0:
+            raise ValueError("target_flux_points must have shape (n_points, 2) with n_points > 0.")
+
+        if coils.target_flux_values is not None:
+            target = np.asarray(coils.target_flux_values, dtype=np.float64).reshape(-1)
+            if target.shape[0] != n_pts:
+                raise ValueError(
+                    "target_flux_values must have the same length as target_flux_points."
+                )
+            if not np.all(np.isfinite(target)):
+                raise ValueError("target_flux_values must contain finite values only.")
+            return target
+
+        psi_samples = np.array(
+            [float(self._interp_psi(R_t, Z_t)) for R_t, Z_t in obs], dtype=np.float64
+        )
+        iso_level = float(np.mean(psi_samples))
+        return np.full(n_pts, iso_level, dtype=np.float64)
 
     def solve_free_boundary(
         self,
@@ -1640,7 +1707,13 @@ class FusionKernel:
             ``{"outer_iterations": int, "final_diff": float,
             "coil_currents": NDArray}``
         """
+        if max_outer_iter < 1:
+            raise ValueError("max_outer_iter must be >= 1.")
+        if not np.isfinite(tol) or tol < 0.0:
+            raise ValueError("tol must be finite and >= 0.")
+
         psi_ext = self._compute_external_flux(coils)
+        diff = float("inf")
 
         for outer in range(max_outer_iter):
             # Apply external flux as boundary condition
@@ -1658,12 +1731,7 @@ class FusionKernel:
 
             # Optional: optimise coil currents to match target shape
             if optimize_shape and coils.target_flux_points is not None:
-                obs = coils.target_flux_points
-                # Extract current flux at target points via interpolation
-                target_psi = np.array([
-                    float(self._interp_psi(R_t, Z_t))
-                    for R_t, Z_t in obs
-                ])
+                target_psi = self._resolve_shape_target_flux(coils)
                 new_currents = self.optimize_coil_currents(
                     coils, target_psi, tikhonov_alpha=tikhonov_alpha,
                 )

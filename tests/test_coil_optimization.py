@@ -61,6 +61,7 @@ def test_coilset_defaults():
     cs = CoilSet()
     assert cs.current_limits is None
     assert cs.target_flux_points is None
+    assert cs.target_flux_values is None
 
 
 def test_coilset_with_limits():
@@ -77,6 +78,14 @@ def test_coilset_with_target_points():
     targets = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
     cs.target_flux_points = targets
     assert cs.target_flux_points.shape == (3, 2)
+
+
+def test_coilset_with_target_flux_values():
+    """CoilSet should accept target_flux_values for shape control."""
+    cs = _make_coils()
+    cs.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
+    cs.target_flux_values = np.array([0.2, 0.2, 0.2])
+    assert cs.target_flux_values.shape == (3,)
 
 
 # ── Mutual inductance matrix ────────────────────────────────────────
@@ -150,6 +159,23 @@ def test_optimize_finite_currents(kernel: FusionKernel):
     target = np.array([0.1, 0.1])
     I_opt = kernel.optimize_coil_currents(coils, target)
     assert np.all(np.isfinite(I_opt))
+
+
+def test_optimize_raises_on_target_length_mismatch(kernel: FusionKernel):
+    """Target vector must match the number of target_flux_points."""
+    coils = _make_coils(4)
+    coils.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
+    with pytest.raises(ValueError, match="target_flux"):
+        kernel.optimize_coil_currents(coils, np.array([0.1, 0.2]))
+
+
+def test_optimize_raises_on_current_limits_shape_mismatch(kernel: FusionKernel):
+    """current_limits must have one entry per coil."""
+    coils = _make_coils(4)
+    coils.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
+    coils.current_limits = np.array([1e3, 1e3])  # wrong length
+    with pytest.raises(ValueError, match="current_limits"):
+        kernel.optimize_coil_currents(coils, np.array([0.1, 0.1, 0.1]))
 
 
 def test_optimize_reduces_residual(kernel: FusionKernel):
@@ -244,6 +270,57 @@ def test_solve_free_boundary_with_optimization(kernel: FusionKernel):
     assert not np.allclose(result["coil_currents"], I_before), (
         "Coil currents were not updated during shape optimisation"
     )
+
+
+def test_solve_free_boundary_uses_explicit_target_flux_values(
+    kernel: FusionKernel, monkeypatch: pytest.MonkeyPatch,
+):
+    """Shape optimisation should pass explicit target_flux_values to optimiser."""
+    coils = _make_coils(4)
+    coils.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
+    coils.target_flux_values = np.array([0.25, 0.25, 0.25])
+    captured: dict[str, np.ndarray] = {}
+
+    def _stub_optimize(
+        _self: FusionKernel,
+        _coils: CoilSet,
+        target_flux: np.ndarray,
+        tikhonov_alpha: float = 1e-4,
+    ) -> np.ndarray:
+        del tikhonov_alpha
+        captured["target_flux"] = np.asarray(target_flux, dtype=np.float64).copy()
+        return _coils.currents.copy()
+
+    monkeypatch.setattr(FusionKernel, "optimize_coil_currents", _stub_optimize)
+    kernel.solve_free_boundary(coils, max_outer_iter=1, tol=0.0, optimize_shape=True)
+
+    np.testing.assert_allclose(captured["target_flux"], coils.target_flux_values, atol=0.0)
+
+
+def test_solve_free_boundary_infers_isoflux_target_without_explicit_values(
+    kernel: FusionKernel, monkeypatch: pytest.MonkeyPatch,
+):
+    """Without explicit target_flux_values the inferred shape target should be isoflux."""
+    coils = _make_coils(4)
+    coils.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
+    captured: dict[str, np.ndarray] = {}
+
+    def _stub_optimize(
+        _self: FusionKernel,
+        _coils: CoilSet,
+        target_flux: np.ndarray,
+        tikhonov_alpha: float = 1e-4,
+    ) -> np.ndarray:
+        del tikhonov_alpha
+        captured["target_flux"] = np.asarray(target_flux, dtype=np.float64).copy()
+        return _coils.currents.copy()
+
+    monkeypatch.setattr(FusionKernel, "optimize_coil_currents", _stub_optimize)
+    kernel.solve_free_boundary(coils, max_outer_iter=1, tol=0.0, optimize_shape=True)
+
+    target = captured["target_flux"]
+    assert target.shape == (3,)
+    assert float(np.max(target) - np.min(target)) < 1e-12
 
 
 def test_solve_free_boundary_enforces_external_boundary_flux(kernel: FusionKernel):

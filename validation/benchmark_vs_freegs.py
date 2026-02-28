@@ -689,10 +689,18 @@ def compare_case(
 
     # ── Pass / fail logic ─────────────────────────────────────────
     if use_freegs:
+        finite_freegs_metrics = bool(
+            np.isfinite(psi_nrmse)
+            and np.isfinite(q_nrmse)
+            and np.isfinite(axis_err)
+            and np.isfinite(sep_nrmse)
+        )
         passes = bool(
-            psi_nrmse < FREEGS_PSI_NRMSE_THRESHOLD
-            and (np.isnan(q_nrmse) or q_nrmse < FREEGS_Q_NRMSE_THRESHOLD)
+            finite_freegs_metrics
+            and psi_nrmse < FREEGS_PSI_NRMSE_THRESHOLD
+            and q_nrmse < FREEGS_Q_NRMSE_THRESHOLD
             and axis_err < FREEGS_AXIS_ERROR_M
+            and sep_nrmse < FREEGS_SEPARATRIX_NRMSE
         )
     else:
         passes = bool(psi_nrmse < PSI_NRMSE_THRESHOLD)
@@ -766,10 +774,21 @@ def run_benchmark(*, force_solovev: bool = False) -> dict[str, Any]:
     overall_passes = all(r["passes"] for r in case_results)
     runtime = time.perf_counter() - t0
 
+    thresholds: dict[str, float] = {
+        "psi_nrmse": FREEGS_PSI_NRMSE_THRESHOLD if use_freegs else PSI_NRMSE_THRESHOLD,
+    }
+    if use_freegs:
+        thresholds.update({
+            "q_profile_nrmse": FREEGS_Q_NRMSE_THRESHOLD,
+            "axis_error_m": FREEGS_AXIS_ERROR_M,
+            "separatrix_nrmse": FREEGS_SEPARATRIX_NRMSE,
+        })
+
     report = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": mode_label,
-        "psi_nrmse_threshold": PSI_NRMSE_THRESHOLD,
+        "psi_nrmse_threshold": thresholds["psi_nrmse"],
+        "thresholds": thresholds,
         "cases": case_results,
         "overall_psi_nrmse": round(overall_psi_nrmse, 6),
         "passes": overall_passes,
