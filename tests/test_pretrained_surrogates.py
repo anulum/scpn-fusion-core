@@ -9,9 +9,12 @@
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pytest
 
+import scpn_fusion.core.pretrained_surrogates as ps
 from scpn_fusion.core.pretrained_surrogates import (
     bundle_pretrained_surrogates,
     evaluate_pretrained_fno,
@@ -132,3 +135,103 @@ def test_bundle_pretrained_surrogates_rejects_invalid_config(
     params.update(kwargs)
     with pytest.raises(ValueError, match=match):
         bundle_pretrained_surrogates(**params)
+
+
+def test_bundle_pretrained_surrogates_reuses_valid_cached_manifest(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest_path = tmp_path / "manifest.json"
+    mlp_path = tmp_path / "mlp.npz"
+    fno_path = tmp_path / "fno.npz"
+    mlp_path.write_bytes(b"cached")
+    fno_path.write_bytes(b"cached")
+    cached_manifest = {
+        "version": "task2-pretrained-v1",
+        "artifacts": {"mlp_itpa": "weights/mlp.npz", "fno_eurofusion_jet": "weights/fno.npz"},
+        "datasets": {"itpa": "validation/itpa.csv", "eurofusion_proxy_jet": "validation/jet"},
+        "config": {"seed": 7},
+        "metrics": {"mlp": {"train_rmse_s": 1.0}, "fno": {"val_relative_l2": 0.1}},
+        "coverage": {"coverage_percent": 50.0},
+    }
+    manifest_path.write_text(json.dumps(cached_manifest), encoding="utf-8")
+
+    def _unexpected(*args, **kwargs):  # type: ignore[no-untyped-def]
+        _ = (args, kwargs)
+        raise AssertionError("training should not run when cached manifest is valid")
+
+    monkeypatch.setattr(ps, "_train_itpa_mlp", _unexpected)
+    monkeypatch.setattr(ps, "_train_fno_on_jet", _unexpected)
+
+    out = bundle_pretrained_surrogates(
+        force_retrain=False,
+        weights_dir=tmp_path,
+        manifest_path=manifest_path,
+        mlp_path=mlp_path,
+        fno_path=fno_path,
+    )
+    assert out == cached_manifest
+
+
+def test_bundle_pretrained_surrogates_rebuilds_on_invalid_cached_manifest(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    manifest_path = tmp_path / "manifest.json"
+    mlp_path = tmp_path / "mlp.npz"
+    fno_path = tmp_path / "fno.npz"
+    mlp_path.write_bytes(b"cached")
+    fno_path.write_bytes(b"cached")
+    manifest_path.write_text('{"version":"task2-pretrained-v1"}', encoding="utf-8")
+
+    calls = {"mlp": 0, "fno": 0}
+
+    def _stub_train_itpa_mlp(**kwargs):  # type: ignore[no-untyped-def]
+        _ = kwargs
+        calls["mlp"] += 1
+        model = ps.PretrainedMLPSurrogate(
+            feature_mean=np.array([0.0], dtype=np.float64),
+            feature_std=np.array([1.0], dtype=np.float64),
+            w1=np.array([[0.0]], dtype=np.float64),
+            b1=np.array([0.0], dtype=np.float64),
+            w2=np.array([0.0], dtype=np.float64),
+            b2=np.array(0.0, dtype=np.float64),
+            target_mean=0.0,
+            target_std=1.0,
+        )
+        return model, {"train_rmse_s": 0.0, "train_rmse_pct": 0.0}
+
+    def _stub_save_pretrained_mlp(model, path):  # type: ignore[no-untyped-def]
+        _ = model
+        np.savez(path, x=np.array([1.0], dtype=np.float64))
+
+    def _stub_train_fno_on_jet(*, save_path, **kwargs):  # type: ignore[no-untyped-def]
+        _ = kwargs
+        calls["fno"] += 1
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        save_path.write_bytes(b"fno")
+        return {"train_relative_l2": 0.0, "val_relative_l2": 0.0, "dataset_samples": 1.0}
+
+    monkeypatch.setattr(ps, "_train_itpa_mlp", _stub_train_itpa_mlp)
+    monkeypatch.setattr(ps, "save_pretrained_mlp", _stub_save_pretrained_mlp)
+    monkeypatch.setattr(ps, "_train_fno_on_jet", _stub_train_fno_on_jet)
+
+    out = bundle_pretrained_surrogates(
+        force_retrain=False,
+        seed=3,
+        weights_dir=tmp_path,
+        manifest_path=manifest_path,
+        mlp_path=mlp_path,
+        fno_path=fno_path,
+        mlp_hidden=4,
+        mlp_epochs=1,
+        fno_modes=2,
+        fno_width=2,
+        fno_epochs=1,
+        fno_batch_size=1,
+        fno_augment_per_file=1,
+    )
+
+    assert calls["mlp"] == 1
+    assert calls["fno"] == 1
+    assert out["version"] == "task2-pretrained-v1"
+    assert "mlp" in out["metrics"]
+    assert "fno" in out["metrics"]

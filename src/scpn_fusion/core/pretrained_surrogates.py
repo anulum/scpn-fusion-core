@@ -33,6 +33,14 @@ DEFAULT_MANIFEST_PATH = DEFAULT_WEIGHTS_DIR / "pretrained_surrogates_manifest.js
 
 
 FloatArray = NDArray[np.float64]
+_REQUIRED_MANIFEST_KEYS: tuple[str, ...] = (
+    "version",
+    "artifacts",
+    "datasets",
+    "config",
+    "metrics",
+    "coverage",
+)
 
 
 def _default_surrogate_coverage() -> dict[str, Any]:
@@ -393,6 +401,27 @@ def load_pretrained_mlp(path: Path = DEFAULT_MLP_PATH) -> PretrainedMLPSurrogate
         )
 
 
+def _load_cached_manifest(manifest_path: Path) -> dict[str, Any]:
+    try:
+        raw = manifest_path.read_text(encoding="utf-8")
+        manifest = json.loads(raw)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid cached manifest: {exc.__class__.__name__}") from exc
+
+    if not isinstance(manifest, dict):
+        raise ValueError("invalid cached manifest: expected JSON object.")
+    missing = [k for k in _REQUIRED_MANIFEST_KEYS if k not in manifest]
+    if missing:
+        missing_joined = ", ".join(missing)
+        raise ValueError(f"invalid cached manifest: missing keys: {missing_joined}")
+    if not isinstance(manifest.get("version"), str):
+        raise ValueError("invalid cached manifest: version must be a string.")
+    for k in ("artifacts", "datasets", "config", "metrics", "coverage"):
+        if not isinstance(manifest.get(k), dict):
+            raise ValueError(f"invalid cached manifest: {k} must be an object.")
+    return manifest
+
+
 def evaluate_pretrained_mlp(
     *,
     model_path: Path = DEFAULT_MLP_PATH,
@@ -447,7 +476,10 @@ def bundle_pretrained_surrogates(
         and mlp_path.exists()
         and fno_path.exists()
     ):
-        return json.loads(manifest_path.read_text(encoding="utf-8"))
+        try:
+            return _load_cached_manifest(manifest_path)
+        except ValueError:
+            pass
 
     mlp_model, mlp_metrics = _train_itpa_mlp(
         seed=seed,
