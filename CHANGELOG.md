@@ -30,6 +30,7 @@
 - Repo policy: local Claude command-permission settings (`.claude/settings.local.json`) are now explicitly local-only and git-ignored.
 - CI compatibility: `quantum_bridge` now uses postponed annotation evaluation to keep Python 3.9 import-safe while retaining modern union type hints.
 - CI stability: Task 4 quasi-3D threshold gating now applies tiny floating-point comparison tolerance to avoid Python-version edge drift at boundary values.
+- Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weights are absent.
 - Packaging hardening: removed legacy `setup.py`; `pyproject.toml` is now the sole Python packaging metadata source.
 - Packaging hardening: Docker build now installs from `pyproject.toml` with `README.md` + `validation/` staged before `pip install .`.
 - Repo hygiene: removed stale `ci_old.yml` and `mypy.ini.bak` artifacts to reduce release-surface ambiguity.
@@ -37,6 +38,7 @@
 
 ### Added
 - Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).
+- Regression test for deprecated FNO-controller missing-weight fallback path.
 
 ---
 

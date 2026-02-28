@@ -14,6 +14,7 @@ Will be removed in v4.0.
 
 from __future__ import annotations
 
+import logging
 import warnings
 
 warnings.warn(
@@ -27,6 +28,9 @@ from typing import Any, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+logger = logging.getLogger(__name__)
+
 try:
     import jax
     import jax.numpy as jnp
@@ -119,7 +123,6 @@ class FNO_Controller:
         if self.weights_path.exists():
             self.load_weights(str(self.weights_path))
         else:
-            logger = warnings.logging.getLogger(__name__)
             logger.warning(f"JAX weights not found at {self.weights_path}. Simulation will use unit params.")
 
     def load_weights(self, path: str) -> None:

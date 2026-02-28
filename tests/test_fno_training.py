@@ -70,6 +70,21 @@ def test_fno_controller_loads_saved_weights(tmp_path):
     assert 0.0 <= suppression <= 1.0
 
 
+def test_fno_controller_missing_weights_path_fails_soft(tmp_path, caplog):
+    missing = tmp_path / "missing_fno_weights.npz"
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="FNO turbulence surrogate.*",
+            category=Warning,
+        )
+        with caplog.at_level("WARNING", logger="scpn_fusion.core.fno_turbulence_suppressor"):
+            controller = FNO_Controller(weights_path=str(missing))
+
+    assert controller.loaded_weights is False
+    assert any("JAX weights not found" in msg for msg in caplog.messages)
+
+
 def test_load_fno_params_rejects_object_array_payload(tmp_path: Path) -> None:
     from scpn_fusion.core.fno_jax_training import load_fno_params
 
