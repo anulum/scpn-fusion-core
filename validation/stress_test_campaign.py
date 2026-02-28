@@ -322,6 +322,12 @@ def _run_rust_pid_episode(
         if report.disrupted
         else float(shot_duration)
     )
+    pf_events = max(0.0, float(getattr(report, "pf_constraint_events", 0.0)))
+    heating_events = max(0.0, float(getattr(report, "heating_constraint_events", 0.0)))
+    vessel_events = max(0.0, float(getattr(report, "vessel_contact_events", 0.0)))
+    total_constraint_events = pf_events + heating_events + vessel_events
+    constraint_penalty = total_constraint_events / max(float(report.steps), 1.0)
+    energy_efficiency = float(np.clip(1.0 - constraint_penalty, 0.0, 1.0))
 
     return EpisodeResult(
         mean_abs_r_error=report.mean_abs_r_error,
@@ -330,7 +336,7 @@ def _run_rust_pid_episode(
         latency_us=per_step_us,
         disrupted=report.disrupted,
         t_disruption=t_disruption,
-        energy_efficiency=0.95,  # Rust sim does not yet expose actuator effort
+        energy_efficiency=energy_efficiency,
     )
 
 

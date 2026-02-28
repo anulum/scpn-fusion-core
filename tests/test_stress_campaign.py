@@ -230,6 +230,9 @@ def test_rust_pid_episode_non_disrupted_uses_full_duration_for_def(monkeypatch):
         mean_abs_r_error = 0.02
         mean_abs_z_error = 0.03
         disrupted = False
+        pf_constraint_events = 0
+        heating_constraint_events = 0
+        vessel_contact_events = 0
 
     class FakeSim:
         def __init__(self, target_r: float, target_z: float, control_hz: float) -> None:
@@ -254,6 +257,9 @@ def test_rust_pid_episode_clamps_disruption_time_to_shot_duration(monkeypatch):
         mean_abs_r_error = 0.8
         mean_abs_z_error = 0.7
         disrupted = True
+        pf_constraint_events = 0
+        heating_constraint_events = 0
+        vessel_contact_events = 0
 
     class FakeSim:
         def __init__(self, target_r: float, target_z: float, control_hz: float) -> None:
@@ -276,3 +282,29 @@ def test_rust_pid_episode_requires_rust_binding(monkeypatch):
     monkeypatch.setattr(mod, "PyRustFlightSim", None, raising=False)
     with pytest.raises(RuntimeError, match="Rust flight simulator is unavailable"):
         mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
+
+
+def test_rust_pid_episode_energy_efficiency_tracks_constraint_events(monkeypatch):
+    """Rust lane should derive efficiency from constraint-event burden."""
+    import validation.stress_test_campaign as mod
+
+    class FakeReport:
+        steps = 100
+        duration_s = 30.0
+        mean_abs_r_error = 0.05
+        mean_abs_z_error = 0.04
+        disrupted = False
+        pf_constraint_events = 5
+        heating_constraint_events = 10
+        vessel_contact_events = 0
+
+    class FakeSim:
+        def __init__(self, target_r: float, target_z: float, control_hz: float) -> None:
+            pass
+
+        def run_shot(self, shot_duration: float) -> FakeReport:
+            return FakeReport()
+
+    monkeypatch.setattr(mod, "PyRustFlightSim", FakeSim, raising=False)
+    episode = mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
+    assert episode.energy_efficiency == pytest.approx(0.85, abs=1e-12)
