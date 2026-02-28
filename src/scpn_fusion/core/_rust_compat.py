@@ -13,8 +13,11 @@ Usage:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 """
 import os
+import logging
 from typing import Optional
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 try:
     from scpn_fusion_rs import (
@@ -29,6 +32,35 @@ try:
     _RUST_AVAILABLE = True
 except ImportError:
     _RUST_AVAILABLE = False
+
+
+def _require_monotonic_axis(name: str, values: np.ndarray, expected_len: int) -> np.ndarray:
+    arr = np.asarray(values, dtype=np.float64)
+    if arr.ndim != 1 or arr.size != int(expected_len):
+        raise ValueError(f"{name} must be 1-D with length {expected_len}, got shape {arr.shape}")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain finite values")
+    delta = np.diff(arr)
+    if delta.size == 0 or not np.all(delta > 0.0):
+        raise ValueError(f"{name} must be strictly increasing")
+    return arr
+
+
+def _require_state_grid(
+    name: str,
+    values: np.ndarray,
+    *,
+    nz: int,
+    nr: int,
+    require_finite: bool,
+) -> np.ndarray:
+    arr = np.asarray(values, dtype=np.float64)
+    expected = (int(nz), int(nr))
+    if arr.ndim != 2 or tuple(arr.shape) != expected:
+        raise ValueError(f"{name} must have shape {expected}, got {arr.shape}")
+    if require_finite and not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain finite values")
+    return arr
 
 
 def _rust_available():
@@ -47,39 +79,42 @@ class RustAcceleratedKernel:
 
     def __init__(self, config_path):
         self._config_path = str(config_path)
+        self.state_sync_failures = 0
+        self.last_state_sync_error: Optional[str] = None
         # Load via Rust (PyO3 expects str, not Path)
         self._rust = PyFusionKernel(self._config_path)
 
         # Also load JSON config for attribute access (bridges read .cfg directly)
         import json
-        with open(config_path, 'r') as f:
+        with open(config_path, "r", encoding="utf-8") as f:
             self.cfg = json.load(f)
 
         # Mirror grid attributes
         nr, nz = self._rust.grid_shape()
-        self.NR = nr
-        self.NZ = nz
-        self.R = np.asarray(self._rust.get_r())
-        self.Z = np.asarray(self._rust.get_z())
-        self.dR = self.R[1] - self.R[0]
-        self.dZ = self.Z[1] - self.Z[0]
+        self.NR = int(nr)
+        self.NZ = int(nz)
+        if self.NR < 2 or self.NZ < 2:
+            raise ValueError(f"Rust grid shape must be >= 2x2, got {(self.NR, self.NZ)}")
+        self.R = _require_monotonic_axis("R", np.asarray(self._rust.get_r()), self.NR)
+        self.Z = _require_monotonic_axis("Z", np.asarray(self._rust.get_z()), self.NZ)
+        self.dR = float(self.R[1] - self.R[0])
+        self.dZ = float(self.Z[1] - self.Z[0])
         self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
 
-        # Initialize Psi and J_phi from Rust state
-        self.Psi = np.asarray(self._rust.get_psi())
-        self.J_phi = np.asarray(self._rust.get_j_phi())
-
-        # B-field placeholders (computed after solve)
-        self.B_R = np.zeros((self.NZ, self.NR))
-        self.B_Z = np.zeros((self.NZ, self.NR))
+        # Initialize and validate state from Rust arrays.
+        self.Psi = np.zeros((self.NZ, self.NR), dtype=np.float64)
+        self.J_phi = np.zeros((self.NZ, self.NR), dtype=np.float64)
+        self.B_R = np.zeros((self.NZ, self.NR), dtype=np.float64)
+        self.B_Z = np.zeros((self.NZ, self.NR), dtype=np.float64)
+        self._sync_state_from_rust(context="init", require_finite=True)
+        self.compute_b_field()
 
     def solve_equilibrium(self):
         """Solve Grad-Shafranov equilibrium via Rust backend."""
         result = self._rust.solve_equilibrium()
 
         # Sync arrays back to Python attributes
-        self.Psi = np.asarray(self._rust.get_psi())
-        self.J_phi = np.asarray(self._rust.get_j_phi())
+        self._sync_state_from_rust(context="solve_equilibrium", require_finite=True)
 
         # Compute B-field from Psi (matching Python FusionKernel.compute_b_field)
         self.compute_b_field()
@@ -88,10 +123,42 @@ class RustAcceleratedKernel:
 
     def compute_b_field(self):
         """Compute magnetic field components from Psi gradient."""
+        if tuple(self.Psi.shape) != (self.NZ, self.NR):
+            raise ValueError(
+                f"Psi shape mismatch for B-field computation: expected {(self.NZ, self.NR)}, "
+                f"got {self.Psi.shape}"
+            )
+        if not np.all(np.isfinite(self.Psi)):
+            raise ValueError("Psi must contain finite values before B-field computation")
         dPsi_dR, dPsi_dZ = np.gradient(self.Psi, self.dR, self.dZ)
         R_safe = np.maximum(self.RR, 1e-6)
         self.B_R = -(1.0 / R_safe) * dPsi_dZ
         self.B_Z = (1.0 / R_safe) * dPsi_dR
+
+    def _sync_state_from_rust(self, *, context: str, require_finite: bool) -> None:
+        """Synchronize Psi/J_phi arrays from Rust and enforce shape/finite contracts."""
+        try:
+            psi = _require_state_grid(
+                "Psi",
+                np.asarray(self._rust.get_psi()),
+                nz=self.NZ,
+                nr=self.NR,
+                require_finite=require_finite,
+            )
+            j_phi = _require_state_grid(
+                "J_phi",
+                np.asarray(self._rust.get_j_phi()),
+                nz=self.NZ,
+                nr=self.NR,
+                require_finite=require_finite,
+            )
+        except ValueError as exc:
+            self.state_sync_failures += 1
+            self.last_state_sync_error = str(exc)
+            logger.warning("Rust state sync failed during %s: %s", context, exc)
+            raise RuntimeError(f"Rust state sync failed during {context}: {exc}") from exc
+        self.Psi = psi
+        self.J_phi = j_phi
 
     def find_x_point(self, Psi):
         """

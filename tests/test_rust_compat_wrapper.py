@@ -57,6 +57,26 @@ class _DummyRustKernel:
         return self._method
 
 
+class _DummyNonMonotonicRKernel(_DummyRustKernel):
+    def get_r(self) -> list[float]:
+        out = self._r.copy()
+        out[2] = out[1]
+        return out.tolist()
+
+
+class _DummySolveBadStateKernel(_DummyRustKernel):
+    def solve_equilibrium(self) -> object:
+        self._psi = np.full((4, 5), 0.0, dtype=float)
+        return object()
+
+
+class _DummySolveNanStateKernel(_DummyRustKernel):
+    def solve_equilibrium(self) -> object:
+        self._psi = self._psi.copy()
+        self._psi[0, 0] = np.nan
+        return object()
+
+
 def _write_minimal_config(path: Path) -> None:
     path.write_text("{}", encoding="utf-8")
 
@@ -84,3 +104,41 @@ def test_rust_wrapper_solver_method_propagates_invalid(monkeypatch: pytest.Monke
     wrapper = _rust_compat.RustAcceleratedKernel(str(cfg))
     with pytest.raises(ValueError, match="Unknown solver method"):
         wrapper.set_solver_method("invalid")
+
+
+def test_rust_wrapper_rejects_non_monotonic_axes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    cfg = tmp_path / "cfg.json"
+    _write_minimal_config(cfg)
+    monkeypatch.setattr(_rust_compat, "PyFusionKernel", _DummyNonMonotonicRKernel, raising=False)
+    with pytest.raises(ValueError, match="strictly increasing"):
+        _rust_compat.RustAcceleratedKernel(str(cfg))
+
+
+def test_rust_wrapper_tracks_state_sync_failure_on_bad_shape(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    cfg = tmp_path / "cfg.json"
+    _write_minimal_config(cfg)
+    monkeypatch.setattr(_rust_compat, "PyFusionKernel", _DummySolveBadStateKernel, raising=False)
+    wrapper = _rust_compat.RustAcceleratedKernel(str(cfg))
+    with pytest.raises(RuntimeError, match="state sync failed"):
+        wrapper.solve_equilibrium()
+    assert wrapper.state_sync_failures == 1
+    assert wrapper.last_state_sync_error is not None
+    assert "shape" in wrapper.last_state_sync_error
+
+
+def test_rust_wrapper_tracks_state_sync_failure_on_nonfinite(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    cfg = tmp_path / "cfg.json"
+    _write_minimal_config(cfg)
+    monkeypatch.setattr(_rust_compat, "PyFusionKernel", _DummySolveNanStateKernel, raising=False)
+    wrapper = _rust_compat.RustAcceleratedKernel(str(cfg))
+    with pytest.raises(RuntimeError, match="state sync failed"):
+        wrapper.solve_equilibrium()
+    assert wrapper.state_sync_failures == 1
+    assert wrapper.last_state_sync_error is not None
+    assert "finite" in wrapper.last_state_sync_error

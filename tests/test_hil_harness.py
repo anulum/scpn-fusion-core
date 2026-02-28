@@ -14,6 +14,7 @@ from scpn_fusion.control.hil_harness import (
     SNNNeuronConfig,
     HILBenchmarkResult,
     run_hil_benchmark,
+    run_hil_benchmark_detailed,
 )
 
 
@@ -169,3 +170,38 @@ class TestHILBenchmark:
         print(f"    P99: {result.control_metrics.p99_latency_us:.1f} us")
         print(f"    Sub-ms: {'PASS' if result.passes_sub_ms else 'FAIL'}")
         assert result.passes_sub_ms
+
+
+class TestHILDetailedBenchmark:
+    def test_detailed_benchmark_schema_and_ranges(self):
+        out = run_hil_benchmark_detailed(n_steps=64, rng_seed=7, state_dim=6, control_dim=3)
+        assert out["n_steps"] == 64
+        assert out["rng_seed"] == 7
+        assert out["state_dim"] == 6
+        assert out["control_dim"] == 3
+        for key in ("mean_us", "p50_us", "p95_us", "p99_us", "max_us"):
+            assert key in out
+            assert np.isfinite(out[key])
+            assert out[key] >= 0.0
+
+        stage = out["stage_breakdown"]
+        assert set(stage.keys()) == {
+            "state_estimation_mean_us",
+            "state_estimation_p95_us",
+            "controller_step_mean_us",
+            "controller_step_p95_us",
+            "actuator_command_mean_us",
+            "actuator_command_p95_us",
+        }
+
+    @pytest.mark.parametrize(
+        "kwargs, match",
+        [
+            ({"n_steps": 0}, "n_steps"),
+            ({"state_dim": 0}, "state_dim"),
+            ({"control_dim": 0}, "control_dim"),
+        ],
+    )
+    def test_detailed_benchmark_rejects_invalid_shape_or_steps(self, kwargs, match):
+        with pytest.raises(ValueError, match=match):
+            run_hil_benchmark_detailed(**kwargs)

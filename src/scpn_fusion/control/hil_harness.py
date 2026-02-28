@@ -480,47 +480,81 @@ def run_hil_benchmark(
     return result
 
 
-def run_hil_benchmark_detailed(n_steps=10000):
+def run_hil_benchmark_detailed(
+    n_steps: int = 10000,
+    *,
+    rng_seed: int = 42,
+    state_dim: int = 10,
+    control_dim: int = 4,
+):
     """Run HIL benchmark with detailed per-stage profiling.
 
     Returns dict with latency statistics and pipeline profile.
     """
-    import time
-    profiles = []
+    steps = int(n_steps)
+    state_width = int(state_dim)
+    control_width = int(control_dim)
+    if steps < 1:
+        raise ValueError("n_steps must be >= 1")
+    if state_width < 1:
+        raise ValueError("state_dim must be >= 1")
+    if control_width < 1:
+        raise ValueError("control_dim must be >= 1")
 
-    for _ in range(n_steps):
+    rng = np.random.default_rng(int(rng_seed))
+    profiles: list[PipelineProfile] = []
+
+    # Deterministic synthetic pipeline kernels (stable linearized plant+controller).
+    estimator_a = np.eye(state_width, dtype=np.float64) * 0.92
+    estimator_b = rng.standard_normal((state_width, state_width)) * 0.08
+    controller_k = rng.standard_normal((control_width, state_width)) * 0.15
+    actuator_bias = rng.standard_normal(control_width) * 0.01
+    state = np.zeros(state_width, dtype=np.float64)
+    measurement = np.zeros(state_width, dtype=np.float64)
+
+    for _ in range(steps):
         p = PipelineProfile()
 
-        # Simulate state estimation
+        # Stage 1: state estimation surrogate.
         t0 = time.perf_counter_ns()
-        _ = np.random.randn(10)  # placeholder for state estimation
+        measurement = 0.97 * measurement + 0.03 * rng.standard_normal(state_width)
+        state = estimator_a @ state + estimator_b @ measurement
         p.state_estimation_us = (time.perf_counter_ns() - t0) / 1e3
 
-        # Simulate controller step
+        # Stage 2: controller inference surrogate.
         t0 = time.perf_counter_ns()
-        _ = np.random.randn(4) @ np.random.randn(4, 2)  # placeholder
+        control = controller_k @ state
         p.controller_step_us = (time.perf_counter_ns() - t0) / 1e3
 
-        # Simulate actuator command
+        # Stage 3: actuator command shaping and saturation.
         t0 = time.perf_counter_ns()
-        _ = np.clip(np.random.randn(4), -1, 1)
+        _ = np.clip(control + actuator_bias, -1.0, 1.0)
         p.actuator_command_us = (time.perf_counter_ns() - t0) / 1e3
 
         p.total_us = p.state_estimation_us + p.controller_step_us + p.actuator_command_us
         profiles.append(p)
 
-    totals = np.array([p.total_us for p in profiles])
+    state_times = np.asarray([p.state_estimation_us for p in profiles], dtype=np.float64)
+    controller_times = np.asarray([p.controller_step_us for p in profiles], dtype=np.float64)
+    actuator_times = np.asarray([p.actuator_command_us for p in profiles], dtype=np.float64)
+    totals = np.asarray([p.total_us for p in profiles], dtype=np.float64)
     return {
-        'n_steps': n_steps,
+        'n_steps': steps,
+        'rng_seed': int(rng_seed),
+        'state_dim': state_width,
+        'control_dim': control_width,
         'mean_us': float(np.mean(totals)),
         'p50_us': float(np.percentile(totals, 50)),
         'p95_us': float(np.percentile(totals, 95)),
         'p99_us': float(np.percentile(totals, 99)),
         'max_us': float(np.max(totals)),
         'stage_breakdown': {
-            'state_estimation_mean_us': float(np.mean([p.state_estimation_us for p in profiles])),
-            'controller_step_mean_us': float(np.mean([p.controller_step_us for p in profiles])),
-            'actuator_command_mean_us': float(np.mean([p.actuator_command_us for p in profiles])),
+            'state_estimation_mean_us': float(np.mean(state_times)),
+            'state_estimation_p95_us': float(np.percentile(state_times, 95)),
+            'controller_step_mean_us': float(np.mean(controller_times)),
+            'controller_step_p95_us': float(np.percentile(controller_times, 95)),
+            'actuator_command_mean_us': float(np.mean(actuator_times)),
+            'actuator_command_p95_us': float(np.percentile(actuator_times, 95)),
         }
     }
 
