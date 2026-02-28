@@ -276,7 +276,7 @@ def two_fluid_temhd_coupled_profile(
             surf_t, _ = temhd.step(float(q) / 1e6, dt=0.05)
             cooling = 1.0 / (1.0 + np.exp(-(surf_t - 720.0) / 180.0))
             two_fluid_relax = 0.060 * cooling + 0.022 * np.clip(delta[i] / 18.0, -1.0, 1.0)
-            coupled[i] = float(q) * float(np.clip(1.0 - two_fluid_relax, 0.70, 0.99))
+            coupled[i] = float(q) * float(np.clip(1.0 - two_fluid_relax, 0.70, 0.989))
 
     two_fluid_index = float(np.mean(np.abs(te - ti)) / max(float(np.mean(te)), 1e-9))
     return np.asarray(coupled, dtype=np.float64), {

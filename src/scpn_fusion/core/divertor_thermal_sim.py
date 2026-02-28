@@ -105,12 +105,22 @@ class DivertorLab:
         """
         if not (0.0 < relaxation < 1.0):
             raise ValueError("relaxation must be in (0, 1).")
+        if max_iter < 1:
+            raise ValueError("max_iter must be >= 1.")
+        if not np.isfinite(tol) or tol <= 0.0:
+            raise ValueError("tol must be finite and > 0.")
         T_surf = 500.0
 
         # Li vapour pressure (Alcock et al. 1984): log10(P) = A − B/T_K
         A_li, B_li = 10.0, 8000.0
 
-        for i in range(max_iter):
+        current_relaxation = float(relaxation)
+        prev_residual = float("inf")
+        q_surf = float(self.q_target_solid)
+        f_rad = 0.0
+        best = (float("inf"), T_surf, q_surf, f_rad)
+
+        for _ in range(max_iter):
             T_K = T_surf + 273.15
             P_sat = 10**(A_li - B_li / T_K)
 
@@ -124,13 +134,26 @@ class DivertorLab:
 
             T_new = T_back + (q_surf * d) / k_eff
             residual = abs(T_new - T_surf)
+            if residual < best[0]:
+                best = (residual, T_new, q_surf, f_rad)
 
             if residual < tol:
                 T_surf = T_new
                 break
 
-            T_surf = relaxation * T_surf + (1.0 - relaxation) * T_new
+            if residual > prev_residual:
+                current_relaxation = min(0.97, current_relaxation + 0.05)
+            else:
+                current_relaxation = max(float(relaxation), current_relaxation - 0.01)
+
+            delta = np.clip(T_new - T_surf, -1200.0, 1200.0)
+            T_surf = T_surf + (1.0 - current_relaxation) * delta
+            prev_residual = residual
         else:
+            residual, t_best, q_best, f_best = best
+            T_surf = float(t_best)
+            q_surf = float(q_best)
+            f_rad = float(f_best)
             logger.warning(
                 "Li vapor shielding did not converge after %d iterations "
                 "(residual=%.2f °C)", max_iter, residual,
