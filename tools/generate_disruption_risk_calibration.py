@@ -36,10 +36,24 @@ DEFAULT_CALIBRATION = (
 )
 DEFAULT_REPORT_MD = REPO_ROOT / "validation" / "reports" / "disruption_risk_holdout_report.md"
 VALIDATE_REAL_SHOTS_PATH = REPO_ROOT / "validation" / "validate_real_shots.py"
+_MAX_JSON_BYTES = 8 * 1024 * 1024
+_MAX_SPLIT_IDS_PER_SET = 200_000
+_MAX_MANIFEST_SHOTS = 50_000
+_MAX_SIGNAL_SAMPLES_PER_SHOT = 200_000
+
+
+def _load_json_text(path: Path) -> str:
+    size = int(path.stat().st_size)
+    if size > _MAX_JSON_BYTES:
+        raise ValueError(
+            f"{path} exceeds max JSON size "
+            f"({_MAX_JSON_BYTES} bytes)."
+        )
+    return path.read_text(encoding="utf-8")
 
 
 def _load_json(path: Path) -> dict[str, Any]:
-    data = json.loads(path.read_text(encoding="utf-8"))
+    data = json.loads(_load_json_text(path))
     if not isinstance(data, dict):
         raise ValueError(f"{path} must contain a top-level object.")
     return data
@@ -62,6 +76,11 @@ def _display_path(path: Path) -> str:
 def _parse_split_ids(name: str, value: Any) -> list[int]:
     if not isinstance(value, list) or not value:
         raise ValueError(f"Split '{name}' must be a non-empty list of integer shot ids.")
+    if len(value) > _MAX_SPLIT_IDS_PER_SET:
+        raise ValueError(
+            f"Split '{name}' has {len(value)} ids, exceeding max "
+            f"{_MAX_SPLIT_IDS_PER_SET}."
+        )
     out: list[int] = []
     for i, item in enumerate(value):
         if isinstance(item, bool) or not isinstance(item, int) or item <= 0:
@@ -118,6 +137,11 @@ def _load_samples(
     items = manifest.get("shots")
     if not isinstance(items, list) or not items:
         raise ValueError("Manifest must contain non-empty 'shots' list.")
+    if len(items) > _MAX_MANIFEST_SHOTS:
+        raise ValueError(
+            f"Manifest includes {len(items)} shots, exceeding max "
+            f"{_MAX_MANIFEST_SHOTS}."
+        )
 
     loader = _load_payload_loader()
     samples: list[dict[str, Any]] = []
@@ -143,6 +167,11 @@ def _load_samples(
 
         payload = loader(npz_path)
         signal = np.asarray(payload["signal"], dtype=np.float64)
+        if signal.size > _MAX_SIGNAL_SAMPLES_PER_SHOT:
+            raise ValueError(
+                f"{file_name}: signal length {signal.size} exceeds max "
+                f"{_MAX_SIGNAL_SAMPLES_PER_SHOT}."
+            )
         n1_amp = np.asarray(payload["n1_amp"], dtype=np.float64)
         n2_amp = payload["n2_amp"]
 

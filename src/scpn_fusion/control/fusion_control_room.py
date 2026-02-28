@@ -22,12 +22,22 @@ try:
 except ImportError:
     try:
         from scpn_fusion.core.fusion_kernel import FusionKernel
-    except Exception:  # pragma: no cover - optional kernel path
+    except (ImportError, OSError):  # pragma: no cover - optional kernel path
         FusionKernel = None
 
 RESOLUTION = 60
 SIM_DURATION = 200
 FPS = 10
+_RENDER_OUTPUT_EXCEPTIONS = (OSError, RuntimeError, ValueError, TypeError)
+_KERNEL_INIT_EXCEPTIONS = (OSError, RuntimeError, ValueError, TypeError, AttributeError)
+_KERNEL_COIL_UPDATE_EXCEPTIONS = (
+    AttributeError,
+    KeyError,
+    TypeError,
+    ValueError,
+    IndexError,
+)
+_KERNEL_SOLVE_EXCEPTIONS = (RuntimeError, ValueError, TypeError, FloatingPointError)
 
 
 class TokamakPhysicsEngine:
@@ -315,7 +325,7 @@ def _render_outputs(
             )
             ani.save(output_gif, writer=PillowWriter(fps=FPS))
             animation_saved = True
-        except Exception as exc:
+        except _RENDER_OUTPUT_EXCEPTIONS as exc:
             animation_error = str(exc)
 
     report_saved = False
@@ -326,7 +336,7 @@ def _render_outputs(
             plt.tight_layout()
             fig.savefig(output_report)
             report_saved = True
-        except Exception as exc:
+        except _RENDER_OUTPUT_EXCEPTIONS as exc:
             report_error = str(exc)
 
     plt.close(fig)
@@ -368,7 +378,7 @@ def run_control_room(
             kernel = kernel_factory(cfg) if kernel_factory is not None else None
             if kernel is not None:
                 psi_source = "kernel"
-        except Exception as exc:
+        except _KERNEL_INIT_EXCEPTIONS as exc:
             kernel = None
             kernel_error = str(exc)
             psi_source = "analytic"
@@ -401,13 +411,13 @@ def run_control_room(
                 if len(coils) >= 5:
                     coils[0]["current"] = float(coils[0].get("current", 0.0)) + top_action
                     coils[4]["current"] = float(coils[4].get("current", 0.0)) + bot_action
-            except Exception:
+            except _KERNEL_COIL_UPDATE_EXCEPTIONS:
                 pass
 
         if kernel is not None and hasattr(kernel, "solve_equilibrium"):
             try:
                 kernel.solve_equilibrium()
-            except Exception:
+            except _KERNEL_SOLVE_EXCEPTIONS:
                 pass
 
         true_z = reactor.step_dynamics(top_action, bot_action)

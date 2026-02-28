@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
@@ -20,7 +21,7 @@ try:
     import torch
     import torch.nn as nn
     import torch.optim as optim
-except Exception:  # pragma: no cover - optional dependency path
+except (ImportError, OSError):  # pragma: no cover - optional dependency path
     torch = None
     nn = None
     optim = None
@@ -43,6 +44,19 @@ DISRUPTION_RISK_LINEAR_WEIGHTS: dict[str, float] = {
     "spread": 0.15,
 }
 _ALLOW_INSECURE_TORCH_LOAD_ENV = "SCPN_ALLOW_INSECURE_TORCH_LOAD"
+_CHECKPOINT_LOAD_EXCEPTIONS = (
+    RuntimeError,
+    ValueError,
+    TypeError,
+    OSError,
+    KeyError,
+    AttributeError,
+    IndexError,
+    EOFError,
+    pickle.UnpicklingError,
+)
+_CHECKPOINT_TRAIN_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, AttributeError)
+_INFERENCE_FALLBACK_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, AttributeError)
 
 
 def _require_int(name: str, value: object, minimum: int | None = None) -> int:
@@ -745,7 +759,7 @@ def load_or_train_predictor(
                 "model_path": str(path),
                 "seq_len": int(loaded_seq_len),
             }
-        except Exception as exc:
+        except _CHECKPOINT_LOAD_EXCEPTIONS as exc:
             if not allow_fallback:
                 raise
             return None, {
@@ -771,7 +785,7 @@ def load_or_train_predictor(
     kwargs.setdefault("model_path", path)
     try:
         model, info = train_predictor(**kwargs)
-    except Exception as exc:
+    except _CHECKPOINT_TRAIN_EXCEPTIONS as exc:
         if not allow_fallback:
             raise
         return None, {
@@ -854,7 +868,7 @@ def predict_disruption_risk_safe(
         out_meta["confidence_score"] = confidence
         
         return float(np.clip(risk_mean, 0.0, 1.0)), out_meta
-    except Exception as exc:
+    except _INFERENCE_FALLBACK_EXCEPTIONS as exc:
         if not allow_fallback:
             raise RuntimeError(
                 "predict_disruption_risk_safe fallback disabled: "

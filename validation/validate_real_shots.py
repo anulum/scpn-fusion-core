@@ -53,6 +53,9 @@ THRESHOLDS = {
 DISRUPTION_CALIBRATION_PATH = (
     ROOT / "validation" / "reference_data" / "diiid" / "disruption_risk_calibration.json"
 )
+_MAX_CALIBRATION_JSON_BYTES = 2 * 1024 * 1024
+_MAX_SHOT_NPZ_BYTES = 64 * 1024 * 1024
+_MAX_SHOT_SIGNAL_SAMPLES = 200_000
 
 
 # ── Lane 1: Equilibrium Validation ───────────────────────────────────
@@ -269,6 +272,18 @@ def validate_transport(itpa_csv: Path) -> dict[str, Any]:
 
 # ── Lane 3: Disruption Validation ────────────────────────────────────
 
+def _load_bounded_json_object(path: Path, *, max_bytes: int) -> dict[str, Any]:
+    size = int(path.stat().st_size)
+    if size > max_bytes:
+        raise ValueError(
+            f"{path}: file size {size} bytes exceeds max {max_bytes} bytes"
+        )
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"{path}: calibration JSON must be an object")
+    return payload
+
+
 def load_disruption_risk_calibration(
     calibration_path: Path = DISRUPTION_CALIBRATION_PATH,
 ) -> dict[str, Any]:
@@ -283,9 +298,10 @@ def load_disruption_risk_calibration(
     if not calibration_path.exists():
         return calibration
 
-    data = json.loads(calibration_path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise ValueError(f"{calibration_path}: calibration JSON must be an object")
+    data = _load_bounded_json_object(
+        calibration_path,
+        max_bytes=_MAX_CALIBRATION_JSON_BYTES,
+    )
     selection = data.get("selection", {})
     if not isinstance(selection, dict):
         selection = {}
@@ -310,6 +326,12 @@ def load_disruption_risk_calibration(
 
 def load_disruption_shot_payload(npz_path: Path) -> dict[str, Any]:
     """Load and validate disruption-shot payload schema."""
+    file_size = int(npz_path.stat().st_size)
+    if file_size > _MAX_SHOT_NPZ_BYTES:
+        raise ValueError(
+            f"{npz_path.name}: artifact size {file_size} bytes exceeds max "
+            f"{_MAX_SHOT_NPZ_BYTES} bytes"
+        )
     with np.load(npz_path, allow_pickle=False) as data:
         signal_key: str | None = None
         if "dBdt_gauss_per_s" in data:
@@ -325,6 +347,11 @@ def load_disruption_shot_payload(npz_path: Path) -> dict[str, Any]:
         signal = np.asarray(data[signal_key], dtype=np.float64).reshape(-1)
         if signal.size < 2:
             raise ValueError(f"{npz_path.name}: signal must contain >= 2 samples")
+        if signal.size > _MAX_SHOT_SIGNAL_SAMPLES:
+            raise ValueError(
+                f"{npz_path.name}: signal length {signal.size} exceeds max "
+                f"{_MAX_SHOT_SIGNAL_SAMPLES}"
+            )
         if not np.all(np.isfinite(signal)):
             raise ValueError(f"{npz_path.name}: signal contains non-finite values")
 

@@ -17,10 +17,23 @@ DEFAULT_MANIFEST = (
     REPO_ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots_manifest.json"
 )
 SPLIT_KEYS = ("train", "val", "test")
+_MAX_JSON_BYTES = 2 * 1024 * 1024
+_MAX_SPLIT_IDS_PER_BUCKET = 200_000
+_MAX_MANIFEST_SHOTS = 200_000
+
+
+def _load_json_text(path: Path) -> str:
+    size = int(path.stat().st_size)
+    if size > _MAX_JSON_BYTES:
+        raise ValueError(
+            f"{path} exceeds max JSON size "
+            f"({_MAX_JSON_BYTES} bytes)."
+        )
+    return path.read_text(encoding="utf-8")
 
 
 def _load_json(path: Path) -> dict[str, Any]:
-    data = json.loads(path.read_text(encoding="utf-8"))
+    data = json.loads(_load_json_text(path))
     if not isinstance(data, dict):
         raise ValueError(f"{path} must contain a top-level object.")
     return data
@@ -29,6 +42,11 @@ def _load_json(path: Path) -> dict[str, Any]:
 def _parse_split_ids(name: str, value: Any) -> list[int]:
     if not isinstance(value, list) or not value:
         raise ValueError(f"Split '{name}' must be a non-empty list.")
+    if len(value) > _MAX_SPLIT_IDS_PER_BUCKET:
+        raise ValueError(
+            f"Split '{name}' has {len(value)} ids, exceeding max "
+            f"{_MAX_SPLIT_IDS_PER_BUCKET}."
+        )
     out: list[int] = []
     for i, item in enumerate(value):
         if isinstance(item, bool) or not isinstance(item, int):
@@ -43,6 +61,11 @@ def _manifest_shot_ids(manifest: dict[str, Any]) -> set[int]:
     shots = manifest.get("shots")
     if not isinstance(shots, list) or not shots:
         raise ValueError("Manifest must contain non-empty 'shots' list.")
+    if len(shots) > _MAX_MANIFEST_SHOTS:
+        raise ValueError(
+            "Manifest shot count exceeds max "
+            f"{_MAX_MANIFEST_SHOTS}."
+        )
     out: set[int] = set()
     for i, item in enumerate(shots):
         if not isinstance(item, dict):

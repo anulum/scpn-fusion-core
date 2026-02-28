@@ -33,6 +33,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 TGLF_REF_DIR = REPO_ROOT / "validation" / "tglf_reference"
 _TGLF_RETRY_BACKOFF_SECONDS = 1.0
 _TGLF_MAX_RETRIES_LIMIT = 10
+_TGLF_MAX_PARSED_VECTOR_LENGTH = 2048
 
 
 # ── Data containers ──────────────────────────────────────────────────
@@ -173,7 +174,15 @@ def parse_tglf_output(output_dir: str | Path) -> list[TGLFOutput]:
 
     def _coerce_sequence(value: Any, *, default: float) -> list[float]:
         if isinstance(value, (list, tuple, np.ndarray)):
-            seq = [_finite_float(v, default=default) for v in value]
+            seq_in = list(value)
+            if len(seq_in) > _TGLF_MAX_PARSED_VECTOR_LENGTH:
+                logger.warning(
+                    "TGLF payload vector exceeded cap (%d > %d); truncating.",
+                    len(seq_in),
+                    _TGLF_MAX_PARSED_VECTOR_LENGTH,
+                )
+                seq_in = seq_in[:_TGLF_MAX_PARSED_VECTOR_LENGTH]
+            seq = [_finite_float(v, default=default) for v in seq_in]
             return seq or [default]
         return [_finite_float(value, default=default)]
 

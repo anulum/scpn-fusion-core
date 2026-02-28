@@ -117,3 +117,36 @@ def test_calibration_check_detects_stale_output(tmp_path: Path) -> None:
 def test_calibration_rejects_invalid_targets() -> None:
     with pytest.raises(ValueError, match="target_recall"):
         risk_calibration.main(["--target-recall", "1.1", "--skip-gates"])
+
+
+def test_load_json_rejects_oversized_payload(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payload_path = tmp_path / "oversized.json"
+    payload_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(risk_calibration, "_MAX_JSON_BYTES", 1)
+    with pytest.raises(ValueError, match="exceeds max JSON size"):
+        risk_calibration._load_json(payload_path)
+
+
+def test_load_samples_rejects_oversized_signal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    shot_dir = tmp_path / "shots"
+    shot_dir.mkdir(parents=True, exist_ok=True)
+    _write_shot(shot_dir / "shot_100001_disruptive.npz", disruptive=True, amplitude=1.0)
+
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps({"shots": [{"file": "shot_100001_disruptive.npz", "shot": 100001}]}),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(risk_calibration, "_MAX_SIGNAL_SAMPLES_PER_SHOT", 16)
+    with pytest.raises(ValueError, match="signal length"):
+        risk_calibration._load_samples(
+            shot_dir=shot_dir,
+            manifest_path=manifest_path,
+            split_map={100001: "train"},
+            window_size=8,
+        )

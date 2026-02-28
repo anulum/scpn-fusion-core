@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import scpn_fusion.core.tglf_interface as tglf_mod
 from scpn_fusion.core.tglf_interface import (
     TGLFInputDeck,
     TGLFOutput,
@@ -295,6 +296,25 @@ class TestOutputParsing:
         assert outputs[1].chi_i == pytest.approx(2.4)
         assert outputs[1].chi_e == pytest.approx(0.0)
         assert outputs[1].gamma_max == pytest.approx(0.2)
+
+    def test_parse_tglf_output_caps_oversized_vectors(self, tmp_path: Path) -> None:
+        """Oversized vector payloads should be capped to bounded output length."""
+        cap = tglf_mod._TGLF_MAX_PARSED_VECTOR_LENGTH
+        n_points = cap + 64
+        payload = {
+            "rho_points": [float(i) for i in range(n_points)],
+            "chi_i": [float(i) for i in range(n_points)],
+            "chi_e": [float(i) * 0.5 for i in range(n_points)],
+            "gamma_max": [0.1 for _ in range(n_points)],
+            "q_i": [1.0 for _ in range(n_points)],
+            "q_e": [0.5 for _ in range(n_points)],
+        }
+        (tmp_path / "oversized.json").write_text(json.dumps(payload), encoding="utf-8")
+        outputs = parse_tglf_output(tmp_path)
+        assert len(outputs) == cap
+        assert outputs[0].rho == pytest.approx(0.0)
+        assert outputs[-1].rho == pytest.approx(float(cap - 1))
+        assert outputs[-1].chi_i == pytest.approx(float(cap - 1))
 
 
 # ── 6. Write Input File ──────────────────────────────────────────────

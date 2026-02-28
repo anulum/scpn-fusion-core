@@ -156,6 +156,40 @@ def test_load_disruption_risk_calibration_rejects_invalid_threshold(tmp_path: Pa
         validate_real_shots.load_disruption_risk_calibration(calibration_path)
 
 
+def test_load_disruption_risk_calibration_rejects_oversized_json(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calibration_path = tmp_path / "oversized_calibration.json"
+    calibration_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(validate_real_shots, "_MAX_CALIBRATION_JSON_BYTES", 1)
+    with pytest.raises(ValueError, match="exceeds max"):
+        validate_real_shots.load_disruption_risk_calibration(calibration_path)
+
+
+def test_load_payload_rejects_oversized_npz_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    shot_path = _write_npz(
+        tmp_path / "shot_large.npz",
+        n1_amp=np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float64),
+    )
+    monkeypatch.setattr(validate_real_shots, "_MAX_SHOT_NPZ_BYTES", 1)
+    with pytest.raises(ValueError, match="artifact size"):
+        validate_real_shots.load_disruption_shot_payload(shot_path)
+
+
+def test_load_payload_rejects_oversized_signal_length(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    shot_path = _write_npz(
+        tmp_path / "shot_signal_cap.npz",
+        n1_amp=np.array([0.1, 0.2, 0.3, 0.4, 0.5], dtype=np.float64),
+    )
+    monkeypatch.setattr(validate_real_shots, "_MAX_SHOT_SIGNAL_SAMPLES", 4)
+    with pytest.raises(ValueError, match="signal length"):
+        validate_real_shots.load_disruption_shot_payload(shot_path)
+
+
 def test_validate_disruption_reports_pipeline_contract_metadata(tmp_path: Path) -> None:
     n = 160
     t = np.linspace(0.0, 0.159, n, dtype=np.float64)

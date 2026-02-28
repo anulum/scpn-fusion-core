@@ -34,6 +34,23 @@ try:
 except ImportError:
     pass
 
+_RUST_TRANSPORT_FALLBACK_EXCEPTIONS = (
+    RuntimeError,
+    ValueError,
+    TypeError,
+    AttributeError,
+    FloatingPointError,
+)
+_EPED_FALLBACK_EXCEPTIONS = (
+    ImportError,
+    RuntimeError,
+    ValueError,
+    TypeError,
+    AttributeError,
+    KeyError,
+    FloatingPointError,
+)
+
 
 class PhysicsError(RuntimeError):
     """Raised when a physics constraint is violated."""
@@ -184,7 +201,7 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
             )
             _logger.debug("chang_hinton_chi_profile: Rust fast-path (%d pts)", len(rho_arr))
             return chi_rust
-        except Exception:
+        except _RUST_TRANSPORT_FALLBACK_EXCEPTIONS:
             _logger.debug("chang_hinton_chi_profile: Rust fast-path failed, falling back to Python")
 
     # Vectorized Python fallback
@@ -285,7 +302,7 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
             )
             _logger.debug("sauter_bootstrap: Rust fast-path (%d pts)", len(rho_arr))
             return j_rust
-        except Exception:
+        except _RUST_TRANSPORT_FALLBACK_EXCEPTIONS:
             _logger.debug("sauter_bootstrap: Rust fast-path failed, falling back to Python")
 
     # Vectorized Python fallback
@@ -852,7 +869,7 @@ class TransportSolver(FusionKernel):
                         self.Ti[ped_idx:],
                         ped.T_ped_keV * np.linspace(1.0, 0.1, len(self.Ti[ped_idx:]))
                     )
-            except Exception as exc:
+            except _EPED_FALLBACK_EXCEPTIONS as exc:
                 # Fallback: simple edge suppression
                 edge_mask = self.rho > 0.9
                 chi_turb[edge_mask] *= 0.1

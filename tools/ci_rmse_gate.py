@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 # ── Thresholds ────────────────────────────────────────────────────────
 # Set ~30% above current best so they catch regressions, not noise.
@@ -37,6 +38,26 @@ THRESHOLDS: dict[str, float] = {
     # Q peak — 0-D model artifact ceiling
     "q_max": 15.0,
 }
+_MAX_ARTIFACT_JSON_BYTES = 4 * 1024 * 1024
+_MAX_TOP_LEVEL_KEYS = 256
+
+
+def _load_json_object(path: Path) -> dict[str, Any]:
+    size = int(path.stat().st_size)
+    if size > _MAX_ARTIFACT_JSON_BYTES:
+        raise ValueError(
+            f"{path} exceeds max JSON size "
+            f"({_MAX_ARTIFACT_JSON_BYTES} bytes)."
+        )
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"{path} must contain a top-level JSON object.")
+    if len(data) > _MAX_TOP_LEVEL_KEYS:
+        raise ValueError(
+            f"{path} has {len(data)} top-level keys, exceeding max "
+            f"{_MAX_TOP_LEVEL_KEYS}."
+        )
+    return data
 
 
 def main() -> int:
@@ -45,7 +66,11 @@ def main() -> int:
         print(f"ERROR: {artifact} not found — run rmse_dashboard.py first.")
         return 1
 
-    data = json.loads(artifact.read_text(encoding="utf-8"))
+    try:
+        data = _load_json_object(artifact)
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        return 1
     failures: list[str] = []
 
     # ── confinement_itpa ──────────────────────────────────────────────
@@ -87,7 +112,11 @@ def main() -> int:
     # ── disruption FPR (hard gate since v3.1) ──────────────────────────
     real_shot_artifact = Path("artifacts/real_shot_validation.json")
     if real_shot_artifact.exists():
-        rs_data = json.loads(real_shot_artifact.read_text(encoding="utf-8"))
+        try:
+            rs_data = _load_json_object(real_shot_artifact)
+        except ValueError as exc:
+            print(f"ERROR: {exc}")
+            return 1
         dis = rs_data.get("disruption", {})
         fpr = dis.get("false_positive_rate", 0.0)
         fpr_thresh = THRESHOLDS["disruption_fpr"]

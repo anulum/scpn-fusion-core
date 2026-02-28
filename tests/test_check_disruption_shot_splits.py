@@ -10,6 +10,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "tools" / "check_disruption_shot_splits.py"
@@ -59,3 +61,21 @@ def test_detects_missing_manifest_ids(tmp_path: Path) -> None:
         ["--splits", str(split_file), "--manifest", str(manifest_file)]
     )
     assert rc == 1
+
+
+def test_load_json_rejects_oversized_payload(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payload_path = tmp_path / "oversized.json"
+    payload_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(split_check, "_MAX_JSON_BYTES", 1)
+    with pytest.raises(ValueError, match="exceeds max JSON size"):
+        split_check._load_json(payload_path)
+
+
+def test_parse_split_ids_rejects_oversized_split(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(split_check, "_MAX_SPLIT_IDS_PER_BUCKET", 2)
+    with pytest.raises(ValueError, match="exceeding max"):
+        split_check._parse_split_ids("train", [1, 2, 3])
