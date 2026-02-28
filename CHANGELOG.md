@@ -37,11 +37,14 @@
 - Onboarding hardening: README now includes a fast-start 45-second path, explicit capability bullets, direct Colab/Binder links, and a top-limitations snapshot.
 - Validation hardening: TORAX cross-validation fallback now uses deterministic stable seeding (BLAKE2-based) instead of Python process-randomized `hash()`.
 - Validation observability: TORAX benchmark artifacts now expose per-case backend, fallback reason, and fallback seed fields.
+- Validation hardening: SPARC GEQDSK RMSE benchmark fallback no longer uses identity-like reconstruction; it now uses a deterministic reduced-order proxy.
+- Validation observability: SPARC GEQDSK RMSE benchmark now records surrogate backend and fallback reason per case, plus strict backend requirement support (`--strict-backend`).
 
 ### Added
 - Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).
 - Regression test for deprecated FNO-controller missing-weight fallback path.
 - Regression tests for TORAX benchmark deterministic fallback seeding and backend/fallback metadata fields.
+- Regression tests for SPARC GEQDSK RMSE benchmark backend provenance and strict backend gating.
 
 ---
 

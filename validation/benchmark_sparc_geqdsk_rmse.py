@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import time
@@ -66,11 +67,47 @@ def _build_sparc_like_equilibrium(
     }
 
 
-def _run_neural_surrogate(eq: dict[str, Any]) -> FloatArray:
+def _reduced_order_proxy(psi: FloatArray, coarse_points: int = 20) -> FloatArray:
+    """Build a deterministic low-resolution proxy and upsample back."""
+    arr = np.asarray(psi, dtype=np.float64)
+    if arr.ndim != 2:
+        raise ValueError("Expected a 2D psi grid.")
+    nz, nr = arr.shape
+    if nz < 2 or nr < 2:
+        raise ValueError("Expected psi grid dimensions >= 2.")
+
+    coarse_nz = max(8, min(int(coarse_points), nz))
+    coarse_nr = max(8, min(int(coarse_points), nr))
+
+    z = np.linspace(0.0, 1.0, nz, dtype=np.float64)
+    r = np.linspace(0.0, 1.0, nr, dtype=np.float64)
+    zc = np.linspace(0.0, 1.0, coarse_nz, dtype=np.float64)
+    rc = np.linspace(0.0, 1.0, coarse_nr, dtype=np.float64)
+
+    reduced_r = np.empty((nz, coarse_nr), dtype=np.float64)
+    for i in range(nz):
+        reduced_r[i, :] = np.interp(rc, r, arr[i, :])
+
+    reduced = np.empty((coarse_nz, coarse_nr), dtype=np.float64)
+    for j in range(coarse_nr):
+        reduced[:, j] = np.interp(zc, z, reduced_r[:, j])
+
+    up_r = np.empty((coarse_nz, nr), dtype=np.float64)
+    for i in range(coarse_nz):
+        up_r[i, :] = np.interp(r, rc, reduced[i, :])
+
+    up = np.empty((nz, nr), dtype=np.float64)
+    for j in range(nr):
+        up[:, j] = np.interp(z, zc, up_r[:, j])
+
+    return np.asarray(np.clip(up, 0.0, 1.0), dtype=np.float64)
+
+
+def _run_neural_surrogate(eq: dict[str, Any]) -> tuple[FloatArray, str, str | None]:
     """Run neural equilibrium accelerator on the reference grid.
 
-    Falls back to a PCA-reconstruction proxy if the full accelerator is
-    unavailable (e.g. missing weights).
+    Falls back to a deterministic reduced-order proxy if the full accelerator
+    is unavailable (e.g. missing weights).
     """
     try:
         from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumAccelerator
@@ -79,27 +116,25 @@ def _run_neural_surrogate(eq: dict[str, Any]) -> FloatArray:
         if not accel.is_ready:
             raise RuntimeError("Accelerator weights not loaded")
         psi_pred = accel.predict(eq["psi"])
-        return np.asarray(psi_pred, dtype=np.float64)
-    except Exception:
-        # PCA reconstruction proxy: project onto top-k modes, reconstruct
-        psi = eq["psi"]
-        flat = psi.reshape(1, -1)
-        mean = np.mean(flat, axis=1, keepdims=True)
-        centered = flat - mean
-        # Rank-8 SVD approximation simulates neural surrogate output
-        U, S, Vt = np.linalg.svd(centered, full_matrices=False)
-        k = min(8, len(S))
-        recon = U[:, :k] @ np.diag(S[:k]) @ Vt[:k, :] + mean
-        return recon.reshape(psi.shape)
+        return np.asarray(psi_pred, dtype=np.float64), "neural_equilibrium", None
+    except Exception as exc:
+        # Deterministic reduced-order proxy used only for comparative smoke checks.
+        proxy = _reduced_order_proxy(np.asarray(eq["psi"], dtype=np.float64))
+        return proxy, "reduced_order_proxy", f"{type(exc).__name__}: {exc}"
 
 
-def run_benchmark(grid_sizes: list[int] | None = None) -> dict[str, Any]:
+def run_benchmark(
+    grid_sizes: list[int] | None = None,
+    *,
+    require_neural_backend: bool = False,
+) -> dict[str, Any]:
     if grid_sizes is None:
         grid_sizes = [65, 129]
 
     t0 = time.time()
     cases: list[dict[str, Any]] = []
     all_pass = True
+    all_cases_neural_backend = True
 
     configs = [
         {"name": "SPARC-V2C", "R0": 1.85, "a": 0.57, "kappa": 1.97, "Ip": 8.7, "B0": 12.2},
@@ -114,9 +149,11 @@ def run_benchmark(grid_sizes: list[int] | None = None) -> dict[str, Any]:
                 R0=cfg["R0"], a=cfg["a"], kappa=cfg["kappa"],
                 Ip=cfg["Ip"], B0=cfg["B0"],
             )
-            psi_pred = _run_neural_surrogate(eq)
+            psi_pred, backend, fallback_reason = _run_neural_surrogate(eq)
             err = nrmse(eq["psi"], psi_pred)
-            passes = err < NRMSE_THRESHOLD
+            backend_ok = backend == "neural_equilibrium"
+            passes = (err < NRMSE_THRESHOLD) and (backend_ok or not require_neural_backend)
+            all_cases_neural_backend = all_cases_neural_backend and backend_ok
 
             cases.append({
                 "name": cfg["name"],
@@ -124,6 +161,9 @@ def run_benchmark(grid_sizes: list[int] | None = None) -> dict[str, Any]:
                 "nrmse": round(err, 6),
                 "threshold": NRMSE_THRESHOLD,
                 "passes": passes,
+                "surrogate_backend": backend,
+                "fallback_reason": fallback_reason,
+                "backend_requirement_satisfied": backend_ok or not require_neural_backend,
             })
             if not passes:
                 all_pass = False
@@ -132,6 +172,8 @@ def run_benchmark(grid_sizes: list[int] | None = None) -> dict[str, Any]:
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "nrmse_threshold": NRMSE_THRESHOLD,
+        "require_neural_backend": bool(require_neural_backend),
+        "all_cases_neural_backend": bool(all_cases_neural_backend),
         "cases": cases,
         "passes": all_pass,
         "runtime_s": round(elapsed, 2),
@@ -139,7 +181,15 @@ def run_benchmark(grid_sizes: list[int] | None = None) -> dict[str, Any]:
 
 
 def main() -> int:
-    result = run_benchmark()
+    parser = argparse.ArgumentParser(description="SPARC GEQDSK RMSE benchmark")
+    parser.add_argument(
+        "--strict-backend",
+        action="store_true",
+        help="Fail if neural equilibrium backend is unavailable in any case.",
+    )
+    args = parser.parse_args()
+
+    result = run_benchmark(require_neural_backend=bool(args.strict_backend))
 
     out_dir = REPO_ROOT / "artifacts"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -151,10 +201,16 @@ def main() -> int:
         print(f"  [{status}] {case['name']} {case['grid']}: NRMSE={case['nrmse']:.4f}")
 
     if result["passes"]:
-        print(f"\nAll cases pass (threshold={NRMSE_THRESHOLD})")
+        print(
+            f"\nAll cases pass (threshold={NRMSE_THRESHOLD}, "
+            f"strict_backend={bool(args.strict_backend)})"
+        )
         return 0
     else:
-        print(f"\nSome cases FAILED (threshold={NRMSE_THRESHOLD})")
+        print(
+            f"\nSome cases FAILED (threshold={NRMSE_THRESHOLD}, "
+            f"strict_backend={bool(args.strict_backend)})"
+        )
         return 1
 
 
