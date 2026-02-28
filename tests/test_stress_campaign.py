@@ -328,6 +328,22 @@ def test_build_isoflux_controller_surrogate_switch(monkeypatch):
     assert calls[1]["control_dt_s"] == 0.01
 
 
+@pytest.mark.parametrize(
+    ("kwargs", "expected"),
+    [
+        ({"n_episodes": 0}, "n_episodes"),
+        ({"shot_duration": 0}, "shot_duration"),
+        ({"noise_level": -0.1}, "noise_level"),
+        ({"delay_ms": -1.0}, "delay_ms"),
+    ],
+)
+def test_run_campaign_rejects_invalid_inputs(kwargs, expected):
+    import validation.stress_test_campaign as mod
+
+    with pytest.raises(ValueError, match=expected):
+        mod.run_campaign(config_path="unused", **kwargs)
+
+
 def test_rust_pid_episode_non_disrupted_uses_full_duration_for_def(monkeypatch):
     """Non-disrupted Rust episodes must report full-shot DEF support."""
     import validation.stress_test_campaign as mod

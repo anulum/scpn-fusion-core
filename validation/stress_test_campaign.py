@@ -434,6 +434,19 @@ def run_campaign(
     surrogate : bool
         Whether to use the neural equilibrium surrogate (fast-path).
     """
+    n_episodes = int(n_episodes)
+    if n_episodes < 1:
+        raise ValueError("n_episodes must be >= 1.")
+    shot_duration = int(shot_duration)
+    if shot_duration < 1:
+        raise ValueError("shot_duration must be >= 1 second.")
+    noise_level = float(noise_level)
+    if not np.isfinite(noise_level) or noise_level < 0.0:
+        raise ValueError("noise_level must be finite and >= 0.")
+    delay_ms = float(delay_ms)
+    if not np.isfinite(delay_ms) or delay_ms < 0.0:
+        raise ValueError("delay_ms must be finite and >= 0.")
+
     if config_path is None:
         config_path = repo_root / "iter_config.json"
 
