@@ -38,6 +38,19 @@ class _DummyKernel:
         self.Psi = (self.RR - center_r) ** 2 + ((self.ZZ - center_z) / 1.7) ** 2
 
 
+class _FailingKernel:
+    """Kernel stand-in that consistently fails update/solve paths."""
+
+    def __init__(self, _config_path: str) -> None:
+        self.cfg = None
+        r = np.linspace(1.0, 5.0, 32)
+        z = np.linspace(-3.0, 3.0, 32)
+        self.Psi = np.zeros((z.size, r.size), dtype=np.float64)
+
+    def solve_equilibrium(self) -> None:
+        raise RuntimeError("solver diverged")
+
+
 def test_run_control_room_returns_finite_summary_without_outputs() -> None:
     summary = run_control_room(
         sim_duration=18,
@@ -55,6 +68,8 @@ def test_run_control_room_returns_finite_summary_without_outputs() -> None:
         "max_abs_z",
         "mean_top_action",
         "mean_bottom_action",
+        "kernel_coil_update_failures",
+        "kernel_solve_failures",
         "animation_saved",
         "report_saved",
     ):
@@ -66,6 +81,10 @@ def test_run_control_room_returns_finite_summary_without_outputs() -> None:
     assert np.isfinite(summary["final_z"])
     assert np.isfinite(summary["mean_abs_z"])
     assert np.isfinite(summary["max_abs_z"])
+    assert summary["kernel_coil_update_failures"] == 0
+    assert summary["kernel_coil_update_error"] is None
+    assert summary["kernel_solve_failures"] == 0
+    assert summary["kernel_solve_error"] is None
 
 
 def test_run_control_room_is_deterministic_for_fixed_seed() -> None:
@@ -97,6 +116,23 @@ def test_run_control_room_supports_kernel_backed_psi_source() -> None:
     )
     assert summary["psi_source"] == "kernel"
     assert summary["kernel_error"] is None
+
+
+def test_run_control_room_tracks_kernel_failures_without_abort() -> None:
+    summary = run_control_room(
+        sim_duration=7,
+        seed=5,
+        save_animation=False,
+        save_report=False,
+        verbose=False,
+        kernel_factory=_FailingKernel,
+        config_file="dummy.json",
+    )
+    assert summary["psi_source"] == "kernel"
+    assert summary["kernel_coil_update_failures"] == 7
+    assert summary["kernel_solve_failures"] == 7
+    assert summary["kernel_coil_update_error"] is not None
+    assert summary["kernel_solve_error"] == "solver diverged"
 
 
 def test_run_control_room_rejects_invalid_sim_duration() -> None:

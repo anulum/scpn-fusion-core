@@ -31,8 +31,8 @@ _PyTransportSolver: Any = None
 try:
     from scpn_fusion_rs import PyTransportSolver as _PyTransportSolver  # type: ignore[assignment,no-redef]
     _rust_transport_available = True
-except ImportError:
-    pass
+except ImportError as exc:
+    _logger.debug("Rust transport bindings unavailable; using Python transport kernels: %s", exc)
 
 _RUST_TRANSPORT_FALLBACK_EXCEPTIONS = (
     RuntimeError,

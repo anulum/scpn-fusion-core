@@ -96,6 +96,9 @@ class HPCBridge:
         self.lib = None
         self.solver_ptr = None
         self.loaded: bool = False
+        self.load_error: Optional[str] = None
+        self.close_error: Optional[str] = None
+        self.close_error_count: int = 0
         self._destroy_symbol: Optional[str] = None
         self._has_converged_api: bool = False
         self._has_boundary_api: bool = False
@@ -129,8 +132,13 @@ class HPCBridge:
             self._setup_signatures()
             logger.info("Loaded C++ accelerator: %s", self.lib_path)
             self.loaded = True
-        except OSError:
-            pass
+        except OSError as exc:
+            self.load_error = str(exc)
+            logger.debug(
+                "C++ accelerator unavailable at %s; falling back to Python solver: %s",
+                self.lib_path,
+                self.load_error,
+            )
 
     def is_available(self) -> bool:
         """Return *True* if the compiled solver library was loaded."""
@@ -142,8 +150,10 @@ class HPCBridge:
             try:
                 if self.lib is not None and self._destroy_symbol is not None:
                     getattr(self.lib, self._destroy_symbol)(self.solver_ptr)
-            except Exception:
-                pass
+            except Exception as exc:
+                self.close_error = str(exc)
+                self.close_error_count = int(getattr(self, "close_error_count", 0)) + 1
+                logger.warning("Failed to release C++ solver instance cleanly: %s", self.close_error)
             self.solver_ptr = None
 
     def __del__(self) -> None:

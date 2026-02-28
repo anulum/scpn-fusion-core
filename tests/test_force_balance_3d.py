@@ -33,6 +33,8 @@ class TestForceBalance3DBasic:
         assert result.iterations >= 1
         assert result.initial_residual > 0.0
         assert len(result.force_residual_history) >= 2
+        assert result.armijo_reject_count >= 0
+        assert result.non_decreasing_steps >= 0
 
     def test_solve_reduces_residual(self):
         eq = _make_eq()

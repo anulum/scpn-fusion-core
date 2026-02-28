@@ -400,6 +400,10 @@ def run_control_room(
     history_top: list[float] = []
     history_bot: list[float] = []
     frames: list[dict[str, Any]] = []
+    kernel_coil_update_failures = 0
+    kernel_coil_update_error: Optional[str] = None
+    kernel_solve_failures = 0
+    kernel_solve_error: Optional[str] = None
 
     top_action = 0.0
     bot_action = 0.0
@@ -411,14 +415,26 @@ def run_control_room(
                 if len(coils) >= 5:
                     coils[0]["current"] = float(coils[0].get("current", 0.0)) + top_action
                     coils[4]["current"] = float(coils[4].get("current", 0.0)) + bot_action
-            except _KERNEL_COIL_UPDATE_EXCEPTIONS:
-                pass
+            except _KERNEL_COIL_UPDATE_EXCEPTIONS as exc:
+                kernel_coil_update_failures += 1
+                if kernel_coil_update_error is None:
+                    kernel_coil_update_error = str(exc)
+                    logger.warning(
+                        "Kernel coil update failed; continuing with fallback controls: %s",
+                        kernel_coil_update_error,
+                    )
 
         if kernel is not None and hasattr(kernel, "solve_equilibrium"):
             try:
                 kernel.solve_equilibrium()
-            except _KERNEL_SOLVE_EXCEPTIONS:
-                pass
+            except _KERNEL_SOLVE_EXCEPTIONS as exc:
+                kernel_solve_failures += 1
+                if kernel_solve_error is None:
+                    kernel_solve_error = str(exc)
+                    logger.warning(
+                        "Kernel equilibrium solve failed; continuing with last known state: %s",
+                        kernel_solve_error,
+                    )
 
         true_z = reactor.step_dynamics(top_action, bot_action)
         density, psi = reactor.solve_flux_surfaces()
@@ -482,6 +498,10 @@ def run_control_room(
         "max_abs_z": float(np.max(np.abs(z_arr))),
         "mean_top_action": float(np.mean(top_arr)),
         "mean_bottom_action": float(np.mean(bot_arr)),
+        "kernel_coil_update_failures": int(kernel_coil_update_failures),
+        "kernel_coil_update_error": kernel_coil_update_error,
+        "kernel_solve_failures": int(kernel_solve_failures),
+        "kernel_solve_error": kernel_solve_error,
         "animation_saved": bool(animation_saved),
         "animation_error": animation_error,
         "report_saved": bool(report_saved),

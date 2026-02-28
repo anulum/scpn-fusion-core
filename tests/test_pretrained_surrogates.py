@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+import logging
 
 import numpy as np
 import pytest
@@ -173,7 +174,7 @@ def test_bundle_pretrained_surrogates_reuses_valid_cached_manifest(
 
 
 def test_bundle_pretrained_surrogates_rebuilds_on_invalid_cached_manifest(
-    tmp_path, monkeypatch: pytest.MonkeyPatch
+    tmp_path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     manifest_path = tmp_path / "manifest.json"
     mlp_path = tmp_path / "mlp.npz"
@@ -213,6 +214,7 @@ def test_bundle_pretrained_surrogates_rebuilds_on_invalid_cached_manifest(
     monkeypatch.setattr(ps, "_train_itpa_mlp", _stub_train_itpa_mlp)
     monkeypatch.setattr(ps, "save_pretrained_mlp", _stub_save_pretrained_mlp)
     monkeypatch.setattr(ps, "_train_fno_on_jet", _stub_train_fno_on_jet)
+    caplog.set_level(logging.WARNING, logger=ps.__name__)
 
     out = bundle_pretrained_surrogates(
         force_retrain=False,
@@ -235,3 +237,4 @@ def test_bundle_pretrained_surrogates_rebuilds_on_invalid_cached_manifest(
     assert out["version"] == "task2-pretrained-v1"
     assert "mlp" in out["metrics"]
     assert "fno" in out["metrics"]
+    assert any("Invalid cached pretrained-surrogates manifest" in rec.message for rec in caplog.records)

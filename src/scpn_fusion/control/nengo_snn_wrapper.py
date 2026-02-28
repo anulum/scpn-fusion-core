@@ -39,8 +39,8 @@ _nengo_available = False
 try:
     import nengo as _nengo  # type: ignore[no-redef]
     _nengo_available = True
-except ImportError:
-    pass
+except ImportError as exc:
+    logger.debug("Nengo import unavailable; NengoSNNController disabled: %s", exc)
 
 
 def nengo_available() -> bool:
@@ -282,8 +282,8 @@ class NengoSNNController:
                     # Nengo stores decoder weights in simulator data
                     w = self._simulator.data[conn].weights
                     weights[label] = np.array(w)
-                except (AttributeError, KeyError):
-                    pass
+                except (AttributeError, KeyError) as exc:
+                    logger.debug("Skipping weight export for connection '%s': %s", label, exc)
         return weights
 
     def export_fpga_weights(self, filename: str | Path) -> None:

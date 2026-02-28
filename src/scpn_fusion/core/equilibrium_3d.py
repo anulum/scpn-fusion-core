@@ -16,9 +16,12 @@ but exposes a compatible interface for non-axisymmetric ``n != 0`` shaping.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 from typing import Iterable
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -265,6 +268,8 @@ class ForceBalanceResult:
     initial_residual: float
     modes: list[FourierMode3D]
     force_residual_history: list[float]
+    armijo_reject_count: int = 0
+    non_decreasing_steps: int = 0
 
 
 class ForceBalance3D:
@@ -442,6 +447,8 @@ class ForceBalance3D:
 
         initial_residual = self.compute_force_residual(n_rho, n_theta, n_phi)
         history = [initial_residual]
+        armijo_reject_count = 0
+        non_decreasing_steps = 0
 
         components = ["r_cos", "r_sin", "z_cos", "z_sin"]
 
@@ -484,10 +491,18 @@ class ForceBalance3D:
                 self.eq.modes = saved
                 step *= 0.5
             else:
-                # Accept last trial even if Armijo not fully satisfied
-                pass
+                armijo_reject_count += 1
+                logger.debug(
+                    "ForceBalance3D Armijo line-search rejected all trial steps "
+                    "(iteration=%d, residual=%.6e, grad_norm_sq=%.6e)",
+                    iteration,
+                    current_residual,
+                    grad_norm_sq,
+                )
 
             new_residual = self.compute_force_residual(n_rho, n_theta, n_phi)
+            if new_residual >= current_residual:
+                non_decreasing_steps += 1
             history.append(new_residual)
 
         final_residual = history[-1]
@@ -498,4 +513,6 @@ class ForceBalance3D:
             initial_residual=initial_residual,
             modes=list(self.eq.modes),
             force_residual_history=history,
+            armijo_reject_count=armijo_reject_count,
+            non_decreasing_steps=non_decreasing_steps,
         )

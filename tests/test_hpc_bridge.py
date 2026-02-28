@@ -75,6 +75,11 @@ class _DummyDeleteLib:
         self.deleted = solver_ptr
 
 
+class _DummyDestroyRaisesLib:
+    def destroy_solver(self, _solver_ptr) -> None:
+        raise RuntimeError("destroy failed")
+
+
 def _make_bridge(nr: int = 2, nz: int = 3) -> HPCBridge:
     bridge = HPCBridge.__new__(HPCBridge)
     bridge.lib = _DummyLib()
@@ -297,6 +302,20 @@ def test_close_supports_delete_solver_alias() -> None:
     assert bridge.lib.deleted == 999
 
 
+def test_close_tracks_destroy_errors_without_raising() -> None:
+    bridge = HPCBridge.__new__(HPCBridge)
+    bridge.lib = _DummyDestroyRaisesLib()
+    bridge.solver_ptr = 321
+    bridge.loaded = True
+    bridge._destroy_symbol = "destroy_solver"
+    bridge.close_error = None
+    bridge.close_error_count = 0
+    bridge.close()
+    assert bridge.solver_ptr is None
+    assert bridge.close_error == "destroy failed"
+    assert bridge.close_error_count == 1
+
+
 def test_init_prefers_env_override_path(monkeypatch: pytest.MonkeyPatch) -> None:
     expected = "/tmp/scpn_solver_override.so"
 
@@ -308,6 +327,7 @@ def test_init_prefers_env_override_path(monkeypatch: pytest.MonkeyPatch) -> None
     bridge = HPCBridge()
     assert bridge.lib_path == expected
     assert not bridge.loaded
+    assert bridge.load_error == "no library"
 
 
 def test_init_uses_package_local_default_without_cwd(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -322,6 +342,7 @@ def test_init_uses_package_local_default_without_cwd(monkeypatch: pytest.MonkeyP
     expected = str(Path(hpc_mod.__file__).resolve().parent / "libscpn_solver.so")
     assert bridge.lib_path == expected
     assert not bridge.loaded
+    assert bridge.load_error == "no library"
 
 
 def test_compile_cpp_requires_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:

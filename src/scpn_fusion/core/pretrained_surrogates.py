@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import csv
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ from scpn_fusion.core.eqdsk import read_geqdsk
 from scpn_fusion.core.fno_training import AdamOptimizer, MultiLayerFNO
 
 
+logger = logging.getLogger(__name__)
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_ITPA_CSV = REPO_ROOT / "validation" / "reference_data" / "itpa" / "hmode_confinement.csv"
 DEFAULT_JET_DIR = REPO_ROOT / "validation" / "reference_data" / "jet"
@@ -478,8 +480,12 @@ def bundle_pretrained_surrogates(
     ):
         try:
             return _load_cached_manifest(manifest_path)
-        except ValueError:
-            pass
+        except ValueError as exc:
+            logger.warning(
+                "Invalid cached pretrained-surrogates manifest at %s; rebuilding artifacts: %s",
+                manifest_path,
+                exc,
+            )
 
     mlp_model, mlp_metrics = _train_itpa_mlp(
         seed=seed,
