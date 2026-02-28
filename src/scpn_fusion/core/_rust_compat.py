@@ -14,6 +14,7 @@ Usage:
 """
 import os
 import logging
+from collections import deque
 from typing import Optional
 import numpy as np
 
@@ -255,9 +256,10 @@ else:
 
 
 class RustSnnPool:
-    """Python wrapper for Rust SpikingControllerPool (LIF neuron population).
+    """Compatibility wrapper for Rust SpikingControllerPool.
 
-    Falls back with ImportError if the Rust extension is not compiled.
+    Uses the Rust implementation when available and falls back to a
+    deterministic NumPy LIF population otherwise.
 
     Parameters
     ----------
@@ -267,12 +269,40 @@ class RustSnnPool:
         Output scaling factor.
     window_size : int
         Sliding window length for rate-code averaging.
+    allow_numpy_fallback : bool
+        When ``False``, raise :class:`ImportError` if Rust extension is
+        unavailable.
+    seed : int
+        Seed used by deterministic NumPy fallback backend.
     """
 
-    def __init__(self, n_neurons: int = 50, gain: float = 10.0, window_size: int = 20):
-        from scpn_fusion_rs import PySnnPool  # type: ignore[import-untyped]
+    def __init__(
+        self,
+        n_neurons: int = 50,
+        gain: float = 10.0,
+        window_size: int = 20,
+        *,
+        allow_numpy_fallback: bool = True,
+        seed: int = 42,
+    ):
+        self._backend = "rust"
+        if _RUST_AVAILABLE:
+            from scpn_fusion_rs import PySnnPool  # type: ignore[import-untyped]
 
-        self._inner = PySnnPool(n_neurons, gain, window_size)
+            self._inner = PySnnPool(n_neurons, gain, window_size)
+            return
+
+        if not allow_numpy_fallback:
+            raise ImportError(
+                "scpn_fusion_rs not installed and allow_numpy_fallback=False."
+            )
+        self._backend = "numpy_fallback"
+        self._inner = _NumpySnnPoolFallback(
+            n_neurons=n_neurons,
+            gain=gain,
+            window_size=window_size,
+            seed=seed,
+        )
 
     def step(self, error: float) -> float:
         """Process *error* through SNN pool and return scalar control output."""
@@ -286,14 +316,22 @@ class RustSnnPool:
     def gain(self) -> float:
         return self._inner.gain
 
+    @property
+    def backend(self) -> str:
+        return self._backend
+
     def __repr__(self) -> str:
-        return f"RustSnnPool(n_neurons={self.n_neurons}, gain={self.gain})"
+        return (
+            f"RustSnnPool(n_neurons={self.n_neurons}, gain={self.gain}, "
+            f"backend='{self.backend}')"
+        )
 
 
 class RustSnnController:
-    """Python wrapper for Rust NeuroCyberneticController (dual R+Z SNN pools).
+    """Compatibility wrapper for Rust NeuroCyberneticController.
 
-    Falls back with ImportError if the Rust extension is not compiled.
+    Uses the Rust implementation when available and falls back to paired
+    deterministic NumPy LIF pools otherwise.
 
     Parameters
     ----------
@@ -301,12 +339,38 @@ class RustSnnController:
         Target major-radius position [m].
     target_z : float
         Target vertical position [m].
+    allow_numpy_fallback : bool
+        When ``False``, raise :class:`ImportError` if Rust extension is
+        unavailable.
+    seed : int
+        Seed used by deterministic NumPy fallback backend.
     """
 
-    def __init__(self, target_r: float = 6.2, target_z: float = 0.0):
-        from scpn_fusion_rs import PySnnController  # type: ignore[import-untyped]
+    def __init__(
+        self,
+        target_r: float = 6.2,
+        target_z: float = 0.0,
+        *,
+        allow_numpy_fallback: bool = True,
+        seed: int = 42,
+    ):
+        self._backend = "rust"
+        if _RUST_AVAILABLE:
+            from scpn_fusion_rs import PySnnController  # type: ignore[import-untyped]
 
-        self._inner = PySnnController(target_r, target_z)
+            self._inner = PySnnController(target_r, target_z)
+            return
+
+        if not allow_numpy_fallback:
+            raise ImportError(
+                "scpn_fusion_rs not installed and allow_numpy_fallback=False."
+            )
+        self._backend = "numpy_fallback"
+        self._inner = _NumpySnnControllerFallback(
+            target_r=target_r,
+            target_z=target_z,
+            seed=seed,
+        )
 
     def step(self, measured_r: float, measured_z: float) -> tuple[float, float]:
         """Process measured (R, Z) position and return (ctrl_R, ctrl_Z)."""
@@ -320,8 +384,96 @@ class RustSnnController:
     def target_z(self) -> float:
         return self._inner.target_z
 
+    @property
+    def backend(self) -> str:
+        return self._backend
+
     def __repr__(self) -> str:
-        return f"RustSnnController(target_r={self.target_r}, target_z={self.target_z})"
+        return (
+            f"RustSnnController(target_r={self.target_r}, target_z={self.target_z}, "
+            f"backend='{self.backend}')"
+        )
+
+
+class _NumpySnnPoolFallback:
+    """Deterministic local fallback matching the Rust SNN pool interface."""
+
+    def __init__(
+        self,
+        n_neurons: int,
+        gain: float,
+        window_size: int,
+        *,
+        seed: int,
+    ) -> None:
+        self.n_neurons = int(n_neurons)
+        self.gain = float(gain)
+        self.window_size = int(window_size)
+        if self.n_neurons < 1:
+            raise ValueError("n_neurons must be >= 1.")
+        if not np.isfinite(self.gain):
+            raise ValueError("gain must be finite.")
+        if self.window_size < 1:
+            raise ValueError("window_size must be >= 1.")
+
+        self._rng_pos = np.random.default_rng(int(seed))
+        self._rng_neg = np.random.default_rng(int(seed) + 100003)
+        self._v_pos = np.zeros(self.n_neurons, dtype=np.float64)
+        self._v_neg = np.zeros(self.n_neurons, dtype=np.float64)
+        self._history_pos: deque[int] = deque([0] * self.window_size, maxlen=self.window_size)
+        self._history_neg: deque[int] = deque([0] * self.window_size, maxlen=self.window_size)
+        self._alpha = 1.0e-3 / 15.0e-3
+        self._noise_std = 0.02
+        self._i_scale = 5.0
+        self._i_bias = 0.1
+        self._v_threshold = 0.35
+        self._v_reset = 0.0
+
+    def _step_pop(self, v: np.ndarray, rng: np.random.Generator, input_current: float) -> int:
+        noise = rng.normal(0.0, self._noise_std, size=v.shape)
+        v += self._alpha * (-v + float(input_current) + noise)
+        fired = v >= self._v_threshold
+        n_fired = int(np.count_nonzero(fired))
+        if n_fired > 0:
+            v[fired] = self._v_reset
+        return n_fired
+
+    def step(self, error_signal: float) -> float:
+        err = float(error_signal)
+        if not np.isfinite(err):
+            raise ValueError("error_signal must be finite.")
+        input_pos = max(0.0, err) * self._i_scale
+        input_neg = max(0.0, -err) * self._i_scale
+
+        spikes_pos = self._step_pop(self._v_pos, self._rng_pos, self._i_bias + input_pos)
+        spikes_neg = self._step_pop(self._v_neg, self._rng_neg, self._i_bias + input_neg)
+        self._history_pos.append(spikes_pos)
+        self._history_neg.append(spikes_neg)
+
+        rate_pos = float(sum(self._history_pos) / (self.window_size * self.n_neurons))
+        rate_neg = float(sum(self._history_neg) / (self.window_size * self.n_neurons))
+        return float((rate_pos - rate_neg) * self.gain)
+
+
+class _NumpySnnControllerFallback:
+    """Deterministic local fallback matching the Rust SNN controller interface."""
+
+    def __init__(self, target_r: float, target_z: float, *, seed: int) -> None:
+        self.target_r = float(target_r)
+        self.target_z = float(target_z)
+        if not np.isfinite(self.target_r) or not np.isfinite(self.target_z):
+            raise ValueError("target_r and target_z must be finite.")
+        self._pool_r = _NumpySnnPoolFallback(50, 10.0, 20, seed=int(seed) + 1)
+        self._pool_z = _NumpySnnPoolFallback(50, 20.0, 20, seed=int(seed) + 2)
+
+    def step(self, measured_r: float, measured_z: float) -> tuple[float, float]:
+        mr = float(measured_r)
+        mz = float(measured_z)
+        if not np.isfinite(mr) or not np.isfinite(mz):
+            raise ValueError("measured_r and measured_z must be finite.")
+        err_r = self.target_r - mr
+        err_z = self.target_z - mz
+        return self._pool_r.step(err_r), self._pool_z.step(err_z)
 
 
 def rust_multigrid_vcycle(

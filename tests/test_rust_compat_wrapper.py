@@ -142,3 +142,46 @@ def test_rust_wrapper_tracks_state_sync_failure_on_nonfinite(
     assert wrapper.state_sync_failures == 1
     assert wrapper.last_state_sync_error is not None
     assert "finite" in wrapper.last_state_sync_error
+
+
+def test_rust_snn_pool_falls_back_to_numpy(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(_rust_compat, "_RUST_AVAILABLE", False)
+    pool = _rust_compat.RustSnnPool(n_neurons=20, gain=5.0, window_size=10, seed=17)
+    assert pool.backend == "numpy_fallback"
+    out = 0.0
+    for _ in range(60):
+        out = pool.step(2.0)
+    assert np.isfinite(out)
+    assert out > 0.0
+
+
+def test_rust_snn_controller_falls_back_to_numpy(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(_rust_compat, "_RUST_AVAILABLE", False)
+    ctrl = _rust_compat.RustSnnController(target_r=6.2, target_z=0.0, seed=17)
+    assert ctrl.backend == "numpy_fallback"
+
+    out_r = 0.0
+    out_z = 0.0
+    for _ in range(60):
+        out_r, out_z = ctrl.step(5.8, 0.2)  # positive R error, negative Z error
+
+    assert np.isfinite(out_r)
+    assert np.isfinite(out_z)
+    assert out_r > 0.0
+    assert out_z < 0.0
+
+
+def test_rust_snn_pool_strict_mode_raises_without_extension(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(_rust_compat, "_RUST_AVAILABLE", False)
+    with pytest.raises(ImportError, match="allow_numpy_fallback=False"):
+        _rust_compat.RustSnnPool(allow_numpy_fallback=False)
+
+
+def test_rust_snn_controller_strict_mode_raises_without_extension(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(_rust_compat, "_RUST_AVAILABLE", False)
+    with pytest.raises(ImportError, match="allow_numpy_fallback=False"):
+        _rust_compat.RustSnnController(allow_numpy_fallback=False)
