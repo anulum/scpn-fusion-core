@@ -206,6 +206,14 @@ struct PySimulationReport {
     #[pyo3(get)]
     pub mean_abs_z_error: f64,
     #[pyo3(get)]
+    pub final_beta: f64,
+    #[pyo3(get)]
+    pub final_heating_mw: f64,
+    #[pyo3(get)]
+    pub max_beta: f64,
+    #[pyo3(get)]
+    pub max_heating_mw: f64,
+    #[pyo3(get)]
     pub disrupted: bool,
     #[pyo3(get)]
     pub r_history: Vec<f64>,
@@ -247,6 +255,10 @@ impl PyRustFlightSim {
             max_step_time_us: report.max_step_time_us,
             mean_abs_r_error: report.mean_abs_r_error,
             mean_abs_z_error: report.mean_abs_z_error,
+            final_beta: report.final_beta,
+            final_heating_mw: report.final_heating_mw,
+            max_beta: report.max_beta,
+            max_heating_mw: report.max_heating_mw,
             disrupted: report.disrupted,
             r_history: report.r_history,
             z_history: report.z_history,

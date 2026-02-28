@@ -12,7 +12,8 @@ use crate::digital_twin::ActuatorDelayLine;
 use crate::pid::IsoFluxController;
 use crate::telemetry::TelemetrySuite;
 use fusion_types::error::{FusionError, FusionResult};
-use std::time::Instant;
+use ndarray::Array1;
+use std::time::{Duration, Instant};
 
 /// Shot result metrics for analysis.
 #[derive(Debug, Clone)]
@@ -23,10 +24,24 @@ pub struct SimulationReport {
     pub max_step_time_us: f64,
     pub mean_abs_r_error: f64,
     pub mean_abs_z_error: f64,
+    pub final_beta: f64,
+    pub final_heating_mw: f64,
+    pub max_beta: f64,
+    pub max_heating_mw: f64,
     pub disrupted: bool,
     pub r_history: Vec<f64>,
     pub z_history: Vec<f64>,
     pub ip_history: Vec<f64>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct StepMetrics {
+    pub r_error: f64,
+    pub z_error: f64,
+    pub disrupted: bool,
+    pub step_time_us: f64,
+    pub beta: f64,
+    pub heating_mw: f64,
 }
 
 /// High-speed simulation engine.
@@ -88,6 +103,147 @@ impl RustFlightSim {
         })
     }
 
+    fn validate_shot_duration(&self, shot_duration_s: f64) -> FusionResult<usize> {
+        if !shot_duration_s.is_finite() || shot_duration_s <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "shot_duration_s must be finite and > 0".to_string(),
+            ));
+        }
+        let steps = (shot_duration_s / self.control_dt) as usize;
+        if steps == 0 {
+            return Err(FusionError::ConfigError(
+                "shot_duration_s too short for selected control_dt".to_string(),
+            ));
+        }
+        Ok(steps)
+    }
+
+    pub fn reset_for_shot(&mut self) {
+        self.telemetry.clear();
+        self.delay_line.reset();
+        self.pf_states.fill(0.0);
+    }
+
+    pub fn prepare_shot(&mut self, shot_duration_s: f64) -> FusionResult<usize> {
+        let steps = self.validate_shot_duration(shot_duration_s)?;
+        self.reset_for_shot();
+        Ok(steps)
+    }
+
+    pub fn step_once(
+        &mut self,
+        step_index: usize,
+        shot_duration_s: f64,
+    ) -> FusionResult<StepMetrics> {
+        if !shot_duration_s.is_finite() || shot_duration_s <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "shot_duration_s must be finite and > 0".to_string(),
+            ));
+        }
+        let t_step_start = Instant::now();
+        let phase = (step_index as f64 * self.control_dt / shot_duration_s).clamp(0.0, 1.0);
+
+        // 1. Physics Evolution (Plant)
+        self.curr_ip_ma = 5.0 + 10.0 * phase;
+        // Heating command acts as a bounded actuator that drives beta.
+        // This fills the heating-control safety gap with a stable surrogate
+        // coupling: higher constrained heating -> higher target beta.
+        let heating_request_mw = 20.0 + 60.0 * phase;
+        self.curr_heating_mw = self.constraints.heating.enforce(
+            heating_request_mw,
+            self.curr_heating_mw,
+            self.control_dt,
+        );
+        let beta_target = 0.6 + 0.03 * self.curr_heating_mw;
+        self.curr_beta += 0.5 * (beta_target - self.curr_beta) * self.control_dt;
+        self.curr_beta = self.curr_beta.clamp(0.2, 10.0);
+
+        // Natural Drifts (Shafranov shift + Vertical instability)
+        self.curr_r += 0.01 * self.curr_beta * self.control_dt;
+        self.curr_z += 0.02 * self.control_dt;
+
+        // Clamp to vessel boundaries
+        self.curr_r = self.curr_r.clamp(2.0, 10.0);
+        self.curr_z = self.curr_z.clamp(-6.0, 6.0);
+
+        // 2. Control Action
+        let (requested_r, requested_z) = self.controller.step(self.curr_r, self.curr_z)?;
+
+        // 2b. Safety Enforcement (Hardening Task 1)
+        let ctrl_r =
+            self.constraints
+                .pf_coils
+                .enforce(requested_r, self.pf_states[0], self.control_dt);
+        let ctrl_z =
+            self.constraints
+                .pf_coils
+                .enforce(requested_z, self.pf_states[1], self.control_dt);
+        self.pf_states[0] = ctrl_r;
+        self.pf_states[1] = ctrl_z;
+
+        // 3. Apply Actuators (with delay/lag)
+        let actions = self
+            .delay_line
+            .push(Array1::from_vec(vec![ctrl_r, ctrl_z]))
+            .map_err(|e| FusionError::ConfigError(e.to_string()))?;
+
+        let applied_r = actions[0];
+        let applied_z = actions[1];
+
+        // 4. Update state based on applied control
+        self.curr_r += applied_r * self.control_dt;
+        self.curr_z += applied_z * self.control_dt;
+
+        // Record Telemetry (Zero Allocation)
+        self.telemetry
+            .record(self.curr_r, self.curr_z, self.curr_ip_ma, self.curr_beta);
+
+        // 5. Metrics
+        let r_err = (self.curr_r - self.controller.target_r).abs();
+        let z_err = (self.curr_z - self.controller.target_z).abs();
+        let disrupted = r_err > 0.5 || z_err > 0.5;
+        let step_time_us = t_step_start.elapsed().as_secs_f64() * 1_000_000.0;
+
+        Ok(StepMetrics {
+            r_error: r_err,
+            z_error: z_err,
+            disrupted,
+            step_time_us,
+            beta: self.curr_beta,
+            heating_mw: self.curr_heating_mw,
+        })
+    }
+
+    pub fn finalize_report(
+        &self,
+        steps: usize,
+        shot_duration_s: f64,
+        wall_time_ms: f64,
+        max_step_time_us: f64,
+        r_err_sum: f64,
+        z_err_sum: f64,
+        disrupted: bool,
+        max_beta: f64,
+        max_heating_mw: f64,
+    ) -> SimulationReport {
+        SimulationReport {
+            steps,
+            duration_s: shot_duration_s,
+            wall_time_ms,
+            max_step_time_us,
+            mean_abs_r_error: r_err_sum / steps as f64,
+            mean_abs_z_error: z_err_sum / steps as f64,
+            final_beta: self.curr_beta,
+            final_heating_mw: self.curr_heating_mw,
+            max_beta,
+            max_heating_mw,
+            disrupted,
+            r_history: self.telemetry.r_axis.get_view(),
+            z_history: self.telemetry.z_axis.get_view(),
+            ip_history: self.telemetry.ip_ma.get_view(),
+        }
+    }
+
     /// Execute a shot at the target frequency.
     ///
     /// If `deterministic` is true, uses a high-precision busy-wait loop
@@ -97,125 +253,46 @@ impl RustFlightSim {
         shot_duration_s: f64,
         deterministic: bool,
     ) -> FusionResult<SimulationReport> {
-        if !shot_duration_s.is_finite() || shot_duration_s <= 0.0 {
-            return Err(FusionError::ConfigError(
-                "shot_duration_s must be finite and > 0".to_string(),
-            ));
-        }
+        let steps = self.prepare_shot(shot_duration_s)?;
         let t_start = Instant::now();
-        let steps = (shot_duration_s / self.control_dt) as usize;
-        if steps == 0 {
-            return Err(FusionError::ConfigError(
-                "shot_duration_s too short for selected control_dt".to_string(),
-            ));
-        }
-        let step_duration = std::time::Duration::from_secs_f64(self.control_dt);
+        let step_duration = Duration::from_secs_f64(self.control_dt);
 
         let mut r_err_sum = 0.0;
         let mut z_err_sum = 0.0;
-        let mut max_step_us = 0.0;
+        let mut max_step_us = 0.0_f64;
         let mut disrupted = false;
+        let mut max_beta = self.curr_beta;
+        let mut max_heating_mw = self.curr_heating_mw;
 
         let mut next_tick = Instant::now();
-
-        for t in 0..steps {
+        for step_idx in 0..steps {
             if deterministic {
                 while Instant::now() < next_tick {
                     std::hint::spin_loop();
                 }
             }
-
-            let t_step_start = Instant::now();
-            let time_s = t as f64 * self.control_dt;
-
-            // 1. Physics Evolution (Plant)
-            self.curr_ip_ma = 5.0 + (10.0 * time_s / shot_duration_s);
-            // Heating command acts as a bounded actuator that drives beta.
-            // This fills the heating-control safety gap with a stable surrogate
-            // coupling: higher constrained heating -> higher target beta.
-            let heating_request_mw = 20.0 + 60.0 * (time_s / shot_duration_s).clamp(0.0, 1.0);
-            self.curr_heating_mw = self.constraints.heating.enforce(
-                heating_request_mw,
-                self.curr_heating_mw,
-                self.control_dt,
-            );
-            let beta_target = 0.6 + 0.03 * self.curr_heating_mw;
-            self.curr_beta += 0.5 * (beta_target - self.curr_beta) * self.control_dt;
-            self.curr_beta = self.curr_beta.clamp(0.2, 10.0);
-
-            // Natural Drifts (Shafranov shift + Vertical instability)
-            self.curr_r += 0.01 * self.curr_beta * self.control_dt;
-            self.curr_z += 0.02 * self.control_dt;
-
-            // Clamp to vessel boundaries
-            self.curr_r = self.curr_r.clamp(2.0, 10.0);
-            self.curr_z = self.curr_z.clamp(-6.0, 6.0);
-
-            // 2. Control Action
-            let (requested_r, requested_z) = self.controller.step(self.curr_r, self.curr_z)?;
-
-            // 2b. Safety Enforcement (Hardening Task 1)
-            let ctrl_r =
-                self.constraints
-                    .pf_coils
-                    .enforce(requested_r, self.pf_states[0], self.control_dt);
-            let ctrl_z =
-                self.constraints
-                    .pf_coils
-                    .enforce(requested_z, self.pf_states[1], self.control_dt);
-            self.pf_states[0] = ctrl_r;
-            self.pf_states[1] = ctrl_z;
-
-            // 3. Apply Actuators (with delay/lag)
-            use ndarray::Array1;
-            let actions = self
-                .delay_line
-                .push(Array1::from_vec(vec![ctrl_r, ctrl_z]))
-                .map_err(|e| FusionError::ConfigError(e.to_string()))?;
-
-            let applied_r = actions[0];
-            let applied_z = actions[1];
-
-            // 4. Update state based on applied control
-            self.curr_r += applied_r * self.control_dt;
-            self.curr_z += applied_z * self.control_dt;
-
-            // Record Telemetry (Zero Allocation)
-            self.telemetry
-                .record(self.curr_r, self.curr_z, self.curr_ip_ma, self.curr_beta);
-
-            // 5. Metrics
-            let r_err = (self.curr_r - self.controller.target_r).abs();
-            let z_err = (self.curr_z - self.controller.target_z).abs();
-            r_err_sum += r_err;
-            z_err_sum += z_err;
-
-            if r_err > 0.5 || z_err > 0.5 {
-                disrupted = true;
-            }
-
-            let step_us = t_step_start.elapsed().as_secs_f64() * 1_000_000.0;
-            if step_us > max_step_us {
-                max_step_us = step_us;
-            }
-
+            let step = self.step_once(step_idx, shot_duration_s)?;
+            r_err_sum += step.r_error;
+            z_err_sum += step.z_error;
+            disrupted |= step.disrupted;
+            max_step_us = max_step_us.max(step.step_time_us);
+            max_beta = max_beta.max(step.beta);
+            max_heating_mw = max_heating_mw.max(step.heating_mw);
             next_tick += step_duration;
         }
 
         let wall_time = t_start.elapsed().as_secs_f64() * 1000.0;
-
-        Ok(SimulationReport {
+        Ok(self.finalize_report(
             steps,
-            duration_s: shot_duration_s,
-            wall_time_ms: wall_time,
-            max_step_time_us: max_step_us,
-            mean_abs_r_error: r_err_sum / steps as f64,
-            mean_abs_z_error: z_err_sum / steps as f64,
+            shot_duration_s,
+            wall_time,
+            max_step_us,
+            r_err_sum,
+            z_err_sum,
             disrupted,
-            r_history: self.telemetry.r_axis.get_view(),
-            z_history: self.telemetry.z_axis.get_view(),
-            ip_history: self.telemetry.ip_ma.get_view(),
-        })
+            max_beta,
+            max_heating_mw,
+        ))
     }
 }
 
@@ -243,6 +320,30 @@ mod tests {
         assert_eq!(report.steps, 200);
         assert!(sim.curr_beta.is_finite());
         assert!(sim.curr_heating_mw.is_finite());
+        assert!(report.final_beta.is_finite());
+        assert!(report.final_heating_mw.is_finite());
+        assert!(report.max_beta.is_finite());
+        assert!(report.max_heating_mw.is_finite());
+        assert!((0.2..=10.0).contains(&report.final_beta));
+        assert!((0.2..=10.0).contains(&report.max_beta));
+        assert!(report.max_beta >= report.final_beta);
+        assert!((0.0..=100.0).contains(&report.final_heating_mw));
+        assert!((0.0..=100.0).contains(&report.max_heating_mw));
+        assert!(report.max_heating_mw >= report.final_heating_mw);
         assert!((0.0..=100.0).contains(&sim.curr_heating_mw));
+    }
+
+    #[test]
+    fn test_run_shot_resets_telemetry_between_runs() {
+        let mut sim = RustFlightSim::new(6.2, 0.0, 10_000.0).expect("valid sim");
+        let first = sim.run_shot(0.01, false).expect("first shot");
+        assert_eq!(first.steps, 100);
+        assert_eq!(first.r_history.len(), 100);
+
+        let second = sim.run_shot(0.005, false).expect("second shot");
+        assert_eq!(second.steps, 50);
+        assert_eq!(second.r_history.len(), 50);
+        assert_eq!(second.z_history.len(), 50);
+        assert_eq!(second.ip_history.len(), 50);
     }
 }

@@ -58,6 +58,11 @@ impl CircularChannel {
         };
         self.data[idx]
     }
+
+    pub fn clear(&mut self) {
+        self.head = 0;
+        self.count = 0;
+    }
 }
 
 /// Multi-channel telemetry suite.
@@ -84,5 +89,12 @@ impl TelemetrySuite {
         self.z_axis.push(z);
         self.ip_ma.push(ip);
         self.beta.push(beta);
+    }
+
+    pub fn clear(&mut self) {
+        self.r_axis.clear();
+        self.z_axis.clear();
+        self.ip_ma.clear();
+        self.beta.clear();
     }
 }

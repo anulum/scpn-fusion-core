@@ -134,3 +134,20 @@ class TestPyRustFlightSim:
         assert report.steps == 1500
         assert not report.disrupted  # Baseline should be stable
         assert report.max_step_time_us > 0
+
+    def test_report_exposes_heating_beta_contracts(self):
+        sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, 10000.0)
+        report = sim.run_shot(0.02)
+
+        assert np.isfinite(report.final_beta)
+        assert np.isfinite(report.final_heating_mw)
+        assert np.isfinite(report.max_beta)
+        assert np.isfinite(report.max_heating_mw)
+
+        assert 0.2 <= report.final_beta <= 10.0
+        assert 0.2 <= report.max_beta <= 10.0
+        assert report.max_beta >= report.final_beta
+
+        assert 0.0 <= report.final_heating_mw <= 100.0
+        assert 0.0 <= report.max_heating_mw <= 100.0
+        assert report.max_heating_mw >= report.final_heating_mw

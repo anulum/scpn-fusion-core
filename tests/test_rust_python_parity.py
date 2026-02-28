@@ -79,6 +79,15 @@ try:
 except ImportError:
     _HAS_RUST_SCPN_RUNTIME = False
 
+_HAS_RUST_TRANSPORT_SOLVER = False
+_rust_transport_solver_cls = None
+try:
+    from scpn_fusion_rs import PyTransportSolver as _rust_transport_solver_cls  # type: ignore[import-not-found]
+
+    _HAS_RUST_TRANSPORT_SOLVER = True
+except ImportError:
+    _HAS_RUST_TRANSPORT_SOLVER = False
+
 # Module-level skip: if Rust is entirely absent every test is skipped
 pytestmark = pytest.mark.skipif(not HAS_RUST, reason="Rust bindings (scpn_fusion_rs) not available")
 
@@ -452,6 +461,112 @@ class TestTransportSolverParity:
                 signal_py[:min_len], signal_rs[:min_len], rtol=1e-3, atol=1e-4,
                 err_msg=f"Tearing mode parity failed: max rel diff = {_max_rel_diff(signal_py[:min_len], signal_rs[:min_len]):.6e}",
             )
+
+    @pytest.mark.skipif(
+        not _HAS_RUST_TRANSPORT_SOLVER,
+        reason="Rust PyTransportSolver binding not available",
+    )
+    def test_chang_hinton_randomized_parity(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Stress randomized profile parity for Chang-Hinton transport."""
+        import scpn_fusion.core.integrated_transport_solver as transport_mod
+        from scpn_fusion.core.integrated_transport_solver import chang_hinton_chi_profile
+
+        solver = _rust_transport_solver_cls()
+        rng = np.random.default_rng(20260228)
+        monkeypatch.setattr(transport_mod, "_rust_transport_available", False)
+
+        max_rel = 0.0
+        max_l2 = 0.0
+        for _ in range(40):
+            rho = np.linspace(0.01, 1.0, 64, dtype=np.float64)
+            ti_peak = rng.uniform(8.0, 22.0)
+            ti_shape = rng.uniform(1.2, 2.6)
+            floor = rng.uniform(0.05, 1.0)
+            t_i = ti_peak * (1.0 - rho**2) ** ti_shape + floor
+            n_e_19 = rng.uniform(4.0, 14.0) * (1.0 - 0.7 * rho**2) + rng.uniform(0.1, 1.2)
+            q = rng.uniform(0.9, 1.4) + rng.uniform(1.8, 3.6) * rho**2
+
+            chi_py = chang_hinton_chi_profile(
+                rho, t_i, n_e_19, q, R0=6.2, a=2.0, B0=5.3, A_ion=2.0, Z_eff=1.5,
+            )
+            chi_rs = np.asarray(solver.chang_hinton_chi_profile(rho, t_i, n_e_19, q), dtype=np.float64)
+
+            np.testing.assert_allclose(
+                chi_py, chi_rs, rtol=1e-9, atol=1e-12,
+                err_msg=f"Chang-Hinton randomized parity failed: max rel diff={_max_rel_diff(chi_py, chi_rs):.6e}",
+            )
+            max_rel = max(max_rel, _max_rel_diff(chi_py, chi_rs))
+            max_l2 = max(
+                max_l2,
+                float(np.linalg.norm(chi_py - chi_rs) / max(np.linalg.norm(chi_py), 1e-15)),
+            )
+
+        assert max_rel < 1e-8
+        assert max_l2 < 1e-9
+
+    @pytest.mark.skipif(
+        not _HAS_RUST_TRANSPORT_SOLVER,
+        reason="Rust PyTransportSolver binding not available",
+    )
+    def test_sauter_bootstrap_randomized_parity(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Stress randomized profile parity for the Sauter bootstrap kernel."""
+        import scpn_fusion.core.integrated_transport_solver as transport_mod
+        from scpn_fusion.core.integrated_transport_solver import (
+            calculate_sauter_bootstrap_current_full,
+        )
+
+        solver = _rust_transport_solver_cls()
+        rng = np.random.default_rng(20260301)
+        monkeypatch.setattr(transport_mod, "_rust_transport_available", False)
+
+        min_corr = 1.0
+        max_shape_l2 = 0.0
+        min_scale = float("inf")
+        max_scale = 0.0
+        rho = np.linspace(0.01, 1.0, 64, dtype=np.float64)
+        eps = np.clip(rho * 2.0 / 6.2, 1e-6, 0.999999)
+        for _ in range(40):
+            te_peak = rng.uniform(6.0, 18.0)
+            ti_peak = rng.uniform(7.0, 20.0)
+            shape = rng.uniform(1.1, 2.4)
+            t_e = te_peak * (1.0 - rho**2) ** shape + rng.uniform(0.05, 0.7)
+            t_i = ti_peak * (1.0 - rho**2) ** (shape + 0.2) + rng.uniform(0.05, 0.9)
+            n_e_19 = rng.uniform(4.0, 12.0) * (1.0 - 0.65 * rho**2) + rng.uniform(0.2, 1.0)
+            q = rng.uniform(0.95, 1.5) + rng.uniform(1.5, 3.2) * rho**2
+            b0 = rng.uniform(4.5, 6.2)
+
+            j_py = calculate_sauter_bootstrap_current_full(
+                rho, t_e, t_i, n_e_19, q, R0=6.2, a=2.0, B0=b0, Z_eff=1.5,
+            )
+            j_rs = np.asarray(
+                solver.sauter_bootstrap_profile(rho, t_e, t_i, n_e_19, q, eps, b0),
+                dtype=np.float64,
+            )
+
+            py_norm = float(np.linalg.norm(j_py))
+            rs_norm = float(np.linalg.norm(j_rs))
+            assert py_norm > 0.0 and rs_norm > 0.0
+
+            corr = float(np.corrcoef(j_py, j_rs)[0, 1])
+            scale_ratio = rs_norm / py_norm
+            shape_l2 = float(np.linalg.norm(j_py / py_norm - j_rs / rs_norm))
+
+            min_corr = min(min_corr, corr)
+            max_shape_l2 = max(max_shape_l2, shape_l2)
+            min_scale = min(min_scale, scale_ratio)
+            max_scale = max(max_scale, scale_ratio)
+
+            assert corr > 0.99, f"Sauter profile correlation too low: {corr:.6f}"
+            assert shape_l2 < 0.08, f"Sauter normalized-shape drift too high: {shape_l2:.6f}"
+            assert 1.8 < scale_ratio < 2.5, f"Sauter scale ratio out of band: {scale_ratio:.6f}"
+
+        assert min_corr > 0.99
+        assert max_shape_l2 < 0.08
+        assert min_scale > 1.8
+        assert max_scale < 2.5
 
     def test_transport_no_rust_path_skips_gracefully(self) -> None:
         """Verify that the neural transport module works in pure-Python

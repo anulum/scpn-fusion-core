@@ -9,6 +9,8 @@
 
 use crate::flight_sim::{RustFlightSim, SimulationReport};
 use fusion_types::error::{FusionError, FusionResult};
+use std::thread;
+use std::time::{Duration, Instant};
 
 /// Configuration for the real-time driver.
 pub struct RtcConfig {
@@ -35,23 +37,82 @@ impl RtcDriver {
                 "shot_duration_s must be finite and > 0".to_string(),
             ));
         }
+        if !self.config.target_hz.is_finite() || self.config.target_hz <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "target_hz must be finite and > 0".to_string(),
+            ));
+        }
         if !self.config.max_jitter_us.is_finite() || self.config.max_jitter_us < 0.0 {
             return Err(FusionError::ConfigError(
                 "max_jitter_us must be finite and >= 0".to_string(),
             ));
         }
 
-        let report = self
-            .sim
-            .run_shot(shot_duration_s, self.config.use_busy_wait)?;
-
-        if self.config.max_jitter_us > 0.0 && report.max_step_time_us > self.config.max_jitter_us {
-            return Err(FusionError::PhysicsViolation(format!(
-                "RTC jitter exceeded threshold: max_step_time_us={:.3} > allowed={:.3}",
-                report.max_step_time_us, self.config.max_jitter_us
+        let sim_hz = 1.0 / self.sim.control_dt;
+        let rel_hz_mismatch = ((sim_hz - self.config.target_hz) / self.config.target_hz).abs();
+        if rel_hz_mismatch > 1e-6 {
+            return Err(FusionError::ConfigError(format!(
+                "RtcConfig target_hz ({:.6}) does not match simulator frequency ({:.6})",
+                self.config.target_hz, sim_hz
             )));
         }
-        Ok(report)
+
+        let steps = self.sim.prepare_shot(shot_duration_s)?;
+        let step_duration = Duration::from_secs_f64(self.sim.control_dt);
+        let mut next_tick = Instant::now();
+        let t_start = Instant::now();
+
+        let mut r_err_sum = 0.0;
+        let mut z_err_sum = 0.0;
+        let mut max_step_us = 0.0_f64;
+        let mut disrupted = false;
+        let mut max_beta = self.sim.curr_beta;
+        let mut max_heating_mw = self.sim.curr_heating_mw;
+
+        for step_idx in 0..steps {
+            if self.config.use_busy_wait {
+                while Instant::now() < next_tick {
+                    std::hint::spin_loop();
+                }
+            } else if let Some(wait) = next_tick.checked_duration_since(Instant::now()) {
+                thread::sleep(wait);
+            }
+
+            let tick_started_at = Instant::now();
+            let jitter_us = if tick_started_at >= next_tick {
+                (tick_started_at - next_tick).as_secs_f64() * 1_000_000.0
+            } else {
+                (next_tick - tick_started_at).as_secs_f64() * 1_000_000.0
+            };
+            if self.config.max_jitter_us > 0.0 && jitter_us > self.config.max_jitter_us {
+                return Err(FusionError::PhysicsViolation(format!(
+                    "RTC jitter exceeded threshold: jitter_us={:.3} > allowed={:.3}",
+                    jitter_us, self.config.max_jitter_us
+                )));
+            }
+
+            let step = self.sim.step_once(step_idx, shot_duration_s)?;
+            r_err_sum += step.r_error;
+            z_err_sum += step.z_error;
+            disrupted |= step.disrupted;
+            max_step_us = max_step_us.max(step.step_time_us);
+            max_beta = max_beta.max(step.beta);
+            max_heating_mw = max_heating_mw.max(step.heating_mw);
+            next_tick += step_duration;
+        }
+
+        let wall_time_ms = t_start.elapsed().as_secs_f64() * 1000.0;
+        Ok(self.sim.finalize_report(
+            steps,
+            shot_duration_s,
+            wall_time_ms,
+            max_step_us,
+            r_err_sum,
+            z_err_sum,
+            disrupted,
+            max_beta,
+            max_heating_mw,
+        ))
     }
 }
 
@@ -72,6 +133,20 @@ mod tests {
             },
         );
         assert!(driver.run_shot_hardened(0.0).is_err());
+    }
+
+    #[test]
+    fn test_run_shot_hardened_rejects_target_hz_mismatch() {
+        let sim = RustFlightSim::new(6.2, 0.0, 5000.0).expect("valid sim");
+        let mut driver = RtcDriver::new(
+            sim,
+            RtcConfig {
+                target_hz: 4000.0,
+                max_jitter_us: 10_000.0,
+                use_busy_wait: false,
+            },
+        );
+        assert!(driver.run_shot_hardened(0.01).is_err());
     }
 
     #[test]
