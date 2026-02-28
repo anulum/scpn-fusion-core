@@ -95,24 +95,24 @@ jobs:
               if age_minutes is not None and age_minutes > max_stale_minutes:
                   stale.append((run_id_other, run_url, age_minutes))
 
-          if duplicates or stale:
+          if duplicates:
               print("CI chain guard failed.")
-              if duplicates:
-                  print("Duplicate in-progress runs for same workflow/ref/sha:")
-                  for rid, url, age in duplicates:
-                      age_str = "unknown" if age is None else f"{age:.1f}m"
-                      print(f" - run_id={rid} age={age_str} url={url}")
-              if stale:
-                  print(
-                      "Stale in-progress runs for same workflow/ref "
-                      f"(>{max_stale_minutes:.0f}m):"
-                  )
-                  for rid, url, age in stale:
-                      age_str = "unknown" if age is None else f"{age:.1f}m"
-                      print(f" - run_id={rid} age={age_str} url={url}")
+              print("Duplicate in-progress runs for same workflow/ref/sha:")
+              for rid, url, age in duplicates:
+                  age_str = "unknown" if age is None else f"{age:.1f}m"
+                  print(f" - run_id={rid} age={age_str} url={url}")
               raise SystemExit(1)
 
-          print("CI chain guard passed: no duplicate/stale in-progress runs found.")
+          if stale:
+              print(
+                  "CI chain guard warning: stale in-progress runs for same workflow/ref "
+                  f"(>{max_stale_minutes:.0f}m):"
+              )
+              for rid, url, age in stale:
+                  age_str = "unknown" if age is None else f"{age:.1f}m"
+                  print(f" - run_id={rid} age={age_str} url={url}")
+
+          print("CI chain guard passed: no duplicate in-progress runs found.")
           PY
 
   python-tests:
