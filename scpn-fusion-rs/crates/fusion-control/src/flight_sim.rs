@@ -44,6 +44,16 @@ pub struct StepMetrics {
     pub heating_mw: f64,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct ShotAggregate {
+    pub max_step_time_us: f64,
+    pub r_err_sum: f64,
+    pub z_err_sum: f64,
+    pub disrupted: bool,
+    pub max_beta: f64,
+    pub max_heating_mw: f64,
+}
+
 /// High-speed simulation engine.
 pub struct RustFlightSim {
     pub controller: IsoFluxController,
@@ -219,25 +229,20 @@ impl RustFlightSim {
         steps: usize,
         shot_duration_s: f64,
         wall_time_ms: f64,
-        max_step_time_us: f64,
-        r_err_sum: f64,
-        z_err_sum: f64,
-        disrupted: bool,
-        max_beta: f64,
-        max_heating_mw: f64,
+        aggregate: ShotAggregate,
     ) -> SimulationReport {
         SimulationReport {
             steps,
             duration_s: shot_duration_s,
             wall_time_ms,
-            max_step_time_us,
-            mean_abs_r_error: r_err_sum / steps as f64,
-            mean_abs_z_error: z_err_sum / steps as f64,
+            max_step_time_us: aggregate.max_step_time_us,
+            mean_abs_r_error: aggregate.r_err_sum / steps as f64,
+            mean_abs_z_error: aggregate.z_err_sum / steps as f64,
             final_beta: self.curr_beta,
             final_heating_mw: self.curr_heating_mw,
-            max_beta,
-            max_heating_mw,
-            disrupted,
+            max_beta: aggregate.max_beta,
+            max_heating_mw: aggregate.max_heating_mw,
+            disrupted: aggregate.disrupted,
             r_history: self.telemetry.r_axis.get_view(),
             z_history: self.telemetry.z_axis.get_view(),
             ip_history: self.telemetry.ip_ma.get_view(),
@@ -257,12 +262,14 @@ impl RustFlightSim {
         let t_start = Instant::now();
         let step_duration = Duration::from_secs_f64(self.control_dt);
 
-        let mut r_err_sum = 0.0;
-        let mut z_err_sum = 0.0;
-        let mut max_step_us = 0.0_f64;
-        let mut disrupted = false;
-        let mut max_beta = self.curr_beta;
-        let mut max_heating_mw = self.curr_heating_mw;
+        let mut aggregate = ShotAggregate {
+            max_step_time_us: 0.0,
+            r_err_sum: 0.0,
+            z_err_sum: 0.0,
+            disrupted: false,
+            max_beta: self.curr_beta,
+            max_heating_mw: self.curr_heating_mw,
+        };
 
         let mut next_tick = Instant::now();
         for step_idx in 0..steps {
@@ -272,27 +279,17 @@ impl RustFlightSim {
                 }
             }
             let step = self.step_once(step_idx, shot_duration_s)?;
-            r_err_sum += step.r_error;
-            z_err_sum += step.z_error;
-            disrupted |= step.disrupted;
-            max_step_us = max_step_us.max(step.step_time_us);
-            max_beta = max_beta.max(step.beta);
-            max_heating_mw = max_heating_mw.max(step.heating_mw);
+            aggregate.r_err_sum += step.r_error;
+            aggregate.z_err_sum += step.z_error;
+            aggregate.disrupted |= step.disrupted;
+            aggregate.max_step_time_us = aggregate.max_step_time_us.max(step.step_time_us);
+            aggregate.max_beta = aggregate.max_beta.max(step.beta);
+            aggregate.max_heating_mw = aggregate.max_heating_mw.max(step.heating_mw);
             next_tick += step_duration;
         }
 
         let wall_time = t_start.elapsed().as_secs_f64() * 1000.0;
-        Ok(self.finalize_report(
-            steps,
-            shot_duration_s,
-            wall_time,
-            max_step_us,
-            r_err_sum,
-            z_err_sum,
-            disrupted,
-            max_beta,
-            max_heating_mw,
-        ))
+        Ok(self.finalize_report(steps, shot_duration_s, wall_time, aggregate))
     }
 }
 

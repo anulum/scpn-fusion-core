@@ -7,7 +7,7 @@
 //! Provides deterministic timing for high-frequency control loops.
 //! Designed for Preempt-RT Linux and bare-metal targets.
 
-use crate::flight_sim::{RustFlightSim, SimulationReport};
+use crate::flight_sim::{RustFlightSim, ShotAggregate, SimulationReport};
 use fusion_types::error::{FusionError, FusionResult};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -62,12 +62,14 @@ impl RtcDriver {
         let mut next_tick = Instant::now();
         let t_start = Instant::now();
 
-        let mut r_err_sum = 0.0;
-        let mut z_err_sum = 0.0;
-        let mut max_step_us = 0.0_f64;
-        let mut disrupted = false;
-        let mut max_beta = self.sim.curr_beta;
-        let mut max_heating_mw = self.sim.curr_heating_mw;
+        let mut aggregate = ShotAggregate {
+            max_step_time_us: 0.0,
+            r_err_sum: 0.0,
+            z_err_sum: 0.0,
+            disrupted: false,
+            max_beta: self.sim.curr_beta,
+            max_heating_mw: self.sim.curr_heating_mw,
+        };
 
         for step_idx in 0..steps {
             if self.config.use_busy_wait {
@@ -92,27 +94,19 @@ impl RtcDriver {
             }
 
             let step = self.sim.step_once(step_idx, shot_duration_s)?;
-            r_err_sum += step.r_error;
-            z_err_sum += step.z_error;
-            disrupted |= step.disrupted;
-            max_step_us = max_step_us.max(step.step_time_us);
-            max_beta = max_beta.max(step.beta);
-            max_heating_mw = max_heating_mw.max(step.heating_mw);
+            aggregate.r_err_sum += step.r_error;
+            aggregate.z_err_sum += step.z_error;
+            aggregate.disrupted |= step.disrupted;
+            aggregate.max_step_time_us = aggregate.max_step_time_us.max(step.step_time_us);
+            aggregate.max_beta = aggregate.max_beta.max(step.beta);
+            aggregate.max_heating_mw = aggregate.max_heating_mw.max(step.heating_mw);
             next_tick += step_duration;
         }
 
         let wall_time_ms = t_start.elapsed().as_secs_f64() * 1000.0;
-        Ok(self.sim.finalize_report(
-            steps,
-            shot_duration_s,
-            wall_time_ms,
-            max_step_us,
-            r_err_sum,
-            z_err_sum,
-            disrupted,
-            max_beta,
-            max_heating_mw,
-        ))
+        Ok(self
+            .sim
+            .finalize_report(steps, shot_duration_s, wall_time_ms, aggregate))
     }
 }
 
