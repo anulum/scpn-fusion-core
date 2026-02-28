@@ -122,6 +122,19 @@ def test_divertor_warns_on_non_convergence(caplog):
     assert any("did not converge" in r.message for r in caplog.records)
 
 
+def test_divertor_rejects_invalid_solver_controls():
+    from scpn_fusion.core.divertor_thermal_sim import DivertorLab
+
+    lab = DivertorLab(P_sol_MW=50.0)
+    lab.calculate_heat_load()
+    with pytest.raises(ValueError, match="max_iter"):
+        lab.simulate_lithium_vapor(max_iter=0)
+    with pytest.raises(ValueError, match="tol"):
+        lab.simulate_lithium_vapor(tol=0.0)
+    with pytest.raises(ValueError, match="tol"):
+        lab.simulate_lithium_vapor(tol=float("nan"))
+
+
 # ── 1.5 Sawtooth constants ──────────────────────────────────────────
 
 
