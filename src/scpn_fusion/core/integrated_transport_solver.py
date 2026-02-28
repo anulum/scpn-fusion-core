@@ -50,6 +50,14 @@ _EPED_FALLBACK_EXCEPTIONS = (
     KeyError,
     FloatingPointError,
 )
+_RUST_CHANG_HINTON_DEFAULTS: dict[str, float] = {
+    "R0": 6.2,
+    "a": 2.0,
+    "B0": 5.3,
+    "A_ion": 2.0,
+    "Z_eff": 1.5,
+}
+_RUST_CHANG_HINTON_PARAM_ATOL = 1e-12
 
 
 class PhysicsError(RuntimeError):
@@ -96,6 +104,33 @@ def _coerce_matching_1d_profiles(**profiles: Any) -> dict[str, np.ndarray]:
             )
         out[name] = arr
     return out
+
+
+def _rust_chang_hinton_params_match_defaults(
+    *,
+    R0: float,
+    a: float,
+    B0: float,
+    A_ion: float,
+    Z_eff: float,
+) -> bool:
+    """Return whether Chang-Hinton inputs match Rust default-parameter contract."""
+    params = {
+        "R0": float(R0),
+        "a": float(a),
+        "B0": float(B0),
+        "A_ion": float(A_ion),
+        "Z_eff": float(Z_eff),
+    }
+    for key, value in params.items():
+        if not np.isclose(
+            value,
+            _RUST_CHANG_HINTON_DEFAULTS[key],
+            rtol=0.0,
+            atol=_RUST_CHANG_HINTON_PARAM_ATOL,
+        ):
+            return False
+    return True
 
 
 def _load_gyro_bohm_coefficient(
@@ -192,7 +227,14 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
     # NeoclassicalParams::default() (R0=6.2, a=2.0, B0=5.3, A_ion=2.0,
     # Z_eff=1.5) with only q_profile overridden. Delegate when the
     # caller's parameters match these defaults.
-    if _rust_transport_available:
+    use_rust_fast_path = _rust_transport_available and _rust_chang_hinton_params_match_defaults(
+        R0=r0,
+        a=a_minor,
+        B0=b0,
+        A_ion=a_ion,
+        Z_eff=z_eff,
+    )
+    if use_rust_fast_path:
         try:
             solver = _PyTransportSolver()
             chi_rust = np.asarray(
@@ -203,6 +245,16 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
             return chi_rust
         except _RUST_TRANSPORT_FALLBACK_EXCEPTIONS:
             _logger.debug("chang_hinton_chi_profile: Rust fast-path failed, falling back to Python")
+    elif _rust_transport_available:
+        _logger.debug(
+            "chang_hinton_chi_profile: Rust fast-path skipped for non-default geometry/charge "
+            "(R0=%.6g, a=%.6g, B0=%.6g, A_ion=%.6g, Z_eff=%.6g)",
+            r0,
+            a_minor,
+            b0,
+            a_ion,
+            z_eff,
+        )
 
     # Vectorized Python fallback
     e_charge = 1.602176634e-19
@@ -475,6 +527,17 @@ class TransportSolver(FusionKernel):
             "extrapolation_penalty": 1.0,
             "domain_violations": [],
             "fallback_used": False,
+        }
+        self._last_pedestal_bc_contract: dict[str, Any] = {
+            "used": False,
+            "updated": False,
+            "fallback_used": False,
+            "in_domain": None,
+            "extrapolation_penalty": None,
+            "n_ped_1e19": None,
+            "t_edge_keV_before": float(self.T_edge_keV),
+            "t_edge_keV_after": float(self.T_edge_keV),
+            "error": None,
         }
 
         # Numerical hardening telemetry (non-finite replacements per step)
@@ -1307,21 +1370,58 @@ class TransportSolver(FusionKernel):
 
     def update_pedestal_bc(self):
         """Update T_edge_keV using EPED model if active."""
+        contract: dict[str, Any] = {
+            "used": self.pedestal_model is not None,
+            "updated": False,
+            "fallback_used": False,
+            "in_domain": None,
+            "extrapolation_penalty": None,
+            "n_ped_1e19": None,
+            "t_edge_keV_before": float(self.T_edge_keV),
+            "t_edge_keV_after": float(self.T_edge_keV),
+            "error": None,
+        }
         if self.pedestal_model is None:
+            self._last_pedestal_bc_contract = contract
             return
 
         # Use density at rho ~ 0.95 as proxy for pedestal density
         n_ped_idx = int(0.95 * self.nr)
         n_ped = float(self.ne[n_ped_idx])
-        
+        contract["n_ped_1e19"] = n_ped
+        if (not np.isfinite(n_ped)) or n_ped <= 0.0:
+            contract["fallback_used"] = True
+            contract["error"] = f"invalid_n_ped:{n_ped!r}"
+            contract["t_edge_keV_after"] = float(self.T_edge_keV)
+            self._last_pedestal_bc_contract = contract
+            return
+
         # Predict
         try:
             result = self.pedestal_model.predict(n_ped, T_ped_guess_keV=self.T_edge_keV)
-            if result.in_domain or result.extrapolation_penalty > 0.5:
+            in_domain = bool(getattr(result, "in_domain", False))
+            penalty = float(getattr(result, "extrapolation_penalty", 0.0))
+            contract["in_domain"] = in_domain
+            contract["extrapolation_penalty"] = penalty
+            if in_domain or penalty > 0.5:
                 # Relax towards new value to avoid shocks
-                self.T_edge_keV = 0.8 * self.T_edge_keV + 0.2 * result.T_ped_keV
-        except ValueError:
-            pass # Keep previous BC on failure
+                candidate = 0.8 * self.T_edge_keV + 0.2 * float(result.T_ped_keV)
+                if (not np.isfinite(candidate)) or candidate <= 0.0:
+                    raise ValueError(
+                        f"Invalid pedestal boundary candidate {candidate!r}"
+                    )
+                self.T_edge_keV = float(candidate)
+                contract["updated"] = True
+        except _EPED_FALLBACK_EXCEPTIONS as exc:
+            contract["fallback_used"] = True
+            contract["error"] = f"{exc.__class__.__name__}:{exc}"
+            _logger.debug(
+                "update_pedestal_bc: retaining previous T_edge_keV=%.6f due to %s",
+                float(self.T_edge_keV),
+                exc,
+            )
+        contract["t_edge_keV_after"] = float(self.T_edge_keV)
+        self._last_pedestal_bc_contract = contract
 
     def evolve_profiles(
         self,

@@ -8,8 +8,7 @@
 //! Designed for Preempt-RT Linux and bare-metal targets.
 
 use crate::flight_sim::{RustFlightSim, SimulationReport};
-use fusion_types::error::FusionResult;
-use std::time::{Duration, Instant};
+use fusion_types::error::{FusionError, FusionResult};
 
 /// Configuration for the real-time driver.
 pub struct RtcConfig {
@@ -31,44 +30,78 @@ impl RtcDriver {
 
     /// Execute a shot with deterministic timing.
     pub fn run_shot_hardened(&mut self, shot_duration_s: f64) -> FusionResult<SimulationReport> {
-        let t_start = Instant::now();
-        let steps = (shot_duration_s / self.sim.control_dt) as usize;
-        let step_duration = Duration::from_secs_f64(self.sim.control_dt);
-
-        let mut report = self.sim.run_shot(0.0, self.config.use_busy_wait)?; // Initialize report
-
-        report.steps = steps;
-        report.duration_s = shot_duration_s;
-
-        let mut next_tick = Instant::now();
-
-        for _ in 0..steps {
-            // 1. Precise Wait (Deterministic Tick)
-            if self.config.use_busy_wait {
-                while Instant::now() < next_tick {
-                    std::hint::spin_loop();
-                }
-            } else {
-                let now = Instant::now();
-                if now < next_tick {
-                    std::thread::sleep(next_tick - now);
-                }
-            }
-
-            // 2. Execute Control Step
-            // (Note: We use a simplified single-step runner for deterministic loop)
-            self.execute_single_step(&mut report)?;
-
-            next_tick += step_duration;
+        if !shot_duration_s.is_finite() || shot_duration_s <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "shot_duration_s must be finite and > 0".to_string(),
+            ));
+        }
+        if !self.config.max_jitter_us.is_finite() || self.config.max_jitter_us < 0.0 {
+            return Err(FusionError::ConfigError(
+                "max_jitter_us must be finite and >= 0".to_string(),
+            ));
         }
 
-        report.wall_time_ms = t_start.elapsed().as_secs_f64() * 1000.0;
+        let report = self
+            .sim
+            .run_shot(shot_duration_s, self.config.use_busy_wait)?;
+
+        if self.config.max_jitter_us > 0.0 && report.max_step_time_us > self.config.max_jitter_us {
+            return Err(FusionError::PhysicsViolation(format!(
+                "RTC jitter exceeded threshold: max_step_time_us={:.3} > allowed={:.3}",
+                report.max_step_time_us, self.config.max_jitter_us
+            )));
+        }
         Ok(report)
     }
+}
 
-    fn execute_single_step(&mut self, _report: &mut SimulationReport) -> FusionResult<()> {
-        // Implementation of single deterministic step
-        // (Similar to flight_sim.rs loop body)
-        Ok(())
+#[cfg(test)]
+mod tests {
+    use super::{RtcConfig, RtcDriver};
+    use crate::flight_sim::RustFlightSim;
+
+    #[test]
+    fn test_run_shot_hardened_rejects_invalid_duration() {
+        let sim = RustFlightSim::new(6.2, 0.0, 5000.0).expect("valid sim");
+        let mut driver = RtcDriver::new(
+            sim,
+            RtcConfig {
+                target_hz: 5000.0,
+                max_jitter_us: 10_000.0,
+                use_busy_wait: false,
+            },
+        );
+        assert!(driver.run_shot_hardened(0.0).is_err());
+    }
+
+    #[test]
+    fn test_run_shot_hardened_enforces_jitter_threshold() {
+        let sim = RustFlightSim::new(6.2, 0.0, 2000.0).expect("valid sim");
+        let mut driver = RtcDriver::new(
+            sim,
+            RtcConfig {
+                target_hz: 2000.0,
+                max_jitter_us: 0.0001,
+                use_busy_wait: false,
+            },
+        );
+        assert!(driver.run_shot_hardened(0.01).is_err());
+    }
+
+    #[test]
+    fn test_run_shot_hardened_passes_with_relaxed_jitter() {
+        let sim = RustFlightSim::new(6.2, 0.0, 2000.0).expect("valid sim");
+        let mut driver = RtcDriver::new(
+            sim,
+            RtcConfig {
+                target_hz: 2000.0,
+                max_jitter_us: 100_000.0,
+                use_busy_wait: false,
+            },
+        );
+        let report = driver
+            .run_shot_hardened(0.01)
+            .expect("jitter budget should pass");
+        assert!(report.steps > 0);
     }
 }

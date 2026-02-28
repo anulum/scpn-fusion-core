@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import scpn_fusion.core.integrated_transport_solver as transport_mod
 from scpn_fusion.core.integrated_transport_solver import (
     TransportSolver,
     PhysicsError,
@@ -525,6 +526,37 @@ class TestNeoclassical:
         with pytest.raises(ValueError, match="B0"):
             chang_hinton_chi_profile(rho, Ti, ne, q, R0=6.2, a=2.0, B0=0.0)
 
+    def test_chang_hinton_rust_fast_path_requires_default_params(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        rho = np.linspace(0.0, 1.0, 8)
+        Ti = np.linspace(3.0, 1.0, 8)
+        ne = np.linspace(8.0, 4.0, 8)
+        q = np.linspace(1.0, 3.0, 8)
+        sentinel = np.full_like(rho, 123.456, dtype=np.float64)
+        calls = {"n": 0}
+
+        class _FakeSolver:
+            def chang_hinton_chi_profile(self, rho_v, ti_v, ne_v, q_v):
+                _ = (rho_v, ti_v, ne_v, q_v)
+                calls["n"] += 1
+                return sentinel
+
+        monkeypatch.setattr(transport_mod, "_rust_transport_available", True)
+        monkeypatch.setattr(transport_mod, "_PyTransportSolver", _FakeSolver)
+
+        out_non_default = chang_hinton_chi_profile(
+            rho, Ti, ne, q, R0=6.4, a=2.0, B0=5.3
+        )
+        assert calls["n"] == 0
+        assert not np.allclose(out_non_default, sentinel)
+
+        out_default = chang_hinton_chi_profile(
+            rho, Ti, ne, q, R0=6.2, a=2.0, B0=5.3, A_ion=2.0, Z_eff=1.5
+        )
+        assert calls["n"] == 1
+        np.testing.assert_allclose(out_default, sentinel)
+
     def test_bootstrap_current_shape(self) -> None:
         """Sauter bootstrap current profile should match rho shape."""
         rho = np.linspace(0, 1, 50)
@@ -551,6 +583,43 @@ class TestNeoclassical:
             calculate_sauter_bootstrap_current_full(
                 rho, Te, Ti, ne, q, R0=float("nan"), a=2.0, B0=5.3
             )
+
+    def test_update_pedestal_bc_records_failure_contract(self, solver: TransportSolver) -> None:
+        class _BrokenPedestal:
+            def predict(self, n_ped, T_ped_guess_keV):
+                _ = (n_ped, T_ped_guess_keV)
+                raise ValueError("synthetic pedestal failure")
+
+        solver.pedestal_model = _BrokenPedestal()
+        edge_before = float(solver.T_edge_keV)
+        solver.update_pedestal_bc()
+        contract = solver._last_pedestal_bc_contract
+        assert contract["used"] is True
+        assert contract["updated"] is False
+        assert contract["fallback_used"] is True
+        assert str(contract["error"]).startswith("ValueError:")
+        assert solver.T_edge_keV == pytest.approx(edge_before)
+
+    def test_update_pedestal_bc_updates_edge_on_valid_prediction(self, solver: TransportSolver) -> None:
+        class _PedestalPrediction:
+            in_domain = True
+            extrapolation_penalty = 1.0
+            T_ped_keV = 1.2
+
+        class _WorkingPedestal:
+            def predict(self, n_ped, T_ped_guess_keV):
+                _ = (n_ped, T_ped_guess_keV)
+                return _PedestalPrediction()
+
+        solver.pedestal_model = _WorkingPedestal()
+        edge_before = float(solver.T_edge_keV)
+        solver.update_pedestal_bc()
+        contract = solver._last_pedestal_bc_contract
+        assert contract["used"] is True
+        assert contract["fallback_used"] is False
+        assert contract["updated"] is True
+        assert contract["error"] is None
+        assert float(solver.T_edge_keV) > edge_before
 
 
 class TestGyroBohmLoader:

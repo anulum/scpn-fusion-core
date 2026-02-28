@@ -41,12 +41,23 @@ pub struct RustFlightSim {
     pub curr_z: f64,
     pub curr_ip_ma: f64,
     pub curr_beta: f64,
+    pub curr_heating_mw: f64,
     // Actuator States (for slew rate tracking)
     pub pf_states: Vec<f64>,
 }
 
 impl RustFlightSim {
     pub fn new(target_r: f64, target_z: f64, control_hz: f64) -> FusionResult<Self> {
+        if !target_r.is_finite() || !target_z.is_finite() {
+            return Err(FusionError::ConfigError(
+                "target_r/target_z must be finite".to_string(),
+            ));
+        }
+        if !control_hz.is_finite() || control_hz <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "control_hz must be finite and > 0".to_string(),
+            ));
+        }
         let control_dt = 1.0 / control_hz;
         let mut controller = IsoFluxController::new(target_r, target_z)?;
 
@@ -72,6 +83,7 @@ impl RustFlightSim {
             curr_z: target_z,
             curr_ip_ma: 5.0,
             curr_beta: 1.0,
+            curr_heating_mw: 20.0,
             pf_states: vec![0.0, 0.0], // R, Z actuators
         })
     }
@@ -85,8 +97,18 @@ impl RustFlightSim {
         shot_duration_s: f64,
         deterministic: bool,
     ) -> FusionResult<SimulationReport> {
+        if !shot_duration_s.is_finite() || shot_duration_s <= 0.0 {
+            return Err(FusionError::ConfigError(
+                "shot_duration_s must be finite and > 0".to_string(),
+            ));
+        }
         let t_start = Instant::now();
         let steps = (shot_duration_s / self.control_dt) as usize;
+        if steps == 0 {
+            return Err(FusionError::ConfigError(
+                "shot_duration_s too short for selected control_dt".to_string(),
+            ));
+        }
         let step_duration = std::time::Duration::from_secs_f64(self.control_dt);
 
         let mut r_err_sum = 0.0;
@@ -108,7 +130,18 @@ impl RustFlightSim {
 
             // 1. Physics Evolution (Plant)
             self.curr_ip_ma = 5.0 + (10.0 * time_s / shot_duration_s);
-            self.curr_beta = 1.0 + (0.01 * time_s);
+            // Heating command acts as a bounded actuator that drives beta.
+            // This fills the heating-control safety gap with a stable surrogate
+            // coupling: higher constrained heating -> higher target beta.
+            let heating_request_mw = 20.0 + 60.0 * (time_s / shot_duration_s).clamp(0.0, 1.0);
+            self.curr_heating_mw = self.constraints.heating.enforce(
+                heating_request_mw,
+                self.curr_heating_mw,
+                self.control_dt,
+            );
+            let beta_target = 0.6 + 0.03 * self.curr_heating_mw;
+            self.curr_beta += 0.5 * (beta_target - self.curr_beta) * self.control_dt;
+            self.curr_beta = self.curr_beta.clamp(0.2, 10.0);
 
             // Natural Drifts (Shafranov shift + Vertical instability)
             self.curr_r += 0.01 * self.curr_beta * self.control_dt;
@@ -132,8 +165,6 @@ impl RustFlightSim {
                     .enforce(requested_z, self.pf_states[1], self.control_dt);
             self.pf_states[0] = ctrl_r;
             self.pf_states[1] = ctrl_z;
-
-            // TODO: Enforce heating constraints when heating control is active
 
             // 3. Apply Actuators (with delay/lag)
             use ndarray::Array1;
@@ -185,5 +216,33 @@ impl RustFlightSim {
             z_history: self.telemetry.z_axis.get_view(),
             ip_history: self.telemetry.ip_ma.get_view(),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RustFlightSim;
+
+    #[test]
+    fn test_new_rejects_invalid_control_hz() {
+        assert!(RustFlightSim::new(6.2, 0.0, 0.0).is_err());
+        assert!(RustFlightSim::new(6.2, 0.0, f64::NAN).is_err());
+    }
+
+    #[test]
+    fn test_run_shot_rejects_invalid_duration() {
+        let mut sim = RustFlightSim::new(6.2, 0.0, 10_000.0).expect("valid sim");
+        assert!(sim.run_shot(0.0, false).is_err());
+        assert!(sim.run_shot(f64::NAN, false).is_err());
+    }
+
+    #[test]
+    fn test_run_shot_keeps_beta_and_heating_finite() {
+        let mut sim = RustFlightSim::new(6.2, 0.0, 10_000.0).expect("valid sim");
+        let report = sim.run_shot(0.02, false).expect("shot should run");
+        assert_eq!(report.steps, 200);
+        assert!(sim.curr_beta.is_finite());
+        assert!(sim.curr_heating_mw.is_finite());
+        assert!((0.0..=100.0).contains(&sim.curr_heating_mw));
     }
 }
