@@ -15,6 +15,7 @@ Exit code 0 if all thresholds met, 1 otherwise.
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import time
@@ -49,6 +50,11 @@ THRESHOLDS = {
     "disruption_recall_min": 0.60,        # > 60% recall
     "disruption_fpr_max": 0.40,           # FPR <= 40% for full PASS
     "disruption_detection_ms": 50.0,      # within 50ms of TQ
+}
+STRICT_DATASET_MINIMA = {
+    "equilibrium_files": 12,
+    "transport_shots": 52,
+    "disruption_shots": 12,
 }
 DISRUPTION_CALIBRATION_PATH = (
     ROOT / "validation" / "reference_data" / "diiid" / "disruption_risk_calibration.json"
@@ -582,6 +588,44 @@ def validate_disruption(
     }
 
 
+def evaluate_dataset_coverage(
+    eq_result: dict[str, Any],
+    tr_result: dict[str, Any],
+    dis_result: dict[str, Any],
+    *,
+    min_equilibrium_files: int,
+    min_transport_shots: int,
+    min_disruption_shots: int,
+) -> dict[str, Any]:
+    """Evaluate dataset-size coverage gates for external-competitiveness runs."""
+    required = {
+        "equilibrium_files": max(int(min_equilibrium_files), 0),
+        "transport_shots": max(int(min_transport_shots), 0),
+        "disruption_shots": max(int(min_disruption_shots), 0),
+    }
+    actual = {
+        "equilibrium_files": int(eq_result.get("n_files", 0)),
+        "transport_shots": int(tr_result.get("n_shots", 0)),
+        "disruption_shots": int(dis_result.get("n_shots", 0)),
+    }
+
+    checks: dict[str, dict[str, Any]] = {}
+    for key, minimum in required.items():
+        observed = actual.get(key, 0)
+        checks[key] = {
+            "required_min": minimum,
+            "observed": observed,
+            "passes": bool(observed >= minimum),
+        }
+
+    return {
+        "required": required,
+        "actual": actual,
+        "checks": checks,
+        "passes": bool(all(item["passes"] for item in checks.values())),
+    }
+
+
 # ── Output ────────────────────────────────────────────────────────────
 
 def render_markdown(report: dict[str, Any]) -> str:
@@ -665,6 +709,28 @@ def render_markdown(report: dict[str, Any]) -> str:
         lines.append(f"- **Note**: {dis['fpr_note']}")
     lines.append("")
 
+    # Dataset coverage
+    cov = report.get("dataset_coverage", {})
+    if isinstance(cov, dict):
+        lines.append("## 4. Dataset Coverage Gates")
+        checks = cov.get("checks", {})
+        if isinstance(checks, dict):
+            lines.append("| Dataset | Observed | Required Min | Status |")
+            lines.append("|---------|----------|--------------|--------|")
+            labels = {
+                "equilibrium_files": "Equilibrium files",
+                "transport_shots": "Transport shots",
+                "disruption_shots": "Disruption shots",
+            }
+            for key in ("equilibrium_files", "transport_shots", "disruption_shots"):
+                item = checks.get(key, {})
+                observed = int(item.get("observed", 0))
+                required = int(item.get("required_min", 0))
+                status = "PASS" if bool(item.get("passes", False)) else "FAIL"
+                lines.append(f"| {labels[key]} | {observed} | {required} | {status} |")
+        lines.append(f"- **Status**: {'PASS' if cov.get('passes', False) else 'FAIL'}")
+        lines.append("")
+
     # Summary
     lines.append("## Summary")
     lines.append("")
@@ -674,6 +740,13 @@ def render_markdown(report: dict[str, Any]) -> str:
     tr_metric = f"2-sigma {tr.get('within_2sigma_fraction', 0):.0%}" if isinstance(tr.get('within_2sigma_fraction'), float) else "N/A"
     lines.append(f"| Transport | {'PASS' if tr['passes'] else 'FAIL'} | {tr_metric} |")
     lines.append(f"| Disruption | {dis_status} | Recall {dis.get('recall', 0):.0%}, FPR {dis.get('false_positive_rate', 0):.0%} |")
+    if isinstance(cov, dict):
+        lines.append(
+            f"| Dataset Coverage | {'PASS' if cov.get('passes', False) else 'FAIL'} "
+            f"| Eq={cov.get('actual', {}).get('equilibrium_files', 0)}, "
+            f"Tr={cov.get('actual', {}).get('transport_shots', 0)}, "
+            f"Dis={cov.get('actual', {}).get('disruption_shots', 0)} |"
+        )
     lines.append("")
 
     return "\n".join(lines)
@@ -684,6 +757,10 @@ def render_markdown(report: dict[str, Any]) -> str:
 def main(
     output_json: Path | None = None,
     output_md: Path | None = None,
+    *,
+    min_equilibrium_files: int = 0,
+    min_transport_shots: int = 0,
+    min_disruption_shots: int = 0,
 ) -> int:
     """Run all validation lanes. Returns 0 if pass, 1 if fail."""
     from datetime import datetime, timezone
@@ -753,9 +830,37 @@ def main(
         dis_result = {"n_shots": 0, "passes": False, "partial_pass": False, "error": "No disruption data"}
         print("  SKIP: No disruption NPZ files")
 
+    # Lane 4: Dataset-coverage gates
+    coverage_result = evaluate_dataset_coverage(
+        eq_result,
+        tr_result,
+        dis_result,
+        min_equilibrium_files=min_equilibrium_files,
+        min_transport_shots=min_transport_shots,
+        min_disruption_shots=min_disruption_shots,
+    )
+    print("\n[Lane 4] Dataset coverage gates...")
+    labels = {
+        "equilibrium_files": "Equilibrium files",
+        "transport_shots": "Transport shots",
+        "disruption_shots": "Disruption shots",
+    }
+    for key in ("equilibrium_files", "transport_shots", "disruption_shots"):
+        item = coverage_result["checks"][key]
+        status = "PASS" if item["passes"] else "FAIL"
+        print(
+            f"  {status}: {labels[key]} "
+            f"{item['observed']}/{item['required_min']} (observed/min)"
+        )
+
     # PARTIAL_PASS on disruption does NOT block the release — it's a known limitation
     dis_acceptable = dis_result["passes"] or dis_result.get("partial_pass", False)
-    overall = eq_result["passes"] and tr_result["passes"] and dis_acceptable
+    overall = (
+        eq_result["passes"]
+        and tr_result["passes"]
+        and dis_acceptable
+        and coverage_result["passes"]
+    )
     runtime = time.perf_counter() - t0
 
     report = {
@@ -763,9 +868,15 @@ def main(
         "runtime_s": round(runtime, 2),
         "overall_pass": overall,
         "thresholds": THRESHOLDS,
+        "dataset_minima": {
+            "equilibrium_files": int(max(min_equilibrium_files, 0)),
+            "transport_shots": int(max(min_transport_shots, 0)),
+            "disruption_shots": int(max(min_disruption_shots, 0)),
+        },
         "equilibrium": eq_result,
         "transport": tr_result,
         "disruption": dis_result,
+        "dataset_coverage": coverage_result,
     }
 
     # Write outputs
@@ -784,5 +895,73 @@ def main(
     return 0 if overall else 1
 
 
+def _build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Run SCPN real-shot validation lanes and optional dataset coverage gates."
+    )
+    parser.add_argument(
+        "--output-json",
+        type=Path,
+        default=None,
+        help="Output path for JSON artifact (default: artifacts/real_shot_validation.json).",
+    )
+    parser.add_argument(
+        "--output-md",
+        type=Path,
+        default=None,
+        help="Output path for Markdown artifact (default: artifacts/real_shot_validation.md).",
+    )
+    parser.add_argument(
+        "--min-equilibrium-files",
+        type=int,
+        default=0,
+        help="Minimum equilibrium reference files required for dataset coverage PASS.",
+    )
+    parser.add_argument(
+        "--min-transport-shots",
+        type=int,
+        default=0,
+        help="Minimum transport reference shots required for dataset coverage PASS.",
+    )
+    parser.add_argument(
+        "--min-disruption-shots",
+        type=int,
+        default=0,
+        help="Minimum disruption reference shots required for dataset coverage PASS.",
+    )
+    parser.add_argument(
+        "--strict-coverage",
+        action="store_true",
+        help=(
+            "Enable strict dataset-coverage minima "
+            f"(eq>={STRICT_DATASET_MINIMA['equilibrium_files']}, "
+            f"transport>={STRICT_DATASET_MINIMA['transport_shots']}, "
+            f"disruption>={STRICT_DATASET_MINIMA['disruption_shots']})."
+        ),
+    )
+    return parser
+
+
+def cli(argv: list[str] | None = None) -> int:
+    parser = _build_arg_parser()
+    args = parser.parse_args(argv)
+
+    min_eq = int(max(args.min_equilibrium_files, 0))
+    min_tr = int(max(args.min_transport_shots, 0))
+    min_dis = int(max(args.min_disruption_shots, 0))
+    if args.strict_coverage:
+        min_eq = max(min_eq, STRICT_DATASET_MINIMA["equilibrium_files"])
+        min_tr = max(min_tr, STRICT_DATASET_MINIMA["transport_shots"])
+        min_dis = max(min_dis, STRICT_DATASET_MINIMA["disruption_shots"])
+
+    return main(
+        output_json=args.output_json,
+        output_md=args.output_md,
+        min_equilibrium_files=min_eq,
+        min_transport_shots=min_tr,
+        min_disruption_shots=min_dis,
+    )
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(cli())

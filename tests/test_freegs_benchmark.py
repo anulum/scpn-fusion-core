@@ -166,7 +166,7 @@ class TestBuildConfig:
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
     def test_config_R_range_positive(self, case: TokamakCase) -> None:
         cfg = build_config(case)
-        assert cfg["dimensions"]["R_min"] > 0 or case.R0 - 2 * case.a < 0
+        assert cfg["dimensions"]["R_min"] > 0
         assert cfg["dimensions"]["R_max"] > cfg["dimensions"]["R_min"]
 
 
@@ -198,7 +198,7 @@ class TestSolovevBenchmarkIntegration:
         assert "cases" in report
         assert "overall_psi_nrmse" in report
         assert "passes" in report
-        assert report["mode"] == "solovev_analytic"
+        assert report["mode"] == "solovev_manufactured_source"
         assert len(report["cases"]) == len(CASES)
 
         # Each case should have expected fields
@@ -206,6 +206,8 @@ class TestSolovevBenchmarkIntegration:
             assert "name" in case_result
             assert "psi_nrmse" in case_result
             assert "passes" in case_result
+            assert "comparison_backend" in case_result
+            assert "reference_backend" in case_result
 
     def test_report_is_json_serialisable(self) -> None:
         """Report can be serialised to JSON without error."""
@@ -214,7 +216,7 @@ class TestSolovevBenchmarkIntegration:
         assert len(text) > 100
         # Round-trip
         parsed = json.loads(text)
-        assert parsed["mode"] == "solovev_analytic"
+        assert parsed["mode"] == "solovev_manufactured_source"
 
 
 # ── FreeGS-dependent tests (skipped when not installed) ──────────────

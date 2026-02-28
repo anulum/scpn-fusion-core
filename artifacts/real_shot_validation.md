@@ -1,7 +1,7 @@
 # SCPN Fusion Core — Real-Shot Validation Report
 
-- **Generated**: `2026-02-20T05:05:43.491180+00:00`
-- **Runtime**: `3.49s`
+- **Generated**: `2026-02-28T21:09:21.088944+00:00`
+- **Runtime**: `5.61s`
 - **Overall**: PASS
 
 ## 1. Equilibrium Validation
@@ -32,9 +32,10 @@
 | jet_lmode_2MA.geqdsk | JET | 4.18 | 2.3171 | 3.8509 |
 
 ## 2. Transport Validation (ITPA)
-- Shots: 20
-- RMSE: 0.1287 s (28.6% relative)
-- Within 2-sigma: 95%
+- Shots: 53
+- RMSE: 0.0969 s (37.4% relative)
+- Within 2-sigma: 74%
+- Uncertainty envelope: |rel error| p95=2.16, z-score p95=3.78, coverage 1sigma=38%
 - **Status**: PASS
 
 ## 3. Disruption Prediction
@@ -46,10 +47,19 @@
 - Replay pipeline: sensor_preprocess=ON, actuator_lag=ON
   (mean |sensor delta|=3.368383, mean |actuator lag|=0.006291)
 
+## 4. Dataset Coverage Gates
+| Dataset | Observed | Required Min | Status |
+|---------|----------|--------------|--------|
+| Equilibrium files | 18 | 12 | PASS |
+| Transport shots | 53 | 52 | PASS |
+| Disruption shots | 16 | 12 | PASS |
+- **Status**: PASS
+
 ## Summary
 
 | Lane | Status | Key Metric |
 |------|--------|------------|
 | Equilibrium | PASS | Psi NRMSE pass 67% |
-| Transport | PASS | 2-sigma 95% |
+| Transport | PASS | 2-sigma 74% |
 | Disruption | PASS | Recall 100%, FPR 0% |
+| Dataset Coverage | PASS | Eq=18, Tr=53, Dis=16 |

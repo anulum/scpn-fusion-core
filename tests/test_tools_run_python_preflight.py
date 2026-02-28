@@ -128,6 +128,22 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
+                "validation/benchmark_vs_torax.py",
+                "--strict-backend",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "validation/benchmark_sparc_geqdsk_rmse.py",
+                "--strict-backend",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
                 "validation/benchmark_multi_ion_transport_conservation.py",
                 "--strict",
             ],
@@ -192,6 +208,8 @@ def test_main_honors_skip_flags(monkeypatch):
             "--skip-disruption-replay-pipeline",
             "--skip-eped-domain-contract",
             "--skip-transport-uncertainty",
+            "--skip-torax-strict-backend",
+            "--skip-sparc-strict-backend",
             "--skip-multi-ion-conservation",
             "--skip-end-to-end-latency",
             "--skip-notebook-quality",

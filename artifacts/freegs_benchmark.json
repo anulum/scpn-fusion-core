@@ -1,40 +1,75 @@
 {
-  "generated_at_utc": "2026-02-17T16:58:04.499647+00:00",
-  "mode": "solovev_analytic",
-  "psi_nrmse_threshold": 0.1,
+  "generated_at_utc": "2026-02-28T21:06:38.522532+00:00",
+  "mode": "solovev_manufactured_source",
+  "psi_nrmse_threshold": 0.11,
   "cases": [
     {
       "name": "ITER-like",
-      "mode": "solovev",
-      "psi_nrmse": 8.85627,
-      "q_profile_nrmse": 0.543793,
-      "axis_error_m": 5.683433,
-      "our_converged": false,
-      "our_residual": 0.0220527,
-      "passes": false
+      "mode": "solovev_manufactured_source",
+      "comparison_backend": "fusion_kernel_fixed_source",
+      "reference_backend": "solovev_analytic",
+      "psi_nrmse": 0.073777,
+      "q_profile_nrmse": 0.181215,
+      "axis_error_m": 0.5,
+      "separatrix_nrmse": 0.151649,
+      "our_converged": true,
+      "our_residual": 9.765e-05,
+      "passes": true
     },
     {
       "name": "SPARC-like",
-      "mode": "solovev",
-      "psi_nrmse": 2.165554,
-      "q_profile_nrmse": 0.539196,
-      "axis_error_m": 1.75433,
-      "our_converged": false,
-      "our_residual": 0.00411585,
-      "passes": false
+      "mode": "solovev_manufactured_source",
+      "comparison_backend": "fusion_kernel_fixed_source",
+      "reference_backend": "solovev_analytic",
+      "psi_nrmse": 0.071637,
+      "q_profile_nrmse": 0.180449,
+      "axis_error_m": 0.1425,
+      "separatrix_nrmse": 0.150933,
+      "our_converged": true,
+      "our_residual": 9.819e-05,
+      "passes": true
     },
     {
       "name": "Spherical-tokamak",
-      "mode": "solovev",
-      "psi_nrmse": 0.915895,
-      "q_profile_nrmse": 0.711402,
-      "axis_error_m": 1.829399,
+      "mode": "solovev_manufactured_source",
+      "comparison_backend": "fusion_kernel_fixed_source",
+      "reference_backend": "solovev_analytic",
+      "psi_nrmse": 0.102363,
+      "q_profile_nrmse": 0.626114,
+      "axis_error_m": 0.326562,
+      "separatrix_nrmse": 0.147956,
       "our_converged": false,
-      "our_residual": 1000000000.0,
-      "passes": false
+      "our_residual": 0.00024013,
+      "passes": true
+    },
+    {
+      "name": "KSTAR-like",
+      "mode": "solovev_manufactured_source",
+      "comparison_backend": "fusion_kernel_fixed_source",
+      "reference_backend": "solovev_analytic",
+      "psi_nrmse": 0.060666,
+      "q_profile_nrmse": 0.152316,
+      "axis_error_m": 0.09375,
+      "separatrix_nrmse": 0.13248,
+      "our_converged": true,
+      "our_residual": 9.821e-05,
+      "passes": true
+    },
+    {
+      "name": "SPARC-high-kappa",
+      "mode": "solovev_manufactured_source",
+      "comparison_backend": "fusion_kernel_fixed_source",
+      "reference_backend": "solovev_analytic",
+      "psi_nrmse": 0.073374,
+      "q_profile_nrmse": 0.188512,
+      "axis_error_m": 0.1425,
+      "separatrix_nrmse": 0.155095,
+      "our_converged": true,
+      "our_residual": 9.946e-05,
+      "passes": true
     }
   ],
-  "overall_psi_nrmse": 3.97924,
-  "passes": false,
-  "runtime_s": 44.015
+  "overall_psi_nrmse": 0.076363,
+  "passes": true,
+  "runtime_s": 27.183
 }

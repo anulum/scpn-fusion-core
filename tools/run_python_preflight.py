@@ -31,6 +31,8 @@ def _build_release_checks(
     skip_disruption_replay_pipeline: bool,
     skip_eped_domain_contract: bool,
     skip_transport_uncertainty: bool,
+    skip_torax_strict_backend: bool,
+    skip_sparc_strict_backend: bool,
     skip_multi_ion_conservation: bool,
     skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
@@ -157,6 +159,28 @@ def _build_release_checks(
                 ],
             )
         )
+    if not skip_torax_strict_backend:
+        checks.append(
+            (
+                "TORAX strict-backend benchmark",
+                [
+                    sys.executable,
+                    "validation/benchmark_vs_torax.py",
+                    "--strict-backend",
+                ],
+            )
+        )
+    if not skip_sparc_strict_backend:
+        checks.append(
+            (
+                "SPARC GEQDSK strict-backend benchmark",
+                [
+                    sys.executable,
+                    "validation/benchmark_sparc_geqdsk_rmse.py",
+                    "--strict-backend",
+                ],
+            )
+        )
     if not skip_multi_ion_conservation:
         checks.append(
             (
@@ -236,6 +260,8 @@ def _build_checks(
     skip_disruption_replay_pipeline: bool,
     skip_eped_domain_contract: bool,
     skip_transport_uncertainty: bool,
+    skip_torax_strict_backend: bool,
+    skip_sparc_strict_backend: bool,
     skip_multi_ion_conservation: bool,
     skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
@@ -257,6 +283,8 @@ def _build_checks(
                 skip_disruption_replay_pipeline=skip_disruption_replay_pipeline,
                 skip_eped_domain_contract=skip_eped_domain_contract,
                 skip_transport_uncertainty=skip_transport_uncertainty,
+                skip_torax_strict_backend=skip_torax_strict_backend,
+                skip_sparc_strict_backend=skip_sparc_strict_backend,
                 skip_multi_ion_conservation=skip_multi_ion_conservation,
                 skip_end_to_end_latency=skip_end_to_end_latency,
                 skip_notebook_quality=skip_notebook_quality,
@@ -367,6 +395,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip validation/benchmark_transport_uncertainty_envelope.py --strict",
     )
     parser.add_argument(
+        "--skip-torax-strict-backend",
+        action="store_true",
+        help="Skip validation/benchmark_vs_torax.py --strict-backend",
+    )
+    parser.add_argument(
+        "--skip-sparc-strict-backend",
+        action="store_true",
+        help="Skip validation/benchmark_sparc_geqdsk_rmse.py --strict-backend",
+    )
+    parser.add_argument(
         "--skip-multi-ion-conservation",
         action="store_true",
         help="Skip validation/benchmark_multi_ion_transport_conservation.py --strict",
@@ -421,6 +459,8 @@ def main(argv: list[str] | None = None) -> int:
         skip_disruption_replay_pipeline=args.skip_disruption_replay_pipeline,
         skip_eped_domain_contract=args.skip_eped_domain_contract,
         skip_transport_uncertainty=args.skip_transport_uncertainty,
+        skip_torax_strict_backend=args.skip_torax_strict_backend,
+        skip_sparc_strict_backend=args.skip_sparc_strict_backend,
         skip_multi_ion_conservation=args.skip_multi_ion_conservation,
         skip_end_to_end_latency=args.skip_end_to_end_latency,
         skip_notebook_quality=args.skip_notebook_quality,

@@ -314,3 +314,47 @@ def test_validate_transport_reports_uncertainty_envelope_contract(tmp_path: Path
     assert float(env["abs_relative_error_p95"]) >= float(env["abs_relative_error_p50"]) >= 0.0
     assert float(env["sigma_s_p95"]) >= float(env["sigma_s_p50"]) > 0.0
     assert float(env["zscore_p95"]) >= float(env["zscore_p50"]) >= 0.0
+
+
+def test_dataset_coverage_gate_tracks_observed_vs_required_counts() -> None:
+    out = validate_real_shots.evaluate_dataset_coverage(
+        {"n_files": 11},
+        {"n_shots": 52},
+        {"n_shots": 9},
+        min_equilibrium_files=10,
+        min_transport_shots=52,
+        min_disruption_shots=10,
+    )
+
+    assert out["checks"]["equilibrium_files"]["passes"] is True
+    assert out["checks"]["transport_shots"]["passes"] is True
+    assert out["checks"]["disruption_shots"]["passes"] is False
+    assert out["passes"] is False
+
+
+def test_cli_strict_coverage_enforces_default_minima(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, int] = {}
+
+    def fake_main(
+        output_json: Path | None = None,
+        output_md: Path | None = None,
+        *,
+        min_equilibrium_files: int = 0,
+        min_transport_shots: int = 0,
+        min_disruption_shots: int = 0,
+    ) -> int:
+        del output_json, output_md
+        captured["min_equilibrium_files"] = min_equilibrium_files
+        captured["min_transport_shots"] = min_transport_shots
+        captured["min_disruption_shots"] = min_disruption_shots
+        return 0
+
+    monkeypatch.setattr(validate_real_shots, "main", fake_main)
+
+    rc = validate_real_shots.cli(["--strict-coverage"])
+    assert rc == 0
+    assert captured["min_equilibrium_files"] == validate_real_shots.STRICT_DATASET_MINIMA["equilibrium_files"]
+    assert captured["min_transport_shots"] == validate_real_shots.STRICT_DATASET_MINIMA["transport_shots"]
+    assert captured["min_disruption_shots"] == validate_real_shots.STRICT_DATASET_MINIMA["disruption_shots"]
