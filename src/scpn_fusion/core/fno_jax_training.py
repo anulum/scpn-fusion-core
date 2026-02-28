@@ -2,6 +2,8 @@
 # SCPN Fusion Core — JAX Fourier Neural Operator (FNO) Training
 # © 1998–2026 Miroslav Šotek. All rights reserved.
 # ─────────────────────────────────────────────────────────────────────
+from __future__ import annotations
+
 import jax
 import jax.numpy as jnp
 from jax import grad, jit, vmap, value_and_grad, random
