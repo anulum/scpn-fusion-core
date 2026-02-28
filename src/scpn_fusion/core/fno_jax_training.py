@@ -99,12 +99,45 @@ def update_step(params, m, v, x_batch, y_batch, lr, t):
 
 # ── Data Generation (Physics-Informed GENE-like) ──────────────────────
 
-def load_gene_binary(file_path: str):
+def load_gene_binary(file_path: str) -> tuple[np.ndarray, np.ndarray]:
+    """Load validated real-data arrays for FNO training from an `.npz` artifact.
+
+    Expected schema:
+      - `X`: shape `[n_samples, grid, grid, 1]`
+      - `Y`: shape `[n_samples]` or `[n_samples, 1]`
     """
-    Placeholder for actual GENE binary output ingestion.
-    Use this to replace synthetic fields with real gyrokinetic data (Roadmap G4).
-    """
-    raise NotImplementedError("Actual GENE binary ingestion requires the GA-TGLF/GENE tools.")
+    path = Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError(f"GENE dataset not found: {path}")
+    if path.suffix.lower() != ".npz":
+        raise ValueError(
+            "Unsupported GENE dataset format. Provide an .npz containing 'X' and 'Y'."
+        )
+
+    with np.load(path, allow_pickle=False) as data:
+        if "X" not in data or "Y" not in data:
+            raise ValueError("Dataset .npz must contain 'X' and 'Y' arrays.")
+        x_np = np.asarray(data["X"], dtype=np.float32)
+        y_np = np.asarray(data["Y"], dtype=np.float32)
+
+    if x_np.ndim != 4 or x_np.shape[-1] != 1:
+        raise ValueError("X must have shape [n_samples, grid, grid, 1].")
+    if y_np.ndim > 2:
+        raise ValueError("Y must be 1D or 2D with singleton second dimension.")
+    y_np = y_np.reshape(-1)
+    if x_np.shape[0] != y_np.shape[0]:
+        raise ValueError("X and Y must have the same number of samples.")
+    if x_np.shape[0] < 1:
+        raise ValueError("Dataset must contain at least one sample.")
+    if x_np.shape[1] < MODES or x_np.shape[2] < MODES:
+        raise ValueError(
+            f"Grid must be >= {MODES} in both spatial dims; "
+            f"got ({x_np.shape[1]}, {x_np.shape[2]})."
+        )
+    if not np.all(np.isfinite(x_np)) or not np.all(np.isfinite(y_np)):
+        raise ValueError("X and Y must be finite.")
+
+    return x_np, y_np
 
 def generate_gene_like_field(grid_size, regime, key):
     """
@@ -163,27 +196,7 @@ def train_fno_jax(
     data_source = "synthetic"
     if data_path and Path(data_path).exists():
         logger.info(f"Loading REAL GENE/TGLF dataset from {data_path}...")
-        with np.load(data_path, allow_pickle=False) as data:
-            if "X" not in data or "Y" not in data:
-                raise ValueError("Dataset .npz must contain 'X' and 'Y' arrays.")
-            x_np = np.asarray(data["X"], dtype=np.float32)
-            y_np = np.asarray(data["Y"], dtype=np.float32)
-        if x_np.ndim != 4 or x_np.shape[-1] != 1:
-            raise ValueError("X must have shape [n_samples, grid, grid, 1].")
-        if y_np.ndim > 2:
-            raise ValueError("Y must be 1D or 2D with singleton second dimension.")
-        y_np = y_np.reshape(-1)
-        if x_np.shape[0] != y_np.shape[0]:
-            raise ValueError("X and Y must have the same number of samples.")
-        if x_np.shape[0] < 1:
-            raise ValueError("Dataset must contain at least one sample.")
-        if x_np.shape[1] < MODES or x_np.shape[2] < MODES:
-            raise ValueError(
-                f"Grid must be >= {MODES} in both spatial dims; "
-                f"got ({x_np.shape[1]}, {x_np.shape[2]})."
-            )
-        if not np.all(np.isfinite(x_np)) or not np.all(np.isfinite(y_np)):
-            raise ValueError("X and Y must be finite.")
+        x_np, y_np = load_gene_binary(data_path)
         X = jnp.asarray(x_np)
         Y = jnp.asarray(y_np)
         n_samples_eff = int(x_np.shape[0])

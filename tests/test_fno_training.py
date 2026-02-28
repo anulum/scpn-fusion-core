@@ -120,6 +120,32 @@ def test_train_fno_jax_rejects_invalid_dataset_schema(tmp_path: Path) -> None:
         )
 
 
+def test_load_gene_binary_accepts_valid_npz(tmp_path: Path) -> None:
+    from scpn_fusion.core.fno_jax_training import load_gene_binary
+
+    rng = np.random.default_rng(123)
+    path = tmp_path / "gene_like.npz"
+    np.savez(
+        path,
+        X=rng.normal(size=(3, 64, 64, 1)).astype(np.float32),
+        Y=np.asarray([[0.1], [0.2], [0.3]], dtype=np.float32),
+    )
+    x_np, y_np = load_gene_binary(str(path))
+    assert x_np.shape == (3, 64, 64, 1)
+    assert y_np.shape == (3,)
+    assert np.all(np.isfinite(x_np))
+    assert np.all(np.isfinite(y_np))
+
+
+def test_load_gene_binary_rejects_unsupported_extension(tmp_path: Path) -> None:
+    from scpn_fusion.core.fno_jax_training import load_gene_binary
+
+    path = tmp_path / "gene_like.npy"
+    np.save(path, np.zeros((2, 2), dtype=np.float32))
+    with pytest.raises(ValueError, match="Unsupported GENE dataset format"):
+        load_gene_binary(str(path))
+
+
 def test_spectral_generator_is_deterministic_for_seed() -> None:
     g1 = SpectralTurbulenceGenerator(size=24, seed=77)
     g2 = SpectralTurbulenceGenerator(size=24, seed=77)
