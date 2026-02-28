@@ -28,6 +28,7 @@ pub struct SimulationReport {
     pub final_heating_mw: f64,
     pub max_beta: f64,
     pub max_heating_mw: f64,
+    pub vessel_contact_events: usize,
     pub disrupted: bool,
     pub r_history: Vec<f64>,
     pub z_history: Vec<f64>,
@@ -42,6 +43,7 @@ pub struct StepMetrics {
     pub step_time_us: f64,
     pub beta: f64,
     pub heating_mw: f64,
+    pub vessel_contact: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -52,6 +54,7 @@ pub struct ShotAggregate {
     pub disrupted: bool,
     pub max_beta: f64,
     pub max_heating_mw: f64,
+    pub vessel_contact_events: usize,
 }
 
 /// High-speed simulation engine.
@@ -72,6 +75,41 @@ pub struct RustFlightSim {
 }
 
 impl RustFlightSim {
+    fn validate_runtime_state(&self) -> FusionResult<()> {
+        let state_fields = [
+            ("curr_r", self.curr_r),
+            ("curr_z", self.curr_z),
+            ("curr_ip_ma", self.curr_ip_ma),
+            ("curr_beta", self.curr_beta),
+            ("curr_heating_mw", self.curr_heating_mw),
+        ];
+        for (name, value) in state_fields {
+            if !value.is_finite() {
+                return Err(FusionError::PhysicsViolation(format!(
+                    "non-finite simulator state {name}={value}"
+                )));
+            }
+        }
+        if !(0.0..=100.0).contains(&self.curr_heating_mw) {
+            return Err(FusionError::PhysicsViolation(format!(
+                "heating command out of physical envelope: {} MW",
+                self.curr_heating_mw
+            )));
+        }
+        if !(0.2..=10.0).contains(&self.curr_beta) {
+            return Err(FusionError::PhysicsViolation(format!(
+                "beta out of physical envelope: {}",
+                self.curr_beta
+            )));
+        }
+        if self.pf_states.len() != 2 || self.pf_states.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::PhysicsViolation(
+                "PF actuator state vector invalid (must be 2 finite elements)".to_string(),
+            ));
+        }
+        Ok(())
+    }
+
     pub fn new(target_r: f64, target_z: f64, control_hz: f64) -> FusionResult<Self> {
         if !target_r.is_finite() || !target_z.is_finite() {
             return Err(FusionError::ConfigError(
@@ -136,6 +174,7 @@ impl RustFlightSim {
 
     pub fn prepare_shot(&mut self, shot_duration_s: f64) -> FusionResult<usize> {
         let steps = self.validate_shot_duration(shot_duration_s)?;
+        self.validate_runtime_state()?;
         self.reset_for_shot();
         Ok(steps)
     }
@@ -150,6 +189,7 @@ impl RustFlightSim {
                 "shot_duration_s must be finite and > 0".to_string(),
             ));
         }
+        self.validate_runtime_state()?;
         let t_step_start = Instant::now();
         let phase = (step_index as f64 * self.control_dt / shot_duration_s).clamp(0.0, 1.0);
 
@@ -201,8 +241,13 @@ impl RustFlightSim {
         let applied_z = actions[1];
 
         // 4. Update state based on applied control
-        self.curr_r += applied_r * self.control_dt;
-        self.curr_z += applied_z * self.control_dt;
+        let next_r = self.curr_r + applied_r * self.control_dt;
+        let next_z = self.curr_z + applied_z * self.control_dt;
+        self.curr_r = next_r.clamp(2.0, 10.0);
+        self.curr_z = next_z.clamp(-6.0, 6.0);
+        let vessel_contact = (next_r - self.curr_r).abs() > f64::EPSILON
+            || (next_z - self.curr_z).abs() > f64::EPSILON;
+        self.validate_runtime_state()?;
 
         // Record Telemetry (Zero Allocation)
         self.telemetry
@@ -211,7 +256,7 @@ impl RustFlightSim {
         // 5. Metrics
         let r_err = (self.curr_r - self.controller.target_r).abs();
         let z_err = (self.curr_z - self.controller.target_z).abs();
-        let disrupted = r_err > 0.5 || z_err > 0.5;
+        let disrupted = r_err > 0.5 || z_err > 0.5 || vessel_contact;
         let step_time_us = t_step_start.elapsed().as_secs_f64() * 1_000_000.0;
 
         Ok(StepMetrics {
@@ -221,6 +266,7 @@ impl RustFlightSim {
             step_time_us,
             beta: self.curr_beta,
             heating_mw: self.curr_heating_mw,
+            vessel_contact,
         })
     }
 
@@ -242,6 +288,7 @@ impl RustFlightSim {
             final_heating_mw: self.curr_heating_mw,
             max_beta: aggregate.max_beta,
             max_heating_mw: aggregate.max_heating_mw,
+            vessel_contact_events: aggregate.vessel_contact_events,
             disrupted: aggregate.disrupted,
             r_history: self.telemetry.r_axis.get_view(),
             z_history: self.telemetry.z_axis.get_view(),
@@ -269,6 +316,7 @@ impl RustFlightSim {
             disrupted: false,
             max_beta: self.curr_beta,
             max_heating_mw: self.curr_heating_mw,
+            vessel_contact_events: 0,
         };
 
         let mut next_tick = Instant::now();
@@ -285,6 +333,7 @@ impl RustFlightSim {
             aggregate.max_step_time_us = aggregate.max_step_time_us.max(step.step_time_us);
             aggregate.max_beta = aggregate.max_beta.max(step.beta);
             aggregate.max_heating_mw = aggregate.max_heating_mw.max(step.heating_mw);
+            aggregate.vessel_contact_events += usize::from(step.vessel_contact);
             next_tick += step_duration;
         }
 
@@ -328,6 +377,7 @@ mod tests {
         assert!((0.0..=100.0).contains(&report.max_heating_mw));
         assert!(report.max_heating_mw >= report.final_heating_mw);
         assert!((0.0..=100.0).contains(&sim.curr_heating_mw));
+        assert!(report.vessel_contact_events <= report.steps);
     }
 
     #[test]
@@ -342,5 +392,12 @@ mod tests {
         assert_eq!(second.r_history.len(), 50);
         assert_eq!(second.z_history.len(), 50);
         assert_eq!(second.ip_history.len(), 50);
+    }
+
+    #[test]
+    fn test_step_once_rejects_non_finite_runtime_state() {
+        let mut sim = RustFlightSim::new(6.2, 0.0, 10_000.0).expect("valid sim");
+        sim.curr_beta = f64::NAN;
+        assert!(sim.step_once(0, 0.01).is_err());
     }
 }

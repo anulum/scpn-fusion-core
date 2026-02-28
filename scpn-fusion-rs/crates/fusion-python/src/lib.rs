@@ -214,6 +214,8 @@ struct PySimulationReport {
     #[pyo3(get)]
     pub max_heating_mw: f64,
     #[pyo3(get)]
+    pub vessel_contact_events: usize,
+    #[pyo3(get)]
     pub disrupted: bool,
     #[pyo3(get)]
     pub r_history: Vec<f64>,
@@ -221,6 +223,58 @@ struct PySimulationReport {
     pub z_history: Vec<f64>,
     #[pyo3(get)]
     pub ip_history: Vec<f64>,
+}
+
+#[pyclass]
+struct PyStepMetrics {
+    #[pyo3(get)]
+    pub r_error: f64,
+    #[pyo3(get)]
+    pub z_error: f64,
+    #[pyo3(get)]
+    pub disrupted: bool,
+    #[pyo3(get)]
+    pub step_time_us: f64,
+    #[pyo3(get)]
+    pub beta: f64,
+    #[pyo3(get)]
+    pub heating_mw: f64,
+    #[pyo3(get)]
+    pub vessel_contact: bool,
+}
+
+fn to_py_simulation_report(
+    report: fusion_control::flight_sim::SimulationReport,
+) -> PySimulationReport {
+    PySimulationReport {
+        steps: report.steps,
+        duration_s: report.duration_s,
+        wall_time_ms: report.wall_time_ms,
+        max_step_time_us: report.max_step_time_us,
+        mean_abs_r_error: report.mean_abs_r_error,
+        mean_abs_z_error: report.mean_abs_z_error,
+        final_beta: report.final_beta,
+        final_heating_mw: report.final_heating_mw,
+        max_beta: report.max_beta,
+        max_heating_mw: report.max_heating_mw,
+        vessel_contact_events: report.vessel_contact_events,
+        disrupted: report.disrupted,
+        r_history: report.r_history,
+        z_history: report.z_history,
+        ip_history: report.ip_history,
+    }
+}
+
+fn to_py_step_metrics(step: fusion_control::flight_sim::StepMetrics) -> PyStepMetrics {
+    PyStepMetrics {
+        r_error: step.r_error,
+        z_error: step.z_error,
+        disrupted: step.disrupted,
+        step_time_us: step.step_time_us,
+        beta: step.beta,
+        heating_mw: step.heating_mw,
+        vessel_contact: step.vessel_contact,
+    }
 }
 
 #[pyclass]
@@ -248,22 +302,25 @@ impl PyRustFlightSim {
             .inner
             .run_shot(shot_duration_s, deterministic)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
-        Ok(PySimulationReport {
-            steps: report.steps,
-            duration_s: report.duration_s,
-            wall_time_ms: report.wall_time_ms,
-            max_step_time_us: report.max_step_time_us,
-            mean_abs_r_error: report.mean_abs_r_error,
-            mean_abs_z_error: report.mean_abs_z_error,
-            final_beta: report.final_beta,
-            final_heating_mw: report.final_heating_mw,
-            max_beta: report.max_beta,
-            max_heating_mw: report.max_heating_mw,
-            disrupted: report.disrupted,
-            r_history: report.r_history,
-            z_history: report.z_history,
-            ip_history: report.ip_history,
-        })
+        Ok(to_py_simulation_report(report))
+    }
+
+    fn prepare_shot(&mut self, shot_duration_s: f64) -> PyResult<usize> {
+        self.inner
+            .prepare_shot(shot_duration_s)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+    }
+
+    fn reset_for_shot(&mut self) {
+        self.inner.reset_for_shot();
+    }
+
+    fn step_once(&mut self, step_index: usize, shot_duration_s: f64) -> PyResult<PyStepMetrics> {
+        let step = self
+            .inner
+            .step_once(step_index, shot_duration_s)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+        Ok(to_py_step_metrics(step))
     }
 }
 
@@ -1548,6 +1605,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyPlantModel>()?;
     m.add_class::<PyRustFlightSim>()?;
     m.add_class::<PySimulationReport>()?;
+    m.add_class::<PyStepMetrics>()?;
     m.add_function(wrap_pyfunction!(shafranov_bv, m)?)?;
     m.add_function(wrap_pyfunction!(solve_coil_currents, m)?)?;
     m.add_function(wrap_pyfunction!(measure_magnetics, m)?)?;

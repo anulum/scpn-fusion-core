@@ -127,6 +127,7 @@ class TestPyRustFlightSim:
         assert isinstance(report.disrupted, bool)
         assert len(report.r_history) == 1000
         assert len(report.z_history) == 1000
+        assert 0 <= report.vessel_contact_events <= report.steps
 
     def test_30khz_stability(self):
         sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, 30000.0)
@@ -151,3 +152,24 @@ class TestPyRustFlightSim:
         assert 0.0 <= report.final_heating_mw <= 100.0
         assert 0.0 <= report.max_heating_mw <= 100.0
         assert report.max_heating_mw >= report.final_heating_mw
+
+    def test_prepare_and_step_once_api(self):
+        sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, 10000.0)
+        steps = sim.prepare_shot(0.01)
+        assert steps == 100
+
+        first = sim.step_once(0, 0.01)
+        mid = sim.step_once(50, 0.01)
+        last = sim.step_once(99, 0.01)
+
+        for step in (first, mid, last):
+            assert np.isfinite(step.r_error)
+            assert np.isfinite(step.z_error)
+            assert np.isfinite(step.step_time_us)
+            assert np.isfinite(step.beta)
+            assert np.isfinite(step.heating_mw)
+            assert 0.2 <= step.beta <= 10.0
+            assert 0.0 <= step.heating_mw <= 100.0
+            assert isinstance(step.vessel_contact, bool)
+
+        assert first.heating_mw <= mid.heating_mw <= last.heating_mw

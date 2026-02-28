@@ -69,6 +69,7 @@ impl RtcDriver {
             disrupted: false,
             max_beta: self.sim.curr_beta,
             max_heating_mw: self.sim.curr_heating_mw,
+            vessel_contact_events: 0,
         };
 
         for step_idx in 0..steps {
@@ -100,6 +101,7 @@ impl RtcDriver {
             aggregate.max_step_time_us = aggregate.max_step_time_us.max(step.step_time_us);
             aggregate.max_beta = aggregate.max_beta.max(step.beta);
             aggregate.max_heating_mw = aggregate.max_heating_mw.max(step.heating_mw);
+            aggregate.vessel_contact_events += usize::from(step.vessel_contact);
             next_tick += step_duration;
         }
 

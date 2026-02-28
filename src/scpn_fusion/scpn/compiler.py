@@ -77,8 +77,8 @@ def _resolve_git_sha() -> str:
         sha = result.stdout.strip()
         if sha:
             return sha[:7]
-    except (subprocess.SubprocessError, OSError, ValueError):
-        pass
+    except (subprocess.SubprocessError, OSError, ValueError) as exc:
+        logger.debug("Falling back to synthetic git SHA: %s", exc)
 
     return "0000000"
 
