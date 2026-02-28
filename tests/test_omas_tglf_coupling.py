@@ -148,6 +148,19 @@ class TestTGLFOutputParser:
             assert result.chi_i == 0.0  # couldn't parse
             assert result.chi_e == pytest.approx(1.5)
 
+    def test_parse_non_finite_values(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_path = Path(tmpdir) / "out.tglf.run"
+            out_path.write_text(
+                "CHI_I = NaN\n"
+                "CHI_E = Infinity\n"
+                "GAMMA_MAX = -Infinity\n"
+            )
+            result = _parse_tglf_run_output(out_path, rho=0.5)
+            assert result.chi_i == 0.0
+            assert result.chi_e == 0.0
+            assert result.gamma_max == 0.0
+
 
 # ── TGLF binary execution (mocked) ────────────────────────────────────
 

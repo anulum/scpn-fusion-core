@@ -342,6 +342,18 @@ class TestTGLFBenchmark:
         assert np.isfinite(result.rms_error_chi_i)
         assert np.isfinite(result.rms_error_chi_e)
 
+    def test_benchmark_compare_empty_reference_outputs(self) -> None:
+        """Empty TGLF outputs should return default zeroed comparison metrics."""
+        benchmark = TGLFBenchmark()
+        rho_grid = np.linspace(0, 1, 10)
+        our_chi_i = np.linspace(0.1, 1.0, 10)
+        our_chi_e = np.linspace(0.2, 0.8, 10)
+        result = benchmark.compare(our_chi_i, our_chi_e, rho_grid, [])
+        assert isinstance(result, TGLFComparisonResult)
+        assert result.rho_points == []
+        assert result.rms_error_chi_i == 0.0
+        assert result.rms_error_chi_e == 0.0
+
     def test_benchmark_perfect_match(self) -> None:
         """When our values match TGLF exactly, RMS error should be very small.
 

@@ -21,6 +21,7 @@
 - Runtime hardening: TGLF binary execution now validates finite positive timeouts and non-negative integer retry counts, and uses deterministic retry backoff.
 - Runtime hardening: TGLF retry counts are now capped to a bounded range to prevent runaway retry loops from malformed configs.
 - Runtime hardening: TGLF JSON output parsing now handles malformed/non-object files safely and coerces scalar or non-finite numeric payloads to finite defaults.
+- Runtime hardening: TGLF text-output parsing now rejects non-finite coefficients, and benchmark comparison now handles empty TGLF reference sets without crashing.
 - Tooling hardening: QLKNN training scripts now enforce secure `.npz` loading (`allow_pickle=False`) with required-key validation.
 - Tooling hardening: claims audit git file discovery now uses a bounded subprocess timeout with safe fallback.
 - CI hardening: `run_python_preflight.py` and `run_mypy_strict.py` now enforce bounded subprocess timeouts with explicit timeout exit handling.

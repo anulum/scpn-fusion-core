@@ -236,6 +236,8 @@ class TGLFBenchmark:
             TGLF reference outputs.
         """
         result = TGLFComparisonResult()
+        if not tglf_outputs:
+            return result
         tglf_rho = np.array([o.rho for o in tglf_outputs])
         tglf_chi_i = np.array([o.chi_i for o in tglf_outputs])
         tglf_chi_e = np.array([o.chi_e for o in tglf_outputs])
@@ -529,9 +531,12 @@ def _parse_tglf_run_output(path: Path, rho: float) -> TGLFOutput:
         key = key.strip().upper()
         val = val.strip()
         try:
-            fval = float(val)
+            parsed = float(val)
         except ValueError:
             continue
+        if not np.isfinite(parsed):
+            continue
+        fval = float(parsed)
         if key == "CHI_I" or key == "CHIEFF_I":
             chi_i = fval
         elif key == "CHI_E" or key == "CHIEFF_E":
