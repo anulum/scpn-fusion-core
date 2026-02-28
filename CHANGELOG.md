@@ -35,10 +35,13 @@
 - Packaging hardening: Docker build now installs from `pyproject.toml` with `README.md` + `validation/` staged before `pip install .`.
 - Repo hygiene: removed stale `ci_old.yml` and `mypy.ini.bak` artifacts to reduce release-surface ambiguity.
 - Onboarding hardening: README now includes a fast-start 45-second path, explicit capability bullets, direct Colab/Binder links, and a top-limitations snapshot.
+- Validation hardening: TORAX cross-validation fallback now uses deterministic stable seeding (BLAKE2-based) instead of Python process-randomized `hash()`.
+- Validation observability: TORAX benchmark artifacts now expose per-case backend, fallback reason, and fallback seed fields.
 
 ### Added
 - Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).
 - Regression test for deprecated FNO-controller missing-weight fallback path.
+- Regression tests for TORAX benchmark deterministic fallback seeding and backend/fallback metadata fields.
 
 ---
 

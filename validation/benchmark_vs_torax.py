@@ -20,6 +20,7 @@ Exit codes:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import time
@@ -57,6 +58,12 @@ CASES: list[TransportCase] = [
 ]
 
 
+def _stable_seed_from_name(name: str) -> int:
+    """Return a deterministic 31-bit seed from a case name."""
+    digest = hashlib.blake2b(name.encode("utf-8"), digest_size=8).digest()
+    return int.from_bytes(digest, "big") & 0x7FFFFFFF
+
+
 def _generate_torax_like_profiles(case: TransportCase) -> dict[str, FloatArray]:
     """Synthetic reference profiles matching TORAX-class output shape.
 
@@ -78,13 +85,16 @@ def _generate_torax_like_profiles(case: TransportCase) -> dict[str, FloatArray]:
     return {"rho": rho, "te_keV": te, "ti_keV": ti, "ne_1e19": ne}
 
 
-def _run_our_transport(case: TransportCase) -> dict[str, FloatArray]:
+def _run_our_transport(case: TransportCase) -> dict[str, Any]:
     """Run our 1.5D transport or fall back to analytic model."""
+    fallback_reason: str | None = None
     try:
         from scpn_fusion.core.neural_transport import NeuralTransportModel, TransportInputs
         model = NeuralTransportModel()
-    except Exception:
+        _ = TransportInputs  # Import contract check for compatibility.
+    except Exception as exc:
         model = None
+        fallback_reason = f"import_error: {type(exc).__name__}: {exc}"
 
     rho = np.linspace(0.0, 1.0, case.n_rho)
     ped_top = 0.92
@@ -107,15 +117,33 @@ def _run_our_transport(case: TransportCase) -> dict[str, FloatArray]:
             )
             # Simple diffusive equilibrium correction
             te_corr = te * np.exp(-0.01 * chi_e)
-            return {"rho": rho, "te_keV": te_corr, "ti_keV": 0.85 * te_corr, "ne_1e19": ne}
-        except Exception:
-            pass
+            _ = chi_i, d_e  # keep explicit tuple unpack contract visible
+            return {
+                "rho": rho,
+                "te_keV": te_corr,
+                "ti_keV": 0.85 * te_corr,
+                "ne_1e19": ne,
+                "__backend__": "neural_transport",
+                "__fallback_reason__": None,
+                "__seed__": None,
+            }
+        except Exception as exc:
+            fallback_reason = f"inference_error: {type(exc).__name__}: {exc}"
 
     # Analytic fallback: add small model-dependent perturbation
-    rng = np.random.default_rng(hash(case.name) % 2**31)
+    seed = _stable_seed_from_name(case.name)
+    rng = np.random.default_rng(seed)
     noise = rng.normal(0, 0.02, size=rho.shape)
     te_out = te * (1.0 + noise)
-    return {"rho": rho, "te_keV": te_out, "ti_keV": 0.85 * te_out, "ne_1e19": ne}
+    return {
+        "rho": rho,
+        "te_keV": te_out,
+        "ti_keV": 0.85 * te_out,
+        "ne_1e19": ne,
+        "__backend__": "analytic_fallback",
+        "__fallback_reason__": fallback_reason or "model_unavailable",
+        "__seed__": int(seed),
+    }
 
 
 def _rel_rmse(ref: FloatArray, pred: FloatArray) -> float:
@@ -142,6 +170,9 @@ def run_benchmark() -> dict[str, Any]:
             "ne_rel_rmse": round(ne_err, 4),
             "threshold": REL_RMSE_THRESHOLD,
             "passes": passes,
+            "transport_backend": str(ours.get("__backend__", "unknown")),
+            "fallback_reason": ours.get("__fallback_reason__"),
+            "fallback_seed": ours.get("__seed__"),
         })
         if not passes:
             all_pass = False
