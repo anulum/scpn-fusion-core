@@ -201,6 +201,58 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool
     )
 
 
+def _run_mpc_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
+    """Run a single linear-surrogate MPC episode."""
+    if not _mpc_available or ModelPredictiveController is None or NeuralSurrogate is None:
+        raise RuntimeError("MPC controller is unavailable in this environment.")
+    factory = NeuralEquilibriumKernel if surrogate else None
+    dt = 0.01 if surrogate else 0.05
+    steps = int(shot_duration / dt)
+    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
+    n_coils = len(ctrl.kernel.cfg.get("coils", []))
+    if n_coils < 1:
+        raise RuntimeError("ITER config is missing coil definitions for MPC.")
+
+    target_state = np.array([6.2, 0.0, 5.0, -3.5], dtype=np.float64)
+    surrogate_model = NeuralSurrogate(n_coils=n_coils, n_state=4, verbose=False)
+    surrogate_model.train_on_kernel(ctrl.kernel, perturbation=1.0)
+    mpc = ModelPredictiveController(
+        surrogate_model,
+        target_state=target_state,
+        prediction_horizon=6,
+        learning_rate=0.25,
+        iterations=8,
+        action_limit=2.0,
+    )
+
+    def mpc_step(pid: Any, err: float) -> float:
+        idx_max = int(np.argmax(ctrl.kernel.Psi))
+        iz, ir = np.unravel_index(idx_max, ctrl.kernel.Psi.shape)
+        r_ax = float(ctrl.kernel.R[ir])
+        z_ax = float(ctrl.kernel.Z[iz])
+        xp_pos, _ = ctrl.kernel.find_x_point(ctrl.kernel.Psi)
+        state = np.array([r_ax, z_ax, float(xp_pos[0]), float(xp_pos[1])], dtype=np.float64)
+        action = np.asarray(mpc.plan_trajectory(state), dtype=np.float64).reshape(-1)
+        return float(action[0]) if action.size else 0.0
+
+    ctrl.pid_step = mpc_step
+    t0 = time.perf_counter_ns()
+    result = ctrl.run_shot(shot_duration=steps, save_plot=False)
+    total_us = (time.perf_counter_ns() - t0) / 1e3
+    per_step_us = total_us / max(result["steps"], 1)
+    r_err = result["mean_abs_r_error"]
+    z_err = result["mean_abs_z_error"]
+    actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
+    disrupted = r_err > 0.5 or z_err > 0.5
+    return EpisodeResult(
+        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
+        reward=-(r_err + z_err), latency_us=per_step_us,
+        disrupted=disrupted,
+        t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
+        energy_efficiency=1.0 / (1.0 + actuator_effort),
+    )
+
+
 def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
     """Run a single Nonlinear MPC (JAX) episode."""
     if not _nmpc_jax_available or get_nmpc_controller is None:
@@ -256,6 +308,9 @@ CONTROLLERS: dict[str, Callable] = {
     "PID": _run_pid_episode,
     "H-infinity": _run_hinf_episode,
 }
+
+if _mpc_available:
+    CONTROLLERS["MPC"] = _run_mpc_episode
 
 if _nmpc_jax_available:
     CONTROLLERS["NMPC-JAX"] = _run_nmpc_jax_episode

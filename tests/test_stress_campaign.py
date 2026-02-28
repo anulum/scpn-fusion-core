@@ -220,6 +220,90 @@ def test_controllers_registry_has_pid_and_hinf():
     assert "H-infinity" in CONTROLLERS
 
 
+def test_controllers_registry_tracks_optional_mpc_lane():
+    """MPC lane should only be exposed when the optional dependency is present."""
+    import validation.stress_test_campaign as mod
+
+    if mod._mpc_available:
+        assert "MPC" in mod.CONTROLLERS
+    else:
+        assert "MPC" not in mod.CONTROLLERS
+
+
+def test_mpc_episode_requires_optional_dependency(monkeypatch):
+    """MPC episode runner should fail cleanly when optional deps are absent."""
+    import validation.stress_test_campaign as mod
+
+    monkeypatch.setattr(mod, "_mpc_available", False)
+    monkeypatch.setattr(mod, "ModelPredictiveController", None, raising=False)
+    monkeypatch.setattr(mod, "NeuralSurrogate", None, raising=False)
+    with pytest.raises(RuntimeError, match="MPC controller is unavailable"):
+        mod._run_mpc_episode(config_path="unused", shot_duration=30)
+
+
+def test_mpc_episode_with_mocked_dependencies(monkeypatch):
+    """MPC runner should emit a finite EpisodeResult when dependencies are mocked."""
+    import validation.stress_test_campaign as mod
+
+    class FakeKernel:
+        def __init__(self):
+            self.cfg = {"coils": [{"current": 0.0}, {"current": 0.0}]}
+            self.Psi = np.array([[0.0, 1.0], [0.2, 0.3]], dtype=np.float64)
+            self.R = np.array([5.8, 6.1], dtype=np.float64)
+            self.Z = np.array([-0.2, 0.1], dtype=np.float64)
+
+        def find_x_point(self, psi):
+            return np.array([5.0, -3.5], dtype=np.float64), 0.0
+
+    class FakeIsoFluxController:
+        def __init__(self, config_path, verbose=False, kernel_factory=None, control_dt_s=0.05):
+            self.kernel = FakeKernel()
+            self.pid_R = {"Kp": 2.0}
+            self.pid_step = lambda pid, err: float(err)
+
+        def run_shot(self, shot_duration: int, save_plot: bool = False):
+            _ = self.pid_step(self.pid_R, 0.1)
+            return {
+                "steps": float(shot_duration),
+                "mean_abs_r_error": 0.12,
+                "mean_abs_z_error": 0.09,
+                "mean_abs_radial_actuator_lag": 0.2,
+            }
+
+    class FakeSurrogate:
+        def __init__(self, n_coils, n_state, verbose=False):
+            self.n_coils = n_coils
+            self.n_state = n_state
+
+        def train_on_kernel(self, kernel, perturbation: float = 1.0):
+            return None
+
+    class FakeMPC:
+        def __init__(
+            self,
+            surrogate_model,
+            target_state,
+            prediction_horizon=6,
+            learning_rate=0.25,
+            iterations=8,
+            action_limit=2.0,
+        ):
+            self.target_state = target_state
+
+        def plan_trajectory(self, state):
+            return np.array([0.4, 0.0], dtype=np.float64)
+
+    monkeypatch.setattr(mod, "_mpc_available", True)
+    monkeypatch.setattr(mod, "IsoFluxController", FakeIsoFluxController)
+    monkeypatch.setattr(mod, "NeuralSurrogate", FakeSurrogate, raising=False)
+    monkeypatch.setattr(mod, "ModelPredictiveController", FakeMPC, raising=False)
+
+    episode = mod._run_mpc_episode(config_path="unused", shot_duration=30, surrogate=False)
+    assert np.isfinite(episode.reward)
+    assert episode.t_disruption == 30.0
+    assert episode.energy_efficiency == pytest.approx(1.0 / 1.2, abs=1e-12)
+
+
 def test_rust_pid_episode_non_disrupted_uses_full_duration_for_def(monkeypatch):
     """Non-disrupted Rust episodes must report full-shot DEF support."""
     import validation.stress_test_campaign as mod
