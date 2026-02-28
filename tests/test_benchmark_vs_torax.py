@@ -50,23 +50,29 @@ def test_run_our_transport_fallback_reports_reason_and_seed(monkeypatch) -> None
 
 def test_run_benchmark_includes_transport_backend_fields(monkeypatch) -> None:
     def _stub_transport(case):  # type: ignore[no-untyped-def]
-        rho = np.linspace(0.0, 1.0, case.n_rho)
-        te = np.ones(case.n_rho, dtype=np.float64)
+        ref = benchmark_vs_torax._generate_torax_like_profiles(case)
         return {
-            "rho": rho,
-            "te_keV": te,
-            "ti_keV": 0.85 * te,
-            "ne_1e19": te,
+            "rho": ref["rho"],
+            "te_keV": ref["te_keV"],
+            "ti_keV": ref["ti_keV"],
+            "ne_1e19": ref["ne_1e19"],
             "__backend__": "stub",
             "__fallback_reason__": "unit-test",
             "__seed__": 123,
         }
 
     monkeypatch.setattr(benchmark_vs_torax, "_run_our_transport", _stub_transport)
-    result = benchmark_vs_torax.run_benchmark()
+    result = benchmark_vs_torax.run_benchmark(require_neural_transport=False)
+    strict_result = benchmark_vs_torax.run_benchmark(require_neural_transport=True)
 
     assert "cases" in result and result["cases"]
+    assert result["passes"] is True
+    assert strict_result["passes"] is False
+    assert strict_result["all_cases_neural_transport"] is False
     for row in result["cases"]:
         assert row["transport_backend"] == "stub"
         assert row["fallback_reason"] == "unit-test"
         assert row["fallback_seed"] == 123
+        assert row["backend_requirement_satisfied"] is True
+    for row in strict_result["cases"]:
+        assert row["backend_requirement_satisfied"] is False

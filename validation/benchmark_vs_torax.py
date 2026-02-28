@@ -20,6 +20,7 @@ Exit codes:
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import sys
@@ -151,10 +152,11 @@ def _rel_rmse(ref: FloatArray, pred: FloatArray) -> float:
     return float(np.sqrt(np.mean((ref - pred) ** 2)) / denom)
 
 
-def run_benchmark() -> dict[str, Any]:
+def run_benchmark(*, require_neural_transport: bool = False) -> dict[str, Any]:
     t0 = time.time()
     cases: list[dict[str, Any]] = []
     all_pass = True
+    all_cases_neural_transport = True
 
     for case in CASES:
         ref = _generate_torax_like_profiles(case)
@@ -162,17 +164,25 @@ def run_benchmark() -> dict[str, Any]:
 
         te_err = _rel_rmse(ref["te_keV"], ours["te_keV"])
         ne_err = _rel_rmse(ref["ne_1e19"], ours["ne_1e19"])
+        backend = str(ours.get("__backend__", "unknown"))
+        backend_ok = backend == "neural_transport"
+        all_cases_neural_transport = all_cases_neural_transport and backend_ok
 
-        passes = te_err < REL_RMSE_THRESHOLD and ne_err < REL_RMSE_THRESHOLD
+        passes = (
+            te_err < REL_RMSE_THRESHOLD
+            and ne_err < REL_RMSE_THRESHOLD
+            and (backend_ok or not require_neural_transport)
+        )
         cases.append({
             "name": case.name,
             "te_rel_rmse": round(te_err, 4),
             "ne_rel_rmse": round(ne_err, 4),
             "threshold": REL_RMSE_THRESHOLD,
             "passes": passes,
-            "transport_backend": str(ours.get("__backend__", "unknown")),
+            "transport_backend": backend,
             "fallback_reason": ours.get("__fallback_reason__"),
             "fallback_seed": ours.get("__seed__"),
+            "backend_requirement_satisfied": backend_ok or not require_neural_transport,
         })
         if not passes:
             all_pass = False
@@ -181,6 +191,8 @@ def run_benchmark() -> dict[str, Any]:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "synthetic_torax_reference",
         "rel_rmse_threshold": REL_RMSE_THRESHOLD,
+        "require_neural_transport": bool(require_neural_transport),
+        "all_cases_neural_transport": bool(all_cases_neural_transport),
         "cases": cases,
         "passes": all_pass,
         "runtime_s": round(time.time() - t0, 2),
@@ -188,7 +200,15 @@ def run_benchmark() -> dict[str, Any]:
 
 
 def main() -> int:
-    result = run_benchmark()
+    parser = argparse.ArgumentParser(description="TORAX synthetic transport cross-validation")
+    parser.add_argument(
+        "--strict-backend",
+        action="store_true",
+        help="Fail if neural transport backend is unavailable in any case.",
+    )
+    args = parser.parse_args()
+
+    result = run_benchmark(require_neural_transport=bool(args.strict_backend))
 
     out_dir = REPO_ROOT / "artifacts"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -200,7 +220,10 @@ def main() -> int:
         tag = "PASS" if c["passes"] else "FAIL"
         print(f"  [{tag}] {c['name']}: Te_RMSE={c['te_rel_rmse']:.2%} ne_RMSE={c['ne_rel_rmse']:.2%}")
 
-    print(f"\n{'All pass' if result['passes'] else 'Some FAILED'} (threshold={REL_RMSE_THRESHOLD:.0%})")
+    print(
+        f"\n{'All pass' if result['passes'] else 'Some FAILED'} "
+        f"(threshold={REL_RMSE_THRESHOLD:.0%}, strict_backend={bool(args.strict_backend)})"
+    )
     return 0 if result["passes"] else 1
 
 
