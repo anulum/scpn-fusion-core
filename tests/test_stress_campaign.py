@@ -241,6 +241,7 @@ def test_rust_pid_episode_non_disrupted_uses_full_duration_for_def(monkeypatch):
         def run_shot(self, shot_duration: float) -> FakeReport:
             return FakeReport()
 
+    monkeypatch.setattr(mod, "_rust_flight_sim_available", True)
     monkeypatch.setattr(mod, "PyRustFlightSim", FakeSim, raising=False)
     episode = mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
     assert episode.disrupted is False
@@ -268,6 +269,7 @@ def test_rust_pid_episode_clamps_disruption_time_to_shot_duration(monkeypatch):
         def run_shot(self, shot_duration: float) -> FakeReport:
             return FakeReport()
 
+    monkeypatch.setattr(mod, "_rust_flight_sim_available", True)
     monkeypatch.setattr(mod, "PyRustFlightSim", FakeSim, raising=False)
     episode = mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
     assert episode.disrupted is True
@@ -305,6 +307,7 @@ def test_rust_pid_episode_energy_efficiency_tracks_constraint_events(monkeypatch
         def run_shot(self, shot_duration: float) -> FakeReport:
             return FakeReport()
 
+    monkeypatch.setattr(mod, "_rust_flight_sim_available", True)
     monkeypatch.setattr(mod, "PyRustFlightSim", FakeSim, raising=False)
     episode = mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
     assert episode.energy_efficiency == pytest.approx(0.85, abs=1e-12)
