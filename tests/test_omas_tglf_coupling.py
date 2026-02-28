@@ -168,10 +168,10 @@ class TestTGLFBinaryExecution:
                 timeout_s=timeout_s,
             )
 
-    @pytest.mark.parametrize("max_retries", [-1, 1.5, True])
+    @pytest.mark.parametrize("max_retries", [-1, 11, 1.5, True])
     def test_run_tglf_binary_rejects_invalid_max_retries(self, max_retries):
         deck = TGLFInputDeck()
-        with pytest.raises(ValueError, match="max_retries must be an integer >= 0."):
+        with pytest.raises(ValueError, match="max_retries must be an integer in \\[0, 10\\]."):
             run_tglf_binary(
                 deck,
                 "/nonexistent/path/to/tglf",

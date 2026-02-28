@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TGLF_REF_DIR = REPO_ROOT / "validation" / "tglf_reference"
 _TGLF_RETRY_BACKOFF_SECONDS = 1.0
+_TGLF_MAX_RETRIES_LIMIT = 10
 
 
 # ── Data containers ──────────────────────────────────────────────────
@@ -339,10 +340,14 @@ def _normalize_tglf_timeout_seconds(timeout_s: float) -> float:
 
 def _normalize_tglf_max_retries(max_retries: int) -> int:
     if isinstance(max_retries, bool) or not isinstance(max_retries, int):
-        raise ValueError("max_retries must be an integer >= 0.")
+        raise ValueError(
+            f"max_retries must be an integer in [0, {_TGLF_MAX_RETRIES_LIMIT}]."
+        )
     retries = int(max_retries)
-    if retries < 0:
-        raise ValueError("max_retries must be an integer >= 0.")
+    if retries < 0 or retries > _TGLF_MAX_RETRIES_LIMIT:
+        raise ValueError(
+            f"max_retries must be an integer in [0, {_TGLF_MAX_RETRIES_LIMIT}]."
+        )
     return retries
 
 
@@ -466,9 +471,10 @@ def run_tglf_binary(
 
         except (RuntimeError, subprocess.TimeoutExpired) as exc:
             last_exc = exc
-            logger.warning(f"TGLF attempt {attempt+1} failed: {exc}. Retrying...")
-            import time
-            time.sleep(_TGLF_RETRY_BACKOFF_SECONDS)
+            if attempt < max_retries:
+                logger.warning(f"TGLF attempt {attempt+1} failed: {exc}. Retrying...")
+                import time
+                time.sleep(_TGLF_RETRY_BACKOFF_SECONDS)
         finally:
             if cleanup and (attempt == max_retries or not last_exc):
                 import shutil
