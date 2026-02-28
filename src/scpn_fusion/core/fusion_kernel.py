@@ -1635,11 +1635,20 @@ class FusionKernel:
             ub = np.inf * np.ones(n_coils)
 
         result = lsq_linear(A, b, bounds=(lb, ub), method='trf')
+        if not bool(getattr(result, "success", False)) or not np.all(np.isfinite(result.x)):
+            logger.warning(
+                "Coil optimisation failed (status=%s): %s. Falling back to prior currents.",
+                getattr(result, "status", "unknown"),
+                getattr(result, "message", "no message"),
+            )
+            fallback = np.asarray(coils.currents, dtype=np.float64).copy()
+            return np.clip(fallback, lb, ub).astype(np.float64)
+
         logger.info(
             "Coil optimisation: cost=%.4e, status=%d (%s)",
             result.cost, result.status, result.message,
         )
-        return result.x.astype(np.float64)
+        return np.asarray(result.x, dtype=np.float64)
 
     def _resolve_shape_target_flux(self, coils: CoilSet) -> FloatArray:
         """Resolve target flux vector for shape optimisation control points.

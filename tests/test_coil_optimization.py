@@ -178,6 +178,25 @@ def test_optimize_raises_on_current_limits_shape_mismatch(kernel: FusionKernel):
         kernel.optimize_coil_currents(coils, np.array([0.1, 0.1, 0.1]))
 
 
+def test_optimize_falls_back_to_prior_currents_on_solver_failure(
+    kernel: FusionKernel, monkeypatch: pytest.MonkeyPatch,
+):
+    """Failed least-squares solve should safely return bounded prior currents."""
+    coils = _make_coils(4)
+    coils.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
+
+    class _FailResult:
+        success = False
+        status = -1
+        message = "synthetic failure"
+        cost = float("inf")
+        x = np.array([np.nan, np.nan, np.nan, np.nan], dtype=np.float64)
+
+    monkeypatch.setattr("scipy.optimize.lsq_linear", lambda *_args, **_kwargs: _FailResult())
+    out = kernel.optimize_coil_currents(coils, np.array([0.1, 0.1, 0.1]))
+    np.testing.assert_allclose(out, coils.currents, atol=0.0)
+
+
 def test_optimize_reduces_residual(kernel: FusionKernel):
     """Optimised currents should produce flux closer to target than random currents."""
     coils = _make_coils(4)
@@ -343,3 +362,15 @@ def test_solve_free_boundary_runs_multiple_iters(kernel: FusionKernel):
     # but it should complete all requested iterations.
     assert result["outer_iterations"] >= 1
     assert np.isfinite(result["final_diff"])
+
+
+def test_solve_free_boundary_rejects_invalid_outer_iter(kernel: FusionKernel):
+    coils = _make_coils(4)
+    with pytest.raises(ValueError, match="max_outer_iter"):
+        kernel.solve_free_boundary(coils, max_outer_iter=0)
+
+
+def test_solve_free_boundary_rejects_invalid_tolerance(kernel: FusionKernel):
+    coils = _make_coils(4)
+    with pytest.raises(ValueError, match="tol"):
+        kernel.solve_free_boundary(coils, max_outer_iter=1, tol=-1.0)
