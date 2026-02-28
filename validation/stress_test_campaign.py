@@ -118,12 +118,26 @@ class ControllerMetrics:
     episodes: list = field(default_factory=list)
 
 
+def _build_isoflux_controller(
+    config_path: Any,
+    *,
+    surrogate: bool,
+    dt: float,
+) -> IsoFluxController:
+    kwargs: dict[str, Any] = {
+        "verbose": False,
+        "control_dt_s": dt,
+    }
+    if surrogate:
+        kwargs["kernel_factory"] = NeuralEquilibriumKernel
+    return IsoFluxController(config_path, **kwargs)
+
+
 def _run_pid_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
     """Run a single PID episode."""
-    factory = NeuralEquilibriumKernel if surrogate else None
     dt = 0.01 if surrogate else 0.05
     steps = int(shot_duration / dt)
-    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
+    ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
     t0 = time.perf_counter_ns()
     result = ctrl.run_shot(shot_duration=steps, save_plot=False)
     total_us = (time.perf_counter_ns() - t0) / 1e3
@@ -154,10 +168,9 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool
     that a unit position error produces the same control magnitude as
     the PID's proportional term (Kp).
     """
-    factory = NeuralEquilibriumKernel if surrogate else None
     dt = 0.01 if surrogate else 0.05
     steps = int(shot_duration / dt)
-    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
+    ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
 
     # Separate controllers — each maintains its own observer state.
     hinf_R = get_radial_robust_controller()
@@ -205,10 +218,9 @@ def _run_mpc_episode(config_path: Any, shot_duration: int = 30, surrogate: bool 
     """Run a single linear-surrogate MPC episode."""
     if not _mpc_available or ModelPredictiveController is None or NeuralSurrogate is None:
         raise RuntimeError("MPC controller is unavailable in this environment.")
-    factory = NeuralEquilibriumKernel if surrogate else None
     dt = 0.01 if surrogate else 0.05
     steps = int(shot_duration / dt)
-    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
+    ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
     n_coils = len(ctrl.kernel.cfg.get("coils", []))
     if n_coils < 1:
         raise RuntimeError("ITER config is missing coil definitions for MPC.")
@@ -257,9 +269,8 @@ def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30, surrogate: 
     """Run a single Nonlinear MPC (JAX) episode."""
     if not _nmpc_jax_available or get_nmpc_controller is None:
         raise RuntimeError("NMPC-JAX controller is unavailable in this environment.")
-    factory = NeuralEquilibriumKernel if surrogate else None
     dt = 0.01 if surrogate else 0.05
-    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
+    ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
     # NMPC setup: state_dim=4, action_dim=len(coils)
     n_coils = len(ctrl.kernel.cfg["coils"])
     nmpc = get_nmpc_controller(state_dim=4, action_dim=n_coils, horizon=10)
@@ -320,10 +331,9 @@ def _run_snn_episode(config_path: Any, shot_duration: int = 30, surrogate: bool 
     """Run a single Nengo-SNN episode."""
     if not _snn_available or NengoSNNController is None or NengoSNNConfig is None:
         raise RuntimeError("Nengo-SNN controller is unavailable in this environment.")
-    factory = NeuralEquilibriumKernel if surrogate else None
     dt = 0.01 if surrogate else 0.05
     steps = int(shot_duration / dt)
-    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
+    ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
     snn = NengoSNNController(NengoSNNConfig(n_neurons=200, n_channels=2))
 
     def snn_step(pid: Any, err: float) -> float:

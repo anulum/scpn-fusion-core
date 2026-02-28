@@ -304,6 +304,30 @@ def test_mpc_episode_with_mocked_dependencies(monkeypatch):
     assert episode.energy_efficiency == pytest.approx(1.0 / 1.2, abs=1e-12)
 
 
+def test_build_isoflux_controller_surrogate_switch(monkeypatch):
+    """Controller builder should only inject kernel_factory in surrogate mode."""
+    import validation.stress_test_campaign as mod
+
+    calls = []
+
+    class DummyController:
+        pass
+
+    def fake_ctor(config_path, **kwargs):
+        calls.append(kwargs)
+        return DummyController()
+
+    monkeypatch.setattr(mod, "IsoFluxController", fake_ctor)
+
+    _ = mod._build_isoflux_controller("cfg.json", surrogate=False, dt=0.05)
+    _ = mod._build_isoflux_controller("cfg.json", surrogate=True, dt=0.01)
+
+    assert "kernel_factory" not in calls[0]
+    assert calls[0]["control_dt_s"] == 0.05
+    assert calls[1]["kernel_factory"] is mod.NeuralEquilibriumKernel
+    assert calls[1]["control_dt_s"] == 0.01
+
+
 def test_rust_pid_episode_non_disrupted_uses_full_duration_for_def(monkeypatch):
     """Non-disrupted Rust episodes must report full-shot DEF support."""
     import validation.stress_test_campaign as mod
