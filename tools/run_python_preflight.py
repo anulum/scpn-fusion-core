@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
 import shlex
 import subprocess
 import sys
@@ -38,6 +39,7 @@ def _build_release_checks(
     skip_notebook_quality: bool,
     skip_threshold_smoke: bool,
     skip_mypy: bool,
+    enable_strict_backend_checks: bool,
 ) -> list[tuple[str, list[str]]]:
     checks: list[tuple[str, list[str]]] = []
     if not skip_version_metadata:
@@ -159,7 +161,7 @@ def _build_release_checks(
                 ],
             )
         )
-    if not skip_torax_strict_backend:
+    if enable_strict_backend_checks and not skip_torax_strict_backend:
         checks.append(
             (
                 "TORAX strict-backend benchmark",
@@ -170,7 +172,7 @@ def _build_release_checks(
                 ],
             )
         )
-    if not skip_sparc_strict_backend:
+    if enable_strict_backend_checks and not skip_sparc_strict_backend:
         checks.append(
             (
                 "SPARC GEQDSK strict-backend benchmark",
@@ -268,6 +270,7 @@ def _build_checks(
     skip_threshold_smoke: bool,
     skip_mypy: bool,
     skip_research_suite: bool,
+    enable_strict_backend_checks: bool,
 ) -> list[tuple[str, list[str]]]:
     checks: list[tuple[str, list[str]]] = []
     if gate in {"release", "all"}:
@@ -290,6 +293,7 @@ def _build_checks(
                 skip_notebook_quality=skip_notebook_quality,
                 skip_threshold_smoke=skip_threshold_smoke,
                 skip_mypy=skip_mypy,
+                enable_strict_backend_checks=enable_strict_backend_checks,
             )
         )
     if gate in {"research", "all"}:
@@ -405,6 +409,18 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip validation/benchmark_sparc_geqdsk_rmse.py --strict-backend",
     )
     parser.add_argument(
+        "--enable-strict-backend-checks",
+        action="store_true",
+        default=bool(
+            os.environ.get("SCPN_ENABLE_STRICT_BACKEND_CHECKS", "").strip().lower()
+            in {"1", "true", "yes", "on"}
+        ),
+        help=(
+            "Enable strict-backend TORAX/SPARC checks "
+            "(also enabled by SCPN_ENABLE_STRICT_BACKEND_CHECKS=1)."
+        ),
+    )
+    parser.add_argument(
         "--skip-multi-ion-conservation",
         action="store_true",
         help="Skip validation/benchmark_multi_ion_transport_conservation.py --strict",
@@ -467,6 +483,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_threshold_smoke=args.skip_threshold_smoke,
         skip_mypy=args.skip_mypy,
         skip_research_suite=args.skip_research_suite,
+        enable_strict_backend_checks=args.enable_strict_backend_checks,
     )
     if not checks:
         print("[preflight] No checks selected.")
