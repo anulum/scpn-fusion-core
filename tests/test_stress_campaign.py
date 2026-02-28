@@ -266,3 +266,13 @@ def test_rust_pid_episode_clamps_disruption_time_to_shot_duration(monkeypatch):
     episode = mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
     assert episode.disrupted is True
     assert episode.t_disruption == 30.0
+
+
+def test_rust_pid_episode_requires_rust_binding(monkeypatch):
+    """Calling Rust lane without binding should fail with explicit error."""
+    import validation.stress_test_campaign as mod
+
+    monkeypatch.setattr(mod, "_rust_flight_sim_available", False)
+    monkeypatch.setattr(mod, "PyRustFlightSim", None, raising=False)
+    with pytest.raises(RuntimeError, match="Rust flight simulator is unavailable"):
+        mod._run_rust_pid_episode(config_path="unused", shot_duration=30)

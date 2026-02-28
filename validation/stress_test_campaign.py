@@ -56,7 +56,8 @@ try:
     )
     _mpc_available = True
 except ImportError:
-    pass
+    ModelPredictiveController = None  # type: ignore[assignment]
+    NeuralSurrogate = None  # type: ignore[assignment]
 
 try:
     from scpn_fusion.control.fusion_nmpc_jax import (
@@ -66,6 +67,8 @@ try:
     _nmpc_jax_available = True
 except ImportError:
     _nmpc_jax_available = False
+    get_nmpc_controller = None  # type: ignore[assignment]
+    NonlinearMPC = None  # type: ignore[assignment]
 
 try:
     from scpn_fusion.control.nengo_snn_wrapper import (
@@ -75,14 +78,15 @@ try:
     )
     _snn_available = nengo_available()
 except ImportError:
-    pass
+    NengoSNNController = None  # type: ignore[assignment]
+    NengoSNNConfig = None  # type: ignore[assignment]
 
 _rust_flight_sim_available = False
 try:
     from scpn_fusion_rs import PyRustFlightSim
     _rust_flight_sim_available = True
 except ImportError:
-    pass
+    PyRustFlightSim = None  # type: ignore[assignment]
 
 
 @dataclass
@@ -199,6 +203,8 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool
 
 def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
     """Run a single Nonlinear MPC (JAX) episode."""
+    if not _nmpc_jax_available or get_nmpc_controller is None:
+        raise RuntimeError("NMPC-JAX controller is unavailable in this environment.")
     factory = NeuralEquilibriumKernel if surrogate else None
     dt = 0.01 if surrogate else 0.05
     ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=factory, control_dt_s=dt)
@@ -257,6 +263,8 @@ if _nmpc_jax_available:
 
 def _run_snn_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
     """Run a single Nengo-SNN episode."""
+    if not _snn_available or NengoSNNController is None or NengoSNNConfig is None:
+        raise RuntimeError("Nengo-SNN controller is unavailable in this environment.")
     factory = NeuralEquilibriumKernel if surrogate else None
     dt = 0.01 if surrogate else 0.05
     steps = int(shot_duration / dt)
@@ -302,6 +310,8 @@ def _run_rust_pid_episode(
     implements a 10 kHz PID control loop with simplified linear plasma
     physics — orders of magnitude faster than the Python G-S path.
     """
+    if not _rust_flight_sim_available or PyRustFlightSim is None:
+        raise RuntimeError("Rust flight simulator is unavailable in this environment.")
     sim = PyRustFlightSim(target_r=6.2, target_z=0.0, control_hz=10000.0)
     t0 = time.perf_counter_ns()
     report = sim.run_shot(float(shot_duration))
