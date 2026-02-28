@@ -32,56 +32,49 @@ def sync():
     version = get_version()
     print(f"--- Synchronizing Metadata to v{version} ---")
 
-    # 1. pyproject.toml (under [project] section — multiline aware)
+    # 1. pyproject.toml (single source of truth for Python packaging metadata)
     update_file(
         REPO_ROOT / "pyproject.toml",
         r'(?m)^version = ".*?"',
         f'version = "{version}"'
     )
 
-    # 2. setup.py
-    update_file(
-        REPO_ROOT / "setup.py",
-        r'version=".*?"',
-        f'version="{version}"'
-    )
-
-    # 3. __init__.py
+    # 2. __init__.py
     update_file(
         REPO_ROOT / "src" / "scpn_fusion" / "__init__.py",
         r'__version__ = ".*?"',
         f'__version__ = "{version}"'
     )
 
-    # 4. CITATION.cff
+    # 3. CITATION.cff
     update_file(
         REPO_ROOT / "CITATION.cff",
         r'(?m)^version: ".*?"',
         f'version: "{version}"'
     )
 
-    # 4b. validation/__init__.py
+    # 3b. validation/__init__.py
     update_file(
         REPO_ROOT / "validation" / "__init__.py",
         r'__version__ = ".*?"',
         f'__version__ = "{version}"'
     )
 
-    # 4c. scpn-fusion-rs/crates/fusion-python/pyproject.toml
+    # 3c. scpn-fusion-rs/crates/fusion-python/pyproject.toml
     update_file(
         REPO_ROOT / "scpn-fusion-rs" / "crates" / "fusion-python" / "pyproject.toml",
         r'(?m)^version = ".*?"',
         f'version = "{version}"'
     )
 
-    # 4d. docs/RELEASE_ACCEPTANCE_CHECKLIST.md
+    # 3d. docs/RELEASE_ACCEPTANCE_CHECKLIST.md
     update_file(
         REPO_ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md",
         r'Release Version: `v\d+\.\d+\.\d+`',
         f'Release Version: `v{version}`'
     )
 
-    # 4e. docs/competitive_analysis.md table rows
+    # 3e. docs/competitive_analysis.md table rows
     update_file(
         REPO_ROOT / "docs" / "competitive_analysis.md",
         r'SCPN v\d+\.\d+\.\d+',

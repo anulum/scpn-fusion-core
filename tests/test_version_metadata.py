@@ -17,7 +17,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INIT_PATH = ROOT / "src" / "scpn_fusion" / "__init__.py"
 PYPROJECT_PATH = ROOT / "pyproject.toml"
-SETUP_PATH = ROOT / "setup.py"
 CITATION_PATH = ROOT / "CITATION.cff"
 SPHINX_CONF_PATH = ROOT / "docs" / "sphinx" / "conf.py"
 README_PATH = ROOT / "README.md"
@@ -48,13 +47,6 @@ def test_release_metadata_versions_are_consistent() -> None:
         "pyproject.toml",
     )
 
-    setup_text = SETUP_PATH.read_text(encoding="utf-8")
-    setup_version = _extract_version(
-        r'version\s*=\s*"([^"]+)"',
-        setup_text,
-        "setup.py",
-    )
-
     citation_text = CITATION_PATH.read_text(encoding="utf-8")
     citation_version = _extract_version(
         r'(?m)^version:\s*"([^"]+)"',
@@ -69,9 +61,12 @@ def test_release_metadata_versions_are_consistent() -> None:
     sphinx_release = str(getattr(sphinx_conf, "release"))
 
     assert pyproject_version == package_version
-    assert setup_version == package_version
     assert citation_version == package_version
     assert sphinx_release == package_version
+
+
+def test_legacy_setup_py_is_not_present() -> None:
+    assert not (ROOT / "setup.py").exists()
 
 
 def test_release_docs_reference_current_version() -> None:

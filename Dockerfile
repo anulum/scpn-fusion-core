@@ -43,8 +43,9 @@ COPY --from=rust-builder /build/wheels/ /tmp/wheels/
 RUN pip install --no-cache-dir /tmp/wheels/*.whl && rm -rf /tmp/wheels
 
 # Copy Python project files
-COPY pyproject.toml setup.py ./
+COPY pyproject.toml README.md ./
 COPY src/ src/
+COPY validation/ validation/
 
 # Install runtime dependencies (dev extras optional)
 RUN if [ "$INSTALL_DEV" = "1" ]; then \
@@ -57,7 +58,6 @@ RUN if [ "$INSTALL_DEV" = "1" ]; then \
 COPY calibration/ calibration/
 COPY schemas/ schemas/
 COPY examples/ examples/
-COPY validation/ validation/
 COPY tests/ tests/
 COPY run_fusion_suite.py conftest.py iter_config.json ./
 

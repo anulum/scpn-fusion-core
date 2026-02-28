@@ -17,18 +17,26 @@ Rust acceleration (6,600x speedup).
 > **Minimal control-only package:** [`scpn-control`](https://github.com/anulum/scpn-control) (41 files, pip-installable).
 > This repo is the full physics + experimental suite.
 
-## Try in 60 Seconds
+## What Is It?
+
+- Control-first tokamak runtime: Petri-net policies compile to deterministic SNN controllers.
+- Physics-backed plant loop: Grad-Shafranov + transport + validation lanes for closed-loop replay.
+- Dual execution stack: pure Python baseline with optional Rust acceleration for sub-microsecond control.
+
+## Try in 45 Seconds
 
 ```bash
 pip install -e .
 scpn-fusion kernel          # Grad-Shafranov equilibrium
-scpn-fusion flight           # Tokamak flight simulator
+scpn-fusion flight          # Tokamak flight simulator
 pytest tests/ -x -q          # 1,899 tests
 ```
 
 Or run the **Golden Base** hero notebook -- formal proofs, closed-loop control,
 shot replay, all in one:
 [`examples/neuro_symbolic_control_demo_v2.ipynb`](examples/neuro_symbolic_control_demo_v2.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/anulum/scpn-fusion-core/blob/main/examples/neuro_symbolic_control_demo_v2.ipynb)
+[![Launch Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/anulum/scpn-fusion-core/main?labpath=examples%2Fneuro_symbolic_control_demo_v2.ipynb)
 
 ```bash
 # Docker one-click
@@ -59,7 +67,21 @@ closure. See [`docs/HONEST_SCOPE.md`](docs/HONEST_SCOPE.md) for the full
 limitations assessment, and [`docs/CLAIMS_EVIDENCE_MAP.md`](docs/CLAIMS_EVIDENCE_MAP.md)
 for every claim mapped to its evidence artifact.
 
+Top limitations right now:
+- No full 5D gyrokinetic turbulence solve in-loop (surrogate + reduced-order only).
+- No full 3D nonlinear MHD stack in-loop (external coupling required for that fidelity).
+- Free-boundary equilibrium/inverse reconstruction is not yet EFIT-grade.
+
 ## Core Innovation: Neuro-Symbolic Compiler
+
+```mermaid
+flowchart LR
+    A["Petri Net<br/>places + transitions + contracts"] --> B["compiler.py<br/>structure-preserving mapping"]
+    B --> C["Stochastic LIF Network<br/>neurons + synapses + thresholds"]
+    C --> D["controller.py<br/>closed-loop execution"]
+    D --> E["Real-Time Plasma Control<br/>sub-ms latency + deterministic replay"]
+    E --> F["artifact.py<br/>versioned signed artifact"]
+```
 
 ```
 Petri Net (places + transitions + contracts)
