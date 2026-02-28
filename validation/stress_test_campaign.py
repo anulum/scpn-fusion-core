@@ -307,6 +307,11 @@ def _run_rust_pid_episode(
     report = sim.run_shot(float(shot_duration))
     total_us = (time.perf_counter_ns() - t0) / 1e3
     per_step_us = total_us / max(report.steps, 1)
+    t_disruption = (
+        float(min(report.duration_s, float(shot_duration)))
+        if report.disrupted
+        else float(shot_duration)
+    )
 
     return EpisodeResult(
         mean_abs_r_error=report.mean_abs_r_error,
@@ -314,7 +319,7 @@ def _run_rust_pid_episode(
         reward=-(report.mean_abs_r_error + report.mean_abs_z_error),
         latency_us=per_step_us,
         disrupted=report.disrupted,
-        t_disruption=report.duration_s if report.disrupted else 0.0,
+        t_disruption=t_disruption,
         energy_efficiency=0.95,  # Rust sim does not yet expose actuator effort
     )
 

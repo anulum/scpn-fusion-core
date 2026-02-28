@@ -36,6 +36,7 @@ from scpn_fusion.control.h_infinity_controller import get_radial_robust_controll
 
 # Optional controller imports
 _mpc_available = False
+_nmpc_jax_available = False
 _snn_available = False
 
 try:
@@ -45,7 +46,14 @@ try:
     )
     _mpc_available = True
 except ImportError:
-    pass
+    ModelPredictiveController = None  # type: ignore[assignment]
+    NeuralSurrogate = None  # type: ignore[assignment]
+
+try:
+    from scpn_fusion.control.fusion_nmpc_jax import get_nmpc_controller
+    _nmpc_jax_available = True
+except ImportError:
+    get_nmpc_controller = None  # type: ignore[assignment]
 
 try:
     from scpn_fusion.control.nengo_snn_wrapper import (
@@ -55,7 +63,8 @@ try:
     )
     _snn_available = nengo_available()
 except ImportError:
-    pass
+    NengoSNNController = None  # type: ignore[assignment]
+    NengoSNNConfig = None  # type: ignore[assignment]
 
 
 @dataclass
@@ -85,61 +94,181 @@ class ControllerMetrics:
     episodes: list = field(default_factory=list)
 
 
-def _run_pid_episode(config_path, shot_duration=30):
-    ctrl = IsoFluxController(config_path, verbose=False)
-    t0 = time.perf_counter_ns()
-    result = ctrl.run_shot(shot_duration=shot_duration, save_plot=False)
-    total_us = (time.perf_counter_ns() - t0) / 1e3
-    per_step_us = total_us / max(result["steps"], 1)
-    r_err = result["mean_abs_r_error"]
-    z_err = result["mean_abs_z_error"]
-    actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
+def _to_episode_result(
+    run_result: dict[str, Any],
+    total_us: float,
+    shot_duration: int,
+) -> EpisodeResult:
+    per_step_us = total_us / max(int(run_result.get("steps", 0)), 1)
+    r_err = float(run_result["mean_abs_r_error"])
+    z_err = float(run_result["mean_abs_z_error"])
+    actuator_effort = float(run_result.get("mean_abs_radial_actuator_lag", 0.0))
     disrupted = r_err > 0.5 or z_err > 0.5
     return EpisodeResult(
-        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
-        reward=-(r_err + z_err), latency_us=per_step_us,
+        mean_abs_r_error=r_err,
+        mean_abs_z_error=z_err,
+        reward=-(r_err + z_err),
+        latency_us=per_step_us,
         disrupted=disrupted,
         t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
         energy_efficiency=1.0 / (1.0 + actuator_effort),
     )
 
 
-def _run_hinf_episode(config_path, shot_duration=30):
+def _run_pid_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    steps = int(shot_duration)
     ctrl = IsoFluxController(config_path, verbose=False)
-    hinf = get_radial_robust_controller()
-    ctrl.pid_step = lambda pid, err: hinf.step(err, 0.05)
     t0 = time.perf_counter_ns()
-    result = ctrl.run_shot(shot_duration=shot_duration, save_plot=False)
+    result = ctrl.run_shot(shot_duration=steps, save_plot=False)
     total_us = (time.perf_counter_ns() - t0) / 1e3
-    per_step_us = total_us / max(result["steps"], 1)
-    r_err = result["mean_abs_r_error"]
-    z_err = result["mean_abs_z_error"]
-    actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
-    disrupted = r_err > 0.5 or z_err > 0.5
-    return EpisodeResult(
-        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
-        reward=-(r_err + z_err), latency_us=per_step_us,
-        disrupted=disrupted,
-        t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
-        energy_efficiency=1.0 / (1.0 + actuator_effort),
+    return _to_episode_result(result, total_us, steps)
+
+
+def _run_hinf_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    steps = int(shot_duration)
+    dt = 0.05
+    ctrl = IsoFluxController(config_path, verbose=False, control_dt_s=dt)
+    # Maintain independent observer state for radial and vertical channels.
+    hinf_r = get_radial_robust_controller()
+    hinf_z = get_radial_robust_controller()
+    hinf_r.step(0.0, dt)
+    hinf_r.reset()
+    hinf_z.step(0.0, dt)
+    hinf_z.reset()
+    kp_r = float(ctrl.pid_R["Kp"])
+    kp_z = float(ctrl.pid_Z["Kp"])
+    scale_r = kp_r / max(abs(float(hinf_r._Fd[0, 0])), 1.0e-12)
+    scale_z = kp_z / max(abs(float(hinf_z._Fd[0, 0])), 1.0e-12)
+    pid_r_id = id(ctrl.pid_R)
+
+    def hinf_step(pid: Any, err: float) -> float:
+        if id(pid) == pid_r_id:
+            return scale_r * hinf_r.step(err, dt)
+        return scale_z * hinf_z.step(err, dt)
+
+    ctrl.pid_step = hinf_step
+    t0 = time.perf_counter_ns()
+    result = ctrl.run_shot(shot_duration=steps, save_plot=False)
+    total_us = (time.perf_counter_ns() - t0) / 1e3
+    return _to_episode_result(result, total_us, steps)
+
+
+def _run_mpc_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    if not _mpc_available:
+        raise RuntimeError("MPC controller is unavailable in this environment.")
+    steps = int(shot_duration)
+    ctrl = IsoFluxController(config_path, verbose=False)
+    n_coils = len(ctrl.kernel.cfg.get("coils", []))
+    if n_coils < 1:
+        raise RuntimeError("ITER config is missing coil definitions for MPC.")
+    target = np.array([6.2, 0.0, 5.0, -3.5], dtype=np.float64)
+    surrogate = NeuralSurrogate(n_coils=n_coils, n_state=4, verbose=False)
+    surrogate.train_on_kernel(ctrl.kernel, perturbation=1.0)
+    mpc = ModelPredictiveController(
+        surrogate,
+        target_state=target,
+        prediction_horizon=6,
+        learning_rate=0.25,
+        iterations=8,
+        action_limit=2.0,
     )
 
+    def mpc_step(pid: Any, err: float) -> float:
+        idx_max = int(np.argmax(ctrl.kernel.Psi))
+        iz, ir = np.unravel_index(idx_max, ctrl.kernel.Psi.shape)
+        r_ax = float(ctrl.kernel.R[ir])
+        z_ax = float(ctrl.kernel.Z[iz])
+        xp_pos, _ = ctrl.kernel.find_x_point(ctrl.kernel.Psi)
+        state = np.array([r_ax, z_ax, float(xp_pos[0]), float(xp_pos[1])], dtype=np.float64)
+        action = np.asarray(mpc.plan_trajectory(state), dtype=np.float64).reshape(-1)
+        return float(action[0]) if action.size else 0.0
 
-CONTROLLERS = {
-    "PID": _run_pid_episode,
-    "H-infinity": _run_hinf_episode,
-}
+    ctrl.pid_step = mpc_step
+    t0 = time.perf_counter_ns()
+    result = ctrl.run_shot(shot_duration=steps, save_plot=False)
+    total_us = (time.perf_counter_ns() - t0) / 1e3
+    return _to_episode_result(result, total_us, steps)
 
 
-def run_comparison(n_episodes=100, shot_duration=30, config_path=None):
+def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    if not _nmpc_jax_available:
+        raise RuntimeError("NMPC-JAX controller is unavailable in this environment.")
+    steps = int(shot_duration)
+    ctrl = IsoFluxController(config_path, verbose=False)
+    n_coils = len(ctrl.kernel.cfg.get("coils", []))
+    if n_coils < 1:
+        raise RuntimeError("ITER config is missing coil definitions for NMPC-JAX.")
+    target = np.array([6.2, 0.0, 5.0, -3.5], dtype=np.float64)
+    nmpc = get_nmpc_controller(state_dim=4, action_dim=n_coils, horizon=10)
+
+    def nmpc_step(pid: Any, err: float) -> float:
+        idx_max = int(np.argmax(ctrl.kernel.Psi))
+        iz, ir = np.unravel_index(idx_max, ctrl.kernel.Psi.shape)
+        r_ax = float(ctrl.kernel.R[ir])
+        z_ax = float(ctrl.kernel.Z[iz])
+        xp_pos, _ = ctrl.kernel.find_x_point(ctrl.kernel.Psi)
+        state = np.array([r_ax, z_ax, float(xp_pos[0]), float(xp_pos[1])], dtype=np.float64)
+        action = np.asarray(nmpc.plan_trajectory(state, target), dtype=np.float64).reshape(-1)
+        return float(action[0]) if action.size else 0.0
+
+    ctrl.pid_step = nmpc_step
+    t0 = time.perf_counter_ns()
+    result = ctrl.run_shot(shot_duration=steps, save_plot=False)
+    total_us = (time.perf_counter_ns() - t0) / 1e3
+    return _to_episode_result(result, total_us, steps)
+
+
+def _run_snn_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    if not _snn_available:
+        raise RuntimeError("Nengo-SNN controller is unavailable in this environment.")
+    steps = int(shot_duration)
+    ctrl = IsoFluxController(config_path, verbose=False)
+    snn = NengoSNNController(NengoSNNConfig(n_neurons=200, n_channels=2))
+
+    def snn_step(pid: Any, err: float) -> float:
+        output = snn.step(np.array([float(err), 0.0], dtype=np.float64))
+        return float(np.asarray(output, dtype=np.float64).reshape(-1)[0])
+
+    ctrl.pid_step = snn_step
+    t0 = time.perf_counter_ns()
+    result = ctrl.run_shot(shot_duration=steps, save_plot=False)
+    total_us = (time.perf_counter_ns() - t0) / 1e3
+    return _to_episode_result(result, total_us, steps)
+
+
+def _build_controller_registry() -> dict[str, Callable[[Any, int], EpisodeResult]]:
+    controllers: dict[str, Callable[[Any, int], EpisodeResult]] = {
+        "PID": _run_pid_episode,
+        "H-infinity": _run_hinf_episode,
+    }
+    if _mpc_available:
+        controllers["MPC"] = _run_mpc_episode
+    if _nmpc_jax_available:
+        controllers["NMPC-JAX"] = _run_nmpc_jax_episode
+    if _snn_available:
+        controllers["Nengo-SNN"] = _run_snn_episode
+    return controllers
+
+
+CONTROLLERS = _build_controller_registry()
+
+
+def run_comparison(
+    n_episodes: int = 100,
+    shot_duration: int = 30,
+    config_path: Any = None,
+) -> dict[str, ControllerMetrics]:
     """Run all available controllers on identical scenarios."""
     if config_path is None:
         config_path = repo_root / "iter_config.json"
 
-    print(f"=== 4-Way Controller Comparison ===")
+    if not CONTROLLERS:
+        raise RuntimeError("No controllers are available for comparison.")
+
+    print("=== 4-Way Controller Comparison ===")
     print(f"Episodes: {n_episodes} | Controllers: {', '.join(CONTROLLERS.keys())}")
 
-    results = {}
+    results: dict[str, ControllerMetrics] = {}
     for ctrl_name, run_fn in CONTROLLERS.items():
         print(f"--- Running {ctrl_name} ({n_episodes} episodes) ---")
         metrics = ControllerMetrics(name=ctrl_name)
@@ -169,7 +298,7 @@ def run_comparison(n_episodes=100, shot_duration=30, config_path=None):
     return results
 
 
-def generate_comparison_table(results):
+def generate_comparison_table(results: dict[str, ControllerMetrics]) -> str:
     """Generate markdown comparison table."""
     lines = [
         "| Controller | Episodes | Mean Reward | P95 Latency (us) | Disruption Rate | DEF | Energy Eff |",
@@ -184,7 +313,7 @@ def generate_comparison_table(results):
     return "\n".join(lines)
 
 
-def generate_latex_table(results):
+def generate_latex_table(results: dict[str, ControllerMetrics]) -> str:
     """Generate publication-ready LaTeX table."""
     lines = [
         r"\begin{table}[htbp]",
@@ -205,12 +334,59 @@ def generate_latex_table(results):
     return "\n".join(lines)
 
 
+def save_results_json(results: dict[str, ControllerMetrics], output_path: Path) -> None:
+    payload: dict[str, dict[str, float | int]] = {}
+    for name, metrics in results.items():
+        payload[name] = {
+            "n_episodes": metrics.n_episodes,
+            "mean_reward": metrics.mean_reward,
+            "std_reward": metrics.std_reward,
+            "mean_r_error": metrics.mean_r_error,
+            "p95_latency_us": metrics.p95_latency_us,
+            "disruption_rate": metrics.disruption_rate,
+            "mean_def": metrics.mean_def,
+            "mean_energy_efficiency": metrics.mean_energy_efficiency,
+        }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="4-Way Controller Comparison")
     parser.add_argument("--episodes", type=int, default=100)
     parser.add_argument("--quick", action="store_true", help="5 episodes for CI")
+    parser.add_argument(
+        "--output-json",
+        type=str,
+        default=None,
+        help="Optional output path for JSON summary payload.",
+    )
+    parser.add_argument(
+        "--output-md",
+        type=str,
+        default=None,
+        help="Optional output path for markdown table.",
+    )
+    parser.add_argument(
+        "--output-tex",
+        type=str,
+        default=None,
+        help="Optional output path for LaTeX table.",
+    )
     args = parser.parse_args()
     if args.quick:
         args.episodes = 5
     results = run_comparison(n_episodes=args.episodes)
-    print("\n" + generate_comparison_table(results))
+    md_table = generate_comparison_table(results)
+    print("\n" + md_table)
+
+    if args.output_json:
+        save_results_json(results, Path(args.output_json))
+        print(f"\nJSON summary saved to {args.output_json}")
+    if args.output_md:
+        Path(args.output_md).write_text(md_table + "\n", encoding="utf-8")
+        print(f"Markdown table saved to {args.output_md}")
+    if args.output_tex:
+        tex = generate_latex_table(results)
+        Path(args.output_tex).write_text(tex + "\n", encoding="utf-8")
+        print(f"LaTeX table saved to {args.output_tex}")
