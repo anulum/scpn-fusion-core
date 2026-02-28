@@ -630,6 +630,35 @@ class TestGyroBohmLoader:
         c_gb = _load_gyro_bohm_coefficient(bad)
         assert c_gb == pytest.approx(0.1)
 
+    def test_loader_contract_reports_json_source(self, tmp_path: Path) -> None:
+        good = tmp_path / "good_cgb.json"
+        good.write_text(json.dumps({"c_gB": 0.234}), encoding="utf-8")
+        c_gb, contract = transport_mod._load_gyro_bohm_coefficient_with_contract(good)
+        assert c_gb == pytest.approx(0.234)
+        assert contract["source"] == "json_file"
+        assert contract["fallback_used"] is False
+        assert contract["error"] is None
+
+    def test_loader_contract_reports_fallback_reason(self, tmp_path: Path) -> None:
+        bad = tmp_path / "missing_key.json"
+        bad.write_text(json.dumps({"wrong_key": 0.3}), encoding="utf-8")
+        c_gb, contract = transport_mod._load_gyro_bohm_coefficient_with_contract(bad)
+        assert c_gb == pytest.approx(0.1)
+        assert contract["source"] == "default_fallback"
+        assert contract["fallback_used"] is True
+        assert "KeyError" in str(contract["error"])
+
+    def test_gyro_bohm_contract_tracks_invalid_param_fallback(self, solver: TransportSolver) -> None:
+        solver.set_neoclassical(R0=6.2, a=2.0, B0=5.3)
+        assert solver.neoclassical_params is not None
+        solver.neoclassical_params["c_gB"] = float("nan")
+        _ = solver._gyro_bohm_chi()
+        contract = solver._last_gyro_bohm_contract
+        assert contract["used"] is True
+        assert contract["fallback_used"] is True
+        assert contract["source"] == "neoclassical_params_invalid_fallback"
+        assert "ValueError" in str(contract["error"])
+
 
 # ── 6. Thomas Solver ─────────────────────────────────────────────────
 

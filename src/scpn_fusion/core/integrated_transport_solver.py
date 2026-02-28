@@ -149,7 +149,21 @@ def _load_gyro_bohm_coefficient(
     float
         The calibrated c_gB value, or 0.1 if the file is not found.
     """
+    c_gB, _ = _load_gyro_bohm_coefficient_with_contract(path)
+    return c_gB
+
+
+def _load_gyro_bohm_coefficient_with_contract(
+    path: Path | str | None = None,
+) -> tuple[float, dict[str, Any]]:
+    """Load calibrated c_gB and return value plus provenance contract."""
     p = Path(path) if path else _GYRO_BOHM_COEFF_PATH
+    contract: dict[str, Any] = {
+        "source": "json_file",
+        "path": str(p),
+        "fallback_used": False,
+        "error": None,
+    }
     try:
         with open(p, encoding="utf-8") as f:
             data = json.load(f)
@@ -157,24 +171,35 @@ def _load_gyro_bohm_coefficient(
         if (not np.isfinite(c_gB)) or c_gB <= 0.0:
             raise ValueError(f"Invalid c_gB={c_gB!r}")
         _logger.debug("Loaded c_gB = %.6f from %s", c_gB, p)
-        return c_gB
+        return c_gB, contract
     except (FileNotFoundError, KeyError, json.JSONDecodeError, TypeError, ValueError) as exc:
         _logger.warning(
             "Could not load c_gB from %s (%s), using default %.4f",
             p, exc, _GYRO_BOHM_DEFAULT,
         )
-        return _GYRO_BOHM_DEFAULT
+        contract["source"] = "default_fallback"
+        contract["fallback_used"] = True
+        contract["error"] = f"{exc.__class__.__name__}:{exc}"
+        return _GYRO_BOHM_DEFAULT, contract
 
 
 _gyro_bohm_cache: float | None = None
+_gyro_bohm_cache_contract: dict[str, Any] | None = None
 
 
 def _load_gyro_bohm_coefficient_cached() -> float:
     """Return the default-path c_gB value, reading the file at most once."""
+    value, _ = _load_gyro_bohm_coefficient_cached_with_contract()
+    return value
+
+
+def _load_gyro_bohm_coefficient_cached_with_contract() -> tuple[float, dict[str, Any]]:
+    """Cached c_gB loader with provenance contract."""
     global _gyro_bohm_cache  # noqa: PLW0603
-    if _gyro_bohm_cache is None:
-        _gyro_bohm_cache = _load_gyro_bohm_coefficient()
-    return _gyro_bohm_cache
+    global _gyro_bohm_cache_contract  # noqa: PLW0603
+    if _gyro_bohm_cache is None or _gyro_bohm_cache_contract is None:
+        _gyro_bohm_cache, _gyro_bohm_cache_contract = _load_gyro_bohm_coefficient_with_contract()
+    return float(_gyro_bohm_cache), dict(_gyro_bohm_cache_contract)
 
 
 def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.5):
@@ -520,6 +545,14 @@ class TransportSolver(FusionKernel):
             "reconstructed_electron_MW": 0.0,
             "reconstructed_total_MW": 0.0,
         }
+        self._last_gyro_bohm_contract: dict[str, Any] = {
+            "used": False,
+            "source": "uninitialized",
+            "path": str(_GYRO_BOHM_COEFF_PATH),
+            "c_gB": float(_GYRO_BOHM_DEFAULT),
+            "fallback_used": False,
+            "error": None,
+        }
         self._last_pedestal_contract: dict[str, Any] = {
             "used": False,
             "in_domain": True,
@@ -806,6 +839,14 @@ class TransportSolver(FusionKernel):
         or to the module-level default (0.1) otherwise.
         """
         if self.neoclassical_params is None:
+            self._last_gyro_bohm_contract = {
+                "used": False,
+                "source": "neoclassical_disabled",
+                "path": str(_GYRO_BOHM_COEFF_PATH),
+                "c_gB": float(_GYRO_BOHM_DEFAULT),
+                "fallback_used": True,
+                "error": "neoclassical_params_missing",
+            }
             return np.full_like(self.rho, 0.5)
 
         p = self.neoclassical_params
@@ -817,9 +858,40 @@ class TransportSolver(FusionKernel):
 
         # Load c_gB: explicit param > cached JSON file > default
         if 'c_gB' in p:
-            c_gB = float(p['c_gB'])
+            try:
+                c_gB = float(p['c_gB'])
+                if (not np.isfinite(c_gB)) or c_gB <= 0.0:
+                    raise ValueError(f"Invalid c_gB={p['c_gB']!r}")
+                self._last_gyro_bohm_contract = {
+                    "used": True,
+                    "source": "neoclassical_params",
+                    "path": None,
+                    "c_gB": float(c_gB),
+                    "fallback_used": False,
+                    "error": None,
+                }
+            except (TypeError, ValueError) as exc:
+                c_gB, fallback_contract = _load_gyro_bohm_coefficient_cached_with_contract()
+                self._last_gyro_bohm_contract = {
+                    "used": True,
+                    "source": "neoclassical_params_invalid_fallback",
+                    "path": fallback_contract.get("path"),
+                    "c_gB": float(c_gB),
+                    "fallback_used": True,
+                    "error": f"{exc.__class__.__name__}:{exc}",
+                    "requested_c_gB": p.get("c_gB"),
+                    "fallback_source": fallback_contract.get("source"),
+                }
         else:
-            c_gB = _load_gyro_bohm_coefficient_cached()
+            c_gB, loader_contract = _load_gyro_bohm_coefficient_cached_with_contract()
+            self._last_gyro_bohm_contract = {
+                "used": True,
+                "source": loader_contract.get("source", "json_file"),
+                "path": loader_contract.get("path"),
+                "c_gB": float(c_gB),
+                "fallback_used": bool(loader_contract.get("fallback_used", False)),
+                "error": loader_contract.get("error"),
+            }
 
         e_charge = 1.602176634e-19
         m_i = A_ion * 1.672621924e-27
