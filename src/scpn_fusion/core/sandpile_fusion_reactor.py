@@ -29,6 +29,8 @@ class TokamakSandpile:
         self.h = np.zeros(size, dtype=int) # Height (Temperature/Density)
         self.avalanche_history = []
         self.confinement_history = []
+        self.edge_loss_events = 0
+        self.last_edge_loss_events = 0
         
         # Magnetic Control (Z_crit modification)
         self.control_profile = np.zeros(size) 
@@ -50,6 +52,7 @@ class TokamakSandpile:
         
         sites_active = np.where(self.Z >= current_Z_crit)[0]
         avalanche_size = 0
+        edge_loss_events = 0
         
         # While there are unstable sites, relax them
         # (In a real sandpile this cascades instantenously, here we iterate)
@@ -66,8 +69,8 @@ class TokamakSandpile:
                     self.Z[i+1] += 1
                 else:
                     # Edge loss (Energy leaves reactor)
-                    pass 
-                    
+                    edge_loss_events += 1
+                     
                 if i - 1 >= 0:
                     self.Z[i-1] += 1
                 
@@ -76,7 +79,8 @@ class TokamakSandpile:
             # Re-check instability
             sites_active = np.where(self.Z >= current_Z_crit)[0]
             sub_steps += 1
-            
+        self.edge_loss_events += edge_loss_events
+        self.last_edge_loss_events = edge_loss_events
         return avalanche_size
 
     def calculate_profile(self):

@@ -342,9 +342,6 @@ def write_geqdsk(eq: GEqdsk, path: Union[str, Path]) -> None:
         for i in range(nbdry):
             f.write(_fmt(eq.rbdry[i]))
             f.write(_fmt(eq.zbdry[i]))
-            if (i + 1) % 2 == 0 or i == nbdry - 1:
-                # not quite standard but widely accepted
-                pass
             if ((i + 1) * 2) % 5 == 0 or i == nbdry - 1:
                 f.write("\n")
         if nbdry > 0 and (nbdry * 2) % 5 != 0:

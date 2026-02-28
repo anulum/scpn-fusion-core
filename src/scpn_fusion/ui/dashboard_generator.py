@@ -36,6 +36,14 @@ class DashboardGenerator:
         R_start = np.linspace(self.kernel.cfg['dimensions']['R_min'] + 0.1, 
                               self.kernel.cfg['dimensions']['R_max'] - 0.1, n_lines)
         Z_start = np.zeros_like(R_start)
+        r_min = float(self.kernel.cfg["dimensions"]["R_min"])
+        r_max = float(self.kernel.cfg["dimensions"]["R_max"])
+        z_min = float(self.kernel.cfg["dimensions"]["Z_min"])
+        z_max = float(self.kernel.cfg["dimensions"]["Z_max"])
+        r0 = 0.5 * (r_min + r_max)
+        z0 = 0.5 * (z_min + z_max)
+        max_psi = max(float(np.max(np.abs(self.kernel.Psi))), 1.0e-9)
+        max_radius = max(r_max - r0, r0 - r_min, z_max - z0, z0 - z_min)
         
         fig, ax = plt.subplots(figsize=(10, 10))
         
@@ -45,11 +53,6 @@ class DashboardGenerator:
         # Field line integrator (Symplectic-like or RK4)
         # dR/dphi = R * Br / Bphi
         # dZ/dphi = R * Bz / Bphi
-        dphi = 2 * np.pi # One toroidal turn per step (Poincaré section)
-        
-        # Pre-compute fields
-        # Note: kernel.J_phi -> B_pol via Psi
-        # We need a field interpolator. For speed, we use grid lookup.
         
         for i in range(n_lines):
             r, z = R_start[i], Z_start[i]
@@ -64,25 +67,33 @@ class DashboardGenerator:
                 
                 # q-profile proxy
                 psi_val = self._get_psi(r, z)
-                q = 1.0 + 3.0 * (psi_val / np.max(self.kernel.Psi))**2
-                
+                q = 1.0 + 3.0 * (float(psi_val) / max_psi)**2
+                 
                 # Perturbation (m=2, n=1 mode)
                 k = 2e-4
-                theta = np.arctan2(z, r - 3.0) # Poloidal angle
-                
+                theta = np.arctan2(z - z0, r - r0) # Poloidal angle around magnetic axis
+                 
                 # Map: theta_n+1 = theta_n + 2*pi/q + k*sin(theta_n)
                 # r_n+1 = r_n + k*sin(theta_n) (Radial kick)
-                
+                 
                 theta_new = theta + 2*np.pi/q + k*np.sin(2*theta)
-                r_new = r + (k/10.0)*np.sin(2*theta) # Radial diffusion
-                
+                radial_kick = (k / 10.0) * np.sin(2 * theta)
+                 
                 # Convert back to R,Z (assuming circular for plot)
                 # This is a heuristic visualizer for topology health
                 # Real tracing requires B_vector
-                
-                # For now, we plot the flux surfaces which are the "integrable" orbits
-                pass 
-                
+                radius = np.hypot(r - r0, z - z0)
+                radius = float(np.clip(radius + radial_kick, 0.02, max_radius))
+                r_new = float(np.clip(r0 + radius * np.cos(theta_new), r_min, r_max))
+                z_new = float(np.clip(z0 + radius * np.sin(theta_new), z_min, z_max))
+
+                r = r_new
+                z = z_new
+                path_r.append(r)
+                path_z.append(z)
+
+            ax.plot(path_r, path_z, ".", ms=0.8, alpha=0.35)
+                 
             # Fallback: Plot contours of Psi which represent the unperturbed surfaces
             # Real Poincaré requires 3D code (e.g. VENUS/NEMATO integration)
             
