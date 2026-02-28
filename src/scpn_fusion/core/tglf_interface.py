@@ -162,16 +162,39 @@ def parse_tglf_output(output_dir: str | Path) -> list[TGLFOutput]:
     output_dir = Path(output_dir)
     results = []
 
-    for f in sorted(output_dir.glob("*.json")):
-        with open(f) as fp:
-            data = json.load(fp)
+    def _finite_float(value: Any, *, default: float) -> float:
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError):
+            return default
+        if not np.isfinite(parsed):
+            return default
+        return parsed
 
-        rho_pts = data.get("rho_points", [data.get("rho", 0.5)])
-        chi_i_list = data.get("chi_i", [0.0])
-        chi_e_list = data.get("chi_e", [0.0])
-        gamma_list = data.get("gamma_max", [0.0])
-        qi_list = data.get("q_i", [0.0])
-        qe_list = data.get("q_e", [0.0])
+    def _coerce_sequence(value: Any, *, default: float) -> list[float]:
+        if isinstance(value, (list, tuple, np.ndarray)):
+            seq = [_finite_float(v, default=default) for v in value]
+            return seq or [default]
+        return [_finite_float(value, default=default)]
+
+    for f in sorted(output_dir.glob("*.json")):
+        try:
+            with open(f, encoding="utf-8") as fp:
+                data = json.load(fp)
+        except (OSError, json.JSONDecodeError):
+            logger.warning("Skipping malformed TGLF output file: %s", f)
+            continue
+        if not isinstance(data, dict):
+            logger.warning("Skipping non-object TGLF output payload: %s", f)
+            continue
+
+        rho_source = data.get("rho_points", data.get("rho", 0.5))
+        rho_pts = _coerce_sequence(rho_source, default=0.5)
+        chi_i_list = _coerce_sequence(data.get("chi_i", 0.0), default=0.0)
+        chi_e_list = _coerce_sequence(data.get("chi_e", 0.0), default=0.0)
+        gamma_list = _coerce_sequence(data.get("gamma_max", 0.0), default=0.0)
+        qi_list = _coerce_sequence(data.get("q_i", 0.0), default=0.0)
+        qe_list = _coerce_sequence(data.get("q_e", 0.0), default=0.0)
 
         for j in range(len(rho_pts)):
             results.append(TGLFOutput(

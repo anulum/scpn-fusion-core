@@ -250,6 +250,52 @@ class TestOutputParsing:
         outputs = parse_tglf_output(tmp_path)
         assert outputs == []
 
+    def test_parse_tglf_output_accepts_scalar_numeric_payload(self, tmp_path: Path) -> None:
+        """Scalar rho/chi payload should parse as a single-point output."""
+        data = {
+            "rho": 0.55,
+            "chi_i": 1.8,
+            "chi_e": 1.1,
+            "gamma_max": 0.14,
+            "q_i": 2.3,
+            "q_e": 1.7,
+        }
+        (tmp_path / "scalar_output.json").write_text(json.dumps(data), encoding="utf-8")
+        outputs = parse_tglf_output(tmp_path)
+        assert len(outputs) == 1
+        assert outputs[0].rho == pytest.approx(0.55)
+        assert outputs[0].chi_i == pytest.approx(1.8)
+        assert outputs[0].chi_e == pytest.approx(1.1)
+
+    def test_parse_tglf_output_skips_non_object_payloads(self, tmp_path: Path) -> None:
+        """Top-level JSON arrays are invalid for this parser and should be skipped."""
+        (tmp_path / "bad_payload.json").write_text(
+            json.dumps([{"rho": 0.5, "chi_i": 1.0}]),
+            encoding="utf-8",
+        )
+        outputs = parse_tglf_output(tmp_path)
+        assert outputs == []
+
+    def test_parse_tglf_output_clamps_non_finite_numbers(self, tmp_path: Path) -> None:
+        """NaN/inf inputs are coerced to finite defaults."""
+        payload = (
+            '{"rho_points":[NaN,0.7],'
+            '"chi_i":[Infinity,2.4],'
+            '"chi_e":[1.2,-Infinity],'
+            '"gamma_max":[NaN,0.2]}'
+        )
+        (tmp_path / "non_finite.json").write_text(payload, encoding="utf-8")
+        outputs = parse_tglf_output(tmp_path)
+        assert len(outputs) == 2
+        assert outputs[0].rho == pytest.approx(0.5)
+        assert outputs[0].chi_i == pytest.approx(0.0)
+        assert outputs[0].chi_e == pytest.approx(1.2)
+        assert outputs[0].gamma_max == pytest.approx(0.0)
+        assert outputs[1].rho == pytest.approx(0.7)
+        assert outputs[1].chi_i == pytest.approx(2.4)
+        assert outputs[1].chi_e == pytest.approx(0.0)
+        assert outputs[1].gamma_max == pytest.approx(0.2)
+
 
 # ── 6. Write Input File ──────────────────────────────────────────────
 
