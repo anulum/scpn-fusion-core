@@ -9,6 +9,7 @@ import numpy as np
 from pathlib import Path
 import time
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -138,69 +139,120 @@ def generate_gene_like_field(grid_size, regime, key):
     field = field / (jnp.max(field) + 1e-6)
     return field.reshape(grid_size, grid_size, 1)
 
-def train_fno_jax(data_path=None):
+def train_fno_jax(
+    data_path: str | None = None,
+    *,
+    n_samples: int = 2000,
+    epochs: int = 101,
+    batch_size: int = BATCH_SIZE,
+    learning_rate: float = LEARNING_RATE,
+    save_path: str = "weights/fno_turbulence_jax.npz",
+    seed: int = 42,
+) -> dict[str, Any]:
     logging.basicConfig(level=logging.INFO)
-    
+
+    if epochs < 1:
+        raise ValueError("epochs must be >= 1.")
+    if batch_size < 1:
+        raise ValueError("batch_size must be >= 1.")
+    if n_samples < 1:
+        raise ValueError("n_samples must be >= 1.")
+
+    data_source = "synthetic"
     if data_path and Path(data_path).exists():
         logger.info(f"Loading REAL GENE/TGLF dataset from {data_path}...")
         with np.load(data_path, allow_pickle=False) as data:
-            X, Y = jnp.array(data["X"]), jnp.array(data["Y"])
-            n_samples = X.shape[0]
+            if "X" not in data or "Y" not in data:
+                raise ValueError("Dataset .npz must contain 'X' and 'Y' arrays.")
+            x_np = np.asarray(data["X"], dtype=np.float32)
+            y_np = np.asarray(data["Y"], dtype=np.float32)
+        if x_np.ndim != 4 or x_np.shape[-1] != 1:
+            raise ValueError("X must have shape [n_samples, grid, grid, 1].")
+        if y_np.ndim > 2:
+            raise ValueError("Y must be 1D or 2D with singleton second dimension.")
+        y_np = y_np.reshape(-1)
+        if x_np.shape[0] != y_np.shape[0]:
+            raise ValueError("X and Y must have the same number of samples.")
+        if x_np.shape[0] < 1:
+            raise ValueError("Dataset must contain at least one sample.")
+        if x_np.shape[1] < MODES or x_np.shape[2] < MODES:
+            raise ValueError(
+                f"Grid must be >= {MODES} in both spatial dims; "
+                f"got ({x_np.shape[1]}, {x_np.shape[2]})."
+            )
+        if not np.all(np.isfinite(x_np)) or not np.all(np.isfinite(y_np)):
+            raise ValueError("X and Y must be finite.")
+        X = jnp.asarray(x_np)
+        Y = jnp.asarray(y_np)
+        n_samples_eff = int(x_np.shape[0])
+        data_source = "real"
     else:
         logger.info("Generating Physics-Informed GENE-like dataset (G4 Roadmap)...")
-        n_samples = 2000 # Increased for better fidelity
         grid_size = 64
-        
-        X_list = []
-        Y_list = []
-        key = random.PRNGKey(42)
-        
+        key = random.PRNGKey(seed)
+        x_list = []
+        y_list = []
+
         for i in range(n_samples):
             key, subkey = random.split(key)
-            # Match regimes to TGLF validation order/magnitudes
             regime = ["ITG", "TEM", "ETG"][i % 3]
             field = generate_gene_like_field(grid_size, regime, subkey)
-
-            # Target intensity: ITG (high) -> TEM (mid) -> ETG (low)
             gamma = 0.35 if regime == "ITG" else (0.25 if regime == "TEM" else 0.15)
-            # Add some physical noise
             gamma *= (0.9 + 0.2 * random.uniform(subkey))
+            x_list.append(field * gamma)
+            y_list.append(gamma)
 
-            # Scale field by gamma to make it learnable from amplitude
-            field = field * gamma
+        X = jnp.asarray(x_list)
+        Y = jnp.asarray(y_list)
+        n_samples_eff = int(n_samples)
 
-            X_list.append(field)
-
-            Y_list.append(gamma)
-
-        X = jnp.array(X_list)
-        Y = jnp.array(Y_list)
-
-        key = random.PRNGKey(42)
-        params = init_fno_params(key, MODES, WIDTH)
-        m = jax.tree_util.tree_map(jnp.zeros_like, params)
-        v = jax.tree_util.tree_map(jnp.zeros_like, params)
+    key = random.PRNGKey(seed)
+    params = init_fno_params(key, MODES, WIDTH)
+    m = jax.tree_util.tree_map(jnp.zeros_like, params)
+    v = jax.tree_util.tree_map(jnp.zeros_like, params)
 
     logger.info("Starting training loop (Adam)...")
     t_step = 1
-    # Increase epochs for G4 fidelity
-    for epoch in range(101):
+    rng = np.random.default_rng(seed + 17)
+    losses: list[float] = []
+    batch_n = min(int(batch_size), n_samples_eff)
+    for epoch in range(int(epochs)):
         t0 = time.perf_counter()
-        idx = np.random.permutation(n_samples)
-        epoch_loss = 0
-        for i in range(0, n_samples, BATCH_SIZE):
-            batch_idx = idx[i:i+BATCH_SIZE]
-            if len(batch_idx) < BATCH_SIZE: continue
-            params, m, v, loss = update_step(params, m, v, X[batch_idx], Y[batch_idx], LEARNING_RATE, t_step)
-            epoch_loss += loss
+        idx = rng.permutation(n_samples_eff)
+        epoch_losses: list[float] = []
+        for i in range(0, n_samples_eff, batch_n):
+            batch_idx = idx[i : i + batch_n]
+            if batch_idx.size == 0:
+                continue
+            params, m, v, loss = update_step(
+                params,
+                m,
+                v,
+                X[batch_idx],
+                Y[batch_idx],
+                float(learning_rate),
+                t_step,
+            )
+            epoch_losses.append(float(loss))
             t_step += 1
-            
-        if epoch % 5 == 0:
+
+        epoch_mean_loss = float(np.mean(np.asarray(epoch_losses, dtype=np.float64)))
+        losses.append(epoch_mean_loss)
+        if epoch % 5 == 0 or epoch == epochs - 1:
             dt = time.perf_counter() - t0
-            logger.info(f"Epoch {epoch}: Loss={epoch_loss/(n_samples/BATCH_SIZE):.6f} ({dt:.2f}s)")
+            logger.info(f"Epoch {epoch}: Loss={epoch_mean_loss:.6f} ({dt:.2f}s)")
 
     logger.info("Training complete. Saving JAX-FNO weights...")
-    np.savez("weights/fno_turbulence_jax.npz", **params)
+    out = Path(save_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(out, **{k: np.asarray(v) for k, v in params.items()})
+    return {
+        "data_source": data_source,
+        "n_samples": n_samples_eff,
+        "epochs_completed": int(epochs),
+        "final_loss": float(losses[-1] if losses else float("nan")),
+        "save_path": str(out),
+    }
 
 def fno_predict_jit(params, x):
     """JIT-compiled single-sample FNO inference.

@@ -79,6 +79,47 @@ def test_load_fno_params_rejects_object_array_payload(tmp_path: Path) -> None:
         load_fno_params(str(bad))
 
 
+def test_train_fno_jax_accepts_real_dataset_input(tmp_path: Path) -> None:
+    from scpn_fusion.core.fno_jax_training import train_fno_jax
+
+    rng = np.random.default_rng(17)
+    data_path = tmp_path / "real_dataset.npz"
+    np.savez(
+        data_path,
+        X=rng.normal(size=(2, 64, 64, 1)).astype(np.float32),
+        Y=np.asarray([0.2, 0.35], dtype=np.float32),
+    )
+    weights_path = tmp_path / "fno_real_weights.npz"
+    summary = train_fno_jax(
+        data_path=str(data_path),
+        epochs=1,
+        batch_size=1,
+        save_path=str(weights_path),
+        seed=23,
+    )
+
+    assert weights_path.exists()
+    assert summary["data_source"] == "real"
+    assert summary["n_samples"] == 2
+    assert summary["epochs_completed"] == 1
+    assert np.isfinite(float(summary["final_loss"]))
+
+
+def test_train_fno_jax_rejects_invalid_dataset_schema(tmp_path: Path) -> None:
+    from scpn_fusion.core.fno_jax_training import train_fno_jax
+
+    bad = tmp_path / "bad_dataset.npz"
+    np.savez(bad, X=np.zeros((2, 64, 64, 1), dtype=np.float32))
+    with pytest.raises(ValueError, match="contain 'X' and 'Y'"):
+        train_fno_jax(
+            data_path=str(bad),
+            epochs=1,
+            batch_size=1,
+            save_path=str(tmp_path / "unused.npz"),
+            seed=23,
+        )
+
+
 def test_spectral_generator_is_deterministic_for_seed() -> None:
     g1 = SpectralTurbulenceGenerator(size=24, seed=77)
     g2 = SpectralTurbulenceGenerator(size=24, seed=77)
