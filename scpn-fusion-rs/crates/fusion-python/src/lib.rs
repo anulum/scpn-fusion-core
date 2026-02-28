@@ -216,6 +216,10 @@ struct PySimulationReport {
     #[pyo3(get)]
     pub vessel_contact_events: usize,
     #[pyo3(get)]
+    pub retained_steps: usize,
+    #[pyo3(get)]
+    pub history_truncated: bool,
+    #[pyo3(get)]
     pub disrupted: bool,
     #[pyo3(get)]
     pub r_history: Vec<f64>,
@@ -258,6 +262,8 @@ fn to_py_simulation_report(
         max_beta: report.max_beta,
         max_heating_mw: report.max_heating_mw,
         vessel_contact_events: report.vessel_contact_events,
+        retained_steps: report.retained_steps,
+        history_truncated: report.history_truncated,
         disrupted: report.disrupted,
         r_history: report.r_history,
         z_history: report.z_history,

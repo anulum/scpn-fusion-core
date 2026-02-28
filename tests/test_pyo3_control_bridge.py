@@ -128,6 +128,8 @@ class TestPyRustFlightSim:
         assert len(report.r_history) == 1000
         assert len(report.z_history) == 1000
         assert 0 <= report.vessel_contact_events <= report.steps
+        assert report.retained_steps == report.steps
+        assert report.history_truncated is False
 
     def test_30khz_stability(self):
         sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, 30000.0)
@@ -173,3 +175,5 @@ class TestPyRustFlightSim:
             assert isinstance(step.vessel_contact, bool)
 
         assert first.heating_mw <= mid.heating_mw <= last.heating_mw
+        with pytest.raises(RuntimeError):
+            sim.step_once(steps, 0.01)

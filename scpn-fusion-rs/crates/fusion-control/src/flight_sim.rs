@@ -29,6 +29,8 @@ pub struct SimulationReport {
     pub max_beta: f64,
     pub max_heating_mw: f64,
     pub vessel_contact_events: usize,
+    pub retained_steps: usize,
+    pub history_truncated: bool,
     pub disrupted: bool,
     pub r_history: Vec<f64>,
     pub z_history: Vec<f64>,
@@ -189,6 +191,17 @@ impl RustFlightSim {
                 "shot_duration_s must be finite and > 0".to_string(),
             ));
         }
+        let steps = (shot_duration_s / self.control_dt) as usize;
+        if steps == 0 {
+            return Err(FusionError::ConfigError(
+                "shot_duration_s too short for selected control_dt".to_string(),
+            ));
+        }
+        if step_index >= steps {
+            return Err(FusionError::ConfigError(format!(
+                "step_index {step_index} out of bounds for shot with {steps} steps"
+            )));
+        }
         self.validate_runtime_state()?;
         let t_step_start = Instant::now();
         let phase = (step_index as f64 * self.control_dt / shot_duration_s).clamp(0.0, 1.0);
@@ -277,6 +290,12 @@ impl RustFlightSim {
         wall_time_ms: f64,
         aggregate: ShotAggregate,
     ) -> SimulationReport {
+        let r_history = self.telemetry.r_axis.get_view();
+        let z_history = self.telemetry.z_axis.get_view();
+        let ip_history = self.telemetry.ip_ma.get_view();
+        let retained_steps = r_history.len();
+        let history_truncated = retained_steps < steps;
+
         SimulationReport {
             steps,
             duration_s: shot_duration_s,
@@ -289,10 +308,12 @@ impl RustFlightSim {
             max_beta: aggregate.max_beta,
             max_heating_mw: aggregate.max_heating_mw,
             vessel_contact_events: aggregate.vessel_contact_events,
+            retained_steps,
+            history_truncated,
             disrupted: aggregate.disrupted,
-            r_history: self.telemetry.r_axis.get_view(),
-            z_history: self.telemetry.z_axis.get_view(),
-            ip_history: self.telemetry.ip_ma.get_view(),
+            r_history,
+            z_history,
+            ip_history,
         }
     }
 
@@ -345,6 +366,7 @@ impl RustFlightSim {
 #[cfg(test)]
 mod tests {
     use super::RustFlightSim;
+    use crate::telemetry::TelemetrySuite;
 
     #[test]
     fn test_new_rejects_invalid_control_hz() {
@@ -378,6 +400,8 @@ mod tests {
         assert!(report.max_heating_mw >= report.final_heating_mw);
         assert!((0.0..=100.0).contains(&sim.curr_heating_mw));
         assert!(report.vessel_contact_events <= report.steps);
+        assert_eq!(report.retained_steps, report.steps);
+        assert!(!report.history_truncated);
     }
 
     #[test]
@@ -399,5 +423,22 @@ mod tests {
         let mut sim = RustFlightSim::new(6.2, 0.0, 10_000.0).expect("valid sim");
         sim.curr_beta = f64::NAN;
         assert!(sim.step_once(0, 0.01).is_err());
+    }
+
+    #[test]
+    fn test_step_once_rejects_out_of_bounds_index() {
+        let mut sim = RustFlightSim::new(6.2, 0.0, 10_000.0).expect("valid sim");
+        assert!(sim.step_once(100, 0.01).is_err());
+    }
+
+    #[test]
+    fn test_report_flags_history_truncation() {
+        let mut sim = RustFlightSim::new(6.2, 0.0, 10_000.0).expect("valid sim");
+        sim.telemetry = TelemetrySuite::new(16);
+        let report = sim.run_shot(0.01, false).expect("shot should run");
+        assert_eq!(report.steps, 100);
+        assert_eq!(report.retained_steps, 16);
+        assert!(report.history_truncated);
+        assert_eq!(report.r_history.len(), 16);
     }
 }
