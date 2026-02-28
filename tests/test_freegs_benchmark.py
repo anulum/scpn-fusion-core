@@ -231,7 +231,7 @@ class TestFreeGSComparison:
 
         case = CASES[0]
         result = run_freegs_case(case)
-        for key in ("psi", "R", "Z", "R_axis", "Z_axis", "q_proxy"):
+        for key in ("psi", "R", "Z", "R_axis", "Z_axis", "q_proxy", "axis_pressure_pa"):
             assert key in result
 
     def test_full_freegs_benchmark(self) -> None:

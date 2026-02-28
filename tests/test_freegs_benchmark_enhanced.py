@@ -16,8 +16,10 @@ from benchmark_vs_freegs import (
     FREEGS_Q_NRMSE_THRESHOLD,
     FREEGS_SEPARATRIX_NRMSE,
     PSI_NRMSE_THRESHOLD,
+    CASES,
     TokamakCase,
     compare_separatrix,
+    estimate_axis_pressure_pa,
     generate_per_metric_report,
     nrmse,
     solovev_psi,
@@ -42,6 +44,19 @@ class TestThresholds:
 
     def test_freegs_separatrix_value(self):
         assert FREEGS_SEPARATRIX_NRMSE == pytest.approx(0.05)
+
+
+class TestFreeGSAxisPressureEstimate:
+    def test_pressure_is_positive_and_finite(self):
+        for case in CASES:
+            p_axis = estimate_axis_pressure_pa(case)
+            assert np.isfinite(p_axis)
+            assert p_axis > 0.0
+
+    def test_pressure_scales_up_with_higher_field(self):
+        low_field = TokamakCase("lowB", R0=1.8, a=0.5, B0=2.0, Ip=2.0, kappa=1.8)
+        high_field = TokamakCase("highB", R0=1.8, a=0.5, B0=8.0, Ip=2.0, kappa=1.8)
+        assert estimate_axis_pressure_pa(high_field) > estimate_axis_pressure_pa(low_field)
 
 
 # ── compare_separatrix ─────────────────────────────────────────────────

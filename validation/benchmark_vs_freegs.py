@@ -100,6 +100,26 @@ CASES: list[TokamakCase] = [
     TokamakCase(name="SPARC-high-kappa",     R0=1.85, a=0.57, B0=12.2, Ip=9.0,   kappa=2.20),
 ]
 
+
+def estimate_axis_pressure_pa(case: TokamakCase) -> float:
+    """Estimate a bounded axis pressure for FreeGS profile setup.
+
+    Uses a lightweight beta-based heuristic:
+
+        p_axis ~ beta_t * B0^2 / (2 * mu0)
+
+    where beta_t is derived from machine-level ``Ip/B0`` scaling and clipped
+    to a conservative range to avoid pathological setup values in the
+    benchmark harness.
+    """
+    mu0_si = 4.0e-7 * np.pi
+    b0_t = max(float(case.B0), 0.1)
+    ip_ma = max(float(case.Ip), 0.05)
+
+    beta_t = float(np.clip(0.015 + 0.004 * (ip_ma / b0_t), 0.01, 0.08))
+    p_axis = beta_t * (b0_t ** 2) / (2.0 * mu0_si)
+    return float(np.clip(p_axis, 5.0e4, 2.0e7))
+
 # ── Solov'ev analytic equilibrium ────────────────────────────────────
 
 
@@ -445,8 +465,9 @@ def run_freegs_case(case: TokamakCase) -> dict[str, Any]:
     )
 
     # Profiles
+    axis_pressure_pa = estimate_axis_pressure_pa(case)
     profiles = freegs.jtor.ConstrainPaxisIp(
-        1e3,       # Axis pressure [Pa] (simplified)
+        axis_pressure_pa,
         case.Ip * 1e6,  # Plasma current [A]
         case.R0,
     )
@@ -486,6 +507,7 @@ def run_freegs_case(case: TokamakCase) -> dict[str, Any]:
         "R_axis": R_axis,
         "Z_axis": Z_axis,
         "q_proxy": q_proxy,
+        "axis_pressure_pa": float(axis_pressure_pa),
     }
 
 
