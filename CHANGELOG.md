@@ -42,6 +42,7 @@
 - Validation hardening: TORAX benchmark adds strict backend gating (`--strict-backend`) to fail when reduced-order fallback is used.
 - Validation hardening: SPARC GEQDSK RMSE benchmark fallback no longer uses identity-like reconstruction; it now uses a deterministic reduced-order proxy.
 - Validation observability: SPARC GEQDSK RMSE benchmark now records surrogate backend and fallback reason per case, plus strict backend requirement support (`--strict-backend`).
+- CI hardening: Python coverage lane now runs with `--cov-branch`, and coverage guard supports optional global/domain/file branch-rate thresholds to prevent silent branch-coverage regressions.
 
 ### Added
 - Wave A scaffolding: `tools/coverage_guard.py` + `tools/coverage_guard_thresholds.json` with CI coverage regression gating and summary artifact upload.

@@ -179,7 +179,7 @@ jobs:
         run: pytest tests/ -v -m "not experimental"
       - name: Generate Python coverage report
         if: matrix.python-version == '3.12'
-        run: pytest tests/ -q -m "not experimental" --cov=scpn_fusion --cov-report=xml:coverage-python.xml
+        run: pytest tests/ -q -m "not experimental" --cov=scpn_fusion --cov-branch --cov-report=xml:coverage-python.xml
       - name: Coverage regression guard
         if: matrix.python-version == '3.12'
         run: |

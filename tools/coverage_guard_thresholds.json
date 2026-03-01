@@ -1,5 +1,6 @@
 {
   "global_min_line_rate": 72.5,
+  "global_min_branch_rate": 1.0,
   "domain_min_line_rate": {
     "cli.py": 76.0,
     "control": 79.0,
