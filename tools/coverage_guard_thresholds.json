@@ -1,0 +1,24 @@
+{
+  "global_min_line_rate": 72.5,
+  "domain_min_line_rate": {
+    "cli.py": 76.0,
+    "control": 79.0,
+    "core": 70.0,
+    "diagnostics": 73.0,
+    "engineering": 66.0,
+    "hpc": 70.0,
+    "io": 79.0,
+    "nuclear": 34.0,
+    "scpn": 87.0,
+    "ui": 23.0
+  },
+  "file_min_line_rate": {
+    "src/scpn_fusion/cli.py": 76.0,
+    "src/scpn_fusion/control/disruption_contracts.py": 88.0,
+    "src/scpn_fusion/core/integrated_transport_solver.py": 93.0,
+    "src/scpn_fusion/core/quasi_3d_contracts.py": 90.0,
+    "src/scpn_fusion/scpn/compiler.py": 77.0,
+    "src/scpn_fusion/scpn/contracts.py": 97.0,
+    "src/scpn_fusion/scpn/controller.py": 92.0
+  }
+}

@@ -11,6 +11,7 @@
 ## [Unreleased]
 
 ### Changed
+- Validation governance hardening (Wave A): release preflight now enforces source P0/P1 issue-backlog drift checks and untested-module linkage guard checks.
 - Governance hardening: refreshed `UNDERDEVELOPED_REGISTER.md` from the current codebase snapshot and removed stale hard-coded underdeveloped counts from README/ROADMAP/CONTRIBUTING/HONEST_SCOPE (docs now reference live register summary).
 - Security hardening: disruption predictor checkpoint loading now fails closed when `weights_only=True` is unavailable; insecure legacy torch deserialization is opt-in via `SCPN_ALLOW_INSECURE_TORCH_LOAD=1` for trusted checkpoints only.
 - Security hardening: remaining `.npz` loaders in runtime/validation paths now use `allow_pickle=False` and context-managed reads (`tokamak_archive`, `neural_transport`, `fno_turbulence_suppressor`, `fno_jax_training`, `validate_real_shots`, `validate_fno_tglf`, `validate_transport_qlknn`).
@@ -43,6 +44,9 @@
 - Validation observability: SPARC GEQDSK RMSE benchmark now records surrogate backend and fallback reason per case, plus strict backend requirement support (`--strict-backend`).
 
 ### Added
+- Wave A scaffolding: `tools/coverage_guard.py` + `tools/coverage_guard_thresholds.json` with CI coverage regression gating and summary artifact upload.
+- Wave A scaffolding: `tools/generate_source_p0p1_issue_backlog.py` with tracked outputs (`docs/SOURCE_P0P1_ISSUE_BACKLOG.{md,json}`).
+- Wave A scaffolding: `tools/check_test_module_linkage.py` + allowlist policy file to block newly unlinked source modules.
 - Community hardening: added dedicated issue templates for real-data validation contributions and manuscript/claim review workflows.
 - Release hardening: added `docs/HARDENING_30_DAY_EXECUTION_PLAN.md` and `docs/V3_9_3_RELEASE_CHECKLIST.md` to enforce scope-focused v3.9.3 execution gates.
 - Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).

@@ -180,6 +180,13 @@ jobs:
       - name: Generate Python coverage report
         if: matrix.python-version == '3.12'
         run: pytest tests/ -q -m "not experimental" --cov=scpn_fusion --cov-report=xml:coverage-python.xml
+      - name: Coverage regression guard
+        if: matrix.python-version == '3.12'
+        run: |
+          python tools/coverage_guard.py \
+            --coverage-xml coverage-python.xml \
+            --thresholds tools/coverage_guard_thresholds.json \
+            --summary-json artifacts/coverage_guard_summary.json
       - name: Run property-based tests (Hypothesis)
         run: pytest tests/test_hypothesis_properties.py -v --hypothesis-seed=0
       - name: Disruption false-positive rate gate
@@ -199,6 +206,12 @@ jobs:
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload coverage guard summary
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-guard-summary
+          path: artifacts/coverage_guard_summary.json
 
   python-research-gate:
     name: Python Research Gate
