@@ -10,7 +10,10 @@ def churchill_friction_factor(Re, epsilon_d=1e-4):
     Churchill Correlation for Darcy Friction Factor (f).
     Valid for all flow regimes (laminar, transition, turbulent).
     """
-    if Re < 1e-3: return 64.0/1e-3 # Limit
+    if Re <= 0.0:
+        raise ValueError("Reynolds number must be positive.")
+    if Re < 1e-3:
+        return 64.0 / 1e-3  # Limit
     
     A = (2.457 * np.log(1.0 / ((7.0 / Re)**0.9 + 0.27 * epsilon_d)))**16
     B = (37530.0 / Re)**16
@@ -40,6 +43,15 @@ class CoolantLoop:
         L: Total pipe length (m)
         D: Pipe diameter (m)
         """
+        if Q_thermal_MW < 0.0:
+            raise ValueError("Q_thermal_MW must be non-negative.")
+        if delta_T <= 0.0:
+            raise ValueError("delta_T must be > 0.")
+        if L <= 0.0:
+            raise ValueError("L must be > 0.")
+        if D <= 0.0:
+            raise ValueError("D must be > 0.")
+
         # 1. Mass flow rate (mdot = Q / (cp * dT))
         mdot = (Q_thermal_MW * 1e6) / (self.p['cp'] * delta_T)
         

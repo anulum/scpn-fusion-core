@@ -56,7 +56,7 @@ class ReactorConfig(BaseModel):
     reactor_name: str = "Unnamed-Reactor"
     grid_resolution: Tuple[int, int] = Field(default=(65, 65))
     dimensions: Dimensions
-    coils: List[Coil] = []
+    coils: List[Coil] = Field(default_factory=list)
     physics: PhysicsParams = Field(default_factory=PhysicsParams)
     solver: SolverParams = Field(default_factory=SolverParams)
 

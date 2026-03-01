@@ -7,16 +7,8 @@
       "reason": "Release-lane tests currently exercise wrapper behavior indirectly via controller benches."
     },
     {
-      "path": "src/scpn_fusion/control/rust_flight_sim_wrapper.py",
-      "reason": "Optional rust bridge placeholder; dedicated module-level tests pending."
-    },
-    {
       "path": "src/scpn_fusion/core/compact_reactor_optimizer.py",
       "reason": "Coverage lane exists via integration pathways; module-level import linkage pending."
-    },
-    {
-      "path": "src/scpn_fusion/core/config_schema.py",
-      "reason": "Schema usage is indirect through runtime configs; direct tests pending."
     },
     {
       "path": "src/scpn_fusion/core/force_balance.py",
@@ -31,28 +23,12 @@
       "reason": "Experimental bridge remains opt-in; release-lane direct tests pending."
     },
     {
-      "path": "src/scpn_fusion/core/state_space.py",
-      "reason": "Support module with sparse release-lane direct references."
-    },
-    {
       "path": "src/scpn_fusion/core/turbulence_oracle.py",
       "reason": "Experimental oracle lane retained for research profile only."
     },
     {
       "path": "src/scpn_fusion/core/vibrana_bridge.py",
       "reason": "Optional external bridge lane; direct tests pending."
-    },
-    {
-      "path": "src/scpn_fusion/engineering/balance_of_plant.py",
-      "reason": "Engineering lane currently validated through higher-level scenarios."
-    },
-    {
-      "path": "src/scpn_fusion/engineering/thermal_hydraulics.py",
-      "reason": "Engineering lane currently validated through higher-level scenarios."
-    },
-    {
-      "path": "src/scpn_fusion/io/logging_config.py",
-      "reason": "Utility module referenced indirectly by runtime entrypoints."
     },
     {
       "path": "src/scpn_fusion/ui/dashboard_launcher.py",
