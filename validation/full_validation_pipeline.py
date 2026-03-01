@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -40,6 +41,30 @@ from scpn_fusion.io.tokamak_archive import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+EXPERIMENTAL_ACK_TOKEN = "I_UNDERSTAND_EXPERIMENTAL"
+
+
+def _env_enabled(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def require_experimental_opt_in(
+    *,
+    allow_experimental: bool,
+    experimental_ack: str | None,
+) -> None:
+    if not (allow_experimental or _env_enabled("SCPN_EXPERIMENTAL")):
+        raise SystemExit(
+            "Experimental validation is locked; pass --experimental or set SCPN_EXPERIMENTAL=1."
+        )
+    ack_env = os.environ.get("SCPN_EXPERIMENTAL_ACK", "").strip()
+    ack = (experimental_ack or "").strip() or ack_env
+    if ack != EXPERIMENTAL_ACK_TOKEN:
+        raise SystemExit(
+            "Experimental acknowledgement missing; pass "
+            f"--experimental-ack {EXPERIMENTAL_ACK_TOKEN} "
+            "or set SCPN_EXPERIMENTAL_ACK."
+        )
 
 
 @dataclass(frozen=True)
@@ -712,6 +737,8 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--experimental", action="store_true")
+    parser.add_argument("--experimental-ack", default="")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--scenario-count", type=int, default=128)
     parser.add_argument("--controllers", default="mpc,rl")
@@ -749,6 +776,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)
+    require_experimental_opt_in(
+        allow_experimental=bool(args.experimental),
+        experimental_ack=str(args.experimental_ack),
+    )
 
     controller_set = _parse_controller_set(args.controllers)
     report = generate_report(

@@ -131,6 +131,17 @@ def _is_marker_suppressed(
             and "experimental acknowledgement missing" in file_text
             and "--experimental-ack" in file_text
         )
+    if marker == "EXPERIMENTAL" and rel_path in {
+        "validation/full_validation_pipeline.py",
+        "validation/run_experimental_validation.py",
+        "validation/validate_against_sparc.py",
+    }:
+        # Experimental validation entrypoints are explicitly locked behind flag+ack.
+        return (
+            "require_experimental_opt_in" in file_text
+            and "--experimental-ack" in file_text
+            and "SCPN_EXPERIMENTAL_ACK" in file_text
+        )
     if marker == "FALLBACK":
         stripped = line.strip()
         # Pure comments/docstring headers often document an already-hardened fallback lane.

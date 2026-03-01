@@ -28,7 +28,9 @@ Available SPARC files (8 total):
 Requires: numpy, scpn_fusion.core.eqdsk
 """
 
+import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -36,6 +38,30 @@ import numpy as np
 
 # Locate project root
 BASE = Path(__file__).resolve().parent.parent
+EXPERIMENTAL_ACK_TOKEN = "I_UNDERSTAND_EXPERIMENTAL"
+
+
+def _env_enabled(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def require_experimental_opt_in(
+    *,
+    allow_experimental: bool,
+    experimental_ack: str | None,
+) -> None:
+    if not (allow_experimental or _env_enabled("SCPN_EXPERIMENTAL")):
+        raise SystemExit(
+            "Experimental validation is locked; pass --experimental or set SCPN_EXPERIMENTAL=1."
+        )
+    ack_env = os.environ.get("SCPN_EXPERIMENTAL_ACK", "").strip()
+    ack = (experimental_ack or "").strip() or ack_env
+    if ack != EXPERIMENTAL_ACK_TOKEN:
+        raise SystemExit(
+            "Experimental acknowledgement missing; pass "
+            f"--experimental-ack {EXPERIMENTAL_ACK_TOKEN} "
+            "or set SCPN_EXPERIMENTAL_ACK."
+        )
 
 
 def find_sparc_files() -> list[Path]:
@@ -183,7 +209,24 @@ def validate_solver(eq, label: str) -> dict:
         os.unlink(config_path)
 
 
-def main():
+def main(argv: list[str] | None = None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--experimental",
+        action="store_true",
+        help="Unlock experimental validation lane.",
+    )
+    parser.add_argument(
+        "--experimental-ack",
+        default="",
+        help=f"Acknowledgement token for experimental lane ({EXPERIMENTAL_ACK_TOKEN}).",
+    )
+    args = parser.parse_args(argv)
+    require_experimental_opt_in(
+        allow_experimental=bool(args.experimental),
+        experimental_ack=str(args.experimental_ack),
+    )
+
     from scpn_fusion.core.eqdsk import read_geqdsk
 
     print("=" * 80)
