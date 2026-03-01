@@ -31,10 +31,6 @@
       "reason": "Experimental bridge remains opt-in; release-lane direct tests pending."
     },
     {
-      "path": "src/scpn_fusion/core/quantum_bridge.py",
-      "reason": "CLI/runtime tests exercise entrypoints; direct module linkage marker pending."
-    },
-    {
       "path": "src/scpn_fusion/core/state_space.py",
       "reason": "Support module with sparse release-lane direct references."
     },

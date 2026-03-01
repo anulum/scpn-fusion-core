@@ -57,6 +57,8 @@ def _load_underdeveloped_module() -> Any:
 def collect_source_issues(repo_root: Path) -> list[SourceIssue]:
     underdev = _load_underdeveloped_module()
     entries = underdev.collect_entries(repo_root)
+    if hasattr(underdev, "_filter_entries_by_scope"):
+        entries = underdev._filter_entries_by_scope(entries, scope="source")
 
     grouped: dict[str, list[Any]] = {}
     for entry in entries:

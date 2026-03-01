@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -12,6 +14,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE_ROOT = REPO_ROOT / "src" / "scpn_fusion"
 DEFAULT_TEST_ROOT = REPO_ROOT / "tests"
 DEFAULT_ALLOWLIST = REPO_ROOT / "tools" / "untested_module_allowlist.json"
+
+
+@dataclass(frozen=True)
+class TestLinkageIndex:
+    imports: set[str]
+    test_module_stems: set[str]
+    corpus: str
 
 
 def _resolve(path_value: str) -> Path:
@@ -35,11 +44,64 @@ def _module_import_path(source_root: Path, module_path: Path) -> str:
     return "scpn_fusion." + ".".join(rel.parts)
 
 
+def _iter_test_files(test_root: Path) -> list[Path]:
+    return sorted(test_root.rglob("test_*.py"))
+
+
 def _build_test_corpus(test_root: Path) -> str:
     parts: list[str] = []
-    for path in sorted(test_root.rglob("test_*.py")):
+    for path in _iter_test_files(test_root):
         parts.append(path.read_text(encoding="utf-8", errors="ignore"))
     return "\n".join(parts)
+
+
+def _collect_import_targets(path: Path) -> set[str]:
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return set()
+
+    imports: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                imports.add(alias.name)
+        elif isinstance(node, ast.ImportFrom):
+            if node.level != 0 or node.module is None:
+                continue
+            imports.add(node.module)
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                imports.add(f"{node.module}.{alias.name}")
+    return imports
+
+
+def _build_test_linkage_index(test_root: Path) -> TestLinkageIndex:
+    imports: set[str] = set()
+    stems: set[str] = set()
+    corpus_parts: list[str] = []
+
+    for path in _iter_test_files(test_root):
+        corpus_parts.append(path.read_text(encoding="utf-8", errors="ignore"))
+        imports.update(_collect_import_targets(path))
+        stem = path.stem
+        if stem.startswith("test_") and len(stem) > len("test_"):
+            stems.add(stem[len("test_"):])
+
+    return TestLinkageIndex(
+        imports=imports,
+        test_module_stems=stems,
+        corpus="\n".join(corpus_parts),
+    )
+
+
+def _is_import_linked(import_path: str, imports: set[str]) -> bool:
+    if import_path in imports:
+        return True
+    prefix = import_path + "."
+    return any(candidate.startswith(prefix) for candidate in imports)
 
 
 def collect_unlinked_modules(
@@ -47,14 +109,20 @@ def collect_unlinked_modules(
     source_root: Path,
     test_root: Path,
 ) -> list[str]:
-    corpus = _build_test_corpus(test_root)
+    linkage = _build_test_linkage_index(test_root)
     unlinked: list[str] = []
     for module_path in collect_source_modules(source_root):
         import_path = _module_import_path(source_root, module_path)
         stem = module_path.stem
-        if import_path in corpus:
+        if _is_import_linked(import_path, linkage.imports):
             continue
-        if f"test_{stem}" in corpus:
+        if stem in linkage.test_module_stems:
+            continue
+
+        # Backward-compatible textual heuristic for dynamic import patterns.
+        if import_path in linkage.corpus:
+            continue
+        if f"test_{stem}" in linkage.corpus:
             continue
         unlinked.append(module_path.relative_to(REPO_ROOT).as_posix())
     return sorted(unlinked)

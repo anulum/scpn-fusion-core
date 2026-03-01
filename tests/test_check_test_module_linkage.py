@@ -49,3 +49,24 @@ def test_main_fails_with_empty_allowlist(tmp_path: Path) -> None:
     )
     assert rc == 1
 
+
+def test_collect_unlinked_modules_detects_ast_import_linkage(tmp_path: Path) -> None:
+    source_root = tmp_path / "src" / "scpn_fusion"
+    module_dir = source_root / "core"
+    module_dir.mkdir(parents=True)
+    (module_dir / "sample_module.py").write_text("VALUE = 1\n", encoding="utf-8")
+
+    test_root = tmp_path / "tests"
+    test_root.mkdir(parents=True)
+    (test_root / "test_sample_module.py").write_text(
+        "from scpn_fusion.core import sample_module\n"
+        "def test_linkage() -> None:\n"
+        "    assert sample_module.VALUE == 1\n",
+        encoding="utf-8",
+    )
+
+    unlinked = linkage.collect_unlinked_modules(
+        source_root=source_root,
+        test_root=test_root,
+    )
+    assert unlinked == []

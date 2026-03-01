@@ -25,11 +25,21 @@ def test_collect_entries_returns_actionable_findings() -> None:
     assert any(entry.path.startswith("src/scpn_fusion/") for entry in entries)
     assert any(entry.marker in {"DEPRECATED", "EXPERIMENTAL", "SIMPLIFIED"} for entry in entries)
     assert all(entry.path != "docs/CLAIMS_EVIDENCE_MAP.md" for entry in entries)
+    assert all(entry.path != "docs/SOURCE_P0P1_ISSUE_BACKLOG.md" for entry in entries)
+    assert all(entry.path != "docs/SOURCE_P0P1_ISSUE_BACKLOG.json" for entry in entries)
 
 
 def test_render_markdown_contains_priority_sections() -> None:
     entries = underdev.collect_entries(ROOT)
     rendered = underdev.render_markdown(entries=entries, top_limit=10, full_limit=20)
     assert "# Underdeveloped Register" in rendered
+    assert "## Source-Centric Priority Backlog" in rendered
     assert "## Top Priority Backlog" in rendered
     assert "## Full Register" in rendered
+
+
+def test_source_scope_filters_to_src_paths() -> None:
+    entries = underdev.collect_entries(ROOT)
+    scoped = underdev._filter_entries_by_scope(entries, scope="source")
+    assert len(scoped) > 0
+    assert all(entry.path.startswith("src/scpn_fusion/") for entry in scoped)

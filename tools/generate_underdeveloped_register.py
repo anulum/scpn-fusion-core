@@ -51,6 +51,8 @@ EXCLUDED_PATHS = {
     "validation/claims_manifest.json",
     "docs/V3_6_MILESTONE_BOARD.md",
     "docs/CLAIMS_EVIDENCE_MAP.md",
+    "docs/SOURCE_P0P1_ISSUE_BACKLOG.md",
+    "docs/SOURCE_P0P1_ISSUE_BACKLOG.json",
 }
 
 
@@ -132,6 +134,15 @@ DOMAIN_BONUS = {
     "validation": 6,
     "docs_claims": -6,
     "other": 0,
+}
+
+SOURCE_DOMAINS = {
+    "control",
+    "core_physics",
+    "nuclear",
+    "diagnostics_io",
+    "compiler_runtime",
+    "validation",
 }
 
 
@@ -239,7 +250,7 @@ def collect_entries(repo_root: Path) -> list[RegisterEntry]:
                     continue
                 seen.add(key)
                 file_hits += 1
-                if file_hits > 20:
+                if file_hits >= 20:
                     break
                 score = int(rule.base_score + bonus)
                 entries.append(
@@ -254,10 +265,18 @@ def collect_entries(repo_root: Path) -> list[RegisterEntry]:
                         proposed_action=rule.proposed_action,
                     )
                 )
-            if file_hits > 20:
+            if file_hits >= 20:
                 break
     entries.sort(key=lambda e: (-e.score, e.domain, e.path, e.line))
     return entries
+
+
+def _filter_entries_by_scope(entries: list[RegisterEntry], *, scope: str) -> list[RegisterEntry]:
+    if scope == "full":
+        return list(entries)
+    if scope == "source":
+        return [entry for entry in entries if entry.path.startswith("src/scpn_fusion/")]
+    raise ValueError(f"Unsupported scope: {scope}")
 
 
 def _render_counts(title: str, counts: dict[str, int]) -> list[str]:
@@ -273,6 +292,7 @@ def render_markdown(
     entries: list[RegisterEntry],
     top_limit: int,
     full_limit: int,
+    scope: str = "full",
 ) -> str:
     now = datetime.now(timezone.utc).isoformat()
     marker_counts: dict[str, int] = {}
@@ -281,12 +301,22 @@ def render_markdown(
         marker_counts[entry.marker] = marker_counts.get(entry.marker, 0) + 1
         domain_counts[entry.domain] = domain_counts.get(entry.domain, 0) + 1
 
+    source_entries = [entry for entry in entries if entry.domain in SOURCE_DOMAINS]
+    docs_entries = [entry for entry in entries if entry.domain == "docs_claims"]
+    source_p0p1 = [entry for entry in source_entries if _priority(entry.score) in {"P0", "P1"}]
+    source_backlog = sorted(source_p0p1, key=lambda e: (-e.score, e.domain, e.path, e.line))
+    source_scope_note = (
+        "source-only (`src/scpn_fusion/**`) markers"
+        if scope == "source"
+        else "production code + docs claims markers (tests/reports/html excluded)"
+    )
+
     lines: list[str] = [
         "# Underdeveloped Register",
         "",
         f"- Generated at: `{now}`",
         "- Generator: `tools/generate_underdeveloped_register.py`",
-        "- Scope: production code + docs claims markers (tests/reports/html excluded)",
+        f"- Scope: {source_scope_note}",
         "",
         "## Executive Summary",
         "",
@@ -294,11 +324,33 @@ def render_markdown(
         "|---|---:|",
         f"| Total flagged entries | {len(entries)} |",
         f"| P0 + P1 entries | {sum(1 for e in entries if _priority(e.score) in {'P0', 'P1'})} |",
+        f"| Source-domain entries | {len(source_entries)} |",
+        f"| Source-domain P0 + P1 entries | {len(source_backlog)} |",
+        f"| Docs-claims entries | {len(docs_entries)} |",
         f"| Domains affected | {len(domain_counts)} |",
         "",
     ]
     lines.extend(_render_counts("Marker Distribution", marker_counts))
     lines.extend(_render_counts("Domain Distribution", domain_counts))
+
+    if scope == "full":
+        lines.extend(
+            [
+                f"## Source-Centric Priority Backlog (Top {min(top_limit, len(source_backlog))})",
+                "",
+                "_Filtered to implementation domains to reduce docs/claims noise during hardening triage._",
+                "",
+                "| Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |",
+                "|---|---:|---|---|---|---|---|---|",
+            ]
+        )
+        for entry in source_backlog[:top_limit]:
+            lines.append(
+                "| "
+                f"{_priority(entry.score)} | {entry.score} | `{entry.domain}` | `{entry.marker}` | "
+                f"`{entry.path}:{entry.line}` | {entry.owner} | {entry.proposed_action} | {entry.snippet} |"
+            )
+        lines.append("")
 
     lines.extend(
         [
@@ -352,6 +404,12 @@ def main(argv: list[str] | None = None) -> int:
         default=250,
         help="Number of entries to include in the full register section.",
     )
+    parser.add_argument(
+        "--scope",
+        choices=("full", "source"),
+        default="full",
+        help="Report scope: full (default) or source (src/scpn_fusion only).",
+    )
     args = parser.parse_args(argv)
 
     if args.top_limit < 1:
@@ -360,17 +418,20 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("--full-limit must be >= 1.")
 
     entries = collect_entries(REPO_ROOT)
+    entries = _filter_entries_by_scope(entries, scope=str(args.scope))
     report = render_markdown(
         entries=entries,
         top_limit=int(args.top_limit),
         full_limit=int(args.full_limit),
+        scope=str(args.scope),
     )
     output_path = Path(args.output)
     if not output_path.is_absolute():
         output_path = REPO_ROOT / output_path
     output_path.write_text(report, encoding="utf-8")
     print(
-        f"Generated underdeveloped register with {len(entries)} entries: "
+        f"Generated underdeveloped register with {len(entries)} entries "
+        f"(scope={args.scope}): "
         f"{output_path.relative_to(REPO_ROOT).as_posix()}"
     )
     return 0
