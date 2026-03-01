@@ -7,7 +7,11 @@ import numpy as np
 import pytest
 import jax
 import jax.numpy as jnp
-from scpn_fusion.core.jax_transport_solver import transport_step_jax, simulate_scenario_jax
+from scpn_fusion.core.jax_transport_solver import (
+    transport_step_checked,
+    transport_step_jax,
+    simulate_scenario_jax,
+)
 
 def test_jax_transport_step_returns_finite():
     """Verify that a single JAX transport step returns valid finite profiles."""
@@ -69,3 +73,15 @@ def test_jax_transport_vmap_batching():
     assert jnp.all(jnp.isfinite(new_te_batch))
     # Higher heating should result in higher temperature
     assert new_te_batch[3, 0] > new_te_batch[0, 0]
+
+
+def test_transport_step_checked_rejects_non_monotonic_rho():
+    nr = 16
+    rho = jnp.concatenate([jnp.linspace(0.0, 0.5, nr // 2), jnp.linspace(0.4, 1.0, nr // 2)])
+    te = jnp.ones(nr) * 5.0
+    ti = jnp.ones(nr) * 5.0
+    ne = jnp.ones(nr) * 5.0
+    chi = jnp.ones(nr)
+    src = jnp.zeros(nr)
+    with pytest.raises(ValueError, match="rho"):
+        transport_step_checked(te, ti, ne, chi, chi, src, src, rho, 0.01)

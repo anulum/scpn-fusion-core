@@ -43,6 +43,9 @@ B_TOROIDAL = 5.3           # toroidal field [T], ITER-like
 DIFFUSION_FLOOR = 1e-5     # numerical diffusion floor [arb.]
 AVALANCHE_RATE = 100.0     # Rosenbluth-Putvinski avalanche rate prefactor [1/s]
 DREICER_SOURCE = 1.0e15    # Dreicer injection flux [m^-3 s^-1]
+_KNOCK_ON_SCALE = 1.0e-25
+_KNOCK_ON_MAX_SOURCE = 1.0e24
+_RE_SEED_FLOOR = 1.0e6
 
 @dataclass
 class RunawayElectronState:
@@ -59,12 +62,17 @@ class FokkerPlanckSolver:
     Solves the 1D kinetic equation for runaway electrons.
     """
     def __init__(self, np_grid: int = 200, p_max: float = 100.0):
-        self.np_grid = np_grid
-        self.p_max = p_max
+        if isinstance(np_grid, bool) or int(np_grid) < 16:
+            raise ValueError("np_grid must be an integer >= 16.")
+        p_max = float(p_max)
+        if not np.isfinite(p_max) or p_max <= 1e-3:
+            raise ValueError("p_max must be finite and > 1e-3.")
+        self.np_grid = int(np_grid)
+        self.p_max = float(p_max)
         # Log-spaced momentum grid, p normalised to m_e c
-        self.p = np.logspace(-2, np.log10(p_max), np_grid)
+        self.p = np.logspace(-2, np.log10(self.p_max), self.np_grid)
         self.dp = np.gradient(self.p)
-        self.f = np.zeros(np_grid)
+        self.f = np.zeros(self.np_grid)
         self.time = 0.0
 
     def compute_coefficients(
@@ -120,14 +128,19 @@ class FokkerPlanckSolver:
     def explicit_knock_on_source(self, n_e: float) -> np.ndarray:
         """Knock-on collision source via Moller cross-section (1/p² scaling).
 
-        Simplified from Rosenbluth-Putvinski, Nucl. Fusion 37 (1997).
+        Reduced-order closure from Rosenbluth-Putvinski, Nucl. Fusion 37 (1997).
         Empirical scaling 1e-25 calibrated to ITER-like RE generation rates.
         """
+        n_e = float(n_e)
+        if not np.isfinite(n_e) or n_e <= 0.0:
+            raise ValueError("n_e must be finite and > 0.")
         source = 1.0 / (self.p**2 + 1e-4)
         n_re = np.sum(self.f * self.dp)
-        if n_re < 1e6:
+        if n_re < _RE_SEED_FLOOR:
             return np.zeros_like(self.f)
-        return source * n_e * n_re * 1e-25
+        out = source * n_e * n_re * _KNOCK_ON_SCALE
+        out = np.nan_to_num(out, nan=0.0, posinf=_KNOCK_ON_MAX_SOURCE, neginf=0.0)
+        return np.clip(out, 0.0, _KNOCK_ON_MAX_SOURCE)
 
     @staticmethod
     def _minmod(a: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -151,6 +164,22 @@ class FokkerPlanckSolver:
         Advection: 2nd-order MUSCL with minmod limiter (Toro Ch. 13).
         Diffusion: central difference operator-split half-step.
         """
+        dt = float(dt)
+        E_field = float(E_field)
+        n_e = float(n_e)
+        T_e_eV = float(T_e_eV)
+        Z_eff = float(Z_eff)
+        if not np.isfinite(dt) or dt <= 0.0:
+            raise ValueError("dt must be finite and > 0.")
+        if not np.isfinite(E_field):
+            raise ValueError("E_field must be finite.")
+        if not np.isfinite(n_e) or n_e <= 0.0:
+            raise ValueError("n_e must be finite and > 0.")
+        if not np.isfinite(T_e_eV) or T_e_eV <= 0.0:
+            raise ValueError("T_e_eV must be finite and > 0.")
+        if not np.isfinite(Z_eff) or Z_eff <= 0.0:
+            raise ValueError("Z_eff must be finite and > 0.")
+
         A, D, Fc = self.compute_coefficients(E_field, n_e, Z_eff, T_e_eV)
 
         # CFL advisory

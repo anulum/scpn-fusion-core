@@ -11,6 +11,46 @@ import jax
 import jax.numpy as jnp
 from jax import jit, vmap
 
+# ── Validation wrappers ──────────────────────────────────────────────
+
+def _validate_transport_inputs(
+    te: jnp.ndarray,
+    ti: jnp.ndarray,
+    ne: jnp.ndarray,
+    chi_e: jnp.ndarray,
+    chi_i: jnp.ndarray,
+    s_heat_e: jnp.ndarray,
+    s_heat_i: jnp.ndarray,
+    rho: jnp.ndarray,
+    dt: float,
+) -> None:
+    arrays = {
+        "te": te,
+        "ti": ti,
+        "ne": ne,
+        "chi_e": chi_e,
+        "chi_i": chi_i,
+        "s_heat_e": s_heat_e,
+        "s_heat_i": s_heat_i,
+        "rho": rho,
+    }
+    n = int(te.shape[0])
+    if n < 3:
+        raise ValueError("te must have length >= 3.")
+    for name, arr in arrays.items():
+        if arr.ndim != 1:
+            raise ValueError(f"{name} must be 1D.")
+        if arr.shape[0] != n:
+            raise ValueError(f"{name} must have length {n}.")
+    rho_np = jnp.asarray(rho)
+    if not bool(jnp.all(jnp.isfinite(rho_np))):
+        raise ValueError("rho must be finite.")
+    if not bool(jnp.all(rho_np[1:] > rho_np[:-1])):
+        raise ValueError("rho must be strictly increasing.")
+    dt_val = float(dt)
+    if not jnp.isfinite(dt_val) or dt_val <= 0.0:
+        raise ValueError("dt must be finite and > 0.")
+
 # ── JAX Kernels ──────────────────────────────────────────────────────
 
 @jit
@@ -34,7 +74,7 @@ def transport_step_jax(
     
     def evolve(T, chi, S):
         # Cylindrical-like divergence in rho: (1/rho) * d/drho (rho * n * chi * dT/drho)
-        # Simplified for 1.5D: d/drho (D * dT/drho)
+        # Reduced-order 1.5D closure: d/drho (D * dT/drho)
         grad_T = jnp.gradient(T, drho)
         flux = -ne * chi * grad_T
         div_flux = jnp.gradient(flux, drho) / jnp.maximum(ne, 1e-6)
@@ -76,6 +116,22 @@ def simulate_scenario_jax(
 
     (_, _), history = jax.lax.scan(body_fn, (initial_te, initial_ti), p_aux_mw)
     return history
+
+
+def transport_step_checked(
+    te: jnp.ndarray,
+    ti: jnp.ndarray,
+    ne: jnp.ndarray,
+    chi_e: jnp.ndarray,
+    chi_i: jnp.ndarray,
+    s_heat_e: jnp.ndarray,
+    s_heat_i: jnp.ndarray,
+    rho: jnp.ndarray,
+    dt: float,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+    """Validated wrapper around ``transport_step_jax``."""
+    _validate_transport_inputs(te, ti, ne, chi_e, chi_i, s_heat_e, s_heat_i, rho, dt)
+    return transport_step_jax(te, ti, ne, chi_e, chi_i, s_heat_e, s_heat_i, rho, dt)
 
 if __name__ == "__main__":
     # Simple verification

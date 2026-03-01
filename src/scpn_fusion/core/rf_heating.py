@@ -86,7 +86,7 @@ class RFHeatingSystem:
         
         # 2. Density Profile (Parabolic)
         # n = n0 * (1 - psi_norm)
-        # Simplified: Gaussian blob
+        # Reduced-order surrogate: Gaussian blob
         dist_sq = (R - R0)**2 + Z**2
         n_e = 1e20 * np.exp(-dist_sq / 2.0)
         

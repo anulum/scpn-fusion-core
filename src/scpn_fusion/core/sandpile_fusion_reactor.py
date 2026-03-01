@@ -24,9 +24,11 @@ class TokamakSandpile:
     Reference: 'Running Sandpile' models for L-H transition.
     """
     def __init__(self, size=L):
-        self.size = size
-        self.Z = np.zeros(size, dtype=int) # Local gradients (slope)
-        self.h = np.zeros(size, dtype=int) # Height (Temperature/Density)
+        if isinstance(size, bool) or int(size) < 3:
+            raise ValueError("size must be an integer >= 3.")
+        self.size = int(size)
+        self.Z = np.zeros(self.size, dtype=int) # Local gradients (slope)
+        self.h = np.zeros(self.size, dtype=int) # Height (Temperature/Density)
         self.avalanche_history = []
         self.confinement_history = []
         self.edge_loss_events = 0
@@ -46,6 +48,12 @@ class TokamakSandpile:
         If slope > critical, redistribute energy.
         suppression_strength: 0.0 to 1.0 (Effect of HJB control)
         """
+        suppression_strength = float(suppression_strength)
+        if not np.isfinite(suppression_strength):
+            raise ValueError("suppression_strength must be finite.")
+        if suppression_strength < 0.0 or suppression_strength > 1.0:
+            raise ValueError("suppression_strength must be in [0, 1].")
+
         # Dynamic Critical Gradient: 
         # Stronger magnetic field (control) = Higher threshold before collapse
         current_Z_crit = Z_CRIT_BASE + (2.0 * suppression_strength)
@@ -92,7 +100,7 @@ class TokamakSandpile:
 
 class HJB_Avalanche_Controller:
     """
-    A simplified Reinforcement Learning agent.
+    A heuristic closed-loop controller for avalanche suppression.
     Observed State: Current Avalanche Size.
     Action: Increase/Decrease Magnetic Shear (Z_crit).
     Reward: Maximize Core Height (Confinement) - Action Cost.

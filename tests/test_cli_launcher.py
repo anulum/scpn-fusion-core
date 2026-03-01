@@ -126,6 +126,50 @@ def test_run_mode_returns_timeout_code_on_timeout(monkeypatch) -> None:
     assert code == 124
 
 
+def test_experimental_mode_requires_ack(monkeypatch) -> None:
+    monkeypatch.setattr(
+        cli_mod,
+        "MODE_SPECS",
+        {"quantum": cli_mod.ModeSpec("mod.quantum", "experimental", "quantum")},
+    )
+    monkeypatch.delenv("SCPN_EXPERIMENTAL", raising=False)
+    monkeypatch.delenv("SCPN_EXPERIMENTAL_ACK", raising=False)
+
+    runner = CliRunner()
+    result = runner.invoke(cli_mod.cli, ["quantum", "--experimental"])
+    assert result.exit_code != 0
+    assert "experimental acknowledgement missing" in result.output
+
+
+def test_experimental_mode_runs_with_ack(monkeypatch) -> None:
+    monkeypatch.setattr(
+        cli_mod,
+        "MODE_SPECS",
+        {"quantum": cli_mod.ModeSpec("mod.quantum", "experimental", "quantum")},
+    )
+    monkeypatch.delenv("SCPN_EXPERIMENTAL", raising=False)
+
+    calls: list[tuple[list[str], str, bool, float]] = []
+
+    def fake_run(cmd, cwd, check, timeout):  # type: ignore[no-untyped-def]
+        calls.append((cmd, cwd, check, timeout))
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(cli_mod.subprocess, "run", fake_run)
+    runner = CliRunner()
+    result = runner.invoke(
+        cli_mod.cli,
+        [
+            "quantum",
+            "--experimental",
+            "--experimental-ack",
+            cli_mod.EXPERIMENTAL_ACK_TOKEN,
+        ],
+    )
+    assert result.exit_code == 0
+    assert len(calls) == 1
+
+
 def test_cli_rejects_non_positive_timeout() -> None:
     runner = CliRunner()
     result = runner.invoke(cli_mod.cli, ["kernel", "--mode-timeout-seconds", "0"])

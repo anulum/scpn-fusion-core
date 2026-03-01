@@ -21,6 +21,7 @@ import click
 LOGGER = logging.getLogger("scpn_fusion.cli")
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODE_TIMEOUT_SECONDS = 1800.0
+EXPERIMENTAL_ACK_TOKEN = "I_UNDERSTAND_EXPERIMENTAL"
 
 
 @dataclass(frozen=True)
@@ -128,12 +129,22 @@ def _lock_reason(
     *,
     include_surrogate: bool,
     include_experimental: bool,
+    experimental_ack: str | None = None,
 ) -> str | None:
     spec = MODE_SPECS[mode]
     if spec.maturity == "surrogate" and not include_surrogate:
         return "surrogate mode locked; pass --surrogate or set SCPN_SURROGATE=1"
     if spec.maturity == "experimental" and not include_experimental:
         return "experimental mode locked; pass --experimental or set SCPN_EXPERIMENTAL=1"
+    if spec.maturity == "experimental":
+        ack_env = os.environ.get("SCPN_EXPERIMENTAL_ACK", "").strip()
+        ack = (experimental_ack or "").strip() or ack_env
+        if ack != EXPERIMENTAL_ACK_TOKEN:
+            return (
+                "experimental acknowledgement missing; pass "
+                f"--experimental-ack {EXPERIMENTAL_ACK_TOKEN} "
+                "or set SCPN_EXPERIMENTAL_ACK."
+            )
     return None
 
 
@@ -142,12 +153,24 @@ def _execution_plan(
     *,
     include_surrogate: bool,
     include_experimental: bool,
+    experimental_ack: str | None = None,
 ) -> list[str]:
     if mode == "all":
-        return _available_modes(
+        plan = _available_modes(
             include_surrogate=include_surrogate,
             include_experimental=include_experimental,
         )
+        if include_experimental:
+            for planned_mode in plan:
+                reason = _lock_reason(
+                    planned_mode,
+                    include_surrogate=include_surrogate,
+                    include_experimental=include_experimental,
+                    experimental_ack=experimental_ack,
+                )
+                if reason is not None:
+                    raise click.ClickException(f"Mode '{planned_mode}' is locked: {reason}")
+        return plan
 
     if mode not in MODE_SPECS:
         all_modes = ", ".join(sorted(MODE_SPECS))
@@ -157,6 +180,7 @@ def _execution_plan(
         mode,
         include_surrogate=include_surrogate,
         include_experimental=include_experimental,
+        experimental_ack=experimental_ack,
     )
     if reason is not None:
         raise click.ClickException(f"Mode '{mode}' is locked: {reason}")
@@ -254,6 +278,12 @@ def _system_health_check() -> None:
 @click.argument("script_args", nargs=-1, type=click.UNPROCESSED)
 @click.option("--surrogate", is_flag=True, help="Unlock surrogate modes.")
 @click.option("--experimental", is_flag=True, help="Unlock experimental modes.")
+@click.option(
+    "--experimental-ack",
+    default="",
+    show_default=False,
+    help=f"Acknowledgement token required for experimental modes ({EXPERIMENTAL_ACK_TOKEN}).",
+)
 @click.option("--python-bin", default=sys.executable, show_default=True, help="Python executable for subprocesses.")
 @click.option(
     "--mode-timeout-seconds",
@@ -278,6 +308,7 @@ def cli(
     script_args: tuple[str, ...],
     surrogate: bool,
     experimental: bool,
+    experimental_ack: str,
     python_bin: str,
     mode_timeout_seconds: float,
     continue_on_error: bool,
@@ -306,6 +337,7 @@ def cli(
                 name,
                 include_surrogate=include_surrogate,
                 include_experimental=include_experimental,
+                experimental_ack=experimental_ack,
             ) is None
             click.echo(
                 f"{name} | {spec.maturity} | {'yes' if unlocked else 'no'} | {spec.description}"
@@ -319,6 +351,7 @@ def cli(
         mode,
         include_surrogate=include_surrogate,
         include_experimental=include_experimental,
+        experimental_ack=experimental_ack,
     )
     LOGGER.info("Resolved execution plan: %s", ", ".join(plan))
 

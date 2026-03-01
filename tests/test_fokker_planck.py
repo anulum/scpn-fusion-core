@@ -58,3 +58,16 @@ def test_drag_regularized_at_thermal_speed():
     # The total advection (drag + synchrotron) should be bounded, not divergent
     # With regularization the value is O(10^5) rather than Inf
     assert abs(A[0]) < 1e8, f"A[0]={A[0]:.2e} is unreasonably large"
+
+
+def test_fokker_planck_rejects_invalid_constructor_inputs():
+    with pytest.raises(ValueError, match="np_grid"):
+        FokkerPlanckSolver(np_grid=4, p_max=10.0)
+    with pytest.raises(ValueError, match="p_max"):
+        FokkerPlanckSolver(np_grid=32, p_max=0.0)
+
+
+def test_fokker_planck_step_rejects_invalid_dt():
+    solver = FokkerPlanckSolver()
+    with pytest.raises(ValueError, match="dt"):
+        solver.step(dt=0.0, E_field=10.0, n_e=5e19, T_e_eV=5000.0, Z_eff=1.0)

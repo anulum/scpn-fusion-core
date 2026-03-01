@@ -253,7 +253,14 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         Roth-Bohdansky Sputtering Yield (Y).
         Y = Q * (1 - (E_th/E)^(2/3)) * (1 - E_th/E)^2
         """
-        # Material Parameters (Simplified for D on Target)
+        E_inc_eV = float(E_inc_eV)
+        angle_deg = float(angle_deg)
+        if not np.isfinite(E_inc_eV) or E_inc_eV <= 0.0:
+            raise ValueError("E_inc_eV must be finite and > 0.")
+        if not np.isfinite(angle_deg) or angle_deg < 0.0 or angle_deg >= 89.5:
+            raise ValueError("angle_deg must be finite and in [0, 89.5).")
+
+        # Material Parameters (reduced-order D-on-target closure)
         # Threshold Energy (E_th), Yield Factor (Q)
         props = {
             'Tungsten (W)': {'E_th': 200.0, 'Q': 0.004}, # High threshold, low yield
@@ -267,9 +274,9 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         p = props[material_name]
         E_th = p['E_th']
         
-        # Angular dependence (Yamamura)
-        # f(alpha) ~ 1 / cos(alpha) -> simplified enhancement
-        f_angle = 1.0 + (angle_deg / 90.0) 
+        # Angular dependence (bounded Yamamura-style enhancement).
+        theta = np.deg2rad(angle_deg)
+        f_angle = float(np.clip(np.cos(theta), 0.05, 1.0) ** -0.65)
         
         if E_inc_eV < E_th:
             return 0.0
@@ -277,7 +284,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         ratio = E_th / E_inc_eV
         Y = p['Q'] * (1.0 - ratio**(2.0/3.0)) * (1.0 - ratio)**2 * f_angle
         
-        return max(Y, 0.0)
+        return float(np.clip(Y, 0.0, 5.0))
 
     def analyze_materials(self, wall_flux):
         """

@@ -12,7 +12,7 @@ Physics:
 - Lagrangian tracking of N fragments (position r, velocity v).
 - Shielding-modifed Parks ablation rate:
   dm/dt = -1.25e16 * n_e^(1/3) * T_e^(1.64) * r_p^(1.33) / v_p
-  (Simplified scaling)
+  (Reduced-order scaling calibrated for fast control studies)
 - Deposition of ablated material into the plasma density profile.
 """
 
@@ -56,9 +56,41 @@ class SpiAblationSolver:
                  total_mass_kg: float = 0.01, # 10g Neon
                  velocity_mps: float = 200.0,
                  dispersion: float = 0.1, # Velocity spread fraction
-                 injector_pos: np.ndarray = np.array([10.0, 0.0, 0.0]), # Outboard midplane
-                 injector_dir: np.ndarray = np.array([-1.0, 0.0, 0.0]) # Radial inward
+                 injector_pos: np.ndarray | None = None, # Outboard midplane
+                 injector_dir: np.ndarray | None = None, # Radial inward
+                 seed: int = 42,
                  ):
+        if isinstance(n_fragments, bool) or int(n_fragments) < 1:
+            raise ValueError("n_fragments must be an integer >= 1.")
+        total_mass_kg = float(total_mass_kg)
+        velocity_mps = float(velocity_mps)
+        dispersion = float(dispersion)
+        if not np.isfinite(total_mass_kg) or total_mass_kg <= 0.0:
+            raise ValueError("total_mass_kg must be finite and > 0.")
+        if not np.isfinite(velocity_mps) or velocity_mps <= 0.0:
+            raise ValueError("velocity_mps must be finite and > 0.")
+        if not np.isfinite(dispersion) or dispersion < 0.0:
+            raise ValueError("dispersion must be finite and >= 0.")
+        if isinstance(seed, bool) or not isinstance(seed, (int, np.integer)):
+            raise ValueError("seed must be an integer.")
+
+        n_fragments = int(n_fragments)
+        injector_pos_arr = np.asarray(
+            [10.0, 0.0, 0.0] if injector_pos is None else injector_pos,
+            dtype=np.float64,
+        )
+        injector_dir_arr = np.asarray(
+            [-1.0, 0.0, 0.0] if injector_dir is None else injector_dir,
+            dtype=np.float64,
+        )
+        if injector_pos_arr.shape != (3,) or not np.all(np.isfinite(injector_pos_arr)):
+            raise ValueError("injector_pos must be a finite 3-vector.")
+        if injector_dir_arr.shape != (3,) or not np.all(np.isfinite(injector_dir_arr)):
+            raise ValueError("injector_dir must be a finite 3-vector.")
+        dir_norm = float(np.linalg.norm(injector_dir_arr))
+        if dir_norm <= 0.0:
+            raise ValueError("injector_dir must be non-zero.")
+
         self.fragments: List[SpiFragment] = []
 
         # Uniform fragment mass; size from solid-sphere volume
@@ -66,13 +98,13 @@ class SpiAblationSolver:
         vol = m_frag / RHO_NEON_SOLID
         r_frag = (3 * vol / (4 * np.pi))**(1/3)
 
-        rng = np.random.default_rng(42)
+        rng = np.random.default_rng(int(seed))
         for i in range(n_fragments):
-            v_dir = injector_dir + rng.normal(0, dispersion, 3)
+            v_dir = injector_dir_arr + rng.normal(0, dispersion, 3)
             v_dir /= np.linalg.norm(v_dir)
             v_mag = velocity_mps * rng.normal(1.0, 0.1)
             vel = v_dir * v_mag
-            pos = injector_pos + rng.normal(0, 0.05, 3)
+            pos = injector_pos_arr + rng.normal(0, 0.05, 3)
             
             self.fragments.append(SpiFragment(
                 id=i,
@@ -84,6 +116,23 @@ class SpiAblationSolver:
             
     def step(self, dt: float, plasma_ne_profile: np.ndarray, plasma_te_profile: np.ndarray, r_grid: np.ndarray) -> np.ndarray:
         """Advance fragments and return deposition profile [particles/m^3/s]."""
+        dt = float(dt)
+        if not np.isfinite(dt) or dt <= 0.0:
+            raise ValueError("dt must be finite and > 0.")
+        plasma_ne_profile = np.asarray(plasma_ne_profile, dtype=np.float64)
+        plasma_te_profile = np.asarray(plasma_te_profile, dtype=np.float64)
+        r_grid = np.asarray(r_grid, dtype=np.float64)
+        if plasma_ne_profile.ndim != 1 or plasma_te_profile.ndim != 1 or r_grid.ndim != 1:
+            raise ValueError("plasma_ne_profile, plasma_te_profile, and r_grid must be 1D arrays.")
+        if len(r_grid) < 2:
+            raise ValueError("r_grid must have at least 2 points.")
+        if len(plasma_ne_profile) != len(plasma_te_profile):
+            raise ValueError("plasma_ne_profile and plasma_te_profile must have matching lengths.")
+        if not np.all(np.isfinite(plasma_ne_profile)) or not np.all(np.isfinite(plasma_te_profile)):
+            raise ValueError("plasma profiles must be finite.")
+        if not np.all(np.isfinite(r_grid)) or not np.all(np.diff(r_grid) > 0.0):
+            raise ValueError("r_grid must be finite and strictly increasing.")
+
         deposition = np.zeros_like(r_grid)
         dr = r_grid[1] - r_grid[0] if len(r_grid) > 1 else 1.0
 

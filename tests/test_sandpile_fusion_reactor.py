@@ -7,6 +7,8 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import pytest
+
 from scpn_fusion.core.sandpile_fusion_reactor import TokamakSandpile
 
 
@@ -25,3 +27,9 @@ def test_relax_resets_last_edge_loss_counter_per_step() -> None:
     reactor.Z[:] = 0
     reactor.relax(suppression_strength=0.0)
     assert reactor.last_edge_loss_events == 0
+
+
+def test_relax_rejects_invalid_suppression_strength() -> None:
+    reactor = TokamakSandpile(size=8)
+    with pytest.raises(ValueError, match="suppression_strength"):
+        reactor.relax(suppression_strength=1.5)

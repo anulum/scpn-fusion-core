@@ -40,11 +40,32 @@ class GlobalDesignExplorer:
         self.divertor_flux_cap_mw_m2 = float(divertor_flux_cap_mw_m2)
         self.zeff_cap = float(zeff_cap)
         self.hts_peak_cap_t = float(hts_peak_cap_t)
+
+    @staticmethod
+    def _require_finite_positive(name: str, value: float) -> float:
+        out = float(value)
+        if not np.isfinite(out) or out <= 0.0:
+            raise ValueError(f"{name} must be finite and > 0.")
+        return out
+
+    @staticmethod
+    def _validate_bounds(name: str, bounds: tuple[float, float]) -> tuple[float, float]:
+        if len(bounds) != 2:
+            raise ValueError(f"{name} must be a (min, max) tuple.")
+        lo = float(bounds[0])
+        hi = float(bounds[1])
+        if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
+            raise ValueError(f"{name} must be finite with max > min.")
+        return lo, hi
         
     def evaluate_design(self, R_maj, B_field, I_plasma):
         """
         Runs a full-stack simulation for a specific design point.
         """
+        R_maj = self._require_finite_positive("R_maj", R_maj)
+        B_field = self._require_finite_positive("B_field", B_field)
+        I_plasma = self._require_finite_positive("I_plasma", I_plasma)
+
         # 1. Modify Configuration in-memory (Mocking the file load for speed)
         # We assume scaling laws for quick evaluation, 
         # but calling the actual Kernel would be too slow for 1000s of points without the Neural Accelerator.
@@ -64,9 +85,9 @@ class GlobalDesignExplorer:
         # Higher kappa/delta allows higher beta_N
         kappa, delta = 1.7, 0.33
         beta_N_nominal = 2.8 
-        # Shaping benefit: beta_N ~ (1 + kappa^2) * (1 + delta) ? 
-        # Actually simplified scaling: beta_N_eff = beta_N_nominal * (1 + 0.2*(kappa-1.5))
-        beta_N_eff = beta_N_nominal * (1.0 + 0.2 * (kappa - 1.5))
+        # Reduced-order shaping correction constrained to credible envelope.
+        beta_shape_gain = 1.0 + 0.18 * (kappa - 1.5) + 0.08 * delta
+        beta_N_eff = float(np.clip(beta_N_nominal * beta_shape_gain, 2.0, 4.2))
         
         I_N = I_plasma / (a_min * B_field)
         beta_limit_pct = beta_N_eff * I_N
@@ -120,6 +141,7 @@ class GlobalDesignExplorer:
         
         return {
             'R': R_maj, 'B': B_field, 'Ip': I_plasma,
+            'Model_Regime': 'reduced_order',
             'P_fus': P_fus,
             'Q': Q_eng,
             'Wall_Load': Neutron_Load,
@@ -130,6 +152,7 @@ class GlobalDesignExplorer:
             'B_peak_HTS_T': b_peak_hts_t,
             'Zeff_Est': zeff_est,
             'Constraint_OK': constraint_ok,
+            'beta_N_eff': beta_N_eff,
             'Cost': R_maj**3 * B_field # Rough proxy for cost
         }
 
@@ -143,6 +166,14 @@ class GlobalDesignExplorer:
         seed=None,
         q95_min=3.0,
     ):
+        if isinstance(n_samples, bool) or int(n_samples) < 1:
+            raise ValueError("n_samples must be an integer >= 1.")
+        n_samples = int(n_samples)
+        r_bounds = self._validate_bounds("r_bounds", r_bounds)
+        b_bounds = self._validate_bounds("b_bounds", b_bounds)
+        i_bounds = self._validate_bounds("i_bounds", i_bounds)
+        q95_min = self._require_finite_positive("q95_min", q95_min)
+
         print(f"--- SCPN GLOBAL DESIGN SCAN ({n_samples} Universes) ---")
         rng = np.random.default_rng(int(seed)) if seed is not None else np.random.default_rng()
         
@@ -176,6 +207,7 @@ class GlobalDesignExplorer:
                     "P_fus",
                     "Q",
                     "Wall_Load",
+                    "Model_Regime",
                     "Div_Load_Baseline",
                     "Shadow_Fraction",
                     "Div_Load_Optimized",
@@ -183,6 +215,7 @@ class GlobalDesignExplorer:
                     "B_peak_HTS_T",
                     "Zeff_Est",
                     "Constraint_OK",
+                    "beta_N_eff",
                     "Cost",
                 ]
             )

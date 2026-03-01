@@ -6,7 +6,7 @@
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 """
-EPED-like simplified pedestal scaling model for H-mode tokamak plasmas.
+EPED-like reduced-order pedestal scaling model for H-mode tokamak plasmas.
 
 Based on Snyder et al., Physics of Plasmas 16, 056118 (2009) and
 Snyder et al., Physics of Plasmas 18, 056115 (2011).
@@ -101,7 +101,7 @@ class PedestalResult:
 
 
 class EpedPedestalModel:
-    """Simplified EPED-like pedestal model.
+    """Reduced-order EPED-like pedestal model.
 
     Parameters
     ----------

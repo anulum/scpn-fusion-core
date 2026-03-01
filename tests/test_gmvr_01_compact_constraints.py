@@ -13,6 +13,7 @@ import importlib.util
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.global_design_scanner import GlobalDesignExplorer
 
@@ -57,3 +58,9 @@ def test_compact_scan_does_not_mutate_global_numpy_rng_state() -> None:
     np.random.set_state(state)
     expected = float(np.random.random())
     assert observed == expected
+
+
+def test_run_scan_rejects_invalid_bounds() -> None:
+    explorer = GlobalDesignExplorer("dummy")
+    with pytest.raises(ValueError, match="r_bounds"):
+        explorer.run_scan(n_samples=10, r_bounds=(2.0, 2.0))

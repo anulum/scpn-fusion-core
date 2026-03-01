@@ -149,3 +149,11 @@ def test_tau_he_ratio_validation(
             tau_He_ratio=tau_He_ratio,
             pumping_efficiency=1.0,
         )
+
+
+def test_sputtering_yield_input_validation() -> None:
+    lab = NuclearEngineeringLab(default_iter_config_path())
+    with pytest.raises(ValueError, match="E_inc_eV"):
+        lab.calculate_sputtering_yield("Tungsten (W)", E_inc_eV=0.0, angle_deg=30.0)
+    with pytest.raises(ValueError, match="angle_deg"):
+        lab.calculate_sputtering_yield("Tungsten (W)", E_inc_eV=100.0, angle_deg=95.0)

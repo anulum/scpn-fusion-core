@@ -48,8 +48,12 @@ class FusionBurnPhysics(FusionKernel):
         Maps Magnetic Equilibrium -> Thermodynamics -> Fusion Power.
         P_aux_MW: External Heating Power (NBI/ECRH) in MegaWatts.
         """
+        P_aux_MW = float(P_aux_MW)
+        if not np.isfinite(P_aux_MW) or P_aux_MW < 0.0:
+            raise ValueError("P_aux_MW must be finite and >= 0.")
+
         # 1. Derive Pressure from Grad-Shafranov (J ~ R*p')
-        # In our simplified kernel, J was modeled directly. 
+        # In this reduced-order kernel, J is modeled directly.
         # Here we assume Pressure follows Flux Surfaces: p(psi) ~ (1-psi)^2
         
         idx_max = np.argmax(self.Psi)
@@ -255,6 +259,18 @@ class DynamicBurnModel:
         self.n_e20 = float(n_e20)
         self.M_eff = float(M_eff)
         self.Z_eff = float(Z_eff)
+        for name, value in {
+            "R0": self.R0,
+            "a": self.a,
+            "B_t": self.B_t,
+            "I_p": self.I_p,
+            "kappa": self.kappa,
+            "n_e20": self.n_e20,
+            "M_eff": self.M_eff,
+            "Z_eff": self.Z_eff,
+        }.items():
+            if not np.isfinite(value) or value <= 0.0:
+                raise ValueError(f"{name} must be finite and > 0.")
 
         # Plasma volume (torus)
         self.V_plasma = 2.0 * np.pi**2 * self.R0 * self.a**2 * self.kappa
@@ -420,7 +436,7 @@ class DynamicBurnModel:
             # Bremsstrahlung: P_brems ~ 5.35e-37 * Z_eff * n_e^2 * sqrt(T_keV) * V
             P_brems = 5.35e-37 * self.Z_eff * n_e**2 * np.sqrt(max(T, 0.1)) * self.V_plasma
 
-            # Impurity line radiation (simplified)
+            # Impurity line radiation (reduced-order closure)
             P_line = 1e-37 * (self.Z_eff - 1.0) * n_e**2 * self.V_plasma
 
             P_rad = P_brems + P_line

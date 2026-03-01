@@ -7,7 +7,6 @@
 # ─────────────────────────────────────────────────────────────────────
 
 from pathlib import Path
-import warnings
 
 import numpy as np
 import pytest
@@ -55,16 +54,11 @@ def test_fno_controller_loads_saved_weights(tmp_path):
     params = init_fno_params(key, MODES, WIDTH)
     np.savez(output, **{k: np.array(v) for k, v in params.items()})
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            message="FNO turbulence surrogate.*",
-            category=Warning,
-        )
-        controller = FNO_Controller(weights_path=str(output))
+    controller = FNO_Controller(weights_path=str(output), allow_legacy=True)
     suppression, prediction = controller.predict_and_suppress(np.zeros((64, 64), dtype=np.float64))
 
     assert controller.loaded_weights
+    assert controller.backend == "legacy_jax_fno"
     assert prediction.shape == (64, 64)
     assert np.isfinite(suppression)
     assert 0.0 <= suppression <= 1.0
@@ -72,17 +66,12 @@ def test_fno_controller_loads_saved_weights(tmp_path):
 
 def test_fno_controller_missing_weights_path_fails_soft(tmp_path, caplog):
     missing = tmp_path / "missing_fno_weights.npz"
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            message="FNO turbulence surrogate.*",
-            category=Warning,
-        )
-        with caplog.at_level("WARNING", logger="scpn_fusion.core.fno_turbulence_suppressor"):
-            controller = FNO_Controller(weights_path=str(missing))
+    with caplog.at_level("WARNING", logger="scpn_fusion.core.fno_turbulence_suppressor"):
+        controller = FNO_Controller(weights_path=str(missing), allow_legacy=True)
 
     assert controller.loaded_weights is False
-    assert any("JAX weights not found" in msg for msg in caplog.messages)
+    assert controller.backend == "compat_reduced_order"
+    assert any("weights not found" in msg for msg in caplog.messages)
 
 
 def test_load_fno_params_rejects_object_array_payload(tmp_path: Path) -> None:
@@ -184,17 +173,13 @@ def test_spectral_generator_does_not_mutate_global_numpy_rng_state() -> None:
 
 
 def test_run_fno_simulation_returns_finite_summary_without_plot() -> None:
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            message="FNO turbulence surrogate.*",
-            category=Warning,
-        )
-        summary = run_fno_simulation(time_steps=24, seed=7, save_plot=False, verbose=False)
+    summary = run_fno_simulation(time_steps=24, seed=7, save_plot=False, verbose=False)
     for key in (
         "seed",
         "steps",
         "loaded_weights",
+        "backend",
+        "legacy_enabled",
         "final_energy",
         "mean_energy_last_20",
         "max_energy",
@@ -206,20 +191,28 @@ def test_run_fno_simulation_returns_finite_summary_without_plot() -> None:
     assert summary["steps"] == 24
     assert summary["plot_saved"] is False
     assert summary["plot_error"] is None
+    assert summary["legacy_enabled"] is False
+    assert summary["backend"] == "compat_reduced_order"
     assert np.isfinite(summary["final_energy"])
     assert np.isfinite(summary["mean_energy_last_20"])
     assert np.isfinite(summary["max_energy"])
 
 
 def test_run_fno_simulation_is_deterministic_for_seed() -> None:
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            message="FNO turbulence surrogate.*",
-            category=Warning,
-        )
-        a = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
-        b = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
+    a = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
+    b = run_fno_simulation(time_steps=18, seed=19, save_plot=False, verbose=False)
     assert a["final_energy"] == b["final_energy"]
     assert a["mean_energy_last_20"] == b["mean_energy_last_20"]
     assert a["max_energy"] == b["max_energy"]
+
+
+def test_fno_controller_default_backend_is_compatibility_mode() -> None:
+    controller = FNO_Controller(weights_path=None, allow_legacy=False)
+    assert controller.backend == "compat_reduced_order"
+    assert controller.legacy_enabled is False
+
+
+def test_fno_controller_rejects_invalid_field_shape() -> None:
+    controller = FNO_Controller(weights_path=None, allow_legacy=False)
+    with pytest.raises(ValueError, match="shape"):
+        controller.predict_and_suppress(np.zeros((32, 32), dtype=np.float64))

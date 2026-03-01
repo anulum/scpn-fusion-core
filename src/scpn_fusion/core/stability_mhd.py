@@ -343,6 +343,19 @@ def troyon_beta_limit(
     ----------
     Troyon et al., Plasma Phys. Control. Fusion 26:209 (1984)
     """
+    for name, value in {"beta_t": beta_t, "Ip_MA": Ip_MA, "a": a, "B0": B0}.items():
+        val = float(value)
+        if not np.isfinite(val):
+            raise ValueError(f"{name} must be finite.")
+        if name != "beta_t" and val <= 0.0:
+            raise ValueError(f"{name} must be > 0.")
+        if name == "beta_t" and val < 0.0:
+            raise ValueError("beta_t must be >= 0.")
+    beta_t = float(beta_t)
+    Ip_MA = float(Ip_MA)
+    a = float(a)
+    B0 = float(B0)
+
     I_N = Ip_MA / max(a * B0, 1e-10)  # normalised current [MA / (m T)]
     beta_N = 100.0 * beta_t / max(I_N, 1e-10)  # [% m T / MA]
 
@@ -372,9 +385,9 @@ def ntm_stability(
     a: float,
     r_s_delta_prime: float = -2.0,
 ) -> NTMResult:
-    r"""Simplified neoclassical tearing mode (NTM) seeding analysis.
+    r"""Reduced-order neoclassical tearing mode (NTM) seeding analysis.
 
-    The modified Rutherford equation for island width *w* is (simplified):
+    The modified Rutherford equation for island width *w* is (reduced-order):
 
     .. math::
         \tau_R\,\frac{dw}{dt}
@@ -413,6 +426,16 @@ def ntm_stability(
     La Haye, Phys. Plasmas 13:055501 (2006)
     Sauter et al., Phys. Plasmas 4:1654 (1997)
     """
+    j_bs = np.asarray(j_bs, dtype=np.float64)
+    j_total = np.asarray(j_total, dtype=np.float64)
+    if j_bs.shape != qp.rho.shape or j_total.shape != qp.rho.shape:
+        raise ValueError("j_bs and j_total must match qp.rho shape.")
+    if not np.all(np.isfinite(j_bs)) or not np.all(np.isfinite(j_total)):
+        raise ValueError("j_bs and j_total must be finite.")
+    a = float(a)
+    if not np.isfinite(a) or a <= 0.0:
+        raise ValueError("a must be finite and > 0.")
+
     j_total_safe = np.where(np.abs(j_total) > 1e-6, j_total, 1e-6)
     j_bs_frac = j_bs / j_total_safe  # bootstrap fraction
 

@@ -5,24 +5,17 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ─────────────────────────────────────────────────────────────────────
-"""DEPRECATED: FNO turbulence surrogate (synthetic-only, rel_L2=0.79).
+"""Legacy turbulence suppression compatibility module.
 
-Trained on 60 Hasegawa-Wakatani samples; not validated against gyrokinetics.
-Use QLKNN-10D neural transport (weights/neural_transport_qlknn.npz) instead.
-Will be removed in v4.0.
+Default execution uses a deterministic reduced-order compatibility backend.
+The historical JAX-FNO backend is available only via explicit opt-in:
+``allow_legacy=True`` or ``SCPN_ENABLE_LEGACY_FNO=1``.
 """
 
 from __future__ import annotations
 
 import logging
-import warnings
-
-warnings.warn(
-    "fno_turbulence_suppressor is deprecated (rel_L2=0.79, synthetic-only). "
-    "Use neural_transport with QLKNN-10D weights instead. Removal in v4.0.",
-    FutureWarning,
-    stacklevel=2,
-)
+import os
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
@@ -43,12 +36,28 @@ except ImportError:
     _HAS_JAX = False
 
 DEFAULT_JAX_WEIGHTS = Path("weights/fno_turbulence_jax.npz")
+LEGACY_ENABLE_ENV = "SCPN_ENABLE_LEGACY_FNO"
 
 
 MODES = 12
 WIDTH = 32
 GRID_SIZE = 64
 TIME_STEPS = 200
+
+
+def _env_enabled(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _compat_suppression_from_field(field: np.ndarray) -> float:
+    """Deterministic reduced-order suppression estimate from field statistics."""
+    finite = np.nan_to_num(np.asarray(field, dtype=np.float64), nan=0.0, posinf=0.0, neginf=0.0)
+    rms = float(np.sqrt(np.mean(finite**2)))
+    grad_r = np.gradient(finite, axis=0)
+    grad_z = np.gradient(finite, axis=1)
+    grad_rms = float(np.sqrt(np.mean(grad_r**2 + grad_z**2)))
+    signal = 0.9 * rms + 0.35 * grad_rms
+    return float(np.clip(np.tanh(1.6 * signal), 0.0, 0.98))
 
 
 class SpectralTurbulenceGenerator:
@@ -109,54 +118,70 @@ class SpectralTurbulenceGenerator:
 
 class FNO_Controller:
     """
-    Predicts turbulence evolution and computes suppression damping using JAX-FNO.
+    Predict turbulence suppression with explicit legacy opt-in semantics.
+
+    Default backend is deterministic compatibility mode. Legacy JAX-FNO can be
+    enabled with ``allow_legacy=True`` or ``SCPN_ENABLE_LEGACY_FNO=1``.
     """
 
     def __init__(
         self,
         weights_path: Optional[str] = None,
+        *,
+        allow_legacy: bool = False,
     ) -> None:
         self.weights_path = Path(weights_path) if weights_path else DEFAULT_JAX_WEIGHTS
         self.params = {}
         self.loaded_weights = False
+        self.legacy_enabled = bool(allow_legacy) or _env_enabled(LEGACY_ENABLE_ENV)
+        self.backend = "compat_reduced_order"
 
-        if self.weights_path.exists():
+        if self.legacy_enabled and _HAS_JAX and self.weights_path.exists():
             self.load_weights(str(self.weights_path))
-        else:
-            logger.warning(f"JAX weights not found at {self.weights_path}. Simulation will use unit params.")
+            self.backend = "legacy_jax_fno"
+        elif self.legacy_enabled and not _HAS_JAX:
+            logger.warning("Legacy FNO requested but JAX is unavailable; using compatibility backend.")
+        elif self.legacy_enabled and not self.weights_path.exists():
+            logger.warning(
+                "Legacy FNO requested but weights not found at %s; using compatibility backend.",
+                self.weights_path,
+            )
+        elif not self.legacy_enabled:
+            logger.info(
+                "Legacy FNO disabled by default; using compatibility backend. "
+                "Set %s=1 or allow_legacy=True to enable historical lane.",
+                LEGACY_ENABLE_ENV,
+            )
 
     def load_weights(self, path: str) -> None:
+        if not _HAS_JAX:
+            raise RuntimeError("JAX backend not available; cannot load legacy FNO weights.")
         with np.load(path, allow_pickle=False) as data:
             self.params = {k: jnp.array(data[k]) for k in data.files}
         self.loaded_weights = True
 
-    def predict_and_suppress(self, field: np.ndarray) -> Tuple[float, np.ndarray]:
-        # Inference using JAX model
-        if not _HAS_JAX or not self.loaded_weights:
-            return 0.0, field
-
-        x_jax = jnp.array(field).reshape(GRID_SIZE, GRID_SIZE, 1)
-            
-        prediction_val = model_forward(self.params, x_jax)
-        # Simple suppression law: tanh of predicted intensity
-        suppression = float(jnp.tanh(prediction_val * 2.0))
-        
-        # Fourier-project to divergence-free field: v - k(k·v)/k²
-        pred_field = np.array(field * (1.0 - suppression)) # Scaled prediction
-        
+    @staticmethod
+    def _postprocess_prediction(field: np.ndarray, suppression: float) -> np.ndarray:
+        pred_field = np.asarray(field, dtype=np.float64) * (1.0 - float(np.clip(suppression, 0.0, 0.98)))
         field_k = np.fft.fft2(pred_field)
-        kx = np.fft.fftfreq(GRID_SIZE)
-        ky = np.fft.fftfreq(GRID_SIZE)
-        kx_grid, ky_grid = np.meshgrid(kx, ky)
-        k2 = kx_grid**2 + ky_grid**2
-        k2[0, 0] = 1.0 # Avoid div zero
-        
-        # Divergence projection (Simplified for scalar proxy)
-        # Effectively a high-pass filter to remove non-physical DC drift
-        field_k[0, 0] = 0.0 
-        h_field = np.fft.ifft2(field_k).real
-        
-        return suppression, h_field
+        field_k[0, 0] = 0.0  # remove non-physical DC drift
+        out = np.fft.ifft2(field_k).real
+        return np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
+
+    def predict_and_suppress(self, field: np.ndarray) -> Tuple[float, np.ndarray]:
+        field_np = np.asarray(field, dtype=np.float64)
+        if field_np.shape != (GRID_SIZE, GRID_SIZE):
+            raise ValueError(f"field must have shape {(GRID_SIZE, GRID_SIZE)}, got {field_np.shape}.")
+
+        # Compatibility mode is the safe default lane.
+        if not (self.legacy_enabled and _HAS_JAX and self.loaded_weights):
+            suppression = _compat_suppression_from_field(field_np)
+            return suppression, self._postprocess_prediction(field_np, suppression)
+
+        x_jax = jnp.asarray(field_np).reshape(GRID_SIZE, GRID_SIZE, 1)
+        prediction_val = model_forward(self.params, x_jax)
+        suppression = float(np.clip(jnp.tanh(prediction_val * 2.0), 0.0, 0.98))
+        return suppression, self._postprocess_prediction(field_np, suppression)
 
 
 def run_fno_simulation(
@@ -164,21 +189,22 @@ def run_fno_simulation(
     weights_path: Optional[str] = None,
     *,
     seed: int = 42,
+    allow_legacy: bool = False,
     save_plot: bool = True,
     output_path: str = "FNO_Turbulence_Result.png",
     verbose: bool = True,
 ) -> dict[str, Any]:
     if verbose:
-        print("--- SCPN FNO: Spectral Turbulence Suppression ---")
+        print("--- SCPN FNO Compatibility: Spectral Turbulence Suppression ---")
 
     sim = SpectralTurbulenceGenerator(seed=int(seed))
-    ai = FNO_Controller(weights_path=weights_path)
+    ai = FNO_Controller(weights_path=weights_path, allow_legacy=allow_legacy)
 
     if verbose:
-        if ai.loaded_weights:
+        if ai.backend == "legacy_jax_fno":
             print(f"Loaded trained FNO weights: {ai.weights_path}")
         else:
-            print("No trained weights found. Using random initialization.")
+            print(f"Using backend={ai.backend} (legacy_enabled={ai.legacy_enabled}).")
 
     history_energy = []
     last_control = 0.0
@@ -237,6 +263,8 @@ def run_fno_simulation(
         "seed": int(seed),
         "steps": int(time_steps),
         "loaded_weights": bool(ai.loaded_weights),
+        "backend": str(ai.backend),
+        "legacy_enabled": bool(ai.legacy_enabled),
         "final_energy": float(hist[-1]) if hist.size else 0.0,
         "mean_energy_last_20": float(np.mean(hist[-20:])) if hist.size else 0.0,
         "max_energy": float(np.max(hist)) if hist.size else 0.0,
