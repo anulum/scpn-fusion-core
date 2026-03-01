@@ -23,7 +23,7 @@ def test_collect_unlinked_modules_returns_known_paths() -> None:
         test_root=ROOT / "tests",
     )
     assert len(unlinked) > 0
-    assert "src/scpn_fusion/core/compact_reactor_optimizer.py" in unlinked
+    assert "src/scpn_fusion/core/force_balance.py" in unlinked
 
 
 def test_main_passes_with_repo_allowlist() -> None:

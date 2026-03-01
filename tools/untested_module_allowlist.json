@@ -3,10 +3,6 @@
   "policy": "This allowlist freezes currently unlinked modules. New unlinked modules fail CI.",
   "allowlisted_modules": [
     {
-      "path": "src/scpn_fusion/core/compact_reactor_optimizer.py",
-      "reason": "Coverage lane exists via integration pathways; module-level import linkage pending."
-    },
-    {
       "path": "src/scpn_fusion/core/force_balance.py",
       "reason": "Prototype lane not yet directly linked from release test files."
     },
