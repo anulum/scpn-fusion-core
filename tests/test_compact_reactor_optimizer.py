@@ -13,9 +13,22 @@ def test_plasma_physics_model_returns_positive_outputs() -> None:
     assert vol > 0.0
 
 
+def test_plasma_physics_model_rejects_nonphysical_inputs() -> None:
+    architect = CompactReactorArchitect()
+    with pytest.raises(ValueError, match="must be > 0"):
+        architect.plasma_physics_model(R=0.0, a=0.5, B0=10.0)
+
+
 def test_radial_build_constraints_fail_for_impossible_post_radius() -> None:
     architect = CompactReactorArchitect()
     ok, b_coil = architect.radial_build_constraints(R=0.2, a=0.1, B0=10.0)
+    assert ok is False
+    assert b_coil == 0
+
+
+def test_radial_build_constraints_rejects_nonpositive_inputs() -> None:
+    architect = CompactReactorArchitect()
+    ok, b_coil = architect.radial_build_constraints(R=1.0, a=0.0, B0=10.0)
     assert ok is False
     assert b_coil == 0
 
@@ -33,3 +46,17 @@ def test_calculate_economics_returns_finite_values() -> None:
     assert coe > 0.0
     assert capex > 0.0
     assert coe == pytest.approx(float(coe))
+
+
+def test_calculate_economics_rejects_nonphysical_design() -> None:
+    architect = CompactReactorArchitect()
+    with pytest.raises(ValueError, match="positive"):
+        architect.calculate_economics(
+            {
+                "R": 1.7,
+                "a": 0.6,
+                "B_coil": 20.0,
+                "P_fus": 0.0,
+                "Vol": 20.0,
+            }
+        )

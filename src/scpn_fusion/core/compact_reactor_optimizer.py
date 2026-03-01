@@ -21,6 +21,8 @@ class CompactReactorArchitect:
         self.fluence_limit = 5e22 
         
     def plasma_physics_model(self, R, a, B0):
+        if R <= 0 or a <= 0 or B0 <= 0:
+            raise ValueError("R, a, and B0 must be > 0 for plasma_physics_model.")
         Vol = 2 * np.pi * R * np.pi * a**2 
         kappa = 2.0
         I_p = (5 * a**2 * B0 / R) * ((1 + kappa**2)/2) / 3.0
@@ -31,11 +33,14 @@ class CompactReactorArchitect:
         return P_fusion, I_p, Vol
 
     def radial_build_constraints(self, R, a, B0):
+        if R <= 0 or a <= 0 or B0 <= 0:
+            return False, 0
         d_shield = 0.10 
         gap = 0.02
         d_coil = 0.2
         R_post = R - a - d_shield - gap
-        if R_post < 0.05: return False, 0
+        if R_post < max(0.05, d_coil):
+            return False, 0
         B_coil = B0 * (R / R_post)
         I_total_MA = 5.0 * R * B0 
         Area_coil = np.pi * (R_post**2 - (R_post-d_coil)**2)
@@ -65,6 +70,8 @@ class CompactReactorArchitect:
         P_fus = d['P_fus']
         R = d['R']
         B_coil = d['B_coil']
+        if P_fus <= 0 or R <= 0 or d['a'] <= 0 or B_coil <= 0:
+            raise ValueError("Design requires positive P_fus, R, a, and B_coil.")
         
         # 1. Direct Capital Costs (Estimate in M$)
         # Magnet cost scales with Volume * B^2
@@ -83,6 +90,8 @@ class CompactReactorArchitect:
         # 2. CoE Calculation
         f_avail = 0.75 # High availability goal
         p_net_mw = P_fus * 0.4 * 0.9 # Thermal efficiency * recirculating power
+        if p_net_mw <= 0:
+            raise ValueError("Computed net electric power must be > 0.")
         
         # Annualized capital cost (10% fixed charge rate)
         annual_cap = total_cap_m_usd * 0.10 * 1e6

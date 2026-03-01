@@ -6,9 +6,8 @@
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
-import sys
-import os
 import json
+from pathlib import Path
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
@@ -26,7 +25,14 @@ class ForceBalanceSolver:
         self.config_path = config_path
         self.analyzer = StabilityAnalyzer(config_path)
         
-    def solve_for_equilibrium(self, target_R=6.2, target_Z=0.0):
+    def solve_for_equilibrium(
+        self,
+        target_R=6.2,
+        target_Z=0.0,
+        *,
+        max_iterations: int = 10,
+        jacobian_floor: float = 1e-12,
+    ):
         print(f"--- FORCE BALANCE SOLVER (Newton-Raphson) ---")
         print(f"Target Equilibrium: R={target_R}m, Z={target_Z}m")
         
@@ -38,7 +44,7 @@ class ForceBalanceSolver:
         Ip = self.analyzer.kernel.cfg['physics']['plasma_current_target']
         
         # Newton Loop
-        for iter in range(10):
+        for iter in range(max_iterations):
             # 1. Calculate Current Force
             Fr, Fz, n_idx = self.analyzer.calculate_forces(target_R, target_Z, Ip)
             print(f"Iter {iter}: Radial Force = {Fr/1e6:.2f} MN")
@@ -73,8 +79,15 @@ class ForceBalanceSolver:
             # We want F_target = 0
             # 0 = F_old + J * delta_I
             # delta_I = - F_old / J
-            
-            delta_I = - Fr / J
+            if not np.isfinite(J) or abs(J) < jacobian_floor:
+                # Singular/ill-conditioned update; take a conservative directional step.
+                delta_I = -0.25 * np.sign(Fr) if Fr != 0.0 else 0.0
+                print(
+                    "  Jacobian near-singular; applying conservative "
+                    f"directional step ΔI={delta_I:.3f} MA"
+                )
+            else:
+                delta_I = - Fr / J
             
             # Safety Clamp (don't jump more than 5 MA at once)
             delta_I = np.clip(delta_I, -5.0, 5.0)
@@ -94,11 +107,19 @@ class ForceBalanceSolver:
         # Save Result
         self.save_config()
         
-    def save_config(self):
-        # Save to validation folder
-        out_path = os.path.join(os.path.dirname(__file__), "../../../validation/iter_force_balanced.json")
-        with open(out_path, "w") as f:
-            json.dump(self.analyzer.kernel.cfg, f, indent=4)
+    def save_config(self, output_path: str | Path | None = None):
+        # Save to validation folder by default.
+        repo_root = Path(__file__).resolve().parents[3]
+        out_path = (
+            Path(output_path)
+            if output_path is not None
+            else (repo_root / "validation" / "iter_force_balanced.json")
+        )
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(
+            json.dumps(self.analyzer.kernel.cfg, indent=4),
+            encoding="utf-8",
+        )
         print(f"Balanced Config Saved: {out_path}")
 
 if __name__ == "__main__":

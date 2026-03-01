@@ -33,10 +33,26 @@ def test_visualize_bridge_saves_plot(monkeypatch) -> None:
     bridge = lazarus_bridge.LazarusBridge.__new__(lazarus_bridge.LazarusBridge)
     bridge.kernel = _DummyKernel()
     saved: list[str] = []
+    class _DummyAxes:
+        def contour(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+            return None
+
+        def plot(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+            return None
+
+        def set_title(self, *_args, **_kwargs) -> None:
+            return None
+
+        def legend(self, *_args, **_kwargs) -> None:
+            return None
+
+    class _DummyFig:
+        pass
 
     def _fake_savefig(path: str) -> None:
         saved.append(path)
 
+    monkeypatch.setattr(lazarus_bridge.plt, "subplots", lambda **kwargs: (_DummyFig(), _DummyAxes()))
     monkeypatch.setattr(lazarus_bridge.plt, "savefig", _fake_savefig)
     bridge.visualize_bridge(1.0)
     assert saved
