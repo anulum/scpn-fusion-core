@@ -176,10 +176,37 @@ jobs:
         if: matrix.python-version == '3.12'
         run: python tools/run_python_preflight.py --gate release
       - name: Run release test suite (exclude experimental-only lanes)
+        if: matrix.python-version != '3.12'
         run: pytest tests/ -v -m "not experimental"
       - name: Generate Python coverage report
         if: matrix.python-version == '3.12'
-        run: pytest tests/ -q -m "not experimental" --cov=scpn_fusion --cov-branch --cov-report=xml:coverage-python.xml
+        run: |
+          mkdir -p artifacts
+          set +e
+          timeout --signal=TERM 50m pytest tests/ -q -m "not experimental" \
+            --cov=scpn_fusion --cov-branch --cov-report=xml:coverage-python.xml \
+            2>&1 | tee artifacts/python312_coverage.log
+          rc=${PIPESTATUS[0]}
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          diag = {
+              "coverage_timeout": False,
+              "coverage_log": "artifacts/python312_coverage.log",
+              "coverage_xml": "coverage-python.xml",
+              "timeout_minutes": 50,
+          }
+          Path("artifacts").mkdir(parents=True, exist_ok=True)
+          Path("artifacts/python312_coverage_diagnostics.json").write_text(
+              json.dumps(diag, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          if [ "$rc" -eq 124 ]; then
+            echo "::error::Python 3.12 coverage run timed out after 50 minutes."
+          fi
+          exit "$rc"
       - name: Coverage regression guard
         if: matrix.python-version == '3.12'
         run: |
@@ -206,11 +233,22 @@ jobs:
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload Python 3.12 coverage diagnostics
+        if: matrix.python-version == '3.12' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python312-coverage-diagnostics
+          if-no-files-found: warn
+          path: |
+            artifacts/python312_coverage.log
+            artifacts/python312_coverage_diagnostics.json
+            coverage-python.xml
       - name: Upload coverage guard summary
-        if: matrix.python-version == '3.12'
+        if: matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-guard-summary
+          if-no-files-found: warn
           path: artifacts/coverage_guard_summary.json
 
   python-research-gate:
@@ -372,6 +410,63 @@ jobs:
           path: |
             artifacts/real_shot_validation.json
             artifacts/real_shot_validation.md
+
+  benchmark-provenance-smoke:
+    name: Benchmark Provenance Smoke
+    runs-on: ubuntu-latest
+    needs: [python-tests]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install "jax[cpu]" gymnasium
+      - name: Generate benchmark artifacts
+        run: |
+          python validation/benchmark_vs_torax.py
+          python validation/benchmark_sparc_geqdsk_rmse.py
+      - name: Verify provenance fields
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          torax = json.loads(Path("artifacts/torax_benchmark.json").read_text(encoding="utf-8"))
+          sparc = json.loads(Path("artifacts/sparc_geqdsk_rmse_benchmark.json").read_text(encoding="utf-8"))
+
+          torax_cases = torax.get("cases", [])
+          sparc_cases = sparc.get("cases", [])
+          if not torax_cases:
+              raise SystemExit("torax benchmark produced zero cases")
+          if not sparc_cases:
+              raise SystemExit("sparc benchmark produced zero cases")
+
+          for idx, case in enumerate(torax_cases):
+              for key in ("transport_backend", "fallback_reason", "fallback_seed"):
+                  if key not in case:
+                      raise SystemExit(f"torax case[{idx}] missing key: {key}")
+          for idx, case in enumerate(sparc_cases):
+              for key in ("surrogate_backend", "fallback_reason"):
+                  if key not in case:
+                      raise SystemExit(f"sparc case[{idx}] missing key: {key}")
+
+          print(
+              "Benchmark provenance OK: "
+              f"torax_cases={len(torax_cases)} sparc_cases={len(sparc_cases)}"
+          )
+          PY
+      - name: Upload benchmark provenance artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-provenance-smoke
+          path: |
+            artifacts/torax_benchmark.json
+            artifacts/sparc_geqdsk_rmse_benchmark.json
 
   rust-tests:
     name: Rust (stable)

@@ -2,7 +2,7 @@
   "global_min_line_rate": 72.5,
   "global_min_branch_rate": 1.0,
   "domain_min_line_rate": {
-    "cli.py": 74.0,
+    "cli.py": 80.0,
     "control": 78.0,
     "core": 70.0,
     "diagnostics": 73.0,
@@ -14,7 +14,7 @@
     "ui": 23.0
   },
   "file_min_line_rate": {
-    "src/scpn_fusion/cli.py": 74.0,
+    "src/scpn_fusion/cli.py": 80.0,
     "src/scpn_fusion/control/disruption_contracts.py": 88.0,
     "src/scpn_fusion/core/integrated_transport_solver.py": 91.0,
     "src/scpn_fusion/core/quasi_3d_contracts.py": 90.0,

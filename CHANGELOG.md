@@ -44,11 +44,15 @@
 - Validation observability: SPARC GEQDSK RMSE benchmark now records surrogate backend and fallback reason per case, plus strict backend requirement support (`--strict-backend`).
 - CI hardening: Python coverage lane now runs with `--cov-branch`, and coverage guard supports optional global/domain/file branch-rate thresholds to prevent silent branch-coverage regressions.
 - CI stability: calibrated line-coverage guard thresholds to current release-lane baseline for `cli.py`, `control`, and `integrated_transport_solver` while retaining regression gating.
+- CI throughput hardening: Python 3.12 lane now avoids duplicate full-suite execution by running a single coverage-enabled release pass, reducing redundant runtime.
+- CI resiliency hardening: Python 3.12 coverage run now has an explicit 50-minute timeout, writes diagnostics metadata/logs, and uploads diagnostics artifacts on failure.
+- Coverage recovery: expanded unified-CLI test surface and re-tightened `cli.py` coverage thresholds to 80% after restoring measured coverage headroom.
 
 ### Added
 - Wave A scaffolding: `tools/coverage_guard.py` + `tools/coverage_guard_thresholds.json` with CI coverage regression gating and summary artifact upload.
 - Wave A scaffolding: `tools/generate_source_p0p1_issue_backlog.py` with tracked outputs (`docs/SOURCE_P0P1_ISSUE_BACKLOG.{md,json}`).
 - Wave A scaffolding: `tools/check_test_module_linkage.py` + allowlist policy file to block newly unlinked source modules.
+- Validation hardening: added CI `Benchmark Provenance Smoke` lane to enforce TORAX/SPARC benchmark artifact provenance fields (`backend`, `fallback_reason`, seed metadata) and publish artifacts.
 - Community hardening: added dedicated issue templates for real-data validation contributions and manuscript/claim review workflows.
 - Release hardening: added `docs/HARDENING_30_DAY_EXECUTION_PLAN.md` and `docs/V3_9_3_RELEASE_CHECKLIST.md` to enforce scope-focused v3.9.3 execution gates.
 - Regression tests for secure deserialization defaults (object-array payload rejection and secure checkpoint load-path assertions).
