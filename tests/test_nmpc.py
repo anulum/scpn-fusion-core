@@ -5,6 +5,7 @@
 
 import numpy as np
 import pytest
+import scpn_fusion.control.fusion_nmpc_jax as nmpc_mod
 from scpn_fusion.control.fusion_nmpc_jax import (
     NeuralODEDynamics,
     NonlinearMPC,
@@ -52,3 +53,20 @@ def test_nmpc_rtol_parameter_respected():
 
     ctrl2 = NonlinearMPC(dyn, horizon=5, rtol=1e-6)
     assert ctrl2.rtol == 1e-6
+
+
+def test_nmpc_records_backend_after_plan():
+    ctrl = get_nmpc_controller(state_dim=2, action_dim=2, horizon=3)
+    x0 = np.zeros(2)
+    target = np.array([0.2, -0.1], dtype=float)
+    _ = ctrl.plan_trajectory(x0, target)
+    assert ctrl.last_backend in {"jax", "numpy_compat"}
+
+
+def test_nmpc_strict_mode_rejects_numpy_fallback_when_jax_unavailable(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(nmpc_mod, "_HAS_JAX", False)
+    dyn = NeuralODEDynamics(state_dim=2, action_dim=2)
+    with pytest.raises(ImportError, match="allow_numpy_fallback=False"):
+        NonlinearMPC(dyn, horizon=5, allow_numpy_fallback=False)

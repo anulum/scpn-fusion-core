@@ -23,7 +23,8 @@ def test_collect_entries_returns_actionable_findings() -> None:
     entries = underdev.collect_entries(ROOT)
     assert len(entries) > 0
     assert any(entry.path.startswith("src/scpn_fusion/") for entry in entries)
-    assert any(entry.marker in {"DEPRECATED", "EXPERIMENTAL", "SIMPLIFIED"} for entry in entries)
+    rule_markers = {rule.marker for rule in underdev.MARKER_RULES}
+    assert all(entry.marker in rule_markers for entry in entries)
     assert all(entry.path != "docs/CLAIMS_EVIDENCE_MAP.md" for entry in entries)
     assert all(entry.path != "docs/SOURCE_P0P1_ISSUE_BACKLOG.md" for entry in entries)
     assert all(entry.path != "docs/SOURCE_P0P1_ISSUE_BACKLOG.json" for entry in entries)
@@ -43,3 +44,43 @@ def test_source_scope_filters_to_src_paths() -> None:
     scoped = underdev._filter_entries_by_scope(entries, scope="source")
     assert len(scoped) > 0
     assert all(entry.path.startswith("src/scpn_fusion/") for entry in scoped)
+
+
+def test_fallback_metadata_lines_are_suppressed() -> None:
+    assert underdev._is_marker_suppressed(
+        rel_path="src/scpn_fusion/control/disruption_predictor.py",
+        marker="FALLBACK",
+        line='"fallback": True,',
+        file_text="",
+    )
+
+
+def test_fallback_comment_lines_are_suppressed() -> None:
+    assert underdev._is_marker_suppressed(
+        rel_path="src/scpn_fusion/core/fusion_kernel.py",
+        marker="FALLBACK",
+        line="# Python fallback path",
+        file_text="",
+    )
+
+
+def test_analytic_solver_fallback_line_is_suppressed_when_guarded() -> None:
+    assert underdev._is_marker_suppressed(
+        rel_path="src/scpn_fusion/control/analytic_solver.py",
+        marker="FALLBACK",
+        line='fallback = repo_root / "validation" / "iter_validated_config.json"',
+        file_text=(
+            'allow_validation_fallback=True\n'
+            '"config_source": "validation_fallback_default"\n'
+            '"fallback_used": True\n'
+        ),
+    )
+
+
+def test_fallback_assignment_metadata_line_is_suppressed() -> None:
+    assert underdev._is_marker_suppressed(
+        rel_path="src/scpn_fusion/control/disruption_predictor.py",
+        marker="FALLBACK",
+        line='info["fallback"] = False',
+        file_text="",
+    )

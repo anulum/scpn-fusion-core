@@ -184,6 +184,37 @@ class AnalyticEquilibriumSolver:
         return str(out_path)
 
 
+def _resolve_default_config_path(
+    repo_root: Path,
+    *,
+    allow_validation_fallback: bool = True,
+) -> tuple[str, str, bool]:
+    """Resolve the default analytic solver config with explicit fallback policy."""
+    preferred = repo_root / "calibration" / "iter_genetic_temp.json"
+    fallback = repo_root / "validation" / "iter_validated_config.json"
+
+    if preferred.exists():
+        return str(preferred), "preferred_default", False
+
+    if fallback.exists():
+        if not allow_validation_fallback:
+            raise FileNotFoundError(
+                "Preferred default config is missing and validation fallback is disabled: "
+                f"{preferred}"
+            )
+        logger.warning(
+            "Preferred analytic config missing; using validation fallback: %s",
+            fallback,
+        )
+        return str(fallback), "validation_fallback_default", True
+
+    raise FileNotFoundError(
+        "No default analytic config found. Checked:\n"
+        f"- {preferred}\n"
+        f"- {fallback}"
+    )
+
+
 def run_analytic_solver(
     config_path: Optional[str] = None,
     *,
@@ -196,6 +227,7 @@ def run_analytic_solver(
     ridge_lambda: float = 0.0,
     save_config: bool = True,
     output_config_path: Optional[str] = None,
+    allow_validation_fallback: bool = True,
     verbose: bool = True,
     kernel_factory: Callable[[str], Any] = FusionKernel,
 ) -> Dict[str, Any]:
@@ -203,10 +235,13 @@ def run_analytic_solver(
     Run analytic equilibrium solve and return deterministic summary.
     """
     repo_root = Path(__file__).resolve().parents[3]
+    config_source = "explicit"
+    fallback_used = False
     if config_path is None:
-        preferred = repo_root / "calibration" / "iter_genetic_temp.json"
-        fallback = repo_root / "validation" / "iter_validated_config.json"
-        config_path = str(preferred if preferred.exists() else fallback)
+        config_path, config_source, fallback_used = _resolve_default_config_path(
+            repo_root,
+            allow_validation_fallback=allow_validation_fallback,
+        )
 
     solver = AnalyticEquilibriumSolver(
         str(config_path),
@@ -237,6 +272,8 @@ def run_analytic_solver(
     summary_currents = {name: float(currents[i]) for i, name in enumerate(names)}
     return {
         "config_path": str(config_path),
+        "config_source": str(config_source),
+        "fallback_used": bool(fallback_used),
         "output_config_path": written_path,
         "target_r_m": float(target_r),
         "target_z_m": float(target_z),

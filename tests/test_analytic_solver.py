@@ -9,9 +9,11 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 import numpy as np
 import pytest
 
+from scpn_fusion.control import analytic_solver as analytic_solver_mod
 from scpn_fusion.control.analytic_solver import (
     AnalyticEquilibriumSolver,
     run_analytic_solver,
@@ -90,6 +92,8 @@ def test_run_analytic_solver_returns_deterministic_summary_without_write() -> No
     b = run_analytic_solver(**kwargs)
     for key in (
         "config_path",
+        "config_source",
+        "fallback_used",
         "target_r_m",
         "target_z_m",
         "a_minor_m",
@@ -100,6 +104,8 @@ def test_run_analytic_solver_returns_deterministic_summary_without_write() -> No
     ):
         assert key in a
     assert a["config_path"] == "dummy.json"
+    assert a["config_source"] == "explicit"
+    assert a["fallback_used"] is False
     assert a["output_config_path"] is None
     assert set(a["coil_currents_ma"].keys()) == {"PF1", "PF2", "PF3", "PF4"}
     for key in (
@@ -110,3 +116,29 @@ def test_run_analytic_solver_returns_deterministic_summary_without_write() -> No
         assert a[key] == pytest.approx(b[key], rel=0.0, abs=0.0)
     for k, v in a["coil_currents_ma"].items():
         assert float(v) == pytest.approx(float(b["coil_currents_ma"][k]), rel=0.0, abs=0.0)
+
+
+def test_resolve_default_config_prefers_calibration_config(tmp_path) -> None:
+    calibration = tmp_path / "calibration"
+    validation = tmp_path / "validation"
+    calibration.mkdir(parents=True, exist_ok=True)
+    validation.mkdir(parents=True, exist_ok=True)
+    (calibration / "iter_genetic_temp.json").write_text("{}", encoding="utf-8")
+    (validation / "iter_validated_config.json").write_text("{}", encoding="utf-8")
+
+    path, source, used_fallback = analytic_solver_mod._resolve_default_config_path(tmp_path)
+    assert Path(path).as_posix().endswith("calibration/iter_genetic_temp.json")
+    assert source == "preferred_default"
+    assert used_fallback is False
+
+
+def test_resolve_default_config_can_disable_validation_fallback(tmp_path) -> None:
+    validation = tmp_path / "validation"
+    validation.mkdir(parents=True, exist_ok=True)
+    (validation / "iter_validated_config.json").write_text("{}", encoding="utf-8")
+
+    with pytest.raises(FileNotFoundError, match="validation fallback is disabled"):
+        analytic_solver_mod._resolve_default_config_path(
+            tmp_path,
+            allow_validation_fallback=False,
+        )

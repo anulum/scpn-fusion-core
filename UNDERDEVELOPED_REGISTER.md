@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-01T05:24:09.098414+00:00`
+- Generated at: `2026-03-01T06:29:24.331440+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,45 +8,43 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 327 |
-| P0 + P1 entries | 105 |
-| Source-domain entries | 131 |
-| Source-domain P0 + P1 entries | 47 |
-| Docs-claims entries | 161 |
+| Total flagged entries | 247 |
+| P0 + P1 entries | 71 |
+| Source-domain entries | 68 |
+| Source-domain P0 + P1 entries | 25 |
+| Docs-claims entries | 159 |
 | Domains affected | 8 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 176 |
-| `EXPERIMENTAL` | 61 |
-| `SIMPLIFIED` | 38 |
-| `DEPRECATED` | 24 |
+| `FALLBACK` | 130 |
+| `EXPERIMENTAL` | 49 |
 | `PLANNED` | 23 |
-| `NOT_VALIDATED` | 5 |
+| `DEPRECATED` | 22 |
+| `SIMPLIFIED` | 19 |
+| `NOT_VALIDATED` | 4 |
 
 ## Domain Distribution
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 161 |
-| `core_physics` | 44 |
-| `validation` | 44 |
-| `other` | 35 |
-| `control` | 28 |
-| `compiler_runtime` | 8 |
-| `nuclear` | 4 |
-| `diagnostics_io` | 3 |
+| `docs_claims` | 159 |
+| `validation` | 37 |
+| `other` | 20 |
+| `core_physics` | 16 |
+| `control` | 7 |
+| `compiler_runtime` | 6 |
+| `diagnostics_io` | 1 |
+| `nuclear` | 1 |
 
-## Source-Centric Priority Backlog (Top 47)
+## Source-Centric Priority Backlog (Top 25)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 104 | `core_physics` | `DEPRECATED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:8` | Core Physics WG | Replace default path or remove lane before next major release. | """DEPRECATED: FNO turbulence surrogate (synthetic-only, rel_L2=0.79). |
-| P0 | 104 | `core_physics` | `DEPRECATED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:21` | Core Physics WG | Replace default path or remove lane before next major release. | "fno_turbulence_suppressor is deprecated (rel_L2=0.79, synthetic-only). " |
 | P0 | 101 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:105` | Validation WG | Replace default path or remove lane before next major release. | if "DEPRECATED" in markers: |
 | P0 | 101 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:106` | Validation WG | Replace default path or remove lane before next major release. | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
 | P0 | 101 | `validation` | `DEPRECATED` | `validation/benchmark_deprecated_mode_exclusion.py:3` | Validation WG | Replace default path or remove lane before next major release. | # SCPN Fusion Core -- Deprecated Mode Exclusion Benchmark |
@@ -56,7 +54,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 101 | `validation` | `DEPRECATED` | `validation/collect_results.py:531` | Validation WG | Replace default path or remove lane before next major release. | rows.append(f"| JAX FNO turbulence surrogate relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | DEPRECATED — synthet... |
 | P0 | 101 | `validation` | `DEPRECATED` | `validation/collect_results.py:532` | Validation WG | Replace default path or remove lane before next major release. | rows.append(f"| JAX FNO turbulence surrogate relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | DEPRECATED — use QLKNN... |
 | P0 | 101 | `validation` | `DEPRECATED` | `validation/collect_results.py:590` | Validation WG | Replace default path or remove lane before next major release. | sections.append(f"\| FNO EUROfusion \| DEPRECATED \| {fno_metric} \|") |
-| P0 | 95 | `core_physics` | `NOT_VALIDATED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:10` | Core Physics WG | Add real-data validation campaign and publish error bars. | Trained on 60 Hasegawa-Wakatani samples; not validated against gyrokinetics. |
 | P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:113` | Validation WG | Gate behind explicit flag and define validation exit criteria. | if "EXPERIMENTAL" in markers: |
 | P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:114` | Validation WG | Gate behind explicit flag and define validation exit criteria. | items.append("Ensure release lane remains experimental-excluded unless explicitly opted in.") |
 | P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:268` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
@@ -73,32 +70,11 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/run_experimental_validation.py:2` | Validation WG | Gate behind explicit flag and define validation exit criteria. | # SCPN Fusion Core — Unified Experimental Validation Runner |
 | P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/run_experimental_validation.py:190` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print(" SCPN Fusion Core — Unified Experimental Validation") |
 | P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/validate_against_sparc.py:185` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print(" SCPN Fusion Core - Validation Against Experimental Data") |
-| P1 | 84 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/fokker_planck_re.py:123` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified from Rosenbluth-Putvinski, Nucl. Fusion 37 (1997). |
-| P1 | 84 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/spi_ablation.py:15` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | (Simplified scaling) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/eped_pedestal.py:9` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | EPED-like simplified pedestal scaling model for H-mode tokamak plasmas. |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/eped_pedestal.py:104` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified EPED-like pedestal model. |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:154` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Divergence projection (Simplified for scalar proxy) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/fusion_ignition_sim.py:52` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # In our simplified kernel, J was modeled directly. |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/fusion_ignition_sim.py:423` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Impurity line radiation (simplified) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/global_design_scanner.py:68` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Actually simplified scaling: beta_N_eff = beta_N_nominal * (1 + 0.2*(kappa-1.5)) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_transport_solver.py:766` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Z_eff = (n_e * 1 + n_imp * Z^2) / (n_e + n_imp * Z) ≈ simplified |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_transport_solver.py:797` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | L34 = -0.1 * L31 # often stabilizing/negative in simplified models |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/jax_transport_solver.py:37` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified for 1.5D: d/drho (D * dT/drho) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neural_transport.py:128` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | _CRIT_TEM = 5.0 # R/L_Te threshold for TEM (simplified) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/rf_heating.py:89` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: Gaussian blob |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/sandpile_fusion_reactor.py:95` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | A simplified Reinforcement Learning agent. |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stability_mhd.py:375` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | r"""Simplified neoclassical tearing mode (NTM) seeding analysis. |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stability_mhd.py:377` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | The modified Rutherford equation for island width *w* is (simplified): |
-| P1 | 82 | `nuclear` | `SIMPLIFIED` | `src/scpn_fusion/nuclear/blanket_neutronics.py:75` | Nuclear WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Cross Sections (Macroscopic Sigma in cm^-1) - Simplified for 14 MeV neutrons |
-| P1 | 82 | `nuclear` | `SIMPLIFIED` | `src/scpn_fusion/nuclear/nuclear_wall_interaction.py:256` | Nuclear WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Material Parameters (Simplified for D on Target) |
-| P1 | 82 | `nuclear` | `SIMPLIFIED` | `src/scpn_fusion/nuclear/nuclear_wall_interaction.py:271` | Nuclear WG | Upgrade with higher-fidelity closure or tighten domain contract. | # f(alpha) ~ 1 / cos(alpha) -> simplified enhancement |
 
 ## Top Priority Backlog (Top 80)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 104 | `core_physics` | `DEPRECATED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:8` | Core Physics WG | Replace default path or remove lane before next major release. | """DEPRECATED: FNO turbulence surrogate (synthetic-only, rel_L2=0.79). |
-| P0 | 104 | `core_physics` | `DEPRECATED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:21` | Core Physics WG | Replace default path or remove lane before next major release. | "fno_turbulence_suppressor is deprecated (rel_L2=0.79, synthetic-only). " |
 | P0 | 101 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:105` | Validation WG | Replace default path or remove lane before next major release. | if "DEPRECATED" in markers: |
 | P0 | 101 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:106` | Validation WG | Replace default path or remove lane before next major release. | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
 | P0 | 101 | `validation` | `DEPRECATED` | `validation/benchmark_deprecated_mode_exclusion.py:3` | Validation WG | Replace default path or remove lane before next major release. | # SCPN Fusion Core -- Deprecated Mode Exclusion Benchmark |
@@ -108,7 +84,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 101 | `validation` | `DEPRECATED` | `validation/collect_results.py:531` | Validation WG | Replace default path or remove lane before next major release. | rows.append(f"| JAX FNO turbulence surrogate relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | DEPRECATED — synthet... |
 | P0 | 101 | `validation` | `DEPRECATED` | `validation/collect_results.py:532` | Validation WG | Replace default path or remove lane before next major release. | rows.append(f"| JAX FNO turbulence surrogate relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | DEPRECATED — use QLKNN... |
 | P0 | 101 | `validation` | `DEPRECATED` | `validation/collect_results.py:590` | Validation WG | Replace default path or remove lane before next major release. | sections.append(f"\| FNO EUROfusion \| DEPRECATED \| {fno_metric} \|") |
-| P0 | 95 | `core_physics` | `NOT_VALIDATED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:10` | Core Physics WG | Add real-data validation campaign and publish error bars. | Trained on 60 Hasegawa-Wakatani samples; not validated against gyrokinetics. |
 | P0 | 95 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | Architecture WG | Replace default path or remove lane before next major release. | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
 | P0 | 95 | `other` | `DEPRECATED` | `CHANGELOG.md:53` | Architecture WG | Replace default path or remove lane before next major release. | - Regression test for deprecated FNO-controller missing-weight fallback path. |
 | P1 | 94 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:113` | Validation WG | Gate behind explicit flag and define validation exit criteria. | if "EXPERIMENTAL" in markers: |
@@ -142,48 +117,49 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:200` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added CI split lane `python-research-gate` and release-only pytest execution (`-m "not experimental"`) |
 | P1 | 88 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:281` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added single-command suite execution via `scpn-fusion all --surrogate --experimental`. |
 | P1 | 88 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:75` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | # Experimental modes (opt-in). |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:76` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | "quantum": ModeSpec("scpn_fusion.core.quantum_bridge", "experimental", "Quantum bridge"), |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:77` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | "q-control": ModeSpec("scpn_fusion.core.quantum_bridge", "experimental", "Quantum control bridge"), |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:80` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | "experimental", |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:83` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | "lazarus": ModeSpec("scpn_fusion.core.lazarus_bridge", "experimental", "Lazarus bridge"), |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:84` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | "director": ModeSpec("scpn_fusion.control.director_interface", "experimental", "Director interface"), |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:85` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | "vibrana": ModeSpec("scpn_fusion.core.vibrana_bridge", "experimental", "Vibrana bridge"), |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:121` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | elif spec.maturity == "experimental" and include_experimental: |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:135` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | if spec.maturity == "experimental" and not include_experimental: |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:136` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | return "experimental mode locked; pass --experimental or set SCPN_EXPERIMENTAL=1" |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:256` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | @click.option("--experimental", is_flag=True, help="Unlock experimental modes.") |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:280` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | experimental: bool, |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:295` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | include_experimental = experimental or _env_enabled("SCPN_EXPERIMENTAL") |
-| P1 | 84 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/fokker_planck_re.py:123` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified from Rosenbluth-Putvinski, Nucl. Fusion 37 (1997). |
-| P1 | 84 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/spi_ablation.py:15` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | (Simplified scaling) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/eped_pedestal.py:9` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | EPED-like simplified pedestal scaling model for H-mode tokamak plasmas. |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/eped_pedestal.py:104` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified EPED-like pedestal model. |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:154` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Divergence projection (Simplified for scalar proxy) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/fusion_ignition_sim.py:52` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # In our simplified kernel, J was modeled directly. |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/fusion_ignition_sim.py:423` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Impurity line radiation (simplified) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/global_design_scanner.py:68` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Actually simplified scaling: beta_N_eff = beta_N_nominal * (1 + 0.2*(kappa-1.5)) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_transport_solver.py:766` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Z_eff = (n_e * 1 + n_imp * Z^2) / (n_e + n_imp * Z) ≈ simplified |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_transport_solver.py:797` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | L34 = -0.1 * L31 # often stabilizing/negative in simplified models |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/jax_transport_solver.py:37` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified for 1.5D: d/drho (D * dT/drho) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neural_transport.py:128` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | _CRIT_TEM = 5.0 # R/L_Te threshold for TEM (simplified) |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/rf_heating.py:89` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: Gaussian blob |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/sandpile_fusion_reactor.py:95` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | A simplified Reinforcement Learning agent. |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stability_mhd.py:375` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | r"""Simplified neoclassical tearing mode (NTM) seeding analysis. |
-| P1 | 83 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stability_mhd.py:377` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | The modified Rutherford equation for island width *w* is (simplified): |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | Docs WG | Gate behind explicit flag and define validation exit criteria. | > This repo is the full physics + experimental suite. |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:255` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ### Experimental |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:327` | Docs WG | Gate behind explicit flag and define validation exit criteria. | scpn-fusion all --surrogate --experimental |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:23` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `EXPERIMENTAL` \| 55 \| |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:73` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - `EXPERIMENTAL`: 15 mentions |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:102` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:343` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ## 6. Experimental Validation Portfolio |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:478` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - **HSX** (University of Wisconsin): 4 field periods, QHS configuration, US-based experimental access |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:546` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Q4 \| DIII-D and JET GEQDSK validation (5+5 shots) \| Extended validation database \| Axis error < 10 mm on experimental shots \| |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:554` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Experimental data access (DIII-D, JET): $50K |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:611` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| **Experimental Access** \| \| \| \| \| |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:634` | Docs WG | Gate behind explicit flag and define validation exit criteria. | **Experimental Access:** DIII-D and JET GEQDSK data are needed for expanding the validation database beyond the current 8 SPARC files. Co... |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:788` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 2. **General Atomics** — DIII-D experimental data access, validation collaboration |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2534` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Each paper would require additional experimental results (plant model integration, hardware benchmarks, comparison against conventional c... |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 4. For real experimental data, start with `0.01` and adjust based on |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:98` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| **0.05–0.5** \| Standard robust range \| Real experimental data with occasional probe failures or calibration drift \| |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/V3_9_3_RELEASE_CHECKLIST.md:18` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - [ ] Confirm deprecated/experimental paths remain non-default in release-facing commands. |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:8` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Preserve visibility on experimental/research lanes without letting them silently contaminate release acceptance. |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:15` | Docs WG | Gate behind explicit flag and define validation exit criteria. | | `release` | Version/claims integrity, disruption data provenance + split + calibration holdout checks, disruption replay pipeline contr... |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:16` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `research` \| Experimental-only pytest lane (`pytest -m experimental`). \| `python tools/run_python_preflight.py --gate research` \| |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:24` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `python-research-gate` \| Experimental validation lane (3.12) \| `research` \| |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:25` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `validation-regression` \| Cross-language physics validation lane \| `release` (`pytest -m "not experimental"`) \| |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:27` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ## Experimental Marker Contract |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:29` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Tests marked with `@pytest.mark.experimental` are considered research-only and are excluded from release acceptance runs. As of v3.9.x th... |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:42` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 1. Remove `@pytest.mark.experimental` from the test module(s). |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:79` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| DIII-D \| ITER \| |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Experimental Bridges |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/userguide/validation.rst:5` | Docs WG | Gate behind explicit flag and define validation exit criteria. | SCPN-Fusion-Core is validated against published experimental data from |
+| P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Add real-data validation campaign and publish error bars. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
+| P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Add real-data validation campaign and publish error bars. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
+| P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | Docs WG | Add real-data validation campaign and publish error bars. | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
+| P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | Docs WG | Add real-data validation campaign and publish error bars. | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
+| P2 | 80 | `validation` | `SIMPLIFIED` | `tools/generate_source_p0p1_issue_backlog.py:109` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | if "SIMPLIFIED" in markers: |
+| P2 | 80 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
+| P2 | 80 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:375` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | implements a 10 kHz PID control loop with simplified linear plasma |
+| P2 | 80 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Step Physics (Single step of simulate logic simplified) |
+| P2 | 80 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
 
-## Full Register (Top 250)
+## Full Register (Top 247)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `core_physics` | `DEPRECATED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:8` | """DEPRECATED: FNO turbulence surrogate (synthetic-only, rel_L2=0.79). |
-| P0 | `core_physics` | `DEPRECATED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:21` | "fno_turbulence_suppressor is deprecated (rel_L2=0.79, synthetic-only). " |
 | P0 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:105` | if "DEPRECATED" in markers: |
 | P0 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:106` | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
 | P0 | `validation` | `DEPRECATED` | `validation/benchmark_deprecated_mode_exclusion.py:3` | # SCPN Fusion Core -- Deprecated Mode Exclusion Benchmark |
@@ -193,7 +169,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | `validation` | `DEPRECATED` | `validation/collect_results.py:531` | rows.append(f"| JAX FNO turbulence surrogate relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | DEPRECATED — synthet... |
 | P0 | `validation` | `DEPRECATED` | `validation/collect_results.py:532` | rows.append(f"| JAX FNO turbulence surrogate relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | DEPRECATED — use QLKNN... |
 | P0 | `validation` | `DEPRECATED` | `validation/collect_results.py:590` | sections.append(f"\| FNO EUROfusion \| DEPRECATED \| {fno_metric} \|") |
-| P0 | `core_physics` | `NOT_VALIDATED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:10` | Trained on 60 Hasegawa-Wakatani samples; not validated against gyrokinetics. |
 | P0 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
 | P0 | `other` | `DEPRECATED` | `CHANGELOG.md:53` | - Regression test for deprecated FNO-controller missing-weight fallback path. |
 | P1 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:113` | if "EXPERIMENTAL" in markers: |
@@ -227,40 +202,12 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:200` | - Added CI split lane `python-research-gate` and release-only pytest execution (`-m "not experimental"`) |
 | P1 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:281` | - Added single-command suite execution via `scpn-fusion all --surrogate --experimental`. |
 | P1 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:75` | # Experimental modes (opt-in). |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:76` | "quantum": ModeSpec("scpn_fusion.core.quantum_bridge", "experimental", "Quantum bridge"), |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:77` | "q-control": ModeSpec("scpn_fusion.core.quantum_bridge", "experimental", "Quantum control bridge"), |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:80` | "experimental", |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:83` | "lazarus": ModeSpec("scpn_fusion.core.lazarus_bridge", "experimental", "Lazarus bridge"), |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:84` | "director": ModeSpec("scpn_fusion.control.director_interface", "experimental", "Director interface"), |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:85` | "vibrana": ModeSpec("scpn_fusion.core.vibrana_bridge", "experimental", "Vibrana bridge"), |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:121` | elif spec.maturity == "experimental" and include_experimental: |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:135` | if spec.maturity == "experimental" and not include_experimental: |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:136` | return "experimental mode locked; pass --experimental or set SCPN_EXPERIMENTAL=1" |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:256` | @click.option("--experimental", is_flag=True, help="Unlock experimental modes.") |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:280` | experimental: bool, |
-| P1 | `other` | `EXPERIMENTAL` | `src/scpn_fusion/cli.py:295` | include_experimental = experimental or _env_enabled("SCPN_EXPERIMENTAL") |
-| P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/fokker_planck_re.py:123` | Simplified from Rosenbluth-Putvinski, Nucl. Fusion 37 (1997). |
-| P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/spi_ablation.py:15` | (Simplified scaling) |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/eped_pedestal.py:9` | EPED-like simplified pedestal scaling model for H-mode tokamak plasmas. |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/eped_pedestal.py:104` | """Simplified EPED-like pedestal model. |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/fno_turbulence_suppressor.py:154` | # Divergence projection (Simplified for scalar proxy) |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/fusion_ignition_sim.py:52` | # In our simplified kernel, J was modeled directly. |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/fusion_ignition_sim.py:423` | # Impurity line radiation (simplified) |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/global_design_scanner.py:68` | # Actually simplified scaling: beta_N_eff = beta_N_nominal * (1 + 0.2*(kappa-1.5)) |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_transport_solver.py:766` | # Z_eff = (n_e * 1 + n_imp * Z^2) / (n_e + n_imp * Z) ≈ simplified |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_transport_solver.py:797` | L34 = -0.1 * L31 # often stabilizing/negative in simplified models |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/jax_transport_solver.py:37` | # Simplified for 1.5D: d/drho (D * dT/drho) |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neural_transport.py:128` | _CRIT_TEM = 5.0 # R/L_Te threshold for TEM (simplified) |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/rf_heating.py:89` | # Simplified: Gaussian blob |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/sandpile_fusion_reactor.py:95` | A simplified Reinforcement Learning agent. |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stability_mhd.py:375` | r"""Simplified neoclassical tearing mode (NTM) seeding analysis. |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stability_mhd.py:377` | The modified Rutherford equation for island width *w* is (simplified): |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | > This repo is the full physics + experimental suite. |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:255` | ### Experimental |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:327` | scpn-fusion all --surrogate --experimental |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:23` | \| `EXPERIMENTAL` \| 55 \| |
+| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:73` | - `EXPERIMENTAL`: 15 mentions |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:102` | - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:343` | ## 6. Experimental Validation Portfolio |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:478` | - **HSX** (University of Wisconsin): 4 field periods, QHS configuration, US-based experimental access |
@@ -284,9 +231,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:79` | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| DIII-D \| ITER \| |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Experimental Bridges |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/userguide/validation.rst:5` | SCPN-Fusion-Core is validated against published experimental data from |
-| P1 | `nuclear` | `SIMPLIFIED` | `src/scpn_fusion/nuclear/blanket_neutronics.py:75` | # Cross Sections (Macroscopic Sigma in cm^-1) - Simplified for 14 MeV neutrons |
-| P1 | `nuclear` | `SIMPLIFIED` | `src/scpn_fusion/nuclear/nuclear_wall_interaction.py:256` | # Material Parameters (Simplified for D on Target) |
-| P1 | `nuclear` | `SIMPLIFIED` | `src/scpn_fusion/nuclear/nuclear_wall_interaction.py:271` | # f(alpha) ~ 1 / cos(alpha) -> simplified enhancement |
 | P2 | `docs_claims` | `NOT_VALIDATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P2 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
 | P2 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
@@ -296,85 +240,44 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:375` | implements a 10 kHz PID control loop with simplified linear plasma |
 | P2 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | # Step Physics (Single step of simulate logic simplified) |
 | P2 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/analytic_solver.py:208` | fallback = repo_root / "validation" / "iter_validated_config.json" |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/analytic_solver.py:209` | config_path = str(preferred if preferred.exists() else fallback) |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/director_interface.py:45` | """Deterministic fallback director when external DIRECTOR_AI is unavailable.""" |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:729` | "fallback": True, |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:758` | "fallback": False, |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:767` | "fallback": True, |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:777` | "fallback": True, |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:793` | "fallback": True, |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:799` | info["fallback"] = False |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:813` | Predict disruption risk with checkpoint path if available, else deterministic fallback. |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:819` | ``metadata`` includes whether fallback mode was used. |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:822` | failures instead of returning fallback risk from ``predict_disruption_risk``. |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:839` | "predict_disruption_risk_safe fallback disabled: " |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:843` | out_meta["mode"] = "fallback" |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:874` | "predict_disruption_risk_safe fallback disabled: " |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:878` | out_meta["mode"] = "fallback" |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/fusion_control_room.py:391` | logger.warning("Kernel init failed, fallback to analytic Psi: %s", kernel_error) |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/fusion_control_room.py:423` | "Kernel coil update failed; continuing with fallback controls: %s", |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/fusion_nmpc_jax.py:12` | and minimises tracking cost via gradient descent (JAX) or L-BFGS-B (NumPy fallback). |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/fusion_optimal_control.py:122` | # Fallback: infer from grid arrays when dimensions not in config |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/h_infinity_controller.py:166` | self._Fd: np.ndarray = self.F # fallback: continuous gain |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/jax_traceable_runtime.py:4` | """Optional JAX-traceable control-loop utilities with NumPy fallback.""" |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/nengo_snn_wrapper.py:35` | # Lazy Nengo import — graceful fallback |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/nengo_snn_wrapper.py:385` | # ── Fallback for when Nengo is not available ───────────────────────── |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/neuro_cybernetic_controller.py:58` | Push-pull spiking control population with deterministic fallback. |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/neuro_cybernetic_controller.py:151` | # Reduced threshold keeps fallback lane responsive in low-current control |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/_rust_compat.py:276` | Seed used by deterministic NumPy fallback backend. |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/_rust_compat.py:346` | Seed used by deterministic NumPy fallback backend. |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/_rust_compat.py:399` | """Deterministic local fallback matching the Rust SNN pool interface.""" |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/_rust_compat.py:459` | """Deterministic local fallback matching the Rust SNN controller interface.""" |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/_rust_compat.py:500` | "Use Python multigrid fallback in FusionKernel._multigrid_vcycle()." |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/_rust_compat.py:509` | "Use Python multigrid fallback." |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/fusion_kernel.py:198` | "HPC Acceleration UNAVAILABLE (using Python fallback)." |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/fusion_kernel.py:794` | """Run the inner elliptic solve (HPC or Python fallback). |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/fusion_kernel.py:1644` | fallback = np.asarray(coils.currents, dtype=np.float64).copy() |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/fusion_kernel.py:1645` | return np.clip(fallback, lb, ub).astype(np.float64) |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/geometry_3d.py:122` | """Build a conservative elliptical boundary fallback inside the domain.""" |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gpu_runtime.py:114` | raise RuntimeError("PyTorch fallback requested but torch is not installed.") |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gpu_runtime.py:300` | "PyTorch fallback requested but torch is not installed." |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:74` | _GYRO_BOHM_DEFAULT = 0.1 # Fallback if JSON not found |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:284` | # Vectorized Python fallback |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:385` | # Vectorized Python fallback |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:930` | # Base Level: neoclassical + gyro-Bohm, or constant fallback |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:1008` | # Fallback: simple edge suppression |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:1147` | fallback: np.ndarray, |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:1154` | fb = np.asarray(fallback, dtype=np.float64) |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/neural_transport.py:141` | """Analytic critical-gradient transport model (fallback).""" |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/neural_transport.py:324` | """Neural transport surrogate with analytic fallback. |
+| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:1148` | fallback: np.ndarray, |
+| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:1155` | fb = np.asarray(fallback, dtype=np.float64) |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/neural_transport.py:360` | "critical-gradient fallback", |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/quasi_3d_contracts.py:178` | fallback = _require_finite_float("fallback_asymmetry", fallback_asymmetry) |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/quasi_3d_contracts.py:183` | ratio = float(np.clip(0.06 + 0.40 * abs(fallback), 0.0, 0.9)) |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/quasi_3d_contracts.py:200` | ratio = float(np.clip(0.06 + 0.40 * abs(fallback), 0.0, 0.9)) |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/tglf_interface.py:497` | # Fallback: check for JSON output |
 | P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:116` | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
 | P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/compiler.py:14` | - Float-path fallback when sc_neurocore is not installed. |
-| P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/compiler.py:36` | # ── sc_neurocore import (graceful fallback) ────────────────────────────────── |
 | P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/compiler.py:127` | Holds both the dense float matrices (for validation / fallback) and |
 | P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/compiler.py:189` | "Use dense_forward_float for the numpy fallback." |
-| P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/compiler.py:204` | # Vectorized path when numpy bit_count is available; fallback keeps |
 | P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/safety_interlocks.py:98` | def _safe_float(state: Mapping[str, float], key: str, fallback: float) -> float: |
 | P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/safety_interlocks.py:99` | value = float(state.get(key, fallback)) |
 | P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/safety_interlocks.py:100` | return value if np.isfinite(value) else float(fallback) |
 | P2 | `nuclear` | `FALLBACK` | `src/scpn_fusion/nuclear/blanket_neutronics.py:159` | else: # pragma: no cover - legacy NumPy fallback |
-| P2 | `diagnostics_io` | `FALLBACK` | `src/scpn_fusion/diagnostics/tomography.py:125` | # Analytic Ridge fallback |
-| P2 | `diagnostics_io` | `FALLBACK` | `src/scpn_fusion/io/tokamak_archive.py:8` | """Empirical tokamak profile loaders with optional live MDSplus fallback.""" |
 | P2 | `diagnostics_io` | `FALLBACK` | `src/scpn_fusion/io/tokamak_archive.py:362` | Poll live MDSplus feed snapshots with deterministic merge + fallback metadata. |
-| P2 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:185` | # ── Reference data fallback ───────────────────────────────────────── |
 | P2 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:230` | logger.debug("tokamak_archive fallback failed: %s", exc) |
-| P2 | `validation` | `FALLBACK` | `tools/download_efit_geqdsk.py:91` | # Fallback: any .geqdsk file whose name contains the shot number |
 | P2 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:142` | print(" Will use critical-gradient fallback (less accurate).") |
-| P2 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:200` | # Fallback: use critical gradient model |
 | P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:111` | if "FALLBACK" in markers: |
 | P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:112` | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | ``get_radial_robust_controller()`` with LQR fallback. |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:204` | # LQR Robust Controller (fallback for H-infinity) |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:720` | """Build the H-infinity controller with LQR fallback.""" |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_torax.py:134` | # Analytic fallback: add small model-dependent perturbation |
-| P2 | `validation` | `FALLBACK` | `validation/rmse_dashboard.py:303` | # Fallback: legacy FusionBurnPhysics path |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:24` | \| `SIMPLIFIED` \| 27 \| |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:60` | \| `src/scpn_fusion/core/integrated_transport_solver.py` \| 1 (`SIMPLIFIED`) \| Largest physics file, central to transport claims \| |
@@ -401,19 +304,15 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `other` | `FALLBACK` | `CHANGELOG.md:75` | - **Rust Transport Delegation**: `chang_hinton_chi_profile()` → Rust fast-path (4.7x speedup), `calculate_sauter_bootstrap_current_full()... |
 | P3 | `other` | `FALLBACK` | `CHANGELOG.md:147` | - Robust fallback to SciPy L-BFGS-B when JAX is unavailable. |
 | P3 | `other` | `FALLBACK` | `CHANGELOG.md:366` | - Python-side wrappers in `_rust_compat.py`: `RustSnnPool`, `RustSnnController` with graceful fallback |
-| P3 | `other` | `FALLBACK` | `src/scpn_fusion/ui/app.py:27` | # Fallback for dev mode |
-| P3 | `other` | `FALLBACK` | `src/scpn_fusion/ui/dashboard_generator.py:97` | # Fallback: Plot contours of Psi which represent the unperturbed surfaces |
 | P3 | `validation` | `PLANNED` | `validation/validate_real_shots.py:565` | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
 | P3 | `docs_claims` | `FALLBACK` | `README.md:108` | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/3d_gaps.md:92` | - fallback if external dependency is unavailable. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | - Transparent fallback to analytic model when no weights are available |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | with fallback to CPU SIMD for systems without GPU support. |
-| P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:88` | ## Figure 2: Ion Thermal Diffusivity — Fallback vs MLP (Line Plot) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:93` | │ ╱ Fallback (analytic) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:124` | \| Fallback vectorised \| ~2 ms \| ~7× slower \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:125` | \| Fallback point-by-point loop \| ~200 ms \| ~670× slower \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:22` | \| `FALLBACK` \| 172 \| |
-| P3 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:68` | ### 2.2 Fallback-heavy runtime surfaces |
 | P3 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:71` | - `FALLBACK`: 67 mentions |
 | P3 | `docs_claims` | `FALLBACK` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:103` | - Transparent fallback to full physics solve when surrogate confidence is below threshold |
 | P3 | `docs_claims` | `FALLBACK` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:276` | - f32 precision with tolerance-guarded fallback to f64 CPU path |
@@ -425,10 +324,86 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:41` | - [6.2 Import Boundary and Fallback Strategy](#62-import-boundary-and-fallback-strategy) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:269` | **Dependencies:** numpy, sc_neurocore (optional — graceful fallback) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:337` | **`dense_forward_float(W, inputs)`** — The float path: a simple `W @ inputs` using numpy. Used for validation and as a fallback when sc_n... |
-| P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:486` | ### 6.2 Import Boundary and Fallback Strategy |
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:502` | **Rationale:** The Logic Compiler is a component of SCPN-Fusion-Core, which may be installed in environments where sc_neurocore is not pr... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:660` | | **Graceful sc_neurocore fallback** | SCPN-Fusion-Core may be used without neuromorphic hardware. The Petri Net API should always be ava... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:740` | The "Tokens are Bits" philosophy creates a direct isomorphism between Petri Net semantics and stochastic computing primitives, guaranteei... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEXT_SPRINT_EXECUTION_QUEUE.md:37` | - Completed: `S1-003` (added low-point LCFS fallback regression test and VMEC-like geometry CI smoke coverage). |
 | P3 | `docs_claims` | `FALLBACK` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:779` | commit SC state (or oracle fallback) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:786` | The oracle path is always available and always correct. The SC path currently returns the oracle result (fallback) but is structured so t... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1721` | The untested lines in `artifact.py` are error-handling paths for malformed JSON that would require intentionally corrupted artifacts to e... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2904` | 4. **Fallback policy.** If the divergence exceeds a threshold, the controller should revert to the oracle path. This provides a safety ne... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE2_ADVANCED_RFC_TEMPLATE.md:36` | - Offline fallback path: |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:44` | | S2-004 | P1 | Control | Add robust model-loading fallback path in disruption predictor | `src/scpn_fusion/control/disruption_predictor.... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:57` | | S3-004 | P1 | Control | Normalize control simulation imports and deterministic fallback entry points | `src/scpn_fusion/control/disrupt... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:86` | | H5-013 | P1 | SCPN | Add Rust stochastic-firing kernel bridge for runtime backend and validate Rust sample path execution | `src/scpn_f... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:142` | | H7-005 | P1 | Control | Add deterministic NumPy LIF fallback backend for neuro-cybernetic spiking pool when sc-neurocore is unavailable... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:143` | | H7-006 | P1 | Control | Harden Director interface with deterministic built-in fallback oversight and CI-safe summary execution | `src/s... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:145` | | H7-008 | P1 | Nuclear | Restore NumPy 2.4 compatibility for blanket TBR integration in Python 3.11 CI lane | `src/scpn_fusion/nuclear/b... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:152` | | H7-015 | P1 | Diagnostics | Harden tomography inversion with strict signal guards and deterministic non-SciPy fallback solve path | `sr... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:165` | | H7-028 | P1 | Control | Remove residual global NumPy RNG mutation from tearing-mode simulation fallback path | `src/scpn_fusion/control... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:198` | | H7-061 | P1 | Control | Harden director-interface runtime mission with strict duration/glitch input guards | `src/scpn_fusion/control/d... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:200` | | H7-063 | P1 | Control | Harden disruption-predictor sequence-length handling with strict guardrails | `src/scpn_fusion/control/disrupti... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:201` | | H7-064 | P1 | Control | Harden fallback-director constructor with strict entropy/window input guards | `src/scpn_fusion/control/directo... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:202` | | H7-065 | P1 | Control | Harden disruption-predictor training campaign with strict shot/epoch input guards | `src/scpn_fusion/control/di... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:205` | | H7-068 | P1 | HPC | Harden native convergence bridge with strict max-iteration/tolerance/omega guards | `src/scpn_fusion/hpc/hpc_bridge... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:208` | | H7-071 | P1 | Control | Harden spiking-controller constructor with strict neuron/window/timebase/noise guards | `src/scpn_fusion/contro... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:209` | | H7-072 | P1 | Diagnostics | Harden tomography constructor with strict grid/regularization input guards | `src/scpn_fusion/diagnostics/t... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:216` | | H7-079 | P1 | Control | Harden disruption predictor sequence/training integer knobs with strict type/range guards | `src/scpn_fusion/co... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:252` | | H8-025 | P1 | Control | Harden analytic Shafranov and coil-solve APIs with strict finite/conditioning validation | `scpn-fusion-rs/crat... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:256` | | H8-029 | P1 | Operations | Harden digital-twin bit-flip fault injection with strict input/index validation | `scpn-fusion-rs/crates/fus... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/PHASE3_EXECUTION_REGISTRY.md:261` | | H8-034 | P1 | Runtime | Harden JIT kernel runtime execution with strict active-kernel and vector validation | `scpn-fusion-rs/crates/fu... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/SOLVER_TUNING_GUIDE.md:187` | \| 1 \| 1× (serial fallback) \| Same as before \| |
+| P3 | `docs_claims` | `FALLBACK` | `docs/SOLVER_TUNING_GUIDE.md:258` | \| Discontinuity at threshold \| Fallback model uses hard cutoff \| Switch to MLP weights (smooth transition) \| |
+| P3 | `docs_claims` | `FALLBACK` | `docs/promotions/HN_SHOW.md:11` | SCPN Fusion Core is an open-source tokamak plasma physics simulator that covers the full lifecycle of a fusion reactor: Grad-Shafranov eq... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/promotions/REDDIT_COMPILERS.md:15` | 2. **Compilation** (`scpn/compiler.py`) -- Each Petri net transition maps to a stochastic leaky-integrate-and-fire (LIF) neuron. Places b... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/promotions/REDDIT_PROGRAMMING.md:13` | - Transparent fallback: `try: import scpn_fusion_rs` -- if the Rust extension isn't built, NumPy kicks in |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GAI-01_RFC.md:43` | - Offline fallback path: benchmark remains fully offline (`numpy`, existing project modules). |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GAI-02_RFC.md:42` | - Offline fallback path: full campaign runs with stdlib + NumPy + in-repo modules. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GAI-03_RFC.md:40` | - Offline fallback path: full benchmark and scanner integration remain NumPy/Pandas only. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GDEP-01_RFC.md:40` | - Offline fallback path: campaign remains fully deterministic and local. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GDEP-02_RFC.md:39` | - Offline fallback path: deterministic CPU and `gpu_sim` lanes run locally. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GDEP-03_RFC.md:41` | - Offline fallback path: deterministic local report generation using bundled synthetic references. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GDEP-05_RFC.md:42` | - Offline fallback path: deterministic local parsing of tracker/changelog files. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GMVR-01_RFC.md:40` | - Offline fallback path: deterministic NumPy/Pandas scan remains available. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GMVR-02_RFC.md:39` | - Offline fallback path: deterministic model and toroidal sweep remain in-repo. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GMVR-03_RFC.md:40` | - Offline fallback path: deterministic field-line and Poincare diagnostics remain local. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GNEU-01_RFC.md:43` | - Offline fallback path: benchmark remains fully offline and deterministic (`numpy` + existing repo modules). |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GPHY-01_RFC.md:38` | - Offline fallback path: particle overlay remains optional and disabled by default. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GPHY-02_RFC.md:37` | - Offline fallback path: deterministic local trajectory integration and drift checks. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GPHY-03_RFC.md:36` | - Offline fallback path: deterministic in-repo lookup/interpolation only. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GPHY-04_RFC.md:38` | - Offline fallback path: existing analytic wall generator remains available. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GPHY-05_RFC.md:37` | - Offline fallback path: additive APIs; existing controller paths remain available. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GPHY-06_RFC.md:37` | - Offline fallback path: if no active compiled kernel is available, execution is identity/stable. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GPHY-06_RFC.md:70` | - add deterministic tests for cache reuse, hot-swap behavior, and identity fallback. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:18` | 1. ``wgpu`` SOR kernel (red-black stencil + deterministic CPU fallback) |
+| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:19` | 2. GPU-backed GMRES preconditioning (CUDA/ROCm adapters with CPU fallback) |
+| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:39` | - Operations: runtime capability detection + automatic CPU fallback |
+| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/index.rst:54` | speedups with pure-Python fallback |
+| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/installation.rst:42` | INFO: scpn_fusion_rs not found -- using NumPy fallback. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/control.rst:89` | - **Checkpoint fallback** ensuring graceful degradation if the model |
+| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/diagnostics.rst:97` | with automatic fallback for environments where SciPy is not optimised. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:102` | WebGPU) with deterministic CPU fallback. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:110` | CUDA/ROCm adapters for the GMRES linear solver with CPU fallback |
+| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:129` | - Operations: runtime capability detection + automatic CPU fallback |
+| P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:41` | \| GPU support \| Planned \| Yes (JAX) \| No \| No \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:242` | \| SOR red-black sweep \| wgpu compute shader \| 20–50× (65×65), 100–200× (256×256) \| P0 \| Planned \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:243` | \| Multigrid V-cycle \| wgpu + host orchestration \| 10–30× \| P1 \| Planned \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:245` | \| MLP batch inference \| wgpu or cuBLAS \| 2–5× (small H) \| P3 \| Planned \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:246` | \| FNO turbulence (FFT) \| cuFFT / wgpu FFT \| 50–100× (64×64) \| P3 \| Planned \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:282` | \| SCPN (planned) \| Quadtree, gradient-based \| 2D GS + 3D extension \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:284` | The planned quadtree AMR is simpler than JOREK's h-p adaptivity but |
+| P3 | `docs_claims` | `PLANNED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:25` | \| `PLANNED` \| 22 \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:284` | \| Multigrid V-cycle (65x65) \| 10-30x \| Phase 3 planned \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:285` | \| FNO turbulence (FFT, 64x64) \| 50-100x \| Phase 3 planned \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:286` | \| MLP batch inference \| 2-5x \| Phase 3 planned \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/HONEST_SCOPE.md:25` | \| Full 3D MHD \| Not planned for real-time loop \| Use NIMROD/M3D-C1 externally \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:690` | **Packet C — `scpn/runtime.py` — PetriNetEngine** (planned): |
+| P3 | `docs_claims` | `PLANNED` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:704` | **Packet D — `examples/01_traffic_light.py` — Hello World Demo** (planned): |
+| P3 | `docs_claims` | `PLANNED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:212` | > "Packet C — `scpn/runtime.py` — PetriNetEngine (planned): The runtime engine wraps the `CompiledNet` in a simulation loop." |
+| P3 | `docs_claims` | `PLANNED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2675` | Online learning is planned as future work (Section 34) with appropriate safety constraints (bounded weight deltas, Lyapunov stability mon... |
+| P3 | `docs_claims` | `PLANNED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2684` | Plant model integration is planned as future work (Section 31). |
+| P3 | `docs_claims` | `PLANNED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2693` | Hierarchical multi-controller composition is planned as future work (Section 33). |
+| P3 | `docs_claims` | `PLANNED` | `docs/VALIDATION_AGAINST_ITER.md:238` | Planned follow-up after WP-E1: |
+| P3 | `docs_claims` | `PLANNED` | `docs/competitive_analysis.md:75` | \| GPU acceleration \| Planned (wgpu) \| Yes (JAX) \| No \| No \| JAX \| No \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/sphinx/userguide/hpc.rst:6` | native backend, C++ FFI bridge, and a planned GPU acceleration path. |
+| P3 | `docs_claims` | `PLANNED` | `docs/sphinx/userguide/hpc.rst:96` | GPU support is planned in three phases (tracked in |

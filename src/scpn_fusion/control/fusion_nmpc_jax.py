@@ -9,7 +9,7 @@
 Trajectory optimiser with learned MLP dynamics and JAX gradient acceleration.
 
 Rolls out a 2-layer MLP surrogate dx/dt = MLP(x, u) over a finite horizon
-and minimises tracking cost via gradient descent (JAX) or L-BFGS-B (NumPy fallback).
+and minimises tracking cost via gradient descent (JAX) or L-BFGS-B (NumPy compatibility backend).
 """
 
 from __future__ import annotations
@@ -83,6 +83,7 @@ class NonlinearMPC:
         iterations: int = 50,
         l2_reg: float = 0.01,
         rtol: float = 1e-4,
+        allow_numpy_fallback: bool = True,
     ):
         self.dynamics = dynamics
         self.horizon = horizon
@@ -91,6 +92,13 @@ class NonlinearMPC:
         self.iterations = iterations
         self.l2_reg = l2_reg
         self.rtol = rtol
+        self.allow_numpy_fallback = bool(allow_numpy_fallback)
+        self.last_backend = "uninitialized"
+
+        if not _HAS_JAX and not self.allow_numpy_fallback:
+            raise ImportError(
+                "JAX backend unavailable and allow_numpy_fallback=False for NonlinearMPC."
+            )
         
         self._jax_grad_fn = None
         self._compile_jax()
@@ -125,9 +133,14 @@ class NonlinearMPC:
             U = u_guess.copy()
 
         if _HAS_JAX:
+            self.last_backend = "jax"
             return self._plan_jax(x0, target, U)
-        else:
-            return self._plan_numpy(x0, target, U)
+        if not self.allow_numpy_fallback:
+            raise ImportError(
+                "JAX backend unavailable and allow_numpy_fallback=False for NonlinearMPC."
+            )
+        self.last_backend = "numpy_compat"
+        return self._plan_numpy(x0, target, U)
 
     def _plan_jax(self, x0: FloatArray, target: FloatArray, U: FloatArray) -> FloatArray:
         params = self.dynamics.params

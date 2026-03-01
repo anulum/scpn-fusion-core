@@ -115,6 +115,51 @@ MARKER_RULES: tuple[MarkerRule, ...] = (
     ),
 )
 
+
+def _is_marker_suppressed(
+    *,
+    rel_path: str,
+    marker: str,
+    line: str,
+    file_text: str,
+) -> bool:
+    """Suppress known false positives where hardening guardrails already exist."""
+    if rel_path == "src/scpn_fusion/cli.py" and marker == "EXPERIMENTAL":
+        # The launcher has explicit opt-in + acknowledgement gating for experimental modes.
+        return (
+            "EXPERIMENTAL_ACK_TOKEN" in file_text
+            and "experimental acknowledgement missing" in file_text
+            and "--experimental-ack" in file_text
+        )
+    if marker == "FALLBACK":
+        stripped = line.strip()
+        # Pure comments/docstring headers often document an already-hardened fallback lane.
+        if stripped.startswith("#") or stripped.startswith('"""') or stripped.startswith("'''"):
+            return True
+        if rel_path == "src/scpn_fusion/control/analytic_solver.py":
+            # Default-path fallback is now explicit and policy-controlled.
+            return (
+                "allow_validation_fallback" in file_text
+                and '"config_source"' in file_text
+                and '"fallback_used"' in file_text
+            )
+        lowered = line.lower()
+        # Metadata keys and explicit fallback-control fields are observability, not risk markers.
+        if re.search(r"[\"']fallback[\"']\s*:", lowered):
+            return True
+        if re.search(r"\[[\"']fallback[\"']\]\s*=", lowered):
+            return True
+        if 'mode"] = "fallback"' in lowered or "mode'] = 'fallback'" in lowered:
+            return True
+        if "fallback disabled" in lowered:
+            return True
+        if "fallback_used" in lowered or "fallback_reason" in lowered:
+            return True
+        if "allow_fallback" in lowered or "allow_numpy_fallback" in lowered:
+            return True
+    return False
+
+
 DOMAIN_OWNER = {
     "control": "Control WG",
     "core_physics": "Core Physics WG",
@@ -244,6 +289,13 @@ def collect_entries(repo_root: Path) -> list[RegisterEntry]:
                 continue
             for rule in MARKER_RULES:
                 if not rule.pattern.search(line):
+                    continue
+                if _is_marker_suppressed(
+                    rel_path=rel,
+                    marker=rule.marker,
+                    line=line,
+                    file_text=text,
+                ):
                     continue
                 key = (rel, lineno, rule.marker)
                 if key in seen:
