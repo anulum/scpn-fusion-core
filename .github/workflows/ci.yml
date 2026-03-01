@@ -235,7 +235,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload Python 3.12 coverage diagnostics
         if: matrix.python-version == '3.12' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: python312-coverage-diagnostics
           if-no-files-found: warn
@@ -245,7 +245,7 @@ jobs:
             coverage-python.xml
       - name: Upload coverage guard summary
         if: matrix.python-version == '3.12' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-guard-summary
           if-no-files-found: warn
@@ -378,7 +378,7 @@ jobs:
       - name: RMSE regression gate
         run: python tools/ci_rmse_gate.py
       - name: Upload RMSE artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rmse-dashboard-smoke
           path: |
@@ -404,7 +404,7 @@ jobs:
       - name: Run real-shot validation
         run: python validation/validate_real_shots.py
       - name: Upload validation artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: real-shot-validation
           path: |
@@ -461,7 +461,7 @@ jobs:
           )
           PY
       - name: Upload benchmark provenance artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: benchmark-provenance-smoke
           path: |
@@ -651,7 +651,7 @@ jobs:
           fi
       - name: Upload benchmark artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rust-benchmarks
           path: scpn-fusion-rs/benchmark-results/
