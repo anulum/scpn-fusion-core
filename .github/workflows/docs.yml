@@ -50,7 +50,7 @@ jobs:
         run: sphinx-build -b html docs/sphinx docs/sphinx/_build/html
 
       - name: Upload Python docs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: python-docs
           path: docs/sphinx/_build/html/
@@ -80,7 +80,7 @@ jobs:
         run: cargo doc --no-deps --all-features
 
       - name: Upload Rust docs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rust-docs
           path: scpn-fusion-rs/target/doc/
@@ -109,7 +109,7 @@ jobs:
           python -m jupyter nbconvert --to html examples/*.ipynb --output-dir docs/notebooks/
 
       - name: Upload notebook HTML
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: notebook-html
           path: docs/notebooks/
