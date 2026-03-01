@@ -1,26 +1,5 @@
 {
   "generated_from": "Deep audit 2026-03-01 Wave A baseline",
   "policy": "This allowlist freezes currently unlinked modules. New unlinked modules fail CI.",
-  "allowlisted_modules": [
-    {
-      "path": "src/scpn_fusion/core/force_balance.py",
-      "reason": "Prototype lane not yet directly linked from release test files."
-    },
-    {
-      "path": "src/scpn_fusion/core/hall_mhd_discovery.py",
-      "reason": "Task lane covered by campaign tests; direct module linkage pending."
-    },
-    {
-      "path": "src/scpn_fusion/core/lazarus_bridge.py",
-      "reason": "Experimental bridge remains opt-in; release-lane direct tests pending."
-    },
-    {
-      "path": "src/scpn_fusion/core/turbulence_oracle.py",
-      "reason": "Experimental oracle lane retained for research profile only."
-    },
-    {
-      "path": "src/scpn_fusion/core/vibrana_bridge.py",
-      "reason": "Optional external bridge lane; direct tests pending."
-    }
-  ]
+  "allowlisted_modules": []
 }
