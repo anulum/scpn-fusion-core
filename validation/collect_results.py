@@ -304,6 +304,7 @@ def generate_results_md(
     freegs: dict | None = None,
     threshold_sweep: dict | None = None,
     elapsed_s: float = 0.0,
+    include_legacy_fno: bool = False,
     *,
     results: dict | None = None,
     campaign: dict | None = None,
@@ -527,9 +528,17 @@ def generate_results_md(
         if surrogates.get("mlp_rmse_s") is not None:
             rows.append(f"| Neural transport MLP surrogate tau_E RMSE | {_fmt(surrogates['mlp_rmse_s'], '.4f')} | s | ITPA H-mode confinement time |")
             rows.append(f"| Neural transport MLP surrogate tau_E RMSE % | {_fmt(surrogates['mlp_rmse_pct'], '.1f')} | % | {int(surrogates.get('mlp_samples', 0))} samples |")
-        if surrogates.get("fno_rel_l2_mean") is not None:
-            rows.append(f"| JAX FNO turbulence surrogate relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | DEPRECATED — synthetic-only, removal in v4.0 |")
-            rows.append(f"| JAX FNO turbulence surrogate relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | DEPRECATED — use QLKNN-10D instead |")
+        if include_legacy_fno and surrogates.get("fno_rel_l2_mean") is not None:
+            rows.append(
+                f"| JAX FNO turbulence surrogate relative L2 (mean) | "
+                f"{_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | "
+                "Legacy research lane (synthetic-only) |"
+            )
+            rows.append(
+                f"| JAX FNO turbulence surrogate relative L2 (P95) | "
+                f"{_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | "
+                "Legacy research lane; prefer QLKNN-10D |"
+            )
     if rows:
         sections.append("## Legacy Surrogates\n")
         sections.append("| Metric | Value | Unit | Notes |")
@@ -586,8 +595,13 @@ def generate_results_md(
           f"P50 = {hil['p50_us']:.1f} μs" if hil else "—")
     _lane("FreeGS analytic", freegs, "passes",
           f"ψ NRMSE = {freegs['overall_psi_nrmse']:.3f}" if freegs else "—")
-    fno_metric = f"rel_L2 = {surrogates['fno_rel_l2_mean']:.4f} (synthetic-only, removal in v4.0)" if surrogates and surrogates.get("fno_rel_l2_mean") is not None else "—"
-    sections.append(f"| FNO EUROfusion | DEPRECATED | {fno_metric} |")
+    if include_legacy_fno:
+        fno_metric = (
+            f"rel_L2 = {surrogates['fno_rel_l2_mean']:.4f} (synthetic-only)"
+            if surrogates and surrogates.get("fno_rel_l2_mean") is not None
+            else "—"
+        )
+        sections.append(f"| FNO EUROfusion | LEGACY | {fno_metric} |")
     sections.append("")
 
     # ── Controller Performance (campaign) ──
@@ -624,6 +638,11 @@ Re-run with `python validation/collect_results.py` to reproduce.*
 def main() -> None:
     parser = argparse.ArgumentParser(description="Collect SCPN Fusion Core benchmark results")
     parser.add_argument("--quick", action="store_true", help="Run reduced iterations for faster turnaround")
+    parser.add_argument(
+        "--include-legacy-fno",
+        action="store_true",
+        help="Include legacy FNO surrogate metrics in RESULTS.md (research view).",
+    )
     args = parser.parse_args()
 
     print("=" * 60)
@@ -697,6 +716,7 @@ def main() -> None:
         freegs=freegs,
         threshold_sweep=threshold_sweep,
         elapsed_s=elapsed,
+        include_legacy_fno=bool(args.include_legacy_fno),
     )
     RESULTS_PATH.write_text(md, encoding="utf-8")
     print(f"  -> {RESULTS_PATH} written ({len(md)} bytes)")

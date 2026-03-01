@@ -1,6 +1,6 @@
 # Validation Reference Data
 
-Experimental and design reference data for cross-validating SCPN Fusion Core
+Public and design reference data for cross-validating SCPN Fusion Core
 simulation outputs against real tokamak parameters.
 
 ## Datasets

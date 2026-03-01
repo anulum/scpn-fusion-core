@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-01T09:00:45.444641+00:00`
+- Generated at: `2026-03-01T10:07:44.269973+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 210 |
-| P0 + P1 entries | 44 |
-| Source-domain entries | 31 |
-| Source-domain P0 + P1 entries | 4 |
+| Total flagged entries | 206 |
+| P0 + P1 entries | 40 |
+| Source-domain entries | 27 |
+| Source-domain P0 + P1 entries | 0 |
 | Docs-claims entries | 159 |
 | Domains affected | 3 |
 
@@ -20,9 +20,9 @@
 | Key | Count |
 |---|---:|
 | `FALLBACK` | 99 |
-| `EXPERIMENTAL` | 43 |
+| `EXPERIMENTAL` | 42 |
 | `PLANNED` | 23 |
-| `DEPRECATED` | 22 |
+| `DEPRECATED` | 19 |
 | `SIMPLIFIED` | 19 |
 | `NOT_VALIDATED` | 4 |
 
@@ -31,25 +31,20 @@
 | Key | Count |
 |---|---:|
 | `docs_claims` | 159 |
-| `validation` | 31 |
+| `validation` | 27 |
 | `other` | 20 |
 
-## Source-Centric Priority Backlog (Top 4)
+## Source-Centric Priority Backlog (Top 0)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/reference_data/README.md:3` | Validation WG | Gate behind explicit flag and define validation exit criteria. | Experimental and design reference data for cross-validating SCPN Fusion Core |
-| P1 | 87 | `validation` | `DEPRECATED` | `validation/collect_results.py:531` | Validation WG | Replace default path or remove lane before next major release. | rows.append(f"| JAX FNO turbulence surrogate relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | DEPRECATED — synthet... |
-| P1 | 87 | `validation` | `DEPRECATED` | `validation/collect_results.py:532` | Validation WG | Replace default path or remove lane before next major release. | rows.append(f"| JAX FNO turbulence surrogate relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | DEPRECATED — use QLKNN... |
-| P1 | 87 | `validation` | `DEPRECATED` | `validation/collect_results.py:590` | Validation WG | Replace default path or remove lane before next major release. | sections.append(f"\| FNO EUROfusion \| DEPRECATED \| {fno_metric} \|") |
 
 ## Top Priority Backlog (Top 80)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/reference_data/README.md:3` | Validation WG | Gate behind explicit flag and define validation exit criteria. | Experimental and design reference data for cross-validating SCPN Fusion Core |
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `RESULTS.md:145` | Docs WG | Replace default path or remove lane before next major release. | \| JAX FNO turbulence surrogate relative L2 (mean) \| 0.7925 \| — \| DEPRECATED — synthetic-only, removal in v4.0 \| |
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `RESULTS.md:146` | Docs WG | Replace default path or remove lane before next major release. | \| JAX FNO turbulence surrogate relative L2 (P95) \| 0.7933 \| — \| DEPRECATED — use QLKNN-10D instead \| |
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `RESULTS.md:162` | Docs WG | Replace default path or remove lane before next major release. | \| FNO EUROfusion \| DEPRECATED \| rel_L2 = 0.7925 (synthetic-only, removal in v4.0) \| |
@@ -61,9 +56,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Replace default path or remove lane before next major release. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/V3_9_3_RELEASE_CHECKLIST.md:18` | Docs WG | Replace default path or remove lane before next major release. | - [ ] Confirm deprecated/experimental paths remain non-default in release-facing commands. |
 | P1 | 88 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
-| P1 | 87 | `validation` | `DEPRECATED` | `validation/collect_results.py:531` | Validation WG | Replace default path or remove lane before next major release. | rows.append(f"| JAX FNO turbulence surrogate relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | DEPRECATED — synthet... |
-| P1 | 87 | `validation` | `DEPRECATED` | `validation/collect_results.py:532` | Validation WG | Replace default path or remove lane before next major release. | rows.append(f"| JAX FNO turbulence surrogate relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | DEPRECATED — use QLKNN... |
-| P1 | 87 | `validation` | `DEPRECATED` | `validation/collect_results.py:590` | Validation WG | Replace default path or remove lane before next major release. | sections.append(f"\| FNO EUROfusion \| DEPRECATED \| {fno_metric} \|") |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | Docs WG | Gate behind explicit flag and define validation exit criteria. | > This repo is the full physics + experimental suite. |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:255` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ### Experimental |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
@@ -129,12 +121,15 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:24` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `SIMPLIFIED` \| 27 \| |
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:60` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/core/integrated_transport_solver.py` \| 1 (`SIMPLIFIED`) \| Largest physics file, central to transport claims \| |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:61` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/core/eped_pedestal.py` \| 1 (`SIMPLIFIED`) \| Pedestal closure fidelity bottleneck \| |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:62` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/core/stability_mhd.py` \| 1 (`SIMPLIFIED`) \| NTM/MHD reliability for disruption-oriented claims \| |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:63` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/control/fokker_planck_re.py` \| 1 (`SIMPLIFIED`) \| Runaway electron fidelity limits hard-safety narratives \| |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:64` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/control/spi_ablation.py` \| 1 (`SIMPLIFIED`) \| SPI mitigation realism in disruption campaigns \| |
 
-## Full Register (Top 210)
+## Full Register (Top 206)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P1 | `validation` | `EXPERIMENTAL` | `validation/reference_data/README.md:3` | Experimental and design reference data for cross-validating SCPN Fusion Core |
 | P1 | `docs_claims` | `DEPRECATED` | `RESULTS.md:145` | \| JAX FNO turbulence surrogate relative L2 (mean) \| 0.7925 \| — \| DEPRECATED — synthetic-only, removal in v4.0 \| |
 | P1 | `docs_claims` | `DEPRECATED` | `RESULTS.md:146` | \| JAX FNO turbulence surrogate relative L2 (P95) \| 0.7933 \| — \| DEPRECATED — use QLKNN-10D instead \| |
 | P1 | `docs_claims` | `DEPRECATED` | `RESULTS.md:162` | \| FNO EUROfusion \| DEPRECATED \| rel_L2 = 0.7925 (synthetic-only, removal in v4.0) \| |
@@ -146,9 +141,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | `docs_claims` | `DEPRECATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
 | P1 | `docs_claims` | `DEPRECATED` | `docs/V3_9_3_RELEASE_CHECKLIST.md:18` | - [ ] Confirm deprecated/experimental paths remain non-default in release-facing commands. |
 | P1 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
-| P1 | `validation` | `DEPRECATED` | `validation/collect_results.py:531` | rows.append(f"| JAX FNO turbulence surrogate relative L2 (mean) | {_fmt(surrogates['fno_rel_l2_mean'], '.4f')} | — | DEPRECATED — synthet... |
-| P1 | `validation` | `DEPRECATED` | `validation/collect_results.py:532` | rows.append(f"| JAX FNO turbulence surrogate relative L2 (P95) | {_fmt(surrogates['fno_rel_l2_p95'], '.4f')} | — | DEPRECATED — use QLKNN... |
-| P1 | `validation` | `DEPRECATED` | `validation/collect_results.py:590` | sections.append(f"\| FNO EUROfusion \| DEPRECATED \| {fno_metric} \|") |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | > This repo is the full physics + experimental suite. |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:255` | ### Experimental |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
