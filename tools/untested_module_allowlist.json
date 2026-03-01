@@ -3,10 +3,6 @@
   "policy": "This allowlist freezes currently unlinked modules. New unlinked modules fail CI.",
   "allowlisted_modules": [
     {
-      "path": "src/scpn_fusion/control/nengo_snn_wrapper.py",
-      "reason": "Release-lane tests currently exercise wrapper behavior indirectly via controller benches."
-    },
-    {
       "path": "src/scpn_fusion/core/compact_reactor_optimizer.py",
       "reason": "Coverage lane exists via integration pathways; module-level import linkage pending."
     },
@@ -29,10 +25,6 @@
     {
       "path": "src/scpn_fusion/core/vibrana_bridge.py",
       "reason": "Optional external bridge lane; direct tests pending."
-    },
-    {
-      "path": "src/scpn_fusion/ui/dashboard_launcher.py",
-      "reason": "Launcher exercised by integration/UI workflows, not direct unit tests."
     }
   ]
 }
