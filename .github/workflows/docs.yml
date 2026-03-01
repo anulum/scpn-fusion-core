@@ -131,19 +131,19 @@ jobs:
             docs/assets/repo_header.png
 
       - name: Download Python docs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: python-docs
           path: site/python/
 
       - name: Download Rust docs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: rust-docs
           path: site/rust/
 
       - name: Download notebook HTML
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: notebook-html
           path: site/notebooks/
