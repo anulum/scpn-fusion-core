@@ -28,6 +28,8 @@ Available SPARC files (8 total):
 Requires: numpy, scpn_fusion.core.eqdsk
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import os
