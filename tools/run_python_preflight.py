@@ -36,6 +36,7 @@ def _build_release_checks(
     skip_transport_uncertainty: bool,
     skip_torax_strict_backend: bool,
     skip_sparc_strict_backend: bool,
+    skip_freegs_strict_backend: bool,
     skip_multi_ion_conservation: bool,
     skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
@@ -206,6 +207,17 @@ def _build_release_checks(
                 ],
             )
         )
+    if enable_strict_backend_checks and not skip_freegs_strict_backend:
+        checks.append(
+            (
+                "FreeGS strict-backend benchmark",
+                [
+                    sys.executable,
+                    "validation/benchmark_vs_freegs.py",
+                    "--strict-backend",
+                ],
+            )
+        )
     if not skip_multi_ion_conservation:
         checks.append(
             (
@@ -289,6 +301,7 @@ def _build_checks(
     skip_transport_uncertainty: bool,
     skip_torax_strict_backend: bool,
     skip_sparc_strict_backend: bool,
+    skip_freegs_strict_backend: bool,
     skip_multi_ion_conservation: bool,
     skip_end_to_end_latency: bool,
     skip_notebook_quality: bool,
@@ -315,6 +328,7 @@ def _build_checks(
                 skip_transport_uncertainty=skip_transport_uncertainty,
                 skip_torax_strict_backend=skip_torax_strict_backend,
                 skip_sparc_strict_backend=skip_sparc_strict_backend,
+                skip_freegs_strict_backend=skip_freegs_strict_backend,
                 skip_multi_ion_conservation=skip_multi_ion_conservation,
                 skip_end_to_end_latency=skip_end_to_end_latency,
                 skip_notebook_quality=skip_notebook_quality,
@@ -446,6 +460,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip validation/benchmark_sparc_geqdsk_rmse.py --strict-backend",
     )
     parser.add_argument(
+        "--skip-freegs-strict-backend",
+        action="store_true",
+        help="Skip validation/benchmark_vs_freegs.py --strict-backend",
+    )
+    parser.add_argument(
         "--enable-strict-backend-checks",
         action="store_true",
         default=bool(
@@ -516,6 +535,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_transport_uncertainty=args.skip_transport_uncertainty,
         skip_torax_strict_backend=args.skip_torax_strict_backend,
         skip_sparc_strict_backend=args.skip_sparc_strict_backend,
+        skip_freegs_strict_backend=args.skip_freegs_strict_backend,
         skip_multi_ion_conservation=args.skip_multi_ion_conservation,
         skip_end_to_end_latency=args.skip_end_to_end_latency,
         skip_notebook_quality=args.skip_notebook_quality,

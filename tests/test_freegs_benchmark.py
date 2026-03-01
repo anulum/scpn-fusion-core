@@ -44,6 +44,7 @@ compare_case = benchmark_vs_freegs.compare_case
 run_solovev_benchmark = benchmark_vs_freegs.run_solovev_benchmark
 HAS_FREEGS = benchmark_vs_freegs.HAS_FREEGS
 PSI_NRMSE_THRESHOLD = benchmark_vs_freegs.PSI_NRMSE_THRESHOLD
+FREEGS_FLUX_AREA_REL_ERROR = benchmark_vs_freegs.FREEGS_FLUX_AREA_REL_ERROR
 
 
 # ── Solov'ev analytic tests (always run) ─────────────────────────────
@@ -208,6 +209,7 @@ class TestSolovevBenchmarkIntegration:
             assert "passes" in case_result
             assert "comparison_backend" in case_result
             assert "reference_backend" in case_result
+            assert "flux_area_rel_error" in case_result
 
     def test_report_is_json_serialisable(self) -> None:
         """Report can be serialised to JSON without error."""
@@ -217,6 +219,23 @@ class TestSolovevBenchmarkIntegration:
         # Round-trip
         parsed = json.loads(text)
         assert parsed["mode"] == "solovev_manufactured_source"
+
+
+class TestStrictBackendControls:
+    """Strict-backend mode should fail fast if FreeGS is unavailable."""
+
+    def test_rejects_conflicting_force_and_strict_flags(self) -> None:
+        with pytest.raises(ValueError):
+            benchmark_vs_freegs.run_benchmark(
+                force_solovev=True,
+                require_freegs_backend=True,
+            )
+
+    def test_strict_backend_requires_freegs_when_unavailable(self) -> None:
+        if HAS_FREEGS:
+            pytest.skip("freegs installed")
+        with pytest.raises(RuntimeError):
+            benchmark_vs_freegs.run_benchmark(require_freegs_backend=True)
 
 
 # ── FreeGS-dependent tests (skipped when not installed) ──────────────
@@ -237,6 +256,9 @@ class TestFreeGSComparison:
     def test_full_freegs_benchmark(self) -> None:
         from benchmark_vs_freegs import run_benchmark
 
-        report = run_benchmark(force_solovev=False)
+        report = run_benchmark(force_solovev=False, require_freegs_backend=True)
         assert report["mode"] == "freegs"
         assert len(report["cases"]) == len(CASES)
+        assert report["thresholds"]["flux_area_rel_error"] == pytest.approx(
+            FREEGS_FLUX_AREA_REL_ERROR
+        )

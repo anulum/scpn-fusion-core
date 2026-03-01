@@ -160,6 +160,31 @@ def _is_marker_suppressed(
     return False
 
 
+def _score_context_penalty(*, rel_path: str, marker: str, line: str) -> int:
+    """Return score penalty for governance/audit marker contexts.
+
+    These contexts are still tracked in the register, but they should not
+    dominate the top P0/P1 queue intended for hardening implementation gaps.
+    """
+    lowered = line.lower()
+    if rel_path == "tools/generate_source_p0p1_issue_backlog.py":
+        if marker in {"DEPRECATED", "EXPERIMENTAL"}:
+            return 26
+    if rel_path == "validation/benchmark_deprecated_mode_exclusion.py":
+        if marker in {"DEPRECATED", "EXPERIMENTAL"}:
+            return 26
+    if rel_path == "tools/run_python_preflight.py" and marker == "EXPERIMENTAL":
+        if "experimental-only" in lowered or '-m", "experimental"' in lowered:
+            return 18
+    if rel_path == "validation/collect_results.py" and marker == "DEPRECATED":
+        if "deprecated" in lowered and "fno" in lowered:
+            return 14
+    if rel_path in {"CHANGELOG.md", "docs/sphinx/changelog.rst"}:
+        if marker in {"DEPRECATED", "EXPERIMENTAL"}:
+            return 18
+    return 0
+
+
 DOMAIN_OWNER = {
     "control": "Control WG",
     "core_physics": "Core Physics WG",
@@ -304,7 +329,11 @@ def collect_entries(repo_root: Path) -> list[RegisterEntry]:
                 file_hits += 1
                 if file_hits >= 20:
                     break
-                score = int(rule.base_score + bonus)
+                score = int(rule.base_score + bonus - _score_context_penalty(
+                    rel_path=rel,
+                    marker=rule.marker,
+                    line=line,
+                ))
                 entries.append(
                     RegisterEntry(
                         path=rel,

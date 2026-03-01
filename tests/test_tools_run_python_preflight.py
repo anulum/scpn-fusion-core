@@ -211,6 +211,7 @@ def test_main_honors_skip_flags(monkeypatch):
             "--skip-transport-uncertainty",
             "--skip-torax-strict-backend",
             "--skip-sparc-strict-backend",
+            "--skip-freegs-strict-backend",
             "--skip-multi-ion-conservation",
             "--skip-end-to-end-latency",
             "--skip-notebook-quality",
@@ -288,6 +289,14 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
             [
                 "python-test",
                 "validation/benchmark_sparc_geqdsk_rmse.py",
+                "--strict-backend",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "validation/benchmark_vs_freegs.py",
                 "--strict-backend",
             ],
             SCRIPT_PATH.resolve().parents[1],

@@ -24,6 +24,7 @@ Exit codes:
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import tempfile
@@ -56,6 +57,7 @@ FREEGS_PSI_NRMSE_THRESHOLD = 0.005   # 0.5% for direct numerical comparison
 FREEGS_Q_NRMSE_THRESHOLD = 0.10      # 10% for q-profile
 FREEGS_AXIS_ERROR_M = 0.10           # 10 cm axis position error
 FREEGS_SEPARATRIX_NRMSE = 0.05       # 5% separatrix boundary
+FREEGS_FLUX_AREA_REL_ERROR = 0.12    # 12% mid-surface area parity
 
 
 def _stable_rmse(delta: NDArray[np.float64]) -> float:
@@ -596,6 +598,40 @@ def compare_separatrix(
     return nrmse(ref_norm, our_norm)
 
 
+def compare_flux_surface_area(
+    our_psi: NDArray[np.float64],
+    ref_psi: NDArray[np.float64],
+    R: NDArray[np.float64],
+    Z: NDArray[np.float64],
+    *,
+    level: float = 0.5,
+) -> float:
+    """Compare flux-surface area (normalised psi >= level) by relative error."""
+    if our_psi.shape != ref_psi.shape:
+        return float("nan")
+    if R.size < 2 or Z.size < 2:
+        return float("nan")
+
+    d_r = float(np.mean(np.diff(R)))
+    d_z = float(np.mean(np.diff(Z)))
+    if d_r <= 0.0 or d_z <= 0.0 or not np.isfinite(d_r) or not np.isfinite(d_z):
+        return float("nan")
+
+    def _norm(psi: NDArray[np.float64]) -> NDArray[np.float64]:
+        rng = float(np.max(psi) - np.min(psi))
+        if rng < 1e-12:
+            return np.zeros_like(psi, dtype=np.float64)
+        return (psi - np.min(psi)) / rng
+
+    our_norm = _norm(our_psi)
+    ref_norm = _norm(ref_psi)
+    our_area = float(np.sum(our_norm >= level) * d_r * d_z)
+    ref_area = float(np.sum(ref_norm >= level) * d_r * d_z)
+    if ref_area <= 0.0:
+        return float("nan")
+    return float(abs(our_area - ref_area) / max(ref_area, 1e-12))
+
+
 # ── Case-level comparison ────────────────────────────────────────────
 
 
@@ -684,8 +720,15 @@ def compare_case(
             our["R"] if our["R"].ndim == 1 else our["R"][0, :],
             our["Z"] if our["Z"].ndim == 1 else our["Z"][:, 0],
         )
+        area_rel_error = compare_flux_surface_area(
+            our_psi,
+            ref_psi_interp,
+            our["R"] if our["R"].ndim == 1 else our["R"][0, :],
+            our["Z"] if our["Z"].ndim == 1 else our["Z"][:, 0],
+        )
     else:
         sep_nrmse = float("nan")
+        area_rel_error = float("nan")
 
     # ── Pass / fail logic ─────────────────────────────────────────
     if use_freegs:
@@ -694,6 +737,7 @@ def compare_case(
             and np.isfinite(q_nrmse)
             and np.isfinite(axis_err)
             and np.isfinite(sep_nrmse)
+            and np.isfinite(area_rel_error)
         )
         passes = bool(
             finite_freegs_metrics
@@ -701,6 +745,7 @@ def compare_case(
             and q_nrmse < FREEGS_Q_NRMSE_THRESHOLD
             and axis_err < FREEGS_AXIS_ERROR_M
             and sep_nrmse < FREEGS_SEPARATRIX_NRMSE
+            and area_rel_error < FREEGS_FLUX_AREA_REL_ERROR
         )
     else:
         passes = bool(psi_nrmse < PSI_NRMSE_THRESHOLD)
@@ -714,6 +759,7 @@ def compare_case(
         "q_profile_nrmse": round(float(q_nrmse), 6),
         "axis_error_m": round(axis_err, 6),
         "separatrix_nrmse": round(float(sep_nrmse), 6),
+        "flux_area_rel_error": round(float(area_rel_error), 6),
         "our_converged": our["converged"],
         "our_residual": round(float(our["residual"]), 8),
         "passes": passes,
@@ -723,19 +769,34 @@ def compare_case(
 # ── Campaign runner ──────────────────────────────────────────────────
 
 
-def run_benchmark(*, force_solovev: bool = False) -> dict[str, Any]:
+def run_benchmark(
+    *,
+    force_solovev: bool = False,
+    require_freegs_backend: bool = False,
+) -> dict[str, Any]:
     """Run all benchmark cases and return the full report dict.
 
     Parameters
     ----------
     force_solovev : bool
         If True, skip FreeGS even if available and use Solov'ev only.
+    require_freegs_backend : bool
+        If True, require FreeGS and fail instead of falling back.
 
     Returns
     -------
     dict  — JSON-serialisable benchmark report.
     """
-    use_freegs = HAS_FREEGS and not force_solovev
+    if require_freegs_backend and force_solovev:
+        raise ValueError(
+            "require_freegs_backend cannot be combined with force_solovev."
+        )
+    if require_freegs_backend and not HAS_FREEGS:
+        raise RuntimeError(
+            "FreeGS strict backend requested but `freegs` is not installed."
+        )
+
+    use_freegs = bool(require_freegs_backend or (HAS_FREEGS and not force_solovev))
     mode_label = "freegs" if use_freegs else "solovev_manufactured_source"
 
     if use_freegs:
@@ -760,6 +821,8 @@ def run_benchmark(*, force_solovev: bool = False) -> dict[str, Any]:
                 "psi_nrmse": float("nan"),
                 "q_profile_nrmse": float("nan"),
                 "axis_error_m": float("nan"),
+                "separatrix_nrmse": float("nan"),
+                "flux_area_rel_error": float("nan"),
                 "error": str(exc),
                 "passes": False,
             }
@@ -782,6 +845,7 @@ def run_benchmark(*, force_solovev: bool = False) -> dict[str, Any]:
             "q_profile_nrmse": FREEGS_Q_NRMSE_THRESHOLD,
             "axis_error_m": FREEGS_AXIS_ERROR_M,
             "separatrix_nrmse": FREEGS_SEPARATRIX_NRMSE,
+            "flux_area_rel_error": FREEGS_FLUX_AREA_REL_ERROR,
         })
 
     report = {
@@ -832,13 +896,36 @@ def generate_per_metric_report(report: dict[str, Any]) -> str:
 # ── Main ─────────────────────────────────────────────────────────────
 
 
-def main() -> int:
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--force-solovev",
+        action="store_true",
+        help="Force Solov'ev manufactured-source lane even when FreeGS is available.",
+    )
+    parser.add_argument(
+        "--strict-backend",
+        action="store_true",
+        help="Require FreeGS backend and fail instead of falling back to Solov'ev.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
     print("=" * 64)
     print("  SCPN Fusion Core -- FreeGS / Solov'ev Blind Benchmark")
     print("=" * 64)
     print()
 
-    report = run_benchmark()
+    args = _parse_args(argv)
+    try:
+        report = run_benchmark(
+            force_solovev=bool(args.force_solovev),
+            require_freegs_backend=bool(args.strict_backend),
+        )
+    except (RuntimeError, ValueError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
 
     # Write artifact
     artifacts_dir = ROOT / "artifacts"
