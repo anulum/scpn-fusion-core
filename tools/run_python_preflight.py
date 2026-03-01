@@ -25,6 +25,7 @@ def _build_release_checks(
     skip_version_metadata: bool,
     skip_claims_audit: bool,
     skip_claims_map: bool,
+    skip_underdeveloped_register: bool,
     skip_source_issue_backlog: bool,
     skip_untested_module_guard: bool,
     skip_release_checklist: bool,
@@ -85,6 +86,17 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "tools/generate_claims_evidence_map.py",
+                    "--check",
+                ],
+            )
+        )
+    if not skip_underdeveloped_register:
+        checks.append(
+            (
+                "Underdeveloped register drift check",
+                [
+                    sys.executable,
+                    "tools/generate_underdeveloped_register.py",
                     "--check",
                 ],
             )
@@ -290,6 +302,7 @@ def _build_checks(
     skip_version_metadata: bool,
     skip_claims_audit: bool,
     skip_claims_map: bool,
+    skip_underdeveloped_register: bool,
     skip_source_issue_backlog: bool,
     skip_untested_module_guard: bool,
     skip_release_checklist: bool,
@@ -317,6 +330,7 @@ def _build_checks(
                 skip_version_metadata=skip_version_metadata,
                 skip_claims_audit=skip_claims_audit,
                 skip_claims_map=skip_claims_map,
+                skip_underdeveloped_register=skip_underdeveloped_register,
                 skip_source_issue_backlog=skip_source_issue_backlog,
                 skip_untested_module_guard=skip_untested_module_guard,
                 skip_release_checklist=skip_release_checklist,
@@ -403,6 +417,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-claims-map",
         action="store_true",
         help="Skip tools/generate_claims_evidence_map.py --check",
+    )
+    parser.add_argument(
+        "--skip-underdeveloped-register",
+        action="store_true",
+        help="Skip tools/generate_underdeveloped_register.py --check",
     )
     parser.add_argument(
         "--skip-source-issue-backlog",
@@ -524,6 +543,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_version_metadata=args.skip_version_metadata,
         skip_claims_audit=args.skip_claims_audit,
         skip_claims_map=args.skip_claims_map,
+        skip_underdeveloped_register=args.skip_underdeveloped_register,
         skip_source_issue_backlog=args.skip_source_issue_backlog,
         skip_untested_module_guard=args.skip_untested_module_guard,
         skip_release_checklist=args.skip_release_checklist,

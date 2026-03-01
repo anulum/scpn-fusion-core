@@ -477,12 +477,42 @@ def render_markdown(
     return "\n".join(lines)
 
 
+def _resolve_output(path_value: str) -> Path:
+    output_path = Path(path_value)
+    if not output_path.is_absolute():
+        output_path = REPO_ROOT / output_path
+    return output_path
+
+
+def _display_path(path: Path) -> str:
+    try:
+        return path.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _normalize_for_check(content: str) -> str:
+    # Generated timestamps change every run; compare everything else.
+    lines: list[str] = []
+    for line in content.splitlines():
+        if line.startswith("- Generated at: `"):
+            lines.append("- Generated at: `<dynamic>`")
+            continue
+        lines.append(line)
+    return "\n".join(lines).strip()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output",
         default=str(DEFAULT_OUTPUT),
         help="Output markdown path (default: UNDERDEVELOPED_REGISTER.md at repo root).",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Check mode: fail if output differs from generated content.",
     )
     parser.add_argument(
         "--top-limit",
@@ -517,14 +547,31 @@ def main(argv: list[str] | None = None) -> int:
         full_limit=int(args.full_limit),
         scope=str(args.scope),
     )
-    output_path = Path(args.output)
-    if not output_path.is_absolute():
-        output_path = REPO_ROOT / output_path
+    output_path = _resolve_output(str(args.output))
+
+    if args.check:
+        if not output_path.exists():
+            print(
+                "Underdeveloped register output missing. "
+                "Run without --check to generate:\n"
+                f"- {_display_path(output_path)}"
+            )
+            return 1
+        current = output_path.read_text(encoding="utf-8")
+        if _normalize_for_check(current) != _normalize_for_check(report):
+            print(f"Underdeveloped register drift detected: {_display_path(output_path)}")
+            return 1
+        print(
+            f"Underdeveloped register is up to date ({len(entries)} entries, "
+            f"scope={args.scope})."
+        )
+        return 0
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(report, encoding="utf-8")
     print(
         f"Generated underdeveloped register with {len(entries)} entries "
-        f"(scope={args.scope}): "
-        f"{output_path.relative_to(REPO_ROOT).as_posix()}"
+        f"(scope={args.scope}): {_display_path(output_path)}"
     )
     return 0
 

@@ -83,3 +83,24 @@ def test_fallback_assignment_metadata_line_is_suppressed() -> None:
         line='info["fallback"] = False',
         file_text="",
     )
+
+
+def test_main_check_mode_passes_when_output_is_current(tmp_path: Path) -> None:
+    output_path = tmp_path / "UNDERDEVELOPED_REGISTER.md"
+    rc_generate = underdev.main(["--output", str(output_path)])
+    assert rc_generate == 0
+    rc_check = underdev.main(["--output", str(output_path), "--check"])
+    assert rc_check == 0
+
+
+def test_main_check_mode_fails_when_output_is_missing(tmp_path: Path) -> None:
+    output_path = tmp_path / "missing_underdeveloped_register.md"
+    rc_check = underdev.main(["--output", str(output_path), "--check"])
+    assert rc_check == 1
+
+
+def test_main_check_mode_fails_on_drift(tmp_path: Path) -> None:
+    output_path = tmp_path / "UNDERDEVELOPED_REGISTER.md"
+    output_path.write_text("# stale\n", encoding="utf-8")
+    rc_check = underdev.main(["--output", str(output_path), "--check"])
+    assert rc_check == 1

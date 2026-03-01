@@ -74,6 +74,14 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
+                "tools/generate_underdeveloped_register.py",
+                "--check",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
                 "tools/generate_source_p0p1_issue_backlog.py",
                 "--check",
             ],
@@ -200,6 +208,7 @@ def test_main_honors_skip_flags(monkeypatch):
             "run_python_preflight.py",
             "--skip-version-metadata",
             "--skip-claims-map",
+            "--skip-underdeveloped-register",
             "--skip-source-issue-backlog",
             "--skip-untested-module-guard",
             "--skip-release-checklist",
@@ -254,6 +263,7 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
             "--skip-version-metadata",
             "--skip-claims-audit",
             "--skip-claims-map",
+            "--skip-underdeveloped-register",
             "--skip-source-issue-backlog",
             "--skip-untested-module-guard",
             "--skip-release-checklist",

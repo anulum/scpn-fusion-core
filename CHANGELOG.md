@@ -47,6 +47,8 @@
 - CI throughput hardening: Python 3.12 lane now avoids duplicate full-suite execution by running a single coverage-enabled release pass, reducing redundant runtime.
 - CI resiliency hardening: Python 3.12 coverage run now has an explicit 50-minute timeout, writes diagnostics metadata/logs, and uploads diagnostics artifacts on failure.
 - Coverage recovery: expanded unified-CLI test surface and re-tightened `cli.py` coverage thresholds to 80% after restoring measured coverage headroom.
+- Governance hardening: `generate_underdeveloped_register.py` now supports deterministic `--check` mode for drift detection (timestamp-normalized comparison).
+- Validation governance hardening: release preflight now includes an `UNDERDEVELOPED_REGISTER.md` drift gate with an explicit skip flag for scoped local runs.
 
 ### Added
 - Wave A scaffolding: `tools/coverage_guard.py` + `tools/coverage_guard_thresholds.json` with CI coverage regression gating and summary artifact upload.
@@ -59,6 +61,7 @@
 - Regression test for deprecated FNO-controller missing-weight fallback path.
 - Regression tests for TORAX benchmark deterministic fallback seeding and backend/fallback metadata fields.
 - Regression tests for SPARC GEQDSK RMSE benchmark backend provenance and strict backend gating.
+- Regression tests for underdeveloped-register `--check` behavior (up-to-date, missing-output, and drift detection paths).
 
 ---
 
