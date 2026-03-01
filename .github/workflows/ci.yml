@@ -124,7 +124,7 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Enforce local-only handovers exclusion
         if: matrix.python-version == '3.12'
         run: |
@@ -256,7 +256,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
@@ -302,7 +302,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
@@ -344,7 +344,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
@@ -390,7 +390,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -416,7 +416,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -476,7 +476,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -505,7 +505,7 @@ jobs:
       run:
         working-directory: .
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Set up Python 3.12
@@ -556,7 +556,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Cache cargo
@@ -605,7 +605,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install cargo-audit
         run: cargo install cargo-audit
       - name: Run security audit
@@ -619,7 +619,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Cache cargo
@@ -661,7 +661,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests, rust-tests, rust-python-interop]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
@@ -710,7 +710,7 @@ jobs:
     needs: [python-tests]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
