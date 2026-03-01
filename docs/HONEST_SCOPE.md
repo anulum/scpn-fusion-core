@@ -65,5 +65,5 @@ Full claims-to-evidence audit: [`docs/CLAIMS_EVIDENCE_MAP.md`](CLAIMS_EVIDENCE_M
 ## Underdeveloped flags
 
 The auto-generated [`UNDERDEVELOPED_REGISTER.md`](../UNDERDEVELOPED_REGISTER.md)
-tracks 312 flags across the codebase. Of these, 114 are P0/P1 severity. The
-register is regenerated on each release and CI-gated.
+tracks the current flag count across the codebase (see Executive Summary for
+live totals). The register is regenerated on each release and CI-gated.

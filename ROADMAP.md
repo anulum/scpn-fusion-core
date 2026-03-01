@@ -3,6 +3,8 @@
 > Last updated: 2026-02-27. This roadmap reflects current priorities and may
 > change based on community feedback and validation results.
 
+Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_DAY_EXECUTION_PLAN.md)
+
 ## v4.0 — Validation-First Release (target: Q2 2026)
 
 ### Remove or retrain FNO turbulence surrogate
@@ -27,8 +29,8 @@ Status: DEPRECATED. Tracking: `src/scpn_fusion/core/fno_turbulence_suppressor.py
 
 ### Reduce underdeveloped flag count
 
-312 flags (114 P0/P1) tracked in `UNDERDEVELOPED_REGISTER.md`. Target for v4.0:
-reduce P0/P1 count below 50.
+Current totals are tracked in `UNDERDEVELOPED_REGISTER.md` (auto-generated each
+hardening wave). Target for v4.0: reduce P0/P1 count below 50.
 
 ### FPGA deployment path
 

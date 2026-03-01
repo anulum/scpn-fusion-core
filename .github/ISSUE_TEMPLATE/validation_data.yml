@@ -1,0 +1,84 @@
+name: Validation Data Contribution
+description: Propose or contribute real-shot data for validation campaigns
+title: "[VALIDATION-DATA] "
+labels: ["validation", "data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping expand real-data validation coverage.
+        Please provide enough provenance so data can be used in CI-gated
+        benchmarks and claims-evidence mapping.
+  - type: input
+    id: machine
+    attributes:
+      label: Machine
+      description: Tokamak or experiment name (e.g., SPARC, DIII-D, JET, ASDEX-U)
+      placeholder: "SPARC"
+    validations:
+      required: true
+  - type: input
+    id: shots
+    attributes:
+      label: Shot IDs / Count
+      description: Shot numbers or a summary count
+      placeholder: "1001, 1002, 1003"
+    validations:
+      required: true
+  - type: textarea
+    id: signals
+    attributes:
+      label: Available Signals
+      description: List fields/signals included (equilibrium, profiles, probes, control traces)
+      placeholder: "psi(R,Z), q-profile, Te(rho), Ti(rho), ne(rho), coil currents, diagnostic probes"
+    validations:
+      required: true
+  - type: textarea
+    id: provenance
+    attributes:
+      label: Data Provenance
+      description: Source link, data portal, paper DOI/arXiv, and extraction method
+      placeholder: "Source URL + DOI/arXiv + extraction notes"
+    validations:
+      required: true
+  - type: dropdown
+    id: license
+    attributes:
+      label: Data License / Access Terms
+      options:
+        - Public and redistributable
+        - Public metadata, restricted raw data
+        - Restricted institutional access
+        - Unsure (describe below)
+    validations:
+      required: true
+  - type: textarea
+    id: usage_rights
+    attributes:
+      label: Usage Constraints
+      description: Any restrictions on redistribution, publication, or derivative artifacts
+    validations:
+      required: true
+  - type: textarea
+    id: format
+    attributes:
+      label: Format and Size
+      description: File formats and approximate payload size
+      placeholder: "GEQDSK + CSV profiles, 120 MB"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Proposed Validation Acceptance Criteria
+      description: Define metrics/thresholds this dataset should validate
+      placeholder: "Axis RMSE < 1 cm, q95 error < 5%, profile rel_L2 < 0.1"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Any caveats, preprocessing requirements, or related issues
+    validations:
+      required: false

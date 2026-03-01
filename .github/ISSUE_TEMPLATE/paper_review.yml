@@ -1,0 +1,75 @@
+name: Paper / Claim Review
+description: Request technical review of claims, equations, or manuscript sections
+title: "[PAPER-REVIEW] "
+labels: ["research", "paper-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for manuscript feedback, claim verification, and
+        evidence-gap review before release or submission.
+  - type: input
+    id: paper
+    attributes:
+      label: Paper or Document
+      description: File path or external link
+      placeholder: "papers/paper_b_snn_controller.tex"
+    validations:
+      required: true
+  - type: input
+    id: section
+    attributes:
+      label: Section / Claim Scope
+      description: Which section or claim block should be reviewed
+      placeholder: "Section 3.2: compiler invariants and latency claims"
+    validations:
+      required: true
+  - type: textarea
+    id: claim
+    attributes:
+      label: Claim to Review
+      description: Exact claim text or concise paraphrase
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Current Evidence Artifacts
+      description: Link files in `RESULTS.md`, validation outputs, or claims map entries
+      placeholder: "RESULTS.md row X, validation/report_Y.json, docs/CLAIMS_EVIDENCE_MAP.md section Z"
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: External References
+      description: DOI/arXiv references needed to validate framing or equations
+    validations:
+      required: false
+  - type: dropdown
+    id: review_type
+    attributes:
+      label: Review Type
+      options:
+        - Technical correctness
+        - Evidence/traceability
+        - Reproducibility
+        - Writing clarity
+        - Scope/positioning
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: What must be true to close this review issue
+      placeholder: "All claim rows map to reproducible artifacts; no unsupported performance statement remains."
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Context
+      description: Reviewer notes, risks, or open questions
+    validations:
+      required: false

@@ -333,7 +333,7 @@ module returns structured errors. Full registry:
 [`docs/PHASE3_EXECUTION_REGISTRY.md`](docs/PHASE3_EXECUTION_REGISTRY.md).
 
 Audit artifacts:
-- [Underdeveloped register](UNDERDEVELOPED_REGISTER.md) (312 flags, auto-generated)
+- [Underdeveloped register](UNDERDEVELOPED_REGISTER.md) (auto-generated; see Executive Summary for current counts)
 - [Claims evidence map](docs/CLAIMS_EVIDENCE_MAP.md) (every claim mapped to evidence)
 - [Validation gate matrix](docs/VALIDATION_GATE_MATRIX.md)
 - [Release acceptance checklist](docs/RELEASE_ACCEPTANCE_CHECKLIST.md)

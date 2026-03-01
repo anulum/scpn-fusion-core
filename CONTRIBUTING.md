@@ -409,7 +409,7 @@ on our issue tracker. Some ideas:
 - Add GEQDSK test cases from publicly available tokamak data (MAST-U, W7-X).
 - Add Hypothesis property tests for numerical routines in `core/`.
 - Write a new tutorial notebook demonstrating a specific physics module.
-- Reduce underdeveloped flags in [`UNDERDEVELOPED_REGISTER.md`](UNDERDEVELOPED_REGISTER.md) (312 flags, 114 P0/P1).
+- Reduce P0/P1 entries in [`UNDERDEVELOPED_REGISTER.md`](UNDERDEVELOPED_REGISTER.md) (see Executive Summary for current counts).
 - Contribute real experimental validation data (equilibria, confinement profiles).
 
 ---

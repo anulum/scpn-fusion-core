@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Ideas and Roadmap Discussion
+    url: https://github.com/anulum/scpn-fusion-core/discussions
+    about: Share roadmap ideas, adoption feedback, and collaboration proposals.
   - name: Security Vulnerability
     url: mailto:protoscience@anulum.li?subject=[SECURITY]%20SCPN%20Fusion%20Core
     about: Do not open a public issue. Report security vulnerabilities via email.
