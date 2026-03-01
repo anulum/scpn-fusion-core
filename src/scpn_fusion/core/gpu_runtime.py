@@ -111,7 +111,9 @@ class GPURuntimeBridge:
 
     def _torch_fallback_multigrid(self, field: np.ndarray, iterations: int = 4) -> np.ndarray:
         if torch is None:
-            raise RuntimeError("PyTorch fallback requested but torch is not installed.")
+            raise RuntimeError(
+                "PyTorch compatibility backend requested but torch is not installed."
+            )
         u = torch.as_tensor(np.asarray(field, dtype=np.float64))
         iterations = self._require_int_at_least(
             iterations, name="iterations", minimum=1
@@ -297,7 +299,7 @@ class GPURuntimeBridge:
             resolved_backend = backend
         if resolved_backend == "torch_fallback" and torch is None:
             raise RuntimeError(
-                "PyTorch fallback requested but torch is not installed."
+                "PyTorch compatibility backend requested but torch is not installed."
             )
         if resolved_backend == "jax" and jax is None:
             raise RuntimeError("JAX backend requested but jax is not installed.")

@@ -72,7 +72,7 @@ class BreedingBlanket:
         # For legacy compatibility, alias x to distance from first wall
         self.x = self.r - self.r_inner
         
-        # Cross Sections (Macroscopic Sigma in cm^-1) - Simplified for 14 MeV neutrons
+        # Cross sections (macroscopic Sigma in cm^-1) - reduced-order 14 MeV closure.
         # ENRICHED BLANKET (90% Li-6 + Beryllium Multiplier)
         self.Sigma_capture_Li6 = 0.15 * self.li6_enrichment
         self.Sigma_scatter = 0.2      
@@ -156,7 +156,7 @@ class BreedingBlanket:
         
         if hasattr(np, "trapezoid"):
             total_production = np.trapezoid(integrand, self.r)
-        else:  # pragma: no cover - legacy NumPy fallback
+        else:  # pragma: no cover - legacy NumPy compatibility path
             total_production = np.trapz(integrand, self.r)  # type: ignore[attr-defined,unused-ignore]
         
         # Incoming Current (per unit length)

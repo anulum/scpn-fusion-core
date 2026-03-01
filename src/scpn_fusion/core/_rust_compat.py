@@ -273,7 +273,7 @@ class RustSnnPool:
         When ``False``, raise :class:`ImportError` if Rust extension is
         unavailable.
     seed : int
-        Seed used by deterministic NumPy fallback backend.
+        Seed used by deterministic NumPy compatibility backend.
     """
 
     def __init__(
@@ -343,7 +343,7 @@ class RustSnnController:
         When ``False``, raise :class:`ImportError` if Rust extension is
         unavailable.
     seed : int
-        Seed used by deterministic NumPy fallback backend.
+        Seed used by deterministic NumPy compatibility backend.
     """
 
     def __init__(
@@ -396,7 +396,7 @@ class RustSnnController:
 
 
 class _NumpySnnPoolFallback:
-    """Deterministic local fallback matching the Rust SNN pool interface."""
+    """Deterministic local compatibility path matching the Rust SNN pool interface."""
 
     def __init__(
         self,
@@ -456,7 +456,7 @@ class _NumpySnnPoolFallback:
 
 
 class _NumpySnnControllerFallback:
-    """Deterministic local fallback matching the Rust SNN controller interface."""
+    """Deterministic local compatibility path matching the Rust SNN controller interface."""
 
     def __init__(self, target_r: float, target_z: float, *, seed: int) -> None:
         self.target_r = float(target_r)
@@ -497,7 +497,7 @@ def rust_multigrid_vcycle(
     if not _RUST_AVAILABLE:
         raise ImportError(
             "scpn_fusion_rs not installed — Rust multigrid unavailable. "
-            "Use Python multigrid fallback in FusionKernel._multigrid_vcycle()."
+            "Use Python multigrid compatibility path in FusionKernel._multigrid_vcycle()."
         )
     # Delegate to Rust PyO3 binding (when available in fusion-python crate)
     try:
@@ -506,5 +506,5 @@ def rust_multigrid_vcycle(
     except ImportError:
         raise ImportError(
             "Rust multigrid_vcycle not exposed via PyO3. "
-            "Use Python multigrid fallback."
+            "Use Python multigrid compatibility path."
         )

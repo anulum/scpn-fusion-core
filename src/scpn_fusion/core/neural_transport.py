@@ -125,7 +125,7 @@ class TransportFluxes:
 
 # Critical gradient thresholds (Dimits shift included)
 _CRIT_ITG = 4.0   # R/L_Ti threshold for ITG
-_CRIT_TEM = 5.0   # R/L_Te threshold for TEM (simplified)
+_CRIT_TEM = 5.0   # R/L_Te threshold for TEM (reduced-order closure)
 _CHI_GB = 1.0     # Gyro-Bohm normalisation [m^2/s]
 
 # Transport stiffness exponent.  Physical range 1.5–4.0 (Dimits PoP 2000,
@@ -357,7 +357,7 @@ class NeuralTransportModel:
         if self.weights_path is None or not self.weights_path.exists():
             logger.info(
                 "Neural transport weights not found at %s — using "
-                "critical-gradient fallback",
+                "critical-gradient compatibility model",
                 self.weights_path,
             )
             return

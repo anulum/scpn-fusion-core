@@ -354,6 +354,7 @@ def run_control_room(
     verbose: bool = True,
     kernel_factory: Optional[Callable[[str], Any]] = None,
     config_file: Optional[str] = None,
+    allow_kernel_fallback: bool = True,
 ) -> dict[str, Any]:
     """
     Run the control-room loop and return deterministic summary metrics.
@@ -361,6 +362,7 @@ def run_control_room(
     steps = int(sim_duration)
     if steps < 1:
         raise ValueError("sim_duration must be >= 1.")
+    allow_kernel_fallback = bool(allow_kernel_fallback)
     rng = np.random.default_rng(int(seed))
 
     kernel = None
@@ -379,6 +381,10 @@ def run_control_room(
             if kernel is not None:
                 psi_source = "kernel"
         except _KERNEL_INIT_EXCEPTIONS as exc:
+            if not allow_kernel_fallback:
+                raise RuntimeError(
+                    "Kernel initialization failed and allow_kernel_fallback=False."
+                ) from exc
             kernel = None
             kernel_error = str(exc)
             psi_source = "analytic"
@@ -388,7 +394,10 @@ def run_control_room(
         if psi_source == "kernel":
             logger.info("Using kernel-backed Psi source.")
         elif kernel_error:
-            logger.warning("Kernel init failed, fallback to analytic Psi: %s", kernel_error)
+            logger.warning(
+                "Kernel init failed; continuing with analytic Psi source: %s",
+                kernel_error,
+            )
 
     reactor = TokamakPhysicsEngine(seed=seed, kernel=kernel)
     sensors = DiagnosticSystem(rng=rng)
@@ -419,8 +428,12 @@ def run_control_room(
                 kernel_coil_update_failures += 1
                 if kernel_coil_update_error is None:
                     kernel_coil_update_error = str(exc)
+                    if not allow_kernel_fallback:
+                        raise RuntimeError(
+                            "Kernel coil update failed and allow_kernel_fallback=False."
+                        ) from exc
                     logger.warning(
-                        "Kernel coil update failed; continuing with fallback controls: %s",
+                        "Kernel coil update failed; continuing with analytic control actions: %s",
                         kernel_coil_update_error,
                     )
 
@@ -431,6 +444,10 @@ def run_control_room(
                 kernel_solve_failures += 1
                 if kernel_solve_error is None:
                     kernel_solve_error = str(exc)
+                    if not allow_kernel_fallback:
+                        raise RuntimeError(
+                            "Kernel solve failed and allow_kernel_fallback=False."
+                        ) from exc
                     logger.warning(
                         "Kernel equilibrium solve failed; continuing with last known state: %s",
                         kernel_solve_error,
@@ -492,6 +509,12 @@ def run_control_room(
         "seed": int(seed),
         "steps": int(steps),
         "psi_source": psi_source,
+        "kernel_fallback_allowed": bool(allow_kernel_fallback),
+        "kernel_fallback_used": bool(
+            kernel_error is not None
+            or kernel_coil_update_failures > 0
+            or kernel_solve_failures > 0
+        ),
         "kernel_error": kernel_error,
         "final_z": float(z_arr[-1]),
         "mean_abs_z": float(np.mean(np.abs(z_arr))),

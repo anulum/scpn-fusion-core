@@ -95,9 +95,9 @@ def build_safety_net() -> StochasticPetriNet:
     return net
 
 
-def _safe_float(state: Mapping[str, float], key: str, fallback: float) -> float:
-    value = float(state.get(key, fallback))
-    return value if np.isfinite(value) else float(fallback)
+def _safe_float(state: Mapping[str, float], key: str, default_value: float) -> float:
+    value = float(state.get(key, default_value))
+    return value if np.isfinite(value) else float(default_value)
 
 
 def safety_tokens_from_state(
@@ -214,4 +214,3 @@ class SafetyInterlockRuntime:
         tokens = safety_tokens_from_state(state, limits=self.limits)
         self.set_safety_tokens(tokens)
         return self.allowed_actions()
-

@@ -175,12 +175,12 @@ def hall_mhd_zonal_ratio(
 ) -> dict[str, Any]:
     grid_n = _require_int("grid", grid, 8)
     steps_n = _require_int("steps", steps, 1)
-    fallback = _require_finite_float("fallback_asymmetry", fallback_asymmetry)
+    asymmetry_proxy = _require_finite_float("fallback_asymmetry", fallback_asymmetry)
 
     try:
         from scpn_fusion.core.hall_mhd_discovery import HallMHD
     except Exception:
-        ratio = float(np.clip(0.06 + 0.40 * abs(fallback), 0.0, 0.9))
+        ratio = float(np.clip(0.06 + 0.40 * abs(asymmetry_proxy), 0.0, 0.9))
         return {"backend": "proxy", "zonal_ratio": ratio}
 
     state = np.random.get_state()
@@ -197,7 +197,7 @@ def hall_mhd_zonal_ratio(
 
     ratio = float(np.mean(np.asarray(ratios, dtype=np.float64)))
     if not np.isfinite(ratio) or ratio <= 0.0:
-        ratio = float(np.clip(0.06 + 0.40 * abs(fallback), 0.0, 0.9))
+        ratio = float(np.clip(0.06 + 0.40 * abs(asymmetry_proxy), 0.0, 0.9))
         return {"backend": "proxy", "zonal_ratio": ratio}
     return {"backend": "hall_mhd", "zonal_ratio": ratio}
 

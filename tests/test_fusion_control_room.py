@@ -51,6 +51,11 @@ class _FailingKernel:
         raise RuntimeError("solver diverged")
 
 
+class _InitFailKernel:
+    def __init__(self, _config_path: str) -> None:
+        raise RuntimeError("kernel init failed")
+
+
 def test_run_control_room_returns_finite_summary_without_outputs() -> None:
     summary = run_control_room(
         sim_duration=18,
@@ -63,6 +68,8 @@ def test_run_control_room_returns_finite_summary_without_outputs() -> None:
         "seed",
         "steps",
         "psi_source",
+        "kernel_fallback_allowed",
+        "kernel_fallback_used",
         "final_z",
         "mean_abs_z",
         "max_abs_z",
@@ -76,6 +83,8 @@ def test_run_control_room_returns_finite_summary_without_outputs() -> None:
         assert key in summary
     assert summary["steps"] == 18
     assert summary["psi_source"] == "analytic"
+    assert summary["kernel_fallback_allowed"] is True
+    assert summary["kernel_fallback_used"] is False
     assert summary["animation_saved"] is False
     assert summary["report_saved"] is False
     assert np.isfinite(summary["final_z"])
@@ -129,6 +138,8 @@ def test_run_control_room_tracks_kernel_failures_without_abort() -> None:
         config_file="dummy.json",
     )
     assert summary["psi_source"] == "kernel"
+    assert summary["kernel_fallback_allowed"] is True
+    assert summary["kernel_fallback_used"] is True
     assert summary["kernel_coil_update_failures"] == 7
     assert summary["kernel_solve_failures"] == 7
     assert summary["kernel_coil_update_error"] is not None
@@ -149,3 +160,31 @@ def test_run_control_room_rejects_invalid_sim_duration() -> None:
 def test_tokamak_physics_engine_rejects_invalid_size() -> None:
     with pytest.raises(ValueError, match="size"):
         TokamakPhysicsEngine(size=8, seed=1)
+
+
+def test_run_control_room_strict_mode_raises_on_kernel_init_failure() -> None:
+    with pytest.raises(RuntimeError, match="allow_kernel_fallback=False"):
+        run_control_room(
+            sim_duration=4,
+            seed=1,
+            save_animation=False,
+            save_report=False,
+            verbose=False,
+            kernel_factory=_InitFailKernel,
+            config_file="dummy.json",
+            allow_kernel_fallback=False,
+        )
+
+
+def test_run_control_room_strict_mode_raises_on_kernel_runtime_failure() -> None:
+    with pytest.raises(RuntimeError, match="allow_kernel_fallback=False"):
+        run_control_room(
+            sim_duration=4,
+            seed=2,
+            save_animation=False,
+            save_report=False,
+            verbose=False,
+            kernel_factory=_FailingKernel,
+            config_file="dummy.json",
+            allow_kernel_fallback=False,
+        )

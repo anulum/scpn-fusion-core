@@ -195,7 +195,7 @@ class FusionKernel:
             )
         else:
             logger.info(
-                "HPC Acceleration UNAVAILABLE (using Python fallback)."
+            "HPC Acceleration UNAVAILABLE (using Python compatibility backend)."
             )
 
     # ── vacuum field ──────────────────────────────────────────────────
@@ -791,7 +791,7 @@ class FusionKernel:
     def _elliptic_solve(
         self, Source: FloatArray, Psi_bc: FloatArray
     ) -> FloatArray:
-        """Run the inner elliptic solve (HPC or Python fallback).
+        """Run the inner elliptic solve (HPC or Python compatibility backend).
 
         The solver method is chosen from the config key
         ``solver.solver_method``:
@@ -1641,8 +1641,8 @@ class FusionKernel:
                 getattr(result, "status", "unknown"),
                 getattr(result, "message", "no message"),
             )
-            fallback = np.asarray(coils.currents, dtype=np.float64).copy()
-            return np.clip(fallback, lb, ub).astype(np.float64)
+            prior_currents = np.asarray(coils.currents, dtype=np.float64).copy()
+            return np.clip(prior_currents, lb, ub).astype(np.float64)
 
         logger.info(
             "Coil optimisation: cost=%.4e, status=%d (%s)",

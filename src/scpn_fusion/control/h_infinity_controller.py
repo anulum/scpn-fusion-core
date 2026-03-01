@@ -163,7 +163,7 @@ class HInfinityController:
 
         # Discrete gains cache (recomputed when dt changes)
         self._cached_dt: float = 0.0
-        self._Fd: np.ndarray = self.F  # fallback: continuous gain
+        self._Fd: np.ndarray = self.F  # compatibility default: continuous gain
         self._Ld: np.ndarray = self.L_gain.copy()
         self._Ad: np.ndarray = np.eye(self.n)
         self._Bd_u: np.ndarray = np.zeros((self.n, self.m))

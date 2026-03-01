@@ -5,7 +5,7 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-"""Empirical tokamak profile loaders with optional live MDSplus fallback."""
+"""Empirical tokamak profile loaders with optional live MDSplus compatibility path."""
 
 from __future__ import annotations
 
@@ -359,7 +359,7 @@ def poll_mdsplus_feed(
     fallback_to_reference: bool = True,
 ) -> tuple[list[TokamakProfile], dict[str, Any]]:
     """
-    Poll live MDSplus feed snapshots with deterministic merge + fallback metadata.
+    Poll live MDSplus feed snapshots with deterministic merge + compatibility metadata.
 
     Notes:
     - This function performs immediate poll iterations without sleeping to keep

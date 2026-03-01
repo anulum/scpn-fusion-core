@@ -11,7 +11,7 @@ Packet B — FusionCompiler and CompiledNet.
 Compiles a ``StochasticPetriNet`` into sc_neurocore artifacts:
     - One ``StochasticLIFNeuron`` per transition (pure threshold comparator).
     - Pre-packed uint64 weight bitstreams for AND+popcount forward pass.
-    - Float-path fallback when sc_neurocore is not installed.
+    - Float-path compatibility route when sc_neurocore is not installed.
 """
 
 from __future__ import annotations
@@ -124,7 +124,7 @@ def _encode_weight_matrix_packed(
 class CompiledNet:
     """Compiled Petri Net ready for sc_neurocore execution.
 
-    Holds both the dense float matrices (for validation / fallback) and
+    Holds both the dense float matrices (for validation / compatibility) and
     pre-packed uint64 weight bitstreams (for the stochastic path).
     """
 
@@ -186,7 +186,7 @@ class CompiledNet:
         if not _HAS_SC_NEUROCORE:
             raise RuntimeError(
                 "dense_forward requires sc_neurocore.  "
-                "Use dense_forward_float for the numpy fallback."
+                "Use dense_forward_float for the numpy compatibility path."
             )
 
         n_out, n_in, n_words = W_packed.shape

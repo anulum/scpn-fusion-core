@@ -71,7 +71,7 @@ _GYRO_BOHM_COEFF_PATH = (
     / "gyro_bohm_coefficients.json"
 )
 
-_GYRO_BOHM_DEFAULT = 0.1  # Fallback if JSON not found
+_GYRO_BOHM_DEFAULT = 0.1  # Compatibility default if JSON is unavailable
 
 
 def _require_positive_finite_scalar(name: str, value: Any) -> float:
@@ -763,7 +763,7 @@ class TransportSolver(FusionKernel):
         Z_imp = 6.0
         ne_safe = np.maximum(self.ne, 0.1) * 1e19
         n_imp_m3 = self.n_impurity * 1e19
-        # Z_eff = (n_e * 1 + n_imp * Z^2) / (n_e + n_imp * Z)  ≈ simplified
+        # Z_eff = (n_e * 1 + n_imp * Z^2) / (n_e + n_imp * Z)  (reduced-order closure)
         sum_nZ2 = ne_safe + n_imp_m3 * Z_imp ** 2
         sum_nZ = ne_safe + n_imp_m3 * Z_imp
         self._Z_eff = float(np.clip(np.mean(sum_nZ2 / np.maximum(sum_nZ, 1e10)), 1.0, 10.0))
@@ -794,7 +794,8 @@ class TransportSolver(FusionKernel):
         # Sauter coefficients approximations (L-mode, low collisionality)
         L31 = f_trapped / (1.0 + 0.3 * np.sqrt(epsilon))
         L32 = 0.5 * L31
-        L34 = -0.1 * L31 # often stabilizing/negative in simplified models
+        zeff_eff = float(np.clip(getattr(self, "_Z_eff", 1.5), 1.0, 5.0))
+        L34 = -0.1 * L31 * (1.0 + 0.08 * (zeff_eff - 1.0))  # bounded temperature-gradient coupling
 
         # J_bs ~ -(1/B_pol) * [ L31 * (Te+Ti) * dn/dr + L32 * n * dTe/dr + L34 * n * dTi/dr ]
         J_bs = -(1.0 / B_pol) * (
@@ -1144,18 +1145,18 @@ class TransportSolver(FusionKernel):
     @staticmethod
     def _sanitize_with_fallback(
         arr: np.ndarray,
-        fallback: np.ndarray,
+        reference: np.ndarray,
         *,
         floor: float | None = None,
         ceil: float | None = None,
     ) -> tuple[np.ndarray, int]:
         """Replace non-finite entries and enforce optional lower/upper bounds."""
         out = np.asarray(arr, dtype=np.float64).copy()
-        fb = np.asarray(fallback, dtype=np.float64)
+        ref = np.asarray(reference, dtype=np.float64)
         bad = ~np.isfinite(out)
         recovered = int(np.count_nonzero(bad))
         if recovered > 0:
-            out[bad] = fb[bad]
+            out[bad] = ref[bad]
         if floor is not None:
             np.maximum(out, floor, out=out)
         if ceil is not None:

@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-01T06:29:24.331440+00:00`
+- Generated at: `2026-03-01T06:54:45.606403+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,18 +8,18 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 247 |
+| Total flagged entries | 216 |
 | P0 + P1 entries | 71 |
-| Source-domain entries | 68 |
+| Source-domain entries | 37 |
 | Source-domain P0 + P1 entries | 25 |
 | Docs-claims entries | 159 |
-| Domains affected | 8 |
+| Domains affected | 3 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 130 |
+| `FALLBACK` | 99 |
 | `EXPERIMENTAL` | 49 |
 | `PLANNED` | 23 |
 | `DEPRECATED` | 22 |
@@ -33,11 +33,6 @@
 | `docs_claims` | 159 |
 | `validation` | 37 |
 | `other` | 20 |
-| `core_physics` | 16 |
-| `control` | 7 |
-| `compiler_runtime` | 6 |
-| `diagnostics_io` | 1 |
-| `nuclear` | 1 |
 
 ## Source-Centric Priority Backlog (Top 25)
 
@@ -156,7 +151,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 80 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Step Physics (Single step of simulate logic simplified) |
 | P2 | 80 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
 
-## Full Register (Top 247)
+## Full Register (Top 216)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -240,38 +235,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:375` | implements a 10 kHz PID control loop with simplified linear plasma |
 | P2 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | # Step Physics (Single step of simulate logic simplified) |
 | P2 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:813` | Predict disruption risk with checkpoint path if available, else deterministic fallback. |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:819` | ``metadata`` includes whether fallback mode was used. |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/disruption_predictor.py:822` | failures instead of returning fallback risk from ``predict_disruption_risk``. |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/fusion_control_room.py:391` | logger.warning("Kernel init failed, fallback to analytic Psi: %s", kernel_error) |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/fusion_control_room.py:423` | "Kernel coil update failed; continuing with fallback controls: %s", |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/h_infinity_controller.py:166` | self._Fd: np.ndarray = self.F # fallback: continuous gain |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/neuro_cybernetic_controller.py:58` | Push-pull spiking control population with deterministic fallback. |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/_rust_compat.py:276` | Seed used by deterministic NumPy fallback backend. |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/_rust_compat.py:346` | Seed used by deterministic NumPy fallback backend. |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/_rust_compat.py:500` | "Use Python multigrid fallback in FusionKernel._multigrid_vcycle()." |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/_rust_compat.py:509` | "Use Python multigrid fallback." |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/fusion_kernel.py:198` | "HPC Acceleration UNAVAILABLE (using Python fallback)." |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/fusion_kernel.py:1644` | fallback = np.asarray(coils.currents, dtype=np.float64).copy() |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/fusion_kernel.py:1645` | return np.clip(fallback, lb, ub).astype(np.float64) |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gpu_runtime.py:114` | raise RuntimeError("PyTorch fallback requested but torch is not installed.") |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gpu_runtime.py:300` | "PyTorch fallback requested but torch is not installed." |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:74` | _GYRO_BOHM_DEFAULT = 0.1 # Fallback if JSON not found |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:1148` | fallback: np.ndarray, |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/integrated_transport_solver.py:1155` | fb = np.asarray(fallback, dtype=np.float64) |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/neural_transport.py:360` | "critical-gradient fallback", |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/quasi_3d_contracts.py:178` | fallback = _require_finite_float("fallback_asymmetry", fallback_asymmetry) |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/quasi_3d_contracts.py:183` | ratio = float(np.clip(0.06 + 0.40 * abs(fallback), 0.0, 0.9)) |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/quasi_3d_contracts.py:200` | ratio = float(np.clip(0.06 + 0.40 * abs(fallback), 0.0, 0.9)) |
 | P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:116` | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
-| P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/compiler.py:14` | - Float-path fallback when sc_neurocore is not installed. |
-| P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/compiler.py:127` | Holds both the dense float matrices (for validation / fallback) and |
-| P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/compiler.py:189` | "Use dense_forward_float for the numpy fallback." |
-| P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/safety_interlocks.py:98` | def _safe_float(state: Mapping[str, float], key: str, fallback: float) -> float: |
-| P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/safety_interlocks.py:99` | value = float(state.get(key, fallback)) |
-| P2 | `compiler_runtime` | `FALLBACK` | `src/scpn_fusion/scpn/safety_interlocks.py:100` | return value if np.isfinite(value) else float(fallback) |
-| P2 | `nuclear` | `FALLBACK` | `src/scpn_fusion/nuclear/blanket_neutronics.py:159` | else: # pragma: no cover - legacy NumPy fallback |
-| P2 | `diagnostics_io` | `FALLBACK` | `src/scpn_fusion/io/tokamak_archive.py:362` | Poll live MDSplus feed snapshots with deterministic merge + fallback metadata. |
 | P2 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:230` | logger.debug("tokamak_archive fallback failed: %s", exc) |
 | P2 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:142` | print(" Will use critical-gradient fallback (less accurate).") |
 | P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:111` | if "FALLBACK" in markers: |

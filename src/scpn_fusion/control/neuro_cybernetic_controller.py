@@ -55,7 +55,7 @@ def _resolve_fusion_kernel() -> Any:
 
 class SpikingControllerPool:
     """
-    Push-pull spiking control population with deterministic fallback.
+    Push-pull spiking control population with deterministic compatibility path.
 
     Preferred backend is ``sc-neurocore``. If unavailable, a reduced NumPy LIF
     population is used so controller workflows remain executable in CI.
@@ -148,7 +148,7 @@ class SpikingControllerPool:
         self._v_neg = np.zeros(self.n_neurons, dtype=np.float64)
         self._alpha = dt_s / tau_mem_s
         self._noise_std = noise_std
-        # Reduced threshold keeps fallback lane responsive in low-current control
+        # Reduced threshold keeps compatibility lane responsive in low-current control
         # regimes while preserving deterministic push-pull polarity.
         self._v_threshold = 0.35
         self._v_reset = 0.0

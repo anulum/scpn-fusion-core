@@ -810,16 +810,18 @@ def predict_disruption_risk_safe(
     allow_fallback: bool = True,
 ) -> tuple[float, dict[str, Any]]:
     """
-    Predict disruption risk with checkpoint path if available, else deterministic fallback.
+    Predict disruption risk with checkpoint path if available, else deterministic
+    compatibility estimator.
 
     Returns
     -------
     risk, metadata
         ``risk`` is always a bounded float in ``[0, 1]``.
-        ``metadata`` includes whether fallback mode was used.
+        ``metadata`` includes whether compatibility mode was used.
     allow_fallback
         If ``False``, this API raises on missing/broken checkpoints or inference
-        failures instead of returning fallback risk from ``predict_disruption_risk``.
+        failures instead of returning compatibility risk from
+        ``predict_disruption_risk``.
     """
     base_risk = float(np.clip(predict_disruption_risk(signal, toroidal_observables), 0.0, 1.0))
 
