@@ -26,6 +26,7 @@ def _build_release_checks(
     skip_claims_audit: bool,
     skip_claims_map: bool,
     skip_underdeveloped_register: bool,
+    skip_underdeveloped_scope_reports: bool,
     skip_source_issue_backlog: bool,
     skip_untested_module_guard: bool,
     skip_release_checklist: bool,
@@ -97,6 +98,17 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "tools/generate_underdeveloped_register.py",
+                    "--check",
+                ],
+            )
+        )
+    if not skip_underdeveloped_scope_reports:
+        checks.append(
+            (
+                "Underdeveloped scope-report drift check",
+                [
+                    sys.executable,
+                    "tools/generate_underdeveloped_scope_reports.py",
                     "--check",
                 ],
             )
@@ -303,6 +315,7 @@ def _build_checks(
     skip_claims_audit: bool,
     skip_claims_map: bool,
     skip_underdeveloped_register: bool,
+    skip_underdeveloped_scope_reports: bool,
     skip_source_issue_backlog: bool,
     skip_untested_module_guard: bool,
     skip_release_checklist: bool,
@@ -331,6 +344,7 @@ def _build_checks(
                 skip_claims_audit=skip_claims_audit,
                 skip_claims_map=skip_claims_map,
                 skip_underdeveloped_register=skip_underdeveloped_register,
+                skip_underdeveloped_scope_reports=skip_underdeveloped_scope_reports,
                 skip_source_issue_backlog=skip_source_issue_backlog,
                 skip_untested_module_guard=skip_untested_module_guard,
                 skip_release_checklist=skip_release_checklist,
@@ -422,6 +436,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-underdeveloped-register",
         action="store_true",
         help="Skip tools/generate_underdeveloped_register.py --check",
+    )
+    parser.add_argument(
+        "--skip-underdeveloped-scope-reports",
+        action="store_true",
+        help="Skip tools/generate_underdeveloped_scope_reports.py --check",
     )
     parser.add_argument(
         "--skip-source-issue-backlog",
@@ -544,6 +563,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_claims_audit=args.skip_claims_audit,
         skip_claims_map=args.skip_claims_map,
         skip_underdeveloped_register=args.skip_underdeveloped_register,
+        skip_underdeveloped_scope_reports=args.skip_underdeveloped_scope_reports,
         skip_source_issue_backlog=args.skip_source_issue_backlog,
         skip_untested_module_guard=args.skip_untested_module_guard,
         skip_release_checklist=args.skip_release_checklist,

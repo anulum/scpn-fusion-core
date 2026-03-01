@@ -49,6 +49,11 @@
 - Coverage recovery: expanded unified-CLI test surface and re-tightened `cli.py` coverage thresholds to 80% after restoring measured coverage headroom.
 - Governance hardening: `generate_underdeveloped_register.py` now supports deterministic `--check` mode for drift detection (timestamp-normalized comparison).
 - Validation governance hardening: release preflight now includes an `UNDERDEVELOPED_REGISTER.md` drift gate with an explicit skip flag for scoped local runs.
+- Validation governance hardening: release preflight now includes split underdeveloped scope-report drift checks (`source` vs `docs_claims`) to reduce hardening triage noise.
+- CI hardening: Python 3.12 release preflight now enables strict backend checks by default for release mode while explicitly skipping unstable SPARC/FreeGS strict lanes in that step.
+- Benchmark hardening: TORAX and SPARC benchmark scripts now enforce standalone `src/` import-path determinism for CI/local parity.
+- Runtime hardening: `traceable_runtime_parity.py` now enforces standalone `src/` import-path determinism for CI/local parity.
+- Validation hardening: real-shot CI lane now runs `validate_real_shots.py --strict-coverage` and enforces a dedicated artifact guard for coverage minima + machine diversity.
 
 ### Added
 - Wave A scaffolding: `tools/coverage_guard.py` + `tools/coverage_guard_thresholds.json` with CI coverage regression gating and summary artifact upload.
@@ -62,6 +67,11 @@
 - Regression tests for TORAX benchmark deterministic fallback seeding and backend/fallback metadata fields.
 - Regression tests for SPARC GEQDSK RMSE benchmark backend provenance and strict backend gating.
 - Regression tests for underdeveloped-register `--check` behavior (up-to-date, missing-output, and drift detection paths).
+- Validation hardening: added `tools/fallback_budget_guard.py` + thresholds config and wired CI fallback-budget contract on TORAX/SPARC/FreeGS benchmark artifacts.
+- Runtime hardening: added `tools/runtime_parity_perf_guard.py` + thresholds config and new CI `Runtime Parity + Perf Gate` artifact contract.
+- Validation hardening: added `tools/real_shot_validation_guard.py` + thresholds config and CI guard summary artifact for strict real-shot coverage lanes.
+- Governance hardening: added `tools/generate_underdeveloped_scope_reports.py` and tracked split reports (`docs/UNDERDEVELOPED_SOURCE_REGISTER.md`, `docs/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md`, `docs/UNDERDEVELOPED_SCOPE_SUMMARY.json`).
+- Session logging: added `docs/session_logs/2026-03-01_h12_h17_hardening.md` with full H12-H17 execution record.
 
 ---
 

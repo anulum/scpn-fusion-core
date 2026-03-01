@@ -1,0 +1,12 @@
+{
+  "coverage_minima": {
+    "equilibrium_files": 12,
+    "transport_shots": 52,
+    "disruption_shots": 12
+  },
+  "required_equilibrium_machines": [
+    "SPARC",
+    "DIII-D",
+    "JET"
+  ]
+}

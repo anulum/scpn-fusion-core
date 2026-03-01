@@ -33,6 +33,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / "src"))
 FloatArray = NDArray[np.float64]
 
 # Tolerance: relative RMSE < 25% on a synthetic comparison

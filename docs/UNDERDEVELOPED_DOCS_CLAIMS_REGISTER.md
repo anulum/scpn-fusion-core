@@ -1,29 +1,29 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-01T23:21:21.968225+00:00`
+- Generated at: `2026-03-01T23:21:22.717108+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
-- Scope: production code + docs claims markers (tests/reports/html excluded)
+- Scope: docs-claims-only markers
 
 ## Executive Summary
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 212 |
-| P0 + P1 entries | 40 |
-| Source-domain entries | 30 |
+| Total flagged entries | 162 |
+| P0 + P1 entries | 39 |
+| Source-domain entries | 0 |
 | Source-domain P0 + P1 entries | 0 |
 | Docs-claims entries | 162 |
-| Domains affected | 3 |
+| Domains affected | 1 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 105 |
-| `EXPERIMENTAL` | 42 |
-| `PLANNED` | 23 |
-| `DEPRECATED` | 19 |
-| `SIMPLIFIED` | 19 |
+| `FALLBACK` | 83 |
+| `EXPERIMENTAL` | 29 |
+| `PLANNED` | 22 |
+| `SIMPLIFIED` | 13 |
+| `DEPRECATED` | 11 |
 | `NOT_VALIDATED` | 4 |
 
 ## Domain Distribution
@@ -31,15 +31,6 @@
 | Key | Count |
 |---|---:|
 | `docs_claims` | 162 |
-| `validation` | 30 |
-| `other` | 20 |
-
-## Source-Centric Priority Backlog (Top 0)
-
-_Filtered to implementation domains to reduce docs/claims noise during hardening triage._
-
-| Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
-|---|---:|---|---|---|---|---|---|
 
 ## Top Priority Backlog (Top 80)
 
@@ -55,7 +46,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:17` | Docs WG | Replace default path or remove lane before next major release. | - Keep deprecated FNO paths non-default and explicitly gated. |
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Replace default path or remove lane before next major release. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/V3_9_3_RELEASE_CHECKLIST.md:18` | Docs WG | Replace default path or remove lane before next major release. | - [ ] Confirm deprecated/experimental paths remain non-default in release-facing commands. |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | Docs WG | Gate behind explicit flag and define validation exit criteria. | > This repo is the full physics + experimental suite. |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:255` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ### Experimental |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
@@ -89,44 +79,45 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Add real-data validation campaign and publish error bars. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
 | P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | Docs WG | Add real-data validation campaign and publish error bars. | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
 | P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | Docs WG | Add real-data validation campaign and publish error bars. | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
-| P2 | 80 | `validation` | `SIMPLIFIED` | `tools/generate_source_p0p1_issue_backlog.py:109` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | if "SIMPLIFIED" in markers: |
-| P2 | 80 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
-| P2 | 80 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:375` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | implements a 10 kHz PID control loop with simplified linear plasma |
-| P2 | 80 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Step Physics (Single step of simulate logic simplified) |
-| P2 | 80 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
-| P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | Architecture WG | Replace default path or remove lane before next major release. | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
-| P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:66` | Architecture WG | Replace default path or remove lane before next major release. | - Regression test for deprecated FNO-controller missing-weight fallback path. |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:304` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:305` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:410` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:411` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:544` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
-| P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:105` | Validation WG | Replace default path or remove lane before next major release. | if "DEPRECATED" in markers: |
-| P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:106` | Validation WG | Replace default path or remove lane before next major release. | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
-| P2 | 75 | `validation` | `DEPRECATED` | `validation/benchmark_deprecated_mode_exclusion.py:3` | Validation WG | Replace default path or remove lane before next major release. | # SCPN Fusion Core -- Deprecated Mode Exclusion Benchmark |
-| P2 | 75 | `validation` | `DEPRECATED` | `validation/benchmark_deprecated_mode_exclusion.py:5` | Validation WG | Replace default path or remove lane before next major release. | """Benchmark to ensure deprecated FNO lanes never leak into default runtime.""" |
-| P2 | 75 | `validation` | `DEPRECATED` | `validation/benchmark_deprecated_mode_exclusion.py:106` | Validation WG | Replace default path or remove lane before next major release. | "# Deprecated Mode Exclusion Benchmark", |
-| P2 | 75 | `validation` | `DEPRECATED` | `validation/benchmark_deprecated_mode_exclusion.py:154` | Validation WG | Replace default path or remove lane before next major release. | print("Deprecated mode exclusion benchmark complete.") |
-| P2 | 74 | `other` | `SIMPLIFIED` | `CHANGELOG.md:135` | Architecture WG | Upgrade with higher-fidelity closure or tighten domain contract. | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
 | P2 | 71 | `docs_claims` | `DEPRECATED` | `docs/sphinx/changelog.rst:27` | Docs WG | Replace default path or remove lane before next major release. | - FNO turbulence surrogate deprecated (runtime ``FutureWarning``) |
-| P2 | 71 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:230` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | logger.debug("tokamak_archive fallback failed: %s", exc) |
-| P2 | 71 | `validation` | `FALLBACK` | `tools/fallback_budget_guard.py:159` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Fallback budget summary: " |
-| P2 | 71 | `validation` | `FALLBACK` | `tools/fallback_budget_guard.py:165` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | print("Fallback budget guard failed.") |
-| P2 | 71 | `validation` | `FALLBACK` | `tools/fallback_budget_guard.py:167` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | print("Fallback budget guard passed.") |
-| P2 | 71 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:142` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | print(" Will use critical-gradient fallback (less accurate).") |
-| P2 | 71 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:111` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | if "FALLBACK" in markers: |
-| P2 | 71 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:112` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | ``get_radial_robust_controller()`` with LQR fallback. |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
-| P2 | 70 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:218` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
-| P2 | 70 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:219` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added CI split lane `python-research-gate` and release-only pytest execution (`-m "not experimental"`) |
-| P2 | 70 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:300` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added single-command suite execution via `scpn-fusion all --surrogate --experimental`. |
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:24` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `SIMPLIFIED` \| 27 \| |
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:60` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/core/integrated_transport_solver.py` \| 1 (`SIMPLIFIED`) \| Largest physics file, central to transport claims \| |
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:61` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/core/eped_pedestal.py` \| 1 (`SIMPLIFIED`) \| Pedestal closure fidelity bottleneck \| |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:62` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/core/stability_mhd.py` \| 1 (`SIMPLIFIED`) \| NTM/MHD reliability for disruption-oriented claims \| |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:63` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/control/fokker_planck_re.py` \| 1 (`SIMPLIFIED`) \| Runaway electron fidelity limits hard-safety narratives \| |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:64` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/control/spi_ablation.py` \| 1 (`SIMPLIFIED`) \| SPI mitigation realism in disruption campaigns \| |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:65` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/nuclear/blanket_neutronics.py` \| 1 (`SIMPLIFIED`) \| TBR confidence boundary \| |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:66` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/nuclear/nuclear_wall_interaction.py` \| 1 (`SIMPLIFIED`) \| PWI claims bounded by reduced model assumptions \| |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:72` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | - `SIMPLIFIED`: 19 mentions |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/assets/generate_header.py:27` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified Grad-Shafranov flux function with Shafranov shift + triangularity |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/control.rst:197` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | simplified equilibrium and transport problems, used primarily for: |
+| P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/transport.rst:82` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | using simplified ray-tracing: |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `README.md:108` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/3d_gaps.md:92` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - fallback if external dependency is unavailable. |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback to analytic model when no weights are available |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | with fallback to CPU SIMD for systems without GPU support. |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:93` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | │ ╱ Fallback (analytic) |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:124` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Fallback vectorised \| ~2 ms \| ~7× slower \| |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:125` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Fallback point-by-point loop \| ~200 ms \| ~670× slower \| |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:22` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| `FALLBACK` \| 172 \| |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:71` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - `FALLBACK`: 67 mentions |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:103` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback to full physics solve when surrogate confidence is below threshold |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:276` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - f32 precision with tolerance-guarded fallback to f64 CPU path |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:508` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **2. Rust Performance with Python Accessibility:** The dual-language architecture provides 10-50x performance over pure-Python alternativ... |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:35` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Host orchestration in Rust with deterministic CPU fallback |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:64` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - CPU fallback for unsupported nodes |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:122` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - automatic CPU fallback |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:41` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - [6.2 Import Boundary and Fallback Strategy](#62-import-boundary-and-fallback-strategy) |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:269` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **Dependencies:** numpy, sc_neurocore (optional — graceful fallback) |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:337` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **`dense_forward_float(W, inputs)`** — The float path: a simple `W @ inputs` using numpy. Used for validation and as a fallback when sc_n... |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:502` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **Rationale:** The Logic Compiler is a component of SCPN-Fusion-Core, which may be installed in environments where sc_neurocore is not pr... |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:660` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | **Graceful sc_neurocore fallback** | SCPN-Fusion-Core may be used without neuromorphic hardware. The Petri Net API should always be ava... |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:740` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | The "Tokens are Bits" philosophy creates a direct isomorphism between Petri Net semantics and stochastic computing primitives, guaranteei... |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/NEXT_SPRINT_EXECUTION_QUEUE.md:37` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Completed: `S1-003` (added low-point LCFS fallback regression test and VMEC-like geometry CI smoke coverage). |
 
-## Full Register (Top 212)
+## Full Register (Top 162)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -140,7 +131,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:17` | - Keep deprecated FNO paths non-default and explicitly gated. |
 | P1 | `docs_claims` | `DEPRECATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
 | P1 | `docs_claims` | `DEPRECATED` | `docs/V3_9_3_RELEASE_CHECKLIST.md:18` | - [ ] Confirm deprecated/experimental paths remain non-default in release-facing commands. |
-| P1 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | > This repo is the full physics + experimental suite. |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:255` | ### Experimental |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
@@ -174,38 +164,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
 | P2 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
 | P2 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
-| P2 | `validation` | `SIMPLIFIED` | `tools/generate_source_p0p1_issue_backlog.py:109` | if "SIMPLIFIED" in markers: |
-| P2 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | # Simplified: spectral conv in truncated mode space |
-| P2 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:375` | implements a 10 kHz PID control loop with simplified linear plasma |
-| P2 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | # Step Physics (Single step of simulate logic simplified) |
-| P2 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
-| P2 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
-| P2 | `other` | `DEPRECATED` | `CHANGELOG.md:66` | - Regression test for deprecated FNO-controller missing-weight fallback path. |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:304` | "Experimental-only pytest suite", |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:305` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:410` | "'release' excludes experimental-only lanes, " |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:411` | "'research' runs experimental-only lanes, " |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:544` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
-| P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:105` | if "DEPRECATED" in markers: |
-| P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:106` | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
-| P2 | `validation` | `DEPRECATED` | `validation/benchmark_deprecated_mode_exclusion.py:3` | # SCPN Fusion Core -- Deprecated Mode Exclusion Benchmark |
-| P2 | `validation` | `DEPRECATED` | `validation/benchmark_deprecated_mode_exclusion.py:5` | """Benchmark to ensure deprecated FNO lanes never leak into default runtime.""" |
-| P2 | `validation` | `DEPRECATED` | `validation/benchmark_deprecated_mode_exclusion.py:106` | "# Deprecated Mode Exclusion Benchmark", |
-| P2 | `validation` | `DEPRECATED` | `validation/benchmark_deprecated_mode_exclusion.py:154` | print("Deprecated mode exclusion benchmark complete.") |
-| P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:135` | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/sphinx/changelog.rst:27` | - FNO turbulence surrogate deprecated (runtime ``FutureWarning``) |
-| P2 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:230` | logger.debug("tokamak_archive fallback failed: %s", exc) |
-| P2 | `validation` | `FALLBACK` | `tools/fallback_budget_guard.py:159` | "Fallback budget summary: " |
-| P2 | `validation` | `FALLBACK` | `tools/fallback_budget_guard.py:165` | print("Fallback budget guard failed.") |
-| P2 | `validation` | `FALLBACK` | `tools/fallback_budget_guard.py:167` | print("Fallback budget guard passed.") |
-| P2 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:142` | print(" Will use critical-gradient fallback (less accurate).") |
-| P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:111` | if "FALLBACK" in markers: |
-| P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:112` | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | ``get_radial_robust_controller()`` with LQR fallback. |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
-| P2 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:218` | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
-| P2 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:219` | - Added CI split lane `python-research-gate` and release-only pytest execution (`-m "not experimental"`) |
-| P2 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:300` | - Added single-command suite execution via `scpn-fusion all --surrogate --experimental`. |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:24` | \| `SIMPLIFIED` \| 27 \| |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:60` | \| `src/scpn_fusion/core/integrated_transport_solver.py` \| 1 (`SIMPLIFIED`) \| Largest physics file, central to transport claims \| |
@@ -219,24 +178,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/assets/generate_header.py:27` | # Simplified Grad-Shafranov flux function with Shafranov shift + triangularity |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/control.rst:197` | simplified equilibrium and transport problems, used primarily for: |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/transport.rst:82` | using simplified ray-tracing: |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:113` | if "EXPERIMENTAL" in markers: |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:114` | items.append("Ensure release lane remains experimental-excluded unless explicitly opted in.") |
-| P2 | `validation` | `EXPERIMENTAL` | `validation/benchmark_deprecated_mode_exclusion.py:42` | return "pytestmark = pytest.mark.experimental" in text |
-| P2 | `validation` | `EXPERIMENTAL` | `validation/benchmark_deprecated_mode_exclusion.py:123` | "\| Research file \| Experimental marker \|", |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:21` | - Runtime hardening: compiler git SHA probe now uses bounded subprocess timeout with deterministic fallback. |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:29` | - Tooling hardening: claims audit git file discovery now uses a bounded subprocess timeout with safe fallback. |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:35` | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:40` | - Validation hardening: TORAX cross-validation fallback now uses deterministic stable seeding (BLAKE2-based) instead of Python process-ra... |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:41` | - Validation observability: TORAX benchmark artifacts now expose per-case backend, fallback reason, and fallback seed fields. |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:42` | - Validation hardening: TORAX benchmark adds strict backend gating (`--strict-backend`) to fail when reduced-order fallback is used. |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:43` | - Validation hardening: SPARC GEQDSK RMSE benchmark fallback no longer uses identity-like reconstruction; it now uses a deterministic red... |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:44` | - Validation observability: SPARC GEQDSK RMSE benchmark now records surrogate backend and fallback reason per case, plus strict backend r... |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:66` | - Regression test for deprecated FNO-controller missing-weight fallback path. |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:67` | - Regression tests for TORAX benchmark deterministic fallback seeding and backend/fallback metadata fields. |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:70` | - Validation hardening: added `tools/fallback_budget_guard.py` + thresholds config and wired CI fallback-budget contract on TORAX/SPARC/F... |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:94` | - **Rust Transport Delegation**: `chang_hinton_chi_profile()` → Rust fast-path (4.7x speedup), `calculate_sauter_bootstrap_current_full()... |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:166` | - Robust fallback to SciPy L-BFGS-B when JAX is unavailable. |
-| P3 | `validation` | `PLANNED` | `validation/validate_real_shots.py:565` | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
 | P3 | `docs_claims` | `FALLBACK` | `README.md:108` | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/3d_gaps.md:92` | - fallback if external dependency is unavailable. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | - Transparent fallback to analytic model when no weights are available |

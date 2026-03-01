@@ -45,6 +45,13 @@ def test_source_scope_filters_to_src_paths() -> None:
     assert all(entry.path.startswith("src/scpn_fusion/") for entry in scoped)
 
 
+def test_docs_claims_scope_filters_to_docs_domain() -> None:
+    entries = underdev.collect_entries(ROOT)
+    scoped = underdev._filter_entries_by_scope(entries, scope="docs_claims")
+    assert isinstance(scoped, list)
+    assert all(entry.domain == "docs_claims" for entry in scoped)
+
+
 def test_fallback_metadata_lines_are_suppressed() -> None:
     assert underdev._is_marker_suppressed(
         rel_path="src/scpn_fusion/control/disruption_predictor.py",

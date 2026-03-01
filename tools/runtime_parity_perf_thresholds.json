@@ -1,0 +1,10 @@
+{
+  "parity": {
+    "min_report_count": 1
+  },
+  "latency": {
+    "max_snn_p95_surrogate_ms": 6.0,
+    "max_snn_p95_full_ms": 10.0,
+    "max_full_to_surrogate_ratio": 6.5
+  }
+}

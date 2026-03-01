@@ -53,6 +53,9 @@ EXCLUDED_PATHS = {
     "docs/CLAIMS_EVIDENCE_MAP.md",
     "docs/SOURCE_P0P1_ISSUE_BACKLOG.md",
     "docs/SOURCE_P0P1_ISSUE_BACKLOG.json",
+    "docs/UNDERDEVELOPED_SOURCE_REGISTER.md",
+    "docs/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md",
+    "docs/UNDERDEVELOPED_SCOPE_SUMMARY.json",
 }
 
 
@@ -368,6 +371,8 @@ def _filter_entries_by_scope(entries: list[RegisterEntry], *, scope: str) -> lis
         return list(entries)
     if scope == "source":
         return [entry for entry in entries if entry.path.startswith("src/scpn_fusion/")]
+    if scope == "docs_claims":
+        return [entry for entry in entries if entry.domain == "docs_claims"]
     raise ValueError(f"Unsupported scope: {scope}")
 
 
@@ -397,11 +402,12 @@ def render_markdown(
     docs_entries = [entry for entry in entries if entry.domain == "docs_claims"]
     source_p0p1 = [entry for entry in source_entries if _priority(entry.score) in {"P0", "P1"}]
     source_backlog = sorted(source_p0p1, key=lambda e: (-e.score, e.domain, e.path, e.line))
-    source_scope_note = (
-        "source-only (`src/scpn_fusion/**`) markers"
-        if scope == "source"
-        else "production code + docs claims markers (tests/reports/html excluded)"
-    )
+    if scope == "source":
+        source_scope_note = "source-only (`src/scpn_fusion/**`) markers"
+    elif scope == "docs_claims":
+        source_scope_note = "docs-claims-only markers"
+    else:
+        source_scope_note = "production code + docs claims markers (tests/reports/html excluded)"
 
     lines: list[str] = [
         "# Underdeveloped Register",
@@ -528,9 +534,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--scope",
-        choices=("full", "source"),
+        choices=("full", "source", "docs_claims"),
         default="full",
-        help="Report scope: full (default) or source (src/scpn_fusion only).",
+        help=(
+            "Report scope: full (default), source (src/scpn_fusion only), "
+            "or docs_claims."
+        ),
     )
     args = parser.parse_args(argv)
 

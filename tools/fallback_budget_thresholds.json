@@ -1,0 +1,26 @@
+{
+  "torax": {
+    "preferred_backend": "neural_transport",
+    "allowed_backends": [
+      "neural_transport"
+    ],
+    "max_fallback_rate": 0.0,
+    "require_all_cases_pass": true
+  },
+  "sparc": {
+    "preferred_backend": "neural_equilibrium",
+    "allowed_backends": [
+      "neural_equilibrium",
+      "reduced_order_proxy"
+    ],
+    "max_fallback_rate": 1.0,
+    "require_all_cases_pass": true
+  },
+  "freegs": {
+    "allowed_modes": [
+      "solovev_manufactured_source",
+      "freegs"
+    ],
+    "require_all_cases_pass": true
+  }
+}

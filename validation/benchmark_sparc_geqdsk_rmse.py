@@ -19,6 +19,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / "src"))
 
 FloatArray = NDArray[np.float64]
 
@@ -103,6 +104,61 @@ def _reduced_order_proxy(psi: FloatArray, coarse_points: int = 20) -> FloatArray
     return np.asarray(np.clip(up, 0.0, 1.0), dtype=np.float64)
 
 
+def _resize_grid_like(source: FloatArray, target_shape: tuple[int, int]) -> FloatArray:
+    """Resize a 2D grid to target shape using deterministic bilinear interpolation."""
+    src = np.asarray(source, dtype=np.float64)
+    if src.ndim != 2:
+        raise ValueError("Expected a 2D grid for resizing.")
+    if src.shape == target_shape:
+        return src
+    target_nz, target_nr = target_shape
+    src_nz, src_nr = src.shape
+    if src_nz < 2 or src_nr < 2 or target_nz < 2 or target_nr < 2:
+        raise ValueError("Source and target grid dimensions must be >= 2.")
+
+    z_src = np.linspace(0.0, 1.0, src_nz, dtype=np.float64)
+    r_src = np.linspace(0.0, 1.0, src_nr, dtype=np.float64)
+    z_tgt = np.linspace(0.0, 1.0, target_nz, dtype=np.float64)
+    r_tgt = np.linspace(0.0, 1.0, target_nr, dtype=np.float64)
+
+    interp_r = np.empty((src_nz, target_nr), dtype=np.float64)
+    for iz in range(src_nz):
+        interp_r[iz, :] = np.interp(r_tgt, r_src, src[iz, :])
+
+    out = np.empty((target_nz, target_nr), dtype=np.float64)
+    for ir in range(target_nr):
+        out[:, ir] = np.interp(z_tgt, z_src, interp_r[:, ir])
+    return np.asarray(out, dtype=np.float64)
+
+
+def _build_neural_feature_vector(eq: dict[str, Any], n_input_features: int) -> FloatArray:
+    """Construct deterministic feature vector compatible with saved equilibrium weights."""
+    base = np.array(
+        [
+            float(eq["Ip"]),
+            float(eq["B0"]),
+            float(eq["R0"]),
+            0.0,  # Z-axis proxy
+            1.0,  # pprime scale
+            1.0,  # ffprime scale
+            float(np.max(eq["psi"])),
+            float(np.min(eq["psi"])),
+            float(eq["kappa"]),
+            0.3,  # upper triangularity proxy
+            0.3,  # lower triangularity proxy
+            3.0,  # q95 proxy
+        ],
+        dtype=np.float64,
+    )
+    if n_input_features <= 0:
+        raise ValueError("n_input_features must be >= 1")
+    if n_input_features <= base.size:
+        return base[:n_input_features]
+    out = np.zeros(n_input_features, dtype=np.float64)
+    out[: base.size] = base
+    return out
+
+
 def _run_neural_surrogate(eq: dict[str, Any]) -> tuple[FloatArray, str, str | None]:
     """Run neural equilibrium accelerator on the reference grid.
 
@@ -110,12 +166,27 @@ def _run_neural_surrogate(eq: dict[str, Any]) -> tuple[FloatArray, str, str | No
     is unavailable (e.g. missing weights).
     """
     try:
-        from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumAccelerator
+        from scpn_fusion.core.neural_equilibrium import (
+            DEFAULT_WEIGHTS_PATH,
+            NeuralEquilibriumAccelerator,
+        )
 
         accel = NeuralEquilibriumAccelerator()
-        if not accel.is_ready:
-            raise RuntimeError("Accelerator weights not loaded")
-        psi_pred = accel.predict(eq["psi"])
+        if not Path(DEFAULT_WEIGHTS_PATH).exists():
+            raise RuntimeError(f"weights_missing: {DEFAULT_WEIGHTS_PATH}")
+        accel.load_weights(DEFAULT_WEIGHTS_PATH)
+        if not accel.is_trained:
+            raise RuntimeError("weights_load_failed")
+        features = _build_neural_feature_vector(eq, int(accel.cfg.n_input_features))
+        psi_pred = np.asarray(accel.predict(features), dtype=np.float64)
+        psi_pred = _resize_grid_like(psi_pred, np.asarray(eq["psi"]).shape)
+        if not np.all(np.isfinite(psi_pred)):
+            raise RuntimeError("non_finite_prediction")
+
+        # Guard against silently accepting wildly out-of-domain outputs.
+        fit_nrmse = nrmse(np.asarray(eq["psi"], dtype=np.float64), psi_pred)
+        if not np.isfinite(fit_nrmse) or fit_nrmse > 0.25:
+            raise RuntimeError(f"surrogate_out_of_domain_nrmse={fit_nrmse:.6f}")
         return np.asarray(psi_pred, dtype=np.float64), "neural_equilibrium", None
     except Exception as exc:
         # Deterministic reduced-order proxy used only for comparative smoke checks.

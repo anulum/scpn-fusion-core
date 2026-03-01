@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import sys
 import types
+from pathlib import Path
 
 import numpy as np
 
@@ -28,6 +29,7 @@ def test_reduced_order_proxy_preserves_shape_and_is_finite() -> None:
 
 def test_run_neural_surrogate_fallback_reports_backend(monkeypatch) -> None:
     fake_module = types.ModuleType("scpn_fusion.core.neural_equilibrium")
+    fake_module.DEFAULT_WEIGHTS_PATH = Path("synthetic_weights_missing.npz")
 
     class _FailingAccelerator:
         def __init__(self) -> None:
