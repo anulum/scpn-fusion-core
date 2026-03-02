@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T02:27:13.951139+00:00`
+- Generated at: `2026-03-02T03:22:51.065135+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,9 +8,9 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 196 |
+| Total flagged entries | 203 |
 | P0 + P1 entries | 21 |
-| Source-domain entries | 22 |
+| Source-domain entries | 29 |
 | Source-domain P0 + P1 entries | 5 |
 | Docs-claims entries | 154 |
 | Domains affected | 5 |
@@ -19,7 +19,7 @@
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 100 |
+| `FALLBACK` | 107 |
 | `EXPERIMENTAL` | 35 |
 | `PLANNED` | 23 |
 | `SIMPLIFIED` | 18 |
@@ -32,8 +32,8 @@
 | Key | Count |
 |---|---:|
 | `docs_claims` | 154 |
+| `validation` | 25 |
 | `other` | 20 |
-| `validation` | 18 |
 | `core_physics` | 3 |
 | `diagnostics_io` | 1 |
 
@@ -98,6 +98,13 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 71 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:112` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:539` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | fallback = run_solovev_case(case) |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:541` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "psi": fallback["psi"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:542` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R": fallback["R"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:543` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z": fallback["Z"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:544` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R_axis": fallback["R_axis"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:545` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z_axis": fallback["Z_axis"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:546` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "q_proxy": fallback["q_proxy"], |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:26` | Docs WG | Replace default path or remove lane before next major release. | \| `DEPRECATED` \| 17 \| |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:51` | Docs WG | Replace default path or remove lane before next major release. | - The critical residual gaps are targeted: physics fidelity upgrades, deprecated FNO lane retirement, and validation/claim rigor. |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Replace default path or remove lane before next major release. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
@@ -126,15 +133,8 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:73` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - `EXPERIMENTAL`: 15 mentions |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:102` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:343` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ## 6. Experimental Validation Portfolio |
-| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:478` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - **HSX** (University of Wisconsin): 4 field periods, QHS configuration, US-based experimental access |
-| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:546` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Q4 \| DIII-D and JET GEQDSK validation (5+5 shots) \| Extended validation database \| Axis error < 10 mm on experimental shots \| |
-| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:554` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Experimental data access (DIII-D, JET): $50K |
-| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:611` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| **Experimental Access** \| \| \| \| \| |
-| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:634` | Docs WG | Gate behind explicit flag and define validation exit criteria. | **Experimental Access:** DIII-D and JET GEQDSK data are needed for expanding the validation database beyond the current 8 SPARC files. Co... |
-| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:788` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 2. **General Atomics** — DIII-D experimental data access, validation collaboration |
-| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2534` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Each paper would require additional experimental results (plant model integration, hardware benchmarks, comparison against conventional c... |
 
-## Full Register (Top 196)
+## Full Register (Top 203)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -183,6 +183,13 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:112` | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:539` | fallback = run_solovev_case(case) |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:541` | "psi": fallback["psi"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:542` | "R": fallback["R"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:543` | "Z": fallback["Z"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:544` | "R_axis": fallback["R_axis"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:545` | "Z_axis": fallback["Z_axis"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:546` | "q_proxy": fallback["q_proxy"], |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:26` | \| `DEPRECATED` \| 17 \| |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:51` | - The critical residual gaps are targeted: physics fidelity upgrades, deprecated FNO lane retirement, and validation/claim rigor. |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
