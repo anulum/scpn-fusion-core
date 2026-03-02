@@ -25,6 +25,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import sys
 import tempfile
@@ -453,28 +454,55 @@ def run_manufactured_solovev_solver(case: TokamakCase) -> dict[str, Any]:
 
 def _build_freegs_profiles(
     freegs_module: Any,
+    eq: Any,
     case: TokamakCase,
     axis_pressure_pa: float,
 ) -> Any:
     """Build FreeGS profile constraints across FreeGS API variants.
 
-    FreeGS 0.8.x requires an explicit ``fvac`` positional argument in
-    ``ConstrainPaxisIp`` while older variants accept only three positional
-    arguments. Try the legacy call first and retry with ``fvac`` when needed.
+    Recent FreeGS releases expose ``ConstrainPaxisIp(eq, paxis, Ip, fvac, ...)``
+    while older variants accepted positional forms without ``eq``/``fvac``.
+    Select the call shape from introspected parameter names, then fall back to
+    legacy retry logic if signature metadata is unavailable.
     """
+    constructor = freegs_module.jtor.ConstrainPaxisIp
+    fvac = float(case.R0 * case.B0)
+    ip_amps = float(case.Ip * 1e6)
+
     try:
-        return freegs_module.jtor.ConstrainPaxisIp(
+        params = list(inspect.signature(constructor).parameters.keys())
+    except (TypeError, ValueError):
+        params = []
+
+    if params:
+        non_self = [name for name in params if name != "self"]
+        args: list[Any] = []
+        kwargs: dict[str, Any] = {}
+
+        if non_self and non_self[0] == "eq":
+            args.append(eq)
+
+        args.extend([axis_pressure_pa, ip_amps])
+        if "fvac" in non_self:
+            args.append(fvac)
+
+        if "Raxis" in non_self:
+            kwargs["Raxis"] = case.R0
+
+        return constructor(*args, **kwargs)
+
+    try:
+        return constructor(
             axis_pressure_pa,
-            case.Ip * 1e6,  # Plasma current [A]
+            ip_amps,
             case.R0,
         )
     except TypeError as exc:
         if "fvac" not in str(exc):
             raise
-        fvac = float(case.R0 * case.B0)
-        return freegs_module.jtor.ConstrainPaxisIp(
+        return constructor(
             axis_pressure_pa,
-            case.Ip * 1e6,  # Plasma current [A]
+            ip_amps,
             case.R0,
             fvac,
         )
@@ -510,6 +538,7 @@ def run_freegs_case(case: TokamakCase) -> dict[str, Any]:
 
         profiles = _build_freegs_profiles(
             freegs,
+            eq,
             case,
             axis_pressure_pa,
         )

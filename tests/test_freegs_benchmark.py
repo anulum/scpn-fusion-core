@@ -32,6 +32,7 @@ MODULE_PATH = ROOT / "validation" / "benchmark_vs_freegs.py"
 _spec = importlib.util.spec_from_file_location("benchmark_vs_freegs", MODULE_PATH)
 assert _spec is not None and _spec.loader is not None
 benchmark_vs_freegs = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = benchmark_vs_freegs
 _spec.loader.exec_module(benchmark_vs_freegs)
 
 # Re-export key symbols for convenience
@@ -240,20 +241,26 @@ class TestStrictBackendControls:
             benchmark_vs_freegs.run_benchmark(require_freegs_backend=True)
 
 
-def test_run_freegs_case_retries_constrain_with_fvac(
+def test_run_freegs_case_builds_profiles_with_eq_and_fvac(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """FreeGS API drift: retry ConstrainPaxisIp with explicit ``fvac``."""
+    """FreeGS API drift: ConstrainPaxisIp(eq, paxis, Ip, fvac, ...) support."""
     case = CASES[0]
     axis_pressure_pa = benchmark_vs_freegs.estimate_axis_pressure_pa(case)
     calls: list[tuple[object, ...]] = []
+    kwargs_calls: list[dict[str, object]] = []
 
-    def _constrain_paxis_ip(*args: object) -> object:
-        calls.append(args)
-        if len(calls) == 1:
-            raise TypeError(
-                "ConstrainPaxisIp.__init__() missing 1 required positional argument: 'fvac'"
-            )
+    def _constrain_paxis_ip(
+        eq: object,
+        paxis: float,
+        ip: float,
+        fvac: float,
+        alpha_m: float = 1.0,
+        alpha_n: float = 2.0,
+        Raxis: float = 1.0,
+    ) -> object:
+        calls.append((eq, paxis, ip, fvac, alpha_m, alpha_n, Raxis))
+        kwargs_calls.append({"Raxis": Raxis})
         return SimpleNamespace(tag="profiles")
 
     fake_eq = SimpleNamespace(
@@ -276,18 +283,14 @@ def test_run_freegs_case_retries_constrain_with_fvac(
     result = benchmark_vs_freegs.run_freegs_case(case)
     assert result["freegs_fallback"] is False
     assert result["reference_backend"] == "freegs"
-    assert len(calls) == 2
-    assert calls[0] == (
-        axis_pressure_pa,
-        case.Ip * 1e6,
-        case.R0,
-    )
-    assert calls[1] == (
-        axis_pressure_pa,
-        case.Ip * 1e6,
-        case.R0,
-        case.R0 * case.B0,
-    )
+    assert len(calls) == 1
+    eq_obj, paxis, ip, fvac, _alpha_m, _alpha_n, raxis = calls[0]
+    assert eq_obj is fake_eq
+    assert paxis == axis_pressure_pa
+    assert ip == case.Ip * 1e6
+    assert fvac == case.R0 * case.B0
+    assert raxis == case.R0
+    assert kwargs_calls[0]["Raxis"] == case.R0
 
 
 # ── FreeGS-dependent tests (skipped when not installed) ──────────────
