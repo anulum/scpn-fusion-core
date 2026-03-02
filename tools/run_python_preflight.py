@@ -64,10 +64,11 @@ def _build_release_checks(
         # Hardening: Run metadata sync first to ensure consistency
         checks.append(
             (
-                "Metadata auto-synchronization",
+                "Metadata drift check",
                 [
                     sys.executable,
                     "tools/sync_metadata.py",
+                    "--check",
                 ],
             )
         )
