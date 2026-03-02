@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T01:14:21.212508+00:00`
+- Generated at: `2026-03-02T02:27:13.951139+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 195 |
-| P0 + P1 entries | 20 |
-| Source-domain entries | 21 |
-| Source-domain P0 + P1 entries | 4 |
+| Total flagged entries | 196 |
+| P0 + P1 entries | 21 |
+| Source-domain entries | 22 |
+| Source-domain P0 + P1 entries | 5 |
 | Docs-claims entries | 154 |
 | Domains affected | 5 |
 
@@ -23,7 +23,7 @@
 | `EXPERIMENTAL` | 35 |
 | `PLANNED` | 23 |
 | `SIMPLIFIED` | 18 |
-| `DEPRECATED` | 11 |
+| `DEPRECATED` | 12 |
 | `MONOLITH` | 4 |
 | `NOT_VALIDATED` | 4 |
 
@@ -33,11 +33,11 @@
 |---|---:|
 | `docs_claims` | 154 |
 | `other` | 20 |
-| `validation` | 17 |
+| `validation` | 18 |
 | `core_physics` | 3 |
 | `diagnostics_io` | 1 |
 
-## Source-Centric Priority Backlog (Top 4)
+## Source-Centric Priority Backlog (Top 5)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
@@ -45,6 +45,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 |---|---:|---|---|---|---|---|---|
 | P0 | 107 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1435 exceeds monolith threshold (900+). |
 | P0 | 107 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1738 exceeds monolith threshold (900+). |
+| P0 | 101 | `validation` | `DEPRECATED` | `validation/benchmark_vs_freegs.py:52` | Validation WG | Replace default path or remove lane before next major release. | message="Implicit None on return values is deprecated and will raise KeyErrors.", |
 | P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fno_training.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=914 exceeds monolith threshold (900+). |
 | P0 | 97 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=990 exceeds monolith threshold (900+). |
 
@@ -54,6 +55,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 |---|---:|---|---|---|---|---|---|
 | P0 | 107 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1435 exceeds monolith threshold (900+). |
 | P0 | 107 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1738 exceeds monolith threshold (900+). |
+| P0 | 101 | `validation` | `DEPRECATED` | `validation/benchmark_vs_freegs.py:52` | Validation WG | Replace default path or remove lane before next major release. | message="Implicit None on return values is deprecated and will raise KeyErrors.", |
 | P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fno_training.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=914 exceeds monolith threshold (900+). |
 | P0 | 97 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=990 exceeds monolith threshold (900+). |
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | Docs WG | Replace default path or remove lane before next major release. | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
@@ -131,14 +133,14 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:634` | Docs WG | Gate behind explicit flag and define validation exit criteria. | **Experimental Access:** DIII-D and JET GEQDSK data are needed for expanding the validation database beyond the current 8 SPARC files. Co... |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:788` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 2. **General Atomics** — DIII-D experimental data access, validation collaboration |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2534` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Each paper would require additional experimental results (plant model integration, hardware benchmarks, comparison against conventional c... |
-| P3 | 61 | `validation` | `PLANNED` | `validation/validate_real_shots.py:565` | Validation WG | Convert roadmap note into scheduled milestone task + owner. | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
 
-## Full Register (Top 195)
+## Full Register (Top 196)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel.py:1` | module LOC=1435 exceeds monolith threshold (900+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | module LOC=1738 exceeds monolith threshold (900+). |
+| P0 | `validation` | `DEPRECATED` | `validation/benchmark_vs_freegs.py:52` | message="Implicit None on return values is deprecated and will raise KeyErrors.", |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fno_training.py:1` | module LOC=914 exceeds monolith threshold (900+). |
 | P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | module LOC=990 exceeds monolith threshold (900+). |
 | P1 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
