@@ -293,6 +293,57 @@ def test_run_freegs_case_builds_profiles_with_eq_and_fvac(
     assert kwargs_calls[0]["Raxis"] == case.R0
 
 
+def test_run_freegs_case_retries_legacy_isoflux_shape_on_unpack_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Retry solve with legacy 3-tuple isoflux layout when needed."""
+    case = CASES[0]
+    solve_calls = 0
+
+    def _constrain_paxis_ip(
+        eq: object,
+        paxis: float,
+        ip: float,
+        fvac: float,
+        alpha_m: float = 1.0,
+        alpha_n: float = 2.0,
+        Raxis: float = 1.0,
+    ) -> object:
+        return SimpleNamespace(tag="profiles")
+
+    fake_eq = SimpleNamespace(
+        psi=lambda: np.zeros((case.NZ, case.NR), dtype=np.float64),
+        R=np.linspace(case.R0 - 2.0 * case.a, case.R0 + 2.0 * case.a, case.NR),
+        Z=np.linspace(-2.0 * case.kappa * case.a, 2.0 * case.kappa * case.a, case.NZ),
+        Rmagnetic=case.R0,
+        Zmagnetic=0.0,
+    )
+
+    def _control_constrain(*, xpoints: object, isoflux: object) -> object:
+        return SimpleNamespace(xpoints=xpoints, isoflux=isoflux)
+
+    def _solve(_eq: object, _profiles: object, constrain: object, **_kwargs: object) -> None:
+        nonlocal solve_calls
+        solve_calls += 1
+        first_tuple = constrain.isoflux[0]
+        if len(first_tuple) == 4:
+            raise ValueError("not enough values to unpack (expected 4, got 3)")
+
+    fake_freegs = SimpleNamespace(
+        machine=SimpleNamespace(TestTokamak=lambda: SimpleNamespace()),
+        Equilibrium=lambda **_kwargs: fake_eq,
+        jtor=SimpleNamespace(ConstrainPaxisIp=_constrain_paxis_ip),
+        control=SimpleNamespace(constrain=_control_constrain),
+        solve=_solve,
+    )
+    monkeypatch.setitem(sys.modules, "freegs", fake_freegs)
+
+    result = benchmark_vs_freegs.run_freegs_case(case)
+    assert solve_calls == 2
+    assert result["freegs_fallback"] is False
+    assert result["reference_backend"] == "freegs"
+
+
 # ── FreeGS-dependent tests (skipped when not installed) ──────────────
 
 

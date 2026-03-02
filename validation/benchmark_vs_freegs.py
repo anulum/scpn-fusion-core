@@ -543,17 +543,38 @@ def run_freegs_case(case: TokamakCase) -> dict[str, Any]:
             axis_pressure_pa,
         )
 
-        # Boundary constraint
-        xpoints = [(case.R0 - 0.8 * case.a, -case.kappa * case.a * 0.9)]
-        isoflux = [
-            (case.R0 + case.a, 0.0, xpoints[0]),
-            (case.R0, case.kappa * case.a, xpoints[0]),
+        # Boundary constraint: FreeGS variants differ in isoflux tuple shape.
+        # Newer releases use (r1, z1, r2, z2), while older ones accept
+        # (r1, z1, (r2, z2)).
+        x_point = (case.R0 - 0.8 * case.a, -case.kappa * case.a * 0.9)
+        xpoints = [x_point]
+        isoflux_variants = [
+            [
+                (case.R0 + case.a, 0.0, x_point[0], x_point[1]),
+                (case.R0, case.kappa * case.a, x_point[0], x_point[1]),
+            ],
+            [
+                (case.R0 + case.a, 0.0, x_point),
+                (case.R0, case.kappa * case.a, x_point),
+            ],
         ]
 
-        constrain = freegs.control.constrain(xpoints=xpoints, isoflux=isoflux)
+        last_unpack_error: ValueError | None = None
+        for isoflux in isoflux_variants:
+            constrain = freegs.control.constrain(xpoints=xpoints, isoflux=isoflux)
+            try:
+                freegs.solve(eq, profiles, constrain, maxits=50, atol=1e-3, rtol=1e-2)
+                last_unpack_error = None
+                break
+            except ValueError as exc:
+                msg = str(exc)
+                if "unpack" in msg and "value" in msg:
+                    last_unpack_error = exc
+                    continue
+                raise
 
-        # Solve
-        freegs.solve(eq, profiles, constrain, maxits=50, atol=1e-3, rtol=1e-2)
+        if last_unpack_error is not None:
+            raise last_unpack_error
 
         # Extract results
         psi = eq.psi()
