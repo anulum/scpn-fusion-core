@@ -347,6 +347,14 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),
+        (
+            [
+                "python-test",
+                "validation/benchmark_vs_freegs.py",
+                "--strict-backend",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
     ]
 
 
@@ -441,6 +449,73 @@ def test_main_skips_freegs_strict_backend_when_unavailable(monkeypatch):
         [
             "run_python_preflight.py",
             "--enable-strict-backend-checks",
+            "--skip-version-metadata",
+            "--skip-claims-audit",
+            "--skip-claims-map",
+            "--skip-underdeveloped-register",
+            "--skip-underdeveloped-scope-reports",
+            "--skip-release-delta-guard",
+            "--skip-source-issue-backlog",
+            "--skip-untested-module-guard",
+            "--skip-deprecated-default-lane-guard",
+            "--skip-release-checklist",
+            "--skip-shot-manifest",
+            "--skip-shot-splits",
+            "--skip-disruption-calibration",
+            "--skip-disruption-replay-pipeline",
+            "--skip-disruption-transfer-generalization",
+            "--skip-eped-domain-contract",
+            "--skip-transport-uncertainty",
+            "--skip-multi-ion-conservation",
+            "--skip-end-to-end-latency",
+            "--skip-notebook-quality",
+            "--skip-threshold-smoke",
+            "--skip-mypy",
+        ],
+    )
+    monkeypatch.setattr(module.sys, "executable", "python-test")
+
+    rc = module.main()
+    assert rc == 0
+    assert all(check is False for _, _, check, _ in calls)
+    assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
+    assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
+        (
+            [
+                "python-test",
+                "validation/benchmark_vs_torax.py",
+                "--strict-backend",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "validation/benchmark_sparc_geqdsk_rmse.py",
+                "--strict-backend",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+    ]
+
+
+def test_main_skips_freegs_strict_backend_when_flagged(monkeypatch):
+    module = _load_module()
+    calls: list[tuple[list[str], Path, bool, float]] = []
+
+    def fake_run(cmd, cwd, check, timeout):
+        calls.append((cmd, cwd, check, timeout))
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+    monkeypatch.setattr(module, "_module_available", lambda _name: True)
+    monkeypatch.setattr(
+        module.sys,
+        "argv",
+        [
+            "run_python_preflight.py",
+            "--enable-strict-backend-checks",
+            "--skip-freegs-strict-backend",
             "--skip-version-metadata",
             "--skip-claims-audit",
             "--skip-claims-map",

@@ -603,7 +603,7 @@ def main(argv: list[str] | None = None) -> int:
             in {"1", "true", "yes", "on"}
         ),
         help=(
-            "Enable strict-backend FreeGS check "
+            "Force strict-backend FreeGS check when strict backend checks are enabled "
             "(also enabled by SCPN_ENABLE_FREEGS_STRICT_BACKEND_CHECKS=1)."
         ),
     )
@@ -644,19 +644,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     freegs_available = _module_available("freegs")
+    enable_freegs_strict_backend_check = bool(
+        args.enable_strict_backend_checks and (
+            args.enable_freegs_strict_backend_check
+            or not args.skip_freegs_strict_backend
+        )
+    )
     if (
         args.enable_strict_backend_checks
-        and not args.skip_freegs_strict_backend
-        and not args.enable_freegs_strict_backend_check
-    ):
-        print(
-            "[preflight] Skipping FreeGS strict-backend benchmark: explicit opt-in "
-            "disabled (use --enable-freegs-strict-backend-check or "
-            "SCPN_ENABLE_FREEGS_STRICT_BACKEND_CHECKS=1)."
-        )
-    elif (
-        args.enable_strict_backend_checks
-        and args.enable_freegs_strict_backend_check
+        and enable_freegs_strict_backend_check
         and not args.skip_freegs_strict_backend
         and not freegs_available
     ):
@@ -697,7 +693,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_mypy=args.skip_mypy,
         skip_research_suite=args.skip_research_suite,
         enable_strict_backend_checks=args.enable_strict_backend_checks,
-        enable_freegs_strict_backend_check=args.enable_freegs_strict_backend_check,
+        enable_freegs_strict_backend_check=enable_freegs_strict_backend_check,
         freegs_available=freegs_available,
     )
     if not checks:

@@ -5,15 +5,15 @@ This document defines the split between release-grade validation and research-on
 ## Why this exists
 
 - Keep release CI lanes focused on deterministic, production-facing checks.
-- Preserve visibility on experimental/research lanes without letting them silently contaminate release acceptance.
+- Preserve visibility on research-only lanes without letting them silently contaminate release acceptance.
 - Make gate intent explicit in both local preflight and GitHub Actions.
 
 ## Gate Profiles
 
 | Profile | Scope | Command |
 |---|---|---|
-| `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lane guard, disruption data provenance + split + calibration holdout checks, disruption replay pipeline contract benchmark, disruption transfer-generalization benchmark, EPED domain-contract benchmark, transport uncertainty-envelope benchmark, multi-ion transport conservation benchmark, end-to-end latency benchmark, notebook quality gate, Task 5/6 threshold smoke, strict typing; excludes experimental tests from global pytest runs. | `python tools/run_python_preflight.py --gate release` |
-| `research` | Experimental-only pytest lane (`pytest -m experimental`). | `python tools/run_python_preflight.py --gate research` |
+| `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lane guard, disruption data provenance + split + calibration holdout checks, disruption replay pipeline contract benchmark, disruption transfer-generalization benchmark, EPED domain-contract benchmark, transport uncertainty-envelope benchmark, TORAX/SPARC/FreeGS strict-backend parity checks, multi-ion transport conservation benchmark, end-to-end latency benchmark, notebook quality gate, Task 5/6 threshold smoke, strict typing; excludes research-marker tests from global pytest runs. | `python tools/run_python_preflight.py --gate release` |
+| `research` | Research-only pytest lane (`pytest -m experimental` marker). | `python tools/run_python_preflight.py --gate research` |
 | `all` | Release + research profiles in sequence. | `python tools/run_python_preflight.py --gate all` |
 
 ## CI Mapping
@@ -21,7 +21,7 @@ This document defines the split between release-grade validation and research-on
 | CI Job | Role | Gate |
 |---|---|---|
 | `python-tests` | Multi-version core regression lane | `release` |
-| `python-research-gate` | Experimental validation lane (3.12) | `research` |
+| `python-research-gate` | Research validation lane (3.12) | `research` |
 | `validation-regression` | Cross-language physics validation lane | `release` (`pytest -m "not experimental"`) |
 
 ## Experimental Marker Contract
