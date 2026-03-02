@@ -92,6 +92,24 @@ def test_fallback_assignment_metadata_line_is_suppressed() -> None:
     )
 
 
+def test_narrative_docs_claims_receive_priority_penalty() -> None:
+    penalty = underdev._score_context_penalty(
+        rel_path="docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
+        marker="EXPERIMENTAL",
+        line="- Experimental data access remains in-progress.",
+    )
+    assert penalty >= 20
+
+
+def test_release_claim_surfaces_do_not_receive_narrative_penalty() -> None:
+    penalty = underdev._score_context_penalty(
+        rel_path="docs/HONEST_SCOPE.md",
+        marker="EXPERIMENTAL",
+        line="| 5D gyrokinetic turbulence | Deliberately reduced-order for real-time control |",
+    )
+    assert penalty == 0
+
+
 def test_main_check_mode_passes_when_output_is_current(tmp_path: Path) -> None:
     output_path = tmp_path / "UNDERDEVELOPED_REGISTER.md"
     rc_generate = underdev.main(["--output", str(output_path)])

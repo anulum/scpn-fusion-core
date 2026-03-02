@@ -60,6 +60,25 @@ benchmarks/results/
 # Streamlit
 .streamlit/
 
+# Local CI/debug artifacts (tracked benchmark artifacts remain explicit files).
+artifacts/_*.log
+artifacts/_*.zip
+artifacts/*_local*.json
+artifacts/*_local*.md
+artifacts/underdeveloped_register_ci*.md
+artifacts/untested_module_guard_summary.json
+artifacts/deprecated_default_lane_guard_summary.json
+
+# Local LaTeX build intermediates
+papers/*.aux
+papers/*.bbl
+papers/*.blg
+papers/*.log
+papers/*.out
+papers/*.fdb_latexmk
+papers/*.fls
+papers/*.toc
+
 # Jupyter
 .ipynb_checkpoints/
 

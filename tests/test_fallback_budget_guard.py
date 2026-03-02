@@ -133,3 +133,65 @@ def test_main_writes_summary_and_returns_nonzero_on_failure(tmp_path: Path) -> N
     assert rc == 1
     payload = json.loads(summary_path.read_text(encoding="utf-8"))
     assert payload["overall_pass"] is False
+
+
+def test_evaluate_requires_freegs_mode_when_available() -> None:
+    summary = guard.evaluate(
+        torax={"cases": [{"transport_backend": "neural_transport", "passes": True}]},
+        sparc={"cases": [{"surrogate_backend": "neural_equilibrium", "passes": True}]},
+        freegs={
+            "freegs_available": True,
+            "force_solovev": False,
+            "cases": [{"mode": "solovev_manufactured_source", "passes": True}],
+        },
+        thresholds={
+            "torax": {
+                "preferred_backend": "neural_transport",
+                "allowed_backends": ["neural_transport"],
+                "max_fallback_rate": 0.0,
+            },
+            "sparc": {
+                "preferred_backend": "neural_equilibrium",
+                "allowed_backends": ["neural_equilibrium"],
+                "max_fallback_rate": 0.0,
+            },
+            "freegs": {
+                "allowed_modes": ["solovev_manufactured_source", "freegs"],
+                "require_freegs_mode_when_available": True,
+                "min_freegs_cases_when_available": 1,
+            },
+        },
+    )
+    assert summary["freegs"]["passes"] is False
+    assert summary["overall_pass"] is False
+
+
+def test_evaluate_allows_force_solovev_even_when_freegs_is_available() -> None:
+    summary = guard.evaluate(
+        torax={"cases": [{"transport_backend": "neural_transport", "passes": True}]},
+        sparc={"cases": [{"surrogate_backend": "neural_equilibrium", "passes": True}]},
+        freegs={
+            "freegs_available": True,
+            "force_solovev": True,
+            "cases": [{"mode": "solovev_manufactured_source", "passes": True}],
+        },
+        thresholds={
+            "torax": {
+                "preferred_backend": "neural_transport",
+                "allowed_backends": ["neural_transport"],
+                "max_fallback_rate": 0.0,
+            },
+            "sparc": {
+                "preferred_backend": "neural_equilibrium",
+                "allowed_backends": ["neural_equilibrium"],
+                "max_fallback_rate": 0.0,
+            },
+            "freegs": {
+                "allowed_modes": ["solovev_manufactured_source", "freegs"],
+                "require_freegs_mode_when_available": True,
+                "min_freegs_cases_when_available": 1,
+            },
+        },
+    )
+    assert summary["freegs"]["passes"] is True
+    assert summary["overall_pass"] is True

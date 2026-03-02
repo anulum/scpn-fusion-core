@@ -15,7 +15,7 @@ Release objective:
 - [ ] Re-run release validation lane (`python tools/run_python_preflight.py --gate release`).
 - [ ] Regenerate `RESULTS.md` via `validation/collect_results.py`.
 - [ ] Verify updated claims are mapped in `docs/CLAIMS_EVIDENCE_MAP.md`.
-- [ ] Confirm deprecated/experimental paths remain non-default in release-facing commands.
+- [x] Confirm non-default research lanes remain opt-in in release-facing commands (`tools/deprecated_default_lane_guard.py`).
 
 ## 3) Community and Contribution Infrastructure
 

@@ -29,6 +29,7 @@ def _build_release_checks(
     skip_underdeveloped_scope_reports: bool,
     skip_source_issue_backlog: bool,
     skip_untested_module_guard: bool,
+    skip_deprecated_default_lane_guard: bool,
     skip_release_checklist: bool,
     skip_shot_manifest: bool,
     skip_shot_splits: bool,
@@ -131,6 +132,18 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "tools/check_test_module_linkage.py",
+                    "--summary-json",
+                    "artifacts/untested_module_guard_summary.json",
+                ],
+            )
+        )
+    if not skip_deprecated_default_lane_guard:
+        checks.append(
+            (
+                "Deprecated default lane guard",
+                [
+                    sys.executable,
+                    "tools/deprecated_default_lane_guard.py",
                 ],
             )
         )
@@ -318,6 +331,7 @@ def _build_checks(
     skip_underdeveloped_scope_reports: bool,
     skip_source_issue_backlog: bool,
     skip_untested_module_guard: bool,
+    skip_deprecated_default_lane_guard: bool,
     skip_release_checklist: bool,
     skip_shot_manifest: bool,
     skip_shot_splits: bool,
@@ -347,6 +361,7 @@ def _build_checks(
                 skip_underdeveloped_scope_reports=skip_underdeveloped_scope_reports,
                 skip_source_issue_backlog=skip_source_issue_backlog,
                 skip_untested_module_guard=skip_untested_module_guard,
+                skip_deprecated_default_lane_guard=skip_deprecated_default_lane_guard,
                 skip_release_checklist=skip_release_checklist,
                 skip_shot_manifest=skip_shot_manifest,
                 skip_shot_splits=skip_shot_splits,
@@ -451,6 +466,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-untested-module-guard",
         action="store_true",
         help="Skip tools/check_test_module_linkage.py",
+    )
+    parser.add_argument(
+        "--skip-deprecated-default-lane-guard",
+        action="store_true",
+        help="Skip tools/deprecated_default_lane_guard.py",
     )
     parser.add_argument(
         "--skip-release-checklist",
@@ -566,6 +586,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_underdeveloped_scope_reports=args.skip_underdeveloped_scope_reports,
         skip_source_issue_backlog=args.skip_source_issue_backlog,
         skip_untested_module_guard=args.skip_untested_module_guard,
+        skip_deprecated_default_lane_guard=args.skip_deprecated_default_lane_guard,
         skip_release_checklist=args.skip_release_checklist,
         skip_shot_manifest=args.skip_shot_manifest,
         skip_shot_splits=args.skip_shot_splits,

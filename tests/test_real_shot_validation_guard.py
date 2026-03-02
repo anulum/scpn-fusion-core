@@ -23,6 +23,11 @@ def _base_report() -> dict:
     return {
         "overall_pass": True,
         "dataset_coverage": {"passes": True},
+        "dataset_minima": {
+            "equilibrium_files": 12,
+            "transport_shots": 52,
+            "disruption_shots": 12,
+        },
         "equilibrium": {
             "n_files": 18,
             "results": [
@@ -31,8 +36,29 @@ def _base_report() -> dict:
                 {"machine": "JET"},
             ],
         },
-        "transport": {"n_shots": 53},
-        "disruption": {"n_shots": 16},
+        "transport": {
+            "n_shots": 53,
+            "shots": [
+                {"machine": "SPARC"},
+                {"machine": "DIII-D"},
+                {"machine": "JET"},
+                {"machine": "ITER"},
+                {"machine": "EAST"},
+                {"machine": "KSTAR"},
+                {"machine": "C-Mod"},
+                {"machine": "ASDEX-U"},
+                {"machine": "MAST-U"},
+                {"machine": "NSTX-U"},
+                {"machine": "TCV"},
+                {"machine": "WEST"},
+            ],
+        },
+        "disruption": {
+            "n_shots": 16,
+            "n_disruptions": 6,
+            "n_safe": 10,
+            "calibration": {"gates_overall_pass": True},
+        },
     }
 
 
@@ -40,6 +66,12 @@ def _thresholds() -> dict:
     return {
         "coverage_minima": {"equilibrium_files": 12, "transport_shots": 52, "disruption_shots": 12},
         "required_equilibrium_machines": ["SPARC", "DIII-D", "JET"],
+        "required_transport_machines": ["SPARC", "DIII-D", "JET", "ITER"],
+        "min_transport_machine_count": 12,
+        "min_disruption_events": 4,
+        "min_safe_events": 8,
+        "require_disruption_calibration_gate_pass": True,
+        "require_dataset_minima_match_thresholds": True,
     }
 
 
@@ -53,6 +85,22 @@ def test_evaluate_fails_on_missing_machine() -> None:
     report["equilibrium"]["results"] = [{"machine": "SPARC"}, {"machine": "DIII-D"}]
     summary = guard.evaluate(report=report, thresholds=_thresholds())
     assert summary["equilibrium_machine_diversity"]["passes"] is False
+    assert summary["overall_pass"] is False
+
+
+def test_evaluate_fails_on_missing_transport_machine() -> None:
+    report = _base_report()
+    report["transport"]["shots"] = [{"machine": "SPARC"}, {"machine": "DIII-D"}]
+    summary = guard.evaluate(report=report, thresholds=_thresholds())
+    assert summary["transport_machine_diversity"]["passes"] is False
+    assert summary["overall_pass"] is False
+
+
+def test_evaluate_fails_when_disruption_balance_is_below_thresholds() -> None:
+    report = _base_report()
+    report["disruption"]["n_disruptions"] = 2
+    summary = guard.evaluate(report=report, thresholds=_thresholds())
+    assert summary["disruption_event_balance"]["passes"] is False
     assert summary["overall_pass"] is False
 
 

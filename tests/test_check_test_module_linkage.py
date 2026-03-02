@@ -31,6 +31,15 @@ def test_main_passes_with_repo_allowlist() -> None:
     assert rc == 0
 
 
+def test_main_writes_summary_json(tmp_path: Path) -> None:
+    summary_path = tmp_path / "summary.json"
+    rc = linkage.main(["--summary-json", str(summary_path)])
+    assert rc == 0
+    payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert payload["overall_pass"] is True
+    assert payload["unexpected_count"] == 0
+
+
 def test_main_fails_with_empty_allowlist(tmp_path: Path) -> None:
     allowlist = tmp_path / "allowlist.json"
     allowlist.write_text(

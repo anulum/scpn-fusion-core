@@ -99,6 +99,15 @@ def test_main_runs_default_checks_in_order(monkeypatch):
             [
                 "python-test",
                 "tools/check_test_module_linkage.py",
+                "--summary-json",
+                "artifacts/untested_module_guard_summary.json",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/deprecated_default_lane_guard.py",
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),
@@ -220,6 +229,7 @@ def test_main_honors_skip_flags(monkeypatch):
             "--skip-underdeveloped-scope-reports",
             "--skip-source-issue-backlog",
             "--skip-untested-module-guard",
+            "--skip-deprecated-default-lane-guard",
             "--skip-release-checklist",
             "--skip-shot-manifest",
             "--skip-shot-splits",
@@ -276,6 +286,7 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
             "--skip-underdeveloped-scope-reports",
             "--skip-source-issue-backlog",
             "--skip-untested-module-guard",
+            "--skip-deprecated-default-lane-guard",
             "--skip-release-checklist",
             "--skip-shot-manifest",
             "--skip-shot-splits",

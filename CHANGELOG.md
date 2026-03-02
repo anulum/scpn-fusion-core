@@ -54,6 +54,12 @@
 - Benchmark hardening: TORAX and SPARC benchmark scripts now enforce standalone `src/` import-path determinism for CI/local parity.
 - Runtime hardening: `traceable_runtime_parity.py` now enforces standalone `src/` import-path determinism for CI/local parity.
 - Validation hardening: real-shot CI lane now runs `validate_real_shots.py --strict-coverage` and enforces a dedicated artifact guard for coverage minima + machine diversity.
+- Governance hardening: underdeveloped-register scoring now down-weights narrative/planning docs so release-critical claim surfaces dominate P0/P1 triage.
+- CI hardening: release preflight now enforces a deprecated-default-lane guard and persists guard diagnostics artifacts.
+- Validation hardening: real-shot guard now enforces transport-machine diversity, disruption class-balance minima, calibration gate pass, and dataset-minima alignment checks.
+- Validation hardening: FreeGS benchmark artifacts now include backend-availability metadata, and fallback-budget guard is availability-aware for strict FreeGS parity enforcement.
+- Validation observability: untested-module linkage guard now supports JSON summary output for CI artifact diagnostics.
+- Repo hygiene: expanded `.gitignore` for local CI logs, local benchmark scratch artifacts, and LaTeX build intermediates.
 
 ### Added
 - Wave A scaffolding: `tools/coverage_guard.py` + `tools/coverage_guard_thresholds.json` with CI coverage regression gating and summary artifact upload.
@@ -72,6 +78,8 @@
 - Validation hardening: added `tools/real_shot_validation_guard.py` + thresholds config and CI guard summary artifact for strict real-shot coverage lanes.
 - Governance hardening: added `tools/generate_underdeveloped_scope_reports.py` and tracked split reports (`docs/UNDERDEVELOPED_SOURCE_REGISTER.md`, `docs/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md`, `docs/UNDERDEVELOPED_SCOPE_SUMMARY.json`).
 - Session logging: added `docs/session_logs/2026-03-01_h12_h17_hardening.md` with full H12-H17 execution record.
+- CI/runtime hardening: added `tools/deprecated_default_lane_guard.py` with regression tests and release-preflight integration.
+- Regression tests for expanded real-shot and FreeGS fallback-budget guard contracts.
 
 ---
 

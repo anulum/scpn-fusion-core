@@ -170,6 +170,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Allow allowlist entries that are no longer unlinked.",
     )
+    parser.add_argument(
+        "--summary-json",
+        default="",
+        help="Optional JSON path to write guard summary diagnostics.",
+    )
     args = parser.parse_args(argv)
 
     source_root = _resolve(args.source_root)
@@ -187,10 +192,30 @@ def main(argv: list[str] | None = None) -> int:
     unexpected = sorted(unlinked - allowlisted)
     stale = sorted(allowlisted - unlinked)
 
+    summary = {
+        "unlinked_count": len(unlinked),
+        "allowlisted_count": len(allowlisted),
+        "unexpected_count": len(unexpected),
+        "stale_allowlist_count": len(stale),
+        "unexpected_modules": unexpected,
+        "stale_allowlist_modules": stale,
+        "overall_pass": (not unexpected)
+        and (not stale or bool(args.allow_stale_allowlist)),
+    }
+
     print(f"Unlinked modules detected: {len(unlinked)}")
     print(f"Allowlisted modules: {len(allowlisted)}")
     print(f"Unexpected modules: {len(unexpected)}")
     print(f"Stale allowlist entries: {len(stale)}")
+
+    summary_path_value = str(args.summary_json).strip()
+    if summary_path_value:
+        summary_path = _resolve(summary_path_value)
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(
+            json.dumps(summary, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
 
     if unexpected:
         print("Guard FAILED: new modules without direct test linkage:")

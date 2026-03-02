@@ -58,6 +58,33 @@ EXCLUDED_PATHS = {
     "docs/UNDERDEVELOPED_SCOPE_SUMMARY.json",
 }
 
+# Release-critical claim surfaces should remain high-signal in the queue.
+RELEASE_CLAIM_SURFACES = {
+    "README.md",
+    "RESULTS.md",
+    "VALIDATION.md",
+    "docs/HONEST_SCOPE.md",
+    "docs/BENCHMARKS.md",
+    "docs/VALIDATION_GATE_MATRIX.md",
+    "docs/V3_9_3_RELEASE_CHECKLIST.md",
+    "docs/RELEASE_ACCEPTANCE_CHECKLIST.md",
+    "docs/competitive_analysis.md",
+    "docs/sphinx/userguide/validation.rst",
+}
+
+# Lower-priority narrative/planning docs are still tracked, but should not
+# dominate the P0/P1 hardening queue ahead of implementation-facing risks.
+NARRATIVE_DOC_PREFIXES = (
+    "docs/promotions/",
+    "docs/rfc/",
+    "docs/PHASE3_EXECUTION_REGISTRY.md",
+    "docs/DEEP_AUDIT_AND_SOTA_PLAN_",
+    "docs/HARDENING_30_DAY_EXECUTION_PLAN.md",
+    "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
+    "docs/PACKET_",
+    "docs/session_logs/",
+)
+
 
 @dataclass(frozen=True)
 class MarkerRule:
@@ -181,22 +208,34 @@ def _score_context_penalty(*, rel_path: str, marker: str, line: str) -> int:
     dominate the top P0/P1 queue intended for hardening implementation gaps.
     """
     lowered = line.lower()
+    penalty = 0
+
+    # Non-release narrative docs should not crowd out release-critical triage.
+    if rel_path.startswith("docs/") and rel_path not in RELEASE_CLAIM_SURFACES:
+        if rel_path.startswith(NARRATIVE_DOC_PREFIXES):
+            if marker in {"DEPRECATED", "EXPERIMENTAL", "NOT_VALIDATED"}:
+                penalty += 20
+            elif marker in {"SIMPLIFIED", "FALLBACK", "PLANNED"}:
+                penalty += 14
+        elif marker in {"EXPERIMENTAL", "PLANNED", "FALLBACK"}:
+            penalty += 10
+
     if rel_path == "tools/generate_source_p0p1_issue_backlog.py":
         if marker in {"DEPRECATED", "EXPERIMENTAL"}:
-            return 26
+            penalty += 26
     if rel_path == "validation/benchmark_deprecated_mode_exclusion.py":
         if marker in {"DEPRECATED", "EXPERIMENTAL"}:
-            return 26
+            penalty += 26
     if rel_path == "tools/run_python_preflight.py" and marker == "EXPERIMENTAL":
         if "experimental-only" in lowered or '-m", "experimental"' in lowered:
-            return 18
+            penalty += 18
     if rel_path == "validation/collect_results.py" and marker == "DEPRECATED":
         if "deprecated" in lowered and "fno" in lowered:
-            return 14
+            penalty += 14
     if rel_path in {"CHANGELOG.md", "docs/sphinx/changelog.rst"}:
         if marker in {"DEPRECATED", "EXPERIMENTAL"}:
-            return 18
-    return 0
+            penalty += 18
+    return penalty
 
 
 DOMAIN_OWNER = {

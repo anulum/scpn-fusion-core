@@ -851,6 +851,9 @@ def run_benchmark(
     report = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": mode_label,
+        "freegs_available": bool(HAS_FREEGS),
+        "force_solovev": bool(force_solovev),
+        "require_freegs_backend": bool(require_freegs_backend),
         "psi_nrmse_threshold": thresholds["psi_nrmse"],
         "thresholds": thresholds,
         "cases": case_results,

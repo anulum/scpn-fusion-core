@@ -77,6 +77,14 @@ def evaluate(
     torax_allowed = {str(v) for v in torax_cfg.get("allowed_backends", [torax_preferred])}
     sparc_allowed = {str(v) for v in sparc_cfg.get("allowed_backends", [sparc_preferred])}
     freegs_allowed_modes = {str(v) for v in freegs_cfg.get("allowed_modes", ["solovev_manufactured_source", "freegs"])}
+    require_freegs_mode_when_available = bool(
+        freegs_cfg.get("require_freegs_mode_when_available", False)
+    )
+    min_freegs_cases_when_available = int(
+        freegs_cfg.get("min_freegs_cases_when_available", 1)
+    )
+    freegs_available = bool(freegs.get("freegs_available", False))
+    force_solovev = bool(freegs.get("force_solovev", False))
 
     torax_rate = _fallback_rate_for_cases(
         torax_cases,
@@ -91,6 +99,7 @@ def evaluate(
     torax_backends = sorted(set(_case_backends(torax_cases, "transport_backend")))
     sparc_backends = sorted(set(_case_backends(sparc_cases, "surrogate_backend")))
     freegs_modes = sorted(set(_case_backends(freegs_cases, "mode")))
+    freegs_case_count = sum(1 for case in freegs_cases if str(case.get("mode", "")) == "freegs")
 
     torax_pass = (
         torax_rate <= float(torax_cfg.get("max_fallback_rate", 0.0))
@@ -105,6 +114,15 @@ def evaluate(
     freegs_pass = (
         set(freegs_modes).issubset(freegs_allowed_modes)
         and (all(bool(c.get("passes", False)) for c in freegs_cases) if bool(freegs_cfg.get("require_all_cases_pass", True)) else True)
+        and (
+            True
+            if (not require_freegs_mode_when_available)
+            else (
+                (not freegs_available)
+                or force_solovev
+                or (freegs_case_count >= min_freegs_cases_when_available)
+            )
+        )
     )
 
     return {
@@ -123,8 +141,13 @@ def evaluate(
             "passes": bool(sparc_pass),
         },
         "freegs": {
+            "freegs_available": freegs_available,
+            "force_solovev": force_solovev,
             "observed_modes": freegs_modes,
             "allowed_modes": sorted(freegs_allowed_modes),
+            "freegs_case_count": freegs_case_count,
+            "require_freegs_mode_when_available": require_freegs_mode_when_available,
+            "min_freegs_cases_when_available": min_freegs_cases_when_available,
             "passes": bool(freegs_pass),
         },
         "overall_pass": bool(torax_pass and sparc_pass and freegs_pass),

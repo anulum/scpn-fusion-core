@@ -32,13 +32,30 @@ def _load_json(path: Path) -> dict[str, Any]:
 def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str, Any]:
     coverage_cfg = dict(thresholds.get("coverage_minima", {}))
     required_machines = [str(v) for v in thresholds.get("required_equilibrium_machines", [])]
+    required_transport_machines = [
+        str(v) for v in thresholds.get("required_transport_machines", [])
+    ]
+    min_transport_machine_count = int(thresholds.get("min_transport_machine_count", 0))
+    min_disruptions = int(thresholds.get("min_disruption_events", 0))
+    min_safe = int(thresholds.get("min_safe_events", 0))
+    require_calibration_gate = bool(
+        thresholds.get("require_disruption_calibration_gate_pass", False)
+    )
+    require_minima_match = bool(
+        thresholds.get("require_dataset_minima_match_thresholds", False)
+    )
 
     eq = dict(report.get("equilibrium", {}))
     tr = dict(report.get("transport", {}))
     dis = dict(report.get("disruption", {}))
     coverage = dict(report.get("dataset_coverage", {}))
+    dataset_minima = dict(report.get("dataset_minima", {}))
     eq_results = [dict(r) for r in eq.get("results", []) if isinstance(r, dict)]
+    tr_results = [dict(r) for r in tr.get("shots", []) if isinstance(r, dict)]
     observed_machines = sorted({str(r.get("machine", "unknown")) for r in eq_results if "machine" in r})
+    observed_transport_machines = sorted(
+        {str(r.get("machine", "unknown")) for r in tr_results if "machine" in r}
+    )
 
     min_eq = int(coverage_cfg.get("equilibrium_files", 0))
     min_tr = int(coverage_cfg.get("transport_shots", 0))
@@ -47,9 +64,28 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
     eq_count = int(eq.get("n_files", 0))
     tr_count = int(tr.get("n_shots", 0))
     dis_count = int(dis.get("n_shots", 0))
+    disruption_count = int(dis.get("n_disruptions", 0))
+    safe_count = int(dis.get("n_safe", 0))
+    calibration = dict(dis.get("calibration", {}))
+    calibration_gate = calibration.get("gates_overall_pass")
 
     counts_pass = bool(eq_count >= min_eq and tr_count >= min_tr and dis_count >= min_dis)
     machines_pass = all(machine in observed_machines for machine in required_machines)
+    transport_machine_pass = (
+        all(machine in observed_transport_machines for machine in required_transport_machines)
+        and len(observed_transport_machines) >= min_transport_machine_count
+    )
+    disruption_balance_pass = bool(disruption_count >= min_disruptions and safe_count >= min_safe)
+    calibration_pass = (
+        bool(calibration_gate) if require_calibration_gate else True
+    )
+    minima_alignment_pass = True
+    if require_minima_match:
+        minima_alignment_pass = bool(
+            int(dataset_minima.get("equilibrium_files", 0)) >= min_eq
+            and int(dataset_minima.get("transport_shots", 0)) >= min_tr
+            and int(dataset_minima.get("disruption_shots", 0)) >= min_dis
+        )
     artifact_pass = bool(report.get("overall_pass", False)) and bool(coverage.get("passes", False))
 
     return {
@@ -65,7 +101,47 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
             "required": required_machines,
             "passes": machines_pass,
         },
-        "overall_pass": bool(artifact_pass and counts_pass and machines_pass),
+        "transport_machine_diversity": {
+            "observed": observed_transport_machines,
+            "required": required_transport_machines,
+            "required_min_count": min_transport_machine_count,
+            "passes": transport_machine_pass,
+        },
+        "disruption_event_balance": {
+            "observed_disruptions": disruption_count,
+            "observed_safe": safe_count,
+            "required_disruptions": min_disruptions,
+            "required_safe": min_safe,
+            "passes": disruption_balance_pass,
+        },
+        "calibration_gate": {
+            "required": require_calibration_gate,
+            "observed_overall_pass": calibration_gate,
+            "passes": calibration_pass,
+        },
+        "dataset_minima_alignment": {
+            "required": require_minima_match,
+            "observed": {
+                "equilibrium_files": int(dataset_minima.get("equilibrium_files", 0)),
+                "transport_shots": int(dataset_minima.get("transport_shots", 0)),
+                "disruption_shots": int(dataset_minima.get("disruption_shots", 0)),
+            },
+            "threshold_minima": {
+                "equilibrium_files": min_eq,
+                "transport_shots": min_tr,
+                "disruption_shots": min_dis,
+            },
+            "passes": minima_alignment_pass,
+        },
+        "overall_pass": bool(
+            artifact_pass
+            and counts_pass
+            and machines_pass
+            and transport_machine_pass
+            and disruption_balance_pass
+            and calibration_pass
+            and minima_alignment_pass
+        ),
     }
 
 
@@ -88,7 +164,10 @@ def main(argv: list[str] | None = None) -> int:
         "Real-shot guard summary: "
         f"artifact_pass={summary['overall_artifact_pass']} "
         f"coverage_pass={summary['coverage_counts']['passes']} "
-        f"machines_pass={summary['equilibrium_machine_diversity']['passes']}"
+        f"machines_pass={summary['equilibrium_machine_diversity']['passes']} "
+        f"transport_machine_pass={summary['transport_machine_diversity']['passes']} "
+        f"disruption_balance_pass={summary['disruption_event_balance']['passes']} "
+        f"calibration_pass={summary['calibration_gate']['passes']}"
     )
     if not bool(summary["overall_pass"]):
         print("Real-shot validation guard failed.")

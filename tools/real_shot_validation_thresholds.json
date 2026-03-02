@@ -8,5 +8,16 @@
     "SPARC",
     "DIII-D",
     "JET"
-  ]
+  ],
+  "required_transport_machines": [
+    "SPARC",
+    "DIII-D",
+    "JET",
+    "ITER"
+  ],
+  "min_transport_machine_count": 12,
+  "min_disruption_events": 4,
+  "min_safe_events": 8,
+  "require_disruption_calibration_gate_pass": true,
+  "require_dataset_minima_match_thresholds": true
 }

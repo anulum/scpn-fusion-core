@@ -21,6 +21,8 @@
       "solovev_manufactured_source",
       "freegs"
     ],
+    "require_freegs_mode_when_available": true,
+    "min_freegs_cases_when_available": 1,
     "require_all_cases_pass": true
   }
 }
