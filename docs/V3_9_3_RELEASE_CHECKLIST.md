@@ -29,6 +29,8 @@ Release objective:
 - [ ] Confirm CI release lanes pass on `main`.
 - [ ] Confirm coverage artifact upload lane remains green.
 - [ ] Confirm dependency update automation config is present and valid.
+- [ ] Confirm wheel matrix builds for cp39-cp312 on Linux/macOS/Windows (`.github/workflows/wheels.yml`).
+- [ ] Confirm wheel publish gate is configured (`WHEELS_PUBLISH_ENABLED=true`) or run manual dispatch with `publish=true`.
 
 ## 5) Versioning and Release Notes
 
