@@ -42,6 +42,7 @@ def test_source_scope_filters_to_src_paths() -> None:
     entries = underdev.collect_entries(ROOT)
     scoped = underdev._filter_entries_by_scope(entries, scope="source")
     assert isinstance(scoped, list)
+    assert scoped
     assert all(entry.path.startswith("src/scpn_fusion/") for entry in scoped)
 
 
@@ -97,6 +98,33 @@ def test_deprecated_guard_lines_are_suppressed() -> None:
         rel_path="tools/deprecated_default_lane_guard.py",
         marker="DEPRECATED",
         line='print("Deprecated default lane guard failed.")',
+        file_text="",
+    )
+
+
+def test_deprecated_docs_guard_line_is_suppressed() -> None:
+    assert underdev._is_marker_suppressed(
+        rel_path="docs/VALIDATION_GATE_MATRIX.md",
+        marker="DEPRECATED",
+        line="| `release` | ... deprecated-default-lane guard ... |",
+        file_text="",
+    )
+
+
+def test_experimental_command_lines_are_suppressed_on_release_surfaces() -> None:
+    assert underdev._is_marker_suppressed(
+        rel_path="docs/BENCHMARKS.md",
+        marker="EXPERIMENTAL",
+        line="scpn-fusion all --surrogate --experimental",
+        file_text="",
+    )
+
+
+def test_experimental_gate_lines_are_suppressed_on_release_surfaces() -> None:
+    assert underdev._is_marker_suppressed(
+        rel_path="docs/VALIDATION_GATE_MATRIX.md",
+        marker="EXPERIMENTAL",
+        line="| `validation-regression` | ... (`pytest -m \"not experimental\"`) |",
         file_text="",
     )
 

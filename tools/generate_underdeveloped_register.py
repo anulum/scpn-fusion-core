@@ -163,11 +163,11 @@ MARKER_RULES: tuple[MarkerRule, ...] = (
     ),
 )
 
-SOURCE_MONOLITH_LOC_WARN = 900
-SOURCE_MONOLITH_LOC_CRITICAL = 1400
-SOURCE_FALLBACK_DENSITY_WARN = 12
-SOURCE_FALLBACK_DENSITY_CRITICAL = 24
-SOURCE_MIN_LOC_FOR_FALLBACK_DENSITY = 280
+SOURCE_MONOLITH_LOC_WARN = 700
+SOURCE_MONOLITH_LOC_CRITICAL = 1100
+SOURCE_FALLBACK_DENSITY_WARN = 8
+SOURCE_FALLBACK_DENSITY_CRITICAL = 16
+SOURCE_MIN_LOC_FOR_FALLBACK_DENSITY = 220
 SOURCE_TEST_GAP_LOC_THRESHOLD = 450
 _MARKER_RULE_BY_NAME = {rule.marker: rule for rule in MARKER_RULES}
 
@@ -181,6 +181,37 @@ def _is_marker_suppressed(
 ) -> bool:
     """Suppress known false positives where hardening guardrails already exist."""
     lowered_line = line.lower()
+    normalized_line = " ".join(line.strip().split()).lower()
+    rel_is_release_claim_surface = rel_path in RELEASE_CLAIM_SURFACES
+
+    if marker == "DEPRECATED":
+        if "deprecated-default-lane guard" in normalized_line:
+            return True
+        if "deprecated-default-lane-guard" in normalized_line:
+            return True
+
+    if marker == "EXPERIMENTAL" and rel_is_release_claim_surface:
+        # Commands/docs that explicitly *gate* experimental lanes should not be
+        # treated as unresolved underdevelopment debt.
+        if "--experimental" in lowered_line:
+            return True
+        if "@pytest.mark.experimental" in lowered_line:
+            return True
+        if "pytest -m experimental" in lowered_line:
+            return True
+        if "experimental marker contract" in lowered_line:
+            return True
+        if "experimental-only" in lowered_line:
+            return True
+        if "python-research-gate" in lowered_line:
+            return True
+        if "experimental/research" in lowered_line:
+            return True
+        if "not experimental" in lowered_line:
+            return True
+        if "experimental tests" in lowered_line and "exclude" in lowered_line:
+            return True
+
     if rel_path in {
         "tools/deprecated_default_lane_guard.py",
         "validation/benchmark_deprecated_mode_exclusion.py",

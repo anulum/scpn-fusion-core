@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T23:17:22.017715+00:00`
+- Generated at: `2026-03-02T23:36:32.284061+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,66 +8,73 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 203 |
-| P0 + P1 entries | 16 |
-| Source-domain entries | 29 |
-| Source-domain P0 + P1 entries | 0 |
-| Docs-claims entries | 154 |
-| Domains affected | 3 |
+| Total flagged entries | 195 |
+| P0 + P1 entries | 9 |
+| Source-domain entries | 37 |
+| Source-domain P0 + P1 entries | 9 |
+| Docs-claims entries | 139 |
+| Domains affected | 7 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
 | `FALLBACK` | 110 |
-| `EXPERIMENTAL` | 35 |
 | `PLANNED` | 23 |
+| `EXPERIMENTAL` | 21 |
 | `SIMPLIFIED` | 18 |
-| `DEPRECATED` | 13 |
+| `DEPRECATED` | 10 |
+| `MONOLITH` | 7 |
 | `NOT_VALIDATED` | 4 |
+| `FALLBACK_DENSITY` | 2 |
 
 ## Domain Distribution
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 154 |
-| `validation` | 29 |
-| `other` | 20 |
+| `docs_claims` | 139 |
+| `validation` | 28 |
+| `other` | 19 |
+| `control` | 4 |
+| `core_physics` | 2 |
+| `diagnostics_io` | 2 |
+| `compiler_runtime` | 1 |
 
-## Source-Centric Priority Backlog (Top 0)
+## Source-Centric Priority Backlog (Top 9)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
+| P0 | 100 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_contracts.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=732 exceeds monolith threshold (700+). |
+| P0 | 100 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=827 exceeds monolith threshold (700+). |
+| P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=830 exceeds monolith threshold (700+). |
+| P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_runtime.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=839 exceeds monolith threshold (700+). |
+| P0 | 98 | `compiler_runtime` | `MONOLITH` | `src/scpn_fusion/scpn/controller.py:1` | Runtime WG | Split module into focused subcomponents and lock interface contracts. | module LOC=707 exceeds monolith threshold (700+). |
+| P0 | 97 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=819 exceeds monolith threshold (700+). |
+| P0 | 97 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=727 exceeds monolith threshold (700+). |
+| P1 | 94 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/analytic_solver.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback mentions=8 across LOC=247; high fallback concentration in primary module. |
+| P1 | 94 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback mentions=10 across LOC=827; high fallback concentration in primary module. |
 
 ## Top Priority Backlog (Top 80)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | Docs WG | Replace default path or remove lane before next major release. | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
-| P1 | 88 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | Docs WG | Gate behind explicit flag and define validation exit criteria. | > This repo is the full physics + experimental suite. |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:260` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ### Experimental |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:327` | Docs WG | Gate behind explicit flag and define validation exit criteria. | scpn-fusion all --surrogate --experimental |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:8` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Preserve visibility on experimental/research lanes without letting them silently contaminate release acceptance. |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:15` | Docs WG | Gate behind explicit flag and define validation exit criteria. | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:16` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `research` \| Experimental-only pytest lane (`pytest -m experimental`). \| `python tools/run_python_preflight.py --gate research` \| |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:24` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `python-research-gate` \| Experimental validation lane (3.12) \| `research` \| |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:25` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `validation-regression` \| Cross-language physics validation lane \| `release` (`pytest -m "not experimental"`) \| |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:27` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ## Experimental Marker Contract |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:29` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Tests marked with `@pytest.mark.experimental` are considered research-only and are excluded from release acceptance runs. As of v3.9.x th... |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:42` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 1. Remove `@pytest.mark.experimental` from the test module(s). |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:79` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| DIII-D \| ITER \| |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/userguide/validation.rst:5` | Docs WG | Gate behind explicit flag and define validation exit criteria. | SCPN-Fusion-Core is validated against published experimental data from |
+| P0 | 100 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_contracts.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=732 exceeds monolith threshold (700+). |
+| P0 | 100 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=827 exceeds monolith threshold (700+). |
+| P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=830 exceeds monolith threshold (700+). |
+| P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_runtime.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=839 exceeds monolith threshold (700+). |
+| P0 | 98 | `compiler_runtime` | `MONOLITH` | `src/scpn_fusion/scpn/controller.py:1` | Runtime WG | Split module into focused subcomponents and lock interface contracts. | module LOC=707 exceeds monolith threshold (700+). |
+| P0 | 97 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=819 exceeds monolith threshold (700+). |
+| P0 | 97 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=727 exceeds monolith threshold (700+). |
+| P1 | 94 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/analytic_solver.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback mentions=8 across LOC=247; high fallback concentration in primary module. |
+| P1 | 94 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback mentions=10 across LOC=827; high fallback concentration in primary module. |
 | P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Add real-data validation campaign and publish error bars. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |
 | P2 | 80 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
 | P2 | 80 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:375` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | implements a 10 kHz PID control loop with simplified linear plasma |
 | P2 | 80 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Step Physics (Single step of simulate logic simplified) |
 | P2 | 80 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
 | P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | Architecture WG | Replace default path or remove lane before next major release. | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
-| P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:58` | Architecture WG | Replace default path or remove lane before next major release. | - CI hardening: release preflight now enforces a deprecated-default-lane guard and persists guard diagnostics artifacts. |
 | P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:72` | Architecture WG | Replace default path or remove lane before next major release. | - Regression test for deprecated FNO-controller missing-weight fallback path. |
 | P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:358` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
 | P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:359` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
@@ -75,7 +82,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:475` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
 | P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:637` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
 | P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | Validation WG | Replace default path or remove lane before next major release. | if "DEPRECATED" in issue.markers: |
-| P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:79` | Validation WG | Replace default path or remove lane before next major release. | metrics.append("Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py).") |
 | P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:192` | Validation WG | Replace default path or remove lane before next major release. | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
 | P2 | 74 | `other` | `SIMPLIFIED` | `CHANGELOG.md:155` | Architecture WG | Upgrade with higher-fidelity closure or tighten domain contract. | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
 | P2 | 72 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 4. For real experimental data, start with `0.01` and adjust based on |
@@ -97,6 +103,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:623` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R_axis": fallback["R_axis"], |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:624` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z_axis": fallback["Z_axis"], |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:625` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "q_proxy": fallback["q_proxy"], |
+| P2 | 70 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:238` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:26` | Docs WG | Replace default path or remove lane before next major release. | \| `DEPRECATED` \| 17 \| |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:51` | Docs WG | Replace default path or remove lane before next major release. | - The critical residual gaps are targeted: physics fidelity upgrades, deprecated FNO lane retirement, and validation/claim rigor. |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Replace default path or remove lane before next major release. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
@@ -125,34 +132,34 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:73` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - `EXPERIMENTAL`: 15 mentions |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:102` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:343` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ## 6. Experimental Validation Portfolio |
+| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:478` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - **HSX** (University of Wisconsin): 4 field periods, QHS configuration, US-based experimental access |
+| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:546` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Q4 \| DIII-D and JET GEQDSK validation (5+5 shots) \| Extended validation database \| Axis error < 10 mm on experimental shots \| |
+| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:554` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Experimental data access (DIII-D, JET): $50K |
+| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:611` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| **Experimental Access** \| \| \| \| \| |
+| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:634` | Docs WG | Gate behind explicit flag and define validation exit criteria. | **Experimental Access:** DIII-D and JET GEQDSK data are needed for expanding the validation database beyond the current 8 SPARC files. Co... |
+| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:788` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 2. **General Atomics** — DIII-D experimental data access, validation collaboration |
+| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2534` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Each paper would require additional experimental results (plant model integration, hardware benchmarks, comparison against conventional c... |
+| P3 | 61 | `validation` | `PLANNED` | `validation/validate_real_shots.py:565` | Validation WG | Convert roadmap note into scheduled milestone task + owner. | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
 
-## Full Register (Top 203)
+## Full Register (Top 195)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P1 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
-| P1 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | > This repo is the full physics + experimental suite. |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:260` | ### Experimental |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:327` | scpn-fusion all --surrogate --experimental |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:8` | - Preserve visibility on experimental/research lanes without letting them silently contaminate release acceptance. |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:15` | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:16` | \| `research` \| Experimental-only pytest lane (`pytest -m experimental`). \| `python tools/run_python_preflight.py --gate research` \| |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:24` | \| `python-research-gate` \| Experimental validation lane (3.12) \| `research` \| |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:25` | \| `validation-regression` \| Cross-language physics validation lane \| `release` (`pytest -m "not experimental"`) \| |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:27` | ## Experimental Marker Contract |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:29` | Tests marked with `@pytest.mark.experimental` are considered research-only and are excluded from release acceptance runs. As of v3.9.x th... |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:42` | 1. Remove `@pytest.mark.experimental` from the test module(s). |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:79` | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| DIII-D \| ITER \| |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/userguide/validation.rst:5` | SCPN-Fusion-Core is validated against published experimental data from |
+| P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_contracts.py:1` | module LOC=732 exceeds monolith threshold (700+). |
+| P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_predictor.py:1` | module LOC=827 exceeds monolith threshold (700+). |
+| P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | module LOC=830 exceeds monolith threshold (700+). |
+| P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_runtime.py:1` | module LOC=839 exceeds monolith threshold (700+). |
+| P0 | `compiler_runtime` | `MONOLITH` | `src/scpn_fusion/scpn/controller.py:1` | module LOC=707 exceeds monolith threshold (700+). |
+| P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | module LOC=819 exceeds monolith threshold (700+). |
+| P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | module LOC=727 exceeds monolith threshold (700+). |
+| P1 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/analytic_solver.py:1` | fallback mentions=8 across LOC=247; high fallback concentration in primary module. |
+| P1 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | fallback mentions=10 across LOC=827; high fallback concentration in primary module. |
 | P2 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |
 | P2 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | # Simplified: spectral conv in truncated mode space |
 | P2 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:375` | implements a 10 kHz PID control loop with simplified linear plasma |
 | P2 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | # Step Physics (Single step of simulate logic simplified) |
 | P2 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
 | P2 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
-| P2 | `other` | `DEPRECATED` | `CHANGELOG.md:58` | - CI hardening: release preflight now enforces a deprecated-default-lane guard and persists guard diagnostics artifacts. |
 | P2 | `other` | `DEPRECATED` | `CHANGELOG.md:72` | - Regression test for deprecated FNO-controller missing-weight fallback path. |
 | P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:358` | "Experimental-only pytest suite", |
 | P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:359` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
@@ -160,7 +167,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:475` | "'research' runs experimental-only lanes, " |
 | P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:637` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
 | P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | if "DEPRECATED" in issue.markers: |
-| P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:79` | metrics.append("Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py).") |
 | P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:192` | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
 | P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:155` | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | 4. For real experimental data, start with `0.01` and adjust based on |
@@ -182,6 +188,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:623` | "R_axis": fallback["R_axis"], |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:624` | "Z_axis": fallback["Z_axis"], |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:625` | "q_proxy": fallback["q_proxy"], |
+| P2 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:238` | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:26` | \| `DEPRECATED` \| 17 \| |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:51` | - The critical residual gaps are targeted: physics fidelity upgrades, deprecated FNO lane retirement, and validation/claim rigor. |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |

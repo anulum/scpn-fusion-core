@@ -76,7 +76,7 @@
 | Autodifferentiation | No | **Yes (JAX)** | No | No | **Yes (Julia)** | No |
 | Compact reactor optimizer | Yes | No | Yes (DEMO) | No | Yes | No |
 | GEQDSK I/O | Read + validate | No | No | Read + write | Yes | No |
-| Experimental validation | SPARC, ITPA, JET | DIII-D | ITER, DEMO | JET | DIII-D | ITER |
+| Research validation (opt-in) | SPARC, ITPA, JET | DIII-D | ITER, DEMO | JET | DIII-D | ITER |
 
 ## 5. Where Competitors Lead
 

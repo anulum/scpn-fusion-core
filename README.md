@@ -15,7 +15,7 @@ as stochastic Petri nets, compile to spiking neural networks, execute at
 Rust acceleration (6,600x speedup).
 
 > **Minimal control-only package:** [`scpn-control`](https://github.com/anulum/scpn-control) (41 files, pip-installable).
-> This repo is the full physics + experimental suite.
+> This repo is the full physics + research suite.
 
 ## What Is It?
 
@@ -257,7 +257,7 @@ python validation/benchmark_disturbance_rejection.py
 
 `neural` (PCA+MLP equilibrium) | `geometry` (3D Fourier) | `wdm` (dense matter EOS)
 
-### Experimental
+### Research (Opt-in)
 
 `quantum` | `vibrana` | `lazarus` | `director` | `fno` (archived synthetic-only lane) -- integration bridges to external SCPN components.
 

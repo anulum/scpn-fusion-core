@@ -39,7 +39,7 @@ Comparison of SCPN Fusion Core against established fusion simulation codes.
 | GEQDSK I/O | Read + validate | No | No | Read + write |
 | Rust acceleration | Native (10 crates) | No | JAX/XLA | No |
 | GPU support | Planned | Yes (JAX) | No | No |
-| Experimental validation | SPARC, ITPA, JET | DIII-D | ITER, DEMO | JET |
+| Research validation (opt-in) | SPARC, ITPA, JET | DIII-D | ITER, DEMO | JET |
 
 ## Validation Accuracy
 

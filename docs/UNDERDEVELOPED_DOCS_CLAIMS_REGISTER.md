@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T23:17:25.974668+00:00`
+- Generated at: `2026-03-02T23:36:34.666574+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: docs-claims-only markers
 
@@ -8,11 +8,11 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 154 |
-| P0 + P1 entries | 15 |
+| Total flagged entries | 139 |
+| P0 + P1 entries | 0 |
 | Source-domain entries | 0 |
 | Source-domain P0 + P1 entries | 0 |
-| Docs-claims entries | 154 |
+| Docs-claims entries | 139 |
 | Domains affected | 1 |
 
 ## Marker Distribution
@@ -20,37 +20,22 @@
 | Key | Count |
 |---|---:|
 | `FALLBACK` | 80 |
-| `EXPERIMENTAL` | 28 |
 | `PLANNED` | 22 |
+| `EXPERIMENTAL` | 14 |
 | `SIMPLIFIED` | 13 |
-| `DEPRECATED` | 7 |
+| `DEPRECATED` | 6 |
 | `NOT_VALIDATED` | 4 |
 
 ## Domain Distribution
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 154 |
+| `docs_claims` | 139 |
 
 ## Top Priority Backlog (Top 80)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | Docs WG | Replace default path or remove lane before next major release. | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | Docs WG | Gate behind explicit flag and define validation exit criteria. | > This repo is the full physics + experimental suite. |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:260` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ### Experimental |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:327` | Docs WG | Gate behind explicit flag and define validation exit criteria. | scpn-fusion all --surrogate --experimental |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:8` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Preserve visibility on experimental/research lanes without letting them silently contaminate release acceptance. |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:15` | Docs WG | Gate behind explicit flag and define validation exit criteria. | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:16` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `research` \| Experimental-only pytest lane (`pytest -m experimental`). \| `python tools/run_python_preflight.py --gate research` \| |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:24` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `python-research-gate` \| Experimental validation lane (3.12) \| `research` \| |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:25` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `validation-regression` \| Cross-language physics validation lane \| `release` (`pytest -m "not experimental"`) \| |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:27` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ## Experimental Marker Contract |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:29` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Tests marked with `@pytest.mark.experimental` are considered research-only and are excluded from release acceptance runs. As of v3.9.x th... |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:42` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 1. Remove `@pytest.mark.experimental` from the test module(s). |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:79` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| DIII-D \| ITER \| |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/userguide/validation.rst:5` | Docs WG | Gate behind explicit flag and define validation exit criteria. | SCPN-Fusion-Core is validated against published experimental data from |
 | P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Add real-data validation campaign and publish error bars. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |
 | P2 | 72 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 4. For real experimental data, start with `0.01` and adjust based on |
 | P2 | 72 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:98` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| **0.05–0.5** \| Standard robust range \| Real experimental data with occasional probe failures or calibration drift \| |
@@ -116,26 +101,26 @@
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEXT_SPRINT_EXECUTION_QUEUE.md:37` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Completed: `S1-003` (added low-point LCFS fallback regression test and VMEC-like geometry CI smoke coverage). |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/PHASE2_ADVANCED_RFC_TEMPLATE.md:36` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Offline fallback path: |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/SOLVER_TUNING_GUIDE.md:187` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| 1 \| 1× (serial fallback) \| Same as before \| |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/SOLVER_TUNING_GUIDE.md:258` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Discontinuity at threshold \| Fallback model uses hard cutoff \| Switch to MLP weights (smooth transition) \| |
+| P3 | 49 | `docs_claims` | `PLANNED` | `docs/competitive_analysis.md:75` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| GPU acceleration \| Planned (wgpu) \| Yes (JAX) \| No \| No \| JAX \| No \| |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:18` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | 1. ``wgpu`` SOR kernel (red-black stencil + deterministic CPU fallback) |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:19` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | 2. GPU-backed GMRES preconditioning (CUDA/ROCm adapters with CPU fallback) |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:39` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Operations: runtime capability detection + automatic CPU fallback |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/index.rst:54` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | speedups with pure-Python fallback |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/installation.rst:42` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | INFO: scpn_fusion_rs not found -- using NumPy fallback. |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/control.rst:89` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - **Checkpoint fallback** ensuring graceful degradation if the model |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/diagnostics.rst:97` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | with automatic fallback for environments where SciPy is not optimised. |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:102` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | WebGPU) with deterministic CPU fallback. |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:110` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | CUDA/ROCm adapters for the GMRES linear solver with CPU fallback |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:129` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Operations: runtime capability detection + automatic CPU fallback |
+| P3 | 45 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:22` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| `FALLBACK` \| 172 \| |
+| P3 | 45 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:71` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - `FALLBACK`: 67 mentions |
+| P3 | 45 | `docs_claims` | `FALLBACK` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:103` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback to full physics solve when surrogate confidence is below threshold |
 
-## Full Register (Top 154)
+## Full Register (Top 139)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P1 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | > This repo is the full physics + experimental suite. |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:260` | ### Experimental |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:327` | scpn-fusion all --surrogate --experimental |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:8` | - Preserve visibility on experimental/research lanes without letting them silently contaminate release acceptance. |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:15` | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:16` | \| `research` \| Experimental-only pytest lane (`pytest -m experimental`). \| `python tools/run_python_preflight.py --gate research` \| |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:24` | \| `python-research-gate` \| Experimental validation lane (3.12) \| `research` \| |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:25` | \| `validation-regression` \| Cross-language physics validation lane \| `release` (`pytest -m "not experimental"`) \| |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:27` | ## Experimental Marker Contract |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:29` | Tests marked with `@pytest.mark.experimental` are considered research-only and are excluded from release acceptance runs. As of v3.9.x th... |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:42` | 1. Remove `@pytest.mark.experimental` from the test module(s). |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:79` | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| DIII-D \| ITER \| |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/userguide/validation.rst:5` | SCPN-Fusion-Core is validated against published experimental data from |
 | P2 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | 4. For real experimental data, start with `0.01` and adjust based on |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:98` | \| **0.05–0.5** \| Standard robust range \| Real experimental data with occasional probe failures or calibration drift \| |

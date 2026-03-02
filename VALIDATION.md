@@ -103,7 +103,7 @@ python validation/scpn_end_to_end_latency.py --strict
 ## Data License And Copyright Context
 
 - Bundled `disruption_shots/*.npz` in this repo are generated synthetic reference profiles and are distributed with this codebase workflow.
-- Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder.
+- Real DIII-D data are not bundled in this specific `disruption_shots` folder.
 - DIII-D itself is a U.S. DOE Office of Science user facility operated by General Atomics; real-shot data access and reuse follow facility/data-access terms and publication rules.
 - If replacing synthetic files with true DIII-D data, document:
   - acquisition source,

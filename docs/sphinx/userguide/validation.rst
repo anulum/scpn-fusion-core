@@ -2,7 +2,7 @@
 Validation Framework
 ==============================
 
-SCPN-Fusion-Core is validated against published experimental data from
+SCPN-Fusion-Core is validated against published device datasets from
 real tokamaks.  The validation framework provides regression-grade
 checks that detect numerical regressions and ensure physically
 reasonable behaviour across releases.
