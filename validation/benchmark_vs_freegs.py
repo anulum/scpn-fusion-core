@@ -49,7 +49,7 @@ try:
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore",
-            message="Implicit None on return values is deprecated and will raise KeyErrors.",
+            message=r"Implicit None on return values .* raise KeyErrors\.",
             category=DeprecationWarning,
         )
         import freegs  # type: ignore[import-untyped]

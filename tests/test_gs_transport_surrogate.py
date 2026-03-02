@@ -20,6 +20,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from scpn_fusion.core import gs_transport_surrogate_training as gsts
 from scpn_fusion.core.fno_training import (
     MLPSurrogate,
     _generate_gs_transport_pairs,
@@ -154,3 +155,12 @@ def test_relative_l2_nonzero():
     result = _relative_l2(a, b)
     assert result > 0.0
     assert np.isfinite(result)
+
+
+def test_split_module_api_is_reachable() -> None:
+    """Ensure split module is directly imported and executable for guard linkage."""
+    model = gsts.MLPSurrogate(input_dim=10, hidden_dim=8, seed=7)
+    out = model.forward(np.zeros(10, dtype=np.float64))
+    assert out.shape == (10,)
+    assert callable(gsts.train_gs_transport_surrogate)
+    assert callable(gsts._generate_gs_transport_pairs)

@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T03:22:51.065135+00:00`
+- Generated at: `2026-03-02T15:25:59.643252+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 203 |
-| P0 + P1 entries | 21 |
-| Source-domain entries | 29 |
-| Source-domain P0 + P1 entries | 5 |
+| Total flagged entries | 206 |
+| P0 + P1 entries | 19 |
+| Source-domain entries | 32 |
+| Source-domain P0 + P1 entries | 3 |
 | Docs-claims entries | 154 |
 | Domains affected | 5 |
 
@@ -19,25 +19,25 @@
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 107 |
+| `FALLBACK` | 110 |
 | `EXPERIMENTAL` | 35 |
 | `PLANNED` | 23 |
 | `SIMPLIFIED` | 18 |
-| `DEPRECATED` | 12 |
-| `MONOLITH` | 4 |
+| `DEPRECATED` | 13 |
 | `NOT_VALIDATED` | 4 |
+| `MONOLITH` | 3 |
 
 ## Domain Distribution
 
 | Key | Count |
 |---|---:|
 | `docs_claims` | 154 |
-| `validation` | 25 |
+| `validation` | 29 |
 | `other` | 20 |
-| `core_physics` | 3 |
+| `core_physics` | 2 |
 | `diagnostics_io` | 1 |
 
-## Source-Centric Priority Backlog (Top 5)
+## Source-Centric Priority Backlog (Top 3)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
@@ -45,8 +45,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 |---|---:|---|---|---|---|---|---|
 | P0 | 107 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1435 exceeds monolith threshold (900+). |
 | P0 | 107 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1738 exceeds monolith threshold (900+). |
-| P0 | 101 | `validation` | `DEPRECATED` | `validation/benchmark_vs_freegs.py:52` | Validation WG | Replace default path or remove lane before next major release. | message="Implicit None on return values is deprecated and will raise KeyErrors.", |
-| P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fno_training.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=914 exceeds monolith threshold (900+). |
 | P0 | 97 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=990 exceeds monolith threshold (900+). |
 
 ## Top Priority Backlog (Top 80)
@@ -55,8 +53,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 |---|---:|---|---|---|---|---|---|
 | P0 | 107 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1435 exceeds monolith threshold (900+). |
 | P0 | 107 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1738 exceeds monolith threshold (900+). |
-| P0 | 101 | `validation` | `DEPRECATED` | `validation/benchmark_vs_freegs.py:52` | Validation WG | Replace default path or remove lane before next major release. | message="Implicit None on return values is deprecated and will raise KeyErrors.", |
-| P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fno_training.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=914 exceeds monolith threshold (900+). |
 | P0 | 97 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=990 exceeds monolith threshold (900+). |
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | Docs WG | Replace default path or remove lane before next major release. | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
 | P1 | 88 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
@@ -82,12 +78,14 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | Architecture WG | Replace default path or remove lane before next major release. | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
 | P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:58` | Architecture WG | Replace default path or remove lane before next major release. | - CI hardening: release preflight now enforces a deprecated-default-lane guard and persists guard diagnostics artifacts. |
 | P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:72` | Architecture WG | Replace default path or remove lane before next major release. | - Regression test for deprecated FNO-controller missing-weight fallback path. |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:317` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:318` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:425` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:426` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:564` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
-| P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:106` | Validation WG | Replace default path or remove lane before next major release. | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
+| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:342` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
+| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:343` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
+| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:454` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
+| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:455` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
+| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:603` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
+| P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | Validation WG | Replace default path or remove lane before next major release. | if "DEPRECATED" in issue.markers: |
+| P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:79` | Validation WG | Replace default path or remove lane before next major release. | metrics.append("Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py).") |
+| P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:192` | Validation WG | Replace default path or remove lane before next major release. | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
 | P2 | 74 | `other` | `SIMPLIFIED` | `CHANGELOG.md:143` | Architecture WG | Upgrade with higher-fidelity closure or tighten domain contract. | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
 | P2 | 72 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 4. For real experimental data, start with `0.01` and adjust based on |
 | P2 | 72 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:98` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| **0.05–0.5** \| Standard robust range \| Real experimental data with occasional probe failures or calibration drift \| |
@@ -95,9 +93,12 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 71 | `docs_claims` | `DEPRECATED` | `docs/sphinx/changelog.rst:27` | Docs WG | Replace default path or remove lane before next major release. | - FNO turbulence surrogate deprecated (runtime ``FutureWarning``) |
 | P2 | 71 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:230` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | logger.debug("tokamak_archive fallback failed: %s", exc) |
 | P2 | 71 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:142` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | print(" Will use critical-gradient fallback (less accurate).") |
-| P2 | 71 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:112` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
+| P2 | 71 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:82` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | if "FALLBACK" in issue.markers: |
+| P2 | 71 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:83` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | metrics.append("Fallback budget guard remains green for impacted lane (tools/fallback_budget_guard.py).") |
+| P2 | 71 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:198` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_sparc_geqdsk_rmse.py:207` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | except Exception as exc: # pragma: no cover - import failure handled via synthetic fallback |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:539` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | fallback = run_solovev_case(case) |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:541` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "psi": fallback["psi"], |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:542` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R": fallback["R"], |
@@ -113,7 +114,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/assets/generate_header.py:27` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified Grad-Shafranov flux function with Shafranov shift + triangularity |
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/control.rst:197` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | simplified equilibrium and transport problems, used primarily for: |
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/transport.rst:82` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | using simplified ray-tracing: |
-| P2 | 68 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:114` | Validation WG | Gate behind explicit flag and define validation exit criteria. | items.append("Ensure release lane remains experimental-excluded unless explicitly opted in.") |
+| P2 | 68 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:200` | Validation WG | Gate behind explicit flag and define validation exit criteria. | items.append("Ensure release lane remains experimental-excluded unless explicitly opted in.") |
 | P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:21` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - Runtime hardening: compiler git SHA probe now uses bounded subprocess timeout with deterministic fallback. |
 | P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:29` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - Tooling hardening: claims audit git file discovery now uses a bounded subprocess timeout with safe fallback. |
 | P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:35` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
@@ -130,18 +131,13 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:102` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - **Rust Transport Delegation**: `chang_hinton_chi_profile()` → Rust fast-path (4.7x speedup), `calculate_sauter_bootstrap_current_full()... |
 | P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:174` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - Robust fallback to SciPy L-BFGS-B when JAX is unavailable. |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:23` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `EXPERIMENTAL` \| 55 \| |
-| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:73` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - `EXPERIMENTAL`: 15 mentions |
-| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:102` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only |
-| P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:343` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ## 6. Experimental Validation Portfolio |
 
-## Full Register (Top 203)
+## Full Register (Top 206)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel.py:1` | module LOC=1435 exceeds monolith threshold (900+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | module LOC=1738 exceeds monolith threshold (900+). |
-| P0 | `validation` | `DEPRECATED` | `validation/benchmark_vs_freegs.py:52` | message="Implicit None on return values is deprecated and will raise KeyErrors.", |
-| P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fno_training.py:1` | module LOC=914 exceeds monolith threshold (900+). |
 | P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | module LOC=990 exceeds monolith threshold (900+). |
 | P1 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
 | P1 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
@@ -167,12 +163,14 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
 | P2 | `other` | `DEPRECATED` | `CHANGELOG.md:58` | - CI hardening: release preflight now enforces a deprecated-default-lane guard and persists guard diagnostics artifacts. |
 | P2 | `other` | `DEPRECATED` | `CHANGELOG.md:72` | - Regression test for deprecated FNO-controller missing-weight fallback path. |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:317` | "Experimental-only pytest suite", |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:318` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:425` | "'release' excludes experimental-only lanes, " |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:426` | "'research' runs experimental-only lanes, " |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:564` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
-| P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:106` | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:342` | "Experimental-only pytest suite", |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:343` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:454` | "'release' excludes experimental-only lanes, " |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:455` | "'research' runs experimental-only lanes, " |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:603` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
+| P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | if "DEPRECATED" in issue.markers: |
+| P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:79` | metrics.append("Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py).") |
+| P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:192` | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
 | P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:143` | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | 4. For real experimental data, start with `0.01` and adjust based on |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:98` | \| **0.05–0.5** \| Standard robust range \| Real experimental data with occasional probe failures or calibration drift \| |
@@ -180,9 +178,12 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `docs_claims` | `DEPRECATED` | `docs/sphinx/changelog.rst:27` | - FNO turbulence surrogate deprecated (runtime ``FutureWarning``) |
 | P2 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:230` | logger.debug("tokamak_archive fallback failed: %s", exc) |
 | P2 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:142` | print(" Will use critical-gradient fallback (less accurate).") |
-| P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:112` | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
+| P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:82` | if "FALLBACK" in issue.markers: |
+| P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:83` | metrics.append("Fallback budget guard remains green for impacted lane (tools/fallback_budget_guard.py).") |
+| P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:198` | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_sparc_geqdsk_rmse.py:207` | except Exception as exc: # pragma: no cover - import failure handled via synthetic fallback |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:539` | fallback = run_solovev_case(case) |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:541` | "psi": fallback["psi"], |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:542` | "R": fallback["R"], |
@@ -198,7 +199,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/assets/generate_header.py:27` | # Simplified Grad-Shafranov flux function with Shafranov shift + triangularity |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/control.rst:197` | simplified equilibrium and transport problems, used primarily for: |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/transport.rst:82` | using simplified ray-tracing: |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:114` | items.append("Ensure release lane remains experimental-excluded unless explicitly opted in.") |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:200` | items.append("Ensure release lane remains experimental-excluded unless explicitly opted in.") |
 | P3 | `other` | `FALLBACK` | `CHANGELOG.md:21` | - Runtime hardening: compiler git SHA probe now uses bounded subprocess timeout with deterministic fallback. |
 | P3 | `other` | `FALLBACK` | `CHANGELOG.md:29` | - Tooling hardening: claims audit git file discovery now uses a bounded subprocess timeout with safe fallback. |
 | P3 | `other` | `FALLBACK` | `CHANGELOG.md:35` | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
