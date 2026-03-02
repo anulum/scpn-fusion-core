@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T00:25:14.507827+00:00`
+- Generated at: `2026-03-02T00:40:43.954117+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: docs-claims-only markers
 
@@ -8,29 +8,29 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 164 |
+| Total flagged entries | 158 |
 | P0 + P1 entries | 19 |
 | Source-domain entries | 0 |
 | Source-domain P0 + P1 entries | 0 |
-| Docs-claims entries | 164 |
+| Docs-claims entries | 158 |
 | Domains affected | 1 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 83 |
+| `FALLBACK` | 80 |
 | `EXPERIMENTAL` | 28 |
 | `PLANNED` | 22 |
-| `DEPRECATED` | 14 |
 | `SIMPLIFIED` | 13 |
+| `DEPRECATED` | 11 |
 | `NOT_VALIDATED` | 4 |
 
 ## Domain Distribution
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 164 |
+| `docs_claims` | 158 |
 
 ## Top Priority Backlog (Top 80)
 
@@ -65,9 +65,6 @@
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Replace default path or remove lane before next major release. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:16` | Docs WG | Replace default path or remove lane before next major release. | - Lock default turbulence path to non-deprecated lanes only. |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:17` | Docs WG | Replace default path or remove lane before next major release. | - Keep deprecated FNO paths non-default and explicitly gated. |
-| P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/session_logs/2026-03-02_h18_h23_fix_all.md:9` | Docs WG | Replace default path or remove lane before next major release. | Execute full hardening continuation: reduce docs-claims triage noise, enforce deprecated-lane non-default runtime policy, strengthen vali... |
-| P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/session_logs/2026-03-02_h18_h23_fix_all.md:24` | Docs WG | Replace default path or remove lane before next major release. | 2. Deprecated default-lane guard (`H19`) |
-| P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/session_logs/2026-03-02_h18_h23_fix_all.md:26` | Docs WG | Replace default path or remove lane before next major release. | - verifies default `scpn-fusion all` plan excludes deprecated FNO runtime modules, |
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/assets/generate_header.py:27` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified Grad-Shafranov flux function with Shafranov shift + triangularity |
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/control.rst:197` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | simplified equilibrium and transport problems, used primarily for: |
 | P2 | 68 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/transport.rst:82` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | using simplified ray-tracing: |
@@ -116,8 +113,11 @@
 | P3 | 49 | `docs_claims` | `PLANNED` | `docs/HONEST_SCOPE.md:25` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| Full 3D MHD \| Not planned for real-time loop \| Use NIMROD/M3D-C1 externally \| |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:41` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - [6.2 Import Boundary and Fallback Strategy](#62-import-boundary-and-fallback-strategy) |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:269` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **Dependencies:** numpy, sc_neurocore (optional — graceful fallback) |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:337` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **`dense_forward_float(W, inputs)`** — The float path: a simple `W @ inputs` using numpy. Used for validation and as a fallback when sc_n... |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:502` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **Rationale:** The Logic Compiler is a component of SCPN-Fusion-Core, which may be installed in environments where sc_neurocore is not pr... |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:660` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | **Graceful sc_neurocore fallback** | SCPN-Fusion-Core may be used without neuromorphic hardware. The Petri Net API should always be ava... |
 
-## Full Register (Top 164)
+## Full Register (Top 158)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -150,9 +150,6 @@
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:16` | - Lock default turbulence path to non-deprecated lanes only. |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:17` | - Keep deprecated FNO paths non-default and explicitly gated. |
-| P2 | `docs_claims` | `DEPRECATED` | `docs/session_logs/2026-03-02_h18_h23_fix_all.md:9` | Execute full hardening continuation: reduce docs-claims triage noise, enforce deprecated-lane non-default runtime policy, strengthen vali... |
-| P2 | `docs_claims` | `DEPRECATED` | `docs/session_logs/2026-03-02_h18_h23_fix_all.md:24` | 2. Deprecated default-lane guard (`H19`) |
-| P2 | `docs_claims` | `DEPRECATED` | `docs/session_logs/2026-03-02_h18_h23_fix_all.md:26` | - verifies default `scpn-fusion all` plan excludes deprecated FNO runtime modules, |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/assets/generate_header.py:27` | # Simplified Grad-Shafranov flux function with Shafranov shift + triangularity |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/control.rst:197` | simplified equilibrium and transport problems, used primarily for: |
 | P2 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/transport.rst:82` | using simplified ray-tracing: |
@@ -269,9 +266,6 @@
 | P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GPHY-05_RFC.md:37` | - Offline fallback path: additive APIs; existing controller paths remain available. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GPHY-06_RFC.md:37` | - Offline fallback path: if no active compiled kernel is available, execution is identity/stable. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/rfc/GPHY-06_RFC.md:70` | - add deterministic tests for cache reuse, hot-swap behavior, and identity fallback. |
-| P3 | `docs_claims` | `FALLBACK` | `docs/session_logs/2026-03-01_h12_h17_hardening.md:15` | - SPARC/FreeGS strict checks remain explicitly skipped in release preflight to avoid known backend-availability false negatives; they are... |
-| P3 | `docs_claims` | `FALLBACK` | `docs/session_logs/2026-03-01_h12_h17_hardening.md:18` | - Added fallback budget guard tooling: |
-| P3 | `docs_claims` | `FALLBACK` | `docs/session_logs/2026-03-01_h12_h17_hardening.md:25` | - CI now enforces fallback-budget contract and uploads: |
 | P3 | `docs_claims` | `PLANNED` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:690` | **Packet C — `scpn/runtime.py` — PetriNetEngine** (planned): |
 | P3 | `docs_claims` | `PLANNED` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:704` | **Packet D — `examples/01_traffic_light.py` — Hello World Demo** (planned): |
 | P3 | `docs_claims` | `PLANNED` | `docs/VALIDATION_AGAINST_ITER.md:238` | Planned follow-up after WP-E1: |
