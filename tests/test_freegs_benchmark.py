@@ -253,6 +253,23 @@ class TestFreeGSComparison:
         for key in ("psi", "R", "Z", "R_axis", "Z_axis", "q_proxy", "axis_pressure_pa"):
             assert key in result
 
+    def test_freegs_case_fallback_on_runtime_instability(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        import benchmark_vs_freegs as b
+
+        def _raise_runtime_issue(*_args: object, **_kwargs: object) -> None:
+            raise ValueError("setting an array element with a sequence")
+
+        monkeypatch.setattr(b.freegs, "solve", _raise_runtime_issue)
+        result = b.run_freegs_case(CASES[0])
+        for key in ("psi", "R", "Z", "R_axis", "Z_axis", "q_proxy", "axis_pressure_pa"):
+            assert key in result
+        assert result["freegs_fallback"] is True
+        assert result["reference_backend"] == "solovev_fallback"
+        assert "freegs_error" in result
+
     def test_full_freegs_benchmark(self) -> None:
         from benchmark_vs_freegs import run_benchmark
 

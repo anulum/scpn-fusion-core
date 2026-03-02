@@ -458,69 +458,97 @@ def run_freegs_case(case: TokamakCase) -> dict[str, Any]:
     """
     import freegs  # type: ignore[import-untyped]
 
-    # Build a simple tokamak with wall matching our case
-    tokamak = freegs.machine.TestTokamak()
-
-    # Create equilibrium on matching grid
-    R_min = case.R0 - 2.0 * case.a
-    R_max = case.R0 + 2.0 * case.a
-    Z_half = 2.0 * case.kappa * case.a
-
-    eq = freegs.Equilibrium(
-        tokamak=tokamak,
-        Rmin=max(R_min, 0.1),
-        Rmax=R_max,
-        Zmin=-Z_half,
-        Zmax=Z_half,
-        nx=case.NR,
-        ny=case.NZ,
-    )
-
     # Profiles
     axis_pressure_pa = estimate_axis_pressure_pa(case)
-    profiles = freegs.jtor.ConstrainPaxisIp(
-        axis_pressure_pa,
-        case.Ip * 1e6,  # Plasma current [A]
-        case.R0,
-    )
+    try:
+        # Build a simple tokamak with wall matching our case
+        tokamak = freegs.machine.TestTokamak()
 
-    # Boundary constraint
-    xpoints = [(case.R0 - 0.8 * case.a, -case.kappa * case.a * 0.9)]
-    isoflux = [
-        (case.R0 + case.a, 0.0, xpoints[0]),
-        (case.R0, case.kappa * case.a, xpoints[0]),
-    ]
+        # Create equilibrium on matching grid
+        R_min = case.R0 - 2.0 * case.a
+        R_max = case.R0 + 2.0 * case.a
+        Z_half = 2.0 * case.kappa * case.a
 
-    constrain = freegs.control.constrain(xpoints=xpoints, isoflux=isoflux)
+        eq = freegs.Equilibrium(
+            tokamak=tokamak,
+            Rmin=max(R_min, 0.1),
+            Rmax=R_max,
+            Zmin=-Z_half,
+            Zmax=Z_half,
+            nx=case.NR,
+            ny=case.NZ,
+        )
 
-    # Solve
-    freegs.solve(eq, profiles, constrain, maxits=50, atol=1e-3, rtol=1e-2)
+        profiles = freegs.jtor.ConstrainPaxisIp(
+            axis_pressure_pa,
+            case.Ip * 1e6,  # Plasma current [A]
+            case.R0,
+        )
 
-    # Extract results
-    psi = eq.psi()
-    R = eq.R
-    Z = eq.Z
-    R_axis = float(eq.Rmagnetic if hasattr(eq, "Rmagnetic") else case.R0)
-    Z_axis = float(eq.Zmagnetic if hasattr(eq, "Zmagnetic") else 0.0)
+        # Boundary constraint
+        xpoints = [(case.R0 - 0.8 * case.a, -case.kappa * case.a * 0.9)]
+        isoflux = [
+            (case.R0 + case.a, 0.0, xpoints[0]),
+            (case.R0, case.kappa * case.a, xpoints[0]),
+        ]
 
-    # q-proxy: midplane radial psi slice
-    iz_mid = len(Z) // 2
-    psi_mid = psi[iz_mid, :] if psi.ndim == 2 else psi[:, iz_mid]
-    psi_range_val = float(np.max(np.abs(psi_mid)))
-    if psi_range_val < 1e-12:
-        psi_range_val = 1.0
-    psi_norm = psi_mid / psi_range_val
-    q_proxy = np.clip(1.0 / (np.abs(psi_norm) + 0.01), 0.5, 10.0)
+        constrain = freegs.control.constrain(xpoints=xpoints, isoflux=isoflux)
 
-    return {
-        "psi": psi,
-        "R": R,
-        "Z": Z,
-        "R_axis": R_axis,
-        "Z_axis": Z_axis,
-        "q_proxy": q_proxy,
-        "axis_pressure_pa": float(axis_pressure_pa),
-    }
+        # Solve
+        freegs.solve(eq, profiles, constrain, maxits=50, atol=1e-3, rtol=1e-2)
+
+        # Extract results
+        psi = eq.psi()
+        R = eq.R
+        Z = eq.Z
+        R_axis = float(eq.Rmagnetic if hasattr(eq, "Rmagnetic") else case.R0)
+        Z_axis = float(eq.Zmagnetic if hasattr(eq, "Zmagnetic") else 0.0)
+
+        # q-proxy: midplane radial psi slice
+        iz_mid = len(Z) // 2
+        psi_mid = psi[iz_mid, :] if psi.ndim == 2 else psi[:, iz_mid]
+        psi_range_val = float(np.max(np.abs(psi_mid)))
+        if psi_range_val < 1e-12:
+            psi_range_val = 1.0
+        psi_norm = psi_mid / psi_range_val
+        q_proxy = np.clip(1.0 / (np.abs(psi_norm) + 0.01), 0.5, 10.0)
+
+        return {
+            "psi": psi,
+            "R": R,
+            "Z": Z,
+            "R_axis": R_axis,
+            "Z_axis": Z_axis,
+            "q_proxy": q_proxy,
+            "axis_pressure_pa": float(axis_pressure_pa),
+            "reference_backend": "freegs",
+            "freegs_fallback": False,
+        }
+    except Exception as exc:
+        # FreeGS occasionally raises backend-specific numerical/runtime errors
+        # on some numpy/toolchain combinations. Keep benchmark/test pipelines
+        # deterministic by falling back to the Solov'ev reference lane.
+        warnings.warn(
+            (
+                f"FreeGS runtime instability for case '{case.name}': {exc}. "
+                "Falling back to Solov'ev reference for this case."
+            ),
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        fallback = run_solovev_case(case)
+        return {
+            "psi": fallback["psi"],
+            "R": fallback["R"],
+            "Z": fallback["Z"],
+            "R_axis": fallback["R_axis"],
+            "Z_axis": fallback["Z_axis"],
+            "q_proxy": fallback["q_proxy"],
+            "axis_pressure_pa": float(axis_pressure_pa),
+            "reference_backend": "solovev_fallback",
+            "freegs_fallback": True,
+            "freegs_error": str(exc),
+        }
 
 
 # ── Solov'ev comparison (always available) ───────────────────────────
@@ -669,7 +697,7 @@ def compare_case(
         ref = run_freegs_case(case)
         mode = "freegs"
         comparison_backend = "fusion_kernel_nonlinear"
-        reference_backend = "freegs"
+        reference_backend = str(ref.get("reference_backend", "freegs"))
     else:
         print(f"  [{case.name}] Running manufactured-source GS parity solve...")
         our = run_manufactured_solovev_solver(case)
@@ -742,6 +770,7 @@ def compare_case(
 
     # ── Pass / fail logic ─────────────────────────────────────────
     if use_freegs:
+        freegs_fallback = bool(ref.get("freegs_fallback", False))
         finite_freegs_metrics = bool(
             np.isfinite(psi_nrmse)
             and np.isfinite(q_nrmse)
@@ -751,6 +780,7 @@ def compare_case(
         )
         passes = bool(
             finite_freegs_metrics
+            and not freegs_fallback
             and psi_nrmse < FREEGS_PSI_NRMSE_THRESHOLD
             and q_nrmse < FREEGS_Q_NRMSE_THRESHOLD
             and axis_err < FREEGS_AXIS_ERROR_M
@@ -760,7 +790,7 @@ def compare_case(
     else:
         passes = bool(psi_nrmse < PSI_NRMSE_THRESHOLD)
 
-    return {
+    result: dict[str, Any] = {
         "name": case.name,
         "mode": mode,
         "comparison_backend": comparison_backend,
@@ -774,6 +804,10 @@ def compare_case(
         "our_residual": round(float(our["residual"]), 8),
         "passes": passes,
     }
+    if use_freegs and bool(ref.get("freegs_fallback", False)):
+        result["freegs_fallback"] = True
+        result["freegs_error"] = str(ref.get("freegs_error", ""))
+    return result
 
 
 # ── Campaign runner ──────────────────────────────────────────────────
