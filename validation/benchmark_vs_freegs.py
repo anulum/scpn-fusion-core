@@ -29,6 +29,7 @@ import json
 import sys
 import tempfile
 import time
+import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -42,7 +43,16 @@ sys.path.insert(0, str(ROOT / "src"))
 # ── FreeGS availability probe ────────────────────────────────────────
 
 try:
-    import freegs  # type: ignore[import-untyped]
+    # FreeGS currently emits a third-party DeprecationWarning during import
+    # on Python 3.12 metadata adapters. Keep pytest deprecation-as-error strict
+    # for our code while suppressing that external import noise.
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="Implicit None on return values is deprecated and will raise KeyErrors.",
+            category=DeprecationWarning,
+        )
+        import freegs  # type: ignore[import-untyped]
 
     HAS_FREEGS = True
 except ImportError:
