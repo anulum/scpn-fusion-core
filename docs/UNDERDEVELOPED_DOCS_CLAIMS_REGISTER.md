@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T00:40:43.954117+00:00`
+- Generated at: `2026-03-02T01:14:32.049612+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: docs-claims-only markers
 
@@ -8,11 +8,11 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 158 |
-| P0 + P1 entries | 19 |
+| Total flagged entries | 154 |
+| P0 + P1 entries | 15 |
 | Source-domain entries | 0 |
 | Source-domain P0 + P1 entries | 0 |
-| Docs-claims entries | 158 |
+| Docs-claims entries | 154 |
 | Domains affected | 1 |
 
 ## Marker Distribution
@@ -23,23 +23,19 @@
 | `EXPERIMENTAL` | 28 |
 | `PLANNED` | 22 |
 | `SIMPLIFIED` | 13 |
-| `DEPRECATED` | 11 |
+| `DEPRECATED` | 7 |
 | `NOT_VALIDATED` | 4 |
 
 ## Domain Distribution
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 158 |
+| `docs_claims` | 154 |
 
 ## Top Priority Backlog (Top 80)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P1 | 89 | `docs_claims` | `DEPRECATED` | `RESULTS.md:145` | Docs WG | Replace default path or remove lane before next major release. | \| JAX FNO turbulence surrogate relative L2 (mean) \| 0.7925 \| — \| DEPRECATED — synthetic-only, removal in v4.0 \| |
-| P1 | 89 | `docs_claims` | `DEPRECATED` | `RESULTS.md:146` | Docs WG | Replace default path or remove lane before next major release. | \| JAX FNO turbulence surrogate relative L2 (P95) \| 0.7933 \| — \| DEPRECATED — use QLKNN-10D instead \| |
-| P1 | 89 | `docs_claims` | `DEPRECATED` | `RESULTS.md:162` | Docs WG | Replace default path or remove lane before next major release. | \| FNO EUROfusion \| DEPRECATED \| rel_L2 = 0.7925 (synthetic-only, removal in v4.0) \| |
-| P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Replace default path or remove lane before next major release. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | Docs WG | Replace default path or remove lane before next major release. | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | Docs WG | Gate behind explicit flag and define validation exit criteria. | > This repo is the full physics + experimental suite. |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:255` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ### Experimental |
@@ -55,7 +51,7 @@
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:42` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 1. Remove `@pytest.mark.experimental` from the test module(s). |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:79` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| DIII-D \| ITER \| |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/userguide/validation.rst:5` | Docs WG | Gate behind explicit flag and define validation exit criteria. | SCPN-Fusion-Core is validated against published experimental data from |
-| P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Add real-data validation campaign and publish error bars. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
+| P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Add real-data validation campaign and publish error bars. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |
 | P2 | 72 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 4. For real experimental data, start with `0.01` and adjust based on |
 | P2 | 72 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:98` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| **0.05–0.5** \| Standard robust range \| Real experimental data with occasional probe failures or calibration drift \| |
 | P2 | 72 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Experimental Bridges |
@@ -116,15 +112,15 @@
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:337` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **`dense_forward_float(W, inputs)`** — The float path: a simple `W @ inputs` using numpy. Used for validation and as a fallback when sc_n... |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:502` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **Rationale:** The Logic Compiler is a component of SCPN-Fusion-Core, which may be installed in environments where sc_neurocore is not pr... |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:660` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | **Graceful sc_neurocore fallback** | SCPN-Fusion-Core may be used without neuromorphic hardware. The Petri Net API should always be ava... |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:740` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | The "Tokens are Bits" philosophy creates a direct isomorphism between Petri Net semantics and stochastic computing primitives, guaranteei... |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEXT_SPRINT_EXECUTION_QUEUE.md:37` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Completed: `S1-003` (added low-point LCFS fallback regression test and VMEC-like geometry CI smoke coverage). |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/PHASE2_ADVANCED_RFC_TEMPLATE.md:36` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Offline fallback path: |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/SOLVER_TUNING_GUIDE.md:187` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| 1 \| 1× (serial fallback) \| Same as before \| |
 
-## Full Register (Top 158)
+## Full Register (Top 154)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P1 | `docs_claims` | `DEPRECATED` | `RESULTS.md:145` | \| JAX FNO turbulence surrogate relative L2 (mean) \| 0.7925 \| — \| DEPRECATED — synthetic-only, removal in v4.0 \| |
-| P1 | `docs_claims` | `DEPRECATED` | `RESULTS.md:146` | \| JAX FNO turbulence surrogate relative L2 (P95) \| 0.7933 \| — \| DEPRECATED — use QLKNN-10D instead \| |
-| P1 | `docs_claims` | `DEPRECATED` | `RESULTS.md:162` | \| FNO EUROfusion \| DEPRECATED \| rel_L2 = 0.7925 (synthetic-only, removal in v4.0) \| |
-| P1 | `docs_claims` | `DEPRECATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
 | P1 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | > This repo is the full physics + experimental suite. |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:255` | ### Experimental |
@@ -140,7 +136,7 @@
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:42` | 1. Remove `@pytest.mark.experimental` from the test module(s). |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:79` | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| DIII-D \| ITER \| |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/userguide/validation.rst:5` | SCPN-Fusion-Core is validated against published experimental data from |
-| P2 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; DEPRECATED in v3.9 \| |
+| P2 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | 4. For real experimental data, start with `0.01` and adjust based on |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:98` | \| **0.05–0.5** \| Standard robust range \| Real experimental data with occasional probe failures or calibration drift \| |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Experimental Bridges |

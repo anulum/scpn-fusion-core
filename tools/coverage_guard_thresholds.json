@@ -9,9 +9,9 @@
     "engineering": 66.0,
     "hpc": 70.0,
     "io": 79.0,
-    "nuclear": 34.0,
+    "nuclear": 36.0,
     "scpn": 87.0,
-    "ui": 23.0
+    "ui": 25.0
   },
   "file_min_line_rate": {
     "src/scpn_fusion/cli.py": 80.0,

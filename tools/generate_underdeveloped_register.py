@@ -143,7 +143,33 @@ MARKER_RULES: tuple[MarkerRule, ...] = (
         base_score=55,
         proposed_action="Convert roadmap note into scheduled milestone task + owner.",
     ),
+    MarkerRule(
+        marker="MONOLITH",
+        pattern=re.compile(r"$^"),
+        base_score=90,
+        proposed_action="Split module into focused subcomponents and lock interface contracts.",
+    ),
+    MarkerRule(
+        marker="FALLBACK_DENSITY",
+        pattern=re.compile(r"$^"),
+        base_score=84,
+        proposed_action="Reduce fallback concentration and enforce strict-backend parity checks.",
+    ),
+    MarkerRule(
+        marker="TEST_GAP",
+        pattern=re.compile(r"$^"),
+        base_score=88,
+        proposed_action="Add direct module tests and eliminate allowlist-only linkage.",
+    ),
 )
+
+SOURCE_MONOLITH_LOC_WARN = 900
+SOURCE_MONOLITH_LOC_CRITICAL = 1400
+SOURCE_FALLBACK_DENSITY_WARN = 12
+SOURCE_FALLBACK_DENSITY_CRITICAL = 24
+SOURCE_MIN_LOC_FOR_FALLBACK_DENSITY = 280
+SOURCE_TEST_GAP_LOC_THRESHOLD = 450
+_MARKER_RULE_BY_NAME = {rule.marker: rule for rule in MARKER_RULES}
 
 
 def _is_marker_suppressed(
@@ -154,6 +180,35 @@ def _is_marker_suppressed(
     file_text: str,
 ) -> bool:
     """Suppress known false positives where hardening guardrails already exist."""
+    lowered_line = line.lower()
+    if rel_path in {
+        "tools/deprecated_default_lane_guard.py",
+        "validation/benchmark_deprecated_mode_exclusion.py",
+    } and marker in {"DEPRECATED", "EXPERIMENTAL"}:
+        # Guard/benchmark internals should not self-trigger top-priority backlog noise.
+        return True
+    if rel_path == "tools/run_python_preflight.py" and marker == "DEPRECATED":
+        if "deprecated default lane guard" in lowered_line:
+            return True
+        if "--skip-deprecated-default-lane-guard" in lowered_line:
+            return True
+    if rel_path == "tools/generate_source_p0p1_issue_backlog.py" and marker in {
+        "DEPRECATED",
+        "EXPERIMENTAL",
+        "FALLBACK",
+        "SIMPLIFIED",
+    }:
+        if "if \"" in line and "\" in markers" in line:
+            return True
+        if "acceptance" in lowered_line and "checklist" in lowered_line:
+            return True
+    if rel_path == "tools/fallback_budget_guard.py" and marker == "FALLBACK":
+        if "fallback budget summary" in lowered_line:
+            return True
+        if "fallback budget guard failed" in lowered_line:
+            return True
+        if "fallback budget guard passed" in lowered_line:
+            return True
     if rel_path == "src/scpn_fusion/cli.py" and marker == "EXPERIMENTAL":
         # The launcher has explicit opt-in + acknowledgement gating for experimental modes.
         return (
@@ -199,6 +254,110 @@ def _is_marker_suppressed(
         if "allow_fallback" in lowered or "allow_numpy_fallback" in lowered:
             return True
     return False
+
+
+def _count_nontrivial_loc(text: str) -> int:
+    count = 0
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("#"):
+            continue
+        count += 1
+    return count
+
+
+def _has_direct_test_linkage(*, rel_path: str, test_corpus: str) -> bool:
+    module_rel = rel_path.removeprefix("src/").removesuffix(".py")
+    import_path = module_rel.replace("/", ".")
+    stem = Path(rel_path).stem
+    return (
+        (import_path in test_corpus)
+        or (f"test_{stem}" in test_corpus)
+        or (f"from {import_path}" in test_corpus)
+        or (f"import {import_path}" in test_corpus)
+    )
+
+
+def _collect_source_heuristic_entries(repo_root: Path) -> list[RegisterEntry]:
+    entries: list[RegisterEntry] = []
+    tests_root = repo_root / "tests"
+    test_corpus_parts: list[str] = []
+    for test_file in sorted(tests_root.rglob("test_*.py")):
+        test_corpus_parts.append(test_file.read_text(encoding="utf-8", errors="ignore"))
+    test_corpus = "\n".join(test_corpus_parts)
+
+    for path in sorted((repo_root / "src" / "scpn_fusion").rglob("*.py")):
+        if path.name == "__init__.py":
+            continue
+        rel_path = _normalize(path.relative_to(repo_root))
+        domain = _domain_for(rel_path)
+        if domain not in SOURCE_DOMAINS:
+            continue
+        owner = DOMAIN_OWNER[domain]
+        bonus = DOMAIN_BONUS.get(domain, 0)
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        loc = _count_nontrivial_loc(text)
+        fallback_mentions = len(re.findall(r"\bfallback\b", text, flags=re.IGNORECASE))
+        has_linkage = _has_direct_test_linkage(rel_path=rel_path, test_corpus=test_corpus)
+
+        if loc >= SOURCE_MONOLITH_LOC_WARN:
+            base = SOURCE_MONOLITH_LOC_CRITICAL if loc >= SOURCE_MONOLITH_LOC_CRITICAL else SOURCE_MONOLITH_LOC_WARN
+            marker = "MONOLITH"
+            rule = _MARKER_RULE_BY_NAME[marker]
+            score = int(rule.base_score + bonus + (8 if base == SOURCE_MONOLITH_LOC_CRITICAL else 0))
+            entries.append(
+                RegisterEntry(
+                    path=rel_path,
+                    line=1,
+                    marker=marker,
+                    snippet=f"module LOC={loc} exceeds monolith threshold ({SOURCE_MONOLITH_LOC_WARN}+).",
+                    domain=domain,
+                    owner=owner,
+                    score=score,
+                    proposed_action=rule.proposed_action,
+                )
+            )
+
+        if loc >= SOURCE_MIN_LOC_FOR_FALLBACK_DENSITY and fallback_mentions >= SOURCE_FALLBACK_DENSITY_WARN:
+            is_critical = fallback_mentions >= SOURCE_FALLBACK_DENSITY_CRITICAL
+            marker = "FALLBACK_DENSITY"
+            rule = _MARKER_RULE_BY_NAME[marker]
+            score = int(rule.base_score + bonus + (6 if is_critical else 0))
+            entries.append(
+                RegisterEntry(
+                    path=rel_path,
+                    line=1,
+                    marker=marker,
+                    snippet=(
+                        f"fallback mentions={fallback_mentions} across LOC={loc}; "
+                        "high fallback concentration in primary module."
+                    ),
+                    domain=domain,
+                    owner=owner,
+                    score=score,
+                    proposed_action=rule.proposed_action,
+                )
+            )
+
+        if loc >= SOURCE_TEST_GAP_LOC_THRESHOLD and not has_linkage:
+            marker = "TEST_GAP"
+            rule = _MARKER_RULE_BY_NAME[marker]
+            score = int(rule.base_score + bonus)
+            entries.append(
+                RegisterEntry(
+                    path=rel_path,
+                    line=1,
+                    marker=marker,
+                    snippet="large source module without direct test import/stem linkage.",
+                    domain=domain,
+                    owner=owner,
+                    score=score,
+                    proposed_action=rule.proposed_action,
+                )
+            )
+    return entries
 
 
 def _score_context_penalty(*, rel_path: str, marker: str, line: str) -> int:
@@ -401,6 +560,12 @@ def collect_entries(repo_root: Path) -> list[RegisterEntry]:
                 )
             if file_hits >= 20:
                 break
+    for entry in _collect_source_heuristic_entries(repo_root):
+        key = (entry.path, entry.line, entry.marker)
+        if key in seen:
+            continue
+        seen.add(key)
+        entries.append(entry)
     entries.sort(key=lambda e: (-e.score, e.domain, e.path, e.line))
     return entries
 

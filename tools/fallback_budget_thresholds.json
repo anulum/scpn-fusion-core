@@ -5,15 +5,20 @@
       "neural_transport"
     ],
     "max_fallback_rate": 0.0,
+    "min_preferred_backend_rate": 1.0,
+    "min_case_count": 3,
+    "require_backend_requirement_satisfied": true,
     "require_all_cases_pass": true
   },
   "sparc": {
     "preferred_backend": "neural_equilibrium",
     "allowed_backends": [
-      "neural_equilibrium",
-      "reduced_order_proxy"
+      "neural_equilibrium"
     ],
-    "max_fallback_rate": 1.0,
+    "max_fallback_rate": 0.0,
+    "min_preferred_backend_rate": 1.0,
+    "min_case_count": 8,
+    "require_backend_requirement_satisfied": true,
     "require_all_cases_pass": true
   },
   "freegs": {
@@ -23,6 +28,8 @@
     ],
     "require_freegs_mode_when_available": true,
     "min_freegs_cases_when_available": 1,
+    "require_reference_backend_when_available": "freegs",
+    "min_case_count": 3,
     "require_all_cases_pass": true
   }
 }

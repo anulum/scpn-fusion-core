@@ -195,3 +195,35 @@ def test_evaluate_allows_force_solovev_even_when_freegs_is_available() -> None:
     )
     assert summary["freegs"]["passes"] is True
     assert summary["overall_pass"] is True
+
+
+def test_evaluate_enforces_preferred_backend_rate_when_configured() -> None:
+    summary = guard.evaluate(
+        torax={
+            "cases": [
+                {"transport_backend": "analytic_fallback", "passes": True},
+                {"transport_backend": "neural_transport", "passes": True},
+            ]
+        },
+        sparc={"cases": [{"surrogate_backend": "neural_equilibrium", "passes": True}]},
+        freegs={"cases": [{"mode": "freegs", "reference_backend": "freegs", "passes": True}]},
+        thresholds={
+            "torax": {
+                "preferred_backend": "neural_transport",
+                "allowed_backends": ["neural_transport", "analytic_fallback"],
+                "max_fallback_rate": 1.0,
+                "min_preferred_backend_rate": 1.0,
+            },
+            "sparc": {
+                "preferred_backend": "neural_equilibrium",
+                "allowed_backends": ["neural_equilibrium"],
+                "max_fallback_rate": 0.0,
+            },
+            "freegs": {
+                "allowed_modes": ["freegs"],
+            },
+        },
+    )
+    assert summary["torax"]["preferred_backend_rate"] < 1.0
+    assert summary["torax"]["passes"] is False
+    assert summary["overall_pass"] is False

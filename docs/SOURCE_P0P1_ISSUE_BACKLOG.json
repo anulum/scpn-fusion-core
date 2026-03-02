@@ -1,6 +1,115 @@
 {
-  "generated_at": "2026-03-02T00:25:14.256630+00:00",
+  "generated_at": "2026-03-02T01:14:32.044409+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
-  "issue_count": 0,
-  "issues": []
+  "issue_count": 4,
+  "issues": [
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change."
+      ],
+      "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/fusion_kernel.py",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "core_physics"
+      ],
+      "markers": [
+        "MONOLITH"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P0",
+      "proposed_actions": [
+        "Split module into focused subcomponents and lock interface contracts."
+      ],
+      "score": 107,
+      "title": "[P0] Harden src/scpn_fusion/core/fusion_kernel.py",
+      "trigger_lines": [
+        1
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change."
+      ],
+      "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/integrated_transport_solver.py",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "core_physics"
+      ],
+      "markers": [
+        "MONOLITH"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P0",
+      "proposed_actions": [
+        "Split module into focused subcomponents and lock interface contracts."
+      ],
+      "score": 107,
+      "title": "[P0] Harden src/scpn_fusion/core/integrated_transport_solver.py",
+      "trigger_lines": [
+        1
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change."
+      ],
+      "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/fno_training.py",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "core_physics"
+      ],
+      "markers": [
+        "MONOLITH"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P0",
+      "proposed_actions": [
+        "Split module into focused subcomponents and lock interface contracts."
+      ],
+      "score": 99,
+      "title": "[P0] Harden src/scpn_fusion/core/fno_training.py",
+      "trigger_lines": [
+        1
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change."
+      ],
+      "domain": "diagnostics_io",
+      "file_path": "src/scpn_fusion/io/imas_connector.py",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "diagnostics_io"
+      ],
+      "markers": [
+        "MONOLITH"
+      ],
+      "owner_hint": "Diagnostics/IO WG",
+      "priority": "P0",
+      "proposed_actions": [
+        "Split module into focused subcomponents and lock interface contracts."
+      ],
+      "score": 97,
+      "title": "[P0] Harden src/scpn_fusion/io/imas_connector.py",
+      "trigger_lines": [
+        1
+      ]
+    }
+  ]
 }

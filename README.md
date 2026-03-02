@@ -250,11 +250,11 @@ python validation/benchmark_disturbance_rejection.py
 
 ### Surrogate / Reduced-order
 
-`neural` (PCA+MLP equilibrium) | `fno` (JAX turbulence) | `geometry` (3D Fourier) | `wdm` (dense matter EOS)
+`neural` (PCA+MLP equilibrium) | `geometry` (3D Fourier) | `wdm` (dense matter EOS)
 
 ### Experimental
 
-`quantum` | `vibrana` | `lazarus` | `director` -- integration bridges to external SCPN components.
+`quantum` | `vibrana` | `lazarus` | `director` | `fno` (archived synthetic-only lane) -- integration bridges to external SCPN components.
 
 </details>
 

@@ -63,6 +63,8 @@ benchmarks/results/
 # Local CI/debug artifacts (tracked benchmark artifacts remain explicit files).
 artifacts/_*.log
 artifacts/_*.zip
+artifacts/_tmp_*.json
+artifacts/_tmp_*.md
 artifacts/*_local*.json
 artifacts/*_local*.md
 artifacts/underdeveloped_register_ci*.md

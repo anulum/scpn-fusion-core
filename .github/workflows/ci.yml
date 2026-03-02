@@ -143,6 +143,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
           pip install "jax[cpu]" gymnasium
+          if [ "${{ matrix.python-version }}" = "3.12" ]; then
+            pip install "freegs>=0.6"
+          fi
 
       - name: Bootstrap optional sc-neurocore modules (Python 3.12 lane)
         if: matrix.python-version == '3.12'
@@ -177,9 +180,7 @@ jobs:
         env:
           SCPN_ENABLE_STRICT_BACKEND_CHECKS: "1"
         run: |
-          python tools/run_python_preflight.py --gate release \
-            --skip-sparc-strict-backend \
-            --skip-freegs-strict-backend
+          python tools/run_python_preflight.py --gate release
       - name: Run release test suite (exclude experimental-only lanes)
         if: matrix.python-version != '3.12'
         run: pytest tests/ -v -m "not experimental"
@@ -443,11 +444,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
           pip install "jax[cpu]" gymnasium
+          pip install "freegs>=0.6"
       - name: Generate benchmark artifacts
         run: |
           python validation/benchmark_vs_torax.py --strict-backend
-          python validation/benchmark_sparc_geqdsk_rmse.py
-          python validation/benchmark_vs_freegs.py --force-solovev
+          python validation/benchmark_sparc_geqdsk_rmse.py --strict-backend
+          python validation/benchmark_vs_freegs.py --strict-backend
       - name: Verify provenance fields
         run: |
           python - <<'PY'
@@ -476,10 +478,16 @@ jobs:
               for key in ("surrogate_backend", "fallback_reason"):
                   if key not in case:
                       raise SystemExit(f"sparc case[{idx}] missing key: {key}")
+              if not bool(case.get("backend_requirement_satisfied", False)):
+                  raise SystemExit(f"sparc case[{idx}] backend requirement not satisfied")
           for idx, case in enumerate(freegs_cases):
               for key in ("mode", "comparison_backend", "reference_backend"):
                   if key not in case:
                       raise SystemExit(f"freegs case[{idx}] missing key: {key}")
+              if case.get("reference_backend") != "freegs":
+                  raise SystemExit(
+                      f"freegs case[{idx}] reference backend drifted: {case.get('reference_backend')}"
+                  )
 
           print(
               "Benchmark provenance OK: "

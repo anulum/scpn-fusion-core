@@ -51,6 +51,27 @@ def _fallback_rate_for_cases(
     return float(fallback_count / len(cases))
 
 
+def _mean_flag(cases: list[dict[str, Any]], key: str) -> float | None:
+    values = [bool(case.get(key)) for case in cases if key in case]
+    if not values:
+        return None
+    return float(sum(1 for v in values if v) / len(values))
+
+
+def _rate_for_backend(
+    cases: list[dict[str, Any]],
+    *,
+    backend_key: str,
+    preferred_backend: str,
+) -> float:
+    if not cases:
+        return 0.0
+    preferred_hits = sum(
+        1 for case in cases if str(case.get(backend_key, "unknown")) == preferred_backend
+    )
+    return float(preferred_hits / len(cases))
+
+
 def evaluate(
     *,
     torax: dict[str, Any],
@@ -98,22 +119,77 @@ def evaluate(
     )
     torax_backends = sorted(set(_case_backends(torax_cases, "transport_backend")))
     sparc_backends = sorted(set(_case_backends(sparc_cases, "surrogate_backend")))
+    torax_preferred_rate = _rate_for_backend(
+        torax_cases,
+        backend_key="transport_backend",
+        preferred_backend=torax_preferred,
+    )
+    sparc_preferred_rate = _rate_for_backend(
+        sparc_cases,
+        backend_key="surrogate_backend",
+        preferred_backend=sparc_preferred,
+    )
+    torax_backend_requirement_rate = _mean_flag(torax_cases, "backend_requirement_satisfied")
+    sparc_backend_requirement_rate = _mean_flag(sparc_cases, "backend_requirement_satisfied")
     freegs_modes = sorted(set(_case_backends(freegs_cases, "mode")))
+    freegs_reference_backends = sorted(set(_case_backends(freegs_cases, "reference_backend")))
     freegs_case_count = sum(1 for case in freegs_cases if str(case.get("mode", "")) == "freegs")
+    torax_min_cases = int(torax_cfg.get("min_case_count", 0))
+    sparc_min_cases = int(sparc_cfg.get("min_case_count", 0))
+    freegs_min_cases = int(freegs_cfg.get("min_case_count", 0))
+    torax_min_preferred_rate = torax_cfg.get("min_preferred_backend_rate")
+    sparc_min_preferred_rate = sparc_cfg.get("min_preferred_backend_rate")
+    torax_require_backend_requirement = bool(
+        torax_cfg.get("require_backend_requirement_satisfied", False)
+    )
+    sparc_require_backend_requirement = bool(
+        sparc_cfg.get("require_backend_requirement_satisfied", False)
+    )
+    freegs_required_reference_backend = str(
+        freegs_cfg.get("require_reference_backend_when_available", "")
+    ).strip()
 
     torax_pass = (
-        torax_rate <= float(torax_cfg.get("max_fallback_rate", 0.0))
+        len(torax_cases) >= torax_min_cases
+        and torax_rate <= float(torax_cfg.get("max_fallback_rate", 0.0))
         and set(torax_backends).issubset(torax_allowed)
+        and (
+            True
+            if torax_min_preferred_rate is None
+            else torax_preferred_rate >= float(torax_min_preferred_rate)
+        )
+        and (
+            True
+            if (not torax_require_backend_requirement or torax_backend_requirement_rate is None)
+            else torax_backend_requirement_rate >= 1.0
+        )
         and (all(bool(c.get("passes", False)) for c in torax_cases) if bool(torax_cfg.get("require_all_cases_pass", True)) else True)
     )
     sparc_pass = (
-        sparc_rate <= float(sparc_cfg.get("max_fallback_rate", 1.0))
+        len(sparc_cases) >= sparc_min_cases
+        and sparc_rate <= float(sparc_cfg.get("max_fallback_rate", 1.0))
         and set(sparc_backends).issubset(sparc_allowed)
+        and (
+            True
+            if sparc_min_preferred_rate is None
+            else sparc_preferred_rate >= float(sparc_min_preferred_rate)
+        )
+        and (
+            True
+            if (not sparc_require_backend_requirement or sparc_backend_requirement_rate is None)
+            else sparc_backend_requirement_rate >= 1.0
+        )
         and (all(bool(c.get("passes", False)) for c in sparc_cases) if bool(sparc_cfg.get("require_all_cases_pass", True)) else True)
     )
     freegs_pass = (
-        set(freegs_modes).issubset(freegs_allowed_modes)
+        len(freegs_cases) >= freegs_min_cases
+        and set(freegs_modes).issubset(freegs_allowed_modes)
         and (all(bool(c.get("passes", False)) for c in freegs_cases) if bool(freegs_cfg.get("require_all_cases_pass", True)) else True)
+        and (
+            True
+            if not (freegs_required_reference_backend and freegs_available and not force_solovev)
+            else (freegs_reference_backends == [freegs_required_reference_backend])
+        )
         and (
             True
             if (not require_freegs_mode_when_available)
@@ -130,22 +206,42 @@ def evaluate(
             "preferred_backend": torax_preferred,
             "observed_backends": torax_backends,
             "fallback_rate": torax_rate,
+            "preferred_backend_rate": torax_preferred_rate,
             "max_fallback_rate": float(torax_cfg.get("max_fallback_rate", 0.0)),
+            "min_preferred_backend_rate": (
+                None if torax_min_preferred_rate is None else float(torax_min_preferred_rate)
+            ),
+            "min_case_count": torax_min_cases,
+            "case_count": len(torax_cases),
+            "backend_requirement_satisfied_rate": torax_backend_requirement_rate,
+            "require_backend_requirement_satisfied": torax_require_backend_requirement,
             "passes": bool(torax_pass),
         },
         "sparc": {
             "preferred_backend": sparc_preferred,
             "observed_backends": sparc_backends,
             "fallback_rate": sparc_rate,
+            "preferred_backend_rate": sparc_preferred_rate,
             "max_fallback_rate": float(sparc_cfg.get("max_fallback_rate", 1.0)),
+            "min_preferred_backend_rate": (
+                None if sparc_min_preferred_rate is None else float(sparc_min_preferred_rate)
+            ),
+            "min_case_count": sparc_min_cases,
+            "case_count": len(sparc_cases),
+            "backend_requirement_satisfied_rate": sparc_backend_requirement_rate,
+            "require_backend_requirement_satisfied": sparc_require_backend_requirement,
             "passes": bool(sparc_pass),
         },
         "freegs": {
             "freegs_available": freegs_available,
             "force_solovev": force_solovev,
             "observed_modes": freegs_modes,
+            "observed_reference_backends": freegs_reference_backends,
             "allowed_modes": sorted(freegs_allowed_modes),
             "freegs_case_count": freegs_case_count,
+            "case_count": len(freegs_cases),
+            "min_case_count": freegs_min_cases,
+            "require_reference_backend_when_available": freegs_required_reference_backend,
             "require_freegs_mode_when_available": require_freegs_mode_when_available,
             "min_freegs_cases_when_available": min_freegs_cases_when_available,
             "passes": bool(freegs_pass),

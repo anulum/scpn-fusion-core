@@ -42,6 +42,7 @@ def test_source_scope_filters_to_src_paths() -> None:
     entries = underdev.collect_entries(ROOT)
     scoped = underdev._filter_entries_by_scope(entries, scope="source")
     assert isinstance(scoped, list)
+    assert len(scoped) > 0
     assert all(entry.path.startswith("src/scpn_fusion/") for entry in scoped)
 
 
@@ -90,6 +91,22 @@ def test_fallback_assignment_metadata_line_is_suppressed() -> None:
         line='info["fallback"] = False',
         file_text="",
     )
+
+
+def test_deprecated_guard_lines_are_suppressed() -> None:
+    assert underdev._is_marker_suppressed(
+        rel_path="tools/deprecated_default_lane_guard.py",
+        marker="DEPRECATED",
+        line='print("Deprecated default lane guard failed.")',
+        file_text="",
+    )
+
+
+def test_collect_entries_includes_source_heuristic_markers() -> None:
+    entries = underdev.collect_entries(ROOT)
+    markers = {entry.marker for entry in entries}
+    assert "MONOLITH" in markers
+    assert markers.intersection({"FALLBACK_DENSITY", "TEST_GAP", "MONOLITH"})
 
 
 def test_narrative_docs_claims_receive_priority_penalty() -> None:

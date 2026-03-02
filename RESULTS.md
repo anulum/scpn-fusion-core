@@ -136,14 +136,14 @@
 | Pareto score | 0.60 | recall − FPR |
 | Shots evaluated | 16 | 6 disruptions, 10 safe |
 
-## Legacy Surrogates
+## Archived Surrogate Lane (Non-release)
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
 | Neural transport MLP surrogate tau_E RMSE | 0.0607 | s | ITPA H-mode confinement time |
 | Neural transport MLP surrogate tau_E RMSE % | 13.5 | % | 20 samples |
-| JAX FNO turbulence surrogate relative L2 (mean) | 0.7925 | — | DEPRECATED — synthetic-only, removal in v4.0 |
-| JAX FNO turbulence surrogate relative L2 (P95) | 0.7933 | — | DEPRECATED — use QLKNN-10D instead |
+| JAX FNO turbulence surrogate relative L2 (mean) | 0.7925 | — | Archived non-release lane (synthetic-only) |
+| JAX FNO turbulence surrogate relative L2 (P95) | 0.7933 | — | Archived non-release lane; use QLKNN-10D |
 
 ## Validation Summary
 
@@ -159,7 +159,7 @@
 | Disruption detection | PASS | recall=100% |
 | HIL sub-ms | PASS | P50 = 27.4 μs |
 | FreeGS analytic | FAIL | ψ NRMSE = 3.979 |
-| FNO EUROfusion | DEPRECATED | rel_L2 = 0.7925 (synthetic-only, removal in v4.0) |
+| FNO EUROfusion | Archived (non-release) | rel_L2 = 0.7925 (synthetic-only) |
 
 ## Documentation & Hero Notebooks
 
