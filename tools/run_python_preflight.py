@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import math
 import os
 import shlex
@@ -11,6 +12,13 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CHECK_TIMEOUT_SECONDS = 1800.0
+
+
+def _module_available(module_name: str) -> bool:
+    try:
+        return importlib.util.find_spec(module_name) is not None
+    except (ImportError, ValueError):
+        return False
 
 
 def _normalize_check_timeout_seconds(timeout_s: float) -> float:
@@ -48,6 +56,7 @@ def _build_release_checks(
     skip_threshold_smoke: bool,
     skip_mypy: bool,
     enable_strict_backend_checks: bool,
+    freegs_available: bool,
 ) -> list[tuple[str, list[str]]]:
     checks: list[tuple[str, list[str]]] = []
     if not skip_version_metadata:
@@ -269,7 +278,11 @@ def _build_release_checks(
                 ],
             )
         )
-    if enable_strict_backend_checks and not skip_freegs_strict_backend:
+    if (
+        enable_strict_backend_checks
+        and not skip_freegs_strict_backend
+        and freegs_available
+    ):
         checks.append(
             (
                 "FreeGS strict-backend benchmark",
@@ -376,6 +389,7 @@ def _build_checks(
     skip_mypy: bool,
     skip_research_suite: bool,
     enable_strict_backend_checks: bool,
+    freegs_available: bool,
 ) -> list[tuple[str, list[str]]]:
     checks: list[tuple[str, list[str]]] = []
     if gate in {"release", "all"}:
@@ -407,6 +421,7 @@ def _build_checks(
                 skip_threshold_smoke=skip_threshold_smoke,
                 skip_mypy=skip_mypy,
                 enable_strict_backend_checks=enable_strict_backend_checks,
+                freegs_available=freegs_available,
             )
         )
     if gate in {"research", "all"}:
@@ -609,6 +624,13 @@ def main(argv: list[str] | None = None) -> int:
         help="Per-check subprocess timeout in seconds.",
     )
     args = parser.parse_args(argv)
+    freegs_available = _module_available("freegs")
+    if (
+        args.enable_strict_backend_checks
+        and not args.skip_freegs_strict_backend
+        and not freegs_available
+    ):
+        print("[preflight] Skipping FreeGS strict-backend benchmark: freegs not installed.")
     try:
         check_timeout_seconds = _normalize_check_timeout_seconds(
             args.check_timeout_seconds
@@ -645,6 +667,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_mypy=args.skip_mypy,
         skip_research_suite=args.skip_research_suite,
         enable_strict_backend_checks=args.enable_strict_backend_checks,
+        freegs_available=freegs_available,
     )
     if not checks:
         print("[preflight] No checks selected.")
