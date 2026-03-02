@@ -1,10 +1,10 @@
 {
-  "baseline_generated_at": "2026-03-02T03:22:53Z",
-  "baseline_version": "v3.9.2",
-  "notes": "Pinned baseline for v3.9.3 hardening deltas.",
-  "source_total": 4,
-  "source_p0p1": 4,
-  "docs_claims_total": 154,
-  "docs_claims_p0p1": 15,
+  "baseline_generated_at": "2026-03-02T23:36:34Z",
+  "baseline_version": "v3.9.3-hardening-wave",
+  "notes": "Refreshed baseline after source-scope scanner hardening and docs-claim noise reduction.",
+  "source_total": 9,
+  "source_p0p1": 9,
+  "docs_claims_total": 139,
+  "docs_claims_p0p1": 0,
   "claims_tracked": 2
 }
