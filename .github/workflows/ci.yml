@@ -180,9 +180,7 @@ jobs:
         env:
           SCPN_ENABLE_STRICT_BACKEND_CHECKS: "1"
         run: |
-          python tools/run_python_preflight.py --gate release \
-            --skip-sparc-strict-backend \
-            --skip-freegs-strict-backend
+          python tools/run_python_preflight.py --gate release
       - name: Run release test suite (exclude experimental-only lanes)
         if: matrix.python-version != '3.12'
         run: pytest tests/ -v -m "not experimental"

@@ -67,3 +67,34 @@ def test_run_benchmark_strict_backend_enforces_neural_requirement(monkeypatch) -
     for row in strict_result["cases"]:
         assert row["surrogate_backend"] == "reduced_order_proxy"
         assert row["backend_requirement_satisfied"] is False
+
+
+def test_run_benchmark_uses_reference_geqdsk_mode_when_cases_available(monkeypatch) -> None:
+    psi = np.eye(9, dtype=np.float64)
+
+    monkeypatch.setattr(
+        benchmark_sparc_geqdsk_rmse,
+        "_load_sparc_geqdsk_cases",
+        lambda: [
+            {
+                "name": "sparc_ref_case",
+                "source_file": "sparc_ref_case.geqdsk",
+                "psi": psi,
+                "feature_vector_full": np.array([-8.7, -12.2, 1.85, 0.0, 1.0, 1.0, 0.0, 2.37]),
+                "Ip": -8.7,
+                "B0": -12.2,
+                "R0": 1.85,
+                "kappa": 1.8,
+            }
+        ],
+    )
+
+    def _proxy_only(eq):  # type: ignore[no-untyped-def]
+        return np.asarray(eq["psi"], dtype=np.float64), "reduced_order_proxy", "unit-test"
+
+    monkeypatch.setattr(benchmark_sparc_geqdsk_rmse, "_run_neural_surrogate", _proxy_only)
+    result = benchmark_sparc_geqdsk_rmse.run_benchmark(grid_sizes=[9], require_neural_backend=False)
+
+    assert result["mode"] == "reference_geqdsk"
+    assert len(result["cases"]) == 1
+    assert result["cases"][0]["source_file"] == "sparc_ref_case.geqdsk"

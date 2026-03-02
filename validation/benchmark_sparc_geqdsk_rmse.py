@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 import time
 from datetime import datetime, timezone
@@ -22,9 +23,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 FloatArray = NDArray[np.float64]
+logger = logging.getLogger(__name__)
 
 # NRMSE threshold — Eq. surrogate must reproduce ψ grid within 5%
 NRMSE_THRESHOLD = 0.05
+SPARC_REFERENCE_DIR = REPO_ROOT / "validation" / "reference_data" / "sparc"
 
 
 def nrmse(y_true: FloatArray, y_pred: FloatArray) -> float:
@@ -133,23 +136,26 @@ def _resize_grid_like(source: FloatArray, target_shape: tuple[int, int]) -> Floa
 
 def _build_neural_feature_vector(eq: dict[str, Any], n_input_features: int) -> FloatArray:
     """Construct deterministic feature vector compatible with saved equilibrium weights."""
-    base = np.array(
-        [
-            float(eq["Ip"]),
-            float(eq["B0"]),
-            float(eq["R0"]),
-            0.0,  # Z-axis proxy
-            1.0,  # pprime scale
-            1.0,  # ffprime scale
-            float(np.max(eq["psi"])),
-            float(np.min(eq["psi"])),
-            float(eq["kappa"]),
-            0.3,  # upper triangularity proxy
-            0.3,  # lower triangularity proxy
-            3.0,  # q95 proxy
-        ],
-        dtype=np.float64,
-    )
+    if "feature_vector_full" in eq:
+        base = np.asarray(eq["feature_vector_full"], dtype=np.float64)
+    else:
+        base = np.array(
+            [
+                float(eq["Ip"]),
+                float(eq["B0"]),
+                float(eq["R0"]),
+                0.0,  # Z-axis proxy
+                1.0,  # pprime scale
+                1.0,  # ffprime scale
+                float(np.max(eq["psi"])),
+                float(np.min(eq["psi"])),
+                float(eq["kappa"]),
+                0.3,  # upper triangularity proxy
+                0.3,  # lower triangularity proxy
+                3.0,  # q95 proxy
+            ],
+            dtype=np.float64,
+        )
     if n_input_features <= 0:
         raise ValueError("n_input_features must be >= 1")
     if n_input_features <= base.size:
@@ -194,6 +200,70 @@ def _run_neural_surrogate(eq: dict[str, Any]) -> tuple[FloatArray, str, str | No
         return proxy, "reduced_order_proxy", f"{type(exc).__name__}: {exc}"
 
 
+def _load_sparc_geqdsk_cases() -> list[dict[str, Any]]:
+    """Load SPARC GEQDSK references and derive feature vectors for surrogate inference."""
+    try:
+        from scpn_fusion.core.eqdsk import read_geqdsk
+    except Exception as exc:  # pragma: no cover - import failure handled via synthetic fallback
+        logger.warning("Failed to import GEQDSK reader: %s", exc)
+        return []
+
+    files = sorted(SPARC_REFERENCE_DIR.glob("*.geqdsk"))
+    cases: list[dict[str, Any]] = []
+    for path in files:
+        try:
+            eq = read_geqdsk(path)
+        except Exception as exc:  # pragma: no cover - malformed files are skipped
+            logger.warning("Skipping GEQDSK '%s': %s", path.name, exc)
+            continue
+
+        psi = np.asarray(eq.psirz, dtype=np.float64)
+        if psi.ndim != 2 or psi.shape[0] < 2 or psi.shape[1] < 2:
+            logger.warning("Skipping GEQDSK '%s': invalid psi grid shape %s", path.name, psi.shape)
+            continue
+
+        kappa = 1.7
+        if hasattr(eq, "rbbbs") and eq.rbbbs is not None and len(eq.rbbbs) > 3:
+            r_span = float(np.max(eq.rbbbs) - np.min(eq.rbbbs))
+            kappa = float((np.max(eq.zbbbs) - np.min(eq.zbbbs)) / max(r_span, 0.01))
+        q95 = 3.0
+        if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
+            idx_95 = int(0.95 * len(eq.qpsi))
+            q95 = float(eq.qpsi[min(idx_95, len(eq.qpsi) - 1)])
+
+        feature_vector_full = np.array(
+            [
+                float(eq.current / 1e6),  # Ip [MA]
+                float(eq.bcentr),         # Bt [T]
+                float(eq.rmaxis),         # R_axis [m]
+                float(eq.zmaxis),         # Z_axis [m]
+                1.0,                      # pprime scale
+                1.0,                      # ffprime scale
+                float(eq.simag),          # psi axis
+                float(eq.sibry),          # psi boundary
+                float(kappa),             # elongation
+                0.3,                      # triangularity proxies
+                0.3,
+                float(q95),
+            ],
+            dtype=np.float64,
+        )
+
+        cases.append(
+            {
+                "name": path.stem,
+                "source_file": path.name,
+                "psi": psi,
+                "feature_vector_full": feature_vector_full,
+                "Ip": float(eq.current / 1e6),
+                "B0": float(eq.bcentr),
+                "R0": float(eq.rmaxis),
+                "kappa": float(kappa),
+            }
+        )
+    return cases
+
+
 def run_benchmark(
     grid_sizes: list[int] | None = None,
     *,
@@ -207,27 +277,49 @@ def run_benchmark(
     all_pass = True
     all_cases_neural_backend = True
 
-    configs = [
-        {"name": "SPARC-V2C", "R0": 1.85, "a": 0.57, "kappa": 1.97, "Ip": 8.7, "B0": 12.2},
-        {"name": "SPARC-V0", "R0": 1.85, "a": 0.57, "kappa": 1.70, "Ip": 7.5, "B0": 12.0},
-        {"name": "SPARC-high-kappa", "R0": 1.85, "a": 0.57, "kappa": 2.20, "Ip": 9.0, "B0": 12.2},
-    ]
+    reference_cases = _load_sparc_geqdsk_cases()
+    using_reference_data = len(reference_cases) > 0
+    if not using_reference_data:
+        # Compatibility fallback when reference dataset is absent.
+        reference_cases = [
+            _build_sparc_like_equilibrium(
+                R0=1.85,
+                a=0.57,
+                kappa=1.97,
+                Ip=8.7,
+                B0=12.2,
+            ),
+            _build_sparc_like_equilibrium(
+                R0=1.85,
+                a=0.57,
+                kappa=1.70,
+                Ip=7.5,
+                B0=12.0,
+            ),
+            _build_sparc_like_equilibrium(
+                R0=1.85,
+                a=0.57,
+                kappa=2.20,
+                Ip=9.0,
+                B0=12.2,
+            ),
+        ]
+        reference_cases[0]["name"] = "SPARC-V2C"
+        reference_cases[1]["name"] = "SPARC-V0"
+        reference_cases[2]["name"] = "SPARC-high-kappa"
 
     for gs in grid_sizes:
-        for cfg in configs:
-            eq = _build_sparc_like_equilibrium(
-                NR=gs, NZ=gs,
-                R0=cfg["R0"], a=cfg["a"], kappa=cfg["kappa"],
-                Ip=cfg["Ip"], B0=cfg["B0"],
-            )
+        for eq_ref in reference_cases:
+            eq = dict(eq_ref)
+            eq["psi"] = _resize_grid_like(np.asarray(eq_ref["psi"], dtype=np.float64), (gs, gs))
             psi_pred, backend, fallback_reason = _run_neural_surrogate(eq)
             err = nrmse(eq["psi"], psi_pred)
             backend_ok = backend == "neural_equilibrium"
             passes = (err < NRMSE_THRESHOLD) and (backend_ok or not require_neural_backend)
             all_cases_neural_backend = all_cases_neural_backend and backend_ok
 
-            cases.append({
-                "name": cfg["name"],
+            row = {
+                "name": str(eq_ref.get("name", "unknown")),
                 "grid": f"{gs}x{gs}",
                 "nrmse": round(err, 6),
                 "threshold": NRMSE_THRESHOLD,
@@ -235,13 +327,17 @@ def run_benchmark(
                 "surrogate_backend": backend,
                 "fallback_reason": fallback_reason,
                 "backend_requirement_satisfied": backend_ok or not require_neural_backend,
-            })
+            }
+            if "source_file" in eq_ref:
+                row["source_file"] = str(eq_ref["source_file"])
+            cases.append(row)
             if not passes:
                 all_pass = False
 
     elapsed = time.time() - t0
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "mode": "reference_geqdsk" if using_reference_data else "synthetic_fallback",
         "nrmse_threshold": NRMSE_THRESHOLD,
         "require_neural_backend": bool(require_neural_backend),
         "all_cases_neural_backend": bool(all_cases_neural_backend),
