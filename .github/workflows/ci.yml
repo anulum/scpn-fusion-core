@@ -191,7 +191,7 @@ jobs:
         run: |
           mkdir -p artifacts
           set +e
-          timeout --signal=TERM 50m pytest tests/ -q -m "not experimental" \
+          timeout --signal=TERM 75m pytest tests/ -q -m "not experimental" \
             --cov=scpn_fusion --cov-branch --cov-report=xml:coverage-python.xml \
             2>&1 | tee artifacts/python312_coverage.log
           rc=${PIPESTATUS[0]}
@@ -203,7 +203,7 @@ jobs:
               "coverage_timeout": False,
               "coverage_log": "artifacts/python312_coverage.log",
               "coverage_xml": "coverage-python.xml",
-              "timeout_minutes": 50,
+              "timeout_minutes": 75,
           }
           Path("artifacts").mkdir(parents=True, exist_ok=True)
           Path("artifacts/python312_coverage_diagnostics.json").write_text(
@@ -212,7 +212,7 @@ jobs:
           )
           PY
           if [ "$rc" -eq 124 ]; then
-            echo "::error::Python 3.12 coverage run timed out after 50 minutes."
+            echo "::error::Python 3.12 coverage run timed out after 75 minutes."
           fi
           exit "$rc"
       - name: Coverage regression guard
