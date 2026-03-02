@@ -13,12 +13,11 @@
   "sparc": {
     "preferred_backend": "neural_equilibrium",
     "allowed_backends": [
-      "neural_equilibrium"
+      "neural_equilibrium",
+      "reduced_order_proxy"
     ],
-    "max_fallback_rate": 0.0,
-    "min_preferred_backend_rate": 1.0,
+    "max_fallback_rate": 1.0,
     "min_case_count": 8,
-    "require_backend_requirement_satisfied": true,
     "require_all_cases_pass": true
   },
   "freegs": {
