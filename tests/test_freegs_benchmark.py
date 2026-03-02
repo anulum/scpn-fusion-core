@@ -17,7 +17,9 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -236,6 +238,56 @@ class TestStrictBackendControls:
             pytest.skip("freegs installed")
         with pytest.raises(RuntimeError):
             benchmark_vs_freegs.run_benchmark(require_freegs_backend=True)
+
+
+def test_run_freegs_case_retries_constrain_with_fvac(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """FreeGS API drift: retry ConstrainPaxisIp with explicit ``fvac``."""
+    case = CASES[0]
+    axis_pressure_pa = benchmark_vs_freegs.estimate_axis_pressure_pa(case)
+    calls: list[tuple[object, ...]] = []
+
+    def _constrain_paxis_ip(*args: object) -> object:
+        calls.append(args)
+        if len(calls) == 1:
+            raise TypeError(
+                "ConstrainPaxisIp.__init__() missing 1 required positional argument: 'fvac'"
+            )
+        return SimpleNamespace(tag="profiles")
+
+    fake_eq = SimpleNamespace(
+        psi=lambda: np.zeros((case.NZ, case.NR), dtype=np.float64),
+        R=np.linspace(case.R0 - 2.0 * case.a, case.R0 + 2.0 * case.a, case.NR),
+        Z=np.linspace(-2.0 * case.kappa * case.a, 2.0 * case.kappa * case.a, case.NZ),
+        Rmagnetic=case.R0,
+        Zmagnetic=0.0,
+    )
+
+    fake_freegs = SimpleNamespace(
+        machine=SimpleNamespace(TestTokamak=lambda: SimpleNamespace()),
+        Equilibrium=lambda **_kwargs: fake_eq,
+        jtor=SimpleNamespace(ConstrainPaxisIp=_constrain_paxis_ip),
+        control=SimpleNamespace(constrain=lambda **_kwargs: SimpleNamespace()),
+        solve=lambda *_args, **_kwargs: None,
+    )
+    monkeypatch.setitem(sys.modules, "freegs", fake_freegs)
+
+    result = benchmark_vs_freegs.run_freegs_case(case)
+    assert result["freegs_fallback"] is False
+    assert result["reference_backend"] == "freegs"
+    assert len(calls) == 2
+    assert calls[0] == (
+        axis_pressure_pa,
+        case.Ip * 1e6,
+        case.R0,
+    )
+    assert calls[1] == (
+        axis_pressure_pa,
+        case.Ip * 1e6,
+        case.R0,
+        case.R0 * case.B0,
+    )
 
 
 # ── FreeGS-dependent tests (skipped when not installed) ──────────────

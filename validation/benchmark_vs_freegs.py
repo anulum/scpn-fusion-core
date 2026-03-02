@@ -451,6 +451,35 @@ def run_manufactured_solovev_solver(case: TokamakCase) -> dict[str, Any]:
 # ── FreeGS comparison (only when installed) ──────────────────────────
 
 
+def _build_freegs_profiles(
+    freegs_module: Any,
+    case: TokamakCase,
+    axis_pressure_pa: float,
+) -> Any:
+    """Build FreeGS profile constraints across FreeGS API variants.
+
+    FreeGS 0.8.x requires an explicit ``fvac`` positional argument in
+    ``ConstrainPaxisIp`` while older variants accept only three positional
+    arguments. Try the legacy call first and retry with ``fvac`` when needed.
+    """
+    try:
+        return freegs_module.jtor.ConstrainPaxisIp(
+            axis_pressure_pa,
+            case.Ip * 1e6,  # Plasma current [A]
+            case.R0,
+        )
+    except TypeError as exc:
+        if "fvac" not in str(exc):
+            raise
+        fvac = float(case.R0 * case.B0)
+        return freegs_module.jtor.ConstrainPaxisIp(
+            axis_pressure_pa,
+            case.Ip * 1e6,  # Plasma current [A]
+            case.R0,
+            fvac,
+        )
+
+
 def run_freegs_case(case: TokamakCase) -> dict[str, Any]:
     """Set up and solve a FreeGS equilibrium for the given case.
 
@@ -479,10 +508,10 @@ def run_freegs_case(case: TokamakCase) -> dict[str, Any]:
             ny=case.NZ,
         )
 
-        profiles = freegs.jtor.ConstrainPaxisIp(
+        profiles = _build_freegs_profiles(
+            freegs,
+            case,
             axis_pressure_pa,
-            case.Ip * 1e6,  # Plasma current [A]
-            case.R0,
         )
 
         # Boundary constraint

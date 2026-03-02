@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T16:36:45.247665+00:00`
+- Generated at: `2026-03-02T17:00:41.818516+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -94,13 +94,13 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_sparc_geqdsk_rmse.py:207` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | except Exception as exc: # pragma: no cover - import failure handled via synthetic fallback |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:539` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | fallback = run_solovev_case(case) |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:541` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "psi": fallback["psi"], |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:542` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R": fallback["R"], |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:543` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z": fallback["Z"], |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:544` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R_axis": fallback["R_axis"], |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:545` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z_axis": fallback["Z_axis"], |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:546` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "q_proxy": fallback["q_proxy"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:568` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | fallback = run_solovev_case(case) |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:570` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "psi": fallback["psi"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:571` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R": fallback["R"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:572` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z": fallback["Z"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:573` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R_axis": fallback["R_axis"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:574` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z_axis": fallback["Z_axis"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:575` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "q_proxy": fallback["q_proxy"], |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:26` | Docs WG | Replace default path or remove lane before next major release. | \| `DEPRECATED` \| 17 \| |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:51` | Docs WG | Replace default path or remove lane before next major release. | - The critical residual gaps are targeted: physics fidelity upgrades, deprecated FNO lane retirement, and validation/claim rigor. |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Replace default path or remove lane before next major release. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
@@ -179,13 +179,13 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_sparc_geqdsk_rmse.py:207` | except Exception as exc: # pragma: no cover - import failure handled via synthetic fallback |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:539` | fallback = run_solovev_case(case) |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:541` | "psi": fallback["psi"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:542` | "R": fallback["R"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:543` | "Z": fallback["Z"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:544` | "R_axis": fallback["R_axis"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:545` | "Z_axis": fallback["Z_axis"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:546` | "q_proxy": fallback["q_proxy"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:568` | fallback = run_solovev_case(case) |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:570` | "psi": fallback["psi"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:571` | "R": fallback["R"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:572` | "Z": fallback["Z"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:573` | "R_axis": fallback["R_axis"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:574` | "Z_axis": fallback["Z_axis"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:575` | "q_proxy": fallback["q_proxy"], |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:26` | \| `DEPRECATED` \| 17 \| |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:51` | - The critical residual gaps are targeted: physics fidelity upgrades, deprecated FNO lane retirement, and validation/claim rigor. |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
