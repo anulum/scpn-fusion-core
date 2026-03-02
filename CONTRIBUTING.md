@@ -133,6 +133,13 @@ black src/ tests/
 ruff check src/ tests/
 ```
 
+```bash
+# Optional: install pre-commit hooks for local parity with CI style gates
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
 **Additional conventions:**
 - **Type hints:** Use on all public API functions and class methods.
 - **Docstrings:** NumPy or Google style. All public functions, classes, and modules

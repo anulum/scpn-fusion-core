@@ -83,6 +83,18 @@
 
 ---
 
+## [3.9.3] — 2026-03-02
+
+### Changed
+- Promoted hardening-wave governance, coverage, and validation guardrails from the release track to the published 3.9.3 baseline.
+- Aligned packaging and release metadata to v3.9.3 across Python package metadata, citation, benchmark docs, and release checklist.
+
+### Added
+- New minimal onboarding script `examples/minimal.py` that runs a reduced equilibrium solve and one SCPN controller step.
+- Pre-commit scaffolding (`.pre-commit-config.yaml`) for Black, Ruff, mypy, and Rust fmt/clippy parity checks.
+
+---
+
 ## [3.9.2] — 2026-02-24
 
 ### Fixed
