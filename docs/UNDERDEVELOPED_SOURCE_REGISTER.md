@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T17:26:30.031195+00:00`
+- Generated at: `2026-03-02T17:59:02.118879+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: source-only (`src/scpn_fusion/**`) markers
 
@@ -8,33 +8,29 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 1 |
-| P0 + P1 entries | 1 |
-| Source-domain entries | 1 |
-| Source-domain P0 + P1 entries | 1 |
+| Total flagged entries | 0 |
+| P0 + P1 entries | 0 |
+| Source-domain entries | 0 |
+| Source-domain P0 + P1 entries | 0 |
 | Docs-claims entries | 0 |
-| Domains affected | 1 |
+| Domains affected | 0 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `MONOLITH` | 1 |
 
 ## Domain Distribution
 
 | Key | Count |
 |---|---:|
-| `core_physics` | 1 |
 
-## Top Priority Backlog (Top 1)
+## Top Priority Backlog (Top 0)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 107 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1738 exceeds monolith threshold (900+). |
 
-## Full Register (Top 1)
+## Full Register (Top 0)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | module LOC=1738 exceeds monolith threshold (900+). |
