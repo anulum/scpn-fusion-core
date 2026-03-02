@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T17:58:58.712264+00:00`
+- Generated at: `2026-03-02T22:33:46.895579+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -48,7 +48,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 89 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | Docs WG | Replace default path or remove lane before next major release. | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
 | P1 | 88 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | Docs WG | Gate behind explicit flag and define validation exit criteria. | > This repo is the full physics + experimental suite. |
-| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:255` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ### Experimental |
+| P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `README.md:260` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ### Experimental |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:327` | Docs WG | Gate behind explicit flag and define validation exit criteria. | scpn-fusion all --surrogate --experimental |
 | P1 | 82 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:8` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Preserve visibility on experimental/research lanes without letting them silently contaminate release acceptance. |
@@ -77,7 +77,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | Validation WG | Replace default path or remove lane before next major release. | if "DEPRECATED" in issue.markers: |
 | P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:79` | Validation WG | Replace default path or remove lane before next major release. | metrics.append("Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py).") |
 | P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:192` | Validation WG | Replace default path or remove lane before next major release. | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
-| P2 | 74 | `other` | `SIMPLIFIED` | `CHANGELOG.md:143` | Architecture WG | Upgrade with higher-fidelity closure or tighten domain contract. | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
+| P2 | 74 | `other` | `SIMPLIFIED` | `CHANGELOG.md:155` | Architecture WG | Upgrade with higher-fidelity closure or tighten domain contract. | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
 | P2 | 72 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 4. For real experimental data, start with `0.01` and adjust based on |
 | P2 | 72 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:98` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| **0.05–0.5** \| Standard robust range \| Real experimental data with occasional probe failures or calibration drift \| |
 | P2 | 72 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Experimental Bridges |
@@ -119,8 +119,8 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:73` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - Regression tests for TORAX benchmark deterministic fallback seeding and backend/fallback metadata fields. |
 | P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:76` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - Validation hardening: added `tools/fallback_budget_guard.py` + thresholds config and wired CI fallback-budget contract on TORAX/SPARC/F... |
 | P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:82` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - Regression tests for expanded real-shot and FreeGS fallback-budget guard contracts. |
-| P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:102` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - **Rust Transport Delegation**: `chang_hinton_chi_profile()` → Rust fast-path (4.7x speedup), `calculate_sauter_bootstrap_current_full()... |
-| P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:174` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - Robust fallback to SciPy L-BFGS-B when JAX is unavailable. |
+| P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:114` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - **Rust Transport Delegation**: `chang_hinton_chi_profile()` → Rust fast-path (4.7x speedup), `calculate_sauter_bootstrap_current_full()... |
+| P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:186` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - Robust fallback to SciPy L-BFGS-B when JAX is unavailable. |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:23` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `EXPERIMENTAL` \| 55 \| |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:73` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - `EXPERIMENTAL`: 15 mentions |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:102` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only |
@@ -133,7 +133,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | `docs_claims` | `DEPRECATED` | `docs/VALIDATION_GATE_MATRIX.md:15` | | `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lan... |
 | P1 | `other` | `EXPERIMENTAL` | `VALIDATION.md:106` | - Real DIII-D experimental data are not bundled in this specific `disruption_shots` folder. |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:18` | > This repo is the full physics + experimental suite. |
-| P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:255` | ### Experimental |
+| P1 | `docs_claims` | `EXPERIMENTAL` | `README.md:260` | ### Experimental |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:42` | \| Experimental validation \| SPARC, ITPA, JET \| DIII-D \| ITER, DEMO \| JET \| |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/BENCHMARKS.md:327` | scpn-fusion all --surrogate --experimental |
 | P1 | `docs_claims` | `EXPERIMENTAL` | `docs/VALIDATION_GATE_MATRIX.md:8` | - Preserve visibility on experimental/research lanes without letting them silently contaminate release acceptance. |
@@ -162,7 +162,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | if "DEPRECATED" in issue.markers: |
 | P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:79` | metrics.append("Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py).") |
 | P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:192` | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
-| P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:143` | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
+| P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:155` | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | 4. For real experimental data, start with `0.01` and adjust based on |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:98` | \| **0.05–0.5** \| Standard robust range \| Real experimental data with occasional probe failures or calibration drift \| |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Experimental Bridges |
@@ -204,8 +204,8 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `other` | `FALLBACK` | `CHANGELOG.md:73` | - Regression tests for TORAX benchmark deterministic fallback seeding and backend/fallback metadata fields. |
 | P3 | `other` | `FALLBACK` | `CHANGELOG.md:76` | - Validation hardening: added `tools/fallback_budget_guard.py` + thresholds config and wired CI fallback-budget contract on TORAX/SPARC/F... |
 | P3 | `other` | `FALLBACK` | `CHANGELOG.md:82` | - Regression tests for expanded real-shot and FreeGS fallback-budget guard contracts. |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:102` | - **Rust Transport Delegation**: `chang_hinton_chi_profile()` → Rust fast-path (4.7x speedup), `calculate_sauter_bootstrap_current_full()... |
-| P3 | `other` | `FALLBACK` | `CHANGELOG.md:174` | - Robust fallback to SciPy L-BFGS-B when JAX is unavailable. |
+| P3 | `other` | `FALLBACK` | `CHANGELOG.md:114` | - **Rust Transport Delegation**: `chang_hinton_chi_profile()` → Rust fast-path (4.7x speedup), `calculate_sauter_bootstrap_current_full()... |
+| P3 | `other` | `FALLBACK` | `CHANGELOG.md:186` | - Robust fallback to SciPy L-BFGS-B when JAX is unavailable. |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:23` | \| `EXPERIMENTAL` \| 55 \| |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:73` | - `EXPERIMENTAL`: 15 mentions |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:102` | - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only |
@@ -221,7 +221,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
-| P3 | `docs_claims` | `FALLBACK` | `README.md:108` | \| Graceful degradation \| Every path has a pure-Python fallback \| |
+| P3 | `docs_claims` | `FALLBACK` | `README.md:113` | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | - Transparent fallback to analytic model when no weights are available |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
