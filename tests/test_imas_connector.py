@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import pytest
 
+from scpn_fusion.io import imas_history_payloads
 from scpn_fusion.io.imas_connector import (
     digital_twin_history_to_ids,
     digital_twin_history_to_ids_pulse,
@@ -61,6 +62,12 @@ def test_validate_ids_payload_accepts_nominal_payload() -> None:
     recovered = ids_to_digital_twin_summary(payload)
     assert recovered["steps"] == 12
     assert recovered["final_islands_px"] == 4
+
+
+def test_split_history_module_api_reachable() -> None:
+    assert callable(imas_history_payloads.digital_twin_history_to_ids)
+    assert callable(imas_history_payloads.validate_ids_payload_sequence)
+    assert callable(imas_history_payloads.validate_ids_pulse_payload)
 
 
 @pytest.mark.parametrize(
