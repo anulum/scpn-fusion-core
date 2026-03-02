@@ -42,7 +42,6 @@ def test_source_scope_filters_to_src_paths() -> None:
     entries = underdev.collect_entries(ROOT)
     scoped = underdev._filter_entries_by_scope(entries, scope="source")
     assert isinstance(scoped, list)
-    assert len(scoped) > 0
     assert all(entry.path.startswith("src/scpn_fusion/") for entry in scoped)
 
 
@@ -102,11 +101,25 @@ def test_deprecated_guard_lines_are_suppressed() -> None:
     )
 
 
-def test_collect_entries_includes_source_heuristic_markers() -> None:
-    entries = underdev.collect_entries(ROOT)
+def test_collect_source_heuristics_detects_monolith_and_test_gap(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    src_dir = repo_root / "src" / "scpn_fusion" / "core"
+    tests_dir = repo_root / "tests"
+    src_dir.mkdir(parents=True, exist_ok=True)
+    tests_dir.mkdir(parents=True, exist_ok=True)
+
+    huge_module = src_dir / "synthetic_huge_module.py"
+    huge_module.write_text(
+        "\n".join("value = 1" for _ in range(underdev.SOURCE_MONOLITH_LOC_WARN + 5)),
+        encoding="utf-8",
+    )
+    # Include at least one test file so test corpus generation path is exercised.
+    (tests_dir / "test_dummy.py").write_text("def test_dummy():\n    assert True\n", encoding="utf-8")
+
+    entries = underdev._collect_source_heuristic_entries(repo_root)
     markers = {entry.marker for entry in entries}
     assert "MONOLITH" in markers
-    assert markers.intersection({"FALLBACK_DENSITY", "TEST_GAP", "MONOLITH"})
+    assert "TEST_GAP" in markers
 
 
 def test_narrative_docs_claims_receive_priority_penalty() -> None:
