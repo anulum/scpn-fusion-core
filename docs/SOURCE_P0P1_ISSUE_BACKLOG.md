@@ -1,6 +1,6 @@
 # Source P0/P1 Issue Backlog
 
-- Generated at: `2026-03-02T03:22:53.828158+00:00`
+- Generated at: `2026-03-02T13:35:21.078408+00:00`
 - Generator: `tools/generate_source_p0p1_issue_backlog.py`
 - Scope: source files only (`src/scpn_fusion/**`) with P0/P1 severity
 
@@ -45,6 +45,11 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Add or tighten regression tests for this module path and update coverage baselines.
 - [ ] Update claim/evidence references if behavior or metrics change.
 
+**Closure Metrics**
+- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
+- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
+
 ### 2. [P0] Harden `src/scpn_fusion/core/integrated_transport_solver.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p0`, `core_physics`
@@ -59,6 +64,11 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 **Acceptance Checklist**
 - [ ] Add or tighten regression tests for this module path and update coverage baselines.
 - [ ] Update claim/evidence references if behavior or metrics change.
+
+**Closure Metrics**
+- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
+- [ ] File line coverage in release lane is >= 91.0% (tools/coverage_guard.py).
+- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
 
 ### 3. [P0] Harden `src/scpn_fusion/core/fno_training.py`
 
@@ -75,6 +85,11 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Add or tighten regression tests for this module path and update coverage baselines.
 - [ ] Update claim/evidence references if behavior or metrics change.
 
+**Closure Metrics**
+- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
+- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
+
 ### 4. [P0] Harden `src/scpn_fusion/io/imas_connector.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p0`, `diagnostics_io`
@@ -89,3 +104,8 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 **Acceptance Checklist**
 - [ ] Add or tighten regression tests for this module path and update coverage baselines.
 - [ ] Update claim/evidence references if behavior or metrics change.
+
+**Closure Metrics**
+- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
+- [ ] File line coverage in release lane is >= 79.0% (tools/coverage_guard.py).
+- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.

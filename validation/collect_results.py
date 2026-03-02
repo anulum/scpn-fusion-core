@@ -257,6 +257,10 @@ def load_freegs_benchmark() -> dict[str, Any] | None:
     return _load_artifact(ARTIFACTS / "freegs_benchmark.json")
 
 
+def load_disruption_transfer_generalization() -> dict[str, Any] | None:
+    return _load_artifact(ARTIFACTS / "disruption_transfer_generalization.json")
+
+
 def load_disruption_threshold() -> dict[str, Any] | None:
     return _load_artifact(ARTIFACTS / "disruption_threshold_sweep.json")
 
@@ -302,6 +306,7 @@ def generate_results_md(
     confinement: dict | None = None,
     disturbance: dict | None = None,
     freegs: dict | None = None,
+    transfer_generalization: dict | None = None,
     threshold_sweep: dict | None = None,
     elapsed_s: float = 0.0,
     include_legacy_fno: bool = False,
@@ -323,6 +328,7 @@ def generate_results_md(
         confinement = confinement or results.get("confinement")
         disturbance = disturbance or results.get("disturbance")
         freegs = freegs or results.get("freegs")
+        transfer_generalization = transfer_generalization or results.get("transfer_generalization")
         threshold_sweep = threshold_sweep or results.get("threshold_sweep")
         campaign = campaign or results.get("campaign")
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -506,6 +512,29 @@ def generate_results_md(
                         f"(threshold: {freegs.get('psi_nrmse_threshold', '?')}). "
                         f"Overall: {'PASS' if freegs.get('passes') else 'FAIL'}*\n")
 
+    # ── Disruption Transfer Generalization ──
+    if transfer_generalization:
+        src = transfer_generalization.get("source_group", {})
+        tgt = transfer_generalization.get("target_group", {})
+        sections.append("## Disruption Transfer-Generalization\n")
+        sections.append("| Group | Shots | Disruptions | Safe | Recall | FPR |")
+        sections.append("|---|---:|---:|---:|---:|---:|")
+        sections.append(
+            f"| Source | {src.get('n_shots', '—')} | {src.get('n_disruptions', '—')} | "
+            f"{src.get('n_safe', '—')} | {_fmt(src.get('recall'), '.3f')} | "
+            f"{_fmt(src.get('false_positive_rate'), '.3f')} |"
+        )
+        sections.append(
+            f"| Target | {tgt.get('n_shots', '—')} | {tgt.get('n_disruptions', '—')} | "
+            f"{tgt.get('n_safe', '—')} | {_fmt(tgt.get('recall'), '.3f')} | "
+            f"{_fmt(tgt.get('false_positive_rate'), '.3f')} |"
+        )
+        sections.append(
+            f"\n*Transfer efficiency (target/source recall): "
+            f"{_fmt(transfer_generalization.get('transfer_efficiency'), '.3f')} "
+            f"| Overall: {'PASS' if transfer_generalization.get('passes') else 'FAIL'}*\n"
+        )
+
     # ── Disruption Threshold Sweep ──
     if threshold_sweep:
         opt = threshold_sweep.get("optimal", {})
@@ -595,6 +624,12 @@ def generate_results_md(
           f"P50 = {hil['p50_us']:.1f} μs" if hil else "—")
     _lane("FreeGS analytic", freegs, "passes",
           f"ψ NRMSE = {freegs['overall_psi_nrmse']:.3f}" if freegs else "—")
+    _lane("Transfer generalization", transfer_generalization, "passes",
+          (
+              f"eff={transfer_generalization['transfer_efficiency']:.3f}, "
+              f"target_recall={transfer_generalization['target_group']['recall']:.3f}"
+          )
+          if transfer_generalization else "—")
     if include_legacy_fno:
         fno_metric = (
             f"rel_L2 = {surrogates['fno_rel_l2_mean']:.4f} (synthetic-only)"
@@ -693,7 +728,10 @@ def main() -> None:
     print("[13/14] FreeGS Benchmark")
     freegs = _safe_run("freegs", load_freegs_benchmark)
 
-    print("[14/14] Disruption Threshold Sweep")
+    print("[14/15] Transfer Generalization")
+    transfer_generalization = _safe_run("transfer_generalization", load_disruption_transfer_generalization)
+
+    print("[15/15] Disruption Threshold Sweep")
     threshold_sweep = _safe_run("threshold", load_disruption_threshold)
 
     elapsed = time.perf_counter() - t_start
@@ -714,6 +752,7 @@ def main() -> None:
         confinement=confinement,
         disturbance=disturbance,
         freegs=freegs,
+        transfer_generalization=transfer_generalization,
         threshold_sweep=threshold_sweep,
         elapsed_s=elapsed,
         include_legacy_fno=bool(args.include_legacy_fno),
@@ -722,9 +761,10 @@ def main() -> None:
     print(f"  -> {RESULTS_PATH} written ({len(md)} bytes)")
 
     all_lanes = [hil, disruption, q10, tbr, ecrh, fb3d, surrogates, neural_eq,
-                 qlknn, real_shots, confinement, disturbance, freegs, threshold_sweep]
+                 qlknn, real_shots, confinement, disturbance, freegs,
+                 transfer_generalization, threshold_sweep]
     n_ok = sum(1 for x in all_lanes if x is not None)
-    print(f"\nDone: {n_ok}/14 benchmarks succeeded in {elapsed:.0f}s")
+    print(f"\nDone: {n_ok}/15 benchmarks succeeded in {elapsed:.0f}s")
 
 
 if __name__ == "__main__":

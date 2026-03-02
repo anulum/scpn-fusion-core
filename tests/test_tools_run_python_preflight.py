@@ -90,6 +90,15 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
+                "tools/release_delta_guard.py",
+                "--summary-json",
+                "artifacts/release_delta_guard_summary.json",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
                 "tools/generate_source_p0p1_issue_backlog.py",
                 "--check",
             ],
@@ -145,6 +154,14 @@ def test_main_runs_default_checks_in_order(monkeypatch):
             [
                 "python-test",
                 "validation/benchmark_disruption_replay_pipeline.py",
+                "--strict",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "validation/benchmark_disruption_transfer_generalization.py",
                 "--strict",
             ],
             SCRIPT_PATH.resolve().parents[1],
@@ -227,6 +244,7 @@ def test_main_honors_skip_flags(monkeypatch):
             "--skip-claims-map",
             "--skip-underdeveloped-register",
             "--skip-underdeveloped-scope-reports",
+            "--skip-release-delta-guard",
             "--skip-source-issue-backlog",
             "--skip-untested-module-guard",
             "--skip-deprecated-default-lane-guard",
@@ -235,6 +253,7 @@ def test_main_honors_skip_flags(monkeypatch):
             "--skip-shot-splits",
             "--skip-disruption-calibration",
             "--skip-disruption-replay-pipeline",
+            "--skip-disruption-transfer-generalization",
             "--skip-eped-domain-contract",
             "--skip-transport-uncertainty",
             "--skip-torax-strict-backend",
@@ -284,6 +303,7 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
             "--skip-claims-map",
             "--skip-underdeveloped-register",
             "--skip-underdeveloped-scope-reports",
+            "--skip-release-delta-guard",
             "--skip-source-issue-backlog",
             "--skip-untested-module-guard",
             "--skip-deprecated-default-lane-guard",
@@ -292,6 +312,7 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
             "--skip-shot-splits",
             "--skip-disruption-calibration",
             "--skip-disruption-replay-pipeline",
+            "--skip-disruption-transfer-generalization",
             "--skip-eped-domain-contract",
             "--skip-transport-uncertainty",
             "--skip-multi-ion-conservation",

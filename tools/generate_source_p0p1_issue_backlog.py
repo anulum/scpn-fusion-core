@@ -17,6 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 UNDERDEV_MODULE_PATH = REPO_ROOT / "tools" / "generate_underdeveloped_register.py"
 DEFAULT_OUTPUT_MD = REPO_ROOT / "docs" / "SOURCE_P0P1_ISSUE_BACKLOG.md"
 DEFAULT_OUTPUT_JSON = REPO_ROOT / "docs" / "SOURCE_P0P1_ISSUE_BACKLOG.json"
+COVERAGE_THRESHOLDS_PATH = REPO_ROOT / "tools" / "coverage_guard_thresholds.json"
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,91 @@ class SourceIssue:
     markers: tuple[str, ...]
     lines: tuple[int, ...]
     proposed_actions: tuple[str, ...]
+
+
+def _module_domain_from_path(file_path: str) -> str:
+    parts = file_path.split("/")
+    if len(parts) >= 3:
+        return parts[2]
+    return "other"
+
+
+def _load_coverage_thresholds() -> dict[str, Any]:
+    if not COVERAGE_THRESHOLDS_PATH.exists():
+        return {}
+    payload = json.loads(COVERAGE_THRESHOLDS_PATH.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        return {}
+    return payload
+
+
+def _coverage_line_target(issue: SourceIssue, coverage_cfg: dict[str, Any]) -> float | None:
+    file_targets = coverage_cfg.get("file_min_line_rate", {})
+    if isinstance(file_targets, dict):
+        value = file_targets.get(issue.file_path)
+        if isinstance(value, (int, float)):
+            return float(value)
+
+    domain_targets = coverage_cfg.get("domain_min_line_rate", {})
+    if isinstance(domain_targets, dict):
+        module_domain = _module_domain_from_path(issue.file_path)
+        value = domain_targets.get(module_domain)
+        if isinstance(value, (int, float)):
+            return float(value)
+    return None
+
+
+def _closure_metrics(issue: SourceIssue, coverage_cfg: dict[str, Any]) -> list[str]:
+    metrics: list[str] = [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+    ]
+    line_target = _coverage_line_target(issue, coverage_cfg)
+    if line_target is not None:
+        metrics.append(f"File line coverage in release lane is >= {line_target:.1f}% (tools/coverage_guard.py).")
+    if "MONOLITH" in issue.markers:
+        metrics.append(
+            "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
+        )
+    if "DEPRECATED" in issue.markers:
+        metrics.append("Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py).")
+    if "NOT_VALIDATED" in issue.markers:
+        metrics.append("Validation artifact path is added and mapped in docs/CLAIMS_EVIDENCE_MAP.md.")
+    if "FALLBACK" in issue.markers:
+        metrics.append("Fallback budget guard remains green for impacted lane (tools/fallback_budget_guard.py).")
+    return metrics
+
+
+def _issue_slug(issue: SourceIssue) -> str:
+    rel = issue.file_path.removeprefix("src/scpn_fusion/").replace("/", "-").replace(".py", "")
+    return f"{issue.priority.lower()}-{rel}"
+
+
+def _render_issue_body(issue: SourceIssue, coverage_cfg: dict[str, Any]) -> str:
+    actions = "\n".join(f"- {item}" for item in issue.proposed_actions)
+    acceptance = "\n".join(f"- [ ] {item}" for item in _acceptance_items(issue.markers))
+    closure = "\n".join(f"- [ ] {item}" for item in _closure_metrics(issue, coverage_cfg))
+    marker_str = ", ".join(f"`{marker}`" for marker in issue.markers)
+    line_str = ", ".join(str(line) for line in issue.lines)
+    return "\n".join(
+        [
+            f"## Scope",
+            f"- File: `{issue.file_path}`",
+            f"- Priority: `{issue.priority}` (score `{issue.score}`)",
+            f"- Domain: `{issue.domain}`",
+            f"- Owner hint: `{issue.owner}`",
+            f"- Markers: {marker_str}",
+            f"- Trigger lines: `{line_str}`",
+            "",
+            "## Proposed Actions",
+            actions,
+            "",
+            "## Acceptance Checklist",
+            acceptance,
+            "",
+            "## Closure Metrics",
+            closure,
+        ]
+    )
 
 
 def _priority(score: int) -> str:
@@ -121,6 +207,7 @@ def _acceptance_items(markers: tuple[str, ...]) -> list[str]:
 
 def render_markdown(issues: list[SourceIssue]) -> str:
     now = datetime.now(timezone.utc).isoformat()
+    coverage_cfg = _load_coverage_thresholds()
     p0_count = sum(1 for issue in issues if issue.priority == "P0")
     p1_count = sum(1 for issue in issues if issue.priority == "P1")
     marker_counts: dict[str, int] = {}
@@ -182,6 +269,7 @@ def render_markdown(issues: list[SourceIssue]) -> str:
         line_str = ", ".join(str(line) for line in issue.lines)
         actions = "\n".join(f"- {item}" for item in issue.proposed_actions)
         acceptance = "\n".join(f"- [ ] {item}" for item in _acceptance_items(issue.markers))
+        closure = "\n".join(f"- [ ] {item}" for item in _closure_metrics(issue, coverage_cfg))
         labels = ", ".join(
             [
                 "`hardening`",
@@ -207,6 +295,9 @@ def render_markdown(issues: list[SourceIssue]) -> str:
                 "**Acceptance Checklist**",
                 acceptance,
                 "",
+                "**Closure Metrics**",
+                closure,
+                "",
             ]
         )
 
@@ -214,6 +305,7 @@ def render_markdown(issues: list[SourceIssue]) -> str:
 
 
 def render_json(issues: list[SourceIssue]) -> str:
+    coverage_cfg = _load_coverage_thresholds()
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "generator": "tools/generate_source_p0p1_issue_backlog.py",
@@ -234,8 +326,18 @@ def render_json(issues: list[SourceIssue]) -> str:
                     issue.priority.lower(),
                     issue.domain,
                 ],
+                "issue_slug": _issue_slug(issue),
+                "github_title": f"[{issue.priority}] Harden {issue.file_path}",
+                "github_labels": [
+                    "hardening",
+                    "underdeveloped",
+                    issue.priority.lower(),
+                    issue.domain,
+                ],
+                "github_body": _render_issue_body(issue, coverage_cfg),
                 "proposed_actions": list(issue.proposed_actions),
                 "acceptance_checklist": _acceptance_items(issue.markers),
+                "closure_metrics": _closure_metrics(issue, coverage_cfg),
             }
             for issue in issues
         ],

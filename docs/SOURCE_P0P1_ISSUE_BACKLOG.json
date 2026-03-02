@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-02T03:22:53.828158+00:00",
+  "generated_at": "2026-03-02T13:35:21.080393+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
   "issue_count": 4,
   "issues": [
@@ -8,8 +8,22 @@
         "Add or tighten regression tests for this module path and update coverage baselines.",
         "Update claim/evidence references if behavior or metrics change."
       ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
+        "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
+      ],
       "domain": "core_physics",
       "file_path": "src/scpn_fusion/core/fusion_kernel.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/fusion_kernel.py`\n- Priority: `P0` (score `107`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `MONOLITH`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Split module into focused subcomponents and lock interface contracts.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).\n- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "core_physics"
+      ],
+      "github_title": "[P0] Harden src/scpn_fusion/core/fusion_kernel.py",
+      "issue_slug": "p0-core-fusion_kernel",
       "labels": [
         "hardening",
         "underdeveloped",
@@ -35,8 +49,22 @@
         "Add or tighten regression tests for this module path and update coverage baselines.",
         "Update claim/evidence references if behavior or metrics change."
       ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 91.0% (tools/coverage_guard.py).",
+        "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
+      ],
       "domain": "core_physics",
       "file_path": "src/scpn_fusion/core/integrated_transport_solver.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/integrated_transport_solver.py`\n- Priority: `P0` (score `107`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `MONOLITH`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Split module into focused subcomponents and lock interface contracts.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 91.0% (tools/coverage_guard.py).\n- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "core_physics"
+      ],
+      "github_title": "[P0] Harden src/scpn_fusion/core/integrated_transport_solver.py",
+      "issue_slug": "p0-core-integrated_transport_solver",
       "labels": [
         "hardening",
         "underdeveloped",
@@ -62,8 +90,22 @@
         "Add or tighten regression tests for this module path and update coverage baselines.",
         "Update claim/evidence references if behavior or metrics change."
       ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
+        "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
+      ],
       "domain": "core_physics",
       "file_path": "src/scpn_fusion/core/fno_training.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/fno_training.py`\n- Priority: `P0` (score `99`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `MONOLITH`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Split module into focused subcomponents and lock interface contracts.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).\n- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "core_physics"
+      ],
+      "github_title": "[P0] Harden src/scpn_fusion/core/fno_training.py",
+      "issue_slug": "p0-core-fno_training",
       "labels": [
         "hardening",
         "underdeveloped",
@@ -89,8 +131,22 @@
         "Add or tighten regression tests for this module path and update coverage baselines.",
         "Update claim/evidence references if behavior or metrics change."
       ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 79.0% (tools/coverage_guard.py).",
+        "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
+      ],
       "domain": "diagnostics_io",
       "file_path": "src/scpn_fusion/io/imas_connector.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/io/imas_connector.py`\n- Priority: `P0` (score `97`)\n- Domain: `diagnostics_io`\n- Owner hint: `Diagnostics/IO WG`\n- Markers: `MONOLITH`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Split module into focused subcomponents and lock interface contracts.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 79.0% (tools/coverage_guard.py).\n- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "diagnostics_io"
+      ],
+      "github_title": "[P0] Harden src/scpn_fusion/io/imas_connector.py",
+      "issue_slug": "p0-io-imas_connector",
       "labels": [
         "hardening",
         "underdeveloped",

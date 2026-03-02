@@ -1,6 +1,6 @@
 {
   "global_min_line_rate": 72.5,
-  "global_min_branch_rate": 1.0,
+  "global_min_branch_rate": 10.0,
   "domain_min_line_rate": {
     "cli.py": 80.0,
     "control": 78.0,
@@ -13,6 +13,12 @@
     "scpn": 87.0,
     "ui": 25.0
   },
+  "domain_min_branch_rate": {
+    "cli.py": 85.0,
+    "control": 5.0,
+    "core": 10.0,
+    "scpn": 60.0
+  },
   "file_min_line_rate": {
     "src/scpn_fusion/cli.py": 80.0,
     "src/scpn_fusion/control/disruption_contracts.py": 88.0,
@@ -21,5 +27,14 @@
     "src/scpn_fusion/scpn/compiler.py": 77.0,
     "src/scpn_fusion/scpn/contracts.py": 97.0,
     "src/scpn_fusion/scpn/controller.py": 92.0
+  },
+  "file_min_branch_rate": {
+    "src/scpn_fusion/cli.py": 90.0,
+    "src/scpn_fusion/control/disruption_contracts.py": 60.0,
+    "src/scpn_fusion/core/integrated_transport_solver.py": 60.0,
+    "src/scpn_fusion/core/quasi_3d_contracts.py": 65.0,
+    "src/scpn_fusion/scpn/compiler.py": 45.0,
+    "src/scpn_fusion/scpn/contracts.py": 45.0,
+    "src/scpn_fusion/scpn/controller.py": 75.0
   }
 }

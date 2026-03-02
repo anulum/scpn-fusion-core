@@ -27,6 +27,7 @@ def _build_release_checks(
     skip_claims_map: bool,
     skip_underdeveloped_register: bool,
     skip_underdeveloped_scope_reports: bool,
+    skip_release_delta_guard: bool,
     skip_source_issue_backlog: bool,
     skip_untested_module_guard: bool,
     skip_deprecated_default_lane_guard: bool,
@@ -35,6 +36,7 @@ def _build_release_checks(
     skip_shot_splits: bool,
     skip_disruption_calibration: bool,
     skip_disruption_replay_pipeline: bool,
+    skip_disruption_transfer_generalization: bool,
     skip_eped_domain_contract: bool,
     skip_transport_uncertainty: bool,
     skip_torax_strict_backend: bool,
@@ -111,6 +113,18 @@ def _build_release_checks(
                     sys.executable,
                     "tools/generate_underdeveloped_scope_reports.py",
                     "--check",
+                ],
+            )
+        )
+    if not skip_release_delta_guard:
+        checks.append(
+            (
+                "Release delta non-regression guard",
+                [
+                    sys.executable,
+                    "tools/release_delta_guard.py",
+                    "--summary-json",
+                    "artifacts/release_delta_guard_summary.json",
                 ],
             )
         )
@@ -196,6 +210,17 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "validation/benchmark_disruption_replay_pipeline.py",
+                    "--strict",
+                ],
+            )
+        )
+    if not skip_disruption_transfer_generalization:
+        checks.append(
+            (
+                "Disruption transfer-generalization benchmark",
+                [
+                    sys.executable,
+                    "validation/benchmark_disruption_transfer_generalization.py",
                     "--strict",
                 ],
             )
@@ -329,6 +354,7 @@ def _build_checks(
     skip_claims_map: bool,
     skip_underdeveloped_register: bool,
     skip_underdeveloped_scope_reports: bool,
+    skip_release_delta_guard: bool,
     skip_source_issue_backlog: bool,
     skip_untested_module_guard: bool,
     skip_deprecated_default_lane_guard: bool,
@@ -337,6 +363,7 @@ def _build_checks(
     skip_shot_splits: bool,
     skip_disruption_calibration: bool,
     skip_disruption_replay_pipeline: bool,
+    skip_disruption_transfer_generalization: bool,
     skip_eped_domain_contract: bool,
     skip_transport_uncertainty: bool,
     skip_torax_strict_backend: bool,
@@ -359,6 +386,7 @@ def _build_checks(
                 skip_claims_map=skip_claims_map,
                 skip_underdeveloped_register=skip_underdeveloped_register,
                 skip_underdeveloped_scope_reports=skip_underdeveloped_scope_reports,
+                skip_release_delta_guard=skip_release_delta_guard,
                 skip_source_issue_backlog=skip_source_issue_backlog,
                 skip_untested_module_guard=skip_untested_module_guard,
                 skip_deprecated_default_lane_guard=skip_deprecated_default_lane_guard,
@@ -367,6 +395,7 @@ def _build_checks(
                 skip_shot_splits=skip_shot_splits,
                 skip_disruption_calibration=skip_disruption_calibration,
                 skip_disruption_replay_pipeline=skip_disruption_replay_pipeline,
+                skip_disruption_transfer_generalization=skip_disruption_transfer_generalization,
                 skip_eped_domain_contract=skip_eped_domain_contract,
                 skip_transport_uncertainty=skip_transport_uncertainty,
                 skip_torax_strict_backend=skip_torax_strict_backend,
@@ -458,6 +487,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip tools/generate_underdeveloped_scope_reports.py --check",
     )
     parser.add_argument(
+        "--skip-release-delta-guard",
+        action="store_true",
+        help="Skip tools/release_delta_guard.py non-regression check.",
+    )
+    parser.add_argument(
         "--skip-source-issue-backlog",
         action="store_true",
         help="Skip tools/generate_source_p0p1_issue_backlog.py --check",
@@ -496,6 +530,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-disruption-replay-pipeline",
         action="store_true",
         help="Skip validation/benchmark_disruption_replay_pipeline.py --strict",
+    )
+    parser.add_argument(
+        "--skip-disruption-transfer-generalization",
+        action="store_true",
+        help="Skip validation/benchmark_disruption_transfer_generalization.py --strict",
     )
     parser.add_argument(
         "--skip-eped-domain-contract",
@@ -584,6 +623,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_claims_map=args.skip_claims_map,
         skip_underdeveloped_register=args.skip_underdeveloped_register,
         skip_underdeveloped_scope_reports=args.skip_underdeveloped_scope_reports,
+        skip_release_delta_guard=args.skip_release_delta_guard,
         skip_source_issue_backlog=args.skip_source_issue_backlog,
         skip_untested_module_guard=args.skip_untested_module_guard,
         skip_deprecated_default_lane_guard=args.skip_deprecated_default_lane_guard,
@@ -592,6 +632,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_shot_splits=args.skip_shot_splits,
         skip_disruption_calibration=args.skip_disruption_calibration,
         skip_disruption_replay_pipeline=args.skip_disruption_replay_pipeline,
+        skip_disruption_transfer_generalization=args.skip_disruption_transfer_generalization,
         skip_eped_domain_contract=args.skip_eped_domain_contract,
         skip_transport_uncertainty=args.skip_transport_uncertainty,
         skip_torax_strict_backend=args.skip_torax_strict_backend,

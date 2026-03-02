@@ -1,0 +1,10 @@
+{
+  "baseline_generated_at": "2026-03-02T03:22:53Z",
+  "baseline_version": "v3.9.2",
+  "notes": "Pinned baseline for v3.9.3 hardening deltas.",
+  "source_total": 4,
+  "source_p0p1": 4,
+  "docs_claims_total": 154,
+  "docs_claims_p0p1": 15,
+  "claims_tracked": 2
+}

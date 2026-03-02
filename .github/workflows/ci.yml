@@ -222,6 +222,14 @@ jobs:
             --coverage-xml coverage-python.xml \
             --thresholds tools/coverage_guard_thresholds.json \
             --summary-json artifacts/coverage_guard_summary.json
+      - name: Coverage delta report
+        if: matrix.python-version == '3.12'
+        run: |
+          python tools/coverage_delta_report.py \
+            --coverage-summary artifacts/coverage_guard_summary.json \
+            --thresholds tools/coverage_guard_thresholds.json \
+            --output-json artifacts/coverage_delta_report.json \
+            --output-md artifacts/coverage_delta_report.md
       - name: Run property-based tests (Hypothesis)
         run: pytest tests/test_hypothesis_properties.py -v --hypothesis-seed=0
       - name: Disruption false-positive rate gate
@@ -253,13 +261,17 @@ jobs:
             coverage-python.xml
             artifacts/untested_module_guard_summary.json
             artifacts/deprecated_default_lane_guard_summary.json
+            artifacts/release_delta_guard_summary.json
       - name: Upload coverage guard summary
         if: matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-guard-summary
           if-no-files-found: warn
-          path: artifacts/coverage_guard_summary.json
+          path: |
+            artifacts/coverage_guard_summary.json
+            artifacts/coverage_delta_report.json
+            artifacts/coverage_delta_report.md
 
   python-research-gate:
     name: Python Research Gate
@@ -452,6 +464,7 @@ jobs:
           python validation/benchmark_vs_torax.py --strict-backend
           python validation/benchmark_sparc_geqdsk_rmse.py
           python validation/benchmark_vs_freegs.py --force-solovev
+          python validation/benchmark_disruption_transfer_generalization.py --strict
       - name: Verify provenance fields
         run: |
           python - <<'PY'
@@ -461,16 +474,20 @@ jobs:
           torax = json.loads(Path("artifacts/torax_benchmark.json").read_text(encoding="utf-8"))
           sparc = json.loads(Path("artifacts/sparc_geqdsk_rmse_benchmark.json").read_text(encoding="utf-8"))
           freegs = json.loads(Path("artifacts/freegs_benchmark.json").read_text(encoding="utf-8"))
+          transfer = json.loads(Path("artifacts/disruption_transfer_generalization.json").read_text(encoding="utf-8"))
 
           torax_cases = torax.get("cases", [])
           sparc_cases = sparc.get("cases", [])
           freegs_cases = freegs.get("cases", [])
+          transfer_checks = transfer.get("checks", {})
           if not torax_cases:
               raise SystemExit("torax benchmark produced zero cases")
           if not sparc_cases:
               raise SystemExit("sparc benchmark produced zero cases")
           if not freegs_cases:
               raise SystemExit("freegs benchmark produced zero cases")
+          if not transfer_checks:
+              raise SystemExit("transfer benchmark produced zero checks")
 
           for idx, case in enumerate(torax_cases):
               for key in ("transport_backend", "fallback_reason", "fallback_seed"):
@@ -486,12 +503,21 @@ jobs:
               for key in ("mode", "comparison_backend", "reference_backend"):
                   if key not in case:
                       raise SystemExit(f"freegs case[{idx}] missing key: {key}")
+          for key in ("source_group", "target_group", "transfer_efficiency", "passes", "thresholds"):
+              if key not in transfer:
+                  raise SystemExit(f"transfer benchmark missing key: {key}")
+          for key in ("recall", "false_positive_rate", "n_shots"):
+              if key not in transfer["source_group"]:
+                  raise SystemExit(f"transfer source_group missing key: {key}")
+              if key not in transfer["target_group"]:
+                  raise SystemExit(f"transfer target_group missing key: {key}")
 
           print(
               "Benchmark provenance OK: "
               f"torax_cases={len(torax_cases)} "
               f"sparc_cases={len(sparc_cases)} "
-              f"freegs_cases={len(freegs_cases)}"
+              f"freegs_cases={len(freegs_cases)} "
+              f"transfer_pass={transfer.get('passes')}"
           )
           PY
       - name: Fallback budget guard
@@ -511,6 +537,8 @@ jobs:
             artifacts/sparc_geqdsk_rmse_benchmark.json
             artifacts/freegs_benchmark.json
             artifacts/fallback_budget_summary.json
+            artifacts/disruption_transfer_generalization.json
+            artifacts/disruption_transfer_generalization.md
 
   runtime-parity-perf-gate:
     name: Runtime Parity + Perf Gate

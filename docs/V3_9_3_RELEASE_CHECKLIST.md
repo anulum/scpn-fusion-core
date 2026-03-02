@@ -9,6 +9,7 @@ Release objective:
 - [ ] Regenerate `UNDERDEVELOPED_REGISTER.md` from `tools/generate_underdeveloped_register.py`.
 - [ ] Confirm Executive Summary counts are current and reflected in docs by reference (not hard-coded).
 - [ ] Verify no stale count literals remain in `README.md`, `ROADMAP.md`, `CONTRIBUTING.md`, `docs/HONEST_SCOPE.md`.
+- [ ] Run `python tools/release_delta_guard.py --require-positive-delta` against `docs/release_delta_baseline.json`.
 
 ## 2) Validation and Claims Integrity
 
@@ -41,3 +42,4 @@ Release objective:
 - [ ] No unsupported headline claims in README/RESULTS/HONEST_SCOPE.
 - [ ] CI status green for release lanes.
 - [ ] Reproducibility commands execute cleanly in documented environment.
+- [ ] Release delta guard reports positive improvement (`artifacts/release_delta_guard_summary.json`).

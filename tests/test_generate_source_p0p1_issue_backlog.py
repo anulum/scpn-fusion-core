@@ -31,6 +31,7 @@ def test_render_markdown_contains_expected_sections() -> None:
     assert "## Auto-generated Issue Seeds" in rendered
     if issues:
         assert "Acceptance Checklist" in rendered
+        assert "Closure Metrics" in rendered
 
 
 def test_main_writes_markdown_and_json(tmp_path: Path) -> None:
@@ -50,3 +51,8 @@ def test_main_writes_markdown_and_json(tmp_path: Path) -> None:
     payload = json.loads(json_path.read_text(encoding="utf-8"))
     assert isinstance(payload.get("issues"), list)
     assert isinstance(payload.get("issue_count"), int)
+    if payload["issues"]:
+        issue0 = payload["issues"][0]
+        assert isinstance(issue0.get("closure_metrics"), list)
+        assert isinstance(issue0.get("issue_slug"), str)
+        assert isinstance(issue0.get("github_body"), str)
