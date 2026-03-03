@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T23:36:32.284061+00:00`
+- Generated at: `2026-03-03T00:05:01.424871+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,18 +8,18 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 195 |
+| Total flagged entries | 196 |
 | P0 + P1 entries | 9 |
 | Source-domain entries | 37 |
 | Source-domain P0 + P1 entries | 9 |
-| Docs-claims entries | 139 |
+| Docs-claims entries | 140 |
 | Domains affected | 7 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 110 |
+| `FALLBACK` | 111 |
 | `PLANNED` | 23 |
 | `EXPERIMENTAL` | 21 |
 | `SIMPLIFIED` | 18 |
@@ -32,7 +32,7 @@
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 139 |
+| `docs_claims` | 140 |
 | `validation` | 28 |
 | `other` | 19 |
 | `control` | 4 |
@@ -141,7 +141,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2534` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Each paper would require additional experimental results (plant model integration, hardware benchmarks, comparison against conventional c... |
 | P3 | 61 | `validation` | `PLANNED` | `validation/validate_real_shots.py:565` | Validation WG | Convert roadmap note into scheduled milestone task + owner. | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
 
-## Full Register (Top 195)
+## Full Register (Top 196)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -232,6 +232,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | - Transparent fallback to analytic model when no weights are available |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
+| P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:29` | until convergence hardening closes the remaining fallback/instability cases. |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:24` | \| `SIMPLIFIED` \| 27 \| |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:60` | \| `src/scpn_fusion/core/integrated_transport_solver.py` \| 1 (`SIMPLIFIED`) \| Largest physics file, central to transport claims \| |

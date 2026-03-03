@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-02T23:36:34.669596+00:00",
+  "generated_at": "2026-03-03T00:05:04.831119+00:00",
   "generator": "tools/generate_underdeveloped_scope_reports.py",
   "snapshots": [
     {
@@ -15,14 +15,14 @@
       "marker_counts": {
         "DEPRECATED": 6,
         "EXPERIMENTAL": 14,
-        "FALLBACK": 80,
+        "FALLBACK": 81,
         "NOT_VALIDATED": 4,
         "PLANNED": 22,
         "SIMPLIFIED": 13
       },
       "p0_p1_entries": 0,
       "scope": "docs_claims",
-      "total_entries": 139
+      "total_entries": 140
     }
   ]
 }

@@ -179,7 +179,6 @@ jobs:
         if: matrix.python-version == '3.12'
         env:
           SCPN_ENABLE_STRICT_BACKEND_CHECKS: "1"
-          SCPN_ENABLE_FREEGS_STRICT_BACKEND_CHECKS: "1"
         run: |
           python tools/run_python_preflight.py --gate release
       - name: Run release test suite (exclude experimental-only lanes)

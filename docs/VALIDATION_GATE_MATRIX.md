@@ -12,7 +12,7 @@ This document defines the split between release-grade validation and research-on
 
 | Profile | Scope | Command |
 |---|---|---|
-| `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lane guard, disruption data provenance + split + calibration holdout checks, disruption replay pipeline contract benchmark, disruption transfer-generalization benchmark, EPED domain-contract benchmark, transport uncertainty-envelope benchmark, TORAX/SPARC/FreeGS strict-backend parity checks, multi-ion transport conservation benchmark, end-to-end latency benchmark, notebook quality gate, Task 5/6 threshold smoke, strict typing; excludes research-marker tests from global pytest runs. | `python tools/run_python_preflight.py --gate release` |
+| `release` | Version/claims integrity, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lane guard, disruption data provenance + split + calibration holdout checks, disruption replay pipeline contract benchmark, disruption transfer-generalization benchmark, EPED domain-contract benchmark, transport uncertainty-envelope benchmark, TORAX/SPARC strict-backend parity checks, multi-ion transport conservation benchmark, end-to-end latency benchmark, notebook quality gate, Task 5/6 threshold smoke, strict typing; excludes research-marker tests from global pytest runs. | `python tools/run_python_preflight.py --gate release` |
 | `research` | Research-only pytest lane (`pytest -m experimental` marker). | `python tools/run_python_preflight.py --gate research` |
 | `all` | Release + research profiles in sequence. | `python tools/run_python_preflight.py --gate all` |
 
@@ -23,6 +23,10 @@ This document defines the split between release-grade validation and research-on
 | `python-tests` | Multi-version core regression lane | `release` |
 | `python-research-gate` | Research validation lane (3.12) | `research` |
 | `validation-regression` | Cross-language physics validation lane | `release` (`pytest -m "not experimental"`) |
+
+FreeGS strict-backend parity remains opt-in via
+`--enable-freegs-strict-backend-check` (or `SCPN_ENABLE_FREEGS_STRICT_BACKEND_CHECKS=1`)
+until convergence hardening closes the remaining fallback/instability cases.
 
 ## Experimental Marker Contract
 

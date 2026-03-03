@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-02T23:36:34.666574+00:00`
+- Generated at: `2026-03-03T00:05:04.829532+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: docs-claims-only markers
 
@@ -8,18 +8,18 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 139 |
+| Total flagged entries | 140 |
 | P0 + P1 entries | 0 |
 | Source-domain entries | 0 |
 | Source-domain P0 + P1 entries | 0 |
-| Docs-claims entries | 139 |
+| Docs-claims entries | 140 |
 | Domains affected | 1 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 80 |
+| `FALLBACK` | 81 |
 | `PLANNED` | 22 |
 | `EXPERIMENTAL` | 14 |
 | `SIMPLIFIED` | 13 |
@@ -30,7 +30,7 @@
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 139 |
+| `docs_claims` | 140 |
 
 ## Top Priority Backlog (Top 80)
 
@@ -67,6 +67,7 @@
 | P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback to analytic model when no weights are available |
 | P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | 59 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:29` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | until convergence hardening closes the remaining fallback/instability cases. |
 | P3 | 54 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:24` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `SIMPLIFIED` \| 27 \| |
 | P3 | 54 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P3 | 54 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:60` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | \| `src/scpn_fusion/core/integrated_transport_solver.py` \| 1 (`SIMPLIFIED`) \| Largest physics file, central to transport claims \| |
@@ -115,9 +116,8 @@
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:129` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Operations: runtime capability detection + automatic CPU fallback |
 | P3 | 45 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:22` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| `FALLBACK` \| 172 \| |
 | P3 | 45 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:71` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - `FALLBACK`: 67 mentions |
-| P3 | 45 | `docs_claims` | `FALLBACK` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:103` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback to full physics solve when surrogate confidence is below threshold |
 
-## Full Register (Top 139)
+## Full Register (Top 140)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -152,6 +152,7 @@
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | - Transparent fallback to analytic model when no weights are available |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
+| P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:29` | until convergence hardening closes the remaining fallback/instability cases. |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:24` | \| `SIMPLIFIED` \| 27 \| |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:60` | \| `src/scpn_fusion/core/integrated_transport_solver.py` \| 1 (`SIMPLIFIED`) \| Largest physics file, central to transport claims \| |

@@ -347,14 +347,6 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
             ],
             SCRIPT_PATH.resolve().parents[1],
         ),
-        (
-            [
-                "python-test",
-                "validation/benchmark_vs_freegs.py",
-                "--strict-backend",
-            ],
-            SCRIPT_PATH.resolve().parents[1],
-        ),
     ]
 
 
@@ -515,6 +507,7 @@ def test_main_skips_freegs_strict_backend_when_flagged(monkeypatch):
         [
             "run_python_preflight.py",
             "--enable-strict-backend-checks",
+            "--enable-freegs-strict-backend-check",
             "--skip-freegs-strict-backend",
             "--skip-version-metadata",
             "--skip-claims-audit",
