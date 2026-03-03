@@ -203,6 +203,63 @@ def _normalize_for_check(payload: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _emit_stale_diff_summary(
+    existing_payload: dict[str, Any],
+    generated_payload: dict[str, Any],
+) -> None:
+    existing = _normalize_for_check(existing_payload)
+    generated = _normalize_for_check(generated_payload)
+
+    print("Reference-data provenance mismatch summary:")
+    for key in ("dataset_root", "policy_file", "file_count"):
+        if existing.get(key) != generated.get(key):
+            print(f"- {key}: existing={existing.get(key)!r} generated={generated.get(key)!r}")
+
+    def _index(rows: Any, *, key: str) -> dict[str, dict[str, Any]]:
+        out: dict[str, dict[str, Any]] = {}
+        if not isinstance(rows, list):
+            return out
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            value = row.get(key)
+            if isinstance(value, str) and value:
+                out[value] = row
+        return out
+
+    existing_datasets = _index(existing.get("datasets"), key="id")
+    generated_datasets = _index(generated.get("datasets"), key="id")
+    missing_datasets = sorted(set(existing_datasets) - set(generated_datasets))
+    added_datasets = sorted(set(generated_datasets) - set(existing_datasets))
+    if missing_datasets:
+        print(f"- missing datasets ({len(missing_datasets)}): {missing_datasets[:5]}")
+    if added_datasets:
+        print(f"- added datasets ({len(added_datasets)}): {added_datasets[:5]}")
+
+    existing_files = _index(existing.get("files"), key="path")
+    generated_files = _index(generated.get("files"), key="path")
+    missing_paths = sorted(set(existing_files) - set(generated_files))
+    added_paths = sorted(set(generated_files) - set(existing_files))
+    if missing_paths:
+        print(f"- missing files ({len(missing_paths)}): {missing_paths[:8]}")
+    if added_paths:
+        print(f"- added files ({len(added_paths)}): {added_paths[:8]}")
+
+    for path in sorted(set(existing_files) & set(generated_files)):
+        before = existing_files[path]
+        after = generated_files[path]
+        if before == after:
+            continue
+        print(f"- first differing file row: {path}")
+        for field in sorted(set(before) | set(after)):
+            if before.get(field) == after.get(field):
+                continue
+            print(
+                f"  - {field}: existing={before.get(field)!r} generated={after.get(field)!r}"
+            )
+        break
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=str(DEFAULT_ROOT), help="Reference-data root directory.")
@@ -259,6 +316,7 @@ def main(argv: list[str] | None = None) -> int:
                 "Reference-data provenance manifest is stale. "
                 "Run tools/generate_reference_data_provenance_manifest.py to refresh."
             )
+            _emit_stale_diff_summary(existing_payload, manifest_payload)
             return 1
         print(f"Reference-data provenance manifest is up to date: {manifest_path}")
         return 0
