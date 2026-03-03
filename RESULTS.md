@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.9.3)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-03-03 01:05 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-03-03 01:37 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.9.3
-- **Generated:** 2026-03-03 01:05 UTC
-- **Wall-clock:** 23s
+- **Generated:** 2026-03-03 01:37 UTC
+- **Wall-clock:** 17s
 
 ## Equilibrium & Transport
 
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.34 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.74 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.28 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 0.54 | ms | 129x129 grid |
 
 ## QLKNN Neural Transport Surrogate
 
@@ -75,16 +75,16 @@
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
-| Disruption prevention rate (SNN) | 0.0 | % | 10-run ensemble |
-| Mean halo current peak | 2.610 | MA | |
-| P95 halo current peak | 3.541 | MA | |
-| Mean RE current peak | 14.057 | MA | |
-| P95 RE current peak | 15.430 | MA | |
-| ITER halo+RE contract pass (stress lane) | No | — | Requires prevention>=90%, P95 halo<=3.4 MA, P95 RE<=1.0 MA |
-| HIL control-loop P50 latency | 23.9 | μs | 200 iterations |
-| HIL control-loop P95 latency | 68.3 | μs | |
-| HIL control-loop P99 latency | 172.6 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 33.2 μs |
+| Disruption prevention rate (SNN) | 100.0 | % | 10-run ensemble |
+| Mean halo current peak | 1.655 | MA | |
+| P95 halo current peak | 2.255 | MA | |
+| Mean RE current peak | 0.014 | MA | |
+| P95 RE current peak | 0.020 | MA | |
+| ITER halo+RE contract pass (stress lane) | Yes | — | Requires prevention>=90%, P95 halo<=3.4 MA, P95 RE<=1.0 MA |
+| HIL control-loop P50 latency | 11.3 | μs | 200 iterations |
+| HIL control-loop P95 latency | 13.0 | μs | |
+| HIL control-loop P99 latency | 18.8 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 16.9 μs |
 
 ## Real-Shot Validation
 
@@ -130,6 +130,15 @@
 
 *Overall ψ NRMSE: 0.076 (threshold: 0.11). Overall: PASS*
 
+## Disruption Transfer-Generalization
+
+| Group | Shots | Disruptions | Safe | Recall | FPR |
+|---|---:|---:|---:|---:|---:|
+| Source | 5 | 1 | 4 | 1.000 | 0.000 |
+| Target | 11 | 5 | 6 | 1.000 | 0.000 |
+
+*Transfer efficiency (target/source recall): 1.000 | Overall: PASS*
+
 ## Disruption Threshold Optimization
 
 | Metric | Value | Notes |
@@ -160,9 +169,9 @@
 | TBR > 1.05 | PASS | TBR = 1.1409 |
 | ECRH absorption | RUN | 99.0% |
 | Disruption detection | PASS | recall=100% |
-| HIL sub-ms | PASS | P50 = 23.9 μs |
+| HIL sub-ms | PASS | P50 = 11.3 μs |
 | Solov'ev manufactured-source parity | PASS | ψ NRMSE = 0.076 |
-| Transfer generalization | — | not available |
+| Transfer generalization | PASS | eff=1.000, target_recall=1.000 |
 
 ## Documentation & Hero Notebooks
 

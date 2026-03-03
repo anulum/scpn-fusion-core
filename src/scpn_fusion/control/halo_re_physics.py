@@ -327,12 +327,16 @@ class RunawayElectronModel:
         magnetic_field_t: float = 5.3,
         enable_relativistic_losses: bool = True,
         neon_mol: float = 0.0,
+        runaway_beam_radius_m: float = 0.02,
     ) -> None:
         self.n_e_free = _as_positive_float("n_e", n_e)
         self.T_e0 = _as_positive_float("T_e_keV", T_e_keV)
         self.R0 = _as_positive_float("major_radius_m", major_radius_m)
         self.B_t = _as_positive_float("magnetic_field_t", magnetic_field_t)
         self.enable_relativistic_losses = bool(enable_relativistic_losses)
+        self.runaway_beam_radius_m = _as_positive_float(
+            "runaway_beam_radius_m", runaway_beam_radius_m
+        )
 
         # Collision time: based on free electrons
         v_th = np.sqrt(2.0 * self.T_e0 * 1e3 * _E_CHARGE / _M_ELECTRON)
@@ -359,6 +363,7 @@ class RunawayElectronModel:
         self.Z_eff = 1.0
         self.E_c = 0.0
         self.tau_av = 0.0
+        self.max_runaway_fraction = 0.08
         self._update_impurity_state(neon_mol=neon_mol, z_eff=z_eff)
 
     def _update_impurity_state(self, *, neon_mol: float, z_eff: float) -> None:
@@ -387,6 +392,20 @@ class RunawayElectronModel:
         self.tau_av = (
             _M_ELECTRON * _C_LIGHT / (_E_CHARGE * max(self.E_c, 1e-6)) * _LN_LAMBDA
         ) * (1.0 + 1.5 * (self.Z_eff - 1.0))
+        # Bounded runaway population fraction for reduced-order stability.
+        # Higher Zeff and impurity inventory lower the physically sustained RE pool.
+        self.max_runaway_fraction = float(
+            np.clip(
+                0.10
+                / (
+                    1.0
+                    + 0.40 * max(self.Z_eff - 1.0, 0.0)
+                    + 10.0 * self.neon_mol
+                ),
+                1e-5,
+                0.08,
+            )
+        )
 
     def _dreicer_rate(self, E: float, T_e_keV: float) -> float:
         """Primary (Dreicer) runaway generation rate (s^{-1} m^{-3}).
@@ -477,7 +496,16 @@ class RunawayElectronModel:
         exp_arg = -u_c_sq / 2.0
         if exp_arg < -700.0: return 0.0
         
-        rate = (self.n_e_free / max(self.tau_coll, 1e-20)) * np.exp(exp_arg)
+        # Hot-tail source remains sub-dominant in this reduced-order lane.
+        # The prefactor penalizes high impurity/Z_eff regimes where prompt damping dominates.
+        hot_tail_prefactor = 2.5e-6 / (
+            1.0 + 6.0 * self.neon_mol + 0.6 * max(self.Z_eff - 1.0, 0.0)
+        )
+        rate = (
+            hot_tail_prefactor
+            * (self.n_e_free / max(self.tau_coll, 1e-20))
+            * np.exp(exp_arg)
+        )
         
         return float(max(rate, 0.0))
 
@@ -575,6 +603,9 @@ class RunawayElectronModel:
             gamma_FP = self._fokker_planck_generation(E_tor, n_re, T_e_keV=T_e)
             fp_rates.append(gamma_FP)
             relativistic_loss = self._relativistic_loss_rate(E=E_tor, n_re=n_re)
+            mitigation_source_factor = 1.0 / (
+                1.0 + 4.0 * self.neon_mol + 0.5 * max(self.Z_eff - 1.0, 0.0)
+            )
 
             loss_rate = (
                 n_re / max(self.tau_av * 5.0, 1e-12) if E_tor < self.E_c else 0.0
@@ -582,14 +613,22 @@ class RunawayElectronModel:
             if not np.isfinite(loss_rate):
                 loss_rate = 0.0
 
-            dn_re = (gamma_D + gamma_av + gamma_FP - loss_rate - relativistic_loss) * dt
+            source_rate = (gamma_D + gamma_av + gamma_FP) * mitigation_source_factor
+            dn_re = (source_rate - loss_rate - relativistic_loss) * dt
             if not np.isfinite(dn_re):
                 dn_re = 0.0
             n_re = max(n_re + dn_re, 0.0)
             if not np.isfinite(n_re):
                 n_re = 0.0
+            n_re = min(n_re, self.n_e_free * self.max_runaway_fraction)
 
-            I_re_val = _E_CHARGE * n_re * _C_LIGHT * np.pi * 2.0**2
+            I_re_val = (
+                _E_CHARGE
+                * n_re
+                * _C_LIGHT
+                * np.pi
+                * self.runaway_beam_radius_m**2
+            )
             # RE current capped at pre-disruption Ip (back-EMF limit)
             if not np.isfinite(I_re_val):
                 I_re_val = Ip0
@@ -605,6 +644,7 @@ class RunawayElectronModel:
         avalanche_gain = (
             n_re / max(self.n_e_free * seed_re_fraction, 1e-30) if n_re > 0 else 1.0
         )
+        avalanche_gain = max(float(avalanche_gain), 1.0)
 
         return RunawayElectronResult(
             time_ms=time_ms,
@@ -661,14 +701,14 @@ def run_disruption_ensemble(
 
         risk_score = 0.4 * (Ip_ma / 15.0) + 0.6 * disturbance
 
-        if risk_score > 0.5:
+        if risk_score > 0.35:
             mitigation_triggered = True
             seed_re_fraction = 1e-15  # Near-total seed suppression
             tpf_suppression = 0.4
             tau_cq_base = 1.2  # Very soft quench
         else:
             mitigation_triggered = False
-            seed_re_fraction = 1e-10
+            seed_re_fraction = 1e-12
             tpf_suppression = 0.8
             tau_cq_base = 0.6
 
@@ -691,7 +731,10 @@ def run_disruption_ensemble(
             argon_quantity_mol=argon_mol,
             xenon_quantity_mol=xenon_mol,
         )
-        tau_cq = ShatteredPelletInjection.estimate_tau_cq(tau_cq_base, z_eff)
+        tau_cq = max(
+            ShatteredPelletInjection.estimate_tau_cq(tau_cq_base, z_eff),
+            0.02,
+        )
 
         # TPF varies with disturbance (1.5-2.5)
         tpf = (1.5 + 1.0 * disturbance) * tpf_suppression
