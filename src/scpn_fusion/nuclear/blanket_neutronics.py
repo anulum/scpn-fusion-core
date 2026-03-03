@@ -458,8 +458,8 @@ class MultiGroupBlanket:
             A[-1, -1] = 1.0
             A[-1, -2] = -1.0
             b[-1] = bc_right[1] * dr
-            
-        return np.linalg.solve(A, b)
+
+        return np.asarray(np.linalg.solve(A, b), dtype=np.float64)
 
     def solve_transport(
         self,
@@ -522,8 +522,14 @@ class MultiGroupBlanket:
         prod_g3 = self.sigma_capture_g3 * phi_g3
         total_prod = prod_g1 + prod_g2 + prod_g3
 
-        trap = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
-        total_tritium = trap(total_prod * 2.0 * np.pi * self.r, self.r)
+        if hasattr(np, "trapezoid"):
+            total_tritium = np.trapezoid(total_prod * 2.0 * np.pi * self.r, self.r)
+        else:  # pragma: no cover - legacy NumPy compatibility path
+            edge = np.diff(self.r)
+            total_integrand = total_prod * 2.0 * np.pi * self.r
+            total_tritium = float(
+                np.sum(0.5 * (total_integrand[1:] + total_integrand[:-1]) * edge)
+            )
         
         # Incident current (per unit length): J+ * Area_inner
         incident_current_total = (phi_g1[0] / 4.0) * (2.0 * np.pi * self.r_inner)
@@ -532,9 +538,22 @@ class MultiGroupBlanket:
 
         # Per-group TBR breakdown (with same correction factors as total)
         corr = port_coverage_factor * streaming_factor
-        tbr_g1 = trap(prod_g1 * 2.0 * np.pi * self.r, self.r) / max(incident_current_total, 1e-12) * corr
-        tbr_g2 = trap(prod_g2 * 2.0 * np.pi * self.r, self.r) / max(incident_current_total, 1e-12) * corr
-        tbr_g3 = trap(prod_g3 * 2.0 * np.pi * self.r, self.r) / max(incident_current_total, 1e-12) * corr
+        if hasattr(np, "trapezoid"):
+            tbr_g1_raw = np.trapezoid(prod_g1 * 2.0 * np.pi * self.r, self.r)
+            tbr_g2_raw = np.trapezoid(prod_g2 * 2.0 * np.pi * self.r, self.r)
+            tbr_g3_raw = np.trapezoid(prod_g3 * 2.0 * np.pi * self.r, self.r)
+        else:  # pragma: no cover - legacy NumPy compatibility path
+            edge = np.diff(self.r)
+            g1 = prod_g1 * 2.0 * np.pi * self.r
+            g2 = prod_g2 * 2.0 * np.pi * self.r
+            g3 = prod_g3 * 2.0 * np.pi * self.r
+            tbr_g1_raw = float(np.sum(0.5 * (g1[1:] + g1[:-1]) * edge))
+            tbr_g2_raw = float(np.sum(0.5 * (g2[1:] + g2[:-1]) * edge))
+            tbr_g3_raw = float(np.sum(0.5 * (g3[1:] + g3[:-1]) * edge))
+
+        tbr_g1 = tbr_g1_raw / max(incident_current_total, 1e-12) * corr
+        tbr_g2 = tbr_g2_raw / max(incident_current_total, 1e-12) * corr
+        tbr_g3 = tbr_g3_raw / max(incident_current_total, 1e-12) * corr
 
         # Flux clamping telemetry (tracked before np.maximum above)
         flux_clamp_total = n_clamped_g1 + n_clamped_g2 + n_clamped_g3
