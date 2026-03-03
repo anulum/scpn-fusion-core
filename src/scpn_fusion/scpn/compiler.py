@@ -503,8 +503,14 @@ class FusionCompiler:
                 strict_validation=bool(strict_topology),
                 allow_inhibitor=bool(allow_inhibitor),
             )
-        assert net.W_in is not None
-        assert net.W_out is not None
+        if net.W_in is None:
+            raise RuntimeError(
+                "Petri net compile produced no W_in matrix; aborting artifact compile."
+            )
+        if net.W_out is None:
+            raise RuntimeError(
+                "Petri net compile produced no W_out matrix; aborting artifact compile."
+            )
 
         # 1. Dense matrices
         W_in: FloatArray = np.asarray(net.W_in.toarray(), dtype=np.float64)    # (nT, nP)

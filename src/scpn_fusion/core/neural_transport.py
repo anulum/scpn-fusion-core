@@ -26,8 +26,8 @@ The module is designed for the QLKNN-10D public dataset:
     https://doi.org/10.5281/zenodo.3700755
 
 Download the dataset and run the training recipe in
-``docs/NEURAL_TRANSPORT_TRAINING.md`` (to be created) to produce an
-``.npz`` weight file that this module loads at construction time.
+``docs/NEURAL_TRANSPORT_TRAINING.md`` to produce an ``.npz`` weight
+file that this module loads at construction time.
 
 References
 ----------
