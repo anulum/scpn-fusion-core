@@ -24,7 +24,12 @@ import numpy as np
 import pytest
 
 from scpn_fusion.scpn.structure import StochasticPetriNet
-from scpn_fusion.scpn.compiler import FusionCompiler, CompiledNet, _HAS_SC_NEUROCORE
+from scpn_fusion.scpn.compiler import (
+    FusionCompiler,
+    CompiledNet,
+    _HAS_SC_NEUROCORE,
+    _encode_weight_matrix_packed,
+)
 
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -309,6 +314,38 @@ class TestStochasticPetriNet:
 
 
 class TestFusionCompiler:
+    def test_dense_forward_requires_sc_neurocore_when_unavailable(
+        self, compiled: CompiledNet
+    ) -> None:
+        if _HAS_SC_NEUROCORE:
+            pytest.skip("sc_neurocore available; no fallback RuntimeError expected")
+
+        w_dummy = np.zeros((compiled.n_transitions, compiled.n_places, 1), dtype=np.uint64)
+        x_dummy = np.zeros(compiled.n_places, dtype=np.float64)
+        with pytest.raises(RuntimeError, match="dense_forward requires sc_neurocore"):
+            compiled.dense_forward(w_dummy, x_dummy)
+
+    def test_encode_weight_matrix_packed_exercises_padding_branch(self) -> None:
+        W = np.array([[0.25, 0.75]], dtype=np.float64)
+        packed = _encode_weight_matrix_packed(W, bitstream_length=65, seed=11)
+        assert packed.shape == (1, 2, 2)
+        assert packed.dtype == np.uint64
+
+    def test_invalid_lif_parameter_variants_rejected(self) -> None:
+        with pytest.raises(ValueError, match="lif_noise_std"):
+            FusionCompiler(lif_noise_std=-0.1)
+        with pytest.raises(ValueError, match="lif_dt"):
+            FusionCompiler(lif_dt=0.0)
+        with pytest.raises(ValueError, match="lif_resistance"):
+            FusionCompiler(lif_resistance=0.0)
+        with pytest.raises(ValueError, match="lif_refractory_period"):
+            FusionCompiler(lif_refractory_period=-1)
+
+    def test_compile_rejects_invalid_firing_mode(self, traffic_net: StochasticPetriNet) -> None:
+        compiler = FusionCompiler(bitstream_length=128, seed=7)
+        with pytest.raises(ValueError, match="firing_mode must be 'binary' or 'fractional'"):
+            compiler.compile(traffic_net, firing_mode="invalid")
+
     def test_compile_strict_topology_rejects_dead_nodes(self) -> None:
         net = StochasticPetriNet()
         net.add_place("A", initial_tokens=1.0)
