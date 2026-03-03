@@ -28,6 +28,11 @@ repos:
 
   - repo: local
     hooks:
+      - id: version-metadata-consistency
+        name: version metadata consistency guard
+        entry: python tools/sync_metadata.py --check
+        language: system
+        pass_filenames: false
       - id: cargo-fmt-check
         name: cargo fmt --check
         entry: cargo fmt --all --check

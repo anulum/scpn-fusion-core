@@ -138,6 +138,9 @@ ruff check src/ tests/
 pip install pre-commit
 pre-commit install
 pre-commit run --all-files
+
+# Recommended: enable repository-native git hooks (blocks commits on metadata drift)
+git config core.hooksPath .githooks
 ```
 
 **Additional conventions:**

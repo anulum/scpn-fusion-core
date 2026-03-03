@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Local Git Pre-Commit Guard
+# © 1998–2026 Miroslav Sotek. All rights reserved.
+# License: GNU AGPL v3 | Commercial licensing available
+# ──────────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+if command -v python >/dev/null 2>&1; then
+  PYTHON_BIN=(python)
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN=(python3)
+elif command -v py >/dev/null 2>&1; then
+  PYTHON_BIN=(py -3)
+else
+  echo "[pre-commit] Python is required for metadata consistency checks."
+  echo "[pre-commit] Install Python and re-run the commit."
+  exit 1
+fi
+
+echo "[pre-commit] Checking release/version metadata drift..."
+if ! "${PYTHON_BIN[@]}" tools/sync_metadata.py --check; then
+  echo "[pre-commit] Metadata drift detected. Commit blocked."
+  echo "[pre-commit] Run: ${PYTHON_BIN[*]} tools/sync_metadata.py"
+  echo "[pre-commit] Then stage updated files and commit again."
+  exit 1
+fi
+
+echo "[pre-commit] Metadata check passed."
