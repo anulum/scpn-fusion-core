@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import numpy as np
-from typing import Optional
+from typing import Any, Optional
 
 
 DEFAULT_DISRUPTION_RISK_BIAS = -4.0
@@ -258,58 +258,125 @@ def run_fault_noise_campaign(
     )
 
     rng = np.random.default_rng(seed_i)
-    exceed_count = 0
+    abs_errors: list[float] = []
+    recovery_steps: list[int] = []
     total_bit_flips = 0
-    recovery_hits = 0
     baseline_mean = 0.0
     perturbed_mean = 0.0
 
-    for episode in range(episodes_i):
+    for _ in range(episodes_i):
         signal = _synthetic_control_signal(rng, window_i)
-        risk_baseline = predict_disruption_risk(signal)
-        baseline_mean += risk_baseline
+        toroidal = {
+            "toroidal_n1_amp": float(rng.uniform(0.05, 0.25)),
+            "toroidal_n2_amp": float(rng.uniform(0.03, 0.18)),
+            "toroidal_n3_amp": float(rng.uniform(0.01, 0.12)),
+            "toroidal_radial_spread": float(rng.uniform(0.01, 0.08)),
+        }
+        toroidal["toroidal_asymmetry_index"] = float(
+            np.sqrt(
+                toroidal["toroidal_n1_amp"] ** 2
+                + toroidal["toroidal_n2_amp"] ** 2
+                + toroidal["toroidal_n3_amp"] ** 2
+            )
+        )
 
-        noisy_signal = np.clip(signal + rng.normal(0.0, noise, size=signal.shape), 0.0, None)
-        risk_noisy = predict_disruption_risk(noisy_signal)
+        baseline = np.array(
+            [predict_disruption_risk(signal[: i + 1], toroidal) for i in range(window_i)],
+            dtype=float,
+        )
+        baseline_mean += float(np.mean(baseline))
 
-        if ((episode + 1) % bit_flip_i) == 0:
-            flip_idx = int(rng.integers(0, 64))
-            risk_fault = apply_bit_flip_fault(risk_noisy, flip_idx)
+        faulty_signal = signal.copy()
+        faulty_indices: list[int] = []
+        for i in range(window_i):
+            faulty_signal[i] += float(rng.normal(0.0, noise))
+            if i % bit_flip_i == 0:
+                faulty_signal[i] = apply_bit_flip_fault(
+                    faulty_signal[i], int(rng.integers(0, 52))
+                )
+                faulty_indices.append(i)
+
+        faulty_toroidal = dict(toroidal)
+        faulty_toroidal["toroidal_n1_amp"] = max(
+            0.0, faulty_toroidal["toroidal_n1_amp"] + float(rng.normal(0.0, noise * 0.5))
+        )
+        faulty_toroidal["toroidal_n2_amp"] = max(
+            0.0, faulty_toroidal["toroidal_n2_amp"] + float(rng.normal(0.0, noise * 0.4))
+        )
+        faulty_toroidal["toroidal_asymmetry_index"] = float(
+            np.sqrt(
+                faulty_toroidal["toroidal_n1_amp"] ** 2
+                + faulty_toroidal["toroidal_n2_amp"] ** 2
+                + faulty_toroidal["toroidal_n3_amp"] ** 2
+            )
+        )
+
+        perturbed = np.array(
+            [
+                predict_disruption_risk(faulty_signal[: i + 1], faulty_toroidal)
+                for i in range(window_i)
+            ],
+            dtype=float,
+        )
+        perturbed_mean += float(np.mean(perturbed))
+
+        err = np.abs(perturbed - baseline)
+        abs_errors.extend(err.tolist())
+
+        for idx in faulty_indices:
             total_bit_flips += 1
-        else:
-            risk_fault = risk_noisy
+            stop = min(window_i, idx + recovery_window_i + 1)
+            recover_idx = stop
+            for j in range(idx, stop):
+                if err[j] <= recovery_eps:
+                    recover_idx = j
+                    break
+            recovery_steps.append(int(recover_idx - idx))
 
-        if not np.isfinite(risk_fault):
-            risk_fault = risk_baseline
+    baseline_mean /= float(episodes_i)
+    perturbed_mean /= float(episodes_i)
 
-        perturbed_mean += risk_fault
-        delta = abs(risk_fault - risk_baseline)
-        if delta > recovery_eps:
-            exceed_count += 1
+    errors_arr = np.asarray(abs_errors, dtype=float)
+    rec_arr = np.asarray(
+        recovery_steps if recovery_steps else [recovery_window_i + 1],
+        dtype=float,
+    )
 
-        history = [risk_fault]
-        for _ in range(recovery_window_i):
-            blend = 0.65 * history[-1] + 0.35 * risk_baseline
-            history.append(float(np.clip(blend, 0.0, 1.0)))
-        if abs(history[-1] - risk_baseline) <= recovery_eps:
-            recovery_hits += 1
+    mean_abs_err = float(np.mean(errors_arr))
+    p95_abs_err = float(np.percentile(errors_arr, 95))
+    p95_recovery = float(np.percentile(rec_arr, 95))
+    success_rate = float(np.mean(rec_arr <= recovery_window_i))
+    exceed_rate = float(np.mean(errors_arr > recovery_eps))
 
-    baseline_mean /= episodes_i
-    perturbed_mean /= episodes_i
-    exceed_rate = exceed_count / episodes_i
-    recovery_rate = recovery_hits / episodes_i
-
-    passes = bool(exceed_rate <= 0.15 and recovery_rate >= 0.90)
+    thresholds: dict[str, float] = {
+        "max_mean_abs_risk_error": 0.08,
+        "max_p95_abs_risk_error": 0.22,
+        "max_recovery_steps_p95": float(recovery_window_i),
+        "min_recovery_success_rate": 0.80,
+    }
+    passes = bool(
+        mean_abs_err <= thresholds["max_mean_abs_risk_error"]
+        and p95_abs_err <= thresholds["max_p95_abs_risk_error"]
+        and p95_recovery <= thresholds["max_recovery_steps_p95"]
+        and success_rate >= thresholds["min_recovery_success_rate"]
+    )
     return {
         "seed": seed_i,
         "episodes": episodes_i,
         "window": window_i,
         "noise_std": noise,
         "bit_flip_interval": bit_flip_i,
-        "bit_flip_events": total_bit_flips,
-        "exceed_count": exceed_count,
-        "exceed_rate": float(exceed_rate),
-        "recovery_rate": float(recovery_rate),
+        "fault_count": int(total_bit_flips),
+        "mean_abs_risk_error": mean_abs_err,
+        "p95_abs_risk_error": p95_abs_err,
+        "recovery_steps_p95": p95_recovery,
+        "recovery_success_rate": success_rate,
+        "thresholds": thresholds,
+        # Backward-compatible aliases retained for existing dashboards/exports.
+        "bit_flip_events": int(total_bit_flips),
+        "exceed_count": int(np.sum(errors_arr > recovery_eps)),
+        "exceed_rate": exceed_rate,
+        "recovery_rate": success_rate,
         "baseline_mean_risk": float(baseline_mean),
         "perturbed_mean_risk": float(perturbed_mean),
         "passes_thresholds": passes,
@@ -328,12 +395,33 @@ class HybridAnomalyDetector:
             raise ValueError("ema must be finite and in (0, 1].")
         self.threshold = threshold_f
         self.ema = ema_f
-        self._state = 0.0
+        self.mean = 0.0
+        self.var = 1.0
+        self.initialized = False
 
-    def score(self, signal, toroidal_observables=None):
-        raw = float(predict_disruption_risk(signal, toroidal_observables))
-        self._state = (1.0 - self.ema) * self._state + self.ema * raw
-        return self._state
+    def score(self, signal, toroidal_observables=None) -> dict[str, float | bool]:
+        supervised = float(predict_disruption_risk(signal, toroidal_observables))
+
+        if self.initialized:
+            z = abs(supervised - self.mean) / float(np.sqrt(self.var + 1e-9))
+            unsupervised = float(1.0 - np.exp(-0.5 * z))
+        else:
+            unsupervised = 0.0
+            self.initialized = True
+
+        alpha = self.ema
+        delta = supervised - self.mean
+        self.mean += alpha * delta
+        self.var = (1.0 - alpha) * self.var + alpha * delta * delta
+        self.var = float(max(self.var, 1e-9))
+
+        anomaly_score = float(np.clip(0.7 * supervised + 0.3 * unsupervised, 0.0, 1.0))
+        return {
+            "supervised_score": supervised,
+            "unsupervised_score": float(unsupervised),
+            "anomaly_score": anomaly_score,
+            "alarm": bool(anomaly_score >= self.threshold),
+        }
 
 
 def run_anomaly_alarm_campaign(
@@ -371,8 +459,8 @@ def run_anomaly_alarm_campaign(
 
         alarm_step = -1
         for idx in range(8, window_i + 1):
-            risk = detector.score(signal[:idx])
-            if risk >= threshold_f:
+            scored = detector.score(signal[:idx])
+            if bool(scored["alarm"]):
                 alarm_step = idx
                 break
 
