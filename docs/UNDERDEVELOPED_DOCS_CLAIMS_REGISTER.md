@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-03T18:14:58.827734+00:00`
+- Generated at: `2026-03-03T20:46:29.684781+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: docs-claims-only markers
 
@@ -8,18 +8,18 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 140 |
+| Total flagged entries | 141 |
 | P0 + P1 entries | 0 |
 | Source-domain entries | 0 |
 | Source-domain P0 + P1 entries | 0 |
-| Docs-claims entries | 140 |
+| Docs-claims entries | 141 |
 | Domains affected | 1 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 81 |
+| `FALLBACK` | 82 |
 | `PLANNED` | 22 |
 | `EXPERIMENTAL` | 14 |
 | `SIMPLIFIED` | 13 |
@@ -30,7 +30,7 @@
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 140 |
+| `docs_claims` | 141 |
 
 ## Top Priority Backlog (Top 80)
 
@@ -93,6 +93,7 @@
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:64` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - CPU fallback for unsupported nodes |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:122` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - automatic CPU fallback |
 | P3 | 49 | `docs_claims` | `PLANNED` | `docs/HONEST_SCOPE.md:25` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| Full 3D MHD \| Not planned for real-time loop \| Use NIMROD/M3D-C1 externally \| |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURAL_TRANSPORT_TRAINING.md:112` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - fallback to analytic critical-gradient model on any contract failure |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:41` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - [6.2 Import Boundary and Fallback Strategy](#62-import-boundary-and-fallback-strategy) |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:269` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **Dependencies:** numpy, sc_neurocore (optional — graceful fallback) |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:337` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **`dense_forward_float(W, inputs)`** — The float path: a simple `W @ inputs` using numpy. Used for validation and as a fallback when sc_n... |
@@ -115,9 +116,8 @@
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:110` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | CUDA/ROCm adapters for the GMRES linear solver with CPU fallback |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:129` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Operations: runtime capability detection + automatic CPU fallback |
 | P3 | 45 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:22` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| `FALLBACK` \| 172 \| |
-| P3 | 45 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:71` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - `FALLBACK`: 67 mentions |
 
-## Full Register (Top 140)
+## Full Register (Top 141)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -178,6 +178,7 @@
 | P3 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:64` | - CPU fallback for unsupported nodes |
 | P3 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:122` | - automatic CPU fallback |
 | P3 | `docs_claims` | `PLANNED` | `docs/HONEST_SCOPE.md:25` | \| Full 3D MHD \| Not planned for real-time loop \| Use NIMROD/M3D-C1 externally \| |
+| P3 | `docs_claims` | `FALLBACK` | `docs/NEURAL_TRANSPORT_TRAINING.md:112` | - fallback to analytic critical-gradient model on any contract failure |
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:41` | - [6.2 Import Boundary and Fallback Strategy](#62-import-boundary-and-fallback-strategy) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:269` | **Dependencies:** numpy, sc_neurocore (optional — graceful fallback) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:337` | **`dense_forward_float(W, inputs)`** — The float path: a simple `W @ inputs` using numpy. Used for validation and as a fallback when sc_n... |
