@@ -42,8 +42,16 @@ jobs:
           else
             python tools/check_release_acceptance.py --allow-not-ready
           fi
+      - name: Install release validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Run critical release validation
+        run: |
+          pytest -q tests/test_version_metadata.py
+          python tools/run_python_preflight.py --gate release
       - name: Install build tools
-        run: python -m pip install --upgrade pip build
+        run: python -m pip install --upgrade build
       - name: Build sdist and wheel
         run: python -m build
       - name: Upload artifacts

@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-03T20:46:29.684781+00:00`
+- Generated at: `2026-03-03T21:24:45.853615+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: docs-claims-only markers
 
@@ -8,18 +8,18 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 141 |
+| Total flagged entries | 142 |
 | P0 + P1 entries | 0 |
 | Source-domain entries | 0 |
 | Source-domain P0 + P1 entries | 0 |
-| Docs-claims entries | 141 |
+| Docs-claims entries | 142 |
 | Domains affected | 1 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 82 |
+| `FALLBACK` | 83 |
 | `PLANNED` | 22 |
 | `EXPERIMENTAL` | 14 |
 | `SIMPLIFIED` | 13 |
@@ -30,7 +30,7 @@
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 141 |
+| `docs_claims` | 142 |
 
 ## Top Priority Backlog (Top 80)
 
@@ -89,6 +89,7 @@
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:93` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | │ ╱ Fallback (analytic) |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:124` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Fallback vectorised \| ~2 ms \| ~7× slower \| |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:125` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Fallback point-by-point loop \| ~200 ms \| ~670× slower \| |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/CI_FAILURE_LEDGER.md:19` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | CI-2026-03-03-006 | 2026-03-03 19:18 | 22638800884 (Python 3.9/3.10) | `ModuleNotFoundError: No module named 'tomllib'` from `tools/che... |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:35` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Host orchestration in Rust with deterministic CPU fallback |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:64` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - CPU fallback for unsupported nodes |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:122` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - automatic CPU fallback |
@@ -115,9 +116,8 @@
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:102` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | WebGPU) with deterministic CPU fallback. |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:110` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | CUDA/ROCm adapters for the GMRES linear solver with CPU fallback |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:129` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Operations: runtime capability detection + automatic CPU fallback |
-| P3 | 45 | `docs_claims` | `FALLBACK` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:22` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| `FALLBACK` \| 172 \| |
 
-## Full Register (Top 141)
+## Full Register (Top 142)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -174,6 +174,7 @@
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:93` | │ ╱ Fallback (analytic) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:124` | \| Fallback vectorised \| ~2 ms \| ~7× slower \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:125` | \| Fallback point-by-point loop \| ~200 ms \| ~670× slower \| |
+| P3 | `docs_claims` | `FALLBACK` | `docs/CI_FAILURE_LEDGER.md:19` | | CI-2026-03-03-006 | 2026-03-03 19:18 | 22638800884 (Python 3.9/3.10) | `ModuleNotFoundError: No module named 'tomllib'` from `tools/che... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:35` | - Host orchestration in Rust with deterministic CPU fallback |
 | P3 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:64` | - CPU fallback for unsupported nodes |
 | P3 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:122` | - automatic CPU fallback |

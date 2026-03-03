@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-03T20:42:40.681935+00:00`
+- Generated at: `2026-03-03T21:24:10.566798+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,18 +8,18 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 190 |
+| Total flagged entries | 191 |
 | P0 + P1 entries | 0 |
 | Source-domain entries | 28 |
 | Source-domain P0 + P1 entries | 0 |
-| Docs-claims entries | 141 |
+| Docs-claims entries | 142 |
 | Domains affected | 3 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 114 |
+| `FALLBACK` | 115 |
 | `PLANNED` | 23 |
 | `EXPERIMENTAL` | 21 |
 | `SIMPLIFIED` | 18 |
@@ -30,7 +30,7 @@
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 141 |
+| `docs_claims` | 142 |
 | `validation` | 28 |
 | `other` | 21 |
 
@@ -126,7 +126,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | 59 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
 
-## Full Register (Top 190)
+## Full Register (Top 191)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -232,6 +232,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:93` | │ ╱ Fallback (analytic) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:124` | \| Fallback vectorised \| ~2 ms \| ~7× slower \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:125` | \| Fallback point-by-point loop \| ~200 ms \| ~670× slower \| |
+| P3 | `docs_claims` | `FALLBACK` | `docs/CI_FAILURE_LEDGER.md:19` | | CI-2026-03-03-006 | 2026-03-03 19:18 | 22638800884 (Python 3.9/3.10) | `ModuleNotFoundError: No module named 'tomllib'` from `tools/che... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:35` | - Host orchestration in Rust with deterministic CPU fallback |
 | P3 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:64` | - CPU fallback for unsupported nodes |
 | P3 | `docs_claims` | `FALLBACK` | `docs/GPU_ACCELERATION_ROADMAP.md:122` | - automatic CPU fallback |

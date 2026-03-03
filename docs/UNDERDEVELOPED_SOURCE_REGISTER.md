@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-03T20:46:29.684781+00:00`
+- Generated at: `2026-03-03T21:24:45.853615+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: source-only (`src/scpn_fusion/**`) markers
 
