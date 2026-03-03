@@ -15,3 +15,8 @@ This checklist must be fully green before publishing a release tag.
 - [x] Changelog contains the release section and date
 - [x] CI workflow on `main` is green for the release commit
 - [x] Tag/release notes reviewed and approved
+
+## Post-Publish Verification
+
+- Verify PyPI parity (same version as release tag):  
+  `python tools/check_pypi_sync.py --package scpn-fusion --mode equal --strip-v-prefix --retries 30 --retry-delay 10`

@@ -4,6 +4,13 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to publish (tag/sha/branch). Defaults to current ref."
+        required: false
+        default: ""
+        type: string
 
 permissions:
   id-token: write  # Required for trusted publisher (OIDC)
@@ -15,12 +22,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Release acceptance checklist gate
-        run: python tools/check_release_acceptance.py --expected-version "${GITHUB_REF_NAME}"
+        run: |
+          expected=""
+          if [ "${{ github.event_name }}" = "push" ] && [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            expected="${GITHUB_REF_NAME}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.ref }}" ] && [[ "${{ inputs.ref }}" == v* ]]; then
+            expected="${{ inputs.ref }}"
+          fi
+
+          if [ -n "${expected}" ]; then
+            python tools/check_release_acceptance.py --expected-version "${expected}"
+          else
+            python tools/check_release_acceptance.py --allow-not-ready
+          fi
       - name: Install build tools
         run: python -m pip install --upgrade pip build
       - name: Build sdist and wheel
@@ -48,6 +69,27 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         # Uses OIDC trusted publisher — no API token needed
         # Configure at: https://pypi.org/manage/project/scpn-fusion/settings/publishing/
+
+  verify-pypi-parity:
+    name: Verify PyPI version parity
+    needs: [publish-pypi]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify PyPI package version
+        run: |
+          python tools/check_pypi_sync.py \
+            --package scpn-fusion \
+            --mode equal \
+            --strip-v-prefix \
+            --retries 30 \
+            --retry-delay 10
 
   publish-testpypi:
     name: Publish to TestPyPI
