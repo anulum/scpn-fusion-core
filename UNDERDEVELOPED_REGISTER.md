@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-03T01:38:25.133889+00:00`
+- Generated at: `2026-03-03T02:30:15.074671+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -74,11 +74,11 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 80 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
 | P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | Architecture WG | Replace default path or remove lane before next major release. | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
 | P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:72` | Architecture WG | Replace default path or remove lane before next major release. | - Regression test for deprecated FNO-controller missing-weight fallback path. |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:358` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:359` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:474` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:475` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
-| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:637` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
+| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:371` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
+| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:372` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
+| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:489` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
+| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:490` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
+| P2 | 76 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:657` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
 | P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | Validation WG | Replace default path or remove lane before next major release. | if "DEPRECATED" in issue.markers: |
 | P2 | 75 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:192` | Validation WG | Replace default path or remove lane before next major release. | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
 | P2 | 74 | `other` | `SIMPLIFIED` | `CHANGELOG.md:155` | Architecture WG | Upgrade with higher-fidelity closure or tighten domain contract. | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
@@ -159,11 +159,11 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
 | P2 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
 | P2 | `other` | `DEPRECATED` | `CHANGELOG.md:72` | - Regression test for deprecated FNO-controller missing-weight fallback path. |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:358` | "Experimental-only pytest suite", |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:359` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:474` | "'release' excludes experimental-only lanes, " |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:475` | "'research' runs experimental-only lanes, " |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:637` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:371` | "Experimental-only pytest suite", |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:372` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:489` | "'release' excludes experimental-only lanes, " |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:490` | "'research' runs experimental-only lanes, " |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:657` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
 | P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | if "DEPRECATED" in issue.markers: |
 | P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:192` | items.append("Remove deprecated runtime-default path or replace with validated default lane.") |
 | P2 | `other` | `SIMPLIFIED` | `CHANGELOG.md:155` | - **D-T Reactivity Fix**: Replaced simplified Huba fit with NRL Plasma Formulary 5-coefficient Bosch-Hale parameterisation for `sigma_v_d... |
