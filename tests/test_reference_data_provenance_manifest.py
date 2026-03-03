@@ -241,3 +241,25 @@ def test_build_manifest_sorts_files_by_relative_posix_path(tmp_path: Path) -> No
     payload = prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
     paths = [row["path"] for row in payload["files"]]
     assert paths == sorted(paths)
+
+
+def test_normalize_for_check_sorts_datasets_and_files() -> None:
+    payload = {
+        "generated_at_utc": "2026-03-03T00:00:00+00:00",
+        "datasets": [
+            {"id": "zeta", "file_count": 1},
+            {"id": "alpha", "file_count": 2},
+        ],
+        "files": [
+            {"path": "z/file.json", "sha256": "a"},
+            {"path": "a/file.json", "sha256": "b"},
+        ],
+    }
+
+    normalized = prov._normalize_for_check(payload)
+    assert normalized["generated_at_utc"] == "<normalized>"
+    assert [row["id"] for row in normalized["datasets"]] == ["alpha", "zeta"]
+    assert [row["path"] for row in normalized["files"]] == [
+        "a/file.json",
+        "z/file.json",
+    ]

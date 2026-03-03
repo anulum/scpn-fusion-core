@@ -168,6 +168,18 @@ def _normalize_for_check(payload: dict[str, Any]) -> dict[str, Any]:
     out = dict(payload)
     if "generated_at_utc" in out:
         out["generated_at_utc"] = "<normalized>"
+    datasets = out.get("datasets")
+    if isinstance(datasets, list):
+        out["datasets"] = sorted(
+            datasets,
+            key=lambda item: str(item.get("id", "")) if isinstance(item, dict) else "",
+        )
+    files = out.get("files")
+    if isinstance(files, list):
+        out["files"] = sorted(
+            files,
+            key=lambda item: str(item.get("path", "")) if isinstance(item, dict) else "",
+        )
     return out
 
 
