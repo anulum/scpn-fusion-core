@@ -70,6 +70,15 @@ artifacts/*_local*.md
 artifacts/underdeveloped_register_ci*.md
 artifacts/untested_module_guard_summary.json
 artifacts/deprecated_default_lane_guard_summary.json
+artifacts/ci-run-*/
+artifacts/job_*.log
+artifacts/coverage-critical-sample.xml
+artifacts/coverage-critical-sample-summary.json
+artifacts/disruption_transfer_generalization.json
+artifacts/disruption_transfer_generalization.md
+artifacts/release_delta_guard_summary.json
+artifacts/sparc_geqdsk_rmse_benchmark.json
+artifacts/torax_benchmark.json
 
 # Local LaTeX build intermediates
 papers/*.aux
@@ -80,6 +89,11 @@ papers/*.out
 papers/*.fdb_latexmk
 papers/*.fls
 papers/*.toc
+papers/*.pdf
+papers/*.tar.gz
+
+# Accidental nested repository mirror from local tooling/worktree mistakes
+03_CODE/SCPN-Fusion-Core/
 
 # Jupyter
 .ipynb_checkpoints/
