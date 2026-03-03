@@ -1,33 +1,202 @@
 {
-  "version": "claims-audit-v1",
+  "version": "claims-audit-v2",
   "claims": [
     {
-      "id": "readme_pretrained_coverage_claim",
-      "source_file": "docs/HONEST_SCOPE.md",
-      "source_pattern": "4 of 7 surrogate lanes ship pretrained",
+      "id": "readme_rust_speedup_claim",
+      "source_file": "README.md",
+      "source_pattern": "6,600x speedup",
       "evidence_files": [
-        "validation/reports/task2_pretrained_surrogates_benchmark.json",
-        "validation/reports/task2_pretrained_surrogates_benchmark.md",
-        "weights/neural_transport_qlknn.npz"
+        "validation/reports/stress_test_campaign.json"
       ],
       "evidence_patterns": [
         {
-          "file": "validation/reports/task2_pretrained_surrogates_benchmark.json",
-          "pattern": "\"coverage_percent\"\\s*:\\s*57\\.1428"
+          "file": "validation/reports/stress_test_campaign.json",
+          "pattern": "\"PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*3431\\.3758333333335"
+        },
+        {
+          "file": "validation/reports/stress_test_campaign.json",
+          "pattern": "\"Rust-PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*0\\.522531"
         }
       ]
     },
     {
-      "id": "results_fno_validated_status",
-      "source_file": "RESULTS.md",
-      "source_pattern": "JAX FNO turbulence surrogate",
+      "id": "readme_rust_control_loop_latency_claim",
+      "source_file": "README.md",
+      "source_pattern": "Rust control-loop latency \\| \\*\\*0\\.52 us P50\\*\\*",
       "evidence_files": [
-        "src/scpn_fusion/core/fno_jax_training.py"
+        "validation/reports/stress_test_campaign.json"
       ],
       "evidence_patterns": [
         {
-          "file": "src/scpn_fusion/core/fno_jax_training.py",
-          "pattern": "JAX-FNO"
+          "file": "validation/reports/stress_test_campaign.json",
+          "pattern": "\"Rust-PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*0\\.522531"
+        }
+      ]
+    },
+    {
+      "id": "readme_qlknn_transport_claim",
+      "source_file": "README.md",
+      "source_pattern": "QLKNN-10D transport surrogate \\| test rel_L2 = 0\\.094",
+      "evidence_files": [
+        "weights/neural_transport_qlknn.metrics.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "weights/neural_transport_qlknn.metrics.json",
+          "pattern": "\"test_relative_l2\"\\s*:\\s*0\\.09430918020180648"
+        }
+      ]
+    },
+    {
+      "id": "readme_zero_disruption_rust_pid_claim",
+      "source_file": "README.md",
+      "source_pattern": "Disruption rate \\(1,000-shot campaign\\) \\| \\*\\*0%\\*\\* \\(Rust-PID\\)",
+      "evidence_files": [
+        "validation/reports/stress_test_campaign.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "validation/reports/stress_test_campaign.json",
+          "pattern": "\"Rust-PID\"[\\s\\S]*\"disruption_rate\"\\s*:\\s*0\\.0"
+        }
+      ]
+    },
+    {
+      "id": "readme_itpa_hmode_coverage_claim",
+      "source_file": "README.md",
+      "source_pattern": "ITPA H-mode confinement",
+      "evidence_files": [
+        "artifacts/real_shot_validation.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/real_shot_validation.json",
+          "pattern": "\"transport\"[\\s\\S]*\"n_shots\"\\s*:\\s*53"
+        }
+      ]
+    },
+    {
+      "id": "results_qlknn_lane_pass",
+      "source_file": "RESULTS.md",
+      "source_pattern": "QLKNN Transport \\| PASS",
+      "evidence_files": [
+        "weights/neural_transport_qlknn.metrics.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "weights/neural_transport_qlknn.metrics.json",
+          "pattern": "\"test_relative_l2\"\\s*:\\s*0\\.09430918020180648"
+        }
+      ]
+    },
+    {
+      "id": "results_real_shot_overall_pass",
+      "source_file": "RESULTS.md",
+      "source_pattern": "Overall real-shot pass \\| Yes",
+      "evidence_files": [
+        "artifacts/real_shot_validation.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/real_shot_validation.json",
+          "pattern": "\"overall_pass\"\\s*:\\s*true"
+        }
+      ]
+    },
+    {
+      "id": "results_real_shot_disruption_recall",
+      "source_file": "RESULTS.md",
+      "source_pattern": "Disruption recall \\| 1\\.00",
+      "evidence_files": [
+        "artifacts/real_shot_validation.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/real_shot_validation.json",
+          "pattern": "\"disruption\"[\\s\\S]*\"recall\"\\s*:\\s*1\\.0"
+        }
+      ]
+    },
+    {
+      "id": "results_real_shot_disruption_fpr",
+      "source_file": "RESULTS.md",
+      "source_pattern": "Disruption FPR \\| 0\\.00",
+      "evidence_files": [
+        "artifacts/real_shot_validation.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/real_shot_validation.json",
+          "pattern": "\"disruption\"[\\s\\S]*\"false_positive_rate\"\\s*:\\s*0\\.0"
+        }
+      ]
+    },
+    {
+      "id": "results_manufactured_source_equilibrium_pass",
+      "source_file": "RESULTS.md",
+      "source_pattern": "Manufactured-Source Equilibrium Parity \\(Solov'ev lane\\)",
+      "evidence_files": [
+        "artifacts/freegs_benchmark.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/freegs_benchmark.json",
+          "pattern": "\"mode\"\\s*:\\s*\"solovev_manufactured_source\""
+        },
+        {
+          "file": "artifacts/freegs_benchmark.json",
+          "pattern": "\"overall_psi_nrmse\"\\s*:\\s*0\\.076363"
+        },
+        {
+          "file": "artifacts/freegs_benchmark.json",
+          "pattern": "\"passes\"\\s*:\\s*true"
+        }
+      ]
+    },
+    {
+      "id": "results_threshold_sweep_dataset_size",
+      "source_file": "RESULTS.md",
+      "source_pattern": "Shots evaluated \\| 16",
+      "evidence_files": [
+        "artifacts/disruption_threshold_sweep.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/disruption_threshold_sweep.json",
+          "pattern": "\"n_shots\"\\s*:\\s*16"
+        }
+      ]
+    },
+    {
+      "id": "results_threshold_sweep_fpr",
+      "source_file": "RESULTS.md",
+      "source_pattern": "\\| FPR \\| 0\\.50",
+      "evidence_files": [
+        "artifacts/disruption_threshold_sweep.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "artifacts/disruption_threshold_sweep.json",
+          "pattern": "\"fpr\"\\s*:\\s*0\\.5"
+        }
+      ]
+    },
+    {
+      "id": "security_current_supported_release",
+      "source_file": "SECURITY.md",
+      "source_pattern": "\\| 3\\.9\\.3\\s+\\| :white_check_mark:",
+      "evidence_files": [
+        "pyproject.toml",
+        "src/scpn_fusion/__init__.py"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "pyproject.toml",
+          "pattern": "version\\s*=\\s*\"3\\.9\\.3\""
+        },
+        {
+          "file": "src/scpn_fusion/__init__.py",
+          "pattern": "__version__\\s*=\\s*\"3\\.9\\.3\""
         }
       ]
     }

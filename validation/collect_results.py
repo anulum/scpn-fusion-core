@@ -444,7 +444,11 @@ def generate_results_md(
         rows.append(f"| P95 halo current peak | {_fmt(disruption['p95_halo_ma'], '.3f')} | MA | |")
         rows.append(f"| Mean RE current peak | {_fmt(disruption['mean_re_ma'], '.3f')} | MA | |")
         rows.append(f"| P95 RE current peak | {_fmt(disruption['p95_re_ma'], '.3f')} | MA | |")
-        rows.append(f"| Passes ITER limits | {_fmt(disruption['passes_iter'])} | — | Halo + RE constraints |")
+        rows.append(
+            "| ITER halo+RE contract pass (stress lane) | "
+            f"{_fmt(disruption['passes_iter'])} | — | "
+            "Requires prevention>=90%, P95 halo<=3.4 MA, P95 RE<=1.0 MA |"
+        )
     if hil:
         rows.append(f"| HIL control-loop P50 latency | {_fmt(hil['p50_us'], '.1f')} | μs | {hil['iterations']} iterations |")
         rows.append(f"| HIL control-loop P95 latency | {_fmt(hil['p95_us'], '.1f')} | μs | |")
@@ -477,6 +481,7 @@ def generate_results_md(
             sections.append(f"| Equilibrium ψ pass fraction | {_fmt((eq.get('psi_pass_fraction', 0)) * 100, '.0f')} | % | {eq.get('n_psi_pass', '?')}/{eq.get('n_files', '?')} files |")
             sections.append(f"| Equilibrium q95 pass fraction | {_fmt((eq.get('q95_pass_fraction', 0)) * 100, '.0f')} | % | {eq.get('n_q95_pass', '?')}/{eq.get('n_files', '?')} files |")
             sections.append(f"| Equilibrium validation | {_fmt(eq.get('passes'))} | — | |")
+        sections.append("| Data provenance | Mixed | — | Real SPARC/ITPA + template-generated DIII-D disruption shots |")
         sections.append(f"| Overall real-shot pass | {_fmt(real_shots.get('overall_pass'))} | — | |")
         sections.append("")
 
@@ -497,7 +502,14 @@ def generate_results_md(
 
     # ── FreeGS Equilibrium Benchmark ──
     if freegs:
-        sections.append("## FreeGS Equilibrium Benchmark\n")
+        freegs_mode = str(freegs.get("mode", "freegs_numeric")).strip().lower()
+        using_solovev = freegs_mode == "solovev_manufactured_source"
+        heading = (
+            "## Manufactured-Source Equilibrium Parity (Solov'ev lane)\n"
+            if using_solovev
+            else "## FreeGS Equilibrium Benchmark\n"
+        )
+        sections.append(heading)
         sections.append("| Case | ψ NRMSE | q NRMSE | Axis error (m) | Passes |")
         sections.append("|------|---------|---------|---------------|--------|")
         for c in freegs.get("cases", []):
@@ -507,6 +519,11 @@ def generate_results_md(
                 f"| {_fmt(c['q_profile_nrmse'], '.3f')} "
                 f"| {_fmt(c['axis_error_m'], '.3f')} "
                 f"| {_fmt(c['passes'])} |"
+            )
+        if using_solovev:
+            sections.append("")
+            sections.append(
+                "> Provenance: synthetic manufactured-source parity lane (release default when FreeGS backend is unavailable)."
             )
         sections.append(f"\n*Overall ψ NRMSE: {_fmt(freegs.get('overall_psi_nrmse'), '.3f')} "
                         f"(threshold: {freegs.get('psi_nrmse_threshold', '?')}). "
@@ -600,7 +617,7 @@ def generate_results_md(
         qlknn_pass = v < 0.10
         qlknn_metric = f"test_rel_l2 = {v:.4f}"
     _lane("QLKNN Transport", {"passes": qlknn_pass} if qlknn else None, "passes", qlknn_metric)
-    _lane("Real-shot validation", real_shots, "overall_pass",
+    _lane("Real-shot validation (mixed real+template)", real_shots, "overall_pass",
           f"recall={real_shots['disruption']['recall']:.0%}, FPR={real_shots['disruption']['false_positive_rate']:.0%}" if real_shots and "disruption" in real_shots else "—")
 
     conf_metric = "—"
@@ -622,7 +639,10 @@ def generate_results_md(
           f"recall={real_shots['disruption']['recall']:.0%}" if real_shots and "disruption" in real_shots else "—")
     _lane("HIL sub-ms", hil, "sub_ms",
           f"P50 = {hil['p50_us']:.1f} μs" if hil else "—")
-    _lane("FreeGS analytic", freegs, "passes",
+    freegs_lane_name = "FreeGS strict-backend parity"
+    if freegs and str(freegs.get("mode", "")).strip().lower() == "solovev_manufactured_source":
+        freegs_lane_name = "Solov'ev manufactured-source parity"
+    _lane(freegs_lane_name, freegs, "passes",
           f"ψ NRMSE = {freegs['overall_psi_nrmse']:.3f}" if freegs else "—")
     _lane("Transfer generalization", transfer_generalization, "passes",
           (

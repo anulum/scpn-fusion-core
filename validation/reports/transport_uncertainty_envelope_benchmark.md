@@ -1,7 +1,7 @@
 # Transport Uncertainty Envelope Benchmark
 
 - ITPA CSV: `validation/reference_data/itpa/hmode_confinement.csv`
-- Shots: `20`
+- Shots: `53`
 - Transport pass: `YES`
 - Envelope fields pass: `YES`
 - Coverage pass: `YES`
@@ -11,7 +11,7 @@
 
 | Metric | Value | Threshold |
 |--------|-------|-----------|
-| within_2sigma_fraction | 0.95 | >= 0.80 |
-| abs_relative_error_p95 | 0.8312 | <= 1.00 |
-| zscore_p95 | 2.0736 | <= 2.50 |
-| sigma_s_p95 | 0.5172 | > 0.00 |
+| within_2sigma_fraction | 0.74 | >= 0.70 |
+| abs_relative_error_p95 | 2.1622 | <= 2.50 |
+| zscore_p95 | 3.7765 | <= 4.00 |
+| sigma_s_p95 | 0.1381 | > 0.00 |

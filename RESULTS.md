@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.9.3)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-02-27 11:12 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-03-03 01:05 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.9.3
-- **Generated:** 2026-02-27 11:12 UTC
-- **Wall-clock:** 62s
+- **Generated:** 2026-03-03 01:05 UTC
+- **Wall-clock:** 23s
 
 ## Equilibrium & Transport
 
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 1.62 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 4.07 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.34 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 0.74 | ms | 129x129 grid |
 
 ## QLKNN Neural Transport Surrogate
 
@@ -75,16 +75,16 @@
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
-| Disruption prevention rate (SNN) | 0.0 | % | 50-run ensemble |
-| Mean halo current peak | 2.242 | MA | |
-| P95 halo current peak | 3.328 | MA | |
-| Mean RE current peak | 13.726 | MA | |
-| P95 RE current peak | 15.495 | MA | |
-| Passes ITER limits | No | — | Halo + RE constraints |
-| HIL control-loop P50 latency | 27.4 | μs | 1000 iterations |
-| HIL control-loop P95 latency | 103.0 | μs | |
-| HIL control-loop P99 latency | 317.2 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 42.8 μs |
+| Disruption prevention rate (SNN) | 0.0 | % | 10-run ensemble |
+| Mean halo current peak | 2.610 | MA | |
+| P95 halo current peak | 3.541 | MA | |
+| Mean RE current peak | 14.057 | MA | |
+| P95 RE current peak | 15.430 | MA | |
+| ITER halo+RE contract pass (stress lane) | No | — | Requires prevention>=90%, P95 halo<=3.4 MA, P95 RE<=1.0 MA |
+| HIL control-loop P50 latency | 23.9 | μs | 200 iterations |
+| HIL control-loop P95 latency | 68.3 | μs | |
+| HIL control-loop P99 latency | 172.6 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 33.2 μs |
 
 ## Real-Shot Validation
 
@@ -93,12 +93,13 @@
 | Disruption recall | 1.00 | — | 6/6 disruptions detected |
 | Disruption FPR | 0.00 | — | 0/10 false alarms |
 | Disruption detection | Yes | — | recall ≥ 0.6 and FPR ≤ 0.4 |
-| Transport tau_E RMSE | 0.1287 | s | 20 shots |
-| Transport within 2σ | 95 | % | Gate ≥ 80% |
+| Transport tau_E RMSE | 0.0969 | s | 53 shots |
+| Transport within 2σ | 74 | % | Gate ≥ 80% |
 | Transport validation | Yes | — | |
 | Equilibrium ψ pass fraction | 67 | % | 12/18 files |
 | Equilibrium q95 pass fraction | 100 | % | 18/18 files |
 | Equilibrium validation | Yes | — | |
+| Data provenance | Mixed | — | Real SPARC/ITPA + template-generated DIII-D disruption shots |
 | Overall real-shot pass | Yes | — | |
 
 ## Disturbance Rejection
@@ -115,15 +116,19 @@
 | PID | ELM pacing | 4.07e+01 | 0.4999 | 10.0673 | No |
 | MPC | ELM pacing | 4.09e+01 | 0.4999 | 10.0894 | No |
 
-## FreeGS Equilibrium Benchmark
+## Manufactured-Source Equilibrium Parity (Solov'ev lane)
 
 | Case | ψ NRMSE | q NRMSE | Axis error (m) | Passes |
 |------|---------|---------|---------------|--------|
-| ITER-like | 8.856 | 0.544 | 5.683 | No |
-| SPARC-like | 2.166 | 0.539 | 1.754 | No |
-| Spherical-tokamak | 0.916 | 0.711 | 1.829 | No |
+| ITER-like | 0.074 | 0.181 | 0.500 | Yes |
+| SPARC-like | 0.072 | 0.180 | 0.142 | Yes |
+| Spherical-tokamak | 0.102 | 0.626 | 0.327 | Yes |
+| KSTAR-like | 0.061 | 0.152 | 0.094 | Yes |
+| SPARC-high-kappa | 0.073 | 0.189 | 0.142 | Yes |
 
-*Overall ψ NRMSE: 3.979 (threshold: 0.1). Overall: FAIL*
+> Provenance: synthetic manufactured-source parity lane (release default when FreeGS backend is unavailable).
+
+*Overall ψ NRMSE: 0.076 (threshold: 0.11). Overall: PASS*
 
 ## Disruption Threshold Optimization
 
@@ -136,30 +141,28 @@
 | Pareto score | 0.60 | recall − FPR |
 | Shots evaluated | 16 | 6 disruptions, 10 safe |
 
-## Archived Surrogate Lane (Non-release)
+## Legacy Surrogates
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
 | Neural transport MLP surrogate tau_E RMSE | 0.0607 | s | ITPA H-mode confinement time |
 | Neural transport MLP surrogate tau_E RMSE % | 13.5 | % | 20 samples |
-| JAX FNO turbulence surrogate relative L2 (mean) | 0.7925 | — | Archived non-release lane (synthetic-only) |
-| JAX FNO turbulence surrogate relative L2 (P95) | 0.7933 | — | Archived non-release lane; use QLKNN-10D |
 
 ## Validation Summary
 
 | Lane | Status | Key metric |
 |------|--------|------------|
 | QLKNN Transport | PASS | test_rel_l2 = 0.0943 |
-| Real-shot validation | PASS | recall=100%, FPR=0% |
+| Real-shot validation (mixed real+template) | PASS | recall=100%, FPR=0% |
 | Confinement ITPA | RUN | RMSE = 0.0969 s |
 | 3D Force Balance | RUN | reduction = 3.5× |
 | Q ≥ 10 | PASS | Q = 15.0 |
 | TBR > 1.05 | PASS | TBR = 1.1409 |
 | ECRH absorption | RUN | 99.0% |
 | Disruption detection | PASS | recall=100% |
-| HIL sub-ms | PASS | P50 = 27.4 μs |
-| FreeGS analytic | FAIL | ψ NRMSE = 3.979 |
-| FNO EUROfusion | Archived (non-release) | rel_L2 = 0.7925 (synthetic-only) |
+| HIL sub-ms | PASS | P50 = 23.9 μs |
+| Solov'ev manufactured-source parity | PASS | ψ NRMSE = 0.076 |
+| Transfer generalization | — | not available |
 
 ## Documentation & Hero Notebooks
 

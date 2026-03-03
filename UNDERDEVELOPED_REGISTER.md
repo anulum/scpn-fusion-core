@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-03T00:05:01.424871+00:00`
+- Generated at: `2026-03-03T01:05:39.385319+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 196 |
-| P0 + P1 entries | 9 |
-| Source-domain entries | 37 |
-| Source-domain P0 + P1 entries | 9 |
+| Total flagged entries | 195 |
+| P0 + P1 entries | 8 |
+| Source-domain entries | 36 |
+| Source-domain P0 + P1 entries | 8 |
 | Docs-claims entries | 140 |
 | Domains affected | 7 |
 
@@ -24,7 +24,7 @@
 | `EXPERIMENTAL` | 21 |
 | `SIMPLIFIED` | 18 |
 | `DEPRECATED` | 10 |
-| `MONOLITH` | 7 |
+| `MONOLITH` | 6 |
 | `NOT_VALIDATED` | 4 |
 | `FALLBACK_DENSITY` | 2 |
 
@@ -35,18 +35,17 @@
 | `docs_claims` | 140 |
 | `validation` | 28 |
 | `other` | 19 |
-| `control` | 4 |
+| `control` | 3 |
 | `core_physics` | 2 |
 | `diagnostics_io` | 2 |
 | `compiler_runtime` | 1 |
 
-## Source-Centric Priority Backlog (Top 9)
+## Source-Centric Priority Backlog (Top 8)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 100 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_contracts.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=732 exceeds monolith threshold (700+). |
 | P0 | 100 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=827 exceeds monolith threshold (700+). |
 | P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=830 exceeds monolith threshold (700+). |
 | P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_runtime.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=839 exceeds monolith threshold (700+). |
@@ -60,7 +59,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 100 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_contracts.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=732 exceeds monolith threshold (700+). |
 | P0 | 100 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=827 exceeds monolith threshold (700+). |
 | P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=830 exceeds monolith threshold (700+). |
 | P0 | 99 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_runtime.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=839 exceeds monolith threshold (700+). |
@@ -140,12 +138,12 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:788` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 2. **General Atomics** — DIII-D experimental data access, validation collaboration |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2534` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Each paper would require additional experimental results (plant model integration, hardware benchmarks, comparison against conventional c... |
 | P3 | 61 | `validation` | `PLANNED` | `validation/validate_real_shots.py:565` | Validation WG | Convert roadmap note into scheduled milestone task + owner. | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
+| P3 | 60 | `docs_claims` | `NOT_VALIDATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Add real-data validation campaign and publish error bars. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 
-## Full Register (Top 196)
+## Full Register (Top 195)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_contracts.py:1` | module LOC=732 exceeds monolith threshold (700+). |
 | P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_predictor.py:1` | module LOC=827 exceeds monolith threshold (700+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | module LOC=830 exceeds monolith threshold (700+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_runtime.py:1` | module LOC=839 exceeds monolith threshold (700+). |

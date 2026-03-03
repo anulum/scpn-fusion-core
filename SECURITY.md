@@ -4,8 +4,10 @@
 
 | Version | Supported          | Notes |
 |---------|--------------------|-------|
-| 3.1.0   | :white_check_mark: | Current stable — Phase 0 physics hardening |
-| 3.0.0   | :white_check_mark: | Previous stable — Rust SNN, full-chain UQ, shot replay |
+| 3.9.3   | :white_check_mark: | Current stable — hardening/governance wave |
+| 3.9.2   | :white_check_mark: | Previous stable — validation-first release line |
+| 3.1.0   | :x:                | Superseded (Phase 0 physics hardening) |
+| 3.0.0   | :x:                | Superseded (Rust SNN, full-chain UQ, shot replay) |
 | 2.0.0   | :x:                | Superseded (multigrid, gyro-Bohm, H-inf controller) |
 | 2.1.0   | :x:                | Superseded (GEQDSK, Sauter bootstrap, Spitzer) |
 | 1.0.2   | :x:                | Superseded (initial public release) |
@@ -43,13 +45,13 @@ configuration. Security concerns are primarily:
 
 ## Hardening Measures in Place
 
-### Input Validation (v1.0.2 — v3.1.0)
+### Input Validation (v1.0.2 — v3.9.3)
 Over 30 hardening commits add runtime guards across all physics and control
 modules: array shape/dtype checks, non-finite rejection, range clamping,
 and constructor parameter validation. See the git log for commits prefixed
 with `Harden`.
 
-### Physics Constraint Enforcement (v3.1.0)
+### Physics Constraint Enforcement (v3.1.0+)
 - Greenwald density limit rejects unphysical density points in Q-scan
 - Temperature capped at 25 keV with warning emission
 - Q factor capped at 15 to prevent 0-D model artifacts
@@ -110,3 +112,5 @@ analysis integration, audit reports) are welcome.
 | 2026-02-16 | v2.1.0 released — GEQDSK expansion, Sauter bootstrap |
 | 2026-02-17 | v3.0.0 released — Rust SNN PyO3, full-chain UQ, shot replay |
 | 2026-02-17 | v3.1.0 released — Phase 0 physics hardening (Greenwald, TBR, conservation) |
+| 2026-02-24 | v3.9.2 released — validation-first release line |
+| 2026-03-02 | v3.9.3 released — hardening/governance wave |
