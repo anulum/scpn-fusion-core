@@ -7,10 +7,14 @@ import argparse
 import json
 import re
 import time
-import tomllib
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+try:  # Python 3.11+
+    import tomllib  # type: ignore[attr-defined]
+except ModuleNotFoundError:  # pragma: no cover - exercised on 3.9/3.10 CI lanes
+    tomllib = None  # type: ignore[assignment]
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -19,14 +23,31 @@ DEFAULT_PYPROJECT = REPO_ROOT / "pyproject.toml"
 
 def read_local_version(pyproject_path: Path) -> str:
     """Read project.version from pyproject.toml."""
-    data = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
-    project = data.get("project", {})
-    version = project.get("version")
-    if not isinstance(version, str) or not version.strip():
-        raise ValueError(
-            f"Unable to determine project.version from {pyproject_path.as_posix()}"
-        )
-    return version.strip()
+    text = pyproject_path.read_text(encoding="utf-8")
+    if tomllib is not None:
+        data = tomllib.loads(text)
+        project = data.get("project", {})
+        version = project.get("version")
+        if isinstance(version, str) and version.strip():
+            return version.strip()
+
+    in_project = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_project = stripped == "[project]"
+            continue
+        if not in_project:
+            continue
+        match = re.match(r'^version\s*=\s*["\']([^"\']+)["\']\s*$', stripped)
+        if match:
+            return match.group(1).strip()
+
+    raise ValueError(
+        f"Unable to determine project.version from {pyproject_path.as_posix()}"
+    )
 
 
 def fetch_pypi_version(package: str, timeout: float) -> str:

@@ -26,6 +26,16 @@ def test_read_local_version(tmp_path: Path) -> None:
     assert check_pypi_sync.read_local_version(pyproject) == "1.2.3"
 
 
+def test_read_local_version_without_tomllib(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        "[project]\nname = \"demo\"\nversion = \"9.8.7\"\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(check_pypi_sync, "tomllib", None)
+    assert check_pypi_sync.read_local_version(pyproject) == "9.8.7"
+
+
 @pytest.mark.parametrize(
     ("local", "remote", "mode", "expected"),
     [
