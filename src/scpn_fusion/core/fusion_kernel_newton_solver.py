@@ -89,6 +89,16 @@ class FusionKernelNewtonSolverMixin:
         Psi_norm = (self.Psi - Psi_axis) / denom
         mask_plasma = (Psi_norm >= 0) & (Psi_norm < 1.0)
 
+        # External profile mode injects J_phi from transport/runtime coupling.
+        # Use a bounded secant-like diagonal approximation instead of the
+        # fixed L-mode linear profile derivative.
+        if bool(getattr(self, "external_profile_mode", False)):
+            dJ_dpsi = np.zeros_like(self.Psi)
+            j_abs = np.abs(np.asarray(self.J_phi, dtype=float))
+            scale = max(abs(float(denom)), 1e-9)
+            dJ_dpsi[mask_plasma] = -j_abs[mask_plasma] / scale
+            return dJ_dpsi
+
         # For the linear L-mode profile: Source = -mu0 * R * J_phi
         # J_phi = c * (1 - psi_norm) * R  =>  dJ_phi/dpsi_norm = -c * R
         # dJ_phi/dpsi = dJ_phi/dpsi_norm * dpsi_norm/dpsi = -c * R / denom
@@ -136,7 +146,15 @@ class FusionKernelNewtonSolverMixin:
             raise ValueError("solver.gs_residual_threshold must be > 0")
         mu0: float = self.cfg["physics"]["vacuum_permeability"]
         warmup_steps: int = min(15, max_iter // 2)
-        newton_alpha: float = 0.5  # damped Newton
+        newton_alpha: float = 0.5  # initial damped Newton step
+        line_search_c: float = 1e-4
+        max_backtracks: int = 6
+        use_newton_line_search: bool = bool(
+            self.cfg["solver"].get("newton_line_search", False)
+        )
+        use_gmres_preconditioner: bool = bool(
+            self.cfg["solver"].get("gmres_diagonal_preconditioner", False)
+        )
 
         residual_history: list[float] = []
         gs_residual_history: list[float] = []
@@ -204,7 +222,8 @@ class FusionKernelNewtonSolverMixin:
                 r_k = self._compute_gs_residual(Source)
                 res_norm = float(np.sqrt(np.sum(r_k[1:-1, 1:-1] ** 2)))
                 gs_residual = float(np.sqrt(np.mean(r_k[1:-1, 1:-1] ** 2)))
-                residual_history.append(res_norm)
+                if not use_newton_line_search:
+                    residual_history.append(res_norm)
                 gs_residual_history.append(gs_residual)
                 if gs_residual < gs_best:
                     gs_best = gs_residual
@@ -212,6 +231,8 @@ class FusionKernelNewtonSolverMixin:
                 update_converged = res_norm < tol
                 gs_converged = (not require_gs_residual) or (gs_residual < gs_tol)
                 if update_converged and gs_converged:
+                    if use_newton_line_search:
+                        residual_history.append(res_norm)
                     converged = True
                     break
 
@@ -232,10 +253,40 @@ class FusionKernelNewtonSolverMixin:
                     dtype=np.float64,
                 )
 
-                # Solve J_k * delta = -r_k
+                # Solve J_k * delta = -r_k.
                 rhs = -r_k[1:-1, 1:-1].ravel()
-                delta_flat, info = gmres(J_op, rhs, maxiter=100, restart=50,
-                                         atol=1e-8, rtol=1e-6)
+                if use_gmres_preconditioner:
+                    diag_laplacian = -2.0 / (self.dR**2) - 2.0 / (self.dZ**2)
+                    diag_jac = diag_laplacian - diag_term[1:-1, 1:-1]
+                    safe_diag = np.where(
+                        np.abs(diag_jac) > 1e-12,
+                        diag_jac,
+                        np.where(diag_jac >= 0.0, 1e-12, -1e-12),
+                    )
+                    inv_diag = (1.0 / safe_diag).ravel()
+                    M_op = LinearOperator(
+                        shape=(n_interior, n_interior),
+                        matvec=lambda x: inv_diag * x,
+                        dtype=np.float64,
+                    )
+                    delta_flat, info = gmres(
+                        J_op,
+                        rhs,
+                        maxiter=100,
+                        restart=50,
+                        atol=1e-8,
+                        rtol=1e-6,
+                        M=M_op,
+                    )
+                else:
+                    delta_flat, info = gmres(
+                        J_op,
+                        rhs,
+                        maxiter=100,
+                        restart=50,
+                        atol=1e-8,
+                        rtol=1e-6,
+                    )
 
                 if info != 0:
                     logger.warning("GMRES did not converge at Newton iter %d (info=%d)", k, info)
@@ -243,9 +294,57 @@ class FusionKernelNewtonSolverMixin:
                 delta = np.zeros_like(self.Psi)
                 delta[1:-1, 1:-1] = delta_flat.reshape(NZ - 2, NR_grid - 2)
 
-                # Damped Newton update
-                self.Psi += newton_alpha * delta
-                self._apply_boundary_conditions(self.Psi, Psi_vac_boundary)
+                if use_newton_line_search:
+                    # Armijo backtracking line search on GS residual norm.
+                    psi_prev = self.Psi.copy()
+                    alpha = newton_alpha
+                    accepted = False
+                    source_trial = Source
+                    for _ in range(max_backtracks):
+                        trial = psi_prev + alpha * delta
+                        self._apply_boundary_conditions(trial, Psi_vac_boundary)
+                        self.Psi = trial
+                        if not getattr(self, "external_profile_mode", False):
+                            _, _, trial_axis = self._find_magnetic_axis()
+                            _, trial_boundary = self.find_x_point(self.Psi)
+                            if abs(trial_axis - trial_boundary) < 0.1:
+                                trial_boundary = trial_axis * 0.1
+                            self.J_phi = self.update_plasma_source_nonlinear(
+                                trial_axis, trial_boundary
+                            )
+                            source_trial = -mu0 * self.RR * self.J_phi
+                        trial_r = self._compute_gs_residual(source_trial)
+                        trial_norm = float(np.sqrt(np.sum(trial_r[1:-1, 1:-1] ** 2)))
+                        if trial_norm <= (1.0 - line_search_c * alpha) * res_norm:
+                            accepted = True
+                            break
+                        alpha *= 0.5
+
+                    if not accepted:
+                        logger.debug(
+                            "Newton line search rejected all steps at iter=%d; using minimum backtrack.",
+                            k,
+                        )
+                        self.Psi = psi_prev + alpha * delta
+                        self._apply_boundary_conditions(self.Psi, Psi_vac_boundary)
+                        if not getattr(self, "external_profile_mode", False):
+                            _, _, trial_axis = self._find_magnetic_axis()
+                            _, trial_boundary = self.find_x_point(self.Psi)
+                            if abs(trial_axis - trial_boundary) < 0.1:
+                                trial_boundary = trial_axis * 0.1
+                            self.J_phi = self.update_plasma_source_nonlinear(
+                                trial_axis, trial_boundary
+                            )
+                    else:
+                        Source = source_trial
+
+                    post_r = self._compute_gs_residual(Source)
+                    post_norm = float(np.sqrt(np.sum(post_r[1:-1, 1:-1] ** 2)))
+                    residual_history.append(post_norm)
+                else:
+                    # Legacy fixed-damping Newton step (default for parity).
+                    self.Psi += newton_alpha * delta
+                    self._apply_boundary_conditions(self.Psi, Psi_vac_boundary)
 
                 # NaN check
                 if np.isnan(self.Psi).any() or np.isinf(self.Psi).any():

@@ -249,10 +249,54 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
 
         mask_divertor = self.ZZ < (self.cfg["dimensions"]["Z_min"] * 0.5)
         if np.any(mask_divertor):
-            masked_B = np.where(mask_divertor, B_mag, 1e9)
-            idx_min = np.argmin(masked_B)
-            iz, ir = np.unravel_index(idx_min, Psi.shape)
-            return (float(self.R[ir]), float(self.Z[iz])), float(Psi[iz, ir])
+            masked_B = np.where(mask_divertor, B_mag, np.inf)
+            finite_count = int(np.isfinite(masked_B).sum())
+            if finite_count > 0:
+                use_saddle_detection = bool(
+                    self.cfg.get("solver", {}).get("xpoint_use_saddle_detection", False)
+                )
+                if not use_saddle_detection:
+                    idx_min = int(np.argmin(masked_B))
+                    iz, ir = np.unravel_index(idx_min, Psi.shape)
+                    return (float(self.R[ir]), float(self.Z[iz])), float(Psi[iz, ir])
+
+                # Prefer true magnetic saddles over pure |grad(Psi)| minima.
+                n_candidates = min(16, finite_count)
+                flat = masked_B.ravel()
+                candidate_idx = np.argpartition(flat, n_candidates - 1)[:n_candidates]
+                saddle_hits: list[tuple[float, int, int]] = []
+                nz, nr = Psi.shape
+                for idx in candidate_idx:
+                    iz, ir = np.unravel_index(int(idx), Psi.shape)
+                    if iz <= 0 or iz >= nz - 1 or ir <= 0 or ir >= nr - 1:
+                        continue
+                    d2R = (Psi[iz, ir + 1] - 2.0 * Psi[iz, ir] + Psi[iz, ir - 1]) / (
+                        self.dR**2
+                    )
+                    d2Z = (Psi[iz + 1, ir] - 2.0 * Psi[iz, ir] + Psi[iz - 1, ir]) / (
+                        self.dZ**2
+                    )
+                    dRZ = (
+                        Psi[iz + 1, ir + 1]
+                        - Psi[iz + 1, ir - 1]
+                        - Psi[iz - 1, ir + 1]
+                        + Psi[iz - 1, ir - 1]
+                    ) / (4.0 * self.dR * self.dZ)
+                    det_hessian = float(d2R * d2Z - dRZ * dRZ)
+                    if np.isfinite(det_hessian) and det_hessian < 0.0:
+                        saddle_hits.append((float(masked_B[iz, ir]), int(iz), int(ir)))
+
+                if saddle_hits:
+                    _, iz_best, ir_best = min(saddle_hits, key=lambda x: x[0])
+                    return (
+                        (float(self.R[ir_best]), float(self.Z[iz_best])),
+                        float(Psi[iz_best, ir_best]),
+                    )
+
+                # Fallback to minimum-gradient candidate when saddle test fails.
+                idx_min = int(np.argmin(masked_B))
+                iz, ir = np.unravel_index(idx_min, Psi.shape)
+                return (float(self.R[ir]), float(self.Z[iz])), float(Psi[iz, ir])
 
         return (0.0, 0.0), float(np.min(Psi))
 

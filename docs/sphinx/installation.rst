@@ -2,7 +2,7 @@
 Installation
 ============
 
-SCPN-Fusion-Core supports three installation paths: a pure-Python install
+SCPN-Fusion-Core supports three installation paths: a pure-Python core install
 (fastest to get started), a Rust-accelerated install (10--50x faster
 numerics), and a Docker-based install (zero local dependencies).
 
@@ -13,18 +13,26 @@ Requirements
 - NumPy >= 1.22
 - SciPy >= 1.8
 
-Optional dependencies are pulled in automatically by the ``[dev]`` extra:
-``pytest``, ``hypothesis``, ``matplotlib``, ``streamlit``.
+Optional runtime stacks are exposed via extras:
+
+- ``[ui]``: Streamlit dashboard
+- ``[ml]``: JAX/JAXLIB ML lanes
+- ``[rl]``: Gymnasium RL environments
+- ``[full]``: all optional runtime stacks + physics extras
 
 From PyPI (Recommended)
 -----------------------
 
-Pre-built wheels include the Rust extension for common platforms::
+Pre-built wheels include the Python core package::
 
     pip install scpn-fusion
 
-This is the simplest path and provides both the Python package and the
-compiled Rust kernels.
+Install optional stacks explicitly as needed::
+
+    pip install "scpn-fusion[ui]"
+    pip install "scpn-fusion[ml]"
+    pip install "scpn-fusion[rl]"
+    pip install "scpn-fusion[full]"
 
 From Source (Pure Python)
 -------------------------
@@ -49,8 +57,7 @@ For running the test suite, linters, and building documentation::
     pip install -e ".[dev]"
     pytest tests/ -v
 
-The ``[dev]`` extra installs ``pytest``, ``hypothesis``, ``matplotlib``,
-and ``streamlit``.
+The ``[dev]`` extra installs test/type-check tooling only.
 
 Rust Kernel Build (Optional)
 -----------------------------

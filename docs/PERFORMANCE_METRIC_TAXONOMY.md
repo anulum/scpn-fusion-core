@@ -11,6 +11,12 @@ competitive analysis to avoid mixing kernel-only and end-to-end timings.
 | `control.closed_loop_step_us` | End-to-end closed-loop control step | Controller step including orchestration/interop overhead used in campaign loops | Full transport/equilibrium solve wall-clock | 11.9 us P50 / 23.9 us P99 |
 | `control.hil_loop_us` | Hardware-in-the-loop loop latency | HIL integration path as reported in `RESULTS.md` | Offline synthetic microbench shortcuts | 11.3 us P50 (latest HIL lane) |
 
+## Clock Separation
+
+- **Fast control clock (1-10 kHz):** controller tick (`control.pid_kernel_step_us`, `control.closed_loop_step_us`).
+- **Slow physics clock (10-100 Hz):** equilibrium/transport state updates and inverse solves.
+- **Surrogate bridge:** reduced-order/neural surrogates can approximate the slow lane at higher update rates; they are reported separately from high-fidelity solves.
+
 ## Rules
 
 1. Never compare two numbers without stating the metric ID.

@@ -107,6 +107,19 @@ def test_find_x_point_avoids_overflow_with_extreme_gradients(tmp_path: Path) -> 
     assert np.isfinite(psi_x)
 
 
+def test_find_x_point_prefers_saddle_candidate(tmp_path: Path) -> None:
+    cfg_path = _write_cfg(tmp_path / "cfg_xpt_saddle.json", fail_on_diverge=False)
+    kernel = FusionKernel(cfg_path)
+    kernel.cfg.setdefault("solver", {})["xpoint_use_saddle_detection"] = True
+    r0 = float(kernel.R[len(kernel.R) // 2])
+    z0 = float(kernel.Z[int(0.2 * (len(kernel.Z) - 1))])
+    psi = (kernel.RR - r0) ** 2 - (kernel.ZZ - z0) ** 2
+
+    x_point, _ = kernel.find_x_point(psi)
+    assert abs(x_point[0] - r0) <= float(kernel.dR)
+    assert abs(x_point[1] - z0) <= float(kernel.dZ)
+
+
 def test_sor_step_sanitizes_non_finite_inputs(tmp_path: Path) -> None:
     cfg_path = _write_cfg(tmp_path / "cfg_sor.json", fail_on_diverge=False)
     kernel = FusionKernel(cfg_path)

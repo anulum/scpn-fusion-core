@@ -23,6 +23,10 @@ Rust acceleration (6,600x speedup).
 - Physics-backed plant loop: Grad-Shafranov + transport + validation lanes for closed-loop replay.
 - Dual execution stack: pure Python baseline with optional Rust acceleration for sub-microsecond control.
 
+Control/physics clocks are intentionally split:
+- Fast control clock (1-10 kHz): policy execution and actuator commands.
+- Slow physics clock (10-100 Hz): equilibrium/transport state refresh.
+
 ## Try in 45 Seconds
 
 ```bash
@@ -129,6 +133,9 @@ model for the controller to operate against.
 | NMPC-JAX | 45,450 us | 49,773 us | 0% |
 | Nengo-SNN | 23,573 us | 24,736 us | 0% |
 
+`H-infinity` is currently a research lane (reduced-order 2x2 robust model) and
+is not part of production release acceptance criteria.
+
 ---
 
 <details>
@@ -167,8 +174,9 @@ scpn-fusion-core/
 ### Python (no Rust required)
 
 ```bash
-pip install -e .               # from source
-pip install "scpn-fusion[full]"  # from PyPI (all optional Python deps)
+pip install -e .                      # core runtime (minimal deps)
+pip install "scpn-fusion[full]"       # core + UI + JAX/ML + RL + physics extras
+pip install "scpn-fusion[ui,ml,rl]"   # explicit optional stacks only
 ```
 
 Every module auto-detects Rust and falls back to NumPy/SciPy.
