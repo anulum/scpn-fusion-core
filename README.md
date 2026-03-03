@@ -61,6 +61,12 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | Q >= 10 operating point | Q = 15 (ITER-like) | `RESULTS.md` |
 | TBR | 1.14 (3-group blanket) | `RESULTS.md` |
 
+Latency taxonomy:
+- `control.pid_kernel_step_us`: kernel-only Rust PID microbenchmark (`0.52 us P50`).
+- `control.closed_loop_step_us`: end-to-end closed-loop step (`11.9 us P50 / 23.9 us P99`).
+- `control.hil_loop_us`: HIL loop lane in `RESULTS.md` (`11.3 us P50` latest report).
+- Full definitions: [`docs/PERFORMANCE_METRIC_TAXONOMY.md`](docs/PERFORMANCE_METRIC_TAXONOMY.md)
+
 Full numbers: [`RESULTS.md`](RESULTS.md) -- re-run `python validation/collect_results.py` to reproduce.
 
 ## Honest Scope

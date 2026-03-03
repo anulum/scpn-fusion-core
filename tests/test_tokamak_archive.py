@@ -32,6 +32,25 @@ def test_load_cmod_reference_profiles_smoke() -> None:
     assert np.isfinite([r.tau_e_ms for r in rows]).all()
 
 
+def test_default_data_root_can_be_overridden_by_env(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    data_root = tmp_path / "reference_data"
+    disruption_dir = data_root / "diiid" / "disruption_shots"
+    synthetic_dir = data_root / "synthetic_shots"
+    disruption_dir.mkdir(parents=True)
+    synthetic_dir.mkdir(parents=True)
+    (disruption_dir / "shot_env_override.npz").write_bytes(b"placeholder")
+    (synthetic_dir / "shot_env_override.npz").write_bytes(b"placeholder")
+
+    monkeypatch.setenv("SCPN_DATA_DIR", str(data_root))
+
+    assert archive.default_reference_data_root() == data_root
+    assert archive.list_disruption_shots() == ["shot_env_override"]
+    assert archive.list_synthetic_shots() == ["shot_env_override"]
+
+
 def test_load_machine_profiles_live_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     def _fail_live(**_: object) -> list[archive.TokamakProfile]:
         raise RuntimeError("live unavailable")

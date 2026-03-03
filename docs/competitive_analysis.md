@@ -3,12 +3,14 @@
 > **Last updated:** 2026-02-20.
 > Community code timings are from published literature (references at end).
 > SCPN timings are CI-verified on GitHub Actions ubuntu-latest unless noted.
+> Latency IDs are defined in `docs/PERFORMANCE_METRIC_TAXONOMY.md`; this table
+> reports `control.closed_loop_step_us` (not kernel-only microbenchmarks).
 
 ## 1. Real-Time Control Loop
 
 | Code | Control Freq | Step Latency | Language | Source |
 |------|-------------|-------------|----------|--------|
-| **SCPN v3.9.3 (Rust)** | **10--30 kHz** | **11.9 us P50 / 23.9 us P99** | Rust + Python | CI Criterion |
+| **SCPN v3.9.3 (Rust)** | **10--30 kHz** | **11.9 us P50 / 23.9 us P99** | Rust + Python | CI Criterion (`control.closed_loop_step_us`) |
 | DIII-D PCS (production) | 4--10 kHz (physics loops) | 100--250 us per physics cycle | C / Fortran | Penaflor 2024; Barr 2024 |
 | P-EFIT (GPU) | N/A (reconstruction) | 300--375 us per iter (129x129) | Fortran + CUDA | Sabbagh 2023 |
 | TORAX | N/A (offline sim) | ~ms per timestep | Python / JAX | Citrin 2024 |

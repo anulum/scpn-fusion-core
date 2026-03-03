@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import csv
 import math
+import os
 from datetime import datetime, timezone
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,10 +23,42 @@ from numpy.typing import NDArray
 from scpn_fusion.core.eqdsk import read_geqdsk
 
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_DIIID_DIR = REPO_ROOT / "validation" / "reference_data" / "diiid"
-DEFAULT_DISRUPTION_DIR = DEFAULT_DIIID_DIR / "disruption_shots"
-DEFAULT_ITPA_CSV = REPO_ROOT / "validation" / "reference_data" / "itpa" / "hmode_confinement.csv"
+_DATA_ROOT_ENV = "SCPN_DATA_DIR"
+
+
+def default_reference_data_root() -> Path:
+    """Return the base directory for reference data assets.
+
+    If ``SCPN_DATA_DIR`` is set, this path is used (after ``expanduser``).
+    Otherwise the repository-local ``validation/reference_data`` path is used.
+    """
+    env = os.environ.get(_DATA_ROOT_ENV, "").strip()
+    if env:
+        return Path(env).expanduser()
+    return Path(__file__).resolve().parents[3] / "validation" / "reference_data"
+
+
+def default_diiid_dir() -> Path:
+    return default_reference_data_root() / "diiid"
+
+
+def default_disruption_dir() -> Path:
+    return default_diiid_dir() / "disruption_shots"
+
+
+def default_itpa_csv() -> Path:
+    return default_reference_data_root() / "itpa" / "hmode_confinement.csv"
+
+
+def default_synthetic_dir() -> Path:
+    return default_reference_data_root() / "synthetic_shots"
+
+
+# Backward-compatible constants (resolved at import time).
+DEFAULT_DIIID_DIR = default_diiid_dir()
+DEFAULT_DISRUPTION_DIR = default_disruption_dir()
+DEFAULT_ITPA_CSV = default_itpa_csv()
+DEFAULT_SYNTHETIC_DIR = default_synthetic_dir()
 
 DEFAULT_MDSPLUS_NODE_MAP: dict[str, str] = {
     "time_ms": "\\time_ms",
@@ -159,7 +192,7 @@ def load_diiid_reference_profiles(
     contour_points: int = 64,
     sensor_points: int = 96,
 ) -> list[TokamakProfile]:
-    ref_dir = reference_dir if reference_dir is not None else DEFAULT_DIIID_DIR
+    ref_dir = reference_dir if reference_dir is not None else default_diiid_dir()
     files = sorted(Path(ref_dir).glob("*.geqdsk"))
     profiles: list[TokamakProfile] = []
     for idx, path in enumerate(files):
@@ -201,7 +234,7 @@ def load_cmod_reference_profiles(
     contour_points: int = 64,
     sensor_points: int = 96,
 ) -> list[TokamakProfile]:
-    csv_path = itpa_csv_path if itpa_csv_path is not None else DEFAULT_ITPA_CSV
+    csv_path = itpa_csv_path if itpa_csv_path is not None else default_itpa_csv()
     rows: list[TokamakProfile] = []
     with Path(csv_path).open("r", encoding="utf-8", newline="") as fh:
         reader = csv.DictReader(fh)
@@ -515,7 +548,7 @@ def list_disruption_shots(
         >>> names
         ['shot_154406_hybrid', 'shot_155916_locked_mode', ...]
     """
-    d = disruption_dir if disruption_dir is not None else DEFAULT_DISRUPTION_DIR
+    d = disruption_dir if disruption_dir is not None else default_disruption_dir()
     d = Path(d)
     if not d.is_dir():
         return []
@@ -558,7 +591,7 @@ def load_disruption_shot(
     """
     p = Path(shot_name_or_path)
     if not p.suffix:
-        d = disruption_dir if disruption_dir is not None else DEFAULT_DISRUPTION_DIR
+        d = disruption_dir if disruption_dir is not None else default_disruption_dir()
         p = Path(d) / f"{p.name}.npz"
     if p.suffix.lower() != ".npz":
         raise ValueError(f"Disruption shot file must be .npz: {p}")
@@ -590,8 +623,6 @@ def load_disruption_shot(
 # ---------------------------------------------------------------------------
 # Synthetic multi-machine shot database (ITER / SPARC / DIII-D / EAST)
 # ---------------------------------------------------------------------------
-
-DEFAULT_SYNTHETIC_DIR = REPO_ROOT / "validation" / "reference_data" / "synthetic_shots"
 
 #: Machine parameter specifications for synthetic shot generation.
 _MACHINE_SPECS: dict[str, dict[str, Any]] = {
@@ -683,7 +714,7 @@ def generate_synthetic_shot_database(
         ``Te0_keV``, ``q95``, ``beta_N``.
     """
     rng = np.random.default_rng(seed)
-    out_dir = Path(output_dir) if output_dir is not None else DEFAULT_SYNTHETIC_DIR
+    out_dir = Path(output_dir) if output_dir is not None else default_synthetic_dir()
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Distribute shots across machines, respecting spec defaults but scaling
@@ -787,7 +818,7 @@ def list_synthetic_shots(
     list[str]
         Sorted list of shot names (stem only).
     """
-    d = Path(synthetic_dir) if synthetic_dir is not None else DEFAULT_SYNTHETIC_DIR
+    d = Path(synthetic_dir) if synthetic_dir is not None else default_synthetic_dir()
     if not d.is_dir():
         return []
     return sorted(p.stem for p in d.glob("*.npz"))
@@ -828,7 +859,7 @@ def load_synthetic_shot(
     """
     p = Path(shot_name_or_path)
     if not p.suffix:
-        d = Path(synthetic_dir) if synthetic_dir is not None else DEFAULT_SYNTHETIC_DIR
+        d = Path(synthetic_dir) if synthetic_dir is not None else default_synthetic_dir()
         p = d / f"{p.name}.npz"
     if p.suffix.lower() != ".npz":
         raise ValueError(f"Synthetic shot file must be .npz: {p}")

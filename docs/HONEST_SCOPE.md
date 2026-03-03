@@ -10,7 +10,7 @@ first-principles transport/gyrokinetic code.
 | Capability | Evidence |
 |-----------|---------|
 | Petri net → SNN compilation with formal verification | 37 hardening tasks, deterministic replay |
-| Sub-microsecond Rust control loop (0.52 µs P50) | `validation/verify_10khz_rust.py`, Criterion benches |
+| Sub-microsecond Rust control kernel (0.52 µs P50) and closed-loop latency (11.9 µs P50 / 23.9 µs P99) | `docs/PERFORMANCE_METRIC_TAXONOMY.md`, `validation/verify_10khz_rust.py`, Criterion benches |
 | QLKNN-10D real-gyrokinetic transport surrogate | test_rel_L2 = 0.0943, Zenodo DOI 10.5281/zenodo.3497066 |
 | IPB98(y,2) confinement scaling on 53 shots / 24 machines | `validation/reference_data/itpa/hmode_confinement.csv` |
 | 8 SPARC EFIT GEQDSK equilibrium validation | `validation/reference_data/sparc/` (MIT, CFS) |
