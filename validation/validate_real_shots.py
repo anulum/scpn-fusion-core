@@ -62,6 +62,8 @@ DISRUPTION_CALIBRATION_PATH = (
 _MAX_CALIBRATION_JSON_BYTES = 2 * 1024 * 1024
 _MAX_SHOT_NPZ_BYTES = 64 * 1024 * 1024
 _MAX_SHOT_SIGNAL_SAMPLES = 200_000
+_DISRUPTION_MIN_RECALL_SAMPLES = 30
+_DISRUPTION_MIN_FPR_SAMPLES = 100
 
 
 # ── Lane 1: Equilibrium Validation ───────────────────────────────────
@@ -71,6 +73,21 @@ def nrmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     rmse = float(np.sqrt(np.mean((y_true - y_pred) ** 2)))
     rng = float(np.max(y_true) - np.min(y_true))
     return rmse / max(rng, 1e-12)
+
+
+def wilson_interval(successes: int, total: int, *, z: float = 1.96) -> tuple[float, float]:
+    """Wilson score confidence interval for binomial proportions."""
+    n = max(int(total), 0)
+    if n <= 0:
+        return (0.0, 1.0)
+    p = float(successes) / float(n)
+    z2 = z * z
+    denom = 1.0 + (z2 / n)
+    center = (p + z2 / (2.0 * n)) / denom
+    radius = (z / denom) * np.sqrt((p * (1.0 - p) / n) + (z2 / (4.0 * n * n)))
+    lo = float(np.clip(center - radius, 0.0, 1.0))
+    hi = float(np.clip(center + radius, 0.0, 1.0))
+    return (lo, hi)
 
 
 def validate_equilibrium(ref_dirs: list[Path]) -> dict[str, Any]:
@@ -539,6 +556,14 @@ def validate_disruption(
     recall = true_positives / max(n_disruptions, 1)
     n_safe = true_negatives + false_positives
     fpr = false_positives / max(n_safe, 1)
+    recall_ci95 = wilson_interval(true_positives, n_disruptions)
+    fpr_ci95 = wilson_interval(false_positives, n_safe)
+    sample_adequacy = {
+        "recall_min_disruption_shots": int(_DISRUPTION_MIN_RECALL_SAMPLES),
+        "fpr_min_safe_shots": int(_DISRUPTION_MIN_FPR_SAMPLES),
+        "recall_samples_ok": bool(n_disruptions >= _DISRUPTION_MIN_RECALL_SAMPLES),
+        "fpr_samples_ok": bool(n_safe >= _DISRUPTION_MIN_FPR_SAMPLES),
+    }
 
     return {
         "n_shots": len(results),
@@ -549,7 +574,9 @@ def validate_disruption(
         "false_positives": false_positives,
         "true_negatives": true_negatives,
         "recall": round(recall, 2),
+        "recall_ci95": [round(float(recall_ci95[0]), 4), round(float(recall_ci95[1]), 4)],
         "false_positive_rate": round(fpr, 2),
+        "false_positive_rate_ci95": [round(float(fpr_ci95[0]), 4), round(float(fpr_ci95[1]), 4)],
         "recall_ok": bool(recall >= THRESHOLDS["disruption_recall_min"]),
         "fpr_ok": bool(fpr <= THRESHOLDS["disruption_fpr_max"]),
         "passes": bool(
@@ -566,6 +593,7 @@ def validate_disruption(
             if fpr > THRESHOLDS["disruption_fpr_max"]
             else None
         ),
+        "sample_adequacy": sample_adequacy,
         "calibration": calibration,
         "pipeline": {
             "config": dict(pipeline_cfg),
@@ -685,7 +713,17 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.append("## 3. Disruption Prediction")
     lines.append(f"- Shots: {dis['n_shots']} ({dis.get('n_disruptions', 0)} disruptions, {dis.get('n_safe', 0)} safe)")
     lines.append(f"- Recall: {dis.get('recall', 0):.0%}")
+    if isinstance(dis.get("recall_ci95"), list) and len(dis["recall_ci95"]) == 2:
+        lines.append(
+            f"  (95% CI: {float(dis['recall_ci95'][0]):.0%} to {float(dis['recall_ci95'][1]):.0%})"
+        )
     lines.append(f"- FPR: {dis.get('false_positive_rate', 0):.0%}")
+    if isinstance(dis.get("false_positive_rate_ci95"), list) and len(dis["false_positive_rate_ci95"]) == 2:
+        lines.append(
+            "  "
+            f"(95% CI: {float(dis['false_positive_rate_ci95'][0]):.0%} to "
+            f"{float(dis['false_positive_rate_ci95'][1]):.0%})"
+        )
     lines.append(f"- **Status**: {dis_status}")
     calibration = dis.get("calibration", {})
     if isinstance(calibration, dict):
@@ -707,6 +745,15 @@ def render_markdown(report: dict[str, Any]) -> str:
         )
     if dis.get("fpr_note"):
         lines.append(f"- **Note**: {dis['fpr_note']}")
+    sample_adequacy = dis.get("sample_adequacy", {})
+    if isinstance(sample_adequacy, dict):
+        lines.append(
+            "- Sample adequacy: "
+            f"recall_samples_ok={bool(sample_adequacy.get('recall_samples_ok', False))} "
+            f"(n_disruptions>={int(sample_adequacy.get('recall_min_disruption_shots', 0))}), "
+            f"fpr_samples_ok={bool(sample_adequacy.get('fpr_samples_ok', False))} "
+            f"(n_safe>={int(sample_adequacy.get('fpr_min_safe_shots', 0))})"
+        )
     lines.append("")
 
     # Dataset coverage

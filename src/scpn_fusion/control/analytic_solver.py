@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 import numpy as np
+from scpn_fusion.fallback_telemetry import record_fallback_event
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +203,14 @@ def _resolve_default_config_path(
                 "Preferred default config is missing and validation fallback is disabled: "
                 f"{preferred}"
             )
+        record_fallback_event(
+            "analytic_solver",
+            "default_config_validation_fallback",
+            context={
+                "preferred_config": str(preferred),
+                "fallback_config": str(fallback),
+            },
+        )
         logger.warning(
             "Preferred analytic config missing; using validation fallback: %s",
             fallback,

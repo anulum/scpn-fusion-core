@@ -150,6 +150,33 @@ def test_collect_source_heuristics_detects_monolith_and_test_gap(tmp_path: Path)
     assert "TEST_GAP" in markers
 
 
+def test_fallback_density_signal_count_ignores_metadata_noise() -> None:
+    signal = underdev._fallback_density_signal_count(
+        "\n".join(
+            [
+                'out_meta["mode"] = "fallback"',
+                '"fallback": True,',
+                "allow_fallback=True,",
+                "fallback_used = True",
+            ]
+        )
+    )
+    assert signal == 0
+
+
+def test_fallback_density_signal_count_counts_runtime_risk_lines() -> None:
+    signal = underdev._fallback_density_signal_count(
+        "\n".join(
+            [
+                "record_fallback_event(\"x\", \"y\")",
+                "if not allow_fallback:",
+                "raise RuntimeError(\"fallback disabled\")",
+            ]
+        )
+    )
+    assert signal >= 2
+
+
 def test_narrative_docs_claims_receive_priority_penalty() -> None:
     penalty = underdev._score_context_penalty(
         rel_path="docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",

@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-03T16:45:57.809100+00:00`
+- Generated at: `2026-03-03T18:14:57.606540+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,57 +8,43 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 194 |
-| P0 + P1 entries | 5 |
-| Source-domain entries | 33 |
-| Source-domain P0 + P1 entries | 5 |
+| Total flagged entries | 189 |
+| P0 + P1 entries | 0 |
+| Source-domain entries | 28 |
+| Source-domain P0 + P1 entries | 0 |
 | Docs-claims entries | 140 |
-| Domains affected | 5 |
+| Domains affected | 3 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
 | `FALLBACK` | 113 |
-| `EXPERIMENTAL` | 23 |
 | `PLANNED` | 23 |
+| `EXPERIMENTAL` | 21 |
 | `SIMPLIFIED` | 18 |
 | `DEPRECATED` | 10 |
 | `NOT_VALIDATED` | 4 |
-| `FALLBACK_DENSITY` | 2 |
-| `MONOLITH` | 1 |
 
 ## Domain Distribution
 
 | Key | Count |
 |---|---:|
 | `docs_claims` | 140 |
-| `validation` | 30 |
+| `validation` | 28 |
 | `other` | 21 |
-| `control` | 2 |
-| `diagnostics_io` | 1 |
 
-## Source-Centric Priority Backlog (Top 5)
+## Source-Centric Priority Backlog (Top 0)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 97 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=819 exceeds monolith threshold (700+). |
-| P1 | 94 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/analytic_solver.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback mentions=8 across LOC=247; high fallback concentration in primary module. |
-| P1 | 94 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback mentions=10 across LOC=467; high fallback concentration in primary module. |
-| P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/controller_comparison.py:401` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "this controller remains an experimental policy path." |
-| P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/stress_test_campaign.py:589` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "this controller remains an experimental policy path." |
 
 ## Top Priority Backlog (Top 80)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 97 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=819 exceeds monolith threshold (700+). |
-| P1 | 94 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/analytic_solver.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback mentions=8 across LOC=247; high fallback concentration in primary module. |
-| P1 | 94 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback mentions=10 across LOC=467; high fallback concentration in primary module. |
-| P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/controller_comparison.py:401` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "this controller remains an experimental policy path." |
-| P1 | 94 | `validation` | `EXPERIMENTAL` | `validation/stress_test_campaign.py:589` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "this controller remains an experimental policy path." |
 | P2 | 80 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Add real-data validation campaign and publish error bars. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |
 | P2 | 80 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
 | P2 | 80 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:391` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | implements a 10 kHz PID control loop with simplified linear plasma |
@@ -86,13 +72,13 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
 | P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_sparc_geqdsk_rmse.py:207` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | except Exception as exc: # pragma: no cover - import failure handled via synthetic fallback |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:618` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | fallback = run_solovev_case(case) |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:620` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "psi": fallback["psi"], |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:621` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R": fallback["R"], |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:622` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z": fallback["Z"], |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:623` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R_axis": fallback["R_axis"], |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:624` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z_axis": fallback["Z_axis"], |
-| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:625` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "q_proxy": fallback["q_proxy"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:628` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | fallback = run_solovev_case(case) |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:630` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "psi": fallback["psi"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:631` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R": fallback["R"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:632` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z": fallback["Z"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:633` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R_axis": fallback["R_axis"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:634` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z_axis": fallback["Z_axis"], |
+| P2 | 71 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:635` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "q_proxy": fallback["q_proxy"], |
 | P2 | 70 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:238` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:26` | Docs WG | Replace default path or remove lane before next major release. | \| `DEPRECATED` \| 17 \| |
 | P2 | 69 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:51` | Docs WG | Replace default path or remove lane before next major release. | - The critical residual gaps are targeted: physics fidelity upgrades, deprecated FNO lane retirement, and validation/claim rigor. |
@@ -131,19 +117,19 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:634` | Docs WG | Gate behind explicit flag and define validation exit criteria. | **Experimental Access:** DIII-D and JET GEQDSK data are needed for expanding the validation database beyond the current 8 SPARC files. Co... |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:788` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 2. **General Atomics** — DIII-D experimental data access, validation collaboration |
 | P3 | 62 | `docs_claims` | `EXPERIMENTAL` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2534` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Each paper would require additional experimental results (plant model integration, hardware benchmarks, comparison against conventional c... |
-| P3 | 61 | `validation` | `PLANNED` | `validation/validate_real_shots.py:565` | Validation WG | Convert roadmap note into scheduled milestone task + owner. | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
+| P3 | 61 | `validation` | `PLANNED` | `validation/validate_real_shots.py:592` | Validation WG | Convert roadmap note into scheduled milestone task + owner. | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
 | P3 | 60 | `docs_claims` | `NOT_VALIDATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Add real-data validation campaign and publish error bars. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P3 | 60 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | Docs WG | Add real-data validation campaign and publish error bars. | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
+| P3 | 60 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | Docs WG | Add real-data validation campaign and publish error bars. | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `README.md:123` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback to analytic model when no weights are available |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | with fallback to CPU SIMD for systems without GPU support. |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
 
-## Full Register (Top 194)
+## Full Register (Top 189)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/imas_connector.py:1` | module LOC=819 exceeds monolith threshold (700+). |
-| P1 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/analytic_solver.py:1` | fallback mentions=8 across LOC=247; high fallback concentration in primary module. |
-| P1 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | fallback mentions=10 across LOC=467; high fallback concentration in primary module. |
-| P1 | `validation` | `EXPERIMENTAL` | `validation/controller_comparison.py:401` | "this controller remains an experimental policy path." |
-| P1 | `validation` | `EXPERIMENTAL` | `validation/stress_test_campaign.py:589` | "this controller remains an experimental policy path." |
 | P2 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |
 | P2 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | # Simplified: spectral conv in truncated mode space |
 | P2 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:391` | implements a 10 kHz PID control loop with simplified linear plasma |
@@ -171,13 +157,13 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_sparc_geqdsk_rmse.py:207` | except Exception as exc: # pragma: no cover - import failure handled via synthetic fallback |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:618` | fallback = run_solovev_case(case) |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:620` | "psi": fallback["psi"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:621` | "R": fallback["R"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:622` | "Z": fallback["Z"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:623` | "R_axis": fallback["R_axis"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:624` | "Z_axis": fallback["Z_axis"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:625` | "q_proxy": fallback["q_proxy"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:628` | fallback = run_solovev_case(case) |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:630` | "psi": fallback["psi"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:631` | "R": fallback["R"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:632` | "Z": fallback["Z"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:633` | "R_axis": fallback["R_axis"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:634` | "Z_axis": fallback["Z_axis"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:635` | "q_proxy": fallback["q_proxy"], |
 | P2 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:238` | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:26` | \| `DEPRECATED` \| 17 \| |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:51` | - The critical residual gaps are targeted: physics fidelity upgrades, deprecated FNO lane retirement, and validation/claim rigor. |
@@ -216,7 +202,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:634` | **Experimental Access:** DIII-D and JET GEQDSK data are needed for expanding the validation database beyond the current 8 SPARC files. Co... |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:788` | 2. **General Atomics** — DIII-D experimental data access, validation collaboration |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2534` | Each paper would require additional experimental results (plant model integration, hardware benchmarks, comparison against conventional c... |
-| P3 | `validation` | `PLANNED` | `validation/validate_real_shots.py:565` | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
+| P3 | `validation` | `PLANNED` | `validation/validate_real_shots.py:592` | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |

@@ -69,6 +69,7 @@ FREEGS_Q_NRMSE_THRESHOLD = 0.10      # 10% for q-profile
 FREEGS_AXIS_ERROR_M = 0.10           # 10 cm axis position error
 FREEGS_SEPARATRIX_NRMSE = 0.05       # 5% separatrix boundary
 FREEGS_FLUX_AREA_REL_ERROR = 0.12    # 12% mid-surface area parity
+FREEGS_PSI_NORM_NRMSE_THRESHOLD = 0.06  # 6% after independent field normalization
 
 
 def _stable_rmse(delta: NDArray[np.float64]) -> float:
@@ -88,6 +89,15 @@ def nrmse(y_true: NDArray[np.float64], y_pred: NDArray[np.float64]) -> float:
     rmse_val = _stable_rmse(y_true - y_pred)
     rng = float(np.max(y_true) - np.min(y_true))
     return rmse_val / max(rng, 1e-12)
+
+
+def normalize_psi(psi: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Normalize psi to [0, 1] for scale-invariant field-fidelity checks."""
+    arr = np.asarray(psi, dtype=np.float64)
+    rng = float(np.max(arr) - np.min(arr))
+    if rng < 1e-12:
+        return np.zeros_like(arr, dtype=np.float64)
+    return (arr - np.min(arr)) / rng
 
 
 # ── Test-case definitions ────────────────────────────────────────────
@@ -808,6 +818,7 @@ def compare_case(
         ref_psi_interp = ref_psi
 
     psi_nrmse = nrmse(ref_psi_interp, our_psi)
+    psi_nrmse_normalized = nrmse(normalize_psi(ref_psi_interp), normalize_psi(our_psi))
 
     # ── q-profile NRMSE ──────────────────────────────────────────────
     our_q = our["q_proxy"]
@@ -852,21 +863,35 @@ def compare_case(
         freegs_fallback = bool(ref.get("freegs_fallback", False))
         finite_freegs_metrics = bool(
             np.isfinite(psi_nrmse)
+            and np.isfinite(psi_nrmse_normalized)
             and np.isfinite(q_nrmse)
             and np.isfinite(axis_err)
             and np.isfinite(sep_nrmse)
             and np.isfinite(area_rel_error)
         )
+        invariant_checks = {
+            "psi_norm_nrmse_ok": bool(psi_nrmse_normalized < FREEGS_PSI_NORM_NRMSE_THRESHOLD),
+            "q_profile_nrmse_ok": bool(q_nrmse < FREEGS_Q_NRMSE_THRESHOLD),
+            "axis_error_ok": bool(axis_err < FREEGS_AXIS_ERROR_M),
+            "separatrix_ok": bool(sep_nrmse < FREEGS_SEPARATRIX_NRMSE),
+            "flux_area_ok": bool(area_rel_error < FREEGS_FLUX_AREA_REL_ERROR),
+        }
+        invariant_pass_fraction = float(
+            np.mean(np.asarray(list(invariant_checks.values()), dtype=np.float64))
+        )
         passes = bool(
             finite_freegs_metrics
             and not freegs_fallback
             and psi_nrmse < FREEGS_PSI_NRMSE_THRESHOLD
+            and invariant_checks["psi_norm_nrmse_ok"]
             and q_nrmse < FREEGS_Q_NRMSE_THRESHOLD
             and axis_err < FREEGS_AXIS_ERROR_M
             and sep_nrmse < FREEGS_SEPARATRIX_NRMSE
             and area_rel_error < FREEGS_FLUX_AREA_REL_ERROR
         )
     else:
+        invariant_checks = {}
+        invariant_pass_fraction = float("nan")
         passes = bool(psi_nrmse < PSI_NRMSE_THRESHOLD)
 
     result: dict[str, Any] = {
@@ -875,10 +900,13 @@ def compare_case(
         "comparison_backend": comparison_backend,
         "reference_backend": reference_backend,
         "psi_nrmse": round(float(psi_nrmse), 6),
+        "psi_nrmse_normalized": round(float(psi_nrmse_normalized), 6),
         "q_profile_nrmse": round(float(q_nrmse), 6),
         "axis_error_m": round(axis_err, 6),
         "separatrix_nrmse": round(float(sep_nrmse), 6),
         "flux_area_rel_error": round(float(area_rel_error), 6),
+        "invariant_pass_fraction": round(float(invariant_pass_fraction), 6),
+        "invariant_checks": invariant_checks,
         "our_converged": our["converged"],
         "our_residual": round(float(our["residual"]), 8),
         "passes": passes,
@@ -965,6 +993,7 @@ def run_benchmark(
     }
     if use_freegs:
         thresholds.update({
+            "psi_nrmse_normalized": FREEGS_PSI_NORM_NRMSE_THRESHOLD,
             "q_profile_nrmse": FREEGS_Q_NRMSE_THRESHOLD,
             "axis_error_m": FREEGS_AXIS_ERROR_M,
             "separatrix_nrmse": FREEGS_SEPARATRIX_NRMSE,
@@ -1003,18 +1032,21 @@ def generate_per_metric_report(report: dict[str, Any]) -> str:
     lines = [
         "## FreeGS / Solov'ev Benchmark — Per-Metric Report",
         "",
-        "| Case | Mode | Psi NRMSE | q NRMSE | Axis Err [m] | Sep. NRMSE | Status |",
-        "|------|------|-----------|---------|--------------|------------|--------|",
+        "| Case | Mode | Psi NRMSE | Psi NRMSE (norm) | q NRMSE | Axis Err [m] | Sep. NRMSE | Invariant Pass | Status |",
+        "|------|------|-----------|------------------|---------|--------------|------------|----------------|--------|",
     ]
     for c in report.get("cases", []):
         status = "PASS" if c.get("passes", False) else "FAIL"
         sep = c.get("separatrix_nrmse", float("nan"))
+        psi_norm = c.get("psi_nrmse_normalized", float("nan"))
+        invariant = c.get("invariant_pass_fraction", float("nan"))
         lines.append(
             f"| {c['name']} | {c.get('mode', '?')} "
             f"| {c.get('psi_nrmse', float('nan')):.4f} "
+            f"| {psi_norm:.4f} "
             f"| {c.get('q_profile_nrmse', float('nan')):.4f} "
             f"| {c.get('axis_error_m', float('nan')):.4f} "
-            f"| {sep:.4f} | {status} |"
+            f"| {sep:.4f} | {invariant:.2%} | {status} |"
         )
     return "\n".join(lines)
 

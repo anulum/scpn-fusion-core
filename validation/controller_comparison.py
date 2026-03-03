@@ -354,10 +354,61 @@ def generate_latex_table(results: dict[str, ControllerMetrics]) -> str:
     return "\n".join(lines)
 
 
+def derive_hinf_graduation_status(results: dict[str, ControllerMetrics]) -> dict[str, Any]:
+    """Compute graduation criteria snapshot for H-infinity lane."""
+    pid = results.get("PID")
+    hinf = results.get("H-infinity")
+    if pid is None or hinf is None or hinf.n_episodes <= 0:
+        return {
+            "available": False,
+            "eligible_for_default_lane": False,
+            "reason": "missing_pid_or_hinf_metrics",
+        }
+
+    latency_ratio = float(hinf.p95_latency_us) / max(float(pid.p95_latency_us), 1.0e-12)
+    disruption_delta = float(hinf.disruption_rate - pid.disruption_rate)
+    reward_delta = float(hinf.mean_reward - pid.mean_reward)
+    checks: dict[str, dict[str, Any]] = {
+        "research_gate_enabled": {
+            "value": bool(_env_flag_enabled(HINF_RESEARCH_ENV)),
+            "required": True,
+            "passes": bool(_env_flag_enabled(HINF_RESEARCH_ENV)),
+        },
+        "episodes": {
+            "value": int(hinf.n_episodes),
+            "required_min": 100,
+            "passes": bool(hinf.n_episodes >= 100),
+        },
+        "disruption_delta": {
+            "value": round(disruption_delta, 6),
+            "required_max": 0.01,
+            "passes": bool(disruption_delta <= 0.01),
+        },
+        "latency_p95_ratio": {
+            "value": round(latency_ratio, 6),
+            "required_max": 3.0,
+            "passes": bool(latency_ratio <= 3.0),
+        },
+        "reward_delta": {
+            "value": round(reward_delta, 6),
+            "required_min": -0.05,
+            "passes": bool(reward_delta >= -0.05),
+        },
+    }
+    return {
+        "available": True,
+        "eligible_for_default_lane": bool(all(c["passes"] for c in checks.values())),
+        "checks": checks,
+    }
+
+
 def save_results_json(results: dict[str, ControllerMetrics], output_path: Path) -> None:
-    payload: dict[str, dict[str, float | int]] = {}
+    payload: dict[str, Any] = {
+        "controllers": {},
+        "hinf_graduation": derive_hinf_graduation_status(results),
+    }
     for name, metrics in results.items():
-        payload[name] = {
+        payload["controllers"][name] = {
             "n_episodes": metrics.n_episodes,
             "mean_reward": metrics.mean_reward,
             "std_reward": metrics.std_reward,

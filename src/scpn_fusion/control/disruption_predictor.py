@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,7 +29,10 @@ from scpn_fusion.control.disruption_risk_runtime import (
     run_fault_noise_campaign,
     simulate_tearing_mode,
 )
-from scpn_fusion.fallback_telemetry import record_fallback_event
+from scpn_fusion.fallback_telemetry import (
+    record_fallback_event,
+    snapshot_fallback_telemetry,
+)
 
 __all__ = [
     "DEFAULT_DISRUPTION_RISK_BIAS",
@@ -74,6 +78,8 @@ _CHECKPOINT_LOAD_EXCEPTIONS = (
 )
 _CHECKPOINT_TRAIN_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, AttributeError)
 _INFERENCE_FALLBACK_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, AttributeError)
+_DISRUPTION_STRICT_NO_FALLBACK_ENV = "SCPN_DISRUPTION_DISABLE_FALLBACK"
+_MAX_CHECKPOINT_PARAMETER_COUNT = 5_000_000
 
 
 def _repo_root() -> Path:
@@ -86,6 +92,29 @@ def default_model_path() -> Path:
 
 def _normalize_seq_len(seq_len):
     return _require_int("seq_len", seq_len, 8)
+
+
+def _resolve_allow_fallback(allow_fallback: bool) -> bool:
+    """Resolve fallback policy from API argument + environment strict mode."""
+    if not bool(allow_fallback):
+        return False
+    raw = os.getenv(_DISRUPTION_STRICT_NO_FALLBACK_ENV, "")
+    return raw.strip().lower() not in {"1", "true", "yes", "on"}
+
+
+def _augment_with_fallback_telemetry(meta: dict[str, Any]) -> dict[str, Any]:
+    out = dict(meta)
+    out["fallback_telemetry"] = snapshot_fallback_telemetry()
+    return out
+
+
+def _record_recovery_event(reason: str, *, context: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Record fallback telemetry via a single choke-point for this module."""
+    return record_fallback_event(
+        "disruption_predictor",
+        reason,
+        context=context,
+    )
 
 
 def _prepare_signal_window(signal, seq_len):
@@ -109,8 +138,7 @@ def _safe_torch_checkpoint_load(path: Path) -> Any:
     except TypeError as exc:
         if "weights_only" not in str(exc):
             raise
-        record_fallback_event(
-            "disruption_predictor",
+        _record_recovery_event(
             "legacy_checkpoint_load_blocked",
             context={"path": str(path)},
         )
@@ -119,6 +147,31 @@ def _safe_torch_checkpoint_load(path: Path) -> Any:
             "is unavailable. Use a compatible torch version or convert checkpoint "
             "outside library runtime."
         ) from exc
+
+
+def _validated_checkpoint_state_dict(raw_state: Any) -> dict[str, Any]:
+    """Validate loaded checkpoint payload shape and enforce size budget."""
+    if not isinstance(raw_state, dict):
+        raise ValueError("checkpoint state_dict must be a mapping.")
+    total_params = 0
+    for key, value in raw_state.items():
+        if not isinstance(key, str):
+            raise ValueError("checkpoint state_dict keys must be strings.")
+        if torch is not None and hasattr(torch, "Tensor") and isinstance(value, torch.Tensor):
+            total_params += int(value.numel())
+            continue
+        if isinstance(value, np.ndarray):
+            total_params += int(value.size)
+            continue
+        raise ValueError("checkpoint state_dict values must be tensor/ndarray.")
+    if total_params <= 0:
+        raise ValueError("checkpoint state_dict must contain at least one parameter tensor.")
+    if total_params > _MAX_CHECKPOINT_PARAMETER_COUNT:
+        raise ValueError(
+            "checkpoint state_dict parameter count exceeds safety budget: "
+            f"{total_params} > {_MAX_CHECKPOINT_PARAMETER_COUNT}"
+        )
+    return raw_state
 
 if torch is not None:
     class DisruptionTransformer(nn.Module):
@@ -264,21 +317,21 @@ def load_or_train_predictor(
     train_if_missing=True,
     allow_fallback=True,
 ):
+    effective_allow_fallback = _resolve_allow_fallback(bool(allow_fallback))
     if torch is None:
-        if not allow_fallback:
+        if not effective_allow_fallback:
             raise RuntimeError("Torch is required for load_or_train_predictor().")
-        record_fallback_event(
-            "disruption_predictor",
+        _record_recovery_event(
             "torch_unavailable_fallback",
             context={"model_path": str(model_path) if model_path is not None else None},
         )
-        return None, {
+        return None, _augment_with_fallback_telemetry({
             "trained": False,
             "fallback": True,
             "reason": "torch_unavailable",
             "model_path": str(model_path) if model_path is not None else str(default_model_path()),
             "seq_len": int(_normalize_seq_len(seq_len)),
-        }
+        })
 
     path = Path(model_path) if model_path is not None else default_model_path()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -289,14 +342,11 @@ def load_or_train_predictor(
         try:
             checkpoint = _safe_torch_checkpoint_load(path)
             if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
-                state_dict = checkpoint["state_dict"]
+                state_dict = _validated_checkpoint_state_dict(checkpoint["state_dict"])
                 loaded_seq_len = _normalize_seq_len(checkpoint.get("seq_len", seq_len))
             else:
-                state_dict = checkpoint
+                state_dict = _validated_checkpoint_state_dict(checkpoint)
                 loaded_seq_len = seq_len
-
-            if not isinstance(state_dict, dict):
-                raise ValueError("checkpoint state_dict must be a mapping.")
 
             model = DisruptionTransformer(seq_len=loaded_seq_len)
             model.load_state_dict(state_dict)
@@ -308,35 +358,33 @@ def load_or_train_predictor(
                 "seq_len": int(loaded_seq_len),
             }
         except _CHECKPOINT_LOAD_EXCEPTIONS as exc:
-            if not allow_fallback:
+            if not effective_allow_fallback:
                 raise
-            record_fallback_event(
-                "disruption_predictor",
+            _record_recovery_event(
                 "checkpoint_load_failed_fallback",
                 context={"error": exc.__class__.__name__, "model_path": str(path)},
             )
-            return None, {
+            return None, _augment_with_fallback_telemetry({
                 "trained": False,
                 "fallback": True,
                 "reason": f"checkpoint_load_failed:{exc.__class__.__name__}",
                 "model_path": str(path),
                 "seq_len": int(seq_len),
-            }
+            })
 
     if not train_if_missing and not force_retrain:
-        if allow_fallback:
-            record_fallback_event(
-                "disruption_predictor",
+        if effective_allow_fallback:
+            _record_recovery_event(
                 "checkpoint_missing_fallback",
                 context={"model_path": str(path)},
             )
-            return None, {
+            return None, _augment_with_fallback_telemetry({
                 "trained": False,
                 "fallback": True,
                 "reason": "checkpoint_missing",
                 "model_path": str(path),
                 "seq_len": int(seq_len),
-            }
+            })
         raise FileNotFoundError(f"Checkpoint not found: {path}")
 
     kwargs.setdefault("seq_len", seq_len)
@@ -344,20 +392,19 @@ def load_or_train_predictor(
     try:
         model, info = train_predictor(**kwargs)
     except _CHECKPOINT_TRAIN_EXCEPTIONS as exc:
-        if not allow_fallback:
+        if not effective_allow_fallback:
             raise
-        record_fallback_event(
-            "disruption_predictor",
+        _record_recovery_event(
             "train_failed_fallback",
             context={"error": exc.__class__.__name__, "model_path": str(path)},
         )
-        return None, {
+        return None, _augment_with_fallback_telemetry({
             "trained": False,
             "fallback": True,
             "reason": f"train_failed:{exc.__class__.__name__}",
             "model_path": str(path),
             "seq_len": int(seq_len),
-        }
+        })
     info["trained"] = True
     info["fallback"] = False
     return model, info
@@ -386,6 +433,7 @@ def predict_disruption_risk_safe(
         failures instead of returning compatibility risk from
         ``predict_disruption_risk``.
     """
+    effective_allow_fallback = _resolve_allow_fallback(bool(allow_fallback))
     base_risk = float(np.clip(predict_disruption_risk(signal, toroidal_observables), 0.0, 1.0))
 
     model, meta = load_or_train_predictor(
@@ -394,22 +442,21 @@ def predict_disruption_risk_safe(
         force_retrain=False,
         train_kwargs={"seq_len": _normalize_seq_len(seq_len), "save_plot": False},
         train_if_missing=bool(train_if_missing),
-        allow_fallback=bool(allow_fallback),
+        allow_fallback=bool(effective_allow_fallback),
     )
 
     if model is None or torch is None:
-        if not allow_fallback:
+        if not effective_allow_fallback:
             reason = meta.get("reason", "model_unavailable")
             raise RuntimeError(
                 "predict_disruption_risk_safe fallback disabled: "
                 f"disruption model unavailable ({reason})."
             )
-        record_fallback_event(
-            "disruption_predictor",
+        _record_recovery_event(
             "inference_model_unavailable_fallback",
             context={"reason": str(meta.get("reason", "model_unavailable"))},
         )
-        out_meta = dict(meta)
+        out_meta = _augment_with_fallback_telemetry(dict(meta))
         out_meta["mode"] = "fallback"
         out_meta["risk_source"] = "predict_disruption_risk"
         return base_risk, out_meta
@@ -439,17 +486,16 @@ def predict_disruption_risk_safe(
         
         return float(np.clip(risk_mean, 0.0, 1.0)), out_meta
     except _INFERENCE_FALLBACK_EXCEPTIONS as exc:
-        if not allow_fallback:
+        if not effective_allow_fallback:
             raise RuntimeError(
                 "predict_disruption_risk_safe fallback disabled: "
                 f"transformer inference failed ({exc.__class__.__name__})."
             ) from exc
-        record_fallback_event(
-            "disruption_predictor",
+        _record_recovery_event(
             "inference_failed_fallback",
             context={"error": exc.__class__.__name__},
         )
-        out_meta = dict(meta)
+        out_meta = _augment_with_fallback_telemetry(dict(meta))
         out_meta["mode"] = "fallback"
         out_meta["risk_source"] = "predict_disruption_risk"
         out_meta["reason"] = f"inference_failed:{exc.__class__.__name__}"

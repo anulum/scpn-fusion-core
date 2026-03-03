@@ -538,13 +538,80 @@ def generate_summary_table(results: dict[str, ControllerMetrics]) -> str:
     return "\n".join(lines)
 
 
+def derive_hinf_graduation_status(results: dict[str, ControllerMetrics]) -> dict[str, Any]:
+    """Compute explicit graduation criteria for H-infinity default-lane promotion."""
+    pid = results.get("PID")
+    hinf = results.get("H-infinity")
+    if pid is None or hinf is None or hinf.n_episodes <= 0:
+        return {
+            "available": False,
+            "eligible_for_default_lane": False,
+            "reason": "missing_pid_or_hinf_metrics",
+        }
+
+    latency_ratio = (
+        float(hinf.p95_latency_us) / max(float(pid.p95_latency_us), 1.0e-12)
+    )
+    disruption_delta = float(hinf.disruption_rate - pid.disruption_rate)
+    reward_delta = float(hinf.mean_reward - pid.mean_reward)
+
+    checks: dict[str, dict[str, Any]] = {
+        "research_gate_enabled": {
+            "value": bool(_env_flag_enabled(HINF_RESEARCH_ENV)),
+            "required": True,
+            "passes": bool(_env_flag_enabled(HINF_RESEARCH_ENV)),
+        },
+        "episodes": {
+            "value": int(hinf.n_episodes),
+            "required_min": 100,
+            "passes": bool(hinf.n_episodes >= 100),
+        },
+        "disruption_delta": {
+            "value": round(disruption_delta, 6),
+            "required_max": 0.01,
+            "passes": bool(disruption_delta <= 0.01),
+        },
+        "latency_p95_ratio": {
+            "value": round(latency_ratio, 6),
+            "required_max": 3.0,
+            "passes": bool(latency_ratio <= 3.0),
+        },
+        "reward_delta": {
+            "value": round(reward_delta, 6),
+            "required_min": -0.05,
+            "passes": bool(reward_delta >= -0.05),
+        },
+    }
+
+    return {
+        "available": True,
+        "eligible_for_default_lane": bool(all(c["passes"] for c in checks.values())),
+        "checks": checks,
+        "baseline_pid": {
+            "n_episodes": int(pid.n_episodes),
+            "mean_reward": float(pid.mean_reward),
+            "p95_latency_us": float(pid.p95_latency_us),
+            "disruption_rate": float(pid.disruption_rate),
+        },
+        "candidate_hinf": {
+            "n_episodes": int(hinf.n_episodes),
+            "mean_reward": float(hinf.mean_reward),
+            "p95_latency_us": float(hinf.p95_latency_us),
+            "disruption_rate": float(hinf.disruption_rate),
+        },
+    }
+
+
 def save_results_json(
     results: dict[str, ControllerMetrics], path: Path
 ) -> None:
     """Persist campaign results to JSON."""
-    data = {}
+    data: dict[str, Any] = {
+        "controllers": {},
+        "hinf_graduation": derive_hinf_graduation_status(results),
+    }
     for name, m in results.items():
-        data[name] = {
+        data["controllers"][name] = {
             "n_episodes": m.n_episodes,
             "mean_reward": m.mean_reward,
             "std_reward": m.std_reward,

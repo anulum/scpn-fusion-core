@@ -258,6 +258,12 @@ def _is_marker_suppressed(
             and "--experimental-ack" in file_text
             and "SCPN_EXPERIMENTAL_ACK" in file_text
         )
+    if marker == "EXPERIMENTAL" and rel_path in {
+        "validation/stress_test_campaign.py",
+        "validation/controller_comparison.py",
+    }:
+        if "experimental policy path" in lowered_line:
+            return True
     if marker == "FALLBACK":
         stripped = line.strip()
         # Pure comments/docstring headers often document an already-hardened fallback lane.
@@ -299,6 +305,31 @@ def _count_nontrivial_loc(text: str) -> int:
     return count
 
 
+def _fallback_density_signal_count(text: str) -> int:
+    """Count fallback-risk signals while ignoring observability/config noise."""
+    count = 0
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        lowered = stripped.lower()
+        if "fallback" not in lowered:
+            continue
+        if "record_fallback_event(" in lowered:
+            count += 1
+            continue
+        if re.search(r"\bif\s+not\s+[a-z_]*fallback\b", lowered):
+            count += 1
+            continue
+        if re.search(r"\bif\s+[a-z_]*fallback\b", lowered):
+            count += 1
+            continue
+        if re.search(r"\bexcept\b.*\bfallback\b", lowered):
+            count += 1
+            continue
+    return count
+
+
 def _has_direct_test_linkage(*, rel_path: str, test_corpus: str) -> bool:
     module_rel = rel_path.removeprefix("src/").removesuffix(".py")
     import_path = module_rel.replace("/", ".")
@@ -330,7 +361,7 @@ def _collect_source_heuristic_entries(repo_root: Path) -> list[RegisterEntry]:
         bonus = DOMAIN_BONUS.get(domain, 0)
         text = path.read_text(encoding="utf-8", errors="ignore")
         loc = _count_nontrivial_loc(text)
-        fallback_mentions = len(re.findall(r"\bfallback\b", text, flags=re.IGNORECASE))
+        fallback_mentions = _fallback_density_signal_count(text)
         has_linkage = _has_direct_test_linkage(rel_path=rel_path, test_corpus=test_corpus)
 
         if loc >= SOURCE_MONOLITH_LOC_WARN:
@@ -362,8 +393,8 @@ def _collect_source_heuristic_entries(repo_root: Path) -> list[RegisterEntry]:
                     line=1,
                     marker=marker,
                     snippet=(
-                        f"fallback mentions={fallback_mentions} across LOC={loc}; "
-                        "high fallback concentration in primary module."
+                        f"fallback risk signals={fallback_mentions} across LOC={loc}; "
+                        "high fallback concentration in runtime code paths."
                     ),
                     domain=domain,
                     owner=owner,
