@@ -8,30 +8,30 @@ import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Tuple, Union
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = REPO_ROOT / "validation" / "claim_range_thresholds.json"
 
 
-PathToken = str | int
+PathToken = Union[str, int]
 
 
 @dataclass(frozen=True)
 class RatioPath:
-    numerator: tuple[PathToken, ...]
-    denominator: tuple[PathToken, ...]
+    numerator: Tuple[PathToken, ...]
+    denominator: Tuple[PathToken, ...]
 
 
 @dataclass(frozen=True)
 class RangeCheck:
     check_id: str
     file: str
-    path: tuple[PathToken, ...] | None
-    ratio: RatioPath | None
-    minimum: float | None
-    maximum: float | None
+    path: Optional[Tuple[PathToken, ...]]
+    ratio: Optional[RatioPath]
+    minimum: Optional[float]
+    maximum: Optional[float]
     equals: Any
     description: str
 
@@ -55,7 +55,7 @@ def _coerce_finite_float(name: str, value: Any) -> float:
     return out
 
 
-def _parse_path(name: str, value: Any) -> tuple[PathToken, ...]:
+def _parse_path(name: str, value: Any) -> Tuple[PathToken, ...]:
     if not isinstance(value, list) or len(value) == 0:
         raise ValueError(f"{name} must be a non-empty list of path tokens.")
     tokens: list[PathToken] = []
@@ -133,7 +133,7 @@ def _parse_check(index: int, value: Any) -> RangeCheck:
     )
 
 
-def load_checks(config_path: Path) -> tuple[RangeCheck, ...]:
+def load_checks(config_path: Path) -> Tuple[RangeCheck, ...]:
     payload = json.loads(config_path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("Claim range config must be a JSON object.")
@@ -152,7 +152,7 @@ def load_checks(config_path: Path) -> tuple[RangeCheck, ...]:
     return tuple(checks)
 
 
-def _resolve_path(payload: Any, path: tuple[PathToken, ...], *, label: str) -> Any:
+def _resolve_path(payload: Any, path: Tuple[PathToken, ...], *, label: str) -> Any:
     current = payload
     for token in path:
         token_desc = repr(token)
@@ -181,10 +181,10 @@ def _coerce_observed_number(check_id: str, value: Any) -> float:
 
 
 def run_checks(
-    checks: tuple[RangeCheck, ...],
+    checks: Tuple[RangeCheck, ...],
     *,
     repo_root: Path = REPO_ROOT,
-) -> tuple[list[str], dict[str, Any]]:
+) -> Tuple[list[str], dict[str, Any]]:
     errors: list[str] = []
     summary_rows: list[dict[str, Any]] = []
     json_cache: dict[Path, Any] = {}
@@ -277,7 +277,7 @@ def run_checks(
     return errors, summary
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--config",
