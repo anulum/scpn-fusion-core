@@ -230,6 +230,15 @@ def test_controllers_registry_tracks_optional_mpc_lane():
         assert "MPC" not in mod.CONTROLLERS
 
 
+def test_stress_hinf_episode_requires_explicit_research_gate(monkeypatch):
+    """H-infinity runner should fail-closed unless research gate is enabled."""
+    import validation.stress_test_campaign as mod
+
+    monkeypatch.delenv(mod.HINF_RESEARCH_ENV, raising=False)
+    with pytest.raises(RuntimeError, match="disabled by default"):
+        mod._run_hinf_episode(config_path="unused", shot_duration=10)
+
+
 def test_mpc_episode_requires_optional_dependency(monkeypatch):
     """MPC episode runner should fail cleanly when optional deps are absent."""
     import validation.stress_test_campaign as mod

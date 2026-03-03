@@ -929,10 +929,40 @@ def generate_markdown_report(all_metrics: List[ScenarioMetrics]) -> str:
 
 def generate_json_results(all_metrics: List[ScenarioMetrics]) -> Dict[str, Any]:
     """Build a JSON-serialisable results dictionary."""
+    fairness_entries: List[Dict[str, Any]] = []
+    for metric in all_metrics:
+        cfg = SCENARIOS.get(metric.scenario, {})
+        fairness_entries.append(
+            {
+                "controller": metric.controller,
+                "scenario": metric.scenario,
+                "timing": {
+                    "wall_clock_s": metric.wall_clock_s,
+                },
+                "accuracy": {
+                    "ise": metric.ise,
+                    "settling_time_s": metric.settling_time_s,
+                    "peak_overshoot": metric.peak_overshoot,
+                    "stable": metric.stable,
+                },
+                "conditions": {
+                    "duration_s": float(cfg.get("duration_s", float("nan"))),
+                    "dt_s": float(cfg.get("dt_s", float("nan"))),
+                    "steps": int(
+                        round(float(cfg.get("duration_s", 0.0)) / float(cfg.get("dt_s", 1.0)))
+                    )
+                    if float(cfg.get("dt_s", 0.0)) > 0.0
+                    else 0,
+                    "plant_model": "linear_vertical_dynamics_gamma100",
+                },
+            }
+        )
+
     return {
         "benchmark": "disturbance_rejection",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "simulation_dt_s": DT,
+        "fairness_schema_version": "1.0",
         "scenarios": {
             name: {
                 "duration_s": cfg["duration_s"],
@@ -943,6 +973,7 @@ def generate_json_results(all_metrics: List[ScenarioMetrics]) -> Dict[str, Any]:
             for name, cfg in SCENARIOS.items()
         },
         "results": [m.to_dict() for m in all_metrics],
+        "fairness": fairness_entries,
     }
 
 

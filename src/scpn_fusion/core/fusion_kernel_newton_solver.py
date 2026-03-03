@@ -152,8 +152,24 @@ class FusionKernelNewtonSolverMixin:
         use_newton_line_search: bool = bool(
             self.cfg["solver"].get("newton_line_search", False)
         )
-        use_gmres_preconditioner: bool = bool(
-            self.cfg["solver"].get("gmres_diagonal_preconditioner", False)
+        gmres_preconditioner_mode = str(
+            self.cfg["solver"].get("gmres_preconditioner", "none")
+        ).strip().lower()
+        if gmres_preconditioner_mode in {"", "auto", "default", "legacy"}:
+            gmres_preconditioner_mode = "none"
+        if (
+            gmres_preconditioner_mode == "none"
+            and bool(self.cfg["solver"].get("gmres_diagonal_preconditioner", False))
+        ):
+            gmres_preconditioner_mode = "diagonal"
+        if gmres_preconditioner_mode not in {"none", "diagonal", "ilu"}:
+            raise ValueError(
+                "solver.gmres_preconditioner must be one of "
+                "{'none', 'diagonal', 'ilu'}"
+            )
+        ilu_drop_tol = float(self.cfg["solver"].get("gmres_ilu_drop_tol", 1e-4))
+        ilu_fill_factor = float(
+            self.cfg["solver"].get("gmres_ilu_fill_factor", 8.0)
         )
 
         residual_history: list[float] = []
@@ -255,7 +271,8 @@ class FusionKernelNewtonSolverMixin:
 
                 # Solve J_k * delta = -r_k.
                 rhs = -r_k[1:-1, 1:-1].ravel()
-                if use_gmres_preconditioner:
+
+                def _build_diagonal_preconditioner() -> LinearOperator:
                     diag_laplacian = -2.0 / (self.dR**2) - 2.0 / (self.dZ**2)
                     diag_jac = diag_laplacian - diag_term[1:-1, 1:-1]
                     safe_diag = np.where(
@@ -264,11 +281,72 @@ class FusionKernelNewtonSolverMixin:
                         np.where(diag_jac >= 0.0, 1e-12, -1e-12),
                     )
                     inv_diag = (1.0 / safe_diag).ravel()
-                    M_op = LinearOperator(
+                    return LinearOperator(
                         shape=(n_interior, n_interior),
                         matvec=lambda x: inv_diag * x,
                         dtype=np.float64,
                     )
+
+                M_op: LinearOperator | None = None
+                if gmres_preconditioner_mode == "diagonal":
+                    M_op = _build_diagonal_preconditioner()
+                elif gmres_preconditioner_mode == "ilu":
+                    try:
+                        from scipy.sparse import diags, eye, kron
+                        from scipy.sparse.linalg import spilu
+
+                        nz_int = NZ - 2
+                        nr_int = NR_grid - 2
+                        main_r = np.full(nr_int, -2.0 / (self.dR**2))
+                        off_r = np.full(max(nr_int - 1, 0), 1.0 / (self.dR**2))
+                        lap_r = diags(
+                            [off_r, main_r, off_r],
+                            offsets=[-1, 0, 1],
+                            shape=(nr_int, nr_int),
+                            format="csc",
+                        )
+                        main_z = np.full(nz_int, -2.0 / (self.dZ**2))
+                        off_z = np.full(max(nz_int - 1, 0), 1.0 / (self.dZ**2))
+                        lap_z = diags(
+                            [off_z, main_z, off_z],
+                            offsets=[-1, 0, 1],
+                            shape=(nz_int, nz_int),
+                            format="csc",
+                        )
+                        laplace_approx = (
+                            kron(eye(nz_int, format="csc"), lap_r, format="csc")
+                            + kron(lap_z, eye(nr_int, format="csc"), format="csc")
+                        )
+                        jac_diag = diags(
+                            -diag_term[1:-1, 1:-1].ravel(),
+                            offsets=0,
+                            format="csc",
+                        )
+                        jacobian_approx = laplace_approx + jac_diag
+                        # Shift to avoid singular preconditioner builds near nullspace.
+                        jacobian_approx = jacobian_approx + diags(
+                            np.full(n_interior, 1e-9), offsets=0, format="csc"
+                        )
+                        ilu = spilu(
+                            jacobian_approx,
+                            drop_tol=max(1e-12, ilu_drop_tol),
+                            fill_factor=max(1.0, ilu_fill_factor),
+                        )
+                        M_op = LinearOperator(
+                            shape=(n_interior, n_interior),
+                            matvec=lambda x: ilu.solve(x),
+                            dtype=np.float64,
+                        )
+                    except Exception as exc:
+                        logger.warning(
+                            "ILU preconditioner unavailable at Newton iter %d (%s); "
+                            "falling back to diagonal.",
+                            k,
+                            exc,
+                        )
+                        M_op = _build_diagonal_preconditioner()
+
+                if M_op is not None:
                     delta_flat, info = gmres(
                         J_op,
                         rhs,

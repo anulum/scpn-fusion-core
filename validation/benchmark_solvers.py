@@ -169,6 +169,41 @@ def print_results(results: list[dict]):
     print("=" * 80)
 
 
+def _build_fairness_entry(result: dict, config_path: str) -> dict:
+    """Pair timing, accuracy, and run conditions for fair comparisons."""
+    shots = max(int(result.get("shots", 0)), 1)
+    converged = int(result.get("converged", 0))
+    return {
+        "timing": {
+            "mean_ms": float(result.get("mean_ms", float("nan"))),
+            "median_ms": float(result.get("median_ms", float("nan"))),
+            "p95_ms": float(result.get("p95_ms", float("nan"))),
+            "min_ms": float(result.get("min_ms", float("nan"))),
+            "max_ms": float(result.get("max_ms", float("nan"))),
+        },
+        "accuracy": {
+            "mean_residual": float(result.get("mean_residual", float("nan"))),
+            "converged_fraction": float(converged / shots),
+        },
+        "conditions": {
+            "config_path": str(config_path),
+            "shots": int(result.get("shots", 0)),
+            "solver_label": str(result.get("method", "")),
+            "benchmark": "equilibrium_solver",
+        },
+    }
+
+
+def build_json_summary(results: list[dict], config_path: str) -> list[dict]:
+    """Strip raw time traces and attach fairness triplets."""
+    summary: list[dict] = []
+    for result in results:
+        row = {k: v for k, v in result.items() if k != "times_ms"}
+        row["fairness"] = _build_fairness_entry(result, config_path)
+        summary.append(row)
+    return summary
+
+
 def main():
     import argparse
 
@@ -207,10 +242,7 @@ def main():
 
     # Save JSON summary
     if args.json:
-        summary = []
-        for r in results:
-            s = {k: v for k, v in r.items() if k != "times_ms"}
-            summary.append(s)
+        summary = build_json_summary(results, config_path)
         with open(args.json, "w") as f:
             json.dump(summary, f, indent=2, default=str)
         print(f"Results saved to {args.json}")

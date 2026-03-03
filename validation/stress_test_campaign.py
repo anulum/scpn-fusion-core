@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from dataclasses import dataclass, field
@@ -118,6 +119,15 @@ class ControllerMetrics:
     episodes: list = field(default_factory=list)
 
 
+HINF_RESEARCH_ENV = "SCPN_ENABLE_HINF_RESEARCH"
+
+
+def _env_flag_enabled(name: str) -> bool:
+    """Return True when an environment gate is explicitly enabled."""
+    raw = os.getenv(name, "")
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _build_isoflux_controller(
     config_path: Any,
     *,
@@ -168,6 +178,12 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool
     that a unit position error produces the same control magnitude as
     the PID's proportional term (Kp).
     """
+    if not _env_flag_enabled(HINF_RESEARCH_ENV):
+        raise RuntimeError(
+            "H-infinity research lane is disabled by default; set "
+            f"{HINF_RESEARCH_ENV}=1 or pass --enable-hinf-research."
+        )
+
     dt = 0.01 if surrogate else 0.05
     steps = int(shot_duration / dt)
     ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
@@ -454,6 +470,10 @@ def run_campaign(
     print(f"Episodes: {n_episodes} | Shot duration: {shot_duration}s")
     print(f"Noise: {noise_level*100:.0f}% | Delay: {delay_ms:.0f}ms")
     print(f"Surrogate: {'Enabled' if surrogate else 'Disabled'}")
+    print(
+        "H-infinity research lane: "
+        + ("Enabled" if _env_flag_enabled(HINF_RESEARCH_ENV) else "Disabled")
+    )
     print(f"Controllers: {', '.join(CONTROLLERS.keys())}")
 
     results: dict[str, ControllerMetrics] = {}
@@ -561,10 +581,20 @@ if __name__ == "__main__":
         "--output", type=str, default=None,
         help="Path to save JSON results",
     )
+    parser.add_argument(
+        "--enable-hinf-research",
+        action="store_true",
+        help=(
+            "Enable H-infinity research lane. Disabled by default because "
+            "this controller remains an experimental policy path."
+        ),
+    )
     args = parser.parse_args()
 
     if args.quick:
         args.episodes = 10
+    if args.enable_hinf_research:
+        os.environ[HINF_RESEARCH_ENV] = "1"
 
     results = run_campaign(n_episodes=args.episodes, surrogate=args.surrogate)
     print("\n" + generate_summary_table(results))

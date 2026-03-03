@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from dataclasses import dataclass, field
@@ -94,6 +95,15 @@ class ControllerMetrics:
     episodes: list = field(default_factory=list)
 
 
+HINF_RESEARCH_ENV = "SCPN_ENABLE_HINF_RESEARCH"
+
+
+def _env_flag_enabled(name: str) -> bool:
+    """Return True when an environment gate is explicitly enabled."""
+    raw = os.getenv(name, "")
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _to_episode_result(
     run_result: dict[str, Any],
     total_us: float,
@@ -125,6 +135,12 @@ def _run_pid_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult
 
 
 def _run_hinf_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    if not _env_flag_enabled(HINF_RESEARCH_ENV):
+        raise RuntimeError(
+            "H-infinity research lane is disabled by default; set "
+            f"{HINF_RESEARCH_ENV}=1 or pass --enable-hinf-research."
+        )
+
     steps = int(shot_duration)
     dt = 0.05
     ctrl = IsoFluxController(config_path, verbose=False, control_dt_s=dt)
@@ -266,6 +282,10 @@ def run_comparison(
         raise RuntimeError("No controllers are available for comparison.")
 
     print("=== 4-Way Controller Comparison ===")
+    print(
+        "H-infinity research lane: "
+        + ("Enabled" if _env_flag_enabled(HINF_RESEARCH_ENV) else "Disabled")
+    )
     print(f"Episodes: {n_episodes} | Controllers: {', '.join(CONTROLLERS.keys())}")
 
     results: dict[str, ControllerMetrics] = {}
@@ -373,9 +393,19 @@ if __name__ == "__main__":
         default=None,
         help="Optional output path for LaTeX table.",
     )
+    parser.add_argument(
+        "--enable-hinf-research",
+        action="store_true",
+        help=(
+            "Enable H-infinity research lane. Disabled by default because "
+            "this controller remains an experimental policy path."
+        ),
+    )
     args = parser.parse_args()
     if args.quick:
         args.episodes = 5
+    if args.enable_hinf_research:
+        os.environ[HINF_RESEARCH_ENV] = "1"
     results = run_comparison(n_episodes=args.episodes)
     md_table = generate_comparison_table(results)
     print("\n" + md_table)

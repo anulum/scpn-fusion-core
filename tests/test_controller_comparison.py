@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pytest
 
 # Ensure validation/ is importable
 repo_root = Path(__file__).resolve().parents[1]
@@ -65,6 +66,7 @@ def test_hinf_episode_uses_independent_axis_controllers(monkeypatch) -> None:
 
     monkeypatch.setattr(mod, "IsoFluxController", FakeIsoFluxController)
     monkeypatch.setattr(mod, "get_radial_robust_controller", fake_get_hinf)
+    monkeypatch.setenv(mod.HINF_RESEARCH_ENV, "1")
 
     episode = mod._run_hinf_episode("unused.json", shot_duration=8)
 
@@ -75,6 +77,14 @@ def test_hinf_episode_uses_independent_axis_controllers(monkeypatch) -> None:
     assert any(abs(err - 0.2) < 1e-12 for err, _ in created[0].steps[1:])
     assert any(abs(err + 0.1) < 1e-12 for err, _ in created[1].steps[1:])
     assert episode.t_disruption == 8.0
+
+
+def test_hinf_episode_requires_explicit_research_gate(monkeypatch) -> None:
+    import validation.controller_comparison as mod
+
+    monkeypatch.delenv(mod.HINF_RESEARCH_ENV, raising=False)
+    with pytest.raises(RuntimeError, match="disabled by default"):
+        mod._run_hinf_episode("unused.json", shot_duration=8)
 
 
 def test_controller_registry_contains_baseline_controllers() -> None:

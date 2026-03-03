@@ -156,3 +156,35 @@ def test_newton_reports_gs_residual_metrics(newton_cfg: Path):
     assert np.isfinite(result["gs_residual"])
     assert np.isfinite(result["gs_residual_best"])
     assert len(result["gs_residual_history"]) >= 1
+
+
+def test_newton_allows_ilu_preconditioner_mode(tmp_path: Path):
+    """ILU preconditioner mode should execute without crashing."""
+    cfg = MOCK_CONFIG.copy()
+    cfg["solver"] = {
+        **cfg["solver"],
+        "gmres_preconditioner": "ilu",
+        "max_iterations": 20,
+    }
+    p = tmp_path / "newton_ilu.json"
+    p.write_text(json.dumps(cfg), encoding="utf-8")
+
+    fk = FusionKernel(str(p))
+    result = fk.solve_equilibrium()
+    assert result["solver_method"] == "newton"
+    assert np.isfinite(result["residual"])
+
+
+def test_newton_rejects_invalid_preconditioner_mode(tmp_path: Path):
+    """Invalid preconditioner names should fail fast."""
+    cfg = MOCK_CONFIG.copy()
+    cfg["solver"] = {
+        **cfg["solver"],
+        "gmres_preconditioner": "not-a-mode",
+    }
+    p = tmp_path / "newton_bad_precond.json"
+    p.write_text(json.dumps(cfg), encoding="utf-8")
+
+    fk = FusionKernel(str(p))
+    with pytest.raises(ValueError, match="gmres_preconditioner"):
+        fk.solve_equilibrium()
