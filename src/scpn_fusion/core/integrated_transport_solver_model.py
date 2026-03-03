@@ -20,6 +20,8 @@ def _solver_module() -> Any:
 
 
 class TransportSolverModelMixin:
+    neoclassical_params: dict[str, Any] | None
+
     def set_numerical_recovery_limit(self, max_recoveries: int | None) -> None:
         """Set optional per-step numerical-recovery cap."""
         if max_recoveries is None:
@@ -426,4 +428,3 @@ class TransportSolverModelMixin:
         self.chi_e = chi_base + chi_turb
         self.chi_i = chi_base + chi_turb
         self.D_n = 0.1 * self.chi_e
-

@@ -570,7 +570,10 @@ class NeuroSymbolicController(
             )
             if use_rust_sampler:
                 try:
-                    sampled = _rust_sample_firing(
+                    sampler = _rust_sample_firing
+                    if sampler is None:
+                        raise RuntimeError("rust sampler unavailable")
+                    sampled = sampler(
                         p_fire,
                         int(self._sc_n_passes),
                         int(sample_seed),
