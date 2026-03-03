@@ -7,7 +7,7 @@
       "license": "synthetic-v1",
       "source": "Derived calibration artifact from synthetic DIII-D-like shots.",
       "source_type": "derived_calibration",
-      "total_bytes": 2765
+      "total_bytes": 2653
     },
     {
       "file_count": 1,
@@ -15,7 +15,7 @@
       "license": "synthetic-v1",
       "source": "Auto-generated manifest for synthetic DIII-D-like disruption shots.",
       "source_type": "derived_manifest",
-      "total_bytes": 6783
+      "total_bytes": 6596
     },
     {
       "file_count": 16,
@@ -39,7 +39,7 @@
       "license": "synthetic-v1",
       "source": "Bundled DIII-D-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle",
-      "total_bytes": 386310
+      "total_bytes": 381655
     },
     {
       "file_count": 4,
@@ -47,7 +47,7 @@
       "license": "citation-required",
       "source": "Derived coefficients/calibration artifacts from ITPA subset.",
       "source_type": "derived_calibration",
-      "total_bytes": 7625
+      "total_bytes": 7481
     },
     {
       "file_count": 5,
@@ -55,7 +55,7 @@
       "license": "synthetic-v1",
       "source": "Bundled JET-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle",
-      "total_bytes": 386310
+      "total_bytes": 381655
     },
     {
       "file_count": 3,
@@ -63,7 +63,7 @@
       "license": "citation-required",
       "source": "Curated summary from ITER Physics Basis literature.",
       "source_type": "published_reference_summary",
-      "total_bytes": 2342
+      "total_bytes": 2267
     },
     {
       "file_count": 2,
@@ -87,7 +87,7 @@
       "license": "see validation/reference_data/sparc/LICENSE",
       "source": "SPARC public design reference metadata.",
       "source_type": "reference_dataset_subset",
-      "total_bytes": 1987770
+      "total_bytes": 1949992
     },
     {
       "file_count": 2,
@@ -130,8 +130,8 @@
       "dataset_id": "diiid_reference_equilibria",
       "license": "synthetic-v1",
       "path": "diiid/diiid_hmode_1p5MA.geqdsk",
-      "sha256": "4a3565f9e1bdc3d40663276d3b686d450863549496d65c0c55f3cad8339c7dc2",
-      "size_bytes": 77262,
+      "sha256": "790a22de79134840fff5a9d93e0e81729aa7d9bf865a5018de968b66330f6c52",
+      "size_bytes": 76331,
       "source": "Bundled DIII-D-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -139,8 +139,8 @@
       "dataset_id": "diiid_reference_equilibria",
       "license": "synthetic-v1",
       "path": "diiid/diiid_hmode_2MA.geqdsk",
-      "sha256": "079b4bca0b61e8d3b31b7ac893e259cfc8e21dc6bcbcb91b76f2ab2e3ae5ee33",
-      "size_bytes": 77262,
+      "sha256": "2595e43a357b1216893ba8dff7c4e3fc881c3df129ad1509c297739a1d72c850",
+      "size_bytes": 76331,
       "source": "Bundled DIII-D-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -148,8 +148,8 @@
       "dataset_id": "diiid_reference_equilibria",
       "license": "synthetic-v1",
       "path": "diiid/diiid_lmode_1MA.geqdsk",
-      "sha256": "cdcdda9be80a4353931e09057f3d63402c3b1997d9e88467e414bac10122e289",
-      "size_bytes": 77262,
+      "sha256": "aad69251999d3acc569b2b154a3c2752337d9b56059cffc0851a34ffab44c98c",
+      "size_bytes": 76331,
       "source": "Bundled DIII-D-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -157,8 +157,8 @@
       "dataset_id": "diiid_reference_equilibria",
       "license": "synthetic-v1",
       "path": "diiid/diiid_negdelta.geqdsk",
-      "sha256": "5072464d12071ab63efc4e8ca3f627f149a7d20ad419b5d7a5ad6eb44d667332",
-      "size_bytes": 77262,
+      "sha256": "a02d32b8f09e2fa07e4c83afd26fbbb2b45aa9adabcea85e76db6725e28ae830",
+      "size_bytes": 76331,
       "source": "Bundled DIII-D-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -166,8 +166,8 @@
       "dataset_id": "diiid_reference_equilibria",
       "license": "synthetic-v1",
       "path": "diiid/diiid_snowflake.geqdsk",
-      "sha256": "b7f568d448d3e99fc87cdd7201f426e5409b1644c355eed5cb9afdd332bfe96b",
-      "size_bytes": 77262,
+      "sha256": "850505013e701dec7cb1fba9ce5cbeba0315860babf905aca07171da43783927",
+      "size_bytes": 76331,
       "source": "Bundled DIII-D-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -175,8 +175,8 @@
       "dataset_id": "diiid_disruption_calibration",
       "license": "synthetic-v1",
       "path": "diiid/disruption_risk_calibration.json",
-      "sha256": "0369a3d5cb126321087da65e7c0a5dde4daa72cea922f561ae217201548d9c9c",
-      "size_bytes": 2765,
+      "sha256": "fd3f402129b6b7a091f68f732b1c54e9ddce24655d58fb50120e41e8c2e54589",
+      "size_bytes": 2653,
       "source": "Derived calibration artifact from synthetic DIII-D-like shots.",
       "source_type": "derived_calibration"
     },
@@ -337,8 +337,8 @@
       "dataset_id": "diiid_disruption_manifest",
       "license": "synthetic-v1",
       "path": "diiid/disruption_shots_manifest.json",
-      "sha256": "75f550fffa607bf42fd5cadc783893a7b9f0f97b16f6c012398222cf2280ee8b",
-      "size_bytes": 6783,
+      "sha256": "b3c6aaad2a73ffdf983f62dfa7c04f32a1406cfde2c08a06086ce1bd82ab7e65",
+      "size_bytes": 6596,
       "source": "Auto-generated manifest for synthetic DIII-D-like disruption shots.",
       "source_type": "derived_manifest"
     },
@@ -346,8 +346,8 @@
       "dataset_id": "published_reference_metadata",
       "license": "citation-required",
       "path": "iter_reference.json",
-      "sha256": "35ceeb2248262b335df7d5b61fead7c209b9a04fbd5fb8a159963e7af1baf723",
-      "size_bytes": 509,
+      "sha256": "5efdeb6ee13d3a7627632ac344300b4b8229e700b09ffcbe7234d282c0ed6674",
+      "size_bytes": 487,
       "source": "Curated summary from ITER Physics Basis literature.",
       "source_type": "published_reference_summary"
     },
@@ -355,8 +355,8 @@
       "dataset_id": "itpa_reference_bundle",
       "license": "citation-required",
       "path": "itpa/gyro_bohm_coefficients.json",
-      "sha256": "f1436ec1656039150be0828af3a687a2d5479d729b797b7e280f3abaa4f29691",
-      "size_bytes": 744,
+      "sha256": "5dce1a7fd8da29fa76fad5769e8b4fa1865413e5bc99d42beeec8d5c6cd08118",
+      "size_bytes": 729,
       "source": "Derived coefficients/calibration artifacts from ITPA subset.",
       "source_type": "derived_calibration"
     },
@@ -364,8 +364,8 @@
       "dataset_id": "itpa_reference_bundle",
       "license": "citation-required",
       "path": "itpa/hmode_confinement.csv",
-      "sha256": "22c1a3c3d730cd9bfa07220df138d29ba3257f4dfc67d58377bb718cf1f952a6",
-      "size_bytes": 4378,
+      "sha256": "aa6848b4d1a87dfa4d146f4e4670a1e566624e674648eebfafb303fc20f4afad",
+      "size_bytes": 4324,
       "source": "ITPA confinement reference subset used for reduced-order calibration.",
       "source_type": "reference_dataset_subset"
     },
@@ -373,8 +373,8 @@
       "dataset_id": "itpa_reference_bundle",
       "license": "citation-required",
       "path": "itpa/ipb98y2_coefficients.json",
-      "sha256": "b3b00827be61d21378eeadfc80686a780389711e7910024966298237e330e704",
-      "size_bytes": 1075,
+      "sha256": "860aefafde3ae3774fa14bf938f37d041770060e107cded96e185aefc0a76680",
+      "size_bytes": 1039,
       "source": "Derived coefficients/calibration artifacts from ITPA subset.",
       "source_type": "derived_calibration"
     },
@@ -382,8 +382,8 @@
       "dataset_id": "itpa_reference_bundle",
       "license": "AGPL-3.0-or-later",
       "path": "itpa/README.md",
-      "sha256": "a50ad8956ddbed276793a9fd96c46a58e0a3718e5ae17a5f92100d860c37ce06",
-      "size_bytes": 1428,
+      "sha256": "2b98eef1e153a2f44191bf710236c1109a54a65c001e022a872197885e36e4e1",
+      "size_bytes": 1389,
       "source": "ITPA reference-data notes.",
       "source_type": "documentation"
     },
@@ -391,8 +391,8 @@
       "dataset_id": "jet_reference_equilibria",
       "license": "synthetic-v1",
       "path": "jet/jet_dt_3p5MA.geqdsk",
-      "sha256": "f41dc435bb005633db81010e79a749ee8d28e5ade91a7c83c4d951190318e338",
-      "size_bytes": 77262,
+      "sha256": "cab6079f1ed3bc7495b359c5af1175c33c7e3e64c038b4c5ce9db164d250b0db",
+      "size_bytes": 76331,
       "source": "Bundled JET-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -400,8 +400,8 @@
       "dataset_id": "jet_reference_equilibria",
       "license": "synthetic-v1",
       "path": "jet/jet_high_ip_4p8MA.geqdsk",
-      "sha256": "cdeb1acadb6eb067030748677fe38c17233a18f10f056cd907ccc64c99625908",
-      "size_bytes": 77262,
+      "sha256": "1d73818462574223f0da9e4789bd18fa76cf381ee839435aea6c27057f826b1b",
+      "size_bytes": 76331,
       "source": "Bundled JET-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -409,8 +409,8 @@
       "dataset_id": "jet_reference_equilibria",
       "license": "synthetic-v1",
       "path": "jet/jet_hmode_3MA.geqdsk",
-      "sha256": "c267f20eb2df4eadd4ee966c294328a56de8399b4f397a39612d045838d05ff9",
-      "size_bytes": 77262,
+      "sha256": "08b376d2ea3d13bfbdb1243d9f50a3a7a607360af77a9dc64f29d53bed852fd7",
+      "size_bytes": 76331,
       "source": "Bundled JET-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -418,8 +418,8 @@
       "dataset_id": "jet_reference_equilibria",
       "license": "synthetic-v1",
       "path": "jet/jet_hybrid_2p5MA.geqdsk",
-      "sha256": "0ab2f1205e877478e9befae6f742915c24bf24534931d7197211a628fa7841a7",
-      "size_bytes": 77262,
+      "sha256": "3b9c732ac36e06eb2559e326dd74cb5460e676ff7b536a396a9d09ac27a0a0f8",
+      "size_bytes": 76331,
       "source": "Bundled JET-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -427,8 +427,8 @@
       "dataset_id": "jet_reference_equilibria",
       "license": "synthetic-v1",
       "path": "jet/jet_lmode_2MA.geqdsk",
-      "sha256": "62bfcafe32e17cc7a94cab7ba747856d16661c104fda9e08f377b1e65bba02e3",
-      "size_bytes": 77262,
+      "sha256": "7568c6d71daf0a361bb33ce118beea378aa09eeffdb48ef2577fd894b7b5a31b",
+      "size_bytes": 76331,
       "source": "Bundled JET-like equilibrium references for validation lanes.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -445,8 +445,8 @@
       "dataset_id": "published_reference_metadata",
       "license": "citation-required",
       "path": "qlknn10d_published_benchmarks.json",
-      "sha256": "ceb48e9716d5be2ea58824ace1d5187e157111d34808c2a501e3afc65699013c",
-      "size_bytes": 1387,
+      "sha256": "123f48321c7c161f232b2e6366c2266cfee8c85c110f6bd0d10ad1a3c70c8e76",
+      "size_bytes": 1354,
       "source": "Curated summary from public QLKNN benchmark paper.",
       "source_type": "published_reference_summary"
     },
@@ -463,8 +463,8 @@
       "dataset_id": "sparc_reference_bundle",
       "license": "see validation/reference_data/sparc/LICENSE",
       "path": "sparc/device_description.json",
-      "sha256": "406ca98b40856f8736e3f37559b28222ff3dc981a0cabadf244ceaded3918e1b",
-      "size_bytes": 406142,
+      "sha256": "74837c820e9867f80a2139e297b60ee214778dd09ea20dcf97b1721af86d57fd",
+      "size_bytes": 379205,
       "source": "SPARC public design reference metadata.",
       "source_type": "reference_dataset_subset"
     },
@@ -481,8 +481,8 @@
       "dataset_id": "sparc_reference_bundle",
       "license": "see validation/reference_data/sparc/LICENSE",
       "path": "sparc/lmode_hv.geqdsk",
-      "sha256": "669bbf4fb807a6d8ba88a97414a2cbf3fc3185fc98fbcae27da2c86791823e8b",
-      "size_bytes": 295542,
+      "sha256": "5566d1b90bb82b3b644558ee04349133c5c809519bb70af92cf48bdf93fc9545",
+      "size_bytes": 291934,
       "source": "SPARC public equilibrium references.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -490,8 +490,8 @@
       "dataset_id": "sparc_reference_bundle",
       "license": "see validation/reference_data/sparc/LICENSE",
       "path": "sparc/lmode_vh.geqdsk",
-      "sha256": "6cf5baba915fd8081c23dbc1b0822abbfd717c45c793bd161294b23329575bae",
-      "size_bytes": 295542,
+      "sha256": "b8854b9ac7db86a279fe53623745185ee647102ffee9e8c939adc5d5e84296a4",
+      "size_bytes": 291934,
       "source": "SPARC public equilibrium references.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -499,8 +499,8 @@
       "dataset_id": "sparc_reference_bundle",
       "license": "see validation/reference_data/sparc/LICENSE",
       "path": "sparc/lmode_vv.geqdsk",
-      "sha256": "863d6c7670aa9015132112f9364cce71214622395e3f9d2cc0dc28f37db42a0b",
-      "size_bytes": 295542,
+      "sha256": "bf6aed3ff09488a96f566225a4e363c9237252f649ad8f370761e61eba4f846f",
+      "size_bytes": 291934,
       "source": "SPARC public equilibrium references.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -508,8 +508,8 @@
       "dataset_id": "sparc_reference_bundle",
       "license": "see validation/reference_data/sparc/LICENSE",
       "path": "sparc/prd_popcon.csv",
-      "sha256": "e98caaf4f9f16404f74a44ec96e3de132646d0759e1357d0ec02fee405f21c39",
-      "size_bytes": 407,
+      "sha256": "a996208488df24900d7f11bba370949e78012869b563a32bf0ec32ef2066b36e",
+      "size_bytes": 390,
       "source": "SPARC public design reference tables.",
       "source_type": "reference_dataset_subset"
     },
@@ -562,8 +562,8 @@
       "dataset_id": "published_reference_metadata",
       "license": "citation-required",
       "path": "sparc_reference.json",
-      "sha256": "6dd4b6c99fa24855b926dfe0328469b1c95c0f5a375f9a9e795799075b15d19d",
-      "size_bytes": 446,
+      "sha256": "218cd3bfbb0500fde9b6bafe47c38022803b47ad3c6ab7d7274576199a1f1d86",
+      "size_bytes": 426,
       "source": "Curated summary from SPARC public design publications.",
       "source_type": "published_reference_summary"
     },
@@ -577,7 +577,7 @@
       "source_type": "synthetic_generated"
     }
   ],
-  "generated_at_utc": "2026-03-03T05:03:30.183343+00:00",
+  "generated_at_utc": "2026-03-03T06:15:16.726033+00:00",
   "manifest_version": "reference-data-provenance-v1",
   "policy_file": "provenance_policy.json"
 }

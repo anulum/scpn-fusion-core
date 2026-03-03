@@ -15,13 +15,28 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ROOT = REPO_ROOT / "validation" / "reference_data"
 DEFAULT_POLICY = DEFAULT_ROOT / "provenance_policy.json"
 DEFAULT_MANIFEST = DEFAULT_ROOT / "provenance_manifest.json"
+_TEXT_NORMALIZED_SUFFIXES = {
+    ".json",
+    ".md",
+    ".txt",
+    ".csv",
+    ".yaml",
+    ".yml",
+    ".geqdsk",
+}
 
 
-def _sha256(path: Path) -> str:
+def _content_bytes(path: Path) -> bytes:
+    raw = path.read_bytes()
+    if path.suffix.lower() in _TEXT_NORMALIZED_SUFFIXES:
+        return raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return raw
+
+
+def _sha256(content: bytes) -> str:
     digest = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
-            digest.update(chunk)
+    for idx in range(0, len(content), 1024 * 1024):
+        digest.update(content[idx : idx + 1024 * 1024])
     return digest.hexdigest()
 
 
@@ -110,8 +125,9 @@ def build_manifest(
             continue
 
         rule = _match_rule(rel, rules)
-        size_bytes = int(path.stat().st_size)
-        sha256 = _sha256(path)
+        content = _content_bytes(path)
+        size_bytes = int(len(content))
+        sha256 = _sha256(content)
 
         row = {
             "path": rel,

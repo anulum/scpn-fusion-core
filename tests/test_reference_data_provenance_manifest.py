@@ -167,3 +167,42 @@ def test_build_manifest_raises_on_unmatched_file(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="No provenance policy rule matched file"):
         prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
 
+
+def test_build_manifest_normalizes_text_line_endings_for_hash_and_size(tmp_path: Path) -> None:
+    root = tmp_path / "reference_data"
+    root.mkdir(parents=True)
+    text_path = root / "README.md"
+    text_path.write_bytes(b"line1\r\nline2\r\n")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    _write_json(
+        policy,
+        {
+            "rules": [
+                {
+                    "id": "metadata",
+                    "glob": "README.md",
+                    "source_type": "documentation",
+                    "source": "docs",
+                    "license": "AGPL-3.0-or-later",
+                },
+                {
+                    "id": "policy",
+                    "glob": "provenance_policy.json",
+                    "source_type": "documentation",
+                    "source": "policy",
+                    "license": "AGPL-3.0-or-later",
+                },
+            ]
+        },
+    )
+
+    crlf_manifest = prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+    crlf_row = next(row for row in crlf_manifest["files"] if row["path"] == "README.md")
+
+    text_path.write_bytes(b"line1\nline2\n")
+    lf_manifest = prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+    lf_row = next(row for row in lf_manifest["files"] if row["path"] == "README.md")
+
+    assert crlf_row["sha256"] == lf_row["sha256"]
+    assert crlf_row["size_bytes"] == lf_row["size_bytes"]
