@@ -8,12 +8,45 @@
 from __future__ import annotations
 
 import logging
-import os
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
+
+from scpn_fusion.control.disruption_risk_runtime import (
+    DEFAULT_DISRUPTION_RISK_BIAS,
+    DEFAULT_DISRUPTION_RISK_THRESHOLD,
+    DISRUPTION_RISK_LINEAR_WEIGHTS,
+    HybridAnomalyDetector,
+    _require_int,
+    apply_bit_flip_fault,
+    apply_disruption_logit_bias,
+    build_disruption_feature_vector,
+    predict_disruption_risk,
+    run_anomaly_alarm_campaign,
+    run_fault_noise_campaign,
+    simulate_tearing_mode,
+)
+from scpn_fusion.fallback_telemetry import record_fallback_event
+
+__all__ = [
+    "DEFAULT_DISRUPTION_RISK_BIAS",
+    "DEFAULT_DISRUPTION_RISK_THRESHOLD",
+    "DISRUPTION_RISK_LINEAR_WEIGHTS",
+    "HybridAnomalyDetector",
+    "apply_bit_flip_fault",
+    "apply_disruption_logit_bias",
+    "build_disruption_feature_vector",
+    "predict_disruption_risk",
+    "run_anomaly_alarm_campaign",
+    "run_fault_noise_campaign",
+    "DisruptionTransformer",
+    "train_predictor",
+    "load_or_train_predictor",
+    "predict_disruption_risk_safe",
+    "evaluate_predictor",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -28,22 +61,6 @@ except (ImportError, OSError):  # pragma: no cover - optional dependency path
 
 DEFAULT_SEQ_LEN = 100
 DEFAULT_MODEL_FILENAME = "disruption_model.pth"
-DEFAULT_DISRUPTION_RISK_BIAS = -4.0
-DEFAULT_DISRUPTION_RISK_THRESHOLD = 0.50
-DISRUPTION_RISK_LINEAR_WEIGHTS: dict[str, float] = {
-    "mean": 0.02,
-    "std": 0.55,
-    "max_val": 0.03,
-    "slope": 0.50,
-    "energy": 0.005,
-    "last": 0.02,
-    "n1": 1.10,
-    "n2": 0.70,
-    "n3": 0.45,
-    "asym": 0.50,
-    "spread": 0.15,
-}
-_ALLOW_INSECURE_TORCH_LOAD_ENV = "SCPN_ALLOW_INSECURE_TORCH_LOAD"
 _CHECKPOINT_LOAD_EXCEPTIONS = (
     RuntimeError,
     ValueError,
@@ -57,475 +74,6 @@ _CHECKPOINT_LOAD_EXCEPTIONS = (
 )
 _CHECKPOINT_TRAIN_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, AttributeError)
 _INFERENCE_FALLBACK_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, AttributeError)
-
-
-def _require_int(name: str, value: object, minimum: int | None = None) -> int:
-    if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
-        if minimum is None:
-            raise ValueError(f"{name} must be an integer.")
-        raise ValueError(f"{name} must be an integer >= {minimum}.")
-    parsed = int(value)
-    if minimum is not None and parsed < minimum:
-        raise ValueError(f"{name} must be an integer >= {minimum}.")
-    return parsed
-
-
-def simulate_tearing_mode(
-    steps=1000,
-    *,
-    rng: Optional[np.random.Generator] = None,
-):
-    """
-    Generates synthetic shot data.
-    Returns:
-        signal (array): Magnetic sensor data (dB/dt)
-        label (int): 1 if disrupted, 0 if safe
-        time_to_disruption (array): Time remaining (or -1 if safe)
-    """
-    steps = _require_int("steps", steps, 1)
-    dt = 0.01
-    w = 0.01 # Island width
-    local_rng = rng if rng is not None else np.random.default_rng()
-    
-    is_disruptive = float(local_rng.random()) > 0.5
-    trigger_time = int(local_rng.integers(200, 800)) if is_disruptive else 9999
-    
-    delta_prime = -0.5
-    w_history = []
-    
-    beta_p = 0.8   # poloidal beta proxy
-    w_crit = 0.05  # island stabilisation threshold
-    
-    for t in range(steps):
-        if t > trigger_time:
-            delta_prime = -0.1
-            if w < 0.1: w = 0.15  # seed island
-            
-        # Modified Rutherford Equation: dw/dt = Delta' + Delta'_BS
-        # Delta'_BS = beta_p * w / (w^2 + w_crit^2)
-        f_bs = beta_p * (w / (w**2 + w_crit**2))
-        
-        dw = (delta_prime + f_bs) * (1.0 - w/12.0) * dt
-        w += dw
-        w += float(local_rng.normal(0.0, 0.02))
-        w = max(w, 0.001)
-        
-        w_history.append(w)
-        
-        # Mode lock → disruption
-        if w > 8.0:
-            return np.array(w_history), 1, (t - trigger_time)
-            
-    return np.array(w_history), 0, -1
-
-
-def build_disruption_feature_vector(signal, toroidal_observables=None):
-    """
-    Build a compact feature vector for control-oriented disruption scoring.
-
-    Feature layout:
-      [mean, std, max, slope, energy, last,
-       toroidal_n1_amp, toroidal_n2_amp, toroidal_n3_amp,
-       toroidal_asymmetry_index, toroidal_radial_spread]
-    """
-    sig = np.asarray(signal, dtype=float).reshape(-1)
-    if sig.size == 0:
-        raise ValueError("signal must contain at least one sample")
-    if not np.all(np.isfinite(sig)):
-        raise ValueError("signal must be finite.")
-
-    mean = float(np.mean(sig))
-    std = float(np.std(sig))
-    max_val = float(np.max(sig))
-    slope = float((sig[-1] - sig[0]) / max(sig.size - 1, 1))
-    energy = float(np.mean(sig**2))
-    last = float(sig[-1])
-
-    obs = toroidal_observables or {}
-    n1 = float(obs.get("toroidal_n1_amp", 0.0))
-    n2 = float(obs.get("toroidal_n2_amp", 0.0))
-    n3 = float(obs.get("toroidal_n3_amp", 0.0))
-    asym = float(obs.get("toroidal_asymmetry_index", np.sqrt(n1 * n1 + n2 * n2 + n3 * n3)))
-    spread = float(obs.get("toroidal_radial_spread", 0.0))
-    if not np.all(np.isfinite([n1, n2, n3, asym, spread])):
-        raise ValueError("toroidal observables must be finite.")
-
-    return np.array(
-        [mean, std, max_val, slope, energy, last, n1, n2, n3, asym, spread],
-        dtype=float,
-    )
-
-
-def _compute_disruption_logit_from_features(features: np.ndarray) -> float:
-    mean, std, max_val, slope, energy, last, n1, n2, n3, asym, spread = features
-    thermal_term = (
-        DISRUPTION_RISK_LINEAR_WEIGHTS["max_val"] * max_val
-        + DISRUPTION_RISK_LINEAR_WEIGHTS["std"] * std
-        + DISRUPTION_RISK_LINEAR_WEIGHTS["energy"] * energy
-        + DISRUPTION_RISK_LINEAR_WEIGHTS["slope"] * slope
-    )
-    asym_term = (
-        DISRUPTION_RISK_LINEAR_WEIGHTS["n1"] * n1
-        + DISRUPTION_RISK_LINEAR_WEIGHTS["n2"] * n2
-        + DISRUPTION_RISK_LINEAR_WEIGHTS["n3"] * n3
-        + DISRUPTION_RISK_LINEAR_WEIGHTS["asym"] * asym
-        + DISRUPTION_RISK_LINEAR_WEIGHTS["spread"] * spread
-    )
-    state_term = (
-        DISRUPTION_RISK_LINEAR_WEIGHTS["mean"] * mean
-        + DISRUPTION_RISK_LINEAR_WEIGHTS["last"] * last
-    )
-    return float(DEFAULT_DISRUPTION_RISK_BIAS + thermal_term + asym_term + state_term)
-
-
-def apply_disruption_logit_bias(risk: float, bias_delta: float) -> float:
-    """Apply additive logit-space calibration bias to a bounded risk score."""
-    risk_f = float(risk)
-    bias_f = float(bias_delta)
-    if not np.isfinite(risk_f):
-        raise ValueError("risk must be finite.")
-    if not np.isfinite(bias_f):
-        raise ValueError("bias_delta must be finite.")
-    clipped = float(np.clip(risk_f, 1e-9, 1.0 - 1e-9))
-    logit = float(np.log(clipped / (1.0 - clipped)) + bias_f)
-    return float(1.0 / (1.0 + np.exp(-logit)))
-
-
-def predict_disruption_risk(signal, toroidal_observables=None, bias_delta: float = 0.0):
-    """
-    Lightweight deterministic disruption risk estimator (0..1) for control loops.
-
-    This supplements the Transformer pathway by explicitly consuming toroidal
-    asymmetry observables from 3D diagnostics.
-    """
-    features = build_disruption_feature_vector(signal, toroidal_observables)
-
-    bias_f = float(bias_delta)
-    if not np.isfinite(bias_f):
-        raise ValueError("bias_delta must be finite.")
-    logits = _compute_disruption_logit_from_features(features) + bias_f
-    return float(1.0 / (1.0 + np.exp(-logits)))
-
-
-def apply_bit_flip_fault(value, bit_index):
-    """Inject a deterministic single-bit fault into a float."""
-    if isinstance(bit_index, bool) or not isinstance(bit_index, (int, np.integer)):
-        raise ValueError("bit_index must be an integer in [0, 63].")
-    bit = int(bit_index)
-    if bit < 0 or bit > 63:
-        raise ValueError("bit_index must be an integer in [0, 63].")
-    raw = np.array([float(value)], dtype=np.float64).view(np.uint64)[0]
-    flipped = np.uint64(raw ^ (np.uint64(1) << np.uint64(bit)))
-    out = np.array([flipped], dtype=np.uint64).view(np.float64)[0]
-    return float(out if np.isfinite(out) else value)
-
-
-def _synthetic_control_signal(rng, length):
-    t = np.linspace(0.0, 1.0, int(length), dtype=float)
-    base = 0.7 + 0.15 * np.sin(2.0 * np.pi * 3.0 * t) + 0.05 * np.cos(2.0 * np.pi * 7.0 * t)
-    ramp = np.where(t > 0.65, (t - 0.65) * 0.9, 0.0)
-    noise = rng.normal(0.0, 0.01, size=t.shape)
-    return np.clip(base + ramp + noise, 0.01, None)
-
-
-def _normalize_fault_campaign_inputs(
-    seed,
-    episodes,
-    window,
-    noise_std,
-    bit_flip_interval,
-    recovery_window,
-    recovery_epsilon,
-):
-    seed_i = _require_int("seed", seed, 0)
-    episodes_i = _require_int("episodes", episodes, 1)
-    window_i = _require_int("window", window, 16)
-    noise = float(noise_std)
-    bit_flip_i = _require_int("bit_flip_interval", bit_flip_interval, 1)
-    recovery_window_i = _require_int("recovery_window", recovery_window, 1)
-    recovery_eps = float(recovery_epsilon)
-    if not np.isfinite(noise) or noise < 0.0:
-        raise ValueError("noise_std must be finite and >= 0.")
-    if not np.isfinite(recovery_eps) or recovery_eps <= 0.0:
-        raise ValueError("recovery_epsilon must be finite and > 0.")
-
-    return (
-        seed_i,
-        episodes_i,
-        window_i,
-        noise,
-        bit_flip_i,
-        recovery_window_i,
-        recovery_eps,
-    )
-
-
-def run_fault_noise_campaign(
-    seed=42,
-    episodes=64,
-    window=128,
-    noise_std=0.03,
-    bit_flip_interval=11,
-    recovery_window=6,
-    recovery_epsilon=0.03,
-):
-    """
-    Run deterministic synthetic fault/noise campaign for disruption-risk resilience.
-    """
-    (
-        seed_i,
-        episodes_i,
-        window_i,
-        noise,
-        bit_flip_i,
-        recovery_window_i,
-        recovery_eps,
-    ) = _normalize_fault_campaign_inputs(
-        seed,
-        episodes,
-        window,
-        noise_std,
-        bit_flip_interval,
-        recovery_window,
-        recovery_epsilon,
-    )
-    rng = np.random.default_rng(seed_i)
-
-    abs_errors = []
-    recovery_steps = []
-    n_faults = 0
-
-    for _ in range(episodes_i):
-        signal = _synthetic_control_signal(rng, window_i)
-        toroidal = {
-            "toroidal_n1_amp": float(rng.uniform(0.05, 0.25)),
-            "toroidal_n2_amp": float(rng.uniform(0.03, 0.18)),
-            "toroidal_n3_amp": float(rng.uniform(0.01, 0.12)),
-            "toroidal_radial_spread": float(rng.uniform(0.01, 0.08)),
-        }
-        toroidal["toroidal_asymmetry_index"] = float(
-            np.sqrt(
-                toroidal["toroidal_n1_amp"] ** 2
-                + toroidal["toroidal_n2_amp"] ** 2
-                + toroidal["toroidal_n3_amp"] ** 2
-            )
-        )
-
-        baseline = np.array(
-            [predict_disruption_risk(signal[: i + 1], toroidal) for i in range(window_i)],
-            dtype=float,
-        )
-
-        faulty_signal = signal.copy()
-        faulty_indices = []
-        for i in range(window_i):
-            faulty_signal[i] += float(rng.normal(0.0, noise))
-            if i % bit_flip_i == 0:
-                faulty_signal[i] = apply_bit_flip_fault(
-                    faulty_signal[i], int(rng.integers(0, 52))
-                )
-                faulty_indices.append(i)
-
-        faulty_toroidal = dict(toroidal)
-        faulty_toroidal["toroidal_n1_amp"] = max(
-            0.0, faulty_toroidal["toroidal_n1_amp"] + float(rng.normal(0.0, noise * 0.5))
-        )
-        faulty_toroidal["toroidal_n2_amp"] = max(
-            0.0, faulty_toroidal["toroidal_n2_amp"] + float(rng.normal(0.0, noise * 0.4))
-        )
-        faulty_toroidal["toroidal_asymmetry_index"] = float(
-            np.sqrt(
-                faulty_toroidal["toroidal_n1_amp"] ** 2
-                + faulty_toroidal["toroidal_n2_amp"] ** 2
-                + faulty_toroidal["toroidal_n3_amp"] ** 2
-            )
-        )
-
-        perturbed = np.array(
-            [
-                predict_disruption_risk(faulty_signal[: i + 1], faulty_toroidal)
-                for i in range(window_i)
-            ],
-            dtype=float,
-        )
-
-        err = np.abs(perturbed - baseline)
-        abs_errors.extend(err.tolist())
-
-        for idx in faulty_indices:
-            n_faults += 1
-            stop = min(window_i, idx + recovery_window_i + 1)
-            recover_idx = stop
-            for j in range(idx, stop):
-                if err[j] <= recovery_eps:
-                    recover_idx = j
-                    break
-            recovery_steps.append(int(recover_idx - idx))
-
-    errors_arr = np.asarray(abs_errors, dtype=float)
-    rec_arr = np.asarray(
-        recovery_steps if recovery_steps else [recovery_window_i + 1],
-        dtype=float,
-    )
-
-    mean_abs_err = float(np.mean(errors_arr))
-    p95_abs_err = float(np.percentile(errors_arr, 95))
-    p95_recovery = float(np.percentile(rec_arr, 95))
-    success_rate = float(np.mean(rec_arr <= recovery_window_i))
-
-    thresholds = {
-        "max_mean_abs_risk_error": 0.08,
-        "max_p95_abs_risk_error": 0.22,
-        "max_recovery_steps_p95": float(recovery_window_i),
-        "min_recovery_success_rate": 0.80,
-    }
-    passes = bool(
-        mean_abs_err <= thresholds["max_mean_abs_risk_error"]
-        and p95_abs_err <= thresholds["max_p95_abs_risk_error"]
-        and p95_recovery <= thresholds["max_recovery_steps_p95"]
-        and success_rate >= thresholds["min_recovery_success_rate"]
-    )
-
-    return {
-        "seed": seed_i,
-        "episodes": episodes_i,
-        "window": window_i,
-        "noise_std": noise,
-        "bit_flip_interval": bit_flip_i,
-        "fault_count": int(n_faults),
-        "mean_abs_risk_error": mean_abs_err,
-        "p95_abs_risk_error": p95_abs_err,
-        "recovery_steps_p95": p95_recovery,
-        "recovery_success_rate": success_rate,
-        "thresholds": thresholds,
-        "passes_thresholds": passes,
-    }
-
-
-class HybridAnomalyDetector:
-    """
-    Lightweight supervised+unsupervised anomaly detector for early alarms.
-
-    - Supervised term: `predict_disruption_risk`.
-    - Unsupervised term: online z-score novelty on recent risk stream.
-    """
-
-    def __init__(self, threshold=0.50, ema=0.05):
-        threshold_f = float(threshold)
-        ema_f = float(ema)
-        if not np.isfinite(threshold_f) or threshold_f < 0.0 or threshold_f > 1.0:
-            raise ValueError("threshold must be finite and in [0, 1].")
-        if not np.isfinite(ema_f) or ema_f <= 0.0 or ema_f > 1.0:
-            raise ValueError("ema must be finite and in (0, 1].")
-        self.threshold = threshold_f
-        self.ema = ema_f
-        self.mean = 0.0
-        self.var = 1.0
-        self.initialized = False
-
-    def score(self, signal, toroidal_observables=None):
-        supervised = predict_disruption_risk(signal, toroidal_observables)
-        value = float(supervised)
-
-        if self.initialized:
-            z = abs(value - self.mean) / float(np.sqrt(self.var + 1e-9))
-            unsupervised = float(1.0 - np.exp(-0.5 * z))
-        else:
-            unsupervised = 0.0
-            self.initialized = True
-
-        alpha = self.ema
-        delta = value - self.mean
-        self.mean += alpha * delta
-        self.var = (1.0 - alpha) * self.var + alpha * delta * delta
-        self.var = float(max(self.var, 1e-9))
-
-        anomaly_score = float(np.clip(0.7 * supervised + 0.3 * unsupervised, 0.0, 1.0))
-        return {
-            "supervised_score": float(supervised),
-            "unsupervised_score": float(unsupervised),
-            "anomaly_score": anomaly_score,
-            "alarm": bool(anomaly_score >= self.threshold),
-        }
-
-
-def run_anomaly_alarm_campaign(
-    seed=42,
-    episodes=32,
-    window=128,
-    threshold=0.50,
-):
-    """
-    Deterministic anomaly-alarm campaign under random perturbations.
-    """
-    seed_i = _require_int("seed", seed, 0)
-    episodes_i = _require_int("episodes", episodes, 1)
-    window_i = _require_int("window", window, 16)
-    threshold_f = float(threshold)
-    if not np.isfinite(threshold_f) or threshold_f < 0.0 or threshold_f > 1.0:
-        raise ValueError("threshold must be finite and in [0, 1].")
-
-    rng = np.random.default_rng(seed_i)
-    detector = HybridAnomalyDetector(threshold=threshold_f)
-
-    true_positives = 0
-    false_positives = 0
-    positives = 0
-    negatives = 0
-    latencies = []
-
-    for ep in range(episodes_i):
-        sim_rng = np.random.default_rng(int(seed_i + ep))
-        signal, label, _ = simulate_tearing_mode(steps=window_i, rng=sim_rng)
-        if signal.size < window_i:
-            signal = np.pad(signal, (0, window_i - signal.size), mode="edge")
-        signal = np.asarray(signal[:window_i], dtype=float)
-
-        n1 = float(rng.uniform(0.03, 0.24))
-        n2 = float(rng.uniform(0.02, 0.16))
-        n3 = float(rng.uniform(0.01, 0.10))
-        toroidal = {
-            "toroidal_n1_amp": n1,
-            "toroidal_n2_amp": n2,
-            "toroidal_n3_amp": n3,
-            "toroidal_asymmetry_index": float(np.sqrt(n1 * n1 + n2 * n2 + n3 * n3)),
-            "toroidal_radial_spread": float(rng.uniform(0.01, 0.08)),
-        }
-
-        first_alarm = None
-        for k in range(window_i):
-            perturbed_signal = signal[: k + 1].copy()
-            perturbed_signal[-1] += float(rng.normal(0.0, 0.02))
-            score = detector.score(perturbed_signal, toroidal)
-            if score["alarm"] and first_alarm is None:
-                first_alarm = k
-
-        is_positive = bool(label == 1)
-        if is_positive:
-            positives += 1
-            if first_alarm is not None:
-                true_positives += 1
-                latencies.append(first_alarm)
-        else:
-            negatives += 1
-            if first_alarm is not None:
-                false_positives += 1
-
-    tpr = float(true_positives / max(positives, 1))
-    fpr = float(false_positives / max(negatives, 1))
-    p95_latency = float(np.percentile(latencies, 95)) if latencies else float(window_i)
-    passes = bool(tpr >= 0.75 and fpr <= 0.35)
-
-    return {
-        "seed": seed_i,
-        "episodes": episodes_i,
-        "window": window_i,
-        "threshold": threshold_f,
-        "true_positive_rate": tpr,
-        "false_positive_rate": fpr,
-        "p95_alarm_latency_steps": p95_latency,
-        "passes_thresholds": passes,
-    }
 
 
 def _repo_root() -> Path:
@@ -551,9 +99,8 @@ def _prepare_signal_window(signal, seq_len):
 def _safe_torch_checkpoint_load(path: Path) -> Any:
     """Load checkpoint with safest available torch semantics.
 
-    Prefers ``weights_only=True`` to avoid arbitrary object deserialization.
-    On older torch versions that do not support this keyword, falls back to
-    legacy loading for compatibility.
+    Enforces ``weights_only=True`` and fails closed when unavailable to avoid
+    arbitrary object deserialization paths in library runtime.
     """
     if torch is None:
         raise RuntimeError("Torch is required for checkpoint loading.")
@@ -562,20 +109,16 @@ def _safe_torch_checkpoint_load(path: Path) -> Any:
     except TypeError as exc:
         if "weights_only" not in str(exc):
             raise
-        allow_insecure_legacy_load = str(
-            os.environ.get(_ALLOW_INSECURE_TORCH_LOAD_ENV, "")
-        ).strip().lower() in {"1", "true", "yes", "on"}
-        if not allow_insecure_legacy_load:
-            raise RuntimeError(
-                "Legacy torch checkpoint loading is disabled because weights_only=True "
-                f"is unavailable. Set {_ALLOW_INSECURE_TORCH_LOAD_ENV}=1 only for "
-                "trusted checkpoints."
-            ) from exc
-        logger.warning(
-            "torch.load(weights_only=True) unsupported; using legacy checkpoint load "
-            "because SCPN_ALLOW_INSECURE_TORCH_LOAD is enabled."
+        record_fallback_event(
+            "disruption_predictor",
+            "legacy_checkpoint_load_blocked",
+            context={"path": str(path)},
         )
-        return torch.load(path, map_location="cpu")
+        raise RuntimeError(
+            "Legacy torch checkpoint loading is disabled because weights_only=True "
+            "is unavailable. Use a compatible torch version or convert checkpoint "
+            "outside library runtime."
+        ) from exc
 
 if torch is not None:
     class DisruptionTransformer(nn.Module):
@@ -724,6 +267,11 @@ def load_or_train_predictor(
     if torch is None:
         if not allow_fallback:
             raise RuntimeError("Torch is required for load_or_train_predictor().")
+        record_fallback_event(
+            "disruption_predictor",
+            "torch_unavailable_fallback",
+            context={"model_path": str(model_path) if model_path is not None else None},
+        )
         return None, {
             "trained": False,
             "fallback": True,
@@ -762,6 +310,11 @@ def load_or_train_predictor(
         except _CHECKPOINT_LOAD_EXCEPTIONS as exc:
             if not allow_fallback:
                 raise
+            record_fallback_event(
+                "disruption_predictor",
+                "checkpoint_load_failed_fallback",
+                context={"error": exc.__class__.__name__, "model_path": str(path)},
+            )
             return None, {
                 "trained": False,
                 "fallback": True,
@@ -772,6 +325,11 @@ def load_or_train_predictor(
 
     if not train_if_missing and not force_retrain:
         if allow_fallback:
+            record_fallback_event(
+                "disruption_predictor",
+                "checkpoint_missing_fallback",
+                context={"model_path": str(path)},
+            )
             return None, {
                 "trained": False,
                 "fallback": True,
@@ -788,6 +346,11 @@ def load_or_train_predictor(
     except _CHECKPOINT_TRAIN_EXCEPTIONS as exc:
         if not allow_fallback:
             raise
+        record_fallback_event(
+            "disruption_predictor",
+            "train_failed_fallback",
+            context={"error": exc.__class__.__name__, "model_path": str(path)},
+        )
         return None, {
             "trained": False,
             "fallback": True,
@@ -841,6 +404,11 @@ def predict_disruption_risk_safe(
                 "predict_disruption_risk_safe fallback disabled: "
                 f"disruption model unavailable ({reason})."
             )
+        record_fallback_event(
+            "disruption_predictor",
+            "inference_model_unavailable_fallback",
+            context={"reason": str(meta.get("reason", "model_unavailable"))},
+        )
         out_meta = dict(meta)
         out_meta["mode"] = "fallback"
         out_meta["risk_source"] = "predict_disruption_risk"
@@ -876,6 +444,11 @@ def predict_disruption_risk_safe(
                 "predict_disruption_risk_safe fallback disabled: "
                 f"transformer inference failed ({exc.__class__.__name__})."
             ) from exc
+        record_fallback_event(
+            "disruption_predictor",
+            "inference_failed_fallback",
+            context={"error": exc.__class__.__name__},
+        )
         out_meta = dict(meta)
         out_meta["mode"] = "fallback"
         out_meta["risk_source"] = "predict_disruption_risk"

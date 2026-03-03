@@ -29,6 +29,9 @@ from .contracts import (
     ControlTargets,
     _seed64,
 )
+from .controller_backend_mixin import NeuroSymbolicControllerBackendMixin
+from .controller_features_mixin import NeuroSymbolicControllerFeaturesMixin
+from scpn_fusion.fallback_telemetry import record_fallback_event
 
 FloatArray = NDArray[np.float64]
 
@@ -56,7 +59,10 @@ except Exception:
     _HAS_RUST_SCPN_RUNTIME = False
 
 
-class NeuroSymbolicController:
+class NeuroSymbolicController(
+    NeuroSymbolicControllerFeaturesMixin,
+    NeuroSymbolicControllerBackendMixin,
+):
     """Reference controller with oracle float and stochastic paths.
 
     Parameters
@@ -234,9 +240,23 @@ class NeuroSymbolicController:
         if self._runtime_backend_request == "numpy":
             self._runtime_backend = "numpy"
         elif self._runtime_backend_request == "rust":
-            self._runtime_backend = "rust" if _HAS_RUST_SCPN_RUNTIME else "numpy"
+            if _HAS_RUST_SCPN_RUNTIME:
+                self._runtime_backend = "rust"
+            else:
+                self._runtime_backend = "numpy"
+                record_fallback_event(
+                    "scpn_controller",
+                    "rust_backend_unavailable",
+                    context={"runtime_backend_request": "rust"},
+                )
         else:
             self._runtime_backend = "rust" if rust_eligible else "numpy"
+            if self._runtime_backend == "numpy" and not _HAS_RUST_SCPN_RUNTIME:
+                record_fallback_event(
+                    "scpn_controller",
+                    "auto_backend_numpy_due_to_missing_rust",
+                    context={"problem_size": int(problem_size)},
+                )
         produced_feature_keys = set(self._axis_pos_keys)
         produced_feature_keys.update(self._axis_neg_keys)
         passthrough_sources: list[str] = []
@@ -493,89 +513,6 @@ class NeuroSymbolicController:
 
     # ── Internal ─────────────────────────────────────────────────────────
 
-    def _compute_feature_components(
-        self, obs_map: Mapping[str, float]
-    ) -> Tuple[FloatArray, FloatArray]:
-        if self._axis_count == 0:
-            return self._empty, self._empty
-
-        obs_vals = self._tmp_obs_vals
-        for i, key in enumerate(self._axis_obs_keys):
-            if key not in obs_map:
-                raise KeyError(
-                    f"Missing observation key for feature extraction: {key}"
-                )
-            obs_vals[i] = float(obs_map[key])
-        return self._compute_feature_components_vector(obs_vals)
-
-    def _compute_feature_components_vector(
-        self, obs_vector: Sequence[float] | FloatArray
-    ) -> Tuple[FloatArray, FloatArray]:
-        if self._axis_count == 0:
-            return self._empty, self._empty
-
-        obs_vals = np.asarray(obs_vector, dtype=np.float64)
-        if obs_vals.shape != (self._axis_count,):
-            raise ValueError(
-                f"obs_vector must have length {self._axis_count}, got {obs_vals.size}"
-            )
-        np.subtract(self._axis_targets, obs_vals, out=self._tmp_feature_err)
-        np.divide(self._tmp_feature_err, self._axis_scales, out=self._tmp_feature_err)
-        np.clip(self._tmp_feature_err, -1.0, 1.0, out=self._tmp_feature_err)
-        np.clip(self._tmp_feature_err, 0.0, 1.0, out=self._tmp_feature_pos)
-        np.negative(self._tmp_feature_err, out=self._tmp_feature_neg)
-        np.clip(self._tmp_feature_neg, 0.0, 1.0, out=self._tmp_feature_neg)
-        return self._tmp_feature_pos, self._tmp_feature_neg
-
-    def _build_feature_dict(
-        self, obs_map: Mapping[str, float], pos_vals: FloatArray, neg_vals: FloatArray
-    ) -> Dict[str, float]:
-        feats: Dict[str, float] = {}
-        for i, key in enumerate(self._axis_pos_keys):
-            feats[key] = float(pos_vals[i])
-        for i, key in enumerate(self._axis_neg_keys):
-            feats[key] = float(neg_vals[i])
-        for key in self._passthrough_sources:
-            if key not in obs_map:
-                raise KeyError(f"Missing observation key for passthrough: {key}")
-            feats[key] = float(np.clip(obs_map[key], 0.0, 1.0))
-        return feats
-
-    def _inject_places(
-        self,
-        marking: FloatArray,
-        obs_map: Mapping[str, float],
-        pos_vals: FloatArray,
-        neg_vals: FloatArray,
-    ) -> None:
-        """Write features into a marking vector via place_injections config."""
-        if self._inj_count == 0:
-            return
-
-        values = self._tmp_inj_values
-        values.fill(0.0)
-        axis_mask = self._inj_source_axis_idx >= 0
-        if np.any(axis_mask):
-            axis_indices = self._inj_source_axis_idx[axis_mask]
-            axis_pos = self._inj_source_axis_pos[axis_mask]
-            values[axis_mask] = np.where(
-                axis_pos,
-                pos_vals[axis_indices],
-                neg_vals[axis_indices],
-            )
-        for idx, key in self._inj_passthrough_pairs:
-            if key not in obs_map:
-                raise KeyError(f"Missing observation key for passthrough: {key}")
-            values[idx] = float(np.clip(obs_map[key], 0.0, 1.0))
-
-        np.multiply(values, self._inj_scales, out=values)
-        values += self._inj_offsets
-        if self._inj_has_clamp:
-            values[self._inj_clamp_idx] = np.clip(
-                values[self._inj_clamp_idx], 0.0, 1.0
-            )
-        marking[self._inj_place_ids] = values
-
     def _oracle_step(self, marking: FloatArray) -> Tuple[FloatArray, FloatArray]:
         """Float-path Petri step.
 
@@ -626,25 +563,35 @@ class NeuroSymbolicController:
             rng = None
         else:
             sample_seed = _seed64(self.seed_base, f"sc_step:{int(k)}")
-            if (
+            use_rust_sampler = (
                 self._runtime_backend == "rust"
                 and _HAS_RUST_SCPN_RUNTIME
                 and _rust_sample_firing is not None
-            ):
-                sampled = _rust_sample_firing(
-                    p_fire,
-                    int(self._sc_n_passes),
-                    int(sample_seed),
-                    bool(self._sc_antithetic),
-                )
-                f = np.asarray(sampled, dtype=np.float64)
-                if self._sc_bitflip_rate > 0.0:
-                    rng = np.random.default_rng(
-                        _seed64(self.seed_base, f"sc_flip:{int(k)}")
+            )
+            if use_rust_sampler:
+                try:
+                    sampled = _rust_sample_firing(
+                        p_fire,
+                        int(self._sc_n_passes),
+                        int(sample_seed),
+                        bool(self._sc_antithetic),
                     )
-                else:
-                    rng = None
-            else:
+                    f = np.asarray(sampled, dtype=np.float64)
+                    if self._sc_bitflip_rate > 0.0:
+                        rng = np.random.default_rng(
+                            _seed64(self.seed_base, f"sc_flip:{int(k)}")
+                        )
+                    else:
+                        rng = None
+                except Exception as exc:  # pragma: no cover - depends on Rust runtime failures
+                    record_fallback_event(
+                        "scpn_controller",
+                        "rust_sample_firing_failed",
+                        context={"error": exc.__class__.__name__},
+                    )
+                    use_rust_sampler = False
+
+            if not use_rust_sampler:
                 rng = np.random.default_rng(sample_seed)
                 counts = self._tmp_sc_counts
                 if self._sc_antithetic and self._sc_n_passes >= 2:
@@ -743,72 +690,3 @@ class NeuroSymbolicController:
 
         next_cursor = (cursor + 1) % pending.shape[0]
         return fired_now, next_cursor
-
-    def _dense_activations(self, marking: FloatArray) -> FloatArray:
-        if self._runtime_backend == "rust" and _HAS_RUST_SCPN_RUNTIME:
-            assert _rust_dense_activations is not None
-            out = _rust_dense_activations(self._W_in, marking)
-            return np.asarray(out, dtype=np.float64)
-        self._tmp_activations[:] = self._W_in @ marking
-        return self._tmp_activations
-
-    def _marking_update(
-        self, marking: FloatArray, firing: FloatArray, out: FloatArray
-    ) -> FloatArray:
-        if self._runtime_backend == "rust" and _HAS_RUST_SCPN_RUNTIME:
-            assert _rust_marking_update is not None
-            rust_out = _rust_marking_update(marking, self._W_in, self._W_out, firing)
-            np.copyto(out, np.asarray(rust_out, dtype=np.float64))
-            return out
-        self._tmp_consumption[:] = self._W_in_t @ firing
-        self._tmp_production[:] = self._W_out @ firing
-        out[:] = marking
-        out -= self._tmp_consumption
-        out += self._tmp_production
-        np.clip(out, 0.0, 1.0, out=out)
-        return out
-
-    def _decode_actions(self, marking: FloatArray) -> Dict[str, float]:
-        actions = self._decode_actions_vector(marking)
-        if actions.size == 0:
-            return {}
-        return {
-            name: float(actions[i]) for i, name in enumerate(self._action_names)
-        }
-
-    def _decode_actions_vector(self, marking: FloatArray) -> FloatArray:
-        if self._action_count == 0:
-            return self._empty
-
-        raw = self._tmp_actions
-        np.subtract(marking[self._action_pos_idx], marking[self._action_neg_idx], out=raw)
-        raw *= self._action_gains
-        raw = np.clip(
-            raw,
-            self._prev_actions - self._action_max_delta,
-            self._prev_actions + self._action_max_delta,
-        )
-        np.clip(raw, -self._action_abs_max, self._action_abs_max, out=self._prev_actions)
-        return self._prev_actions
-
-    def _apply_bit_flip_faults(
-        self, values: FloatArray, rng: np.random.Generator
-    ) -> FloatArray:
-        """Inject bounded deterministic bit-flip faults into float vectors."""
-        out = np.asarray(values, dtype=np.float64).copy()
-        if self._sc_bitflip_rate <= 0.0 or out.size == 0:
-            return out
-
-        flips = rng.random(out.size) < self._sc_bitflip_rate
-        if not np.any(flips):
-            return out
-
-        raw = out.view(np.uint64)
-        flip_idx = np.flatnonzero(flips)
-        bits = rng.integers(0, 52, size=flip_idx.size, dtype=np.uint64)
-        masks = np.left_shift(np.uint64(1), bits)
-        raw[flip_idx] ^= masks
-
-        out = raw.view(np.float64)
-        out = np.nan_to_num(out, nan=0.0, posinf=1.0, neginf=0.0)
-        return np.clip(out, 0.0, 1.0)

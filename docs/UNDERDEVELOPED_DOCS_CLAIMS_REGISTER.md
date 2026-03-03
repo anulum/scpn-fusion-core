@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-03T02:30:16.603087+00:00`
+- Generated at: `2026-03-03T05:13:38.889962+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: docs-claims-only markers
 
@@ -63,7 +63,7 @@
 | P3 | 60 | `docs_claims` | `NOT_VALIDATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Add real-data validation campaign and publish error bars. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P3 | 60 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | Docs WG | Add real-data validation campaign and publish error bars. | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
 | P3 | 60 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | Docs WG | Add real-data validation campaign and publish error bars. | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
-| P3 | 59 | `docs_claims` | `FALLBACK` | `README.md:113` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `README.md:119` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback to analytic model when no weights are available |
 | P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | 59 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
@@ -103,7 +103,7 @@
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/PHASE2_ADVANCED_RFC_TEMPLATE.md:36` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Offline fallback path: |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/SOLVER_TUNING_GUIDE.md:187` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| 1 \| 1× (serial fallback) \| Same as before \| |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/SOLVER_TUNING_GUIDE.md:258` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Discontinuity at threshold \| Fallback model uses hard cutoff \| Switch to MLP weights (smooth transition) \| |
-| P3 | 49 | `docs_claims` | `PLANNED` | `docs/competitive_analysis.md:75` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| GPU acceleration \| Planned (wgpu) \| Yes (JAX) \| No \| No \| JAX \| No \| |
+| P3 | 49 | `docs_claims` | `PLANNED` | `docs/competitive_analysis.md:77` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| GPU acceleration \| Planned (wgpu) \| Yes (JAX) \| No \| No \| JAX \| No \| |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:18` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | 1. ``wgpu`` SOR kernel (red-black stencil + deterministic CPU fallback) |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:19` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | 2. GPU-backed GMRES preconditioning (CUDA/ROCm adapters with CPU fallback) |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:39` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Operations: runtime capability detection + automatic CPU fallback |
@@ -148,7 +148,7 @@
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
-| P3 | `docs_claims` | `FALLBACK` | `README.md:113` | \| Graceful degradation \| Every path has a pure-Python fallback \| |
+| P3 | `docs_claims` | `FALLBACK` | `README.md:119` | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | - Transparent fallback to analytic model when no weights are available |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
@@ -188,7 +188,7 @@
 | P3 | `docs_claims` | `FALLBACK` | `docs/PHASE2_ADVANCED_RFC_TEMPLATE.md:36` | - Offline fallback path: |
 | P3 | `docs_claims` | `FALLBACK` | `docs/SOLVER_TUNING_GUIDE.md:187` | \| 1 \| 1× (serial fallback) \| Same as before \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/SOLVER_TUNING_GUIDE.md:258` | \| Discontinuity at threshold \| Fallback model uses hard cutoff \| Switch to MLP weights (smooth transition) \| |
-| P3 | `docs_claims` | `PLANNED` | `docs/competitive_analysis.md:75` | \| GPU acceleration \| Planned (wgpu) \| Yes (JAX) \| No \| No \| JAX \| No \| |
+| P3 | `docs_claims` | `PLANNED` | `docs/competitive_analysis.md:77` | \| GPU acceleration \| Planned (wgpu) \| Yes (JAX) \| No \| No \| JAX \| No \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:18` | 1. ``wgpu`` SOR kernel (red-black stencil + deterministic CPU fallback) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:19` | 2. GPU-backed GMRES preconditioning (CUDA/ROCm adapters with CPU fallback) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:39` | - Operations: runtime capability detection + automatic CPU fallback |

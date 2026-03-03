@@ -21,6 +21,20 @@ import numpy as np
 from numpy.typing import NDArray
 
 from scpn_fusion.core.eqdsk import read_geqdsk
+from scpn_fusion.fallback_telemetry import record_fallback_event
+from scpn_fusion.io.tokamak_disruption_archive import (
+    list_disruption_shots as _list_disruption_shots_impl,
+    load_disruption_shot as _load_disruption_shot_impl,
+)
+from scpn_fusion.io.tokamak_live_payload import (
+    to_scalar as _to_scalar,
+    to_trace as _to_trace,
+)
+from scpn_fusion.io.tokamak_synthetic_archive import (
+    generate_synthetic_shot_database as _generate_synthetic_shot_database_impl,
+    list_synthetic_shots as _list_synthetic_shots_impl,
+    load_synthetic_shot as _load_synthetic_shot_impl,
+)
 
 
 _DATA_ROOT_ENV = "SCPN_DATA_DIR"
@@ -53,7 +67,6 @@ def default_itpa_csv() -> Path:
 def default_synthetic_dir() -> Path:
     return default_reference_data_root() / "synthetic_shots"
 
-
 # Backward-compatible constants (resolved at import time).
 DEFAULT_DIIID_DIR = default_diiid_dir()
 DEFAULT_DISRUPTION_DIR = default_disruption_dir()
@@ -72,7 +85,6 @@ DEFAULT_MDSPLUS_NODE_MAP: dict[str, str] = {
     "toroidal_n3_amp": "\\toroidal_n3_amp",
     "disruption": "\\disruption_flag",
 }
-
 
 @dataclass(frozen=True)
 class TokamakProfile:
@@ -285,29 +297,6 @@ def load_cmod_reference_profiles(
     return rows
 
 
-def _to_scalar(value: Any) -> float:
-    arr = np.asarray(value, dtype=np.float64)
-    if arr.size == 0:
-        raise ValueError("Empty MDSplus node payload.")
-    flat = arr.reshape(-1)
-    finite = flat[np.isfinite(flat)]
-    if finite.size == 0:
-        raise ValueError("No finite values in MDSplus payload.")
-    return float(finite[-1])
-
-
-def _to_trace(value: Any, points: int) -> NDArray[np.float64]:
-    arr = np.asarray(value, dtype=np.float64)
-    if arr.ndim == 0:
-        arr = np.repeat(arr.reshape(1), 8)
-    elif arr.ndim > 1:
-        arr = arr.reshape(-1)
-    arr = arr[np.isfinite(arr)]
-    if arr.size < 2:
-        raise ValueError("Trace payload must contain at least 2 finite values.")
-    return _resample_1d(arr, points)
-
-
 def fetch_mdsplus_profiles(
     *,
     machine: str,
@@ -343,8 +332,8 @@ def fetch_mdsplus_profiles(
                 payload = conn.get(node)
                 return payload.data() if hasattr(payload, "data") else payload
 
-            psi = _to_trace(_fetch("psi_contour"), contour_points)
-            trace = _to_trace(_fetch("sensor_trace"), sensor_points)
+            psi = _to_trace(_fetch("psi_contour"), contour_points, resample_1d=_resample_1d)
+            trace = _to_trace(_fetch("sensor_trace"), sensor_points, resample_1d=_resample_1d)
             beta_n = _coerce_finite("beta_n", _to_scalar(_fetch("beta_n")), minimum=0.0)
             q95 = _coerce_finite("q95", _to_scalar(_fetch("q95")), minimum=0.0)
             tau_ms = _coerce_finite("tau_e_ms", _to_scalar(_fetch("tau_e_ms")), minimum=0.0)
@@ -428,6 +417,11 @@ def poll_mdsplus_feed(
             for row in live:
                 merged[_profile_key(row)] = row
         except Exception as exc:
+            record_fallback_event(
+                "tokamak_archive",
+                "mdsplus_poll_error",
+                context={"machine": normalized_machine, "error": exc.__class__.__name__},
+            )
             rec["error"] = str(exc)
         poll_records.append(rec)
 
@@ -441,6 +435,11 @@ def poll_mdsplus_feed(
         )
         for row in fallback_rows:
             merged[_profile_key(row)] = row
+        record_fallback_event(
+            "tokamak_archive",
+            "poll_reference_fallback",
+            context={"machine": normalized_machine, "reason": "no_live_profiles"},
+        )
 
     rows = list(merged.values())
     rows.sort(key=lambda r: (r.machine, int(r.shot), float(r.time_ms)))
@@ -489,6 +488,11 @@ def load_machine_profiles(
     if prefer_live:
         if not host or not tree:
             live_error = "Missing host/tree for live MDSplus fetch."
+            record_fallback_event(
+                "tokamak_archive",
+                "live_fetch_config_missing_fallback",
+                context={"machine": normalized_machine},
+            )
         else:
             live_shots = shots if shots is not None else [p.shot for p in ref[:6]]
             try:
@@ -504,6 +508,11 @@ def load_machine_profiles(
                 )
             except Exception as exc:
                 live_error = str(exc)
+                record_fallback_event(
+                    "tokamak_archive",
+                    "live_fetch_failed_fallback",
+                    context={"machine": normalized_machine, "error": exc.__class__.__name__},
+                )
 
     if live_profiles:
         by_key: dict[tuple[int, int], TokamakProfile] = {
@@ -516,6 +525,12 @@ def load_machine_profiles(
     else:
         merged = ref
         source = "reference"
+        if prefer_live:
+            record_fallback_event(
+                "tokamak_archive",
+                "live_fetch_empty_fallback",
+                context={"machine": normalized_machine},
+            )
 
     return merged, {
         "machine": normalized_machine,
@@ -526,10 +541,6 @@ def load_machine_profiles(
         "live_error": live_error,
     }
 
-
-# ---------------------------------------------------------------------------
-# Disruption shot NPZ loaders (synthetic DIII-D reference data)
-# ---------------------------------------------------------------------------
 
 def list_disruption_shots(
     *,
@@ -549,10 +560,7 @@ def list_disruption_shots(
         ['shot_154406_hybrid', 'shot_155916_locked_mode', ...]
     """
     d = disruption_dir if disruption_dir is not None else default_disruption_dir()
-    d = Path(d)
-    if not d.is_dir():
-        return []
-    return sorted(p.stem for p in d.glob("*.npz"))
+    return _list_disruption_shots_impl(disruption_dir=Path(d))
 
 
 def load_disruption_shot(
@@ -589,97 +597,8 @@ def load_disruption_shot(
     ValueError
         If the file is missing required keys.
     """
-    p = Path(shot_name_or_path)
-    if not p.suffix:
-        d = disruption_dir if disruption_dir is not None else default_disruption_dir()
-        p = Path(d) / f"{p.name}.npz"
-    if p.suffix.lower() != ".npz":
-        raise ValueError(f"Disruption shot file must be .npz: {p}")
-    if not p.exists():
-        raise FileNotFoundError(f"Disruption shot file not found: {p}")
-
-    with np.load(str(p), allow_pickle=False) as raw:
-        required_array_keys = {
-            "time_s", "Ip_MA", "BT_T", "beta_N", "q95", "ne_1e19",
-            "n1_amp", "n2_amp", "locked_mode_amp", "dBdt_gauss_per_s",
-            "vertical_position_m",
-        }
-        required_scalar_keys = {"is_disruption", "disruption_time_idx", "disruption_type"}
-        all_required = required_array_keys | required_scalar_keys
-        present = set(raw.files)
-        missing = all_required - present
-        if missing:
-            raise ValueError(f"NPZ file {p.name} missing keys: {sorted(missing)}")
-
-        result: dict[str, Any] = {}
-        for k in required_array_keys:
-            result[k] = np.asarray(raw[k], dtype=np.float64)
-        result["is_disruption"] = bool(np.asarray(raw["is_disruption"]).reshape(()).item())
-        result["disruption_time_idx"] = int(np.asarray(raw["disruption_time_idx"]).reshape(()).item())
-        result["disruption_type"] = str(np.asarray(raw["disruption_type"]).reshape(()).item())
-        return result
-
-
-# ---------------------------------------------------------------------------
-# Synthetic multi-machine shot database (ITER / SPARC / DIII-D / EAST)
-# ---------------------------------------------------------------------------
-
-#: Machine parameter specifications for synthetic shot generation.
-_MACHINE_SPECS: dict[str, dict[str, Any]] = {
-    "ITER": {
-        "n_shots": 15,
-        "Ip_MA": (15.0, 15.0),
-        "BT_T": (5.3, 5.3),
-        "ne_1e19": (10.0, 12.0),
-        "Te_keV": (8.0, 25.0),
-        "Ti_keV_ratio": (0.85, 1.0),
-        "q95": (2.8, 3.5),
-        "beta_N": (1.8, 2.5),
-    },
-    "SPARC": {
-        "n_shots": 15,
-        "Ip_MA": (8.7, 8.7),
-        "BT_T": (12.2, 12.2),
-        "ne_1e19": (25.0, 40.0),
-        "Te_keV": (10.0, 22.0),
-        "Ti_keV_ratio": (0.80, 0.95),
-        "q95": (3.0, 4.0),
-        "beta_N": (1.5, 2.8),
-    },
-    "DIII-D": {
-        "n_shots": 20,
-        "Ip_MA": (1.0, 2.0),
-        "BT_T": (2.1, 2.1),
-        "ne_1e19": (3.0, 8.0),
-        "Te_keV": (2.0, 8.0),
-        "Ti_keV_ratio": (0.75, 1.05),
-        "q95": (3.0, 6.0),
-        "beta_N": (1.0, 3.0),
-    },
-    "EAST": {
-        "n_shots": 10,
-        "Ip_MA": (0.4, 1.0),
-        "BT_T": (2.5, 2.5),
-        "ne_1e19": (2.0, 5.0),
-        "Te_keV": (1.0, 5.0),
-        "Ti_keV_ratio": (0.70, 0.95),
-        "q95": (4.0, 7.0),
-        "beta_N": (0.8, 2.2),
-    },
-}
-
-
-def _parabolic_profile(
-    rho: NDArray[np.float64],
-    peak: float,
-    edge_fraction: float = 0.1,
-    alpha: float = 0.5,
-) -> NDArray[np.float64]:
-    """Parabolic profile: peak * ((1 - rho^2)^alpha * (1 - edge_fraction) + edge_fraction)."""
-    return np.asarray(
-        peak * ((1.0 - rho ** 2) ** alpha * (1.0 - edge_fraction) + edge_fraction),
-        dtype=np.float64,
-    )
+    d = disruption_dir if disruption_dir is not None else default_disruption_dir()
+    return _load_disruption_shot_impl(shot_name_or_path, disruption_dir=Path(d))
 
 
 def generate_synthetic_shot_database(
@@ -713,91 +632,12 @@ def generate_synthetic_shot_database(
         ``shot_id``, ``disruption_label``, ``Ip_MA``, ``BT_T``, ``ne0_1e19``,
         ``Te0_keV``, ``q95``, ``beta_N``.
     """
-    rng = np.random.default_rng(seed)
     out_dir = Path(output_dir) if output_dir is not None else default_synthetic_dir()
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    # Distribute shots across machines, respecting spec defaults but scaling
-    # up proportionally if the caller requests more than sum-of-defaults.
-    spec_total = sum(s["n_shots"] for s in _MACHINE_SPECS.values())
-    scale = max(1.0, n_shots / spec_total)
-    machine_counts: dict[str, int] = {
-        m: max(int(round(s["n_shots"] * scale)), s["n_shots"])
-        for m, s in _MACHINE_SPECS.items()
-    }
-
-    rho = np.linspace(0.0, 1.0, 1000, dtype=np.float64)
-    time_s = np.linspace(0.0, 10.0, 1000, dtype=np.float64)
-
-    catalogue: list[dict[str, Any]] = []
-    shot_counter = 0
-
-    for machine, spec in _MACHINE_SPECS.items():
-        count = machine_counts[machine]
-        for idx in range(count):
-            shot_counter += 1
-            is_disruption = bool(rng.random() < 0.20)
-
-            # Sample scalar parameters uniformly within machine range.
-            ip = float(rng.uniform(*spec["Ip_MA"]))
-            bt = float(rng.uniform(*spec["BT_T"]))
-            ne0 = float(rng.uniform(*spec["ne_1e19"]))
-            te0 = float(rng.uniform(*spec["Te_keV"]))
-            ti_ratio = float(rng.uniform(*spec["Ti_keV_ratio"]))
-            ti0 = te0 * ti_ratio
-            q95_val = float(rng.uniform(*spec["q95"]))
-            beta_n = float(rng.uniform(*spec["beta_N"]))
-
-            # Disruption shots: push beta_N up, q95 down.
-            if is_disruption:
-                beta_n = float(np.clip(beta_n * 1.4, spec["beta_N"][0], spec["beta_N"][1] * 1.5))
-                q95_val = float(np.clip(q95_val * 0.75, 1.5, spec["q95"][1]))
-
-            # Build radial profiles on rho grid (1000 pts).
-            ne_profile = _parabolic_profile(rho, ne0, edge_fraction=0.12, alpha=0.5)
-            te_profile = _parabolic_profile(rho, te0, edge_fraction=0.08, alpha=0.6)
-            ti_profile = _parabolic_profile(rho, ti0, edge_fraction=0.08, alpha=0.55)
-
-            # Time-dependent scalar traces (1000 pts).
-            ip_trace = np.full(1000, ip, dtype=np.float64)
-            bt_trace = np.full(1000, bt, dtype=np.float64)
-            q95_trace = np.full(1000, q95_val, dtype=np.float64)
-            beta_n_trace = np.full(1000, beta_n, dtype=np.float64)
-
-            # Add small temporal noise.
-            ip_trace += rng.normal(0.0, 0.01 * ip, size=1000)
-            q95_trace += rng.normal(0.0, 0.02 * q95_val, size=1000)
-            beta_n_trace += rng.normal(0.0, 0.02 * beta_n, size=1000)
-
-            shot_id = f"{machine.replace('-', '')}_{shot_counter:04d}"
-            fname = f"shot_{shot_id}.npz"
-            np.savez_compressed(
-                str(out_dir / fname),
-                time_s=time_s,
-                Ip_MA=ip_trace,
-                BT_T=bt_trace,
-                ne_1e19=ne_profile,
-                Te_keV=te_profile,
-                Ti_keV=ti_profile,
-                q95=q95_trace,
-                beta_N=beta_n_trace,
-                disruption_label=np.bool_(is_disruption),
-                machine=np.array(machine, dtype="U16"),
-            )
-            catalogue.append({
-                "file": fname,
-                "machine": machine,
-                "shot_id": shot_id,
-                "disruption_label": is_disruption,
-                "Ip_MA": round(ip, 4),
-                "BT_T": round(bt, 4),
-                "ne0_1e19": round(ne0, 4),
-                "Te0_keV": round(te0, 4),
-                "q95": round(q95_val, 4),
-                "beta_N": round(beta_n, 4),
-            })
-
-    return catalogue
+    return _generate_synthetic_shot_database_impl(
+        n_shots=n_shots,
+        output_dir=out_dir,
+        seed=seed,
+    )
 
 
 def list_synthetic_shots(
@@ -819,9 +659,7 @@ def list_synthetic_shots(
         Sorted list of shot names (stem only).
     """
     d = Path(synthetic_dir) if synthetic_dir is not None else default_synthetic_dir()
-    if not d.is_dir():
-        return []
-    return sorted(p.stem for p in d.glob("*.npz"))
+    return _list_synthetic_shots_impl(synthetic_dir=d)
 
 
 def load_synthetic_shot(
@@ -857,30 +695,5 @@ def load_synthetic_shot(
     ValueError
         If the file is missing required keys.
     """
-    p = Path(shot_name_or_path)
-    if not p.suffix:
-        d = Path(synthetic_dir) if synthetic_dir is not None else default_synthetic_dir()
-        p = d / f"{p.name}.npz"
-    if p.suffix.lower() != ".npz":
-        raise ValueError(f"Synthetic shot file must be .npz: {p}")
-    if not p.exists():
-        raise FileNotFoundError(f"Synthetic shot file not found: {p}")
-
-    with np.load(str(p), allow_pickle=False) as raw:
-        required_array_keys = {
-            "time_s", "Ip_MA", "BT_T", "ne_1e19", "Te_keV", "Ti_keV",
-            "q95", "beta_N",
-        }
-        required_scalar_keys = {"disruption_label", "machine"}
-        all_required = required_array_keys | required_scalar_keys
-        present = set(raw.files)
-        missing = all_required - present
-        if missing:
-            raise ValueError(f"NPZ file {p.name} missing keys: {sorted(missing)}")
-
-        result: dict[str, Any] = {}
-        for k in required_array_keys:
-            result[k] = np.asarray(raw[k], dtype=np.float64)
-        result["disruption_label"] = bool(np.asarray(raw["disruption_label"]).reshape(()).item())
-        result["machine"] = str(np.asarray(raw["machine"]).reshape(()).item())
-        return result
+    d = Path(synthetic_dir) if synthetic_dir is not None else default_synthetic_dir()
+    return _load_synthetic_shot_impl(shot_name_or_path, synthetic_dir=d)

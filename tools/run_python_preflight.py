@@ -42,6 +42,7 @@ def _build_release_checks(
     skip_deprecated_default_lane_guard: bool,
     skip_release_checklist: bool,
     skip_shot_manifest: bool,
+    skip_reference_data_provenance: bool,
     skip_shot_splits: bool,
     skip_disruption_calibration: bool,
     skip_disruption_replay_pipeline: bool,
@@ -202,6 +203,17 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "tools/generate_disruption_shot_manifest.py",
+                    "--check",
+                ],
+            )
+        )
+    if not skip_reference_data_provenance:
+        checks.append(
+            (
+                "Reference-data provenance manifest check",
+                [
+                    sys.executable,
+                    "tools/generate_reference_data_provenance_manifest.py",
                     "--check",
                 ],
             )
@@ -390,6 +402,7 @@ def _build_checks(
     skip_deprecated_default_lane_guard: bool,
     skip_release_checklist: bool,
     skip_shot_manifest: bool,
+    skip_reference_data_provenance: bool,
     skip_shot_splits: bool,
     skip_disruption_calibration: bool,
     skip_disruption_replay_pipeline: bool,
@@ -425,6 +438,7 @@ def _build_checks(
                 skip_deprecated_default_lane_guard=skip_deprecated_default_lane_guard,
                 skip_release_checklist=skip_release_checklist,
                 skip_shot_manifest=skip_shot_manifest,
+                skip_reference_data_provenance=skip_reference_data_provenance,
                 skip_shot_splits=skip_shot_splits,
                 skip_disruption_calibration=skip_disruption_calibration,
                 skip_disruption_replay_pipeline=skip_disruption_replay_pipeline,
@@ -555,6 +569,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-shot-manifest",
         action="store_true",
         help="Skip tools/generate_disruption_shot_manifest.py --check",
+    )
+    parser.add_argument(
+        "--skip-reference-data-provenance",
+        action="store_true",
+        help="Skip tools/generate_reference_data_provenance_manifest.py --check",
     )
     parser.add_argument(
         "--skip-shot-splits",
@@ -703,6 +722,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_deprecated_default_lane_guard=args.skip_deprecated_default_lane_guard,
         skip_release_checklist=args.skip_release_checklist,
         skip_shot_manifest=args.skip_shot_manifest,
+        skip_reference_data_provenance=args.skip_reference_data_provenance,
         skip_shot_splits=args.skip_shot_splits,
         skip_disruption_calibration=args.skip_disruption_calibration,
         skip_disruption_replay_pipeline=args.skip_disruption_replay_pipeline,

@@ -10,6 +10,10 @@ import numpy as np
 import pytest
 
 import scpn_fusion.io.tokamak_archive as archive
+from scpn_fusion.fallback_telemetry import (
+    reset_fallback_telemetry,
+    snapshot_fallback_telemetry,
+)
 
 
 def test_load_diiid_reference_profiles_smoke() -> None:
@@ -123,6 +127,8 @@ def test_poll_mdsplus_feed_merges_live_snapshots(monkeypatch: pytest.MonkeyPatch
 
 
 def test_poll_mdsplus_feed_falls_back_to_reference(monkeypatch: pytest.MonkeyPatch) -> None:
+    reset_fallback_telemetry()
+
     def _live_fail(**_: object) -> list[archive.TokamakProfile]:
         raise RuntimeError("mdsplus down")
 
@@ -139,6 +145,8 @@ def test_poll_mdsplus_feed_falls_back_to_reference(monkeypatch: pytest.MonkeyPat
     assert meta["source"] == "reference_fallback"
     assert meta["fallback_meta"] is not None
     assert any("mdsplus down" in str(r["error"]) for r in meta["poll_records"])
+    snap = snapshot_fallback_telemetry()
+    assert snap["domain_counts"]["tokamak_archive"] >= 1
 
 
 # ──────────────────────────────────────────────────────────────────────
