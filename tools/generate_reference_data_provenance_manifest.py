@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -95,6 +96,48 @@ def _match_rule(rel_path: str, rules: list[dict[str, str]]) -> dict[str, str]:
     return matches[0]
 
 
+def _git_tracked_paths(root: Path) -> set[str] | None:
+    """Return repo-tracked file paths relative to ``root`` when available.
+
+    Falls back to ``None`` outside git-tracked contexts so tests/temp roots
+    still work without requiring a repository.
+    """
+    try:
+        root_rel = root.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return None
+
+    cmd = [
+        "git",
+        "-C",
+        str(REPO_ROOT),
+        "ls-files",
+        "--",
+        root_rel,
+    ]
+    try:
+        result = subprocess.run(
+            cmd,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+
+    tracked: set[str] = set()
+    prefix = root_rel.rstrip("/") + "/"
+    for line in result.stdout.splitlines():
+        entry = line.strip().replace("\\", "/")
+        if not entry.startswith(prefix):
+            continue
+        tracked.add(entry[len(prefix) :])
+    return tracked
+
+
 def build_manifest(
     *,
     root: Path,
@@ -107,6 +150,7 @@ def build_manifest(
     root = Path(root)
     manifest_rel = manifest_path.relative_to(root).as_posix()
     policy_rel = policy_path.relative_to(root).as_posix()
+    tracked_paths = _git_tracked_paths(root)
     files = sorted(
         (p for p in root.rglob("*") if p.is_file()),
         key=lambda path: path.relative_to(root).as_posix(),
@@ -117,6 +161,8 @@ def build_manifest(
     for path in files:
         rel = path.relative_to(root).as_posix()
         if rel == manifest_rel:
+            continue
+        if tracked_paths is not None and rel not in tracked_paths:
             continue
 
         rule = _match_rule(rel, rules)

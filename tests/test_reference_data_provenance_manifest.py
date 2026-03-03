@@ -302,3 +302,47 @@ def test_normalize_for_check_ignores_byte_fingerprint_fields() -> None:
     }
 
     assert prov._normalize_for_check(payload_a) == prov._normalize_for_check(payload_b)
+
+
+def test_build_manifest_ignores_untracked_files_when_git_index_available(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    root = tmp_path / "reference_data"
+    root.mkdir(parents=True)
+    (root / "README.md").write_text("reference data\n", encoding="utf-8")
+    (root / "untracked_extra.npz").write_bytes(b"extra")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    _write_json(
+        policy,
+        {
+            "rules": [
+                {
+                    "id": "metadata",
+                    "glob": "README.md",
+                    "source_type": "documentation",
+                    "source": "docs",
+                    "license": "AGPL-3.0-or-later",
+                },
+                {
+                    "id": "policy",
+                    "glob": "provenance_policy.json",
+                    "source_type": "documentation",
+                    "source": "policy",
+                    "license": "AGPL-3.0-or-later",
+                },
+            ]
+        },
+    )
+
+    monkeypatch.setattr(
+        prov,
+        "_git_tracked_paths",
+        lambda _root: {"README.md", "provenance_policy.json"},
+    )
+    payload = prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+    assert payload["file_count"] == 2
+    assert sorted(row["path"] for row in payload["files"]) == [
+        "README.md",
+        "provenance_policy.json",
+    ]
