@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-03T05:13:38.889962+00:00`
+- Generated at: `2026-03-03T16:46:35.434026+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: docs-claims-only markers
 
@@ -63,7 +63,7 @@
 | P3 | 60 | `docs_claims` | `NOT_VALIDATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Add real-data validation campaign and publish error bars. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P3 | 60 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | Docs WG | Add real-data validation campaign and publish error bars. | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
 | P3 | 60 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | Docs WG | Add real-data validation campaign and publish error bars. | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
-| P3 | 59 | `docs_claims` | `FALLBACK` | `README.md:119` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
+| P3 | 59 | `docs_claims` | `FALLBACK` | `README.md:123` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback to analytic model when no weights are available |
 | P3 | 59 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | 59 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
@@ -108,7 +108,7 @@
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:19` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | 2. GPU-backed GMRES preconditioning (CUDA/ROCm adapters with CPU fallback) |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:39` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Operations: runtime capability detection + automatic CPU fallback |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/index.rst:54` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | speedups with pure-Python fallback |
-| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/installation.rst:42` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | INFO: scpn_fusion_rs not found -- using NumPy fallback. |
+| P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/installation.rst:50` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | INFO: scpn_fusion_rs not found -- using NumPy fallback. |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/control.rst:89` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - **Checkpoint fallback** ensuring graceful degradation if the model |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/diagnostics.rst:97` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | with automatic fallback for environments where SciPy is not optimised. |
 | P3 | 49 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:102` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | WebGPU) with deterministic CPU fallback. |
@@ -148,7 +148,7 @@
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
-| P3 | `docs_claims` | `FALLBACK` | `README.md:119` | \| Graceful degradation \| Every path has a pure-Python fallback \| |
+| P3 | `docs_claims` | `FALLBACK` | `README.md:123` | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | - Transparent fallback to analytic model when no weights are available |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
@@ -193,7 +193,7 @@
 | P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:19` | 2. GPU-backed GMRES preconditioning (CUDA/ROCm adapters with CPU fallback) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/gpu_roadmap.rst:39` | - Operations: runtime capability detection + automatic CPU fallback |
 | P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/index.rst:54` | speedups with pure-Python fallback |
-| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/installation.rst:42` | INFO: scpn_fusion_rs not found -- using NumPy fallback. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/installation.rst:50` | INFO: scpn_fusion_rs not found -- using NumPy fallback. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/control.rst:89` | - **Checkpoint fallback** ensuring graceful degradation if the model |
 | P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/diagnostics.rst:97` | with automatic fallback for environments where SciPy is not optimised. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/sphinx/userguide/hpc.rst:102` | WebGPU) with deterministic CPU fallback. |
