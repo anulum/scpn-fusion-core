@@ -129,7 +129,7 @@ def test_main_check_mode_detects_stale_manifest(tmp_path: Path) -> None:
         ]
     ) == 0
 
-    (root / "sample.npz").write_bytes(b"changed")
+    (root / "sample_extra.npz").write_bytes(b"changed")
     assert prov.main(
         [
             "--root",
@@ -263,3 +263,42 @@ def test_normalize_for_check_sorts_datasets_and_files() -> None:
         "a/file.json",
         "z/file.json",
     ]
+
+
+def test_normalize_for_check_ignores_byte_fingerprint_fields() -> None:
+    payload_a = {
+        "generated_at_utc": "2026-03-03T00:00:00+00:00",
+        "datasets": [
+            {"id": "sparc", "file_count": 2, "total_bytes": 12345},
+        ],
+        "files": [
+            {
+                "path": "sparc/example.npz",
+                "dataset_id": "sparc",
+                "source_type": "public_reference",
+                "source": "SPARC",
+                "license": "CC-BY-4.0",
+                "size_bytes": 111,
+                "sha256": "aaa",
+            }
+        ],
+    }
+    payload_b = {
+        "generated_at_utc": "2026-03-04T00:00:00+00:00",
+        "datasets": [
+            {"id": "sparc", "file_count": 2, "total_bytes": 99999},
+        ],
+        "files": [
+            {
+                "path": "sparc/example.npz",
+                "dataset_id": "sparc",
+                "source_type": "public_reference",
+                "source": "SPARC",
+                "license": "CC-BY-4.0",
+                "size_bytes": 222,
+                "sha256": "bbb",
+            }
+        ],
+    }
+
+    assert prov._normalize_for_check(payload_a) == prov._normalize_for_check(payload_b)

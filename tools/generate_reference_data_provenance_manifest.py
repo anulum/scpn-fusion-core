@@ -170,14 +170,34 @@ def _normalize_for_check(payload: dict[str, Any]) -> dict[str, Any]:
         out["generated_at_utc"] = "<normalized>"
     datasets = out.get("datasets")
     if isinstance(datasets, list):
+        normalized_datasets: list[dict[str, Any] | Any] = []
+        for item in datasets:
+            if not isinstance(item, dict):
+                normalized_datasets.append(item)
+                continue
+            row = dict(item)
+            if "total_bytes" in row:
+                row["total_bytes"] = "<normalized>"
+            normalized_datasets.append(row)
         out["datasets"] = sorted(
-            datasets,
+            normalized_datasets,
             key=lambda item: str(item.get("id", "")) if isinstance(item, dict) else "",
         )
     files = out.get("files")
     if isinstance(files, list):
+        normalized_files: list[dict[str, Any] | Any] = []
+        for item in files:
+            if not isinstance(item, dict):
+                normalized_files.append(item)
+                continue
+            row = dict(item)
+            if "size_bytes" in row:
+                row["size_bytes"] = "<normalized>"
+            if "sha256" in row:
+                row["sha256"] = "<normalized>"
+            normalized_files.append(row)
         out["files"] = sorted(
-            files,
+            normalized_files,
             key=lambda item: str(item.get("path", "")) if isinstance(item, dict) else "",
         )
     return out
