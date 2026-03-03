@@ -15,22 +15,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ROOT = REPO_ROOT / "validation" / "reference_data"
 DEFAULT_POLICY = DEFAULT_ROOT / "provenance_policy.json"
 DEFAULT_MANIFEST = DEFAULT_ROOT / "provenance_manifest.json"
-_TEXT_NORMALIZED_SUFFIXES = {
-    ".json",
-    ".md",
-    ".txt",
-    ".csv",
-    ".yaml",
-    ".yml",
-    ".geqdsk",
-}
+_BINARY_SUFFIXES = {".npz"}
 
 
 def _content_bytes(path: Path) -> bytes:
     raw = path.read_bytes()
-    if path.suffix.lower() in _TEXT_NORMALIZED_SUFFIXES:
-        return raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
-    return raw
+    if path.suffix.lower() in _BINARY_SUFFIXES:
+        return raw
+    return raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
 
 
 def _sha256(content: bytes) -> str:

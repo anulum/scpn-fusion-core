@@ -79,7 +79,7 @@
       "license": "see-file",
       "source": "License notice distributed with SPARC reference bundle.",
       "source_type": "license_notice",
-      "total_bytes": 1246
+      "total_bytes": 1217
     },
     {
       "file_count": 10,
@@ -87,7 +87,7 @@
       "license": "see validation/reference_data/sparc/LICENSE",
       "source": "SPARC public design reference metadata.",
       "source_type": "reference_dataset_subset",
-      "total_bytes": 1949992
+      "total_bytes": 1941482
     },
     {
       "file_count": 2,
@@ -472,8 +472,8 @@
       "dataset_id": "sparc_license_file",
       "license": "see-file",
       "path": "sparc/LICENSE",
-      "sha256": "4c60d3d0f291c1a46d420d9d0f1c4581b048c38a4477fccbad39a995ae0d32a1",
-      "size_bytes": 1246,
+      "sha256": "3d3de4376af2f70558b5e3408915d1ee6cfa5b0fba304753f94cd14cf981536d",
+      "size_bytes": 1217,
       "source": "License notice distributed with SPARC reference bundle.",
       "source_type": "license_notice"
     },
@@ -517,8 +517,8 @@
       "dataset_id": "sparc_reference_bundle",
       "license": "see validation/reference_data/sparc/LICENSE",
       "path": "sparc/sparc_1300.eqdsk",
-      "sha256": "0cdee231b517c3224f0604dea8690ea609b9bdf4ac88406000f8a3a3eef7fbbc",
-      "size_bytes": 138919,
+      "sha256": "e7054c18fd7684d22c8eb52c2c53bc2c305803bb7aee9090d83573d45733edc2",
+      "size_bytes": 137217,
       "source": "SPARC public equilibrium references.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -526,8 +526,8 @@
       "dataset_id": "sparc_reference_bundle",
       "license": "see validation/reference_data/sparc/LICENSE",
       "path": "sparc/sparc_1305.eqdsk",
-      "sha256": "80cecbf3b5cd86b08748f11bbde2ed380cc413c7914912bb1696b16ecf186864",
-      "size_bytes": 138919,
+      "sha256": "86ac3d5a3d1995df5173dfe79af07a81864d4ab534381386bfe577b6f34dc469",
+      "size_bytes": 137217,
       "source": "SPARC public equilibrium references.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -535,8 +535,8 @@
       "dataset_id": "sparc_reference_bundle",
       "license": "see validation/reference_data/sparc/LICENSE",
       "path": "sparc/sparc_1310.eqdsk",
-      "sha256": "d980c7a9b05f58cef826f721bdd781e0850c3fd8990c961229e7f3d73a1f8d72",
-      "size_bytes": 138919,
+      "sha256": "79f3faa79cdeef239a6ca62574982eb58da99c0d0a9e0014928f55ed585f79f9",
+      "size_bytes": 137217,
       "source": "SPARC public equilibrium references.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -544,8 +544,8 @@
       "dataset_id": "sparc_reference_bundle",
       "license": "see validation/reference_data/sparc/LICENSE",
       "path": "sparc/sparc_1315.eqdsk",
-      "sha256": "70e6c920167ed8bf75a041a068a90930764494bf3d55d1509d6b50bcd5698688",
-      "size_bytes": 138919,
+      "sha256": "73ca6b67eeb438c9afa73e87d238070f506face3139d26756295dbd7e0c19d8e",
+      "size_bytes": 137217,
       "source": "SPARC public equilibrium references.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -553,8 +553,8 @@
       "dataset_id": "sparc_reference_bundle",
       "license": "see validation/reference_data/sparc/LICENSE",
       "path": "sparc/sparc_1349.eqdsk",
-      "sha256": "fd801902884342b6b4f82beffac86552929dc55a4a779d8c1db7cea4f716deb8",
-      "size_bytes": 138919,
+      "sha256": "e7a4c34bdc1a1c4e9d9a81add811941410ed169acebc696b0fcb568d6fda82ec",
+      "size_bytes": 137217,
       "source": "SPARC public equilibrium references.",
       "source_type": "reference_equilibrium_bundle"
     },
@@ -577,7 +577,7 @@
       "source_type": "synthetic_generated"
     }
   ],
-  "generated_at_utc": "2026-03-03T06:15:16.726033+00:00",
+  "generated_at_utc": "2026-03-03T06:23:22.274165+00:00",
   "manifest_version": "reference-data-provenance-v1",
   "policy_file": "provenance_policy.json"
 }
