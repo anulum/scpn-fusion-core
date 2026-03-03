@@ -26,8 +26,8 @@ def test_render_markdown_includes_summary_and_claim_ids() -> None:
     rendered = claims_map.render_markdown(claims, manifest_path="validation/claims_manifest.json")
     assert "# Claims Evidence Map" in rendered
     assert "## Summary" in rendered
-    assert "readme_pretrained_coverage_claim" in rendered
-    assert "results_fno_validated_status" in rendered
+    assert "readme_rust_speedup_claim" in rendered
+    assert "results_real_shot_overall_pass" in rendered
 
 
 def test_check_mode_reports_stale_output(tmp_path: Path) -> None:

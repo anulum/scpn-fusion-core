@@ -38,8 +38,8 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `validation/reports/stress_test_campaign.json` | `"PID"[\s\S]*"p50_latency_us"\s*:\s*3431\.3758333333335` |
-| `validation/reports/stress_test_campaign.json` | `"Rust-PID"[\s\S]*"p50_latency_us"\s*:\s*0\.522531` |
+| `validation/reports/stress_test_campaign.json` | `"PID"[\s\S]*"p50_latency_us"\s*:\s*[0-9eE+\-.]+` |
+| `validation/reports/stress_test_campaign.json` | `"Rust-PID"[\s\S]*"p50_latency_us"\s*:\s*[0-9eE+\-.]+` |
 
 ### `readme_rust_control_loop_latency_claim`
 
@@ -53,7 +53,7 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `validation/reports/stress_test_campaign.json` | `"Rust-PID"[\s\S]*"p50_latency_us"\s*:\s*0\.522531` |
+| `validation/reports/stress_test_campaign.json` | `"Rust-PID"[\s\S]*"p50_latency_us"\s*:\s*[0-9eE+\-.]+` |
 
 ### `readme_qlknn_transport_claim`
 
@@ -67,7 +67,7 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `weights/neural_transport_qlknn.metrics.json` | `"test_relative_l2"\s*:\s*0\.09430918020180648` |
+| `weights/neural_transport_qlknn.metrics.json` | `"test_relative_l2"\s*:\s*[0-9eE+\-.]+` |
 
 ### `readme_zero_disruption_rust_pid_claim`
 
@@ -109,7 +109,7 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `weights/neural_transport_qlknn.metrics.json` | `"test_relative_l2"\s*:\s*0\.09430918020180648` |
+| `weights/neural_transport_qlknn.metrics.json` | `"test_relative_l2"\s*:\s*[0-9eE+\-.]+` |
 
 ### `results_real_shot_overall_pass`
 
@@ -166,7 +166,7 @@ Evidence pattern checks:
 | File | Pattern |
 |---|---|
 | `artifacts/freegs_benchmark.json` | `"mode"\s*:\s*"solovev_manufactured_source"` |
-| `artifacts/freegs_benchmark.json` | `"overall_psi_nrmse"\s*:\s*0\.076363` |
+| `artifacts/freegs_benchmark.json` | `"overall_psi_nrmse"\s*:\s*[0-9eE+\-.]+` |
 | `artifacts/freegs_benchmark.json` | `"passes"\s*:\s*true` |
 
 ### `results_threshold_sweep_dataset_size`

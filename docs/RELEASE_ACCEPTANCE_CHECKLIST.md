@@ -9,7 +9,7 @@ This checklist must be fully green before publishing a release tag.
 
 - [x] Release preflight (`python tools/run_python_preflight.py --gate release`)
 - [x] Research preflight (`python tools/run_python_preflight.py --gate research`)
-- [x] Claims audit and claims evidence map are up to date
+- [x] Claims audit, claim-range guard, and claims evidence map are up to date
 - [x] Underdeveloped register regenerated in current branch
 - [x] Version metadata and release docs are consistent
 - [x] Changelog contains the release section and date

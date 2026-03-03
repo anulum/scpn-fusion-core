@@ -46,6 +46,9 @@ dev = [
     "hypothesis>=6.0",
     "mypy>=1.10",
 ]
+rust = [
+    "maturin>=1.7,<2.0",
+]
 snn = [
     "nengo>=4.0",
 ]
@@ -60,10 +63,10 @@ gpu = [
     "jax[cuda12]>=0.4.20",
 ]
 full = [
-    "scpn-fusion-rs>=0.1.0",
     "nengo>=4.0",
     "freegs>=0.6",
     "omas>=0.70",
+    "maturin>=1.7,<2.0",
 ]
 
 [tool.setuptools]

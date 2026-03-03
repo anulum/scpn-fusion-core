@@ -162,7 +162,7 @@ scpn-fusion-core/
 
 ```bash
 pip install -e .               # from source
-pip install "scpn-fusion[full]"  # from PyPI with optional deps
+pip install "scpn-fusion[full]"  # from PyPI (all optional Python deps)
 ```
 
 Every module auto-detects Rust and falls back to NumPy/SciPy.
@@ -170,9 +170,9 @@ Every module auto-detects Rust and falls back to NumPy/SciPy.
 ### Rust acceleration (optional)
 
 ```bash
+pip install "scpn-fusion[rust]"
 cd scpn-fusion-rs
 cargo build --release && cargo test
-pip install maturin
 cd crates/fusion-python && maturin develop --release
 ```
 

@@ -14,7 +14,7 @@ DEFAULT_CHECKLIST = REPO_ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md"
 REQUIRED_ITEMS = (
     "Release preflight (`python tools/run_python_preflight.py --gate release`)",
     "Research preflight (`python tools/run_python_preflight.py --gate research`)",
-    "Claims audit and claims evidence map are up to date",
+    "Claims audit, claim-range guard, and claims evidence map are up to date",
     "Underdeveloped register regenerated in current branch",
     "Version metadata and release docs are consistent",
     "Changelog contains the release section and date",

@@ -11,11 +11,11 @@
       "evidence_patterns": [
         {
           "file": "validation/reports/stress_test_campaign.json",
-          "pattern": "\"PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*3431\\.3758333333335"
+          "pattern": "\"PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*[0-9eE+\\-.]+"
         },
         {
           "file": "validation/reports/stress_test_campaign.json",
-          "pattern": "\"Rust-PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*0\\.522531"
+          "pattern": "\"Rust-PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*[0-9eE+\\-.]+"
         }
       ]
     },
@@ -29,7 +29,7 @@
       "evidence_patterns": [
         {
           "file": "validation/reports/stress_test_campaign.json",
-          "pattern": "\"Rust-PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*0\\.522531"
+          "pattern": "\"Rust-PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*[0-9eE+\\-.]+"
         }
       ]
     },
@@ -43,7 +43,7 @@
       "evidence_patterns": [
         {
           "file": "weights/neural_transport_qlknn.metrics.json",
-          "pattern": "\"test_relative_l2\"\\s*:\\s*0\\.09430918020180648"
+          "pattern": "\"test_relative_l2\"\\s*:\\s*[0-9eE+\\-.]+"
         }
       ]
     },
@@ -85,7 +85,7 @@
       "evidence_patterns": [
         {
           "file": "weights/neural_transport_qlknn.metrics.json",
-          "pattern": "\"test_relative_l2\"\\s*:\\s*0\\.09430918020180648"
+          "pattern": "\"test_relative_l2\"\\s*:\\s*[0-9eE+\\-.]+"
         }
       ]
     },
@@ -145,7 +145,7 @@
         },
         {
           "file": "artifacts/freegs_benchmark.json",
-          "pattern": "\"overall_psi_nrmse\"\\s*:\\s*0\\.076363"
+          "pattern": "\"overall_psi_nrmse\"\\s*:\\s*[0-9eE+\\-.]+"
         },
         {
           "file": "artifacts/freegs_benchmark.json",

@@ -260,6 +260,7 @@ jobs:
             artifacts/untested_module_guard_summary.json
             artifacts/deprecated_default_lane_guard_summary.json
             artifacts/release_delta_guard_summary.json
+            artifacts/claim_range_guard_summary.json
       - name: Upload coverage guard summary
         if: matrix.python-version == '3.12' && always()
         uses: actions/upload-artifact@v4

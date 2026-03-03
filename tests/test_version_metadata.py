@@ -23,6 +23,9 @@ README_PATH = ROOT / "README.md"
 RESULTS_PATH = ROOT / "RESULTS.md"
 VALIDATION_PATH = ROOT / "VALIDATION.md"
 CHANGELOG_PATH = ROOT / "CHANGELOG.md"
+RUST_PYPROJECT_PATH = (
+    ROOT / "scpn-fusion-rs" / "crates" / "fusion-python" / "pyproject.toml"
+)
 
 
 def _extract_version(pattern: str, text: str, label: str) -> str:
@@ -59,10 +62,17 @@ def test_release_metadata_versions_are_consistent() -> None:
     sphinx_conf = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(sphinx_conf)
     sphinx_release = str(getattr(sphinx_conf, "release"))
+    rust_pyproject_text = RUST_PYPROJECT_PATH.read_text(encoding="utf-8")
+    rust_pyproject_version = _extract_version(
+        r'(?m)^version\s*=\s*"([^"]+)"',
+        rust_pyproject_text,
+        "scpn-fusion-rs/crates/fusion-python/pyproject.toml",
+    )
 
     assert pyproject_version == package_version
     assert citation_version == package_version
     assert sphinx_release == package_version
+    assert rust_pyproject_version == package_version
 
 
 def test_legacy_setup_py_is_not_present() -> None:
@@ -95,3 +105,13 @@ def test_release_docs_reference_current_version() -> None:
         rf"(?m)^## \[{re.escape(package_version)}\]\s+—\s+",
         changelog_text,
     )
+
+
+def test_full_extra_does_not_require_companion_rust_wheel() -> None:
+    pyproject_text = PYPROJECT_PATH.read_text(encoding="utf-8")
+    full_block = _extract_version(
+        r"(?ms)^\s*full\s*=\s*\[(.*?)\]\s*(?:\r?\n\s*[A-Za-z_][A-Za-z0-9_-]*\s*=|\Z)",
+        pyproject_text,
+        "pyproject.toml full extra",
+    )
+    assert "scpn-fusion-rs" not in full_block

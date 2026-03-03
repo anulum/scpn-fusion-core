@@ -32,6 +32,7 @@ def _build_release_checks(
     *,
     skip_version_metadata: bool,
     skip_claims_audit: bool,
+    skip_claim_range_guard: bool,
     skip_claims_map: bool,
     skip_underdeveloped_register: bool,
     skip_underdeveloped_scope_reports: bool,
@@ -91,6 +92,18 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "tools/claims_audit.py",
+                ],
+            )
+        )
+    if not skip_claim_range_guard:
+        checks.append(
+            (
+                "Claims range guard",
+                [
+                    sys.executable,
+                    "tools/claim_range_guard.py",
+                    "--summary-json",
+                    "artifacts/claim_range_guard_summary.json",
                 ],
             )
         )
@@ -367,6 +380,7 @@ def _build_checks(
     gate: str,
     skip_version_metadata: bool,
     skip_claims_audit: bool,
+    skip_claim_range_guard: bool,
     skip_claims_map: bool,
     skip_underdeveloped_register: bool,
     skip_underdeveloped_scope_reports: bool,
@@ -401,6 +415,7 @@ def _build_checks(
             _build_release_checks(
                 skip_version_metadata=skip_version_metadata,
                 skip_claims_audit=skip_claims_audit,
+                skip_claim_range_guard=skip_claim_range_guard,
                 skip_claims_map=skip_claims_map,
                 skip_underdeveloped_register=skip_underdeveloped_register,
                 skip_underdeveloped_scope_reports=skip_underdeveloped_scope_reports,
@@ -490,6 +505,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-claims-audit",
         action="store_true",
         help="Skip tools/claims_audit.py",
+    )
+    parser.add_argument(
+        "--skip-claim-range-guard",
+        action="store_true",
+        help="Skip tools/claim_range_guard.py",
     )
     parser.add_argument(
         "--skip-claims-map",
@@ -673,6 +693,7 @@ def main(argv: list[str] | None = None) -> int:
         gate=args.gate,
         skip_version_metadata=args.skip_version_metadata,
         skip_claims_audit=args.skip_claims_audit,
+        skip_claim_range_guard=args.skip_claim_range_guard,
         skip_claims_map=args.skip_claims_map,
         skip_underdeveloped_register=args.skip_underdeveloped_register,
         skip_underdeveloped_scope_reports=args.skip_underdeveloped_scope_reports,

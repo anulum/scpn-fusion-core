@@ -37,15 +37,24 @@ Simulates Ion Cyclotron Resonance Heating (ICRH) and Lower Hybrid Current Drive 
 ### Integrated Transport Solver (`integrated_transport_solver.py`)
 Couples the heating profiles with a 1D transport model (WDM - Whole Device Modeling). Confinement scaling follows the IPB98(y,2) law [3] with Bayesian uncertainty quantification via the Verdoolaege regression framework [4].
 $$ \frac{\partial n}{\partial t} = \frac{1}{V'} \frac{\partial}{\partial \rho} [V' (D \frac{\partial n}{\partial \rho})] + S $$
-Where $D$ is the anomalous diffusion coefficient derived from the **Turbulence Oracle** (a Fourier Neural Operator [5] trained on gyrokinetic data).
+Where $D$ is the anomalous diffusion coefficient from reduced-order surrogates
+(QLKNN-10D lane for validated release results; optional research lanes may use
+archived synthetic surrogates).
 
 ---
 
-## 4. Turbulence Suppression: FNO-Based Control
+## 4. Turbulence Lanes and Status
 
-The most innovative feature of the Fusion-Core is the **FNO Turbulence Suppressor** (`fno_turbulence_suppressor.py`).
-*   **Concept**: Uses a **Fourier Neural Operator (FNO)** [5] to simulate the Kolmogorov scale turbulence in real-time.
-*   **Action**: Predicts the onset of Edge Localized Modes (ELMs) and adjusts the magnetic shear to suppress them before they trigger a disruption. When suppression fails, Shattered Pellet Injection (SPI) [8] is deployed as a mitigation strategy.
+SCPN Fusion Core keeps a strict split between release and research turbulence
+paths:
+
+*   **Release lane (validated):** QLKNN-10D surrogate-backed transport path.
+*   **Research lane (archived from release):** FNO-based turbulence suppressor
+    (`fno_turbulence_suppressor.py`) trained on synthetic proxy data.
+
+The FNO lane remains useful for fast control prototyping, but it is **not**
+treated as gyrokinetic-validated evidence in release claims. See
+`docs/HONEST_SCOPE.md` for the current contract.
 
 ---
 

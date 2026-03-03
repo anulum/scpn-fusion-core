@@ -67,7 +67,7 @@ jobs:
           path: dist/*.tar.gz
 
   publish:
-    name: Publish to PyPI
+    name: Publish Rust wheels to PyPI
     needs: [build-wheels, build-sdist]
     runs-on: ubuntu-latest
     if: >
@@ -75,7 +75,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' && inputs.publish == true)
     environment:
       name: pypi
-      url: https://pypi.org/p/scpn-fusion
+      url: https://pypi.org/p/scpn-fusion-rs
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v7

@@ -1,0 +1,78 @@
+{
+  "version": "claim-range-guard-v1",
+  "checks": [
+    {
+      "id": "rust_pid_p50_latency_us",
+      "file": "validation/reports/stress_test_campaign.json",
+      "path": ["Rust-PID", "p50_latency_us"],
+      "max": 2.0,
+      "description": "Rust PID control loop p50 latency remains within sub-2 us release contract."
+    },
+    {
+      "id": "rust_pid_speedup_vs_python_pid",
+      "file": "validation/reports/stress_test_campaign.json",
+      "ratio": {
+        "numerator": ["PID", "p50_latency_us"],
+        "denominator": ["Rust-PID", "p50_latency_us"]
+      },
+      "min": 1000.0,
+      "description": "Rust PID must retain at least 1000x speedup over Python PID in stress artifact."
+    },
+    {
+      "id": "rust_pid_disruption_rate",
+      "file": "validation/reports/stress_test_campaign.json",
+      "path": ["Rust-PID", "disruption_rate"],
+      "max": 0.0,
+      "description": "Rust PID stress campaign disruption rate must remain zero."
+    },
+    {
+      "id": "qlknn_test_relative_l2",
+      "file": "weights/neural_transport_qlknn.metrics.json",
+      "path": ["test_relative_l2"],
+      "max": 0.12,
+      "description": "QLKNN test relative L2 remains within documented release envelope."
+    },
+    {
+      "id": "real_shot_overall_pass",
+      "file": "artifacts/real_shot_validation.json",
+      "path": ["overall_pass"],
+      "equals": true,
+      "description": "Real-shot validation artifact must report overall pass."
+    },
+    {
+      "id": "real_shot_disruption_recall",
+      "file": "artifacts/real_shot_validation.json",
+      "path": ["disruption", "recall"],
+      "min": 0.6,
+      "description": "Real-shot disruption recall remains above release minimum."
+    },
+    {
+      "id": "real_shot_disruption_fpr",
+      "file": "artifacts/real_shot_validation.json",
+      "path": ["disruption", "false_positive_rate"],
+      "max": 0.4,
+      "description": "Real-shot disruption false-positive rate remains below release maximum."
+    },
+    {
+      "id": "freegs_mode_contract",
+      "file": "artifacts/freegs_benchmark.json",
+      "path": ["mode"],
+      "equals": "solovev_manufactured_source",
+      "description": "Release FreeGS lane must stay in manufactured-source parity mode."
+    },
+    {
+      "id": "freegs_overall_psi_nrmse",
+      "file": "artifacts/freegs_benchmark.json",
+      "path": ["overall_psi_nrmse"],
+      "max": 0.11,
+      "description": "Manufactured-source FreeGS parity psi NRMSE remains within release threshold."
+    },
+    {
+      "id": "freegs_passes_contract",
+      "file": "artifacts/freegs_benchmark.json",
+      "path": ["passes"],
+      "equals": true,
+      "description": "Manufactured-source FreeGS parity lane must remain passing."
+    }
+  ]
+}
