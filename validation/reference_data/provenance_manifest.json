@@ -44,9 +44,9 @@
     {
       "file_count": 4,
       "id": "itpa_reference_bundle",
-      "license": "citation-required",
-      "source": "Derived coefficients/calibration artifacts from ITPA subset.",
-      "source_type": "derived_calibration",
+      "license": "AGPL-3.0-or-later",
+      "source": "ITPA reference-data notes.",
+      "source_type": "documentation",
       "total_bytes": 7481
     },
     {
@@ -69,7 +69,7 @@
       "file_count": 2,
       "id": "reference_data_metadata",
       "license": "AGPL-3.0-or-later",
-      "source": "Repository-maintained provenance policy.",
+      "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
       "total_bytes": 7896
     },
@@ -108,6 +108,15 @@
   ],
   "file_count": 52,
   "files": [
+    {
+      "dataset_id": "reference_data_metadata",
+      "license": "AGPL-3.0-or-later",
+      "path": "README.md",
+      "sha256": "0ca88bf3acbff563bfba0584a62723822ef7839882845398f3f7bdd983b0c90b",
+      "size_bytes": 2631,
+      "source": "Repository-maintained reference-data documentation.",
+      "source_type": "documentation"
+    },
     {
       "dataset_id": "synthetic_blind_suite",
       "license": "synthetic-v1",
@@ -353,6 +362,15 @@
     },
     {
       "dataset_id": "itpa_reference_bundle",
+      "license": "AGPL-3.0-or-later",
+      "path": "itpa/README.md",
+      "sha256": "2b98eef1e153a2f44191bf710236c1109a54a65c001e022a872197885e36e4e1",
+      "size_bytes": 1389,
+      "source": "ITPA reference-data notes.",
+      "source_type": "documentation"
+    },
+    {
+      "dataset_id": "itpa_reference_bundle",
       "license": "citation-required",
       "path": "itpa/gyro_bohm_coefficients.json",
       "sha256": "5dce1a7fd8da29fa76fad5769e8b4fa1865413e5bc99d42beeec8d5c6cd08118",
@@ -377,15 +395,6 @@
       "size_bytes": 1039,
       "source": "Derived coefficients/calibration artifacts from ITPA subset.",
       "source_type": "derived_calibration"
-    },
-    {
-      "dataset_id": "itpa_reference_bundle",
-      "license": "AGPL-3.0-or-later",
-      "path": "itpa/README.md",
-      "sha256": "2b98eef1e153a2f44191bf710236c1109a54a65c001e022a872197885e36e4e1",
-      "size_bytes": 1389,
-      "source": "ITPA reference-data notes.",
-      "source_type": "documentation"
     },
     {
       "dataset_id": "jet_reference_equilibria",
@@ -451,13 +460,13 @@
       "source_type": "published_reference_summary"
     },
     {
-      "dataset_id": "reference_data_metadata",
-      "license": "AGPL-3.0-or-later",
-      "path": "README.md",
-      "sha256": "0ca88bf3acbff563bfba0584a62723822ef7839882845398f3f7bdd983b0c90b",
-      "size_bytes": 2631,
-      "source": "Repository-maintained reference-data documentation.",
-      "source_type": "documentation"
+      "dataset_id": "sparc_license_file",
+      "license": "see-file",
+      "path": "sparc/LICENSE",
+      "sha256": "3d3de4376af2f70558b5e3408915d1ee6cfa5b0fba304753f94cd14cf981536d",
+      "size_bytes": 1217,
+      "source": "License notice distributed with SPARC reference bundle.",
+      "source_type": "license_notice"
     },
     {
       "dataset_id": "sparc_reference_bundle",
@@ -467,15 +476,6 @@
       "size_bytes": 379205,
       "source": "SPARC public design reference metadata.",
       "source_type": "reference_dataset_subset"
-    },
-    {
-      "dataset_id": "sparc_license_file",
-      "license": "see-file",
-      "path": "sparc/LICENSE",
-      "sha256": "3d3de4376af2f70558b5e3408915d1ee6cfa5b0fba304753f94cd14cf981536d",
-      "size_bytes": 1217,
-      "source": "License notice distributed with SPARC reference bundle.",
-      "source_type": "license_notice"
     },
     {
       "dataset_id": "sparc_reference_bundle",
@@ -577,7 +577,7 @@
       "source_type": "synthetic_generated"
     }
   ],
-  "generated_at_utc": "2026-03-03T06:23:22.274165+00:00",
+  "generated_at_utc": "2026-03-03T06:28:21.303738+00:00",
   "manifest_version": "reference-data-provenance-v1",
   "policy_file": "provenance_policy.json"
 }

@@ -206,3 +206,38 @@ def test_build_manifest_normalizes_text_line_endings_for_hash_and_size(tmp_path:
 
     assert crlf_row["sha256"] == lf_row["sha256"]
     assert crlf_row["size_bytes"] == lf_row["size_bytes"]
+
+
+def test_build_manifest_sorts_files_by_relative_posix_path(tmp_path: Path) -> None:
+    root = tmp_path / "reference_data"
+    (root / "b").mkdir(parents=True)
+    (root / "a").mkdir(parents=True)
+    (root / "b" / "y.txt").write_text("y\n", encoding="utf-8")
+    (root / "a" / "x.txt").write_text("x\n", encoding="utf-8")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    _write_json(
+        policy,
+        {
+            "rules": [
+                {
+                    "id": "txt",
+                    "glob": "**/*.txt",
+                    "source_type": "documentation",
+                    "source": "docs",
+                    "license": "AGPL-3.0-or-later",
+                },
+                {
+                    "id": "policy",
+                    "glob": "provenance_policy.json",
+                    "source_type": "documentation",
+                    "source": "policy",
+                    "license": "AGPL-3.0-or-later",
+                },
+            ]
+        },
+    )
+
+    payload = prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+    paths = [row["path"] for row in payload["files"]]
+    assert paths == sorted(paths)

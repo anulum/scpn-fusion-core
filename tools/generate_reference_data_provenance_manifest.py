@@ -107,7 +107,10 @@ def build_manifest(
     root = Path(root)
     manifest_rel = manifest_path.relative_to(root).as_posix()
     policy_rel = policy_path.relative_to(root).as_posix()
-    files = sorted(p for p in root.rglob("*") if p.is_file())
+    files = sorted(
+        (p for p in root.rglob("*") if p.is_file()),
+        key=lambda path: path.relative_to(root).as_posix(),
+    )
 
     dataset_rows: dict[str, dict[str, Any]] = {}
     file_rows: list[dict[str, Any]] = []
