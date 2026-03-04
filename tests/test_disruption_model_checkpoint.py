@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 import warnings
 
@@ -182,6 +183,57 @@ def test_safe_checkpoint_load_rejects_oversized_checkpoint(
     monkeypatch.setattr(checkpoint_policy, "_MAX_CHECKPOINT_BYTES", 4)
     with pytest.raises(RuntimeError, match="safety size budget"):
         dp._safe_torch_checkpoint_load(model_path)
+
+
+def test_safe_checkpoint_load_rejects_digest_outside_allowlist(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model_path = tmp_path / "checkpoint.pth"
+    payload = b"checkpoint-bytes"
+    model_path.write_bytes(payload)
+
+    wrong_digest = hashlib.sha256(b"other-bytes").hexdigest()
+    monkeypatch.setenv(
+        checkpoint_policy._CHECKPOINT_SHA256_ALLOWLIST_ENV,
+        wrong_digest,
+    )
+
+    calls: list[dict[str, object]] = []
+
+    def _fake_load(path: Path, **kwargs: object) -> object:
+        _ = path
+        calls.append(dict(kwargs))
+        return {"state_dict": {}, "seq_len": 32}
+
+    monkeypatch.setattr(dp.torch, "load", _fake_load)
+
+    with pytest.raises(RuntimeError, match="SHA256 digest is not allowlisted"):
+        dp._safe_torch_checkpoint_load(model_path)
+    assert calls == []
+
+
+def test_safe_checkpoint_load_accepts_digest_in_allowlist(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model_path = tmp_path / "checkpoint.pth"
+    payload = b"checkpoint-bytes"
+    model_path.write_bytes(payload)
+    digest = hashlib.sha256(payload).hexdigest()
+    monkeypatch.setenv(
+        checkpoint_policy._CHECKPOINT_SHA256_ALLOWLIST_ENV,
+        digest,
+    )
+
+    def _fake_load(path: Path, **kwargs: object) -> object:
+        _ = (path, kwargs)
+        return {"state_dict": {}, "seq_len": 32}
+
+    monkeypatch.setattr(dp.torch, "load", _fake_load)
+    loaded = dp._safe_torch_checkpoint_load(model_path)
+    assert isinstance(loaded, dict)
+    assert loaded["seq_len"] == 32
 
 
 def test_load_or_train_rejects_non_mapping_checkpoint_payload(

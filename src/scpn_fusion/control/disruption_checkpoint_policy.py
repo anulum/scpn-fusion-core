@@ -7,6 +7,7 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
+import hashlib
 import os
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,7 @@ except (ImportError, OSError):  # pragma: no cover - optional dependency path
     torch = None
 
 _DISRUPTION_STRICT_NO_FALLBACK_ENV = "SCPN_DISRUPTION_DISABLE_FALLBACK"
+_CHECKPOINT_SHA256_ALLOWLIST_ENV = "SCPN_DISRUPTION_CHECKPOINT_SHA256_ALLOWLIST"
 _MAX_CHECKPOINT_PARAMETER_COUNT = 5_000_000
 _MAX_CHECKPOINT_BYTES = 128 * 1024 * 1024
 _ALLOWED_CHECKPOINT_SUFFIXES = {".pth", ".pt", ".ckpt"}
@@ -74,6 +76,34 @@ def _prepare_signal_window(signal: Any, seq_len: Any) -> np.ndarray:
     return np.pad(flat, (0, seq_len_i - flat.size), mode="edge")
 
 
+def _parse_checkpoint_sha256_allowlist() -> set[str]:
+    """Parse optional checkpoint SHA256 allowlist from environment."""
+    raw = os.getenv(_CHECKPOINT_SHA256_ALLOWLIST_ENV, "")
+    items: set[str] = set()
+    for token in raw.replace(";", ",").split(","):
+        digest = token.strip().lower()
+        if not digest:
+            continue
+        if len(digest) != 64 or any(ch not in "0123456789abcdef" for ch in digest):
+            raise ValueError(
+                f"{_CHECKPOINT_SHA256_ALLOWLIST_ENV} contains invalid SHA256: {digest!r}"
+            )
+        items.add(digest)
+    return items
+
+
+def _sha256_file(path: Path) -> str:
+    """Return lowercase SHA256 digest for a file."""
+    hasher = hashlib.sha256()
+    with path.open("rb") as fh:
+        while True:
+            block = fh.read(1024 * 1024)
+            if not block:
+                break
+            hasher.update(block)
+    return hasher.hexdigest()
+
+
 def _safe_torch_checkpoint_load(path: Path) -> Any:
     """Load checkpoint with safest available torch semantics.
 
@@ -102,6 +132,18 @@ def _safe_torch_checkpoint_load(path: Path) -> Any:
             "Checkpoint file exceeds safety size budget: "
             f"{size} > {_MAX_CHECKPOINT_BYTES} bytes."
         )
+    sha_allowlist = _parse_checkpoint_sha256_allowlist()
+    if sha_allowlist:
+        digest = _sha256_file(path)
+        if digest not in sha_allowlist:
+            _record_recovery_event(
+                "checkpoint_sha256_allowlist_blocked",
+                context={"path": str(path), "sha256": digest},
+            )
+            raise RuntimeError(
+                "Checkpoint SHA256 digest is not allowlisted by policy: "
+                f"{digest}"
+            )
     try:
         return torch.load(path, map_location="cpu", weights_only=True)
     except TypeError as exc:
@@ -145,6 +187,7 @@ def _validated_checkpoint_state_dict(raw_state: Any) -> dict[str, Any]:
 
 __all__ = [
     "_DISRUPTION_STRICT_NO_FALLBACK_ENV",
+    "_CHECKPOINT_SHA256_ALLOWLIST_ENV",
     "_MAX_CHECKPOINT_PARAMETER_COUNT",
     "_MAX_CHECKPOINT_BYTES",
     "default_model_path",
