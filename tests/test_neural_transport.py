@@ -12,7 +12,6 @@ import pytest
 from scpn_fusion.core.neural_transport import (
     MLPWeights,
     NeuralTransportModel,
-    TransportFluxes,
     TransportInputs,
     _mlp_forward,
     _relu,

@@ -50,6 +50,10 @@ from typing import Optional
 import numpy as np
 from numpy.typing import NDArray
 
+from .neural_transport_math import _compute_nustar, _mlp_forward
+from .neural_transport_math import _relu as _relu  # noqa: F401
+from .neural_transport_math import _softplus as _softplus  # noqa: F401
+
 logger = logging.getLogger(__name__)
 
 FloatArray = NDArray[np.float64]
@@ -216,86 +220,6 @@ class MLPWeights:
     @property
     def n_layers(self) -> int:
         return len(self.layers_w)
-
-
-def _relu(x: FloatArray) -> FloatArray:
-    return np.maximum(0.0, x)
-
-
-def _softplus(x: FloatArray) -> FloatArray:
-    return np.log1p(np.exp(np.clip(x, -20.0, 20.0)))
-
-
-def _gelu(x: FloatArray) -> FloatArray:
-    """Gaussian Error Linear Unit (matches JAX/PyTorch training)."""
-    return x * 0.5 * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * x ** 3)))
-
-
-def _mlp_forward(x: FloatArray, weights: MLPWeights) -> FloatArray:
-    """Forward pass through a variable-depth MLP.
-
-    Parameters
-    ----------
-    x : FloatArray
-        Input vector of shape ``(10,)`` or ``(batch, 10)``.
-    weights : MLPWeights
-        Network parameters (auto-detected depth).
-
-    Returns
-    -------
-    FloatArray
-        Output vector of shape ``(3,)`` or ``(batch, 3)``
-        representing ``[chi_e, chi_i, D_e]``.
-    """
-    # Normalise inputs
-    h = (x - weights.input_mean) / np.maximum(weights.input_std, 1e-8)
-
-    # Hidden layers (all except last): GELU activation
-    for i in range(weights.n_layers - 1):
-        h = _gelu(h @ weights.layers_w[i] + weights.layers_b[i])
-
-    # Output layer
-    raw = h @ weights.layers_w[-1] + weights.layers_b[-1]
-    if weights.gated:
-        # Gated: first 3 outputs are flux logits, last 3 are gate logits
-        flux = _softplus(raw[..., :3]) * weights.output_scale
-        gate = 1.0 / (1.0 + np.exp(-np.clip(raw[..., 3:], -20.0, 20.0)))  # sigmoid
-        out = gate * flux
-    else:
-        out = _softplus(raw) * weights.output_scale
-
-    # If trained in log-space, convert: output = exp(log(1+Y)) - 1 = Y
-    if weights.log_transform:
-        out = np.expm1(np.clip(out, 0.0, 20.0))
-
-    # Gyro-Bohm skip connection: multiply by chi_gb(Te)
-    if weights.gb_scale:
-        te = x[..., 1]  # Te_keV is column 1
-        te_j = te * 1e3 * 1.602e-19
-        cs = np.sqrt(te_j / 3.344e-27)
-        rho_s = np.sqrt(3.344e-27 * te_j) / (1.602e-19 * 5.3)
-        chi_gb = rho_s ** 2 * cs / 6.2
-        if chi_gb.ndim == 0:
-            out = out * float(chi_gb)
-        else:
-            out = out * chi_gb[..., np.newaxis]
-
-    return out
-
-
-def _compute_nustar(te_kev: float, ne_19: float, q: float, rho: float,
-                     r_major: float = 6.2, z_eff: float = 1.0) -> float:
-    """Electron collisionality nu_star (Wesson Ch.14).
-
-    nu* = 6.921e-18 * ne * q * R * Zeff^2 * ln(Lambda) / (Te^2 * eps^1.5)
-    with eps = rho * a / R, a ≈ R/3.1 (ITER-like aspect ratio).
-    """
-    ln_lambda = 15.2  # Coulomb logarithm, Wesson Ch.14
-    ne_m3 = ne_19 * 1e19
-    te_ev = te_kev * 1e3
-    eps = max(rho * r_major / 3.1 / r_major, 1e-4)
-    return 6.921e-18 * ne_m3 * q * r_major * z_eff ** 2 * ln_lambda / (
-        max(te_ev, 1.0) ** 2 * eps ** 1.5)
 
 
 def _append_derived(x: FloatArray, inp, expected_dim: int) -> FloatArray:
