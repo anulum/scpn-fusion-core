@@ -190,6 +190,36 @@ def test_newton_rejects_invalid_preconditioner_mode(tmp_path: Path):
         fk.solve_equilibrium()
 
 
+@pytest.mark.parametrize(
+    ("field", "value", "error_pattern"),
+    [
+        ("gmres_ilu_drop_tol", 0.0, "gmres_ilu_drop_tol"),
+        ("gmres_ilu_drop_tol", float("nan"), "gmres_ilu_drop_tol"),
+        ("gmres_ilu_fill_factor", 0.5, "gmres_ilu_fill_factor"),
+        ("gmres_ilu_fill_factor", float("inf"), "gmres_ilu_fill_factor"),
+    ],
+)
+def test_newton_rejects_invalid_ilu_parameters(
+    tmp_path: Path,
+    field: str,
+    value: float,
+    error_pattern: str,
+) -> None:
+    """Invalid ILU tuning parameters should fail fast in Newton setup."""
+    cfg = MOCK_CONFIG.copy()
+    cfg["solver"] = {
+        **cfg["solver"],
+        "gmres_preconditioner": "ilu",
+        field: value,
+    }
+    p = tmp_path / "newton_bad_ilu.json"
+    p.write_text(json.dumps(cfg), encoding="utf-8")
+
+    fk = FusionKernel(str(p))
+    with pytest.raises(ValueError, match=error_pattern):
+        fk.solve_equilibrium()
+
+
 def test_newton_line_search_reports_telemetry(tmp_path: Path) -> None:
     """Line-search mode should expose structured telemetry counters."""
     cfg = MOCK_CONFIG.copy()

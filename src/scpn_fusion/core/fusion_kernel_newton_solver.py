@@ -104,6 +104,10 @@ class FusionKernelNewtonSolverMixin:
         ilu_fill_factor = float(
             self.cfg["solver"].get("gmres_ilu_fill_factor", 8.0)
         )
+        if (not np.isfinite(ilu_drop_tol)) or ilu_drop_tol <= 0.0:
+            raise ValueError("solver.gmres_ilu_drop_tol must be finite and > 0")
+        if (not np.isfinite(ilu_fill_factor)) or ilu_fill_factor < 1.0:
+            raise ValueError("solver.gmres_ilu_fill_factor must be finite and >= 1")
 
         residual_history: list[float] = []
         gs_residual_history: list[float] = []
