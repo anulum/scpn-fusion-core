@@ -120,6 +120,22 @@ def test_find_x_point_prefers_saddle_candidate(tmp_path: Path) -> None:
     assert abs(x_point[1] - z0) <= float(kernel.dZ)
 
 
+def test_find_x_point_handles_nonfinite_flux_field(tmp_path: Path) -> None:
+    cfg_path = _write_cfg(tmp_path / "cfg_xpt_nonfinite.json", fail_on_diverge=False)
+    kernel = FusionKernel(cfg_path)
+    psi = np.full_like(kernel.Psi, np.nan)
+    psi[1, 1] = np.inf
+    psi[2, 2] = -np.inf
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)
+        x_point, psi_x = kernel.find_x_point(psi)
+
+    assert np.isfinite(x_point[0])
+    assert np.isfinite(x_point[1])
+    assert np.isfinite(psi_x)
+
+
 def test_sor_step_sanitizes_non_finite_inputs(tmp_path: Path) -> None:
     cfg_path = _write_cfg(tmp_path / "cfg_sor.json", fail_on_diverge=False)
     kernel = FusionKernel(cfg_path)

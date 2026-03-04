@@ -251,7 +251,13 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
             ``((R_x, Z_x), Psi_x)`` — position and flux value at the
             X-point.
         """
-        dPsi_dR, dPsi_dZ = np.gradient(Psi, self.dR, self.dZ)
+        psi_raw = np.asarray(Psi, dtype=np.float64)
+        finite_mask = np.isfinite(psi_raw)
+        if not np.any(finite_mask):
+            return (0.0, 0.0), 0.0
+        psi_safe = np.nan_to_num(psi_raw, nan=0.0, posinf=1e300, neginf=-1e300)
+
+        dPsi_dR, dPsi_dZ = np.gradient(psi_safe, self.dR, self.dZ)
         # ``hypot`` avoids overflow/underflow in extreme gradient excursions.
         B_mag = np.hypot(dPsi_dR, dPsi_dZ)
 
@@ -266,7 +272,10 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
                 if not use_saddle_detection:
                     idx_min = int(np.argmin(masked_B))
                     iz, ir = np.unravel_index(idx_min, Psi.shape)
-                    return (float(self.R[ir]), float(self.Z[iz])), float(Psi[iz, ir])
+                    psi_x = float(psi_raw[iz, ir])
+                    if not np.isfinite(psi_x):
+                        psi_x = float(psi_safe[iz, ir])
+                    return (float(self.R[ir]), float(self.Z[iz])), psi_x
 
                 # Prefer true magnetic saddles over pure |grad(Psi)| minima.
                 n_candidates = min(16, finite_count)
@@ -278,17 +287,17 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
                     iz, ir = np.unravel_index(int(idx), Psi.shape)
                     if iz <= 0 or iz >= nz - 1 or ir <= 0 or ir >= nr - 1:
                         continue
-                    d2R = (Psi[iz, ir + 1] - 2.0 * Psi[iz, ir] + Psi[iz, ir - 1]) / (
+                    d2R = (psi_safe[iz, ir + 1] - 2.0 * psi_safe[iz, ir] + psi_safe[iz, ir - 1]) / (
                         self.dR**2
                     )
-                    d2Z = (Psi[iz + 1, ir] - 2.0 * Psi[iz, ir] + Psi[iz - 1, ir]) / (
+                    d2Z = (psi_safe[iz + 1, ir] - 2.0 * psi_safe[iz, ir] + psi_safe[iz - 1, ir]) / (
                         self.dZ**2
                     )
                     dRZ = (
-                        Psi[iz + 1, ir + 1]
-                        - Psi[iz + 1, ir - 1]
-                        - Psi[iz - 1, ir + 1]
-                        + Psi[iz - 1, ir - 1]
+                        psi_safe[iz + 1, ir + 1]
+                        - psi_safe[iz + 1, ir - 1]
+                        - psi_safe[iz - 1, ir + 1]
+                        + psi_safe[iz - 1, ir - 1]
                     ) / (4.0 * self.dR * self.dZ)
                     det_hessian = float(d2R * d2Z - dRZ * dRZ)
                     if np.isfinite(det_hessian) and det_hessian < 0.0:
@@ -296,17 +305,24 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
 
                 if saddle_hits:
                     _, iz_best, ir_best = min(saddle_hits, key=lambda x: x[0])
+                    psi_x = float(psi_raw[iz_best, ir_best])
+                    if not np.isfinite(psi_x):
+                        psi_x = float(psi_safe[iz_best, ir_best])
                     return (
                         (float(self.R[ir_best]), float(self.Z[iz_best])),
-                        float(Psi[iz_best, ir_best]),
+                        psi_x,
                     )
 
                 # Fallback to minimum-gradient candidate when saddle test fails.
                 idx_min = int(np.argmin(masked_B))
                 iz, ir = np.unravel_index(idx_min, Psi.shape)
-                return (float(self.R[ir]), float(self.Z[iz])), float(Psi[iz, ir])
+                psi_x = float(psi_raw[iz, ir])
+                if not np.isfinite(psi_x):
+                    psi_x = float(psi_safe[iz, ir])
+                return (float(self.R[ir]), float(self.Z[iz])), psi_x
 
-        return (0.0, 0.0), float(np.min(Psi))
+        psi_min = float(np.min(psi_raw[finite_mask]))
+        return (0.0, 0.0), psi_min
 
     def _find_magnetic_axis(self) -> tuple[int, int, float]:
         """Find the O-point (magnetic axis) as the global Psi maximum.
