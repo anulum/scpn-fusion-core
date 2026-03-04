@@ -18,6 +18,12 @@ from scpn_fusion.core.integrated_transport_solver_adaptive import (
 from scpn_fusion.core.integrated_transport_solver_coupling import (
     TransportSolverCouplingMixin,
 )
+from scpn_fusion.core.integrated_transport_solver_runtime_utils import (
+    build_cn_tridiag as _build_cn_tridiag_impl,
+    explicit_diffusion_rhs as _explicit_diffusion_rhs_impl,
+    sanitize_with_fallback as _sanitize_with_fallback_impl,
+    thomas_solve as _thomas_solve_impl,
+)
 _logger = logging.getLogger(__name__)
 __all__ = ["AdaptiveTimeController", "TransportSolverRuntimeMixin"]
 
@@ -55,39 +61,7 @@ class TransportSolverRuntimeMixin(TransportSolverCouplingMixin):
         -------
         x : array, length n
         """
-        n = len(d)
-        # Work on copies to avoid mutating input
-        cp = np.empty(n - 1)
-        dp = np.empty(n)
-
-        b0 = float(b[0])
-        if (not np.isfinite(b0)) or abs(b0) < 1e-30:
-            b0 = 1e-30
-        cp0 = float(c[0]) / b0
-        dp0 = float(d[0]) / b0
-        cp[0] = cp0 if np.isfinite(cp0) else 0.0
-        dp[0] = dp0 if np.isfinite(dp0) else 0.0
-
-        for i in range(1, n):
-            m = b[i] - a[i - 1] * (cp[i - 1] if i - 1 < len(cp) else 0.0)
-            if (not np.isfinite(m)) or abs(m) < 1e-30:
-                m = 1e-30
-            numer = d[i] - a[i - 1] * dp[i - 1]
-            if not np.isfinite(numer):
-                numer = 0.0
-            dp_i = numer / m
-            dp[i] = dp_i if np.isfinite(dp_i) else 0.0
-            if i < n - 1:
-                cp_i = c[i] / m
-                cp[i] = cp_i if np.isfinite(cp_i) else 0.0
-
-        x = np.empty(n)
-        x[-1] = dp[-1]
-        for i in range(n - 2, -1, -1):
-            x_i = dp[i] - cp[i] * x[i + 1]
-            x[i] = x_i if np.isfinite(x_i) else 0.0
-
-        return x
+        return _thomas_solve_impl(a, b, c, d)
 
     def _explicit_diffusion_rhs(self, T, chi):
         """Compute explicit diffusion operator L_h(T) = (1/r) d/dr(r chi dT/dr).
@@ -95,23 +69,12 @@ class TransportSolverRuntimeMixin(TransportSolverCouplingMixin):
         Uses half-grid diffusivities and central differences on the
         interior, returning an array of the same length as *T*.
         """
-        n = len(T)
-        Lh = np.zeros(n)
-        dr = self.drho
-
-        # Vectorised interior (i = 1 .. n-2)
-        r = self.rho[1:n - 1]
-        chi_ip = 0.5 * (chi[1:n - 1] + chi[2:n])
-        chi_im = 0.5 * (chi[1:n - 1] + chi[0:n - 2])
-        r_ip = r + 0.5 * dr
-        r_im = r - 0.5 * dr
-
-        flux_ip = chi_ip * r_ip * (T[2:n] - T[1:n - 1]) / dr
-        flux_im = chi_im * r_im * (T[1:n - 1] - T[0:n - 2]) / dr
-
-        Lh[1:n - 1] = (flux_ip - flux_im) / (r * dr)
-
-        return Lh
+        return _explicit_diffusion_rhs_impl(
+            rho=self.rho,
+            drho=float(self.drho),
+            T=np.asarray(T, dtype=np.float64),
+            chi=np.asarray(chi, dtype=np.float64),
+        )
 
     def _build_cn_tridiag(self, chi, dt):
         """Build tridiagonal coefficients for the Crank-Nicolson LHS.
@@ -122,28 +85,12 @@ class TransportSolverRuntimeMixin(TransportSolverCouplingMixin):
         Returns (a, b, c) sub/main/super diagonals for the interior points,
         padded to full grid size (BCs applied separately).
         """
-        n = len(self.rho)
-        dr = self.drho
-        a = np.zeros(n - 1)  # sub-diagonal
-        b = np.ones(n)       # main diagonal
-        c = np.zeros(n - 1)  # super-diagonal
-
-        # Vectorised interior (i = 1 .. n-2)
-        r = self.rho[1:n - 1]
-        chi_ip = 0.5 * (chi[1:n - 1] + chi[2:n])
-        chi_im = 0.5 * (chi[1:n - 1] + chi[0:n - 2])
-        r_ip = r + 0.5 * dr
-        r_im = r - 0.5 * dr
-
-        coeff_ip = chi_ip * r_ip / (r * dr * dr)
-        coeff_im = chi_im * r_im / (r * dr * dr)
-
-        # LHS: (I - 0.5*dt*L_h) => diag entries are *subtracted*
-        b[1:n - 1] = 1.0 + 0.5 * dt * (coeff_ip + coeff_im)
-        c[1:n - 1] = -0.5 * dt * coeff_ip       # T_{i+1} coefficient
-        a[0:n - 2] = -0.5 * dt * coeff_im        # T_{i-1} coefficient
-
-        return a, b, c
+        return _build_cn_tridiag_impl(
+            rho=self.rho,
+            drho=float(self.drho),
+            chi=np.asarray(chi, dtype=np.float64),
+            dt=float(dt),
+        )
 
     @staticmethod
     def _sanitize_with_fallback(
@@ -154,17 +101,12 @@ class TransportSolverRuntimeMixin(TransportSolverCouplingMixin):
         ceil: float | None = None,
     ) -> tuple[np.ndarray, int]:
         """Replace non-finite entries and enforce optional lower/upper bounds."""
-        out = np.asarray(arr, dtype=np.float64).copy()
-        ref = np.asarray(reference, dtype=np.float64)
-        bad = ~np.isfinite(out)
-        recovered = int(np.count_nonzero(bad))
-        if recovered > 0:
-            out[bad] = ref[bad]
-        if floor is not None:
-            np.maximum(out, floor, out=out)
-        if ceil is not None:
-            np.minimum(out, ceil, out=out)
-        return out, recovered
+        return _sanitize_with_fallback_impl(
+            np.asarray(arr, dtype=np.float64),
+            np.asarray(reference, dtype=np.float64),
+            floor=floor,
+            ceil=ceil,
+        )
 
     def _sanitize_runtime_state(self, *, label_prefix: str) -> int:
         """Keep runtime profiles and coefficients finite during transport stepping."""

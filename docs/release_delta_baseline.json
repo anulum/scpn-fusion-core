@@ -1,10 +1,10 @@
 {
-  "baseline_generated_at": "2026-03-02T23:36:34Z",
-  "baseline_version": "v3.9.3-hardening-wave",
-  "notes": "Refreshed baseline after source-scope scanner hardening and docs-claim noise reduction.",
-  "source_total": 9,
-  "source_p0p1": 9,
-  "docs_claims_total": 139,
+  "baseline_generated_at": "2026-03-04T00:00:00Z",
+  "baseline_version": "v3.9.3-hardening-wave-a1",
+  "notes": "Rebased after source-scoring calibration and claims coverage expansion in hardening wave A1.",
+  "source_total": 15,
+  "source_p0p1": 13,
+  "docs_claims_total": 142,
   "docs_claims_p0p1": 0,
-  "claims_tracked": 2
+  "claims_tracked": 13
 }

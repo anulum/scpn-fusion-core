@@ -15,6 +15,7 @@ DEFAULT_TORAX = REPO_ROOT / "artifacts" / "torax_benchmark.json"
 DEFAULT_SPARC = REPO_ROOT / "artifacts" / "sparc_geqdsk_rmse_benchmark.json"
 DEFAULT_FREEGS = REPO_ROOT / "artifacts" / "freegs_benchmark.json"
 DEFAULT_SUMMARY = REPO_ROOT / "artifacts" / "fallback_budget_summary.json"
+DEFAULT_TELEMETRY = REPO_ROOT / "artifacts" / "fallback_telemetry.json"
 
 
 def _resolve(path_value: str) -> Path:
@@ -78,6 +79,7 @@ def evaluate(
     sparc: dict[str, Any],
     freegs: dict[str, Any],
     thresholds: dict[str, Any],
+    runtime_telemetry: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     torax_cfg = dict(thresholds.get("torax", {}))
     sparc_cfg = dict(thresholds.get("sparc", {}))
@@ -95,6 +97,10 @@ def evaluate(
 
     torax_preferred = str(torax_cfg.get("preferred_backend", "neural_transport"))
     sparc_preferred = str(sparc_cfg.get("preferred_backend", "neural_equilibrium"))
+    torax_strict_requested = bool(torax.get("require_neural_transport", False))
+    sparc_strict_requested = bool(sparc.get("require_neural_backend", False))
+    freegs_strict_requested = bool(freegs.get("require_freegs_backend", False))
+
     torax_allowed = {str(v) for v in torax_cfg.get("allowed_backends", [torax_preferred])}
     sparc_allowed = {str(v) for v in sparc_cfg.get("allowed_backends", [sparc_preferred])}
     freegs_allowed_modes = {str(v) for v in freegs_cfg.get("allowed_modes", ["solovev_manufactured_source", "freegs"])}
@@ -148,10 +154,26 @@ def evaluate(
     freegs_required_reference_backend = str(
         freegs_cfg.get("require_reference_backend_when_available", "")
     ).strip()
+    torax_max_fallback_rate = float(torax_cfg.get("max_fallback_rate", 0.0))
+    sparc_max_fallback_rate = float(sparc_cfg.get("max_fallback_rate", 1.0))
+
+    if torax_strict_requested:
+        torax_allowed = {torax_preferred}
+        torax_min_preferred_rate = 1.0
+        torax_require_backend_requirement = True
+        torax_max_fallback_rate = 0.0
+    if sparc_strict_requested:
+        sparc_allowed = {sparc_preferred}
+        sparc_min_preferred_rate = 1.0
+        sparc_require_backend_requirement = True
+        sparc_max_fallback_rate = 0.0
+    if freegs_strict_requested:
+        require_freegs_mode_when_available = True
+        min_freegs_cases_when_available = max(min_freegs_cases_when_available, 1)
 
     torax_pass = (
         len(torax_cases) >= torax_min_cases
-        and torax_rate <= float(torax_cfg.get("max_fallback_rate", 0.0))
+        and torax_rate <= torax_max_fallback_rate
         and set(torax_backends).issubset(torax_allowed)
         and (
             True
@@ -167,7 +189,7 @@ def evaluate(
     )
     sparc_pass = (
         len(sparc_cases) >= sparc_min_cases
-        and sparc_rate <= float(sparc_cfg.get("max_fallback_rate", 1.0))
+        and sparc_rate <= sparc_max_fallback_rate
         and set(sparc_backends).issubset(sparc_allowed)
         and (
             True
@@ -201,13 +223,45 @@ def evaluate(
         )
     )
 
+    runtime_cfg = dict(thresholds.get("runtime", {}))
+    runtime_payload = dict(runtime_telemetry or {})
+    runtime_total = int(runtime_payload.get("total_count", 0) or 0)
+    raw_domain_counts = runtime_payload.get("domain_counts", {})
+    if not isinstance(raw_domain_counts, dict):
+        raw_domain_counts = {}
+    runtime_domain_counts = {
+        str(k): int(v)
+        for k, v in raw_domain_counts.items()
+        if isinstance(k, str) and isinstance(v, (int, float))
+    }
+    runtime_max_total_raw = runtime_cfg.get("max_total_events")
+    runtime_max_total = (
+        None if runtime_max_total_raw is None else int(runtime_max_total_raw)
+    )
+    raw_runtime_domain_limits = runtime_cfg.get("max_domain_events", {})
+    if not isinstance(raw_runtime_domain_limits, dict):
+        raw_runtime_domain_limits = {}
+    runtime_domain_limits = {
+        str(k): int(v)
+        for k, v in raw_runtime_domain_limits.items()
+        if isinstance(k, str) and isinstance(v, (int, float))
+    }
+    runtime_total_ok = (
+        True if runtime_max_total is None else runtime_total <= runtime_max_total
+    )
+    runtime_domain_ok = all(
+        int(runtime_domain_counts.get(domain, 0)) <= int(limit)
+        for domain, limit in runtime_domain_limits.items()
+    )
+    runtime_pass = runtime_total_ok and runtime_domain_ok
+
     return {
         "torax": {
             "preferred_backend": torax_preferred,
             "observed_backends": torax_backends,
             "fallback_rate": torax_rate,
             "preferred_backend_rate": torax_preferred_rate,
-            "max_fallback_rate": float(torax_cfg.get("max_fallback_rate", 0.0)),
+            "max_fallback_rate": torax_max_fallback_rate,
             "min_preferred_backend_rate": (
                 None if torax_min_preferred_rate is None else float(torax_min_preferred_rate)
             ),
@@ -215,6 +269,7 @@ def evaluate(
             "case_count": len(torax_cases),
             "backend_requirement_satisfied_rate": torax_backend_requirement_rate,
             "require_backend_requirement_satisfied": torax_require_backend_requirement,
+            "strict_requested": torax_strict_requested,
             "passes": bool(torax_pass),
         },
         "sparc": {
@@ -222,7 +277,7 @@ def evaluate(
             "observed_backends": sparc_backends,
             "fallback_rate": sparc_rate,
             "preferred_backend_rate": sparc_preferred_rate,
-            "max_fallback_rate": float(sparc_cfg.get("max_fallback_rate", 1.0)),
+            "max_fallback_rate": sparc_max_fallback_rate,
             "min_preferred_backend_rate": (
                 None if sparc_min_preferred_rate is None else float(sparc_min_preferred_rate)
             ),
@@ -230,6 +285,7 @@ def evaluate(
             "case_count": len(sparc_cases),
             "backend_requirement_satisfied_rate": sparc_backend_requirement_rate,
             "require_backend_requirement_satisfied": sparc_require_backend_requirement,
+            "strict_requested": sparc_strict_requested,
             "passes": bool(sparc_pass),
         },
         "freegs": {
@@ -244,9 +300,19 @@ def evaluate(
             "require_reference_backend_when_available": freegs_required_reference_backend,
             "require_freegs_mode_when_available": require_freegs_mode_when_available,
             "min_freegs_cases_when_available": min_freegs_cases_when_available,
+            "strict_requested": freegs_strict_requested,
             "passes": bool(freegs_pass),
         },
-        "overall_pass": bool(torax_pass and sparc_pass and freegs_pass),
+        "runtime": {
+            "max_total_events": runtime_max_total,
+            "total_events": runtime_total,
+            "total_passes": runtime_total_ok,
+            "max_domain_events": runtime_domain_limits,
+            "domain_counts": runtime_domain_counts,
+            "domain_passes": runtime_domain_ok,
+            "passes": runtime_pass,
+        },
+        "overall_pass": bool(torax_pass and sparc_pass and freegs_pass and runtime_pass),
     }
 
 
@@ -257,6 +323,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--freegs", default=str(DEFAULT_FREEGS))
     parser.add_argument("--thresholds", default=str(DEFAULT_THRESHOLDS))
     parser.add_argument("--summary-json", default=str(DEFAULT_SUMMARY))
+    parser.add_argument(
+        "--telemetry",
+        default=str(DEFAULT_TELEMETRY),
+        help="Optional runtime fallback telemetry snapshot JSON.",
+    )
     args = parser.parse_args(argv)
 
     torax_path = _resolve(args.torax)
@@ -264,12 +335,15 @@ def main(argv: list[str] | None = None) -> int:
     freegs_path = _resolve(args.freegs)
     thresholds_path = _resolve(args.thresholds)
     summary_path = _resolve(args.summary_json)
+    telemetry_path = _resolve(args.telemetry)
+    runtime_telemetry = _load_json(telemetry_path) if telemetry_path.exists() else None
 
     summary = evaluate(
         torax=_load_json(torax_path),
         sparc=_load_json(sparc_path),
         freegs=_load_json(freegs_path),
         thresholds=_load_json(thresholds_path),
+        runtime_telemetry=runtime_telemetry,
     )
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -278,7 +352,8 @@ def main(argv: list[str] | None = None) -> int:
         "Fallback budget summary: "
         f"torax={summary['torax']['fallback_rate']:.3f} "
         f"sparc={summary['sparc']['fallback_rate']:.3f} "
-        f"freegs_modes={summary['freegs']['observed_modes']}"
+        f"freegs_modes={summary['freegs']['observed_modes']} "
+        f"runtime_events={summary['runtime']['total_events']}"
     )
     if not bool(summary["overall_pass"]):
         print("Fallback budget guard failed.")

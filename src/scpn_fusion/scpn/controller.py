@@ -31,6 +31,7 @@ from .contracts import (
 )
 from .controller_backend_mixin import NeuroSymbolicControllerBackendMixin
 from .controller_features_mixin import NeuroSymbolicControllerFeaturesMixin
+from .controller_runtime_backend import probe_rust_runtime_bindings
 from scpn_fusion.fallback_telemetry import record_fallback_event
 
 FloatArray = NDArray[np.float64]
@@ -44,19 +45,12 @@ _rust_sample_firing: Optional[
     Callable[[FloatArray, int, int, bool], object]
 ] = None
 
-try:
-    from scpn_fusion_rs import (  # type: ignore[import-not-found,unused-ignore]
-        scpn_dense_activations as _rust_dense_activations_impl,
-        scpn_marking_update as _rust_marking_update_impl,
-        scpn_sample_firing as _rust_sample_firing_impl,
-    )
-
-    _rust_dense_activations = _rust_dense_activations_impl
-    _rust_marking_update = _rust_marking_update_impl
-    _rust_sample_firing = _rust_sample_firing_impl
-    _HAS_RUST_SCPN_RUNTIME = True
-except Exception:
-    _HAS_RUST_SCPN_RUNTIME = False
+(
+    _HAS_RUST_SCPN_RUNTIME,
+    _rust_dense_activations,
+    _rust_marking_update,
+    _rust_sample_firing,
+) = probe_rust_runtime_bindings()
 
 
 class NeuroSymbolicController(

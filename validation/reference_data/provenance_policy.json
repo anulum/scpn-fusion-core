@@ -1,5 +1,39 @@
 {
-  "policy_version": "reference-data-provenance-policy-v1",
+  "policy_version": "reference-data-provenance-policy-v2",
+  "license_registry": [
+    {
+      "id": "AGPL-3.0-or-later",
+      "redistributable": true,
+      "attribution_required": true,
+      "citation_required": false,
+      "requires_license_notice": false,
+      "notes": "Repository-originated documentation and policy content."
+    },
+    {
+      "id": "synthetic-v1",
+      "redistributable": true,
+      "attribution_required": false,
+      "citation_required": false,
+      "requires_license_notice": false,
+      "notes": "Project-generated synthetic data artifacts."
+    },
+    {
+      "id": "citation-required",
+      "redistributable": true,
+      "attribution_required": true,
+      "citation_required": true,
+      "requires_license_notice": false,
+      "notes": "Derived summaries/subsets requiring scholarly citation."
+    },
+    {
+      "id": "see-file",
+      "redistributable": true,
+      "attribution_required": true,
+      "citation_required": false,
+      "requires_license_notice": true,
+      "notes": "License terms defined by an in-tree license notice file."
+    }
+  ],
   "rules": [
     {
       "id": "reference_data_metadata",
@@ -20,21 +54,24 @@
       "glob": "iter_reference.json",
       "source_type": "published_reference_summary",
       "source": "Curated summary from ITER Physics Basis literature.",
-      "license": "citation-required"
+      "license": "citation-required",
+      "citation": "ITER Physics Basis, Nucl. Fusion (public literature summary)."
     },
     {
       "id": "published_reference_metadata",
       "glob": "sparc_reference.json",
       "source_type": "published_reference_summary",
       "source": "Curated summary from SPARC public design publications.",
-      "license": "citation-required"
+      "license": "citation-required",
+      "citation": "SPARC public design publications and associated open references."
     },
     {
       "id": "published_reference_metadata",
       "glob": "qlknn10d_published_benchmarks.json",
       "source_type": "published_reference_summary",
       "source": "Curated summary from public QLKNN benchmark paper.",
-      "license": "citation-required"
+      "license": "citation-required",
+      "citation": "QLKNN public benchmark publication (summary values only)."
     },
     {
       "id": "synthetic_tglf_training",
@@ -90,17 +127,19 @@
       "glob": "itpa/*.csv",
       "source_type": "reference_dataset_subset",
       "source": "ITPA confinement reference subset used for reduced-order calibration.",
-      "license": "citation-required"
+      "license": "citation-required",
+      "citation": "ITPA confinement database and scaling-law references (subset use)."
     },
     {
       "id": "itpa_reference_bundle",
       "glob": "itpa/*.json",
       "source_type": "derived_calibration",
       "source": "Derived coefficients/calibration artifacts from ITPA subset.",
-      "license": "citation-required"
+      "license": "citation-required",
+      "citation": "Derived from cited ITPA subset artifacts."
     },
     {
-      "id": "itpa_reference_bundle",
+      "id": "itpa_reference_notes",
       "glob": "itpa/*.md",
       "source_type": "documentation",
       "source": "ITPA reference-data notes.",
@@ -118,35 +157,40 @@
       "glob": "sparc/LICENSE",
       "source_type": "license_notice",
       "source": "License notice distributed with SPARC reference bundle.",
-      "license": "see-file"
+      "license": "see-file",
+      "license_notice": "validation/reference_data/sparc/LICENSE"
     },
     {
       "id": "sparc_reference_bundle",
       "glob": "sparc/*.csv",
       "source_type": "reference_dataset_subset",
       "source": "SPARC public design reference tables.",
-      "license": "see validation/reference_data/sparc/LICENSE"
+      "license": "see-file",
+      "license_notice": "validation/reference_data/sparc/LICENSE"
     },
     {
       "id": "sparc_reference_bundle",
       "glob": "sparc/*.json",
       "source_type": "reference_dataset_subset",
       "source": "SPARC public design reference metadata.",
-      "license": "see validation/reference_data/sparc/LICENSE"
+      "license": "see-file",
+      "license_notice": "validation/reference_data/sparc/LICENSE"
     },
     {
       "id": "sparc_reference_bundle",
       "glob": "sparc/*.geqdsk",
       "source_type": "reference_equilibrium_bundle",
       "source": "SPARC public equilibrium references.",
-      "license": "see validation/reference_data/sparc/LICENSE"
+      "license": "see-file",
+      "license_notice": "validation/reference_data/sparc/LICENSE"
     },
     {
       "id": "sparc_reference_bundle",
       "glob": "sparc/*.eqdsk",
       "source_type": "reference_equilibrium_bundle",
       "source": "SPARC public equilibrium references.",
-      "license": "see validation/reference_data/sparc/LICENSE"
+      "license": "see-file",
+      "license_notice": "validation/reference_data/sparc/LICENSE"
     }
   ]
 }

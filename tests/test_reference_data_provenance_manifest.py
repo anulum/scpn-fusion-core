@@ -25,6 +25,50 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
+_TEST_LICENSE_REGISTRY = [
+    {
+        "id": "AGPL-3.0-or-later",
+        "redistributable": True,
+        "attribution_required": True,
+        "citation_required": False,
+        "requires_license_notice": False,
+        "notes": "test",
+    },
+    {
+        "id": "synthetic-v1",
+        "redistributable": True,
+        "attribution_required": False,
+        "citation_required": False,
+        "requires_license_notice": False,
+        "notes": "test",
+    },
+    {
+        "id": "citation-required",
+        "redistributable": True,
+        "attribution_required": True,
+        "citation_required": True,
+        "requires_license_notice": False,
+        "notes": "test",
+    },
+    {
+        "id": "see-file",
+        "redistributable": True,
+        "attribution_required": True,
+        "citation_required": False,
+        "requires_license_notice": True,
+        "notes": "test",
+    },
+]
+
+
+def _policy_with_rules(rules: list[dict]) -> dict:
+    return {
+        "policy_version": "reference-data-provenance-policy-v2",
+        "license_registry": _TEST_LICENSE_REGISTRY,
+        "rules": rules,
+    }
+
+
 def test_build_manifest_assigns_license_for_all_files(tmp_path: Path) -> None:
     root = tmp_path / "reference_data"
     root.mkdir(parents=True)
@@ -34,8 +78,8 @@ def test_build_manifest_assigns_license_for_all_files(tmp_path: Path) -> None:
     manifest = root / "provenance_manifest.json"
     _write_json(
         policy,
-        {
-            "rules": [
+        _policy_with_rules(
+            [
                 {
                     "id": "metadata",
                     "glob": "README.md",
@@ -58,7 +102,7 @@ def test_build_manifest_assigns_license_for_all_files(tmp_path: Path) -> None:
                     "license": "AGPL-3.0-or-later",
                 },
             ]
-        },
+        ),
     )
 
     payload = prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
@@ -77,8 +121,8 @@ def test_main_check_mode_detects_stale_manifest(tmp_path: Path) -> None:
     manifest = root / "provenance_manifest.json"
     _write_json(
         policy,
-        {
-            "rules": [
+        _policy_with_rules(
+            [
                 {
                     "id": "metadata",
                     "glob": "README.md",
@@ -101,7 +145,7 @@ def test_main_check_mode_detects_stale_manifest(tmp_path: Path) -> None:
                     "license": "AGPL-3.0-or-later",
                 },
             ]
-        },
+        ),
     )
 
     assert (
@@ -151,8 +195,8 @@ def test_build_manifest_raises_on_unmatched_file(tmp_path: Path) -> None:
     manifest = root / "provenance_manifest.json"
     _write_json(
         policy,
-        {
-            "rules": [
+        _policy_with_rules(
+            [
                 {
                     "id": "policy",
                     "glob": "provenance_policy.json",
@@ -161,7 +205,7 @@ def test_build_manifest_raises_on_unmatched_file(tmp_path: Path) -> None:
                     "license": "AGPL-3.0-or-later",
                 }
             ]
-        },
+        ),
     )
 
     with pytest.raises(ValueError, match="No provenance policy rule matched file"):
@@ -177,8 +221,8 @@ def test_build_manifest_normalizes_text_line_endings_for_hash_and_size(tmp_path:
     manifest = root / "provenance_manifest.json"
     _write_json(
         policy,
-        {
-            "rules": [
+        _policy_with_rules(
+            [
                 {
                     "id": "metadata",
                     "glob": "README.md",
@@ -194,7 +238,7 @@ def test_build_manifest_normalizes_text_line_endings_for_hash_and_size(tmp_path:
                     "license": "AGPL-3.0-or-later",
                 },
             ]
-        },
+        ),
     )
 
     crlf_manifest = prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
@@ -218,8 +262,8 @@ def test_build_manifest_sorts_files_by_relative_posix_path(tmp_path: Path) -> No
     manifest = root / "provenance_manifest.json"
     _write_json(
         policy,
-        {
-            "rules": [
+        _policy_with_rules(
+            [
                 {
                     "id": "txt",
                     "glob": "**/*.txt",
@@ -235,7 +279,7 @@ def test_build_manifest_sorts_files_by_relative_posix_path(tmp_path: Path) -> No
                     "license": "AGPL-3.0-or-later",
                 },
             ]
-        },
+        ),
     )
 
     payload = prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
@@ -315,8 +359,8 @@ def test_build_manifest_ignores_untracked_files_when_git_index_available(
     manifest = root / "provenance_manifest.json"
     _write_json(
         policy,
-        {
-            "rules": [
+        _policy_with_rules(
+            [
                 {
                     "id": "metadata",
                     "glob": "README.md",
@@ -332,7 +376,7 @@ def test_build_manifest_ignores_untracked_files_when_git_index_available(
                     "license": "AGPL-3.0-or-later",
                 },
             ]
-        },
+        ),
     )
 
     monkeypatch.setattr(
@@ -346,3 +390,117 @@ def test_build_manifest_ignores_untracked_files_when_git_index_available(
         "README.md",
         "provenance_policy.json",
     ]
+
+
+def test_build_manifest_requires_known_license_id(tmp_path: Path) -> None:
+    root = tmp_path / "reference_data"
+    root.mkdir(parents=True)
+    (root / "README.md").write_text("reference data\n", encoding="utf-8")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    bad_rules = [
+        {
+            "id": "metadata",
+            "glob": "README.md",
+            "source_type": "documentation",
+            "source": "docs",
+            "license": "NOT-A-LICENSE",
+        },
+        {
+            "id": "policy",
+            "glob": "provenance_policy.json",
+            "source_type": "documentation",
+            "source": "policy",
+            "license": "AGPL-3.0-or-later",
+        },
+    ]
+    _write_json(policy, _policy_with_rules(bad_rules))
+
+    with pytest.raises(ValueError, match="unknown license"):
+        prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+
+
+def test_build_manifest_enforces_citation_and_license_notice_requirements(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "reference_data"
+    root.mkdir(parents=True)
+    (root / "note.json").write_text("{}", encoding="utf-8")
+    (root / "sparc.csv").write_text("x,y\n1,2\n", encoding="utf-8")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    bad_rules = [
+        {
+            "id": "published",
+            "glob": "note.json",
+            "source_type": "published_reference_summary",
+            "source": "paper",
+            "license": "citation-required",
+        },
+        {
+            "id": "bundle",
+            "glob": "sparc.csv",
+            "source_type": "reference_dataset_subset",
+            "source": "sparc",
+            "license": "see-file",
+        },
+        {
+            "id": "policy",
+            "glob": "provenance_policy.json",
+            "source_type": "documentation",
+            "source": "policy",
+            "license": "AGPL-3.0-or-later",
+        },
+    ]
+    _write_json(policy, _policy_with_rules(bad_rules))
+
+    with pytest.raises(ValueError, match="requires citation"):
+        prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+
+    bad_rules[0]["citation"] = "published source"
+    _write_json(policy, _policy_with_rules(bad_rules))
+    with pytest.raises(ValueError, match="requires license_notice"):
+        prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+
+
+def test_build_manifest_emits_license_policy_metadata(tmp_path: Path) -> None:
+    root = tmp_path / "reference_data"
+    root.mkdir(parents=True)
+    (root / "README.md").write_text("reference data\n", encoding="utf-8")
+    (root / "sparc.csv").write_text("x,y\n1,2\n", encoding="utf-8")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    rules = [
+        {
+            "id": "metadata",
+            "glob": "README.md",
+            "source_type": "documentation",
+            "source": "docs",
+            "license": "AGPL-3.0-or-later",
+        },
+        {
+            "id": "sparc_bundle",
+            "glob": "sparc.csv",
+            "source_type": "reference_dataset_subset",
+            "source": "sparc",
+            "license": "see-file",
+            "license_notice": "validation/reference_data/sparc/LICENSE",
+        },
+        {
+            "id": "policy",
+            "glob": "provenance_policy.json",
+            "source_type": "documentation",
+            "source": "policy",
+            "license": "AGPL-3.0-or-later",
+        },
+    ]
+    _write_json(policy, _policy_with_rules(rules))
+
+    payload = prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+    assert payload["manifest_version"] == "reference-data-provenance-v2"
+    assert payload["policy_version"] == "reference-data-provenance-policy-v2"
+    assert any(row["id"] == "see-file" for row in payload["license_registry"])
+    sparc_file = next(row for row in payload["files"] if row["path"] == "sparc.csv")
+    assert sparc_file["license"] == "see-file"
+    assert sparc_file["license_notice"] == "validation/reference_data/sparc/LICENSE"
+    assert sparc_file["license_attribution_required"] is True

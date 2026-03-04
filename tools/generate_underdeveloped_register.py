@@ -163,12 +163,12 @@ MARKER_RULES: tuple[MarkerRule, ...] = (
     ),
 )
 
-SOURCE_MONOLITH_LOC_WARN = 700
-SOURCE_MONOLITH_LOC_CRITICAL = 1100
-SOURCE_FALLBACK_DENSITY_WARN = 8
-SOURCE_FALLBACK_DENSITY_CRITICAL = 16
-SOURCE_MIN_LOC_FOR_FALLBACK_DENSITY = 220
-SOURCE_TEST_GAP_LOC_THRESHOLD = 450
+SOURCE_MONOLITH_LOC_WARN = 500
+SOURCE_MONOLITH_LOC_CRITICAL = 800
+SOURCE_FALLBACK_DENSITY_WARN = 6
+SOURCE_FALLBACK_DENSITY_CRITICAL = 12
+SOURCE_MIN_LOC_FOR_FALLBACK_DENSITY = 180
+SOURCE_TEST_GAP_LOC_THRESHOLD = 350
 _MARKER_RULE_BY_NAME = {rule.marker: rule for rule in MARKER_RULES}
 
 
@@ -435,11 +435,13 @@ def _score_context_penalty(*, rel_path: str, marker: str, line: str) -> int:
     if rel_path.startswith("docs/") and rel_path not in RELEASE_CLAIM_SURFACES:
         if rel_path.startswith(NARRATIVE_DOC_PREFIXES):
             if marker in {"DEPRECATED", "EXPERIMENTAL", "NOT_VALIDATED"}:
-                penalty += 20
+                penalty += 40
             elif marker in {"SIMPLIFIED", "FALLBACK", "PLANNED"}:
-                penalty += 14
+                penalty += 28
         elif marker in {"EXPERIMENTAL", "PLANNED", "FALLBACK"}:
-            penalty += 10
+            penalty += 18
+        elif marker in {"DEPRECATED", "NOT_VALIDATED"}:
+            penalty += 12
 
     if rel_path == "tools/generate_source_p0p1_issue_backlog.py":
         if marker in {"DEPRECATED", "EXPERIMENTAL"}:
@@ -470,13 +472,13 @@ DOMAIN_OWNER = {
     "other": "Architecture WG",
 }
 DOMAIN_BONUS = {
-    "control": 10,
-    "core_physics": 9,
-    "nuclear": 8,
-    "diagnostics_io": 7,
-    "compiler_runtime": 8,
-    "validation": 6,
-    "docs_claims": -6,
+    "control": 12,
+    "core_physics": 11,
+    "nuclear": 10,
+    "diagnostics_io": 9,
+    "compiler_runtime": 10,
+    "validation": 8,
+    "docs_claims": -18,
     "other": 0,
 }
 

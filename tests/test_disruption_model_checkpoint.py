@@ -16,6 +16,7 @@ import numpy as np
 import pytest
 
 import scpn_fusion.control.disruption_predictor as dp
+import scpn_fusion.control.disruption_checkpoint_policy as checkpoint_policy
 
 
 pytestmark = pytest.mark.skipif(dp.torch is None, reason="torch is required for checkpoint tests")
@@ -163,6 +164,24 @@ def test_safe_checkpoint_load_blocks_legacy_mode_even_with_env_opt_in(
 
     assert len(calls) == 1
     assert calls[0].get("weights_only") is True
+
+
+def test_safe_checkpoint_load_rejects_unexpected_suffix(tmp_path: Path) -> None:
+    model_path = tmp_path / "checkpoint.bin"
+    model_path.write_bytes(b"placeholder")
+    with pytest.raises(RuntimeError, match="suffix"):
+        dp._safe_torch_checkpoint_load(model_path)
+
+
+def test_safe_checkpoint_load_rejects_oversized_checkpoint(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    model_path = tmp_path / "checkpoint.pth"
+    model_path.write_bytes(b"0123456789")
+    monkeypatch.setattr(checkpoint_policy, "_MAX_CHECKPOINT_BYTES", 4)
+    with pytest.raises(RuntimeError, match="safety size budget"):
+        dp._safe_torch_checkpoint_load(model_path)
 
 
 def test_load_or_train_rejects_non_mapping_checkpoint_payload(

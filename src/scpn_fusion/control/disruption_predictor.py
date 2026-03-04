@@ -8,13 +8,23 @@
 from __future__ import annotations
 
 import logging
-import os
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 from typing import Any
 
+from scpn_fusion.control.disruption_checkpoint_policy import (
+    _augment_with_fallback_telemetry,
+    _normalize_seq_len,
+    _prepare_signal_window,
+    _record_recovery_event,
+    _repo_root,
+    _resolve_allow_fallback,
+    _safe_torch_checkpoint_load,
+    _validated_checkpoint_state_dict,
+    default_model_path,
+)
 from scpn_fusion.control.disruption_risk_runtime import (
     DEFAULT_DISRUPTION_RISK_BIAS,
     DEFAULT_DISRUPTION_RISK_THRESHOLD,
@@ -28,10 +38,6 @@ from scpn_fusion.control.disruption_risk_runtime import (
     run_anomaly_alarm_campaign,
     run_fault_noise_campaign,
     simulate_tearing_mode,
-)
-from scpn_fusion.fallback_telemetry import (
-    record_fallback_event,
-    snapshot_fallback_telemetry,
 )
 
 __all__ = [
@@ -78,100 +84,6 @@ _CHECKPOINT_LOAD_EXCEPTIONS = (
 )
 _CHECKPOINT_TRAIN_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, AttributeError)
 _INFERENCE_FALLBACK_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, AttributeError)
-_DISRUPTION_STRICT_NO_FALLBACK_ENV = "SCPN_DISRUPTION_DISABLE_FALLBACK"
-_MAX_CHECKPOINT_PARAMETER_COUNT = 5_000_000
-
-
-def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[3]
-
-
-def default_model_path() -> Path:
-    return _repo_root() / "artifacts" / DEFAULT_MODEL_FILENAME
-
-
-def _normalize_seq_len(seq_len):
-    return _require_int("seq_len", seq_len, 8)
-
-
-def _resolve_allow_fallback(allow_fallback: bool) -> bool:
-    """Resolve fallback policy from API argument + environment strict mode."""
-    if not bool(allow_fallback):
-        return False
-    raw = os.getenv(_DISRUPTION_STRICT_NO_FALLBACK_ENV, "")
-    return raw.strip().lower() not in {"1", "true", "yes", "on"}
-
-
-def _augment_with_fallback_telemetry(meta: dict[str, Any]) -> dict[str, Any]:
-    out = dict(meta)
-    out["fallback_telemetry"] = snapshot_fallback_telemetry()
-    return out
-
-
-def _record_recovery_event(reason: str, *, context: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Record fallback telemetry via a single choke-point for this module."""
-    return record_fallback_event(
-        "disruption_predictor",
-        reason,
-        context=context,
-    )
-
-
-def _prepare_signal_window(signal, seq_len):
-    seq_len = _normalize_seq_len(seq_len)
-    flat = np.asarray(signal, dtype=float).reshape(-1)
-    if flat.size >= seq_len:
-        return flat[:seq_len]
-    return np.pad(flat, (0, seq_len - flat.size), mode="edge")
-
-
-def _safe_torch_checkpoint_load(path: Path) -> Any:
-    """Load checkpoint with safest available torch semantics.
-
-    Enforces ``weights_only=True`` and fails closed when unavailable to avoid
-    arbitrary object deserialization paths in library runtime.
-    """
-    if torch is None:
-        raise RuntimeError("Torch is required for checkpoint loading.")
-    try:
-        return torch.load(path, map_location="cpu", weights_only=True)
-    except TypeError as exc:
-        if "weights_only" not in str(exc):
-            raise
-        _record_recovery_event(
-            "legacy_checkpoint_load_blocked",
-            context={"path": str(path)},
-        )
-        raise RuntimeError(
-            "Legacy torch checkpoint loading is disabled because weights_only=True "
-            "is unavailable. Use a compatible torch version or convert checkpoint "
-            "outside library runtime."
-        ) from exc
-
-
-def _validated_checkpoint_state_dict(raw_state: Any) -> dict[str, Any]:
-    """Validate loaded checkpoint payload shape and enforce size budget."""
-    if not isinstance(raw_state, dict):
-        raise ValueError("checkpoint state_dict must be a mapping.")
-    total_params = 0
-    for key, value in raw_state.items():
-        if not isinstance(key, str):
-            raise ValueError("checkpoint state_dict keys must be strings.")
-        if torch is not None and hasattr(torch, "Tensor") and isinstance(value, torch.Tensor):
-            total_params += int(value.numel())
-            continue
-        if isinstance(value, np.ndarray):
-            total_params += int(value.size)
-            continue
-        raise ValueError("checkpoint state_dict values must be tensor/ndarray.")
-    if total_params <= 0:
-        raise ValueError("checkpoint state_dict must contain at least one parameter tensor.")
-    if total_params > _MAX_CHECKPOINT_PARAMETER_COUNT:
-        raise ValueError(
-            "checkpoint state_dict parameter count exceeds safety budget: "
-            f"{total_params} > {_MAX_CHECKPOINT_PARAMETER_COUNT}"
-        )
-    return raw_state
 
 if torch is not None:
     class DisruptionTransformer(nn.Module):
@@ -233,7 +145,7 @@ def train_predictor(
     data_rng = np.random.default_rng(seed)
     eval_rng = np.random.default_rng(seed + 1000003)
 
-    model_path = Path(model_path) if model_path is not None else default_model_path()
+    model_path = Path(model_path) if model_path is not None else default_model_path(DEFAULT_MODEL_FILENAME)
     model_path.parent.mkdir(parents=True, exist_ok=True)
 
     logger.info("--- SCPN SAFETY AI: Disruption Prediction (Transformer) ---")
@@ -329,11 +241,11 @@ def load_or_train_predictor(
             "trained": False,
             "fallback": True,
             "reason": "torch_unavailable",
-            "model_path": str(model_path) if model_path is not None else str(default_model_path()),
+            "model_path": str(model_path) if model_path is not None else str(default_model_path(DEFAULT_MODEL_FILENAME)),
             "seq_len": int(_normalize_seq_len(seq_len)),
         })
 
-    path = Path(model_path) if model_path is not None else default_model_path()
+    path = Path(model_path) if model_path is not None else default_model_path(DEFAULT_MODEL_FILENAME)
     path.parent.mkdir(parents=True, exist_ok=True)
     seq_len = _normalize_seq_len(seq_len)
     kwargs = dict(train_kwargs or {})

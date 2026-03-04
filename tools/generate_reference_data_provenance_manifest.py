@@ -40,12 +40,58 @@ def _load_json(path: Path, *, label: str) -> dict[str, Any]:
     return payload
 
 
-def _normalize_rules(policy: dict[str, Any]) -> list[dict[str, str]]:
+def _normalize_license_registry(policy: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    raw_registry = policy.get("license_registry")
+    if not isinstance(raw_registry, list) or not raw_registry:
+        raise ValueError("provenance policy must contain non-empty 'license_registry' list.")
+
+    out: dict[str, dict[str, Any]] = {}
+    for idx, raw in enumerate(raw_registry):
+        if not isinstance(raw, dict):
+            raise ValueError(f"license_registry entry #{idx} must be a JSON object.")
+        license_id = str(raw.get("id", "")).strip()
+        if not license_id:
+            raise ValueError(f"license_registry entry #{idx} missing non-empty id.")
+        if license_id in out:
+            raise ValueError(f"duplicate license_registry id: {license_id}")
+        redistributable = raw.get("redistributable")
+        attribution_required = raw.get("attribution_required")
+        citation_required = raw.get("citation_required")
+        requires_license_notice = raw.get("requires_license_notice", False)
+        if not isinstance(redistributable, bool):
+            raise ValueError(f"license_registry entry {license_id} missing bool redistributable.")
+        if not isinstance(attribution_required, bool):
+            raise ValueError(
+                f"license_registry entry {license_id} missing bool attribution_required."
+            )
+        if not isinstance(citation_required, bool):
+            raise ValueError(
+                f"license_registry entry {license_id} missing bool citation_required."
+            )
+        if not isinstance(requires_license_notice, bool):
+            raise ValueError(
+                f"license_registry entry {license_id} missing bool requires_license_notice."
+            )
+        notes = str(raw.get("notes", "")).strip()
+        out[license_id] = {
+            "id": license_id,
+            "redistributable": redistributable,
+            "attribution_required": attribution_required,
+            "citation_required": citation_required,
+            "requires_license_notice": requires_license_notice,
+            "notes": notes,
+        }
+    return out
+
+
+def _normalize_rules(
+    policy: dict[str, Any], *, license_registry: dict[str, dict[str, Any]]
+) -> list[dict[str, Any]]:
     raw_rules = policy.get("rules")
     if not isinstance(raw_rules, list) or not raw_rules:
         raise ValueError("provenance policy must contain non-empty 'rules' list.")
 
-    out: list[dict[str, str]] = []
+    out: list[dict[str, Any]] = []
     for idx, raw in enumerate(raw_rules):
         if not isinstance(raw, dict):
             raise ValueError(f"rule #{idx} must be a JSON object.")
@@ -64,6 +110,22 @@ def _normalize_rules(policy: dict[str, Any]) -> list[dict[str, str]]:
             raise ValueError(f"rule {dataset_id} missing non-empty license.")
         if not source_type:
             raise ValueError(f"rule {dataset_id} missing non-empty source_type.")
+        if license_name not in license_registry:
+            raise ValueError(
+                f"rule {dataset_id} references unknown license '{license_name}'. "
+                "Declare it in license_registry."
+            )
+        citation = str(raw.get("citation", "")).strip()
+        license_notice = str(raw.get("license_notice", "")).strip()
+        license_meta = license_registry[license_name]
+        if bool(license_meta["citation_required"]) and not citation:
+            raise ValueError(
+                f"rule {dataset_id} uses license '{license_name}' which requires citation."
+            )
+        if bool(license_meta["requires_license_notice"]) and not license_notice:
+            raise ValueError(
+                f"rule {dataset_id} uses license '{license_name}' which requires license_notice."
+            )
         out.append(
             {
                 "id": dataset_id,
@@ -71,6 +133,8 @@ def _normalize_rules(policy: dict[str, Any]) -> list[dict[str, str]]:
                 "source": source,
                 "license": license_name,
                 "source_type": source_type,
+                "citation": citation,
+                "license_notice": license_notice,
             }
         )
     return out
@@ -145,7 +209,8 @@ def build_manifest(
     manifest_path: Path,
 ) -> dict[str, Any]:
     policy_payload = _load_json(policy_path, label="provenance policy")
-    rules = _normalize_rules(policy_payload)
+    license_registry = _normalize_license_registry(policy_payload)
+    rules = _normalize_rules(policy_payload, license_registry=license_registry)
 
     root = Path(root)
     manifest_rel = manifest_path.relative_to(root).as_posix()
@@ -166,6 +231,7 @@ def build_manifest(
             continue
 
         rule = _match_rule(rel, rules)
+        license_meta = license_registry[rule["license"]]
         content = _content_bytes(path)
         size_bytes = int(len(content))
         sha256 = _sha256(content)
@@ -176,9 +242,16 @@ def build_manifest(
             "source_type": rule["source_type"],
             "source": rule["source"],
             "license": rule["license"],
+            "license_redistributable": bool(license_meta["redistributable"]),
+            "license_attribution_required": bool(license_meta["attribution_required"]),
+            "license_citation_required": bool(license_meta["citation_required"]),
             "size_bytes": size_bytes,
             "sha256": sha256,
         }
+        if rule["citation"]:
+            row["citation"] = rule["citation"]
+        if rule["license_notice"]:
+            row["license_notice"] = rule["license_notice"]
         file_rows.append(row)
 
         acc = dataset_rows.get(rule["id"])
@@ -188,18 +261,45 @@ def build_manifest(
                 "source_type": rule["source_type"],
                 "source": rule["source"],
                 "license": rule["license"],
+                "license_redistributable": bool(license_meta["redistributable"]),
+                "license_attribution_required": bool(license_meta["attribution_required"]),
+                "license_citation_required": bool(license_meta["citation_required"]),
                 "file_count": 0,
                 "total_bytes": 0,
             }
+            if rule["citation"]:
+                acc["citation"] = rule["citation"]
+            if rule["license_notice"]:
+                acc["license_notice"] = rule["license_notice"]
             dataset_rows[rule["id"]] = acc
+        else:
+            if str(acc.get("license", "")) != rule["license"]:
+                raise ValueError(
+                    f"dataset id {rule['id']} maps to multiple licenses: "
+                    f"{acc.get('license')} vs {rule['license']}"
+                )
         acc["file_count"] = int(acc["file_count"]) + 1
         acc["total_bytes"] = int(acc["total_bytes"]) + size_bytes
 
+    registry_rows = [
+        {
+            "id": str(item["id"]),
+            "redistributable": bool(item["redistributable"]),
+            "attribution_required": bool(item["attribution_required"]),
+            "citation_required": bool(item["citation_required"]),
+            "requires_license_notice": bool(item["requires_license_notice"]),
+            "notes": str(item.get("notes", "")),
+        }
+        for item in license_registry.values()
+    ]
+
     return {
-        "manifest_version": "reference-data-provenance-v1",
+        "manifest_version": "reference-data-provenance-v2",
         "dataset_root": "validation/reference_data",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "policy_file": policy_rel,
+        "policy_version": str(policy_payload.get("policy_version", "")).strip(),
+        "license_registry": sorted(registry_rows, key=lambda item: item["id"]),
         "file_count": len(file_rows),
         "datasets": sorted(dataset_rows.values(), key=lambda item: str(item["id"])),
         "files": file_rows,
@@ -214,6 +314,12 @@ def _normalize_for_check(payload: dict[str, Any]) -> dict[str, Any]:
     out = dict(payload)
     if "generated_at_utc" in out:
         out["generated_at_utc"] = "<normalized>"
+    license_registry = out.get("license_registry")
+    if isinstance(license_registry, list):
+        out["license_registry"] = sorted(
+            license_registry,
+            key=lambda item: str(item.get("id", "")) if isinstance(item, dict) else "",
+        )
     datasets = out.get("datasets")
     if isinstance(datasets, list):
         normalized_datasets: list[dict[str, Any] | Any] = []
