@@ -12,6 +12,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CHECK_TIMEOUT_SECONDS = 1800.0
+_PREFLIGHT_LATENCY_OUTPUT_JSON = "artifacts/_tmp_scpn_end_to_end_latency.json"
+_PREFLIGHT_LATENCY_OUTPUT_MD = "artifacts/_tmp_scpn_end_to_end_latency.md"
 
 
 def _module_available(module_name: str) -> bool:
@@ -340,6 +342,10 @@ def _build_release_checks(
                     sys.executable,
                     "validation/scpn_end_to_end_latency.py",
                     "--strict",
+                    "--output-json",
+                    _PREFLIGHT_LATENCY_OUTPUT_JSON,
+                    "--output-md",
+                    _PREFLIGHT_LATENCY_OUTPUT_MD,
                 ],
             )
         )
