@@ -36,9 +36,19 @@ esac
 echo "[pre-push] Running local preflight gate: $GATE"
 echo "[pre-push] Command: ${PYTHON_BIN[*]} tools/run_python_preflight.py --gate $GATE --check-timeout-seconds $TIMEOUT_SECONDS"
 
+TRACKED_BEFORE="$(git status --porcelain --untracked-files=no)"
+
 if ! "${PYTHON_BIN[@]}" tools/run_python_preflight.py --gate "$GATE" --check-timeout-seconds "$TIMEOUT_SECONDS"; then
   echo "[pre-push] Local preflight FAILED. Push blocked."
   echo "[pre-push] Fix failures locally before pushing."
+  exit 1
+fi
+
+TRACKED_AFTER="$(git status --porcelain --untracked-files=no)"
+if [[ "$TRACKED_BEFORE" != "$TRACKED_AFTER" ]]; then
+  echo "[pre-push] Local preflight modified tracked files. Push blocked."
+  echo "[pre-push] Restore/regenerate artifacts and commit intentionally."
+  git status --short
   exit 1
 fi
 
