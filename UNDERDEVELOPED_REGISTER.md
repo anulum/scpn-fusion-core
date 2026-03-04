@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T13:34:59.587712+00:00`
+- Generated at: `2026-03-04T15:55:02.960147+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -64,13 +64,13 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_sparc_geqdsk_rmse.py:207` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | except Exception as exc: # pragma: no cover - import failure handled via synthetic fallback |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:628` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | fallback = run_solovev_case(case) |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:630` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "psi": fallback["psi"], |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:631` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R": fallback["R"], |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:632` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z": fallback["Z"], |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:633` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R_axis": fallback["R_axis"], |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:634` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z_axis": fallback["Z_axis"], |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:635` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "q_proxy": fallback["q_proxy"], |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:647` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | fallback = run_solovev_case(case) |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:649` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "psi": fallback["psi"], |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:650` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R": fallback["R"], |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:651` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z": fallback["Z"], |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:652` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R_axis": fallback["R_axis"], |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:653` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z_axis": fallback["Z_axis"], |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:654` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "q_proxy": fallback["q_proxy"], |
 | P2 | 70 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:238` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
 | P2 | 70 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:200` | Validation WG | Gate behind explicit flag and define validation exit criteria. | items.append("Ensure release lane remains experimental-excluded unless explicitly opted in.") |
 | P2 | 68 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Add real-data validation campaign and publish error bars. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |
@@ -149,13 +149,13 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_sparc_geqdsk_rmse.py:207` | except Exception as exc: # pragma: no cover - import failure handled via synthetic fallback |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:628` | fallback = run_solovev_case(case) |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:630` | "psi": fallback["psi"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:631` | "R": fallback["R"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:632` | "Z": fallback["Z"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:633` | "R_axis": fallback["R_axis"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:634` | "Z_axis": fallback["Z_axis"], |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:635` | "q_proxy": fallback["q_proxy"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:647` | fallback = run_solovev_case(case) |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:649` | "psi": fallback["psi"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:650` | "R": fallback["R"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:651` | "Z": fallback["Z"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:652` | "R_axis": fallback["R_axis"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:653` | "Z_axis": fallback["Z_axis"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:654` | "q_proxy": fallback["q_proxy"], |
 | P2 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:238` | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
 | P2 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:200` | items.append("Ensure release lane remains experimental-excluded unless explicitly opted in.") |
 | P2 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |

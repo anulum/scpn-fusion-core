@@ -518,7 +518,11 @@ def _build_freegs_profiles(
         )
 
 
-def run_freegs_case(case: TokamakCase) -> dict[str, Any]:
+def run_freegs_case(
+    case: TokamakCase,
+    *,
+    allow_runtime_fallback: bool = True,
+) -> dict[str, Any]:
     """Set up and solve a FreeGS equilibrium for the given case.
 
     Returns dict with: psi, R, Z, R_axis, Z_axis, q_proxy
@@ -614,6 +618,21 @@ def run_freegs_case(case: TokamakCase) -> dict[str, Any]:
             "freegs_fallback": False,
         }
     except Exception as exc:
+        from scpn_fusion.fallback_telemetry import record_fallback_event
+
+        record_fallback_event(
+            "validation.freegs",
+            "runtime_error_solovev_reference",
+            context={
+                "case": case.name,
+                "allow_runtime_fallback": bool(allow_runtime_fallback),
+                "error_type": type(exc).__name__,
+            },
+        )
+        if not allow_runtime_fallback:
+            raise RuntimeError(
+                f"FreeGS strict backend runtime failure for case '{case.name}': {exc}"
+            ) from exc
         # FreeGS occasionally raises backend-specific numerical/runtime errors
         # on some numpy/toolchain combinations. Keep benchmark/test pipelines
         # deterministic by falling back to the Solov'ev reference lane.
@@ -766,6 +785,7 @@ def compare_case(
     case: TokamakCase,
     *,
     use_freegs: bool = False,
+    allow_runtime_fallback: bool = True,
 ) -> dict[str, Any]:
     """Run one benchmark case and return metrics.
 
@@ -783,7 +803,7 @@ def compare_case(
         print(f"  [{case.name}] Running our nonlinear solver...")
         our = run_our_solver(case)
         print(f"  [{case.name}] Running FreeGS...")
-        ref = run_freegs_case(case)
+        ref = run_freegs_case(case, allow_runtime_fallback=allow_runtime_fallback)
         mode = "freegs"
         comparison_backend = "fusion_kernel_nonlinear"
         reference_backend = str(ref.get("reference_backend", "freegs"))
@@ -948,6 +968,7 @@ def run_benchmark(
         )
 
     use_freegs = bool(require_freegs_backend or (HAS_FREEGS and not force_solovev))
+    allow_runtime_fallback = not require_freegs_backend
     mode_label = "freegs" if use_freegs else "solovev_manufactured_source"
 
     if use_freegs:
@@ -960,7 +981,11 @@ def run_benchmark(
 
     for case in CASES:
         try:
-            result = compare_case(case, use_freegs=use_freegs)
+            result = compare_case(
+                case,
+                use_freegs=use_freegs,
+                allow_runtime_fallback=allow_runtime_fallback,
+            )
         except Exception as exc:
             result = {
                 "name": case.name,

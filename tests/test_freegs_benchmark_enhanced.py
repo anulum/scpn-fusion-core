@@ -83,7 +83,7 @@ class TestFreeGSPassContract:
                 "residual": 0.0,
             }
 
-        def _freegs_stub(_case):  # type: ignore[no-untyped-def]
+        def _freegs_stub(_case, **_kwargs):  # type: ignore[no-untyped-def]
             return {
                 "psi": psi.copy(),
                 "R": R.copy(),
@@ -111,7 +111,13 @@ class TestFreeGSPassContract:
     def test_freegs_report_includes_mode_specific_thresholds(self, monkeypatch):
         monkeypatch.setattr("benchmark_vs_freegs.HAS_FREEGS", True)
 
-        def _compare_case_stub(case, *, use_freegs=False):  # type: ignore[no-untyped-def]
+        def _compare_case_stub(  # type: ignore[no-untyped-def]
+            case,
+            *,
+            use_freegs=False,
+            allow_runtime_fallback=True,
+        ):
+            assert isinstance(allow_runtime_fallback, bool)
             return {
                 "name": case.name,
                 "mode": "freegs" if use_freegs else "solovev_manufactured_source",
