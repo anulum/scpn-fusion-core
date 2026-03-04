@@ -225,8 +225,9 @@ def solve_free_boundary(
         # Optional: optimise coil currents to match target shape
         if optimize_shape and coils.target_flux_points is not None:
             target_psi = resolve_shape_target_flux(kernel, coils)
-            new_currents = optimize_coil_currents(
-                kernel, coils, target_psi, tikhonov_alpha=tikhonov_alpha,
+            # Route through the kernel method to preserve monkeypatch/test hooks.
+            new_currents = kernel.optimize_coil_currents(
+                coils, target_psi, tikhonov_alpha=tikhonov_alpha,
             )
             coils.currents = new_currents
             psi_ext = compute_external_flux(kernel, coils)
