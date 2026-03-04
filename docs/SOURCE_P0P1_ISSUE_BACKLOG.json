@@ -1,49 +1,8 @@
 {
-  "generated_at": "2026-03-04T03:00:24.687840+00:00",
+  "generated_at": "2026-03-04T03:07:20.163415+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
-  "issue_count": 8,
+  "issue_count": 7,
   "issues": [
-    {
-      "acceptance_checklist": [
-        "Add or tighten regression tests for this module path and update coverage baselines.",
-        "Update claim/evidence references if behavior or metrics change."
-      ],
-      "closure_metrics": [
-        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
-        "File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).",
-        "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
-      ],
-      "domain": "control",
-      "file_path": "src/scpn_fusion/control/halo_re_physics.py",
-      "github_body": "## Scope\n- File: `src/scpn_fusion/control/halo_re_physics.py`\n- Priority: `P0` (score `102`)\n- Domain: `control`\n- Owner hint: `Control WG`\n- Markers: `MONOLITH`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Split module into focused subcomponents and lock interface contracts.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).\n- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.",
-      "github_labels": [
-        "hardening",
-        "underdeveloped",
-        "p0",
-        "control"
-      ],
-      "github_title": "[P0] Harden src/scpn_fusion/control/halo_re_physics.py",
-      "issue_slug": "p0-control-halo_re_physics",
-      "labels": [
-        "hardening",
-        "underdeveloped",
-        "p0",
-        "control"
-      ],
-      "markers": [
-        "MONOLITH"
-      ],
-      "owner_hint": "Control WG",
-      "priority": "P0",
-      "proposed_actions": [
-        "Split module into focused subcomponents and lock interface contracts."
-      ],
-      "score": 102,
-      "title": "[P0] Harden src/scpn_fusion/control/halo_re_physics.py",
-      "trigger_lines": [
-        1
-      ]
-    },
     {
       "acceptance_checklist": [
         "Add or tighten regression tests for this module path and update coverage baselines.",
