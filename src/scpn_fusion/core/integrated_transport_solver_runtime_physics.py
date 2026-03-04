@@ -125,8 +125,13 @@ class TransportSolverRuntimePhysicsMixin:
     @staticmethod
     def _bosch_hale_sigmav(T_keV: np.ndarray) -> np.ndarray:
         """D-T <sigma*v> [m^3/s] using NRL Plasma Formulary fit."""
-        T = np.maximum(T_keV, 0.2)
-        return 3.68e-18 / (T ** (2.0 / 3.0)) * np.exp(-19.94 / (T ** (1.0 / 3.0)))
+        T_raw = np.asarray(T_keV, dtype=np.float64)
+        # Harden against NaN/Inf contamination from upstream thermal solves.
+        T = np.nan_to_num(T_raw, nan=0.2, posinf=200.0, neginf=0.2)
+        T = np.clip(T, 0.2, 200.0)
+        sigmav = 3.68e-18 / (T ** (2.0 / 3.0)) * np.exp(-19.94 / (T ** (1.0 / 3.0)))
+        sigmav = np.nan_to_num(sigmav, nan=0.0, posinf=0.0, neginf=0.0)
+        return np.maximum(sigmav, 0.0)
 
     @staticmethod
     def _tungsten_radiation_rate(Te_keV: np.ndarray) -> np.ndarray:
@@ -150,9 +155,17 @@ class TransportSolverRuntimePhysicsMixin:
     @staticmethod
     def _bremsstrahlung_power_density(ne_1e19: np.ndarray, Te_keV: np.ndarray, Z_eff: float) -> np.ndarray:
         """Bremsstrahlung power density [W/m^3]."""
-        ne_m3 = ne_1e19 * 1e19
-        Te = np.maximum(Te_keV, 0.01)
-        return 5.35e-37 * Z_eff * ne_m3 ** 2 * np.sqrt(Te)
+        ne_raw = np.asarray(ne_1e19, dtype=np.float64)
+        te_raw = np.asarray(Te_keV, dtype=np.float64)
+        ne_safe = np.nan_to_num(ne_raw, nan=0.0, posinf=1e6, neginf=0.0)
+        ne_safe = np.clip(ne_safe, 0.0, 1e6)
+        te_safe = np.nan_to_num(te_raw, nan=0.01, posinf=1e3, neginf=0.01)
+        te_safe = np.clip(te_safe, 0.01, 1e3)
+        z_eff = float(np.nan_to_num(Z_eff, nan=1.0, posinf=100.0, neginf=1.0))
+        z_eff = float(np.clip(z_eff, 1.0e-6, 100.0))
+        ne_m3 = ne_safe * 1e19
+        p_brem = 5.35e-37 * z_eff * ne_m3 ** 2 * np.sqrt(te_safe)
+        return np.nan_to_num(p_brem, nan=0.0, posinf=np.finfo(np.float64).max, neginf=0.0)
 
     def _evolve_species(self, dt: float) -> tuple[np.ndarray, np.ndarray]:
         """Evolve D/T/He-ash species densities by one time-step."""
