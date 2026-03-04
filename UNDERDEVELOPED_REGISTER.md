@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T03:07:17.601493+00:00`
+- Generated at: `2026-03-04T03:16:20.177329+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 199 |
-| P0 + P1 entries | 11 |
-| Source-domain entries | 36 |
-| Source-domain P0 + P1 entries | 11 |
+| Total flagged entries | 198 |
+| P0 + P1 entries | 10 |
+| Source-domain entries | 35 |
+| Source-domain P0 + P1 entries | 10 |
 | Docs-claims entries | 142 |
 | Domains affected | 5 |
 
@@ -24,7 +24,7 @@
 | `EXPERIMENTAL` | 21 |
 | `SIMPLIFIED` | 18 |
 | `DEPRECATED` | 10 |
-| `MONOLITH` | 6 |
+| `MONOLITH` | 5 |
 | `NOT_VALIDATED` | 4 |
 | `FALLBACK_DENSITY` | 1 |
 
@@ -35,10 +35,10 @@
 | `docs_claims` | 142 |
 | `validation` | 29 |
 | `other` | 21 |
-| `core_physics` | 6 |
+| `core_physics` | 5 |
 | `control` | 1 |
 
-## Source-Centric Priority Backlog (Top 11)
+## Source-Centric Priority Backlog (Top 10)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
@@ -49,7 +49,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel_newton_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=632 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=595 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=509 exceeds monolith threshold (500+). |
-| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=517 exceeds monolith threshold (500+). |
 | P0 | 96 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:391` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | implements a 10 kHz PID control loop with simplified linear plasma |
@@ -65,7 +64,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel_newton_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=632 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=595 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=509 exceeds monolith threshold (500+). |
-| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=517 exceeds monolith threshold (500+). |
 | P0 | 96 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:391` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | implements a 10 kHz PID control loop with simplified linear plasma |
@@ -140,8 +138,9 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:26` | Docs WG | Replace default path or remove lane before next major release. | \| `DEPRECATED` \| 17 \| |
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:51` | Docs WG | Replace default path or remove lane before next major release. | - The critical residual gaps are targeted: physics fidelity upgrades, deprecated FNO lane retirement, and validation/claim rigor. |
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Replace default path or remove lane before next major release. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
+| P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:16` | Docs WG | Replace default path or remove lane before next major release. | - Lock default turbulence path to non-deprecated lanes only. |
 
-## Full Register (Top 199)
+## Full Register (Top 198)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -150,7 +149,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel_newton_solver.py:1` | module LOC=632 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | module LOC=595 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | module LOC=509 exceeds monolith threshold (500+). |
-| P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | module LOC=517 exceeds monolith threshold (500+). |
 | P0 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P1 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | # Simplified: spectral conv in truncated mode space |
 | P1 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:391` | implements a 10 kHz PID control loop with simplified linear plasma |

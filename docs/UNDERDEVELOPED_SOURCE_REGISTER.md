@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T03:07:18.977186+00:00`
+- Generated at: `2026-03-04T03:16:21.576380+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: source-only (`src/scpn_fusion/**`) markers
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 9 |
-| P0 + P1 entries | 7 |
-| Source-domain entries | 7 |
-| Source-domain P0 + P1 entries | 7 |
+| Total flagged entries | 8 |
+| P0 + P1 entries | 6 |
+| Source-domain entries | 6 |
+| Source-domain P0 + P1 entries | 6 |
 | Docs-claims entries | 0 |
 | Domains affected | 3 |
 
@@ -19,7 +19,7 @@
 
 | Key | Count |
 |---|---:|
-| `MONOLITH` | 6 |
+| `MONOLITH` | 5 |
 | `FALLBACK` | 2 |
 | `FALLBACK_DENSITY` | 1 |
 
@@ -27,11 +27,11 @@
 
 | Key | Count |
 |---|---:|
-| `core_physics` | 6 |
+| `core_physics` | 5 |
 | `other` | 2 |
 | `control` | 1 |
 
-## Top Priority Backlog (Top 9)
+## Top Priority Backlog (Top 8)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
@@ -40,12 +40,11 @@
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel_newton_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=632 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=595 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=509 exceeds monolith threshold (500+). |
-| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=517 exceeds monolith threshold (500+). |
 | P0 | 96 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P3 | 65 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:32` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | raise ValueError("fallback domain must be non-empty") |
 | P3 | 65 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:114` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | "Fallback budget exceeded: " |
 
-## Full Register (Top 9)
+## Full Register (Top 8)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -54,7 +53,6 @@
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel_newton_solver.py:1` | module LOC=632 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | module LOC=595 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | module LOC=509 exceeds monolith threshold (500+). |
-| P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | module LOC=517 exceeds monolith threshold (500+). |
 | P0 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P3 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:32` | raise ValueError("fallback domain must be non-empty") |
 | P3 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:114` | "Fallback budget exceeded: " |
