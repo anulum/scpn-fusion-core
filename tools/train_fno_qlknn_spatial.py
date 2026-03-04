@@ -113,16 +113,11 @@ def train_fno(
         # Truncate to modes
         h_low = h_fft[:M, :M, :]  # (M, M, width)
 
-        # Complex spectral multiplication per channel
+        # Complex spectral multiplication over all lifted channels.
         w_complex = params["w1_real"] + 1j * params["w1_imag"]  # (width, width, M, M)
-        # Einsum: modes x width -> width
-        out_fft = jnp.zeros_like(h_fft)
-        # Simplified: spectral conv in truncated mode space
-        for c_out in range(min(width, 8)):  # limit channels for speed
-            for c_in in range(min(width, 8)):
-                out_fft = out_fft.at[:M, :M, c_out].add(
-                    h_low[:, :, c_in] * w_complex[c_in, c_out, :M, :M]
-                )
+        w_low = w_complex[:, :, :M, :M]
+        out_low = jnp.einsum("xyi,ioxy->xyo", h_low, w_low, optimize=True)
+        out_fft = jnp.zeros_like(h_fft).at[:M, :M, :].set(out_low)
 
         h_spec = jnp.fft.irfft2(out_fft, s=(grid_size, grid_size), axes=(0, 1))
 

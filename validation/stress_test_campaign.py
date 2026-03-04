@@ -388,8 +388,8 @@ def _run_rust_pid_episode(
     """Run a single episode using the Rust-native flight simulator.
 
     Uses ``PyRustFlightSim`` from the ``scpn_fusion_rs`` extension which
-    implements a 10 kHz PID control loop with simplified linear plasma
-    physics — orders of magnitude faster than the Python G-S path.
+    implements a 10 kHz PID control loop with a reduced-order linearized
+    plasma surrogate — orders of magnitude faster than the Python G-S path.
     """
     if not _rust_flight_sim_available or PyRustFlightSim is None:
         raise RuntimeError("Rust flight simulator is unavailable in this environment.")

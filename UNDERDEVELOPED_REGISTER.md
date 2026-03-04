@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T13:10:49.376413+00:00`
+- Generated at: `2026-03-04T13:34:59.587712+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 192 |
-| P0 + P1 entries | 4 |
-| Source-domain entries | 29 |
-| Source-domain P0 + P1 entries | 4 |
+| Total flagged entries | 188 |
+| P0 + P1 entries | 0 |
+| Source-domain entries | 25 |
+| Source-domain P0 + P1 entries | 0 |
 | Docs-claims entries | 142 |
 | Domains affected | 3 |
 
@@ -22,7 +22,7 @@
 | `FALLBACK` | 116 |
 | `PLANNED` | 23 |
 | `EXPERIMENTAL` | 21 |
-| `SIMPLIFIED` | 18 |
+| `SIMPLIFIED` | 14 |
 | `DEPRECATED` | 10 |
 | `NOT_VALIDATED` | 4 |
 
@@ -31,28 +31,20 @@
 | Key | Count |
 |---|---:|
 | `docs_claims` | 142 |
-| `validation` | 29 |
+| `validation` | 25 |
 | `other` | 21 |
 
-## Source-Centric Priority Backlog (Top 4)
+## Source-Centric Priority Backlog (Top 0)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P1 | 82 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
-| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:391` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | implements a 10 kHz PID control loop with simplified linear plasma |
-| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Step Physics (Single step of simulate logic simplified) |
-| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
 
 ## Top Priority Backlog (Top 80)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P1 | 82 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
-| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:391` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | implements a 10 kHz PID control loop with simplified linear plasma |
-| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Step Physics (Single step of simulate logic simplified) |
-| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
 | P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:383` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
 | P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:384` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
 | P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:503` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
@@ -129,15 +121,15 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:23` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `EXPERIMENTAL` \| 55 \| |
 | P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:73` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - `EXPERIMENTAL`: 15 mentions |
 | P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:102` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only |
+| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:343` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ## 6. Experimental Validation Portfolio |
+| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:478` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - **HSX** (University of Wisconsin): 4 field periods, QHS configuration, US-based experimental access |
+| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:546` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Q4 \| DIII-D and JET GEQDSK validation (5+5 shots) \| Extended validation database \| Axis error < 10 mm on experimental shots \| |
+| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:554` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Experimental data access (DIII-D, JET): $50K |
 
-## Full Register (Top 192)
+## Full Register (Top 188)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P1 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | # Simplified: spectral conv in truncated mode space |
-| P1 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:391` | implements a 10 kHz PID control loop with simplified linear plasma |
-| P1 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | # Step Physics (Single step of simulate logic simplified) |
-| P1 | `validation` | `SIMPLIFIED` | `validation/validate_iter.py:59` | # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" |
 | P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:383` | "Experimental-only pytest suite", |
 | P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:384` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
 | P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:503` | "'release' excludes experimental-only lanes, " |

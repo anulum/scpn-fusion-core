@@ -59,18 +59,22 @@ class TestFullPulseScenario(unittest.TestCase):
             # Update Model State
             burn_sim.I_p = max(Ip_tgt, 0.1)
             
-            # Step Physics (Single step of simulate logic simplified)
-            step_res = burn_sim.simulate(
-                P_aux_mw=P_aux, 
-                T_initial_keV=T_core, 
-                duration_s=dt, 
-                dt_s=dt,
-                warn_on_temperature_cap=False
-            )
-            
-            # Extract new state
-            T_core = step_res['T_final_keV']
-            Q = step_res['Q_final']
+            # Advance physics with internal sub-steps for better pulse fidelity.
+            n_substeps = max(1, int(round(dt / 0.1)))
+            sub_dt = dt / n_substeps
+            step_res = None
+            for _ in range(n_substeps):
+                step_res = burn_sim.simulate(
+                    P_aux_mw=P_aux,
+                    T_initial_keV=T_core,
+                    duration_s=sub_dt,
+                    dt_s=sub_dt,
+                    warn_on_temperature_cap=False,
+                )
+                T_core = step_res["T_final_keV"]
+            if step_res is None:
+                raise RuntimeError("Pulse simulation produced no sub-step result.")
+            Q = step_res["Q_final"]
             history_Q.append(Q)
             
             status = "OK"

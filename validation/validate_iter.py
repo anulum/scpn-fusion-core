@@ -55,14 +55,17 @@ def validate_iter(config_path: Path = DEFAULT_CONFIG_PATH) -> None:
     else:
         print(f"[FAIL] Geometry mismatch (Got {R_axis:.2f}, Expected 6.2)")
         
-    # Power check (Physics)
-    # Our model is simplified (L-mode profiles mostly), so if we get > 100MW it's a "physics pass" 
-    # (showing we capture the scale), even if we don't hit 500MW without H-mode profiles.
-    if 100 < P_fus < 800:
-        print("[PASS] Fusion Power order-of-magnitude correct")
+    # Power check (reduced-order contract):
+    # release acceptance requires physically plausible fusion power and Q>2.
+    if 100 < P_fus < 800 and Q > 2.0:
+        print("[PASS] Reduced-order burn contract met (power scale + Q>2)")
         score += 1
+        if 300 < P_fus < 700 and Q > 6.0:
+            print("       Strong alignment with ITER-scale burn corridor")
     else:
-        print(f"[FAIL] Fusion Power unrealistic (Got {P_fus:.1f} MW)")
+        print(
+            f"[FAIL] Burn contract violation (P_fusion={P_fus:.1f} MW, Q={Q:.2f})"
+        )
         
     if score == 2:
         print("\nRESULT: MODEL IS SCIENTIFICALLY SOUND.")
