@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T16:21:33.556265+00:00`
+- Generated at: `2026-03-04T17:16:11.617105+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -45,11 +45,11 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:383` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
-| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:384` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:503` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
-| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:504` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
-| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:676` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
+| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:389` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
+| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:390` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
+| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:509` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
+| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:510` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
+| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:682` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
 | P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | Architecture WG | Replace default path or remove lane before next major release. | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
 | P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:72` | Architecture WG | Replace default path or remove lane before next major release. | - Regression test for deprecated FNO-controller missing-weight fallback path. |
 | P2 | 77 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | Validation WG | Replace default path or remove lane before next major release. | if "DEPRECATED" in issue.markers: |
@@ -130,11 +130,11 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:383` | "Experimental-only pytest suite", |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:384` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:503` | "'release' excludes experimental-only lanes, " |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:504` | "'research' runs experimental-only lanes, " |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:676` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:389` | "Experimental-only pytest suite", |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:390` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:509` | "'release' excludes experimental-only lanes, " |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:510` | "'research' runs experimental-only lanes, " |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:682` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
 | P2 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
 | P2 | `other` | `DEPRECATED` | `CHANGELOG.md:72` | - Regression test for deprecated FNO-controller missing-weight fallback path. |
 | P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | if "DEPRECATED" in issue.markers: |
