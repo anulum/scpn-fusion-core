@@ -181,8 +181,12 @@ class TransportSolverRuntimePhysicsMixin:
         S_fuel = S_fus / 1e19
         S_He = S_fus / 1e19
 
-        tau_E = self.compute_confinement_time(1.0)
+        tau_E = float(self.compute_confinement_time(1.0))
+        if (not np.isfinite(tau_E)) or tau_E <= 0.0:
+            tau_E = 0.5 / max(float(self.tau_He_factor), 1e-6)
         tau_He = max(self.tau_He_factor * tau_E, 0.5)
+        if (not np.isfinite(tau_He)) or tau_He <= 0.0:
+            tau_He = 0.5
         S_He_pump_rate = 1.0 / tau_He
 
         L_D_exp = self._explicit_diffusion_rhs(self.n_D, self.D_species * np.ones(self.nr))

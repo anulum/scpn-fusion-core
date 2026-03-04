@@ -360,6 +360,21 @@ class TestMultiIon:
         ne_check = np.maximum(ne_check, 0.1)
         np.testing.assert_allclose(solver_multi.ne, ne_check, rtol=1e-10)
 
+    def test_multi_ion_evolve_species_sanitizes_nonfinite_tau_e(
+        self, solver_multi: TransportSolver
+    ) -> None:
+        """Species evolution should remain finite if confinement-time estimate is non-finite."""
+        solver_multi.compute_confinement_time = (  # type: ignore[assignment]
+            lambda _p_loss_mw: float("nan")
+        )
+        s_he, p_rad_line = solver_multi._evolve_species(dt=0.01)
+
+        assert np.all(np.isfinite(s_he))
+        assert np.all(np.isfinite(p_rad_line))
+        assert np.all(s_he >= 0.0)
+        assert np.all(p_rad_line >= 0.0)
+        assert np.isfinite(solver_multi._Z_eff)
+
 
 # ── 4. Steady State Run ──────────────────────────────────────────────
 
@@ -684,8 +699,10 @@ class TestThomasSolver:
         d = np.ones(n) * (1.0 / (n - 1)) ** 2
         d[0] = 0.0
         d[-1] = 0.0
-        b[0] = 1.0; c[0] = 0.0
-        a[-1] = 0.0; b[-1] = 1.0
+        b[0] = 1.0
+        c[0] = 0.0
+        a[-1] = 0.0
+        b[-1] = 1.0
         x = TransportSolver._thomas_solve(a, b, c, d)
         assert x.shape == (n,)
         assert np.all(np.isfinite(x))
