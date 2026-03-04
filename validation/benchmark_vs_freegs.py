@@ -1010,6 +1010,9 @@ def run_benchmark(
         if np.isfinite(r["psi_nrmse"])
     ]
     overall_psi_nrmse = float(np.mean(psi_nrmses)) if psi_nrmses else float("nan")
+    freegs_runtime_fallback_cases = int(
+        sum(bool(r.get("freegs_fallback", False)) for r in case_results)
+    )
     overall_passes = all(r["passes"] for r in case_results)
     runtime = time.perf_counter() - t0
 
@@ -1031,6 +1034,8 @@ def run_benchmark(
         "freegs_available": bool(HAS_FREEGS),
         "force_solovev": bool(force_solovev),
         "require_freegs_backend": bool(require_freegs_backend),
+        "runtime_fallback_allowed": bool(allow_runtime_fallback),
+        "freegs_runtime_fallback_cases": freegs_runtime_fallback_cases,
         "psi_nrmse_threshold": thresholds["psi_nrmse"],
         "thresholds": thresholds,
         "cases": case_results,
@@ -1057,21 +1062,22 @@ def generate_per_metric_report(report: dict[str, Any]) -> str:
     lines = [
         "## FreeGS / Solov'ev Benchmark — Per-Metric Report",
         "",
-        "| Case | Mode | Psi NRMSE | Psi NRMSE (norm) | q NRMSE | Axis Err [m] | Sep. NRMSE | Invariant Pass | Status |",
-        "|------|------|-----------|------------------|---------|--------------|------------|----------------|--------|",
+        "| Case | Mode | Psi NRMSE | Psi NRMSE (norm) | q NRMSE | Axis Err [m] | Sep. NRMSE | Invariant Pass | Fallback | Status |",
+        "|------|------|-----------|------------------|---------|--------------|------------|----------------|----------|--------|",
     ]
     for c in report.get("cases", []):
         status = "PASS" if c.get("passes", False) else "FAIL"
         sep = c.get("separatrix_nrmse", float("nan"))
         psi_norm = c.get("psi_nrmse_normalized", float("nan"))
         invariant = c.get("invariant_pass_fraction", float("nan"))
+        fallback = "Yes" if c.get("freegs_fallback", False) else "No"
         lines.append(
             f"| {c['name']} | {c.get('mode', '?')} "
             f"| {c.get('psi_nrmse', float('nan')):.4f} "
             f"| {psi_norm:.4f} "
             f"| {c.get('q_profile_nrmse', float('nan')):.4f} "
             f"| {c.get('axis_error_m', float('nan')):.4f} "
-            f"| {sep:.4f} | {invariant:.2%} | {status} |"
+            f"| {sep:.4f} | {invariant:.2%} | {fallback} | {status} |"
         )
     return "\n".join(lines)
 

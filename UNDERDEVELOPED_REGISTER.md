@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T15:55:02.960147+00:00`
+- Generated at: `2026-03-04T16:11:18.610740+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,9 +8,9 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 188 |
+| Total flagged entries | 191 |
 | P0 + P1 entries | 0 |
-| Source-domain entries | 25 |
+| Source-domain entries | 28 |
 | Source-domain P0 + P1 entries | 0 |
 | Docs-claims entries | 142 |
 | Domains affected | 3 |
@@ -19,7 +19,7 @@
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 116 |
+| `FALLBACK` | 119 |
 | `PLANNED` | 23 |
 | `EXPERIMENTAL` | 21 |
 | `SIMPLIFIED` | 14 |
@@ -31,7 +31,7 @@
 | Key | Count |
 |---|---:|
 | `docs_claims` | 142 |
-| `validation` | 25 |
+| `validation` | 28 |
 | `other` | 21 |
 
 ## Source-Centric Priority Backlog (Top 0)
@@ -71,6 +71,9 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:652` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "R_axis": fallback["R_axis"], |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:653` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "Z_axis": fallback["Z_axis"], |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:654` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "q_proxy": fallback["q_proxy"], |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:1065` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "\| Case \| Mode \| Psi NRMSE \| Psi NRMSE (norm) \| q NRMSE \| Axis Err [m] \| Sep. NRMSE \| Invariant Pass \| Fallback \| Status \|", |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:1073` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | fallback = "Yes" if c.get("freegs_fallback", False) else "No" |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:1080` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"\| {sep:.4f} \| {invariant:.2%} \| {fallback} \| {status} \|" |
 | P2 | 70 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:238` | Architecture WG | Gate behind explicit flag and define validation exit criteria. | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
 | P2 | 70 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:200` | Validation WG | Gate behind explicit flag and define validation exit criteria. | items.append("Ensure release lane remains experimental-excluded unless explicitly opted in.") |
 | P2 | 68 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | Docs WG | Add real-data validation campaign and publish error bars. | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |
@@ -122,11 +125,8 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:73` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - `EXPERIMENTAL`: 15 mentions |
 | P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:102` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only |
 | P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:343` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ## 6. Experimental Validation Portfolio |
-| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:478` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - **HSX** (University of Wisconsin): 4 field periods, QHS configuration, US-based experimental access |
-| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:546` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Q4 \| DIII-D and JET GEQDSK validation (5+5 shots) \| Extended validation database \| Axis error < 10 mm on experimental shots \| |
-| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:554` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Experimental data access (DIII-D, JET): $50K |
 
-## Full Register (Top 188)
+## Full Register (Top 191)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -156,6 +156,9 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:652` | "R_axis": fallback["R_axis"], |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:653` | "Z_axis": fallback["Z_axis"], |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:654` | "q_proxy": fallback["q_proxy"], |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:1065` | "\| Case \| Mode \| Psi NRMSE \| Psi NRMSE (norm) \| q NRMSE \| Axis Err [m] \| Sep. NRMSE \| Invariant Pass \| Fallback \| Status \|", |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:1073` | fallback = "Yes" if c.get("freegs_fallback", False) else "No" |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:1080` | f"\| {sep:.4f} \| {invariant:.2%} \| {fallback} \| {status} \|" |
 | P2 | `other` | `EXPERIMENTAL` | `CHANGELOG.md:238` | - Added research-only pytest marker contract (`@pytest.mark.experimental`) |
 | P2 | `validation` | `EXPERIMENTAL` | `tools/generate_source_p0p1_issue_backlog.py:200` | items.append("Ensure release lane remains experimental-excluded unless explicitly opted in.") |
 | P2 | `docs_claims` | `NOT_VALIDATED` | `docs/HONEST_SCOPE.md:37` | \| FNO turbulence \| Synthetic-data trained; **not validated against gyrokinetics** \| Proxy mapping only; archived from release lane in v3.9 \| |
