@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T19:16:09.533016+00:00`
+- Generated at: `2026-03-04T20:02:41.272009+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,9 +8,9 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 191 |
+| Total flagged entries | 194 |
 | P0 + P1 entries | 0 |
-| Source-domain entries | 28 |
+| Source-domain entries | 31 |
 | Source-domain P0 + P1 entries | 0 |
 | Docs-claims entries | 142 |
 | Domains affected | 3 |
@@ -19,7 +19,7 @@
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 119 |
+| `FALLBACK` | 122 |
 | `PLANNED` | 23 |
 | `EXPERIMENTAL` | 21 |
 | `SIMPLIFIED` | 14 |
@@ -31,7 +31,7 @@
 | Key | Count |
 |---|---:|
 | `docs_claims` | 142 |
-| `validation` | 28 |
+| `validation` | 31 |
 | `other` | 21 |
 
 ## Source-Centric Priority Backlog (Top 0)
@@ -62,7 +62,10 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 73 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:83` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | metrics.append("Fallback budget guard remains green for impacted lane (tools/fallback_budget_guard.py).") |
 | P2 | 73 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:198` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | ``get_radial_robust_controller()`` with LQR fallback. |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:727` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | whether LQR fallback was used. |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:745` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "H-infinity strict mode: ARE synthesis failed; fallback disallowed" |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:748` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:1198` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | print(" H-infinity strict mode = ENABLED (fallback disallowed)") |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_sparc_geqdsk_rmse.py:207` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | except Exception as exc: # pragma: no cover - import failure handled via synthetic fallback |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:647` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | fallback = run_solovev_case(case) |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:649` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "psi": fallback["psi"], |
@@ -122,11 +125,8 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/HONEST_SCOPE.md:25` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| Full 3D MHD \| Not planned for real-time loop \| Use NIMROD/M3D-C1 externally \| |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/competitive_analysis.md:77` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| GPU acceleration \| Planned (wgpu) \| Yes (JAX) \| No \| No \| JAX \| No \| |
 | P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:23` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `EXPERIMENTAL` \| 55 \| |
-| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:73` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - `EXPERIMENTAL`: 15 mentions |
-| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:102` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only |
-| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:343` | Docs WG | Gate behind explicit flag and define validation exit criteria. | ## 6. Experimental Validation Portfolio |
 
-## Full Register (Top 191)
+## Full Register (Top 194)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -147,7 +147,10 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:83` | metrics.append("Fallback budget guard remains green for impacted lane (tools/fallback_budget_guard.py).") |
 | P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:198` | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | ``get_radial_robust_controller()`` with LQR fallback. |
-| P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:729` | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:727` | whether LQR fallback was used. |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:745` | "H-infinity strict mode: ARE synthesis failed; fallback disallowed" |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:748` | f" [H-infinity] ARE failed ({exc}); using LQR fallback" |
+| P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:1198` | print(" H-infinity strict mode = ENABLED (fallback disallowed)") |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_sparc_geqdsk_rmse.py:207` | except Exception as exc: # pragma: no cover - import failure handled via synthetic fallback |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:647` | fallback = run_solovev_case(case) |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_vs_freegs.py:649` | "psi": fallback["psi"], |
