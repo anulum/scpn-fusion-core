@@ -8,9 +8,14 @@ from typing import Any
 
 import numpy as np
 
-from scpn_fusion.core.fusion_kernel_numerics import (
-    FloatArray,
-    stable_rms as _stable_rms,
+from scpn_fusion.core.fusion_kernel_numerics import FloatArray
+from scpn_fusion.core.fusion_kernel_solver_runtime import (
+    apply_gs_operator as _apply_gs_operator_runtime,
+    compute_gs_residual as _compute_gs_residual_runtime,
+    compute_gs_residual_rms as _compute_gs_residual_rms_runtime,
+    compute_profile_jacobian as _compute_profile_jacobian_runtime,
+    solve_newton_linear_system as _solve_newton_linear_system_runtime,
+    solve_via_rust_multigrid as _solve_via_rust_multigrid_runtime,
 )
 
 logger = logging.getLogger(__name__)
@@ -20,98 +25,22 @@ class FusionKernelNewtonSolverMixin:
     # ── Newton-Kantorovich equilibrium solver ────────────────────────
 
     def _compute_gs_residual(self, Source: FloatArray) -> FloatArray:
-        """Compute the GS residual r = L*[psi] - Source on interior points.
-
-        The toroidal GS* operator is:
-            L* = d2/dR2 - (1/R) d/dR + d2/dZ2
-        """
-        Psi = self.Psi
-        NZ, NR = Psi.shape
-        dR2 = self.dR ** 2
-        dZ2 = self.dZ ** 2
-
-        residual = np.zeros_like(Psi)
-        R_int = self.RR[1:-1, 1:-1]
-        R_safe = np.maximum(R_int, 1e-10)
-
-        # 5-point toroidal stencil
-        d2R = (Psi[1:-1, 2:] - 2.0 * Psi[1:-1, 1:-1] + Psi[1:-1, 0:-2]) / dR2
-        d1R = (Psi[1:-1, 2:] - Psi[1:-1, 0:-2]) / (2.0 * self.dR)
-        d2Z = (Psi[2:, 1:-1] - 2.0 * Psi[1:-1, 1:-1] + Psi[0:-2, 1:-1]) / dZ2
-
-        Lpsi = d2R - d1R / R_safe + d2Z
-        residual[1:-1, 1:-1] = Lpsi - Source[1:-1, 1:-1]
-        return residual
+        """Compute GS residual using shared runtime helper."""
+        return _compute_gs_residual_runtime(self, Source)
 
     def _compute_gs_residual_rms(self, Source: FloatArray) -> float:
         """Return RMS GS residual over interior points."""
-        residual = self._compute_gs_residual(Source)
-        interior = residual[1:-1, 1:-1]
-        if interior.size == 0:
-            return 0.0
-        return _stable_rms(interior)
+        return _compute_gs_residual_rms_runtime(self, Source)
 
     def _apply_gs_operator(self, v: FloatArray) -> FloatArray:
-        """Apply the discrete GS* operator to array *v*.
-
-        Used as the matvec in the GMRES LinearOperator for Newton.
-        """
-        NZ, NR = v.shape
-        dR2 = self.dR ** 2
-        dZ2 = self.dZ ** 2
-
-        result = np.zeros_like(v)
-        R_int = self.RR[1:-1, 1:-1]
-        R_safe = np.maximum(R_int, 1e-10)
-
-        d2R = (v[1:-1, 2:] - 2.0 * v[1:-1, 1:-1] + v[1:-1, 0:-2]) / dR2
-        d1R = (v[1:-1, 2:] - v[1:-1, 0:-2]) / (2.0 * self.dR)
-        d2Z = (v[2:, 1:-1] - 2.0 * v[1:-1, 1:-1] + v[0:-2, 1:-1]) / dZ2
-
-        result[1:-1, 1:-1] = d2R - d1R / R_safe + d2Z
-        return result
+        """Apply the discrete GS* operator to array *v*."""
+        return _apply_gs_operator_runtime(self, v)
 
     def _compute_profile_jacobian(
         self, Psi_axis: float, Psi_boundary: float, mu0: float
     ) -> FloatArray:
-        """Compute dJ_phi/dpsi as a 2D diagonal scaling field.
-
-        For L-mode linear profiles:
-            p'(psi_norm) = const => J_phi ∝ (1 - psi_norm) * R
-            dJ_phi/dpsi = -c / (Psi_boundary - Psi_axis) for points inside plasma
-
-        Returns a 2D array of the same shape as self.Psi.
-        """
-        denom = Psi_boundary - Psi_axis
-        if abs(denom) < 1e-9:
-            denom = 1e-9
-
-        Psi_norm = (self.Psi - Psi_axis) / denom
-        mask_plasma = (Psi_norm >= 0) & (Psi_norm < 1.0)
-
-        # External profile mode injects J_phi from transport/runtime coupling.
-        # Use a bounded secant-like diagonal approximation instead of the
-        # fixed L-mode linear profile derivative.
-        if bool(getattr(self, "external_profile_mode", False)):
-            dJ_dpsi = np.zeros_like(self.Psi)
-            j_abs = np.abs(np.asarray(self.J_phi, dtype=float))
-            scale = max(abs(float(denom)), 1e-9)
-            dJ_dpsi[mask_plasma] = -j_abs[mask_plasma] / scale
-            return dJ_dpsi
-
-        # For the linear L-mode profile: Source = -mu0 * R * J_phi
-        # J_phi = c * (1 - psi_norm) * R  =>  dJ_phi/dpsi_norm = -c * R
-        # dJ_phi/dpsi = dJ_phi/dpsi_norm * dpsi_norm/dpsi = -c * R / denom
-        # We compute c from the current normalisation
-        I_target = self.cfg["physics"]["plasma_current_target"]
-        # Approximate: I = integral(J_phi) dA ≈ c * sum_plasma((1-psi_norm)*R) * dR*dZ
-        s = float(np.sum(np.where(mask_plasma, (1 - Psi_norm) * self.RR, 0.0))) * self.dR * self.dZ
-        c = I_target / max(abs(s), 1e-9)
-
-        dJ_dpsi = np.zeros_like(self.Psi)
-        dJ_dpsi[mask_plasma] = -c * self.RR[mask_plasma] / denom
-
-        return dJ_dpsi
+        """Compute dJ_phi/dpsi as a 2D diagonal scaling field."""
+        return _compute_profile_jacobian_runtime(self, Psi_axis, Psi_boundary, mu0)
 
     def _newton_solve_dispatch(
         self,
@@ -126,7 +55,7 @@ class FusionKernelNewtonSolverMixin:
 
         Returns the standard result dict.
         """
-        from scipy.sparse.linalg import LinearOperator, gmres
+        from scipy.sparse.linalg import LinearOperator
 
         t0 = time.time()
         Psi_vac_boundary = self._prepare_initial_flux(
@@ -271,100 +200,19 @@ class FusionKernelNewtonSolverMixin:
 
                 # Solve J_k * delta = -r_k.
                 rhs = -r_k[1:-1, 1:-1].ravel()
-
-                def _build_diagonal_preconditioner() -> LinearOperator:
-                    diag_laplacian = -2.0 / (self.dR**2) - 2.0 / (self.dZ**2)
-                    diag_jac = diag_laplacian - diag_term[1:-1, 1:-1]
-                    safe_diag = np.where(
-                        np.abs(diag_jac) > 1e-12,
-                        diag_jac,
-                        np.where(diag_jac >= 0.0, 1e-12, -1e-12),
-                    )
-                    inv_diag = (1.0 / safe_diag).ravel()
-                    return LinearOperator(
-                        shape=(n_interior, n_interior),
-                        matvec=lambda x: inv_diag * x,
-                        dtype=np.float64,
-                    )
-
-                M_op: LinearOperator | None = None
-                if gmres_preconditioner_mode == "diagonal":
-                    M_op = _build_diagonal_preconditioner()
-                elif gmres_preconditioner_mode == "ilu":
-                    try:
-                        from scipy.sparse import diags, eye, kron
-                        from scipy.sparse.linalg import spilu
-
-                        nz_int = NZ - 2
-                        nr_int = NR_grid - 2
-                        main_r = np.full(nr_int, -2.0 / (self.dR**2))
-                        off_r = np.full(max(nr_int - 1, 0), 1.0 / (self.dR**2))
-                        lap_r = diags(
-                            [off_r, main_r, off_r],
-                            offsets=[-1, 0, 1],
-                            shape=(nr_int, nr_int),
-                            format="csc",
-                        )
-                        main_z = np.full(nz_int, -2.0 / (self.dZ**2))
-                        off_z = np.full(max(nz_int - 1, 0), 1.0 / (self.dZ**2))
-                        lap_z = diags(
-                            [off_z, main_z, off_z],
-                            offsets=[-1, 0, 1],
-                            shape=(nz_int, nz_int),
-                            format="csc",
-                        )
-                        laplace_approx = (
-                            kron(eye(nz_int, format="csc"), lap_r, format="csc")
-                            + kron(lap_z, eye(nr_int, format="csc"), format="csc")
-                        )
-                        jac_diag = diags(
-                            -diag_term[1:-1, 1:-1].ravel(),
-                            offsets=0,
-                            format="csc",
-                        )
-                        jacobian_approx = laplace_approx + jac_diag
-                        # Shift to avoid singular preconditioner builds near nullspace.
-                        jacobian_approx = jacobian_approx + diags(
-                            np.full(n_interior, 1e-9), offsets=0, format="csc"
-                        )
-                        ilu = spilu(
-                            jacobian_approx,
-                            drop_tol=max(1e-12, ilu_drop_tol),
-                            fill_factor=max(1.0, ilu_fill_factor),
-                        )
-                        M_op = LinearOperator(
-                            shape=(n_interior, n_interior),
-                            matvec=lambda x: ilu.solve(x),
-                            dtype=np.float64,
-                        )
-                    except Exception as exc:
-                        logger.warning(
-                            "ILU preconditioner unavailable at Newton iter %d (%s); "
-                            "falling back to diagonal.",
-                            k,
-                            exc,
-                        )
-                        M_op = _build_diagonal_preconditioner()
-
-                if M_op is not None:
-                    delta_flat, info = gmres(
-                        J_op,
-                        rhs,
-                        maxiter=100,
-                        restart=50,
-                        atol=1e-8,
-                        rtol=1e-6,
-                        M=M_op,
-                    )
-                else:
-                    delta_flat, info = gmres(
-                        J_op,
-                        rhs,
-                        maxiter=100,
-                        restart=50,
-                        atol=1e-8,
-                        rtol=1e-6,
-                    )
+                delta_flat, info = _solve_newton_linear_system_runtime(
+                    kernel=self,
+                    J_op=J_op,
+                    rhs=rhs,
+                    diag_term=diag_term,
+                    n_interior=n_interior,
+                    nz=NZ,
+                    nr=NR_grid,
+                    gmres_preconditioner_mode=gmres_preconditioner_mode,
+                    ilu_drop_tol=ilu_drop_tol,
+                    ilu_fill_factor=ilu_fill_factor,
+                    iter_idx=k,
+                )
 
                 if info != 0:
                     logger.warning("GMRES did not converge at Newton iter %d (info=%d)", k, info)
@@ -465,66 +313,12 @@ class FusionKernelNewtonSolverMixin:
         preserve_initial_state: bool = False,
         boundary_flux: FloatArray | None = None,
     ) -> dict[str, Any]:
-        """Delegate the full equilibrium solve to the Rust multigrid backend.
-
-        Falls back to Python SOR if the Rust extension is not installed.
-        """
-        from scpn_fusion.core._rust_compat import _rust_available, RustAcceleratedKernel
-
-        if preserve_initial_state or boundary_flux is not None:
-            logger.warning(
-                "Boundary-constrained solve requested with rust_multigrid; "
-                "falling back to Python SOR."
-            )
-            prior_method = self.cfg["solver"].get("solver_method", "rust_multigrid")
-            self.cfg["solver"]["solver_method"] = "sor"
-            try:
-                return self.solve_equilibrium(
-                    preserve_initial_state=preserve_initial_state,
-                    boundary_flux=boundary_flux,
-                )
-            finally:
-                self.cfg["solver"]["solver_method"] = prior_method
-
-        if not _rust_available():
-            logger.warning("Rust unavailable; falling back to Python SOR.")
-            prior_method = self.cfg["solver"].get("solver_method", "rust_multigrid")
-            self.cfg["solver"]["solver_method"] = "sor"
-            try:
-                return self.solve_equilibrium()
-            finally:
-                self.cfg["solver"]["solver_method"] = prior_method
-
-        t0 = time.time()
-        rk = RustAcceleratedKernel(self._config_path)
-        rk.set_solver_method("multigrid")
-        rust_result = rk.solve_equilibrium()
-
-        # Sync state back
-        self.Psi = rk.Psi
-        self.J_phi = rk.J_phi
-        self.B_R = rk.B_R
-        self.B_Z = rk.B_Z
-
-        mu0: float = self.cfg["physics"]["vacuum_permeability"]
-        source = -mu0 * self.RR * self.J_phi
-        gs_residual = self._compute_gs_residual_rms(source)
-        elapsed = time.time() - t0
-        solver_tol = float(self.cfg.get("solver", {}).get("convergence_threshold", 1e-4))
-        practical_tol = max(solver_tol, 2e-3)
-        converged = bool(rust_result.converged or rust_result.residual <= practical_tol)
-        return {
-            "psi": self.Psi,
-            "converged": converged,
-            "iterations": rust_result.iterations,
-            "residual": rust_result.residual,
-            "residual_history": [],
-            "gs_residual": gs_residual,
-            "gs_residual_best": gs_residual,
-            "gs_residual_history": [],
-            "wall_time_s": elapsed,
-            "solver_method": "rust_multigrid",
-        }
+        """Delegate the full equilibrium solve to shared rust dispatch helper."""
+        return _solve_via_rust_multigrid_runtime(
+            self,
+            preserve_initial_state=preserve_initial_state,
+            boundary_flux=boundary_flux,
+        )
 
     # ── main solver ───────────────────────────────────────────────────
 
