@@ -47,6 +47,7 @@ Outputs
 Usage::
 
     python validation/benchmark_disturbance_rejection.py
+    python validation/benchmark_disturbance_rejection.py --strict-hinf
     python validation/benchmark_disturbance_rejection.py --output-dir results/
 """
 
@@ -57,10 +58,10 @@ import json
 import sys
 import time
 import warnings
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Dict, List, Optional, Protocol, Tuple
 
 import numpy as np
 
@@ -78,7 +79,6 @@ _snn_available = False
 
 try:
     from scpn_fusion.control.h_infinity_controller import (
-        HInfinityController,
         get_radial_robust_controller,
     )
     _hinf_available = True
@@ -716,46 +716,101 @@ def run_scenario(
 # Controller factory
 # ===================================================================
 
-def _build_hinf_controller(gamma_growth: float = 100.0) -> Any:
-    """Build the H-infinity controller with LQR fallback."""
+def _build_hinf_controller(
+    gamma_growth: float = 100.0,
+    *,
+    strict_hinf: bool = False,
+) -> Tuple[Any, Dict[str, Any]]:
+    """Build the H-infinity controller.
+
+    Returns ``(controller, build_metadata)`` where ``build_metadata`` records
+    whether LQR fallback was used.
+    """
     if not _hinf_available:
         raise RuntimeError("H-infinity module not importable")
     try:
         ctrl = get_radial_robust_controller(gamma_growth=gamma_growth)
         print("    [H-infinity] Riccati synthesis: OK")
-        return ctrl
+        return (
+            ctrl,
+            {
+                "backend": "h_infinity",
+                "fallback_used": False,
+                "fallback_reason": None,
+            },
+        )
     except (ValueError, np.linalg.LinAlgError) as exc:
+        if strict_hinf:
+            raise RuntimeError(
+                "H-infinity strict mode: ARE synthesis failed; fallback disallowed"
+            ) from exc
         print(
             f"    [H-infinity] ARE failed ({exc}); using LQR fallback"
         )
         ctrl = LQRRobustController(gamma_growth=gamma_growth)
-        assert ctrl.is_stable, "LQR closed-loop must be stable"
-        return ctrl
+        if not ctrl.is_stable:
+            raise RuntimeError("LQR closed-loop must be stable")
+        return (
+            ctrl,
+            {
+                "backend": "lqr_fallback",
+                "fallback_used": True,
+                "fallback_reason": f"{type(exc).__name__}: {exc}",
+            },
+        )
 
 
-def build_controllers() -> Dict[str, Any]:
+def build_controllers(
+    *,
+    strict_hinf: bool = False,
+) -> Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]:
     """Instantiate all available benchmark controllers.
 
     Controllers that cannot be imported are skipped with a warning.
     """
     controllers: Dict[str, Any] = {}
+    controller_build: Dict[str, Dict[str, Any]] = {}
 
     # PID -- always available (pure Python/NumPy)
     controllers["PID"] = PIDController(
         kp=1.5e4, ki=3.0e3, kd=1.5e2,
     )
+    controller_build["PID"] = {
+        "backend": "pid_numpy",
+        "fallback_used": False,
+        "fallback_reason": None,
+    }
     print("    [PID] Initialised: Kp=1.5e4, Ki=3.0e3, Kd=1.5e2")
 
     # H-infinity
     if _hinf_available:
         try:
-            controllers["H-infinity"] = _build_hinf_controller(
+            controllers["H-infinity"], controller_build["H-infinity"] = _build_hinf_controller(
                 gamma_growth=100.0,
+                strict_hinf=strict_hinf,
             )
         except Exception as exc:
+            if strict_hinf:
+                raise RuntimeError(
+                    "H-infinity strict mode failed during controller build"
+                ) from exc
             warnings.warn(f"H-infinity controller skipped: {exc}")
+            controller_build["H-infinity"] = {
+                "backend": "skipped",
+                "fallback_used": None,
+                "fallback_reason": str(exc),
+            }
+    elif strict_hinf:
+        raise RuntimeError(
+            "H-infinity strict mode requires scpn_fusion.control.h_infinity_controller"
+        )
     else:
         print("    [H-infinity] SKIPPED (import failed)")
+        controller_build["H-infinity"] = {
+            "backend": "unavailable",
+            "fallback_used": None,
+            "fallback_reason": "module_import_failed",
+        }
 
     # MPC -- always available (pure Python/NumPy)
     controllers["MPC"] = MPCController(
@@ -766,6 +821,11 @@ def build_controllers() -> Dict[str, Any]:
         iterations=15,
         learning_rate=0.1,
     )
+    controller_build["MPC"] = {
+        "backend": "mpc_numpy",
+        "fallback_used": False,
+        "fallback_reason": None,
+    }
     print("    [MPC] Initialised: horizon=10, Q=1e4, R=1e-2")
 
     # SNN
@@ -781,12 +841,27 @@ def build_controllers() -> Dict[str, Any]:
                 f"    [SNN] Initialised: 50 neurons, "
                 f"backend={controllers['SNN']._pool.backend}"
             )
+            controller_build["SNN"] = {
+                "backend": str(controllers["SNN"]._pool.backend),
+                "fallback_used": False,
+                "fallback_reason": None,
+            }
         except Exception as exc:
             warnings.warn(f"SNN controller skipped: {exc}")
+            controller_build["SNN"] = {
+                "backend": "skipped",
+                "fallback_used": None,
+                "fallback_reason": str(exc),
+            }
     else:
         print("    [SNN] SKIPPED (import failed)")
+        controller_build["SNN"] = {
+            "backend": "unavailable",
+            "fallback_used": None,
+            "fallback_reason": "module_import_failed",
+        }
 
-    return controllers
+    return controllers, controller_build
 
 
 # ===================================================================
@@ -927,7 +1002,12 @@ def generate_markdown_report(all_metrics: List[ScenarioMetrics]) -> str:
     return "\n".join(lines)
 
 
-def generate_json_results(all_metrics: List[ScenarioMetrics]) -> Dict[str, Any]:
+def generate_json_results(
+    all_metrics: List[ScenarioMetrics],
+    *,
+    controller_build: Optional[Dict[str, Dict[str, Any]]] = None,
+    strict_hinf: bool = False,
+) -> Dict[str, Any]:
     """Build a JSON-serialisable results dictionary."""
     fairness_entries: List[Dict[str, Any]] = []
     for metric in all_metrics:
@@ -963,6 +1043,8 @@ def generate_json_results(all_metrics: List[ScenarioMetrics]) -> Dict[str, Any]:
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "simulation_dt_s": DT,
         "fairness_schema_version": "1.0",
+        "strict_hinf": bool(strict_hinf),
+        "controller_build": dict(controller_build or {}),
         "scenarios": {
             name: {
                 "duration_s": cfg["duration_s"],
@@ -1096,7 +1178,11 @@ def save_overlay_plots(
 # Main
 # ===================================================================
 
-def main(output_dir: Optional[str] = None) -> None:
+def main(
+    output_dir: Optional[str] = None,
+    *,
+    strict_hinf: bool = False,
+) -> None:
     """Run all (controller x scenario) pairs and output results."""
     if output_dir is None:
         out_path = REPO_ROOT / "artifacts"
@@ -1108,12 +1194,14 @@ def main(output_dir: Optional[str] = None) -> None:
     print("  DISTURBANCE REJECTION BENCHMARK")
     print("  SNN vs MPC vs H-infinity vs PID")
     print(f"  Simulation dt = {DT:.0e} s")
+    if strict_hinf:
+        print("  H-infinity strict mode = ENABLED (fallback disallowed)")
     print("=" * 72)
     print()
 
     # Build controllers
     print("Initialising controllers...")
-    controllers = build_controllers()
+    controllers, controller_build = build_controllers(strict_hinf=strict_hinf)
     print(f"  Active controllers: {', '.join(controllers.keys())}")
     print()
 
@@ -1155,7 +1243,11 @@ def main(output_dir: Optional[str] = None) -> None:
 
     # JSON
     json_path = out_path / "benchmark_disturbance_rejection.json"
-    json_data = generate_json_results(all_metrics)
+    json_data = generate_json_results(
+        all_metrics,
+        controller_build=controller_build,
+        strict_hinf=strict_hinf,
+    )
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(json_data, f, indent=2, default=str)
     print(f"JSON results written to: {json_path}")
@@ -1230,5 +1322,13 @@ if __name__ == "__main__":
             "Defaults to <repo>/artifacts/"
         ),
     )
+    parser.add_argument(
+        "--strict-hinf",
+        action="store_true",
+        help=(
+            "Fail benchmark initialization when H-infinity synthesis is "
+            "infeasible or unavailable instead of falling back to LQR."
+        ),
+    )
     args = parser.parse_args()
-    main(output_dir=args.output_dir)
+    main(output_dir=args.output_dir, strict_hinf=args.strict_hinf)
