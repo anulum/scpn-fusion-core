@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T01:15:14.711150+00:00`
+- Generated at: `2026-03-04T02:09:07.785644+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 204 |
-| P0 + P1 entries | 16 |
-| Source-domain entries | 41 |
-| Source-domain P0 + P1 entries | 16 |
+| Total flagged entries | 203 |
+| P0 + P1 entries | 15 |
+| Source-domain entries | 40 |
+| Source-domain P0 + P1 entries | 15 |
 | Docs-claims entries | 142 |
 | Domains affected | 6 |
 
@@ -23,8 +23,8 @@
 | `PLANNED` | 23 |
 | `EXPERIMENTAL` | 21 |
 | `SIMPLIFIED` | 18 |
-| `MONOLITH` | 11 |
 | `DEPRECATED` | 10 |
+| `MONOLITH` | 10 |
 | `NOT_VALIDATED` | 4 |
 | `FALLBACK_DENSITY` | 1 |
 
@@ -37,9 +37,9 @@
 | `other` | 21 |
 | `core_physics` | 6 |
 | `control` | 4 |
-| `compiler_runtime` | 2 |
+| `compiler_runtime` | 1 |
 
-## Source-Centric Priority Backlog (Top 16)
+## Source-Centric Priority Backlog (Top 15)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
@@ -54,7 +54,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=595 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=509 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=517 exceeds monolith threshold (500+). |
-| P0 | 100 | `compiler_runtime` | `MONOLITH` | `src/scpn_fusion/scpn/artifact.py:1` | Runtime WG | Split module into focused subcomponents and lock interface contracts. | module LOC=583 exceeds monolith threshold (500+). |
 | P0 | 100 | `compiler_runtime` | `MONOLITH` | `src/scpn_fusion/scpn/controller.py:1` | Runtime WG | Split module into focused subcomponents and lock interface contracts. | module LOC=599 exceeds monolith threshold (500+). |
 | P0 | 96 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
@@ -75,7 +74,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=595 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=509 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=517 exceeds monolith threshold (500+). |
-| P0 | 100 | `compiler_runtime` | `MONOLITH` | `src/scpn_fusion/scpn/artifact.py:1` | Runtime WG | Split module into focused subcomponents and lock interface contracts. | module LOC=583 exceeds monolith threshold (500+). |
 | P0 | 100 | `compiler_runtime` | `MONOLITH` | `src/scpn_fusion/scpn/controller.py:1` | Runtime WG | Split module into focused subcomponents and lock interface contracts. | module LOC=599 exceeds monolith threshold (500+). |
 | P0 | 96 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
@@ -146,8 +144,9 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:243` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| Multigrid V-cycle \| wgpu + host orchestration \| 10–30× \| P1 \| Planned \| |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:245` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| MLP batch inference \| wgpu or cuBLAS \| 2–5× (small H) \| P3 \| Planned \| |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:246` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| FNO turbulence (FFT) \| cuFFT / wgpu FFT \| 50–100× (64×64) \| P3 \| Planned \| |
+| P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:282` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| SCPN (planned) \| Quadtree, gradient-based \| 2D GS + 3D extension \| |
 
-## Full Register (Top 204)
+## Full Register (Top 203)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -160,7 +159,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | module LOC=595 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | module LOC=509 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | module LOC=517 exceeds monolith threshold (500+). |
-| P0 | `compiler_runtime` | `MONOLITH` | `src/scpn_fusion/scpn/artifact.py:1` | module LOC=583 exceeds monolith threshold (500+). |
 | P0 | `compiler_runtime` | `MONOLITH` | `src/scpn_fusion/scpn/controller.py:1` | module LOC=599 exceeds monolith threshold (500+). |
 | P0 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P1 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | # Simplified: spectral conv in truncated mode space |
