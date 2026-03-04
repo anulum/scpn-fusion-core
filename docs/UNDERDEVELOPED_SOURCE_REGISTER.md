@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T02:54:20.638786+00:00`
+- Generated at: `2026-03-04T03:00:22.896169+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: source-only (`src/scpn_fusion/**`) markers
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 11 |
-| P0 + P1 entries | 9 |
-| Source-domain entries | 9 |
-| Source-domain P0 + P1 entries | 9 |
+| Total flagged entries | 10 |
+| P0 + P1 entries | 8 |
+| Source-domain entries | 8 |
+| Source-domain P0 + P1 entries | 8 |
 | Docs-claims entries | 0 |
 | Domains affected | 3 |
 
@@ -19,7 +19,7 @@
 
 | Key | Count |
 |---|---:|
-| `MONOLITH` | 8 |
+| `MONOLITH` | 7 |
 | `FALLBACK` | 2 |
 | `FALLBACK_DENSITY` | 1 |
 
@@ -28,14 +28,13 @@
 | Key | Count |
 |---|---:|
 | `core_physics` | 6 |
-| `control` | 3 |
+| `control` | 2 |
 | `other` | 2 |
 
-## Top Priority Backlog (Top 11)
+## Top Priority Backlog (Top 10)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 102 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_contracts.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=649 exceeds monolith threshold (500+). |
 | P0 | 102 | `control` | `MONOLITH` | `src/scpn_fusion/control/halo_re_physics.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=651 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fno_training.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=572 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=590 exceeds monolith threshold (500+). |
@@ -47,11 +46,10 @@
 | P3 | 65 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:32` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | raise ValueError("fallback domain must be non-empty") |
 | P3 | 65 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:114` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | "Fallback budget exceeded: " |
 
-## Full Register (Top 11)
+## Full Register (Top 10)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_contracts.py:1` | module LOC=649 exceeds monolith threshold (500+). |
 | P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/halo_re_physics.py:1` | module LOC=651 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fno_training.py:1` | module LOC=572 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel.py:1` | module LOC=590 exceeds monolith threshold (500+). |
