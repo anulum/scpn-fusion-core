@@ -53,12 +53,34 @@ def test_traceable_runtime_jax_backend_raises_when_unavailable(
         runtime.run_traceable_control_loop(commands, backend="jax")
 
 
+def test_traceable_runtime_jax_backend_raises_when_imports_are_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(runtime, "_HAS_JAX", True)
+    monkeypatch.setattr(runtime, "jax", None)
+    monkeypatch.setattr(runtime, "jnp", None)
+    commands = np.asarray([0.1, 0.2], dtype=np.float64)
+    with pytest.raises(RuntimeError, match="imports are unavailable"):
+        runtime.run_traceable_control_loop(commands, backend="jax")
+
+
 def test_traceable_runtime_torchscript_backend_raises_when_unavailable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(runtime, "_HAS_TORCH", False)
     commands = np.asarray([0.1, 0.2], dtype=np.float64)
     with pytest.raises(RuntimeError, match="TorchScript backend requested"):
+        runtime.run_traceable_control_loop(commands, backend="torchscript")
+
+
+def test_traceable_runtime_torch_backend_raises_when_imports_are_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(runtime, "_HAS_TORCH", True)
+    monkeypatch.setattr(runtime, "torch", None)
+    monkeypatch.setattr(runtime, "_torchscript_rollout", object())
+    commands = np.asarray([0.1, 0.2], dtype=np.float64)
+    with pytest.raises(RuntimeError, match="imports are unavailable"):
         runtime.run_traceable_control_loop(commands, backend="torchscript")
 
 
@@ -168,6 +190,28 @@ def test_traceable_runtime_batch_torchscript_backend_raises_when_unavailable(
     monkeypatch.setattr(runtime, "_HAS_TORCH", False)
     commands = np.asarray([[0.1, 0.2]], dtype=np.float64)
     with pytest.raises(RuntimeError, match="TorchScript backend requested"):
+        runtime.run_traceable_control_batch(commands, backend="torchscript")
+
+
+def test_traceable_runtime_batch_jax_backend_raises_when_imports_are_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(runtime, "_HAS_JAX", True)
+    monkeypatch.setattr(runtime, "jax", None)
+    monkeypatch.setattr(runtime, "jnp", None)
+    commands = np.asarray([[0.1, 0.2]], dtype=np.float64)
+    with pytest.raises(RuntimeError, match="imports are unavailable"):
+        runtime.run_traceable_control_batch(commands, backend="jax")
+
+
+def test_traceable_runtime_batch_torch_backend_raises_when_imports_are_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(runtime, "_HAS_TORCH", True)
+    monkeypatch.setattr(runtime, "torch", None)
+    monkeypatch.setattr(runtime, "_torchscript_rollout_batch", object())
+    commands = np.asarray([[0.1, 0.2]], dtype=np.float64)
+    with pytest.raises(RuntimeError, match="imports are unavailable"):
         runtime.run_traceable_control_batch(commands, backend="torchscript")
 
 
