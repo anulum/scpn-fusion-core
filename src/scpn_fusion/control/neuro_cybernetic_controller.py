@@ -16,9 +16,9 @@ from typing import Any, Callable, Dict, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scpn_fusion.scpn.safety_interlocks import SafetyInterlockRuntime
 
 logger = logging.getLogger(__name__)
-from scpn_fusion.scpn.safety_interlocks import SafetyInterlockRuntime
 
 try:
     from sc_neurocore.neurons.stochastic_lif import StochasticLIFNeuron
@@ -302,7 +302,8 @@ class NeuroCyberneticController:
         verbose: bool,
         output_path: Optional[str],
     ) -> Dict[str, Any]:
-        assert self.brain_R is not None and self.brain_Z is not None
+        if self.brain_R is None or self.brain_Z is None:
+            raise RuntimeError("Controller brains are not initialized.")
         if verbose:
             logger.info("--- %s PLASMA INTERFACE ---", title.upper())
             logger.info("Initializing Stochastic Neural Network (SNN)...")

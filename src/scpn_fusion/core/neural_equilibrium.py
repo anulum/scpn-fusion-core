@@ -119,11 +119,13 @@ class MinimalPCA:
         return self
 
     def transform(self, X: NDArray) -> NDArray:
-        assert self.mean_ is not None and self.components_ is not None
+        if self.mean_ is None or self.components_ is None:
+            raise RuntimeError("PCA model not fitted before transform().")
         return (X - self.mean_) @ self.components_.T
 
     def inverse_transform(self, Z: NDArray) -> NDArray:
-        assert self.mean_ is not None and self.components_ is not None
+        if self.mean_ is None or self.components_ is None:
+            raise RuntimeError("PCA model not fitted before inverse_transform().")
         return Z @ self.components_ + self.mean_
 
     def fit_transform(self, X: NDArray) -> NDArray:
@@ -171,7 +173,10 @@ class NeuralEquilibriumAccelerator:
         """Evaluate on test set. Returns dict with mse, max_error, gs_residual."""
         if not self.is_trained:
             raise RuntimeError("Not trained")
-        assert self._input_mean is not None and self._input_std is not None
+        if self._input_mean is None or self._input_std is None:
+            raise RuntimeError("Input normalization statistics are unavailable.")
+        if self.mlp is None:
+            raise RuntimeError("MLP weights are unavailable.")
         x_norm = (X_test - self._input_mean) / self._input_std
         coeffs = self.mlp.predict(x_norm)
         psi_pred = self.pca.inverse_transform(coeffs)
@@ -499,7 +504,10 @@ class NeuralEquilibriumAccelerator:
         if features.ndim == 1:
             features = features[np.newaxis, :]
 
-        assert self._input_mean is not None and self._input_std is not None
+        if self._input_mean is None or self._input_std is None:
+            raise RuntimeError("Input normalization statistics are unavailable.")
+        if self.mlp is None:
+            raise RuntimeError("MLP weights are unavailable.")
         x_norm = (features - self._input_mean) / self._input_std
         coeffs = self.mlp.predict(x_norm)
         psi_flat = self.pca.inverse_transform(coeffs)

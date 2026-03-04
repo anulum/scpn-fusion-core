@@ -132,6 +132,17 @@ class TestStochasticPetriNet:
         assert "T=3" in s
         assert "compiled=True" in s
 
+    def test_summary_raises_on_inconsistent_compiled_state(self) -> None:
+        net = StochasticPetriNet()
+        net.add_place("A", initial_tokens=1.0)
+        net.add_transition("T", threshold=0.5)
+        net.add_arc("A", "T", weight=1.0)
+        net.add_arc("T", "A", weight=1.0)
+        net.compile()
+        net.W_in = None
+        with pytest.raises(RuntimeError, match="missing sparse matrices"):
+            net.summary()
+
     def test_compiled_flag(self) -> None:
         net = StochasticPetriNet()
         net.add_place("A")

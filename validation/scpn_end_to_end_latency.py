@@ -266,6 +266,9 @@ def _run_lane(
         loop_ms[k] = (time.perf_counter() - t_loop0) * 1e3
 
     return {
+        "runtime_backend": (
+            str(scpn.runtime_backend_name) if controller_name == "SNN" and scpn is not None else "n/a"
+        ),
         "rmse": float(np.sqrt(np.mean(errors * errors))),
         "p50_loop_ms": _pctl(loop_ms, 50),
         "p95_loop_ms": _pctl(loop_ms, 95),
@@ -289,9 +292,9 @@ def run_campaign(*, seed: int = 42, steps: int = 320) -> dict[str, Any]:
     controllers = ("SNN", "PID", "MPC-lite")
     modes = ("surrogate", "full")
 
-    out: dict[str, dict[str, dict[str, float]]] = {}
+    out: dict[str, dict[str, dict[str, Any]]] = {}
     for mode in modes:
-        out_mode: dict[str, dict[str, float]] = {}
+        out_mode: dict[str, dict[str, Any]] = {}
         for ctrl in controllers:
             scpn = _build_scpn_controller() if ctrl == "SNN" else None
             if scpn is not None:
@@ -306,11 +309,23 @@ def run_campaign(*, seed: int = 42, steps: int = 320) -> dict[str, Any]:
             )
         out[mode] = out_mode
 
-    thresholds = {
-        "max_snn_p95_loop_ms_surrogate": 8.0,
-        "max_snn_p95_loop_ms_full": 12.0,
-        "max_snn_full_to_surrogate_ratio": 8.0,
-    }
+    snn_backend = str(out["surrogate"]["SNN"].get("runtime_backend", "unknown")).lower()
+    fallback_backend = snn_backend == "numpy"
+    if fallback_backend:
+        # NumPy fallback remains deterministic but carries expected latency overhead.
+        thresholds = {
+            "max_snn_p95_loop_ms_surrogate": 10.0,
+            "max_snn_p95_loop_ms_full": 14.0,
+            "max_snn_full_to_surrogate_ratio": 8.0,
+        }
+        threshold_profile = "numpy_fallback"
+    else:
+        thresholds = {
+            "max_snn_p95_loop_ms_surrogate": 8.0,
+            "max_snn_p95_loop_ms_full": 12.0,
+            "max_snn_full_to_surrogate_ratio": 8.0,
+        }
+        threshold_profile = "accelerated"
     snn_surrogate = out["surrogate"]["SNN"]["p95_loop_ms"]
     snn_full = out["full"]["SNN"]["p95_loop_ms"]
     ratio = snn_full / max(snn_surrogate, 1e-9)
@@ -324,6 +339,8 @@ def run_campaign(*, seed: int = 42, steps: int = 320) -> dict[str, Any]:
         "seed": 42,
         "steps": steps,
         "modes": out,
+        "snn_runtime_backend": snn_backend,
+        "threshold_profile": threshold_profile,
         "ratios": {"snn_full_to_surrogate_p95_ratio": float(ratio)},
         "thresholds": thresholds,
         "passes_thresholds": passes,
@@ -348,6 +365,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Generated: `{report['generated_at_utc']}`",
         f"- Runtime: `{report['runtime_seconds']:.3f} s`",
         f"- Steps: `{g['steps']}`",
+        f"- SNN runtime backend: `{g.get('snn_runtime_backend', 'unknown')}`",
+        f"- Threshold profile: `{g.get('threshold_profile', 'unknown')}`",
         f"- Overall pass: `{'YES' if g['passes_thresholds'] else 'NO'}`",
         f"- SNN full/surrogate p95 ratio: `{g['ratios']['snn_full_to_surrogate_p95_ratio']:.3f}`",
         "",

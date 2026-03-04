@@ -23,9 +23,9 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -108,7 +108,8 @@ class NengoSNNController:
         output ensemble through a learned connection (NEF decode).
         """
         nengo = _nengo
-        assert nengo is not None
+        if nengo is None:
+            raise RuntimeError("Nengo backend unavailable; install nengo and rebuild.")
 
         cfg = self.cfg
         self._network = nengo.Network(seed=cfg.seed, label="SNN_Controller")
@@ -228,7 +229,8 @@ class NengoSNNController:
             raise RuntimeError("Network not built. Call build_network() first.")
 
         nengo = _nengo
-        assert nengo is not None
+        if nengo is None:
+            raise RuntimeError("Nengo backend unavailable; rebuild after installing nengo.")
 
         # Feed error into input node
         error = np.asarray(state, dtype=float).ravel()[:self.cfg.n_channels]

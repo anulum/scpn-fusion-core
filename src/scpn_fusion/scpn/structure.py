@@ -451,8 +451,10 @@ class StochasticPetriNet:
             lines.append(f"  {src} --({w:.3f})--> {tgt}{extra}")
 
         if self._compiled:
-            assert self.W_in is not None
-            assert self.W_out is not None
+            if self.W_in is None or self.W_out is None:
+                raise RuntimeError(
+                    "Compiled net is missing sparse matrices; re-run compile()."
+                )
             lines.append("")
             lines.append(
                 f"W_in  (nT={self.W_in.shape[0]}, nP={self.W_in.shape[1]})  "

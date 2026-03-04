@@ -24,8 +24,12 @@ class NeuroSymbolicControllerBackendMixin:
         controller_mod = _controller_module()
         if self._runtime_backend == "rust" and controller_mod._HAS_RUST_SCPN_RUNTIME:
             try:
-                assert controller_mod._rust_dense_activations is not None
-                out = controller_mod._rust_dense_activations(self._W_in, marking)
+                rust_dense_activations = controller_mod._rust_dense_activations
+                if rust_dense_activations is None:
+                    raise RuntimeError(
+                        "Rust runtime reports availability without dense kernel."
+                    )
+                out = rust_dense_activations(self._W_in, marking)
                 return np.asarray(out, dtype=np.float64)
             except Exception as exc:  # pragma: no cover - depends on Rust runtime failures
                 record_fallback_event(
@@ -46,8 +50,12 @@ class NeuroSymbolicControllerBackendMixin:
         controller_mod = _controller_module()
         if self._runtime_backend == "rust" and controller_mod._HAS_RUST_SCPN_RUNTIME:
             try:
-                assert controller_mod._rust_marking_update is not None
-                rust_out = controller_mod._rust_marking_update(
+                rust_marking_update = controller_mod._rust_marking_update
+                if rust_marking_update is None:
+                    raise RuntimeError(
+                        "Rust runtime reports availability without marking kernel."
+                    )
+                rust_out = rust_marking_update(
                     marking, self._W_in, self._W_out, firing
                 )
                 np.copyto(out, np.asarray(rust_out, dtype=np.float64))
@@ -203,7 +211,8 @@ class NeuroSymbolicControllerBackendMixin:
         )
         m2 = self._marking_update(marking, f_timed, self._tmp_marking_sc)
         if self._sc_bitflip_rate > 0.0:
-            assert rng is not None
+            if rng is None:
+                rng = np.random.default_rng(_seed64(self.seed_base, f"sc_flip:{int(k)}"))
             m2 = self._apply_bit_flip_faults(m2, rng)
 
         return f_timed, m2

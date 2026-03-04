@@ -40,6 +40,16 @@ SPARC_DIR = ROOT / "validation" / "reference_data" / "sparc"
 class TestMinimalPCA:
     """Verify the pure-NumPy PCA implementation."""
 
+    def test_transform_before_fit_raises(self):
+        pca = MinimalPCA(n_components=3)
+        with pytest.raises(RuntimeError, match="not fitted"):
+            pca.transform(np.zeros((2, 5)))
+
+    def test_inverse_transform_before_fit_raises(self):
+        pca = MinimalPCA(n_components=3)
+        with pytest.raises(RuntimeError, match="not fitted"):
+            pca.inverse_transform(np.zeros((2, 3)))
+
     def test_fit_transform_shape(self):
         rng = np.random.default_rng(1)
         X = rng.standard_normal((50, 100))
@@ -153,7 +163,6 @@ class TestAcceleratorUnit:
         accel._input_std[accel._input_std < 1e-10] = 1.0
 
         accel.pca.fit(Y)
-        Y_comp = accel.pca.transform(Y)
 
         accel.mlp = SimpleMLP([4, 16, 8, 3], seed=42)
         accel.is_trained = True

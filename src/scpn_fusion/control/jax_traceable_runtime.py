@@ -162,8 +162,8 @@ def _simulate_jax(
 ) -> FloatArray:
     if not _HAS_JAX:
         raise RuntimeError("JAX backend requested but JAX is not installed.")
-    assert jnp is not None
-    assert jax is not None
+    if jnp is None or jax is None:
+        raise RuntimeError("JAX backend requested but JAX imports are unavailable.")
 
     cmd = jnp.asarray(commands, dtype=jnp.float64)
     alpha = jnp.asarray(spec.dt_s / (spec.tau_s + spec.dt_s), dtype=jnp.float64)
@@ -231,7 +231,8 @@ def _simulate_torchscript(
 ) -> FloatArray:
     if not _HAS_TORCH or _torchscript_rollout is None:
         raise RuntimeError("TorchScript backend requested but torch is not installed.")
-    assert torch is not None
+    if torch is None:
+        raise RuntimeError("TorchScript backend requested but torch imports are unavailable.")
 
     cmd = torch.as_tensor(commands, dtype=torch.float64)
     alpha = float(spec.dt_s / (spec.tau_s + spec.dt_s))
@@ -263,8 +264,8 @@ def _simulate_jax_batch(
 ) -> FloatArray:
     if not _HAS_JAX:
         raise RuntimeError("JAX backend requested but JAX is not installed.")
-    assert jnp is not None
-    assert jax is not None
+    if jnp is None or jax is None:
+        raise RuntimeError("JAX backend requested but JAX imports are unavailable.")
 
     cmd = jnp.asarray(commands, dtype=jnp.float64)
     x0 = jnp.asarray(initial_state, dtype=jnp.float64)
@@ -291,7 +292,8 @@ def _simulate_torchscript_batch(
 ) -> FloatArray:
     if not _HAS_TORCH or _torchscript_rollout_batch is None:
         raise RuntimeError("TorchScript backend requested but torch is not installed.")
-    assert torch is not None
+    if torch is None:
+        raise RuntimeError("TorchScript backend requested but torch imports are unavailable.")
 
     cmd = torch.as_tensor(commands, dtype=torch.float64)
     x0 = torch.as_tensor(initial_state, dtype=torch.float64)
