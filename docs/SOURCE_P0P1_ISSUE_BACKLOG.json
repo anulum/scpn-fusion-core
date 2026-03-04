@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-04T00:47:44.291517+00:00",
+  "generated_at": "2026-03-04T01:15:21.564463+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
-  "issue_count": 13,
+  "issue_count": 12,
   "issues": [
     {
       "acceptance_checklist": [
@@ -245,47 +245,6 @@
       ],
       "score": 101,
       "title": "[P0] Harden src/scpn_fusion/core/fusion_kernel_newton_solver.py",
-      "trigger_lines": [
-        1
-      ]
-    },
-    {
-      "acceptance_checklist": [
-        "Add or tighten regression tests for this module path and update coverage baselines.",
-        "Update claim/evidence references if behavior or metrics change."
-      ],
-      "closure_metrics": [
-        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
-        "File line coverage in release lane is >= 94.0% (tools/coverage_guard.py).",
-        "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
-      ],
-      "domain": "core_physics",
-      "file_path": "src/scpn_fusion/core/integrated_transport_solver_runtime.py",
-      "github_body": "## Scope\n- File: `src/scpn_fusion/core/integrated_transport_solver_runtime.py`\n- Priority: `P0` (score `101`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `MONOLITH`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Split module into focused subcomponents and lock interface contracts.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 94.0% (tools/coverage_guard.py).\n- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.",
-      "github_labels": [
-        "hardening",
-        "underdeveloped",
-        "p0",
-        "core_physics"
-      ],
-      "github_title": "[P0] Harden src/scpn_fusion/core/integrated_transport_solver_runtime.py",
-      "issue_slug": "p0-core-integrated_transport_solver_runtime",
-      "labels": [
-        "hardening",
-        "underdeveloped",
-        "p0",
-        "core_physics"
-      ],
-      "markers": [
-        "MONOLITH"
-      ],
-      "owner_hint": "Core Physics WG",
-      "priority": "P0",
-      "proposed_actions": [
-        "Split module into focused subcomponents and lock interface contracts."
-      ],
-      "score": 101,
-      "title": "[P0] Harden src/scpn_fusion/core/integrated_transport_solver_runtime.py",
       "trigger_lines": [
         1
       ]

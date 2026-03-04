@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-03-04T00:47:41.984177+00:00",
+  "generated_at": "2026-03-04T01:15:18.450996+00:00",
   "generator": "tools/generate_underdeveloped_scope_reports.py",
   "snapshots": [
     {
       "marker_counts": {
         "FALLBACK": 2,
         "FALLBACK_DENSITY": 1,
-        "MONOLITH": 12
+        "MONOLITH": 11
       },
-      "p0_p1_entries": 13,
+      "p0_p1_entries": 12,
       "scope": "source",
-      "total_entries": 15
+      "total_entries": 14
     },
     {
       "marker_counts": {
