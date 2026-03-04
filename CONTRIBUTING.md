@@ -139,8 +139,11 @@ pip install pre-commit
 pre-commit install
 pre-commit run --all-files
 
-# Recommended: enable repository-native git hooks (blocks commits on metadata drift)
+# Required: enable repository-native git hooks (commit + push guards)
 git config core.hooksPath .githooks
+
+# Ensure hook scripts are executable (Linux/macOS/Git Bash)
+chmod +x .githooks/pre-commit .githooks/pre-push
 ```
 
 **Additional conventions:**
@@ -213,7 +216,21 @@ pytest tests/test_physics.py -v
 
 # Run with coverage reporting
 pytest tests/ -v --cov=scpn_fusion --cov-report=term-missing
+
+# Run local CI-parity gate before every push (recommended default)
+python tools/run_python_preflight.py --gate release
+
+# Optional stricter local gate (release + research lane)
+python tools/run_python_preflight.py --gate all
 ```
+
+### Local CI-First Rules (Mandatory)
+
+1. Never push without a green local preflight gate (`release` at minimum).
+2. Never use `--no-verify` to bypass hooks except for incident recovery; if used, document reason in `docs/CI_FAILURE_LEDGER.md`.
+3. Treat `drift detected` and `manifest is stale` as local process failures; regenerate artifacts and re-run preflight before push.
+4. Treat infrastructure-only errors (e.g., upstream HTTP 500 from GitHub services) as transient and re-run CI before changing code.
+5. Keep `core.hooksPath=.githooks` configured in every local clone.
 
 ### Rust Tests
 

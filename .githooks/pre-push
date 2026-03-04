@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Local Git Pre-Push Guard
+# © 1998–2026 Miroslav Sotek. All rights reserved.
+# License: GNU AGPL v3 | Commercial licensing available
+# ──────────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+if command -v python >/dev/null 2>&1; then
+  PYTHON_BIN=(python)
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN=(python3)
+elif command -v py >/dev/null 2>&1; then
+  PYTHON_BIN=(py -3)
+else
+  echo "[pre-push] Python is required for local preflight checks."
+  echo "[pre-push] Install Python and re-run push."
+  exit 1
+fi
+
+GATE="${SCPN_PREPUSH_GATE:-release}"
+TIMEOUT_SECONDS="${SCPN_PREPUSH_TIMEOUT_SECONDS:-1800}"
+
+case "$GATE" in
+  release|research|all) ;;
+  *)
+    echo "[pre-push] Invalid SCPN_PREPUSH_GATE='$GATE'. Use: release | research | all."
+    exit 1
+    ;;
+esac
+
+echo "[pre-push] Running local preflight gate: $GATE"
+echo "[pre-push] Command: ${PYTHON_BIN[*]} tools/run_python_preflight.py --gate $GATE --check-timeout-seconds $TIMEOUT_SECONDS"
+
+if ! "${PYTHON_BIN[@]}" tools/run_python_preflight.py --gate "$GATE" --check-timeout-seconds "$TIMEOUT_SECONDS"; then
+  echo "[pre-push] Local preflight FAILED. Push blocked."
+  echo "[pre-push] Fix failures locally before pushing."
+  exit 1
+fi
+
+echo "[pre-push] Local preflight passed. Push allowed."

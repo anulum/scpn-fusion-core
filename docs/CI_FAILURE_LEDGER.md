@@ -7,6 +7,12 @@ This ledger records recurring CI failure patterns seen during the 2026-03-03 har
 - Link at least one representative run ID and the fixing commit.
 - Mark `Transient` vs `Deterministic` so triage is fast.
 
+## Baseline Prevention Policy (2026-03-04)
+- Enforce local git hooks via `git config core.hooksPath .githooks`.
+- `pre-commit` blocks metadata drift (`tools/sync_metadata.py --check`).
+- `pre-push` blocks pushes unless `python tools/run_python_preflight.py --gate release` passes.
+- CI failures from deterministic drift/schema causes should be considered process violations and fixed locally before next push.
+
 ## Incident Table
 
 | ID | First Seen (UTC) | Representative Runs | Failure Signature | Category | Root Cause | Resolved By | Prevention Guard |
