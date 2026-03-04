@@ -13,6 +13,8 @@ import numpy as np
 import pytest
 
 from scpn_fusion.diagnostics.forward import (
+    _validate_chords,
+    _validate_points,
     generate_forward_channels,
     interferometer_phase_shift,
     neutron_count_rate,
@@ -229,4 +231,20 @@ def test_generate_forward_channels_rejects_invalid_thomson_temp_map() -> None:
             z_grid=z,
             interferometer_chords=[((4.2, 0.0), (7.8, 0.0))],
             volume_element_m3=0.02,
+        )
+
+
+def test_validate_chords_requires_bounds_when_enforcing_domain() -> None:
+    with pytest.raises(ValueError, match="Domain bounds must be provided"):
+        _validate_chords(
+            [((4.0, 0.0), (8.0, 0.0))],
+            enforce_domain_bounds=True,
+        )
+
+
+def test_validate_points_requires_bounds_when_enforcing_domain() -> None:
+    with pytest.raises(ValueError, match="Domain bounds must be provided"):
+        _validate_points(
+            [(6.0, 0.0)],
+            enforce_domain_bounds=True,
         )

@@ -81,8 +81,10 @@ def _validate_chords(
         if not np.all(np.isfinite(np.asarray(vals, dtype=np.float64))):
             raise ValueError(f"chords[{i}] has non-finite coordinates.")
         if enforce_domain_bounds:
-            assert r_min is not None and r_max is not None
-            assert z_min is not None and z_max is not None
+            if r_min is None or r_max is None or z_min is None or z_max is None:
+                raise ValueError(
+                    "Domain bounds must be provided when enforce_domain_bounds=True."
+                )
             if (
                 float(start[0]) < float(r_min)
                 or float(start[0]) > float(r_max)
@@ -118,8 +120,10 @@ def _validate_points(
         if not np.isfinite(r_point) or not np.isfinite(z_point):
             raise ValueError(f"sample_points[{i}] has non-finite coordinates.")
         if enforce_domain_bounds:
-            assert r_min is not None and r_max is not None
-            assert z_min is not None and z_max is not None
+            if r_min is None or r_max is None or z_min is None or z_max is None:
+                raise ValueError(
+                    "Domain bounds must be provided when enforce_domain_bounds=True."
+                )
             if (
                 r_point < float(r_min)
                 or r_point > float(r_max)
