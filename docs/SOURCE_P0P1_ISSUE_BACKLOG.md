@@ -1,6 +1,6 @@
 # Source P0/P1 Issue Backlog
 
-- Generated at: `2026-03-04T02:09:49.481356+00:00`
+- Generated at: `2026-03-04T02:34:02.083395+00:00`
 - Generator: `tools/generate_source_p0p1_issue_backlog.py`
 - Scope: source files only (`src/scpn_fusion/**`) with P0/P1 severity
 
@@ -8,16 +8,16 @@
 
 | Metric | Value |
 |---|---:|
-| Source issue seeds | 11 |
-| P0 seeds | 11 |
+| Source issue seeds | 10 |
+| P0 seeds | 10 |
 | P1 seeds | 0 |
-| Domains represented | 3 |
+| Domains represented | 2 |
 
 ## Marker Distribution
 
 | Marker | Count |
 |---|---:|
-| `MONOLITH` | 10 |
+| `MONOLITH` | 9 |
 | `FALLBACK_DENSITY` | 1 |
 
 ## Domain Distribution
@@ -26,7 +26,6 @@
 |---|---:|
 | `core_physics` | 6 |
 | `control` | 4 |
-| `compiler_runtime` | 1 |
 
 ## Auto-generated Issue Seeds
 
@@ -212,27 +211,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
 - [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
 
-### 10. [P0] Harden `src/scpn_fusion/scpn/controller.py`
-
-- **Labels**: `hardening`, `underdeveloped`, `p0`, `compiler_runtime`
-- **Owner Hint**: Runtime WG
-- **Priority Score**: `100`
-- **Markers**: `MONOLITH`
-- **Trigger Lines**: `1`
-
-**Proposed Actions**
-- Split module into focused subcomponents and lock interface contracts.
-
-**Acceptance Checklist**
-- [ ] Add or tighten regression tests for this module path and update coverage baselines.
-- [ ] Update claim/evidence references if behavior or metrics change.
-
-**Closure Metrics**
-- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 92.0% (tools/coverage_guard.py).
-- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
-
-### 11. [P0] Harden `src/scpn_fusion/control/disruption_predictor.py`
+### 10. [P0] Harden `src/scpn_fusion/control/disruption_predictor.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p0`, `control`
 - **Owner Hint**: Control WG
