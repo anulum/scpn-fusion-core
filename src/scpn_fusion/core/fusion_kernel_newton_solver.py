@@ -76,11 +76,15 @@ class FusionKernelNewtonSolverMixin:
         mu0: float = self.cfg["physics"]["vacuum_permeability"]
         warmup_steps: int = min(15, max_iter // 2)
         newton_alpha: float = 0.5  # initial damped Newton step
-        line_search_c: float = 1e-4
-        max_backtracks: int = 6
         use_newton_line_search: bool = bool(
             self.cfg["solver"].get("newton_line_search", False)
         )
+        line_search_c = float(self.cfg["solver"].get("newton_line_search_c", 1e-4))
+        if (not np.isfinite(line_search_c)) or line_search_c <= 0.0 or line_search_c >= 1.0:
+            raise ValueError("solver.newton_line_search_c must be finite and in (0, 1)")
+        max_backtracks = int(self.cfg["solver"].get("newton_line_search_max_backtracks", 6))
+        if max_backtracks <= 0:
+            raise ValueError("solver.newton_line_search_max_backtracks must be >= 1")
         gmres_preconditioner_mode = str(
             self.cfg["solver"].get("gmres_preconditioner", "none")
         ).strip().lower()
@@ -103,6 +107,9 @@ class FusionKernelNewtonSolverMixin:
 
         residual_history: list[float] = []
         gs_residual_history: list[float] = []
+        line_search_attempts = 0
+        line_search_accepts = 0
+        line_search_rejects = 0
         converged = False
         final_iter = 0
         gs_best: float = float("inf")
@@ -227,6 +234,7 @@ class FusionKernelNewtonSolverMixin:
                     accepted = False
                     source_trial = Source
                     for _ in range(max_backtracks):
+                        line_search_attempts += 1
                         trial = psi_prev + alpha * delta
                         self._apply_boundary_conditions(trial, Psi_vac_boundary)
                         self.Psi = trial
@@ -243,7 +251,9 @@ class FusionKernelNewtonSolverMixin:
                         trial_norm = float(np.sqrt(np.sum(trial_r[1:-1, 1:-1] ** 2)))
                         if trial_norm <= (1.0 - line_search_c * alpha) * res_norm:
                             accepted = True
+                            line_search_accepts += 1
                             break
+                        line_search_rejects += 1
                         alpha *= 0.5
 
                     if not accepted:
@@ -302,6 +312,10 @@ class FusionKernelNewtonSolverMixin:
             "gs_residual": gs_final,
             "gs_residual_best": gs_best_out,
             "gs_residual_history": gs_residual_history,
+            "newton_line_search": use_newton_line_search,
+            "newton_line_search_attempts": line_search_attempts,
+            "newton_line_search_accepts": line_search_accepts,
+            "newton_line_search_rejects": line_search_rejects,
             "wall_time_s": elapsed,
             "solver_method": "newton",
         }

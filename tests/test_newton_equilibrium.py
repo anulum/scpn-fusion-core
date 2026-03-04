@@ -188,3 +188,58 @@ def test_newton_rejects_invalid_preconditioner_mode(tmp_path: Path):
     fk = FusionKernel(str(p))
     with pytest.raises(ValueError, match="gmres_preconditioner"):
         fk.solve_equilibrium()
+
+
+def test_newton_line_search_reports_telemetry(tmp_path: Path) -> None:
+    """Line-search mode should expose structured telemetry counters."""
+    cfg = MOCK_CONFIG.copy()
+    cfg["solver"] = {
+        **cfg["solver"],
+        "newton_line_search": True,
+        "newton_line_search_c": 1e-4,
+        "newton_line_search_max_backtracks": 4,
+        "max_iterations": 20,
+    }
+    p = tmp_path / "newton_line_search.json"
+    p.write_text(json.dumps(cfg), encoding="utf-8")
+
+    fk = FusionKernel(str(p))
+    result = fk.solve_equilibrium()
+    assert result["solver_method"] == "newton"
+    assert result["newton_line_search"] is True
+    assert result["newton_line_search_attempts"] >= 0
+    assert result["newton_line_search_accepts"] >= 0
+    assert result["newton_line_search_rejects"] >= 0
+    assert (
+        result["newton_line_search_attempts"]
+        >= result["newton_line_search_accepts"] + result["newton_line_search_rejects"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "error_pattern"),
+    [
+        ("newton_line_search_c", 0.0, "newton_line_search_c"),
+        ("newton_line_search_c", 1.0, "newton_line_search_c"),
+        ("newton_line_search_max_backtracks", 0, "newton_line_search_max_backtracks"),
+    ],
+)
+def test_newton_rejects_invalid_line_search_config(
+    tmp_path: Path,
+    field: str,
+    value: float,
+    error_pattern: str,
+) -> None:
+    """Invalid line-search parameters should fail fast."""
+    cfg = MOCK_CONFIG.copy()
+    cfg["solver"] = {
+        **cfg["solver"],
+        "newton_line_search": True,
+        field: value,
+    }
+    p = tmp_path / "newton_bad_line_search.json"
+    p.write_text(json.dumps(cfg), encoding="utf-8")
+
+    fk = FusionKernel(str(p))
+    with pytest.raises(ValueError, match=error_pattern):
+        fk.solve_equilibrium()
