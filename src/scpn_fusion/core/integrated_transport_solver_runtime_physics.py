@@ -93,7 +93,9 @@ class TransportSolverRuntimePhysicsMixin:
             return zeros, zeros
 
         e_keV_J = 1.602176634e-16
-        ne_safe = np.maximum(self.ne, 0.1) * 1e19
+        ne_raw = np.asarray(self.ne, dtype=np.float64)
+        ne_safe = np.nan_to_num(ne_raw, nan=0.1, posinf=1e3, neginf=0.1)
+        ne_safe = np.clip(ne_safe, 0.1, 1e3) * 1e19
 
         electron_frac = (
             float(np.clip(self.aux_heating_electron_fraction, 0.0, 1.0))
@@ -136,7 +138,9 @@ class TransportSolverRuntimePhysicsMixin:
     @staticmethod
     def _tungsten_radiation_rate(Te_keV: np.ndarray) -> np.ndarray:
         """Coronal-equilibrium tungsten radiation rate coefficient [W*m^3]."""
-        Te = np.maximum(Te_keV, 0.01)
+        te_raw = np.asarray(Te_keV, dtype=np.float64)
+        Te = np.nan_to_num(te_raw, nan=0.01, posinf=1e3, neginf=0.01)
+        Te = np.clip(Te, 0.01, 1e3)
         Lz = np.where(
             Te < 1.0,
             5.0e-31 * np.sqrt(Te),
@@ -150,7 +154,7 @@ class TransportSolverRuntimePhysicsMixin:
                 ),
             ),
         )
-        return Lz
+        return np.nan_to_num(Lz, nan=5.0e-31, posinf=8.0e-31, neginf=5.0e-31)
 
     @staticmethod
     def _bremsstrahlung_power_density(ne_1e19: np.ndarray, Te_keV: np.ndarray, Z_eff: float) -> np.ndarray:
@@ -203,7 +207,9 @@ class TransportSolverRuntimePhysicsMixin:
         self.n_He[-1] = 0.0
         self.n_He = np.maximum(0.0, self.n_He)
 
-        log_te = np.log10(np.maximum(self.Te, 0.1))
+        te_safe = np.nan_to_num(np.asarray(self.Te, dtype=np.float64), nan=0.1, posinf=1e3, neginf=0.1)
+        te_safe = np.clip(te_safe, 0.1, 1e3)
+        log_te = np.log10(te_safe)
         Z_W = np.clip(15.0 + 12.0 * log_te, 10.0, 50.0)
 
         self.ne = self.n_D + self.n_T + 2.0 * self.n_He + Z_W * np.maximum(self.n_impurity, 0.0)

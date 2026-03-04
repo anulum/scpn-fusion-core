@@ -14,6 +14,19 @@ from scpn_fusion.core.integrated_transport_solver_runtime_physics import (
 )
 
 
+class _AuxHeatingDummy(TransportSolverRuntimePhysicsMixin):
+    def __init__(self) -> None:
+        self.nr = 8
+        self.rho = np.linspace(0.0, 1.0, self.nr, dtype=np.float64)
+        self.drho = float(self.rho[1] - self.rho[0])
+        self.cfg = {"dimensions": {"R_min": 4.2, "R_max": 8.2}}
+        self.aux_heating_profile_width = 0.35
+        self.aux_heating_electron_fraction = 0.4
+        self.multi_ion = True
+        self.ne = np.full(self.nr, 5.0, dtype=np.float64)
+        self._last_aux_heating_balance: dict[str, float] = {}
+
+
 def test_bosch_hale_sigmav_sanitizes_nonfinite_inputs() -> None:
     t = np.array([np.nan, -5.0, 0.0, 0.2, 1.0, 10.0, np.inf], dtype=np.float64)
     out = TransportSolverRuntimePhysicsMixin._bosch_hale_sigmav(t)
@@ -45,3 +58,24 @@ def test_bremsstrahlung_power_density_monotonic_in_density() -> None:
     te = np.full_like(ne, 5.0)
     out = TransportSolverRuntimePhysicsMixin._bremsstrahlung_power_density(ne, te, Z_eff=1.5)
     assert np.all(np.diff(out) > 0.0), out
+
+
+def test_tungsten_radiation_rate_sanitizes_nonfinite_inputs() -> None:
+    te = np.array([np.nan, -3.0, 0.0, 1.0, 10.0, np.inf], dtype=np.float64)
+    out = TransportSolverRuntimePhysicsMixin._tungsten_radiation_rate(te)
+
+    assert out.shape == te.shape
+    assert np.all(np.isfinite(out))
+    assert np.all(out > 0.0)
+
+
+def test_aux_heating_sources_sanitize_nonfinite_density() -> None:
+    dummy = _AuxHeatingDummy()
+    dummy.ne = np.array([np.nan, -1.0, 0.0, 2.0, 5.0, np.inf, 1.0, 3.0], dtype=np.float64)
+    s_i, s_e = dummy._compute_aux_heating_sources(8.0)
+
+    assert s_i.shape == (dummy.nr,)
+    assert s_e.shape == (dummy.nr,)
+    assert np.all(np.isfinite(s_i))
+    assert np.all(np.isfinite(s_e))
+    assert dummy._last_aux_heating_balance["target_total_MW"] == 8.0
