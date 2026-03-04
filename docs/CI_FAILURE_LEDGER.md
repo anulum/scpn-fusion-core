@@ -12,6 +12,7 @@ This ledger records recurring CI failure patterns seen during the 2026-03-03 har
 - `pre-commit` blocks metadata drift (`tools/sync_metadata.py --check`).
 - `pre-push` blocks pushes unless `python tools/run_python_preflight.py --gate release` passes.
 - CI failures from deterministic drift/schema causes should be considered process violations and fixed locally before next push.
+- Distinguish `cancelled` from `failure`: chain-guard cancellations are expected on superseded pushes and should not trigger code hotfixes.
 
 ## Incident Table
 
@@ -26,6 +27,7 @@ This ledger records recurring CI failure patterns seen during the 2026-03-03 har
 | CI-2026-03-03-007 | 2026-03-03 19:17 | 22638800884 (Python 3.12 job) | `fatal: ... requested URL returned error: 500` in `actions/checkout` | Transient infra | GitHub remote fetch returned HTTP 500 repeatedly during checkout retry window. | Re-run succeeded in later run(s) | Treat as transient unless repeated across multiple runs; re-run workflow before code changes. |
 | CI-2026-03-03-008 | 2026-03-03 19:21 | 22638800884 (Rust Security Audit) | `couldn't fetch advisory database ... Received HTTP status 500` | Transient infra | RustSec advisory DB fetch outage/IO error. | Re-run succeeded (example: 22642012052) | Keep audit job, allow operator rerun on network outages; do not hotfix code for infra-only failure. |
 | CI-2026-03-04-001 | 2026-03-04 11:41 | 22667815814 | `KeyError: 'target_flux'` in `tests/test_coil_optimization.py` | Deterministic | Free-boundary runtime refactor invoked helper directly and bypassed `FusionKernel.optimize_coil_currents` method seam used by tests/contract hooks. | `99213c1` | Keep method-dispatch seam in runtime path and run `python -m pytest tests/test_coil_optimization.py -q` before push after free-boundary edits. |
+| CI-2026-03-04-002 | 2026-03-04 11:25 | 22667290256 | CI run shown as `cancelled` (`#829`) | Expected chain behavior | Run was superseded by a newer push and terminated by CI chain guard; no failing job signature present. | N/A (no code fix) | Avoid push bursts during long-running suites; wait for current CI to complete before pushing non-urgent commits. |
 
 ## Quick Triage Rules
 - If failure text includes `drift detected` or `manifest is stale`: regenerate artifacts, re-run preflight locally, then push.
