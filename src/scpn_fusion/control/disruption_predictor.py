@@ -229,9 +229,9 @@ def load_or_train_predictor(
     train_if_missing=True,
     allow_fallback=True,
 ):
-    effective_allow_fallback = _resolve_allow_fallback(bool(allow_fallback))
+    recovery_allowed = _resolve_allow_fallback(bool(allow_fallback))
     if torch is None:
-        if not effective_allow_fallback:
+        if not recovery_allowed:
             raise RuntimeError("Torch is required for load_or_train_predictor().")
         _record_recovery_event(
             "torch_unavailable_fallback",
@@ -270,7 +270,7 @@ def load_or_train_predictor(
                 "seq_len": int(loaded_seq_len),
             }
         except _CHECKPOINT_LOAD_EXCEPTIONS as exc:
-            if not effective_allow_fallback:
+            if not recovery_allowed:
                 raise
             _record_recovery_event(
                 "checkpoint_load_failed_fallback",
@@ -285,7 +285,7 @@ def load_or_train_predictor(
             })
 
     if not train_if_missing and not force_retrain:
-        if effective_allow_fallback:
+        if recovery_allowed:
             _record_recovery_event(
                 "checkpoint_missing_fallback",
                 context={"model_path": str(path)},
@@ -304,7 +304,7 @@ def load_or_train_predictor(
     try:
         model, info = train_predictor(**kwargs)
     except _CHECKPOINT_TRAIN_EXCEPTIONS as exc:
-        if not effective_allow_fallback:
+        if not recovery_allowed:
             raise
         _record_recovery_event(
             "train_failed_fallback",
@@ -345,7 +345,7 @@ def predict_disruption_risk_safe(
         failures instead of returning compatibility risk from
         ``predict_disruption_risk``.
     """
-    effective_allow_fallback = _resolve_allow_fallback(bool(allow_fallback))
+    recovery_allowed = _resolve_allow_fallback(bool(allow_fallback))
     base_risk = float(np.clip(predict_disruption_risk(signal, toroidal_observables), 0.0, 1.0))
 
     model, meta = load_or_train_predictor(
@@ -354,11 +354,11 @@ def predict_disruption_risk_safe(
         force_retrain=False,
         train_kwargs={"seq_len": _normalize_seq_len(seq_len), "save_plot": False},
         train_if_missing=bool(train_if_missing),
-        allow_fallback=bool(effective_allow_fallback),
+        allow_fallback=bool(recovery_allowed),
     )
 
     if model is None or torch is None:
-        if not effective_allow_fallback:
+        if not recovery_allowed:
             reason = meta.get("reason", "model_unavailable")
             raise RuntimeError(
                 "predict_disruption_risk_safe fallback disabled: "
@@ -398,7 +398,7 @@ def predict_disruption_risk_safe(
         
         return float(np.clip(risk_mean, 0.0, 1.0)), out_meta
     except _INFERENCE_FALLBACK_EXCEPTIONS as exc:
-        if not effective_allow_fallback:
+        if not recovery_allowed:
             raise RuntimeError(
                 "predict_disruption_risk_safe fallback disabled: "
                 f"transformer inference failed ({exc.__class__.__name__})."

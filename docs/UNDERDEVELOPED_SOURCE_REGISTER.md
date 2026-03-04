@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T13:04:17.776143+00:00`
+- Generated at: `2026-03-04T13:10:50.845514+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: source-only (`src/scpn_fusion/**`) markers
 
@@ -8,39 +8,35 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 3 |
-| P0 + P1 entries | 1 |
-| Source-domain entries | 1 |
-| Source-domain P0 + P1 entries | 1 |
+| Total flagged entries | 2 |
+| P0 + P1 entries | 0 |
+| Source-domain entries | 0 |
+| Source-domain P0 + P1 entries | 0 |
 | Docs-claims entries | 0 |
-| Domains affected | 2 |
+| Domains affected | 1 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
 | `FALLBACK` | 2 |
-| `FALLBACK_DENSITY` | 1 |
 
 ## Domain Distribution
 
 | Key | Count |
 |---|---:|
 | `other` | 2 |
-| `control` | 1 |
 
-## Top Priority Backlog (Top 3)
+## Top Priority Backlog (Top 2)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 96 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P3 | 65 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:32` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | raise ValueError("fallback domain must be non-empty") |
 | P3 | 65 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:114` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | "Fallback budget exceeded: " |
 
-## Full Register (Top 3)
+## Full Register (Top 2)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P3 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:32` | raise ValueError("fallback domain must be non-empty") |
 | P3 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:114` | "Fallback budget exceeded: " |

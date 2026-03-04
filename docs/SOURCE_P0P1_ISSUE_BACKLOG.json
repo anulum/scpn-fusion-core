@@ -1,47 +1,6 @@
 {
-  "generated_at": "2026-03-04T13:04:19.249775+00:00",
+  "generated_at": "2026-03-04T13:10:52.258618+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
-  "issue_count": 1,
-  "issues": [
-    {
-      "acceptance_checklist": [
-        "Add or tighten regression tests for this module path and update coverage baselines.",
-        "Update claim/evidence references if behavior or metrics change."
-      ],
-      "closure_metrics": [
-        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
-        "File line coverage in release lane is >= 78.0% (tools/coverage_guard.py)."
-      ],
-      "domain": "control",
-      "file_path": "src/scpn_fusion/control/disruption_predictor.py",
-      "github_body": "## Scope\n- File: `src/scpn_fusion/control/disruption_predictor.py`\n- Priority: `P0` (score `96`)\n- Domain: `control`\n- Owner hint: `Control WG`\n- Markers: `FALLBACK_DENSITY`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Reduce fallback concentration and enforce strict-backend parity checks.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).",
-      "github_labels": [
-        "hardening",
-        "underdeveloped",
-        "p0",
-        "control"
-      ],
-      "github_title": "[P0] Harden src/scpn_fusion/control/disruption_predictor.py",
-      "issue_slug": "p0-control-disruption_predictor",
-      "labels": [
-        "hardening",
-        "underdeveloped",
-        "p0",
-        "control"
-      ],
-      "markers": [
-        "FALLBACK_DENSITY"
-      ],
-      "owner_hint": "Control WG",
-      "priority": "P0",
-      "proposed_actions": [
-        "Reduce fallback concentration and enforce strict-backend parity checks."
-      ],
-      "score": 96,
-      "title": "[P0] Harden src/scpn_fusion/control/disruption_predictor.py",
-      "trigger_lines": [
-        1
-      ]
-    }
-  ]
+  "issue_count": 0,
+  "issues": []
 }

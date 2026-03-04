@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T13:04:16.383804+00:00`
+- Generated at: `2026-03-04T13:10:49.376413+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,12 +8,12 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 193 |
-| P0 + P1 entries | 5 |
-| Source-domain entries | 30 |
-| Source-domain P0 + P1 entries | 5 |
+| Total flagged entries | 192 |
+| P0 + P1 entries | 4 |
+| Source-domain entries | 29 |
+| Source-domain P0 + P1 entries | 4 |
 | Docs-claims entries | 142 |
-| Domains affected | 4 |
+| Domains affected | 3 |
 
 ## Marker Distribution
 
@@ -25,7 +25,6 @@
 | `SIMPLIFIED` | 18 |
 | `DEPRECATED` | 10 |
 | `NOT_VALIDATED` | 4 |
-| `FALLBACK_DENSITY` | 1 |
 
 ## Domain Distribution
 
@@ -34,15 +33,13 @@
 | `docs_claims` | 142 |
 | `validation` | 29 |
 | `other` | 21 |
-| `control` | 1 |
 
-## Source-Centric Priority Backlog (Top 5)
+## Source-Centric Priority Backlog (Top 4)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 96 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:391` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | implements a 10 kHz PID control loop with simplified linear plasma |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Step Physics (Single step of simulate logic simplified) |
@@ -52,7 +49,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 96 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | Control WG | Reduce fallback concentration and enforce strict-backend parity checks. | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: spectral conv in truncated mode space |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:391` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | implements a 10 kHz PID control loop with simplified linear plasma |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Step Physics (Single step of simulate logic simplified) |
@@ -132,12 +128,12 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/competitive_analysis.md:77` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| GPU acceleration \| Planned (wgpu) \| Yes (JAX) \| No \| No \| JAX \| No \| |
 | P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:23` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `EXPERIMENTAL` \| 55 \| |
 | P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:73` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - `EXPERIMENTAL`: 15 mentions |
+| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:102` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only |
 
-## Full Register (Top 193)
+## Full Register (Top 192)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `control` | `FALLBACK_DENSITY` | `src/scpn_fusion/control/disruption_predictor.py:1` | fallback risk signals=6 across LOC=437; high fallback concentration in runtime code paths. |
 | P1 | `validation` | `SIMPLIFIED` | `tools/train_fno_qlknn_spatial.py:120` | # Simplified: spectral conv in truncated mode space |
 | P1 | `validation` | `SIMPLIFIED` | `validation/stress_test_campaign.py:391` | implements a 10 kHz PID control loop with simplified linear plasma |
 | P1 | `validation` | `SIMPLIFIED` | `validation/test_full_pulse_scenario.py:62` | # Step Physics (Single step of simulate logic simplified) |
