@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T02:33:57.908291+00:00`
+- Generated at: `2026-03-04T02:54:19.151144+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 202 |
-| P0 + P1 entries | 14 |
-| Source-domain entries | 39 |
-| Source-domain P0 + P1 entries | 14 |
+| Total flagged entries | 201 |
+| P0 + P1 entries | 13 |
+| Source-domain entries | 38 |
+| Source-domain P0 + P1 entries | 13 |
 | Docs-claims entries | 142 |
 | Domains affected | 5 |
 
@@ -24,7 +24,7 @@
 | `EXPERIMENTAL` | 21 |
 | `SIMPLIFIED` | 18 |
 | `DEPRECATED` | 10 |
-| `MONOLITH` | 9 |
+| `MONOLITH` | 8 |
 | `NOT_VALIDATED` | 4 |
 | `FALLBACK_DENSITY` | 1 |
 
@@ -36,9 +36,9 @@
 | `validation` | 29 |
 | `other` | 21 |
 | `core_physics` | 6 |
-| `control` | 4 |
+| `control` | 3 |
 
-## Source-Centric Priority Backlog (Top 14)
+## Source-Centric Priority Backlog (Top 13)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
@@ -46,7 +46,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 |---|---:|---|---|---|---|---|---|
 | P0 | 102 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_contracts.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=649 exceeds monolith threshold (500+). |
 | P0 | 102 | `control` | `MONOLITH` | `src/scpn_fusion/control/halo_re_physics.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=651 exceeds monolith threshold (500+). |
-| P0 | 102 | `control` | `MONOLITH` | `src/scpn_fusion/control/hil_harness.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=547 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fno_training.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=572 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=590 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel_newton_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=632 exceeds monolith threshold (500+). |
@@ -65,7 +64,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 |---|---:|---|---|---|---|---|---|
 | P0 | 102 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_contracts.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=649 exceeds monolith threshold (500+). |
 | P0 | 102 | `control` | `MONOLITH` | `src/scpn_fusion/control/halo_re_physics.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=651 exceeds monolith threshold (500+). |
-| P0 | 102 | `control` | `MONOLITH` | `src/scpn_fusion/control/hil_harness.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=547 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fno_training.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=572 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=590 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel_newton_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=632 exceeds monolith threshold (500+). |
@@ -143,14 +141,14 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:246` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| FNO turbulence (FFT) \| cuFFT / wgpu FFT \| 50–100× (64×64) \| P3 \| Planned \| |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:282` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| SCPN (planned) \| Quadtree, gradient-based \| 2D GS + 3D extension \| |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:284` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | The planned quadtree AMR is simpler than JOREK's h-p adaptivity but |
+| P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:26` | Docs WG | Replace default path or remove lane before next major release. | \| `DEPRECATED` \| 17 \| |
 
-## Full Register (Top 202)
+## Full Register (Top 201)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
 | P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/disruption_contracts.py:1` | module LOC=649 exceeds monolith threshold (500+). |
 | P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/halo_re_physics.py:1` | module LOC=651 exceeds monolith threshold (500+). |
-| P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/hil_harness.py:1` | module LOC=547 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fno_training.py:1` | module LOC=572 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel.py:1` | module LOC=590 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel_newton_solver.py:1` | module LOC=632 exceeds monolith threshold (500+). |
