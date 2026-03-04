@@ -79,3 +79,14 @@ def test_aux_heating_sources_sanitize_nonfinite_density() -> None:
     assert np.all(np.isfinite(s_i))
     assert np.all(np.isfinite(s_e))
     assert dummy._last_aux_heating_balance["target_total_MW"] == 8.0
+
+
+def test_aux_heating_sources_sanitize_nonfinite_rho_grid() -> None:
+    dummy = _AuxHeatingDummy()
+    dummy.rho[2] = float("nan")
+    dummy.rho[5] = float("inf")
+    s_i, s_e = dummy._compute_aux_heating_sources(6.0)
+
+    assert np.all(np.isfinite(s_i))
+    assert np.all(np.isfinite(s_e))
+    assert dummy._last_aux_heating_balance["target_total_MW"] == 6.0

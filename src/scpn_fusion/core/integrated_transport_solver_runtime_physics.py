@@ -74,7 +74,11 @@ class TransportSolverRuntimePhysicsMixin:
             return zeros, zeros
 
         profile_width = max(self.aux_heating_profile_width, 1e-6)
-        shape = np.exp(-(self.rho**2) / profile_width)
+        rho_raw = np.asarray(self.rho, dtype=np.float64)
+        rho_safe = np.nan_to_num(rho_raw, nan=0.0, posinf=1.0, neginf=0.0)
+        rho_safe = np.clip(rho_safe, 0.0, 1.0)
+        shape = np.exp(-(rho_safe**2) / profile_width)
+        shape = np.nan_to_num(shape, nan=1.0, posinf=1.0, neginf=1.0)
         dV = self._rho_volume_element()
         norm = float(np.sum(shape * dV))
         if (not np.isfinite(norm)) or norm <= 0.0:
