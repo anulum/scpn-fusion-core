@@ -77,7 +77,7 @@ jobs:
 
       - name: Build rustdoc
         working-directory: scpn-fusion-rs
-        run: cargo doc --no-deps --all-features
+        run: cargo doc --workspace --no-deps --all-features --exclude scpn-fusion-rs
 
       - name: Upload Rust docs
         uses: actions/upload-artifact@v4
