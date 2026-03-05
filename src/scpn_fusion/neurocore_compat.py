@@ -94,7 +94,10 @@ def vec_popcount(packed: UInt64Array) -> int:
     if hasattr(np, "bit_count"):
         return int(np.bit_count(arr).sum(dtype=np.uint64))
     # NumPy < 2 fallback.
-    return int(sum(int(v).bit_count() for v in arr.tolist()))
+    if hasattr(int, "bit_count"):
+        return int(sum(int(v).bit_count() for v in arr.tolist()))
+    # Python 3.9 compatibility.
+    return int(sum(bin(int(v)).count("1") for v in arr.tolist()))
 
 
 @dataclass
