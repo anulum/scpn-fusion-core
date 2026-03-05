@@ -842,8 +842,12 @@ class TestLevel2Primitives:
     )
     def test_encode_mean_accuracy(self) -> None:
         """E[popcount(Encode(p))/L] ≈ p for a grid of probabilities."""
-        from sc_neurocore import generate_bernoulli_bitstream, RNG
-        from sc_neurocore.accel.vector_ops import pack_bitstream, vec_popcount
+        from scpn_fusion.neurocore_compat import (
+            RNG,
+            generate_bernoulli_bitstream,
+            pack_bitstream,
+            vec_popcount,
+        )
 
         L = 4096
         for p_target in [0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0]:
@@ -860,8 +864,9 @@ class TestLevel2Primitives:
     )
     def test_and_product_accuracy(self) -> None:
         """E[AND(w, p)] ≈ w*p."""
-        from sc_neurocore import generate_bernoulli_bitstream, RNG
-        from sc_neurocore.accel.vector_ops import (
+        from scpn_fusion.neurocore_compat import (
+            RNG,
+            generate_bernoulli_bitstream,
             pack_bitstream,
             vec_and,
             vec_popcount,

@@ -17,18 +17,13 @@ from typing import Any, Callable, Dict, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 from scpn_fusion.scpn.safety_interlocks import SafetyInterlockRuntime
+from scpn_fusion.neurocore_compat import (
+    SC_NEUROCORE_AVAILABLE,
+    QuantumEntropySource,
+    StochasticLIFNeuron,
+)
 
 logger = logging.getLogger(__name__)
-
-try:
-    from sc_neurocore.neurons.stochastic_lif import StochasticLIFNeuron
-    from sc_neurocore.sources.quantum_entropy import QuantumEntropySource
-
-    SC_NEUROCORE_AVAILABLE = True
-except Exception:  # pragma: no cover - optional dependency path
-    SC_NEUROCORE_AVAILABLE = False
-    StochasticLIFNeuron = None
-    QuantumEntropySource = None
 
 SHOT_DURATION = 100
 TARGET_R = 6.2

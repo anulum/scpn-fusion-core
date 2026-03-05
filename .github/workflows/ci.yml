@@ -147,33 +147,15 @@ jobs:
             pip install "freegs>=0.6"
           fi
 
-      - name: Bootstrap optional sc-neurocore modules (Python 3.12 lane)
+      - name: Verify embedded neurocore backend (Python 3.12 lane)
         if: matrix.python-version == '3.12'
         run: |
           python - <<'PY'
-          import importlib.util
-          import shutil
-          import subprocess
-          import sys
+          from scpn_fusion.neurocore_compat import SC_NEUROCORE_AVAILABLE, SC_NEUROCORE_BACKEND
 
-          if importlib.util.find_spec("sc_neurocore") is not None:
-              print("sc_neurocore already available.")
-              raise SystemExit(0)
-
-          if shutil.which("rustc") is None:
-              print("rustc not available in this lane; continuing with numpy fallback path.")
-              raise SystemExit(0)
-
-          cmd = [
-              sys.executable,
-              "-m",
-              "pip",
-              "install",
-              "git+https://github.com/anulum/sc-neurocore.git@df81aa28fd2db55665cacd87c3c4a62b7d8e077f#subdirectory=bridge",
-          ]
-          result = subprocess.run(cmd, check=False)
-          if result.returncode != 0:
-              print("Optional sc-neurocore bootstrap failed; continuing with fallback path.")
+          if not SC_NEUROCORE_AVAILABLE:
+              raise SystemExit("Embedded neurocore backend unavailable.")
+          print(f"Embedded neurocore backend active: {SC_NEUROCORE_BACKEND}")
           PY
       - name: Python preflight release gate
         if: matrix.python-version == '3.12'
@@ -288,32 +270,14 @@ jobs:
           pip install -e ".[dev]"
           pip install "jax[cpu]" gymnasium
 
-      - name: Bootstrap optional sc-neurocore modules
+      - name: Verify embedded neurocore backend
         run: |
           python - <<'PY'
-          import importlib.util
-          import shutil
-          import subprocess
-          import sys
+          from scpn_fusion.neurocore_compat import SC_NEUROCORE_AVAILABLE, SC_NEUROCORE_BACKEND
 
-          if importlib.util.find_spec("sc_neurocore") is not None:
-              print("sc_neurocore already available.")
-              raise SystemExit(0)
-
-          if shutil.which("rustc") is None:
-              print("rustc not available in this lane; continuing with numpy fallback path.")
-              raise SystemExit(0)
-
-          cmd = [
-              sys.executable,
-              "-m",
-              "pip",
-              "install",
-              "git+https://github.com/anulum/sc-neurocore.git@df81aa28fd2db55665cacd87c3c4a62b7d8e077f#subdirectory=bridge",
-          ]
-          result = subprocess.run(cmd, check=False)
-          if result.returncode != 0:
-              print("Optional sc-neurocore bootstrap failed; continuing with fallback path.")
+          if not SC_NEUROCORE_AVAILABLE:
+              raise SystemExit("Embedded neurocore backend unavailable.")
+          print(f"Embedded neurocore backend active: {SC_NEUROCORE_BACKEND}")
           PY
       - name: Python preflight research gate
         run: python tools/run_python_preflight.py --gate research
@@ -784,32 +748,14 @@ jobs:
           pip install -e ".[dev]"
           pip install "jax[cpu]" gymnasium
 
-      - name: Bootstrap optional sc-neurocore modules
+      - name: Verify embedded neurocore backend
         run: |
           python - <<'PY'
-          import importlib.util
-          import shutil
-          import subprocess
-          import sys
+          from scpn_fusion.neurocore_compat import SC_NEUROCORE_AVAILABLE, SC_NEUROCORE_BACKEND
 
-          if importlib.util.find_spec("sc_neurocore") is not None:
-              print("sc_neurocore already available.")
-              raise SystemExit(0)
-
-          if shutil.which("rustc") is None:
-              print("rustc not available in this lane; continuing with numpy fallback path.")
-              raise SystemExit(0)
-
-          cmd = [
-              sys.executable,
-              "-m",
-              "pip",
-              "install",
-              "git+https://github.com/anulum/sc-neurocore.git@df81aa28fd2db55665cacd87c3c4a62b7d8e077f#subdirectory=bridge",
-          ]
-          result = subprocess.run(cmd, check=False)
-          if result.returncode != 0:
-              print("Optional sc-neurocore bootstrap failed; continuing with fallback path.")
+          if not SC_NEUROCORE_AVAILABLE:
+              raise SystemExit("Embedded neurocore backend unavailable.")
+          print(f"Embedded neurocore backend active: {SC_NEUROCORE_BACKEND}")
           PY
       - name: IPB98 confinement scaling validation
         run: pytest tests/test_uncertainty.py -v --tb=short

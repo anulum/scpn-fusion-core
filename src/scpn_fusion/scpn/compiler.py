@@ -29,26 +29,19 @@ import numpy as np
 from numpy.typing import NDArray
 
 from scpn_fusion import __version__ as PACKAGE_VERSION
+from scpn_fusion.neurocore_compat import (
+    RNG as _SC_RNG,
+    SC_NEUROCORE_AVAILABLE as _HAS_SC_NEUROCORE,
+    StochasticLIFNeuron,
+    generate_bernoulli_bitstream,
+    pack_bitstream,
+    vec_and,
+    vec_popcount,
+)
 from .structure import StochasticPetriNet
 
 logger = logging.getLogger(__name__)
-
-# ── sc_neurocore import (graceful fallback) ──────────────────────────────────
-
-_HAS_SC_NEUROCORE = False
-
-try:
-    from sc_neurocore import StochasticLIFNeuron
-    from sc_neurocore import generate_bernoulli_bitstream
-    from sc_neurocore import RNG as _SC_RNG
-    from sc_neurocore.accel.vector_ops import pack_bitstream, vec_and, vec_popcount
-
-    _HAS_SC_NEUROCORE = True
-    logger.info("sc_neurocore detected — stochastic path enabled.")
-except ImportError:
-    logger.warning(
-        "sc_neurocore not installed — using numpy float-path only."
-    )
+logger.info("Embedded neurocore backend active for standalone SCPN execution.")
 
 FloatArray = NDArray[np.float64]
 UInt64Array = NDArray[np.uint64]
