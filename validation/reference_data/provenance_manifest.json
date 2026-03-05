@@ -24,6 +24,17 @@
       "total_bytes": 6596
     },
     {
+      "file_count": 1,
+      "id": "diiid_disruption_metadata",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "source": "Repository-maintained onboarding and metadata templates for DIII-D disruption lanes.",
+      "source_type": "documentation",
+      "total_bytes": 691
+    },
+    {
       "file_count": 16,
       "id": "diiid_disruption_shots",
       "license": "synthetic-v1",
@@ -111,7 +122,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 9531
+      "total_bytes": 9802
     },
     {
       "file_count": 1,
@@ -149,7 +160,7 @@
       "total_bytes": 3182
     }
   ],
-  "file_count": 51,
+  "file_count": 52,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -476,6 +487,18 @@
       "source_type": "derived_manifest"
     },
     {
+      "dataset_id": "diiid_disruption_metadata",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "path": "diiid/raw_disruption_onboarding_spec.example.json",
+      "sha256": "da433e2bbc36d77d490e2192f77ad3d449e9e02d7d60e550752e0397478427ee",
+      "size_bytes": 691,
+      "source": "Repository-maintained onboarding and metadata templates for DIII-D disruption lanes.",
+      "source_type": "documentation"
+    },
+    {
       "citation": "ITER Physics Basis, Nucl. Fusion (public literature summary).",
       "dataset_id": "published_reference_metadata",
       "license": "citation-required",
@@ -606,8 +629,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "10c8b7ed346acdf58ecfbfd6e23abf87a57740becd0d20f061da53ba37dcbddb",
-      "size_bytes": 6900,
+      "sha256": "fe3ca04e802ad070639a5dcb45be5109c3387ebb8354c9a30700f43922bc0715",
+      "size_bytes": 7171,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -781,7 +804,7 @@
       "source_type": "published_reference_summary"
     }
   ],
-  "generated_at_utc": "2026-03-03T23:55:05.603110+00:00",
+  "generated_at_utc": "2026-03-05T19:31:18.822826+00:00",
   "license_registry": [
     {
       "attribution_required": true,

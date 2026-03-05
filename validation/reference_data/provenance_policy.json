@@ -116,6 +116,13 @@
       "license": "synthetic-v1"
     },
     {
+      "id": "diiid_disruption_metadata",
+      "glob": "diiid/*.example.json",
+      "source_type": "documentation",
+      "source": "Repository-maintained onboarding and metadata templates for DIII-D disruption lanes.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
       "id": "diiid_disruption_shots",
       "glob": "diiid/disruption_shots/*.npz",
       "source_type": "synthetic_generated",
