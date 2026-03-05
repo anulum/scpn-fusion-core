@@ -30,6 +30,13 @@ if ! "${PYTHON_BIN[@]}" tools/sync_metadata.py --check; then
   exit 1
 fi
 
+echo "[pre-commit] Checking packaging contract..."
+if ! "${PYTHON_BIN[@]}" tools/check_packaging_contract.py; then
+  echo "[pre-commit] Packaging contract check failed. Commit blocked."
+  echo "[pre-commit] Base dependencies must stay lightweight and full extra must remain complete."
+  exit 1
+fi
+
 echo "[pre-commit] Checking Git LFS hygiene..."
 if ! "${PYTHON_BIN[@]}" tools/check_lfs_hygiene.py; then
   echo "[pre-commit] LFS hygiene check failed. Commit blocked."
@@ -37,4 +44,4 @@ if ! "${PYTHON_BIN[@]}" tools/check_lfs_hygiene.py; then
   exit 1
 fi
 
-echo "[pre-commit] Metadata + LFS hygiene checks passed."
+echo "[pre-commit] Metadata + packaging + LFS hygiene checks passed."

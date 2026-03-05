@@ -12,6 +12,7 @@ This checklist must be fully green before publishing a release tag.
 - [x] Claims audit, claim-range guard, and claims evidence map are up to date
 - [x] Underdeveloped register regenerated in current branch
 - [x] Version metadata and release docs are consistent
+- [x] Packaging contract guard passes (`python tools/check_packaging_contract.py`)
 - [x] Changelog contains the release section and date
 - [x] CI workflow on `main` is green for the release commit
 - [x] Tag/release notes reviewed and approved

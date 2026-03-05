@@ -1,0 +1,14 @@
+{
+  "roadmap_version": "v4.0",
+  "targets": {
+    "equilibrium_files_total": 20,
+    "sparc_equilibria": 20,
+    "transport_shots_total": 100,
+    "transport_machines_total": 30,
+    "disruption_shots_total": 16,
+    "jet_dt_equilibria": 5
+  },
+  "notes": {
+    "disruption_shots_total": "Raw MDSplus ingestion readiness is tracked separately via disruption calibration source metadata."
+  }
+}

@@ -33,6 +33,7 @@ def _normalize_check_timeout_seconds(timeout_s: float) -> float:
 def _build_release_checks(
     *,
     skip_version_metadata: bool,
+    skip_packaging_contract: bool,
     skip_lfs_hygiene: bool,
     skip_claims_audit: bool,
     skip_claim_range_guard: bool,
@@ -86,6 +87,18 @@ def _build_release_checks(
                     "pytest",
                     "tests/test_version_metadata.py",
                     "-q",
+                ],
+            )
+        )
+    if not skip_packaging_contract:
+        checks.append(
+            (
+                "Packaging contract guard",
+                [
+                    sys.executable,
+                    "tools/check_packaging_contract.py",
+                    "--summary-json",
+                    "artifacts/packaging_contract_summary.json",
                 ],
             )
         )
@@ -408,6 +421,7 @@ def _build_checks(
     *,
     gate: str,
     skip_version_metadata: bool,
+    skip_packaging_contract: bool,
     skip_lfs_hygiene: bool,
     skip_claims_audit: bool,
     skip_claim_range_guard: bool,
@@ -445,6 +459,7 @@ def _build_checks(
         checks.extend(
             _build_release_checks(
                 skip_version_metadata=skip_version_metadata,
+                skip_packaging_contract=skip_packaging_contract,
                 skip_lfs_hygiene=skip_lfs_hygiene,
                 skip_claims_audit=skip_claims_audit,
                 skip_claim_range_guard=skip_claim_range_guard,
@@ -478,9 +493,7 @@ def _build_checks(
             )
         )
     if gate in {"research", "all"}:
-        checks.extend(
-            _build_research_checks(skip_research_suite=skip_research_suite)
-        )
+        checks.extend(_build_research_checks(skip_research_suite=skip_research_suite))
     return checks
 
 
@@ -496,10 +509,7 @@ def _run_check(name: str, cmd: list[str], *, timeout_seconds: float) -> int:
         )
     except subprocess.TimeoutExpired:
         print(
-            (
-                f"[preflight] TIMEOUT at '{name}' "
-                f"after {timeout_seconds:.1f}s."
-            ),
+            (f"[preflight] TIMEOUT at '{name}' " f"after {timeout_seconds:.1f}s."),
             file=sys.stderr,
         )
         return 124
@@ -528,6 +538,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-version-metadata",
         action="store_true",
         help="Skip tests/test_version_metadata.py",
+    )
+    parser.add_argument(
+        "--skip-packaging-contract",
+        action="store_true",
+        help="Skip tools/check_packaging_contract.py",
     )
     parser.add_argument(
         "--skip-lfs-hygiene",
@@ -724,7 +739,9 @@ def main(argv: list[str] | None = None) -> int:
         and not args.skip_freegs_strict_backend
         and not freegs_available
     ):
-        print("[preflight] Skipping FreeGS strict-backend benchmark: freegs not installed.")
+        print(
+            "[preflight] Skipping FreeGS strict-backend benchmark: freegs not installed."
+        )
     try:
         check_timeout_seconds = _normalize_check_timeout_seconds(
             args.check_timeout_seconds
@@ -735,6 +752,7 @@ def main(argv: list[str] | None = None) -> int:
     checks = _build_checks(
         gate=args.gate,
         skip_version_metadata=args.skip_version_metadata,
+        skip_packaging_contract=args.skip_packaging_contract,
         skip_lfs_hygiene=args.skip_lfs_hygiene,
         skip_claims_audit=args.skip_claims_audit,
         skip_claim_range_guard=args.skip_claim_range_guard,

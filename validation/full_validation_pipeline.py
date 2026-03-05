@@ -14,16 +14,19 @@ Task 1 validation pipeline:
   - target: <5% RMSE (psi contour + confinement)
   - rewrite: >10% RMSE
   - high-beta divergence: pivot to hybrid 2D recommendation
+- FNO retrain route defaults to external-service artifact import.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
+import shutil
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -32,7 +35,6 @@ import numpy as np
 from numpy.typing import NDArray
 
 from scpn_fusion.control.disruption_predictor import predict_disruption_risk
-from scpn_fusion.core.fno_training import train_fno_multi_regime
 from scpn_fusion.io.tokamak_archive import (
     TokamakProfile,
     load_machine_profiles,
@@ -42,6 +44,10 @@ from scpn_fusion.io.tokamak_archive import (
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPERIMENTAL_ACK_TOKEN = "I_UNDERSTAND_EXPERIMENTAL"
+DEFAULT_EXTERNAL_FNO_MANIFEST = (
+    ROOT / "artifacts" / "external_fno_retrain_manifest.json"
+)
+DEFAULT_EXTERNAL_FNO_WEIGHTS = ROOT / "artifacts" / "external_fno_retrain_weights.npz"
 
 
 def _env_enabled(name: str) -> bool:
@@ -129,6 +135,72 @@ def _coerce_fraction(name: str, value: Any) -> float:
     return out
 
 
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _import_external_retrained_fno(
+    *,
+    manifest_path: Path,
+    weights_path: Path,
+    output_path: Path,
+) -> dict[str, Any]:
+    summary: dict[str, Any] = {
+        "mode": "external-service",
+        "status": "pending_external_service",
+        "manifest_path": str(manifest_path),
+        "weights_path": str(weights_path),
+        "output_path": str(output_path),
+        "errors": [],
+    }
+
+    if not manifest_path.exists() or not weights_path.exists():
+        summary["errors"] = [
+            "External retrain artifacts not found yet. "
+            "Export a retrain request and import returned artifacts."
+        ]
+        return summary
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict):
+        summary["errors"] = ["External retrain manifest must be a JSON object."]
+        return summary
+
+    expected_sha = manifest.get("weights_sha256")
+    if not isinstance(expected_sha, str) or not expected_sha.strip():
+        summary["errors"] = ["Manifest missing weights_sha256."]
+        return summary
+    actual_sha = _sha256_file(weights_path)
+    if actual_sha.lower() != expected_sha.strip().lower():
+        summary["errors"] = [
+            "Manifest weights_sha256 does not match provided weights file."
+        ]
+        summary["observed_sha256"] = actual_sha
+        return summary
+
+    datasets = manifest.get("trained_datasets", [])
+    datasets_text = " ".join(str(item).lower() for item in datasets)
+    if not any(token in datasets_text for token in ("gene", "cgyro")):
+        summary["errors"] = [
+            "Manifest trained_datasets must include GENE and/or CGYRO provenance."
+        ]
+        return summary
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(weights_path, output_path)
+    summary["status"] = "imported"
+    summary["errors"] = []
+    summary["weights_sha256"] = actual_sha
+    summary["manifest_service"] = manifest.get("service")
+    summary["manifest_schema_version"] = manifest.get("schema_version")
+    summary["trained_datasets"] = datasets
+    return summary
+
+
 def _rmse_percent(truth: NDArray[np.float64], pred: NDArray[np.float64]) -> float:
     truth_f = np.asarray(truth, dtype=np.float64)
     pred_f = np.asarray(pred, dtype=np.float64)
@@ -170,7 +242,9 @@ def _build_disruption_scenarios(
             raise ValueError("sensor_trace must be 1D with at least 8 values.")
 
         psi_jitter = rng.normal(0.0, 0.004, size=psi.size)
-        psi_shift = 0.02 * np.sin(np.linspace(0.0, 2.0 * np.pi, psi.size, dtype=np.float64) + 0.15 * i)
+        psi_shift = 0.02 * np.sin(
+            np.linspace(0.0, 2.0 * np.pi, psi.size, dtype=np.float64) + 0.15 * i
+        )
         psi_scenario = np.clip(psi + psi_jitter + psi_shift, 0.0, 1.5)
 
         trace_scenario = trace + rng.normal(0.0, 0.015, size=trace.size)
@@ -185,23 +259,19 @@ def _build_disruption_scenarios(
         tau_e_ms = float(np.clip(base.tau_e_ms * tau_scale, 5.0, 1200.0))
         fault_injected = bool(rng.random() < fault_injection_fraction)
         elm_severity = (
-            float(rng.uniform(0.25, 1.0))
-            if rng.random() < elm_stress_fraction
-            else 0.0
+            float(rng.uniform(0.25, 1.0)) if rng.random() < elm_stress_fraction else 0.0
         )
 
         if elm_severity > 0.0:
             psi_axis = np.linspace(0.0, 1.0, psi_scenario.size, dtype=np.float64)
-            psi_burst = np.exp(-((psi_axis - 0.84) / 0.08) ** 2)
+            psi_burst = np.exp(-(((psi_axis - 0.84) / 0.08) ** 2))
             psi_scenario = np.clip(
                 psi_scenario + 0.035 * elm_severity * psi_burst,
                 0.0,
                 1.5,
             )
-            trace_axis = np.linspace(
-                0.0, 1.0, trace_scenario.size, dtype=np.float64
-            )
-            trace_burst = np.exp(-((trace_axis - 0.86) / 0.07) ** 2)
+            trace_axis = np.linspace(0.0, 1.0, trace_scenario.size, dtype=np.float64)
+            trace_burst = np.exp(-(((trace_axis - 0.86) / 0.07) ** 2))
             trace_scenario = np.clip(
                 trace_scenario + 0.12 * elm_severity * trace_burst,
                 0.0,
@@ -235,9 +305,15 @@ def _build_disruption_scenarios(
                 disruption=True,
                 psi_contour=psi_scenario.astype(np.float64),
                 sensor_trace=trace_scenario.astype(np.float64),
-                toroidal_n1_amp=float(max(0.0, base.toroidal_n1_amp + rng.normal(0.0, 0.01))),
-                toroidal_n2_amp=float(max(0.0, base.toroidal_n2_amp + rng.normal(0.0, 0.008))),
-                toroidal_n3_amp=float(max(0.0, base.toroidal_n3_amp + rng.normal(0.0, 0.006))),
+                toroidal_n1_amp=float(
+                    max(0.0, base.toroidal_n1_amp + rng.normal(0.0, 0.01))
+                ),
+                toroidal_n2_amp=float(
+                    max(0.0, base.toroidal_n2_amp + rng.normal(0.0, 0.008))
+                ),
+                toroidal_n3_amp=float(
+                    max(0.0, base.toroidal_n3_amp + rng.normal(0.0, 0.006))
+                ),
                 elm_severity=elm_severity,
                 fault_injected=fault_injected,
                 scenario_id=i,
@@ -304,13 +380,17 @@ def _simulate_controller(
 
     if ctrl == "mpc":
         err_scale = _coerce_finite("mpc_error_scale", mpc_error_scale, minimum=0.0)
-        sigma = err_scale * (0.018 + 0.010 * risk + high_beta_penalty_scale * 0.010 * beta_excess)
+        sigma = err_scale * (
+            0.018 + 0.010 * risk + high_beta_penalty_scale * 0.010 * beta_excess
+        )
         tau_bias = -0.006 + 0.012 * risk + high_beta_penalty_scale * 0.010 * beta_excess
         tau_bias += 0.006 * float(scenario.elm_severity)
         tau_bias += 0.005 if scenario.fault_injected else 0.0
     else:
         err_scale = _coerce_finite("rl_error_scale", rl_error_scale, minimum=0.0)
-        sigma = err_scale * (0.024 + 0.014 * risk + high_beta_penalty_scale * 0.018 * beta_excess)
+        sigma = err_scale * (
+            0.024 + 0.014 * risk + high_beta_penalty_scale * 0.018 * beta_excess
+        )
         tau_bias = 0.004 + 0.020 * risk + high_beta_penalty_scale * 0.016 * beta_excess
         tau_bias += 0.010 * float(scenario.elm_severity)
         tau_bias += 0.008 if scenario.fault_injected else 0.0
@@ -398,7 +478,9 @@ def _summarize_metrics(
         elm_mean_tau = 0.0
 
     passes_target = bool(mean_psi < 5.0 and mean_tau < 5.0)
-    rewrite_required = bool(mean_psi > 10.0 or mean_tau > 10.0 or p95_psi > 10.0 or p95_tau > 10.0)
+    rewrite_required = bool(
+        mean_psi > 10.0 or mean_tau > 10.0 or p95_psi > 10.0 or p95_tau > 10.0
+    )
     pivot_to_hybrid_2d = bool(
         high_beta_count >= max(10, int(0.1 * len(rows))) and divergence_rate >= 0.25
     )
@@ -472,16 +554,25 @@ def run_campaign(
     live_poll_interval_ms: int = 100,
     live_shot_budget: int = 8,
     auto_retrain_fno: bool = False,
+    fno_retrain_mode: str = "external-service",
     fno_retrain_samples: int = 1024,
     fno_retrain_epochs: int = 12,
     fno_retrain_seed: int = 404,
-    fno_retrain_output: str | Path = ROOT / "weights" / "fno_turbulence_retrained_from_empirical.npz",
+    fno_retrain_output: str | Path = ROOT
+    / "weights"
+    / "fno_turbulence_retrained_from_empirical.npz",
+    fno_external_manifest: str | Path = DEFAULT_EXTERNAL_FNO_MANIFEST,
+    fno_external_weights: str | Path = DEFAULT_EXTERNAL_FNO_WEIGHTS,
 ) -> dict[str, Any]:
     seed_i = _coerce_int("seed", seed, minimum=0)
     scenarios_i = _coerce_int("scenario_count", scenario_count, minimum=100)
     high_beta = _coerce_finite("high_beta_threshold", high_beta_threshold, minimum=0.1)
-    high_beta_frac = _coerce_fraction("synthetic_high_beta_fraction", synthetic_high_beta_fraction)
-    penalty_scale = _coerce_finite("high_beta_penalty_scale", high_beta_penalty_scale, minimum=0.0)
+    high_beta_frac = _coerce_fraction(
+        "synthetic_high_beta_fraction", synthetic_high_beta_fraction
+    )
+    penalty_scale = _coerce_finite(
+        "high_beta_penalty_scale", high_beta_penalty_scale, minimum=0.0
+    )
     fault_frac = _coerce_fraction("fault_injection_fraction", fault_injection_fraction)
     elm_frac = _coerce_fraction("elm_stress_fraction", elm_stress_fraction)
     fault_noise = _coerce_finite("fault_noise_std", fault_noise_std, minimum=0.0)
@@ -500,8 +591,12 @@ def run_campaign(
 
     t0 = time.perf_counter()
     if prefer_live_archives:
-        d3d_ref, d3d_ref_meta = load_machine_profiles(machine="DIII-D", prefer_live=False)
-        cmod_ref, cmod_ref_meta = load_machine_profiles(machine="C-Mod", prefer_live=False)
+        d3d_ref, d3d_ref_meta = load_machine_profiles(
+            machine="DIII-D", prefer_live=False
+        )
+        cmod_ref, cmod_ref_meta = load_machine_profiles(
+            machine="C-Mod", prefer_live=False
+        )
         d3d_shots = [int(p.shot) for p in d3d_ref[:live_shot_budget_i]]
         cmod_shots = [int(p.shot) for p in cmod_ref[:live_shot_budget_i]]
         d3d_profiles, d3d_poll_meta = poll_mdsplus_feed(
@@ -560,7 +655,9 @@ def run_campaign(
     )
 
     rng = np.random.default_rng(seed_i + 901)
-    per_controller_metrics: dict[str, list[ScenarioMetric]] = {c: [] for c in controllers_norm}
+    per_controller_metrics: dict[str, list[ScenarioMetric]] = {
+        c: [] for c in controllers_norm
+    }
     for scenario in scenarios:
         for controller in controllers_norm:
             metric = _simulate_controller(
@@ -581,7 +678,9 @@ def run_campaign(
     passes_target = bool(all(v["passes_target"] for v in summaries.values()))
     rewrite_required = bool(any(v["rewrite_required"] for v in summaries.values()))
     pivot_to_hybrid_2d = bool(any(v["pivot_to_hybrid_2d"] for v in summaries.values()))
-    weak_fault_lane = bool(any(v["fault_uptime_rate"] < 0.99 for v in summaries.values()))
+    weak_fault_lane = bool(
+        any(v["fault_uptime_rate"] < 0.99 for v in summaries.values())
+    )
 
     recommendations: list[str] = []
     if rewrite_required:
@@ -601,15 +700,40 @@ def run_campaign(
             "Current campaign meets RMSE gates; continue live-archive sweeps and monitor high-beta divergence rate."
         )
 
+    retrain_mode = str(fno_retrain_mode).strip().lower()
+    if retrain_mode not in {"external-service", "local"}:
+        raise ValueError("fno_retrain_mode must be 'external-service' or 'local'.")
+    external_manifest_path = Path(fno_external_manifest)
+    external_weights_path = Path(fno_external_weights)
+    retrain_output_path = Path(fno_retrain_output)
+    if not external_manifest_path.is_absolute():
+        external_manifest_path = ROOT / external_manifest_path
+    if not external_weights_path.is_absolute():
+        external_weights_path = ROOT / external_weights_path
+    if not retrain_output_path.is_absolute():
+        retrain_output_path = ROOT / retrain_output_path
+
     retrain_summary: dict[str, Any] | None = None
     if auto_retrain_fno and rewrite_required:
-        retrain_summary = train_fno_multi_regime(
-            n_samples=_coerce_int("fno_retrain_samples", fno_retrain_samples, minimum=64),
-            epochs=_coerce_int("fno_retrain_epochs", fno_retrain_epochs, minimum=1),
-            seed=_coerce_int("fno_retrain_seed", fno_retrain_seed, minimum=0),
-            save_path=str(Path(fno_retrain_output)),
-            patience=max(1, min(8, int(fno_retrain_epochs))),
-        )
+        if retrain_mode == "local":
+            # Local retrain remains available as a controlled fallback.
+            from scpn_fusion.core.fno_training import train_fno_multi_regime
+
+            retrain_summary = train_fno_multi_regime(
+                n_samples=_coerce_int(
+                    "fno_retrain_samples", fno_retrain_samples, minimum=64
+                ),
+                epochs=_coerce_int("fno_retrain_epochs", fno_retrain_epochs, minimum=1),
+                seed=_coerce_int("fno_retrain_seed", fno_retrain_seed, minimum=0),
+                save_path=str(retrain_output_path),
+                patience=max(1, min(8, int(fno_retrain_epochs))),
+            )
+        else:
+            retrain_summary = _import_external_retrained_fno(
+                manifest_path=external_manifest_path,
+                weights_path=external_weights_path,
+                output_path=retrain_output_path,
+            )
 
     elapsed = float(time.perf_counter() - t0)
     return {
@@ -632,6 +756,10 @@ def run_campaign(
             "live_polls": int(live_polls_i),
             "live_poll_interval_ms": int(live_poll_interval_i),
             "live_shot_budget": int(live_shot_budget_i),
+            "fno_retrain_mode": retrain_mode,
+            "fno_external_manifest": str(external_manifest_path),
+            "fno_external_weights": str(external_weights_path),
+            "fno_retrain_output": str(retrain_output_path),
         },
         "archive_sources": {
             "DIII-D": d3d_meta,
@@ -648,9 +776,24 @@ def run_campaign(
         "fno_retrain_plan": {
             "recommended": rewrite_required,
             "auto_retrain_executed": bool(retrain_summary is not None),
+            "mode": retrain_mode,
             "recommended_command": (
-                "python validation/full_validation_pipeline.py --strict --auto-retrain-fno "
-                "--fno-retrain-samples 2048 --fno-retrain-epochs 24"
+                "python tools/export_fno_external_retrain_request.py "
+                "--validation-report validation/reports/full_validation_pipeline.json "
+                "--output-json artifacts/fno_external_retrain_request.json"
+                if retrain_mode == "external-service"
+                else (
+                    "python validation/full_validation_pipeline.py --strict --auto-retrain-fno "
+                    "--fno-retrain-mode local --fno-retrain-samples 2048 --fno-retrain-epochs 24"
+                )
+            ),
+            "import_command": (
+                "python tools/import_external_fno_weights.py "
+                "--manifest artifacts/external_fno_retrain_manifest.json "
+                "--weights artifacts/external_fno_retrain_weights.npz "
+                "--output weights/fno_turbulence_retrained_from_empirical.npz"
+                if retrain_mode == "external-service"
+                else None
             ),
             "reason": "RMSE >10% gate" if rewrite_required else "No rewrite trigger",
             "summary": retrain_summary,
@@ -759,12 +902,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--live-poll-interval-ms", type=int, default=100)
     parser.add_argument("--live-shot-budget", type=int, default=8)
     parser.add_argument("--auto-retrain-fno", action="store_true")
+    parser.add_argument(
+        "--fno-retrain-mode",
+        choices=("external-service", "local"),
+        default="external-service",
+    )
     parser.add_argument("--fno-retrain-samples", type=int, default=1024)
     parser.add_argument("--fno-retrain-epochs", type=int, default=12)
     parser.add_argument("--fno-retrain-seed", type=int, default=404)
     parser.add_argument(
         "--fno-retrain-output",
         default=str(ROOT / "weights" / "fno_turbulence_retrained_from_empirical.npz"),
+    )
+    parser.add_argument(
+        "--fno-external-manifest",
+        default=str(DEFAULT_EXTERNAL_FNO_MANIFEST),
+    )
+    parser.add_argument(
+        "--fno-external-weights",
+        default=str(DEFAULT_EXTERNAL_FNO_WEIGHTS),
     )
     parser.add_argument(
         "--output-json",
@@ -803,10 +959,13 @@ def main(argv: list[str] | None = None) -> int:
         live_poll_interval_ms=args.live_poll_interval_ms,
         live_shot_budget=args.live_shot_budget,
         auto_retrain_fno=args.auto_retrain_fno,
+        fno_retrain_mode=args.fno_retrain_mode,
         fno_retrain_samples=args.fno_retrain_samples,
         fno_retrain_epochs=args.fno_retrain_epochs,
         fno_retrain_seed=args.fno_retrain_seed,
         fno_retrain_output=args.fno_retrain_output,
+        fno_external_manifest=args.fno_external_manifest,
+        fno_external_weights=args.fno_external_weights,
     )
 
     out_json = Path(args.output_json)

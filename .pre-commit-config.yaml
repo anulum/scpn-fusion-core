@@ -33,6 +33,11 @@ repos:
         entry: python tools/sync_metadata.py --check
         language: system
         pass_filenames: false
+      - id: packaging-contract
+        name: packaging contract guard
+        entry: python tools/check_packaging_contract.py
+        language: system
+        pass_filenames: false
       - id: cargo-fmt-check
         name: cargo fmt --check
         entry: cargo fmt --all --check

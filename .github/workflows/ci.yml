@@ -398,6 +398,13 @@ jobs:
             --report artifacts/real_shot_validation.json \
             --thresholds tools/real_shot_validation_thresholds.json \
             --summary-json artifacts/real_shot_validation_guard_summary.json
+      - name: Real-data roadmap progress report
+        run: |
+          python tools/real_data_roadmap_progress.py \
+            --report artifacts/real_shot_validation.json \
+            --targets tools/real_data_roadmap_targets.json \
+            --output-json artifacts/real_data_roadmap_progress.json \
+            --output-md artifacts/real_data_roadmap_progress.md
       - name: Upload validation artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -406,6 +413,8 @@ jobs:
             artifacts/real_shot_validation.json
             artifacts/real_shot_validation.md
             artifacts/real_shot_validation_guard_summary.json
+            artifacts/real_data_roadmap_progress.json
+            artifacts/real_data_roadmap_progress.md
 
   benchmark-provenance-smoke:
     name: Benchmark Provenance Smoke

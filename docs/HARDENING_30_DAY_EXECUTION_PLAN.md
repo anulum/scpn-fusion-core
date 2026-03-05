@@ -15,11 +15,13 @@ Baseline snapshot (generated on 2026-02-28):
 Week 1
 - Lock default turbulence path to non-deprecated lanes only.
 - Keep deprecated FNO paths non-default and explicitly gated.
+- Route FNO retrain through external service workflow (request export + signed artifact import).
 - Add claim/evidence check for every benchmark table row touched.
 
 Week 2
 - Expand real-data validation ingestion path (SPARC/ITPA first).
 - Add stricter validation gate checks for data provenance and holdouts.
+- Emit roadmap progress artifact (counts vs v4.0 goals) from real-shot CI lane.
 - Publish updated benchmark delta table vs previous release artifacts.
 
 Week 3

@@ -12,11 +12,13 @@ Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_
 The JAX FNO module (rel_L2 = 0.79, synthetic Hasegawa-Wakatani only) is
 DEPRECATED in v3.9. In v4.0 it will be either:
 
-- **Retrained** on real gyrokinetic data (GENE/CGYRO flux-tube runs) if
-  collaboration access materializes, or
+- **Retrained** on real gyrokinetic data (GENE/CGYRO flux-tube runs) through
+  the established external retrain service workflow (request export + signed
+  artifact import), or
 - **Removed entirely** if no real training data is available.
 
-Status: DEPRECATED. Tracking: `src/scpn_fusion/core/fno_turbulence_suppressor.py`
+Status: DEPRECATED. Tracking: `src/scpn_fusion/core/fno_turbulence_suppressor.py`  
+Runbook: [`docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md`](docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md)
 
 ### Expand real-data validation
 
