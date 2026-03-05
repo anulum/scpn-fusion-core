@@ -61,6 +61,13 @@
       "description": "Release FreeGS lane must stay in manufactured-source parity mode."
     },
     {
+      "id": "freegs_force_solovev_contract",
+      "file": "artifacts/freegs_benchmark.json",
+      "path": ["force_solovev"],
+      "equals": true,
+      "description": "Release FreeGS parity run must be pinned to forced Solovev mode."
+    },
+    {
       "id": "freegs_overall_psi_nrmse",
       "file": "artifacts/freegs_benchmark.json",
       "path": ["overall_psi_nrmse"],

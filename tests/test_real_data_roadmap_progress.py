@@ -36,6 +36,10 @@ def test_progress_summary_contains_expected_metrics() -> None:
         "disruption": {
             "n_shots": 16,
             "calibration": {"source": "diiid-disruption-risk-calibration-v1"},
+            "data_source": {
+                "source_types": ["synthetic_diiid_like"],
+                "raw_ingestion_ready": False,
+            },
         },
     }
     targets = {
@@ -58,3 +62,24 @@ def test_progress_summary_contains_expected_metrics() -> None:
     metrics = {row["metric"]: row for row in summary["metrics"]}
     assert metrics["disruption_shots_total"]["passes"] is True
     assert metrics["transport_shots_total"]["passes"] is False
+
+
+def test_progress_uses_explicit_disruption_source_contract_for_raw_readiness() -> None:
+    report = {
+        "equilibrium": {"n_files": 0, "results": []},
+        "transport": {"n_shots": 0, "shots": []},
+        "disruption": {
+            "n_shots": 1,
+            "calibration": {"source": "diiid-disruption-risk-calibration-v1"},
+            "data_source": {
+                "source_types": ["raw_diiid_mdsplus"],
+                "raw_ingestion_ready": True,
+            },
+        },
+    }
+    targets = {"targets": {"disruption_shots_total": 1}}
+    summary = real_data_roadmap_progress.evaluate_progress(
+        report=report, targets=targets
+    )
+    assert summary["d3d_raw_ingestion_ready"] is True
+    assert summary["d3d_disruption_source_types"] == ["raw_diiid_mdsplus"]

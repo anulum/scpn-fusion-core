@@ -60,6 +60,22 @@ def test_main_runs_default_checks_in_order(monkeypatch):
         (
             [
                 "python-test",
+                "tools/check_packaging_contract.py",
+                "--summary-json",
+                "artifacts/packaging_contract_summary.json",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/check_lfs_hygiene.py",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
                 "tools/claims_audit.py",
             ],
             SCRIPT_PATH.resolve().parents[1],
@@ -297,6 +313,22 @@ def test_main_honors_skip_flags(monkeypatch):
     assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
         (
+            [
+                "python-test",
+                "tools/check_packaging_contract.py",
+                "--summary-json",
+                "artifacts/packaging_contract_summary.json",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/check_lfs_hygiene.py",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
             ["python-test", "tools/claims_audit.py"],
             SCRIPT_PATH.resolve().parents[1],
         ),
@@ -356,6 +388,22 @@ def test_main_enables_strict_backend_checks_when_requested(monkeypatch):
     assert all(check is False for _, _, check, _ in calls)
     assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
+        (
+            [
+                "python-test",
+                "tools/check_packaging_contract.py",
+                "--summary-json",
+                "artifacts/packaging_contract_summary.json",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/check_lfs_hygiene.py",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
         (
             [
                 "python-test",
@@ -425,6 +473,22 @@ def test_main_enables_freegs_strict_backend_check_when_requested(monkeypatch):
     assert all(check is False for _, _, check, _ in calls)
     assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
+        (
+            [
+                "python-test",
+                "tools/check_packaging_contract.py",
+                "--summary-json",
+                "artifacts/packaging_contract_summary.json",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/check_lfs_hygiene.py",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
         (
             [
                 "python-test",
@@ -504,6 +568,22 @@ def test_main_skips_freegs_strict_backend_when_unavailable(monkeypatch):
         (
             [
                 "python-test",
+                "tools/check_packaging_contract.py",
+                "--summary-json",
+                "artifacts/packaging_contract_summary.json",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/check_lfs_hygiene.py",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
                 "validation/benchmark_vs_torax.py",
                 "--strict-backend",
             ],
@@ -571,6 +651,22 @@ def test_main_skips_freegs_strict_backend_when_flagged(monkeypatch):
     assert all(check is False for _, _, check, _ in calls)
     assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
+        (
+            [
+                "python-test",
+                "tools/check_packaging_contract.py",
+                "--summary-json",
+                "artifacts/packaging_contract_summary.json",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
+        (
+            [
+                "python-test",
+                "tools/check_lfs_hygiene.py",
+            ],
+            SCRIPT_PATH.resolve().parents[1],
+        ),
         (
             [
                 "python-test",

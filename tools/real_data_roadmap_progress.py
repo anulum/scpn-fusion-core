@@ -80,10 +80,28 @@ def evaluate_progress(
     calibration_source = ""
     if isinstance(calibration, dict):
         calibration_source = str(calibration.get("source", "")).strip()
-    d3d_raw_ingestion_ready = bool(
-        calibration_source
-        and any(token in calibration_source.lower() for token in ("raw", "mdsplus"))
-    )
+    disruption_source = dis.get("data_source", {})
+    d3d_disruption_source_types: list[str] = []
+    d3d_raw_ingestion_ready = False
+    if isinstance(disruption_source, dict):
+        source_types_raw = disruption_source.get("source_types", [])
+        if isinstance(source_types_raw, list):
+            d3d_disruption_source_types = sorted(
+                {
+                    str(value).strip()
+                    for value in source_types_raw
+                    if str(value).strip()
+                }
+            )
+        d3d_raw_ingestion_ready = bool(
+            disruption_source.get("raw_ingestion_ready", False)
+        )
+    if not d3d_raw_ingestion_ready:
+        # Backward-compatible fallback for historical artifacts lacking data_source contract.
+        d3d_raw_ingestion_ready = bool(
+            calibration_source
+            and any(token in calibration_source.lower() for token in ("raw", "mdsplus"))
+        )
 
     observed = {
         "equilibrium_files_total": equilibrium_total,
@@ -116,6 +134,7 @@ def evaluate_progress(
         "roadmap_version": str(targets.get("roadmap_version", "v4.0")),
         "overall_pass": overall_pass,
         "d3d_raw_ingestion_ready": d3d_raw_ingestion_ready,
+        "d3d_disruption_source_types": d3d_disruption_source_types,
         "d3d_calibration_source": calibration_source or None,
         "transport_machines": transport_machines,
         "metrics": rows,
@@ -134,6 +153,12 @@ def render_markdown(summary: dict[str, Any]) -> str:
     source = summary.get("d3d_calibration_source")
     if source:
         lines.append(f"- DIII-D calibration source: `{source}`")
+    source_types = summary.get("d3d_disruption_source_types", [])
+    if isinstance(source_types, list) and source_types:
+        lines.append(
+            "- DIII-D disruption source types: "
+            + ", ".join(f"`{str(source_type)}`" for source_type in source_types)
+        )
     lines.extend(
         [
             "",

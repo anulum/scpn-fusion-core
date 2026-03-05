@@ -44,6 +44,12 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
     require_minima_match = bool(
         thresholds.get("require_dataset_minima_match_thresholds", False)
     )
+    require_disruption_source_contract = bool(
+        thresholds.get("require_disruption_source_contract", False)
+    )
+    require_disruption_raw_ingestion_ready = bool(
+        thresholds.get("require_disruption_raw_ingestion_ready", False)
+    )
 
     eq = dict(report.get("equilibrium", {}))
     tr = dict(report.get("transport", {}))
@@ -68,6 +74,19 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
     safe_count = int(dis.get("n_safe", 0))
     calibration = dict(dis.get("calibration", {}))
     calibration_gate = calibration.get("gates_overall_pass")
+    disruption_data_source = dis.get("data_source", {})
+    if not isinstance(disruption_data_source, dict):
+        disruption_data_source = {}
+    source_types_raw = disruption_data_source.get("source_types", [])
+    if not isinstance(source_types_raw, list):
+        source_types_raw = []
+    source_types = sorted(
+        {str(v).strip() for v in source_types_raw if str(v).strip()}
+    )
+    source_contract_present = bool(
+        disruption_data_source.get("manifest_found", False) and source_types
+    )
+    raw_ingestion_ready = bool(disruption_data_source.get("raw_ingestion_ready", False))
 
     counts_pass = bool(eq_count >= min_eq and tr_count >= min_tr and dis_count >= min_dis)
     machines_pass = all(machine in observed_machines for machine in required_machines)
@@ -86,6 +105,10 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
             and int(dataset_minima.get("transport_shots", 0)) >= min_tr
             and int(dataset_minima.get("disruption_shots", 0)) >= min_dis
         )
+    disruption_source_pass = bool(
+        (source_contract_present if require_disruption_source_contract else True)
+        and (raw_ingestion_ready if require_disruption_raw_ingestion_ready else True)
+    )
     artifact_pass = bool(report.get("overall_pass", False)) and bool(coverage.get("passes", False))
 
     return {
@@ -119,6 +142,14 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
             "observed_overall_pass": calibration_gate,
             "passes": calibration_pass,
         },
+        "disruption_data_source": {
+            "require_source_contract": require_disruption_source_contract,
+            "require_raw_ingestion_ready": require_disruption_raw_ingestion_ready,
+            "source_contract_present": source_contract_present,
+            "raw_ingestion_ready": raw_ingestion_ready,
+            "observed_source_types": source_types,
+            "passes": disruption_source_pass,
+        },
         "dataset_minima_alignment": {
             "required": require_minima_match,
             "observed": {
@@ -140,6 +171,7 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
             and transport_machine_pass
             and disruption_balance_pass
             and calibration_pass
+            and disruption_source_pass
             and minima_alignment_pass
         ),
     }
@@ -167,7 +199,8 @@ def main(argv: list[str] | None = None) -> int:
         f"machines_pass={summary['equilibrium_machine_diversity']['passes']} "
         f"transport_machine_pass={summary['transport_machine_diversity']['passes']} "
         f"disruption_balance_pass={summary['disruption_event_balance']['passes']} "
-        f"calibration_pass={summary['calibration_gate']['passes']}"
+        f"calibration_pass={summary['calibration_gate']['passes']} "
+        f"disruption_source_pass={summary['disruption_data_source']['passes']}"
     )
     if not bool(summary["overall_pass"]):
         print("Real-shot validation guard failed.")

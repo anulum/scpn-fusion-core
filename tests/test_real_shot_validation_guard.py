@@ -58,6 +58,11 @@ def _base_report() -> dict:
             "n_disruptions": 6,
             "n_safe": 10,
             "calibration": {"gates_overall_pass": True},
+            "data_source": {
+                "manifest_found": True,
+                "source_types": ["synthetic_diiid_like"],
+                "raw_ingestion_ready": False,
+            },
         },
     }
 
@@ -71,6 +76,8 @@ def _thresholds() -> dict:
         "min_disruption_events": 4,
         "min_safe_events": 8,
         "require_disruption_calibration_gate_pass": True,
+        "require_disruption_source_contract": True,
+        "require_disruption_raw_ingestion_ready": False,
         "require_dataset_minima_match_thresholds": True,
     }
 
@@ -101,6 +108,23 @@ def test_evaluate_fails_when_disruption_balance_is_below_thresholds() -> None:
     report["disruption"]["n_disruptions"] = 2
     summary = guard.evaluate(report=report, thresholds=_thresholds())
     assert summary["disruption_event_balance"]["passes"] is False
+    assert summary["overall_pass"] is False
+
+
+def test_evaluate_fails_when_disruption_source_contract_missing() -> None:
+    report = _base_report()
+    report["disruption"]["data_source"] = {}
+    summary = guard.evaluate(report=report, thresholds=_thresholds())
+    assert summary["disruption_data_source"]["passes"] is False
+    assert summary["overall_pass"] is False
+
+
+def test_evaluate_fails_when_raw_ingestion_is_required() -> None:
+    report = _base_report()
+    thresholds = _thresholds()
+    thresholds["require_disruption_raw_ingestion_ready"] = True
+    summary = guard.evaluate(report=report, thresholds=thresholds)
+    assert summary["disruption_data_source"]["passes"] is False
     assert summary["overall_pass"] is False
 
 

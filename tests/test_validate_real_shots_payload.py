@@ -224,6 +224,8 @@ def test_validate_disruption_reports_pipeline_contract_metadata(tmp_path: Path) 
             "actuator_lag_enabled": False,
         },
     )
+    assert disabled["data_source"]["manifest_found"] is False
+    assert disabled["data_source"]["raw_ingestion_ready"] is False
     assert disabled["pipeline"]["sensor_preprocess_enabled"] is False
     assert disabled["pipeline"]["actuator_lag_enabled"] is False
     assert float(disabled["pipeline"]["mean_abs_sensor_delta"]) == 0.0
@@ -234,6 +236,40 @@ def test_validate_disruption_reports_pipeline_contract_metadata(tmp_path: Path) 
     assert enabled["pipeline"]["actuator_lag_enabled"] is True
     assert float(enabled["pipeline"]["mean_abs_sensor_delta"]) >= 0.0
     assert float(enabled["pipeline"]["mean_abs_actuator_lag"]) >= 0.0
+
+
+def test_validate_disruption_reads_data_source_contract_manifest(tmp_path: Path) -> None:
+    shot_dir = tmp_path / "shots"
+    shot_dir.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        shot_dir / "shot_safe.npz",
+        n1_amp=np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float64),
+        is_disruption=np.array(False),
+        disruption_time_idx=np.array(-1),
+    )
+    (tmp_path / "disruption_shots_manifest.json").write_text(
+        json.dumps(
+            {
+                "manifest_version": "test-v1",
+                "dataset": "diiid_disruption_shots",
+                "shot_count": 1,
+                "shots": [
+                    {
+                        "file": "shot_safe.npz",
+                        "source_type": "raw_diiid_mdsplus",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    out = validate_real_shots.validate_disruption(shot_dir)
+    source = out["data_source"]
+    assert source["manifest_found"] is True
+    assert source["raw_ingestion_ready"] is True
+    assert source["source_types"] == ["raw_diiid_mdsplus"]
+    assert source["manifest_shot_count_matches"] is True
 
 
 def test_validate_transport_reports_uncertainty_envelope_contract(tmp_path: Path) -> None:

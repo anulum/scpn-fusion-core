@@ -59,11 +59,14 @@ STRICT_DATASET_MINIMA = {
 DISRUPTION_CALIBRATION_PATH = (
     ROOT / "validation" / "reference_data" / "diiid" / "disruption_risk_calibration.json"
 )
+DISRUPTION_SHOT_MANIFEST_NAME = "disruption_shots_manifest.json"
 _MAX_CALIBRATION_JSON_BYTES = 2 * 1024 * 1024
+_MAX_MANIFEST_JSON_BYTES = 4 * 1024 * 1024
 _MAX_SHOT_NPZ_BYTES = 64 * 1024 * 1024
 _MAX_SHOT_SIGNAL_SAMPLES = 200_000
 _DISRUPTION_MIN_RECALL_SAMPLES = 30
 _DISRUPTION_MIN_FPR_SAMPLES = 100
+_RAW_SOURCE_TOKENS = ("raw", "mdsplus")
 
 
 # ── Lane 1: Equilibrium Validation ───────────────────────────────────
@@ -347,6 +350,70 @@ def load_disruption_risk_calibration(
     return calibration
 
 
+def load_disruption_data_source_contract(disruption_dir: Path) -> dict[str, Any]:
+    """Load disruption-shot source metadata from the manifest adjacent to shot files."""
+    manifest_path = disruption_dir.parent / DISRUPTION_SHOT_MANIFEST_NAME
+    summary: dict[str, Any] = {
+        "manifest_path": str(manifest_path),
+        "manifest_found": False,
+        "manifest_version": None,
+        "dataset": None,
+        "source_types": [],
+        "source_type_counts": {},
+        "real_data_notice": None,
+        "raw_ingestion_ready": False,
+        "synthetic_only": False,
+        "manifest_shot_count": None,
+        "manifest_shot_count_matches": None,
+    }
+    if not manifest_path.exists():
+        return summary
+
+    payload = _load_bounded_json_object(
+        manifest_path,
+        max_bytes=_MAX_MANIFEST_JSON_BYTES,
+    )
+    shots_raw = payload.get("shots", [])
+    shots = shots_raw if isinstance(shots_raw, list) else []
+    source_type_counts: dict[str, int] = {}
+    for shot in shots:
+        if not isinstance(shot, dict):
+            continue
+        source_type_raw = shot.get("source_type", "unknown")
+        source_type = str(source_type_raw).strip() or "unknown"
+        source_type_counts[source_type] = source_type_counts.get(source_type, 0) + 1
+
+    source_types = sorted(source_type_counts.keys())
+    raw_ready = any(
+        any(token in source_type.lower() for token in _RAW_SOURCE_TOKENS)
+        for source_type in source_types
+    )
+    synthetic_only = bool(source_types) and all(
+        "synthetic" in source_type.lower() for source_type in source_types
+    )
+    manifest_shot_count = (
+        int(payload.get("shot_count"))
+        if isinstance(payload.get("shot_count"), (int, float))
+        else len(shots)
+    )
+
+    summary.update(
+        {
+            "manifest_found": True,
+            "manifest_version": str(payload.get("manifest_version", "")).strip() or None,
+            "dataset": str(payload.get("dataset", "")).strip() or None,
+            "source_types": source_types,
+            "source_type_counts": source_type_counts,
+            "real_data_notice": str(payload.get("real_data_notice", "")).strip() or None,
+            "raw_ingestion_ready": bool(raw_ready),
+            "synthetic_only": bool(synthetic_only),
+            "manifest_shot_count": int(manifest_shot_count),
+            "manifest_shot_count_matches": bool(manifest_shot_count == len(shots)),
+        }
+    )
+    return summary
+
+
 def load_disruption_shot_payload(npz_path: Path) -> dict[str, Any]:
     """Load and validate disruption-shot payload schema."""
     file_size = int(npz_path.stat().st_size)
@@ -452,11 +519,13 @@ def validate_disruption(
     bias_delta = float(calibration["bias_delta"])
 
     npz_files = sorted(disruption_dir.glob("*.npz"))
+    data_source = load_disruption_data_source_contract(disruption_dir)
     if not npz_files:
         return {
             "n_shots": 0,
             "passes": False,
             "error": f"No disruption NPZ files in {disruption_dir}",
+            "data_source": data_source,
         }
 
     results = []
@@ -595,6 +664,7 @@ def validate_disruption(
         ),
         "sample_adequacy": sample_adequacy,
         "calibration": calibration,
+        "data_source": data_source,
         "pipeline": {
             "config": dict(pipeline_cfg),
             "sensor_preprocess_enabled": bool(pipeline_cfg["sensor_preprocess_enabled"]),
@@ -731,6 +801,18 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"- Calibration: `{calibration.get('source', 'default-v2.1')}` "
             f"(threshold={calibration.get('risk_threshold', 0.50):.2f}, "
             f"bias_delta={calibration.get('bias_delta', 0.0):.2f})"
+        )
+    data_source = dis.get("data_source", {})
+    if isinstance(data_source, dict):
+        source_types = data_source.get("source_types", [])
+        if not isinstance(source_types, list):
+            source_types = []
+        source_display = ", ".join(str(v) for v in source_types) if source_types else "unknown"
+        lines.append(
+            "- Data source contract: "
+            f"manifest_found={bool(data_source.get('manifest_found', False))}, "
+            f"raw_ingestion_ready={bool(data_source.get('raw_ingestion_ready', False))}, "
+            f"source_types={source_display}"
         )
     pipeline = dis.get("pipeline", {})
     if isinstance(pipeline, dict):

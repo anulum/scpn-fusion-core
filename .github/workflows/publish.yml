@@ -51,9 +51,11 @@ jobs:
           pytest -q tests/test_version_metadata.py
           python tools/run_python_preflight.py --gate release
       - name: Install build tools
-        run: python -m pip install --upgrade build
+        run: python -m pip install --upgrade build twine
       - name: Build sdist and wheel
         run: python -m build
+      - name: Twine metadata check
+        run: python -m twine check dist/*
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -73,10 +75,23 @@ jobs:
         with:
           name: dist
           path: dist/
-      - name: Publish to PyPI
+      - name: Publish to PyPI (OIDC)
+        id: publish_oidc
+        continue-on-error: true
         uses: pypa/gh-action-pypi-publish@release/v1
         # Uses OIDC trusted publisher — no API token needed
         # Configure at: https://pypi.org/manage/project/scpn-fusion/settings/publishing/
+      - name: Publish to PyPI (token fallback)
+        id: publish_token
+        if: ${{ steps.publish_oidc.outcome != 'success' && secrets.PYPI_API_TOKEN != '' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Ensure publish succeeded
+        if: ${{ steps.publish_oidc.outcome != 'success' && steps.publish_token.outcome != 'success' }}
+        run: |
+          echo "PyPI publish failed for both OIDC and token fallback."
+          exit 1
 
   verify-pypi-parity:
     name: Verify PyPI version parity
