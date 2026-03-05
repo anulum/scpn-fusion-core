@@ -11,7 +11,7 @@
 
 | Metric | Value | Threshold |
 |--------|-------|-----------|
-| within_2sigma_fraction | 0.74 | >= 0.70 |
+| within_2sigma_fraction | 0.72 | >= 0.70 |
 | abs_relative_error_p95 | 2.1622 | <= 2.50 |
-| zscore_p95 | 3.7765 | <= 4.00 |
-| sigma_s_p95 | 0.1381 | > 0.00 |
+| zscore_p95 | 3.7922 | <= 4.00 |
+| sigma_s_p95 | 0.1435 | > 0.00 |

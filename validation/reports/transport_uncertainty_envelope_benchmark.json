@@ -16,19 +16,19 @@
     "transport_summary": {
       "rmse_s": 0.0969,
       "rmse_relative": 0.374,
-      "within_2sigma_fraction": 0.74,
+      "within_2sigma_fraction": 0.72,
       "uncertainty_envelope": {
         "abs_relative_error_p50": 0.3077,
         "abs_relative_error_p95": 2.1622,
         "residual_s_p05": -0.0739,
         "residual_s_p50": 0.007,
         "residual_s_p95": 0.1463,
-        "sigma_s_p50": 0.0229,
-        "sigma_s_p95": 0.1381,
-        "zscore_p50": 1.1847,
-        "zscore_p95": 3.7765,
-        "within_1sigma_fraction": 0.38,
-        "within_2sigma_fraction": 0.74
+        "sigma_s_p50": 0.0231,
+        "sigma_s_p95": 0.1435,
+        "zscore_p50": 1.1481,
+        "zscore_p95": 3.7922,
+        "within_1sigma_fraction": 0.4,
+        "within_2sigma_fraction": 0.72
       }
     }
   }
