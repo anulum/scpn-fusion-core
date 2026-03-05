@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-05T17:52:39.626152+00:00`
+- Generated at: `2026-03-05T18:24:29.171233+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -97,7 +97,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 65 | `other` | `FALLBACK` | `CHANGELOG.md:186` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | - Robust fallback to SciPy L-BFGS-B when JAX is unavailable. |
 | P3 | 65 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:32` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | raise ValueError("fallback domain must be non-empty") |
 | P3 | 65 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:114` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | "Fallback budget exceeded: " |
-| P3 | 63 | `validation` | `PLANNED` | `validation/validate_real_shots.py:592` | Validation WG | Convert roadmap note into scheduled milestone task + owner. | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
+| P3 | 63 | `validation` | `PLANNED` | `validation/validate_real_shots.py:661` | Validation WG | Convert roadmap note into scheduled milestone task + owner. | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
 | P3 | 56 | `docs_claims` | `SIMPLIFIED` | `docs/assets/generate_header.py:27` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified Grad-Shafranov flux function with Shafranov shift + triangularity |
 | P3 | 56 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/control.rst:197` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | simplified equilibrium and transport problems, used primarily for: |
 | P3 | 56 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/transport.rst:82` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | using simplified ray-tracing: |
@@ -182,7 +182,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `other` | `FALLBACK` | `CHANGELOG.md:186` | - Robust fallback to SciPy L-BFGS-B when JAX is unavailable. |
 | P3 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:32` | raise ValueError("fallback domain must be non-empty") |
 | P3 | `other` | `FALLBACK` | `src/scpn_fusion/fallback_telemetry.py:114` | "Fallback budget exceeded: " |
-| P3 | `validation` | `PLANNED` | `validation/validate_real_shots.py:592` | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
+| P3 | `validation` | `PLANNED` | `validation/validate_real_shots.py:661` | f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1" |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/assets/generate_header.py:27` | # Simplified Grad-Shafranov flux function with Shafranov shift + triangularity |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/control.rst:197` | simplified equilibrium and transport problems, used primarily for: |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/transport.rst:82` | using simplified ray-tracing: |
