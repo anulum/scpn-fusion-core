@@ -83,7 +83,7 @@ jobs:
         # Configure at: https://pypi.org/manage/project/scpn-fusion/settings/publishing/
       - name: Publish to PyPI (token fallback)
         id: publish_token
-        if: ${{ steps.publish_oidc.outcome != 'success' && secrets.PYPI_API_TOKEN != '' }}
+        if: ${{ steps.publish_oidc.outcome != 'success' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
