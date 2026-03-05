@@ -65,6 +65,8 @@ artifacts/_*.log
 artifacts/_*.zip
 artifacts/_tmp_*.json
 artifacts/_tmp_*.md
+artifacts/_tmp_*.txt
+artifacts/_tmp_*.csv
 artifacts/*_local*.json
 artifacts/*_local*.md
 artifacts/underdeveloped_register_ci*.md
@@ -103,3 +105,10 @@ papers/*.tar.gz
 data/qlknn10d/
 data/qlknn10d_processed/
 data/fno_qlknn_spatial/
+
+# Local audit scratch scripts/logs (machine-local only)
+deep_file_audit.py
+run_audit.py
+run_audit_fast.py
+run_audit_fix.py
+pytest_results.log
