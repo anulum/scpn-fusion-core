@@ -116,6 +116,94 @@ jobs:
           print("CI chain guard passed: no duplicate in-progress runs found.")
           PY
 
+  smoke-install:
+    name: Install Smoke (${{ matrix.os }} / ${{ matrix.profile }})
+    runs-on: ${{ matrix.os }}
+    needs: [ci-chain-guard]
+    continue-on-error: ${{ matrix.allow_failure }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            profile: minimal
+            allow_failure: false
+          - os: ubuntu-latest
+            profile: dev
+            allow_failure: false
+          - os: ubuntu-latest
+            profile: full
+            allow_failure: false
+          - os: macos-latest
+            profile: minimal
+            allow_failure: false
+          - os: macos-latest
+            profile: dev
+            allow_failure: false
+          - os: macos-latest
+            profile: full
+            allow_failure: false
+          - os: windows-latest
+            profile: minimal
+            allow_failure: false
+          - os: windows-latest
+            profile: dev
+            allow_failure: false
+          # Windows + full currently has occasional upstream dependency
+          # turbulence (jax/freegs/omas wheel availability).
+          - os: windows-latest
+            profile: full
+            allow_failure: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install selected dependency profile
+        env:
+          SCPN_PROFILE: ${{ matrix.profile }}
+        run: |
+          python -m pip install --upgrade pip
+          python - <<'PY'
+          from __future__ import annotations
+          import os
+          import subprocess
+          import sys
+
+          profile = os.environ["SCPN_PROFILE"].strip().lower()
+          args = {
+              "minimal": ["-e", "."],
+              "dev": ["-e", ".[dev]"],
+              "full": ["-e", ".[full]"],
+          }.get(profile)
+          if args is None:
+              raise SystemExit(f"Unknown install profile: {profile}")
+          cmd = [sys.executable, "-m", "pip", "install", *args]
+          print("Running:", " ".join(cmd))
+          subprocess.check_call(cmd)
+          PY
+      - name: Import smoke
+        env:
+          SCPN_PROFILE: ${{ matrix.profile }}
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+          import importlib
+          import os
+          import subprocess
+          import sys
+
+          import scpn_fusion
+
+          print("scpn_fusion version:", getattr(scpn_fusion, "__version__", "unknown"))
+          profile = os.environ["SCPN_PROFILE"].strip().lower()
+          if profile == "full":
+              importlib.import_module("jax")
+              importlib.import_module("gymnasium")
+          subprocess.check_call([sys.executable, "-m", "scpn_fusion.cli", "--help"])
+          PY
+
   python-tests:
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest

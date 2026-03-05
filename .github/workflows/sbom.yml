@@ -1,0 +1,66 @@
+name: SBOM Generation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "30 3 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: sbom-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cyclonedx-sbom:
+    name: CycloneDX SBOM (Python + Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Generate Python CycloneDX SBOM
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install cyclonedx-bom
+          mkdir -p artifacts
+          cyclonedx-py environment --of JSON --no-validate \
+            -o artifacts/sbom-python.cdx.json
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Generate Rust CycloneDX SBOMs
+        run: |
+          cargo install cargo-cyclonedx --locked
+          cargo cyclonedx --manifest-path scpn-fusion-rs/Cargo.toml \
+            --format json --override-filename sbom-rust.cdx
+          mkdir -p artifacts/sbom-rust
+          while IFS= read -r file; do
+            crate="$(basename "$(dirname "$file")")"
+            cp "$file" "artifacts/sbom-rust/${crate}.cdx.json"
+          done < <(find scpn-fusion-rs -name "sbom-rust.cdx.json" -type f)
+          count=$(find artifacts/sbom-rust -name "*.cdx.json" -type f | wc -l)
+          if [ "$count" -eq 0 ]; then
+            echo "::error::No Rust SBOM files were generated."
+            exit 1
+          fi
+          echo "Rust SBOM files generated: $count"
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx-sbom
+          path: |
+            artifacts/sbom-python.cdx.json
+            artifacts/sbom-rust/*.cdx.json

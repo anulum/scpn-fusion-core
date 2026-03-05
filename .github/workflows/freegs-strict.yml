@@ -3,6 +3,10 @@ name: FreeGS Strict Backend Gate
 on:
   workflow_dispatch:
 
+concurrency:
+  group: freegs-strict-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

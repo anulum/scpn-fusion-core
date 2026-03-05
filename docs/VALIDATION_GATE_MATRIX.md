@@ -27,6 +27,8 @@ This document defines the split between release-grade validation and research-on
 | `validation-regression` | Cross-language physics validation lane | `release` (`pytest -m "not experimental"`) |
 | `strict-real-data` (`real-data-strict.yml`, manual dispatch) | External-data readiness lane; fails when DIII-D raw ingestion contract is unmet (unless dry-run override is set). | `real-data-strict` |
 | `freegs-strict` (`freegs-strict.yml`, manual dispatch) | Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS reference backend. | `freegs-strict` |
+| `security-audit` (`security-audit.yml`) | Supply-chain audit lane for Python + Rust dependencies (`pip-audit`, `cargo audit`) on PR and weekly schedule. | Security audit |
+| `sbom` (`sbom.yml`) | CycloneDX SBOM generation lane for Python environment + Rust crates; publishes artifacts for traceability/compliance. | SBOM generation |
 
 FreeGS strict-backend parity remains opt-in via
 `--enable-freegs-strict-backend-check` (or `SCPN_ENABLE_FREEGS_STRICT_BACKEND_CHECKS=1`)

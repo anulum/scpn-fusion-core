@@ -1,0 +1,64 @@
+name: Security Audit
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: security-audit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  python-dependency-audit:
+    name: Python Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install audit tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pip-audit
+      - name: Run pip-audit (strict)
+        run: |
+          mkdir -p artifacts
+          pip-audit -S --desc on --format json --output artifacts/pip-audit.json
+      - name: Upload Python audit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dependency-audit
+          path: artifacts/pip-audit.json
+
+  rust-dependency-audit:
+    name: Rust Dependency Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scpn-fusion-rs
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      - name: Run cargo audit
+        run: |
+          mkdir -p ../artifacts
+          cargo audit --json > ../artifacts/cargo-audit.json
+      - name: Upload Rust audit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-dependency-audit
+          path: artifacts/cargo-audit.json

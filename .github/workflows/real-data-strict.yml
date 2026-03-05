@@ -9,6 +9,10 @@ on:
         default: false
         type: boolean
 
+concurrency:
+  group: real-data-strict-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
