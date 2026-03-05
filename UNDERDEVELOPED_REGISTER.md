@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-05T19:10:09.465643+00:00`
+- Generated at: `2026-03-05T19:27:49.306971+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,9 +8,9 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 196 |
+| Total flagged entries | 197 |
 | P0 + P1 entries | 0 |
-| Source-domain entries | 31 |
+| Source-domain entries | 32 |
 | Source-domain P0 + P1 entries | 0 |
 | Docs-claims entries | 144 |
 | Domains affected | 3 |
@@ -19,7 +19,7 @@
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 122 |
+| `FALLBACK` | 123 |
 | `EXPERIMENTAL` | 23 |
 | `PLANNED` | 23 |
 | `SIMPLIFIED` | 14 |
@@ -31,7 +31,7 @@
 | Key | Count |
 |---|---:|
 | `docs_claims` | 144 |
-| `validation` | 31 |
+| `validation` | 32 |
 | `other` | 21 |
 
 ## Source-Centric Priority Backlog (Top 0)
@@ -61,6 +61,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 73 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:82` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | if "FALLBACK" in issue.markers: |
 | P2 | 73 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:83` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | metrics.append("Fallback budget guard remains green for impacted lane (tools/fallback_budget_guard.py).") |
 | P2 | 73 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:198` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
+| P2 | 73 | `validation` | `FALLBACK` | `tools/onboard_diiid_raw_disruption_shots.py:18` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | except ImportError: # pragma: no cover - direct script execution fallback |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:727` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | whether LQR fallback was used. |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:745` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | "H-infinity strict mode: ARE synthesis failed; fallback disallowed" |
@@ -124,9 +125,8 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Replace default path or remove lane before next major release. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:16` | Docs WG | Replace default path or remove lane before next major release. | - Lock default turbulence path to non-deprecated lanes only. |
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:17` | Docs WG | Replace default path or remove lane before next major release. | - Keep deprecated FNO paths non-default and explicitly gated. |
-| P3 | 37 | `docs_claims` | `PLANNED` | `docs/HONEST_SCOPE.md:25` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| Full 3D MHD \| Not planned for real-time loop \| Use NIMROD/M3D-C1 externally \| |
 
-## Full Register (Top 196)
+## Full Register (Top 197)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -146,6 +146,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:82` | if "FALLBACK" in issue.markers: |
 | P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:83` | metrics.append("Fallback budget guard remains green for impacted lane (tools/fallback_budget_guard.py).") |
 | P2 | `validation` | `FALLBACK` | `tools/generate_source_p0p1_issue_backlog.py:198` | items.append("Record fallback telemetry and enforce strict-backend parity where applicable.") |
+| P2 | `validation` | `FALLBACK` | `tools/onboard_diiid_raw_disruption_shots.py:18` | except ImportError: # pragma: no cover - direct script execution fallback |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:26` | ``get_radial_robust_controller()`` with LQR fallback. |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:727` | whether LQR fallback was used. |
 | P2 | `validation` | `FALLBACK` | `validation/benchmark_disturbance_rejection.py:745` | "H-infinity strict mode: ARE synthesis failed; fallback disallowed" |
