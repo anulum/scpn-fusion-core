@@ -33,6 +33,7 @@ def _normalize_check_timeout_seconds(timeout_s: float) -> float:
 def _build_release_checks(
     *,
     skip_version_metadata: bool,
+    skip_lfs_hygiene: bool,
     skip_claims_audit: bool,
     skip_claim_range_guard: bool,
     skip_claims_map: bool,
@@ -85,6 +86,16 @@ def _build_release_checks(
                     "pytest",
                     "tests/test_version_metadata.py",
                     "-q",
+                ],
+            )
+        )
+    if not skip_lfs_hygiene:
+        checks.append(
+            (
+                "Git LFS hygiene guard",
+                [
+                    sys.executable,
+                    "tools/check_lfs_hygiene.py",
                 ],
             )
         )
@@ -397,6 +408,7 @@ def _build_checks(
     *,
     gate: str,
     skip_version_metadata: bool,
+    skip_lfs_hygiene: bool,
     skip_claims_audit: bool,
     skip_claim_range_guard: bool,
     skip_claims_map: bool,
@@ -433,6 +445,7 @@ def _build_checks(
         checks.extend(
             _build_release_checks(
                 skip_version_metadata=skip_version_metadata,
+                skip_lfs_hygiene=skip_lfs_hygiene,
                 skip_claims_audit=skip_claims_audit,
                 skip_claim_range_guard=skip_claim_range_guard,
                 skip_claims_map=skip_claims_map,
@@ -515,6 +528,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-version-metadata",
         action="store_true",
         help="Skip tests/test_version_metadata.py",
+    )
+    parser.add_argument(
+        "--skip-lfs-hygiene",
+        action="store_true",
+        help="Skip tools/check_lfs_hygiene.py",
     )
     parser.add_argument(
         "--skip-notebook-quality",
@@ -717,6 +735,7 @@ def main(argv: list[str] | None = None) -> int:
     checks = _build_checks(
         gate=args.gate,
         skip_version_metadata=args.skip_version_metadata,
+        skip_lfs_hygiene=args.skip_lfs_hygiene,
         skip_claims_audit=args.skip_claims_audit,
         skip_claim_range_guard=args.skip_claim_range_guard,
         skip_claims_map=args.skip_claims_map,

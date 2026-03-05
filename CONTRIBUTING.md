@@ -76,6 +76,24 @@ python -c "import scpn_fusion; print(scpn_fusion.__version__)"
 pytest tests/ -v
 ```
 
+### Git LFS (Required for Weights/Reference Binaries)
+
+Model weights and reference `.npz/.npy` artifacts are tracked with Git LFS.
+Set this up once per machine:
+
+```bash
+git lfs install
+git lfs pull
+```
+
+Before pushing, run:
+
+```bash
+python tools/check_lfs_hygiene.py
+```
+
+This is also enforced by local pre-commit/pre-push guards.
+
 ### Rust (Optional)
 
 The Rust workspace provides high-performance kernels. All functionality works

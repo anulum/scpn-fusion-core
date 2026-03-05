@@ -52,6 +52,13 @@ shot replay, all in one:
 docker compose up --build    # Streamlit dashboard at localhost:8501
 ```
 
+For full validation datasets and weight artifacts after clone:
+
+```bash
+git lfs install
+git lfs pull
+```
+
 ## Key Results
 
 | Metric | Value | Reproducibility |

@@ -30,4 +30,11 @@ if ! "${PYTHON_BIN[@]}" tools/sync_metadata.py --check; then
   exit 1
 fi
 
-echo "[pre-commit] Metadata check passed."
+echo "[pre-commit] Checking Git LFS hygiene..."
+if ! "${PYTHON_BIN[@]}" tools/check_lfs_hygiene.py; then
+  echo "[pre-commit] LFS hygiene check failed. Commit blocked."
+  echo "[pre-commit] Ensure large model/data artifacts are tracked via Git LFS."
+  exit 1
+fi
+
+echo "[pre-commit] Metadata + LFS hygiene checks passed."
