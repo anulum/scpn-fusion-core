@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-05T19:27:49.306971+00:00`
+- Generated at: `2026-03-05T21:24:26.975010+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,18 +8,18 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 197 |
+| Total flagged entries | 199 |
 | P0 + P1 entries | 0 |
 | Source-domain entries | 32 |
 | Source-domain P0 + P1 entries | 0 |
-| Docs-claims entries | 144 |
+| Docs-claims entries | 146 |
 | Domains affected | 3 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 123 |
+| `FALLBACK` | 125 |
 | `EXPERIMENTAL` | 23 |
 | `PLANNED` | 23 |
 | `SIMPLIFIED` | 14 |
@@ -30,7 +30,7 @@
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 144 |
+| `docs_claims` | 146 |
 | `validation` | 32 |
 | `other` | 21 |
 
@@ -111,7 +111,9 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback to analytic model when no weights are available |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
-| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:31` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | until convergence hardening closes the remaining fallback/instability cases. |
+| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:19` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | `freegs-strict` | FreeGS-only strict backend parity lane with runtime-fallback disallowed and artifact contract checks (`mode=freegs`, ... |
+| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:29` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | `freegs-strict` (`freegs-strict.yml`, manual dispatch) | Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS referen... |
+| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:34` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | enforces a no-fallback contract when invoked. |
 | P3 | 47 | `docs_claims` | `DEPRECATED` | `docs/sphinx/changelog.rst:27` | Docs WG | Replace default path or remove lane before next major release. | - FNO turbulence surrogate deprecated (runtime ``FutureWarning``) |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:41` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| GPU support \| Planned \| Yes (JAX) \| No \| No \| |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:242` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| SOR red-black sweep \| wgpu compute shader \| 20–50× (65×65), 100–200× (256×256) \| P0 \| Planned \| |
@@ -123,10 +125,8 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:26` | Docs WG | Replace default path or remove lane before next major release. | \| `DEPRECATED` \| 17 \| |
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:51` | Docs WG | Replace default path or remove lane before next major release. | - The critical residual gaps are targeted: physics fidelity upgrades, deprecated FNO lane retirement, and validation/claim rigor. |
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:59` | Docs WG | Replace default path or remove lane before next major release. | | `src/scpn_fusion/core/fno_turbulence_suppressor.py` | 3 (`DEPRECATED`, `NOT_VALIDATED`, `SIMPLIFIED`) | Highest-credibility physics lan... |
-| P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:16` | Docs WG | Replace default path or remove lane before next major release. | - Lock default turbulence path to non-deprecated lanes only. |
-| P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:17` | Docs WG | Replace default path or remove lane before next major release. | - Keep deprecated FNO paths non-default and explicitly gated. |
 
-## Full Register (Top 197)
+## Full Register (Top 199)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -196,7 +196,9 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | - Transparent fallback to analytic model when no weights are available |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
-| P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:31` | until convergence hardening closes the remaining fallback/instability cases. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:19` | | `freegs-strict` | FreeGS-only strict backend parity lane with runtime-fallback disallowed and artifact contract checks (`mode=freegs`, ... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:29` | | `freegs-strict` (`freegs-strict.yml`, manual dispatch) | Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS referen... |
+| P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:34` | enforces a no-fallback contract when invoked. |
 | P3 | `docs_claims` | `DEPRECATED` | `docs/sphinx/changelog.rst:27` | - FNO turbulence surrogate deprecated (runtime ``FutureWarning``) |
 | P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:41` | \| GPU support \| Planned \| Yes (JAX) \| No \| No \| |
 | P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:242` | \| SOR red-black sweep \| wgpu compute shader \| 20–50× (65×65), 100–200× (256×256) \| P0 \| Planned \| |
