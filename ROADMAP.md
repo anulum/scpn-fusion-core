@@ -1,9 +1,29 @@
 # Roadmap
 
-> Last updated: 2026-02-27. This roadmap reflects current priorities and may
+> Last updated: 2026-03-05. This roadmap reflects current priorities and may
 > change based on community feedback and validation results.
 
 Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_DAY_EXECUTION_PLAN.md)
+
+## Current Hardening Snapshot (2026-03-05)
+
+| Area | Current State | Tracking / Gate |
+|---|---|---|
+| Underdeveloped register | 197 total flags, **0 P0/P1** | `UNDERDEVELOPED_REGISTER.md` (generated) |
+| Real-data roadmap progress | 18 equilibrium files, 8 SPARC, 53 transport shots, 24 machines, 16 disruption shots, 1 JET-DT | `tools/real_data_roadmap_progress.py` + `tools/real_data_roadmap_non_regression_guard.py` |
+| DIII-D raw ingestion readiness | **Not ready yet** (strict lane blocks promotion) | `tools/run_real_data_strict_gate.py` + `real-data-strict.yml` |
+| FreeGS strict parity | New dedicated strict no-fallback lane available | `.github/workflows/freegs-strict.yml` + `tools/check_freegs_strict_artifact.py` |
+
+Roadmap KPI commands:
+
+```bash
+python tools/real_data_roadmap_progress.py \
+  --report artifacts/real_shot_validation.json \
+  --targets tools/real_data_roadmap_targets.json
+python tools/real_data_roadmap_non_regression_guard.py \
+  --progress-json artifacts/real_data_roadmap_progress.json \
+  --baseline-json tools/real_data_roadmap_baseline.json
+```
 
 ## v4.0 — Validation-First Release (target: Q2 2026)
 

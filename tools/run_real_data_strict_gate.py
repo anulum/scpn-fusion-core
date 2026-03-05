@@ -14,6 +14,7 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TIMEOUT_SECONDS = 1800.0
+_RAW_SOURCE_TYPE_TOKENS = ("raw", "mdsplus", "omas")
 
 
 def _resolve(path_value: str) -> Path:
@@ -28,6 +29,21 @@ def _load_json(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"{path}: expected JSON object payload")
     return payload
+
+
+def _has_raw_source_type(progress_payload: dict[str, Any]) -> bool:
+    explicit = progress_payload.get("d3d_raw_source_type_present")
+    if isinstance(explicit, bool):
+        return explicit
+
+    source_types_raw = progress_payload.get("d3d_disruption_source_types", [])
+    if not isinstance(source_types_raw, list):
+        return False
+    for value in source_types_raw:
+        lowered = str(value).strip().lower()
+        if lowered and any(token in lowered for token in _RAW_SOURCE_TYPE_TOKENS):
+            return True
+    return False
 
 
 def _run_step(name: str, cmd: list[str], *, timeout_seconds: float) -> None:
@@ -187,7 +203,18 @@ def main(argv: list[str] | None = None) -> int:
 
     progress_payload = _load_json(progress_json)
     raw_ready = bool(progress_payload.get("d3d_raw_ingestion_ready", False))
-    print(f"[real-data-strict] d3d_raw_ingestion_ready={raw_ready}")
+    raw_source_contract = _has_raw_source_type(progress_payload)
+    print(
+        "[real-data-strict] "
+        f"d3d_raw_ingestion_ready={raw_ready} "
+        f"d3d_raw_source_contract={raw_source_contract}"
+    )
+    if raw_ready and not raw_source_contract and not args.allow_missing_raw_ingestion:
+        print(
+            "Strict real-data gate failed: d3d_raw_ingestion_ready is true but "
+            "d3d_raw_source_type_present/source_types contract is missing."
+        )
+        return 1
     if not args.allow_missing_raw_ingestion and not raw_ready:
         print(
             "Strict real-data gate failed: d3d_raw_ingestion_ready is false. "

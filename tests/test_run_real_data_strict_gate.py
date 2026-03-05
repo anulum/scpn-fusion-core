@@ -236,3 +236,70 @@ def test_main_requires_report_when_validation_is_skipped(tmp_path: Path) -> None
     except FileNotFoundError:
         return
     raise AssertionError(f"expected FileNotFoundError, got rc={rc}")
+
+
+def test_main_fails_when_raw_ready_missing_raw_source_contract(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    report_json = tmp_path / "real_shot.json"
+    report_md = tmp_path / "real_shot.md"
+    guard_summary = tmp_path / "guard_summary.json"
+    progress_json = tmp_path / "progress.json"
+    progress_md = tmp_path / "progress.md"
+    non_reg_summary = tmp_path / "non_regression.json"
+    thresholds = tmp_path / "thresholds.json"
+    targets = tmp_path / "targets.json"
+    baseline = tmp_path / "baseline.json"
+
+    report_json.write_text("{}", encoding="utf-8")
+    report_md.write_text("# report\n", encoding="utf-8")
+    _write_json(thresholds, {})
+    _write_json(targets, {"targets": {}})
+    _write_json(baseline, {"metrics": {}})
+
+    calls: list[str] = []
+
+    def fake_run_step(name: str, cmd: list[str], *, timeout_seconds: float) -> None:
+        del cmd, timeout_seconds
+        calls.append(name)
+        if name == "real-shot guard":
+            _write_json(guard_summary, {"overall_pass": True})
+        elif name == "real-data roadmap progress":
+            _write_json(
+                progress_json,
+                {
+                    "d3d_raw_ingestion_ready": True,
+                    "d3d_disruption_source_types": ["synthetic_diiid_like"],
+                },
+            )
+            progress_md.write_text("# progress\n", encoding="utf-8")
+        elif name == "real-data roadmap non-regression guard":
+            _write_json(non_reg_summary, {"overall_pass": True})
+
+    monkeypatch.setattr(runner, "_run_step", fake_run_step)
+    rc = runner.main(
+        [
+            "--skip-validation",
+            "--report-json",
+            str(report_json),
+            "--report-md",
+            str(report_md),
+            "--guard-summary-json",
+            str(guard_summary),
+            "--progress-json",
+            str(progress_json),
+            "--progress-md",
+            str(progress_md),
+            "--non-regression-summary-json",
+            str(non_reg_summary),
+            "--thresholds",
+            str(thresholds),
+            "--targets",
+            str(targets),
+            "--baseline-json",
+            str(baseline),
+        ]
+    )
+    assert rc == 1
+    assert calls == ["real-shot guard", "real-data roadmap progress"]

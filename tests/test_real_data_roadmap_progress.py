@@ -58,10 +58,13 @@ def test_progress_summary_contains_expected_metrics() -> None:
     )
     assert summary["roadmap_version"] == "v4.0"
     assert summary["overall_pass"] is False
+    assert summary["overall_progress_ratio"] < 1.0
     assert summary["d3d_raw_ingestion_ready"] is False
+    assert summary["d3d_raw_source_type_present"] is False
     metrics = {row["metric"]: row for row in summary["metrics"]}
     assert metrics["disruption_shots_total"]["passes"] is True
     assert metrics["transport_shots_total"]["passes"] is False
+    assert metrics["transport_shots_total"]["remaining_to_target"] == 47
 
 
 def test_progress_uses_explicit_disruption_source_contract_for_raw_readiness() -> None:
@@ -82,4 +85,26 @@ def test_progress_uses_explicit_disruption_source_contract_for_raw_readiness() -
         report=report, targets=targets
     )
     assert summary["d3d_raw_ingestion_ready"] is True
+    assert summary["d3d_raw_source_type_present"] is True
     assert summary["d3d_disruption_source_types"] == ["raw_diiid_mdsplus"]
+
+
+def test_progress_rejects_raw_ready_without_raw_source_type_contract() -> None:
+    report = {
+        "equilibrium": {"n_files": 0, "results": []},
+        "transport": {"n_shots": 0, "shots": []},
+        "disruption": {
+            "n_shots": 1,
+            "calibration": {"source": "diiid-disruption-risk-calibration-v1"},
+            "data_source": {
+                "source_types": ["synthetic_diiid_like"],
+                "raw_ingestion_ready": True,
+            },
+        },
+    }
+    targets = {"targets": {"disruption_shots_total": 1}}
+    summary = real_data_roadmap_progress.evaluate_progress(
+        report=report, targets=targets
+    )
+    assert summary["d3d_raw_source_type_present"] is False
+    assert summary["d3d_raw_ingestion_ready"] is False

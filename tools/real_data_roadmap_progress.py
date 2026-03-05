@@ -15,6 +15,7 @@ DEFAULT_REPORT = REPO_ROOT / "artifacts" / "real_shot_validation.json"
 DEFAULT_TARGETS = REPO_ROOT / "tools" / "real_data_roadmap_targets.json"
 DEFAULT_JSON = REPO_ROOT / "artifacts" / "real_data_roadmap_progress.json"
 DEFAULT_MD = REPO_ROOT / "artifacts" / "real_data_roadmap_progress.md"
+_RAW_SOURCE_TYPE_TOKENS = ("raw", "mdsplus", "omas")
 
 
 def _resolve(path_value: str) -> Path:
@@ -35,6 +36,11 @@ def _safe_ratio(current: int, target: int) -> float:
     if target <= 0:
         return 1.0
     return float(min(1.0, max(0.0, current / target)))
+
+
+def _is_raw_source_type(value: str) -> bool:
+    lowered = str(value).strip().lower()
+    return bool(lowered) and any(token in lowered for token in _RAW_SOURCE_TYPE_TOKENS)
 
 
 def evaluate_progress(
@@ -93,15 +99,26 @@ def evaluate_progress(
                     if str(value).strip()
                 }
             )
-        d3d_raw_ingestion_ready = bool(
-            disruption_source.get("raw_ingestion_ready", False)
-        )
+        if bool(disruption_source.get("raw_ingestion_ready", False)):
+            # Keep readiness tied to provenance-contract semantics instead of
+            # trusting the boolean in isolation.
+            d3d_raw_ingestion_ready = any(
+                _is_raw_source_type(source_type)
+                for source_type in d3d_disruption_source_types
+            )
     if not d3d_raw_ingestion_ready:
         # Backward-compatible fallback for historical artifacts lacking data_source contract.
         d3d_raw_ingestion_ready = bool(
             calibration_source
             and any(token in calibration_source.lower() for token in ("raw", "mdsplus"))
         )
+    d3d_raw_source_type_present = any(
+        _is_raw_source_type(source_type) for source_type in d3d_disruption_source_types
+    ) or bool(
+        d3d_raw_ingestion_ready
+        and calibration_source
+        and any(token in calibration_source.lower() for token in ("raw", "mdsplus"))
+    )
 
     observed = {
         "equilibrium_files_total": equilibrium_total,
@@ -114,26 +131,38 @@ def evaluate_progress(
 
     rows: list[dict[str, Any]] = []
     overall_pass = True
+    completion_ratios: list[float] = []
     for key, target_raw in target_cfg.items():
         target = int(target_raw)
         current = int(observed.get(key, 0))
         passed = current >= target
+        progress_ratio = _safe_ratio(current, target)
         overall_pass = overall_pass and passed
+        completion_ratios.append(progress_ratio)
         rows.append(
             {
                 "metric": key,
                 "current": current,
                 "target": target,
-                "progress_ratio": _safe_ratio(current, target),
+                "progress_ratio": progress_ratio,
+                "remaining_to_target": max(0, target - current),
                 "passes": passed,
             }
         )
+
+    overall_progress_ratio = (
+        float(sum(completion_ratios) / len(completion_ratios))
+        if completion_ratios
+        else 1.0
+    )
 
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "roadmap_version": str(targets.get("roadmap_version", "v4.0")),
         "overall_pass": overall_pass,
+        "overall_progress_ratio": overall_progress_ratio,
         "d3d_raw_ingestion_ready": d3d_raw_ingestion_ready,
+        "d3d_raw_source_type_present": d3d_raw_source_type_present,
         "d3d_disruption_source_types": d3d_disruption_source_types,
         "d3d_calibration_source": calibration_source or None,
         "transport_machines": transport_machines,
@@ -148,7 +177,9 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Generated: `{summary['generated_at_utc']}`",
         f"- Roadmap: `{summary['roadmap_version']}`",
         f"- Overall target pass: `{'YES' if summary['overall_pass'] else 'NO'}`",
+        f"- Overall target completion: `{float(summary.get('overall_progress_ratio', 0.0)) * 100.0:.1f}%`",
         f"- DIII-D raw-ingestion readiness: `{'YES' if summary['d3d_raw_ingestion_ready'] else 'NO'}`",
+        f"- DIII-D raw source-type contract: `{'YES' if summary.get('d3d_raw_source_type_present', False) else 'NO'}`",
     ]
     source = summary.get("d3d_calibration_source")
     if source:
@@ -162,18 +193,19 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-            "| Metric | Current | Target | Progress | Pass |",
-            "|---|---:|---:|---:|:---:|",
+            "| Metric | Current | Target | Gap | Progress | Pass |",
+            "|---|---:|---:|---:|---:|:---:|",
         ]
     )
     for row in summary.get("metrics", []):
         metric = str(row.get("metric", "unknown"))
         current = int(row.get("current", 0))
         target = int(row.get("target", 0))
+        remaining = int(row.get("remaining_to_target", max(0, target - current)))
         progress = float(row.get("progress_ratio", 0.0)) * 100.0
         passed = bool(row.get("passes", False))
         lines.append(
-            f"| `{metric}` | {current} | {target} | {progress:.1f}% | {'YES' if passed else 'NO'} |"
+            f"| `{metric}` | {current} | {target} | {remaining} | {progress:.1f}% | {'YES' if passed else 'NO'} |"
         )
     machines = summary.get("transport_machines", [])
     if isinstance(machines, list) and machines:

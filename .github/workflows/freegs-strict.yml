@@ -1,0 +1,45 @@
+name: FreeGS Strict Backend Gate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freegs-strict:
+    name: FreeGS Strict Parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install "jax[cpu]" gymnasium "freegs>=0.6"
+
+      - name: Run FreeGS strict-backend benchmark
+        run: |
+          python validation/benchmark_vs_freegs.py --strict-backend
+
+      - name: Enforce FreeGS strict artifact contract
+        run: |
+          python tools/check_freegs_strict_artifact.py \
+            --report artifacts/freegs_benchmark.json \
+            --summary-json artifacts/freegs_strict_guard_summary.json
+
+      - name: Upload FreeGS strict artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: freegs-strict-gate
+          path: |
+            artifacts/freegs_benchmark.json
+            artifacts/freegs_strict_guard_summary.json
