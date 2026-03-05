@@ -405,6 +405,12 @@ jobs:
             --targets tools/real_data_roadmap_targets.json \
             --output-json artifacts/real_data_roadmap_progress.json \
             --output-md artifacts/real_data_roadmap_progress.md
+      - name: Real-data roadmap non-regression guard
+        run: |
+          python tools/real_data_roadmap_non_regression_guard.py \
+            --progress-json artifacts/real_data_roadmap_progress.json \
+            --baseline-json tools/real_data_roadmap_baseline.json \
+            --summary-json artifacts/real_data_roadmap_non_regression_summary.json
       - name: Upload validation artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -415,6 +421,7 @@ jobs:
             artifacts/real_shot_validation_guard_summary.json
             artifacts/real_data_roadmap_progress.json
             artifacts/real_data_roadmap_progress.md
+            artifacts/real_data_roadmap_non_regression_summary.json
 
   benchmark-provenance-smoke:
     name: Benchmark Provenance Smoke

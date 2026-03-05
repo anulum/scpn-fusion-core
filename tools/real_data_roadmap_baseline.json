@@ -1,0 +1,12 @@
+{
+  "roadmap_version": "v4.0",
+  "metrics": {
+    "equilibrium_files_total": 18,
+    "sparc_equilibria": 8,
+    "transport_shots_total": 53,
+    "transport_machines_total": 24,
+    "disruption_shots_total": 16,
+    "jet_dt_equilibria": 1
+  },
+  "d3d_raw_ingestion_ready": false
+}

@@ -22,6 +22,7 @@ Week 2
 - Expand real-data validation ingestion path (SPARC/ITPA first).
 - Add stricter validation gate checks for data provenance and holdouts.
 - Emit roadmap progress artifact (counts vs v4.0 goals) from real-shot CI lane.
+- Enforce non-regression guard against pinned real-data baseline in CI.
 - Publish updated benchmark delta table vs previous release artifacts.
 
 Week 3
