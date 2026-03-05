@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-04T22:05:16.757509+00:00`
+- Generated at: `2026-03-05T00:57:44.276870+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,12 +8,12 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 194 |
-| P0 + P1 entries | 0 |
-| Source-domain entries | 31 |
-| Source-domain P0 + P1 entries | 0 |
+| Total flagged entries | 195 |
+| P0 + P1 entries | 1 |
+| Source-domain entries | 32 |
+| Source-domain P0 + P1 entries | 1 |
 | Docs-claims entries | 142 |
-| Domains affected | 3 |
+| Domains affected | 4 |
 
 ## Marker Distribution
 
@@ -25,6 +25,7 @@
 | `SIMPLIFIED` | 14 |
 | `DEPRECATED` | 10 |
 | `NOT_VALIDATED` | 4 |
+| `MONOLITH` | 1 |
 
 ## Domain Distribution
 
@@ -33,18 +34,21 @@
 | `docs_claims` | 142 |
 | `validation` | 31 |
 | `other` | 21 |
+| `core_physics` | 1 |
 
-## Source-Centric Priority Backlog (Top 0)
+## Source-Centric Priority Backlog (Top 1)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
+| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel_newton_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=521 exceeds monolith threshold (500+). |
 
 ## Top Priority Backlog (Top 80)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
+| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel_newton_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=521 exceeds monolith threshold (500+). |
 | P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:389` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
 | P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:390` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
 | P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:509` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
@@ -124,12 +128,12 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:17` | Docs WG | Replace default path or remove lane before next major release. | - Keep deprecated FNO paths non-default and explicitly gated. |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/HONEST_SCOPE.md:25` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| Full 3D MHD \| Not planned for real-time loop \| Use NIMROD/M3D-C1 externally \| |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/competitive_analysis.md:77` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| GPU acceleration \| Planned (wgpu) \| Yes (JAX) \| No \| No \| JAX \| No \| |
-| P3 | 30 | `docs_claims` | `EXPERIMENTAL` | `docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md:23` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| `EXPERIMENTAL` \| 55 \| |
 
-## Full Register (Top 194)
+## Full Register (Top 195)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
+| P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/fusion_kernel_newton_solver.py:1` | module LOC=521 exceeds monolith threshold (500+). |
 | P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:389` | "Experimental-only pytest suite", |
 | P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:390` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
 | P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:509` | "'release' excludes experimental-only lanes, " |
