@@ -176,9 +176,6 @@ class ShatteredPelletInjection:
         # Modeled as an ensemble of fragments
         n_fragments = 50
         pellet_radius_m = 0.002 
-        # Total Moles -> Atoms
-        total_atoms = total_impurity * 6.022e23
-        atoms_per_fragment = total_atoms / n_fragments
         
         # Current plasma state (local to SPI)
         ne_local = 1.0e20 # Initial
@@ -206,7 +203,7 @@ class ShatteredPelletInjection:
                 P_rad = 1e9 * (self.Z_eff**0.5) * (self.Te / 1.0)**0.5 * (ne_local / 1e20)
                 dW = -P_rad * dt
                 prev_W = self.W_th
-                self.W_th += dW
+                self.W_th = max(0.0, self.W_th + dW)
                 denom = max(prev_W - dW, 1e-12)
                 self.Te = max(0.01, self.Te * (self.W_th / denom))
 

@@ -101,6 +101,15 @@ def test_shear_zero_at_axis():
     assert abs(qp.shear[0]) < 1e-10, f"s(0) = {qp.shear[0]:.2e} != 0"
 
 
+def test_q_profile_shape_correction_changes_q_level():
+    """Elongation/triangularity correction should shift absolute q level."""
+    ne, Ti, Te = _parabolic_profiles()
+    qp_cyl = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA, kappa=1.0, delta=0.0)
+    qp_shaped = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA, kappa=1.7, delta=0.3)
+    assert qp_shaped.q_edge > qp_cyl.q_edge
+    assert qp_shaped.q_min > qp_cyl.q_min
+
+
 # ── Mercier tests ────────────────────────────────────────────────
 
 def test_mercier_stable_low_pressure():

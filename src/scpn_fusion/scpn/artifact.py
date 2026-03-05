@@ -339,6 +339,100 @@ def load_artifact(path: Union[str, Path]) -> Artifact:
     return artifact
 
 
+def get_artifact_json_schema() -> Dict[str, Any]:
+    """Return a formal JSON schema for ``.scpnctl.json`` artifacts."""
+    return {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "SCPN Controller Artifact",
+        "type": "object",
+        "required": ["meta", "topology", "weights", "readout", "initial_state"],
+        "properties": {
+            "meta": {
+                "type": "object",
+                "required": ["artifact_version", "name", "stream_length"],
+                "properties": {
+                    "artifact_version": {"type": "string"},
+                    "name": {"type": "string"},
+                    "dt_control_s": {"type": "number"},
+                    "stream_length": {"type": "integer"},
+                    "fixed_point": {
+                        "type": "object",
+                        "properties": {
+                            "data_width": {"type": "integer"},
+                            "fraction_bits": {"type": "integer"},
+                            "signed": {"type": "boolean"},
+                        },
+                    },
+                },
+            },
+            "topology": {
+                "type": "object",
+                "properties": {
+                    "places": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "integer"},
+                                "name": {"type": "string"},
+                            },
+                        },
+                    },
+                    "transitions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "integer"},
+                                "name": {"type": "string"},
+                                "threshold": {"type": "number"},
+                            },
+                        },
+                    },
+                },
+            },
+            "weights": {
+                "type": "object",
+                "properties": {
+                    "w_in": {"$ref": "#/definitions/weight_matrix"},
+                    "w_out": {"$ref": "#/definitions/weight_matrix"},
+                    "packed": {
+                        "type": "object",
+                        "properties": {
+                            "shape": {"type": "array", "items": {"type": "integer"}},
+                            "data_b64": {"type": "string"},
+                        },
+                    },
+                },
+            },
+            "readout": {
+                "type": "object",
+                "properties": {
+                    "actions": {"type": "array"},
+                    "gains": {"type": "object"},
+                    "limits": {"type": "object"},
+                },
+            },
+            "initial_state": {
+                "type": "object",
+                "properties": {
+                    "marking": {"type": "array", "items": {"type": "number"}},
+                    "place_injections": {"type": "array"},
+                },
+            },
+        },
+        "definitions": {
+            "weight_matrix": {
+                "type": "object",
+                "properties": {
+                    "shape": {"type": "array", "items": {"type": "integer"}},
+                    "data": {"type": "array", "items": {"type": "number"}},
+                },
+            },
+        },
+    }
+
+
 def save_artifact(
     artifact: Artifact,
     path: Union[str, Path],

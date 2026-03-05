@@ -433,12 +433,8 @@ class NeuroSymbolicController(
             with open(log_path, "a", encoding="utf-8") as fh:
                 fh.write(json.dumps(rec) + "\n")
 
-        # Build typed result
-        result: ControlAction = {
-            "dI_PF3_A": actions_dict.get("dI_PF3_A", 0.0),
-            "dI_PF_topbot_A": actions_dict.get("dI_PF_topbot_A", 0.0),
-        }
-        return result
+        # Preserve all decoded action channels from the artifact readout.
+        return cast(ControlAction, dict(actions_dict))
 
     def step_traceable(
         self,

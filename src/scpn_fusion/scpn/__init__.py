@@ -32,7 +32,7 @@ from .contracts import (
     decode_actions,
     verify_safety_contracts,
 )
-from .artifact import Artifact, load_artifact, save_artifact
+from .artifact import Artifact, get_artifact_json_schema, load_artifact, save_artifact
 from .controller import NeuroSymbolicController
 from .safety_interlocks import (
     CONTROL_TRANSITIONS,
@@ -68,6 +68,7 @@ __all__ = [
     "safety_tokens_from_state",
     # Packet C — artifact
     "Artifact",
+    "get_artifact_json_schema",
     "load_artifact",
     "save_artifact",
     # Packet C — controller

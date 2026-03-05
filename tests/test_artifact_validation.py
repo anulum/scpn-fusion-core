@@ -17,6 +17,7 @@ from scpn_fusion.scpn.artifact import (
     TransitionSpec,
     WeightMatrix,
     Weights,
+    get_artifact_json_schema,
 )
 from scpn_fusion.scpn.artifact_validation import validate_artifact
 
@@ -76,3 +77,10 @@ def test_validate_artifact_rejects_out_of_bounds_action_place() -> None:
     artifact.readout.actions[0].pos_place = 3
     with pytest.raises(ValueError, match="out of bounds"):
         validate_artifact(artifact, error_type=ValueError)
+
+
+def test_get_artifact_json_schema_contains_required_sections() -> None:
+    schema = get_artifact_json_schema()
+    assert schema["type"] == "object"
+    for section in ("meta", "topology", "weights", "readout", "initial_state"):
+        assert section in schema["properties"]

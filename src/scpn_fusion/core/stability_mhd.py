@@ -25,7 +25,7 @@ References
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 from numpy.typing import NDArray
@@ -138,14 +138,13 @@ def compute_q_profile(
     a: float,
     B0: float,
     Ip_MA: float,
+    kappa: float = 1.0,
+    delta: float = 0.0,
 ) -> QProfile:
-    """Compute the safety-factor profile from cylindrical approximation.
+    """Compute the safety-factor profile from a shape-aware approximation.
 
-    Uses a parabolic current profile:
-        I_enclosed(rho) = Ip * (2*rho^2 - rho^4)
-
-    and the cylindrical safety factor:
-        q(rho) = rho * a * B0 / (R0 * B_theta(rho))
+    Uses a parabolic current profile and a Uckan-style geometric correction
+    for elongation (kappa) and triangularity (delta).
 
     Parameters
     ----------
@@ -156,6 +155,8 @@ def compute_q_profile(
     a : float — minor radius [m]
     B0 : float — toroidal field on axis [T]
     Ip_MA : float — total plasma current [MA]
+    kappa : float — elongation
+    delta : float — triangularity
 
     Returns
     -------
@@ -163,7 +164,12 @@ def compute_q_profile(
     """
     mu0 = 4.0 * np.pi * 1e-7
     Ip = Ip_MA * 1e6  # MA -> A
-    n = len(rho)
+    epsilon = a / R0
+
+    # Uckan-style shape correction proxy.
+    f_shape = (1.0 + kappa**2 * (1.0 + 2.0 * delta**2 - 1.2 * delta**3)) / 2.0
+    f_aspect = (1.17 - 0.65 * epsilon) / (1.0 - epsilon**2)
+    f_total = f_shape * f_aspect
 
     # Parabolic current profile: j(rho) ∝ (1 - rho^2)
     # => I_enclosed(rho) = Ip * (2*rho^2 - rho^4)
@@ -174,12 +180,12 @@ def compute_q_profile(
     B_theta = mu0 * I_enc / (2.0 * np.pi * rho_safe * a)
     B_theta = np.maximum(B_theta, 1e-12)
 
-    # q(rho) = rho * a * B0 / (R0 * B_theta)
-    q = rho_safe * a * B0 / (R0 * B_theta)
+    # Cylindrical q-profile, then shape correction.
+    q_cyl = rho_safe * a * B0 / (R0 * B_theta)
+    q = q_cyl * f_total
 
-    # Fix axis: q(0) = q(eps) (L'Hopital limit gives q0 = a^2 B0 / (R0 mu0 Ip / pi))
-    # Analytic: q0 = 2 pi a^2 B0 / (mu0 R0 Ip * 2) for parabolic j
-    q0 = np.pi * a**2 * B0 / (mu0 * R0 * Ip)
+    # Axis value from the same shape-corrected approximation.
+    q0 = f_total * np.pi * a**2 * B0 / (mu0 * R0 * Ip)
     q[0] = q0
 
     # Magnetic shear: s = (rho/q) * dq/drho

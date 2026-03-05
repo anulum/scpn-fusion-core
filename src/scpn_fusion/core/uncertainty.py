@@ -5,8 +5,6 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-from __future__ import annotations
-
 """
 Bayesian uncertainty quantification for fusion performance predictions.
 
@@ -20,9 +18,13 @@ References
 - Verdoolaege et al., Nucl. Fusion 61 (2021) 076006
 """
 
+from __future__ import annotations
+
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional
+
+from scpn_fusion.core.scaling_laws import load_ipb98y2_coefficients
 
 
 _SAFE_LOG_MAX = 700.0
@@ -30,30 +32,31 @@ _SAFE_LOG_MIN = -745.0
 
 
 # IPB98(y,2) scaling: τ_E = C · I_p^α_I · B^α_B · P^α_P · n^α_n · R^α_R · A^α_A · κ^α_κ · M^α_M
-# Central values from ITER Physics Basis
+_COEFFS = load_ipb98y2_coefficients()
+_UNC = _COEFFS.get("uncertainties_1sigma", _COEFFS.get("exponent_uncertainties", {}))
 IPB98_CENTRAL = {
-    'C':     0.0562,
-    'alpha_I':  0.93,
-    'alpha_B':  0.15,
-    'alpha_P': -0.69,
-    'alpha_n':  0.41,
-    'alpha_R':  1.97,
-    'alpha_A': -0.58,
-    'alpha_kappa': 0.78,
-    'alpha_M':  0.19,
+    "C": _COEFFS["C"],
+    "alpha_I": _COEFFS["exponents"]["Ip_MA"],
+    "alpha_B": _COEFFS["exponents"]["BT_T"],
+    "alpha_P": _COEFFS["exponents"]["Ploss_MW"],
+    "alpha_n": _COEFFS["exponents"]["ne19_1e19m3"],
+    "alpha_R": _COEFFS["exponents"]["R_m"],
+    "alpha_A": -_COEFFS["exponents"]["epsilon"],  # ε = a/R = 1/A
+    "alpha_kappa": _COEFFS["exponents"]["kappa"],
+    "alpha_M": _COEFFS["exponents"]["M_AMU"],
 }
 
 # 1-sigma uncertainties (from Verdoolaege 2021 Bayesian regression)
 IPB98_SIGMA = {
-    'C':     0.008,
-    'alpha_I':  0.04,
-    'alpha_B':  0.05,
-    'alpha_P':  0.03,
-    'alpha_n':  0.04,
-    'alpha_R':  0.08,
-    'alpha_A':  0.05,
-    'alpha_kappa': 0.06,
-    'alpha_M':  0.05,
+    "C": float(_UNC.get("C", 0.012)),
+    "alpha_I": float(_UNC.get("Ip_MA", 0.03)),
+    "alpha_B": float(_UNC.get("BT_T", 0.05)),
+    "alpha_P": float(_UNC.get("Ploss_MW", 0.02)),
+    "alpha_n": float(_UNC.get("ne19_1e19m3", 0.04)),
+    "alpha_R": float(_UNC.get("R_m", 0.08)),
+    "alpha_A": float(_UNC.get("epsilon", 0.06)),
+    "alpha_kappa": float(_UNC.get("kappa", 0.07)),
+    "alpha_M": float(_UNC.get("M_AMU", 0.04)),
 }
 
 
@@ -310,6 +313,38 @@ class FullChainUQResult:
     n_samples: int = 0
 
 
+def _build_ipb98_covariance() -> np.ndarray:
+    """Build covariance matrix for correlated IPB98 coefficient sampling."""
+    keys = [
+        "C",
+        "alpha_I",
+        "alpha_B",
+        "alpha_P",
+        "alpha_n",
+        "alpha_R",
+        "alpha_A",
+        "alpha_kappa",
+        "alpha_M",
+    ]
+    sigmas = np.array([IPB98_SIGMA[k] for k in keys], dtype=np.float64)
+    cov = np.diag(sigmas**2)
+
+    # Known physical correlations from global scaling regressions.
+    idx_c = 0
+    idx_r = 5
+    corr_cr = -0.7
+    cov[idx_c, idx_r] = corr_cr * sigmas[idx_c] * sigmas[idx_r]
+    cov[idx_r, idx_c] = cov[idx_c, idx_r]
+
+    idx_i = 1
+    idx_b = 2
+    corr_ib = 0.4
+    cov[idx_i, idx_b] = corr_ib * sigmas[idx_i] * sigmas[idx_b]
+    cov[idx_b, idx_i] = cov[idx_i, idx_b]
+
+    return cov
+
+
 def quantify_full_chain(
     scenario: PlasmaScenario,
     n_samples: int = 5000,
@@ -373,15 +408,32 @@ def quantify_full_chain(
     beta_n_samples = np.zeros(n_samples)
     psi_nrmse_samples = np.zeros(n_samples)
 
-    a_nominal = scenario.R / scenario.A  # minor radius (m)
+    # Correlated IPB98 coefficient draws.
+    keys = [
+        "C",
+        "alpha_I",
+        "alpha_B",
+        "alpha_P",
+        "alpha_n",
+        "alpha_R",
+        "alpha_A",
+        "alpha_kappa",
+        "alpha_M",
+    ]
+    means = np.array([IPB98_CENTRAL[k] for k in keys], dtype=np.float64)
+    cov = _build_ipb98_covariance()
+    try:
+        ipb_samples = rng.multivariate_normal(means, cov, size=n_samples)
+    except np.linalg.LinAlgError:
+        # Numerical guard for near-singular covariance estimates.
+        cov = cov + np.eye(len(keys), dtype=np.float64) * 1e-12
+        ipb_samples = rng.multivariate_normal(means, cov, size=n_samples)
 
     for i in range(n_samples):
-        # (a) Perturb IPB98 scaling-law coefficients
-        params = {}
-        for key in IPB98_CENTRAL:
-            params[key] = rng.normal(IPB98_CENTRAL[key], IPB98_SIGMA[key])
-        params['C'] = max(params['C'], 1e-4)
-        params['alpha_P'] = min(params['alpha_P'], -0.1)
+        # (a) Perturb IPB98 scaling-law coefficients with correlated draws.
+        params = {keys[j]: float(ipb_samples[i, j]) for j in range(len(keys))}
+        params["C"] = max(params["C"], 1e-4)
+        params["alpha_P"] = min(params["alpha_P"], -0.1)
 
         # (b) Perturb gyro-Bohm transport coefficient
         chi_factor = rng.lognormal(0.0, chi_gB_sigma)
