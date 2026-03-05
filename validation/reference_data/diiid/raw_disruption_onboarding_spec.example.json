@@ -1,0 +1,33 @@
+{
+  "shots": [
+    {
+      "shot": 163303,
+      "scenario": "raw_hmode_disruptive",
+      "label": "disruptive",
+      "machine": "DIII-D",
+      "signals": [
+        "Ip",
+        "q95",
+        "beta_N"
+      ],
+      "primary_signal": "Ip",
+      "is_disruption": true,
+      "disruption_time_s": 3.4,
+      "license": "facility-restricted-not-redistributable"
+    },
+    {
+      "shot": 163303,
+      "scenario": "raw_hmode_safe",
+      "label": "safe",
+      "machine": "DIII-D",
+      "signals": [
+        "Ip",
+        "q95",
+        "beta_N"
+      ],
+      "primary_signal": "Ip",
+      "is_disruption": false,
+      "license": "facility-restricted-not-redistributable"
+    }
+  ]
+}

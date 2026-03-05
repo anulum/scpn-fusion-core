@@ -9,6 +9,6 @@
     "jet_dt_equilibria": 5
   },
   "notes": {
-    "disruption_shots_total": "Raw MDSplus ingestion readiness is tracked separately via disruption calibration source metadata."
+    "disruption_shots_total": "Raw MDSplus ingestion readiness is tracked separately via disruption data-source contract metadata in real_shot_validation.json."
   }
 }

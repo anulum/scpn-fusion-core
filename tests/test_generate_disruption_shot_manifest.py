@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -49,3 +50,35 @@ def test_manifest_check_detects_stale_output(tmp_path: Path) -> None:
         ["--shot-dir", str(shot_dir), "--manifest", str(manifest_path), "--check"]
     )
     assert rc_check == 1
+
+
+def test_build_manifest_applies_metadata_overrides(tmp_path: Path) -> None:
+    shot_dir = tmp_path / "shots"
+    shot_dir.mkdir(parents=True, exist_ok=True)
+    (shot_dir / "shot_123456_raw_hmode.npz").write_bytes(b"raw-content")
+    metadata_path = tmp_path / "disruption_shot_metadata.json"
+    metadata_path.write_text(
+        json.dumps(
+            {
+                "manifest_overrides": {
+                    "data_license": "mixed-v1",
+                    "real_data_notice": "raw-enabled",
+                },
+                "shot_overrides": {
+                    "shot_123456_raw_hmode.npz": {
+                        "source_type": "raw_diiid_mdsplus_proxy",
+                        "generator": "tools/onboard_diiid_raw_disruption_shots.py",
+                        "license": "facility-restricted-not-redistributable",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    manifest = shot_manifest.build_manifest(shot_dir, metadata_path=metadata_path)
+    assert manifest["data_license"] == "mixed-v1"
+    assert manifest["real_data_notice"] == "raw-enabled"
+    shot = manifest["shots"][0]
+    assert shot["source_type"] == "raw_diiid_mdsplus_proxy"
+    assert shot["generator"] == "tools/onboard_diiid_raw_disruption_shots.py"
