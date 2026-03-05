@@ -15,6 +15,7 @@ This document defines the split between release-grade validation and research-on
 | `release` | Version/claims integrity, packaging contract guard, claim-range guard, underdeveloped/source-backlog drift checks, untested-module linkage guard, deprecated-default-lane guard, disruption data provenance + split + calibration holdout checks, disruption replay pipeline contract benchmark, disruption transfer-generalization benchmark, EPED domain-contract benchmark, transport uncertainty-envelope benchmark, TORAX/SPARC strict-backend parity checks, multi-ion transport conservation benchmark, end-to-end latency benchmark, notebook quality gate, Task 5/6 threshold smoke, strict typing; excludes research-marker tests from global pytest runs. | `python tools/run_python_preflight.py --gate release` |
 | `research` | Research-only pytest lane (`pytest -m experimental` marker). | `python tools/run_python_preflight.py --gate research` |
 | `all` | Release + research profiles in sequence. | `python tools/run_python_preflight.py --gate all` |
+| `real-data-strict` | End-to-end real-shot validation + guard + roadmap checks with raw-ingestion readiness enforcement (`require_disruption_raw_ingestion_ready=true`). | `python tools/run_real_data_strict_gate.py --thresholds tools/real_shot_validation_thresholds_raw_ready.json` |
 
 ## CI Mapping
 
@@ -23,6 +24,7 @@ This document defines the split between release-grade validation and research-on
 | `python-tests` | Multi-version core regression lane | `release` |
 | `python-research-gate` | Research validation lane (3.12) | `research` |
 | `validation-regression` | Cross-language physics validation lane | `release` (`pytest -m "not experimental"`) |
+| `strict-real-data` (`real-data-strict.yml`, manual dispatch) | External-data readiness lane; fails when DIII-D raw ingestion contract is unmet (unless dry-run override is set). | `real-data-strict` |
 
 FreeGS strict-backend parity remains opt-in via
 `--enable-freegs-strict-backend-check` (or `SCPN_ENABLE_FREEGS_STRICT_BACKEND_CHECKS=1`)

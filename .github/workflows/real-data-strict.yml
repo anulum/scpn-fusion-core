@@ -1,0 +1,50 @@
+name: Real-Data Strict Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      allow_missing_raw_ingestion:
+        description: "Allow dry-run when raw DIII-D ingestion is unavailable"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  strict-real-data:
+    name: Strict Real-Data Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install "jax[cpu]" gymnasium
+      - name: Run strict real-data gate
+        run: |
+          extra=""
+          if [ "${{ inputs.allow_missing_raw_ingestion }}" = "true" ]; then
+            extra="--allow-missing-raw-ingestion"
+          fi
+          python tools/run_real_data_strict_gate.py \
+            --thresholds tools/real_shot_validation_thresholds_raw_ready.json \
+            ${extra}
+      - name: Upload strict real-data artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: strict-real-data-gate
+          path: |
+            artifacts/real_shot_validation.json
+            artifacts/real_shot_validation.md
+            artifacts/real_shot_validation_guard_summary.json
+            artifacts/real_data_roadmap_progress.json
+            artifacts/real_data_roadmap_progress.md
+            artifacts/real_data_roadmap_non_regression_summary.json
