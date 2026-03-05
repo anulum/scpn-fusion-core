@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-05T01:48:36.440754+00:00`
+- Generated at: `2026-03-05T16:35:47.160167+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -45,11 +45,11 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:389` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
-| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:390` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:509` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
-| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:510` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
-| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:682` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
+| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:400` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "Experimental-only pytest suite", |
+| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:401` | Validation WG | Gate behind explicit flag and define validation exit criteria. | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
+| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:522` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'release' excludes experimental-only lanes, " |
+| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:523` | Validation WG | Gate behind explicit flag and define validation exit criteria. | "'research' runs experimental-only lanes, " |
+| P2 | 78 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:700` | Validation WG | Gate behind explicit flag and define validation exit criteria. | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
 | P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | Architecture WG | Replace default path or remove lane before next major release. | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
 | P2 | 77 | `other` | `DEPRECATED` | `CHANGELOG.md:72` | Architecture WG | Replace default path or remove lane before next major release. | - Regression test for deprecated FNO-controller missing-weight fallback path. |
 | P2 | 77 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | Validation WG | Replace default path or remove lane before next major release. | if "DEPRECATED" in issue.markers: |
@@ -104,7 +104,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 4. For real experimental data, start with `0.01` and adjust based on |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:98` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| **0.05–0.5** \| Standard robust range \| Real experimental data with occasional probe failures or calibration drift \| |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Experimental Bridges |
-| P3 | 47 | `docs_claims` | `FALLBACK` | `README.md:123` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
+| P3 | 47 | `docs_claims` | `FALLBACK` | `README.md:130` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback to analytic model when no weights are available |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
@@ -130,11 +130,11 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:389` | "Experimental-only pytest suite", |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:390` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:509` | "'release' excludes experimental-only lanes, " |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:510` | "'research' runs experimental-only lanes, " |
-| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:682` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:400` | "Experimental-only pytest suite", |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:401` | [sys.executable, "-m", "pytest", "tests/", "-q", "-m", "experimental"], |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:522` | "'release' excludes experimental-only lanes, " |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:523` | "'research' runs experimental-only lanes, " |
+| P2 | `validation` | `EXPERIMENTAL` | `tools/run_python_preflight.py:700` | help="Skip pytest experimental-only lane (tests/ -m experimental).", |
 | P2 | `other` | `DEPRECATED` | `CHANGELOG.md:35` | - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weig... |
 | P2 | `other` | `DEPRECATED` | `CHANGELOG.md:72` | - Regression test for deprecated FNO-controller missing-weight fallback path. |
 | P2 | `validation` | `DEPRECATED` | `tools/generate_source_p0p1_issue_backlog.py:78` | if "DEPRECATED" in issue.markers: |
@@ -189,7 +189,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:74` | 4. For real experimental data, start with `0.01` and adjust based on |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/SOLVER_TUNING_GUIDE.md:98` | \| **0.05–0.5** \| Standard robust range \| Real experimental data with occasional probe failures or calibration drift \| |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Experimental Bridges |
-| P3 | `docs_claims` | `FALLBACK` | `README.md:123` | \| Graceful degradation \| Every path has a pure-Python fallback \| |
+| P3 | `docs_claims` | `FALLBACK` | `README.md:130` | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:167` | - Transparent fallback to analytic model when no weights are available |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:259` | with fallback to CPU SIMD for systems without GPU support. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/HONEST_SCOPE.md:18` | \| Graceful degradation (no Rust / no GPU / no SC-NeuroCore) \| Every module has a pure-Python fallback \| |
