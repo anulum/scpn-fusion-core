@@ -156,6 +156,7 @@ fn prolong_and_add(@builtin(global_invocation_id) gid: vec3<u32>) {
     }
 
     let nr_c = (params.nr - 1u) / 2u + 1u;
+    let nz_c = (params.nz - 1u) / 2u + 1u;
     
     // Coarse indices (floor)
     let ir_c = ir_f / 2u;
