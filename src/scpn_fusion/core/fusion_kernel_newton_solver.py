@@ -8,6 +8,10 @@ from typing import Any
 
 import numpy as np
 
+from scpn_fusion.core.fusion_kernel_newton_runtime import (
+    GmresTelemetry,
+    parse_newton_dispatch_config,
+)
 from scpn_fusion.core.fusion_kernel_numerics import FloatArray
 from scpn_fusion.core.fusion_kernel_solver_runtime import (
     apply_gs_operator as _apply_gs_operator_runtime,
@@ -63,75 +67,26 @@ class FusionKernelNewtonSolverMixin:
             boundary_flux=boundary_flux,
         )
 
-        max_iter: int = self.cfg["solver"]["max_iterations"]
-        tol: float = self.cfg["solver"]["convergence_threshold"]
-        picard_alpha: float = self.cfg["solver"].get("relaxation_factor", 0.1)
-        fail_on_diverge: bool = bool(self.cfg["solver"].get("fail_on_diverge", False))
-        require_gs_residual: bool = bool(
-            self.cfg["solver"].get("require_gs_residual", False)
-        )
-        gs_tol: float = float(self.cfg["solver"].get("gs_residual_threshold", tol))
-        if require_gs_residual and gs_tol <= 0.0:
-            raise ValueError("solver.gs_residual_threshold must be > 0")
-        mu0: float = self.cfg["physics"]["vacuum_permeability"]
-        warmup_steps: int = min(15, max_iter // 2)
-        newton_alpha: float = 0.5  # initial damped Newton step
-        use_newton_line_search: bool = bool(
-            self.cfg["solver"].get("newton_line_search", False)
-        )
-        line_search_c = float(self.cfg["solver"].get("newton_line_search_c", 1e-4))
-        if (not np.isfinite(line_search_c)) or line_search_c <= 0.0 or line_search_c >= 1.0:
-            raise ValueError("solver.newton_line_search_c must be finite and in (0, 1)")
-        max_backtracks = int(self.cfg["solver"].get("newton_line_search_max_backtracks", 6))
-        if max_backtracks <= 0:
-            raise ValueError("solver.newton_line_search_max_backtracks must be >= 1")
-        gmres_preconditioner_mode = str(
-            self.cfg["solver"].get("gmres_preconditioner", "none")
-        ).strip().lower()
-        if gmres_preconditioner_mode in {"", "auto", "default", "legacy"}:
-            gmres_preconditioner_mode = "none"
-        if (
-            gmres_preconditioner_mode == "none"
-            and bool(self.cfg["solver"].get("gmres_diagonal_preconditioner", False))
-        ):
-            gmres_preconditioner_mode = "diagonal"
-        if gmres_preconditioner_mode not in {"none", "diagonal", "ilu"}:
-            raise ValueError(
-                "solver.gmres_preconditioner must be one of "
-                "{'none', 'diagonal', 'ilu'}"
-            )
-        ilu_drop_tol = float(self.cfg["solver"].get("gmres_ilu_drop_tol", 1e-4))
-        ilu_fill_factor = float(
-            self.cfg["solver"].get("gmres_ilu_fill_factor", 8.0)
-        )
-        if (not np.isfinite(ilu_drop_tol)) or ilu_drop_tol <= 0.0:
-            raise ValueError("solver.gmres_ilu_drop_tol must be finite and > 0")
-        if (not np.isfinite(ilu_fill_factor)) or ilu_fill_factor < 1.0:
-            raise ValueError("solver.gmres_ilu_fill_factor must be finite and >= 1")
-        gmres_fail_on_breakdown = bool(
-            self.cfg["solver"].get("gmres_fail_on_breakdown", True)
-        )
-        gmres_nonconverged_budget_raw = self.cfg["solver"].get(
-            "gmres_nonconverged_budget"
-        )
-        gmres_nonconverged_budget: int | None
-        if gmres_nonconverged_budget_raw is None:
-            gmres_nonconverged_budget = None
-        else:
-            if isinstance(gmres_nonconverged_budget_raw, bool):
-                raise ValueError("solver.gmres_nonconverged_budget must be an int >= 0")
-            gmres_nonconverged_budget = int(gmres_nonconverged_budget_raw)
-            if gmres_nonconverged_budget < 0:
-                raise ValueError("solver.gmres_nonconverged_budget must be >= 0")
+        options = parse_newton_dispatch_config(self.cfg)
+        max_iter = options.max_iter
+        tol = options.tol
+        picard_alpha = options.picard_alpha
+        fail_on_diverge = options.fail_on_diverge
+        require_gs_residual = options.require_gs_residual
+        gs_tol = options.gs_tol
+        mu0 = options.mu0
+        warmup_steps = options.warmup_steps
+        newton_alpha = options.newton_alpha
+        use_newton_line_search = options.use_newton_line_search
+        line_search_c = options.line_search_c
+        max_backtracks = options.max_backtracks
 
         residual_history: list[float] = []
         gs_residual_history: list[float] = []
         line_search_attempts = 0
         line_search_accepts = 0
         line_search_rejects = 0
-        gmres_nonconverged_count = 0
-        gmres_breakdown_count = 0
-        gmres_last_info = 0
+        gmres_telemetry = GmresTelemetry()
         converged = False
         final_iter = 0
         gs_best: float = float("inf")
@@ -237,32 +192,21 @@ class FusionKernelNewtonSolverMixin:
                     n_interior=n_interior,
                     nz=NZ,
                     nr=NR_grid,
-                    gmres_preconditioner_mode=gmres_preconditioner_mode,
-                    ilu_drop_tol=ilu_drop_tol,
-                    ilu_fill_factor=ilu_fill_factor,
+                    gmres_preconditioner_mode=options.gmres_preconditioner_mode,
+                    ilu_drop_tol=options.ilu_drop_tol,
+                    ilu_fill_factor=options.ilu_fill_factor,
                     iter_idx=k,
                 )
-                gmres_last_info = int(info)
+                gmres_telemetry.last_info = int(info)
 
                 if info != 0:
                     logger.warning("GMRES did not converge at Newton iter %d (info=%d)", k, info)
-                    if info < 0:
-                        gmres_breakdown_count += 1
-                        if gmres_fail_on_breakdown:
-                            raise RuntimeError(
-                                f"GMRES breakdown at Newton iter={k} (info={info})"
-                            )
-                    else:
-                        gmres_nonconverged_count += 1
-                        if (
-                            gmres_nonconverged_budget is not None
-                            and gmres_nonconverged_count > gmres_nonconverged_budget
-                        ):
-                            raise RuntimeError(
-                                "GMRES non-convergence budget exceeded: "
-                                f"{gmres_nonconverged_count}>{gmres_nonconverged_budget} "
-                                f"(last info={info}, iter={k})"
-                            )
+                    gmres_telemetry.record(
+                        info=int(info),
+                        iter_idx=k,
+                        fail_on_breakdown=options.gmres_fail_on_breakdown,
+                        nonconverged_budget=options.gmres_nonconverged_budget,
+                    )
 
                 delta = np.zeros_like(self.Psi)
                 delta[1:-1, 1:-1] = delta_flat.reshape(NZ - 2, NR_grid - 2)
@@ -356,11 +300,11 @@ class FusionKernelNewtonSolverMixin:
             "newton_line_search_attempts": line_search_attempts,
             "newton_line_search_accepts": line_search_accepts,
             "newton_line_search_rejects": line_search_rejects,
-            "gmres_nonconverged_count": gmres_nonconverged_count,
-            "gmres_breakdown_count": gmres_breakdown_count,
-            "gmres_last_info": gmres_last_info,
-            "gmres_fail_on_breakdown": gmres_fail_on_breakdown,
-            "gmres_nonconverged_budget": gmres_nonconverged_budget,
+            "gmres_nonconverged_count": gmres_telemetry.nonconverged_count,
+            "gmres_breakdown_count": gmres_telemetry.breakdown_count,
+            "gmres_last_info": gmres_telemetry.last_info,
+            "gmres_fail_on_breakdown": options.gmres_fail_on_breakdown,
+            "gmres_nonconverged_budget": options.gmres_nonconverged_budget,
             "wall_time_s": elapsed,
             "solver_method": "newton",
         }
