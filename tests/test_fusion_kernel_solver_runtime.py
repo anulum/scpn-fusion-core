@@ -61,6 +61,34 @@ def test_compute_profile_jacobian_external_profile_mode() -> None:
     assert float(np.min(jac)) <= 0.0
 
 
+def test_compute_profile_jacobian_stable_with_extreme_profile_inputs() -> None:
+    k = _KernelStub()
+    k.Psi[1, 1] = np.nan
+    k.Psi[2, 2] = np.inf
+    k.Psi[3, 3] = -np.inf
+    k.RR[1, 2] = np.nan
+    k.RR[2, 3] = np.inf
+    jac = compute_profile_jacobian(
+        k,
+        Psi_axis=np.nan,
+        Psi_boundary=np.inf,
+        mu0=1.0,
+    )
+    assert jac.shape == k.Psi.shape
+    assert np.all(np.isfinite(jac))
+
+
+def test_compute_profile_jacobian_external_mode_sanitizes_nonfinite_jphi() -> None:
+    k = _KernelStub()
+    k.external_profile_mode = True
+    k.Psi = np.linspace(0.0, 0.9, k.Psi.size, dtype=np.float64).reshape(k.Psi.shape)
+    k.J_phi[1, 1] = np.nan
+    k.J_phi[2, 2] = np.inf
+    jac = compute_profile_jacobian(k, Psi_axis=0.0, Psi_boundary=1.0, mu0=1.0)
+    assert np.all(np.isfinite(jac))
+    assert np.all(jac <= 0.0)
+
+
 def test_solve_newton_linear_system_identity_operator() -> None:
     k = _KernelStub(nz=4, nr=4)
     n = 4

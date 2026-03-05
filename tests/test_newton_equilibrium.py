@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import scpn_fusion.core.fusion_kernel_newton_solver as newton_mod
 from scpn_fusion.core.fusion_kernel import FusionKernel
 
 MOCK_CONFIG = {
@@ -220,6 +221,78 @@ def test_newton_rejects_invalid_ilu_parameters(
         fk.solve_equilibrium()
 
 
+@pytest.mark.parametrize(
+    ("value", "error_pattern"),
+    [
+        (-1, "gmres_nonconverged_budget"),
+        (True, "gmres_nonconverged_budget"),
+    ],
+)
+def test_newton_rejects_invalid_gmres_nonconverged_budget(
+    tmp_path: Path,
+    value: object,
+    error_pattern: str,
+) -> None:
+    """GMRES non-convergence budget must be an integer >= 0."""
+    cfg = MOCK_CONFIG.copy()
+    cfg["solver"] = {
+        **cfg["solver"],
+        "gmres_nonconverged_budget": value,
+    }
+    p = tmp_path / "newton_bad_gmres_budget.json"
+    p.write_text(json.dumps(cfg), encoding="utf-8")
+
+    fk = FusionKernel(str(p))
+    with pytest.raises(ValueError, match=error_pattern):
+        fk.solve_equilibrium()
+
+
+def test_newton_fails_fast_when_gmres_budget_exceeded(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Fail fast when GMRES keeps returning non-converged info and budget is exhausted."""
+    cfg = MOCK_CONFIG.copy()
+    cfg["solver"] = {
+        **cfg["solver"],
+        "max_iterations": 8,
+        "convergence_threshold": 1e-18,
+        "require_gs_residual": True,
+        "gs_residual_threshold": 1e-18,
+        "gmres_nonconverged_budget": 0,
+    }
+    p = tmp_path / "newton_gmres_budget.json"
+    p.write_text(json.dumps(cfg), encoding="utf-8")
+
+    def _fake_solve_linear_system(**kwargs: object) -> tuple[np.ndarray, int]:
+        rhs = np.asarray(kwargs["rhs"], dtype=np.float64)
+        return np.zeros_like(rhs), 1
+
+    monkeypatch.setattr(
+        newton_mod,
+        "_solve_newton_linear_system_runtime",
+        _fake_solve_linear_system,
+    )
+
+    fk = FusionKernel(str(p))
+    with pytest.raises(RuntimeError, match="GMRES non-convergence budget exceeded"):
+        fk.solve_equilibrium()
+
+
+def test_newton_reports_gmres_telemetry_keys(newton_cfg: Path) -> None:
+    """Newton result should expose GMRES convergence telemetry."""
+    fk = FusionKernel(str(newton_cfg))
+    result = fk.solve_equilibrium()
+
+    assert "gmres_nonconverged_count" in result
+    assert "gmres_breakdown_count" in result
+    assert "gmres_last_info" in result
+    assert "gmres_fail_on_breakdown" in result
+    assert "gmres_nonconverged_budget" in result
+    assert result["gmres_nonconverged_count"] >= 0
+    assert result["gmres_breakdown_count"] >= 0
+
+
 def test_newton_line_search_reports_telemetry(tmp_path: Path) -> None:
     """Line-search mode should expose structured telemetry counters."""
     cfg = MOCK_CONFIG.copy()
@@ -273,3 +346,68 @@ def test_newton_rejects_invalid_line_search_config(
     fk = FusionKernel(str(p))
     with pytest.raises(ValueError, match=error_pattern):
         fk.solve_equilibrium()
+
+
+@pytest.mark.parametrize("line_search_enabled", [False, True])
+def test_newton_mode_strict_determinism_across_fixed_seed(
+    tmp_path: Path,
+    line_search_enabled: bool,
+) -> None:
+    """Newton line-search mode should be bit-stable across repeated fixed-seed runs."""
+    cfg = MOCK_CONFIG.copy()
+    cfg["solver"] = {
+        **cfg["solver"],
+        "newton_line_search": line_search_enabled,
+        "max_iterations": 25,
+    }
+    p = tmp_path / f"newton_seeded_{int(line_search_enabled)}.json"
+    p.write_text(json.dumps(cfg), encoding="utf-8")
+
+    np.random.seed(12345)
+    fk1 = FusionKernel(str(p))
+    r1 = fk1.solve_equilibrium()
+    psi_1 = fk1.Psi.copy()
+
+    np.random.seed(12345)
+    fk2 = FusionKernel(str(p))
+    r2 = fk2.solve_equilibrium()
+    psi_2 = fk2.Psi.copy()
+
+    np.testing.assert_array_equal(psi_1, psi_2)
+    np.testing.assert_array_equal(
+        np.asarray(r1["residual_history"], dtype=np.float64),
+        np.asarray(r2["residual_history"], dtype=np.float64),
+    )
+    assert r1["gmres_nonconverged_count"] == r2["gmres_nonconverged_count"]
+    assert r1["gmres_breakdown_count"] == r2["gmres_breakdown_count"]
+
+
+def test_newton_line_search_enabled_disabled_fixed_seed_parity(
+    tmp_path: Path,
+) -> None:
+    """Enabled/disabled line-search modes should both produce finite, shape-parity outputs."""
+    cfg = MOCK_CONFIG.copy()
+    cfg["solver"] = {
+        **cfg["solver"],
+        "max_iterations": 25,
+    }
+    p = tmp_path / "newton_line_search_parity.json"
+    p.write_text(json.dumps(cfg), encoding="utf-8")
+
+    np.random.seed(777)
+    fk_off = FusionKernel(str(p))
+    fk_off.cfg["solver"]["newton_line_search"] = False
+    r_off = fk_off.solve_equilibrium()
+    psi_off = fk_off.Psi.copy()
+
+    np.random.seed(777)
+    fk_on = FusionKernel(str(p))
+    fk_on.cfg["solver"]["newton_line_search"] = True
+    r_on = fk_on.solve_equilibrium()
+    psi_on = fk_on.Psi.copy()
+
+    assert psi_off.shape == psi_on.shape
+    assert np.all(np.isfinite(psi_off))
+    assert np.all(np.isfinite(psi_on))
+    assert np.isfinite(r_off["residual"])
+    assert np.isfinite(r_on["residual"])

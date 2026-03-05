@@ -66,38 +66,57 @@ def compute_profile_jacobian(
     kernel: Any, Psi_axis: float, Psi_boundary: float, mu0: float
 ) -> FloatArray:
     """Compute dJ_phi/dpsi as a 2D diagonal scaling field."""
-    denom = Psi_boundary - Psi_axis
-    if abs(denom) < 1e-9:
+    psi_axis = float(np.nan_to_num(Psi_axis, nan=0.0, posinf=0.0, neginf=0.0))
+    psi_boundary = float(np.nan_to_num(Psi_boundary, nan=psi_axis + 1e-9, posinf=psi_axis + 1e-9, neginf=psi_axis - 1e-9))
+    denom = psi_boundary - psi_axis
+    if not np.isfinite(denom):
         denom = 1e-9
+    if abs(denom) < 1e-9:
+        denom = 1e-9 if denom >= 0.0 else -1e-9
 
-    Psi_norm = (kernel.Psi - Psi_axis) / denom
+    psi_raw = np.asarray(kernel.Psi, dtype=np.float64)
+    psi_safe = np.nan_to_num(psi_raw, nan=psi_axis, posinf=psi_axis + 1e9, neginf=psi_axis - 1e9)
+    rr_raw = np.asarray(kernel.RR, dtype=np.float64)
+    rr_safe = np.nan_to_num(rr_raw, nan=0.0, posinf=1e6, neginf=0.0)
+    rr_safe = np.clip(rr_safe, 0.0, 1e6)
+
+    Psi_norm = (psi_safe - psi_axis) / denom
     mask_plasma = (Psi_norm >= 0) & (Psi_norm < 1.0)
 
     # External profile mode injects J_phi from transport/runtime coupling.
     # Use a bounded secant-like diagonal approximation instead of the
     # fixed L-mode linear profile derivative.
     if bool(getattr(kernel, "external_profile_mode", False)):
-        dJ_dpsi = np.zeros_like(kernel.Psi)
-        j_abs = np.abs(np.asarray(kernel.J_phi, dtype=float))
+        dJ_dpsi = np.zeros_like(psi_safe)
+        j_abs = np.abs(np.nan_to_num(np.asarray(kernel.J_phi, dtype=float), nan=0.0, posinf=1e12, neginf=1e12))
         scale = max(abs(float(denom)), 1e-9)
         dJ_dpsi[mask_plasma] = -j_abs[mask_plasma] / scale
-        return dJ_dpsi
+        return np.nan_to_num(dJ_dpsi, nan=0.0, posinf=0.0, neginf=-1e12)
 
     # For the linear L-mode profile: Source = -mu0 * R * J_phi
     # J_phi = c * (1 - psi_norm) * R  =>  dJ_phi/dpsi_norm = -c * R
     # dJ_phi/dpsi = dJ_phi/dpsi_norm * dpsi_norm/dpsi = -c * R / denom
-    I_target = kernel.cfg["physics"]["plasma_current_target"]
+    I_target = float(
+        np.nan_to_num(
+            kernel.cfg["physics"]["plasma_current_target"],
+            nan=0.0,
+            posinf=0.0,
+            neginf=0.0,
+        )
+    )
     s = (
-        float(np.sum(np.where(mask_plasma, (1 - Psi_norm) * kernel.RR, 0.0)))
+        float(np.sum(np.where(mask_plasma, (1 - Psi_norm) * rr_safe, 0.0)))
         * kernel.dR
         * kernel.dZ
     )
+    if not np.isfinite(s):
+        s = 0.0
     c = I_target / max(abs(s), 1e-9)
 
-    dJ_dpsi = np.zeros_like(kernel.Psi)
-    dJ_dpsi[mask_plasma] = -c * kernel.RR[mask_plasma] / denom
+    dJ_dpsi = np.zeros_like(psi_safe)
+    dJ_dpsi[mask_plasma] = -c * rr_safe[mask_plasma] / denom
 
-    return dJ_dpsi
+    return np.nan_to_num(dJ_dpsi, nan=0.0, posinf=1e12, neginf=-1e12)
 
 
 def solve_via_rust_multigrid(
