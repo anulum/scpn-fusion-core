@@ -9,8 +9,8 @@ on:
       ref:
         description: "Git ref to publish (tag/sha/branch). Defaults to current ref."
         required: false
-      default: ""
-      type: string
+        default: ""
+        type: string
 
 concurrency:
   group: publish-${{ github.workflow }}-${{ github.ref }}
