@@ -32,7 +32,37 @@ jobs:
       - name: Run pip-audit (strict)
         run: |
           mkdir -p artifacts
-          pip-audit -S --desc on --format json --output artifacts/pip-audit.json
+          python -m pip freeze --all > artifacts/pip-freeze.txt
+          python - <<'PY'
+          from pathlib import Path
+
+          src = Path("artifacts/pip-freeze.txt")
+          dst = Path("artifacts/pip-audit-requirements.txt")
+          lines: list[str] = []
+          for raw in src.read_text(encoding="utf-8").splitlines():
+              line = raw.strip()
+              if not line:
+                  continue
+              lower = line.lower()
+              # Exclude local editable/install refs that are not resolvable on PyPI.
+              if lower.startswith("-e "):
+                  continue
+              if " @ file://" in lower:
+                  continue
+              if lower.startswith("scpn-fusion @"):
+                  continue
+              lines.append(line)
+          dst.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          print(f"Wrote {len(lines)} requirements for pip-audit: {dst}")
+          PY
+          set +e
+          pip-audit -r artifacts/pip-audit-requirements.txt --desc on --format json --output artifacts/pip-audit.json
+          audit_exit=$?
+          set -e
+          if [ ! -s artifacts/pip-audit.json ]; then
+            echo '{"error":"pip-audit produced no JSON output"}' > artifacts/pip-audit.json
+          fi
+          exit $audit_exit
       - name: Upload Python audit artifact
         if: always()
         uses: actions/upload-artifact@v4
