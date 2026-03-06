@@ -46,7 +46,7 @@ jobs:
           args: --release --strip --out ../../../dist --interpreter 3.9 3.10 3.11 3.12
 
       - name: Upload wheel artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: wheel-${{ matrix.os }}
           path: dist/*.whl
@@ -65,7 +65,7 @@ jobs:
           pip install build
           python -m build --sdist
       - name: Upload sdist
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: sdist
           path: dist/*.tar.gz

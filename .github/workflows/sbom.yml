@@ -58,7 +58,7 @@ jobs:
           echo "Rust SBOM files generated: $count"
 
       - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: cyclonedx-sbom
           path: |
