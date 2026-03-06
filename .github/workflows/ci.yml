@@ -156,7 +156,7 @@ jobs:
             profile: full
             allow_failure: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -214,7 +214,7 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Enforce local-only handovers exclusion
         if: matrix.python-version == '3.12'
         run: |
@@ -225,7 +225,7 @@ jobs:
             exit 1
           fi
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -312,7 +312,7 @@ jobs:
           "
       - name: Upload Python coverage to Codecov
         if: matrix.python-version == '3.12'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: coverage-python.xml
           flags: python
@@ -321,7 +321,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload Python 3.12 coverage diagnostics
         if: matrix.python-version == '3.12' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: python312-coverage-diagnostics
           if-no-files-found: warn
@@ -335,7 +335,7 @@ jobs:
             artifacts/claim_range_guard_summary.json
       - name: Upload coverage guard summary
         if: matrix.python-version == '3.12' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-guard-summary
           if-no-files-found: warn
@@ -349,9 +349,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -377,9 +377,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -419,9 +419,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -453,7 +453,7 @@ jobs:
       - name: RMSE regression gate
         run: python tools/ci_rmse_gate.py
       - name: Upload RMSE artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: rmse-dashboard-smoke
           path: |
@@ -465,9 +465,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -501,7 +501,7 @@ jobs:
             --baseline-json tools/real_data_roadmap_baseline.json \
             --summary-json artifacts/real_data_roadmap_non_regression_summary.json
       - name: Upload validation artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: real-shot-validation
           path: |
@@ -517,9 +517,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -598,7 +598,7 @@ jobs:
             --thresholds tools/fallback_budget_thresholds.json \
             --summary-json artifacts/fallback_budget_summary.json
       - name: Upload benchmark provenance artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: benchmark-provenance-smoke
           path: |
@@ -614,9 +614,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -640,7 +640,7 @@ jobs:
             --thresholds tools/runtime_parity_perf_thresholds.json \
             --summary-json artifacts/runtime_parity_perf_guard_summary.json
       - name: Upload runtime parity/perf artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: runtime-parity-perf-gate
           path: |
@@ -658,7 +658,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -687,11 +687,11 @@ jobs:
       run:
         working-directory: .
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Cache cargo
@@ -738,7 +738,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Cache cargo
@@ -771,7 +771,7 @@ jobs:
       - name: Generate coverage
         run: cargo tarpaulin --packages fusion-types fusion-math fusion-core fusion-physics fusion-nuclear fusion-engineering fusion-control fusion-diagnostics fusion-ml --run-types Lib --timeout 300 --out xml --output-dir coverage
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: scpn-fusion-rs/coverage/cobertura.xml
           flags: rust
@@ -787,7 +787,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install cargo-audit
         run: cargo install cargo-audit
       - name: Run security audit
@@ -801,7 +801,7 @@ jobs:
       run:
         working-directory: scpn-fusion-rs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Cache cargo
@@ -833,7 +833,7 @@ jobs:
           fi
       - name: Upload benchmark artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: rust-benchmarks
           path: scpn-fusion-rs/benchmark-results/
@@ -843,9 +843,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-tests, rust-tests, rust-python-interop]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install dependencies
@@ -874,9 +874,9 @@ jobs:
     needs: [python-tests]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install dependencies

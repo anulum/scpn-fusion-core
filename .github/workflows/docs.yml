@@ -33,10 +33,10 @@ jobs:
     name: Build Python API docs (Sphinx)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -50,7 +50,7 @@ jobs:
         run: sphinx-build -b html docs/sphinx docs/sphinx/_build/html
 
       - name: Upload Python docs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: python-docs
           path: docs/sphinx/_build/html/
@@ -60,7 +60,7 @@ jobs:
     name: Build Rust API docs (rustdoc)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -80,7 +80,7 @@ jobs:
         run: cargo doc --workspace --no-deps --all-features --exclude scpn-fusion-rs
 
       - name: Upload Rust docs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: rust-docs
           path: scpn-fusion-rs/target/doc/
@@ -90,10 +90,10 @@ jobs:
     name: Build tutorial notebook HTML exports
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -109,7 +109,7 @@ jobs:
           python -m jupyter nbconvert --to html examples/*.ipynb --output-dir docs/notebooks/
 
       - name: Upload notebook HTML
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: notebook-html
           path: docs/notebooks/
@@ -125,25 +125,25 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           sparse-checkout: |
             docs/assets/repo_header.png
 
       - name: Download Python docs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: python-docs
           path: site/python/
 
       - name: Download Rust docs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: rust-docs
           path: site/rust/
 
       - name: Download notebook HTML
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: notebook-html
           path: site/notebooks/
