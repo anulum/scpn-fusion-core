@@ -143,18 +143,6 @@ jobs:
           - os: macos-latest
             profile: full
             allow_failure: false
-          - os: windows-latest
-            profile: minimal
-            allow_failure: true
-          - os: windows-latest
-            profile: dev
-            allow_failure: true
-          # Windows wheels and resolver behavior are still inconsistent for
-          # several optional scientific dependencies. Keep smoke coverage, but
-          # do not block release CI on these lanes until parity is stable.
-          - os: windows-latest
-            profile: full
-            allow_failure: true
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
