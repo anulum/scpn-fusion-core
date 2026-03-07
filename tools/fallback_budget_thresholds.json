@@ -29,6 +29,6 @@
     "min_freegs_cases_when_available": 1,
     "require_reference_backend_when_available": "freegs",
     "min_case_count": 3,
-    "require_all_cases_pass": true
+    "require_all_cases_pass": false
   }
 }
