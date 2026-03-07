@@ -43,10 +43,10 @@ QLKNN_FLUX_COLS = ["efi_GB", "efe_GB", "pfe_GB"]
 # Physical sampling ranges for augmentation
 TE_RANGE = (1.0, 25.0)   # keV
 NE_RANGE = (1.0, 15.0)   # 10^19 m^-3
-BT_REF = 5.3              # T
-R_REF = 6.2               # m
-MI_KG = 3.344e-27          # deuterium
-E_CHARGE = 1.602e-19
+BT_REF = 5.3              # T, ITER reference (ITER Physics Basis, NF 39 2137, 1999)
+R_REF = 6.2               # m, ITER major radius
+MI_KG = 3.344e-27          # kg, deuterium ion mass (CODATA 2018)
+E_CHARGE = 1.602e-19      # C, elementary charge (CODATA 2018)
 
 
 def _gyrobohm_chi(te_kev: np.ndarray) -> np.ndarray:
@@ -83,7 +83,7 @@ def _load_chunk_hdf5(path: Path, start: int, count: int) -> tuple[np.ndarray, np
                 try:
                     df_out = pd.read_hdf(path, key=out_key, start=start, stop=start+len(df_in))
                     fluxes[:, i] = df_out[col].values if col in df_out.columns else df_out.iloc[:, 0].values
-                except:
+                except (KeyError, ValueError):
                     with h5py.File(path, "r") as f_loc:
                         if out_key in f_loc: fluxes[:, i] = f_loc[out_key][start:start+len(df_in)]
             return inputs, fluxes, list(df_in.columns)

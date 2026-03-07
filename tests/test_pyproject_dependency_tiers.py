@@ -39,6 +39,6 @@ def test_optional_dependency_groups_expose_ui_ml_rl_and_full() -> None:
     assert "rl = [" in content
     assert "full = [" in content
     assert '"streamlit"' in content
-    assert '"jax<0.5.0"' in content
-    assert '"jaxlib<0.5.0"' in content
+    assert '"jax>=0.4.20"' in content
+    assert '"jaxlib>=0.4.20"' in content
     assert '"gymnasium>=1.0.0"' in content

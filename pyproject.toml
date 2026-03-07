@@ -40,8 +40,8 @@ ui = [
     "streamlit",
 ]
 ml = [
-    "jax<0.5.0",
-    "jaxlib<0.5.0",
+    "jax>=0.4.20",
+    "jaxlib>=0.4.20",
 ]
 rl = [
     "gymnasium>=1.0.0",
@@ -70,8 +70,8 @@ gpu = [
 ]
 full = [
     "streamlit",
-    "jax<0.5.0",
-    "jaxlib<0.5.0",
+    "jax>=0.4.20",
+    "jaxlib>=0.4.20",
     "gymnasium>=1.0.0",
     "nengo>=4.0",
     "freegs>=0.6",

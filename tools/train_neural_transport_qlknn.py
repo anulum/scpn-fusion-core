@@ -49,11 +49,11 @@ OUTPUT_DIM = 3
 _CRIT_ITG = 4.0  # R/L_Ti threshold
 _CRIT_TEM = 5.0  # R/L_Te threshold
 
-# Gyro-Bohm scaling constants (for chi_gb normalization)
-_BT_REF = 5.3       # T
-_R_REF = 6.2        # m
-_MI_KG = 3.344e-27  # deuterium
-_E_CHARGE = 1.602e-19
+# Gyro-Bohm scaling constants (ITER reference, NF 39 2137, 1999)
+_BT_REF = 5.3       # T, ITER toroidal field
+_R_REF = 6.2        # m, ITER major radius
+_MI_KG = 3.344e-27  # kg, deuterium ion mass (CODATA 2018)
+_E_CHARGE = 1.602e-19  # C, elementary charge (CODATA 2018)
 
 
 def _load_npz_required(path: Path, *, required_keys: tuple[str, ...]) -> dict[str, np.ndarray]:

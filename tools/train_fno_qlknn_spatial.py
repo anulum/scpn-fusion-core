@@ -68,6 +68,13 @@ def train_fno(
         jax.config.update("jax_platform_name", "cpu")
 
     # Load data
+    for split in ("train.npz", "val.npz"):
+        p = data_dir / split
+        if not p.exists():
+            print(f"ERROR: {p} not found.")
+            print("Run first: python tools/generate_fno_qlknn_spatial.py")
+            sys.exit(1)
+
     train_x, train_y = _load_spatial_split(data_dir / "train.npz")
     val_x, val_y = _load_spatial_split(data_dir / "val.npz")
 
