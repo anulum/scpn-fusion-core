@@ -1,0 +1,10 @@
+{
+  "val_relative_l2": 0.2233426868915558,
+  "epochs": 300,
+  "modes": 16,
+  "width": 64,
+  "grid_size": 64,
+  "n_train": 170,
+  "training_time_s": 15.653804992000005,
+  "data_source": "QLKNN-MLP oracle spatial pairs"
+}

@@ -1,46 +1,87 @@
 {
-  "generated_at_utc": "2026-02-16T00:00:00.000000+00:00",
+  "generated_at_utc": "2026-03-08T00:05:00+00:00",
   "version": "task2-pretrained-v2",
   "artifacts": {
     "mlp_itpa": "weights/pretrained_mlp_itpa.npz",
     "fno_eurofusion_jet": "weights/pretrained_fno_eurofusion_jet.npz",
-    "neural_equilibrium_sparc": "weights/neural_equilibrium_sparc.npz"
+    "neural_transport_qlknn": "weights/neural_transport_qlknn.npz",
+    "fno_turbulence_jax": "weights/fno_turbulence_jax.npz"
   },
   "datasets": {
     "itpa": "validation/reference_data/itpa/hmode_confinement.csv",
     "eurofusion_proxy_jet": "validation/reference_data/jet",
-    "sparc_geqdsk": "validation/reference_data/sparc"
+    "qlknn10d": "Zenodo DOI 10.5281/zenodo.3497066 (500K samples, Zeff=1 subset)"
   },
   "config": {
     "seed": 42,
     "mlp_hidden": 32,
     "mlp_epochs": 1200,
-    "fno_modes": 8,
-    "fno_width": 16,
-    "fno_epochs": 24,
-    "fno_batch_size": 8,
-    "fno_augment_per_file": 12,
-    "neural_eq_n_components": 20,
-    "neural_eq_hidden_sizes": [128, 64, 32],
-    "neural_eq_perturbations": 25,
-    "neural_eq_geqdsk_files": 3
+    "fno_legacy_modes": 8,
+    "fno_legacy_width": 16,
+    "neural_transport": {
+      "hidden_dims": [512, 256, 128],
+      "epochs": 1000,
+      "lr": 1e-4,
+      "batch_size": 4096,
+      "gated": true,
+      "regime_balance": true,
+      "patience": 100,
+      "platform": "GPU (NVIDIA L40S 48GB)"
+    },
+    "fno_jax": {
+      "modes": 16,
+      "width": 64,
+      "epochs": 300,
+      "lr": 1e-3,
+      "batch_size": 32,
+      "grid_size": 64,
+      "n_equilibria": 200
+    }
   },
   "metrics": {
-    "mlp": {
-      "train_rmse_s": 0.06065391091166174,
-      "train_rmse_pct": 13.48913842133367
+    "mlp_itpa": {
+      "train_rmse_s": 0.061,
+      "train_rmse_pct": 23.4
     },
-    "fno": {
-      "train_relative_l2": 0.7925486587283793,
-      "val_relative_l2": 0.7933617814704241,
-      "dataset_samples": 60.0
+    "fno_legacy": {
+      "train_relative_l2": 0.793,
+      "val_relative_l2": 0.793,
+      "status": "DEPRECATED — superseded by fno_turbulence_jax"
     },
-    "neural_equilibrium": {
-      "train_samples": 78,
-      "explained_variance": 1.0,
-      "final_loss": 0.001047,
-      "train_time_s": 3.1,
-      "grid_shape": [129, 129]
+    "neural_transport_qlknn": {
+      "test_relative_l2": 0.243,
+      "val_relative_l2": 0.222,
+      "train_relative_l2": 0.153,
+      "chi_e_rel_l2": 0.243,
+      "chi_i_rel_l2": 0.242,
+      "D_e_rel_l2": 0.351,
+      "epochs_run": 391,
+      "training_time_s": 365,
+      "data_source": "QLKNN-10D (van de Plassche 2020, PoP 27 022310)"
+    },
+    "fno_turbulence_jax": {
+      "val_relative_l2": 0.223,
+      "n_train": 170,
+      "grid_size": 64,
+      "training_time_s": 16,
+      "data_source": "QLKNN-MLP oracle spatial pairs"
     }
+  },
+  "coverage": {
+    "pretrained_shipped": [
+      "scpn_fusion.core.pretrained_surrogates:mlp_itpa",
+      "scpn_fusion.core.pretrained_surrogates:fno_eurofusion_jet",
+      "scpn_fusion.core.neural_equilibrium:sparc",
+      "scpn_fusion.core.neural_transport:qlknn",
+      "scpn_fusion.core.fno_training:jax_spatial"
+    ],
+    "requires_user_training": [
+      "scpn_fusion.core.heat_ml_shadow_surrogate",
+      "scpn_fusion.core.gyro_swin_surrogate",
+      "scpn_fusion.core.turbulence_oracle"
+    ],
+    "coverage_fraction": 0.625,
+    "coverage_percent": 62.5,
+    "notes": "GPU-trained QLKNN transport surrogate (L40S, 500K samples) and JAX FNO spatial model added. Legacy NumPy FNO deprecated. Neural equilibrium retrain deferred (needs >3 SPARC GEQDSK files)."
   }
 }

@@ -76,9 +76,10 @@ def _profiles_from_rho(
 
     Returns dict with Te, Ti, ne, q, s_hat, beta_e, grad_Te, grad_Ti, grad_ne.
     """
-    # Pedestal-like profiles
-    alpha_T = 2.0  # temperature profile peakedness
-    alpha_n = 1.5  # density profile peakedness
+    rho = np.clip(rho, 0.0, 1.0)
+
+    alpha_T = 2.0
+    alpha_n = 1.5
 
     Te = Te0 * (1 - rho ** alpha_T) ** 1.5
     Ti = Ti0 * (1 - rho ** alpha_T) ** 1.5
@@ -176,20 +177,31 @@ def generate(
             rho, p["Te0"], p["Ti0"], p["ne0"], p["q0"], p["q_edge"],
         )
 
-        # Build input batch for MLP: (grid_size*grid_size, 10)
         flat_rho = rho.ravel()
+        te_flat = profiles["Te"].ravel()
+        ti_flat = profiles["Ti"].ravel()
+        ne_flat = profiles["ne"].ravel()
+        grad_te = profiles["grad_Te"].ravel()
+        grad_ti = profiles["grad_Ti"].ravel()
+        grad_ne = profiles["grad_ne"].ravel()
+        q_flat = profiles["q"].ravel()
+        s_hat = profiles["s_hat"].ravel()
+        beta_e = profiles["beta_e"].ravel()
+        ti_te = ti_flat / np.maximum(te_flat, 1e-8)
+        nustar = 1e-3 * ne_flat / (te_flat ** 2 + 1e-8)
+
         x_batch = np.column_stack([
-            flat_rho,
-            profiles["Te"].ravel(),
-            profiles["Ti"].ravel(),
-            profiles["ne"].ravel(),
-            profiles["grad_Te"].ravel(),
-            profiles["grad_Ti"].ravel(),
-            profiles["grad_ne"].ravel(),
-            profiles["q"].ravel(),
-            profiles["s_hat"].ravel(),
-            profiles["beta_e"].ravel(),
+            flat_rho, te_flat, ti_flat, ne_flat,
+            grad_te, grad_ti, grad_ne,
+            q_flat, s_hat, beta_e, ti_te, nustar,
         ])
+
+        # Match derived features appended by training pipeline
+        ati = grad_ti
+        ate = grad_te
+        itg_excess = np.maximum(0.0, ati - 4.0)
+        tem_excess = np.maximum(0.0, ate - 5.0)
+        x_batch = np.column_stack([x_batch, itg_excess, tem_excess])
 
         # Query MLP for chi_i at each grid point
         if model.is_neural and model._weights is not None:
