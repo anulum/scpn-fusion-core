@@ -658,7 +658,7 @@ def validate_disruption(
         ),
         "fpr_note": (
             f"FPR {fpr:.0%} exceeds operational threshold "
-            f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning planned for v2.1"
+            f"({THRESHOLDS['disruption_fpr_max']:.0%}); tuning tracked in ROADMAP.md"
             if fpr > THRESHOLDS["disruption_fpr_max"]
             else None
         ),

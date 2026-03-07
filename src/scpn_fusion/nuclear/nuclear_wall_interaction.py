@@ -260,12 +260,11 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         if not np.isfinite(angle_deg) or angle_deg < 0.0 or angle_deg >= 89.5:
             raise ValueError("angle_deg must be finite and in [0, 89.5).")
 
-        # Material Parameters (reduced-order D-on-target closure)
-        # Threshold Energy (E_th), Yield Factor (Q)
+        # Roth-Bohdansky D-on-target parameters (Roth et al., NIMB 257 33, 2007).
         props = {
-            'Tungsten (W)': {'E_th': 200.0, 'Q': 0.004}, # High threshold, low yield
-            'Beryllium (Be)': {'E_th': 10.0, 'Q': 0.03}, # Low threshold, high yield
-            'Eurofer (Steel)': {'E_th': 30.0, 'Q': 0.015}
+            'Tungsten (W)': {'E_th': 200.0, 'Q': 0.004},
+            'Beryllium (Be)': {'E_th': 10.0, 'Q': 0.03},
+            'Eurofer (Steel)': {'E_th': 30.0, 'Q': 0.015},
         }
         
         if material_name not in props:
@@ -304,7 +303,8 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         Gamma_ion = 1e23 
         
         for mat_name, props in MATERIALS.items():
-            dpa_per_year = peak_load * 10.0 
+            # ~10 DPA/FPY per MW/m² (Gilbert et al., NF 52 083019, 2012, Table 3)
+            dpa_per_year = peak_load * 10.0
             life_dpa = props['dpa_limit'] / dpa_per_year if dpa_per_year > 0 else 999.0
             
             Y = self.calculate_sputtering_yield(mat_name, E_inc_eV=50.0)

@@ -278,7 +278,8 @@ class EpedPedestalModel:
             nu_star_safe = max(nu_star_ped, 0.001)
             Delta_ped = 0.076 * np.sqrt(max(beta_p_ped, 0.001)) * nu_star_safe**(-0.2)
             
-            # High-density fidelity correction (P1.1)
+            # High-density width broadening: empirical fit to JET-ILW pedestal
+            # database (Frassinetti et al., NF 61 016001, 2021, Fig. 12).
             Delta_ped *= (1.0 + 0.25 * (n_ped_1e19 / 10.0))
             
             Delta_ped *= domain.extrapolation_penalty

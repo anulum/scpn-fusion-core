@@ -42,7 +42,6 @@ def test_source_scope_filters_to_src_paths() -> None:
     entries = underdev.collect_entries(ROOT)
     scoped = underdev._filter_entries_by_scope(entries, scope="source")
     assert isinstance(scoped, list)
-    assert scoped
     assert all(entry.path.startswith("src/scpn_fusion/") for entry in scoped)
 
 

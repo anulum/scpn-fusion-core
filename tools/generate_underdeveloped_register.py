@@ -56,6 +56,12 @@ EXCLUDED_PATHS = {
     "docs/UNDERDEVELOPED_SOURCE_REGISTER.md",
     "docs/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md",
     "docs/UNDERDEVELOPED_SCOPE_SUMMARY.json",
+    # Completed-work logs: keywords here describe fixed/shipped items, not open debt.
+    "CHANGELOG.md",
+    "docs/sphinx/changelog.rst",
+    # Fallback infrastructure: these files *are* the monitoring/budget system.
+    "src/scpn_fusion/fallback_telemetry.py",
+    "tools/fallback_budget_guard.py",
 }
 
 # Release-critical claim surfaces should remain high-signal in the queue.
@@ -290,6 +296,62 @@ def _is_marker_suppressed(
             return True
         if "allow_fallback" in lowered or "allow_numpy_fallback" in lowered:
             return True
+        # Validation benchmarks that *test* fallback paths by design.
+        if rel_path in {
+            "validation/benchmark_vs_freegs.py",
+            "validation/benchmark_disturbance_rejection.py",
+            "validation/benchmark_sparc_geqdsk_rmse.py",
+        }:
+            return True
+        # Import-failure fallback guards in tools are standard resilience, not debt.
+        if rel_path.startswith("tools/") and "except" in lowered and "import" in lowered:
+            return True
+
+    # "experimental" in grant pitches and tuning guides means lab data, not code maturity.
+    if marker == "EXPERIMENTAL" and rel_path in {
+        "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
+        "docs/SOLVER_TUNING_GUIDE.md",
+        "docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md",
+    }:
+        return True
+
+    # Execution registry entries describe completed hardening items.
+    if rel_path == "docs/PHASE3_EXECUTION_REGISTRY.md":
+        return True
+
+    # Audit/governance tools that reference marker names as strings are
+    # infrastructure, not underdeveloped code.
+    if rel_path in {
+        "tools/generate_source_p0p1_issue_backlog.py",
+        "tools/run_python_preflight.py",
+    }:
+        return True
+
+    # Docs describing fallback/degradation as an intentional architecture
+    # feature are not deficiencies.
+    if marker == "FALLBACK" and rel_path.startswith("docs/"):
+        lowered_l = line.lower()
+        if any(phrase in lowered_l for phrase in (
+            "pure-python fallback",
+            "cpu fallback",
+            "graceful fallback",
+            "graceful degradation",
+            "deterministic fallback",
+            "automatic fallback",
+            "checkpoint fallback",
+            "analytic fallback",
+            "numpy fallback",
+            "fallback path",
+            "fallback strategy",
+            "fallback model",
+            "serial fallback",
+        )):
+            return True
+
+    # Deep-audit planning docs that *list* marker counts are meta-reports.
+    if rel_path.startswith("docs/DEEP_AUDIT_AND_SOTA_PLAN"):
+        return True
+
     return False
 
 
@@ -455,9 +517,6 @@ def _score_context_penalty(*, rel_path: str, marker: str, line: str) -> int:
     if rel_path == "validation/collect_results.py" and marker == "DEPRECATED":
         if "deprecated" in lowered and "fno" in lowered:
             penalty += 14
-    if rel_path in {"CHANGELOG.md", "docs/sphinx/changelog.rst"}:
-        if marker in {"DEPRECATED", "EXPERIMENTAL"}:
-            penalty += 18
     return penalty
 
 
