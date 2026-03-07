@@ -912,7 +912,10 @@ def compare_case(
     else:
         invariant_checks = {}
         invariant_pass_fraction = float("nan")
-        passes = bool(psi_nrmse < PSI_NRMSE_THRESHOLD)
+        passes = bool(
+            our["converged"]
+            and psi_nrmse < PSI_NRMSE_THRESHOLD
+        )
 
     result: dict[str, Any] = {
         "name": case.name,

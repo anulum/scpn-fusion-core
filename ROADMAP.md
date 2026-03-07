@@ -1,15 +1,15 @@
 # Roadmap
 
-> Last updated: 2026-03-05. This roadmap reflects current priorities and may
+> Last updated: 2026-03-07. This roadmap reflects current priorities and may
 > change based on community feedback and validation results.
 
 Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_DAY_EXECUTION_PLAN.md)
 
-## Current Hardening Snapshot (2026-03-05)
+## Current Hardening Snapshot (2026-03-07)
 
 | Area | Current State | Tracking / Gate |
 |---|---|---|
-| Underdeveloped register | 197 total flags, **0 P0/P1** | `UNDERDEVELOPED_REGISTER.md` (generated) |
+| Underdeveloped register | 60 total flags, **0 P0/P1** | `UNDERDEVELOPED_REGISTER.md` (generated) |
 | Real-data roadmap progress | 18 equilibrium files, 8 SPARC, 53 transport shots, 24 machines, 16 disruption shots, 1 JET-DT | `tools/real_data_roadmap_progress.py` + `tools/real_data_roadmap_non_regression_guard.py` |
 | DIII-D raw ingestion readiness | **Not ready yet** (strict lane blocks promotion) | `tools/run_real_data_strict_gate.py` + `real-data-strict.yml` |
 | FreeGS strict parity | New dedicated strict no-fallback lane available | `.github/workflows/freegs-strict.yml` + `tools/check_freegs_strict_artifact.py` |
@@ -52,7 +52,8 @@ Runbook: [`docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md`](docs/FNO_EXTERNAL_RETRAIN_RUNB
 ### Reduce underdeveloped flag count
 
 Current totals are tracked in `UNDERDEVELOPED_REGISTER.md` (auto-generated each
-hardening wave). Target for v4.0: reduce P0/P1 count below 50.
+hardening wave). As of 2026-03-07: 60 total flags, 0 P0/P1.
+Target for v4.0: reduce remaining docs-claims flags below 30.
 
 ### FPGA deployment path
 
