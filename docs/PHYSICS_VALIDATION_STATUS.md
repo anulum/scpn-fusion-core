@@ -288,3 +288,47 @@ The FNO is already DEPRECATED (v4.0 decision: retrain on real data or remove).
 2. **FNO Spatial** — quick win, JAX-accelerated, improves turbulence modelling.
 3. **Neural Equilibrium** — needs more GEQDSK files first (3 files insufficient).
 4. **Multi-Regime FNO** — experimental, synthetic data only.
+
+---
+
+## 5. Reference Data Provenance
+
+Source: `validation/reference_data/provenance_manifest.json` (v2, 2026-03-05).
+
+### Real Data (from published sources)
+
+| Dataset | Files | Source |
+|---------|-------|--------|
+| SPARC equilibria | 8 EQDSK + 3 lmode GEQDSK | CFS/MIT public design data |
+| SPARC POPCON | 1 CSV | Published design tables |
+| SPARC device description | 1 JSON | Public design parameters |
+| ITPA confinement | 53 shots, 1 CSV | Published ITPA H-mode database subset |
+| ITPA coefficients | 2 JSON | Derived from published ITPA data |
+| QLKNN-10D benchmarks | 1 JSON (summary) | Published QLKNN paper values |
+| QLKNN-10D training data | 500K samples (Zenodo) | Real gyrokinetic GENE/QuaLiKiz runs |
+
+### Synthetic Data (generated in-repo)
+
+| Dataset | Files | Provenance Label |
+|---------|-------|------------------|
+| DIII-D equilibria | 5 GEQDSK | `synthetic-v1` ("DIII-D-like") |
+| DIII-D disruption shots | 16 NPZ | `synthetic-v1` ("synthetic DIII-D-like") |
+| JET equilibria | 5 GEQDSK | `synthetic-v1` ("JET-like") |
+| Blind validation suite | 2 JSON | `synthetic-v1` |
+
+### Training Data Summary
+
+| Model | Trains On | Real? |
+|-------|-----------|-------|
+| Neural Transport (QLKNN) | Zenodo QLKNN-10D (500K samples) | **Yes** (real gyrokinetic) |
+| Neural Equilibrium | 3 SPARC lmode GEQDSK | **Yes** (real CFS/MIT) |
+| MLP ITPA | 53-shot ITPA CSV | **Yes** (real multi-machine) |
+| FNO turbulence | Synthetic Hasegawa-Wakatani | **No** (DEPRECATED) |
+| GS-Transport surrogate | TransportSolver oracle | **No** (synthetic) |
+| Disruption predictor | 16 DIII-D-like NPZ | **No** (synthetic) |
+
+### Data Access Blockers
+
+- **DIII-D raw data**: Pending GA MDSplus access (would replace synthetic GEQDSK + disruption shots).
+- **JET DT campaign**: Pending EUROfusion data access (would replace synthetic JET GEQDSK).
+- **Additional SPARC**: Pending CFS data release (currently 8 equilibria; target 20+).
