@@ -464,13 +464,16 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
     gs_rel, gs_max = gs_residual(eq)
 
     # 2. Manufactured solve
+    # Optimal SOR omega for NxN Laplacian: 2/(1 + sin(pi/N))
+    n_eff = max(eq.nw, eq.nh)
+    omega_opt = 2.0 / (1.0 + np.sin(np.pi / n_eff))
     if warm_start:
         solver_psi, iters, res, t_ms = manufactured_solve_vectorised(
-            eq, omega=1.3, max_iter=200, tol=1e-8,
+            eq, omega=omega_opt, max_iter=5000, tol=1e-8,
         )
     else:
         solver_psi, iters, res, t_ms = manufactured_solve_vectorised(
-            eq, omega=1.5, max_iter=2000, tol=1e-7,
+            eq, omega=omega_opt, max_iter=10000, tol=1e-7,
         )
 
     # 3. Point-wise RMSE
