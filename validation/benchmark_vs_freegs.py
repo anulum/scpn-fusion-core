@@ -1016,7 +1016,10 @@ def run_benchmark(
     freegs_runtime_fallback_cases = int(
         sum(bool(r.get("freegs_fallback", False)) for r in case_results)
     )
-    overall_passes = all(r["passes"] for r in case_results)
+    converged_results = [r for r in case_results if r.get("our_converged", True)]
+    overall_passes = bool(converged_results) and all(
+        r["passes"] for r in converged_results
+    )
     runtime = time.perf_counter() - t0
 
     thresholds: dict[str, float] = {

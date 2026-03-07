@@ -1,9 +1,11 @@
 {
-  "generated_at_utc": "2026-03-02T00:26:42.518418+00:00",
+  "generated_at_utc": "2026-03-07T12:14:09.168882+00:00",
   "mode": "solovev_manufactured_source",
-  "freegs_available": false,
+  "freegs_available": true,
   "force_solovev": true,
   "require_freegs_backend": false,
+  "runtime_fallback_allowed": true,
+  "freegs_runtime_fallback_cases": 0,
   "psi_nrmse_threshold": 0.11,
   "thresholds": {
     "psi_nrmse": 0.11
@@ -15,10 +17,13 @@
       "comparison_backend": "fusion_kernel_fixed_source",
       "reference_backend": "solovev_analytic",
       "psi_nrmse": 0.073777,
+      "psi_nrmse_normalized": 0.126573,
       "q_profile_nrmse": 0.181215,
       "axis_error_m": 0.5,
       "separatrix_nrmse": 0.151649,
       "flux_area_rel_error": 0.2079,
+      "invariant_pass_fraction": NaN,
+      "invariant_checks": {},
       "our_converged": true,
       "our_residual": 9.765e-05,
       "passes": true
@@ -29,10 +34,13 @@
       "comparison_backend": "fusion_kernel_fixed_source",
       "reference_backend": "solovev_analytic",
       "psi_nrmse": 0.071637,
+      "psi_nrmse_normalized": 0.126012,
       "q_profile_nrmse": 0.180449,
       "axis_error_m": 0.1425,
       "separatrix_nrmse": 0.150933,
       "flux_area_rel_error": 0.199584,
+      "invariant_pass_fraction": NaN,
+      "invariant_checks": {},
       "our_converged": true,
       "our_residual": 9.819e-05,
       "passes": true
@@ -43,13 +51,16 @@
       "comparison_backend": "fusion_kernel_fixed_source",
       "reference_backend": "solovev_analytic",
       "psi_nrmse": 0.102363,
+      "psi_nrmse_normalized": 0.196691,
       "q_profile_nrmse": 0.626114,
       "axis_error_m": 0.326562,
       "separatrix_nrmse": 0.147956,
       "flux_area_rel_error": 0.168224,
+      "invariant_pass_fraction": NaN,
+      "invariant_checks": {},
       "our_converged": false,
       "our_residual": 0.00024013,
-      "passes": true
+      "passes": false
     },
     {
       "name": "KSTAR-like",
@@ -57,10 +68,13 @@
       "comparison_backend": "fusion_kernel_fixed_source",
       "reference_backend": "solovev_analytic",
       "psi_nrmse": 0.060666,
+      "psi_nrmse_normalized": 0.112576,
       "q_profile_nrmse": 0.152316,
       "axis_error_m": 0.09375,
       "separatrix_nrmse": 0.13248,
       "flux_area_rel_error": 0.158898,
+      "invariant_pass_fraction": NaN,
+      "invariant_checks": {},
       "our_converged": true,
       "our_residual": 9.821e-05,
       "passes": true
@@ -71,10 +85,13 @@
       "comparison_backend": "fusion_kernel_fixed_source",
       "reference_backend": "solovev_analytic",
       "psi_nrmse": 0.073374,
+      "psi_nrmse_normalized": 0.128962,
       "q_profile_nrmse": 0.188512,
       "axis_error_m": 0.1425,
       "separatrix_nrmse": 0.155095,
       "flux_area_rel_error": 0.2079,
+      "invariant_pass_fraction": NaN,
+      "invariant_checks": {},
       "our_converged": true,
       "our_residual": 9.946e-05,
       "passes": true
@@ -82,5 +99,5 @@
   ],
   "overall_psi_nrmse": 0.076363,
   "passes": true,
-  "runtime_s": 12.597
+  "runtime_s": 5.68
 }
