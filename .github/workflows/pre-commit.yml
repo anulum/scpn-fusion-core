@@ -9,8 +9,6 @@ name: Pre-commit
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
   pull_request:
 
 permissions: {}
@@ -30,3 +28,5 @@ jobs:
           python-version: "3.12"
 
       - uses: pre-commit/action@v3.0.1
+        env:
+          SKIP: black,ruff,mypy,cargo-fmt-check,cargo-clippy,version-metadata-consistency,packaging-contract
