@@ -4,7 +4,9 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: end-of-file-fixer
+        exclude: '\.(npz|npy|pkl|pt|onnx|whl|tar\.gz|png|jpg|svg)$'
       - id: trailing-whitespace
+        exclude: '\.(npz|npy|pkl|pt|onnx|whl|tar\.gz|png|jpg|svg)$'
 
   - repo: https://github.com/psf/black
     rev: 24.10.0
