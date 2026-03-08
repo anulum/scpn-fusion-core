@@ -5,14 +5,17 @@
 
 Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_DAY_EXECUTION_PLAN.md)
 
-## Current Hardening Snapshot (2026-03-07)
+## Current Hardening Snapshot (2026-03-08)
 
 | Area | Current State | Tracking / Gate |
 |---|---|---|
-| Underdeveloped register | 66 total flags, **0 P0/P1** | `UNDERDEVELOPED_REGISTER.md` (generated) |
+| Underdeveloped register | 68 total flags, **0 P0/P1** | `UNDERDEVELOPED_REGISTER.md` (generated) |
+| Pretrained surrogates | **5/8 shipped** (62.5%): ITPA MLP, Neural EQ, QLKNN, FNO JAX, FNO legacy (deprecated) | `weights/pretrained_surrogates_manifest.json` |
+| QLKNN transport surrogate | test_rel_L2 = 0.243 (GPU L40S, 500K samples, gated 512×256×128) | `weights/neural_transport_qlknn.metrics.json` |
+| FNO turbulence (JAX) | val_rel_L2 = 0.223 (modes=16, width=64, QLKNN-oracle pairs) | `weights/fno_turbulence_jax.metrics.json` |
 | Real-data roadmap progress | 18 equilibrium files, 8 SPARC, 53 transport shots, 24 machines, 16 disruption shots, 1 JET-DT | `tools/real_data_roadmap_progress.py` + `tools/real_data_roadmap_non_regression_guard.py` |
 | DIII-D raw ingestion readiness | **Not ready yet** (strict lane blocks promotion) | `tools/run_real_data_strict_gate.py` + `real-data-strict.yml` |
-| FreeGS strict parity | New dedicated strict no-fallback lane available | `.github/workflows/freegs-strict.yml` + `tools/check_freegs_strict_artifact.py` |
+| FreeGS strict parity | Dedicated strict no-fallback lane available | `.github/workflows/freegs-strict.yml` + `tools/check_freegs_strict_artifact.py` |
 
 Roadmap KPI commands:
 
@@ -27,17 +30,19 @@ python tools/real_data_roadmap_non_regression_guard.py \
 
 ## v4.0 — Validation-First Release (target: Q2 2026)
 
-### Remove or retrain FNO turbulence surrogate
+### Retrain surrogates to elite accuracy
 
-The JAX FNO module (rel_L2 = 0.79, synthetic Hasegawa-Wakatani only) is
-DEPRECATED in v3.9. In v4.0 it will be either:
+GPU-trained weights shipped in v3.9.2. Next targets:
 
-- **Retrained** on real gyrokinetic data (GENE/CGYRO flux-tube runs) through
-  the established external retrain service workflow (request export + signed
-  artifact import), or
-- **Removed entirely** if no real training data is available.
+| Surrogate | Current | Elite Target | Method |
+|-----------|---------|-------------|--------|
+| QLKNN transport | test_rel_L2 = 0.243 | < 0.10 | Retrain with 1024×512×256, 10M samples, 2000 epochs |
+| FNO turbulence (JAX) | val_rel_L2 = 0.223 | < 0.10 | Retrain with 2000 equilibria from improved QLKNN oracle |
+| Neural equilibrium | psi NRMSE = 0.076 | < 0.05 | Blocked on GEQDSK data (need 50+ equilibria) |
 
-Status: DEPRECATED. Tracking: `src/scpn_fusion/core/fno_turbulence_suppressor.py`  
+The legacy NumPy FNO (rel_L2 = 0.79) is DEPRECATED and superseded by the JAX
+FNO. It will be removed in v4.0 if not retrained on real gyrokinetic data.
+
 Runbook: [`docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md`](docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md)
 
 ### Expand real-data validation
@@ -52,7 +57,7 @@ Runbook: [`docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md`](docs/FNO_EXTERNAL_RETRAIN_RUNB
 ### Reduce underdeveloped flag count
 
 Current totals are tracked in `UNDERDEVELOPED_REGISTER.md` (auto-generated each
-hardening wave). As of 2026-03-07: 66 total flags, 0 P0/P1.
+hardening wave). As of 2026-03-08: 68 total flags, 0 P0/P1.
 Target for v4.0: reduce remaining docs-claims flags below 30.
 
 ### FPGA deployment path
