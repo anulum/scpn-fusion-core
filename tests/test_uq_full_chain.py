@@ -16,13 +16,12 @@ import json
 import numpy as np
 import pytest
 
-from scpn_fusion.core.uncertainty import (
+from scpn_fusion.core.uncertainty import PlasmaScenario, quantify_uncertainty
+from scpn_fusion.core.uncertainty_full_chain import (
     EquilibriumUncertainty,
     FullChainUQResult,
-    PlasmaScenario,
     TransportUncertainty,
     quantify_full_chain,
-    quantify_uncertainty,
     summarize_uq,
 )
 
