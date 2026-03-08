@@ -133,13 +133,15 @@ to close when the multigrid solver replaces Picard+SOR in the kernel.
 
 ## Neural Transport Surrogate
 
-MLP surrogate (10→64→32→3 architecture) for fast transport coefficient
-estimation.  Pure NumPy — no TensorFlow/PyTorch overhead.
+MLP surrogate for fast transport coefficient estimation. Pure NumPy inference
+— no TensorFlow/PyTorch overhead.
 
-> **Important:** No physics-trained weights are shipped in this repository.
-> The benchmark timings below use synthetic weights for latency measurement.
-> To use the surrogate for actual physics, you must train weights on
-> gyrokinetic output (see training recipe in the notebook).
+Two weight sets are shipped:
+- `weights/neural_transport_qlknn.npz` — 14→512→256→128→6 gated MLP trained on
+  QLKNN-10D (van de Plassche 2020, Zenodo DOI 10.5281/zenodo.3497066).
+  test_rel_L2 = 0.243, trained on NVIDIA L40S 48GB.
+- `weights/fno_turbulence_jax.npz` — JAX FNO (modes=16, width=64) trained on
+  QLKNN-oracle spatial pairs. val_rel_L2 = 0.223.
 
 **Latency measurements (synthetic weights, Criterion benchmark):**
 

@@ -11,7 +11,7 @@ first-principles transport/gyrokinetic code.
 |-----------|---------|
 | Petri net → SNN compilation with formal verification | 37 hardening tasks, deterministic replay |
 | Sub-microsecond Rust control kernel (0.52 µs P50) and closed-loop latency (11.9 µs P50 / 23.9 µs P99) | `docs/PERFORMANCE_METRIC_TAXONOMY.md`, `validation/verify_10khz_rust.py`, Criterion benches |
-| QLKNN-10D real-gyrokinetic transport surrogate | test_rel_L2 = 0.0943, Zenodo DOI 10.5281/zenodo.3497066 |
+| QLKNN-10D real-gyrokinetic transport surrogate | test_rel_L2 = 0.243 (512×256×128 gated MLP, 500K samples), Zenodo DOI 10.5281/zenodo.3497066 |
 | IPB98(y,2) confinement scaling on 53 shots / 24 machines | `validation/reference_data/itpa/hmode_confinement.csv` |
 | 8 SPARC EFIT GEQDSK equilibrium validation | `validation/reference_data/sparc/` (MIT, CFS) |
 | 0% disruption rate across 1,000-shot stress campaigns | `validation/stress_test_campaign.py` |
@@ -40,14 +40,15 @@ first-principles transport/gyrokinetic code.
 
 ## Pretrained surrogate status
 
-4 of 7 surrogate lanes ship pretrained weights:
+5 of 8 surrogate lanes ship pretrained weights:
 
 | Surrogate | Status | Evidence |
 |-----------|--------|---------|
 | MLP ITPA confinement | Shipped | 13.5% RMSE on training set |
-| FNO EUROfusion-proxy | Archived non-release lane | rel_L2 = 0.79 (synthetic only) |
+| FNO EUROfusion-proxy | DEPRECATED | rel_L2 = 0.79 (synthetic only) |
 | Neural equilibrium (SPARC) | Shipped | PCA+MLP, 78 samples |
-| QLKNN-10D transport | Shipped | test_rel_L2 = 0.0943 |
+| QLKNN-10D transport | Shipped | test_rel_L2 = 0.243 (GPU L40S, 500K samples) |
+| FNO turbulence (JAX) | Shipped | val_rel_L2 = 0.223 (QLKNN-oracle spatial pairs) |
 | Heat ML shadow | Requires user training | No pretrained weights |
 | Gyro-Swin | Requires user training | No pretrained weights |
 | Turbulence oracle | Requires user training | No pretrained weights |
