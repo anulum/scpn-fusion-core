@@ -64,7 +64,7 @@ git lfs pull
 | Metric | Value | Reproducibility |
 |--------|-------|-----------------|
 | Rust control-loop latency | **0.52 us P50** | `validation/verify_10khz_rust.py` |
-| QLKNN-10D transport surrogate | test rel_L2 = 0.094 | `weights/neural_transport_qlknn.npz` |
+| QLKNN-10D transport surrogate | test rel_L2 = 0.201 | `weights/neural_transport_qlknn.npz` |
 | Disruption rate (1,000-shot campaign) | **0%** (Rust-PID) | `validation/stress_test_campaign.py` |
 | ITPA H-mode confinement | 53 shots / 24 machines | `validation/reference_data/itpa/` |
 | SPARC GEQDSK validation | 8 EFIT equilibria (MIT, CFS) | `validation/reference_data/sparc/` |

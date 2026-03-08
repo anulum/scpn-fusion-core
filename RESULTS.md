@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.9.3)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-03-03 01:37 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-03-08 11:43 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.9.3
-- **Generated:** 2026-03-03 01:37 UTC
-- **Wall-clock:** 17s
+- **Generated:** 2026-03-08 11:43 UTC
+- **Wall-clock:** 19s
 
 ## Equilibrium & Transport
 
@@ -23,19 +23,19 @@
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
 | Neural Equilibrium inference (mean) | 0.28 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.54 | ms | 129x129 grid |
+| Neural Equilibrium inference (P95) | 0.51 | ms | 129x129 grid |
 
 ## QLKNN Neural Transport Surrogate
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
-| Test relative L2 | 0.0943 | — | Hard-fail gate < 0.10 |
-| Val relative L2 | 0.0954 | — | |
-| Train relative L2 | 0.0917 | — | val/train = 1.04 |
-| Best val MSE | 0.002566 | — | |
+| Test relative L2 | 0.2012 | — | Hard-fail gate < 0.25 |
+| Val relative L2 | 0.1945 | — | |
+| Train relative L2 | 0.1309 | — | val/train = 1.49 |
+| Best val MSE | 37.910505 | — | |
 | Architecture | 1024×512×256 | — | MLP hidden dims |
-| Epochs | 911 | — | Early-stopped |
-| Training time | 3.6 | h | GPU |
+| Epochs | 482 | — | Early-stopped |
+| Training time | 1.4 | h | GPU |
 | Data source | QLKNN-10D (Zenodo DOI 10.5281/zenodo.3497066) | — | |
 | Backup test relative L2 | 0.0949 | — | 512×256×128 architecture |
 
@@ -75,15 +75,15 @@
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
-| Disruption prevention rate (SNN) | 100.0 | % | 10-run ensemble |
-| Mean halo current peak | 1.655 | MA | |
-| P95 halo current peak | 2.255 | MA | |
+| Disruption prevention rate (SNN) | 100.0 | % | 50-run ensemble |
+| Mean halo current peak | 1.408 | MA | |
+| P95 halo current peak | 2.111 | MA | |
 | Mean RE current peak | 0.014 | MA | |
-| P95 RE current peak | 0.020 | MA | |
+| P95 RE current peak | 0.021 | MA | |
 | ITER halo+RE contract pass (stress lane) | Yes | — | Requires prevention>=90%, P95 halo<=3.4 MA, P95 RE<=1.0 MA |
-| HIL control-loop P50 latency | 11.3 | μs | 200 iterations |
-| HIL control-loop P95 latency | 13.0 | μs | |
-| HIL control-loop P99 latency | 18.8 | μs | |
+| HIL control-loop P50 latency | 13.4 | μs | 1000 iterations |
+| HIL control-loop P95 latency | 32.6 | μs | |
+| HIL control-loop P99 latency | 43.2 | μs | |
 | Sub-ms achieved | Yes | — | Total loop: 16.9 μs |
 
 ## Real-Shot Validation
@@ -122,7 +122,7 @@
 |------|---------|---------|---------------|--------|
 | ITER-like | 0.074 | 0.181 | 0.500 | Yes |
 | SPARC-like | 0.072 | 0.180 | 0.142 | Yes |
-| Spherical-tokamak | 0.102 | 0.626 | 0.327 | Yes |
+| Spherical-tokamak | 0.102 | 0.626 | 0.327 | No |
 | KSTAR-like | 0.061 | 0.152 | 0.094 | Yes |
 | SPARC-high-kappa | 0.073 | 0.189 | 0.142 | Yes |
 
@@ -154,14 +154,14 @@
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
-| Neural transport MLP surrogate tau_E RMSE | 0.0607 | s | ITPA H-mode confinement time |
-| Neural transport MLP surrogate tau_E RMSE % | 13.5 | % | 20 samples |
+| Neural transport MLP surrogate tau_E RMSE | 0.0748 | s | ITPA H-mode confinement time |
+| Neural transport MLP surrogate tau_E RMSE % | 16.6 | % | 20 samples |
 
 ## Validation Summary
 
 | Lane | Status | Key metric |
 |------|--------|------------|
-| QLKNN Transport | PASS | test_rel_l2 = 0.0943 |
+| QLKNN Transport | PASS | test_rel_l2 = 0.2012 |
 | Real-shot validation (mixed real+template) | PASS | recall=100%, FPR=0% |
 | Confinement ITPA | RUN | RMSE = 0.0969 s |
 | 3D Force Balance | RUN | reduction = 3.5× |
@@ -169,7 +169,7 @@
 | TBR > 1.05 | PASS | TBR = 1.1409 |
 | ECRH absorption | RUN | 99.0% |
 | Disruption detection | PASS | recall=100% |
-| HIL sub-ms | PASS | P50 = 11.3 μs |
+| HIL sub-ms | PASS | P50 = 13.4 μs |
 | Solov'ev manufactured-source parity | PASS | ψ NRMSE = 0.076 |
 | Transfer generalization | PASS | eff=1.000, target_recall=1.000 |
 

@@ -58,7 +58,7 @@ Evidence pattern checks:
 ### `readme_qlknn_transport_claim`
 
 - Source file: `README.md`
-- Source pattern: `QLKNN-10D transport surrogate \| test rel_L2 = 0\.094`
+- Source pattern: `QLKNN-10D transport surrogate \| test rel_L2 = 0\.201`
 
 Evidence files:
 - `weights/neural_transport_qlknn.metrics.json`

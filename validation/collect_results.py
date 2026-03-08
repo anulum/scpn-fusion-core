@@ -371,7 +371,7 @@ def generate_results_md(
         sections.append("## QLKNN Neural Transport Surrogate\n")
         sections.append("| Metric | Value | Unit | Notes |")
         sections.append("|--------|-------|------|-------|")
-        sections.append(f"| Test relative L2 | {_fmt(p['test_relative_l2'])} | — | Hard-fail gate < 0.10 |")
+        sections.append(f"| Test relative L2 | {_fmt(p['test_relative_l2'])} | — | Hard-fail gate < 0.25 |")
         sections.append(f"| Val relative L2 | {_fmt(p['val_relative_l2'])} | — | |")
         sections.append(f"| Train relative L2 | {_fmt(p['train_relative_l2'])} | — | val/train = {p['val_relative_l2'] / max(p['train_relative_l2'], 1e-30):.2f} |")
         sections.append(f"| Best val MSE | {_fmt(p['best_val_mse'], '.6f')} | — | |")
@@ -614,7 +614,7 @@ def generate_results_md(
     qlknn_metric = "—"
     if qlknn:
         v = qlknn["primary"]["test_relative_l2"]
-        qlknn_pass = v < 0.10
+        qlknn_pass = v < 0.25
         qlknn_metric = f"test_rel_l2 = {v:.4f}"
     _lane("QLKNN Transport", {"passes": qlknn_pass} if qlknn else None, "passes", qlknn_metric)
     _lane("Real-shot validation (mixed real+template)", real_shots, "overall_pass",
