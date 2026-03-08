@@ -1,15 +1,15 @@
 {
-  "test_relative_l2": 0.24261925767105857,
-  "val_relative_l2": 0.22177744621293677,
-  "train_relative_l2": 0.15341544399880694,
-  "best_val_mse": 56.26194447878818,
-  "epochs_run": 391,
-  "training_time_s": 365.2951706499998,
+  "test_relative_l2": 0.2012012780283069,
+  "val_relative_l2": 0.19449205465044478,
+  "train_relative_l2": 0.1308530976668255,
+  "best_val_mse": 37.91050533294146,
+  "epochs_run": 482,
+  "training_time_s": 4895.192491711,
   "platform": "GPU",
   "hidden_dims": [
+    1024,
     512,
-    256,
-    128
+    256
   ],
   "data_source": "QLKNN-10D (Zenodo DOI 10.5281/zenodo.3497066)"
 }

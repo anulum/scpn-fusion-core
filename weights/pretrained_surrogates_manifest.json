@@ -1,6 +1,6 @@
 {
-  "generated_at_utc": "2026-03-08T00:05:00+00:00",
-  "version": "task2-pretrained-v2",
+  "generated_at_utc": "2026-03-08T04:30:00+00:00",
+  "version": "task2-pretrained-v3-elite",
   "artifacts": {
     "mlp_itpa": "weights/pretrained_mlp_itpa.npz",
     "fno_eurofusion_jet": "weights/pretrained_fno_eurofusion_jet.npz",
@@ -19,8 +19,8 @@
     "fno_legacy_modes": 8,
     "fno_legacy_width": 16,
     "neural_transport": {
-      "hidden_dims": [512, 256, 128],
-      "epochs": 1000,
+      "hidden_dims": [1024, 512, 256],
+      "epochs": 1500,
       "lr": 1e-4,
       "batch_size": 4096,
       "gated": true,
@@ -29,13 +29,14 @@
       "platform": "GPU (NVIDIA L40S 48GB)"
     },
     "fno_jax": {
-      "modes": 16,
-      "width": 64,
-      "epochs": 300,
+      "n_layers": 4,
+      "modes": 24,
+      "width": 128,
+      "epochs": 1500,
       "lr": 1e-3,
       "batch_size": 32,
       "grid_size": 64,
-      "n_equilibria": 200
+      "n_equilibria": 2000
     }
   },
   "metrics": {
@@ -49,22 +50,19 @@
       "status": "DEPRECATED — superseded by fno_turbulence_jax"
     },
     "neural_transport_qlknn": {
-      "test_relative_l2": 0.243,
-      "val_relative_l2": 0.222,
-      "train_relative_l2": 0.153,
-      "chi_e_rel_l2": 0.243,
-      "chi_i_rel_l2": 0.242,
-      "D_e_rel_l2": 0.351,
-      "epochs_run": 391,
-      "training_time_s": 365,
+      "test_relative_l2": 0.201,
+      "val_relative_l2": 0.194,
+      "train_relative_l2": 0.131,
+      "epochs_run": 482,
+      "training_time_s": 4895,
       "data_source": "QLKNN-10D (van de Plassche 2020, PoP 27 022310)"
     },
     "fno_turbulence_jax": {
-      "val_relative_l2": 0.223,
-      "n_train": 170,
+      "val_relative_l2": 0.356,
+      "n_train": 1700,
       "grid_size": 64,
-      "training_time_s": 16,
-      "data_source": "QLKNN-MLP oracle spatial pairs"
+      "training_time_s": 522,
+      "data_source": "QLKNN-MLP oracle spatial pairs (2000 equilibria)"
     }
   },
   "coverage": {
@@ -82,6 +80,6 @@
     ],
     "coverage_fraction": 0.625,
     "coverage_percent": 62.5,
-    "notes": "GPU-trained QLKNN transport surrogate (L40S, 500K samples) and JAX FNO spatial model added. Legacy NumPy FNO deprecated. Neural equilibrium retrain deferred (needs >3 SPARC GEQDSK files)."
+    "notes": "Elite retrain: QLKNN 1024x512x256 MLP (test_rel_L2=0.201, down from 0.243). FNO 4-layer (val_rel_L2=0.356 on 2000 equilibria; limited by oracle noise floor). Legacy NumPy FNO deprecated. Neural equilibrium retrain deferred (needs >3 SPARC GEQDSK files)."
   }
 }

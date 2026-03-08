@@ -11,8 +11,8 @@ Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_
 |---|---|---|
 | Underdeveloped register | 68 total flags, **0 P0/P1** | `UNDERDEVELOPED_REGISTER.md` (generated) |
 | Pretrained surrogates | **5/8 shipped** (62.5%): ITPA MLP, Neural EQ, QLKNN, FNO JAX, FNO legacy (deprecated) | `weights/pretrained_surrogates_manifest.json` |
-| QLKNN transport surrogate | test_rel_L2 = 0.243 (GPU L40S, 500K samples, gated 512×256×128) | `weights/neural_transport_qlknn.metrics.json` |
-| FNO turbulence (JAX) | val_rel_L2 = 0.223 (modes=16, width=64, QLKNN-oracle pairs) | `weights/fno_turbulence_jax.metrics.json` |
+| QLKNN transport surrogate | test_rel_L2 = 0.201 (GPU L40S, 500K samples, gated 1024×512×256) | `weights/neural_transport_qlknn.metrics.json` |
+| FNO turbulence (JAX) | val_rel_L2 = 0.356 (4-layer, modes=24, width=128, 2000 equilibria) | `weights/fno_turbulence_jax.metrics.json` |
 | Real-data roadmap progress | 18 equilibrium files, 8 SPARC, 53 transport shots, 24 machines, 16 disruption shots, 1 JET-DT | `tools/real_data_roadmap_progress.py` + `tools/real_data_roadmap_non_regression_guard.py` |
 | DIII-D raw ingestion readiness | **Not ready yet** (strict lane blocks promotion) | `tools/run_real_data_strict_gate.py` + `real-data-strict.yml` |
 | FreeGS strict parity | Dedicated strict no-fallback lane available | `.github/workflows/freegs-strict.yml` + `tools/check_freegs_strict_artifact.py` |
@@ -36,8 +36,8 @@ GPU-trained weights shipped in v3.9.2. Next targets:
 
 | Surrogate | Current | Elite Target | Method |
 |-----------|---------|-------------|--------|
-| QLKNN transport | test_rel_L2 = 0.243 | < 0.10 | Retrain with 1024×512×256, 10M samples, 2000 epochs |
-| FNO turbulence (JAX) | val_rel_L2 = 0.223 | < 0.10 | Retrain with 2000 equilibria from improved QLKNN oracle |
+| QLKNN transport | test_rel_L2 = 0.201 | < 0.10 | Next: 10M samples, dropout, ensemble |
+| FNO turbulence (JAX) | val_rel_L2 = 0.356 | < 0.20 | Bottleneck: oracle noise floor; needs real gyrokinetic spatial data |
 | Neural equilibrium | psi NRMSE = 0.076 | < 0.05 | Blocked on GEQDSK data (need 50+ equilibria) |
 
 The legacy NumPy FNO (rel_L2 = 0.79) is DEPRECATED and superseded by the JAX

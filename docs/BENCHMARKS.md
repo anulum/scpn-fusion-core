@@ -137,11 +137,11 @@ MLP surrogate for fast transport coefficient estimation. Pure NumPy inference
 — no TensorFlow/PyTorch overhead.
 
 Two weight sets are shipped:
-- `weights/neural_transport_qlknn.npz` — 14→512→256→128→6 gated MLP trained on
+- `weights/neural_transport_qlknn.npz` — 14→1024→512→256→6 gated MLP trained on
   QLKNN-10D (van de Plassche 2020, Zenodo DOI 10.5281/zenodo.3497066).
-  test_rel_L2 = 0.243, trained on NVIDIA L40S 48GB.
-- `weights/fno_turbulence_jax.npz` — JAX FNO (modes=16, width=64) trained on
-  QLKNN-oracle spatial pairs. val_rel_L2 = 0.223.
+  test_rel_L2 = 0.201, trained on NVIDIA L40S 48GB.
+- `weights/fno_turbulence_jax.npz` — 4-layer JAX FNO (modes=24, width=128) trained
+  on 2000 QLKNN-oracle spatial equilibria. val_rel_L2 = 0.356.
 
 **Latency measurements (synthetic weights, Criterion benchmark):**
 

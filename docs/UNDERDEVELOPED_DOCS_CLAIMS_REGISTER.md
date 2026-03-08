@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-08T00:17:13.459524+00:00`
+- Generated at: `2026-03-08T04:35:33.888577+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: docs-claims-only markers
 
@@ -55,7 +55,7 @@
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:19` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | `freegs-strict` | FreeGS-only strict backend parity lane with runtime-fallback disallowed and artifact contract checks (`mode=freegs`, ... |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:29` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | `freegs-strict` (`freegs-strict.yml`, manual dispatch) | Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS referen... |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:36` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | enforces a no-fallback contract when invoked. |
-| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/competitive_analysis.md:40` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | > (test_rel_L2 = 0.243) alongside the analytic critical-gradient fallback. |
+| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/competitive_analysis.md:40` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | > (test_rel_L2 = 0.201) alongside the analytic critical-gradient fallback. |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:41` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| GPU support \| Planned \| Yes (JAX) \| No \| No \| |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:244` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| SOR red-black sweep \| wgpu compute shader \| 20–50× (65×65), 100–200× (256×256) \| P0 \| Planned \| |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:245` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| Multigrid V-cycle \| wgpu + host orchestration \| 10–30× \| P1 \| Planned \| |
@@ -126,7 +126,7 @@
 | P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:19` | | `freegs-strict` | FreeGS-only strict backend parity lane with runtime-fallback disallowed and artifact contract checks (`mode=freegs`, ... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:29` | | `freegs-strict` (`freegs-strict.yml`, manual dispatch) | Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS referen... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:36` | enforces a no-fallback contract when invoked. |
-| P3 | `docs_claims` | `FALLBACK` | `docs/competitive_analysis.md:40` | > (test_rel_L2 = 0.243) alongside the analytic critical-gradient fallback. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/competitive_analysis.md:40` | > (test_rel_L2 = 0.201) alongside the analytic critical-gradient fallback. |
 | P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:41` | \| GPU support \| Planned \| Yes (JAX) \| No \| No \| |
 | P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:244` | \| SOR red-black sweep \| wgpu compute shader \| 20–50× (65×65), 100–200× (256×256) \| P0 \| Planned \| |
 | P3 | `docs_claims` | `PLANNED` | `docs/BENCHMARKS.md:245` | \| Multigrid V-cycle \| wgpu + host orchestration \| 10–30× \| P1 \| Planned \| |

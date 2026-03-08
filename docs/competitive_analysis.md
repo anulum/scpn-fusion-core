@@ -37,7 +37,7 @@
 | QLKNN (TensorFlow) | NN inference | ~100 us (25 outputs) | Surrogate | van de Plassche 2020 |
 
 > **Fidelity note:** SCPN ships a QLKNN-10D trained MLP surrogate
-> (test_rel_L2 = 0.243) alongside the analytic critical-gradient fallback.
+> (test_rel_L2 = 0.201) alongside the analytic critical-gradient fallback.
 > The MLP is trained on van de Plassche 2020 gyrokinetic data (500K samples).
 > 10-25% relative error is typical for QLKNN surrogates. The speed advantage
 > reflects both surrogate approach and lightweight NumPy inference.
@@ -71,7 +71,7 @@
 | **Neuro-symbolic SNN** | **Yes** | No | No | No | No | No |
 | **Disruption prediction (ML)** | **Yes** | No | No | No | No | N/A |
 | **SPI mitigation** | **Yes** | No | No | No | No | Yes |
-| FNO turbulence surrogate | **Yes (JAX, val_rel_L2=0.223)** | No | QLKNN | No | TJLF | No |
+| FNO turbulence surrogate | **Yes (JAX, val_rel_L2=0.356)** | No | QLKNN | No | TJLF | No |
 | Neutronics / TBR | Yes (1-D slab) | No | Yes | No | Yes | No |
 | **Digital twin (real-time)** | **Yes** | No | No | No | No | No |
 | **Rust native backend** | **Yes (10 crates)** | No | No | No | No | No |
@@ -87,7 +87,7 @@
 |----------|--------|-------------------|
 | No autodiff | Cannot do gradient-based plasma scenario optimisation | TORAX (JAX), FUSE (Julia) |
 | No GPU equilibrium | P-EFIT achieves <1 ms on GPU; SCPN is CPU-only | P-EFIT |
-| QLKNN accuracy gap | test_rel_L2=0.243 vs TORAX's ~15% (deeper net, more data) | TORAX, FUSE |
+| QLKNN accuracy gap | test_rel_L2=0.201 vs TORAX's ~15% (deeper net, more data) | TORAX, FUSE |
 | No RL integration | No Gym environment for controller training | Gym-TORAX |
 | Smaller community | Single-team vs DeepMind / General Atomics resources | TORAX, FUSE |
 
