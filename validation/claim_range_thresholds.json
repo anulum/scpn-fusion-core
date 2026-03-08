@@ -29,8 +29,8 @@
       "id": "qlknn_test_relative_l2",
       "file": "weights/neural_transport_qlknn.metrics.json",
       "path": ["test_relative_l2"],
-      "max": 0.30,
-      "description": "QLKNN test relative L2 < 0.30 (van de Plassche 2020: 10-25% typical for MLP surrogates)."
+      "max": 0.25,
+      "description": "QLKNN test relative L2 < 0.25 (elite retrain achieved 0.201 on L40S)."
     },
     {
       "id": "real_shot_overall_pass",
