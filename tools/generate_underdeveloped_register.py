@@ -622,7 +622,7 @@ def _iter_candidate_files(repo_root: Path) -> Iterable[Path]:
             continue
         if not root.exists():
             continue
-        for path in root.rglob("*"):
+        for path in sorted(root.rglob("*")):
             if not path.is_file():
                 continue
             if _is_excluded(path):
