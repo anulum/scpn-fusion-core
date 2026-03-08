@@ -622,7 +622,7 @@ def _iter_candidate_files(repo_root: Path) -> Iterable[Path]:
             continue
         if not root.exists():
             continue
-        for path in sorted(root.rglob("*")):
+        for path in sorted(root.rglob("*"), key=lambda p: p.as_posix()):
             if not path.is_file():
                 continue
             if _is_excluded(path):
@@ -894,8 +894,20 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 1
         current = output_path.read_text(encoding="utf-8")
-        if _normalize_for_check(current) != _normalize_for_check(report):
+        norm_current = _normalize_for_check(current)
+        norm_report = _normalize_for_check(report)
+        if norm_current != norm_report:
             print(f"Underdeveloped register drift detected: {_display_path(output_path)}")
+            cur_lines = norm_current.splitlines()
+            rep_lines = norm_report.splitlines()
+            shown = 0
+            for i, (a, b) in enumerate(zip(cur_lines, rep_lines)):
+                if a != b and shown < 5:
+                    print(f"  line {i+1} committed: {a[:120]}")
+                    print(f"  line {i+1} generated: {b[:120]}")
+                    shown += 1
+            if len(cur_lines) != len(rep_lines):
+                print(f"  line count: committed={len(cur_lines)}, generated={len(rep_lines)}")
             return 1
         print(
             f"Underdeveloped register is up to date ({len(entries)} entries, "
