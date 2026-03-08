@@ -1,6 +1,12 @@
+# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Tests
+# © 1998–2026 Miroslav Šotek. All rights reserved.
+# License: GNU AGPL v3
+# ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.state_space import FusionState
 
@@ -52,3 +58,31 @@ def test_from_kernel_constructs_state() -> None:
     assert s.x_point_z == -0.1
     assert s.ip_ma == 8.7
     assert s.time_s == 0.125
+
+
+def test_construction_defaults() -> None:
+    state = FusionState()
+    assert state.ip_ma == 0.0
+    assert state.beta_p == 0.0
+    assert state.f_bs == 0.0
+
+
+def test_to_vector_dtype() -> None:
+    vec = FusionState(ip_ma=15.0, q95=3.0).to_vector()
+    assert vec.shape == (6,)
+    assert vec.dtype == np.float64
+
+
+def test_compute_bootstrap_fraction_analytic() -> None:
+    """f_bs = clip(0.4 * beta_p * sqrt(epsilon), 0, 0.9). Sauter-like scaling."""
+    state = FusionState(beta_p=1.0)
+    eps = 0.32
+    result = state.compute_bootstrap_fraction(epsilon=eps)
+    expected = 0.4 * 1.0 * np.sqrt(eps)
+    assert result == pytest.approx(expected, rel=1e-10)
+    assert state.f_bs == pytest.approx(expected, rel=1e-10)
+
+
+def test_compute_bootstrap_fraction_beta_p_zero() -> None:
+    state = FusionState(beta_p=0.0)
+    assert state.compute_bootstrap_fraction() == 0.0

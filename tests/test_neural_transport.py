@@ -403,6 +403,27 @@ class TestNeuralTransportModel:
         assert contract["rho_max"] == pytest.approx(1.0)
 
 
+def test_neural_transport_ood_bounded() -> None:
+    """Extreme gradient inputs must produce finite, bounded transport output."""
+    model = NeuralTransportModel("/tmp/fallback.npz")
+    n = 20
+    rho = np.linspace(0.01, 0.99, n)
+    # Extreme temperature profiles that produce grad_ti >> typical range
+    te = 100.0 * np.exp(-8.0 * rho) + 0.01
+    ti = 120.0 * np.exp(-8.0 * rho) + 0.01
+    ne = 20.0 * (1 - rho**2) + 0.1
+    q = 1.0 + 3.0 * rho**2
+    s_hat = 6.0 * rho
+
+    chi_e, chi_i, d_e = model.predict_profile(rho, te, ti, ne, q, s_hat)
+
+    assert np.all(np.isfinite(chi_e)), "chi_e contains non-finite values under OOD input"
+    assert np.all(np.isfinite(chi_i)), "chi_i contains non-finite values under OOD input"
+    assert np.all(np.isfinite(d_e)), "d_e contains non-finite values under OOD input"
+    assert np.all(chi_e >= 0.0)
+    assert np.all(chi_i >= 0.0)
+
+
 def test_neural_transport_rejects_object_array_weight_payload(tmp_path: Path) -> None:
     """Object-array NPZ payloads should be rejected under secure defaults."""
     bad_weights = tmp_path / "bad_weights.npz"

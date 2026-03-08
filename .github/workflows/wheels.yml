@@ -22,14 +22,14 @@ concurrency:
   group: wheels-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  id-token: write
-  contents: read
+permissions: {}
 
 jobs:
   build-wheels:
     name: Build wheels (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -54,6 +54,8 @@ jobs:
   build-sdist:
     name: Build sdist (pure Python)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
@@ -74,6 +76,9 @@ jobs:
     name: Publish Rust wheels to PyPI
     needs: [build-wheels, build-sdist]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     if: >
       (startsWith(github.ref, 'refs/tags/v') && vars.WHEELS_PUBLISH_ENABLED == 'true') ||
       (github.event_name == 'workflow_dispatch' && inputs.publish == true)
@@ -89,3 +94,5 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true

@@ -18,6 +18,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
+
+from scpn_fusion.exceptions import FusionCoreError as _FusionCoreError
 from typing import Any, Dict, List, Optional, Union
 from scpn_fusion.scpn.artifact_codec import (
     decode_u64_compact_payload,
@@ -172,7 +174,7 @@ class Artifact:
 # ── Validation ──────────────────────────────────────────────────────────────
 
 
-class ArtifactValidationError(ValueError):
+class ArtifactValidationError(ValueError, _FusionCoreError):
     """Raised when an artifact fails lightweight validation."""
 
 

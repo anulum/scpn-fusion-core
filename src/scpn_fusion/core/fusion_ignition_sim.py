@@ -15,8 +15,10 @@ from .fusion_kernel import FusionKernel
 from .uncertainty import _dt_reactivity
 import sys
 
+from scpn_fusion.exceptions import FusionCoreError as _FusionCoreError
 
-class BurnPhysicsError(RuntimeError):
+
+class BurnPhysicsError(RuntimeError, _FusionCoreError):
     """Raised when strict 0-D burn physics contracts are violated."""
 
 

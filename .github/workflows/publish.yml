@@ -23,14 +23,14 @@ concurrency:
   group: publish-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  id-token: write  # Required for trusted publisher (OIDC)
-  contents: read
+permissions: {}
 
 jobs:
   build:
     name: Build distribution
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
         with:
@@ -96,6 +96,9 @@ jobs:
     name: Publish to PyPI
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     environment:
       name: pypi
       url: https://pypi.org/p/scpn-fusion
@@ -113,14 +116,15 @@ jobs:
         id: publish_oidc
         continue-on-error: true
         uses: pypa/gh-action-pypi-publish@release/v1
-        # Uses OIDC trusted publisher — no API token needed
-        # Configure at: https://pypi.org/manage/project/scpn-fusion/settings/publishing/
+        with:
+          attestations: true
       - name: Publish to PyPI (token fallback)
         id: publish_token
         if: ${{ steps.publish_oidc.outcome != 'success' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+          attestations: true
       - name: Ensure publish succeeded
         if: ${{ steps.publish_oidc.outcome != 'success' && steps.publish_token.outcome != 'success' }}
         run: |
@@ -131,6 +135,8 @@ jobs:
     name: Verify PyPI version parity
     needs: [publish-pypi]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
         with:
@@ -152,7 +158,10 @@ jobs:
     name: Publish to TestPyPI
     needs: build
     runs-on: ubuntu-latest
-    continue-on-error: true  # TestPyPI is best-effort; don't fail the release
+    permissions:
+      id-token: write
+      contents: read
+    continue-on-error: true
     environment:
       name: testpypi
       url: https://test.pypi.org/p/scpn-fusion

@@ -261,3 +261,45 @@ def test_external_profile_mode_is_true(solver: TransportSolver):
     """TransportSolver must have external_profile_mode=True so that
     solve_equilibrium uses the J_phi set by map_profiles_to_2d()."""
     assert solver.external_profile_mode is True
+
+
+# ── GS→transport surrogate smoke (C-H5) ─────────────────────────────
+
+
+def test_gs_transport_surrogate_coupling_smoke(tmp_path: Path) -> None:
+    """Solve small equilibrium, feed psi-derived profiles to NeuralTransportModel."""
+    from scpn_fusion.core.fusion_kernel import FusionKernel
+    from scpn_fusion.core.neural_transport import NeuralTransportModel
+
+    cfg = {
+        "reactor_name": "GS-Smoke",
+        "grid_resolution": [8, 8],
+        "dimensions": {"R_min": 4.0, "R_max": 8.0, "Z_min": -3.0, "Z_max": 3.0},
+        "physics": {"plasma_current_target": 1.0, "vacuum_permeability": 1.0},
+        "coils": [],
+        "solver": {
+            "max_iterations": 5,
+            "convergence_threshold": 1e-4,
+            "relaxation_factor": 0.3,
+        },
+    }
+    cfg_path = tmp_path / "gs_smoke.json"
+    cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
+    kernel = FusionKernel(cfg_path)
+    kernel.solve_equilibrium()
+
+    n = 20
+    rho = np.linspace(0.01, 0.99, n)
+    te = 10.0 * (1.0 - rho**2) + 0.2
+    ti = 9.0 * (1.0 - rho**2) + 0.2
+    ne = 8.0 * (1.0 - rho**2) + 0.5
+    q_prof = 1.0 + 2.5 * rho**2
+    s_hat = 5.0 * rho
+
+    model = NeuralTransportModel("/tmp/no_weights.npz")
+    chi_e, chi_i, d_e = model.predict_profile(rho, te, ti, ne, q_prof, s_hat)
+
+    assert chi_e.shape == (n,)
+    assert np.all(np.isfinite(chi_e))
+    assert np.all(np.isfinite(chi_i))
+    assert np.all(np.isfinite(d_e))

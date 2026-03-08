@@ -18,13 +18,14 @@ concurrency:
   group: security-audit-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   python-dependency-audit:
     name: Python Dependency Audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
@@ -80,6 +81,8 @@ jobs:
   rust-dependency-audit:
     name: Rust Dependency Audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: scpn-fusion-rs

@@ -13,6 +13,8 @@ import numpy as np
 from pathlib import Path
 from typing import Any
 
+from scpn_fusion.exceptions import FusionCoreError as _FusionCoreError
+
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
@@ -72,7 +74,7 @@ _EPED_FALLBACK_EXCEPTIONS = (
 )
 
 
-class PhysicsError(RuntimeError):
+class PhysicsError(RuntimeError, _FusionCoreError):
     """Raised when a physics constraint is violated."""
 
 _GYRO_BOHM_COEFF_PATH = (

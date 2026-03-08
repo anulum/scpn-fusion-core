@@ -19,10 +19,7 @@ on:
       - "pyproject.toml"
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+permissions: {}
 
 concurrency:
   group: pages-${{ github.ref }}
@@ -32,6 +29,8 @@ jobs:
   build-python-docs:
     name: Build Python API docs (Sphinx)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -59,6 +58,8 @@ jobs:
   build-rust-docs:
     name: Build Rust API docs (rustdoc)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -89,6 +90,8 @@ jobs:
   build-notebook-html:
     name: Build tutorial notebook HTML exports
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -119,6 +122,10 @@ jobs:
     name: Deploy to GitHub Pages
     needs: [build-python-docs, build-rust-docs, build-notebook-html]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     env:
       PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
     environment:

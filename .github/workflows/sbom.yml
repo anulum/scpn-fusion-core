@@ -20,13 +20,14 @@ concurrency:
   group: sbom-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   cyclonedx-sbom:
     name: CycloneDX SBOM (Python + Rust)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
 

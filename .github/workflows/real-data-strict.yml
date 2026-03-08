@@ -20,13 +20,14 @@ concurrency:
   group: real-data-strict-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   strict-real-data:
     name: Strict Real-Data Validation
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python

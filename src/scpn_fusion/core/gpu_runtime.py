@@ -27,7 +27,6 @@ except Exception:  # pragma: no cover - optional dependency path
     jax = None  # type: ignore[assignment]
     jnp = None  # type: ignore[assignment]
 
-from scpn_fusion.control.disruption_predictor import apply_bit_flip_fault
 
 
 @dataclass(frozen=True)
@@ -268,6 +267,7 @@ class GPURuntimeBridge:
             flat = noisy.reshape(-1)
             for i in idx:
                 bit = int(rng.integers(0, 52))
+                from scpn_fusion.control.disruption_predictor import apply_bit_flip_fault
                 flat[int(i)] = apply_bit_flip_fault(float(flat[int(i)]), bit)
             noisy = flat.reshape(noisy.shape)
         return np.nan_to_num(noisy, nan=0.0, posinf=1.0, neginf=0.0)

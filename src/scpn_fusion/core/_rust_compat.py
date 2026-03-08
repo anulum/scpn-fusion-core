@@ -5,6 +5,8 @@
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
+from __future__ import annotations
+
 """
 Backward compatibility layer: imports from Rust (scpn_fusion_rs) if available,
 falls back to pure-Python implementations.
@@ -487,24 +489,19 @@ def rust_multigrid_vcycle(
     nz: int,
     tol: float = 1e-6,
     max_cycles: int = 500,
-) -> tuple[np.ndarray, float, int, bool]:
-    """Call Rust multigrid V-cycle if available, else raise ImportError.
+) -> tuple[np.ndarray, float, int, bool] | None:
+    """Call Rust multigrid V-cycle if available, else return None.
 
     Returns
     -------
-    tuple of (psi, residual, n_cycles, converged)
+    tuple of (psi, residual, n_cycles, converged), or None when Rust is unavailable.
     """
     if not _RUST_AVAILABLE:
-        raise ImportError(
-            "scpn_fusion_rs not installed — Rust multigrid unavailable. "
-            "Use Python multigrid compatibility path in FusionKernel._multigrid_vcycle()."
-        )
-    # Delegate to Rust PyO3 binding (when available in fusion-python crate)
+        logger.warning("scpn_fusion_rs not installed — falling back to Python multigrid.")
+        return None
     try:
         from scpn_fusion_rs import multigrid_vcycle as _rust_mg  # type: ignore
         return _rust_mg(source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol, max_cycles)
     except ImportError:
-        raise ImportError(
-            "Rust multigrid_vcycle not exposed via PyO3. "
-            "Use Python multigrid compatibility path."
-        )
+        logger.warning("Rust multigrid_vcycle not exposed via PyO3 — falling back to Python.")
+        return None
