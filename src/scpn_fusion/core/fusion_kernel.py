@@ -226,9 +226,10 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
             K = ellipk(k2)
             E = ellipe(k2)
 
-            prefactor = (mu0 * current) / (2 * np.pi)
-            sqrt_term = np.sqrt(R_plus_Rc_sq + dZ**2)
-            term = ((2.0 - k2) * K - 2.0 * E) / k2
+            prefactor = (mu0 * current) / (2.0 * np.pi)
+            sqrt_term = np.sqrt(self.RR * Rc)
+            k = np.sqrt(k2)
+            term = ((2.0 - k2) * K - 2.0 * E) / k
             Psi_vac += prefactor * sqrt_term * term
 
         return Psi_vac

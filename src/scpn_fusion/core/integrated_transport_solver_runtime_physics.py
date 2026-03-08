@@ -14,6 +14,8 @@ from typing import Any
 
 import numpy as np
 
+from scpn_fusion.core.uncertainty import _dt_reactivity
+
 _logger = logging.getLogger(__name__)
 
 
@@ -130,14 +132,11 @@ class TransportSolverRuntimePhysicsMixin:
 
     @staticmethod
     def _bosch_hale_sigmav(T_keV: np.ndarray) -> np.ndarray:
-        """D-T <sigma*v> [m^3/s] using NRL Plasma Formulary fit."""
+        """D-T <sigma v> [m^3/s]. Bosch & Hale, NF 32 (1992) 611."""
         T_raw = np.asarray(T_keV, dtype=np.float64)
-        # Harden against NaN/Inf contamination from upstream thermal solves.
         T = np.nan_to_num(T_raw, nan=0.2, posinf=200.0, neginf=0.2)
         T = np.clip(T, 0.2, 200.0)
-        sigmav = 3.68e-18 / (T ** (2.0 / 3.0)) * np.exp(-19.94 / (T ** (1.0 / 3.0)))
-        sigmav = np.nan_to_num(sigmav, nan=0.0, posinf=0.0, neginf=0.0)
-        return np.maximum(sigmav, 0.0)
+        return _dt_reactivity(T)
 
     @staticmethod
     def _tungsten_radiation_rate(Te_keV: np.ndarray) -> np.ndarray:

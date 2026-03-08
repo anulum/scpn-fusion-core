@@ -434,6 +434,7 @@ class NeuralTransportModel:
         q_profile: FloatArray,
         s_hat_profile: FloatArray,
         r_major: float = 6.2,
+        a_minor: float = 2.0,
     ) -> tuple[FloatArray, FloatArray, FloatArray]:
         """Predict transport coefficients on the full radial profile.
 
@@ -456,6 +457,8 @@ class NeuralTransportModel:
             Magnetic shear profile, shape ``(N,)``.
         r_major : float
             Major radius [m] for gradient normalisation.
+        a_minor : float
+            Minor radius [m].
 
         Returns
         -------
@@ -532,7 +535,7 @@ class NeuralTransportModel:
             if expected_dim >= 12:
                 ti_te = ti / np.maximum(te, 1e-6)
                 nustar = np.array([
-                    _compute_nustar(te[i], ne[i], q_profile[i], rho[i], r_major)
+                    _compute_nustar(te[i], ne[i], q_profile[i], rho[i], r_major, a_minor)
                     for i in range(n)
                 ])
                 x_batch = np.column_stack([x_batch, ti_te, nustar])
@@ -554,7 +557,7 @@ class NeuralTransportModel:
             return chi_e_out, chi_i_out, d_e_out
 
         # Inverse aspect ratio eps(rho)
-        eps = rho / (r_major / 2.0) # a approx R/2
+        eps = rho * a_minor / r_major
         eps = np.clip(eps, 0.0, 0.5)
         
         crit_tem = 4.0 * (1.0 + 2.0 * eps)

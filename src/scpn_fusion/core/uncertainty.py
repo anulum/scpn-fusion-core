@@ -203,20 +203,27 @@ def ipb98_tau_e(scenario: PlasmaScenario,
     return _safe_exp_from_log(float(log_tau), name="ipb98_tau_e")
 
 
-def _dt_reactivity(Ti_keV: float) -> float:
-    """D-T fusion reactivity <sigma v> [m^3/s] using Gamow peak approximation.
+def _dt_reactivity(Ti_keV):
+    """D-T fusion reactivity <sigma v> [m^3/s].
 
-    Valid for Ti in [1, 100] keV.
-    Reference: Huba, NRL Plasma Formulary (2019); Bosch & Hale, NF 32 (1992) 611.
+    Bosch & Hale, Nuclear Fusion 32 (1992) 611, Table IV.
+    Valid for 0.2 <= T <= 100 keV.  Accepts scalar or array.
     """
-    T = float(max(Ti_keV, 1.0))
-    # Gamow peak form: <sv> = A * T^{-2/3} * exp(-B * T^{-1/3})
-    # A = 6.68e-12 cm^3/s, B = 19.94 keV^{1/3}  (D-T)
-    # Convert cm^3/s -> m^3/s: factor 1e-6
-    A_m3 = 6.68e-18  # m^3/s
-    B = 19.94
-    sv = A_m3 * T ** (-2.0 / 3.0) * np.exp(-B * T ** (-1.0 / 3.0))
-    return float(sv)
+    T = np.clip(np.asarray(Ti_keV, dtype=np.float64), 0.2, 100.0)
+    # Bosch-Hale D-T coefficients (Table IV, 0.2-100 keV range)
+    _BG2 = 34.3827**2  # keV
+    _MRC2 = 1124656.0  # keV
+    _C1 = 1.17302e-9
+    _C2, _C3 = 1.51361e-2, 7.51886e-2
+    _C4, _C5 = 4.60643e-3, 1.35000e-2
+    _C6, _C7 = -1.06750e-4, 1.36600e-5
+    theta = T / (1.0 - T * (_C2 + T * (_C4 + T * _C6))
+                 / (1.0 + T * (_C3 + T * (_C5 + T * _C7))))
+    xi = (_BG2 / (4.0 * theta)) ** (1.0 / 3.0)
+    # Formula yields cm^3/s; convert to m^3/s
+    sv = _C1 * theta * np.sqrt(xi / (_MRC2 * T**3)) * np.exp(-3.0 * xi) * 1e-6
+    sv = np.maximum(sv, 0.0)
+    return float(sv) if sv.ndim == 0 else sv
 
 
 def fusion_power_from_tau(scenario: PlasmaScenario, tau_E: float) -> float:

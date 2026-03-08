@@ -12,6 +12,7 @@ import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 from .fusion_kernel import FusionKernel
+from .uncertainty import _dt_reactivity
 import sys
 
 
@@ -28,20 +29,8 @@ class FusionBurnPhysics(FusionKernel):
         super().__init__(config_path)
         
     def bosch_hale_dt(self, T_keV):
-        """
-        Calculates <sigma*v> for Deuterium-Tritium fusion.
-        Parametrization by Bosch & Hale (1992).
-        T_keV: Ion Temperature in keV.
-        Returns: Reaction rate in m^3/s
-        """
-        # Avoid zero/negative temp
-        T = np.maximum(T_keV, 0.1)
-        
-        # NRL Plasma Formulary approximation for D-T <sigma v> (m^3/s)
-        # Valid for T < 100 keV
-        sigmav = 3.68e-18 / (T**(2/3)) * np.exp(-19.94 / (T**(1/3)))
-        
-        return sigmav
+        """D-T <sigma v> [m^3/s]. Bosch & Hale, NF 32 (1992) 611."""
+        return _dt_reactivity(T_keV)
 
     def calculate_thermodynamics(self, P_aux_MW=50.0):
         """
@@ -277,9 +266,8 @@ class DynamicBurnModel:
 
     @staticmethod
     def bosch_hale_dt(T_keV: float) -> float:
-        """D-T reactivity <sigma v> in m^3/s (Bosch & Hale 1992)."""
-        T = max(float(T_keV), 0.1)
-        return 3.68e-18 / T ** (2.0 / 3.0) * np.exp(-19.94 / T ** (1.0 / 3.0))
+        """D-T <sigma v> [m^3/s]. Bosch & Hale, NF 32 (1992) 611."""
+        return _dt_reactivity(T_keV)
 
     def iter98y2_tau_e(self, P_loss_mw: float) -> float:
         """ITER IPB98(y,2) energy confinement scaling (s).

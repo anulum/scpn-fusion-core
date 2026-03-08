@@ -126,8 +126,9 @@ pub fn calculate_vacuum_field(
                     ));
                 }
 
-                let sqrt_term = denom.sqrt();
-                let term = ((2.0 - k2) * k_val - 2.0 * e_val) / k2;
+                let sqrt_term = (r * rc).sqrt();
+                let k = k2.sqrt();
+                let term = ((2.0 - k2) * k_val - 2.0 * e_val) / k;
                 let coil_flux = prefactor * sqrt_term * term;
                 if !coil_flux.is_finite() {
                     return Err(FusionError::ConfigError(

@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-08T12:15:17.309152+00:00`
+- Generated at: `2026-03-08T16:49:32.363792+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,12 +8,12 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 68 |
-| P0 + P1 entries | 0 |
-| Source-domain entries | 2 |
-| Source-domain P0 + P1 entries | 0 |
+| Total flagged entries | 69 |
+| P0 + P1 entries | 1 |
+| Source-domain entries | 3 |
+| Source-domain P0 + P1 entries | 1 |
 | Docs-claims entries | 66 |
-| Domains affected | 2 |
+| Domains affected | 3 |
 
 ## Marker Distribution
 
@@ -25,6 +25,7 @@
 | `EXPERIMENTAL` | 5 |
 | `NOT_VALIDATED` | 3 |
 | `SIMPLIFIED` | 3 |
+| `MONOLITH` | 1 |
 
 ## Domain Distribution
 
@@ -32,18 +33,21 @@
 |---|---:|
 | `docs_claims` | 66 |
 | `validation` | 2 |
+| `core_physics` | 1 |
 
-## Source-Centric Priority Backlog (Top 0)
+## Source-Centric Priority Backlog (Top 1)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
+| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/uncertainty.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
 
-## Top Priority Backlog (Top 68)
+## Top Priority Backlog (Top 69)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
+| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/uncertainty.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
 | P2 | 77 | `docs_claims` | `DEPRECATED` | `docs/HONEST_SCOPE.md:48` | Docs WG | Replace default path or remove lane before next major release. | \| FNO EUROfusion-proxy \| DEPRECATED \| rel_L2 = 0.79 (synthetic only) \| |
 | P2 | 73 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:230` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | logger.debug("tokamak_archive fallback failed: %s", exc) |
 | P2 | 73 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:143` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | print(" Will use critical-gradient fallback (less accurate).") |
@@ -113,10 +117,11 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 9 | `docs_claims` | `PLANNED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2684` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | Plant model integration is planned as future work (Section 31). |
 | P3 | 9 | `docs_claims` | `PLANNED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2693` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | Hierarchical multi-controller composition is planned as future work (Section 33). |
 
-## Full Register (Top 68)
+## Full Register (Top 69)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
+| P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/uncertainty.py:1` | module LOC=501 exceeds monolith threshold (500+). |
 | P2 | `docs_claims` | `DEPRECATED` | `docs/HONEST_SCOPE.md:48` | \| FNO EUROfusion-proxy \| DEPRECATED \| rel_L2 = 0.79 (synthetic only) \| |
 | P2 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:230` | logger.debug("tokamak_archive fallback failed: %s", exc) |
 | P2 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:143` | print(" Will use critical-gradient fallback (less accurate).") |

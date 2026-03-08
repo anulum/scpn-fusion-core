@@ -68,13 +68,17 @@ def _compute_nustar(
     q: float,
     rho: float,
     r_major: float = 6.2,
+    a_minor: float = 2.0,
     z_eff: float = 1.0,
 ) -> float:
-    """Electron collisionality nu_star (Wesson Ch.14)."""
+    """Electron collisionality nu_star (Wesson Ch.14, Eq.14.5.4).
+
+    eps = rho * a_minor / r_major  (local inverse aspect ratio).
+    """
     ln_lambda = 15.2
     ne_m3 = ne_19 * 1e19
     te_ev = te_kev * 1e3
-    eps = max(rho * r_major / 3.1 / r_major, 1e-4)
+    eps = max(rho * a_minor / r_major, 1e-4)
     return 6.921e-18 * ne_m3 * q * r_major * z_eff**2 * ln_lambda / (
         max(te_ev, 1.0) ** 2 * eps**1.5
     )
