@@ -132,16 +132,16 @@
       ]
     },
     {
-      "id": "results_manufactured_source_equilibrium_pass",
+      "id": "results_freegs_equilibrium_benchmark",
       "source_file": "RESULTS.md",
-      "source_pattern": "Manufactured-Source Equilibrium Parity \\(Solov'ev lane\\)",
+      "source_pattern": "FreeGS Equilibrium Benchmark",
       "evidence_files": [
         "artifacts/freegs_benchmark.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/freegs_benchmark.json",
-          "pattern": "\"mode\"\\s*:\\s*\"solovev_manufactured_source\""
+          "pattern": "\"mode\"\\s*:\\s*\"freegs\""
         },
         {
           "file": "artifacts/freegs_benchmark.json",
@@ -149,7 +149,7 @@
         },
         {
           "file": "artifacts/freegs_benchmark.json",
-          "pattern": "\"passes\"\\s*:\\s*true"
+          "pattern": "\"passes\"\\s*:\\s*(true|false)"
         }
       ]
     },

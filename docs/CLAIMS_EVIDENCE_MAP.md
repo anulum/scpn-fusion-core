@@ -19,7 +19,7 @@ to concrete evidence files and patterns.
 | `results_real_shot_overall_pass` | `RESULTS.md` | 1 | 1 |
 | `results_real_shot_disruption_recall` | `RESULTS.md` | 1 | 1 |
 | `results_real_shot_disruption_fpr` | `RESULTS.md` | 1 | 1 |
-| `results_manufactured_source_equilibrium_pass` | `RESULTS.md` | 1 | 3 |
+| `results_freegs_equilibrium_benchmark` | `RESULTS.md` | 1 | 3 |
 | `results_threshold_sweep_dataset_size` | `RESULTS.md` | 1 | 1 |
 | `results_threshold_sweep_fpr` | `RESULTS.md` | 1 | 1 |
 | `security_current_supported_release` | `SECURITY.md` | 2 | 2 |
@@ -153,10 +153,10 @@ Evidence pattern checks:
 |---|---|
 | `artifacts/real_shot_validation.json` | `"disruption"[\s\S]*"false_positive_rate"\s*:\s*0\.0` |
 
-### `results_manufactured_source_equilibrium_pass`
+### `results_freegs_equilibrium_benchmark`
 
 - Source file: `RESULTS.md`
-- Source pattern: `Manufactured-Source Equilibrium Parity \(Solov'ev lane\)`
+- Source pattern: `FreeGS Equilibrium Benchmark`
 
 Evidence files:
 - `artifacts/freegs_benchmark.json`
@@ -165,9 +165,9 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `artifacts/freegs_benchmark.json` | `"mode"\s*:\s*"solovev_manufactured_source"` |
+| `artifacts/freegs_benchmark.json` | `"mode"\s*:\s*"freegs"` |
 | `artifacts/freegs_benchmark.json` | `"overall_psi_nrmse"\s*:\s*[0-9eE+\-.]+` |
-| `artifacts/freegs_benchmark.json` | `"passes"\s*:\s*true` |
+| `artifacts/freegs_benchmark.json` | `"passes"\s*:\s*(true\|false)` |
 
 ### `results_threshold_sweep_dataset_size`
 

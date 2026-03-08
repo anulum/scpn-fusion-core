@@ -76,13 +76,22 @@ def test_newton_fewer_iterations(newton_cfg: Path, picard_cfg: Path):
         )
 
 
-def test_newton_quadratic_residual_decrease(newton_cfg: Path):
-    """Residual should decrease rapidly during Newton phase."""
-    fk = FusionKernel(str(newton_cfg))
+def test_newton_quadratic_residual_decrease(tmp_path: Path):
+    """Residual should decrease with line search enabled."""
+    cfg = MOCK_CONFIG.copy()
+    cfg["solver"] = {
+        **cfg["solver"],
+        "newton_line_search": True,
+        "newton_line_search_c": 1e-4,
+        "newton_line_search_max_backtracks": 8,
+    }
+    p = tmp_path / "newton_ls.json"
+    p.write_text(json.dumps(cfg), encoding="utf-8")
+
+    fk = FusionKernel(str(p))
     result = fk.solve_equilibrium()
     rh = result["residual_history"]
     if len(rh) >= 4:
-        # Check that later residuals are much smaller than earlier ones
         late = rh[-1]
         mid = rh[len(rh) // 2]
         assert late <= mid or late < 1e-2, (
