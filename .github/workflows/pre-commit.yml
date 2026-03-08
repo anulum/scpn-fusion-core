@@ -1,0 +1,32 @@
+# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Pre-commit
+# © 1998–2026 Miroslav Šotek. All rights reserved.
+# Contact: www.anulum.li | protoscience@anulum.li
+# License: GNU AGPL v3 | Commercial licensing available
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# ──────────────────────────────────────────────────────────────────────
+name: Pre-commit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: pre-commit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - uses: pre-commit/action@v3.0.1

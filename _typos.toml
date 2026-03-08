@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[default.extend-words]
+# Domain-specific terms that are not typos
+nli = "nli"
+qlknn = "qlknn"
+fno = "fno"
+tokamak = "tokamak"
+geqdsk = "geqdsk"
+eqdsk = "eqdsk"
+solovev = "solovev"
+mhd = "mhd"
+nrmse = "nrmse"
+rmse = "rmse"
+iter = "iter"
+sparc = "sparc"
+divertor = "divertor"
+stellarator = "stellarator"
+pedestal = "pedestal"
+eped = "eped"
+sawtooth = "sawtooth"
+gyrokinetic = "gyrokinetic"
+tglf = "tglf"
+hmode = "hmode"
+itpa = "itpa"
+diii = "diii"
+kstar = "kstar"
+scpn = "scpn"
+freegs = "freegs"
+torax = "torax"
+
+[files]
+extend-exclude = [
+    "*.npz",
+    "*.npy",
+    "*.pkl",
+    "*.pt",
+    "weights/",
+    "artifacts/",
+    "scpn-fusion-rs/target/",
+]
