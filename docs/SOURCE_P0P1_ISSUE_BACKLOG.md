@@ -1,6 +1,6 @@
 # Source P0/P1 Issue Backlog
 
-- Generated at: `2026-03-08T17:36:50.069227+00:00`
+- Generated at: `2026-03-08T18:37:32.028281+00:00`
 - Generator: `tools/generate_source_p0p1_issue_backlog.py`
 - Scope: source files only (`src/scpn_fusion/**`) with P0/P1 severity
 

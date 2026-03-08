@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.9.3)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-03-08 11:43 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-03-08 18:35 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.9.3
-- **Generated:** 2026-03-08 11:43 UTC
-- **Wall-clock:** 19s
+- **Generated:** 2026-03-08 18:35 UTC
+- **Wall-clock:** 17s
 
 ## Equilibrium & Transport
 
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.28 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.51 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.20 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 0.34 | ms | 129x129 grid |
 
 ## QLKNN Neural Transport Surrogate
 
@@ -63,8 +63,8 @@
 | Best Q (ITER-like scan) | 15.00 | — | Target: Q ≥ 10 |
 | Q ≥ 10 achieved | Yes | — | 0.80 × 10²⁰ m⁻³ |
 | P_aux at best Q | 10.0 | MW | Auxiliary heating |
-| P_fus at best Q | 1061.3 | MW | Fusion power |
-| T at best Q | 21.5 | keV | Ion temperature |
+| P_fus at best Q | 1564.0 | MW | Fusion power |
+| T at best Q | 24.8 | keV | Ion temperature |
 | ECRH absorption efficiency | 99.0 | % | 170 GHz, 1st harmonic, 20 MW |
 | Tritium Breeding Ratio (total) | 1.1409 | — | 3-group, 80 cm, 90% ⁶Li |
 | TBR fast group | 0.0278 | — | 14.1 MeV neutrons |
@@ -81,10 +81,10 @@
 | Mean RE current peak | 0.014 | MA | |
 | P95 RE current peak | 0.021 | MA | |
 | ITER halo+RE contract pass (stress lane) | Yes | — | Requires prevention>=90%, P95 halo<=3.4 MA, P95 RE<=1.0 MA |
-| HIL control-loop P50 latency | 13.4 | μs | 1000 iterations |
-| HIL control-loop P95 latency | 32.6 | μs | |
-| HIL control-loop P99 latency | 43.2 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 16.9 μs |
+| HIL control-loop P50 latency | 10.8 | μs | 1000 iterations |
+| HIL control-loop P95 latency | 18.5 | μs | |
+| HIL control-loop P99 latency | 24.7 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 12.2 μs |
 
 ## Real-Shot Validation
 
@@ -94,7 +94,7 @@
 | Disruption FPR | 0.00 | — | 0/10 false alarms |
 | Disruption detection | Yes | — | recall ≥ 0.6 and FPR ≤ 0.4 |
 | Transport tau_E RMSE | 0.0969 | s | 53 shots |
-| Transport within 2σ | 74 | % | Gate ≥ 80% |
+| Transport within 2σ | 72 | % | Gate ≥ 80% |
 | Transport validation | Yes | — | |
 | Equilibrium ψ pass fraction | 67 | % | 12/18 files |
 | Equilibrium q95 pass fraction | 100 | % | 18/18 files |
@@ -116,19 +116,17 @@
 | PID | ELM pacing | 4.07e+01 | 0.4999 | 10.0673 | No |
 | MPC | ELM pacing | 4.09e+01 | 0.4999 | 10.0894 | No |
 
-## Manufactured-Source Equilibrium Parity (Solov'ev lane)
+## FreeGS Equilibrium Benchmark
 
 | Case | ψ NRMSE | q NRMSE | Axis error (m) | Passes |
 |------|---------|---------|---------------|--------|
-| ITER-like | 0.074 | 0.181 | 0.500 | Yes |
-| SPARC-like | 0.072 | 0.180 | 0.142 | Yes |
-| Spherical-tokamak | 0.102 | 0.626 | 0.327 | No |
-| KSTAR-like | 0.061 | 0.152 | 0.094 | Yes |
-| SPARC-high-kappa | 0.073 | 0.189 | 0.142 | Yes |
+| ITER-like | 5.308 | 0.520 | 3.968 | No |
+| SPARC-like | 1.153 | 0.552 | 1.754 | No |
+| Spherical-tokamak | 0.470 | 0.600 | 1.968 | No |
+| KSTAR-like | 0.951 | 0.532 | 1.477 | No |
+| SPARC-high-kappa | 1.093 | 0.556 | 1.875 | No |
 
-> Provenance: synthetic manufactured-source parity lane (release default when FreeGS backend is unavailable).
-
-*Overall ψ NRMSE: 0.076 (threshold: 0.11). Overall: PASS*
+*Overall ψ NRMSE: 1.795 (threshold: 0.005). Overall: FAIL*
 
 ## Disruption Transfer-Generalization
 
@@ -169,8 +167,8 @@
 | TBR > 1.05 | PASS | TBR = 1.1409 |
 | ECRH absorption | RUN | 99.0% |
 | Disruption detection | PASS | recall=100% |
-| HIL sub-ms | PASS | P50 = 13.4 μs |
-| Solov'ev manufactured-source parity | PASS | ψ NRMSE = 0.076 |
+| HIL sub-ms | PASS | P50 = 10.8 μs |
+| FreeGS strict-backend parity | FAIL | ψ NRMSE = 1.795 |
 | Transfer generalization | PASS | eff=1.000, target_recall=1.000 |
 
 ## Documentation & Hero Notebooks

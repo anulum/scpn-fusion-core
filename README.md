@@ -67,15 +67,16 @@ git lfs pull
 | QLKNN-10D transport surrogate | test rel_L2 = 0.201 | `weights/neural_transport_qlknn.npz` |
 | Disruption rate (1,000-shot campaign) | **0%** (Rust-PID) | `validation/stress_test_campaign.py` |
 | ITPA H-mode confinement | 53 shots / 24 machines | `validation/reference_data/itpa/` |
-| SPARC GEQDSK validation | 8 EFIT equilibria (MIT, CFS) | `validation/reference_data/sparc/` |
-| HIL control loop | 27 us P50 | `python validation/collect_results.py` |
+| SPARC GEQDSK validation | 6 EFIT equilibria (MIT, CFS) | `validation/reference_data/sparc/` |
+| HIL control loop | 10.8 us P50 | `python validation/collect_results.py` |
 | Q >= 10 operating point | Q = 15 (ITER-like) | `RESULTS.md` |
 | TBR | 1.14 (3-group blanket) | `RESULTS.md` |
+| FreeGS equilibrium parity | **FAIL** (ψ NRMSE 1.80) | `validation/benchmark_vs_freegs.py` |
 
 Latency taxonomy:
 - `control.pid_kernel_step_us`: kernel-only Rust PID microbenchmark (`0.52 us P50`).
 - `control.closed_loop_step_us`: end-to-end closed-loop step (`11.9 us P50 / 23.9 us P99`).
-- `control.hil_loop_us`: HIL loop lane in `RESULTS.md` (`11.3 us P50` latest report).
+- `control.hil_loop_us`: HIL loop lane in `RESULTS.md` (`10.8 us P50` latest report).
 - Full definitions: [`docs/PERFORMANCE_METRIC_TAXONOMY.md`](docs/PERFORMANCE_METRIC_TAXONOMY.md)
 
 Full numbers: [`RESULTS.md`](RESULTS.md) -- re-run `python validation/collect_results.py` to reproduce.

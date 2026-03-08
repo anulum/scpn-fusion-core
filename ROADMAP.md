@@ -38,7 +38,8 @@ GPU-trained weights shipped in v3.9.2. Next targets:
 |-----------|---------|-------------|--------|
 | QLKNN transport | test_rel_L2 = 0.201 | < 0.10 | Next: 10M samples, dropout, ensemble |
 | FNO turbulence (JAX) | val_rel_L2 = 0.356 | < 0.20 | Bottleneck: oracle noise floor; needs real gyrokinetic spatial data |
-| Neural equilibrium | psi NRMSE = 0.076 | < 0.05 | Blocked on GEQDSK data (need 50+ equilibria) |
+| Neural equilibrium | psi NRMSE = 0.076 | < 0.05 | Blocked on GEQDSK data (need 50+ equilibria). Retrain needed after A2 vacuum-field fix (v3.9.3). |
+| FreeGS parity | ψ NRMSE = 1.80 | < 0.005 | FAIL after v3.9.3 vacuum-field correction. GS solver boundary handling needs rework. |
 
 The legacy NumPy FNO (rel_L2 = 0.79) is DEPRECATED and superseded by the JAX
 FNO. It will be removed in v4.0 if not retrained on real gyrokinetic data.
