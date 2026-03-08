@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+from scipy.special import ellipe, ellipk
 
 from scpn_fusion.core.fusion_kernel_numerics import FloatArray
 
@@ -14,36 +15,48 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_MU0 = 4e-7 * np.pi
+
 
 def green_function(R_src: float, Z_src: float, R_obs: float, Z_obs: float) -> float:
-    """Toroidal Green's function using elliptic integrals."""
-    mu0 = 4e-7 * np.pi
+    """Toroidal Green's function using elliptic integrals (scalar entry point)."""
     denom = (R_obs + R_src) ** 2 + (Z_obs - Z_src) ** 2
     if denom < 1e-30:
         return 0.0
     k2 = 4.0 * R_obs * R_src / denom
     k2 = np.clip(k2, 1e-12, 1.0 - 1e-12)
     k = np.sqrt(k2)
-    from scipy.special import ellipk, ellipe
-
     K_val = ellipk(k2)
     E_val = ellipe(k2)
-    prefactor = mu0 / (2.0 * np.pi) * np.sqrt(R_obs * R_src)
+    prefactor = _MU0 / (2.0 * np.pi) * np.sqrt(R_obs * R_src)
     psi = prefactor * ((2.0 - k2) * K_val - 2.0 * E_val) / k
     return float(psi)
+
+
+def _green_function_vectorised(
+    R_src: float, Z_src: float, R_obs: FloatArray, Z_obs: FloatArray,
+) -> FloatArray:
+    """Vectorised toroidal Green's function over observation grid arrays."""
+    denom = (R_obs + R_src) ** 2 + (Z_obs - Z_src) ** 2
+    k2 = np.where(denom > 1e-30, 4.0 * R_obs * R_src / np.maximum(denom, 1e-30), 0.0)
+    k2 = np.clip(k2, 1e-12, 1.0 - 1e-12)
+    k = np.sqrt(k2)
+    K_val = ellipk(k2)
+    E_val = ellipe(k2)
+    prefactor = _MU0 / (2.0 * np.pi) * np.sqrt(R_obs * R_src)
+    return prefactor * ((2.0 - k2) * K_val - 2.0 * E_val) / k
 
 
 def compute_external_flux(kernel: Any, coils: "CoilSet") -> FloatArray:
     """Sum Green's function contributions on boundary from ``CoilSet``."""
     NR, NZ = len(kernel.R), len(kernel.Z)
     psi_ext = np.zeros((NZ, NR))
+    RR, ZZ = np.meshgrid(kernel.R, kernel.Z)
     for idx, (pos, current) in enumerate(zip(coils.positions, coils.currents)):
         R_c, Z_c = pos
         turns = coils.turns[idx] if idx < len(coils.turns) else 1
         I_eff = current * turns
-        for iz in range(NZ):
-            for ir in range(NR):
-                psi_ext[iz, ir] += I_eff * green_function(R_c, Z_c, kernel.R[ir], kernel.Z[iz])
+        psi_ext += I_eff * _green_function_vectorised(R_c, Z_c, RR, ZZ)
     return psi_ext
 
 
@@ -55,13 +68,13 @@ def build_mutual_inductance_matrix(
     """Build mutual-inductance matrix M[k, p] for coil optimisation."""
     n_coils = len(coils.positions)
     n_pts = obs_points.shape[0]
+    R_obs = obs_points[:, 0]
+    Z_obs = obs_points[:, 1]
     M = np.zeros((n_coils, n_pts))
 
     for k, (Rc, Zc) in enumerate(coils.positions):
         turns = coils.turns[k] if k < len(coils.turns) else 1
-        for p in range(n_pts):
-            R_obs, Z_obs = obs_points[p]
-            M[k, p] = turns * green_function(Rc, Zc, R_obs, Z_obs)
+        M[k, :] = turns * _green_function_vectorised(Rc, Zc, R_obs, Z_obs)
 
     return M
 

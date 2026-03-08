@@ -124,18 +124,14 @@ class FusionKernelIterativeSolverMixin:
         nr_c = (nr_f + 1) // 2
         coarse = np.zeros((nz_c, nr_c))
 
-        # Interior points via full-weighting
-        for ic in range(1, nz_c - 1):
-            for jc in range(1, nr_c - 1):
-                i = 2 * ic
-                j = 2 * jc
-                coarse[ic, jc] = (
-                    4.0 * fine[i, j]
-                    + 2.0 * (fine[i - 1, j] + fine[i + 1, j]
-                             + fine[i, j - 1] + fine[i, j + 1])
-                    + (fine[i - 1, j - 1] + fine[i - 1, j + 1]
-                       + fine[i + 1, j - 1] + fine[i + 1, j + 1])
-                ) / 16.0
+        # Interior: vectorised 9-point stencil via even-index slicing
+        coarse[1:-1, 1:-1] = (
+            4.0 * fine[2:-2:2, 2:-2:2]
+            + 2.0 * (fine[1:-3:2, 2:-2:2] + fine[3:-1:2, 2:-2:2]
+                     + fine[2:-2:2, 1:-3:2] + fine[2:-2:2, 3:-1:2])
+            + (fine[1:-3:2, 1:-3:2] + fine[1:-3:2, 3:-1:2]
+               + fine[3:-1:2, 1:-3:2] + fine[3:-1:2, 3:-1:2])
+        ) / 16.0
 
         # Boundary: inject directly
         coarse[0, :] = fine[0, ::2][:nr_c]
@@ -154,45 +150,28 @@ class FusionKernelIterativeSolverMixin:
         nz_c, nr_c = coarse.shape
         fine = np.zeros((nz_f, nr_f))
 
-        for ic in range(nz_c):
-            for jc in range(nr_c):
-                i = 2 * ic
-                j = 2 * jc
-                if i < nz_f and j < nr_f:
-                    fine[i, j] = coarse[ic, jc]
+        # Coincident points (even rows, even cols)
+        nz_used = min(nz_c, (nz_f + 1) // 2)
+        nr_used = min(nr_c, (nr_f + 1) // 2)
+        fine[:2 * nz_used - 1:2, :2 * nr_used - 1:2] = coarse[:nz_used, :nr_used]
 
-        # Interpolate horizontal midpoints
-        for ic in range(nz_c):
-            i = 2 * ic
-            if i >= nz_f:
-                continue
-            for jc in range(nr_c - 1):
-                j = 2 * jc + 1
-                if j < nr_f:
-                    fine[i, j] = 0.5 * (coarse[ic, jc] + coarse[ic, jc + 1])
+        # Horizontal midpoints (even rows, odd cols)
+        h_end = min(2 * (nr_c - 1), nr_f - 1)
+        fine[:2 * nz_used - 1:2, 1:h_end:2] = 0.5 * (
+            coarse[:nz_used, :-1] + coarse[:nz_used, 1:]
+        )[:, :(h_end - 1) // 2 + 1]
 
-        # Interpolate vertical midpoints
-        for ic in range(nz_c - 1):
-            i = 2 * ic + 1
-            if i >= nz_f:
-                continue
-            for jc in range(nr_c):
-                j = 2 * jc
-                if j < nr_f:
-                    fine[i, j] = 0.5 * (coarse[ic, jc] + coarse[ic + 1, jc])
+        # Vertical midpoints (odd rows, even cols)
+        v_end = min(2 * (nz_c - 1), nz_f - 1)
+        fine[1:v_end:2, :2 * nr_used - 1:2] = 0.5 * (
+            coarse[:-1, :nr_used] + coarse[1:, :nr_used]
+        )[:((v_end - 1) // 2 + 1), :]
 
-        # Interpolate center points
-        for ic in range(nz_c - 1):
-            i = 2 * ic + 1
-            if i >= nz_f:
-                continue
-            for jc in range(nr_c - 1):
-                j = 2 * jc + 1
-                if j < nr_f:
-                    fine[i, j] = 0.25 * (
-                        coarse[ic, jc] + coarse[ic + 1, jc]
-                        + coarse[ic, jc + 1] + coarse[ic + 1, jc + 1]
-                    )
+        # Centre points (odd rows, odd cols)
+        fine[1:v_end:2, 1:h_end:2] = 0.25 * (
+            coarse[:-1, :-1] + coarse[1:, :-1]
+            + coarse[:-1, 1:] + coarse[1:, 1:]
+        )[:((v_end - 1) // 2 + 1), :(h_end - 1) // 2 + 1]
 
         return fine
 

@@ -74,6 +74,32 @@ def explicit_diffusion_rhs(
     return Lh
 
 
+class _CNGridCache:
+    """Precomputed grid-constant factors for Crank-Nicolson tridiag assembly.
+
+    ``geo_ip[i]`` = r_{i+1/2} / (r_i * dr²), ``geo_im[i]`` = r_{i-1/2} / (r_i * dr²),
+    both defined over interior indices i=1..n-2.
+    """
+
+    __slots__ = ("geo_ip", "geo_im", "_key")
+
+    def __init__(self, rho: np.ndarray, drho: float) -> None:
+        n = len(rho)
+        r = rho[1:n - 1]
+        r_ip = r + 0.5 * drho
+        r_im = r - 0.5 * drho
+        inv_r_dr2 = 1.0 / (r * drho * drho)
+        self.geo_ip = r_ip * inv_r_dr2
+        self.geo_im = r_im * inv_r_dr2
+        self._key = (n, drho)
+
+    def matches(self, rho: np.ndarray, drho: float) -> bool:
+        return self._key == (len(rho), drho)
+
+
+_cn_grid_cache: _CNGridCache | None = None
+
+
 def build_cn_tridiag(
     *,
     rho: np.ndarray,
@@ -82,20 +108,21 @@ def build_cn_tridiag(
     dt: float,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Build tridiagonal coefficients for Crank-Nicolson LHS."""
+    global _cn_grid_cache  # noqa: PLW0603
+    if _cn_grid_cache is None or not _cn_grid_cache.matches(rho, drho):
+        _cn_grid_cache = _CNGridCache(rho, drho)
+    cache = _cn_grid_cache
+
     n = len(rho)
-    dr = drho
     a = np.zeros(n - 1)
     b = np.ones(n)
     c = np.zeros(n - 1)
 
-    r = rho[1:n - 1]
     chi_ip = 0.5 * (chi[1:n - 1] + chi[2:n])
     chi_im = 0.5 * (chi[1:n - 1] + chi[0:n - 2])
-    r_ip = r + 0.5 * dr
-    r_im = r - 0.5 * dr
 
-    coeff_ip = chi_ip * r_ip / (r * dr * dr)
-    coeff_im = chi_im * r_im / (r * dr * dr)
+    coeff_ip = chi_ip * cache.geo_ip
+    coeff_im = chi_im * cache.geo_im
 
     b[1:n - 1] = 1.0 + 0.5 * dt * (coeff_ip + coeff_im)
     c[1:n - 1] = -0.5 * dt * coeff_ip
