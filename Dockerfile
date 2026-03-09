@@ -2,7 +2,7 @@
 # SCPN Fusion Core — Docker Image
 # © 1998–2026 Miroslav Šotek. All rights reserved.
 # Contact: www.anulum.li | protoscience@anulum.li
-# License: GNU AGPL v3 | Commercial licensing available
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # ──────────────────────────────────────────────────────────────────────
 
 # ── Stage 1: Build Rust workspace + PyO3 bindings ────────────────────
@@ -70,6 +70,9 @@ ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false \
     STREAMLIT_SERVER_PORT=8501
 
 EXPOSE 8501
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8501/_stcore/health || exit 1
 
 CMD ["streamlit", "run", "src/scpn_fusion/ui/app.py", \
      "--server.address=0.0.0.0"]

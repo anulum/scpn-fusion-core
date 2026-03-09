@@ -51,6 +51,9 @@ dev = [
     "pytest-cov>=5.0",
     "hypothesis>=6.0",
     "mypy>=1.10",
+    "ruff>=0.8",
+    "bandit>=1.7",
+    "pre-commit>=3.0",
 ]
 rust = [
     "maturin>=1.7,<2.0",
@@ -191,3 +194,44 @@ filterwarnings = [
     "default::UserWarning",
 ]
 xfail_strict = true
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+exclude = ["notebooks", "validation/reference_data", "weights"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = [
+  "E501",
+  "E402",
+  "E741",
+  "I001",
+  "UP006", "UP007", "UP015", "UP031", "UP035", "UP037", "UP038", "UP045",
+  "F841",
+  "SIM102", "SIM105", "SIM108",
+  "B007", "B017", "B018", "B023", "B028", "B904", "B905",
+]
+
+[tool.bandit]
+skips = ["B101", "B311", "B404", "B603", "B607"]
+exclude_dirs = ["tests", "notebooks", "validation"]
+
+[tool.coverage.run]
+source = ["scpn_fusion"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__",
+    "raise NotImplementedError",
+    "except ImportError",
+    "if HAS_JAX",
+    "if HAS_NENGO",
+    "if HAS_FREEGS",
+    "if HAS_OMAS",
+]

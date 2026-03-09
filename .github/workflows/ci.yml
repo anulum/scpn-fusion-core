@@ -1,8 +1,8 @@
 # ──────────────────────────────────────────────────────────────────────
 # SCPN Fusion Core — Continuous Integration
-# © 1998–2026 Miroslav Šotek.
+# © 1998–2026 Miroslav Šotek. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # Contact: www.anulum.li | protoscience@anulum.li
-# License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 name: CI
 
