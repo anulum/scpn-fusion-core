@@ -209,6 +209,8 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v6
+        with:
+          lfs: true
       - name: Enforce local-only handovers exclusion
         if: matrix.python-version == '3.12'
         run: |
@@ -346,6 +348,8 @@ jobs:
     needs: [python-tests]
     steps:
       - uses: actions/checkout@v6
+        with:
+          lfs: true
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
@@ -376,6 +380,8 @@ jobs:
     needs: [python-tests]
     steps:
       - uses: actions/checkout@v6
+        with:
+          lfs: true
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
@@ -420,6 +426,8 @@ jobs:
     needs: [python-tests]
     steps:
       - uses: actions/checkout@v6
+        with:
+          lfs: true
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
@@ -468,6 +476,8 @@ jobs:
     needs: [python-tests]
     steps:
       - uses: actions/checkout@v6
+        with:
+          lfs: true
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -522,6 +532,8 @@ jobs:
     needs: [python-tests]
     steps:
       - uses: actions/checkout@v6
+        with:
+          lfs: true
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -621,6 +633,8 @@ jobs:
     needs: [python-tests]
     steps:
       - uses: actions/checkout@v6
+        with:
+          lfs: true
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
