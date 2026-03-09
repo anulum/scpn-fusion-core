@@ -276,15 +276,15 @@ class LQRRobustController:
 
 
 # -------------------------------------------------------------------
-# MPC Controller (quadratic cost, 10-step horizon)
+# MPC Controller (Riccati-optimal, receding horizon)
 # -------------------------------------------------------------------
 
 class MPCController:
-    """Model Predictive Controller with quadratic cost.
+    """Model Predictive Controller with Riccati-optimal state feedback.
 
-    Uses a simple linearised plant model internally and optimises a
-    10-step horizon via iterative gradient descent on the quadratic
-    cost J = sum_{k=0}^{H-1} [ Q * e(k)^2 + R * u(k)^2 ].
+    Solves the DARE for the ZOH-discretised plant to obtain the optimal
+    linear-quadratic gain. At each step, reconstructs the state from
+    error measurements and applies u = -K x_hat.
 
     The plant model matches the linearised vertical stability system:
         x = [z, dz/dt]
@@ -295,36 +295,54 @@ class MPCController:
     def __init__(
         self,
         gamma_growth: float = 100.0,
-        horizon: int = 10,
         q_weight: float = 1.0e4,
         r_weight: float = 1.0e-2,
+        u_max: float = 1.0e6,
+        # Legacy params accepted for API compat but unused
+        horizon: int = 10,
         iterations: int = 15,
         learning_rate: float = 0.1,
-        u_max: float = 1.0e6,
     ) -> None:
         self.A = np.array([
             [0.0, 1.0],
             [gamma_growth ** 2, -10.0],
         ])
-        self.B = np.array([0.0, 1.0])
-        self.C = np.array([1.0, 0.0])
-
-        self.horizon = int(horizon)
-        self.q_weight = float(q_weight)
-        self.r_weight = float(r_weight)
-        self.iterations = int(iterations)
-        self.lr = float(learning_rate)
+        self.B_col = np.array([[0.0], [1.0]])
         self.u_max = float(u_max)
 
+        self.Q = np.diag([float(q_weight), 1.0])
+        self.R = np.array([[float(r_weight)]])
+
+        self._K: Optional[np.ndarray] = None
+        self._cached_dt: Optional[float] = None
         self._prev_error = 0.0
         self._first_step = True
-        self._x_hat = np.zeros(2)
+
+    def _recompute_gain(self, dt: float) -> None:
+        """ZOH discretise then solve DARE for optimal gain."""
+        from scipy.linalg import expm, solve_discrete_are
+
+        n = 2
+        M = np.zeros((n + 1, n + 1))
+        M[:n, :n] = self.A * dt
+        M[:n, n:] = self.B_col * dt
+        eM = expm(M)
+        Ad = eM[:n, :n]
+        Bd = eM[:n, n:]
+
+        Xd = solve_discrete_are(Ad, Bd, self.Q, self.R)
+        self._K = np.linalg.solve(
+            self.R + Bd.T @ Xd @ Bd, Bd.T @ Xd @ Ad,
+        )
+        self._cached_dt = dt
 
     def step(self, error: float, dt: float) -> float:
         e = float(error)
         dt_f = float(dt)
 
-        # Simple observer: reconstruct velocity from error derivative
+        if self._cached_dt != dt_f:
+            self._recompute_gain(dt_f)
+
         if self._first_step:
             de_dt = 0.0
             self._first_step = False
@@ -332,53 +350,14 @@ class MPCController:
             de_dt = (e - self._prev_error) / dt_f if dt_f > 0 else 0.0
         self._prev_error = e
 
-        # Map error to plant state: z = -error (target=0), dz/dt ~ -de/dt
-        self._x_hat[0] = -e
-        self._x_hat[1] = -de_dt
-
-        # Optimise control sequence over horizon
-        u_seq = np.zeros(self.horizon)
-        for _ in range(self.iterations):
-            # Forward simulate and compute gradients
-            x = self._x_hat.copy()
-            grad = np.zeros(self.horizon)
-            # Forward pass: store states
-            states = np.zeros((self.horizon + 1, 2))
-            states[0] = x.copy()
-            for k in range(self.horizon):
-                dx = self.A @ states[k] + self.B * u_seq[k]
-                states[k + 1] = states[k] + dx * dt_f
-
-            # Backward pass: compute gradients
-            # Cost: J = sum Q * z(k)^2 + R * u(k)^2
-            # dJ/du(k) = R * 2 * u(k) + dz(k+1)/du(k) * Q * 2 * z(k+1)
-            # For simplicity, use single-step sensitivity:
-            #   dz(k+1)/du(k) ~ B[0]*dt (direct) but second-order also matters
-            # We use accumulated sensitivity via chain rule
-            for k in range(self.horizon):
-                z_k1 = states[k + 1, 0]
-                # Sensitivity of z at step k+1 to u at step k
-                # dz_{k+1}/du_k = B_z * dt = 0 * dt = 0 (B[0]=0)
-                # but dz_dot_{k+1}/du_k = B[1]*dt = dt
-                # and dz_{k+2}/du_k includes gamma^2 * dz_dot contribution
-                # For simplicity, use finite-difference-like sensitivity
-                # through the chain: dJ/du_k ~ 2*R*u_k + 2*Q*z_{k+1}*dz/du
-                sens_z = self.B[1] * dt_f * dt_f  # dz ~ B[1]*dt*dt through A
-                grad[k] = (
-                    2.0 * self.r_weight * u_seq[k]
-                    + 2.0 * self.q_weight * z_k1 * sens_z
-                )
-
-            u_seq -= self.lr * grad
-            u_seq = np.clip(u_seq, -self.u_max, self.u_max)
-
-        # Apply first action (receding horizon)
-        return float(u_seq[0])
+        # Map error → plant state: z = -error, dz/dt = -de/dt
+        x_hat = np.array([-e, -de_dt])
+        u_raw = float((-self._K @ x_hat).item())
+        return float(np.clip(u_raw, -self.u_max, self.u_max))
 
     def reset(self) -> None:
         self._prev_error = 0.0
         self._first_step = True
-        self._x_hat = np.zeros(2)
 
 
 # -------------------------------------------------------------------
@@ -396,8 +375,8 @@ class SNNControllerWrapper:
     def __init__(
         self,
         n_neurons: int = 50,
-        gain: float = 5.0e3,
-        tau_window: int = 20,
+        gain: float = 5.0e4,
+        tau_window: int = 10,
         seed: int = 42,
     ) -> None:
         if not _snn_available:
@@ -716,6 +695,24 @@ def run_scenario(
 # Controller factory
 # ===================================================================
 
+class _HInfMeasurementAdapter:
+    """Adapts the H-infinity controller to the benchmark error convention.
+
+    HInfinityController.step() expects a raw measurement y = z_position,
+    but the benchmark passes error = target - z = -z. This wrapper negates
+    the input, matching what LQRRobustController does internally (line 256).
+    """
+
+    def __init__(self, inner: Any) -> None:
+        self._inner = inner
+
+    def step(self, error: float, dt: float) -> float:
+        return self._inner.step(-error, dt)
+
+    def reset(self) -> None:
+        self._inner.reset()
+
+
 def _build_hinf_controller(
     gamma_growth: float = 100.0,
     *,
@@ -732,7 +729,7 @@ def _build_hinf_controller(
         ctrl = get_radial_robust_controller(gamma_growth=gamma_growth)
         print("    [H-infinity] Riccati synthesis: OK")
         return (
-            ctrl,
+            _HInfMeasurementAdapter(ctrl),
             {
                 "backend": "h_infinity",
                 "fallback_used": False,
@@ -815,26 +812,23 @@ def build_controllers(
     # MPC -- always available (pure Python/NumPy)
     controllers["MPC"] = MPCController(
         gamma_growth=100.0,
-        horizon=10,
         q_weight=1.0e4,
         r_weight=1.0e-2,
-        iterations=15,
-        learning_rate=0.1,
     )
     controller_build["MPC"] = {
-        "backend": "mpc_numpy",
+        "backend": "mpc_dare",
         "fallback_used": False,
         "fallback_reason": None,
     }
-    print("    [MPC] Initialised: horizon=10, Q=1e4, R=1e-2")
+    print("    [MPC] Initialised: DARE-optimal, Q=1e4, R=1e-2")
 
     # SNN
     if _snn_available:
         try:
             controllers["SNN"] = SNNControllerWrapper(
                 n_neurons=50,
-                gain=5.0e3,
-                tau_window=20,
+                gain=5.0e4,
+                tau_window=10,
                 seed=42,
             )
             print(

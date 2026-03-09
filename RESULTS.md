@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.9.3)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-03-09 01:19 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-03-09 02:13 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,7 +12,7 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.9.3
-- **Generated:** 2026-03-09 01:19 UTC
+- **Generated:** 2026-03-09 02:13 UTC
 - **Wall-clock:** 18s
 
 ## Equilibrium & Transport
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.29 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.44 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.22 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 0.59 | ms | 129x129 grid |
 
 ## QLKNN Neural Transport Surrogate
 
@@ -81,10 +81,10 @@
 | Mean RE current peak | 0.014 | MA | |
 | P95 RE current peak | 0.021 | MA | |
 | ITER halo+RE contract pass (stress lane) | Yes | — | Requires prevention>=90%, P95 halo<=3.4 MA, P95 RE<=1.0 MA |
-| HIL control-loop P50 latency | 17.7 | μs | 1000 iterations |
-| HIL control-loop P95 latency | 25.5 | μs | |
-| HIL control-loop P99 latency | 39.2 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 17.4 μs |
+| HIL control-loop P50 latency | 11.6 | μs | 1000 iterations |
+| HIL control-loop P95 latency | 22.2 | μs | |
+| HIL control-loop P99 latency | 29.5 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 14.0 μs |
 
 ## Real-Shot Validation
 
@@ -107,17 +107,17 @@
 | Controller | Scenario | ISE | Settling (s) | Overshoot | Stable |
 |-----------|----------|-----|-------------|-----------|--------|
 | PID | VDE | 1.08e-05 | 0.0843 | 0.0200 | Yes |
-| H-infinity | VDE | 1.93e+02 | 1.9999 | 10.0777 | No |
-| MPC | VDE | 1.90e+02 | 1.9999 | 10.0068 | No |
-| SNN | VDE | 1.92e+02 | 1.9999 | 10.0538 | No |
+| H-infinity | VDE | 4.86e-05 | 0.0894 | 0.0397 | Yes |
+| MPC | VDE | 5.27e-06 | 0.0553 | 0.0171 | Yes |
+| SNN | VDE | 7.74e-02 | 1.9999 | 0.3100 | Yes |
 | PID | Density ramp | 5.96e-05 | 3.9999 | 0.0091 | Yes |
-| H-infinity | Density ramp | 3.89e+02 | 3.9999 | 10.0790 | No |
-| MPC | Density ramp | 3.86e+02 | 3.9999 | 10.0252 | No |
-| SNN | Density ramp | 3.85e+02 | 3.9999 | 10.0102 | No |
+| H-infinity | Density ramp | 9.08e-04 | 3.9999 | 0.0316 | Yes |
+| MPC | Density ramp | 2.06e-05 | 3.9999 | 0.0048 | Yes |
+| SNN | Density ramp | 1.55e-01 | 3.9999 | 0.3143 | Yes |
 | PID | ELM pacing | 7.18e-07 | 2.9999 | 0.0013 | Yes |
-| H-infinity | ELM pacing | 2.92e+02 | 2.9999 | 10.1136 | No |
-| MPC | ELM pacing | 2.89e+02 | 2.9999 | 10.0582 | No |
-| SNN | ELM pacing | 2.86e+02 | 2.9999 | 10.0142 | No |
+| H-infinity | ELM pacing | 1.37e-05 | 2.9999 | 0.0045 | Yes |
+| MPC | ELM pacing | 4.86e-07 | 2.9593 | 0.0011 | Yes |
+| SNN | ELM pacing | 1.15e-01 | 2.9999 | 0.3104 | Yes |
 
 ## FreeGS Equilibrium Benchmark
 
@@ -170,7 +170,7 @@
 | TBR > 1.05 | PASS | TBR = 1.1409 |
 | ECRH absorption | RUN | 99.0% |
 | Disruption detection | PASS | recall=100% |
-| HIL sub-ms | PASS | P50 = 17.7 μs |
+| HIL sub-ms | PASS | P50 = 11.6 μs |
 | FreeGS strict-backend parity | FAIL | ψ NRMSE = 1.795 |
 | Transfer generalization | PASS | eff=1.000, target_recall=1.000 |
 
