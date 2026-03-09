@@ -317,7 +317,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload Python 3.12 coverage diagnostics
         if: matrix.python-version == '3.12' && always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: python312-coverage-diagnostics
           if-no-files-found: warn
@@ -331,7 +331,7 @@ jobs:
             artifacts/claim_range_guard_summary.json
       - name: Upload coverage guard summary
         if: matrix.python-version == '3.12' && always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-guard-summary
           if-no-files-found: warn
@@ -461,7 +461,7 @@ jobs:
       - name: RMSE regression gate
         run: python tools/ci_rmse_gate.py
       - name: Upload RMSE artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: rmse-dashboard-smoke
           path: |
@@ -513,7 +513,7 @@ jobs:
             --baseline-json tools/real_data_roadmap_baseline.json \
             --summary-json artifacts/real_data_roadmap_non_regression_summary.json
       - name: Upload validation artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: real-shot-validation
           path: |
@@ -614,7 +614,7 @@ jobs:
             --thresholds tools/fallback_budget_thresholds.json \
             --summary-json artifacts/fallback_budget_summary.json
       - name: Upload benchmark provenance artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: benchmark-provenance-smoke
           path: |
@@ -660,7 +660,7 @@ jobs:
             --thresholds tools/runtime_parity_perf_thresholds.json \
             --summary-json artifacts/runtime_parity_perf_guard_summary.json
       - name: Upload runtime parity/perf artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: runtime-parity-perf-gate
           path: |
@@ -863,7 +863,7 @@ jobs:
           fi
       - name: Upload benchmark artifacts
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: rust-benchmarks
           path: scpn-fusion-rs/benchmark-results/
