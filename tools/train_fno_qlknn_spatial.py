@@ -46,8 +46,14 @@ def _load_spatial_split(path: Path) -> tuple[np.ndarray, np.ndarray]:
 
 
 def _augment_flips(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Augment 2D fields with horizontal and vertical flips (4x data)."""
-    aug_x = [x, x[:, ::-1, :], x[:, :, ::-1], x[:, ::-1, ::-1]]
+    """Augment 2D fields with horizontal and vertical flips (4x data).
+
+    Handles both (N, H, W) and (N, H, W, C) shaped inputs.
+    """
+    if x.ndim == 4:
+        aug_x = [x, x[:, ::-1, :, :], x[:, :, ::-1, :], x[:, ::-1, ::-1, :]]
+    else:
+        aug_x = [x, x[:, ::-1, :], x[:, :, ::-1], x[:, ::-1, ::-1]]
     aug_y = [y, y[:, ::-1, :], y[:, :, ::-1], y[:, ::-1, ::-1]]
     return np.concatenate(aug_x, axis=0), np.concatenate(aug_y, axis=0)
 
@@ -101,7 +107,9 @@ def train_fno(
 
     grid_size = X_train.shape[1]
     n_train = len(X_train)
-    print(f"  Grid: {grid_size}x{grid_size}")
+    # Detect input channels: (N, H, W) -> 1 channel, (N, H, W, C) -> C channels
+    in_channels = X_train.shape[-1] if X_train.ndim == 4 else 1
+    print(f"  Grid: {grid_size}x{grid_size}, input channels: {in_channels}")
     print(f"FNO: {n_layers} spectral layers, modes={modes}, width={width}")
 
     key = random.PRNGKey(seed)
@@ -113,7 +121,7 @@ def train_fno(
         keys = random.split(key, 4 + 4 * n_layers)
         ki = 0
         p = {
-            "lift_w": random.normal(keys[ki], (1, width)) * 0.1,
+            "lift_w": random.normal(keys[ki], (in_channels, width)) * 0.1,
             "lift_b": jnp.zeros(width),
         }
         ki += 1
@@ -137,7 +145,8 @@ def train_fno(
     @jit
     def fno_forward(params, x):
         """Li et al. 2021 FNO: lift -> N spectral conv blocks -> project."""
-        x = x[..., None]
+        if x.ndim == 2:
+            x = x[..., None]
         h = x @ params["lift_w"] + params["lift_b"]
 
         M = modes
