@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.9.3)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-03-09 02:13 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-03-09 02:20 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.9.3
-- **Generated:** 2026-03-09 02:13 UTC
-- **Wall-clock:** 18s
+- **Generated:** 2026-03-09 02:20 UTC
+- **Wall-clock:** 19s
 
 ## Equilibrium & Transport
 
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.22 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.59 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.14 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 0.23 | ms | 129x129 grid |
 
 ## QLKNN Neural Transport Surrogate
 
@@ -81,10 +81,10 @@
 | Mean RE current peak | 0.014 | MA | |
 | P95 RE current peak | 0.021 | MA | |
 | ITER halo+RE contract pass (stress lane) | Yes | — | Requires prevention>=90%, P95 halo<=3.4 MA, P95 RE<=1.0 MA |
-| HIL control-loop P50 latency | 11.6 | μs | 1000 iterations |
-| HIL control-loop P95 latency | 22.2 | μs | |
-| HIL control-loop P99 latency | 29.5 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 14.0 μs |
+| HIL control-loop P50 latency | 12.7 | μs | 1000 iterations |
+| HIL control-loop P95 latency | 30.1 | μs | |
+| HIL control-loop P99 latency | 71.1 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 16.4 μs |
 
 ## Real-Shot Validation
 
@@ -170,7 +170,7 @@
 | TBR > 1.05 | PASS | TBR = 1.1409 |
 | ECRH absorption | RUN | 99.0% |
 | Disruption detection | PASS | recall=100% |
-| HIL sub-ms | PASS | P50 = 11.6 μs |
+| HIL sub-ms | PASS | P50 = 12.7 μs |
 | FreeGS strict-backend parity | FAIL | ψ NRMSE = 1.795 |
 | Transfer generalization | PASS | eff=1.000, target_recall=1.000 |
 

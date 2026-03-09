@@ -40,8 +40,8 @@ Metrics (per controller per scenario)
 Outputs
 -------
 - Comparison table to stdout (markdown format)
-- ``<output-dir>/benchmark_disturbance_rejection.json``
-- ``<output-dir>/benchmark_disturbance_rejection.md``
+- ``<output-dir>/disturbance_rejection_benchmark.json``
+- ``<output-dir>/disturbance_rejection_benchmark.md``
 - Time-series overlay plots (if matplotlib available)
 
 Usage::
@@ -1235,8 +1235,8 @@ def main(
     print(table_str)
     print()
 
-    # JSON
-    json_path = out_path / "benchmark_disturbance_rejection.json"
+    # JSON — filename matches what collect_results.py expects
+    json_path = out_path / "disturbance_rejection_benchmark.json"
     json_data = generate_json_results(
         all_metrics,
         controller_build=controller_build,
@@ -1247,7 +1247,7 @@ def main(
     print(f"JSON results written to: {json_path}")
 
     # Markdown
-    md_path = out_path / "benchmark_disturbance_rejection.md"
+    md_path = out_path / "disturbance_rejection_benchmark.md"
     md_content = generate_markdown_report(all_metrics)
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(md_content)

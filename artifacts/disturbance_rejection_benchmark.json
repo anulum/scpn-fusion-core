@@ -1,6 +1,6 @@
 {
   "benchmark": "disturbance_rejection",
-  "timestamp": "2026-03-09T02:12:47.931686+00:00",
+  "timestamp": "2026-03-09T02:20:22.079482+00:00",
   "simulation_dt_s": 0.0001,
   "fairness_schema_version": "1.0",
   "strict_hinf": false,
@@ -54,7 +54,7 @@
       "settling_time_s": 0.0843,
       "peak_overshoot": 0.019955497501660237,
       "control_effort": 15.810464049965482,
-      "wall_clock_s": 0.31181550002656877,
+      "wall_clock_s": 0.25394269987009466,
       "stable": true
     },
     {
@@ -64,7 +64,7 @@
       "settling_time_s": 0.08940000000000001,
       "peak_overshoot": 0.03974184350138196,
       "control_effort": 20.012404254016477,
-      "wall_clock_s": 0.6952776999678463,
+      "wall_clock_s": 0.5934015000239015,
       "stable": true
     },
     {
@@ -74,7 +74,7 @@
       "settling_time_s": 0.0553,
       "peak_overshoot": 0.01705336434667273,
       "control_effort": 7.108994361463121,
-      "wall_clock_s": 0.4134805998764932,
+      "wall_clock_s": 0.32677140017040074,
       "stable": true
     },
     {
@@ -84,7 +84,7 @@
       "settling_time_s": 1.9999,
       "peak_overshoot": 0.31002914165037243,
       "control_effort": 3910.0000000000027,
-      "wall_clock_s": 1.310063200071454,
+      "wall_clock_s": 1.0571937998756766,
       "stable": true
     },
     {
@@ -94,7 +94,7 @@
       "settling_time_s": 3.9999000000000002,
       "peak_overshoot": 0.009066532408948808,
       "control_effort": 213.02116181458453,
-      "wall_clock_s": 0.6699274000711739,
+      "wall_clock_s": 0.5980930998921394,
       "stable": true
     },
     {
@@ -104,7 +104,7 @@
       "settling_time_s": 3.9999000000000002,
       "peak_overshoot": 0.03164924093385723,
       "control_effort": 621.9038597730867,
-      "wall_clock_s": 1.4714200999587774,
+      "wall_clock_s": 1.0775178000330925,
       "stable": true
     },
     {
@@ -114,7 +114,7 @@
       "settling_time_s": 3.9999000000000002,
       "peak_overshoot": 0.004807220324863686,
       "control_effort": 162.79916507308934,
-      "wall_clock_s": 0.8471234999597073,
+      "wall_clock_s": 0.7188937999308109,
       "stable": true
     },
     {
@@ -124,7 +124,7 @@
       "settling_time_s": 3.9999000000000002,
       "peak_overshoot": 0.3143075674452389,
       "control_effort": 7715.0000000000055,
-      "wall_clock_s": 2.9255875998642296,
+      "wall_clock_s": 2.134814399993047,
       "stable": true
     },
     {
@@ -134,7 +134,7 @@
       "settling_time_s": 2.9999000000000002,
       "peak_overshoot": 0.0013037828807398242,
       "control_effort": 18.9194329783357,
-      "wall_clock_s": 0.5321661999914795,
+      "wall_clock_s": 0.3609370000194758,
       "stable": true
     },
     {
@@ -144,7 +144,7 @@
       "settling_time_s": 2.9999000000000002,
       "peak_overshoot": 0.004524883882745575,
       "control_effort": 57.71567420614426,
-      "wall_clock_s": 1.0991656999103725,
+      "wall_clock_s": 0.8254708000458777,
       "stable": true
     },
     {
@@ -154,7 +154,7 @@
       "settling_time_s": 2.9593000000000003,
       "peak_overshoot": 0.0011148550979894285,
       "control_effort": 15.034226777099885,
-      "wall_clock_s": 0.7214161001611501,
+      "wall_clock_s": 0.5321116000413895,
       "stable": true
     },
     {
@@ -164,7 +164,7 @@
       "settling_time_s": 2.9999000000000002,
       "peak_overshoot": 0.310413067826527,
       "control_effort": 5824.250000000005,
-      "wall_clock_s": 2.051032500108704,
+      "wall_clock_s": 1.55614580004476,
       "stable": true
     }
   ],
@@ -173,7 +173,7 @@
       "controller": "PID",
       "scenario": "VDE",
       "timing": {
-        "wall_clock_s": 0.31181550002656877
+        "wall_clock_s": 0.25394269987009466
       },
       "accuracy": {
         "ise": 1.076582157117096e-05,
@@ -192,7 +192,7 @@
       "controller": "H-infinity",
       "scenario": "VDE",
       "timing": {
-        "wall_clock_s": 0.6952776999678463
+        "wall_clock_s": 0.5934015000239015
       },
       "accuracy": {
         "ise": 4.8578941779823684e-05,
@@ -211,7 +211,7 @@
       "controller": "MPC",
       "scenario": "VDE",
       "timing": {
-        "wall_clock_s": 0.4134805998764932
+        "wall_clock_s": 0.32677140017040074
       },
       "accuracy": {
         "ise": 5.274264066451195e-06,
@@ -230,7 +230,7 @@
       "controller": "SNN",
       "scenario": "VDE",
       "timing": {
-        "wall_clock_s": 1.310063200071454
+        "wall_clock_s": 1.0571937998756766
       },
       "accuracy": {
         "ise": 0.0774204821615129,
@@ -249,7 +249,7 @@
       "controller": "PID",
       "scenario": "Density ramp",
       "timing": {
-        "wall_clock_s": 0.6699274000711739
+        "wall_clock_s": 0.5980930998921394
       },
       "accuracy": {
         "ise": 5.9554642502530975e-05,
@@ -268,7 +268,7 @@
       "controller": "H-infinity",
       "scenario": "Density ramp",
       "timing": {
-        "wall_clock_s": 1.4714200999587774
+        "wall_clock_s": 1.0775178000330925
       },
       "accuracy": {
         "ise": 0.0009081469382617616,
@@ -287,7 +287,7 @@
       "controller": "MPC",
       "scenario": "Density ramp",
       "timing": {
-        "wall_clock_s": 0.8471234999597073
+        "wall_clock_s": 0.7188937999308109
       },
       "accuracy": {
         "ise": 2.0584131080087216e-05,
@@ -306,7 +306,7 @@
       "controller": "SNN",
       "scenario": "Density ramp",
       "timing": {
-        "wall_clock_s": 2.9255875998642296
+        "wall_clock_s": 2.134814399993047
       },
       "accuracy": {
         "ise": 0.15481857682840763,
@@ -325,7 +325,7 @@
       "controller": "PID",
       "scenario": "ELM pacing",
       "timing": {
-        "wall_clock_s": 0.5321661999914795
+        "wall_clock_s": 0.3609370000194758
       },
       "accuracy": {
         "ise": 7.18132807725353e-07,
@@ -344,7 +344,7 @@
       "controller": "H-infinity",
       "scenario": "ELM pacing",
       "timing": {
-        "wall_clock_s": 1.0991656999103725
+        "wall_clock_s": 0.8254708000458777
       },
       "accuracy": {
         "ise": 1.3667901749310617e-05,
@@ -363,7 +363,7 @@
       "controller": "MPC",
       "scenario": "ELM pacing",
       "timing": {
-        "wall_clock_s": 0.7214161001611501
+        "wall_clock_s": 0.5321116000413895
       },
       "accuracy": {
         "ise": 4.855022055271269e-07,
@@ -382,7 +382,7 @@
       "controller": "SNN",
       "scenario": "ELM pacing",
       "timing": {
-        "wall_clock_s": 2.051032500108704
+        "wall_clock_s": 1.55614580004476
       },
       "accuracy": {
         "ise": 0.11518032547093546,
