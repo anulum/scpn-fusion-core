@@ -409,6 +409,11 @@ class NeuralEquilibriumAccelerator:
                     grad_w = activations[i].T @ delta
                     grad_b = delta.sum(axis=0)
 
+                    grad_norm = np.linalg.norm(grad_w)
+                    if grad_norm > 1.0:
+                        grad_w *= 1.0 / grad_norm
+                        grad_b *= 1.0 / grad_norm
+
                     velocity[i] = momentum * velocity[i] - lr * grad_w
                     velocity_b[i] = momentum * velocity_b[i] - lr * grad_b
 

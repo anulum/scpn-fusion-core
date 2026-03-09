@@ -23,7 +23,7 @@ first-principles transport/gyrokinetic code.
 | Gap | Why | Alternative |
 |-----|-----|-------------|
 | 5D gyrokinetic turbulence | Deliberately reduced-order for real-time control | Use GENE/GS2; couple via surrogate training |
-| Full 3D MHD | Not planned for real-time loop | Use NIMROD/M3D-C1 externally |
+| Full 3D MHD | Out of scope for real-time loop | Use NIMROD/M3D-C1 externally |
 | Publication-quality equilibrium reconstruction | Default 65x65 grid, Picard+SOR | Use EFIT/CHEASE for production equilibria |
 | Complete impurity transport | Simple diffusion only | Use JINTRAC/STRAHL |
 | Free-boundary equilibrium | Coil currents are fixed inputs | Use FreeGS/CREATE-NL |
@@ -35,7 +35,7 @@ first-principles transport/gyrokinetic code.
 | Equilibrium | Picard + SOR/multigrid, converges on SPARC GEQDSKs | 65x65 default grid; not EFIT-quality inverse reconstruction |
 | Transport | 1.5D Bohm/gyro-Bohm + Chang-Hinton neoclassical | No ITG/TEM/ETG channels; no NBI slowing-down |
 | Neural equilibrium | PCA+MLP on 78 samples (SPARC L-mode family) | Useful only for the specific equilibrium family it was trained on |
-| FNO turbulence | Synthetic-data trained; **not validated against gyrokinetics** | Proxy mapping only; archived from release lane in v3.9 |
+| FNO turbulence | Synthetic-data trained; **no gyrokinetic validation** | Proxy mapping only; archived from release lane in v3.9 |
 | Neural transport MLP | 53-row ITPA illustrative dataset | Cannot capture full H-mode parameter space |
 | Stability | Vertical n-index + ballooning/Mercier criteria | No kink, peeling-ballooning, or RWM analysis |
 
@@ -46,7 +46,7 @@ first-principles transport/gyrokinetic code.
 | Surrogate | Status | Evidence |
 |-----------|--------|---------|
 | MLP ITPA confinement | Shipped | 13.5% RMSE on training set |
-| FNO EUROfusion-proxy | DEPRECATED | rel_L2 = 0.79 (synthetic only) |
+| FNO EUROfusion-proxy | Retired (v3.9) | rel_L2 = 0.79 (synthetic only) |
 | Neural equilibrium (SPARC) | Shipped | PCA+MLP, 78 samples |
 | QLKNN-10D transport | Shipped | test_rel_L2 = 0.201 (GPU L40S, 500K samples, 1024×512×256) |
 | FNO turbulence (JAX) | Shipped | val_rel_L2 = 0.356 (4-layer FNO, modes=24, 2000 QLKNN-oracle equilibria) |

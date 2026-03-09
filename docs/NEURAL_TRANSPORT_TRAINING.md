@@ -109,7 +109,7 @@ Hardening checks enforced by loader:
 - `allow_pickle=False`
 - bounded file size
 - required-key and version validation
-- fallback to analytic critical-gradient model on any contract failure
+- revert to analytic critical-gradient model on any contract failure
 
 ## 6. Reproducibility notes
 

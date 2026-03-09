@@ -50,12 +50,13 @@
       "status": "DEPRECATED — superseded by fno_turbulence_jax"
     },
     "neural_transport_qlknn": {
-      "test_relative_l2": 0.201,
-      "val_relative_l2": 0.194,
-      "train_relative_l2": 0.131,
-      "epochs_run": 482,
-      "training_time_s": 4895,
-      "data_source": "QLKNN-10D (van de Plassche 2020, PoP 27 022310)"
+      "test_relative_l2": 0.094,
+      "val_relative_l2": 0.095,
+      "train_relative_l2": 0.092,
+      "epochs_run": 911,
+      "training_time_s": 13127,
+      "data_source": "QLKNN-10D (van de Plassche 2020, PoP 27 022310)",
+      "notes": "Promoted B8_wide run (1024x512x256 gated MLP, 911 epochs). Previous default (rel_L2=0.201) archived as _v393_original."
     },
     "fno_turbulence_jax": {
       "val_relative_l2": 0.356,
@@ -80,6 +81,6 @@
     ],
     "coverage_fraction": 0.625,
     "coverage_percent": 62.5,
-    "notes": "Elite retrain: QLKNN 1024x512x256 MLP (test_rel_L2=0.201, down from 0.243). FNO 4-layer (val_rel_L2=0.356 on 2000 equilibria; limited by oracle noise floor). Legacy NumPy FNO deprecated. Neural equilibrium retrain deferred (needs >3 SPARC GEQDSK files)."
+    "notes": "QLKNN promoted B8_wide run (test_rel_L2=0.094). FNO 4-layer (val_rel_L2=0.356 on 2000 equilibria; limited by oracle noise floor). Legacy NumPy FNO deprecated. Neural equilibrium retrain deferred (needs >50 SPARC GEQDSK files)."
   }
 }

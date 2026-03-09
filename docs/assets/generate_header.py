@@ -24,7 +24,7 @@ z = np.linspace(-kappa * a * 1.2, kappa * a * 1.2, NZ)
 R, Z = np.meshgrid(r, z)
 
 # ---------------------------------------------------------------------------
-# Simplified Grad-Shafranov flux function with Shafranov shift + triangularity
+# Compact Grad-Shafranov flux function with Shafranov shift + triangularity
 # psi(R,Z) ~ (R - R0 - delta_shift)^2 + (Z/kappa)^2   (normalised)
 # ---------------------------------------------------------------------------
 delta_shift = delta * a * (Z / (a * kappa)) ** 2

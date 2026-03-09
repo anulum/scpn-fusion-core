@@ -38,7 +38,7 @@ Comparison of SCPN Fusion Core against established fusion simulation codes.
 | Compact reactor optimizer | MVR-0.96 | No | Yes (DEMO) | No |
 | GEQDSK I/O | Read + validate | No | No | Read + write |
 | Rust acceleration | Native (10 crates) | No | JAX/XLA | No |
-| GPU support | Planned | Yes (JAX) | No | No |
+| GPU support | Roadmap (wgpu) | Yes (JAX) | No | No |
 | Research validation (opt-in) | SPARC, ITPA, JET | DIII-D | ITER, DEMO | JET |
 
 ## Validation Accuracy
@@ -166,7 +166,7 @@ has not been validated against gyrokinetic output in this repository.
 Key properties:
 - Vectorised `predict_profile()` gives ~100× speedup over point-by-point loop
 - SHA-256 weight checksums for reproducibility tracking
-- Transparent fallback to analytic model when no weights are available
+- Transparent degradation to analytic model when no weights are available
 
 *Reference: van de Plassche, K.L. et al. (2020). Phys. Plasmas 27, 022310.*
 
@@ -241,11 +241,11 @@ See `SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md` Section 28 for full details.
 
 | Target | Backend | Expected Speedup | Priority | Status |
 |--------|---------|-----------------|----------|--------|
-| SOR red-black sweep | wgpu compute shader | 20–50× (65×65), 100–200× (256×256) | P0 | Planned |
-| Multigrid V-cycle | wgpu + host orchestration | 10–30× | P1 | Planned |
+| SOR red-black sweep | wgpu compute shader | 20–50× (65×65), 100–200× (256×256) | P0 | Targeted |
+| Multigrid V-cycle | wgpu + host orchestration | 10–30× | P1 | Targeted |
 | Vacuum field (elliptic integrals) | rayon (CPU) → wgpu | 5–10× | P2 | rayon done |
-| MLP batch inference | wgpu or cuBLAS | 2–5× (small H) | P3 | Planned |
-| FNO turbulence (FFT) | cuFFT / wgpu FFT | 50–100× (64×64) | P3 | Planned |
+| MLP batch inference | wgpu or cuBLAS | 2–5× (small H) | P3 | Targeted |
+| FNO turbulence (FFT) | cuFFT / wgpu FFT | 50–100× (64×64) | P3 | Targeted |
 
 ### Projected Timings (GPU, RTX 4090-class)
 
@@ -258,7 +258,7 @@ See `SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md` Section 28 for full details.
 | MLP 1000-pt profile | 0.3 ms | ~0.05 ms | Batch matmul |
 
 Implementation path: `wgpu` crate targeting Vulkan/Metal/D3D12/WebGPU,
-with fallback to CPU SIMD for systems without GPU support.
+with CPU SIMD alternate path for systems without GPU support.
 
 ## Adaptive Grids & 3D Transport Roadmap
 
@@ -281,9 +281,9 @@ with fallback to CPU SIMD for systems without GPU support.
 | NIMROD | Block-structured | 3D MHD |
 | JOREK | Bézier elements, h-p | 3D nonlinear MHD |
 | BOUT++ | Field-aligned, block | Edge turbulence |
-| SCPN (planned) | Quadtree, gradient-based | 2D GS + 3D extension |
+| SCPN (targeted) | Quadtree, gradient-based | 2D GS + 3D extension |
 
-The planned quadtree AMR is simpler than JOREK's h-p adaptivity but
+The targeted quadtree AMR is simpler than JOREK's h-p adaptivity but
 sufficient for equilibrium and transport applications where steep gradients
 are localised near the pedestal and X-point regions.
 

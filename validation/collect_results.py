@@ -217,7 +217,14 @@ def run_neural_eq() -> dict[str, Any] | None:
         return None
     model = NeuralEquilibriumAccelerator()
     model.load_weights(weights_path)
-    features = np.array([8.7, 12.2, 1.85, 0.0, 1.0, 1.0, -5.0, 0.0])
+    n_in = model.cfg.n_input_features
+    if n_in == 12:
+        # [I_p(MA), B_t(T), R_axis(m), Z_axis(m), pprime_s, ffprime_s,
+        #  simag, sibry, kappa, delta_up, delta_low, q95]
+        features = np.array([8.7, 12.2, 1.85, 0.0, 1.0, 1.0, -5.0, 0.0,
+                             1.75, 0.3, 0.3, 3.4])
+    else:
+        features = np.zeros(n_in)
     psi = model.predict(features)
     bench = model.benchmark(features, n_runs=50)
     return {

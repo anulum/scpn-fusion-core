@@ -16,7 +16,7 @@ This document defines the split between release-grade validation and research-on
 | `research` | Research-only pytest lane (`pytest -m experimental` marker). | `python tools/run_python_preflight.py --gate research` |
 | `all` | Release + research profiles in sequence. | `python tools/run_python_preflight.py --gate all` |
 | `real-data-strict` | End-to-end real-shot validation + guard + roadmap checks with raw-ingestion readiness enforcement (`require_disruption_raw_ingestion_ready=true`). | `python tools/run_real_data_strict_gate.py --thresholds tools/real_shot_validation_thresholds_raw_ready.json` |
-| `freegs-strict` | FreeGS-only strict backend parity lane with runtime-fallback disallowed and artifact contract checks (`mode=freegs`, no fallback cases). | `python validation/benchmark_vs_freegs.py --strict-backend && python tools/check_freegs_strict_artifact.py --report artifacts/freegs_benchmark.json` |
+| `freegs-strict` | FreeGS-only strict backend parity lane with runtime degradation disallowed and artifact contract checks (`mode=freegs`, no alternate-path cases). | `python validation/benchmark_vs_freegs.py --strict-backend && python tools/check_freegs_strict_artifact.py --report artifacts/freegs_benchmark.json` |
 
 ## CI Mapping
 
@@ -26,14 +26,14 @@ This document defines the split between release-grade validation and research-on
 | `python-research-gate` | Research validation lane (3.12) | `research` |
 | `validation-regression` | Cross-language physics validation lane | `release` (`pytest -m "not experimental"`) |
 | `strict-real-data` (`real-data-strict.yml`, manual dispatch) | External-data readiness lane; fails when DIII-D raw ingestion contract is unmet (unless dry-run override is set). | `real-data-strict` |
-| `freegs-strict` (`freegs-strict.yml`, manual dispatch) | Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS reference backend. | `freegs-strict` |
+| `freegs-strict` (`freegs-strict.yml`, manual dispatch) | Strict FreeGS backend parity lane; fails on any degraded-mode or non-FreeGS reference backend. | `freegs-strict` |
 | `security-audit` (`security-audit.yml`) | Supply-chain audit lane for Python + Rust dependencies (`pip-audit`, `cargo audit`) on PR and weekly schedule. | Security audit |
 | `sbom` (`sbom.yml`) | CycloneDX SBOM generation lane for Python environment + Rust crates; publishes artifacts for traceability/compliance. | SBOM generation |
 
 FreeGS strict-backend parity remains opt-in via
 `--enable-freegs-strict-backend-check` (or `SCPN_ENABLE_FREEGS_STRICT_BACKEND_CHECKS=1`)
 for the release preflight path, while the dedicated `freegs-strict.yml` workflow
-enforces a no-fallback contract when invoked.
+enforces a strict-backend-only contract when invoked.
 
 ## Experimental Marker Contract
 

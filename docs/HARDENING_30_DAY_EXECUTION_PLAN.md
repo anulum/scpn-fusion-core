@@ -13,8 +13,8 @@ Baseline snapshot (generated on 2026-02-28):
 ## Workstream A: Physics and Validation Credibility (P0)
 
 Week 1
-- Lock default turbulence path to non-deprecated lanes only.
-- Keep deprecated FNO paths non-default and explicitly gated.
+- Lock default turbulence path to non-retired lanes only.
+- Keep retired FNO paths non-default and explicitly gated.
 - Route FNO retrain through external service workflow (request export + signed artifact import).
 - Add claim/evidence check for every benchmark table row touched.
 

@@ -37,7 +37,7 @@
 | QLKNN (TensorFlow) | NN inference | ~100 us (25 outputs) | Surrogate | van de Plassche 2020 |
 
 > **Fidelity note:** SCPN ships a QLKNN-10D trained MLP surrogate
-> (test_rel_L2 = 0.201) alongside the analytic critical-gradient fallback.
+> (test_rel_L2 = 0.201) alongside the analytic critical-gradient baseline.
 > The MLP is trained on van de Plassche 2020 gyrokinetic data (500K samples).
 > 10-25% relative error is typical for QLKNN surrogates. The speed advantage
 > reflects both surrogate approach and lightweight NumPy inference.
@@ -75,7 +75,7 @@
 | Neutronics / TBR | Yes (1-D slab) | No | Yes | No | Yes | No |
 | **Digital twin (real-time)** | **Yes** | No | No | No | No | No |
 | **Rust native backend** | **Yes (10 crates)** | No | No | No | No | No |
-| GPU acceleration | Planned (wgpu) | Yes (JAX) | No | No | JAX | No |
+| GPU acceleration | Roadmap (wgpu) | Yes (JAX) | No | No | JAX | No |
 | Autodifferentiation | No | **Yes (JAX)** | No | No | **Yes (Julia)** | No |
 | Compact reactor optimizer | Yes | No | Yes (DEMO) | No | Yes | No |
 | GEQDSK I/O | Read + validate | No | No | Read + write | Yes | No |

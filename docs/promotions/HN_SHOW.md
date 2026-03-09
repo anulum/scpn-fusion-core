@@ -8,7 +8,7 @@
 
 **Body:**
 
-SCPN Fusion Core is an open-source tokamak plasma physics simulator that covers the full lifecycle of a fusion reactor: Grad-Shafranov equilibrium, MHD stability, transport, heating, neutronics, disruption prediction, and real-time control. The Python package (46 modules) handles physics and AI; a 10-crate Rust workspace provides native acceleration via PyO3 with transparent fallback to NumPy.
+SCPN Fusion Core is an open-source tokamak plasma physics simulator that covers the full lifecycle of a fusion reactor: Grad-Shafranov equilibrium, MHD stability, transport, heating, neutronics, disruption prediction, and real-time control. The Python package (46 modules) handles physics and AI; a 10-crate Rust workspace provides native acceleration via PyO3 with transparent degradation to NumPy.
 
 What makes it different from existing fusion codes (EFIT, TORAX, PROCESS, GENE): it's a single integrated codebase rather than a pipeline of separate Fortran programs, it includes a neuro-symbolic compiler that maps Petri-net control logic to stochastic spiking neural networks, and everything is AGPL-licensed so anyone can audit and extend it.
 

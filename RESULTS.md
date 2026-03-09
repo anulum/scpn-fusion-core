@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.9.3)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-03-09 12:21 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-03-09 13:20 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.9.3
-- **Generated:** 2026-03-09 12:21 UTC
-- **Wall-clock:** 20s
+- **Generated:** 2026-03-09 13:20 UTC
+- **Wall-clock:** 68s
 
 ## Equilibrium & Transport
 
@@ -22,20 +22,20 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.31 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.64 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 1.23 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 4.39 | ms | 129x129 grid |
 
 ## QLKNN Neural Transport Surrogate
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
-| Test relative L2 | 0.2012 | — | Hard-fail gate < 0.25 |
-| Val relative L2 | 0.1945 | — | |
-| Train relative L2 | 0.1309 | — | val/train = 1.49 |
-| Best val MSE | 37.910505 | — | |
+| Test relative L2 | 0.0943 | — | Hard-fail gate < 0.25 |
+| Val relative L2 | 0.0954 | — | |
+| Train relative L2 | 0.0917 | — | val/train = 1.04 |
+| Best val MSE | 0.002566 | — | |
 | Architecture | 1024×512×256 | — | MLP hidden dims |
-| Epochs | 482 | — | Early-stopped |
-| Training time | 1.4 | h | GPU |
+| Epochs | 911 | — | Early-stopped |
+| Training time | 3.6 | h | GPU |
 | Data source | QLKNN-10D (Zenodo DOI 10.5281/zenodo.3497066) | — | |
 | Backup test relative L2 | 0.0949 | — | 512×256×128 architecture |
 
@@ -81,10 +81,10 @@
 | Mean RE current peak | 0.014 | MA | |
 | P95 RE current peak | 0.021 | MA | |
 | ITER halo+RE contract pass (stress lane) | Yes | — | Requires prevention>=90%, P95 halo<=3.4 MA, P95 RE<=1.0 MA |
-| HIL control-loop P50 latency | 12.2 | μs | 1000 iterations |
-| HIL control-loop P95 latency | 22.3 | μs | |
-| HIL control-loop P99 latency | 44.3 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 14.3 μs |
+| HIL control-loop P50 latency | 27.1 | μs | 1000 iterations |
+| HIL control-loop P95 latency | 85.6 | μs | |
+| HIL control-loop P99 latency | 364.9 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 68.4 μs |
 
 ## Real-Shot Validation
 
@@ -164,7 +164,7 @@
 
 | Lane | Status | Key metric |
 |------|--------|------------|
-| QLKNN Transport | PASS | test_rel_l2 = 0.2012 |
+| QLKNN Transport | PASS | test_rel_l2 = 0.0943 |
 | Real-shot validation (mixed real+template) | PASS | recall=100%, FPR=0% |
 | Confinement ITPA | RUN | RMSE = 0.0969 s |
 | 3D Force Balance | RUN | reduction = 3.5× |
@@ -172,7 +172,7 @@
 | TBR > 1.05 | PASS | TBR = 1.1409 |
 | ECRH absorption | RUN | 99.0% |
 | Disruption detection | PASS | recall=100% |
-| HIL sub-ms | PASS | P50 = 12.2 μs |
+| HIL sub-ms | PASS | P50 = 27.1 μs |
 | Solov'ev manufactured-source parity | PASS | ψ NRMSE = 0.000 |
 | Transfer generalization | PASS | eff=1.000, target_recall=1.000 |
 

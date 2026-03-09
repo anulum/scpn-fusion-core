@@ -1,10 +1,10 @@
 {
-  "test_relative_l2": 0.2012012780283069,
-  "val_relative_l2": 0.19449205465044478,
-  "train_relative_l2": 0.1308530976668255,
-  "best_val_mse": 37.91050533294146,
-  "epochs_run": 482,
-  "training_time_s": 4895.192491711,
+  "test_relative_l2": 0.09430918020180648,
+  "val_relative_l2": 0.09540667882993831,
+  "train_relative_l2": 0.09173176131406788,
+  "best_val_mse": 0.0025658053291303887,
+  "epochs_run": 911,
+  "training_time_s": 13126.700219258666,
   "platform": "GPU",
   "hidden_dims": [
     1024,

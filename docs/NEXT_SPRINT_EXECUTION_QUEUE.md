@@ -34,7 +34,7 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 
 - Completed: `S1-001` (reduced 3D volumetric blanket surrogate with Python + Rust tests).
 - Completed: `S1-002` (toroidal asymmetry observables + disruption-path integration in Python and Rust).
-- Completed: `S1-003` (added low-point LCFS fallback regression test and VMEC-like geometry CI smoke coverage).
+- Completed: `S1-003` (added low-point LCFS alternate-path regression test and VMEC-like geometry CI smoke coverage).
 - Completed: `S1-004` (deterministic control fault/noise resilience baseline in Python + Rust with campaign reporting and thresholds).
 - Completed: `S1-005` (RFC template + tracker: `docs/PHASE2_ADVANCED_RFC_TEMPLATE.md`, `docs/PHASE2_ADVANCED_RFC_TRACKER.md`).
 - Completed: `GAI-01` (synthetic GyroSwin-like turbulence surrogate benchmark lane + strict RMSE/speedup validation).

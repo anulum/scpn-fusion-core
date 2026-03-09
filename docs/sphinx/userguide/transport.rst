@@ -79,7 +79,7 @@ RF Heating Models
 ------------------
 
 The ``rf_heating`` module simulates auxiliary heating deposition profiles
-using simplified ray-tracing:
+using reduced-order ray-tracing:
 
 **ICRH** -- Ion Cyclotron Resonance Heating
    Power is deposited at the ion cyclotron resonance layer

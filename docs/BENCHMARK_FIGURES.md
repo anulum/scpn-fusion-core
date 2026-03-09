@@ -90,7 +90,7 @@ QuaLiKiz ~1 s/point, QLKNN ~10 µs/point (van de Plassche 2020).
 ```
 chi_i [m²/s]
   ^
-  │                                  ╱ Fallback (analytic)
+  │                                  ╱ Analytic baseline
   │                                ╱
   │                              ╱
   │                            ╱    --- MLP (trained)
@@ -121,8 +121,8 @@ the gyrokinetic-level response including saturation effects.
 |--------------------|-----------------|----------|
 | MLP vectorised (`predict_profile`) | ~0.3 ms | 1× (baseline) |
 | MLP point-by-point loop | ~30 ms | ~100× slower |
-| Fallback vectorised | ~2 ms | ~7× slower |
-| Fallback point-by-point loop | ~200 ms | ~670× slower |
+| Analytic vectorised | ~2 ms | ~7× slower |
+| Analytic point-by-point loop | ~200 ms | ~670× slower |
 
 ---
 
