@@ -1,22 +1,22 @@
 # SCPN RMSE Dashboard
 
-- Generated: `2026-02-17T22:55:26.565818+00:00`
-- Runtime: `1.13s`
+- Generated: `2026-03-09T00:41:41.695633+00:00`
+- Runtime: `2.85s`
 
 ## Auto-Flag Summary
 
 | Metric | Value | Flag |
 |--------|-------|------|
-| tau_E MAE % | `32.53%` | **[FAIL]** |
-| beta_N RMSE | `0.0417` | **[PASS]** |
+| tau_E MAE % | `50.09%` | **[FAIL]** |
+| beta_N RMSE | `0.1731` | **[FAIL]** |
 | SPARC axis RMSE (m) | `1.594950` | **[FAIL]** |
 
 ## Confinement RMSE (ITPA H-mode)
 
-- Samples: `20`
-- `tau_E` RMSE: `0.1287 s`
-- `tau_E` mean absolute relative error: `32.53%` **[FAIL]**
-- `H98(y,2)` RMSE: `0.1983`
+- Samples: `53`
+- `tau_E` RMSE: `0.0969 s`
+- `tau_E` mean absolute relative error: `50.09%` **[FAIL]**
+- `H98(y,2)` RMSE: `0.2954`
 
 ![tau_E scatter](./tau_e_scatter.png)
 
@@ -28,7 +28,7 @@
 ## Beta_N RMSE (ITER + SPARC references)
 
 - Samples: `2`
-- `beta_N` RMSE: `0.0417` **[PASS]**
+- `beta_N` RMSE: `0.1731` **[FAIL]**
 
 ![beta_N scatter](./beta_n_scatter.png)
 
@@ -36,6 +36,14 @@
 
 - Files: `8`
 - Axis RMSE: `1.594950 m` **[FAIL]**
+
+## SPARC Point-wise psi(R,Z) RMSE
+
+- Files: `8`
+- Mean normalised psi RMSE: `0.928002`
+- Mean relative L2: `0.803325`
+- Mean GS residual (rel L2): `11.8310`
+- Worst file: `lmode_vh.geqdsk` (psi_N RMSE = `1.478894`)
 
 ## Forward Diagnostics RMSE
 

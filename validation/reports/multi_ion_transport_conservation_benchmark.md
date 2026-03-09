@@ -13,4 +13,4 @@
 |--------|-------|-----------|
 | quasineutral_residual | 0.000e+00 | <= 1.0e-10 |
 | late_energy_error_p95 | 0.5746 | <= 2.00 |
-| he_ash_peak_1e19m3 | 0.000845 | >= 1.0e-04 |
+| he_ash_peak_1e19m3 | 0.000230 | >= 1.0e-04 |

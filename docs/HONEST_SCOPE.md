@@ -13,7 +13,7 @@ first-principles transport/gyrokinetic code.
 | Sub-microsecond Rust control kernel (0.52 µs P50) and closed-loop latency (11.9 µs P50 / 23.9 µs P99) | `docs/PERFORMANCE_METRIC_TAXONOMY.md`, `validation/verify_10khz_rust.py`, Criterion benches |
 | QLKNN-10D real-gyrokinetic transport surrogate | test_rel_L2 = 0.201 (1024×512×256 gated MLP, 500K samples, GPU L40S), Zenodo DOI 10.5281/zenodo.3497066 |
 | IPB98(y,2) confinement scaling on 53 shots / 24 machines | `validation/reference_data/itpa/hmode_confinement.csv` |
-| 6 SPARC EFIT GEQDSK equilibrium validation | `validation/reference_data/sparc/` (MIT, CFS) |
+| 8 SPARC EFIT GEQDSK equilibrium validation | `validation/reference_data/sparc/` (MIT, CFS) |
 | FreeGS equilibrium parity | **FAIL** — ψ NRMSE 1.80 after vacuum-field correction (v3.9.3). GS solver needs further work. |
 | 0% disruption rate across 1,000-shot stress campaigns | `validation/stress_test_campaign.py` |
 | Graceful degradation (no Rust / no GPU / no SC-NeuroCore) | Every module has a pure-Python fallback |

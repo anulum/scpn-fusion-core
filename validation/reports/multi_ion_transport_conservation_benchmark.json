@@ -17,11 +17,11 @@
     },
     "metrics": {
       "quasineutral_residual": 0.0,
-      "late_energy_error_mean": 0.3773900747217936,
-      "late_energy_error_p95": 0.5746280379618891,
-      "he_ash_peak_1e19m3": 0.0008446484439644131,
-      "n_D_min": 0.007225785704750987,
-      "n_T_min": 0.007225785704750987,
+      "late_energy_error_mean": 0.37738436649283,
+      "late_energy_error_p95": 0.5746325797428774,
+      "he_ash_peak_1e19m3": 0.00022976807289422946,
+      "n_D_min": 0.007251624132476136,
+      "n_T_min": 0.007251624132476136,
       "n_He_min": 0.0,
       "z_eff_final": 1.0
     }

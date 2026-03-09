@@ -1,6 +1,6 @@
 # SCPN Fusion Core — Benchmark Results (v3.9.3)
 
-> **Auto-generated** by `validation/collect_results.py` on 2026-03-08 18:35 UTC.
+> **Auto-generated** by `validation/collect_results.py` on 2026-03-09 00:43 UTC.
 > Re-run the script to refresh these numbers on your hardware.
 
 ## Environment
@@ -12,8 +12,8 @@
 - **NumPy:** 1.26.4
 - **RAM:** 31.8 GB
 - **Version:** 3.9.3
-- **Generated:** 2026-03-08 18:35 UTC
-- **Wall-clock:** 17s
+- **Generated:** 2026-03-09 00:43 UTC
+- **Wall-clock:** 19s
 
 ## Equilibrium & Transport
 
@@ -22,8 +22,8 @@
 | 3D Force-Balance initial residual | 3.8002e+05 | — | Spectral variational method |
 | 3D Force-Balance final residual | 1.0706e+05 | — | After 20 iterations |
 | 3D Force-Balance reduction factor | 3.5× | — | initial / final |
-| Neural Equilibrium inference (mean) | 0.20 | ms | PCA+MLP surrogate on 129x129 grid |
-| Neural Equilibrium inference (P95) | 0.34 | ms | 129x129 grid |
+| Neural Equilibrium inference (mean) | 0.16 | ms | PCA+MLP surrogate on 129x129 grid |
+| Neural Equilibrium inference (P95) | 0.30 | ms | 129x129 grid |
 
 ## QLKNN Neural Transport Surrogate
 
@@ -46,12 +46,12 @@
 | Machines validated | 53 | — | ITER, JET, DIII-D, ASDEX-U, C-Mod, JT-60U, NSTX, MAST, KSTAR, EAST, SPARC, ARC, TFTR, WEST, TCV, HL-2A, HL-2M, COMPASS, JT-60SA, SST-1, Aditya-U, Globus-M2, NSTX-U, MAST-U |
 | tau_E RMSE | 0.0969 | s | |
 | tau_E relative RMSE | 50.1 | % | |
-| H98 RMSE | 0.6518 | — | |
+| H98 RMSE | 0.2954 | — | |
 | ITER_15MA_baseline τ_E error | -1.0 | % | τ_pred=3.664 s |
 | SPARC_V2C τ_E error | 2.9 | % | τ_pred=0.793 s |
-| β_N RMSE | 0.0417 | — | |
-| ITER_15MA_baseline β_N error | -2.8 | % | Q=15, P_fus=1981 MW |
-| SPARC_V2C β_N error | 3.0 | % | Q=15, P_fus=493 MW |
+| β_N RMSE | 0.1731 | — | |
+| ITER_15MA_baseline β_N error | 5.8 | % | Q=15, P_fus=2538 MW |
+| SPARC_V2C β_N error | 22.2 | % | Q=15, P_fus=840 MW |
 | Interferometer phase RMSE | 0.003379 | rad | 3 channels |
 | Neutron rate relative error | 3.0 | % | |
 | Thomson voltage RMSE | 6.11e-07 | V | 3 channels |
@@ -81,10 +81,10 @@
 | Mean RE current peak | 0.014 | MA | |
 | P95 RE current peak | 0.021 | MA | |
 | ITER halo+RE contract pass (stress lane) | Yes | — | Requires prevention>=90%, P95 halo<=3.4 MA, P95 RE<=1.0 MA |
-| HIL control-loop P50 latency | 10.8 | μs | 1000 iterations |
-| HIL control-loop P95 latency | 18.5 | μs | |
-| HIL control-loop P99 latency | 24.7 | μs | |
-| Sub-ms achieved | Yes | — | Total loop: 12.2 μs |
+| HIL control-loop P50 latency | 23.8 | μs | 1000 iterations |
+| HIL control-loop P95 latency | 81.6 | μs | |
+| HIL control-loop P99 latency | 191.5 | μs | |
+| Sub-ms achieved | Yes | — | Total loop: 33.3 μs |
 
 ## Real-Shot Validation
 
@@ -94,7 +94,7 @@
 | Disruption FPR | 0.00 | — | 0/10 false alarms |
 | Disruption detection | Yes | — | recall ≥ 0.6 and FPR ≤ 0.4 |
 | Transport tau_E RMSE | 0.0969 | s | 53 shots |
-| Transport within 2σ | 72 | % | Gate ≥ 80% |
+| Transport within 2σ | 74 | % | Gate ≥ 80% |
 | Transport validation | Yes | — | |
 | Equilibrium ψ pass fraction | 67 | % | 12/18 files |
 | Equilibrium q95 pass fraction | 100 | % | 18/18 files |
@@ -152,8 +152,8 @@
 
 | Metric | Value | Unit | Notes |
 |--------|-------|------|-------|
-| Neural transport MLP surrogate tau_E RMSE | 0.0748 | s | ITPA H-mode confinement time |
-| Neural transport MLP surrogate tau_E RMSE % | 16.6 | % | 20 samples |
+| Neural transport MLP surrogate tau_E RMSE | 0.0607 | s | ITPA H-mode confinement time |
+| Neural transport MLP surrogate tau_E RMSE % | 13.5 | % | 20 samples |
 
 ## Validation Summary
 
@@ -167,7 +167,7 @@
 | TBR > 1.05 | PASS | TBR = 1.1409 |
 | ECRH absorption | RUN | 99.0% |
 | Disruption detection | PASS | recall=100% |
-| HIL sub-ms | PASS | P50 = 10.8 μs |
+| HIL sub-ms | PASS | P50 = 23.8 μs |
 | FreeGS strict-backend parity | FAIL | ψ NRMSE = 1.795 |
 | Transfer generalization | PASS | eff=1.000, target_recall=1.000 |
 
