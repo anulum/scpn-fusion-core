@@ -32,11 +32,15 @@
       "n_layers": 4,
       "modes": 24,
       "width": 128,
+      "input_channels": 5,
+      "channels": ["psi", "Te", "Ti", "q", "grad_Ti"],
       "epochs": 1500,
-      "lr": 1e-3,
+      "lr": 5e-4,
       "batch_size": 32,
       "grid_size": 64,
-      "n_equilibria": 2000
+      "n_equilibria": 5000,
+      "augmentation": "horizontal+vertical flips (4x)",
+      "platform": "NVIDIA L40S 48GB (UpCloud fi-hel2)"
     }
   },
   "metrics": {
@@ -59,11 +63,17 @@
       "notes": "Promoted B8_wide run (1024x512x256 gated MLP, 911 epochs). Previous default (rel_L2=0.201) archived as _v393_original."
     },
     "fno_turbulence_jax": {
-      "val_relative_l2": 0.356,
-      "n_train": 1700,
+      "val_relative_l2": 0.055,
+      "epochs_run": 267,
+      "early_stopped": true,
+      "n_train": 17000,
+      "n_train_raw": 4250,
+      "n_val": 750,
       "grid_size": 64,
-      "training_time_s": 522,
-      "data_source": "QLKNN-MLP oracle spatial pairs (2000 equilibria)"
+      "input_channels": 5,
+      "training_time_s": 6526,
+      "data_source": "QLKNN-MLP oracle spatial pairs (5000 equilibria, 5-channel [psi,Te,Ti,q,grad_Ti])",
+      "notes": "6.5x improvement from single-channel (0.356) via multi-channel physics drivers. L40S GPU retrain 2026-03-09."
     }
   },
   "coverage": {
@@ -81,6 +91,6 @@
     ],
     "coverage_fraction": 0.625,
     "coverage_percent": 62.5,
-    "notes": "QLKNN promoted B8_wide run (test_rel_L2=0.094). FNO 4-layer (val_rel_L2=0.356 on 2000 equilibria; limited by oracle noise floor). Legacy NumPy FNO deprecated. Neural equilibrium retrain deferred (needs >50 SPARC GEQDSK files)."
+    "notes": "QLKNN promoted B8_wide run (test_rel_L2=0.094). FNO 4-layer retrained with 5-channel input (val_rel_L2=0.055, 6.5x improvement from 0.356). Legacy NumPy FNO deprecated."
   }
 }
