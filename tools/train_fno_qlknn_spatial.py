@@ -45,14 +45,21 @@ def _load_spatial_split(path: Path) -> tuple[np.ndarray, np.ndarray]:
     return x, y
 
 
+def _augment_flips(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Augment 2D fields with horizontal and vertical flips (4x data)."""
+    aug_x = [x, x[:, ::-1, :], x[:, :, ::-1], x[:, ::-1, ::-1]]
+    aug_y = [y, y[:, ::-1, :], y[:, :, ::-1], y[:, ::-1, ::-1]]
+    return np.concatenate(aug_x, axis=0), np.concatenate(aug_y, axis=0)
+
+
 def train_fno(
     data_dir: Path,
     output_path: Path,
-    modes: int = 16,
-    width: int = 64,
+    modes: int = 24,
+    width: int = 128,
     n_layers: int = 4,
-    epochs: int = 200,
-    lr: float = 1e-3,
+    epochs: int = 1500,
+    lr: float = 5e-4,
     batch_size: int = 32,
     seed: int = 42,
 ) -> None:
@@ -82,6 +89,11 @@ def train_fno(
     train_x, train_y = _load_spatial_split(data_dir / "train.npz")
     val_x, val_y = _load_spatial_split(data_dir / "val.npz")
 
+    # Flip augmentation on training data (4x effective samples)
+    train_x, train_y = _augment_flips(train_x, train_y)
+    n_raw = len(train_x) // 4
+    print(f"Data: {n_raw} raw + flip augmentation = {len(train_x)} train, {len(val_x)} val")
+
     X_train = jnp.array(train_x)
     Y_train = jnp.array(train_y)
     X_val = jnp.array(val_x)
@@ -89,7 +101,7 @@ def train_fno(
 
     grid_size = X_train.shape[1]
     n_train = len(X_train)
-    print(f"Data: train={n_train}, val={len(X_val)}, grid={grid_size}x{grid_size}")
+    print(f"  Grid: {grid_size}x{grid_size}")
     print(f"FNO: {n_layers} spectral layers, modes={modes}, width={width}")
 
     key = random.PRNGKey(seed)
@@ -258,11 +270,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--modes", type=int, default=16)
-    parser.add_argument("--width", type=int, default=64)
+    parser.add_argument("--modes", type=int, default=24)
+    parser.add_argument("--width", type=int, default=128)
     parser.add_argument("--n-layers", type=int, default=4)
-    parser.add_argument("--epochs", type=int, default=200)
-    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--epochs", type=int, default=1500)
+    parser.add_argument("--lr", type=float, default=5e-4)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()

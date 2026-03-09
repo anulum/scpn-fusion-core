@@ -126,7 +126,7 @@ def _profiles_from_rho(
 def generate(
     weights_path: Path,
     output_dir: Path,
-    n_equilibria: int = 200,
+    n_equilibria: int = 5000,
     grid_size: int = 64,
     seed: int = 42,
 ) -> None:
@@ -270,7 +270,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=Path, default=DEFAULT_WEIGHTS)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--n-equilibria", type=int, default=200)
+    parser.add_argument("--n-equilibria", type=int, default=5000)
     parser.add_argument("--grid-size", type=int, default=64)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
