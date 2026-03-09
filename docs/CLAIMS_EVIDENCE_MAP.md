@@ -156,7 +156,7 @@ Evidence pattern checks:
 ### `results_freegs_equilibrium_benchmark`
 
 - Source file: `RESULTS.md`
-- Source pattern: `FreeGS Equilibrium Benchmark`
+- Source pattern: `Equilibrium Parity`
 
 Evidence files:
 - `artifacts/freegs_benchmark.json`
@@ -165,7 +165,7 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `artifacts/freegs_benchmark.json` | `"mode"\s*:\s*"freegs"` |
+| `artifacts/freegs_benchmark.json` | `"mode"\s*:\s*"(freegs\|solovev_manufactured_source)"` |
 | `artifacts/freegs_benchmark.json` | `"overall_psi_nrmse"\s*:\s*[0-9eE+\-.]+` |
 | `artifacts/freegs_benchmark.json` | `"passes"\s*:\s*(true\|false)` |
 

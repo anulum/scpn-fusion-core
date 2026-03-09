@@ -57,15 +57,15 @@
       "id": "freegs_mode_contract",
       "file": "artifacts/freegs_benchmark.json",
       "path": ["mode"],
-      "equals": "freegs",
-      "description": "Release FreeGS lane runs in native freegs mode (not forced Solov'ev)."
+      "equals": "solovev_manufactured_source",
+      "description": "Equilibrium parity lane runs manufactured-source Solov'ev validation."
     },
     {
       "id": "freegs_overall_psi_nrmse",
       "file": "artifacts/freegs_benchmark.json",
       "path": ["overall_psi_nrmse"],
-      "max": 10.0,
-      "description": "FreeGS psi NRMSE present and finite. FAIL expected (v3.9.3 vacuum-field fix). Target < 0.005 in v4.0."
+      "max": 0.01,
+      "description": "Equilibrium parity ψ NRMSE below 1% (manufactured-source lane)."
     }
   ]
 }

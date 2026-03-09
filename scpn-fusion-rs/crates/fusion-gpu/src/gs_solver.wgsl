@@ -61,8 +61,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     // ∂²ψ/∂Z² ≈ (ψ[i+1,j] - 2ψ[i,j] + ψ[i-1,j]) / dZ²
 
     let c_center = -2.0 / dr2 - 2.0 / dz2;
-    let c_right = 1.0 / dr2 + inv_R / (2.0 * dr);
-    let c_left = 1.0 / dr2 - inv_R / (2.0 * dr);
+    let c_right = 1.0 / dr2 - inv_R / (2.0 * dr);
+    let c_left = 1.0 / dr2 + inv_R / (2.0 * dr);
     let c_up = 1.0 / dz2;
     let c_down = 1.0 / dz2;
 
@@ -103,8 +103,8 @@ fn calculate_residual(@builtin(global_invocation_id) gid: vec3<u32>) {
     let inv_R = 1.0 / max(R, 1e-6);
 
     let c_center = -2.0 / (dr * dr) - 2.0 / (dz * dz);
-    let c_right = 1.0 / (dr * dr) + inv_R / (2.0 * dr);
-    let c_left = 1.0 / (dr * dr) - inv_R / (2.0 * dr);
+    let c_right = 1.0 / (dr * dr) - inv_R / (2.0 * dr);
+    let c_left = 1.0 / (dr * dr) + inv_R / (2.0 * dr);
     let c_up = 1.0 / (dz * dz);
     let c_down = 1.0 / (dz * dz);
 

@@ -134,14 +134,14 @@
     {
       "id": "results_freegs_equilibrium_benchmark",
       "source_file": "RESULTS.md",
-      "source_pattern": "FreeGS Equilibrium Benchmark",
+      "source_pattern": "Equilibrium Parity",
       "evidence_files": [
         "artifacts/freegs_benchmark.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/freegs_benchmark.json",
-          "pattern": "\"mode\"\\s*:\\s*\"freegs\""
+          "pattern": "\"mode\"\\s*:\\s*\"(freegs|solovev_manufactured_source)\""
         },
         {
           "file": "artifacts/freegs_benchmark.json",

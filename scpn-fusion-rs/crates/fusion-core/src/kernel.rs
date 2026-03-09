@@ -70,8 +70,8 @@ fn sor_step_python(psi: &mut Array2<f64>, source: &Array2<f64>, grid: &Grid2D, o
                     continue;
                 }
                 let r = grid.rr[[iz, ir]].max(1e-10);
-                let a_e = 1.0 / dr2 + 1.0 / (2.0 * r * grid.dr);
-                let a_w = 1.0 / dr2 - 1.0 / (2.0 * r * grid.dr);
+                let a_e = 1.0 / dr2 - 1.0 / (2.0 * r * grid.dr);
+                let a_w = 1.0 / dr2 + 1.0 / (2.0 * r * grid.dr);
                 let gs_update = (a_e * psi[[iz, ir + 1]]
                     + a_w * psi[[iz, ir - 1]]
                     + a_ns * psi[[iz - 1, ir]]

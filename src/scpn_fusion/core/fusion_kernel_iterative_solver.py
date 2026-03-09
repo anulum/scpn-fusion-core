@@ -80,8 +80,8 @@ class FusionKernelIterativeSolverMixin:
         # Toroidal stencil coefficients (arrays over interior grid)
         R_int = self.RR[1:-1, 1:-1]
         R_safe = np.maximum(R_int, 1e-10)
-        a_E = 1.0 / dR2 + 1.0 / (2.0 * R_safe * self.dR)  # (NZ-2, NR-2)
-        a_W = 1.0 / dR2 - 1.0 / (2.0 * R_safe * self.dR)  # (NZ-2, NR-2)
+        a_E = 1.0 / dR2 - 1.0 / (2.0 * R_safe * self.dR)  # (NZ-2, NR-2)
+        a_W = 1.0 / dR2 + 1.0 / (2.0 * R_safe * self.dR)  # (NZ-2, NR-2)
         a_NS = 1.0 / dZ2  # scalar — same for north and south
         a_C = 2.0 / dR2 + 2.0 / dZ2  # scalar
 
@@ -195,8 +195,8 @@ class FusionKernelIterativeSolverMixin:
 
         R_int = R_grid[1:-1, 1:-1]
         R_safe = np.maximum(R_int, 1e-10)
-        a_E = 1.0 / dR2 + 1.0 / (2.0 * R_safe * dR)
-        a_W = 1.0 / dR2 - 1.0 / (2.0 * R_safe * dR)
+        a_E = 1.0 / dR2 - 1.0 / (2.0 * R_safe * dR)
+        a_W = 1.0 / dR2 + 1.0 / (2.0 * R_safe * dR)
         a_NS = 1.0 / dZ2
         a_C = 2.0 / dR2 + 2.0 / dZ2
 
