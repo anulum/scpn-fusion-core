@@ -1,7 +1,7 @@
 # SCPN Fusion Core — Real-Shot Validation Report
 
-- **Generated**: `2026-02-28T21:09:21.088944+00:00`
-- **Runtime**: `5.61s`
+- **Generated**: `2026-03-09T01:16:26.531417+00:00`
+- **Runtime**: `1.23s`
 - **Overall**: PASS
 
 ## 1. Equilibrium Validation
@@ -34,25 +34,29 @@
 ## 2. Transport Validation (ITPA)
 - Shots: 53
 - RMSE: 0.0969 s (37.4% relative)
-- Within 2-sigma: 74%
-- Uncertainty envelope: |rel error| p95=2.16, z-score p95=3.78, coverage 1sigma=38%
+- Within 2-sigma: 72%
+- Uncertainty envelope: |rel error| p95=2.16, z-score p95=3.79, coverage 1sigma=40%
 - **Status**: PASS
 
 ## 3. Disruption Prediction
 - Shots: 16 (6 disruptions, 10 safe)
 - Recall: 100%
+  (95% CI: 61% to 100%)
 - FPR: 0%
+  (95% CI: 0% to 28%)
 - **Status**: PASS
 - Calibration: `diiid-disruption-risk-calibration-v1` (threshold=0.50, bias_delta=-0.00)
+- Data source contract: manifest_found=True, raw_ingestion_ready=False, source_types=synthetic_diiid_like
 - Replay pipeline: sensor_preprocess=ON, actuator_lag=ON
   (mean |sensor delta|=3.368383, mean |actuator lag|=0.006291)
+- Sample adequacy: recall_samples_ok=False (n_disruptions>=30), fpr_samples_ok=False (n_safe>=100)
 
 ## 4. Dataset Coverage Gates
 | Dataset | Observed | Required Min | Status |
 |---------|----------|--------------|--------|
-| Equilibrium files | 18 | 12 | PASS |
-| Transport shots | 53 | 52 | PASS |
-| Disruption shots | 16 | 12 | PASS |
+| Equilibrium files | 18 | 0 | PASS |
+| Transport shots | 53 | 0 | PASS |
+| Disruption shots | 16 | 0 | PASS |
 - **Status**: PASS
 
 ## Summary
@@ -60,6 +64,6 @@
 | Lane | Status | Key Metric |
 |------|--------|------------|
 | Equilibrium | PASS | Psi NRMSE pass 67% |
-| Transport | PASS | 2-sigma 74% |
+| Transport | PASS | 2-sigma 72% |
 | Disruption | PASS | Recall 100%, FPR 0% |
 | Dataset Coverage | PASS | Eq=18, Tr=53, Dis=16 |

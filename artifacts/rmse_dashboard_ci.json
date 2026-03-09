@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-03-09T00:41:41.695633+00:00",
+  "generated_at_utc": "2026-03-09T01:18:56.599113+00:00",
   "confinement_itpa": {
     "count": 53,
     "tau_rmse_s": 0.09690193155298907,
@@ -530,7 +530,7 @@
         "psi_relative_l2": 0.8069833784393026,
         "sor_iterations": 540,
         "sor_residual": 5.453146989520263e-09,
-        "solve_time_ms": 475.21669999696314
+        "solve_time_ms": 326.10170007683337
       },
       {
         "file": "lmode_vh.geqdsk",
@@ -544,7 +544,7 @@
         "psi_relative_l2": 0.8263978274343944,
         "sor_iterations": 540,
         "sor_residual": 5.6169544571105234e-09,
-        "solve_time_ms": 370.5482999794185
+        "solve_time_ms": 455.78370010480285
       },
       {
         "file": "lmode_vv.geqdsk",
@@ -558,7 +558,7 @@
         "psi_relative_l2": 0.8303890978638094,
         "sor_iterations": 540,
         "sor_residual": 5.413955950217542e-09,
-        "solve_time_ms": 312.99140001647174
+        "solve_time_ms": 403.5885001067072
       },
       {
         "file": "sparc_1300.eqdsk",
@@ -572,7 +572,7 @@
         "psi_relative_l2": 0.8509447364688567,
         "sor_iterations": 480,
         "sor_residual": 5.7510764622792365e-09,
-        "solve_time_ms": 190.2968999929726
+        "solve_time_ms": 180.59609993360937
       },
       {
         "file": "sparc_1305.eqdsk",
@@ -586,7 +586,7 @@
         "psi_relative_l2": 0.7825707791480618,
         "sor_iterations": 500,
         "sor_residual": 5.1593521122050845e-09,
-        "solve_time_ms": 199.37129993923008
+        "solve_time_ms": 177.79370001517236
       },
       {
         "file": "sparc_1310.eqdsk",
@@ -600,7 +600,7 @@
         "psi_relative_l2": 0.7692139054655321,
         "sor_iterations": 500,
         "sor_residual": 7.298175563885678e-09,
-        "solve_time_ms": 176.42139992676675
+        "solve_time_ms": 262.818600051105
       },
       {
         "file": "sparc_1315.eqdsk",
@@ -614,7 +614,7 @@
         "psi_relative_l2": 0.7685456244580154,
         "sor_iterations": 500,
         "sor_residual": 7.029393567226094e-09,
-        "solve_time_ms": 173.8862998317927
+        "solve_time_ms": 170.02610000781715
       },
       {
         "file": "sparc_1349.eqdsk",
@@ -628,7 +628,7 @@
         "psi_relative_l2": 0.7915526869274138,
         "sor_iterations": 500,
         "sor_residual": 7.343626706735051e-09,
-        "solve_time_ms": 151.64839988574386
+        "solve_time_ms": 158.88069989159703
       }
     ]
   },
@@ -656,5 +656,5 @@
       }
     ]
   },
-  "runtime_seconds": 2.8475895000156015
+  "runtime_seconds": 3.0244289999827743
 }
