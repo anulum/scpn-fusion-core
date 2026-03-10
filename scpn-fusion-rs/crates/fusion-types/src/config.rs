@@ -186,7 +186,7 @@ mod tests {
             ReactorConfig::from_file(&config_path("src/scpn_fusion/core/default_config.json"))
                 .unwrap();
         assert_eq!(cfg.reactor_name, "SCPN-Standard-Model");
-        assert_eq!(cfg.grid_resolution, [65, 65]);
+        assert_eq!(cfg.grid_resolution, [129, 129]);
     }
 
     #[test]
