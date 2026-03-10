@@ -260,8 +260,8 @@ class EpedPedestalModel:
             v_te = np.sqrt(2.0 * T_J / (9.109e-31))
             # NRL Plasma Formulary ln_Lambda for typical H-mode pedestal
             _m_e = 9.109e-31
-            T_eV = T_ped * 1e3  # keV → eV
-            ln_lambda = max(17.7 + np.log(T_eV / 1e4) - 0.5 * np.log(n_e / 1e20), 10.0)
+            T_eV = max(T_ped, 0.01) * 1e3  # keV → eV, floor at 10 eV
+            ln_lambda = max(17.7 + np.log(T_eV / 1e4) - 0.5 * np.log(max(n_e, 1e10) / 1e20), 10.0)
             # NRL electron-ion collision frequency: Wesson Ch.14, Eq.(14.6.1)
             # nu_ei = n_e Z e^4 ln_L / (12 pi^{3/2} eps0^2 m_e^{1/2} T_e^{3/2})
             nu_ei = (n_e * self.Z_eff * _E_CHARGE**4 * ln_lambda) / \

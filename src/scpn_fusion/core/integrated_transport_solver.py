@@ -259,8 +259,8 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
 
     n_e = n_e_arr[valid] * 1e19
     # NRL Plasma Formulary: ln_Lambda = 17.7 + ln(T_keV/10) - 0.5*ln(n_e/1e20)
-    T_keV = T_i_arr[valid]
-    ln_lambda = np.clip(17.7 + np.log(T_keV / 10.0) - 0.5 * np.log(n_e / 1e20), 10.0, 25.0)
+    T_keV = np.maximum(T_i_arr[valid], 0.01)
+    ln_lambda = np.clip(17.7 + np.log(T_keV / 10.0) - 0.5 * np.log(np.maximum(n_e, 1e10) / 1e20), 10.0, 25.0)
     nu_ii = (n_e * z_eff ** 2 * e_charge ** 4 * ln_lambda
              / (12.0 * np.pi ** 1.5 * eps0 ** 2 * m_i ** 0.5 * T_J ** 1.5))
 
@@ -368,7 +368,7 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
     T_e_J = te_v * 1e3 * e_charge
     v_te = np.sqrt(2.0 * T_e_J / m_e)
     n_e = ne_v * 1e19
-    ln_lambda = np.clip(17.7 + np.log(te_v / 10.0) - 0.5 * np.log(n_e / 1e20), 10.0, 25.0)
+    ln_lambda = np.clip(17.7 + np.log(np.maximum(te_v, 0.01) / 10.0) - 0.5 * np.log(np.maximum(n_e, 1e10) / 1e20), 10.0, 25.0)
     nu_ei = n_e * z_eff * e_charge ** 4 * ln_lambda / (
         12.0 * np.pi ** 1.5 * eps0 ** 2 * m_e ** 0.5 * T_e_J ** 1.5
     )

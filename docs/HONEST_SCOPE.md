@@ -10,8 +10,8 @@ first-principles transport/gyrokinetic code.
 | Capability | Evidence |
 |-----------|---------|
 | Petri net → SNN compilation with formal verification | 37 hardening tasks, deterministic replay |
-| Sub-microsecond Rust control kernel (0.52 µs P50) and closed-loop latency (11.9 µs P50 / 23.9 µs P99) | `docs/PERFORMANCE_METRIC_TAXONOMY.md`, `validation/verify_10khz_rust.py`, Criterion benches |
-| QLKNN-10D real-gyrokinetic transport surrogate | test_rel_L2 = 0.201 (1024×512×256 gated MLP, 500K samples, GPU L40S), Zenodo DOI 10.5281/zenodo.3497066 |
+| Sub-microsecond Rust control kernel (0.52 µs P50) and closed-loop latency (23.8 µs P50 / 122 µs P99) | `docs/PERFORMANCE_METRIC_TAXONOMY.md`, `validation/verify_10khz_rust.py`, Criterion benches |
+| QLKNN-10D real-gyrokinetic transport surrogate | test_rel_L2 = 0.094 (1024×512×256 gated MLP, 500K samples, GPU L40S), Zenodo DOI 10.5281/zenodo.3497066 |
 | IPB98(y,2) confinement scaling on 53 shots / 24 machines | `validation/reference_data/itpa/hmode_confinement.csv` |
 | 8 SPARC EFIT GEQDSK equilibrium validation | `validation/reference_data/sparc/` (MIT, CFS) |
 | Solov'ev manufactured-source parity | **PASS** — ψ NRMSE 0.000 across 5 tokamak geometries (v3.9.4). 1/R stencil sign error fixed. |
@@ -48,8 +48,8 @@ first-principles transport/gyrokinetic code.
 | MLP ITPA confinement | Shipped | 13.5% RMSE on training set |
 | FNO EUROfusion-proxy | Retired (v3.9) | rel_L2 = 0.79 (synthetic only) |
 | Neural equilibrium (SPARC) | Shipped | PCA+MLP, 78 samples |
-| QLKNN-10D transport | Shipped | test_rel_L2 = 0.201 (GPU L40S, 500K samples, 1024×512×256) |
-| FNO turbulence (JAX) | Shipped | val_rel_L2 = 0.356 (4-layer FNO, modes=24, 2000 QLKNN-oracle equilibria) |
+| QLKNN-10D transport | Shipped | test_rel_L2 = 0.094 (GPU L40S, 500K samples, 1024×512×256) |
+| FNO turbulence (JAX) | Shipped | val_rel_L2 = 0.055 (4-layer FNO, modes=24, 2000 QLKNN-oracle equilibria) |
 | Heat ML shadow | Requires user training | No pretrained weights |
 | Gyro-Swin | Requires user training | No pretrained weights |
 | Turbulence oracle | Requires user training | No pretrained weights |

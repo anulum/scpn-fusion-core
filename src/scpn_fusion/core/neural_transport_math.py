@@ -50,10 +50,14 @@ def _mlp_forward(x: FloatArray, weights: Any) -> FloatArray:
 
     if weights.gb_scale:
         te = x[..., 1]
-        te_j = te * 1e3 * 1.602e-19
-        cs = np.sqrt(te_j / 3.344e-27)
-        rho_s = np.sqrt(3.344e-27 * te_j) / (1.602e-19 * 5.3)
-        chi_gb = rho_s ** 2 * cs / 6.2
+        _m_D = 3.344e-27  # deuterium mass [kg]
+        _e = 1.602e-19  # elementary charge [C]
+        _B0_SPARC = 5.3  # reference B0 [T], matched to QLKNN training
+        _R0_ITER = 6.2  # reference R0 [m], gyro-Bohm normalisation
+        te_j = te * 1e3 * _e
+        cs = np.sqrt(te_j / _m_D)
+        rho_s = np.sqrt(_m_D * te_j) / (_e * _B0_SPARC)
+        chi_gb = rho_s ** 2 * cs / _R0_ITER
         if chi_gb.ndim == 0:
             out = out * float(chi_gb)
         else:

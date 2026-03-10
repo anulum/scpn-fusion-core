@@ -76,7 +76,7 @@ git lfs pull
 
 Latency taxonomy:
 - `control.pid_kernel_step_us`: kernel-only Rust PID microbenchmark (`0.52 us P50`).
-- `control.closed_loop_step_us`: end-to-end closed-loop step (`11.9 us P50 / 23.9 us P99`).
+- `control.closed_loop_step_us`: end-to-end closed-loop step (`23.8 us P50 / 122 us P99`).
 - `control.hil_loop_us`: HIL loop lane in `RESULTS.md` (`10.5 us P50` latest report).
 - Full definitions: [`docs/PERFORMANCE_METRIC_TAXONOMY.md`](docs/PERFORMANCE_METRIC_TAXONOMY.md)
 
