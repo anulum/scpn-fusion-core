@@ -8,7 +8,7 @@
 
 | Case | In domain | Score | Penalty | Violations | Delta_ped | T_ped [keV] |
 |------|-----------|-------|---------|------------|-----------|-------------|
-| in_ref | YES | 0.000 | 1.000 | — | 0.0100 | 0.3954 |
+| in_ref | YES | 0.000 | 1.000 | — | 0.0197 | 0.7782 |
 | in_compact | YES | 0.000 | 1.000 | — | 0.1500 | 19.6591 |
 | out_density | NO | 0.429 | 0.850 | n_ped_1e19=22 outside [2, 16] 1e19 m^-3 | 0.0100 | 0.1438 |
 | out_temperature | NO | 0.513 | 0.821 | T_ped_guess_keV=12 outside [0.2, 8] keV | 0.0100 | 0.3514 |

@@ -258,11 +258,14 @@ class EpedPedestalModel:
 
             # Collisionality (electron-ion)
             v_te = np.sqrt(2.0 * T_J / (9.109e-31))
-            ln_lambda = 17.0
-            # nu_ei = (n_e * Z * e^4 * ln_L) / ( (4*pi*eps0)^2 * m_e^0.5 * (3*T_e)^1.5 )
-            # Using simpler thermal collision frequency form:
+            # NRL Plasma Formulary ln_Lambda for typical H-mode pedestal
+            _m_e = 9.109e-31
+            T_eV = T_ped * 1e3  # keV → eV
+            ln_lambda = max(17.7 + np.log(T_eV / 1e4) - 0.5 * np.log(n_e / 1e20), 10.0)
+            # NRL electron-ion collision frequency: Wesson Ch.14, Eq.(14.6.1)
+            # nu_ei = n_e Z e^4 ln_L / (12 pi^{3/2} eps0^2 m_e^{1/2} T_e^{3/2})
             nu_ei = (n_e * self.Z_eff * _E_CHARGE**4 * ln_lambda) / \
-                    (25.13 * _EPS0**2 * np.sqrt(9.109e-31) * T_J**1.5)
+                    (12.0 * np.pi**1.5 * _EPS0**2 * np.sqrt(_m_e) * T_J**1.5)
 
             # Safety factor at pedestal (≈ edge q)
             # Use cylindrical approximation with elongation

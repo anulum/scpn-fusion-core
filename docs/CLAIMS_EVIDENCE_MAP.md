@@ -44,7 +44,7 @@ Evidence pattern checks:
 ### `readme_rust_control_loop_latency_claim`
 
 - Source file: `README.md`
-- Source pattern: `Rust control-loop latency \| \*\*0\.52 us P50\*\*`
+- Source pattern: `Rust PID kernel latency \| \*\*0\.52 us P50\*\*`
 
 Evidence files:
 - `validation/reports/stress_test_campaign.json`
@@ -58,7 +58,7 @@ Evidence pattern checks:
 ### `readme_qlknn_transport_claim`
 
 - Source file: `README.md`
-- Source pattern: `QLKNN-10D transport surrogate \| test rel_L2 = 0\.201`
+- Source pattern: `QLKNN-10D transport surrogate \| test rel_L2 = \*\*0\.094\*\*`
 
 Evidence files:
 - `weights/neural_transport_qlknn.metrics.json`
@@ -72,7 +72,7 @@ Evidence pattern checks:
 ### `readme_zero_disruption_rust_pid_claim`
 
 - Source file: `README.md`
-- Source pattern: `Disruption rate \(1,000-shot campaign\) \| \*\*0%\*\* \(Rust-PID\)`
+- Source pattern: `Disruption rate \(1,000-shot sim campaign\) \| \*\*0%\*\* \(Rust-PID\)`
 
 Evidence files:
 - `validation/reports/stress_test_campaign.json`

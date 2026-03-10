@@ -177,15 +177,15 @@ class TestEvolveProfiles:
         solver.evolve_profiles(dt=0.01, P_aux=50.0)
         assert not np.allclose(solver.Ti, Ti_before, atol=1e-12)
 
-    def test_enforce_conservation_no_raise_small_dt(self, solver: TransportSolver) -> None:
-        """With small dt and reasonable params, enforce_conservation should not raise."""
-        # This is best-effort: small dt + moderate heating shouldn't violate conservation
-        try:
-            solver.evolve_profiles(dt=0.001, P_aux=20.0, enforce_conservation=True)
-        except PhysicsError:
-            # If the initial conditions are too far from equilibrium,
-            # conservation may be violated. This is acceptable.
-            pass
+    def test_enforce_conservation_reports_finite_error(self, solver: TransportSolver) -> None:
+        """Conservation tracking produces a finite diagnostic even if the
+        1% gate is violated on cold-start parabolic profiles."""
+        solver.evolve_profiles(dt=0.001, P_aux=20.0, enforce_conservation=False)
+        assert np.isfinite(solver._last_conservation_error)
+        assert solver._last_conservation_error < 1.0, \
+            f"Conservation error {solver._last_conservation_error:.2e} exceeds 100%"
+        assert np.all(np.isfinite(solver.Ti))
+        assert np.all(np.isfinite(solver.Te))
 
     def test_multiple_steps_trend(self, solver: TransportSolver) -> None:
         """With sustained heating, average temperature should change over time."""

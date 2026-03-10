@@ -69,9 +69,9 @@
         "extrapolation_score": 0.0,
         "extrapolation_penalty": 1.0,
         "domain_violations": [],
-        "Delta_ped": 0.01,
-        "T_ped_keV": 0.395356077598502,
-        "p_ped_kPa": 10.134884314211371
+        "Delta_ped": 0.01968270635601724,
+        "T_ped_keV": 0.778167758143808,
+        "p_ped_kPa": 19.948195190882757
       },
       {
         "case_id": "in_compact",

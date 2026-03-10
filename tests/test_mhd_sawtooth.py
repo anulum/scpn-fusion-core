@@ -66,7 +66,7 @@ def test_laplacian_quadratic_profile() -> None:
     lap = sim.laplacian(f, m=0)  # m=0 removes the -m^2/r^2 term
     # For m=0: lap = d^2f/dr^2 + (1/r)*df/dr = 2 + (1/r)*2r = 4
     interior = lap[5:-5]  # avoid boundaries and near-r=0
-    assert np.allclose(np.real(interior), 4.0, atol=0.5), \
+    assert np.allclose(np.real(interior), 4.0, atol=0.05), \
         f"Expected ~4 for Laplacian of r^2 with m=0, got {np.real(interior[:5])}"
 
 

@@ -109,7 +109,7 @@ class RWMResult:
     beta_N_crit_nowall: float
     beta_N_crit_wall: float
     stable: bool
-    mode_growth_rate: float # 1/tau_wall units
+    mode_growth_rate: float # dimensionless: gamma*tau_w ~ (beta-beta_nw)/(beta_w-beta)
 
 
 @dataclass
@@ -202,7 +202,7 @@ def compute_q_profile(
     dp_dr = dp_drho / a  # dp/dr [Pa/m]
 
     alpha_mhd = -2.0 * mu0 * R0 * q**2 / (B0**2) * dp_dr
-    alpha_mhd = np.maximum(alpha_mhd, 0.0)  # Physical: alpha >= 0
+    # Keep sign: negative alpha indicates second-stability-access regions
 
     q_min_idx = int(np.argmin(q))
     q_min = float(q[q_min_idx])
