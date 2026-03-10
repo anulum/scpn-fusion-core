@@ -1,5 +1,6 @@
 # Rust
 target/
+.tmp_cargo_target*/
 Cargo.lock
 !scpn-fusion-rs/Cargo.lock
 
@@ -55,6 +56,7 @@ benchmarks/results/
 !weights/fno_turbulence_jax.npz
 !weights/neural_transport_qlknn.npz
 !weights/neural_equilibrium_sparc.npz
+!weights/neural_transport_qlknn.npz
 !validation/reference_data/diiid/disruption_shots/*.npz
 
 # Streamlit
@@ -86,6 +88,17 @@ artifacts/release_delta_guard_summary.json
 artifacts/claim_range_guard_summary.json
 artifacts/sparc_geqdsk_rmse_benchmark.json
 artifacts/torax_benchmark.json
+artifacts/full_validation_pipeline_*.json
+artifacts/full_validation_pipeline_*.md
+artifacts/rmse_dashboard_*.json
+artifacts/rmse_dashboard_*.md
+artifacts/scpn_pid_mpc_*.json
+artifacts/scpn_pid_mpc_*.md
+artifacts/task*_*.json
+artifacts/task*_*.md
+artifacts/traceable_runtime_parity_*.json
+artifacts/traceable_runtime_parity_*.md
+artifacts/tmp_task*/
 
 # Local LaTeX build intermediates
 papers/*.aux
@@ -109,6 +122,9 @@ papers/*.tar.gz
 data/qlknn10d/
 data/qlknn10d_processed/
 data/fno_qlknn_spatial/
+
+# Local weight backups (not shipped)
+weights/*_original.*
 
 # Local audit scratch scripts/logs (machine-local only)
 deep_file_audit.py
