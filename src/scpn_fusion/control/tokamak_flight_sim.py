@@ -15,15 +15,12 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:
-    from scpn_fusion.core.fusion_kernel import FusionKernel
+from scpn_fusion.core.fusion_kernel import FusionKernel
 
 SHOT_DURATION = 50
-TARGET_R = 6.2     # Target Major Radius
-TARGET_Z = 0.0     # Target Vertical Position
-TARGET_ELONGATION = 1.7 
+DEFAULT_TARGET_R = 6.2
+DEFAULT_TARGET_Z = 0.0
+TARGET_ELONGATION = 1.7
 
 
 class FirstOrderActuator:
@@ -194,6 +191,10 @@ class IsoFluxController:
             u_max=heating_beta_max,
         )
 
+        target = self.kernel.cfg.get("target", {})
+        self.target_R = float(target.get("R_axis", DEFAULT_TARGET_R))
+        self.target_Z = float(target.get("Z_axis", DEFAULT_TARGET_Z))
+
     def _log(self, message: str) -> None:
         if self.verbose:
             logger.info(message)
@@ -236,33 +237,45 @@ class IsoFluxController:
         
         # Initial Solve
         self.kernel.solve_equilibrium()
-        
+
+        Ip_cfg = float(self.kernel.cfg["physics"]["plasma_current_target"])
+
         # Physics Evolution Loop
         for t in range(steps):
             time_s = t * self.control_dt_s
-            target_Ip = 5.0 + (10.0 * t / steps)  # 5 → 15 MA ramp
+            target_Ip = Ip_cfg * (0.98 + 0.02 * t / steps)
             physics_cfg = self.kernel.cfg.setdefault("physics", {})
             physics_cfg['plasma_current_target'] = target_Ip
 
             # Heating ramp — drives outward Shafranov shift
-            beta_cmd = 1.0 + (0.01 * t)
+            beta_cmd = 1.0 + (0.002 * t)
             beta_applied = self._act_heating.step(beta_cmd)
 
             physics_cfg['beta_scale'] = beta_applied
             
-            # Find current magnetic axis
-            if hasattr(self.kernel, "find_magnetic_axis"):
-                curr_R, curr_Z, _ = self.kernel.find_magnetic_axis()
-            else:
-                idx_max = np.argmax(self.kernel.Psi)
-                iz, ir = np.unravel_index(idx_max, self.kernel.Psi.shape)
-                curr_R = self.kernel.R[ir]
-                curr_Z = self.kernel.Z[iz]
+            # Find current magnetic axis (parabolic sub-grid interpolation)
+            idx_max = np.argmax(self.kernel.Psi)
+            iz, ir = np.unravel_index(idx_max, self.kernel.Psi.shape)
+            curr_R = float(self.kernel.R[ir])
+            curr_Z = float(self.kernel.Z[iz])
+            Psi = self.kernel.Psi
+            if 1 <= ir <= self.kernel.NR - 2:
+                a, b, c = Psi[iz, ir - 1], Psi[iz, ir], Psi[iz, ir + 1]
+                denom = 2.0 * (a - 2.0 * b + c)
+                if abs(denom) > 1e-30:
+                    dr = np.clip(-(c - a) / denom, -0.5, 0.5)
+                    curr_R += dr * self.kernel.dR
+            if 1 <= iz <= self.kernel.NZ - 2:
+                a, b, c = Psi[iz - 1, ir], Psi[iz, ir], Psi[iz + 1, ir]
+                denom = 2.0 * (a - 2.0 * b + c)
+                if abs(denom) > 1e-30:
+                    dz = np.clip(-(c - a) / denom, -0.5, 0.5)
+                    curr_Z += dz * self.kernel.dZ
             
             xp_pos, _ = self.kernel.find_x_point(self.kernel.Psi)
 
-            err_R = TARGET_R - curr_R
-            err_Z = TARGET_Z - curr_Z
+            err_R = self.target_R - curr_R
+            err_Z = self.target_Z - curr_Z
 
             ctrl_radial_cmd = self.pid_step(self.pid_R, err_R)
             ctrl_vertical_cmd = self.pid_step(self.pid_Z, err_Z)
@@ -276,7 +289,7 @@ class IsoFluxController:
             self._add_coil_current(2, ctrl_radial)       # PF3 radial correction
             self._add_coil_current(0, ctrl_vertical_top)   # top coil
             self._add_coil_current(4, ctrl_vertical_bottom) # bottom coil
-            
+
             self.kernel.solve_equilibrium()
 
             self.history['t'].append(t)
@@ -305,12 +318,12 @@ class IsoFluxController:
         final_axis_z = float(self.history['Z_axis'][-1]) if self.history['Z_axis'] else 0.0
         final_ip_ma = float(self.history['Ip'][-1]) if self.history['Ip'] else 0.0
         mean_abs_r_error = (
-            float(np.mean(np.abs(np.asarray(self.history['R_axis']) - TARGET_R)))
+            float(np.mean(np.abs(np.asarray(self.history['R_axis']) - self.target_R)))
             if self.history['R_axis']
             else 0.0
         )
         mean_abs_z_error = (
-            float(np.mean(np.abs(np.asarray(self.history['Z_axis']) - TARGET_Z)))
+            float(np.mean(np.abs(np.asarray(self.history['Z_axis']) - self.target_Z)))
             if self.history['Z_axis']
             else 0.0
         )
@@ -383,8 +396,8 @@ class IsoFluxController:
             ax1.plot(self.history['t'], self.history['R_axis'], 'b-', label='R Axis (Radial)')
             ax1.plot(self.history['t'], self.history['Z_axis'], 'r-', label='Z Axis (Vertical)')
 
-            ax1.axhline(TARGET_R, color='b', linestyle='--', alpha=0.5, label='Target R')
-            ax1.axhline(TARGET_Z, color='r', linestyle='--', alpha=0.5, label='Target Z')
+            ax1.axhline(self.target_R, color='b', linestyle='--', alpha=0.5, label='Target R')
+            ax1.axhline(self.target_Z, color='r', linestyle='--', alpha=0.5, label='Target Z')
 
             ax1.set_xlabel("Shot Time (a.u.)")
             ax1.set_ylabel("Position (m)")

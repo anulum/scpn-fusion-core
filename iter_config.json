@@ -4,25 +4,42 @@
     "dimensions": {
         "R_min": 2.0,
         "R_max": 10.0,
-        "Z_min": -6.0,
-        "Z_max": 6.0
+        "Z_min": -4.0,
+        "Z_max": 4.0
     },
     "physics": {
         "plasma_current_target": 15.0,
         "vacuum_permeability": 1.0
     },
+    "target": {
+        "R_axis": 5.9,
+        "Z_axis": -2.1
+    },
     "coils": [
-        { "name": "PF1", "r": 3.0, "z": 7.6, "current": 8.0 },
-        { "name": "PF2", "r": 8.2, "z": 6.7, "current": -1.3229 },
-        { "name": "PF3", "r": 12.0, "z": 2.7, "current": -3.0182 },
-        { "name": "PF4", "r": 12.6, "z": -2.3, "current": -2.9829 },
-        { "name": "PF5", "r": 8.4, "z": -6.7, "current": -1.3663 },
-        { "name": "PF6", "r": 4.3, "z": -7.6, "current": -0.3880 },
-        { "name": "CS",  "r": 1.7, "z": 0.0, "current": 0.1543 }
+        { "name": "PF1", "r": 3.5,  "z": 3.0,   "current": -1.0 },
+        { "name": "PF2", "r": 8.0,  "z": 3.0,   "current": 4.0 },
+        { "name": "PF3", "r": 9.5,  "z": 0.0,   "current": 6.0 },
+        { "name": "PF4", "r": 8.0,  "z": -3.0,  "current": 4.0 },
+        { "name": "PF5", "r": 3.5,  "z": -3.0,  "current": -1.0 },
+        { "name": "PF6", "r": 9.5,  "z": 3.0,   "current": 3.0 },
+        { "name": "CS",  "r": 2.1,  "z": 0.0,   "current": 0.0 }
     ],
     "solver": {
-        "max_iterations": 1000,
+        "max_iterations": 500,
         "convergence_threshold": 0.0001,
         "relaxation_factor": 0.1
+    },
+    "_reference": {
+        "paper": "ITER Research Plan, ITER Organisation (2018)",
+        "R_major_m": 6.2,
+        "a_minor_m": 2.0,
+        "B_T": 5.3,
+        "Ip_MA": 15.0,
+        "kappa": 1.7,
+        "delta": 0.33,
+        "q95": 3.0,
+        "Q_target": 10.0,
+        "P_fusion_MW": 500,
+        "note": "Coil positions/currents tuned for GS solver equilibrium near R=6.2m; square grid (dR=dZ) avoids Jacobi stencil anisotropy"
     }
 }

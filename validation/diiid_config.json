@@ -11,6 +11,10 @@
         "plasma_current_target": 1.6,
         "vacuum_permeability": 1.0
     },
+    "target": {
+        "R_axis": 1.67,
+        "Z_axis": 0.0
+    },
     "coils": [
         {"name": "OH",   "r": 0.42,  "z": 0.0,   "current": -4.0},
         {"name": "F1A",  "r": 0.86,  "z": 1.01,  "current": 2.0},
