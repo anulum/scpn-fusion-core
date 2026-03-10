@@ -119,7 +119,8 @@ pub fn chang_hinton_chi(
     let rho_i = m_i * v_ti / (NC_ELEM_CHARGE * params.b_toroidal);
 
     // NRL Plasma Formulary: ln Λ = 17.7 + ln(T_keV/10) − 0.5 ln(n_e/1e20)
-    let ln_lambda = (17.7 + (t_i_kev.max(0.01) / 10.0).ln() - 0.5 * (n_e / 1e20).ln()).clamp(10.0, 25.0);
+    let ln_lambda =
+        (17.7 + (t_i_kev.max(0.01) / 10.0).ln() - 0.5 * (n_e / 1e20).ln()).clamp(10.0, 25.0);
     let eps0 = 8.854_187_812_8e-12;
     let e4 = NC_ELEM_CHARGE.powi(4);
     let nu_ii = n_e * params.z_eff * params.z_eff * e4 * ln_lambda
@@ -247,7 +248,8 @@ pub fn sauter_bootstrap_current_profile(
 
         let n_e = ne19 * 1e19;
         // NRL Plasma Formulary: ln Λ = 17.7 + ln(T_keV/10) − 0.5 ln(n_e/1e20)
-        let ln_lambda = (17.7 + (te.max(0.01) / 10.0).ln() - 0.5 * (n_e / 1e20).ln()).clamp(10.0, 25.0);
+        let ln_lambda =
+            (17.7 + (te.max(0.01) / 10.0).ln() - 0.5 * (n_e / 1e20).ln()).clamp(10.0, 25.0);
         let nu_ei = n_e * z_eff * e_charge.powi(4) * ln_lambda
             / (12.0 * std::f64::consts::PI.powf(1.5) * eps0.powi(2) * m_e.sqrt() * t_e_j.powf(1.5));
         if !nu_ei.is_finite() || nu_ei <= 0.0 {
