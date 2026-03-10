@@ -38,7 +38,9 @@ Comparison of SCPN Fusion Core against established fusion simulation codes.
 | Compact reactor optimizer | MVR-0.96 | No | Yes (DEMO) | No |
 | GEQDSK I/O | Read + validate | No | No | Read + write |
 | Rust acceleration | Native (10 crates) | No | JAX/XLA | No |
-| GPU support | Roadmap (wgpu) | Yes (JAX) | No | No |
+| GPU support | Yes (JAX XLA + wgpu) | Yes (JAX) | No | No |
+| Autodifferentiation | Yes (JAX GS solver) | Yes (JAX) | No | No |
+| RL environment | Yes (Gymnasium) | Gym-TORAX | No | No |
 | Research validation (opt-in) | SPARC, ITPA, JET | DIII-D | ITER, DEMO | JET |
 
 ## Validation Accuracy

@@ -186,8 +186,8 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool
     steps = int(shot_duration / dt)
     ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
 
-    hinf_R = get_flight_sim_controller(response_gain=0.05, actuator_tau=0.06)
-    hinf_Z = get_flight_sim_controller(response_gain=0.02, actuator_tau=0.06)
+    hinf_R = get_flight_sim_controller(response_gain=1.0, actuator_tau=0.06)
+    hinf_Z = get_flight_sim_controller(response_gain=0.1, actuator_tau=0.06)
 
     pid_R_id = id(ctrl.pid_R)
 

@@ -22,16 +22,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from scpn_fusion.control.tokamak_flight_sim import (
-    IsoFluxController,
-    TARGET_R,
-    TARGET_Z,
-)
-
-try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:
-    from scpn_fusion.core.fusion_kernel import FusionKernel
+from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
 
 logger = logging.getLogger(__name__)
 
@@ -107,8 +98,8 @@ class TokamakEnv(gym.Env):
         ip = float(physics_cfg.get("plasma_current_target", 5.0))
         beta = float(physics_cfg.get("beta_scale", 1.0))
 
-        err_r = float(TARGET_R - curr_R)
-        err_z = float(TARGET_Z - curr_Z)
+        err_r = float(self.controller.target_R - curr_R)
+        err_z = float(self.controller.target_Z - curr_Z)
 
         return np.array([
             curr_R, curr_Z, ip, beta,

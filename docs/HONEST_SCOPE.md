@@ -16,6 +16,9 @@ first-principles transport/gyrokinetic code.
 | 8 SPARC EFIT GEQDSK equilibrium validation | `validation/reference_data/sparc/` (MIT, CFS) |
 | Solov'ev manufactured-source parity | **PASS** — ψ NRMSE 0.000 across 5 tokamak geometries (v3.9.4). 1/R stencil sign error fixed. |
 | 0% disruption rate across 1,000-shot stress campaigns | `validation/stress_test_campaign.py` |
+| JAX-differentiable GS equilibrium (autodiff through Picard+SOR) | `core/jax_equilibrium_solver.py`, 9 tests |
+| Gymnasium RL environment for controller training | `control/gym_tokamak_env.py`, Stable-Baselines3/RLlib compatible |
+| GPU-accelerated equilibrium via JAX XLA + wgpu compute shader | Auto-targets GPU when available; `fusion-gpu/gs_solver.wgsl` |
 | Graceful degradation (no Rust / no GPU / no SC-NeuroCore) | Every module has a pure-Python fallback |
 
 ## What it does not do

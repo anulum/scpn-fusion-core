@@ -75,8 +75,9 @@
 | Neutronics / TBR | Yes (1-D slab) | No | Yes | No | Yes | No |
 | **Digital twin (real-time)** | **Yes** | No | No | No | No | No |
 | **Rust native backend** | **Yes (10 crates)** | No | No | No | No | No |
-| GPU acceleration | Roadmap (wgpu) | Yes (JAX) | No | No | JAX | No |
-| Autodifferentiation | No | **Yes (JAX)** | No | No | **Yes (Julia)** | No |
+| GPU acceleration | **Yes (JAX XLA + wgpu shader)** | Yes (JAX) | No | No | JAX | No |
+| Autodifferentiation | **Yes (JAX)** | **Yes (JAX)** | No | No | **Yes (Julia)** | No |
+| **RL environment (Gymnasium)** | **Yes** | Gym-TORAX | No | No | No | No |
 | Compact reactor optimizer | Yes | No | Yes (DEMO) | No | Yes | No |
 | GEQDSK I/O | Read + validate | No | No | Read + write | Yes | No |
 | Research validation (opt-in) | SPARC, ITPA, JET | DIII-D | ITER, DEMO | JET | DIII-D | ITER |
@@ -85,11 +86,17 @@
 
 | Weakness | Detail | Who Does It Better |
 |----------|--------|-------------------|
-| No autodiff | Cannot do gradient-based plasma scenario optimisation | TORAX (JAX), FUSE (Julia) |
-| No GPU equilibrium | P-EFIT achieves <1 ms on GPU; SCPN is CPU-only | P-EFIT |
 | QLKNN accuracy gap | test_rel_L2=0.094 vs TORAX's ~15% (deeper net, more data) | TORAX, FUSE |
-| No RL integration | No Gym environment for controller training | Gym-TORAX |
 | Smaller community | Single-team vs DeepMind / General Atomics resources | TORAX, FUSE |
+| Validation mostly synthetic | Real data: 8 SPARC GEQDSKs + 53 ITPA; DIII-D disruption shots template-generated | TORAX, FUSE |
+
+### Previously Listed Gaps — Now Closed
+
+| Former Weakness | Resolution | Module |
+|----------------|-----------|--------|
+| No autodiff | JAX-differentiable GS equilibrium solver with ``jax.grad`` through Picard+SOR | `core/jax_equilibrium_solver.py` |
+| No GPU equilibrium | JAX solver auto-targets GPU via XLA; wgpu compute shader for Rust path | `core/jax_equilibrium_solver.py`, `fusion-gpu/gs_solver.wgsl` |
+| No RL integration | Gymnasium v0.29+ compliant `TokamakEnv` with SB3/RLlib support | `control/gym_tokamak_env.py` |
 
 ## 6. SCPN Unique Position
 
@@ -107,6 +114,15 @@
 4. **Full-stack breadth** -- neutronics, transport, equilibrium, control,
    disruption mitigation in one codebase. FUSE comes closest but lacks the
    real-time control pipeline.
+
+5. **JAX-differentiable equilibrium** -- ``jax.grad`` through the full
+   Grad-Shafranov Picard+SOR solve enables gradient-based coil optimization
+   and end-to-end differentiable control. Matches TORAX/FUSE autodiff
+   capability while retaining the Rust real-time path.
+
+6. **Gymnasium RL environment** -- standard ``TokamakEnv`` wrapping the
+   flight simulator, compatible with Stable-Baselines3, Ray RLlib, and
+   other Gymnasium-compatible RL libraries.
 
 ## References
 
