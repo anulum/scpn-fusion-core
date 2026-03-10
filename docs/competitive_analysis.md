@@ -66,7 +66,7 @@
 | Feature | SCPN | TORAX | PROCESS | FREEGS | FUSE | DREAM |
 |---------|------|-------|---------|--------|------|-------|
 | GS Equilibrium | Yes (multigrid) | Yes (spectral) | No | Yes (Picard) | Yes | No |
-| Free-boundary solve | Yes | Partial | No | Yes | Yes | No |
+| Free-boundary solve | **Yes (Green's function + coil opt)** | Partial | No | Yes | Yes | No |
 | Transport solver | 1.5D coupled | 1D flux-driven | 0D | No | 1D | 0--1D |
 | **Neuro-symbolic SNN** | **Yes** | No | No | No | No | No |
 | **Disruption prediction (ML)** | **Yes** | No | No | No | No | N/A |

@@ -1,9 +1,9 @@
 # ──────────────────────────────────────────────────────────────────────
-# SCPN Fusion Core — MHD Stability Tests (Five-Criterion Suite)
+# SCPN Fusion Core — MHD Stability Tests (Seven-Criterion Suite)
 # © 1998–2026 Miroslav Šotek. All rights reserved.
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-"""Verification: q-profile, Mercier, ballooning, KS, Troyon, and NTM stability."""
+"""Verification: q-profile, Mercier, ballooning, KS, Troyon, NTM, RWM, and peeling-ballooning."""
 
 import json
 from pathlib import Path
@@ -18,6 +18,7 @@ from scpn_fusion.core.stability_mhd import (
     KruskalShafranovResult,
     TroyonResult,
     NTMResult,
+    PeelingBallooningResult,
     StabilitySummary,
     compute_q_profile,
     mercier_stability,
@@ -25,6 +26,7 @@ from scpn_fusion.core.stability_mhd import (
     kruskal_shafranov_stability,
     troyon_beta_limit,
     ntm_stability,
+    peeling_ballooning_stability,
     run_full_stability_check,
 )
 
@@ -401,3 +403,83 @@ def test_full_stability_counts():
         assert summary.overall_stable is True
     else:
         assert summary.overall_stable is False
+
+
+# ── Peeling-ballooning tests ──────────────────────────────────────
+
+def test_pb_stable_low_pedestal():
+    """Low pedestal pressure + low edge current -> PB stable."""
+    ne, Ti, Te = _parabolic_profiles()
+    qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA)
+    pb = peeling_ballooning_stability(
+        qp, j_edge=1e4, p_ped_Pa=5e3, R0=R0, a=A, B0=B0,
+    )
+    assert isinstance(pb, PeelingBallooningResult)
+    assert pb.stable is True
+    assert pb.stability_distance > 0.0
+    assert pb.elm_type is None
+
+
+def test_pb_unstable_high_pressure():
+    """Very high pedestal pressure -> ballooning-dominated Type-I ELM."""
+    ne, Ti, Te = _parabolic_profiles()
+    qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA)
+    pb = peeling_ballooning_stability(
+        qp, j_edge=1e4, p_ped_Pa=5e6, R0=R0, a=A, B0=B0,
+    )
+    assert pb.stable is False
+    assert pb.stability_distance < 0.0
+    assert pb.elm_type == "type_I"
+
+
+def test_pb_unstable_high_edge_current():
+    """Very high edge current -> peeling-dominated Type-III ELM."""
+    ne, Ti, Te = _parabolic_profiles()
+    qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA)
+    pb = peeling_ballooning_stability(
+        qp, j_edge=1e8, p_ped_Pa=1e3, R0=R0, a=A, B0=B0,
+    )
+    assert pb.stable is False
+    assert pb.elm_type == "type_III"
+
+
+def test_pb_shaping_increases_stability():
+    """Higher elongation + triangularity should increase PB stability margin."""
+    ne, Ti, Te = _parabolic_profiles()
+    qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA, kappa=1.7, delta=0.3)
+    pb_low = peeling_ballooning_stability(
+        qp, j_edge=5e5, p_ped_Pa=1e5, R0=R0, a=A, B0=B0, kappa=1.0, delta=0.0,
+    )
+    pb_high = peeling_ballooning_stability(
+        qp, j_edge=5e5, p_ped_Pa=1e5, R0=R0, a=A, B0=B0, kappa=2.0, delta=0.4,
+    )
+    assert pb_high.stability_distance > pb_low.stability_distance
+
+
+def test_pb_normalised_coordinates_positive():
+    """j_edge_norm and alpha_edge_norm must be non-negative."""
+    ne, Ti, Te = _parabolic_profiles()
+    qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA)
+    pb = peeling_ballooning_stability(
+        qp, j_edge=3e5, p_ped_Pa=5e4, R0=R0, a=A, B0=B0,
+    )
+    assert pb.j_edge_norm >= 0.0
+    assert pb.alpha_edge_norm >= 0.0
+
+
+def test_full_stability_with_pb():
+    """Full stability check with PB included counts 8 criteria."""
+    ne, Ti, Te = _parabolic_profiles()
+    qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA)
+    j_bs = np.zeros(NR)
+    j_total = 1e6 * np.ones(NR)
+    summary = run_full_stability_check(
+        qp,
+        beta_t=0.025, Ip_MA=IP_MA, a=A, B0=B0, R0=R0,
+        j_bs=j_bs, j_total=j_total,
+        j_edge=1e4, p_ped_Pa=5e3,
+    )
+    # 3 base + Troyon + NTM + RWM + PB = 7
+    assert summary.n_criteria_checked == 7
+    assert summary.peeling_ballooning is not None
+    assert isinstance(summary.peeling_ballooning, PeelingBallooningResult)

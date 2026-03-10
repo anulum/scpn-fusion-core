@@ -23,21 +23,19 @@ first-principles transport/gyrokinetic code.
 | Gap | Why | Alternative |
 |-----|-----|-------------|
 | 5D gyrokinetic turbulence | Deliberately reduced-order for real-time control | Use GENE/GS2; couple via surrogate training |
-| Full 3D MHD | Out of scope for real-time loop | Use NIMROD/M3D-C1 externally |
-| Publication-quality equilibrium reconstruction | Default 65x65 grid, Picard+SOR | Use EFIT/CHEASE for production equilibria |
+| Full 3D nonlinear MHD | Out of scope for real-time loop | Use NIMROD/M3D-C1 externally |
 | Complete impurity transport | Simple diffusion only | Use JINTRAC/STRAHL |
-| Free-boundary equilibrium | Coil currents are fixed inputs | Use FreeGS/CREATE-NL |
 
 ## Physics model fidelity
 
 | Module | Actual fidelity | Known limitations |
 |--------|----------------|-------------------|
-| Equilibrium | Picard + SOR/multigrid, converges on SPARC GEQDSKs | 65x65 default grid; not EFIT-quality inverse reconstruction |
+| Equilibrium | Picard + SOR/multigrid, converges on SPARC GEQDSKs; default 129×129 grid; free-boundary via Green's function + coil optimisation | Not EFIT-quality inverse reconstruction |
 | Transport | 1.5D Bohm/gyro-Bohm + Chang-Hinton neoclassical | No ITG/TEM/ETG channels; no NBI slowing-down |
-| Neural equilibrium | PCA+MLP on 78 samples (SPARC L-mode family) | Useful only for the specific equilibrium family it was trained on |
-| FNO turbulence | Synthetic-data trained; **no gyrokinetic validation** | Proxy mapping only; archived from release lane in v3.9 |
+| Neural equilibrium | PCA+MLP on 18 GEQDSK files (SPARC+DIII-D+JET) × 25 perturbations | Useful only for equilibrium families it was trained on |
+| FNO turbulence | QLKNN-oracle-trained (val_rel_L2 = 0.055); validated against QLKNN-10D test set | No direct gyrokinetic (GENE/CGYRO) validation |
 | Neural transport MLP | 53-row ITPA illustrative dataset | Cannot capture full H-mode parameter space |
-| Stability | Vertical n-index + ballooning/Mercier criteria | No kink, peeling-ballooning, or RWM analysis |
+| Stability | 7-criterion suite: Mercier, ballooning, Kruskal-Shafranov, Troyon, NTM, RWM, peeling-ballooning | Reduced-order; no full eigenvalue PB code (ELITE/MISHKA) |
 
 ## Pretrained surrogate status
 

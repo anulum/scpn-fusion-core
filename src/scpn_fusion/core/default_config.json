@@ -1,6 +1,6 @@
 {
     "reactor_name": "SCPN-Standard-Model",
-    "grid_resolution": [65, 65],
+    "grid_resolution": [129, 129],
     "dimensions": {
         "R_min": 2.0,
         "R_max": 10.0,

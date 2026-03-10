@@ -6,13 +6,15 @@
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 """
-MHD stability analysis suite — five criteria:
+MHD stability analysis suite — seven criteria:
 
 1. **Mercier** — interchange stability (D_M >= 0)
 2. **Ballooning** — first-stability boundary (Connor-Hastie-Taylor)
 3. **Kruskal-Shafranov** — external kink (q_edge > 1)
 4. **Troyon** — normalised beta limit (beta_N < g)
 5. **NTM** — neoclassical tearing mode seeding threshold
+6. **RWM** — resistive wall mode (beta_N between no-wall and ideal-wall limits)
+7. **Peeling-ballooning** — coupled pedestal stability (ELM boundary)
 
 References
 ----------
@@ -21,6 +23,8 @@ References
 - Kruskal & Schwarzschild, Proc. R. Soc. Lond. A 223:348 (1954)
 - Troyon et al., Plasma Phys. Control. Fusion 26:209 (1984)
 - La Haye, Phys. Plasmas 13:055501 (2006)
+- Snyder et al., Phys. Plasmas 9:2037 (2002)
+- Snyder et al., Nucl. Fusion 51:103016 (2011)
 """
 
 from __future__ import annotations
@@ -113,6 +117,20 @@ class RWMResult:
 
 
 @dataclass
+class PeelingBallooningResult:
+    """Coupled peeling-ballooning stability at the H-mode pedestal.
+
+    Snyder et al., Phys. Plasmas 9:2037 (2002); Nucl. Fusion 51:103016 (2011).
+    """
+
+    j_edge_norm: float       # j_edge / j_crit (peeling drive)
+    alpha_edge_norm: float   # alpha / alpha_crit (ballooning drive)
+    stability_distance: float  # distance from PB boundary (>0 = stable)
+    stable: bool
+    elm_type: str | None     # "type_I", "type_III", or None
+
+
+@dataclass
 class StabilitySummary:
     """Combined result from all MHD stability criteria."""
 
@@ -122,6 +140,7 @@ class StabilitySummary:
     troyon: TroyonResult | None
     ntm: NTMResult | None
     rwm: RWMResult | None
+    peeling_ballooning: PeelingBallooningResult | None
     n_criteria_checked: int
     n_criteria_stable: int
     overall_stable: bool
@@ -520,7 +539,112 @@ def rwm_stability(
     )
 
 
-# ── Full stability check (all 5 criteria) ──────────────────────────
+# ── Peeling-ballooning stability ──────────────────────────────────
+
+def peeling_ballooning_stability(
+    qp: QProfile,
+    j_edge: float,
+    p_ped_Pa: float,
+    R0: float,
+    a: float,
+    B0: float,
+    kappa: float = 1.7,
+    delta: float = 0.3,
+) -> PeelingBallooningResult:
+    r"""Coupled peeling-ballooning stability for H-mode pedestal.
+
+    The instability boundary in normalised (j, alpha) space is approximately
+    elliptical with shaping corrections:
+
+    .. math::
+        \left(\frac{j_\parallel}{j_{\rm crit}}\right)^2
+        + \left(\frac{\alpha}{\alpha_{\rm crit}}\right)^2 = 1
+
+    The peeling critical current follows from the external kink condition
+    (Snyder et al. 2002, Eq. 12):
+
+    .. math::
+        j_{\rm crit} = \frac{2 B_\theta}{\mu_0 q_{95}^2 R_0}
+        \cdot f_{\rm shape}(\kappa, \delta)
+
+    Parameters
+    ----------
+    qp : QProfile — pre-computed safety-factor profile
+    j_edge : float — edge parallel current density [A/m^2]
+    p_ped_Pa : float — pedestal-top pressure [Pa]
+    R0 : float — major radius [m]
+    a : float — minor radius [m]
+    B0 : float — toroidal field on axis [T]
+    kappa : float — elongation (default 1.7)
+    delta : float — triangularity (default 0.3)
+
+    Returns
+    -------
+    PeelingBallooningResult
+
+    References
+    ----------
+    Snyder et al., Phys. Plasmas 9:2037 (2002)
+    Snyder et al., Nucl. Fusion 51:103016 (2011)
+    """
+    mu0 = 4.0 * np.pi * 1e-7
+    q_edge = max(qp.q_edge, 1.01)
+
+    # Shaping factor: elongation + triangularity increase j_crit
+    # Fit from Snyder 2002 Fig. 5 + Snyder 2011 EPED calibration
+    f_shape = (1.0 + 0.5 * (kappa - 1.0)) * (1.0 + 0.8 * delta)
+
+    # Poloidal field at pedestal
+    Ip_approx = 2.0 * np.pi * a * B0 / (mu0 * q_edge * R0)
+    B_pol = mu0 * Ip_approx / (2.0 * np.pi * a * np.sqrt((1.0 + kappa**2) / 2.0))
+
+    # Peeling critical current density: external kink onset
+    j_crit = 2.0 * B_pol * f_shape / (mu0 * q_edge**2 * R0)
+    j_crit = max(j_crit, 1e-6)
+
+    # Ballooning critical alpha (Connor-Hastie-Taylor with shaping)
+    s_edge = float(qp.shear[-1]) if len(qp.shear) > 0 else 2.0
+    s_edge = max(s_edge, 0.1)
+    if s_edge < 1.0:
+        alpha_crit_base = s_edge * (1.0 - s_edge / 2.0)
+    else:
+        alpha_crit_base = 0.6 * s_edge
+    alpha_crit = max(alpha_crit_base * (1.0 + 0.3 * (kappa - 1.0)), 0.01)
+
+    # Pedestal alpha_MHD: alpha = -2 mu0 R0 q^2 / B0^2 * dp/dr
+    # Approximate dp/dr ~ p_ped / (Delta_ped * a) with Delta_ped ~ 0.05
+    Delta_ped = 0.05
+    dp_dr = p_ped_Pa / max(Delta_ped * a, 1e-3)
+    alpha_ped = 2.0 * mu0 * R0 * q_edge**2 / (B0**2) * dp_dr
+
+    # Normalised coordinates
+    j_norm = abs(j_edge) / j_crit
+    alpha_norm = alpha_ped / alpha_crit
+
+    # Coupled PB boundary: elliptical in (j_norm, alpha_norm)
+    # Distance from boundary: 1 - sqrt(j^2 + alpha^2)
+    pb_radius = float(np.sqrt(j_norm**2 + alpha_norm**2))
+    stability_distance = 1.0 - pb_radius
+    stable = stability_distance > 0.0
+
+    # ELM type classification
+    elm_type: str | None = None
+    if not stable:
+        if alpha_norm > j_norm:
+            elm_type = "type_I"   # ballooning-dominated (large ELMs)
+        else:
+            elm_type = "type_III"  # peeling-dominated (small, frequent ELMs)
+
+    return PeelingBallooningResult(
+        j_edge_norm=float(j_norm),
+        alpha_edge_norm=float(alpha_norm),
+        stability_distance=float(stability_distance),
+        stable=stable,
+        elm_type=elm_type,
+    )
+
+
+# ── Full stability check (all 7 criteria) ──────────────────────────
 
 def run_full_stability_check(
     qp: QProfile,
@@ -528,14 +652,20 @@ def run_full_stability_check(
     Ip_MA: float | None = None,
     a: float | None = None,
     B0: float | None = None,
+    R0: float | None = None,
     j_bs: NDArray[np.float64] | None = None,
     j_total: NDArray[np.float64] | None = None,
+    j_edge: float | None = None,
+    p_ped_Pa: float | None = None,
+    kappa: float = 1.7,
+    delta: float = 0.3,
 ) -> StabilitySummary:
     """Run all available MHD stability criteria and return a summary.
 
     Mercier, ballooning, and Kruskal-Shafranov are always evaluated.
     Troyon requires ``beta_t``, ``Ip_MA``, ``a``, and ``B0``.
     NTM requires ``j_bs``, ``j_total``, and ``a``.
+    Peeling-ballooning requires ``j_edge``, ``p_ped_Pa``, ``R0``, ``a``, ``B0``.
 
     Parameters
     ----------
@@ -544,8 +674,13 @@ def run_full_stability_check(
     Ip_MA : float, optional — plasma current [MA]
     a : float, optional — minor radius [m]
     B0 : float, optional — toroidal field on axis [T]
+    R0 : float, optional — major radius [m]
     j_bs : array, optional — bootstrap current density [A/m^2]
     j_total : array, optional — total current density [A/m^2]
+    j_edge : float, optional — edge parallel current density [A/m^2]
+    p_ped_Pa : float, optional — pedestal-top pressure [Pa]
+    kappa : float — elongation (default 1.7)
+    delta : float — triangularity (default 0.3)
 
     Returns
     -------
@@ -558,17 +693,14 @@ def run_full_stability_check(
     n_checked = 3
     n_stable = 0
 
-    # Mercier: stable if no unstable point found (past the axis)
     mercier_ok = mr.first_unstable_rho is None
     if mercier_ok:
         n_stable += 1
 
-    # Ballooning: stable if all points are stable
     ballooning_ok = bool(np.all(br.stable))
     if ballooning_ok:
         n_stable += 1
 
-    # KS: direct boolean
     if ks.stable:
         n_stable += 1
 
@@ -593,6 +725,15 @@ def run_full_stability_check(
         if rwm_result.stable:
             n_stable += 1
 
+    pb_result: PeelingBallooningResult | None = None
+    if j_edge is not None and p_ped_Pa is not None and R0 is not None and a is not None and B0 is not None:
+        pb_result = peeling_ballooning_stability(
+            qp, j_edge, p_ped_Pa, R0, a, B0, kappa=kappa, delta=delta,
+        )
+        n_checked += 1
+        if pb_result.stable:
+            n_stable += 1
+
     overall = n_stable == n_checked
 
     return StabilitySummary(
@@ -602,6 +743,7 @@ def run_full_stability_check(
         troyon=troyon_result,
         ntm=ntm_result,
         rwm=rwm_result,
+        peeling_ballooning=pb_result,
         n_criteria_checked=n_checked,
         n_criteria_stable=n_stable,
         overall_stable=overall,
