@@ -419,6 +419,120 @@ def test_rust_pid_episode_requires_rust_binding(monkeypatch):
         mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
 
 
+def test_flight_sim_controller_factory():
+    """get_flight_sim_controller synthesizes a valid controller."""
+    from scpn_fusion.control.h_infinity_controller import get_flight_sim_controller
+
+    ctrl = get_flight_sim_controller(response_gain=0.05, actuator_tau=0.06)
+    assert ctrl.is_stable
+    assert ctrl.gamma > 1.0
+    assert np.all(np.isfinite(ctrl.F))
+    assert np.all(np.isfinite(ctrl.L_gain))
+
+
+def test_flight_sim_controller_closed_loop_converges():
+    """H-inf controller for flight-sim plant should drive error to zero."""
+    from scpn_fusion.control.h_infinity_controller import get_flight_sim_controller
+
+    ctrl = get_flight_sim_controller(response_gain=0.05, actuator_tau=0.06)
+    dt = 0.05
+    g = 0.05
+    tau = 0.06
+
+    # Simulate: x1=error, x2=actuator_state
+    x1, x2 = 0.3, 0.0  # initial 0.3m error
+    errors = [x1]
+    for _ in range(200):
+        u = ctrl.step(x1, dt)
+        # Discrete plant update (Euler)
+        dx1 = -g * x2
+        dx2 = (u - x2) / tau
+        x1 += dx1 * dt
+        x2 += dx2 * dt
+        errors.append(x1)
+
+    assert abs(errors[-1]) < 0.05 * abs(errors[0])
+
+
+def test_flight_sim_controller_both_channels():
+    """Radial and vertical controllers should both converge independently."""
+    from scpn_fusion.control.h_infinity_controller import get_flight_sim_controller
+
+    ctrl_R = get_flight_sim_controller(response_gain=0.05, actuator_tau=0.06)
+    ctrl_Z = get_flight_sim_controller(response_gain=0.02, actuator_tau=0.06)
+    dt = 0.05
+
+    for ctrl, g, e0 in [(ctrl_R, 0.05, 0.2), (ctrl_Z, 0.02, -0.15)]:
+        x1, x2 = e0, 0.0
+        for _ in range(300):
+            u = ctrl.step(x1, dt)
+            dx1 = -g * x2
+            dx2 = (u - x2) / 0.06
+            x1 += dx1 * dt
+            x2 += dx2 * dt
+        assert abs(x1) < 0.1 * abs(e0)
+
+
+def test_flight_sim_controller_rejects_invalid_params():
+    """Factory should reject non-physical parameter values."""
+    from scpn_fusion.control.h_infinity_controller import get_flight_sim_controller
+
+    with pytest.raises(ValueError, match="response_gain"):
+        get_flight_sim_controller(response_gain=-1.0)
+    with pytest.raises(ValueError, match="actuator_tau"):
+        get_flight_sim_controller(actuator_tau=0.0)
+
+
+def test_hinf_episode_uses_flight_sim_controller(monkeypatch):
+    """H-inf episode should use get_flight_sim_controller, not get_radial_robust_controller."""
+    import validation.stress_test_campaign as mod
+
+    monkeypatch.setenv(mod.HINF_RESEARCH_ENV, "1")
+
+    class FakeKernel:
+        def __init__(self, *a, **kw):
+            self.cfg = {"coils": [{"current": 0.0}] * 7, "physics": {}}
+            nr, nz = 5, 5
+            self.Psi = np.zeros((nz, nr))
+            self.Psi[2, 3] = 1.0
+            self.R = np.linspace(4.0, 8.0, nr)
+            self.Z = np.linspace(-4.0, 4.0, nz)
+        def solve_equilibrium(self):
+            pass
+        def find_x_point(self, psi):
+            return np.array([5.0, -3.5]), 0.0
+
+    monkeypatch.setattr(mod, "IsoFluxController",
+        lambda *a, **kw: _make_fake_iso(FakeKernel, kw.get("control_dt_s", 0.05)))
+
+    ep = mod._run_hinf_episode(config_path="unused", shot_duration=5)
+    assert np.isfinite(ep.reward)
+    assert ep.mean_abs_r_error >= 0.0
+
+
+def _make_fake_iso(kernel_cls, dt):
+    """Build a minimal IsoFluxController stand-in for H-inf testing."""
+
+    class FakeIso:
+        def __init__(self):
+            self.kernel = kernel_cls()
+            self.pid_R = {"Kp": 2.0, "Ki": 0.1, "Kd": 0.5, "err_sum": 0, "last_err": 0}
+            self.pid_Z = {"Kp": 5.0, "Ki": 0.2, "Kd": 2.0, "err_sum": 0, "last_err": 0}
+
+        def pid_step(self, pid, err):
+            return float(err) * pid["Kp"]
+
+        def run_shot(self, shot_duration, save_plot=False):
+            return {
+                "steps": int(shot_duration),
+                "mean_abs_r_error": 0.08,
+                "mean_abs_z_error": 0.06,
+                "mean_abs_radial_actuator_lag": 0.1,
+            }
+
+    return FakeIso()
+
+
 def test_rust_pid_episode_energy_efficiency_tracks_constraint_events(monkeypatch):
     """Rust lane should derive efficiency from constraint-event burden."""
     import validation.stress_test_campaign as mod

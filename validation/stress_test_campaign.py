@@ -43,7 +43,10 @@ repo_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(repo_root / "src"))
 
 from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
-from scpn_fusion.control.h_infinity_controller import get_radial_robust_controller
+from scpn_fusion.control.h_infinity_controller import (
+    get_flight_sim_controller,
+    get_radial_robust_controller,
+)
 from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumKernel
 
 # Optional controller imports
@@ -168,15 +171,10 @@ def _run_pid_episode(config_path: Any, shot_duration: int = 30, surrogate: bool 
 def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
     """Run a single H-infinity episode.
 
-    Uses two *independent* H-inf controllers (one per axis) to avoid
-    observer state corruption when ``pid_step`` is called for both
-    the radial and vertical channels.
-
-    The H-inf DARE gains are synthesised for the internal plant model
-    (growth rate 100/s) whose actuator scale differs from the flight
-    simulator's coil-current interface.  We normalise the output so
-    that a unit position error produces the same control magnitude as
-    the PID's proportional term (Kp).
+    Uses two independent H-inf controllers (one per axis), each
+    synthesized for the flight sim's quasi-static equilibrium dynamics
+    (error + first-order actuator lag).  The error signal from the
+    flight sim is passed directly — no sign adapter or gain scaling.
     """
     if not _env_flag_enabled(HINF_RESEARCH_ENV):
         raise RuntimeError(
@@ -188,28 +186,15 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool
     steps = int(shot_duration / dt)
     ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
 
-    # Separate controllers — each maintains its own observer state.
-    hinf_R = get_radial_robust_controller()
-    hinf_Z = get_radial_robust_controller()
-
-    # Force DARE gains to be computed for the current dt.
-    hinf_R.step(0.0, dt); hinf_R.reset()
-    hinf_Z.step(0.0, dt); hinf_Z.reset()
-
-    # Gain normalisation: H-inf DARE gain Fd[0,0] maps unit position
-    # error to a control output.  We scale so that the effective
-    # proportional gain matches the PID's Kp.
-    kp_R = ctrl.pid_R['Kp']
-    kp_Z = ctrl.pid_Z['Kp']
-    scale_R = kp_R / max(abs(float(hinf_R._Fd[0, 0])), 1e-12)
-    scale_Z = kp_Z / max(abs(float(hinf_Z._Fd[0, 0])), 1e-12)
+    hinf_R = get_flight_sim_controller(response_gain=0.05, actuator_tau=0.06)
+    hinf_Z = get_flight_sim_controller(response_gain=0.02, actuator_tau=0.06)
 
     pid_R_id = id(ctrl.pid_R)
 
     def hinf_step(pid: Any, err: float) -> float:
         if id(pid) == pid_R_id:
-            return scale_R * hinf_R.step(err, dt)
-        return scale_Z * hinf_Z.step(err, dt)
+            return hinf_R.step(err, dt)
+        return hinf_Z.step(err, dt)
 
     ctrl.pid_step = hinf_step
 

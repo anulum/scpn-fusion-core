@@ -422,6 +422,53 @@ class HInfinityController:
         return 0.0
 
 
+def get_flight_sim_controller(
+    response_gain: float = 0.05,
+    actuator_tau: float = 0.06,
+    enforce_robust_feasibility: bool = False,
+) -> HInfinityController:
+    """H-inf controller matched to IsoFluxController flight-sim dynamics.
+
+    Plant model: quasi-static equilibrium response through first-order actuator.
+
+        dx1/dt = -g * x2          error driven by actuator output
+        dx2/dt = (u - x2) / tau   first-order actuator lag
+        y = x1                    error measurement
+
+    The flight sim adds controller output (after actuator) to coil current
+    each timestep.  The equilibrium solver responds quasi-statically, so the
+    effective plant is an integrator (coil current accumulation) cascaded
+    with a first-order actuator lag.  x1 = tracking error is the measured
+    output — no sign adapter needed.
+
+    Parameters
+    ----------
+    response_gain : float
+        Sensitivity of position error to accumulated coil current [1/s].
+        Radial channel: ~0.05, vertical: ~0.02.
+    actuator_tau : float
+        First-order actuator time constant [s]. Default 0.06.
+    """
+    if not np.isfinite(response_gain) or response_gain <= 0.0:
+        raise ValueError("response_gain must be finite and > 0.")
+    if not np.isfinite(actuator_tau) or actuator_tau <= 0.0:
+        raise ValueError("actuator_tau must be finite and > 0.")
+    inv_tau = 1.0 / actuator_tau
+    # Positive growth rate on error: during current ramp-up the
+    # Shafranov shift causes position drift (~1/s) if uncorrected.
+    # This mild instability also gives the ARE solver a clean
+    # Hamiltonian spectrum.
+    A = np.array([[1.0, -response_gain], [0.0, -inv_tau]])
+    B2 = np.array([[0.0], [inv_tau]])
+    B1 = np.array([[1.0], [0.0]])
+    C1 = np.array([[1.0, 0.0], [0.0, 0.01]])
+    C2 = np.array([[1.0, 0.0]])
+    return HInfinityController(
+        A, B1, B2, C1, C2,
+        enforce_robust_feasibility=enforce_robust_feasibility,
+    )
+
+
 def get_radial_robust_controller(
     gamma_growth: float = 100.0,
     *,
