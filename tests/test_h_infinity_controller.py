@@ -14,6 +14,9 @@ import pytest
 
 from scpn_fusion.control.h_infinity_controller import (
     HInfinityController,
+    LQRController,
+    get_flight_sim_controller_v2,
+    get_flight_sim_lqr_controller,
     get_radial_robust_controller,
 )
 
@@ -437,3 +440,109 @@ class TestDampingParameter:
             get_radial_robust_controller(damping=float("nan"))
         with pytest.raises(ValueError, match="damping"):
             get_radial_robust_controller(damping=float("inf"))
+
+
+# ── 13. Flight Sim Controller v2 (corrected integrator plant) ────────
+
+
+class TestFlightSimV2:
+
+    def test_v2_synthesis_succeeds(self) -> None:
+        ctrl = get_flight_sim_controller_v2(position_sensitivity=0.567, sample_dt=0.05)
+        assert ctrl.n == 2
+        assert ctrl.gamma > 1.0
+        assert ctrl.robust_feasible
+        assert ctrl.is_stable
+
+    def test_v2_corrected_plant_matrix(self) -> None:
+        """A[0,1] should be -sensitivity/dt (integrator gain), not a small constant."""
+        ctrl = get_flight_sim_controller_v2(
+            position_sensitivity=0.567, sample_dt=0.05, drift_rate=0.1,
+        )
+        np.testing.assert_allclose(ctrl.A[0, 1], -0.567 / 0.05, rtol=1e-12)
+        np.testing.assert_allclose(ctrl.A[0, 0], 0.1, rtol=1e-12)
+
+    def test_v2_observer_q_scale_affects_observer_speed(self) -> None:
+        """Larger observer_q_scale should produce a faster observer."""
+        slow = get_flight_sim_controller_v2(observer_q_scale=1.0)
+        fast = get_flight_sim_controller_v2(observer_q_scale=100.0)
+        slow._update_discretization(0.05)
+        fast._update_discretization(0.05)
+        obs_slow = slow._Ad - slow._Ld @ slow.C2
+        obs_fast = fast._Ad - fast._Ld @ fast.C2
+        rho_slow = float(np.max(np.abs(np.linalg.eigvals(obs_slow))))
+        rho_fast = float(np.max(np.abs(np.linalg.eigvals(obs_fast))))
+        assert rho_fast < rho_slow
+
+    def test_v2_step_reduces_error_simplified_plant(self) -> None:
+        """10 steps on a simplified plant should reduce error."""
+        ctrl = get_flight_sim_controller_v2(
+            position_sensitivity=0.567, sample_dt=0.05, observer_q_scale=100.0,
+        )
+        dt = 0.05
+        err = 0.5
+        for _ in range(10):
+            u = ctrl.step(err, dt)
+            err = err + 0.1 * err * dt - 0.567 * 0.45 * u
+        assert err < 0.4
+
+    def test_v2_rejects_bad_params(self) -> None:
+        with pytest.raises(ValueError):
+            get_flight_sim_controller_v2(position_sensitivity=-1.0)
+        with pytest.raises(ValueError):
+            get_flight_sim_controller_v2(sample_dt=0.0)
+
+
+# ── 14. LQR Controller ──────────────────────────────────────────────
+
+
+class TestLQRController:
+
+    def test_lqr_synthesis_succeeds(self) -> None:
+        ctrl = get_flight_sim_lqr_controller(position_sensitivity=0.567, sample_dt=0.05)
+        assert isinstance(ctrl, LQRController)
+        assert ctrl.n == 2
+
+    def test_lqr_step_returns_scalar(self) -> None:
+        ctrl = get_flight_sim_lqr_controller()
+        u = ctrl.step(0.5, 0.05)
+        assert isinstance(u, float)
+        assert np.isfinite(u)
+
+    def test_lqr_reduces_error(self) -> None:
+        ctrl = get_flight_sim_lqr_controller(
+            position_sensitivity=0.567, sample_dt=0.05,
+        )
+        dt = 0.05
+        err = 0.5
+        for _ in range(10):
+            u = ctrl.step(err, dt)
+            err = err + 0.1 * err * dt - 0.567 * 0.45 * u
+        assert err < 0.35
+
+    def test_lqr_reset_zeros_state(self) -> None:
+        ctrl = get_flight_sim_lqr_controller()
+        ctrl.step(1.0, 0.05)
+        assert not np.allclose(ctrl.state, 0.0)
+        ctrl.reset()
+        np.testing.assert_array_equal(ctrl.state, np.zeros(ctrl.n))
+
+    def test_lqr_different_from_hinf(self) -> None:
+        """LQR and H-inf v2 should produce different control actions."""
+        hinf = get_flight_sim_controller_v2(
+            position_sensitivity=0.567, observer_q_scale=100.0,
+        )
+        lqr = get_flight_sim_lqr_controller(position_sensitivity=0.567)
+        dt = 0.05
+        # Warm-start both with same initial state
+        hinf.state = np.array([0.5, 0.0])
+        lqr.state = np.array([0.5, 0.0])
+        u_hinf = hinf.step(0.5, dt)
+        u_lqr = lqr.step(0.5, dt)
+        assert abs(u_hinf - u_lqr) > 1e-6
+
+    def test_lqr_rejects_bad_params(self) -> None:
+        with pytest.raises(ValueError):
+            get_flight_sim_lqr_controller(position_sensitivity=0.0)
+        with pytest.raises(ValueError):
+            get_flight_sim_lqr_controller(actuator_tau=-1.0)

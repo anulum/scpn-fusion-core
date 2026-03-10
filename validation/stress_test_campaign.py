@@ -45,6 +45,8 @@ sys.path.insert(0, str(repo_root / "src"))
 from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
 from scpn_fusion.control.h_infinity_controller import (
     get_flight_sim_controller,
+    get_flight_sim_controller_v2,
+    get_flight_sim_lqr_controller,
     get_radial_robust_controller,
 )
 from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumKernel
@@ -186,8 +188,12 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool
     steps = int(shot_duration / dt)
     ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
 
-    hinf_R = get_flight_sim_controller(response_gain=1.0, actuator_tau=0.06)
-    hinf_Z = get_flight_sim_controller(response_gain=0.1, actuator_tau=0.06)
+    hinf_R = get_flight_sim_controller_v2(
+        position_sensitivity=0.567, sample_dt=dt,
+    )
+    hinf_Z = get_flight_sim_controller_v2(
+        position_sensitivity=0.05, sample_dt=dt,
+    )
 
     pid_R_id = id(ctrl.pid_R)
 
@@ -197,6 +203,45 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool
         return hinf_Z.step(err, dt)
 
     ctrl.pid_step = hinf_step
+
+    t0 = time.perf_counter_ns()
+    result = ctrl.run_shot(shot_duration=steps, save_plot=False)
+    total_us = (time.perf_counter_ns() - t0) / 1e3
+    per_step_us = total_us / max(result["steps"], 1)
+    r_err = result["mean_abs_r_error"]
+    z_err = result["mean_abs_z_error"]
+    actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
+    disrupted = r_err > 0.5 or z_err > 0.5
+    return EpisodeResult(
+        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
+        reward=-(r_err + z_err), latency_us=per_step_us,
+        disrupted=disrupted,
+        t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
+        energy_efficiency=1.0 / (1.0 + actuator_effort),
+    )
+
+
+def _run_lqr_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
+    """Run a single LQR episode with corrected integrator plant model."""
+    dt = 0.01 if surrogate else 0.05
+    steps = int(shot_duration / dt)
+    ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
+
+    lqr_R = get_flight_sim_lqr_controller(
+        position_sensitivity=0.567, sample_dt=dt,
+    )
+    lqr_Z = get_flight_sim_lqr_controller(
+        position_sensitivity=0.05, sample_dt=dt,
+    )
+
+    pid_R_id = id(ctrl.pid_R)
+
+    def lqr_step(pid: Any, err: float) -> float:
+        if id(pid) == pid_R_id:
+            return lqr_R.step(err, dt)
+        return lqr_Z.step(err, dt)
+
+    ctrl.pid_step = lqr_step
 
     t0 = time.perf_counter_ns()
     result = ctrl.run_shot(shot_duration=steps, save_plot=False)
@@ -319,6 +364,7 @@ def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30, surrogate: 
 CONTROLLERS: dict[str, Callable] = {
     "PID": _run_pid_episode,
     "H-infinity": _run_hinf_episode,
+    "LQR": _run_lqr_episode,
 }
 
 if _mpc_available:

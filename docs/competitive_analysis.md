@@ -78,6 +78,7 @@
 | GPU acceleration | **Yes (JAX XLA + wgpu shader)** | Yes (JAX) | No | No | JAX | No |
 | Autodifferentiation | **Yes (JAX)** | **Yes (JAX)** | No | No | **Yes (Julia)** | No |
 | **RL environment (Gymnasium)** | **Yes** | Gym-TORAX | No | No | No | No |
+| **Multi-controller suite** | **PID + H-inf + LQR** | No | No | No | No | No |
 | Compact reactor optimizer | Yes | No | Yes (DEMO) | No | Yes | No |
 | GEQDSK I/O | Read + validate | No | No | Read + write | Yes | No |
 | Research validation (opt-in) | SPARC, ITPA, JET | DIII-D | ITER, DEMO | JET | DIII-D | ITER |
@@ -97,6 +98,8 @@
 | No autodiff | JAX-differentiable GS equilibrium solver with ``jax.grad`` through Picard+SOR | `core/jax_equilibrium_solver.py` |
 | No GPU equilibrium | JAX solver auto-targets GPU via XLA; wgpu compute shader for Rust path | `core/jax_equilibrium_solver.py`, `fusion-gpu/gs_solver.wgsl` |
 | No RL integration | Gymnasium v0.29+ compliant `TokamakEnv` with SB3/RLlib support | `control/gym_tokamak_env.py` |
+| H-inf controller disrupts | Corrected plant model (integrator from coil accumulation) + fast observer. 0% disruption rate. | `control/h_infinity_controller.py` v2 |
+| Single controller variant | PID, H-inf, and LQR controllers all verified non-disrupting on ITER config | `control/h_infinity_controller.py` LQR + v2 |
 
 ## 6. SCPN Unique Position
 

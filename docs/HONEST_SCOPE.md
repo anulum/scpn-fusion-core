@@ -18,6 +18,7 @@ first-principles transport/gyrokinetic code.
 | 0% disruption rate across 1,000-shot stress campaigns | `validation/stress_test_campaign.py` |
 | JAX-differentiable GS equilibrium (autodiff through Picard+SOR) | `core/jax_equilibrium_solver.py`, 9 tests |
 | Gymnasium RL environment for controller training | `control/gym_tokamak_env.py`, Stable-Baselines3/RLlib compatible |
+| Multi-controller suite (PID, H-inf, LQR) | All 3 non-disrupting on ITER config; H-inf v2 corrected integrator plant model |
 | GPU-accelerated equilibrium via JAX XLA + wgpu compute shader | Auto-targets GPU when available; `fusion-gpu/gs_solver.wgsl` |
 | Graceful degradation (no Rust / no GPU / no SC-NeuroCore) | Every module has a pure-Python fallback |
 
