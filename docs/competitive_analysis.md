@@ -1,6 +1,6 @@
 # Competitive Analysis — SCPN Fusion Core v3.9.3
 
-> **Last updated:** 2026-02-20.
+> **Last updated:** 2026-03-10.
 > Community code timings are from published literature (references at end).
 > SCPN timings are CI-verified on GitHub Actions ubuntu-latest unless noted.
 > Latency IDs are defined in `docs/PERFORMANCE_METRIC_TAXONOMY.md`; this table
@@ -10,7 +10,7 @@
 
 | Code | Control Freq | Step Latency | Language | Source |
 |------|-------------|-------------|----------|--------|
-| **SCPN v3.9.3 (Rust)** | **10--30 kHz** | **11.9 us P50 / 23.9 us P99** | Rust + Python | CI Criterion (`control.closed_loop_step_us`) |
+| **SCPN v3.9.3 (Rust)** | **10--30 kHz** | **23.8 us P50 / 122 us P99** | Rust + Python | CI Criterion (`control.closed_loop_step_us`) |
 | DIII-D PCS (production) | 4--10 kHz (physics loops) | 100--250 us per physics cycle | C / Fortran | Penaflor 2024; Barr 2024 |
 | P-EFIT (GPU) | N/A (reconstruction) | 300--375 us per iter (129x129) | Fortran + CUDA | Sabbagh 2023 |
 | TORAX | N/A (offline sim) | ~ms per timestep | Python / JAX | Citrin 2024 |
@@ -19,7 +19,7 @@
 
 > **Note on DIII-D:** The raw data-acquisition cycle runs at ~16.7 kHz (60 us),
 > but the physics-level control algorithms (rtEFIT, shape control, NTM
-> feedback) execute at 4--10 kHz depending on the algorithm. SCPN's 11.9 us
+> feedback) execute at 4--10 kHz depending on the algorithm. SCPN's 23.8 us
 > P50 is still faster than any published DIII-D physics control loop and
 > operates without dedicated FPGA or InfiniBand hardware.
 
@@ -37,7 +37,7 @@
 | QLKNN (TensorFlow) | NN inference | ~100 us (25 outputs) | Surrogate | van de Plassche 2020 |
 
 > **Fidelity note:** SCPN ships a QLKNN-10D trained MLP surrogate
-> (test_rel_L2 = 0.201) alongside the analytic critical-gradient baseline.
+> (test_rel_L2 = 0.094) alongside the analytic critical-gradient baseline.
 > The MLP is trained on van de Plassche 2020 gyrokinetic data (500K samples).
 > 10-25% relative error is typical for QLKNN surrogates. The speed advantage
 > reflects both surrogate approach and lightweight NumPy inference.
@@ -71,7 +71,7 @@
 | **Neuro-symbolic SNN** | **Yes** | No | No | No | No | No |
 | **Disruption prediction (ML)** | **Yes** | No | No | No | No | N/A |
 | **SPI mitigation** | **Yes** | No | No | No | No | Yes |
-| FNO turbulence surrogate | **Yes (JAX, val_rel_L2=0.356)** | No | QLKNN | No | TJLF | No |
+| FNO turbulence surrogate | **Yes (JAX, val_rel_L2=0.055)** | No | QLKNN | No | TJLF | No |
 | Neutronics / TBR | Yes (1-D slab) | No | Yes | No | Yes | No |
 | **Digital twin (real-time)** | **Yes** | No | No | No | No | No |
 | **Rust native backend** | **Yes (10 crates)** | No | No | No | No | No |
@@ -87,13 +87,13 @@
 |----------|--------|-------------------|
 | No autodiff | Cannot do gradient-based plasma scenario optimisation | TORAX (JAX), FUSE (Julia) |
 | No GPU equilibrium | P-EFIT achieves <1 ms on GPU; SCPN is CPU-only | P-EFIT |
-| QLKNN accuracy gap | test_rel_L2=0.201 vs TORAX's ~15% (deeper net, more data) | TORAX, FUSE |
+| QLKNN accuracy gap | test_rel_L2=0.094 vs TORAX's ~15% (deeper net, more data) | TORAX, FUSE |
 | No RL integration | No Gym environment for controller training | Gym-TORAX |
 | Smaller community | Single-team vs DeepMind / General Atomics resources | TORAX, FUSE |
 
 ## 6. SCPN Unique Position
 
-1. **Only open-source code with reactor-grade real-time control** -- 11.9 us
+1. **Only open-source code with reactor-grade real-time control** -- 23.8 us
    P50 control loop, faster than any published DIII-D physics loop. No other
    open-source fusion code offers real-time control at this latency.
 
