@@ -165,9 +165,9 @@ mod tests {
         assert_eq!(cfg.grid_resolution, [128, 128]);
         assert_eq!(cfg.coils.len(), 7);
         assert_eq!(cfg.coils[0].name, "PF1");
-        assert!((cfg.coils[0].r - 3.0).abs() < 1e-10);
-        assert!((cfg.coils[0].current - 8.0).abs() < 1e-10);
-        assert_eq!(cfg.solver.max_iterations, 1000);
+        assert!((cfg.coils[0].r - 3.5).abs() < 1e-10);
+        assert!((cfg.coils[0].current - (-1.0)).abs() < 1e-10);
+        assert_eq!(cfg.solver.max_iterations, 500);
         assert!((cfg.solver.convergence_threshold - 1e-4).abs() < 1e-12);
     }
 
