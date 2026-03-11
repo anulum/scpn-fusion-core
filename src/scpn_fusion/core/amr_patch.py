@@ -194,24 +194,35 @@ def _jacobi_smooth(
     source: FloatArray,
     dr: float,
     dz: float,
+    R_1d: FloatArray | None = None,
     iterations: int = 5,
     omega: float = 0.8,
 ) -> FloatArray:
-    """Weighted Jacobi smoothing for the GS elliptic operator on a sub-patch."""
+    """Weighted Jacobi smoothing with cylindrical GS* operator on a sub-patch."""
     u = psi.copy()
     dr2 = dr * dr
     dz2 = dz * dz
-    coeff = 2.0 / dr2 + 2.0 / dz2
-    if coeff < 1e-30:
+    a_C = 2.0 / dr2 + 2.0 / dz2
+    if a_C < 1e-30:
         return u
-    inv_coeff = 1.0 / coeff
+    a_NS = 1.0 / dz2
+    if R_1d is not None:
+        R_int = np.maximum(R_1d[1:-1], 1e-10)
+        # shape (1, NR-2) for broadcasting with (NZ-2, NR-2) interior
+        a_E = (1.0 / dr2 - 1.0 / (2.0 * R_int * dr))[np.newaxis, :]
+        a_W = (1.0 / dr2 + 1.0 / (2.0 * R_int * dr))[np.newaxis, :]
+    else:
+        a_E = 1.0 / dr2
+        a_W = 1.0 / dr2
     for _ in range(iterations):
         u_new = u.copy()
-        u_new[1:-1, 1:-1] = inv_coeff * (
-            (u[1:-1, 2:] + u[1:-1, :-2]) / dr2
-            + (u[2:, 1:-1] + u[:-2, 1:-1]) / dz2
+        u_new[1:-1, 1:-1] = (
+            a_E * u[1:-1, 2:]
+            + a_W * u[1:-1, :-2]
+            + a_NS * u[2:, 1:-1]
+            + a_NS * u[:-2, 1:-1]
             - source[1:-1, 1:-1]
-        )
+        ) / a_C
         u[1:-1, 1:-1] = (1.0 - omega) * u[1:-1, 1:-1] + omega * u_new[1:-1, 1:-1]
     return u
 
@@ -255,7 +266,7 @@ def solve_amr(
     dr = float(R[1] - R[0]) if nr > 1 else 1.0
     dz = float(Z[1] - Z[0]) if nz > 1 else 1.0
 
-    psi_out = _jacobi_smooth(psi_base, source, dr, dz, iterations=smooth_iters)
+    psi_out = _jacobi_smooth(psi_base, source, dr, dz, R_1d=R, iterations=smooth_iters)
 
     flagged = flag_refinement_cells(psi_out, dr, dz, threshold=grad_threshold)
     patch_bounds = _find_patch_bounds(flagged, R, Z)
@@ -274,10 +285,11 @@ def solve_amr(
 
         fine_dr = dr / REFINE_FACTOR
         fine_dz = dz / REFINE_FACTOR
+        fine_R = np.linspace(R[i_lo], R[i_hi], fine_nr)
 
         fine_psi = _jacobi_smooth(
             fine_psi, fine_src, fine_dr, fine_dz,
-            iterations=refine_smooth_iters,
+            R_1d=fine_R, iterations=refine_smooth_iters,
         )
 
         correction = restrict(fine_psi, sub_psi.shape) - sub_psi
