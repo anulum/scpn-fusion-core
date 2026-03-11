@@ -29,6 +29,10 @@ class _DummyKernel:
         }
         self.R = np.linspace(5.8, 6.4, 13)
         self.Z = np.linspace(-0.3, 0.3, 13)
+        self.NR = len(self.R)
+        self.NZ = len(self.Z)
+        self.dR = float(self.R[1] - self.R[0])
+        self.dZ = float(self.Z[1] - self.Z[0])
         self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
         self.Psi = np.zeros((len(self.Z), len(self.R)), dtype=np.float64)
         self._ticks = 0
