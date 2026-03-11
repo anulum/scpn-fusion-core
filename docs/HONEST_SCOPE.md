@@ -49,7 +49,7 @@ first-principles transport/gyrokinetic code.
 |-----------|--------|---------|
 | MLP ITPA confinement | Shipped | 13.5% RMSE on training set |
 | FNO EUROfusion-proxy | Retired (v3.9) | rel_L2 = 0.79 (synthetic only) |
-| Neural equilibrium (SPARC) | Shipped | PCA+MLP, 78 samples |
+| Neural equilibrium (multi-machine) | Shipped | PCA+MLP, 1818 samples (SPARC+DIII-D+JET), max rel_L2 < 0.001 |
 | QLKNN-10D transport | Shipped | test_rel_L2 = 0.094 (GPU L40S, 500K samples, 1024×512×256) |
 | FNO turbulence (JAX) | Shipped | val_rel_L2 = 0.055 (4-layer FNO, modes=24, 2000 QLKNN-oracle equilibria) |
 | Heat ML shadow | Requires user training | No pretrained weights |

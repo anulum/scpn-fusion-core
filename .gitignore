@@ -56,6 +56,7 @@ benchmarks/results/
 !weights/fno_turbulence_jax.npz
 !weights/neural_transport_qlknn.npz
 !weights/neural_equilibrium_sparc.npz
+!weights/neural_equilibrium_augmented.npz
 !weights/neural_transport_qlknn.npz
 !validation/reference_data/diiid/disruption_shots/*.npz
 

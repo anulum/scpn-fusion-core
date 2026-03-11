@@ -1,0 +1,54 @@
+{
+  "model": "neural_equilibrium_augmented_v3",
+  "hidden": [
+    512,
+    256,
+    128,
+    64
+  ],
+  "n_pca": 50,
+  "sample_weighted": true,
+  "n_samples": 1818,
+  "best_val_loss": 0.00043754527257417505,
+  "train_time_s": 104.61932686400007,
+  "epochs_run": 3000,
+  "per_machine": {
+    "diiid": {
+      "mean_rel_l2": 0.0007815229365721645,
+      "max_rel_l2": 0.0009748649623431383,
+      "per_file": {
+        "diiid_hmode_1p5MA.geqdsk": 0.0005988908243131747,
+        "diiid_hmode_2MA.geqdsk": 0.0009439994614761247,
+        "diiid_lmode_1MA.geqdsk": 0.0008607929432810807,
+        "diiid_negdelta.geqdsk": 0.0005290664914473041,
+        "diiid_snowflake.geqdsk": 0.0009748649623431383
+      }
+    },
+    "jet": {
+      "mean_rel_l2": 0.0005099442421456227,
+      "max_rel_l2": 0.0007778617107440127,
+      "per_file": {
+        "jet_dt_3p5MA.geqdsk": 0.0007778617107440127,
+        "jet_high_ip_4p8MA.geqdsk": 0.00034250957200460754,
+        "jet_hmode_3MA.geqdsk": 0.0004335153273530779,
+        "jet_hybrid_2p5MA.geqdsk": 0.0005696870681600155,
+        "jet_lmode_2MA.geqdsk": 0.00042614753246639935
+      }
+    },
+    "sparc": {
+      "mean_rel_l2": 0.0004552416216312032,
+      "max_rel_l2": 0.0009657173437150481,
+      "per_file": {
+        "lmode_hv.geqdsk": 0.0003043681557867704,
+        "lmode_vh.geqdsk": 0.0003043295893995605,
+        "lmode_vv.geqdsk": 0.00023218759275520323,
+        "sparc_1300.eqdsk": 0.00024217941549589114,
+        "sparc_1305.eqdsk": 0.0009657173437150481,
+        "sparc_1310.eqdsk": 0.0007339248018351636,
+        "sparc_1315.eqdsk": 0.0002821491561762839,
+        "sparc_1349.eqdsk": 0.000577076917885705
+      }
+    }
+  },
+  "acceptance": "PASS"
+}

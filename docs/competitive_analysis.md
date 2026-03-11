@@ -57,9 +57,10 @@
 | **SCPN v3.9.3 (Multigrid)** | 65x65 | V-cycle | **~15 ms** | Projected |
 
 > The Neural Equilibrium Kernel achieves P-EFIT-class speed (0.39 ms) on
-> **CPU only**, without requiring CUDA or GPU hardware. This is relevant for
-> embedded or edge deployment scenarios where GPU availability is not
-> guaranteed.
+> **CPU only**, without requiring CUDA or GPU hardware. Trained on 18 GEQDSK
+> files across SPARC, DIII-D, and JET (1818 samples), with per-file rel_L2
+> < 0.001 for all machines including negative-triangularity and snowflake
+> divertor configurations.
 
 ## 4. Feature Breadth
 

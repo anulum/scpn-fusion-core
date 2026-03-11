@@ -150,6 +150,7 @@ class NeuralEquilibriumAccelerator:
         self.is_trained = False
         self._input_mean: NDArray | None = None
         self._input_std: NDArray | None = None
+        self._psi_normalized: bool = False
 
     # ── GS residual loss ───────────────────────────────────────────
 
@@ -517,6 +518,13 @@ class NeuralEquilibriumAccelerator:
         coeffs = self.mlp.predict(x_norm)
         psi_flat = self.pca.inverse_transform(coeffs)
 
+        # Denormalise if model was trained on normalised psi.
+        # simag at feature index 6, sibry at index 7.
+        if self._psi_normalized:
+            simag = features[:, 6:7]
+            sibry = features[:, 7:8]
+            psi_flat = psi_flat * (sibry - simag) + simag
+
         nh, nw = self.cfg.grid_shape
         if features.shape[0] == 1:
             return psi_flat.reshape(nh, nw)
@@ -576,8 +584,13 @@ class NeuralEquilibriumAccelerator:
             self.mlp.weights = weights
             self.mlp.biases = biases
 
+            self._psi_normalized = bool(
+                "psi_normalized" in data and int(data["psi_normalized"][0]) == 1
+            )
+
         self.is_trained = True
-        logger.info("Loaded neural equilibrium weights from %s", path)
+        logger.info("Loaded neural equilibrium weights from %s (psi_normalized=%s)",
+                     path, self._psi_normalized)
 
     # ── Convenience ──────────────────────────────────────────────────
 
