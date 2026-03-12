@@ -14,10 +14,10 @@ def churchill_friction_factor(Re, epsilon_d=1e-4):
         raise ValueError("Reynolds number must be positive.")
     if Re < 1e-3:
         return 64.0 / 1e-3  # Limit
-    
+
     A = (2.457 * np.log(1.0 / ((7.0 / Re)**0.9 + 0.27 * epsilon_d)))**16
     B = (37530.0 / Re)**16
-    
+
     f = 8.0 * ((8.0 / Re)**12 + 1.0 / (A + B)**1.5)**(1.0/12.0)
     return f
 
@@ -34,7 +34,7 @@ class CoolantLoop:
             'lipb':   {'rho': 9000.0, 'mu': 1e-3, 'cp': 190.0}
         }
         self.p = props.get(coolant_type, props['water'])
-        
+
     def calculate_pumping_power(self, Q_thermal_MW, delta_T=50.0, L=100.0, D=0.05):
         """
         Estimates pumping power needed to exhaust Q_thermal.
@@ -54,25 +54,25 @@ class CoolantLoop:
 
         # 1. Mass flow rate (mdot = Q / (cp * dT))
         mdot = (Q_thermal_MW * 1e6) / (self.p['cp'] * delta_T)
-        
+
         # 2. Velocity (v = mdot / (rho * Area))
         area = np.pi * (D/2)**2
         v = mdot / (self.p['rho'] * area)
-        
+
         # 3. Reynolds Number
         Re = (self.p['rho'] * v * D) / self.p['mu']
-        
+
         # 4. Friction Factor (Churchill)
         f = churchill_friction_factor(Re)
-        
+
         # 5. Pressure Drop (Darcy-Weisbach)
         dP = f * (L/D) * (self.p['rho'] * v**2 / 2.0)
-        
+
         # 6. Pumping Power (W)
         eta_pump = 0.8
         vol_flow = mdot / self.p['rho']
         P_pump_W = (dP * vol_flow) / eta_pump
-        
+
         return {
             'mdot_kg_s': mdot,
             'velocity_m_s': v,

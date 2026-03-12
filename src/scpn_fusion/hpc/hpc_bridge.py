@@ -302,13 +302,13 @@ class HPCBridge:
         if NeuralEquilibriumKernel is None:
             logger.warning("NeuralEquilibriumKernel not available (ImportError).")
             return None
-            
+
         try:
             # Note: NeuralEquilibriumKernel needs a config for grid sizing
             # default to iter_config.json in root if not provided
             if config_path is None:
                 config_path = Path(__file__).resolve().parents[3] / "iter_config.json"
-            
+
             kernel = NeuralEquilibriumKernel(config_path)
             res = kernel.solve_equilibrium()
             return res.get("Psi")
@@ -473,17 +473,17 @@ def compile_cpp() -> Optional[str]:
 if __name__ == "__main__":
     # Test sequence
     lib_file = compile_cpp()
-    
+
     if lib_file:
         bridge = HPCBridge(lib_file)
-        
+
         # Test Grid
         N = 100
         bridge.initialize(N, N, (2.0, 10.0), (-5.0, 5.0))
-        
+
         # Dummy Current (Gaussian)
         J = np.random.rand(N, N)
-        
+
         # Run
         Psi = bridge.solve(J, iterations=500)
         print(f"Max Flux: {np.max(Psi)}")

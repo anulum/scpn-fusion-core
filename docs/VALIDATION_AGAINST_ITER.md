@@ -1,7 +1,7 @@
 # Validation Against ITER and Reference Machines
 
-**Date**: 2026-02-12  
-**Version**: v1.0.2 preparation (WP-E1)  
+**Date**: 2026-02-12
+**Version**: v1.0.2 preparation (WP-E1)
 **Scope**: Regression-grade confinement validation using published reference scenarios
 
 ---
@@ -179,13 +179,13 @@ This check is implemented in `test_diiid_lmode_baseline`.
 
 `tests/test_validation_regression.py` provides:
 
-1. `test_iter_tau_e_within_20pct`  
+1. `test_iter_tau_e_within_20pct`
    Confirms ITER confinement remains in expected range.
-2. `test_sparc_high_field_advantage`  
+2. `test_sparc_high_field_advantage`
    Confirms high-field compact advantage in confinement density.
-3. `test_ipb98_scaling_sanity`  
+3. `test_ipb98_scaling_sanity`
    Confirms deterministic reference output for a fixed ITER-like point.
-4. `test_diiid_lmode_baseline`  
+4. `test_diiid_lmode_baseline`
    Confirms physically plausible L-mode confinement scale.
 
 ---

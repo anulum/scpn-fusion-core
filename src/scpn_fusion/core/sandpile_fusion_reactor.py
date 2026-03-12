@@ -18,9 +18,9 @@ TIME_STEPS = 5000  # Total simulation time
 
 class TokamakSandpile:
     """
-    Implements a modified Bak-Tang-Wiesenfeld (BTW) sandpile model 
-    to simulate self-organized criticality (SOC) in plasma turbulence. 
-    
+    Implements a modified Bak-Tang-Wiesenfeld (BTW) sandpile model
+    to simulate self-organized criticality (SOC) in plasma turbulence.
+
     Reference: 'Running Sandpile' models for L-H transition.
     """
     def __init__(self, size=L):
@@ -33,15 +33,15 @@ class TokamakSandpile:
         self.confinement_history = []
         self.edge_loss_events = 0
         self.last_edge_loss_events = 0
-        
+
         # Magnetic Control (Z_crit modification)
-        self.control_profile = np.zeros(size) 
+        self.control_profile = np.zeros(size)
 
     def drive(self):
         """Adds energy (sand) to the core."""
         # Core heating: Add grain to center
         self.Z[0] += 1
-        
+
     def relax(self, suppression_strength=0.0):
         """
         The Avalanche Step.
@@ -54,14 +54,14 @@ class TokamakSandpile:
         if suppression_strength < 0.0 or suppression_strength > 1.0:
             raise ValueError("suppression_strength must be in [0, 1].")
 
-        # Dynamic Critical Gradient: 
+        # Dynamic Critical Gradient:
         # Stronger magnetic field (control) = Higher threshold before collapse
         current_Z_crit = Z_CRIT_BASE + (2.0 * suppression_strength)
-        
+
         sites_active = np.where(self.Z >= current_Z_crit)[0]
         avalanche_size = 0
         edge_loss_events = 0
-        
+
         # While there are unstable sites, relax them
         # (In a real sandpile this cascades instantenously, here we iterate)
         sub_steps = 0
@@ -69,21 +69,21 @@ class TokamakSandpile:
             for i in sites_active:
                 # Topple rule: Z_i reduces, Z_i+1 increases
                 # This conserves mass internally, loses at edge
-                
+
                 amount = 2 # Standard BTW transfer
                 self.Z[i] -= amount
-                
+
                 if i + 1 < self.size:
                     self.Z[i+1] += 1
                 else:
                     # Edge loss (Energy leaves reactor)
                     edge_loss_events += 1
-                     
+
                 if i - 1 >= 0:
                     self.Z[i-1] += 1
-                
+
                 avalanche_size += 1
-            
+
             # Re-check instability
             sites_active = np.where(self.Z >= current_Z_crit)[0]
             sub_steps += 1
@@ -113,9 +113,9 @@ class HJB_Avalanche_Controller:
         # Heuristic Policy derived from Optimal Control:
         # If avalanche is big (instability), clamp down (increase shear).
         # If stable but low temp, relax shear (to allow some transport/fueling).
-        
+
         target_shear = 0.0
-        
+
         if last_avalanche_size > 5:
             # Active turbulence detected! Suppress!
             target_shear = 1.0
@@ -125,7 +125,7 @@ class HJB_Avalanche_Controller:
         else:
             # Stable, relax to save energy
             target_shear = 0.0
-            
+
         # Smooth transition
         self.shear += self.alpha * (target_shear - self.shear)
         self.shear = np.clip(self.shear, 0.0, 1.0)
@@ -133,34 +133,34 @@ class HJB_Avalanche_Controller:
 
 def run_sandpile_simulation():
     print("--- SCPN FUSION: Self-Organized Criticality (Sandpile) Model ---")
-    
+
     reactor = TokamakSandpile(L)
     controller = HJB_Avalanche_Controller()
-    
+
     # Storage for Visualization
     history_map = np.zeros((TIME_STEPS, L))
     history_avalanches = []
     history_control = []
     history_core_E = []
-    
+
     print(f"Simulating {TIME_STEPS} transport steps...")
-    
+
     for t in range(TIME_STEPS):
         reactor.drive()
 
         last_av = history_avalanches[-1] if len(history_avalanches) > 0 else 0
         core_temp = reactor.h[0] if t > 0 else 0
-        
+
         action_shear = controller.act(last_av, core_temp)
-        
+
         av_size = reactor.relax(suppression_strength=action_shear)
         profile = reactor.calculate_profile()
-        
+
         history_map[t, :] = reactor.Z # Store gradients (instability map)
         history_avalanches.append(av_size)
         history_control.append(action_shear)
         history_core_E.append(profile[0])
-        
+
         if t % 500 == 0:
             print(f"Step {t}: Core Temp={profile[0]}, Avalanche={av_size}, Control={action_shear:.2f}")
 
@@ -190,7 +190,7 @@ def run_sandpile_simulation():
     ax3.set_xlabel("Size (S)")
     ax3.set_ylabel("Count N(S)")
     ax3.grid(True, which="both", ls="-", alpha=0.2)
-    
+
     ax4 = fig.add_subplot(2, 2, 4)
     ax4.plot(history_control, color='blue', alpha=0.7)
     ax4.set_title("HJB Controller Action (Magnetic Shear)")

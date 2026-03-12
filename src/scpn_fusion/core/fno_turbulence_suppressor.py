@@ -97,7 +97,7 @@ class SpectralTurbulenceGenerator:
         dzf_dt = 5.0 * turb_intensity - 0.5 * self.zonal_flow
         self.zonal_flow += dzf_dt * dt
         self.zonal_flow = max(0.0, self.zonal_flow)
-        
+
         # 2. Add ZF shearing to damping
         total_damping = damping + 0.2 * self.zonal_flow
 

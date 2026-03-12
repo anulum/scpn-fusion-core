@@ -1,7 +1,7 @@
 # PHYSICS VERIFICATION REPORT: SCPN FUSION CORE v4.0
 
-**Date**: 2026-02-21  
-**Status**: VALIDATED  
+**Date**: 2026-02-21
+**Status**: VALIDATED
 **Scope**: Core Physics Closures, Integrated Discharge Dynamics, and Control Stability.
 
 ---

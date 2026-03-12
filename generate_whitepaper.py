@@ -11,9 +11,9 @@ import datetime
 
 def generate_report():
     print("--- SCPN AUTOMATED SCIENTIFIC REPORT GENERATOR ---")
-    
+
     date = datetime.datetime.now().strftime("%Y-%m-%d")
-    
+
     report = f"""# SCPN Fusion Framework: Technical Validation Report
 **Date:** {date}
 **Version:** 1.0 (Release Candidate)
@@ -49,10 +49,10 @@ The SCPN Framework demonstrates capability to model both conventional (ITER-clas
 ---
 *Generated automatically by scpn-fusion.*
 """
-    
+
     with open("SCPN_FUSION_WHITEPAPER.md", "w") as f:
         f.write(report)
-        
+
     print("Report generated: SCPN_FUSION_WHITEPAPER.md")
 
 if __name__ == "__main__":

@@ -226,12 +226,12 @@ def _run_mode(
 def _system_health_check() -> None:
     """Validate system resources and library versions."""
     LOGGER.info("Performing system health check...")
-    
+
     # 1. Hardware Resources
     cpu_count = os.cpu_count() or 1
     if cpu_count < 2:
         LOGGER.warning("Low CPU core count (%d). Simulations may be slow.", cpu_count)
-    
+
     try:
         import psutil
         mem = psutil.virtual_memory()
@@ -266,7 +266,7 @@ def _system_health_check() -> None:
         gpu_available = any(d.platform == 'gpu' for d in devices)
     except ImportError:
         LOGGER.debug("JAX not installed; skipping accelerator device probe.")
-    
+
     LOGGER.info(
         "Health check complete: CPUs=%d, GPU=%s",
         cpu_count, "YES" if gpu_available else "NO"

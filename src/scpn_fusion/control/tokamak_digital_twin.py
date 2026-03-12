@@ -159,7 +159,7 @@ class SimpleNeuralNet:
         self.b1 = np.zeros((1, hidden_size))
         self.W2 = rng.standard_normal((hidden_size, output_size)) * np.sqrt(1 / hidden_size)
         self.b2 = np.zeros((1, output_size))
-        
+
     def forward(self, x):
         self.z1 = np.dot(x, self.W1) + self.b1
         self.a1 = np.tanh(self.z1)
@@ -213,20 +213,20 @@ def run_digital_twin(
     local_rng = _resolve_rng(seed=int(seed), rng=rng)
     if verbose:
         logger.info("--- SCPN 2D TOKAMAK DIGITAL TWIN + NEURAL CONTROL ---")
-    
+
     topo = TokamakTopoloy()
     plasma = Plasma2D(topo, gyro_surrogate=gyro_surrogate)
-    
+
     state_dim = GRID_SIZE
     brain = SimpleNeuralNet(state_dim, HIDDEN_SIZE, 1, rng=local_rng)
-    
+
     history_rewards = []
     history_actions = []
     sensor_dropouts_total = 0
-    
+
     if verbose:
         logger.info("Training Neural Network for %d steps...", steps)
-    
+
     for t in range(steps):
         midplane_idx = GRID_SIZE // 2
         state_vector = np.asarray(plasma.T[midplane_idx, :], dtype=float).reshape(1, -1).copy()
@@ -244,7 +244,7 @@ def run_digital_twin(
             state_vector = np.nan_to_num(
                 state_vector, nan=0.0, posinf=100.0, neginf=0.0
             )
-        
+
         noise = float(local_rng.normal(0.0, 0.2))
         raw_action = brain.forward(state_vector)
         action = float(np.clip(raw_action + noise, -1.0, 1.0)[0, 0])
@@ -257,12 +257,12 @@ def run_digital_twin(
         baseline = np.mean(history_rewards[-50:]) if len(history_rewards) > 50 else 0
         # Derivative-free policy gradient estimator
         advantage = (reward - baseline) * noise
-        
+
         loss = brain.train_step(state_vector, None, advantage)
-        
+
         history_rewards.append(reward)
         history_actions.append(action)
-        
+
         if verbose and t % 500 == 0:
             logger.info(
                 "Digital twin simulation progress",

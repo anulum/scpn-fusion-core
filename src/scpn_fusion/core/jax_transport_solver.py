@@ -67,31 +67,31 @@ def transport_step_jax(
 ) -> tuple[jnp.ndarray, jnp.ndarray]:
     """
     Single differentiable transport step (Explicit finite difference).
-    
+
     dT/dt = 1/n * div(n * chi * grad(T)) + S
     """
     drho = rho[1] - rho[0]
-    
+
     def evolve(T, chi, S):
         # Cylindrical-like divergence in rho: (1/rho) * d/drho (rho * n * chi * dT/drho)
         # Reduced-order 1.5D closure: d/drho (D * dT/drho)
         grad_T = jnp.gradient(T, drho)
         flux = -ne * chi * grad_T
         div_flux = jnp.gradient(flux, drho) / jnp.maximum(ne, 1e-6)
-        
+
         # Numerical Hardening: Prevent NaN propagation
         new_T = T + dt * (-div_flux + S)
         return jnp.where(jnp.isfinite(new_T), new_T, T)
 
     new_te = evolve(te, chi_e, s_heat_e)
     new_ti = evolve(ti, chi_i, s_heat_i)
-    
+
     # Boundary conditions (Axis symmetry, Edge fixed)
     new_te = new_te.at[0].set(new_te[1])
     new_te = new_te.at[-1].set(0.1)
     new_ti = new_ti.at[0].set(new_ti[1])
     new_ti = new_ti.at[-1].set(0.1)
-    
+
     return jnp.maximum(new_te, 0.01), jnp.maximum(new_ti, 0.01)
 
 @jit
@@ -106,7 +106,7 @@ def simulate_scenario_jax(
     dt: float,
 ):
     """Rollout a transport simulation in JAX."""
-    
+
     def body_fn(carry, p_now):
         te, ti = carry
         # Simple heating model: uniform distribution for now
@@ -142,10 +142,10 @@ if __name__ == "__main__":
     ne = jnp.ones(nr) * 5.0
     chi = jnp.ones(nr) * 1.0
     s = jnp.zeros(nr)
-    
+
     new_te, new_ti = transport_step_jax(te, ti, ne, chi, chi, s, s, rho, 0.01)
     print("JAX Transport Step OK. Core Te:", new_te[0])
-    
+
     # Gradient test
     def cost(p):
         hist_te, _ = simulate_scenario_jax(te, ti, ne, chi, chi, p, rho, 0.01)

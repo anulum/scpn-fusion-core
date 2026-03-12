@@ -24,11 +24,11 @@ def test_fokker_planck_step_conserves_positivity():
     solver = FokkerPlanckSolver()
     # Inject some population
     solver.f[10] = 1.0e10
-    
+
     # Evolve
     # High E field to drive acceleration
     state = solver.step(dt=1e-5, E_field=10.0, n_e=5e19, T_e_eV=5000.0, Z_eff=1.0)
-    
+
     assert np.all(state.f >= 0.0)
     assert state.n_re > 0.0
     assert state.current_re > 0.0

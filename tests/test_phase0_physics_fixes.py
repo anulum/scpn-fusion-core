@@ -41,24 +41,24 @@ class TestTBRCorrection:
         report = blanket.calculate_volumetric_tbr()  # default resolution
         expected_ratio = 0.80 * 0.85  # port_coverage * streaming
         actual_ratio = report.tbr / report.tbr_ideal
-        assert abs(actual_ratio - expected_ratio) < 1e-6, (
-            f"Correction ratio {actual_ratio:.6f} != expected {expected_ratio}"
-        )
+        assert (
+            abs(actual_ratio - expected_ratio) < 1e-6
+        ), f"Correction ratio {actual_ratio:.6f} != expected {expected_ratio}"
 
     def test_multigroup_tbr_corrected_in_realistic_range(self):
         """3-group blanket with default corrections should give TBR in [1.0, 1.4]."""
         blanket = MultiGroupBlanket(thickness_cm=80.0, li6_enrichment=0.9)
         result = blanket.solve_transport()
         assert 1.0 <= result["tbr"] <= 1.4, (
-            f"Corrected 3-group TBR {result['tbr']:.3f} outside "
-            f"Fischer/DEMO range [1.0, 1.4]"
+            f"Corrected 3-group TBR {result['tbr']:.3f} outside " f"Fischer/DEMO range [1.0, 1.4]"
         )
 
     def test_volumetric_tbr_ideal_unchanged_with_unit_factors(self):
         """When correction factors = 1.0, tbr should equal tbr_ideal."""
         blanket = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.9)
         report = blanket.calculate_volumetric_tbr(
-            port_coverage_factor=1.0, streaming_factor=1.0,
+            port_coverage_factor=1.0,
+            streaming_factor=1.0,
             blanket_fill_factor=1.0,
         )
         assert abs(report.tbr - report.tbr_ideal) < 1e-12
@@ -74,9 +74,9 @@ class TestTBRCorrection:
         """3-group blanket with corrections should still be above 1.0."""
         blanket = MultiGroupBlanket(thickness_cm=80.0, li6_enrichment=0.9)
         result = blanket.solve_transport()
-        assert result["tbr"] > 1.0, (
-            f"Corrected 3-group TBR {result['tbr']:.3f} below self-sufficiency"
-        )
+        assert (
+            result["tbr"] > 1.0
+        ), f"Corrected 3-group TBR {result['tbr']:.3f} below self-sufficiency"
 
     def test_multigroup_tbr_ideal_field_present(self):
         """3-group result includes tbr_ideal."""
@@ -89,7 +89,8 @@ class TestTBRCorrection:
         """With correction=1.0, corrected TBR equals ideal."""
         blanket = MultiGroupBlanket(thickness_cm=80.0, li6_enrichment=0.9)
         result = blanket.solve_transport(
-            port_coverage_factor=1.0, streaming_factor=1.0,
+            port_coverage_factor=1.0,
+            streaming_factor=1.0,
         )
         assert abs(result["tbr"] - result["tbr_ideal"]) < 1e-12
 
@@ -97,26 +98,35 @@ class TestTBRCorrection:
         """Lower fill factor should reduce corrected TBR."""
         blanket = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.9)
         full = blanket.calculate_volumetric_tbr(
-            radial_cells=8, poloidal_cells=16, toroidal_cells=12,
+            radial_cells=8,
+            poloidal_cells=16,
+            toroidal_cells=12,
             blanket_fill_factor=1.0,
         )
         partial = blanket.calculate_volumetric_tbr(
-            radial_cells=8, poloidal_cells=16, toroidal_cells=12,
+            radial_cells=8,
+            poloidal_cells=16,
+            toroidal_cells=12,
             blanket_fill_factor=0.65,
         )
         assert partial.tbr < full.tbr
 
-    @pytest.mark.parametrize("bad_kwargs,match", [
-        ({"port_coverage_factor": 0.0}, "port_coverage_factor"),
-        ({"port_coverage_factor": 1.5}, "port_coverage_factor"),
-        ({"streaming_factor": -0.1}, "streaming_factor"),
-        ({"blanket_fill_factor": 0.0}, "blanket_fill_factor"),
-    ])
+    @pytest.mark.parametrize(
+        "bad_kwargs,match",
+        [
+            ({"port_coverage_factor": 0.0}, "port_coverage_factor"),
+            ({"port_coverage_factor": 1.5}, "port_coverage_factor"),
+            ({"streaming_factor": -0.1}, "streaming_factor"),
+            ({"blanket_fill_factor": 0.0}, "blanket_fill_factor"),
+        ],
+    )
     def test_volumetric_rejects_invalid_correction_factors(self, bad_kwargs, match):
         blanket = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.9)
         with pytest.raises(ValueError, match=match):
             blanket.calculate_volumetric_tbr(
-                radial_cells=8, poloidal_cells=16, toroidal_cells=12,
+                radial_cells=8,
+                poloidal_cells=16,
+                toroidal_cells=12,
                 **bad_kwargs,
             )
 
@@ -132,27 +142,37 @@ class TestQScanLimits:
     def test_q_ceiling_at_15(self):
         """Q factor must not exceed 15 in dynamic burn model."""
         model = DynamicBurnModel(
-            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, n_e20=1.0,
+            R0=6.2,
+            a=2.0,
+            B_t=5.3,
+            I_p=15.0,
+            n_e20=1.0,
         )
         result = model.simulate(P_aux_mw=10.0, duration_s=50.0, dt_s=0.05)
-        assert result["Q_peak"] <= 15.0, (
-            f"Q_peak={result['Q_peak']:.1f} exceeds ceiling of 15"
-        )
+        assert result["Q_peak"] <= 15.0, f"Q_peak={result['Q_peak']:.1f} exceeds ceiling of 15"
 
     def test_temperature_capped_at_25_kev(self):
         """Temperature must be capped at 25 keV."""
         model = DynamicBurnModel(
-            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, n_e20=1.0,
+            R0=6.2,
+            a=2.0,
+            B_t=5.3,
+            I_p=15.0,
+            n_e20=1.0,
         )
         result = model.simulate(P_aux_mw=70.0, duration_s=50.0, dt_s=0.05)
-        assert max(result["T_keV"]) <= 25.0 + 0.01, (
-            f"T_peak={max(result['T_keV']):.1f} keV exceeds 25 keV cap"
-        )
+        assert (
+            max(result["T_keV"]) <= 25.0 + 0.01
+        ), f"T_peak={max(result['T_keV']):.1f} keV exceeds 25 keV cap"
 
     def test_temperature_warning_emitted(self):
         """Warning emitted when temperature hits cap."""
         model = DynamicBurnModel(
-            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, n_e20=1.0,
+            R0=6.2,
+            a=2.0,
+            B_t=5.3,
+            I_p=15.0,
+            n_e20=1.0,
         )
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
@@ -163,7 +183,11 @@ class TestQScanLimits:
     def test_temperature_cap_telemetry_present(self):
         """Result includes deterministic temperature-cap telemetry fields."""
         model = DynamicBurnModel(
-            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, n_e20=1.0,
+            R0=6.2,
+            a=2.0,
+            B_t=5.3,
+            I_p=15.0,
+            n_e20=1.0,
         )
         result = model.simulate(
             P_aux_mw=70.0,
@@ -182,7 +206,11 @@ class TestQScanLimits:
     def test_enforce_temperature_limit_raises_in_strict_mode(self):
         """Strict mode should fail-fast when 25 keV cap is crossed."""
         model = DynamicBurnModel(
-            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, n_e20=1.0,
+            R0=6.2,
+            a=2.0,
+            B_t=5.3,
+            I_p=15.0,
+            n_e20=1.0,
         )
         with pytest.raises(BurnPhysicsError, match="exceeds 25.0 keV"):
             model.simulate(
@@ -196,7 +224,11 @@ class TestQScanLimits:
     def test_temperature_clamp_budget_raises_when_exceeded(self):
         """Clamp-event budget should raise when cap events exceed threshold."""
         model = DynamicBurnModel(
-            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, n_e20=1.0,
+            R0=6.2,
+            a=2.0,
+            B_t=5.3,
+            I_p=15.0,
+            n_e20=1.0,
         )
         with pytest.raises(BurnPhysicsError, match="cap events exceeded limit"):
             model.simulate(
@@ -211,7 +243,11 @@ class TestQScanLimits:
     def test_temperature_clamp_budget_rejects_invalid_inputs(self, bad_limit):
         """Clamp-event budget must be non-negative integer or None."""
         model = DynamicBurnModel(
-            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, n_e20=1.0,
+            R0=6.2,
+            a=2.0,
+            B_t=5.3,
+            I_p=15.0,
+            n_e20=1.0,
         )
         with pytest.raises(ValueError, match="max_temperature_clamp_events"):
             model.simulate(
@@ -224,7 +260,11 @@ class TestQScanLimits:
     def test_q_scan_with_iter_params_q_below_15(self):
         """Full Q-scan with ITER parameters should produce Q <= 15."""
         result = DynamicBurnModel.find_q10_operating_point(
-            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, kappa=1.7,
+            R0=6.2,
+            a=2.0,
+            B_t=5.3,
+            I_p=15.0,
+            kappa=1.7,
         )
         assert result["best"] is not None
         assert result["best"]["Q_final"] <= 15.0
@@ -234,7 +274,11 @@ class TestQScanLimits:
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             DynamicBurnModel.find_q10_operating_point(
-                R0=6.2, a=2.0, B_t=5.3, I_p=15.0, kappa=1.7,
+                R0=6.2,
+                a=2.0,
+                B_t=5.3,
+                I_p=15.0,
+                kappa=1.7,
             )
         cap_warnings = [w for w in caught if "physical limit" in str(w.message)]
         assert len(cap_warnings) == 0
@@ -242,7 +286,11 @@ class TestQScanLimits:
     def test_greenwald_limit_skip(self):
         """Greenwald limit correctly computed and applied."""
         result = DynamicBurnModel.find_q10_operating_point(
-            R0=6.2, a=2.0, B_t=5.3, I_p=15.0, kappa=1.7,
+            R0=6.2,
+            a=2.0,
+            B_t=5.3,
+            I_p=15.0,
+            kappa=1.7,
         )
         assert "n_greenwald" in result
         n_gw = result["n_greenwald"]
@@ -260,7 +308,11 @@ class TestQScanLimits:
         with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
             result = DynamicBurnModel.find_q10_operating_point(
-                R0=6.2, a=5.0, B_t=5.3, I_p=1.0, kappa=1.7,
+                R0=6.2,
+                a=5.0,
+                B_t=5.3,
+                I_p=1.0,
+                kappa=1.7,
             )
         assert result["best"] is None
         assert result["q10_achieved"] is False
@@ -280,6 +332,7 @@ class TestEnergyConservation:
         """Create a TransportSolver with equilibrium solved."""
         from pathlib import Path
         from scpn_fusion.core.integrated_transport_solver import TransportSolver
+
         config = str(Path(__file__).resolve().parents[1] / "iter_config.json")
         ts = TransportSolver(config)
         ts.solve_equilibrium()
@@ -330,4 +383,5 @@ class TestEnergyConservation:
     def test_physics_error_importable(self):
         """PhysicsError can be imported from the transport module."""
         from scpn_fusion.core.integrated_transport_solver import PhysicsError
+
         assert issubclass(PhysicsError, RuntimeError)

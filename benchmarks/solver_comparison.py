@@ -50,7 +50,7 @@ def _benchmark_sor(nr: int, nz: int, max_iter: int = 200) -> dict[str, object]:
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, dir=".") as f:
         json.dump(config, f)
         tmp_path = f.name
-    
+
     try:
         kernel = FusionKernel(tmp_path)
         t0 = time.perf_counter()
@@ -114,7 +114,7 @@ def _benchmark_neural(nr: int, nz: int) -> dict[str, object]:
     if not config_path.exists():
         # Create a temp config if needed, or use existing one
         config_path = Path("iter_config.json")
-    
+
     try:
         kernel = NeuralEquilibriumKernel(config_path)
         t0 = time.perf_counter()

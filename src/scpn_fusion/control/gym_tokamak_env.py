@@ -33,7 +33,7 @@ class TokamakEnv(gym.Env):
 
     Observation Space (Box):
         [R_axis, Z_axis, Ip_MA, Beta, Error_R, Error_Z, XP_R, XP_Z]
-    
+
     Action Space (Box):
         [PF1_delta, PF3_delta, PF5_delta, Heating_delta]
     """
@@ -82,7 +82,7 @@ class TokamakEnv(gym.Env):
 
     def _get_obs(self) -> np.ndarray:
         kernel = self.controller.kernel
-        
+
         # Measure state (similar to tokamak_flight_sim.py)
         if hasattr(kernel, "find_magnetic_axis"):
             curr_R, curr_Z, _ = kernel.find_magnetic_axis()
@@ -91,9 +91,9 @@ class TokamakEnv(gym.Env):
             iz, ir = np.unravel_index(idx_max, kernel.Psi.shape)
             curr_R = float(kernel.R[ir])
             curr_Z = float(kernel.Z[iz])
-            
+
         xp_pos, _ = kernel.find_x_point(kernel.Psi)
-        
+
         physics_cfg = kernel.cfg.get("physics", {})
         ip = float(physics_cfg.get("plasma_current_target", 5.0))
         beta = float(physics_cfg.get("beta_scale", 1.0))
@@ -113,7 +113,7 @@ class TokamakEnv(gym.Env):
         options: Optional[Dict[str, Any]] = None,
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
         super().reset(seed=seed)
-        
+
         # Re-init controller/kernel
         self.controller = IsoFluxController(
             config_file=self.config_file,
@@ -121,7 +121,7 @@ class TokamakEnv(gym.Env):
             control_dt_s=self.control_dt_s,
         )
         self.controller.kernel.solve_equilibrium()
-        
+
         self.current_step = 0
         obs = self._get_obs()
         return obs, {}
@@ -145,23 +145,23 @@ class TokamakEnv(gym.Env):
         self.controller._add_coil_current(0, top_applied)
         self.controller._add_coil_current(2, radial_applied)
         self.controller._add_coil_current(4, bottom_applied)
-        
+
         # Update Physics
         self.controller.kernel.cfg.setdefault("physics", {})["beta_scale"] = beta_applied
-        
+
         # Solve Equilibrium
         self.controller.kernel.solve_equilibrium()
-        
+
         # New observation
         obs = self._get_obs()
-        
+
         # Reward function: - MSE of position + energy efficiency
         r_err = obs[4]
         z_err = obs[5]
         dist_to_target = np.sqrt(r_err**2 + z_err**2)
-        
+
         reward = -dist_to_target
-        
+
         # Penalty for disruption (if out of bounds)
         disrupted = False
         if abs(r_err) > 0.5 or abs(z_err) > 0.5:
@@ -171,7 +171,7 @@ class TokamakEnv(gym.Env):
         self.current_step += 1
         terminated = disrupted
         truncated = self.current_step >= self.max_steps
-        
+
         return obs, float(reward), terminated, truncated, {"disrupted": disrupted}
 
     def render(self):

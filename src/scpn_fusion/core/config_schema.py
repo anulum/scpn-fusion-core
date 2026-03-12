@@ -52,7 +52,7 @@ class SolverParams(BaseModel):
 
 class ReactorConfig(BaseModel):
     model_config = ConfigDict(extra='allow')
-    
+
     reactor_name: str = "Unnamed-Reactor"
     grid_resolution: Tuple[int, int] = Field(default=(129, 129))
     dimensions: Dimensions

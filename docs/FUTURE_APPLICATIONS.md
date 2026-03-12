@@ -7,7 +7,7 @@
 
 ## 1. AI-Driven Real-Time Control
 
-The FNO-based turbulence suppressor and the neural equilibrium solver developed in this framework are ready for integration into **Tokamak Control Systems**. 
+The FNO-based turbulence suppressor and the neural equilibrium solver developed in this framework are ready for integration into **Tokamak Control Systems**.
 *   **Application**: Real-time disruption prediction and avoidance using low-latency FPGA implementations of our neural kernels.
 *   **Goal**: Eliminating "Disruptions"—the single greatest threat to tokamak commercial viability.
 

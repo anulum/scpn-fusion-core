@@ -24,37 +24,37 @@ def validate_iter(config_path: Path = DEFAULT_CONFIG_PATH) -> None:
     print("[1/3] Solving MHD Equilibrium...")
     sim = FusionBurnPhysics(str(config_path))
     sim.solve_equilibrium()
-    
+
     # Check Geometry
     # Find X-point and Axis
     idx_max = np.argmax(sim.Psi)
     iz, ir = np.unravel_index(idx_max, sim.Psi.shape)
     R_axis = sim.R[ir]
-    
+
     print(f"  -> Calculated Major Radius: {R_axis:.2f} m (ITER Nominal: 6.2 m)")
-    
+
     # 3. Run Burn Physics
     print("[2/3] Calculating Fusion Performance...")
     # ITER Baseline: 50MW Aux Heating -> 500MW Fusion
     metrics = sim.calculate_thermodynamics(P_aux_MW=50.0)
-    
+
     P_fus = metrics['P_fusion_MW']
     Q = metrics['Q']
-    
+
     print(f"  -> Calculated Fusion Power: {P_fus:.1f} MW (ITER Target: 500 MW)")
     print(f"  -> Calculated Q-Factor:     {Q:.2f} (ITER Target: 10.0)")
-    
+
     # 4. Scorecard
     print("\n--- VALIDATION REPORT CARD ---")
     score = 0
-    
+
     # Radius check (Geometry)
-    if 5.8 < R_axis < 6.6: 
+    if 5.8 < R_axis < 6.6:
         print("[PASS] Geometry within 5% tolerance")
         score += 1
     else:
         print(f"[FAIL] Geometry mismatch (Got {R_axis:.2f}, Expected 6.2)")
-        
+
     # Power check (reduced-order contract):
     # release acceptance requires physically plausible fusion power and Q>2.
     if 100 < P_fus < 800 and Q > 2.0:
@@ -66,7 +66,7 @@ def validate_iter(config_path: Path = DEFAULT_CONFIG_PATH) -> None:
         print(
             f"[FAIL] Burn contract violation (P_fusion={P_fus:.1f} MW, Q={Q:.2f})"
         )
-        
+
     if score == 2:
         print("\nRESULT: MODEL IS SCIENTIFICALLY SOUND.")
     else:

@@ -519,7 +519,7 @@ def cxrs_ion_diagnostics(
     samples: int = 96,
 ) -> tuple[FloatArray, FloatArray]:
     """Predict CXRS ion temperature and toroidal rotation.
-    
+
     Weights signals by a Gaussian beam-emission profile centered at beam_r_center.
     """
     ti, r, z = _validate_field_grid(
@@ -534,19 +534,19 @@ def cxrs_ion_diagnostics(
         z,
         name="cxrs.vphi",
     )
-    
+
     # Emission weight: exp(-(R - R_beam)^2 / w^2)
     rr_mesh, _ = np.meshgrid(r, z)
     weight_map = np.exp(-((rr_mesh - beam_r_center)**2) / (beam_width**2))
-    
+
     ti_out = np.zeros(len(chords), dtype=np.float64)
     vphi_out = np.zeros(len(chords), dtype=np.float64)
-    
+
     for i, (start, end) in enumerate(chords):
         # Weighted integrals
         sum_w = _line_integral_nearest(weight_map, r, z, start, end, samples=samples)
         if sum_w > 1e-9:
             ti_out[i] = _line_integral_nearest(ti * weight_map, r, z, start, end, samples=samples) / sum_w
             vphi_out[i] = _line_integral_nearest(vphi * weight_map, r, z, start, end, samples=samples) / sum_w
-            
+
     return ti_out, vphi_out

@@ -3,7 +3,7 @@ import numpy as np
 
 def test_eped():
     print("--- EPED Pedestal Model Test ---")
-    
+
     # ITER parameters
     iter_model = EpedPedestalModel(
         R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, kappa=1.7

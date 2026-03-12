@@ -130,11 +130,11 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
         """
         with open(path, "r") as f:
             raw_cfg = json.load(f)
-        
+
         # Hardening: Strict schema validation at the entry point
         validated_cfg = validate_config(raw_cfg)
         self.cfg = validated_cfg.model_dump()
-        
+
         logger.info("Loaded configuration for: %s", self.cfg["reactor_name"])
 
     def initialize_grid(self) -> None:

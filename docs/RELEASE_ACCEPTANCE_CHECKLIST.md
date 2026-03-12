@@ -1,6 +1,6 @@
 # Release Acceptance Checklist
 
-Release Version: `v3.9.3`  
+Release Version: `v3.9.3`
 Checklist State: `ready`
 
 This checklist must be fully green before publishing a release tag.
@@ -20,5 +20,5 @@ This checklist must be fully green before publishing a release tag.
 
 ## Post-Publish Verification
 
-- Verify PyPI parity (same version as release tag):  
+- Verify PyPI parity (same version as release tag):
   `python tools/check_pypi_sync.py --package scpn-fusion --mode equal --strip-v-prefix --retries 30 --retry-delay 10`

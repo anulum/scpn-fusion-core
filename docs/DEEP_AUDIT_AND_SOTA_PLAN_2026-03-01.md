@@ -172,31 +172,31 @@ Coverage by major domain (line hits):
 
 ### 4.1 Control and transport SOTA signals
 
-1. **TORAX** documents a differentiable tokamak transport simulator verified against RAPTOR and JETTO baselines.  
+1. **TORAX** documents a differentiable tokamak transport simulator verified against RAPTOR and JETTO baselines.
    Relevance: differentiable simulation + surrogate integration is now mainstream for fast control workflows.
 
-2. **FreeGSNKE** positions free-boundary tokamak simulation with active coil/vessel dynamics and DINA benchmark comparison.  
+2. **FreeGSNKE** positions free-boundary tokamak simulation with active coil/vessel dynamics and DINA benchmark comparison.
    Relevance: free-boundary parity is a mandatory credibility checkpoint.
 
-3. **Deep RL in tokamak control** (DeepMind + TCV, then tearing-mode suppression in Nature 2024) demonstrates robust, real-time, high-power operation gains from learning-based control.  
+3. **Deep RL in tokamak control** (DeepMind + TCV, then tearing-mode suppression in Nature 2024) demonstrates robust, real-time, high-power operation gains from learning-based control.
    Relevance: data-driven controllers are now accepted when bounded by rigorous safety and validation gates.
 
-4. **MAST-U real-time current profile estimation (2025)** uses force-balance + EKF to infer profiles from magnetic diagnostics.  
+4. **MAST-U real-time current profile estimation (2025)** uses force-balance + EKF to infer profiles from magnetic diagnostics.
    Relevance: estimator integration is SOTA for physics-constrained real-time state reconstruction.
 
-5. **MAST-U Newton-Krylov Grad-Shafranov solver (2025)** reports >3x speedup and improved robustness over classic Picard-style approaches.  
+5. **MAST-U Newton-Krylov Grad-Shafranov solver (2025)** reports >3x speedup and improved robustness over classic Picard-style approaches.
    Relevance: modern equilibrium lanes are converging to faster, more robust nonlinear solvers.
 
-6. **Disruption prediction transfer learning** (PPPL/APS feature) highlights cross-machine portability as key for deployment realism.  
+6. **Disruption prediction transfer learning** (PPPL/APS feature) highlights cross-machine portability as key for deployment realism.
    Relevance: single-machine synthetic-heavy pipelines are no longer enough for competitiveness.
 
-7. **ITER CODAC / real-time framework focus** emphasizes deterministic real-time software architecture and strict integration discipline.  
+7. **ITER CODAC / real-time framework focus** emphasizes deterministic real-time software architecture and strict integration discipline.
    Relevance: governance and deterministic runtime contracts are strategic, not optional.
 
-8. **Neuromorphic hardware trajectory (Intel Loihi 2)** reports major efficiency/speed scaling versus first-generation neuromorphic processors.  
+8. **Neuromorphic hardware trajectory (Intel Loihi 2)** reports major efficiency/speed scaling versus first-generation neuromorphic processors.
    Relevance: SCPN’s Petri->SNN compiler path is well-aligned with hardware trends, but needs stronger deployment evidence.
 
-9. **QLKNN-10D benchmark baseline** remains a key reference for fast transport surrogates with substantial speedups over direct QuaLiKiz solves.  
+9. **QLKNN-10D benchmark baseline** remains a key reference for fast transport surrogates with substantial speedups over direct QuaLiKiz solves.
    Relevance: replacing deprecated synthetic FNO defaults with validated QLKNN-first lanes is aligned with field expectations.
 
 ## 5) Gap Matrix: Current vs SOTA
@@ -214,22 +214,22 @@ Coverage by major domain (line hits):
 ## 6) Plan to Fill Gaps and Drive Toward 100% (Where Physically/Practically Possible)
 
 ## Principle
-Absolute 100% across all optional hardware/data/network branches is not physically meaningful.  
+Absolute 100% across all optional hardware/data/network branches is not physically meaningful.
 Target instead: **100% of all feasible deterministic production pathways**, with explicit waivers for externally constrained branches.
 
 ### 6.1 Coverage model (what “100%” means here)
 
-1. **Code-path coverage**  
+1. **Code-path coverage**
    100% of non-experimental, non-hardware-gated Python production code paths.
-2. **Branch coverage**  
+2. **Branch coverage**
    100% for critical safety/runtime modules (`scpn/`, `control/`, `integrated_transport_solver`, `disruption_predictor`, `cli` gates).
-3. **Contract coverage**  
+3. **Contract coverage**
    100% of documented domain contracts tested (input validation, fallback provenance, timeout behavior).
-4. **Claim-evidence coverage**  
+4. **Claim-evidence coverage**
    100% of headline README/RESULTS claims mapped in `CLAIMS_EVIDENCE_MAP`.
-5. **Data provenance coverage**  
+5. **Data provenance coverage**
    100% of validation artifacts carry provenance (source, split, calibration holdout).
-6. **Type coverage**  
+6. **Type coverage**
    100% strict typing for target critical modules; explicit waivers for optional third-party integrations.
 
 ### 6.1.1 Numeric coverage targets (v3.9.3 -> v4.0 runway)
@@ -282,13 +282,13 @@ Hard 100% requirement in v4.0:
 
 ## 7) “Beyond SOTA” Targeted Research Tracks
 
-1. **Proof-carrying control artifacts**  
+1. **Proof-carrying control artifacts**
    Compile-time formal guarantees + runtime verifier attestation bundle.
-2. **Differentiable control co-design lane**  
+2. **Differentiable control co-design lane**
    Couple differentiable transport approximations with policy-gradient/MPC hybrid tuning.
-3. **Cross-machine adaptation benchmark suite**  
+3. **Cross-machine adaptation benchmark suite**
    Standardized transfer-learning scorecard across SPARC/ITPA/DIII-D/JET-accessible subsets.
-4. **Neuromorphic HIL parity pack**  
+4. **Neuromorphic HIL parity pack**
    Bit-exact replay across NumPy, Rust, and hardware-backed SNN lanes with signed artifacts.
 
 ## 8) Immediate Next Actions (Autonomous)
@@ -301,16 +301,16 @@ Hard 100% requirement in v4.0:
 
 ## 9) External Research References
 
-1. TORAX docs: https://torax.readthedocs.io/en/latest/  
-2. TORAX GitHub: https://github.com/google-deepmind/torax  
-3. FreeGSNKE GitHub: https://github.com/FusionComputingLab/freegsnke  
-4. DeepMind (Nature 2024 tearing control): https://deepmind.google/discover/blog/how-ai-could-help-fusion-reactors-control-plasma/  
-5. DeepMind (Nature 2022 TCV control): https://deepmind.google/discover/blog/accelerating-fusion-science-through-learned-plasma-control/  
-6. DOE DIII-D robust controller news: https://www.energy.gov/science/fes/articles/artificial-intelligence-advances-fusion-research-and-development  
-7. PPPL transfer-learning disruption prediction feature: https://www.pppl.gov/news/2024/artificial-intelligence-predicts-disruptions-fusion-experiments  
-8. QLKNN-10D publication (Phys. Plasmas, 2020): https://www.osti.gov/biblio/1604324  
-9. MAST-U real-time EKF profile estimation (2025): https://www.osti.gov/biblio/2503499  
-10. MAST-U Newton-Krylov free-boundary GS solver (2025): https://www.osti.gov/pages/biblio/2534725  
-11. ITER CODAC architecture overview: https://www.iter.org/fr/node/20687/codac  
-12. ITER real-time framework case study (Fus. Eng. Des., 2023): https://www.osti.gov/pages/biblio/2247748  
+1. TORAX docs: https://torax.readthedocs.io/en/latest/
+2. TORAX GitHub: https://github.com/google-deepmind/torax
+3. FreeGSNKE GitHub: https://github.com/FusionComputingLab/freegsnke
+4. DeepMind (Nature 2024 tearing control): https://deepmind.google/discover/blog/how-ai-could-help-fusion-reactors-control-plasma/
+5. DeepMind (Nature 2022 TCV control): https://deepmind.google/discover/blog/accelerating-fusion-science-through-learned-plasma-control/
+6. DOE DIII-D robust controller news: https://www.energy.gov/science/fes/articles/artificial-intelligence-advances-fusion-research-and-development
+7. PPPL transfer-learning disruption prediction feature: https://www.pppl.gov/news/2024/artificial-intelligence-predicts-disruptions-fusion-experiments
+8. QLKNN-10D publication (Phys. Plasmas, 2020): https://www.osti.gov/biblio/1604324
+9. MAST-U real-time EKF profile estimation (2025): https://www.osti.gov/biblio/2503499
+10. MAST-U Newton-Krylov free-boundary GS solver (2025): https://www.osti.gov/pages/biblio/2534725
+11. ITER CODAC architecture overview: https://www.iter.org/fr/node/20687/codac
+12. ITER real-time framework case study (Fus. Eng. Des., 2023): https://www.osti.gov/pages/biblio/2247748
 13. Intel Loihi 2 release: https://www.intc.com/news-events/press-releases/detail/1684/intel-builds-worlds-largest-neuromorphic-system-to

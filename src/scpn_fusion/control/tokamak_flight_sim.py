@@ -158,11 +158,11 @@ class IsoFluxController:
         heating_actuator_tau_s = float(heating_actuator_tau_s)
         if not np.isfinite(heating_actuator_tau_s) or heating_actuator_tau_s <= 0.0:
             raise ValueError("heating_actuator_tau_s must be finite and > 0.")
-        
+
         # PID Gains for Position Control
         # Radial Control (Horizontal) -> Controlled by Outer Coils (PF2, PF3, PF4)
         self.pid_R = {'Kp': 2.0, 'Ki': 0.1, 'Kd': 0.5, 'err_sum': 0, 'last_err': 0}
-        
+
         # Vertical Control (Z-pos) -> Controlled by Top/Bottom diff (PF1 vs PF5)
         self.pid_Z = {'Kp': 5.0, 'Ki': 0.2, 'Kd': 2.0, 'err_sum': 0, 'last_err': 0}
 
@@ -234,7 +234,7 @@ class IsoFluxController:
             raise ValueError("shot_duration must be >= 1.")
         self._log(f"--- INITIATING TOKAMAK FLIGHT SIMULATOR ({steps} steps) ---")
         self._log(f"Scenario: Current Ramp-Up & Divertor Formation (dt={self.control_dt_s}s)")
-        
+
         # Initial Solve
         self.kernel.solve_equilibrium()
 
@@ -252,7 +252,7 @@ class IsoFluxController:
             beta_applied = self._act_heating.step(beta_cmd)
 
             physics_cfg['beta_scale'] = beta_applied
-            
+
             # Find current magnetic axis (parabolic sub-grid interpolation)
             idx_max = np.argmax(self.kernel.Psi)
             iz, ir = np.unravel_index(idx_max, self.kernel.Psi.shape)
@@ -271,7 +271,7 @@ class IsoFluxController:
                 if abs(denom) > 1e-30:
                     dz = np.clip(-(c - a) / denom, -0.5, 0.5)
                     curr_Z += dz * self.kernel.dZ
-            
+
             xp_pos, _ = self.kernel.find_x_point(self.kernel.Psi)
 
             err_R = self.target_R - curr_R
@@ -285,7 +285,7 @@ class IsoFluxController:
             ctrl_vertical_top = self._act_top.step(-ctrl_vertical_cmd)
             ctrl_vertical_bottom = self._act_bottom.step(ctrl_vertical_cmd)
             ctrl_vertical_applied = 0.5 * (ctrl_vertical_bottom - ctrl_vertical_top)
-            
+
             self._add_coil_current(2, ctrl_radial)       # PF3 radial correction
             self._add_coil_current(0, ctrl_vertical_top)   # top coil
             self._add_coil_current(4, ctrl_vertical_bottom) # bottom coil
@@ -303,7 +303,7 @@ class IsoFluxController:
             self.history['ctrl_Z_applied'].append(ctrl_vertical_applied)
             self.history['beta_cmd'].append(beta_cmd)
             self.history['beta_applied'].append(beta_applied)
-            
+
             self._log(
                 f"Time {time_s:.2f}s (Step {t}): Ip={target_Ip:.1f}MA | "
                 f"Axis=({curr_R:.2f}, {curr_Z:.2f}) | XP=({xp_pos[0]:.2f}, {xp_pos[1]:.2f}) | Ctrl_R={ctrl_radial:.2f} | Psi_max={np.max(self.kernel.Psi):.2f}"

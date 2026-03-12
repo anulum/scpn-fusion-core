@@ -107,7 +107,10 @@ def test_gdep_01_chaos_campaign_is_deterministic_for_seed() -> None:
     assert a["machines"][0]["planning_success_rate"] == b["machines"][0]["planning_success_rate"]
     assert a["machines"][1]["mean_risk"] == b["machines"][1]["mean_risk"]
     assert a["machines"][0]["chaos_dropouts_total"] == b["machines"][0]["chaos_dropouts_total"]
-    assert a["machines"][1]["chaos_noise_injections_total"] == b["machines"][1]["chaos_noise_injections_total"]
+    assert (
+        a["machines"][1]["chaos_noise_injections_total"]
+        == b["machines"][1]["chaos_noise_injections_total"]
+    )
     assert a["chaos_dropouts_total"] == b["chaos_dropouts_total"]
     assert a["chaos_noise_injections_total"] == b["chaos_noise_injections_total"]
 
