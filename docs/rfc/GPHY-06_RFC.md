@@ -67,7 +67,7 @@ Fixed generic solver paths cannot represent regime-specific runtime specializati
 - Milestone 2:
   - implement `RuntimeKernelJit` compile/cache/activate API.
 - Milestone 3:
-  - add deterministic tests for cache reuse, hot-swap behavior, and identity pass-through.
+  - add deterministic tests for cache reuse, hot-swap behavior, and identity fallback.
 
 ## 8. Go/No-Go Checklist
 

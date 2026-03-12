@@ -334,7 +334,7 @@ For each output i:
 
 This computes the stochastic estimate of `W @ input_probs`. The expected value equals the true matrix-vector product; the variance decreases as 1/L.
 
-**`dense_forward_float(W, inputs)`** — The float path: a simple `W @ inputs` using numpy. Used for validation and as the default path when sc_neurocore is not installed.
+**`dense_forward_float(W, inputs)`** — The float path: a simple `W @ inputs` using numpy. Used for validation and as a fallback when sc_neurocore is not installed.
 
 **`lif_fire(currents)`** — Threshold detection:
 
@@ -499,7 +499,7 @@ except ImportError:
 
 This flag gates all stochastic-path code. The `CompiledNet` dataclass stores `W_in_packed = None` and `neurons = []` when sc_neurocore is absent. The `lif_fire()` method falls back to numpy threshold comparison. The `dense_forward_float()` method always works regardless of sc_neurocore availability.
 
-**Rationale:** The Logic Compiler is a component of SCPN-Fusion-Core, which may be installed in environments where sc_neurocore is not present (e.g., pure physics simulation without neuromorphic hardware). The float path ensures the Petri Net modelling API is always available, with the stochastic compilation path as an optional acceleration.
+**Rationale:** The Logic Compiler is a component of SCPN-Fusion-Core, which may be installed in environments where sc_neurocore is not present (e.g., pure physics simulation without neuromorphic hardware). The fallback ensures the Petri Net modelling API is always available, with the stochastic compilation path as an optional acceleration.
 
 ### 6.3 Performance Characteristics
 
@@ -657,7 +657,7 @@ The neuro-symbolic compilation approach has broader implications beyond fusion:
 | **tau_mem = 1e6** (no leak) | Petri Net transitions are memoryless: they fire or don't on each step, with no temporal accumulation. | Cannot model transitions that "build up" over time. This is correct for standard PN semantics; temporal dynamics are the responsibility of the Packet C runtime clock. |
 | **noise_std = 0** (deterministic LIF) | Stochastic noise is already present in the bitstream encoding. Adding LIF noise would double-count randomness. | For future use cases requiring noisy transitions (e.g., modelling unreliable actuators), noise can be enabled per-neuron. |
 | **Per-element unique RNG seeds** | Statistical independence between weight bitstreams is critical for correct stochastic products. Correlated bitstreams produce biased results. | Memory: one seed counter (int) per element. Negligible. |
-| **Graceful sc_neurocore degradation** | SCPN-Fusion-Core may be used without neuromorphic hardware. The Petri Net API should always be available. | Code complexity: every method needs a float-path alternative. Mitigated by clean if/else structure. |
+| **Graceful sc_neurocore fallback** | SCPN-Fusion-Core may be used without neuromorphic hardware. The Petri Net API should always be available. | Code complexity: every method needs a float-path alternative. Mitigated by clean if/else structure. |
 | **Bitstream length default = 1024** | 1024 bits gives ~3.1% standard deviation (1/√1024), equivalent to ~5-bit precision. Sufficient for control thresholds but not for high-precision computation. | Accuracy vs. speed trade-off. L=4096 gives ~1.6% σ but 4× slower encoding and 4× more memory. User-configurable. |
 | **Minimum bitstream length = 64** | Below 64, packing to uint64 produces a single word per stream, and statistical accuracy is too poor (~12.5% σ) for meaningful computation. | Prevents user error. |
 | **Weight values clamped to [0, 1]** | Stochastic unipolar encoding requires P ∈ [0, 1]. Weights > 1.0 would need bipolar or multi-stream encoding (future work). | Limits arc weights to the [0, 1] range. Sufficient for normalised Petri Nets; higher weights can be implemented via multiple arcs. |
@@ -687,7 +687,7 @@ The neuro-symbolic compilation approach has broader implications beyond fusion:
 
 The Logic Compiler (A + B) provides the **definition** and **compilation** phases. Two additional packets complete the system:
 
-**Packet C — `scpn/runtime.py` — PetriNetEngine** (next milestone):
+**Packet C — `scpn/runtime.py` — PetriNetEngine** (planned):
 
 The runtime engine wraps the `CompiledNet` in a simulation loop:
 
@@ -701,7 +701,7 @@ print(engine.history)  # Full trajectory
 
 Internally, `step()` executes the pipeline described in Section 3.1: encode marking → forward pass → LIF fire → update marking. The engine will support both stochastic and float execution modes, configurable step timing, and optional state recording.
 
-**Packet D — `examples/01_traffic_light.py` — Hello World Demo** (next milestone):
+**Packet D — `examples/01_traffic_light.py` — Hello World Demo** (planned):
 
 A self-contained example that defines the traffic-light net, compiles it, runs it for 1000 steps, and visualises the state trajectory — demonstrating the full pipeline from human-readable specification to neuromorphic execution.
 
@@ -737,7 +737,7 @@ The test suite's `TestCyclicFlow.test_ten_step_cycle` already validates the comp
 
 The Neuro-Symbolic Logic Compiler bridges the gap between formal symbolic control specification (Petri Nets) and high-speed neuromorphic execution (stochastic bitstream computing). Packet A provides a clean, validated builder API for defining Stochastic Petri Nets with sparse matrix compilation. Packet B compiles these nets into sc_neurocore artifacts — LIF threshold neurons and pre-packed uint64 weight bitstreams — that execute the same logic through AND gates and bit counters instead of floating-point arithmetic.
 
-The "Tokens are Bits" philosophy creates a direct isomorphism between Petri Net semantics and stochastic computing primitives, guaranteeing by construction that the neuromorphic execution faithfully implements the symbolic specification. The dual execution path (stochastic + float alternate) ensures the system works everywhere — from a researcher's laptop without neuromorphic hardware to an FPGA in a tokamak control room.
+The "Tokens are Bits" philosophy creates a direct isomorphism between Petri Net semantics and stochastic computing primitives, guaranteeing by construction that the neuromorphic execution faithfully implements the symbolic specification. The dual execution path (stochastic + float fallback) ensures the system works everywhere — from a researcher's laptop without neuromorphic hardware to an FPGA in a tokamak control room.
 
 With 32 passing tests, proven cyclic correctness, and verified token conservation, Packets A & B provide a solid foundation for the runtime engine (Packet C) and demonstration (Packet D) that will complete the first end-to-end neuro-symbolic controller in the SCPN-Fusion-Core ecosystem.
 

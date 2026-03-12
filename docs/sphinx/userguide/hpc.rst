@@ -3,7 +3,7 @@ HPC and GPU Acceleration
 ============================================
 
 SCPN-Fusion-Core supports high-performance computing through a Rust
-native backend, C++ FFI bridge, and a GPU acceleration roadmap.
+native backend, C++ FFI bridge, and a planned GPU acceleration path.
 
 Rust Workspace
 ---------------
@@ -93,7 +93,7 @@ before porting them to Rust.
 GPU Acceleration Roadmap
 --------------------------
 
-GPU support is targeted in three phases (tracked in
+GPU support is planned in three phases (tracked in
 ``docs/GPU_ACCELERATION_ROADMAP.md``):
 
 **Phase 1: wgpu SOR kernel**

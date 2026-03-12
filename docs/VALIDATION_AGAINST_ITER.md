@@ -235,7 +235,7 @@ detection, not full-fidelity discharge reconstruction.
 
 ## 11. Next Validation Extensions
 
-Targeted follow-up after WP-E1:
+Planned follow-up after WP-E1:
 
 1. Add machine-specific uncertainty bands in reference JSON.
 2. Include JET and DIII-D published points as explicit files.

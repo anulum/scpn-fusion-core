@@ -10,7 +10,7 @@ The benchmark (`validation/benchmark_vs_freegs.py`) operates in **two modes**:
 
 | Mode | Gate | Status |
 |------|------|--------|
-| Solov'ev (analytic) | psi_nrmse < 0.11 | **PASS** (avg 0.076) |
+| Solov'ev (fallback) | psi_nrmse < 0.11 | **PASS** (avg 0.076) |
 | FreeGS strict | psi_nrmse < 0.005 + 5 more gates | **Not run on CI** (opt-in) |
 
 Latest artifact (`artifacts/freegs_benchmark.json`, 2026-03-02):
@@ -221,7 +221,7 @@ Does NOT depend on UPDE Kuramoto coupling (unaffected by prior bug fixes).
 | FNO Spatial | `tools/train_fno_qlknn_spatial.py` | JAX | QLKNN oracle (200 equilibria) | 30-60 min | Production |
 | GS-Transport Surrogate | `src/.../gs_transport_surrogate_training.py` | NumPy | TransportSolver (5K samples) | 10-30 min | Production |
 | Neural Equilibrium | `src/.../neural_equilibrium_training.py` | NumPy | SPARC GEQDSK (78 samples) | 5-15 min | Production |
-| Multi-Regime FNO | `src/.../fno_training_multi_regime.py` | NumPy | Synthetic H-W | 30-90 min | Research-only |
+| Multi-Regime FNO | `src/.../fno_training_multi_regime.py` | NumPy | Synthetic H-W | 30-90 min | Experimental |
 | Advanced FNO (velocity) | `src/.../fno_jax_training.py` | JAX | GENE data (not available) | TBD | Scaffold only |
 
 ### GPU Requirements
@@ -275,19 +275,19 @@ Runbook: `docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md`
 | Weight | Date | Accuracy | Depends on Corrected Physics? |
 |--------|------|----------|-------------------------------|
 | `mlp_itpa` | 2026-02-16 | RMSE 13.5% | No (ITPA scaling fit) |
-| `fno_eurofusion_jet` | 2026-02-16 | rel_L2=0.79 | No (Retired in v3.9) |
+| `fno_eurofusion_jet` | 2026-02-16 | rel_L2=0.79 | No (DEPRECATED) |
 | `neural_equilibrium_sparc` | 2026-02-16 | NRMSE <1e-4 | No (GS-only, no UPDE) |
 
 All weights generated before Gemini's physics hardening (2026-02-21) but none depend
 on the corrected subsystems (Kuramoto coupling, MRE disruption, Bosch-Hale reactivity).
-The FNO is already retired from the default lane (v4.0 decision: retrain on real data or remove).
+The FNO is already DEPRECATED (v4.0 decision: retrain on real data or remove).
 
 ### Priority for GPU Training
 
 1. **Neural Transport (QLKNN)** — most useful, cleanest pipeline, public data.
 2. **FNO Spatial** — quick win, JAX-accelerated, improves turbulence modelling.
 3. **Neural Equilibrium** — needs more GEQDSK files first (3 files insufficient).
-4. **Multi-Regime FNO** — research-only, synthetic data only.
+4. **Multi-Regime FNO** — experimental, synthetic data only.
 
 ---
 
@@ -323,7 +323,7 @@ Source: `validation/reference_data/provenance_manifest.json` (v2, 2026-03-05).
 | Neural Transport (QLKNN) | Zenodo QLKNN-10D (500K samples) | **Yes** (real gyrokinetic) |
 | Neural Equilibrium | 3 SPARC lmode GEQDSK | **Yes** (real CFS/MIT) |
 | MLP ITPA | 53-shot ITPA CSV | **Yes** (real multi-machine) |
-| FNO turbulence | Synthetic Hasegawa-Wakatani | **No** (Retired in v3.9) |
+| FNO turbulence | Synthetic Hasegawa-Wakatani | **No** (DEPRECATED) |
 | GS-Transport surrogate | TransportSolver oracle | **No** (synthetic) |
 | Disruption predictor | 16 DIII-D-like NPZ | **No** (synthetic) |
 

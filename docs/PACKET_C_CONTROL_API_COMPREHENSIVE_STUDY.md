@@ -209,7 +209,7 @@ After the completion of Packets A and B, the Neuro-Symbolic Logic Compiler could
 
 The Packets A & B technical report explicitly identified this gap in Section 11 ("Relationship to Packets C & D"):
 
-> "Packet C — `scpn/runtime.py` — PetriNetEngine (next milestone): The runtime engine wraps the `CompiledNet` in a simulation loop."
+> "Packet C — `scpn/runtime.py` — PetriNetEngine (planned): The runtime engine wraps the `CompiledNet` in a simulation loop."
 
 Packet C delivers this and substantially more: not just a runtime engine, but a complete control API with typed data contracts, a portable artifact format, embedded safety constraints, and a dual-path architecture designed for future hardware acceleration.
 
@@ -776,14 +776,14 @@ The `NeuroSymbolicController` executes two independent paths on every tick:
               │               │
               └───────┬───────┘
                       │
-            commit SC state (or oracle path)
+            commit SC state (or oracle fallback)
                       │
                decode_actions()
                       │
                   ControlAction
 ```
 
-The oracle path is always available and always correct. The SC path currently returns the oracle result (default) but is structured so that when the Rust Petri kernel is exposed, `_sc_step()` becomes a real stochastic execution and the dual-path architecture enables online comparison:
+The oracle path is always available and always correct. The SC path currently returns the oracle result (fallback) but is structured so that when the Rust Petri kernel is exposed, `_sc_step()` becomes a real stochastic execution and the dual-path architecture enables online comparison:
 
 - **Development**: oracle serves as ground truth while building and debugging nets
 - **Validation**: oracle vs SC comparison quantifies stochastic error bounds
@@ -1718,7 +1718,7 @@ The Packet C test suite achieves comprehensive coverage of the new code:
 | `controller.py` | 130 | 125 | ~96% |
 | `compiler.py` (new code) | ~110 | ~105 | ~95% |
 
-The untested lines in `artifact.py` are error-handling paths for malformed JSON that would require intentionally corrupted artifacts to exercise. The untested lines in `controller.py` are the `_sc_step` method's body (currently a one-line delegation to oracle), which will be exercised when the Rust SC kernel is integrated.
+The untested lines in `artifact.py` are error-handling paths for malformed JSON that would require intentionally corrupted artifacts to exercise. The untested lines in `controller.py` are the `_sc_step` method's body (currently a one-line fallback to oracle), which will be exercised when the Rust SC kernel is integrated.
 
 ### 15.4 What Is Not Tested
 
@@ -1728,7 +1728,7 @@ Several important aspects are deliberately not tested in the current suite:
 
 2. **Concurrent access.** The controller is not thread-safe; no concurrency tests exist. Thread safety is not a requirement for the current single-threaded oracle path.
 
-3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not checked against the artifact files in the test suite. Schema validation requires a JSON Schema library (e.g., `jsonschema`), which is not currently a dependency.
+3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema validation requires a JSON Schema library (e.g., `jsonschema`), which is not currently a dependency.
 
 4. **Stochastic path divergence.** When the SC path is activated, the oracle and SC paths will produce different results (the SC path is an approximation). Tests comparing the two paths' agreement are deferred to Packet D.
 
@@ -2672,7 +2672,7 @@ The controller's weights are fixed at compile time. There is no mechanism for on
 - Weight changes during execution could violate the safety envelope (e.g., a learned weight exceeding [0, 1]).
 - The determinism guarantee would be broken if weights change during execution.
 
-Online learning is deferred to future work (Section 34) with appropriate safety constraints (bounded weight deltas, Lyapunov stability monitoring).
+Online learning is planned as future work (Section 34) with appropriate safety constraints (bounded weight deltas, Lyapunov stability monitoring).
 
 ### 28.2 Plant Model
 
@@ -2681,7 +2681,7 @@ The controller has no internal model of the plant. It does not predict future st
 - Model-based control requires system identification, which is a separate research effort.
 - The current proportional/integral control topology is sufficient for demonstrating the pipeline.
 
-Plant model integration is deferred to future work (Section 31).
+Plant model integration is planned as future work (Section 31).
 
 ### 28.3 Multi-Rate Execution
 
@@ -2690,7 +2690,7 @@ The controller runs at a single rate (one tick per `dt_control_s`). There is no 
 - It requires a scheduler, which adds non-trivial complexity.
 - The single-rate design can achieve multi-rate behaviour by composing multiple controllers at different rates in the external orchestration layer.
 
-Hierarchical multi-controller composition is deferred to future work (Section 33).
+Hierarchical multi-controller composition is planned as future work (Section 33).
 
 ### 28.4 Adaptive Thresholds
 
@@ -2901,7 +2901,7 @@ Activating the stochastic path requires:
        logger.warning(f"Oracle-SC divergence: {divergence} at k={k}")
    ```
 
-4. **Revert policy.** If the divergence exceeds a threshold, the controller should revert to the oracle path. This provides a safety net during the SC path integration period.
+4. **Fallback policy.** If the divergence exceeds a threshold, the controller should revert to the oracle path. This provides a safety net during the SC path integration period.
 
 The SC path activation is tracked in the Rust migration handover document (`.coordination/handovers/CODEX_RUST_MIGRATION_HANDOVER_2026-02-10.md`).
 
@@ -3081,7 +3081,7 @@ Packet C of the SCPN Fusion Core Neuro-Symbolic Logic Compiler makes the followi
 
 4. **Single control domain.** The contracts are hardcoded for the fusion plasma R/Z control problem. While the extension pattern (Section 20) is straightforward, the current implementation cannot be used for other control problems without modifying the source code.
 
-5. **No schema checking.** The JSON Schema exists but is not checked at load time. This means a malformed artifact that satisfies the programmatic checks but violates the schema would not be caught.
+5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the programmatic checks but violates the schema would not be caught.
 
 6. **Oracle-only firing semantics.** The oracle path implements firing with exact floating-point arithmetic. The stochastic path would introduce quantisation noise from the bitstream representation. The impact of this noise on controller performance is unknown and needs analysis.
 

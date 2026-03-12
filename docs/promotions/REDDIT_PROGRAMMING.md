@@ -10,7 +10,7 @@ We've open-sourced SCPN Fusion Core, a full-stack tokamak fusion reactor simulat
 
 **Architecture:**
 - 46-module Python package (physics, AI, diagnostics) + 10-crate Rust workspace (native solvers via PyO3)
-- Transparent degradation: `try: import scpn_fusion_rs` -- if the Rust extension isn't built, NumPy kicks in
+- Transparent fallback: `try: import scpn_fusion_rs` -- if the Rust extension isn't built, NumPy kicks in
 - Property-based testing on both sides: Hypothesis (Python) and proptest (Rust) covering numerical invariants and solver convergence
 
 **Rust solver stack:**

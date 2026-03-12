@@ -14,14 +14,13 @@ concurrency:
   group: freegs-strict-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   freegs-strict:
     name: FreeGS Strict Parity
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
@@ -49,7 +48,7 @@ jobs:
 
       - name: Upload FreeGS strict artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: freegs-strict-gate
           path: |

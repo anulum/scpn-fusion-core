@@ -12,5 +12,5 @@
 | Metric | Value | Threshold |
 |--------|-------|-----------|
 | quasineutral_residual | 0.000e+00 | <= 1.0e-10 |
-| late_energy_error_p95 | 0.5746 | <= 2.00 |
-| he_ash_peak_1e19m3 | 0.000230 | >= 1.0e-04 |
+| late_energy_error_p95 | 0.4393 | <= 2.00 |
+| he_ash_peak_1e19m3 | 0.000241 | >= 1.0e-04 |

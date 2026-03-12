@@ -100,7 +100,7 @@ SCPN-Fusion-Core implements a four-layer AI stack that spans the full lifecycle 
 **Key design decisions:**
 - No pickle persistence — model weights stored as `.npz` with `allow_pickle=False` for security and cross-platform reproducibility
 - Training on real experimental data via `train_from_geqdsk()` with profile perturbations, not synthetic data only
-- Transparent revert to full physics solve when surrogate confidence is below threshold
+- Transparent fallback to full physics solve when surrogate confidence is below threshold
 - Rust inference path in `fusion-ml/src/neural_equilibrium.rs` for sub-millisecond deployment
 
 **Validation:** 19 unit tests covering PCA round-trip fidelity, MLP shape invariants, save/load determinism, SPARC training integration, and benchmark timing.
@@ -273,7 +273,7 @@ SCPN-Fusion-Core has implemented a production GPU backend using the `wgpu` crate
 - Workgroup size: 16x16 threads
 - Two-pass checkerboard sweep (red dispatch, then black dispatch)
 - Boundary-skipping interior iteration
-- f32 precision with tolerance-guarded promotion to f64 CPU path
+- f32 precision with tolerance-guarded fallback to f64 CPU path
 
 **Projected speedups on RTX 4090-class hardware:**
 
@@ -281,9 +281,9 @@ SCPN-Fusion-Core has implemented a production GPU backend using the `wgpu` crate
 |:----|:---:|:---:|
 | SOR red-black sweep (65x65) | 20-50x | Implemented |
 | SOR red-black sweep (256x256) | 100-200x | Implemented |
-| Multigrid V-cycle (65x65) | 10-30x | Phase 3 targeted |
-| FNO turbulence (FFT, 64x64) | 50-100x | Phase 3 targeted |
-| MLP batch inference | 2-5x | Phase 3 targeted |
+| Multigrid V-cycle (65x65) | 10-30x | Phase 3 planned |
+| FNO turbulence (FFT, 64x64) | 50-100x | Phase 3 planned |
+| MLP batch inference | 2-5x | Phase 3 planned |
 
 ### 5.3 MPI Domain Decomposition
 

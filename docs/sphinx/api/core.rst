@@ -222,7 +222,7 @@ Rust Compatibility Layer
    :undoc-members:
    :show-inheritance:
 
-Research Bridges
+Experimental Bridges
 ----------------------
 
 .. automodule:: scpn_fusion.core.lazarus_bridge

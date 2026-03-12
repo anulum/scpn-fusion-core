@@ -1,8 +1,8 @@
 # ──────────────────────────────────────────────────────────────────────
 # SCPN Fusion Core — Documentation Build & GitHub Pages Deploy
-# © 1998–2026 Miroslav Šotek. All rights reserved.
-# SPDX-License-Identifier: AGPL-3.0-or-later
+# (c) 1998-2026 Miroslav Sotek.
 # Contact: www.anulum.li | protoscience@anulum.li
+# License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 name: Documentation
 
@@ -19,7 +19,10 @@ on:
       - "pyproject.toml"
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: pages-${{ github.ref }}
@@ -29,8 +32,6 @@ jobs:
   build-python-docs:
     name: Build Python API docs (Sphinx)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -49,7 +50,7 @@ jobs:
         run: sphinx-build -b html docs/sphinx docs/sphinx/_build/html
 
       - name: Upload Python docs
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: python-docs
           path: docs/sphinx/_build/html/
@@ -58,8 +59,6 @@ jobs:
   build-rust-docs:
     name: Build Rust API docs (rustdoc)
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -81,7 +80,7 @@ jobs:
         run: cargo doc --workspace --no-deps --all-features --exclude scpn-fusion-rs
 
       - name: Upload Rust docs
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: rust-docs
           path: scpn-fusion-rs/target/doc/
@@ -90,8 +89,6 @@ jobs:
   build-notebook-html:
     name: Build tutorial notebook HTML exports
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v6
 
@@ -112,7 +109,7 @@ jobs:
           python -m jupyter nbconvert --to html examples/*.ipynb --output-dir docs/notebooks/
 
       - name: Upload notebook HTML
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: notebook-html
           path: docs/notebooks/
@@ -122,10 +119,6 @@ jobs:
     name: Deploy to GitHub Pages
     needs: [build-python-docs, build-rust-docs, build-notebook-html]
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
     env:
       PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
     environment:
@@ -138,19 +131,19 @@ jobs:
             docs/assets/repo_header.png
 
       - name: Download Python docs
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v7
         with:
           name: python-docs
           path: site/python/
 
       - name: Download Rust docs
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v7
         with:
           name: rust-docs
           path: site/rust/
 
       - name: Download notebook HTML
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v7
         with:
           name: notebook-html
           path: site/notebooks/
@@ -407,7 +400,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Upload to Pages
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
           name: ${{ env.PAGES_ARTIFACT_NAME }}
           path: site/

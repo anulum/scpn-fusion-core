@@ -18,14 +18,13 @@ concurrency:
   group: security-audit-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   python-dependency-audit:
     name: Python Dependency Audit
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
@@ -73,7 +72,7 @@ jobs:
           exit $audit_exit
       - name: Upload Python audit artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: python-dependency-audit
           path: artifacts/pip-audit.json
@@ -81,8 +80,6 @@ jobs:
   rust-dependency-audit:
     name: Rust Dependency Audit
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     defaults:
       run:
         working-directory: scpn-fusion-rs
@@ -98,7 +95,7 @@ jobs:
           cargo audit --json > ../artifacts/cargo-audit.json
       - name: Upload Rust audit artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v6
         with:
           name: rust-dependency-audit
           path: artifacts/cargo-audit.json

@@ -16,7 +16,8 @@ on:
   schedule:
     - cron: "0 6 * * 1"
 
-permissions: {}
+permissions:
+  security-events: write
 
 concurrency:
   group: codeql-${{ github.ref }}
@@ -25,14 +26,11 @@ concurrency:
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v6
 
-      - uses: github/codeql-action/init@0d579ffd059c29b07949a3cce3983f0780820c98  # v4.32.6
+      - uses: github/codeql-action/init@v3
         with:
           languages: python
 
-      - uses: github/codeql-action/analyze@0d579ffd059c29b07949a3cce3983f0780820c98  # v4.32.6
+      - uses: github/codeql-action/analyze@v3

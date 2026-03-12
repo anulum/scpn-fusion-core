@@ -12,14 +12,13 @@ on:
     - cron: "0 6 * * 1"
   workflow_dispatch:
 
-permissions: {}
+permissions:
+  issues: write
+  pull-requests: write
 
 jobs:
   stale:
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
     steps:
       - uses: actions/stale@v10.2.0
         with:

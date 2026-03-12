@@ -13,7 +13,7 @@ on:
   schedule:
     - cron: "0 6 * * 1"
 
-permissions: {}
+permissions: read-all
 
 concurrency:
   group: scorecard-${{ github.ref }}
@@ -23,7 +23,6 @@ jobs:
   analysis:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       security-events: write
       id-token: write
     steps:
@@ -31,7 +30,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a  # v2.4.3
+      - uses: ossf/scorecard-action@v2.4.3
         with:
           results_file: results.sarif
           results_format: sarif
@@ -43,6 +42,6 @@ jobs:
           path: results.sarif
           retention-days: 5
 
-      - uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98  # v4.32.6
+      - uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
