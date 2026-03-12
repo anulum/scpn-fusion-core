@@ -237,4 +237,6 @@ def test_bundle_pretrained_surrogates_rebuilds_on_invalid_cached_manifest(
     assert out["version"] == "task2-pretrained-v1"
     assert "mlp" in out["metrics"]
     assert "fno" in out["metrics"]
-    assert any("Invalid cached pretrained-surrogates manifest" in rec.message for rec in caplog.records)
+    assert any(
+        "Invalid cached pretrained-surrogates manifest" in rec.message for rec in caplog.records
+    )

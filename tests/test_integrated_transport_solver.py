@@ -72,9 +72,9 @@ def solver(config_file: Path) -> TransportSolver:
     """Create a single-ion TransportSolver with physical initial profiles."""
     ts = TransportSolver(str(config_file), multi_ion=False)
     # Set physically meaningful initial profiles
-    ts.Ti = 5.0 * (1 - ts.rho ** 2)
-    ts.Te = 5.0 * (1 - ts.rho ** 2)
-    ts.ne = 8.0 * (1 - ts.rho ** 2) ** 0.5
+    ts.Ti = 5.0 * (1 - ts.rho**2)
+    ts.Te = 5.0 * (1 - ts.rho**2)
+    ts.ne = 8.0 * (1 - ts.rho**2) ** 0.5
     ts.update_transport_model(50.0)
     return ts
 
@@ -83,9 +83,9 @@ def solver(config_file: Path) -> TransportSolver:
 def solver_multi(config_file: Path) -> TransportSolver:
     """Create a multi-ion TransportSolver with D, T, He-ash species."""
     ts = TransportSolver(str(config_file), multi_ion=True)
-    ts.Ti = 5.0 * (1 - ts.rho ** 2)
-    ts.Te = 5.0 * (1 - ts.rho ** 2)
-    ts.ne = 8.0 * (1 - ts.rho ** 2) ** 0.5
+    ts.Ti = 5.0 * (1 - ts.rho**2)
+    ts.Te = 5.0 * (1 - ts.rho**2)
+    ts.ne = 8.0 * (1 - ts.rho**2) ** 0.5
     ts.n_D = 0.5 * ts.ne.copy()
     ts.n_T = 0.5 * ts.ne.copy()
     ts.n_He = np.zeros(ts.nr)
@@ -94,6 +94,7 @@ def solver_multi(config_file: Path) -> TransportSolver:
 
 
 # ── 1. Initialization ────────────────────────────────────────────────
+
 
 class TestInitialization:
 
@@ -172,6 +173,7 @@ class TestInitialization:
 
 # ── 2. Profile Evolution ─────────────────────────────────────────────
 
+
 class TestEvolveProfiles:
 
     def test_evolve_profiles_runs(self, solver: TransportSolver) -> None:
@@ -211,8 +213,9 @@ class TestEvolveProfiles:
         1% gate is violated on cold-start parabolic profiles."""
         solver.evolve_profiles(dt=0.001, P_aux=20.0, enforce_conservation=False)
         assert np.isfinite(solver._last_conservation_error)
-        assert solver._last_conservation_error < 1.0, \
-            f"Conservation error {solver._last_conservation_error:.2e} exceeds 100%"
+        assert (
+            solver._last_conservation_error < 1.0
+        ), f"Conservation error {solver._last_conservation_error:.2e} exceeds 100%"
         assert np.all(np.isfinite(solver.Ti))
         assert np.all(np.isfinite(solver.Te))
 
@@ -323,6 +326,7 @@ class TestEvolveProfiles:
 
 # ── 3. Multi-Ion Species ──────────────────────────────────────────────
 
+
 class TestMultiIon:
 
     def test_multi_ion_he_ash_grows(self, solver_multi: TransportSolver) -> None:
@@ -382,7 +386,8 @@ class TestMultiIon:
             solver_multi.evolve_profiles(dt=0.01, P_aux=50.0)
         # ne = n_D + n_T + 2*n_He + Z_W * n_impurity
         ne_check = (
-            solver_multi.n_D + solver_multi.n_T
+            solver_multi.n_D
+            + solver_multi.n_T
             + 2.0 * solver_multi.n_He
             + 10.0 * np.maximum(solver_multi.n_impurity, 0.0)
         )
@@ -406,6 +411,7 @@ class TestMultiIon:
 
 
 # ── 4. Steady State Run ──────────────────────────────────────────────
+
 
 class TestSteadyState:
 
@@ -493,6 +499,7 @@ class TestSteadyState:
 
 
 # ── 5. Neoclassical Transport ─────────────────────────────────────────
+
 
 class TestNeoclassical:
 
@@ -758,9 +765,9 @@ class TestNeoclassical:
     def test_chang_hinton_profile_shape(self) -> None:
         """Chang-Hinton neoclassical chi should match input rho shape."""
         rho = np.linspace(0, 1, 50)
-        Ti = 5.0 * (1 - rho ** 2)
-        ne = 8.0 * (1 - rho ** 2) ** 0.5
-        q = 1.0 + 3.0 * rho ** 2
+        Ti = 5.0 * (1 - rho**2)
+        ne = 8.0 * (1 - rho**2) ** 0.5
+        q = 1.0 + 3.0 * rho**2
         chi = chang_hinton_chi_profile(rho, Ti, ne, q, R0=6.2, a=2.0, B0=5.3)
         assert chi.shape == (50,)
         assert np.all(np.isfinite(chi))
@@ -801,9 +808,7 @@ class TestNeoclassical:
         monkeypatch.setattr(transport_mod, "_rust_transport_available", True)
         monkeypatch.setattr(transport_mod, "_PyTransportSolver", _FakeSolver)
 
-        out_non_default = chang_hinton_chi_profile(
-            rho, Ti, ne, q, R0=6.4, a=2.0, B0=5.3
-        )
+        out_non_default = chang_hinton_chi_profile(rho, Ti, ne, q, R0=6.4, a=2.0, B0=5.3)
         assert calls["n"] == 0
         assert not np.allclose(out_non_default, sentinel)
 
@@ -816,13 +821,11 @@ class TestNeoclassical:
     def test_bootstrap_current_shape(self) -> None:
         """Sauter bootstrap current profile should match rho shape."""
         rho = np.linspace(0, 1, 50)
-        Te = 5.0 * (1 - rho ** 2)
-        Ti = 5.0 * (1 - rho ** 2)
-        ne = 8.0 * (1 - rho ** 2) ** 0.5
-        q = 1.0 + 3.0 * rho ** 2
-        j_bs = calculate_sauter_bootstrap_current_full(
-            rho, Te, Ti, ne, q, R0=6.2, a=2.0, B0=5.3
-        )
+        Te = 5.0 * (1 - rho**2)
+        Ti = 5.0 * (1 - rho**2)
+        ne = 8.0 * (1 - rho**2) ** 0.5
+        q = 1.0 + 3.0 * rho**2
+        j_bs = calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0=6.2, a=2.0, B0=5.3)
         assert j_bs.shape == (50,)
         assert np.all(np.isfinite(j_bs))
         # Should be zero at the boundary (j_bs[0] and j_bs[-1])
@@ -856,7 +859,9 @@ class TestNeoclassical:
         assert str(contract["error"]).startswith("ValueError:")
         assert solver.T_edge_keV == pytest.approx(edge_before)
 
-    def test_update_pedestal_bc_updates_edge_on_valid_prediction(self, solver: TransportSolver) -> None:
+    def test_update_pedestal_bc_updates_edge_on_valid_prediction(
+        self, solver: TransportSolver
+    ) -> None:
         class _PedestalPrediction:
             in_domain = True
             extrapolation_penalty = 1.0
@@ -904,7 +909,9 @@ class TestGyroBohmLoader:
         assert contract["fallback_used"] is True
         assert "KeyError" in str(contract["error"])
 
-    def test_gyro_bohm_contract_tracks_invalid_param_fallback(self, solver: TransportSolver) -> None:
+    def test_gyro_bohm_contract_tracks_invalid_param_fallback(
+        self, solver: TransportSolver
+    ) -> None:
         solver.set_neoclassical(R0=6.2, a=2.0, B0=5.3)
         assert solver.neoclassical_params is not None
         solver.neoclassical_params["c_gB"] = float("nan")
@@ -917,6 +924,7 @@ class TestGyroBohmLoader:
 
 
 # ── 6. Thomas Solver ─────────────────────────────────────────────────
+
 
 class TestThomasSolver:
 
@@ -951,6 +959,7 @@ class TestThomasSolver:
 
 # ── 7. Bosch-Hale D-T Reactivity ─────────────────────────────────────
 
+
 class TestBoschHale:
 
     def test_sigmav_positive_for_fusion_temperatures(self) -> None:
@@ -967,12 +976,13 @@ class TestBoschHale:
         # The simplified NRL Formulary fit is monotonically increasing
         # over the range 1-100 keV (peak is beyond 100 keV for this fit)
         for i in range(1, len(sv)):
-            assert sv[i] > sv[i - 1], (
-                f"sigma_v not increasing: sv[{T[i]}] = {sv[i]} <= sv[{T[i-1]}] = {sv[i-1]}"
-            )
+            assert (
+                sv[i] > sv[i - 1]
+            ), f"sigma_v not increasing: sv[{T[i]}] = {sv[i]} <= sv[{T[i-1]}] = {sv[i-1]}"
 
 
 # ── 8. Impurity Injection ────────────────────────────────────────────
+
 
 class TestImpurityInjection:
 
@@ -998,13 +1008,11 @@ class TestBootstrapFloor:
         """At edge where Te→0, bootstrap current should remain finite and bounded."""
         rho = np.linspace(0, 1, 50)
         # Temperature drops to nearly zero at the edge
-        Te = 5.0 * np.maximum(1 - rho ** 2, 0.0) ** 2  # very steep
-        Ti = 5.0 * np.maximum(1 - rho ** 2, 0.0) ** 2
-        ne = 8.0 * np.maximum(1 - rho ** 2, 0.0) ** 0.5
-        q = 1.0 + 3.0 * rho ** 2
-        j_bs = calculate_sauter_bootstrap_current_full(
-            rho, Te, Ti, ne, q, R0=6.2, a=2.0, B0=5.3
-        )
+        Te = 5.0 * np.maximum(1 - rho**2, 0.0) ** 2  # very steep
+        Ti = 5.0 * np.maximum(1 - rho**2, 0.0) ** 2
+        ne = 8.0 * np.maximum(1 - rho**2, 0.0) ** 0.5
+        q = 1.0 + 3.0 * rho**2
+        j_bs = calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0=6.2, a=2.0, B0=5.3)
         assert np.all(np.isfinite(j_bs)), "j_bs has non-finite values at edge"
 
     def test_bootstrap_current_no_nans_with_flat_profile(self) -> None:
@@ -1014,9 +1022,7 @@ class TestBootstrapFloor:
         Ti = np.ones(50) * 0.01
         ne = np.ones(50) * 0.5
         q = np.ones(50) * 2.0
-        j_bs = calculate_sauter_bootstrap_current_full(
-            rho, Te, Ti, ne, q, R0=6.2, a=2.0, B0=5.3
-        )
+        j_bs = calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0=6.2, a=2.0, B0=5.3)
         assert np.all(np.isfinite(j_bs)), "j_bs has non-finite values with flat profile"
 
 

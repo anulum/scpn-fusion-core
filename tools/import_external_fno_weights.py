@@ -42,9 +42,7 @@ def _load_json(path: Path) -> dict[str, Any]:
     return payload
 
 
-def _validate_manifest(
-    manifest: dict[str, Any], weights_sha: str
-) -> tuple[bool, list[str]]:
+def _validate_manifest(manifest: dict[str, Any], weights_sha: str) -> tuple[bool, list[str]]:
     errors: list[str] = []
     schema_version = manifest.get("schema_version")
     if not isinstance(schema_version, str) or not schema_version.strip():
@@ -66,9 +64,7 @@ def _validate_manifest(
     else:
         lowered = " ".join(str(item).lower() for item in datasets)
         if not any(token in lowered for token in REQUIRED_DATASET_TOKENS):
-            errors.append(
-                "manifest.trained_datasets must include GENE and/or CGYRO provenance"
-            )
+            errors.append("manifest.trained_datasets must include GENE and/or CGYRO provenance")
 
     license_info = manifest.get("data_license")
     if not isinstance(license_info, str) or not license_info.strip():
@@ -131,14 +127,9 @@ def main(argv: list[str] | None = None) -> int:
         summary["overall_pass"] = False
 
     summary_path.parent.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(
-        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
-    print(
-        "External FNO import: "
-        f"pass={summary['overall_pass']} output={output_path.as_posix()}"
-    )
+    print("External FNO import: " f"pass={summary['overall_pass']} output={output_path.as_posix()}")
     if not bool(summary["overall_pass"]):
         print("External FNO import failed; see summary JSON for details.")
         return 1

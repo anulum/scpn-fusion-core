@@ -44,6 +44,7 @@ def solver(tmp_path: Path) -> TransportSolver:
 
 # ── Thomas solver unit tests ──────────────────────────────────────
 
+
 def test_thomas_solve_identity():
     """Identity matrix should return RHS unchanged."""
     n = 10
@@ -73,6 +74,7 @@ def test_thomas_solve_tridiag():
 
 
 # ── CN transport tests ────────────────────────────────────────────
+
 
 def test_cn_large_dt_no_nan(solver: TransportSolver):
     """dt=1.0 must produce no NaN — the whole point of CN."""

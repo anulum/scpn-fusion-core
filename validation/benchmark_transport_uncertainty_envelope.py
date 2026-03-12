@@ -65,8 +65,7 @@ def run_benchmark(*, itpa_csv: Path) -> dict[str, Any]:
         <= CONTRACT_THRESHOLDS["max_abs_relative_error_p95"]
     )
     zscore_p95_pass = bool(
-        float(envelope.get("zscore_p95", np.inf))
-        <= CONTRACT_THRESHOLDS["max_zscore_p95"]
+        float(envelope.get("zscore_p95", np.inf)) <= CONTRACT_THRESHOLDS["max_zscore_p95"]
     )
     passes = bool(
         int(transport.get("n_shots", 0)) > 0
@@ -128,9 +127,7 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"| zscore_p95 | {float(env.get('zscore_p95', 0.0)):.4f} | "
             f"<= {CONTRACT_THRESHOLDS['max_zscore_p95']:.2f} |"
         ),
-        (
-            f"| sigma_s_p95 | {float(env.get('sigma_s_p95', 0.0)):.4f} | > 0.00 |"
-        ),
+        (f"| sigma_s_p95 | {float(env.get('sigma_s_p95', 0.0)):.4f} | > 0.00 |"),
         "",
     ]
     return "\n".join(lines)
@@ -144,11 +141,15 @@ def main() -> int:
     )
     parser.add_argument(
         "--output-json",
-        default=str(ROOT / "validation" / "reports" / "transport_uncertainty_envelope_benchmark.json"),
+        default=str(
+            ROOT / "validation" / "reports" / "transport_uncertainty_envelope_benchmark.json"
+        ),
     )
     parser.add_argument(
         "--output-md",
-        default=str(ROOT / "validation" / "reports" / "transport_uncertainty_envelope_benchmark.md"),
+        default=str(
+            ROOT / "validation" / "reports" / "transport_uncertainty_envelope_benchmark.md"
+        ),
     )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args()

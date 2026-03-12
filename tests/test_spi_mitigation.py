@@ -23,12 +23,8 @@ def test_estimate_z_eff_increases_with_neon_quantity() -> None:
 
 def test_estimate_z_eff_cocktail_reflects_species_mix() -> None:
     neon_only = ShatteredPelletInjection.estimate_z_eff_cocktail(neon_quantity_mol=0.12)
-    argon_only = ShatteredPelletInjection.estimate_z_eff_cocktail(
-        argon_quantity_mol=0.12
-    )
-    xenon_only = ShatteredPelletInjection.estimate_z_eff_cocktail(
-        xenon_quantity_mol=0.12
-    )
+    argon_only = ShatteredPelletInjection.estimate_z_eff_cocktail(argon_quantity_mol=0.12)
+    xenon_only = ShatteredPelletInjection.estimate_z_eff_cocktail(xenon_quantity_mol=0.12)
     assert neon_only >= 1.0
     assert argon_only > neon_only
     assert xenon_only > argon_only
@@ -57,9 +53,7 @@ def test_estimate_mitigation_cocktail_shifts_to_heavier_species_with_risk() -> N
     )
     assert np.isclose(
         low["total_quantity_mol"],
-        low["neon_quantity_mol"]
-        + low["argon_quantity_mol"]
-        + low["xenon_quantity_mol"],
+        low["neon_quantity_mol"] + low["argon_quantity_mol"] + low["xenon_quantity_mol"],
     )
     assert high["xenon_quantity_mol"] > low["xenon_quantity_mol"]
     assert high["total_quantity_mol"] >= low["total_quantity_mol"]

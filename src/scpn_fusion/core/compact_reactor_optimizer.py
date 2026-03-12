@@ -7,59 +7,60 @@
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import minimize
-import sys
+
 
 class CompactReactorArchitect:
     """
     Optimizes Fusion Reactor Geometry for MINIMUM SIZE.
     """
+
     def __init__(self):
-        self.J_crit_base = 1500.0 # MA/m2 
-        self.B_max_coil = 30.0   # Tesla 
-        self.lambda_shield = 0.10 
-        self.fluence_limit = 5e22 
-        
+        self.J_crit_base = 1500.0  # MA/m2
+        self.B_max_coil = 30.0  # Tesla
+        self.lambda_shield = 0.10
+        self.fluence_limit = 5e22
+
     def plasma_physics_model(self, R, a, B0):
         if R <= 0 or a <= 0 or B0 <= 0:
             raise ValueError("R, a, and B0 must be > 0 for plasma_physics_model.")
-        Vol = 2 * np.pi * R * np.pi * a**2 
+        Vol = 2 * np.pi * R * np.pi * a**2
         kappa = 2.0
-        I_p = (5 * a**2 * B0 / R) * ((1 + kappa**2)/2) / 3.0
-        beta_limit = 4.0 * (I_p / (a * B0)) / 100.0 
+        I_p = (5 * a**2 * B0 / R) * ((1 + kappa**2) / 2) / 3.0
+        beta_limit = 4.0 * (I_p / (a * B0)) / 100.0
         pressure = beta_limit * (B0**2 / (2 * 1.25e-6))
-        p_fus_density = 0.25 * (pressure / 1e6)**2 
+        p_fus_density = 0.25 * (pressure / 1e6) ** 2
         P_fusion = p_fus_density * Vol
         return P_fusion, I_p, Vol
 
     def radial_build_constraints(self, R, a, B0):
         if R <= 0 or a <= 0 or B0 <= 0:
             return False, 0
-        d_shield = 0.10 
+        d_shield = 0.10
         gap = 0.02
         d_coil = 0.2
         R_post = R - a - d_shield - gap
         if R_post < max(0.05, d_coil):
             return False, 0
         B_coil = B0 * (R / R_post)
-        I_total_MA = 5.0 * R * B0 
-        Area_coil = np.pi * (R_post**2 - (R_post-d_coil)**2)
+        I_total_MA = 5.0 * R * B0
+        Area_coil = np.pi * (R_post**2 - (R_post - d_coil) ** 2)
         J_real = I_total_MA / (Area_coil + 1e-9)
         J_limit = self.J_crit_base * (20.0 / B_coil)
         magnet_ok = (J_real < J_limit) and (B_coil < self.B_max_coil)
         return magnet_ok, B_coil
 
     def visualize_space(self, designs, label=""):
-        if not designs: return
-        Rs = [d['R'] for d in designs]
-        Bs = [d['B0'] for d in designs]
-        Ps = [d['P_fus'] for d in designs]
+        if not designs:
+            return
+        Rs = [d["R"] for d in designs]
+        Bs = [d["B0"] for d in designs]
+        Ps = [d["P_fus"] for d in designs]
         plt.figure(figsize=(10, 6))
-        sc = plt.scatter(Rs, Bs, c=Ps, cmap='viridis', s=50, alpha=0.8)
-        plt.colorbar(sc, label='Fusion Power (MW)')
-        plt.xlabel('Major Radius R (m)')
-        plt.ylabel('Magnetic Field B0 (Tesla)')
-        plt.title(f'Compact Fusion Design Space - {label}')
+        sc = plt.scatter(Rs, Bs, c=Ps, cmap="viridis", s=50, alpha=0.8)
+        plt.colorbar(sc, label="Fusion Power (MW)")
+        plt.xlabel("Major Radius R (m)")
+        plt.ylabel("Magnetic Field B0 (Tesla)")
+        plt.title(f"Compact Fusion Design Space - {label}")
         plt.savefig(f"Compact_Space_{label}.png")
 
     def calculate_economics(self, d):
@@ -67,39 +68,39 @@ class CompactReactorArchitect:
         Calculates Cost of Electricity (CoE) [$/MWh].
         Sheffield model: CoE ~ (C_cap * F_cap + C_om) / (8760 * P_net * f_avail)
         """
-        P_fus = d['P_fus']
-        R = d['R']
-        B_coil = d['B_coil']
-        if P_fus <= 0 or R <= 0 or d['a'] <= 0 or B_coil <= 0:
+        P_fus = d["P_fus"]
+        R = d["R"]
+        B_coil = d["B_coil"]
+        if P_fus <= 0 or R <= 0 or d["a"] <= 0 or B_coil <= 0:
             raise ValueError("Design requires positive P_fus, R, a, and B_coil.")
-        
+
         # 1. Direct Capital Costs (Estimate in M$)
         # Magnet cost scales with Volume * B^2
-        vol_coil = d['Vol'] * 0.5 # Proxy for coil volume
-        C_magnet = 0.5 * vol_coil * (B_coil/10.0)**2 
-        
+        vol_coil = d["Vol"] * 0.5  # Proxy for coil volume
+        C_magnet = 0.5 * vol_coil * (B_coil / 10.0) ** 2
+
         # Blanket/Vessel cost scales with First Wall Area
-        area_wall = 4 * np.pi**2 * R * d['a']
+        area_wall = 4 * np.pi**2 * R * d["a"]
         C_blanket = 0.2 * area_wall
-        
+
         # Balance of Plant (BoP) scales with Power
-        C_bop = 1.2 * (P_fus * 0.4) # 0.4 efficiency
-        
-        total_cap_m_usd = (C_magnet + C_blanket + C_bop) * 1.5 # Multiplier for engineering
-        
+        C_bop = 1.2 * (P_fus * 0.4)  # 0.4 efficiency
+
+        total_cap_m_usd = (C_magnet + C_blanket + C_bop) * 1.5  # Multiplier for engineering
+
         # 2. CoE Calculation
-        f_avail = 0.75 # High availability goal
-        p_net_mw = P_fus * 0.4 * 0.9 # Thermal efficiency * recirculating power
+        f_avail = 0.75  # High availability goal
+        p_net_mw = P_fus * 0.4 * 0.9  # Thermal efficiency * recirculating power
         if p_net_mw <= 0:
             raise ValueError("Computed net electric power must be > 0.")
-        
+
         # Annualized capital cost (10% fixed charge rate)
         annual_cap = total_cap_m_usd * 0.10 * 1e6
         # O&M (3% of capital)
         annual_om = total_cap_m_usd * 0.03 * 1e6
-        
+
         coe = (annual_cap + annual_om) / (8760.0 * p_net_mw * f_avail)
-        
+
         return coe, total_cap_m_usd
 
     def report_design(self, d):
@@ -122,27 +123,36 @@ class CompactReactorArchitect:
         radii = np.linspace(0.3, 5.0, 100)
         fields = np.linspace(5.0, 20.0, 30)
         valid_designs = []
-        max_div_load = 100.0 if use_temhd else 10.0 
+        max_div_load = 100.0 if use_temhd else 10.0
         for R in radii:
             for B0 in fields:
                 for A in [2.0, 2.5, 3.0]:
                     a = R / A
                     P_fus, Ip, Vol = self.plasma_physics_model(R, a, B0)
-                    if P_fus < target_power_MW: continue
+                    if P_fus < target_power_MW:
+                        continue
                     ok, B_coil = self.radial_build_constraints(R, a, B0)
                     f_rad = 0.90
                     P_sep = (0.2 * P_fus + 5.0) * (1.0 - f_rad)
-                    lambda_q = 0.63 * (B0**(-1.19)) * 1e-3
+                    lambda_q = 0.63 * (B0 ** (-1.19)) * 1e-3
                     Area_div = 2 * np.pi * R * lambda_q * 20.0
-                    q_div = P_sep / Area_div 
+                    q_div = P_sep / Area_div
                     Area_wall = 4 * np.pi**2 * R * a
-                    q_wall = (0.8 * P_fus) / Area_wall 
+                    q_wall = (0.8 * P_fus) / Area_wall
                     if ok and q_div < max_div_load and q_wall < 5.0:
-                        design = {'R': R, 'a': a, 'B0': B0, 'B_coil': B_coil,
-                                  'P_fus': P_fus, 'Vol': Vol, 'Ip': Ip,
-                                  'q_div': q_div, 'q_wall': q_wall}
+                        design = {
+                            "R": R,
+                            "a": a,
+                            "B0": B0,
+                            "B_coil": B_coil,
+                            "P_fus": P_fus,
+                            "Vol": Vol,
+                            "Ip": Ip,
+                            "q_div": q_div,
+                            "q_wall": q_wall,
+                        }
                         valid_designs.append(design)
-                        if R < best_R:
+                        if best_R > R:
                             best_R = R
                             best_design = design
         if best_design:
@@ -150,6 +160,7 @@ class CompactReactorArchitect:
             self.visualize_space(valid_designs, label)
         else:
             print(f"No viable design found for {label}.")
+
 
 if __name__ == "__main__":
     architect = CompactReactorArchitect()

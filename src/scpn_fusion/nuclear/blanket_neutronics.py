@@ -56,7 +56,10 @@ class BreedingBlanket:
     1D Cylindrical Neutronics Transport Code for TBR calculation.
     Simulates neutron attenuation in a blanket annulus (r_inner to r_outer).
     """
-    def __init__(self, thickness_cm: float = 100, li6_enrichment: float = 1.0, r_inner_cm: float = 200.0) -> None:
+
+    def __init__(
+        self, thickness_cm: float = 100, li6_enrichment: float = 1.0, r_inner_cm: float = 200.0
+    ) -> None:
         self.thickness = _require_finite_float("thickness_cm", thickness_cm, min_value=0.1)
         self.r_inner = _require_finite_float("r_inner_cm", r_inner_cm, min_value=10.0)
         self.li6_enrichment = _require_finite_float(
@@ -71,18 +74,20 @@ class BreedingBlanket:
         self.dr = self.r[1] - self.r[0]
         # For legacy compatibility, alias x to distance from first wall
         self.x = self.r - self.r_inner
-        
+
         # Cross sections (macroscopic Sigma in cm^-1) - reduced-order 14 MeV closure.
         # ENRICHED BLANKET (90% Li-6 + Beryllium Multiplier)
         self.Sigma_capture_Li6 = 0.15 * self.li6_enrichment
-        self.Sigma_scatter = 0.2      
-        self.Sigma_parasitic = 0.02   
-        self.Sigma_multiply = 0.08    # High Multiplication (Beryllium)
-        
-        # Multiplier gain (neutrons per (n,2n) reaction)
-        self.multiplier_gain = 1.8 
+        self.Sigma_scatter = 0.2
+        self.Sigma_parasitic = 0.02
+        self.Sigma_multiply = 0.08  # High Multiplication (Beryllium)
 
-    def solve_transport(self, incident_flux: float = 1e14, rear_albedo: float = 0.0) -> NDArray[np.float64]:
+        # Multiplier gain (neutrons per (n,2n) reaction)
+        self.multiplier_gain = 1.8
+
+    def solve_transport(
+        self, incident_flux: float = 1e14, rear_albedo: float = 0.0
+    ) -> NDArray[np.float64]:
         """
         Solves steady-state cylindrical diffusion-reaction equation for neutron flux Phi(r).
         -D * (1/r * d/dr(r * dPhi/dr)) + Sigma_rem * Phi = 0
@@ -96,50 +101,56 @@ class BreedingBlanket:
             raise ValueError("rear_albedo must satisfy 0.0 <= rear_albedo < 1.0")
 
         # Diffusion Coefficient
-        Sigma_total = self.Sigma_capture_Li6 + self.Sigma_scatter + self.Sigma_parasitic + self.Sigma_multiply
+        Sigma_total = (
+            self.Sigma_capture_Li6 + self.Sigma_scatter + self.Sigma_parasitic + self.Sigma_multiply
+        )
         D = 1.0 / (3.0 * Sigma_total)
-        
+
         # Finite Difference Matrix for Cylindrical Laplacian
         # 1/r * d/dr (r dPhi/dr) ~ (r_{i+1/2}(phi_{i+1}-phi_i) - r_{i-1/2}(phi_i-phi_{i-1})) / (r_i * dr^2)
         N = self.points
         A = np.zeros((N, N))
         b = np.zeros(N)
-        
+
         # Effective removal
-        Sigma_removal = self.Sigma_capture_Li6 + self.Sigma_parasitic - (self.Sigma_multiply * (self.multiplier_gain - 1.0))
-        
+        Sigma_removal = (
+            self.Sigma_capture_Li6
+            + self.Sigma_parasitic
+            - (self.Sigma_multiply * (self.multiplier_gain - 1.0))
+        )
+
         dr = self.dr
-        
-        for i in range(1, N-1):
+
+        for i in range(1, N - 1):
             r_i = self.r[i]
-            r_plus = r_i + 0.5*dr
-            r_minus = r_i - 0.5*dr
-            
+            r_plus = r_i + 0.5 * dr
+            r_minus = r_i - 0.5 * dr
+
             # Coefficients from discretization:
             # -D/r_i * [ (r_plus/dr^2) * (phi_{i+1}-phi_i) - (r_minus/dr^2) * (phi_i-phi_{i-1}) ] + Sigma * phi_i = 0
-            
+
             c_plus = (D * r_plus) / (r_i * dr**2)
             c_minus = (D * r_minus) / (r_i * dr**2)
             c_center = c_plus + c_minus + Sigma_removal
-            
-            A[i, i-1] = -c_minus
-            A[i, i]   = c_center
-            A[i, i+1] = -c_plus
+
+            A[i, i - 1] = -c_minus
+            A[i, i] = c_center
+            A[i, i + 1] = -c_plus
             b[i] = 0
-            
+
         # Boundary Conditions
         # r=r_inner (First Wall): Flux imposed
         A[0, 0] = 1.0
         b[0] = incident_flux
-        
+
         # r=r_outer (Shield): Albedo
         A[-1, -1] = 1.0
         A[-1, -2] = -rear_albedo
         b[-1] = 0.0
-        
+
         # Solve
         phi = np.linalg.solve(A, b)
-        
+
         return phi  # type: ignore[return-value,unused-ignore]
 
     def calculate_tbr(self, phi: NDArray[np.float64]) -> tuple[float, NDArray[np.float64]]:
@@ -149,26 +160,26 @@ class BreedingBlanket:
         """
         # Production Rate density: R(r) = Sigma_Li6 * Phi(r)
         production_rate = self.Sigma_capture_Li6 * phi
-        
+
         # Integrate over cylindrical volume (per unit length)
         # Integral P(r) * 2*pi*r * dr
         integrand = production_rate * 2.0 * np.pi * self.r
-        
+
         if hasattr(np, "trapezoid"):
             total_production = np.trapezoid(integrand, self.r)
         else:  # pragma: no cover - legacy NumPy compatibility path
             total_production = np.trapz(integrand, self.r)  # type: ignore[attr-defined,unused-ignore]
-        
+
         # Incoming Current (per unit length)
         # Total neutrons entering cylinder surface = J_in * Area
         # Area = 2*pi*r_inner * 1
         # J_in ~ Phi[0]/4 (isotropic)
-        
+
         incident_current = (phi[0] / 4.0) * (2.0 * np.pi * self.r_inner)
-        
+
         # TBR calculation
         TBR = total_production / max(incident_current, 1e-12)
-        
+
         return TBR, production_rate
 
     def calculate_volumetric_tbr(
@@ -281,6 +292,7 @@ class BreedingBlanket:
             tbr_ideal=tbr_ideal,
         )
 
+
 def run_breeding_sim(
     *,
     thickness_cm: float = 80.0,
@@ -358,6 +370,7 @@ def run_breeding_sim(
     }
     return summary
 
+
 class MultiGroupBlanket:
     """3-group neutron transport for tritium breeding ratio calculation.
 
@@ -422,25 +435,29 @@ class MultiGroupBlanket:
         self.multiplier_gain = 1.8  # Be(n,2n) neutron gain
 
     def _solve_cylindrical_group(
-        self, D: float, sigma_rem: float, source: NDArray[np.float64], 
-        bc_left: tuple[str, float], bc_right: tuple[str, float]
+        self,
+        D: float,
+        sigma_rem: float,
+        source: NDArray[np.float64],
+        bc_left: tuple[str, float],
+        bc_right: tuple[str, float],
     ) -> NDArray[np.float64]:
         """Solve 1D cylindrical diffusion for a single group."""
         N = self.n_cells
         dr = self.dx
         A = np.zeros((N, N))
         b = source.copy()
-        
-        for i in range(1, N-1):
+
+        for i in range(1, N - 1):
             r_i = self.r[i]
-            r_p = r_i + 0.5*dr
-            r_m = r_i - 0.5*dr
+            r_p = r_i + 0.5 * dr
+            r_m = r_i - 0.5 * dr
             c_p = (D * r_p) / (r_i * dr**2)
             c_m = (D * r_m) / (r_i * dr**2)
-            A[i, i-1] = -c_m
-            A[i, i]   = c_p + c_m + sigma_rem
-            A[i, i+1] = -c_p
-            
+            A[i, i - 1] = -c_m
+            A[i, i] = c_p + c_m + sigma_rem
+            A[i, i + 1] = -c_p
+
         # Left BC (r = r_inner)
         if bc_left[0] == "dirichlet":
             A[0, 0] = 1.0
@@ -449,7 +466,7 @@ class MultiGroupBlanket:
             A[0, 0] = 1.0
             A[0, 1] = -1.0
             b[0] = bc_left[1] * dr
-            
+
         # Right BC (r = r_outer)
         if bc_right[0] == "dirichlet":
             A[-1, -1] = 1.0
@@ -475,44 +492,58 @@ class MultiGroupBlanket:
         streaming_factor = float(streaming_factor)
         if not (0.0 < streaming_factor <= 1.0):
             raise ValueError("streaming_factor must be in (0, 1].")
-        
+
         # Group 1 (fast)
-        sigma_tot_1 = (self.sigma_capture_g1 + self.sigma_scatter_g1 + 
-                       self.sigma_multiply_g1 + self.sigma_downscatter_12 + self.sigma_parasitic_g1)
+        sigma_tot_1 = (
+            self.sigma_capture_g1
+            + self.sigma_scatter_g1
+            + self.sigma_multiply_g1
+            + self.sigma_downscatter_12
+            + self.sigma_parasitic_g1
+        )
         D1 = 1.0 / (3.0 * sigma_tot_1)
-        sigma_rem_1 = (self.sigma_capture_g1 + self.sigma_downscatter_12 + 
-                       self.sigma_parasitic_g1 - self.sigma_multiply_g1 * (self.multiplier_gain - 1.0))
-        
+        sigma_rem_1 = (
+            self.sigma_capture_g1
+            + self.sigma_downscatter_12
+            + self.sigma_parasitic_g1
+            - self.sigma_multiply_g1 * (self.multiplier_gain - 1.0)
+        )
+
         phi_g1 = self._solve_cylindrical_group(
-            D1, sigma_rem_1, np.zeros(self.n_cells), 
-            ("dirichlet", incident_flux), ("dirichlet", 0.0)
+            D1,
+            sigma_rem_1,
+            np.zeros(self.n_cells),
+            ("dirichlet", incident_flux),
+            ("dirichlet", 0.0),
         )
         n_clamped_g1 = int(np.sum(phi_g1 < 0))
         phi_g1 = np.maximum(phi_g1, 0.0)
 
         # Group 2 (epithermal)
-        sigma_tot_2 = (self.sigma_capture_g2 + self.sigma_scatter_g2 + 
-                       self.sigma_downscatter_23 + self.sigma_parasitic_g2)
+        sigma_tot_2 = (
+            self.sigma_capture_g2
+            + self.sigma_scatter_g2
+            + self.sigma_downscatter_23
+            + self.sigma_parasitic_g2
+        )
         D2 = 1.0 / (3.0 * sigma_tot_2)
-        sigma_rem_2 = (self.sigma_capture_g2 + self.sigma_downscatter_23 + self.sigma_parasitic_g2)
-        
+        sigma_rem_2 = self.sigma_capture_g2 + self.sigma_downscatter_23 + self.sigma_parasitic_g2
+
         source2 = self.sigma_downscatter_12 * phi_g1
         phi_g2 = self._solve_cylindrical_group(
-            D2, sigma_rem_2, source2, 
-            ("neumann", 0.0), ("dirichlet", 0.0)
+            D2, sigma_rem_2, source2, ("neumann", 0.0), ("dirichlet", 0.0)
         )
         n_clamped_g2 = int(np.sum(phi_g2 < 0))
         phi_g2 = np.maximum(phi_g2, 0.0)
 
         # Group 3 (thermal)
-        sigma_tot_3 = (self.sigma_capture_g3 + self.sigma_scatter_g3 + self.sigma_parasitic_g3)
+        sigma_tot_3 = self.sigma_capture_g3 + self.sigma_scatter_g3 + self.sigma_parasitic_g3
         D3 = 1.0 / (3.0 * sigma_tot_3)
         sigma_rem_3 = self.sigma_capture_g3 + self.sigma_parasitic_g3
-        
+
         source3 = self.sigma_downscatter_23 * phi_g2
         phi_g3 = self._solve_cylindrical_group(
-            D3, sigma_rem_3, source3, 
-            ("neumann", 0.0), ("dirichlet", 0.0)
+            D3, sigma_rem_3, source3, ("neumann", 0.0), ("dirichlet", 0.0)
         )
         n_clamped_g3 = int(np.sum(phi_g3 < 0))
         phi_g3 = np.maximum(phi_g3, 0.0)
@@ -523,16 +554,12 @@ class MultiGroupBlanket:
         total_prod = prod_g1 + prod_g2 + prod_g3
 
         if hasattr(np, "trapezoid"):
-            total_tritium = float(
-                np.trapezoid(total_prod * 2.0 * np.pi * self.r, self.r)
-            )
+            total_tritium = float(np.trapezoid(total_prod * 2.0 * np.pi * self.r, self.r))
         else:  # pragma: no cover - legacy NumPy compatibility path
             edge = np.diff(self.r)
             total_integrand = total_prod * 2.0 * np.pi * self.r
-            total_tritium = float(
-                np.sum(0.5 * (total_integrand[1:] + total_integrand[:-1]) * edge)
-            )
-        
+            total_tritium = float(np.sum(0.5 * (total_integrand[1:] + total_integrand[:-1]) * edge))
+
         # Incident current (per unit length): J+ * Area_inner
         incident_current_total = (phi_g1[0] / 4.0) * (2.0 * np.pi * self.r_inner)
         tbr_ideal = total_tritium / max(incident_current_total, 1e-12)
@@ -570,9 +597,12 @@ class MultiGroupBlanket:
         incident_current_cm2_s = float(incident_current_total / max(area_cm2, 1e-12))
 
         return {
-            "phi_g1": phi_g1, "phi_g2": phi_g2, "phi_g3": phi_g3,
+            "phi_g1": phi_g1,
+            "phi_g2": phi_g2,
+            "phi_g3": phi_g3,
             "total_production": total_prod,
-            "tbr": float(tbr), "tbr_ideal": float(tbr_ideal),
+            "tbr": float(tbr),
+            "tbr_ideal": float(tbr_ideal),
             "tbr_by_group": {
                 "fast": float(tbr_g1),
                 "epithermal": float(tbr_g2),

@@ -64,11 +64,11 @@ except ImportError:
 PSI_NRMSE_THRESHOLD = 0.11  # 11 %
 
 # Tighter thresholds when FreeGS is available for direct numerical comparison
-FREEGS_PSI_NRMSE_THRESHOLD = 0.005   # 0.5% for direct numerical comparison
-FREEGS_Q_NRMSE_THRESHOLD = 0.10      # 10% for q-profile
-FREEGS_AXIS_ERROR_M = 0.10           # 10 cm axis position error
-FREEGS_SEPARATRIX_NRMSE = 0.05       # 5% separatrix boundary
-FREEGS_FLUX_AREA_REL_ERROR = 0.12    # 12% mid-surface area parity
+FREEGS_PSI_NRMSE_THRESHOLD = 0.005  # 0.5% for direct numerical comparison
+FREEGS_Q_NRMSE_THRESHOLD = 0.10  # 10% for q-profile
+FREEGS_AXIS_ERROR_M = 0.10  # 10 cm axis position error
+FREEGS_SEPARATRIX_NRMSE = 0.05  # 5% separatrix boundary
+FREEGS_FLUX_AREA_REL_ERROR = 0.12  # 12% mid-surface area parity
 FREEGS_PSI_NORM_NRMSE_THRESHOLD = 0.06  # 6% after independent field normalization
 
 
@@ -102,25 +102,26 @@ def normalize_psi(psi: NDArray[np.float64]) -> NDArray[np.float64]:
 
 # ── Test-case definitions ────────────────────────────────────────────
 
+
 class TokamakCase(NamedTuple):
     """Specification for a single benchmark tokamak."""
 
     name: str
-    R0: float          # Major radius [m]
-    a: float           # Minor radius [m]
-    B0: float          # Toroidal field on axis [T]
-    Ip: float          # Plasma current [MA]
-    kappa: float        # Elongation
-    NR: int = 65       # Grid points in R
-    NZ: int = 65       # Grid points in Z
+    R0: float  # Major radius [m]
+    a: float  # Minor radius [m]
+    B0: float  # Toroidal field on axis [T]
+    Ip: float  # Plasma current [MA]
+    kappa: float  # Elongation
+    NR: int = 65  # Grid points in R
+    NZ: int = 65  # Grid points in Z
 
 
 CASES: list[TokamakCase] = [
-    TokamakCase(name="ITER-like",            R0=6.2,  a=2.0,  B0=5.3,  Ip=15.0,  kappa=1.7),
-    TokamakCase(name="SPARC-like",           R0=1.85, a=0.57, B0=12.2, Ip=8.7,   kappa=1.97),
-    TokamakCase(name="Spherical-tokamak",    R0=0.85, a=0.55, B0=0.5,  Ip=1.0,   kappa=2.5),
-    TokamakCase(name="KSTAR-like",           R0=1.80, a=0.50, B0=3.5,  Ip=2.0,   kappa=1.83),
-    TokamakCase(name="SPARC-high-kappa",     R0=1.85, a=0.57, B0=12.2, Ip=9.0,   kappa=2.20),
+    TokamakCase(name="ITER-like", R0=6.2, a=2.0, B0=5.3, Ip=15.0, kappa=1.7),
+    TokamakCase(name="SPARC-like", R0=1.85, a=0.57, B0=12.2, Ip=8.7, kappa=1.97),
+    TokamakCase(name="Spherical-tokamak", R0=0.85, a=0.55, B0=0.5, Ip=1.0, kappa=2.5),
+    TokamakCase(name="KSTAR-like", R0=1.80, a=0.50, B0=3.5, Ip=2.0, kappa=1.83),
+    TokamakCase(name="SPARC-high-kappa", R0=1.85, a=0.57, B0=12.2, Ip=9.0, kappa=2.20),
 ]
 
 
@@ -140,8 +141,9 @@ def estimate_axis_pressure_pa(case: TokamakCase) -> float:
     ip_ma = max(float(case.Ip), 0.05)
 
     beta_t = float(np.clip(0.015 + 0.004 * (ip_ma / b0_t), 0.01, 0.08))
-    p_axis = beta_t * (b0_t ** 2) / (2.0 * mu0_si)
+    p_axis = beta_t * (b0_t**2) / (2.0 * mu0_si)
     return float(np.clip(p_axis, 5.0e4, 2.0e7))
+
 
 # ── Solov'ev analytic equilibrium ────────────────────────────────────
 
@@ -195,13 +197,13 @@ def solovev_psi(
     -------
     Psi : 2-D array, >= 0 inside the separatrix, 0 outside.
     """
-    eps_s = ((R0 + a) ** 2 - R0 ** 2) / R0 ** 2
+    eps_s = ((R0 + a) ** 2 - R0**2) / R0**2
     ka = kappa * a
 
-    u = (R ** 2 - R0 ** 2) / (eps_s * R0 ** 2)
+    u = (R**2 - R0**2) / (eps_s * R0**2)
     v = Z / ka
 
-    Psi_raw = Psi_0 * (1.0 - u ** 2 - v ** 2)
+    Psi_raw = Psi_0 * (1.0 - u**2 - v**2)
     Psi = np.where(Psi_raw > 0.0, Psi_raw, 0.0)
     return Psi
 
@@ -236,19 +238,18 @@ def solovev_jphi(
     -------
     J_phi : 2-D array, same shape as R.
     """
-    eps_s = ((R0 + a) ** 2 - R0 ** 2) / R0 ** 2
+    eps_s = ((R0 + a) ** 2 - R0**2) / R0**2
     ka = kappa * a
 
-    u = (R ** 2 - R0 ** 2) / (eps_s * R0 ** 2)
+    u = (R**2 - R0**2) / (eps_s * R0**2)
     v = Z / ka
-    plasma_mask = (u ** 2 + v ** 2) < 1.0
+    plasma_mask = (u**2 + v**2) < 1.0
 
     R_safe = np.maximum(R, 1e-10)
     J_phi = np.zeros_like(R, dtype=np.float64)
-    J_phi[plasma_mask] = (
-        8.0 * Psi_0 * R_safe[plasma_mask] / (eps_s * R0 ** 2) ** 2
-        + 2.0 * Psi_0 / (R_safe[plasma_mask] * ka ** 2)
-    )
+    J_phi[plasma_mask] = 8.0 * Psi_0 * R_safe[plasma_mask] / (
+        eps_s * R0**2
+    ) ** 2 + 2.0 * Psi_0 / (R_safe[plasma_mask] * ka**2)
     return J_phi
 
 
@@ -262,9 +263,9 @@ def compute_discrete_gs_source(
     source = np.zeros_like(psi, dtype=np.float64)
     r_safe = np.maximum(rr[1:-1, 1:-1], 1e-10)
 
-    d2_r = (psi[1:-1, 2:] - 2.0 * psi[1:-1, 1:-1] + psi[1:-1, 0:-2]) / (d_r ** 2)
+    d2_r = (psi[1:-1, 2:] - 2.0 * psi[1:-1, 1:-1] + psi[1:-1, 0:-2]) / (d_r**2)
     d1_r = (psi[1:-1, 2:] - psi[1:-1, 0:-2]) / (2.0 * d_r)
-    d2_z = (psi[2:, 1:-1] - 2.0 * psi[1:-1, 1:-1] + psi[0:-2, 1:-1]) / (d_z ** 2)
+    d2_z = (psi[2:, 1:-1] - 2.0 * psi[1:-1, 1:-1] + psi[0:-2, 1:-1]) / (d_z**2)
     source[1:-1, 1:-1] = d2_r - d1_r / r_safe + d2_z
 
     return source
@@ -286,11 +287,11 @@ def build_config(case: TokamakCase) -> dict[str, Any]:
     coil_R = case.R0 + 1.5 * case.a
     coil_Z = 1.2 * case.kappa * case.a
     coils = [
-        {"name": "PF1", "r": coil_R,            "z":  coil_Z, "current":  2.0},
-        {"name": "PF2", "r": coil_R,            "z": -coil_Z, "current":  2.0},
-        {"name": "PF3", "r": case.R0 - 0.5 * case.a, "z":  coil_Z * 1.1, "current": -1.0},
+        {"name": "PF1", "r": coil_R, "z": coil_Z, "current": 2.0},
+        {"name": "PF2", "r": coil_R, "z": -coil_Z, "current": 2.0},
+        {"name": "PF3", "r": case.R0 - 0.5 * case.a, "z": coil_Z * 1.1, "current": -1.0},
         {"name": "PF4", "r": case.R0 - 0.5 * case.a, "z": -coil_Z * 1.1, "current": -1.0},
-        {"name": "CS",  "r": max(R_min + 0.05, 0.3),  "z": 0.0,   "current": 0.15},
+        {"name": "CS", "r": max(R_min + 0.05, 0.3), "z": 0.0, "current": 0.15},
     ]
 
     return {
@@ -331,9 +332,7 @@ def run_our_solver(case: TokamakCase) -> dict[str, Any]:
 
     cfg = build_config(case)
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False, dir=str(ROOT)
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, dir=str(ROOT)) as f:
         json.dump(cfg, f)
         config_path = f.name
 
@@ -388,9 +387,7 @@ def run_manufactured_solovev_solver(case: TokamakCase) -> dict[str, Any]:
     cfg = build_config(case)
     mu0 = float(cfg["physics"].get("vacuum_permeability", 1.0))
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False, dir=str(ROOT)
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, dir=str(ROOT)) as f:
         json.dump(cfg, f)
         config_path = f.name
 
@@ -825,8 +822,10 @@ def compare_case(
         from scipy.interpolate import RegularGridInterpolator
 
         interp = RegularGridInterpolator(
-            (ref["Z"] if ref["Z"].ndim == 1 else ref["Z"][:, 0],
-             ref["R"] if ref["R"].ndim == 1 else ref["R"][0, :]),
+            (
+                ref["Z"] if ref["Z"].ndim == 1 else ref["Z"][:, 0],
+                ref["R"] if ref["R"].ndim == 1 else ref["R"][0, :],
+            ),
             ref_psi,
             method="linear",
             bounds_error=False,
@@ -856,15 +855,15 @@ def compare_case(
         q_nrmse = float("nan")
 
     # ── Axis position error ──────────────────────────────────────────
-    axis_err = float(np.sqrt(
-        (our["R_axis"] - ref["R_axis"]) ** 2
-        + (our["Z_axis"] - ref["Z_axis"]) ** 2
-    ))
+    axis_err = float(
+        np.sqrt((our["R_axis"] - ref["R_axis"]) ** 2 + (our["Z_axis"] - ref["Z_axis"]) ** 2)
+    )
 
     # ── Separatrix boundary NRMSE ───────────────────────────────────
     if our_psi.shape == ref_psi_interp.shape:
         sep_nrmse = compare_separatrix(
-            our_psi, ref_psi_interp,
+            our_psi,
+            ref_psi_interp,
             our["R"] if our["R"].ndim == 1 else our["R"][0, :],
             our["Z"] if our["Z"].ndim == 1 else our["Z"][:, 0],
         )
@@ -912,10 +911,7 @@ def compare_case(
     else:
         invariant_checks = {}
         invariant_pass_fraction = float("nan")
-        passes = bool(
-            our["converged"]
-            and psi_nrmse < PSI_NRMSE_THRESHOLD
-        )
+        passes = bool(our["converged"] and psi_nrmse < PSI_NRMSE_THRESHOLD)
 
     result: dict[str, Any] = {
         "name": case.name,
@@ -962,13 +958,9 @@ def run_benchmark(
     dict  — JSON-serialisable benchmark report.
     """
     if require_freegs_backend and force_solovev:
-        raise ValueError(
-            "require_freegs_backend cannot be combined with force_solovev."
-        )
+        raise ValueError("require_freegs_backend cannot be combined with force_solovev.")
     if require_freegs_backend and not HAS_FREEGS:
-        raise RuntimeError(
-            "FreeGS strict backend requested but `freegs` is not installed."
-        )
+        raise RuntimeError("FreeGS strict backend requested but `freegs` is not installed.")
 
     use_freegs = bool(require_freegs_backend or (HAS_FREEGS and not force_solovev))
     allow_runtime_fallback = not require_freegs_backend
@@ -1007,32 +999,28 @@ def run_benchmark(
             }
         case_results.append(result)
 
-    psi_nrmses = [
-        r["psi_nrmse"]
-        for r in case_results
-        if np.isfinite(r["psi_nrmse"])
-    ]
+    psi_nrmses = [r["psi_nrmse"] for r in case_results if np.isfinite(r["psi_nrmse"])]
     overall_psi_nrmse = float(np.mean(psi_nrmses)) if psi_nrmses else float("nan")
     freegs_runtime_fallback_cases = int(
         sum(bool(r.get("freegs_fallback", False)) for r in case_results)
     )
     converged_results = [r for r in case_results if r.get("our_converged", True)]
-    overall_passes = bool(converged_results) and all(
-        r["passes"] for r in converged_results
-    )
+    overall_passes = bool(converged_results) and all(r["passes"] for r in converged_results)
     runtime = time.perf_counter() - t0
 
     thresholds: dict[str, float] = {
         "psi_nrmse": FREEGS_PSI_NRMSE_THRESHOLD if use_freegs else PSI_NRMSE_THRESHOLD,
     }
     if use_freegs:
-        thresholds.update({
-            "psi_nrmse_normalized": FREEGS_PSI_NORM_NRMSE_THRESHOLD,
-            "q_profile_nrmse": FREEGS_Q_NRMSE_THRESHOLD,
-            "axis_error_m": FREEGS_AXIS_ERROR_M,
-            "separatrix_nrmse": FREEGS_SEPARATRIX_NRMSE,
-            "flux_area_rel_error": FREEGS_FLUX_AREA_REL_ERROR,
-        })
+        thresholds.update(
+            {
+                "psi_nrmse_normalized": FREEGS_PSI_NORM_NRMSE_THRESHOLD,
+                "q_profile_nrmse": FREEGS_Q_NRMSE_THRESHOLD,
+                "axis_error_m": FREEGS_AXIS_ERROR_M,
+                "separatrix_nrmse": FREEGS_SEPARATRIX_NRMSE,
+                "flux_area_rel_error": FREEGS_FLUX_AREA_REL_ERROR,
+            }
+        )
 
     report = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),

@@ -108,11 +108,7 @@ def run_benchmark(
     he_ash_pass = bool(he_ash_peak >= CONTRACT_THRESHOLDS["min_he_ash_peak"])
 
     passes = bool(
-        finite_pass
-        and positivity_pass
-        and quasineutral_pass
-        and late_energy_pass
-        and he_ash_pass
+        finite_pass and positivity_pass and quasineutral_pass and late_energy_pass and he_ash_pass
     )
 
     return {
@@ -185,11 +181,15 @@ def main() -> int:
     parser.add_argument("--p-aux-mw", type=float, default=30.0)
     parser.add_argument(
         "--output-json",
-        default=str(ROOT / "validation" / "reports" / "multi_ion_transport_conservation_benchmark.json"),
+        default=str(
+            ROOT / "validation" / "reports" / "multi_ion_transport_conservation_benchmark.json"
+        ),
     )
     parser.add_argument(
         "--output-md",
-        default=str(ROOT / "validation" / "reports" / "multi_ion_transport_conservation_benchmark.md"),
+        default=str(
+            ROOT / "validation" / "reports" / "multi_ion_transport_conservation_benchmark.md"
+        ),
     )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args()

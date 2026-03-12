@@ -34,11 +34,13 @@ def _base_summary():
 
 def _base_state():
     s = _base_summary()
-    s.update({
-        "rho_norm": [0.0, 0.25, 0.5, 0.75, 1.0],
-        "electron_temp_keV": [10.0, 8.0, 5.0, 2.0, 0.5],
-        "electron_density_1e20_m3": [1.0, 0.9, 0.7, 0.4, 0.1],
-    })
+    s.update(
+        {
+            "rho_norm": [0.0, 0.25, 0.5, 0.75, 1.0],
+            "electron_temp_keV": [10.0, 8.0, 5.0, 2.0, 0.5],
+            "electron_density_1e20_m3": [1.0, 0.9, 0.7, 0.4, 0.1],
+        }
+    )
     return s
 
 
@@ -59,7 +61,9 @@ class TestStateRoundTrip:
         recovered = ids_to_digital_twin_state(ids)
         assert recovered["steps"] == original["steps"]
         np.testing.assert_allclose(
-            recovered["rho_norm"], original["rho_norm"], atol=1e-10,
+            recovered["rho_norm"],
+            original["rho_norm"],
+            atol=1e-10,
         )
         np.testing.assert_allclose(
             recovered["electron_temp_keV"],

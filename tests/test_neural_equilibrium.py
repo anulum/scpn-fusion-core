@@ -300,9 +300,7 @@ class TestSPARCTraining:
         tmp = tmp_path_factory.mktemp("neq")
         files = sorted(SPARC_DIR.glob("*.geqdsk")) + sorted(SPARC_DIR.glob("*.eqdsk"))
 
-        accel = NeuralEquilibriumAccelerator(
-            NeuralEqConfig(n_components=10, hidden_sizes=(32, 16))
-        )
+        accel = NeuralEquilibriumAccelerator(NeuralEqConfig(n_components=10, hidden_sizes=(32, 16)))
         result = accel.train_from_geqdsk(
             files[:3],  # Use subset for speed
             n_perturbations=5,
@@ -333,18 +331,28 @@ class TestSPARCTraining:
         eq = read_geqdsk(next(SPARC_DIR.glob("*.geqdsk")))
         kappa_t = 1.7
         q95_t = 3.0
-        if hasattr(eq, 'rbbbs') and eq.rbbbs is not None and len(eq.rbbbs) > 3:
+        if hasattr(eq, "rbbbs") and eq.rbbbs is not None and len(eq.rbbbs) > 3:
             r_span = eq.rbbbs.max() - eq.rbbbs.min()
             kappa_t = (eq.zbbbs.max() - eq.zbbbs.min()) / max(r_span, 0.01)
-        if hasattr(eq, 'qpsi') and eq.qpsi is not None and len(eq.qpsi) > 0:
+        if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
             idx_95 = int(0.95 * len(eq.qpsi))
             q95_t = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
-        features = np.array([
-            eq.current / 1e6, eq.bcentr,
-            eq.rmaxis, eq.zmaxis,
-            1.0, 1.0, eq.simag, eq.sibry,
-            kappa_t, 0.3, 0.3, q95_t,
-        ])
+        features = np.array(
+            [
+                eq.current / 1e6,
+                eq.bcentr,
+                eq.rmaxis,
+                eq.zmaxis,
+                1.0,
+                1.0,
+                eq.simag,
+                eq.sibry,
+                kappa_t,
+                0.3,
+                0.3,
+                q95_t,
+            ]
+        )
         psi = accel.predict(features)
         assert psi.ndim == 2
         # Grid shape should match what was trained on
@@ -358,18 +366,28 @@ class TestSPARCTraining:
         eq = read_geqdsk(next(SPARC_DIR.glob("*.geqdsk")))
         kappa_t = 1.7
         q95_t = 3.0
-        if hasattr(eq, 'rbbbs') and eq.rbbbs is not None and len(eq.rbbbs) > 3:
+        if hasattr(eq, "rbbbs") and eq.rbbbs is not None and len(eq.rbbbs) > 3:
             r_span = eq.rbbbs.max() - eq.rbbbs.min()
             kappa_t = (eq.zbbbs.max() - eq.zbbbs.min()) / max(r_span, 0.01)
-        if hasattr(eq, 'qpsi') and eq.qpsi is not None and len(eq.qpsi) > 0:
+        if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
             idx_95 = int(0.95 * len(eq.qpsi))
             q95_t = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
-        features = np.array([
-            eq.current / 1e6, eq.bcentr,
-            eq.rmaxis, eq.zmaxis,
-            1.0, 1.0, eq.simag, eq.sibry,
-            kappa_t, 0.3, 0.3, q95_t,
-        ])
+        features = np.array(
+            [
+                eq.current / 1e6,
+                eq.bcentr,
+                eq.rmaxis,
+                eq.zmaxis,
+                1.0,
+                1.0,
+                eq.simag,
+                eq.sibry,
+                kappa_t,
+                0.3,
+                0.3,
+                q95_t,
+            ]
+        )
         psi = accel.predict(features)
         assert np.all(np.isfinite(psi))
 
@@ -380,18 +398,28 @@ class TestSPARCTraining:
         eq = read_geqdsk(next(SPARC_DIR.glob("*.geqdsk")))
         kappa_t = 1.7
         q95_t = 3.0
-        if hasattr(eq, 'rbbbs') and eq.rbbbs is not None and len(eq.rbbbs) > 3:
+        if hasattr(eq, "rbbbs") and eq.rbbbs is not None and len(eq.rbbbs) > 3:
             r_span = eq.rbbbs.max() - eq.rbbbs.min()
             kappa_t = (eq.zbbbs.max() - eq.zbbbs.min()) / max(r_span, 0.01)
-        if hasattr(eq, 'qpsi') and eq.qpsi is not None and len(eq.qpsi) > 0:
+        if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
             idx_95 = int(0.95 * len(eq.qpsi))
             q95_t = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
-        features = np.array([
-            eq.current / 1e6, eq.bcentr,
-            eq.rmaxis, eq.zmaxis,
-            1.0, 1.0, eq.simag, eq.sibry,
-            kappa_t, 0.3, 0.3, q95_t,
-        ])
+        features = np.array(
+            [
+                eq.current / 1e6,
+                eq.bcentr,
+                eq.rmaxis,
+                eq.zmaxis,
+                1.0,
+                1.0,
+                eq.simag,
+                eq.sibry,
+                kappa_t,
+                0.3,
+                0.3,
+                q95_t,
+            ]
+        )
 
         pred_before = accel.predict(features).copy()
 

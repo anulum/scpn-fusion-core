@@ -62,15 +62,15 @@ def explicit_diffusion_rhs(
     Lh = np.zeros(n)
     dr = drho
 
-    r = rho[1:n - 1]
-    chi_ip = 0.5 * (chi[1:n - 1] + chi[2:n])
-    chi_im = 0.5 * (chi[1:n - 1] + chi[0:n - 2])
+    r = rho[1 : n - 1]
+    chi_ip = 0.5 * (chi[1 : n - 1] + chi[2:n])
+    chi_im = 0.5 * (chi[1 : n - 1] + chi[0 : n - 2])
     r_ip = r + 0.5 * dr
     r_im = r - 0.5 * dr
 
-    flux_ip = chi_ip * r_ip * (T[2:n] - T[1:n - 1]) / dr
-    flux_im = chi_im * r_im * (T[1:n - 1] - T[0:n - 2]) / dr
-    Lh[1:n - 1] = (flux_ip - flux_im) / (r * dr)
+    flux_ip = chi_ip * r_ip * (T[2:n] - T[1 : n - 1]) / dr
+    flux_im = chi_im * r_im * (T[1 : n - 1] - T[0 : n - 2]) / dr
+    Lh[1 : n - 1] = (flux_ip - flux_im) / (r * dr)
     return Lh
 
 
@@ -85,7 +85,7 @@ class _CNGridCache:
 
     def __init__(self, rho: np.ndarray, drho: float) -> None:
         n = len(rho)
-        r = rho[1:n - 1]
+        r = rho[1 : n - 1]
         r_ip = r + 0.5 * drho
         r_im = r - 0.5 * drho
         inv_r_dr2 = 1.0 / (r * drho * drho)
@@ -118,15 +118,15 @@ def build_cn_tridiag(
     b = np.ones(n)
     c = np.zeros(n - 1)
 
-    chi_ip = 0.5 * (chi[1:n - 1] + chi[2:n])
-    chi_im = 0.5 * (chi[1:n - 1] + chi[0:n - 2])
+    chi_ip = 0.5 * (chi[1 : n - 1] + chi[2:n])
+    chi_im = 0.5 * (chi[1 : n - 1] + chi[0 : n - 2])
 
     coeff_ip = chi_ip * cache.geo_ip
     coeff_im = chi_im * cache.geo_im
 
-    b[1:n - 1] = 1.0 + 0.5 * dt * (coeff_ip + coeff_im)
-    c[1:n - 1] = -0.5 * dt * coeff_ip
-    a[0:n - 2] = -0.5 * dt * coeff_im
+    b[1 : n - 1] = 1.0 + 0.5 * dt * (coeff_ip + coeff_im)
+    c[1 : n - 1] = -0.5 * dt * coeff_ip
+    a[0 : n - 2] = -0.5 * dt * coeff_im
     return a, b, c
 
 

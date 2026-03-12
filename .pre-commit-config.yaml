@@ -35,13 +35,13 @@ repos:
         pass_filenames: false
       - id: cargo-fmt-check
         name: cargo fmt --check
-        entry: cargo fmt --all --check
+        entry: bash -c "cd scpn-fusion-rs && cargo fmt --all --check"
         language: system
         pass_filenames: false
         files: ^scpn-fusion-rs/
       - id: cargo-clippy
         name: cargo clippy --all-targets --all-features -- -D warnings
-        entry: cargo clippy --all-targets --all-features -- -D warnings
+        entry: bash -c "cd scpn-fusion-rs && cargo clippy --all-targets --all-features -- -D warnings"
         language: system
         pass_filenames: false
         files: ^scpn-fusion-rs/

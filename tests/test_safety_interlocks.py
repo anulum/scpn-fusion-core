@@ -76,4 +76,3 @@ def test_formal_contracts_detect_inconsistent_enablement() -> None:
         transition_enabled={"heat_ramp": True},
     )
     assert violations == ["thermal_limit inhibits heat_ramp"]
-

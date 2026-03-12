@@ -34,4 +34,3 @@ def to_trace(value: Any, points: int, *, resample_1d: Any) -> NDArray[np.float64
     if arr.size < 2:
         raise ValueError("Trace payload must contain at least 2 finite values.")
     return resample_1d(arr, points)
-

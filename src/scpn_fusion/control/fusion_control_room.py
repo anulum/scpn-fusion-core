@@ -77,7 +77,7 @@ class TokamakPhysicsEngine:
     def _kernel_psi(self) -> Optional[np.ndarray]:
         if self.kernel is None or not hasattr(self.kernel, "Psi"):
             return None
-        psi = np.asarray(getattr(self.kernel, "Psi"), dtype=np.float64)
+        psi = np.asarray(self.kernel.Psi, dtype=np.float64)
         if psi.ndim != 2 or psi.shape[0] < 8 or psi.shape[1] < 8:
             return None
         return psi
@@ -97,10 +97,7 @@ class TokamakPhysicsEngine:
             rho_sq = (
                 (self.RR - self.R0) ** 2
                 + ((self.ZZ - self.z_pos) / self.kappa) ** 2
-                - 2.0
-                * self.delta
-                * (self.RR - self.R0)
-                * ((self.RR - self.R0) ** 2)
+                - 2.0 * self.delta * (self.RR - self.R0) * ((self.RR - self.R0) ** 2)
             )
             psi = rho_sq / (self.a**2)
             psi = np.clip(psi, 0.0, None)
@@ -143,22 +140,22 @@ class KalmanObserver:
     Linear Kalman Filter for robust plasma position state estimation.
     Harden state estimation against sensor noise and dropout.
     """
+
     def __init__(self, dt: float = 0.1):
         # State: [z, v_z]
         self.x = np.array([0.0, 0.0])
         self.P = np.eye(2) * 0.1
-        
+
         # Transition Matrix (Linear drift model)
-        self.A = np.array([[1.0, dt],
-                           [0.0, 0.9]]) # 0.9 matches drift damping in engine
-        
+        self.A = np.array([[1.0, dt], [0.0, 0.9]])  # 0.9 matches drift damping in engine
+
         # Measurement Matrix (We only measure position z)
         self.H = np.array([[1.0, 0.0]])
-        
+
         # Covariance Matrices
-        self.Q = np.eye(2) * 0.01 # Process Noise
-        self.R = np.array([[0.05]]) # Measurement Noise
-        
+        self.Q = np.eye(2) * 0.01  # Process Noise
+        self.R = np.array([[0.05]])  # Measurement Noise
+
     def update(self, measured_z: float, dropout: bool = False) -> float:
         """Predict-correct cycle. Returns filtered Z-position."""
         self.x = self.A @ self.x
@@ -168,12 +165,12 @@ class KalmanObserver:
             y = measured_z - (self.H @ self.x)  # innovation
             S = self.H @ self.P @ self.H.T + self.R
             K = self.P @ self.H.T @ np.linalg.inv(S)
-            
+
             self.x = self.x + K @ y
             self.P = (np.eye(2) - K @ self.H) @ self.P
         else:
             self.P *= 1.2  # covariance inflation on dropout
-            
+
         return float(self.x[0])
 
 
@@ -185,16 +182,16 @@ class NeuralController:
         self.integral_error = 0.0
         self.prev_error = 0.0
         self.filtered_derivative = 0.0
-        
+
         # PID Gains (Hardened defaults)
         self.kp = 5.0
         self.ki = 0.5
         self.kd = 2.0
-        
+
         # Filter constant for derivative (tau_d)
         # Prevents noise spikes from being amplified
-        self.tau_d = 0.05 
-        
+        self.tau_d = 0.05
+
         # Anti-windup limit
         self.integral_limit = 2.0
 
@@ -204,7 +201,9 @@ class NeuralController:
         p_term = self.kp * error
 
         self.integral_error += error * self.dt
-        self.integral_error = np.clip(self.integral_error, -self.integral_limit, self.integral_limit)
+        self.integral_error = np.clip(
+            self.integral_error, -self.integral_limit, self.integral_limit
+        )
         i_term = self.ki * self.integral_error
 
         # d/dt low-pass: y(t) = α·x(t) + (1-α)·y(t-dt)
@@ -212,11 +211,11 @@ class NeuralController:
         alpha = self.dt / (self.tau_d + self.dt)
         self.filtered_derivative = alpha * raw_derivative + (1.0 - alpha) * self.filtered_derivative
         d_term = self.kd * self.filtered_derivative
-        
+
         self.prev_error = error
 
         pid_out = p_term + i_term + d_term
-        
+
         # Actuator Saturation (tanh)
         force = float(np.tanh(pid_out))
         if force > 0.0:
@@ -262,8 +261,8 @@ def _render_outputs(
     ax_trace.set_title("Vertical Displacement (Z-Pos)", color="white")
     ax_trace.set_ylim(-1.5, 1.5)
     ax_trace.grid(True, color="#444")
-    line_z, = ax_trace.plot([], [], "cyan", lw=2, animated=True)
-    line_setpoint, = ax_trace.plot([], [], "r--", alpha=0.5, animated=True)
+    (line_z,) = ax_trace.plot([], [], "cyan", lw=2, animated=True)
+    (line_setpoint,) = ax_trace.plot([], [], "r--", alpha=0.5, animated=True)
     ax_trace.set_xlim(0, max(50, len(frames)))
 
     ax_coils = fig.add_subplot(gs[1, 1])
@@ -276,8 +275,8 @@ def _render_outputs(
     ax_coils.set_xticklabels(["Top", "Bottom"], color="white")
     ax_coils.legend()
 
-    top_marker, = ax_plasma.plot(3.0, 2.9, "s", color="red", markersize=20, alpha=0.3)
-    bot_marker, = ax_plasma.plot(3.0, -2.9, "s", color="blue", markersize=20, alpha=0.3)
+    (top_marker,) = ax_plasma.plot(3.0, 2.9, "s", color="red", markersize=20, alpha=0.3)
+    (bot_marker,) = ax_plasma.plot(3.0, -2.9, "s", color="blue", markersize=20, alpha=0.3)
     wall = plt.Rectangle(
         (extent[0], extent[2] + 0.2),
         extent[1] - extent[0],
@@ -455,14 +454,14 @@ def run_control_room(
 
         true_z = reactor.step_dynamics(top_action, bot_action)
         density, psi = reactor.solve_flux_surfaces()
-        
+
         # Sensor measurement with potential dropout
         raw_measured_z = sensors.measure_position(true_z)
-        dropout = (frame % 20 == 0) # Simulate periodic glitch
-        
+        dropout = frame % 20 == 0  # Simulate periodic glitch
+
         # State estimation
         filtered_z = observer.update(raw_measured_z, dropout=dropout)
-        
+
         # AI uses filtered state
         top_action, bot_action = ai.compute_action(filtered_z)
 
@@ -511,9 +510,7 @@ def run_control_room(
         "psi_source": psi_source,
         "kernel_fallback_allowed": bool(allow_kernel_fallback),
         "kernel_fallback_used": bool(
-            kernel_error is not None
-            or kernel_coil_update_failures > 0
-            or kernel_solve_failures > 0
+            kernel_error is not None or kernel_coil_update_failures > 0 or kernel_solve_failures > 0
         ),
         "kernel_error": kernel_error,
         "final_z": float(z_arr[-1]),

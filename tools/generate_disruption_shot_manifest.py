@@ -13,7 +13,9 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SHOT_DIR = REPO_ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots"
-DEFAULT_MANIFEST = REPO_ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots_manifest.json"
+DEFAULT_MANIFEST = (
+    REPO_ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots_manifest.json"
+)
 DEFAULT_METADATA = (
     REPO_ROOT / "validation" / "reference_data" / "diiid" / "disruption_shot_metadata.json"
 )
@@ -48,7 +50,9 @@ def _classify_scenario(scenario: str) -> str:
     return "safe" if scenario.endswith("_safe") else "disruptive"
 
 
-def _load_metadata_overrides(metadata_path: Path) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+def _load_metadata_overrides(
+    metadata_path: Path,
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
     if not metadata_path.exists():
         return {}, {}
 
@@ -81,9 +85,7 @@ def _load_metadata_overrides(metadata_path: Path) -> tuple[dict[str, Any], dict[
         override: dict[str, Any] = {}
         for key, value in override_raw.items():
             if key not in _SHOT_OVERRIDE_KEYS:
-                raise ValueError(
-                    f"Unsupported shot override key for {filename}: {key}"
-                )
+                raise ValueError(f"Unsupported shot override key for {filename}: {key}")
             if key == "shot":
                 if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
                     raise ValueError(
@@ -92,9 +94,7 @@ def _load_metadata_overrides(metadata_path: Path) -> tuple[dict[str, Any], dict[
                 override[key] = int(value)
                 continue
             if not isinstance(value, str) or not value.strip():
-                raise ValueError(
-                    f"shot_overrides['{filename}'].{key} must be a non-empty string"
-                )
+                raise ValueError(f"shot_overrides['{filename}'].{key} must be a non-empty string")
             override[key] = value
         shot_overrides[filename] = override
 
@@ -138,8 +138,7 @@ def build_manifest(shot_dir: Path, *, metadata_path: Path | None = None) -> dict
     stale_overrides = sorted(set(shot_overrides.keys()) - seen_files)
     if stale_overrides:
         raise ValueError(
-            "Metadata overrides reference missing shot files: "
-            + ", ".join(stale_overrides)
+            "Metadata overrides reference missing shot files: " + ", ".join(stale_overrides)
         )
 
     manifest = {

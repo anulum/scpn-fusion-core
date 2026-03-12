@@ -76,7 +76,14 @@ def test_redeposition_factor_is_bounded_and_controls_net_flux() -> None:
 def test_erosion_outputs_finite_and_nonnegative() -> None:
     pwi = SputteringPhysics("Tungsten", redeposition_factor=0.95)
     out = pwi.calculate_erosion_rate(flux_particles_m2_s=5e23, T_ion_eV=40.0)
-    for key in ("Yield", "E_impact", "Net_Flux", "Erosion_mm_year", "Impurity_Source", "Redeposition"):
+    for key in (
+        "Yield",
+        "E_impact",
+        "Net_Flux",
+        "Erosion_mm_year",
+        "Impurity_Source",
+        "Redeposition",
+    ):
         assert key in out
         assert np.isfinite(out[key])
     assert out["Yield"] >= 0.0

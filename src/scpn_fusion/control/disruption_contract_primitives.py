@@ -119,4 +119,3 @@ __all__ = [
     "require_positive_float",
     "synthetic_disruption_signal",
 ]
-

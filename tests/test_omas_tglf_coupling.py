@@ -1,10 +1,8 @@
 """Tests for P2.3: OMAS/TGLF Live Coupling."""
 
-import json
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -22,7 +20,6 @@ from scpn_fusion.core.eqdsk import GEqdsk
 from scpn_fusion.core.tglf_interface import (
     TGLFInputDeck,
     TGLFOutput,
-    TGLFComparisonResult,
     TGLFBenchmark,
     run_tglf_binary,
     write_tglf_input_file,
@@ -108,10 +105,7 @@ class TestTGLFOutputParser:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
             out_path.write_text(
-                "CHI_I = 1.5\n"
-                "CHI_E = 0.8\n"
-                "GAMMA_MAX = 0.12\n"
-                "OTHER = ignored\n"
+                "CHI_I = 1.5\n" "CHI_E = 0.8\n" "GAMMA_MAX = 0.12\n" "OTHER = ignored\n"
             )
             result = _parse_tglf_run_output(out_path, rho=0.5)
             assert result.rho == pytest.approx(0.5)
@@ -139,10 +133,7 @@ class TestTGLFOutputParser:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
             out_path.write_text(
-                "# comment\n"
-                "no_equals_here\n"
-                "CHI_I = notanumber\n"
-                "CHI_E = 1.5\n"
+                "# comment\n" "no_equals_here\n" "CHI_I = notanumber\n" "CHI_E = 1.5\n"
             )
             result = _parse_tglf_run_output(out_path, rho=0.5)
             assert result.chi_i == 0.0  # couldn't parse
@@ -151,11 +142,7 @@ class TestTGLFOutputParser:
     def test_parse_non_finite_values(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
-            out_path.write_text(
-                "CHI_I = NaN\n"
-                "CHI_E = Infinity\n"
-                "GAMMA_MAX = -Infinity\n"
-            )
+            out_path.write_text("CHI_I = NaN\n" "CHI_E = Infinity\n" "GAMMA_MAX = -Infinity\n")
             result = _parse_tglf_run_output(out_path, rho=0.5)
             assert result.chi_i == 0.0
             assert result.chi_e == 0.0
@@ -202,8 +189,7 @@ class TestTGLFBenchmark:
         chi_i = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0])
         chi_e = np.array([0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5])
         tglf_outputs = [
-            TGLFOutput(rho=r, chi_i=ci, chi_e=ce)
-            for r, ci, ce in zip(rho, chi_i, chi_e)
+            TGLFOutput(rho=r, chi_i=ci, chi_e=ce) for r, ci, ce in zip(rho, chi_i, chi_e)
         ]
         result = benchmark.compare(chi_i, chi_e, rho, tglf_outputs)
         assert result.rms_error_chi_i < 1e-10

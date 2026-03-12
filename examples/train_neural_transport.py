@@ -70,7 +70,9 @@ def init_params(seed: int) -> Dict[str, np.ndarray]:
     }
 
 
-def forward(params: Dict[str, np.ndarray], x_norm: np.ndarray, output_scale: np.ndarray) -> Dict[str, np.ndarray]:
+def forward(
+    params: Dict[str, np.ndarray], x_norm: np.ndarray, output_scale: np.ndarray
+) -> Dict[str, np.ndarray]:
     z1 = x_norm @ params["w1"] + params["b1"][None, :]
     h1 = relu(z1)
     z2 = h1 @ params["w2"] + params["b2"][None, :]

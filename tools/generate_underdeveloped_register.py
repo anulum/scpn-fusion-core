@@ -235,7 +235,7 @@ def _is_marker_suppressed(
         "FALLBACK",
         "SIMPLIFIED",
     }:
-        if "if \"" in line and "\" in markers" in line:
+        if 'if "' in line and '" in markers' in line:
             return True
         if "acceptance" in lowered_line and "checklist" in lowered_line:
             return True
@@ -331,28 +331,28 @@ def _is_marker_suppressed(
     # feature are not deficiencies.
     if marker == "FALLBACK" and rel_path.startswith("docs/"):
         lowered_l = line.lower()
-        if any(phrase in lowered_l for phrase in (
-            "pure-python fallback",
-            "cpu fallback",
-            "graceful fallback",
-            "graceful degradation",
-            "deterministic fallback",
-            "automatic fallback",
-            "checkpoint fallback",
-            "analytic fallback",
-            "numpy fallback",
-            "fallback path",
-            "fallback strategy",
-            "fallback model",
-            "serial fallback",
-        )):
+        if any(
+            phrase in lowered_l
+            for phrase in (
+                "pure-python fallback",
+                "cpu fallback",
+                "graceful fallback",
+                "graceful degradation",
+                "deterministic fallback",
+                "automatic fallback",
+                "checkpoint fallback",
+                "analytic fallback",
+                "numpy fallback",
+                "fallback path",
+                "fallback strategy",
+                "fallback model",
+                "serial fallback",
+            )
+        ):
             return True
 
     # Deep-audit planning docs that *list* marker counts are meta-reports.
-    if rel_path.startswith("docs/DEEP_AUDIT_AND_SOTA_PLAN"):
-        return True
-
-    return False
+    return bool(rel_path.startswith("docs/DEEP_AUDIT_AND_SOTA_PLAN"))
 
 
 def _count_nontrivial_loc(text: str) -> int:
@@ -427,10 +427,16 @@ def _collect_source_heuristic_entries(repo_root: Path) -> list[RegisterEntry]:
         has_linkage = _has_direct_test_linkage(rel_path=rel_path, test_corpus=test_corpus)
 
         if loc >= SOURCE_MONOLITH_LOC_WARN:
-            base = SOURCE_MONOLITH_LOC_CRITICAL if loc >= SOURCE_MONOLITH_LOC_CRITICAL else SOURCE_MONOLITH_LOC_WARN
+            base = (
+                SOURCE_MONOLITH_LOC_CRITICAL
+                if loc >= SOURCE_MONOLITH_LOC_CRITICAL
+                else SOURCE_MONOLITH_LOC_WARN
+            )
             marker = "MONOLITH"
             rule = _MARKER_RULE_BY_NAME[marker]
-            score = int(rule.base_score + bonus + (8 if base == SOURCE_MONOLITH_LOC_CRITICAL else 0))
+            score = int(
+                rule.base_score + bonus + (8 if base == SOURCE_MONOLITH_LOC_CRITICAL else 0)
+            )
             entries.append(
                 RegisterEntry(
                     path=rel_path,
@@ -444,7 +450,10 @@ def _collect_source_heuristic_entries(repo_root: Path) -> list[RegisterEntry]:
                 )
             )
 
-        if loc >= SOURCE_MIN_LOC_FOR_FALLBACK_DENSITY and fallback_mentions >= SOURCE_FALLBACK_DENSITY_WARN:
+        if (
+            loc >= SOURCE_MIN_LOC_FOR_FALLBACK_DENSITY
+            and fallback_mentions >= SOURCE_FALLBACK_DENSITY_WARN
+        ):
             is_critical = fallback_mentions >= SOURCE_FALLBACK_DENSITY_CRITICAL
             marker = "FALLBACK_DENSITY"
             rule = _MARKER_RULE_BY_NAME[marker]
@@ -567,9 +576,7 @@ def _is_excluded(path: Path) -> bool:
         return True
     if any(posix == item or posix.startswith(f"{item}/") for item in EXCLUDED_DIR_NAMES):
         return True
-    if path.suffix.lower() in EXCLUDED_SUFFIXES:
-        return True
-    return False
+    return path.suffix.lower() in EXCLUDED_SUFFIXES
 
 
 def _is_text_file(path: Path) -> bool:
@@ -664,11 +671,15 @@ def collect_entries(repo_root: Path) -> list[RegisterEntry]:
                 file_hits += 1
                 if file_hits >= 20:
                     break
-                score = int(rule.base_score + bonus - _score_context_penalty(
-                    rel_path=rel,
-                    marker=rule.marker,
-                    line=line,
-                ))
+                score = int(
+                    rule.base_score
+                    + bonus
+                    - _score_context_penalty(
+                        rel_path=rel,
+                        marker=rule.marker,
+                        line=line,
+                    )
+                )
                 entries.append(
                     RegisterEntry(
                         path=rel,
@@ -863,10 +874,7 @@ def main(argv: list[str] | None = None) -> int:
         "--scope",
         choices=("full", "source", "docs_claims"),
         default="full",
-        help=(
-            "Report scope: full (default), source (src/scpn_fusion only), "
-            "or docs_claims."
-        ),
+        help=("Report scope: full (default), source (src/scpn_fusion only), " "or docs_claims."),
     )
     args = parser.parse_args(argv)
 

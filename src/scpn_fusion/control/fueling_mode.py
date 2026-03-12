@@ -64,9 +64,7 @@ def _build_fueling_controller() -> NeuroSymbolicController:
     compiled = FusionCompiler.with_reactor_lif_defaults(
         bitstream_length=1024,
         seed=77,
-    ).compile(
-        net, firing_mode="binary"
-    )
+    ).compile(net, firing_mode="binary")
     artifact = compiled.export_artifact(
         name="gneu03_fueling",
         dt_control_s=0.001,

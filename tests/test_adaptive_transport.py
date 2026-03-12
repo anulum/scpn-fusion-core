@@ -44,9 +44,7 @@ def solver(tmp_path: Path) -> TransportSolver:
 
 def test_adaptive_dt_adapts(solver: TransportSolver):
     """Adaptive controller should actively adjust dt (not stay constant)."""
-    result = solver.run_to_steady_state(
-        P_aux=30.0, n_steps=15, dt=0.01, adaptive=True, tol=1e-2
-    )
+    result = solver.run_to_steady_state(P_aux=30.0, n_steps=15, dt=0.01, adaptive=True, tol=1e-2)
     dts = result["dt_history"]
     assert len(dts) >= 2
     # dt should change from its initial value (controller is active)
@@ -78,22 +76,18 @@ def test_adaptive_reaches_steady_state(solver: TransportSolver):
 
 def test_adaptive_error_decreases(solver: TransportSolver):
     """Error history trend should generally decrease (or stabilise)."""
-    result = solver.run_to_steady_state(
-        P_aux=30.0, n_steps=20, dt=0.01, adaptive=True, tol=1e-2
-    )
+    result = solver.run_to_steady_state(P_aux=30.0, n_steps=20, dt=0.01, adaptive=True, tol=1e-2)
     errors = result["error_history"]
     if len(errors) >= 4:
         # The last quarter should not be significantly worse than the second quarter
-        q2 = np.mean(errors[len(errors)//4 : len(errors)//2])
-        q4 = np.mean(errors[3*len(errors)//4:])
+        q2 = np.mean(errors[len(errors) // 4 : len(errors) // 2])
+        q4 = np.mean(errors[3 * len(errors) // 4 :])
         assert q4 <= q2 * 5, f"Error increased: q2={q2:.2e}, q4={q4:.2e}"
 
 
 def test_adaptive_no_nan(solver: TransportSolver):
     """Adaptive stepping should never produce NaN."""
-    result = solver.run_to_steady_state(
-        P_aux=50.0, n_steps=30, dt=0.1, adaptive=True, tol=1e-3
-    )
+    result = solver.run_to_steady_state(P_aux=50.0, n_steps=30, dt=0.1, adaptive=True, tol=1e-3)
     assert np.all(np.isfinite(result["Ti_profile"])), "Adaptive produced NaN"
 
 

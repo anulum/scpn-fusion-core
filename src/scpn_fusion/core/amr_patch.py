@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -36,6 +35,7 @@ class AMRPatch:
     psi : FloatArray
         Poloidal flux on this patch grid, shape ``(nz, nr)``.
     """
+
     r_lo: float
     r_hi: float
     z_lo: float
@@ -117,7 +117,12 @@ def _find_patch_bounds(
                     cells.append((cj, ci))
                     for dj, di in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                         nj, ni = cj + dj, ci + di
-                        if 0 <= nj < nz and 0 <= ni < nr and flagged[nj, ni] and not visited[nj, ni]:
+                        if (
+                            0 <= nj < nz
+                            and 0 <= ni < nr
+                            and flagged[nj, ni]
+                            and not visited[nj, ni]
+                        ):
                             stack.append((nj, ni))
 
                 if not cells:
@@ -132,12 +137,14 @@ def _find_patch_bounds(
                 if (i_hi - i_lo) < MIN_PATCH_CELLS or (j_hi - j_lo) < MIN_PATCH_CELLS:
                     continue
 
-                patches.append((
-                    float(R[i_lo]),
-                    float(R[i_hi]),
-                    float(Z[j_lo]),
-                    float(Z[j_hi]),
-                ))
+                patches.append(
+                    (
+                        float(R[i_lo]),
+                        float(R[i_hi]),
+                        float(Z[j_lo]),
+                        float(Z[j_hi]),
+                    )
+                )
 
     return patches
 
@@ -281,7 +288,13 @@ def solve_amr(
     patches: list[AMRPatch] = []
     for r_lo, r_hi, z_lo, z_hi in patch_bounds:
         sub_psi, i_lo, i_hi, j_lo, j_hi = _extract_subgrid(
-            psi_out, R, Z, r_lo, r_hi, z_lo, z_hi,
+            psi_out,
+            R,
+            Z,
+            r_lo,
+            r_hi,
+            z_lo,
+            z_hi,
         )
         sub_src = source[j_lo : j_hi + 1, i_lo : i_hi + 1]
 
@@ -295,7 +308,10 @@ def solve_amr(
 
         fine_R = np.linspace(r_lo, r_hi, fine_nr)
         fine_psi = _jacobi_smooth(
-            fine_psi, fine_src, fine_dr, fine_dz,
+            fine_psi,
+            fine_src,
+            fine_dr,
+            fine_dz,
             R_1d=fine_R,
             iterations=refine_smooth_iters,
         )
@@ -303,9 +319,17 @@ def solve_amr(
         correction = restrict(fine_psi, sub_psi.shape) - sub_psi
         psi_out[j_lo : j_hi + 1, i_lo : i_hi + 1] += correction
 
-        patches.append(AMRPatch(
-            r_lo=r_lo, r_hi=r_hi, z_lo=z_lo, z_hi=z_hi,
-            level=1, nr=fine_nr, nz=fine_nz, psi=fine_psi,
-        ))
+        patches.append(
+            AMRPatch(
+                r_lo=r_lo,
+                r_hi=r_hi,
+                z_lo=z_lo,
+                z_hi=z_hi,
+                level=1,
+                nr=fine_nr,
+                nz=fine_nz,
+                psi=fine_psi,
+            )
+        )
 
     return psi_out, patches

@@ -45,9 +45,7 @@ def read_local_version(pyproject_path: Path) -> str:
         if match:
             return match.group(1).strip()
 
-    raise ValueError(
-        f"Unable to determine project.version from {pyproject_path.as_posix()}"
-    )
+    raise ValueError(f"Unable to determine project.version from {pyproject_path.as_posix()}")
 
 
 def fetch_pypi_version(package: str, timeout: float) -> str:

@@ -36,14 +36,14 @@ def ipb98_tau_e(
     """IPB98(y,2) scaling law [s]."""
     return (
         0.0562
-        * (ip_ma ** 0.93)
-        * (b_t ** 0.15)
-        * (n_e19 ** 0.41)
-        * (p_loss_mw ** -0.69)
-        * (r_m ** 1.97)
-        * (kappa ** 0.78)
-        * (epsilon ** 0.58)
-        * (a_eff_amu ** 0.19)
+        * (ip_ma**0.93)
+        * (b_t**0.15)
+        * (n_e19**0.41)
+        * (p_loss_mw**-0.69)
+        * (r_m**1.97)
+        * (kappa**0.78)
+        * (epsilon**0.58)
+        * (a_eff_amu**0.19)
     )
 
 

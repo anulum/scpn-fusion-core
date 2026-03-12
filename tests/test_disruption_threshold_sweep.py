@@ -21,7 +21,6 @@ import pytest
 
 from scpn_fusion.control.disruption_predictor import (
     HybridAnomalyDetector,
-    build_disruption_feature_vector,
     predict_disruption_risk,
 )
 
@@ -139,12 +138,8 @@ def test_disruption_fpr_below_30_pct() -> None:
 def test_disruption_operating_point_recall_100_fpr_0() -> None:
     """With v2.1 weights, the operating point should achieve recall=100% FPR=0%."""
     result = _run_sliding_window_detection(risk_threshold=0.50)
-    assert result["recall"] == 1.0, (
-        f"Expected recall=100%, got {result['recall']:.2%}"
-    )
-    assert result["fpr"] == 0.0, (
-        f"Expected FPR=0%, got {result['fpr']:.2%}"
-    )
+    assert result["recall"] == 1.0, f"Expected recall=100%, got {result['recall']:.2%}"
+    assert result["fpr"] == 0.0, f"Expected FPR=0%, got {result['fpr']:.2%}"
 
 
 def test_v21_weights_safe_signal_below_threshold() -> None:
@@ -158,9 +153,7 @@ def test_v21_weights_safe_signal_below_threshold() -> None:
         "toroidal_n3_amp": 0.02,
     }
     risk = predict_disruption_risk(signal, toroidal)
-    assert risk < 0.50, (
-        f"Safe high-power signal should have risk < 0.50, got {risk:.4f}"
-    )
+    assert risk < 0.50, f"Safe high-power signal should have risk < 0.50, got {risk:.4f}"
 
 
 def test_v21_weights_unstable_signal_above_threshold() -> None:
@@ -176,9 +169,7 @@ def test_v21_weights_unstable_signal_above_threshold() -> None:
         "toroidal_n3_amp": 0.02,
     }
     risk = predict_disruption_risk(signal, toroidal)
-    assert risk > 0.50, (
-        f"Unstable signal should have risk > 0.50, got {risk:.4f}"
-    )
+    assert risk > 0.50, f"Unstable signal should have risk > 0.50, got {risk:.4f}"
 
 
 def test_hybrid_anomaly_detector_default_threshold_is_050() -> None:
@@ -198,6 +189,4 @@ def test_predict_disruption_risk_monotonic_in_std() -> None:
         risks.append(predict_disruption_risk(signal, toroidal))
     # Risk should be non-decreasing (approximately, given fixed rng)
     for i in range(len(risks) - 1):
-        assert risks[i + 1] >= risks[i] - 0.01, (
-            f"Risk not monotonic in std: {risks}"
-        )
+        assert risks[i + 1] >= risks[i] - 0.01, f"Risk not monotonic in std: {risks}"

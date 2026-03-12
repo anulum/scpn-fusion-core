@@ -40,9 +40,7 @@ def _force_divergence(kernel: FusionKernel) -> None:
     nans = np.full_like(kernel.Psi, np.nan)
     kernel.calculate_vacuum_field = lambda: zeros.copy()  # type: ignore[assignment]
     kernel._seed_plasma = lambda _mu0: None  # type: ignore[assignment]
-    kernel._find_magnetic_axis = (  # type: ignore[assignment]
-        lambda: (0.0, 0.0, 1.0)
-    )
+    kernel._find_magnetic_axis = lambda: (0.0, 0.0, 1.0)  # type: ignore[assignment]
     kernel.find_x_point = lambda _psi: ((0.0, 0.0), 0.0)  # type: ignore[assignment]
     kernel.update_plasma_source_nonlinear = (  # type: ignore[assignment]
         lambda _axis, _boundary: zeros.copy()

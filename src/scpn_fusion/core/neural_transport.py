@@ -148,10 +148,10 @@ class TransportFluxes:
 
 
 # Critical gradient thresholds (Dimits shift included)
-_CRIT_ITG = 4.0   # R/L_Ti threshold for ITG
-_CRIT_TEM = 5.0   # R/L_Te threshold for TEM (reduced-order closure)
+_CRIT_ITG = 4.0  # R/L_Ti threshold for ITG
+_CRIT_TEM = 5.0  # R/L_Te threshold for TEM (reduced-order closure)
 _CRIT_ETG = 12.0  # R/L_Te threshold for ETG branch in reduced closure
-_CHI_GB = 1.0     # Gyro-Bohm normalisation [m^2/s]
+_CHI_GB = 1.0  # Gyro-Bohm normalisation [m^2/s]
 
 # Transport stiffness exponent.  Physical range 1.5–4.0 (Dimits PoP 2000,
 # Citrin NF 2015); values outside [1.0, 6.0] are non-physical.
@@ -196,7 +196,9 @@ def _dominant_channel(
 
 
 def critical_gradient_model(
-    inp: TransportInputs, *, stiffness: float = _STIFFNESS,
+    inp: TransportInputs,
+    *,
+    stiffness: float = _STIFFNESS,
 ) -> TransportFluxes:
     """Reduced multichannel gyrokinetic closure used as analytic fallback.
 
@@ -209,8 +211,7 @@ def critical_gradient_model(
     """
     if not (_STIFFNESS_MIN <= stiffness <= _STIFFNESS_MAX):
         raise ValueError(
-            f"stiffness={stiffness} outside physical range "
-            f"[{_STIFFNESS_MIN}, {_STIFFNESS_MAX}]"
+            f"stiffness={stiffness} outside physical range " f"[{_STIFFNESS_MIN}, {_STIFFNESS_MAX}]"
         )
     eps = float(np.clip(inp.rho * inp.a_minor_m / max(inp.r_major_m, 1e-6), 0.0, 0.8))
     trapped_frac = float(np.clip(1.46 * np.sqrt(max(eps, 0.0)), 0.0, 1.0))
@@ -234,10 +235,7 @@ def critical_gradient_model(
     density_excess = max(inp.grad_ne - 2.5, 0.0)
     crit_tem = max(
         2.5,
-        5.0
-        + 1.1 * eps
-        + 0.12 * min(max(nustar, 0.0), 10.0)
-        - 0.35 * density_excess,
+        5.0 + 1.1 * eps + 0.12 * min(max(nustar, 0.0), 10.0) - 0.35 * density_excess,
     )
     crit_etg = 10.5 + 1.0 * eps + 0.3 * max(inp.s_hat, 0.0) + 0.2 * max(nustar, 0.0)
 
@@ -251,12 +249,7 @@ def critical_gradient_model(
     collisional_tem = 1.0 / (1.0 + 0.8 * max(nustar, 0.0))
     density_drive = 0.15 + 0.35 * density_excess
     chi_e_tem = (
-        chi_gb
-        * excess_tem**stiffness
-        * trapped_frac
-        * collisional_tem
-        * beta_supp
-        * density_drive
+        chi_gb * excess_tem**stiffness * trapped_frac * collisional_tem * beta_supp * density_drive
     )
 
     collisional_etg = 1.0 / (1.0 + 1.5 * max(nustar, 0.0))
@@ -265,7 +258,7 @@ def critical_gradient_model(
     chi_e_etg = (
         0.85
         * chi_gb
-        * excess_etg**(0.9 * stiffness)
+        * excess_etg ** (0.9 * stiffness)
         * collisional_etg
         * etg_shear
         * electron_ratio
@@ -417,11 +410,19 @@ def reduced_gyrokinetic_profile_model(
             "a_minor": a_minor,
             "b_toroidal": b_toroidal,
         },
-        "edge_etg_fraction": float(
-            np.mean(
-                [1.0 if ch == "ETG" else 0.0 for ch, r in zip(dominant_channels, rho) if r >= 0.8]
+        "edge_etg_fraction": (
+            float(
+                np.mean(
+                    [
+                        1.0 if ch == "ETG" else 0.0
+                        for ch, r in zip(dominant_channels, rho)
+                        if r >= 0.8
+                    ]
+                )
             )
-        ) if np.any(rho >= 0.8) else 0.0,
+            if np.any(rho >= 0.8)
+            else 0.0
+        ),
     }
     return chi_e, chi_i, d_e, metadata
 
@@ -493,7 +494,7 @@ def _append_derived(x: FloatArray, inp, expected_dim: int) -> FloatArray:
         te_j = inp.te_kev * 1e3 * 1.602e-19
         cs = np.sqrt(te_j / 3.344e-27)
         rho_s = np.sqrt(3.344e-27 * te_j) / (1.602e-19 * 5.3)
-        chi_gb = rho_s ** 2 * cs / 6.2
+        chi_gb = rho_s**2 * cs / 6.2
         x = np.append(x, [np.log(max(chi_gb, 1e-10))])
     return x
 
@@ -519,7 +520,9 @@ class NeuralTransportModel:
 
         # Default to bundled QLKNN-10D weights if not specified
         if weights_path is None:
-            weights_path = Path(__file__).resolve().parents[3] / "weights" / "neural_transport_qlknn.npz"
+            weights_path = (
+                Path(__file__).resolve().parents[3] / "weights" / "neural_transport_qlknn.npz"
+            )
 
         self.weights_path: Optional[Path] = None
         self.weights_checksum: Optional[str] = None
@@ -602,9 +605,7 @@ class NeuralTransportModel:
 
                 for key in ("input_mean", "input_std", "output_scale"):
                     if key not in data:
-                        logger.warning(
-                            "Weight file missing key '%s' — falling back", key
-                        )
+                        logger.warning("Weight file missing key '%s' — falling back", key)
                         return
 
                 # Version check (optional key, defaults to 1)
@@ -621,7 +622,9 @@ class NeuralTransportModel:
                 layers_b = [data[f"b{i+1}"] for i in range(n_layers)]
 
                 # Check for log-space transform flag
-                log_transform = bool(int(data["log_transform"])) if "log_transform" in data else False
+                log_transform = (
+                    bool(int(data["log_transform"])) if "log_transform" in data else False
+                )
                 # Check for gyro-Bohm skip connection flag
                 gb_scale = bool(int(data["gb_scale"])) if "gb_scale" in data else False
                 # Check for gated output architecture flag
@@ -640,10 +643,7 @@ class NeuralTransportModel:
                 self.is_neural = True
 
                 # Compute checksum for reproducibility tracking
-                raw = b"".join(
-                    data[k].tobytes() for k in sorted(data.files)
-                    if k != "version"
-                )
+                raw = b"".join(data[k].tobytes() for k in sorted(data.files) if k != "version")
                 self.weights_checksum = hashlib.sha256(raw).hexdigest()[:16]
 
                 # Build architecture description string
@@ -683,11 +683,20 @@ class NeuralTransportModel:
         if not self.is_neural or self._weights is None:
             return critical_gradient_model(inp)
 
-        x = np.array([
-            inp.rho, inp.te_kev, inp.ti_kev, inp.ne_19,
-            inp.grad_te, inp.grad_ti, inp.grad_ne,
-            inp.q, inp.s_hat, inp.beta_e,
-        ])
+        x = np.array(
+            [
+                inp.rho,
+                inp.te_kev,
+                inp.ti_kev,
+                inp.ne_19,
+                inp.grad_te,
+                inp.grad_ti,
+                inp.grad_ne,
+                inp.q,
+                inp.s_hat,
+                inp.beta_e,
+            ]
+        )
         expected_dim = self._weights.layers_w[0].shape[0]
         x = _append_derived(x, inp, expected_dim)
         out = _mlp_forward(x, self._weights)
@@ -809,18 +818,29 @@ class NeuralTransportModel:
                 "rho_max": float(rho[-1]),
                 "r_major": float(r_major),
             }
-            x_batch = np.column_stack([
-                rho, te, ti, ne,
-                grad_te, grad_ti, grad_ne,
-                q_profile, s_hat_profile, beta_e,
-            ])  # (N, 10)
+            x_batch = np.column_stack(
+                [
+                    rho,
+                    te,
+                    ti,
+                    ne,
+                    grad_te,
+                    grad_ti,
+                    grad_ne,
+                    q_profile,
+                    s_hat_profile,
+                    beta_e,
+                ]
+            )  # (N, 10)
             expected_dim = self._weights.layers_w[0].shape[0]
             if expected_dim >= 12:
                 ti_te = ti / np.maximum(te, 1e-6)
-                nustar = np.array([
-                    _compute_nustar(te[i], ne[i], q_profile[i], rho[i], r_major, a_minor)
-                    for i in range(n)
-                ])
+                nustar = np.array(
+                    [
+                        _compute_nustar(te[i], ne[i], q_profile[i], rho[i], r_major, a_minor)
+                        for i in range(n)
+                    ]
+                )
                 x_batch = np.column_stack([x_batch, ti_te, nustar])
             if expected_dim >= 14:
                 itg_excess = np.maximum(0.0, grad_ti - _CRIT_ITG)
@@ -830,7 +850,7 @@ class NeuralTransportModel:
                 te_j = te * 1e3 * 1.602e-19
                 cs = np.sqrt(te_j / 3.344e-27)
                 rho_s = np.sqrt(3.344e-27 * te_j) / (1.602e-19 * b_toroidal)
-                chi_gb = rho_s ** 2 * cs / r_major
+                chi_gb = rho_s**2 * cs / r_major
                 log_chi_gb = np.log(np.maximum(chi_gb, 1e-10))
                 x_batch = np.column_stack([x_batch, log_chi_gb])
             if self._weights.input_mean.shape[0] != expected_dim:
@@ -843,8 +863,12 @@ class NeuralTransportModel:
                     "Neural transport input_std dimension does not match the "
                     f"expected feature width ({self._weights.input_std.shape[0]} != {expected_dim})."
                 )
-            safe_input_std = np.where(np.abs(self._weights.input_std) < 1e-8, 1.0, self._weights.input_std)
-            z_batch = np.abs((x_batch - self._weights.input_mean[None, :]) / safe_input_std[None, :])
+            safe_input_std = np.where(
+                np.abs(self._weights.input_std) < 1e-8, 1.0, self._weights.input_std
+            )
+            z_batch = np.abs(
+                (x_batch - self._weights.input_mean[None, :]) / safe_input_std[None, :]
+            )
             ood_mask_3sigma = np.any(z_batch > 3.0, axis=1)
             ood_mask_5sigma = np.any(z_batch > 5.0, axis=1)
             self._last_max_abs_z_profile = np.max(z_batch, axis=1)

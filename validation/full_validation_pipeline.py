@@ -44,9 +44,7 @@ from scpn_fusion.io.tokamak_archive import (
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPERIMENTAL_ACK_TOKEN = "I_UNDERSTAND_EXPERIMENTAL"
-DEFAULT_EXTERNAL_FNO_MANIFEST = (
-    ROOT / "artifacts" / "external_fno_retrain_manifest.json"
-)
+DEFAULT_EXTERNAL_FNO_MANIFEST = ROOT / "artifacts" / "external_fno_retrain_manifest.json"
 DEFAULT_EXTERNAL_FNO_WEIGHTS = ROOT / "artifacts" / "external_fno_retrain_weights.npz"
 
 
@@ -176,18 +174,14 @@ def _import_external_retrained_fno(
         return summary
     actual_sha = _sha256_file(weights_path)
     if actual_sha.lower() != expected_sha.strip().lower():
-        summary["errors"] = [
-            "Manifest weights_sha256 does not match provided weights file."
-        ]
+        summary["errors"] = ["Manifest weights_sha256 does not match provided weights file."]
         summary["observed_sha256"] = actual_sha
         return summary
 
     datasets = manifest.get("trained_datasets", [])
     datasets_text = " ".join(str(item).lower() for item in datasets)
     if not any(token in datasets_text for token in ("gene", "cgyro")):
-        summary["errors"] = [
-            "Manifest trained_datasets must include GENE and/or CGYRO provenance."
-        ]
+        summary["errors"] = ["Manifest trained_datasets must include GENE and/or CGYRO provenance."]
         return summary
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -258,9 +252,7 @@ def _build_disruption_scenarios(
         tau_scale = float(1.0 + rng.normal(0.0, 0.02))
         tau_e_ms = float(np.clip(base.tau_e_ms * tau_scale, 5.0, 1200.0))
         fault_injected = bool(rng.random() < fault_injection_fraction)
-        elm_severity = (
-            float(rng.uniform(0.25, 1.0)) if rng.random() < elm_stress_fraction else 0.0
-        )
+        elm_severity = float(rng.uniform(0.25, 1.0)) if rng.random() < elm_stress_fraction else 0.0
 
         if elm_severity > 0.0:
             psi_axis = np.linspace(0.0, 1.0, psi_scenario.size, dtype=np.float64)
@@ -280,8 +272,7 @@ def _build_disruption_scenarios(
 
         if fault_injected:
             trace_scenario = np.clip(
-                trace_scenario
-                + rng.normal(0.0, fault_noise_std, size=trace_scenario.size),
+                trace_scenario + rng.normal(0.0, fault_noise_std, size=trace_scenario.size),
                 0.0,
                 5.0,
             )
@@ -305,15 +296,9 @@ def _build_disruption_scenarios(
                 disruption=True,
                 psi_contour=psi_scenario.astype(np.float64),
                 sensor_trace=trace_scenario.astype(np.float64),
-                toroidal_n1_amp=float(
-                    max(0.0, base.toroidal_n1_amp + rng.normal(0.0, 0.01))
-                ),
-                toroidal_n2_amp=float(
-                    max(0.0, base.toroidal_n2_amp + rng.normal(0.0, 0.008))
-                ),
-                toroidal_n3_amp=float(
-                    max(0.0, base.toroidal_n3_amp + rng.normal(0.0, 0.006))
-                ),
+                toroidal_n1_amp=float(max(0.0, base.toroidal_n1_amp + rng.normal(0.0, 0.01))),
+                toroidal_n2_amp=float(max(0.0, base.toroidal_n2_amp + rng.normal(0.0, 0.008))),
+                toroidal_n3_amp=float(max(0.0, base.toroidal_n3_amp + rng.normal(0.0, 0.006))),
                 elm_severity=elm_severity,
                 fault_injected=fault_injected,
                 scenario_id=i,
@@ -380,17 +365,13 @@ def _simulate_controller(
 
     if ctrl == "mpc":
         err_scale = _coerce_finite("mpc_error_scale", mpc_error_scale, minimum=0.0)
-        sigma = err_scale * (
-            0.018 + 0.010 * risk + high_beta_penalty_scale * 0.010 * beta_excess
-        )
+        sigma = err_scale * (0.018 + 0.010 * risk + high_beta_penalty_scale * 0.010 * beta_excess)
         tau_bias = -0.006 + 0.012 * risk + high_beta_penalty_scale * 0.010 * beta_excess
         tau_bias += 0.006 * float(scenario.elm_severity)
         tau_bias += 0.005 if scenario.fault_injected else 0.0
     else:
         err_scale = _coerce_finite("rl_error_scale", rl_error_scale, minimum=0.0)
-        sigma = err_scale * (
-            0.024 + 0.014 * risk + high_beta_penalty_scale * 0.018 * beta_excess
-        )
+        sigma = err_scale * (0.024 + 0.014 * risk + high_beta_penalty_scale * 0.018 * beta_excess)
         tau_bias = 0.004 + 0.020 * risk + high_beta_penalty_scale * 0.016 * beta_excess
         tau_bias += 0.010 * float(scenario.elm_severity)
         tau_bias += 0.008 if scenario.fault_injected else 0.0
@@ -478,9 +459,7 @@ def _summarize_metrics(
         elm_mean_tau = 0.0
 
     passes_target = bool(mean_psi < 5.0 and mean_tau < 5.0)
-    rewrite_required = bool(
-        mean_psi > 10.0 or mean_tau > 10.0 or p95_psi > 10.0 or p95_tau > 10.0
-    )
+    rewrite_required = bool(mean_psi > 10.0 or mean_tau > 10.0 or p95_psi > 10.0 or p95_tau > 10.0)
     pivot_to_hybrid_2d = bool(
         high_beta_count >= max(10, int(0.1 * len(rows))) and divergence_rate >= 0.25
     )
@@ -567,19 +546,13 @@ def run_campaign(
     seed_i = _coerce_int("seed", seed, minimum=0)
     scenarios_i = _coerce_int("scenario_count", scenario_count, minimum=100)
     high_beta = _coerce_finite("high_beta_threshold", high_beta_threshold, minimum=0.1)
-    high_beta_frac = _coerce_fraction(
-        "synthetic_high_beta_fraction", synthetic_high_beta_fraction
-    )
-    penalty_scale = _coerce_finite(
-        "high_beta_penalty_scale", high_beta_penalty_scale, minimum=0.0
-    )
+    high_beta_frac = _coerce_fraction("synthetic_high_beta_fraction", synthetic_high_beta_fraction)
+    penalty_scale = _coerce_finite("high_beta_penalty_scale", high_beta_penalty_scale, minimum=0.0)
     fault_frac = _coerce_fraction("fault_injection_fraction", fault_injection_fraction)
     elm_frac = _coerce_fraction("elm_stress_fraction", elm_stress_fraction)
     fault_noise = _coerce_finite("fault_noise_std", fault_noise_std, minimum=0.0)
     live_polls_i = _coerce_int("live_polls", live_polls, minimum=1)
-    live_poll_interval_i = _coerce_int(
-        "live_poll_interval_ms", live_poll_interval_ms, minimum=1
-    )
+    live_poll_interval_i = _coerce_int("live_poll_interval_ms", live_poll_interval_ms, minimum=1)
     live_shot_budget_i = _coerce_int("live_shot_budget", live_shot_budget, minimum=1)
 
     controllers_norm = tuple(sorted({c.strip().lower() for c in controllers}))
@@ -591,12 +564,8 @@ def run_campaign(
 
     t0 = time.perf_counter()
     if prefer_live_archives:
-        d3d_ref, d3d_ref_meta = load_machine_profiles(
-            machine="DIII-D", prefer_live=False
-        )
-        cmod_ref, cmod_ref_meta = load_machine_profiles(
-            machine="C-Mod", prefer_live=False
-        )
+        d3d_ref, d3d_ref_meta = load_machine_profiles(machine="DIII-D", prefer_live=False)
+        cmod_ref, cmod_ref_meta = load_machine_profiles(machine="C-Mod", prefer_live=False)
         d3d_shots = [int(p.shot) for p in d3d_ref[:live_shot_budget_i]]
         cmod_shots = [int(p.shot) for p in cmod_ref[:live_shot_budget_i]]
         d3d_profiles, d3d_poll_meta = poll_mdsplus_feed(
@@ -655,9 +624,7 @@ def run_campaign(
     )
 
     rng = np.random.default_rng(seed_i + 901)
-    per_controller_metrics: dict[str, list[ScenarioMetric]] = {
-        c: [] for c in controllers_norm
-    }
+    per_controller_metrics: dict[str, list[ScenarioMetric]] = {c: [] for c in controllers_norm}
     for scenario in scenarios:
         for controller in controllers_norm:
             metric = _simulate_controller(
@@ -678,9 +645,7 @@ def run_campaign(
     passes_target = bool(all(v["passes_target"] for v in summaries.values()))
     rewrite_required = bool(any(v["rewrite_required"] for v in summaries.values()))
     pivot_to_hybrid_2d = bool(any(v["pivot_to_hybrid_2d"] for v in summaries.values()))
-    weak_fault_lane = bool(
-        any(v["fault_uptime_rate"] < 0.99 for v in summaries.values())
-    )
+    weak_fault_lane = bool(any(v["fault_uptime_rate"] < 0.99 for v in summaries.values()))
 
     recommendations: list[str] = []
     if rewrite_required:
@@ -720,9 +685,7 @@ def run_campaign(
             from scpn_fusion.core.fno_training import train_fno_multi_regime
 
             retrain_summary = train_fno_multi_regime(
-                n_samples=_coerce_int(
-                    "fno_retrain_samples", fno_retrain_samples, minimum=64
-                ),
+                n_samples=_coerce_int("fno_retrain_samples", fno_retrain_samples, minimum=64),
                 epochs=_coerce_int("fno_retrain_epochs", fno_retrain_epochs, minimum=1),
                 seed=_coerce_int("fno_retrain_seed", fno_retrain_seed, minimum=0),
                 save_path=str(retrain_output_path),

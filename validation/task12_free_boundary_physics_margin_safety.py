@@ -270,11 +270,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--control-dt-s", type=float, default=0.05)
     parser.add_argument(
         "--output-json",
-        default=str(ROOT / "validation" / "reports" / "task12_free_boundary_physics_margin_safety.json"),
+        default=str(
+            ROOT / "validation" / "reports" / "task12_free_boundary_physics_margin_safety.json"
+        ),
     )
     parser.add_argument(
         "--output-md",
-        default=str(ROOT / "validation" / "reports" / "task12_free_boundary_physics_margin_safety.md"),
+        default=str(
+            ROOT / "validation" / "reports" / "task12_free_boundary_physics_margin_safety.md"
+        ),
     )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)

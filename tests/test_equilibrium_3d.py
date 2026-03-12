@@ -66,9 +66,7 @@ def test_vmec_like_n1_mode_introduces_toroidal_variation() -> None:
     rho = np.ones_like(theta)
 
     r_a, z_a, _ = eq.flux_to_cylindrical(rho, theta, np.zeros_like(theta))
-    r_b, z_b, _ = eq.flux_to_cylindrical(
-        rho, theta, np.full_like(theta, 0.5 * np.pi)
-    )
+    r_b, z_b, _ = eq.flux_to_cylindrical(rho, theta, np.full_like(theta, 0.5 * np.pi))
 
     assert float(np.max(np.abs(r_a - r_b))) > 1e-3
     assert float(np.max(np.abs(z_a - z_b))) > 1e-3

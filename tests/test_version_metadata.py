@@ -23,9 +23,7 @@ README_PATH = ROOT / "README.md"
 RESULTS_PATH = ROOT / "RESULTS.md"
 VALIDATION_PATH = ROOT / "VALIDATION.md"
 CHANGELOG_PATH = ROOT / "CHANGELOG.md"
-RUST_PYPROJECT_PATH = (
-    ROOT / "scpn-fusion-rs" / "crates" / "fusion-python" / "pyproject.toml"
-)
+RUST_PYPROJECT_PATH = ROOT / "scpn-fusion-rs" / "crates" / "fusion-python" / "pyproject.toml"
 
 
 def _extract_version(pattern: str, text: str, label: str) -> str:
@@ -61,7 +59,7 @@ def test_release_metadata_versions_are_consistent() -> None:
     assert spec and spec.loader
     sphinx_conf = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(sphinx_conf)
-    sphinx_release = str(getattr(sphinx_conf, "release"))
+    sphinx_release = str(sphinx_conf.release)
     rust_pyproject_text = RUST_PYPROJECT_PATH.read_text(encoding="utf-8")
     rust_pyproject_version = _extract_version(
         r'(?m)^version\s*=\s*"([^"]+)"',

@@ -61,6 +61,8 @@ def load_disruption_shot(
         for k in required_array_keys:
             result[k] = np.asarray(raw[k], dtype=np.float64)
         result["is_disruption"] = bool(np.asarray(raw["is_disruption"]).reshape(()).item())
-        result["disruption_time_idx"] = int(np.asarray(raw["disruption_time_idx"]).reshape(()).item())
+        result["disruption_time_idx"] = int(
+            np.asarray(raw["disruption_time_idx"]).reshape(()).item()
+        )
         result["disruption_type"] = str(np.asarray(raw["disruption_type"]).reshape(()).item())
         return result

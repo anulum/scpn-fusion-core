@@ -64,9 +64,7 @@ def main(argv: list[str] | None = None) -> int:
         if abs(args.n1_amplitude) > 0.0:
             amp = float(args.n1_amplitude)
             modes.append(FourierMode3D(m=1, n=1, r_cos=amp, z_sin=0.5 * amp))
-        builder.equilibrium_3d = builder.build_vmec_like_equilibrium(
-            toroidal_modes=modes
-        )
+        builder.equilibrium_3d = builder.build_vmec_like_equilibrium(toroidal_modes=modes)
 
     vertices, faces = builder.generate_plasma_surface(
         resolution_toroidal=args.toroidal,

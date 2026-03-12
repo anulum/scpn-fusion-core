@@ -93,10 +93,7 @@ class RunawayElectronModel:
 
         t_e_joules = self.T_e0 * 1e3 * _E_CHARGE
         self.E_D = (
-            self.n_e_free
-            * _E_CHARGE**3
-            * _LN_LAMBDA
-            / (4.0 * np.pi * _EPSILON0**2 * t_e_joules)
+            self.n_e_free * _E_CHARGE**3 * _LN_LAMBDA / (4.0 * np.pi * _EPSILON0**2 * t_e_joules)
         )
 
         self.neon_mol = 0.0
@@ -125,9 +122,9 @@ class RunawayElectronModel:
             / (4.0 * np.pi * _EPSILON0**2 * _M_ELECTRON * _C_LIGHT**2)
         )
 
-        self.tau_av = (
-            _M_ELECTRON * _C_LIGHT / (_E_CHARGE * max(self.E_c, 1e-6)) * _LN_LAMBDA
-        ) * (1.0 + 1.5 * (self.Z_eff - 1.0))
+        self.tau_av = (_M_ELECTRON * _C_LIGHT / (_E_CHARGE * max(self.E_c, 1e-6)) * _LN_LAMBDA) * (
+            1.0 + 1.5 * (self.Z_eff - 1.0)
+        )
         self.max_runaway_fraction = float(
             np.clip(
                 0.10 / (1.0 + 0.40 * max(self.Z_eff - 1.0, 0.0) + 10.0 * self.neon_mol),
@@ -143,12 +140,7 @@ class RunawayElectronModel:
             return 0.0
 
         t_joules = T_e_keV * 1e3 * _E_CHARGE
-        e_d = (
-            self.n_e_free
-            * _E_CHARGE**3
-            * _LN_LAMBDA
-            / (4.0 * np.pi * _EPSILON0**2 * t_joules)
-        )
+        e_d = self.n_e_free * _E_CHARGE**3 * _LN_LAMBDA / (4.0 * np.pi * _EPSILON0**2 * t_joules)
 
         ratio = e_d / max(E, 1e-6)
         if not np.isfinite(ratio) or ratio <= 0.0 or ratio > 200.0:
@@ -159,12 +151,7 @@ class RunawayElectronModel:
         c_d = 0.35
         ratio_term = float(np.exp(-h_z * np.log(max(ratio, 1e-20))))
         exp_arg = float(np.clip(-ratio / 4.0 - nu_eff, -700.0, 0.0))
-        rate = (
-            (self.n_e_free / max(self.tau_coll, 1e-20))
-            * c_d
-            * ratio_term
-            * np.exp(exp_arg)
-        )
+        rate = (self.n_e_free / max(self.tau_coll, 1e-20)) * c_d * ratio_term * np.exp(exp_arg)
         if not np.isfinite(rate):
             return 0.0
         return max(float(rate), 0.0)
@@ -172,7 +159,7 @@ class RunawayElectronModel:
     def _avalanche_rate(self, E: float, n_re: float) -> float:
         if not np.isfinite(E) or not np.isfinite(n_re):
             return 0.0
-        if E <= self.E_c or n_re <= 0:
+        if self.E_c >= E or n_re <= 0:
             return 0.0
 
         deconfinement_factor = 0.001 if self.neon_mol > 0.3 else 1.0
@@ -181,34 +168,21 @@ class RunawayElectronModel:
             return 0.0
         return max(float(growth * deconfinement_factor), 0.0)
 
-    def _fokker_planck_generation(
-        self, E: float, n_re: float, T_e_keV: float = 0.5
-    ) -> float:
+    def _fokker_planck_generation(self, E: float, n_re: float, T_e_keV: float = 0.5) -> float:
         if not np.isfinite(E) or not np.isfinite(n_re):
             return 0.0
-        if E <= self.E_c or T_e_keV <= 0.01:
+        if self.E_c >= E or T_e_keV <= 0.01:
             return 0.0
 
         t_joules = T_e_keV * 1e3 * _E_CHARGE
-        e_d = (
-            self.n_e_free
-            * _E_CHARGE**3
-            * _LN_LAMBDA
-            / (4.0 * np.pi * _EPSILON0**2 * t_joules)
-        )
+        e_d = self.n_e_free * _E_CHARGE**3 * _LN_LAMBDA / (4.0 * np.pi * _EPSILON0**2 * t_joules)
         u_c_sq = e_d / max(E, 1e-6)
         exp_arg = -u_c_sq / 2.0
         if exp_arg < -700.0:
             return 0.0
 
-        hot_tail_prefactor = 2.5e-6 / (
-            1.0 + 6.0 * self.neon_mol + 0.6 * max(self.Z_eff - 1.0, 0.0)
-        )
-        rate = (
-            hot_tail_prefactor
-            * (self.n_e_free / max(self.tau_coll, 1e-20))
-            * np.exp(exp_arg)
-        )
+        hot_tail_prefactor = 2.5e-6 / (1.0 + 6.0 * self.neon_mol + 0.6 * max(self.Z_eff - 1.0, 0.0))
+        rate = hot_tail_prefactor * (self.n_e_free / max(self.tau_coll, 1e-20)) * np.exp(exp_arg)
         return float(max(rate, 0.0))
 
     def _relativistic_loss_rate(self, *, E: float, n_re: float) -> float:
@@ -220,9 +194,7 @@ class RunawayElectronModel:
         e_ratio = max(E / max(self.E_c, 1e-9), 0.0)
         gamma_eff = 1.0 + 4.0 * max(e_ratio - 1.0, 0.0)
         tau_sync = 0.08 / max(self.B_t * self.B_t * gamma_eff, 1e-12)
-        tau_brem = 0.12 / max(
-            (1.0 + 0.08 * self.Z_eff) * (self.n_e_tot / 1e20) * gamma_eff, 1e-12
-        )
+        tau_brem = 0.12 / max((1.0 + 0.08 * self.Z_eff) * (self.n_e_tot / 1e20) * gamma_eff, 1e-12)
         tau_rel = max(min(tau_sync, tau_brem), 1e-6)
         loss = n_re / tau_rel
         if not np.isfinite(loss):
@@ -250,9 +222,7 @@ class RunawayElectronModel:
 
         seed_re_fraction = _as_finite_float("seed_re_fraction", seed_re_fraction)
         if not (0.0 < seed_re_fraction <= 1.0):
-            raise ValueError(
-                f"seed_re_fraction must be in (0, 1], got {seed_re_fraction!r}"
-            )
+            raise ValueError(f"seed_re_fraction must be in (0, 1], got {seed_re_fraction!r}")
         neon_mol_eff = (
             self.neon_mol if neon_mol is None else _as_non_negative_float("neon_mol", neon_mol)
         )
@@ -302,13 +272,7 @@ class RunawayElectronModel:
                 n_re = 0.0
             n_re = min(n_re, self.n_e_free * self.max_runaway_fraction)
 
-            i_re_val = (
-                _E_CHARGE
-                * n_re
-                * _C_LIGHT
-                * np.pi
-                * self.runaway_beam_radius_m**2
-            )
+            i_re_val = _E_CHARGE * n_re * _C_LIGHT * np.pi * self.runaway_beam_radius_m**2
             if not np.isfinite(i_re_val):
                 i_re_val = ip0
             i_re_val = min(i_re_val, ip0)

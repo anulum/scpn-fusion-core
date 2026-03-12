@@ -41,9 +41,7 @@ def main(argv: list[str] | None = None) -> int:
     from scpn_fusion.core.equilibrium_3d import FourierMode3D
     from scpn_fusion.core.geometry_3d import Reactor3DBuilder
 
-    parser = argparse.ArgumentParser(
-        description="SCPN 3D field-line and Poincare quickstart."
-    )
+    parser = argparse.ArgumentParser(description="SCPN 3D field-line and Poincare quickstart.")
     parser.add_argument(
         "--config",
         default=str(root / "validation" / "iter_validated_config.json"),
@@ -91,9 +89,7 @@ def main(argv: list[str] | None = None) -> int:
         if abs(args.n1_amplitude) > 0.0:
             amp = float(args.n1_amplitude)
             modes.append(FourierMode3D(m=1, n=1, r_cos=amp, z_sin=0.5 * amp))
-        builder.equilibrium_3d = builder.build_vmec_like_equilibrium(
-            toroidal_modes=modes
-        )
+        builder.equilibrium_3d = builder.build_vmec_like_equilibrium(toroidal_modes=modes)
 
     trace, poincare = builder.generate_poincare_map(
         toroidal_turns=args.turns,

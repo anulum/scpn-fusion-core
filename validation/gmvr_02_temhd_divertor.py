@@ -59,9 +59,7 @@ def run_campaign() -> dict[str, Any]:
     indices_arr = np.asarray(indices, dtype=float)
     toroidal_stability_rate = float(np.mean(indices_arr <= 1.0))
 
-    pressure_ratio = float(
-        fast["pressure_loss_pa"] / max(slow["pressure_loss_pa"], 1e-12)
-    )
+    pressure_ratio = float(fast["pressure_loss_pa"] / max(slow["pressure_loss_pa"], 1e-12))
     evap_ratio = float(
         fast["evaporation_rate_kg_m2_s"] / max(slow["evaporation_rate_kg_m2_s"], 1e-12)
     )

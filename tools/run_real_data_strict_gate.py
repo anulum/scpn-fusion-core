@@ -139,7 +139,9 @@ def main(argv: list[str] | None = None) -> int:
         thresholds_payload = _load_json(thresholds_path)
         if bool(thresholds_payload.get("require_disruption_raw_ingestion_ready", False)):
             thresholds_payload["require_disruption_raw_ingestion_ready"] = False
-            dry_run_thresholds = REPO_ROOT / "artifacts" / "_tmp_real_shot_validation_thresholds_dry_run.json"
+            dry_run_thresholds = (
+                REPO_ROOT / "artifacts" / "_tmp_real_shot_validation_thresholds_dry_run.json"
+            )
             dry_run_thresholds.parent.mkdir(parents=True, exist_ok=True)
             dry_run_thresholds.write_text(
                 json.dumps(thresholds_payload, indent=2, sort_keys=True) + "\n",

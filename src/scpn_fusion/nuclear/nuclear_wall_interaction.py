@@ -14,15 +14,16 @@ from scpn_fusion.engineering.cad_raytrace import CADLoadReport, estimate_surface
 
 # Neutron damage thresholds (DPA limit before replacement)
 MATERIALS = {
-    'Tungsten (W)': {'dpa_limit': 50.0, 'sigma_dpa': 1000}, # Divertor armor
-    'Eurofer (Steel)': {'dpa_limit': 150.0, 'sigma_dpa': 500}, # Structural blanket
-    'Beryllium (Be)': {'dpa_limit': 10.0, 'sigma_dpa': 200}, # First wall (old design)
+    "Tungsten (W)": {"dpa_limit": 50.0, "sigma_dpa": 1000},  # Divertor armor
+    "Eurofer (Steel)": {"dpa_limit": 150.0, "sigma_dpa": 500},  # Structural blanket
+    "Beryllium (Be)": {"dpa_limit": 10.0, "sigma_dpa": 200},  # First wall (old design)
 }
 
 
 def default_iter_config_path() -> str:
     """Resolve repository-local default ITER configuration path."""
     return str(Path(__file__).resolve().parents[3] / "iter_config.json")
+
 
 class NuclearEngineeringLab(FusionBurnPhysics):
     """
@@ -31,6 +32,7 @@ class NuclearEngineeringLab(FusionBurnPhysics):
     2. Neutron Flux distribution on the First Wall.
     3. Material Damage (DPA).
     """
+
     def __init__(self, config_path):
         super().__init__(config_path)
 
@@ -52,20 +54,20 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         source_map = np.zeros_like(self.Psi)
         source_map[mask] = s_peak * (1.0 - psi_norm[mask]) ** 2
         return source_map
-        
+
     def generate_first_wall(self):
         """
         Defines the geometry of the reactor wall (Vacuum Vessel).
         Approximated as a D-shaped contour surrounding the plasma.
         """
-        theta = np.linspace(0, 2*np.pi, 200)
+        theta = np.linspace(0, 2 * np.pi, 200)
         # Wall Parameters
-        R0, a, kappa, delta = 5.0, 3.0, 1.9, 0.4 
-        
+        R0, a, kappa, delta = 5.0, 3.0, 1.9, 0.4
+
         # Parametric Wall
-        R_wall = R0 + a * np.cos(theta + np.arcsin(delta)*np.sin(theta))
+        R_wall = R0 + a * np.cos(theta + np.arcsin(delta) * np.sin(theta))
         Z_wall = kappa * a * np.sin(theta)
-        
+
         return R_wall, Z_wall
 
     def simulate_ash_poisoning(
@@ -90,59 +92,59 @@ class NuclearEngineeringLab(FusionBurnPhysics):
             raise ValueError("pumping_efficiency must be finite and in [0, 1].")
 
         print(f"[Nuclear] Simulating Ash Poisoning (tau_He*/tau_E = {tau_He_ratio})...")
-        
+
         self.solve_equilibrium()
 
-        n_e_target = 1.0e20 # Electron density (Greenwald Limit constant)
-        f_He = 0.0 # Helium fraction
-        dt = 1.0 # Second
-        
-        history = {'time': [], 'P_fus': [], 'f_He': [], 'Q': []}
-        
+        n_e_target = 1.0e20  # Electron density (Greenwald Limit constant)
+        f_He = 0.0  # Helium fraction
+        dt = 1.0  # Second
+
+        history = {"time": [], "P_fus": [], "f_He": [], "Q": []}
+
         # Volume (Approximation)
-        Vol = 800.0 # m^3
-        
+        Vol = 800.0  # m^3
+
         for t in range(burn_steps):
             # A. Composition (Quasi-neutrality constraint)
             # n_e = n_D + n_T + 2*n_He + Z_imp*n_imp
             # Assume n_D = n_T
             # n_fuel = n_e - 2*n_He
-            
+
             n_He = f_He * n_e_target
-            n_fuel = n_e_target - 2*n_He
+            n_fuel = n_e_target - 2 * n_He
             n_D = 0.5 * n_fuel
             n_T = 0.5 * n_fuel
-            
+
             if n_fuel < 0:
                 print("  -> Plasma Quenched (Dilution Limit)")
                 break
-                
+
             # B. Reaction Rate
-            T_keV = 20.0 # Keep temp constant for this isolation study
+            T_keV = 20.0  # Keep temp constant for this isolation study
             sigmav = self.bosch_hale_dt(T_keV)
-            
+
             # Reaction rate per volume
             R_fus = n_D * n_T * sigmav
-            
+
             # C. Ash Dynamics (0D equation)
             # dn_He/dt = Source(Fusion) - Sink(Transport/Pump)
             tau_E = 3.0
             tau_He = tau_He_ratio * tau_E
-            
+
             dn_He = R_fus - (pumping_efficiency * n_He / tau_He)
-            
+
             # Update State
             n_He += dn_He * dt
             f_He = n_He / n_e_target
-            
+
             # D. Power Output
             E_fus = 17.6 * 1.602e-13
             P_fus_MW = (R_fus * E_fus * Vol) / 1e6
-            
-            history['time'].append(t)
-            history['P_fus'].append(P_fus_MW)
-            history['f_He'].append(f_He)
-            
+
+            history["time"].append(t)
+            history["P_fus"].append(P_fus_MW)
+            history["f_He"].append(f_He)
+
         return history
 
     def calculate_neutron_wall_loading(self):
@@ -150,69 +152,69 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         Ray-Tracing calculation of 14.1 MeV neutrons hitting the wall.
         """
         print("[Nuclear] Calculating Neutron Wall Loading (NWL)...")
-        
+
         Source_Map = self._build_neutron_source_map()
-        
+
         Rw, Zw = self.generate_first_wall()
         wall_flux = np.zeros(len(Rw))
-        
+
         # Line-of-sight ray tracing (downsampled)
         step = 4
         RR_sub = self.RR[::step, ::step]
         ZZ_sub = self.ZZ[::step, ::step]
         S_sub = Source_Map[::step, ::step]
         dV = (self.dR * step) * (self.dZ * step) * 2 * np.pi * RR_sub
-        
+
         # Flatten sources
         src_r = RR_sub.flatten()
         src_z = ZZ_sub.flatten()
         src_S = S_sub.flatten() * dV.flatten()
-        
+
         # Filter only active plasma points
         active_idx = src_S > 0
         src_r = src_r[active_idx]
         src_z = src_z[active_idx]
         src_S = src_S[active_idx]
-        
+
         print(f"  Ray-tracing from {len(src_r)} plasma elements to {len(Rw)} wall segments...")
-        
+
         for i in range(len(Rw)):
             # Target point
             wx, wz = Rw[i], Zw[i]
-            
+
             # Normal vector of wall (approx)
-            if i < len(Rw)-1:
-                dx, dz = Rw[i+1]-Rw[i], Zw[i+1]-Zw[i]
+            if i < len(Rw) - 1:
+                dx, dz = Rw[i + 1] - Rw[i], Zw[i + 1] - Zw[i]
             else:
-                dx, dz = Rw[0]-Rw[i], Zw[0]-Zw[i]
+                dx, dz = Rw[0] - Rw[i], Zw[0] - Zw[i]
             normal = np.array([-dz, dx])
             normal /= np.linalg.norm(normal)
-            
+
             # Vector from source to target
             vec_r = wx - src_r
             vec_z = wz - src_z
             dist_sq = vec_r**2 + vec_z**2
             dist = np.sqrt(dist_sq)
-            
+
             # Toroidal View-Factor Correction (P1.1)
             # Neutrons from a toroidal source ring at (src_r, src_z)
-            # The flux at (wx, wz) scales with 1/dist but also depends on 
+            # The flux at (wx, wz) scales with 1/dist but also depends on
             # the toroidal integral. For large R, it approaches spherical 1/r2.
             # For small R, the "inner" wall sees more flux due to curvature.
-            toroidal_correction = src_r / wx # Flux enhancement on inner wall
-            
+            toroidal_correction = src_r / wx  # Flux enhancement on inner wall
+
             # Cosine incidence (Dot product with normal)
             # normal is [nr, nz], vec is [vec_r, vec_z]
             # normalize vec
             unit_vec_r = vec_r / dist
             unit_vec_z = vec_z / dist
             cos_theta = np.maximum(0.0, (unit_vec_r * normal[0] + unit_vec_z * normal[1]))
-            
+
             flux_contrib = (src_S * toroidal_correction * cos_theta) / (4.0 * np.pi * dist_sq)
-            
+
             # Sum up
             wall_flux[i] = np.sum(flux_contrib)
-            
+
         return Rw, Zw, wall_flux
 
     def calculate_cad_wall_loading(
@@ -262,27 +264,27 @@ class NuclearEngineeringLab(FusionBurnPhysics):
 
         # Roth-Bohdansky D-on-target parameters (Roth et al., NIMB 257 33, 2007).
         props = {
-            'Tungsten (W)': {'E_th': 200.0, 'Q': 0.004},
-            'Beryllium (Be)': {'E_th': 10.0, 'Q': 0.03},
-            'Eurofer (Steel)': {'E_th': 30.0, 'Q': 0.015},
+            "Tungsten (W)": {"E_th": 200.0, "Q": 0.004},
+            "Beryllium (Be)": {"E_th": 10.0, "Q": 0.03},
+            "Eurofer (Steel)": {"E_th": 30.0, "Q": 0.015},
         }
-        
+
         if material_name not in props:
             return 0.0
-            
+
         p = props[material_name]
-        E_th = p['E_th']
-        
+        E_th = p["E_th"]
+
         # Angular dependence (bounded Yamamura-style enhancement).
         theta = np.deg2rad(angle_deg)
         f_angle = float(np.clip(np.cos(theta), 0.05, 1.0) ** -0.65)
-        
+
         if E_inc_eV < E_th:
             return 0.0
-            
+
         ratio = E_th / E_inc_eV
-        Y = p['Q'] * (1.0 - ratio**(2.0/3.0)) * (1.0 - ratio)**2 * f_angle
-        
+        Y = p["Q"] * (1.0 - ratio ** (2.0 / 3.0)) * (1.0 - ratio) ** 2 * f_angle
+
         return float(np.clip(Y, 0.0, 5.0))
 
     def analyze_materials(self, wall_flux):
@@ -290,36 +292,37 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         Calculates lifespan using Sputtering + DPA.
         """
         # Convert Flux (n/m2/s) to MW/m2 (14 MeV per neutron)
-        MW_m2 = wall_flux * 14.1 * 1.602e-13 / 1e6 
-        
+        MW_m2 = wall_flux * 14.1 * 1.602e-13 / 1e6
+
         peak_load = np.max(MW_m2)
         avg_load = np.mean(MW_m2)
-        
+
         print(f"[Nuclear] Wall Loading: Peak={peak_load:.2f} MW/m2, Avg={avg_load:.2f} MW/m2")
-        
+
         results = {}
         # Particle Flux estimate (D/T/He ions)
         # Gamma_i ~ 1e23 ions/m2/s (High flux)
-        Gamma_ion = 1e23 
-        
+        Gamma_ion = 1e23
+
         for mat_name, props in MATERIALS.items():
             # ~10 DPA/FPY per MW/m² (Gilbert et al., NF 52 083019, 2012, Table 3)
             dpa_per_year = peak_load * 10.0
-            life_dpa = props['dpa_limit'] / dpa_per_year if dpa_per_year > 0 else 999.0
-            
+            life_dpa = props["dpa_limit"] / dpa_per_year if dpa_per_year > 0 else 999.0
+
             Y = self.calculate_sputtering_yield(mat_name, E_inc_eV=50.0)
-            n_atom = 6.3e28 # atoms/m3 (W)
+            n_atom = 6.3e28  # atoms/m3 (W)
             erosion_rate_m_s = Y * Gamma_ion / n_atom
             erosion_mm_year = erosion_rate_m_s * 1000 * 3.15e7
-            
+
             # Allowable erosion depth (e.g. 5 mm)
             life_erosion = 5.0 / erosion_mm_year if erosion_mm_year > 0 else 999.0
-            
+
             # Limited by the worst mechanism
             lifespan = min(life_dpa, life_erosion)
             results[mat_name] = lifespan
-            
+
         return results, MW_m2
+
 
 def run_nuclear_sim(
     config_path: Optional[str] = None,
@@ -337,61 +340,63 @@ def run_nuclear_sim(
         print("--- SCPN NUCLEAR ENGINEERING: Ash & Materials ---")
         print(f"[Nuclear] Config: {config_path}")
     lab = lab_factory(config_path)
-    
+
     hist_good = lab.simulate_ash_poisoning(tau_He_ratio=5.0, pumping_efficiency=1.0)
     hist_bad = lab.simulate_ash_poisoning(tau_He_ratio=15.0, pumping_efficiency=0.5)
-    
+
     Rw, Zw, neutron_flux = lab.calculate_neutron_wall_loading()
-    
+
     lifespans, mw_load = lab.analyze_materials(neutron_flux)
-    
+
     plot_saved = False
     plot_error: Optional[str] = None
     if save_plot:
         try:
             fig = plt.figure(figsize=(15, 10))
-            
+
             # Plot A: Ash Poisoning
             ax1 = fig.add_subplot(2, 2, 1)
-            ax1.plot(hist_good['time'], hist_good['P_fus'], 'g-', label='Good Pumping (Tau*=5)')
-            ax1.plot(hist_bad['time'], hist_bad['P_fus'], 'r--', label='Bad Pumping (Tau*=15)')
+            ax1.plot(hist_good["time"], hist_good["P_fus"], "g-", label="Good Pumping (Tau*=5)")
+            ax1.plot(hist_bad["time"], hist_bad["P_fus"], "r--", label="Bad Pumping (Tau*=15)")
             ax1.set_title("Fusion Power Evolution (Helium Poisoning)")
             ax1.set_xlabel("Burn Time (s)")
             ax1.set_ylabel("Power (MW)")
             ax1.legend()
             ax1.grid(True)
-            
+
             # Plot B: Helium Fraction
             ax2 = fig.add_subplot(2, 2, 2)
-            ax2.plot(hist_good['time'], np.array(hist_good['f_He'])*100, 'g-', label='He % (Good)')
-            ax2.plot(hist_bad['time'], np.array(hist_bad['f_He'])*100, 'r--', label='He % (Bad)')
-            ax2.axhline(10.0, color='k', linestyle=':', label='Dilution Limit (10%)')
+            ax2.plot(
+                hist_good["time"], np.array(hist_good["f_He"]) * 100, "g-", label="He % (Good)"
+            )
+            ax2.plot(hist_bad["time"], np.array(hist_bad["f_He"]) * 100, "r--", label="He % (Bad)")
+            ax2.axhline(10.0, color="k", linestyle=":", label="Dilution Limit (10%)")
             ax2.set_title("Helium Ash Accumulation")
             ax2.set_ylabel("He Concentration (%)")
             ax2.legend()
             ax2.grid(True)
-            
+
             # Plot C: Neutron Wall Load (Heatmap on Wall)
             ax3 = fig.add_subplot(2, 2, 3)
             # Plot Plasma Core
-            ax3.contour(lab.RR, lab.ZZ, lab.Psi, levels=10, colors='gray', alpha=0.3)
+            ax3.contour(lab.RR, lab.ZZ, lab.Psi, levels=10, colors="gray", alpha=0.3)
             # Plot Wall colored by Load
-            sc = ax3.scatter(Rw, Zw, c=mw_load, cmap='inferno', s=20)
-            plt.colorbar(sc, ax=ax3, label='Neutron Load (MW/m2)')
+            sc = ax3.scatter(Rw, Zw, c=mw_load, cmap="inferno", s=20)
+            plt.colorbar(sc, ax=ax3, label="Neutron Load (MW/m2)")
             ax3.set_title("Neutron Flux Distribution (2D)")
-            ax3.axis('equal')
-            
+            ax3.axis("equal")
+
             # Plot D: Component Lifespan
             ax4 = fig.add_subplot(2, 2, 4)
             mats = list(lifespans.keys())
             years = list(lifespans.values())
-            colors = ['gray', 'orange', 'green']
+            colors = ["gray", "orange", "green"]
             ax4.bar(mats, years, color=colors)
             ax4.set_title("First Wall Component Lifespan (at Peak Flux)")
             ax4.set_ylabel("Full Power Years (FPY)")
-            ax4.axhline(5.0, color='r', linestyle='--', label='Maintenance Cycle (5y)')
+            ax4.axhline(5.0, color="r", linestyle="--", label="Maintenance Cycle (5y)")
             ax4.legend()
-            
+
             plt.tight_layout()
             plt.savefig(output_path)
             plot_saved = True
@@ -427,6 +432,7 @@ def run_nuclear_sim(
         "plot_saved": bool(plot_saved),
         "plot_error": plot_error,
     }
+
 
 if __name__ == "__main__":
     run_nuclear_sim()

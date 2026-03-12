@@ -141,8 +141,7 @@ def _safe_torch_checkpoint_load(path: Path) -> Any:
                 context={"path": str(path), "sha256": digest},
             )
             raise RuntimeError(
-                "Checkpoint SHA256 digest is not allowlisted by policy: "
-                f"{digest}"
+                "Checkpoint SHA256 digest is not allowlisted by policy: " f"{digest}"
             )
     try:
         return torch.load(path, map_location="cpu", weights_only=True)

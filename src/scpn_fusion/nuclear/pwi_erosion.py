@@ -39,7 +39,7 @@ class SputteringPhysics:
         E = float(E_ion_eV)
         if not np.isfinite(E):
             raise ValueError("E_ion_eV must be finite.")
-        if E <= self.E_th:
+        if self.E_th >= E:
             return 0.0
 
         eps = E / self.E_th

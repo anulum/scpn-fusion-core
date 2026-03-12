@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple
 
 import gymnasium as gym
 import numpy as np
@@ -101,11 +101,10 @@ class TokamakEnv(gym.Env):
         err_r = float(self.controller.target_R - curr_R)
         err_z = float(self.controller.target_Z - curr_Z)
 
-        return np.array([
-            curr_R, curr_Z, ip, beta,
-            err_r, err_z,
-            float(xp_pos[0]), float(xp_pos[1])
-        ], dtype=np.float32)
+        return np.array(
+            [curr_R, curr_Z, ip, beta, err_r, err_z, float(xp_pos[0]), float(xp_pos[1])],
+            dtype=np.float32,
+        )
 
     def reset(
         self,
@@ -126,9 +125,7 @@ class TokamakEnv(gym.Env):
         obs = self._get_obs()
         return obs, {}
 
-    def step(
-        self, action: np.ndarray
-    ) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
         # Map normalized [-1, 1] to physical deltas
         scaled_action = action * self._action_scale
         pf1_delta, pf3_delta, pf5_delta, heating_delta = scaled_action
@@ -139,7 +136,7 @@ class TokamakEnv(gym.Env):
         radial_applied = self.controller._act_radial.step(pf3_delta)
         top_applied = self.controller._act_top.step(pf1_delta)
         bottom_applied = self.controller._act_bottom.step(pf5_delta)
-        beta_applied = self.controller._act_heating.step(1.0 + heating_delta) # base 1.0
+        beta_applied = self.controller._act_heating.step(1.0 + heating_delta)  # base 1.0
 
         # Update Coils
         self.controller._add_coil_current(0, top_applied)
@@ -180,8 +177,12 @@ class TokamakEnv(gym.Env):
             obs = self._get_obs()
             logger.info(
                 "Step %d: R=%.2f, Z=%.2f, Reward=%.4f",
-                self.current_step, obs[0], obs[1], -np.sqrt(obs[4]**2 + obs[5]**2),
+                self.current_step,
+                obs[0],
+                obs[1],
+                -np.sqrt(obs[4] ** 2 + obs[5] ** 2),
             )
+
 
 # Registration
 def register():
@@ -189,6 +190,7 @@ def register():
         id="Tokamak-v0",
         entry_point="scpn_fusion.control.gym_tokamak_env:TokamakEnv",
     )
+
 
 if __name__ == "__main__":
     # Smoke test

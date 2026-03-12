@@ -39,8 +39,12 @@ def test_campaign_meets_thresholds_smoke() -> None:
     out = scpn_pid_mpc_benchmark.run_campaign(seed=42, steps=240)
     assert out["passes_thresholds"] is True
     assert out["mpc"]["rmse"] <= out["pid"]["rmse"]
-    assert out["ratios"]["scpn_vs_pid_rmse_ratio"] <= out["thresholds"]["max_scpn_vs_pid_rmse_ratio"]
-    assert out["ratios"]["scpn_vs_mpc_rmse_ratio"] <= out["thresholds"]["max_scpn_vs_mpc_rmse_ratio"]
+    assert (
+        out["ratios"]["scpn_vs_pid_rmse_ratio"] <= out["thresholds"]["max_scpn_vs_pid_rmse_ratio"]
+    )
+    assert (
+        out["ratios"]["scpn_vs_mpc_rmse_ratio"] <= out["thresholds"]["max_scpn_vs_mpc_rmse_ratio"]
+    )
 
 
 def test_campaign_controller_uses_nonzero_binary_margin() -> None:
@@ -49,12 +53,8 @@ def test_campaign_controller_uses_nonzero_binary_margin() -> None:
 
 
 def test_traceable_runtime_lane_is_exposed_and_deterministic() -> None:
-    a = scpn_pid_mpc_benchmark.run_campaign(
-        seed=42, steps=160, scpn_runtime_profile="traceable"
-    )
-    b = scpn_pid_mpc_benchmark.run_campaign(
-        seed=42, steps=160, scpn_runtime_profile="traceable"
-    )
+    a = scpn_pid_mpc_benchmark.run_campaign(seed=42, steps=160, scpn_runtime_profile="traceable")
+    b = scpn_pid_mpc_benchmark.run_campaign(seed=42, steps=160, scpn_runtime_profile="traceable")
     assert a["runtime_lane"]["runtime_profile"] == "traceable"
     assert a["runtime_lane"]["uses_traceable_step"] is True
     assert a["scpn"]["rmse"] == b["scpn"]["rmse"]

@@ -74,7 +74,9 @@ def run_campaign(
     refined_sorted = sorted(refined, key=lambda row: float(row["objective"]), reverse=True)
 
     valid = [
-        row for row in refined_sorted if float(row["q_proxy"]) >= 10.0 and float(row["tbr_final"]) >= 1.05
+        row
+        for row in refined_sorted
+        if float(row["q_proxy"]) >= 10.0 and float(row["tbr_final"]) >= 1.05
     ]
     selected = valid[:target]
 
@@ -83,9 +85,15 @@ def run_campaign(
     qr_arr = np.asarray([float(row["q_aries_at_proxy"]) for row in selected], dtype=np.float64)
     rf_arr = np.asarray([float(row["rf_absorption_eff"]) for row in selected], dtype=np.float64)
     nbi_arr = np.asarray([float(row["nbi_absorption_eff"]) for row in selected], dtype=np.float64)
-    rf_reflect_arr = np.asarray([float(row["rf_reflection_rate"]) for row in selected], dtype=np.float64)
-    nbi_reflect_arr = np.asarray([float(row["nbi_reflection_rate"]) for row in selected], dtype=np.float64)
-    leak_arr = np.asarray([float(row.get("neutron_leakage_rate", 0.0)) for row in selected], dtype=np.float64)
+    rf_reflect_arr = np.asarray(
+        [float(row["rf_reflection_rate"]) for row in selected], dtype=np.float64
+    )
+    nbi_reflect_arr = np.asarray(
+        [float(row["nbi_reflection_rate"]) for row in selected], dtype=np.float64
+    )
+    leak_arr = np.asarray(
+        [float(row.get("neutron_leakage_rate", 0.0)) for row in selected], dtype=np.float64
+    )
     tbr_mc_arr = np.asarray([float(row.get("tbr_mc", 0.0)) for row in selected], dtype=np.float64)
     if q_arr.size > 0:
         rel_err = np.abs((q_arr - qr_arr) / np.maximum(np.abs(qr_arr), 1e-9))
@@ -117,7 +125,9 @@ def run_campaign(
         "mean_rf_absorption_eff": float(np.mean(rf_arr)) if rf_arr.size else 0.0,
         "mean_nbi_absorption_eff": float(np.mean(nbi_arr)) if nbi_arr.size else 0.0,
         "mean_rf_reflection_rate": float(np.mean(rf_reflect_arr)) if rf_reflect_arr.size else 0.0,
-        "mean_nbi_reflection_rate": float(np.mean(nbi_reflect_arr)) if nbi_reflect_arr.size else 0.0,
+        "mean_nbi_reflection_rate": (
+            float(np.mean(nbi_reflect_arr)) if nbi_reflect_arr.size else 0.0
+        ),
         "mean_neutron_leakage_rate": float(np.mean(leak_arr)) if leak_arr.size else 0.0,
         "mean_tbr_mc": float(np.mean(tbr_mc_arr)) if tbr_mc_arr.size else 0.0,
         "aries_at_parity_pct": float(aries_parity_pct),

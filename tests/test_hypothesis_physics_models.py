@@ -28,7 +28,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from hypothesis import given, settings, assume, HealthCheck
+from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
 
 logger = logging.getLogger(__name__)
@@ -39,18 +39,12 @@ from scpn_fusion.core.fusion_kernel import FusionKernel
 from scpn_fusion.core.scaling_laws import (
     compute_h_factor,
     ipb98y2_tau_e,
-    load_ipb98y2_coefficients,
 )
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
-_SPARC_DIR = (
-    Path(__file__).resolve().parents[1]
-    / "validation"
-    / "reference_data"
-    / "sparc"
-)
+_SPARC_DIR = Path(__file__).resolve().parents[1] / "validation" / "reference_data" / "sparc"
 _LMODE_FILE = _SPARC_DIR / "lmode_vv.geqdsk"
 
 
@@ -60,8 +54,10 @@ def _minimal_config(tmp_path, method="sor", NR=33, NZ=33, max_iter=100):
         "reactor_name": "test",
         "grid_resolution": [NR, NZ],
         "dimensions": {
-            "R_min": 1.0, "R_max": 3.0,
-            "Z_min": -1.5, "Z_max": 1.5,
+            "R_min": 1.0,
+            "R_max": 3.0,
+            "Z_min": -1.5,
+            "Z_max": 1.5,
         },
         "physics": {
             "plasma_current_target": 1.0,
@@ -128,19 +124,23 @@ class TestSORConvergenceProperty:
     """SOR converges for all omega in [1.0, 2.0)."""
 
     @given(omega=sor_omega)
-    @settings(max_examples=10,
-              suppress_health_check=[HealthCheck.too_slow,
-                                     HealthCheck.function_scoped_fixture],
-              deadline=30000)
+    @settings(
+        max_examples=10,
+        suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture],
+        deadline=30000,
+    )
     def test_sor_no_diverge(self, omega, tmp_path):
         """SOR with omega in [1, 2) should not produce NaN."""
         import tempfile
+
         cfg = {
             "reactor_name": "test",
             "grid_resolution": [17, 17],
             "dimensions": {
-                "R_min": 1.0, "R_max": 3.0,
-                "Z_min": -1.5, "Z_max": 1.5,
+                "R_min": 1.0,
+                "R_max": 3.0,
+                "Z_min": -1.5,
+                "Z_max": 1.5,
             },
             "physics": {
                 "plasma_current_target": 1.0,
@@ -158,18 +158,14 @@ class TestSORConvergenceProperty:
                 "sor_omega": omega,
             },
         }
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(cfg, f)
             p = Path(f.name)
 
         fk = FusionKernel(p)
         result = fk.solve_equilibrium()
         p.unlink(missing_ok=True)
-        assert not np.any(np.isnan(result["psi"])), (
-            f"NaN with omega={omega:.3f}"
-        )
+        assert not np.any(np.isnan(result["psi"])), f"NaN with omega={omega:.3f}"
 
 
 class TestTransportPositivity:
@@ -195,9 +191,7 @@ class TestTransportPositivity:
         assert np.all(ts.Ti >= 0.01), "Ti went below clamp floor"
         # If the explicit solver went NaN, skip rather than fail
         if not np.all(np.isfinite(ts.Ti)):
-            pytest.skip(
-                "Transport NaN — known explicit-scheme limitation on toy grid"
-            )
+            pytest.skip("Transport NaN — known explicit-scheme limitation on toy grid")
 
 
 class TestEnergyConservation:
@@ -223,12 +217,9 @@ class TestEnergyConservation:
 
         T_avg_final = float(np.mean(ts.Ti))
         if not np.isfinite(T_avg_final):
-            pytest.skip(
-                "Transport NaN — known explicit-scheme limitation on toy grid"
-            )
+            pytest.skip("Transport NaN — known explicit-scheme limitation on toy grid")
         assert T_avg_final <= T_avg_initial + 0.1, (
-            f"Temperature increased without heating: "
-            f"{T_avg_initial:.3f} → {T_avg_final:.3f}"
+            f"Temperature increased without heating: " f"{T_avg_initial:.3f} → {T_avg_final:.3f}"
         )
 
 
@@ -249,8 +240,14 @@ class TestIPB98y2Properties:
     def test_tau_always_positive(self, Ip, BT, ne19, Ploss, R, kappa, epsilon, M):
         """τ_E is always positive for valid inputs."""
         tau = ipb98y2_tau_e(
-            Ip=Ip, BT=BT, ne19=ne19, Ploss=Ploss,
-            R=R, kappa=kappa, epsilon=epsilon, M=M,
+            Ip=Ip,
+            BT=BT,
+            ne19=ne19,
+            Ploss=Ploss,
+            R=R,
+            kappa=kappa,
+            epsilon=epsilon,
+            M=M,
         )
         assert tau > 0, f"τ_E={tau} not positive"
         assert np.isfinite(tau), f"τ_E={tau} not finite"
@@ -262,8 +259,7 @@ class TestIPB98y2Properties:
     @settings(max_examples=50)
     def test_tau_monotonic_in_ip(self, Ip_low, Ip_high):
         """τ_E increases with Ip (exponent > 0)."""
-        base = dict(BT=5.0, ne19=8.0, Ploss=10.0, R=3.0,
-                    kappa=1.7, epsilon=0.3, M=2.5)
+        base = dict(BT=5.0, ne19=8.0, Ploss=10.0, R=3.0, kappa=1.7, epsilon=0.3, M=2.5)
         tau_lo = ipb98y2_tau_e(Ip=Ip_low, **base)
         tau_hi = ipb98y2_tau_e(Ip=Ip_high, **base)
         assert tau_hi > tau_lo
@@ -275,8 +271,7 @@ class TestIPB98y2Properties:
     @settings(max_examples=50)
     def test_tau_decreasing_in_ploss(self, Ploss_low, Ploss_high):
         """τ_E decreases with Ploss (exponent < 0)."""
-        base = dict(Ip=2.0, BT=5.0, ne19=8.0, R=3.0,
-                    kappa=1.7, epsilon=0.3, M=2.5)
+        base = dict(Ip=2.0, BT=5.0, ne19=8.0, R=3.0, kappa=1.7, epsilon=0.3, M=2.5)
         tau_lo = ipb98y2_tau_e(Ploss=Ploss_low, **base)
         tau_hi = ipb98y2_tau_e(Ploss=Ploss_high, **base)
         assert tau_lo > tau_hi

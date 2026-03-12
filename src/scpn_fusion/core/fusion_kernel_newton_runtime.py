@@ -57,10 +57,7 @@ class GmresTelemetry:
             return
 
         self.nonconverged_count += 1
-        if (
-            nonconverged_budget is not None
-            and self.nonconverged_count > nonconverged_budget
-        ):
+        if nonconverged_budget is not None and self.nonconverged_count > nonconverged_budget:
             raise RuntimeError(
                 "GMRES non-convergence budget exceeded: "
                 f"{self.nonconverged_count}>{nonconverged_budget} "
@@ -94,20 +91,16 @@ def parse_newton_dispatch_config(cfg: dict[str, Any]) -> NewtonDispatchConfig:
     if max_backtracks <= 0:
         raise ValueError("solver.newton_line_search_max_backtracks must be >= 1")
 
-    gmres_preconditioner_mode = str(
-        solver_cfg.get("gmres_preconditioner", "none")
-    ).strip().lower()
+    gmres_preconditioner_mode = str(solver_cfg.get("gmres_preconditioner", "none")).strip().lower()
     if gmres_preconditioner_mode in {"", "auto", "default", "legacy"}:
         gmres_preconditioner_mode = "none"
-    if (
-        gmres_preconditioner_mode == "none"
-        and bool(solver_cfg.get("gmres_diagonal_preconditioner", False))
+    if gmres_preconditioner_mode == "none" and bool(
+        solver_cfg.get("gmres_diagonal_preconditioner", False)
     ):
         gmres_preconditioner_mode = "diagonal"
     if gmres_preconditioner_mode not in {"none", "diagonal", "ilu"}:
         raise ValueError(
-            "solver.gmres_preconditioner must be one of "
-            "{'none', 'diagonal', 'ilu'}"
+            "solver.gmres_preconditioner must be one of " "{'none', 'diagonal', 'ilu'}"
         )
 
     ilu_drop_tol = float(solver_cfg.get("gmres_ilu_drop_tol", 1e-4))
@@ -155,4 +148,3 @@ __all__ = [
     "NewtonDispatchConfig",
     "parse_newton_dispatch_config",
 ]
-

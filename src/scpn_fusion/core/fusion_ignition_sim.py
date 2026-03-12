@@ -13,7 +13,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from .fusion_kernel import FusionKernel
 from .uncertainty import _dt_reactivity
-import sys
 
 from scpn_fusion.exceptions import FusionCoreError as _FusionCoreError
 
@@ -27,6 +26,7 @@ class FusionBurnPhysics(FusionKernel):
     Extends the Grad-Shafranov Solver with Thermonuclear Physics.
     Calculates Fusion Power, Alpha Heating, and Q-Factor.
     """
+
     def __init__(self, config_path):
         super().__init__(config_path)
 
@@ -64,25 +64,25 @@ class FusionBurnPhysics(FusionKernel):
         mask = (Psi_norm >= 0) & (Psi_norm < 1.0)
 
         # Peak values (ITER-like)
-        n_peak = 1.0e20 # m^-3 (Density)
-        T_peak_keV = 20.0 # keV (Temperature)
+        n_peak = 1.0e20  # m^-3 (Density)
+        T_peak_keV = 20.0  # keV (Temperature)
 
         # Profiles
         n = np.zeros_like(self.Psi)
         T = np.zeros_like(self.Psi)
 
-        n[mask] = n_peak * (1 - Psi_norm[mask]**2)**0.5
-        T[mask] = T_peak_keV * (1 - Psi_norm[mask]**2)**1.0
+        n[mask] = n_peak * (1 - Psi_norm[mask] ** 2) ** 0.5
+        T[mask] = T_peak_keV * (1 - Psi_norm[mask] ** 2) ** 1.0
 
         # 2. Calculate Fusion Power
         # P_fus = E_fus * nD * nT * <sigma v>
         # Assume 50-50 D-T mix
         nD = 0.5 * n
         nT = 0.5 * n
-        E_fus = 17.6 * 1.602e-13 # MeV to Joules (17.6 MeV per reaction)
+        E_fus = 17.6 * 1.602e-13  # MeV to Joules (17.6 MeV per reaction)
 
         sigmav = self.bosch_hale_dt(T)
-        power_density = nD * nT * sigmav * E_fus # Watts/m^3
+        power_density = nD * nT * sigmav * E_fus  # Watts/m^3
 
         # Integrate over volume (Approximating Toroidal symmetry 2*pi*R)
         dV = self.dR * self.dZ * 2 * np.pi * self.RR
@@ -94,45 +94,54 @@ class FusionBurnPhysics(FusionKernel):
 
         # 4. Losses (IPB98(y,2) Confinement scaling)
         # Tau_E = 0.0562 * Ip^0.93 * Bt^0.15 * n19^0.41 * P^-0.69 * R^1.97 * eps^0.58 * kappa^0.78 * M^0.19
-        W_thermal = np.sum(3 * n * (T * 1.602e-16) * dV) # Thermal energy in Joules
+        W_thermal = np.sum(3 * n * (T * 1.602e-16) * dV)  # Thermal energy in Joules
 
         # Extraction of parameters for scaling
         Ip_MA = self.cfg["physics"].get("plasma_current_target", 15.0e6) / 1e6
-        Bt = self.cfg["dimensions"].get("B0", 5.3) # Nominal
+        Bt = self.cfg["dimensions"].get("B0", 5.3)  # Nominal
         n19 = n_peak / 1e19
         R = self.cfg["dimensions"].get("R0", 6.2)
         a = (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / 2.0
         eps = a / R
         kappa = self.cfg["dimensions"].get("kappa", 1.7)
-        M_eff = 2.5 # D-T
+        M_eff = 2.5  # D-T
 
         # Power for scaling (Loss power)
-        P_loss_scaling_MW = max((P_aux_MW + P_alpha/1e6), 1.0)
+        P_loss_scaling_MW = max((P_aux_MW + P_alpha / 1e6), 1.0)
 
-        Tau_E = (0.0562 * Ip_MA**0.93 * Bt**0.15 * n19**0.41 *
-                 P_loss_scaling_MW**(-0.69) * R**1.97 * eps**0.58 *
-                 kappa**0.78 * M_eff**0.19)
+        Tau_E = (
+            0.0562
+            * Ip_MA**0.93
+            * Bt**0.15
+            * n19**0.41
+            * P_loss_scaling_MW ** (-0.69)
+            * R**1.97
+            * eps**0.58
+            * kappa**0.78
+            * M_eff**0.19
+        )
 
-        Tau_E = np.clip(Tau_E, 0.1, 10.0) # Physical bounds
+        Tau_E = np.clip(Tau_E, 0.1, 10.0)  # Physical bounds
         P_loss = W_thermal / Tau_E
 
         # 5. Global Balance
         # dW/dt = P_alpha + P_aux - P_loss
-        net_heating = P_alpha + (P_aux_MW*1e6) - P_loss
+        net_heating = P_alpha + (P_aux_MW * 1e6) - P_loss
 
         # Q Factor
-        Q = P_fusion_total / (P_aux_MW*1e6) if P_aux_MW > 0 else 0
+        Q = P_fusion_total / (P_aux_MW * 1e6) if P_aux_MW > 0 else 0
 
         return {
-            'P_fusion_MW': P_fusion_total / 1e6,
-            'P_alpha_MW': P_alpha / 1e6,
-            'P_loss_MW': P_loss / 1e6,
-            'P_aux_MW': P_aux_MW,
-            'Net_MW': net_heating / 1e6,
-            'Q': Q,
-            'T_peak': T_peak_keV,
-            'W_MJ': W_thermal / 1e6
+            "P_fusion_MW": P_fusion_total / 1e6,
+            "P_alpha_MW": P_alpha / 1e6,
+            "P_loss_MW": P_loss / 1e6,
+            "P_aux_MW": P_aux_MW,
+            "Net_MW": net_heating / 1e6,
+            "Q": Q,
+            "T_peak": T_peak_keV,
+            "W_MJ": W_thermal / 1e6,
         }
+
 
 def run_ignition_experiment():
     print("--- SCPN IGNITION EXPERIMENT: The Road to Q > 10 ---")
@@ -142,12 +151,14 @@ def run_ignition_experiment():
 
     # Simulation: Power Ramp Up
     # We increase Auxiliary Heating and measure the response
-    power_ramp = np.linspace(0, 100, 20) # 0 to 100 MW
+    power_ramp = np.linspace(0, 100, 20)  # 0 to 100 MW
 
     history_Q = []
     history_P_fus = []
 
-    print(f"{ 'Aux (MW)':<10} | { 'Fusion (MW)':<12} | { 'Alpha (MW)':<10} | { 'Q-Factor':<8} | {'Status'}")
+    print(
+        f"{ 'Aux (MW)':<10} | { 'Fusion (MW)':<12} | { 'Alpha (MW)':<10} | { 'Q-Factor':<8} | {'Status'}"
+    )
     print("-" * 60)
 
     # 1. Establish Geometry
@@ -162,22 +173,27 @@ def run_ignition_experiment():
 
         # Status check
         status = "L-Mode"
-        if metrics['Q'] > 1.0: status = "Breakeven"
-        if metrics['Q'] > 5.0: status = "Burning"
-        if metrics['Q'] > 10.0: status = "IGNITION"
+        if metrics["Q"] > 1.0:
+            status = "Breakeven"
+        if metrics["Q"] > 5.0:
+            status = "Burning"
+        if metrics["Q"] > 10.0:
+            status = "IGNITION"
 
-        history_Q.append(metrics['Q'])
-        history_P_fus.append(metrics['P_fusion_MW'])
+        history_Q.append(metrics["Q"])
+        history_P_fus.append(metrics["P_fusion_MW"])
 
-        print(f"{P_aux:<10.1f} | {metrics['P_fusion_MW']:<12.1f} | {metrics['P_alpha_MW']:<10.1f} | {metrics['Q']:<8.2f} | {status}")
+        print(
+            f"{P_aux:<10.1f} | {metrics['P_fusion_MW']:<12.1f} | {metrics['P_alpha_MW']:<10.1f} | {metrics['Q']:<8.2f} | {status}"
+        )
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
     # Q-Curve
     ax1.set_title("Fusion Gain (Q) vs Input Power")
-    ax1.plot(power_ramp, history_Q, 'r-o', linewidth=2)
-    ax1.axhline(1.0, color='gray', linestyle='--', label='Breakeven (Q=1)')
-    ax1.axhline(10.0, color='green', linestyle='--', label='Ignition (Q=10)')
+    ax1.plot(power_ramp, history_Q, "r-o", linewidth=2)
+    ax1.axhline(1.0, color="gray", linestyle="--", label="Breakeven (Q=1)")
+    ax1.axhline(10.0, color="green", linestyle="--", label="Ignition (Q=10)")
     ax1.set_xlabel("Auxiliary Heating (MW)")
     ax1.set_ylabel("Q")
     ax1.legend()
@@ -186,13 +202,18 @@ def run_ignition_experiment():
     # POP-CON Plot (Operating Point)
     # We visualize where the final state sits in Power space
     ax2.set_title("Power Balance (Ignition Condition)")
-    ax2.bar(['Alpha Heat', 'Aux Heat'], [metrics['P_alpha_MW'], metrics['P_aux_MW']], color=['red', 'orange'])
-    ax2.bar(['Losses'], [metrics['P_loss_MW']], color='blue')
+    ax2.bar(
+        ["Alpha Heat", "Aux Heat"],
+        [metrics["P_alpha_MW"], metrics["P_aux_MW"]],
+        color=["red", "orange"],
+    )
+    ax2.bar(["Losses"], [metrics["P_loss_MW"]], color="blue")
     ax2.set_ylabel("Power (MW)")
 
     plt.tight_layout()
     plt.savefig("Ignition_Result.png")
     print("\nExperiment Complete. Results: Ignition_Result.png")
+
 
 class DynamicBurnModel:
     """Self-consistent dynamic burn model with ITER98y2 confinement scaling.
@@ -285,7 +306,7 @@ class DynamicBurnModel:
             * self.I_p**0.93
             * self.B_t**0.15
             * n_e19**0.41
-            * P**(-0.69)
+            * P ** (-0.69)
             * self.R0**1.97
             * eps**0.58
             * self.kappa**0.78
@@ -299,9 +320,7 @@ class DynamicBurnModel:
         P_thr = 0.0488 * n_e20^0.717 * B_t^0.803 * S^0.941
         where S is the plasma surface area.
         """
-        S = 4.0 * np.pi**2 * self.R0 * self.a * np.sqrt(
-            (1.0 + self.kappa**2) / 2.0
-        )
+        S = 4.0 * np.pi**2 * self.R0 * self.a * np.sqrt((1.0 + self.kappa**2) / 2.0)
         P_thr = 0.0488 * self.n_e20**0.717 * self.B_t**0.803 * S**0.941
         return float(P_thr)
 
@@ -407,7 +426,7 @@ class DynamicBurnModel:
             P_alpha_born = 0.2 * P_fus  # 3.5 MeV / 17.6 MeV
 
             # Alpha slowing-down time: tau_s ~ 0.012 * Te^1.5 / (ne/1e19)
-            tau_s_alpha = 0.012 * (max(T, 0.1)**1.5) / (self.n_e20 * 10.0)
+            tau_s_alpha = 0.012 * (max(T, 0.1) ** 1.5) / (self.n_e20 * 10.0)
             tau_s_alpha = np.clip(tau_s_alpha, 0.01, 2.0)
 
             # Simple First-Order delay for P_alpha_deposited
@@ -416,7 +435,10 @@ class DynamicBurnModel:
             else:
                 # dP_dep/dt = (P_born - P_dep) / tau_s
                 # P_dep_new = P_dep + dt * (P_born - P_dep) / tau_s
-                P_alpha_dep = P_alpha_hist[-1]*1e6 + dt_s * (P_alpha_born - P_alpha_hist[-1]*1e6) / tau_s_alpha
+                P_alpha_dep = (
+                    P_alpha_hist[-1] * 1e6
+                    + dt_s * (P_alpha_born - P_alpha_hist[-1] * 1e6) / tau_s_alpha
+                )
 
             # Losses
             P_total_heating = P_alpha_dep + P_aux_mw * 1e6
@@ -438,13 +460,16 @@ class DynamicBurnModel:
 
             # Temperature from stored energy
             T = W_thermal / (1.5 * n_e * 1e3 * 1.602e-19 * self.V_plasma)
-            if T > t_cap_keV:
+            if t_cap_keV < T:
                 temperature_cap_events += 1
                 if enforce_temperature_limit:
                     raise BurnPhysicsError(
                         f"Temperature {T:.2f} keV exceeds {t_cap_keV:.1f} keV physical limit."
                     )
-                if max_temperature_clamp_events is not None and temperature_cap_events > max_temperature_clamp_events:
+                if (
+                    max_temperature_clamp_events is not None
+                    and temperature_cap_events > max_temperature_clamp_events
+                ):
                     raise BurnPhysicsError(
                         "Temperature cap events exceeded limit: "
                         f"{temperature_cap_events} > {max_temperature_clamp_events}."
@@ -536,25 +561,25 @@ class DynamicBurnModel:
                 continue
 
             for P_aux in np.arange(10.0, 80.0, 5.0):
-                model = DynamicBurnModel(
-                    R0=R0, a=a, B_t=B_t, I_p=I_p, kappa=kappa, n_e20=n_e20
-                )
+                model = DynamicBurnModel(R0=R0, a=a, B_t=B_t, I_p=I_p, kappa=kappa, n_e20=n_e20)
                 sim = model.simulate(
                     P_aux_mw=P_aux,
                     duration_s=50.0,
                     dt_s=0.05,
                     warn_on_temperature_cap=False,
                 )
-                results.append({
-                    "n_e20": n_e20,
-                    "P_aux_MW": P_aux,
-                    "Q_final": sim["Q_final"],
-                    "Q_peak": sim["Q_peak"],
-                    "T_final_keV": sim["T_final_keV"],
-                    "P_fus_final_MW": sim["P_fus_final_MW"],
-                    "f_he_final": sim["f_he_final"],
-                    "ignition": sim["ignition"],
-                })
+                results.append(
+                    {
+                        "n_e20": n_e20,
+                        "P_aux_MW": P_aux,
+                        "Q_final": sim["Q_final"],
+                        "Q_peak": sim["Q_peak"],
+                        "T_final_keV": sim["T_final_keV"],
+                        "P_fus_final_MW": sim["P_fus_final_MW"],
+                        "f_he_final": sim["f_he_final"],
+                        "ignition": sim["ignition"],
+                    }
+                )
 
         # Find best Q operating point
         if not results:

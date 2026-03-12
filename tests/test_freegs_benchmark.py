@@ -75,8 +75,7 @@ class TestSolovevAnalytic:
         if psi_range > 1e-12:
             psi_bdy_norm = abs(psi[iz_mid, ir_bdy]) / psi_range
             assert psi_bdy_norm < 0.15, (
-                f"Psi at outer midplane boundary too large: "
-                f"{psi_bdy_norm:.4f} (normalised)"
+                f"Psi at outer midplane boundary too large: " f"{psi_bdy_norm:.4f} (normalised)"
             )
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
@@ -95,12 +94,12 @@ class TestSolovevAnalytic:
         Z_axis = float(Z_1d[iz_ax])
 
         # Axis should be within ~a of R0
-        assert abs(R_axis - case.R0) < 1.5 * case.a, (
-            f"Magnetic axis R={R_axis:.3f} too far from R0={case.R0}"
-        )
-        assert abs(Z_axis) < case.kappa * case.a, (
-            f"Magnetic axis Z={Z_axis:.3f} too far from midplane"
-        )
+        assert (
+            abs(R_axis - case.R0) < 1.5 * case.a
+        ), f"Magnetic axis R={R_axis:.3f} too far from R0={case.R0}"
+        assert (
+            abs(Z_axis) < case.kappa * case.a
+        ), f"Magnetic axis Z={Z_axis:.3f} too far from midplane"
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
     def test_solovev_psi_is_finite(self, case: TokamakCase) -> None:
@@ -127,9 +126,7 @@ class TestSolovevAnalytic:
         assert np.all(np.isfinite(jphi)), "j_phi contains NaN/Inf"
         # Interior should have significant current density
         interior = jphi[2:-2, 2:-2]
-        assert float(np.max(np.abs(interior))) > 1e-6, (
-            "j_phi is essentially zero everywhere"
-        )
+        assert float(np.max(np.abs(interior))) > 1e-6, "j_phi is essentially zero everywhere"
 
 
 class TestNRMSEUtility:

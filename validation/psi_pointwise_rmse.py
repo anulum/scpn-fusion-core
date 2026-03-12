@@ -45,22 +45,24 @@ SPARC_DIR = ROOT / "validation" / "reference_data" / "sparc"
 
 # ── Data containers ──────────────────────────────────────────────────
 
+
 @dataclass
 class PsiRMSEResult:
     """Per-file ψ RMSE metrics."""
+
     file: str
-    grid: str                        # e.g. "129x129"
+    grid: str  # e.g. "129x129"
 
     # GS residual (how well reference satisfies GS equation)
-    gs_residual_l2: float            # ||residual||_2 / ||source||_2
-    gs_residual_max: float           # max |residual|  (Wb/rad·m⁻²)
+    gs_residual_l2: float  # ||residual||_2 / ||source||_2
+    gs_residual_max: float  # max |residual|  (Wb/rad·m⁻²)
 
     # Manufactured-source solve
-    psi_rmse_wb: float               # raw RMSE in Wb/rad
-    psi_rmse_norm: float             # RMSE in normalised ψ_N
-    psi_rmse_plasma_wb: float        # RMSE restricted to plasma (ψ_N ∈ [0,1))
-    psi_max_error_wb: float          # max |Δψ| over full domain
-    psi_relative_l2: float           # ||Δψ||_2 / ||ψ_ref||_2
+    psi_rmse_wb: float  # raw RMSE in Wb/rad
+    psi_rmse_norm: float  # RMSE in normalised ψ_N
+    psi_rmse_plasma_wb: float  # RMSE restricted to plasma (ψ_N ∈ [0,1))
+    psi_max_error_wb: float  # max |Δψ| over full domain
+    psi_relative_l2: float  # ||Δψ||_2 / ||ψ_ref||_2
 
     # Solver metadata
     sor_iterations: int
@@ -71,6 +73,7 @@ class PsiRMSEResult:
 @dataclass
 class PsiRMSESummary:
     """Aggregate over all files."""
+
     count: int
     mean_psi_rmse_norm: float
     mean_psi_relative_l2: float
@@ -82,9 +85,8 @@ class PsiRMSESummary:
 
 # ── GS operator ──────────────────────────────────────────────────────
 
-def gs_operator(
-    psi: NDArray, R: NDArray, Z: NDArray
-) -> NDArray:
+
+def gs_operator(psi: NDArray, R: NDArray, Z: NDArray) -> NDArray:
     """
     Evaluate the Grad-Shafranov elliptic operator Δ*ψ on interior points.
 
@@ -157,9 +159,7 @@ def compute_gs_source(
     Z = np.asarray(eq.z, dtype=np.float64)
 
     if psirz.shape != (eq.nh, eq.nw):
-        raise ValueError(
-            f"eq.psirz shape must be ({eq.nh}, {eq.nw}), got {psirz.shape}"
-        )
+        raise ValueError(f"eq.psirz shape must be ({eq.nh}, {eq.nw}), got {psirz.shape}")
     if pprime.shape != (eq.nw,):
         raise ValueError(f"eq.pprime length must be {eq.nw}, got {pprime.shape}")
     if ffprime.shape != (eq.nw,):
@@ -208,6 +208,7 @@ def compute_gs_source(
 
 # ── GS residual ──────────────────────────────────────────────────────
 
+
 def gs_residual(eq: GEqdsk) -> tuple[float, float]:
     """
     Compute relative L2 and max residual of the GS equation on reference ψ.
@@ -229,6 +230,7 @@ def gs_residual(eq: GEqdsk) -> tuple[float, float]:
 
 
 # ── Manufactured-source SOR solve ────────────────────────────────────
+
 
 def manufactured_solve(
     eq: GEqdsk,
@@ -270,7 +272,7 @@ def manufactured_solve(
     scale = dR**2 * dZ**2
 
     R_int = np.maximum(RR[:, 1:-1], 1e-6)
-    c_R = -dZ**2 * dR / (2.0 * R_int)  # (1, nr-2)
+    c_R = -(dZ**2) * dR / (2.0 * R_int)  # (1, nr-2)
 
     t0 = time.perf_counter()
     final_res = 0.0
@@ -280,7 +282,7 @@ def manufactured_solve(
         for iz in range(1, nz - 1):
             for ir in range(1, nr - 1):
                 r_val = max(R[ir], 1e-6)
-                c = -dZ**2 * dR / (2.0 * r_val)
+                c = -(dZ**2) * dR / (2.0 * r_val)
                 rhs = (
                     a_R * (psi[iz, ir + 1] + psi[iz, ir - 1])
                     + a_Z * (psi[iz + 1, ir] + psi[iz - 1, ir])
@@ -338,7 +340,7 @@ def manufactured_solve_vectorised(
 
     R_2d = np.broadcast_to(R[np.newaxis, :], (nz, nr))
     R_safe = np.maximum(R_2d, 1e-6)
-    c_coeff = -dZ**2 * dR / (2.0 * R_safe)
+    c_coeff = -(dZ**2) * dR / (2.0 * R_safe)
 
     t0 = time.perf_counter()
     final_res = 0.0
@@ -357,7 +359,7 @@ def manufactured_solve_vectorised(
             new_vals = rhs / denom
 
             # Checkerboard mask for this parity
-            iz_idx, ir_idx = np.mgrid[1:nz-1, 1:nr-1]
+            iz_idx, ir_idx = np.mgrid[1 : nz - 1, 1 : nr - 1]
             mask = ((iz_idx + ir_idx) % 2) == parity
             psi_old = psi[1:-1, 1:-1].copy()
             psi[1:-1, 1:-1] = np.where(
@@ -380,6 +382,7 @@ def manufactured_solve_vectorised(
 
 
 # ── RMSE computation ─────────────────────────────────────────────────
+
 
 def compute_psi_rmse(
     eq: GEqdsk,
@@ -445,6 +448,7 @@ def compute_psi_rmse(
 
 # ── Per-file validation ──────────────────────────────────────────────
 
+
 def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
     """
     Run full ψ RMSE validation on a single GEQDSK file.
@@ -469,11 +473,17 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
     omega_opt = 2.0 / (1.0 + np.sin(np.pi / n_eff))
     if warm_start:
         solver_psi, iters, res, t_ms = manufactured_solve_vectorised(
-            eq, omega=omega_opt, max_iter=5000, tol=1e-8,
+            eq,
+            omega=omega_opt,
+            max_iter=5000,
+            tol=1e-8,
         )
     else:
         solver_psi, iters, res, t_ms = manufactured_solve_vectorised(
-            eq, omega=omega_opt, max_iter=10000, tol=1e-7,
+            eq,
+            omega=omega_opt,
+            max_iter=10000,
+            tol=1e-7,
         )
 
     # 3. Point-wise RMSE
@@ -497,6 +507,7 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
 
 # ── Aggregate validation ─────────────────────────────────────────────
 
+
 def validate_all_sparc(sparc_dir: Path | None = None) -> PsiRMSESummary:
     """
     Run ψ RMSE validation on all 8 SPARC equilibrium files.
@@ -518,9 +529,7 @@ def validate_all_sparc(sparc_dir: Path | None = None) -> PsiRMSESummary:
     rows = [asdict(r) for r in results]
 
     finite_norm_entries = [
-        (idx, r.psi_rmse_norm)
-        for idx, r in enumerate(results)
-        if np.isfinite(r.psi_rmse_norm)
+        (idx, r.psi_rmse_norm) for idx, r in enumerate(results) if np.isfinite(r.psi_rmse_norm)
     ]
     norms = [norm for _, norm in finite_norm_entries]
     rel_l2s = [r.psi_relative_l2 for r in results]
@@ -546,6 +555,7 @@ def validate_all_sparc(sparc_dir: Path | None = None) -> PsiRMSESummary:
 
 # ── For rmse_dashboard.py integration ────────────────────────────────
 
+
 def sparc_psi_rmse(sparc_dir: Path) -> dict[str, Any]:
     """
     Drop-in function for rmse_dashboard.py integration.
@@ -559,6 +569,7 @@ def sparc_psi_rmse(sparc_dir: Path) -> dict[str, Any]:
 
 # ── CLI ──────────────────────────────────────────────────────────────
 
+
 def main() -> int:
     print("=" * 70)
     print("SCPN Fusion Core - Point-wise psi(R,Z) RMSE Validation")
@@ -570,19 +581,25 @@ def main() -> int:
     print(f"Mean normalized psi RMSE: {summary.mean_psi_rmse_norm:.6f}")
     print(f"Mean relative L2:       {summary.mean_psi_relative_l2:.6f}")
     print(f"Mean GS residual (L2):  {summary.mean_gs_residual_l2:.6f}")
-    print(f"Worst file:             {summary.worst_file} "
-          f"(psi_N RMSE = {summary.worst_psi_rmse_norm:.6f})")
+    print(
+        f"Worst file:             {summary.worst_file} "
+        f"(psi_N RMSE = {summary.worst_psi_rmse_norm:.6f})"
+    )
     print()
 
     # Per-file table
-    print(f"{'File':<22} {'Grid':<8} {'psi_N RMSE':>10} {'Rel L2':>10} "
-          f"{'GS Res':>10} {'Iters':>6} {'Time(ms)':>10}")
+    print(
+        f"{'File':<22} {'Grid':<8} {'psi_N RMSE':>10} {'Rel L2':>10} "
+        f"{'GS Res':>10} {'Iters':>6} {'Time(ms)':>10}"
+    )
     print("-" * 80)
     for r in summary.rows:
-        print(f"{r['file']:<22} {r['grid']:<8} "
-              f"{r['psi_rmse_norm']:>10.6f} {r['psi_relative_l2']:>10.6f} "
-              f"{r['gs_residual_l2']:>10.4f} {r['sor_iterations']:>6d} "
-              f"{r['solve_time_ms']:>10.1f}")
+        print(
+            f"{r['file']:<22} {r['grid']:<8} "
+            f"{r['psi_rmse_norm']:>10.6f} {r['psi_relative_l2']:>10.6f} "
+            f"{r['gs_residual_l2']:>10.4f} {r['sor_iterations']:>6d} "
+            f"{r['solve_time_ms']:>10.1f}"
+        )
 
     # Save JSON
     out = ROOT / "validation" / "reports" / "psi_pointwise_rmse.json"

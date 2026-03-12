@@ -45,12 +45,8 @@ class _DummyKernel:
         ir = int(np.argmin(np.abs(self.R - center_r)))
         iz = int(np.argmin(np.abs(self.Z - center_z)))
         self.Psi.fill(-1.0)
-        self.Psi[iz, ir] = 1.0 + 0.001 * float(
-            self.cfg["physics"]["plasma_current_target"]
-        )
-        self.J_phi = np.exp(
-            -((self.RR - center_r) ** 2 + ((self.ZZ - center_z) / 1.5) ** 2)
-        )
+        self.Psi[iz, ir] = 1.0 + 0.001 * float(self.cfg["physics"]["plasma_current_target"])
+        self.J_phi = np.exp(-((self.RR - center_r) ** 2 + ((self.ZZ - center_z) / 1.5) ** 2))
 
 
 def test_run_optimal_control_returns_finite_bounded_summary() -> None:

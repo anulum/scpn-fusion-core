@@ -16,6 +16,7 @@ from scpn_fusion.core.fusion_ignition_sim import DynamicBurnModel
 from scpn_fusion.control.disruption_predictor import simulate_tearing_mode
 from scpn_fusion.nuclear.nuclear_wall_interaction import NuclearEngineeringLab
 
+
 class TestPhysicsClosures(unittest.TestCase):
     """
     Validation suite for v4.0 Hardened Physics Closures.
@@ -29,8 +30,7 @@ class TestPhysicsClosures(unittest.TestCase):
         # SPARC-like parameters (High Field)
         # Replaced 'mass' with 'A_ion'
         model = EpedPedestalModel(
-            R0=1.85, a=0.57, B0=12.2, Ip_MA=8.7, kappa=1.97,
-            Z_eff=1.5, A_ion=2.5
+            R0=1.85, a=0.57, B0=12.2, Ip_MA=8.7, kappa=1.97, Z_eff=1.5, A_ion=2.5
         )
 
         # Scan densities
@@ -58,9 +58,11 @@ class TestPhysicsClosures(unittest.TestCase):
         print(f"  Tau_E (100MW): {tau_high:.2f} s")
 
         ratio = tau_high / tau_ref
-        expected_ratio = (100.0/50.0)**(-0.69)
+        expected_ratio = (100.0 / 50.0) ** (-0.69)
 
-        self.assertAlmostEqual(ratio, expected_ratio, places=2, msg="Power degradation scaling mismatch")
+        self.assertAlmostEqual(
+            ratio, expected_ratio, places=2, msg="Power degradation scaling mismatch"
+        )
 
     def test_mre_growth_rates(self):
         """Verify Modified Rutherford Equation (MRE) dynamics."""
@@ -74,7 +76,7 @@ class TestPhysicsClosures(unittest.TestCase):
         max_w = np.max(w_history)
         print(f"  Max Island Width: {max_w:.3f}")
 
-        if label == 0: # Stable shot
+        if label == 0:  # Stable shot
             self.assertLess(max_w, 2.0, "Stable shot shouldn't grow locked mode islands")
 
     def test_sputtering_yield(self):
@@ -84,16 +86,20 @@ class TestPhysicsClosures(unittest.TestCase):
         # Create temp config
         import json
         import os
+
         dummy_cfg = "temp_nuclear_config.json"
         with open(dummy_cfg, "w") as f:
-            json.dump({
-                "reactor_name": "TestReactor",
-                "dimensions": {"R_min": 1.0, "R_max": 3.0, "Z_min": -1.0, "Z_max": 1.0},
-                "physics": {"plasma_current_target": 10.0, "vacuum_permeability": 1.256e-6},
-                "solver": {"nr": 65, "nz": 65},
-                "grid_resolution": [65, 65],
-                "coils": []
-            }, f)
+            json.dump(
+                {
+                    "reactor_name": "TestReactor",
+                    "dimensions": {"R_min": 1.0, "R_max": 3.0, "Z_min": -1.0, "Z_max": 1.0},
+                    "physics": {"plasma_current_target": 10.0, "vacuum_permeability": 1.256e-6},
+                    "solver": {"nr": 65, "nz": 65},
+                    "grid_resolution": [65, 65],
+                    "coils": [],
+                },
+                f,
+            )
 
         try:
             # Instantiate Nuclear Lab
@@ -112,5 +118,6 @@ class TestPhysicsClosures(unittest.TestCase):
             if os.path.exists(dummy_cfg):
                 os.remove(dummy_cfg)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

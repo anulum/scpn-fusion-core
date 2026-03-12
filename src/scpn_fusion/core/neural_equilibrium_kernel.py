@@ -47,7 +47,9 @@ class NeuralEquilibriumKernel:
         with open(self.config_path, "r", encoding="utf-8") as f:
             self.cfg = json.load(f)
 
-        resolved_weights_path = Path(weights_path) if weights_path is not None else DEFAULT_WEIGHTS_PATH
+        resolved_weights_path = (
+            Path(weights_path) if weights_path is not None else DEFAULT_WEIGHTS_PATH
+        )
 
         self.accel = NeuralEquilibriumAccelerator()
         if resolved_weights_path.exists():
@@ -163,7 +165,7 @@ class NeuralEquilibriumKernel:
         grad_mag = np.sqrt(dPsi_dz**2 + dPsi_dr**2)
 
         # Only look in the lower half for divertor.
-        mask = self.ZZ < (self.cfg["dimensions"]["Z_min"] * 0.2)
+        mask = (self.cfg["dimensions"]["Z_min"] * 0.2) > self.ZZ
         if not np.any(mask):
             mask = np.ones_like(Psi, dtype=bool)
 
@@ -172,4 +174,3 @@ class NeuralEquilibriumKernel:
         iz, ir = np.unravel_index(idx_min, Psi.shape)
 
         return (self.R[ir], self.Z[iz]), Psi[iz, ir]
-

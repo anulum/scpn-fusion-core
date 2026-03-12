@@ -15,6 +15,7 @@ from typing import Callable, Literal
 
 try:
     import scpn_fusion_rs
+
     HAS_RUST = True
 except ImportError:
     HAS_RUST = False
@@ -201,6 +202,7 @@ def _parse_args() -> argparse.Namespace:
         help="Shot duration passed to run_shot (default: 30.0).",
     )
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     args = _parse_args()

@@ -103,13 +103,13 @@ def evaluate(
 
     torax_allowed = {str(v) for v in torax_cfg.get("allowed_backends", [torax_preferred])}
     sparc_allowed = {str(v) for v in sparc_cfg.get("allowed_backends", [sparc_preferred])}
-    freegs_allowed_modes = {str(v) for v in freegs_cfg.get("allowed_modes", ["solovev_manufactured_source", "freegs"])}
+    freegs_allowed_modes = {
+        str(v) for v in freegs_cfg.get("allowed_modes", ["solovev_manufactured_source", "freegs"])
+    }
     require_freegs_mode_when_available = bool(
         freegs_cfg.get("require_freegs_mode_when_available", False)
     )
-    min_freegs_cases_when_available = int(
-        freegs_cfg.get("min_freegs_cases_when_available", 1)
-    )
+    min_freegs_cases_when_available = int(freegs_cfg.get("min_freegs_cases_when_available", 1))
     freegs_available = bool(freegs.get("freegs_available", False))
     force_solovev = bool(freegs.get("force_solovev", False))
 
@@ -185,7 +185,11 @@ def evaluate(
             if (not torax_require_backend_requirement or torax_backend_requirement_rate is None)
             else torax_backend_requirement_rate >= 1.0
         )
-        and (all(bool(c.get("passes", False)) for c in torax_cases) if bool(torax_cfg.get("require_all_cases_pass", True)) else True)
+        and (
+            all(bool(c.get("passes", False)) for c in torax_cases)
+            if bool(torax_cfg.get("require_all_cases_pass", True))
+            else True
+        )
     )
     sparc_pass = (
         len(sparc_cases) >= sparc_min_cases
@@ -201,12 +205,20 @@ def evaluate(
             if (not sparc_require_backend_requirement or sparc_backend_requirement_rate is None)
             else sparc_backend_requirement_rate >= 1.0
         )
-        and (all(bool(c.get("passes", False)) for c in sparc_cases) if bool(sparc_cfg.get("require_all_cases_pass", True)) else True)
+        and (
+            all(bool(c.get("passes", False)) for c in sparc_cases)
+            if bool(sparc_cfg.get("require_all_cases_pass", True))
+            else True
+        )
     )
     freegs_pass = (
         len(freegs_cases) >= freegs_min_cases
         and set(freegs_modes).issubset(freegs_allowed_modes)
-        and (all(bool(c.get("passes", False)) for c in freegs_cases) if bool(freegs_cfg.get("require_all_cases_pass", True)) else True)
+        and (
+            all(bool(c.get("passes", False)) for c in freegs_cases)
+            if bool(freegs_cfg.get("require_all_cases_pass", True))
+            else True
+        )
         and (
             True
             if not (freegs_required_reference_backend and freegs_available and not force_solovev)
@@ -235,9 +247,7 @@ def evaluate(
         if isinstance(k, str) and isinstance(v, (int, float))
     }
     runtime_max_total_raw = runtime_cfg.get("max_total_events")
-    runtime_max_total = (
-        None if runtime_max_total_raw is None else int(runtime_max_total_raw)
-    )
+    runtime_max_total = None if runtime_max_total_raw is None else int(runtime_max_total_raw)
     raw_runtime_domain_limits = runtime_cfg.get("max_domain_events", {})
     if not isinstance(raw_runtime_domain_limits, dict):
         raw_runtime_domain_limits = {}
@@ -246,9 +256,7 @@ def evaluate(
         for k, v in raw_runtime_domain_limits.items()
         if isinstance(k, str) and isinstance(v, (int, float))
     }
-    runtime_total_ok = (
-        True if runtime_max_total is None else runtime_total <= runtime_max_total
-    )
+    runtime_total_ok = True if runtime_max_total is None else runtime_total <= runtime_max_total
     runtime_domain_ok = all(
         int(runtime_domain_counts.get(domain, 0)) <= int(limit)
         for domain, limit in runtime_domain_limits.items()

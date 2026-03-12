@@ -81,10 +81,7 @@ def decode_u64_compact_payload(
     if count < 0 or count > available:
         raise error_type(f"Invalid compact packed count {count}; available words={available}.")
 
-    return [
-        int.from_bytes(raw[i * 8 : (i + 1) * 8], "little", signed=False)
-        for i in range(count)
-    ]
+    return [int.from_bytes(raw[i * 8 : (i + 1) * 8], "little", signed=False) for i in range(count)]
 
 
 __all__ = ["encode_u64_compact_payload", "decode_u64_compact_payload"]

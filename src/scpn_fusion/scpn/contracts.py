@@ -90,7 +90,7 @@ def _clip01(v: float) -> float:
 
 def _seed64(seed_base: int, sid: str) -> int:
     """Deterministic seed derivation: sha256(seed_base || sid) → u64."""
-    h = hashlib.sha256(f"{seed_base}:{sid}".encode("utf-8")).digest()
+    h = hashlib.sha256(f"{seed_base}:{sid}".encode()).digest()
     return int.from_bytes(h[:8], "little", signed=False)
 
 
@@ -220,9 +220,7 @@ def decode_actions(
         if spec.pos_place < 0 or spec.neg_place < 0:
             raise ValueError("Action place indices must be >= 0.")
         if spec.pos_place >= n_places or spec.neg_place >= n_places:
-            raise ValueError(
-                "Action place index out of bounds for marking vector."
-            )
+            raise ValueError("Action place index out of bounds for marking vector.")
         pos = marking[spec.pos_place]
         neg = marking[spec.neg_place]
         raw = (pos - neg) * gains[i]
@@ -274,8 +272,7 @@ class PhysicsInvariant:
     def __post_init__(self) -> None:
         if self.comparator not in _VALID_COMPARATORS:
             raise ValueError(
-                f"Invalid comparator {self.comparator!r}; "
-                f"must be one of {_VALID_COMPARATORS}"
+                f"Invalid comparator {self.comparator!r}; " f"must be one of {_VALID_COMPARATORS}"
             )
         if not math.isfinite(self.threshold):
             raise ValueError("PhysicsInvariant threshold must be finite.")
@@ -510,7 +507,5 @@ def verify_safety_contracts(
         token = float(safety_tokens.get(contract.safety_place, 0.0))
         enabled = bool(transition_enabled.get(contract.control_transition, False))
         if token > 0.0 and enabled:
-            violations.append(
-                f"{contract.safety_place} inhibits {contract.control_transition}"
-            )
+            violations.append(f"{contract.safety_place} inhibits {contract.control_transition}")
     return violations

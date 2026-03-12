@@ -33,8 +33,8 @@ logger = logging.getLogger(__name__)
 
 # Physical constants
 _E_CHARGE = 1.602176634e-19  # C
-_M_P = 1.672621924e-27       # kg
-_EPS0 = 8.854187812e-12      # F/m
+_M_P = 1.672621924e-27  # kg
+_EPS0 = 8.854187812e-12  # F/m
 
 _EPED_DOMAIN_BOUNDS: Dict[str, Tuple[float, float, str]] = {
     "R0": (1.0, 10.0, "m"),
@@ -88,12 +88,13 @@ class PedestalDomainAssessment:
 @dataclass
 class PedestalResult:
     """Result of EPED-like pedestal prediction."""
-    p_ped_kPa: float       # pedestal-top pressure [kPa]
-    T_ped_keV: float       # pedestal-top temperature [keV]
-    n_ped_1e19: float      # pedestal-top density [10^19 m^-3]
-    Delta_ped: float       # normalised pedestal width (in psi_N)
-    beta_p_ped: float      # poloidal beta at pedestal
-    nu_star_ped: float     # pedestal collisionality
+
+    p_ped_kPa: float  # pedestal-top pressure [kPa]
+    T_ped_keV: float  # pedestal-top temperature [keV]
+    n_ped_1e19: float  # pedestal-top density [10^19 m^-3]
+    Delta_ped: float  # normalised pedestal width (in psi_N)
+    beta_p_ped: float  # poloidal beta at pedestal
+    nu_star_ped: float  # pedestal collisionality
     in_domain: bool = True
     extrapolation_score: float = 0.0
     extrapolation_penalty: float = 1.0
@@ -142,9 +143,9 @@ class EpedPedestalModel:
         # Derived
         self.epsilon = self.a / self.R0
         mu0 = 4.0 * np.pi * 1e-7
-        self.B_pol = mu0 * self.Ip_MA * 1e6 / (2.0 * np.pi * self.a * np.sqrt(
-            (1.0 + self.kappa**2) / 2.0
-        ))
+        self.B_pol = (
+            mu0 * self.Ip_MA * 1e6 / (2.0 * np.pi * self.a * np.sqrt((1.0 + self.kappa**2) / 2.0))
+        )
 
     @classmethod
     def domain_metadata(cls) -> dict[str, dict[str, object]]:
@@ -179,9 +180,7 @@ class EpedPedestalModel:
             lo, hi, units = _EPED_DOMAIN_BOUNDS[name]
             violation = _normalized_domain_violation(value, lower=lo, upper=hi)
             if violation > 0.0:
-                violations.append(
-                    f"{name}={value:.4g} outside [{lo:.4g}, {hi:.4g}] {units}"
-                )
+                violations.append(f"{name}={value:.4g} outside [{lo:.4g}, {hi:.4g}] {units}")
             max_violation = max(max_violation, violation)
         penalty = float(
             np.clip(
@@ -264,12 +263,17 @@ class EpedPedestalModel:
             ln_lambda = max(17.7 + np.log(T_eV / 1e4) - 0.5 * np.log(max(n_e, 1e10) / 1e20), 10.0)
             # NRL electron-ion collision frequency: Wesson Ch.14, Eq.(14.6.1)
             # nu_ei = n_e Z e^4 ln_L / (12 pi^{3/2} eps0^2 m_e^{1/2} T_e^{3/2})
-            nu_ei = (n_e * self.Z_eff * _E_CHARGE**4 * ln_lambda) / \
-                    (12.0 * np.pi**1.5 * _EPS0**2 * np.sqrt(_m_e) * T_J**1.5)
+            nu_ei = (n_e * self.Z_eff * _E_CHARGE**4 * ln_lambda) / (
+                12.0 * np.pi**1.5 * _EPS0**2 * np.sqrt(_m_e) * T_J**1.5
+            )
 
             # Safety factor at pedestal (≈ edge q)
             # Use cylindrical approximation with elongation
-            q_ped = (self.B0 / self.R0) * (self.a**2 / (0.2 * self.Ip_MA)) * ((1.0 + self.kappa**2) / 2.0)
+            q_ped = (
+                (self.B0 / self.R0)
+                * (self.a**2 / (0.2 * self.Ip_MA))
+                * ((1.0 + self.kappa**2) / 2.0)
+            )
             q_ped = max(q_ped, 2.0)
 
             eps_ped = 0.95 * self.epsilon  # pedestal at rho~0.95
@@ -279,33 +283,34 @@ class EpedPedestalModel:
             # Snyder scaling: Delta_ped = 0.076 * beta_p_ped^0.5 * nu_star_ped^{-0.2}
             # Clamp nu_star to avoid blowup at very low collisionality
             nu_star_safe = max(nu_star_ped, 0.001)
-            Delta_ped = 0.076 * np.sqrt(max(beta_p_ped, 0.001)) * nu_star_safe**(-0.2)
-            
+            Delta_ped = 0.076 * np.sqrt(max(beta_p_ped, 0.001)) * nu_star_safe ** (-0.2)
+
             # High-density width broadening: empirical fit to JET-ILW pedestal
             # database (Frassinetti et al., NF 61 016001, 2021, Fig. 12).
-            Delta_ped *= (1.0 + 0.25 * (n_ped_1e19 / 10.0))
-            
+            Delta_ped *= 1.0 + 0.25 * (n_ped_1e19 / 10.0)
+
             Delta_ped *= domain.extrapolation_penalty
             Delta_ped = np.clip(Delta_ped, 0.01, 0.15)
 
             # Connor-Hastie-Taylor ballooning limit alpha(s)
-            s_ped = 2.0 * (1.0 + 0.5 * (self.kappa - 1.7)) 
+            s_ped = 2.0 * (1.0 + 0.5 * (self.kappa - 1.7))
             if s_ped < 1.0:
                 alpha_crit = s_ped * (1.0 - s_ped / 2.0)
             else:
                 alpha_crit = 0.6 * s_ped
             # Shaping benefit
-            alpha_crit *= (1.0 + 0.3 * (self.kappa - 1.0))
+            alpha_crit *= 1.0 + 0.3 * (self.kappa - 1.0)
 
             # T_ped constrained by KBM limit alpha_crit:
             # alpha = (2*mu0*R0*q^2 / B0^2) * (p_ped / (Delta * a))
             # p_ped = 2 * n_e * T_ped
             # => T_ped_max = (alpha_crit * B0^2 * Delta * a) / (4 * mu0 * R0 * q^2 * n_e)
-            T_ped_max = (alpha_crit * self.B0**2 * Delta_ped * self.a) / \
-                         (4.0 * mu0 * self.R0 * q_ped**2 * n_e)
-            
+            T_ped_max = (alpha_crit * self.B0**2 * Delta_ped * self.a) / (
+                4.0 * mu0 * self.R0 * q_ped**2 * n_e
+            )
+
             T_ped_max_keV = T_ped_max / _E_CHARGE / 1000.0
-            
+
             T_ped_new = T_ped_max_keV
             T_ped_new = max(T_ped_new, 0.1)
 

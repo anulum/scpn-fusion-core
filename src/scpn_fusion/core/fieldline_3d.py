@@ -169,9 +169,7 @@ class FieldLineTracer3D:
             frac = float(np.clip(frac, 0.0, 1.0))
 
             rho_cross = float(trace.rho[k] + frac * (trace.rho[k + 1] - trace.rho[k]))
-            theta_cross = float(
-                trace.theta[k] + frac * (trace.theta[k + 1] - trace.theta[k])
-            )
+            theta_cross = float(trace.theta[k] + frac * (trace.theta[k + 1] - trace.theta[k]))
             r_cross, z_cross, _ = self.equilibrium.flux_to_cylindrical(
                 rho_cross,
                 theta_cross,

@@ -59,6 +59,7 @@ def default_reference_data_root() -> Path:
     """Backward-compatible export for reference-data root resolution."""
     return _default_reference_data_root()
 
+
 DEFAULT_MDSPLUS_NODE_MAP: dict[str, str] = {
     "time_ms": "\\time_ms",
     "beta_n": "\\betan",
@@ -71,6 +72,7 @@ DEFAULT_MDSPLUS_NODE_MAP: dict[str, str] = {
     "toroidal_n3_amp": "\\toroidal_n3_amp",
     "disruption": "\\disruption_flag",
 }
+
 
 def load_diiid_reference_profiles(
     *,
@@ -96,6 +98,7 @@ def load_diiid_reference_profiles(
     if not profiles:
         raise ValueError(f"No DIII-D reference files found in {ref_dir}.")
     return profiles
+
 
 def load_cmod_reference_profiles(
     *,
@@ -195,9 +198,15 @@ def fetch_mdsplus_profiles(
             q95 = _coerce_finite("q95", _to_scalar(_fetch("q95")), minimum=0.0)
             tau_ms = _coerce_finite("tau_e_ms", _to_scalar(_fetch("tau_e_ms")), minimum=0.0)
             time_ms = _coerce_finite("time_ms", _to_scalar(_fetch("time_ms")), minimum=0.0)
-            n1 = _coerce_finite("toroidal_n1_amp", _to_scalar(_fetch("toroidal_n1_amp")), minimum=0.0)
-            n2 = _coerce_finite("toroidal_n2_amp", _to_scalar(_fetch("toroidal_n2_amp")), minimum=0.0)
-            n3 = _coerce_finite("toroidal_n3_amp", _to_scalar(_fetch("toroidal_n3_amp")), minimum=0.0)
+            n1 = _coerce_finite(
+                "toroidal_n1_amp", _to_scalar(_fetch("toroidal_n1_amp")), minimum=0.0
+            )
+            n2 = _coerce_finite(
+                "toroidal_n2_amp", _to_scalar(_fetch("toroidal_n2_amp")), minimum=0.0
+            )
+            n3 = _coerce_finite(
+                "toroidal_n3_amp", _to_scalar(_fetch("toroidal_n3_amp")), minimum=0.0
+            )
             disruption = bool(round(_to_scalar(_fetch("disruption"))))
 
             out.append(
@@ -301,7 +310,11 @@ def poll_mdsplus_feed(
     rows = list(merged.values())
     rows.sort(key=lambda r: (r.machine, int(r.shot), float(r.time_ms)))
     total_live = int(sum(int(r["live_count"]) for r in poll_records))
-    source = "live_stream" if total_live > 0 else ("reference_fallback" if fallback_meta is not None else "empty")
+    source = (
+        "live_stream"
+        if total_live > 0
+        else ("reference_fallback" if fallback_meta is not None else "empty")
+    )
     return rows, {
         "machine": normalized_machine,
         "host": str(host),

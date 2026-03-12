@@ -36,7 +36,7 @@ REGIME_NAMES = {0: "stable", 1: "ITG", 2: "TEM"}
 
 
 def _relative_l2(pred: np.ndarray, target: np.ndarray) -> float:
-    return float(np.sqrt(np.sum((pred - target) ** 2) / max(np.sum(target ** 2), 1e-8)))
+    return float(np.sqrt(np.sum((pred - target) ** 2) / max(np.sum(target**2), 1e-8)))
 
 
 def _rmse_pct(pred: np.ndarray, target: np.ndarray) -> float:
@@ -79,6 +79,7 @@ def validate(
 
     # Run inference
     from scpn_fusion.core.neural_transport import _mlp_forward
+
     preds = _mlp_forward(X_test, model._weights)
 
     # ── Overall metrics ──────────────────────────────────────────
@@ -136,9 +137,7 @@ def validate(
         "n_test": len(X_test),
         "overall_relative_l2": overall_l2,
         "overall_rmse_pct": overall_rmse_pct,
-        "per_output_relative_l2": {
-            name: per_output_l2[i] for i, name in enumerate(OUTPUT_NAMES)
-        },
+        "per_output_relative_l2": {name: per_output_l2[i] for i, name in enumerate(OUTPUT_NAMES)},
         "verdict": "PASS" if verdict else "FAIL",
     }
     report_path = REPO_ROOT / "validation" / "reports" / "transport_qlknn_validation.json"

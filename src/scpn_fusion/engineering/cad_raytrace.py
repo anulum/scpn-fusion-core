@@ -12,7 +12,6 @@ from __future__ import annotations
 import struct
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 from numpy.typing import NDArray
@@ -60,9 +59,7 @@ def _parse_binary_stl(path: Path) -> tuple[FloatArray, IntArray]:
     tri_count = struct.unpack_from("<I", data, 80)[0]
     expected = 84 + tri_count * 50
     if len(data) < expected:
-        raise ValueError(
-            f"Binary STL truncated: expected >= {expected} bytes, got {len(data)}"
-        )
+        raise ValueError(f"Binary STL truncated: expected >= {expected} bytes, got {len(data)}")
 
     vertices: list[list[float]] = []
     faces: list[list[int]] = []
@@ -250,7 +247,8 @@ def estimate_surface_loading(
                     candidate_idx = np.arange(faces.shape[0])
 
                 for j in candidate_idx:
-                    if i == j: continue
+                    if i == j:
+                        continue
                     if _segment_intersects_triangle(p, c, tri[j], epsilon=occlusion_epsilon):
                         visible[i] = False
                         break

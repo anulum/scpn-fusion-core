@@ -12,6 +12,7 @@ from scpn_fusion.core.gpu_runtime import GPURuntimeBridge
 
 try:
     import jax
+
     HAS_JAX = True
 except ImportError:
     HAS_JAX = False
@@ -62,7 +63,9 @@ class TestJAXMultigridParity:
 
     def test_jax_benchmark_latency(self, bridge):
         bench = bridge.benchmark_equilibrium_latency(
-            backend="jax", trials=16, grid_size=32,
+            backend="jax",
+            trials=16,
+            grid_size=32,
         )
         assert bench.backend == "jax"
         assert bench.mean_ms_wall > 0.0

@@ -49,9 +49,7 @@ class _DummyKernel:
         ir = int(np.argmin(np.abs(self.R - center_r)))
         iz = int(np.argmin(np.abs(self.Z - center_z)))
         self.Psi.fill(-1.0)
-        self.Psi[iz, ir] = 1.0 + 0.001 * float(
-            self.cfg["physics"]["plasma_current_target"]
-        )
+        self.Psi[iz, ir] = 1.0 + 0.001 * float(self.cfg["physics"]["plasma_current_target"])
 
     def find_x_point(self, _psi: np.ndarray) -> tuple[tuple[float, float], float]:
         return (float(self.R[-2]), float(self.Z[1])), 0.0

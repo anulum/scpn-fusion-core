@@ -36,12 +36,7 @@ def run_campaign(
     )
     df = explorer.run_compact_scan(n_samples=scan_samples, seed=seed)
 
-    feasible = df[
-        (df["Constraint_OK"])
-        & (df["R"] >= 1.2)
-        & (df["R"] <= 1.5)
-        & (df["Q"] > 5.0)
-    ]
+    feasible = df[(df["Constraint_OK"]) & (df["R"] >= 1.2) & (df["R"] <= 1.5) & (df["Q"] > 5.0)]
 
     feasible_count = int(len(feasible))
     best = feasible.loc[feasible["Cost"].idxmin()] if feasible_count > 0 else None
@@ -154,10 +149,7 @@ def main(argv: list[str] | None = None) -> int:
 
     g = report["gmvr_01"]
     print("GMVR-01 compact-constraint validation complete.")
-    print(
-        f"feasible_count={g['feasible_count']}, "
-        f"passes_thresholds={g['passes_thresholds']}"
-    )
+    print(f"feasible_count={g['feasible_count']}, " f"passes_thresholds={g['passes_thresholds']}")
 
     if args.strict and not g["passes_thresholds"]:
         return 2

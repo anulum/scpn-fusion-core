@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import numpy as np
-from typing import Any, Optional
+from typing import Optional
 
 
 DEFAULT_DISRUPTION_RISK_BIAS = -4.0
@@ -60,7 +60,7 @@ def simulate_tearing_mode(
     delta_prime = -0.5
     w_history = []
 
-    beta_p = 0.8   # poloidal beta proxy
+    beta_p = 0.8  # poloidal beta proxy
     w_crit = 0.05  # island stabilisation threshold
 
     for t in range(steps):
@@ -291,9 +291,7 @@ def run_fault_noise_campaign(
         for i in range(window_i):
             faulty_signal[i] += float(rng.normal(0.0, noise))
             if i % bit_flip_i == 0:
-                faulty_signal[i] = apply_bit_flip_fault(
-                    faulty_signal[i], int(rng.integers(0, 52))
-                )
+                faulty_signal[i] = apply_bit_flip_fault(faulty_signal[i], int(rng.integers(0, 52)))
                 faulty_indices.append(i)
 
         faulty_toroidal = dict(toroidal)

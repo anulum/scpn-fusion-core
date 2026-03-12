@@ -14,7 +14,6 @@ import statistics
 import sys
 from pathlib import Path
 
-import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -68,26 +67,42 @@ def validate_against_itpa(
         epsilon = a / R
 
         tau_pred = ipb98y2_tau_e(
-            Ip, BT, ne19, Ploss, R, kappa, epsilon, M,
+            Ip,
+            BT,
+            ne19,
+            Ploss,
+            R,
+            kappa,
+            epsilon,
+            M,
             coefficients=coefficients,
         )
         tau_pred_unc, sigma = ipb98y2_with_uncertainty(
-            Ip, BT, ne19, Ploss, R, kappa, epsilon, M,
+            Ip,
+            BT,
+            ne19,
+            Ploss,
+            R,
+            kappa,
+            epsilon,
+            M,
             coefficients=coefficients,
         )
 
         rel_error = (tau_pred - tau_meas) / max(tau_meas, 1e-9)
         within_2sigma = abs(tau_pred - tau_meas) <= 2.0 * sigma
 
-        results.append({
-            "machine": machine,
-            "shot": shot,
-            "tau_measured_s": tau_meas,
-            "tau_predicted_s": round(tau_pred, 4),
-            "sigma_s": round(sigma, 4),
-            "relative_error": round(rel_error, 4),
-            "within_2sigma": within_2sigma,
-        })
+        results.append(
+            {
+                "machine": machine,
+                "shot": shot,
+                "tau_measured_s": tau_meas,
+                "tau_predicted_s": round(tau_pred, 4),
+                "sigma_s": round(sigma, 4),
+                "relative_error": round(rel_error, 4),
+                "within_2sigma": within_2sigma,
+            }
+        )
 
         tau_measured.append(tau_meas)
         tau_predicted.append(tau_pred)
@@ -119,7 +134,9 @@ def validate_against_itpa(
         lines = ["# ITPA Transport Validation\n"]
         lines.append(f"- **N shots**: {n}")
         lines.append(f"- **RMSE**: {rmse_val:.4f} s ({rmse_rel:.1%} relative)")
-        lines.append(f"- **Within 2-sigma**: {within_2sigma_count}/{n} ({within_2sigma_count/n:.0%})")
+        lines.append(
+            f"- **Within 2-sigma**: {within_2sigma_count}/{n} ({within_2sigma_count/n:.0%})"
+        )
         lines.append("")
         lines.append("| Machine | Shot | tau_meas [s] | tau_pred [s] | Rel Error | 2-sigma |")
         lines.append("|---------|------|-------------|-------------|-----------|---------|")

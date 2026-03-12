@@ -76,7 +76,7 @@ def test_analytic_solver_fallback_line_is_suppressed_when_guarded() -> None:
         marker="FALLBACK",
         line='fallback = repo_root / "validation" / "iter_validated_config.json"',
         file_text=(
-            'allow_validation_fallback=True\n'
+            "allow_validation_fallback=True\n"
             '"config_source": "validation_fallback_default"\n'
             '"fallback_used": True\n'
         ),
@@ -123,7 +123,7 @@ def test_experimental_gate_lines_are_suppressed_on_release_surfaces() -> None:
     assert underdev._is_marker_suppressed(
         rel_path="docs/VALIDATION_GATE_MATRIX.md",
         marker="EXPERIMENTAL",
-        line="| `validation-regression` | ... (`pytest -m \"not experimental\"`) |",
+        line='| `validation-regression` | ... (`pytest -m "not experimental"`) |',
         file_text="",
     )
 
@@ -141,7 +141,9 @@ def test_collect_source_heuristics_detects_monolith_and_test_gap(tmp_path: Path)
         encoding="utf-8",
     )
     # Include at least one test file so test corpus generation path is exercised.
-    (tests_dir / "test_dummy.py").write_text("def test_dummy():\n    assert True\n", encoding="utf-8")
+    (tests_dir / "test_dummy.py").write_text(
+        "def test_dummy():\n    assert True\n", encoding="utf-8"
+    )
 
     entries = underdev._collect_source_heuristic_entries(repo_root)
     markers = {entry.marker for entry in entries}
@@ -167,9 +169,9 @@ def test_fallback_density_signal_count_counts_runtime_risk_lines() -> None:
     signal = underdev._fallback_density_signal_count(
         "\n".join(
             [
-                "record_fallback_event(\"x\", \"y\")",
+                'record_fallback_event("x", "y")',
                 "if not allow_fallback:",
-                "raise RuntimeError(\"fallback disabled\")",
+                'raise RuntimeError("fallback disabled")',
             ]
         )
     )

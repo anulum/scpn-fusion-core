@@ -75,19 +75,15 @@ def genray_like_heating_proxy(
         rf_survival = np.cumprod(np.where(rf_reflect_mask, 0.92, 0.996))
         nbi_survival = np.cumprod(np.where(nbi_reflect_mask, 0.95, 0.997))
 
-        rf_kernel = (
-            np.exp(-((radius - rf_res_radius) / rf_sigma) ** 2) * shear_mod * rf_survival
-        )
+        rf_kernel = np.exp(-(((radius - rf_res_radius) / rf_sigma) ** 2)) * shear_mod * rf_survival
         nbi_kernel = (
-            np.exp(-((radius - nbi_res_radius) / nbi_sigma) ** 2)
+            np.exp(-(((radius - nbi_res_radius) / nbi_sigma) ** 2))
             * (1.0 + 0.05 * np.sin(1.5 * tor_phase + pitch))
             * nbi_survival
         )
         rf_hits.append(float(np.mean(rf_kernel)))
         nbi_hits.append(float(np.mean(nbi_kernel)))
-        mean_path_norm += (
-            float(np.sum(0.98 + 0.08 * np.abs(np.gradient(radius)))) / n_steps_f
-        )
+        mean_path_norm += float(np.sum(0.98 + 0.08 * np.abs(np.gradient(radius)))) / n_steps_f
 
     rf_absorption_eff = float(
         np.clip(0.56 + 0.34 * np.mean(np.asarray(rf_hits, dtype=np.float64)), 0.35, 0.95)
@@ -95,9 +91,7 @@ def genray_like_heating_proxy(
     nbi_absorption_eff = float(
         np.clip(0.50 + 0.34 * np.mean(np.asarray(nbi_hits, dtype=np.float64)), 0.28, 0.93)
     )
-    absorbed_heating_mw = float(
-        rf_power_mw * rf_absorption_eff + nbi_power_mw * nbi_absorption_eff
-    )
+    absorbed_heating_mw = float(rf_power_mw * rf_absorption_eff + nbi_power_mw * nbi_absorption_eff)
     return {
         "rf_absorption_eff": rf_absorption_eff,
         "nbi_absorption_eff": nbi_absorption_eff,
@@ -249,18 +243,12 @@ def quick_candidate(
         absorbed_heating_mw=heating["absorbed_heating_mw"],
     )
     surrogate_q = float(
-        4.8
-        + 0.085
-        * np.sqrt(max(float(design["Q"]), 0.0))
-        * heating_weight
-        * np.sqrt(b_t / 5.5)
+        4.8 + 0.085 * np.sqrt(max(float(design["Q"]), 0.0)) * heating_weight * np.sqrt(b_t / 5.5)
     )
     q_proxy = float(0.90 * q_aries + 0.10 * surrogate_q + 2.8)
 
     raw_tbr_est = float(
-        base_tbr
-        * (blanket_thickness_cm / 260.0) ** 0.11
-        * (1.0 + 0.07 * (elongation - 1.7))
+        base_tbr * (blanket_thickness_cm / 260.0) ** 0.11 * (1.0 + 0.07 * (elongation - 1.7))
     )
     tbr_est, tbr_factor = mcnp_lite_tbr(
         raw_tbr=raw_tbr_est,

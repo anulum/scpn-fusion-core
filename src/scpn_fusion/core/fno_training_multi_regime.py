@@ -292,8 +292,7 @@ def train_fno_multi_regime(
         regime_val_losses.setdefault(r, []).append(loss_j)
 
     regime_summary = {
-        r: {"mean": float(np.mean(v)), "n": len(v)}
-        for r, v in regime_val_losses.items()
+        r: {"mean": float(np.mean(v)), "n": len(v)} for r, v in regime_val_losses.items()
     }
     history["regime_val_losses"] = regime_summary
 
@@ -311,4 +310,3 @@ def train_fno_multi_regime(
         logger.info("  %s: mean_val_loss=%.4f (n=%d)", r, s["mean"], s["n"])
 
     return history
-

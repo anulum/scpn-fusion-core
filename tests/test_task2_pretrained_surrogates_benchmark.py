@@ -18,9 +18,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "task2_pretrained_surrogates_benchmark.py"
-SPEC = importlib.util.spec_from_file_location(
-    "task2_pretrained_surrogates_benchmark", MODULE_PATH
-)
+SPEC = importlib.util.spec_from_file_location("task2_pretrained_surrogates_benchmark", MODULE_PATH)
 assert SPEC and SPEC.loader
 task2_bench = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(task2_bench)
@@ -61,9 +59,7 @@ def test_task2_auc_benchmark_rejects_invalid_inputs() -> None:
     with pytest.raises(ValueError, match="window"):
         task2_bench.run_disruption_auc_benchmark(profile="tokamaknet", seed=1, window=8)
     with pytest.raises(ValueError, match="label_flip_rate"):
-        task2_bench.run_disruption_auc_benchmark(
-            profile="tm1", seed=1, label_flip_rate=1.1
-        )
+        task2_bench.run_disruption_auc_benchmark(profile="tm1", seed=1, label_flip_rate=1.1)
 
 
 def test_task2_markdown_contains_required_sections() -> None:

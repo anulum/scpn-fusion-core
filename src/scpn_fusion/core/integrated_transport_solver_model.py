@@ -92,7 +92,11 @@ class TransportSolverModelMixin:
             raise ValueError("Neural OOD profile shape must match transport rho grid.")
 
         ood_mask = z_profile > sigma
-        interior_indices = np.nonzero(ood_mask & (np.arange(self.rho.size) > 0) & (np.arange(self.rho.size) < self.rho.size - 1))[0]
+        interior_indices = np.nonzero(
+            ood_mask
+            & (np.arange(self.rho.size) > 0)
+            & (np.arange(self.rho.size) < self.rho.size - 1)
+        )[0]
         if interior_indices.size == 0:
             return ood_mask, []
 
@@ -181,9 +185,13 @@ class TransportSolverModelMixin:
         if self._last_numerical_recovery_count <= limit:
             return
 
-        details = ", ".join(
-            f"{name}={count}" for name, count in sorted(self._last_numerical_recovery_breakdown.items())
-        ) or "no breakdown"
+        details = (
+            ", ".join(
+                f"{name}={count}"
+                for name, count in sorted(self._last_numerical_recovery_breakdown.items())
+            )
+            or "no breakdown"
+        )
         raise solver_mod.PhysicsError(
             "Numerical recovery budget exceeded: "
             f"{self._last_numerical_recovery_count} > {limit}. "
@@ -225,16 +233,16 @@ class TransportSolverModelMixin:
     def chang_hinton_chi_profile(self) -> np.ndarray:
         """Backward-compatible Chang-Hinton profile helper."""
         solver_mod = _solver_module()
-        rho = np.asarray(getattr(self, "rho"), dtype=np.float64)
+        rho = np.asarray(self.rho, dtype=np.float64)
 
         t_i_raw = getattr(self, "t_i", None)
         if t_i_raw is None:
-            t_i_raw = getattr(self, "Ti")
+            t_i_raw = self.Ti
         t_i = np.asarray(t_i_raw, dtype=np.float64)
 
         n_e_raw = getattr(self, "n_e", None)
         if n_e_raw is None:
-            n_e_raw = getattr(self, "ne")
+            n_e_raw = self.ne
         n_e = np.asarray(n_e_raw, dtype=np.float64)
         q_profile = np.asarray(
             getattr(self, "q_profile", np.linspace(1.0, 3.0, len(rho))),
@@ -312,9 +320,7 @@ class TransportSolverModelMixin:
         l34 = -0.1 * l31 * (1.0 + 0.08 * (zeff_eff - 1.0))
 
         j_bs = -(1.0 / b_pol) * (
-            l31 * (self.Te + self.Ti) * e_charge * dn_dr
-            + l32 * n_e * dte_dr
-            + l34 * n_e * dti_dr
+            l31 * (self.Te + self.Ti) * e_charge * dn_dr + l32 * n_e * dte_dr + l34 * n_e * dti_dr
         )
         j_bs *= 1.4
         j_bs[0] = 0
@@ -373,7 +379,9 @@ class TransportSolverModelMixin:
                     "error": None,
                 }
             except (TypeError, ValueError) as exc:
-                c_gB, fallback_contract = solver_mod._load_gyro_bohm_coefficient_cached_with_contract()
+                c_gB, fallback_contract = (
+                    solver_mod._load_gyro_bohm_coefficient_cached_with_contract()
+                )
                 self._last_gyro_bohm_contract = {
                     "used": True,
                     "source": "neoclassical_params_invalid_fallback",
@@ -480,7 +488,9 @@ class TransportSolverModelMixin:
                 chi_turb_i = np.asarray(scan.chi_i_profile, dtype=np.float64)
                 chi_turb_e = np.asarray(scan.chi_e_profile, dtype=np.float64)
                 d_turb = np.maximum(0.15 * chi_turb_e, 0.05 * chi_turb_i)
-                dominant_channel = "ETG" if float(np.mean(chi_turb_e)) > float(np.mean(chi_turb_i)) else "ITG"
+                dominant_channel = (
+                    "ETG" if float(np.mean(chi_turb_e)) > float(np.mean(chi_turb_i)) else "ITG"
+                )
                 self._last_transport_closure_contract = {
                     "used": True,
                     "model": "tglf_live_profile",
@@ -509,9 +519,9 @@ class TransportSolverModelMixin:
                     "chi_e_turb_mean": float(np.mean(chi_turb_e)),
                     "chi_i_turb_mean": float(np.mean(chi_turb_i)),
                     "d_turb_mean": float(np.mean(d_turb)),
-                    "chi_gb_reference_mean": None
-                    if chi_gb_reference is None
-                    else float(np.mean(chi_gb_reference)),
+                    "chi_gb_reference_mean": (
+                        None if chi_gb_reference is None else float(np.mean(chi_gb_reference))
+                    ),
                     "weights_loaded": False,
                     "weights_path": None,
                     "weights_checksum": None,
@@ -522,7 +532,9 @@ class TransportSolverModelMixin:
                     "max_abs_z": 0.0,
                     "tglf_sample_count": int(len(scan.rho_samples)),
                     "tglf_sample_indices": [],
-                    "gamma_profile_mean": float(np.mean(np.asarray(scan.gamma_profile, dtype=np.float64))),
+                    "gamma_profile_mean": float(
+                        np.mean(np.asarray(scan.gamma_profile, dtype=np.float64))
+                    ),
                     "error": None,
                 }
             elif transport_backend_key in {"neural_transport_hybrid", "qlknn_tglf_hybrid"}:
@@ -539,7 +551,9 @@ class TransportSolverModelMixin:
                     weights_path = getattr(neural_model, "weights_path", None)
                     resolved_path = None if weights_path is None else Path(weights_path)
                     if resolved_path is not None and not resolved_path.exists():
-                        raise FileNotFoundError(f"Neural transport weights not found at {resolved_path}.")
+                        raise FileNotFoundError(
+                            f"Neural transport weights not found at {resolved_path}."
+                        )
                     raise RuntimeError(
                         "Neural transport backend requested but no valid weights were loaded."
                     )
@@ -635,9 +649,9 @@ class TransportSolverModelMixin:
                     "chi_e_turb_mean": float(np.mean(chi_turb_e)),
                     "chi_i_turb_mean": float(np.mean(chi_turb_i)),
                     "d_turb_mean": float(np.mean(d_turb)),
-                    "chi_gb_reference_mean": None
-                    if chi_gb_reference is None
-                    else float(np.mean(chi_gb_reference)),
+                    "chi_gb_reference_mean": (
+                        None if chi_gb_reference is None else float(np.mean(chi_gb_reference))
+                    ),
                     "weights_loaded": bool(surrogate_meta.get("weights_loaded", True)),
                     "weights_path": surrogate_meta.get("weights_path"),
                     "weights_checksum": surrogate_meta.get("weights_checksum"),
@@ -657,7 +671,9 @@ class TransportSolverModelMixin:
                     weights_path = getattr(neural_model, "weights_path", None)
                     resolved_path = None if weights_path is None else Path(weights_path)
                     if resolved_path is not None and not resolved_path.exists():
-                        raise FileNotFoundError(f"Neural transport weights not found at {resolved_path}.")
+                        raise FileNotFoundError(
+                            f"Neural transport weights not found at {resolved_path}."
+                        )
                     raise RuntimeError(
                         "Neural transport backend requested but no valid weights were loaded."
                     )
@@ -727,9 +743,9 @@ class TransportSolverModelMixin:
                     "chi_e_turb_mean": float(np.mean(chi_turb_e)),
                     "chi_i_turb_mean": float(np.mean(chi_turb_i)),
                     "d_turb_mean": float(np.mean(d_turb)),
-                    "chi_gb_reference_mean": None
-                    if chi_gb_reference is None
-                    else float(np.mean(chi_gb_reference)),
+                    "chi_gb_reference_mean": (
+                        None if chi_gb_reference is None else float(np.mean(chi_gb_reference))
+                    ),
                     "weights_loaded": bool(surrogate_meta.get("weights_loaded", True)),
                     "weights_path": surrogate_meta.get("weights_path"),
                     "weights_checksum": surrogate_meta.get("weights_checksum"),
@@ -772,9 +788,9 @@ class TransportSolverModelMixin:
                     "chi_e_turb_mean": float(np.mean(chi_turb_e)),
                     "chi_i_turb_mean": float(np.mean(chi_turb_i)),
                     "d_turb_mean": float(np.mean(d_turb)),
-                    "chi_gb_reference_mean": None
-                    if chi_gb_reference is None
-                    else float(np.mean(chi_gb_reference)),
+                    "chi_gb_reference_mean": (
+                        None if chi_gb_reference is None else float(np.mean(chi_gb_reference))
+                    ),
                     "weights_loaded": False,
                     "weights_path": None,
                     "weights_checksum": None,
@@ -825,9 +841,9 @@ class TransportSolverModelMixin:
                 "chi_e_turb_mean": float(np.mean(chi_turb_e)),
                 "chi_i_turb_mean": float(np.mean(chi_turb_i)),
                 "d_turb_mean": float(np.mean(d_turb)),
-                "chi_gb_reference_mean": None
-                if chi_gb_reference is None
-                else float(np.mean(chi_gb_reference)),
+                "chi_gb_reference_mean": (
+                    None if chi_gb_reference is None else float(np.mean(chi_gb_reference))
+                ),
                 "weights_loaded": False,
                 "weights_path": None,
                 "weights_checksum": None,

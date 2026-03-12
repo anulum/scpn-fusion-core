@@ -20,9 +20,7 @@ def validate_artifact(
     meta = artifact.meta
 
     if meta.firing_mode not in ("binary", "fractional"):
-        raise error_type(
-            f"firing_mode must be 'binary' or 'fractional', got '{meta.firing_mode}'"
-        )
+        raise error_type(f"firing_mode must be 'binary' or 'fractional', got '{meta.firing_mode}'")
 
     if isinstance(meta.fixed_point.data_width, bool) or not isinstance(
         meta.fixed_point.data_width, int
@@ -61,7 +59,9 @@ def validate_artifact(
             raise error_type(f"w_out weight {val} outside [0, 1]")
 
     for transition in artifact.topology.transitions:
-        if isinstance(transition.threshold, bool) or not isinstance(transition.threshold, (int, float)):
+        if isinstance(transition.threshold, bool) or not isinstance(
+            transition.threshold, (int, float)
+        ):
             raise error_type(
                 f"threshold {transition.threshold} for '{transition.name}' must be finite and in [0, 1]"
             )
@@ -74,10 +74,16 @@ def validate_artifact(
                 f"threshold {transition.threshold} for '{transition.name}' outside [0, 1]"
             )
         if transition.margin is not None:
-            if isinstance(transition.margin, bool) or not isinstance(transition.margin, (int, float)):
-                raise error_type(f"margin {transition.margin} for '{transition.name}' must be finite and >= 0")
+            if isinstance(transition.margin, bool) or not isinstance(
+                transition.margin, (int, float)
+            ):
+                raise error_type(
+                    f"margin {transition.margin} for '{transition.name}' must be finite and >= 0"
+                )
             if not math.isfinite(transition.margin) or transition.margin < 0.0:
-                raise error_type(f"margin {transition.margin} for '{transition.name}' must be finite and >= 0")
+                raise error_type(
+                    f"margin {transition.margin} for '{transition.name}' must be finite and >= 0"
+                )
         if isinstance(transition.delay_ticks, bool) or not isinstance(transition.delay_ticks, int):
             raise error_type(
                 f"delay_ticks {transition.delay_ticks} for '{transition.name}' must be an integer >= 0"
@@ -115,9 +121,17 @@ def validate_artifact(
             )
         if not isinstance(injection.source, str) or not injection.source:
             raise error_type("place_injections.source must be a non-empty string")
-        if isinstance(injection.scale, bool) or not isinstance(injection.scale, (int, float)) or not math.isfinite(injection.scale):
+        if (
+            isinstance(injection.scale, bool)
+            or not isinstance(injection.scale, (int, float))
+            or not math.isfinite(injection.scale)
+        ):
             raise error_type("place_injections.scale must be finite numeric")
-        if isinstance(injection.offset, bool) or not isinstance(injection.offset, (int, float)) or not math.isfinite(injection.offset):
+        if (
+            isinstance(injection.offset, bool)
+            or not isinstance(injection.offset, (int, float))
+            or not math.isfinite(injection.offset)
+        ):
             raise error_type("place_injections.offset must be finite numeric")
         if not isinstance(injection.clamp_0_1, bool):
             raise error_type("place_injections.clamp_0_1 must be a boolean")

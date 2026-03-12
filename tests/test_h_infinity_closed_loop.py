@@ -42,6 +42,7 @@ def _zoh_discretize(A: np.ndarray, B: np.ndarray, dt: float):
 
 # ── Factory tests ────────────────────────────────────────────────────
 
+
 class TestFactory:
     """Smoke tests for get_radial_robust_controller."""
 
@@ -67,6 +68,7 @@ class TestFactory:
 
 
 # ── Closed-loop stability tests ─────────────────────────────────────
+
 
 class TestClosedLoop:
     """Integration tests simulating the full observer-feedback loop.
@@ -98,8 +100,7 @@ class TestClosedLoop:
 
         # Must converge: final error < 1% of initial
         assert errors[-1] < 0.01 * errors[0], (
-            f"Controller did not converge: final={errors[-1]:.4e}, "
-            f"initial={errors[0]:.4e}"
+            f"Controller did not converge: final={errors[-1]:.4e}, " f"initial={errors[0]:.4e}"
         )
 
     def test_large_dt_stable(self, ctrl):
@@ -156,9 +157,7 @@ class TestClosedLoop:
             x_plant = Ad_u @ x_plant + Bd_u.ravel() * u + Bd_w.ravel() * w
 
         final_err = abs((C2 @ x_plant).item())
-        assert final_err < 0.05, (
-            f"Disturbance not rejected: final={final_err:.4e}"
-        )
+        assert final_err < 0.05, f"Disturbance not rejected: final={final_err:.4e}"
 
     def test_output_saturation(self):
         """Output clipping should limit the control signal."""
@@ -192,6 +191,7 @@ class TestClosedLoop:
 
 
 # ── Edge case tests ──────────────────────────────────────────────────
+
 
 class TestEdgeCases:
     def test_nan_error_raises(self):

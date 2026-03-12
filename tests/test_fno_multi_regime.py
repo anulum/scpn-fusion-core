@@ -12,7 +12,6 @@ import numpy as np
 import pytest
 
 from scpn_fusion.core.fno_training import (
-    DEFAULT_SPARC_WEIGHTS_PATH,
     MultiLayerFNO,
     SPARC_REGIMES,
     _generate_multi_regime_pairs,
@@ -63,25 +62,19 @@ class TestMultiRegimeGenerator:
     """Verify the multi-regime data generator."""
 
     def test_output_shapes(self):
-        x, y, meta = _generate_multi_regime_pairs(
-            n_samples=12, grid_size=32, seed=0
-        )
+        x, y, meta = _generate_multi_regime_pairs(n_samples=12, grid_size=32, seed=0)
         assert x.shape == (12, 32, 32)
         assert y.shape == (12, 32, 32)
         assert len(meta) == 12
 
     def test_all_regimes_sampled(self):
         """With enough samples, all three regimes should appear."""
-        _, _, meta = _generate_multi_regime_pairs(
-            n_samples=300, grid_size=16, seed=7
-        )
+        _, _, meta = _generate_multi_regime_pairs(n_samples=300, grid_size=16, seed=7)
         regimes_seen = {m["regime"] for m in meta}
         assert regimes_seen == {"itg", "tem", "etg"}
 
     def test_metadata_has_params(self):
-        _, _, meta = _generate_multi_regime_pairs(
-            n_samples=3, grid_size=16, seed=1
-        )
+        _, _, meta = _generate_multi_regime_pairs(n_samples=3, grid_size=16, seed=1)
         for m in meta:
             assert "regime" in m
             assert "alpha" in m
@@ -89,19 +82,13 @@ class TestMultiRegimeGenerator:
             assert "nu" in m
 
     def test_outputs_finite(self):
-        x, y, _ = _generate_multi_regime_pairs(
-            n_samples=10, grid_size=32, seed=2
-        )
+        x, y, _ = _generate_multi_regime_pairs(n_samples=10, grid_size=32, seed=2)
         assert np.all(np.isfinite(x))
         assert np.all(np.isfinite(y))
 
     def test_deterministic(self):
-        x1, y1, m1 = _generate_multi_regime_pairs(
-            n_samples=5, grid_size=16, seed=99
-        )
-        x2, y2, m2 = _generate_multi_regime_pairs(
-            n_samples=5, grid_size=16, seed=99
-        )
+        x1, y1, m1 = _generate_multi_regime_pairs(n_samples=5, grid_size=16, seed=99)
+        x2, y2, m2 = _generate_multi_regime_pairs(n_samples=5, grid_size=16, seed=99)
         np.testing.assert_array_equal(x1, x2)
         np.testing.assert_array_equal(y1, y2)
         assert [m["regime"] for m in m1] == [m["regime"] for m in m2]
@@ -120,20 +107,22 @@ class TestMultiRegimeGenerator:
 
     def test_x_and_y_differ(self):
         """x (input field) and y (evolved field) should not be identical."""
-        x, y, _ = _generate_multi_regime_pairs(
-            n_samples=5, grid_size=32, seed=3
-        )
+        x, y, _ = _generate_multi_regime_pairs(n_samples=5, grid_size=32, seed=3)
         for i in range(len(x)):
             assert not np.allclose(x[i], y[i])
 
     def test_itg_has_more_low_k_energy(self):
         """ITG fields should have relatively more low-k energy than ETG."""
         x_itg, _, _ = _generate_multi_regime_pairs(
-            n_samples=50, grid_size=64, seed=10,
+            n_samples=50,
+            grid_size=64,
+            seed=10,
             regime_weights={"itg": 1.0, "tem": 0.0, "etg": 0.0},
         )
         x_etg, _, _ = _generate_multi_regime_pairs(
-            n_samples=50, grid_size=64, seed=10,
+            n_samples=50,
+            grid_size=64,
+            seed=10,
             regime_weights={"itg": 0.0, "tem": 0.0, "etg": 1.0},
         )
 
@@ -141,7 +130,7 @@ class TestMultiRegimeGenerator:
             fracs = []
             for f in fields:
                 fk = np.abs(np.fft.fft2(f))
-                k2 = np.fft.fftfreq(64)[:, None]**2 + np.fft.fftfreq(64)[None, :]**2
+                k2 = np.fft.fftfreq(64)[:, None] ** 2 + np.fft.fftfreq(64)[None, :] ** 2
                 low_k_power = np.sum(fk[k2 < 0.01])
                 total = np.sum(fk) + 1e-15
                 fracs.append(low_k_power / total)
@@ -150,9 +139,7 @@ class TestMultiRegimeGenerator:
         # ITG should have more low-k content
         itg_frac = low_k_fraction(x_itg)
         etg_frac = low_k_fraction(x_etg)
-        assert itg_frac > etg_frac, (
-            f"ITG low-k fraction {itg_frac:.4f} <= ETG {etg_frac:.4f}"
-        )
+        assert itg_frac > etg_frac, f"ITG low-k fraction {itg_frac:.4f} <= ETG {etg_frac:.4f}"
 
 
 # ── Multi-regime training ────────────────────────────────────────────

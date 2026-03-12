@@ -42,27 +42,28 @@ from numpy.typing import NDArray
 
 # ── Data container ────────────────────────────────────────────────────
 
+
 @dataclass
 class GEqdsk:
     """Container for all data in a G-EQDSK file."""
 
     # Header
     description: str = ""
-    nw: int = 0              # number of horizontal (R) grid points
-    nh: int = 0              # number of vertical (Z) grid points
+    nw: int = 0  # number of horizontal (R) grid points
+    nh: int = 0  # number of vertical (Z) grid points
 
     # Scalars
-    rdim: float = 0.0        # horizontal dimension (m)
-    zdim: float = 0.0        # vertical dimension (m)
-    rcentr: float = 0.0      # reference R for vacuum toroidal field (m)
-    rleft: float = 0.0       # R at left of computational domain (m)
-    zmid: float = 0.0        # Z at centre of computational domain (m)
-    rmaxis: float = 0.0      # R of magnetic axis (m)
-    zmaxis: float = 0.0      # Z of magnetic axis (m)
-    simag: float = 0.0       # ψ at magnetic axis (Wb/rad)
-    sibry: float = 0.0       # ψ at plasma boundary (Wb/rad)
-    bcentr: float = 0.0      # vacuum toroidal field at rcentr (T)
-    current: float = 0.0     # plasma current (A)
+    rdim: float = 0.0  # horizontal dimension (m)
+    zdim: float = 0.0  # vertical dimension (m)
+    rcentr: float = 0.0  # reference R for vacuum toroidal field (m)
+    rleft: float = 0.0  # R at left of computational domain (m)
+    zmid: float = 0.0  # Z at centre of computational domain (m)
+    rmaxis: float = 0.0  # R of magnetic axis (m)
+    zmaxis: float = 0.0  # Z of magnetic axis (m)
+    simag: float = 0.0  # ψ at magnetic axis (Wb/rad)
+    sibry: float = 0.0  # ψ at plasma boundary (Wb/rad)
+    bcentr: float = 0.0  # vacuum toroidal field at rcentr (T)
+    current: float = 0.0  # plasma current (A)
 
     # 1-D profile arrays (length nw)
     fpol: NDArray[np.float64] = field(default_factory=lambda: np.array([], dtype=np.float64))
@@ -90,9 +91,7 @@ class GEqdsk:
     @property
     def z(self) -> NDArray[np.float64]:
         """1-D array of Z grid values."""
-        return np.linspace(
-            self.zmid - self.zdim / 2, self.zmid + self.zdim / 2, self.nh
-        )
+        return np.linspace(self.zmid - self.zdim / 2, self.zmid + self.zdim / 2, self.nh)
 
     @property
     def psi_norm(self) -> NDArray[np.float64]:
@@ -134,9 +133,7 @@ class GEqdsk:
 # Regex that matches Fortran-style floats: optional sign, digits,
 # optional decimal, optional exponent.  Handles the common case where
 # two values like "2.385E+00-1.216E+01" run together (no whitespace).
-_FORTRAN_FLOAT_RE = re.compile(
-    r"[+-]?\d*\.?\d+(?:[eEdD][+-]?\d+)?"
-)
+_FORTRAN_FLOAT_RE = re.compile(r"[+-]?\d*\.?\d+(?:[eEdD][+-]?\d+)?")
 
 
 def _split_fortran(line: str) -> list[str]:
@@ -194,8 +191,7 @@ def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
     def _read_array(n: int) -> NDArray[np.float64]:
         nonlocal idx
         arr = np.array(
-            [float(tokens[idx + i].replace("D", "E").replace("d", "e"))
-             for i in range(n)]
+            [float(tokens[idx + i].replace("D", "E").replace("d", "e")) for i in range(n)]
         )
         idx += n
         return arr
@@ -280,6 +276,7 @@ def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
 
 # ── Writer ────────────────────────────────────────────────────────────
 
+
 def write_geqdsk(eq: GEqdsk, path: Union[str, Path]) -> None:
     """
     Write a :class:`GEqdsk` to a G-EQDSK file.
@@ -311,10 +308,26 @@ def write_geqdsk(eq: GEqdsk, path: Union[str, Path]) -> None:
 
         # Scalars (20 values, 5 per line)
         scalars = [
-            eq.rdim, eq.zdim, eq.rcentr, eq.rleft, eq.zmid,
-            eq.rmaxis, eq.zmaxis, eq.simag, eq.sibry, eq.bcentr,
-            eq.current, eq.simag, 0.0, eq.rmaxis, 0.0,
-            eq.zmaxis, 0.0, eq.sibry, 0.0, 0.0,
+            eq.rdim,
+            eq.zdim,
+            eq.rcentr,
+            eq.rleft,
+            eq.zmid,
+            eq.rmaxis,
+            eq.zmaxis,
+            eq.simag,
+            eq.sibry,
+            eq.bcentr,
+            eq.current,
+            eq.simag,
+            0.0,
+            eq.rmaxis,
+            0.0,
+            eq.zmaxis,
+            0.0,
+            eq.sibry,
+            0.0,
+            0.0,
         ]
         for i, v in enumerate(scalars):
             f.write(_fmt(v))

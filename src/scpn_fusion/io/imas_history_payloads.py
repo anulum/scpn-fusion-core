@@ -73,9 +73,7 @@ def validate_ids_payload_sequence(payloads: Sequence[Mapping[str, Any]]) -> None
             baseline_run = run
         else:
             if machine != baseline_machine:
-                raise ValueError(
-                    "All IDS payloads in sequence must share the same machine."
-                )
+                raise ValueError("All IDS payloads in sequence must share the same machine.")
             if shot != baseline_shot:
                 raise ValueError("All IDS payloads in sequence must share the same shot.")
             if run != baseline_run:
@@ -188,7 +186,10 @@ def validate_ids_pulse_payload(pulse: Mapping[str, Any]) -> None:
     for idx, payload in enumerate(slices):
         if str(payload.get("machine", "")).strip() != machine:
             raise ValueError(f"pulse.time_slices[{idx}].machine does not match pulse.machine.")
-        if c._coerce_int(f"pulse.time_slices[{idx}].shot", payload.get("shot", 0), minimum=0) != shot:
+        if (
+            c._coerce_int(f"pulse.time_slices[{idx}].shot", payload.get("shot", 0), minimum=0)
+            != shot
+        ):
             raise ValueError(f"pulse.time_slices[{idx}].shot does not match pulse.shot.")
         if c._coerce_int(f"pulse.time_slices[{idx}].run", payload.get("run", 0), minimum=0) != run:
             raise ValueError(f"pulse.time_slices[{idx}].run does not match pulse.run.")

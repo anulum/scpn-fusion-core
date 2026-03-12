@@ -110,9 +110,7 @@ def _safe_exp_from_log(log_value: float, *, name: str) -> float:
     if not np.isfinite(log_value):
         raise ValueError(f"{name} became non-finite in log space")
     if log_value > _SAFE_LOG_MAX or log_value < _SAFE_LOG_MIN:
-        raise ValueError(
-            f"{name} outside numerically stable range (log={log_value:.2f})"
-        )
+        raise ValueError(f"{name} outside numerically stable range (log={log_value:.2f})")
     out = float(np.exp(log_value))
     if not np.isfinite(out) or out <= 0.0:
         raise ValueError(f"{name} is non-finite after exponentiation")
@@ -122,22 +120,24 @@ def _safe_exp_from_log(log_value: float, *, name: str) -> float:
 @dataclass
 class PlasmaScenario:
     """Input plasma parameters for a confinement prediction."""
-    I_p: float        # Plasma current (MA)
-    B_t: float        # Toroidal field (T)
-    P_heat: float     # Total heating power (MW)
-    n_e: float        # Line-average electron density (10^19 m^-3)
-    R: float          # Major radius (m)
-    A: float          # Aspect ratio R/a
-    kappa: float      # Elongation
-    M: float = 2.5    # Effective ion mass (AMU, 2.5 for D-T)
+
+    I_p: float  # Plasma current (MA)
+    B_t: float  # Toroidal field (T)
+    P_heat: float  # Total heating power (MW)
+    n_e: float  # Line-average electron density (10^19 m^-3)
+    R: float  # Major radius (m)
+    A: float  # Aspect ratio R/a
+    kappa: float  # Elongation
+    M: float = 2.5  # Effective ion mass (AMU, 2.5 for D-T)
 
 
 @dataclass
 class UQResult:
     """Uncertainty-quantified prediction result."""
-    tau_E: float          # Confinement time (s)
-    P_fusion: float       # Fusion power (MW)
-    Q: float              # Fusion gain Q = P_fus / P_heat
+
+    tau_E: float  # Confinement time (s)
+    P_fusion: float  # Fusion power (MW)
+    Q: float  # Fusion gain Q = P_fus / P_heat
 
     tau_E_sigma: float
     P_fusion_sigma: float
@@ -151,8 +151,7 @@ class UQResult:
     n_samples: int = 0
 
 
-def ipb98_tau_e(scenario: PlasmaScenario,
-                params: Optional[dict] = None) -> float:
+def ipb98_tau_e(scenario: PlasmaScenario, params: Optional[dict] = None) -> float:
     """
     Compute IPB98(y,2) confinement time for given plasma parameters.
 
@@ -191,14 +190,14 @@ def ipb98_tau_e(scenario: PlasmaScenario,
 
     log_tau = (
         np.log(c)
-        + float(p['alpha_I']) * np.log(scenario.I_p)
-        + float(p['alpha_B']) * np.log(scenario.B_t)
-        + float(p['alpha_P']) * np.log(scenario.P_heat)
-        + float(p['alpha_n']) * np.log(scenario.n_e)
-        + float(p['alpha_R']) * np.log(scenario.R)
-        + float(p['alpha_A']) * np.log(scenario.A)
-        + float(p['alpha_kappa']) * np.log(scenario.kappa)
-        + float(p['alpha_M']) * np.log(scenario.M)
+        + float(p["alpha_I"]) * np.log(scenario.I_p)
+        + float(p["alpha_B"]) * np.log(scenario.B_t)
+        + float(p["alpha_P"]) * np.log(scenario.P_heat)
+        + float(p["alpha_n"]) * np.log(scenario.n_e)
+        + float(p["alpha_R"]) * np.log(scenario.R)
+        + float(p["alpha_A"]) * np.log(scenario.A)
+        + float(p["alpha_kappa"]) * np.log(scenario.kappa)
+        + float(p["alpha_M"]) * np.log(scenario.M)
     )
     return _safe_exp_from_log(float(log_tau), name="ipb98_tau_e")
 
@@ -217,8 +216,7 @@ def _dt_reactivity(Ti_keV):
     _C2, _C3 = 1.51361e-2, 7.51886e-2
     _C4, _C5 = 4.60643e-3, 1.35000e-2
     _C6, _C7 = -1.06750e-4, 1.36600e-5
-    theta = T / (1.0 - T * (_C2 + T * (_C4 + T * _C6))
-                 / (1.0 + T * (_C3 + T * (_C5 + T * _C7))))
+    theta = T / (1.0 - T * (_C2 + T * (_C4 + T * _C6)) / (1.0 + T * (_C3 + T * (_C5 + T * _C7))))
     xi = (_BG2 / (4.0 * theta)) ** (1.0 / 3.0)
     # Formula yields cm^3/s; convert to m^3/s
     sv = _C1 * theta * np.sqrt(xi / (_MRC2 * T**3)) * np.exp(-3.0 * xi) * 1e-6
@@ -260,9 +258,9 @@ def fusion_power_from_tau(scenario: PlasmaScenario, tau_E: float) -> float:
     return float(pfus_mw)
 
 
-def quantify_uncertainty(scenario: PlasmaScenario,
-                         n_samples: int = 10000,
-                         seed: Optional[int] = None) -> UQResult:
+def quantify_uncertainty(
+    scenario: PlasmaScenario, n_samples: int = 10000, seed: Optional[int] = None
+) -> UQResult:
     """
     Monte Carlo uncertainty quantification for fusion performance.
 
@@ -296,8 +294,8 @@ def quantify_uncertainty(scenario: PlasmaScenario,
         for key in IPB98_CENTRAL:
             params[key] = rng.normal(IPB98_CENTRAL[key], IPB98_SIGMA[key])
 
-        params['C'] = max(params['C'], 1e-4)
-        params['alpha_P'] = min(params['alpha_P'], -0.1)
+        params["C"] = max(params["C"], 1e-4)
+        params["alpha_P"] = min(params["alpha_P"], -0.1)
 
         tau = ipb98_tau_e(scenario, params)
         tau = max(tau, 1e-6)
@@ -324,7 +322,8 @@ def quantify_uncertainty(scenario: PlasmaScenario,
         Q_sigma=float(np.std(q_samples)),
         tau_E_percentiles=np.asarray(np.percentile(tau_samples, pcts), dtype=float),
         P_fusion_percentiles=np.asarray(
-            np.percentile(pfus_samples, pcts), dtype=float,
+            np.percentile(pfus_samples, pcts),
+            dtype=float,
         ),
         Q_percentiles=np.asarray(np.percentile(q_samples, pcts), dtype=float),
         n_samples=n_samples,

@@ -80,10 +80,7 @@ def estimate_core_edge_match_proxy(tau_pred_s: float, beta_pred: float) -> float
 
 
 def _mean_abs_relative_pct(y_true: list[float], y_pred: list[float]) -> float:
-    rel = [
-        abs(t - p) / max(abs(t), 1e-9) * 100.0
-        for t, p in zip(y_true, y_pred)
-    ]
+    rel = [abs(t - p) / max(abs(t), 1e-9) * 100.0 for t, p in zip(y_true, y_pred)]
     return float(statistics.mean(rel))
 
 

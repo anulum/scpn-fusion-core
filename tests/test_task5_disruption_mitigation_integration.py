@@ -49,9 +49,7 @@ def test_task5_campaign_passes_thresholds_smoke() -> None:
         ({"mpc_steps_per_episode": 8}, "mpc_steps_per_episode"),
     ],
 )
-def test_task5_campaign_rejects_invalid_inputs(
-    kwargs: dict[str, int], match: str
-) -> None:
+def test_task5_campaign_rejects_invalid_inputs(kwargs: dict[str, int], match: str) -> None:
     with pytest.raises(ValueError, match=match):
         task5_disruption_mitigation_integration.run_campaign(**kwargs)
 

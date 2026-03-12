@@ -4,10 +4,10 @@
 # ─────────────────────────────────────────────────────────────────────
 import logging
 import sys
-from pathlib import Path
 import argparse
 
 logger = logging.getLogger(__name__)
+
 
 def run():
     try:
@@ -19,7 +19,9 @@ def run():
     parser = argparse.ArgumentParser(description="Rust-Native High-Speed Flight Sim")
     parser.add_argument("--hz", type=float, default=10000.0, help="Control frequency (Hz)")
     parser.add_argument("--duration", type=float, default=30.0, help="Shot duration (s)")
-    parser.add_argument("--deterministic", action="store_true", help="Enable high-precision busy-wait loop")
+    parser.add_argument(
+        "--deterministic", action="store_true", help="Enable high-precision busy-wait loop"
+    )
     args = parser.parse_args()
 
     logger.info("--- Initiating Rust-Native Flight Sim (%.0f Hz) ---", args.hz)
@@ -34,6 +36,7 @@ def run():
     logger.info("  Avg Latency: %.2f us", report.wall_time_ms * 1000 / report.steps)
     logger.info("  Mean R Error: %.6f", report.mean_abs_r_error)
     logger.info("  Disrupted: %s", report.disrupted)
+
 
 if __name__ == "__main__":
     run()

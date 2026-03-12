@@ -83,9 +83,7 @@ class PlasmaTomography:
         """
         b = np.asarray(signals, dtype=np.float64).reshape(-1)
         if b.size != self.A.shape[0]:
-            raise ValueError(
-                f"signals length mismatch: expected {self.A.shape[0]}, got {b.size}."
-            )
+            raise ValueError(f"signals length mismatch: expected {self.A.shape[0]}, got {b.size}.")
         # Condition signals
         b = np.nan_to_num(b, nan=0.0, posinf=0.0, neginf=0.0)
         b = np.maximum(b, 0.0)
@@ -100,41 +98,41 @@ class PlasmaTomography:
             b_aug = np.concatenate([b, np.zeros(self.n_pixels, dtype=np.float64)])
             res = lsq_linear(A_aug, b_aug, bounds=(0.0, np.inf), tol=1e-4)
             x = np.asarray(res.x, dtype=np.float64)
-            
+
         elif method == "sart":
             # Iterative Reconstruction (Simultaneous Algebraic Reconstruction Technique)
             # x_new = x_old + lambda * A.T * (b - A*x_old) / (A.T * A * 1)
             x = np.zeros(self.n_pixels, dtype=np.float64)
             n_iters = 50
             relax = 0.1
-            
+
             # Precompute weights for SART
-            v = np.sum(self.A, axis=0) # Column sums
-            h = np.sum(self.A, axis=1) # Row sums
-            v = np.where(v > 0, 1.0/v, 0.0)
-            h = np.where(h > 0, 1.0/h, 0.0)
-            
+            v = np.sum(self.A, axis=0)  # Column sums
+            h = np.sum(self.A, axis=1)  # Row sums
+            v = np.where(v > 0, 1.0 / v, 0.0)
+            h = np.where(h > 0, 1.0 / h, 0.0)
+
             for _ in range(n_iters):
                 # Back-projection of error
                 error = b - self.A @ x
                 update = self.A.T @ (h * error)
                 x += relax * v * update
-                x = np.maximum(x, 0.0) # Non-negativity constraint
-                
+                x = np.maximum(x, 0.0)  # Non-negativity constraint
+
         else:
             # Analytic Ridge fallback
             lam = self.lambda_reg
             L = np.eye(self.n_pixels, dtype=np.float64) * 4.0
             idx = np.arange(self.n_pixels)
             mask_l = (idx % self.res) > 0
-            L[idx[mask_l], idx[mask_l]-1] = -1.0
+            L[idx[mask_l], idx[mask_l] - 1] = -1.0
             mask_r = (idx % self.res) < (self.res - 1)
-            L[idx[mask_r], idx[mask_r]+1] = -1.0
+            L[idx[mask_r], idx[mask_r] + 1] = -1.0
             mask_d = idx >= self.res
-            L[idx[mask_d], idx[mask_d]-self.res] = -1.0
+            L[idx[mask_d], idx[mask_d] - self.res] = -1.0
             mask_u = idx < (self.n_pixels - self.res)
-            L[idx[mask_u], idx[mask_u]+self.res] = -1.0
-            
+            L[idx[mask_u], idx[mask_u] + self.res] = -1.0
+
             lhs = self.A.T @ self.A + lam * (L.T @ L)
             rhs = self.A.T @ b
             try:

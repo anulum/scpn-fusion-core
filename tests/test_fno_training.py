@@ -20,6 +20,7 @@ from scpn_fusion.core.fno_turbulence_suppressor import (
 
 try:
     import jax
+
     HAS_JAX = True
 except ImportError:
     HAS_JAX = False

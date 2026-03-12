@@ -49,9 +49,7 @@ def _rmse_percent(truth: NDArray[np.float64], pred: NDArray[np.float64]) -> floa
     if truth.shape != pred.shape or truth.size == 0:
         raise ValueError("truth/pred arrays must be non-empty and same shape.")
     return float(
-        100.0
-        * np.sqrt(np.mean((pred - truth) ** 2))
-        / max(float(np.mean(np.abs(truth))), 1e-12)
+        100.0 * np.sqrt(np.mean((pred - truth) ** 2)) / max(float(np.mean(np.abs(truth))), 1e-12)
     )
 
 

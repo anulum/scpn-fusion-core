@@ -335,7 +335,7 @@ def test_main_honors_skip_flags(monkeypatch):
         (
             ["python-test", "tools/run_mypy_strict.py"],
             SCRIPT_PATH.resolve().parents[1],
-        )
+        ),
     ]
 
 

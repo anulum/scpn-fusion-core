@@ -212,7 +212,7 @@ class TestDynamicBurnModel:
         assert "scan_results" in result
         assert "best" in result
         assert len(result["scan_results"]) > 0
-        print(f"\n=== Q-10 Scan Result ===")
+        print("\n=== Q-10 Scan Result ===")
         print(f"    Best Q:     {result['best']['Q_final']:.1f}")
         print(f"    P_aux:      {result['best']['P_aux_MW']:.0f} MW")
         print(f"    P_fus:      {result['best']['P_fus_final_MW']:.0f} MW")

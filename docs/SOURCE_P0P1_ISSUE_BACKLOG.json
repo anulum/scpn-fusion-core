@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-11T23:43:59.056561+00:00",
+  "generated_at": "2026-03-12T01:53:11.897470+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
-  "issue_count": 4,
+  "issue_count": 6,
   "issues": [
     {
       "acceptance_checklist": [
@@ -133,6 +133,47 @@
       ],
       "closure_metrics": [
         "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 85.0% (tools/coverage_guard.py).",
+        "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
+      ],
+      "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/integrated_transport_solver.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/integrated_transport_solver.py`\n- Priority: `P0` (score `101`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `MONOLITH`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Split module into focused subcomponents and lock interface contracts.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 85.0% (tools/coverage_guard.py).\n- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "core_physics"
+      ],
+      "github_title": "[P0] Harden src/scpn_fusion/core/integrated_transport_solver.py",
+      "issue_slug": "p0-core-integrated_transport_solver",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "core_physics"
+      ],
+      "markers": [
+        "MONOLITH"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P0",
+      "proposed_actions": [
+        "Split module into focused subcomponents and lock interface contracts."
+      ],
+      "score": 101,
+      "title": "[P0] Harden src/scpn_fusion/core/integrated_transport_solver.py",
+      "trigger_lines": [
+        1
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
         "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
         "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
       ],
@@ -163,6 +204,47 @@
       ],
       "score": 101,
       "title": "[P0] Harden src/scpn_fusion/core/tglf_interface.py",
+      "trigger_lines": [
+        1
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 79.0% (tools/coverage_guard.py).",
+        "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
+      ],
+      "domain": "diagnostics_io",
+      "file_path": "src/scpn_fusion/io/tokamak_archive.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/io/tokamak_archive.py`\n- Priority: `P0` (score `99`)\n- Domain: `diagnostics_io`\n- Owner hint: `Diagnostics/IO WG`\n- Markers: `MONOLITH`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Split module into focused subcomponents and lock interface contracts.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 79.0% (tools/coverage_guard.py).\n- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "diagnostics_io"
+      ],
+      "github_title": "[P0] Harden src/scpn_fusion/io/tokamak_archive.py",
+      "issue_slug": "p0-io-tokamak_archive",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "diagnostics_io"
+      ],
+      "markers": [
+        "MONOLITH"
+      ],
+      "owner_hint": "Diagnostics/IO WG",
+      "priority": "P0",
+      "proposed_actions": [
+        "Split module into focused subcomponents and lock interface contracts."
+      ],
+      "score": 99,
+      "title": "[P0] Harden src/scpn_fusion/io/tokamak_archive.py",
       "trigger_lines": [
         1
       ]

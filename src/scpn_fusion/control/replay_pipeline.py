@@ -61,9 +61,7 @@ def load_replay_pipeline_config(
         "sensor_clip_sigma": _require_finite_float_ge(
             "sensor_clip_sigma", cfg["sensor_clip_sigma"], 0.0
         ),
-        "actuator_lag_enabled": _require_bool(
-            "actuator_lag_enabled", cfg["actuator_lag_enabled"]
-        ),
+        "actuator_lag_enabled": _require_bool("actuator_lag_enabled", cfg["actuator_lag_enabled"]),
         "actuator_tau_s": _require_finite_float_ge("actuator_tau_s", cfg["actuator_tau_s"], 1e-9),
         "actuator_slew_per_s": _require_finite_float_ge(
             "actuator_slew_per_s", cfg["actuator_slew_per_s"], 1e-9
@@ -169,4 +167,3 @@ __all__ = [
     "load_replay_pipeline_config",
     "preprocess_sensor_trace",
 ]
-

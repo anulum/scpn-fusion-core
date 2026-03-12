@@ -83,9 +83,7 @@ def test_higher_li6_enrichment_increases_volumetric_tbr() -> None:
     low = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.5)
     high = BreedingBlanket(thickness_cm=80.0, li6_enrichment=0.95)
 
-    low_report = low.calculate_volumetric_tbr(
-        radial_cells=8, poloidal_cells=16, toroidal_cells=12
-    )
+    low_report = low.calculate_volumetric_tbr(radial_cells=8, poloidal_cells=16, toroidal_cells=12)
     high_report = high.calculate_volumetric_tbr(
         radial_cells=8, poloidal_cells=16, toroidal_cells=12
     )

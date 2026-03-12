@@ -12,7 +12,6 @@ risk detector using predict_disruption_risk. Asserts recall and FPR.
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from scpn_fusion.control.disruption_risk_runtime import predict_disruption_risk
 

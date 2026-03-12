@@ -234,15 +234,15 @@ def _load_sparc_geqdsk_cases() -> list[dict[str, Any]]:
         feature_vector_full = np.array(
             [
                 float(eq.current / 1e6),  # Ip [MA]
-                float(eq.bcentr),         # Bt [T]
-                float(eq.rmaxis),         # R_axis [m]
-                float(eq.zmaxis),         # Z_axis [m]
-                1.0,                      # pprime scale
-                1.0,                      # ffprime scale
-                float(eq.simag),          # psi axis
-                float(eq.sibry),          # psi boundary
-                float(kappa),             # elongation
-                0.3,                      # triangularity proxies
+                float(eq.bcentr),  # Bt [T]
+                float(eq.rmaxis),  # R_axis [m]
+                float(eq.zmaxis),  # Z_axis [m]
+                1.0,  # pprime scale
+                1.0,  # ffprime scale
+                float(eq.simag),  # psi axis
+                float(eq.sibry),  # psi boundary
+                float(kappa),  # elongation
+                0.3,  # triangularity proxies
                 0.3,
                 float(q95),
             ],

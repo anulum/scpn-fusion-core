@@ -35,7 +35,7 @@ from scpn_fusion.core.stability_mhd import (
 NR = 50
 RHO = np.linspace(0, 1, NR)
 R0 = 6.2  # m
-A = 2.0   # m
+A = 2.0  # m
 B0 = 5.3  # T
 IP_MA = 15.0  # MA
 
@@ -43,7 +43,7 @@ IP_MA = 15.0  # MA
 def _flat_profiles():
     """Low-pressure profiles (flat, no gradient -> stable)."""
     ne = 10.0 * np.ones(NR)  # 10^19 m^-3
-    Ti = 1.0 * np.ones(NR)   # keV (flat -> no gradient)
+    Ti = 1.0 * np.ones(NR)  # keV (flat -> no gradient)
     Te = 1.0 * np.ones(NR)
     return ne, Ti, Te
 
@@ -65,6 +65,7 @@ def _extreme_pressure_profiles():
 
 
 # ── Q-profile tests ──────────────────────────────────────────────
+
 
 def test_q_profile_monotonic():
     """q should increase from axis to edge for a parabolic current."""
@@ -114,6 +115,7 @@ def test_q_profile_shape_correction_changes_q_level():
 
 # ── Mercier tests ────────────────────────────────────────────────
 
+
 def test_mercier_stable_low_pressure():
     """Flat pressure (no gradient) -> all Mercier-stable."""
     ne, Ti, Te = _flat_profiles()
@@ -137,6 +139,7 @@ def test_mercier_detects_instability():
 
 
 # ── Ballooning tests ─────────────────────────────────────────────
+
 
 def test_ballooning_alpha_crit_positive():
     """Critical alpha must be >= 0 everywhere."""
@@ -164,6 +167,7 @@ def test_ballooning_unstable_high_beta():
 
 
 # ── Integration test ─────────────────────────────────────────────
+
 
 def test_stability_analyzer_integration(tmp_path: Path):
     """Full pipeline: equilibrium -> q-profile -> Mercier -> ballooning."""
@@ -197,6 +201,7 @@ def test_stability_analyzer_integration(tmp_path: Path):
 
 # ── Kruskal-Shafranov tests ────────────────────────────────────────
 
+
 def test_ks_stable_high_q_edge():
     """q_edge = 3 (typical tokamak) -> KS stable."""
     ne, Ti, Te = _parabolic_profiles()
@@ -217,8 +222,13 @@ def test_ks_unstable_low_q_edge():
     shear = np.zeros(20)
     alpha = np.zeros(20)
     qp = QProfile(
-        rho=rho, q=q, shear=shear, alpha_mhd=alpha,
-        q_min=0.6, q_min_rho=0.0, q_edge=0.8,
+        rho=rho,
+        q=q,
+        shear=shear,
+        alpha_mhd=alpha,
+        q_min=0.6,
+        q_min_rho=0.0,
+        q_edge=0.8,
     )
     ks = kruskal_shafranov_stability(qp)
     assert ks.stable is False
@@ -230,8 +240,13 @@ def test_ks_marginal():
     """q_edge exactly 1 is NOT stable (strict inequality q > 1)."""
     rho = np.linspace(0, 1, 10)
     qp = QProfile(
-        rho=rho, q=np.ones(10), shear=np.zeros(10),
-        alpha_mhd=np.zeros(10), q_min=1.0, q_min_rho=0.0, q_edge=1.0,
+        rho=rho,
+        q=np.ones(10),
+        shear=np.zeros(10),
+        alpha_mhd=np.zeros(10),
+        q_min=1.0,
+        q_min_rho=0.0,
+        q_edge=1.0,
     )
     ks = kruskal_shafranov_stability(qp)
     assert ks.stable is False
@@ -240,15 +255,19 @@ def test_ks_marginal():
 
 # ── Troyon beta limit tests ────────────────────────────────────────
 
+
 def test_troyon_iter_like_stable():
     """ITER-like: beta_t=2.5%, Ip=15MA, a=2m, B0=5.3T -> beta_N~1.8 < 2.8."""
     tr = troyon_beta_limit(
-        beta_t=0.025, Ip_MA=15.0, a=2.0, B0=5.3,
+        beta_t=0.025,
+        Ip_MA=15.0,
+        a=2.0,
+        B0=5.3,
     )
     assert isinstance(tr, TroyonResult)
-    assert tr.beta_N < tr.beta_N_crit_nowall, (
-        f"beta_N={tr.beta_N:.2f} should be < g_nowall={tr.beta_N_crit_nowall}"
-    )
+    assert (
+        tr.beta_N < tr.beta_N_crit_nowall
+    ), f"beta_N={tr.beta_N:.2f} should be < g_nowall={tr.beta_N_crit_nowall}"
     assert tr.stable_nowall is True
     assert tr.stable_wall is True
     assert tr.margin_nowall > 0.0
@@ -257,7 +276,10 @@ def test_troyon_iter_like_stable():
 def test_troyon_high_beta_unstable():
     """Very high beta_t = 10% with low current -> beta_N well above limit."""
     tr = troyon_beta_limit(
-        beta_t=0.10, Ip_MA=5.0, a=2.0, B0=5.3,
+        beta_t=0.10,
+        Ip_MA=5.0,
+        a=2.0,
+        B0=5.3,
     )
     # I_N = 5/(2*5.3) ~ 0.47;  beta_N = 100*0.10/0.47 ~ 21 >> 2.8
     assert tr.beta_N > tr.beta_N_crit_nowall
@@ -269,8 +291,12 @@ def test_troyon_high_beta_unstable():
 def test_troyon_custom_g():
     """Custom Troyon coefficients are respected."""
     tr = troyon_beta_limit(
-        beta_t=0.025, Ip_MA=15.0, a=2.0, B0=5.3,
-        g_nowall=1.0, g_wall=1.5,
+        beta_t=0.025,
+        Ip_MA=15.0,
+        a=2.0,
+        B0=5.3,
+        g_nowall=1.0,
+        g_wall=1.5,
     )
     assert tr.beta_N_crit_nowall == pytest.approx(1.0)
     assert tr.beta_N_crit_wall == pytest.approx(1.5)
@@ -289,6 +315,7 @@ def test_troyon_beta_n_formula():
 
 
 # ── NTM stability tests ────────────────────────────────────────────
+
 
 def test_ntm_zero_bootstrap():
     """Zero bootstrap current -> no NTM drive anywhere."""
@@ -334,12 +361,11 @@ def test_ntm_classically_unstable_no_ntm():
     # With positive r_s_delta_prime, the classical mode is already unstable
     # but the NTM bootstrap mechanism flag should not trigger
     ntm = ntm_stability(qp, j_bs, j_total, a=A, r_s_delta_prime=2.0)
-    assert not np.any(ntm.ntm_unstable), (
-        "Classically unstable (delta'>0) should not flag as NTM"
-    )
+    assert not np.any(ntm.ntm_unstable), "Classically unstable (delta'>0) should not flag as NTM"
 
 
 # ── Full stability check tests ─────────────────────────────────────
+
 
 def test_full_stability_check_three_criteria():
     """Without optional params, only 3 criteria are checked."""
@@ -361,8 +387,12 @@ def test_full_stability_check_all_five():
     j_total = 1e6 * np.ones(NR)
     summary = run_full_stability_check(
         qp,
-        beta_t=0.025, Ip_MA=IP_MA, a=A, B0=B0,
-        j_bs=j_bs, j_total=j_total,
+        beta_t=0.025,
+        Ip_MA=IP_MA,
+        a=A,
+        B0=B0,
+        j_bs=j_bs,
+        j_total=j_total,
     )
     assert summary.n_criteria_checked == 6  # Mercier, Ballooning, KS, Troyon, NTM, RWM
     assert summary.troyon is not None
@@ -378,8 +408,12 @@ def test_full_stability_low_pressure_stable():
     j_total = 1e6 * np.ones(NR)
     summary = run_full_stability_check(
         qp,
-        beta_t=0.005, Ip_MA=IP_MA, a=A, B0=B0,
-        j_bs=j_bs, j_total=j_total,
+        beta_t=0.005,
+        Ip_MA=IP_MA,
+        a=A,
+        B0=B0,
+        j_bs=j_bs,
+        j_total=j_total,
     )
     # KS should be stable (q_edge > 1 for ITER-like)
     assert summary.kruskal_shafranov.stable
@@ -407,12 +441,18 @@ def test_full_stability_counts():
 
 # ── Peeling-ballooning tests ──────────────────────────────────────
 
+
 def test_pb_stable_low_pedestal():
     """Low pedestal pressure + low edge current -> PB stable."""
     ne, Ti, Te = _parabolic_profiles()
     qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA)
     pb = peeling_ballooning_stability(
-        qp, j_edge=1e4, p_ped_Pa=5e3, R0=R0, a=A, B0=B0,
+        qp,
+        j_edge=1e4,
+        p_ped_Pa=5e3,
+        R0=R0,
+        a=A,
+        B0=B0,
     )
     assert isinstance(pb, PeelingBallooningResult)
     assert pb.stable is True
@@ -425,7 +465,12 @@ def test_pb_unstable_high_pressure():
     ne, Ti, Te = _parabolic_profiles()
     qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA)
     pb = peeling_ballooning_stability(
-        qp, j_edge=1e4, p_ped_Pa=5e6, R0=R0, a=A, B0=B0,
+        qp,
+        j_edge=1e4,
+        p_ped_Pa=5e6,
+        R0=R0,
+        a=A,
+        B0=B0,
     )
     assert pb.stable is False
     assert pb.stability_distance < 0.0
@@ -437,7 +482,12 @@ def test_pb_unstable_high_edge_current():
     ne, Ti, Te = _parabolic_profiles()
     qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA)
     pb = peeling_ballooning_stability(
-        qp, j_edge=1e8, p_ped_Pa=1e3, R0=R0, a=A, B0=B0,
+        qp,
+        j_edge=1e8,
+        p_ped_Pa=1e3,
+        R0=R0,
+        a=A,
+        B0=B0,
     )
     assert pb.stable is False
     assert pb.elm_type == "type_III"
@@ -448,10 +498,24 @@ def test_pb_shaping_increases_stability():
     ne, Ti, Te = _parabolic_profiles()
     qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA, kappa=1.7, delta=0.3)
     pb_low = peeling_ballooning_stability(
-        qp, j_edge=5e5, p_ped_Pa=1e5, R0=R0, a=A, B0=B0, kappa=1.0, delta=0.0,
+        qp,
+        j_edge=5e5,
+        p_ped_Pa=1e5,
+        R0=R0,
+        a=A,
+        B0=B0,
+        kappa=1.0,
+        delta=0.0,
     )
     pb_high = peeling_ballooning_stability(
-        qp, j_edge=5e5, p_ped_Pa=1e5, R0=R0, a=A, B0=B0, kappa=2.0, delta=0.4,
+        qp,
+        j_edge=5e5,
+        p_ped_Pa=1e5,
+        R0=R0,
+        a=A,
+        B0=B0,
+        kappa=2.0,
+        delta=0.4,
     )
     assert pb_high.stability_distance > pb_low.stability_distance
 
@@ -461,7 +525,12 @@ def test_pb_normalised_coordinates_positive():
     ne, Ti, Te = _parabolic_profiles()
     qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA)
     pb = peeling_ballooning_stability(
-        qp, j_edge=3e5, p_ped_Pa=5e4, R0=R0, a=A, B0=B0,
+        qp,
+        j_edge=3e5,
+        p_ped_Pa=5e4,
+        R0=R0,
+        a=A,
+        B0=B0,
     )
     assert pb.j_edge_norm >= 0.0
     assert pb.alpha_edge_norm >= 0.0
@@ -475,9 +544,15 @@ def test_full_stability_with_pb():
     j_total = 1e6 * np.ones(NR)
     summary = run_full_stability_check(
         qp,
-        beta_t=0.025, Ip_MA=IP_MA, a=A, B0=B0, R0=R0,
-        j_bs=j_bs, j_total=j_total,
-        j_edge=1e4, p_ped_Pa=5e3,
+        beta_t=0.025,
+        Ip_MA=IP_MA,
+        a=A,
+        B0=B0,
+        R0=R0,
+        j_bs=j_bs,
+        j_total=j_total,
+        j_edge=1e4,
+        p_ped_Pa=5e3,
     )
     # 3 base + Troyon + NTM + RWM + PB = 7
     assert summary.n_criteria_checked == 7

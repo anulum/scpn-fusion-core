@@ -14,9 +14,7 @@ from scpn_fusion.core.fusion_kernel_numerics import (
 class FusionKernelIterativeSolverMixin:
     # ── elliptic sub-solvers ──────────────────────────────────────────
 
-    def _jacobi_step(
-        self, Psi: FloatArray, Source: FloatArray
-    ) -> FloatArray:
+    def _jacobi_step(self, Psi: FloatArray, Source: FloatArray) -> FloatArray:
         """Perform one cylindrical Jacobi iteration on the interior grid.
 
         Parameters
@@ -35,8 +33,8 @@ class FusionKernelIterativeSolverMixin:
         Source = _sanitize_numeric_array(Source)
         Psi_new = Psi.copy()
 
-        dR2 = self.dR ** 2
-        dZ2 = self.dZ ** 2
+        dR2 = self.dR**2
+        dZ2 = self.dZ**2
 
         R_int = self.RR[1:-1, 1:-1]
         R_safe = np.maximum(R_int, 1e-10)
@@ -92,8 +90,8 @@ class FusionKernelIterativeSolverMixin:
         Psi_new = _sanitize_numeric_array(Psi)
         Source = _sanitize_numeric_array(Source)
         NZ, NR = Psi.shape
-        dR2 = self.dR ** 2
-        dZ2 = self.dZ ** 2
+        dR2 = self.dR**2
+        dZ2 = self.dZ**2
 
         # Toroidal stencil coefficients (arrays over interior grid)
         R_int = self.RR[1:-1, 1:-1]
@@ -104,7 +102,7 @@ class FusionKernelIterativeSolverMixin:
         a_C = 2.0 / dR2 + 2.0 / dZ2  # scalar
 
         # Checkerboard mask for interior points
-        ii, jj = np.mgrid[1:NZ - 1, 1:NR - 1]
+        ii, jj = np.mgrid[1 : NZ - 1, 1 : NR - 1]
 
         for parity in (0, 1):  # 0 = red, 1 = black
             mask = ((ii + jj) % 2) == parity
@@ -145,10 +143,19 @@ class FusionKernelIterativeSolverMixin:
         # Interior: vectorised 9-point stencil via even-index slicing
         coarse[1:-1, 1:-1] = (
             4.0 * fine[2:-2:2, 2:-2:2]
-            + 2.0 * (fine[1:-3:2, 2:-2:2] + fine[3:-1:2, 2:-2:2]
-                     + fine[2:-2:2, 1:-3:2] + fine[2:-2:2, 3:-1:2])
-            + (fine[1:-3:2, 1:-3:2] + fine[1:-3:2, 3:-1:2]
-               + fine[3:-1:2, 1:-3:2] + fine[3:-1:2, 3:-1:2])
+            + 2.0
+            * (
+                fine[1:-3:2, 2:-2:2]
+                + fine[3:-1:2, 2:-2:2]
+                + fine[2:-2:2, 1:-3:2]
+                + fine[2:-2:2, 3:-1:2]
+            )
+            + (
+                fine[1:-3:2, 1:-3:2]
+                + fine[1:-3:2, 3:-1:2]
+                + fine[3:-1:2, 1:-3:2]
+                + fine[3:-1:2, 3:-1:2]
+            )
         ) / 16.0
 
         # Boundary: inject directly
@@ -171,25 +178,27 @@ class FusionKernelIterativeSolverMixin:
         # Coincident points (even rows, even cols)
         nz_used = min(nz_c, (nz_f + 1) // 2)
         nr_used = min(nr_c, (nr_f + 1) // 2)
-        fine[:2 * nz_used - 1:2, :2 * nr_used - 1:2] = coarse[:nz_used, :nr_used]
+        fine[: 2 * nz_used - 1 : 2, : 2 * nr_used - 1 : 2] = coarse[:nz_used, :nr_used]
 
         # Horizontal midpoints (even rows, odd cols)
         h_end = min(2 * (nr_c - 1), nr_f - 1)
-        fine[:2 * nz_used - 1:2, 1:h_end:2] = 0.5 * (
-            coarse[:nz_used, :-1] + coarse[:nz_used, 1:]
-        )[:, :(h_end - 1) // 2 + 1]
+        fine[: 2 * nz_used - 1 : 2, 1:h_end:2] = (
+            0.5 * (coarse[:nz_used, :-1] + coarse[:nz_used, 1:])[:, : (h_end - 1) // 2 + 1]
+        )
 
         # Vertical midpoints (odd rows, even cols)
         v_end = min(2 * (nz_c - 1), nz_f - 1)
-        fine[1:v_end:2, :2 * nr_used - 1:2] = 0.5 * (
-            coarse[:-1, :nr_used] + coarse[1:, :nr_used]
-        )[:((v_end - 1) // 2 + 1), :]
+        fine[1:v_end:2, : 2 * nr_used - 1 : 2] = (
+            0.5 * (coarse[:-1, :nr_used] + coarse[1:, :nr_used])[: ((v_end - 1) // 2 + 1), :]
+        )
 
         # Centre points (odd rows, odd cols)
-        fine[1:v_end:2, 1:h_end:2] = 0.25 * (
-            coarse[:-1, :-1] + coarse[1:, :-1]
-            + coarse[:-1, 1:] + coarse[1:, 1:]
-        )[:((v_end - 1) // 2 + 1), :(h_end - 1) // 2 + 1]
+        fine[1:v_end:2, 1:h_end:2] = (
+            0.25
+            * (coarse[:-1, :-1] + coarse[1:, :-1] + coarse[:-1, 1:] + coarse[1:, 1:])[
+                : ((v_end - 1) // 2 + 1), : (h_end - 1) // 2 + 1
+            ]
+        )
 
         return fine
 
@@ -208,8 +217,8 @@ class FusionKernelIterativeSolverMixin:
         Works on arbitrary grid sizes (not just the root grid).
         """
         NZ, NR = Psi.shape
-        dR2 = dR ** 2
-        dZ2 = dZ ** 2
+        dR2 = dR**2
+        dZ2 = dZ**2
 
         R_int = R_grid[1:-1, 1:-1]
         R_safe = np.maximum(R_int, 1e-10)
@@ -218,7 +227,7 @@ class FusionKernelIterativeSolverMixin:
         a_NS = 1.0 / dZ2
         a_C = 2.0 / dR2 + 2.0 / dZ2
 
-        ii, jj = np.mgrid[1:NZ - 1, 1:NR - 1]
+        ii, jj = np.mgrid[1 : NZ - 1, 1 : NR - 1]
 
         for _ in range(n_sweeps):
             for parity in (0, 1):
@@ -247,8 +256,8 @@ class FusionKernelIterativeSolverMixin:
     ) -> FloatArray:
         """Compute GS* residual r = L*[Psi] - Source on given grid."""
         NZ, NR = Psi.shape
-        dR2 = dR ** 2
-        dZ2 = dZ ** 2
+        dR2 = dR**2
+        dZ2 = dZ**2
 
         residual = np.zeros_like(Psi)
         R_int = R_grid[1:-1, 1:-1]
@@ -302,10 +311,8 @@ class FusionKernelIterativeSolverMixin:
         NZ, NR = Psi.shape
 
         # Base case: grid too coarse — solve directly with many SOR sweeps
-        if NZ <= min_grid or NR <= min_grid:
-            return self._mg_smooth(
-                Psi.copy(), Source, R_grid, dR, dZ, omega, n_sweeps=50
-            )
+        if min_grid >= NZ or min_grid >= NR:
+            return self._mg_smooth(Psi.copy(), Source, R_grid, dR, dZ, omega, n_sweeps=50)
 
         # 1. Pre-smooth
         Psi = self._mg_smooth(Psi.copy(), Source, R_grid, dR, dZ, omega, pre_smooth)
@@ -325,8 +332,14 @@ class FusionKernelIterativeSolverMixin:
         # 4. Solve coarse-grid correction: L*[e] = r
         e_coarse = np.zeros((nz_c, nr_c))
         e_coarse = self._multigrid_vcycle(
-            e_coarse, r_coarse, R_coarse, dR_c, dZ_c,
-            omega=omega, pre_smooth=pre_smooth, post_smooth=post_smooth,
+            e_coarse,
+            r_coarse,
+            R_coarse,
+            dR_c,
+            dZ_c,
+            omega=omega,
+            pre_smooth=pre_smooth,
+            post_smooth=post_smooth,
             min_grid=min_grid,
         )
 
@@ -378,7 +391,7 @@ class FusionKernelIterativeSolverMixin:
         # Solve min ||F @ alpha||^2 s.t. sum(alpha) = 1
         # via: delta_F[:,j] = F[:,j+1] - F[:,j], then solve normal equations
         dF = np.diff(F, axis=1)  # (N, mk-1)
-        rhs = F[:, -1]           # latest residual
+        rhs = F[:, -1]  # latest residual
 
         # Tikhonov regularisation for numerical stability
         gram = dF.T @ dF
@@ -407,9 +420,7 @@ class FusionKernelIterativeSolverMixin:
 
         return mixed
 
-    def _apply_boundary_conditions(
-        self, Psi: FloatArray, Psi_bc: FloatArray
-    ) -> None:
+    def _apply_boundary_conditions(self, Psi: FloatArray, Psi_bc: FloatArray) -> None:
         """Copy vacuum-field boundary values onto the edges of *Psi*.
 
         Parameters
@@ -424,9 +435,7 @@ class FusionKernelIterativeSolverMixin:
         Psi[:, 0] = Psi_bc[:, 0]
         Psi[:, -1] = Psi_bc[:, -1]
 
-    def _elliptic_solve(
-        self, Source: FloatArray, Psi_bc: FloatArray
-    ) -> FloatArray:
+    def _elliptic_solve(self, Source: FloatArray, Psi_bc: FloatArray) -> FloatArray:
         """Run the inner elliptic solve (HPC or Python compatibility backend).
 
         The solver method is chosen from the config key
@@ -462,7 +471,11 @@ class FusionKernelIterativeSolverMixin:
             Psi_new = self._jacobi_step(self.Psi, Source)
         elif method == "multigrid":
             Psi_new = self._multigrid_vcycle(
-                self.Psi.copy(), Source, self.RR, self.dR, self.dZ,
+                self.Psi.copy(),
+                Source,
+                self.RR,
+                self.dR,
+                self.dZ,
                 omega=omega,
             )
         else:
@@ -490,10 +503,7 @@ class FusionKernelIterativeSolverMixin:
             self.J_phi = np.zeros_like(self.Psi)
             return
 
-        R_center = (
-            self.cfg["dimensions"]["R_min"]
-            + self.cfg["dimensions"]["R_max"]
-        ) / 2.0
+        R_center = (self.cfg["dimensions"]["R_min"] + self.cfg["dimensions"]["R_max"]) / 2.0
         dist_sq = (self.RR - R_center) ** 2 + self.ZZ**2
         self.J_phi = np.exp(-dist_sq / 2.0)
 
@@ -545,4 +555,3 @@ class FusionKernelIterativeSolverMixin:
             self.Psi = psi_boundary.copy()
 
         return psi_boundary
-

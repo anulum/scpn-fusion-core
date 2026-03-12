@@ -36,7 +36,9 @@ def _summary_markdown(summary: dict[str, Any]) -> str:
     lines.append(f"- requested_backends: `{summary['requested_backends']}`")
     lines.append(f"- available_backends: `{summary['available_backends']}`")
     lines.append("")
-    lines.append("| backend | single_max_abs_err | batch_max_abs_err | single_within_tol | batch_within_tol |")
+    lines.append(
+        "| backend | single_max_abs_err | batch_max_abs_err | single_within_tol | batch_within_tol |"
+    )
     lines.append("|---|---:|---:|:---:|:---:|")
     for rec in summary["reports"]:
         lines.append(

@@ -39,9 +39,7 @@ def _prepare_minimal_kernel_config(
     cfg["grid_resolution"] = [grid, grid]
     cfg.setdefault("solver", {})
     cfg["solver"]["max_iterations"] = int(equilibrium_iters)
-    cfg["solver"]["convergence_threshold"] = float(
-        cfg["solver"].get("convergence_threshold", 1e-4)
-    )
+    cfg["solver"]["convergence_threshold"] = float(cfg["solver"].get("convergence_threshold", 1e-4))
     cfg["solver"]["relaxation_factor"] = float(cfg["solver"].get("relaxation_factor", 0.1))
     return cfg
 

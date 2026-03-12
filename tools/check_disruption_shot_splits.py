@@ -25,10 +25,7 @@ _MAX_MANIFEST_SHOTS = 200_000
 def _load_json_text(path: Path) -> str:
     size = int(path.stat().st_size)
     if size > _MAX_JSON_BYTES:
-        raise ValueError(
-            f"{path} exceeds max JSON size "
-            f"({_MAX_JSON_BYTES} bytes)."
-        )
+        raise ValueError(f"{path} exceeds max JSON size " f"({_MAX_JSON_BYTES} bytes).")
     return path.read_text(encoding="utf-8")
 
 
@@ -44,8 +41,7 @@ def _parse_split_ids(name: str, value: Any) -> list[int]:
         raise ValueError(f"Split '{name}' must be a non-empty list.")
     if len(value) > _MAX_SPLIT_IDS_PER_BUCKET:
         raise ValueError(
-            f"Split '{name}' has {len(value)} ids, exceeding max "
-            f"{_MAX_SPLIT_IDS_PER_BUCKET}."
+            f"Split '{name}' has {len(value)} ids, exceeding max " f"{_MAX_SPLIT_IDS_PER_BUCKET}."
         )
     out: list[int] = []
     for i, item in enumerate(value):
@@ -62,10 +58,7 @@ def _manifest_shot_ids(manifest: dict[str, Any]) -> set[int]:
     if not isinstance(shots, list) or not shots:
         raise ValueError("Manifest must contain non-empty 'shots' list.")
     if len(shots) > _MAX_MANIFEST_SHOTS:
-        raise ValueError(
-            "Manifest shot count exceeds max "
-            f"{_MAX_MANIFEST_SHOTS}."
-        )
+        raise ValueError("Manifest shot count exceeds max " f"{_MAX_MANIFEST_SHOTS}.")
     out: set[int] = set()
     for i, item in enumerate(shots):
         if not isinstance(item, dict):
@@ -96,9 +89,7 @@ def validate_splits(split_data: dict[str, Any], manifest_data: dict[str, Any]) -
         for right in SPLIT_KEYS[i + 1 :]:
             overlap = sorted(left_set & set(parsed[right]))
             if overlap:
-                errors.append(
-                    f"Split overlap between '{left}' and '{right}': {overlap}"
-                )
+                errors.append(f"Split overlap between '{left}' and '{right}': {overlap}")
 
     try:
         manifest_ids = _manifest_shot_ids(manifest_data)

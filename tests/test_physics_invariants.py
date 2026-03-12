@@ -1,7 +1,5 @@
 """Tests for P2.1: Physics Invariant contracts."""
 
-import math
-
 import pytest
 
 from scpn_fusion.scpn.contracts import (
@@ -20,27 +18,19 @@ from scpn_fusion.scpn.contracts import (
 class TestPhysicsInvariantDataclass:
     def test_valid_comparators(self):
         for comp in ("gt", "lt", "gte", "lte"):
-            inv = PhysicsInvariant(
-                name="test", description="d", threshold=1.0, comparator=comp
-            )
+            inv = PhysicsInvariant(name="test", description="d", threshold=1.0, comparator=comp)
             assert inv.comparator == comp
 
     def test_invalid_comparator_raises(self):
         with pytest.raises(ValueError, match="Invalid comparator"):
-            PhysicsInvariant(
-                name="test", description="d", threshold=1.0, comparator="eq"
-            )
+            PhysicsInvariant(name="test", description="d", threshold=1.0, comparator="eq")
 
     def test_nonfinite_threshold_raises(self):
         with pytest.raises(ValueError, match="finite"):
-            PhysicsInvariant(
-                name="test", description="d", threshold=float("inf"), comparator="gt"
-            )
+            PhysicsInvariant(name="test", description="d", threshold=float("inf"), comparator="gt")
 
     def test_frozen(self):
-        inv = PhysicsInvariant(
-            name="test", description="d", threshold=1.0, comparator="gt"
-        )
+        inv = PhysicsInvariant(name="test", description="d", threshold=1.0, comparator="gt")
         with pytest.raises(AttributeError):
             inv.threshold = 2.0  # type: ignore[misc]
 

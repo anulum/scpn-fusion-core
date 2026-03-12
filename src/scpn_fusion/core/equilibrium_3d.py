@@ -367,9 +367,7 @@ class ForceBalance3D:
         # drho/dR ~ cos(theta) / a_minor, drho/dZ ~ sin(theta) / (kappa * a_minor)
         theta_flat = theta_g.ravel()
         grad_p_R = dp_drho * np.cos(theta_flat) / max(self.eq.a_minor, 1e-6)
-        grad_p_Z = dp_drho * np.sin(theta_flat) / max(
-            self.eq.kappa * self.eq.a_minor, 1e-6
-        )
+        grad_p_Z = dp_drho * np.sin(theta_flat) / max(self.eq.kappa * self.eq.a_minor, 1e-6)
 
         # Current density and magnetic field
         B_R, B_Z, B_phi = self._magnetic_field(R_flat, Z_flat, rho_flat)
@@ -403,9 +401,12 @@ class ForceBalance3D:
 
         # Perturb +epsilon
         kwargs = {
-            "m": mode.m, "n": mode.n,
-            "r_cos": mode.r_cos, "r_sin": mode.r_sin,
-            "z_cos": mode.z_cos, "z_sin": mode.z_sin,
+            "m": mode.m,
+            "n": mode.n,
+            "r_cos": mode.r_cos,
+            "r_sin": mode.r_sin,
+            "z_cos": mode.z_cos,
+            "z_sin": mode.z_sin,
         }
         kwargs[component] = orig_val + epsilon
         self.eq.modes[mode_idx] = FourierMode3D(**kwargs)
@@ -477,9 +478,12 @@ class ForceBalance3D:
                 for idx, comp, g in gradients:
                     mode = self.eq.modes[idx]
                     kwargs = {
-                        "m": mode.m, "n": mode.n,
-                        "r_cos": mode.r_cos, "r_sin": mode.r_sin,
-                        "z_cos": mode.z_cos, "z_sin": mode.z_sin,
+                        "m": mode.m,
+                        "n": mode.n,
+                        "r_cos": mode.r_cos,
+                        "r_sin": mode.r_sin,
+                        "z_cos": mode.z_cos,
+                        "z_sin": mode.z_sin,
                     }
                     kwargs[comp] = kwargs[comp] - step * g
                     self.eq.modes[idx] = FourierMode3D(**kwargs)

@@ -182,6 +182,7 @@ def validate_solver(eq, label: str) -> dict:
 
     # Write temp config
     import tempfile
+
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         json.dump(config, f, indent=2)
         config_path = f.name
@@ -208,6 +209,7 @@ def validate_solver(eq, label: str) -> dict:
         }
     finally:
         import os
+
         os.unlink(config_path)
 
 
@@ -296,11 +298,13 @@ def main(argv: list[str] | None = None):
     print(f"  Files validated:     {len(files)}")
     print(f"  Topology pass:       {passed}/{len(topology_results)}")
     solver_conv = sum(1 for r in solver_results if r.get("converged", False))
-    solver_run = sum(1 for r in solver_results if r.get("solver_available", False) and "error" not in r)
+    solver_run = sum(
+        1 for r in solver_results if r.get("solver_available", False) and "error" not in r
+    )
     if solver_run > 0:
         print(f"  Solver converged:    {solver_conv}/{solver_run}")
     else:
-        print(f"  Solver:              skipped (Rust backend not available)")
+        print("  Solver:              skipped (Rust backend not available)")
 
     # ── Save JSON ──
     output_path = BASE / "validation" / "experimental_validation_results.json"

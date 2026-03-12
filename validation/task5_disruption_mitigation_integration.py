@@ -76,7 +76,9 @@ def run_campaign(
     risk_hi = np.asarray([float(e["risk_p95_high"]) for e in episodes], dtype=np.float64)
     wall_hi = np.asarray([float(e["wall_damage_p95_high"]) for e in episodes], dtype=np.float64)
     unc = np.asarray([float(e["uncertainty_envelope"]) for e in episodes], dtype=np.float64)
-    prevented_robust = np.asarray([float(e["prevented_robust"]) for e in episodes], dtype=np.float64)
+    prevented_robust = np.asarray(
+        [float(e["prevented_robust"]) for e in episodes], dtype=np.float64
+    )
 
     hybrid = run_nstxu_torax_hybrid_campaign(
         seed=seed_i + 911,
@@ -230,9 +232,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--output-md",
-        default=str(
-            ROOT / "validation" / "reports" / "task5_disruption_mitigation_integration.md"
-        ),
+        default=str(ROOT / "validation" / "reports" / "task5_disruption_mitigation_integration.md"),
     )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)

@@ -54,9 +54,7 @@ def run_benchmark() -> dict[str, Any]:
     )
 
     public_modules = [
-        spec.module
-        for spec in scpn_cli.MODE_SPECS.values()
-        if spec.maturity == "public"
+        spec.module for spec in scpn_cli.MODE_SPECS.values() if spec.maturity == "public"
     ]
     public_exclusion_pass = bool(
         all(not _contains_deprecated_module(module) for module in public_modules)
@@ -72,7 +70,11 @@ def run_benchmark() -> dict[str, Any]:
     )
 
     research_marker_results = {
-        path.as_posix().split("/", maxsplit=0)[-1] if False else str(path.relative_to(ROOT).as_posix()): _file_has_experimental_marker(path)
+        (
+            path.as_posix().split("/", maxsplit=0)[-1]
+            if False
+            else str(path.relative_to(ROOT).as_posix())
+        ): _file_has_experimental_marker(path)
         for path in FNO_TEST_FILES
     }
     research_marker_pass = bool(all(research_marker_results.values()))

@@ -175,4 +175,3 @@ __all__ = [
     "geqdsk_to_imas_equilibrium",
     "imas_equilibrium_to_geqdsk",
 ]
-

@@ -57,9 +57,7 @@ def _parse_evidence_patterns(value: Any) -> tuple[EvidencePattern, ...]:
         out.append(
             EvidencePattern(
                 file=_require_str(f"evidence_patterns[{i}].file", item.get("file")),
-                pattern=_require_str(
-                    f"evidence_patterns[{i}].pattern", item.get("pattern")
-                ),
+                pattern=_require_str(f"evidence_patterns[{i}].pattern", item.get("pattern")),
             )
         )
     return tuple(out)
@@ -85,9 +83,7 @@ def load_manifest(path: Path) -> tuple[ClaimSpec, ...]:
         out.append(
             ClaimSpec(
                 claim_id=claim_id,
-                source_file=_require_str(
-                    f"claims[{i}].source_file", claim.get("source_file")
-                ),
+                source_file=_require_str(f"claims[{i}].source_file", claim.get("source_file")),
                 source_pattern=_require_str(
                     f"claims[{i}].source_pattern", claim.get("source_pattern")
                 ),
@@ -95,9 +91,7 @@ def load_manifest(path: Path) -> tuple[ClaimSpec, ...]:
                     f"claims[{i}].evidence_files",
                     claim.get("evidence_files", []),
                 ),
-                evidence_patterns=_parse_evidence_patterns(
-                    claim.get("evidence_patterns", [])
-                ),
+                evidence_patterns=_parse_evidence_patterns(claim.get("evidence_patterns", [])),
             )
         )
     return tuple(out)
@@ -160,8 +154,7 @@ def render_markdown(claims: tuple[ClaimSpec, ...], manifest_path: str) -> str:
             )
             for pattern in claim.evidence_patterns:
                 lines.append(
-                    f"| `{_escape_cell(pattern.file)}` | "
-                    f"`{_escape_cell(pattern.pattern)}` |"
+                    f"| `{_escape_cell(pattern.file)}` | " f"`{_escape_cell(pattern.pattern)}` |"
                 )
         else:
             lines.append("- (none)")

@@ -57,7 +57,9 @@ def main() -> None:
 
     mae = float(np.mean(np.abs(y_pred - y_ref)))
     rmse = float(np.sqrt(np.mean((y_pred - y_ref) ** 2)))
-    r2 = 1.0 - float(np.sum((y_pred - y_ref) ** 2) / (np.sum((y_ref - y_ref.mean(axis=0)) ** 2) + 1e-12))
+    r2 = 1.0 - float(
+        np.sum((y_pred - y_ref) ** 2) / (np.sum((y_ref - y_ref.mean(axis=0)) ** 2) + 1e-12)
+    )
     rel = rel_l2(y_pred, y_ref)
 
     print(f"Validated weights: {weights}")

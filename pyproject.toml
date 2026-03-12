@@ -217,6 +217,30 @@ ignore = [
   "B007", "B017", "B018", "B023", "B028", "B904", "B905",
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# Re-exports
+"__init__.py" = ["F401"]
+# Notebooks: re-exports + cell redefinitions
+"examples/*.ipynb" = ["F401", "F811"]
+# Conditional imports in try/except blocks (optional dependencies)
+"src/scpn_fusion/control/director_interface.py" = ["F401"]
+"src/scpn_fusion/control/fusion_nmpc_jax.py" = ["F401"]
+"src/scpn_fusion/core/_rust_compat.py" = ["F401"]
+"src/scpn_fusion/core/fno_turbulence_suppressor.py" = ["F401"]
+"src/scpn_fusion/core/force_balance.py" = ["F401"]
+"src/scpn_fusion/core/global_design_scanner.py" = ["F401"]
+"src/scpn_fusion/core/lazarus_bridge.py" = ["F401"]
+"src/scpn_fusion/core/vibrana_bridge.py" = ["F401"]
+"src/scpn_fusion/core/wdm_engine.py" = ["F401"]
+# Forward reference to TransportSolver (circular import guard)
+"src/scpn_fusion/core/integrated_transport_solver_adaptive.py" = ["F821"]
+# Conditional imports in tests/tools/validation
+"tests/test_rust_python_parity.py" = ["F401"]
+"tests/test_fno_training.py" = ["F401"]
+"tests/test_gpu_jax_backend.py" = ["F401"]
+"tools/generate_benchmark_plots.py" = ["F401"]
+"validation/benchmark_vs_freegs.py" = ["F401"]
+
 [tool.bandit]
 skips = ["B101", "B311", "B404", "B603", "B607"]
 exclude_dirs = ["tests", "notebooks", "validation"]

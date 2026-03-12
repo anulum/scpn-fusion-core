@@ -20,7 +20,9 @@ SPEC.loader.exec_module(tool)
 
 
 def test_build_scope_reports_returns_nonempty_payloads() -> None:
-    source_md, docs_md, summary_json = tool._build_scope_reports(top_limit=10, full_limit=20)  # noqa: SLF001
+    source_md, docs_md, summary_json = tool._build_scope_reports(
+        top_limit=10, full_limit=20
+    )  # noqa: SLF001
     assert "# Underdeveloped Register" in source_md
     assert "# Underdeveloped Register" in docs_md
     payload = json.loads(summary_json)

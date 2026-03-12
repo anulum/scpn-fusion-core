@@ -17,7 +17,6 @@ import json
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
 
@@ -88,8 +87,7 @@ class TestStencilParity:
 
         interior_diff = result[1:-1, 1:-1] - psi[1:-1, 1:-1]
         max_correction = float(np.max(np.abs(interior_diff)))
-        assert max_correction > 1e-6, \
-            "Jacobi stencil appears Cartesian (no 1/R correction)"
+        assert max_correction > 1e-6, "Jacobi stencil appears Cartesian (no 1/R correction)"
 
     def test_convergence_to_same_solution(self, tmp_path: Path) -> None:
         """Jacobi and SOR must converge to the same equilibrium."""

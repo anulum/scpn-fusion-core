@@ -12,7 +12,6 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[0].parent / "src"))
@@ -198,4 +197,6 @@ class TestLatencyBenchmark:
         elapsed_rust = time.perf_counter() - start
 
         # Sanity: 10k steps should complete in < 5 seconds (typically < 0.2s)
-        assert elapsed_rust < 5.0, f"Rust controller too slow: {elapsed_rust:.3f}s for {n_steps} steps"
+        assert (
+            elapsed_rust < 5.0
+        ), f"Rust controller too slow: {elapsed_rust:.3f}s for {n_steps} steps"

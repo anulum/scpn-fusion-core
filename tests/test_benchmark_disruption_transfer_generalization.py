@@ -10,7 +10,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "benchmark_disruption_transfer_generalization.py"
-SPEC = importlib.util.spec_from_file_location("benchmark_disruption_transfer_generalization", MODULE_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "benchmark_disruption_transfer_generalization", MODULE_PATH
+)
 assert SPEC and SPEC.loader
 mod = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = mod
@@ -32,7 +34,9 @@ def _fake_disruption_payload() -> dict:
 
 
 def test_run_benchmark_splits_source_vs_target(monkeypatch) -> None:
-    monkeypatch.setattr(mod, "validate_disruption", lambda *_args, **_kwargs: _fake_disruption_payload())
+    monkeypatch.setattr(
+        mod, "validate_disruption", lambda *_args, **_kwargs: _fake_disruption_payload()
+    )
     report = mod.run_benchmark(
         disruption_dir=ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots",
         source_scenarios=("hmode", "hmode_safe", "hybrid"),
@@ -46,7 +50,9 @@ def test_run_benchmark_splits_source_vs_target(monkeypatch) -> None:
 
 
 def test_main_writes_outputs(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setattr(mod, "validate_disruption", lambda *_args, **_kwargs: _fake_disruption_payload())
+    monkeypatch.setattr(
+        mod, "validate_disruption", lambda *_args, **_kwargs: _fake_disruption_payload()
+    )
     out_json = tmp_path / "transfer.json"
     out_md = tmp_path / "transfer.md"
     rc = mod.main(

@@ -77,12 +77,8 @@ def _queue_health(phase3_statuses: dict[str, str], sprint_prefix: str) -> dict[s
         for task_id, status in phase3_statuses.items()
         if task_id.startswith(f"{sprint_prefix}-")
     }
-    completed = sorted(
-        task_id for task_id, status in scoped.items() if status == "Completed"
-    )
-    in_progress = sorted(
-        task_id for task_id, status in scoped.items() if status == "In progress"
-    )
+    completed = sorted(task_id for task_id, status in scoped.items() if status == "Completed")
+    in_progress = sorted(task_id for task_id, status in scoped.items() if status == "In progress")
     return {
         "completed_count": len(completed),
         "in_progress_count": len(in_progress),
@@ -104,9 +100,7 @@ def run_campaign(
     changelog_text = changelog_path.read_text(encoding="utf-8")
 
     missing_done = [
-        task_id
-        for task_id in REQUIRED_DONE_TASKS
-        if statuses.get(task_id, "Missing") != "Done"
+        task_id for task_id in REQUIRED_DONE_TASKS if statuses.get(task_id, "Missing") != "Done"
     ]
 
     changelog_phrase_present = REQUIRED_CHANGELOG_PHRASE in changelog_text

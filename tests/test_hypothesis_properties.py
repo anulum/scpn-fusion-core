@@ -17,11 +17,11 @@ Covers:
 
 import numpy as np
 import pytest
-from hypothesis import given, settings, assume, HealthCheck
+from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
 
 from scpn_fusion.scpn.structure import StochasticPetriNet
-from scpn_fusion.scpn.compiler import FusionCompiler, CompiledNet
+from scpn_fusion.scpn.compiler import FusionCompiler
 
 
 def _to_dense(arr):
@@ -156,9 +156,7 @@ class TestCompilerProperties:
         compiler = FusionCompiler(bitstream_length=1024, seed=42)
         compiled = compiler.compile(net)
 
-        np.testing.assert_array_equal(
-            compiled.initial_marking, net.get_initial_marking()
-        )
+        np.testing.assert_array_equal(compiled.initial_marking, net.get_initial_marking())
 
     @given(petri_net())
     @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow])

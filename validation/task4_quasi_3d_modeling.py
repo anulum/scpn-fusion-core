@@ -51,9 +51,7 @@ def _rmse_percent(truth: np.ndarray, pred: np.ndarray) -> float:
     if truth.shape != pred.shape or truth.size == 0:
         raise ValueError("truth/pred arrays must be non-empty and same shape.")
     return float(
-        100.0
-        * np.sqrt(np.mean((pred - truth) ** 2))
-        / max(float(np.mean(np.abs(truth))), 1e-12)
+        100.0 * np.sqrt(np.mean((pred - truth) ** 2)) / max(float(np.mean(np.abs(truth))), 1e-12)
     )
 
 
@@ -137,17 +135,13 @@ def run_campaign(
         thresholds["max_force_residual_p95_pct"] + _THRESHOLD_COMPARISON_EPS
     ):
         failure_reasons.append("force_residual_p95_pct")
-    if two_fluid_index < (
-        thresholds["min_two_fluid_index"] - _THRESHOLD_COMPARISON_EPS
-    ):
+    if two_fluid_index < (thresholds["min_two_fluid_index"] - _THRESHOLD_COMPARISON_EPS):
         failure_reasons.append("two_fluid_index")
     if float(divertor["cooling_gain_pct"]) < (
         thresholds["min_temhd_cooling_gain_pct"] - _THRESHOLD_COMPARISON_EPS
     ):
         failure_reasons.append("temhd_cooling_gain_pct")
-    if jet_rmse_pct > (
-        thresholds["max_jet_heat_flux_rmse_pct"] + _THRESHOLD_COMPARISON_EPS
-    ):
+    if jet_rmse_pct > (thresholds["max_jet_heat_flux_rmse_pct"] + _THRESHOLD_COMPARISON_EPS):
         failure_reasons.append("jet_heat_flux_rmse_pct")
     if float(tbr["erosion_curve_rmse_pct"]) > (
         thresholds["max_erosion_curve_rmse_pct"] + _THRESHOLD_COMPARISON_EPS

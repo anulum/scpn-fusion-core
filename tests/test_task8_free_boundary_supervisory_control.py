@@ -17,7 +17,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "task8_free_boundary_supervisory_control.py"
-SPEC = importlib.util.spec_from_file_location("task8_free_boundary_supervisory_control", MODULE_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "task8_free_boundary_supervisory_control", MODULE_PATH
+)
 assert SPEC and SPEC.loader
 task8_free_boundary_supervisory_control = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(task8_free_boundary_supervisory_control)
@@ -45,9 +47,7 @@ def test_task8_campaign_passes_thresholds_smoke() -> None:
         ({"control_dt_s": 0.0}, "control_dt_s"),
     ],
 )
-def test_task8_campaign_rejects_invalid_inputs(
-    kwargs: dict[str, int | float], match: str
-) -> None:
+def test_task8_campaign_rejects_invalid_inputs(kwargs: dict[str, int | float], match: str) -> None:
     with pytest.raises(ValueError, match=match):
         task8_free_boundary_supervisory_control.run_campaign(**kwargs)
 

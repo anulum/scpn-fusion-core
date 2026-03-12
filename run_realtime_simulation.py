@@ -22,15 +22,15 @@ DEFAULT_CONFIG_PATH = ROOT / "validation" / "iter_validated_config.json"
 # We use a Dictionary Proxy to simulate the Network Bus (Redis/Kafka)
 def physics_node(bus, stop_event, cfg_path: str):
     print("[PHYSICS] Node Started. Booting Reactor...")
-    
+
     # Init Physics
     kernel = FusionKernel(cfg_path)
     pwi = SputteringPhysics("Tungsten")
-    
+
     t = 0
     while not stop_event.is_set():
         start_time = time.time()
-        
+
         # 1. READ INPUTS (Action from Controller)
         action = bus.get('control_action', None)
         if action:
@@ -39,23 +39,23 @@ def physics_node(bus, stop_event, cfg_path: str):
             for i, delta in enumerate(action):
                 if i < len(kernel.cfg['coils']):
                     kernel.cfg['coils'][i]['current'] += delta
-        
+
         # 2. EVOLVE PHYSICS
         # Add random noise (Real world chaos)
         kernel.cfg['physics']['plasma_current_target'] += np.random.normal(0, 0.01)
-        
+
         kernel.solve_equilibrium()
-        
+
         # PWI Physics
         # Assume T_div depends on heating power (simplified coupling)
         T_div = 50.0 + np.random.normal(0, 2.0)
         pwi_res = pwi.calculate_erosion_rate(1e23, T_div)
-        
+
         # 3. PUBLISH STATE (Telemetry)
         # Extract key metrics
         idx_max = np.argmax(kernel.Psi)
         iz, ir = np.unravel_index(idx_max, kernel.Psi.shape)
-        
+
         state = {
             'timestamp': t,
             'R_axis': kernel.R[ir],
@@ -64,10 +64,10 @@ def physics_node(bus, stop_event, cfg_path: str):
             'Erosion_Rate': pwi_res['Erosion_mm_year'],
             'T_divertor': T_div
         }
-        
+
         bus['telemetry'] = state
         t += 1
-        
+
         # Real-time pacing (simulate 100Hz loop)
         elapsed = time.time() - start_time
         sleep_time = max(0, 0.01 - elapsed)
@@ -75,41 +75,41 @@ def physics_node(bus, stop_event, cfg_path: str):
 
 def control_node(bus, stop_event):
     print("[CONTROL] Node Started. Waiting for telemetry...")
-    
+
     target_R = 6.2
     Kp = 0.5
-    
+
     while not stop_event.is_set():
         # 1. READ SENSORS
         state = bus.get('telemetry', None)
         if state is None:
             time.sleep(0.1)
             continue
-            
+
         # 2. ALGORITHM (Simple Proportional Controller for Demo)
         # Real version would use the MPC module
         error_R = target_R - state['R_axis']
-        
+
         # Action: Adjust Outer Coils (PF3, PF4)
         # If R is too small (Inner), Push with Outer Coils? No, pull.
         # Simple logic: dI = Kp * error
         dI = Kp * error_R
-        
+
         action = [0.0]*7
         action[2] = dI # PF3
         action[3] = dI # PF4
-        
+
         # 3. ACTUATE
         bus['control_action'] = action
-        
+
         time.sleep(0.05) # 20Hz Control Loop
 
 def logger_node(bus, stop_event):
     print("[LOGGER] Node Started. Recording Stream...")
-    
+
     history = []
     last_t = -1
-    
+
     while not stop_event.is_set():
         state = bus.get('telemetry', None)
         if state and state['timestamp'] != last_t:
@@ -119,7 +119,7 @@ def logger_node(bus, stop_event):
                 history.append(state)
             except KeyError:
                 pass # Data not fully ready yet
-            
+
         time.sleep(0.1)
 
 def run_digital_twin_2_0(config_path: Path = DEFAULT_CONFIG_PATH):
@@ -127,12 +127,12 @@ def run_digital_twin_2_0(config_path: Path = DEFAULT_CONFIG_PATH):
     print("   SCPN DIGITAL TWIN 2.0: REAL-TIME ENGINE        ")
     print("   Architecture: Asynchronous Multiprocessing     ")
     print("==================================================")
-    
+
     # Shared Memory Manager
     manager = multiprocessing.Manager()
     bus = manager.dict()
     stop_event = manager.Event()
-    
+
     # Processes
     p_phys = multiprocessing.Process(
         target=physics_node,
@@ -140,15 +140,15 @@ def run_digital_twin_2_0(config_path: Path = DEFAULT_CONFIG_PATH):
     )
     p_ctrl = multiprocessing.Process(target=control_node, args=(bus, stop_event))
     p_log = multiprocessing.Process(target=logger_node, args=(bus, stop_event))
-    
+
     # Start
     p_phys.start()
     p_ctrl.start()
     p_log.start()
-    
+
     # Run for 5 seconds
     time.sleep(5)
-    
+
     # Shutdown
     print("\n[SYSTEM] Shutting down...")
     stop_event.set()

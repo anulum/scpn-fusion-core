@@ -89,7 +89,9 @@ def build_report(
     line_rate = summary.get("line_rate_pct")
     branch_rate = summary.get("branch_rate_pct")
     domain_line = _to_float_map(summary.get("domain_line_rate_pct"), label="domain_line_rate_pct")
-    domain_branch = _to_float_map(summary.get("domain_branch_rate_pct"), label="domain_branch_rate_pct")
+    domain_branch = _to_float_map(
+        summary.get("domain_branch_rate_pct"), label="domain_branch_rate_pct"
+    )
     file_line = _to_float_map(summary.get("file_line_rate_pct"), label="file_line_rate_pct")
     file_branch = _to_float_map(summary.get("file_branch_rate_pct"), label="file_branch_rate_pct")
 
@@ -123,7 +125,9 @@ def build_report(
             _delta_row(name=name, target=target, observed=domain_line.get(name))
         )
     for name, target in sorted(
-        _to_float_map(thresholds.get("domain_min_branch_rate"), label="domain_min_branch_rate").items()
+        _to_float_map(
+            thresholds.get("domain_min_branch_rate"), label="domain_min_branch_rate"
+        ).items()
     ):
         rows_domain_branch.append(
             _delta_row(name=name, target=target, observed=domain_branch.get(name))
@@ -131,9 +135,7 @@ def build_report(
     for name, target in sorted(
         _to_float_map(thresholds.get("file_min_line_rate"), label="file_min_line_rate").items()
     ):
-        rows_file_line.append(
-            _delta_row(name=name, target=target, observed=file_line.get(name))
-        )
+        rows_file_line.append(_delta_row(name=name, target=target, observed=file_line.get(name)))
     for name, target in sorted(
         _to_float_map(thresholds.get("file_min_branch_rate"), label="file_min_branch_rate").items()
     ):
@@ -186,7 +188,12 @@ def _fmt_delta(value: float | None) -> str:
 
 
 def _render_section(title: str, rows: list[dict[str, Any]]) -> list[str]:
-    lines = [f"## {title}", "", "| Check | Target | Observed | Delta | Status |", "|---|---:|---:|---:|---|"]
+    lines = [
+        f"## {title}",
+        "",
+        "| Check | Target | Observed | Delta | Status |",
+        "|---|---:|---:|---:|---|",
+    ]
     for row in rows:
         status = "PASS" if row["passes"] else "FAIL"
         if row["missing_observation"]:

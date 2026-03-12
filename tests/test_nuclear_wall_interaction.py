@@ -124,9 +124,7 @@ def test_pumping_efficiency_validation(
 
 
 @pytest.mark.parametrize("burn_time_sec", [0, -5])
-def test_burn_time_validation(
-    monkeypatch: pytest.MonkeyPatch, burn_time_sec: int
-) -> None:
+def test_burn_time_validation(monkeypatch: pytest.MonkeyPatch, burn_time_sec: int) -> None:
     lab = NuclearEngineeringLab(default_iter_config_path())
     monkeypatch.setattr(lab, "solve_equilibrium", lambda: None)
     with pytest.raises(ValueError, match="burn_time_sec"):
@@ -138,9 +136,7 @@ def test_burn_time_validation(
 
 
 @pytest.mark.parametrize("tau_He_ratio", [0.0, -1.0, float("nan")])
-def test_tau_he_ratio_validation(
-    monkeypatch: pytest.MonkeyPatch, tau_He_ratio: float
-) -> None:
+def test_tau_he_ratio_validation(monkeypatch: pytest.MonkeyPatch, tau_He_ratio: float) -> None:
     lab = NuclearEngineeringLab(default_iter_config_path())
     monkeypatch.setattr(lab, "solve_equilibrium", lambda: None)
     with pytest.raises(ValueError, match="tau_He_ratio"):

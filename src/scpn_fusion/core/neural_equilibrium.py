@@ -42,9 +42,11 @@ DEFAULT_WEIGHTS_PATH = REPO_ROOT / "weights" / "neural_equilibrium_sparc.npz"
 
 # ── Data containers ──────────────────────────────────────────────────
 
+
 @dataclass
 class NeuralEqConfig:
     """Configuration for the neural equilibrium model."""
+
     n_components: int = 20
     hidden_sizes: tuple[int, ...] = (128, 64, 32)
     n_input_features: int = 12
@@ -55,6 +57,7 @@ class NeuralEqConfig:
 @dataclass
 class TrainingResult:
     """Training summary."""
+
     n_samples: int
     n_components: int
     explained_variance: float
@@ -68,6 +71,7 @@ class TrainingResult:
 
 # ── Simple MLP (pure NumPy) ──────────────────────────────────────────
 
+
 class SimpleMLP:
     """Feedforward MLP with ReLU hidden layers and linear output."""
 
@@ -79,9 +83,7 @@ class SimpleMLP:
             fan_in = layer_sizes[i]
             # He initialisation
             scale = np.sqrt(2.0 / fan_in)
-            self.weights.append(
-                self.rng.normal(0, scale, (layer_sizes[i], layer_sizes[i + 1]))
-            )
+            self.weights.append(self.rng.normal(0, scale, (layer_sizes[i], layer_sizes[i + 1])))
             self.biases.append(np.zeros(layer_sizes[i + 1]))
 
     def forward(self, x: NDArray) -> NDArray:
@@ -98,6 +100,7 @@ class SimpleMLP:
 
 # ── PCA (minimal, no sklearn dependency) ─────────────────────────────
 
+
 class MinimalPCA:
     """Minimal PCA via SVD, no sklearn required."""
 
@@ -113,9 +116,7 @@ class MinimalPCA:
         U, S, Vt = np.linalg.svd(X_centered, full_matrices=False)
         total_var = (S**2).sum()
         self.components_ = Vt[: self.n_components]
-        self.explained_variance_ratio_ = (
-            S[: self.n_components] ** 2 / max(total_var, 1e-15)
-        )
+        self.explained_variance_ratio_ = S[: self.n_components] ** 2 / max(total_var, 1e-15)
         return self
 
     def transform(self, X: NDArray) -> NDArray:
@@ -134,6 +135,7 @@ class MinimalPCA:
 
 
 # ── Neural Equilibrium Accelerator ───────────────────────────────────
+
 
 class NeuralEquilibriumAccelerator:
     """
@@ -160,17 +162,13 @@ class NeuralEquilibriumAccelerator:
         psi = psi_pred_flat.reshape(nh, nw)
         lap = np.zeros_like(psi)
         lap[1:-1, 1:-1] = (
-            psi[2:, 1:-1] + psi[:-2, 1:-1]
-            + psi[1:-1, 2:] + psi[1:-1, :-2]
-            - 4 * psi[1:-1, 1:-1]
+            psi[2:, 1:-1] + psi[:-2, 1:-1] + psi[1:-1, 2:] + psi[1:-1, :-2] - 4 * psi[1:-1, 1:-1]
         )
         return float(np.mean(lap[1:-1, 1:-1] ** 2))
 
     # ── Evaluation ────────────────────────────────────────────────
 
-    def evaluate_surrogate(
-        self, X_test: NDArray, Y_test_raw: NDArray
-    ) -> dict[str, float]:
+    def evaluate_surrogate(self, X_test: NDArray, Y_test_raw: NDArray) -> dict[str, float]:
         """Evaluate on test set. Returns dict with mse, max_error, gs_residual."""
         if not self.is_trained:
             raise RuntimeError("Not trained")
@@ -233,11 +231,10 @@ class NeuralEquilibriumAccelerator:
             # Interpolate onto target grid if needed
             if eq.nh != target_nh or eq.nw != target_nw:
                 from scipy.interpolate import RectBivariateSpline
+
                 spline = RectBivariateSpline(eq.z, eq.r, eq.psirz, kx=3, ky=3)
                 target_r = np.linspace(eq.rleft, eq.rleft + eq.rdim, target_nw)
-                target_z = np.linspace(
-                    eq.zmid - eq.zdim / 2, eq.zmid + eq.zdim / 2, target_nh
-                )
+                target_z = np.linspace(eq.zmid - eq.zdim / 2, eq.zmid + eq.zdim / 2, target_nh)
                 psi_interp = spline(target_z, target_r, grid=True)
             else:
                 psi_interp = eq.psirz
@@ -247,28 +244,30 @@ class NeuralEquilibriumAccelerator:
             delta_upper = 0.3  # default upper triangularity
             delta_lower = 0.3  # default lower triangularity
             q95 = 3.0  # default safety factor at 95% flux
-            if hasattr(eq, 'rbbbs') and eq.rbbbs is not None and len(eq.rbbbs) > 3:
+            if hasattr(eq, "rbbbs") and eq.rbbbs is not None and len(eq.rbbbs) > 3:
                 r_span = eq.rbbbs.max() - eq.rbbbs.min()
                 kappa = (eq.zbbbs.max() - eq.zbbbs.min()) / max(r_span, 0.01)
-            if hasattr(eq, 'qpsi') and eq.qpsi is not None and len(eq.qpsi) > 0:
+            if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
                 idx_95 = int(0.95 * len(eq.qpsi))
                 q95 = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
 
             # Base feature vector (12-dim)
-            base_features = np.array([
-                eq.current / 1e6,  # I_p in MA
-                eq.bcentr,         # B_t in T
-                eq.rmaxis,         # R_axis in m
-                eq.zmaxis,         # Z_axis in m
-                1.0,               # pprime scale factor
-                1.0,               # ffprime scale factor
-                eq.simag,          # psi at axis
-                eq.sibry,          # psi at boundary
-                kappa,             # elongation
-                delta_upper,       # upper triangularity
-                delta_lower,       # lower triangularity
-                q95,               # safety factor at 95% flux
-            ])
+            base_features = np.array(
+                [
+                    eq.current / 1e6,  # I_p in MA
+                    eq.bcentr,  # B_t in T
+                    eq.rmaxis,  # R_axis in m
+                    eq.zmaxis,  # Z_axis in m
+                    1.0,  # pprime scale factor
+                    1.0,  # ffprime scale factor
+                    eq.simag,  # psi at axis
+                    eq.sibry,  # psi at boundary
+                    kappa,  # elongation
+                    delta_upper,  # upper triangularity
+                    delta_lower,  # lower triangularity
+                    q95,  # safety factor at 95% flux
+                ]
+            )
 
             # Unperturbed sample
             X_features.append(base_features)
@@ -297,9 +296,7 @@ class NeuralEquilibriumAccelerator:
                 # Perturb interior normalised psi
                 plasma_mask = (psi_n >= 0) & (psi_n < 1.0)
                 psi_perturbed = psi_interp.copy()
-                psi_perturbed[plasma_mask] += (
-                    mix * 0.1 * denom * (1.0 - psi_n[plasma_mask])
-                )
+                psi_perturbed[plasma_mask] += mix * 0.1 * denom * (1.0 - psi_n[plasma_mask])
 
                 X_features.append(feat)
                 Y_psi.append(psi_perturbed.ravel())
@@ -307,8 +304,9 @@ class NeuralEquilibriumAccelerator:
         X = np.array(X_features)
         Y = np.array(Y_psi)
         n_samples = len(X)
-        logger.info("Training data: %d samples, %d features → %d outputs",
-                     n_samples, X.shape[1], Y.shape[1])
+        logger.info(
+            "Training data: %d samples, %d features → %d outputs", n_samples, X.shape[1], Y.shape[1]
+        )
 
         # Normalise inputs
         self._input_mean = X.mean(axis=0)
@@ -319,16 +317,20 @@ class NeuralEquilibriumAccelerator:
         # PCA on flattened psi
         Y_compressed = self.pca.fit_transform(Y)
         explained = float(np.sum(self.pca.explained_variance_ratio_))
-        logger.info("PCA: %d → %d components, %.2f%% variance retained",
-                     Y.shape[1], self.cfg.n_components, explained * 100)
+        logger.info(
+            "PCA: %d → %d components, %.2f%% variance retained",
+            Y.shape[1],
+            self.cfg.n_components,
+            explained * 100,
+        )
 
         # ── Train/val/test split (70/15/15) ────────────────────────
         indices = rng.permutation(n_samples)
         n_train = int(0.70 * n_samples)
         n_val = int(0.15 * n_samples)
         train_idx = indices[:n_train]
-        val_idx = indices[n_train:n_train + n_val]
-        test_idx = indices[n_train + n_val:]
+        val_idx = indices[n_train : n_train + n_val]
+        test_idx = indices[n_train + n_val :]
 
         X_train, Y_train = X_norm[train_idx], Y_compressed[train_idx]
         X_val, Y_val = X_norm[val_idx], Y_compressed[val_idx]
@@ -337,7 +339,9 @@ class NeuralEquilibriumAccelerator:
 
         logger.info(
             "Split: %d train / %d val / %d test",
-            len(train_idx), len(val_idx), len(test_idx),
+            len(train_idx),
+            len(val_idx),
+            len(test_idx),
         )
 
         # ── Train MLP: X_train → Y_train ─────────────────────────
@@ -368,7 +372,7 @@ class NeuralEquilibriumAccelerator:
             epoch_loss = 0.0
 
             for start in range(0, len(X_train), batch_size):
-                idx = order[start:start + batch_size]
+                idx = order[start : start + batch_size]
                 x_batch = X_train[idx]
                 y_batch = Y_train[idx]
 
@@ -385,17 +389,13 @@ class NeuralEquilibriumAccelerator:
 
                 # MSE loss
                 error = activations[-1] - y_batch
-                loss = float(np.mean(error ** 2))
+                loss = float(np.mean(error**2))
 
                 # GS residual loss on this batch
                 gs_loss = 0.0
                 for row in range(len(idx)):
-                    psi_pred_flat = self.pca.inverse_transform(
-                        activations[-1][row:row + 1]
-                    )[0]
-                    gs_loss += self._gs_residual_loss(
-                        psi_pred_flat, self.cfg.grid_shape
-                    )
+                    psi_pred_flat = self.pca.inverse_transform(activations[-1][row : row + 1])[0]
+                    gs_loss += self._gs_residual_loss(psi_pred_flat, self.cfg.grid_shape)
                 gs_loss /= len(idx)
                 loss = loss + self.cfg.lambda_gs * gs_loss
 
@@ -435,12 +435,8 @@ class NeuralEquilibriumAccelerator:
             val_mse = float(np.mean((val_pred - Y_val) ** 2))
             val_gs = 0.0
             for row in range(len(X_val)):
-                psi_pred_flat = self.pca.inverse_transform(
-                    val_pred[row:row + 1]
-                )[0]
-                val_gs += self._gs_residual_loss(
-                    psi_pred_flat, self.cfg.grid_shape
-                )
+                psi_pred_flat = self.pca.inverse_transform(val_pred[row : row + 1])[0]
+                val_gs += self._gs_residual_loss(psi_pred_flat, self.cfg.grid_shape)
             val_gs /= max(len(X_val), 1)
             val_loss = val_mse + self.cfg.lambda_gs * val_gs
 
@@ -452,14 +448,17 @@ class NeuralEquilibriumAccelerator:
                 if patience_counter >= patience:
                     logger.info(
                         "Early stopping at epoch %d (val_loss=%.6f)",
-                        epoch, val_loss,
+                        epoch,
+                        val_loss,
                     )
                     break
 
             if epoch % 50 == 0:
                 logger.info(
                     "Epoch %d: train_loss=%.6f  val_loss=%.6f",
-                    epoch, epoch_loss, val_loss,
+                    epoch,
+                    epoch_loss,
+                    val_loss,
                 )
 
         self.is_trained = True
@@ -467,7 +466,8 @@ class NeuralEquilibriumAccelerator:
 
         # ── Evaluate on held-out test set ─────────────────────────
         test_metrics = self.evaluate_surrogate(
-            X[test_idx], Y_test_raw,
+            X[test_idx],
+            Y_test_raw,
         )
         logger.info(
             "Test set: MSE=%.6f  max_error=%.6f  GS_residual=%.6f",
@@ -505,7 +505,9 @@ class NeuralEquilibriumAccelerator:
             Shape (nh, nw) or (batch, nh, nw).
         """
         if not self.is_trained:
-            raise RuntimeError("Model not trained. Call train_from_geqdsk() or load_weights() first.")
+            raise RuntimeError(
+                "Model not trained. Call train_from_geqdsk() or load_weights() first."
+            )
 
         if features.ndim == 1:
             features = features[np.newaxis, :]
@@ -589,8 +591,11 @@ class NeuralEquilibriumAccelerator:
             )
 
         self.is_trained = True
-        logger.info("Loaded neural equilibrium weights from %s (psi_normalized=%s)",
-                     path, self._psi_normalized)
+        logger.info(
+            "Loaded neural equilibrium weights from %s (psi_normalized=%s)",
+            path,
+            self._psi_normalized,
+        )
 
     # ── Convenience ──────────────────────────────────────────────────
 

@@ -102,12 +102,14 @@ def _parse_check(index: int, value: Any) -> RangeCheck:
     maximum = value.get("max")
     equals = value.get("equals", None)
     if minimum is None and maximum is None and equals is None:
-        raise ValueError(
-            f"checks[{index}] must define at least one of 'min', 'max', or 'equals'."
-        )
+        raise ValueError(f"checks[{index}] must define at least one of 'min', 'max', or 'equals'.")
 
-    min_float = _coerce_finite_float(f"checks[{index}].min", minimum) if minimum is not None else None
-    max_float = _coerce_finite_float(f"checks[{index}].max", maximum) if maximum is not None else None
+    min_float = (
+        _coerce_finite_float(f"checks[{index}].min", minimum) if minimum is not None else None
+    )
+    max_float = (
+        _coerce_finite_float(f"checks[{index}].max", maximum) if maximum is not None else None
+    )
     if min_float is not None and max_float is not None and min_float > max_float:
         raise ValueError(
             f"checks[{index}] has invalid bounds: min ({min_float}) > max ({max_float})."
@@ -116,9 +118,7 @@ def _parse_check(index: int, value: Any) -> RangeCheck:
     if _is_number(equals):
         equals = _coerce_finite_float(f"checks[{index}].equals", equals)
     elif equals is not None and not isinstance(equals, (bool, str)):
-        raise ValueError(
-            f"checks[{index}].equals must be null, bool, string, or finite number."
-        )
+        raise ValueError(f"checks[{index}].equals must be null, bool, string, or finite number.")
 
     description = str(value.get("description") or "").strip()
     return RangeCheck(

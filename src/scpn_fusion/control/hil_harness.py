@@ -31,9 +31,11 @@ from .hil_demo_runner import HILDemoRunner  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class PipelineProfile:
     """Per-stage timing profile for the HIL control pipeline."""
+
     state_estimation_us: float = 0.0
     controller_step_us: float = 0.0
     actuator_command_us: float = 0.0
@@ -172,9 +174,7 @@ class HILControlLoop:
         self.sensor = sensor or SensorInterface()
         self._control_fn: Callable[[float, SensorInterface], float] | None = None
 
-    def set_controller(
-        self, fn: Callable[[float, SensorInterface], float]
-    ) -> None:
+    def set_controller(self, fn: Callable[[float, SensorInterface], float]) -> None:
         """Register the control callback: fn(error, sensor) -> command."""
         self._control_fn = fn
 
@@ -468,7 +468,9 @@ def run_hil_benchmark(
         logger.info("  P99 latency:    %.1f us", metrics.p99_latency_us)
         logger.info("  Max latency:    %.1f us", metrics.max_latency_us)
         logger.info("  Jitter (std):   %.1f us", metrics.jitter_std_us)
-        logger.info("  Overruns:       %d (%.1f%%)", metrics.overrun_count, metrics.overrun_fraction * 100)
+        logger.info(
+            "  Overruns:       %d (%.1f%%)", metrics.overrun_count, metrics.overrun_fraction * 100
+        )
         logger.info("  Sub-ms (P95):   %s", "PASS" if metrics.sub_ms_achieved else "FAIL")
         logger.info("  1 kHz capable:  %s", "PASS" if result.passes_1khz else "FAIL")
         if fpga_map:
@@ -537,21 +539,21 @@ def run_hil_benchmark_detailed(
     actuator_times = np.asarray([p.actuator_command_us for p in profiles], dtype=np.float64)
     totals = np.asarray([p.total_us for p in profiles], dtype=np.float64)
     return {
-        'n_steps': steps,
-        'rng_seed': int(rng_seed),
-        'state_dim': state_width,
-        'control_dim': control_width,
-        'mean_us': float(np.mean(totals)),
-        'p50_us': float(np.percentile(totals, 50)),
-        'p95_us': float(np.percentile(totals, 95)),
-        'p99_us': float(np.percentile(totals, 99)),
-        'max_us': float(np.max(totals)),
-        'stage_breakdown': {
-            'state_estimation_mean_us': float(np.mean(state_times)),
-            'state_estimation_p95_us': float(np.percentile(state_times, 95)),
-            'controller_step_mean_us': float(np.mean(controller_times)),
-            'controller_step_p95_us': float(np.percentile(controller_times, 95)),
-            'actuator_command_mean_us': float(np.mean(actuator_times)),
-            'actuator_command_p95_us': float(np.percentile(actuator_times, 95)),
-        }
+        "n_steps": steps,
+        "rng_seed": int(rng_seed),
+        "state_dim": state_width,
+        "control_dim": control_width,
+        "mean_us": float(np.mean(totals)),
+        "p50_us": float(np.percentile(totals, 50)),
+        "p95_us": float(np.percentile(totals, 95)),
+        "p99_us": float(np.percentile(totals, 99)),
+        "max_us": float(np.max(totals)),
+        "stage_breakdown": {
+            "state_estimation_mean_us": float(np.mean(state_times)),
+            "state_estimation_p95_us": float(np.percentile(state_times, 95)),
+            "controller_step_mean_us": float(np.mean(controller_times)),
+            "controller_step_p95_us": float(np.percentile(controller_times, 95)),
+            "actuator_command_mean_us": float(np.mean(actuator_times)),
+            "actuator_command_p95_us": float(np.percentile(actuator_times, 95)),
+        },
     }

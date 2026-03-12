@@ -40,7 +40,7 @@ def test_ipb98_regression_point() -> None:
 def test_rmse_basic() -> None:
     assert rmse_dashboard.rmse([1.0, 2.0, 3.0], [1.0, 2.0, 3.0]) == 0.0
     val = rmse_dashboard.rmse([1.0, 3.0], [2.0, 5.0])
-    assert val == pytest.approx((2.5**0.5))
+    assert val == pytest.approx(2.5**0.5)
 
 
 def test_rmse_raises_on_invalid_input() -> None:

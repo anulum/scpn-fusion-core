@@ -62,7 +62,7 @@ class MinimalPCA:
         U, S, Vt = np.linalg.svd(Xc, full_matrices=False)
         k = min(self.k, len(S))
         self.V = Vt[:k]
-        self.evr = S[:k] ** 2 / max((S ** 2).sum(), 1e-15)
+        self.evr = S[:k] ** 2 / max((S**2).sum(), 1e-15)
         self.k = k
         return self
 
@@ -96,7 +96,9 @@ class MLP:
 
 
 def load_data(
-    ref_dir: Path, n_pert: int, rng: np.random.Generator,
+    ref_dir: Path,
+    n_pert: int,
+    rng: np.random.Generator,
 ) -> tuple[NDArray, NDArray, list[str], NDArray]:
     from scpn_fusion.core.eqdsk import read_geqdsk
     from scipy.interpolate import RectBivariateSpline
@@ -141,10 +143,22 @@ def load_data(
             if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
                 q95 = eq.qpsi[min(int(0.95 * len(eq.qpsi)), len(eq.qpsi) - 1)]
 
-            base = np.array([
-                eq.current / 1e6, eq.bcentr, eq.rmaxis, eq.zmaxis,
-                1.0, 1.0, eq.simag, eq.sibry, kap, du, dl, q95,
-            ])
+            base = np.array(
+                [
+                    eq.current / 1e6,
+                    eq.bcentr,
+                    eq.rmaxis,
+                    eq.zmaxis,
+                    1.0,
+                    1.0,
+                    eq.simag,
+                    eq.sibry,
+                    kap,
+                    du,
+                    dl,
+                    q95,
+                ]
+            )
 
             # Per-file weight: each file gets equal total gradient influence
             w_per_sample = 1.0 / (total_files * (1 + n_pert))
@@ -174,7 +188,8 @@ def load_data(
 
 
 def stratified_split(
-    labels: list[str], rng: np.random.Generator,
+    labels: list[str],
+    rng: np.random.Generator,
 ) -> tuple[NDArray, NDArray, NDArray]:
     machines = sorted(set(labels))
     tri, vai, tei = [], [], []
@@ -185,14 +200,17 @@ def stratified_split(
         nt = max(1, int(0.70 * n))
         nv = max(1, int(0.15 * n))
         tri.extend(idx[:nt])
-        vai.extend(idx[nt:nt + nv])
-        tei.extend(idx[nt + nv:])
+        vai.extend(idx[nt : nt + nv])
+        tei.extend(idx[nt + nv :])
     return np.array(tri), np.array(vai), np.array(tei)
 
 
 def validate_per_machine(
-    ref_dir: Path, mlp: MLP, pca: MinimalPCA,
-    imean: NDArray, istd: NDArray,
+    ref_dir: Path,
+    mlp: MLP,
+    pca: MinimalPCA,
+    imean: NDArray,
+    istd: NDArray,
 ) -> dict[str, dict]:
     from scpn_fusion.core.eqdsk import read_geqdsk
     from scipy.interpolate import RectBivariateSpline
@@ -229,22 +247,35 @@ def validate_per_machine(
             if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
                 q95 = eq.qpsi[min(int(0.95 * len(eq.qpsi)), len(eq.qpsi) - 1)]
 
-            feat = np.array([
-                eq.current / 1e6, eq.bcentr, eq.rmaxis, eq.zmaxis,
-                1.0, 1.0, eq.simag, eq.sibry, kap, du2, dl2, q95,
-            ])
+            feat = np.array(
+                [
+                    eq.current / 1e6,
+                    eq.bcentr,
+                    eq.rmaxis,
+                    eq.zmaxis,
+                    1.0,
+                    1.0,
+                    eq.simag,
+                    eq.sibry,
+                    kap,
+                    du2,
+                    dl2,
+                    q95,
+                ]
+            )
             xn = (feat - imean) / istd
             coeff = mlp.forward(xn[np.newaxis, :])
             pred = pca.inverse_transform(coeff)[0].reshape(TARGET_GRID, TARGET_GRID)
-            rl2 = float(
-                np.linalg.norm(pred - psi_ref) / max(np.linalg.norm(psi_ref), 1e-12)
-            )
+            rl2 = float(np.linalg.norm(pred - psi_ref) / max(np.linalg.norm(psi_ref), 1e-12))
             file_res.append((f.name, rl2))
 
         ml2 = float(np.mean([x[1] for x in file_res]))
         mx2 = float(np.max([x[1] for x in file_res]))
-        results[d.name] = {"mean_rel_l2": ml2, "max_rel_l2": mx2,
-                           "per_file": {n: v for n, v in file_res}}
+        results[d.name] = {
+            "mean_rel_l2": ml2,
+            "max_rel_l2": mx2,
+            "per_file": {n: v for n, v in file_res},
+        }
         print(f"  [{d.name}] mean={ml2:.4f}  max={mx2:.4f}")
         for n, v in file_res:
             print(f"    {n}: {v:.4f}")
@@ -297,7 +328,7 @@ def main() -> int:
         eloss = 0.0
 
         for s in range(0, len(Xtr), BS):
-            idx = order[s:s + BS]
+            idx = order[s : s + BS]
             xb, yb = Xtr[idx], Ytr[idx]
             wb = sw_train[idx]
 
@@ -311,7 +342,7 @@ def main() -> int:
             err = acts[-1] - yb
             w_sqrt = np.sqrt(wb[:, np.newaxis])
             weighted_err = err * w_sqrt
-            loss = float(np.mean(weighted_err ** 2))
+            loss = float(np.mean(weighted_err**2))
             eloss += loss * len(idx)
 
             delta = 2.0 * weighted_err * w_sqrt / len(idx)
@@ -362,9 +393,12 @@ def main() -> int:
 
     all_pass = True
     for machine, metrics in per_machine.items():
-        if machine == "sparc" and metrics["mean_rel_l2"] > 0.10:
-            all_pass = False
-        elif machine != "sparc" and metrics["mean_rel_l2"] > 0.20:
+        if (
+            machine == "sparc"
+            and metrics["mean_rel_l2"] > 0.10
+            or machine != "sparc"
+            and metrics["mean_rel_l2"] > 0.20
+        ):
             all_pass = False
 
     save_path = REPO_ROOT / "weights" / "neural_equilibrium_augmented_v3.npz"

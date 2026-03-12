@@ -21,12 +21,12 @@ except Exception:  # pragma: no cover - optional dependency path
 
 try:
     import jax
+
     jax.config.update("jax_enable_x64", True)
     import jax.numpy as jnp
 except Exception:  # pragma: no cover - optional dependency path
     jax = None  # type: ignore[assignment]
     jnp = None  # type: ignore[assignment]
-
 
 
 @dataclass(frozen=True)
@@ -71,9 +71,7 @@ class GPURuntimeBridge:
 
     def _gpu_sim_multigrid(self, field: np.ndarray, iterations: int = 4) -> np.ndarray:
         u = field.astype(np.float64, copy=True)
-        iterations = self._require_int_at_least(
-            iterations, name="iterations", minimum=1
-        )
+        iterations = self._require_int_at_least(iterations, name="iterations", minimum=1)
         for _ in range(iterations):
             u = 0.2 * (
                 u
@@ -87,9 +85,7 @@ class GPURuntimeBridge:
     def _cpu_multigrid(self, field: np.ndarray, iterations: int = 4) -> np.ndarray:
         u = field.astype(np.float64, copy=True)
         n0, n1 = u.shape
-        iterations = self._require_int_at_least(
-            iterations, name="iterations", minimum=1
-        )
+        iterations = self._require_int_at_least(iterations, name="iterations", minimum=1)
         for _ in range(iterations):
             next_u = u.copy()
             for i in range(1, n0 - 1):
@@ -114,9 +110,7 @@ class GPURuntimeBridge:
                 "PyTorch compatibility backend requested but torch is not installed."
             )
         u = torch.as_tensor(np.asarray(field, dtype=np.float64))
-        iterations = self._require_int_at_least(
-            iterations, name="iterations", minimum=1
-        )
+        iterations = self._require_int_at_least(iterations, name="iterations", minimum=1)
         for _ in range(iterations):
             u = 0.2 * (
                 u
@@ -130,9 +124,7 @@ class GPURuntimeBridge:
     def _jax_multigrid(self, field: np.ndarray, iterations: int = 4) -> np.ndarray:
         if jax is None:
             raise RuntimeError("JAX backend requested but jax is not installed.")
-        iterations = self._require_int_at_least(
-            iterations, name="iterations", minimum=1
-        )
+        iterations = self._require_int_at_least(iterations, name="iterations", minimum=1)
         u = jnp.asarray(field, dtype=jnp.float64)
 
         @jax.jit
@@ -228,7 +220,9 @@ class GPURuntimeBridge:
             snn_mean_ms_wall=float(np.mean(snn_wall)),
         )
 
-    def benchmark_pair(self, *, trials: int = 64, grid_size: int = 64) -> dict[str, float | dict[str, float]]:
+    def benchmark_pair(
+        self, *, trials: int = 64, grid_size: int = 64
+    ) -> dict[str, float | dict[str, float]]:
         cpu = self.benchmark(backend="cpu", trials=trials, grid_size=grid_size)
         gpu = self.benchmark(backend="gpu_sim", trials=trials, grid_size=grid_size)
         return {
@@ -268,6 +262,7 @@ class GPURuntimeBridge:
             for i in idx:
                 bit = int(rng.integers(0, 52))
                 from scpn_fusion.control.disruption_predictor import apply_bit_flip_fault
+
                 flat[int(i)] = apply_bit_flip_fault(float(flat[int(i)]), bit)
             noisy = flat.reshape(noisy.shape)
         return np.nan_to_num(noisy, nan=0.0, posinf=1.0, neginf=0.0)
@@ -285,9 +280,7 @@ class GPURuntimeBridge:
         seed: int = 42,
     ) -> EquilibriumLatencyBenchmark:
         if backend not in {"auto", "cpu", "gpu_sim", "torch_fallback", "jax"}:
-            raise ValueError(
-                "backend must be one of: auto, cpu, gpu_sim, torch_fallback, jax."
-            )
+            raise ValueError("backend must be one of: auto, cpu, gpu_sim, torch_fallback, jax.")
         if backend == "auto":
             if jax is not None:
                 resolved_backend = "jax"

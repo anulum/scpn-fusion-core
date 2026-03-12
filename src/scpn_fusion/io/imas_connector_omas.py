@@ -26,8 +26,7 @@ def ids_to_omas_equilibrium(ids_dict: Mapping[str, Any]) -> Any:
     """Convert an IMAS equilibrium IDS dict to an OMAS ODS."""
     if not HAS_OMAS or omas is None:
         raise ImportError(
-            "The 'omas' package is required for OMAS conversion. "
-            "Install with: pip install omas"
+            "The 'omas' package is required for OMAS conversion. " "Install with: pip install omas"
         )
 
     ods = omas.ODS()
@@ -59,7 +58,9 @@ def ids_to_omas_equilibrium(ids_dict: Mapping[str, Any]) -> Any:
         if p1d:
             ods[f"{prefix}.profiles_1d.psi"] = np.asarray(p1d.get("psi", []), dtype=np.float64)
             ods[f"{prefix}.profiles_1d.q"] = np.asarray(p1d.get("q", []), dtype=np.float64)
-            ods[f"{prefix}.profiles_1d.pressure"] = np.asarray(p1d.get("pressure", []), dtype=np.float64)
+            ods[f"{prefix}.profiles_1d.pressure"] = np.asarray(
+                p1d.get("pressure", []), dtype=np.float64
+            )
             ods[f"{prefix}.profiles_1d.f"] = np.asarray(p1d.get("f", []), dtype=np.float64)
 
         bdry = ts.get("boundary", {})
@@ -143,4 +144,3 @@ __all__ = [
     "ids_to_omas_equilibrium",
     "omas_equilibrium_to_ids",
 ]
-

@@ -9,9 +9,10 @@ Enables jax.grad through the transport evolution step.
 
 import jax
 import jax.numpy as jnp
-from jax import jit, vmap
+from jax import jit
 
 # ── Validation wrappers ──────────────────────────────────────────────
+
 
 def _validate_transport_inputs(
     te: jnp.ndarray,
@@ -51,7 +52,9 @@ def _validate_transport_inputs(
     if not jnp.isfinite(dt_val) or dt_val <= 0.0:
         raise ValueError("dt must be finite and > 0.")
 
+
 # ── JAX Kernels ──────────────────────────────────────────────────────
+
 
 @jit
 def transport_step_jax(
@@ -94,6 +97,7 @@ def transport_step_jax(
 
     return jnp.maximum(new_te, 0.01), jnp.maximum(new_ti, 0.01)
 
+
 @jit
 def simulate_scenario_jax(
     initial_te: jnp.ndarray,
@@ -101,7 +105,7 @@ def simulate_scenario_jax(
     ne: jnp.ndarray,
     chi_e: jnp.ndarray,
     chi_i: jnp.ndarray,
-    p_aux_mw: jnp.ndarray, # Time-series of heating
+    p_aux_mw: jnp.ndarray,  # Time-series of heating
     rho: jnp.ndarray,
     dt: float,
 ):
@@ -110,7 +114,7 @@ def simulate_scenario_jax(
     def body_fn(carry, p_now):
         te, ti = carry
         # Simple heating model: uniform distribution for now
-        s_heat = p_now * 1e6 / (jnp.sum(ne) * 1.6e-16) # Mock scaling
+        s_heat = p_now * 1e6 / (jnp.sum(ne) * 1.6e-16)  # Mock scaling
         new_te, new_ti = transport_step_jax(te, ti, ne, chi_e, chi_i, s_heat, s_heat, rho, dt)
         return (new_te, new_ti), (new_te, new_ti)
 
@@ -133,6 +137,7 @@ def transport_step_checked(
     _validate_transport_inputs(te, ti, ne, chi_e, chi_i, s_heat_e, s_heat_i, rho, dt)
     return transport_step_jax(te, ti, ne, chi_e, chi_i, s_heat_e, s_heat_i, rho, dt)
 
+
 if __name__ == "__main__":
     # Simple verification
     nr = 65
@@ -149,7 +154,7 @@ if __name__ == "__main__":
     # Gradient test
     def cost(p):
         hist_te, _ = simulate_scenario_jax(te, ti, ne, chi, chi, p, rho, 0.01)
-        return jnp.mean(hist_te[-1]) # Final average Te
+        return jnp.mean(hist_te[-1])  # Final average Te
 
     p_series = jnp.ones(10) * 10.0
     g = jax.grad(cost)(p_series)

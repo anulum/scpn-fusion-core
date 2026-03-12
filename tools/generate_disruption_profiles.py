@@ -25,7 +25,6 @@ reproducibility.
 from __future__ import annotations
 
 import argparse
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -41,9 +40,7 @@ TIME = np.linspace(0.0, T_END, N_STEPS, dtype=np.float64)
 DT = TIME[1] - TIME[0]  # ~0.003003 s
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT_DIR = (
-    REPO_ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots"
-)
+DEFAULT_OUTPUT_DIR = REPO_ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots"
 
 # -------------------------------------------------------------------------
 # Helpers
@@ -150,7 +147,9 @@ def generate_locked_mode(rng: np.random.Generator) -> dict:
 
     # beta_N drops as island grows, collapse at disruption
     for i in range(onset_idx, N_STEPS):
-        frac = min((TIME[i] - TIME[onset_idx]) / (TIME[disrupt_target] - TIME[onset_idx] + 1e-9), 1.0)
+        frac = min(
+            (TIME[i] - TIME[onset_idx]) / (TIME[disrupt_target] - TIME[onset_idx] + 1e-9), 1.0
+        )
         beta_N[i] -= 0.3 * frac
     beta_N = _exp_decay(beta_N, disrupt_target, tau=0.01)
 
@@ -216,7 +215,7 @@ def generate_density_limit(rng: np.random.Generator) -> dict:
 
     # Greenwald limit for DIII-D (a~0.67 m): n_GW ~ 7.1e19
     a = 0.67
-    n_GW = Ip_base / (np.pi * a ** 2) * 10.0  # ~7.1
+    n_GW = Ip_base / (np.pi * a**2) * 10.0  # ~7.1
 
     disrupt_target = _time_to_idx(2.5)
     marfe_onset = _time_to_idx(2.2)
@@ -225,7 +224,7 @@ def generate_density_limit(rng: np.random.Generator) -> dict:
     n1 = np.full(N_STEPS, 0.02, dtype=np.float64)
     for i in range(marfe_onset, N_STEPS):
         frac = min((TIME[i] - TIME[marfe_onset]) / 0.4, 1.0)
-        n1[i] = 0.02 + 0.35 * frac ** 2
+        n1[i] = 0.02 + 0.35 * frac**2
     n1 = np.clip(n1, 0.01, 0.5)
 
     n2 = np.clip(n1 * 0.35, 0.01, 0.3)
@@ -308,8 +307,10 @@ def generate_vde(rng: np.random.Generator) -> dict:
     # n=1 grows during VDE
     n1 = np.full(N_STEPS, 0.02, dtype=np.float64)
     for i in range(vde_onset, N_STEPS):
-        frac = min((TIME[i] - TIME[vde_onset]) / (TIME[disrupt_target] - TIME[vde_onset] + 1e-9), 1.5)
-        n1[i] = 0.02 + 0.40 * frac ** 1.5
+        frac = min(
+            (TIME[i] - TIME[vde_onset]) / (TIME[disrupt_target] - TIME[vde_onset] + 1e-9), 1.5
+        )
+        n1[i] = 0.02 + 0.40 * frac**1.5
     n1 = np.clip(n1, 0.01, 0.5)
 
     n2 = np.clip(n1 * 0.3, 0.01, 0.3)
@@ -391,7 +392,7 @@ def generate_tearing(rng: np.random.Generator) -> dict:
     n1 = np.full(N_STEPS, 0.02, dtype=np.float64)
     for i in range(_time_to_idx(1.5), N_STEPS):
         frac = min((TIME[i] - 1.5) / 0.8, 1.0)
-        n1[i] = 0.02 + 0.30 * frac ** 2
+        n1[i] = 0.02 + 0.30 * frac**2
     n1 = np.clip(n1, 0.01, 0.5)
 
     # Locked mode near disruption
@@ -468,7 +469,7 @@ def generate_beta_limit(rng: np.random.Generator) -> dict:
     exceed_idx = _time_to_idx(1.6)  # beta_N ~ 3.4 approaching limit
     for i in range(exceed_idx, N_STEPS):
         excess = max(beta_N[i] - 3.2, 0.0)
-        n1[i] = 0.02 + 0.6 * excess ** 2
+        n1[i] = 0.02 + 0.6 * excess**2
     n1 = np.clip(n1, 0.01, 0.5)
 
     n2 = np.clip(n1 * 0.4, 0.01, 0.3)
@@ -799,17 +800,21 @@ def generate_all(
 
         # Validate array shapes
         for key in [
-            "time_s", "Ip_MA", "BT_T", "beta_N", "q95", "ne_1e19",
-            "n1_amp", "n2_amp", "locked_mode_amp", "dBdt_gauss_per_s",
+            "time_s",
+            "Ip_MA",
+            "BT_T",
+            "beta_N",
+            "q95",
+            "ne_1e19",
+            "n1_amp",
+            "n2_amp",
+            "locked_mode_amp",
+            "dBdt_gauss_per_s",
             "vertical_position_m",
         ]:
             arr = data[key]
-            assert arr.shape == (N_STEPS,), (
-                f"{name}/{key}: expected ({N_STEPS},), got {arr.shape}"
-            )
-            assert arr.dtype == np.float64, (
-                f"{name}/{key}: expected float64, got {arr.dtype}"
-            )
+            assert arr.shape == (N_STEPS,), f"{name}/{key}: expected ({N_STEPS},), got {arr.shape}"
+            assert arr.dtype == np.float64, f"{name}/{key}: expected float64, got {arr.dtype}"
 
         path = out_dir / f"{name}.npz"
         _save_shot(path, **data)
@@ -819,9 +824,7 @@ def generate_all(
             dtype_tag = data["disruption_type"]
             idx_tag = data["disruption_time_idx"]
             label = (
-                f"disruption ({dtype_tag}) at idx {idx_tag}"
-                if data["is_disruption"]
-                else "safe"
+                f"disruption ({dtype_tag}) at idx {idx_tag}" if data["is_disruption"] else "safe"
             )
             print(f"OK  [{label}]")
 
@@ -835,9 +838,19 @@ def verify_all(output_dir: Path | str | None = None) -> None:
     out_dir = Path(output_dir) if output_dir is not None else DEFAULT_OUTPUT_DIR
 
     required_keys = {
-        "time_s", "Ip_MA", "BT_T", "beta_N", "q95", "ne_1e19",
-        "n1_amp", "n2_amp", "locked_mode_amp", "dBdt_gauss_per_s",
-        "vertical_position_m", "is_disruption", "disruption_time_idx",
+        "time_s",
+        "Ip_MA",
+        "BT_T",
+        "beta_N",
+        "q95",
+        "ne_1e19",
+        "n1_amp",
+        "n2_amp",
+        "locked_mode_amp",
+        "dBdt_gauss_per_s",
+        "vertical_position_m",
+        "is_disruption",
+        "disruption_time_idx",
         "disruption_type",
     }
     array_keys = required_keys - {"is_disruption", "disruption_time_idx", "disruption_type"}
@@ -864,18 +877,12 @@ def verify_all(output_dir: Path | str | None = None) -> None:
             disrupt_type = str(np.asarray(data["disruption_type"]).reshape(()).item())
 
         if is_disrupt:
-            assert 0 <= disrupt_idx < N_STEPS, (
-                f"{name}: bad disruption_time_idx={disrupt_idx}"
-            )
+            assert 0 <= disrupt_idx < N_STEPS, f"{name}: bad disruption_time_idx={disrupt_idx}"
             assert disrupt_type != "safe", f"{name}: disruption but type='safe'"
             n_disruption += 1
         else:
-            assert disrupt_idx == -1, (
-                f"{name}: safe but disruption_time_idx={disrupt_idx}"
-            )
-            assert disrupt_type == "safe", (
-                f"{name}: safe but type='{disrupt_type}'"
-            )
+            assert disrupt_idx == -1, f"{name}: safe but disruption_time_idx={disrupt_idx}"
+            assert disrupt_type == "safe", f"{name}: safe but type='{disrupt_type}'"
             n_safe += 1
 
         print(f"  VERIFIED {name}: type={disrupt_type}, idx={disrupt_idx}")
@@ -918,7 +925,7 @@ def main() -> None:
     else:
         print("Generating DIII-D synthetic disruption shot profiles...")
         print(f"  Steps: {N_STEPS}, time: 0 - {T_END} s, dt: {DT:.6f} s")
-        print(f"  Seeding: np.random.default_rng(shot_number)")
+        print("  Seeding: np.random.default_rng(shot_number)")
         print()
         generate_all(out_dir)
         print()

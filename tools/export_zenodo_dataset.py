@@ -15,17 +15,24 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_OUTPUT = ROOT.parent.parent / "01_MANUSCRIPTS" / "SCPN_PAPERS" / "Paper_SNN_Tokamak_Control" / "zenodo_dataset"
+DEFAULT_OUTPUT = (
+    ROOT.parent.parent
+    / "01_MANUSCRIPTS"
+    / "SCPN_PAPERS"
+    / "Paper_SNN_Tokamak_Control"
+    / "zenodo_dataset"
+)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Export Zenodo dataset bundle")
     parser.add_argument(
-        "--output-dir", type=Path, default=DEFAULT_OUTPUT,
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_OUTPUT,
         help="Output directory for the dataset bundle",
     )
     args = parser.parse_args()
@@ -88,7 +95,9 @@ def main() -> None:
 
     # ── 6. Generate dataset metadata JSON ───────────────────────────
     meta = out / "dataset_metadata.json"
-    meta.write_text(json.dumps(_build_metadata(version), indent=2, ensure_ascii=False), encoding="utf-8")
+    meta.write_text(
+        json.dumps(_build_metadata(version), indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     print("  Generated dataset_metadata.json")
 
     # ── Summary ─────────────────────────────────────────────────────

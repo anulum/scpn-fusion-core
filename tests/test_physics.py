@@ -19,8 +19,9 @@ MOCK_CONFIG = {
     "dimensions": {"R_min": 1, "R_max": 2, "Z_min": -1, "Z_max": 1},
     "physics": {"plasma_current_target": 1.0, "vacuum_permeability": 1.0},
     "coils": [],
-    "solver": {"max_iterations": 1, "convergence_threshold": 1e-4, "relaxation_factor": 0.1}
+    "solver": {"max_iterations": 1, "convergence_threshold": 1e-4, "relaxation_factor": 0.1},
 }
+
 
 @pytest.fixture
 def sim(tmp_path: Path) -> FusionBurnPhysics:

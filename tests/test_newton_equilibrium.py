@@ -51,6 +51,7 @@ def picard_cfg(tmp_path: Path) -> Path:
 
 # ── Tests ─────────────────────────────────────────────────────────
 
+
 def test_newton_converges_finite(newton_cfg: Path):
     """Newton should produce finite Psi with no NaN."""
     fk = FusionKernel(str(newton_cfg))
@@ -71,8 +72,7 @@ def test_newton_fewer_iterations(newton_cfg: Path, picard_cfg: Path):
     # But the comparison is only meaningful if both converge
     if r_n["converged"] and r_p["converged"]:
         assert r_n["iterations"] < r_p["iterations"], (
-            f"Newton ({r_n['iterations']}) not fewer than "
-            f"Picard ({r_p['iterations']})"
+            f"Newton ({r_n['iterations']}) not fewer than " f"Picard ({r_p['iterations']})"
         )
 
 
@@ -94,9 +94,9 @@ def test_newton_quadratic_residual_decrease(tmp_path: Path):
     if len(rh) >= 4:
         late = rh[-1]
         mid = rh[len(rh) // 2]
-        assert late <= mid * 1.05 or late < 1e-2, (
-            f"Residual not decreasing: mid={mid:.2e}, late={late:.2e}"
-        )
+        assert (
+            late <= mid * 1.05 or late < 1e-2
+        ), f"Residual not decreasing: mid={mid:.2e}, late={late:.2e}"
 
 
 def test_newton_matches_picard_solution(newton_cfg: Path, picard_cfg: Path):
@@ -110,9 +110,7 @@ def test_newton_matches_picard_solution(newton_cfg: Path, picard_cfg: Path):
     if r_n["converged"] and r_p["converged"]:
         psi_diff = np.abs(fk_n.Psi - fk_p.Psi)
         # Allow larger tolerance since these are different iteration strategies
-        assert np.mean(psi_diff) < 1.0, (
-            f"Psi mean diff = {np.mean(psi_diff):.3f}"
-        )
+        assert np.mean(psi_diff) < 1.0, f"Psi mean diff = {np.mean(psi_diff):.3f}"
 
 
 def test_newton_gs_residual_small(newton_cfg: Path):
@@ -120,9 +118,7 @@ def test_newton_gs_residual_small(newton_cfg: Path):
     fk = FusionKernel(str(newton_cfg))
     result = fk.solve_equilibrium()
     if result["converged"]:
-        assert result["residual"] < 1e-2, (
-            f"Final residual = {result['residual']:.2e}"
-        )
+        assert result["residual"] < 1e-2, f"Final residual = {result['residual']:.2e}"
 
 
 def test_newton_with_hmode_profiles(tmp_path: Path):
@@ -132,10 +128,8 @@ def test_newton_with_hmode_profiles(tmp_path: Path):
         **cfg["physics"],
         "profiles": {
             "mode": "h-mode",
-            "p_prime": {"ped_top": 0.92, "ped_width": 0.05,
-                        "ped_height": 1.0, "core_alpha": 0.3},
-            "ff_prime": {"ped_top": 0.92, "ped_width": 0.05,
-                         "ped_height": 1.0, "core_alpha": 0.3},
+            "p_prime": {"ped_top": 0.92, "ped_width": 0.05, "ped_height": 1.0, "core_alpha": 0.3},
+            "ff_prime": {"ped_top": 0.92, "ped_width": 0.05, "ped_height": 1.0, "core_alpha": 0.3},
         },
     }
     p = tmp_path / "hmode_newton.json"

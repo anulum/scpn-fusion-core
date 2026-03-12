@@ -37,17 +37,12 @@ def evaluate(report: dict[str, Any]) -> dict[str, Any]:
     checks = {
         "strict_requested": bool(report.get("require_freegs_backend", False)),
         "mode_is_freegs": str(report.get("mode", "")).strip() == "freegs",
-        "runtime_fallback_disallowed": not bool(
-            report.get("runtime_fallback_allowed", True)
-        ),
-        "runtime_fallback_case_count_zero": int(
-            report.get("freegs_runtime_fallback_cases", 0)
-        )
+        "runtime_fallback_disallowed": not bool(report.get("runtime_fallback_allowed", True)),
+        "runtime_fallback_case_count_zero": int(report.get("freegs_runtime_fallback_cases", 0))
         == 0,
         "all_cases_pass": all(bool(case.get("passes", False)) for case in cases),
         "all_reference_backends_freegs": all(
-            str(case.get("reference_backend", "")).strip() == "freegs"
-            for case in cases
+            str(case.get("reference_backend", "")).strip() == "freegs" for case in cases
         ),
         "no_case_level_fallback": all(
             not bool(case.get("freegs_fallback", False)) for case in cases
@@ -64,9 +59,7 @@ def evaluate(report: dict[str, Any]) -> dict[str, Any]:
         "report_mode": report.get("mode"),
         "require_freegs_backend": bool(report.get("require_freegs_backend", False)),
         "runtime_fallback_allowed": bool(report.get("runtime_fallback_allowed", True)),
-        "freegs_runtime_fallback_cases": int(
-            report.get("freegs_runtime_fallback_cases", 0)
-        ),
+        "freegs_runtime_fallback_cases": int(report.get("freegs_runtime_fallback_cases", 0)),
     }
 
 
@@ -81,9 +74,7 @@ def main(argv: list[str] | None = None) -> int:
 
     summary_path = _resolve(args.summary_json)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(
-        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     print(
         "FreeGS strict artifact guard: "

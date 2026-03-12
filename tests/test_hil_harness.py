@@ -164,7 +164,7 @@ class TestHILBenchmark:
     def test_sub_ms_p95(self):
         """The key deliverable: demonstrate sub-ms control loop latency."""
         result = run_hil_benchmark(iterations=1000)
-        print(f"\n=== HIL Benchmark ===")
+        print("\n=== HIL Benchmark ===")
         print(f"    P50: {result.control_metrics.p50_latency_us:.1f} us")
         print(f"    P95: {result.control_metrics.p95_latency_us:.1f} us")
         print(f"    P99: {result.control_metrics.p99_latency_us:.1f} us")

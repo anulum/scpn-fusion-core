@@ -25,8 +25,8 @@ LEARNING_RATE = 0.0001
 HIDDEN_SIZE = 64
 BATCH_SIZE = 32
 MEMORY_SIZE = 1000
-R_MAJ = 2.0   # major radius [m]
-R_MIN = 0.8   # minor radius [m]
+R_MAJ = 2.0  # major radius [m]
+R_MIN = 0.8  # minor radius [m]
 _GRID_SPACING = 1.0  # cell size for 2D diffusion stencil [arbitrary]
 
 
@@ -43,8 +43,8 @@ class TokamakTopoloy:
 
     def __init__(self, size=GRID_SIZE):
         self.size = size
-        y, x = np.ogrid[-size/2:size/2, -size/2:size/2]
-        self.r_map = np.sqrt(x**2 + y**2) / (size/2)
+        y, x = np.ogrid[-size / 2 : size / 2, -size / 2 : size / 2]
+        self.r_map = np.sqrt(x**2 + y**2) / (size / 2)
         self.mask = self.r_map <= 1.0
 
         self.q0 = 1.0
@@ -61,7 +61,7 @@ class TokamakTopoloy:
         w_crit = 0.05
         for res in self.resonances:
             delta_prime = -0.2 - (5.0 * self.island_widths[res])
-            f_bs = beta_p * (self.island_widths[res] / (self.island_widths[res]**2 + w_crit**2))
+            f_bs = beta_p * (self.island_widths[res] / (self.island_widths[res] ** 2 + w_crit**2))
             dw_dt = self.eta * (delta_prime + f_bs)
             self.island_widths[res] = max(0.001, self.island_widths[res] + dw_dt * dt)
 
@@ -79,6 +79,7 @@ class TokamakTopoloy:
             mask = (np.abs(self.q_map - res) < width) & self.mask
             danger_map = np.logical_or(danger_map, mask)
         return danger_map
+
 
 class Plasma2D:
     """2D diffusion-reaction model on a poloidal cross-section."""
@@ -118,7 +119,7 @@ class Plasma2D:
 
         # CFL stability: dt_cfl = dx^2 / (4 * D_max) for 2D explicit Euler
         D_max = float(np.max(diffusivity))
-        dt_cfl = _GRID_SPACING ** 2 / (4.0 * max(D_max, 1e-12))
+        dt_cfl = _GRID_SPACING**2 / (4.0 * max(D_max, 1e-12))
         dt_phys = 1.0
         n_sub = max(1, int(np.ceil(dt_phys / dt_cfl)))
         dt_sub = dt_phys / n_sub
@@ -128,7 +129,7 @@ class Plasma2D:
             T_down = np.roll(self.T, 1, axis=0)
             T_left = np.roll(self.T, -1, axis=1)
             T_right = np.roll(self.T, 1, axis=1)
-            laplacian = (T_up + T_down + T_left + T_right - 4 * self.T)
+            laplacian = T_up + T_down + T_left + T_right - 4 * self.T
 
             radiation = 0.002 * np.sqrt(np.maximum(self.T, 0.0) + 1e-6)
             tungsten_rad = 0.05 * np.exp(-((self.T - 2.0) ** 2) / 0.5)
@@ -143,6 +144,7 @@ class Plasma2D:
         avg_temp = np.mean(self.T[self.topo.mask])
         self.T_core_hist.append(core_temp)
         return self.T.flatten(), avg_temp
+
 
 class SimpleNeuralNet:
     """NumPy MLP policy network for continuous control."""
@@ -187,6 +189,7 @@ class SimpleNeuralNet:
         self.b2 -= LEARNING_RATE * d_b2
         return np.mean(np.abs(grad_out))
 
+
 def run_digital_twin(
     time_steps=TIME_STEPS,
     seed=42,
@@ -206,7 +209,11 @@ def run_digital_twin(
     chaos_monkey = bool(chaos_monkey)
     sensor_dropout_prob = float(sensor_dropout_prob)
     sensor_noise_std = float(sensor_noise_std)
-    if not np.isfinite(sensor_dropout_prob) or sensor_dropout_prob < 0.0 or sensor_dropout_prob > 1.0:
+    if (
+        not np.isfinite(sensor_dropout_prob)
+        or sensor_dropout_prob < 0.0
+        or sensor_dropout_prob > 1.0
+    ):
         raise ValueError("sensor_dropout_prob must be finite and in [0, 1].")
     if not np.isfinite(sensor_noise_std) or sensor_noise_std < 0.0:
         raise ValueError("sensor_noise_std must be finite and >= 0.")
@@ -232,18 +239,14 @@ def run_digital_twin(
         state_vector = np.asarray(plasma.T[midplane_idx, :], dtype=float).reshape(1, -1).copy()
         if chaos_monkey:
             if sensor_noise_std > 0.0:
-                state_vector += local_rng.normal(
-                    0.0, sensor_noise_std, size=state_vector.shape
-                )
+                state_vector += local_rng.normal(0.0, sensor_noise_std, size=state_vector.shape)
             if sensor_dropout_prob > 0.0:
                 dropout_mask = local_rng.random(state_vector.shape[1]) < sensor_dropout_prob
                 dropped = int(np.sum(dropout_mask, dtype=np.int64))
                 if dropped > 0:
                     state_vector[0, dropout_mask] = 0.0
                     sensor_dropouts_total += dropped
-            state_vector = np.nan_to_num(
-                state_vector, nan=0.0, posinf=100.0, neginf=0.0
-            )
+            state_vector = np.nan_to_num(state_vector, nan=0.0, posinf=100.0, neginf=0.0)
 
         noise = float(local_rng.normal(0.0, 0.2))
         raw_action = brain.forward(state_vector)
@@ -266,13 +269,15 @@ def run_digital_twin(
         if verbose and t % 500 == 0:
             logger.info(
                 "Digital twin simulation progress",
-                extra={"physics_context": {
-                    "step": t,
-                    "avg_temp": float(avg_temp),
-                    "action": float(action),
-                    "loss": float(loss),
-                    "islands_px": int(np.sum(topo.get_rational_surfaces()))
-                }}
+                extra={
+                    "physics_context": {
+                        "step": t,
+                        "avg_temp": float(avg_temp),
+                        "action": float(action),
+                        "loss": float(loss),
+                        "islands_px": int(np.sum(topo.get_rational_surfaces())),
+                    }
+                },
             )
 
     plot_saved = False
@@ -281,33 +286,33 @@ def run_digital_twin(
         try:
             fig = plt.figure(figsize=(15, 6))
             ax1 = fig.add_subplot(1, 3, 1)
-            im = ax1.imshow(plasma.T, cmap='inferno', origin='lower')
+            im = ax1.imshow(plasma.T, cmap="inferno", origin="lower")
             ax1.set_title("Final Plasma Cross-Section (2D)")
-            plt.colorbar(im, ax=ax1, label='Temperature (keV)')
+            plt.colorbar(im, ax=ax1, label="Temperature (keV)")
 
             islands = topo.get_rational_surfaces()
-            ax1.contour(islands, colors='cyan', levels=[0.5], linewidths=1, alpha=0.5)
-            ax1.text(2, 2, "Cyan = q-Resonance (Islands)", color='cyan', fontsize=8)
+            ax1.contour(islands, colors="cyan", levels=[0.5], linewidths=1, alpha=0.5)
+            ax1.text(2, 2, "Cyan = q-Resonance (Islands)", color="cyan", fontsize=8)
 
             ax2 = fig.add_subplot(1, 3, 2)
-            ax2.plot(history_rewards, color='orange', alpha=0.6)
+            ax2.plot(history_rewards, color="orange", alpha=0.6)
             # Moving average
             if len(history_rewards) > 50:
-                mov_avg = np.convolve(history_rewards, np.ones(50)/50, mode='valid')
-                ax2.plot(range(len(mov_avg)), mov_avg, 'r-', linewidth=2, label='Moving Avg')
+                mov_avg = np.convolve(history_rewards, np.ones(50) / 50, mode="valid")
+                ax2.plot(range(len(mov_avg)), mov_avg, "r-", linewidth=2, label="Moving Avg")
             ax2.set_title("Learning Curve")
             ax2.set_xlabel("Steps")
             ax2.set_ylabel("Reward (Confinement)")
             ax2.legend()
 
             ax3 = fig.add_subplot(1, 3, 3)
-            r_axis = np.linspace(0, 1, GRID_SIZE//2)
-            q_axis = topo.q_map[GRID_SIZE//2, GRID_SIZE//2:]
-            ax3.plot(r_axis, q_axis, 'b-', linewidth=2, label='Safety Factor q(r)')
+            r_axis = np.linspace(0, 1, GRID_SIZE // 2)
+            q_axis = topo.q_map[GRID_SIZE // 2, GRID_SIZE // 2 :]
+            ax3.plot(r_axis, q_axis, "b-", linewidth=2, label="Safety Factor q(r)")
 
             for q_res in [1.5, 2.0, 2.5, 3.0]:
-                ax3.axhline(q_res, color='red', linestyle='--', alpha=0.3)
-                ax3.text(0.1, q_res, f"q={q_res}", color='red', fontsize=8)
+                ax3.axhline(q_res, color="red", linestyle="--", alpha=0.3)
+                ax3.text(0.1, q_res, f"q={q_res}", color="red", fontsize=8)
 
             ax3.set_title("Final Safety Factor Profile")
             ax3.set_xlabel("Normalized Radius r/a")
@@ -381,7 +386,9 @@ def run_digital_twin_ids_history(
         raise ValueError("time_steps is controlled by history_steps in history mode.")
     if "seed" in kwargs:
         raise ValueError("seed is controlled by the seed argument in history mode.")
-    if isinstance(history_steps, (str, bytes, bytearray)) or not isinstance(history_steps, Sequence):
+    if isinstance(history_steps, (str, bytes, bytearray)) or not isinstance(
+        history_steps, Sequence
+    ):
         raise ValueError("history_steps must be a sequence of positive integers.")
     if len(history_steps) == 0:
         raise ValueError("history_steps must contain at least one step count.")
@@ -436,7 +443,9 @@ def _run_digital_twin_history_snapshots(
     seed: int,
     **kwargs,
 ) -> list[dict[str, object]]:
-    if isinstance(history_steps, (str, bytes, bytearray)) or not isinstance(history_steps, Sequence):
+    if isinstance(history_steps, (str, bytes, bytearray)) or not isinstance(
+        history_steps, Sequence
+    ):
         raise ValueError("history_steps must be a sequence of positive integers.")
     if len(history_steps) == 0:
         raise ValueError("history_steps must contain at least one step count.")
@@ -455,6 +464,7 @@ def _run_digital_twin_history_snapshots(
         )
         snapshots.append(summary)
     return snapshots
+
 
 if __name__ == "__main__":
     run_digital_twin()

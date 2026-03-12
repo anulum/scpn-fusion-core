@@ -43,25 +43,19 @@ class _DummyKernel:
             cur = float(coil["current"])
             r0 = float(coil["r"])
             z0 = float(coil["z"])
-            psi += cur * np.exp(
-                -((self.RR - r0) ** 2 + (self.ZZ - z0) ** 2) / 0.08
-            )
+            psi += cur * np.exp(-((self.RR - r0) ** 2 + (self.ZZ - z0) ** 2) / 0.08)
         return psi
 
 
 def test_calculate_required_bv_returns_finite_expected_sign() -> None:
-    solver = AnalyticEquilibriumSolver(
-        "dummy.json", kernel_factory=_DummyKernel, verbose=False
-    )
+    solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
     bv = solver.calculate_required_Bv(6.2, 2.0, 15.0, beta_p=0.5, li=0.8)
     assert np.isfinite(bv)
     assert bv < 0.0
 
 
 def test_solve_coil_currents_hits_target_bv_projection() -> None:
-    solver = AnalyticEquilibriumSolver(
-        "dummy.json", kernel_factory=_DummyKernel, verbose=False
-    )
+    solver = AnalyticEquilibriumSolver("dummy.json", kernel_factory=_DummyKernel, verbose=False)
     target_bv = -0.02
     currents = solver.solve_coil_currents(target_bv, 6.2, target_Z=0.0)
     efficiencies = solver.compute_coil_efficiencies(6.2, target_Z=0.0)

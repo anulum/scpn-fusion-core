@@ -56,9 +56,7 @@ def test_campaign_report_is_deterministic_for_same_seed() -> None:
 
 
 def test_render_markdown_contains_metrics_section() -> None:
-    report = control_resilience_campaign.generate_campaign_report(
-        seed=11, episodes=4, window=24
-    )
+    report = control_resilience_campaign.generate_campaign_report(seed=11, episodes=4, window=24)
     text = control_resilience_campaign.render_markdown(report)
     assert "# Control Resilience Campaign" in text
     assert "## Metrics" in text

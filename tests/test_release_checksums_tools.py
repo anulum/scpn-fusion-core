@@ -37,9 +37,7 @@ def test_generate_and_verify_manifest_roundtrip(tmp_path: Path) -> None:
     assert summary["count"] == 2
     assert manifest.exists()
 
-    verify_summary = verify_release_checksums.verify_manifest(
-        dist_dir=dist, manifest=manifest
-    )
+    verify_summary = verify_release_checksums.verify_manifest(dist_dir=dist, manifest=manifest)
     assert verify_summary["overall_pass"] is True
     assert verify_summary["failures"] == []
     assert verify_summary["verified_entries"] == 2
@@ -55,9 +53,7 @@ def test_verify_detects_tamper(tmp_path: Path) -> None:
     # Tamper artifact after manifest generation.
     _write(dist / "pkg_a.whl", "artifact-a-modified")
 
-    verify_summary = verify_release_checksums.verify_manifest(
-        dist_dir=dist, manifest=manifest
-    )
+    verify_summary = verify_release_checksums.verify_manifest(dist_dir=dist, manifest=manifest)
     assert verify_summary["overall_pass"] is False
     assert any("digest mismatch: pkg_a.whl" in item for item in verify_summary["failures"])
 

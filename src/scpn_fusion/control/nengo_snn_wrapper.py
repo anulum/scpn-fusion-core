@@ -38,6 +38,7 @@ _nengo_available = False
 
 try:
     import nengo as _nengo  # type: ignore[no-redef]
+
     _nengo_available = True
 except ImportError as exc:
     logger.debug("Nengo import unavailable; NengoSNNController disabled: %s", exc)
@@ -51,14 +52,15 @@ def nengo_available() -> bool:
 @dataclass
 class NengoSNNConfig:
     """Configuration for the Nengo SNN controller."""
-    n_neurons: int = 200           # neurons per ensemble
-    n_channels: int = 2            # control channels (R, Z)
-    tau_synapse: float = 0.015     # synaptic time constant [s]
-    tau_mem: float = 0.020         # membrane time constant [s]
-    dt: float = 0.001              # simulation timestep [s]
-    max_rate_hz: float = 200.0     # maximum neuron firing rate [Hz]
+
+    n_neurons: int = 200  # neurons per ensemble
+    n_channels: int = 2  # control channels (R, Z)
+    tau_synapse: float = 0.015  # synaptic time constant [s]
+    tau_mem: float = 0.020  # membrane time constant [s]
+    dt: float = 0.001  # simulation timestep [s]
+    max_rate_hz: float = 200.0  # maximum neuron firing rate [Hz]
     intercept_range: tuple[float, float] = (-0.8, 0.8)
-    gain: float = 5.0              # controller gain
+    gain: float = 5.0  # controller gain
     seed: int = 42
 
 
@@ -142,12 +144,8 @@ class NengoSNNController:
                         tau_rc=cfg.tau_mem,
                         tau_ref=0.002,
                     ),
-                    max_rates=nengo.dists.Uniform(
-                        cfg.max_rate_hz * 0.5, cfg.max_rate_hz
-                    ),
-                    intercepts=nengo.dists.Uniform(
-                        *cfg.intercept_range
-                    ),
+                    max_rates=nengo.dists.Uniform(cfg.max_rate_hz * 0.5, cfg.max_rate_hz),
+                    intercepts=nengo.dists.Uniform(*cfg.intercept_range),
                     label=f"error_ch{ch}",
                     seed=cfg.seed + ch,
                 )
@@ -160,12 +158,8 @@ class NengoSNNController:
                         tau_rc=cfg.tau_mem,
                         tau_ref=0.002,
                     ),
-                    max_rates=nengo.dists.Uniform(
-                        cfg.max_rate_hz * 0.5, cfg.max_rate_hz
-                    ),
-                    intercepts=nengo.dists.Uniform(
-                        *cfg.intercept_range
-                    ),
+                    max_rates=nengo.dists.Uniform(cfg.max_rate_hz * 0.5, cfg.max_rate_hz),
+                    intercepts=nengo.dists.Uniform(*cfg.intercept_range),
                     label=f"control_ch{ch}",
                     seed=cfg.seed + ch + 100,
                 )
@@ -193,23 +187,23 @@ class NengoSNNController:
                 )
 
                 # Probes
-                self._error_probes.append(
-                    nengo.Probe(error_ens, synapse=0.01)
-                )
+                self._error_probes.append(nengo.Probe(error_ens, synapse=0.01))
 
-            self._output_probe = nengo.Probe(
-                output_node, synapse=0.01
-            )
+            self._output_probe = nengo.Probe(output_node, synapse=0.01)
 
         # Build simulator
         self._simulator = nengo.Simulator(
-            self._network, dt=cfg.dt, progress_bar=False,
+            self._network,
+            dt=cfg.dt,
+            progress_bar=False,
         )
         self._built = True
         self._step_count = 0
         logger.info(
             "Built Nengo SNN controller: %d neurons/channel x %d channels, dt=%.3fs",
-            cfg.n_neurons, cfg.n_channels, cfg.dt,
+            cfg.n_neurons,
+            cfg.n_channels,
+            cfg.dt,
         )
 
     def step(self, state: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -233,7 +227,7 @@ class NengoSNNController:
             raise RuntimeError("Nengo backend unavailable; rebuild after installing nengo.")
 
         # Feed error into input node
-        error = np.asarray(state, dtype=float).ravel()[:self.cfg.n_channels]
+        error = np.asarray(state, dtype=float).ravel()[: self.cfg.n_channels]
 
         # Set input value (read by the input node callable)
         self._error_value[:] = error
@@ -278,7 +272,7 @@ class NengoSNNController:
 
         weights: dict[str, NDArray] = {}
         for conn in self._network.all_connections:
-            if hasattr(conn, 'solver') and hasattr(self._simulator, 'data'):
+            if hasattr(conn, "solver") and hasattr(self._simulator, "data"):
                 label = conn.label or f"conn_{id(conn)}"
                 try:
                     # Nengo stores decoder weights in simulator data
@@ -328,8 +322,7 @@ class NengoSNNController:
             import nengo_loihi
         except ImportError:
             raise ImportError(
-                "nengo_loihi is required for Loihi export. "
-                "Install with: pip install nengo-loihi"
+                "nengo_loihi is required for Loihi export. " "Install with: pip install nengo-loihi"
             )
 
         path = Path(filename)
@@ -337,7 +330,9 @@ class NengoSNNController:
 
         # Build a Loihi simulator to extract hardware-mapped parameters
         loihi_sim = nengo_loihi.Simulator(
-            self._network, dt=self.cfg.dt, progress_bar=False,
+            self._network,
+            dt=self.cfg.dt,
+            progress_bar=False,
         )
 
         payload: dict[str, Any] = {
@@ -385,6 +380,7 @@ class NengoSNNController:
 
 
 # ── Fallback for when Nengo is not available ─────────────────────────
+
 
 class NengoSNNControllerStub:
     """Stub that raises ImportError on instantiation.

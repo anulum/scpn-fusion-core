@@ -26,9 +26,7 @@ class NeuroSymbolicControllerBackendMixin:
             try:
                 rust_dense_activations = controller_mod._rust_dense_activations
                 if rust_dense_activations is None:
-                    raise RuntimeError(
-                        "Rust runtime reports availability without dense kernel."
-                    )
+                    raise RuntimeError("Rust runtime reports availability without dense kernel.")
                 out = rust_dense_activations(self._W_in, marking)
                 return np.asarray(out, dtype=np.float64)
             except Exception as exc:  # pragma: no cover - depends on Rust runtime failures
@@ -52,12 +50,8 @@ class NeuroSymbolicControllerBackendMixin:
             try:
                 rust_marking_update = controller_mod._rust_marking_update
                 if rust_marking_update is None:
-                    raise RuntimeError(
-                        "Rust runtime reports availability without marking kernel."
-                    )
-                rust_out = rust_marking_update(
-                    marking, self._W_in, self._W_out, firing
-                )
+                    raise RuntimeError("Rust runtime reports availability without marking kernel.")
+                rust_out = rust_marking_update(marking, self._W_in, self._W_out, firing)
                 np.copyto(out, np.asarray(rust_out, dtype=np.float64))
                 return out
             except Exception as exc:  # pragma: no cover - depends on Rust runtime failures
@@ -133,9 +127,7 @@ class NeuroSymbolicControllerBackendMixin:
                     )
                     f = np.asarray(sampled, dtype=np.float64)
                     if self._sc_bitflip_rate > 0.0:
-                        rng = np.random.default_rng(
-                            _seed64(self.seed_base, f"sc_flip:{int(k)}")
-                        )
+                        rng = np.random.default_rng(_seed64(self.seed_base, f"sc_flip:{int(k)}"))
                     else:
                         rng = None
                 except Exception as exc:  # pragma: no cover - depends on Rust runtime failures
@@ -188,9 +180,7 @@ class NeuroSymbolicControllerBackendMixin:
                                     axis=0,
                                     dtype=np.int64,
                                 )
-                            counts[start:end] = np.asarray(
-                                low_hits + high_hits, dtype=np.int64
-                            )
+                            counts[start:end] = np.asarray(low_hits + high_hits, dtype=np.int64)
                 else:
                     np.copyto(
                         counts,

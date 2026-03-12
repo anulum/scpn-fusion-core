@@ -128,11 +128,11 @@ class CompiledNet:
     transition_names: List[str]
 
     # Dense weight matrices (float path)
-    W_in: FloatArray          # (nT, nP)
-    W_out: FloatArray         # (nP, nT)
+    W_in: FloatArray  # (nT, nP)
+    W_out: FloatArray  # (nP, nT)
 
     # Pre-packed weight bitstreams (stochastic path) — None if no sc_neurocore
-    W_in_packed: Optional[UInt64Array] = None   # (nT, nP, n_words) uint64
+    W_in_packed: Optional[UInt64Array] = None  # (nT, nP, n_words) uint64
     W_out_packed: Optional[UInt64Array] = None  # (nP, nT, n_words) uint64
 
     # LIF neurons (one per transition) — empty list if no sc_neurocore
@@ -289,9 +289,7 @@ class CompiledNet:
             name=name,
             dt_control_s=dt_control_s,
             stream_length=self.bitstream_length,
-            fixed_point=artifact_mod.FixedPoint(
-                data_width=16, fraction_bits=10, signed=False
-            ),
+            fixed_point=artifact_mod.FixedPoint(data_width=16, fraction_bits=10, signed=False),
             firing_mode=self.firing_mode,
             seed_policy=artifact_mod.SeedPolicy(
                 id="default", hash_fn="splitmix64", rng_family="xoshiro256++"
@@ -304,10 +302,7 @@ class CompiledNet:
             ),
         )
 
-        places = [
-            artifact_mod.PlaceSpec(id=i, name=n)
-            for i, n in enumerate(self.place_names)
-        ]
+        places = [artifact_mod.PlaceSpec(id=i, name=n) for i, n in enumerate(self.place_names)]
         transitions = [
             artifact_mod.TransitionSpec(
                 id=i,
@@ -486,9 +481,7 @@ class FusionCompiler:
             4. Return ``CompiledNet`` with all artifacts.
         """
         if firing_mode not in ("binary", "fractional"):
-            raise ValueError(
-                f"firing_mode must be 'binary' or 'fractional', got '{firing_mode}'"
-            )
+            raise ValueError(f"firing_mode must be 'binary' or 'fractional', got '{firing_mode}'")
         validate = bool(validate_topology or strict_topology)
         if (not net.is_compiled) or allow_inhibitor or validate:
             net.compile(
@@ -506,7 +499,7 @@ class FusionCompiler:
             )
 
         # 1. Dense matrices
-        W_in: FloatArray = np.asarray(net.W_in.toarray(), dtype=np.float64)    # (nT, nP)
+        W_in: FloatArray = np.asarray(net.W_in.toarray(), dtype=np.float64)  # (nT, nP)
         W_out: FloatArray = np.asarray(net.W_out.toarray(), dtype=np.float64)  # (nP, nT)
 
         thresholds = net.get_thresholds()
@@ -535,9 +528,7 @@ class FusionCompiler:
         W_out_packed: UInt64Array | None = None
 
         if _HAS_SC_NEUROCORE:
-            W_in_packed = _encode_weight_matrix_packed(
-                W_in, self.bitstream_length, seed=self.seed
-            )
+            W_in_packed = _encode_weight_matrix_packed(W_in, self.bitstream_length, seed=self.seed)
             W_out_packed = _encode_weight_matrix_packed(
                 W_out, self.bitstream_length, seed=self.seed + W_in.size
             )

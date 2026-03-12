@@ -58,6 +58,7 @@ def require_experimental_opt_in(
 
 # ── IPB98(y,2) scaling law ────────────────────────────────────────────
 
+
 def tau_ipb98y2(
     Ip_MA: float,
     BT_T: float,
@@ -74,18 +75,19 @@ def tau_ipb98y2(
     epsilon = a_m / R_m
     return (
         0.0562
-        * Ip_MA ** 0.93
-        * BT_T ** 0.15
-        * ne19 ** 0.41
+        * Ip_MA**0.93
+        * BT_T**0.15
+        * ne19**0.41
         * Ploss_MW ** (-0.69)
-        * R_m ** 1.97
-        * kappa ** 0.78
-        * epsilon ** 0.58
-        * M_AMU ** 0.19
+        * R_m**1.97
+        * kappa**0.78
+        * epsilon**0.58
+        * M_AMU**0.19
     )
 
 
 # ── Equilibrium comparison ────────────────────────────────────────────
+
 
 def compare_equilibrium(eq: GEqdsk, label: str) -> dict:
     """Compute validation metrics for a single GEQDSK equilibrium."""
@@ -141,8 +143,7 @@ def compare_equilibrium(eq: GEqdsk, label: str) -> dict:
     # Integrate to get total current estimate
     # J_phi = -gs_op / (mu0 * R); we check sign pattern only
     # Just check that the Laplacian has the right sign pattern
-    interior_sign = np.sign(np.mean(lap[eq.nh // 4 : 3 * eq.nh // 4,
-                                       eq.nw // 4 : 3 * eq.nw // 4]))
+    interior_sign = np.sign(np.mean(lap[eq.nh // 4 : 3 * eq.nh // 4, eq.nw // 4 : 3 * eq.nw // 4]))
 
     return {
         "label": label,
@@ -170,6 +171,7 @@ def compare_equilibrium(eq: GEqdsk, label: str) -> dict:
 
 # ── Confinement scaling validation ────────────────────────────────────
 
+
 def validate_confinement_scaling(csv_path: str) -> list[dict]:
     """Compare tau_E measurements against IPB98(y,2) predictions."""
     import csv
@@ -191,21 +193,24 @@ def validate_confinement_scaling(csv_path: str) -> list[dict]:
                     M_AMU=float(row["M_AMU"]),
                 )
                 rel_err = (tau_pred - tau_meas) / tau_meas
-                results.append({
-                    "machine": row["machine"],
-                    "shot": row["shot"],
-                    "tau_measured_s": tau_meas,
-                    "tau_ipb98y2_s": round(tau_pred, 4),
-                    "relative_error": round(rel_err, 3),
-                    "H98y2_measured": float(row["H98y2"]),
-                    "H98y2_computed": round(tau_meas / tau_pred, 2) if tau_pred > 0 else None,
-                })
+                results.append(
+                    {
+                        "machine": row["machine"],
+                        "shot": row["shot"],
+                        "tau_measured_s": tau_meas,
+                        "tau_ipb98y2_s": round(tau_pred, 4),
+                        "relative_error": round(rel_err, 3),
+                        "H98y2_measured": float(row["H98y2"]),
+                        "H98y2_computed": round(tau_meas / tau_pred, 2) if tau_pred > 0 else None,
+                    }
+                )
             except (ValueError, KeyError):
                 continue
     return results
 
 
 # ── Main ──────────────────────────────────────────────────────────────
+
 
 def main(argv: list[str] | None = None):
     parser = argparse.ArgumentParser(description=__doc__)
@@ -231,27 +236,33 @@ def main(argv: list[str] | None = None):
     for gfile in geqdsk_files:
         eq = read_geqdsk(gfile)
         metrics = compare_equilibrium(eq, gfile.stem)
-        print(f"  {metrics['label']:20s}  "
-              f"Grid={metrics['nw']}×{metrics['nh']}  "
-              f"R_axis={metrics['R_axis_ref']:.3f}m  "
-              f"B_T={metrics['B_tor_T']:.1f}T  "
-              f"I_p={metrics['Ip_MA']:.1f}MA  "
-              f"q95~{metrics['q_95_approx']:.1f}  "
-              f"Axis err: dR={metrics['axis_error_R_m']:.4f}m")
+        print(
+            f"  {metrics['label']:20s}  "
+            f"Grid={metrics['nw']}×{metrics['nh']}  "
+            f"R_axis={metrics['R_axis_ref']:.3f}m  "
+            f"B_T={metrics['B_tor_T']:.1f}T  "
+            f"I_p={metrics['Ip_MA']:.1f}MA  "
+            f"q95~{metrics['q_95_approx']:.1f}  "
+            f"Axis err: dR={metrics['axis_error_R_m']:.4f}m"
+        )
 
     # 2. IPB98(y,2) confinement scaling
     print("\n-- IPB98(y,2) Confinement Scaling Validation --\n")
     csv_path = base / "reference_data" / "itpa" / "hmode_confinement.csv"
     if csv_path.exists():
         results = validate_confinement_scaling(str(csv_path))
-        print(f"  {'Machine':12s} {'Shot':12s} {'tau_meas':>10s} {'tau_IPB98':>10s} {'RelErr':>8s} {'H98_meas':>9s} {'H98_calc':>9s}")
+        print(
+            f"  {'Machine':12s} {'Shot':12s} {'tau_meas':>10s} {'tau_IPB98':>10s} {'RelErr':>8s} {'H98_meas':>9s} {'H98_calc':>9s}"
+        )
         print(f"  {'-'*12} {'-'*12} {'-'*10} {'-'*10} {'-'*8} {'-'*9} {'-'*9}")
         for r in results:
-            print(f"  {r['machine']:12s} {r['shot']:12s} "
-                  f"{r['tau_measured_s']:10.4f} {r['tau_ipb98y2_s']:10.4f} "
-                  f"{r['relative_error']:+8.1%} "
-                  f"{r['H98y2_measured']:9.2f} "
-                  f"{r['H98y2_computed']:9.2f}")
+            print(
+                f"  {r['machine']:12s} {r['shot']:12s} "
+                f"{r['tau_measured_s']:10.4f} {r['tau_ipb98y2_s']:10.4f} "
+                f"{r['relative_error']:+8.1%} "
+                f"{r['H98y2_measured']:9.2f} "
+                f"{r['H98y2_computed']:9.2f}"
+            )
 
         # Summary statistics
         errors = [abs(r["relative_error"]) for r in results]
@@ -261,20 +272,28 @@ def main(argv: list[str] | None = None):
 
     # 3. Machine config summary
     print("\n-- Machine Configuration Summary --\n")
-    for cfg_name in ["iter_validated_config.json", "sparc_config.json",
-                     "jet_config.json", "diiid_config.json"]:
+    for cfg_name in [
+        "iter_validated_config.json",
+        "sparc_config.json",
+        "jet_config.json",
+        "diiid_config.json",
+    ]:
         cfg_path = base / cfg_name
         if cfg_path.exists():
             with open(cfg_path) as f:
                 cfg = json.load(f)
             ref = cfg.get("_reference", {})
             print(f"  {cfg['reactor_name']}")
-            print(f"    Grid: {cfg['grid_resolution']}, I_p={cfg['physics']['plasma_current_target']} MA")
+            print(
+                f"    Grid: {cfg['grid_resolution']}, I_p={cfg['physics']['plasma_current_target']} MA"
+            )
             if ref:
-                print(f"    Published: R={ref.get('R_major_m','?')}m, "
-                      f"B_T={ref.get('B_T','?')}T, "
-                      f"kappa={ref.get('kappa','?')}, "
-                      f"delta={ref.get('delta','?')}")
+                print(
+                    f"    Published: R={ref.get('R_major_m','?')}m, "
+                    f"B_T={ref.get('B_T','?')}T, "
+                    f"kappa={ref.get('kappa','?')}, "
+                    f"delta={ref.get('delta','?')}"
+                )
             print()
 
     print("=" * 72)

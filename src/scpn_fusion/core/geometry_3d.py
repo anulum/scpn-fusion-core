@@ -48,9 +48,7 @@ class Reactor3DBuilder:
         elif equilibrium_3d is not None:
             self.kernel = None
         else:
-            raise ValueError(
-                "Provide either `config_path`, `kernel`, or `equilibrium_3d`."
-            )
+            raise ValueError("Provide either `config_path`, `kernel`, or `equilibrium_3d`.")
 
         if solve_equilibrium and self.kernel is not None:
             self.kernel.solve_equilibrium()
@@ -65,10 +63,7 @@ class Reactor3DBuilder:
 
     def _inside_domain(self, r_val: float, z_val: float) -> bool:
         kernel = self._require_kernel()
-        return (
-            kernel.R[0] <= r_val <= kernel.R[-1]
-            and kernel.Z[0] <= z_val <= kernel.Z[-1]
-        )
+        return kernel.R[0] <= r_val <= kernel.R[-1] and kernel.Z[0] <= z_val <= kernel.Z[-1]
 
     def _sample_psi_bilinear(self, r_val: float, z_val: float) -> float:
         kernel = self._require_kernel()
@@ -173,8 +168,10 @@ class Reactor3DBuilder:
                 sampled_radii.append(float(radius))
                 sampled_diffs.append(float(diff))
 
-                crossed = diff == 0.0 or (prev_diff > 0.0 and diff < 0.0) or (
-                    prev_diff < 0.0 and diff > 0.0
+                crossed = (
+                    diff == 0.0
+                    or (prev_diff > 0.0 and diff < 0.0)
+                    or (prev_diff < 0.0 and diff > 0.0)
                 )
                 if crossed:
                     delta = diff - prev_diff

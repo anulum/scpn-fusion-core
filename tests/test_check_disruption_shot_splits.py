@@ -57,9 +57,7 @@ def test_detects_missing_manifest_ids(tmp_path: Path) -> None:
         json.dumps({"shots": [{"shot": 10}, {"shot": 11}, {"shot": 12}, {"shot": 13}]}),
         encoding="utf-8",
     )
-    rc = split_check.main(
-        ["--splits", str(split_file), "--manifest", str(manifest_file)]
-    )
+    rc = split_check.main(["--splits", str(split_file), "--manifest", str(manifest_file)])
     assert rc == 1
 
 

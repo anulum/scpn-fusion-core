@@ -65,6 +65,7 @@ def wdm(config_file: Path) -> WholeDeviceModel:
 
 # ── 1. Initialization ────────────────────────────────────────────────
 
+
 class TestWDMInit:
 
     def test_init(self, wdm: WholeDeviceModel) -> None:
@@ -100,6 +101,7 @@ class TestWDMInit:
 
 
 # ── 2. Short Discharge Runs ──────────────────────────────────────────
+
 
 class TestDischargeRun:
 
@@ -137,6 +139,7 @@ class TestDischargeRun:
 
 # ── 3. Component Integration ─────────────────────────────────────────
 
+
 class TestComponentIntegration:
 
     def test_transport_ne_is_array(self, wdm: WholeDeviceModel) -> None:
@@ -157,15 +160,14 @@ class TestComponentIntegration:
 
     def test_pwi_can_calculate_erosion(self, wdm: WholeDeviceModel) -> None:
         """PWI erosion rate calculation works within WDM."""
-        result = wdm.pwi.calculate_erosion_rate(
-            flux_particles_m2_s=1e24, T_ion_eV=100.0
-        )
+        result = wdm.pwi.calculate_erosion_rate(flux_particles_m2_s=1e24, T_ion_eV=100.0)
         assert isinstance(result, dict)
         assert "Impurity_Source" in result
         assert "Erosion_mm_year" in result
 
 
 # ── 4. Config Path Handling ──────────────────────────────────────────
+
 
 class TestConfigHandling:
 
@@ -176,9 +178,7 @@ class TestConfigHandling:
 
     def test_uses_iter_config_if_available(self) -> None:
         """If the shipped iter_config.json exists, WDM can use it."""
-        iter_config = (
-            Path(__file__).resolve().parents[1] / "iter_config.json"
-        )
+        iter_config = Path(__file__).resolve().parents[1] / "iter_config.json"
         if not iter_config.exists():
             pytest.skip("iter_config.json not found in repo root")
         wdm = WholeDeviceModel(str(iter_config))

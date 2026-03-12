@@ -199,8 +199,7 @@ def run_campaign(
 
     watchdog_trip = bool(
         faulted["failsafe_trip_count"] >= thresholds["min_fault_failsafe_trip_count"]
-        and
-        faulted["supervisor_intervention_count"] > nominal_a["supervisor_intervention_count"]
+        and faulted["supervisor_intervention_count"] > nominal_a["supervisor_intervention_count"]
         and faulted["max_risk_score"] >= thresholds["min_fault_max_risk_score"]
     )
 
@@ -231,15 +230,11 @@ def run_campaign(
         "seed": seed_i,
         "task9_free_boundary_replay_hil": {
             "nominal_replay": {
-                "summary": {
-                    key: value for key, value in nominal_a.items() if key != "trace"
-                },
+                "summary": {key: value for key, value in nominal_a.items() if key != "trace"},
                 "replay_deterministic": replay_deterministic,
             },
             "faulted_watchdog": {
-                "summary": {
-                    key: value for key, value in faulted.items() if key != "trace"
-                },
+                "summary": {key: value for key, value in faulted.items() if key != "trace"},
                 "watchdog_trip": watchdog_trip,
             },
             "hil_compatibility": hil,

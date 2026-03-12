@@ -100,9 +100,7 @@ def run_real_shot_replay(
 
     risk_raw_series = np.zeros(n_steps, dtype=np.float64)
     for t in range(min(window_size, n_steps), n_steps):
-        signal_window = (
-            signal_proc[t - window_size : t] if t >= window_size else signal_proc[:t]
-        )
+        signal_window = signal_proc[t - window_size : t] if t >= window_size else signal_proc[:t]
         if signal_window.size < 8:
             continue
 
@@ -183,16 +181,12 @@ def run_real_shot_replay(
     detection_lead_ms = -1.0
     if is_disruption and disruption_time_idx > 0 and first_alarm_idx > 0:
         dt_arr = time_s if time_s.size > 0 else np.arange(n_steps) * 0.001
-        detection_lead_ms = float(
-            (dt_arr[disruption_time_idx] - dt_arr[first_alarm_idx]) * 1000
-        )
+        detection_lead_ms = float((dt_arr[disruption_time_idx] - dt_arr[first_alarm_idx]) * 1000)
 
     prevented = False
     if is_disruption:
         if spi_triggered and spi_trigger_idx < disruption_time_idx:
-            post_risk = np.mean(
-                risk_series[spi_trigger_idx : min(spi_trigger_idx + 50, n_steps)]
-            )
+            post_risk = np.mean(risk_series[spi_trigger_idx : min(spi_trigger_idx + 50, n_steps)])
             prevented = bool(post_risk < 0.88 and tau_cq_ms > 0)
     else:
         prevented = not spi_triggered

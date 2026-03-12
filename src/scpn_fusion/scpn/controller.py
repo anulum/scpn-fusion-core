@@ -40,9 +40,7 @@ _rust_dense_activations: Optional[Callable[[FloatArray, FloatArray], object]] = 
 _rust_marking_update: Optional[
     Callable[[FloatArray, FloatArray, FloatArray, FloatArray], object]
 ] = None
-_rust_sample_firing: Optional[
-    Callable[[FloatArray, int, int, bool], object]
-] = None
+_rust_sample_firing: Optional[Callable[[FloatArray, int, int, bool], object]] = None
 
 (
     _HAS_RUST_SCPN_RUNTIME,
@@ -105,9 +103,7 @@ class NeuroSymbolicController(
             raise ValueError("sc_bitflip_rate must be finite and in [0, 1].")
         self._runtime_profile = runtime_profile.strip().lower()
         if self._runtime_profile not in {"adaptive", "deterministic", "traceable"}:
-            raise ValueError(
-                "runtime_profile must be 'adaptive', 'deterministic', or 'traceable'"
-            )
+            raise ValueError("runtime_profile must be 'adaptive', 'deterministic', or 'traceable'")
         self._sc_antithetic = bool(sc_antithetic)
         self._enable_oracle_diagnostics = bool(enable_oracle_diagnostics)
         self._feature_axes = list(feature_axes) if feature_axes is not None else None
@@ -143,14 +139,9 @@ class NeuroSymbolicController(
         self._feature_axes_effective = axes
         self._axis_count = len(axes)
         self._axis_obs_keys = [axis.obs_key for axis in axes]
-        self._axis_targets = np.asarray(
-            [axis.target for axis in axes], dtype=np.float64
-        )
+        self._axis_targets = np.asarray([axis.target for axis in axes], dtype=np.float64)
         self._axis_scales = np.asarray(
-            [
-                axis.scale if abs(axis.scale) > 1e-12 else 1e-12
-                for axis in axes
-            ],
+            [axis.scale if abs(axis.scale) > 1e-12 else 1e-12 for axis in axes],
             dtype=np.float64,
         )
         self._axis_pos_keys = [axis.pos_key for axis in axes]
@@ -186,16 +177,12 @@ class NeuroSymbolicController(
         self._delay_immediate_idx = np.flatnonzero(self._delay_ticks == 0).astype(
             np.int64, copy=False
         )
-        self._delay_delayed_idx = np.flatnonzero(self._delay_ticks > 0).astype(
-            np.int64, copy=False
-        )
+        self._delay_delayed_idx = np.flatnonzero(self._delay_ticks > 0).astype(np.int64, copy=False)
         if self._delay_delayed_idx.size:
             self._delay_delayed_offsets = np.asarray(
                 self._delay_ticks[self._delay_delayed_idx], dtype=np.int64
             )
-            self._tmp_delay_slots = np.zeros(
-                self._delay_delayed_idx.size, dtype=np.int64
-            )
+            self._tmp_delay_slots = np.zeros(self._delay_delayed_idx.size, dtype=np.int64)
         else:
             self._delay_delayed_offsets = np.asarray([], dtype=np.int64)
             self._tmp_delay_slots = np.asarray([], dtype=np.int64)
@@ -209,9 +196,7 @@ class NeuroSymbolicController(
         default_margin = float(getattr(artifact.meta, "firing_margin", 0.05) or 0.05)
         self._margins = np.asarray(
             [
-                float(
-                    ((tr.margin if tr.margin is not None else default_margin) or default_margin)
-                )
+                float((tr.margin if tr.margin is not None else default_margin) or default_margin)
                 for tr in artifact.topology.transitions
             ],
             dtype=np.float64,
@@ -266,21 +251,13 @@ class NeuroSymbolicController(
             key_to_axis[key] = (i, False)
 
         # Live state
-        self._marking = np.asarray(
-            artifact.initial_state.marking, dtype=np.float64
-        ).copy()
+        self._marking = np.asarray(artifact.initial_state.marking, dtype=np.float64).copy()
         injections = artifact.initial_state.place_injections
         self._inj_sources = [inj.source for inj in injections]
         self._inj_count = len(self._inj_sources)
-        self._inj_place_ids = np.asarray(
-            [inj.place_id for inj in injections], dtype=np.int64
-        )
-        self._inj_scales = np.asarray(
-            [inj.scale for inj in injections], dtype=np.float64
-        )
-        self._inj_offsets = np.asarray(
-            [inj.offset for inj in injections], dtype=np.float64
-        )
+        self._inj_place_ids = np.asarray([inj.place_id for inj in injections], dtype=np.int64)
+        self._inj_scales = np.asarray([inj.scale for inj in injections], dtype=np.float64)
+        self._inj_offsets = np.asarray([inj.offset for inj in injections], dtype=np.float64)
         self._inj_clamp_mask = np.asarray(
             [bool(inj.clamp_0_1) for inj in injections], dtype=np.bool_
         )
@@ -309,9 +286,7 @@ class NeuroSymbolicController(
         )
         self._action_gains = np.asarray(artifact.readout.gains, dtype=np.float64)
         self._action_abs_max = np.asarray(artifact.readout.abs_max, dtype=np.float64)
-        self._action_slew_per_s = np.asarray(
-            artifact.readout.slew_per_s, dtype=np.float64
-        )
+        self._action_slew_per_s = np.asarray(artifact.readout.slew_per_s, dtype=np.float64)
         self._action_count = len(self._action_names)
         self._dt = float(artifact.meta.dt_control_s)
         self._action_max_delta = self._action_slew_per_s * self._dt
@@ -337,9 +312,7 @@ class NeuroSymbolicController(
         self._sc_cursor = 0
         self.last_oracle_firing = []
         self.last_sc_firing = []
-        self.last_oracle_marking = (
-            self._marking.tolist() if self._enable_oracle_diagnostics else []
-        )
+        self.last_oracle_marking = self._marking.tolist() if self._enable_oracle_diagnostics else []
         self.last_sc_marking = self._marking.tolist()
 
     @property
@@ -381,11 +354,7 @@ class NeuroSymbolicController(
 
         # 1. Feature extraction (fast compiled mapping)
         pos_vals, neg_vals = self._compute_feature_components(obs)
-        feats = (
-            self._build_feature_dict(obs, pos_vals, neg_vals)
-            if log_path is not None
-            else None
-        )
+        feats = self._build_feature_dict(obs, pos_vals, neg_vals) if log_path is not None else None
 
         # 2. Inject features into marking
         m = self._tmp_marking_input
@@ -405,9 +374,7 @@ class NeuroSymbolicController(
         # Diagnostics (used by deterministic benchmark gates)
         self.last_oracle_firing = f_oracle.tolist()
         self.last_sc_firing = f_sc.tolist()
-        self.last_oracle_marking = (
-            m_oracle.tolist() if self._enable_oracle_diagnostics else []
-        )
+        self.last_oracle_marking = m_oracle.tolist() if self._enable_oracle_diagnostics else []
         self.last_sc_marking = m_sc.tolist()
 
         # Commit SC state
@@ -469,9 +436,7 @@ class NeuroSymbolicController(
 
         self.last_oracle_firing = f_oracle.tolist()
         self.last_sc_firing = f_sc.tolist()
-        self.last_oracle_marking = (
-            m_oracle.tolist() if self._enable_oracle_diagnostics else []
-        )
+        self.last_oracle_marking = m_oracle.tolist() if self._enable_oracle_diagnostics else []
         self.last_sc_marking = m_sc.tolist()
 
         np.copyto(self._marking, m_sc)
@@ -479,10 +444,7 @@ class NeuroSymbolicController(
 
         t1 = time.perf_counter()
         if log_path is not None:
-            obs_payload = {
-                key: float(value)
-                for key, value in zip(self._axis_obs_keys, obs_vector)
-            }
+            obs_payload = {key: float(value) for key, value in zip(self._axis_obs_keys, obs_vector)}
             rec = {
                 "k": int(k),
                 "obs": obs_payload,

@@ -76,4 +76,3 @@ def test_apply_actuator_lag_rejects_nonpositive_dt() -> None:
     cmd = np.asarray([0.0, 0.5], dtype=np.float64)
     with pytest.raises(ValueError, match="dt_s"):
         apply_actuator_lag(cmd, dt_s=0.0)
-

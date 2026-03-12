@@ -6,10 +6,8 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from scpn_fusion.core.amr_patch import (
-    AMRPatch,
     gradient_magnitude,
     flag_refinement_cells,
     prolongate,
@@ -94,8 +92,12 @@ class TestSolveAMR:
         source = np.zeros_like(psi_init)
 
         psi_amr, patches = solve_amr(
-            psi_init, R_base, Z_base, source,
-            smooth_iters=5, refine_smooth_iters=10,
+            psi_init,
+            R_base,
+            Z_base,
+            source,
+            smooth_iters=5,
+            refine_smooth_iters=10,
         )
 
         assert psi_amr.shape == psi_init.shape
@@ -113,8 +115,12 @@ class TestSolveAMR:
         source = np.zeros_like(psi_true)
 
         psi_amr, _ = solve_amr(
-            psi_true, R, Z, source,
-            smooth_iters=5, refine_smooth_iters=10,
+            psi_true,
+            R,
+            Z,
+            source,
+            smooth_iters=5,
+            refine_smooth_iters=10,
         )
         err = _nrmse(psi_true, psi_amr)
         # AMR + Jacobi smoothing on a 65x65 grid introduces < 2% error

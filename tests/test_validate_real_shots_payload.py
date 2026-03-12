@@ -391,6 +391,15 @@ def test_cli_strict_coverage_enforces_default_minima(
 
     rc = validate_real_shots.cli(["--strict-coverage"])
     assert rc == 0
-    assert captured["min_equilibrium_files"] == validate_real_shots.STRICT_DATASET_MINIMA["equilibrium_files"]
-    assert captured["min_transport_shots"] == validate_real_shots.STRICT_DATASET_MINIMA["transport_shots"]
-    assert captured["min_disruption_shots"] == validate_real_shots.STRICT_DATASET_MINIMA["disruption_shots"]
+    assert (
+        captured["min_equilibrium_files"]
+        == validate_real_shots.STRICT_DATASET_MINIMA["equilibrium_files"]
+    )
+    assert (
+        captured["min_transport_shots"]
+        == validate_real_shots.STRICT_DATASET_MINIMA["transport_shots"]
+    )
+    assert (
+        captured["min_disruption_shots"]
+        == validate_real_shots.STRICT_DATASET_MINIMA["disruption_shots"]
+    )

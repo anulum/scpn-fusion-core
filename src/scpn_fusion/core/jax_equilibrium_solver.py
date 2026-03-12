@@ -36,6 +36,7 @@ _MU0_NORM = 1.0
 
 # ── Elliptic integral approximations (Hastings, Abramowitz & Stegun) ──
 
+
 @jit
 def _ellipk_approx(m: jnp.ndarray) -> jnp.ndarray:
     """Complete elliptic integral K(m), Abramowitz & Stegun 17.3.34."""
@@ -60,9 +61,9 @@ def _ellipe_approx(m: jnp.ndarray) -> jnp.ndarray:
 
 # ── Toroidal Green's function ──────────────────────────────────────
 
+
 @jit
-def greens_psi(R: jnp.ndarray, Z: jnp.ndarray,
-               Rc: float, Zc: float, I: float) -> jnp.ndarray:
+def greens_psi(R: jnp.ndarray, Z: jnp.ndarray, Rc: float, Zc: float, I: float) -> jnp.ndarray:
     """Poloidal flux from a single filamentary coil at (Rc, Zc) with current I.
 
     Ψ = (μ₀ I / 2π) √(R Rc) [(2/k - k) K(k²) - (2/k) E(k²)]
@@ -82,9 +83,13 @@ def greens_psi(R: jnp.ndarray, Z: jnp.ndarray,
 
 
 @jit
-def vacuum_field(R_grid: jnp.ndarray, Z_grid: jnp.ndarray,
-                 coil_R: jnp.ndarray, coil_Z: jnp.ndarray,
-                 coil_I: jnp.ndarray) -> jnp.ndarray:
+def vacuum_field(
+    R_grid: jnp.ndarray,
+    Z_grid: jnp.ndarray,
+    coil_R: jnp.ndarray,
+    coil_Z: jnp.ndarray,
+    coil_I: jnp.ndarray,
+) -> jnp.ndarray:
     """Sum vacuum Ψ from all coils on 2D (NZ, NR) grid.
 
     Parameters
@@ -112,9 +117,11 @@ def vacuum_field(R_grid: jnp.ndarray, Z_grid: jnp.ndarray,
 
 # ── Plasma source (simple p'(ψ) model) ────────────────────────────
 
+
 @jit
-def _plasma_source(psi: jnp.ndarray, R_grid: jnp.ndarray,
-                   Ip: float, psi_axis: float, psi_boundary: float) -> jnp.ndarray:
+def _plasma_source(
+    psi: jnp.ndarray, R_grid: jnp.ndarray, Ip: float, psi_axis: float, psi_boundary: float
+) -> jnp.ndarray:
     """Toroidal current density source Jφ for Picard iteration.
 
     Simple parabolic current profile: J_phi(psi) = J0 (1 - psi_n²)
@@ -122,20 +129,20 @@ def _plasma_source(psi: jnp.ndarray, R_grid: jnp.ndarray,
 
     Normalized so ∫ J_phi dA ≈ Ip.
     """
-    dpsi = jnp.where(jnp.abs(psi_boundary - psi_axis) > 1e-12,
-                     psi_boundary - psi_axis, 1.0)
+    dpsi = jnp.where(jnp.abs(psi_boundary - psi_axis) > 1e-12, psi_boundary - psi_axis, 1.0)
     psi_n = jnp.clip((psi - psi_axis) / dpsi, 0.0, 1.0)
-    j_profile = (1.0 - psi_n ** 2)
+    j_profile = 1.0 - psi_n**2
     R2d = R_grid[jnp.newaxis, :]
     return -_MU0_NORM * R2d * j_profile * Ip
 
 
 # ── SOR relaxation step ───────────────────────────────────────────
 
+
 @jit
-def _sor_step(psi: jnp.ndarray, source: jnp.ndarray,
-              R_grid: jnp.ndarray, dR: float, dZ: float,
-              omega: float) -> jnp.ndarray:
+def _sor_step(
+    psi: jnp.ndarray, source: jnp.ndarray, R_grid: jnp.ndarray, dR: float, dZ: float, omega: float
+) -> jnp.ndarray:
     """One full SOR sweep for the GS operator Δ*ψ = S.
 
     Δ*ψ = ∂²ψ/∂R² - (1/R)∂ψ/∂R + ∂²ψ/∂Z²
@@ -148,20 +155,17 @@ def _sor_step(psi: jnp.ndarray, source: jnp.ndarray,
 
     # Interior stencil using shifted arrays
     psi_Rp = jnp.roll(psi, -1, axis=1)  # psi[i, j+1]
-    psi_Rm = jnp.roll(psi, 1, axis=1)   # psi[i, j-1]
+    psi_Rm = jnp.roll(psi, 1, axis=1)  # psi[i, j-1]
     psi_Zp = jnp.roll(psi, -1, axis=0)  # psi[i+1, j]
-    psi_Zm = jnp.roll(psi, 1, axis=0)   # psi[i-1, j]
+    psi_Zm = jnp.roll(psi, 1, axis=0)  # psi[i-1, j]
 
     R2d = R_grid[jnp.newaxis, :]
     R_safe = jnp.maximum(R2d, 1e-6)
     inv_R_term = (psi_Rp - psi_Rm) / (2.0 * dR * R_safe)
 
-    psi_gs = (
-        (psi_Rp + psi_Rm) / dR2
-        + (psi_Zp + psi_Zm) / dZ2
-        - inv_R_term
-        - source
-    ) / (2.0 / dR2 + 2.0 / dZ2)
+    psi_gs = ((psi_Rp + psi_Rm) / dR2 + (psi_Zp + psi_Zm) / dZ2 - inv_R_term - source) / (
+        2.0 / dR2 + 2.0 / dZ2
+    )
 
     new_psi = (1.0 - omega) * psi + omega * psi_gs
 
@@ -174,6 +178,7 @@ def _sor_step(psi: jnp.ndarray, source: jnp.ndarray,
 
 
 # ── Picard iteration (fixed-point) ────────────────────────────────
+
 
 @partial(jit, static_argnums=(7, 8))
 def solve_equilibrium_jax(
@@ -233,9 +238,9 @@ def solve_equilibrium_jax(
 
 # ── Axis finding ──────────────────────────────────────────────────
 
+
 @jit
-def find_axis(psi: jnp.ndarray, R_grid: jnp.ndarray,
-              Z_grid: jnp.ndarray) -> tuple[float, float]:
+def find_axis(psi: jnp.ndarray, R_grid: jnp.ndarray, Z_grid: jnp.ndarray) -> tuple[float, float]:
     """Find magnetic axis via argmax + parabolic sub-grid interpolation."""
     idx = jnp.argmax(psi)
     iz = idx // psi.shape[1]
@@ -251,8 +256,7 @@ def find_axis(psi: jnp.ndarray, R_grid: jnp.ndarray,
     b_r = psi[iz, ir_safe]
     c_r = psi[iz, ir_safe + 1]
     denom_r = 2.0 * (a_r - 2.0 * b_r + c_r)
-    dr_shift = jnp.where(jnp.abs(denom_r) > 1e-30,
-                         jnp.clip(-(c_r - a_r) / denom_r, -0.5, 0.5), 0.0)
+    dr_shift = jnp.where(jnp.abs(denom_r) > 1e-30, jnp.clip(-(c_r - a_r) / denom_r, -0.5, 0.5), 0.0)
     R_ax = R_ax + dr_shift * dR
 
     # Parabolic refinement in Z
@@ -261,8 +265,7 @@ def find_axis(psi: jnp.ndarray, R_grid: jnp.ndarray,
     b_z = psi[iz_safe, ir]
     c_z = psi[iz_safe + 1, ir]
     denom_z = 2.0 * (a_z - 2.0 * b_z + c_z)
-    dz_shift = jnp.where(jnp.abs(denom_z) > 1e-30,
-                         jnp.clip(-(c_z - a_z) / denom_z, -0.5, 0.5), 0.0)
+    dz_shift = jnp.where(jnp.abs(denom_z) > 1e-30, jnp.clip(-(c_z - a_z) / denom_z, -0.5, 0.5), 0.0)
     Z_ax = Z_ax + dz_shift * dZ
 
     return R_ax, Z_ax
@@ -270,12 +273,18 @@ def find_axis(psi: jnp.ndarray, R_grid: jnp.ndarray,
 
 # ── Differentiable loss functions for optimization ─────────────────
 
+
 @jit
-def axis_position_loss(coil_I: jnp.ndarray,
-                       R_grid: jnp.ndarray, Z_grid: jnp.ndarray,
-                       coil_R: jnp.ndarray, coil_Z: jnp.ndarray,
-                       Ip: float,
-                       target_R: float, target_Z: float) -> float:
+def axis_position_loss(
+    coil_I: jnp.ndarray,
+    R_grid: jnp.ndarray,
+    Z_grid: jnp.ndarray,
+    coil_R: jnp.ndarray,
+    coil_Z: jnp.ndarray,
+    Ip: float,
+    target_R: float,
+    target_Z: float,
+) -> float:
     """Squared distance from magnetic axis to target position.
 
     Differentiable w.r.t. coil_I. Use ``jax.grad(axis_position_loss)``
@@ -287,11 +296,14 @@ def axis_position_loss(coil_I: jnp.ndarray,
 
 
 def optimize_coil_currents(
-    R_grid: jnp.ndarray, Z_grid: jnp.ndarray,
-    coil_R: jnp.ndarray, coil_Z: jnp.ndarray,
+    R_grid: jnp.ndarray,
+    Z_grid: jnp.ndarray,
+    coil_R: jnp.ndarray,
+    coil_Z: jnp.ndarray,
     coil_I_init: jnp.ndarray,
     Ip: float,
-    target_R: float, target_Z: float,
+    target_R: float,
+    target_Z: float,
     lr: float = 0.1,
     steps: int = 50,
 ) -> tuple[jnp.ndarray, list[float]]:
@@ -314,8 +326,9 @@ def optimize_coil_currents(
     losses = []
 
     for _ in range(steps):
-        loss = float(axis_position_loss(coil_I, R_grid, Z_grid,
-                                        coil_R, coil_Z, Ip, target_R, target_Z))
+        loss = float(
+            axis_position_loss(coil_I, R_grid, Z_grid, coil_R, coil_Z, Ip, target_R, target_Z)
+        )
         losses.append(loss)
         g = grad_fn(coil_I, R_grid, Z_grid, coil_R, coil_Z, Ip, target_R, target_Z)
         coil_I = coil_I - lr * g
@@ -325,11 +338,16 @@ def optimize_coil_currents(
 
 # ── Sensitivity analysis ──────────────────────────────────────────
 
+
 @jit
-def axis_sensitivity(coil_I: jnp.ndarray,
-                     R_grid: jnp.ndarray, Z_grid: jnp.ndarray,
-                     coil_R: jnp.ndarray, coil_Z: jnp.ndarray,
-                     Ip: float) -> tuple[jnp.ndarray, jnp.ndarray]:
+def axis_sensitivity(
+    coil_I: jnp.ndarray,
+    R_grid: jnp.ndarray,
+    Z_grid: jnp.ndarray,
+    coil_R: jnp.ndarray,
+    coil_Z: jnp.ndarray,
+    Ip: float,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
     """Jacobian dR_axis/dI_coil and dZ_axis/dI_coil.
 
     Returns
@@ -337,6 +355,7 @@ def axis_sensitivity(coil_I: jnp.ndarray,
     dR_dI : (N_coils,) sensitivity of R_axis to each coil current
     dZ_dI : (N_coils,) sensitivity of Z_axis to each coil current
     """
+
     def R_fn(I):
         psi = solve_equilibrium_jax(R_grid, Z_grid, coil_R, coil_Z, I, Ip)
         R_ax, _ = find_axis(psi, R_grid, Z_grid)

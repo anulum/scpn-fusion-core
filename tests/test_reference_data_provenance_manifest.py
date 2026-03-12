@@ -14,7 +14,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "tools" / "generate_reference_data_provenance_manifest.py"
-SPEC = importlib.util.spec_from_file_location("generate_reference_data_provenance_manifest", MODULE_PATH)
+SPEC = importlib.util.spec_from_file_location(
+    "generate_reference_data_provenance_manifest", MODULE_PATH
+)
 assert SPEC and SPEC.loader
 prov = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = prov
@@ -161,30 +163,36 @@ def test_main_check_mode_detects_stale_manifest(tmp_path: Path) -> None:
         )
         == 0
     )
-    assert prov.main(
-        [
-            "--root",
-            str(root),
-            "--policy",
-            str(policy),
-            "--manifest",
-            str(manifest),
-            "--check",
-        ]
-    ) == 0
+    assert (
+        prov.main(
+            [
+                "--root",
+                str(root),
+                "--policy",
+                str(policy),
+                "--manifest",
+                str(manifest),
+                "--check",
+            ]
+        )
+        == 0
+    )
 
     (root / "sample_extra.npz").write_bytes(b"changed")
-    assert prov.main(
-        [
-            "--root",
-            str(root),
-            "--policy",
-            str(policy),
-            "--manifest",
-            str(manifest),
-            "--check",
-        ]
-    ) == 1
+    assert (
+        prov.main(
+            [
+                "--root",
+                str(root),
+                "--policy",
+                str(policy),
+                "--manifest",
+                str(manifest),
+                "--check",
+            ]
+        )
+        == 1
+    )
 
 
 def test_build_manifest_raises_on_unmatched_file(tmp_path: Path) -> None:

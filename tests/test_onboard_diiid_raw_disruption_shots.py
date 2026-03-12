@@ -13,9 +13,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "tools" / "onboard_diiid_raw_disruption_shots.py"
-SPEC = importlib.util.spec_from_file_location(
-    "onboard_diiid_raw_disruption_shots", MODULE_PATH
-)
+SPEC = importlib.util.spec_from_file_location("onboard_diiid_raw_disruption_shots", MODULE_PATH)
 assert SPEC and SPEC.loader
 onboard_mod = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = onboard_mod

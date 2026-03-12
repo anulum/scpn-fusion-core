@@ -33,27 +33,49 @@ class ModeSpec:
 
 MODE_SPECS: dict[str, ModeSpec] = {
     # Production/public modes.
-    "kernel": ModeSpec("scpn_fusion.core.fusion_kernel", "public", "Grad-Shafranov equilibrium kernel"),
-    "flight": ModeSpec("scpn_fusion.control.tokamak_flight_sim", "public", "Tokamak flight simulator"),
-    "optimal": ModeSpec("scpn_fusion.control.fusion_optimal_control", "public", "Optimal control solver"),
+    "kernel": ModeSpec(
+        "scpn_fusion.core.fusion_kernel", "public", "Grad-Shafranov equilibrium kernel"
+    ),
+    "flight": ModeSpec(
+        "scpn_fusion.control.tokamak_flight_sim", "public", "Tokamak flight simulator"
+    ),
+    "optimal": ModeSpec(
+        "scpn_fusion.control.fusion_optimal_control", "public", "Optimal control solver"
+    ),
     "learning": ModeSpec(
         "scpn_fusion.control.advanced_soc_fusion_learning",
         "public",
         "Advanced SOC fusion learning runtime",
     ),
     "digital-twin": ModeSpec("scpn_fusion.control.tokamak_digital_twin", "public", "Digital twin"),
-    "control-room": ModeSpec("scpn_fusion.control.fusion_control_room", "public", "Control room simulator"),
-    "sandpile": ModeSpec("scpn_fusion.core.sandpile_fusion_reactor", "public", "Legacy SOC research mode"),
-    "nuclear": ModeSpec("scpn_fusion.nuclear.nuclear_wall_interaction", "public", "Wall interaction physics"),
+    "control-room": ModeSpec(
+        "scpn_fusion.control.fusion_control_room", "public", "Control room simulator"
+    ),
+    "sandpile": ModeSpec(
+        "scpn_fusion.core.sandpile_fusion_reactor", "public", "Legacy SOC research mode"
+    ),
+    "nuclear": ModeSpec(
+        "scpn_fusion.nuclear.nuclear_wall_interaction", "public", "Wall interaction physics"
+    ),
     "breeding": ModeSpec("scpn_fusion.nuclear.blanket_neutronics", "public", "Blanket neutronics"),
-    "safety": ModeSpec("scpn_fusion.control.disruption_predictor", "public", "Disruption predictor"),
-    "optimizer": ModeSpec("scpn_fusion.core.compact_reactor_optimizer", "public", "Compact reactor optimizer"),
-    "divertor": ModeSpec("scpn_fusion.core.divertor_thermal_sim", "public", "Divertor thermal model"),
-    "diagnostics": ModeSpec("scpn_fusion.diagnostics.run_diagnostics", "public", "Diagnostics runtime"),
+    "safety": ModeSpec(
+        "scpn_fusion.control.disruption_predictor", "public", "Disruption predictor"
+    ),
+    "optimizer": ModeSpec(
+        "scpn_fusion.core.compact_reactor_optimizer", "public", "Compact reactor optimizer"
+    ),
+    "divertor": ModeSpec(
+        "scpn_fusion.core.divertor_thermal_sim", "public", "Divertor thermal model"
+    ),
+    "diagnostics": ModeSpec(
+        "scpn_fusion.diagnostics.run_diagnostics", "public", "Diagnostics runtime"
+    ),
     "sawtooth": ModeSpec("scpn_fusion.core.mhd_sawtooth", "public", "MHD sawtooth model"),
     "geometry": ModeSpec("scpn_fusion.core.geometry_3d", "public", "3D geometry"),
     "spi": ModeSpec("scpn_fusion.control.spi_mitigation", "public", "SPI mitigation"),
-    "scanner": ModeSpec("scpn_fusion.core.global_design_scanner", "public", "Global design scanner"),
+    "scanner": ModeSpec(
+        "scpn_fusion.core.global_design_scanner", "public", "Global design scanner"
+    ),
     "heating": ModeSpec("scpn_fusion.core.rf_heating", "public", "RF heating"),
     "wdm": ModeSpec("scpn_fusion.core.wdm_engine", "public", "Warm dense matter engine"),
     "neuro-control": ModeSpec(
@@ -67,7 +89,9 @@ MODE_SPECS: dict[str, ModeSpec] = {
         "Rust-native 10kHz flight simulator",
     ),
     # Surrogate modes (opt-in).
-    "neural": ModeSpec("scpn_fusion.core.neural_equilibrium", "surrogate", "Neural equilibrium surrogate"),
+    "neural": ModeSpec(
+        "scpn_fusion.core.neural_equilibrium", "surrogate", "Neural equilibrium surrogate"
+    ),
     "fno-training": ModeSpec(
         "scpn_fusion.core.fno_jax_training",
         "surrogate",
@@ -75,14 +99,18 @@ MODE_SPECS: dict[str, ModeSpec] = {
     ),
     # Experimental modes (opt-in).
     "quantum": ModeSpec("scpn_fusion.core.quantum_bridge", "experimental", "Quantum bridge"),
-    "q-control": ModeSpec("scpn_fusion.core.quantum_bridge", "experimental", "Quantum control bridge"),
+    "q-control": ModeSpec(
+        "scpn_fusion.core.quantum_bridge", "experimental", "Quantum control bridge"
+    ),
     "neuro-quantum": ModeSpec(
         "scpn_fusion.control.neuro_cybernetic_controller",
         "experimental",
         "Neuro-quantum control bridge",
     ),
     "lazarus": ModeSpec("scpn_fusion.core.lazarus_bridge", "experimental", "Lazarus bridge"),
-    "director": ModeSpec("scpn_fusion.control.director_interface", "experimental", "Director interface"),
+    "director": ModeSpec(
+        "scpn_fusion.control.director_interface", "experimental", "Director interface"
+    ),
     "vibrana": ModeSpec("scpn_fusion.core.vibrana_bridge", "experimental", "Vibrana bridge"),
 }
 
@@ -115,11 +143,13 @@ def _available_modes(
 ) -> list[str]:
     names: list[str] = []
     for mode, spec in MODE_SPECS.items():
-        if spec.maturity == "public":
-            names.append(mode)
-        elif spec.maturity == "surrogate" and include_surrogate:
-            names.append(mode)
-        elif spec.maturity == "experimental" and include_experimental:
+        if (
+            spec.maturity == "public"
+            or spec.maturity == "surrogate"
+            and include_surrogate
+            or spec.maturity == "experimental"
+            and include_experimental
+        ):
             names.append(mode)
     return names
 
@@ -234,6 +264,7 @@ def _system_health_check() -> None:
 
     try:
         import psutil
+
         mem = psutil.virtual_memory()
         total_gb = mem.total / (1024**3)
         avail_gb = mem.available / (1024**3)
@@ -247,13 +278,15 @@ def _system_health_check() -> None:
     # 2. Library Versions
     try:
         import numpy as np
-        if int(np.__version__.split('.')[0]) < 1:
+
+        if int(np.__version__.split(".")[0]) < 1:
             LOGGER.error("NumPy version too old: %s", np.__version__)
     except ImportError:
         LOGGER.critical("NumPy not found! Core physics will fail.")
 
     try:
         import scipy
+
         LOGGER.debug("SciPy version: %s", scipy.__version__)
     except ImportError:
         LOGGER.warning("SciPy not found. Some solvers will be unavailable.")
@@ -262,14 +295,14 @@ def _system_health_check() -> None:
     gpu_available = False
     try:
         import jax
+
         devices = jax.devices()
-        gpu_available = any(d.platform == 'gpu' for d in devices)
+        gpu_available = any(d.platform == "gpu" for d in devices)
     except ImportError:
         LOGGER.debug("JAX not installed; skipping accelerator device probe.")
 
     LOGGER.info(
-        "Health check complete: CPUs=%d, GPU=%s",
-        cpu_count, "YES" if gpu_available else "NO"
+        "Health check complete: CPUs=%d, GPU=%s", cpu_count, "YES" if gpu_available else "NO"
     )
 
 
@@ -284,7 +317,12 @@ def _system_health_check() -> None:
     show_default=False,
     help=f"Acknowledgement token required for experimental modes ({EXPERIMENTAL_ACK_TOKEN}).",
 )
-@click.option("--python-bin", default=sys.executable, show_default=True, help="Python executable for subprocesses.")
+@click.option(
+    "--python-bin",
+    default=sys.executable,
+    show_default=True,
+    help="Python executable for subprocesses.",
+)
 @click.option(
     "--mode-timeout-seconds",
     default=DEFAULT_MODE_TIMEOUT_SECONDS,
@@ -292,7 +330,9 @@ def _system_health_check() -> None:
     type=float,
     help="Per-mode subprocess timeout in seconds.",
 )
-@click.option("--continue-on-error", is_flag=True, help="Continue running remaining modes after a failure.")
+@click.option(
+    "--continue-on-error", is_flag=True, help="Continue running remaining modes after a failure."
+)
 @click.option("--dry-run", is_flag=True, help="Print the launch plan without executing.")
 @click.option("--list-modes", is_flag=True, help="List available modes and lock state, then exit.")
 @click.option("--skip-health-check", is_flag=True, help="Skip startup system validation.")
@@ -333,12 +373,15 @@ def cli(
     if list_modes:
         click.echo("mode | maturity | unlocked | description")
         for name, spec in MODE_SPECS.items():
-            unlocked = _lock_reason(
-                name,
-                include_surrogate=include_surrogate,
-                include_experimental=include_experimental,
-                experimental_ack=experimental_ack,
-            ) is None
+            unlocked = (
+                _lock_reason(
+                    name,
+                    include_surrogate=include_surrogate,
+                    include_experimental=include_experimental,
+                    experimental_ack=experimental_ack,
+                )
+                is None
+            )
             click.echo(
                 f"{name} | {spec.maturity} | {'yes' if unlocked else 'no'} | {spec.description}"
             )

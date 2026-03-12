@@ -76,7 +76,9 @@ class NeuralSurrogate:
         return np.array([r_ax, z_ax, float(xp_pos[0]), float(xp_pos[1])], dtype=np.float64)
 
     def predict(self, current_state: np.ndarray, action_delta: np.ndarray) -> np.ndarray:
-        return np.asarray(current_state, dtype=np.float64) + (self.B @ np.asarray(action_delta, dtype=np.float64))
+        return np.asarray(current_state, dtype=np.float64) + (
+            self.B @ np.asarray(action_delta, dtype=np.float64)
+        )
 
 
 class ModelPredictiveController:
@@ -134,9 +136,7 @@ class ModelPredictiveController:
                 grads[t] = grad_step
                 temp_state = next_state
             planned_actions -= self.learning_rate * grads
-            planned_actions = np.clip(
-                planned_actions, -self.action_limit, self.action_limit
-            )
+            planned_actions = np.clip(planned_actions, -self.action_limit, self.action_limit)
 
         return np.asarray(planned_actions[0], dtype=np.float64)
 
@@ -278,7 +278,12 @@ def run_sota_simulation(
         if verbose and t % 10 == 0:
             logger.info(
                 "Step %d: R=%.2f, Z=%.2f | X-Point=(%.2f,%.2f) | Err=%.3f",
-                t, curr_state[0], curr_state[1], curr_state[2], curr_state[3], err,
+                t,
+                curr_state[0],
+                curr_state[1],
+                curr_state[2],
+                curr_state[3],
+                err,
             )
 
     runtime_s = float(time.time() - start_time)
@@ -309,15 +314,15 @@ def run_sota_simulation(
         "final_z_axis": float(h_z[-1]) if h_z else 0.0,
         "final_xpoint_r": float(h_xr[-1]) if h_xr else 0.0,
         "final_xpoint_z": float(h_xz[-1]) if h_xz else 0.0,
-        "mean_tracking_error": float(np.mean(np.asarray(h_error, dtype=np.float64)))
-        if h_error
-        else 0.0,
-        "max_abs_action": float(np.max(np.asarray(h_action, dtype=np.float64)))
-        if h_action
-        else 0.0,
-        "max_abs_coil_current": float(np.max(np.asarray(h_coil_abs, dtype=np.float64)))
-        if h_coil_abs
-        else 0.0,
+        "mean_tracking_error": (
+            float(np.mean(np.asarray(h_error, dtype=np.float64))) if h_error else 0.0
+        ),
+        "max_abs_action": (
+            float(np.max(np.asarray(h_action, dtype=np.float64))) if h_action else 0.0
+        ),
+        "max_abs_coil_current": (
+            float(np.max(np.asarray(h_coil_abs, dtype=np.float64))) if h_coil_abs else 0.0
+        ),
         "plot_saved": bool(plot_saved),
         "plot_error": plot_error,
     }

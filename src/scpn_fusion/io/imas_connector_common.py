@@ -36,9 +36,7 @@ REQUIRED_PROFILE_1D_KEYS = (
     "electron_density_1e20_m3",
 )
 
-REQUIRED_DIGITAL_TWIN_STATE_KEYS = (
-    REQUIRED_DIGITAL_TWIN_SUMMARY_KEYS + REQUIRED_PROFILE_1D_KEYS
-)
+REQUIRED_DIGITAL_TWIN_STATE_KEYS = REQUIRED_DIGITAL_TWIN_SUMMARY_KEYS + REQUIRED_PROFILE_1D_KEYS
 
 
 def _missing_required_keys(mapping: Mapping[str, Any], required: tuple[str, ...]) -> list[str]:
@@ -132,13 +130,9 @@ def _coerce_profiles_1d(
     )
     n = len(rho)
     if len(temp) != n:
-        raise ValueError(
-            f"{name}.electron_temp_keV length must match {name}.rho_norm."
-        )
+        raise ValueError(f"{name}.electron_temp_keV length must match {name}.rho_norm.")
     if len(dens) != n:
-        raise ValueError(
-            f"{name}.electron_density_1e20_m3 length must match {name}.rho_norm."
-        )
+        raise ValueError(f"{name}.electron_density_1e20_m3 length must match {name}.rho_norm.")
 
     return {
         "rho_norm": rho,
@@ -158,4 +152,3 @@ __all__ = [
     "_coerce_finite_real_sequence",
     "_coerce_profiles_1d",
 ]
-

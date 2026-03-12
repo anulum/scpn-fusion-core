@@ -84,7 +84,9 @@ class TransportSolverCouplingMixin:
             1e3,
         )
         if ne_safe.shape != dV.shape or ti_safe.shape != dV.shape or te_safe.shape != dV.shape:
-            raise _physics_error_type()("Profile and geometry shape mismatch in confinement-time estimate")
+            raise _physics_error_type()(
+                "Profile and geometry shape mismatch in confinement-time estimate"
+            )
 
         energy_density = 1.5 * (ne_safe * 1e19) * (ti_safe + te_safe) * e_kev
         w_stored_j = float(np.sum(energy_density * dV))
@@ -246,4 +248,3 @@ class TransportSolverCouplingMixin:
             "dt_history": atc.dt_history.copy(),
             "error_history": atc.error_history.copy(),
         }
-

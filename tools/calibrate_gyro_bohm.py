@@ -69,13 +69,14 @@ OUTPUT_JSON = REPO_ROOT / "validation" / "reference_data" / "itpa" / "gyro_bohm_
 
 # ── Physical constants ────────────────────────────────────────────────
 
-E_CHARGE = 1.602176634e-19   # C
-M_PROTON = 1.672621924e-27   # kg
-EPS_0 = 8.854187812e-12      # F/m
-E_KEV_J = 1.602176634e-16    # J per keV
+E_CHARGE = 1.602176634e-19  # C
+M_PROTON = 1.672621924e-27  # kg
+EPS_0 = 8.854187812e-12  # F/m
+E_KEV_J = 1.602176634e-16  # J per keV
 
 
 # ── Data container ────────────────────────────────────────────────────
+
 
 @dataclass
 class ShotRecord:
@@ -89,14 +90,14 @@ class ShotRecord:
     shot: str
     Ip_MA: float
     BT_T: float
-    ne19: float       # line-averaged density [10^19 m^-3]
+    ne19: float  # line-averaged density [10^19 m^-3]
     Ploss_MW: float
-    R_m: float        # major radius [m]
-    a_m: float        # minor radius [m]
+    R_m: float  # major radius [m]
+    a_m: float  # minor radius [m]
     kappa: float
-    delta: float      # triangularity
-    M_AMU: float      # effective ion mass
-    tau_E_s: float    # measured confinement time [s]
+    delta: float  # triangularity
+    M_AMU: float  # effective ion mass
+    tau_E_s: float  # measured confinement time [s]
     H98y2: float
     source: str
 
@@ -107,27 +108,30 @@ def load_itpa_csv(path: Path = ITPA_CSV) -> list[ShotRecord]:
     with open(path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            records.append(ShotRecord(
-                machine=row["machine"],
-                shot=row["shot"],
-                Ip_MA=float(row["Ip_MA"]),
-                BT_T=float(row["BT_T"]),
-                ne19=float(row["ne19_1e19m3"]),
-                Ploss_MW=float(row["Ploss_MW"]),
-                R_m=float(row["R_m"]),
-                a_m=float(row["a_m"]),
-                kappa=float(row["kappa"]),
-                delta=float(row["delta"]),
-                M_AMU=float(row["M_AMU"]),
-                tau_E_s=float(row["tau_E_s"]),
-                H98y2=float(row["H98y2"]),
-                source=row["source"],
-            ))
+            records.append(
+                ShotRecord(
+                    machine=row["machine"],
+                    shot=row["shot"],
+                    Ip_MA=float(row["Ip_MA"]),
+                    BT_T=float(row["BT_T"]),
+                    ne19=float(row["ne19_1e19m3"]),
+                    Ploss_MW=float(row["Ploss_MW"]),
+                    R_m=float(row["R_m"]),
+                    a_m=float(row["a_m"]),
+                    kappa=float(row["kappa"]),
+                    delta=float(row["delta"]),
+                    M_AMU=float(row["M_AMU"]),
+                    tau_E_s=float(row["tau_E_s"]),
+                    H98y2=float(row["H98y2"]),
+                    source=row["source"],
+                )
+            )
     logger.info("Loaded %d shots from %s", len(records), path.name)
     return records
 
 
 # ── Chang-Hinton neoclassical chi ─────────────────────────────────────
+
 
 def chang_hinton_chi_scalar(
     rho_norm: float,
@@ -160,7 +164,10 @@ def chang_hinton_chi_scalar(
     n_e = n_e_19 * 1e19
     ln_lambda = 17.0
     nu_ii = (
-        n_e * Z_eff**2 * E_CHARGE**4 * ln_lambda
+        n_e
+        * Z_eff**2
+        * E_CHARGE**4
+        * ln_lambda
         / (12.0 * np.pi**1.5 * EPS_0**2 * m_i**0.5 * T_J**1.5)
     )
 
@@ -169,15 +176,19 @@ def chang_hinton_chi_scalar(
 
     alpha_sh = epsilon
     chi_val = (
-        0.66 * (1.0 + 1.54 * alpha_sh) * q**2
-        * rho_i**2 * nu_ii
-        / (eps32 * (1.0 + 0.74 * nu_star**(2.0 / 3.0)))
+        0.66
+        * (1.0 + 1.54 * alpha_sh)
+        * q**2
+        * rho_i**2
+        * nu_ii
+        / (eps32 * (1.0 + 0.74 * nu_star ** (2.0 / 3.0)))
     )
 
     return max(chi_val, 0.01) if np.isfinite(chi_val) else 0.01
 
 
 # ── Gyro-Bohm chi ────────────────────────────────────────────────────
+
 
 def gyro_bohm_chi_scalar(
     c_gB: float,
@@ -226,6 +237,7 @@ def gyro_bohm_chi_scalar(
 
 
 # ── Predict tau_E for one shot ────────────────────────────────────────
+
 
 def predict_tau_e(shot: ShotRecord, c_gB: float) -> float:
     """Predict energy confinement time [s] for a single shot.
@@ -284,7 +296,7 @@ def predict_tau_e(shot: ShotRecord, c_gB: float) -> float:
         Ip**0.93
         * B0**0.15
         * ne_avg**0.41
-        * P_loss**(-0.69)
+        * P_loss ** (-0.69)
         * R0**1.97
         * kappa**0.78
         * epsilon**0.58
@@ -328,7 +340,14 @@ def predict_tau_e(shot: ShotRecord, c_gB: float) -> float:
 
     # Chang-Hinton neoclassical chi
     chi_neo = chang_hinton_chi_scalar(
-        0.5, T_avg_keV, ne_avg, q_avg, R0, a, B0, A_ion,
+        0.5,
+        T_avg_keV,
+        ne_avg,
+        q_avg,
+        R0,
+        a,
+        B0,
+        A_ion,
     )
 
     # Effective chi implied by the tau_E prediction
@@ -349,6 +368,7 @@ def predict_tau_e(shot: ShotRecord, c_gB: float) -> float:
 
 
 # ── RMSE objective ────────────────────────────────────────────────────
+
 
 def compute_rmse(
     c_gB: float,
@@ -384,11 +404,12 @@ def objective(log_c_gB: float, shots: list[ShotRecord]) -> float:
     Minimises the absolute RMSE [s] — the standard metric for the CI
     regression gate (``ci_rmse_gate.py``).
     """
-    c_gB = 10.0 ** log_c_gB
+    c_gB = 10.0**log_c_gB
     return compute_rmse(c_gB, shots)
 
 
 # ── Bootstrap uncertainty ─────────────────────────────────────────────
+
 
 def bootstrap_uncertainty(
     shots: list[ShotRecord],
@@ -412,12 +433,13 @@ def bootstrap_uncertainty(
             method="bounded",
             options={"xatol": 0.01},
         )
-        c_gB_samples.append(10.0 ** result.x)
+        c_gB_samples.append(10.0**result.x)
 
     return float(np.std(c_gB_samples))
 
 
 # ── Main calibration routine ──────────────────────────────────────────
+
 
 def calibrate(
     csv_path: Optional[Path] = None,
@@ -452,13 +474,13 @@ def calibrate(
 
     result = minimize_scalar(
         objective,
-        bounds=(-2.0, 4.0),   # c_gB in [0.01, 10000]
+        bounds=(-2.0, 4.0),  # c_gB in [0.01, 10000]
         args=(shots,),
         method="bounded",
         options={"xatol": 0.005, "maxiter": 200},
     )
 
-    c_gB_best = 10.0 ** result.x
+    c_gB_best = 10.0**result.x
     rmse_best = result.fun
     mean_tau = np.mean([s.tau_E_s for s in shots])
     rmse_rel = rmse_best / mean_tau
@@ -471,15 +493,19 @@ def calibrate(
     # ── Per-shot tau_E comparison table ──
     if verbose:
         print("\n" + "=" * 90)
-        print(f"{'Machine':<12} {'Shot':<12} {'tau_meas':>8} {'tau_pred':>8} "
-              f"{'error':>8} {'rel_err':>8}")
+        print(
+            f"{'Machine':<12} {'Shot':<12} {'tau_meas':>8} {'tau_pred':>8} "
+            f"{'error':>8} {'rel_err':>8}"
+        )
         print("-" * 90)
         for s in shots:
             tau_pred = predict_tau_e(s, c_gB_best)
             err = tau_pred - s.tau_E_s
             rel_err = err / s.tau_E_s if s.tau_E_s > 0 else 0
-            print(f"{s.machine:<12} {s.shot:<12} {s.tau_E_s:8.4f} {tau_pred:8.4f} "
-                  f"{err:+8.4f} {rel_err:+8.2%}")
+            print(
+                f"{s.machine:<12} {s.shot:<12} {s.tau_E_s:8.4f} {tau_pred:8.4f} "
+                f"{err:+8.4f} {rel_err:+8.2%}"
+            )
         print("=" * 90)
 
     # ── Bootstrap uncertainty ──
@@ -489,10 +515,7 @@ def calibrate(
 
     # ── Additional metrics ──
     log_rmse = compute_log_rmse(c_gB_best, shots)
-    mape = np.mean([
-        abs(predict_tau_e(s, c_gB_best) - s.tau_E_s) / s.tau_E_s
-        for s in shots
-    ])
+    mape = np.mean([abs(predict_tau_e(s, c_gB_best) - s.tau_E_s) / s.tau_E_s for s in shots])
 
     # ── Build result ──
     calibration_result = {

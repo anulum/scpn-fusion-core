@@ -68,9 +68,7 @@ def test_render_markdown_contains_key_sections() -> None:
         ({"dt_ms": 0.0}, "dt_ms"),
     ],
 )
-def test_run_benchmark_rejects_invalid_inputs(
-    kwargs: dict[str, float | int], match: str
-) -> None:
+def test_run_benchmark_rejects_invalid_inputs(kwargs: dict[str, float | int], match: str) -> None:
     with pytest.raises(ValueError, match=match):
         gneu_01_benchmark.run_benchmark(**kwargs)
 

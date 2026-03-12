@@ -9,6 +9,7 @@ try:
     from ._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:
     from .fusion_kernel import FusionKernel
+
     RUST_BACKEND = False
 from .fusion_ignition_sim import FusionBurnPhysics
 from .equilibrium_3d import FourierMode3D, VMECStyleEquilibrium3D
@@ -65,6 +66,7 @@ from .stability_mhd import (
     ntm_stability,
     run_full_stability_check,
 )
+
 # Additional modules available via lazy import to avoid circular deps
 _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "CompactReactorArchitect": (".compact_reactor_optimizer", "CompactReactorArchitect"),
@@ -92,6 +94,7 @@ def __getattr__(name: str):
     if name in _LAZY_IMPORTS:
         module_path, attr = _LAZY_IMPORTS[name]
         import importlib
+
         mod = importlib.import_module(module_path, __name__)
         val = getattr(mod, attr)
         globals()[name] = val

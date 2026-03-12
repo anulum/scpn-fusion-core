@@ -54,6 +54,7 @@ def _make_sor_config(tmp_path: Path) -> Path:
 
 # ── Tests ─────────────────────────────────────────────────────────
 
+
 @requires_rust
 def test_rust_multigrid_returns_finite(cfg_path: Path):
     """Rust multigrid should return finite Psi, no NaN."""
@@ -109,7 +110,16 @@ def test_rust_multigrid_result_keys(tmp_path: Path):
     p.write_text(json.dumps(MOCK_CONFIG), encoding="utf-8")
     fk = FusionKernel(str(p))
     result = fk.solve_equilibrium()
-    expected = {"psi", "converged", "iterations", "residual",
-                "residual_history", "gs_residual", "gs_residual_best",
-                "gs_residual_history", "wall_time_s", "solver_method"}
+    expected = {
+        "psi",
+        "converged",
+        "iterations",
+        "residual",
+        "residual_history",
+        "gs_residual",
+        "gs_residual_best",
+        "gs_residual_history",
+        "wall_time_s",
+        "solver_method",
+    }
     assert expected.issubset(result.keys()), f"Missing keys: {expected - result.keys()}"

@@ -103,11 +103,7 @@ class HPCBridge:
         self._has_converged_api: bool = False
         self._has_boundary_api: bool = False
 
-        lib_name = (
-            "scpn_solver.dll"
-            if platform.system() == "Windows"
-            else "libscpn_solver.so"
-        )
+        lib_name = "scpn_solver.dll" if platform.system() == "Windows" else "libscpn_solver.so"
         env_path = os.environ.get("SCPN_SOLVER_LIB")
         if lib_path is None and env_path:
             lib_path = env_path
@@ -153,7 +149,9 @@ class HPCBridge:
             except Exception as exc:
                 self.close_error = str(exc)
                 self.close_error_count = int(getattr(self, "close_error_count", 0)) + 1
-                logger.warning("Failed to release C++ solver instance cleanly: %s", self.close_error)
+                logger.warning(
+                    "Failed to release C++ solver instance cleanly: %s", self.close_error
+                )
             self.solver_ptr = None
 
     def __del__(self) -> None:
@@ -167,16 +165,23 @@ class HPCBridge:
 
     def _setup_signatures(self):
         # void* create_solver(int nr, int nz, double rmin, double rmax, double zmin, double zmax)
-        self.lib.create_solver.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double]
+        self.lib.create_solver.argtypes = [
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_double,
+            ctypes.c_double,
+            ctypes.c_double,
+            ctypes.c_double,
+        ]
         self.lib.create_solver.restype = ctypes.c_void_p
 
         # void run_step(void* solver, double* j, double* psi, int size, int iter)
         self.lib.run_step.argtypes = [
             ctypes.c_void_p,
-            np.ctypeslib.ndpointer(dtype=np.float64, flags='C_CONTIGUOUS'),
-            np.ctypeslib.ndpointer(dtype=np.float64, flags='C_CONTIGUOUS'),
+            np.ctypeslib.ndpointer(dtype=np.float64, flags="C_CONTIGUOUS"),
+            np.ctypeslib.ndpointer(dtype=np.float64, flags="C_CONTIGUOUS"),
             ctypes.c_int,
-            ctypes.c_int
+            ctypes.c_int,
         ]
 
         # int run_step_converged(void* solver, const double* j, double* psi,
@@ -185,8 +190,8 @@ class HPCBridge:
         if hasattr(self.lib, "run_step_converged"):
             self.lib.run_step_converged.argtypes = [
                 ctypes.c_void_p,
-                np.ctypeslib.ndpointer(dtype=np.float64, flags='C_CONTIGUOUS'),
-                np.ctypeslib.ndpointer(dtype=np.float64, flags='C_CONTIGUOUS'),
+                np.ctypeslib.ndpointer(dtype=np.float64, flags="C_CONTIGUOUS"),
+                np.ctypeslib.ndpointer(dtype=np.float64, flags="C_CONTIGUOUS"),
                 ctypes.c_int,
                 ctypes.c_int,
                 ctypes.c_double,
@@ -294,7 +299,9 @@ class HPCBridge:
         )
         return psi_target
 
-    def solve_neural(self, config_path: Optional[str | Path] = None) -> Optional[NDArray[np.float64]]:
+    def solve_neural(
+        self, config_path: Optional[str | Path] = None
+    ) -> Optional[NDArray[np.float64]]:
         """
         Run the O(1) Neural Equilibrium Surrogate.
         Requires NeuralEquilibriumKernel (JAX/NPZ weights).
@@ -397,9 +404,7 @@ class HPCBridge:
 
         j_input = _as_contiguous_f64(j_phi)
         if j_input.ndim != 2:
-            raise ValueError(
-                f"j_phi must be a 2D array, received ndim={j_input.ndim}"
-            )
+            raise ValueError(f"j_phi must be a 2D array, received ndim={j_input.ndim}")
         if j_input.size == 0:
             raise ValueError("j_phi must be non-empty")
         if not np.all(np.isfinite(j_input)):
@@ -414,6 +419,7 @@ class HPCBridge:
             )
         return j_input, expected_shape
 
+
 def compile_cpp() -> Optional[str]:
     """Compile the C++ solver from source.
 
@@ -426,9 +432,7 @@ def compile_cpp() -> Optional[str]:
         Path to the compiled library, or *None* on failure.
     """
     if os.environ.get("SCPN_ALLOW_NATIVE_BUILD") != "1":
-        logger.warning(
-            "Native build disabled. Set SCPN_ALLOW_NATIVE_BUILD=1 to enable."
-        )
+        logger.warning("Native build disabled. Set SCPN_ALLOW_NATIVE_BUILD=1 to enable.")
         return None
 
     logger.info("Compiling C++ solver kernel…")
@@ -469,6 +473,7 @@ def compile_cpp() -> Optional[str]:
 
     logger.info("Compilation succeeded: %s", out)
     return str(out)
+
 
 if __name__ == "__main__":
     # Test sequence

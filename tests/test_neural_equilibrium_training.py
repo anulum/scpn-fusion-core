@@ -27,7 +27,9 @@ class _DummyAccel:
         self.saved_path: Path | None = None
         self.files_seen: list[Path] = []
 
-    def train_from_geqdsk(self, files: list[Path], n_perturbations: int, seed: int) -> _DummyTrainingResult:
+    def train_from_geqdsk(
+        self, files: list[Path], n_perturbations: int, seed: int
+    ) -> _DummyTrainingResult:
         self.files_seen = list(files)
         assert n_perturbations > 0
         assert seed >= 0

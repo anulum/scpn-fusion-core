@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 try:
     import jax
     import jax.numpy as jnp
+
     try:
         from .fno_jax_training import fno_layer, model_forward
     except ImportError:
@@ -82,7 +83,7 @@ class SpectralTurbulenceGenerator:
         )
         self.field = self._rng.standard_normal((size, size)) * 0.1
         self.field_k = np.fft.fft2(self.field)
-        self.zonal_flow = 0.0 # Predator state
+        self.zonal_flow = 0.0  # Predator state
 
     def step(self, dt: float = 0.01, damping: float = 0.0) -> np.ndarray:
         kx = np.fft.fftfreq(self.size) * self.size
@@ -104,7 +105,9 @@ class SpectralTurbulenceGenerator:
         omega = ky_grid / (1.0 + k2)
         phase_shift = np.exp(-1j * omega * dt)
 
-        forcing = self._rng.standard_normal((self.size, self.size)) + 1j * self._rng.standard_normal((self.size, self.size))
+        forcing = self._rng.standard_normal(
+            (self.size, self.size)
+        ) + 1j * self._rng.standard_normal((self.size, self.size))
         forcing_k = np.fft.fft2(forcing)
         forcing_k *= (k2 < 25.0) * 5.0
 
@@ -140,7 +143,9 @@ class FNO_Controller:
             self.load_weights(str(self.weights_path))
             self.backend = "legacy_jax_fno"
         elif self.legacy_enabled and not _HAS_JAX:
-            logger.warning("Legacy FNO requested but JAX is unavailable; using compatibility backend.")
+            logger.warning(
+                "Legacy FNO requested but JAX is unavailable; using compatibility backend."
+            )
         elif self.legacy_enabled and not self.weights_path.exists():
             logger.warning(
                 "Legacy FNO requested but weights not found at %s; using compatibility backend.",
@@ -162,7 +167,9 @@ class FNO_Controller:
 
     @staticmethod
     def _postprocess_prediction(field: np.ndarray, suppression: float) -> np.ndarray:
-        pred_field = np.asarray(field, dtype=np.float64) * (1.0 - float(np.clip(suppression, 0.0, 0.98)))
+        pred_field = np.asarray(field, dtype=np.float64) * (
+            1.0 - float(np.clip(suppression, 0.0, 0.98))
+        )
         field_k = np.fft.fft2(pred_field)
         field_k[0, 0] = 0.0  # remove non-physical DC drift
         out = np.fft.ifft2(field_k).real
@@ -171,7 +178,9 @@ class FNO_Controller:
     def predict_and_suppress(self, field: np.ndarray) -> Tuple[float, np.ndarray]:
         field_np = np.asarray(field, dtype=np.float64)
         if field_np.shape != (GRID_SIZE, GRID_SIZE):
-            raise ValueError(f"field must have shape {(GRID_SIZE, GRID_SIZE)}, got {field_np.shape}.")
+            raise ValueError(
+                f"field must have shape {(GRID_SIZE, GRID_SIZE)}, got {field_np.shape}."
+            )
 
         # Compatibility mode is the safe default lane.
         if not (self.legacy_enabled and _HAS_JAX and self.loaded_weights):

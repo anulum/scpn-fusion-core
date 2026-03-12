@@ -56,6 +56,7 @@ DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parents[1] / "data" / "qlknn10d"
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
+
 def _sha256(path: Path) -> str:
     """Compute SHA-256 hex digest of a file."""
     h = hashlib.sha256()
@@ -114,7 +115,8 @@ def _download_with_progress(url: str, dest: Path, expected_size: int = 0) -> Non
                         f"\r  {dest.name}: {_human_size(downloaded)}"
                         f" / {_human_size(total)}"
                         f" ({pct:.1f}%) [{speed:.1f} MB/s]",
-                        end="", flush=True,
+                        end="",
+                        flush=True,
                     )
                     last_print = now
 
@@ -134,17 +136,20 @@ def fetch_zenodo_files() -> list[dict]:
 
     files = []
     for f in meta.get("files", []):
-        files.append({
-            "filename": f["key"],
-            "size": f["size"],
-            "checksum": f.get("checksum", ""),  # "md5:abc..."
-            "url": f["links"]["self"],
-        })
+        files.append(
+            {
+                "filename": f["key"],
+                "size": f["size"],
+                "checksum": f.get("checksum", ""),  # "md5:abc..."
+                "url": f["links"]["self"],
+            }
+        )
     print(f"  Found {len(files)} files ({_human_size(sum(f['size'] for f in files))} total)")
     return files
 
 
 # ── Main operations ──────────────────────────────────────────────────
+
 
 def download(output_dir: Path) -> None:
     """Download all dataset files from Zenodo."""
@@ -182,10 +187,7 @@ def download(output_dir: Path) -> None:
         f"**Downloaded**: {datetime.now(timezone.utc).isoformat()}\n\n"
         f"## Citation\n\n{CITATION}\n\n"
         f"## Files\n\n"
-        + "\n".join(
-            f"- `{f['filename']}` ({_human_size(f['size'])})"
-            for f in files
-        )
+        + "\n".join(f"- `{f['filename']}` ({_human_size(f['size'])})" for f in files)
         + "\n\n## Description\n\n"
         "~300 million QuaLiKiz v2.4.0 turbulent transport flux calculations\n"
         "covering ITG, TEM, and ETG regimes.  10-dimensional input space\n"
@@ -246,10 +248,9 @@ def check(output_dir: Path) -> bool:
 
 # ── CLI ──────────────────────────────────────────────────────────────
 
+
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Download the QLKNN-10D dataset from Zenodo."
-    )
+    parser = argparse.ArgumentParser(description="Download the QLKNN-10D dataset from Zenodo.")
     parser.add_argument(
         "--output-dir",
         type=Path,

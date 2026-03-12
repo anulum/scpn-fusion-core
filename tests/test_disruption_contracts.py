@@ -68,14 +68,12 @@ def test_run_disruption_episode_contract_smoke() -> None:
     assert float(out["argon_quantity_mol"]) >= 0.0
     assert float(out["xenon_quantity_mol"]) >= 0.0
     assert float(out["total_impurity_mol"]) >= float(out["neon_quantity_mol"])
-    assert float(out["risk_p95_low"]) <= float(out["risk_after"]) <= float(
-        out["risk_p95_high"]
-    )
-    assert float(out["tbr_p95_low"]) <= float(out["tbr_proxy"]) <= float(
-        out["tbr_p95_high"]
-    )
-    assert float(out["wall_damage_p95_low"]) <= float(out["wall_damage_index"]) <= float(
-        out["wall_damage_p95_high"]
+    assert float(out["risk_p95_low"]) <= float(out["risk_after"]) <= float(out["risk_p95_high"])
+    assert float(out["tbr_p95_low"]) <= float(out["tbr_proxy"]) <= float(out["tbr_p95_high"])
+    assert (
+        float(out["wall_damage_p95_low"])
+        <= float(out["wall_damage_index"])
+        <= float(out["wall_damage_p95_high"])
     )
     assert float(out["uncertainty_envelope"]) > 0.0
 

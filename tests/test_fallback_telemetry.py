@@ -38,4 +38,3 @@ def test_domain_fallback_budget_is_enforced(monkeypatch: pytest.MonkeyPatch) -> 
 
     with pytest.raises(FallbackBudgetExceeded):
         record_fallback_event("scpn_controller", "rust_backend_unavailable")
-

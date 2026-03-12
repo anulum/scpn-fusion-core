@@ -280,7 +280,9 @@ def run_campaign(
             "hardware_profile": {
                 "sc_neurocore_available": bool(SC_NEUROCORE_AVAILABLE),
                 "snn_backend": str(lane_a["snn_backend"]),
-                "fpga_mode": "sc-neurocore-fpga" if SC_NEUROCORE_AVAILABLE else "numpy-fpga-emulation",
+                "fpga_mode": (
+                    "sc-neurocore-fpga" if SC_NEUROCORE_AVAILABLE else "numpy-fpga-emulation"
+                ),
             },
             "hil_closed_loop": metrics,
             "determinism": {

@@ -168,9 +168,7 @@ def test_load_or_train_predictor_can_return_fallback_metadata_when_missing(
 
 
 @pytest.mark.parametrize("seq_len", [0, 16.5])
-def test_load_or_train_predictor_rejects_invalid_seq_len(
-    tmp_path: Path, seq_len: object
-) -> None:
+def test_load_or_train_predictor_rejects_invalid_seq_len(tmp_path: Path, seq_len: object) -> None:
     with pytest.raises(ValueError, match="seq_len"):
         dp.load_or_train_predictor(
             model_path=tmp_path / "missing_model.pth",

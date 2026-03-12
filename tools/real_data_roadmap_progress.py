@@ -43,9 +43,7 @@ def _is_raw_source_type(value: str) -> bool:
     return bool(lowered) and any(token in lowered for token in _RAW_SOURCE_TYPE_TOKENS)
 
 
-def evaluate_progress(
-    *, report: dict[str, Any], targets: dict[str, Any]
-) -> dict[str, Any]:
+def evaluate_progress(*, report: dict[str, Any], targets: dict[str, Any]) -> dict[str, Any]:
     target_cfg = targets.get("targets", {})
     if not isinstance(target_cfg, dict):
         raise ValueError("targets payload missing 'targets' object")
@@ -93,18 +91,13 @@ def evaluate_progress(
         source_types_raw = disruption_source.get("source_types", [])
         if isinstance(source_types_raw, list):
             d3d_disruption_source_types = sorted(
-                {
-                    str(value).strip()
-                    for value in source_types_raw
-                    if str(value).strip()
-                }
+                {str(value).strip() for value in source_types_raw if str(value).strip()}
             )
         if bool(disruption_source.get("raw_ingestion_ready", False)):
             # Keep readiness tied to provenance-contract semantics instead of
             # trusting the boolean in isolation.
             d3d_raw_ingestion_ready = any(
-                _is_raw_source_type(source_type)
-                for source_type in d3d_disruption_source_types
+                _is_raw_source_type(source_type) for source_type in d3d_disruption_source_types
             )
     if not d3d_raw_ingestion_ready:
         # Backward-compatible fallback for historical artifacts lacking data_source contract.
@@ -151,9 +144,7 @@ def evaluate_progress(
         )
 
     overall_progress_ratio = (
-        float(sum(completion_ratios) / len(completion_ratios))
-        if completion_ratios
-        else 1.0
+        float(sum(completion_ratios) / len(completion_ratios)) if completion_ratios else 1.0
     )
 
     return {
@@ -237,9 +228,7 @@ def main(argv: list[str] | None = None) -> int:
     out_md = _resolve(args.output_md)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(
-        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    out_json.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     out_md.write_text(render_markdown(summary), encoding="utf-8")
 
     print(

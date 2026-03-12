@@ -34,7 +34,10 @@ def green_function(R_src: float, Z_src: float, R_obs: float, Z_obs: float) -> fl
 
 
 def _green_function_vectorised(
-    R_src: float, Z_src: float, R_obs: FloatArray, Z_obs: FloatArray,
+    R_src: float,
+    Z_src: float,
+    R_obs: FloatArray,
+    Z_obs: FloatArray,
 ) -> FloatArray:
     """Vectorised toroidal Green's function over observation grid arrays."""
     denom = (R_obs + R_src) ** 2 + (Z_obs - Z_src) ** 2
@@ -93,9 +96,7 @@ def optimize_coil_currents(
     if len(coils.positions) == 0:
         raise ValueError("CoilSet.positions must contain at least one coil.")
     if len(coils.currents) != len(coils.positions):
-        raise ValueError(
-            "CoilSet.currents length must match number of coil positions."
-        )
+        raise ValueError("CoilSet.currents length must match number of coil positions.")
     if not np.isfinite(tikhonov_alpha) or tikhonov_alpha < 0.0:
         raise ValueError("tikhonov_alpha must be finite and non-negative.")
 
@@ -107,9 +108,7 @@ def optimize_coil_currents(
 
     target = np.asarray(target_flux, dtype=np.float64).reshape(-1)
     if target.shape[0] != obs.shape[0]:
-        raise ValueError(
-            "target_flux must have the same length as target_flux_points."
-        )
+        raise ValueError("target_flux must have the same length as target_flux_points.")
     if not np.all(np.isfinite(target)):
         raise ValueError("target_flux must contain finite values only.")
 
@@ -126,9 +125,7 @@ def optimize_coil_currents(
     if coils.current_limits is not None:
         limits = np.asarray(coils.current_limits, dtype=np.float64).reshape(-1)
         if limits.shape[0] != n_coils:
-            raise ValueError(
-                "current_limits must have one entry per coil."
-            )
+            raise ValueError("current_limits must have one entry per coil.")
         if not np.all(np.isfinite(limits)):
             raise ValueError("current_limits must contain finite values only.")
         lb = -np.abs(limits)
@@ -190,9 +187,7 @@ def resolve_shape_target_flux(kernel: Any, coils: "CoilSet") -> FloatArray:
     if coils.target_flux_values is not None:
         target = np.asarray(coils.target_flux_values, dtype=np.float64).reshape(-1)
         if target.shape[0] != n_pts:
-            raise ValueError(
-                "target_flux_values must have the same length as target_flux_points."
-            )
+            raise ValueError("target_flux_values must have the same length as target_flux_points.")
         if not np.all(np.isfinite(target)):
             raise ValueError("target_flux_values must contain finite values only.")
         return target
@@ -240,7 +235,9 @@ def solve_free_boundary(
             target_psi = resolve_shape_target_flux(kernel, coils)
             # Route through the kernel method to preserve monkeypatch/test hooks.
             new_currents = kernel.optimize_coil_currents(
-                coils, target_psi, tikhonov_alpha=tikhonov_alpha,
+                coils,
+                target_psi,
+                tikhonov_alpha=tikhonov_alpha,
             )
             coils.currents = new_currents
             psi_ext = compute_external_flux(kernel, coils)

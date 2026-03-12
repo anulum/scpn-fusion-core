@@ -38,9 +38,7 @@ class _AsciiStrictStdout:
         return "".join(self._parts)
 
 
-def test_main_is_ascii_stdout_safe(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
     summary = PsiRMSESummary(
         count=1,
         mean_psi_rmse_norm=0.125,

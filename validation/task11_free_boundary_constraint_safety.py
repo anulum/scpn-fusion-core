@@ -189,7 +189,9 @@ def run_campaign(
                     "max_action_l1": 0.76,
                 },
             },
-            "constrained_closed_loop": {key: value for key, value in summary.items() if key != "trace"},
+            "constrained_closed_loop": {
+                key: value for key, value in summary.items() if key != "trace"
+            },
             "thresholds": thresholds,
             "failure_reasons": failure_reasons,
             "passes_thresholds": bool(len(failure_reasons) == 0),
@@ -251,7 +253,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--control-dt-s", type=float, default=0.05)
     parser.add_argument(
         "--output-json",
-        default=str(ROOT / "validation" / "reports" / "task11_free_boundary_constraint_safety.json"),
+        default=str(
+            ROOT / "validation" / "reports" / "task11_free_boundary_constraint_safety.json"
+        ),
     )
     parser.add_argument(
         "--output-md",

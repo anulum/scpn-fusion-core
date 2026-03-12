@@ -115,12 +115,24 @@ def main() -> int:
         if hasattr(test_eq, "qpsi") and test_eq.qpsi is not None and len(test_eq.qpsi) > 0:
             idx_95 = int(0.95 * len(test_eq.qpsi))
             q95 = test_eq.qpsi[min(idx_95, len(test_eq.qpsi) - 1)]
-        features = np.array([
-            test_eq.current / 1e6, test_eq.bcentr, test_eq.rmaxis, test_eq.zmaxis,
-            1.0, 1.0, test_eq.simag, test_eq.sibry, kappa, 0.3, 0.3, q95,
-        ])
+        features = np.array(
+            [
+                test_eq.current / 1e6,
+                test_eq.bcentr,
+                test_eq.rmaxis,
+                test_eq.zmaxis,
+                1.0,
+                1.0,
+                test_eq.simag,
+                test_eq.sibry,
+                kappa,
+                0.3,
+                0.3,
+                q95,
+            ]
+        )
         psi_pred = accel_val.predict(features)
-        ref_psi = test_eq.psirz[:psi_pred.shape[0], :psi_pred.shape[1]]
+        ref_psi = test_eq.psirz[: psi_pred.shape[0], : psi_pred.shape[1]]
         rel_l2 = float(np.linalg.norm(psi_pred - ref_psi) / max(np.linalg.norm(ref_psi), 1e-12))
         print(f"  [{machine_dir.name}] {gfiles[0].name}: rel_L2 = {rel_l2:.4f}")
 

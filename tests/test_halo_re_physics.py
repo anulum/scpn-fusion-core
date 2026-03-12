@@ -69,15 +69,13 @@ class TestRunawayElectronModel:
         model = RunawayElectronModel(n_e=1e20, T_e_keV=20.0)
         assert model.E_D > 0.0
         assert model.E_c > 0.0
-        assert model.E_D > model.E_c  # Dreicer > critical
+        assert model.E_c < model.E_D  # Dreicer > critical
 
     def test_higher_zeff_increases_damping(self):
         result_low_z = RunawayElectronModel(z_eff=1.0).simulate(neon_z_eff=1.0)
         result_high_z = RunawayElectronModel(z_eff=5.0).simulate(neon_z_eff=5.0)
         # Higher Z_eff increases collisional drag → less RE
-        assert (
-            result_high_z.peak_re_current_ma <= result_low_z.peak_re_current_ma * 10.0
-        )
+        assert result_high_z.peak_re_current_ma <= result_low_z.peak_re_current_ma * 10.0
 
     def test_avalanche_gain_finite(self):
         model = RunawayElectronModel()

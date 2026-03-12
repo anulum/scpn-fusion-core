@@ -26,6 +26,7 @@ from scpn_fusion.core.integrated_transport_solver_runtime_utils import (
     sanitize_with_fallback as _sanitize_with_fallback_impl,
     thomas_solve as _thomas_solve_impl,
 )
+
 __all__ = ["AdaptiveTimeController", "TransportSolverRuntimeMixin"]
 
 
@@ -37,6 +38,7 @@ class TransportSolverRuntimeMixin(
     chi_e: np.ndarray
     chi_i: np.ndarray
     n_impurity: np.ndarray
+
     @staticmethod
     def _thomas_solve(a, b, c, d):
         """O(n) tridiagonal solver (Thomas algorithm).
@@ -208,9 +210,7 @@ class TransportSolverRuntimeMixin(
 
         self._last_numerical_recovery_count = 0
         self._last_numerical_recovery_breakdown = {}
-        self._last_numerical_recovery_count += self._sanitize_runtime_state(
-            label_prefix="pre"
-        )
+        self._last_numerical_recovery_count += self._sanitize_runtime_state(label_prefix="pre")
         Ti_old = self.Ti.copy()
         Te_old = self.Te.copy()
 
@@ -254,11 +254,9 @@ class TransportSolverRuntimeMixin(
         a, b, c = self._build_cn_tridiag(self.chi_i, dt)
         new_Ti = self._thomas_solve(a, b, c, rhs)
 
-        new_Ti[0] = new_Ti[1]    # Neumann at core
-        new_Ti[-1] = 0.1         # Dirichlet at edge
-        self.Ti, n_ti_new = self._sanitize_with_fallback(
-            new_Ti, Ti_old, floor=0.01, ceil=1e3
-        )
+        new_Ti[0] = new_Ti[1]  # Neumann at core
+        new_Ti[-1] = 0.1  # Dirichlet at edge
+        self.Ti, n_ti_new = self._sanitize_with_fallback(new_Ti, Ti_old, floor=0.01, ceil=1e3)
         self._last_numerical_recovery_count += n_ti_new
         self._record_recovery("cn.ion_solution", n_ti_new)
 
@@ -303,9 +301,7 @@ class TransportSolverRuntimeMixin(
 
             new_Te[0] = new_Te[1]
             new_Te[-1] = self.T_edge_keV  # EPED boundary condition
-            self.Te, n_te_new = self._sanitize_with_fallback(
-                new_Te, Te_old, floor=0.01, ceil=1e3
-            )
+            self.Te, n_te_new = self._sanitize_with_fallback(new_Te, Te_old, floor=0.01, ceil=1e3)
             self._last_numerical_recovery_count += n_te_new
             self._record_recovery("cn.electron_solution", n_te_new)
         else:
@@ -337,9 +333,7 @@ class TransportSolverRuntimeMixin(
         dW_source = dt * 1.5 * np.sum(self.ne * 1e19 * net_source_i * e_keV_J * dV)
 
         dW_actual = W_after - W_before
-        self._last_conservation_error = (
-            abs(dW_actual - dW_source) / max(abs(W_before), 1e-10)
-        )
+        self._last_conservation_error = abs(dW_actual - dW_source) / max(abs(W_before), 1e-10)
         if not np.isfinite(self._last_conservation_error):
             self._last_conservation_error = float("inf")
 
@@ -351,9 +345,7 @@ class TransportSolverRuntimeMixin(
                 f"dW_source={dW_source:.4e} J."
             )
 
-        self._last_numerical_recovery_count += self._sanitize_runtime_state(
-            label_prefix="post"
-        )
+        self._last_numerical_recovery_count += self._sanitize_runtime_state(label_prefix="post")
         self._enforce_recovery_budget(
             enforce_numerical_recovery=enforce_numerical_recovery,
             max_numerical_recoveries=max_numerical_recoveries,

@@ -27,9 +27,7 @@ class _SensorStub:
         self.kernel = _KernelStub()
         origin = np.array([6.0, 5.0])
         targets_r = np.linspace(3.5, 8.5, 8)
-        self.bolo_chords = [
-            (origin, np.array([float(r), -4.0])) for r in targets_r
-        ]
+        self.bolo_chords = [(origin, np.array([float(r), -4.0])) for r in targets_r]
 
 
 def test_geometry_matrix_shape_and_support() -> None:
@@ -72,9 +70,7 @@ def test_reconstruct_falls_back_when_lsq_linear_unavailable(
         ({"lambda_reg": float("nan")}, "lambda_reg"),
     ],
 )
-def test_constructor_rejects_invalid_inputs(
-    kwargs: dict[str, float | int], match: str
-) -> None:
+def test_constructor_rejects_invalid_inputs(kwargs: dict[str, float | int], match: str) -> None:
     params: dict[str, float | int | bool] = {"grid_res": 8, "lambda_reg": 0.1, "verbose": False}
     params.update(kwargs)
     with pytest.raises(ValueError, match=match):

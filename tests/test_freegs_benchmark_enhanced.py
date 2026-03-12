@@ -22,7 +22,6 @@ from benchmark_vs_freegs import (
     compare_separatrix,
     estimate_axis_pressure_pa,
     generate_per_metric_report,
-    nrmse,
     run_benchmark,
     solovev_psi,
 )
@@ -36,16 +35,16 @@ class TestThresholds:
         assert FREEGS_PSI_NRMSE_THRESHOLD < PSI_NRMSE_THRESHOLD
 
     def test_freegs_psi_threshold_value(self):
-        assert FREEGS_PSI_NRMSE_THRESHOLD == pytest.approx(0.005)
+        assert pytest.approx(0.005) == FREEGS_PSI_NRMSE_THRESHOLD
 
     def test_freegs_q_threshold_value(self):
-        assert FREEGS_Q_NRMSE_THRESHOLD == pytest.approx(0.10)
+        assert pytest.approx(0.10) == FREEGS_Q_NRMSE_THRESHOLD
 
     def test_freegs_axis_error_value(self):
-        assert FREEGS_AXIS_ERROR_M == pytest.approx(0.10)
+        assert pytest.approx(0.10) == FREEGS_AXIS_ERROR_M
 
     def test_freegs_separatrix_value(self):
-        assert FREEGS_SEPARATRIX_NRMSE == pytest.approx(0.05)
+        assert pytest.approx(0.05) == FREEGS_SEPARATRIX_NRMSE
 
 
 class TestFreeGSAxisPressureEstimate:

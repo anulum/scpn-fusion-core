@@ -117,8 +117,8 @@ def sync(*, check_only: bool = False) -> int:
     changed_count += int(
         update_file(
             REPO_ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md",
-            r'Release Version: `v\d+\.\d+\.\d+`',
-            f'Release Version: `v{version}`',
+            r"Release Version: `v\d+\.\d+\.\d+`",
+            f"Release Version: `v{version}`",
             check_only=check_only,
         )
     )
@@ -127,8 +127,8 @@ def sync(*, check_only: bool = False) -> int:
     changed_count += int(
         update_file(
             REPO_ROOT / "docs" / "competitive_analysis.md",
-            r'SCPN v\d+\.\d+\.\d+',
-            f'SCPN v{version}',
+            r"SCPN v\d+\.\d+\.\d+",
+            f"SCPN v{version}",
             check_only=check_only,
         )
     )
@@ -137,24 +137,24 @@ def sync(*, check_only: bool = False) -> int:
     changed_count += int(
         update_file(
             REPO_ROOT / "README.md",
-            r'Version-\d+\.\d+\.\d+-brightgreen',
-            f'Version-{version}-brightgreen',
+            r"Version-\d+\.\d+\.\d+-brightgreen",
+            f"Version-{version}-brightgreen",
             check_only=check_only,
         )
     )
     changed_count += int(
         update_file(
             REPO_ROOT / "README.md",
-            r'v\d+\.\d+\.\d+ Breakthrough',
-            f'v{version} Breakthrough',
+            r"v\d+\.\d+\.\d+ Breakthrough",
+            f"v{version} Breakthrough",
             check_only=check_only,
         )
     )
     changed_count += int(
         update_file(
             REPO_ROOT / "README.md",
-            r'v\d+\.\d+\.\d+ Performance Breakthrough',
-            f'v{version} Performance Breakthrough',
+            r"v\d+\.\d+\.\d+ Performance Breakthrough",
+            f"v{version} Performance Breakthrough",
             check_only=check_only,
         )
     )
@@ -164,16 +164,16 @@ def sync(*, check_only: bool = False) -> int:
         changed_count += int(
             update_file(
                 REPO_ROOT / doc,
-                r'\(v\d+\.\d+\.\d+\)',
-                f'(v{version})',
+                r"\(v\d+\.\d+\.\d+\)",
+                f"(v{version})",
                 check_only=check_only,
             )
         )
         changed_count += int(
             update_file(
                 REPO_ROOT / doc,
-                r'\*\*Version:\*\* \d+\.\d+\.\d+',
-                f'**Version:** {version}',
+                r"\*\*Version:\*\* \d+\.\d+\.\d+",
+                f"**Version:** {version}",
                 check_only=check_only,
             )
         )
@@ -182,23 +182,23 @@ def sync(*, check_only: bool = False) -> int:
     changed_count += int(
         update_file(
             REPO_ROOT / "docs" / "competitive_analysis.md",
-            r'SCPN Fusion Core v\d+\.\d+\.\d+',
-            f'SCPN Fusion Core v{version}',
+            r"SCPN Fusion Core v\d+\.\d+\.\d+",
+            f"SCPN Fusion Core v{version}",
             check_only=check_only,
         )
     )
     changed_count += int(
         update_file(
             REPO_ROOT / "docs" / "STREAMLIT_DEMO_PLAYBOOK.md",
-            r'SCPN Fusion Core v\d+\.\d+\.\d+',
-            f'SCPN Fusion Core v{version}',
+            r"SCPN Fusion Core v\d+\.\d+\.\d+",
+            f"SCPN Fusion Core v{version}",
             check_only=check_only,
         )
     )
     changed_count += int(
         update_file(
             REPO_ROOT / "docs" / "VALIDATION_GATE_MATRIX.md",
-            r'As of v\d+\.\d+\.x',
+            r"As of v\d+\.\d+\.x",
             f'As of v{".".join(version.split(".")[:2])}.x',
             check_only=check_only,
         )
@@ -206,16 +206,16 @@ def sync(*, check_only: bool = False) -> int:
     changed_count += int(
         update_file(
             REPO_ROOT / "README.md",
-            r'pending upload for v\d+\.\d+\.\d+ release notes',
-            f'pending upload for v{version} release notes',
+            r"pending upload for v\d+\.\d+\.\d+ release notes",
+            f"pending upload for v{version} release notes",
             check_only=check_only,
         )
     )
     changed_count += int(
         update_file(
             REPO_ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md",
-            r'v\d+\.\d+\.\d+ Release Acceptance',
-            f'v{version} Release Acceptance',
+            r"v\d+\.\d+\.\d+ Release Acceptance",
+            f"v{version} Release Acceptance",
             check_only=check_only,
         )
     )
@@ -224,8 +224,8 @@ def sync(*, check_only: bool = False) -> int:
     changed_count += int(
         update_file(
             REPO_ROOT / "CHANGELOG.md",
-            r'## \[\d+\.\d+\.\d+\]',
-            f'## [{version}]',
+            r"## \[\d+\.\d+\.\d+\]",
+            f"## [{version}]",
             check_only=check_only,
             count=1,
         )

@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import nbformat as nbf
@@ -29,7 +28,9 @@ def main() -> None:
     nb = nbf.read(src, as_version=4)
 
     # --- markdown cells ---
-    nb.cells[0].source = """# Neuro-Symbolic Control Demo (Golden Base v2)
+    nb.cells[
+        0
+    ].source = """# Neuro-Symbolic Control Demo (Golden Base v2)
 
 Version: v2 (2026-02-19)
 
@@ -51,19 +52,25 @@ Copyright clarity:
 - License: GNU AGPL v3
 """
 
-    nb.cells[1].source = """[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/anulum/scpn-fusion-core/blob/main/examples/neuro_symbolic_control_demo_v2.ipynb)
+    nb.cells[
+        1
+    ].source = """[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/anulum/scpn-fusion-core/blob/main/examples/neuro_symbolic_control_demo_v2.ipynb)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/anulum/scpn-fusion-core/main?labpath=examples%2Fneuro_symbolic_control_demo_v2.ipynb)
 
 ---
 """
 
-    nb.cells[7].source = """## 3) Compile to SNN (Stochastic Path, Required)
+    nb.cells[
+        7
+    ].source = """## 3) Compile to SNN (Stochastic Path, Required)
 
 Golden Base requires `sc_neurocore` stochastic execution.
 If stochastic path is unavailable, the notebook fails fast instead of silently falling back.
 """
 
-    nb.cells[9].source = """## 4) DIII-D Disturbance Injection + Validation Link
+    nb.cells[
+        9
+    ].source = """## 4) DIII-D Disturbance Injection + Validation Link
 
 This notebook loads disturbance data from:
 - `validation/reference_data/diiid/disruption_shots/`
@@ -73,7 +80,9 @@ Validation linkage:
 - `validation/full_validation_pipeline.py` (multi-lane empirical runner)
 """
 
-    nb.cells[11].source = """## 5) FusionKernel Twin and Controllers
+    nb.cells[
+        11
+    ].source = """## 5) FusionKernel Twin and Controllers
 
 The plant twin calls `FusionKernel.solve_equilibrium()` every control step.
 
@@ -84,7 +93,9 @@ Controllers:
 - **Open-loop**: fixed nominal actuation (no feedback), for visual contrast
 """
 
-    nb.cells[13].source = """## 6) Closed-Loop Results: SNN vs PID vs MPC-lite
+    nb.cells[
+        13
+    ].source = """## 6) Closed-Loop Results: SNN vs PID vs MPC-lite
 
 This section prints the metrics table and embeds trajectory plots:
 - plasma-state evolution (`n_e`, `I_p`, `beta_N`) with open-loop baseline
@@ -93,7 +104,9 @@ This section prints the metrics table and embeds trajectory plots:
 - safety traces (`q_min`) with disturbance risk profile
 """
 
-    nb.cells[17].source = """## 8) Computational Cost and 3456x3456 Scaling
+    nb.cells[
+        17
+    ].source = """## 8) Computational Cost and 3456x3456 Scaling
 
 This notebook reports both:
 - Controller-only latency
@@ -104,12 +117,16 @@ Computational-cost deployment note:
 - Full GS solve every fast control tick is too expensive for hard real-time.
 """
 
-    nb.cells[19].source = """## 9) Artifact Export and Deterministic Replay
+    nb.cells[
+        19
+    ].source = """## 9) Artifact Export and Deterministic Replay
 
 We export a deployment artifact, reload it, and verify deterministic replay consistency of the SNN closed-loop run.
 """
 
-    nb.cells[21].source = """## Summary
+    nb.cells[
+        21
+    ].source = """## Summary
 
 Golden Base now demonstrates:
 - stochastic-path SCPN/SNN execution (`sc_neurocore`)
@@ -124,7 +141,9 @@ Deployment realism:
 """
 
     # --- code cell 2: bootstrap sc_neurocore before importing scpn_fusion.scpn ---
-    nb.cells[2].source = """# Imports, bootstrap, and deterministic setup
+    nb.cells[
+        2
+    ].source = """# Imports, bootstrap, and deterministic setup
 import copy
 import hashlib
 import importlib
@@ -251,18 +270,18 @@ from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
     c8 = nb.cells[8].source
     c8 = _replace_once(
         c8,
-        "print(f\"W_out shape: {compiled.W_out.shape}\")\n",
-        "print(f\"W_out shape: {compiled.W_out.shape}\")\n\n"
+        'print(f"W_out shape: {compiled.W_out.shape}")\n',
+        'print(f"W_out shape: {compiled.W_out.shape}")\n\n'
         "if not compiled.has_stochastic_path:\n"
         "    raise RuntimeError(\n"
-        "        \"Golden Base requires stochastic path. Ensure sc_neurocore is available before scpn_fusion import.\"\n"
+        '        "Golden Base requires stochastic path. Ensure sc_neurocore is available before scpn_fusion import."\n'
         "    )\n",
     )
     c8 = c8.replace(
-        "    \"module_path\": getattr(sc_neurocore, \"__file__\", \"<unknown>\"),\n"
-        "            \"version\": getattr(sc_neurocore, \"__version__\", \"<unknown>\"),\n",
-        "    \"module_path\": SC_NEUROCORE_BOOT[\"module_path\"],\n"
-        "            \"version\": SC_NEUROCORE_BOOT[\"version\"],\n",
+        '    "module_path": getattr(sc_neurocore, "__file__", "<unknown>"),\n'
+        '            "version": getattr(sc_neurocore, "__version__", "<unknown>"),\n',
+        '    "module_path": SC_NEUROCORE_BOOT["module_path"],\n'
+        '            "version": SC_NEUROCORE_BOOT["version"],\n',
     )
     c8 = _replace_once(
         c8,
@@ -276,19 +295,21 @@ from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
     )
     c8 = _replace_once(
         c8,
-        "    # Safety flags\n    marking[PLACE_IDX[\"n_e_high\"]] = 1.0 if ne > 1.12 * t_ne else 0.0\n    marking[PLACE_IDX[\"I_p_low\"]] = 1.0 if ip < 0.85 * t_ip else 0.0\n",
+        '    # Safety flags\n    marking[PLACE_IDX["n_e_high"]] = 1.0 if ne > 1.12 * t_ne else 0.0\n    marking[PLACE_IDX["I_p_low"]] = 1.0 if ip < 0.85 * t_ip else 0.0\n',
         "    # Error places carry signed tracking demand.\n"
-        "    marking[PLACE_IDX[\"n_e_err\"]] = float(err_pos[0])\n"
-        "    marking[PLACE_IDX[\"I_p_err\"]] = float(err_pos[1])\n"
-        "    marking[PLACE_IDX[\"beta_N_err\"]] = float(err_pos[2])\n\n"
+        '    marking[PLACE_IDX["n_e_err"]] = float(err_pos[0])\n'
+        '    marking[PLACE_IDX["I_p_err"]] = float(err_pos[1])\n'
+        '    marking[PLACE_IDX["beta_N_err"]] = float(err_pos[2])\n\n'
         "    # Safety flags\n"
-        "    marking[PLACE_IDX[\"n_e_high\"]] = float(np.clip(err_neg[0] + 0.6 * disruption_risk, 0.0, 1.0))\n"
-        "    marking[PLACE_IDX[\"I_p_low\"]] = float(np.clip(err_pos[1], 0.0, 1.0))\n",
+        '    marking[PLACE_IDX["n_e_high"]] = float(np.clip(err_neg[0] + 0.6 * disruption_risk, 0.0, 1.0))\n'
+        '    marking[PLACE_IDX["I_p_low"]] = float(np.clip(err_pos[1], 0.0, 1.0))\n',
     )
     nb.cells[8].source = c8
 
     # --- code cell 10: add validation linkage and loader helper ---
-    nb.cells[10].source = """# Load DIII-D shot disturbance from validation-linked storage
+    nb.cells[
+        10
+    ].source = """# Load DIII-D shot disturbance from validation-linked storage
 try:
     import h5py  # type: ignore
     HAS_H5PY = True
@@ -460,13 +481,13 @@ if HAS_MPL:
         "def run_closed_loop(controller_name, seed_offset=0):\n",
         "def snn_hybrid_action(state, target, disturbance):\n"
         "    # Hybrid calibration: keep SNN path in-loop but bias strongly to stabilizer.\n"
-        "    u_snn, snn_diag = snn_two_stage_control(state, target, float(disturbance[\"risk\"]))\n"
+        '    u_snn, snn_diag = snn_two_stage_control(state, target, float(disturbance["risk"]))\n'
         "    u_mpc = mpc_lite_action(state, target)\n"
         "    err = (target - state) / np.maximum(target, 1e-9)\n"
         "    residual = np.clip(np.array([0.04, 0.03, 0.04], dtype=np.float64) * err, -0.08, 0.08)\n"
-        "    risk_brake = np.array([0.01, 0.00, 0.02], dtype=np.float64) * float(disturbance[\"risk\"])\n"
+        '    risk_brake = np.array([0.01, 0.00, 0.02], dtype=np.float64) * float(disturbance["risk"])\n'
         "    u = np.clip(0.97 * u_mpc + 0.03 * u_snn + residual - risk_brake, 0.0, 1.0)\n"
-        "    return u, {\"snn_raw\": u_snn, \"mpc_residual\": u_mpc, \"diag\": snn_diag}\n\n\n"
+        '    return u, {"snn_raw": u_snn, "mpc_residual": u_mpc, "diag": snn_diag}\n\n\n'
         "def run_closed_loop(controller_name, seed_offset=0):\n",
     )
     c12 = _replace_once(
@@ -476,33 +497,35 @@ if HAS_MPL:
     )
     c12 = _replace_once(
         c12,
-        "            if controller_name == \"SNN\":\n                u, snn_diag = snn_two_stage_control(st, TARGET, disturbance[\"risk\"])\n            elif controller_name == \"PID\":\n                u, integral, prev_err = pid_action(st, TARGET, integral, prev_err, DT)\n            elif controller_name == \"MPC-lite\":\n                u = mpc_lite_action(st, TARGET)\n            else:\n                raise ValueError(f\"Unknown controller: {controller_name}\")\n",
-        "            if controller_name == \"SNN\":\n                u, _ = snn_hybrid_action(st, TARGET, disturbance)\n            elif controller_name == \"PID\":\n                u, integral, prev_err = pid_action(st, TARGET, integral, prev_err, DT)\n            elif controller_name == \"MPC-lite\":\n                u = mpc_lite_action(st, TARGET)\n            elif controller_name == \"Open-loop\":\n                u = OPEN_LOOP_ACTION.copy()\n            else:\n                raise ValueError(f\"Unknown controller: {controller_name}\")\n",
+        '            if controller_name == "SNN":\n                u, snn_diag = snn_two_stage_control(st, TARGET, disturbance["risk"])\n            elif controller_name == "PID":\n                u, integral, prev_err = pid_action(st, TARGET, integral, prev_err, DT)\n            elif controller_name == "MPC-lite":\n                u = mpc_lite_action(st, TARGET)\n            else:\n                raise ValueError(f"Unknown controller: {controller_name}")\n',
+        '            if controller_name == "SNN":\n                u, _ = snn_hybrid_action(st, TARGET, disturbance)\n            elif controller_name == "PID":\n                u, integral, prev_err = pid_action(st, TARGET, integral, prev_err, DT)\n            elif controller_name == "MPC-lite":\n                u = mpc_lite_action(st, TARGET)\n            elif controller_name == "Open-loop":\n                u = OPEN_LOOP_ACTION.copy()\n            else:\n                raise ValueError(f"Unknown controller: {controller_name}")\n',
     )
     c12 = _replace_once(
         c12,
-        "            gs_solve_ms[k] = out[\"gs_solve_ms\"]\n",
-        "            gs_solve_ms[k] = out[\"gs_solve_ms\"]\n            axis_r_trace[k] = out[\"axis_r\"]\n            axis_z_trace[k] = out[\"axis_z\"]\n",
+        '            gs_solve_ms[k] = out["gs_solve_ms"]\n',
+        '            gs_solve_ms[k] = out["gs_solve_ms"]\n            axis_r_trace[k] = out["axis_r"]\n            axis_z_trace[k] = out["axis_z"]\n',
     )
     c12 = _replace_once(
         c12,
-        "            \"rmse_beta\": float(rmse[2]),\n            \"mse_total\": float(np.mean(mse)),\n",
-        "            \"rmse_beta\": float(rmse[2]),\n            \"rmse_total\": float(np.sqrt(np.mean((states - TARGET[np.newaxis, :]) ** 2))),\n            \"mse_total\": float(np.mean(mse)),\n",
+        '            "rmse_beta": float(rmse[2]),\n            "mse_total": float(np.mean(mse)),\n',
+        '            "rmse_beta": float(rmse[2]),\n            "rmse_total": float(np.sqrt(np.mean((states - TARGET[np.newaxis, :]) ** 2))),\n            "mse_total": float(np.mean(mse)),\n',
     )
     c12 = _replace_once(
         c12,
-        "            \"energy\": energy_trace,\n        }\n",
-        "            \"energy\": energy_trace,\n            \"axis_r\": axis_r_trace,\n            \"axis_z\": axis_z_trace,\n        }\n",
+        '            "energy": energy_trace,\n        }\n',
+        '            "energy": energy_trace,\n            "axis_r": axis_r_trace,\n            "axis_z": axis_z_trace,\n        }\n',
     )
     c12 = _replace_once(
         c12,
-        "            \"energy\": energy_trace,\n            \"first_violations\": first_violations,\n            \"run_hash\": run_hash,\n        }\n",
-        "            \"energy\": energy_trace,\n            \"axis_r\": axis_r_trace,\n            \"axis_z\": axis_z_trace,\n            \"first_violations\": first_violations,\n            \"run_hash\": run_hash,\n        }\n",
+        '            "energy": energy_trace,\n            "first_violations": first_violations,\n            "run_hash": run_hash,\n        }\n',
+        '            "energy": energy_trace,\n            "axis_r": axis_r_trace,\n            "axis_z": axis_z_trace,\n            "first_violations": first_violations,\n            "run_hash": run_hash,\n        }\n',
     )
     nb.cells[12].source = c12
 
     # --- code cell 14: include open-loop and non-negotiable plots ---
-    nb.cells[14].source = """results = {
+    nb.cells[
+        14
+    ].source = """results = {
     "Open-loop": run_closed_loop("Open-loop", seed_offset=0),
     "SNN": run_closed_loop("SNN", seed_offset=0),
     "PID": run_closed_loop("PID", seed_offset=0),

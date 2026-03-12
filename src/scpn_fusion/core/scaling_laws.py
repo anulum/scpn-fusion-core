@@ -71,6 +71,7 @@ _IPB98Y2_TRAINING_DOMAIN = {
 
 # ── Data container ────────────────────────────────────────────────────
 
+
 @dataclass
 class TransportBenchmarkResult:
     """Result of an IPB98(y,2) benchmark comparison."""
@@ -218,9 +219,7 @@ def assess_ipb98y2_domain(
         "in_training_domain": len(extrapolated_dimensions) == 0,
         "extrapolated_dimensions": extrapolated_dimensions,
         "fractional_extrapolation": frac_extrapolation,
-        "max_fractional_extrapolation": float(
-            max(frac_extrapolation.values(), default=0.0)
-        ),
+        "max_fractional_extrapolation": float(max(frac_extrapolation.values(), default=0.0)),
     }
 
 
@@ -290,9 +289,7 @@ def ipb98y2_tau_e(
     )
     if enforce_training_domain and not domain["in_training_domain"]:
         dims = ", ".join(domain["extrapolated_dimensions"])
-        raise ValueError(
-            "IPB98(y,2) inputs outside training domain: " f"{dims}"
-        )
+        raise ValueError("IPB98(y,2) inputs outside training domain: " f"{dims}")
     if warn_if_extrapolated and not domain["in_training_domain"]:
         warnings.warn(
             "IPB98(y,2) extrapolation beyond training domain for: "
@@ -434,12 +431,17 @@ def ipb98y2_with_uncertainty(
     sigma_lnC = float(coeff.get("sigma_lnC", 0.14))
 
     inputs = {
-        "Ip_MA": Ip, "BT_T": BT, "ne19_1e19m3": ne19,
-        "Ploss_MW": Ploss, "R_m": R, "kappa": kappa,
-        "epsilon": epsilon, "M_AMU": M,
+        "Ip_MA": Ip,
+        "BT_T": BT,
+        "ne19_1e19m3": ne19,
+        "Ploss_MW": Ploss,
+        "R_m": R,
+        "kappa": kappa,
+        "epsilon": epsilon,
+        "M_AMU": M,
     }
 
-    var_ln_tau = sigma_lnC ** 2
+    var_ln_tau = sigma_lnC**2
     max_f64 = np.finfo(np.float64).max
     for key, val in inputs.items():
         if val > 0 and key in exp_unc:

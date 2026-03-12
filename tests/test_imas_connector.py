@@ -191,15 +191,21 @@ def test_validate_ids_payload_accepts_profiles_1d_block() -> None:
             "<= 1.0",
         ),
         (
-            lambda p: p["equilibrium"]["profiles_1d"].__setitem__("electron_temp_keV", [5.0, -1.0, 2.0]),
+            lambda p: p["equilibrium"]["profiles_1d"].__setitem__(
+                "electron_temp_keV", [5.0, -1.0, 2.0]
+            ),
             "electron_temp_keV",
         ),
         (
-            lambda p: p["equilibrium"]["profiles_1d"].__setitem__("electron_density_1e20_m3", [1.0, 0.8]),
+            lambda p: p["equilibrium"]["profiles_1d"].__setitem__(
+                "electron_density_1e20_m3", [1.0, 0.8]
+            ),
             "length must match",
         ),
         (
-            lambda p: p["equilibrium"]["profiles_1d"].__setitem__("electron_density_1e20_m3", [1.0, float("nan"), 0.8]),
+            lambda p: p["equilibrium"]["profiles_1d"].__setitem__(
+                "electron_density_1e20_m3", [1.0, float("nan"), 0.8]
+            ),
             "electron_density_1e20_m3",
         ),
     ],

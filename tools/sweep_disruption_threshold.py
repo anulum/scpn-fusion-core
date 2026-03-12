@@ -49,6 +49,7 @@ WINDOW_SIZE = 128
 
 # ── Core logic ────────────────────────────────────────────────────────
 
+
 def load_shots(disruption_dir: Path) -> list[dict[str, Any]]:
     """Load all NPZ shots and extract metadata."""
     npz_files = sorted(disruption_dir.glob("*.npz"))
@@ -87,14 +88,16 @@ def load_shots(disruption_dir: Path) -> list[dict[str, Any]]:
             continue
         if n2_amp is not None and n2_amp.size != signal.size:
             continue
-        shots.append({
-            "file": npz_path.name,
-            "is_disruption": is_disruption,
-            "disruption_time_idx": disruption_time_idx,
-            "signal": signal,
-            "n1_amp": n1_amp,
-            "n2_amp": n2_amp,
-        })
+        shots.append(
+            {
+                "file": npz_path.name,
+                "is_disruption": is_disruption,
+                "disruption_time_idx": disruption_time_idx,
+                "signal": signal,
+                "n1_amp": n1_amp,
+                "n2_amp": n2_amp,
+            }
+        )
     return shots
 
 
@@ -117,7 +120,7 @@ def precompute_unbiased_logits(shots: list[dict[str, Any]]) -> list[dict[str, An
 
         unbiased_logits = []
         for t in range(window_size, signal.size):
-            window = signal[t - window_size:t]
+            window = signal[t - window_size : t]
             n1 = float(n1_amp[t]) if n1_amp is not None else 0.1
             n2 = float(n2_amp[t]) if n2_amp is not None else 0.05
             toroidal = {
@@ -133,12 +136,14 @@ def precompute_unbiased_logits(shots: list[dict[str, Any]]) -> list[dict[str, An
             state_term = 0.02 * mean + 0.02 * last
             unbiased_logits.append(thermal_term + asym_term + state_term)
 
-        precomputed.append({
-            "file": shot["file"],
-            "is_disruption": shot["is_disruption"],
-            "disruption_time_idx": shot["disruption_time_idx"],
-            "unbiased_logits": np.array(unbiased_logits),
-        })
+        precomputed.append(
+            {
+                "file": shot["file"],
+                "is_disruption": shot["is_disruption"],
+                "disruption_time_idx": shot["disruption_time_idx"],
+                "unbiased_logits": np.array(unbiased_logits),
+            }
+        )
     return precomputed
 
 
@@ -216,8 +221,7 @@ def find_optimal(results: list[dict[str, Any]]) -> dict[str, Any] | None:
     """
     # First: try to find points meeting both constraints
     feasible = [
-        r for r in results
-        if r["fpr"] <= TARGET_FPR_MAX and r["recall"] >= TARGET_RECALL_MIN
+        r for r in results if r["fpr"] <= TARGET_FPR_MAX and r["recall"] >= TARGET_RECALL_MIN
     ]
 
     if feasible:
@@ -254,15 +258,18 @@ def build_roc_curve(
     for thresh_int in range(int(THRESHOLD_MIN * 100), int(THRESHOLD_MAX * 100) + 1, 1):
         threshold = thresh_int / 100.0
         result = evaluate_fast(precomputed, bias, threshold)
-        roc.append({
-            "threshold": result["threshold"],
-            "fpr": result["fpr"],
-            "recall": result["recall"],
-        })
+        roc.append(
+            {
+                "threshold": result["threshold"],
+                "fpr": result["fpr"],
+                "recall": result["recall"],
+            }
+        )
     return roc
 
 
 # ── Main ──────────────────────────────────────────────────────────────
+
 
 def main() -> int:
     print("=" * 60)
@@ -298,7 +305,9 @@ def main() -> int:
         print(f"  {p['file']:40s} {label:5s} {lmin:10.2f} {lmean:10.2f} {lmax:10.2f}")
 
     # Run full grid sweep (fast: just arithmetic comparisons)
-    print(f"\nSweeping bias={BIAS_VALUES[0]}..{BIAS_VALUES[-1]} x threshold={THRESHOLD_MIN}..{THRESHOLD_MAX}")
+    print(
+        f"\nSweeping bias={BIAS_VALUES[0]}..{BIAS_VALUES[-1]} x threshold={THRESHOLD_MIN}..{THRESHOLD_MAX}"
+    )
     t1 = time.perf_counter()
 
     all_results = []
@@ -313,7 +322,11 @@ def main() -> int:
             bias_results.append(result)
 
         # Find best for this bias
-        feasible = [r for r in bias_results if r["fpr"] <= TARGET_FPR_MAX and r["recall"] >= TARGET_RECALL_MIN]
+        feasible = [
+            r
+            for r in bias_results
+            if r["fpr"] <= TARGET_FPR_MAX and r["recall"] >= TARGET_RECALL_MIN
+        ]
         if feasible:
             feasible.sort(key=lambda r: (-r["recall"], r["fpr"]))
             best_per_bias[bias] = feasible[0]
@@ -322,20 +335,30 @@ def main() -> int:
     print(f"  Sweep done: {len(all_results)} configurations in {t_sweep:.1f}s")
 
     # Print per-bias summary
-    print(f"\n{'Bias':>6s} | {'Best Threshold':>14s} | {'Recall':>7s} | {'FPR':>7s} | {'TP':>3s} | {'FP':>3s} | {'TN':>3s} | {'FN':>3s} | Status")
+    print(
+        f"\n{'Bias':>6s} | {'Best Threshold':>14s} | {'Recall':>7s} | {'FPR':>7s} | {'TP':>3s} | {'FP':>3s} | {'TN':>3s} | {'FN':>3s} | Status"
+    )
     print("-" * 85)
     for bias in BIAS_VALUES:
         if bias in best_per_bias:
             r = best_per_bias[bias]
-            status = "MEETS TARGET" if r["recall"] >= TARGET_RECALL_MIN and r["fpr"] <= TARGET_FPR_MAX else "partial"
-            print(f"{bias:6.1f} | {r['threshold']:14.2f} | {r['recall']:7.2%} | {r['fpr']:7.2%} | {r['true_positives']:3d} | {r['false_positives']:3d} | {r['true_negatives']:3d} | {r['false_negatives']:3d} | {status}")
+            status = (
+                "MEETS TARGET"
+                if r["recall"] >= TARGET_RECALL_MIN and r["fpr"] <= TARGET_FPR_MAX
+                else "partial"
+            )
+            print(
+                f"{bias:6.1f} | {r['threshold']:14.2f} | {r['recall']:7.2%} | {r['fpr']:7.2%} | {r['true_positives']:3d} | {r['false_positives']:3d} | {r['true_negatives']:3d} | {r['false_negatives']:3d} | {status}"
+            )
         else:
             # Find best recall at this bias with FPR info
             bias_results = [r for r in all_results if r["bias"] == round(bias, 2)]
             if bias_results:
                 bias_results.sort(key=lambda r: (-r["recall"], r["fpr"]))
                 r = bias_results[0]
-                print(f"{bias:6.1f} | {r['threshold']:14.2f} | {r['recall']:7.2%} | {r['fpr']:7.2%} | {r['true_positives']:3d} | {r['false_positives']:3d} | {r['true_negatives']:3d} | {r['false_negatives']:3d} | NO FEASIBLE POINT")
+                print(
+                    f"{bias:6.1f} | {r['threshold']:14.2f} | {r['recall']:7.2%} | {r['fpr']:7.2%} | {r['true_positives']:3d} | {r['false_positives']:3d} | {r['true_negatives']:3d} | {r['false_negatives']:3d} | NO FEASIBLE POINT"
+                )
 
     # Find global optimum
     optimal = find_optimal(all_results)
@@ -348,7 +371,9 @@ def main() -> int:
         print(f"  Threshold: {optimal['threshold']}")
         print(f"  Recall:    {optimal['recall']:.2%} (target >= {TARGET_RECALL_MIN:.0%})")
         print(f"  FPR:       {optimal['fpr']:.2%} (target <= {TARGET_FPR_MAX:.0%})")
-        print(f"  TP={optimal['true_positives']} FP={optimal['false_positives']} TN={optimal['true_negatives']} FN={optimal['false_negatives']}")
+        print(
+            f"  TP={optimal['true_positives']} FP={optimal['false_positives']} TN={optimal['true_negatives']} FN={optimal['false_negatives']}"
+        )
     else:
         print("\nWARNING: No operating point found!")
 

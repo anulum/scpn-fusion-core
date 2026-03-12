@@ -222,4 +222,3 @@ __all__ = [
     "state_to_imas_core_transport",
     "imas_core_transport_to_state",
 ]
-

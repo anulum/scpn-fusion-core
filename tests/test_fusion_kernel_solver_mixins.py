@@ -27,4 +27,3 @@ def test_numeric_helpers_are_stable_on_non_finite_inputs() -> None:
     assert np.all(np.isfinite(sanitized))
     assert float(np.max(np.abs(sanitized))) <= NUMERIC_SANITIZE_CAP
     assert stable_rms(sanitized) >= 0.0
-

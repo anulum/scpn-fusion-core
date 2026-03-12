@@ -13,7 +13,9 @@ import pytest
 def test_digital_twin_cfl_substep_high_diffusivity():
     """With D_turb=5.0, CFL requires sub-stepping.  T must stay finite."""
     from scpn_fusion.control.tokamak_digital_twin import (
-        Plasma2D, TokamakTopoloy, GRID_SIZE,
+        Plasma2D,
+        TokamakTopoloy,
+        GRID_SIZE,
     )
 
     topo = TokamakTopoloy()
@@ -23,10 +25,13 @@ def test_digital_twin_cfl_substep_high_diffusivity():
     class _AllDanger:
         def get_rational_surfaces(self):
             return np.ones((GRID_SIZE, GRID_SIZE), dtype=bool)
+
         def update_q_profile(self, _):
             pass
+
         def step_island_evolution(self):
             pass
+
         mask = np.ones((GRID_SIZE, GRID_SIZE), dtype=bool)
         q_map = np.ones((GRID_SIZE, GRID_SIZE))
 
@@ -52,6 +57,7 @@ def test_digital_twin_cfl_substep_high_diffusivity():
 def test_parks_coefficient_value():
     """_PARKS_COEFFICIENT should equal 2.0 (Parks NF 57 Eq. 8)."""
     from scpn_fusion.control.spi_ablation import _PARKS_COEFFICIENT
+
     assert _PARKS_COEFFICIENT == 2.0
 
 
@@ -65,8 +71,7 @@ def test_spi_ablation_step_unchanged():
     te = np.ones(50) * 5.0
 
     for _ in range(100):
-        dep = solver.step(dt=1e-4, plasma_ne_profile=ne,
-                          plasma_te_profile=te, r_grid=r_grid)
+        dep = solver.step(dt=1e-4, plasma_ne_profile=ne, plasma_te_profile=te, r_grid=r_grid)
     assert solver.fragments[0].pos[0] < 10.0
 
 
@@ -75,15 +80,20 @@ def test_spi_ablation_step_unchanged():
 
 def test_stiffness_default_in_range():
     from scpn_fusion.core.neural_transport import (
-        _STIFFNESS, _STIFFNESS_MIN, _STIFFNESS_MAX,
+        _STIFFNESS,
+        _STIFFNESS_MIN,
+        _STIFFNESS_MAX,
     )
+
     assert _STIFFNESS_MIN <= _STIFFNESS <= _STIFFNESS_MAX
 
 
 def test_stiffness_invalid_raises():
     from scpn_fusion.core.neural_transport import (
-        critical_gradient_model, TransportInputs,
+        critical_gradient_model,
+        TransportInputs,
     )
+
     with pytest.raises(ValueError, match="stiffness"):
         critical_gradient_model(TransportInputs(), stiffness=0.5)
     with pytest.raises(ValueError, match="stiffness"):
@@ -92,8 +102,10 @@ def test_stiffness_invalid_raises():
 
 def test_stiffness_valid_custom():
     from scpn_fusion.core.neural_transport import (
-        critical_gradient_model, TransportInputs,
+        critical_gradient_model,
+        TransportInputs,
     )
+
     result = critical_gradient_model(TransportInputs(grad_ti=8.0), stiffness=3.0)
     assert result.chi_i > 0.0
 
@@ -140,8 +152,11 @@ def test_divertor_rejects_invalid_solver_controls():
 
 def test_sawtooth_constants_exported():
     from scpn_fusion.core.mhd_sawtooth import (
-        _CRASH_THRESHOLD, _CRASH_REDUCTION, _Q_RECOVERY_RATE,
+        _CRASH_THRESHOLD,
+        _CRASH_REDUCTION,
+        _Q_RECOVERY_RATE,
     )
+
     assert _CRASH_THRESHOLD == 0.1
     assert _CRASH_REDUCTION == 0.01
     assert _Q_RECOVERY_RATE == 0.05

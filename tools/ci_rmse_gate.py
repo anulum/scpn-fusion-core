@@ -45,17 +45,13 @@ _MAX_TOP_LEVEL_KEYS = 256
 def _load_json_object(path: Path) -> dict[str, Any]:
     size = int(path.stat().st_size)
     if size > _MAX_ARTIFACT_JSON_BYTES:
-        raise ValueError(
-            f"{path} exceeds max JSON size "
-            f"({_MAX_ARTIFACT_JSON_BYTES} bytes)."
-        )
+        raise ValueError(f"{path} exceeds max JSON size " f"({_MAX_ARTIFACT_JSON_BYTES} bytes).")
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError(f"{path} must contain a top-level JSON object.")
     if len(data) > _MAX_TOP_LEVEL_KEYS:
         raise ValueError(
-            f"{path} has {len(data)} top-level keys, exceeding max "
-            f"{_MAX_TOP_LEVEL_KEYS}."
+            f"{path} has {len(data)} top-level keys, exceeding max " f"{_MAX_TOP_LEVEL_KEYS}."
         )
     return data
 
@@ -79,9 +75,7 @@ def main() -> int:
         tau_rmse = itpa.get("tau_rmse_s", 0.0)
         thresh = THRESHOLDS["confinement_itpa_tau_rmse_s"]
         if tau_rmse > thresh:
-            failures.append(
-                f"confinement_itpa: tau_rmse {tau_rmse:.4f} s > {thresh:.4f} s"
-            )
+            failures.append(f"confinement_itpa: tau_rmse {tau_rmse:.4f} s > {thresh:.4f} s")
         else:
             print(f"PASS  confinement_itpa: tau_rmse {tau_rmse:.4f} s <= {thresh:.4f} s")
 
@@ -91,9 +85,7 @@ def main() -> int:
         axis_rmse = sparc.get("axis_rmse_m", 0.0)
         thresh = THRESHOLDS["sparc_axis_rmse_m"]
         if axis_rmse > thresh:
-            failures.append(
-                f"sparc_axis: RMSE {axis_rmse:.4f} m > {thresh:.4f} m"
-            )
+            failures.append(f"sparc_axis: RMSE {axis_rmse:.4f} m > {thresh:.4f} m")
         else:
             print(f"PASS  sparc_axis: RMSE {axis_rmse:.4f} m <= {thresh:.4f} m")
 
@@ -103,9 +95,7 @@ def main() -> int:
         beta_rmse = beta.get("beta_n_rmse", 0.0)
         thresh = THRESHOLDS["beta_iter_sparc_beta_n_rmse"]
         if beta_rmse > thresh:
-            failures.append(
-                f"beta_iter_sparc: beta_N RMSE {beta_rmse:.4f} > {thresh:.4f}"
-            )
+            failures.append(f"beta_iter_sparc: beta_N RMSE {beta_rmse:.4f} > {thresh:.4f}")
         else:
             print(f"PASS  beta_iter_sparc: beta_N RMSE {beta_rmse:.4f} <= {thresh:.4f}")
 
@@ -135,8 +125,7 @@ def main() -> int:
             tbr_hi = THRESHOLDS["tbr_max"]
             if tbr < tbr_lo:
                 failures.append(
-                    f"TBR: {tbr:.3f} < {tbr_lo:.2f} "
-                    f"(below tritium self-sufficiency)"
+                    f"TBR: {tbr:.3f} < {tbr_lo:.2f} " f"(below tritium self-sufficiency)"
                 )
             elif tbr > tbr_hi:
                 failures.append(

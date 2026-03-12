@@ -147,15 +147,13 @@ def train_fno(
     def loss_fn(params, x_batch, y_batch):
         preds = vmap(lambda xi: fno_forward(params, xi))(x_batch)
         diff_sq = jnp.sum((preds - y_batch) ** 2, axis=(1, 2))
-        norm_sq = jnp.sum(y_batch ** 2, axis=(1, 2))
+        norm_sq = jnp.sum(y_batch**2, axis=(1, 2))
         return jnp.mean(jnp.sqrt(diff_sq / jnp.maximum(norm_sq, 1e-8)))
 
     @jit
     def relative_l2_metric(params, x, y):
         preds = vmap(lambda xi: fno_forward(params, xi))(x)
-        return jnp.sqrt(
-            jnp.sum((preds - y) ** 2) / jnp.maximum(jnp.sum(y ** 2), 1e-8)
-        )
+        return jnp.sqrt(jnp.sum((preds - y) ** 2) / jnp.maximum(jnp.sum(y**2), 1e-8))
 
     grad_fn = jit(grad(loss_fn))
 
@@ -182,8 +180,8 @@ def train_fno(
 
         epoch_loss = 0.0
         for b in range(n_batches):
-            x_b = X_shuf[b * batch_size:(b + 1) * batch_size]
-            y_b = Y_shuf[b * batch_size:(b + 1) * batch_size]
+            x_b = X_shuf[b * batch_size : (b + 1) * batch_size]
+            y_b = Y_shuf[b * batch_size : (b + 1) * batch_size]
 
             grads = grad_fn(params, x_b, y_b)
             t += 1
@@ -191,9 +189,9 @@ def train_fno(
             for k in params:
                 g = jnp.clip(grads[k], -1.0, 1.0)
                 adam_m[k] = 0.9 * adam_m[k] + 0.1 * g
-                adam_v[k] = 0.999 * adam_v[k] + 0.001 * g ** 2
-                m_hat = adam_m[k] / (1 - 0.9 ** t)
-                v_hat = adam_v[k] / (1 - 0.999 ** t)
+                adam_v[k] = 0.999 * adam_v[k] + 0.001 * g**2
+                m_hat = adam_m[k] / (1 - 0.9**t)
+                v_hat = adam_v[k] / (1 - 0.999**t)
                 params[k] = params[k] - lr_t * m_hat / (jnp.sqrt(v_hat) + 1e-8)
 
             epoch_loss += float(loss_fn(params, x_b, y_b))
@@ -209,9 +207,11 @@ def train_fno(
 
         if epoch % 20 == 0 or epoch == epochs - 1:
             elapsed = time.monotonic() - t0
-            print(f"  Epoch {epoch:4d}/{epochs} | "
-                  f"train_rel_l2={epoch_loss:.4f} | val_rel_l2={val_l2:.4f} | "
-                  f"best={best_val:.4f} | lr={lr_t:.2e} | {elapsed:.0f}s")
+            print(
+                f"  Epoch {epoch:4d}/{epochs} | "
+                f"train_rel_l2={epoch_loss:.4f} | val_rel_l2={val_l2:.4f} | "
+                f"best={best_val:.4f} | lr={lr_t:.2e} | {elapsed:.0f}s"
+            )
             sys.stdout.flush()
 
         if patience_counter >= PATIENCE and epoch > 200:
@@ -228,7 +228,9 @@ def train_fno(
         print(f"  FAIL: val_relative_l2 = {best_val:.4f} >= {SPATIAL_GATE}")
         sys.exit(1)
     elif best_val >= 0.20:
-        print(f"  WARN: val_relative_l2 = {best_val:.4f} >= 0.20 (acceptable, limited by oracle noise)")
+        print(
+            f"  WARN: val_relative_l2 = {best_val:.4f} >= 0.20 (acceptable, limited by oracle noise)"
+        )
     else:
         print(f"  PASS: val_relative_l2 = {best_val:.4f} < 0.20")
 
@@ -267,8 +269,17 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
-    train_fno(args.data_dir, args.output, args.modes, args.width,
-              args.n_layers, args.epochs, args.lr, args.batch_size, args.seed)
+    train_fno(
+        args.data_dir,
+        args.output,
+        args.modes,
+        args.width,
+        args.n_layers,
+        args.epochs,
+        args.lr,
+        args.batch_size,
+        args.seed,
+    )
 
 
 if __name__ == "__main__":

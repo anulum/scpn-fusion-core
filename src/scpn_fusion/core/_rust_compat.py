@@ -32,6 +32,7 @@ try:
         measure_magnetics,
         simulate_tearing_mode,
     )
+
     _RUST_AVAILABLE = True
 except ImportError:
     _RUST_AVAILABLE = False
@@ -89,6 +90,7 @@ class RustAcceleratedKernel:
 
         # Also load JSON config for attribute access (bridges read .cfg directly)
         import json
+
         with open(config_path, "r", encoding="utf-8") as f:
             self.cfg = json.load(f)
 
@@ -171,7 +173,7 @@ class RustAcceleratedKernel:
         dPsi_dR, dPsi_dZ = np.gradient(Psi, self.dR, self.dZ)
         B_mag = np.sqrt(dPsi_dR**2 + dPsi_dZ**2)
 
-        mask_divertor = self.ZZ < (self.cfg['dimensions']['Z_min'] * 0.5)
+        mask_divertor = (self.cfg["dimensions"]["Z_min"] * 0.5) > self.ZZ
 
         if np.any(mask_divertor):
             masked_B = np.where(mask_divertor, B_mag, 1e9)
@@ -209,12 +211,13 @@ if _RUST_AVAILABLE:
     FusionKernel = RustAcceleratedKernel
     RUST_BACKEND = True
 else:
-    from scpn_fusion.core.fusion_kernel import FusionKernel  # noqa: F811
+
     RUST_BACKEND = False
 
 
 # Re-export Rust-only helpers (with compatibility shims where needed)
 if _RUST_AVAILABLE:
+
     def rust_shafranov_bv(*args, **kwargs):
         """Compatibility wrapper for legacy config-path invocation.
 
@@ -243,7 +246,9 @@ if _RUST_AVAILABLE:
 
         rng = np.random.default_rng(seed=int(seed))
         return _py_tearing(steps=int(steps), rng=rng)
+
 else:
+
     def rust_shafranov_bv(*args, **kwargs):
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
@@ -295,9 +300,7 @@ class RustSnnPool:
             return
 
         if not allow_numpy_fallback:
-            raise ImportError(
-                "scpn_fusion_rs not installed and allow_numpy_fallback=False."
-            )
+            raise ImportError("scpn_fusion_rs not installed and allow_numpy_fallback=False.")
         self._backend = "numpy_fallback"
         self._inner = _NumpySnnPoolFallback(
             n_neurons=n_neurons,
@@ -364,9 +367,7 @@ class RustSnnController:
             return
 
         if not allow_numpy_fallback:
-            raise ImportError(
-                "scpn_fusion_rs not installed and allow_numpy_fallback=False."
-            )
+            raise ImportError("scpn_fusion_rs not installed and allow_numpy_fallback=False.")
         self._backend = "numpy_fallback"
         self._inner = _NumpySnnControllerFallback(
             target_r=target_r,
@@ -501,6 +502,7 @@ def rust_multigrid_vcycle(
         return None
     try:
         from scpn_fusion_rs import multigrid_vcycle as _rust_mg  # type: ignore
+
         return _rust_mg(source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol, max_cycles)
     except ImportError:
         logger.warning("Rust multigrid_vcycle not exposed via PyO3 — falling back to Python.")

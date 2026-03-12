@@ -10,29 +10,32 @@ from __future__ import annotations
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 
 logger = logging.getLogger(__name__)
+
 
 class DivertorLab:
     """
     Simulates Heat Exhaust in a Compact Fusion Reactor.
     Compares Solid Tungsten vs. Liquid Lithium Vapor Shielding.
     """
+
     def __init__(self, P_sol_MW: float = 50.0, R_major: float = 2.1, B_pol: float = 2.0) -> None:
         self.P_sol = P_sol_MW
         self.R = R_major
         self.B_pol = B_pol
 
         # Eich scaling: lambda_q [mm] = 0.63 * B_pol^(-1.19)
-        self.lambda_q_mm = 0.63 * (B_pol**(-1.19))
+        self.lambda_q_mm = 0.63 * (B_pol ** (-1.19))
         self.lambda_q = self.lambda_q_mm / 1000.0
-        
-        print(f"--- DIVERTOR PHYSICS ---")
+
+        print("--- DIVERTOR PHYSICS ---")
         print(f"Power to Divertor: {self.P_sol} MW")
         print(f"Eich Width (lambda_q): {self.lambda_q_mm:.3f} mm")
-        
-    def solve_2point_transport(self, expansion_factor: float = 10.0, f_rad: float = 0.5) -> tuple[float, float]:
+
+    def solve_2point_transport(
+        self, expansion_factor: float = 10.0, f_rad: float = 0.5
+    ) -> tuple[float, float]:
         """
         Two-Point Model (2PM) for SOL Transport.
         Balances upstream pressure with target flux constraints.
@@ -41,20 +44,20 @@ class DivertorLab:
         """
         q95 = 3.0
         L_c = np.pi * self.R * q95
-        
+
         # q_par for single-null: P_sol / (2π R λ_q)
         self.q_parallel = (self.P_sol * 1e6) / (2 * np.pi * self.R * self.lambda_q)
 
         # Upstream T: T_u = (3.5 q_par L_c / κ_0)^(2/7)
         k0 = 2000.0  # Spitzer conductivity
-        T_u_eV = (3.5 * self.q_parallel * L_c / k0)**(2.0/7.0)
-        
+        T_u_eV = (3.5 * self.q_parallel * L_c / k0) ** (2.0 / 7.0)
+
         q_target = self.q_parallel * (1.0 - f_rad) / expansion_factor
 
         # Stangeby 2PM heuristic: T_t = T_u * ((1-f_rad) * 0.1)^2
-        T_t_eV = T_u_eV * ((1.0 - f_rad) * 0.1)**2
+        T_t_eV = T_u_eV * ((1.0 - f_rad) * 0.1) ** 2
         T_t_eV = max(T_t_eV, 1.0)
-        
+
         self.q_target_solid = q_target
         return T_u_eV, T_t_eV
 
@@ -62,13 +65,13 @@ class DivertorLab:
         """
         Calculates Peak Heat Flux using 2-Point Model Physics.
         """
-        T_u, T_t = self.solve_2point_transport(expansion_factor, f_rad=0.0) # Unmitigated
-        
+        T_u, T_t = self.solve_2point_transport(expansion_factor, f_rad=0.0)  # Unmitigated
+
         print(f"Parallel Heat Flux: {self.q_parallel/1e9:.1f} GW/m2")
         print(f"Upstream Temp (T_u): {T_u:.1f} eV")
         print(f"Target Temp (T_t): {T_t:.1f} eV")
         print(f"Unmitigated Target Flux: {self.q_target_solid/1e6:.1f} MW/m2")
-        
+
         return self.q_target_solid
 
     def simulate_tungsten(self) -> tuple[float, str]:
@@ -76,20 +79,24 @@ class DivertorLab:
         1D Thermal limit of Tungsten Monoblock.
         Simple conduction model: T_surf = q * d / k + T_coolant
         """
-        k_W = 100.0      # W/(m·K)
-        d_block = 0.01   # 1 cm to cooling channel
-        T_coolant = 100.0 # °C (water)
-        
+        k_W = 100.0  # W/(m·K)
+        d_block = 0.01  # 1 cm to cooling channel
+        T_coolant = 100.0  # °C (water)
+
         q = self.q_target_solid
-        
+
         delta_T = (q * d_block) / k_W
         T_surf = T_coolant + delta_T
-        
+
         status = "MELTED" if T_surf > 3422 else "OK"
         return T_surf, status
 
     def simulate_lithium_vapor(
-        self, *, relaxation: float = 0.7, max_iter: int = 50, tol: float = 0.1,
+        self,
+        *,
+        relaxation: float = 0.7,
+        max_iter: int = 50,
+        tol: float = 0.1,
     ) -> tuple[float, float, float]:
         """
         Self-Consistent Vapor Shielding Physics.
@@ -122,7 +129,7 @@ class DivertorLab:
 
         for _ in range(max_iter):
             T_K = T_surf + 273.15
-            P_sat = 10**(A_li - B_li / T_K)
+            P_sat = 10 ** (A_li - B_li / T_K)
 
             tau = P_sat / 10.0
             f_rad = 0.98 * (1.0 - np.exp(-tau))
@@ -155,8 +162,9 @@ class DivertorLab:
             q_surf = float(q_best)
             f_rad = float(f_best)
             logger.warning(
-                "Li vapor shielding did not converge after %d iterations "
-                "(residual=%.2f °C)", max_iter, residual,
+                "Li vapor shielding did not converge after %d iterations " "(residual=%.2f °C)",
+                max_iter,
+                residual,
             )
 
         return T_surf, q_surf, f_rad
@@ -204,7 +212,9 @@ class DivertorLab:
         flow_relief = 1.0 / (1.0 + 0.45 * np.sqrt(v))
         return float(2.0e-6 * thermal_drive * flow_relief)
 
-    def simulate_temhd_liquid_metal(self, flow_velocity_m_s: float, expansion_factor: float = 15.0) -> dict[str, object]:
+    def simulate_temhd_liquid_metal(
+        self, flow_velocity_m_s: float, expansion_factor: float = 15.0
+    ) -> dict[str, object]:
         """
         Reduced TEMHD divertor state including MHD pressure loss and evaporation.
         """
@@ -214,9 +224,7 @@ class DivertorLab:
         evap_rate = self.estimate_evaporation_rate(t_li_c, flow_velocity_m_s)
 
         stability_index = (
-            q_surface_w_m2 / 45.0e6
-            + mhd["pressure_loss_pa"] / 8.0e5
-            + evap_rate / 1.0e-3
+            q_surface_w_m2 / 45.0e6 + mhd["pressure_loss_pa"] / 8.0e5 + evap_rate / 1.0e-3
         )
         is_stable = bool(stability_index <= 1.0)
 
@@ -232,37 +240,43 @@ class DivertorLab:
             "is_stable": is_stable,
         }
 
+
 def run_divertor_sim() -> None:
     print("\n--- SCPN HEAT EXHAUST: The Lithium Solution ---")
-    
-    lab = DivertorLab(P_sol_MW=80.0, R_major=2.1, B_pol=2.5) # Compact Pilot parameters
-    
+
+    lab = DivertorLab(P_sol_MW=80.0, R_major=2.1, B_pol=2.5)  # Compact Pilot parameters
+
     q_solid = lab.calculate_heat_load(expansion_factor=15.0)
 
     Tw, status_w = lab.simulate_tungsten()
     print(f"Tungsten Divertor: {Tw:.0f} degC -> {status_w}!")
-    
+
     Tli, q_li, shielding = lab.simulate_lithium_vapor()
     print(f"Liquid Li Divertor: {Tli:.0f} degC (Shielding: {shielding*100:.1f}%)")
-    
+
     fig, ax = plt.subplots(figsize=(8, 6))
-    materials = ['Tungsten (Solid)', 'Lithium (Vapor Shield)']
+    materials = ["Tungsten (Solid)", "Lithium (Vapor Shield)"]
     temps = [Tw, Tli]
     limits = [3422, 1342]
-    colors = ['gray', 'purple']
-    
+    colors = ["gray", "purple"]
+
     bars = ax.bar(materials, temps, color=colors)
-    ax.axhline(3422, color='red', linestyle='--', label='W Melting Point')
+    ax.axhline(3422, color="red", linestyle="--", label="W Melting Point")
     ax.set_ylabel("Surface Temperature (°C)")
     ax.set_title("Divertor Material Performance")
-    
+
     # Add Heat Flux annotations
-    ax.text(0, Tw/2, f"Flux: {q_solid/1e6:.0f} MW/m2", ha='center', color='white', fontweight='bold')
-    ax.text(1, Tli/2, f"Flux: {q_li/1e6:.1f} MW/m2", ha='center', color='white', fontweight='bold')
-    
+    ax.text(
+        0, Tw / 2, f"Flux: {q_solid/1e6:.0f} MW/m2", ha="center", color="white", fontweight="bold"
+    )
+    ax.text(
+        1, Tli / 2, f"Flux: {q_li/1e6:.1f} MW/m2", ha="center", color="white", fontweight="bold"
+    )
+
     ax.legend()
     plt.savefig("Divertor_Solution.png")
     print("Saved: Divertor_Solution.png")
+
 
 if __name__ == "__main__":
     run_divertor_sim()

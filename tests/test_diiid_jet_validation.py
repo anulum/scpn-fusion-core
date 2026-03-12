@@ -60,27 +60,21 @@ class TestValidateFile:
         assert np.isfinite(out.psi_relative_l2)
         assert np.isfinite(out.gs_residual_l2)
 
-    def test_rejects_degenerate_psi_range(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_rejects_degenerate_psi_range(self, monkeypatch: pytest.MonkeyPatch) -> None:
         eq = copy.deepcopy(read_geqdsk(SAMPLE_EQ))
         eq.sibry = eq.simag
         monkeypatch.setattr(diiid_jet_mod, "read_geqdsk", lambda _: eq)
         with pytest.raises(ValueError, match="degenerate psi range"):
             diiid_jet_mod.validate_file(SAMPLE_EQ, "DIII-D")
 
-    def test_rejects_profile_length_mismatch(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_rejects_profile_length_mismatch(self, monkeypatch: pytest.MonkeyPatch) -> None:
         eq = copy.deepcopy(read_geqdsk(SAMPLE_EQ))
         eq.pprime = eq.pprime[:-1]
         monkeypatch.setattr(diiid_jet_mod, "read_geqdsk", lambda _: eq)
         with pytest.raises(ValueError, match="pprime"):
             diiid_jet_mod.validate_file(SAMPLE_EQ, "DIII-D")
 
-    def test_rejects_psirz_shape_mismatch(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_rejects_psirz_shape_mismatch(self, monkeypatch: pytest.MonkeyPatch) -> None:
         eq = copy.deepcopy(read_geqdsk(SAMPLE_EQ))
         eq.psirz = eq.psirz[:, :-1]
         monkeypatch.setattr(diiid_jet_mod, "read_geqdsk", lambda _: eq)

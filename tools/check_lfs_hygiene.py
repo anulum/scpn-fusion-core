@@ -136,12 +136,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print(
-        (
-            "LFS hygiene passed: "
-            f"required_files={len(required)} "
-            f"binary_candidates={len(candidate_binary)} "
-            "oversize_non_lfs=0"
-        )
+        "LFS hygiene passed: "
+        f"required_files={len(required)} "
+        f"binary_candidates={len(candidate_binary)} "
+        "oversize_non_lfs=0"
     )
     return 0
 

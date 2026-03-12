@@ -41,9 +41,7 @@ _SimTearingModeFn = Callable[..., tuple[FloatArray, object, object]]
 _BuildFeatureVectorFn = Callable[[FloatArray, dict[str, float]], FloatArray]
 _ApplyBitFlipFn = Callable[[float, int], float]
 _simulate_tearing_mode = cast(_SimTearingModeFn, simulate_tearing_mode)
-_build_disruption_feature_vector = cast(
-    _BuildFeatureVectorFn, build_disruption_feature_vector
-)
+_build_disruption_feature_vector = cast(_BuildFeatureVectorFn, build_disruption_feature_vector)
 _apply_bit_flip_fault = cast(_ApplyBitFlipFn, apply_bit_flip_fault)
 
 
@@ -80,9 +78,7 @@ def _build_controller() -> NeuroSymbolicController:
     compiled = FusionCompiler.with_reactor_lif_defaults(
         bitstream_length=1024,
         seed=42,
-    ).compile(
-        net, firing_mode="binary"
-    )
+    ).compile(net, firing_mode="binary")
     artifact = compiled.export_artifact(
         name="gneu01_controller",
         dt_control_s=0.001,
@@ -141,9 +137,9 @@ def _snn_risk(
         "Z_axis_m": float(0.12 * slope + 0.04 * n2 + 0.03 * std),
     }
     action = controller.step(obs, k)
-    control_term = abs(float(action["dI_PF3_A"])) / 5000.0 + abs(
-        float(action["dI_PF_topbot_A"])
-    ) / 5000.0
+    control_term = (
+        abs(float(action["dI_PF3_A"])) / 5000.0 + abs(float(action["dI_PF_topbot_A"])) / 5000.0
+    )
     snn_policy = _sigmoid(-2.5 + 0.65 * control_term + 0.40 * asym + 0.25 * std)
     return float(np.clip(0.88 * rl_risk + 0.12 * snn_policy, 0.0, 1.0))
 

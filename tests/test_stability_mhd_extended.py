@@ -28,8 +28,13 @@ def iter_qprofile():
     shear[0] = 0.0
     alpha_mhd = 0.1 * np.exp(-((rho - 0.5) ** 2) / 0.05)
     return QProfile(
-        rho=rho, q=q, shear=shear, alpha_mhd=alpha_mhd,
-        q_min=1.0, q_min_rho=0.0, q_edge=3.0,
+        rho=rho,
+        q=q,
+        shear=shear,
+        alpha_mhd=alpha_mhd,
+        q_min=1.0,
+        q_min_rho=0.0,
+        q_edge=3.0,
     )
 
 
@@ -77,15 +82,23 @@ class TestRWM:
 class TestPeelingBallooning:
     def test_stable_pedestal(self, iter_qprofile):
         r = peeling_ballooning_stability(
-            iter_qprofile, j_edge=1e3, p_ped_Pa=5e3,
-            R0=6.2, a=2.0, B0=5.3,
+            iter_qprofile,
+            j_edge=1e3,
+            p_ped_Pa=5e3,
+            R0=6.2,
+            a=2.0,
+            B0=5.3,
         )
         assert r.stable
 
     def test_unstable_high_pressure(self, iter_qprofile):
         r = peeling_ballooning_stability(
-            iter_qprofile, j_edge=1e6, p_ped_Pa=1e6,
-            R0=6.2, a=2.0, B0=5.3,
+            iter_qprofile,
+            j_edge=1e6,
+            p_ped_Pa=1e6,
+            R0=6.2,
+            a=2.0,
+            B0=5.3,
         )
         assert not r.stable
         assert r.elm_type in ("type_I", "type_III")

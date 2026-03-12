@@ -21,9 +21,7 @@ class ShatteredPelletInjection:
     Reduced SPI mitigation model for thermal/current quench campaigns.
     """
 
-    def __init__(
-        self, Plasma_Energy_MJ: float = 300.0, Plasma_Current_MA: float = 15.0
-    ):
+    def __init__(self, Plasma_Energy_MJ: float = 300.0, Plasma_Current_MA: float = 15.0):
         w_mj = float(Plasma_Energy_MJ)
         ip_ma = float(Plasma_Current_MA)
         if not np.isfinite(w_mj) or w_mj <= 0.0:
@@ -107,9 +105,7 @@ class ShatteredPelletInjection:
                 0.24,
             )
         )
-        heavy_drive = float(
-            np.clip(0.55 * risk + 0.45 * dist + 0.20 * max(action, 0.0), 0.0, 1.0)
-        )
+        heavy_drive = float(np.clip(0.55 * risk + 0.45 * dist + 0.20 * max(action, 0.0), 0.0, 1.0))
         xenon_frac = 0.05 + 0.30 * heavy_drive
         argon_frac = 0.15 + 0.25 * heavy_drive
         neon_frac = max(0.0, 1.0 - xenon_frac - argon_frac)
@@ -157,7 +153,9 @@ class ShatteredPelletInjection:
         if verbose:
             logger.warning(
                 "DISRUPTION DETECTED! TRIGGERING SPI (Ne=%.3f mol, Ar=%.3f mol, Xe=%.3f mol)",
-                neon, argon, xenon,
+                neon,
+                argon,
+                xenon,
             )
 
         t_mix = 0.002
@@ -178,19 +176,21 @@ class ShatteredPelletInjection:
         pellet_radius_m = 0.002
 
         # Current plasma state (local to SPI)
-        ne_local = 1.0e20 # Initial
+        ne_local = 1.0e20  # Initial
 
         while t < duration:
             if t > t_mix:
                 # NGPS Ablation Rate: dN/dt ~ n_e^(1/3) * T_e^(1.64) * r_p^(4/3)
                 # Ref: Parks et al., Phys. Plasmas 5, 1024 (1998)
-                ablation_rate = 1.2e16 * (ne_local**0.33) * (self.Te**1.64) * (pellet_radius_m**1.33)
+                ablation_rate = (
+                    1.2e16 * (ne_local**0.33) * (self.Te**1.64) * (pellet_radius_m**1.33)
+                )
 
                 # Atoms released
                 d_atoms = ablation_rate * dt * n_fragments
 
                 # Self-consistent density increase
-                vol_plasma = 800.0 # ITER-like
+                vol_plasma = 800.0  # ITER-like
                 ne_local += d_atoms / vol_plasma
 
                 self.Z_eff = self.estimate_z_eff_cocktail(
@@ -200,7 +200,7 @@ class ShatteredPelletInjection:
                 )
 
                 # Enhanced radiation from density increase
-                P_rad = 1e9 * (self.Z_eff**0.5) * (self.Te / 1.0)**0.5 * (ne_local / 1e20)
+                P_rad = 1e9 * (self.Z_eff**0.5) * (self.Te / 1.0) ** 0.5 * (ne_local / 1e20)
                 dW = -P_rad * dt
                 prev_W = self.W_th
                 self.W_th = max(0.0, self.W_th + dW)
@@ -233,9 +233,7 @@ class ShatteredPelletInjection:
         if return_diagnostics:
             diagnostics = {
                 "z_eff": float(self.Z_eff),
-                "tau_cq_ms_mean": (
-                    float(np.mean(history_tau_cq)) if history_tau_cq else 0.0
-                ),
+                "tau_cq_ms_mean": (float(np.mean(history_tau_cq)) if history_tau_cq else 0.0),
                 "tau_cq_ms_p95": (
                     float(np.percentile(history_tau_cq, 95)) if history_tau_cq else 0.0
                 ),

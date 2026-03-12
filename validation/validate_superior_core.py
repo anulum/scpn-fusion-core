@@ -14,7 +14,6 @@ Validates the integration of:
 
 import sys
 from pathlib import Path
-import numpy as np
 
 # Add src to path
 repo_root = Path(__file__).resolve().parents[1]
@@ -23,6 +22,7 @@ sys.path.insert(0, str(repo_root / "src"))
 from scpn_fusion.core.state_space import FusionState
 from scpn_fusion.control.fusion_nmpc_jax import get_nmpc_controller
 from scpn_fusion.control.tokamak_digital_twin import TokamakTopoloy, Plasma2D
+
 
 def validate():
     print("--- VALIDATING PROJECT TOKAMAK-MASTER INTEGRATION ---")
@@ -45,13 +45,14 @@ def validate():
     # 3. Nonlinear MPC Check
     nmpc = get_nmpc_controller(state_dim=6, action_dim=1, horizon=5)
     target = vec.copy()
-    target[0] += 0.1 # Move axis R
+    target[0] += 0.1  # Move axis R
 
     u_opt = nmpc.plan_trajectory(vec, target)
     print(f"NMPC Optimal Action: {u_opt}")
     assert len(u_opt) == 1
 
     print("\nINTEGRATION SUCCESSFUL: Core is now Physically Hardened.")
+
 
 if __name__ == "__main__":
     validate()

@@ -67,4 +67,3 @@ def test_gmres_telemetry_breakdown_can_be_nonfatal() -> None:
     )
     assert telem.breakdown_count == 1
     assert telem.last_info == -1
-

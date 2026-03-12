@@ -381,7 +381,9 @@ class FreeBoundaryStateEstimator:
             actuator_bias_hat=self.actuator_bias_hat.copy(),
             innovation=self.innovation.copy(),
             corrected_state=self.corrected_state.copy(),
-            uncertainty_norm=float(np.linalg.norm(innovation) + 0.25 * np.linalg.norm(self.actuator_bias_hat)),
+            uncertainty_norm=float(
+                np.linalg.norm(innovation) + 0.25 * np.linalg.norm(self.actuator_bias_hat)
+            ),
         )
 
 
@@ -415,13 +417,21 @@ class FreeBoundarySafetySupervisor:
     ) -> None:
         self.coil_current_limits = _normalize_bounds(coil_current_limits, "coil_current_limits")
         self.coil_delta_limit = _require_positive_finite("coil_delta_limit", coil_delta_limit)
-        self.total_action_l1_limit = _require_positive_finite("total_action_l1_limit", total_action_l1_limit)
+        self.total_action_l1_limit = _require_positive_finite(
+            "total_action_l1_limit", total_action_l1_limit
+        )
         self.current_margin_fraction = float(current_margin_fraction)
-        if not np.isfinite(self.current_margin_fraction) or not (0.0 < self.current_margin_fraction <= 1.0):
+        if not np.isfinite(self.current_margin_fraction) or not (
+            0.0 < self.current_margin_fraction <= 1.0
+        ):
             raise ValueError("current_margin_fraction must be finite and in (0, 1].")
         self.ip_bounds_ma = _normalize_bounds(ip_bounds_ma, "ip_bounds_ma")
-        self.severe_axis_error_m = _require_positive_finite("severe_axis_error_m", severe_axis_error_m)
-        self.severe_xpoint_error_m = _require_positive_finite("severe_xpoint_error_m", severe_xpoint_error_m)
+        self.severe_axis_error_m = _require_positive_finite(
+            "severe_axis_error_m", severe_axis_error_m
+        )
+        self.severe_xpoint_error_m = _require_positive_finite(
+            "severe_xpoint_error_m", severe_xpoint_error_m
+        )
         self.severe_bias_norm_m = _require_positive_finite("severe_bias_norm_m", severe_bias_norm_m)
         self.ip_backoff_ma = _require_positive_finite("ip_backoff_ma", ip_backoff_ma)
         self.axis_r_bounds_m = _normalize_bounds(axis_r_bounds_m, "axis_r_bounds_m")
@@ -451,7 +461,9 @@ class FreeBoundarySafetySupervisor:
             alert_recovery_hold_steps,
         )
         self.fallback_hold_steps = _require_positive_int("fallback_hold_steps", fallback_hold_steps)
-        self.fallback_action_scale = _require_positive_finite("fallback_action_scale", fallback_action_scale)
+        self.fallback_action_scale = _require_positive_finite(
+            "fallback_action_scale", fallback_action_scale
+        )
         self._fallback_steps_remaining = 0
         self._alert_level = 0
         self._alert_recovery_steps = 0
@@ -474,9 +486,7 @@ class FreeBoundarySafetySupervisor:
         failsafe_active: bool,
         invariant_violation_active: bool,
     ) -> int:
-        risk_fraction = float(
-            margins.disruption_risk / max(self.disruption_risk_ceiling, 1e-9)
-        )
+        risk_fraction = float(margins.disruption_risk / max(self.disruption_risk_ceiling, 1e-9))
         requested = 0
         if diagnostic_dropout_active:
             requested = max(requested, 2)
@@ -594,7 +604,8 @@ class FreeBoundarySafetySupervisor:
         xpoint_error = float(np.linalg.norm(target[2:] - corrected[2:]))
         bias_norm = float(np.linalg.norm(bias))
         current_ratio = float(
-            np.max(np.abs(predicted)) / max(abs(self.coil_current_limits[1]), abs(self.coil_current_limits[0]), 1e-9)
+            np.max(np.abs(predicted))
+            / max(abs(self.coil_current_limits[1]), abs(self.coil_current_limits[0]), 1e-9)
         )
         risk_score = float(
             max(
@@ -633,36 +644,48 @@ class FreeBoundarySafetySupervisor:
             or geometry[3] > self.xpoint_z_bounds_m[1]
         )
         if invariant_violation_active:
-            safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - 2.0 * self.ip_backoff_ma)
+            safe_target_ip_ma = max(
+                self.ip_bounds_ma[0], safe_target_ip_ma - 2.0 * self.ip_backoff_ma
+            )
             reasons.append("geometry_guard")
         q95_guard_active = margins.q95_margin < 0.0
         beta_guard_active = margins.beta_margin < 0.0
         risk_guard_active = margins.risk_margin < 0.0
         physics_guard_active = False
         if q95_guard_active:
-            safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - 1.5 * self.ip_backoff_ma)
+            safe_target_ip_ma = max(
+                self.ip_bounds_ma[0], safe_target_ip_ma - 1.5 * self.ip_backoff_ma
+            )
             reasons.append("q95_guard")
             physics_guard_active = True
         if beta_guard_active:
-            safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - 1.5 * self.ip_backoff_ma)
+            safe_target_ip_ma = max(
+                self.ip_bounds_ma[0], safe_target_ip_ma - 1.5 * self.ip_backoff_ma
+            )
             clipped_action = 0.85 * clipped_action
             predicted = np.clip(currents + clipped_action, *self.coil_current_limits)
             reasons.append("beta_guard")
             physics_guard_active = True
         if risk_guard_active:
-            safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - 2.0 * self.ip_backoff_ma)
+            safe_target_ip_ma = max(
+                self.ip_bounds_ma[0], safe_target_ip_ma - 2.0 * self.ip_backoff_ma
+            )
             clipped_action = 0.75 * clipped_action
             predicted = np.clip(currents + clipped_action, *self.coil_current_limits)
             reasons.append("disruption_risk_guard")
             physics_guard_active = True
         degraded_mode_active = bool(diagnostic_dropout_active or actuator_dropout_active)
         if diagnostic_dropout_active:
-            safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - 0.75 * self.ip_backoff_ma)
+            safe_target_ip_ma = max(
+                self.ip_bounds_ma[0], safe_target_ip_ma - 0.75 * self.ip_backoff_ma
+            )
             clipped_action = 0.82 * clipped_action
             predicted = np.clip(currents + clipped_action, *self.coil_current_limits)
             reasons.append("diagnostic_dropout_guard")
         if actuator_dropout_active:
-            safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - 1.25 * self.ip_backoff_ma)
+            safe_target_ip_ma = max(
+                self.ip_bounds_ma[0], safe_target_ip_ma - 1.25 * self.ip_backoff_ma
+            )
             clipped_action = 0.68 * clipped_action
             predicted = np.clip(currents + clipped_action, *self.coil_current_limits)
             reasons.append("actuator_loss_guard")
@@ -674,12 +697,16 @@ class FreeBoundarySafetySupervisor:
             safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - self.ip_backoff_ma)
             reasons.append("xpoint_backoff")
         if bias_norm > self.severe_bias_norm_m:
-            safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - 0.5 * self.ip_backoff_ma)
+            safe_target_ip_ma = max(
+                self.ip_bounds_ma[0], safe_target_ip_ma - 0.5 * self.ip_backoff_ma
+            )
             reasons.append("bias_backoff")
 
         failsafe_active = bool(risk_score > 1.35 and saturation_active)
         if failsafe_active:
-            safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - 4.0 * self.ip_backoff_ma)
+            safe_target_ip_ma = max(
+                self.ip_bounds_ma[0], safe_target_ip_ma - 4.0 * self.ip_backoff_ma
+            )
             clipped_action = 0.6 * clipped_action
             predicted = np.clip(currents + clipped_action, *self.coil_current_limits)
             reasons.append("failsafe_trip")
@@ -695,20 +722,26 @@ class FreeBoundarySafetySupervisor:
             failsafe_active=failsafe_active,
             invariant_violation_active=invariant_violation_active,
         )
-        alert_level, alert_transition_active, recovery_transition_active = self._advance_alert_level(
-            requested_alert_level=requested_alert_level,
-            margins=margins,
-            risk_score=risk_score,
-            invariant_violation_active=invariant_violation_active,
-            failsafe_active=failsafe_active,
+        alert_level, alert_transition_active, recovery_transition_active = (
+            self._advance_alert_level(
+                requested_alert_level=requested_alert_level,
+                margins=margins,
+                risk_score=risk_score,
+                invariant_violation_active=invariant_violation_active,
+                failsafe_active=failsafe_active,
+            )
         )
         if alert_level == 1:
-            safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - 0.50 * self.ip_backoff_ma)
+            safe_target_ip_ma = max(
+                self.ip_bounds_ma[0], safe_target_ip_ma - 0.50 * self.ip_backoff_ma
+            )
             clipped_action = 0.94 * clipped_action
             predicted = np.clip(currents + clipped_action, *self.coil_current_limits)
             reasons.append("policy_warning")
         elif alert_level == 2:
-            safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - 1.10 * self.ip_backoff_ma)
+            safe_target_ip_ma = max(
+                self.ip_bounds_ma[0], safe_target_ip_ma - 1.10 * self.ip_backoff_ma
+            )
             clipped_action = 0.82 * clipped_action
             predicted = np.clip(currents + clipped_action, *self.coil_current_limits)
             reasons.append("policy_guarded")
@@ -717,7 +750,9 @@ class FreeBoundarySafetySupervisor:
             self._fallback_steps_remaining = self.fallback_hold_steps
         fallback_mode_active = self._fallback_steps_remaining > 0
         if fallback_mode_active:
-            safe_target_ip_ma = max(self.ip_bounds_ma[0], safe_target_ip_ma - 1.5 * self.ip_backoff_ma)
+            safe_target_ip_ma = max(
+                self.ip_bounds_ma[0], safe_target_ip_ma - 1.5 * self.ip_backoff_ma
+            )
             clipped_action = self.fallback_action_scale * clipped_action
             predicted = np.clip(currents + clipped_action, *self.coil_current_limits)
             reasons.append("fallback_latched")
@@ -791,7 +826,10 @@ class FreeBoundarySupervisoryController:
             - self.bias_rejection_gains * estimate.bias_hat
             - self.innovation_damping * estimate.innovation
         )
-        action = self.allocation @ desired_delta - self.actuator_compensation_gain * estimate.actuator_bias_hat
+        action = (
+            self.allocation @ desired_delta
+            - self.actuator_compensation_gain * estimate.actuator_bias_hat
+        )
         return np.asarray(action, dtype=np.float64).reshape(-1)
 
 
@@ -987,7 +1025,9 @@ def run_free_boundary_supervisory_simulation(
     kernel = kernel_factory(str(config_file))
     kernel.solve_equilibrium()
 
-    target_obj = target if target is not None else FreeBoundaryTarget(*DEFAULT_TARGET_VECTOR.tolist())
+    target_obj = (
+        target if target is not None else FreeBoundaryTarget(*DEFAULT_TARGET_VECTOR.tolist())
+    )
     surrogate = NeuralSurrogate(
         n_coils=len(kernel.cfg["coils"]),
         n_state=4,
@@ -1110,7 +1150,9 @@ def run_free_boundary_supervisory_simulation(
     t0 = time.perf_counter()
     for step in range(steps):
         if disturbance_start <= step < disturbance_stop:
-            target_ip_ma = float(np.clip(target_ip_ma + float(disturbance_per_step_ma), lo_ip, hi_ip))
+            target_ip_ma = float(
+                np.clip(target_ip_ma + float(disturbance_per_step_ma), lo_ip, hi_ip)
+            )
         if step >= disturbance_recovery_at and disturbance_recovery_rate != 0.0:
             target_ip_ma = float(np.clip(target_ip_ma + disturbance_recovery_rate, lo_ip, hi_ip))
         diagnostic_dropout_active = bool(
@@ -1125,7 +1167,9 @@ def run_free_boundary_supervisory_simulation(
         )
         if step == coil_kick_at and np.any(kick != 0.0):
             for idx, delta in enumerate(kick):
-                kernel.cfg["coils"][idx]["current"] = float(kernel.cfg["coils"][idx].get("current", 0.0)) + float(delta)
+                kernel.cfg["coils"][idx]["current"] = float(
+                    kernel.cfg["coils"][idx].get("current", 0.0)
+                ) + float(delta)
         if step == bias_step:
             sensor_bias = sensor_bias + bias_step_vector
         if step == sensor_bias_clear_at:
@@ -1164,9 +1208,9 @@ def run_free_boundary_supervisory_simulation(
             q95_floor=supervisor.q95_floor,
             beta_n_ceiling=supervisor.beta_n_ceiling,
             disruption_risk_ceiling=supervisor.disruption_risk_ceiling,
-            risk_signal_history=np.asarray(risk_signal_hist[-31:], dtype=np.float64)
-            if risk_signal_hist
-            else None,
+            risk_signal_history=(
+                np.asarray(risk_signal_hist[-31:], dtype=np.float64) if risk_signal_hist else None
+            ),
         )
         risk_signal_hist.append(float(safety_margins.signal_scalar))
         predictive_action = proposed_action + estimate.actuator_bias_hat
@@ -1192,7 +1236,9 @@ def run_free_boundary_supervisory_simulation(
         effective_action = np.asarray(filtered.action, dtype=np.float64)
         if actuator_dropout_active:
             effective_action = np.where(actuator_dropout_mask_arr, 0.0, effective_action)
-        applied_currents = np.clip(coil_currents + effective_action + actuator_bias, *coil_current_limits)
+        applied_currents = np.clip(
+            coil_currents + effective_action + actuator_bias, *coil_current_limits
+        )
         applied_action = applied_currents - coil_currents
         for idx, current in enumerate(applied_currents):
             kernel.cfg["coils"][idx]["current"] = float(current)
@@ -1360,28 +1406,30 @@ def run_free_boundary_supervisory_simulation(
         "mean_axis_error_m": float(np.mean(axis_err_arr)) if axis_err_arr.size else 0.0,
         "p95_axis_error_m": float(np.percentile(axis_err_arr, 95)) if axis_err_arr.size else 0.0,
         "mean_xpoint_error_m": float(np.mean(xpoint_err_arr)) if xpoint_err_arr.size else 0.0,
-        "p95_xpoint_error_m": float(np.percentile(xpoint_err_arr, 95)) if xpoint_err_arr.size else 0.0,
+        "p95_xpoint_error_m": (
+            float(np.percentile(xpoint_err_arr, 95)) if xpoint_err_arr.size else 0.0
+        ),
         "stabilization_rate": float(np.mean(stabilized)) if stabilized.size else 0.0,
-        "mean_measurement_error_m": float(np.sqrt(np.mean((measured_arr - true_arr) ** 2)))
-        if measured_arr.size
-        else 0.0,
-        "mean_estimation_error_m": float(np.sqrt(np.mean((estimated_arr - true_arr) ** 2)))
-        if estimated_arr.size
-        else 0.0,
+        "mean_measurement_error_m": (
+            float(np.sqrt(np.mean((measured_arr - true_arr) ** 2))) if measured_arr.size else 0.0
+        ),
+        "mean_estimation_error_m": (
+            float(np.sqrt(np.mean((estimated_arr - true_arr) ** 2))) if estimated_arr.size else 0.0
+        ),
         "max_bias_norm_m": float(np.max(bias_arr)) if bias_arr.size else 0.0,
         "final_bias_norm_m": float(bias_arr[-1]) if bias_arr.size else 0.0,
         "max_uncertainty_norm": float(np.max(uncertainty_arr)) if uncertainty_arr.size else 0.0,
         "final_uncertainty_norm": float(uncertainty_arr[-1]) if uncertainty_arr.size else 0.0,
-        "mean_actuator_bias_estimation_error": float(
-            np.sqrt(np.mean((actuator_bias_hat_arr - actuator_bias_true_arr) ** 2))
-        )
-        if actuator_bias_hat_arr.size
-        else 0.0,
-        "final_actuator_bias_estimation_error": float(
-            np.linalg.norm(actuator_bias_hat_arr[-1] - actuator_bias_true_arr[-1])
-        )
-        if actuator_bias_hat_arr.size
-        else 0.0,
+        "mean_actuator_bias_estimation_error": (
+            float(np.sqrt(np.mean((actuator_bias_hat_arr - actuator_bias_true_arr) ** 2)))
+            if actuator_bias_hat_arr.size
+            else 0.0
+        ),
+        "final_actuator_bias_estimation_error": (
+            float(np.linalg.norm(actuator_bias_hat_arr[-1] - actuator_bias_true_arr[-1]))
+            if actuator_bias_hat_arr.size
+            else 0.0
+        ),
         "supervisor_intervention_count": int(np.sum(intervention_arr)),
         "saturation_event_count": int(np.sum(saturation_arr)),
         "failsafe_trip_count": int(np.sum(failsafe_arr)),
@@ -1396,7 +1444,9 @@ def run_free_boundary_supervisory_simulation(
         "risk_guard_count": int(np.sum(risk_guard_arr)),
         "min_q95": float(np.min(q95_arr)) if q95_arr.size else 0.0,
         "max_beta_n": float(np.max(beta_n_arr)) if beta_n_arr.size else 0.0,
-        "max_disruption_risk": float(np.max(disruption_risk_arr)) if disruption_risk_arr.size else 0.0,
+        "max_disruption_risk": (
+            float(np.max(disruption_risk_arr)) if disruption_risk_arr.size else 0.0
+        ),
         "min_q95_margin": float(np.min(q95_margin_arr)) if q95_margin_arr.size else 0.0,
         "min_beta_margin": float(np.min(beta_margin_arr)) if beta_margin_arr.size else 0.0,
         "min_risk_margin": float(np.min(risk_margin_arr)) if risk_margin_arr.size else 0.0,
@@ -1411,7 +1461,9 @@ def run_free_boundary_supervisory_simulation(
         "min_target_ip_ma": float(np.min(target_ip_arr)) if target_ip_arr.size else 0.0,
         "max_target_ip_ma": float(np.max(target_ip_arr)) if target_ip_arr.size else 0.0,
         "max_abs_action": float(np.max(np.abs(action_arr))) if action_arr.size else 0.0,
-        "max_action_l1": float(np.max(np.sum(np.abs(action_arr), axis=1))) if action_arr.size else 0.0,
+        "max_action_l1": (
+            float(np.max(np.sum(np.abs(action_arr), axis=1))) if action_arr.size else 0.0
+        ),
         "max_abs_coil_current": float(
             np.max(
                 np.abs(

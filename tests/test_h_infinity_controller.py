@@ -23,6 +23,7 @@ from scpn_fusion.control.h_infinity_controller import (
 
 # ── Reference plant (canonical vertical stability model) ─────────────
 
+
 def _vertical_stability_plant(
     gamma_v: float = 10.0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -35,7 +36,7 @@ def _vertical_stability_plant(
     C1 = [[1, 0], [0, 0.01]]  (penalize position + small control)
     C2 = [[1, 0]]  (measure position)
     """
-    A = np.array([[0.0, 1.0], [gamma_v ** 2, 0.0]])
+    A = np.array([[0.0, 1.0], [gamma_v**2, 0.0]])
     B1 = np.array([[0.0], [1.0]])
     B2 = np.array([[0.0], [1.0]])
     C1 = np.array([[1.0, 0.0], [0.0, 0.01]])
@@ -44,6 +45,7 @@ def _vertical_stability_plant(
 
 
 # ── 1. Controller Synthesis ──────────────────────────────────────────
+
 
 class TestSynthesis:
 
@@ -68,6 +70,7 @@ class TestSynthesis:
 
 
 # ── 2. Gain Shapes ──────────────────────────────────────────────────
+
 
 class TestGainShapes:
 
@@ -100,6 +103,7 @@ class TestGainShapes:
 
 
 # ── 3. Closed-Loop Stability ─────────────────────────────────────────
+
 
 class TestClosedLoopStability:
 
@@ -158,6 +162,7 @@ class TestClosedLoopStability:
 
 # ── 4. Gamma and Feasibility ─────────────────────────────────────────
 
+
 class TestGammaFeasibility:
 
     def test_gamma_positive(self) -> None:
@@ -182,11 +187,12 @@ class TestGammaFeasibility:
     def test_robust_feasible_property(self) -> None:
         """robust_feasible flag should be consistent with spectral radius (with margin)."""
         ctrl = get_radial_robust_controller(gamma_growth=100.0)
-        expected = ctrl.spectral_radius_xy < ctrl.gamma ** 2 * (1.0 - 1e-4)
+        expected = ctrl.spectral_radius_xy < ctrl.gamma**2 * (1.0 - 1e-4)
         assert ctrl.robust_feasible == expected
 
 
 # ── 5. Riccati Residuals ─────────────────────────────────────────────
+
 
 class TestRiccatiResiduals:
 
@@ -210,6 +216,7 @@ class TestRiccatiResiduals:
 
 # ── 6. Robustness Under Plant Perturbation ───────────────────────────
 
+
 class TestRobustness:
 
     def test_perturbed_plant_10_percent(self) -> None:
@@ -225,9 +232,9 @@ class TestRobustness:
         A_cl_perturbed = A_perturbed + B2 @ ctrl.F
         eigs = np.linalg.eigvals(A_cl_perturbed)
         # All eigenvalues should still have negative real parts
-        assert np.all(np.real(eigs) < 0), (
-            f"Closed-loop unstable under 10% perturbation: eigs = {eigs}"
-        )
+        assert np.all(
+            np.real(eigs) < 0
+        ), f"Closed-loop unstable under 10% perturbation: eigs = {eigs}"
 
     def test_perturbed_plant_simulation(self) -> None:
         """Simulate the controller (state feedback) on a 10% perturbed plant.
@@ -254,6 +261,7 @@ class TestRobustness:
 
 
 # ── 7. Input Validation ──────────────────────────────────────────────
+
 
 class TestInputValidation:
 
@@ -301,6 +309,7 @@ class TestInputValidation:
 
 # ── 8. Reset and State Management ────────────────────────────────────
 
+
 class TestStateManagement:
 
     def test_reset_zeros_state(self) -> None:
@@ -330,6 +339,7 @@ class TestStateManagement:
 
 # ── 9. Enforce Robust Feasibility ────────────────────────────────────
 
+
 class TestEnforceRobustFeasibility:
 
     def test_strict_mode_rejects_infeasible(self) -> None:
@@ -338,8 +348,8 @@ class TestEnforceRobustFeasibility:
         # with tiny control authority — structurally infeasible even with
         # gamma inflation.
         A = np.array([[0.0, 1.0], [1e6, 0.0]])
-        B1 = np.array([[0.0], [100.0]])   # large disturbance
-        B2 = np.array([[0.0], [0.01]])     # tiny control authority
+        B1 = np.array([[0.0], [100.0]])  # large disturbance
+        B2 = np.array([[0.0], [0.01]])  # tiny control authority
         C1 = np.array([[1.0, 0.0], [0.0, 0.01]])
         C2 = np.array([[1.0, 0.0]])
         with pytest.raises(ValueError, match="spectral feasibility condition failed"):
@@ -380,9 +390,9 @@ class TestAntiWindup:
             peak_u = max(peak_u, abs(u))
 
         # With anti-windup, overshoot should not exceed 2x u_max
-        assert peak_u <= 2.0 * ctrl.u_max, (
-            f"Overshoot {peak_u} exceeds 2x u_max ({2.0 * ctrl.u_max})"
-        )
+        assert (
+            peak_u <= 2.0 * ctrl.u_max
+        ), f"Overshoot {peak_u} exceeds 2x u_max ({2.0 * ctrl.u_max})"
 
     def test_anti_windup_noop_when_no_saturation(self) -> None:
         """When no clipping occurs, anti-windup correction is zero (no change)."""
@@ -457,7 +467,9 @@ class TestFlightSimV2:
     def test_v2_corrected_plant_matrix(self) -> None:
         """A[0,1] should be -sensitivity/dt (integrator gain), not a small constant."""
         ctrl = get_flight_sim_controller_v2(
-            position_sensitivity=0.567, sample_dt=0.05, drift_rate=0.1,
+            position_sensitivity=0.567,
+            sample_dt=0.05,
+            drift_rate=0.1,
         )
         np.testing.assert_allclose(ctrl.A[0, 1], -0.567 / 0.05, rtol=1e-12)
         np.testing.assert_allclose(ctrl.A[0, 0], 0.1, rtol=1e-12)
@@ -477,7 +489,9 @@ class TestFlightSimV2:
     def test_v2_step_reduces_error_simplified_plant(self) -> None:
         """10 steps on a simplified plant should reduce error."""
         ctrl = get_flight_sim_controller_v2(
-            position_sensitivity=0.567, sample_dt=0.05, observer_q_scale=100.0,
+            position_sensitivity=0.567,
+            sample_dt=0.05,
+            observer_q_scale=100.0,
         )
         dt = 0.05
         err = 0.5
@@ -511,7 +525,8 @@ class TestLQRController:
 
     def test_lqr_reduces_error(self) -> None:
         ctrl = get_flight_sim_lqr_controller(
-            position_sensitivity=0.567, sample_dt=0.05,
+            position_sensitivity=0.567,
+            sample_dt=0.05,
         )
         dt = 0.05
         err = 0.5
@@ -530,7 +545,8 @@ class TestLQRController:
     def test_lqr_different_from_hinf(self) -> None:
         """LQR and H-inf v2 should produce different control actions."""
         hinf = get_flight_sim_controller_v2(
-            position_sensitivity=0.567, observer_q_scale=100.0,
+            position_sensitivity=0.567,
+            observer_q_scale=100.0,
         )
         lqr = get_flight_sim_lqr_controller(position_sensitivity=0.567)
         dt = 0.05

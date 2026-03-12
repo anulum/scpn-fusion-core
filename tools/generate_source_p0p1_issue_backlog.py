@@ -70,17 +70,25 @@ def _closure_metrics(issue: SourceIssue, coverage_cfg: dict[str, Any]) -> list[s
     ]
     line_target = _coverage_line_target(issue, coverage_cfg)
     if line_target is not None:
-        metrics.append(f"File line coverage in release lane is >= {line_target:.1f}% (tools/coverage_guard.py).")
+        metrics.append(
+            f"File line coverage in release lane is >= {line_target:.1f}% (tools/coverage_guard.py)."
+        )
     if "MONOLITH" in issue.markers:
         metrics.append(
             "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
         )
     if "DEPRECATED" in issue.markers:
-        metrics.append("Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py).")
+        metrics.append(
+            "Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py)."
+        )
     if "NOT_VALIDATED" in issue.markers:
-        metrics.append("Validation artifact path is added and mapped in docs/CLAIMS_EVIDENCE_MAP.md.")
+        metrics.append(
+            "Validation artifact path is added and mapped in docs/CLAIMS_EVIDENCE_MAP.md."
+        )
     if "FALLBACK" in issue.markers:
-        metrics.append("Fallback budget guard remains green for impacted lane (tools/fallback_budget_guard.py).")
+        metrics.append(
+            "Fallback budget guard remains green for impacted lane (tools/fallback_budget_guard.py)."
+        )
     return metrics
 
 
@@ -97,7 +105,7 @@ def _render_issue_body(issue: SourceIssue, coverage_cfg: dict[str, Any]) -> str:
     line_str = ", ".join(str(line) for line in issue.lines)
     return "\n".join(
         [
-            f"## Scope",
+            "## Scope",
             f"- File: `{issue.file_path}`",
             f"- Priority: `{issue.priority}` (score `{issue.score}`)",
             f"- Domain: `{issue.domain}`",
@@ -189,15 +197,23 @@ def _acceptance_items(markers: tuple[str, ...]) -> list[str]:
         "Update claim/evidence references if behavior or metrics change.",
     ]
     if "DEPRECATED" in markers:
-        items.append("Remove deprecated runtime-default path or replace with validated default lane.")
+        items.append(
+            "Remove deprecated runtime-default path or replace with validated default lane."
+        )
     if "NOT_VALIDATED" in markers:
         items.append("Publish real-data validation artifact and link it from RESULTS/claims map.")
     if "SIMPLIFIED" in markers:
-        items.append("Document model-domain limits and tighten contract checks for out-of-domain inputs.")
+        items.append(
+            "Document model-domain limits and tighten contract checks for out-of-domain inputs."
+        )
     if "FALLBACK" in markers:
-        items.append("Record fallback telemetry and enforce strict-backend parity where applicable.")
+        items.append(
+            "Record fallback telemetry and enforce strict-backend parity where applicable."
+        )
     if "EXPERIMENTAL" in markers:
-        items.append("Ensure release lane remains experimental-excluded unless explicitly opted in.")
+        items.append(
+            "Ensure release lane remains experimental-excluded unless explicitly opted in."
+        )
     # Keep deterministic order with de-duplication.
     unique: dict[str, None] = {}
     for item in items:

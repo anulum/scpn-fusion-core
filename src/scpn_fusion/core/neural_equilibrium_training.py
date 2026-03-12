@@ -121,4 +121,3 @@ def run_training_cli() -> int:
     bench = accel.benchmark(features)
     print(f"Inference: {bench['mean_ms']:.3f} ms (median: {bench['median_ms']:.3f} ms)")
     return 0
-

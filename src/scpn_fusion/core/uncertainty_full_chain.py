@@ -44,10 +44,11 @@ class EquilibriumUncertainty:
     Captures how boundary perturbations propagate into psi-field and
     magnetic-axis location uncertainty.
     """
-    psi_nrmse_mean: float = 0.0     # Mean normalised RMSE of psi reconstruction
-    psi_nrmse_sigma: float = 0.01   # 1-sigma spread from boundary perturbation
-    R_axis_sigma: float = 0.02      # Magnetic axis R location uncertainty (m)
-    Z_axis_sigma: float = 0.01      # Magnetic axis Z location uncertainty (m)
+
+    psi_nrmse_mean: float = 0.0  # Mean normalised RMSE of psi reconstruction
+    psi_nrmse_sigma: float = 0.01  # 1-sigma spread from boundary perturbation
+    R_axis_sigma: float = 0.02  # Magnetic axis R location uncertainty (m)
+    Z_axis_sigma: float = 0.01  # Magnetic axis Z location uncertainty (m)
 
 
 @dataclass
@@ -57,7 +58,8 @@ class TransportUncertainty:
     Captures the dominant sources of uncertainty in the gyro-Bohm diffusivity
     model and the EPED pedestal prediction.
     """
-    chi_gB_factor_sigma: float = 0.3   # Gyro-Bohm coefficient fractional uncertainty (30%)
+
+    chi_gB_factor_sigma: float = 0.3  # Gyro-Bohm coefficient fractional uncertainty (30%)
     pedestal_height_sigma: float = 0.2  # EPED pedestal height fractional uncertainty (20%)
 
 
@@ -68,6 +70,7 @@ class FullChainUQResult:
 
     All ``*_bands`` fields are length-3 arrays: [5th, 50th, 95th] percentiles.
     """
+
     tau_E: float
     P_fusion: float
     Q: float
@@ -266,17 +269,20 @@ def quantify_full_chain(
         P_fusion_sigma=float(np.std(pfus_samples)),
         Q_sigma=float(np.std(q_samples)),
         psi_nrmse_bands=np.asarray(
-            np.percentile(psi_nrmse_samples, band_pcts), dtype=float,
+            np.percentile(psi_nrmse_samples, band_pcts),
+            dtype=float,
         ),
         tau_E_bands=np.asarray(np.percentile(tau_samples, band_pcts), dtype=float),
         P_fusion_bands=np.asarray(
-            np.percentile(pfus_samples, band_pcts), dtype=float,
+            np.percentile(pfus_samples, band_pcts),
+            dtype=float,
         ),
         Q_bands=np.asarray(np.percentile(q_samples, band_pcts), dtype=float),
         beta_N_bands=np.asarray(np.percentile(beta_n_samples, band_pcts), dtype=float),
         tau_E_percentiles=np.asarray(np.percentile(tau_samples, full_pcts), dtype=float),
         P_fusion_percentiles=np.asarray(
-            np.percentile(pfus_samples, full_pcts), dtype=float,
+            np.percentile(pfus_samples, full_pcts),
+            dtype=float,
         ),
         Q_percentiles=np.asarray(np.percentile(q_samples, full_pcts), dtype=float),
         n_samples=n_samples,
@@ -290,6 +296,7 @@ def summarize_uq(result: FullChainUQResult) -> dict:
     All numpy arrays are converted to Python lists; floats are rounded
     to 6 significant figures.
     """
+
     def _round(x: float, sig: int = 6) -> float:
         return float(f"{x:.{sig}g}")
 

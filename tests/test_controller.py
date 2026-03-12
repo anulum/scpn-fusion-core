@@ -35,7 +35,7 @@ import pytest
 
 from scpn_fusion import __version__ as PACKAGE_VERSION
 from scpn_fusion.scpn.structure import StochasticPetriNet
-from scpn_fusion.scpn.compiler import FusionCompiler, CompiledNet, _HAS_SC_NEUROCORE
+from scpn_fusion.scpn.compiler import FusionCompiler, _HAS_SC_NEUROCORE
 from scpn_fusion.scpn.contracts import (
     ActionSpec,
     ControlAction,
@@ -49,7 +49,6 @@ from scpn_fusion.scpn.contracts import (
 )
 from scpn_fusion.scpn.artifact import (
     ARTIFACT_SCHEMA_VERSION,
-    Artifact,
     ArtifactValidationError,
     PackedWeights,
     PackedWeightsGroup,
@@ -117,9 +116,7 @@ def _build_artifact_path(
     """Compile the 8-place net, export artifact, save to temp file."""
     net = _build_controller_net(transition_delay_ticks=transition_delay_ticks)
     compiler = FusionCompiler(bitstream_length=1024, seed=42)
-    compiled = compiler.compile(
-        net, firing_mode=firing_mode, firing_margin=firing_margin
-    )
+    compiled = compiler.compile(net, firing_mode=firing_mode, firing_margin=firing_margin)
 
     readout_config = {
         "actions": [
@@ -258,8 +255,7 @@ class TestLevel0Static:
             art2 = load_artifact(path2)
             assert art2.weights.packed is not None
             assert (
-                art2.weights.packed.w_in_packed.data_u64
-                == art1.weights.packed.w_in_packed.data_u64
+                art2.weights.packed.w_in_packed.data_u64 == art1.weights.packed.w_in_packed.data_u64
             )
             if art1.weights.packed.w_out_packed is not None:
                 assert art2.weights.packed.w_out_packed is not None
@@ -357,41 +353,31 @@ class TestLevel0Static:
         finally:
             os.unlink(path2)
 
-    def test_load_artifact_rejects_non_integer_delay_ticks(
-        self, artifact_path: str
-    ) -> None:
+    def test_load_artifact_rejects_non_integer_delay_ticks(self, artifact_path: str) -> None:
         obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
         obj["topology"]["transitions"][0]["delay_ticks"] = 1.5
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
-            Path(bad_path).write_text(
-                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
-            )
+            Path(bad_path).write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
             with pytest.raises(ArtifactValidationError, match="delay_ticks"):
                 load_artifact(bad_path)
         finally:
             os.unlink(bad_path)
 
-    def test_load_artifact_rejects_non_integer_stream_length(
-        self, artifact_path: str
-    ) -> None:
+    def test_load_artifact_rejects_non_integer_stream_length(self, artifact_path: str) -> None:
         obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
         obj["meta"]["stream_length"] = 1024.5
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
-            Path(bad_path).write_text(
-                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
-            )
+            Path(bad_path).write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
             with pytest.raises(ArtifactValidationError, match="stream_length"):
                 load_artifact(bad_path)
         finally:
             os.unlink(bad_path)
 
-    @pytest.mark.parametrize(
-        "dt_control_s", [float("nan"), float("inf"), "0.01", True]
-    )
+    @pytest.mark.parametrize("dt_control_s", [float("nan"), float("inf"), "0.01", True])
     def test_load_artifact_rejects_non_finite_dt_control(
         self, artifact_path: str, dt_control_s: object
     ) -> None:
@@ -400,9 +386,7 @@ class TestLevel0Static:
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
-            Path(bad_path).write_text(
-                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
-            )
+            Path(bad_path).write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
             with pytest.raises(ArtifactValidationError, match="dt_control_s"):
                 load_artifact(bad_path)
         finally:
@@ -428,9 +412,7 @@ class TestLevel0Static:
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
-            Path(bad_path).write_text(
-                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
-            )
+            Path(bad_path).write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
             with pytest.raises(ArtifactValidationError, match=match):
                 load_artifact(bad_path)
         finally:
@@ -466,9 +448,7 @@ class TestLevel0Static:
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
-            Path(bad_path).write_text(
-                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
-            )
+            Path(bad_path).write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
             with pytest.raises(ArtifactValidationError, match=match):
                 load_artifact(bad_path)
         finally:
@@ -507,9 +487,7 @@ class TestLevel0Static:
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
-            Path(bad_path).write_text(
-                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
-            )
+            Path(bad_path).write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
             with pytest.raises(ArtifactValidationError, match=match):
                 load_artifact(bad_path)
         finally:
@@ -545,9 +523,7 @@ class TestLevel0Static:
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
-            Path(bad_path).write_text(
-                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
-            )
+            Path(bad_path).write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
             with pytest.raises(ArtifactValidationError, match=match):
                 load_artifact(bad_path)
         finally:
@@ -599,9 +575,7 @@ class TestLevel0Static:
         fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
         os.close(fd)
         try:
-            Path(bad_path).write_text(
-                json.dumps(obj, indent=2) + "\n", encoding="utf-8"
-            )
+            Path(bad_path).write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
             with pytest.raises(ArtifactValidationError, match=match):
                 load_artifact(bad_path)
         finally:
@@ -631,9 +605,7 @@ class TestLevel1Determinism:
         out2 = [c2.step(obs, k) for k in range(20)]
         assert out1 == out2
 
-    def test_deterministic_after_reset(
-        self, controller: NeuroSymbolicController
-    ) -> None:
+    def test_deterministic_after_reset(self, controller: NeuroSymbolicController) -> None:
         obs: ControlObservation = {"R_axis_m": 6.3, "Z_axis_m": -0.05}
         run1 = [controller.step(obs, k) for k in range(10)]
 
@@ -641,7 +613,9 @@ class TestLevel1Determinism:
         run2 = [controller.step(obs, k) for k in range(10)]
         assert run1 == run2
 
-    def test_deterministic_stochastic_fractional_replay(self, artifact_path_fractional: str) -> None:
+    def test_deterministic_stochastic_fractional_replay(
+        self, artifact_path_fractional: str
+    ) -> None:
         art = load_artifact(artifact_path_fractional)
         kwargs = dict(
             artifact=art,
@@ -712,13 +686,13 @@ class TestLevel1Determinism:
         obs: ControlObservation = {"R_axis_m": 6.15, "Z_axis_m": 0.0}
         controller.step(obs, 0)
         delta = np.max(
-            np.abs(np.asarray(controller.last_sc_firing) - np.asarray(controller.last_oracle_firing))
+            np.abs(
+                np.asarray(controller.last_sc_firing) - np.asarray(controller.last_oracle_firing)
+            )
         )
         assert float(delta) > 0.0
 
-    def test_default_runtime_profile_is_adaptive_nonoracle_binary(
-        self, artifact_path: str
-    ) -> None:
+    def test_default_runtime_profile_is_adaptive_nonoracle_binary(self, artifact_path: str) -> None:
         art = load_artifact(artifact_path)
         controller = NeuroSymbolicController(
             artifact=art,
@@ -732,8 +706,7 @@ class TestLevel1Determinism:
         controller.step(obs, 0)
         delta = np.max(
             np.abs(
-                np.asarray(controller.last_sc_firing)
-                - np.asarray(controller.last_oracle_firing)
+                np.asarray(controller.last_sc_firing) - np.asarray(controller.last_oracle_firing)
             )
         )
         assert float(delta) > 0.0
@@ -760,15 +733,17 @@ class TestLevel1Determinism:
         for k in range(10):
             out1.append(c1.step(obs, k))
             diffs.append(
-                float(np.max(np.abs(np.asarray(c1.last_sc_firing) - np.asarray(c1.last_oracle_firing))))
+                float(
+                    np.max(
+                        np.abs(np.asarray(c1.last_sc_firing) - np.asarray(c1.last_oracle_firing))
+                    )
+                )
             )
             out2.append(c2.step(obs, k))
         assert out1 == out2
         assert any(d > 0.0 for d in diffs)
 
-    def test_antithetic_stochastic_fractional_replay(
-        self, artifact_path_fractional: str
-    ) -> None:
+    def test_antithetic_stochastic_fractional_replay(self, artifact_path_fractional: str) -> None:
         art = load_artifact(artifact_path_fractional)
         kwargs = dict(
             artifact=art,
@@ -837,9 +812,7 @@ class TestLevel1Determinism:
 
 
 class TestLevel2Primitives:
-    @pytest.mark.skipif(
-        not _HAS_SC_NEUROCORE, reason="sc_neurocore not installed"
-    )
+    @pytest.mark.skipif(not _HAS_SC_NEUROCORE, reason="sc_neurocore not installed")
     def test_encode_mean_accuracy(self) -> None:
         """E[popcount(Encode(p))/L] ≈ p for a grid of probabilities."""
         from scpn_fusion.neurocore_compat import (
@@ -855,13 +828,9 @@ class TestLevel2Primitives:
             bits = generate_bernoulli_bitstream(p_target, L, rng=rng)
             packed = pack_bitstream(bits)
             p_est = int(vec_popcount(packed)) / L
-            assert abs(p_est - p_target) < 3.0 / math.sqrt(L), (
-                f"p={p_target}, est={p_est}"
-            )
+            assert abs(p_est - p_target) < 3.0 / math.sqrt(L), f"p={p_target}, est={p_est}"
 
-    @pytest.mark.skipif(
-        not _HAS_SC_NEUROCORE, reason="sc_neurocore not installed"
-    )
+    @pytest.mark.skipif(not _HAS_SC_NEUROCORE, reason="sc_neurocore not installed")
     def test_and_product_accuracy(self) -> None:
         """E[AND(w, p)] ≈ w*p."""
         from scpn_fusion.neurocore_compat import (
@@ -880,9 +849,9 @@ class TestLevel2Primitives:
             bits_p = generate_bernoulli_bitstream(p, L, rng=rng_p)
             anded = vec_and(pack_bitstream(bits_w), pack_bitstream(bits_p))
             est = int(vec_popcount(anded)) / L
-            assert abs(est - w * p) < 3.0 / math.sqrt(L), (
-                f"w={w}, p={p}, est={est}, expected={w * p}"
-            )
+            assert abs(est - w * p) < 3.0 / math.sqrt(
+                L
+            ), f"w={w}, p={p}, est={est}, expected={w * p}"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -891,9 +860,7 @@ class TestLevel2Primitives:
 
 
 class TestLevel3PetriSemantics:
-    def test_marking_bounds_200_steps(
-        self, controller: NeuroSymbolicController
-    ) -> None:
+    def test_marking_bounds_200_steps(self, controller: NeuroSymbolicController) -> None:
         """Marking stays in [0, 1] over 200 ticks with sinusoidal obs."""
         for k in range(200):
             obs: ControlObservation = {
@@ -902,13 +869,9 @@ class TestLevel3PetriSemantics:
             }
             controller.step(obs, k)
             for v in controller.marking:
-                assert 0.0 <= v <= 1.0, (
-                    f"marking out of [0,1] at k={k}: {controller.marking}"
-                )
+                assert 0.0 <= v <= 1.0, f"marking out of [0,1] at k={k}: {controller.marking}"
 
-    def test_fractional_firing_range(
-        self, controller_fractional: NeuroSymbolicController
-    ) -> None:
+    def test_fractional_firing_range(self, controller_fractional: NeuroSymbolicController) -> None:
         """Fractional fire values stay in [0, 1]."""
         for k in range(100):
             obs: ControlObservation = {
@@ -951,9 +914,7 @@ class TestLevel3PetriSemantics:
             assert v in (0.0, 1.0), f"binary fire not in {{0,1}}: {v}"
 
     def test_timed_transition_defers_action_release(self) -> None:
-        delayed_path = _build_artifact_path(
-            firing_mode="binary", transition_delay_ticks=2
-        )
+        delayed_path = _build_artifact_path(firing_mode="binary", transition_delay_ticks=2)
         try:
             art = load_artifact(delayed_path)
             assert all(t.delay_ticks == 2 for t in art.topology.transitions)
@@ -1001,9 +962,7 @@ class TestLevel3PetriSemantics:
 
 
 class TestIntegration:
-    def test_sinusoidal_disturbance_bounded(
-        self, controller: NeuroSymbolicController
-    ) -> None:
+    def test_sinusoidal_disturbance_bounded(self, controller: NeuroSymbolicController) -> None:
         """Actions stay bounded under sinusoidal plant disturbance."""
         abs_max = controller.artifact.readout.abs_max
         for k in range(100):
@@ -1015,9 +974,7 @@ class TestIntegration:
             assert abs(act["dI_PF3_A"]) <= abs_max[0] + 1e-10
             assert abs(act["dI_PF_topbot_A"]) <= abs_max[1] + 1e-10
 
-    def test_step_disturbance_nonzero_response(
-        self, controller: NeuroSymbolicController
-    ) -> None:
+    def test_step_disturbance_nonzero_response(self, controller: NeuroSymbolicController) -> None:
         """A sudden offset in R or Z produces a non-zero action."""
         controller.reset()
         # Step disturbance: R axis shifted 0.3 m from target
@@ -1047,9 +1004,9 @@ class TestIntegration:
             act = c.step(obs, k)
             for key in ("dI_PF3_A", "dI_PF_topbot_A"):
                 delta = abs(act[key] - prev_act[key])
-                assert delta <= max_delta + 1e-10, (
-                    f"slew violation at k={k}: delta={delta}, max={max_delta}"
-                )
+                assert (
+                    delta <= max_delta + 1e-10
+                ), f"slew violation at k={k}: delta={delta}, max={max_delta}"
             prev_act = act
 
     def test_jsonl_logging(self, controller: NeuroSymbolicController) -> None:
@@ -1077,9 +1034,7 @@ class TestIntegration:
         finally:
             os.unlink(log_path)
 
-    def test_controller_supports_passthrough_injection_sources(
-        self, artifact_path: str
-    ) -> None:
+    def test_controller_supports_passthrough_injection_sources(self, artifact_path: str) -> None:
         art = load_artifact(artifact_path)
         art.initial_state.place_injections.append(
             PlaceInjection(
@@ -1101,9 +1056,7 @@ class TestIntegration:
         assert "dI_PF3_A" in act
         assert "dI_PF_topbot_A" in act
 
-    def test_controller_passthrough_injection_missing_key_raises(
-        self, artifact_path: str
-    ) -> None:
+    def test_controller_passthrough_injection_missing_key_raises(self, artifact_path: str) -> None:
         art = load_artifact(artifact_path)
         art.initial_state.place_injections.append(
             PlaceInjection(
@@ -1151,9 +1104,7 @@ class TestIntegration:
         assert "dI_PF3_A" in act
         assert "dI_PF_topbot_A" in act
 
-    def test_controller_custom_feature_axes_missing_key_raises(
-        self, artifact_path: str
-    ) -> None:
+    def test_controller_custom_feature_axes_missing_key_raises(self, artifact_path: str) -> None:
         art = load_artifact(artifact_path)
         c = NeuroSymbolicController(
             artifact=art,
@@ -1301,9 +1252,7 @@ class TestIntegration:
             a_map = c_map.step(obs, k)
             a_vec = c_vec.step_traceable(obs_vec, k)
             assert a_map["dI_PF3_A"] == pytest.approx(float(a_vec[0]), rel=0.0, abs=0.0)
-            assert a_map["dI_PF_topbot_A"] == pytest.approx(
-                float(a_vec[1]), rel=0.0, abs=0.0
-            )
+            assert a_map["dI_PF_topbot_A"] == pytest.approx(float(a_vec[1]), rel=0.0, abs=0.0)
 
     def test_traceable_step_validates_vector_length(self, artifact_path: str) -> None:
         art = load_artifact(artifact_path)
@@ -1319,9 +1268,7 @@ class TestIntegration:
         with pytest.raises(ValueError, match="obs_vector"):
             c.step_traceable((6.2,), 0)
 
-    def test_antithetic_chunked_sampling_is_deterministic(
-        self, artifact_path: str
-    ) -> None:
+    def test_antithetic_chunked_sampling_is_deterministic(self, artifact_path: str) -> None:
         art = load_artifact(artifact_path)
         kwargs = dict(
             artifact=art,
@@ -1477,9 +1424,7 @@ class TestContracts:
     def test_extract_features_on_target(self) -> None:
         """When obs == target, all features should be 0."""
         obs: ControlObservation = {"R_axis_m": 6.2, "Z_axis_m": 0.0}
-        feats = extract_features(
-            obs, ControlTargets(), ControlScales()
-        )
+        feats = extract_features(obs, ControlTargets(), ControlScales())
         assert feats["x_R_pos"] == 0.0
         assert feats["x_R_neg"] == 0.0
         assert feats["x_Z_pos"] == 0.0
@@ -1488,27 +1433,21 @@ class TestContracts:
     def test_extract_features_positive_error(self) -> None:
         """R below target → positive R error → x_R_pos > 0."""
         obs: ControlObservation = {"R_axis_m": 6.0, "Z_axis_m": 0.0}
-        feats = extract_features(
-            obs, ControlTargets(), ControlScales()
-        )
+        feats = extract_features(obs, ControlTargets(), ControlScales())
         assert feats["x_R_pos"] > 0.0
         assert feats["x_R_neg"] == 0.0
 
     def test_extract_features_negative_error(self) -> None:
         """R above target → negative R error → x_R_neg > 0."""
         obs: ControlObservation = {"R_axis_m": 6.5, "Z_axis_m": 0.0}
-        feats = extract_features(
-            obs, ControlTargets(), ControlScales()
-        )
+        feats = extract_features(obs, ControlTargets(), ControlScales())
         assert feats["x_R_pos"] == 0.0
         assert feats["x_R_neg"] > 0.0
 
     def test_extract_features_clamped(self) -> None:
         """Extreme obs → features clamped to [0, 1]."""
         obs: ControlObservation = {"R_axis_m": 100.0, "Z_axis_m": -100.0}
-        feats = extract_features(
-            obs, ControlTargets(), ControlScales()
-        )
+        feats = extract_features(obs, ControlTargets(), ControlScales())
         for v in feats.values():
             assert 0.0 <= v <= 1.0
 
@@ -1595,9 +1534,13 @@ class TestContracts:
         ]
         prev = [0.0, 0.0]
         result = decode_actions(
-            marking, specs, gains=[100.0, 100.0],
-            abs_max=[5000.0, 5000.0], slew_per_s=[1e6, 1e6],
-            dt=0.001, prev=prev,
+            marking,
+            specs,
+            gains=[100.0, 100.0],
+            abs_max=[5000.0, 5000.0],
+            slew_per_s=[1e6, 1e6],
+            dt=0.001,
+            prev=prev,
         )
         assert abs(result["dI_PF3_A"] - 60.0) < 1e-10
         assert abs(result["dI_PF_topbot_A"] - 60.0) < 1e-10

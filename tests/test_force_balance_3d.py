@@ -1,7 +1,6 @@
 """Tests for 3D force-balance solver (reduced-order spectral variational)."""
 
 import numpy as np
-import pytest
 
 from scpn_fusion.core.equilibrium_3d import (
     FourierMode3D,

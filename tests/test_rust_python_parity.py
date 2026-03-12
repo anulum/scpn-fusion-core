@@ -22,7 +22,6 @@ For each test, a simple Solov'ev equilibrium problem is set up
 from __future__ import annotations
 
 import json
-import textwrap
 from pathlib import Path
 from typing import Any
 
@@ -105,8 +104,8 @@ IP_MA = 1.0
 
 R_MIN = R0 - 1.5 * A_MINOR  # 0.95
 R_MAX = R0 + 1.5 * A_MINOR  # 2.45
-Z_MIN = -1.5 * A_MINOR      # -0.75
-Z_MAX = 1.5 * A_MINOR       # 0.75
+Z_MIN = -1.5 * A_MINOR  # -0.75
+Z_MAX = 1.5 * A_MINOR  # 0.75
 
 
 def _make_config(
@@ -209,14 +208,17 @@ class TestSORSolverParity:
         psi_rs = rust_kernel.Psi.copy()
 
         # --- Compare ---
-        assert psi_py.shape == psi_rs.shape, (
-            f"Shape mismatch: Python {psi_py.shape} vs Rust {psi_rs.shape}"
-        )
+        assert (
+            psi_py.shape == psi_rs.shape
+        ), f"Shape mismatch: Python {psi_py.shape} vs Rust {psi_rs.shape}"
         assert np.all(np.isfinite(psi_py)), "Python SOR produced non-finite values"
         assert np.all(np.isfinite(psi_rs)), "Rust SOR produced non-finite values"
 
         np.testing.assert_allclose(
-            psi_py, psi_rs, rtol=1e-3, atol=1e-6,
+            psi_py,
+            psi_rs,
+            rtol=1e-3,
+            atol=1e-6,
             err_msg=f"SOR parity failed: max rel diff = {_max_rel_diff(psi_py, psi_rs):.6e}",
         )
 
@@ -273,15 +275,26 @@ class TestMultigridSolverParity:
 
         # --- Python V-cycle ---
         psi_py = py_kernel._multigrid_vcycle(
-            Psi_init.copy(), Source, RR, dR, dZ, omega=1.6,
+            Psi_init.copy(),
+            Source,
+            RR,
+            dR,
+            dZ,
+            omega=1.6,
         )
 
         # --- Rust V-cycle ---
         psi_rs, residual, n_cycles, converged = rust_multigrid_vcycle(
-            Source, Psi_init.copy(),
-            R_MIN, R_MAX, Z_MIN, Z_MAX,
-            NR, NZ,
-            tol=1e-6, max_cycles=500,
+            Source,
+            Psi_init.copy(),
+            R_MIN,
+            R_MAX,
+            Z_MIN,
+            Z_MAX,
+            NR,
+            NZ,
+            tol=1e-6,
+            max_cycles=500,
         )
 
         # --- Compare ---
@@ -290,7 +303,10 @@ class TestMultigridSolverParity:
         assert np.all(np.isfinite(psi_rs)), "Rust multigrid produced NaN"
 
         np.testing.assert_allclose(
-            psi_py, psi_rs, rtol=1e-3, atol=1e-6,
+            psi_py,
+            psi_rs,
+            rtol=1e-3,
+            atol=1e-6,
             err_msg=f"Multigrid parity failed: max rel diff = {_max_rel_diff(psi_py, psi_rs):.6e}",
         )
 
@@ -322,11 +338,17 @@ class TestMultigridSolverParity:
         # A2 vacuum-field fix (v3.9.3) widens the gap further since the
         # Rust binary was not rebuilt. Threshold 0.45 until stencil alignment.
         np.testing.assert_allclose(
-            psi_py[[0, -1], :], psi_rs[[0, -1], :], rtol=1e-3, atol=1e-6,
+            psi_py[[0, -1], :],
+            psi_rs[[0, -1], :],
+            rtol=1e-3,
+            atol=1e-6,
             err_msg="MG boundary parity failed",
         )
         np.testing.assert_allclose(
-            psi_py[:, [0, -1]], psi_rs[:, [0, -1]], rtol=1e-3, atol=1e-6,
+            psi_py[:, [0, -1]],
+            psi_rs[:, [0, -1]],
+            rtol=1e-3,
+            atol=1e-6,
             err_msg="MG boundary parity failed",
         )
 
@@ -388,7 +410,10 @@ class TestVacuumFieldParity:
         assert np.all(np.isfinite(psi_vac_rs)), "Rust vacuum field has NaN"
 
         np.testing.assert_allclose(
-            psi_vac_py, psi_vac_rs, rtol=1e-3, atol=1e-8,
+            psi_vac_py,
+            psi_vac_rs,
+            rtol=1e-3,
+            atol=1e-8,
             err_msg=f"Vacuum field parity failed: max rel diff = {_max_rel_diff(psi_vac_py, psi_vac_rs):.6e}",
         )
 
@@ -413,7 +438,10 @@ class TestVacuumFieldParity:
         assert psi_vac_py.shape == psi_vac_rs.shape
 
         np.testing.assert_allclose(
-            psi_vac_py, psi_vac_rs, rtol=1e-3, atol=1e-8,
+            psi_vac_py,
+            psi_vac_rs,
+            rtol=1e-3,
+            atol=1e-8,
             err_msg=f"shafranov_bv parity failed: max rel diff = {_max_rel_diff(psi_vac_py, psi_vac_rs):.6e}",
         )
 
@@ -451,14 +479,17 @@ class TestTransportSolverParity:
         assert np.all(np.isfinite(signal_py)), "Python tearing mode produced NaN"
         assert np.all(np.isfinite(signal_rs)), "Rust tearing mode produced NaN"
 
-        assert label_py == label_rs, (
-            f"Disruption label mismatch: Python={label_py}, Rust={label_rs}"
-        )
+        assert (
+            label_py == label_rs
+        ), f"Disruption label mismatch: Python={label_py}, Rust={label_rs}"
 
         min_len = min(len(signal_py), len(signal_rs))
         if min_len > 0:
             np.testing.assert_allclose(
-                signal_py[:min_len], signal_rs[:min_len], rtol=1e-3, atol=1e-4,
+                signal_py[:min_len],
+                signal_rs[:min_len],
+                rtol=1e-3,
+                atol=1e-4,
                 err_msg=f"Tearing mode parity failed: max rel diff = {_max_rel_diff(signal_py[:min_len], signal_rs[:min_len]):.6e}",
             )
 
@@ -487,12 +518,25 @@ class TestTransportSolverParity:
             q = rng.uniform(0.9, 1.4) + rng.uniform(1.8, 3.6) * rho**2
 
             chi_py = chang_hinton_chi_profile(
-                rho, t_i, n_e_19, q, R0=6.2, a=2.0, B0=5.3, A_ion=2.0, Z_eff=1.5,
+                rho,
+                t_i,
+                n_e_19,
+                q,
+                R0=6.2,
+                a=2.0,
+                B0=5.3,
+                A_ion=2.0,
+                Z_eff=1.5,
             )
-            chi_rs = np.asarray(solver.chang_hinton_chi_profile(rho, t_i, n_e_19, q), dtype=np.float64)
+            chi_rs = np.asarray(
+                solver.chang_hinton_chi_profile(rho, t_i, n_e_19, q), dtype=np.float64
+            )
 
             np.testing.assert_allclose(
-                chi_py, chi_rs, rtol=1e-9, atol=1e-12,
+                chi_py,
+                chi_rs,
+                rtol=1e-9,
+                atol=1e-12,
                 err_msg=f"Chang-Hinton randomized parity failed: max rel diff={_max_rel_diff(chi_py, chi_rs):.6e}",
             )
             max_rel = max(max_rel, _max_rel_diff(chi_py, chi_rs))
@@ -539,7 +583,15 @@ class TestTransportSolverParity:
             b0 = rng.uniform(4.5, 6.2)
 
             j_py = calculate_sauter_bootstrap_current_full(
-                rho, t_e, t_i, n_e_19, q, R0=6.2, a=2.0, B0=b0, Z_eff=1.5,
+                rho,
+                t_e,
+                t_i,
+                n_e_19,
+                q,
+                R0=6.2,
+                a=2.0,
+                B0=b0,
+                Z_eff=1.5,
             )
             j_rs = np.asarray(
                 solver.sauter_bootstrap_profile(rho, t_e, t_i, n_e_19, q, eps, b0),
@@ -600,7 +652,10 @@ class TestSCPNRuntimeParity:
         act_rs = np.asarray(_rust_dense_act(marking, weights))
 
         np.testing.assert_allclose(
-            act_py, act_rs, rtol=1e-6, atol=1e-10,
+            act_py,
+            act_rs,
+            rtol=1e-6,
+            atol=1e-10,
             err_msg=f"Dense activations parity failed: max rel diff = {_max_rel_diff(act_py, act_rs):.6e}",
         )
 
@@ -621,7 +676,10 @@ class TestSCPNRuntimeParity:
         mk_rs = np.asarray(_rust_marking_upd(marking, pre, post, firing))
 
         np.testing.assert_allclose(
-            mk_py, mk_rs, rtol=1e-6, atol=1e-10,
+            mk_py,
+            mk_rs,
+            rtol=1e-6,
+            atol=1e-10,
             err_msg=f"Marking update parity failed: max rel diff = {_max_rel_diff(mk_py, mk_rs):.6e}",
         )
 
@@ -658,14 +716,20 @@ class TestBFieldParity:
         # --- Compare B_R ---
         assert br_py.shape == br_rs.shape
         np.testing.assert_allclose(
-            br_py, br_rs, rtol=1e-3, atol=1e-6,
+            br_py,
+            br_rs,
+            rtol=1e-3,
+            atol=1e-6,
             err_msg=f"B_R parity failed: max rel diff = {_max_rel_diff(br_py, br_rs):.6e}",
         )
 
         # --- Compare B_Z ---
         assert bz_py.shape == bz_rs.shape
         np.testing.assert_allclose(
-            bz_py, bz_rs, rtol=1e-3, atol=1e-6,
+            bz_py,
+            bz_rs,
+            rtol=1e-3,
+            atol=1e-6,
             err_msg=f"B_Z parity failed: max rel diff = {_max_rel_diff(bz_py, bz_rs):.6e}",
         )
 
@@ -700,12 +764,12 @@ class TestTopologyParity:
         # X-point position should be within 1 grid cell
         dR = (R_MAX - R_MIN) / (NR - 1)
         dZ = (Z_MAX - Z_MIN) / (NZ - 1)
-        assert abs(xpt_py[0] - xpt_rs[0]) < 2 * dR, (
-            f"X-point R mismatch: {xpt_py[0]:.4f} vs {xpt_rs[0]:.4f}"
-        )
-        assert abs(xpt_py[1] - xpt_rs[1]) < 2 * dZ, (
-            f"X-point Z mismatch: {xpt_py[1]:.4f} vs {xpt_rs[1]:.4f}"
-        )
+        assert (
+            abs(xpt_py[0] - xpt_rs[0]) < 2 * dR
+        ), f"X-point R mismatch: {xpt_py[0]:.4f} vs {xpt_rs[0]:.4f}"
+        assert (
+            abs(xpt_py[1] - xpt_rs[1]) < 2 * dZ
+        ), f"X-point Z mismatch: {xpt_py[1]:.4f} vs {xpt_rs[1]:.4f}"
 
         # Psi at X-point should agree
         if abs(psi_xpt_py) > 1e-10:

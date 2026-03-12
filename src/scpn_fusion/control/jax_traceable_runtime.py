@@ -131,9 +131,7 @@ def _resolve_backend_set(backends: list[str] | tuple[str, ...] | None) -> list[s
     for raw in backends:
         name = str(raw).strip().lower()
         if name not in {"numpy", "jax", "torchscript"}:
-            raise ValueError(
-                f"Unsupported backend '{raw}'. Allowed: numpy, jax, torchscript."
-            )
+            raise ValueError(f"Unsupported backend '{raw}'. Allowed: numpy, jax, torchscript.")
         if name not in available:
             raise ValueError(f"Requested backend '{name}' is not available on this host.")
         if name not in seen:
@@ -339,9 +337,7 @@ def run_traceable_control_loop(
 
     if b == "torchscript":
         return TraceableRuntimeResult(
-            state_history=_simulate_torchscript(
-                cmd_arr, float(initial_state), runtime_spec
-            ),
+            state_history=_simulate_torchscript(cmd_arr, float(initial_state), runtime_spec),
             backend_used="torchscript",
             compiled=True,
         )

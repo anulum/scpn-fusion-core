@@ -207,8 +207,12 @@ def ids_to_digital_twin_summary(payload: Mapping[str, Any]) -> dict[str, Any]:
     steps = int(rounded_ms)
     final_axis_r = _coerce_finite_real("equilibrium.axis.r_m", axis.get("r_m", 0.0))
     final_axis_z = _coerce_finite_real("equilibrium.axis.z_m", axis.get("z_m", 0.0))
-    final_islands_px = _coerce_int("equilibrium.islands_px", equilibrium.get("islands_px", 0), minimum=0)
-    final_reward = _coerce_finite_real("performance.final_reward", performance.get("final_reward", 0.0))
+    final_islands_px = _coerce_int(
+        "equilibrium.islands_px", equilibrium.get("islands_px", 0), minimum=0
+    )
+    final_reward = _coerce_finite_real(
+        "performance.final_reward", performance.get("final_reward", 0.0)
+    )
     reward_mean_last_50 = _coerce_finite_real(
         "performance.reward_mean_last_50",
         performance.get("reward_mean_last_50", 0.0),
@@ -254,4 +258,3 @@ __all__ = [
     "ids_to_digital_twin_summary",
     "ids_to_digital_twin_state",
 ]
-

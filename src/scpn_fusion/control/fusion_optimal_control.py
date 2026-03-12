@@ -58,9 +58,7 @@ class OptimalController:
         if not np.isfinite(correction_limit) or correction_limit <= 0.0:
             raise ValueError("correction_limit must be finite and > 0.")
         self.correction_limit = correction_limit
-        self.coil_current_limits = _normalize_bounds(
-            coil_current_limits, "coil_current_limits"
-        )
+        self.coil_current_limits = _normalize_bounds(coil_current_limits, "coil_current_limits")
         self.current_target_limits = _normalize_bounds(
             current_target_limits, "current_target_limits"
         )
@@ -117,23 +115,23 @@ class OptimalController:
         Calculates the Shafranov Shift (Delta R) heuristic.
         Delta R ~ (a^2 / 2R) * (beta_p + li/2)
         """
-        dims = self.kernel.cfg.get('dimensions')
+        dims = self.kernel.cfg.get("dimensions")
         if dims is None:
             # Fallback: infer from grid arrays when dimensions not in config
             r_min = float(self.kernel.R[0])
             r_max = float(self.kernel.R[-1])
         else:
-            r_min = dims['R_min']
-            r_max = dims['R_max']
+            r_min = dims["R_min"]
+            r_max = dims["R_max"]
         a = (r_max - r_min) / 2.0
         R0 = (r_max + r_min) / 2.0
         if R0 <= 0.0:
             return 0.0
 
-        beta_p = self.kernel.cfg['physics'].get('beta_p', 0.5)
-        li = 0.8 # Internal inductance proxy
+        beta_p = self.kernel.cfg["physics"].get("beta_p", 0.5)
+        li = 0.8  # Internal inductance proxy
 
-        shift = (a**2 / (2.0 * R0)) * (beta_p + li/2.0)
+        shift = (a**2 / (2.0 * R0)) * (beta_p + li / 2.0)
         return float(shift)
 
     def get_plasma_pos(self) -> np.ndarray:
@@ -143,13 +141,13 @@ class OptimalController:
         """
         idx_max = int(np.argmax(self.kernel.Psi))
         iz, ir = np.unravel_index(idx_max, self.kernel.Psi.shape)
-        
+
         r_geo = self.kernel.R[ir]
         z_geo = self.kernel.Z[iz]
-        
+
         # Apply shift if beta_p is significant
         delta_r = self.get_shafranov_shift()
-        
+
         return np.array([r_geo + delta_r, z_geo], dtype=np.float64)
 
     def compute_optimal_correction(
@@ -175,10 +173,10 @@ class OptimalController:
         lam = float(regularization_lambda)
         if not np.isfinite(lam) or lam < 0.0:
             raise ValueError("regularization_limit must be finite and >= 0.")
-        
+
         # Tikhonov Damping: s_inv = s / (s^2 + lambda^2)
         s_inv = s / (s**2 + lam**2)
-        
+
         j_inv = vt.T @ np.diag(s_inv) @ u.T
         delta_currents = np.asarray(j_inv @ error, dtype=np.float64)
         return np.clip(delta_currents, -self.correction_limit, self.correction_limit)
@@ -269,12 +267,12 @@ class OptimalController:
             "final_target_ip_ma": float(self.history["Ip"][-1]) if self.history["Ip"] else 0.0,
             "final_axis_r": float(r_arr[-1]) if r_arr.size else 0.0,
             "final_axis_z": float(z_arr[-1]) if z_arr.size else 0.0,
-            "mean_abs_r_error": float(np.mean(np.abs(r_arr - float(target_r))))
-            if r_arr.size
-            else 0.0,
-            "mean_abs_z_error": float(np.mean(np.abs(z_arr - float(target_z))))
-            if z_arr.size
-            else 0.0,
+            "mean_abs_r_error": (
+                float(np.mean(np.abs(r_arr - float(target_r)))) if r_arr.size else 0.0
+            ),
+            "mean_abs_z_error": (
+                float(np.mean(np.abs(z_arr - float(target_z)))) if z_arr.size else 0.0
+            ),
             "mean_error_norm": float(np.mean(e_arr)) if e_arr.size else 0.0,
             "max_abs_delta_i": float(np.max(di_arr)) if di_arr.size else 0.0,
             "max_abs_coil_current": float(np.max(coil_arr)) if coil_arr.size else 0.0,

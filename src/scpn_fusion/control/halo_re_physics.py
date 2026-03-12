@@ -187,9 +187,7 @@ class HaloCurrentModel:
         tpf = _as_positive_float("tpf", tpf)
         contact_fraction = _as_finite_float("contact_fraction", contact_fraction)
         if not (0.0 < contact_fraction <= 1.0):
-            raise ValueError(
-                f"contact_fraction must be in (0, 1], got {contact_fraction!r}"
-            )
+            raise ValueError(f"contact_fraction must be in (0, 1], got {contact_fraction!r}")
 
         self.Ip0 = plasma_current_ma * 1e6  # A
         self.a = minor_radius_m
@@ -315,12 +313,8 @@ def run_disruption_ensemble(
     """
     ensemble_runs = _as_int("ensemble_runs", ensemble_runs, minimum=1)
     seed = _as_int("seed", seed, minimum=0)
-    plasma_current_range = _as_range(
-        "plasma_current_range", plasma_current_range, min_allowed=0.0
-    )
-    plasma_energy_range = _as_range(
-        "plasma_energy_range", plasma_energy_range, min_allowed=0.0
-    )
+    plasma_current_range = _as_range("plasma_current_range", plasma_current_range, min_allowed=0.0)
+    plasma_energy_range = _as_range("plasma_energy_range", plasma_energy_range, min_allowed=0.0)
     neon_range = _as_range("neon_range", neon_range, min_allowed=0.0)
 
     rng = np.random.default_rng(seed)
@@ -436,8 +430,12 @@ def run_disruption_ensemble(
             status = "PREVENTED" if prevented else "FAILED"
             logger.info(
                 "  Run %3d: Ip=%.1fMA impurities=%.3fmol halo=%.2fMA RE=%.3fMA -> %s",
-                run_idx, Ip_ma, impurity_total_mol,
-                halo_result.peak_halo_ma, re_result.peak_re_current_ma, status,
+                run_idx,
+                Ip_ma,
+                impurity_total_mol,
+                halo_result.peak_halo_ma,
+                re_result.peak_re_current_ma,
+                status,
             )
 
     prevention_rate = prevented_count / max(ensemble_runs, 1)

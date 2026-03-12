@@ -129,9 +129,7 @@ class SpikingControllerPool:
             return
 
         if not allow_numpy_fallback:
-            raise RuntimeError(
-                "sc-neurocore is unavailable and allow_numpy_fallback=False."
-            )
+            raise RuntimeError("sc-neurocore is unavailable and allow_numpy_fallback=False.")
 
         self.backend = "numpy_lif"
         self.q_source = None
@@ -187,12 +185,8 @@ class SpikingControllerPool:
         self.history_pos.append(spikes_pos)
         self.history_neg.append(spikes_neg)
 
-        self.last_rate_pos = float(
-            sum(self.history_pos) / (self.window_size * self.n_neurons)
-        )
-        self.last_rate_neg = float(
-            sum(self.history_neg) / (self.window_size * self.n_neurons)
-        )
+        self.last_rate_pos = float(sum(self.history_pos) / (self.window_size * self.n_neurons))
+        self.last_rate_neg = float(sum(self.history_neg) / (self.window_size * self.n_neurons))
         return float((self.last_rate_pos - self.last_rate_neg) * self.gain)
 
 
@@ -211,7 +205,9 @@ class NeuroCyberneticController:
     ) -> None:
         if int(shot_duration) <= 0:
             raise ValueError("shot_duration must be > 0")
-        fusion_kernel_cls = kernel_factory if kernel_factory is not None else _resolve_fusion_kernel()
+        fusion_kernel_cls = (
+            kernel_factory if kernel_factory is not None else _resolve_fusion_kernel()
+        )
         self.kernel = fusion_kernel_cls(config_file)
         self.seed = int(seed)
         self.shot_duration = int(shot_duration)
@@ -387,7 +383,13 @@ class NeuroCyberneticController:
             if verbose:
                 logger.info(
                     "T=%d: Pos=(%.2f, %.2f) | Err=(%.3f, %.3f) | Brain_Out=(%.3f, %.3f)",
-                    t, curr_r, curr_z, err_r, err_z, ctrl_r, ctrl_z,
+                    t,
+                    curr_r,
+                    curr_z,
+                    err_r,
+                    err_z,
+                    ctrl_r,
+                    ctrl_z,
                 )
 
         plot_saved = False
@@ -425,13 +427,9 @@ class NeuroCyberneticController:
             "max_abs_control_z": float(np.max(np.abs(ctrl_z))),
             "mean_spike_imbalance": float(np.mean(self.history["Spike_Rates"])),
             "safety_position_allow_rate": float(
-                np.mean(safety_position_allowed)
-                if safety_position_allowed.size
-                else 1.0
+                np.mean(safety_position_allowed) if safety_position_allowed.size else 1.0
             ),
-            "safety_interlock_trips": int(
-                np.count_nonzero(safety_position_allowed < 0.5)
-            ),
+            "safety_interlock_trips": int(np.count_nonzero(safety_position_allowed < 0.5)),
             "safety_contract_violations": int(np.sum(safety_contract_violations)),
             "plot_saved": bool(plot_saved),
             "plot_error": plot_error,
@@ -463,9 +461,7 @@ class NeuroCyberneticController:
         ax2.legend()
 
         filename = (
-            output_path
-            if output_path is not None
-            else f"{title.replace(' ', '_')}_Result.png"
+            output_path if output_path is not None else f"{title.replace(' ', '_')}_Result.png"
         )
         plt.tight_layout()
         plt.savefig(filename)
@@ -497,9 +493,7 @@ def run_neuro_cybernetic_control(
         return controller.run_quantum_shot(
             save_plot=save_plot, verbose=verbose, output_path=output_path
         )
-    return controller.run_shot(
-        save_plot=save_plot, verbose=verbose, output_path=output_path
-    )
+    return controller.run_shot(save_plot=save_plot, verbose=verbose, output_path=output_path)
 
 
 if __name__ == "__main__":

@@ -106,7 +106,8 @@ class MultiLayerFNO:
                 {
                     "wr": self.rng.normal(0.0, 0.03, size=(self.width, self.modes, self.modes)),
                     "wi": self.rng.normal(0.0, 0.03, size=(self.width, self.modes, self.modes)),
-                    "skip_w": np.eye(self.width) + self.rng.normal(0.0, 0.01, size=(self.width, self.width)),
+                    "skip_w": np.eye(self.width)
+                    + self.rng.normal(0.0, 0.01, size=(self.width, self.width)),
                     "skip_b": np.zeros((self.width,), dtype=np.float64),
                 }
             )
@@ -129,7 +130,9 @@ class MultiLayerFNO:
         h = x_field[:, :, None] * self.lift_w[None, None, :] + self.lift_b[None, None, :]
         for layer in self.layers:
             spectral = self._spectral_convolution(h, layer)
-            pointwise = np.tensordot(h, layer["skip_w"], axes=([2], [0])) + layer["skip_b"][None, None, :]
+            pointwise = (
+                np.tensordot(h, layer["skip_w"], axes=([2], [0])) + layer["skip_b"][None, None, :]
+            )
             h = gelu(spectral + pointwise)
         return h
 
@@ -218,7 +221,9 @@ def _generate_training_pairs(
         field = rng.standard_normal((grid_size, grid_size)) * 0.1
         field_k = np.fft.fft2(field)
 
-        forcing = rng.standard_normal((grid_size, grid_size)) + 1j * rng.standard_normal((grid_size, grid_size))
+        forcing = rng.standard_normal((grid_size, grid_size)) + 1j * rng.standard_normal(
+            (grid_size, grid_size)
+        )
         forcing_k = np.fft.fft2(forcing) * mask_low_k * 5.0
 
         next_k = (field_k * phase_shift) + forcing_k * dt
@@ -230,7 +235,9 @@ def _generate_training_pairs(
     return x, y
 
 
-def _evaluate_loss(model: MultiLayerFNO, x: np.ndarray, y: np.ndarray, max_samples: int = 16) -> float:
+def _evaluate_loss(
+    model: MultiLayerFNO, x: np.ndarray, y: np.ndarray, max_samples: int = 16
+) -> float:
     n = min(max_samples, len(x))
     if n == 0:
         return 0.0
@@ -340,7 +347,9 @@ def train_fno(
 
     history["saved_path"] = str(Path(save_path))
     history["epochs_completed"] = len(history["train_loss"])  # type: ignore[arg-type]
-    history["final_train_loss"] = float(history["train_loss"][-1]) if history["train_loss"] else None
+    history["final_train_loss"] = (
+        float(history["train_loss"][-1]) if history["train_loss"] else None
+    )
     history["final_val_loss"] = float(history["val_loss"][-1]) if history["val_loss"] else None
     return history
 
@@ -381,16 +390,22 @@ if __name__ == "__main__":
 
     if mode == "legacy":
         summary = train_fno(
-            n_samples=128, epochs=5, lr=1e-3,
-            save_path=DEFAULT_WEIGHTS_PATH, patience=5,
+            n_samples=128,
+            epochs=5,
+            lr=1e-3,
+            save_path=DEFAULT_WEIGHTS_PATH,
+            patience=5,
         )
         print("FNO legacy smoke training complete.")
         print(f"Saved: {summary['saved_path']}")
         print(f"Best val loss: {summary['best_val_loss']}")
     elif mode == "gs_transport":
         summary = train_gs_transport_surrogate(
-            n_samples=50, epochs=10, lr=1e-3,
-            save_path=DEFAULT_GS_TRANSPORT_WEIGHTS_PATH, patience=5,
+            n_samples=50,
+            epochs=10,
+            lr=1e-3,
+            save_path=DEFAULT_GS_TRANSPORT_WEIGHTS_PATH,
+            patience=5,
         )
         print("\nGS-transport surrogate training complete.")
         print(f"Saved: {summary['saved_path']}")
@@ -399,8 +414,11 @@ if __name__ == "__main__":
         print(f"Machine-class distribution: {summary['machine_class_counts']}")
     else:
         summary = train_fno_multi_regime(
-            n_samples=256, epochs=10, lr=1e-3,
-            save_path=DEFAULT_SPARC_WEIGHTS_PATH, patience=5,
+            n_samples=256,
+            epochs=10,
+            lr=1e-3,
+            save_path=DEFAULT_SPARC_WEIGHTS_PATH,
+            patience=5,
         )
         print("\nFNO multi-regime SPARC training complete.")
         print(f"Saved: {summary['saved_path']}")

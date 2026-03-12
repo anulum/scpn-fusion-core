@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import json
-import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -18,7 +17,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from scpn_fusion.core.eqdsk import read_geqdsk, GEqdsk
+from scpn_fusion.core.eqdsk import read_geqdsk
 
 
 def nrmse(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -113,12 +112,16 @@ def validate_all(
     for machine_dir in sorted(ref_dir.iterdir()):
         if not machine_dir.is_dir():
             continue
-        for geqdsk_file in sorted(machine_dir.glob("*.geqdsk")) + sorted(machine_dir.glob("*.eqdsk")):
+        for geqdsk_file in sorted(machine_dir.glob("*.geqdsk")) + sorted(
+            machine_dir.glob("*.eqdsk")
+        ):
             try:
                 result = validate_geqdsk(geqdsk_file)
                 results.append(result)
-                print(f"  OK  {geqdsk_file.name}: q95={result['q95']}, "
-                      f"GS_res={result['gs_residual_norm']:.4f}")
+                print(
+                    f"  OK  {geqdsk_file.name}: q95={result['q95']}, "
+                    f"GS_res={result['gs_residual_norm']:.4f}"
+                )
             except Exception as e:
                 print(f"  FAIL {geqdsk_file.name}: {e}")
                 results.append({"file": geqdsk_file.name, "error": str(e)})

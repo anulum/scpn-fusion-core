@@ -29,7 +29,9 @@ class ScopeSnapshot:
 
 
 def _load_underdev_module() -> Any:
-    spec = importlib.util.spec_from_file_location("generate_underdeveloped_register", UNDERDEV_MODULE_PATH)
+    spec = importlib.util.spec_from_file_location(
+        "generate_underdeveloped_register", UNDERDEV_MODULE_PATH
+    )
     if spec is None or spec.loader is None:
         raise RuntimeError("Failed to load tools/generate_underdeveloped_register.py")
     module = importlib.util.module_from_spec(spec)
@@ -126,7 +128,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--summary-json", default=str(DEFAULT_SUMMARY_JSON))
     parser.add_argument("--top-limit", type=int, default=80)
     parser.add_argument("--full-limit", type=int, default=250)
-    parser.add_argument("--check", action="store_true", help="Fail if outputs differ from generated content.")
+    parser.add_argument(
+        "--check", action="store_true", help="Fail if outputs differ from generated content."
+    )
     args = parser.parse_args(argv)
 
     if int(args.top_limit) < 1:
@@ -149,10 +153,14 @@ def main(argv: list[str] | None = None) -> int:
             for path in missing:
                 print(f"- {_display_path(path)}")
             return 1
-        if _normalize_for_check(source_out.read_text(encoding="utf-8")) != _normalize_for_check(source_md):
+        if _normalize_for_check(source_out.read_text(encoding="utf-8")) != _normalize_for_check(
+            source_md
+        ):
             print(f"Scope report drift detected: {_display_path(source_out)}")
             return 1
-        if _normalize_for_check(docs_out.read_text(encoding="utf-8")) != _normalize_for_check(docs_md):
+        if _normalize_for_check(docs_out.read_text(encoding="utf-8")) != _normalize_for_check(
+            docs_md
+        ):
             print(f"Scope report drift detected: {_display_path(docs_out)}")
             return 1
         current_json = _normalize_json_for_check(summary_out.read_text(encoding="utf-8"))

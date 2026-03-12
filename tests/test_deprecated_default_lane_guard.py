@@ -19,7 +19,10 @@ def test_evaluate_passes_when_fno_is_non_default_and_non_public() -> None:
     summary = guard.evaluate(
         mode_specs={
             "kernel": {"module": "scpn_fusion.core.fusion_kernel", "maturity": "public"},
-            "fno-training": {"module": "scpn_fusion.core.fno_jax_training", "maturity": "surrogate"},
+            "fno-training": {
+                "module": "scpn_fusion.core.fno_jax_training",
+                "maturity": "surrogate",
+            },
         },
         default_modes=["kernel"],
         release_commands=["scpn-fusion flight --mode=neuro-control"],
@@ -32,7 +35,10 @@ def test_evaluate_passes_when_fno_is_non_default_and_non_public() -> None:
 def test_evaluate_fails_when_default_includes_deprecated_fno_module() -> None:
     summary = guard.evaluate(
         mode_specs={
-            "kernel": {"module": "scpn_fusion.core.fno_turbulence_suppressor", "maturity": "public"},
+            "kernel": {
+                "module": "scpn_fusion.core.fno_turbulence_suppressor",
+                "maturity": "public",
+            },
         },
         default_modes=["kernel"],
         release_commands=[],
@@ -56,7 +62,10 @@ def test_evaluate_fails_when_fno_mode_is_public() -> None:
 def test_evaluate_fails_when_release_docs_expose_fno_without_surrogate_unlock() -> None:
     summary = guard.evaluate(
         mode_specs={
-            "fno-training": {"module": "scpn_fusion.core.fno_jax_training", "maturity": "surrogate"},
+            "fno-training": {
+                "module": "scpn_fusion.core.fno_jax_training",
+                "maturity": "surrogate",
+            },
         },
         default_modes=[],
         release_commands=["scpn-fusion fno-training"],
@@ -72,7 +81,10 @@ def test_main_writes_summary(monkeypatch, tmp_path: Path) -> None:
         lambda: (
             {
                 "kernel": {"module": "scpn_fusion.core.fusion_kernel", "maturity": "public"},
-                "fno-training": {"module": "scpn_fusion.core.fno_jax_training", "maturity": "surrogate"},
+                "fno-training": {
+                    "module": "scpn_fusion.core.fno_jax_training",
+                    "maturity": "surrogate",
+                },
             },
             ["kernel"],
         ),

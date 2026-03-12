@@ -60,12 +60,10 @@ def synthetic_core_turbulence_target(features: np.ndarray) -> np.ndarray:
     mode_mix = 0.15 * np.sin(np.pi * rho * q * 0.35) ** 2 + 0.10 * np.tanh(22.0 * beta_e * s_hat)
 
     chi_i = (
-        0.25
-        + 0.13 * drive_i ** 1.18
-        + 0.10 * drive_e ** 1.10
-        + 0.05 * coll
-        + mode_mix
-    ) * shape_factor * shear_suppression
+        (0.25 + 0.13 * drive_i**1.18 + 0.10 * drive_e**1.10 + 0.05 * coll + mode_mix)
+        * shape_factor
+        * shear_suppression
+    )
     return np.maximum(chi_i, 1e-6)
 
 

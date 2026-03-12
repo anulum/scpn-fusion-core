@@ -53,10 +53,7 @@ def evaluate(
     default_modes: list[str],
     release_commands: list[str],
 ) -> dict[str, Any]:
-    default_modules = [
-        str(mode_specs.get(mode, {}).get("module", ""))
-        for mode in default_modes
-    ]
+    default_modules = [str(mode_specs.get(mode, {}).get("module", "")) for mode in default_modes]
     default_has_deprecated = any(
         _contains_deprecated_fno_token(module) for module in default_modules
     )
@@ -89,9 +86,7 @@ def evaluate(
         "release_command_count": len(release_commands),
         "docs_violations": docs_violations,
         "overall_pass": bool(
-            (not default_has_deprecated)
-            and (not fno_public_modes)
-            and (not docs_violations)
+            (not default_has_deprecated) and (not fno_public_modes) and (not docs_violations)
         ),
     }
 

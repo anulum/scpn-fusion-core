@@ -40,9 +40,7 @@ def test_manifest_check_detects_stale_output(tmp_path: Path) -> None:
     (shot_dir / "shot_123456_demo.npz").write_bytes(b"synthetic-content")
 
     manifest_path = tmp_path / "manifest.json"
-    rc_write = shot_manifest.main(
-        ["--shot-dir", str(shot_dir), "--manifest", str(manifest_path)]
-    )
+    rc_write = shot_manifest.main(["--shot-dir", str(shot_dir), "--manifest", str(manifest_path)])
     assert rc_write == 0
 
     manifest_path.write_text('{"stale": true}\n', encoding="utf-8")

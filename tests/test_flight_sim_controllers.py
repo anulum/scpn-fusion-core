@@ -29,7 +29,9 @@ class TestFlightSimController:
 
     def test_v2_step_converges(self):
         ctrl = get_flight_sim_controller_v2(
-            position_sensitivity=0.567, sample_dt=0.05, observer_q_scale=100.0,
+            position_sensitivity=0.567,
+            sample_dt=0.05,
+            observer_q_scale=100.0,
         )
         dt = 0.05
         errors = []

@@ -108,9 +108,7 @@ class PretrainedMLPSurrogate:
         if x.ndim == 1:
             x = x.reshape(1, -1)
         if x.shape[1] != self.feature_mean.size:
-            raise ValueError(
-                f"Expected feature width {self.feature_mean.size}, got {x.shape[1]}."
-            )
+            raise ValueError(f"Expected feature width {self.feature_mean.size}, got {x.shape[1]}.")
         x_norm = (x - self.feature_mean[None, :]) / self.feature_std[None, :]
         h = np.tanh(x_norm @ self.w1 + self.b1[None, :])
         y_norm = h @ self.w2 + self.b2
@@ -282,9 +280,7 @@ def _train_fno_on_jet(
     augment_per_file: int = 12,
     jet_dir: Path = DEFAULT_JET_DIR,
 ) -> dict[str, float]:
-    x, y = _build_jet_fno_dataset(
-        jet_dir=jet_dir, seed=seed, augment_per_file=augment_per_file
-    )
+    x, y = _build_jet_fno_dataset(jet_dir=jet_dir, seed=seed, augment_per_file=augment_per_file)
     n = x.shape[0]
     split = max(4, int(0.85 * n))
     x_train, y_train = x[:split], y[:split]
@@ -339,7 +335,9 @@ def _train_fno_on_jet(
     save_path.parent.mkdir(parents=True, exist_ok=True)
     model.save_weights(save_path)
 
-    train_losses = [_relative_l2(model.forward(x_train[i]), y_train[i]) for i in range(min(24, len(x_train)))]
+    train_losses = [
+        _relative_l2(model.forward(x_train[i]), y_train[i]) for i in range(min(24, len(x_train)))
+    ]
     val_losses = [_relative_l2(model.forward(x_val[i]), y_val[i]) for i in range(len(x_val))]
     return {
         "train_relative_l2": float(np.mean(np.asarray(train_losses, dtype=np.float64))),
@@ -358,9 +356,7 @@ def evaluate_pretrained_fno(
 ) -> dict[str, float]:
     if int(max_samples) <= 0:
         raise ValueError("max_samples must be > 0.")
-    x, y = _build_jet_fno_dataset(
-        jet_dir=jet_dir, seed=seed, augment_per_file=augment_per_file
-    )
+    x, y = _build_jet_fno_dataset(jet_dir=jet_dir, seed=seed, augment_per_file=augment_per_file)
     if x.size == 0:
         raise ValueError("FNO evaluation dataset is empty.")
     m = MultiLayerFNO()
@@ -472,12 +468,7 @@ def bundle_pretrained_surrogates(
     if int(fno_augment_per_file) <= 0:
         raise ValueError("fno_augment_per_file must be > 0.")
 
-    if (
-        not force_retrain
-        and manifest_path.exists()
-        and mlp_path.exists()
-        and fno_path.exists()
-    ):
+    if not force_retrain and manifest_path.exists() and mlp_path.exists() and fno_path.exists():
         try:
             return _load_cached_manifest(manifest_path)
         except ValueError as exc:

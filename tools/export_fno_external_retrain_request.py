@@ -17,9 +17,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised on 3.9/3.10 CI lanes
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_VALIDATION_REPORT = (
-    REPO_ROOT / "validation" / "reports" / "full_validation_pipeline.json"
-)
+DEFAULT_VALIDATION_REPORT = REPO_ROOT / "validation" / "reports" / "full_validation_pipeline.json"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "fno_external_retrain_request.json"
 
 
@@ -71,25 +69,19 @@ def _load_validation_report(path: Path) -> dict[str, Any]:
     return payload
 
 
-def _extract_retrain_context(
-    report: dict[str, Any], *, report_found: bool
-) -> dict[str, Any]:
+def _extract_retrain_context(report: dict[str, Any], *, report_found: bool) -> dict[str, Any]:
     controller_metrics = report.get("controller_metrics", {})
     rewrite_required = bool(report.get("rewrite_required", False))
     config = report.get("config", {})
     return {
         "validation_report_found": report_found,
         "rewrite_required": rewrite_required,
-        "controller_metrics": (
-            controller_metrics if isinstance(controller_metrics, dict) else {}
-        ),
+        "controller_metrics": (controller_metrics if isinstance(controller_metrics, dict) else {}),
         "campaign_config": config if isinstance(config, dict) else {},
     }
 
 
-def build_request_payload(
-    report: dict[str, Any], *, report_found: bool
-) -> dict[str, Any]:
+def build_request_payload(report: dict[str, Any], *, report_found: bool) -> dict[str, Any]:
     version = _load_project_version()
     return {
         "schema_version": "1.0",
@@ -116,9 +108,7 @@ def build_request_payload(
                 "must_include_data_license_provenance": True,
             },
         },
-        "local_validation_context": _extract_retrain_context(
-            report, report_found=report_found
-        ),
+        "local_validation_context": _extract_retrain_context(report, report_found=report_found),
     }
 
 
@@ -138,9 +128,7 @@ def main(argv: list[str] | None = None) -> int:
         report = {}
     payload = build_request_payload(report, report_found=report_found)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    out_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     print(
         "External retrain request exported: "

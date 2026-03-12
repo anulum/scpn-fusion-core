@@ -39,9 +39,7 @@ def _summary(strict_ok: bool = True) -> dict[str, object]:
     }
 
 
-def test_main_passes_backend_flags_and_writes_outputs(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_main_passes_backend_flags_and_writes_outputs(tmp_path: Path, monkeypatch) -> None:
     captured: dict[str, object] = {}
 
     def fake_run_parity_check(**kwargs):

@@ -158,7 +158,9 @@ def run_campaign(
     recovery_metrics = {
         "late_mean_disruption_risk": float(np.mean(late_risk)) if late_risk.size else 0.0,
         "late_p95_axis_error_m": float(np.percentile(late_axis, 95)) if late_axis.size else 0.0,
-        "late_p95_xpoint_error_m": float(np.percentile(late_xpoint, 95)) if late_xpoint.size else 0.0,
+        "late_p95_xpoint_error_m": (
+            float(np.percentile(late_xpoint, 95)) if late_xpoint.size else 0.0
+        ),
         "late_max_alert_level": int(np.max(late_alert)) if late_alert.size else 0,
     }
 
@@ -309,11 +311,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--control-dt-s", type=float, default=0.05)
     parser.add_argument(
         "--output-json",
-        default=str(ROOT / "validation" / "reports" / "task13_free_boundary_disruption_policy_recovery.json"),
+        default=str(
+            ROOT / "validation" / "reports" / "task13_free_boundary_disruption_policy_recovery.json"
+        ),
     )
     parser.add_argument(
         "--output-md",
-        default=str(ROOT / "validation" / "reports" / "task13_free_boundary_disruption_policy_recovery.md"),
+        default=str(
+            ROOT / "validation" / "reports" / "task13_free_boundary_disruption_policy_recovery.md"
+        ),
     )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)

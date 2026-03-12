@@ -49,9 +49,7 @@ def test_task13_campaign_passes_thresholds_smoke() -> None:
         ({"control_dt_s": 0.0}, "control_dt_s"),
     ],
 )
-def test_task13_campaign_rejects_invalid_inputs(
-    kwargs: dict[str, int | float], match: str
-) -> None:
+def test_task13_campaign_rejects_invalid_inputs(kwargs: dict[str, int | float], match: str) -> None:
     with pytest.raises(ValueError, match=match):
         task13_free_boundary_disruption_policy_recovery.run_campaign(**kwargs)
 

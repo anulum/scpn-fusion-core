@@ -68,8 +68,6 @@ def test_run_realtime_hybrid_smoke_function() -> None:
         ({"steps_per_episode": 16}, "steps_per_episode"),
     ],
 )
-def test_campaign_rejects_invalid_runtime_inputs(
-    kwargs: dict[str, int], match: str
-) -> None:
+def test_campaign_rejects_invalid_runtime_inputs(kwargs: dict[str, int], match: str) -> None:
     with pytest.raises(ValueError, match=match):
         run_nstxu_torax_hybrid_campaign(seed=42, **kwargs)

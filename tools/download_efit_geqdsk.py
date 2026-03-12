@@ -57,6 +57,7 @@ DEFAULT_CACHE_DIR = REPO_ROOT / "validation" / "reference_data" / "diiid"
 
 # ── Data structures ──────────────────────────────────────────────────
 
+
 @dataclass(frozen=True)
 class ShotStatus:
     """Status of a single GEQDSK file for one shot."""
@@ -70,6 +71,7 @@ class ShotStatus:
 
 
 # ── Core logic ───────────────────────────────────────────────────────
+
 
 def _geqdsk_filename(shot: int) -> str:
     """Return the canonical cache filename for a given shot number."""
@@ -206,7 +208,10 @@ def download_geqdsks(
         # 2. Try MDSplus download if requested
         if try_mdsplus:
             path, err = _try_mdsplus_download(
-                shot, cache_dir, host=host, tree=tree,
+                shot,
+                cache_dir,
+                host=host,
+                tree=tree,
             )
             if path is not None:
                 results.append(
@@ -249,6 +254,7 @@ def download_geqdsks(
 
 # ── CLI ──────────────────────────────────────────────────────────────
 
+
 def _print_status(results: List[ShotStatus]) -> None:
     """Pretty-print the download/cache status table."""
     available_count = sum(1 for r in results if r.available)
@@ -286,10 +292,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "--cache-dir",
         type=Path,
         default=None,
-        help=(
-            "Directory to store/look for cached GEQDSK files. "
-            f"Default: {DEFAULT_CACHE_DIR}"
-        ),
+        help=("Directory to store/look for cached GEQDSK files. " f"Default: {DEFAULT_CACHE_DIR}"),
     )
     parser.add_argument(
         "--no-mdsplus",
@@ -304,7 +307,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Specific shot numbers to check (default: all 5 canonical shots).",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Enable verbose logging.",
     )

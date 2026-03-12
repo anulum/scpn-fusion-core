@@ -212,9 +212,7 @@ def test_load_cad_mesh_ascii_stl_fallback(monkeypatch: pytest.MonkeyPatch, tmp_p
     assert faces.shape == (1, 3)
 
 
-def test_load_cad_mesh_binary_stl_fallback(
-    monkeypatch: pytest.MonkeyPatch, tmp_path
-) -> None:
+def test_load_cad_mesh_binary_stl_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     monkeypatch.setitem(sys.modules, "trimesh", None)
     stl = tmp_path / "mesh_binary.stl"
 

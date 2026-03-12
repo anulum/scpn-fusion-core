@@ -86,9 +86,7 @@ class TestGSOperator:
             ((45, 33), 33, 44, "axis lengths"),
         ],
     )
-    def test_rejects_invalid_grid_shapes(
-        self, psi_shape, r_len, z_len, match
-    ):
+    def test_rejects_invalid_grid_shapes(self, psi_shape, r_len, z_len, match):
         psi = np.zeros(psi_shape, dtype=np.float64)
         R = np.linspace(1.0, 3.0, r_len)
         Z = np.linspace(-1.0, 1.0, z_len)
@@ -178,7 +176,10 @@ class TestManufacturedSolve:
         """Warm-started SOR should converge to moderate RMSE."""
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
         psi_sol, iters, res, t_ms = manufactured_solve_vectorised(
-            eq, omega=1.3, max_iter=500, tol=1e-8,
+            eq,
+            omega=1.3,
+            max_iter=500,
+            tol=1e-8,
         )
         metrics = compute_psi_rmse(eq, psi_sol)
         # Manufactured-source solve: compute GS source from reference profiles,
@@ -187,16 +188,19 @@ class TestManufacturedSolve:
         # profile interpolation (p'/FF' from GEQDSK).  A value under 1.0
         # confirms the solver converges; under 0.1 would require higher-order
         # stencils or more SOR iterations than we allow in CI.
-        assert metrics["psi_relative_l2"] < 1.0, (
-            f"Relative L2 too large: {metrics['psi_relative_l2']}"
-        )
+        assert (
+            metrics["psi_relative_l2"] < 1.0
+        ), f"Relative L2 too large: {metrics['psi_relative_l2']}"
         assert np.isfinite(metrics["psi_rmse_norm"])
 
     def test_vectorised_solver_honours_tolerance_for_early_stop(self):
         """Very loose tolerance should stop at first convergence checkpoint."""
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
         _, iters, _, _ = manufactured_solve_vectorised(
-            eq, omega=1.3, max_iter=40, tol=1e12,
+            eq,
+            omega=1.3,
+            max_iter=40,
+            tol=1e12,
         )
         assert iters == 10
 
@@ -261,13 +265,16 @@ class TestValidateFile:
         assert result.sor_iterations > 0
         assert result.solve_time_ms > 0
 
-    @pytest.mark.parametrize("fname", [
-        "sparc_1300.eqdsk",
-        "sparc_1305.eqdsk",
-        "sparc_1310.eqdsk",
-        "sparc_1315.eqdsk",
-        "sparc_1349.eqdsk",
-    ])
+    @pytest.mark.parametrize(
+        "fname",
+        [
+            "sparc_1300.eqdsk",
+            "sparc_1305.eqdsk",
+            "sparc_1310.eqdsk",
+            "sparc_1315.eqdsk",
+            "sparc_1349.eqdsk",
+        ],
+    )
     def test_eqdsk_files_produce_results(self, fname):
         path = SPARC_DIR / fname
         if not path.exists():

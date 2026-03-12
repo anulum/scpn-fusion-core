@@ -53,9 +53,7 @@ def test_task3_campaign_passes_thresholds_smoke() -> None:
         ({"flux_scenarios": 1}, "flux_scenarios"),
     ],
 )
-def test_task3_campaign_rejects_invalid_inputs(
-    kwargs: dict[str, float | int], match: str
-) -> None:
+def test_task3_campaign_rejects_invalid_inputs(kwargs: dict[str, float | int], match: str) -> None:
     with pytest.raises(ValueError, match=match):
         task3_error_handling_audit.run_campaign(**kwargs)
 

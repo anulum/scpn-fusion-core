@@ -67,7 +67,11 @@ def compute_profile_jacobian(
 ) -> FloatArray:
     """Compute dJ_phi/dpsi as a 2D diagonal scaling field."""
     psi_axis = float(np.nan_to_num(Psi_axis, nan=0.0, posinf=0.0, neginf=0.0))
-    psi_boundary = float(np.nan_to_num(Psi_boundary, nan=psi_axis + 1e-9, posinf=psi_axis + 1e-9, neginf=psi_axis - 1e-9))
+    psi_boundary = float(
+        np.nan_to_num(
+            Psi_boundary, nan=psi_axis + 1e-9, posinf=psi_axis + 1e-9, neginf=psi_axis - 1e-9
+        )
+    )
     denom = psi_boundary - psi_axis
     if not np.isfinite(denom):
         denom = 1e-9
@@ -88,7 +92,9 @@ def compute_profile_jacobian(
     # fixed L-mode linear profile derivative.
     if bool(getattr(kernel, "external_profile_mode", False)):
         dJ_dpsi = np.zeros_like(psi_safe)
-        j_abs = np.abs(np.nan_to_num(np.asarray(kernel.J_phi, dtype=float), nan=0.0, posinf=1e12, neginf=1e12))
+        j_abs = np.abs(
+            np.nan_to_num(np.asarray(kernel.J_phi, dtype=float), nan=0.0, posinf=1e12, neginf=1e12)
+        )
         scale = max(abs(float(denom)), 1e-9)
         dJ_dpsi[mask_plasma] = -j_abs[mask_plasma] / scale
         return np.nan_to_num(dJ_dpsi, nan=0.0, posinf=0.0, neginf=-1e12)
@@ -104,11 +110,7 @@ def compute_profile_jacobian(
             neginf=0.0,
         )
     )
-    s = (
-        float(np.sum(np.where(mask_plasma, (1 - Psi_norm) * rr_safe, 0.0)))
-        * kernel.dR
-        * kernel.dZ
-    )
+    s = float(np.sum(np.where(mask_plasma, (1 - Psi_norm) * rr_safe, 0.0))) * kernel.dR * kernel.dZ
     if not np.isfinite(s):
         s = 0.0
     c = I_target / max(abs(s), 1e-9)
@@ -251,9 +253,8 @@ def solve_newton_linear_system(
                 shape=(nz_int, nz_int),
                 format="csc",
             )
-            laplace_approx = (
-                kron(eye(nz_int, format="csc"), lap_r, format="csc")
-                + kron(lap_z, eye(nr_int, format="csc"), format="csc")
+            laplace_approx = kron(eye(nz_int, format="csc"), lap_r, format="csc") + kron(
+                lap_z, eye(nr_int, format="csc"), format="csc"
             )
             jac_diag = diags(
                 -diag_term[1:-1, 1:-1].ravel(),

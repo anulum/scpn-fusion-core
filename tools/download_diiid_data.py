@@ -39,7 +39,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -92,6 +92,7 @@ CACHE_MAX_AGE_S = 7 * 24 * 3600  # 1 week
 
 # ── Data structures ──────────────────────────────────────────────────
 
+
 @dataclass
 class SignalResult:
     """Container for one fetched signal."""
@@ -117,10 +118,12 @@ class ShotDownloadResult:
 
 # ── NPZ cache helpers ────────────────────────────────────────────────
 
+
 def _cache_key(machine: str, shot: int, signals: Sequence[str]) -> str:
     """Compute a deterministic cache filename."""
     sig_hash = hashlib.md5(
-        ",".join(sorted(signals)).encode(), usedforsecurity=False,
+        ",".join(sorted(signals)).encode(),
+        usedforsecurity=False,
     ).hexdigest()[:8]
     safe_machine = machine.replace("-", "").replace(" ", "_").lower()
     return f"{safe_machine}_{shot}_{sig_hash}.npz"
@@ -184,6 +187,7 @@ def _save_to_cache(path: Path, signals: Dict[str, SignalResult]) -> None:
 
 # ── Reference data fallback ─────────────────────────────────────────
 
+
 def _try_reference_data(
     machine: str,
     shot: int,
@@ -203,7 +207,8 @@ def _try_reference_data(
                 if loaded:
                     logger.info(
                         "Found reference data for shot %d in %s",
-                        shot, npz_file,
+                        shot,
+                        npz_file,
                     )
                     return loaded
             except Exception as exc:  # noqa: BLE001
@@ -233,6 +238,7 @@ def _try_reference_data(
 
 
 # ── MDSplus fetch with retry ─────────────────────────────────────────
+
 
 def _fetch_signal_mdsplus(
     conn: Any,
@@ -282,10 +288,15 @@ def _fetch_signal_mdsplus(
         except Exception as exc:  # noqa: BLE001
             last_exc = exc
             if attempt < max_retries - 1:
-                delay = backoff_base * (2 ** attempt)
+                delay = backoff_base * (2**attempt)
                 logger.warning(
                     "Attempt %d/%d for %s (%s) failed: %s  — retrying in %.1fs",
-                    attempt + 1, max_retries, signal_name, node_path, exc, delay,
+                    attempt + 1,
+                    max_retries,
+                    signal_name,
+                    node_path,
+                    exc,
+                    delay,
                 )
                 time.sleep(delay)
 
@@ -297,6 +308,7 @@ def _fetch_signal_mdsplus(
 
 
 # ── Public API ───────────────────────────────────────────────────────
+
 
 def download_shot_data(
     machine: str,
@@ -365,6 +377,7 @@ def download_shot_data(
     mdsplus_available = False
     try:
         import MDSplus  # type: ignore[import-untyped]
+
         mdsplus_available = True
     except ImportError:
         pass
@@ -400,7 +413,10 @@ def download_shot_data(
 
                     try:
                         data, t = _fetch_signal_mdsplus(
-                            conn, sig_name, node_path, max_retries=max_retries,
+                            conn,
+                            sig_name,
+                            node_path,
+                            max_retries=max_retries,
                         )
                         result.signals[sig_name] = SignalResult(
                             name=sig_name,
@@ -456,6 +472,7 @@ def download_shot_data(
 
 
 # ── CLI ──────────────────────────────────────────────────────────────
+
 
 def _print_result(result: ShotDownloadResult) -> None:
     """Pretty-print download results."""
@@ -531,7 +548,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Force re-download even if cached file exists.",
     )
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
         help="Enable verbose logging.",
     )

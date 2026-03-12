@@ -12,9 +12,7 @@ import scpn_fusion.control.jax_traceable_runtime as runtime
 
 def test_traceable_runtime_numpy_is_deterministic() -> None:
     commands = np.asarray([0.5, 1.2, -0.7, 0.1, 0.0], dtype=np.float64)
-    spec = runtime.TraceableRuntimeSpec(
-        dt_s=0.002, tau_s=0.010, gain=2.0, command_limit=1.0
-    )
+    spec = runtime.TraceableRuntimeSpec(dt_s=0.002, tau_s=0.010, gain=2.0, command_limit=1.0)
     a = runtime.run_traceable_control_loop(
         commands,
         initial_state=0.25,
@@ -87,9 +85,7 @@ def test_traceable_runtime_torch_backend_raises_when_imports_are_missing(
 @pytest.mark.skipif(not runtime._HAS_TORCH, reason="torch unavailable")
 def test_traceable_runtime_torchscript_matches_numpy() -> None:
     commands = np.asarray([0.3, -0.4, 0.5, 1.5], dtype=np.float64)
-    spec = runtime.TraceableRuntimeSpec(
-        dt_s=0.0025, tau_s=0.010, gain=1.5, command_limit=0.9
-    )
+    spec = runtime.TraceableRuntimeSpec(dt_s=0.0025, tau_s=0.010, gain=1.5, command_limit=0.9)
     ref = runtime.run_traceable_control_loop(
         commands, initial_state=0.1, spec=spec, backend="numpy"
     )
@@ -107,9 +103,7 @@ def test_traceable_runtime_rejects_invalid_inputs() -> None:
     with pytest.raises(ValueError, match="finite"):
         runtime.run_traceable_control_loop(np.asarray([0.0, np.nan], dtype=np.float64))
     with pytest.raises(ValueError, match="backend must be one of"):
-        runtime.run_traceable_control_loop(
-            np.asarray([0.0], dtype=np.float64), backend="flux"
-        )
+        runtime.run_traceable_control_loop(np.asarray([0.0], dtype=np.float64), backend="flux")
 
 
 def test_traceable_runtime_rejects_invalid_spec() -> None:

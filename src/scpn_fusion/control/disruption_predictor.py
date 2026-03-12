@@ -86,6 +86,7 @@ _CHECKPOINT_TRAIN_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, At
 _INFERENCE_FALLBACK_EXCEPTIONS = (RuntimeError, ValueError, TypeError, OSError, AttributeError)
 
 if torch is not None:
+
     class DisruptionTransformer(nn.Module):
         def __init__(self, seq_len=DEFAULT_SEQ_LEN):
             super().__init__()
@@ -110,21 +111,22 @@ if torch is not None:
             if src.shape[1] < 1:
                 raise ValueError("Input sequence length must be >= 1.")
             if src.shape[2] != 1:
-                raise ValueError(
-                    f"Input feature dimension must be 1; got {src.shape[2]}."
-                )
+                raise ValueError(f"Input feature dimension must be 1; got {src.shape[2]}.")
             if src.shape[1] > self.seq_len:
                 raise ValueError(
                     f"Input sequence length {src.shape[1]} exceeds configured seq_len {self.seq_len}."
                 )
-            x = self.embedding(src) + self.pos_encoder[:, :src.shape[1], :]
+            x = self.embedding(src) + self.pos_encoder[:, : src.shape[1], :]
             output = self.transformer(x)
             last_step = output[:, -1, :]
             return self.sigmoid(self.classifier(last_step))
+
 else:  # pragma: no cover - only used without torch installed
+
     class DisruptionTransformer:  # type: ignore[no-redef]
         def __init__(self):
             raise RuntimeError("Torch is required for DisruptionTransformer.")
+
 
 def train_predictor(
     seq_len=DEFAULT_SEQ_LEN,
@@ -145,7 +147,9 @@ def train_predictor(
     data_rng = np.random.default_rng(seed)
     eval_rng = np.random.default_rng(seed + 1000003)
 
-    model_path = Path(model_path) if model_path is not None else default_model_path(DEFAULT_MODEL_FILENAME)
+    model_path = (
+        Path(model_path) if model_path is not None else default_model_path(DEFAULT_MODEL_FILENAME)
+    )
     model_path.parent.mkdir(parents=True, exist_ok=True)
 
     logger.info("--- SCPN SAFETY AI: Disruption Prediction (Transformer) ---")
@@ -191,7 +195,7 @@ def train_predictor(
     with torch.no_grad():
         risk = model(input_tensor).item()
 
-    logger.info("Test Shot Ground Truth: %s", 'DISRUPTIVE' if test_lbl else 'SAFE')
+    logger.info("Test Shot Ground Truth: %s", "DISRUPTIVE" if test_lbl else "SAFE")
     logger.info("AI Prediction Risk: %.1f%%", risk * 100)
 
     torch.save({"state_dict": model.state_dict(), "seq_len": int(seq_len)}, model_path)
@@ -237,15 +241,23 @@ def load_or_train_predictor(
             "torch_unavailable_fallback",
             context={"model_path": str(model_path) if model_path is not None else None},
         )
-        return None, _augment_with_fallback_telemetry({
-            "trained": False,
-            "fallback": True,
-            "reason": "torch_unavailable",
-            "model_path": str(model_path) if model_path is not None else str(default_model_path(DEFAULT_MODEL_FILENAME)),
-            "seq_len": int(_normalize_seq_len(seq_len)),
-        })
+        return None, _augment_with_fallback_telemetry(
+            {
+                "trained": False,
+                "fallback": True,
+                "reason": "torch_unavailable",
+                "model_path": (
+                    str(model_path)
+                    if model_path is not None
+                    else str(default_model_path(DEFAULT_MODEL_FILENAME))
+                ),
+                "seq_len": int(_normalize_seq_len(seq_len)),
+            }
+        )
 
-    path = Path(model_path) if model_path is not None else default_model_path(DEFAULT_MODEL_FILENAME)
+    path = (
+        Path(model_path) if model_path is not None else default_model_path(DEFAULT_MODEL_FILENAME)
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     seq_len = _normalize_seq_len(seq_len)
     kwargs = dict(train_kwargs or {})
@@ -276,13 +288,15 @@ def load_or_train_predictor(
                 "checkpoint_load_failed_fallback",
                 context={"error": exc.__class__.__name__, "model_path": str(path)},
             )
-            return None, _augment_with_fallback_telemetry({
-                "trained": False,
-                "fallback": True,
-                "reason": f"checkpoint_load_failed:{exc.__class__.__name__}",
-                "model_path": str(path),
-                "seq_len": int(seq_len),
-            })
+            return None, _augment_with_fallback_telemetry(
+                {
+                    "trained": False,
+                    "fallback": True,
+                    "reason": f"checkpoint_load_failed:{exc.__class__.__name__}",
+                    "model_path": str(path),
+                    "seq_len": int(seq_len),
+                }
+            )
 
     if not train_if_missing and not force_retrain:
         if recovery_allowed:
@@ -290,13 +304,15 @@ def load_or_train_predictor(
                 "checkpoint_missing_fallback",
                 context={"model_path": str(path)},
             )
-            return None, _augment_with_fallback_telemetry({
-                "trained": False,
-                "fallback": True,
-                "reason": "checkpoint_missing",
-                "model_path": str(path),
-                "seq_len": int(seq_len),
-            })
+            return None, _augment_with_fallback_telemetry(
+                {
+                    "trained": False,
+                    "fallback": True,
+                    "reason": "checkpoint_missing",
+                    "model_path": str(path),
+                    "seq_len": int(seq_len),
+                }
+            )
         raise FileNotFoundError(f"Checkpoint not found: {path}")
 
     kwargs.setdefault("seq_len", seq_len)
@@ -310,13 +326,15 @@ def load_or_train_predictor(
             "train_failed_fallback",
             context={"error": exc.__class__.__name__, "model_path": str(path)},
         )
-        return None, _augment_with_fallback_telemetry({
-            "trained": False,
-            "fallback": True,
-            "reason": f"train_failed:{exc.__class__.__name__}",
-            "model_path": str(path),
-            "seq_len": int(seq_len),
-        })
+        return None, _augment_with_fallback_telemetry(
+            {
+                "trained": False,
+                "fallback": True,
+                "reason": f"train_failed:{exc.__class__.__name__}",
+                "model_path": str(path),
+                "seq_len": int(seq_len),
+            }
+        )
     info["trained"] = True
     info["fallback"] = False
     return model, info
@@ -374,28 +392,28 @@ def predict_disruption_risk_safe(
         return base_risk, out_meta
 
     try:
-        model.train() # Enable Dropout for Monte Carlo sampling
+        model.train()  # Enable Dropout for Monte Carlo sampling
         model_seq_len = int(meta.get("seq_len", _normalize_seq_len(seq_len)))
         input_sig = _prepare_signal_window(signal, model_seq_len)
         input_tensor = torch.tensor(input_sig, dtype=torch.float32).reshape(1, -1, 1)
-        
+
         # MC-Dropout: Run 10 forward passes
         n_mc = 10
         mc_risks = []
         with torch.no_grad():
             for _ in range(n_mc):
                 mc_risks.append(float(model(input_tensor).item()))
-        
+
         risk_mean = float(np.mean(mc_risks))
         risk_std = float(np.std(mc_risks))
         confidence = float(np.clip(1.0 - 2.0 * risk_std, 0.0, 1.0))
-        
+
         out_meta = dict(meta)
         out_meta["mode"] = "checkpoint"
         out_meta["risk_source"] = "transformer_mc_dropout"
         out_meta["uncertainty_std"] = risk_std
         out_meta["confidence_score"] = confidence
-        
+
         return float(np.clip(risk_mean, 0.0, 1.0)), out_meta
     except _INFERENCE_FALLBACK_EXCEPTIONS as exc:
         if not recovery_allowed:
@@ -412,6 +430,7 @@ def predict_disruption_risk_safe(
         out_meta["risk_source"] = "predict_disruption_risk"
         out_meta["reason"] = f"inference_failed:{exc.__class__.__name__}"
         return base_risk, out_meta
+
 
 def evaluate_predictor(
     model: Any,
@@ -444,12 +463,12 @@ def evaluate_predictor(
     fpr = fp / max(fp + tn, 1)
 
     result = {
-        'accuracy': float(accuracy),
-        'precision': float(precision),
-        'recall': float(recall),
-        'f1': float(f1),
-        'false_positive_rate': float(fpr),
-        'confusion_matrix': {'tp': int(tp), 'fp': int(fp), 'tn': int(tn), 'fn': int(fn)},
+        "accuracy": float(accuracy),
+        "precision": float(precision),
+        "recall": float(recall),
+        "f1": float(f1),
+        "false_positive_rate": float(fpr),
+        "confusion_matrix": {"tp": int(tp), "fp": int(fp), "tn": int(tn), "fn": int(fn)},
     }
 
     # Recall@T metrics
@@ -462,7 +481,7 @@ def evaluate_predictor(
                 recall_at_t = np.sum(predictions[mask] == 1) / mask.sum()
             else:
                 recall_at_t = 0.0
-            result[f'recall_at_{T_ms}ms'] = float(recall_at_t)
+            result[f"recall_at_{T_ms}ms"] = float(recall_at_t)
 
     return result
 

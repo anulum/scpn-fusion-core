@@ -24,7 +24,9 @@ from scpn_fusion.core.fno_training import DEFAULT_WEIGHTS_PATH, train_fno
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train FNO turbulence suppressor (NumPy only).")
     parser.add_argument("--epochs", type=int, default=500, help="Number of training epochs.")
-    parser.add_argument("--samples", type=int, default=10_000, help="Number of synthetic training samples.")
+    parser.add_argument(
+        "--samples", type=int, default=10_000, help="Number of synthetic training samples."
+    )
     parser.add_argument("--lr", type=float, default=1e-3, help="Adam learning rate.")
     parser.add_argument("--modes", type=int, default=12, help="Number of Fourier modes.")
     parser.add_argument("--width", type=int, default=32, help="Channel width.")

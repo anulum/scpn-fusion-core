@@ -19,11 +19,8 @@ Output contract (for NeuralTransportModel):
 from __future__ import annotations
 
 import argparse
-import json
 import logging
-import sys
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -41,12 +38,12 @@ QLKNN_INPUT_COLS = ["Ati", "Ate", "An", "q", "smag", "x", "Ti_Te", "Zeff", "Nust
 QLKNN_FLUX_COLS = ["efi_GB", "efe_GB", "pfe_GB"]
 
 # Physical sampling ranges for augmentation
-TE_RANGE = (1.0, 25.0)   # keV
-NE_RANGE = (1.0, 15.0)   # 10^19 m^-3
-BT_REF = 5.3              # T, ITER reference (ITER Physics Basis, NF 39 2137, 1999)
-R_REF = 6.2               # m, ITER major radius
-MI_KG = 3.344e-27          # kg, deuterium ion mass (CODATA 2018)
-E_CHARGE = 1.602e-19      # C, elementary charge (CODATA 2018)
+TE_RANGE = (1.0, 25.0)  # keV
+NE_RANGE = (1.0, 15.0)  # 10^19 m^-3
+BT_REF = 5.3  # T, ITER reference (ITER Physics Basis, NF 39 2137, 1999)
+R_REF = 6.2  # m, ITER major radius
+MI_KG = 3.344e-27  # kg, deuterium ion mass (CODATA 2018)
+E_CHARGE = 1.602e-19  # C, elementary charge (CODATA 2018)
 
 
 def _gyrobohm_chi(te_kev: np.ndarray) -> np.ndarray:
@@ -58,40 +55,49 @@ def _gyrobohm_chi(te_kev: np.ndarray) -> np.ndarray:
 
 def _detect_format(input_dir: Path) -> tuple[str, list[Path]]:
     h5_files = sorted(input_dir.glob("*.h5")) + sorted(input_dir.glob("*.hdf5"))
-    if h5_files: return "hdf5", h5_files
+    if h5_files:
+        return "hdf5", h5_files
     nc_files = sorted(input_dir.glob("*.nc"))
-    if nc_files: return "netcdf", nc_files
+    if nc_files:
+        return "netcdf", nc_files
     raise FileNotFoundError(f"No HDF5 or NetCDF files found in {input_dir}.")
 
 
-def _load_chunk_hdf5(path: Path, start: int, count: int) -> tuple[np.ndarray, np.ndarray, list[str]]:
+def _load_chunk_hdf5(
+    path: Path, start: int, count: int
+) -> tuple[np.ndarray, np.ndarray, list[str]]:
     import h5py
     import pandas as pd
+
     with h5py.File(path, "r") as f:
         if "input" in f and "output" in f:
-            df_in = pd.read_hdf(path, key="input", start=start, stop=start+count)
+            df_in = pd.read_hdf(path, key="input", start=start, stop=start + count)
             inputs = np.zeros((len(df_in), len(QLKNN_INPUT_COLS)), dtype=np.float64)
             for i, col in enumerate(QLKNN_INPUT_COLS):
                 if col in df_in.columns:
                     inputs[:, i] = df_in[col].values
                 elif col == "alpha" and "alpha_MHD" in df_in.columns:
                     inputs[:, i] = df_in["alpha_MHD"].values
-            
+
             fluxes = np.zeros((len(df_in), len(QLKNN_FLUX_COLS)), dtype=np.float64)
             for i, col in enumerate(QLKNN_FLUX_COLS):
                 out_key = f"output/{col}"
                 try:
-                    df_out = pd.read_hdf(path, key=out_key, start=start, stop=start+len(df_in))
-                    fluxes[:, i] = df_out[col].values if col in df_out.columns else df_out.iloc[:, 0].values
+                    df_out = pd.read_hdf(path, key=out_key, start=start, stop=start + len(df_in))
+                    fluxes[:, i] = (
+                        df_out[col].values if col in df_out.columns else df_out.iloc[:, 0].values
+                    )
                 except (KeyError, ValueError):
                     with h5py.File(path, "r") as f_loc:
-                        if out_key in f_loc: fluxes[:, i] = f_loc[out_key][start:start+len(df_in)]
+                        if out_key in f_loc:
+                            fluxes[:, i] = f_loc[out_key][start : start + len(df_in)]
             return inputs, fluxes, list(df_in.columns)
     return np.zeros((0, len(QLKNN_INPUT_COLS))), np.zeros((0, 3)), []
 
 
 def _get_total_rows_hdf5(path: Path) -> int:
     import h5py
+
     with h5py.File(path, "r") as f:
         if "input" in f and "block0_values" in f["input"]:
             return f["input"]["block0_values"].shape[0]
@@ -105,12 +111,19 @@ def _classify_regime(ati: np.ndarray, ate: np.ndarray) -> np.ndarray:
     return regime
 
 
-def process(input_dir: Path, output_dir: Path, max_samples: int = 5_000_000, seed: int = 42, regime_balanced: bool = False, gb_normalized: bool = True) -> None:
+def process(
+    input_dir: Path,
+    output_dir: Path,
+    max_samples: int = 5_000_000,
+    seed: int = 42,
+    regime_balanced: bool = False,
+    gb_normalized: bool = True,
+) -> None:
     rng = np.random.default_rng(seed)
     fmt, files = _detect_format(input_dir)
     total_rows = sum(_get_total_rows_hdf5(f) for f in files)
     subsample_rate = min(1.0, max_samples / max(total_rows, 1))
-    
+
     CHUNK_SIZE = 500_000
     all_inputs, all_fluxes, loaded = [], [], 0
     t0 = time.monotonic()
@@ -122,11 +135,11 @@ def process(input_dir: Path, output_dir: Path, max_samples: int = 5_000_000, see
             chunk_n = min(CHUNK_SIZE, n_rows - offset)
             inputs, fluxes, cols = _load_chunk_hdf5(fpath, offset, chunk_n)
             offset += chunk_n
-            
+
             # Filter Zeff=1.0 for determinism in 10D MLP
             if "Zeff" in cols:
                 idx = QLKNN_INPUT_COLS.index("Zeff")
-                mask = (np.abs(inputs[:, idx] - 1.0) < 1e-3)
+                mask = np.abs(inputs[:, idx] - 1.0) < 1e-3
                 inputs, fluxes = inputs[mask], fluxes[mask]
 
             if subsample_rate < 1.0:
@@ -140,29 +153,41 @@ def process(input_dir: Path, output_dir: Path, max_samples: int = 5_000_000, see
             fluxes = np.clip(fluxes, 0.0, None)
 
             if len(inputs) > 0:
-                all_inputs.append(inputs); all_fluxes.append(fluxes); loaded += len(inputs)
+                all_inputs.append(inputs)
+                all_fluxes.append(fluxes)
+                loaded += len(inputs)
                 print(f"\r  Loaded {loaded:,} samples", end="")
 
     raw_inputs = np.vstack(all_inputs)
     raw_fluxes = np.vstack(all_fluxes)
-    
+
     # Shuffle entire loaded set before slicing to max_samples
     # to avoid bias from ordered HDF5 grid
     N_loaded = len(raw_inputs)
     perm_load = rng.permutation(N_loaded)
     raw_inputs = raw_inputs[perm_load][:max_samples]
     raw_fluxes = raw_fluxes[perm_load][:max_samples]
-    
+
     N = len(raw_inputs)
 
-    ati, ate, an, q, smag, x, ti_te = raw_inputs[:, 0], raw_inputs[:, 1], raw_inputs[:, 2], raw_inputs[:, 3], raw_inputs[:, 4], raw_inputs[:, 5], raw_inputs[:, 6]
+    ati, ate, an, q, smag, x, ti_te = (
+        raw_inputs[:, 0],
+        raw_inputs[:, 1],
+        raw_inputs[:, 2],
+        raw_inputs[:, 3],
+        raw_inputs[:, 4],
+        raw_inputs[:, 5],
+        raw_inputs[:, 6],
+    )
     nustar = raw_inputs[:, 8]
 
     te_kev = np.exp(rng.uniform(np.log(TE_RANGE[0]), np.log(TE_RANGE[1]), size=N))
     ti_kev = te_kev * np.clip(ti_te, 0.5, 3.0)
     ne_19 = rng.uniform(*NE_RANGE, size=N)
 
-    X = np.column_stack([x, te_kev, ti_kev, ne_19, ate, ati, an, q, smag, 4.03e-3 * ne_19 * te_kev, ti_te, nustar])
+    X = np.column_stack(
+        [x, te_kev, ti_kev, ne_19, ate, ati, an, q, smag, 4.03e-3 * ne_19 * te_kev, ti_te, nustar]
+    )
 
     if gb_normalized:
         # Save raw GB-normalized fluxes — no chi_gb multiplication.
@@ -178,13 +203,27 @@ def process(input_dir: Path, output_dir: Path, max_samples: int = 5_000_000, see
     regimes = _classify_regime(ati, ate)
     perm = rng.permutation(N)
     X, Y, regimes = X[perm], Y[perm], regimes[perm]
-    
+
     n_train, n_val = int(N * 0.9), int(N * 0.05)
     output_dir.mkdir(parents=True, exist_ok=True)
     _meta = {"gb_normalized": np.array(1 if gb_normalized else 0)}
-    np.savez(output_dir / "train.npz", X=X[:n_train], Y=Y[:n_train], regimes=regimes[:n_train], **_meta)
-    np.savez(output_dir / "val.npz", X=X[n_train:n_train+n_val], Y=Y[n_train:n_train+n_val], regimes=regimes[n_train:n_train+n_val], **_meta)
-    np.savez(output_dir / "test.npz", X=X[n_train+n_val:], Y=Y[n_train+n_val:], regimes=regimes[n_train+n_val:], **_meta)
+    np.savez(
+        output_dir / "train.npz", X=X[:n_train], Y=Y[:n_train], regimes=regimes[:n_train], **_meta
+    )
+    np.savez(
+        output_dir / "val.npz",
+        X=X[n_train : n_train + n_val],
+        Y=Y[n_train : n_train + n_val],
+        regimes=regimes[n_train : n_train + n_val],
+        **_meta,
+    )
+    np.savez(
+        output_dir / "test.npz",
+        X=X[n_train + n_val :],
+        Y=Y[n_train + n_val :],
+        regimes=regimes[n_train + n_val :],
+        **_meta,
+    )
     mode_str = "GB-normalized" if gb_normalized else "physical (m^2/s)"
     print(f"\nDone. Saved {N} samples ({mode_str}).")
 
@@ -192,10 +231,18 @@ def process(input_dir: Path, output_dir: Path, max_samples: int = 5_000_000, see
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-samples", type=int, default=500000)
-    parser.add_argument("--no-gb-normalized", dest="gb_normalized", action="store_false",
-                        help="Save physical fluxes (m^2/s) instead of GB-normalized")
+    parser.add_argument(
+        "--no-gb-normalized",
+        dest="gb_normalized",
+        action="store_false",
+        help="Save physical fluxes (m^2/s) instead of GB-normalized",
+    )
     parser.set_defaults(gb_normalized=True)
     args = parser.parse_args()
-    process(DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_DIR, args.max_samples, gb_normalized=args.gb_normalized)
+    process(
+        DEFAULT_INPUT_DIR, DEFAULT_OUTPUT_DIR, args.max_samples, gb_normalized=args.gb_normalized
+    )
 
-if __name__ == "__main__": main()
+
+if __name__ == "__main__":
+    main()

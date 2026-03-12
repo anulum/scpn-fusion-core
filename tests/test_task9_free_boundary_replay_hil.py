@@ -53,9 +53,7 @@ def test_task9_campaign_passes_thresholds_smoke() -> None:
         ({"hil_steps": 0}, "hil_steps"),
     ],
 )
-def test_task9_campaign_rejects_invalid_inputs(
-    kwargs: dict[str, int | float], match: str
-) -> None:
+def test_task9_campaign_rejects_invalid_inputs(kwargs: dict[str, int | float], match: str) -> None:
     with pytest.raises(ValueError, match=match):
         task9_free_boundary_replay_hil.run_campaign(**kwargs)
 

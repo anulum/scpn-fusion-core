@@ -111,11 +111,7 @@ def run_diag_demo(
     flat_phantom = phantom.reshape(-1)
     flat_recon = reconstruction.reshape(-1)
     n = min(flat_phantom.size, flat_recon.size)
-    rmse = (
-        float(np.sqrt(np.mean((flat_phantom[:n] - flat_recon[:n]) ** 2)))
-        if n > 0
-        else 0.0
-    )
+    rmse = float(np.sqrt(np.mean((flat_phantom[:n] - flat_recon[:n]) ** 2))) if n > 0 else 0.0
 
     plot_saved = False
     plot_error: Optional[str] = None
@@ -159,9 +155,7 @@ def run_diag_demo(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Run synthetic diagnostics and tomography demo."
-    )
+    parser = argparse.ArgumentParser(description="Run synthetic diagnostics and tomography demo.")
     parser.add_argument(
         "--config",
         type=Path,

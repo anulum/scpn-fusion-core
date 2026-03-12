@@ -43,20 +43,24 @@ REL_RMSE_THRESHOLD = 0.25
 
 class TransportCase(NamedTuple):
     name: str
-    R0: float       # major radius [m]
-    a: float         # minor radius [m]
-    Ip: float        # plasma current [MA]
-    B0: float        # toroidal field [T]
+    R0: float  # major radius [m]
+    a: float  # minor radius [m]
+    Ip: float  # plasma current [MA]
+    B0: float  # toroidal field [T]
     ne0_1e19: float  # core density [1e19 m^-3]
-    Te0_keV: float   # core temperature [keV]
+    Te0_keV: float  # core temperature [keV]
     n_rho: int = 32
 
 
 CASES: list[TransportCase] = [
-    TransportCase(name="ITER-baseline",  R0=6.2,  a=2.0,  Ip=15.0, B0=5.3,  ne0_1e19=10.1, Te0_keV=25.0),
-    TransportCase(name="SPARC-V2C",      R0=1.85, a=0.57, Ip=8.7,  B0=12.2, ne0_1e19=15.0, Te0_keV=20.0),
-    TransportCase(name="DIII-D-hybrid",  R0=1.67, a=0.60, Ip=1.2,  B0=1.75, ne0_1e19=5.5,  Te0_keV=4.0),
-    TransportCase(name="KSTAR-steady",   R0=1.80, a=0.50, Ip=0.6,  B0=2.0,  ne0_1e19=4.0,  Te0_keV=3.5),
+    TransportCase(
+        name="ITER-baseline", R0=6.2, a=2.0, Ip=15.0, B0=5.3, ne0_1e19=10.1, Te0_keV=25.0
+    ),
+    TransportCase(name="SPARC-V2C", R0=1.85, a=0.57, Ip=8.7, B0=12.2, ne0_1e19=15.0, Te0_keV=20.0),
+    TransportCase(
+        name="DIII-D-hybrid", R0=1.67, a=0.60, Ip=1.2, B0=1.75, ne0_1e19=5.5, Te0_keV=4.0
+    ),
+    TransportCase(name="KSTAR-steady", R0=1.80, a=0.50, Ip=0.6, B0=2.0, ne0_1e19=4.0, Te0_keV=3.5),
 ]
 
 
@@ -92,6 +96,7 @@ def _run_our_transport(case: TransportCase) -> dict[str, Any]:
     fallback_reason: str | None = None
     try:
         from scpn_fusion.core.neural_transport import NeuralTransportModel, TransportInputs
+
         model = NeuralTransportModel()
         _ = TransportInputs  # Import contract check for compatibility.
     except Exception as exc:
@@ -114,7 +119,12 @@ def _run_our_transport(case: TransportCase) -> dict[str, Any]:
         s_hat = 2.0 * rho * 2.5 * rho / np.maximum(q_profile, 0.01)
         try:
             chi_e, chi_i, d_e = model.predict_profile(
-                rho, te, 0.85 * te, ne, q_profile, s_hat,
+                rho,
+                te,
+                0.85 * te,
+                ne,
+                q_profile,
+                s_hat,
                 r_major=case.R0,
             )
             # Simple diffusive equilibrium correction
@@ -174,17 +184,19 @@ def run_benchmark(*, require_neural_transport: bool = False) -> dict[str, Any]:
             and ne_err < REL_RMSE_THRESHOLD
             and (backend_ok or not require_neural_transport)
         )
-        cases.append({
-            "name": case.name,
-            "te_rel_rmse": round(te_err, 4),
-            "ne_rel_rmse": round(ne_err, 4),
-            "threshold": REL_RMSE_THRESHOLD,
-            "passes": passes,
-            "transport_backend": backend,
-            "fallback_reason": ours.get("__fallback_reason__"),
-            "fallback_seed": ours.get("__seed__"),
-            "backend_requirement_satisfied": backend_ok or not require_neural_transport,
-        })
+        cases.append(
+            {
+                "name": case.name,
+                "te_rel_rmse": round(te_err, 4),
+                "ne_rel_rmse": round(ne_err, 4),
+                "threshold": REL_RMSE_THRESHOLD,
+                "passes": passes,
+                "transport_backend": backend,
+                "fallback_reason": ours.get("__fallback_reason__"),
+                "fallback_seed": ours.get("__seed__"),
+                "backend_requirement_satisfied": backend_ok or not require_neural_transport,
+            }
+        )
         if not passes:
             all_pass = False
 
@@ -214,12 +226,15 @@ def main() -> int:
     out_dir = REPO_ROOT / "artifacts"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "torax_benchmark.json").write_text(
-        json.dumps(result, indent=2), encoding="utf-8",
+        json.dumps(result, indent=2),
+        encoding="utf-8",
     )
 
     for c in result["cases"]:
         tag = "PASS" if c["passes"] else "FAIL"
-        print(f"  [{tag}] {c['name']}: Te_RMSE={c['te_rel_rmse']:.2%} ne_RMSE={c['ne_rel_rmse']:.2%}")
+        print(
+            f"  [{tag}] {c['name']}: Te_RMSE={c['te_rel_rmse']:.2%} ne_RMSE={c['ne_rel_rmse']:.2%}"
+        )
 
     print(
         f"\n{'All pass' if result['passes'] else 'Some FAILED'} "

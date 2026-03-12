@@ -25,8 +25,8 @@ _BOUNDS: dict[str, dict[str, tuple[float, float]]] = {
         "BT_T": (5.0, 5.6),
         "ne0_1e19": (10.0, 12.0),
         "Te0_keV": (8.0, 25.0),
-        "q95": (1.5, 3.5),          # disruptions may push q95 down
-        "beta_N": (1.8, 3.75),      # disruptions may push beta_N up
+        "q95": (1.5, 3.5),  # disruptions may push q95 down
+        "beta_N": (1.8, 3.75),  # disruptions may push beta_N up
     },
     "SPARC": {
         "Ip_MA": (8.5, 9.0),
@@ -73,8 +73,16 @@ def test_npz_has_required_keys(tmp_path: Path) -> None:
     """Every NPZ file must contain the documented keys."""
     generate_synthetic_shot_database(output_dir=tmp_path, seed=7)
     required = {
-        "time_s", "Ip_MA", "BT_T", "ne_1e19", "Te_keV", "Ti_keV",
-        "q95", "beta_N", "disruption_label", "machine",
+        "time_s",
+        "Ip_MA",
+        "BT_T",
+        "ne_1e19",
+        "Te_keV",
+        "Ti_keV",
+        "q95",
+        "beta_N",
+        "disruption_label",
+        "machine",
     }
     for npz_path in tmp_path.glob("*.npz"):
         with np.load(str(npz_path), allow_pickle=False) as data:
@@ -109,9 +117,9 @@ def test_parameter_ranges_are_realistic(tmp_path: Path) -> None:
         bounds = _BOUNDS[machine]
         for key, (lo, hi) in bounds.items():
             val = entry[key]
-            assert lo <= val <= hi, (
-                f"{entry['shot_id']} ({machine}): {key}={val} out of [{lo}, {hi}]"
-            )
+            assert (
+                lo <= val <= hi
+            ), f"{entry['shot_id']} ({machine}): {key}={val} out of [{lo}, {hi}]"
 
 
 def test_disruption_rate_approximately_20_percent(tmp_path: Path) -> None:

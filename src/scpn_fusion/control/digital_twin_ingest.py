@@ -61,22 +61,38 @@ def _build_snn_planner() -> NeuroSymbolicController:
     net.add_arc("T_Rn", "a_R_neg", weight=1.0)
     net.compile()
 
-    artifact = FusionCompiler.with_reactor_lif_defaults(
-        bitstream_length=1024,
-        seed=404,
-    ).compile(net, firing_mode="binary").export_artifact(
-        name="gdep01_digital_twin",
-        dt_control_s=0.001,
-        readout_config={
-            "actions": [{"name": "dI_PF3_A", "pos_place": 2, "neg_place": 3}],
-            "gains": [1800.0],
-            "abs_max": [3500.0],
-            "slew_per_s": [1e6],
-        },
-        injection_config=[
-            {"place_id": 0, "source": "x_R_pos", "scale": 1.0, "offset": 0.0, "clamp_0_1": True},
-            {"place_id": 1, "source": "x_R_neg", "scale": 1.0, "offset": 0.0, "clamp_0_1": True},
-        ],
+    artifact = (
+        FusionCompiler.with_reactor_lif_defaults(
+            bitstream_length=1024,
+            seed=404,
+        )
+        .compile(net, firing_mode="binary")
+        .export_artifact(
+            name="gdep01_digital_twin",
+            dt_control_s=0.001,
+            readout_config={
+                "actions": [{"name": "dI_PF3_A", "pos_place": 2, "neg_place": 3}],
+                "gains": [1800.0],
+                "abs_max": [3500.0],
+                "slew_per_s": [1e6],
+            },
+            injection_config=[
+                {
+                    "place_id": 0,
+                    "source": "x_R_pos",
+                    "scale": 1.0,
+                    "offset": 0.0,
+                    "clamp_0_1": True,
+                },
+                {
+                    "place_id": 1,
+                    "source": "x_R_neg",
+                    "scale": 1.0,
+                    "offset": 0.0,
+                    "clamp_0_1": True,
+                },
+            ],
+        )
     )
     return NeuroSymbolicController(
         artifact=artifact,
@@ -120,7 +136,9 @@ def generate_emulated_stream(
                 t_ms=k * dt_ms,
                 machine=machine_key,
                 ip_ma=float(ip_base + 0.03 * np.sin(2.0 * np.pi * phase) + rng.normal(0.0, 0.004)),
-                beta_n=float(beta_base + 0.05 * np.cos(2.0 * np.pi * 1.4 * phase) + disruption_burst),
+                beta_n=float(
+                    beta_base + 0.05 * np.cos(2.0 * np.pi * 1.4 * phase) + disruption_burst
+                ),
                 q95=float(q95_base - 0.12 * disruption_burst + rng.normal(0.0, 0.01)),
                 density_1e19=float(dens_base + 0.10 * np.sin(2.0 * np.pi * 0.6 * phase)),
             )

@@ -38,6 +38,7 @@ VERSION_FILE = REPO_ROOT / "src" / "scpn_fusion" / "VERSION"
 
 # ── Utility ──────────────────────────────────────────────────────────
 
+
 def _hw_header() -> str:
     lines = [
         f"- **CPU:** {platform.processor() or platform.machine()}",
@@ -48,6 +49,7 @@ def _hw_header() -> str:
     ]
     try:
         import psutil
+
         ram_gb = psutil.virtual_memory().total / (1024**3)
         lines.append(f"- **RAM:** {ram_gb:.1f} GB")
     except ImportError:
@@ -91,8 +93,10 @@ def _fmt(val: Any, fmt: str = ".4f") -> str:
 
 # ── Live benchmark runners (compute on the fly) ─────────────────────
 
+
 def run_hil(quick: bool) -> dict[str, Any] | None:
     from scpn_fusion.control.hil_harness import run_hil_benchmark
+
     iters = 200 if quick else 1000
     result = run_hil_benchmark(iterations=iters)
     m = result.control_metrics
@@ -108,6 +112,7 @@ def run_hil(quick: bool) -> dict[str, Any] | None:
 
 def run_disruption(quick: bool) -> dict[str, Any] | None:
     from scpn_fusion.control.halo_re_physics import run_disruption_ensemble
+
     n = 10 if quick else 50
     r = run_disruption_ensemble(ensemble_runs=n, seed=42)
     return {
@@ -123,8 +128,13 @@ def run_disruption(quick: bool) -> dict[str, Any] | None:
 
 def run_q10() -> dict[str, Any] | None:
     from scpn_fusion.core.fusion_ignition_sim import DynamicBurnModel
+
     r = DynamicBurnModel.find_q10_operating_point(
-        R0=6.2, a=2.0, B_t=5.3, I_p=15.0, kappa=1.7,
+        R0=6.2,
+        a=2.0,
+        B_t=5.3,
+        I_p=15.0,
+        kappa=1.7,
     )
     best = r["best"]
     return {
@@ -139,6 +149,7 @@ def run_q10() -> dict[str, Any] | None:
 
 def run_tbr() -> dict[str, Any] | None:
     from scpn_fusion.nuclear.blanket_neutronics import MultiGroupBlanket
+
     blanket = MultiGroupBlanket(thickness_cm=80.0, li6_enrichment=0.9)
     r = blanket.solve_transport()
     return {
@@ -151,6 +162,7 @@ def run_tbr() -> dict[str, Any] | None:
 
 def run_ecrh() -> dict[str, Any] | None:
     from scpn_fusion.core.rf_heating import ECRHHeatingSystem
+
     ecrh = ECRHHeatingSystem(b0_tesla=5.3, r0_major=6.2, freq_ghz=170.0)
     _rho, _pdep, efficiency = ecrh.compute_deposition(P_ecrh_mw=20.0)
     return {
@@ -165,13 +177,21 @@ def run_force_balance_3d() -> dict[str, Any] | None:
         VMECStyleEquilibrium3D,
         ForceBalance3D,
     )
+
     eq = VMECStyleEquilibrium3D(
-        r_axis=6.2, z_axis=0.0, a_minor=2.0, kappa=1.7,
-        triangularity=0.3, nfp=1,
+        r_axis=6.2,
+        z_axis=0.0,
+        a_minor=2.0,
+        kappa=1.7,
+        triangularity=0.3,
+        nfp=1,
     )
     fb = ForceBalance3D(eq, b0_tesla=5.3, r0_major=6.2, p0_pa=5e5)
     result = fb.solve(
-        max_iterations=20, n_rho=6, n_theta=12, n_phi=8,
+        max_iterations=20,
+        n_rho=6,
+        n_theta=12,
+        n_phi=8,
     )
     return {
         "iterations": result.iterations,
@@ -187,6 +207,7 @@ def run_surrogates() -> dict[str, Any] | None:
         evaluate_pretrained_mlp,
         evaluate_pretrained_fno,
     )
+
     results: dict[str, Any] = {}
     try:
         mlp = evaluate_pretrained_mlp(max_samples=20)
@@ -211,6 +232,7 @@ def run_surrogates() -> dict[str, Any] | None:
 
 def run_neural_eq() -> dict[str, Any] | None:
     from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumAccelerator
+
     weights_path = WEIGHTS / "neural_equilibrium_sparc.npz"
     if not weights_path.exists():
         print("  [neural_eq] weights not found, skipping")
@@ -221,8 +243,7 @@ def run_neural_eq() -> dict[str, Any] | None:
     if n_in == 12:
         # [I_p(MA), B_t(T), R_axis(m), Z_axis(m), pprime_s, ffprime_s,
         #  simag, sibry, kappa, delta_up, delta_low, q95]
-        features = np.array([8.7, 12.2, 1.85, 0.0, 1.0, 1.0, -5.0, 0.0,
-                             1.75, 0.3, 0.3, 3.4])
+        features = np.array([8.7, 12.2, 1.85, 0.0, 1.0, 1.0, -5.0, 0.0, 1.75, 0.3, 0.3, 3.4])
     else:
         features = np.zeros(n_in)
     psi = model.predict(features)
@@ -236,6 +257,7 @@ def run_neural_eq() -> dict[str, Any] | None:
 
 
 # ── Artifact-based benchmark loaders (read pre-computed JSON) ────────
+
 
 def load_qlknn_metrics() -> dict[str, Any] | None:
     primary = _load_artifact(WEIGHTS / "neural_transport_qlknn.metrics.json")
@@ -274,8 +296,10 @@ def load_disruption_threshold() -> dict[str, Any] | None:
 
 # ── Controller campaign (backward-compat API for test_stress_campaign) ──
 
+
 def run_controller_campaign(quick: bool = False) -> dict[str, Any] | None:
     from validation.stress_test_campaign import run_campaign, generate_summary_table
+
     n = 5 if quick else 20
     results = run_campaign(n_episodes=n)
     table = generate_summary_table(results)
@@ -297,6 +321,7 @@ def run_controller_campaign(quick: bool = False) -> dict[str, Any] | None:
 
 
 # ── RESULTS.md generation ────────────────────────────────────────────
+
 
 def generate_results_md(
     hw: str,
@@ -342,7 +367,8 @@ def generate_results_md(
     version = VERSION_FILE.read_text(encoding="utf-8").strip() if VERSION_FILE.exists() else "0.0.0"
     sections: list[str] = []
 
-    sections.append(f"""# SCPN Fusion Core — Benchmark Results (v{version})
+    sections.append(
+        f"""# SCPN Fusion Core — Benchmark Results (v{version})
 
 > **Auto-generated** by `validation/collect_results.py` on {now}.
 > Re-run the script to refresh these numbers on your hardware.
@@ -353,17 +379,28 @@ def generate_results_md(
 - **Version:** {version}
 - **Generated:** {now}
 - **Wall-clock:** {elapsed_s:.0f}s
-""")
+"""
+    )
 
     # ── Equilibrium & Transport ──
     rows: list[str] = []
     if fb3d:
-        rows.append(f"| 3D Force-Balance initial residual | {_fmt(fb3d['initial_residual'], '.4e')} | — | Spectral variational method |")
-        rows.append(f"| 3D Force-Balance final residual | {_fmt(fb3d['final_residual'], '.4e')} | — | After {fb3d.get('iterations', '?')} iterations |")
-        rows.append(f"| 3D Force-Balance reduction factor | {_fmt(fb3d['reduction_factor'], '.1f')}× | — | initial / final |")
+        rows.append(
+            f"| 3D Force-Balance initial residual | {_fmt(fb3d['initial_residual'], '.4e')} | — | Spectral variational method |"
+        )
+        rows.append(
+            f"| 3D Force-Balance final residual | {_fmt(fb3d['final_residual'], '.4e')} | — | After {fb3d.get('iterations', '?')} iterations |"
+        )
+        rows.append(
+            f"| 3D Force-Balance reduction factor | {_fmt(fb3d['reduction_factor'], '.1f')}× | — | initial / final |"
+        )
     if neural_eq:
-        rows.append(f"| Neural Equilibrium inference (mean) | {_fmt(neural_eq['inference_mean_ms'], '.2f')} | ms | PCA+MLP surrogate on {neural_eq['grid_shape']} grid |")
-        rows.append(f"| Neural Equilibrium inference (P95) | {_fmt(neural_eq['inference_p95_ms'], '.2f')} | ms | {neural_eq['grid_shape']} grid |")
+        rows.append(
+            f"| Neural Equilibrium inference (mean) | {_fmt(neural_eq['inference_mean_ms'], '.2f')} | ms | PCA+MLP surrogate on {neural_eq['grid_shape']} grid |"
+        )
+        rows.append(
+            f"| Neural Equilibrium inference (P95) | {_fmt(neural_eq['inference_p95_ms'], '.2f')} | ms | {neural_eq['grid_shape']} grid |"
+        )
     if rows:
         sections.append("## Equilibrium & Transport\n")
         sections.append("| Metric | Value | Unit | Notes |")
@@ -378,18 +415,26 @@ def generate_results_md(
         sections.append("## QLKNN Neural Transport Surrogate\n")
         sections.append("| Metric | Value | Unit | Notes |")
         sections.append("|--------|-------|------|-------|")
-        sections.append(f"| Test relative L2 | {_fmt(p['test_relative_l2'])} | — | Hard-fail gate < 0.25 |")
+        sections.append(
+            f"| Test relative L2 | {_fmt(p['test_relative_l2'])} | — | Hard-fail gate < 0.25 |"
+        )
         sections.append(f"| Val relative L2 | {_fmt(p['val_relative_l2'])} | — | |")
-        sections.append(f"| Train relative L2 | {_fmt(p['train_relative_l2'])} | — | val/train = {p['val_relative_l2'] / max(p['train_relative_l2'], 1e-30):.2f} |")
+        sections.append(
+            f"| Train relative L2 | {_fmt(p['train_relative_l2'])} | — | val/train = {p['val_relative_l2'] / max(p['train_relative_l2'], 1e-30):.2f} |"
+        )
         sections.append(f"| Best val MSE | {_fmt(p['best_val_mse'], '.6f')} | — | |")
         sections.append(f"| Architecture | {dims} | — | MLP hidden dims |")
         sections.append(f"| Epochs | {p['epochs_run']} | — | Early-stopped |")
-        sections.append(f"| Training time | {p['training_time_s'] / 3600:.1f} | h | {p['platform']} |")
+        sections.append(
+            f"| Training time | {p['training_time_s'] / 3600:.1f} | h | {p['platform']} |"
+        )
         sections.append(f"| Data source | {p['data_source']} | — | |")
         if "backup" in qlknn:
             b = qlknn["backup"]
             bdims = "×".join(str(d) for d in b["hidden_dims"])
-            sections.append(f"| Backup test relative L2 | {_fmt(b['test_relative_l2'])} | — | {bdims} architecture |")
+            sections.append(
+                f"| Backup test relative L2 | {_fmt(b['test_relative_l2'])} | — | {bdims} architecture |"
+            )
         sections.append("")
 
     # ── Confinement ITPA ──
@@ -405,35 +450,59 @@ def generate_results_md(
             machines = "ITER, JET, DIII-D, ASDEX-U, C-Mod, JT-60U, NSTX, MAST, KSTAR, EAST, SPARC, ARC, TFTR, WEST, TCV, HL-2A, HL-2M, COMPASS, JT-60SA, SST-1, Aditya-U, Globus-M2, NSTX-U, MAST-U"
             sections.append(f"| Machines validated | {ci.get('count', '—')} | — | {machines} |")
             sections.append(f"| tau_E RMSE | {_fmt(ci.get('tau_rmse_s'), '.4f')} | s | |")
-            sections.append(f"| tau_E relative RMSE | {_fmt(ci.get('tau_mae_rel_pct'), '.1f')} | % | |")
+            sections.append(
+                f"| tau_E relative RMSE | {_fmt(ci.get('tau_mae_rel_pct'), '.1f')} | % | |"
+            )
             sections.append(f"| H98 RMSE | {_fmt(ci.get('h98_rmse'), '.4f')} | — | |")
         if cs and cs.get("rows"):
             for row in cs["rows"]:
-                sections.append(f"| {row['scenario']} τ_E error | {_fmt(row.get('relative_error_pct'), '.1f')} | % | τ_pred={_fmt(row.get('tau_pred_s'), '.3f')} s |")
+                sections.append(
+                    f"| {row['scenario']} τ_E error | {_fmt(row.get('relative_error_pct'), '.1f')} | % | τ_pred={_fmt(row.get('tau_pred_s'), '.3f')} s |"
+                )
         if bn and bn.get("rows"):
             sections.append(f"| β_N RMSE | {_fmt(bn.get('beta_n_rmse'), '.4f')} | — | |")
             for row in bn["rows"]:
-                sections.append(f"| {row['scenario']} β_N error | {_fmt(row.get('relative_error_pct'), '.1f')} | % | Q={_fmt(row.get('model_q'), '.0f')}, P_fus={_fmt(row.get('model_p_fusion_mw'), '.0f')} MW |")
+                sections.append(
+                    f"| {row['scenario']} β_N error | {_fmt(row.get('relative_error_pct'), '.1f')} | % | Q={_fmt(row.get('model_q'), '.0f')}, P_fus={_fmt(row.get('model_p_fusion_mw'), '.0f')} MW |"
+                )
         if fd:
-            sections.append(f"| Interferometer phase RMSE | {_fmt(fd.get('phase_rmse_rad'), '.6f')} | rad | {fd.get('count_interferometer_channels', '?')} channels |")
-            sections.append(f"| Neutron rate relative error | {_fmt(fd.get('neutron_rate_rel_error_pct'), '.1f')} | % | |")
-            sections.append(f"| Thomson voltage RMSE | {_fmt(fd.get('thomson_voltage_rmse_v'), '.2e')} | V | {fd.get('count_thomson_channels', '?')} channels |")
+            sections.append(
+                f"| Interferometer phase RMSE | {_fmt(fd.get('phase_rmse_rad'), '.6f')} | rad | {fd.get('count_interferometer_channels', '?')} channels |"
+            )
+            sections.append(
+                f"| Neutron rate relative error | {_fmt(fd.get('neutron_rate_rel_error_pct'), '.1f')} | % | |"
+            )
+            sections.append(
+                f"| Thomson voltage RMSE | {_fmt(fd.get('thomson_voltage_rmse_v'), '.2e')} | V | {fd.get('count_thomson_channels', '?')} channels |"
+            )
         sections.append("")
 
     # ── Heating & Neutronics ──
     rows = []
     if q10:
-        rows.append(f"| Best Q (ITER-like scan) | {_fmt(q10['best_Q'], '.2f')} | — | Target: Q ≥ 10 |")
-        rows.append(f"| Q ≥ 10 achieved | {_fmt(q10['q10_achieved'])} | — | {_fmt(q10['n_e20'], '.2f')} × 10²⁰ m⁻³ |")
-        rows.append(f"| P_aux at best Q | {_fmt(q10['P_aux_mw'], '.1f')} | MW | Auxiliary heating |")
+        rows.append(
+            f"| Best Q (ITER-like scan) | {_fmt(q10['best_Q'], '.2f')} | — | Target: Q ≥ 10 |"
+        )
+        rows.append(
+            f"| Q ≥ 10 achieved | {_fmt(q10['q10_achieved'])} | — | {_fmt(q10['n_e20'], '.2f')} × 10²⁰ m⁻³ |"
+        )
+        rows.append(
+            f"| P_aux at best Q | {_fmt(q10['P_aux_mw'], '.1f')} | MW | Auxiliary heating |"
+        )
         rows.append(f"| P_fus at best Q | {_fmt(q10['P_fus_mw'], '.1f')} | MW | Fusion power |")
         rows.append(f"| T at best Q | {_fmt(q10['T_keV'], '.1f')} | keV | Ion temperature |")
     if ecrh:
-        rows.append(f"| ECRH absorption efficiency | {_fmt(ecrh['absorption_pct'], '.1f')} | % | 170 GHz, 1st harmonic, {_fmt(ecrh['P_ecrh_mw'], '.0f')} MW |")
+        rows.append(
+            f"| ECRH absorption efficiency | {_fmt(ecrh['absorption_pct'], '.1f')} | % | 170 GHz, 1st harmonic, {_fmt(ecrh['P_ecrh_mw'], '.0f')} MW |"
+        )
     if tbr:
-        rows.append(f"| Tritium Breeding Ratio (total) | {_fmt(tbr['tbr_total'], '.4f')} | — | 3-group, 80 cm, 90% ⁶Li |")
+        rows.append(
+            f"| Tritium Breeding Ratio (total) | {_fmt(tbr['tbr_total'], '.4f')} | — | 3-group, 80 cm, 90% ⁶Li |"
+        )
         rows.append(f"| TBR fast group | {_fmt(tbr['tbr_fast'], '.4f')} | — | 14.1 MeV neutrons |")
-        rows.append(f"| TBR epithermal group | {_fmt(tbr['tbr_epi'], '.4f')} | — | Slowed neutrons |")
+        rows.append(
+            f"| TBR epithermal group | {_fmt(tbr['tbr_epi'], '.4f')} | — | Slowed neutrons |"
+        )
         rows.append(f"| TBR thermal group | {_fmt(tbr['tbr_therm'], '.4f')} | — | Thermalized |")
     if rows:
         sections.append("## Heating & Neutronics\n")
@@ -446,8 +515,12 @@ def generate_results_md(
     rows = []
     if disruption:
         n = disruption["ensemble_runs"]
-        rows.append(f"| Disruption prevention rate (SNN) | {_fmt(disruption['prevention_rate'] * 100, '.1f')} | % | {n}-run ensemble |")
-        rows.append(f"| Mean halo current peak | {_fmt(disruption['mean_halo_ma'], '.3f')} | MA | |")
+        rows.append(
+            f"| Disruption prevention rate (SNN) | {_fmt(disruption['prevention_rate'] * 100, '.1f')} | % | {n}-run ensemble |"
+        )
+        rows.append(
+            f"| Mean halo current peak | {_fmt(disruption['mean_halo_ma'], '.3f')} | MA | |"
+        )
         rows.append(f"| P95 halo current peak | {_fmt(disruption['p95_halo_ma'], '.3f')} | MA | |")
         rows.append(f"| Mean RE current peak | {_fmt(disruption['mean_re_ma'], '.3f')} | MA | |")
         rows.append(f"| P95 RE current peak | {_fmt(disruption['p95_re_ma'], '.3f')} | MA | |")
@@ -457,10 +530,14 @@ def generate_results_md(
             "Requires prevention>=90%, P95 halo<=3.4 MA, P95 RE<=1.0 MA |"
         )
     if hil:
-        rows.append(f"| HIL control-loop P50 latency | {_fmt(hil['p50_us'], '.1f')} | μs | {hil['iterations']} iterations |")
+        rows.append(
+            f"| HIL control-loop P50 latency | {_fmt(hil['p50_us'], '.1f')} | μs | {hil['iterations']} iterations |"
+        )
         rows.append(f"| HIL control-loop P95 latency | {_fmt(hil['p95_us'], '.1f')} | μs | |")
         rows.append(f"| HIL control-loop P99 latency | {_fmt(hil['p99_us'], '.1f')} | μs | |")
-        rows.append(f"| Sub-ms achieved | {_fmt(hil['sub_ms'])} | — | Total loop: {_fmt(hil['total_loop_us'], '.1f')} μs |")
+        rows.append(
+            f"| Sub-ms achieved | {_fmt(hil['sub_ms'])} | — | Total loop: {_fmt(hil['total_loop_us'], '.1f')} μs |"
+        )
     if rows:
         sections.append("## Disruption & Control\n")
         sections.append("| Metric | Value | Unit | Notes |")
@@ -477,19 +554,37 @@ def generate_results_md(
         sections.append("| Metric | Value | Unit | Notes |")
         sections.append("|--------|-------|------|-------|")
         if d:
-            sections.append(f"| Disruption recall | {_fmt(d.get('recall'), '.2f')} | — | {d.get('true_positives', '?')}/{d.get('n_disruptions', '?')} disruptions detected |")
-            sections.append(f"| Disruption FPR | {_fmt(d.get('false_positive_rate'), '.2f')} | — | {d.get('false_positives', '?')}/{d.get('n_safe', '?')} false alarms |")
-            sections.append(f"| Disruption detection | {_fmt(d.get('passes'))} | — | recall ≥ 0.6 and FPR ≤ 0.4 |")
+            sections.append(
+                f"| Disruption recall | {_fmt(d.get('recall'), '.2f')} | — | {d.get('true_positives', '?')}/{d.get('n_disruptions', '?')} disruptions detected |"
+            )
+            sections.append(
+                f"| Disruption FPR | {_fmt(d.get('false_positive_rate'), '.2f')} | — | {d.get('false_positives', '?')}/{d.get('n_safe', '?')} false alarms |"
+            )
+            sections.append(
+                f"| Disruption detection | {_fmt(d.get('passes'))} | — | recall ≥ 0.6 and FPR ≤ 0.4 |"
+            )
         if t:
-            sections.append(f"| Transport tau_E RMSE | {_fmt(t.get('rmse_s'), '.4f')} | s | {t.get('n_shots', '?')} shots |")
-            sections.append(f"| Transport within 2σ | {_fmt((t.get('within_2sigma_fraction', 0)) * 100, '.0f')} | % | Gate ≥ 80% |")
+            sections.append(
+                f"| Transport tau_E RMSE | {_fmt(t.get('rmse_s'), '.4f')} | s | {t.get('n_shots', '?')} shots |"
+            )
+            sections.append(
+                f"| Transport within 2σ | {_fmt((t.get('within_2sigma_fraction', 0)) * 100, '.0f')} | % | Gate ≥ 80% |"
+            )
             sections.append(f"| Transport validation | {_fmt(t.get('passes'))} | — | |")
         if eq:
-            sections.append(f"| Equilibrium ψ pass fraction | {_fmt((eq.get('psi_pass_fraction', 0)) * 100, '.0f')} | % | {eq.get('n_psi_pass', '?')}/{eq.get('n_files', '?')} files |")
-            sections.append(f"| Equilibrium q95 pass fraction | {_fmt((eq.get('q95_pass_fraction', 0)) * 100, '.0f')} | % | {eq.get('n_q95_pass', '?')}/{eq.get('n_files', '?')} files |")
+            sections.append(
+                f"| Equilibrium ψ pass fraction | {_fmt((eq.get('psi_pass_fraction', 0)) * 100, '.0f')} | % | {eq.get('n_psi_pass', '?')}/{eq.get('n_files', '?')} files |"
+            )
+            sections.append(
+                f"| Equilibrium q95 pass fraction | {_fmt((eq.get('q95_pass_fraction', 0)) * 100, '.0f')} | % | {eq.get('n_q95_pass', '?')}/{eq.get('n_files', '?')} files |"
+            )
             sections.append(f"| Equilibrium validation | {_fmt(eq.get('passes'))} | — | |")
-        sections.append("| Data provenance | Mixed | — | Real SPARC/ITPA + template-generated DIII-D disruption shots |")
-        sections.append(f"| Overall real-shot pass | {_fmt(real_shots.get('overall_pass'))} | — | |")
+        sections.append(
+            "| Data provenance | Mixed | — | Real SPARC/ITPA + template-generated DIII-D disruption shots |"
+        )
+        sections.append(
+            f"| Overall real-shot pass | {_fmt(real_shots.get('overall_pass'))} | — | |"
+        )
         sections.append("")
 
     # ── Disturbance Rejection (SNN vs PID vs MPC) ──
@@ -532,9 +627,11 @@ def generate_results_md(
             sections.append(
                 "> Provenance: synthetic manufactured-source parity lane (release default when FreeGS backend is unavailable)."
             )
-        sections.append(f"\n*Overall ψ NRMSE: {_fmt(freegs.get('overall_psi_nrmse'), '.3f')} "
-                        f"(threshold: {freegs.get('psi_nrmse_threshold', '?')}). "
-                        f"Overall: {'PASS' if freegs.get('passes') else 'FAIL'}*\n")
+        sections.append(
+            f"\n*Overall ψ NRMSE: {_fmt(freegs.get('overall_psi_nrmse'), '.3f')} "
+            f"(threshold: {freegs.get('psi_nrmse_threshold', '?')}). "
+            f"Overall: {'PASS' if freegs.get('passes') else 'FAIL'}*\n"
+        )
 
     # ── Disruption Transfer Generalization ──
     if transfer_generalization:
@@ -568,19 +665,31 @@ def generate_results_md(
             sections.append("|--------|-------|-------|")
             sections.append(f"| Optimal bias | {_fmt(opt.get('bias'), '.1f')} | |")
             sections.append(f"| Optimal threshold | {_fmt(opt.get('threshold'), '.2f')} | |")
-            sections.append(f"| Recall | {_fmt(opt.get('recall'), '.2f')} | {opt.get('true_positives', '?')}/{opt.get('n_disruptions', '?')} |")
-            sections.append(f"| FPR | {_fmt(opt.get('fpr'), '.2f')} | {opt.get('false_positives', '?')}/{opt.get('n_safe', '?')} |")
-            sections.append(f"| Pareto score | {_fmt(opt.get('pareto_score'), '.2f')} | recall − FPR |")
+            sections.append(
+                f"| Recall | {_fmt(opt.get('recall'), '.2f')} | {opt.get('true_positives', '?')}/{opt.get('n_disruptions', '?')} |"
+            )
+            sections.append(
+                f"| FPR | {_fmt(opt.get('fpr'), '.2f')} | {opt.get('false_positives', '?')}/{opt.get('n_safe', '?')} |"
+            )
+            sections.append(
+                f"| Pareto score | {_fmt(opt.get('pareto_score'), '.2f')} | recall − FPR |"
+            )
             cfg = threshold_sweep.get("config", {})
-            sections.append(f"| Shots evaluated | {cfg.get('n_shots', '?')} | {cfg.get('n_disruptions', '?')} disruptions, {cfg.get('n_safe', '?')} safe |")
+            sections.append(
+                f"| Shots evaluated | {cfg.get('n_shots', '?')} | {cfg.get('n_disruptions', '?')} disruptions, {cfg.get('n_safe', '?')} safe |"
+            )
             sections.append("")
 
     # ── Legacy Surrogates ──
     rows = []
     if surrogates:
         if surrogates.get("mlp_rmse_s") is not None:
-            rows.append(f"| Neural transport MLP surrogate tau_E RMSE | {_fmt(surrogates['mlp_rmse_s'], '.4f')} | s | ITPA H-mode confinement time |")
-            rows.append(f"| Neural transport MLP surrogate tau_E RMSE % | {_fmt(surrogates['mlp_rmse_pct'], '.1f')} | % | {int(surrogates.get('mlp_samples', 0))} samples |")
+            rows.append(
+                f"| Neural transport MLP surrogate tau_E RMSE | {_fmt(surrogates['mlp_rmse_s'], '.4f')} | s | ITPA H-mode confinement time |"
+            )
+            rows.append(
+                f"| Neural transport MLP surrogate tau_E RMSE % | {_fmt(surrogates['mlp_rmse_pct'], '.1f')} | % | {int(surrogates.get('mlp_samples', 0))} samples |"
+            )
         if include_legacy_fno and surrogates.get("fno_rel_l2_mean") is not None:
             rows.append(
                 f"| JAX FNO turbulence surrogate relative L2 (mean) | "
@@ -624,8 +733,16 @@ def generate_results_md(
         qlknn_pass = v < 0.25
         qlknn_metric = f"test_rel_l2 = {v:.4f}"
     _lane("QLKNN Transport", {"passes": qlknn_pass} if qlknn else None, "passes", qlknn_metric)
-    _lane("Real-shot validation (mixed real+template)", real_shots, "overall_pass",
-          f"recall={real_shots['disruption']['recall']:.0%}, FPR={real_shots['disruption']['false_positive_rate']:.0%}" if real_shots and "disruption" in real_shots else "—")
+    _lane(
+        "Real-shot validation (mixed real+template)",
+        real_shots,
+        "overall_pass",
+        (
+            f"recall={real_shots['disruption']['recall']:.0%}, FPR={real_shots['disruption']['false_positive_rate']:.0%}"
+            if real_shots and "disruption" in real_shots
+            else "—"
+        ),
+    )
 
     conf_metric = "—"
     conf_pass = None
@@ -634,29 +751,53 @@ def generate_results_md(
         conf_metric = f"RMSE = {ci.get('tau_rmse_s', 0):.4f} s"
     _lane("Confinement ITPA", {"passes": conf_pass} if confinement else None, None, conf_metric)
 
-    _lane("3D Force Balance", fb3d, None,
-          f"reduction = {fb3d['reduction_factor']:.1f}×" if fb3d else "—")
-    _lane("Q ≥ 10", q10, "q10_achieved",
-          f"Q = {q10['best_Q']:.1f}" if q10 else "—")
-    _lane("TBR > 1.05", {"passes": tbr and tbr["tbr_total"] > 1.05} if tbr else None, "passes",
-          f"TBR = {tbr['tbr_total']:.4f}" if tbr else "—")
-    _lane("ECRH absorption", ecrh, None,
-          f"{ecrh['absorption_pct']:.1f}%" if ecrh else "—")
-    _lane("Disruption detection", real_shots.get("disruption") if real_shots else None, "passes",
-          f"recall={real_shots['disruption']['recall']:.0%}" if real_shots and "disruption" in real_shots else "—")
-    _lane("HIL sub-ms", hil, "sub_ms",
-          f"P50 = {hil['p50_us']:.1f} μs" if hil else "—")
+    _lane(
+        "3D Force Balance",
+        fb3d,
+        None,
+        f"reduction = {fb3d['reduction_factor']:.1f}×" if fb3d else "—",
+    )
+    _lane("Q ≥ 10", q10, "q10_achieved", f"Q = {q10['best_Q']:.1f}" if q10 else "—")
+    _lane(
+        "TBR > 1.05",
+        {"passes": tbr and tbr["tbr_total"] > 1.05} if tbr else None,
+        "passes",
+        f"TBR = {tbr['tbr_total']:.4f}" if tbr else "—",
+    )
+    _lane("ECRH absorption", ecrh, None, f"{ecrh['absorption_pct']:.1f}%" if ecrh else "—")
+    _lane(
+        "Disruption detection",
+        real_shots.get("disruption") if real_shots else None,
+        "passes",
+        (
+            f"recall={real_shots['disruption']['recall']:.0%}"
+            if real_shots and "disruption" in real_shots
+            else "—"
+        ),
+    )
+    _lane("HIL sub-ms", hil, "sub_ms", f"P50 = {hil['p50_us']:.1f} μs" if hil else "—")
     freegs_lane_name = "FreeGS strict-backend parity"
     if freegs and str(freegs.get("mode", "")).strip().lower() == "solovev_manufactured_source":
         freegs_lane_name = "Solov'ev manufactured-source parity"
-    _lane(freegs_lane_name, freegs, "passes",
-          f"ψ NRMSE = {freegs['overall_psi_nrmse']:.3f}" if freegs else "—")
-    _lane("Transfer generalization", transfer_generalization, "passes",
-          (
-              f"eff={transfer_generalization['transfer_efficiency']:.3f}, "
-              f"target_recall={transfer_generalization['target_group']['recall']:.3f}"
-          )
-          if transfer_generalization else "—")
+    _lane(
+        freegs_lane_name,
+        freegs,
+        "passes",
+        f"ψ NRMSE = {freegs['overall_psi_nrmse']:.3f}" if freegs else "—",
+    )
+    _lane(
+        "Transfer generalization",
+        transfer_generalization,
+        "passes",
+        (
+            (
+                f"eff={transfer_generalization['transfer_efficiency']:.3f}, "
+                f"target_recall={transfer_generalization['target_group']['recall']:.3f}"
+            )
+            if transfer_generalization
+            else "—"
+        ),
+    )
     if include_legacy_fno:
         fno_metric = (
             f"rel_L2 = {surrogates['fno_rel_l2_mean']:.4f} (synthetic-only)"
@@ -673,7 +814,8 @@ def generate_results_md(
         sections.append("")
 
     # ── Documentation & Hero Notebooks ──
-    sections.append("""## Documentation & Hero Notebooks
+    sections.append(
+        """## Documentation & Hero Notebooks
 
 Official performance demonstrations and tutorial paths:
 - `examples/neuro_symbolic_control_demo_v2.ipynb` (Golden Base v2)
@@ -681,25 +823,31 @@ Official performance demonstrations and tutorial paths:
 
 Legacy frozen notebooks:
 - `examples/neuro_symbolic_control_demo.ipynb` (v1)
-""")
+"""
+    )
 
     # ── Footer ──
-    sections.append("""---
+    sections.append(
+        """---
 
 *All benchmarks run on the environment listed above.
 Artifact-based lanes load pre-computed JSON from `artifacts/` and `weights/`.
 Timings are wall-clock and may vary between machines.
 Re-run with `python validation/collect_results.py` to reproduce.*
-""")
+"""
+    )
 
     return "\n".join(sections)
 
 
 # ── Main ─────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Collect SCPN Fusion Core benchmark results")
-    parser.add_argument("--quick", action="store_true", help="Run reduced iterations for faster turnaround")
+    parser.add_argument(
+        "--quick", action="store_true", help="Run reduced iterations for faster turnaround"
+    )
     parser.add_argument(
         "--include-legacy-fno",
         action="store_true",
@@ -756,7 +904,9 @@ def main() -> None:
     freegs = _safe_run("freegs", load_freegs_benchmark)
 
     print("[14/15] Transfer Generalization")
-    transfer_generalization = _safe_run("transfer_generalization", load_disruption_transfer_generalization)
+    transfer_generalization = _safe_run(
+        "transfer_generalization", load_disruption_transfer_generalization
+    )
 
     print("[15/15] Disruption Threshold Sweep")
     threshold_sweep = _safe_run("threshold", load_disruption_threshold)
@@ -787,9 +937,23 @@ def main() -> None:
     RESULTS_PATH.write_text(md, encoding="utf-8")
     print(f"  -> {RESULTS_PATH} written ({len(md)} bytes)")
 
-    all_lanes = [hil, disruption, q10, tbr, ecrh, fb3d, surrogates, neural_eq,
-                 qlknn, real_shots, confinement, disturbance, freegs,
-                 transfer_generalization, threshold_sweep]
+    all_lanes = [
+        hil,
+        disruption,
+        q10,
+        tbr,
+        ecrh,
+        fb3d,
+        surrogates,
+        neural_eq,
+        qlknn,
+        real_shots,
+        confinement,
+        disturbance,
+        freegs,
+        transfer_generalization,
+        threshold_sweep,
+    ]
     n_ok = sum(1 for x in all_lanes if x is not None)
     print(f"\nDone: {n_ok}/15 benchmarks succeeded in {elapsed:.0f}s")
 

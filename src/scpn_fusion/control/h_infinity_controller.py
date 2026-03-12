@@ -146,9 +146,7 @@ class HInfinityController:
         # Solve continuous Riccati equations for feasibility analysis
         self.X, self.Y, self.F, self.L_gain = self._synthesize(self.gamma)
         self.spectral_radius_xy = float(np.max(np.abs(np.linalg.eigvals(self.X @ self.Y))))
-        self.robust_feasible = bool(
-            self.spectral_radius_xy < self.gamma ** 2 * (1.0 - 1e-6)
-        )
+        self.robust_feasible = bool(self.spectral_radius_xy < self.gamma**2 * (1.0 - 1e-6))
         if not self.robust_feasible:
             msg = (
                 "H-infinity spectral feasibility condition failed: "
@@ -187,7 +185,10 @@ class HInfinityController:
 
     @staticmethod
     def _make_feedthrough(
-        value: Optional[npt.ArrayLike], rows: int, cols: int, name: str,
+        value: Optional[npt.ArrayLike],
+        rows: int,
+        cols: int,
+        name: str,
     ) -> np.ndarray:
         if value is not None:
             mat = np.atleast_2d(np.asarray(value, dtype=float))
@@ -235,8 +236,8 @@ class HInfinityController:
         Y = 0.5 * (Y + Y.T)
 
         # Controller gains
-        F = -self.B2.T @ X       # shape (m, n) — state feedback
-        L = Y @ self.C2.T        # shape (n, l) — observer injection
+        F = -self.B2.T @ X  # shape (m, n) — state feedback
+        L = Y @ self.C2.T  # shape (n, l) — observer injection
 
         if not np.all(np.isfinite(F)) or not np.all(np.isfinite(L)):
             raise ValueError("Riccati synthesis produced non-finite gains.")
@@ -259,7 +260,7 @@ class HInfinityController:
                 X, Y, F, L = self._synthesize(gamma_try)
                 eigs = np.linalg.eigvals(X @ Y)
                 spec_rad = float(np.max(np.abs(eigs)))
-                if spec_rad < gamma_try ** 2:
+                if spec_rad < gamma_try**2:
                     best_gamma = gamma_try
                     gamma_max = gamma_try
                 else:
@@ -346,18 +347,13 @@ class HInfinityController:
         # The last term corrects for integrator wind-up when the output saturates.
         innovation = y - self.C2 @ self.state
         aw_correction = self._Bd_u @ (u - u_raw)
-        self.state = (
-            self._Ad @ self.state
-            + self._Bd_u @ u
-            + self._Ld @ innovation
-            + aw_correction
-        )
+        self.state = self._Ad @ self.state + self._Bd_u @ u + self._Ld @ innovation + aw_correction
 
         return float(u[0]) if u.size > 1 else float(u.item())
 
     def riccati_residual_norms(self) -> tuple[float, float]:
         """Return Frobenius norms of the two H-infinity Riccati residuals."""
-        g2 = self.gamma ** 2
+        g2 = self.gamma**2
         res_x = (
             self.A.T @ self.X
             + self.X @ self.A
@@ -370,13 +366,11 @@ class HInfinityController:
             - self.Y @ (self.C2.T @ self.C2 - self.C1.T @ self.C1 / g2) @ self.Y
             + self.B1 @ self.B1.T
         )
-        return float(np.linalg.norm(res_x, ord="fro")), float(
-            np.linalg.norm(res_y, ord="fro")
-        )
+        return float(np.linalg.norm(res_x, ord="fro")), float(np.linalg.norm(res_y, ord="fro"))
 
     def robust_feasibility_margin(self) -> float:
         """Return gamma^2 - rho(XY); positive values satisfy the strict test."""
-        return float(self.gamma ** 2 - self.spectral_radius_xy)
+        return float(self.gamma**2 - self.spectral_radius_xy)
 
     def reset(self) -> None:
         """Reset controller state to zero."""
@@ -416,9 +410,7 @@ class HInfinityController:
         crossed = False
         prev_gain = float("inf")
         for w in freqs:
-            sI_A_inv = np.linalg.solve(
-                1j * w * np.eye(self.n) - self.A, self.B2
-            )
+            sI_A_inv = np.linalg.solve(1j * w * np.eye(self.n) - self.A, self.B2)
             L_jw = self.F @ sI_A_inv
             gain = float(np.abs(L_jw).max())
             if prev_gain > 1.0 >= gain:
@@ -428,17 +420,19 @@ class HInfinityController:
         return 0.0
 
 
-
 # Backward-compatible lazy re-exports from flight_sim_controllers
 _FLIGHT_SIM_NAMES = {
-    "LQRController", "get_flight_sim_controller",
-    "get_flight_sim_controller_v2", "get_flight_sim_lqr_controller",
+    "LQRController",
+    "get_flight_sim_controller",
+    "get_flight_sim_controller_v2",
+    "get_flight_sim_lqr_controller",
 }
 
 
 def __getattr__(name: str) -> object:
     if name in _FLIGHT_SIM_NAMES:
         from . import flight_sim_controllers as _fsc
+
         return getattr(_fsc, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
@@ -468,16 +462,20 @@ def get_radial_robust_controller(
     """
     if not np.isfinite(damping) or damping <= 0.0:
         raise ValueError("damping must be a finite positive value.")
-    A = np.array([
-        [0.0, 1.0],
-        [gamma_growth**2, -damping],
-    ])
+    A = np.array(
+        [
+            [0.0, 1.0],
+            [gamma_growth**2, -damping],
+        ]
+    )
     B2 = np.array([[0.0], [1.0]])
     B1 = np.array([[0.0], [0.5]])
-    C1 = np.array([
-        [1.0, 0.0],
-        [0.0, 0.0],
-    ])
+    C1 = np.array(
+        [
+            [1.0, 0.0],
+            [0.0, 0.0],
+        ]
+    )
     C2 = np.array([[1.0, 0.0]])
 
     return HInfinityController(

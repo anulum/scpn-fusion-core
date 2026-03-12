@@ -92,9 +92,7 @@ def test_compute_profile_jacobian_external_mode_sanitizes_nonfinite_jphi() -> No
 def test_solve_newton_linear_system_identity_operator() -> None:
     k = _KernelStub(nz=4, nr=4)
     n = 4
-    j_op = LinearOperator(
-        shape=(n, n), matvec=lambda x: x, dtype=np.float64
-    )
+    j_op = LinearOperator(shape=(n, n), matvec=lambda x: x, dtype=np.float64)
     rhs = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
     delta, info = solve_newton_linear_system(
         kernel=k,

@@ -47,9 +47,7 @@ def test_check_mode_reports_stale_output(tmp_path: Path) -> None:
     manifest.write_text(json.dumps(manifest_data), encoding="utf-8")
     output.write_text("# stale\n", encoding="utf-8")
 
-    rc = claims_map.main(
-        ["--manifest", str(manifest), "--output", str(output), "--check"]
-    )
+    rc = claims_map.main(["--manifest", str(manifest), "--output", str(output), "--check"])
     assert rc == 1
 
 
@@ -73,7 +71,5 @@ def test_check_mode_passes_when_output_matches(tmp_path: Path) -> None:
     rendered = claims_map.render_markdown(claims, manifest_path=manifest.as_posix())
     output.write_text(rendered, encoding="utf-8")
 
-    rc = claims_map.main(
-        ["--manifest", str(manifest), "--output", str(output), "--check"]
-    )
+    rc = claims_map.main(["--manifest", str(manifest), "--output", str(output), "--check"])
     assert rc == 0

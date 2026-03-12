@@ -38,8 +38,8 @@ def validate_iter(config_path: Path = DEFAULT_CONFIG_PATH) -> None:
     # ITER Baseline: 50MW Aux Heating -> 500MW Fusion
     metrics = sim.calculate_thermodynamics(P_aux_MW=50.0)
 
-    P_fus = metrics['P_fusion_MW']
-    Q = metrics['Q']
+    P_fus = metrics["P_fusion_MW"]
+    Q = metrics["Q"]
 
     print(f"  -> Calculated Fusion Power: {P_fus:.1f} MW (ITER Target: 500 MW)")
     print(f"  -> Calculated Q-Factor:     {Q:.2f} (ITER Target: 10.0)")
@@ -63,9 +63,7 @@ def validate_iter(config_path: Path = DEFAULT_CONFIG_PATH) -> None:
         if 300 < P_fus < 700 and Q > 6.0:
             print("       Strong alignment with ITER-scale burn corridor")
     else:
-        print(
-            f"[FAIL] Burn contract violation (P_fusion={P_fus:.1f} MW, Q={Q:.2f})"
-        )
+        print(f"[FAIL] Burn contract violation (P_fusion={P_fus:.1f} MW, Q={Q:.2f})")
 
     if score == 2:
         print("\nRESULT: MODEL IS SCIENTIFICALLY SOUND.")

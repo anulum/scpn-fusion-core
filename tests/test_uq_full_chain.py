@@ -62,21 +62,25 @@ class TestFullChainReturnShape:
         assert isinstance(r, FullChainUQResult)
 
         # Scalar central / sigma fields
-        for attr in ("tau_E", "P_fusion", "Q",
-                     "tau_E_sigma", "P_fusion_sigma", "Q_sigma",
-                     "n_samples"):
+        for attr in (
+            "tau_E",
+            "P_fusion",
+            "Q",
+            "tau_E_sigma",
+            "P_fusion_sigma",
+            "Q_sigma",
+            "n_samples",
+        ):
             assert hasattr(r, attr), f"Missing attribute: {attr}"
 
         # Band arrays [5%, 50%, 95%] — length 3
-        for attr in ("psi_nrmse_bands", "tau_E_bands",
-                     "P_fusion_bands", "Q_bands", "beta_N_bands"):
+        for attr in ("psi_nrmse_bands", "tau_E_bands", "P_fusion_bands", "Q_bands", "beta_N_bands"):
             arr = getattr(r, attr)
             assert isinstance(arr, np.ndarray), f"{attr} is not ndarray"
             assert len(arr) == 3, f"{attr} length {len(arr)}, expected 3"
 
         # Legacy percentile arrays [5, 25, 50, 75, 95] — length 5
-        for attr in ("tau_E_percentiles", "P_fusion_percentiles",
-                     "Q_percentiles"):
+        for attr in ("tau_E_percentiles", "P_fusion_percentiles", "Q_percentiles"):
             arr = getattr(r, attr)
             assert isinstance(arr, np.ndarray)
             assert len(arr) == 5
@@ -125,15 +129,10 @@ class TestBandOrdering:
     def test_full_chain_bands_ordered(self):
         """5th percentile < 50th < 95th for all band quantities."""
         r = quantify_full_chain(ITER_SCENARIO, n_samples=3000, seed=99)
-        for name in ("psi_nrmse_bands", "tau_E_bands",
-                     "P_fusion_bands", "Q_bands", "beta_N_bands"):
+        for name in ("psi_nrmse_bands", "tau_E_bands", "P_fusion_bands", "Q_bands", "beta_N_bands"):
             bands = getattr(r, name)
-            assert bands[0] <= bands[1] + 1e-12, (
-                f"{name}: 5th ({bands[0]}) > 50th ({bands[1]})"
-            )
-            assert bands[1] <= bands[2] + 1e-12, (
-                f"{name}: 50th ({bands[1]}) > 95th ({bands[2]})"
-            )
+            assert bands[0] <= bands[1] + 1e-12, f"{name}: 5th ({bands[0]}) > 50th ({bands[1]})"
+            assert bands[1] <= bands[2] + 1e-12, f"{name}: 50th ({bands[1]}) > 95th ({bands[2]})"
 
 
 class TestReproducibility:
@@ -188,8 +187,14 @@ class TestInputValidation:
 
     def test_invalid_scenario_rejected(self):
         bad = PlasmaScenario(
-            I_p=15.0, B_t=5.3, P_heat=0.0, n_e=10.1,
-            R=6.2, A=3.1, kappa=1.7, M=2.5,
+            I_p=15.0,
+            B_t=5.3,
+            P_heat=0.0,
+            n_e=10.1,
+            R=6.2,
+            A=3.1,
+            kappa=1.7,
+            M=2.5,
         )
         with pytest.raises(ValueError, match="scenario\\.P_heat"):
             quantify_full_chain(bad, n_samples=64, seed=1)
@@ -200,10 +205,16 @@ class TestChiUncertaintyEffect:
     def test_chi_uncertainty_widens_tau_e_band(self):
         """Larger chi_gB_sigma should produce a wider tau_E band."""
         r_narrow = quantify_full_chain(
-            ITER_SCENARIO, n_samples=3000, seed=10, chi_gB_sigma=0.1,
+            ITER_SCENARIO,
+            n_samples=3000,
+            seed=10,
+            chi_gB_sigma=0.1,
         )
         r_wide = quantify_full_chain(
-            ITER_SCENARIO, n_samples=3000, seed=10, chi_gB_sigma=0.6,
+            ITER_SCENARIO,
+            n_samples=3000,
+            seed=10,
+            chi_gB_sigma=0.6,
         )
         width_narrow = r_narrow.tau_E_bands[2] - r_narrow.tau_E_bands[0]
         width_wide = r_wide.tau_E_bands[2] - r_wide.tau_E_bands[0]
@@ -218,10 +229,16 @@ class TestBoundaryUncertaintyEffect:
     def test_boundary_uncertainty_affects_psi(self):
         """Larger boundary_sigma should widen the psi_nrmse band."""
         r_tight = quantify_full_chain(
-            ITER_SCENARIO, n_samples=3000, seed=20, boundary_sigma=0.005,
+            ITER_SCENARIO,
+            n_samples=3000,
+            seed=20,
+            boundary_sigma=0.005,
         )
         r_loose = quantify_full_chain(
-            ITER_SCENARIO, n_samples=3000, seed=20, boundary_sigma=0.08,
+            ITER_SCENARIO,
+            n_samples=3000,
+            seed=20,
+            boundary_sigma=0.08,
         )
         width_tight = r_tight.psi_nrmse_bands[2] - r_tight.psi_nrmse_bands[0]
         width_loose = r_loose.psi_nrmse_bands[2] - r_loose.psi_nrmse_bands[0]

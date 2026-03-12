@@ -31,7 +31,9 @@ class _DummyAnalyzer:
         self.kernel = _DummyKernel()
         self.Psi_vac = 0.0
 
-    def calculate_forces(self, _target_r: float, _target_z: float, _ip: float) -> tuple[float, float, int]:
+    def calculate_forces(
+        self, _target_r: float, _target_z: float, _ip: float
+    ) -> tuple[float, float, int]:
         # Linear force model around I=1.0 MA so Newton update converges quickly.
         i_pf3 = float(self.kernel.cfg["coils"][2]["current"])
         fr = (i_pf3 - 1.0) * 1.0e6
@@ -43,12 +45,16 @@ class _SingularJacobianAnalyzer:
         self.kernel = _DummyKernel()
         self.Psi_vac = 0.0
 
-    def calculate_forces(self, _target_r: float, _target_z: float, _ip: float) -> tuple[float, float, int]:
+    def calculate_forces(
+        self, _target_r: float, _target_z: float, _ip: float
+    ) -> tuple[float, float, int]:
         # Force independent of current -> numerical Jacobian exactly zero.
         return 1.0e6, 0.0, 0
 
 
-def test_solve_for_equilibrium_converges_with_dummy_analyzer(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_solve_for_equilibrium_converges_with_dummy_analyzer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(force_balance, "StabilityAnalyzer", _DummyAnalyzer)
     solver = force_balance.ForceBalanceSolver("dummy.json")
 

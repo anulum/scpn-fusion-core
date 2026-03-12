@@ -65,9 +65,7 @@ def _normalize_license_registry(policy: dict[str, Any]) -> dict[str, dict[str, A
                 f"license_registry entry {license_id} missing bool attribution_required."
             )
         if not isinstance(citation_required, bool):
-            raise ValueError(
-                f"license_registry entry {license_id} missing bool citation_required."
-            )
+            raise ValueError(f"license_registry entry {license_id} missing bool citation_required.")
         if not isinstance(requires_license_notice, bool):
             raise ValueError(
                 f"license_registry entry {license_id} missing bool requires_license_notice."
@@ -406,9 +404,7 @@ def _emit_stale_diff_summary(
         for field in sorted(set(before) | set(after)):
             if before.get(field) == after.get(field):
                 continue
-            print(
-                f"  - {field}: existing={before.get(field)!r} generated={after.get(field)!r}"
-            )
+            print(f"  - {field}: existing={before.get(field)!r} generated={after.get(field)!r}")
         break
 
 

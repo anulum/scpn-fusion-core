@@ -65,7 +65,7 @@ def _parabolic_profile(
 ) -> NDArray[np.float64]:
     """Parabolic profile: peak * ((1 - rho^2)^alpha * (1 - edge_fraction) + edge_fraction)."""
     return np.asarray(
-        peak * ((1.0 - rho ** 2) ** alpha * (1.0 - edge_fraction) + edge_fraction),
+        peak * ((1.0 - rho**2) ** alpha * (1.0 - edge_fraction) + edge_fraction),
         dtype=np.float64,
     )
 
@@ -84,8 +84,7 @@ def generate_synthetic_shot_database(
     spec_total = sum(s["n_shots"] for s in _MACHINE_SPECS.values())
     scale = max(1.0, n_shots / spec_total)
     machine_counts: dict[str, int] = {
-        m: max(int(round(s["n_shots"] * scale)), s["n_shots"])
-        for m, s in _MACHINE_SPECS.items()
+        m: max(int(round(s["n_shots"] * scale)), s["n_shots"]) for m, s in _MACHINE_SPECS.items()
     }
 
     rho = np.linspace(0.0, 1.0, 1000, dtype=np.float64)

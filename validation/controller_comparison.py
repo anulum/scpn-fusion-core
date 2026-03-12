@@ -45,6 +45,7 @@ try:
         ModelPredictiveController,
         NeuralSurrogate,
     )
+
     _mpc_available = True
 except ImportError:
     ModelPredictiveController = None  # type: ignore[assignment]
@@ -52,6 +53,7 @@ except ImportError:
 
 try:
     from scpn_fusion.control.fusion_nmpc_jax import get_nmpc_controller
+
     _nmpc_jax_available = True
 except ImportError:
     get_nmpc_controller = None  # type: ignore[assignment]
@@ -62,6 +64,7 @@ try:
         NengoSNNConfig,
         nengo_available,
     )
+
     _snn_available = nengo_available()
 except ImportError:
     NengoSNNController = None  # type: ignore[assignment]
@@ -71,6 +74,7 @@ except ImportError:
 @dataclass
 class EpisodeResult:
     """Metrics from a single controller episode."""
+
     mean_abs_r_error: float
     mean_abs_z_error: float
     reward: float
@@ -83,6 +87,7 @@ class EpisodeResult:
 @dataclass
 class ControllerMetrics:
     """Aggregate metrics for a controller across episodes."""
+
     name: str
     n_episodes: int = 0
     mean_reward: float = 0.0
@@ -311,8 +316,12 @@ def run_comparison(
             metrics.mean_r_error = float(np.mean([e.mean_abs_r_error for e in metrics.episodes]))
             metrics.p95_latency_us = float(np.percentile(latencies, 95))
             metrics.disruption_rate = float(np.mean([e.disrupted for e in metrics.episodes]))
-            metrics.mean_def = float(np.mean([e.t_disruption / shot_duration for e in metrics.episodes]))
-            metrics.mean_energy_efficiency = float(np.mean([e.energy_efficiency for e in metrics.episodes]))
+            metrics.mean_def = float(
+                np.mean([e.t_disruption / shot_duration for e in metrics.episodes])
+            )
+            metrics.mean_energy_efficiency = float(
+                np.mean([e.energy_efficiency for e in metrics.episodes])
+            )
         results[ctrl_name] = metrics
 
     return results

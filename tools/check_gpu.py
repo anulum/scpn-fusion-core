@@ -23,6 +23,7 @@ def main() -> None:
     jax_gpu = False
     try:
         import jax
+
         devices = jax.devices()
         jax_gpu = any(d.platform == "gpu" for d in devices)
         print(f"JAX version:   {jax.__version__}")
@@ -39,6 +40,7 @@ def main() -> None:
     # ── JAX CUDA info ────────────────────────────────────────────
     try:
         import jaxlib
+
         print(f"jaxlib version: {jaxlib.__version__}")
     except ImportError:
         pass
@@ -47,6 +49,7 @@ def main() -> None:
     torch_gpu = False
     try:
         import torch
+
         torch_gpu = torch.cuda.is_available()
         print(f"\nPyTorch version: {torch.__version__}")
         print(f"CUDA available:  {torch_gpu}")
@@ -66,6 +69,7 @@ def main() -> None:
     # ── Rust wgpu ────────────────────────────────────────────────
     try:
         import scpn_fusion_rs
+
         if hasattr(scpn_fusion_rs, "py_gpu_available"):
             wgpu = scpn_fusion_rs.py_gpu_available()
             print(f"\nRust wgpu:       {'Available' if wgpu else 'Not available'}")

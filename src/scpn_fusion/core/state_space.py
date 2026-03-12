@@ -13,13 +13,15 @@ Reduces data copying overhead and ensures state consistency.
 from __future__ import annotations
 from dataclasses import dataclass, field
 import numpy as np
-from typing import Dict, Optional
+from typing import Dict
+
 
 @dataclass
 class FusionState:
     """
     Unified plasma state representation.
     """
+
     # Magnetic Axis (m)
     r_axis: float = 0.0
     z_axis: float = 0.0
@@ -53,11 +55,10 @@ class FusionState:
 
     def to_vector(self) -> np.ndarray:
         """Convert scalar features to a vector for ML/MPC use."""
-        return np.array([
-            self.r_axis, self.z_axis,
-            self.x_point_r, self.x_point_z,
-            self.ip_ma, self.q95
-        ], dtype=np.float64)
+        return np.array(
+            [self.r_axis, self.z_axis, self.x_point_r, self.x_point_z, self.ip_ma, self.q95],
+            dtype=np.float64,
+        )
 
     @classmethod
     def from_kernel(cls, kernel: any, time_s: float = 0.0) -> FusionState:
@@ -80,5 +81,5 @@ class FusionState:
             x_point_r=float(xp_pos[0]),
             x_point_z=float(xp_pos[1]),
             ip_ma=ip,
-            time_s=time_s
+            time_s=time_s,
         )

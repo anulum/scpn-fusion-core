@@ -119,7 +119,11 @@ def _torax_step(
         0.85 * command - (state.beta_n - 1.85) - 0.52 * disturbance + rng.normal(0.0, 0.004)
     )
     q95 = state.q95 + 0.060 * (
-        0.18 - 0.33 * command + 0.62 * disturbance - 0.16 * (state.q95 - 4.9) + rng.normal(0.0, 0.006)
+        0.18
+        - 0.33 * command
+        + 0.62 * disturbance
+        - 0.16 * (state.q95 - 4.9)
+        + rng.normal(0.0, 0.006)
     )
     li3 = state.li3 + 0.050 * (0.06 * command - 0.11 * disturbance - 0.09 * (state.li3 - 0.95))
     w_thermal = state.w_thermal_mj + 0.110 * (

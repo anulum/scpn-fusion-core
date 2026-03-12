@@ -79,7 +79,7 @@ def _build_proxy_signal(
         ramp_scale = 1.10 if profile == "tm1" else 0.85
         burst_scale = 0.30 if profile == "tm1" else 0.20
         ramp = np.where(t > 0.58, (t - 0.58) * ramp_scale, 0.0)
-        burst = np.exp(-((t - 0.90) / 0.07) ** 2) * burst_scale
+        burst = np.exp(-(((t - 0.90) / 0.07) ** 2)) * burst_scale
         signal = np.clip(base + ramp + burst, 0.01, None)
         toroidal = {
             "toroidal_n1_amp": float(rng.uniform(0.30, 0.95 if profile == "tm1" else 0.45)),
@@ -315,8 +315,7 @@ def run_campaign(
 
     wall_latency_advisory_pass = bool(
         latency_out["p95_ms_wall"] <= thresholds["max_equilibrium_p95_ms_wall_advisory"]
-        and latency_out["fault_p95_ms_wall"]
-        <= thresholds["max_equilibrium_p95_ms_wall_advisory"]
+        and latency_out["fault_p95_ms_wall"] <= thresholds["max_equilibrium_p95_ms_wall_advisory"]
     )
 
     passes = bool(
@@ -425,15 +424,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--latency-fault-runs", type=int, default=10)
     parser.add_argument(
         "--output-json",
-        default=str(
-            ROOT / "validation" / "reports" / "task2_pretrained_surrogates_benchmark.json"
-        ),
+        default=str(ROOT / "validation" / "reports" / "task2_pretrained_surrogates_benchmark.json"),
     )
     parser.add_argument(
         "--output-md",
-        default=str(
-            ROOT / "validation" / "reports" / "task2_pretrained_surrogates_benchmark.md"
-        ),
+        default=str(ROOT / "validation" / "reports" / "task2_pretrained_surrogates_benchmark.md"),
     )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)

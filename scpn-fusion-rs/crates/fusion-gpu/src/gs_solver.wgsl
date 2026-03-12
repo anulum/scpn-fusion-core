@@ -128,7 +128,7 @@ fn calculate_residual(@builtin(global_invocation_id) gid: vec3<u32>) {
 fn restrict_to_coarse(@builtin(global_invocation_id) gid: vec3<u32>) {
     let ir_c = gid.x;
     let iz_c = gid.y;
-    
+
     // Coarse grid size is (nr-1)/2 + 1
     let nr_c = (params.nr - 1u) / 2u + 1u;
     let nz_c = (params.nz - 1u) / 2u + 1u;
@@ -139,7 +139,7 @@ fn restrict_to_coarse(@builtin(global_invocation_id) gid: vec3<u32>) {
 
     let ir_f = ir_c * 2u;
     let iz_f = iz_c * 2u;
-    
+
     // Simple injection for now
     coarse_dest[iz_c * nr_c + ir_c] = residual_buf[iz_f * params.nr + ir_f];
 }
@@ -157,11 +157,11 @@ fn prolong_and_add(@builtin(global_invocation_id) gid: vec3<u32>) {
 
     let nr_c = (params.nr - 1u) / 2u + 1u;
     let nz_c = (params.nz - 1u) / 2u + 1u;
-    
+
     // Coarse indices (floor)
     let ir_c = ir_f / 2u;
     let iz_c = iz_f / 2u;
-    
+
     // Fractions
     let fr = f32(ir_f % 2u) * 0.5;
     let fz = f32(iz_f % 2u) * 0.5;
@@ -172,9 +172,9 @@ fn prolong_and_add(@builtin(global_invocation_id) gid: vec3<u32>) {
     let c01 = coarse_dest[min(iz_c + 1u, nz_c - 1u) * nr_c + ir_c];
     let c11 = coarse_dest[min(iz_c + 1u, nz_c - 1u) * nr_c + min(ir_c + 1u, nr_c - 1u)];
 
-    let correction = (1.0 - fr) * (1.0 - fz) * c00 + 
-                     fr * (1.0 - fz) * c10 + 
-                     (1.0 - fr) * fz * c01 + 
+    let correction = (1.0 - fr) * (1.0 - fz) * c00 +
+                     fr * (1.0 - fz) * c10 +
+                     (1.0 - fr) * fz * c01 +
                      fr * fz * c11;
 
     psi[idx(iz_f, ir_f)] += correction;

@@ -53,7 +53,7 @@ class CoupledSandpileReactor:
         shear_efficiency: float = SHEAR_EFFICIENCY,
         max_sub_steps: int = 50,
         flow_bounds: Tuple[float, float] = (0.0, 5.0),
-        energy_per_topple_mj: float = 0.05, # Physical calibration
+        energy_per_topple_mj: float = 0.05,  # Physical calibration
     ) -> None:
         size = int(size)
         if size < 8:
@@ -92,7 +92,7 @@ class CoupledSandpileReactor:
         total_topple = 0
 
         for _ in range(self.max_sub_steps):
-            sites_active = np.where(self.Z >= current_z_crit)[0]
+            sites_active = np.where(current_z_crit <= self.Z)[0]
             if sites_active.size == 0:
                 break
             for i in sites_active:
@@ -177,7 +177,7 @@ class FusionAIAgent:
     ) -> int:
         if float(rng.random()) < self.epsilon:
             return int(rng.integers(self.n_actions))
-        
+
         # Softmax selection or Argmax
         # Here we use Argmax for simplicity but the Q-values are regularized
         return int(np.argmax(self.q_table[state]))
@@ -205,7 +205,7 @@ class FusionAIAgent:
 
         target = float(reward) + self.gamma * (max_future_q + self.entropy_beta * entropy)
         new_q = old_q + self.alpha * (target - old_q)
-        
+
         self.q_table[state][int(action)] = new_q
         self.total_reward += float(reward)
         return new_q
@@ -299,11 +299,7 @@ def run_advanced_learning_sim(
     if not np.isfinite(shear_step) or shear_step < 0.0:
         raise ValueError("shear_step must be finite and >= 0.")
     noise_probability = float(noise_probability)
-    if (
-        not np.isfinite(noise_probability)
-        or noise_probability < 0.0
-        or noise_probability > 1.0
-    ):
+    if not np.isfinite(noise_probability) or noise_probability < 0.0 or noise_probability > 1.0:
         raise ValueError("noise_probability must be finite and in [0, 1].")
     rng = np.random.default_rng(int(seed))
 
@@ -357,7 +353,12 @@ def run_advanced_learning_sim(
         if verbose and (t % cadence == 0 or t == steps - 1):
             logger.info(
                 "Step %d: Temp=%.2f | Flow=%.3f | Turb=%s | AI_Shear=%.3f | Q-Avg=%.4f",
-                t, core_temp, flow_val, av_size, current_ext_shear, float(np.mean(brain.q_table))
+                t,
+                core_temp,
+                flow_val,
+                av_size,
+                current_ext_shear,
+                float(np.mean(brain.q_table)),
             )
 
     turb_arr = np.asarray(h_turb, dtype=np.float64)

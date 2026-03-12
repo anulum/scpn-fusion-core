@@ -410,12 +410,8 @@ class FusionKernelNewtonSolverMixin:
         max_iter: int = self.cfg["solver"]["max_iterations"]
         tol: float = self.cfg["solver"]["convergence_threshold"]
         alpha: float = self.cfg["solver"].get("relaxation_factor", 0.1)
-        fail_on_diverge: bool = bool(
-            self.cfg["solver"].get("fail_on_diverge", False)
-        )
-        require_gs_residual: bool = bool(
-            self.cfg["solver"].get("require_gs_residual", False)
-        )
+        fail_on_diverge: bool = bool(self.cfg["solver"].get("fail_on_diverge", False))
+        require_gs_residual: bool = bool(self.cfg["solver"].get("require_gs_residual", False))
         gs_tol: float = float(self.cfg["solver"].get("gs_residual_threshold", tol))
         if require_gs_residual and gs_tol <= 0.0:
             raise ValueError("solver.gs_residual_threshold must be > 0")
@@ -449,9 +445,7 @@ class FusionKernelNewtonSolverMixin:
 
             # 2. Source update
             if not getattr(self, "external_profile_mode", False):
-                self.J_phi = self.update_plasma_source_nonlinear(
-                    Psi_axis, Psi_boundary
-                )
+                self.J_phi = self.update_plasma_source_nonlinear(Psi_axis, Psi_boundary)
 
             # 3. Elliptic solve
             Source = -mu0 * self.RR * self.J_phi
@@ -462,17 +456,17 @@ class FusionKernelNewtonSolverMixin:
             if np.isnan(Psi_new).any() or np.isinf(Psi_new).any():
                 logger.warning(
                     "Solver diverged — reverting to best state.",
-                    extra={"physics_context": {
-                        "iteration": k,
-                        "psi_axis": float(Psi_axis),
-                        "psi_boundary": float(Psi_boundary)
-                    }}
+                    extra={
+                        "physics_context": {
+                            "iteration": k,
+                            "psi_axis": float(Psi_axis),
+                            "psi_boundary": float(Psi_boundary),
+                        }
+                    },
                 )
                 self.Psi = Psi_best
                 if fail_on_diverge:
-                    raise RuntimeError(
-                        f"Equilibrium solver diverged at iter={k}"
-                    )
+                    raise RuntimeError(f"Equilibrium solver diverged at iter={k}")
                 break
 
             # 4. Under-relaxation
@@ -485,9 +479,7 @@ class FusionKernelNewtonSolverMixin:
                 psi_history.append(self.Psi.copy())
                 res_history.append(Psi_new - self.Psi)
                 if len(psi_history) >= 3 and k % 3 == 0:
-                    mixed = self._anderson_step(
-                        psi_history, res_history, m=anderson_m
-                    )
+                    mixed = self._anderson_step(psi_history, res_history, m=anderson_m)
                     self._apply_boundary_conditions(mixed, Psi_vac_boundary)
                     self.Psi = mixed
                 # Trim history to avoid unbounded memory growth
@@ -518,8 +510,7 @@ class FusionKernelNewtonSolverMixin:
 
             if k % 100 == 0:
                 logger.debug(
-                    "Iter %d: res=%.2e | axis=%.2f | X-pt=%.2f "
-                    "at R=%.2f, Z=%.2f",
+                    "Iter %d: res=%.2e | axis=%.2f | X-pt=%.2f " "at R=%.2f, Z=%.2f",
                     k,
                     diff,
                     Psi_axis,
@@ -560,4 +551,3 @@ class FusionKernelNewtonSolverMixin:
             "wall_time_s": elapsed,
             "solver_method": method,
         }
-

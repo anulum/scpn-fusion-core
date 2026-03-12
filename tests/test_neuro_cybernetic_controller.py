@@ -38,9 +38,7 @@ class _DummyKernel:
         )
         center_r = 6.2 + 0.07 * np.tanh(radial_drive / 20.0)
         center_z = 0.0 + 0.05 * np.tanh(vertical_drive / 20.0)
-        self.Psi = 1.0 - (
-            (self.RR - center_r) ** 2 + ((self.ZZ - center_z) / 1.4) ** 2
-        )
+        self.Psi = 1.0 - ((self.RR - center_r) ** 2 + ((self.ZZ - center_z) / 1.4) ** 2)
 
 
 @pytest.fixture(autouse=True)

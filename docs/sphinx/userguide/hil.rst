@@ -79,4 +79,3 @@ Run the HIL regression lane locally:
 
    python -m pytest tests/test_hil_harness.py tests/test_task7_hil_testing.py -q
    python validation/task7_hil_testing.py --strict
-

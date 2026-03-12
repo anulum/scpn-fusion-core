@@ -104,9 +104,7 @@ class TransportSolverRuntimePhysicsMixin:
         ne_safe = np.clip(ne_safe, 0.1, 1e3) * 1e19
 
         electron_frac = (
-            float(np.clip(self.aux_heating_electron_fraction, 0.0, 1.0))
-            if self.multi_ion
-            else 0.0
+            float(np.clip(self.aux_heating_electron_fraction, 0.0, 1.0)) if self.multi_ion else 0.0
         )
         ion_frac = 1.0 - electron_frac
         p_aux_w = float(P_aux_MW) * 1e6
@@ -152,7 +150,7 @@ class TransportSolverRuntimePhysicsMixin:
                 5.0e-31 * np.ones_like(Te),
                 np.where(
                     Te < 20.0,
-                    2.0e-31 * Te ** 0.3,
+                    2.0e-31 * Te**0.3,
                     8.0e-31 * np.ones_like(Te),
                 ),
             ),
@@ -160,7 +158,9 @@ class TransportSolverRuntimePhysicsMixin:
         return np.nan_to_num(Lz, nan=5.0e-31, posinf=8.0e-31, neginf=5.0e-31)
 
     @staticmethod
-    def _bremsstrahlung_power_density(ne_1e19: np.ndarray, Te_keV: np.ndarray, Z_eff: float) -> np.ndarray:
+    def _bremsstrahlung_power_density(
+        ne_1e19: np.ndarray, Te_keV: np.ndarray, Z_eff: float
+    ) -> np.ndarray:
         """Bremsstrahlung power density [W/m^3]."""
         ne_raw = np.asarray(ne_1e19, dtype=np.float64)
         te_raw = np.asarray(Te_keV, dtype=np.float64)
@@ -171,7 +171,7 @@ class TransportSolverRuntimePhysicsMixin:
         z_eff = float(np.nan_to_num(Z_eff, nan=1.0, posinf=100.0, neginf=1.0))
         z_eff = float(np.clip(z_eff, 1.0e-6, 100.0))
         ne_m3 = ne_safe * 1e19
-        p_brem = 5.35e-37 * z_eff * ne_m3 ** 2 * np.sqrt(te_safe)
+        p_brem = 5.35e-37 * z_eff * ne_m3**2 * np.sqrt(te_safe)
         return np.nan_to_num(p_brem, nan=0.0, posinf=np.finfo(np.float64).max, neginf=0.0)
 
     def _evolve_species(self, dt: float) -> tuple[np.ndarray, np.ndarray]:
@@ -214,7 +214,9 @@ class TransportSolverRuntimePhysicsMixin:
         self.n_He[-1] = 0.0
         self.n_He = np.maximum(0.0, self.n_He)
 
-        te_safe = np.nan_to_num(np.asarray(self.Te, dtype=np.float64), nan=0.1, posinf=1e3, neginf=0.1)
+        te_safe = np.nan_to_num(
+            np.asarray(self.Te, dtype=np.float64), nan=0.1, posinf=1e3, neginf=0.1
+        )
         te_safe = np.clip(te_safe, 0.1, 1e3)
         log_te = np.log10(te_safe)
         Z_W = np.clip(15.0 + 12.0 * log_te, 10.0, 50.0)
@@ -228,7 +230,7 @@ class TransportSolverRuntimePhysicsMixin:
             self.n_D * 1e19 * 1.0
             + self.n_T * 1e19 * 1.0
             + self.n_He * 1e19 * 4.0
-            + np.maximum(self.n_impurity, 0.0) * 1e19 * Z_W ** 2
+            + np.maximum(self.n_impurity, 0.0) * 1e19 * Z_W**2
         )
         self._Z_eff = float(np.clip(np.mean(sum_nZ2 / ne_safe), 1.0, 10.0))
 

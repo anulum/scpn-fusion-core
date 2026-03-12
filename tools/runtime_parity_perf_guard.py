@@ -47,7 +47,9 @@ def evaluate(
 
     campaign = dict(latency.get("scpn_end_to_end_latency", {}))
     modes = dict(campaign.get("modes", {}))
-    surrogate_snn = float(modes.get("surrogate", {}).get("SNN", {}).get("p95_loop_ms", float("inf")))
+    surrogate_snn = float(
+        modes.get("surrogate", {}).get("SNN", {}).get("p95_loop_ms", float("inf"))
+    )
     full_snn = float(modes.get("full", {}).get("SNN", {}).get("p95_loop_ms", float("inf")))
     ratio = float(campaign.get("ratios", {}).get("snn_full_to_surrogate_p95_ratio", float("inf")))
     latency_passes = bool(campaign.get("passes_thresholds", False))
@@ -75,7 +77,9 @@ def evaluate(
             "limits": {
                 "max_snn_p95_surrogate_ms": float(latency_cfg.get("max_snn_p95_surrogate_ms", 6.0)),
                 "max_snn_p95_full_ms": float(latency_cfg.get("max_snn_p95_full_ms", 10.0)),
-                "max_full_to_surrogate_ratio": float(latency_cfg.get("max_full_to_surrogate_ratio", 6.5)),
+                "max_full_to_surrogate_ratio": float(
+                    latency_cfg.get("max_full_to_surrogate_ratio", 6.5)
+                ),
             },
             "passes": perf_pass,
         },

@@ -122,4 +122,3 @@ class AdaptiveTimeController:
         self.dt = min(self.dt, self.dt_max)
 
         self._err_prev = error
-

@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from scpn_fusion.core.fusion_ignition_sim import DynamicBurnModel
 from scpn_fusion.core.uncertainty import _dt_reactivity
@@ -42,8 +41,13 @@ def test_calculate_thermodynamics_finite():
         warn_on_temperature_cap=False,
     )
     for key in (
-        "P_fus_MW", "P_alpha_MW", "P_loss_MW", "Q",
-        "T_keV", "tau_E_s", "W_MJ",
+        "P_fus_MW",
+        "P_alpha_MW",
+        "P_loss_MW",
+        "Q",
+        "T_keV",
+        "tau_E_s",
+        "W_MJ",
     ):
         arr = np.asarray(result[key])
         assert np.all(np.isfinite(arr)), f"{key} contains non-finite values"

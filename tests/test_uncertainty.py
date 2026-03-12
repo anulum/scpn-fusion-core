@@ -6,7 +6,6 @@
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 import pytest
-import numpy as np
 
 from scpn_fusion.core.uncertainty import (
     PlasmaScenario,
@@ -19,11 +18,11 @@ from scpn_fusion.core.uncertainty import (
 
 # ITER-like baseline scenario
 ITER_SCENARIO = PlasmaScenario(
-    I_p=15.0,    # MA
-    B_t=5.3,     # T
-    P_heat=50.0, # MW (auxiliary)
-    n_e=10.1,    # 10^19 m^-3
-    R=6.2,       # m
+    I_p=15.0,  # MA
+    B_t=5.3,  # T
+    P_heat=50.0,  # MW (auxiliary)
+    n_e=10.1,  # 10^19 m^-3
+    R=6.2,  # m
     A=3.1,
     kappa=1.7,
     M=2.5,
@@ -52,7 +51,7 @@ class TestIPB98Scaling:
     def test_custom_params(self):
         """Passing custom params should override defaults."""
         params = dict(IPB98_CENTRAL)
-        params['C'] = 0.1  # double the constant
+        params["C"] = 0.1  # double the constant
         tau_custom = ipb98_tau_e(ITER_SCENARIO, params)
         tau_default = ipb98_tau_e(ITER_SCENARIO)
         assert tau_custom > tau_default
@@ -88,8 +87,14 @@ class TestIPB98Scaling:
 
     def test_extreme_scenario_overflow_hard_fails(self):
         scenario = PlasmaScenario(
-            I_p=1e150, B_t=1e150, P_heat=1e-150, n_e=1e150,
-            R=1e150, A=1e-150, kappa=1e150, M=1e150,
+            I_p=1e150,
+            B_t=1e150,
+            P_heat=1e-150,
+            n_e=1e150,
+            R=1e150,
+            A=1e-150,
+            kappa=1e150,
+            M=1e150,
         )
         with pytest.raises(ValueError, match="numerically stable range"):
             ipb98_tau_e(scenario)

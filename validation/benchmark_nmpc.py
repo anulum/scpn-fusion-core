@@ -20,6 +20,7 @@ sys.path.insert(0, str(repo_root / "src"))
 
 from scpn_fusion.control.fusion_nmpc_jax import get_nmpc_controller
 
+
 def run_benchmark():
     print("--- NMPC vs Linear Baseline Benchmark ---")
 
@@ -36,7 +37,9 @@ def run_benchmark():
     target = np.zeros(state_dim)
 
     # 2. Run NMPC
-    print(f"Running NMPC ({'JAX' if hasattr(nmpc, '_jax_grad') and nmpc._jax_grad else 'SciPy'}) for {n_steps} steps...")
+    print(
+        f"Running NMPC ({'JAX' if hasattr(nmpc, '_jax_grad') and nmpc._jax_grad else 'SciPy'}) for {n_steps} steps..."
+    )
 
     start_time = time.time()
     total_cost = 0.0
@@ -55,13 +58,14 @@ def run_benchmark():
         total_cost += np.sum(err**2)
 
     duration = time.time() - start_time
-    avg_latency = (duration / n_steps) * 1000 # ms
+    avg_latency = (duration / n_steps) * 1000  # ms
 
-    print(f"NMPC Results:")
+    print("NMPC Results:")
     print(f"  Total Duration: {duration:.4f}s")
     print(f"  Avg Latency:    {avg_latency:.2f} ms/step")
     print(f"  Final Cost:     {total_cost:.4f}")
     print(f"  Final State:    {x_curr}")
+
 
 if __name__ == "__main__":
     run_benchmark()

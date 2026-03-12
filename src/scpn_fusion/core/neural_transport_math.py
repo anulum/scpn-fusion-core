@@ -28,7 +28,7 @@ def _softplus(x: FloatArray) -> FloatArray:
 
 def _gelu(x: FloatArray) -> FloatArray:
     """Gaussian Error Linear Unit (matches JAX/PyTorch training)."""
-    return x * 0.5 * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * x ** 3)))
+    return x * 0.5 * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * x**3)))
 
 
 def _mlp_forward(x: FloatArray, weights: Any) -> FloatArray:
@@ -57,7 +57,7 @@ def _mlp_forward(x: FloatArray, weights: Any) -> FloatArray:
         te_j = te * 1e3 * _e
         cs = np.sqrt(te_j / _m_D)
         rho_s = np.sqrt(_m_D * te_j) / (_e * _B0_SPARC)
-        chi_gb = rho_s ** 2 * cs / _R0_ITER
+        chi_gb = rho_s**2 * cs / _R0_ITER
         if chi_gb.ndim == 0:
             out = out * float(chi_gb)
         else:
@@ -83,8 +83,8 @@ def _compute_nustar(
     ne_m3 = ne_19 * 1e19
     te_ev = te_kev * 1e3
     eps = max(rho * a_minor / r_major, 1e-4)
-    return 6.921e-18 * ne_m3 * q * r_major * z_eff**2 * ln_lambda / (
-        max(te_ev, 1.0) ** 2 * eps**1.5
+    return (
+        6.921e-18 * ne_m3 * q * r_major * z_eff**2 * ln_lambda / (max(te_ev, 1.0) ** 2 * eps**1.5)
     )
 
 

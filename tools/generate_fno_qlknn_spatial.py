@@ -39,9 +39,14 @@ DEFAULT_OUTPUT_DIR = REPO_ROOT / "data" / "fno_qlknn_spatial"
 
 
 def _make_tokamak_equilibrium(
-    nr: int, nz: int,
-    R0: float, a: float, kappa: float, delta: float,
-    B0: float, Ip: float,
+    nr: int,
+    nz: int,
+    R0: float,
+    a: float,
+    kappa: float,
+    delta: float,
+    B0: float,
+    Ip: float,
     rng: np.random.Generator,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Generate a synthetic tokamak equilibrium psi(R,Z) and profiles.
@@ -61,7 +66,7 @@ def _make_tokamak_equilibrium(
     rho = np.clip(rho, 0, 1.5)
 
     # Poloidal flux (parabolic profile)
-    psi = 1.0 - (1.0 - rho ** 2) ** 2
+    psi = 1.0 - (1.0 - rho**2) ** 2
     psi = np.clip(psi, 0, 1.2)
 
     return psi, rho, RR, ZZ
@@ -69,8 +74,11 @@ def _make_tokamak_equilibrium(
 
 def _profiles_from_rho(
     rho: np.ndarray,
-    Te0: float, Ti0: float, ne0: float,
-    q0: float, q_edge: float,
+    Te0: float,
+    Ti0: float,
+    ne0: float,
+    q0: float,
+    q_edge: float,
 ) -> dict[str, np.ndarray]:
     """Generate radial profiles from normalised radius.
 
@@ -81,19 +89,19 @@ def _profiles_from_rho(
     alpha_T = 2.0
     alpha_n = 1.5
 
-    Te = Te0 * (1 - rho ** alpha_T) ** 1.5
-    Ti = Ti0 * (1 - rho ** alpha_T) ** 1.5
-    ne = ne0 * (1 - rho ** alpha_n) ** 1.0
+    Te = Te0 * (1 - rho**alpha_T) ** 1.5
+    Ti = Ti0 * (1 - rho**alpha_T) ** 1.5
+    ne = ne0 * (1 - rho**alpha_n) ** 1.0
 
     Te = np.maximum(Te, 0.1)  # floor at 100 eV
     Ti = np.maximum(Ti, 0.1)
     ne = np.maximum(ne, 0.1)
 
     # Safety factor profile
-    q = q0 + (q_edge - q0) * rho ** 2
+    q = q0 + (q_edge - q0) * rho**2
 
     # Magnetic shear
-    s_hat = 2 * (q_edge - q0) * rho ** 2 / np.maximum(q, 0.5)
+    s_hat = 2 * (q_edge - q0) * rho**2 / np.maximum(q, 0.5)
 
     # Beta_e
     beta_e = 4.03e-3 * ne * Te
@@ -104,22 +112,28 @@ def _profiles_from_rho(
     eps = rho / (R_major / 2.0)
 
     # dTe/drho
-    dTe = -Te0 * 1.5 * alpha_T * rho ** (alpha_T - 1) * (1 - rho ** alpha_T) ** 0.5
+    dTe = -Te0 * 1.5 * alpha_T * rho ** (alpha_T - 1) * (1 - rho**alpha_T) ** 0.5
     grad_Te = -R_major * dTe / np.maximum(Te, 0.01)
     grad_Te = np.clip(grad_Te, 0, 50)
 
-    dTi = -Ti0 * 1.5 * alpha_T * rho ** (alpha_T - 1) * (1 - rho ** alpha_T) ** 0.5
+    dTi = -Ti0 * 1.5 * alpha_T * rho ** (alpha_T - 1) * (1 - rho**alpha_T) ** 0.5
     grad_Ti = -R_major * dTi / np.maximum(Ti, 0.01)
     grad_Ti = np.clip(grad_Ti, 0, 50)
 
-    dne = -ne0 * 1.0 * alpha_n * rho ** (alpha_n - 1) * (1 - rho ** alpha_n) ** 0.0
+    dne = -ne0 * 1.0 * alpha_n * rho ** (alpha_n - 1) * (1 - rho**alpha_n) ** 0.0
     grad_ne = -R_major * dne / np.maximum(ne, 0.01)
     grad_ne = np.clip(grad_ne, 0, 30)
 
     return {
-        "Te": Te, "Ti": Ti, "ne": ne,
-        "q": q, "s_hat": s_hat, "beta_e": beta_e,
-        "grad_Te": grad_Te, "grad_Ti": grad_Ti, "grad_ne": grad_ne,
+        "Te": Te,
+        "Ti": Ti,
+        "ne": ne,
+        "q": q,
+        "s_hat": s_hat,
+        "beta_e": beta_e,
+        "grad_Te": grad_Te,
+        "grad_Ti": grad_Ti,
+        "grad_ne": grad_ne,
     }
 
 
@@ -149,17 +163,17 @@ def generate(
 
     # Parameter ranges for equilibrium variation
     params_ranges = {
-        "R0": (5.0, 7.0),       # Major radius [m]
-        "a": (1.5, 2.5),        # Minor radius [m]
-        "kappa": (1.5, 2.0),    # Elongation
-        "delta": (0.2, 0.5),    # Triangularity
-        "B0": (4.0, 6.0),       # Toroidal field [T]
-        "Ip": (10.0, 20.0),     # Plasma current [MA]
-        "Te0": (5.0, 25.0),     # Central Te [keV]
-        "Ti0": (5.0, 25.0),     # Central Ti [keV]
-        "ne0": (3.0, 15.0),     # Central ne [10^19 m^-3]
-        "q0": (0.8, 1.2),       # On-axis q
-        "q_edge": (3.0, 6.0),   # Edge q
+        "R0": (5.0, 7.0),  # Major radius [m]
+        "a": (1.5, 2.5),  # Minor radius [m]
+        "kappa": (1.5, 2.0),  # Elongation
+        "delta": (0.2, 0.5),  # Triangularity
+        "B0": (4.0, 6.0),  # Toroidal field [T]
+        "Ip": (10.0, 20.0),  # Plasma current [MA]
+        "Te0": (5.0, 25.0),  # Central Te [keV]
+        "Ti0": (5.0, 25.0),  # Central Ti [keV]
+        "ne0": (3.0, 15.0),  # Central ne [10^19 m^-3]
+        "q0": (0.8, 1.2),  # On-axis q
+        "q_edge": (3.0, 6.0),  # Edge q
     }
 
     t0 = time.monotonic()
@@ -168,13 +182,24 @@ def generate(
         p = {k: rng.uniform(*v) for k, v in params_ranges.items()}
 
         psi, rho, RR, ZZ = _make_tokamak_equilibrium(
-            grid_size, grid_size,
-            p["R0"], p["a"], p["kappa"], p["delta"],
-            p["B0"], p["Ip"], rng,
+            grid_size,
+            grid_size,
+            p["R0"],
+            p["a"],
+            p["kappa"],
+            p["delta"],
+            p["B0"],
+            p["Ip"],
+            rng,
         )
 
         profiles = _profiles_from_rho(
-            rho, p["Te0"], p["Ti0"], p["ne0"], p["q0"], p["q_edge"],
+            rho,
+            p["Te0"],
+            p["Ti0"],
+            p["ne0"],
+            p["q0"],
+            p["q_edge"],
         )
 
         flat_rho = rho.ravel()
@@ -188,13 +213,24 @@ def generate(
         s_hat = profiles["s_hat"].ravel()
         beta_e = profiles["beta_e"].ravel()
         ti_te = ti_flat / np.maximum(te_flat, 1e-8)
-        nustar = 1e-3 * ne_flat / (te_flat ** 2 + 1e-8)
+        nustar = 1e-3 * ne_flat / (te_flat**2 + 1e-8)
 
-        x_batch = np.column_stack([
-            flat_rho, te_flat, ti_flat, ne_flat,
-            grad_te, grad_ti, grad_ne,
-            q_flat, s_hat, beta_e, ti_te, nustar,
-        ])
+        x_batch = np.column_stack(
+            [
+                flat_rho,
+                te_flat,
+                ti_flat,
+                ne_flat,
+                grad_te,
+                grad_ti,
+                grad_ne,
+                q_flat,
+                s_hat,
+                beta_e,
+                ti_te,
+                nustar,
+            ]
+        )
 
         # Match derived features appended by training pipeline
         ati = grad_ti
@@ -206,19 +242,26 @@ def generate(
         # Query MLP for chi_i at each grid point
         if model.is_neural and model._weights is not None:
             from scpn_fusion.core.neural_transport import _mlp_forward
+
             out = _mlp_forward(x_batch, model._weights)  # (N, 3)
             chi_i_2d = out[:, 1].reshape(grid_size, grid_size)
         else:
             # Fallback: use critical gradient model
             from scpn_fusion.core.neural_transport import critical_gradient_model, TransportInputs
+
             chi_i_flat = np.zeros(len(x_batch))
             for j in range(len(x_batch)):
                 inp = TransportInputs(
-                    rho=x_batch[j, 0], te_kev=x_batch[j, 1],
-                    ti_kev=x_batch[j, 2], ne_19=x_batch[j, 3],
-                    grad_te=x_batch[j, 4], grad_ti=x_batch[j, 5],
-                    grad_ne=x_batch[j, 6], q=x_batch[j, 7],
-                    s_hat=x_batch[j, 8], beta_e=x_batch[j, 9],
+                    rho=x_batch[j, 0],
+                    te_kev=x_batch[j, 1],
+                    ti_kev=x_batch[j, 2],
+                    ne_19=x_batch[j, 3],
+                    grad_te=x_batch[j, 4],
+                    grad_ti=x_batch[j, 5],
+                    grad_ne=x_batch[j, 6],
+                    q=x_batch[j, 7],
+                    s_hat=x_batch[j, 8],
+                    beta_e=x_batch[j, 9],
                 )
                 chi_i_flat[j] = critical_gradient_model(inp).chi_i
             chi_i_2d = chi_i_flat.reshape(grid_size, grid_size)
@@ -257,9 +300,7 @@ def generate(
         "param_ranges": {k: list(v) for k, v in params_ranges.items()},
         "seed": seed,
     }
-    (output_dir / "metadata.json").write_text(
-        json.dumps(metadata, indent=2), encoding="utf-8"
-    )
+    (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
 
     print(f"\nSaved to {output_dir}/")
     print(f"  train.npz: X{X_train.shape}, Y{Y_train.shape}")

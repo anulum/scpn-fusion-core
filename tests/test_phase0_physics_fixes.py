@@ -22,7 +22,6 @@ import pytest
 from scpn_fusion.nuclear.blanket_neutronics import (
     BreedingBlanket,
     MultiGroupBlanket,
-    VolumetricBlanketReport,
 )
 from scpn_fusion.core.fusion_ignition_sim import BurnPhysicsError, DynamicBurnModel
 

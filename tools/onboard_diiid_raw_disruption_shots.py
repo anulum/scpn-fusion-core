@@ -27,9 +27,7 @@ DEFAULT_SPEC = (
     / "diiid"
     / "raw_disruption_onboarding_spec.example.json"
 )
-DEFAULT_SHOT_DIR = (
-    REPO_ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots"
-)
+DEFAULT_SHOT_DIR = REPO_ROOT / "validation" / "reference_data" / "diiid" / "disruption_shots"
 DEFAULT_METADATA = (
     REPO_ROOT / "validation" / "reference_data" / "diiid" / "disruption_shot_metadata.json"
 )
@@ -288,9 +286,7 @@ def onboard_shots(
             "label": label,
             "source_type": _derive_source_type(str(download_result.source)),
             "generator": "tools/onboard_diiid_raw_disruption_shots.py",
-            "license": str(
-                item.get("license", "facility-restricted-not-redistributable")
-            ),
+            "license": str(item.get("license", "facility-restricted-not-redistributable")),
         }
         created.append(out_name)
         print(

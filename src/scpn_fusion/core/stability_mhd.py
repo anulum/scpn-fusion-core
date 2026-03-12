@@ -40,6 +40,7 @@ from numpy.typing import NDArray
 
 # ── Dataclasses ──────────────────────────────────────────────────────
 
+
 @dataclass
 class QProfile:
     """Safety-factor profile and derived quantities."""
@@ -80,20 +81,20 @@ class KruskalShafranovResult:
     """External kink stability result (Kruskal-Shafranov criterion)."""
 
     q_edge: float
-    stable: bool       # True if q_edge > 1
-    margin: float      # q_edge - 1
+    stable: bool  # True if q_edge > 1
+    margin: float  # q_edge - 1
 
 
 @dataclass
 class TroyonResult:
     """Troyon normalised-beta-limit result."""
 
-    beta_N: float                # Normalised beta [% m T / MA]
-    beta_N_crit_nowall: float    # Critical beta_N without wall (g = 2.8)
-    beta_N_crit_wall: float      # Critical beta_N with ideal wall (g = 3.5)
+    beta_N: float  # Normalised beta [% m T / MA]
+    beta_N_crit_nowall: float  # Critical beta_N without wall (g = 2.8)
+    beta_N_crit_wall: float  # Critical beta_N with ideal wall (g = 3.5)
     stable_nowall: bool
     stable_wall: bool
-    margin_nowall: float         # beta_N_crit_nowall - beta_N
+    margin_nowall: float  # beta_N_crit_nowall - beta_N
 
 
 @dataclass
@@ -101,9 +102,9 @@ class NTMResult:
     """Neoclassical tearing mode seeding analysis result."""
 
     rho: NDArray[np.float64]
-    delta_prime: NDArray[np.float64]       # Classical stability index (< 0 = stable)
-    j_bs_drive: NDArray[np.float64]        # Bootstrap current fraction drive
-    w_marginal: NDArray[np.float64]        # Marginal island width [m]
+    delta_prime: NDArray[np.float64]  # Classical stability index (< 0 = stable)
+    j_bs_drive: NDArray[np.float64]  # Bootstrap current fraction drive
+    w_marginal: NDArray[np.float64]  # Marginal island width [m]
     ntm_unstable: NDArray[np.bool_]
     most_unstable_rho: float | None
 
@@ -116,7 +117,7 @@ class RWMResult:
     beta_N_crit_nowall: float
     beta_N_crit_wall: float
     stable: bool
-    mode_growth_rate: float # dimensionless: gamma*tau_w ~ (beta-beta_nw)/(beta_w-beta)
+    mode_growth_rate: float  # dimensionless: gamma*tau_w ~ (beta-beta_nw)/(beta_w-beta)
 
 
 @dataclass
@@ -126,11 +127,11 @@ class PeelingBallooningResult:
     Snyder et al., Phys. Plasmas 9:2037 (2002); Nucl. Fusion 51:103016 (2011).
     """
 
-    j_edge_norm: float       # j_edge / j_crit (peeling drive)
-    alpha_edge_norm: float   # alpha / alpha_crit (ballooning drive)
+    j_edge_norm: float  # j_edge / j_crit (peeling drive)
+    alpha_edge_norm: float  # alpha / alpha_crit (ballooning drive)
     stability_distance: float  # distance from PB boundary (>0 = stable)
     stable: bool
-    elm_type: str | None     # "type_I", "type_III", or None
+    elm_type: str | None  # "type_I", "type_III", or None
 
 
 @dataclass
@@ -150,6 +151,7 @@ class StabilitySummary:
 
 
 # ── Q-profile computation ───────────────────────────────────────────
+
 
 def compute_q_profile(
     rho: NDArray[np.float64],
@@ -226,12 +228,18 @@ def compute_q_profile(
     q_edge_val = float(q[-1])
 
     return QProfile(
-        rho=rho, q=q, shear=shear, alpha_mhd=alpha_mhd,
-        q_min=q_min, q_min_rho=q_min_rho, q_edge=q_edge_val,
+        rho=rho,
+        q=q,
+        shear=shear,
+        alpha_mhd=alpha_mhd,
+        q_min=q_min,
+        q_min_rho=q_min_rho,
+        q_edge=q_edge_val,
     )
 
 
 # ── Mercier criterion ────────────────────────────────────────────────
+
 
 def mercier_stability(qp: QProfile) -> MercierResult:
     """Evaluate the Mercier interchange stability criterion (Suydam form).
@@ -247,18 +255,21 @@ def mercier_stability(qp: QProfile) -> MercierResult:
     stable = D_M >= 0.0
 
     first_unstable_rho: float | None = None
-    for i in range(5, len(qp.rho)): # skip axis region
+    for i in range(5, len(qp.rho)):  # skip axis region
         if not stable[i]:
             first_unstable_rho = float(qp.rho[i])
             break
 
     return MercierResult(
-        rho=qp.rho, D_M=D_M.astype(np.float64), stable=stable,
+        rho=qp.rho,
+        D_M=D_M.astype(np.float64),
+        stable=stable,
         first_unstable_rho=first_unstable_rho,
     )
 
 
 # ── Ballooning stability ────────────────────────────────────────────
+
 
 def ballooning_stability(qp: QProfile) -> BallooningResult:
     """Evaluate the first ballooning stability boundary.
@@ -287,12 +298,17 @@ def ballooning_stability(qp: QProfile) -> BallooningResult:
     margin = alpha_crit - alpha
 
     return BallooningResult(
-        rho=qp.rho, s=s, alpha=alpha,
-        alpha_crit=alpha_crit, stable=stable, margin=margin,
+        rho=qp.rho,
+        s=s,
+        alpha=alpha,
+        alpha_crit=alpha_crit,
+        stable=stable,
+        margin=margin,
     )
 
 
 # ── Kruskal-Shafranov criterion ────────────────────────────────────
+
 
 def kruskal_shafranov_stability(qp: QProfile) -> KruskalShafranovResult:
     """Evaluate the Kruskal-Shafranov external kink stability criterion.
@@ -316,7 +332,9 @@ def kruskal_shafranov_stability(qp: QProfile) -> KruskalShafranovResult:
     stable = qp.q_edge > 1.0
     margin = qp.q_edge - 1.0
     return KruskalShafranovResult(
-        q_edge=qp.q_edge, stable=stable, margin=margin,
+        q_edge=qp.q_edge,
+        stable=stable,
+        margin=margin,
     )
 
 
@@ -332,6 +350,7 @@ from .stability_mhd_extended import (  # noqa: E402, F401
 
 
 # ── Full stability check (all 7 criteria) ──────────────────────────
+
 
 def run_full_stability_check(
     qp: QProfile,
@@ -413,9 +432,22 @@ def run_full_stability_check(
             n_stable += 1
 
     pb_result: PeelingBallooningResult | None = None
-    if j_edge is not None and p_ped_Pa is not None and R0 is not None and a is not None and B0 is not None:
+    if (
+        j_edge is not None
+        and p_ped_Pa is not None
+        and R0 is not None
+        and a is not None
+        and B0 is not None
+    ):
         pb_result = peeling_ballooning_stability(
-            qp, j_edge, p_ped_Pa, R0, a, B0, kappa=kappa, delta=delta,
+            qp,
+            j_edge,
+            p_ped_Pa,
+            R0,
+            a,
+            B0,
+            kappa=kappa,
+            delta=delta,
         )
         n_checked += 1
         if pb_result.stable:

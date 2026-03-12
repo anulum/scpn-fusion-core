@@ -32,35 +32,39 @@ logger = logging.getLogger(__name__)
 
 # Physical constants
 MC = 9.109e-31 * 2.998e8  # m_e * c [kg m/s]
-C = 2.998e8               # speed of light [m/s]
-E_CHARGE = 1.602e-19      # elementary charge [C]
-EPS0 = 8.854e-12          # vacuum permittivity [F/m]
-ME = 9.109e-31            # electron mass [kg]
+C = 2.998e8  # speed of light [m/s]
+E_CHARGE = 1.602e-19  # elementary charge [C]
+EPS0 = 8.854e-12  # vacuum permittivity [F/m]
+ME = 9.109e-31  # electron mass [kg]
 
 # Model parameters
-COULOMB_LOG = 15.0         # dimensionless, Wesson Ch. 14 Eq. 14.5.2
-B_TOROIDAL = 5.3           # toroidal field [T], ITER-like
-DIFFUSION_FLOOR = 1e-5     # numerical diffusion floor [arb.]
-AVALANCHE_RATE = 100.0     # Rosenbluth-Putvinski avalanche rate prefactor [1/s]
-DREICER_SOURCE = 1.0e15    # Dreicer injection flux [m^-3 s^-1]
+COULOMB_LOG = 15.0  # dimensionless, Wesson Ch. 14 Eq. 14.5.2
+B_TOROIDAL = 5.3  # toroidal field [T], ITER-like
+DIFFUSION_FLOOR = 1e-5  # numerical diffusion floor [arb.]
+AVALANCHE_RATE = 100.0  # Rosenbluth-Putvinski avalanche rate prefactor [1/s]
+DREICER_SOURCE = 1.0e15  # Dreicer injection flux [m^-3 s^-1]
 _KNOCK_ON_SCALE = 1.0e-25
 _KNOCK_ON_MAX_SOURCE = 1.0e24
 _RE_SEED_FLOOR = 1.0e6
 
+
 @dataclass
 class RunawayElectronState:
     """State of the RE population."""
-    f: np.ndarray          # Distribution function f(p) [1/m^3 / (mc)^3] ? 
-                           # Normalized such that integral f dp = n_RE
-    p_grid: np.ndarray     # Momentum grid (normalized to mc)
+
+    f: np.ndarray  # Distribution function f(p) [1/m^3 / (mc)^3] ?
+    # Normalized such that integral f dp = n_RE
+    p_grid: np.ndarray  # Momentum grid (normalized to mc)
     time: float = 0.0
-    n_re: float = 0.0      # Total RE density [m^-3]
-    current_re: float = 0.0 # Runaway current density [A/m^2]
+    n_re: float = 0.0  # Total RE density [m^-3]
+    current_re: float = 0.0  # Runaway current density [A/m^2]
+
 
 class FokkerPlanckSolver:
     """
     Solves the 1D kinetic equation for runaway electrons.
     """
+
     def __init__(self, np_grid: int = 200, p_max: float = 100.0):
         if isinstance(np_grid, bool) or int(np_grid) < 16:
             raise ValueError("np_grid must be an integer >= 16.")
@@ -76,11 +80,7 @@ class FokkerPlanckSolver:
         self.time = 0.0
 
     def compute_coefficients(
-        self,
-        E_field: float,
-        n_e: float,
-        Z_eff: float,
-        T_e_eV: float
+        self, E_field: float, n_e: float, Z_eff: float, T_e_eV: float
     ) -> Tuple[np.ndarray, np.ndarray, float]:
         """Compute advection (A), diffusion (D), and critical field (Fc) coefficients.
 
@@ -214,7 +214,7 @@ class FokkerPlanckSolver:
         slope = self._minmod(df_fwd, df_bwd)
 
         # Left/right reconstructed states at cell faces i+1/2
-        f_L = f + 0.5 * slope        # left state at right face
+        f_L = f + 0.5 * slope  # left state at right face
         f_R = np.roll(f - 0.5 * slope, -1)  # right state at right face
 
         # Upwind flux at each face: F_{i+1/2}
@@ -222,23 +222,23 @@ class FokkerPlanckSolver:
 
         # Conservative update: f_new[i] -= dt/dp * (flux[i] - flux[i-1])
         f_new = f.copy()
-        f_new[1:N - 1] -= (dt / self.dp[1:N - 1]) * (flux[1:N - 1] - flux[0:N - 2])
+        f_new[1 : N - 1] -= (dt / self.dp[1 : N - 1]) * (flux[1 : N - 1] - flux[0 : N - 2])
 
         # ── Diffusion half-step (central difference) ────────────────
-        dp2 = self.dp ** 2
-        f_new[1:N - 1] += dt * D[1:N - 1] * (
-            f[2:N] - 2.0 * f[1:N - 1] + f[0:N - 2]
-        ) / dp2[1:N - 1]
+        dp2 = self.dp**2
+        f_new[1 : N - 1] += (
+            dt * D[1 : N - 1] * (f[2:N] - 2.0 * f[1 : N - 1] + f[0 : N - 2]) / dp2[1 : N - 1]
+        )
 
         # Sources
-        f_new[1:N - 1] += dt * (S_av[1:N - 1] + S_dr[1:N - 1] + S_ko[1:N - 1])
+        f_new[1 : N - 1] += dt * (S_av[1 : N - 1] + S_dr[1 : N - 1] + S_ko[1 : N - 1])
 
         self.f = np.maximum(0, f_new)
         self.time += dt
 
         dp = self.dp
         n_re = np.sum(self.f * dp)
-        gamma = np.sqrt(1 + self.p ** 2)
+        gamma = np.sqrt(1 + self.p**2)
         v = C * self.p / gamma
         j_re = E_CHARGE * np.sum(self.f * v * dp)
 

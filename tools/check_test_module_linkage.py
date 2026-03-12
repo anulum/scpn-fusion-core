@@ -88,7 +88,7 @@ def _build_test_linkage_index(test_root: Path) -> TestLinkageIndex:
         imports.update(_collect_import_targets(path))
         stem = path.stem
         if stem.startswith("test_") and len(stem) > len("test_"):
-            stems.add(stem[len("test_"):])
+            stems.add(stem[len("test_") :])
 
     return TestLinkageIndex(
         imports=imports,
@@ -199,8 +199,7 @@ def main(argv: list[str] | None = None) -> int:
         "stale_allowlist_count": len(stale),
         "unexpected_modules": unexpected,
         "stale_allowlist_modules": stale,
-        "overall_pass": (not unexpected)
-        and (not stale or bool(args.allow_stale_allowlist)),
+        "overall_pass": (not unexpected) and (not stale or bool(args.allow_stale_allowlist)),
     }
 
     print(f"Unlinked modules detected: {len(unlinked)}")

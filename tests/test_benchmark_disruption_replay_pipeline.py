@@ -16,9 +16,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "benchmark_disruption_replay_pipeline.py"
-SPEC = importlib.util.spec_from_file_location(
-    "benchmark_disruption_replay_pipeline", MODULE_PATH
-)
+SPEC = importlib.util.spec_from_file_location("benchmark_disruption_replay_pipeline", MODULE_PATH)
 assert SPEC and SPEC.loader
 benchmark_disruption_replay_pipeline = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = benchmark_disruption_replay_pipeline

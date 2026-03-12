@@ -675,9 +675,7 @@ def main(argv: list[str] | None = None) -> int:
         "--enable-freegs-strict-backend-check",
         action="store_true",
         default=bool(
-            os.environ.get("SCPN_ENABLE_FREEGS_STRICT_BACKEND_CHECKS", "")
-            .strip()
-            .lower()
+            os.environ.get("SCPN_ENABLE_FREEGS_STRICT_BACKEND_CHECKS", "").strip().lower()
             in {"1", "true", "yes", "on"}
         ),
         help=(
@@ -739,13 +737,9 @@ def main(argv: list[str] | None = None) -> int:
         and not args.skip_freegs_strict_backend
         and not freegs_available
     ):
-        print(
-            "[preflight] Skipping FreeGS strict-backend benchmark: freegs not installed."
-        )
+        print("[preflight] Skipping FreeGS strict-backend benchmark: freegs not installed.")
     try:
-        check_timeout_seconds = _normalize_check_timeout_seconds(
-            args.check_timeout_seconds
-        )
+        check_timeout_seconds = _normalize_check_timeout_seconds(args.check_timeout_seconds)
     except ValueError as exc:
         parser.error(str(exc))
 

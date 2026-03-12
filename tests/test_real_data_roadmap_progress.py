@@ -53,9 +53,7 @@ def test_progress_summary_contains_expected_metrics() -> None:
             "jet_dt_equilibria": 5,
         },
     }
-    summary = real_data_roadmap_progress.evaluate_progress(
-        report=report, targets=targets
-    )
+    summary = real_data_roadmap_progress.evaluate_progress(report=report, targets=targets)
     assert summary["roadmap_version"] == "v4.0"
     assert summary["overall_pass"] is False
     assert summary["overall_progress_ratio"] < 1.0
@@ -81,9 +79,7 @@ def test_progress_uses_explicit_disruption_source_contract_for_raw_readiness() -
         },
     }
     targets = {"targets": {"disruption_shots_total": 1}}
-    summary = real_data_roadmap_progress.evaluate_progress(
-        report=report, targets=targets
-    )
+    summary = real_data_roadmap_progress.evaluate_progress(report=report, targets=targets)
     assert summary["d3d_raw_ingestion_ready"] is True
     assert summary["d3d_raw_source_type_present"] is True
     assert summary["d3d_disruption_source_types"] == ["raw_diiid_mdsplus"]
@@ -103,8 +99,6 @@ def test_progress_rejects_raw_ready_without_raw_source_type_contract() -> None:
         },
     }
     targets = {"targets": {"disruption_shots_total": 1}}
-    summary = real_data_roadmap_progress.evaluate_progress(
-        report=report, targets=targets
-    )
+    summary = real_data_roadmap_progress.evaluate_progress(report=report, targets=targets)
     assert summary["d3d_raw_source_type_present"] is False
     assert summary["d3d_raw_ingestion_ready"] is False

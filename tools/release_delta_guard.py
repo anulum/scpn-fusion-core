@@ -106,12 +106,12 @@ def evaluate(
     current_metrics["claims_tracked"] = int(claims_tracked)
 
     deltas: dict[str, int] = {
-        key: current_metrics[key] - baseline_metrics[key]
-        for key in required_keys
+        key: current_metrics[key] - baseline_metrics[key] for key in required_keys
     }
 
     checks = {
-        "source_p0p1_non_regression": current_metrics["source_p0p1"] <= baseline_metrics["source_p0p1"],
+        "source_p0p1_non_regression": current_metrics["source_p0p1"]
+        <= baseline_metrics["source_p0p1"],
         "docs_claims_p0p1_non_regression": (
             current_metrics["docs_claims_p0p1"] <= baseline_metrics["docs_claims_p0p1"]
         ),

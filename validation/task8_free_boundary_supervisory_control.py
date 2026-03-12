@@ -244,7 +244,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--control-dt-s", type=float, default=0.05)
     parser.add_argument(
         "--output-json",
-        default=str(ROOT / "validation" / "reports" / "task8_free_boundary_supervisory_control.json"),
+        default=str(
+            ROOT / "validation" / "reports" / "task8_free_boundary_supervisory_control.json"
+        ),
     )
     parser.add_argument(
         "--output-md",

@@ -60,7 +60,9 @@ def run_campaign(
         "speedup_threshold": speedup_threshold,
         "gene_proxy_s_per_sample": float(speed.gene_proxy_s_per_sample),
         "surrogate_s_per_sample": float(speed.surrogate_s_per_sample),
-        "passes_thresholds": bool(err_pct <= rmse_threshold_pct and speed.speedup >= speedup_threshold),
+        "passes_thresholds": bool(
+            err_pct <= rmse_threshold_pct and speed.speedup >= speedup_threshold
+        ),
         "runtime_seconds": float(elapsed),
     }
 

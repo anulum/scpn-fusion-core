@@ -31,9 +31,7 @@ def test_repo_release_checklist_passes() -> None:
 
 
 def test_release_checklist_detects_unchecked_required_item(tmp_path: Path) -> None:
-    src = (ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md").read_text(
-        encoding="utf-8"
-    )
+    src = (ROOT / "docs" / "RELEASE_ACCEPTANCE_CHECKLIST.md").read_text(encoding="utf-8")
     modified = re.sub(
         r"- \[x\] Release preflight",
         "- [ ] Release preflight",

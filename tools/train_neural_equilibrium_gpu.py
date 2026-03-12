@@ -34,7 +34,7 @@ import json
 import logging
 import sys
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -79,6 +79,7 @@ class AugTrainingResult:
 
 # ── Minimal PCA ────────────────────────────────────────────────────────
 
+
 class MinimalPCA:
     def __init__(self, n_components: int = 20) -> None:
         self.n_components = n_components
@@ -90,7 +91,7 @@ class MinimalPCA:
         self.mean_ = X.mean(axis=0)
         X_centered = X - self.mean_
         U, S, Vt = np.linalg.svd(X_centered, full_matrices=False)
-        total_var = (S ** 2).sum()
+        total_var = (S**2).sum()
         k = min(self.n_components, len(S))
         self.components_ = Vt[:k]
         self.explained_variance_ratio_ = S[:k] ** 2 / max(total_var, 1e-15)
@@ -110,6 +111,7 @@ class MinimalPCA:
 
 # ── Simple MLP ─────────────────────────────────────────────────────────
 
+
 class SimpleMLP:
     def __init__(self, layer_sizes: list[int], seed: int = 42) -> None:
         self.rng = np.random.default_rng(seed)
@@ -118,9 +120,7 @@ class SimpleMLP:
         for i in range(len(layer_sizes) - 1):
             fan_in = layer_sizes[i]
             scale = np.sqrt(2.0 / fan_in)  # He init
-            self.weights.append(
-                self.rng.normal(0, scale, (layer_sizes[i], layer_sizes[i + 1]))
-            )
+            self.weights.append(self.rng.normal(0, scale, (layer_sizes[i], layer_sizes[i + 1])))
             self.biases.append(np.zeros(layer_sizes[i + 1]))
 
     def forward(self, x: NDArray) -> NDArray:
@@ -136,6 +136,7 @@ class SimpleMLP:
 
 
 # ── Data loading ───────────────────────────────────────────────────────
+
 
 def collect_geqdsk_files(ref_dir: Path) -> dict[str, list[Path]]:
     """Collect GEQDSK/EQDSK files grouped by machine."""
@@ -217,20 +218,22 @@ def load_and_normalise(
                 q95 = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
 
             # 12-dim feature vector
-            base_features = np.array([
-                eq.current / 1e6,
-                eq.bcentr,
-                eq.rmaxis,
-                eq.zmaxis,
-                1.0,       # pprime scale
-                1.0,       # ffprime scale
-                eq.simag,
-                eq.sibry,
-                kappa,
-                delta_upper,
-                delta_lower,
-                q95,
-            ])
+            base_features = np.array(
+                [
+                    eq.current / 1e6,
+                    eq.bcentr,
+                    eq.rmaxis,
+                    eq.zmaxis,
+                    1.0,  # pprime scale
+                    1.0,  # ffprime scale
+                    eq.simag,
+                    eq.sibry,
+                    kappa,
+                    delta_upper,
+                    delta_lower,
+                    q95,
+                ]
+            )
 
             # Unperturbed sample
             X_features.append(base_features)
@@ -260,9 +263,12 @@ def load_and_normalise(
 
 # ── Stratified split ──────────────────────────────────────────────────
 
+
 def stratified_split(
-    labels: list[str], rng: np.random.Generator,
-    train_frac: float = 0.70, val_frac: float = 0.15,
+    labels: list[str],
+    rng: np.random.Generator,
+    train_frac: float = 0.70,
+    val_frac: float = 0.15,
 ) -> tuple[NDArray, NDArray, NDArray]:
     """Split indices ensuring each machine appears in train/val/test."""
     machines = sorted(set(labels))
@@ -275,8 +281,8 @@ def stratified_split(
         n_train = max(1, int(train_frac * n))
         n_val = max(1, int(val_frac * n))
         train_idx.extend(machine_indices[:n_train])
-        val_idx.extend(machine_indices[n_train:n_train + n_val])
-        test_idx.extend(machine_indices[n_train + n_val:])
+        val_idx.extend(machine_indices[n_train : n_train + n_val])
+        test_idx.extend(machine_indices[n_train + n_val :])
 
     return (
         np.array(train_idx, dtype=int),
@@ -287,18 +293,18 @@ def stratified_split(
 
 # ── GS residual loss ──────────────────────────────────────────────────
 
+
 def gs_residual_loss(psi_flat: NDArray, nh: int, nw: int) -> float:
     psi = psi_flat.reshape(nh, nw)
     lap = np.zeros_like(psi)
     lap[1:-1, 1:-1] = (
-        psi[2:, 1:-1] + psi[:-2, 1:-1]
-        + psi[1:-1, 2:] + psi[1:-1, :-2]
-        - 4 * psi[1:-1, 1:-1]
+        psi[2:, 1:-1] + psi[:-2, 1:-1] + psi[1:-1, 2:] + psi[1:-1, :-2] - 4 * psi[1:-1, 1:-1]
     )
     return float(np.mean(lap[1:-1, 1:-1] ** 2))
 
 
 # ── Training loop ─────────────────────────────────────────────────────
+
 
 def train(
     X: NDArray,
@@ -332,15 +338,13 @@ def train(
     for epoch in range(N_EPOCHS):
         epochs_run = epoch + 1
         # Cosine LR decay
-        lr = LR_FINAL + 0.5 * (LR_INITIAL - LR_FINAL) * (
-            1 + np.cos(np.pi * epoch / N_EPOCHS)
-        )
+        lr = LR_FINAL + 0.5 * (LR_INITIAL - LR_FINAL) * (1 + np.cos(np.pi * epoch / N_EPOCHS))
 
         order = rng.permutation(len(X_train))
         epoch_loss = 0.0
 
         for start in range(0, len(X_train), BATCH_SIZE):
-            idx = order[start:start + BATCH_SIZE]
+            idx = order[start : start + BATCH_SIZE]
             x_batch = X_train[idx]
             y_batch = Y_train[idx]
             bs = len(idx)
@@ -357,14 +361,14 @@ def train(
                 activations.append(h)
 
             error = activations[-1] - y_batch
-            mse = float(np.mean(error ** 2))
+            mse = float(np.mean(error**2))
 
             # GS residual (sampled — check 4 random items per batch)
             gs_loss = 0.0
             n_gs_check = min(4, bs)
             gs_indices = rng.choice(bs, n_gs_check, replace=False)
             for gi in gs_indices:
-                psi_flat = pca.inverse_transform(activations[-1][gi:gi + 1])[0]
+                psi_flat = pca.inverse_transform(activations[-1][gi : gi + 1])[0]
                 gs_loss += gs_residual_loss(psi_flat, TARGET_GRID, TARGET_GRID)
             gs_loss /= n_gs_check
 
@@ -456,6 +460,7 @@ def train(
 
 # ── Per-machine validation ─────────────────────────────────────────────
 
+
 def validate_per_machine(
     geqdsk_paths: dict[str, list[Path]],
     mlp: SimpleMLP,
@@ -500,11 +505,22 @@ def validate_per_machine(
                 idx_95 = int(0.95 * len(eq.qpsi))
                 q95 = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
 
-            features = np.array([
-                eq.current / 1e6, eq.bcentr, eq.rmaxis, eq.zmaxis,
-                1.0, 1.0, eq.simag, eq.sibry,
-                kappa, delta_upper, delta_lower, q95,
-            ])
+            features = np.array(
+                [
+                    eq.current / 1e6,
+                    eq.bcentr,
+                    eq.rmaxis,
+                    eq.zmaxis,
+                    1.0,
+                    1.0,
+                    eq.simag,
+                    eq.sibry,
+                    kappa,
+                    delta_upper,
+                    delta_lower,
+                    q95,
+                ]
+            )
 
             x_norm = (features - input_mean) / input_std
             coeffs = mlp.predict(x_norm[np.newaxis, :])
@@ -531,6 +547,7 @@ def validate_per_machine(
 
 
 # ── Save weights ───────────────────────────────────────────────────────
+
 
 def save_weights(
     path: Path,
@@ -592,12 +609,16 @@ def save_weights(
 
 # ── Main ──────────────────────────────────────────────────────────────
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--n-perturbations", type=int, default=50)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--save-path", type=str,
-                        default=str(REPO_ROOT / "weights" / "neural_equilibrium_augmented.npz"))
+    parser.add_argument(
+        "--save-path",
+        type=str,
+        default=str(REPO_ROOT / "weights" / "neural_equilibrium_augmented.npz"),
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
@@ -670,8 +691,13 @@ def main() -> int:
     # Train
     print(f"\nTraining ({N_EPOCHS} max epochs, patience={PATIENCE})...")
     mlp, result, _, _ = train(
-        X_norm, Y_compressed, Y, pca,
-        train_idx, val_idx, test_idx,
+        X_norm,
+        Y_compressed,
+        Y,
+        pca,
+        train_idx,
+        val_idx,
+        test_idx,
         seed=args.seed,
     )
 
@@ -684,9 +710,7 @@ def main() -> int:
 
     # Per-machine validation
     print("\nPer-machine validation (all files):")
-    per_machine = validate_per_machine(
-        files_by_machine, mlp, pca, input_mean, input_std
-    )
+    per_machine = validate_per_machine(files_by_machine, mlp, pca, input_mean, input_std)
     result.per_machine = per_machine
 
     # Check acceptance criteria
@@ -695,13 +719,17 @@ def main() -> int:
     for machine, metrics in per_machine.items():
         if machine == "sparc":
             if metrics["mean_rel_l2"] > 0.10:
-                print(f"\n  FAIL: {machine} mean_rel_L2={metrics['mean_rel_l2']:.4f} > 0.10 hard limit")
+                print(
+                    f"\n  FAIL: {machine} mean_rel_L2={metrics['mean_rel_l2']:.4f} > 0.10 hard limit"
+                )
                 criteria_met = False
             elif metrics["mean_rel_l2"] > 0.05:
                 print(f"\n  WARN: {machine} mean_rel_L2={metrics['mean_rel_l2']:.4f} > 0.05 target")
         else:
             if metrics["mean_rel_l2"] > 0.20:
-                print(f"\n  FAIL: {machine} mean_rel_L2={metrics['mean_rel_l2']:.4f} > 0.20 hard limit")
+                print(
+                    f"\n  FAIL: {machine} mean_rel_L2={metrics['mean_rel_l2']:.4f} > 0.20 hard limit"
+                )
                 criteria_met = False
             elif metrics["mean_rel_l2"] > 0.10:
                 print(f"\n  WARN: {machine} mean_rel_L2={metrics['mean_rel_l2']:.4f} > 0.10 target")

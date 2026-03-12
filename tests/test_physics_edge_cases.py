@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import json
 import logging
-import time
 
 import numpy as np
 import pytest
@@ -37,7 +36,8 @@ logger = logging.getLogger(__name__)
 
 def _make_config(
     tmp_path,
-    NR=33, NZ=33,
+    NR=33,
+    NZ=33,
     max_iter=200,
     current=1.0,
     z_range=1.5,
@@ -49,8 +49,10 @@ def _make_config(
         "reactor_name": "edge_case_test",
         "grid_resolution": [NR, NZ],
         "dimensions": {
-            "R_min": 1.0, "R_max": 3.0,
-            "Z_min": -z_range, "Z_max": z_range,
+            "R_min": 1.0,
+            "R_max": 3.0,
+            "Z_min": -z_range,
+            "Z_max": z_range,
         },
         "physics": {
             "plasma_current_target": current,
@@ -96,9 +98,7 @@ class TestGridSizes:
         result = fk.solve_equilibrium()
 
         assert not np.any(np.isnan(result["psi"]))
-        assert result["wall_time_s"] < 10.0, (
-            f"129×129 took {result['wall_time_s']:.1f}s"
-        )
+        assert result["wall_time_s"] < 10.0, f"129×129 took {result['wall_time_s']:.1f}s"
 
     @pytest.mark.slow
     def test_fine_grid_257x257(self, tmp_path):
@@ -108,9 +108,7 @@ class TestGridSizes:
         result = fk.solve_equilibrium()
 
         assert not np.any(np.isnan(result["psi"]))
-        assert result["wall_time_s"] < 30.0, (
-            f"257×257 took {result['wall_time_s']:.1f}s"
-        )
+        assert result["wall_time_s"] < 30.0, f"257×257 took {result['wall_time_s']:.1f}s"
 
 
 # ── Extreme physics tests ───────────────────────────────────────────
@@ -169,8 +167,10 @@ class TestExtremePhysics:
             "reactor_name": "diverge_test",
             "grid_resolution": [17, 17],
             "dimensions": {
-                "R_min": 0.01, "R_max": 10.0,
-                "Z_min": -5.0, "Z_max": 5.0,
+                "R_min": 0.01,
+                "R_max": 10.0,
+                "Z_min": -5.0,
+                "Z_max": 5.0,
             },
             "physics": {
                 "plasma_current_target": 1e6,
@@ -260,8 +260,7 @@ class TestTransportEdgeCases:
         # NaN can appear in explicit transport — skip if so
         if not np.all(np.isfinite(ts.Ti)):
             pytest.skip(
-                "Transport solver produced NaN under 1000 MW — "
-                "known explicit-scheme limitation"
+                "Transport solver produced NaN under 1000 MW — " "known explicit-scheme limitation"
             )
 
     def test_confinement_time_positive(self, tmp_path):

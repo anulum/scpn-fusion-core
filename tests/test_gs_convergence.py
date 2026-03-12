@@ -19,7 +19,6 @@ Tests cover:
 
 from __future__ import annotations
 
-import copy
 import json
 import logging
 from pathlib import Path
@@ -34,17 +33,11 @@ logger = logging.getLogger(__name__)
 
 # ── SPARC GEQDSK files ───────────────────────────────────────────────
 
-_SPARC_DIR = (
-    Path(__file__).resolve().parents[1]
-    / "validation"
-    / "reference_data"
-    / "sparc"
-)
+_SPARC_DIR = Path(__file__).resolve().parents[1] / "validation" / "reference_data" / "sparc"
 
 _LMODE_FILES = sorted(_SPARC_DIR.glob("lmode_*.geqdsk"))
 _ALL_GEQDSK = sorted(
-    list(_SPARC_DIR.glob("lmode_*.geqdsk"))
-    + list(_SPARC_DIR.glob("sparc_*.eqdsk"))
+    list(_SPARC_DIR.glob("lmode_*.geqdsk")) + list(_SPARC_DIR.glob("sparc_*.eqdsk"))
 )
 
 
@@ -73,6 +66,7 @@ def _write_temp_config(tmp_path, cfg, name="test_config.json"):
 
 # ── Fixtures ─────────────────────────────────────────────────────────
 
+
 @pytest.fixture(params=_LMODE_FILES, ids=[f.stem for f in _LMODE_FILES])
 def lmode_eq(request):
     """Parametrized fixture yielding each L-mode GEQDSK equilibrium."""
@@ -85,8 +79,7 @@ def lmode_eq(request):
 class TestSORConvergence:
     """SOR solver convergence on SPARC equilibria."""
 
-    @pytest.mark.parametrize("geqdsk_path", _LMODE_FILES,
-                             ids=[f.stem for f in _LMODE_FILES])
+    @pytest.mark.parametrize("geqdsk_path", _LMODE_FILES, ids=[f.stem for f in _LMODE_FILES])
     def test_sor_converges(self, geqdsk_path, tmp_path):
         """SOR method converges within 500 iterations on L-mode files."""
         eq = read_geqdsk(geqdsk_path)
@@ -105,8 +98,7 @@ class TestSORConvergence:
         assert not np.any(np.isnan(result["psi"]))
         assert not np.any(np.isinf(result["psi"]))
 
-    @pytest.mark.parametrize("geqdsk_path", _LMODE_FILES,
-                             ids=[f.stem for f in _LMODE_FILES])
+    @pytest.mark.parametrize("geqdsk_path", _LMODE_FILES, ids=[f.stem for f in _LMODE_FILES])
     def test_sor_wall_time(self, geqdsk_path, tmp_path):
         """SOR solver completes within 2s on default grid."""
         eq = read_geqdsk(geqdsk_path)
@@ -116,16 +108,17 @@ class TestSORConvergence:
         fk = FusionKernel(config_file)
         result = fk.solve_equilibrium()
 
-        assert result["wall_time_s"] < 2.0, (
-            f"SOR took {result['wall_time_s']:.2f}s on {geqdsk_path.stem}"
-        )
+        assert (
+            result["wall_time_s"] < 2.0
+        ), f"SOR took {result['wall_time_s']:.2f}s on {geqdsk_path.stem}"
 
 
 class TestJacobiComparison:
     """Compare Jacobi vs SOR iteration counts."""
 
-    @pytest.mark.parametrize("geqdsk_path", _LMODE_FILES[:1],
-                             ids=[f.stem for f in _LMODE_FILES[:1]])
+    @pytest.mark.parametrize(
+        "geqdsk_path", _LMODE_FILES[:1], ids=[f.stem for f in _LMODE_FILES[:1]]
+    )
     def test_sor_fewer_iterations_than_jacobi(self, geqdsk_path, tmp_path):
         """SOR converges in fewer iterations than Jacobi."""
         eq = read_geqdsk(geqdsk_path)
@@ -142,16 +135,17 @@ class TestJacobiComparison:
 
         logger.info(
             "Jacobi: %d iters, res=%.2e | SOR: %d iters, res=%.2e",
-            res_j["iterations"], res_j["residual"],
-            res_s["iterations"], res_s["residual"],
+            res_j["iterations"],
+            res_j["residual"],
+            res_s["iterations"],
+            res_s["residual"],
         )
 
         # SOR should converge faster (fewer iters) or at least reach
         # a lower residual in the same iteration budget.
         if res_j["converged"] and res_s["converged"]:
             assert res_s["iterations"] <= res_j["iterations"], (
-                f"SOR ({res_s['iterations']}) did not beat "
-                f"Jacobi ({res_j['iterations']})"
+                f"SOR ({res_s['iterations']}) did not beat " f"Jacobi ({res_j['iterations']})"
             )
         else:
             # At least SOR residual should be lower
@@ -161,8 +155,9 @@ class TestJacobiComparison:
 class TestAndersonAcceleration:
     """Anderson acceleration improves convergence over plain SOR."""
 
-    @pytest.mark.parametrize("geqdsk_path", _LMODE_FILES[:1],
-                             ids=[f.stem for f in _LMODE_FILES[:1]])
+    @pytest.mark.parametrize(
+        "geqdsk_path", _LMODE_FILES[:1], ids=[f.stem for f in _LMODE_FILES[:1]]
+    )
     def test_anderson_converges(self, geqdsk_path, tmp_path):
         """Anderson method converges without crash."""
         eq = read_geqdsk(geqdsk_path)
@@ -176,12 +171,11 @@ class TestAndersonAcceleration:
         assert not np.any(np.isnan(result["psi"]))
         assert not np.any(np.isinf(result["psi"]))
         # Anderson should converge or at least not be worse than SOR
-        assert result["residual"] < 1e-2, (
-            f"Anderson residual too high: {result['residual']:.2e}"
-        )
+        assert result["residual"] < 1e-2, f"Anderson residual too high: {result['residual']:.2e}"
 
-    @pytest.mark.parametrize("geqdsk_path", _LMODE_FILES[:1],
-                             ids=[f.stem for f in _LMODE_FILES[:1]])
+    @pytest.mark.parametrize(
+        "geqdsk_path", _LMODE_FILES[:1], ids=[f.stem for f in _LMODE_FILES[:1]]
+    )
     def test_anderson_vs_sor(self, geqdsk_path, tmp_path):
         """Anderson should match or beat SOR convergence rate."""
         eq = read_geqdsk(geqdsk_path)
@@ -196,8 +190,10 @@ class TestAndersonAcceleration:
 
         logger.info(
             "SOR: %d iters, res=%.2e | Anderson: %d iters, res=%.2e",
-            res_s["iterations"], res_s["residual"],
-            res_a["iterations"], res_a["residual"],
+            res_s["iterations"],
+            res_s["residual"],
+            res_a["iterations"],
+            res_a["residual"],
         )
 
         # Anderson residual should not be significantly worse
@@ -229,6 +225,5 @@ class TestResidualHistory:
             first_10 = np.mean(hist[:10])
             last_10 = np.mean(hist[-10:])
             assert last_10 < first_10, (
-                f"Residual not decreasing: first_10={first_10:.2e}, "
-                f"last_10={last_10:.2e}"
+                f"Residual not decreasing: first_10={first_10:.2e}, " f"last_10={last_10:.2e}"
             )

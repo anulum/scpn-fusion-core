@@ -59,9 +59,7 @@ def _parse_evidence_patterns(value: Any) -> tuple[EvidencePattern, ...]:
         out.append(
             EvidencePattern(
                 file=_require_str(f"evidence_patterns[{i}].file", item.get("file")),
-                pattern=_require_str(
-                    f"evidence_patterns[{i}].pattern", item.get("pattern")
-                ),
+                pattern=_require_str(f"evidence_patterns[{i}].pattern", item.get("pattern")),
             )
         )
     return tuple(out)
@@ -87,9 +85,7 @@ def load_manifest(path: Path) -> tuple[ClaimSpec, ...]:
         out.append(
             ClaimSpec(
                 claim_id=claim_id,
-                source_file=_require_str(
-                    f"claims[{i}].source_file", claim.get("source_file")
-                ),
+                source_file=_require_str(f"claims[{i}].source_file", claim.get("source_file")),
                 source_pattern=_require_str(
                     f"claims[{i}].source_pattern", claim.get("source_pattern")
                 ),
@@ -97,9 +93,7 @@ def load_manifest(path: Path) -> tuple[ClaimSpec, ...]:
                     f"claims[{i}].evidence_files",
                     claim.get("evidence_files", []),
                 ),
-                evidence_patterns=_parse_evidence_patterns(
-                    claim.get("evidence_patterns", [])
-                ),
+                evidence_patterns=_parse_evidence_patterns(claim.get("evidence_patterns", [])),
             )
         )
     return tuple(out)
@@ -121,11 +115,7 @@ def _git_tracked_files(repo_root: Path) -> set[str] | None:
         )
     except (OSError, subprocess.SubprocessError):
         return None
-    return {
-        line.strip().replace("\\", "/")
-        for line in result.stdout.splitlines()
-        if line.strip()
-    }
+    return {line.strip().replace("\\", "/") for line in result.stdout.splitlines() if line.strip()}
 
 
 def run_audit(
@@ -139,9 +129,7 @@ def run_audit(
     for claim in claims:
         source = repo_root / claim.source_file
         if not source.exists():
-            errors.append(
-                f"[{claim.claim_id}] source file missing: {claim.source_file}"
-            )
+            errors.append(f"[{claim.claim_id}] source file missing: {claim.source_file}")
             continue
         source_text = _read_text(source)
         if re.search(claim.source_pattern, source_text, flags=re.MULTILINE) is None:
@@ -152,9 +140,7 @@ def run_audit(
         for evidence_file in claim.evidence_files:
             evidence = repo_root / evidence_file
             if not evidence.exists():
-                errors.append(
-                    f"[{claim.claim_id}] evidence file missing: {evidence_file}"
-                )
+                errors.append(f"[{claim.claim_id}] evidence file missing: {evidence_file}")
                 continue
             if tracked is not None and evidence_file.replace("\\", "/") not in tracked:
                 errors.append(
@@ -165,8 +151,7 @@ def run_audit(
             evidence = repo_root / pattern_check.file
             if not evidence.exists():
                 errors.append(
-                    f"[{claim.claim_id}] evidence pattern file missing: "
-                    f"{pattern_check.file}"
+                    f"[{claim.claim_id}] evidence pattern file missing: " f"{pattern_check.file}"
                 )
                 continue
             if tracked is not None and pattern_check.file.replace("\\", "/") not in tracked:
@@ -176,10 +161,7 @@ def run_audit(
                 )
                 continue
             evidence_text = _read_text(evidence)
-            if (
-                re.search(pattern_check.pattern, evidence_text, flags=re.MULTILINE)
-                is None
-            ):
+            if re.search(pattern_check.pattern, evidence_text, flags=re.MULTILINE) is None:
                 errors.append(
                     f"[{claim.claim_id}] evidence pattern not found in "
                     f"{pattern_check.file}: {pattern_check.pattern}"

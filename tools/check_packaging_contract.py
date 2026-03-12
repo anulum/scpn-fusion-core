@@ -91,11 +91,7 @@ def evaluate_contract(pyproject: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(dependencies, list):
         raise ValueError("[project].dependencies must be a list")
     dependency_names = sorted(
-        {
-            _canonical_requirement_name(str(item))
-            for item in dependencies
-            if str(item).strip()
-        }
+        {_canonical_requirement_name(str(item)) for item in dependencies if str(item).strip()}
     )
     blocked_in_base = sorted(set(dependency_names) & HEAVY_BASE_BLOCKLIST)
 
@@ -108,9 +104,7 @@ def evaluate_contract(pyproject: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(full_extra, list):
         raise ValueError("[project.optional-dependencies].full must be a list")
     full_names = {
-        _canonical_requirement_name(str(item))
-        for item in full_extra
-        if str(item).strip()
+        _canonical_requirement_name(str(item)) for item in full_extra if str(item).strip()
     }
 
     family_union: set[str] = set()
@@ -153,9 +147,7 @@ def main(argv: list[str] | None = None) -> int:
 
     summary = evaluate_contract(_load_pyproject(pyproject_path))
     summary_path.parent.mkdir(parents=True, exist_ok=True)
-    summary_path.write_text(
-        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     print(
         "Packaging contract: "

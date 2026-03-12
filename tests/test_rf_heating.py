@@ -59,9 +59,9 @@ class TestECRHDeposition:
         # Resonance rho from geometry
         a = 2.0
         rho_res = abs(ecrh.resonance_radius() - ecrh.R0) / a
-        assert abs(peak_rho - rho_res) < 0.15, (
-            f"Deposition peak at rho={peak_rho:.2f}, expected near {rho_res:.2f}"
-        )
+        assert (
+            abs(peak_rho - rho_res) < 0.15
+        ), f"Deposition peak at rho={peak_rho:.2f}, expected near {rho_res:.2f}"
 
     def test_absorption_efficiency_physical(self):
         """Single-pass absorption for ITER ECRH: typically 85-99%."""

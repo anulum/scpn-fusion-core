@@ -85,6 +85,7 @@ class CoilSet:
         Shape ``(n_pts,)``. When omitted, ``solve_free_boundary`` uses an
         isoflux target inferred from current interpolation.
     """
+
     positions: list[tuple[float, float]] = field(default_factory=list)
     currents: NDArray[np.float64] = field(default_factory=lambda: np.array([]))
     turns: list[int] = field(default_factory=list)
@@ -193,9 +194,7 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
                 (self.Z[0], self.Z[-1]),
             )
         else:
-            logger.info(
-            "HPC Acceleration UNAVAILABLE (using Python compatibility backend)."
-            )
+            logger.info("HPC Acceleration UNAVAILABLE (using Python compatibility backend).")
 
     # ── vacuum field ──────────────────────────────────────────────────
 
@@ -236,9 +235,7 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
 
     # ── topology analysis ─────────────────────────────────────────────
 
-    def find_x_point(
-        self, Psi: FloatArray
-    ) -> tuple[tuple[float, float], float]:
+    def find_x_point(self, Psi: FloatArray) -> tuple[tuple[float, float], float]:
         """Locate the X-point (magnetic null) in the lower divertor region.
 
         Parameters
@@ -262,7 +259,7 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
         # ``hypot`` avoids overflow/underflow in extreme gradient excursions.
         B_mag = np.hypot(dPsi_dR, dPsi_dZ)
 
-        mask_divertor = self.ZZ < (self.cfg["dimensions"]["Z_min"] * 0.5)
+        mask_divertor = (self.cfg["dimensions"]["Z_min"] * 0.5) > self.ZZ
         if np.any(mask_divertor):
             masked_B = np.where(mask_divertor, B_mag, np.inf)
             finite_count = int(np.isfinite(masked_B).sum())
@@ -343,9 +340,7 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
     # ── profile functions ─────────────────────────────────────────────
 
     @staticmethod
-    def mtanh_profile(
-        psi_norm: FloatArray, params: dict[str, float]
-    ) -> FloatArray:
+    def mtanh_profile(psi_norm: FloatArray, params: dict[str, float]) -> FloatArray:
         """Evaluate a modified-tanh pedestal profile (vectorised).
 
         Parameters
@@ -379,9 +374,7 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
 
     # ── source term ───────────────────────────────────────────────────
 
-    def update_plasma_source_nonlinear(
-        self, Psi_axis: float, Psi_boundary: float
-    ) -> FloatArray:
+    def update_plasma_source_nonlinear(self, Psi_axis: float, Psi_boundary: float) -> FloatArray:
         """Compute the toroidal current density J_phi from the GS source.
 
         Uses ``J_phi = R p'(psi) + FF'(psi) / (mu0 R)`` with either
@@ -585,11 +578,7 @@ if __name__ == "__main__":
     import sys
 
     logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
-    config_file = (
-        sys.argv[1]
-        if len(sys.argv) > 1
-        else "iter_config.json"
-    )
+    config_file = sys.argv[1] if len(sys.argv) > 1 else "iter_config.json"
     fk = FusionKernel(config_file)
     fk.solve_equilibrium()
     fk.save_results("final_state_nonlinear.npz")

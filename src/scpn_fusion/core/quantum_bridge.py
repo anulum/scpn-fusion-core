@@ -56,9 +56,7 @@ def run_quantum_suite(
     missing = [p for p in script_paths if not p.is_file()]
     if missing:
         missing_text = ", ".join(p.name for p in missing)
-        raise FileNotFoundError(
-            f"Quantum Lab missing required scripts: {missing_text}"
-        )
+        raise FileNotFoundError(f"Quantum Lab missing required scripts: {missing_text}")
 
     for step_label, script_path in zip(_QUANTUM_STEP_LABELS, script_paths):
         print(f"\n{step_label}")
@@ -70,8 +68,7 @@ def run_quantum_suite(
             )
         except subprocess.TimeoutExpired as exc:
             raise RuntimeError(
-                f"Quantum script timed out: {script_path.name} "
-                f"(timeout={timeout_seconds:.1f}s)"
+                f"Quantum script timed out: {script_path.name} " f"(timeout={timeout_seconds:.1f}s)"
             ) from exc
         except subprocess.CalledProcessError as exc:
             raise RuntimeError(
@@ -84,6 +81,7 @@ def run_quantum_suite(
         "base_path": str(lab_path),
         "scripts": [p.name for p in script_paths],
     }
+
 
 if __name__ == "__main__":
     run_quantum_suite()

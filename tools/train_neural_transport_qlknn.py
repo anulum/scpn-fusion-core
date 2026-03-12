@@ -50,8 +50,8 @@ _CRIT_ITG = 4.0  # R/L_Ti threshold
 _CRIT_TEM = 5.0  # R/L_Te threshold
 
 # Gyro-Bohm scaling constants (ITER reference, NF 39 2137, 1999)
-_BT_REF = 5.3       # T, ITER toroidal field
-_R_REF = 6.2        # m, ITER major radius
+_BT_REF = 5.3  # T, ITER toroidal field
+_R_REF = 6.2  # m, ITER major radius
 _MI_KG = 3.344e-27  # kg, deuterium ion mass (CODATA 2018)
 _E_CHARGE = 1.602e-19  # C, elementary charge (CODATA 2018)
 
@@ -92,7 +92,7 @@ def _add_derived_features(X: np.ndarray, include_log_chi_gb: bool = False) -> np
     te_j = te_kev * 1e3 * _E_CHARGE
     cs = np.sqrt(te_j / _MI_KG)
     rho_s = np.sqrt(_MI_KG * te_j) / (_E_CHARGE * _BT_REF)
-    chi_gb = rho_s ** 2 * cs / _R_REF
+    chi_gb = rho_s**2 * cs / _R_REF
     log_chi_gb = np.log(np.maximum(chi_gb, 1e-10))
 
     return np.column_stack([X, itg_excess, tem_excess, log_chi_gb])
@@ -129,6 +129,7 @@ def _fit_stiff_coefficients(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
 
 # ── JAX Training Backend ────────────────────────────────────────────
 
+
 def _chi_gb_np(te_kev: np.ndarray) -> np.ndarray:
     """Gyro-Bohm diffusivity chi_gb = rho_s^2 * c_s / R [m^2/s].
 
@@ -137,7 +138,7 @@ def _chi_gb_np(te_kev: np.ndarray) -> np.ndarray:
     te_j = te_kev * 1e3 * _E_CHARGE
     cs = np.sqrt(te_j / _MI_KG)
     rho_s = np.sqrt(_MI_KG * te_j) / (_E_CHARGE * _BT_REF)
-    return rho_s ** 2 * cs / _R_REF
+    return rho_s**2 * cs / _R_REF
 
 
 def _train_jax(
@@ -190,8 +191,8 @@ def _train_jax(
         key, k = random.split(key)
         fan_in = dims[i]
         scale = np.sqrt(2.0 / fan_in)
-        params[f"w{i+1}"] = random.normal(k, (dims[i], dims[i+1])) * scale
-        params[f"b{i+1}"] = jnp.zeros(dims[i+1])
+        params[f"w{i+1}"] = random.normal(k, (dims[i], dims[i + 1])) * scale
+        params[f"b{i+1}"] = jnp.zeros(dims[i + 1])
 
     # Normalization stats from training data
     input_mean = jnp.array(np.mean(X_train, axis=0))
@@ -224,8 +225,10 @@ def _train_jax(
         _gate_init = np.log(_has_flux / max(1.0 - _has_flux, 0.01))  # inv_sigmoid
         _full_bias = np.concatenate([_init_bias, np.full(OUTPUT_DIM, _gate_init)])
         params[f"b{n_layers+1}"] = jnp.array(_full_bias)
-        print(f"  Output bias init: flux={_init_bias}, gate={_gate_init:.2f} "
-              f"(flux fraction={_has_flux:.2f}, target mean: {_y_mean})")
+        print(
+            f"  Output bias init: flux={_init_bias}, gate={_gate_init:.2f} "
+            f"(flux fraction={_has_flux:.2f}, target mean: {_y_mean})"
+        )
     else:
         params[f"b{n_layers+1}"] = jnp.array(_init_bias)
         print(f"  Output bias init: {_init_bias} (target mean: {_y_mean})")
@@ -262,6 +265,7 @@ def _train_jax(
     weight_decay = wd
 
     if gated:
+
         @jit
         def loss_fn(params, x_batch, y_batch, w_batch):
             """Masked gated loss: BCE for gate (all samples) + MSE for flux (nonzero only).
@@ -279,8 +283,7 @@ def _train_jax(
             is_active = (y_batch > 0.01).astype(jnp.float32)
             eps = 1e-6
             bce = -jnp.mean(
-                is_active * jnp.log(gate + eps) +
-                (1.0 - is_active) * jnp.log(1.0 - gate + eps)
+                is_active * jnp.log(gate + eps) + (1.0 - is_active) * jnp.log(1.0 - gate + eps)
             )
 
             # Flux regression: MSE on nonzero samples ONLY
@@ -292,7 +295,9 @@ def _train_jax(
 
             l2_penalty = sum(jnp.sum(params[k] ** 2) for k in params if k.startswith("w"))
             return 2.0 * bce + flux_mse + weight_decay * l2_penalty
+
     elif hybrid_log:
+
         @jit
         def loss_fn(params, x_batch, y_batch, w_batch):
             """Hybrid log-MSE: equal weight on raw and log(1+x) space.
@@ -305,7 +310,9 @@ def _train_jax(
             mse_log = jnp.mean(w_batch[:, None] * (jnp.log1p(preds) - jnp.log1p(y_batch)) ** 2)
             l2_penalty = sum(jnp.sum(params[k] ** 2) for k in params if k.startswith("w"))
             return 0.5 * mse_raw + 0.5 * mse_log + weight_decay * l2_penalty
+
     else:
+
         @jit
         def loss_fn(params, x_batch, y_batch, w_batch):
             """Standard MSE loss."""
@@ -330,7 +337,7 @@ def _train_jax(
         te_j = te_kev * 1e3 * _jax_E
         cs = jnp.sqrt(te_j / _jax_M)
         rho_s = jnp.sqrt(_jax_M * te_j) / (_jax_E * _jax_B)
-        return rho_s ** 2 * cs / _jax_R
+        return rho_s**2 * cs / _jax_R
 
     _stiff_coeffs_jax = jnp.array(stiff_coeffs) if stiff_coeffs is not None else None
     _crit_itg_j = jnp.float64(_CRIT_ITG)
@@ -342,11 +349,14 @@ def _train_jax(
         ate = x[..., 4]
         ati = x[..., 5]
         an = x[..., 6]
-        base = jnp.stack([
-            jnp.maximum(0.0, ate - _crit_tem_j),
-            jnp.maximum(0.0, ati - _crit_itg_j),
-            jnp.maximum(0.0, an - 2.0),
-        ], axis=-1)
+        base = jnp.stack(
+            [
+                jnp.maximum(0.0, ate - _crit_tem_j),
+                jnp.maximum(0.0, ati - _crit_itg_j),
+                jnp.maximum(0.0, an - 2.0),
+            ],
+            axis=-1,
+        )
         return base * _stiff_coeffs_jax
 
     @jit
@@ -360,9 +370,12 @@ def _train_jax(
             if gb_scale:
                 chi_gb_v = _chi_gb_jax(x[..., 1])
                 return jnp.sqrt(
-                    jnp.sum(chi_gb_v[:, jnp.newaxis] ** 2 * (preds_full - y_full) ** 2) /
-                    jnp.maximum(jnp.sum(chi_gb_v[:, jnp.newaxis] ** 2 * y_full ** 2), 1e-8))
-            return jnp.sqrt(jnp.sum((preds_full - y_full) ** 2) / jnp.maximum(jnp.sum(y_full ** 2), 1e-8))
+                    jnp.sum(chi_gb_v[:, jnp.newaxis] ** 2 * (preds_full - y_full) ** 2)
+                    / jnp.maximum(jnp.sum(chi_gb_v[:, jnp.newaxis] ** 2 * y_full**2), 1e-8)
+                )
+            return jnp.sqrt(
+                jnp.sum((preds_full - y_full) ** 2) / jnp.maximum(jnp.sum(y_full**2), 1e-8)
+            )
         if gb_scale:
             chi_gb_v = _chi_gb_jax(x[..., 1])
             preds_lin = preds * chi_gb_v[..., jnp.newaxis]
@@ -373,7 +386,7 @@ def _train_jax(
         else:
             preds_lin = preds
             y_lin = y
-        return jnp.sqrt(jnp.sum((preds_lin - y_lin) ** 2) / jnp.maximum(jnp.sum(y_lin ** 2), 1e-8))
+        return jnp.sqrt(jnp.sum((preds_lin - y_lin) ** 2) / jnp.maximum(jnp.sum(y_lin**2), 1e-8))
 
     grad_fn = jit(grad(loss_fn))
 
@@ -385,11 +398,13 @@ def _train_jax(
 
     if align_metric and gb_scale:
         _chi_gb_train = _chi_gb_np(np.array(X_train[:, 1]))
-        _sw = _chi_gb_train ** 2
+        _sw = _chi_gb_train**2
         _sw /= np.mean(_sw)
         _sample_weights_jax = jnp.array(_sw)
-        print(f"  Align-metric: sample weights by chi_gb^2 "
-              f"(min={_sw.min():.3f}, median={np.median(_sw):.3f}, max={_sw.max():.3f})")
+        print(
+            f"  Align-metric: sample weights by chi_gb^2 "
+            f"(min={_sw.min():.3f}, median={np.median(_sw):.3f}, max={_sw.max():.3f})"
+        )
     else:
         _sample_weights_jax = jnp.ones(len(Y_train))
 
@@ -434,9 +449,9 @@ def _train_jax(
             for k in list(adam_m.keys()):
                 g = jnp.clip(grads[k], -10.0, 10.0)
                 adam_m[k] = beta1 * adam_m[k] + (1 - beta1) * g
-                adam_v[k] = beta2 * adam_v[k] + (1 - beta2) * g ** 2
-                m_hat = adam_m[k] / (1 - beta1 ** t)
-                v_hat = adam_v[k] / (1 - beta2 ** t)
+                adam_v[k] = beta2 * adam_v[k] + (1 - beta2) * g**2
+                m_hat = adam_m[k] / (1 - beta1**t)
+                v_hat = adam_v[k] / (1 - beta2**t)
                 params[k] = params[k] - lr_t * m_hat / (jnp.sqrt(v_hat) + eps)
 
             batch_loss = loss_fn(params, x_b, y_b, w_b)
@@ -474,7 +489,9 @@ def _train_jax(
     # Compute final metrics on full validation set (always in LINEAR space)
     final_params_jax = {k: jnp.array(v) for k, v in best_params.items()}
     val_rel_l2 = float(relative_l2(final_params_jax, X_v, Y_v))
-    train_rel_l2 = float(relative_l2(final_params_jax, X_t[:min(100000, len(X_t))], Y_t[:min(100000, len(Y_t))]))
+    train_rel_l2 = float(
+        relative_l2(final_params_jax, X_t[: min(100000, len(X_t))], Y_t[: min(100000, len(Y_t))])
+    )
 
     # Per-output relative L2 (in linear space)
     preds_val_raw = forward(final_params_jax, X_v)
@@ -494,10 +511,12 @@ def _train_jax(
         Y_v_lin = Y_v
     per_output_l2 = []
     for col in range(OUTPUT_DIM):
-        l2 = float(jnp.sqrt(
-            jnp.sum((preds_val_lin[:, col] - Y_v_lin[:, col]) ** 2) /
-            jnp.maximum(jnp.sum(Y_v_lin[:, col] ** 2), 1e-8)
-        ))
+        l2 = float(
+            jnp.sqrt(
+                jnp.sum((preds_val_lin[:, col] - Y_v_lin[:, col]) ** 2)
+                / jnp.maximum(jnp.sum(Y_v_lin[:, col] ** 2), 1e-8)
+            )
+        )
         per_output_l2.append(l2)
 
     return {
@@ -523,6 +542,7 @@ def _train_jax(
 
 
 # ── Verification Gate ────────────────────────────────────────────────
+
 
 def verify_and_save(
     result: dict,
@@ -581,7 +601,7 @@ def verify_and_save(
         preds_test = preds_test_raw
         Y_test_lin = Y_test
 
-    test_rel_l2 = np.sqrt(np.sum((preds_test - Y_test_lin) ** 2) / max(np.sum(Y_test_lin ** 2), 1e-8))
+    test_rel_l2 = np.sqrt(np.sum((preds_test - Y_test_lin) ** 2) / max(np.sum(Y_test_lin**2), 1e-8))
 
     # QLKNN surrogates: 10-25% rel error is typical (van de Plassche 2020, PoP 27 022310).
     # Gate: warn at 0.10, hard-fail at 0.30.
@@ -589,7 +609,9 @@ def verify_and_save(
         print(f"  FAIL: test_relative_l2 = {test_rel_l2:.4f} >= 0.30 (hard fail)")
         all_pass = False
     elif test_rel_l2 >= 0.10:
-        print(f"  WARN: test_relative_l2 = {test_rel_l2:.4f} >= 0.10 (acceptable for QLKNN surrogate)")
+        print(
+            f"  WARN: test_relative_l2 = {test_rel_l2:.4f} >= 0.10 (acceptable for QLKNN surrogate)"
+        )
     else:
         print(f"  PASS: test_relative_l2 = {test_rel_l2:.4f} < 0.10")
 
@@ -604,8 +626,8 @@ def verify_and_save(
     # Gate 3: per-output relative L2 (always in linear space)
     for i, name in enumerate(output_names):
         col_l2 = np.sqrt(
-            np.sum((preds_test[:, i] - Y_test_lin[:, i]) ** 2) /
-            max(np.sum(Y_test_lin[:, i] ** 2), 1e-8)
+            np.sum((preds_test[:, i] - Y_test_lin[:, i]) ** 2)
+            / max(np.sum(Y_test_lin[:, i] ** 2), 1e-8)
         )
         if col_l2 >= 0.10:
             print(f"  WARN: {name} relative_l2 = {col_l2:.4f} >= 0.10")
@@ -677,6 +699,7 @@ def verify_and_save(
 
 # ── Main ─────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Train neural transport surrogate on real QLKNN-10D data."
@@ -686,35 +709,60 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=500)
     parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument("--batch-size", type=int, default=4096)
-    parser.add_argument("--hidden-dims", type=str, default="256,128",
-                        help="Comma-separated hidden layer widths")
+    parser.add_argument(
+        "--hidden-dims", type=str, default="256,128", help="Comma-separated hidden layer widths"
+    )
     parser.add_argument("--patience", type=int, default=50)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--max-train-samples", type=int, default=0,
-                        help="Subsample training set (0 = use all)")
-    parser.add_argument("--weight-decay", type=float, default=1e-6,
-                        help="L2 weight decay for regularisation")
-    parser.add_argument("--regime-balance", action="store_true",
-                        help="Downsample zero-flux samples to match flux samples")
-    parser.add_argument("--log-transform", action="store_true",
-                        help="Train on log(1+Y) targets (recommended for heavy-tailed flux data)")
-    parser.add_argument("--gb-scale", action="store_true",
-                        help="Gyro-Bohm skip connection: MLP predicts GB-normalised fluxes, "
-                             "multiplied by chi_gb(Te) at output")
-    parser.add_argument("--gated", action="store_true",
-                        help="Gated output: sigmoid gate * softplus flux, allows exact-zero "
-                             "predictions for stable (sub-threshold) samples")
-    parser.add_argument("--hybrid-log", action="store_true",
-                        help="Hybrid log-MSE loss: 0.5*MSE(raw) + 0.5*MSE(log1p). "
-                             "Balances threshold accuracy with flux magnitude.")
-    parser.add_argument("--align-metric", action="store_true",
-                        help="Weight sample MSE by chi_gb(Te)^2 to align loss with "
-                             "physical-space relative-L2 metric (GB-normalized data only)")
-    parser.add_argument("--residual", action="store_true",
-                        help="Residual learning: subtract stiff-transport baseline, "
-                             "MLP predicts only the correction (linear output)")
-    parser.add_argument("--quick", action="store_true",
-                        help="Quick smoke test (100 samples, 10 epochs)")
+    parser.add_argument(
+        "--max-train-samples", type=int, default=0, help="Subsample training set (0 = use all)"
+    )
+    parser.add_argument(
+        "--weight-decay", type=float, default=1e-6, help="L2 weight decay for regularisation"
+    )
+    parser.add_argument(
+        "--regime-balance",
+        action="store_true",
+        help="Downsample zero-flux samples to match flux samples",
+    )
+    parser.add_argument(
+        "--log-transform",
+        action="store_true",
+        help="Train on log(1+Y) targets (recommended for heavy-tailed flux data)",
+    )
+    parser.add_argument(
+        "--gb-scale",
+        action="store_true",
+        help="Gyro-Bohm skip connection: MLP predicts GB-normalised fluxes, "
+        "multiplied by chi_gb(Te) at output",
+    )
+    parser.add_argument(
+        "--gated",
+        action="store_true",
+        help="Gated output: sigmoid gate * softplus flux, allows exact-zero "
+        "predictions for stable (sub-threshold) samples",
+    )
+    parser.add_argument(
+        "--hybrid-log",
+        action="store_true",
+        help="Hybrid log-MSE loss: 0.5*MSE(raw) + 0.5*MSE(log1p). "
+        "Balances threshold accuracy with flux magnitude.",
+    )
+    parser.add_argument(
+        "--align-metric",
+        action="store_true",
+        help="Weight sample MSE by chi_gb(Te)^2 to align loss with "
+        "physical-space relative-L2 metric (GB-normalized data only)",
+    )
+    parser.add_argument(
+        "--residual",
+        action="store_true",
+        help="Residual learning: subtract stiff-transport baseline, "
+        "MLP predicts only the correction (linear output)",
+    )
+    parser.add_argument(
+        "--quick", action="store_true", help="Quick smoke test (100 samples, 10 epochs)"
+    )
     args = parser.parse_args()
 
     hidden_dims = [int(d) for d in args.hidden_dims.split(",")]
@@ -750,9 +798,11 @@ def main() -> None:
     X_test, Y_test = test_data["X"], test_data["Y"]
 
     # Detect GB-normalized data from pipeline metadata
-    data_gb_normalized = bool(int(train_data["gb_normalized"])) if "gb_normalized" in train_data else False
+    data_gb_normalized = (
+        bool(int(train_data["gb_normalized"])) if "gb_normalized" in train_data else False
+    )
     if data_gb_normalized:
-        print(f"\nData is GB-normalized (raw gyro-Bohm fluxes, no chi_gb multiplication)")
+        print("\nData is GB-normalized (raw gyro-Bohm fluxes, no chi_gb multiplication)")
 
     # Append threshold-excess features.  log_chi_gb is only useful for
     # physical-space targets (for GB targets Te is uncorrelated with Y).
@@ -765,7 +815,7 @@ def main() -> None:
         feat_list = "ITG excess, TEM excess" + (", log(chi_gb)" if include_log else "")
         print(f"Added derived features: {feat_list} -> {X_train.shape[1]}D input")
         if base_dim == 12:
-            print(f"  Base input includes Ti_Te (col 10) and Nustar (col 11)")
+            print("  Base input includes Ti_Te (col 10) and Nustar (col 11)")
 
     if args.quick:
         print("\n--- QUICK SMOKE TEST MODE ---")
@@ -790,20 +840,24 @@ def main() -> None:
                 keep_no_flux = rng_bal.choice(no_flux_idx, n_flux, replace=False)
                 keep_idx = np.sort(np.concatenate([np.where(has_flux)[0], keep_no_flux]))
                 X_train, Y_train = X_train[keep_idx], Y_train[keep_idx]
-                print(f"\nRegime balanced: {len(X_train):,} samples "
-                      f"({n_flux:,} flux + {n_flux:,} zero-flux from {n_no_flux:,})")
+                print(
+                    f"\nRegime balanced: {len(X_train):,} samples "
+                    f"({n_flux:,} flux + {n_flux:,} zero-flux from {n_no_flux:,})"
+                )
 
         # Then subsample if requested
         if args.max_train_samples > 0 and len(X_train) > args.max_train_samples:
             rng = np.random.default_rng(args.seed + 1)
-            idx = rng.permutation(len(X_train))[:args.max_train_samples]
+            idx = rng.permutation(len(X_train))[: args.max_train_samples]
             X_train, Y_train = X_train[idx], Y_train[idx]
             print(f"\nSubsampled training set to {args.max_train_samples:,} samples")
 
     print(f"\nData loaded: train={X_train.shape}, val={X_val.shape}, test={X_test.shape}")
-    print(f"Y ranges: chi_e=[{Y_train[:,0].min():.2f}, {Y_train[:,0].max():.2f}], "
-          f"chi_i=[{Y_train[:,1].min():.2f}, {Y_train[:,1].max():.2f}], "
-          f"D_e=[{Y_train[:,2].min():.2f}, {Y_train[:,2].max():.2f}]")
+    print(
+        f"Y ranges: chi_e=[{Y_train[:,0].min():.2f}, {Y_train[:,0].max():.2f}], "
+        f"chi_i=[{Y_train[:,1].min():.2f}, {Y_train[:,1].max():.2f}], "
+        f"D_e=[{Y_train[:,2].min():.2f}, {Y_train[:,2].max():.2f}]"
+    )
 
     # Target transformation
     Y_val_linear = None
@@ -818,7 +872,7 @@ def main() -> None:
         Y_val_linear = Y_val * chi_gb_val[:, None]
         Y_test_linear = Y_test * chi_gb_test[:, None]
         use_gb_scale = True
-        print(f"\nTraining on GB-normalized targets (loss in GB space, eval in physical space)")
+        print("\nTraining on GB-normalized targets (loss in GB space, eval in physical space)")
     elif args.gb_scale:
         # Legacy: divide physical targets by chi_gb(Te) at training time
         Y_val_linear = Y_val.copy()
@@ -830,18 +884,20 @@ def main() -> None:
         Y_val = Y_val / np.maximum(chi_gb_val[:, None], 1e-10)
         Y_test = Y_test / np.maximum(chi_gb_test[:, None], 1e-10)
         use_gb_scale = True
-        print(f"\nGB-scale: training on Y/chi_gb (legacy mode)")
+        print("\nGB-scale: training on Y/chi_gb (legacy mode)")
     elif args.log_transform:
         Y_val_linear = Y_val.copy()
         Y_test_linear = Y_test.copy()
         Y_train = np.log1p(Y_train)
         Y_val = np.log1p(Y_val)
         Y_test = np.log1p(Y_test)
-        print(f"\nLog-transform applied: training on log(1+Y)")
+        print("\nLog-transform applied: training on log(1+Y)")
 
-    print(f"Y train ranges: [{Y_train[:,0].min():.3f}, {Y_train[:,0].max():.3f}], "
-          f"[{Y_train[:,1].min():.3f}, {Y_train[:,1].max():.3f}], "
-          f"[{Y_train[:,2].min():.3f}, {Y_train[:,2].max():.3f}]")
+    print(
+        f"Y train ranges: [{Y_train[:,0].min():.3f}, {Y_train[:,0].max():.3f}], "
+        f"[{Y_train[:,1].min():.3f}, {Y_train[:,1].max():.3f}], "
+        f"[{Y_train[:,2].min():.3f}, {Y_train[:,2].max():.3f}]"
+    )
 
     # Residual learning: subtract stiff-transport baseline
     _stiff_coeffs = None
@@ -854,18 +910,25 @@ def main() -> None:
         Y_val = Y_val - base_val
         Y_test = Y_test - base_test
         print(f"\nResidual mode: stiff coefficients = {_stiff_coeffs}")
-        print(f"  Baseline explains: "
-              f"chi_e={1 - np.var(Y_train[:,0]) / max(np.var(Y_train[:,0] + base_train[:,0]), 1e-8):.1%}, "
-              f"chi_i={1 - np.var(Y_train[:,1]) / max(np.var(Y_train[:,1] + base_train[:,1]), 1e-8):.1%}, "
-              f"D_e={1 - np.var(Y_train[:,2]) / max(np.var(Y_train[:,2] + base_train[:,2]), 1e-8):.1%}")
-        print(f"  Residual ranges: [{Y_train[:,0].min():.2f}, {Y_train[:,0].max():.2f}], "
-              f"[{Y_train[:,1].min():.2f}, {Y_train[:,1].max():.2f}], "
-              f"[{Y_train[:,2].min():.2f}, {Y_train[:,2].max():.2f}]")
+        print(
+            f"  Baseline explains: "
+            f"chi_e={1 - np.var(Y_train[:,0]) / max(np.var(Y_train[:,0] + base_train[:,0]), 1e-8):.1%}, "
+            f"chi_i={1 - np.var(Y_train[:,1]) / max(np.var(Y_train[:,1] + base_train[:,1]), 1e-8):.1%}, "
+            f"D_e={1 - np.var(Y_train[:,2]) / max(np.var(Y_train[:,2] + base_train[:,2]), 1e-8):.1%}"
+        )
+        print(
+            f"  Residual ranges: [{Y_train[:,0].min():.2f}, {Y_train[:,0].max():.2f}], "
+            f"[{Y_train[:,1].min():.2f}, {Y_train[:,1].max():.2f}], "
+            f"[{Y_train[:,2].min():.2f}, {Y_train[:,2].max():.2f}]"
+        )
 
     # Train
     print("\n--- Training ---")
     result = _train_jax(
-        X_train, Y_train, X_val, Y_val,
+        X_train,
+        Y_train,
+        X_val,
+        Y_val,
         hidden_dims=hidden_dims,
         epochs=args.epochs,
         lr=args.lr,

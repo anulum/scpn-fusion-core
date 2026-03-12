@@ -3,7 +3,6 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import numpy as np
@@ -81,7 +80,9 @@ def _write_minimal_config(path: Path) -> None:
     path.write_text("{}", encoding="utf-8")
 
 
-def test_rust_wrapper_solver_method_forwarding(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_rust_wrapper_solver_method_forwarding(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     cfg = tmp_path / "cfg.json"
     _write_minimal_config(cfg)
     monkeypatch.setattr(_rust_compat, "PyFusionKernel", _DummyRustKernel, raising=False)
@@ -96,7 +97,9 @@ def test_rust_wrapper_solver_method_forwarding(monkeypatch: pytest.MonkeyPatch, 
     assert wrapper.solver_method() == "sor"
 
 
-def test_rust_wrapper_solver_method_propagates_invalid(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_rust_wrapper_solver_method_propagates_invalid(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     cfg = tmp_path / "cfg.json"
     _write_minimal_config(cfg)
     monkeypatch.setattr(_rust_compat, "PyFusionKernel", _DummyRustKernel, raising=False)

@@ -33,9 +33,7 @@ def _sha256(path: Path) -> str:
 
 def _iter_release_files(dist_dir: Path, manifest_name: str) -> list[Path]:
     files = [
-        path
-        for path in sorted(dist_dir.iterdir())
-        if path.is_file() and path.name != manifest_name
+        path for path in sorted(dist_dir.iterdir()) if path.is_file() and path.name != manifest_name
     ]
     return files
 
@@ -85,8 +83,7 @@ def main(argv: list[str] | None = None) -> int:
     summary_json.parent.mkdir(parents=True, exist_ok=True)
     summary_json.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(
-        "Release checksums generated: "
-        f"count={summary['count']} manifest={summary['manifest']}"
+        "Release checksums generated: " f"count={summary['count']} manifest={summary['manifest']}"
     )
     return 0
 

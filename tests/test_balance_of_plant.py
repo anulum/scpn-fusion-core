@@ -9,7 +9,16 @@ def test_calculate_plant_performance_returns_consistent_metrics() -> None:
     model = PowerPlantModel(coolant_type="water")
     metrics = model.calculate_plant_performance(P_fusion_MW=500.0, P_aux_absorbed_MW=50.0)
 
-    expected_keys = {"P_fusion", "P_thermal", "P_gross", "P_recirc", "P_net", "Q_plasma", "Q_eng", "breakdown"}
+    expected_keys = {
+        "P_fusion",
+        "P_thermal",
+        "P_gross",
+        "P_recirc",
+        "P_net",
+        "Q_plasma",
+        "Q_eng",
+        "breakdown",
+    }
     assert expected_keys.issubset(metrics.keys())
     assert metrics["P_fusion"] == pytest.approx(500.0)
     assert metrics["Q_plasma"] == pytest.approx(10.0)

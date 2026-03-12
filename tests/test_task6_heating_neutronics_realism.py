@@ -52,9 +52,7 @@ def test_task6_campaign_passes_thresholds_smoke() -> None:
         ({"shortlist_size": 0}, "shortlist_size"),
     ],
 )
-def test_task6_campaign_rejects_invalid_inputs(
-    kwargs: dict[str, int], match: str
-) -> None:
+def test_task6_campaign_rejects_invalid_inputs(kwargs: dict[str, int], match: str) -> None:
     with pytest.raises(ValueError, match=match):
         task6_heating_neutronics_realism.run_campaign(**kwargs)
 

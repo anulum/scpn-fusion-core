@@ -136,9 +136,7 @@ def evaluate_transition_enablement(
         raise RuntimeError("Safety net must be compiled before evaluation.")
     m = np.asarray(marking, dtype=np.float64)
     if m.shape != (net.n_places,):
-        raise ValueError(
-            f"marking must have shape ({net.n_places},), got {m.shape}"
-        )
+        raise ValueError(f"marking must have shape ({net.n_places},), got {m.shape}")
 
     w_in = net.W_in.toarray()
     thresholds = net.get_thresholds()
@@ -193,8 +191,7 @@ class SafetyInterlockRuntime:
             value = float(tokens.get(place, 0.0))
             self._marking[self._place_idx[place]] = 1.0 if value > 0.0 else 0.0
         self.last_tokens = {
-            place: float(self._marking[self._place_idx[place]])
-            for place in SAFETY_CHANNELS
+            place: float(self._marking[self._place_idx[place]]) for place in SAFETY_CHANNELS
         }
 
     def allowed_actions(self) -> Dict[str, bool]:

@@ -223,10 +223,10 @@ class TestNeuralTransportModel:
         model = NeuralTransportModel("/tmp/fallback.npz")  # force fallback mode
         n = 50
         rho = np.linspace(0, 1, n)
-        te = 10.0 * (1 - rho ** 2) + 0.1
+        te = 10.0 * (1 - rho**2) + 0.1
         ti = te.copy()
-        ne = 8.0 * (1 - rho ** 2) + 0.5
-        q = 1.0 + 2.0 * rho ** 2
+        ne = 8.0 * (1 - rho**2) + 0.5
+        q = 1.0 + 2.0 * rho**2
         s_hat = 4.0 * rho
 
         chi_e, chi_i, d_e = model.predict_profile(rho, te, ti, ne, q, s_hat)
@@ -239,7 +239,7 @@ class TestNeuralTransportModel:
 
     def test_fallback_matches_direct(self):
         """Fallback model.predict() should match critical_gradient_model()."""
-        model = NeuralTransportModel("/tmp/fallback.npz") # force fallback
+        model = NeuralTransportModel("/tmp/fallback.npz")  # force fallback
         inp = TransportInputs(grad_ti=7.0, grad_te=6.5)
 
         via_model = model.predict(inp)
@@ -254,10 +254,10 @@ class TestNeuralTransportModel:
         model = NeuralTransportModel("/tmp/fallback.npz")  # force fallback mode
         n = 30
         rho = np.linspace(0.01, 0.99, n)
-        te = 8.0 * (1 - rho ** 2) + 0.2
+        te = 8.0 * (1 - rho**2) + 0.2
         ti = te * 0.95
-        ne = 6.0 * (1 - rho ** 2) + 0.5
-        q = 1.0 + 2.5 * rho ** 2
+        ne = 6.0 * (1 - rho**2) + 0.5
+        q = 1.0 + 2.5 * rho**2
         s_hat = 5.0 * rho
 
         chi_e, chi_i, d_e = model.predict_profile(rho, te, ti, ne, q, s_hat)
@@ -366,10 +366,10 @@ class TestNeuralTransportModel:
         assert model.is_neural
         n = 20
         rho = np.linspace(0.01, 0.99, n)
-        te = 5.0 * (1 - rho ** 2) + 0.1
+        te = 5.0 * (1 - rho**2) + 0.1
         ti = te.copy()
-        ne = 5.0 * (1 - rho ** 2) + 0.5
-        q = 1.0 + 2.0 * rho ** 2
+        ne = 5.0 * (1 - rho**2) + 0.5
+        q = 1.0 + 2.0 * rho**2
         s_hat = 4.0 * rho
 
         chi_e, chi_i, d_e = model.predict_profile(rho, te, ti, ne, q, s_hat)

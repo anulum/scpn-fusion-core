@@ -10,8 +10,6 @@ from __future__ import annotations
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
-import sys
-import os
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
@@ -44,56 +42,58 @@ def _require_int(name: str, value: int, minimum: int) -> int:
         raise ValueError(f"{name} must be an integer >= {minimum}.")
     return out
 
+
 class RFHeatingSystem:
     """
     Simulates Ion Cyclotron Resonance Heating (ICRH).
-    Uses Ray-Tracing to track EM waves launching from the antenna 
+    Uses Ray-Tracing to track EM waves launching from the antenna
     and absorbing at the resonance layer.
     """
+
     def __init__(self, config_path):
         self.kernel = FusionKernel(config_path)
-        self.kernel.solve_equilibrium() # Get B-field map
-        
+        self.kernel.solve_equilibrium()  # Get B-field map
+
         # Physics Constants
-        self.q_D = 1.602e-19 # Charge (Deuterium)
+        self.q_D = 1.602e-19  # Charge (Deuterium)
         self.m_D = 3.34e-27  # Mass (Deuterium)
-        self.freq = 50e6     # 50 MHz (Standard ICRH freq)
+        self.freq = 50e6  # 50 MHz (Standard ICRH freq)
         self.omega_wave = 2 * np.pi * self.freq
-        
+
     def get_plasma_params(self, R, Z):
         """
         Returns B_mod, density, and derivatives at (R,Z).
         """
         # 1. Magnetic Field (Toroidal dominates)
         # B_tor ~ B0 * R0 / R
-        B0 = 5.3 # Tesla at axis (ITER)
+        B0 = 5.3  # Tesla at axis (ITER)
         R0 = 6.2
         B_tor = B0 * R0 / R
-        
+
         # Poloidal field from kernel
         # We need grid lookup
         ir = int((R - self.kernel.R[0]) / self.kernel.dR)
         iz = int((Z - self.kernel.Z[0]) / self.kernel.dZ)
-        
+
         if 0 <= ir < self.kernel.NR and 0 <= iz < self.kernel.NZ:
             B_R = self.kernel.B_R[iz, ir]
             B_Z = self.kernel.B_Z[iz, ir]
             psi_val = self.kernel.Psi[iz, ir]
         else:
             B_R, B_Z, psi_val = 0, 0, 0
-            
+
         B_mod = np.sqrt(B_tor**2 + B_R**2 + B_Z**2)
-        
+
         # 2. Density Profile (Parabolic)
         # n = n0 * (1 - psi_norm)
         # Reduced-order surrogate: Gaussian blob
-        dist_sq = (R - R0)**2 + Z**2
+        dist_sq = (R - R0) ** 2 + Z**2
         n_e = 1e20 * np.exp(-dist_sq / 2.0)
-        
+
         # Derivatives of density (for refraction)
         dn_dR = -n_e * (R - R0) / 1.0
         dn_dZ = -n_e * Z / 1.0
-        
+
         return B_mod, n_e, dn_dR, dn_dZ
 
     def dispersion_relation(self, R, Z, k_R, k_Z):
@@ -102,28 +102,29 @@ class RFHeatingSystem:
         Harden with Warm Plasma thermal corrections for ICRH.
         """
         B_mod, n_e, _, _ = self.get_plasma_params(R, Z)
-        
-        if n_e < 1e18: return 1.0 # Vacuum
-        
+
+        if n_e < 1e18:
+            return 1.0  # Vacuum
+
         # 1. Alfven speed (Cold Limit)
-        mu0 = 4*np.pi*1e-7
+        mu0 = 4 * np.pi * 1e-7
         v_A = B_mod / np.sqrt(mu0 * n_e * self.m_D)
-        
+
         # 2. Thermal correction (Warm Plasma)
         # For ICRH, thermal effects modify the k_perp dispersion
-        T_ion_keV = 10.0 # Heuristic local Ti
+        T_ion_keV = 10.0  # Heuristic local Ti
         v_thi = np.sqrt(2.0 * T_ion_keV * 1.602e-16 / self.m_D)
-        
+
         # Finite Larmor Radius (FLR) correction factor
         # omega^2 = k^2 * v_A^2 * (1 + 3/4 * (k_perp * rho_i)^2)
         rho_i = self.m_D * v_thi / (self.q_D * B_mod)
         k_sq = k_R**2 + k_Z**2
-        
+
         flr_correction = 1.0 + 0.75 * (k_sq * rho_i**2)
-        
+
         # Dispersion: D = k^2 * v_A^2 * flr_correction - omega^2
         D = k_sq * v_A**2 * flr_correction - self.omega_wave**2
-        
+
         return D
 
     def ray_equations(self, state, t):
@@ -133,105 +134,109 @@ class RFHeatingSystem:
         dk/dt = -dD/dr
         """
         R, Z, kR, kZ = state
-        
+
         # Finite differences for derivatives of D
         # This implicitly handles refraction and reflection
         eps = 1e-3
-        
+
         # dD/dk
         D_pkR = self.dispersion_relation(R, Z, kR + eps, kZ)
         D_mkR = self.dispersion_relation(R, Z, kR - eps, kZ)
-        dD_dkR = (D_pkR - D_mkR) / (2*eps)
-        
+        dD_dkR = (D_pkR - D_mkR) / (2 * eps)
+
         D_pkZ = self.dispersion_relation(R, Z, kR, kZ + eps)
         D_mkZ = self.dispersion_relation(R, Z, kR, kZ - eps)
-        dD_dkZ = (D_pkZ - D_mkZ) / (2*eps)
-        
+        dD_dkZ = (D_pkZ - D_mkZ) / (2 * eps)
+
         # dD/dr
         D_pR = self.dispersion_relation(R + eps, Z, kR, kZ)
         D_mR = self.dispersion_relation(R - eps, Z, kR, kZ)
-        dD_dR = (D_pR - D_mR) / (2*eps)
-        
+        dD_dR = (D_pR - D_mR) / (2 * eps)
+
         D_pZ = self.dispersion_relation(R, Z + eps, kR, kZ)
         D_mZ = self.dispersion_relation(R, Z - eps, kR, kZ)
-        dD_dZ = (D_pZ - D_mZ) / (2*eps)
-        
+        dD_dZ = (D_pZ - D_mZ) / (2 * eps)
+
         # Group Velocity (dr/dt)
         dR_dt = -dD_dkR
         dZ_dt = -dD_dkZ
-        
+
         # Wavevector change (dk/dt)
         dkR_dt = dD_dR
         dkZ_dt = dD_dZ
-        
+
         return [dR_dt, dZ_dt, dkR_dt, dkZ_dt]
 
     def trace_rays(self, n_rays=10):
         print("--- RF HEATING RAY TRACING ---")
         print(f"Frequency: {self.freq/1e6} MHz")
-        
+
         # Antenna Position (Outboard midplane)
         R_ant = 9.0
         Z_ant_spread = np.linspace(-1.0, 1.0, n_rays)
-        
+
         trajectories = []
-        
+
         for i in range(n_rays):
             # Initial condition: Launch inward (kR < 0)
-            k0 = 10.0 # Initial wavenumber
+            k0 = 10.0  # Initial wavenumber
             init_state = [R_ant, Z_ant_spread[i], -k0, 0.0]
-            
-            t_span = np.linspace(0, 0.5, 100) # Short time (normalized)
-            
+
+            t_span = np.linspace(0, 0.5, 100)  # Short time (normalized)
+
             # Solve ODE
             sol = odeint(self.ray_equations, init_state, t_span)
-            
+
             # Check Resonance
             # Resonance condition: omega = omega_ci = qB/m
             # B_res = omega * m / q
             B_res = self.omega_wave * self.m_D / self.q_D
-            
+
             # Find where B matches B_res along path
             # (Post-processing check)
-            
+
             trajectories.append(sol)
-            
+
         print(f"Resonance Field B_res: {B_res:.2f} Tesla")
         return trajectories, B_res
 
     def plot_heating(self, trajectories, B_res):
         fig, ax = plt.subplots(figsize=(8, 8))
-        
+
         # 1. Plasma Geometry
-        ax.contour(self.kernel.RR, self.kernel.ZZ, self.kernel.Psi, colors='gray', alpha=0.3)
-        
+        ax.contour(self.kernel.RR, self.kernel.ZZ, self.kernel.Psi, colors="gray", alpha=0.3)
+
         # 2. Resonance Layer (Vertical Line approx)
         # B_tor ~ B0*R0/R. B ~ B_res => R_res ~ B0*R0/B_res
         R_res = (5.3 * 6.2) / B_res
-        ax.axvline(R_res, color='green', linestyle='--', linewidth=2, label='Cyclotron Resonance Layer')
-        
+        ax.axvline(
+            R_res, color="green", linestyle="--", linewidth=2, label="Cyclotron Resonance Layer"
+        )
+
         # 3. Rays
         for i, sol in enumerate(trajectories):
             R = sol[:, 0]
             Z = sol[:, 1]
-            ax.plot(R, Z, 'r-', alpha=0.6)
-            
+            ax.plot(R, Z, "r-", alpha=0.6)
+
             # Draw absorption point (intersection with Resonance)
             # Simple geometric check
             idx = np.abs(R - R_res).argmin()
             if np.abs(R[idx] - R_res) < 0.1:
-                ax.plot(R[idx], Z[idx], 'y*', markersize=10, label='Energy Dump' if i==0 else "")
-        
+                ax.plot(R[idx], Z[idx], "y*", markersize=10, label="Energy Dump" if i == 0 else "")
+
         # Antenna
-        ax.plot([9.0]*len(trajectories), [t[0,1] for t in trajectories], 'ko', label='Antenna Array')
-        
+        ax.plot(
+            [9.0] * len(trajectories), [t[0, 1] for t in trajectories], "ko", label="Antenna Array"
+        )
+
         ax.set_title(f"ICRH Wave Propagation ({self.freq/1e6} MHz)")
         ax.set_xlabel("R (m)")
         ax.set_ylabel("Z (m)")
         ax.set_xlim(2, 10)
         ax.set_ylim(-6, 6)
         ax.legend()
-        
+
         plt.savefig("RF_Heating_Rays.png")
         print("Saved: RF_Heating_Rays.png")
 
@@ -297,7 +302,7 @@ class RFHeatingSystem:
                 # k_imag ~ (omega_pi^2 / (c * omega)) * exp(-delta^2)
                 # where delta = (omega - omega_ci) / (k_par * v_thi)
                 delta = (self.omega_wave - omega_ci) / max(10.0 * v_thi, 1e6)
-                damping = np.exp(-delta**2)
+                damping = np.exp(-(delta**2))
 
                 # Absorption: dP = -alpha * P * ds
                 # alpha ~ 0.5 * damping / a  (normalised so that strong resonance
@@ -423,8 +428,12 @@ class ECRHHeatingSystem:
         # Single-pass absorption: eta ~ 1 - exp(-tau_opt)
         # Optical depth for O-mode: tau ~ (omega_pe / omega)^2 * (n_e * L / ...)
         omega_pe = np.sqrt(n_e * self.q_e**2 / (self.m_e * 8.854e-12))
-        resonance_overlap = 1.0 if rho_res <= 1.0 else float(np.exp(-((rho_res - 1.0) / 0.18) ** 2))
-        tau_opt = (omega_pe / self.omega) ** 2 * 20.0 * self.harmonic * obliquity * resonance_overlap
+        resonance_overlap = (
+            1.0 if rho_res <= 1.0 else float(np.exp(-(((rho_res - 1.0) / 0.18) ** 2)))
+        )
+        tau_opt = (
+            (omega_pe / self.omega) ** 2 * 20.0 * self.harmonic * obliquity * resonance_overlap
+        )
         efficiency = float(np.clip(1.0 - np.exp(-tau_opt), 0.01, 0.99))
 
         total_dep = np.sum(P_dep)

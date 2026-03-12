@@ -49,12 +49,7 @@ def test_gaussian_interval_clamps_bounds() -> None:
 def test_synthetic_disruption_signal_is_deterministic_for_seed() -> None:
     rng_a = np.random.default_rng(7)
     rng_b = np.random.default_rng(7)
-    signal_a, toroidal_a = synthetic_disruption_signal(
-        rng=rng_a, disturbance=0.6, window=128
-    )
-    signal_b, toroidal_b = synthetic_disruption_signal(
-        rng=rng_b, disturbance=0.6, window=128
-    )
+    signal_a, toroidal_a = synthetic_disruption_signal(rng=rng_a, disturbance=0.6, window=128)
+    signal_b, toroidal_b = synthetic_disruption_signal(rng=rng_b, disturbance=0.6, window=128)
     np.testing.assert_allclose(signal_a, signal_b)
     assert toroidal_a == toroidal_b
-

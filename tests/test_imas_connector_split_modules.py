@@ -48,4 +48,3 @@ def test_omas_module_exposes_bridge_contract() -> None:
     assert isinstance(omas_bridge.HAS_OMAS, bool)
     assert callable(omas_bridge.ids_to_omas_equilibrium)
     assert callable(omas_bridge.omas_equilibrium_to_ids)
-

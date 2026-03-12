@@ -49,9 +49,7 @@ def _parse_manifest(path: Path) -> list[tuple[str, str]]:
 
 def _iter_dist_file_names(dist_dir: Path, manifest_name: str) -> set[str]:
     return {
-        path.name
-        for path in dist_dir.iterdir()
-        if path.is_file() and path.name != manifest_name
+        path.name for path in dist_dir.iterdir() if path.is_file() and path.name != manifest_name
     }
 
 

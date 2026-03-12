@@ -33,8 +33,7 @@ def _midplane_chords(r, z, n=3):
     z_mid = 0.0
     span = (r_max - r_min) / (n + 1)
     return [
-        ((r_min + span * (i + 0.5), z_mid), (r_min + span * (i + 1.5), z_mid))
-        for i in range(n)
+        ((r_min + span * (i + 0.5), z_mid), (r_min + span * (i + 1.5), z_mid)) for i in range(n)
     ]
 
 
@@ -161,6 +160,4 @@ def test_sxr_bolo_domain_bounds() -> None:
     assert result.size == 1
     # With enforce_domain_bounds, should raise
     with pytest.raises(ValueError, match="outside"):
-        soft_xray_brightness(
-            ne, te, r, z, out_of_bounds_chord, enforce_domain_bounds=True
-        )
+        soft_xray_brightness(ne, te, r, z, out_of_bounds_chord, enforce_domain_bounds=True)

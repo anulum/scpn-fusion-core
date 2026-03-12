@@ -51,7 +51,12 @@ def _underdev_summary(*, source_p0p1: int, docs_p0p1: int) -> dict:
 
 
 def _claims_manifest(n: int) -> dict:
-    return {"claims": [{"id": f"c{i}", "source_file": "x", "source_pattern": "y", "evidence_files": []} for i in range(n)]}
+    return {
+        "claims": [
+            {"id": f"c{i}", "source_file": "x", "source_pattern": "y", "evidence_files": []}
+            for i in range(n)
+        ]
+    }
 
 
 def test_main_passes_on_non_regression(tmp_path: Path) -> None:

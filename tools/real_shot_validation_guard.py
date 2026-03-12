@@ -41,9 +41,7 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
     require_calibration_gate = bool(
         thresholds.get("require_disruption_calibration_gate_pass", False)
     )
-    require_minima_match = bool(
-        thresholds.get("require_dataset_minima_match_thresholds", False)
-    )
+    require_minima_match = bool(thresholds.get("require_dataset_minima_match_thresholds", False))
     require_disruption_source_contract = bool(
         thresholds.get("require_disruption_source_contract", False)
     )
@@ -58,7 +56,9 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
     dataset_minima = dict(report.get("dataset_minima", {}))
     eq_results = [dict(r) for r in eq.get("results", []) if isinstance(r, dict)]
     tr_results = [dict(r) for r in tr.get("shots", []) if isinstance(r, dict)]
-    observed_machines = sorted({str(r.get("machine", "unknown")) for r in eq_results if "machine" in r})
+    observed_machines = sorted(
+        {str(r.get("machine", "unknown")) for r in eq_results if "machine" in r}
+    )
     observed_transport_machines = sorted(
         {str(r.get("machine", "unknown")) for r in tr_results if "machine" in r}
     )
@@ -80,9 +80,7 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
     source_types_raw = disruption_data_source.get("source_types", [])
     if not isinstance(source_types_raw, list):
         source_types_raw = []
-    source_types = sorted(
-        {str(v).strip() for v in source_types_raw if str(v).strip()}
-    )
+    source_types = sorted({str(v).strip() for v in source_types_raw if str(v).strip()})
     source_contract_present = bool(
         disruption_data_source.get("manifest_found", False) and source_types
     )
@@ -95,9 +93,7 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
         and len(observed_transport_machines) >= min_transport_machine_count
     )
     disruption_balance_pass = bool(disruption_count >= min_disruptions and safe_count >= min_safe)
-    calibration_pass = (
-        bool(calibration_gate) if require_calibration_gate else True
-    )
+    calibration_pass = bool(calibration_gate) if require_calibration_gate else True
     minima_alignment_pass = True
     if require_minima_match:
         minima_alignment_pass = bool(
@@ -114,9 +110,21 @@ def evaluate(*, report: dict[str, Any], thresholds: dict[str, Any]) -> dict[str,
     return {
         "overall_artifact_pass": artifact_pass,
         "coverage_counts": {
-            "equilibrium_files": {"observed": eq_count, "required_min": min_eq, "passes": eq_count >= min_eq},
-            "transport_shots": {"observed": tr_count, "required_min": min_tr, "passes": tr_count >= min_tr},
-            "disruption_shots": {"observed": dis_count, "required_min": min_dis, "passes": dis_count >= min_dis},
+            "equilibrium_files": {
+                "observed": eq_count,
+                "required_min": min_eq,
+                "passes": eq_count >= min_eq,
+            },
+            "transport_shots": {
+                "observed": tr_count,
+                "required_min": min_tr,
+                "passes": tr_count >= min_tr,
+            },
+            "disruption_shots": {
+                "observed": dis_count,
+                "required_min": min_dis,
+                "passes": dis_count >= min_dis,
+            },
             "passes": counts_pass,
         },
         "equilibrium_machine_diversity": {

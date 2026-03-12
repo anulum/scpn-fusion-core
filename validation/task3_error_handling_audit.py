@@ -13,7 +13,6 @@ import argparse
 import contextlib
 import io
 import json
-import math
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -77,33 +76,35 @@ def _build_petri_liveness_controller() -> NeuroSymbolicController:
     net.add_arc("T_Rn", "a_R_neg", weight=1.0)
     net.compile()
 
-    artifact = FusionCompiler(bitstream_length=1024, seed=315).compile(
-        net, firing_mode="binary"
-    ).export_artifact(
-        name="task3_liveness",
-        dt_control_s=0.001,
-        readout_config={
-            "actions": [{"name": "dI_PF3_A", "pos_place": 2, "neg_place": 3}],
-            "gains": [1800.0],
-            "abs_max": [3500.0],
-            "slew_per_s": [1e6],
-        },
-        injection_config=[
-            {
-                "place_id": 0,
-                "source": "x_R_pos",
-                "scale": 1.0,
-                "offset": 0.0,
-                "clamp_0_1": True,
+    artifact = (
+        FusionCompiler(bitstream_length=1024, seed=315)
+        .compile(net, firing_mode="binary")
+        .export_artifact(
+            name="task3_liveness",
+            dt_control_s=0.001,
+            readout_config={
+                "actions": [{"name": "dI_PF3_A", "pos_place": 2, "neg_place": 3}],
+                "gains": [1800.0],
+                "abs_max": [3500.0],
+                "slew_per_s": [1e6],
             },
-            {
-                "place_id": 1,
-                "source": "x_R_neg",
-                "scale": 1.0,
-                "offset": 0.0,
-                "clamp_0_1": True,
-            },
-        ],
+            injection_config=[
+                {
+                    "place_id": 0,
+                    "source": "x_R_pos",
+                    "scale": 1.0,
+                    "offset": 0.0,
+                    "clamp_0_1": True,
+                },
+                {
+                    "place_id": 1,
+                    "source": "x_R_neg",
+                    "scale": 1.0,
+                    "offset": 0.0,
+                    "clamp_0_1": True,
+                },
+            ],
+        )
     )
     return NeuroSymbolicController(
         artifact=artifact,
@@ -162,6 +163,8 @@ def _run_soc_fault_episode(
     divertor = _init_divertor_lab()
 
     current_ext_shear = 0.0
+    av_size = 0.0
+    flow_val = 0.0
     uptime_steps = 0
     downtime_steps = 0
     forced_downtime = 0
@@ -209,9 +212,7 @@ def _run_soc_fault_episode(
                     )
                     if overheat:
                         overheat_events += 1
-                        forced_downtime = max(
-                            int(forced_downtime), int(overheat_downtime_steps)
-                        )
+                        forced_downtime = max(int(forced_downtime), int(overheat_downtime_steps))
 
         reactor.drive()
         if float(rng.random()) < noise_probability:

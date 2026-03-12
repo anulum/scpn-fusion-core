@@ -39,12 +39,7 @@ from scpn_fusion.core.scaling_laws import (
 
 logger = logging.getLogger(__name__)
 
-_ITPA_DIR = (
-    Path(__file__).resolve().parents[1]
-    / "validation"
-    / "reference_data"
-    / "itpa"
-)
+_ITPA_DIR = Path(__file__).resolve().parents[1] / "validation" / "reference_data" / "itpa"
 _CSV_PATH = _ITPA_DIR / "hmode_confinement.csv"
 _COEFF_PATH = _ITPA_DIR / "ipb98y2_coefficients.json"
 
@@ -71,8 +66,14 @@ class TestIPB98y2Formula:
         # τ_E = 0.0562 * 15^0.93 * 5.3^0.15 * 10.1^0.41 * 87^-0.69
         #       * 6.2^1.97 * 1.70^0.78 * (2.0/6.2)^0.58 * 2.5^0.19
         tau = ipb98y2_tau_e(
-            Ip=15.0, BT=5.3, ne19=10.1, Ploss=87.0,
-            R=6.2, kappa=1.70, epsilon=2.0 / 6.2, M=2.5,
+            Ip=15.0,
+            BT=5.3,
+            ne19=10.1,
+            Ploss=87.0,
+            R=6.2,
+            kappa=1.70,
+            epsilon=2.0 / 6.2,
+            M=2.5,
         )
         # The ITER design expects τ_E ≈ 3.7s at H98=1.0
         assert 2.0 < tau < 6.0, f"ITER τ_E={tau:.3f}s out of expected range"
@@ -171,16 +172,14 @@ class TestIPB98y2Formula:
 
     def test_tau_monotonic_in_ip(self):
         """τ_E should increase with plasma current (positive exponent)."""
-        base = dict(BT=5.0, ne19=8.0, Ploss=10.0, R=3.0,
-                    kappa=1.7, epsilon=0.3, M=2.5)
+        base = dict(BT=5.0, ne19=8.0, Ploss=10.0, R=3.0, kappa=1.7, epsilon=0.3, M=2.5)
         tau_low = ipb98y2_tau_e(Ip=1.0, **base)
         tau_high = ipb98y2_tau_e(Ip=3.0, **base)
         assert tau_high > tau_low
 
     def test_tau_decreasing_in_ploss(self):
         """τ_E should decrease with loss power (negative exponent)."""
-        base = dict(Ip=2.0, BT=5.0, ne19=8.0, R=3.0,
-                    kappa=1.7, epsilon=0.3, M=2.5)
+        base = dict(Ip=2.0, BT=5.0, ne19=8.0, R=3.0, kappa=1.7, epsilon=0.3, M=2.5)
         tau_low_p = ipb98y2_tau_e(Ploss=5.0, **base)
         tau_high_p = ipb98y2_tau_e(Ploss=20.0, **base)
         assert tau_low_p > tau_high_p
@@ -188,8 +187,7 @@ class TestIPB98y2Formula:
     def test_negative_ploss_rejected(self):
         """Ploss <= 0 must raise ValueError."""
         with pytest.raises(ValueError, match="Ploss"):
-            ipb98y2_tau_e(Ip=2.0, BT=5.0, ne19=8.0, Ploss=-1.0,
-                          R=3.0, kappa=1.7, epsilon=0.3)
+            ipb98y2_tau_e(Ip=2.0, BT=5.0, ne19=8.0, Ploss=-1.0, R=3.0, kappa=1.7, epsilon=0.3)
 
     @pytest.mark.parametrize(
         ("tau_actual", "tau_predicted", "match"),
@@ -346,15 +344,17 @@ class TestITPABenchmark:
             h = compute_h_factor(tau_meas, tau_pred)
             rel_err = abs(tau_pred - tau_meas) / tau_meas if tau_meas > 0 else 0
 
-            results.append(TransportBenchmarkResult(
-                machine=row["machine"],
-                shot=row["shot"],
-                tau_e_measured=tau_meas,
-                tau_e_predicted=tau_pred,
-                h_factor=h,
-                relative_error=rel_err,
-            ))
-            errors_sq.append(rel_err ** 2)
+            results.append(
+                TransportBenchmarkResult(
+                    machine=row["machine"],
+                    shot=row["shot"],
+                    tau_e_measured=tau_meas,
+                    tau_e_predicted=tau_pred,
+                    h_factor=h,
+                    relative_error=rel_err,
+                )
+            )
+            errors_sq.append(rel_err**2)
 
         rmse_pct = 100.0 * np.sqrt(np.mean(errors_sq))
 
@@ -363,9 +363,12 @@ class TestITPABenchmark:
         for r in results:
             logger.info(
                 "%-10s %-10s  τ_meas=%.3f  τ_pred=%.3f  H98=%.2f  err=%.1f%%",
-                r.machine, r.shot,
-                r.tau_e_measured, r.tau_e_predicted,
-                r.h_factor, r.relative_error * 100,
+                r.machine,
+                r.shot,
+                r.tau_e_measured,
+                r.tau_e_predicted,
+                r.h_factor,
+                r.relative_error * 100,
             )
         logger.info("Overall RMSE: %.1f%%", rmse_pct)
 
@@ -386,8 +389,14 @@ class TestITPABenchmark:
         """ITER design point should have H98 ≈ 1.0."""
         coeff = load_ipb98y2_coefficients()
         tau_pred = ipb98y2_tau_e(
-            Ip=15.0, BT=5.3, ne19=10.1, Ploss=87.0,
-            R=6.2, kappa=1.70, epsilon=2.0 / 6.2, M=2.5,
+            Ip=15.0,
+            BT=5.3,
+            ne19=10.1,
+            Ploss=87.0,
+            R=6.2,
+            kappa=1.70,
+            epsilon=2.0 / 6.2,
+            M=2.5,
             coefficients=coeff,
         )
         # The CSV says τ_E = 3.70s, H98 = 1.00
@@ -428,7 +437,7 @@ class TestPerMachineBreakdown:
             tau_meas = float(row["tau_E_s"])
             if tau_meas > 0:
                 rel_err = abs(tau_pred - tau_meas) / tau_meas
-                errors_sq.append(rel_err ** 2)
+                errors_sq.append(rel_err**2)
 
         rmse_pct = 100.0 * np.sqrt(np.mean(errors_sq))
         logger.info("Conventional tokamaks RMSE: %.1f%%", rmse_pct)

@@ -44,10 +44,8 @@ sys.path.insert(0, str(repo_root / "src"))
 
 from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
 from scpn_fusion.control.h_infinity_controller import (
-    get_flight_sim_controller,
     get_flight_sim_controller_v2,
     get_flight_sim_lqr_controller,
-    get_radial_robust_controller,
 )
 from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumKernel
 
@@ -60,6 +58,7 @@ try:
         ModelPredictiveController,
         NeuralSurrogate,
     )
+
     _mpc_available = True
 except ImportError:
     ModelPredictiveController = None  # type: ignore[assignment]
@@ -70,6 +69,7 @@ try:
         get_nmpc_controller,
         NonlinearMPC,
     )
+
     _nmpc_jax_available = True
 except ImportError:
     _nmpc_jax_available = False
@@ -82,6 +82,7 @@ try:
         NengoSNNConfig,
         nengo_available,
     )
+
     _snn_available = nengo_available()
 except ImportError:
     NengoSNNController = None  # type: ignore[assignment]
@@ -90,6 +91,7 @@ except ImportError:
 _rust_flight_sim_available = False
 try:
     from scpn_fusion_rs import PyRustFlightSim
+
     _rust_flight_sim_available = True
 except ImportError:
     PyRustFlightSim = None  # type: ignore[assignment]
@@ -98,6 +100,7 @@ except ImportError:
 @dataclass
 class EpisodeResult:
     """Metrics from a single controller episode."""
+
     mean_abs_r_error: float
     mean_abs_z_error: float
     reward: float
@@ -110,6 +113,7 @@ class EpisodeResult:
 @dataclass
 class ControllerMetrics:
     """Aggregate metrics for a controller across episodes."""
+
     name: str
     n_episodes: int = 0
     mean_reward: float = 0.0
@@ -148,7 +152,9 @@ def _build_isoflux_controller(
     return IsoFluxController(config_path, **kwargs)
 
 
-def _run_pid_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
+def _run_pid_episode(
+    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+) -> EpisodeResult:
     """Run a single PID episode."""
     dt = 0.01 if surrogate else 0.05
     steps = int(shot_duration / dt)
@@ -162,15 +168,19 @@ def _run_pid_episode(config_path: Any, shot_duration: int = 30, surrogate: bool 
     actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
     disrupted = r_err > 0.5 or z_err > 0.5
     return EpisodeResult(
-        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
-        reward=-(r_err + z_err), latency_us=per_step_us,
+        mean_abs_r_error=r_err,
+        mean_abs_z_error=z_err,
+        reward=-(r_err + z_err),
+        latency_us=per_step_us,
         disrupted=disrupted,
         t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
         energy_efficiency=1.0 / (1.0 + actuator_effort),
     )
 
 
-def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
+def _run_hinf_episode(
+    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+) -> EpisodeResult:
     """Run a single H-infinity episode.
 
     Uses two independent H-inf controllers (one per axis), each
@@ -189,10 +199,12 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool
     ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
 
     hinf_R = get_flight_sim_controller_v2(
-        position_sensitivity=0.567, sample_dt=dt,
+        position_sensitivity=0.567,
+        sample_dt=dt,
     )
     hinf_Z = get_flight_sim_controller_v2(
-        position_sensitivity=0.05, sample_dt=dt,
+        position_sensitivity=0.05,
+        sample_dt=dt,
     )
 
     pid_R_id = id(ctrl.pid_R)
@@ -213,25 +225,31 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30, surrogate: bool
     actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
     disrupted = r_err > 0.5 or z_err > 0.5
     return EpisodeResult(
-        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
-        reward=-(r_err + z_err), latency_us=per_step_us,
+        mean_abs_r_error=r_err,
+        mean_abs_z_error=z_err,
+        reward=-(r_err + z_err),
+        latency_us=per_step_us,
         disrupted=disrupted,
         t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
         energy_efficiency=1.0 / (1.0 + actuator_effort),
     )
 
 
-def _run_lqr_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
+def _run_lqr_episode(
+    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+) -> EpisodeResult:
     """Run a single LQR episode with corrected integrator plant model."""
     dt = 0.01 if surrogate else 0.05
     steps = int(shot_duration / dt)
     ctrl = _build_isoflux_controller(config_path, surrogate=surrogate, dt=dt)
 
     lqr_R = get_flight_sim_lqr_controller(
-        position_sensitivity=0.567, sample_dt=dt,
+        position_sensitivity=0.567,
+        sample_dt=dt,
     )
     lqr_Z = get_flight_sim_lqr_controller(
-        position_sensitivity=0.05, sample_dt=dt,
+        position_sensitivity=0.05,
+        sample_dt=dt,
     )
 
     pid_R_id = id(ctrl.pid_R)
@@ -252,15 +270,19 @@ def _run_lqr_episode(config_path: Any, shot_duration: int = 30, surrogate: bool 
     actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
     disrupted = r_err > 0.5 or z_err > 0.5
     return EpisodeResult(
-        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
-        reward=-(r_err + z_err), latency_us=per_step_us,
+        mean_abs_r_error=r_err,
+        mean_abs_z_error=z_err,
+        reward=-(r_err + z_err),
+        latency_us=per_step_us,
         disrupted=disrupted,
         t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
         energy_efficiency=1.0 / (1.0 + actuator_effort),
     )
 
 
-def _run_mpc_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
+def _run_mpc_episode(
+    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+) -> EpisodeResult:
     """Run a single linear-surrogate MPC episode."""
     if not _mpc_available or ModelPredictiveController is None or NeuralSurrogate is None:
         raise RuntimeError("MPC controller is unavailable in this environment.")
@@ -303,15 +325,19 @@ def _run_mpc_episode(config_path: Any, shot_duration: int = 30, surrogate: bool 
     actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
     disrupted = r_err > 0.5 or z_err > 0.5
     return EpisodeResult(
-        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
-        reward=-(r_err + z_err), latency_us=per_step_us,
+        mean_abs_r_error=r_err,
+        mean_abs_z_error=z_err,
+        reward=-(r_err + z_err),
+        latency_us=per_step_us,
         disrupted=disrupted,
         t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
         energy_efficiency=1.0 / (1.0 + actuator_effort),
     )
 
 
-def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
+def _run_nmpc_jax_episode(
+    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+) -> EpisodeResult:
     """Run a single Nonlinear MPC (JAX) episode."""
     if not _nmpc_jax_available or get_nmpc_controller is None:
         raise RuntimeError("NMPC-JAX controller is unavailable in this environment.")
@@ -320,10 +346,10 @@ def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30, surrogate: 
     # NMPC setup: state_dim=4, action_dim=len(coils)
     n_coils = len(ctrl.kernel.cfg["coils"])
     nmpc = get_nmpc_controller(state_dim=4, action_dim=n_coils, horizon=10)
-    
+
     # Target state (axis R, Z and X-point R, Z)
     target = np.array([6.0, 0.0, 5.0, -3.5])
-    
+
     def nmpc_step(current_err: float, dt: float) -> float:
         # Get full state for NMPC
         idx_max = int(np.argmax(ctrl.kernel.Psi))
@@ -332,28 +358,30 @@ def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30, surrogate: 
         z_ax = float(ctrl.kernel.Z[iz])
         xp_pos, _ = ctrl.kernel.find_x_point(ctrl.kernel.Psi)
         state = np.array([r_ax, z_ax, float(xp_pos[0]), float(xp_pos[1])])
-        
+
         u_opt = nmpc.plan_trajectory(state, target)
         # For simplicity in this wrapper, we return the first scalar action
         # mapping to the primary radial coil (index 0)
         return float(u_opt[0])
 
     ctrl.pid_step = nmpc_step
-    
+
     t0 = time.perf_counter_ns()
     steps = int(shot_duration / dt)
     result = ctrl.run_shot(shot_duration=steps, save_plot=False)
     total_us = (time.perf_counter_ns() - t0) / 1e3
     per_step_us = total_us / max(result["steps"], 1)
-    
+
     r_err = result["mean_abs_r_error"]
     z_err = result["mean_abs_z_error"]
     actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
     disrupted = r_err > 0.5 or z_err > 0.5
-    
+
     return EpisodeResult(
-        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
-        reward=-(r_err + z_err), latency_us=per_step_us,
+        mean_abs_r_error=r_err,
+        mean_abs_z_error=z_err,
+        reward=-(r_err + z_err),
+        latency_us=per_step_us,
         disrupted=disrupted,
         t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
         energy_efficiency=1.0 / (1.0 + actuator_effort),
@@ -374,7 +402,9 @@ if _nmpc_jax_available:
     CONTROLLERS["NMPC-JAX"] = _run_nmpc_jax_episode
 
 
-def _run_snn_episode(config_path: Any, shot_duration: int = 30, surrogate: bool = False) -> EpisodeResult:
+def _run_snn_episode(
+    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+) -> EpisodeResult:
     """Run a single Nengo-SNN episode."""
     if not _snn_available or NengoSNNController is None or NengoSNNConfig is None:
         raise RuntimeError("Nengo-SNN controller is unavailable in this environment.")
@@ -401,8 +431,10 @@ def _run_snn_episode(config_path: Any, shot_duration: int = 30, surrogate: bool 
     actuator_effort = result.get("mean_abs_radial_actuator_lag", 0.0)
     disrupted = r_err > 0.5 or z_err > 0.5
     return EpisodeResult(
-        mean_abs_r_error=r_err, mean_abs_z_error=z_err,
-        reward=-(r_err + z_err), latency_us=per_step_us,
+        mean_abs_r_error=r_err,
+        mean_abs_z_error=z_err,
+        reward=-(r_err + z_err),
+        latency_us=per_step_us,
         disrupted=disrupted,
         t_disruption=float(shot_duration) if not disrupted else float(shot_duration) * 0.5,
         energy_efficiency=1.0 / (1.0 + actuator_effort),
@@ -414,7 +446,9 @@ if _snn_available:
 
 
 def _run_rust_pid_episode(
-    config_path: Any, shot_duration: int = 30, surrogate: bool = False,
+    config_path: Any,
+    shot_duration: int = 30,
+    surrogate: bool = False,
 ) -> EpisodeResult:
     """Run a single episode using the Rust-native flight simulator.
 
@@ -497,7 +531,7 @@ def run_campaign(
     if config_path is None:
         config_path = repo_root / "iter_config.json"
 
-    print(f"=== 1000-Shot Stress-Test Campaign ===")
+    print("=== 1000-Shot Stress-Test Campaign ===")
     print(f"Episodes: {n_episodes} | Shot duration: {shot_duration}s")
     print(f"Noise: {noise_level*100:.0f}% | Delay: {delay_ms:.0f}ms")
     print(f"Surrogate: {'Enabled' if surrogate else 'Disabled'}")
@@ -530,15 +564,11 @@ def run_campaign(
             metrics.n_episodes = len(metrics.episodes)
             metrics.mean_reward = float(np.mean(rewards))
             metrics.std_reward = float(np.std(rewards))
-            metrics.mean_r_error = float(
-                np.mean([e.mean_abs_r_error for e in metrics.episodes])
-            )
+            metrics.mean_r_error = float(np.mean([e.mean_abs_r_error for e in metrics.episodes]))
             metrics.p50_latency_us = float(np.percentile(latencies, 50))
             metrics.p95_latency_us = float(np.percentile(latencies, 95))
             metrics.p99_latency_us = float(np.percentile(latencies, 99))
-            metrics.disruption_rate = float(
-                np.mean([e.disrupted for e in metrics.episodes])
-            )
+            metrics.disruption_rate = float(np.mean([e.disrupted for e in metrics.episodes]))
             metrics.mean_def = float(
                 np.mean([e.t_disruption / shot_duration for e in metrics.episodes])
             )
@@ -580,9 +610,7 @@ def derive_hinf_graduation_status(results: dict[str, ControllerMetrics]) -> dict
             "reason": "missing_pid_or_hinf_metrics",
         }
 
-    latency_ratio = (
-        float(hinf.p95_latency_us) / max(float(pid.p95_latency_us), 1.0e-12)
-    )
+    latency_ratio = float(hinf.p95_latency_us) / max(float(pid.p95_latency_us), 1.0e-12)
     disruption_delta = float(hinf.disruption_rate - pid.disruption_rate)
     reward_delta = float(hinf.mean_reward - pid.mean_reward)
 
@@ -633,9 +661,7 @@ def derive_hinf_graduation_status(results: dict[str, ControllerMetrics]) -> dict
     }
 
 
-def save_results_json(
-    results: dict[str, ControllerMetrics], path: Path
-) -> None:
+def save_results_json(results: dict[str, ControllerMetrics], path: Path) -> None:
     """Persist campaign results to JSON."""
     data: dict[str, Any] = {
         "controllers": {},
@@ -660,23 +686,27 @@ def save_results_json(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="1000-Shot Stress-Test Campaign"
-    )
+    parser = argparse.ArgumentParser(description="1000-Shot Stress-Test Campaign")
     parser.add_argument(
-        "--episodes", type=int, default=1000,
+        "--episodes",
+        type=int,
+        default=1000,
         help="Number of episodes per controller (default: 1000)",
     )
     parser.add_argument(
-        "--quick", action="store_true",
+        "--quick",
+        action="store_true",
         help="Quick mode: 10 episodes for CI validation",
     )
     parser.add_argument(
-        "--surrogate", action="store_true",
+        "--surrogate",
+        action="store_true",
         help="Use neural equilibrium surrogate for ~1000x faster loop",
     )
     parser.add_argument(
-        "--output", type=str, default=None,
+        "--output",
+        type=str,
+        default=None,
         help="Path to save JSON results",
     )
     parser.add_argument(

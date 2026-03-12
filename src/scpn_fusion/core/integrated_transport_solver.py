@@ -52,6 +52,7 @@ _rust_transport_available = False
 _PyTransportSolver: Any = None
 try:
     from scpn_fusion_rs import PyTransportSolver as _PyTransportSolver  # type: ignore[assignment,no-redef]
+
     _rust_transport_available = True
 except ImportError as exc:
     _logger.debug("Rust transport bindings unavailable; using Python transport kernels: %s", exc)
@@ -76,6 +77,7 @@ _EPED_FALLBACK_EXCEPTIONS = (
 
 class PhysicsError(RuntimeError, _FusionCoreError):
     """Raised when a physics constraint is violated."""
+
 
 _GYRO_BOHM_COEFF_PATH = (
     Path(__file__).resolve().parents[3]
@@ -130,7 +132,9 @@ def _load_gyro_bohm_coefficient_with_contract(
     except (FileNotFoundError, KeyError, json.JSONDecodeError, TypeError, ValueError) as exc:
         _logger.warning(
             "Could not load c_gB from %s (%s), using default %.4f",
-            p, exc, _GYRO_BOHM_DEFAULT,
+            p,
+            exc,
+            _GYRO_BOHM_DEFAULT,
         )
         contract["source"] = "default_fallback"
         contract["fallback_used"] = True
@@ -260,16 +264,28 @@ def chang_hinton_chi_profile(rho, T_i, n_e_19, q, R0, a, B0, A_ion=2.0, Z_eff=1.
     n_e = n_e_arr[valid] * 1e19
     # NRL Plasma Formulary: ln_Lambda = 17.7 + ln(T_keV/10) - 0.5*ln(n_e/1e20)
     T_keV = np.maximum(T_i_arr[valid], 0.01)
-    ln_lambda = np.clip(17.7 + np.log(T_keV / 10.0) - 0.5 * np.log(np.maximum(n_e, 1e10) / 1e20), 10.0, 25.0)
-    nu_ii = (n_e * z_eff ** 2 * e_charge ** 4 * ln_lambda
-             / (12.0 * np.pi ** 1.5 * eps0 ** 2 * m_i ** 0.5 * T_J ** 1.5))
+    ln_lambda = np.clip(
+        17.7 + np.log(T_keV / 10.0) - 0.5 * np.log(np.maximum(n_e, 1e10) / 1e20), 10.0, 25.0
+    )
+    nu_ii = (
+        n_e
+        * z_eff**2
+        * e_charge**4
+        * ln_lambda
+        / (12.0 * np.pi**1.5 * eps0**2 * m_i**0.5 * T_J**1.5)
+    )
 
-    eps32 = eps_v ** 1.5
+    eps32 = eps_v**1.5
     nu_star = np.maximum(nu_ii * q_arr[valid] * r0 / (eps32 * v_ti), 0.0)
 
-    chi_val = (0.66 * (1.0 + 1.54 * eps_v) * q_arr[valid] ** 2
-               * rho_i ** 2 * nu_ii
-               / (eps32 * (1.0 + 0.74 * nu_star ** (2.0 / 3.0))))
+    chi_val = (
+        0.66
+        * (1.0 + 1.54 * eps_v)
+        * q_arr[valid] ** 2
+        * rho_i**2
+        * nu_ii
+        / (eps32 * (1.0 + 0.74 * nu_star ** (2.0 / 3.0)))
+    )
 
     chi_val = np.where(np.isfinite(chi_val), np.maximum(chi_val, 0.01), 0.01)
     chi_nc[valid] = chi_val
@@ -330,7 +346,13 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
             eps_arr = np.clip(rho_arr * a_minor / r0, 1e-6, 0.999999)
             j_rust = np.asarray(
                 solver.sauter_bootstrap_profile(
-                    rho_arr, te_arr, ti_arr, ne_arr, q_arr, eps_arr, b0,
+                    rho_arr,
+                    te_arr,
+                    ti_arr,
+                    ne_arr,
+                    q_arr,
+                    eps_arr,
+                    b0,
                 ),
                 dtype=np.float64,
             )
@@ -361,31 +383,40 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
     q_v = q_arr[sl][valid]
 
     # Trapped fraction (Sauter)
-    sqrt_trap = np.sqrt(np.maximum(1.0 - eps_v ** 2, 1e-12))
+    sqrt_trap = np.sqrt(np.maximum(1.0 - eps_v**2, 1e-12))
     f_t = 1.0 - (1.0 - eps_v) ** 2 / (sqrt_trap * (1.0 + 1.46 * np.sqrt(eps_v)))
     f_t = np.clip(f_t, 0.0, 1.0)
 
     T_e_J = te_v * 1e3 * e_charge
     v_te = np.sqrt(2.0 * T_e_J / m_e)
     n_e = ne_v * 1e19
-    ln_lambda = np.clip(17.7 + np.log(np.maximum(te_v, 0.01) / 10.0) - 0.5 * np.log(np.maximum(n_e, 1e10) / 1e20), 10.0, 25.0)
-    nu_ei = n_e * z_eff * e_charge ** 4 * ln_lambda / (
-        12.0 * np.pi ** 1.5 * eps0 ** 2 * m_e ** 0.5 * T_e_J ** 1.5
+    ln_lambda = np.clip(
+        17.7 + np.log(np.maximum(te_v, 0.01) / 10.0) - 0.5 * np.log(np.maximum(n_e, 1e10) / 1e20),
+        10.0,
+        25.0,
+    )
+    nu_ei = (
+        n_e
+        * z_eff
+        * e_charge**4
+        * ln_lambda
+        / (12.0 * np.pi**1.5 * eps0**2 * m_e**0.5 * T_e_J**1.5)
     )
     nu_ei = np.where(np.isfinite(nu_ei) & (nu_ei >= 0.0), nu_ei, 0.0)
 
     nu_star_e = np.where(
         v_te > 0,
-        nu_ei * q_v * r0 / (eps_v ** 1.5 * v_te),
+        nu_ei * q_v * r0 / (eps_v**1.5 * v_te),
         1e6,
     )
     nu_star_e = np.where(np.isfinite(nu_star_e) & (nu_star_e >= 0.0), nu_star_e, 1e6)
 
     alpha_31 = 1.0 / (1.0 + 0.36 / z_eff)
-    L31 = f_t * alpha_31 / (1.0 + alpha_31 * np.sqrt(nu_star_e) +
-           0.25 * nu_star_e * (1.0 - f_t) ** 2)
+    L31 = (
+        f_t * alpha_31 / (1.0 + alpha_31 * np.sqrt(nu_star_e) + 0.25 * nu_star_e * (1.0 - f_t) ** 2)
+    )
     L32 = f_t * (0.05 + 0.62 * z_eff) / (z_eff * (1.0 + 0.44 * z_eff))
-    L32 /= (1.0 + 0.22 * np.sqrt(nu_star_e) + 0.19 * nu_star_e * (1.0 - f_t))
+    L32 /= 1.0 + 0.22 * np.sqrt(nu_star_e) + 0.19 * nu_star_e * (1.0 - f_t)
     L34 = L31 * ti_v / np.maximum(te_v, 0.01)
 
     # Central-difference gradients at interior points
@@ -394,9 +425,19 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
     dr = (rho_arr[i_full + 1] - rho_arr[i_full - 1]) * a_minor
     dr_ok = np.abs(dr) >= 1e-12
 
-    dn_dr = np.where(dr_ok, (ne_arr[i_full + 1] - ne_arr[i_full - 1]) * 1e19 / np.where(dr_ok, dr, 1.0), 0.0)
-    dTe_dr = np.where(dr_ok, (te_arr[i_full + 1] - te_arr[i_full - 1]) * 1e3 * e_charge / np.where(dr_ok, dr, 1.0), 0.0)
-    dTi_dr = np.where(dr_ok, (ti_arr[i_full + 1] - ti_arr[i_full - 1]) * 1e3 * e_charge / np.where(dr_ok, dr, 1.0), 0.0)
+    dn_dr = np.where(
+        dr_ok, (ne_arr[i_full + 1] - ne_arr[i_full - 1]) * 1e19 / np.where(dr_ok, dr, 1.0), 0.0
+    )
+    dTe_dr = np.where(
+        dr_ok,
+        (te_arr[i_full + 1] - te_arr[i_full - 1]) * 1e3 * e_charge / np.where(dr_ok, dr, 1.0),
+        0.0,
+    )
+    dTi_dr = np.where(
+        dr_ok,
+        (ti_arr[i_full + 1] - ti_arr[i_full - 1]) * 1e3 * e_charge / np.where(dr_ok, dr, 1.0),
+        0.0,
+    )
 
     B_pol = b0 * eps_v / np.maximum(q_v, 0.1)
     B_ok = B_pol >= 1e-10
@@ -405,9 +446,9 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
     _T_FLOOR_J = 10.0 * e_charge
     p_e = n_e * T_e_J
     j_val = -(p_e / np.where(B_ok, B_pol, 1.0)) * (
-        L31 * dn_dr / np.maximum(n_e, 1e10) +
-        L32 * dTe_dr / np.maximum(T_e_J, _T_FLOOR_J) +
-        L34 * dTi_dr / np.maximum(ti_v * 1e3 * e_charge, _T_FLOOR_J)
+        L31 * dn_dr / np.maximum(n_e, 1e10)
+        + L32 * dTe_dr / np.maximum(T_e_J, _T_FLOOR_J)
+        + L34 * dTi_dr / np.maximum(ti_v * 1e3 * e_charge, _T_FLOOR_J)
     )
 
     j_val = np.where(dr_ok & B_ok & np.isfinite(j_val), j_val, 0.0)
@@ -434,6 +475,7 @@ class TransportSolver(
     electron temperature Te, coronal-equilibrium tungsten radiation
     (Pütterich et al. 2010), and per-cell Bremsstrahlung.
     """
+
     def __init__(self, config_path: str | Path, *, multi_ion: bool = False) -> None:
         super().__init__(config_path)
         self.external_profile_mode = True
@@ -445,7 +487,7 @@ class TransportSolver(
 
         self.Te = 1.0 * (1 - self.rho**2)
         self.Ti = 1.0 * (1 - self.rho**2)
-        self.ne = 5.0 * (1 - self.rho**2)**0.5
+        self.ne = 5.0 * (1 - self.rho**2) ** 0.5
 
         self.chi_e = np.ones(self.nr)
         self.chi_i = np.ones(self.nr)
@@ -460,7 +502,9 @@ class TransportSolver(
             a = (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / 2.0
             B0 = self.cfg.get("physics", {}).get("B0", self.cfg.get("B0", 5.3))
             self.pedestal_model = EpedPedestalModel(
-                R0=R0, a=a, B0=B0,
+                R0=R0,
+                a=a,
+                B0=B0,
                 Ip_MA=self.cfg.get("physics", {}).get("plasma_current_target", 5.0),
             )
 
@@ -580,5 +624,6 @@ class TransportSolver(
             self.max_numerical_recoveries_per_step = int(raw_recovery_cap)
 
     # Model/configuration methods are provided by TransportSolverModelMixin.
+
 
 IntegratedTransportSolver = TransportSolver

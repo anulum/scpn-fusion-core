@@ -15,7 +15,7 @@ Verifies that:
 
 import json
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -57,16 +57,25 @@ def solver(tmp_path: Path) -> TransportSolver:
 def test_self_consistent_returns_expected_keys(solver: TransportSolver):
     """run_self_consistent() must return all documented keys."""
     result = solver.run_self_consistent(
-        P_aux=30.0, n_inner=5, n_outer=2, dt=0.01, psi_tol=1e-3,
+        P_aux=30.0,
+        n_inner=5,
+        n_outer=2,
+        dt=0.01,
+        psi_tol=1e-3,
     )
     expected_keys = {
-        "T_avg", "T_core", "tau_e",
-        "n_outer_converged", "psi_residuals",
-        "Ti_profile", "ne_profile", "converged",
+        "T_avg",
+        "T_core",
+        "tau_e",
+        "n_outer_converged",
+        "psi_residuals",
+        "Ti_profile",
+        "ne_profile",
+        "converged",
     }
-    assert expected_keys == set(result.keys()), (
-        f"Missing keys: {expected_keys - set(result.keys())}"
-    )
+    assert expected_keys == set(
+        result.keys()
+    ), f"Missing keys: {expected_keys - set(result.keys())}"
 
 
 def test_self_consistent_psi_residuals_recorded(solver: TransportSolver):
@@ -77,12 +86,16 @@ def test_self_consistent_psi_residuals_recorded(solver: TransportSolver):
     """
     n_outer = 5
     result = solver.run_self_consistent(
-        P_aux=30.0, n_inner=5, n_outer=n_outer, dt=0.01, psi_tol=1e-10,
+        P_aux=30.0,
+        n_inner=5,
+        n_outer=n_outer,
+        dt=0.01,
+        psi_tol=1e-10,
     )
     n_done = result["n_outer_converged"]
-    assert len(result["psi_residuals"]) == n_done, (
-        f"Expected {n_done} residuals, got {len(result['psi_residuals'])}"
-    )
+    assert (
+        len(result["psi_residuals"]) == n_done
+    ), f"Expected {n_done} residuals, got {len(result['psi_residuals'])}"
     assert n_done >= 1, "Should have done at least 1 outer iteration"
     assert n_done <= n_outer, "Should not exceed n_outer"
 
@@ -90,7 +103,11 @@ def test_self_consistent_psi_residuals_recorded(solver: TransportSolver):
 def test_self_consistent_residuals_finite(solver: TransportSolver):
     """All psi residuals should be finite and non-negative."""
     result = solver.run_self_consistent(
-        P_aux=30.0, n_inner=10, n_outer=3, dt=0.01, psi_tol=1e-10,
+        P_aux=30.0,
+        n_inner=10,
+        n_outer=3,
+        dt=0.01,
+        psi_tol=1e-10,
     )
     for r in result["psi_residuals"]:
         assert np.isfinite(r), f"Non-finite psi residual: {r}"
@@ -100,7 +117,10 @@ def test_self_consistent_residuals_finite(solver: TransportSolver):
 def test_self_consistent_profiles_finite(solver: TransportSolver):
     """Output Ti and ne profiles must contain no NaN/Inf."""
     result = solver.run_self_consistent(
-        P_aux=30.0, n_inner=10, n_outer=2, dt=0.01,
+        P_aux=30.0,
+        n_inner=10,
+        n_outer=2,
+        dt=0.01,
     )
     assert np.all(np.isfinite(result["Ti_profile"])), "Ti has NaN/Inf"
     assert np.all(np.isfinite(result["ne_profile"])), "ne has NaN/Inf"
@@ -109,7 +129,10 @@ def test_self_consistent_profiles_finite(solver: TransportSolver):
 def test_self_consistent_positive_temperatures(solver: TransportSolver):
     """Core temperature and average must be positive after coupling."""
     result = solver.run_self_consistent(
-        P_aux=30.0, n_inner=10, n_outer=2, dt=0.01,
+        P_aux=30.0,
+        n_inner=10,
+        n_outer=2,
+        dt=0.01,
     )
     assert result["T_avg"] > 0, f"T_avg={result['T_avg']}"
     assert result["T_core"] > 0, f"T_core={result['T_core']}"
@@ -118,7 +141,11 @@ def test_self_consistent_positive_temperatures(solver: TransportSolver):
 def test_self_consistent_convergence_flag(solver: TransportSolver):
     """With a very loose tolerance the loop should converge."""
     result = solver.run_self_consistent(
-        P_aux=30.0, n_inner=10, n_outer=10, dt=0.01, psi_tol=1e2,
+        P_aux=30.0,
+        n_inner=10,
+        n_outer=10,
+        dt=0.01,
+        psi_tol=1e2,
     )
     assert result["converged"] is True, "Should converge with very loose tol"
     assert result["n_outer_converged"] == 1, "Should converge on first iter"
@@ -131,15 +158,18 @@ def test_self_consistent_psi_residual_trend(solver: TransportSolver):
     The loop may converge early on a small test grid.
     """
     result = solver.run_self_consistent(
-        P_aux=30.0, n_inner=20, n_outer=5, dt=0.01, psi_tol=1e-10,
+        P_aux=30.0,
+        n_inner=20,
+        n_outer=5,
+        dt=0.01,
+        psi_tol=1e-10,
     )
     residuals = result["psi_residuals"]
     assert len(residuals) >= 1, "Should have at least one residual"
     if len(residuals) >= 2:
         # The residuals should not blow up
         assert residuals[-1] <= residuals[0] * 10.0, (
-            f"Residuals blew up: first={residuals[0]:.4e}, "
-            f"last={residuals[-1]:.4e}"
+            f"Residuals blew up: first={residuals[0]:.4e}, " f"last={residuals[-1]:.4e}"
         )
 
 
@@ -151,16 +181,17 @@ def test_map_profiles_called_during_self_consistent(solver: TransportSolver):
 
     The count should equal n_outer_converged (the loop may converge early).
     """
-    with patch.object(
-        solver, "map_profiles_to_2d", wraps=solver.map_profiles_to_2d
-    ) as mock_map:
+    with patch.object(solver, "map_profiles_to_2d", wraps=solver.map_profiles_to_2d) as mock_map:
         result = solver.run_self_consistent(
-            P_aux=30.0, n_inner=5, n_outer=5, dt=0.01, psi_tol=1e-10,
+            P_aux=30.0,
+            n_inner=5,
+            n_outer=5,
+            dt=0.01,
+            psi_tol=1e-10,
         )
         expected = result["n_outer_converged"]
         assert mock_map.call_count == expected, (
-            f"Expected {expected} calls to map_profiles_to_2d, "
-            f"got {mock_map.call_count}"
+            f"Expected {expected} calls to map_profiles_to_2d, " f"got {mock_map.call_count}"
         )
         assert mock_map.call_count >= 1, "Should call map_profiles_to_2d at least once"
 
@@ -175,9 +206,7 @@ def test_map_profiles_updates_jphi(solver: TransportSolver):
     solver.map_profiles_to_2d()
     J_phi_after = solver.J_phi.copy()
     # J_phi should have been updated
-    assert not np.allclose(J_phi_before, J_phi_after), (
-        "J_phi unchanged after map_profiles_to_2d()"
-    )
+    assert not np.allclose(J_phi_before, J_phi_after), "J_phi unchanged after map_profiles_to_2d()"
 
 
 # ── solve_equilibrium() is called ──────────────────────────────────
@@ -187,15 +216,17 @@ def test_solve_equilibrium_called_during_self_consistent(
     solver: TransportSolver,
 ):
     """solve_equilibrium() must be called once per outer iteration."""
-    with patch.object(
-        solver, "solve_equilibrium", wraps=solver.solve_equilibrium
-    ) as mock_eq:
+    with patch.object(solver, "solve_equilibrium", wraps=solver.solve_equilibrium) as mock_eq:
         solver.run_self_consistent(
-            P_aux=30.0, n_inner=5, n_outer=2, dt=0.01, psi_tol=1e-10,
+            P_aux=30.0,
+            n_inner=5,
+            n_outer=2,
+            dt=0.01,
+            psi_tol=1e-10,
         )
-        assert mock_eq.call_count == 2, (
-            f"Expected 2 calls to solve_equilibrium, got {mock_eq.call_count}"
-        )
+        assert (
+            mock_eq.call_count == 2
+        ), f"Expected 2 calls to solve_equilibrium, got {mock_eq.call_count}"
 
 
 # ── Backward compatibility ──────────────────────────────────────────
@@ -219,9 +250,7 @@ def test_run_to_steady_state_self_consistent_delegates(
     solver: TransportSolver,
 ):
     """self_consistent=True should delegate to run_self_consistent()."""
-    with patch.object(
-        solver, "run_self_consistent", wraps=solver.run_self_consistent
-    ) as mock_sc:
+    with patch.object(solver, "run_self_consistent", wraps=solver.run_self_consistent) as mock_sc:
         result = solver.run_to_steady_state(
             P_aux=30.0,
             dt=0.01,
@@ -247,7 +276,11 @@ def test_run_to_steady_state_self_consistent_delegates(
 def test_run_to_steady_state_adaptive_still_works(solver: TransportSolver):
     """adaptive=True should still work (not broken by new parameter)."""
     result = solver.run_to_steady_state(
-        P_aux=30.0, n_steps=10, dt=0.01, adaptive=True, tol=1e-2,
+        P_aux=30.0,
+        n_steps=10,
+        dt=0.01,
+        adaptive=True,
+        tol=1e-2,
     )
     assert "dt_history" in result
     assert "error_history" in result

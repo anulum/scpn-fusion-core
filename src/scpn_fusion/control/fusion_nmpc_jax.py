@@ -24,6 +24,7 @@ try:
     import jax
     import jax.numpy as jnp
     from jax import grad, jit
+
     _HAS_JAX = True
 except ImportError:
     _HAS_JAX = False
@@ -37,23 +38,24 @@ FloatArray = NDArray[np.float64]
 
 class DynamicsMLP:
     """2-layer MLP surrogate for continuous-time plasma dynamics: dx/dt = MLP(x, u)."""
+
     def __init__(self, state_dim: int, action_dim: int, hidden_dim: int = 32, seed: int = 42):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.hidden_dim = hidden_dim
-        
+
         # Initialize weights (Xavier-ish)
         rng = np.random.default_rng(seed)
         scale = 1.0 / np.sqrt(state_dim + action_dim)
-        
+
         # Layer 1: [state, action] -> hidden
         self.W1 = rng.standard_normal((hidden_dim, state_dim + action_dim)) * scale
         self.b1 = np.zeros(hidden_dim)
-        
+
         # Layer 2: hidden -> d_state/dt
         self.W2 = rng.standard_normal((state_dim, hidden_dim)) * scale
         self.b2 = np.zeros(state_dim)
-        
+
         self.params = [self.W1, self.b1, self.W2, self.b2]
 
     def forward_numpy(self, x: FloatArray, u: FloatArray) -> FloatArray:
@@ -68,6 +70,7 @@ class DynamicsMLP:
         h = jnp.tanh(jnp.dot(W1, xu) + b1)
         dxdt = jnp.dot(W2, h) + b2
         return dxdt
+
 
 # Backwards compatibility
 NeuralODEDynamics = DynamicsMLP
@@ -99,7 +102,7 @@ class NonlinearMPC:
             raise ImportError(
                 "JAX backend unavailable and allow_numpy_fallback=False for NonlinearMPC."
             )
-        
+
         self._jax_grad_fn = None
         self._compile_jax()
 
@@ -124,7 +127,9 @@ class NonlinearMPC:
         self._jax_loss = loss_fn
         self._jax_grad = jax.jit(jax.grad(loss_fn))
 
-    def plan_trajectory(self, x0: FloatArray, target: FloatArray, u_guess: Optional[FloatArray] = None) -> FloatArray:
+    def plan_trajectory(
+        self, x0: FloatArray, target: FloatArray, u_guess: Optional[FloatArray] = None
+    ) -> FloatArray:
         """Optimise action sequence and return the first action u_0."""
         action_dim = self.dynamics.action_dim
         if u_guess is None:
@@ -185,20 +190,17 @@ class NonlinearMPC:
             return cost
 
         res = minimize(
-            np_loss, 
-            U.ravel(), 
-            method='L-BFGS-B', 
-            options={'maxiter': self.iterations, 'disp': False}
+            np_loss,
+            U.ravel(),
+            method="L-BFGS-B",
+            options={"maxiter": self.iterations, "disp": False},
         )
-        
+
         best_U = res.x.reshape(self.horizon, self.dynamics.action_dim)
         return best_U[0]
 
-def get_nmpc_controller(
-    state_dim: int = 4,
-    action_dim: int = 4,
-    horizon: int = 10
-) -> NonlinearMPC:
+
+def get_nmpc_controller(state_dim: int = 4, action_dim: int = 4, horizon: int = 10) -> NonlinearMPC:
     """Create a default NonlinearMPC with DynamicsMLP surrogate."""
     dyn = DynamicsMLP(state_dim, action_dim)
     return NonlinearMPC(dyn, horizon=horizon)

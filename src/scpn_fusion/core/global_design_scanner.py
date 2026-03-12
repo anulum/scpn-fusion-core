@@ -7,18 +7,14 @@
 # ──────────────────────────────────────────────────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
-import os
 import pandas as pd
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:
-    from scpn_fusion.core.fusion_kernel import FusionKernel
-from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
-from scpn_fusion.core.divertor_thermal_sim import DivertorLab
+    pass
 from scpn_fusion.core.heat_ml_shadow_surrogate import HeatMLShadowSurrogate
-from scpn_fusion.engineering.balance_of_plant import PowerPlantModel
+
 
 class GlobalDesignExplorer:
     """
@@ -26,6 +22,7 @@ class GlobalDesignExplorer:
     Searches for the Pareto Frontier of Fusion Reactors.
     Objectives: Maximize Q, Minimize Radius (Cost), Minimize Wall Load.
     """
+
     def __init__(
         self,
         base_config_path,
@@ -109,13 +106,11 @@ class GlobalDesignExplorer:
         Neutron_Load = (0.8 * P_fus) / Surface
 
         # Divertor Load (Eich scaling)
-        lambda_q = 0.63 * (B_field**(-1.19)) # mm
-        P_sol = 0.2 * P_fus + 50.0 # Alpha + Aux
+        lambda_q = 0.63 * (B_field ** (-1.19))  # mm
+        P_sol = 0.2 * P_fus + 50.0  # Alpha + Aux
         # q_div ~ P_sol / (2*pi*R*lambda) with compact-device calibration.
         expansion_factor = 12.0 + 0.6 * B_field
-        Div_Load = (
-            P_sol / (2.0 * np.pi * R_maj * lambda_q * 1e-3) / expansion_factor
-        ) * 1e-4
+        Div_Load = (P_sol / (2.0 * np.pi * R_maj * lambda_q * 1e-3) / expansion_factor) * 1e-4
 
         # HEAT-ML magnetic-shadow attenuation (GAI-03).
         b_pol_equiv = max(0.4, 0.22 * B_field)
@@ -140,20 +135,22 @@ class GlobalDesignExplorer:
         Q_eng = P_fus / P_aux
 
         return {
-            'R': R_maj, 'B': B_field, 'Ip': I_plasma,
-            'Model_Regime': 'reduced_order',
-            'P_fus': P_fus,
-            'Q': Q_eng,
-            'Wall_Load': Neutron_Load,
-            'Div_Load_Baseline': Div_Load,
-            'Shadow_Fraction': shadow_fraction,
-            'Div_Load_Optimized': Div_Load_Optimized,
-            'Div_Load': Div_Load_Optimized,
-            'B_peak_HTS_T': b_peak_hts_t,
-            'Zeff_Est': zeff_est,
-            'Constraint_OK': constraint_ok,
-            'beta_N_eff': beta_N_eff,
-            'Cost': R_maj**3 * B_field # Rough proxy for cost
+            "R": R_maj,
+            "B": B_field,
+            "Ip": I_plasma,
+            "Model_Regime": "reduced_order",
+            "P_fus": P_fus,
+            "Q": Q_eng,
+            "Wall_Load": Neutron_Load,
+            "Div_Load_Baseline": Div_Load,
+            "Shadow_Fraction": shadow_fraction,
+            "Div_Load_Optimized": Div_Load_Optimized,
+            "Div_Load": Div_Load_Optimized,
+            "B_peak_HTS_T": b_peak_hts_t,
+            "Zeff_Est": zeff_est,
+            "Constraint_OK": constraint_ok,
+            "beta_N_eff": beta_N_eff,
+            "Cost": R_maj**3 * B_field,  # Rough proxy for cost
         }
 
     def run_scan(
@@ -187,8 +184,8 @@ class GlobalDesignExplorer:
 
             # Physics Constraint: Safety Factor q95 > 3
             # q ~ 5 a^2 B / R I
-            a = R/3.0
-            q95 = 5 * a**2 * B / (R * I) * 2.0 # Approx
+            a = R / 3.0
+            q95 = 5 * a**2 * B / (R * I) * 2.0  # Approx
 
             if q95 < q95_min:
                 continue  # Unstable design, discard
@@ -235,7 +232,7 @@ class GlobalDesignExplorer:
     def analyze_pareto(self, df):
         # Filter: Viable Reactors
         # Q > 2 (Pilot Goal), Wall Load < 5.0 + active engineering constraints.
-        viable = df[(df['Q'] > 2.0) & (df['Wall_Load'] < 5.0) & (df['Constraint_OK'])]
+        viable = df[(df["Q"] > 2.0) & (df["Wall_Load"] < 5.0) & (df["Constraint_OK"])]
 
         print(f"Viable Reactors (Q>2, Load<5): {len(viable)}")
 
@@ -244,7 +241,7 @@ class GlobalDesignExplorer:
             return
 
         # Find "Best" (Min Cost)
-        best = viable.loc[viable['Cost'].idxmin()]
+        best = viable.loc[viable["Cost"].idxmin()]
 
         print("\n=== THE OPTIMAL REACTOR ===")
         print(f"Radius: {best['R']:.2f} m")
@@ -260,32 +257,33 @@ class GlobalDesignExplorer:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
         # Plot 1: Cost vs Performance
-        sc = ax1.scatter(df['R'], df['Q'], c=df['Wall_Load'], cmap='jet', alpha=0.5, s=10)
-        ax1.scatter(viable['R'], viable['Q'], color='black', marker='x', label='Viable')
-        ax1.scatter(best['R'], best['Q'], color='red', s=100, label='OPTIMAL')
+        sc = ax1.scatter(df["R"], df["Q"], c=df["Wall_Load"], cmap="jet", alpha=0.5, s=10)
+        ax1.scatter(viable["R"], viable["Q"], color="black", marker="x", label="Viable")
+        ax1.scatter(best["R"], best["Q"], color="red", s=100, label="OPTIMAL")
 
         ax1.set_xlabel("Major Radius R (m) -> Cost")
         ax1.set_ylabel("Fusion Gain Q")
         ax1.set_title("The Reactor Design Space")
-        ax1.axhline(10, color='r', linestyle='--')
-        plt.colorbar(sc, ax=ax1, label='Neutron Wall Load (MW/m2)')
+        ax1.axhline(10, color="r", linestyle="--")
+        plt.colorbar(sc, ax=ax1, label="Neutron Wall Load (MW/m2)")
         ax1.legend()
 
         # Plot 2: Divertor Challenge
         # B field vs Divertor Load
-        sc2 = ax2.scatter(df['B'], df['Div_Load'], c=df['P_fus'], cmap='plasma', alpha=0.5)
+        sc2 = ax2.scatter(df["B"], df["Div_Load"], c=df["P_fus"], cmap="plasma", alpha=0.5)
         ax2.set_xlabel("Magnetic Field B (T)")
         ax2.set_ylabel("Divertor Heat Flux (MW/m2, HEAT-ML optimized)")
-        ax2.set_yscale('log')
-        ax2.axhline(10, color='green', linestyle='--', label='W Limit (10)')
-        ax2.axhline(50, color='orange', linestyle='--', label='Li Limit (50)')
+        ax2.set_yscale("log")
+        ax2.axhline(10, color="green", linestyle="--", label="W Limit (10)")
+        ax2.axhline(50, color="orange", linestyle="--", label="Li Limit (50)")
         ax2.set_title("The Heat Exhaust Challenge")
-        plt.colorbar(sc2, ax=ax2, label='Fusion Power (MW)')
+        plt.colorbar(sc2, ax=ax2, label="Fusion Power (MW)")
         ax2.legend()
 
         plt.tight_layout()
         plt.savefig("Global_Design_Pareto.png")
         print("Analysis Saved: Global_Design_Pareto.png")
+
 
 if __name__ == "__main__":
     # Dummy path, we use scaling laws

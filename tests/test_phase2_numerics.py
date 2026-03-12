@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from scpn_fusion.control.fokker_planck_re import FokkerPlanckSolver
 
@@ -43,7 +42,7 @@ def test_fp_sharp_feature_fwhm_preservation():
     solver = FokkerPlanckSolver(np_grid=200, p_max=50.0)
     p0 = 10.0
     sigma = 0.5
-    solver.f = 1e10 * np.exp(-((solver.p - p0) ** 2) / (2.0 * sigma ** 2))
+    solver.f = 1e10 * np.exp(-((solver.p - p0) ** 2) / (2.0 * sigma**2))
     fwhm_before = 2.355 * sigma  # Gaussian FWHM
 
     for _ in range(5):
@@ -55,8 +54,9 @@ def test_fp_sharp_feature_fwhm_preservation():
     if len(above) >= 2:
         fwhm_after = above[-1] - above[0]
         # MUSCL should keep FWHM within 3x of original (1st-order would smear much more)
-        assert fwhm_after < fwhm_before * 3.0, \
-            f"FWHM grew from {fwhm_before:.2f} to {fwhm_after:.2f}"
+        assert (
+            fwhm_after < fwhm_before * 3.0
+        ), f"FWHM grew from {fwhm_before:.2f} to {fwhm_after:.2f}"
 
 
 # ── 2.2 Diffusion term ─────────────────────────────────────────────
@@ -67,7 +67,7 @@ def test_fp_diffusion_broadens_gaussian():
     solver = FokkerPlanckSolver(np_grid=300, p_max=100.0)
     p0 = 20.0
     sigma0 = 2.0
-    solver.f = 1e8 * np.exp(-((solver.p - p0) ** 2) / (2.0 * sigma0 ** 2))
+    solver.f = 1e8 * np.exp(-((solver.p - p0) ** 2) / (2.0 * sigma0**2))
     var_before = np.sum(solver.f * (solver.p - p0) ** 2 * solver.dp) / np.sum(solver.f * solver.dp)
 
     # Run with tiny E-field so advection is negligible, diffusion dominates
@@ -76,10 +76,13 @@ def test_fp_diffusion_broadens_gaussian():
     for _ in range(n_steps):
         solver.step(dt=dt, E_field=0.0, n_e=1e17, T_e_eV=100.0, Z_eff=1.0)
 
-    var_after = np.sum(solver.f * (solver.p - p0) ** 2 * solver.dp) / max(np.sum(solver.f * solver.dp), 1e-30)
+    var_after = np.sum(solver.f * (solver.p - p0) ** 2 * solver.dp) / max(
+        np.sum(solver.f * solver.dp), 1e-30
+    )
     # Variance should increase (diffusion broadens)
-    assert var_after > var_before, \
-        f"Variance should grow: before={var_before:.4f}, after={var_after:.4f}"
+    assert (
+        var_after > var_before
+    ), f"Variance should grow: before={var_before:.4f}, after={var_after:.4f}"
 
 
 # ── 2.3 Elliptic integral bounds ───────────────────────────────────

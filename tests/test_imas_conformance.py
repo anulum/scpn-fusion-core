@@ -39,14 +39,13 @@ Uses tmp_path fixture for file I/O tests.
 from __future__ import annotations
 
 import json
-import math
 from pathlib import Path
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, Mapping
 
 import numpy as np
 import pytest
 
-from scpn_fusion.core.eqdsk import GEqdsk, read_geqdsk, write_geqdsk
+from scpn_fusion.core.eqdsk import GEqdsk
 from scpn_fusion.io.imas_connector import (
     geqdsk_to_imas_equilibrium,
     imas_equilibrium_to_geqdsk,
@@ -69,9 +68,11 @@ SPARC_DIR = REPO_ROOT / "validation" / "reference_data" / "sparc"
 # the optional ``jsonschema`` package.  If it is installed we defer
 # to its full validator for extra coverage.
 
+
 def _has_jsonschema() -> bool:
     try:
         import jsonschema  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -81,6 +82,7 @@ def _validate_against_schema(instance: Dict[str, Any], schema: Dict[str, Any]) -
     """Validate *instance* against a JSON Schema draft-07 dict."""
     if _has_jsonschema():
         import jsonschema
+
         jsonschema.validate(instance, schema)
         return
 
@@ -157,6 +159,7 @@ REQUIRED_CORE_PROFILES_1D = [
 
 # ── Fixtures ─────────────────────────────────────────────────────────
 
+
 @pytest.fixture(scope="module")
 def imas_eq_schema() -> Dict[str, Any]:
     """Load the IMAS equilibrium v3 JSON schema if available."""
@@ -173,10 +176,7 @@ def _make_synthetic_geqdsk(nw: int = 33, nh: int = 33) -> GEqdsk:
     Z = np.linspace(-1.5, 1.5, nh)
     RR, ZZ = np.meshgrid(R, Z)
     # Simple Solov'ev-like psi
-    psi = (
-        0.5 * ((RR - 2.0) ** 2 + ZZ ** 2)
-        + 0.02 * rng.standard_normal((nh, nw))
-    )
+    psi = 0.5 * ((RR - 2.0) ** 2 + ZZ**2) + 0.02 * rng.standard_normal((nh, nw))
 
     return GEqdsk(
         description="IMAS conformance synthetic",
@@ -234,6 +234,7 @@ def _make_sample_summary_state() -> Dict[str, Any]:
 # =====================================================================
 # Test Class 1: geqdsk_to_imas_equilibrium() — required IMAS DD v3 fields
 # =====================================================================
+
 
 class TestGeqdskToImasEquilibriumFields:
     """Validate that the equilibrium IDS output has all required IMAS DD v3 fields."""
@@ -368,6 +369,7 @@ class TestGeqdskToImasEquilibriumFields:
 # Test Class 2: state_to_imas_core_profiles() — required fields
 # =====================================================================
 
+
 class TestCoreProfilesConformance:
     """Validate core_profiles IDS output structure and required fields."""
 
@@ -423,9 +425,9 @@ class TestCoreProfilesConformance:
         te_kev = state["electron_temp_keV"]
         for ev, kev in zip(te_ev, te_kev):
             expected = kev * 1.0e3
-            assert abs(ev - expected) < 1e-6, (
-                f"keV->eV conversion: {kev} keV should be {expected} eV, got {ev}"
-            )
+            assert (
+                abs(ev - expected) < 1e-6
+            ), f"keV->eV conversion: {kev} keV should be {expected} eV, got {ev}"
 
     def test_unit_conversion_1e20_to_m3(self) -> None:
         """electron_density_1e20_m3 -> electrons.density must multiply by 1e20."""
@@ -435,9 +437,9 @@ class TestCoreProfilesConformance:
         ne_1e20 = state["electron_density_1e20_m3"]
         for m3, raw in zip(ne_m3, ne_1e20):
             expected = raw * 1.0e20
-            assert abs(m3 / expected - 1.0) < 1e-10, (
-                f"1e20->m^-3 conversion: {raw} * 1e20 = {expected}, got {m3}"
-            )
+            assert (
+                abs(m3 / expected - 1.0) < 1e-10
+            ), f"1e20->m^-3 conversion: {raw} * 1e20 = {expected}, got {m3}"
 
     def test_profile_lengths_match(self) -> None:
         """All profiles must have the same length as rho_tor_norm."""
@@ -458,6 +460,7 @@ class TestCoreProfilesConformance:
 # =====================================================================
 # Test Class 3: state_to_imas_summary() — required fields
 # =====================================================================
+
 
 class TestSummaryConformance:
     """Validate summary IDS output structure."""
@@ -493,9 +496,9 @@ class TestSummaryConformance:
         }
         for imas_key, expected_val in expected_mapping.items():
             assert imas_key in gq, f"Missing IMAS key '{imas_key}' in global_quantities"
-            assert abs(gq[imas_key] - expected_val) < 1e-10, (
-                f"Key '{imas_key}': expected {expected_val}, got {gq[imas_key]}"
-            )
+            assert (
+                abs(gq[imas_key] - expected_val) < 1e-10
+            ), f"Key '{imas_key}': expected {expected_val}, got {gq[imas_key]}"
 
     def test_empty_state(self) -> None:
         """Empty state should produce an empty global_quantities dict."""
@@ -511,6 +514,7 @@ class TestSummaryConformance:
 # =====================================================================
 # Test Class 4: Round-trip write_ids() / read_ids()
 # =====================================================================
+
 
 class TestRoundTripWriteReadIds:
     """Verify that write_ids() then read_ids() preserves data."""
@@ -578,14 +582,14 @@ class TestRoundTripWriteReadIds:
         gq_loaded = ids_loaded["global_quantities"]
         for key in gq_orig:
             assert abs(gq_loaded[key] - gq_orig[key]) < 1e-10, (
-                f"Summary round-trip mismatch for '{key}': "
-                f"{gq_orig[key]} vs {gq_loaded[key]}"
+                f"Summary round-trip mismatch for '{key}': " f"{gq_orig[key]} vs {gq_loaded[key]}"
             )
 
 
 # =====================================================================
 # Test Class 5: GEqdsk -> IMAS -> GEqdsk round-trip
 # =====================================================================
+
 
 class TestGeqdskRoundTrip:
     """Verify that key equilibrium fields survive the IMAS round-trip."""
@@ -665,6 +669,7 @@ class TestGeqdskRoundTrip:
 # =====================================================================
 # Test Class 6: Unit conversion spot-checks
 # =====================================================================
+
 
 class TestUnitConversions:
     """Explicit spot-checks for unit conversion correctness."""

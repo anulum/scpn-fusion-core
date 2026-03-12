@@ -23,9 +23,7 @@ class NeuroSymbolicControllerFeaturesMixin:
         obs_vals = self._tmp_obs_vals
         for i, key in enumerate(self._axis_obs_keys):
             if key not in obs_map:
-                raise KeyError(
-                    f"Missing observation key for feature extraction: {key}"
-                )
+                raise KeyError(f"Missing observation key for feature extraction: {key}")
             obs_vals[i] = float(obs_map[key])
         return self._compute_feature_components_vector(obs_vals)
 
@@ -37,9 +35,7 @@ class NeuroSymbolicControllerFeaturesMixin:
 
         obs_vals = np.asarray(obs_vector, dtype=np.float64)
         if obs_vals.shape != (self._axis_count,):
-            raise ValueError(
-                f"obs_vector must have length {self._axis_count}, got {obs_vals.size}"
-            )
+            raise ValueError(f"obs_vector must have length {self._axis_count}, got {obs_vals.size}")
         np.subtract(self._axis_targets, obs_vals, out=self._tmp_feature_err)
         np.divide(self._tmp_feature_err, self._axis_scales, out=self._tmp_feature_err)
         np.clip(self._tmp_feature_err, -1.0, 1.0, out=self._tmp_feature_err)
@@ -92,18 +88,14 @@ class NeuroSymbolicControllerFeaturesMixin:
         np.multiply(values, self._inj_scales, out=values)
         values += self._inj_offsets
         if self._inj_has_clamp:
-            values[self._inj_clamp_idx] = np.clip(
-                values[self._inj_clamp_idx], 0.0, 1.0
-            )
+            values[self._inj_clamp_idx] = np.clip(values[self._inj_clamp_idx], 0.0, 1.0)
         marking[self._inj_place_ids] = values
 
     def _decode_actions(self, marking: FloatArray) -> Dict[str, float]:
         actions = self._decode_actions_vector(marking)
         if actions.size == 0:
             return {}
-        return {
-            name: float(actions[i]) for i, name in enumerate(self._action_names)
-        }
+        return {name: float(actions[i]) for i, name in enumerate(self._action_names)}
 
     def _decode_actions_vector(self, marking: FloatArray) -> FloatArray:
         if self._action_count == 0:
@@ -120,9 +112,7 @@ class NeuroSymbolicControllerFeaturesMixin:
         np.clip(raw, -self._action_abs_max, self._action_abs_max, out=self._prev_actions)
         return self._prev_actions
 
-    def _apply_bit_flip_faults(
-        self, values: FloatArray, rng: np.random.Generator
-    ) -> FloatArray:
+    def _apply_bit_flip_faults(self, values: FloatArray, rng: np.random.Generator) -> FloatArray:
         """Inject bounded deterministic bit-flip faults into float vectors."""
         out = np.asarray(values, dtype=np.float64).copy()
         if self._sc_bitflip_rate <= 0.0 or out.size == 0:

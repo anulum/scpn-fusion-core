@@ -133,8 +133,8 @@ def test_fault_noise_campaign_metrics_and_thresholds() -> None:
         "passes_thresholds",
     ):
         assert key in report
-    assert 0.0 <= report["mean_abs_risk_error"]
-    assert 0.0 <= report["p95_abs_risk_error"]
+    assert report["mean_abs_risk_error"] >= 0.0
+    assert report["p95_abs_risk_error"] >= 0.0
     assert 0.0 <= report["recovery_success_rate"] <= 1.0
 
 

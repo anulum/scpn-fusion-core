@@ -122,4 +122,3 @@ def record_fallback_event(
         event["domain_limit"] = domain_limit
         event["total_limit"] = total_limit
         return event
-

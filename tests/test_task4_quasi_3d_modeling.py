@@ -55,9 +55,7 @@ def test_task4_campaign_passes_thresholds_smoke() -> None:
         ({"asdex_erosion_ref_mm_year": 0.0}, "asdex_erosion_ref_mm_year"),
     ],
 )
-def test_task4_campaign_rejects_invalid_inputs(
-    kwargs: dict[str, float | int], match: str
-) -> None:
+def test_task4_campaign_rejects_invalid_inputs(kwargs: dict[str, float | int], match: str) -> None:
     with pytest.raises(ValueError, match=match):
         task4_quasi_3d_modeling.run_campaign(**kwargs)
 

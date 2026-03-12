@@ -257,7 +257,7 @@ def test_load_or_train_rejects_non_mapping_checkpoint_payload(
     )
     assert model is None
     assert meta["fallback"] is True
-    assert "checkpoint_load_failed:ValueError" == meta["reason"]
+    assert meta["reason"] == "checkpoint_load_failed:ValueError"
 
 
 def test_predict_disruption_risk_safe_falls_back_on_corrupted_checkpoint(tmp_path: Path) -> None:

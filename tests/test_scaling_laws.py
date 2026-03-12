@@ -27,14 +27,14 @@ from scpn_fusion.core.scaling_laws import (
 # ITER inductive scenario design parameters
 # Shimada et al., NF 47 (2007) S1, Table 1
 ITER_PARAMS = dict(
-    Ip=15.0,       # MA
-    BT=5.3,        # T
-    ne19=10.1,     # 10^19 m^-3
-    Ploss=87.0,    # MW (P_aux + P_alpha - P_rad, ohmic negligible)
-    R=6.2,         # m
-    kappa=1.7,     # elongation
-    epsilon=0.323, # a/R = 2.0/6.2
-    M=2.5,         # D-T
+    Ip=15.0,  # MA
+    BT=5.3,  # T
+    ne19=10.1,  # 10^19 m^-3
+    Ploss=87.0,  # MW (P_aux + P_alpha - P_rad, ohmic negligible)
+    R=6.2,  # m
+    kappa=1.7,  # elongation
+    epsilon=0.323,  # a/R = 2.0/6.2
+    M=2.5,  # D-T
 )
 
 
@@ -75,9 +75,9 @@ class TestITERReferencePrediction:
     def test_iter_in_training_domain(self):
         """ITER parameters must lie within IPB98(y,2) training envelope."""
         domain = assess_ipb98y2_domain(**ITER_PARAMS)
-        assert domain["in_training_domain"], (
-            f"ITER flagged as extrapolated: {domain['extrapolated_dimensions']}"
-        )
+        assert domain[
+            "in_training_domain"
+        ], f"ITER flagged as extrapolated: {domain['extrapolated_dimensions']}"
 
     def test_iter_h_factor_near_unity(self):
         """By design, ITER targets H98(y,2) = 1.0."""

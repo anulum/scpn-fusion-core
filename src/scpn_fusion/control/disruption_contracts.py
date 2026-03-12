@@ -34,8 +34,7 @@ def mcnp_lite_tbr(
     be_multiplier_fraction: float,
     reflector_albedo: float,
     return_uncertainty: Literal[False] = False,
-) -> tuple[float, float]:
-    ...
+) -> tuple[float, float]: ...
 
 
 @overload
@@ -46,8 +45,7 @@ def mcnp_lite_tbr(
     be_multiplier_fraction: float,
     reflector_albedo: float,
     return_uncertainty: Literal[True],
-) -> tuple[float, float, dict[str, float]]:
-    ...
+) -> tuple[float, float, dict[str, float]]: ...
 
 
 def mcnp_lite_tbr(
@@ -60,19 +58,12 @@ def mcnp_lite_tbr(
 ) -> tuple[float, float] | tuple[float, float, dict[str, float]]:
     base_tbr = require_positive_float("base_tbr", base_tbr)
     li6_enrichment = require_finite_float("li6_enrichment", li6_enrichment)
-    be_multiplier_fraction = require_finite_float(
-        "be_multiplier_fraction", be_multiplier_fraction
-    )
+    be_multiplier_fraction = require_finite_float("be_multiplier_fraction", be_multiplier_fraction)
     reflector_albedo = require_finite_float("reflector_albedo", reflector_albedo)
     li6_clip = float(np.clip(li6_enrichment, 0.0, 1.0))
     be_clip = float(np.clip(be_multiplier_fraction, 0.0, 1.0))
     alb_clip = float(np.clip(reflector_albedo, 0.0, 1.0))
-    factor = float(
-        1.15
-        + 0.20 * be_clip
-        + 0.10 * li6_clip
-        + 0.05 * alb_clip
-    )
+    factor = float(1.15 + 0.20 * be_clip + 0.10 * li6_clip + 0.05 * alb_clip)
     # Keep Task-5 gates aligned with engineering-equivalent TBR scale
     # while using conservative volumetric transport surrogates.
     tbr_proxy = float(base_tbr * factor * _TBR_EQUIVALENCE_SCALE)
@@ -262,9 +253,7 @@ def run_disruption_episode(
     )
     tau_cq_s = float(spi_diag["tau_cq_ms_mean"]) * 1e-3
     final_current_ma = float(spi_diag["final_current_MA"])
-    quench_fraction = float(
-        np.clip((pre_current_ma - final_current_ma) / pre_current_ma, 0.0, 1.0)
-    )
+    quench_fraction = float(np.clip((pre_current_ma - final_current_ma) / pre_current_ma, 0.0, 1.0))
     mitigation_strength = float(
         np.clip(
             1.60 * total_impurity_mol
@@ -307,8 +296,7 @@ def run_disruption_episode(
         "toroidal_asymmetry_index": float(
             max(
                 0.0,
-                toroidal["toroidal_asymmetry_index"]
-                * (1.0 - 0.72 * mitigation_strength),
+                toroidal["toroidal_asymmetry_index"] * (1.0 - 0.72 * mitigation_strength),
             )
         ),
         "toroidal_radial_spread": float(
@@ -331,8 +319,7 @@ def run_disruption_episode(
     risk_after = float(
         np.clip(
             0.45 * risk_after_model
-            + 0.55
-            * (risk_before * (1.0 - 0.80 * mitigation_strength) + 0.03 * disturbance),
+            + 0.55 * (risk_before * (1.0 - 0.80 * mitigation_strength) + 0.03 * disturbance),
             0.0,
             1.0,
         )
@@ -353,9 +340,7 @@ def run_disruption_episode(
     b_t = float(rng.uniform(9.0, 12.0))
     ip = float(rng.uniform(3.5, 8.0))
     design = explorer.evaluate_design(r_maj, b_t, ip)
-    q_proxy = float(
-        7.5 + 1.2 * max(float(design["Q"]), 0.0) * (1.0 - 0.25 * disturbance)
-    )
+    q_proxy = float(7.5 + 1.2 * max(float(design["Q"]), 0.0) * (1.0 - 0.25 * disturbance))
     li6_enrichment = float(rng.uniform(0.85, 1.0))
     be_multiplier_fraction = float(rng.uniform(0.35, 0.95))
     reflector_albedo = float(rng.uniform(0.30, 0.90))

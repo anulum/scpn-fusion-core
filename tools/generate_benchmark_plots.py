@@ -29,6 +29,7 @@ import numpy as np
 
 # Matplotlib with non-interactive backend
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
@@ -50,7 +51,7 @@ DPI = 150
 def _apply_dark_theme(fig, ax_or_axes):
     """Apply dark theme to figure and axes."""
     fig.patch.set_facecolor(DARK_BG)
-    axes = ax_or_axes if hasattr(ax_or_axes, '__iter__') else [ax_or_axes]
+    axes = ax_or_axes if hasattr(ax_or_axes, "__iter__") else [ax_or_axes]
     for ax in axes:
         ax.set_facecolor(DARK_BG)
         ax.tick_params(colors=DARK_FG, which="both")
@@ -74,7 +75,7 @@ def _load_or_run_campaign(quick: bool) -> dict:
 
     # Run a quick campaign to get data
     sys.path.insert(0, str(REPO_ROOT / "validation"))
-    from stress_test_campaign import run_campaign, save_results_json
+    from stress_test_campaign import run_campaign
 
     n_episodes = 5 if quick else 20
     results = run_campaign(n_episodes=n_episodes, surrogate=True)
@@ -117,7 +118,9 @@ def plot_controller_latency(data: dict, output: Path) -> None:
 
     ax.set_yscale("log")
     ax.set_ylabel("Latency (us)", fontsize=13, fontweight="bold")
-    ax.set_title("Controller Latency Distribution (Stress-Test Campaign)", fontsize=15, fontweight="bold")
+    ax.set_title(
+        "Controller Latency Distribution (Stress-Test Campaign)", fontsize=15, fontweight="bold"
+    )
     ax.set_xticks(x)
     ax.set_xticklabels(controllers, fontsize=12)
     ax.legend(fontsize=11, facecolor=DARK_BG, edgecolor=GRID_COLOR, labelcolor=DARK_FG)
@@ -127,9 +130,14 @@ def plot_controller_latency(data: dict, output: Path) -> None:
         for bar in bars:
             height = bar.get_height()
             ax.text(
-                bar.get_x() + bar.get_width() / 2.0, height * 1.05,
-                f"{height:.0f}", ha="center", va="bottom",
-                fontsize=8, color=DARK_FG, fontweight="bold",
+                bar.get_x() + bar.get_width() / 2.0,
+                height * 1.05,
+                f"{height:.0f}",
+                ha="center",
+                va="bottom",
+                fontsize=8,
+                color=DARK_FG,
+                fontweight="bold",
             )
 
     fig.tight_layout()
@@ -238,6 +246,7 @@ def plot_snn_trajectory(output: Path, quick: bool = False) -> None:
     try:
         sys.path.insert(0, str(REPO_ROOT / "validation"))
         from stress_test_campaign import _run_snn_episode, _snn_available
+
         if not _snn_available:
             raise ImportError("Nengo not available")
     except (ImportError, NameError):
@@ -255,7 +264,9 @@ def plot_snn_trajectory(output: Path, quick: bool = False) -> None:
     shot_duration = 10 if quick else 30
     steps = int(shot_duration / dt)
 
-    ctrl = IsoFluxController(config_path, verbose=False, kernel_factory=NeuralEquilibriumKernel, control_dt_s=dt)
+    ctrl = IsoFluxController(
+        config_path, verbose=False, kernel_factory=NeuralEquilibriumKernel, control_dt_s=dt
+    )
     snn = NengoSNNController(NengoSNNConfig(n_neurons=200, n_channels=2))
 
     r_history = []
@@ -302,11 +313,22 @@ def _plot_snn_data(output: Path, r_history: np.ndarray, target_r: float, dt: flo
     _apply_dark_theme(fig, [ax1, ax2])
 
     # Top: position vs target
-    ax1.axhline(y=target_r, color=ACCENT_COLORS[1], linestyle="--", linewidth=1.5, label="Target R", alpha=0.8)
+    ax1.axhline(
+        y=target_r,
+        color=ACCENT_COLORS[1],
+        linestyle="--",
+        linewidth=1.5,
+        label="Target R",
+        alpha=0.8,
+    )
     ax1.plot(t, r_history, color=ACCENT_COLORS[0], linewidth=1.2, label="SNN Actual", alpha=0.9)
     ax1.fill_between(
-        t, target_r - 0.01, target_r + 0.01,
-        color=ACCENT_COLORS[2], alpha=0.15, label="1 cm tolerance",
+        t,
+        target_r - 0.01,
+        target_r + 0.01,
+        color=ACCENT_COLORS[2],
+        alpha=0.15,
+        label="1 cm tolerance",
     )
     ax1.set_ylabel("R-axis Position (m)", fontsize=12, fontweight="bold")
     ax1.set_title("Nengo-SNN Controller: Radial Position Tracking", fontsize=14, fontweight="bold")

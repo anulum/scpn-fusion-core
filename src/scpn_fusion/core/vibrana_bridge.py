@@ -8,13 +8,19 @@
 import sys
 import os
 import numpy as np
-import threading
-import queue
 
 # Add VIBRANA path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../CCW_Standalone')))
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../CCW_Standalone"))
+)
 try:
-    from ccw_sota_engine import CCWStateOfTheArtEngine, CCWConfiguration, BiometricData, AttractorType
+    from ccw_sota_engine import (
+        CCWStateOfTheArtEngine,
+        CCWConfiguration,
+        BiometricData,
+        AttractorType,
+    )
+
     VIBRANA_AVAILABLE = True
 except ImportError:
     VIBRANA_AVAILABLE = False
@@ -23,9 +29,10 @@ except ImportError:
 try:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:
-    from scpn_fusion.core.fusion_kernel import FusionKernel
+
     RUST_BACKEND = False
 from scpn_fusion.control.neuro_cybernetic_controller import NeuroCyberneticController
+
 
 class VibranaFusionBridge:
     """
@@ -54,9 +61,9 @@ class VibranaFusionBridge:
         # Audio Config
         self.audio_config = CCWConfiguration(
             sample_rate=44100,
-            duration_minutes=1.0, # Real-time chunks
+            duration_minutes=1.0,  # Real-time chunks
             chaos_enabled=True,
-            attractor_type=AttractorType.LORENZ
+            attractor_type=AttractorType.LORENZ,
         )
         self.engine = CCWStateOfTheArtEngine(self.audio_config)
 
@@ -80,26 +87,22 @@ class VibranaFusionBridge:
         # Stable -> Theta (Meditation/Flow) ~ 5Hz
         # Unstable -> Gamma (High Alert) ~ 40Hz
         if total_error < 0.05:
-            beat_freq = 5.0 # Theta
+            beat_freq = 5.0  # Theta
         elif total_error < 0.2:
-            beat_freq = 10.0 # Alpha
+            beat_freq = 10.0  # Alpha
         else:
-            beat_freq = 40.0 # Gamma (Warning)
+            beat_freq = 40.0  # Gamma (Warning)
         self.engine.config.binaural_beat_frequency = beat_freq
 
         # 4. Harmonics (Timbre) driven by Magnetic Topology
         # Complexity of flux surface shape maps to harmonic richness
         flux_complexity = np.std(psi_matrix)
         if flux_complexity > 0.5:
-            self.engine.config.golden_ratio_harmonics = True # Rich sound
+            self.engine.config.golden_ratio_harmonics = True  # Rich sound
         else:
-            self.engine.config.golden_ratio_harmonics = False # Pure tone
+            self.engine.config.golden_ratio_harmonics = False  # Pure tone
 
-        return {
-            "Carrier": carrier_freq,
-            "Chaos": chaos_level,
-            "Beat": beat_freq
-        }
+        return {"Carrier": carrier_freq, "Chaos": chaos_level, "Beat": beat_freq}
 
     def run_sonification_session(self, duration_steps=100):
         print("--- VIBRANA FUSION BRIDGE: SONIFICATION INITIATED ---")
@@ -113,12 +116,12 @@ class VibranaFusionBridge:
         current_target_Ip = 5.0
 
         for t in range(duration_steps):
-            self.nc.kernel.cfg['physics']['plasma_current_target'] = current_target_Ip
+            self.nc.kernel.cfg["physics"]["plasma_current_target"] = current_target_Ip
             current_target_Ip += 0.1
 
             if t == 50:  # inject instability
                 print(">> INJECTING TURBULENCE <<")
-                self.nc.kernel.cfg['coils'][2]['current'] += 2000.0
+                self.nc.kernel.cfg["coils"][2]["current"] += 2000.0
 
             idx_max = np.argmax(self.nc.kernel.Psi)
             iz, ir = np.unravel_index(idx_max, self.nc.kernel.Psi.shape)
@@ -131,43 +134,49 @@ class VibranaFusionBridge:
             ctrl_R = self.nc.brain_R.step(err_R)
             ctrl_Z = self.nc.brain_Z.step(err_Z)
 
-            self.nc.kernel.cfg['coils'][2]['current'] += ctrl_R
-            self.nc.kernel.cfg['coils'][0]['current'] -= ctrl_Z
-            self.nc.kernel.cfg['coils'][4]['current'] += ctrl_Z
+            self.nc.kernel.cfg["coils"][2]["current"] += ctrl_R
+            self.nc.kernel.cfg["coils"][0]["current"] -= ctrl_Z
+            self.nc.kernel.cfg["coils"][4]["current"] += ctrl_Z
 
             self.nc.kernel.solve_equilibrium()
 
-            audio_params = self.map_physics_to_audio(t, current_target_Ip, err_R, err_Z, self.nc.kernel.Psi)
+            audio_params = self.map_physics_to_audio(
+                t, current_target_Ip, err_R, err_Z, self.nc.kernel.Psi
+            )
 
-            print(f"T={t} | Err={err_R:.3f} | Audio: {audio_params['Carrier']:.0f}Hz + {audio_params['Beat']}Hz Beat | Chaos={audio_params['Chaos']:.2f}")
+            print(
+                f"T={t} | Err={err_R:.3f} | Audio: {audio_params['Carrier']:.0f}Hz + {audio_params['Beat']}Hz Beat | Chaos={audio_params['Chaos']:.2f}"
+            )
 
-            audio_log.append({
-                't': t,
-                'error': np.sqrt(err_R**2 + err_Z**2),
-                'carrier': audio_params['Carrier'],
-                'chaos': audio_params['Chaos']
-            })
+            audio_log.append(
+                {
+                    "t": t,
+                    "error": np.sqrt(err_R**2 + err_Z**2),
+                    "carrier": audio_params["Carrier"],
+                    "chaos": audio_params["Chaos"],
+                }
+            )
 
         self.visualize_soundscape(audio_log)
 
     def visualize_soundscape(self, log):
         import matplotlib.pyplot as plt
 
-        t = [x['t'] for x in log]
-        chaos = [x['chaos'] for x in log]
-        carrier = [x['carrier'] for x in log]
+        t = [x["t"] for x in log]
+        chaos = [x["chaos"] for x in log]
+        carrier = [x["carrier"] for x in log]
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
         # Spectrogram-like visualization
         ax1.set_title("The Song of the Tokamak (Sonification)")
-        ax1.plot(t, carrier, 'b-', label='Pitch (Plasma Current)')
+        ax1.plot(t, carrier, "b-", label="Pitch (Plasma Current)")
         ax1.set_ylabel("Frequency (Hz)")
         ax1.grid(True)
         ax1.legend()
 
         # Dissonance
-        ax2.fill_between(t, chaos, color='r', alpha=0.5, label='Dissonance (Instability)')
+        ax2.fill_between(t, chaos, color="r", alpha=0.5, label="Dissonance (Instability)")
         ax2.set_ylabel("Chaos Level (0-1)")
         ax2.set_xlabel("Time Step")
         ax2.set_ylim(0, 1.1)
@@ -176,6 +185,7 @@ class VibranaFusionBridge:
         plt.tight_layout()
         plt.savefig("Vibrana_Sonification_Result.png")
         print("Analysis saved: Vibrana_Sonification_Result.png")
+
 
 if __name__ == "__main__":
     cfg = "03_CODE/SCPN-Fusion-Core/iter_config.json"

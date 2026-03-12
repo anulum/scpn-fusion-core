@@ -133,9 +133,7 @@ def _disturbance(k: int, steps: int) -> float:
     return float(0.02 * math.sin(0.08 * k) + (0.04 if k >= steps // 2 else 0.0))
 
 
-def _mpc_lite_action(
-    x: float, k: int, steps: int, horizon: int, u_limit: float
-) -> float:
+def _mpc_lite_action(x: float, k: int, steps: int, horizon: int, u_limit: float) -> float:
     candidates = np.linspace(-u_limit, u_limit, 31)
     best_u = 0.0
     best_cost = float("inf")
@@ -267,7 +265,9 @@ def _run_lane(
 
     return {
         "runtime_backend": (
-            str(scpn.runtime_backend_name) if controller_name == "SNN" and scpn is not None else "n/a"
+            str(scpn.runtime_backend_name)
+            if controller_name == "SNN" and scpn is not None
+            else "n/a"
         ),
         "rmse": float(np.sqrt(np.mean(errors * errors))),
         "p50_loop_ms": _pctl(loop_ms, 50),

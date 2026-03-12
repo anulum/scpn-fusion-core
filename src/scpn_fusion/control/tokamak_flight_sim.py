@@ -109,11 +109,13 @@ class FirstOrderActuator:
             return delayed + noise
         return delayed
 
+
 class IsoFluxController:
     """
     Simulates the Plasma Control System (PCS).
     Uses PID loops to adjust Coil Currents to maintain plasma shape.
     """
+
     def __init__(
         self,
         config_file: str,
@@ -128,27 +130,24 @@ class IsoFluxController:
         self.kernel = kernel_factory(config_file)
         self.verbose = bool(verbose)
         self.history = {
-            't': [],
-            'Ip': [],
-            'R_axis': [],
-            'Z_axis': [],
-            'X_point': [],
-            'ctrl_R_cmd': [],
-            'ctrl_R_applied': [],
-            'ctrl_Z_cmd': [],
-            'ctrl_Z_applied': [],
-            'beta_cmd': [],
-            'beta_applied': [],
+            "t": [],
+            "Ip": [],
+            "R_axis": [],
+            "Z_axis": [],
+            "X_point": [],
+            "ctrl_R_cmd": [],
+            "ctrl_R_applied": [],
+            "ctrl_Z_cmd": [],
+            "ctrl_Z_applied": [],
+            "beta_cmd": [],
+            "beta_applied": [],
         }
         control_dt_s = float(control_dt_s)
         if not np.isfinite(control_dt_s) or control_dt_s <= 0.0:
             raise ValueError("control_dt_s must be finite and > 0.")
         self.control_dt_s = control_dt_s
         actuator_current_delta_limit = float(actuator_current_delta_limit)
-        if (
-            not np.isfinite(actuator_current_delta_limit)
-            or actuator_current_delta_limit <= 0.0
-        ):
+        if not np.isfinite(actuator_current_delta_limit) or actuator_current_delta_limit <= 0.0:
             raise ValueError("actuator_current_delta_limit must be finite and > 0.")
         heating_beta_max = float(heating_beta_max)
         if not np.isfinite(heating_beta_max) or heating_beta_max <= 1.0:
@@ -161,10 +160,10 @@ class IsoFluxController:
 
         # PID Gains for Position Control
         # Radial Control (Horizontal) -> Controlled by Outer Coils (PF2, PF3, PF4)
-        self.pid_R = {'Kp': 2.0, 'Ki': 0.1, 'Kd': 0.5, 'err_sum': 0, 'last_err': 0}
+        self.pid_R = {"Kp": 2.0, "Ki": 0.1, "Kd": 0.5, "err_sum": 0, "last_err": 0}
 
         # Vertical Control (Z-pos) -> Controlled by Top/Bottom diff (PF1 vs PF5)
-        self.pid_Z = {'Kp': 5.0, 'Ki': 0.2, 'Kd': 2.0, 'err_sum': 0, 'last_err': 0}
+        self.pid_Z = {"Kp": 5.0, "Ki": 0.2, "Kd": 2.0, "err_sum": 0, "last_err": 0}
 
         self._act_radial = FirstOrderActuator(
             tau_s=actuator_tau_s,
@@ -200,10 +199,10 @@ class IsoFluxController:
             logger.info(message)
 
     def pid_step(self, pid: Dict[str, float], error: float) -> float:
-        pid['err_sum'] += error
-        d_err = error - pid['last_err']
-        pid['last_err'] = error
-        return (pid['Kp'] * error) + (pid['Ki'] * pid['err_sum']) + (pid['Kd'] * d_err)
+        pid["err_sum"] += error
+        d_err = error - pid["last_err"]
+        pid["last_err"] = error
+        return (pid["Kp"] * error) + (pid["Ki"] * pid["err_sum"]) + (pid["Kd"] * d_err)
 
     def _add_coil_current(self, coil_idx: int, delta: float) -> None:
         coils = self.kernel.cfg.get("coils", [])
@@ -245,13 +244,13 @@ class IsoFluxController:
             time_s = t * self.control_dt_s
             target_Ip = Ip_cfg * (0.98 + 0.02 * t / steps)
             physics_cfg = self.kernel.cfg.setdefault("physics", {})
-            physics_cfg['plasma_current_target'] = target_Ip
+            physics_cfg["plasma_current_target"] = target_Ip
 
             # Heating ramp — drives outward Shafranov shift
             beta_cmd = 1.0 + (0.002 * t)
             beta_applied = self._act_heating.step(beta_cmd)
 
-            physics_cfg['beta_scale'] = beta_applied
+            physics_cfg["beta_scale"] = beta_applied
 
             # Find current magnetic axis (parabolic sub-grid interpolation)
             idx_max = np.argmax(self.kernel.Psi)
@@ -286,23 +285,23 @@ class IsoFluxController:
             ctrl_vertical_bottom = self._act_bottom.step(ctrl_vertical_cmd)
             ctrl_vertical_applied = 0.5 * (ctrl_vertical_bottom - ctrl_vertical_top)
 
-            self._add_coil_current(2, ctrl_radial)       # PF3 radial correction
-            self._add_coil_current(0, ctrl_vertical_top)   # top coil
-            self._add_coil_current(4, ctrl_vertical_bottom) # bottom coil
+            self._add_coil_current(2, ctrl_radial)  # PF3 radial correction
+            self._add_coil_current(0, ctrl_vertical_top)  # top coil
+            self._add_coil_current(4, ctrl_vertical_bottom)  # bottom coil
 
             self.kernel.solve_equilibrium()
 
-            self.history['t'].append(t)
-            self.history['Ip'].append(target_Ip)
-            self.history['R_axis'].append(curr_R)
-            self.history['Z_axis'].append(curr_Z)
-            self.history['X_point'].append(xp_pos)
-            self.history['ctrl_R_cmd'].append(ctrl_radial_cmd)
-            self.history['ctrl_R_applied'].append(ctrl_radial)
-            self.history['ctrl_Z_cmd'].append(ctrl_vertical_cmd)
-            self.history['ctrl_Z_applied'].append(ctrl_vertical_applied)
-            self.history['beta_cmd'].append(beta_cmd)
-            self.history['beta_applied'].append(beta_applied)
+            self.history["t"].append(t)
+            self.history["Ip"].append(target_Ip)
+            self.history["R_axis"].append(curr_R)
+            self.history["Z_axis"].append(curr_Z)
+            self.history["X_point"].append(xp_pos)
+            self.history["ctrl_R_cmd"].append(ctrl_radial_cmd)
+            self.history["ctrl_R_applied"].append(ctrl_radial)
+            self.history["ctrl_Z_cmd"].append(ctrl_vertical_cmd)
+            self.history["ctrl_Z_applied"].append(ctrl_vertical_applied)
+            self.history["beta_cmd"].append(beta_cmd)
+            self.history["beta_applied"].append(beta_applied)
 
             self._log(
                 f"Time {time_s:.2f}s (Step {t}): Ip={target_Ip:.1f}MA | "
@@ -314,57 +313,57 @@ class IsoFluxController:
         if save_plot:
             plot_saved, plot_error = self.visualize_flight(output_path=output_path)
 
-        final_axis_r = float(self.history['R_axis'][-1]) if self.history['R_axis'] else 0.0
-        final_axis_z = float(self.history['Z_axis'][-1]) if self.history['Z_axis'] else 0.0
-        final_ip_ma = float(self.history['Ip'][-1]) if self.history['Ip'] else 0.0
+        final_axis_r = float(self.history["R_axis"][-1]) if self.history["R_axis"] else 0.0
+        final_axis_z = float(self.history["Z_axis"][-1]) if self.history["Z_axis"] else 0.0
+        final_ip_ma = float(self.history["Ip"][-1]) if self.history["Ip"] else 0.0
         mean_abs_r_error = (
-            float(np.mean(np.abs(np.asarray(self.history['R_axis']) - self.target_R)))
-            if self.history['R_axis']
+            float(np.mean(np.abs(np.asarray(self.history["R_axis"]) - self.target_R)))
+            if self.history["R_axis"]
             else 0.0
         )
         mean_abs_z_error = (
-            float(np.mean(np.abs(np.asarray(self.history['Z_axis']) - self.target_Z)))
-            if self.history['Z_axis']
+            float(np.mean(np.abs(np.asarray(self.history["Z_axis"]) - self.target_Z)))
+            if self.history["Z_axis"]
             else 0.0
         )
         mean_abs_radial_actuator_lag = (
             float(
                 np.mean(
                     np.abs(
-                        np.asarray(self.history['ctrl_R_cmd'], dtype=np.float64)
-                        - np.asarray(self.history['ctrl_R_applied'], dtype=np.float64)
+                        np.asarray(self.history["ctrl_R_cmd"], dtype=np.float64)
+                        - np.asarray(self.history["ctrl_R_applied"], dtype=np.float64)
                     )
                 )
             )
-            if self.history['ctrl_R_cmd']
+            if self.history["ctrl_R_cmd"]
             else 0.0
         )
         mean_abs_vertical_actuator_lag = (
             float(
                 np.mean(
                     np.abs(
-                        np.asarray(self.history['ctrl_Z_cmd'], dtype=np.float64)
-                        - np.asarray(self.history['ctrl_Z_applied'], dtype=np.float64)
+                        np.asarray(self.history["ctrl_Z_cmd"], dtype=np.float64)
+                        - np.asarray(self.history["ctrl_Z_applied"], dtype=np.float64)
                     )
                 )
             )
-            if self.history['ctrl_Z_cmd']
+            if self.history["ctrl_Z_cmd"]
             else 0.0
         )
         mean_abs_heating_actuator_lag = (
             float(
                 np.mean(
                     np.abs(
-                        np.asarray(self.history['beta_cmd'], dtype=np.float64)
-                        - np.asarray(self.history['beta_applied'], dtype=np.float64)
+                        np.asarray(self.history["beta_cmd"], dtype=np.float64)
+                        - np.asarray(self.history["beta_applied"], dtype=np.float64)
                     )
                 )
             )
-            if self.history['beta_cmd']
+            if self.history["beta_cmd"]
             else 0.0
         )
         final_beta_scale = (
-            float(self.history['beta_applied'][-1]) if self.history['beta_applied'] else 1.0
+            float(self.history["beta_applied"][-1]) if self.history["beta_applied"] else 1.0
         )
         return {
             "steps": int(steps),
@@ -393,24 +392,26 @@ class IsoFluxController:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
             ax1.set_title("Plasma Trajectory Control")
-            ax1.plot(self.history['t'], self.history['R_axis'], 'b-', label='R Axis (Radial)')
-            ax1.plot(self.history['t'], self.history['Z_axis'], 'r-', label='Z Axis (Vertical)')
+            ax1.plot(self.history["t"], self.history["R_axis"], "b-", label="R Axis (Radial)")
+            ax1.plot(self.history["t"], self.history["Z_axis"], "r-", label="Z Axis (Vertical)")
 
-            ax1.axhline(self.target_R, color='b', linestyle='--', alpha=0.5, label='Target R')
-            ax1.axhline(self.target_Z, color='r', linestyle='--', alpha=0.5, label='Target Z')
+            ax1.axhline(self.target_R, color="b", linestyle="--", alpha=0.5, label="Target R")
+            ax1.axhline(self.target_Z, color="r", linestyle="--", alpha=0.5, label="Target Z")
 
             ax1.set_xlabel("Shot Time (a.u.)")
             ax1.set_ylabel("Position (m)")
             ax1.legend()
             ax1.grid(True)
 
-            rx = [p[0] for p in self.history['X_point']]
-            rz = [p[1] for p in self.history['X_point']]
+            rx = [p[0] for p in self.history["X_point"]]
+            rz = [p[1] for p in self.history["X_point"]]
 
             # Filter out 0,0 (Limiter phase)
             valid_idx = [i for i, x in enumerate(rx) if x > 1.0]
             if valid_idx:
-                ax2.plot([rx[i] for i in valid_idx], [rz[i] for i in valid_idx], 'g-o', markersize=4)
+                ax2.plot(
+                    [rx[i] for i in valid_idx], [rz[i] for i in valid_idx], "g-o", markersize=4
+                )
                 ax2.set_title("Divertor X-Point Movement")
                 ax2.set_xlabel("R (m)")
                 ax2.set_ylabel("Z (m)")
@@ -423,11 +424,11 @@ class IsoFluxController:
                         self.kernel.ZZ,
                         self.kernel.Psi,
                         levels=10,
-                        colors='k',
+                        colors="k",
                         alpha=0.2,
                     )
             else:
-                ax2.text(0.5, 0.5, "Plasma Remained Limited (No Divertor)", ha='center')
+                ax2.text(0.5, 0.5, "Plasma Remained Limited (No Divertor)", ha="center")
 
             plt.tight_layout()
             plt.savefig(output_path)
@@ -476,6 +477,7 @@ def run_flight_sim(
     summary["seed"] = seed_int
     summary["config_path"] = str(config_file)
     return summary
+
 
 if __name__ == "__main__":
     run_flight_sim()

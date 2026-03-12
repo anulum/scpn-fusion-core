@@ -8,7 +8,6 @@ the core cells as a standalone script.
 
 import sys
 import time
-import numpy as np
 from pathlib import Path
 
 # Setup paths
@@ -21,16 +20,19 @@ from scpn_fusion.control.fusion_nmpc_jax import get_nmpc_controller
 from scpn_fusion.control.tokamak_digital_twin import TokamakTopoloy, Plasma2D
 from scpn_fusion.control.advanced_soc_fusion_learning import CoupledSandpileReactor
 
+
 def test_platinum_logic():
     print("--- VERIFYING PLATINUM STANDARD LOGIC (v2) ---")
 
     # 0. Version Check
     import scpn_fusion
+
     print(f"SCPN Fusion Core v{scpn_fusion.__version__}")
 
     # 1. Environment Check
     try:
         import jax
+
         print(f"JAX Acceleration: ACTIVE (Backend: {jax.devices()[0].device_kind})")
     except ImportError:
         print("JAX Acceleration: INACTIVE (Falling back to SciPy)")
@@ -39,12 +41,12 @@ def test_platinum_logic():
     print("\nSection 1: Rutherford Island Evolution...")
     topo = TokamakTopoloy()
     plasma = Plasma2D(topo)
-    
+
     w0 = topo.island_widths[2.0]
-    for _ in range(10): # 10 steps for quick verification
+    for _ in range(10):  # 10 steps for quick verification
         plasma.step(action=0.0)
     w_final = topo.island_widths[2.0]
-    
+
     print(f"  Initial Width (q=2.0): {w0:.6f}")
     print(f"  Final Width (q=2.0):   {w_final:.6f}")
     assert w_final != w0, "Island width did not evolve!"
@@ -56,13 +58,13 @@ def test_platinum_logic():
     x0 = state.to_vector()
     target = x0.copy()
     target[0] += 0.05
-    
+
     nmpc = get_nmpc_controller(state_dim=6, action_dim=1, horizon=10)
-    
+
     t0 = time.time()
     u_opt = nmpc.plan_trajectory(x0, target)
     t_elapsed = (time.time() - t0) * 1000
-    
+
     print(f"  NMPC Latency: {t_elapsed:.2f} ms")
     print(f"  Optimal Cmd:  {u_opt}")
     assert len(u_opt) == 1, "NMPC did not return an action!"
@@ -72,10 +74,10 @@ def test_platinum_logic():
     print("\nSection 3: Quantitative SOC (MJ Calibration)...")
     reactor = CoupledSandpileReactor(energy_per_topple_mj=0.05)
     reactor.drive(amount=10.0)
-    
+
     topples, flow, shear = reactor.step_physics(external_shear=0.5)
     energy_mj = reactor.get_elm_energy_mj(topples)
-    
+
     print(f"  Topples:        {topples}")
     print(f"  Energy Release: {energy_mj:.2f} MJ")
     assert energy_mj >= 0, "Negative energy detected!"
@@ -85,7 +87,7 @@ def test_platinum_logic():
     print("\nSection 4: Bosch-Hale D-T Reactivity...")
     sv = DynamicBurnModel.bosch_hale_dt(15.0)  # ITER operating point
     E_fus_J = 17.6e6 * 1.602e-19
-    P_fus_est = (1e20 / 2)**2 * sv * E_fus_J * 830.0 / 1e6  # MW
+    P_fus_est = (1e20 / 2) ** 2 * sv * E_fus_J * 830.0 / 1e6  # MW
     print(f"  sigma_v(15 keV) = {sv:.3e} m^3/s")
     print(f"  P_fusion estimate = {P_fus_est:.1f} MW")
     assert 100 < P_fus_est < 2000, f"Fusion power {P_fus_est} MW out of plausible range!"
@@ -95,11 +97,13 @@ def test_platinum_logic():
     print("\nSection 5: Lazy Import Verification...")
     from scpn_fusion.control import HybridAnomalyDetector, HInfinityController
     from scpn_fusion.core import ReactorConfig
+
     print(f"  control: {HybridAnomalyDetector.__name__}, {HInfinityController.__name__}")
     print(f"  core: {ReactorConfig.__name__}")
     print("  Lazy Imports: VERIFIED")
 
     print("\nPLATINUM STATUS: ALL CORE LOGIC FUNCTIONAL (v2).")
+
 
 if __name__ == "__main__":
     test_platinum_logic()

@@ -9,7 +9,6 @@ output parsing, and benchmark comparison utilities.
 from __future__ import annotations
 
 import json
-import tempfile
 from dataclasses import fields
 from pathlib import Path
 
@@ -34,6 +33,7 @@ from scpn_fusion.core.tglf_interface import (
 
 
 # ── 1. TGLFInputDeck Dataclass ───────────────────────────────────────
+
 
 class TestTGLFInputDeck:
 
@@ -97,14 +97,30 @@ class TestTGLFInputDeck:
         deck = TGLFInputDeck()
         field_names = {f.name for f in fields(deck)}
         expected = {
-            "rho", "s_hat", "q", "alpha_mhd", "kappa", "delta",
-            "R_LTi", "R_LTe", "R_Lne", "R_Lni", "beta_e", "Z_eff",
-            "T_e_keV", "T_i_keV", "n_e_19", "R_major", "a_minor", "B_toroidal",
+            "rho",
+            "s_hat",
+            "q",
+            "alpha_mhd",
+            "kappa",
+            "delta",
+            "R_LTi",
+            "R_LTe",
+            "R_Lne",
+            "R_Lni",
+            "beta_e",
+            "Z_eff",
+            "T_e_keV",
+            "T_i_keV",
+            "n_e_19",
+            "R_major",
+            "a_minor",
+            "B_toroidal",
         }
         assert expected.issubset(field_names)
 
 
 # ── 2. TGLFOutput Dataclass ──────────────────────────────────────────
+
 
 class TestTGLFOutput:
 
@@ -120,9 +136,7 @@ class TestTGLFOutput:
 
     def test_output_custom_values(self) -> None:
         """TGLFOutput stores known transport values correctly."""
-        out = TGLFOutput(
-            rho=0.5, chi_i=2.5, chi_e=1.8, gamma_max=0.15, q_i=3.0, q_e=2.1
-        )
+        out = TGLFOutput(rho=0.5, chi_i=2.5, chi_e=1.8, gamma_max=0.15, q_i=3.0, q_e=2.1)
         assert out.chi_i == 2.5
         assert out.chi_e == 1.8
         assert out.gamma_max == 0.15
@@ -136,6 +150,7 @@ class TestTGLFOutput:
 
 
 # ── 3. TGLFComparisonResult ──────────────────────────────────────────
+
 
 class TestTGLFComparisonResult:
 
@@ -167,6 +182,7 @@ class TestTGLFComparisonResult:
 
 # ── 4. Input Deck Generation from TransportSolver ────────────────────
 
+
 class TestGenerateInputDeck:
 
     @pytest.fixture
@@ -190,9 +206,9 @@ class TestGenerateInputDeck:
         from scpn_fusion.core.integrated_transport_solver import TransportSolver
 
         ts = TransportSolver(str(cfg_path))
-        ts.Ti = 10.0 * (1 - ts.rho ** 2)
-        ts.Te = 10.0 * (1 - ts.rho ** 2)
-        ts.ne = 8.0 * (1 - ts.rho ** 2) ** 0.5
+        ts.Ti = 10.0 * (1 - ts.rho**2)
+        ts.Te = 10.0 * (1 - ts.rho**2)
+        ts.ne = 8.0 * (1 - ts.rho**2) ** 0.5
         return ts
 
     def test_generate_input_deck_returns_deck(self, mock_solver) -> None:
@@ -273,6 +289,7 @@ class TestGenerateInputDeck:
 
 
 # ── 5. Output Parsing ────────────────────────────────────────────────
+
 
 class TestOutputParsing:
 
@@ -366,6 +383,7 @@ class TestOutputParsing:
 
 # ── 6. Write Input File ──────────────────────────────────────────────
 
+
 class TestWriteInputFile:
 
     def test_write_tglf_input_file(self, tmp_path: Path) -> None:
@@ -402,14 +420,15 @@ class TestWriteInputFile:
 
 # ── 7. TGLFBenchmark Comparison ──────────────────────────────────────
 
+
 class TestTGLFBenchmark:
 
     def test_benchmark_compare(self) -> None:
         """TGLFBenchmark.compare produces a TGLFComparisonResult."""
         benchmark = TGLFBenchmark()
         rho_grid = np.linspace(0, 1, 50)
-        our_chi_i = 3.0 * rho_grid ** 2
-        our_chi_e = 2.0 * rho_grid ** 2
+        our_chi_i = 3.0 * rho_grid**2
+        our_chi_e = 2.0 * rho_grid**2
 
         tglf_outputs = [
             TGLFOutput(rho=0.3, chi_i=0.27, chi_e=0.18),
@@ -442,11 +461,10 @@ class TestTGLFBenchmark:
         """
         benchmark = TGLFBenchmark()
         rho_grid = np.linspace(0, 1, 50)
-        chi = 2.0 * rho_grid ** 2
+        chi = 2.0 * rho_grid**2
 
         tglf_outputs = [
-            TGLFOutput(rho=r, chi_i=2.0 * r ** 2, chi_e=2.0 * r ** 2)
-            for r in [0.2, 0.4, 0.6, 0.8]
+            TGLFOutput(rho=r, chi_i=2.0 * r**2, chi_e=2.0 * r**2) for r in [0.2, 0.4, 0.6, 0.8]
         ]
         result = benchmark.compare(chi, chi, rho_grid, tglf_outputs)
         # Linear interpolation of a quadratic on a 50-point grid gives ~1e-4 error
@@ -484,6 +502,7 @@ class TestTGLFBenchmark:
 
 
 # ── 8. Reference Data ────────────────────────────────────────────────
+
 
 class TestReferenceData:
 

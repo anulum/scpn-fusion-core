@@ -16,8 +16,9 @@ from scpn_fusion.core.fusion_kernel import FusionKernel
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
 from scpn_fusion.engineering.balance_of_plant import PowerPlantModel
 
+
 class TestFusionSystem(unittest.TestCase):
-    
+
     @classmethod
     def setUpClass(cls):
         # Create a mini config for fast testing
@@ -25,11 +26,15 @@ class TestFusionSystem(unittest.TestCase):
         cls.test_config_path = str(Path(cls._tmp_dir.name) / "test_config_ci.json")
         config = {
             "reactor_name": "Test-Unit",
-            "grid_resolution": [30, 30], # Low res for speed
+            "grid_resolution": [30, 30],  # Low res for speed
             "dimensions": {"R_min": 1.0, "R_max": 5.0, "Z_min": -2.0, "Z_max": 2.0},
             "physics": {"plasma_current_target": 1.0, "vacuum_permeability": 1.0},
             "coils": [{"name": "PF1", "r": 2.0, "z": 3.0, "current": 1.0}],
-            "solver": {"max_iterations": 10, "convergence_threshold": 1e-2, "relaxation_factor": 0.1}
+            "solver": {
+                "max_iterations": 10,
+                "convergence_threshold": 1e-2,
+                "relaxation_factor": 0.1,
+            },
         }
         with open(cls.test_config_path, "w", encoding="utf-8") as f:
             json.dump(config, f)
@@ -63,7 +68,7 @@ class TestFusionSystem(unittest.TestCase):
     def test_04_physics_functions(self):
         """Test Bosch-Hale and Q calculation."""
         sim = FusionBurnPhysics(self.test_config_path)
-        rate = sim.bosch_hale_dt(20.0) # 20 keV
+        rate = sim.bosch_hale_dt(20.0)  # 20 keV
         self.assertGreater(rate, 1e-23)
         print("Nuclear Physics: PASS")
 
@@ -71,10 +76,11 @@ class TestFusionSystem(unittest.TestCase):
         """Test Balance of Plant logic."""
         plant = PowerPlantModel()
         res = plant.calculate_plant_performance(500.0, 50.0)
-        self.assertAlmostEqual(res['Q_plasma'], 10.0)
-        self.assertGreater(res['P_gross'], 0.0)
+        self.assertAlmostEqual(res["Q_plasma"], 10.0)
+        self.assertGreater(res["P_gross"], 0.0)
         print("Engineering BOP: PASS")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     print("--- SCPN CI/CD TEST SUITE ---")
     unittest.main(verbosity=2)

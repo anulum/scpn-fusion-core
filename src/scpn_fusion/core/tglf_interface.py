@@ -51,52 +51,56 @@ _TGLF_MAX_PARSED_VECTOR_LENGTH = 2048
 
 # ── Data containers ──────────────────────────────────────────────────
 
+
 @dataclass
 class TGLFInputDeck:
     """All TGLF input parameters for a single flux surface."""
+
     rho: float = 0.5
     # Geometry
-    s_hat: float = 1.0          # magnetic shear
-    q: float = 1.5              # safety factor
-    q_prime_loc: float = 0.0    # dq/dr [1/m]
-    alpha_mhd: float = 0.0     # MHD alpha
-    p_prime_loc: float = 0.0    # dP/dr [Pa/m]
-    kappa: float = 1.7          # elongation
-    delta: float = 0.3          # triangularity
-    s_kappa: float = 0.0        # elongation shear
-    s_delta: float = 0.0        # triangularity shear
+    s_hat: float = 1.0  # magnetic shear
+    q: float = 1.5  # safety factor
+    q_prime_loc: float = 0.0  # dq/dr [1/m]
+    alpha_mhd: float = 0.0  # MHD alpha
+    p_prime_loc: float = 0.0  # dP/dr [Pa/m]
+    kappa: float = 1.7  # elongation
+    delta: float = 0.3  # triangularity
+    s_kappa: float = 0.0  # elongation shear
+    s_delta: float = 0.0  # triangularity shear
     # Gradients (R / L_X)
-    R_LTi: float = 6.0         # R / L_Ti
-    R_LTe: float = 6.0         # R / L_Te
-    R_Lne: float = 2.0         # R / L_ne
-    R_Lni: float = 2.0         # R / L_ni
+    R_LTi: float = 6.0  # R / L_Ti
+    R_LTe: float = 6.0  # R / L_Te
+    R_Lne: float = 2.0  # R / L_ne
+    R_Lni: float = 2.0  # R / L_ni
     # Plasma parameters
-    beta_e: float = 0.01       # electron beta
-    Z_eff: float = 1.5         # effective charge
-    xnue: float = 0.0          # normalized electron-ion collisionality
-    T_e_keV: float = 10.0      # electron temperature
-    T_i_keV: float = 10.0      # ion temperature
-    n_e_19: float = 8.0        # electron density [1e19 m^-3]
+    beta_e: float = 0.01  # electron beta
+    Z_eff: float = 1.5  # effective charge
+    xnue: float = 0.0  # normalized electron-ion collisionality
+    T_e_keV: float = 10.0  # electron temperature
+    T_i_keV: float = 10.0  # ion temperature
+    n_e_19: float = 8.0  # electron density [1e19 m^-3]
     # Tokamak
-    R_major: float = 6.2       # major radius [m]
-    a_minor: float = 2.0       # minor radius [m]
-    B_toroidal: float = 5.3    # toroidal field [T]
+    R_major: float = 6.2  # major radius [m]
+    a_minor: float = 2.0  # minor radius [m]
+    B_toroidal: float = 5.3  # toroidal field [T]
 
 
 @dataclass
 class TGLFOutput:
     """Parsed TGLF output for a single run."""
+
     rho: float = 0.5
-    chi_i: float = 0.0         # ion thermal diffusivity [m^2/s]
-    chi_e: float = 0.0         # electron thermal diffusivity [m^2/s]
-    gamma_max: float = 0.0     # maximum growth rate [c_s/a]
-    q_i: float = 0.0           # ion heat flux [MW/m^2]
-    q_e: float = 0.0           # electron heat flux [MW/m^2]
+    chi_i: float = 0.0  # ion thermal diffusivity [m^2/s]
+    chi_e: float = 0.0  # electron thermal diffusivity [m^2/s]
+    gamma_max: float = 0.0  # maximum growth rate [c_s/a]
+    q_i: float = 0.0  # ion heat flux [MW/m^2]
+    q_e: float = 0.0  # electron heat flux [MW/m^2]
 
 
 @dataclass
 class TGLFComparisonResult:
     """Comparison between our transport and TGLF."""
+
     case_name: str = ""
     rho_points: list[float] = field(default_factory=list)
     our_chi_i: list[float] = field(default_factory=list)
@@ -262,6 +266,7 @@ def validate_reduced_transport_reference_suite(
 
 # ── Input deck generation ────────────────────────────────────────────
 
+
 def generate_input_deck(transport_solver: Any, rho_idx: int) -> TGLFInputDeck:
     """Extract TGLF input parameters from a TransportSolver at given flux surface.
 
@@ -348,6 +353,7 @@ def generate_input_deck(transport_solver: Any, rho_idx: int) -> TGLFInputDeck:
 
 # ── Output parsing ───────────────────────────────────────────────────
 
+
 def parse_tglf_output(output_dir: str | Path) -> list[TGLFOutput]:
     """Parse TGLF output files from a directory.
 
@@ -399,19 +405,22 @@ def parse_tglf_output(output_dir: str | Path) -> list[TGLFOutput]:
         qe_list = _coerce_sequence(data.get("q_e", 0.0), default=0.0)
 
         for j in range(len(rho_pts)):
-            results.append(TGLFOutput(
-                rho=rho_pts[j],
-                chi_i=chi_i_list[j] if j < len(chi_i_list) else 0.0,
-                chi_e=chi_e_list[j] if j < len(chi_e_list) else 0.0,
-                gamma_max=gamma_list[j] if j < len(gamma_list) else 0.0,
-                q_i=qi_list[j] if j < len(qi_list) else 0.0,
-                q_e=qe_list[j] if j < len(qe_list) else 0.0,
-            ))
+            results.append(
+                TGLFOutput(
+                    rho=rho_pts[j],
+                    chi_i=chi_i_list[j] if j < len(chi_i_list) else 0.0,
+                    chi_e=chi_e_list[j] if j < len(chi_e_list) else 0.0,
+                    gamma_max=gamma_list[j] if j < len(gamma_list) else 0.0,
+                    q_i=qi_list[j] if j < len(qi_list) else 0.0,
+                    q_e=qe_list[j] if j < len(qe_list) else 0.0,
+                )
+            )
 
     return results
 
 
 # ── Benchmark comparison ─────────────────────────────────────────────
+
 
 class TGLFBenchmark:
     """Compare our transport model against TGLF reference data."""
@@ -506,11 +515,13 @@ class TGLFBenchmark:
                 f"& {r.correlation_chi_i:.3f} & {r.correlation_chi_e:.3f} "
                 f"& {r.max_rel_error_chi_i:.3f} & {r.max_rel_error_chi_e:.3f} \\\\"
             )
-        lines.extend([
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{table}",
-        ])
+        lines.extend(
+            [
+                r"\bottomrule",
+                r"\end{tabular}",
+                r"\end{table}",
+            ]
+        )
         return "\n".join(lines)
 
 
@@ -567,14 +578,10 @@ def _normalize_tglf_timeout_seconds(timeout_s: float) -> float:
 
 def _normalize_tglf_max_retries(max_retries: int) -> int:
     if isinstance(max_retries, bool) or not isinstance(max_retries, int):
-        raise ValueError(
-            f"max_retries must be an integer in [0, {_TGLF_MAX_RETRIES_LIMIT}]."
-        )
+        raise ValueError(f"max_retries must be an integer in [0, {_TGLF_MAX_RETRIES_LIMIT}].")
     retries = int(max_retries)
     if retries < 0 or retries > _TGLF_MAX_RETRIES_LIMIT:
-        raise ValueError(
-            f"max_retries must be an integer in [0, {_TGLF_MAX_RETRIES_LIMIT}]."
-        )
+        raise ValueError(f"max_retries must be an integer in [0, {_TGLF_MAX_RETRIES_LIMIT}].")
     return retries
 
 
@@ -595,23 +602,23 @@ def write_tglf_input_file(deck: TGLFInputDeck, output_dir: str | Path) -> Path:
     path = output_dir / "input.tglf"
 
     lines = [
-        f"# TGLF input deck generated by SCPN Fusion Core",
+        "# TGLF input deck generated by SCPN Fusion Core",
         f"# rho = {deck.rho:.4f}",
-        f"SIGN_BT = 1.0",
-        f"SIGN_IT = 1.0",
-        f"NS = 2",
-        f"MASS_1 = 2.0",
-        f"MASS_2 = 1.0",
-        f"ZS_1 = 1.0",
-        f"ZS_2 = -1.0",
+        "SIGN_BT = 1.0",
+        "SIGN_IT = 1.0",
+        "NS = 2",
+        "MASS_1 = 2.0",
+        "MASS_2 = 1.0",
+        "ZS_1 = 1.0",
+        "ZS_2 = -1.0",
         f"RLNS_1 = {deck.R_Lni:.6f}",
         f"RLNS_2 = {deck.R_Lne:.6f}",
         f"RLTS_1 = {deck.R_LTi:.6f}",
         f"RLTS_2 = {deck.R_LTe:.6f}",
-        f"TAUS_1 = 1.0",
+        "TAUS_1 = 1.0",
         f"TAUS_2 = {deck.T_e_keV / max(deck.T_i_keV, 0.01):.6f}",
-        f"AS_1 = 1.0",
-        f"AS_2 = 1.0",
+        "AS_1 = 1.0",
+        "AS_2 = 1.0",
         f"Q_LOC = {deck.q:.6f}",
         f"Q_PRIME_LOC = {deck.q_prime_loc:.6f}",
         f"P_PRIME_LOC = {deck.p_prime_loc:.6f}",
@@ -678,8 +685,10 @@ def run_tglf_profile_scan(
     chi_e_samples = chi_e_samples[order]
     gamma_samples = gamma_samples[order]
 
-    if np.any(~np.isfinite(rho_samples)) or np.any(~np.isfinite(chi_i_samples)) or np.any(
-        ~np.isfinite(chi_e_samples)
+    if (
+        np.any(~np.isfinite(rho_samples))
+        or np.any(~np.isfinite(chi_i_samples))
+        or np.any(~np.isfinite(chi_e_samples))
     ):
         raise ValueError("TGLF profile scan produced non-finite samples.")
 
@@ -734,7 +743,7 @@ def run_tglf_binary(
         try:
             # Write input file
             input_path = write_tglf_input_file(deck, work_dir)
-            
+
             # Run TGLF
             result = subprocess.run(
                 [str(tglf_path)],
@@ -760,7 +769,7 @@ def run_tglf_binary(
                 outputs = parse_tglf_output(work_dir)
                 if outputs:
                     return outputs[0]
-            
+
             raise RuntimeError("TGLF produced no parseable output.")
 
         except (RuntimeError, subprocess.TimeoutExpired) as exc:
@@ -768,17 +777,19 @@ def run_tglf_binary(
             if attempt < max_retries:
                 logger.warning(f"TGLF attempt {attempt+1} failed: {exc}. Retrying...")
                 import time
+
                 time.sleep(_TGLF_RETRY_BACKOFF_SECONDS)
         finally:
             if cleanup and (attempt == max_retries or not last_exc):
                 import shutil
+
                 shutil.rmtree(work_dir, ignore_errors=True)
-    
+
     if last_exc:
         logger.error(f"TGLF execution failed after {max_retries+1} attempts.")
         # Return empty output rather than crashing the whole transport loop
         return TGLFOutput(rho=deck.rho)
-    
+
     return TGLFOutput(rho=deck.rho)
 
 

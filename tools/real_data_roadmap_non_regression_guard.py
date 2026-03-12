@@ -12,9 +12,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PROGRESS = REPO_ROOT / "artifacts" / "real_data_roadmap_progress.json"
 DEFAULT_BASELINE = REPO_ROOT / "tools" / "real_data_roadmap_baseline.json"
-DEFAULT_SUMMARY = (
-    REPO_ROOT / "artifacts" / "real_data_roadmap_non_regression_summary.json"
-)
+DEFAULT_SUMMARY = REPO_ROOT / "artifacts" / "real_data_roadmap_non_regression_summary.json"
 
 
 def _resolve(path_value: str) -> Path:
@@ -93,9 +91,7 @@ def main(argv: list[str] | None = None) -> int:
 
     out_path = _resolve(args.summary_json)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(
-        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    out_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     print(
         "Real-data roadmap non-regression: "

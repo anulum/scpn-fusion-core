@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import jax
 import jax.numpy as jnp
-from jax import grad, jit, vmap, value_and_grad, random
+from jax import jit, vmap, value_and_grad, random
 import numpy as np
 from pathlib import Path
 import time
@@ -24,9 +24,10 @@ EPOCHS = 50
 
 # ── Model Definition ─────────────────────────────────────────────────
 
+
 def init_fno_params(key, modes, width):
     k1, k2, k3, k4 = random.split(key, 4)
-    
+
     def xavier(k, shape):
         return random.normal(k, shape) * jnp.sqrt(2.0 / (shape[0] + shape[1]))
 
@@ -35,69 +36,74 @@ def init_fno_params(key, modes, width):
         "w1_imag": xavier(k2, (width, width, modes, modes)) * 0.1,
         "b1": jnp.zeros(width),
         "linear1": xavier(k3, (width, width)),
-        
         "fc1": xavier(k4, (width, 128)),
         "fc2": random.normal(random.split(k4)[0], (128, 1)) * 0.01,
     }
     return params
+
 
 @jit
 def fno_layer(x, w_real, w_imag, linear, b):
     # x: (grid, grid, width)
     x_ft = jnp.fft.rfft2(x, axes=(0, 1))
     modes = w_real.shape[2]
-    
+
     # Extract modes
     x_ft_low = x_ft[:modes, :modes, :]
     weights = w_real + 1j * w_imag
-    
+
     # Spectral convolution
     out_ft_low = jnp.einsum("oimj,mji->mjo", weights, x_ft_low)
-    
+
     # Pad back
     out_ft = jnp.zeros_like(x_ft)
     out_ft = out_ft.at[:modes, :modes, :].set(out_ft_low)
-    
+
     x_out = jnp.fft.irfft2(out_ft, axes=(0, 1), s=x.shape[:2])
     return jax.nn.gelu(jnp.dot(x, linear) + b + x_out)
+
 
 def model_forward(params, x):
     # x: (grid, grid, 1)
     x = jnp.repeat(x, WIDTH, axis=-1)
     x = fno_layer(x, params["w1_real"], params["w1_imag"], params["linear1"], params["b1"])
-    
+
     z = jnp.mean(x, axis=(0, 1))
     z = jax.nn.relu(jnp.dot(z, params["fc1"]))
     z = jnp.dot(z, params["fc2"])
     return z[0]
 
+
 # ── Training Loop (Adam) ─────────────────────────────────────────────
+
 
 def mse_loss(params, x_batch, y_batch):
     preds = vmap(lambda x: model_forward(params, x))(x_batch)
-    return jnp.mean((preds - y_batch)**2)
+    return jnp.mean((preds - y_batch) ** 2)
+
 
 @jit
 def update_step(params, m, v, x_batch, y_batch, lr, t):
     b1, b2, eps = 0.9, 0.999, 1e-8
     loss, grads = value_and_grad(mse_loss)(params, x_batch, y_batch)
-    
+
     # Clipping
     grads = jax.tree_util.tree_map(lambda g: jnp.clip(g, -1.0, 1.0), grads)
-    
+
     m = jax.tree_util.tree_map(lambda mi, g: b1 * mi + (1 - b1) * g, m, grads)
     v = jax.tree_util.tree_map(lambda vi, g: b2 * vi + (1 - b2) * (g**2), v, grads)
-    
+
     m_hat = jax.tree_util.tree_map(lambda mi: mi / (1 - b1**t), m)
     v_hat = jax.tree_util.tree_map(lambda vi: vi / (1 - b2**t), v)
-    
+
     new_params = jax.tree_util.tree_map(
-        lambda p, mh, vh: p - lr * mh / (jnp.sqrt(vh) + eps),
-        params, m_hat, v_hat
+        lambda p, mh, vh: p - lr * mh / (jnp.sqrt(vh) + eps), params, m_hat, v_hat
     )
     return new_params, m, v, loss
 
+
 # ── Data Generation (Physics-Informed GENE-like) ──────────────────────
+
 
 def load_gene_binary(file_path: str) -> tuple[np.ndarray, np.ndarray]:
     """Load validated real-data arrays for FNO training from an `.npz` artifact.
@@ -110,9 +116,7 @@ def load_gene_binary(file_path: str) -> tuple[np.ndarray, np.ndarray]:
     if not path.exists():
         raise FileNotFoundError(f"GENE dataset not found: {path}")
     if path.suffix.lower() != ".npz":
-        raise ValueError(
-            "Unsupported GENE dataset format. Provide an .npz containing 'X' and 'Y'."
-        )
+        raise ValueError("Unsupported GENE dataset format. Provide an .npz containing 'X' and 'Y'.")
 
     with np.load(path, allow_pickle=False) as data:
         if "X" not in data or "Y" not in data:
@@ -139,40 +143,44 @@ def load_gene_binary(file_path: str) -> tuple[np.ndarray, np.ndarray]:
 
     return x_np, y_np
 
+
 def generate_gene_like_field(grid_size, regime, key):
     """
     Generates a turbulent field with GENE-like structures (Blobs/Streamers).
-    
+
     NOTE: As of v3.8.2, this is a physics-informed synthetic generator modeling
     GENE spectral character. It is not the direct output of a GENE binary run.
     """
     k = jnp.fft.fftfreq(grid_size)
     kx, ky = jnp.meshgrid(k, k)
     k_mag = jnp.sqrt(kx**2 + ky**2)
-    
+
     if regime == "ITG":
         alpha, anisotropy = 3.5, 1.0
     elif regime == "ETG":
         alpha, anisotropy = 2.2, 4.0
-    else: # TEM
+    else:  # TEM
         alpha, anisotropy = 2.8, 1.5
 
     # Safe effective k
-    k_eff = jnp.sqrt(kx**2 + (ky/anisotropy)**2)
-    k_eff = jnp.maximum(k_eff, 1e-4) # Avoid zero
-    
-    spectrum = (k_eff ** -alpha) * jnp.exp(-(k_mag**2) / 0.5)
-    
+    k_eff = jnp.sqrt(kx**2 + (ky / anisotropy) ** 2)
+    k_eff = jnp.maximum(k_eff, 1e-4)  # Avoid zero
+
+    spectrum = (k_eff**-alpha) * jnp.exp(-(k_mag**2) / 0.5)
+
     k1, k2 = random.split(key)
-    noise = random.normal(k1, (grid_size, grid_size)) + 1j * random.normal(k2, (grid_size, grid_size))
+    noise = random.normal(k1, (grid_size, grid_size)) + 1j * random.normal(
+        k2, (grid_size, grid_size)
+    )
     field_ft = noise * spectrum
-    
+
     # Back to spatial domain
     field = jnp.abs(jnp.fft.ifft2(field_ft))
-    
+
     # Use direct peak normalization + small noise floor
     field = field / (jnp.max(field) + 1e-6)
     return field.reshape(grid_size, grid_size, 1)
+
 
 def train_fno_jax(
     data_path: str | None = None,
@@ -213,7 +221,7 @@ def train_fno_jax(
             regime = ["ITG", "TEM", "ETG"][i % 3]
             field = generate_gene_like_field(grid_size, regime, subkey)
             gamma = 0.35 if regime == "ITG" else (0.25 if regime == "TEM" else 0.15)
-            gamma *= (0.9 + 0.2 * random.uniform(subkey))
+            gamma *= 0.9 + 0.2 * random.uniform(subkey)
             x_list.append(field * gamma)
             y_list.append(gamma)
 
@@ -269,6 +277,7 @@ def train_fno_jax(
         "save_path": str(out),
     }
 
+
 def fno_predict_jit(params, x):
     """JIT-compiled single-sample FNO inference.
 
@@ -294,6 +303,7 @@ def load_fno_params(path="weights/fno_turbulence_jax.npz"):
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", default=None, help="Path to .npz dataset")
     args = parser.parse_args()

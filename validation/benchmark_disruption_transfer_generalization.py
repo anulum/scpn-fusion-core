@@ -234,9 +234,7 @@ def main(argv: list[str] | None = None) -> int:
 
     disruption_dir = _resolve(args.disruption_dir)
     source_scenarios = tuple(
-        scenario.strip()
-        for scenario in str(args.source_scenarios).split(",")
-        if scenario.strip()
+        scenario.strip() for scenario in str(args.source_scenarios).split(",") if scenario.strip()
     )
     if not source_scenarios:
         raise ValueError("source_scenarios must not be empty.")

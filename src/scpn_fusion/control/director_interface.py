@@ -157,8 +157,7 @@ class DirectorInterface:
 
         neural_entropy = float(np.std(brain_activity_arr))
         return (
-            f"Time={t}, Ip={ip:.1f}, Stability={stability}, "
-            f"BrainEntropy={neural_entropy:.2f}"
+            f"Time={t}, Ip={ip:.1f}, Stability={stability}, " f"BrainEntropy={neural_entropy:.2f}"
         )
 
     def run_directed_mission(
@@ -199,9 +198,7 @@ class DirectorInterface:
             self.nc.kernel.cfg["physics"]["plasma_current_target"] = current_target_ip
 
             if t >= glitch_start_step and glitch_std > 0.0:
-                self.nc.kernel.cfg["coils"][2]["current"] += float(
-                    rng.normal(0.0, glitch_std)
-                )
+                self.nc.kernel.cfg["coils"][2]["current"] += float(rng.normal(0.0, glitch_std))
 
             idx_max = int(np.argmax(self.nc.kernel.Psi))
             iz, ir = np.unravel_index(idx_max, self.nc.kernel.Psi.shape)
@@ -231,14 +228,20 @@ class DirectorInterface:
                     status = "APPROVED" if approved else "DENIED"
                     logger.info(
                         "[Director] T=%d | State: %s | Proposal: %s -> %s (SEC=%.2f)",
-                        t, prompt, proposed_action, status, sec_score,
+                        t,
+                        prompt,
+                        proposed_action,
+                        status,
+                        sec_score,
                     )
 
                 if approved:
                     current_target_ip += 1.0
                 else:
                     if verbose:
-                        logger.warning("[Director] INTERVENTION: Reducing Power to restore Coherence.")
+                        logger.warning(
+                            "[Director] INTERVENTION: Reducing Power to restore Coherence."
+                        )
                     current_target_ip = max(1.0, current_target_ip - 2.0)
 
             self.nc.kernel.solve_equilibrium()
@@ -262,9 +265,7 @@ class DirectorInterface:
                 plot_error = f"{exc.__class__.__name__}: {exc}"
 
         err = np.array([x["Err_R"] for x in self.log], dtype=np.float64)
-        interventions = np.array(
-            [x["Director_Intervention"] for x in self.log], dtype=np.float64
-        )
+        interventions = np.array([x["Director_Intervention"] for x in self.log], dtype=np.float64)
         return {
             "backend": self.director_backend,
             "steps": int(duration),

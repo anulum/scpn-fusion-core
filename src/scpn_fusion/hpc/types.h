@@ -27,7 +27,7 @@ namespace SCPN {
         double z_max;
         double target_current; // MA
         double vacuum_perm;
-        
+
         // Iteration Control
         int max_iter;
         double tol;
@@ -49,7 +49,7 @@ namespace SCPN {
         double* psi;        // Magnetic Flux [nr * nz]
         double* j_phi;      // Current Density [nr * nz]
         double* pressure;   // Pressure Profile [nr * nz]
-        
+
         // Derived metrics
         double axis_r;
         double axis_z;

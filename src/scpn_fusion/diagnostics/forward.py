@@ -82,9 +82,7 @@ def _validate_chords(
             raise ValueError(f"chords[{i}] has non-finite coordinates.")
         if enforce_domain_bounds:
             if r_min is None or r_max is None or z_min is None or z_max is None:
-                raise ValueError(
-                    "Domain bounds must be provided when enforce_domain_bounds=True."
-                )
+                raise ValueError("Domain bounds must be provided when enforce_domain_bounds=True.")
             if (
                 float(start[0]) < float(r_min)
                 or float(start[0]) > float(r_max)
@@ -95,9 +93,7 @@ def _validate_chords(
                 or float(end[1]) < float(z_min)
                 or float(end[1]) > float(z_max)
             ):
-                raise ValueError(
-                    f"chords[{i}] lies outside diagnostic domain bounds."
-                )
+                raise ValueError(f"chords[{i}] lies outside diagnostic domain bounds.")
     return chords
 
 
@@ -121,18 +117,14 @@ def _validate_points(
             raise ValueError(f"sample_points[{i}] has non-finite coordinates.")
         if enforce_domain_bounds:
             if r_min is None or r_max is None or z_min is None or z_max is None:
-                raise ValueError(
-                    "Domain bounds must be provided when enforce_domain_bounds=True."
-                )
+                raise ValueError("Domain bounds must be provided when enforce_domain_bounds=True.")
             if (
                 r_point < float(r_min)
                 or r_point > float(r_max)
                 or z_point < float(z_min)
                 or z_point > float(z_max)
             ):
-                raise ValueError(
-                    f"sample_points[{i}] lies outside diagnostic domain bounds."
-                )
+                raise ValueError(f"sample_points[{i}] lies outside diagnostic domain bounds.")
     return points
 
 
@@ -537,7 +529,7 @@ def cxrs_ion_diagnostics(
 
     # Emission weight: exp(-(R - R_beam)^2 / w^2)
     rr_mesh, _ = np.meshgrid(r, z)
-    weight_map = np.exp(-((rr_mesh - beam_r_center)**2) / (beam_width**2))
+    weight_map = np.exp(-((rr_mesh - beam_r_center) ** 2) / (beam_width**2))
 
     ti_out = np.zeros(len(chords), dtype=np.float64)
     vphi_out = np.zeros(len(chords), dtype=np.float64)
@@ -546,7 +538,11 @@ def cxrs_ion_diagnostics(
         # Weighted integrals
         sum_w = _line_integral_nearest(weight_map, r, z, start, end, samples=samples)
         if sum_w > 1e-9:
-            ti_out[i] = _line_integral_nearest(ti * weight_map, r, z, start, end, samples=samples) / sum_w
-            vphi_out[i] = _line_integral_nearest(vphi * weight_map, r, z, start, end, samples=samples) / sum_w
+            ti_out[i] = (
+                _line_integral_nearest(ti * weight_map, r, z, start, end, samples=samples) / sum_w
+            )
+            vphi_out[i] = (
+                _line_integral_nearest(vphi * weight_map, r, z, start, end, samples=samples) / sum_w
+            )
 
     return ti_out, vphi_out

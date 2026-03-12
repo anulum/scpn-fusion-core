@@ -94,15 +94,17 @@ def _generate_gs_transport_pairs(
         if i > 0 and i % 100 == 0:
             logger.info(
                 "GS-transport pair generation: %d / %d (collected %d)",
-                i, n_samples, len(x_list),
+                i,
+                n_samples,
+                len(x_list),
             )
 
-        Ip = float(rng.uniform(1.0, 15.0))        # MA
-        BT = float(rng.uniform(2.0, 12.5))        # T
-        kappa = float(rng.uniform(1.5, 2.1))      # elongation
-        n_e20 = float(rng.uniform(0.3, 1.2))      # 10^20 m^-3
-        P_aux = float(rng.uniform(10.0, 120.0))   # MW
-        T0 = float(rng.uniform(3.0, 25.0))        # keV (peak temperature)
+        Ip = float(rng.uniform(1.0, 15.0))  # MA
+        BT = float(rng.uniform(2.0, 12.5))  # T
+        kappa = float(rng.uniform(1.5, 2.1))  # elongation
+        n_e20 = float(rng.uniform(0.3, 1.2))  # 10^20 m^-3
+        P_aux = float(rng.uniform(10.0, 120.0))  # MW
+        T0 = float(rng.uniform(3.0, 25.0))  # keV (peak temperature)
 
         try:
             config = dict(_GS_TRANSPORT_MOCK_CONFIG_TEMPLATE)
@@ -112,7 +114,10 @@ def _generate_gs_transport_pairs(
             }
 
             with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".json", delete=False, encoding="utf-8",
+                mode="w",
+                suffix=".json",
+                delete=False,
+                encoding="utf-8",
             ) as f:
                 json.dump(config, f)
                 tmp_path = f.name
@@ -126,17 +131,17 @@ def _generate_gs_transport_pairs(
                 solver.nr = grid_size
                 solver.rho = np.linspace(0, 1, grid_size)
                 solver.drho = 1.0 / (grid_size - 1)
-                solver.Te = T0 * (1 - solver.rho ** 2)
-                solver.Ti = T0 * (1 - solver.rho ** 2)
-                solver.ne = n_e20 * 10.0 * (1 - solver.rho ** 2) ** 0.5
+                solver.Te = T0 * (1 - solver.rho**2)
+                solver.Ti = T0 * (1 - solver.rho**2)
+                solver.ne = n_e20 * 10.0 * (1 - solver.rho**2) ** 0.5
                 solver.chi_e = np.ones(grid_size)
                 solver.chi_i = np.ones(grid_size)
                 solver.D_n = np.ones(grid_size)
                 solver.n_impurity = np.zeros(grid_size)
             else:
-                solver.Ti = T0 * (1 - solver.rho ** 2)
-                solver.Te = T0 * (1 - solver.rho ** 2)
-                solver.ne = n_e20 * 10.0 * (1 - solver.rho ** 2) ** 0.5
+                solver.Ti = T0 * (1 - solver.rho**2)
+                solver.Te = T0 * (1 - solver.rho**2)
+                solver.ne = n_e20 * 10.0 * (1 - solver.rho**2) ** 0.5
 
             Ti_initial = solver.Ti.copy()
             for _ in range(5):
@@ -149,14 +154,16 @@ def _generate_gs_transport_pairs(
 
             x_list.append(Ti_initial)
             y_list.append(Ti_final)
-            metadata.append({
-                "Ip": Ip,
-                "BT": BT,
-                "kappa": kappa,
-                "n_e20": n_e20,
-                "P_aux": P_aux,
-                "T0": T0,
-            })
+            metadata.append(
+                {
+                    "Ip": Ip,
+                    "BT": BT,
+                    "kappa": kappa,
+                    "n_e20": n_e20,
+                    "P_aux": P_aux,
+                    "T0": T0,
+                }
+            )
 
         except Exception as exc:
             logger.debug("Sample %d failed: %s", i, exc)
@@ -164,13 +171,13 @@ def _generate_gs_transport_pairs(
 
     if len(x_list) == 0:
         raise RuntimeError(
-            "GS-transport pair generation produced 0 valid samples "
-            f"out of {n_samples} attempts."
+            "GS-transport pair generation produced 0 valid samples " f"out of {n_samples} attempts."
         )
 
     logger.info(
         "GS-transport pair generation complete: %d / %d valid samples",
-        len(x_list), n_samples,
+        len(x_list),
+        n_samples,
     )
 
     x = np.stack(x_list, axis=0)
@@ -204,9 +211,12 @@ class MLPSurrogate:
 
     def _params_dict(self) -> Dict[str, np.ndarray]:
         return {
-            "W1": self.W1, "b1": self.b1,
-            "W2": self.W2, "b2": self.b2,
-            "W3": self.W3, "b3": self.b3,
+            "W1": self.W1,
+            "b1": self.b1,
+            "W2": self.W2,
+            "b2": self.b2,
+            "W3": self.W3,
+            "b3": self.b3,
         }
 
     def save_weights(self, path: str | Path) -> None:
@@ -242,7 +252,9 @@ def train_gs_transport_surrogate(
 
     logger.info("Generating %d GS-transport oracle samples...", n_samples)
     x, y, meta = _generate_gs_transport_pairs(
-        n_samples=n_samples, grid_size=50, seed=seed,
+        n_samples=n_samples,
+        grid_size=50,
+        seed=seed,
     )
     n_valid = len(x)
     logger.info("Collected %d valid samples", n_valid)
@@ -280,7 +292,7 @@ def train_gs_transport_surrogate(
     for epoch in range(epochs):
         pred_train = model.forward(x_train)
         error_train = pred_train - y_train
-        mse_train = float(np.mean(error_train ** 2))
+        mse_train = float(np.mean(error_train**2))
 
         z1 = x_train @ model.W1 + model.b1
         h1 = _gelu(z1)
@@ -309,14 +321,20 @@ def train_gs_transport_surrogate(
         grad_b1 = np.sum(d_z1, axis=0)
 
         params = {
-            "W1": model.W1, "b1": model.b1,
-            "W2": model.W2, "b2": model.b2,
-            "W3": model.W3, "b3": model.b3,
+            "W1": model.W1,
+            "b1": model.b1,
+            "W2": model.W2,
+            "b2": model.b2,
+            "W3": model.W3,
+            "b3": model.b3,
         }
         grads = {
-            "W1": grad_W1, "b1": grad_b1,
-            "W2": grad_W2, "b2": grad_b2,
-            "W3": grad_W3, "b3": grad_b3,
+            "W1": grad_W1,
+            "b1": grad_b1,
+            "W2": grad_W2,
+            "b2": grad_b2,
+            "W3": grad_W3,
+            "b3": grad_b3,
         }
         optimizer.step(params, grads, lr=lr)
 
@@ -340,7 +358,10 @@ def train_gs_transport_surrogate(
 
         if epoch % 50 == 0:
             logger.info(
-                "Epoch %d: train_mse=%.6f val_mse=%.6f", epoch, mse_train, mse_val,
+                "Epoch %d: train_mse=%.6f val_mse=%.6f",
+                epoch,
+                mse_train,
+                mse_val,
             )
 
     for k, v in best_params.items():
@@ -391,4 +412,3 @@ def train_gs_transport_surrogate(
     logger.info("Machine-class distribution: %s", machine_counts)
 
     return history
-

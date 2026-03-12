@@ -20,6 +20,7 @@ SPARC_DIR = Path(__file__).resolve().parent.parent / "validation" / "reference_d
 
 # ── Helpers ────────────────────────────────────────────────────────────
 
+
 def _make_synthetic(nw: int = 17, nh: int = 17) -> GEqdsk:
     """Build a small synthetic equilibrium for round-trip testing."""
     R = np.linspace(1.0, 3.0, nw)
@@ -56,6 +57,7 @@ def _make_synthetic(nw: int = 17, nh: int = 17) -> GEqdsk:
 
 
 # ── Round-trip tests ──────────────────────────────────────────────────
+
 
 class TestEqdskRoundTrip:
     """Write then read synthetic GEQDSK; values must survive the trip."""
@@ -112,6 +114,7 @@ class TestEqdskRoundTrip:
 
 # ── SPARC data tests ─────────────────────────────────────────────────
 
+
 @pytest.mark.skipif(
     not SPARC_DIR.exists(),
     reason="SPARC reference data not available",
@@ -163,6 +166,7 @@ class TestSparcData:
 
 
 # ── Derived properties ────────────────────────────────────────────────
+
 
 class TestGEqdskProperties:
     """Test derived grid and normalisation methods."""

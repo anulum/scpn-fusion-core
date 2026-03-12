@@ -62,12 +62,13 @@ def test_laplacian_boundary_is_zero() -> None:
 def test_laplacian_quadratic_profile() -> None:
     """For f = r^2, second derivative component d^2f/dr^2 = 2."""
     sim = ReducedMHD(nr=200)
-    f = sim.r ** 2 + 0j  # f = r^2
+    f = sim.r**2 + 0j  # f = r^2
     lap = sim.laplacian(f, m=0)  # m=0 removes the -m^2/r^2 term
     # For m=0: lap = d^2f/dr^2 + (1/r)*df/dr = 2 + (1/r)*2r = 4
     interior = lap[5:-5]  # avoid boundaries and near-r=0
-    assert np.allclose(np.real(interior), 4.0, atol=0.05), \
-        f"Expected ~4 for Laplacian of r^2 with m=0, got {np.real(interior[:5])}"
+    assert np.allclose(
+        np.real(interior), 4.0, atol=0.05
+    ), f"Expected ~4 for Laplacian of r^2 with m=0, got {np.real(interior[:5])}"
 
 
 # ── Poisson solver tests ─────────────────────────────────────────────
@@ -131,8 +132,9 @@ def test_step_crash_flattens_q_profile() -> None:
         if crash:
             # Post-crash: q inside q=1 surface should be > 1
             mask = sim.r < 0.4
-            assert np.all(sim.q[mask] >= 1.0), \
-                f"Post-crash q inside r<0.4 should be >= 1.0, got min={sim.q[mask].min():.3f}"
+            assert np.all(
+                sim.q[mask] >= 1.0
+            ), f"Post-crash q inside r<0.4 should be >= 1.0, got min={sim.q[mask].min():.3f}"
             return
     # If no crash in 500 steps, that's also acceptable for some parameter regimes
     # but with default params crash should occur
@@ -149,8 +151,9 @@ def test_step_crash_reduces_amplitude() -> None:
             # So the NEXT step should show a reduced amplitude.
             pre_crash_amp = amp
             amp_after, _ = sim.step(dt=0.01)
-            assert amp_after < pre_crash_amp, \
-                f"Post-crash amplitude {amp_after:.4f} should be < pre-crash {pre_crash_amp:.4f}"
+            assert (
+                amp_after < pre_crash_amp
+            ), f"Post-crash amplitude {amp_after:.4f} should be < pre-crash {pre_crash_amp:.4f}"
             return
     pytest.skip("No crash in 1000 steps")
 
@@ -176,8 +179,7 @@ def test_multiple_sawtooth_cycles() -> None:
             crash_count += 1
         if crash_count >= 2:
             break
-    assert crash_count >= 2, \
-        f"Expected >= 2 sawtooth crashes in 2000 steps, got {crash_count}"
+    assert crash_count >= 2, f"Expected >= 2 sawtooth crashes in 2000 steps, got {crash_count}"
 
 
 def test_q_profile_recovers_after_crash() -> None:
@@ -190,8 +192,7 @@ def test_q_profile_recovers_after_crash() -> None:
             # Run more steps to see recovery
             for _ in range(50):
                 sim.step(dt=0.01)
-            assert sim.q[0] < 1.05, \
-                f"q(0) should recover toward equilibrium, got {sim.q[0]:.3f}"
+            assert sim.q[0] < 1.05, f"q(0) should recover toward equilibrium, got {sim.q[0]:.3f}"
             return
     pytest.skip("No crash in 500 steps")
 
