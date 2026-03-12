@@ -33,6 +33,10 @@ class TransportSolverRuntimeMixin(
     TransportSolverRuntimePhysicsMixin,
     TransportSolverCouplingMixin,
 ):
+    D_n: np.ndarray
+    chi_e: np.ndarray
+    chi_i: np.ndarray
+    n_impurity: np.ndarray
     @staticmethod
     def _thomas_solve(a, b, c, d):
         """O(n) tridiagonal solver (Thomas algorithm).

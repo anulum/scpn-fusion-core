@@ -19,13 +19,19 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-import math
 
 import numpy as np
 from numpy.typing import NDArray
+from scpn_fusion.core.neural_transport import (
+    TransportInputs,
+    _gyro_bohm_diffusivity,
+    critical_gradient_model,
+)
+from scpn_fusion.core.neural_transport_math import _compute_nustar
 from scpn_fusion.core.tglf_surrogate_bridge import (
     TGLFDatasetGenerator,  # noqa: F401 - re-exported for API stability
     train_surrogate_from_tglf,  # noqa: F401 - re-exported for API stability
@@ -52,9 +58,13 @@ class TGLFInputDeck:
     # Geometry
     s_hat: float = 1.0          # magnetic shear
     q: float = 1.5              # safety factor
+    q_prime_loc: float = 0.0    # dq/dr [1/m]
     alpha_mhd: float = 0.0     # MHD alpha
+    p_prime_loc: float = 0.0    # dP/dr [Pa/m]
     kappa: float = 1.7          # elongation
     delta: float = 0.3          # triangularity
+    s_kappa: float = 0.0        # elongation shear
+    s_delta: float = 0.0        # triangularity shear
     # Gradients (R / L_X)
     R_LTi: float = 6.0         # R / L_Ti
     R_LTe: float = 6.0         # R / L_Te
@@ -63,6 +73,7 @@ class TGLFInputDeck:
     # Plasma parameters
     beta_e: float = 0.01       # electron beta
     Z_eff: float = 1.5         # effective charge
+    xnue: float = 0.0          # normalized electron-ion collisionality
     T_e_keV: float = 10.0      # electron temperature
     T_i_keV: float = 10.0      # ion temperature
     n_e_19: float = 8.0        # electron density [1e19 m^-3]
@@ -100,6 +111,155 @@ class TGLFComparisonResult:
     max_rel_error_chi_e: float = 0.0
 
 
+@dataclass
+class TGLFProfileScanResult:
+    """Interpolated transport profiles from a live TGLF radial scan."""
+
+    rho_samples: list[float] = field(default_factory=list)
+    chi_i_samples: list[float] = field(default_factory=list)
+    chi_e_samples: list[float] = field(default_factory=list)
+    gamma_samples: list[float] = field(default_factory=list)
+    chi_i_profile: list[float] = field(default_factory=list)
+    chi_e_profile: list[float] = field(default_factory=list)
+    gamma_profile: list[float] = field(default_factory=list)
+
+
+@dataclass
+class TGLFReferenceCaseResult:
+    """Reduced-closure comparison against a single TGLF reference regime."""
+
+    case_name: str
+    reference_mode: str
+    predicted_mode: str
+    mode_match: bool
+    predicted_chi_i_gyrobohm: float
+    predicted_chi_e_gyrobohm: float
+    reference_chi_i_gyrobohm: float
+    reference_chi_e_gyrobohm: float
+    rel_error_chi_i: float
+    rel_error_chi_e: float
+
+
+def _resolve_solver_geometry(transport_solver: Any) -> tuple[float, float, float, float]:
+    """Resolve geometry and charge state from solver state or config."""
+    ts = transport_solver
+    cfg = getattr(ts, "cfg", {})
+    dims = cfg.get("dimensions", {}) if isinstance(cfg, dict) else {}
+    default_r0 = 0.5 * (float(dims.get("R_min", 4.2)) + float(dims.get("R_max", 8.2)))
+    default_a = 0.5 * (float(dims.get("R_max", 8.2)) - float(dims.get("R_min", 4.2)))
+    physics = cfg.get("physics", {}) if isinstance(cfg, dict) else {}
+
+    params = getattr(ts, "neoclassical_params", None)
+    if not isinstance(params, dict):
+        params = {}
+
+    r0 = float(params.get("R0", getattr(ts, "R0", default_r0)))
+    a_minor = float(params.get("a", getattr(ts, "a", default_a)))
+    b0 = float(params.get("B0", getattr(ts, "B0", physics.get("B0", 5.3))))
+    z_eff = float(params.get("Z_eff", getattr(ts, "_Z_eff", 1.5)))
+    return r0, a_minor, b0, z_eff
+
+
+def _resolve_solver_q_profile(transport_solver: Any) -> NDArray[np.float64]:
+    """Resolve q-profile from runtime state, neoclassical params, or fallback."""
+    ts = transport_solver
+    rho = np.asarray(ts.rho, dtype=np.float64)
+    q_profile = getattr(ts, "q_profile", None)
+    if q_profile is None:
+        params = getattr(ts, "neoclassical_params", None)
+        if isinstance(params, dict):
+            q_profile = params.get("q_profile")
+    if q_profile is None:
+        return np.asarray(1.0 + 3.0 * rho**2, dtype=np.float64)
+
+    q = np.asarray(q_profile, dtype=np.float64)
+    if q.shape != rho.shape or (not np.all(np.isfinite(q))) or np.any(q <= 0.0):
+        return np.asarray(1.0 + 3.0 * rho**2, dtype=np.float64)
+    return q
+
+
+def _reference_case_filename(case_name: str) -> str:
+    """Map a reference case title to its JSON filename."""
+    return case_name.lower().replace("-", "_").replace(" ", "_") + ".json"
+
+
+def _reference_case_to_transport_input(
+    case_payload: dict[str, Any],
+    *,
+    ti_kev: float = 10.0,
+) -> TransportInputs:
+    """Reconstruct a canonical local transport state from TGLF reference metadata."""
+    params = case_payload["input_parameters"]
+    ti = max(float(ti_kev), 0.2)
+    te = max(ti * float(params.get("T_e_T_i", 1.0)), 0.2)
+    ne = max(float(params["beta_e"]) / max(4.03e-3 * te, 1e-6), 0.2)
+    return TransportInputs(
+        rho=float(params["rho_tor"]),
+        te_kev=te,
+        ti_kev=ti,
+        ne_19=ne,
+        grad_te=float(params["R_LT_e"]),
+        grad_ti=float(params["R_LT_i"]),
+        grad_ne=float(params["R_Ln_e"]),
+        q=float(params["q"]),
+        s_hat=float(params["s_hat"]),
+        beta_e=float(params["beta_e"]),
+        r_major_m=float(params["R_major_m"]),
+        a_minor_m=float(params["a_minor_m"]),
+        b_tesla=float(params["B_toroidal_T"]),
+        z_eff=float(params["Z_eff"]),
+    )
+
+
+def validate_reduced_transport_reference_case(
+    case_name: str,
+    ref_dir: str | Path = TGLF_REF_DIR,
+    *,
+    ti_kev: float = 10.0,
+) -> TGLFReferenceCaseResult:
+    """Compare the reduced transport closure against a canonical TGLF regime."""
+    ref_path = Path(ref_dir) / _reference_case_filename(case_name)
+    with open(ref_path, encoding="utf-8") as f:
+        payload = json.load(f)
+
+    inp = _reference_case_to_transport_input(payload, ti_kev=ti_kev)
+    fluxes = critical_gradient_model(inp)
+    chi_gb = _gyro_bohm_diffusivity(inp)
+    ref = payload["tglf_output"]
+
+    pred_i_gb = float(fluxes.chi_i / max(chi_gb, 1e-12))
+    pred_e_gb = float(fluxes.chi_e / max(chi_gb, 1e-12))
+    ref_i_gb = float(ref["chi_i_gyroBohm"])
+    ref_e_gb = float(ref["chi_e_gyroBohm"])
+    reference_mode = str(ref["dominant_mode"])
+    predicted_mode = str(fluxes.channel)
+
+    return TGLFReferenceCaseResult(
+        case_name=str(payload.get("case_name", case_name)),
+        reference_mode=reference_mode,
+        predicted_mode=predicted_mode,
+        mode_match=predicted_mode == reference_mode,
+        predicted_chi_i_gyrobohm=pred_i_gb,
+        predicted_chi_e_gyrobohm=pred_e_gb,
+        reference_chi_i_gyrobohm=ref_i_gb,
+        reference_chi_e_gyrobohm=ref_e_gb,
+        rel_error_chi_i=float(abs(pred_i_gb - ref_i_gb) / max(abs(ref_i_gb), 1e-6)),
+        rel_error_chi_e=float(abs(pred_e_gb - ref_e_gb) / max(abs(ref_e_gb), 1e-6)),
+    )
+
+
+def validate_reduced_transport_reference_suite(
+    ref_dir: str | Path = TGLF_REF_DIR,
+    *,
+    ti_kev: float = 10.0,
+) -> list[TGLFReferenceCaseResult]:
+    """Run the reduced closure against the in-tree ITG/TEM/ETG reference suite."""
+    return [
+        validate_reduced_transport_reference_case(case_name, ref_dir=ref_dir, ti_kev=ti_kev)
+        for case_name in ("ITG-dominated", "TEM-dominated", "ETG-dominated")
+    ]
+
+
 # ── Input deck generation ────────────────────────────────────────────
 
 def generate_input_deck(transport_solver: Any, rho_idx: int) -> TGLFInputDeck:
@@ -121,6 +281,8 @@ def generate_input_deck(transport_solver: Any, rho_idx: int) -> TGLFInputDeck:
     Te = float(ts.Te[rho_idx])
     Ti = float(ts.Ti[rho_idx])
     ne = float(ts.ne[rho_idx])
+    mu0 = 4.0e-7 * np.pi
+    e_charge = 1.602176634e-19
 
     # Compute gradient scale lengths (central differences)
     dr = float(ts.rho[1] - ts.rho[0]) if len(ts.rho) > 1 else 0.01
@@ -134,29 +296,53 @@ def generate_input_deck(transport_solver: Any, rho_idx: int) -> TGLFInputDeck:
             return 0.0
         return -float(grad / val)  # R/L_X = -R * (1/X * dX/dr)
 
-    R0 = getattr(ts, 'R0', 6.2)
-    a = getattr(ts, 'a', 2.0)
+    r0, a_minor, b_toroidal, z_eff = _resolve_solver_geometry(ts)
 
-    R_LTi = R0 * _grad_scale(ts.Ti, rho_idx)
-    R_LTe = R0 * _grad_scale(ts.Te, rho_idx)
-    R_Lne = R0 * _grad_scale(ts.ne, rho_idx)
+    R_LTi = r0 * _grad_scale(ts.Ti, rho_idx)
+    R_LTe = r0 * _grad_scale(ts.Te, rho_idx)
+    R_Lne = r0 * _grad_scale(ts.ne, rho_idx)
 
-    q_val = 1.0 + 3.0 * rho**2  # default q profile
-    s_hat = 2.0 * rho * 3.0 / q_val * rho if rho > 0 else 0.0
+    q_profile = _resolve_solver_q_profile(ts)
+    dq_drho = np.gradient(q_profile, ts.rho)
+    q_val = float(q_profile[rho_idx])
+    s_hat = float(np.clip(rho * dq_drho[rho_idx] / max(q_val, 0.2), 0.0, 10.0))
+    q_prime_loc = float(dq_drho[rho_idx] / max(a_minor, 1e-6))
+
+    pressure_pa = np.maximum(ts.ne, 0.0) * 1e19 * np.maximum(ts.Te + ts.Ti, 0.0) * 1e3 * e_charge
+    dp_drho = np.gradient(pressure_pa, ts.rho)
+    dp_dr = float(dp_drho[rho_idx] / max(a_minor, 1e-6))
+    alpha_mhd = float(
+        np.clip(-2.0 * mu0 * r0 * q_val**2 * dp_dr / max(b_toroidal**2, 1e-6), -20.0, 20.0)
+    )
+    beta_e = float(np.clip(4.03e-3 * ne * Te, 0.0, 1.0))
+    xnue = float(np.clip(_compute_nustar(Te, ne, q_val, rho, r0, a_minor, z_eff), 0.0, 50.0))
+
+    physics_cfg = ts.cfg.get("physics", {}) if isinstance(getattr(ts, "cfg", None), dict) else {}
+    kappa = float(physics_cfg.get("kappa", getattr(ts, "kappa", 1.7)))
+    delta = float(physics_cfg.get("delta", getattr(ts, "delta", 0.33)))
 
     return TGLFInputDeck(
         rho=rho,
         s_hat=s_hat,
         q=q_val,
+        q_prime_loc=q_prime_loc,
+        alpha_mhd=alpha_mhd,
+        p_prime_loc=dp_dr,
+        kappa=kappa,
+        delta=delta,
         R_LTi=R_LTi,
         R_LTe=R_LTe,
         R_Lne=R_Lne,
         R_Lni=R_Lne,
+        beta_e=beta_e,
+        Z_eff=z_eff,
+        xnue=xnue,
         T_e_keV=Te,
         T_i_keV=Ti,
         n_e_19=ne,
-        R_major=R0,
-        a_minor=a,
+        R_major=r0,
+        a_minor=a_minor,
+        B_toroidal=b_toroidal,
     )
 
 
@@ -427,15 +613,15 @@ def write_tglf_input_file(deck: TGLFInputDeck, output_dir: str | Path) -> Path:
         f"AS_1 = 1.0",
         f"AS_2 = 1.0",
         f"Q_LOC = {deck.q:.6f}",
-        f"Q_PRIME_LOC = 0.0",
-        f"P_PRIME_LOC = 0.0",
-        f"S_KAPPA_LOC = 0.0",
-        f"S_DELTA_LOC = 0.0",
+        f"Q_PRIME_LOC = {deck.q_prime_loc:.6f}",
+        f"P_PRIME_LOC = {deck.p_prime_loc:.6f}",
+        f"S_KAPPA_LOC = {deck.s_kappa:.6f}",
+        f"S_DELTA_LOC = {deck.s_delta:.6f}",
         f"KAPPA_LOC = {deck.kappa:.6f}",
         f"DELTA_LOC = {deck.delta:.6f}",
         f"SHAT_LOC = {deck.s_hat:.6f}",
         f"ALPHA_LOC = {deck.alpha_mhd:.6f}",
-        f"XNUE = 0.0",
+        f"XNUE = {deck.xnue:.6f}",
         f"BETAE = {deck.beta_e:.6f}",
         f"ZEFF = {deck.Z_eff:.6f}",
         f"RMAJ_LOC = {deck.R_major:.6f}",
@@ -443,6 +629,73 @@ def write_tglf_input_file(deck: TGLFInputDeck, output_dir: str | Path) -> Path:
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
+
+
+def run_tglf_profile_scan(
+    transport_solver: Any,
+    tglf_binary_path: str | Path,
+    *,
+    rho_indices: list[int] | None = None,
+    timeout_s: float = 120.0,
+    max_retries: int = 2,
+) -> TGLFProfileScanResult:
+    """Run TGLF across selected flux surfaces and interpolate onto the full grid."""
+    ts = transport_solver
+    rho_grid = np.asarray(ts.rho, dtype=np.float64)
+    n = int(rho_grid.size)
+    if n < 3:
+        raise ValueError("transport_solver.rho must contain at least 3 points.")
+
+    if rho_indices is None:
+        base = np.linspace(1, n - 2, min(7, n - 2), dtype=int)
+        rho_indices = sorted({int(i) for i in base.tolist()})
+    else:
+        rho_indices = sorted({int(i) for i in rho_indices if 1 <= int(i) < n - 1})
+
+    if not rho_indices:
+        raise ValueError("rho_indices must contain at least one interior index.")
+
+    outputs: list[TGLFOutput] = []
+    for idx in rho_indices:
+        deck = generate_input_deck(ts, idx)
+        outputs.append(
+            run_tglf_binary(
+                deck,
+                tglf_binary_path,
+                timeout_s=timeout_s,
+                max_retries=max_retries,
+            )
+        )
+
+    rho_samples = np.array([float(out.rho) for out in outputs], dtype=np.float64)
+    chi_i_samples = np.array([max(float(out.chi_i), 0.0) for out in outputs], dtype=np.float64)
+    chi_e_samples = np.array([max(float(out.chi_e), 0.0) for out in outputs], dtype=np.float64)
+    gamma_samples = np.array([max(float(out.gamma_max), 0.0) for out in outputs], dtype=np.float64)
+
+    order = np.argsort(rho_samples)
+    rho_samples = rho_samples[order]
+    chi_i_samples = chi_i_samples[order]
+    chi_e_samples = chi_e_samples[order]
+    gamma_samples = gamma_samples[order]
+
+    if np.any(~np.isfinite(rho_samples)) or np.any(~np.isfinite(chi_i_samples)) or np.any(
+        ~np.isfinite(chi_e_samples)
+    ):
+        raise ValueError("TGLF profile scan produced non-finite samples.")
+
+    chi_i_profile = np.interp(rho_grid, rho_samples, chi_i_samples)
+    chi_e_profile = np.interp(rho_grid, rho_samples, chi_e_samples)
+    gamma_profile = np.interp(rho_grid, rho_samples, gamma_samples)
+
+    return TGLFProfileScanResult(
+        rho_samples=rho_samples.tolist(),
+        chi_i_samples=chi_i_samples.tolist(),
+        chi_e_samples=chi_e_samples.tolist(),
+        gamma_samples=gamma_samples.tolist(),
+        chi_i_profile=chi_i_profile.tolist(),
+        chi_e_profile=chi_e_profile.tolist(),
+        gamma_profile=gamma_profile.tolist(),
+    )
 
 
 def run_tglf_binary(

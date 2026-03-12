@@ -25,6 +25,9 @@ from scpn_fusion.core.tglf_interface import (
     REFERENCE_CASES,
     generate_input_deck,
     parse_tglf_output,
+    run_tglf_profile_scan,
+    validate_reduced_transport_reference_case,
+    validate_reduced_transport_reference_suite,
     write_tglf_input_file,
     write_reference_data,
 )
@@ -224,6 +227,50 @@ class TestGenerateInputDeck:
         # Parabolic profiles have non-zero gradients at mid-radius
         assert deck.R_LTi != 0.0 or deck.rho < 0.01
 
+    def test_generate_input_deck_uses_solver_q_profile(self, mock_solver) -> None:
+        idx = 25
+        mock_solver.q_profile = 1.0 + 4.0 * mock_solver.rho**2
+        deck = generate_input_deck(mock_solver, rho_idx=idx)
+        expected_q = float(mock_solver.q_profile[idx])
+        dq_drho = np.gradient(mock_solver.q_profile, mock_solver.rho)
+        expected_s_hat = float(
+            np.clip(mock_solver.rho[idx] * dq_drho[idx] / max(expected_q, 0.2), 0.0, 10.0)
+        )
+        assert deck.q == pytest.approx(expected_q)
+        assert deck.s_hat == pytest.approx(expected_s_hat)
+
+    def test_generate_input_deck_derives_mhd_and_collisional_terms(self, mock_solver) -> None:
+        idx = 25
+        mock_solver.q_profile = 1.0 + 4.0 * mock_solver.rho**2
+        deck = generate_input_deck(mock_solver, rho_idx=idx)
+        assert np.isfinite(deck.q_prime_loc)
+        assert np.isfinite(deck.p_prime_loc)
+        assert np.isfinite(deck.alpha_mhd)
+        assert np.isfinite(deck.xnue)
+        assert deck.xnue >= 0.0
+        assert deck.kappa > 1.0
+        assert 0.0 <= deck.delta < 1.0
+
+    def test_run_tglf_profile_scan_interpolates_samples(self, mock_solver, monkeypatch) -> None:
+        def _stub_run(deck, _path, *, timeout_s=120.0, max_retries=2):
+            _ = (timeout_s, max_retries)
+            return TGLFOutput(
+                rho=deck.rho,
+                chi_i=2.0 * deck.rho,
+                chi_e=3.0 * deck.rho,
+                gamma_max=0.5 * deck.rho,
+            )
+
+        monkeypatch.setattr(tglf_mod, "run_tglf_binary", _stub_run)
+        result = run_tglf_profile_scan(mock_solver, "C:/fake/tglf", rho_indices=[10, 20, 30])
+        assert len(result.rho_samples) == 3
+        assert len(result.chi_i_profile) == mock_solver.nr
+        assert len(result.chi_e_profile) == mock_solver.nr
+        assert len(result.gamma_profile) == mock_solver.nr
+        idx = 20
+        assert result.chi_i_profile[idx] == pytest.approx(2.0 * mock_solver.rho[idx])
+        assert result.chi_e_profile[idx] == pytest.approx(3.0 * mock_solver.rho[idx])
+
 
 # ── 5. Output Parsing ────────────────────────────────────────────────
 
@@ -333,11 +380,24 @@ class TestWriteInputFile:
 
     def test_write_tglf_input_file_values_present(self, tmp_path: Path) -> None:
         """Written file should contain the numerical values from the deck."""
-        deck = TGLFInputDeck(rho=0.4, q=2.0, kappa=1.85, R_LTi=8.5)
+        deck = TGLFInputDeck(
+            rho=0.4,
+            q=2.0,
+            q_prime_loc=1.2,
+            p_prime_loc=-4200.0,
+            alpha_mhd=0.18,
+            xnue=0.07,
+            kappa=1.85,
+            R_LTi=8.5,
+        )
         path = write_tglf_input_file(deck, tmp_path)
         text = path.read_text(encoding="utf-8")
         assert "2.000000" in text  # q value
         assert "1.850000" in text  # kappa value
+        assert "Q_PRIME_LOC = 1.200000" in text
+        assert "P_PRIME_LOC = -4200.000000" in text
+        assert "ALPHA_LOC = 0.180000" in text
+        assert "XNUE = 0.070000" in text
 
 
 # ── 7. TGLFBenchmark Comparison ──────────────────────────────────────
@@ -452,3 +512,27 @@ class TestReferenceData:
             data = json.loads(jf.read_text(encoding="utf-8"))
             assert "case_name" in data
             assert "rho_points" in data
+
+    @pytest.mark.parametrize(
+        ("case_name", "expected_mode"),
+        [
+            ("ITG-dominated", "ITG"),
+            ("TEM-dominated", "TEM"),
+            ("ETG-dominated", "ETG"),
+        ],
+    )
+    def test_reduced_transport_reference_case_matches_mode(
+        self, case_name: str, expected_mode: str
+    ) -> None:
+        result = validate_reduced_transport_reference_case(case_name)
+        assert result.case_name == case_name
+        assert result.reference_mode == expected_mode
+        assert result.predicted_mode == expected_mode
+        assert result.mode_match is True
+        assert np.isfinite(result.rel_error_chi_i)
+        assert np.isfinite(result.rel_error_chi_e)
+
+    def test_reduced_transport_reference_suite_covers_all_modes(self) -> None:
+        results = validate_reduced_transport_reference_suite()
+        assert [result.reference_mode for result in results] == ["ITG", "TEM", "ETG"]
+        assert all(result.mode_match for result in results)

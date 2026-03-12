@@ -1,0 +1,100 @@
+{
+  "seed": 42,
+  "task11_free_boundary_constraint_safety": {
+    "scenario": {
+      "control_dt_s": 0.05,
+      "shot_length": 84,
+      "constraint_envelopes": {
+        "axis_r_bounds_m": [
+          5.96,
+          6.04
+        ],
+        "axis_z_bounds_m": [
+          -0.07,
+          0.07
+        ],
+        "xpoint_r_bounds_m": [
+          4.99,
+          5.05
+        ],
+        "xpoint_z_bounds_m": [
+          -3.51,
+          -3.45
+        ],
+        "max_action_l1": 0.76
+      }
+    },
+    "constrained_closed_loop": {
+      "config_path": "task11_dummy.json",
+      "steps": 84,
+      "runtime_seconds": 0.06576050000148825,
+      "final_target_ip_ma": 8.030000000000017,
+      "final_r_axis": 5.9625,
+      "final_z_axis": 0.044999999999999984,
+      "final_xpoint_r": 4.9849910111587,
+      "final_xpoint_z": -3.4429971461759483,
+      "mean_axis_error_m": 0.04163369455060553,
+      "p95_axis_error_m": 0.05857687256929967,
+      "mean_xpoint_error_m": 0.03514075042803579,
+      "p95_xpoint_error_m": 0.0560374611745786,
+      "stabilization_rate": 1.0,
+      "mean_measurement_error_m": 0.05347069114463569,
+      "mean_estimation_error_m": 0.05536436692043652,
+      "max_bias_norm_m": 0.019797121993039343,
+      "final_bias_norm_m": 0.002715159901768552,
+      "max_uncertainty_norm": 0.12359138885377183,
+      "final_uncertainty_norm": 0.04747711094514276,
+      "mean_actuator_bias_estimation_error": 0.015450983075961669,
+      "final_actuator_bias_estimation_error": 0.011478574622484134,
+      "supervisor_intervention_count": 68,
+      "saturation_event_count": 68,
+      "failsafe_trip_count": 0,
+      "degraded_mode_count": 0,
+      "diagnostic_dropout_count": 0,
+      "actuator_dropout_count": 0,
+      "fallback_mode_count": 18,
+      "invariant_violation_count": 6,
+      "physics_guard_count": 4,
+      "q95_guard_count": 0,
+      "beta_guard_count": 4,
+      "risk_guard_count": 0,
+      "min_q95": 3.625747450402644,
+      "max_beta_n": 2.626076014620822,
+      "max_disruption_risk": 0.27570548920272736,
+      "min_q95_margin": 0.12574745040264412,
+      "min_beta_margin": -0.026076014620822097,
+      "min_risk_margin": 0.6242945107972726,
+      "warning_mode_count": 0,
+      "guarded_mode_count": 0,
+      "peak_alert_level": 3,
+      "final_alert_level": 3,
+      "alert_transition_count": 1,
+      "recovery_transition_count": 0,
+      "max_risk_score": 1.0,
+      "final_risk_score": 1.0,
+      "min_target_ip_ma": 7.0,
+      "max_target_ip_ma": 9.520000000000016,
+      "max_abs_action": 0.31028961213734174,
+      "max_action_l1": 0.7600000000000002,
+      "max_abs_coil_current": 1.4600000000000002,
+      "replay_signature": "51ce0ca40199e0ae",
+      "plot_saved": false,
+      "plot_error": null
+    },
+    "thresholds": {
+      "max_p95_axis_error_m": 0.065,
+      "max_p95_xpoint_error_m": 0.06,
+      "min_stabilization_rate": 0.95,
+      "max_abs_action": 0.35,
+      "max_action_l1": 0.76,
+      "max_abs_coil_current": 1.5,
+      "min_fallback_mode_count": 5,
+      "max_invariant_violation_count": 6,
+      "max_failsafe_trip_count": 0,
+      "max_risk_score": 1.05
+    },
+    "failure_reasons": [],
+    "passes_thresholds": true
+  },
+  "generated_at_utc": "2026-03-11T21:53:05.536562+00:00"
+}

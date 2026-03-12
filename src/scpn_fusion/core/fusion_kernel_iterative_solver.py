@@ -17,7 +17,7 @@ class FusionKernelIterativeSolverMixin:
     def _jacobi_step(
         self, Psi: FloatArray, Source: FloatArray
     ) -> FloatArray:
-        """Perform one Jacobi iteration on the interior grid points.
+        """Perform one cylindrical Jacobi iteration on the interior grid.
 
         Parameters
         ----------
@@ -31,15 +31,20 @@ class FusionKernelIterativeSolverMixin:
         FloatArray
             Updated flux array (boundaries unchanged).
         """
+        Psi = _sanitize_numeric_array(Psi)
+        Source = _sanitize_numeric_array(Source)
         Psi_new = Psi.copy()
+
         dR2 = self.dR ** 2
         dZ2 = self.dZ ** 2
+
         R_int = self.RR[1:-1, 1:-1]
         R_safe = np.maximum(R_int, 1e-10)
         a_E = 1.0 / dR2 - 1.0 / (2.0 * R_safe * self.dR)
         a_W = 1.0 / dR2 + 1.0 / (2.0 * R_safe * self.dR)
         a_NS = 1.0 / dZ2
         a_C = 2.0 / dR2 + 2.0 / dZ2
+
         Psi_new[1:-1, 1:-1] = (
             a_E * Psi[1:-1, 2:]
             + a_W * Psi[1:-1, 0:-2]
@@ -47,6 +52,11 @@ class FusionKernelIterativeSolverMixin:
             + a_NS * Psi[2:, 1:-1]
             - Source[1:-1, 1:-1]
         ) / a_C
+        Psi_new[1:-1, 1:-1] = np.clip(
+            Psi_new[1:-1, 1:-1],
+            -_NUMERIC_SANITIZE_CAP,
+            _NUMERIC_SANITIZE_CAP,
+        )
         return Psi_new
 
     def _sor_step(

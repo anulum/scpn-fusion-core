@@ -17,6 +17,7 @@ from scpn_fusion.core.neural_transport import (
     _relu,
     _softplus,
     critical_gradient_model,
+    reduced_gyrokinetic_profile_model,
 )
 
 
@@ -60,7 +61,10 @@ class TestCriticalGradient:
         inp = TransportInputs(grad_ti=10.0, grad_te=2.0)
         fluxes = critical_gradient_model(inp)
         assert fluxes.chi_i > 0
-        assert fluxes.chi_e == 0.0
+        assert fluxes.chi_e > 0.0
+        assert fluxes.chi_e_itg > 0.0
+        assert fluxes.chi_e_tem == 0.0
+        assert fluxes.chi_e_etg == 0.0
         assert fluxes.channel == "ITG"
 
     def test_tem_dominant(self):
@@ -69,6 +73,24 @@ class TestCriticalGradient:
         assert fluxes.chi_e > 0
         assert fluxes.chi_i == 0.0
         assert fluxes.channel == "TEM"
+
+    def test_etg_dominant_with_hot_electrons_and_small_trapped_fraction(self):
+        inp = TransportInputs(
+            rho=0.05,
+            te_kev=18.0,
+            ti_kev=1.5,
+            ne_19=1.2,
+            grad_te=30.0,
+            grad_ti=2.0,
+            grad_ne=1.0,
+            q=1.1,
+            s_hat=0.1,
+            beta_e=0.002,
+        )
+        fluxes = critical_gradient_model(inp)
+        assert fluxes.channel == "ETG"
+        assert fluxes.chi_e_etg > fluxes.chi_e_tem
+        assert fluxes.chi_i == 0.0
 
     def test_monotone_with_gradient(self):
         """Higher gradient → higher transport."""
@@ -241,6 +263,7 @@ class TestNeuralTransportModel:
         chi_e, chi_i, d_e = model.predict_profile(rho, te, ti, ne, q, s_hat)
 
         # Point-by-point via predict()
+        dx_ne = np.gradient(ne, rho)
         for i in range(n):
             # Recompute normalised gradients the same way
             dx_te = np.gradient(te, rho)
@@ -251,10 +274,28 @@ class TestNeuralTransportModel:
             safe_ti = np.maximum(np.abs(ti), 1e-6)
             grad_ti_i = float(np.clip(-6.2 * dx_ti[i] / safe_ti[i], 0, 50))
 
-            inp = TransportInputs(grad_te=grad_te_i, grad_ti=grad_ti_i, rho=float(rho[i]))
+            safe_ne = np.maximum(np.abs(ne), 1e-6)
+            grad_ne_i = float(np.clip(-6.2 * dx_ne[i] / safe_ne[i], -10, 30))
+
+            inp = TransportInputs(
+                rho=float(rho[i]),
+                te_kev=float(te[i]),
+                ti_kev=float(ti[i]),
+                ne_19=float(ne[i]),
+                grad_te=grad_te_i,
+                grad_ti=grad_ti_i,
+                grad_ne=grad_ne_i,
+                q=float(q[i]),
+                s_hat=float(s_hat[i]),
+                beta_e=float(4.03e-3 * ne[i] * te[i]),
+                r_major_m=6.2,
+                a_minor_m=2.0,
+                b_tesla=5.3,
+            )
             fluxes = critical_gradient_model(inp)
             np.testing.assert_allclose(chi_e[i], fluxes.chi_e, rtol=1e-10)
             np.testing.assert_allclose(chi_i[i], fluxes.chi_i, rtol=1e-10)
+            np.testing.assert_allclose(d_e[i], fluxes.d_e, rtol=1e-10)
 
     def test_weight_versioning_accepted(self):
         """Version=1 weights should load successfully."""
@@ -340,6 +381,60 @@ class TestNeuralTransportModel:
         assert all(chi_i > 0)
         assert all(d_e > 0)
 
+    def test_neural_predict_profile_records_surrogate_contract(self):
+        """Neural-mode profile inference should expose backend and OOD metadata."""
+        hidden = 12
+        rng = np.random.RandomState(123)
+        weights = {
+            "version": np.array(1),
+            "w1": rng.randn(10, hidden) * 0.1,
+            "b1": np.zeros(hidden),
+            "w2": rng.randn(hidden, hidden) * 0.1,
+            "b2": np.zeros(hidden),
+            "w3": rng.randn(hidden, 3) * 0.1,
+            "b3": np.zeros(3),
+            "input_mean": np.zeros(10),
+            "input_std": np.ones(10),
+            "output_scale": np.ones(3),
+        }
+        with tempfile.NamedTemporaryFile(suffix=".npz", delete=False) as f:
+            np.savez(f.name, **weights)
+            model = NeuralTransportModel(f.name)
+
+        assert model.is_neural
+        rho = np.linspace(0.01, 0.99, 24)
+        te = 6.0 * (1 - rho**2) + 0.2
+        ti = 5.5 * (1 - rho**2) + 0.2
+        ne = 7.0 * (1 - rho**2) ** 0.5 + 0.4
+        q = 1.1 + 1.8 * rho**2
+        s_hat = 4.5 * rho
+
+        chi_e, chi_i, d_e = model.predict_profile(rho, te, ti, ne, q, s_hat)
+        contract = model._last_surrogate_contract
+
+        assert chi_e.shape == rho.shape
+        assert chi_i.shape == rho.shape
+        assert d_e.shape == rho.shape
+        assert contract["model"] == "qlknn_profile_surrogate"
+        assert contract["backend"] == "qlknn_profile_mlp"
+        assert contract["weights_loaded"] is True
+        assert contract["weights_path"] == str(Path(f.name))
+        assert contract["weights_checksum"] == model.weights_checksum
+        assert contract["classification_mode"] == "coarse_ion_vs_electron_dominant"
+        assert set(contract["channel_counts"]) == {"ITG", "TEM", "ETG", "stable"}
+        assert set(contract["channel_energy"]) == {"ITG", "TEM", "ETG"}
+        assert contract["profile_contract"]["n_points"] == rho.size
+        assert contract["input_dim"] == 10
+        assert contract["n_layers"] == 3
+        assert 0.0 <= float(contract["ood_fraction_3sigma"]) <= 1.0
+        assert 0.0 <= float(contract["ood_fraction_5sigma"]) <= 1.0
+        assert int(contract["ood_point_count_3sigma"]) >= 0
+        assert int(contract["ood_point_count_5sigma"]) >= 0
+        assert float(contract["max_abs_z"]) >= 0.0
+        assert model._last_max_abs_z_profile.shape == rho.shape
+        assert model._last_ood_mask_3sigma.shape == rho.shape
+        assert model._last_ood_mask_5sigma.shape == rho.shape
+
     @pytest.mark.parametrize(
         ("kwargs", "match"),
         [
@@ -401,6 +496,35 @@ class TestNeuralTransportModel:
         assert contract["n_points"] == 64
         assert contract["rho_min"] == pytest.approx(0.0)
         assert contract["rho_max"] == pytest.approx(1.0)
+
+    def test_reduced_profile_model_reports_channel_metadata(self):
+        n = 48
+        rho = np.linspace(0.02, 0.98, n)
+        te = 15.0 * np.exp(-10.0 * rho) + 0.2
+        ti = 4.5 * (1.0 - 0.15 * rho**2) + 0.2
+        ne = 4.0 * (1.0 - 0.45 * rho**2) + 0.8
+        q = 1.0 + 2.2 * rho**2
+        s_hat = 4.4 * rho
+
+        chi_e, chi_i, d_e, metadata = reduced_gyrokinetic_profile_model(
+            rho,
+            te,
+            ti,
+            ne,
+            q,
+            s_hat,
+        )
+
+        assert chi_e.shape == (n,)
+        assert chi_i.shape == (n,)
+        assert d_e.shape == (n,)
+        assert metadata["profile_contract"]["n_points"] == n
+        assert metadata["profile_contract"]["rho_min"] == pytest.approx(float(rho[0]))
+        assert metadata["profile_contract"]["rho_max"] == pytest.approx(float(rho[-1]))
+        assert set(metadata["channel_counts"]) == {"ITG", "TEM", "ETG", "stable"}
+        assert set(metadata["channel_energy"]) == {"ITG", "TEM", "ETG"}
+        assert 0.0 <= metadata["edge_etg_fraction"] <= 1.0
+        assert metadata["dominant_channel"] in {"ITG", "TEM", "ETG", "stable"}
 
 
 def test_neural_transport_ood_bounded() -> None:

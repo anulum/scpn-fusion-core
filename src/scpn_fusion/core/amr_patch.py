@@ -198,22 +198,29 @@ def _jacobi_smooth(
     iterations: int = 5,
     omega: float = 0.8,
 ) -> FloatArray:
-    """Weighted Jacobi smoothing with cylindrical GS* operator on a sub-patch."""
+    """Weighted Jacobi smoothing for the GS elliptic operator on a sub-patch.
+
+    When ``R_1d`` is provided, uses the cylindrical Grad-Shafranov stencil
+    with the toroidal ``1/R`` correction in the radial coefficients.
+    """
     u = psi.copy()
     dr2 = dr * dr
     dz2 = dz * dz
+    a_NS = 1.0 / dz2
     a_C = 2.0 / dr2 + 2.0 / dz2
     if a_C < 1e-30:
         return u
-    a_NS = 1.0 / dz2
+
     if R_1d is not None:
-        R_int = np.maximum(R_1d[1:-1], 1e-10)
-        # shape (1, NR-2) for broadcasting with (NZ-2, NR-2) interior
-        a_E = (1.0 / dr2 - 1.0 / (2.0 * R_int * dr))[np.newaxis, :]
-        a_W = (1.0 / dr2 + 1.0 / (2.0 * R_int * dr))[np.newaxis, :]
+        R_safe = np.maximum(np.asarray(R_1d[1:-1], dtype=np.float64), 1e-10)
+        a_E = 1.0 / dr2 - 1.0 / (2.0 * R_safe * dr)
+        a_W = 1.0 / dr2 + 1.0 / (2.0 * R_safe * dr)
+        a_E = np.broadcast_to(a_E, (u.shape[0] - 2, u.shape[1] - 2))
+        a_W = np.broadcast_to(a_W, (u.shape[0] - 2, u.shape[1] - 2))
     else:
-        a_E = 1.0 / dr2
-        a_W = 1.0 / dr2
+        a_E = np.full((u.shape[0] - 2, u.shape[1] - 2), 1.0 / dr2, dtype=np.float64)
+        a_W = np.full((u.shape[0] - 2, u.shape[1] - 2), 1.0 / dr2, dtype=np.float64)
+
     for _ in range(iterations):
         u_new = u.copy()
         u_new[1:-1, 1:-1] = (
@@ -285,11 +292,12 @@ def solve_amr(
 
         fine_dr = dr / REFINE_FACTOR
         fine_dz = dz / REFINE_FACTOR
-        fine_R = np.linspace(R[i_lo], R[i_hi], fine_nr)
 
+        fine_R = np.linspace(r_lo, r_hi, fine_nr)
         fine_psi = _jacobi_smooth(
             fine_psi, fine_src, fine_dr, fine_dz,
-            R_1d=fine_R, iterations=refine_smooth_iters,
+            R_1d=fine_R,
+            iterations=refine_smooth_iters,
         )
 
         correction = restrict(fine_psi, sub_psi.shape) - sub_psi

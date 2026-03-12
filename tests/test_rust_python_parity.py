@@ -190,13 +190,8 @@ class TestSORSolverParity:
     def test_sor_equilibrium_parity(self, tmp_path: Path) -> None:
         """Run the SOR-based equilibrium solver via both Python and Rust
         FusionKernel on the same 65x65 Solov'ev grid (R0=1.7, a=0.5,
-        B0=2.0, Ip=1.0 MA).
-
-        Python uses the corrected cylindrical Jacobi stencil for seeding
-        while Rust still uses the Cartesian stencil, so the initial guess
-        differs. Both converge via Picard+SOR but may settle on slightly
-        different fixed points. Check boundary parity tightly (boundaries
-        are seed-independent) and interior rel_L2 within a loose band.
+        B0=2.0, Ip=1.0 MA).  The final Psi arrays must agree within
+        rtol=1e-3.
         """
         from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
 
@@ -204,13 +199,13 @@ class TestSORSolverParity:
 
         # --- Python path ---
         py_kernel = PyFusionKernel(str(cfg_path))
-        py_kernel.solve_equilibrium()
+        py_result = py_kernel.solve_equilibrium()
         psi_py = py_kernel.Psi.copy()
 
         # --- Rust path ---
         rust_kernel = RustAcceleratedKernel(str(cfg_path))
         rust_kernel.set_solver_method("sor")
-        rust_kernel.solve_equilibrium()
+        rust_result = rust_kernel.solve_equilibrium()
         psi_rs = rust_kernel.Psi.copy()
 
         # --- Compare ---
@@ -220,20 +215,10 @@ class TestSORSolverParity:
         assert np.all(np.isfinite(psi_py)), "Python SOR produced non-finite values"
         assert np.all(np.isfinite(psi_rs)), "Rust SOR produced non-finite values"
 
-        # Boundary parity (seed-independent)
         np.testing.assert_allclose(
-            psi_py[[0, -1], :], psi_rs[[0, -1], :], rtol=1e-3, atol=1e-6,
-            err_msg="SOR boundary parity failed (rows)",
+            psi_py, psi_rs, rtol=1e-3, atol=1e-6,
+            err_msg=f"SOR parity failed: max rel diff = {_max_rel_diff(psi_py, psi_rs):.6e}",
         )
-        np.testing.assert_allclose(
-            psi_py[:, [0, -1]], psi_rs[:, [0, -1]], rtol=1e-3, atol=1e-6,
-            err_msg="SOR boundary parity failed (cols)",
-        )
-
-        # Interior: Rust Jacobi seed differs from Python cylindrical seed.
-        # Threshold 0.45 until Rust stencil is aligned.
-        rel_l2 = np.linalg.norm(psi_py - psi_rs) / max(np.linalg.norm(psi_py), 1e-12)
-        assert rel_l2 < 0.45, f"SOR parity rel-L2 too large: {rel_l2:.6e}"
 
     def test_sor_single_sweep_consistency(self, tmp_path: Path) -> None:
         """Verify that the Python SOR sweep is self-consistent by
@@ -650,11 +635,8 @@ class TestBFieldParity:
     """
 
     def test_b_field_parity(self, tmp_path: Path) -> None:
-        """After equilibrium solve, B_R and B_Z should be structurally
-        consistent between Python and Rust.  The Jacobi seed stencil
-        mismatch (Python cylindrical vs Rust Cartesian) causes the
-        interior Psi to differ, which propagates to B-field derivatives.
-        Check rel_L2 within a loose band until Rust stencil is aligned.
+        """After equilibrium solve, B_R and B_Z should match between
+        Python and Rust within rtol=1e-3.
         """
         from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
 
@@ -675,17 +657,17 @@ class TestBFieldParity:
 
         # --- Compare B_R ---
         assert br_py.shape == br_rs.shape
-        assert np.all(np.isfinite(br_py)), "Python B_R has NaN"
-        assert np.all(np.isfinite(br_rs)), "Rust B_R has NaN"
-        br_rel = np.linalg.norm(br_py - br_rs) / max(np.linalg.norm(br_py), 1e-12)
-        assert br_rel < 0.50, f"B_R parity rel-L2 too large: {br_rel:.6e}"
+        np.testing.assert_allclose(
+            br_py, br_rs, rtol=1e-3, atol=1e-6,
+            err_msg=f"B_R parity failed: max rel diff = {_max_rel_diff(br_py, br_rs):.6e}",
+        )
 
         # --- Compare B_Z ---
         assert bz_py.shape == bz_rs.shape
-        assert np.all(np.isfinite(bz_py)), "Python B_Z has NaN"
-        assert np.all(np.isfinite(bz_rs)), "Rust B_Z has NaN"
-        bz_rel = np.linalg.norm(bz_py - bz_rs) / max(np.linalg.norm(bz_py), 1e-12)
-        assert bz_rel < 0.50, f"B_Z parity rel-L2 too large: {bz_rel:.6e}"
+        np.testing.assert_allclose(
+            bz_py, bz_rs, rtol=1e-3, atol=1e-6,
+            err_msg=f"B_Z parity failed: max rel diff = {_max_rel_diff(bz_py, bz_rs):.6e}",
+        )
 
 
 # ── 7. X-Point and Topology Parity ──────────────────────────────────

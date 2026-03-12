@@ -15,6 +15,15 @@ from typing import Any
 import numpy as np
 
 
+def _resolve_runtime_transport_profiles(transport_solver: Any) -> tuple[np.ndarray, np.ndarray]:
+    """Resolve public transport profiles, falling back only when absent."""
+    ts = transport_solver
+    n = len(ts.rho)
+    chi_i = getattr(ts, "chi_i", getattr(ts, "_chi_i_profile", np.ones(n)))
+    chi_e = getattr(ts, "chi_e", getattr(ts, "_chi_e_profile", np.ones(n) * 0.5))
+    return np.asarray(chi_i, dtype=np.float64), np.asarray(chi_e, dtype=np.float64)
+
+
 def validate_against_tglf(
     transport_solver: Any,
     tglf_binary_path: str | Path,
@@ -36,11 +45,10 @@ def validate_against_tglf(
         output = tglf.run_tglf_binary(deck, tglf_binary_path)
         tglf_outputs.append(output)
 
-    chi_i_gb = getattr(ts, "_chi_i_profile", np.ones(n))
-    chi_e_gb = getattr(ts, "_chi_e_profile", np.ones(n) * 0.5)
+    chi_i_profile, chi_e_profile = _resolve_runtime_transport_profiles(ts)
 
     benchmark = tglf.TGLFBenchmark()
-    result = benchmark.compare(chi_i_gb, chi_e_gb, ts.rho, tglf_outputs)
+    result = benchmark.compare(chi_i_profile, chi_e_profile, ts.rho, tglf_outputs)
     result.case_name = "Live TGLF validation"
     return result
 

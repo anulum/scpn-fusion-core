@@ -1,20 +1,28 @@
 {
-  "generated_at": "2026-03-11T06:58:58.744055+00:00",
+  "generated_at": "2026-03-11T23:44:51.782148+00:00",
   "generator": "tools/generate_underdeveloped_scope_reports.py",
   "snapshots": [
     {
-      "marker_counts": {},
-      "p0_p1_entries": 0,
+      "marker_counts": {
+        "FALLBACK": 1,
+        "MONOLITH": 4
+      },
+      "p0_p1_entries": 4,
       "scope": "source",
-      "total_entries": 0
+      "total_entries": 5
     },
     {
       "marker_counts": {
-        "EXPERIMENTAL": 2
+        "DEPRECATED": 5,
+        "EXPERIMENTAL": 5,
+        "FALLBACK": 24,
+        "NOT_VALIDATED": 2,
+        "PLANNED": 12,
+        "SIMPLIFIED": 3
       },
       "p0_p1_entries": 0,
       "scope": "docs_claims",
-      "total_entries": 2
+      "total_entries": 51
     }
   ]
 }

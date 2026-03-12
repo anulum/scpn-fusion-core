@@ -41,6 +41,24 @@ MINIMAL_CONFIG = {
 }
 
 
+def _write_transport_weights(path: Path, input_dim: int = 10, hidden: int = 8) -> Path:
+    rng = np.random.RandomState(42)
+    weights = {
+        "version": np.array(1),
+        "w1": rng.randn(input_dim, hidden) * 0.08,
+        "b1": np.zeros(hidden),
+        "w2": rng.randn(hidden, hidden) * 0.08,
+        "b2": np.zeros(hidden),
+        "w3": rng.randn(hidden, 3) * 0.08,
+        "b3": np.zeros(3),
+        "input_mean": np.zeros(input_dim),
+        "input_std": np.ones(input_dim),
+        "output_scale": np.ones(3),
+    }
+    np.savez(path, **weights)
+    return path
+
+
 @pytest.fixture
 def config_file(tmp_path: Path) -> Path:
     """Write a minimal JSON config and return its path."""
@@ -139,6 +157,17 @@ class TestInitialization:
         assert contract["used"] is False
         assert contract["fallback_used"] is True
         assert "neoclassical_params_missing" in contract["domain_violations"]
+
+    def test_transport_closure_contract_tracks_runtime_model(self, solver: TransportSolver) -> None:
+        contract = solver._last_transport_closure_contract
+        assert contract["used"] is True
+        assert contract["fallback_used"] is False
+        assert contract["model"] == "reduced_multichannel_analytic"
+        assert contract["base_source"] == "constant_fallback"
+        assert contract["q_profile_source"] == "default_parabolic"
+        assert contract["profile_contract"]["n_points"] == solver.nr
+        assert set(contract["channel_counts"]) == {"ITG", "TEM", "ETG", "stable"}
+        assert set(contract["gradient_clip_counts"]) == {"grad_te", "grad_ti", "grad_ne"}
 
 
 # ── 2. Profile Evolution ─────────────────────────────────────────────
@@ -485,6 +514,218 @@ class TestNeoclassical:
         assert contract["fallback_used"] is False
         assert 0.65 <= float(contract["extrapolation_penalty"]) <= 1.0
         assert isinstance(contract["domain_violations"], list)
+
+    def test_transport_runtime_resolves_electron_dominant_lane(self, config_file: Path) -> None:
+        solver = TransportSolver(str(config_file))
+        solver.Te = 18.0 * np.exp(-12.0 * solver.rho) + 0.1
+        solver.Ti = 4.0 * (1.0 - 0.15 * solver.rho**2) + 0.2
+        solver.ne = 4.0 * (1.0 - 0.35 * solver.rho**2) + 0.8
+        solver.update_transport_model(10.0)
+
+        core_slice = slice(3, -3)
+        assert float(np.mean(solver.chi_e[core_slice])) > float(np.mean(solver.chi_i[core_slice]))
+        assert solver._last_transport_closure_contract["dominant_channel"] in {"TEM", "ETG"}
+        assert np.all(np.isfinite(solver.D_n))
+
+    def test_transport_runtime_can_use_tglf_live_backend(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cfg = dict(MINIMAL_CONFIG)
+        cfg["physics"] = {
+            "plasma_current_target": 15.0,
+            "vacuum_permeability": 1.0,
+            "transport_backend": "tglf_live",
+            "tglf_binary_path": "C:/fake/tglf",
+            "tglf_timeout_s": 30.0,
+            "tglf_max_retries": 1,
+        }
+        cfg_path = tmp_path / "tglf_live_config.json"
+        cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
+
+        import scpn_fusion.core.tglf_interface as tglf_mod
+
+        def _stub_scan(_solver, _binary, *, timeout_s=120.0, max_retries=2, rho_indices=None):
+            _ = (timeout_s, max_retries, rho_indices)
+            rho = _solver.rho
+            return tglf_mod.TGLFProfileScanResult(
+                rho_samples=[float(rho[10]), float(rho[25]), float(rho[40])],
+                chi_i_samples=[0.4, 0.8, 1.2],
+                chi_e_samples=[0.9, 1.3, 1.7],
+                gamma_samples=[0.05, 0.08, 0.11],
+                chi_i_profile=(0.2 + rho).tolist(),
+                chi_e_profile=(0.4 + 1.5 * rho).tolist(),
+                gamma_profile=(0.01 + 0.05 * rho).tolist(),
+            )
+
+        monkeypatch.setattr(tglf_mod, "run_tglf_profile_scan", _stub_scan)
+
+        solver = TransportSolver(str(cfg_path))
+        solver.Ti = 5.0 * (1 - solver.rho**2)
+        solver.Te = 5.0 * (1 - solver.rho**2)
+        solver.ne = 8.0 * (1 - solver.rho**2) ** 0.5
+        solver.update_transport_model(20.0)
+
+        contract = solver._last_transport_closure_contract
+        assert contract["model"] == "tglf_live_profile"
+        assert contract["requested_backend"] == "tglf_live"
+        assert contract["fallback_used"] is False
+        assert contract["profile_contract"]["n_points"] == solver.nr
+        assert np.mean(solver.chi_e) > np.mean(solver.chi_i)
+
+    def test_transport_runtime_can_use_neural_transport_backend(self, tmp_path: Path) -> None:
+        weights_path = _write_transport_weights(tmp_path / "neural_transport_weights.npz")
+        cfg = dict(MINIMAL_CONFIG)
+        cfg["physics"] = {
+            "plasma_current_target": 15.0,
+            "vacuum_permeability": 1.0,
+            "transport_backend": "neural_transport",
+            "neural_transport_weights_path": str(weights_path),
+        }
+        cfg_path = tmp_path / "neural_transport_config.json"
+        cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
+
+        solver = TransportSolver(str(cfg_path))
+        solver.Ti = 5.0 * (1 - solver.rho**2)
+        solver.Te = 5.0 * (1 - solver.rho**2)
+        solver.ne = 8.0 * (1 - solver.rho**2) ** 0.5
+        solver.update_transport_model(20.0)
+
+        contract = solver._last_transport_closure_contract
+        assert contract["model"] == "qlknn_profile_surrogate"
+        assert contract["requested_backend"] == "neural_transport"
+        assert contract["fallback_used"] is False
+        assert contract["weights_loaded"] is True
+        assert contract["weights_path"] == str(weights_path)
+        assert contract["weights_checksum"] is not None
+        assert contract["classification_mode"] == "coarse_ion_vs_electron_dominant"
+        assert contract["profile_contract"]["n_points"] == solver.nr
+        assert 0.0 <= float(contract["ood_fraction_3sigma"]) <= 1.0
+        assert 0.0 <= float(contract["ood_fraction_5sigma"]) <= 1.0
+        assert int(contract["ood_point_count"]) >= 0
+        assert float(contract["max_abs_z"]) >= 0.0
+        assert contract["tglf_sample_count"] == 0
+        assert contract["tglf_sample_indices"] == []
+        assert np.all(solver.chi_e > 0.0)
+        assert np.all(solver.chi_i > 0.0)
+        assert np.all(solver.D_n > 0.0)
+
+    def test_transport_runtime_can_escalate_neural_ood_to_tglf_hybrid(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        weights_path = _write_transport_weights(tmp_path / "hybrid_neural_transport_weights.npz")
+        with np.load(weights_path, allow_pickle=False) as data:
+            payload = {key: data[key] for key in data.files}
+        payload["input_std"] = np.full_like(payload["input_std"], 0.02)
+        np.savez(weights_path, **payload)
+
+        cfg = dict(MINIMAL_CONFIG)
+        cfg["physics"] = {
+            "plasma_current_target": 15.0,
+            "vacuum_permeability": 1.0,
+            "transport_backend": "neural_transport_hybrid",
+            "neural_transport_weights_path": str(weights_path),
+            "neural_transport_tglf_ood_sigma": 5.0,
+            "neural_transport_tglf_max_points": 4,
+            "tglf_binary_path": "C:/fake/tglf",
+        }
+        cfg_path = tmp_path / "neural_transport_hybrid.json"
+        cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
+
+        import scpn_fusion.core.tglf_interface as tglf_mod
+
+        def _stub_scan(_solver, _binary, *, timeout_s=120.0, max_retries=2, rho_indices=None):
+            _ = (timeout_s, max_retries, _binary)
+            assert rho_indices is not None
+            rho = _solver.rho
+            return tglf_mod.TGLFProfileScanResult(
+                rho_samples=[float(rho[i]) for i in rho_indices],
+                chi_i_samples=[3.0 + 0.1 * i for i in range(len(rho_indices))],
+                chi_e_samples=[5.0 + 0.1 * i for i in range(len(rho_indices))],
+                gamma_samples=[0.2 + 0.01 * i for i in range(len(rho_indices))],
+                chi_i_profile=np.full_like(rho, 4.0, dtype=float).tolist(),
+                chi_e_profile=np.full_like(rho, 6.0, dtype=float).tolist(),
+                gamma_profile=np.full_like(rho, 0.25, dtype=float).tolist(),
+            )
+
+        monkeypatch.setattr(tglf_mod, "run_tglf_profile_scan", _stub_scan)
+
+        solver = TransportSolver(str(cfg_path))
+        solver.Ti = 5.0 * (1 - solver.rho**2)
+        solver.Te = 5.2 * (1 - solver.rho**2)
+        solver.ne = 8.0 * (1 - solver.rho**2) ** 0.5
+        solver.update_transport_model(20.0)
+
+        contract = solver._last_transport_closure_contract
+        assert contract["model"] == "qlknn_tglf_hybrid"
+        assert contract["requested_backend"] == "neural_transport_hybrid"
+        assert contract["fallback_used"] is False
+        assert contract["classification_mode"] == "hybrid_neural_tglf_ood_escalation"
+        assert contract["weights_loaded"] is True
+        assert int(contract["ood_point_count"]) > 0
+        assert int(contract["tglf_sample_count"]) > 0
+        assert len(contract["tglf_sample_indices"]) == int(contract["tglf_sample_count"])
+        assert float(contract["gamma_profile_mean"]) == pytest.approx(0.25)
+        assert float(contract["max_abs_z"]) > 5.0
+        assert np.any(solver.chi_i >= 4.0)
+        assert np.any(solver.chi_e >= 6.0)
+
+    def test_transport_runtime_neural_backend_falls_back_cleanly(self, tmp_path: Path) -> None:
+        missing_weights_path = tmp_path / "missing_neural_transport_weights.npz"
+        cfg = dict(MINIMAL_CONFIG)
+        cfg["physics"] = {
+            "plasma_current_target": 15.0,
+            "vacuum_permeability": 1.0,
+            "transport_backend": "neural_transport",
+            "neural_transport_weights_path": str(missing_weights_path),
+        }
+        cfg_path = tmp_path / "neural_transport_fallback.json"
+        cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
+
+        solver = TransportSolver(str(cfg_path))
+        solver.Ti = 5.0 * (1 - solver.rho**2)
+        solver.Te = 5.0 * (1 - solver.rho**2)
+        solver.ne = 8.0 * (1 - solver.rho**2) ** 0.5
+        solver.update_transport_model(20.0)
+
+        contract = solver._last_transport_closure_contract
+        assert contract["requested_backend"] == "neural_transport"
+        assert contract["fallback_used"] is True
+        assert contract["model"] == "legacy_ti_threshold_fallback"
+        assert contract["weights_loaded"] is False
+        assert contract["weights_path"] is None
+        assert "FileNotFoundError" in str(contract["error"])
+
+    def test_transport_runtime_tglf_live_falls_back_cleanly(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cfg = dict(MINIMAL_CONFIG)
+        cfg["physics"] = {
+            "plasma_current_target": 15.0,
+            "vacuum_permeability": 1.0,
+            "transport_backend": "tglf_live",
+            "tglf_binary_path": "C:/missing/tglf",
+        }
+        cfg_path = tmp_path / "tglf_live_fallback.json"
+        cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
+
+        import scpn_fusion.core.tglf_interface as tglf_mod
+
+        def _raise_missing(*_args, **_kwargs):
+            raise FileNotFoundError("TGLF binary not found")
+
+        monkeypatch.setattr(tglf_mod, "run_tglf_profile_scan", _raise_missing)
+
+        solver = TransportSolver(str(cfg_path))
+        solver.Ti = 5.0 * (1 - solver.rho**2)
+        solver.Te = 5.0 * (1 - solver.rho**2)
+        solver.ne = 8.0 * (1 - solver.rho**2) ** 0.5
+        solver.update_transport_model(20.0)
+
+        contract = solver._last_transport_closure_contract
+        assert contract["requested_backend"] == "tglf_live"
+        assert contract["fallback_used"] is True
+        assert contract["model"] == "legacy_ti_threshold_fallback"
+        assert "FileNotFoundError" in str(contract["error"])
 
     @pytest.mark.parametrize(
         ("overrides", "field"),

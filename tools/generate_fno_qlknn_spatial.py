@@ -126,7 +126,7 @@ def _profiles_from_rho(
 def generate(
     weights_path: Path,
     output_dir: Path,
-    n_equilibria: int = 5000,
+    n_equilibria: int = 200,
     grid_size: int = 64,
     seed: int = 42,
 ) -> None:
@@ -223,26 +223,19 @@ def generate(
                 chi_i_flat[j] = critical_gradient_model(inp).chi_i
             chi_i_2d = chi_i_flat.reshape(grid_size, grid_size)
 
-        # Normalise each channel to [0, 1]
+        # Normalise to [0, 1] range for FNO
         psi_norm = psi / max(psi.max(), 1e-8)
         chi_norm = chi_i_2d / max(chi_i_2d.max(), 1e-8)
 
-        # Multi-channel input: [psi, Te, Ti, q, grad_Ti] — key physics drivers
-        te_norm = profiles["Te"] / max(profiles["Te"].max(), 1e-8)
-        ti_norm = profiles["Ti"] / max(profiles["Ti"].max(), 1e-8)
-        q_norm = profiles["q"] / max(profiles["q"].max(), 1e-8)
-        gti_norm = profiles["grad_Ti"] / max(profiles["grad_Ti"].max(), 1e-8)
-
-        x_stack = np.stack([psi_norm, te_norm, ti_norm, q_norm, gti_norm], axis=-1)
-        all_psi.append(x_stack.astype(np.float32))
+        all_psi.append(psi_norm.astype(np.float32))
         all_chi.append(chi_norm.astype(np.float32))
 
         if (i + 1) % 50 == 0:
             elapsed = time.monotonic() - t0
             print(f"  {i+1}/{n_equilibria} ({elapsed:.0f}s)")
 
-    X = np.array(all_psi)   # (N, 64, 64, 5)
-    Y = np.array(all_chi)   # (N, 64, 64)
+    X = np.array(all_psi)  # (N, 64, 64)
+    Y = np.array(all_chi)  # (N, 64, 64)
 
     # Split 85/15
     n_train = int(len(X) * 0.85)
@@ -253,15 +246,12 @@ def generate(
     np.savez(output_dir / "train.npz", X=X_train, Y=Y_train)
     np.savez(output_dir / "val.npz", X=X_val, Y=Y_val)
 
-    n_channels = X_train.shape[-1] if X_train.ndim == 4 else 1
     metadata = {
         "source": "QLKNN-MLP oracle on synthetic equilibria",
         "weights_used": str(weights_path),
         "neural_oracle": model.is_neural,
         "n_equilibria": n_equilibria,
         "grid_size": grid_size,
-        "n_channels": n_channels,
-        "channels": ["psi", "Te", "Ti", "q", "grad_Ti"],
         "n_train": len(X_train),
         "n_val": len(X_val),
         "param_ranges": {k: list(v) for k, v in params_ranges.items()},
@@ -280,7 +270,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", type=Path, default=DEFAULT_WEIGHTS)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--n-equilibria", type=int, default=5000)
+    parser.add_argument("--n-equilibria", type=int, default=200)
     parser.add_argument("--grid-size", type=int, default=64)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
