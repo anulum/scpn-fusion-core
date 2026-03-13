@@ -876,6 +876,8 @@ jobs:
     needs: [python-tests, rust-tests, rust-python-interop]
     steps:
       - uses: actions/checkout@v6
+        with:
+          lfs: true
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
@@ -909,6 +911,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v6
+        with:
+          lfs: true
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
         with:
