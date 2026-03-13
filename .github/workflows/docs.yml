@@ -33,10 +33,10 @@ jobs:
     name: Build Python API docs (Sphinx)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with:
           python-version: "3.12"
 
@@ -50,7 +50,7 @@ jobs:
         run: sphinx-build -b html docs/sphinx docs/sphinx/_build/html
 
       - name: Upload Python docs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
         with:
           name: python-docs
           path: docs/sphinx/_build/html/
@@ -60,13 +60,13 @@ jobs:
     name: Build Rust API docs (rustdoc)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # stable
 
       - name: Cache cargo
-        uses: actions/cache@v5
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306  # v5
         with:
           path: |
             ~/.cargo/registry
@@ -80,7 +80,7 @@ jobs:
         run: cargo doc --workspace --no-deps --all-features --exclude scpn-fusion-rs
 
       - name: Upload Rust docs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
         with:
           name: rust-docs
           path: scpn-fusion-rs/target/doc/
@@ -90,10 +90,10 @@ jobs:
     name: Build tutorial notebook HTML exports
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with:
           python-version: "3.12"
 
@@ -109,7 +109,7 @@ jobs:
           python -m jupyter nbconvert --to html examples/*.ipynb --output-dir docs/notebooks/
 
       - name: Upload notebook HTML
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
         with:
           name: notebook-html
           path: docs/notebooks/
@@ -125,25 +125,25 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
         with:
           sparse-checkout: |
             docs/assets/repo_header.png
 
       - name: Download Python docs
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
         with:
           name: python-docs
           path: site/python/
 
       - name: Download Rust docs
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
         with:
           name: rust-docs
           path: site/rust/
 
       - name: Download notebook HTML
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
         with:
           name: notebook-html
           path: site/notebooks/
@@ -397,16 +397,16 @@ jobs:
           HTMLEOF
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b  # v5
 
       - name: Upload to Pages
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa  # v3
         with:
           name: ${{ env.PAGES_ARTIFACT_NAME }}
           path: site/
 
       - name: Deploy to Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e  # v4
         with:
           artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}

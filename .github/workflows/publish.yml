@@ -32,11 +32,11 @@ jobs:
     name: Build distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with:
           python-version: "3.12"
       - name: Release acceptance checklist gate
@@ -80,12 +80,12 @@ jobs:
       - name: Twine metadata check
         run: python -m twine check dist/*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
         with:
           name: dist
           path: dist/
       - name: Upload checksum summaries
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
         with:
           name: release-checksums
           path: |
@@ -101,7 +101,7 @@ jobs:
       url: https://pypi.org/p/scpn-fusion
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
         with:
           name: dist
           path: dist/
@@ -112,13 +112,13 @@ jobs:
       - name: Publish to PyPI (OIDC)
         id: publish_oidc
         continue-on-error: true
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e  # release/v1
         # Uses OIDC trusted publisher — no API token needed
         # Configure at: https://pypi.org/manage/project/scpn-fusion/settings/publishing/
       - name: Publish to PyPI (token fallback)
         id: publish_token
         if: ${{ steps.publish_oidc.outcome != 'success' }}
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e  # release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
       - name: Ensure publish succeeded
@@ -132,11 +132,11 @@ jobs:
     needs: [publish-pypi]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with:
           python-version: "3.12"
       - name: Verify PyPI package version
@@ -158,7 +158,7 @@ jobs:
       url: https://test.pypi.org/p/scpn-fusion
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7
         with:
           name: dist
           path: dist/
@@ -167,6 +167,6 @@ jobs:
           cd dist
           sha256sum -c SHA256SUMS
       - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e  # release/v1
         with:
           repository-url: https://test.pypi.org/legacy/

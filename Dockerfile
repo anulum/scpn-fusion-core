@@ -6,7 +6,7 @@
 # ──────────────────────────────────────────────────────────────────────
 
 # ── Stage 1: Build Rust workspace + PyO3 bindings ────────────────────
-FROM python:3.12-slim AS rust-builder
+FROM python:3.12-slim@sha256:ccc7089399c8bb65dd1fb3ed6d55efa538a3f5e7fca3f5988ac3b5b87e593bf0 AS rust-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl build-essential pkg-config libssl-dev \
@@ -33,7 +33,7 @@ RUN cd scpn-fusion-rs/crates/fusion-python \
     && maturin build --release --out /build/wheels
 
 # ── Stage 2: Runtime image ───────────────────────────────────────────
-FROM python:3.12-slim AS runtime
+FROM python:3.12-slim@sha256:ccc7089399c8bb65dd1fb3ed6d55efa538a3f5e7fca3f5988ac3b5b87e593bf0 AS runtime
 
 WORKDIR /app
 ARG INSTALL_DEV=0
