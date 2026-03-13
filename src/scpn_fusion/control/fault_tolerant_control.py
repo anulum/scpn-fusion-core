@@ -34,7 +34,9 @@ class FaultReport:
 class FDIMonitor:
     """Fault Detection and Isolation based on innovation monitoring."""
 
-    def __init__(self, n_sensors: int, n_actuators: int, threshold_sigma: float = 3.0, n_alert: int = 5):
+    def __init__(
+        self, n_sensors: int, n_actuators: int, threshold_sigma: float = 3.0, n_alert: int = 5
+    ):
         self.n_sensors = n_sensors
         self.n_actuators = n_actuators
         self.threshold_sigma = threshold_sigma
@@ -48,7 +50,9 @@ class FDIMonitor:
         self.detected_faults: list[FaultReport] = []
         self.faulted_sensors: set[int] = set()
 
-    def update(self, y_measured: np.ndarray, y_predicted: np.ndarray, t: float) -> list[FaultReport]:
+    def update(
+        self, y_measured: np.ndarray, y_predicted: np.ndarray, t: float
+    ) -> list[FaultReport]:
         nu = y_measured - y_predicted
 
         self.innovation_history[self.innovation_idx] = nu
@@ -70,7 +74,11 @@ class FDIMonitor:
                     ftype = FaultType.SENSOR_DRIFT
 
                 report = FaultReport(
-                    component_index=i, is_sensor=True, fault_type=ftype, confidence=1.0, time_detected=t
+                    component_index=i,
+                    is_sensor=True,
+                    fault_type=ftype,
+                    confidence=1.0,
+                    time_detected=t,
                 )
                 new_faults.append(report)
                 self.detected_faults.append(report)
@@ -113,7 +121,9 @@ class ReconfigurableController:
 
         return np.asarray(K)
 
-    def handle_actuator_fault(self, coil_index: int, fault_type: FaultType, stuck_val: float = 0.0) -> None:
+    def handle_actuator_fault(
+        self, coil_index: int, fault_type: FaultType, stuck_val: float = 0.0
+    ) -> None:
         if coil_index in self.faulted_coils:
             return
 
@@ -155,7 +165,9 @@ class ReconfigurableController:
 
 
 class FaultInjector:
-    def __init__(self, fault_time: float, component_index: int, fault_type: FaultType, severity: float = 1.0):
+    def __init__(
+        self, fault_time: float, component_index: int, fault_type: FaultType, severity: float = 1.0
+    ):
         self.fault_time = fault_time
         self.component_index = component_index
         self.fault_type = fault_type

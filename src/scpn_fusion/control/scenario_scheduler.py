@@ -81,7 +81,9 @@ class FeedforwardController:
 class ScenarioOptimizer:
     """Offline trajectory design via Nelder-Mead."""
 
-    def __init__(self, plant_model: Callable, target_state: np.ndarray, T_total: float, dt: float = 0.5):
+    def __init__(
+        self, plant_model: Callable, target_state: np.ndarray, T_total: float, dt: float = 0.5
+    ):
         self.plant_model = plant_model
         self.target_state = target_state
         self.T_total = T_total
@@ -95,7 +97,10 @@ class ScenarioOptimizer:
 
         def objective(p: np.ndarray) -> float:
             p = p.reshape(n_u, len(times))
-            wfs = {"P_aux": ScenarioWaveform("P_aux", times, p[0]), "Ip": ScenarioWaveform("Ip", times, p[1])}
+            wfs = {
+                "P_aux": ScenarioWaveform("P_aux", times, p[0]),
+                "Ip": ScenarioWaveform("Ip", times, p[1]),
+            }
             sched = ScenarioSchedule(wfs)
 
             x = np.zeros(len(self.target_state))
@@ -117,10 +122,15 @@ class ScenarioOptimizer:
 
         import scipy.optimize
 
-        res = scipy.optimize.minimize(objective, p0, method="Nelder-Mead", options={"maxiter": n_iter})
+        res = scipy.optimize.minimize(
+            objective, p0, method="Nelder-Mead", options={"maxiter": n_iter}
+        )
         p_opt = res.x.reshape(n_u, len(times))
 
-        wfs = {"P_aux": ScenarioWaveform("P_aux", times, p_opt[0]), "Ip": ScenarioWaveform("Ip", times, p_opt[1])}
+        wfs = {
+            "P_aux": ScenarioWaveform("P_aux", times, p_opt[0]),
+            "Ip": ScenarioWaveform("Ip", times, p_opt[1]),
+        }
         return ScenarioSchedule(wfs)
 
 
@@ -146,5 +156,8 @@ def nstx_u_1ma_standard() -> ScenarioSchedule:
     ip_vals = np.array([0.1, 0.5, 1.0, 1.0, 0.5, 0.1])
     p_aux = np.array([0.0, 2.0, 8.0, 8.0, 2.0, 0.0])
 
-    wfs = {"Ip": ScenarioWaveform("Ip", times, ip_vals), "P_aux": ScenarioWaveform("P_aux", times, p_aux)}
+    wfs = {
+        "Ip": ScenarioWaveform("Ip", times, ip_vals),
+        "P_aux": ScenarioWaveform("P_aux", times, p_aux),
+    }
     return ScenarioSchedule(wfs)

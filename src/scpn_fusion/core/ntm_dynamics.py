@@ -92,7 +92,9 @@ class NTMIslandDynamics:
         self.a = a
         self.R0 = R0
         self.B0 = B0
-        self.Delta_prime_0 = Delta_prime_0 if Delta_prime_0 is not None else -2.0 * m / max(r_s, 1e-3)
+        self.Delta_prime_0 = (
+            Delta_prime_0 if Delta_prime_0 is not None else -2.0 * m / max(r_s, 1e-3)
+        )
 
         # MRE coefficients — La Haye 2006
         self.a1 = 6.35

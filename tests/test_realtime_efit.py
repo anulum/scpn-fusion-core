@@ -46,7 +46,12 @@ def test_reconstruction_solovev():
 
     efit = RealtimeEFIT(diag, R, Z)
 
-    meas = {"flux_loops": np.zeros(3), "b_probes": np.zeros(3), "Ip": 15.0e6, "coil_currents": np.zeros(5)}
+    meas = {
+        "flux_loops": np.zeros(3),
+        "b_probes": np.zeros(3),
+        "Ip": 15.0e6,
+        "coil_currents": np.zeros(5),
+    }
 
     res = efit.reconstruct(meas)
 

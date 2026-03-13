@@ -86,7 +86,9 @@ def kadomtsev_crash(
 
     psi_star = np.zeros_like(rho)
     for i in range(1, len(rho)):
-        psi_star[i] = psi_star[i - 1] + 0.5 * (integrand[i - 1] + integrand[i]) * (rho[i] - rho[i - 1])
+        psi_star[i] = psi_star[i - 1] + 0.5 * (integrand[i - 1] + integrand[i]) * (
+            rho[i] - rho[i - 1]
+        )
 
     idx_1 = np.searchsorted(rho, rho_1)
     rho_mix = rho[-1]
@@ -138,7 +140,9 @@ class SawtoothCycler:
         self.monitor = SawtoothMonitor(rho, s_crit)
         self.time = 0.0
 
-    def step(self, dt: float, q: np.ndarray, shear: np.ndarray, T: np.ndarray, n: np.ndarray) -> SawtoothEvent | None:
+    def step(
+        self, dt: float, q: np.ndarray, shear: np.ndarray, T: np.ndarray, n: np.ndarray
+    ) -> SawtoothEvent | None:
         self.time += dt
 
         if self.monitor.check_trigger(q, shear):
@@ -153,7 +157,9 @@ class SawtoothCycler:
 
             W_before = plasma_energy(T, n)
 
-            T_new, n_new, q_new, rho_1, rho_mix = kadomtsev_crash(self.rho, T, n, q, self.R0, self.a)
+            T_new, n_new, q_new, rho_1, rho_mix = kadomtsev_crash(
+                self.rho, T, n, q, self.R0, self.a
+            )
 
             W_after = plasma_energy(T_new, n_new)
 
@@ -164,7 +170,10 @@ class SawtoothCycler:
             T_drop = T_core_old - T[0]
             seed_energy = max(W_before - W_after, 0.0)
             core_energy_drop = (
-                1.5 * (n[0] * 1e19) * (T_drop * 1e3 * e_charge) * (2 * np.pi**2 * self.R0 * (rho_1 * self.a) ** 2)
+                1.5
+                * (n[0] * 1e19)
+                * (T_drop * 1e3 * e_charge)
+                * (2 * np.pi**2 * self.R0 * (rho_1 * self.a) ** 2)
             )
 
             return SawtoothEvent(

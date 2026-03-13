@@ -44,7 +44,9 @@ class RegimeDetector:
         self.history: list[OperatingRegime] = []
         self.history_len = 5
 
-    def detect(self, state: np.ndarray, dstate_dt: np.ndarray, tau_E: float, p_disrupt: float) -> OperatingRegime:
+    def detect(
+        self, state: np.ndarray, dstate_dt: np.ndarray, tau_E: float, p_disrupt: float
+    ) -> OperatingRegime:
         dIp_dt = dstate_dt[0]
 
         if p_disrupt > self.thresholds["disruption_prob"]:
@@ -129,7 +131,9 @@ class GainScheduledController:
 
 
 class ScenarioWaveform:
-    def __init__(self, name: str, times: np.ndarray, values: np.ndarray, interp_kind: str = "linear"):
+    def __init__(
+        self, name: str, times: np.ndarray, values: np.ndarray, interp_kind: str = "linear"
+    ):
         self.name = name
         self.times = times
         self.values = values

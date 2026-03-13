@@ -56,7 +56,9 @@ def test_eich_scaling():
 
 
 def test_peak_heat_flux():
-    q_peak = peak_target_heat_flux(P_SOL_MW=100.0, R0=6.2, lambda_q_m=0.001, f_expansion=5.0, alpha_deg=3.0)
+    q_peak = peak_target_heat_flux(
+        P_SOL_MW=100.0, R0=6.2, lambda_q_m=0.001, f_expansion=5.0, alpha_deg=3.0
+    )
     assert q_peak > 10.0
 
 

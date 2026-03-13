@@ -54,7 +54,9 @@ def test_fdi_sensor_drift():
     y_pred = np.array([1.0, 2.0, 3.0])
     y_meas = np.array([1.0, 2.0, 3.0])
 
-    injector = FaultInjector(fault_time=5.0, component_index=2, fault_type=FaultType.SENSOR_DRIFT, severity=2.0)
+    injector = FaultInjector(
+        fault_time=5.0, component_index=2, fault_type=FaultType.SENSOR_DRIFT, severity=2.0
+    )
 
     for t in range(10):
         corrupted = injector.inject(float(t), y_meas)

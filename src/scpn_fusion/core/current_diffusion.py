@@ -149,7 +149,11 @@ class CurrentDiffusionSolver:
             diag[i] = 1.0 - alpha * coeff_curr
             sup[i] = -alpha * coeff_next
 
-            L_psi_n = coeff_prev * self.psi[i - 1] + coeff_curr * self.psi[i] + coeff_next * self.psi[i + 1]
+            L_psi_n = (
+                coeff_prev * self.psi[i - 1]
+                + coeff_curr * self.psi[i]
+                + coeff_next * self.psi[i + 1]
+            )
             rhs[i] = self.psi[i] + alpha * L_psi_n + dt * self.R0 * eta_prof[i] * j_tot_source[i]
 
         # Edge Dirichlet BC

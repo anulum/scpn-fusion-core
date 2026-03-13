@@ -30,7 +30,9 @@ class ECCDSource:
             return np.zeros_like(rho)
         P_W = self.P_ec_MW * 1e6
         P_dens = (
-            P_W / (np.sqrt(2 * np.pi) * self.sigma_rho) * np.exp(-((rho - self.rho_dep) ** 2) / (2 * self.sigma_rho**2))
+            P_W
+            / (np.sqrt(2 * np.pi) * self.sigma_rho)
+            * np.exp(-((rho - self.rho_dep) ** 2) / (2 * self.sigma_rho**2))
         )
         return np.asarray(P_dens)
 
@@ -68,7 +70,9 @@ class NBISource:
         )
         return np.asarray(P_dens)
 
-    def j_cd(self, rho: np.ndarray, ne_19: np.ndarray, Te_keV: np.ndarray, Ti_keV: np.ndarray) -> np.ndarray:
+    def j_cd(
+        self, rho: np.ndarray, ne_19: np.ndarray, Te_keV: np.ndarray, Ti_keV: np.ndarray
+    ) -> np.ndarray:
         """Driven current density profile [A/m^2]."""
         p_heat = self.P_heating(rho)
 
@@ -90,7 +94,9 @@ class NBISource:
             ne = max(ne_19[i], 1e-3) * 1e19
             ln_Lambda = 17.0
 
-            tau_e = (12.0 * np.pi**1.5 * EPS_0**2 * np.sqrt(M_E) * Te_J**1.5) / (ne * Z_eff * E_CHARGE**4 * ln_Lambda)
+            tau_e = (12.0 * np.pi**1.5 * EPS_0**2 * np.sqrt(M_E) * Te_J**1.5) / (
+                ne * Z_eff * E_CHARGE**4 * ln_Lambda
+            )
             denom = (1.0 + m_beam / (m_crit * Z_eff)) ** 1.5
             tau_s = (0.75 * np.sqrt(np.pi)) * (m_beam / M_E) * tau_e / denom
             n_fast = p_heat[i] * tau_s / E_beam_J
@@ -113,7 +119,9 @@ class LHCDSource:
             return np.zeros_like(rho)
         P_W = self.P_lh_MW * 1e6
         P_dens = (
-            P_W / (np.sqrt(2 * np.pi) * self.sigma_rho) * np.exp(-((rho - self.rho_dep) ** 2) / (2 * self.sigma_rho**2))
+            P_W
+            / (np.sqrt(2 * np.pi) * self.sigma_rho)
+            * np.exp(-((rho - self.rho_dep) ** 2) / (2 * self.sigma_rho**2))
         )
         return np.asarray(P_dens)
 
@@ -133,7 +141,9 @@ class CurrentDriveMix:
     def add_source(self, source: ECCDSource | NBISource | LHCDSource) -> None:
         self.sources.append(source)
 
-    def total_j_cd(self, rho: np.ndarray, ne: np.ndarray, Te: np.ndarray, Ti: np.ndarray) -> np.ndarray:
+    def total_j_cd(
+        self, rho: np.ndarray, ne: np.ndarray, Te: np.ndarray, Ti: np.ndarray
+    ) -> np.ndarray:
         j_tot = np.zeros_like(rho)
         for src in self.sources:
             if isinstance(src, NBISource):
@@ -151,7 +161,9 @@ class CurrentDriveMix:
                 p_tot += src.P_absorbed(rho)
         return p_tot
 
-    def total_driven_current(self, rho: np.ndarray, ne: np.ndarray, Te: np.ndarray, Ti: np.ndarray) -> float:
+    def total_driven_current(
+        self, rho: np.ndarray, ne: np.ndarray, Te: np.ndarray, Ti: np.ndarray
+    ) -> float:
         """Integrate total driven current [A] assuming circular cross-section."""
         j_tot = self.total_j_cd(rho, ne, Te, Ti)
         drho = rho[1] - rho[0] if len(rho) > 1 else 0.0
