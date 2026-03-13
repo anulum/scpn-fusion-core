@@ -166,7 +166,7 @@ jobs:
           profile = os.environ["SCPN_PROFILE"].strip().lower()
           reqs = {
               "minimal": "requirements/minimal.txt",
-              "dev": "requirements/ci.txt",
+              "dev": "requirements/ci-py312.txt",
               "full": "requirements/full.txt",
           }.get(profile)
           if reqs is None:
@@ -224,10 +224,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          if [ "${{ matrix.python-version }}" = "3.12" ]; then
+          pyver="${{ matrix.python-version }}"
+          pytag="${pyver//.}"
+          if [ "$pyver" = "3.12" ]; then
             pip install --require-hashes -r requirements/ci-benchmark.txt
           else
-            pip install --require-hashes -r requirements/ci.txt
+            pip install --require-hashes -r "requirements/ci-py${pytag}.txt"
           fi
           pip install --no-deps -e .
 
@@ -354,7 +356,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install --require-hashes -r requirements/ci.txt
+          pip install --require-hashes -r requirements/ci-py312.txt
           pip install --no-deps -e .
 
       - name: Verify embedded neurocore backend
@@ -385,7 +387,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install --require-hashes -r requirements/ci.txt
+          pip install --require-hashes -r requirements/ci-py312.txt
           pip install --no-deps -e .
 
       - name: Run 3D quickstart smoke
@@ -430,7 +432,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install --require-hashes -r requirements/ci.txt
+          pip install --require-hashes -r requirements/ci-py312.txt
           pip install --no-deps -e .
 
       - name: Generate RMSE dashboard
@@ -479,7 +481,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install --require-hashes -r requirements/ci.txt
+          pip install --require-hashes -r requirements/ci-py312.txt
           pip install --no-deps -e .
 
       - name: Run real-shot validation
@@ -633,7 +635,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install --require-hashes -r requirements/ci.txt
+          pip install --require-hashes -r requirements/ci-py312.txt
           pip install --no-deps -e .
       - name: Generate parity and latency artifacts
         run: |
@@ -874,7 +876,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install --require-hashes -r requirements/ci.txt
+          pip install --require-hashes -r requirements/ci-py312.txt
           pip install --no-deps -e .
 
       - name: Verify embedded neurocore backend

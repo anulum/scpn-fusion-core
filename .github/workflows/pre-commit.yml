@@ -31,7 +31,7 @@ jobs:
 
       - name: Install project dependencies
         run: |
-          pip install --require-hashes -r requirements/ci.txt
+          pip install --require-hashes -r requirements/ci-py312.txt
           pip install --no-deps -e .
 
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd  # v3.0.1

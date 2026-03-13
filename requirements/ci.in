@@ -1,5 +1,5 @@
 # CI test dependencies — runtime + dev extras + jax + gymnasium
-# Regenerate: uv pip compile requirements/ci.in --generate-hashes --python-platform linux --python-version 3.11 -o requirements/ci.txt
+# Regenerate: bash tools/regenerate-requirements.sh  (produces ci-py39..ci-py312.txt)
 click>=8.1
 numpy<2.0
 matplotlib

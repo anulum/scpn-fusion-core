@@ -55,7 +55,7 @@ jobs:
           fi
       - name: Install release validation dependencies
         run: |
-          pip install --require-hashes -r requirements/ci.txt
+          pip install --require-hashes -r requirements/ci-py312.txt
           pip install --no-deps -e .
       - name: Run critical release validation
         run: |
