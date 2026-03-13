@@ -14,6 +14,8 @@ import numpy as np
 
 @dataclass
 class SOLSolution:
+    """Two-point SOL solution: upstream/target conditions and heat-flux width."""
+
     T_upstream_eV: float
     T_target_eV: float
     n_target_19: float
@@ -40,6 +42,8 @@ def peak_target_heat_flux(
 
 
 class TwoPointSOL:
+    """Spitzer-Harm two-point model with Eich heat-flux width scaling."""
+
     def __init__(self, R0: float, a: float, q95: float, B_pol: float, kappa: float = 1.0):
         self.R0 = R0
         self.a = a
@@ -50,6 +54,7 @@ class TwoPointSOL:
         self.L_par = np.pi * q95 * R0
 
     def solve(self, P_SOL_MW: float, n_u_19: float, f_rad: float = 0.0) -> SOLSolution:
+        """Solve for target temperature, density, and parallel heat flux."""
         lambda_q_mm = eich_heat_flux_width(P_SOL_MW, self.R0, self.B_pol, self.epsilon)
         lambda_q_m = lambda_q_mm * 1e-3
 

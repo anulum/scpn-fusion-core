@@ -23,6 +23,7 @@ class SuperTwistingSMC:
         self.v = 0.0
 
     def sliding_surface(self, e: float, de_dt: float) -> float:
+        """s = e + c * de/dt."""
         return e + self.c * de_dt
 
     def step(self, e: float, de_dt: float, dt: float) -> float:
@@ -59,6 +60,7 @@ class VerticalStabilizer:
         self.smc = smc
 
     def step(self, Z_meas: float, Z_ref: float, dZ_dt_meas: float, dt: float) -> float:
+        """Compute vertical stabilization command from position error and velocity."""
         e = Z_meas - Z_ref
         u = self.smc.step(e, dZ_dt_meas, dt)
         return u

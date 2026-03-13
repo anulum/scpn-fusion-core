@@ -15,6 +15,8 @@ import numpy as np
 
 @dataclass
 class ScenarioWaveform:
+    """Piecewise-linear time-series for a single actuator channel."""
+
     name: str
     times: np.ndarray
     values: np.ndarray
@@ -25,18 +27,23 @@ class ScenarioWaveform:
 
 
 class ScenarioSchedule:
+    """Collection of named waveforms defining a tokamak discharge scenario."""
+
     def __init__(self, waveforms: dict[str, ScenarioWaveform]):
         self.waveforms = waveforms
 
     def evaluate(self, t: float) -> dict[str, float]:
+        """Interpolate all waveforms at time t."""
         return {name: wf(t) for name, wf in self.waveforms.items()}
 
     def duration(self) -> float:
+        """Maximum endpoint across all waveforms [s]."""
         if not self.waveforms:
             return 0.0
         return float(max(wf.times[-1] for wf in self.waveforms.values()))
 
     def validate(self) -> list[str]:
+        """Check monotonic time vectors and physical sign constraints."""
         errors = []
         for name, wf in self.waveforms.items():
             if not np.all(np.diff(wf.times) >= 0):
@@ -90,6 +97,7 @@ class ScenarioOptimizer:
         self.dt = dt
 
     def optimize(self, n_iter: int = 100) -> ScenarioSchedule:
+        """Minimize state-tracking cost over T_total via Nelder-Mead on waveform knots."""
         times = np.array([0.0, self.T_total / 2.0, self.T_total])
 
         n_u = 2

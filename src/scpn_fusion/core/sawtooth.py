@@ -15,6 +15,8 @@ from scipy.integrate import trapezoid
 
 @dataclass
 class SawtoothEvent:
+    """Record of a single sawtooth crash: timing, radii, and energy release."""
+
     crash_time: float
     rho_1: float
     rho_mix: float
@@ -23,6 +25,8 @@ class SawtoothEvent:
 
 
 class SawtoothMonitor:
+    """Monitors the q-profile for Porcelli-like sawtooth trigger conditions."""
+
     def __init__(self, rho: np.ndarray, s_crit: float = 0.1):
         self.rho = rho
         self.s_crit = s_crit
@@ -143,6 +147,7 @@ class SawtoothCycler:
     def step(
         self, dt: float, q: np.ndarray, shear: np.ndarray, T: np.ndarray, n: np.ndarray
     ) -> SawtoothEvent | None:
+        """Advance by dt; trigger Kadomtsev crash if shear at q=1 exceeds s_crit."""
         self.time += dt
 
         if self.monitor.check_trigger(q, shear):

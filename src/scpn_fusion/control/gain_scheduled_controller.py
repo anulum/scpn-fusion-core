@@ -15,6 +15,8 @@ import numpy as np
 
 
 class OperatingRegime(Enum):
+    """Discharge phase: ramp-up, L-mode, L-H transition, H-mode, ramp-down, disruption."""
+
     RAMP_UP = auto()
     L_MODE_FLAT = auto()
     LH_TRANSITION = auto()
@@ -25,6 +27,8 @@ class OperatingRegime(Enum):
 
 @dataclass
 class RegimeController:
+    """PID gains and setpoint for one operating regime."""
+
     regime: OperatingRegime
     Kp: np.ndarray
     Ki: np.ndarray
@@ -47,6 +51,7 @@ class RegimeDetector:
     def detect(
         self, state: np.ndarray, dstate_dt: np.ndarray, tau_E: float, p_disrupt: float
     ) -> OperatingRegime:
+        """Classify regime from dIp/dt, confinement time, and disruption probability. Uses hysteresis buffer."""
         dIp_dt = dstate_dt[0]
 
         if p_disrupt > self.thresholds["disruption_prob"]:
@@ -96,6 +101,7 @@ class GainScheduledController:
         dt: float,
         detected_regime: OperatingRegime,
     ) -> np.ndarray:
+        """PID step with bumpless gain interpolation during regime transitions."""
         if detected_regime != self.current_regime:
             self.prev_regime = self.current_regime
             self.current_regime = detected_regime
@@ -131,6 +137,8 @@ class GainScheduledController:
 
 
 class ScenarioWaveform:
+    """Piecewise-linear time-series for a single actuator channel."""
+
     def __init__(
         self, name: str, times: np.ndarray, values: np.ndarray, interp_kind: str = "linear"
     ):
@@ -144,18 +152,23 @@ class ScenarioWaveform:
 
 
 class ScenarioSchedule:
+    """Collection of named waveforms defining a tokamak discharge scenario."""
+
     def __init__(self, waveforms: dict[str, ScenarioWaveform]):
         self.waveforms = waveforms
 
     def evaluate(self, t: float) -> dict[str, float]:
+        """Interpolate all waveforms at time t."""
         return {name: wf(t) for name, wf in self.waveforms.items()}
 
     def duration(self) -> float:
+        """Maximum endpoint across all waveforms [s]."""
         if not self.waveforms:
             return 0.0
         return float(max(wf.times[-1] for wf in self.waveforms.values()))
 
     def validate(self) -> list[str]:
+        """Check monotonic time vectors."""
         errors = []
         for name, wf in self.waveforms.items():
             if not np.all(np.diff(wf.times) > 0):

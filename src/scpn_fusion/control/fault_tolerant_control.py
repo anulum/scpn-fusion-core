@@ -15,6 +15,8 @@ import numpy as np
 
 
 class FaultType(Enum):
+    """Actuator and sensor fault modes for FDI classification."""
+
     STUCK_ACTUATOR = auto()
     OPEN_CIRCUIT_ACTUATOR = auto()
     SENSOR_DROPOUT = auto()
@@ -24,6 +26,8 @@ class FaultType(Enum):
 
 @dataclass
 class FaultReport:
+    """Detected fault: which component, fault mode, confidence, and detection time."""
+
     component_index: int
     is_sensor: bool
     fault_type: FaultType
@@ -53,6 +57,7 @@ class FDIMonitor:
     def update(
         self, y_measured: np.ndarray, y_predicted: np.ndarray, t: float
     ) -> list[FaultReport]:
+        """Compare measurements to predictions; flag sensors exceeding threshold_sigma for n_alert consecutive steps."""
         nu = y_measured - y_predicted
 
         self.innovation_history[self.innovation_idx] = nu
@@ -106,6 +111,7 @@ class ReconfigurableController:
         self.K = self._compute_gain()
 
     def _compute_gain(self) -> np.ndarray:
+        """Tikhonov pseudoinverse with faulted-coil rows zeroed."""
         J = self.current_jacobian
         J_T_W = J.T @ self.W
         H = J_T_W @ J + self.lambda_reg * np.eye(self.n_coils)
@@ -124,6 +130,7 @@ class ReconfigurableController:
     def handle_actuator_fault(
         self, coil_index: int, fault_type: FaultType, stuck_val: float = 0.0
     ) -> None:
+        """Zero out the faulted coil column in J and recompute gain."""
         if coil_index in self.faulted_coils:
             return
 
@@ -136,9 +143,11 @@ class ReconfigurableController:
         self.K = self._compute_gain()
 
     def handle_sensor_fault(self, sensor_index: int, fault_type: FaultType) -> None:
+        """Placeholder for sensor fault accommodation (e.g. observer reconfiguration)."""
         pass
 
     def step(self, error: np.ndarray, dt: float) -> np.ndarray:
+        """Compute coil current corrections, compensating stuck-actuator offsets."""
         adjusted_error = error.copy()
         for c_idx, val in self.stuck_values.items():
             adjusted_error -= self.nominal_jacobian[:, c_idx] * val
@@ -151,6 +160,7 @@ class ReconfigurableController:
         return np.asarray(delta_u)
 
     def controllability_check(self) -> bool:
+        """True if enough healthy coils remain for minimum-rank controllability."""
         if len(self.faulted_coils) > self.n_coils // 2:
             return False
 
@@ -161,10 +171,13 @@ class ReconfigurableController:
         return bool(rank >= min_required_rank)
 
     def graceful_shutdown(self) -> np.ndarray:
+        """Return zero-current command vector for safe ramp-down."""
         return np.zeros(self.n_coils)
 
 
 class FaultInjector:
+    """Injects sensor faults (dropout or drift) at a specified time for testing."""
+
     def __init__(
         self, fault_time: float, component_index: int, fault_type: FaultType, severity: float = 1.0
     ):

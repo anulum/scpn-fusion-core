@@ -15,6 +15,8 @@ import numpy as np
 
 @dataclass
 class ShapeTarget:
+    """Desired plasma boundary: isoflux points, gaps, X-point, strike points."""
+
     isoflux_points: list[tuple[float, float]]
     gap_points: list[tuple[float, float, float, float]]
     gap_targets: list[float]
@@ -24,6 +26,8 @@ class ShapeTarget:
 
 @dataclass
 class ShapeControlResult:
+    """Shape control performance: isoflux, gap, X-point, and strike-point errors."""
+
     isoflux_error: float
     gap_errors: np.ndarray
     min_gap: float
@@ -32,6 +36,8 @@ class ShapeControlResult:
 
 
 class CoilSet:
+    """PF coil geometry and current limits."""
+
     def __init__(self, n_coils: int = 10):
         self.n_coils = n_coils
         self.max_currents = np.ones(n_coils) * 50e3
@@ -56,9 +62,11 @@ class ShapeJacobian:
         self.J = np.random.randn(self.n_errors, coil_set.n_coils) * 1e-4
 
     def compute(self) -> np.ndarray:
+        """Return the shape Jacobian matrix d(e_shape)/dI_coils."""
         return self.J
 
     def update(self, state: dict[str, Any]) -> None:
+        """Re-linearize the Jacobian around a new operating point (stub)."""
         pass
 
 
@@ -81,12 +89,14 @@ class PlasmaShapeController:
         self.K_shape = self._compute_gain()
 
     def _compute_gain(self) -> np.ndarray:
+        """K = (J^T W J + lambda I)^-1 J^T W (Tikhonov pseudoinverse)."""
         J = self.jacobian.compute()
         J_T_W = J.T @ self.W
         H = J_T_W @ J + self.lambda_reg * np.eye(self.coil_set.n_coils)
         return np.asarray(np.linalg.inv(H) @ J_T_W)
 
     def _compute_shape_error(self, psi: np.ndarray) -> np.ndarray:
+        """Evaluate [isoflux; gap; X-point; strike-point] error vector from psi."""
         e_iso = np.zeros(self.jacobian.n_isoflux)
         e_gap = np.zeros(self.jacobian.n_gaps)
         e_xp = np.zeros(self.jacobian.n_xpoint)
@@ -114,6 +124,7 @@ class PlasmaShapeController:
         return np.asarray(I_next - coil_currents)
 
     def evaluate_performance(self, psi: np.ndarray) -> ShapeControlResult:
+        """Decompose the shape error vector into per-category metrics."""
         e_shape = self._compute_shape_error(psi)
 
         idx1 = self.jacobian.n_isoflux

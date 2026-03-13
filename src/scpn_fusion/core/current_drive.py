@@ -115,6 +115,7 @@ class LHCDSource:
         self.eta_cd = eta_cd
 
     def P_absorbed(self, rho: np.ndarray) -> np.ndarray:
+        """Absorbed power density profile [W/m^3], Gaussian in rho."""
         if self.sigma_rho <= 0.0:
             return np.zeros_like(rho)
         P_W = self.P_lh_MW * 1e6
@@ -126,6 +127,7 @@ class LHCDSource:
         return np.asarray(P_dens)
 
     def j_cd(self, rho: np.ndarray, ne_19: np.ndarray, Te_keV: np.ndarray) -> np.ndarray:
+        """Driven current density [A/m^2]. j_cd = eta_cd * P_abs / (ne * Te)."""
         p_abs = self.P_absorbed(rho)
         denom = np.maximum(ne_19 * Te_keV, 1e-3)
         return np.asarray(self.eta_cd * p_abs / denom)
@@ -139,11 +141,13 @@ class CurrentDriveMix:
         self.a = a
 
     def add_source(self, source: ECCDSource | NBISource | LHCDSource) -> None:
+        """Register a current drive source (ECCD, NBI, or LHCD)."""
         self.sources.append(source)
 
     def total_j_cd(
         self, rho: np.ndarray, ne: np.ndarray, Te: np.ndarray, Ti: np.ndarray
     ) -> np.ndarray:
+        """Sum driven current density [A/m^2] from all registered sources."""
         j_tot = np.zeros_like(rho)
         for src in self.sources:
             if isinstance(src, NBISource):
@@ -153,6 +157,7 @@ class CurrentDriveMix:
         return j_tot
 
     def total_heating_power(self, rho: np.ndarray) -> np.ndarray:
+        """Sum heating power density [W/m^3] from all registered sources."""
         p_tot = np.zeros_like(rho)
         for src in self.sources:
             if isinstance(src, NBISource):

@@ -40,6 +40,8 @@ class ShapeParams:
 
 @dataclass
 class ReconstructionResult:
+    """EFIT reconstruction output: psi field, source coefficients, and shape."""
+
     psi: np.ndarray
     p_prime_coeffs: np.ndarray
     ff_prime_coeffs: np.ndarray
@@ -50,6 +52,8 @@ class ReconstructionResult:
 
 
 class DiagnosticResponse:
+    """Forward model: psi field → synthetic flux-loop and B-probe signals."""
+
     def __init__(self, diagnostics: MagneticDiagnostics, R_grid: np.ndarray, Z_grid: np.ndarray):
         self.diagnostics = diagnostics
         self.R = R_grid
@@ -155,6 +159,7 @@ class RealtimeEFIT:
         )
 
     def find_lcfs(self, psi: np.ndarray) -> np.ndarray:
+        """Return (R,Z) points on the last closed flux surface. Stub: returns zeros."""
         return np.zeros((10, 2))
 
     def find_xpoint(self, psi: np.ndarray) -> tuple[float, float] | None:
@@ -163,6 +168,7 @@ class RealtimeEFIT:
         return (R0, self.Z[0] + 0.1)
 
     def compute_shape_params(self, psi: np.ndarray) -> ShapeParams:
+        """Extract macroscopic shape descriptors (R0, a, kappa, delta, q95, li) from psi."""
         R0 = np.mean(self.R)
         a = (self.R[-1] - self.R[0]) / 2.0
 

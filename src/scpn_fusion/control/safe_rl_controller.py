@@ -15,6 +15,8 @@ import numpy as np
 
 @dataclass
 class SafetyConstraint:
+    """Named constraint: cost_fn(obs, act, next_obs) must stay below limit."""
+
     name: str
     cost_fn: Callable[[np.ndarray, np.ndarray, np.ndarray], float]
     limit: float
@@ -32,11 +34,13 @@ class ConstrainedGymTokamakEnv:
         self.observation_space = base_env.observation_space
 
     def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:
+        """Reset base environment and cache initial observation."""
         obs, info = self.base_env.reset(**kwargs)
         self._last_obs = obs
         return obs, info
 
     def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
+        """Step base env and append constraint costs to info dict."""
         obs, reward, terminated, truncated, info = self.base_env.step(action)
 
         costs = []
@@ -100,6 +104,7 @@ class LagrangianPPO:
         self.trained = True
 
     def predict(self, obs: np.ndarray) -> np.ndarray:
+        """Return action for given observation. Currently samples randomly."""
         return np.asarray(self.env.action_space.sample())
 
 
