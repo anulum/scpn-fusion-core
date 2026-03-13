@@ -239,3 +239,43 @@ Experimental Bridges
    :members:
    :undoc-members:
    :show-inheritance:
+
+Current Diffusion
+-------------------
+
+.. automodule:: scpn_fusion.core.current_diffusion
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Current Drive Sources
+-----------------------
+
+.. automodule:: scpn_fusion.core.current_drive
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Sawtooth Dynamics
+-------------------
+
+.. automodule:: scpn_fusion.core.sawtooth
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+NTM Island Dynamics
+---------------------
+
+.. automodule:: scpn_fusion.core.ntm_dynamics
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SOL Two-Point Model
+---------------------
+
+.. automodule:: scpn_fusion.core.sol_model
+   :members:
+   :undoc-members:
+   :show-inheritance:

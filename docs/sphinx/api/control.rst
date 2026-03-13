@@ -124,3 +124,59 @@ TORAX Hybrid Loop
    :members:
    :undoc-members:
    :show-inheritance:
+
+Real-Time EFIT
+----------------
+
+.. automodule:: scpn_fusion.control.realtime_efit
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Plasma Shape Controller
+-------------------------
+
+.. automodule:: scpn_fusion.control.shape_controller
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Vertical Stabiliser (Sliding Mode)
+-------------------------------------
+
+.. automodule:: scpn_fusion.control.sliding_mode_vertical
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Fault-Tolerant Control
+------------------------
+
+.. automodule:: scpn_fusion.control.fault_tolerant_control
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Safe RL Controller
+--------------------
+
+.. automodule:: scpn_fusion.control.safe_rl_controller
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Scenario Scheduler
+--------------------
+
+.. automodule:: scpn_fusion.control.scenario_scheduler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Gain-Scheduled Controller
+---------------------------
+
+.. automodule:: scpn_fusion.control.gain_scheduled_controller
+   :members:
+   :undoc-members:
+   :show-inheritance:

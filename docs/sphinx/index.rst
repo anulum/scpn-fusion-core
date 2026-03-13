@@ -66,6 +66,26 @@ Key Features
 
 .. toctree::
    :maxdepth: 2
+   :caption: Learning Path
+
+   learning/plasma_physics_primer
+   learning/fusion_engineering_101
+   learning/first_simulation
+   learning/tokamak_physics_textbook
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Advanced Tutorials
+
+   tutorials/current_profile_evolution
+   tutorials/mhd_instabilities
+   tutorials/edge_sol_physics
+   tutorials/realtime_reconstruction
+   tutorials/fault_tolerant_operations
+   tutorials/scenario_design
+
+.. toctree::
+   :maxdepth: 2
    :caption: User Guide
 
    userguide/equilibrium
