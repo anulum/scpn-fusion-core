@@ -186,7 +186,9 @@ def _max_rel_diff(a: np.ndarray, b: np.ndarray) -> float:
 class TestSORSolverParity:
     """Compare the full Picard+SOR equilibrium solve between Python and Rust."""
 
-    @pytest.mark.xfail(reason="Rust SOR uses different Jacobi seed; max rel diff ~1.9", strict=False)
+    @pytest.mark.xfail(
+        reason="Rust SOR uses different Jacobi seed; max rel diff ~1.9", strict=False
+    )
     def test_sor_equilibrium_parity(self, tmp_path: Path) -> None:
         """Run the SOR-based equilibrium solver via both Python and Rust
         FusionKernel on the same 65x65 Solov'ev grid (R0=1.7, a=0.5,
