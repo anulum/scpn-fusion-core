@@ -87,6 +87,25 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "PlasmaScenario": (".uncertainty", "PlasmaScenario"),
     "UQResult": (".uncertainty", "UQResult"),
     "WholeDeviceModel": (".wdm_engine", "WholeDeviceModel"),
+    # Current diffusion — Sauter neoclassical resistivity, Crank-Nicolson solver
+    "CurrentDiffusionSolver": (".current_diffusion", "CurrentDiffusionSolver"),
+    "neoclassical_resistivity": (".current_diffusion", "neoclassical_resistivity"),
+    # Current drive — ECCD, NBI, LHCD sources
+    "ECCDSource": (".current_drive", "ECCDSource"),
+    "NBISource": (".current_drive", "NBISource"),
+    "LHCDSource": (".current_drive", "LHCDSource"),
+    "CurrentDriveMix": (".current_drive", "CurrentDriveMix"),
+    # Sawtooth — Porcelli trigger + Kadomtsev reconnection
+    "SawtoothCycler": (".sawtooth", "SawtoothCycler"),
+    "SawtoothMonitor": (".sawtooth", "SawtoothMonitor"),
+    "kadomtsev_crash": (".sawtooth", "kadomtsev_crash"),
+    # NTM dynamics — Modified Rutherford Equation
+    "NTMIslandDynamics": (".ntm_dynamics", "NTMIslandDynamics"),
+    "NTMController": (".ntm_dynamics", "NTMController"),
+    "find_rational_surfaces": (".ntm_dynamics", "find_rational_surfaces"),
+    # SOL two-point model — Eich scaling
+    "TwoPointSOL": (".sol_model", "TwoPointSOL"),
+    "eich_heat_flux_width": (".sol_model", "eich_heat_flux_width"),
 }
 
 

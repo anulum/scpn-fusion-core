@@ -1,6 +1,6 @@
 # Source P0/P1 Issue Backlog
 
-- Generated at: `2026-03-12T01:53:11.895107+00:00`
+- Generated at: `2026-03-13T15:11:36.880909+00:00`
 - Generator: `tools/generate_source_p0p1_issue_backlog.py`
 - Scope: source files only (`src/scpn_fusion/**`) with P0/P1 severity
 
@@ -8,9 +8,9 @@
 
 | Metric | Value |
 |---|---:|
-| Source issue seeds | 6 |
+| Source issue seeds | 7 |
 | P0 seeds | 6 |
-| P1 seeds | 0 |
+| P1 seeds | 1 |
 | Domains represented | 3 |
 
 ## Marker Distribution
@@ -18,13 +18,14 @@
 | Marker | Count |
 |---|---:|
 | `MONOLITH` | 6 |
+| `SIMPLIFIED` | 1 |
 
 ## Domain Distribution
 
 | Domain | Count |
 |---|---:|
 | `core_physics` | 4 |
-| `control` | 1 |
+| `control` | 2 |
 | `diagnostics_io` | 1 |
 
 ## Auto-generated Issue Seeds
@@ -150,3 +151,23 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 79.0% (tools/coverage_guard.py).
 - [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
+
+### 7. [P1] Harden `src/scpn_fusion/control/realtime_efit.py`
+
+- **Labels**: `hardening`, `underdeveloped`, `p1`, `control`
+- **Owner Hint**: Control WG
+- **Priority Score**: `86`
+- **Markers**: `SIMPLIFIED`
+- **Trigger Lines**: `95`
+
+**Proposed Actions**
+- Upgrade with higher-fidelity closure or tighten domain contract.
+
+**Acceptance Checklist**
+- [ ] Add or tighten regression tests for this module path and update coverage baselines.
+- [ ] Update claim/evidence references if behavior or metrics change.
+- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.
+
+**Closure Metrics**
+- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).

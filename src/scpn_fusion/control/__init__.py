@@ -28,6 +28,27 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "NeuroCyberneticController": (".neuro_cybernetic_controller", "NeuroCyberneticController"),
     "SpiAblationSolver": (".spi_ablation", "SpiAblationSolver"),
     "ShatteredPelletInjection": (".spi_mitigation", "ShatteredPelletInjection"),
+    # Real-time EFIT equilibrium reconstruction
+    "RealtimeEFIT": (".realtime_efit", "RealtimeEFIT"),
+    "MagneticDiagnostics": (".realtime_efit", "MagneticDiagnostics"),
+    # Plasma shape controller — Jacobian + Tikhonov
+    "PlasmaShapeController": (".shape_controller", "PlasmaShapeController"),
+    "CoilSet": (".shape_controller", "CoilSet"),
+    # Super-twisting sliding mode vertical stabilizer
+    "SuperTwistingSMC": (".sliding_mode_vertical", "SuperTwistingSMC"),
+    "VerticalStabilizer": (".sliding_mode_vertical", "VerticalStabilizer"),
+    # Fault-tolerant reconfigurable control
+    "FDIMonitor": (".fault_tolerant_control", "FDIMonitor"),
+    "ReconfigurableController": (".fault_tolerant_control", "ReconfigurableController"),
+    # Constrained safe RL (Lagrangian PPO)
+    "LagrangianPPO": (".safe_rl_controller", "LagrangianPPO"),
+    "ConstrainedGymTokamakEnv": (".safe_rl_controller", "ConstrainedGymTokamakEnv"),
+    # Feedforward scenario scheduler
+    "ScenarioSchedule": (".scenario_scheduler", "ScenarioSchedule"),
+    "FeedforwardController": (".scenario_scheduler", "FeedforwardController"),
+    # Gain-scheduled multi-regime controller
+    "GainScheduledController": (".gain_scheduled_controller", "GainScheduledController"),
+    "RegimeDetector": (".gain_scheduled_controller", "RegimeDetector"),
 }
 
 
@@ -45,24 +66,38 @@ def __getattr__(name: str):
 
 __all__ = [
     "AnalyticEquilibriumSolver",
+    "CoilSet",
+    "ConstrainedGymTokamakEnv",
     "DirectorInterface",
+    "FDIMonitor",
+    "FeedforwardController",
     "FuelingSimResult",
+    "GainScheduledController",
     "get_nmpc_controller",
     "get_radial_robust_controller",
     "HaloCurrentModel",
     "HInfinityController",
     "HybridAnomalyDetector",
     "IcePelletFuelingController",
+    "LagrangianPPO",
+    "MagneticDiagnostics",
     "ModelPredictiveController",
     "NeuroCyberneticController",
     "NonlinearMPC",
     "OptimalController",
+    "PlasmaShapeController",
+    "RealtimeEFIT",
+    "ReconfigurableController",
+    "RegimeDetector",
     "run_analytic_solver",
     "run_optimal_control",
     "run_sota_simulation",
     "RunawayElectronModel",
+    "ScenarioSchedule",
     "ShatteredPelletInjection",
     "SpiAblationSolver",
+    "SuperTwistingSMC",
     "TokamakEnv",
     "TokamakPhysicsEngine",
+    "VerticalStabilizer",
 ]

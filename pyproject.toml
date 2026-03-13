@@ -228,6 +228,7 @@ ignore = [
 "src/scpn_fusion/core/_rust_compat.py" = ["F401"]
 "src/scpn_fusion/core/fno_turbulence_suppressor.py" = ["F401"]
 "src/scpn_fusion/core/force_balance.py" = ["F401"]
+"src/scpn_fusion/core/current_diffusion.py" = ["F841"]
 "src/scpn_fusion/core/global_design_scanner.py" = ["F401"]
 "src/scpn_fusion/core/lazarus_bridge.py" = ["F401"]
 "src/scpn_fusion/core/vibrana_bridge.py" = ["F401"]
