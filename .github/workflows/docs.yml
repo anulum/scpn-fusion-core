@@ -40,11 +40,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install package
-        run: pip install -e .
-
-      - name: Install Sphinx dependencies
-        run: pip install -r docs/sphinx/requirements.txt
+      - name: Install dependencies
+        run: |
+          pip install --require-hashes -r requirements/docs.txt
+          pip install --no-deps -e .
 
       - name: Build Sphinx docs
         run: sphinx-build -b html docs/sphinx docs/sphinx/_build/html
@@ -99,9 +98,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -e .
-          pip install jupyter nbconvert "jax<0.5.0" "jaxlib<0.5.0"
+          pip install --require-hashes -r requirements/docs.txt
+          pip install --no-deps -e .
 
       - name: Convert notebooks to HTML
         run: |

@@ -1,0 +1,4 @@
+# CI interop dependencies — ci deps + maturin (Rust build)
+# Regenerate: uv pip compile requirements/ci-interop.in --generate-hashes --python-platform linux --python-version 3.11 -o requirements/ci-interop.txt
+-r ci.in
+maturin>=1.7,<2.0

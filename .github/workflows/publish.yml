@@ -55,14 +55,14 @@ jobs:
           fi
       - name: Install release validation dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install --require-hashes -r requirements/ci.txt
+          pip install --no-deps -e .
       - name: Run critical release validation
         run: |
           pytest -q tests/test_version_metadata.py
           python tools/run_python_preflight.py --gate release
       - name: Install build tools
-        run: python -m pip install --upgrade build twine
+        run: pip install --require-hashes -r requirements/build.txt
       - name: Build sdist and wheel
         run: python -m build
       - name: Generate release checksums

@@ -1,0 +1,17 @@
+# CI test dependencies — runtime + dev extras + jax + gymnasium
+# Regenerate: uv pip compile requirements/ci.in --generate-hashes --python-platform linux --python-version 3.11 -o requirements/ci.txt
+click>=8.1
+numpy<2.0
+matplotlib
+scipy
+pydantic>=2.0
+pandas>=1.5
+pytest>=7.0
+pytest-cov>=5.0
+hypothesis>=6.0
+mypy>=1.10
+ruff>=0.8
+bandit>=1.7
+pre-commit>=3.0
+jax[cpu]
+gymnasium

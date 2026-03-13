@@ -62,7 +62,7 @@ jobs:
           python-version: "3.12"
       - name: Build sdist
         run: |
-          pip install build
+          pip install --require-hashes -r requirements/build.txt
           python -m build --sdist
       - name: Upload sdist
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6

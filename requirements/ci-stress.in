@@ -1,0 +1,4 @@
+# CI stress-test dependencies — ci deps + pytest-timeout
+# Regenerate: uv pip compile requirements/ci-stress.in --generate-hashes --python-platform linux --python-version 3.11 -o requirements/ci-stress.txt
+-r ci.in
+pytest-timeout

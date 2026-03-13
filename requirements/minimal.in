@@ -1,0 +1,8 @@
+# Minimal runtime dependencies (smoke-install "minimal" profile)
+# Regenerate: uv pip compile requirements/minimal.in --generate-hashes --universal -o requirements/minimal.txt
+click>=8.1
+numpy<2.0
+matplotlib
+scipy
+pydantic>=2.0
+pandas>=1.5

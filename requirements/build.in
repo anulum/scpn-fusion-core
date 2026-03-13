@@ -1,0 +1,6 @@
+# Build, publish, and audit tool dependencies
+# Regenerate: uv pip compile requirements/build.in --generate-hashes --python-platform linux --python-version 3.11 -o requirements/build.txt
+build
+twine
+pip-audit
+cyclonedx-bom

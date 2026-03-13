@@ -1,0 +1,4 @@
+# CI benchmark dependencies — ci deps + freegs
+# Regenerate: uv pip compile requirements/ci-benchmark.in --generate-hashes --python-platform linux --python-version 3.12 -o requirements/ci-benchmark.txt
+-r ci.in
+freegs>=0.6
