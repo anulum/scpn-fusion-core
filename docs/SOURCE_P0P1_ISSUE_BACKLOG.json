@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-03-13T15:11:36.882906+00:00",
+  "generated_at": "2026-03-13T23:25:46.629287+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
   "issue_count": 7,
   "issues": [
@@ -261,7 +261,7 @@
       ],
       "domain": "control",
       "file_path": "src/scpn_fusion/control/realtime_efit.py",
-      "github_body": "## Scope\n- File: `src/scpn_fusion/control/realtime_efit.py`\n- Priority: `P1` (score `86`)\n- Domain: `control`\n- Owner hint: `Control WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `95`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/control/realtime_efit.py`\n- Priority: `P1` (score `86`)\n- Domain: `control`\n- Owner hint: `Control WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `99`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).",
       "github_labels": [
         "hardening",
         "underdeveloped",
@@ -287,7 +287,7 @@
       "score": 86,
       "title": "[P1] Harden src/scpn_fusion/control/realtime_efit.py",
       "trigger_lines": [
-        95
+        99
       ]
     }
   ]

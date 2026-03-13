@@ -1,6 +1,6 @@
 # Source P0/P1 Issue Backlog
 
-- Generated at: `2026-03-13T15:11:36.880909+00:00`
+- Generated at: `2026-03-13T23:25:46.626720+00:00`
 - Generator: `tools/generate_source_p0p1_issue_backlog.py`
 - Scope: source files only (`src/scpn_fusion/**`) with P0/P1 severity
 
@@ -158,7 +158,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Control WG
 - **Priority Score**: `86`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `95`
+- **Trigger Lines**: `99`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
