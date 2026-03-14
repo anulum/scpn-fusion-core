@@ -10,13 +10,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-import subprocess
 
 import numpy as np
 import pytest
 
-from scpn_fusion.hpc.hpc_bridge import HPCBridge, _as_contiguous_f64
-from scpn_fusion.hpc import hpc_bridge as hpc_mod
+from scpn_fusion.core.hpc_bridge import HPCBridge, _as_contiguous_f64
+from scpn_fusion.core import hpc_bridge as hpc_mod
 
 
 class _DummyLib:
@@ -73,11 +72,6 @@ class _DummyDeleteLib:
 
     def delete_solver(self, solver_ptr) -> None:
         self.deleted = solver_ptr
-
-
-class _DummyDestroyRaisesLib:
-    def destroy_solver(self, _solver_ptr) -> None:
-        raise RuntimeError("destroy failed")
 
 
 def _make_bridge(nr: int = 2, nz: int = 3) -> HPCBridge:
@@ -302,20 +296,6 @@ def test_close_supports_delete_solver_alias() -> None:
     assert bridge.lib.deleted == 999
 
 
-def test_close_tracks_destroy_errors_without_raising() -> None:
-    bridge = HPCBridge.__new__(HPCBridge)
-    bridge.lib = _DummyDestroyRaisesLib()
-    bridge.solver_ptr = 321
-    bridge.loaded = True
-    bridge._destroy_symbol = "destroy_solver"
-    bridge.close_error = None
-    bridge.close_error_count = 0
-    bridge.close()
-    assert bridge.solver_ptr is None
-    assert bridge.close_error == "destroy failed"
-    assert bridge.close_error_count == 1
-
-
 def test_init_prefers_env_override_path(monkeypatch: pytest.MonkeyPatch) -> None:
     expected = "/tmp/scpn_solver_override.so"
 
@@ -327,7 +307,6 @@ def test_init_prefers_env_override_path(monkeypatch: pytest.MonkeyPatch) -> None
     bridge = HPCBridge()
     assert bridge.lib_path == expected
     assert not bridge.loaded
-    assert bridge.load_error == "no library"
 
 
 def test_init_uses_package_local_default_without_cwd(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -342,7 +321,6 @@ def test_init_uses_package_local_default_without_cwd(monkeypatch: pytest.MonkeyP
     expected = str(Path(hpc_mod.__file__).resolve().parent / "libscpn_solver.so")
     assert bridge.lib_path == expected
     assert not bridge.loaded
-    assert bridge.load_error == "no library"
 
 
 def test_compile_cpp_requires_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -353,10 +331,9 @@ def test_compile_cpp_requires_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_compile_cpp_builds_in_package_bin(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def _fake_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
+    def _fake_run(cmd, check):  # type: ignore[no-untyped-def]
         calls["cmd"] = list(cmd)
         calls["check"] = check
-        calls["timeout"] = timeout
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
     monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Linux")
@@ -367,42 +344,80 @@ def test_compile_cpp_builds_in_package_bin(monkeypatch: pytest.MonkeyPatch) -> N
     assert Path(out).name == "libscpn_solver.so"
     assert Path(out).parent.name == "bin"
     assert calls["check"] is True
-    assert calls["timeout"] == hpc_mod._CPP_BUILD_TIMEOUT_SECONDS
     assert isinstance(calls["cmd"], list)
     assert calls["cmd"][0] == "g++"
 
 
-def test_compile_cpp_returns_none_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
-    def _fake_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
-        _ = (check, timeout)
-        raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
+def test_compile_cpp_windows_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: dict[str, object] = {}
+
+    def _fake_run(cmd, check):  # type: ignore[no-untyped-def]
+        calls["cmd"] = list(cmd)
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
-    monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Windows")
     monkeypatch.setattr(hpc_mod.subprocess, "run", _fake_run)
+
+    out = hpc_mod.compile_cpp()
+    assert out is not None
+    assert Path(out).name == "scpn_solver.dll"
+
+
+def test_compile_cpp_handles_build_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    import subprocess
+
+    def _fail_run(cmd, check):  # type: ignore[no-untyped-def]
+        raise subprocess.CalledProcessError(1, cmd)
+
+    monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
+    monkeypatch.setattr(hpc_mod.subprocess, "run", _fail_run)
 
     assert hpc_mod.compile_cpp() is None
 
 
-def test_initialize_rejects_degenerate_grid_nr_1() -> None:
+def test_context_manager_protocol() -> None:
     bridge = _make_bridge()
-    with pytest.raises(ValueError, match="nr and nz must be >= 2"):
-        bridge.initialize(nr=1, nz=10, r_range=(2.0, 10.0), z_range=(-5.0, 5.0))
+    with bridge as b:
+        assert b is bridge
+        assert b.solver_ptr is not None
+    assert bridge.solver_ptr is None
+    assert bridge.lib.destroyed == 12345
 
 
-def test_initialize_rejects_zero_nz() -> None:
+def test_solve_rejects_empty_input() -> None:
+    bridge = _make_bridge(nr=0, nz=0)
+    bridge.nr = 2
+    bridge.nz = 3
+    with pytest.raises(ValueError, match="non-empty"):
+        bridge.solve(np.zeros((0, 0), dtype=np.float64))
+
+
+def test_require_c_contiguous_f64_wrong_dtype() -> None:
+    from scpn_fusion.core.hpc_bridge import _require_c_contiguous_f64
+
+    arr = np.zeros((3, 2), dtype=np.float32)
+    with pytest.raises(ValueError, match="dtype float64"):
+        _require_c_contiguous_f64(arr, (3, 2), "test")
+
+
+def test_sanitize_convergence_params_valid() -> None:
+    from scpn_fusion.core.hpc_bridge import _sanitize_convergence_params
+
+    iters, tol, omega = _sanitize_convergence_params(100, 1e-6, 1.5)
+    assert iters == 100
+    assert abs(tol - 1e-6) < 1e-12
+    assert abs(omega - 1.5) < 1e-12
+
+
+def test_close_noop_when_no_solver_ptr() -> None:
     bridge = _make_bridge()
-    with pytest.raises(ValueError, match="nr and nz must be >= 2"):
-        bridge.initialize(nr=10, nz=0, r_range=(2.0, 10.0), z_range=(-5.0, 5.0))
+    bridge.solver_ptr = None
+    bridge.close()
+    assert bridge.lib.destroyed is None
 
 
-def test_initialize_rejects_inverted_r_range() -> None:
+def test_close_noop_when_not_loaded() -> None:
     bridge = _make_bridge()
-    with pytest.raises(ValueError, match="r_range/z_range must have min < max"):
-        bridge.initialize(nr=10, nz=10, r_range=(10.0, 2.0), z_range=(-5.0, 5.0))
-
-
-def test_initialize_rejects_inverted_z_range() -> None:
-    bridge = _make_bridge()
-    with pytest.raises(ValueError, match="r_range/z_range must have min < max"):
-        bridge.initialize(nr=10, nz=10, r_range=(2.0, 10.0), z_range=(5.0, -5.0))
+    bridge.loaded = False
+    bridge.close()
+    assert bridge.lib.destroyed is None

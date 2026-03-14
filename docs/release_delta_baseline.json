@@ -1,9 +1,9 @@
 {
   "baseline_generated_at": "2026-03-14T00:00:00Z",
-  "baseline_version": "v3.9.3-phase5-phase6-port",
-  "notes": "Rebased after Phase 5+6 physics/control port from scpn-control (25 modules, 96 register entries).",
-  "source_total": 33,
-  "source_p0p1": 28,
+  "baseline_version": "v3.9.3-gk-three-path-port",
+  "notes": "Rebased after GK three-path + JAX + scenario port from scpn-control (33 modules).",
+  "source_total": 50,
+  "source_p0p1": 43,
   "docs_claims_total": 55,
   "docs_claims_p0p1": 0,
   "claims_tracked": 13

@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-14T20:19:41.413070+00:00",
+  "generated_at": "2026-03-14T21:30:06.259887+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
-  "issue_count": 20,
+  "issue_count": 29,
   "issues": [
     {
       "acceptance_checklist": [
@@ -293,6 +293,128 @@
     {
       "acceptance_checklist": [
         "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py)."
+      ],
+      "domain": "compiler_runtime",
+      "file_path": "src/scpn_fusion/hpc/hpc_bridge.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/hpc/hpc_bridge.py`\n- Priority: `P0` (score `98`)\n- Domain: `compiler_runtime`\n- Owner hint: `Runtime WG`\n- Markers: `TEST_GAP`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Add direct module tests and eliminate allowlist-only linkage.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "compiler_runtime"
+      ],
+      "github_title": "[P0] Harden src/scpn_fusion/hpc/hpc_bridge.py",
+      "issue_slug": "p0-hpc-hpc_bridge",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "compiler_runtime"
+      ],
+      "markers": [
+        "TEST_GAP"
+      ],
+      "owner_hint": "Runtime WG",
+      "priority": "P0",
+      "proposed_actions": [
+        "Add direct module tests and eliminate allowlist-only linkage."
+      ],
+      "score": 98,
+      "title": "[P0] Harden src/scpn_fusion/hpc/hpc_bridge.py",
+      "trigger_lines": [
+        1
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change.",
+        "Document model-domain limits and tighten contract checks for out-of-domain inputs."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 78.0% (tools/coverage_guard.py)."
+      ],
+      "domain": "control",
+      "file_path": "src/scpn_fusion/control/burn_controller.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/control/burn_controller.py`\n- Priority: `P1` (score `86`)\n- Domain: `control`\n- Owner hint: `Control WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `136`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "control"
+      ],
+      "github_title": "[P1] Harden src/scpn_fusion/control/burn_controller.py",
+      "issue_slug": "p1-control-burn_controller",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "control"
+      ],
+      "markers": [
+        "SIMPLIFIED"
+      ],
+      "owner_hint": "Control WG",
+      "priority": "P1",
+      "proposed_actions": [
+        "Upgrade with higher-fidelity closure or tighten domain contract."
+      ],
+      "score": 86,
+      "title": "[P1] Harden src/scpn_fusion/control/burn_controller.py",
+      "trigger_lines": [
+        136
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change.",
+        "Document model-domain limits and tighten contract checks for out-of-domain inputs."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 78.0% (tools/coverage_guard.py)."
+      ],
+      "domain": "control",
+      "file_path": "src/scpn_fusion/control/controller_tuning.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/control/controller_tuning.py`\n- Priority: `P1` (score `86`)\n- Domain: `control`\n- Owner hint: `Control WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `61`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "control"
+      ],
+      "github_title": "[P1] Harden src/scpn_fusion/control/controller_tuning.py",
+      "issue_slug": "p1-control-controller_tuning",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "control"
+      ],
+      "markers": [
+        "SIMPLIFIED"
+      ],
+      "owner_hint": "Control WG",
+      "priority": "P1",
+      "proposed_actions": [
+        "Upgrade with higher-fidelity closure or tighten domain contract."
+      ],
+      "score": 86,
+      "title": "[P1] Harden src/scpn_fusion/control/controller_tuning.py",
+      "trigger_lines": [
+        61
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
         "Update claim/evidence references if behavior or metrics change.",
         "Document model-domain limits and tighten contract checks for out-of-domain inputs."
       ],
@@ -550,6 +672,174 @@
         "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py)."
       ],
       "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/gk_eigenvalue.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/gk_eigenvalue.py`\n- Priority: `P1` (score `85`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `205`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "github_title": "[P1] Harden src/scpn_fusion/core/gk_eigenvalue.py",
+      "issue_slug": "p1-core-gk_eigenvalue",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "markers": [
+        "SIMPLIFIED"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P1",
+      "proposed_actions": [
+        "Upgrade with higher-fidelity closure or tighten domain contract."
+      ],
+      "score": 85,
+      "title": "[P1] Harden src/scpn_fusion/core/gk_eigenvalue.py",
+      "trigger_lines": [
+        205
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change.",
+        "Document model-domain limits and tighten contract checks for out-of-domain inputs."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py)."
+      ],
+      "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/gk_geometry.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/gk_geometry.py`\n- Priority: `P1` (score `85`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `121, 127`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "github_title": "[P1] Harden src/scpn_fusion/core/gk_geometry.py",
+      "issue_slug": "p1-core-gk_geometry",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "markers": [
+        "SIMPLIFIED"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P1",
+      "proposed_actions": [
+        "Upgrade with higher-fidelity closure or tighten domain contract."
+      ],
+      "score": 85,
+      "title": "[P1] Harden src/scpn_fusion/core/gk_geometry.py",
+      "trigger_lines": [
+        121,
+        127
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change.",
+        "Document model-domain limits and tighten contract checks for out-of-domain inputs."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py)."
+      ],
+      "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/gk_online_learner.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/gk_online_learner.py`\n- Priority: `P1` (score `85`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `138`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "github_title": "[P1] Harden src/scpn_fusion/core/gk_online_learner.py",
+      "issue_slug": "p1-core-gk_online_learner",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "markers": [
+        "SIMPLIFIED"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P1",
+      "proposed_actions": [
+        "Upgrade with higher-fidelity closure or tighten domain contract."
+      ],
+      "score": 85,
+      "title": "[P1] Harden src/scpn_fusion/core/gk_online_learner.py",
+      "trigger_lines": [
+        138
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change.",
+        "Document model-domain limits and tighten contract checks for out-of-domain inputs."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py)."
+      ],
+      "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/gk_species.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/gk_species.py`\n- Priority: `P1` (score `85`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `13, 157, 166, 179`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "github_title": "[P1] Harden src/scpn_fusion/core/gk_species.py",
+      "issue_slug": "p1-core-gk_species",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "markers": [
+        "SIMPLIFIED"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P1",
+      "proposed_actions": [
+        "Upgrade with higher-fidelity closure or tighten domain contract."
+      ],
+      "score": 85,
+      "title": "[P1] Harden src/scpn_fusion/core/gk_species.py",
+      "trigger_lines": [
+        13,
+        157,
+        166,
+        179
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change.",
+        "Document model-domain limits and tighten contract checks for out-of-domain inputs."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py)."
+      ],
+      "domain": "core_physics",
       "file_path": "src/scpn_fusion/core/impurity_transport.py",
       "github_body": "## Scope\n- File: `src/scpn_fusion/core/impurity_transport.py`\n- Priority: `P1` (score `85`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `170`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
       "github_labels": [
@@ -578,6 +868,49 @@
       "title": "[P1] Harden src/scpn_fusion/core/impurity_transport.py",
       "trigger_lines": [
         170
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change.",
+        "Document model-domain limits and tighten contract checks for out-of-domain inputs."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py)."
+      ],
+      "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/integrated_scenario.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/integrated_scenario.py`\n- Priority: `P1` (score `85`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `35, 245, 255`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "github_title": "[P1] Harden src/scpn_fusion/core/integrated_scenario.py",
+      "issue_slug": "p1-core-integrated_scenario",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "markers": [
+        "SIMPLIFIED"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P1",
+      "proposed_actions": [
+        "Upgrade with higher-fidelity closure or tighten domain contract."
+      ],
+      "score": 85,
+      "title": "[P1] Harden src/scpn_fusion/core/integrated_scenario.py",
+      "trigger_lines": [
+        35,
+        245,
+        255
       ]
     },
     {
@@ -703,6 +1036,47 @@
       "title": "[P1] Harden src/scpn_fusion/core/momentum_transport.py",
       "trigger_lines": [
         110
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change.",
+        "Document model-domain limits and tighten contract checks for out-of-domain inputs."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py)."
+      ],
+      "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/neoclassical.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/neoclassical.py`\n- Priority: `P1` (score `85`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `208`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "github_title": "[P1] Harden src/scpn_fusion/core/neoclassical.py",
+      "issue_slug": "p1-core-neoclassical",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "markers": [
+        "SIMPLIFIED"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P1",
+      "proposed_actions": [
+        "Upgrade with higher-fidelity closure or tighten domain contract."
+      ],
+      "score": 85,
+      "title": "[P1] Harden src/scpn_fusion/core/neoclassical.py",
+      "trigger_lines": [
+        208
       ]
     },
     {

@@ -165,6 +165,43 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     # Phase 6 — Blob transport (SOL filaments)
     "BlobEnsemble": (".blob_transport", "BlobEnsemble"),
     "BlobDynamics": (".blob_transport", "BlobDynamics"),
+    # GK three-path — interface + species + geometry
+    "GKSolverBase": (".gk_interface", "GKSolverBase"),
+    "GKLocalParams": (".gk_interface", "GKLocalParams"),
+    "GKOutput": (".gk_interface", "GKOutput"),
+    # GK — native linear eigenvalue solver
+    "LinearGKResult": (".gk_eigenvalue", "LinearGKResult"),
+    # GK — quasilinear flux model
+    "quasilinear_fluxes_from_spectrum": (".gk_quasilinear", "quasilinear_fluxes_from_spectrum"),
+    # GK — external solver interfaces
+    "GyrokineticsParams": (".gyrokinetic_transport", "GyrokineticsParams"),
+    "TransportFluxes": (".gyrokinetic_transport", "TransportFluxes"),
+    # GK — hybrid surrogate+GK validation
+    # GK — OOD detection + correction + scheduling
+    # (available via direct import: from scpn_fusion.core.gk_ood_detector import ...)
+    # JAX differentiable solvers
+    "jax_gs_solve": (".jax_gs_solver", "jax_gs_solve"),
+    "thomas_solve": (".jax_solvers", "thomas_solve"),
+    # Integrated scenario simulator
+    "ScenarioConfig": (".integrated_scenario", "ScenarioConfig"),
+    "ScenarioState": (".integrated_scenario", "ScenarioState"),
+    # Neoclassical transport (Chang-Hinton + Sauter bootstrap)
+    "chang_hinton_chi": (".neoclassical", "chang_hinton_chi"),
+    "sauter_bootstrap": (".neoclassical", "sauter_bootstrap"),
+    # Vessel eddy current model
+    "VesselModel": (".vessel_model", "VesselModel"),
+    # Tokamak machine presets (ITER, SPARC, DIII-D, JET)
+    "TokamakConfig": (".tokamak_config", "TokamakConfig"),
+    # IMAS/OMAS adapter
+    "EquilibriumIDS": (".imas_adapter", "EquilibriumIDS"),
+    # Ballooning MHD stability
+    "BallooningStabilityAnalysis": (".ballooning_solver", "BallooningStabilityAnalysis"),
+    # Pedestal profile (mtanh + EPED1 width)
+    "PedestalProfile": (".pedestal", "PedestalProfile"),
+    "PedestalParams": (".pedestal", "PedestalParams"),
+    # Checkpoint/resume
+    "save_checkpoint": (".checkpoint", "save_checkpoint"),
+    "load_checkpoint": (".checkpoint", "load_checkpoint"),
 }
 
 

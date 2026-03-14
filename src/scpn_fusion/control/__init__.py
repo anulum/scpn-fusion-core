@@ -66,6 +66,16 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "DetachmentController": (".detachment_controller", "DetachmentController"),
     # Phase 6 — Density control (fueling + pumping)
     "DensityController": (".density_controller", "DensityController"),
+    # NMPC — SQP-based nonlinear MPC
+    "NMPCConfig": (".nmpc_controller", "NMPCConfig"),
+    # Burn control — DT alpha heating + power balance
+    "BurnController": (".burn_controller", "BurnController"),
+    "AlphaHeating": (".burn_controller", "AlphaHeating"),
+    # RZIP — rigid plasma + vessel response
+    "RZIPModel": (".rzip_model", "RZIPModel"),
+    "RZIPController": (".rzip_model", "RZIPController"),
+    # Bio-holonomic controller — SCPN L4/L5 bridge
+    "BioHolonomicController": (".bio_holonomic_controller", "BioHolonomicController"),
 }
 
 
@@ -82,7 +92,10 @@ def __getattr__(name: str):
 
 
 __all__ = [
+    "AlphaHeating",
     "AnalyticEquilibriumSolver",
+    "BioHolonomicController",
+    "BurnController",
     "CoilSet",
     "ConstrainedGymTokamakEnv",
     "DensityController",
@@ -107,6 +120,7 @@ __all__ = [
     "ModelPredictiveController",
     "MuSynthesisController",
     "NeuroCyberneticController",
+    "NMPCConfig",
     "NonlinearMPC",
     "OptimalController",
     "PlasmaShapeController",
@@ -119,6 +133,8 @@ __all__ = [
     "RunawayElectronModel",
     "RWMFeedbackController",
     "RWMPhysics",
+    "RZIPController",
+    "RZIPModel",
     "ScenarioSchedule",
     "ShatteredPelletInjection",
     "SpiAblationSolver",
