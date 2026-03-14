@@ -16,8 +16,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH="/usr/local/cargo/bin:${PATH}"
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-    | sh -s -- -y --default-toolchain stable --profile minimal
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup-init.sh \
+    && echo "6c30b75a75b28a96fd913a037c8581b580080b6ee9b8169a3c0feb1af7fe8caf  /tmp/rustup-init.sh" | sha256sum -c - \
+    && sh /tmp/rustup-init.sh -y --default-toolchain stable --profile minimal \
+    && rm /tmp/rustup-init.sh
 
 WORKDIR /build
 
@@ -28,7 +30,7 @@ COPY scpn-fusion-rs/ scpn-fusion-rs/
 RUN cd scpn-fusion-rs && cargo build --release
 
 # Install maturin and build the PyO3 wheel
-RUN pip install --no-cache-dir maturin
+RUN pip install --no-cache-dir "maturin==1.12.6"
 RUN cd scpn-fusion-rs/crates/fusion-python \
     && maturin build --release --out /build/wheels
 
@@ -46,12 +48,15 @@ RUN pip install --no-cache-dir /tmp/wheels/*.whl && rm -rf /tmp/wheels
 COPY pyproject.toml README.md ./
 COPY src/ src/
 COPY validation/ validation/
+COPY requirements/ requirements/
 
-# Install runtime dependencies (dev extras optional)
+# Install runtime dependencies from hash-pinned lock file, then local package
 RUN if [ "$INSTALL_DEV" = "1" ]; then \
-      pip install --no-cache-dir ".[dev]" ; \
+      pip install --no-cache-dir --require-hashes -r requirements/ci-py312.txt \
+      && pip install --no-cache-dir --no-deps ".[dev]" ; \
     else \
-      pip install --no-cache-dir . ; \
+      pip install --no-cache-dir --require-hashes -r requirements/minimal.txt \
+      && pip install --no-cache-dir --no-deps . ; \
     fi
 
 # Copy remaining project assets needed at runtime

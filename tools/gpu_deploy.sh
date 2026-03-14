@@ -64,10 +64,10 @@ if [ ! -d ".venv" ]; then
 fi
 
 source .venv/bin/activate
-pip install --upgrade pip wheel setuptools -q
+pip install --upgrade "pip==25.0.1" "wheel==0.45.1" "setuptools==78.1.0" -q
 
 # Install with GPU + ML + dev extras
-pip install -e ".[gpu,ml,dev]" -q 2>&1 | tail -3
+pip install --no-deps -e . -q && pip install --require-hashes -r requirements/ci-py312.txt -q 2>&1 | tail -3
 ok "Installed scpn-fusion[gpu,ml,dev]"
 
 # ── Step 2: Verify GPU ──────────────────────────────────────────
