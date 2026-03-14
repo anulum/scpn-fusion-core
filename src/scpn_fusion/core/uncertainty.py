@@ -224,6 +224,9 @@ def _dt_reactivity(Ti_keV):
     return float(sv) if sv.ndim == 0 else sv
 
 
+bosch_hale_reactivity = _dt_reactivity
+
+
 def fusion_power_from_tau(scenario: PlasmaScenario, tau_E: float) -> float:
     """
     Estimate fusion power from cross-section integrated thermal reactivity.
