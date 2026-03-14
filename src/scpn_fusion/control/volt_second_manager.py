@@ -57,7 +57,9 @@ class VoltSecondOptimizer:
         self.budget = flux_budget
         self.transport_model = transport_model
 
-    def optimize_ramp(self, Ip_target_MA: float, t_ramp_max: float, n_segments: int = 10) -> np.ndarray:
+    def optimize_ramp(
+        self, Ip_target_MA: float, t_ramp_max: float, n_segments: int = 10
+    ) -> np.ndarray:
         # A simple optimal ramp: ramp as fast as possible, but we just generate a linear ramp for testing
         # Real optimization would consider CS stress and MHD stability (li limits)
         t_arr = np.linspace(0, t_ramp_max, n_segments)
@@ -68,7 +70,13 @@ class VoltSecondOptimizer:
 class BootstrapCurrentEstimate:
     @staticmethod
     def from_profiles(
-        ne: np.ndarray, Te: np.ndarray, Ti: np.ndarray, q: np.ndarray, rho: np.ndarray, R0: float, a: float
+        ne: np.ndarray,
+        Te: np.ndarray,
+        Ti: np.ndarray,
+        q: np.ndarray,
+        rho: np.ndarray,
+        R0: float,
+        a: float,
     ) -> float:
         # Simplistic proxy: I_bs scales with pressure gradient and epsilon^0.5
         # We assume a fixed profile and just return a scalable estimate
@@ -109,7 +117,9 @@ class ScenarioFluxAnalysis:
     def __init__(self, flux_budget: FluxBudget):
         self.budget = flux_budget
 
-    def analyze(self, ramp_dur: float, flat_dur: float, down_dur: float, Ip_MA: float, I_bs_MA: float) -> FluxReport:
+    def analyze(
+        self, ramp_dur: float, flat_dur: float, down_dur: float, Ip_MA: float, I_bs_MA: float
+    ) -> FluxReport:
         # Mock scenario analysis
         L_term = self.budget.inductive_flux(Ip_MA)
 

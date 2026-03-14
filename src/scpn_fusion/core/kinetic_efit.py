@@ -109,7 +109,9 @@ class KineticEFIT(RealtimeEFIT):
 
         # p_thermal = n_e T_e + n_i T_i
         e_charge = 1.602e-19
-        p_th = (ne_prof * 1e19) * (Te_prof * 1e3 * e_charge) + (ne_prof * 1e19) * (Ti_prof * 1e3 * e_charge)
+        p_th = (ne_prof * 1e19) * (Te_prof * 1e3 * e_charge) + (ne_prof * 1e19) * (
+            Ti_prof * 1e3 * e_charge
+        )
 
         p_fast = self.fast_ions.p_isotropic_equivalent(rho_1d, ne_prof)
         p_kin = p_th + p_fast

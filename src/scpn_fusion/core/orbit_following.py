@@ -25,7 +25,9 @@ class GuidingCenterOrbit:
     (R, Z, phi, v_par, mu) integration using RK4.
     """
 
-    def __init__(self, m_amu: float, Z: int, E_keV: float, pitch_angle: float, R0_init: float, Z0_init: float):
+    def __init__(
+        self, m_amu: float, Z: int, E_keV: float, pitch_angle: float, R0_init: float, Z0_init: float
+    ):
         self.m = m_amu * 1.67e-27
         self.Z_charge = Z * 1.602e-19
         self.E_J = E_keV * 1e3 * 1.602e-19
@@ -104,10 +106,18 @@ class GuidingCenterOrbit:
 class OrbitClassifier:
     @staticmethod
     def classify(
-        orbit_R: np.ndarray, orbit_Z: np.ndarray, v_par: np.ndarray, R_wall: float, Z_wall_upper: float
+        orbit_R: np.ndarray,
+        orbit_Z: np.ndarray,
+        v_par: np.ndarray,
+        R_wall: float,
+        Z_wall_upper: float,
     ) -> str:
         # Check lost
-        if np.any(orbit_R > R_wall) or np.any(np.abs(orbit_Z) > Z_wall_upper) or np.any(orbit_R < 0.1):
+        if (
+            np.any(orbit_R > R_wall)
+            or np.any(np.abs(orbit_Z) > Z_wall_upper)
+            or np.any(orbit_R < 0.1)
+        ):
             return "lost"
 
         # Check trapped (v_par changes sign)
@@ -161,7 +171,11 @@ class MonteCarloEnsemble:
                 v_trace.append(p.v_par)
 
             c = OrbitClassifier.classify(
-                np.array(R_trace), np.array(Z_trace), np.array(v_trace), self.R0 + self.a + 0.5, self.a + 0.5
+                np.array(R_trace),
+                np.array(Z_trace),
+                np.array(v_trace),
+                self.R0 + self.a + 0.5,
+                self.a + 0.5,
             )
             if c == "lost":
                 n_lost += 1
@@ -175,7 +189,9 @@ class MonteCarloEnsemble:
         return EnsembleResult(frac, heating, 0.0, n_pass, n_trap, n_lost)
 
 
-def first_orbit_loss(R0: float, a: float, B0: float, Ip_MA: float, E_alpha_keV: float = 3520.0) -> float:
+def first_orbit_loss(
+    R0: float, a: float, B0: float, Ip_MA: float, E_alpha_keV: float = 3520.0
+) -> float:
     """
     Fraction of alphas lost on their first orbit.
     Scales with rho_alpha / a and 1 / Ip.

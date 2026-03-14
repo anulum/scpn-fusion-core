@@ -60,7 +60,9 @@ class _DummyFreeBoundaryKernel:
             dtype=np.float64,
         )
         self._bias = self._response_matrix @ np.array([0.45, -0.35, 0.30, -0.20], dtype=np.float64)
-        self._drift_vector = self._response_matrix @ np.array([0.10, -0.06, 0.08, -0.04], dtype=np.float64)
+        self._drift_vector = self._response_matrix @ np.array(
+            [0.10, -0.06, 0.08, -0.04], dtype=np.float64
+        )
         self.cfg = {
             "physics": {"drift_scale": 0.0},
             "coils": [
@@ -113,12 +115,16 @@ class _DummyFreeBoundaryKernel:
         currents = np.asarray(active_coils.currents, dtype=np.float64).reshape(-1)
         drift = float(self.cfg.get("physics", {}).get("drift_scale", 0.0))
         disturbance = drift * self._drift_vector
-        self._state = self._target_vector + self._bias + disturbance + self._response_matrix @ currents
+        self._state = (
+            self._target_vector + self._bias + disturbance + self._response_matrix @ currents
+        )
         for idx, current in enumerate(currents):
             self.cfg["coils"][idx]["current"] = float(current)
         self.Psi.fill(0.0)
         return {
-            "boundary_variant": "free_boundary" if boundary_variant is None else str(boundary_variant),
+            "boundary_variant": "free_boundary"
+            if boundary_variant is None
+            else str(boundary_variant),
             "converged": True,
             "outer_iterations": 1,
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
@@ -284,7 +290,9 @@ class _PriorityConflictKernel:
         self._state = self._target_vector + self._bias + self._response_matrix @ currents
         self.Psi.fill(0.0)
         return {
-            "boundary_variant": "free_boundary" if boundary_variant is None else str(boundary_variant),
+            "boundary_variant": "free_boundary"
+            if boundary_variant is None
+            else str(boundary_variant),
             "converged": True,
             "outer_iterations": 1,
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
@@ -358,7 +366,9 @@ class _ProtectedObjectiveKernel:
         self._state = self._target_vector + self._bias + self._response_matrix @ currents
         self.Psi.fill(0.0)
         return {
-            "boundary_variant": "free_boundary" if boundary_variant is None else str(boundary_variant),
+            "boundary_variant": "free_boundary"
+            if boundary_variant is None
+            else str(boundary_variant),
             "converged": True,
             "outer_iterations": 1,
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
@@ -432,7 +442,9 @@ class _ZeroAuthorityKernel:
         self._state = self._target_vector + self._bias + self._response_matrix @ currents
         self.Psi.fill(0.0)
         return {
-            "boundary_variant": "free_boundary" if boundary_variant is None else str(boundary_variant),
+            "boundary_variant": "free_boundary"
+            if boundary_variant is None
+            else str(boundary_variant),
             "converged": True,
             "outer_iterations": 1,
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
@@ -506,7 +518,9 @@ class _WithinToleranceKernel:
         self._state = self._target_vector + self._bias + self._response_matrix @ currents
         self.Psi.fill(0.0)
         return {
-            "boundary_variant": "free_boundary" if boundary_variant is None else str(boundary_variant),
+            "boundary_variant": "free_boundary"
+            if boundary_variant is None
+            else str(boundary_variant),
             "converged": True,
             "outer_iterations": 1,
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
@@ -807,7 +821,9 @@ def test_controller_supervisor_rejects_and_holds_unsafe_updates() -> None:
     assert controller.history["supervisor_hold_steps_remaining"][0] == 2
     assert controller.history["supervisor_hold_steps_remaining"][1] == 1
     assert controller.history["supervisor_hold_steps_remaining"][2] == 0
-    assert summary["final_tracking_error_norm"] == pytest.approx(initial_metrics["tracking_error_norm"])
+    assert summary["final_tracking_error_norm"] == pytest.approx(
+        initial_metrics["tracking_error_norm"]
+    )
     assert summary["max_abs_coil_current"] == pytest.approx(0.0)
 
 
@@ -883,7 +899,10 @@ def test_controller_reports_hidden_true_metrics_under_measurement_distortion() -
     assert summary["measurement_compensation_enabled"] is False
     assert summary["max_abs_measurement_offset"] > 0.0
     assert summary["mean_abs_measurement_offset"] > 0.0
-    assert abs(summary["final_tracking_error_norm"] - summary["final_true_tracking_error_norm"]) > 1.0e-4
+    assert (
+        abs(summary["final_tracking_error_norm"] - summary["final_true_tracking_error_norm"])
+        > 1.0e-4
+    )
     for key in (
         "final_true_tracking_error_norm",
         "mean_true_tracking_error_norm",
@@ -952,7 +971,9 @@ def test_latency_compensation_reduces_delayed_observation_error() -> None:
 
     def disturbance(kernel: _DummyFreeBoundaryKernel, _coils: CoilSet, step: int) -> None:
         drift_schedule = (0.0, 1.0, 0.45, 0.10)
-        kernel.cfg.setdefault("physics", {})["drift_scale"] = drift_schedule[min(step, len(drift_schedule) - 1)]
+        kernel.cfg.setdefault("physics", {})["drift_scale"] = drift_schedule[
+            min(step, len(drift_schedule) - 1)
+        ]
 
     delayed = run_free_boundary_tracking(
         kernel_factory=_MeasurementLatencyKernel,
@@ -977,13 +998,21 @@ def test_latency_compensation_reduces_delayed_observation_error() -> None:
     assert compensated["measurement_latency_enabled"] is True
     assert compensated["latency_compensation_enabled"] is True
     assert compensated["max_abs_objective_rate_estimate"] > 0.0
-    assert compensated["mean_estimated_observation_error_norm"] < delayed["max_delayed_observation_error_norm"]
-    assert compensated["max_estimated_observation_error_norm"] <= delayed["max_delayed_observation_error_norm"] + 0.02
+    assert (
+        compensated["mean_estimated_observation_error_norm"]
+        < delayed["max_delayed_observation_error_norm"]
+    )
+    assert (
+        compensated["max_estimated_observation_error_norm"]
+        <= delayed["max_delayed_observation_error_norm"] + 0.02
+    )
     assert compensated["final_true_tracking_error_norm"] < delayed["final_true_tracking_error_norm"]
 
 
 def test_controller_rejects_invalid_measurement_bias_shape() -> None:
-    with pytest.raises(ValueError, match="measurement_bias.x_point_position must be a scalar or contain exactly 2"):
+    with pytest.raises(
+        ValueError, match="measurement_bias.x_point_position must be a scalar or contain exactly 2"
+    ):
         FreeBoundaryTrackingController(
             "dummy.json",
             kernel_factory=_InvalidMeasurementKernel,

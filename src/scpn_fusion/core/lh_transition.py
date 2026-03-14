@@ -50,7 +50,12 @@ class PredatorPreyModel:
         # d_eps/dt = gamma_L * (p/p0) * eps - alpha1 eps^2 - alpha2 eps V^2 + S_drive
         p0 = 10.0
         S_drive = 1e2  # Background noise drive
-        d_eps = self.gamma_L * (p / p0) * eps - self.alpha1 * eps**2 - self.alpha2 * eps * V**2 + S_drive
+        d_eps = (
+            self.gamma_L * (p / p0) * eps
+            - self.alpha1 * eps**2
+            - self.alpha2 * eps * V**2
+            + S_drive
+        )
 
         # dV/dt = alpha3 eps V - gamma_damp V
         d_V = self.alpha3 * eps * V - self.gamma_damp * V
@@ -62,7 +67,9 @@ class PredatorPreyModel:
         new_state = np.maximum(state + np.array([d_eps, d_V, d_p]) * dt, 0.0)
         return np.asarray(new_state)
 
-    def evolve(self, Q_heating: float, t_span: tuple[float, float], dt: float) -> PredatorPreyResult:
+    def evolve(
+        self, Q_heating: float, t_span: tuple[float, float], dt: float
+    ) -> PredatorPreyResult:
         n_steps = int((t_span[1] - t_span[0]) / dt)
         t_arr = np.linspace(t_span[0], t_span[1], n_steps)
 

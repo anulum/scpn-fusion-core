@@ -115,7 +115,9 @@ class MuSynthesisController:
     """
 
     def __init__(
-        self, plant_ss: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray], uncertainty: StructuredUncertainty
+        self,
+        plant_ss: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+        uncertainty: StructuredUncertainty,
     ):
         self.plant_ss = plant_ss
         self.uncertainty = uncertainty

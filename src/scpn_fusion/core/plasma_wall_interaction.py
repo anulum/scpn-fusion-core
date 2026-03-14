@@ -192,14 +192,22 @@ class LifetimeReport:
 
 
 class DivertorLifetimeAssessment:
-    def __init__(self, sol: TwoPointSOL, sputtering: SputteringYield, erosion: ErosionModel, wall: WallThermalModel):
+    def __init__(
+        self,
+        sol: TwoPointSOL,
+        sputtering: SputteringYield,
+        erosion: ErosionModel,
+        wall: WallThermalModel,
+    ):
         self.sol = sol
         self.sputtering = sputtering
         self.erosion = erosion
         self.wall = wall
         self.transient = TransientThermalLoad(wall)
 
-    def assess(self, P_SOL_MW: float, n_u_19: float, f_ELM_Hz: float, delta_W_ELM_MJ: float) -> LifetimeReport:
+    def assess(
+        self, P_SOL_MW: float, n_u_19: float, f_ELM_Hz: float, delta_W_ELM_MJ: float
+    ) -> LifetimeReport:
         # Steady state
         sol_res = self.sol.solve(P_SOL_MW, n_u_19)
         T_t = sol_res.T_target_eV

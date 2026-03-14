@@ -22,7 +22,14 @@ class AlfvenContinuum:
     """
 
     def __init__(
-        self, rho: np.ndarray, q: np.ndarray, ne: np.ndarray, B0: float, R0: float, m_i_amu: float = 2.5, a: float = 2.0
+        self,
+        rho: np.ndarray,
+        q: np.ndarray,
+        ne: np.ndarray,
+        B0: float,
+        R0: float,
+        m_i_amu: float = 2.5,
+        a: float = 2.0,
     ):
         self.rho = rho
         self.q = q

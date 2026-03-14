@@ -58,7 +58,10 @@ def test_campaign_is_deterministic() -> None:
         assert a["scenarios"][scenario]["summary"]["final_tracking_error_norm"] == pytest.approx(
             b["scenarios"][scenario]["summary"]["final_tracking_error_norm"]
         )
-        assert a["scenarios"][scenario]["passes_thresholds"] == b["scenarios"][scenario]["passes_thresholds"]
+        assert (
+            a["scenarios"][scenario]["passes_thresholds"]
+            == b["scenarios"][scenario]["passes_thresholds"]
+        )
     for sweep in (
         "measurement_fault_scale",
         "measurement_fault_corrected_scale",
@@ -86,16 +89,52 @@ def test_campaign_thresholds_pass() -> None:
     assert out["scenarios"]["measurement_latency_uncorrected"]["passes_thresholds"] is True
     assert out["scenarios"]["measurement_latency_corrected"]["passes_thresholds"] is True
     assert out["scenarios"]["x_point_divertor_kick"]["passes_thresholds"] is True
-    assert out["scenarios"]["x_point_divertor_measurement_latency_uncorrected"]["passes_thresholds"] is True
-    assert out["scenarios"]["x_point_divertor_measurement_latency_corrected"]["passes_thresholds"] is True
-    assert out["scenarios"]["x_point_divertor_supervisor_measurement_fault_uncorrected"]["passes_thresholds"] is True
-    assert out["scenarios"]["x_point_divertor_supervisor_measurement_fault_corrected"]["passes_thresholds"] is True
-    assert out["scenarios"]["x_point_divertor_supervisor_measurement_latency_uncorrected"]["passes_thresholds"] is True
-    assert out["scenarios"]["x_point_divertor_supervisor_measurement_latency_corrected"]["passes_thresholds"] is True
-    assert out["scenarios"]["x_point_divertor_combined_fault_uncorrected"]["passes_thresholds"] is True
-    assert out["scenarios"]["x_point_divertor_combined_fault_corrected"]["passes_thresholds"] is True
-    assert out["scenarios"]["x_point_divertor_measurement_fault_uncorrected"]["passes_thresholds"] is True
-    assert out["scenarios"]["x_point_divertor_measurement_fault_corrected"]["passes_thresholds"] is True
+    assert (
+        out["scenarios"]["x_point_divertor_measurement_latency_uncorrected"]["passes_thresholds"]
+        is True
+    )
+    assert (
+        out["scenarios"]["x_point_divertor_measurement_latency_corrected"]["passes_thresholds"]
+        is True
+    )
+    assert (
+        out["scenarios"]["x_point_divertor_supervisor_measurement_fault_uncorrected"][
+            "passes_thresholds"
+        ]
+        is True
+    )
+    assert (
+        out["scenarios"]["x_point_divertor_supervisor_measurement_fault_corrected"][
+            "passes_thresholds"
+        ]
+        is True
+    )
+    assert (
+        out["scenarios"]["x_point_divertor_supervisor_measurement_latency_uncorrected"][
+            "passes_thresholds"
+        ]
+        is True
+    )
+    assert (
+        out["scenarios"]["x_point_divertor_supervisor_measurement_latency_corrected"][
+            "passes_thresholds"
+        ]
+        is True
+    )
+    assert (
+        out["scenarios"]["x_point_divertor_combined_fault_uncorrected"]["passes_thresholds"] is True
+    )
+    assert (
+        out["scenarios"]["x_point_divertor_combined_fault_corrected"]["passes_thresholds"] is True
+    )
+    assert (
+        out["scenarios"]["x_point_divertor_measurement_fault_uncorrected"]["passes_thresholds"]
+        is True
+    )
+    assert (
+        out["scenarios"]["x_point_divertor_measurement_fault_corrected"]["passes_thresholds"]
+        is True
+    )
     assert out["scenarios"]["supervisor_fallback_kick"]["passes_thresholds"] is True
     assert out["sweeps"]["measurement_fault_scale"]["passes_thresholds"] is True
     assert out["sweeps"]["measurement_fault_corrected_scale"]["passes_thresholds"] is True
@@ -108,7 +147,10 @@ def test_campaign_thresholds_pass() -> None:
     assert out["sweeps"]["topology_measurement_fault_scale"]["passes_thresholds"] is True
     assert out["sweeps"]["topology_measurement_corrected_scale"]["passes_thresholds"] is True
     assert out["sweeps"]["topology_supervisor_measurement_fault_scale"]["passes_thresholds"] is True
-    assert out["sweeps"]["topology_supervisor_measurement_corrected_scale"]["passes_thresholds"] is True
+    assert (
+        out["sweeps"]["topology_supervisor_measurement_corrected_scale"]["passes_thresholds"]
+        is True
+    )
 
 
 def test_measurement_fault_scenarios_expose_and_remove_gap() -> None:
@@ -118,9 +160,15 @@ def test_measurement_fault_scenarios_expose_and_remove_gap() -> None:
     nominal = out["scenarios"]["nominal"]
 
     assert uncorrected["measured_true_gap"] >= uncorrected["thresholds"]["min_measured_true_gap"]
-    assert uncorrected["summary"]["max_abs_measurement_offset"] >= uncorrected["thresholds"]["min_measurement_offset"]
+    assert (
+        uncorrected["summary"]["max_abs_measurement_offset"]
+        >= uncorrected["thresholds"]["min_measurement_offset"]
+    )
     assert corrected["measured_true_gap"] <= corrected["thresholds"]["max_measured_true_gap"]
-    assert corrected["summary"]["max_abs_measurement_offset"] <= corrected["thresholds"]["max_measurement_offset"]
+    assert (
+        corrected["summary"]["max_abs_measurement_offset"]
+        <= corrected["thresholds"]["max_measurement_offset"]
+    )
     assert corrected["summary"]["final_tracking_error_norm"] == pytest.approx(
         nominal["summary"]["final_tracking_error_norm"],
         rel=0.0,
@@ -148,7 +196,8 @@ def test_latency_scenarios_bound_delayed_and_corrected_observation_error() -> No
     corrected = out["scenarios"]["measurement_latency_corrected"]
 
     assert (
-        uncorrected["delayed_observation_error_norm"] >= uncorrected["thresholds"]["min_delayed_observation_error_norm"]
+        uncorrected["delayed_observation_error_norm"]
+        >= uncorrected["thresholds"]["min_delayed_observation_error_norm"]
     )
     assert (
         uncorrected["summary"]["final_true_tracking_error_norm"]
@@ -156,13 +205,17 @@ def test_latency_scenarios_bound_delayed_and_corrected_observation_error() -> No
     )
     assert corrected["summary"]["latency_compensation_enabled"] is True
     assert (
-        corrected["estimated_observation_error_norm"] <= corrected["thresholds"]["max_estimated_observation_error_norm"]
+        corrected["estimated_observation_error_norm"]
+        <= corrected["thresholds"]["max_estimated_observation_error_norm"]
     )
     assert (
         corrected["summary"]["final_true_tracking_error_norm"]
         <= corrected["thresholds"]["max_final_true_tracking_error_norm"]
     )
-    assert corrected["estimated_observation_error_norm"] <= uncorrected["delayed_observation_error_norm"] + 1.0e-3
+    assert (
+        corrected["estimated_observation_error_norm"]
+        <= uncorrected["delayed_observation_error_norm"] + 1.0e-3
+    )
     assert (
         abs(
             corrected["summary"]["final_true_tracking_error_norm"]
@@ -189,7 +242,9 @@ def test_latency_sweeps_activate_with_delay_and_stay_corrected() -> None:
     assert delayed_error[-1] >= delayed_error[1] - 1.0e-6
     assert (
         max(corrected_error)
-        <= free_boundary_tracking_acceptance.LATENCY_CORRECTED_THRESHOLDS["max_estimated_observation_error_norm"]
+        <= free_boundary_tracking_acceptance.LATENCY_CORRECTED_THRESHOLDS[
+            "max_estimated_observation_error_norm"
+        ]
     )
 
 
@@ -218,10 +273,16 @@ def test_corrected_measurement_sweep_keeps_gap_collapsed() -> None:
     assert corrected["checks"]["max_measured_true_gap"] is True
     assert corrected["checks"]["max_measurement_offset"] is True
     assert corrected["checks"]["tracking_error_constant"] is True
-    assert max(gaps) <= free_boundary_tracking_acceptance.CORRECTED_THRESHOLDS["max_measured_true_gap"]
-    assert max(offsets) <= free_boundary_tracking_acceptance.CORRECTED_THRESHOLDS["max_measurement_offset"]
     assert (
-        max(tracking) - min(tracking) <= free_boundary_tracking_acceptance.CORRECTED_THRESHOLDS["max_measured_true_gap"]
+        max(gaps) <= free_boundary_tracking_acceptance.CORRECTED_THRESHOLDS["max_measured_true_gap"]
+    )
+    assert (
+        max(offsets)
+        <= free_boundary_tracking_acceptance.CORRECTED_THRESHOLDS["max_measurement_offset"]
+    )
+    assert (
+        max(tracking) - min(tracking)
+        <= free_boundary_tracking_acceptance.CORRECTED_THRESHOLDS["max_measured_true_gap"]
     )
 
 
@@ -272,29 +333,56 @@ def test_topology_measurement_fault_scenarios_expose_and_remove_topology_gap() -
     uncorrected = out["scenarios"]["x_point_divertor_measurement_fault_uncorrected"]
     corrected = out["scenarios"]["x_point_divertor_measurement_fault_corrected"]
 
-    assert uncorrected["x_point_position_gap"] >= uncorrected["thresholds"]["min_x_point_position_gap"]
+    assert (
+        uncorrected["x_point_position_gap"] >= uncorrected["thresholds"]["min_x_point_position_gap"]
+    )
     assert uncorrected["x_point_flux_gap"] >= uncorrected["thresholds"]["min_x_point_flux_gap"]
     assert uncorrected["divertor_rms_gap"] >= uncorrected["thresholds"]["min_divertor_rms_gap"]
-    assert uncorrected["divertor_max_abs_gap"] >= uncorrected["thresholds"]["min_divertor_max_abs_gap"]
-    assert uncorrected["summary"]["max_abs_measurement_offset"] >= uncorrected["thresholds"]["min_measurement_offset"]
+    assert (
+        uncorrected["divertor_max_abs_gap"] >= uncorrected["thresholds"]["min_divertor_max_abs_gap"]
+    )
+    assert (
+        uncorrected["summary"]["max_abs_measurement_offset"]
+        >= uncorrected["thresholds"]["min_measurement_offset"]
+    )
     assert (
         uncorrected["summary"]["true_x_point_position_error"]
         <= uncorrected["thresholds"]["max_true_x_point_position_error"]
     )
-    assert uncorrected["summary"]["true_x_point_flux_error"] <= uncorrected["thresholds"]["max_true_x_point_flux_error"]
-    assert uncorrected["summary"]["true_divertor_rms"] <= uncorrected["thresholds"]["max_true_divertor_rms"]
-    assert uncorrected["summary"]["true_divertor_max_abs"] <= uncorrected["thresholds"]["max_true_divertor_max_abs"]
+    assert (
+        uncorrected["summary"]["true_x_point_flux_error"]
+        <= uncorrected["thresholds"]["max_true_x_point_flux_error"]
+    )
+    assert (
+        uncorrected["summary"]["true_divertor_rms"]
+        <= uncorrected["thresholds"]["max_true_divertor_rms"]
+    )
+    assert (
+        uncorrected["summary"]["true_divertor_max_abs"]
+        <= uncorrected["thresholds"]["max_true_divertor_max_abs"]
+    )
     assert uncorrected["summary"]["objective_converged"] is False
 
     assert corrected["x_point_position_gap"] <= corrected["thresholds"]["max_x_point_position_gap"]
     assert corrected["x_point_flux_gap"] <= corrected["thresholds"]["max_x_point_flux_gap"]
     assert corrected["divertor_rms_gap"] <= corrected["thresholds"]["max_divertor_rms_gap"]
     assert corrected["divertor_max_abs_gap"] <= corrected["thresholds"]["max_divertor_max_abs_gap"]
-    assert corrected["summary"]["max_abs_measurement_offset"] <= corrected["thresholds"]["max_measurement_offset"]
-    assert corrected["summary"]["x_point_position_error"] <= corrected["thresholds"]["max_x_point_position_error"]
-    assert corrected["summary"]["x_point_flux_error"] <= corrected["thresholds"]["max_x_point_flux_error"]
+    assert (
+        corrected["summary"]["max_abs_measurement_offset"]
+        <= corrected["thresholds"]["max_measurement_offset"]
+    )
+    assert (
+        corrected["summary"]["x_point_position_error"]
+        <= corrected["thresholds"]["max_x_point_position_error"]
+    )
+    assert (
+        corrected["summary"]["x_point_flux_error"]
+        <= corrected["thresholds"]["max_x_point_flux_error"]
+    )
     assert corrected["summary"]["divertor_rms"] <= corrected["thresholds"]["max_divertor_rms"]
-    assert corrected["summary"]["divertor_max_abs"] <= corrected["thresholds"]["max_divertor_max_abs"]
+    assert (
+        corrected["summary"]["divertor_max_abs"] <= corrected["thresholds"]["max_divertor_max_abs"]
+    )
     assert corrected["summary"]["objective_converged"] is True
 
 
@@ -303,12 +391,17 @@ def test_topology_measurement_latency_scenarios_expose_gap_and_restore_tracking(
     uncorrected = out["scenarios"]["x_point_divertor_measurement_latency_uncorrected"]
     corrected = out["scenarios"]["x_point_divertor_measurement_latency_corrected"]
 
-    assert uncorrected["x_point_position_gap"] >= uncorrected["thresholds"]["min_x_point_position_gap"]
+    assert (
+        uncorrected["x_point_position_gap"] >= uncorrected["thresholds"]["min_x_point_position_gap"]
+    )
     assert uncorrected["x_point_flux_gap"] >= uncorrected["thresholds"]["min_x_point_flux_gap"]
     assert uncorrected["divertor_rms_gap"] >= uncorrected["thresholds"]["min_divertor_rms_gap"]
-    assert uncorrected["divertor_max_abs_gap"] >= uncorrected["thresholds"]["min_divertor_max_abs_gap"]
     assert (
-        uncorrected["delayed_observation_error_norm"] >= uncorrected["thresholds"]["min_delayed_observation_error_norm"]
+        uncorrected["divertor_max_abs_gap"] >= uncorrected["thresholds"]["min_divertor_max_abs_gap"]
+    )
+    assert (
+        uncorrected["delayed_observation_error_norm"]
+        >= uncorrected["thresholds"]["min_delayed_observation_error_norm"]
     )
     assert (
         uncorrected["summary"]["final_true_tracking_error_norm"]
@@ -321,7 +414,8 @@ def test_topology_measurement_latency_scenarios_expose_gap_and_restore_tracking(
     assert corrected["divertor_rms_gap"] <= corrected["thresholds"]["max_divertor_rms_gap"]
     assert corrected["divertor_max_abs_gap"] <= corrected["thresholds"]["max_divertor_max_abs_gap"]
     assert (
-        corrected["estimated_observation_error_norm"] <= corrected["thresholds"]["max_estimated_observation_error_norm"]
+        corrected["estimated_observation_error_norm"]
+        <= corrected["thresholds"]["max_estimated_observation_error_norm"]
     )
     assert (
         corrected["summary"]["final_true_tracking_error_norm"]
@@ -336,14 +430,30 @@ def test_topology_combined_fault_scenarios_expose_and_remove_topology_gap() -> N
     uncorrected = out["scenarios"]["x_point_divertor_combined_fault_uncorrected"]
     corrected = out["scenarios"]["x_point_divertor_combined_fault_corrected"]
 
-    assert uncorrected["x_point_position_gap"] >= uncorrected["thresholds"]["min_x_point_position_gap"]
+    assert (
+        uncorrected["x_point_position_gap"] >= uncorrected["thresholds"]["min_x_point_position_gap"]
+    )
     assert uncorrected["x_point_flux_gap"] >= uncorrected["thresholds"]["min_x_point_flux_gap"]
     assert uncorrected["divertor_rms_gap"] >= uncorrected["thresholds"]["min_divertor_rms_gap"]
-    assert uncorrected["divertor_max_abs_gap"] >= uncorrected["thresholds"]["min_divertor_max_abs_gap"]
-    assert uncorrected["summary"]["max_abs_measurement_offset"] >= uncorrected["thresholds"]["min_measurement_offset"]
-    assert uncorrected["summary"]["true_x_point_flux_error"] <= uncorrected["thresholds"]["max_true_x_point_flux_error"]
-    assert uncorrected["summary"]["true_divertor_rms"] <= uncorrected["thresholds"]["max_true_divertor_rms"]
-    assert uncorrected["summary"]["true_divertor_max_abs"] <= uncorrected["thresholds"]["max_true_divertor_max_abs"]
+    assert (
+        uncorrected["divertor_max_abs_gap"] >= uncorrected["thresholds"]["min_divertor_max_abs_gap"]
+    )
+    assert (
+        uncorrected["summary"]["max_abs_measurement_offset"]
+        >= uncorrected["thresholds"]["min_measurement_offset"]
+    )
+    assert (
+        uncorrected["summary"]["true_x_point_flux_error"]
+        <= uncorrected["thresholds"]["max_true_x_point_flux_error"]
+    )
+    assert (
+        uncorrected["summary"]["true_divertor_rms"]
+        <= uncorrected["thresholds"]["max_true_divertor_rms"]
+    )
+    assert (
+        uncorrected["summary"]["true_divertor_max_abs"]
+        <= uncorrected["thresholds"]["max_true_divertor_max_abs"]
+    )
     assert uncorrected["summary"]["objective_converged"] is False
 
     assert corrected["summary"]["final_tracking_error_norm"] == pytest.approx(
@@ -366,7 +476,10 @@ def test_topology_combined_fault_scenarios_expose_and_remove_topology_gap() -> N
         rel=0.0,
         abs=1.0e-12,
     )
-    assert corrected["summary"]["max_abs_measurement_offset"] <= corrected["thresholds"]["max_measurement_offset"]
+    assert (
+        corrected["summary"]["max_abs_measurement_offset"]
+        <= corrected["thresholds"]["max_measurement_offset"]
+    )
     assert corrected["summary"]["objective_converged"] is True
 
 
@@ -381,14 +494,30 @@ def test_topology_supervisor_measurement_scenarios_stay_safe_and_remove_gap() ->
     assert uncorrected["checks"]["max_abs_actuator_lag"] is True
     assert uncorrected["checks"]["supervisor_active"] is True
     assert uncorrected["checks"]["supervisor_safe"] is True
-    assert uncorrected["x_point_position_gap"] >= uncorrected["thresholds"]["min_x_point_position_gap"]
+    assert (
+        uncorrected["x_point_position_gap"] >= uncorrected["thresholds"]["min_x_point_position_gap"]
+    )
     assert uncorrected["x_point_flux_gap"] >= uncorrected["thresholds"]["min_x_point_flux_gap"]
     assert uncorrected["divertor_rms_gap"] >= uncorrected["thresholds"]["min_divertor_rms_gap"]
-    assert uncorrected["divertor_max_abs_gap"] >= uncorrected["thresholds"]["min_divertor_max_abs_gap"]
-    assert uncorrected["summary"]["max_abs_measurement_offset"] >= uncorrected["thresholds"]["min_measurement_offset"]
-    assert uncorrected["summary"]["true_x_point_flux_error"] <= uncorrected["thresholds"]["max_true_x_point_flux_error"]
-    assert uncorrected["summary"]["true_divertor_rms"] <= uncorrected["thresholds"]["max_true_divertor_rms"]
-    assert uncorrected["summary"]["true_divertor_max_abs"] <= uncorrected["thresholds"]["max_true_divertor_max_abs"]
+    assert (
+        uncorrected["divertor_max_abs_gap"] >= uncorrected["thresholds"]["min_divertor_max_abs_gap"]
+    )
+    assert (
+        uncorrected["summary"]["max_abs_measurement_offset"]
+        >= uncorrected["thresholds"]["min_measurement_offset"]
+    )
+    assert (
+        uncorrected["summary"]["true_x_point_flux_error"]
+        <= uncorrected["thresholds"]["max_true_x_point_flux_error"]
+    )
+    assert (
+        uncorrected["summary"]["true_divertor_rms"]
+        <= uncorrected["thresholds"]["max_true_divertor_rms"]
+    )
+    assert (
+        uncorrected["summary"]["true_divertor_max_abs"]
+        <= uncorrected["thresholds"]["max_true_divertor_max_abs"]
+    )
     assert uncorrected["summary"]["objective_converged"] is False
 
     assert corrected["checks"]["supervisor_intervention_count"] is True
@@ -416,7 +545,10 @@ def test_topology_supervisor_measurement_scenarios_stay_safe_and_remove_gap() ->
         rel=0.0,
         abs=1.0e-12,
     )
-    assert corrected["summary"]["max_abs_measurement_offset"] <= corrected["thresholds"]["max_measurement_offset"]
+    assert (
+        corrected["summary"]["max_abs_measurement_offset"]
+        <= corrected["thresholds"]["max_measurement_offset"]
+    )
     assert corrected["summary"]["objective_converged"] is True
 
 
@@ -430,12 +562,17 @@ def test_topology_supervisor_latency_scenarios_stay_safe_and_bound_combined_faul
     assert uncorrected["checks"]["max_abs_actuator_lag"] is True
     assert uncorrected["checks"]["supervisor_active"] is True
     assert uncorrected["checks"]["supervisor_safe"] is True
-    assert uncorrected["x_point_position_gap"] >= uncorrected["thresholds"]["min_x_point_position_gap"]
+    assert (
+        uncorrected["x_point_position_gap"] >= uncorrected["thresholds"]["min_x_point_position_gap"]
+    )
     assert uncorrected["x_point_flux_gap"] >= uncorrected["thresholds"]["min_x_point_flux_gap"]
     assert uncorrected["divertor_rms_gap"] >= uncorrected["thresholds"]["min_divertor_rms_gap"]
-    assert uncorrected["divertor_max_abs_gap"] >= uncorrected["thresholds"]["min_divertor_max_abs_gap"]
     assert (
-        uncorrected["delayed_observation_error_norm"] >= uncorrected["thresholds"]["min_delayed_observation_error_norm"]
+        uncorrected["divertor_max_abs_gap"] >= uncorrected["thresholds"]["min_divertor_max_abs_gap"]
+    )
+    assert (
+        uncorrected["delayed_observation_error_norm"]
+        >= uncorrected["thresholds"]["min_delayed_observation_error_norm"]
     )
     assert uncorrected["summary"]["objective_converged"] is False
 
@@ -449,7 +586,8 @@ def test_topology_supervisor_latency_scenarios_stay_safe_and_bound_combined_faul
     assert corrected["divertor_rms_gap"] <= corrected["thresholds"]["max_divertor_rms_gap"]
     assert corrected["divertor_max_abs_gap"] <= corrected["thresholds"]["max_divertor_max_abs_gap"]
     assert (
-        corrected["estimated_observation_error_norm"] <= corrected["thresholds"]["max_estimated_observation_error_norm"]
+        corrected["estimated_observation_error_norm"]
+        <= corrected["thresholds"]["max_estimated_observation_error_norm"]
     )
     assert (
         corrected["summary"]["final_true_tracking_error_norm"]
@@ -477,7 +615,9 @@ def test_supervisor_fallback_kick_reduces_lag_and_stays_safe() -> None:
     assert scenario["checks"]["supervisor_active"] is True
     assert scenario["checks"]["supervisor_safe"] is True
     assert scenario["checks"]["objective_converged"] is True
-    assert summary["supervisor_intervention_count"] >= thresholds["min_supervisor_intervention_count"]
+    assert (
+        summary["supervisor_intervention_count"] >= thresholds["min_supervisor_intervention_count"]
+    )
     assert summary["fallback_active_steps"] >= thresholds["min_fallback_active_steps"]
     assert summary["supervisor_active"] is True
     assert summary["supervisor_safe"] is True
@@ -516,7 +656,10 @@ def test_topology_kick_sweep_keeps_objectives_bounded() -> None:
     assert divertor_rms[-1] > divertor_rms[0]
     assert divertor_max_abs[-1] > divertor_max_abs[0]
     assert all(objective_converged)
-    assert max(divertor_max_abs) <= free_boundary_tracking_acceptance.TOPOLOGY_THRESHOLDS["max_divertor_max_abs"]
+    assert (
+        max(divertor_max_abs)
+        <= free_boundary_tracking_acceptance.TOPOLOGY_THRESHOLDS["max_divertor_max_abs"]
+    )
 
 
 def test_topology_actuator_slew_sweep_tracks_constraint_tradeoff() -> None:
@@ -542,7 +685,10 @@ def test_topology_actuator_slew_sweep_tracks_constraint_tradeoff() -> None:
     assert divertor_max_abs[-1] > divertor_max_abs[0]
     assert max_abs_coil_current[-1] < max_abs_coil_current[0]
     assert all(objective_converged)
-    assert max(divertor_max_abs) <= free_boundary_tracking_acceptance.TOPOLOGY_THRESHOLDS["max_divertor_max_abs"]
+    assert (
+        max(divertor_max_abs)
+        <= free_boundary_tracking_acceptance.TOPOLOGY_THRESHOLDS["max_divertor_max_abs"]
+    )
 
 
 def test_topology_measurement_sweep_gaps_grow_monotonically() -> None:
@@ -589,17 +735,23 @@ def test_topology_corrected_measurement_sweep_keeps_gaps_collapsed() -> None:
     assert sweep["checks"]["objective_converged_all"] is True
     assert (
         max(x_point_position_gap)
-        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_x_point_position_gap"]
+        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS[
+            "max_x_point_position_gap"
+        ]
     )
     assert (
-        max(x_point_flux_gap) <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_x_point_flux_gap"]
+        max(x_point_flux_gap)
+        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_x_point_flux_gap"]
     )
     assert (
-        max(divertor_rms_gap) <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_divertor_rms_gap"]
+        max(divertor_rms_gap)
+        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_divertor_rms_gap"]
     )
     assert (
         max(divertor_max_abs_gap)
-        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_divertor_max_abs_gap"]
+        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS[
+            "max_divertor_max_abs_gap"
+        ]
     )
     assert (
         max(measurement_offset)
@@ -680,17 +832,23 @@ def test_topology_supervisor_corrected_measurement_sweep_keeps_gaps_collapsed() 
     assert sweep["checks"]["lag_bounded_all"] is True
     assert (
         max(x_point_position_gap)
-        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_x_point_position_gap"]
+        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS[
+            "max_x_point_position_gap"
+        ]
     )
     assert (
-        max(x_point_flux_gap) <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_x_point_flux_gap"]
+        max(x_point_flux_gap)
+        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_x_point_flux_gap"]
     )
     assert (
-        max(divertor_rms_gap) <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_divertor_rms_gap"]
+        max(divertor_rms_gap)
+        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_divertor_rms_gap"]
     )
     assert (
         max(divertor_max_abs_gap)
-        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS["max_divertor_max_abs_gap"]
+        <= free_boundary_tracking_acceptance.TOPOLOGY_CORRECTED_THRESHOLDS[
+            "max_divertor_max_abs_gap"
+        ]
     )
     assert (
         max(measurement_offset)

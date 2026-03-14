@@ -32,7 +32,9 @@ class SpectralBasis:
 
         self.n_modes = len(self.mn_modes)
 
-    def evaluate(self, coeffs_mn: np.ndarray, theta: np.ndarray, zeta: np.ndarray, is_sin: bool = False) -> np.ndarray:
+    def evaluate(
+        self, coeffs_mn: np.ndarray, theta: np.ndarray, zeta: np.ndarray, is_sin: bool = False
+    ) -> np.ndarray:
         # Evaluate sum C_mn * cos(m*theta - n*N_fp*zeta) or sin(...)
         val = np.zeros_like(theta)
         for i, (m, n) in enumerate(self.mn_modes):
@@ -60,7 +62,9 @@ class VMECLiteSolver:
 
         self.s_grid = np.linspace(0.0, 1.0, n_s)
 
-    def set_boundary(self, R_bound: dict[tuple[int, int], float], Z_bound: dict[tuple[int, int], float]) -> None:
+    def set_boundary(
+        self, R_bound: dict[tuple[int, int], float], Z_bound: dict[tuple[int, int], float]
+    ) -> None:
         """Set fixed boundary conditions at s=1."""
         for i, (m, n) in enumerate(self.basis.mn_modes):
             if (m, n) in R_bound:
@@ -151,7 +155,9 @@ class VMECLiteSolver:
                 if m == 1:
                     B_mn[s, k] += iota_s * abs(self.Z_mn[s, k]) / R_00
 
-        return VMECResult(self.R_mn.copy(), self.Z_mn.copy(), B_mn, float(residual), it + 1, converged)
+        return VMECResult(
+            self.R_mn.copy(), self.Z_mn.copy(), B_mn, float(residual), it + 1, converged
+        )
 
 
 class AxisymmetricTokamakBoundary:

@@ -195,7 +195,14 @@ class ELMCycler:
         self.last_crash = 0.0
 
     def step(
-        self, dt: float, alpha_edge: float, j_edge: float, s_edge: float, T_ped: float, n_ped: float, W_ped: float
+        self,
+        dt: float,
+        alpha_edge: float,
+        j_edge: float,
+        s_edge: float,
+        T_ped: float,
+        n_ped: float,
+        W_ped: float,
     ) -> ELMEvent | None:
         self.time += dt
 
@@ -205,6 +212,8 @@ class ELMCycler:
             f_elm = 1.0 / max(self.time - self.last_crash, 1e-6)
             self.last_crash = self.time
 
-            return ELMEvent(time=self.time, delta_W_MJ=res.delta_W_MJ, f_elm_Hz=f_elm, crash_type="Type I")
+            return ELMEvent(
+                time=self.time, delta_W_MJ=res.delta_W_MJ, f_elm_Hz=f_elm, crash_type="Type I"
+            )
 
         return None

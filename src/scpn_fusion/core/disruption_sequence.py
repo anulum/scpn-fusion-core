@@ -96,13 +96,17 @@ class ThermalQuench:
         # tau ~ a^2 / chi
         return self.a**2 / chi
 
-    def heat_deposition(self, W_th_MJ: float, A_wall_m2: float, peaking_factor: float = 3.0) -> float:
+    def heat_deposition(
+        self, W_th_MJ: float, A_wall_m2: float, peaking_factor: float = 3.0
+    ) -> float:
         """Peak heat flux [MJ/m^2]"""
         if A_wall_m2 <= 0.0:
             return float("inf")
         return (W_th_MJ / A_wall_m2) * peaking_factor
 
-    def post_tq_temperature(self, Te_pre_keV: float, tau_tq_ms: float, tau_radiation_ms: float = 0.5) -> float:
+    def post_tq_temperature(
+        self, Te_pre_keV: float, tau_tq_ms: float, tau_radiation_ms: float = 0.5
+    ) -> float:
         """Residual Te [eV] after quench and radiation cooling."""
         # Extremely simplified mapping: drops to few eV via line radiation of impurities.
         # Rapid drop, usually saturates between 5-50 eV
@@ -243,7 +247,9 @@ class DisruptionSequence:
             Z_eff = 1.5
 
         # Phase 2: CQ
-        cq = CurrentQuench(self.config.Ip_MA, 10.0, self.config.R0, self.config.a, self.config.kappa)
+        cq = CurrentQuench(
+            self.config.Ip_MA, 10.0, self.config.R0, self.config.a, self.config.kappa
+        )
 
         # We want to simulate ~150 ms
         dt = 1e-3
@@ -251,7 +257,9 @@ class DisruptionSequence:
         cq_res = cq.evolve(post_T, Z_eff, dt, n_steps)
 
         # Phase 3: RE
-        re_params = RunawayParams(ne_20, post_T / 1000.0, 0.0, Z_eff, self.config.B0, self.config.R0)
+        re_params = RunawayParams(
+            ne_20, post_T / 1000.0, 0.0, Z_eff, self.config.B0, self.config.R0
+        )
         re_model = RunawayEvolution(re_params)
 
         # Initial seed from hot tail
@@ -283,7 +291,9 @@ class DisruptionSequence:
         re_res = REResult(I_RE, W_RE, re_load)
 
         # Phase 4: Halo
-        halo = HaloCurrentModel(self.config.Ip_MA, self.config.R0, self.config.B0, self.config.kappa)
+        halo = HaloCurrentModel(
+            self.config.Ip_MA, self.config.R0, self.config.B0, self.config.kappa
+        )
         f_halo = halo.halo_fraction(0.1, cq_res.cq_duration_ms)
         tpf = halo.toroidal_peaking_factor()
 

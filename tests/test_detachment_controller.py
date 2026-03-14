@@ -42,20 +42,26 @@ def test_detachment_controller_states():
     ctrl = DetachmentController()
 
     # Needs seeding
-    cmd1 = ctrl.step(T_t_measured=20.0, n_t_measured=10.0, P_rad_measured=10.0, rho_front=0.1, dt=0.1)
+    cmd1 = ctrl.step(
+        T_t_measured=20.0, n_t_measured=10.0, P_rad_measured=10.0, rho_front=0.1, dt=0.1
+    )
     assert cmd1 > 0.0
     assert ctrl.state == DetachmentState.PARTIALLY_DETACHED
 
     # Deeply detached -> reduce seeding
     # Reset controller integral correctly so it only evaluates the new error
     ctrl.integral_e = 0.0
-    cmd2 = ctrl.step(T_t_measured=1.0, n_t_measured=10.0, P_rad_measured=50.0, rho_front=0.1, dt=0.1)
+    cmd2 = ctrl.step(
+        T_t_measured=1.0, n_t_measured=10.0, P_rad_measured=50.0, rho_front=0.1, dt=0.1
+    )
     # cmd2 = Kp * (-2) + Ki * (-0.2) = -102 -> max(0, -102) = 0
     assert cmd2 < cmd1
     assert ctrl.state == DetachmentState.FULLY_DETACHED
 
     # MARFE risk -> hard drop
-    cmd3 = ctrl.step(T_t_measured=1.0, n_t_measured=10.0, P_rad_measured=50.0, rho_front=0.9, dt=0.1)
+    cmd3 = ctrl.step(
+        T_t_measured=1.0, n_t_measured=10.0, P_rad_measured=50.0, rho_front=0.9, dt=0.1
+    )
     assert cmd3 <= cmd2
     assert ctrl.state == DetachmentState.XPOINT_MARFE
 

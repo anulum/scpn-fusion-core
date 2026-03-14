@@ -19,7 +19,12 @@ class QLKNNSurrogate:
     model so predictions are physically meaningful out of the box.
     """
 
-    def __init__(self, hidden_layers: list[int] | None = None, activation: str = "elu", pretrained: bool = True):
+    def __init__(
+        self,
+        hidden_layers: list[int] | None = None,
+        activation: str = "elu",
+        pretrained: bool = True,
+    ):
         if hidden_layers is None:
             hidden_layers = [128, 128, 64]
 
@@ -129,7 +134,14 @@ class QLKNNSurrogate:
 class TransportInputNormalizer:
     @staticmethod
     def from_profiles(
-        Te: np.ndarray, Ti: np.ndarray, ne: np.ndarray, q: np.ndarray, R0: float, a: float, B0: float, r: np.ndarray
+        Te: np.ndarray,
+        Ti: np.ndarray,
+        ne: np.ndarray,
+        q: np.ndarray,
+        R0: float,
+        a: float,
+        B0: float,
+        r: np.ndarray,
     ) -> np.ndarray:
         """
         Convert physical profiles into the 10 dimensionless QLKNN inputs.
@@ -170,14 +182,18 @@ class TransportInputNormalizer:
         # 10. epsilon
         eps = epsilon
 
-        inputs = np.vstack([R_L_Ti, R_L_Te, R_L_ne, q_norm, s_hat, alpha_MHD, Ti_Te, nu_star, Z_eff, eps]).T
+        inputs = np.vstack(
+            [R_L_Ti, R_L_Te, R_L_ne, q_norm, s_hat, alpha_MHD, Ti_Te, nu_star, Z_eff, eps]
+        ).T
 
         return inputs
 
 
 class TrainingDataGenerator:
     @staticmethod
-    def generate_parameter_scan(n_samples: int, rng: np.random.RandomState | None = None) -> np.ndarray:
+    def generate_parameter_scan(
+        n_samples: int, rng: np.random.RandomState | None = None
+    ) -> np.ndarray:
         """Uniform random sampling in 10D QLKNN parameter space."""
         if rng is None:
             rng = np.random.RandomState()
@@ -221,7 +237,9 @@ class TrainingDataGenerator:
             nu_star = inputs[i, 7]
 
             # Jenko et al. critical gradient formula
-            R_L_Ti_crit = (1.0 + inputs[i, 6]) * max(1.33 + 1.91 * s_hat / q, 0.0) * (1.0 - 1.5 * eps)
+            R_L_Ti_crit = (
+                (1.0 + inputs[i, 6]) * max(1.33 + 1.91 * s_hat / q, 0.0) * (1.0 - 1.5 * eps)
+            )
             R_L_Ti_crit = max(R_L_Ti_crit, 0.0)
 
             # ITG Flux
@@ -257,7 +275,14 @@ class NeuralTransportTrainer:
             return np.asarray(1.0 - np.tanh(x) ** 2)
         return np.ones_like(x)
 
-    def train(self, X: np.ndarray, y: np.ndarray, epochs: int = 200, lr: float = 1e-3, val_frac: float = 0.2) -> dict:
+    def train(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        epochs: int = 200,
+        lr: float = 1e-3,
+        val_frac: float = 0.2,
+    ) -> dict:
         n_samples = X.shape[0]
         n_val = max(int(n_samples * val_frac), 1)
 
@@ -300,7 +325,9 @@ class NeuralTransportTrainer:
                 model.weights[i] -= lr * dW
                 model.biases[i] -= lr * db
                 if i > 0:
-                    delta = (delta @ model.weights[i].T) * self._activate_deriv(pre_acts[i - 1], model.activation)
+                    delta = (delta @ model.weights[i].T) * self._activate_deriv(
+                        pre_acts[i - 1], model.activation
+                    )
                     np.clip(delta, -1e6, 1e6, out=delta)
 
             pred_val = model.forward(X_val)

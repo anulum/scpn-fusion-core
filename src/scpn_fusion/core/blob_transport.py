@@ -115,7 +115,9 @@ class BlobEnsemble:
 
 class SOLBlobProfile:
     @staticmethod
-    def radial_density(r: np.ndarray, Gamma_blob: float, D_perp: float, lambda_n: float) -> np.ndarray:
+    def radial_density(
+        r: np.ndarray, Gamma_blob: float, D_perp: float, lambda_n: float
+    ) -> np.ndarray:
         # Without blobs: n = n0 exp(-r / lambda_n)
         # With blobs, effective transport is enhanced, flattening profile
         # Simple analytic proxy
@@ -143,7 +145,9 @@ class BlobEvent:
 
 
 class BlobDetector:
-    def detect_blobs(self, signal: np.ndarray, dt: float = 1e-6, threshold: float = 2.5) -> list[BlobEvent]:
+    def detect_blobs(
+        self, signal: np.ndarray, dt: float = 1e-6, threshold: float = 2.5
+    ) -> list[BlobEvent]:
         mean_sig = np.mean(signal)
         std_sig = np.std(signal)
 
@@ -173,7 +177,9 @@ class BlobDetector:
 
         return events
 
-    def conditional_average(self, signal: np.ndarray, events: list[BlobEvent], window: int = 50) -> np.ndarray:
+    def conditional_average(
+        self, signal: np.ndarray, events: list[BlobEvent], window: int = 50
+    ) -> np.ndarray:
         if not events:
             return np.zeros(2 * window + 1)
 

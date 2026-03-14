@@ -111,7 +111,12 @@ def tungsten_accumulation_diagnostic(n_W: np.ndarray, ne: np.ndarray) -> dict[st
     else:
         danger = "critical"
 
-    return {"c_W_core": c_W_core, "c_W_edge": c_W_edge, "peaking_factor": peaking_factor, "danger_level": danger}
+    return {
+        "c_W_core": c_W_core,
+        "c_W_edge": c_W_edge,
+        "peaking_factor": peaking_factor,
+        "danger_level": danger,
+    }
 
 
 class ImpurityTransportSolver:

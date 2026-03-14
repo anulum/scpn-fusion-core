@@ -7,7 +7,9 @@ from __future__ import annotations
 import numpy as np
 
 
-def nbi_torque(P_nbi_profile: np.ndarray, R0: float, v_beam: float, theta_inj_deg: float) -> np.ndarray:
+def nbi_torque(
+    P_nbi_profile: np.ndarray, R0: float, v_beam: float, theta_inj_deg: float
+) -> np.ndarray:
     """
     Torque deposition from NBI [N m / m^3].
     """
@@ -19,7 +21,9 @@ def nbi_torque(P_nbi_profile: np.ndarray, R0: float, v_beam: float, theta_inj_de
     return np.asarray(P_nbi_profile * R0 * np.sin(theta_rad) / v_beam)
 
 
-def intrinsic_rotation_torque(grad_Ti: np.ndarray, grad_ne: np.ndarray, R0: float, a: float) -> np.ndarray:
+def intrinsic_rotation_torque(
+    grad_Ti: np.ndarray, grad_ne: np.ndarray, R0: float, a: float
+) -> np.ndarray:
     """
     Residual stress model torque (Rice scaling heuristic).
     T_intr ~ grad_Ti

@@ -43,7 +43,9 @@ class PaschenBreakdown:
     def paschen_curve(self, p_range: np.ndarray, connection_length_m: float = 100.0) -> np.ndarray:
         return np.array([self.breakdown_voltage(p, connection_length_m) for p in p_range])
 
-    def optimal_prefill_pressure(self, V_loop_max: float, connection_length_m: float = 100.0) -> float:
+    def optimal_prefill_pressure(
+        self, V_loop_max: float, connection_length_m: float = 100.0
+    ) -> float:
         # Minimum of V_breakdown occurs at pd = exp(1 + C2/A)
         pd_opt = math.exp(1.0 + self.C2 / self.A)
         return float(pd_opt / connection_length_m)
@@ -142,7 +144,9 @@ class BurnThrough:
         P_Ohmic = (Ip_kA * 1e3) ** 2 * R_p
         return float(P_Ohmic)
 
-    def radiation_barrier(self, Te_eV: float, ne_19: float, f_imp: float, impurity: str = "C") -> float:
+    def radiation_barrier(
+        self, Te_eV: float, ne_19: float, f_imp: float, impurity: str = "C"
+    ) -> float:
         curve = CoolingCurve(impurity)
         L_z = curve.L_z(np.array([Te_eV]))[0]
 
@@ -160,7 +164,9 @@ class BurnThrough:
         P_rad = self.radiation_barrier(Te_eV, ne_19, f_imp, impurity)
         return P_oh > P_rad
 
-    def critical_impurity_fraction(self, Te_eV: float, ne_19: float, Ip_kA: float, impurity: str) -> float:
+    def critical_impurity_fraction(
+        self, Te_eV: float, ne_19: float, Ip_kA: float, impurity: str
+    ) -> float:
         # Find f_imp such that P_oh = P_rad
         curve = CoolingCurve(impurity)
         L_z = curve.L_z(np.array([Te_eV]))[0]
@@ -176,7 +182,9 @@ class BurnThrough:
         n_imp_crit = P_oh / (ne * L_z * V)
         return float(n_imp_crit / ne)
 
-    def evolve(self, ne_19: float, f_imp: float, dt: float, n_steps: int, impurity: str = "C") -> BurnThroughResult:
+    def evolve(
+        self, ne_19: float, f_imp: float, dt: float, n_steps: int, impurity: str = "C"
+    ) -> BurnThroughResult:
         Te = 5.0  # start at 5 eV
         Ip = 100.0  # start at 100 kA
 
@@ -222,7 +230,15 @@ class StartupResult:
 
 
 class StartupSequence:
-    def __init__(self, R0: float, a: float, B0: float, V_loop: float, p_prefill_Pa: float, f_imp: float = 0.01):
+    def __init__(
+        self,
+        R0: float,
+        a: float,
+        B0: float,
+        V_loop: float,
+        p_prefill_Pa: float,
+        f_imp: float = 0.01,
+    ):
         self.R0 = R0
         self.a = a
         self.B0 = B0

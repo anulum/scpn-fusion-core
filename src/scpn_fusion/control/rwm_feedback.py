@@ -39,7 +39,11 @@ class RWMPhysics:
         if self.beta_n <= self.beta_n_nowall:
             return 0.0  # Stable
 
-        gamma = (1.0 / self.tau_wall) * (self.beta_n - self.beta_n_nowall) / (self.beta_n_wall - self.beta_n)
+        gamma = (
+            (1.0 / self.tau_wall)
+            * (self.beta_n - self.beta_n_nowall)
+            / (self.beta_n_wall - self.beta_n)
+        )
         return gamma
 
 
@@ -97,7 +101,9 @@ class RWMFeedbackController:
         if gamma_wall >= 1e6:
             return gamma_wall  # Cannot stabilize ideal kink
 
-        stabilization = self.G_p * self.M_coil * gamma_wall / (1.0 + gamma_wall * self.tau_controller)
+        stabilization = (
+            self.G_p * self.M_coil * gamma_wall / (1.0 + gamma_wall * self.tau_controller)
+        )
         return gamma_wall - stabilization
 
     def is_stabilized(self, rwm: RWMPhysics) -> bool:

@@ -35,7 +35,9 @@ class ParticleTransportModel:
         decay /= np.sum(decay * self.V_prime * self.drho) + 1e-10
         return np.asarray(rate * decay)
 
-    def pellet_source(self, speed_ms: float, radius_mm: float, launch_angle_deg: float = 0.0) -> np.ndarray:
+    def pellet_source(
+        self, speed_ms: float, radius_mm: float, launch_angle_deg: float = 0.0
+    ) -> np.ndarray:
         """Simple NGS mock. Penetrates deeper with higher speed and radius."""
         if radius_mm <= 0.0:
             return np.zeros(self.n_rho)
@@ -96,7 +98,11 @@ class ParticleTransportModel:
         dne_dt = np.zeros(self.n_rho)
         for i in range(self.n_rho):
             Vp = max(self.V_prime[i], 1e-6)
-            Vp_plus = self.V_prime[i] if i == self.n_rho - 1 else 0.5 * (self.V_prime[i] + self.V_prime[i + 1])
+            Vp_plus = (
+                self.V_prime[i]
+                if i == self.n_rho - 1
+                else 0.5 * (self.V_prime[i] + self.V_prime[i + 1])
+            )
             Vp_minus = 0.0 if i == 0 else 0.5 * (self.V_prime[i] + self.V_prime[i - 1])
 
             div_flux = (Vp_plus * flux[i + 1] - Vp_minus * flux[i]) / (Vp * self.drho * self.a)
@@ -130,7 +136,9 @@ class DensityController:
     def set_target(self, ne_target: np.ndarray) -> None:
         self.ne_target = ne_target
 
-    def set_constraints(self, n_GW: float, gas_max: float, pellet_freq_max: float, pump_max: float) -> None:
+    def set_constraints(
+        self, n_GW: float, gas_max: float, pellet_freq_max: float, pump_max: float
+    ) -> None:
         self.n_GW = n_GW
         self.gas_max = gas_max
         self.pellet_freq_max = pellet_freq_max
@@ -207,7 +215,9 @@ class KalmanDensityEstimator:
         self.P = self.P + self.Q * dt
         return self.x
 
-    def update(self, ne_pred: np.ndarray, measurements: np.ndarray, chord_angles: np.ndarray) -> np.ndarray:
+    def update(
+        self, ne_pred: np.ndarray, measurements: np.ndarray, chord_angles: np.ndarray
+    ) -> np.ndarray:
         C = self.measurement_matrix(chord_angles)
 
         # K = P C^T (C P C^T + R)^-1

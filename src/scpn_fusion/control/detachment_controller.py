@@ -84,7 +84,12 @@ class DetachmentController:
         return DetachmentState.FULLY_DETACHED
 
     def step(
-        self, T_t_measured: float, n_t_measured: float, P_rad_measured: float, rho_front: float, dt: float
+        self,
+        T_t_measured: float,
+        n_t_measured: float,
+        P_rad_measured: float,
+        rho_front: float,
+        dt: float,
     ) -> float:
         self.state = self._determine_state(T_t_measured, rho_front)
 
@@ -120,7 +125,9 @@ class DetachmentBifurcation:
         self.impurity = impurity
         self.front_model = RadiationFrontModel(impurity, sol.R0, sol.a, sol.q95)
 
-    def _steady_state_target(self, seeding_rate: float, P_SOL_MW: float, n_u_19: float) -> DetachmentPoint:
+    def _steady_state_target(
+        self, seeding_rate: float, P_SOL_MW: float, n_u_19: float
+    ) -> DetachmentPoint:
         # Seeding rate determines f_rad
         f_rad = min(0.95, seeding_rate * 0.1)  # Mock scaling
 
@@ -147,7 +154,9 @@ class DetachmentBifurcation:
 
         return DetachmentPoint(seeding_rate, T_t, res.n_target_19, dod, f_rad, state)
 
-    def scan_seeding(self, seeding_range: np.ndarray, P_SOL_MW: float, n_u_19: float) -> list[DetachmentPoint]:
+    def scan_seeding(
+        self, seeding_range: np.ndarray, P_SOL_MW: float, n_u_19: float
+    ) -> list[DetachmentPoint]:
         return [self._steady_state_target(sr, P_SOL_MW, n_u_19) for sr in seeding_range]
 
     def find_rollover_point(self, P_SOL_MW: float, n_u_19: float) -> float:

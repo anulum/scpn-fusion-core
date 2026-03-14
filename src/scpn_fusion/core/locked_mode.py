@@ -73,7 +73,9 @@ class ModeLocking:
         torque = 4.0 * math.pi**2 * self.R0 * n * (m / max(r_s, 1e-3)) * (B_res**2) / mu_0
         return torque
 
-    def evolve_rotation(self, B_res: float, r_s: float, tau_visc: float, dt: float, n_steps: int) -> RotationEvolution:
+    def evolve_rotation(
+        self, B_res: float, r_s: float, tau_visc: float, dt: float, n_steps: int
+    ) -> RotationEvolution:
         omega = self.omega_phi_0
         omega_trace = np.zeros(n_steps)
         locked = False
@@ -118,7 +120,9 @@ class LockedModeIsland:
         self.R0 = R0
         self.delta_prime = delta_prime
 
-    def grow(self, w0: float, eta: float, dt: float, n_steps: int, delta_r_mn: float = 0.3) -> IslandGrowth:
+    def grow(
+        self, w0: float, eta: float, dt: float, n_steps: int, delta_r_mn: float = 0.3
+    ) -> IslandGrowth:
         """
         w grows on resistive timescale.
         dw/dt = (eta / mu0 r_s) * [r_s Delta' + C_lock r_s / w]
@@ -133,7 +137,9 @@ class LockedModeIsland:
 
         for i in range(n_steps):
             # MRE
-            dw_dt = (eta / (mu_0 * self.r_s)) * (self.r_s * self.delta_prime + C_lock * self.r_s / w)
+            dw_dt = (eta / (mu_0 * self.r_s)) * (
+                self.r_s * self.delta_prime + C_lock * self.r_s / w
+            )
             w += dw_dt * dt
             w_trace[i] = w
 

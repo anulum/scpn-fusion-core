@@ -39,7 +39,13 @@ def ngs_ablation_rate(r_p: float, ne: float, Te_eV: float, M_p: float) -> float:
         return 0.0
 
     C_abl = 1.12e6
-    rate = C_abl * (ne ** (1.0 / 3.0)) * (Te_eV ** (5.0 / 3.0)) * (r_p ** (4.0 / 3.0)) * (M_p ** (-1.0 / 3.0))
+    rate = (
+        C_abl
+        * (ne ** (1.0 / 3.0))
+        * (Te_eV ** (5.0 / 3.0))
+        * (r_p ** (4.0 / 3.0))
+        * (M_p ** (-1.0 / 3.0))
+    )
     return float(max(0.0, rate))
 
 
@@ -115,7 +121,13 @@ class PelletTrajectory:
         n_dep = np.mean(deposition[deposition > 0]) if np.any(deposition > 0) else 1.0
         n_e_avg = np.mean(ne) * 1e19
         # Parametric fit: displacement ~ 0.1-0.2 a for ITER
-        drift_m = 0.1 * self.a * np.sqrt(n_dep / max(n_e_avg, 1e-3)) * (T_avg / max(self.B0**2, 1e-3)) / 1000.0
+        drift_m = (
+            0.1
+            * self.a
+            * np.sqrt(n_dep / max(n_e_avg, 1e-3))
+            * (T_avg / max(self.B0**2, 1e-3))
+            / 1000.0
+        )
 
         if self.params.injection_side == "HFS":
             drift_rho = -drift_m / self.a

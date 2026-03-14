@@ -104,7 +104,9 @@ def avalanche_growth_rate(params: RunawayParams, n_RE: float, coulomb_log: float
     return float(max(0.0, rate))
 
 
-def hot_tail_seed(Te_pre_keV: float, Te_post_keV: float, ne_20: float, quench_time_ms: float) -> float:
+def hot_tail_seed(
+    Te_pre_keV: float, Te_post_keV: float, ne_20: float, quench_time_ms: float
+) -> float:
     """
     Seed RE density from thermal quench hot-tail mechanism [m^-3].
     Smith, H.M. et al., Phys. Plasmas 15, 072502 (2008).
@@ -141,7 +143,11 @@ class RunawayEvolution:
         return float(n_RE + dn_RE)
 
     def evolve(
-        self, n_RE_0: float, E_par_profile: Callable[[float], float], t_span: tuple[float, float], dt: float
+        self,
+        n_RE_0: float,
+        E_par_profile: Callable[[float], float],
+        t_span: tuple[float, float],
+        dt: float,
     ) -> tuple[np.ndarray, np.ndarray]:
         t_start, t_end = t_span
         n_steps = int(np.ceil((t_end - t_start) / dt))
@@ -167,7 +173,9 @@ class RunawayEvolution:
 
 class RunawayMitigationAssessment:
     @staticmethod
-    def required_density_for_suppression(E_par: float, Z_eff: float, coulomb_log: float = 15.0) -> float:
+    def required_density_for_suppression(
+        E_par: float, Z_eff: float, coulomb_log: float = 15.0
+    ) -> float:
         """
         Density [10^20 m^-3] needed to make E_c > E_par.
         """

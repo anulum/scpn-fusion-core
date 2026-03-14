@@ -41,7 +41,14 @@ class ChirikovOverlap:
 
 class CoupledTearingModes:
     def __init__(
-        self, mode1: tuple[int, int], mode2: tuple[int, int], r_s1: float, r_s2: float, a: float, R0: float, B0: float
+        self,
+        mode1: tuple[int, int],
+        mode2: tuple[int, int],
+        r_s1: float,
+        r_s2: float,
+        a: float,
+        R0: float,
+        B0: float,
     ):
         self.m1, self.n1 = mode1
         self.m2, self.n2 = mode2
@@ -173,7 +180,9 @@ class DisruptionTriggerAssessment:
     def __init__(self, coupled: CoupledTearingModes):
         self.coupled = coupled
 
-    def run_scenario(self, j_bs: float, j_phi: float, omega_phi: float, seed_energy: float) -> DisruptionPath:
+    def run_scenario(
+        self, j_bs: float, j_phi: float, omega_phi: float, seed_energy: float
+    ) -> DisruptionPath:
         st_seed = SawtoothNTMSeeding(None)
         amp = st_seed.seed_amplitude(seed_energy, self.coupled.r_s1)
 
@@ -181,7 +190,9 @@ class DisruptionTriggerAssessment:
         dt = 0.01
         n_steps = 1000
 
-        res = self.coupled.evolve(1e-6, 1e-6, j_bs, j_phi, eta, dt, n_steps, seed_time=0.1, seed_amplitude=amp)
+        res = self.coupled.evolve(
+            1e-6, 1e-6, j_bs, j_phi, eta, dt, n_steps, seed_time=0.1, seed_amplitude=amp
+        )
 
         if not res.disruption:
             return DisruptionPath(-1.0, True)

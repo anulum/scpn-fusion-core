@@ -58,7 +58,9 @@ def test_rwm_step():
 
 
 def test_wall_time_limits():
-    rwm_ideal_wall = RWMPhysics(beta_n=3.0, beta_n_nowall=2.8, beta_n_wall=3.5, tau_wall=float("inf"))
+    rwm_ideal_wall = RWMPhysics(
+        beta_n=3.0, beta_n_nowall=2.8, beta_n_wall=3.5, tau_wall=float("inf")
+    )
     assert rwm_ideal_wall.growth_rate() == 0.0  # Actually 1/inf -> 0
 
     rwm_no_wall = RWMPhysics(beta_n=3.0, beta_n_nowall=2.8, beta_n_wall=3.5, tau_wall=0.0)

@@ -91,6 +91,8 @@ def test_elm_cycler():
     assert ev is None
 
     # Step 2: Unstable
-    ev2 = cycler.step(0.1, alpha_edge=10.0, j_edge=1e6, s_edge=2.0, T_ped=5.0, n_ped=5.0, W_ped=100.0)
+    ev2 = cycler.step(
+        0.1, alpha_edge=10.0, j_edge=1e6, s_edge=2.0, T_ped=5.0, n_ped=5.0, W_ped=100.0
+    )
     assert ev2 is not None
     assert ev2.delta_W_MJ == 10.0

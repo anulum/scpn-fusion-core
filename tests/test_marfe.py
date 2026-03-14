@@ -54,7 +54,9 @@ def test_density_limit_predictor():
     assert n_marfe > n_gw
 
     # High impurity
-    n_marfe_dirty = DensityLimitPredictor.marfe_limit(15.0, 2.0, P_SOL_MW=100.0, impurity="W", f_imp=1e-2)
+    n_marfe_dirty = DensityLimitPredictor.marfe_limit(
+        15.0, 2.0, P_SOL_MW=100.0, impurity="W", f_imp=1e-2
+    )
     assert n_marfe_dirty < n_marfe
 
 

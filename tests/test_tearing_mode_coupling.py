@@ -45,7 +45,15 @@ def test_coupled_tearing_modes():
 
     # Strong bootstrap + seed -> disruption via Chirikov overlap
     res_seed = c.evolve(
-        1e-6, 2e-3, j_bs=8e5, j_phi=1e6, eta=1e-5, dt=0.01, n_steps=1000, seed_time=0.1, seed_amplitude=0.1
+        1e-6,
+        2e-3,
+        j_bs=8e5,
+        j_phi=1e6,
+        eta=1e-5,
+        dt=0.01,
+        n_steps=1000,
+        seed_time=0.1,
+        seed_amplitude=0.1,
     )
     assert res_seed.disruption
     assert res_seed.overlap_time >= 0.0
