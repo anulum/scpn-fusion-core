@@ -15,7 +15,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-authors = ["Miroslav Sotek", "Michal Reiprich"]
+authors = ["Miroslav Sotek"]
 license = "AGPL-3.0-or-later"
 edition = "2021"
 

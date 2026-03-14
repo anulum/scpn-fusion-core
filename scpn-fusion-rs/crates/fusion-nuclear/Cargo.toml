@@ -1,5 +1,5 @@
 [package]
-authors = ["Miroslav Sotek", "Michal Reiprich"]
+authors = ["Miroslav Sotek"]
 license = "AGPL-3.0-or-later"
 name = "fusion-nuclear"
 version = "0.1.0"

@@ -1,7 +1,7 @@
 # ──────────────────────────────────────────────────────────────────────
 # SCPN Fusion Core — State Estimator Tests
 # © 1998–2026 Miroslav Šotek. All rights reserved.
-# License: MIT OR Apache-2.0
+# License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 """
 Tests for the Extended Kalman Filter (EKF) state estimator.

@@ -62,7 +62,7 @@ If you use SCPN-Fusion-Core in your research, please cite:
    @software{scpn_fusion_core,
      title   = {SCPN Fusion Core: Tokamak Plasma Physics Simulation
                 and Neuro-Symbolic Control Suite},
-     author  = {Sotek, Miroslav and Reiprich, Michal},
+     author  = {Sotek, Miroslav},
      year    = {2026},
      url     = {https://github.com/anulum/scpn-fusion-core},
      version = {1.0.2}
@@ -73,4 +73,3 @@ Authors
 
 - **Miroslav Sotek** -- ANULUM CH & LI --
   `ORCID <https://orcid.org/0009-0009-3560-0851>`_
-- **Michal Reiprich** -- ANULUM CH & LI

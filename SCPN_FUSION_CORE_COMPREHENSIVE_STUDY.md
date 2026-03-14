@@ -2,7 +2,7 @@
 
 ## Integrated Plasma Physics Simulation, Rust-Accelerated Computation, and Neuromorphic Control for Next-Generation Fusion Energy
 
-**Authors:** Miroslav Sotek, Michal Reiprich
+**Author:** Miroslav Sotek
 
 **Date:** February 2026
 
@@ -178,7 +178,7 @@ SCPN-Fusion-Core addresses this fragmentation by implementing simplified but phy
 
 ### 3.1 What is SCPN?
 
-The Self-Consistent Phenomenological Network (SCPN) is a theoretical and computational framework developed by Sotek and Reiprich that organizes physical, biological, and information-theoretic phenomena into a hierarchical 16-layer structure. Each layer is characterized by a phase oscillator governed by the Unified Phase Dynamics Equation (UPDE):
+The Self-Consistent Phenomenological Network (SCPN) is a theoretical and computational framework developed by Sotek that organizes physical, biological, and information-theoretic phenomena into a hierarchical 16-layer structure. Each layer is characterized by a phase oscillator governed by the Unified Phase Dynamics Equation (UPDE):
 
 ```
 dΘ_n/dt = Ω_n + Σ_m K_nm sin(Θ_m - Θ_n) + F_n cos(Θ_n) + η_n(t)

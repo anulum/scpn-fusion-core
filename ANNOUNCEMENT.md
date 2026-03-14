@@ -160,7 +160,7 @@ License: AGPL v3
 
 **Title:** SCPN Fusion Core: A Comprehensive Tokamak Plasma Physics Simulation and Neuro-Symbolic Control Suite
 
-**Authors:** Miroslav Sotek (ORCID: 0009-0009-3560-0851), Michal Reiprich — ANULUM CH & LI
+**Author:** Miroslav Sotek (ORCID: 0009-0009-3560-0851) — ANULUM CH & LI
 
 **Abstract:**
 

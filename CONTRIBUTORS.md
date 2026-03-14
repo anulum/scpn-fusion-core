@@ -7,10 +7,6 @@ SCPN Fusion Core is developed and maintained by the [Anulum Institute](https://w
 - **Miroslav Šotek** — Architecture, plasma physics, neural surrogates, SCPN integration
   - ORCID: [0009-0009-3560-0851](https://orcid.org/0009-0009-3560-0851)
 
-## Contributors
-
-- **Michal Reiprich** — Research collaboration, documentation
-
 ---
 
 Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
