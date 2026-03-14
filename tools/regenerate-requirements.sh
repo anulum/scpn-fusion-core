@@ -18,17 +18,33 @@ for pyver in "${ci_versions[@]}"; do
         -o "${outfile}"
 done
 
-# All other .in files: single lock file each (Python 3.12, linux)
+# Cross-platform lock files (used on macOS + Linux smoke-install)
+cross_platform=("minimal" "full")
+
+# Linux-only lock files (Python 3.12)
 for infile in requirements/*.in; do
     base="$(basename "${infile}" .in)"
     [ "${base}" = "ci" ] && continue  # handled above
     outfile="${infile%.in}.txt"
-    echo "Compiling ${infile} -> ${outfile}  (Python 3.12, linux)"
-    uv pip compile "${infile}" \
-        --generate-hashes \
-        --python-version "3.12" \
-        --python-platform linux \
-        -o "${outfile}"
+    is_cross=false
+    for cp in "${cross_platform[@]}"; do
+        [ "${base}" = "${cp}" ] && is_cross=true
+    done
+    if [ "${is_cross}" = true ]; then
+        echo "Compiling ${infile} -> ${outfile}  (Python 3.12, universal)"
+        uv pip compile "${infile}" \
+            --generate-hashes \
+            --python-version "3.12" \
+            --universal \
+            -o "${outfile}"
+    else
+        echo "Compiling ${infile} -> ${outfile}  (Python 3.12, linux)"
+        uv pip compile "${infile}" \
+            --generate-hashes \
+            --python-version "3.12" \
+            --python-platform linux \
+            -o "${outfile}"
+    fi
 done
 
 echo "Done. $(ls requirements/*.txt | wc -l) lock files regenerated."
