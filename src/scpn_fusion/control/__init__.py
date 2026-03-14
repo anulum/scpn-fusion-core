@@ -49,6 +49,23 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     # Gain-scheduled multi-regime controller
     "GainScheduledController": (".gain_scheduled_controller", "GainScheduledController"),
     "RegimeDetector": (".gain_scheduled_controller", "RegimeDetector"),
+    # Phase 5 — Free-boundary tracking (direct kernel + supervisor + EKF)
+    "FreeBoundaryTrackingController": (".free_boundary_tracking", "FreeBoundaryTrackingController"),
+    # Phase 5 — Extended Kalman Filter state estimator
+    "ExtendedKalmanFilter": (".state_estimator", "ExtendedKalmanFilter"),
+    # Phase 5 — Volt-second management (flux budget optimization)
+    "FluxBudget": (".volt_second_manager", "FluxBudget"),
+    "FluxConsumptionMonitor": (".volt_second_manager", "FluxConsumptionMonitor"),
+    "VoltSecondOptimizer": (".volt_second_manager", "VoltSecondOptimizer"),
+    # Phase 5 — RWM feedback (sensor-coil stabilization)
+    "RWMFeedbackController": (".rwm_feedback", "RWMFeedbackController"),
+    "RWMPhysics": (".rwm_feedback", "RWMPhysics"),
+    # Phase 5 — Mu-synthesis (D-K iteration)
+    "MuSynthesisController": (".mu_synthesis", "MuSynthesisController"),
+    # Phase 6 — Detachment control (impurity seeding)
+    "DetachmentController": (".detachment_controller", "DetachmentController"),
+    # Phase 6 — Density control (fueling + pumping)
+    "DensityController": (".density_controller", "DensityController"),
 }
 
 
@@ -68,9 +85,15 @@ __all__ = [
     "AnalyticEquilibriumSolver",
     "CoilSet",
     "ConstrainedGymTokamakEnv",
+    "DensityController",
+    "DetachmentController",
     "DirectorInterface",
+    "ExtendedKalmanFilter",
     "FDIMonitor",
     "FeedforwardController",
+    "FluxBudget",
+    "FluxConsumptionMonitor",
+    "FreeBoundaryTrackingController",
     "FuelingSimResult",
     "GainScheduledController",
     "get_nmpc_controller",
@@ -82,6 +105,7 @@ __all__ = [
     "LagrangianPPO",
     "MagneticDiagnostics",
     "ModelPredictiveController",
+    "MuSynthesisController",
     "NeuroCyberneticController",
     "NonlinearMPC",
     "OptimalController",
@@ -93,6 +117,8 @@ __all__ = [
     "run_optimal_control",
     "run_sota_simulation",
     "RunawayElectronModel",
+    "RWMFeedbackController",
+    "RWMPhysics",
     "ScenarioSchedule",
     "ShatteredPelletInjection",
     "SpiAblationSolver",
@@ -100,4 +126,5 @@ __all__ = [
     "TokamakEnv",
     "TokamakPhysicsEngine",
     "VerticalStabilizer",
+    "VoltSecondOptimizer",
 ]

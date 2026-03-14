@@ -106,6 +106,65 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     # SOL two-point model — Eich scaling
     "TwoPointSOL": (".sol_model", "TwoPointSOL"),
     "eich_heat_flux_width": (".sol_model", "eich_heat_flux_width"),
+    # Phase 5 — Impurity transport (Hirshman & Sigmar 1981)
+    "ImpurityTransportSolver": (".impurity_transport", "ImpurityTransportSolver"),
+    "neoclassical_impurity_pinch": (".impurity_transport", "neoclassical_impurity_pinch"),
+    "total_radiated_power": (".impurity_transport", "total_radiated_power"),
+    # Phase 5 — Momentum transport (Waltz ExB shearing)
+    "MomentumTransportSolver": (".momentum_transport", "MomentumTransportSolver"),
+    "exb_shearing_rate": (".momentum_transport", "exb_shearing_rate"),
+    "turbulence_suppression_factor": (".momentum_transport", "turbulence_suppression_factor"),
+    # Phase 5 — Runaway electrons (Connor & Hastie 1975, Rosenbluth & Putvinski 1997)
+    "RunawayEvolution": (".runaway_electrons", "RunawayEvolution"),
+    "RunawayParams": (".runaway_electrons", "RunawayParams"),
+    "dreicer_field": (".runaway_electrons", "dreicer_field"),
+    "critical_field": (".runaway_electrons", "critical_field"),
+    # Phase 5 — Alfven eigenmodes (TAE/RSAE)
+    "AlfvenContinuum": (".alfven_eigenmodes", "AlfvenContinuum"),
+    "AlfvenStabilityAnalysis": (".alfven_eigenmodes", "AlfvenStabilityAnalysis"),
+    # Phase 5 — ELM model (peeling-ballooning + Chirikov)
+    "ELMCycler": (".elm_model", "ELMCycler"),
+    "PeelingBallooningBoundary": (".elm_model", "PeelingBallooningBoundary"),
+    "RMPSuppression": (".elm_model", "RMPSuppression"),
+    # Phase 5 — Pellet injection (Parks & Turnbull 1978)
+    "PelletTrajectory": (".pellet_injection", "PelletTrajectory"),
+    "PelletFuelingController": (".pellet_injection", "PelletFuelingController"),
+    "ngs_ablation_rate": (".pellet_injection", "ngs_ablation_rate"),
+    # Phase 5 — Plasma wall interaction (Eckstein sputtering)
+    "SputteringYield": (".plasma_wall_interaction", "SputteringYield"),
+    "WallThermalModel": (".plasma_wall_interaction", "WallThermalModel"),
+    "DivertorLifetimeAssessment": (".plasma_wall_interaction", "DivertorLifetimeAssessment"),
+    # Phase 5 — Kinetic EFIT (anisotropic fast-ion pressure)
+    "KineticEFIT": (".kinetic_efit", "KineticEFIT"),
+    "FastIonPressure": (".kinetic_efit", "FastIonPressure"),
+    # Phase 6 — Disruption sequence (TQ → CQ → RE → halo)
+    "DisruptionConfig": (".disruption_sequence", "DisruptionConfig"),
+    # Phase 6 — Locked mode (error field amplification → braking)
+    "ErrorFieldSpectrum": (".locked_mode", "ErrorFieldSpectrum"),
+    "ResonantFieldAmplification": (".locked_mode", "ResonantFieldAmplification"),
+    "RotationEvolution": (".locked_mode", "RotationEvolution"),
+    # Phase 6 — Plasma startup (Townsend → burn-through)
+    "PaschenBreakdown": (".plasma_startup", "PaschenBreakdown"),
+    "TownsendAvalanche": (".plasma_startup", "TownsendAvalanche"),
+    # Phase 6 — L-H transition (zonal flow predator-prey)
+    "PredatorPreyModel": (".lh_transition", "PredatorPreyModel"),
+    "LHTrigger": (".lh_transition", "LHTrigger"),
+    # Phase 6 — MARFE (radiation front instability)
+    "MARFEFrontModel": (".marfe", "MARFEFrontModel"),
+    "DensityLimitPredictor": (".marfe", "DensityLimitPredictor"),
+    # Phase 6 — Neural turbulence (QLKNN surrogate)
+    "QLKNNSurrogate": (".neural_turbulence", "QLKNNSurrogate"),
+    # Phase 6 — Alpha orbit following
+    "GuidingCenterOrbit": (".orbit_following", "GuidingCenterOrbit"),
+    "OrbitClassifier": (".orbit_following", "OrbitClassifier"),
+    # Phase 6 — Tearing mode coupling
+    "CoupledTearingModes": (".tearing_mode_coupling", "CoupledTearingModes"),
+    "ChirikovOverlap": (".tearing_mode_coupling", "ChirikovOverlap"),
+    # Phase 6 — VMEC-lite (3D fixed-boundary MHD)
+    "VMECLiteSolver": (".vmec_lite", "VMECLiteSolver"),
+    # Phase 6 — Blob transport (SOL filaments)
+    "BlobEnsemble": (".blob_transport", "BlobEnsemble"),
+    "BlobDynamics": (".blob_transport", "BlobDynamics"),
 }
 
 
