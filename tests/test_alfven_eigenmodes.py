@@ -66,8 +66,8 @@ def test_fast_particle_drive():
     F3 = drive.resonance_function(v_A / 3.0, v_A)
     F_off = drive.resonance_function(v_A / 10.0, v_A)
 
-    assert F1 > F_off
-    assert F3 > F_off
+    assert F_off < F1
+    assert F_off < F3
 
     b_fast = drive.beta_fast(ne_20=1.0, B0=5.3)
     assert b_fast > 0.0

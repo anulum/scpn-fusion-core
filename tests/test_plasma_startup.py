@@ -3,7 +3,6 @@
 # ──────────────────────────────────────────────────────────────────────
 from __future__ import annotations
 
-import numpy as np
 
 from scpn_fusion.core.plasma_startup import (
     BurnThrough,
