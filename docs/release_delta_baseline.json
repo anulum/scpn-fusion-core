@@ -1,10 +1,10 @@
 {
-  "baseline_generated_at": "2026-03-04T00:00:00Z",
-  "baseline_version": "v3.9.3-hardening-wave-a1",
-  "notes": "Rebased after source-scoring calibration and claims coverage expansion in hardening wave A1.",
-  "source_total": 15,
-  "source_p0p1": 13,
-  "docs_claims_total": 142,
+  "baseline_generated_at": "2026-03-14T00:00:00Z",
+  "baseline_version": "v3.9.3-phase5-phase6-port",
+  "notes": "Rebased after Phase 5+6 physics/control port from scpn-control (25 modules, 96 register entries).",
+  "source_total": 33,
+  "source_p0p1": 28,
+  "docs_claims_total": 55,
   "docs_claims_p0p1": 0,
   "claims_tracked": 13
 }
