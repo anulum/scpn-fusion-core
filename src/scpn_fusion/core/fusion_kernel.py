@@ -84,6 +84,14 @@ class CoilSet:
         Optional target flux values [Wb] at ``target_flux_points``.
         Shape ``(n_pts,)``. When omitted, ``solve_free_boundary`` uses an
         isoflux target inferred from current interpolation.
+    x_point_target : NDArray or None
+        Target X-point position ``(R, Z)`` [m]. Shape ``(2,)``.
+    x_point_flux_target : float or None
+        Target flux value [Wb] at the X-point.
+    divertor_strike_points : NDArray or None
+        Divertor strike-point positions ``(R, Z)`` [m]. Shape ``(n, 2)``.
+    divertor_flux_values : NDArray or None
+        Target flux values [Wb] at divertor strike points. Shape ``(n,)``.
     """
 
     positions: list[tuple[float, float]] = field(default_factory=list)
@@ -92,6 +100,10 @@ class CoilSet:
     current_limits: NDArray[np.float64] | None = None
     target_flux_points: NDArray[np.float64] | None = None
     target_flux_values: NDArray[np.float64] | None = None
+    x_point_target: NDArray[np.float64] | None = None
+    x_point_flux_target: float | None = None
+    divertor_strike_points: NDArray[np.float64] | None = None
+    divertor_flux_values: NDArray[np.float64] | None = None
 
 
 class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMixin):

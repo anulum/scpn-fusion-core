@@ -119,7 +119,7 @@ class QLKNNSurrogate:
         return np.asarray(out)
 
     def load_weights(self, path: str) -> None:
-        data = np.load(path, allow_pickle=True)
+        data = np.load(path, allow_pickle=False)
         self.weights = [data[f"w{i}"] for i in range(len(self.weights))]
         self.biases = [data[f"b{i}"] for i in range(len(self.biases))]
 
