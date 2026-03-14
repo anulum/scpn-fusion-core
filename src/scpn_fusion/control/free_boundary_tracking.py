@@ -1024,9 +1024,9 @@ class FreeBoundaryTrackingController:
             true_metrics_after = true_metrics_before
         supervisor_after = self.evaluate_supervisor(
             metrics_after,
-            max_abs_coil_current=float(np.max(np.abs(self.coils.currents)))
-            if self.coils.currents.size > 0
-            else 0.0,
+            max_abs_coil_current=(
+                float(np.max(np.abs(self.coils.currents))) if self.coils.currents.size > 0 else 0.0
+            ),
             max_abs_actuator_lag=max_abs_actuator_lag,
         )
         return (
@@ -1197,9 +1197,9 @@ class FreeBoundaryTrackingController:
         last_true_metrics = self.evaluate_objectives(initial_snapshot.true)
         last_supervisor = self.evaluate_supervisor(
             last_metrics,
-            max_abs_coil_current=float(np.max(np.abs(self.coils.currents)))
-            if self.coils.currents.size > 0
-            else 0.0,
+            max_abs_coil_current=(
+                float(np.max(np.abs(self.coils.currents))) if self.coils.currents.size > 0 else 0.0
+            ),
             max_abs_actuator_lag=0.0,
         )
 
@@ -1495,24 +1495,24 @@ class FreeBoundaryTrackingController:
             "boundary_variant": "free_boundary",
             "final_tracking_error_norm": float(error_arr[-1]) if error_arr.size else 0.0,
             "mean_tracking_error_norm": float(np.mean(error_arr)) if error_arr.size else 0.0,
-            "final_true_tracking_error_norm": float(true_error_arr[-1])
-            if true_error_arr.size
-            else 0.0,
-            "mean_true_tracking_error_norm": float(np.mean(true_error_arr))
-            if true_error_arr.size
-            else 0.0,
-            "final_control_error_norm": float(control_error_arr[-1])
-            if control_error_arr.size
-            else 0.0,
-            "mean_control_error_norm": float(np.mean(control_error_arr))
-            if control_error_arr.size
-            else 0.0,
-            "final_true_control_error_norm": float(true_control_error_arr[-1])
-            if true_control_error_arr.size
-            else 0.0,
-            "mean_true_control_error_norm": float(np.mean(true_control_error_arr))
-            if true_control_error_arr.size
-            else 0.0,
+            "final_true_tracking_error_norm": (
+                float(true_error_arr[-1]) if true_error_arr.size else 0.0
+            ),
+            "mean_true_tracking_error_norm": (
+                float(np.mean(true_error_arr)) if true_error_arr.size else 0.0
+            ),
+            "final_control_error_norm": (
+                float(control_error_arr[-1]) if control_error_arr.size else 0.0
+            ),
+            "mean_control_error_norm": (
+                float(np.mean(control_error_arr)) if control_error_arr.size else 0.0
+            ),
+            "final_true_control_error_norm": (
+                float(true_control_error_arr[-1]) if true_control_error_arr.size else 0.0
+            ),
+            "mean_true_control_error_norm": (
+                float(np.mean(true_control_error_arr)) if true_control_error_arr.size else 0.0
+            ),
             "max_abs_delta_i": float(np.max(delta_arr)) if delta_arr.size else 0.0,
             "max_abs_coil_current": float(np.max(coil_arr)) if coil_arr.size else 0.0,
             "max_abs_actuator_lag": float(np.max(lag_arr)) if lag_arr.size else 0.0,
@@ -1527,18 +1527,18 @@ class FreeBoundaryTrackingController:
                 if measurement_offset_mean_arr.size
                 else 0.0
             ),
-            "max_measurement_error_norm": float(np.max(measurement_error_arr))
-            if measurement_error_arr.size
-            else 0.0,
-            "mean_measurement_error_norm": float(np.mean(measurement_error_arr))
-            if measurement_error_arr.size
-            else 0.0,
-            "max_delayed_observation_error_norm": float(np.max(delayed_error_arr))
-            if delayed_error_arr.size
-            else 0.0,
-            "mean_delayed_observation_error_norm": float(np.mean(delayed_error_arr))
-            if delayed_error_arr.size
-            else 0.0,
+            "max_measurement_error_norm": (
+                float(np.max(measurement_error_arr)) if measurement_error_arr.size else 0.0
+            ),
+            "mean_measurement_error_norm": (
+                float(np.mean(measurement_error_arr)) if measurement_error_arr.size else 0.0
+            ),
+            "max_delayed_observation_error_norm": (
+                float(np.max(delayed_error_arr)) if delayed_error_arr.size else 0.0
+            ),
+            "mean_delayed_observation_error_norm": (
+                float(np.mean(delayed_error_arr)) if delayed_error_arr.size else 0.0
+            ),
             "max_estimated_observation_error_norm": (
                 float(np.max(estimated_error_arr)) if estimated_error_arr.size else 0.0
             ),
@@ -1555,29 +1555,29 @@ class FreeBoundaryTrackingController:
             "measurement_latency_steps": int(self.measurement_latency_steps),
             "latency_compensation_enabled": latency_compensation_enabled,
             "latency_compensation_gain": float(self.latency_compensation_gain),
-            "max_abs_objective_bias_estimate": float(np.max(bias_max_arr))
-            if bias_max_arr.size
-            else 0.0,
-            "mean_abs_objective_bias_estimate": float(np.mean(bias_mean_arr))
-            if bias_mean_arr.size
-            else 0.0,
-            "max_abs_objective_rate_estimate": float(np.max(rate_max_arr))
-            if rate_max_arr.size
-            else 0.0,
+            "max_abs_objective_bias_estimate": (
+                float(np.max(bias_max_arr)) if bias_max_arr.size else 0.0
+            ),
+            "mean_abs_objective_bias_estimate": (
+                float(np.mean(bias_mean_arr)) if bias_mean_arr.size else 0.0
+            ),
+            "max_abs_objective_rate_estimate": (
+                float(np.max(rate_max_arr)) if rate_max_arr.size else 0.0
+            ),
             "min_response_rank": int(np.min(response_rank_arr)) if response_rank_arr.size else 0,
-            "max_response_condition_number": float(np.max(response_cond_arr))
-            if response_cond_arr.size
-            else 0.0,
-            "max_response_singular_value": float(np.max(response_sigma_arr))
-            if response_sigma_arr.size
-            else 0.0,
+            "max_response_condition_number": (
+                float(np.max(response_cond_arr)) if response_cond_arr.size else 0.0
+            ),
+            "max_response_singular_value": (
+                float(np.max(response_sigma_arr)) if response_sigma_arr.size else 0.0
+            ),
             "response_degenerate_count": int(np.sum(response_deg_arr)),
-            "final_active_control_rows": int(active_control_arr[-1])
-            if active_control_arr.size
-            else 0,
-            "mean_active_control_rows": float(np.mean(active_control_arr))
-            if active_control_arr.size
-            else 0.0,
+            "final_active_control_rows": (
+                int(active_control_arr[-1]) if active_control_arr.size else 0
+            ),
+            "mean_active_control_rows": (
+                float(np.mean(active_control_arr)) if active_control_arr.size else 0.0
+            ),
             "max_coil_penalty": float(np.max(coil_penalty_arr)) if coil_penalty_arr.size else 1.0,
             "objective_tolerances": last_metrics["objective_tolerances"],
             "objective_checks": last_metrics["objective_checks"],

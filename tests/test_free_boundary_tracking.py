@@ -122,9 +122,9 @@ class _DummyFreeBoundaryKernel:
             self.cfg["coils"][idx]["current"] = float(current)
         self.Psi.fill(0.0)
         return {
-            "boundary_variant": "free_boundary"
-            if boundary_variant is None
-            else str(boundary_variant),
+            "boundary_variant": (
+                "free_boundary" if boundary_variant is None else str(boundary_variant)
+            ),
             "converged": True,
             "outer_iterations": 1,
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
@@ -290,9 +290,9 @@ class _PriorityConflictKernel:
         self._state = self._target_vector + self._bias + self._response_matrix @ currents
         self.Psi.fill(0.0)
         return {
-            "boundary_variant": "free_boundary"
-            if boundary_variant is None
-            else str(boundary_variant),
+            "boundary_variant": (
+                "free_boundary" if boundary_variant is None else str(boundary_variant)
+            ),
             "converged": True,
             "outer_iterations": 1,
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
@@ -366,9 +366,9 @@ class _ProtectedObjectiveKernel:
         self._state = self._target_vector + self._bias + self._response_matrix @ currents
         self.Psi.fill(0.0)
         return {
-            "boundary_variant": "free_boundary"
-            if boundary_variant is None
-            else str(boundary_variant),
+            "boundary_variant": (
+                "free_boundary" if boundary_variant is None else str(boundary_variant)
+            ),
             "converged": True,
             "outer_iterations": 1,
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
@@ -442,9 +442,9 @@ class _ZeroAuthorityKernel:
         self._state = self._target_vector + self._bias + self._response_matrix @ currents
         self.Psi.fill(0.0)
         return {
-            "boundary_variant": "free_boundary"
-            if boundary_variant is None
-            else str(boundary_variant),
+            "boundary_variant": (
+                "free_boundary" if boundary_variant is None else str(boundary_variant)
+            ),
             "converged": True,
             "outer_iterations": 1,
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
@@ -518,9 +518,9 @@ class _WithinToleranceKernel:
         self._state = self._target_vector + self._bias + self._response_matrix @ currents
         self.Psi.fill(0.0)
         return {
-            "boundary_variant": "free_boundary"
-            if boundary_variant is None
-            else str(boundary_variant),
+            "boundary_variant": (
+                "free_boundary" if boundary_variant is None else str(boundary_variant)
+            ),
             "converged": True,
             "outer_iterations": 1,
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
