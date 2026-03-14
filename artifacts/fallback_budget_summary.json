@@ -1,0 +1,66 @@
+{
+  "freegs": {
+    "allowed_modes": [
+      "freegs",
+      "solovev_manufactured_source"
+    ],
+    "case_count": 5,
+    "force_solovev": true,
+    "freegs_available": true,
+    "freegs_case_count": 0,
+    "min_case_count": 3,
+    "min_freegs_cases_when_available": 1,
+    "observed_modes": [
+      "solovev_manufactured_source"
+    ],
+    "observed_reference_backends": [
+      "solovev_analytic"
+    ],
+    "passes": true,
+    "require_freegs_mode_when_available": true,
+    "require_reference_backend_when_available": "freegs",
+    "strict_requested": false
+  },
+  "overall_pass": true,
+  "runtime": {
+    "domain_counts": {},
+    "domain_passes": true,
+    "max_domain_events": {},
+    "max_total_events": null,
+    "passes": true,
+    "total_events": 0,
+    "total_passes": true
+  },
+  "sparc": {
+    "backend_requirement_satisfied_rate": 1.0,
+    "case_count": 6,
+    "fallback_rate": 0.0,
+    "max_fallback_rate": 0.0,
+    "min_case_count": 6,
+    "min_preferred_backend_rate": 1.0,
+    "observed_backends": [
+      "neural_equilibrium"
+    ],
+    "passes": true,
+    "preferred_backend": "neural_equilibrium",
+    "preferred_backend_rate": 1.0,
+    "require_backend_requirement_satisfied": true,
+    "strict_requested": true
+  },
+  "torax": {
+    "backend_requirement_satisfied_rate": 1.0,
+    "case_count": 4,
+    "fallback_rate": 0.0,
+    "max_fallback_rate": 0.0,
+    "min_case_count": 3,
+    "min_preferred_backend_rate": 1.0,
+    "observed_backends": [
+      "neural_transport"
+    ],
+    "passes": true,
+    "preferred_backend": "neural_transport",
+    "preferred_backend_rate": 1.0,
+    "require_backend_requirement_satisfied": true,
+    "strict_requested": true
+  }
+}

@@ -1,0 +1,401 @@
+{
+  "benchmark": "disturbance_rejection",
+  "timestamp": "2026-03-08T18:35:09.710853+00:00",
+  "simulation_dt_s": 0.0001,
+  "fairness_schema_version": "1.0",
+  "strict_hinf": false,
+  "controller_build": {
+    "PID": {
+      "backend": "pid_numpy",
+      "fallback_used": false,
+      "fallback_reason": null
+    },
+    "H-infinity": {
+      "backend": "h_infinity",
+      "fallback_used": false,
+      "fallback_reason": null
+    },
+    "MPC": {
+      "backend": "mpc_numpy",
+      "fallback_used": false,
+      "fallback_reason": null
+    },
+    "SNN": {
+      "backend": "sc_neurocore",
+      "fallback_used": false,
+      "fallback_reason": null
+    }
+  },
+  "scenarios": {
+    "VDE": {
+      "duration_s": 2.0,
+      "dt_s": 0.0001,
+      "steps": 20000,
+      "description": "Vertical Displacement Event: gamma=100/s exponential instability, impulsive kick. Duration: 2 s."
+    },
+    "Density ramp": {
+      "duration_s": 4.0,
+      "dt_s": 0.0001,
+      "steps": 40000,
+      "description": "Linear density ramp 0.5 to 1.2 Greenwald fraction over 2 s, then 2 s settling. Duration: 4 s."
+    },
+    "ELM pacing": {
+      "duration_s": 3.0,
+      "dt_s": 0.0001,
+      "steps": 30000,
+      "description": "ELM pacing at 10 Hz, 5 % beta_N drop per burst, recovery tracking. Duration: 3 s."
+    }
+  },
+  "results": [
+    {
+      "controller": "PID",
+      "scenario": "VDE",
+      "ise": 1.076582157117096e-05,
+      "settling_time_s": 0.0843,
+      "peak_overshoot": 0.019955497501660237,
+      "control_effort": 15.810464049965482,
+      "wall_clock_s": 0.2853417999576777,
+      "stable": true
+    },
+    {
+      "controller": "H-infinity",
+      "scenario": "VDE",
+      "ise": 193.10430049625,
+      "settling_time_s": 1.9999,
+      "peak_overshoot": 10.077661444153312,
+      "control_effort": 244907.74864310952,
+      "wall_clock_s": 0.02085940004326403,
+      "stable": false
+    },
+    {
+      "controller": "MPC",
+      "scenario": "VDE",
+      "ise": 190.42235289587614,
+      "settling_time_s": 1.9999,
+      "peak_overshoot": 10.006815325086064,
+      "control_effort": 0.005752203506878301,
+      "wall_clock_s": 0.6922629999462515,
+      "stable": false
+    },
+    {
+      "controller": "SNN",
+      "scenario": "VDE",
+      "ise": 192.0772281432189,
+      "settling_time_s": 1.9999,
+      "peak_overshoot": 10.05378380828934,
+      "control_effort": 9771.5,
+      "wall_clock_s": 0.037593299988657236,
+      "stable": false
+    },
+    {
+      "controller": "PID",
+      "scenario": "Density ramp",
+      "ise": 5.9554642502530975e-05,
+      "settling_time_s": 3.9999000000000002,
+      "peak_overshoot": 0.009066532408948808,
+      "control_effort": 213.02116181458453,
+      "wall_clock_s": 0.49159649992361665,
+      "stable": true
+    },
+    {
+      "controller": "H-infinity",
+      "scenario": "Density ramp",
+      "ise": 388.89156921977155,
+      "settling_time_s": 3.9999000000000002,
+      "peak_overshoot": 10.079046056804403,
+      "control_effort": 492722.8142162805,
+      "wall_clock_s": 0.013088300125673413,
+      "stable": false
+    },
+    {
+      "controller": "MPC",
+      "scenario": "Density ramp",
+      "ise": 386.3947662741303,
+      "settling_time_s": 3.9999000000000002,
+      "peak_overshoot": 10.025194742380997,
+      "control_effort": 0.011634823279724604,
+      "wall_clock_s": 0.9223477998748422,
+      "stable": false
+    },
+    {
+      "controller": "SNN",
+      "scenario": "Density ramp",
+      "ise": 385.2797129708813,
+      "settling_time_s": 3.9999000000000002,
+      "peak_overshoot": 10.010182492336078,
+      "control_effort": 19672.0,
+      "wall_clock_s": 0.04327589995227754,
+      "stable": false
+    },
+    {
+      "controller": "PID",
+      "scenario": "ELM pacing",
+      "ise": 7.18132807725353e-07,
+      "settling_time_s": 2.9999000000000002,
+      "peak_overshoot": 0.0013037828807398242,
+      "control_effort": 18.9194329783357,
+      "wall_clock_s": 0.3471393999643624,
+      "stable": true
+    },
+    {
+      "controller": "H-infinity",
+      "scenario": "ELM pacing",
+      "ise": 291.94197221446547,
+      "settling_time_s": 2.9999000000000002,
+      "peak_overshoot": 10.113608316194005,
+      "control_effort": 368727.2882568452,
+      "wall_clock_s": 0.018193199997767806,
+      "stable": false
+    },
+    {
+      "controller": "MPC",
+      "scenario": "ELM pacing",
+      "ise": 288.8719784656896,
+      "settling_time_s": 2.9999000000000002,
+      "peak_overshoot": 10.058177642785765,
+      "control_effort": 0.008673798389322657,
+      "wall_clock_s": 1.0011994000524282,
+      "stable": false
+    },
+    {
+      "controller": "SNN",
+      "scenario": "ELM pacing",
+      "ise": 286.3052492095174,
+      "settling_time_s": 2.9999000000000002,
+      "peak_overshoot": 10.014159070746123,
+      "control_effort": 14631.5,
+      "wall_clock_s": 0.07358159986324608,
+      "stable": false
+    }
+  ],
+  "fairness": [
+    {
+      "controller": "PID",
+      "scenario": "VDE",
+      "timing": {
+        "wall_clock_s": 0.2853417999576777
+      },
+      "accuracy": {
+        "ise": 1.076582157117096e-05,
+        "settling_time_s": 0.0843,
+        "peak_overshoot": 0.019955497501660237,
+        "stable": true
+      },
+      "conditions": {
+        "duration_s": 2.0,
+        "dt_s": 0.0001,
+        "steps": 20000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    },
+    {
+      "controller": "H-infinity",
+      "scenario": "VDE",
+      "timing": {
+        "wall_clock_s": 0.02085940004326403
+      },
+      "accuracy": {
+        "ise": 193.10430049625,
+        "settling_time_s": 1.9999,
+        "peak_overshoot": 10.077661444153312,
+        "stable": false
+      },
+      "conditions": {
+        "duration_s": 2.0,
+        "dt_s": 0.0001,
+        "steps": 20000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    },
+    {
+      "controller": "MPC",
+      "scenario": "VDE",
+      "timing": {
+        "wall_clock_s": 0.6922629999462515
+      },
+      "accuracy": {
+        "ise": 190.42235289587614,
+        "settling_time_s": 1.9999,
+        "peak_overshoot": 10.006815325086064,
+        "stable": false
+      },
+      "conditions": {
+        "duration_s": 2.0,
+        "dt_s": 0.0001,
+        "steps": 20000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    },
+    {
+      "controller": "SNN",
+      "scenario": "VDE",
+      "timing": {
+        "wall_clock_s": 0.037593299988657236
+      },
+      "accuracy": {
+        "ise": 192.0772281432189,
+        "settling_time_s": 1.9999,
+        "peak_overshoot": 10.05378380828934,
+        "stable": false
+      },
+      "conditions": {
+        "duration_s": 2.0,
+        "dt_s": 0.0001,
+        "steps": 20000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    },
+    {
+      "controller": "PID",
+      "scenario": "Density ramp",
+      "timing": {
+        "wall_clock_s": 0.49159649992361665
+      },
+      "accuracy": {
+        "ise": 5.9554642502530975e-05,
+        "settling_time_s": 3.9999000000000002,
+        "peak_overshoot": 0.009066532408948808,
+        "stable": true
+      },
+      "conditions": {
+        "duration_s": 4.0,
+        "dt_s": 0.0001,
+        "steps": 40000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    },
+    {
+      "controller": "H-infinity",
+      "scenario": "Density ramp",
+      "timing": {
+        "wall_clock_s": 0.013088300125673413
+      },
+      "accuracy": {
+        "ise": 388.89156921977155,
+        "settling_time_s": 3.9999000000000002,
+        "peak_overshoot": 10.079046056804403,
+        "stable": false
+      },
+      "conditions": {
+        "duration_s": 4.0,
+        "dt_s": 0.0001,
+        "steps": 40000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    },
+    {
+      "controller": "MPC",
+      "scenario": "Density ramp",
+      "timing": {
+        "wall_clock_s": 0.9223477998748422
+      },
+      "accuracy": {
+        "ise": 386.3947662741303,
+        "settling_time_s": 3.9999000000000002,
+        "peak_overshoot": 10.025194742380997,
+        "stable": false
+      },
+      "conditions": {
+        "duration_s": 4.0,
+        "dt_s": 0.0001,
+        "steps": 40000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    },
+    {
+      "controller": "SNN",
+      "scenario": "Density ramp",
+      "timing": {
+        "wall_clock_s": 0.04327589995227754
+      },
+      "accuracy": {
+        "ise": 385.2797129708813,
+        "settling_time_s": 3.9999000000000002,
+        "peak_overshoot": 10.010182492336078,
+        "stable": false
+      },
+      "conditions": {
+        "duration_s": 4.0,
+        "dt_s": 0.0001,
+        "steps": 40000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    },
+    {
+      "controller": "PID",
+      "scenario": "ELM pacing",
+      "timing": {
+        "wall_clock_s": 0.3471393999643624
+      },
+      "accuracy": {
+        "ise": 7.18132807725353e-07,
+        "settling_time_s": 2.9999000000000002,
+        "peak_overshoot": 0.0013037828807398242,
+        "stable": true
+      },
+      "conditions": {
+        "duration_s": 3.0,
+        "dt_s": 0.0001,
+        "steps": 30000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    },
+    {
+      "controller": "H-infinity",
+      "scenario": "ELM pacing",
+      "timing": {
+        "wall_clock_s": 0.018193199997767806
+      },
+      "accuracy": {
+        "ise": 291.94197221446547,
+        "settling_time_s": 2.9999000000000002,
+        "peak_overshoot": 10.113608316194005,
+        "stable": false
+      },
+      "conditions": {
+        "duration_s": 3.0,
+        "dt_s": 0.0001,
+        "steps": 30000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    },
+    {
+      "controller": "MPC",
+      "scenario": "ELM pacing",
+      "timing": {
+        "wall_clock_s": 1.0011994000524282
+      },
+      "accuracy": {
+        "ise": 288.8719784656896,
+        "settling_time_s": 2.9999000000000002,
+        "peak_overshoot": 10.058177642785765,
+        "stable": false
+      },
+      "conditions": {
+        "duration_s": 3.0,
+        "dt_s": 0.0001,
+        "steps": 30000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    },
+    {
+      "controller": "SNN",
+      "scenario": "ELM pacing",
+      "timing": {
+        "wall_clock_s": 0.07358159986324608
+      },
+      "accuracy": {
+        "ise": 286.3052492095174,
+        "settling_time_s": 2.9999000000000002,
+        "peak_overshoot": 10.014159070746123,
+        "stable": false
+      },
+      "conditions": {
+        "duration_s": 3.0,
+        "dt_s": 0.0001,
+        "steps": 30000,
+        "plant_model": "linear_vertical_dynamics_gamma100"
+      }
+    }
+  ]
+}
