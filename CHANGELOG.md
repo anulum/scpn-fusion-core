@@ -8,6 +8,35 @@
 
 # Changelog
 
+## [3.9.3] - 2026-03-14
+
+### Added
+- Phase 5 physics: impurity transport, momentum transport, runaway electrons, Alfven eigenmodes, ELM model, pellet injection, plasma-wall interaction, kinetic EFIT
+- Phase 5 control: free-boundary tracking, state estimator (EKF), volt-second manager, RWM feedback, mu-synthesis
+- Phase 6 physics: disruption sequence, locked mode, plasma startup, L-H transition, MARFE, neural turbulence, orbit following, tearing mode coupling, VMEC-lite, blob transport
+- Phase 6 control: detachment controller, density controller
+- GK three-path: native linear eigenvalue solver, quasilinear flux model, 5 external GK interfaces (TGLF, GENE, GS2, CGYRO, QuaLiKiz), OOD detection, correction, scheduling, online learning, verification reporting
+- JAX differentiable solvers: jax_gs_solver, jax_neural_equilibrium, jax_solvers (Thomas + Crank-Nicolson)
+- Integrated scenario simulator, neoclassical transport, vessel model, tokamak config presets, IMAS adapter
+- Phase dynamics subpackage: Kuramoto UPDE, adaptive K_nm, GK-to-UPDE bridge, plasma K_nm, Lyapunov guard
+- 9 new validation benchmarks
+- CoilSet extended with x_point_target, divertor_strike_points fields
+
+### Fixed
+- Impurity neoclassical pinch Z-factor bug (Hirshman & Sigmar 1981)
+- Pellet injection core deposition index wraparound
+- neural_turbulence.py allow_pickle security violation
+
+### Changed
+- Release delta baseline rebased (source_total: 15→50, p0p1: 13→43)
+- Underdeveloped register: 115 entries (96→115 after GK port)
+
+### Removed
+- Michal Reiprich from all authorship metadata
+- MIT OR Apache-2.0 license references (enforced AGPL-3.0 throughout)
+
+---
+
 ## [Unreleased]
 
 ### Changed

@@ -491,6 +491,32 @@ Thank you for helping improve fusion plasma simulation and control.
 
 ---
 
+## Module Ownership
+
+The Python source tree (`src/scpn_fusion/`) is organised into subsystems.
+When contributing, target the appropriate subsystem and follow existing patterns
+within that directory.
+
+| Subsystem | Files | Scope |
+|-----------|-------|-------|
+| `core/` | 118 | GS equilibrium, transport, GK three-path, MHD stability, disruptions, edge physics, neural surrogates, JAX solvers, scenario simulation, 3D geometry, UQ |
+| `control/` | 54 | PID, H-infinity, mu-synthesis, NMPC, SNN, RL, free-boundary tracking, disruption mitigation, burn control, flight sim, HiL |
+| `phase/` | 10 | Kuramoto UPDE solver, adaptive K_nm, GK-to-UPDE bridge, plasma coupling, Lyapunov guard |
+| `scpn/` | 12 | Petri net compiler, formal contracts, safety interlocks, artifact management |
+| `io/` | 15 | IMAS connector/adapter, GEQDSK I/O, tokamak archive, logging |
+| `diagnostics/` | 5 | Synthetic diagnostic forward models, sensors, tomography |
+| `engineering/` | 4 | Balance of plant, CAD raytrace, thermal hydraulics |
+| `nuclear/` | 5 | Blanket neutronics, PWI erosion, tritium breeding |
+| `hpc/` | 2 | C++ solver bridge, HPC types |
+| `ui/` | 4 | Streamlit dashboard, generator, launcher |
+
+**Rust crates** (`scpn-fusion-rs/crates/`): 11 crates mirroring the Python
+structure. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full crate map.
+
+**Total:** 234 Python source files, 62,570 lines, 11 Rust crates, 2859 tests.
+
+---
+
 ## Session Logs & Handovers
 
 All session logs and handover documents for this project are stored permanently in the monorepo's canonical location:

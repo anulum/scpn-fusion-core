@@ -66,6 +66,24 @@ not raw MDSplus data.
 
 Full claims-to-evidence audit: [`docs/CLAIMS_EVIDENCE_MAP.md`](CLAIMS_EVIDENCE_MAP.md)
 
+## Phase 5+6+GK Scope Boundaries
+
+v3.9.4 added 69 modules across Phase 5, Phase 6, and GK three-path subsystems.
+Each carries explicit fidelity limitations.
+
+| Module Area | What We Implement | What We Do Not |
+|-------------|-------------------|----------------|
+| Native linear GK | Simplified linear eigenvalue solver for ITG/TEM/ETG | Full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-Maxwell) |
+| Free-boundary tracking | Direct coil-response identification from equilibrium sensitivity | Inverse reconstruction from magnetic probes (EFIT, LIUQE) |
+| Disruption predictor | ML classifier trained on reconstructed profile features | Bayesian credibility intervals or physics-based disruption chain models |
+| Impurity transport | Banana-regime neoclassical (Pfirsch-Schluter + banana plateau) | Full Hirshman-Sigmar multi-species collisional operator |
+| VMEC-lite | Reduced-order Fourier representation of 3D equilibria | Full VMEC variational energy minimization with free-boundary |
+| Runaway electrons | Dreicer + hot-tail generation rates, 0D avalanche model | Kinetic runaway distribution (CODE/DREAM-level Fokker-Planck) |
+| ELM model | Peeling-ballooning stability proxy with crash operator | Nonlinear MHD ELM simulation (JOREK, BOUT++) |
+| Neural turbulence | MLP surrogate trained on QLKNN-10D oracle data | Direct coupling to first-principles GK turbulence codes |
+| Orbit following | Guiding-centre Boris push in axisymmetric fields | Full-orbit tracking with 3D perturbation fields and collisions |
+| L-H transition | Martin scaling threshold with hysteresis | First-principles edge turbulence suppression (XGC, GENE-X) |
+
 ## Underdeveloped flags
 
 The auto-generated [`UNDERDEVELOPED_REGISTER.md`](../UNDERDEVELOPED_REGISTER.md)

@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-14T21:29:52.415001+00:00`
+- Generated at: `2026-03-14T22:12:39.398184+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,21 +8,21 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 115 |
+| Total flagged entries | 122 |
 | P0 + P1 entries | 46 |
 | Source-domain entries | 60 |
 | Source-domain P0 + P1 entries | 46 |
-| Docs-claims entries | 55 |
+| Docs-claims entries | 62 |
 | Domains affected | 6 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `SIMPLIFIED` | 42 |
-| `FALLBACK` | 38 |
-| `PLANNED` | 12 |
-| `EXPERIMENTAL` | 8 |
+| `SIMPLIFIED` | 43 |
+| `FALLBACK` | 41 |
+| `PLANNED` | 13 |
+| `EXPERIMENTAL` | 10 |
 | `MONOLITH` | 7 |
 | `DEPRECATED` | 5 |
 | `NOT_VALIDATED` | 2 |
@@ -32,7 +32,7 @@
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 55 |
+| `docs_claims` | 62 |
 | `core_physics` | 37 |
 | `control` | 11 |
 | `validation` | 10 |
@@ -156,9 +156,11 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 73 | `validation` | `FALLBACK` | `validation/task12_free_boundary_physics_margin_safety.py:247` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/task13_free_boundary_disruption_policy_recovery.py:279` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
 | P2 | 73 | `validation` | `FALLBACK` | `validation/task14_free_boundary_failsafe_dropout_replay.py:286` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
+| P2 | 70 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:177` | Docs WG | Gate behind explicit flag and define validation exit criteria. | | Experimental validation | Real data: 8 SPARC GEQDSKs + 53 ITPA discharges + DIII-D disruption templates. TORAX/FUSE have more extensive... |
 | P3 | 65 | `docs_claims` | `DEPRECATED` | `docs/PHYSICS_VALIDATION_STATUS.md:278` | Docs WG | Replace default path or remove lane before next major release. | \| `fno_eurofusion_jet` \| 2026-02-16 \| rel_L2=0.79 \| No (DEPRECATED) \| |
 | P3 | 65 | `docs_claims` | `DEPRECATED` | `docs/PHYSICS_VALIDATION_STATUS.md:283` | Docs WG | Replace default path or remove lane before next major release. | The FNO is already DEPRECATED (v4.0 decision: retrain on real data or remove). |
 | P3 | 65 | `docs_claims` | `DEPRECATED` | `docs/PHYSICS_VALIDATION_STATUS.md:326` | Docs WG | Replace default path or remove lane before next major release. | \| FNO turbulence \| Synthetic Hasegawa-Wakatani \| **No** (DEPRECATED) \| |
+| P3 | 56 | `docs_claims` | `SIMPLIFIED` | `docs/HONEST_SCOPE.md:76` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | | Native linear GK | Simplified linear eigenvalue solver for ITG/TEM/ETG | Full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-M... |
 | P3 | 56 | `docs_claims` | `SIMPLIFIED` | `docs/assets/generate_header.py:27` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified Grad-Shafranov flux function with Shafranov shift + triangularity |
 | P3 | 56 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/tutorials/current_profile_evolution.rst:131` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Bootstrap current (simplified model) |
 | P3 | 56 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/tutorials/realtime_reconstruction.rst:45` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Define diagnostic positions (simplified: 12 flux loops, 8 B_p probes) |
@@ -166,18 +168,16 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 56 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/transport.rst:82` | Docs WG | Upgrade with higher-fidelity closure or tighten domain contract. | using simplified ray-tracing: |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md:47` | Docs WG | Gate behind explicit flag and define validation exit criteria. | --experimental \ |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md:48` | Docs WG | Gate behind explicit flag and define validation exit criteria. | --experimental-ack I_UNDERSTAND_EXPERIMENTAL \ |
+| P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_METHODS_COMPLETE.md:643` | Docs WG | Gate behind explicit flag and define validation exit criteria. | [26] T. Pütterich et al., "Calculation and experimental test of the cooling factor of tungsten," *Nucl. Fusion* 50, 025012 (2010). doi:[1... |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:224` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Multi-Regime FNO \| `src/.../fno_training_multi_regime.py` \| NumPy \| Synthetic H-W \| 30-90 min \| Experimental \| |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:290` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 4. **Multi-Regime FNO** — experimental, synthetic data only. |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Experimental Bridges |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/first_simulation.rst:191` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Step 7: Read Real Experimental Data |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/tokamak_physics_textbook.rst:55` | Docs WG | Gate behind explicit flag and define validation exit criteria. | :math:`F(\psi)` are constrained by experimental data (pressure profile and |
+| P3 | 47 | `docs_claims` | `FALLBACK` | `README.md:155` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:19` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | `freegs-strict` | FreeGS-only strict backend parity lane with runtime-fallback disallowed and artifact contract checks (`mode=freegs`, ... |
-| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:29` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | `freegs-strict` (`freegs-strict.yml`, manual dispatch) | Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS referen... |
-| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:36` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | enforces a no-fallback contract when invoked. |
-| P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:16` | Docs WG | Replace default path or remove lane before next major release. | - Lock default turbulence path to non-deprecated lanes only. |
-| P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:17` | Docs WG | Replace default path or remove lane before next major release. | - Keep deprecated FNO paths non-default and explicitly gated. |
 
-## Full Register (Top 115)
+## Full Register (Top 122)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -241,9 +241,11 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `validation` | `FALLBACK` | `validation/task12_free_boundary_physics_margin_safety.py:247` | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
 | P2 | `validation` | `FALLBACK` | `validation/task13_free_boundary_disruption_policy_recovery.py:279` | f"- fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
 | P2 | `validation` | `FALLBACK` | `validation/task14_free_boundary_failsafe_dropout_replay.py:286` | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
+| P2 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:177` | | Experimental validation | Real data: 8 SPARC GEQDSKs + 53 ITPA discharges + DIII-D disruption templates. TORAX/FUSE have more extensive... |
 | P3 | `docs_claims` | `DEPRECATED` | `docs/PHYSICS_VALIDATION_STATUS.md:278` | \| `fno_eurofusion_jet` \| 2026-02-16 \| rel_L2=0.79 \| No (DEPRECATED) \| |
 | P3 | `docs_claims` | `DEPRECATED` | `docs/PHYSICS_VALIDATION_STATUS.md:283` | The FNO is already DEPRECATED (v4.0 decision: retrain on real data or remove). |
 | P3 | `docs_claims` | `DEPRECATED` | `docs/PHYSICS_VALIDATION_STATUS.md:326` | \| FNO turbulence \| Synthetic Hasegawa-Wakatani \| **No** (DEPRECATED) \| |
+| P3 | `docs_claims` | `SIMPLIFIED` | `docs/HONEST_SCOPE.md:76` | | Native linear GK | Simplified linear eigenvalue solver for ITG/TEM/ETG | Full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-M... |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/assets/generate_header.py:27` | # Simplified Grad-Shafranov flux function with Shafranov shift + triangularity |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/tutorials/current_profile_evolution.rst:131` | # Bootstrap current (simplified model) |
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/tutorials/realtime_reconstruction.rst:45` | # Define diagnostic positions (simplified: 12 flux loops, 8 B_p probes) |
@@ -251,16 +253,21 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `SIMPLIFIED` | `docs/sphinx/userguide/transport.rst:82` | using simplified ray-tracing: |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md:47` | --experimental \ |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md:48` | --experimental-ack I_UNDERSTAND_EXPERIMENTAL \ |
+| P3 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_METHODS_COMPLETE.md:643` | [26] T. Pütterich et al., "Calculation and experimental test of the cooling factor of tungsten," *Nucl. Fusion* 50, 025012 (2010). doi:[1... |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:224` | \| Multi-Regime FNO \| `src/.../fno_training_multi_regime.py` \| NumPy \| Synthetic H-W \| 30-90 min \| Experimental \| |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:290` | 4. **Multi-Regime FNO** — experimental, synthetic data only. |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Experimental Bridges |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/first_simulation.rst:191` | Step 7: Read Real Experimental Data |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/tokamak_physics_textbook.rst:55` | :math:`F(\psi)` are constrained by experimental data (pressure profile and |
+| P3 | `docs_claims` | `FALLBACK` | `README.md:155` | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:19` | | `freegs-strict` | FreeGS-only strict backend parity lane with runtime-fallback disallowed and artifact contract checks (`mode=freegs`, ... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:29` | | `freegs-strict` (`freegs-strict.yml`, manual dispatch) | Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS referen... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:36` | enforces a no-fallback contract when invoked. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/competitive_analysis.md:188` | \| No free-boundary tracking \| Direct kernel + supervisor + EKF + safe fallback \| `control/free_boundary_tracking.py` + supervisory \| |
+| P3 | `docs_claims` | `FALLBACK` | `docs/competitive_analysis.md:235` | from repeated GS solves, with supervisory safe-fallback, disturbance |
 | P3 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:16` | - Lock default turbulence path to non-deprecated lanes only. |
 | P3 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:17` | - Keep deprecated FNO paths non-default and explicitly gated. |
+| P3 | `docs_claims` | `PLANNED` | `docs/competitive_analysis.md:174` | \| Stellarator geometry \| FUSE supports stellarator equilibria natively. SCPN is tokamak-only with stellarator planned. \| FUSE \| |
 | P3 | `docs_claims` | `FALLBACK` | `docs/3d_gaps.md:92` | - fallback if external dependency is unavailable. |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:93` | │ ╱ Fallback (analytic) |
 | P3 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:124` | \| Fallback vectorised \| ~2 ms \| ~7× slower \| |

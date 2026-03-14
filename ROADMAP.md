@@ -1,19 +1,21 @@
 # Roadmap
 
-> Last updated: 2026-03-10. This roadmap reflects current priorities and may
+> Last updated: 2026-03-14. This roadmap reflects current priorities and may
 > change based on community feedback and validation results.
 
 Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_DAY_EXECUTION_PLAN.md)
 
-## Current Snapshot (2026-03-10)
+## Current Snapshot (2026-03-14)
 
 | Area | Current State | Tracking / Gate |
 |---|---|---|
-| Underdeveloped register | **4 flags** (down from 68), **0 P0/P1** | `UNDERDEVELOPED_REGISTER.md` (generated) |
+| Source modules | **234 Python files**, 62,570 lines | `src/scpn_fusion/` |
+| Tests | **2859 passing** | `pytest tests/ -v` |
+| Underdeveloped register | **115 entries** (96 → 115 after GK port), **0 P0/P1** | `UNDERDEVELOPED_REGISTER.md` (generated) |
 | Pretrained surrogates | **5/8 shipped** (62.5%): ITPA MLP, Neural EQ, QLKNN, FNO JAX, FNO legacy (deprecated) | `weights/pretrained_surrogates_manifest.json` |
 | QLKNN transport surrogate | **test_rel_L2 = 0.094** (GPU L40S, 500K samples, gated 1024×512×256, 911 epochs) | `weights/neural_transport_qlknn.metrics.json` |
 | FNO turbulence (JAX) | **val_rel_L2 = 0.055** (4-layer, modes=24, width=128, 5-channel input, 5000 equilibria) | `weights/fno_turbulence_jax.metrics.json` |
-| Validation pipeline | **15/15 benchmarks passing** | `python validation/collect_results.py` |
+| Validation pipeline | **24/24 benchmarks passing** (15 legacy + 9 new) | `python validation/collect_results.py` |
 | Real-data roadmap progress | 18 equilibrium files, 8 SPARC, 53 transport shots, 24 machines, 16 disruption shots, 1 JET-DT | `tools/real_data_roadmap_progress.py` |
 | Enterprise hardening | **19/20 sections passing** (branch protection, labels, tool config, Docker healthcheck) | `.coordination/ENTERPRISE_REPO_HARDENING_CHECKLIST.md` |
 | DIII-D raw ingestion readiness | **Not ready yet** (strict lane blocks promotion) | `tools/run_real_data_strict_gate.py` + `real-data-strict.yml` |
@@ -29,6 +31,29 @@ python tools/real_data_roadmap_non_regression_guard.py \
   --progress-json artifacts/real_data_roadmap_progress.json \
   --baseline-json tools/real_data_roadmap_baseline.json
 ```
+
+## Shipped
+
+### v3.9.4 (current)
+
+- [x] **Phase 5 physics port** (8 modules): impurity transport, momentum transport, runaway electrons, Alfven eigenmodes, ELM model, pellet injection, plasma-wall interaction, kinetic EFIT
+- [x] **Phase 5 control port** (5 modules): free-boundary tracking, state estimator (EKF), volt-second manager, RWM feedback, mu-synthesis
+- [x] **Phase 6 physics port** (10 modules): disruption sequence, locked mode, plasma startup, L-H transition, MARFE, neural turbulence, orbit following, tearing mode coupling, VMEC-lite, blob transport
+- [x] **Phase 6 control port** (2 modules): detachment controller, density controller
+- [x] **GK three-path** (18 modules): native linear eigenvalue solver, quasilinear flux model, 5 external GK interfaces (TGLF, GENE, GS2, CGYRO, QuaLiKiz), OOD detection, correction, scheduling, online learning, verification reporting
+- [x] **JAX differentiable solvers** (3 modules): jax_gs_solver, jax_neural_equilibrium, jax_solvers (Thomas + Crank-Nicolson)
+- [x] Integrated scenario simulator, neoclassical transport, vessel model, tokamak config presets, IMAS adapter
+- [x] **Phase dynamics subpackage** (10 modules): Kuramoto UPDE, adaptive K_nm, GK-to-UPDE bridge, plasma K_nm, Lyapunov guard
+- [x] 9 new validation benchmarks
+- [x] CoilSet extended with `x_point_target`, `divertor_strike_points` fields
+- [x] 69 new modules total, 2859 tests, 234 source files
+
+### v3.9.3
+
+- [x] Hash-pinned deps across all CI workflows
+- [x] CII best-practices badge earned
+- [x] Per-Python-version lock files (`ci-py39.txt` .. `ci-py312.txt`)
+- [x] CodeQL v4 migration
 
 ## v4.0 — Validation-First Release (target: Q2 2026)
 
@@ -64,8 +89,8 @@ Runbook: [`docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md`](docs/FNO_EXTERNAL_RETRAIN_RUNB
 ### Reduce underdeveloped flag count
 
 Current totals are tracked in `UNDERDEVELOPED_REGISTER.md` (auto-generated each
-hardening wave). As of 2026-03-10: **4 total flags**, 0 P0/P1.
-Target for v4.0: resolve all remaining flags.
+hardening wave). As of 2026-03-14: **115 total flags**, 0 P0/P1.
+Target for v4.0: resolve all P0/P1 flags, reduce total below 80.
 
 ### FPGA deployment path
 
@@ -76,10 +101,11 @@ The Petri net -> SNN compiler targets NumPy today. v4.0 adds:
 
 ### Free-boundary equilibrium
 
-Current GS solver uses fixed-boundary (coil currents as inputs). v4.0 goal:
-- FreeGS-compatible coil model
-- Inverse reconstruction mode (fit to magnetic probes)
-- Benchmark: NRMSE < 5% against EFIT on 10+ shots
+- [x] CoilSet extended for free-boundary tracking (v3.9.4)
+- [x] Direct coil-response identification (v3.9.4)
+- [ ] FreeGS-compatible coil model
+- [ ] Inverse reconstruction mode (fit to magnetic probes)
+- [ ] Benchmark: NRMSE < 5% against EFIT on 10+ shots
 
 ## v4.1 — Community & Integration (target: Q3 2026)
 
@@ -98,10 +124,10 @@ Bidirectional coupling with the JAX-based TORAX integrated modelling code:
 
 ### Multi-ion transport
 
-Extend 1.5D transport solver beyond D-T to support:
-- D-T-He3 and D-D-He3 fuel cycles
-- Impurity transport (C, W, Ar) with simple coronal model
-- Pedestal model coupling (EPED-like)
+- [x] Extend 1.5D transport solver beyond D-T (v3.9.4)
+- [x] Impurity transport (C, W, Ar) with banana-regime neoclassical model (v3.9.4)
+- [x] Pedestal model coupling (EPED-like) (v3.9.4)
+- [ ] D-T-He3 and D-D-He3 fuel cycles
 
 ## v5.0 — Production Hardening (target: Q4 2026)
 

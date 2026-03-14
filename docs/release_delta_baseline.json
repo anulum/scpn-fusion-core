@@ -4,7 +4,7 @@
   "notes": "Rebased after GK three-path + JAX + scenario port from scpn-control (33 modules).",
   "source_total": 50,
   "source_p0p1": 43,
-  "docs_claims_total": 55,
+  "docs_claims_total": 62,
   "docs_claims_p0p1": 0,
   "claims_tracked": 13
 }
