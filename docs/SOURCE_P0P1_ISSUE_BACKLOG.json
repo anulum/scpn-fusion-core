@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-15T19:24:11.417495+00:00",
+  "generated_at": "2026-03-15T19:52:14.783142+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
-  "issue_count": 29,
+  "issue_count": 30,
   "issues": [
     {
       "acceptance_checklist": [
@@ -165,6 +165,48 @@
       "title": "[P0] Harden src/scpn_fusion/core/neural_transport.py",
       "trigger_lines": [
         1
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change.",
+        "Remove deprecated runtime-default path or replace with validated default lane."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).",
+        "Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py)."
+      ],
+      "domain": "control",
+      "file_path": "src/scpn_fusion/control/nengo_snn_wrapper.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/control/nengo_snn_wrapper.py`\n- Priority: `P0` (score `107`)\n- Domain: `control`\n- Owner hint: `Control WG`\n- Markers: `DEPRECATED`\n- Trigger lines: `382`\n\n## Proposed Actions\n- Replace default path or remove lane before next major release.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Remove deprecated runtime-default path or replace with validated default lane.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).\n- [ ] Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py).",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "control"
+      ],
+      "github_title": "[P0] Harden src/scpn_fusion/control/nengo_snn_wrapper.py",
+      "issue_slug": "p0-control-nengo_snn_wrapper",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "control"
+      ],
+      "markers": [
+        "DEPRECATED"
+      ],
+      "owner_hint": "Control WG",
+      "priority": "P0",
+      "proposed_actions": [
+        "Replace default path or remove lane before next major release."
+      ],
+      "score": 107,
+      "title": "[P0] Harden src/scpn_fusion/control/nengo_snn_wrapper.py",
+      "trigger_lines": [
+        382
       ]
     },
     {

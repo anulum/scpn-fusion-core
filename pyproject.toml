@@ -8,6 +8,7 @@ version = "3.9.3"
 description = "SCPN Fusion Core - Advanced Plasma Physics & Control Suite"
 authors = [
     {name = "Miroslav Sotek"},
+    {name = "Michal Reiprich"}
 ]
 license = {text = "AGPL-3.0-or-later"}
 classifiers = [
@@ -57,9 +58,7 @@ dev = [
 rust = [
     "maturin>=1.7,<2.0",
 ]
-snn = [
-    "nengo>=4.0",
-]
+snn = []  # pure-numpy LIF+NEF engine, no external deps
 benchmark = [
     "freegs>=0.6",
 ]
@@ -75,7 +74,6 @@ full = [
     "jax>=0.4.20",
     "jaxlib>=0.4.20",
     "gymnasium>=1.0.0",
-    "nengo>=4.0",
     "freegs>=0.6",
     "omas>=0.70",
     "maturin>=1.7,<2.0",
@@ -159,10 +157,6 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["streamlit", "streamlit.*"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["nengo", "nengo.*", "nengo_loihi", "nengo_loihi.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -255,7 +249,6 @@ exclude_lines = [
     "raise NotImplementedError",
     "except ImportError",
     "if HAS_JAX",
-    "if HAS_NENGO",
     "if HAS_FREEGS",
     "if HAS_OMAS",
 ]

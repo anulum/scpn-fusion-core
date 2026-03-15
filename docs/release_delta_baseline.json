@@ -2,8 +2,8 @@
   "baseline_generated_at": "2026-03-14T00:00:00Z",
   "baseline_version": "v3.9.3-gk-three-path-port",
   "notes": "Rebased after GK three-path + JAX + scenario port from scpn-control (33 modules).",
-  "source_total": 50,
-  "source_p0p1": 43,
+  "source_total": 51,
+  "source_p0p1": 44,
   "docs_claims_total": 62,
   "docs_claims_p0p1": 0,
   "claims_tracked": 13

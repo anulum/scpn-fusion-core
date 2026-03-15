@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-14T22:12:39.398184+00:00`
+- Generated at: `2026-03-15T19:51:48.218363+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 122 |
-| P0 + P1 entries | 46 |
-| Source-domain entries | 60 |
-| Source-domain P0 + P1 entries | 46 |
+| Total flagged entries | 123 |
+| P0 + P1 entries | 47 |
+| Source-domain entries | 61 |
+| Source-domain P0 + P1 entries | 47 |
 | Docs-claims entries | 62 |
 | Domains affected | 6 |
 
@@ -24,7 +24,7 @@
 | `PLANNED` | 13 |
 | `EXPERIMENTAL` | 10 |
 | `MONOLITH` | 7 |
-| `DEPRECATED` | 5 |
+| `DEPRECATED` | 6 |
 | `NOT_VALIDATED` | 2 |
 | `TEST_GAP` | 1 |
 
@@ -34,12 +34,12 @@
 |---|---:|
 | `docs_claims` | 62 |
 | `core_physics` | 37 |
-| `control` | 11 |
+| `control` | 12 |
 | `validation` | 10 |
 | `compiler_runtime` | 1 |
 | `diagnostics_io` | 1 |
 
-## Source-Centric Priority Backlog (Top 46)
+## Source-Centric Priority Backlog (Top 47)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
@@ -49,6 +49,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 110 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_tracking.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1566 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=849 exceeds monolith threshold (500+). |
+| P0 | 107 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:382` | Control WG | Replace default path or remove lane before next major release. | "NengoSNNControllerStub is deprecated. " |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
@@ -100,6 +101,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 110 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_tracking.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1566 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=849 exceeds monolith threshold (500+). |
+| P0 | 107 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:382` | Control WG | Replace default path or remove lane before next major release. | "NengoSNNControllerStub is deprecated. " |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
@@ -175,9 +177,8 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/first_simulation.rst:191` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Step 7: Read Real Experimental Data |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/tokamak_physics_textbook.rst:55` | Docs WG | Gate behind explicit flag and define validation exit criteria. | :math:`F(\psi)` are constrained by experimental data (pressure profile and |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `README.md:155` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
-| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:19` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | `freegs-strict` | FreeGS-only strict backend parity lane with runtime-fallback disallowed and artifact contract checks (`mode=freegs`, ... |
 
-## Full Register (Top 122)
+## Full Register (Top 123)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -185,6 +186,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_tracking.py:1` | module LOC=1566 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | module LOC=849 exceeds monolith threshold (500+). |
+| P0 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:382` | "NengoSNNControllerStub is deprecated. " |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | module LOC=501 exceeds monolith threshold (500+). |

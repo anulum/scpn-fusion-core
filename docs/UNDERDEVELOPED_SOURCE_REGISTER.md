@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-14T22:12:45.596671+00:00`
+- Generated at: `2026-03-15T19:51:58.303797+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: source-only (`src/scpn_fusion/**`) markers
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 50 |
-| P0 + P1 entries | 43 |
-| Source-domain entries | 50 |
-| Source-domain P0 + P1 entries | 43 |
+| Total flagged entries | 51 |
+| P0 + P1 entries | 44 |
+| Source-domain entries | 51 |
+| Source-domain P0 + P1 entries | 44 |
 | Docs-claims entries | 0 |
 | Domains affected | 4 |
 
@@ -22,6 +22,7 @@
 | `SIMPLIFIED` | 35 |
 | `FALLBACK` | 7 |
 | `MONOLITH` | 7 |
+| `DEPRECATED` | 1 |
 | `TEST_GAP` | 1 |
 
 ## Domain Distribution
@@ -29,11 +30,11 @@
 | Key | Count |
 |---|---:|
 | `core_physics` | 37 |
-| `control` | 11 |
+| `control` | 12 |
 | `compiler_runtime` | 1 |
 | `diagnostics_io` | 1 |
 
-## Top Priority Backlog (Top 50)
+## Top Priority Backlog (Top 51)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
@@ -41,6 +42,7 @@
 | P0 | 110 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_tracking.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1566 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=849 exceeds monolith threshold (500+). |
+| P0 | 107 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:382` | Control WG | Replace default path or remove lane before next major release. | "NengoSNNControllerStub is deprecated. " |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
@@ -88,7 +90,7 @@
 | P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gk_tglf.py:204` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | _logger.warning("TGLF binary not found, returning fallback") |
 | P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/jax_gs_solver.py:24` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | NumPy fallback provided when JAX is unavailable. |
 
-## Full Register (Top 50)
+## Full Register (Top 51)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -96,6 +98,7 @@
 | P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_tracking.py:1` | module LOC=1566 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | module LOC=849 exceeds monolith threshold (500+). |
+| P0 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:382` | "NengoSNNControllerStub is deprecated. " |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | module LOC=501 exceeds monolith threshold (500+). |

@@ -1,22 +1,22 @@
 # ──────────────────────────────────────────────────────────────────────
-# SCPN Fusion Core — Nengo SNN Controller Wrapper
+# SCPN Fusion Core — Pure-NumPy SNN Controller (LIF + NEF)
 # © 1998–2026 Miroslav Šotek. All rights reserved.
 # Contact: www.anulum.li | protoscience@anulum.li
 # ORCID: https://orcid.org/0009-0009-3560-0851
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
-"""
-Nengo-based Spiking Neural Network controller for tokamak plasma control.
+"""Pure-NumPy spiking neural network controller for tokamak plasma control.
 
-Wraps the existing :class:`SpikingControllerPool` LIF neuron logic in
-Nengo ensembles, enabling:
+Implements LIF neurons with Neural Engineering Framework (NEF) decoding.
+Drop-in replacement for the former Nengo-based wrapper; zero external
+dependencies beyond NumPy. Compatible with NumPy 1.x and 2.x.
 
-1. **Simulation** via Nengo's reference simulator
-2. **Loihi export** via ``nengo_loihi`` (optional dependency)
-3. **FPGA weight export** for hardware synthesis
+Architecture per channel::
 
-If ``nengo`` is not installed, ``NengoSNNController.__init__`` raises
-an :class:`ImportError` with installation instructions.
+    error → [LP τ_s] → LIF error ensemble → [decode gain·x, LP τ_s]
+          → LIF control ensemble → [decode x, LP τ_s] → output
+
+Reference: Eliasmith & Anderson, *Neural Engineering*, MIT Press, 2003.
 """
 
 from __future__ import annotations
@@ -25,273 +25,311 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
-# Lazy Nengo import — graceful fallback
-_nengo = None
-_nengo_available = False
-
-try:
-    import nengo as _nengo  # type: ignore[no-redef]
-
-    _nengo_available = True
-except ImportError as exc:
-    logger.debug("Nengo import unavailable; NengoSNNController disabled: %s", exc)
+_nengo_available = True
 
 
 def nengo_available() -> bool:
-    """Check if Nengo SDK is installed."""
-    return _nengo_available
+    """Always True — no external dependency required."""
+    return True
 
 
 @dataclass
 class NengoSNNConfig:
-    """Configuration for the Nengo SNN controller."""
+    """Configuration for the SNN controller."""
 
-    n_neurons: int = 200  # neurons per ensemble
-    n_channels: int = 2  # control channels (R, Z)
+    n_neurons: int = 200
+    n_channels: int = 2
     tau_synapse: float = 0.015  # synaptic time constant [s]
-    tau_mem: float = 0.020  # membrane time constant [s]
+    tau_mem: float = 0.020  # membrane τ_rc [s]
     dt: float = 0.001  # simulation timestep [s]
-    max_rate_hz: float = 200.0  # maximum neuron firing rate [Hz]
+    max_rate_hz: float = 200.0  # maximum firing rate [Hz]
     intercept_range: tuple[float, float] = (-0.8, 0.8)
-    gain: float = 5.0  # controller gain
+    gain: float = 5.0
     seed: int = 42
 
 
-class NengoSNNController:
-    """Nengo-based SNN controller for tokamak position control.
+# ── Internal building blocks ─────────────────────────────────────────
 
-    Builds a Nengo network with LIF neuron ensembles implementing a
-    push-pull control scheme similar to :class:`SpikingControllerPool`
-    but leveraging Nengo's Neural Engineering Framework for principled
-    weight computation.
+
+class _Lowpass:
+    """First-order exponential lowpass: y += (1-d)(x-y), d = exp(-dt/τ)."""
+
+    __slots__ = ("_decay", "_val")
+
+    def __init__(self, tau: float, dt: float, n: int) -> None:
+        self._decay = np.exp(-dt / tau) if tau > 0 else 0.0
+        self._val = np.zeros(n)
+
+    def step(self, x: NDArray) -> NDArray:
+        self._val = self._decay * self._val + (1.0 - self._decay) * x
+        return self._val
+
+    def reset(self) -> None:
+        self._val[:] = 0.0
+
+
+class _LIFPopulation:
+    """Vectorized LIF neuron population with NEF gain/bias.
+
+    Membrane dynamics (exact integration per timestep):
+        V(t+dt) = J + (V(t) - J) · exp(-Δ/τ_rc)
+    Spike when V ≥ 1, then V = 0 for τ_ref seconds.
+
+    Gain α and bias J_bias from per-neuron (max_rate, intercept):
+        J_max = 1 / (1 - exp((τ_ref - 1/r_max) / τ_rc))
+        α = (J_max - 1) / (1 - intercept)
+        J_bias = 1 - α · intercept
+    Eliasmith & Anderson 2003, Eq. 4.10–4.12.
+    """
+
+    def __init__(
+        self,
+        n: int,
+        tau_rc: float,
+        tau_ref: float,
+        max_rates: NDArray,
+        intercepts: NDArray,
+        encoders: NDArray,
+        dt: float,
+    ) -> None:
+        self.n = n
+        self.tau_rc = tau_rc
+        self.tau_ref = tau_ref
+        self.dt = dt
+        self.encoders = encoders
+
+        J_max = 1.0 / (1.0 - np.exp((tau_ref - 1.0 / max_rates) / tau_rc))
+        self.alpha = (J_max - 1.0) / (1.0 - intercepts)
+        self.J_bias = 1.0 - self.alpha * intercepts
+
+        self.voltage = np.zeros(n)
+        self.ref_time = np.zeros(n)
+
+    def step(self, x: float) -> NDArray:
+        """One dt step. Returns spike rates (1/dt on spike, else 0)."""
+        J = self.alpha * self.encoders * x + self.J_bias
+        delta = np.clip(self.dt - self.ref_time, 0.0, self.dt)
+        self.voltage = J + (self.voltage - J) * np.exp(-delta / self.tau_rc)
+
+        spiked = self.voltage >= 1.0
+        self.voltage[spiked] = 0.0
+        self.ref_time[spiked] = self.tau_ref
+        self.ref_time = np.maximum(self.ref_time - self.dt, 0.0)
+
+        return spiked.astype(np.float64) / self.dt
+
+    def steady_rates(self, x_eval: NDArray) -> NDArray:
+        """Analytic steady-state firing rates. Shape (n, len(x_eval))."""
+        J = (
+            self.alpha[:, None] * self.encoders[:, None] * x_eval[None, :]
+            + self.J_bias[:, None]
+        )
+        rates = np.zeros_like(J)
+        ok = J > 1.0
+        rates[ok] = 1.0 / (self.tau_ref - self.tau_rc * np.log1p(-1.0 / J[ok]))
+        return rates
+
+    def reset(self) -> None:
+        self.voltage[:] = 0.0
+        self.ref_time[:] = 0.0
+
+
+def _nef_decoder(
+    pop: _LIFPopulation, fn, n_eval: int = 200, reg: float = 0.1
+) -> NDArray:
+    """Least-squares NEF decoder for target function fn(x).
+
+    Tikhonov regularization matches Nengo's LstsqL2 default.
+    Returns shape (n_neurons,).
+    """
+    x = np.linspace(-1, 1, n_eval)
+    A = pop.steady_rates(x)
+    Y = fn(x)
+    AAt = A @ A.T
+    max_a = max(float(np.max(A)), 1e-10)
+    gamma = n_eval * reg * max_a**2
+    return np.linalg.solve(AAt + gamma * np.eye(pop.n), A @ Y)
+
+
+class _Channel:
+    """One control channel: error → gain·x → control → identity → output."""
+
+    def __init__(self, cfg: NengoSNNConfig, rng: np.random.Generator) -> None:
+        n, dt = cfg.n_neurons, cfg.dt
+
+        def _make_pop() -> _LIFPopulation:
+            return _LIFPopulation(
+                n=n,
+                tau_rc=cfg.tau_mem,
+                tau_ref=0.002,
+                max_rates=rng.uniform(cfg.max_rate_hz * 0.5, cfg.max_rate_hz, n),
+                intercepts=rng.uniform(*cfg.intercept_range, n),
+                encoders=rng.choice([-1.0, 1.0], n),
+                dt=dt,
+            )
+
+        self.error_pop = _make_pop()
+        self.control_pop = _make_pop()
+
+        gain = cfg.gain
+        self.D_gain = _nef_decoder(self.error_pop, lambda x: gain * x)
+        self.D_id = _nef_decoder(self.control_pop, lambda x: x)
+        self.D_probe = _nef_decoder(self.error_pop, lambda x: x)
+
+        self.syn_in = _Lowpass(cfg.tau_synapse, dt, 1)
+        self.syn_mid = _Lowpass(cfg.tau_synapse, dt, 1)
+        self.syn_out = _Lowpass(cfg.tau_synapse, dt, 1)
+
+        self.probe_filt = _Lowpass(0.01, dt, 1)
+        self.probe_history: list[float] = []
+
+    def step(self, x: float) -> float:
+        x_f = float(self.syn_in.step(np.array([x]))[0])
+        err_spikes = self.error_pop.step(x_f)
+        decoded_gain = float(self.D_gain @ err_spikes)
+        mid_f = float(self.syn_mid.step(np.array([decoded_gain]))[0])
+        ctl_spikes = self.control_pop.step(mid_f)
+        decoded_id = float(self.D_id @ ctl_spikes)
+        out = float(self.syn_out.step(np.array([decoded_id]))[0])
+
+        decoded_probe = float(self.D_probe @ err_spikes)
+        probe_val = float(self.probe_filt.step(np.array([decoded_probe]))[0])
+        self.probe_history.append(probe_val)
+
+        return out
+
+    def reset(self) -> None:
+        self.error_pop.reset()
+        self.control_pop.reset()
+        self.syn_in.reset()
+        self.syn_mid.reset()
+        self.syn_out.reset()
+        self.probe_filt.reset()
+        self.probe_history.clear()
+
+
+# ── Public API ───────────────────────────────────────────────────────
+
+
+class NengoSNNController:
+    """SNN controller for tokamak position control.
+
+    Pure-NumPy LIF + NEF implementation. Per channel: error ensemble
+    decodes gain·x into control ensemble, which decodes identity to output.
 
     Parameters
     ----------
     config : NengoSNNConfig or None
         Controller configuration. Uses defaults if None.
-
-    Raises
-    ------
-    ImportError
-        If ``nengo`` is not installed.
     """
 
     def __init__(self, config: NengoSNNConfig | None = None) -> None:
-        if not _nengo_available:
-            raise ImportError(
-                "Nengo is required for NengoSNNController. "
-                "Install with: pip install nengo\n"
-                "For Loihi support: pip install nengo-loihi"
-            )
         self.cfg = config or NengoSNNConfig()
-        self._network: Any = None
-        self._simulator: Any = None
-        self._input_node: Any = None
-        self._output_probe: Any = None
-        self._error_probes: list[Any] = []
+        self._channels: list[_Channel] = []
         self._built = False
         self._step_count = 0
         self._last_output = np.zeros(self.cfg.n_channels)
-        self._error_value: NDArray[np.float64] = np.zeros(self.cfg.n_channels)
+        self._output_history: list[NDArray] = []
+        self._output_probe_filt = _Lowpass(0.01, self.cfg.dt, self.cfg.n_channels)
 
         self.build_network()
 
     def build_network(self) -> None:
-        """Construct the Nengo network with LIF ensembles.
-
-        Architecture: for each channel, an error ensemble drives an
-        output ensemble through a learned connection (NEF decode).
-        """
-        nengo = _nengo
-        if nengo is None:
-            raise RuntimeError("Nengo backend unavailable; install nengo and rebuild.")
-
+        """Build LIF ensembles and compute NEF decoders."""
         cfg = self.cfg
-        self._network = nengo.Network(seed=cfg.seed, label="SNN_Controller")
-
-        # Mutable container for external input — read by the input node callable
-        self._error_value = np.zeros(cfg.n_channels)
-
-        with self._network:
-            # Input node: callable output for nengo 4.x compatibility
-            self._input_node = nengo.Node(
-                output=lambda t: self._error_value,
-                size_out=cfg.n_channels,
-                label="error_input",
-            )
-
-            # Output node: collects control commands
-            output_node = nengo.Node(
-                size_in=cfg.n_channels,
-                label="control_output",
-            )
-
-            self._error_probes = []
-
-            for ch in range(cfg.n_channels):
-                # Error ensemble — represents the error signal
-                error_ens = nengo.Ensemble(
-                    n_neurons=cfg.n_neurons,
-                    dimensions=1,
-                    neuron_type=nengo.LIF(
-                        tau_rc=cfg.tau_mem,
-                        tau_ref=0.002,
-                    ),
-                    max_rates=nengo.dists.Uniform(cfg.max_rate_hz * 0.5, cfg.max_rate_hz),
-                    intercepts=nengo.dists.Uniform(*cfg.intercept_range),
-                    label=f"error_ch{ch}",
-                    seed=cfg.seed + ch,
-                )
-
-                # Control ensemble — computes the control output
-                control_ens = nengo.Ensemble(
-                    n_neurons=cfg.n_neurons,
-                    dimensions=1,
-                    neuron_type=nengo.LIF(
-                        tau_rc=cfg.tau_mem,
-                        tau_ref=0.002,
-                    ),
-                    max_rates=nengo.dists.Uniform(cfg.max_rate_hz * 0.5, cfg.max_rate_hz),
-                    intercepts=nengo.dists.Uniform(*cfg.intercept_range),
-                    label=f"control_ch{ch}",
-                    seed=cfg.seed + ch + 100,
-                )
-
-                # Input → error ensemble (slice input to this channel)
-                nengo.Connection(
-                    self._input_node[ch],
-                    error_ens,
-                    synapse=cfg.tau_synapse,
-                )
-
-                # Error → control with gain
-                nengo.Connection(
-                    error_ens,
-                    control_ens,
-                    function=lambda x: cfg.gain * x,
-                    synapse=cfg.tau_synapse,
-                )
-
-                # Control → output node
-                nengo.Connection(
-                    control_ens,
-                    output_node[ch],
-                    synapse=cfg.tau_synapse,
-                )
-
-                # Probes
-                self._error_probes.append(nengo.Probe(error_ens, synapse=0.01))
-
-            self._output_probe = nengo.Probe(output_node, synapse=0.01)
-
-        # Build simulator
-        self._simulator = nengo.Simulator(
-            self._network,
-            dt=cfg.dt,
-            progress_bar=False,
-        )
+        rng = np.random.default_rng(cfg.seed)
+        self._channels = [_Channel(cfg, rng) for _ in range(cfg.n_channels)]
         self._built = True
         self._step_count = 0
+        self._output_history.clear()
         logger.info(
-            "Built Nengo SNN controller: %d neurons/channel x %d channels, dt=%.3fs",
+            "Built SNN controller: %d neurons/ch x %d ch, dt=%.3fs",
             cfg.n_neurons,
             cfg.n_channels,
             cfg.dt,
         )
 
     def step(self, state: NDArray[np.float64]) -> NDArray[np.float64]:
-        """Run one control step through the Nengo simulator.
+        """Run one control step.
 
         Parameters
         ----------
-        state : NDArray
-            Error vector of shape (n_channels,).
+        state : array of shape (n_channels,)
+            Error vector.
 
         Returns
         -------
-        NDArray
-            Control command of shape (n_channels,).
+        array of shape (n_channels,)
+            Control command.
         """
         if not self._built:
-            raise RuntimeError("Network not built. Call build_network() first.")
+            raise RuntimeError("Network not built.")
 
-        nengo = _nengo
-        if nengo is None:
-            raise RuntimeError("Nengo backend unavailable; rebuild after installing nengo.")
-
-        # Feed error into input node
         error = np.asarray(state, dtype=float).ravel()[: self.cfg.n_channels]
-
-        # Set input value (read by the input node callable)
-        self._error_value[:] = error
-
-        # Step the simulator
-        self._simulator.step()
+        output = np.array([ch.step(error[i]) for i, ch in enumerate(self._channels)])
         self._step_count += 1
+        self._last_output = output
 
-        # Read output
-        output = self._simulator.data[self._output_probe][-1]
-        self._last_output = np.array(output, dtype=float)
-        return self._last_output.copy()
+        probe_out = self._output_probe_filt.step(output)
+        self._output_history.append(probe_out.copy())
+
+        return output.copy()
 
     def reset(self) -> None:
-        """Reset the simulator state."""
-        if self._simulator is not None:
-            self._simulator.reset()
+        """Reset all neuron state and filters."""
+        for ch in self._channels:
+            ch.reset()
         self._step_count = 0
         self._last_output = np.zeros(self.cfg.n_channels)
-        self._error_value[:] = 0.0
+        self._output_history.clear()
+        self._output_probe_filt.reset()
 
     def get_spike_data(self) -> dict[str, NDArray]:
-        """Return probe data from the simulation."""
-        if self._simulator is None:
+        """Return probe data from simulation."""
+        if not self._output_history:
             return {}
         data: dict[str, NDArray] = {
-            "output": np.array(self._simulator.data[self._output_probe]),
+            "output": np.array(self._output_history),
         }
-        for i, probe in enumerate(self._error_probes):
-            data[f"error_ch{i}"] = np.array(self._simulator.data[probe])
+        for i, ch in enumerate(self._channels):
+            if ch.probe_history:
+                data[f"error_ch{i}"] = np.array(ch.probe_history)[:, None]
         return data
 
     def export_weights(self) -> dict[str, NDArray]:
-        """Extract connection weight matrices from the built network.
+        """Extract decoder, encoder, and gain/bias arrays.
 
         Returns
         -------
-        dict mapping connection label -> weight matrix
+        dict mapping label -> weight array
         """
-        if not self._built or self._simulator is None:
+        if not self._built:
             raise RuntimeError("Network not built.")
 
         weights: dict[str, NDArray] = {}
-        for conn in self._network.all_connections:
-            if hasattr(conn, "solver") and hasattr(self._simulator, "data"):
-                label = conn.label or f"conn_{id(conn)}"
-                try:
-                    # Nengo stores decoder weights in simulator data
-                    w = self._simulator.data[conn].weights
-                    weights[label] = np.array(w)
-                except (AttributeError, KeyError) as exc:
-                    logger.debug("Skipping weight export for connection '%s': %s", label, exc)
+        for i, ch in enumerate(self._channels):
+            weights[f"ch{i}_error_encoders"] = ch.error_pop.encoders.copy()
+            weights[f"ch{i}_error_alpha"] = ch.error_pop.alpha.copy()
+            weights[f"ch{i}_error_J_bias"] = ch.error_pop.J_bias.copy()
+            weights[f"ch{i}_D_gain"] = ch.D_gain.copy()
+            weights[f"ch{i}_control_encoders"] = ch.control_pop.encoders.copy()
+            weights[f"ch{i}_control_alpha"] = ch.control_pop.alpha.copy()
+            weights[f"ch{i}_control_J_bias"] = ch.control_pop.J_bias.copy()
+            weights[f"ch{i}_D_id"] = ch.D_id.copy()
         return weights
 
     def export_fpga_weights(self, filename: str | Path) -> None:
-        """Export weight matrices for FPGA synthesis.
-
-        Writes a NumPy .npz file with all connection weights,
-        neuron parameters, and network topology.
-        """
+        """Export weight matrices for FPGA synthesis as .npz."""
         path = Path(filename)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        payload: dict[str, Any] = {
+        payload: dict[str, NDArray] = {
             "n_neurons": np.array([self.cfg.n_neurons]),
             "n_channels": np.array([self.cfg.n_channels]),
             "dt": np.array([self.cfg.dt]),
@@ -299,99 +337,46 @@ class NengoSNNController:
             "tau_mem": np.array([self.cfg.tau_mem]),
             "gain": np.array([self.cfg.gain]),
         }
-
-        weights = self.export_weights()
-        for label, w in weights.items():
-            safe_label = label.replace(" ", "_").replace(">", "to")
-            payload[f"weight_{safe_label}"] = w
-
+        payload.update(self.export_weights())
         np.savez(str(path), **payload)
         logger.info("Exported FPGA weights to %s", path)
 
     def export_loihi(self, filename: str | Path) -> None:
-        """Export to NengoLoihi-compatible format.
-
-        Requires ``nengo_loihi`` optional dependency.
-
-        Parameters
-        ----------
-        filename : str or Path
-            Output file path (.npz).
-        """
-        try:
-            import nengo_loihi
-        except ImportError:
-            raise ImportError(
-                "nengo_loihi is required for Loihi export. " "Install with: pip install nengo-loihi"
-            )
-
-        path = Path(filename)
-        path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Build a Loihi simulator to extract hardware-mapped parameters
-        loihi_sim = nengo_loihi.Simulator(
-            self._network,
-            dt=self.cfg.dt,
-            progress_bar=False,
+        """Loihi export requires the original nengo + nengo_loihi packages."""
+        raise NotImplementedError(
+            "Loihi export requires nengo + nengo_loihi. "
+            "Use export_fpga_weights() for hardware deployment."
         )
 
-        payload: dict[str, Any] = {
-            "n_neurons": np.array([self.cfg.n_neurons]),
-            "n_channels": np.array([self.cfg.n_channels]),
-            "dt": np.array([self.cfg.dt]),
-            "format": np.array([1]),  # version marker
-        }
-
-        np.savez(str(path), **payload)
-        loihi_sim.close()
-        logger.info("Exported Loihi configuration to %s", path)
-
     def benchmark(self, n_steps: int = 1000) -> dict[str, float]:
-        """Measure per-step latency statistics.
-
-        Parameters
-        ----------
-        n_steps : int
-            Number of benchmark steps.
+        """Measure per-step latency.
 
         Returns
         -------
-        dict with 'mean_us', 'p95_us', 'p99_us', 'max_us'
+        dict with mean_us, p50_us, p95_us, p99_us, max_us
         """
         self.reset()
-        times = []
         rng = np.random.default_rng(0)
-
-        for _ in range(n_steps):
+        times = np.empty(n_steps)
+        for i in range(n_steps):
             error = rng.normal(0, 0.1, size=self.cfg.n_channels)
             t0 = time.perf_counter_ns()
             self.step(error)
-            dt_us = (time.perf_counter_ns() - t0) / 1e3
-            times.append(dt_us)
-
-        arr = np.array(times)
+            times[i] = (time.perf_counter_ns() - t0) / 1e3
         return {
-            "mean_us": float(np.mean(arr)),
-            "p50_us": float(np.percentile(arr, 50)),
-            "p95_us": float(np.percentile(arr, 95)),
-            "p99_us": float(np.percentile(arr, 99)),
-            "max_us": float(np.max(arr)),
+            "mean_us": float(np.mean(times)),
+            "p50_us": float(np.percentile(times, 50)),
+            "p95_us": float(np.percentile(times, 95)),
+            "p99_us": float(np.percentile(times, 99)),
+            "max_us": float(np.max(times)),
         }
 
 
-# ── Fallback for when Nengo is not available ─────────────────────────
-
-
 class NengoSNNControllerStub:
-    """Stub that raises ImportError on instantiation.
+    """Backward-compat stub. No longer needed — controller always works."""
 
-    Used as a drop-in replacement when ``nengo`` is not installed,
-    enabling clean error messages at usage point rather than import time.
-    """
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *_args, **_kwargs) -> None:
         raise ImportError(
-            "Nengo is required for NengoSNNController. "
-            "Install with: pip install nengo\n"
-            "For Loihi support: pip install nengo-loihi"
+            "NengoSNNControllerStub is deprecated. "
+            "Use NengoSNNController directly — no external dependencies required."
         )
