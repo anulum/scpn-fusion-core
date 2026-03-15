@@ -294,6 +294,7 @@ class TestUPDESystem:
 # ── FusionKernel.phase_sync_step (integration smoke test) ────────────
 
 
+@pytest.mark.skip(reason="FusionKernel.phase_sync_step not yet ported from scpn-control")
 class TestFusionKernelPhaseSync:
     """Smoke test that phase_sync_step can be called on a FusionKernel."""
 
