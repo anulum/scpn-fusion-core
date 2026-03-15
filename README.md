@@ -64,7 +64,7 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | Closed-loop HIL latency | **10.5 us P50** | `python validation/collect_results.py` |
 | QLKNN-10D transport surrogate | test rel_L2 = **0.094** | `weights/neural_transport_qlknn.metrics.json` |
 | FNO turbulence surrogate | val rel_L2 = **0.055** | `weights/fno_turbulence_jax.metrics.json` |
-| Disruption rate (1,000-shot sim) | **0%** (Rust-PID) | `validation/stress_test_campaign.py` |
+| Disruption rate (1,000-shot sim campaign) | **0%** (Rust-PID) | `validation/stress_test_campaign.py` |
 | ITPA H-mode confinement | 53 shots / 24 machines | `validation/reference_data/itpa/` |
 | SPARC GEQDSK validation | 8 EFIT equilibria (MIT, CFS) | `validation/reference_data/sparc/` |
 | Q >= 10 operating point | Q = 15 (0D power balance) | `RESULTS.md` |
