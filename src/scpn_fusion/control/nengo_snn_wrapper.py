@@ -126,10 +126,7 @@ class _LIFPopulation:
 
     def steady_rates(self, x_eval: NDArray) -> NDArray:
         """Analytic steady-state firing rates. Shape (n, len(x_eval))."""
-        J = (
-            self.alpha[:, None] * self.encoders[:, None] * x_eval[None, :]
-            + self.J_bias[:, None]
-        )
+        J = self.alpha[:, None] * self.encoders[:, None] * x_eval[None, :] + self.J_bias[:, None]
         rates = np.zeros_like(J)
         ok = J > 1.0
         rates[ok] = 1.0 / (self.tau_ref - self.tau_rc * np.log1p(-1.0 / J[ok]))
@@ -140,9 +137,7 @@ class _LIFPopulation:
         self.ref_time[:] = 0.0
 
 
-def _nef_decoder(
-    pop: _LIFPopulation, fn, n_eval: int = 200, reg: float = 0.1
-) -> NDArray:
+def _nef_decoder(pop: _LIFPopulation, fn, n_eval: int = 200, reg: float = 0.1) -> NDArray:
     """Least-squares NEF decoder for target function fn(x).
 
     Tikhonov regularization matches Nengo's LstsqL2 default.
