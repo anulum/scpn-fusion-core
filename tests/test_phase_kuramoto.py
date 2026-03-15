@@ -304,7 +304,7 @@ class TestFusionKernelPhaseSync:
             "reactor_name": "test_micro",
             "dimensions": {"R_min": 0.5, "R_max": 2.5, "Z_min": -1.5, "Z_max": 1.5},
             "grid_resolution": [9, 9],
-            "coils": {"positions": [], "currents": [], "turns": []},
+            "coils": [],
             "physics": {},
             "solver": {"method": "sor", "max_iterations": 10, "tol": 1e-4},
             "phase_sync": {"K": 2.0, "zeta": 0.5, "psi_mode": "external"},
