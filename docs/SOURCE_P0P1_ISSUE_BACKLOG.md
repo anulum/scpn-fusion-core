@@ -1,6 +1,6 @@
 # Source P0/P1 Issue Backlog
 
-- Generated at: `2026-03-15T23:58:16.529302+00:00`
+- Generated at: `2026-03-16T17:28:48.917799+00:00`
 - Generator: `tools/generate_source_p0p1_issue_backlog.py`
 - Scope: source files only (`src/scpn_fusion/**`) with P0/P1 severity
 
@@ -121,7 +121,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Control WG
 - **Priority Score**: `107`
 - **Markers**: `DEPRECATED`
-- **Trigger Lines**: `375`
+- **Trigger Lines**: `374`
 
 **Proposed Actions**
 - Replace default path or remove lane before next major release.
@@ -221,7 +221,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Control WG
 - **Priority Score**: `86`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `136`
+- **Trigger Lines**: `139`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -241,7 +241,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Control WG
 - **Priority Score**: `86`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `61`
+- **Trigger Lines**: `62`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -261,7 +261,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Control WG
 - **Priority Score**: `86`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `213`
+- **Trigger Lines**: `216`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -281,7 +281,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Control WG
 - **Priority Score**: `86`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `146`
+- **Trigger Lines**: `149`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -301,7 +301,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Control WG
 - **Priority Score**: `86`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `99`
+- **Trigger Lines**: `98`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -321,7 +321,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `251`
+- **Trigger Lines**: `254`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -341,7 +341,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `111, 208`
+- **Trigger Lines**: `114, 211`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -361,7 +361,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `25, 53, 145`
+- **Trigger Lines**: `28, 56, 148`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -381,7 +381,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `205`
+- **Trigger Lines**: `204`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -401,7 +401,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `121, 127`
+- **Trigger Lines**: `120, 126`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -421,7 +421,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `138`
+- **Trigger Lines**: `137`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -441,7 +441,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `13, 157, 166, 179`
+- **Trigger Lines**: `12, 156, 165, 178`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -461,7 +461,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `170`
+- **Trigger Lines**: `173`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -481,7 +481,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `35, 245, 255`
+- **Trigger Lines**: `38, 248, 258`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -501,7 +501,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `48, 149`
+- **Trigger Lines**: `51, 152`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -521,7 +521,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `32, 72`
+- **Trigger Lines**: `35, 75`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -541,7 +541,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `110`
+- **Trigger Lines**: `113`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -561,7 +561,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `208`
+- **Trigger Lines**: `209`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -581,7 +581,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `177, 224`
+- **Trigger Lines**: `180, 227`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -601,7 +601,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `28, 44, 178`
+- **Trigger Lines**: `31, 47, 181`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -621,7 +621,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `49`
+- **Trigger Lines**: `52`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.

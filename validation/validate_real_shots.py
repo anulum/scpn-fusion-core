@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-# ──────────────────────────────────────────────────────────────────────
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Capstone Real-Shot Validation (Phase 2.1)
-# Validates equilibrium, transport, and disruption against real data.
-# ──────────────────────────────────────────────────────────────────────
 """End-to-end validation pipeline for v2.0.0 release gate.
 
 Runs three validation lanes:

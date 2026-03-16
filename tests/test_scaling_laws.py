@@ -1,8 +1,9 @@
-# ──────────────────────────────────────────────────────────────────────
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — IPB98(y,2) Scaling Law Validation Tests
-# © 1998–2026 Miroslav Šotek. All rights reserved.
-# License: GNU AGPL v3
-# ──────────────────────────────────────────────────────────────────────
 """Physics validation tests for the IPB98(y,2) confinement scaling law.
 
 Reference values from:

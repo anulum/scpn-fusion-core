@@ -1,10 +1,9 @@
-# ─────────────────────────────────────────────────────────────────────
-# SCPN Fusion Core — PyO3 GPU Bridge Tests
-# © 1998–2026 Miroslav Šotek. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# ORCID: https://orcid.org/0009-0009-3560-0851
-# License: GNU AGPL v3 | Commercial licensing available
-# ─────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — PyO3 GPU Bridge Tests
 """Tests for PyO3 bindings: fusion-gpu crate → Python.
 
 Covers: WP-GPU1 (GpuGsSolver, gpu_available, gpu_info).

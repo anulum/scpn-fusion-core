@@ -1,8 +1,9 @@
-# ──────────────────────────────────────────────────────────────────────
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Disruption Threshold Sweep Tests
-# Verifies the v2.1 weight tuning achieves FPR < 30% and recall > 80%
-# on the reference DIII-D disruption shot dataset.
-# ──────────────────────────────────────────────────────────────────────
 """Tests that the disruption predictor achieves target operating point.
 
 The v2.1 weight update shifted from amplitude-heavy coefficients to

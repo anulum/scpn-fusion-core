@@ -1,7 +1,9 @@
-# ─────────────────────────────────────────────────────────────────────
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — QLKNN-10D Data Pipeline
-# © 1998–2026 Miroslav Sotek. All rights reserved.
-# ─────────────────────────────────────────────────────────────────────
 """
 Convert QLKNN-10D Zenodo HDF5 data to training-ready .npz files.
 

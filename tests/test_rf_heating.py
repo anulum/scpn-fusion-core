@@ -1,8 +1,9 @@
-# ──────────────────────────────────────────────────────────────────────
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — RF Heating Physics Validation Tests
-# © 1998–2026 Miroslav Šotek. All rights reserved.
-# License: GNU AGPL v3
-# ──────────────────────────────────────────────────────────────────────
 """Physics validation for ECRH heating.
 
 ITER ECRH: 170 GHz, 20 MW, fundamental O-mode.

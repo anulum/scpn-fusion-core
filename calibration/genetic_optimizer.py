@@ -1,10 +1,9 @@
-# ──────────────────────────────────────────────────────────────────────
-# SCPN Fusion Core — Genetic Optimizer
-# © 1998–2026 Miroslav Šotek. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# ORCID: https://orcid.org/0009-0009-3560-0851
-# License: GNU AGPL v3 | Commercial licensing available
-# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Genetic Optimizer
 import numpy as np
 from scipy.optimize import differential_evolution
 import sys
@@ -13,9 +12,10 @@ import json
 import time
 
 # Add src to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
+
 
 def genetic_calibration():
     print("--- SCPN GENETIC CALIBRATION: DIFFERENTIAL EVOLUTION ---")
@@ -29,15 +29,15 @@ def genetic_calibration():
         "dimensions": {"R_min": 2.0, "R_max": 10.0, "Z_min": -6.0, "Z_max": 6.0},
         "physics": {"plasma_current_target": 15.0, "vacuum_permeability": 1.0},
         "coils": [
-            {"name": "PF1", "r": 3.9, "z": 7.6,  "current": 0.0},
-            {"name": "PF2", "r": 8.2, "z": 6.7,  "current": 0.0},
-            {"name": "PF3", "r": 12.0, "z": 2.7,  "current": 0.0},
+            {"name": "PF1", "r": 3.9, "z": 7.6, "current": 0.0},
+            {"name": "PF2", "r": 8.2, "z": 6.7, "current": 0.0},
+            {"name": "PF3", "r": 12.0, "z": 2.7, "current": 0.0},
             {"name": "PF4", "r": 12.6, "z": -2.3, "current": 0.0},
             {"name": "PF5", "r": 8.4, "z": -6.7, "current": 0.0},
             {"name": "PF6", "r": 4.3, "z": -7.6, "current": 0.0},
-            {"name": "CS",  "r": 1.7, "z": 0.0,  "current": 0.0}
+            {"name": "CS", "r": 1.7, "z": 0.0, "current": 0.0},
         ],
-        "solver": {"max_iterations": 300, "convergence_threshold": 1e-3, "relaxation_factor": 0.1}
+        "solver": {"max_iterations": 300, "convergence_threshold": 1e-3, "relaxation_factor": 0.1},
     }
 
     # Save template
@@ -54,16 +54,16 @@ def genetic_calibration():
     def fitness(currents):
         # Apply Genotype (Currents) to Phenotype (Coils)
         for i, I in enumerate(currents):
-            kernel.cfg['coils'][i]['current'] = I
+            kernel.cfg["coils"][i]["current"] = I
 
         # Run Simulation
         # Mute output for speed
         original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
+        sys.stdout = open(os.devnull, "w")
         try:
             kernel.solve_equilibrium()
         except:
-            pass # Ignore divergences
+            pass  # Ignore divergences
         sys.stdout = original_stdout
 
         # Analyze Result
@@ -77,12 +77,12 @@ def genetic_calibration():
 
         # COST FUNCTION
         # 1. Axis Position Error (Target R=6.2, Z=0.0)
-        err_pos = (R_ax - 6.2)**2 + (Z_ax - 0.5)**2 # Slight vertical offset for single null
+        err_pos = (R_ax - 6.2) ** 2 + (Z_ax - 0.5) ** 2  # Slight vertical offset for single null
 
         # 2. X-Point position (Should be at bottom)
         # Target X ~ (5.0, -4.5) approx
         err_x = 0
-        if xp[1] > -3.0: # If X-point is too high or non-existent
+        if xp[1] > -3.0:  # If X-point is too high or non-existent
             err_x = 10.0
 
         # 3. Boundary Flux Error (Limiter vs Divertor)
@@ -94,14 +94,14 @@ def genetic_calibration():
         Psi_ax = kernel.Psi[iz, ir]
 
         err_strength = 0
-        if Psi_ax < 5.0: # We expect ~10-30 Wb for ITER
-            err_strength = 100.0 * (5.0 - Psi_ax)**2
+        if Psi_ax < 5.0:  # We expect ~10-30 Wb for ITER
+            err_strength = 100.0 * (5.0 - Psi_ax) ** 2
 
         total_cost = err_pos + err_x + err_strength
 
         # Penalty for extreme currents (Regularization)
         # We prefer smaller currents
-        total_cost += 0.001 * np.sum(np.array(currents)**2) # Reduced regularization
+        total_cost += 0.001 * np.sum(np.array(currents) ** 2)  # Reduced regularization
 
         return total_cost
 
@@ -112,11 +112,11 @@ def genetic_calibration():
     result = differential_evolution(
         fitness,
         bounds,
-        strategy='best1bin',
+        strategy="best1bin",
         maxiter=20,
         popsize=15,
         tol=0.1,
-        disp=True # Show progress
+        disp=True,  # Show progress
     )
 
     print(f"\n--- EVOLUTION COMPLETE in {time.time()-t0:.1f}s ---")
@@ -125,9 +125,9 @@ def genetic_calibration():
 
     optimized_config = base_config.copy()
     for i, val in enumerate(result.x):
-        name = base_config['coils'][i]['name']
+        name = base_config["coils"][i]["name"]
         print(f"  {name}: {val:.3f} MA")
-        optimized_config['coils'][i]['current'] = val
+        optimized_config["coils"][i]["current"] = val
 
     # Save
     out_path = os.path.join(os.path.dirname(__file__), "../validation/iter_genetic_config.json")
@@ -138,6 +138,7 @@ def genetic_calibration():
     # Cleanup
     if os.path.exists(config_path):
         os.remove(config_path)
+
 
 if __name__ == "__main__":
     genetic_calibration()

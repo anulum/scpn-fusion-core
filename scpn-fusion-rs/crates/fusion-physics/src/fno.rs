@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+// © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+// © Code 2020–2026 Miroslav Šotek. All rights reserved.
+// ORCID: 0009-0009-3560-0851
+// Contact: www.anulum.li | protoscience@anulum.li
 //! FNO turbulence suppressor with multi-layer spectral operator and NPZ weight loading.
 //!
 //! Compatible with Python weights produced by `src/scpn_fusion/core/fno_training.py`.

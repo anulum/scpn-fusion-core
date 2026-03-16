@@ -1,7 +1,9 @@
-# ──────────────────────────────────────────────────────────────────────
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — H-Infinity Controller Closed-Loop Tests
-# © 1998–2026 Miroslav Šotek. All rights reserved.
-# ──────────────────────────────────────────────────────────────────────
 """
 Closed-loop integration tests for the H-infinity robust controller.
 

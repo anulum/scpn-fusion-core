@@ -1,6 +1,9 @@
-# ──────────────────────────────────────────────────────────────────────
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Platinum Notebook Verification
-# ──────────────────────────────────────────────────────────────────────
 """
 Verifies the logic of platinum_standard_demo_v1.ipynb by executing
 the core cells as a standalone script.

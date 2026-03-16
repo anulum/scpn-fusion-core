@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-# ──────────────────────────────────────────────────────────────────────
-# SCPN Fusion Core — FreeGS / Solov'ev Blind Benchmark
-# (c) 1998-2026 Miroslav Sotek. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# ORCID: https://orcid.org/0009-0009-3560-0851
-# License: GNU AGPL v3 | Commercial licensing available
-# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — FreeGS / Solov'ev Blind Benchmark
 """Blind benchmark comparing our GS solver against FreeGS or analytic Solov'ev.
 
 When FreeGS is installed (``pip install freegs``), the script runs a full

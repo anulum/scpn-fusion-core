@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-# ──────────────────────────────────────────────────────────────────────
-# SCPN Fusion Core — IMAS DD v3 Conformance Audit (1D.1)
-# (c) 1998-2026 Miroslav Sotek. All rights reserved.
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# ORCID: https://orcid.org/0009-0009-3560-0851
-# License: GNU AGPL v3 | Commercial licensing available
-# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — IMAS DD v3 Conformance Audit (1D.1)
 """
 IMAS Data Dictionary v3 conformance tests for the SCPN Fusion Core
 IDS converter functions.
