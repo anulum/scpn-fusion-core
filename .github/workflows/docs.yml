@@ -49,7 +49,7 @@ jobs:
         run: sphinx-build -b html docs/sphinx docs/sphinx/_build/html
 
       - name: Upload Python docs
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: python-docs
           path: docs/sphinx/_build/html/
@@ -79,7 +79,7 @@ jobs:
         run: cargo doc --workspace --no-deps --all-features --exclude scpn-fusion-rs
 
       - name: Upload Rust docs
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: rust-docs
           path: scpn-fusion-rs/target/doc/
@@ -107,7 +107,7 @@ jobs:
           python -m jupyter nbconvert --to html examples/*.ipynb --output-dir docs/notebooks/
 
       - name: Upload notebook HTML
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: notebook-html
           path: docs/notebooks/
