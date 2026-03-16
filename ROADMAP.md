@@ -10,8 +10,8 @@ Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_
 | Area | Current State | Tracking / Gate |
 |---|---|---|
 | Source modules | **234 Python files**, 62,570 lines | `src/scpn_fusion/` |
-| Tests | **2859 passing** | `pytest tests/ -v` |
-| Underdeveloped register | **115 entries** (96 → 115 after GK port), **0 P0/P1** | `UNDERDEVELOPED_REGISTER.md` (generated) |
+| Tests | **2882+ passing** (344 test files) | `pytest tests/ -v` |
+| Underdeveloped register | See `UNDERDEVELOPED_REGISTER.md` (auto-generated, CI-gated) | `tools/generate_underdeveloped_register.py --check` |
 | Pretrained surrogates | **5/8 shipped** (62.5%): ITPA MLP, Neural EQ, QLKNN, FNO JAX, FNO legacy (deprecated) | `weights/pretrained_surrogates_manifest.json` |
 | QLKNN transport surrogate | **test_rel_L2 = 0.094** (GPU L40S, 500K samples, gated 1024×512×256, 911 epochs) | `weights/neural_transport_qlknn.metrics.json` |
 | FNO turbulence (JAX) | **val_rel_L2 = 0.055** (4-layer, modes=24, width=128, 5-channel input, 5000 equilibria) | `weights/fno_turbulence_jax.metrics.json` |

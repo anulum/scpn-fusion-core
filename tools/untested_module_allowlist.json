@@ -1,12 +1,5 @@
 {
   "generated_from": "Deep audit 2026-03-01 Wave A baseline",
   "policy": "This allowlist freezes currently unlinked modules. New unlinked modules fail CI.",
-  "allowlisted_modules": [
-    {"path": "src/scpn_fusion/control/bio_holonomic_controller.py", "reason": "SCPN L4/L5 bridge, requires sc-neurocore"},
-    {"path": "src/scpn_fusion/core/_validators.py", "reason": "internal utility, tested transitively"},
-    {"path": "src/scpn_fusion/core/gk_cgyro.py", "reason": "external GK interface, requires CGYRO binary"},
-    {"path": "src/scpn_fusion/core/gk_gene.py", "reason": "external GK interface, requires GENE binary"},
-    {"path": "src/scpn_fusion/core/gk_gs2.py", "reason": "external GK interface, requires GS2 binary"},
-    {"path": "src/scpn_fusion/core/gk_qualikiz.py", "reason": "external GK interface, requires QuaLiKiz binary"}
-  ]
+  "allowlisted_modules": []
 }
