@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-03-16T17:28:48.921340+00:00",
+  "generated_at": "2026-03-17T05:44:29.870034+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
-  "issue_count": 30,
+  "issue_count": 32,
   "issues": [
     {
       "acceptance_checklist": [
@@ -207,6 +207,51 @@
       "title": "[P0] Harden src/scpn_fusion/control/nengo_snn_wrapper.py",
       "trigger_lines": [
         374
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change.",
+        "Document model-domain limits and tighten contract checks for out-of-domain inputs."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
+        "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
+      ],
+      "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/gk_nonlinear.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/gk_nonlinear.py`\n- Priority: `P0` (score `101`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `MONOLITH`, `SIMPLIFIED`\n- Trigger lines: `1, 19`\n\n## Proposed Actions\n- Split module into focused subcomponents and lock interface contracts.\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).\n- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "core_physics"
+      ],
+      "github_title": "[P0] Harden src/scpn_fusion/core/gk_nonlinear.py",
+      "issue_slug": "p0-core-gk_nonlinear",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p0",
+        "core_physics"
+      ],
+      "markers": [
+        "MONOLITH",
+        "SIMPLIFIED"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P0",
+      "proposed_actions": [
+        "Split module into focused subcomponents and lock interface contracts.",
+        "Upgrade with higher-fidelity closure or tighten domain contract."
+      ],
+      "score": 101,
+      "title": "[P0] Harden src/scpn_fusion/core/gk_nonlinear.py",
+      "trigger_lines": [
+        1,
+        19
       ]
     },
     {
@@ -1204,6 +1249,47 @@
         31,
         47,
         181
+      ]
+    },
+    {
+      "acceptance_checklist": [
+        "Add or tighten regression tests for this module path and update coverage baselines.",
+        "Update claim/evidence references if behavior or metrics change.",
+        "Document model-domain limits and tighten contract checks for out-of-domain inputs."
+      ],
+      "closure_metrics": [
+        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
+        "File line coverage in release lane is >= 70.0% (tools/coverage_guard.py)."
+      ],
+      "domain": "core_physics",
+      "file_path": "src/scpn_fusion/core/stellarator_geometry.py",
+      "github_body": "## Scope\n- File: `src/scpn_fusion/core/stellarator_geometry.py`\n- Priority: `P1` (score `85`)\n- Domain: `core_physics`\n- Owner hint: `Core Physics WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `154`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).",
+      "github_labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "github_title": "[P1] Harden src/scpn_fusion/core/stellarator_geometry.py",
+      "issue_slug": "p1-core-stellarator_geometry",
+      "labels": [
+        "hardening",
+        "underdeveloped",
+        "p1",
+        "core_physics"
+      ],
+      "markers": [
+        "SIMPLIFIED"
+      ],
+      "owner_hint": "Core Physics WG",
+      "priority": "P1",
+      "proposed_actions": [
+        "Upgrade with higher-fidelity closure or tighten domain contract."
+      ],
+      "score": 85,
+      "title": "[P1] Harden src/scpn_fusion/core/stellarator_geometry.py",
+      "trigger_lines": [
+        154
       ]
     },
     {

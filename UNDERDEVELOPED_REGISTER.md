@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-16T17:28:21.169999+00:00`
+- Generated at: `2026-03-17T05:43:49.625476+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 123 |
-| P0 + P1 entries | 47 |
-| Source-domain entries | 61 |
-| Source-domain P0 + P1 entries | 47 |
+| Total flagged entries | 126 |
+| P0 + P1 entries | 50 |
+| Source-domain entries | 64 |
+| Source-domain P0 + P1 entries | 50 |
 | Docs-claims entries | 62 |
 | Domains affected | 6 |
 
@@ -19,11 +19,11 @@
 
 | Key | Count |
 |---|---:|
-| `SIMPLIFIED` | 43 |
+| `SIMPLIFIED` | 45 |
 | `FALLBACK` | 41 |
 | `PLANNED` | 13 |
 | `EXPERIMENTAL` | 10 |
-| `MONOLITH` | 7 |
+| `MONOLITH` | 8 |
 | `DEPRECATED` | 6 |
 | `NOT_VALIDATED` | 2 |
 | `TEST_GAP` | 1 |
@@ -33,13 +33,13 @@
 | Key | Count |
 |---|---:|
 | `docs_claims` | 62 |
-| `core_physics` | 37 |
+| `core_physics` | 40 |
 | `control` | 12 |
 | `validation` | 10 |
 | `compiler_runtime` | 1 |
 | `diagnostics_io` | 1 |
 
-## Source-Centric Priority Backlog (Top 47)
+## Source-Centric Priority Backlog (Top 50)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
@@ -50,6 +50,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=849 exceeds monolith threshold (500+). |
 | P0 | 107 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:374` | Control WG | Replace default path or remove lane before next major release. | "NengoSNNControllerStub is deprecated. " |
+| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/gk_nonlinear.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=581 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
@@ -69,6 +70,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_eigenvalue.py:204` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Collision operator (simplified: nu_D * pitch-angle scattering applied to theta structure) |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:120` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Poloidal field: B_p = r / (q * R_s * \|J/r\|) — simplified |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:126` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # b . grad(theta) = B_p / (R_s * \|grad theta\|) ≈ 1 / (q * R_s) simplified |
+| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_nonlinear.py:19` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | - Simplified Sugama collision operator |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_online_learner.py:137` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Backprop (simplified, output layer only for stability) |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:12` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | simplified Sugama model (pitch-angle scattering + energy diffusion). |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:156` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified Sugama model: |
@@ -89,6 +91,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:31` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified threshold energy |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:47` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Using a simplified parameterized curve from Eckstein |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:181` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Highly simplified fatigue life mapping |
+| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stellarator_geometry.py:154` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified analytic proxy: epsilon_eff ~ epsilon_h^(3/2) / sqrt(N_fp). |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/vmec_lite.py:52` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Highly simplified spectral 3D equilibrium solver mimicking VMEC principles. |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified surrogate: stiff critical-gradient model.""" |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:67` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | path_lengths = np.ones(n_chords) # Simplified |
@@ -102,6 +105,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=849 exceeds monolith threshold (500+). |
 | P0 | 107 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:374` | Control WG | Replace default path or remove lane before next major release. | "NengoSNNControllerStub is deprecated. " |
+| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/gk_nonlinear.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=581 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
@@ -121,6 +125,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_eigenvalue.py:204` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Collision operator (simplified: nu_D * pitch-angle scattering applied to theta structure) |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:120` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Poloidal field: B_p = r / (q * R_s * \|J/r\|) — simplified |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:126` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # b . grad(theta) = B_p / (R_s * \|grad theta\|) ≈ 1 / (q * R_s) simplified |
+| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_nonlinear.py:19` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | - Simplified Sugama collision operator |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_online_learner.py:137` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Backprop (simplified, output layer only for stability) |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:12` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | simplified Sugama model (pitch-angle scattering + energy diffusion). |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:156` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified Sugama model: |
@@ -141,6 +146,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:31` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified threshold energy |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:47` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Using a simplified parameterized curve from Eckstein |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:181` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Highly simplified fatigue life mapping |
+| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stellarator_geometry.py:154` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified analytic proxy: epsilon_eff ~ epsilon_h^(3/2) / sqrt(N_fp). |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/vmec_lite.py:52` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Highly simplified spectral 3D equilibrium solver mimicking VMEC principles. |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified surrogate: stiff critical-gradient model.""" |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:67` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | path_lengths = np.ones(n_chords) # Simplified |
@@ -174,11 +180,8 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:224` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Multi-Regime FNO \| `src/.../fno_training_multi_regime.py` \| NumPy \| Synthetic H-W \| 30-90 min \| Experimental \| |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:290` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 4. **Multi-Regime FNO** — experimental, synthetic data only. |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Experimental Bridges |
-| P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/first_simulation.rst:191` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Step 7: Read Real Experimental Data |
-| P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/tokamak_physics_textbook.rst:55` | Docs WG | Gate behind explicit flag and define validation exit criteria. | :math:`F(\psi)` are constrained by experimental data (pressure profile and |
-| P3 | 47 | `docs_claims` | `FALLBACK` | `README.md:155` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 
-## Full Register (Top 123)
+## Full Register (Top 126)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -187,6 +190,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | module LOC=849 exceeds monolith threshold (500+). |
 | P0 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:374` | "NengoSNNControllerStub is deprecated. " |
+| P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/gk_nonlinear.py:1` | module LOC=581 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | module LOC=501 exceeds monolith threshold (500+). |
@@ -206,6 +210,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_eigenvalue.py:204` | # Collision operator (simplified: nu_D * pitch-angle scattering applied to theta structure) |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:120` | # Poloidal field: B_p = r / (q * R_s * \|J/r\|) — simplified |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:126` | # b . grad(theta) = B_p / (R_s * \|grad theta\|) ≈ 1 / (q * R_s) simplified |
+| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_nonlinear.py:19` | - Simplified Sugama collision operator |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_online_learner.py:137` | # Backprop (simplified, output layer only for stability) |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:12` | simplified Sugama model (pitch-angle scattering + energy diffusion). |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:156` | Simplified Sugama model: |
@@ -226,6 +231,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:31` | # Simplified threshold energy |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:47` | # Using a simplified parameterized curve from Eckstein |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:181` | # Highly simplified fatigue life mapping |
+| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stellarator_geometry.py:154` | Simplified analytic proxy: epsilon_eff ~ epsilon_h^(3/2) / sqrt(N_fp). |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/vmec_lite.py:52` | Highly simplified spectral 3D equilibrium solver mimicking VMEC principles. |
 | P1 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | """Simplified surrogate: stiff critical-gradient model.""" |
 | P1 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:67` | path_lengths = np.ones(n_chords) # Simplified |
