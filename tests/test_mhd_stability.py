@@ -266,9 +266,9 @@ def test_troyon_iter_like_stable():
         B0=5.3,
     )
     assert isinstance(tr, TroyonResult)
-    assert (
-        tr.beta_N < tr.beta_N_crit_nowall
-    ), f"beta_N={tr.beta_N:.2f} should be < g_nowall={tr.beta_N_crit_nowall}"
+    assert tr.beta_N < tr.beta_N_crit_nowall, (
+        f"beta_N={tr.beta_N:.2f} should be < g_nowall={tr.beta_N_crit_nowall}"
+    )
     assert tr.stable_nowall is True
     assert tr.stable_wall is True
     assert tr.margin_nowall > 0.0

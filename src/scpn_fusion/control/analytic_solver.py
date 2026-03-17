@@ -217,7 +217,7 @@ def _resolve_default_config_path(
         return str(fallback), "validation_fallback_default", True
 
     raise FileNotFoundError(
-        "No default analytic config found. Checked:\n" f"- {preferred}\n" f"- {fallback}"
+        f"No default analytic config found. Checked:\n- {preferred}\n- {fallback}"
     )
 
 

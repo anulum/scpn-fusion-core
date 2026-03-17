@@ -28,7 +28,6 @@ except ImportError:
 try:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:
-
     RUST_BACKEND = False
 from scpn_fusion.control.neuro_cybernetic_controller import NeuroCyberneticController
 

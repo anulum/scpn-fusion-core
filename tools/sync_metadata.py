@@ -201,7 +201,7 @@ def sync(*, check_only: bool = False) -> int:
         update_file(
             REPO_ROOT / "docs" / "VALIDATION_GATE_MATRIX.md",
             r"As of v\d+\.\d+\.x",
-            f'As of v{".".join(version.split(".")[:2])}.x',
+            f"As of v{'.'.join(version.split('.')[:2])}.x",
             check_only=check_only,
         )
     )

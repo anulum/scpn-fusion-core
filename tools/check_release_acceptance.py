@@ -124,8 +124,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     print(
-        "Release acceptance checklist passed: "
-        f"{checklist_path.relative_to(REPO_ROOT).as_posix()}"
+        f"Release acceptance checklist passed: {checklist_path.relative_to(REPO_ROOT).as_posix()}"
     )
     return 0
 

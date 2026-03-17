@@ -162,7 +162,7 @@ def print_results(results: list[dict]):
                 if faster >= 1.0:
                     print(f"    {r['method']:20s} → {faster:.1f}x faster")
                 else:
-                    print(f"    {r['method']:20s} → {1.0/faster:.1f}x slower")
+                    print(f"    {r['method']:20s} → {1.0 / faster:.1f}x slower")
 
     print()
     print("=" * 80)

@@ -424,9 +424,9 @@ class TestCoreProfilesConformance:
         te_kev = state["electron_temp_keV"]
         for ev, kev in zip(te_ev, te_kev):
             expected = kev * 1.0e3
-            assert (
-                abs(ev - expected) < 1e-6
-            ), f"keV->eV conversion: {kev} keV should be {expected} eV, got {ev}"
+            assert abs(ev - expected) < 1e-6, (
+                f"keV->eV conversion: {kev} keV should be {expected} eV, got {ev}"
+            )
 
     def test_unit_conversion_1e20_to_m3(self) -> None:
         """electron_density_1e20_m3 -> electrons.density must multiply by 1e20."""
@@ -436,9 +436,9 @@ class TestCoreProfilesConformance:
         ne_1e20 = state["electron_density_1e20_m3"]
         for m3, raw in zip(ne_m3, ne_1e20):
             expected = raw * 1.0e20
-            assert (
-                abs(m3 / expected - 1.0) < 1e-10
-            ), f"1e20->m^-3 conversion: {raw} * 1e20 = {expected}, got {m3}"
+            assert abs(m3 / expected - 1.0) < 1e-10, (
+                f"1e20->m^-3 conversion: {raw} * 1e20 = {expected}, got {m3}"
+            )
 
     def test_profile_lengths_match(self) -> None:
         """All profiles must have the same length as rho_tor_norm."""
@@ -495,9 +495,9 @@ class TestSummaryConformance:
         }
         for imas_key, expected_val in expected_mapping.items():
             assert imas_key in gq, f"Missing IMAS key '{imas_key}' in global_quantities"
-            assert (
-                abs(gq[imas_key] - expected_val) < 1e-10
-            ), f"Key '{imas_key}': expected {expected_val}, got {gq[imas_key]}"
+            assert abs(gq[imas_key] - expected_val) < 1e-10, (
+                f"Key '{imas_key}': expected {expected_val}, got {gq[imas_key]}"
+            )
 
     def test_empty_state(self) -> None:
         """Empty state should produce an empty global_quantities dict."""
@@ -581,7 +581,7 @@ class TestRoundTripWriteReadIds:
         gq_loaded = ids_loaded["global_quantities"]
         for key in gq_orig:
             assert abs(gq_loaded[key] - gq_orig[key]) < 1e-10, (
-                f"Summary round-trip mismatch for '{key}': " f"{gq_orig[key]} vs {gq_loaded[key]}"
+                f"Summary round-trip mismatch for '{key}': {gq_orig[key]} vs {gq_loaded[key]}"
             )
 
 

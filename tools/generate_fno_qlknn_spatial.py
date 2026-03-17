@@ -277,7 +277,7 @@ def generate(
 
         if (i + 1) % 50 == 0:
             elapsed = time.monotonic() - t0
-            print(f"  {i+1}/{n_equilibria} ({elapsed:.0f}s)")
+            print(f"  {i + 1}/{n_equilibria} ({elapsed:.0f}s)")
 
     X = np.array(all_psi)  # (N, 64, 64)
     Y = np.array(all_chi)  # (N, 64, 64)

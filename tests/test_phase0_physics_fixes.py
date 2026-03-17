@@ -39,16 +39,16 @@ class TestTBRCorrection:
         report = blanket.calculate_volumetric_tbr()  # default resolution
         expected_ratio = 0.80 * 0.85  # port_coverage * streaming
         actual_ratio = report.tbr / report.tbr_ideal
-        assert (
-            abs(actual_ratio - expected_ratio) < 1e-6
-        ), f"Correction ratio {actual_ratio:.6f} != expected {expected_ratio}"
+        assert abs(actual_ratio - expected_ratio) < 1e-6, (
+            f"Correction ratio {actual_ratio:.6f} != expected {expected_ratio}"
+        )
 
     def test_multigroup_tbr_corrected_in_realistic_range(self):
         """3-group blanket with default corrections should give TBR in [1.0, 1.4]."""
         blanket = MultiGroupBlanket(thickness_cm=80.0, li6_enrichment=0.9)
         result = blanket.solve_transport()
         assert 1.0 <= result["tbr"] <= 1.4, (
-            f"Corrected 3-group TBR {result['tbr']:.3f} outside " f"Fischer/DEMO range [1.0, 1.4]"
+            f"Corrected 3-group TBR {result['tbr']:.3f} outside Fischer/DEMO range [1.0, 1.4]"
         )
 
     def test_volumetric_tbr_ideal_unchanged_with_unit_factors(self):
@@ -72,9 +72,9 @@ class TestTBRCorrection:
         """3-group blanket with corrections should still be above 1.0."""
         blanket = MultiGroupBlanket(thickness_cm=80.0, li6_enrichment=0.9)
         result = blanket.solve_transport()
-        assert (
-            result["tbr"] > 1.0
-        ), f"Corrected 3-group TBR {result['tbr']:.3f} below self-sufficiency"
+        assert result["tbr"] > 1.0, (
+            f"Corrected 3-group TBR {result['tbr']:.3f} below self-sufficiency"
+        )
 
     def test_multigroup_tbr_ideal_field_present(self):
         """3-group result includes tbr_ideal."""
@@ -159,9 +159,9 @@ class TestQScanLimits:
             n_e20=1.0,
         )
         result = model.simulate(P_aux_mw=70.0, duration_s=50.0, dt_s=0.05)
-        assert (
-            max(result["T_keV"]) <= 25.0 + 0.01
-        ), f"T_peak={max(result['T_keV']):.1f} keV exceeds 25 keV cap"
+        assert max(result["T_keV"]) <= 25.0 + 0.01, (
+            f"T_peak={max(result['T_keV']):.1f} keV exceeds 25 keV cap"
+        )
 
     def test_temperature_warning_emitted(self):
         """Warning emitted when temperature hits cap."""

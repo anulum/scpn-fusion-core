@@ -218,7 +218,7 @@ class TestEnergyConservation:
         if not np.isfinite(T_avg_final):
             pytest.skip("Transport NaN — known explicit-scheme limitation on toy grid")
         assert T_avg_final <= T_avg_initial + 0.1, (
-            f"Temperature increased without heating: " f"{T_avg_initial:.3f} → {T_avg_final:.3f}"
+            f"Temperature increased without heating: {T_avg_initial:.3f} → {T_avg_final:.3f}"
         )
 
 

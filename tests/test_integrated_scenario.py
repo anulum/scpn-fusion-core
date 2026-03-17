@@ -5,6 +5,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Integrated Scenario Simulator Tests
 """Requires TransportSolver(nr=...) API not yet available in fusion-core."""
+
 from __future__ import annotations
 
 import pytest

@@ -10,6 +10,7 @@ test_phase_kuramoto.py covers basic from_paper27 and tick smoke tests.
 This file covers from_plasma, adaptive engine wiring, recorder mechanics,
 save_npz, save_hdf5 with mock, reset edge cases, and recorder properties.
 """
+
 from __future__ import annotations
 
 import sys

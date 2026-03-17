@@ -210,7 +210,6 @@ if _RUST_AVAILABLE:
     FusionKernel = RustAcceleratedKernel
     RUST_BACKEND = True
 else:
-
     RUST_BACKEND = False
 
 
@@ -326,8 +325,7 @@ class RustSnnPool:
 
     def __repr__(self) -> str:
         return (
-            f"RustSnnPool(n_neurons={self.n_neurons}, gain={self.gain}, "
-            f"backend='{self.backend}')"
+            f"RustSnnPool(n_neurons={self.n_neurons}, gain={self.gain}, backend='{self.backend}')"
         )
 
 

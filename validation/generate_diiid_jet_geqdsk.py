@@ -603,7 +603,7 @@ def generate_all():
             results.append((path.name, eq.nw, eq.nh, shot["Ip_MA"]))
             print(f"  [{label:8s}] {path.name}: {eq.nw}x{eq.nh}, Ip={shot['Ip_MA']:.2f} MA")
 
-    print(f"\nGenerated {len(results)} GEQDSK files total " f"(25 fixed + 75 sweep = 100).")
+    print(f"\nGenerated {len(results)} GEQDSK files total (25 fixed + 75 sweep = 100).")
     return results
 
 

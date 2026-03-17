@@ -67,7 +67,7 @@ def run_quantum_suite(
             )
         except subprocess.TimeoutExpired as exc:
             raise RuntimeError(
-                f"Quantum script timed out: {script_path.name} " f"(timeout={timeout_seconds:.1f}s)"
+                f"Quantum script timed out: {script_path.name} (timeout={timeout_seconds:.1f}s)"
             ) from exc
         except subprocess.CalledProcessError as exc:
             raise RuntimeError(

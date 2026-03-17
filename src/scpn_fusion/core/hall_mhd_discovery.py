@@ -181,7 +181,7 @@ def run_discovery_sim():
 
         if t % 100 == 0:
             ratio = E_zonal / E_tot if E_tot > 0 else 0
-            print(f"Step {t}: Total E={E_tot:.2e} | Zonal E={E_zonal:.2e} ({ratio*100:.1f}%)")
+            print(f"Step {t}: Total E={E_tot:.2e} | Zonal E={E_zonal:.2e} ({ratio * 100:.1f}%)")
 
     # Visualize
     fig, ax = plt.subplots(figsize=(10, 6))

@@ -271,7 +271,7 @@ class PhysicsInvariant:
     def __post_init__(self) -> None:
         if self.comparator not in _VALID_COMPARATORS:
             raise ValueError(
-                f"Invalid comparator {self.comparator!r}; " f"must be one of {_VALID_COMPARATORS}"
+                f"Invalid comparator {self.comparator!r}; must be one of {_VALID_COMPARATORS}"
             )
         if not math.isfinite(self.threshold):
             raise ValueError("PhysicsInvariant threshold must be finite.")

@@ -156,7 +156,7 @@ def run_audit(
             evidence = repo_root / pattern_check.file
             if not evidence.exists():
                 errors.append(
-                    f"[{claim.claim_id}] evidence pattern file missing: " f"{pattern_check.file}"
+                    f"[{claim.claim_id}] evidence pattern file missing: {pattern_check.file}"
                 )
                 continue
             if tracked is not None and pattern_check.file.replace("\\", "/") not in tracked:

@@ -297,7 +297,9 @@ def train_fno_multi_regime(
 
     history["saved_path"] = str(Path(save_path))
     history["epochs_completed"] = len(history["train_loss"])  # type: ignore[arg-type]
-    history["final_train_loss"] = float(history["train_loss"][-1]) if history["train_loss"] else None  # type: ignore[index]
+    history["final_train_loss"] = (
+        float(history["train_loss"][-1]) if history["train_loss"] else None
+    )  # type: ignore[index]
     history["final_val_loss"] = float(history["val_loss"][-1]) if history["val_loss"] else None  # type: ignore[index]
 
     logger.info(

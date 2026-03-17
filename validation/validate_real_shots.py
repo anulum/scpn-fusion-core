@@ -460,7 +460,7 @@ def load_disruption_shot_payload(npz_path: Path) -> dict[str, Any]:
             signal_key = "n1_amp"
         if signal_key is None:
             raise ValueError(
-                f"{npz_path.name}: missing signal key " "(expected dBdt_gauss_per_s or n1_amp)"
+                f"{npz_path.name}: missing signal key (expected dBdt_gauss_per_s or n1_amp)"
             )
 
         signal = np.asarray(data[signal_key], dtype=np.float64).reshape(-1)
@@ -1047,10 +1047,7 @@ def main(
     for key in ("equilibrium_files", "transport_shots", "disruption_shots"):
         item = coverage_result["checks"][key]
         status = "PASS" if item["passes"] else "FAIL"
-        print(
-            f"  {status}: {labels[key]} "
-            f"{item['observed']}/{item['required_min']} (observed/min)"
-        )
+        print(f"  {status}: {labels[key]} {item['observed']}/{item['required_min']} (observed/min)")
 
     # PARTIAL_PASS on disruption does NOT block the release — it's a known limitation
     dis_acceptable = dis_result["passes"] or dis_result.get("partial_pass", False)

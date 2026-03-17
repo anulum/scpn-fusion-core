@@ -210,9 +210,9 @@ class TestSORSolverParity:
         psi_rs = rust_kernel.Psi.copy()
 
         # --- Compare ---
-        assert (
-            psi_py.shape == psi_rs.shape
-        ), f"Shape mismatch: Python {psi_py.shape} vs Rust {psi_rs.shape}"
+        assert psi_py.shape == psi_rs.shape, (
+            f"Shape mismatch: Python {psi_py.shape} vs Rust {psi_rs.shape}"
+        )
         assert np.all(np.isfinite(psi_py)), "Python SOR produced non-finite values"
         assert np.all(np.isfinite(psi_rs)), "Rust SOR produced non-finite values"
 
@@ -481,9 +481,9 @@ class TestTransportSolverParity:
         assert np.all(np.isfinite(signal_py)), "Python tearing mode produced NaN"
         assert np.all(np.isfinite(signal_rs)), "Rust tearing mode produced NaN"
 
-        assert (
-            label_py == label_rs
-        ), f"Disruption label mismatch: Python={label_py}, Rust={label_rs}"
+        assert label_py == label_rs, (
+            f"Disruption label mismatch: Python={label_py}, Rust={label_rs}"
+        )
 
         min_len = min(len(signal_py), len(signal_rs))
         if min_len > 0:
@@ -767,12 +767,12 @@ class TestTopologyParity:
         # X-point position should be within 1 grid cell
         dR = (R_MAX - R_MIN) / (NR - 1)
         dZ = (Z_MAX - Z_MIN) / (NZ - 1)
-        assert (
-            abs(xpt_py[0] - xpt_rs[0]) < 2 * dR
-        ), f"X-point R mismatch: {xpt_py[0]:.4f} vs {xpt_rs[0]:.4f}"
-        assert (
-            abs(xpt_py[1] - xpt_rs[1]) < 2 * dZ
-        ), f"X-point Z mismatch: {xpt_py[1]:.4f} vs {xpt_rs[1]:.4f}"
+        assert abs(xpt_py[0] - xpt_rs[0]) < 2 * dR, (
+            f"X-point R mismatch: {xpt_py[0]:.4f} vs {xpt_rs[0]:.4f}"
+        )
+        assert abs(xpt_py[1] - xpt_rs[1]) < 2 * dZ, (
+            f"X-point Z mismatch: {xpt_py[1]:.4f} vs {xpt_rs[1]:.4f}"
+        )
 
         # Psi at X-point should agree
         if abs(psi_xpt_py) > 1e-10:

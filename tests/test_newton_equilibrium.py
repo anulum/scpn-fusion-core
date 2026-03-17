@@ -73,7 +73,7 @@ def test_newton_fewer_iterations(newton_cfg: Path, picard_cfg: Path):
     # But the comparison is only meaningful if both converge
     if r_n["converged"] and r_p["converged"]:
         assert r_n["iterations"] < r_p["iterations"], (
-            f"Newton ({r_n['iterations']}) not fewer than " f"Picard ({r_p['iterations']})"
+            f"Newton ({r_n['iterations']}) not fewer than Picard ({r_p['iterations']})"
         )
 
 
@@ -95,9 +95,9 @@ def test_newton_quadratic_residual_decrease(tmp_path: Path):
     if len(rh) >= 4:
         late = rh[-1]
         mid = rh[len(rh) // 2]
-        assert (
-            late <= mid * 1.05 or late < 1e-2
-        ), f"Residual not decreasing: mid={mid:.2e}, late={late:.2e}"
+        assert late <= mid * 1.05 or late < 1e-2, (
+            f"Residual not decreasing: mid={mid:.2e}, late={late:.2e}"
+        )
 
 
 def test_newton_matches_picard_solution(newton_cfg: Path, picard_cfg: Path):

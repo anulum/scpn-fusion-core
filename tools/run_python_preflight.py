@@ -514,7 +514,7 @@ def _run_check(name: str, cmd: list[str], *, timeout_seconds: float) -> int:
         )
     except subprocess.TimeoutExpired:
         print(
-            (f"[preflight] TIMEOUT at '{name}' " f"after {timeout_seconds:.1f}s."),
+            (f"[preflight] TIMEOUT at '{name}' after {timeout_seconds:.1f}s."),
             file=sys.stderr,
         )
         return 124
@@ -524,8 +524,7 @@ def _run_check(name: str, cmd: list[str], *, timeout_seconds: float) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Run local/CI Python preflight checks with gate profiles "
-            "(release, research, or both)."
+            "Run local/CI Python preflight checks with gate profiles (release, research, or both)."
         )
     )
     parser.add_argument(

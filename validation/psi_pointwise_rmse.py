@@ -165,8 +165,7 @@ def compute_gs_source(
         raise ValueError(f"eq.ffprime length must be {eq.nw}, got {ffprime.shape}")
     if R.shape != (eq.nw,) or Z.shape != (eq.nh,):
         raise ValueError(
-            f"R/Z axis lengths must match nw/nh ({eq.nw}, {eq.nh}), "
-            f"got R={R.shape}, Z={Z.shape}"
+            f"R/Z axis lengths must match nw/nh ({eq.nw}, {eq.nh}), got R={R.shape}, Z={Z.shape}"
         )
 
     if not np.all(np.isfinite(psirz)):

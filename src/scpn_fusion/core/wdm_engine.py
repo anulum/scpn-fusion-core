@@ -107,10 +107,10 @@ class WholeDeviceModel:
             history.append(state)
 
             if t % 50 == 0:
-                print(f"{t*dt:<6.2f} | {core_T:<8.2f} | {state['W_impurity']:<8.2e} | {status}")
+                print(f"{t * dt:<6.2f} | {core_T:<8.2f} | {state['W_impurity']:<8.2e} | {status}")
 
             if status == "COLLAPSE":
-                print(f"!!! RADIATIVE COLLAPSE DETECTED AT t={t*dt:.2f}s !!!")
+                print(f"!!! RADIATIVE COLLAPSE DETECTED AT t={t * dt:.2f}s !!!")
                 break
 
         self.plot_results(history)

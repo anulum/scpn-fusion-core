@@ -288,7 +288,7 @@ def ipb98y2_tau_e(
     )
     if enforce_training_domain and not domain["in_training_domain"]:
         dims = ", ".join(domain["extrapolated_dimensions"])
-        raise ValueError("IPB98(y,2) inputs outside training domain: " f"{dims}")
+        raise ValueError(f"IPB98(y,2) inputs outside training domain: {dims}")
     if warn_if_extrapolated and not domain["in_training_domain"]:
         warnings.warn(
             "IPB98(y,2) extrapolation beyond training domain for: "
@@ -318,8 +318,7 @@ def ipb98y2_tau_e(
     tau_f = float(tau)
     if not np.isfinite(tau_f) or tau_f <= 0:
         raise ValueError(
-            "Computed IPB98(y,2) confinement time is invalid "
-            f"(tau={tau_f!r}) for supplied inputs."
+            f"Computed IPB98(y,2) confinement time is invalid (tau={tau_f!r}) for supplied inputs."
         )
     return tau_f
 

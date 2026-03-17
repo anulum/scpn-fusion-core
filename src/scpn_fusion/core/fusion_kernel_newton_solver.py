@@ -515,7 +515,7 @@ class FusionKernelNewtonSolverMixin:
 
             if k % 100 == 0:
                 logger.debug(
-                    "Iter %d: res=%.2e | axis=%.2f | X-pt=%.2f " "at R=%.2f, Z=%.2f",
+                    "Iter %d: res=%.2e | axis=%.2f | X-pt=%.2f at R=%.2f, Z=%.2f",
                     k,
                     diff,
                     Psi_axis,

@@ -54,7 +54,10 @@ def test_drag_regularized_at_thermal_speed():
     """Drag at the smallest momentum should be bounded (not divergent)."""
     solver = FokkerPlanckSolver(np_grid=200, p_max=10.0)
     A, D, Fc = solver.compute_coefficients(
-        E_field=1.0, n_e=5e19, Z_eff=1.5, T_e_eV=100.0  # lower Te
+        E_field=1.0,
+        n_e=5e19,
+        Z_eff=1.5,
+        T_e_eV=100.0,  # lower Te
     )
     # At the first grid point (smallest p), drag should be large but finite
     assert np.isfinite(A[0])

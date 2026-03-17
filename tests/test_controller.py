@@ -848,9 +848,9 @@ class TestLevel2Primitives:
             bits_p = generate_bernoulli_bitstream(p, L, rng=rng_p)
             anded = vec_and(pack_bitstream(bits_w), pack_bitstream(bits_p))
             est = int(vec_popcount(anded)) / L
-            assert abs(est - w * p) < 3.0 / math.sqrt(
-                L
-            ), f"w={w}, p={p}, est={est}, expected={w * p}"
+            assert abs(est - w * p) < 3.0 / math.sqrt(L), (
+                f"w={w}, p={p}, est={est}, expected={w * p}"
+            )
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -1003,9 +1003,9 @@ class TestIntegration:
             act = c.step(obs, k)
             for key in ("dI_PF3_A", "dI_PF_topbot_A"):
                 delta = abs(act[key] - prev_act[key])
-                assert (
-                    delta <= max_delta + 1e-10
-                ), f"slew violation at k={k}: delta={delta}, max={max_delta}"
+                assert delta <= max_delta + 1e-10, (
+                    f"slew violation at k={k}: delta={delta}, max={max_delta}"
+                )
             prev_act = act
 
     def test_jsonl_logging(self, controller: NeuroSymbolicController) -> None:

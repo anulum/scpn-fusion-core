@@ -134,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
-    print("External FNO import: " f"pass={summary['overall_pass']} output={output_path.as_posix()}")
+    print(f"External FNO import: pass={summary['overall_pass']} output={output_path.as_posix()}")
     if not bool(summary["overall_pass"]):
         print("External FNO import failed; see summary JSON for details.")
         return 1

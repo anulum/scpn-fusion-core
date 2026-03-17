@@ -66,10 +66,10 @@ class DivertorLab:
         """
         T_u, T_t = self.solve_2point_transport(expansion_factor, f_rad=0.0)  # Unmitigated
 
-        print(f"Parallel Heat Flux: {self.q_parallel/1e9:.1f} GW/m2")
+        print(f"Parallel Heat Flux: {self.q_parallel / 1e9:.1f} GW/m2")
         print(f"Upstream Temp (T_u): {T_u:.1f} eV")
         print(f"Target Temp (T_t): {T_t:.1f} eV")
-        print(f"Unmitigated Target Flux: {self.q_target_solid/1e6:.1f} MW/m2")
+        print(f"Unmitigated Target Flux: {self.q_target_solid / 1e6:.1f} MW/m2")
 
         return self.q_target_solid
 
@@ -161,7 +161,7 @@ class DivertorLab:
             q_surf = float(q_best)
             f_rad = float(f_best)
             logger.warning(
-                "Li vapor shielding did not converge after %d iterations " "(residual=%.2f °C)",
+                "Li vapor shielding did not converge after %d iterations (residual=%.2f °C)",
                 max_iter,
                 residual,
             )
@@ -251,7 +251,7 @@ def run_divertor_sim() -> None:
     print(f"Tungsten Divertor: {Tw:.0f} degC -> {status_w}!")
 
     Tli, q_li, shielding = lab.simulate_lithium_vapor()
-    print(f"Liquid Li Divertor: {Tli:.0f} degC (Shielding: {shielding*100:.1f}%)")
+    print(f"Liquid Li Divertor: {Tli:.0f} degC (Shielding: {shielding * 100:.1f}%)")
 
     fig, ax = plt.subplots(figsize=(8, 6))
     materials = ["Tungsten (Solid)", "Lithium (Vapor Shield)"]
@@ -266,10 +266,10 @@ def run_divertor_sim() -> None:
 
     # Add Heat Flux annotations
     ax.text(
-        0, Tw / 2, f"Flux: {q_solid/1e6:.0f} MW/m2", ha="center", color="white", fontweight="bold"
+        0, Tw / 2, f"Flux: {q_solid / 1e6:.0f} MW/m2", ha="center", color="white", fontweight="bold"
     )
     ax.text(
-        1, Tli / 2, f"Flux: {q_li/1e6:.1f} MW/m2", ha="center", color="white", fontweight="bold"
+        1, Tli / 2, f"Flux: {q_li / 1e6:.1f} MW/m2", ha="center", color="white", fontweight="bold"
     )
 
     ax.legend()

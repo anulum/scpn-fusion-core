@@ -59,9 +59,9 @@ def test_fp_sharp_feature_fwhm_preservation():
     if len(above) >= 2:
         fwhm_after = above[-1] - above[0]
         # MUSCL should keep FWHM within 3x of original (1st-order would smear much more)
-        assert (
-            fwhm_after < fwhm_before * 3.0
-        ), f"FWHM grew from {fwhm_before:.2f} to {fwhm_after:.2f}"
+        assert fwhm_after < fwhm_before * 3.0, (
+            f"FWHM grew from {fwhm_before:.2f} to {fwhm_after:.2f}"
+        )
 
 
 # ── 2.2 Diffusion term ─────────────────────────────────────────────
@@ -85,9 +85,9 @@ def test_fp_diffusion_broadens_gaussian():
         np.sum(solver.f * solver.dp), 1e-30
     )
     # Variance should increase (diffusion broadens)
-    assert (
-        var_after > var_before
-    ), f"Variance should grow: before={var_before:.4f}, after={var_after:.4f}"
+    assert var_after > var_before, (
+        f"Variance should grow: before={var_before:.4f}, after={var_after:.4f}"
+    )
 
 
 # ── 2.3 Elliptic integral bounds ───────────────────────────────────

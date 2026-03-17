@@ -136,8 +136,7 @@ def solve_via_rust_multigrid(
 
     if preserve_initial_state or boundary_flux is not None:
         logger.warning(
-            "Boundary-constrained solve requested with rust_multigrid; "
-            "falling back to Python SOR."
+            "Boundary-constrained solve requested with rust_multigrid; falling back to Python SOR."
         )
         prior_method = kernel.cfg["solver"].get("solver_method", "rust_multigrid")
         kernel.cfg["solver"]["solver_method"] = "sor"
@@ -283,8 +282,7 @@ def solve_newton_linear_system(
             )
         except Exception as exc:
             logger.warning(
-                "ILU preconditioner unavailable at Newton iter %d (%s); "
-                "falling back to diagonal.",
+                "ILU preconditioner unavailable at Newton iter %d (%s); falling back to diagonal.",
                 iter_idx,
                 exc,
             )

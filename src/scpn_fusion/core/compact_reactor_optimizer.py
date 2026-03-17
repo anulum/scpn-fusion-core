@@ -105,7 +105,7 @@ class CompactReactorArchitect:
     def report_design(self, d):
         coe, cap = self.calculate_economics(d)
         print("\n=== MINIMUM VIABLE REACTOR FOUND ===")
-        print(f"Geometry:      R = {d['R']:.3f} m, a = {d['a']:.3f} m (A={d['R']/d['a']:.1f})")
+        print(f"Geometry:      R = {d['R']:.3f} m, a = {d['a']:.3f} m (A={d['R'] / d['a']:.1f})")
         print(f"Magnetics:     B0 = {d['B0']:.1f} T (Plasma), B_max = {d['B_coil']:.1f} T (Coil)")
         print(f"Performance:   P_fusion = {d['P_fus']:.1f} MW")
         print(f"Heat Loads:    Divertor = {d['q_div']:.1f} MW/m2, Wall = {d['q_wall']:.2f} MW/m2")

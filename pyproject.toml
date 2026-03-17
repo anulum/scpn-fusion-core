@@ -188,10 +188,6 @@ filterwarnings = [
 ]
 xfail_strict = true
 
-[tool.black]
-line-length = 100
-target-version = ["py39"]
-
 [tool.ruff]
 line-length = 100
 target-version = "py39"

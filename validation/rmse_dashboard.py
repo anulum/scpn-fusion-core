@@ -500,7 +500,7 @@ def render_markdown(report: dict[str, Any], plot_dir: str | None = None) -> str:
     lines.append("## Beta_N RMSE (ITER + SPARC references)")
     lines.append("")
     lines.append(f"- Samples: `{beta['count']}`")
-    lines.append(f"- `beta_N` RMSE: `{beta['beta_n_rmse']:.4f}` " f"**{_FLAG_EMOJI[beta_flag]}**")
+    lines.append(f"- `beta_N` RMSE: `{beta['beta_n_rmse']:.4f}` **{_FLAG_EMOJI[beta_flag]}**")
     lines.append("")
 
     if plot_dir:
@@ -512,9 +512,7 @@ def render_markdown(report: dict[str, Any], plot_dir: str | None = None) -> str:
     lines.append("## SPARC GEQDSK Axis Error")
     lines.append("")
     lines.append(f"- Files: `{sparc_axis['count']}`")
-    lines.append(
-        f"- Axis RMSE: `{sparc_axis['axis_rmse_m']:.6f} m` " f"**{_FLAG_EMOJI[axis_flag]}**"
-    )
+    lines.append(f"- Axis RMSE: `{sparc_axis['axis_rmse_m']:.6f} m` **{_FLAG_EMOJI[axis_flag]}**")
     lines.append("")
 
     # ── Psi RMSE ──────────────────────────────────────────────────────

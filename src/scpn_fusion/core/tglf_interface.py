@@ -774,7 +774,7 @@ def run_tglf_binary(
         except (RuntimeError, subprocess.TimeoutExpired) as exc:
             last_exc = exc
             if attempt < max_retries:
-                logger.warning(f"TGLF attempt {attempt+1} failed: {exc}. Retrying...")
+                logger.warning(f"TGLF attempt {attempt + 1} failed: {exc}. Retrying...")
                 import time
 
                 time.sleep(_TGLF_RETRY_BACKOFF_SECONDS)
@@ -785,7 +785,7 @@ def run_tglf_binary(
                 shutil.rmtree(work_dir, ignore_errors=True)
 
     if last_exc:
-        logger.error(f"TGLF execution failed after {max_retries+1} attempts.")
+        logger.error(f"TGLF execution failed after {max_retries + 1} attempts.")
         # Return empty output rather than crashing the whole transport loop
         return TGLFOutput(rho=deck.rho)
 

@@ -76,9 +76,9 @@ class TestITERReferencePrediction:
     def test_iter_in_training_domain(self):
         """ITER parameters must lie within IPB98(y,2) training envelope."""
         domain = assess_ipb98y2_domain(**ITER_PARAMS)
-        assert domain[
-            "in_training_domain"
-        ], f"ITER flagged as extrapolated: {domain['extrapolated_dimensions']}"
+        assert domain["in_training_domain"], (
+            f"ITER flagged as extrapolated: {domain['extrapolated_dimensions']}"
+        )
 
     def test_iter_h_factor_near_unity(self):
         """By design, ITER targets H98(y,2) = 1.0."""

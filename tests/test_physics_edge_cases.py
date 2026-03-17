@@ -259,7 +259,7 @@ class TestTransportEdgeCases:
         # NaN can appear in explicit transport — skip if so
         if not np.all(np.isfinite(ts.Ti)):
             pytest.skip(
-                "Transport solver produced NaN under 1000 MW — " "known explicit-scheme limitation"
+                "Transport solver produced NaN under 1000 MW — known explicit-scheme limitation"
             )
 
     def test_confinement_time_positive(self, tmp_path):

@@ -531,6 +531,5 @@ def run_control_room(
 if __name__ == "__main__":
     summary = run_control_room()
     print(
-        "Control-room run complete "
-        f"(psi_source={summary['psi_source']}, steps={summary['steps']})."
+        f"Control-room run complete (psi_source={summary['psi_source']}, steps={summary['steps']})."
     )

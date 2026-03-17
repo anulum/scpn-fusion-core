@@ -100,7 +100,6 @@ def solver_multi(config_file: Path) -> TransportSolver:
 
 
 class TestInitialization:
-
     def test_init_default(self, config_file: Path) -> None:
         """TransportSolver initializes with correct default profile shapes."""
         ts = TransportSolver(str(config_file))
@@ -178,7 +177,6 @@ class TestInitialization:
 
 
 class TestEvolveProfiles:
-
     def test_evolve_profiles_runs(self, solver: TransportSolver) -> None:
         """evolve_profiles returns (avg_T, core_T) as finite floats."""
         avg_T, core_T = solver.evolve_profiles(dt=0.01, P_aux=50.0)
@@ -216,9 +214,9 @@ class TestEvolveProfiles:
         1% gate is violated on cold-start parabolic profiles."""
         solver.evolve_profiles(dt=0.001, P_aux=20.0, enforce_conservation=False)
         assert np.isfinite(solver._last_conservation_error)
-        assert (
-            solver._last_conservation_error < 1.0
-        ), f"Conservation error {solver._last_conservation_error:.2e} exceeds 100%"
+        assert solver._last_conservation_error < 1.0, (
+            f"Conservation error {solver._last_conservation_error:.2e} exceeds 100%"
+        )
         assert np.all(np.isfinite(solver.Ti))
         assert np.all(np.isfinite(solver.Te))
 
@@ -331,7 +329,6 @@ class TestEvolveProfiles:
 
 
 class TestMultiIon:
-
     def test_multi_ion_he_ash_grows(self, solver_multi: TransportSolver) -> None:
         """With multi_ion=True, after N steps, n_He should increase."""
         he_initial = np.sum(solver_multi.n_He)
@@ -417,7 +414,6 @@ class TestMultiIon:
 
 
 class TestSteadyState:
-
     def test_run_to_steady_state_returns_dict(self, solver: TransportSolver) -> None:
         """run_to_steady_state returns a dict with expected keys."""
         result = solver.run_to_steady_state(P_aux=50.0, n_steps=10, dt=0.01)
@@ -505,7 +501,6 @@ class TestSteadyState:
 
 
 class TestNeoclassical:
-
     def test_set_neoclassical_stores_params(self, solver: TransportSolver) -> None:
         """set_neoclassical stores parameters for Chang-Hinton model."""
         solver.set_neoclassical(R0=6.2, a=2.0, B0=5.3)
@@ -887,7 +882,6 @@ class TestNeoclassical:
 
 
 class TestGyroBohmLoader:
-
     def test_invalid_cgb_falls_back_to_default(self, tmp_path: Path) -> None:
         bad = tmp_path / "bad_cgb.json"
         bad.write_text(json.dumps({"c_gB": "nan"}), encoding="utf-8")
@@ -930,7 +924,6 @@ class TestGyroBohmLoader:
 
 
 class TestThomasSolver:
-
     def test_thomas_identity_system(self) -> None:
         """Thomas solver with identity matrix returns the RHS."""
         n = 10
@@ -964,7 +957,6 @@ class TestThomasSolver:
 
 
 class TestBoschHale:
-
     def test_sigmav_positive_for_fusion_temperatures(self) -> None:
         """Bosch-Hale <sigma*v> should be positive for T > 0.2 keV."""
         T = np.array([1.0, 5.0, 10.0, 20.0, 50.0])
@@ -979,16 +971,15 @@ class TestBoschHale:
         # The simplified NRL Formulary fit is monotonically increasing
         # over the range 1-100 keV (peak is beyond 100 keV for this fit)
         for i in range(1, len(sv)):
-            assert (
-                sv[i] > sv[i - 1]
-            ), f"sigma_v not increasing: sv[{T[i]}] = {sv[i]} <= sv[{T[i-1]}] = {sv[i-1]}"
+            assert sv[i] > sv[i - 1], (
+                f"sigma_v not increasing: sv[{T[i]}] = {sv[i]} <= sv[{T[i - 1]}] = {sv[i - 1]}"
+            )
 
 
 # ── 8. Impurity Injection ────────────────────────────────────────────
 
 
 class TestImpurityInjection:
-
     def test_inject_impurities_increases_edge(self, solver: TransportSolver) -> None:
         """Injecting impurities should increase the total impurity count."""
         imp_before = np.sum(solver.n_impurity)
@@ -1006,7 +997,6 @@ class TestImpurityInjection:
 
 
 class TestBootstrapFloor:
-
     def test_bootstrap_current_finite_at_edge(self) -> None:
         """At edge where Te→0, bootstrap current should remain finite and bounded."""
         rho = np.linspace(0, 1, 50)
@@ -1033,7 +1023,6 @@ class TestBootstrapFloor:
 
 
 class TestImpurityEvolution:
-
     def test_impurity_evolves_from_zero(self, config_file: Path) -> None:
         """After several evolve_profiles steps, n_impurity should be nonzero near edge."""
         solver = TransportSolver(str(config_file), multi_ion=False)

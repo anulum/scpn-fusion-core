@@ -87,9 +87,7 @@ def main(argv: list[str] | None = None) -> int:
 
     summary_json.parent.mkdir(parents=True, exist_ok=True)
     summary_json.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(
-        "Release checksums generated: " f"count={summary['count']} manifest={summary['manifest']}"
-    )
+    print(f"Release checksums generated: count={summary['count']} manifest={summary['manifest']}")
     return 0
 
 

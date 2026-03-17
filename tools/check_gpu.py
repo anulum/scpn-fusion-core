@@ -84,13 +84,13 @@ def main() -> None:
 
     # ── Summary ──────────────────────────────────────────────────
     gpu_ok = jax_gpu or torch_gpu
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"GPU Status: {'AVAILABLE' if gpu_ok else 'NOT AVAILABLE (CPU only)'}")
     if not gpu_ok:
         print("\nTo enable GPU training:")
         print("  pip install 'jax[cuda12]'")
         print("  # Requires NVIDIA GPU + CUDA 12.x toolkit")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
 
     sys.exit(0 if gpu_ok else 1)
 

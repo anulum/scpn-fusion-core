@@ -102,7 +102,7 @@ class TestClosedLoop:
 
         # Must converge: final error < 1% of initial
         assert errors[-1] < 0.01 * errors[0], (
-            f"Controller did not converge: final={errors[-1]:.4e}, " f"initial={errors[0]:.4e}"
+            f"Controller did not converge: final={errors[-1]:.4e}, initial={errors[0]:.4e}"
         )
 
     def test_large_dt_stable(self, ctrl):

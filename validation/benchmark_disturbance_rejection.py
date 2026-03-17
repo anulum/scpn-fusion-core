@@ -553,7 +553,7 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
         "x0": np.array([0.0, 0.0]),
         "settling_threshold": 0.05,
         "description": (
-            "ELM pacing at 10 Hz, 5 % beta_N drop per burst, " "recovery tracking. Duration: 3 s."
+            "ELM pacing at 10 Hz, 5 % beta_N drop per burst, recovery tracking. Duration: 3 s."
         ),
     },
 }
@@ -851,9 +851,7 @@ def build_controllers(
                 tau_window=10,
                 seed=42,
             )
-            print(
-                f"    [SNN] Initialised: 50 neurons, " f"backend={controllers['SNN']._pool.backend}"
-            )
+            print(f"    [SNN] Initialised: 50 neurons, backend={controllers['SNN']._pool.backend}")
             controller_build["SNN"] = {
                 "backend": str(controllers["SNN"]._pool.backend),
                 "fallback_used": False,
@@ -924,7 +922,7 @@ def generate_markdown_report(all_metrics: List[ScenarioMetrics]) -> str:
     lines: List[str] = [
         "# Disturbance Rejection Benchmark",
         "",
-        "ITER-like parameters: Ip=15 MA, BT=5.3 T, R=6.2 m, a=2.0 m, " "gamma_growth=100/s",
+        "ITER-like parameters: Ip=15 MA, BT=5.3 T, R=6.2 m, a=2.0 m, gamma_growth=100/s",
         "",
         "## Results",
         "",
@@ -972,13 +970,11 @@ def generate_markdown_report(all_metrics: List[ScenarioMetrics]) -> str:
     lines.append("## Metrics Definitions")
     lines.append("")
     lines.append("- **ISE**: Integral of Squared Error (lower is better)")
-    lines.append("- **Settling Time**: Time to reach and stay within 5 % band " "(lower is better)")
-    lines.append(
-        "- **Peak Overshoot**: Maximum absolute deviation from setpoint " "(lower is better)"
-    )
-    lines.append("- **Control Effort**: Integral of |u| over time " "(lower = more efficient)")
-    lines.append("- **Wall-Clock**: Real execution time in seconds " "(lower = faster)")
-    lines.append("- **Stable**: Whether the plant state remained bounded " "during the scenario")
+    lines.append("- **Settling Time**: Time to reach and stay within 5 % band (lower is better)")
+    lines.append("- **Peak Overshoot**: Maximum absolute deviation from setpoint (lower is better)")
+    lines.append("- **Control Effort**: Integral of |u| over time (lower = more efficient)")
+    lines.append("- **Wall-Clock**: Real execution time in seconds (lower = faster)")
+    lines.append("- **Stable**: Whether the plant state remained bounded during the scenario")
     lines.append("")
 
     # Verdict
@@ -989,7 +985,7 @@ def generate_markdown_report(all_metrics: List[ScenarioMetrics]) -> str:
         stable_m = [m for m in sc_metrics if m.stable]
         if stable_m:
             best = min(stable_m, key=lambda m: m.ise)
-            lines.append(f"- **{scenario}**: Best ISE = {best.controller} " f"({best.ise:.3e})")
+            lines.append(f"- **{scenario}**: Best ISE = {best.controller} ({best.ise:.3e})")
         else:
             lines.append(f"- **{scenario}**: ALL CONTROLLERS UNSTABLE")
     lines.append("")
@@ -1278,7 +1274,7 @@ def main(
         stable_results = [m for m in scenario_results if m.stable]
         if stable_results:
             best = min(stable_results, key=lambda m: m.ise)
-            print(f"  {scenario_name:<16}: Best ISE = {best.controller} " f"({best.ise:.3e})")
+            print(f"  {scenario_name:<16}: Best ISE = {best.controller} ({best.ise:.3e})")
         else:
             print(f"  {scenario_name:<16}: ALL CONTROLLERS UNSTABLE")
 
@@ -1311,8 +1307,7 @@ if __name__ == "__main__":
         type=str,
         default=None,
         help=(
-            "Directory for output artifacts (JSON, markdown, plots). "
-            "Defaults to <repo>/artifacts/"
+            "Directory for output artifacts (JSON, markdown, plots). Defaults to <repo>/artifacts/"
         ),
     )
     parser.add_argument(

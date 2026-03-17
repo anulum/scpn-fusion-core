@@ -120,9 +120,9 @@ def test_parameter_ranges_are_realistic(tmp_path: Path) -> None:
         bounds = _BOUNDS[machine]
         for key, (lo, hi) in bounds.items():
             val = entry[key]
-            assert (
-                lo <= val <= hi
-            ), f"{entry['shot_id']} ({machine}): {key}={val} out of [{lo}, {hi}]"
+            assert lo <= val <= hi, (
+                f"{entry['shot_id']} ({machine}): {key}={val} out of [{lo}, {hi}]"
+            )
 
 
 def test_disruption_rate_approximately_20_percent(tmp_path: Path) -> None:

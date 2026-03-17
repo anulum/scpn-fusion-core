@@ -97,9 +97,9 @@ def test_bosch_hale_monotonic_low_T():
     T = np.array([1.0, 5.0, 10.0, 20.0, 40.0, 60.0])
     sv = TransportSolver._bosch_hale_sigmav(T)
     for i in range(len(T) - 1):
-        assert (
-            sv[i + 1] > sv[i]
-        ), f"sigma_v not increasing: sv({T[i]})={sv[i]:.2e} >= sv({T[i+1]})={sv[i+1]:.2e}"
+        assert sv[i + 1] > sv[i], (
+            f"sigma_v not increasing: sv({T[i]})={sv[i]:.2e} >= sv({T[i + 1]})={sv[i + 1]:.2e}"
+        )
 
 
 # ── Tungsten radiation rate ──────────────────────────────────────────
@@ -221,9 +221,9 @@ def test_conservation_error_bounded(solver_multi: TransportSolver):
     # is recomputed from quasineutrality.  We verify the *late* errors
     # stabilise below a generous bound.
     late_errors = errors[10:]
-    assert all(
-        e < 5.0 for e in late_errors
-    ), f"Conservation error still diverging after 10 steps: {late_errors}"
+    assert all(e < 5.0 for e in late_errors), (
+        f"Conservation error still diverging after 10 steps: {late_errors}"
+    )
     assert np.all(np.isfinite(late_errors)), "Conservation error has NaN"
 
 

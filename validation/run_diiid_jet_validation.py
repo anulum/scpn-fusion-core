@@ -177,11 +177,11 @@ def main():
             print(f"  [{device_label}] No GEQDSK files found")
             continue
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"  {device_label} Equilibrium Validation ({len(files)} files)")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(f"{'File':<30} {'Grid':>7} {'Ip[MA]':>7} {'RMSE':>10} {'MaxErr':>10} {'RelL2':>10}")
-        print(f"{'-'*30} {'-'*7} {'-'*7} {'-'*10} {'-'*10} {'-'*10}")
+        print(f"{'-' * 30} {'-' * 7} {'-' * 7} {'-' * 10} {'-' * 10} {'-' * 10}")
 
         for path in files:
             r = validate_file(path, device_label)
@@ -192,14 +192,14 @@ def main():
                 f"{r.psi_relative_l2:>10.4e}"
             )
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"  Summary: {len(results)} equilibria validated")
     if results:
         mean_rel_l2 = np.mean([r.psi_relative_l2 for r in results])
         max_rel_l2 = max(r.psi_relative_l2 for r in results)
         print(f"  Mean relative L2: {mean_rel_l2:.4e}")
         print(f"  Max  relative L2: {max_rel_l2:.4e}")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
 
 if __name__ == "__main__":

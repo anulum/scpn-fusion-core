@@ -100,8 +100,7 @@ def test_rust_multigrid_faster_than_sor(tmp_path: Path):
     r_mg = fk_mg.solve_equilibrium()
 
     assert r_mg["wall_time_s"] < r_sor["wall_time_s"], (
-        f"Rust MG ({r_mg['wall_time_s']:.3f}s) not faster than "
-        f"SOR ({r_sor['wall_time_s']:.3f}s)"
+        f"Rust MG ({r_mg['wall_time_s']:.3f}s) not faster than SOR ({r_sor['wall_time_s']:.3f}s)"
     )
 
 

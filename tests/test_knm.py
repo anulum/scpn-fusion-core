@@ -9,6 +9,7 @@ Tests for KnmSpec dataclass and build_knm_paper27 constructor.
 test_phase_kuramoto.py covers basic shape/anchors/zeta. This file
 targets validation logic, edge cases, and mathematical properties.
 """
+
 from __future__ import annotations
 
 import numpy as np

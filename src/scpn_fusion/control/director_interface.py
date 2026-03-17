@@ -155,9 +155,7 @@ class DirectorInterface:
             stability = "Critical"
 
         neural_entropy = float(np.std(brain_activity_arr))
-        return (
-            f"Time={t}, Ip={ip:.1f}, Stability={stability}, " f"BrainEntropy={neural_entropy:.2f}"
-        )
+        return f"Time={t}, Ip={ip:.1f}, Stability={stability}, BrainEntropy={neural_entropy:.2f}"
 
     def run_directed_mission(
         self,

@@ -168,7 +168,7 @@ class RFHeatingSystem:
 
     def trace_rays(self, n_rays=10):
         print("--- RF HEATING RAY TRACING ---")
-        print(f"Frequency: {self.freq/1e6} MHz")
+        print(f"Frequency: {self.freq / 1e6} MHz")
 
         # Antenna Position (Outboard midplane)
         R_ant = 9.0
@@ -229,7 +229,7 @@ class RFHeatingSystem:
             [9.0] * len(trajectories), [t[0, 1] for t in trajectories], "ko", label="Antenna Array"
         )
 
-        ax.set_title(f"ICRH Wave Propagation ({self.freq/1e6} MHz)")
+        ax.set_title(f"ICRH Wave Propagation ({self.freq / 1e6} MHz)")
         ax.set_xlabel("R (m)")
         ax.set_ylabel("Z (m)")
         ax.set_xlim(2, 10)

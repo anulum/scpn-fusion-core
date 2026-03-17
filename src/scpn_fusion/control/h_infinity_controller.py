@@ -149,7 +149,7 @@ class HInfinityController:
         if not self.robust_feasible:
             msg = (
                 "H-infinity spectral feasibility condition failed: "
-                f"rho(XY)={self.spectral_radius_xy:.6g} >= gamma^2={self.gamma ** 2:.6g}."
+                f"rho(XY)={self.spectral_radius_xy:.6g} >= gamma^2={self.gamma**2:.6g}."
             )
             if enforce_robust_feasibility:
                 raise ValueError(msg)

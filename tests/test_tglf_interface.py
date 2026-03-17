@@ -39,7 +39,6 @@ from scpn_fusion.core.tglf_interface import (
 
 
 class TestTGLFInputDeck:
-
     def test_input_deck_defaults(self) -> None:
         """TGLFInputDeck() should have sensible default values."""
         deck = TGLFInputDeck()
@@ -126,7 +125,6 @@ class TestTGLFInputDeck:
 
 
 class TestTGLFOutput:
-
     def test_output_dataclass_defaults(self) -> None:
         """TGLFOutput has zero defaults for chi and flux values."""
         out = TGLFOutput()
@@ -156,7 +154,6 @@ class TestTGLFOutput:
 
 
 class TestTGLFComparisonResult:
-
     def test_comparison_result_defaults(self) -> None:
         """TGLFComparisonResult defaults to empty lists and zero errors."""
         result = TGLFComparisonResult()
@@ -187,7 +184,6 @@ class TestTGLFComparisonResult:
 
 
 class TestGenerateInputDeck:
-
     @pytest.fixture
     def mock_solver(self, tmp_path: Path):
         """Create a minimal TransportSolver for testing generate_input_deck."""
@@ -295,7 +291,6 @@ class TestGenerateInputDeck:
 
 
 class TestOutputParsing:
-
     def test_parse_tglf_output_from_json(self, tmp_path: Path) -> None:
         """parse_tglf_output reads JSON files and returns TGLFOutput list."""
         data = {
@@ -388,7 +383,6 @@ class TestOutputParsing:
 
 
 class TestWriteInputFile:
-
     def test_write_tglf_input_file(self, tmp_path: Path) -> None:
         """write_tglf_input_file creates a readable input.tglf file."""
         deck = TGLFInputDeck(rho=0.5, q=1.5, kappa=1.7, R_LTi=6.0)
@@ -425,7 +419,6 @@ class TestWriteInputFile:
 
 
 class TestTGLFBenchmark:
-
     def test_benchmark_compare(self) -> None:
         """TGLFBenchmark.compare produces a TGLFComparisonResult."""
         benchmark = TGLFBenchmark()
@@ -508,7 +501,6 @@ class TestTGLFBenchmark:
 
 
 class TestReferenceData:
-
     def test_reference_cases_exist(self) -> None:
         """REFERENCE_CASES dict has the expected entries."""
         assert "ITG-dominated" in REFERENCE_CASES

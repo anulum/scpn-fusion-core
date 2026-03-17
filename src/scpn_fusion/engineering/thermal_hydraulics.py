@@ -91,5 +91,5 @@ if __name__ == "__main__":
     res = loop.calculate_pumping_power(Q_thermal_MW=500.0)
     print("--- Thermal Hydraulics (Water) ---")
     print(f"Mass Flow: {res['mdot_kg_s']:.1f} kg/s")
-    print(f"Pressure Drop: {res['dP_Pa']/1e5:.2f} bar")
+    print(f"Pressure Drop: {res['dP_Pa'] / 1e5:.2f} bar")
     print(f"Pumping Power: {res['P_pump_MW']:.2f} MW")

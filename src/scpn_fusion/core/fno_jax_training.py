@@ -137,8 +137,7 @@ def load_gene_binary(file_path: str) -> tuple[np.ndarray, np.ndarray]:
         raise ValueError("Dataset must contain at least one sample.")
     if x_np.shape[1] < MODES or x_np.shape[2] < MODES:
         raise ValueError(
-            f"Grid must be >= {MODES} in both spatial dims; "
-            f"got ({x_np.shape[1]}, {x_np.shape[2]})."
+            f"Grid must be >= {MODES} in both spatial dims; got ({x_np.shape[1]}, {x_np.shape[2]})."
         )
     if not np.all(np.isfinite(x_np)) or not np.all(np.isfinite(y_np)):
         raise ValueError("X and Y must be finite.")

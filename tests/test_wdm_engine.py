@@ -70,7 +70,6 @@ def wdm(config_file: Path) -> WholeDeviceModel:
 
 
 class TestWDMInit:
-
     def test_init(self, wdm: WholeDeviceModel) -> None:
         """WholeDeviceModel initializes without error and has transport attribute."""
         assert hasattr(wdm, "transport")
@@ -107,7 +106,6 @@ class TestWDMInit:
 
 
 class TestDischargeRun:
-
     def test_run_short_discharge(self, wdm: WholeDeviceModel) -> None:
         """Run a 0.1 second discharge; verify it completes without error.
 
@@ -144,7 +142,6 @@ class TestDischargeRun:
 
 
 class TestComponentIntegration:
-
     def test_transport_ne_is_array(self, wdm: WholeDeviceModel) -> None:
         """Transport solver density profile is a numpy array."""
         assert isinstance(wdm.transport.ne, np.ndarray)
@@ -173,7 +170,6 @@ class TestComponentIntegration:
 
 
 class TestConfigHandling:
-
     def test_accepts_string_path(self, config_file: Path) -> None:
         """WholeDeviceModel accepts a string config path."""
         wdm = WholeDeviceModel(str(config_file))

@@ -74,9 +74,9 @@ def test_self_consistent_returns_expected_keys(solver: TransportSolver):
         "ne_profile",
         "converged",
     }
-    assert expected_keys == set(
-        result.keys()
-    ), f"Missing keys: {expected_keys - set(result.keys())}"
+    assert expected_keys == set(result.keys()), (
+        f"Missing keys: {expected_keys - set(result.keys())}"
+    )
 
 
 def test_self_consistent_psi_residuals_recorded(solver: TransportSolver):
@@ -94,9 +94,9 @@ def test_self_consistent_psi_residuals_recorded(solver: TransportSolver):
         psi_tol=1e-10,
     )
     n_done = result["n_outer_converged"]
-    assert (
-        len(result["psi_residuals"]) == n_done
-    ), f"Expected {n_done} residuals, got {len(result['psi_residuals'])}"
+    assert len(result["psi_residuals"]) == n_done, (
+        f"Expected {n_done} residuals, got {len(result['psi_residuals'])}"
+    )
     assert n_done >= 1, "Should have done at least 1 outer iteration"
     assert n_done <= n_outer, "Should not exceed n_outer"
 
@@ -170,7 +170,7 @@ def test_self_consistent_psi_residual_trend(solver: TransportSolver):
     if len(residuals) >= 2:
         # The residuals should not blow up
         assert residuals[-1] <= residuals[0] * 10.0, (
-            f"Residuals blew up: first={residuals[0]:.4e}, " f"last={residuals[-1]:.4e}"
+            f"Residuals blew up: first={residuals[0]:.4e}, last={residuals[-1]:.4e}"
         )
 
 
@@ -192,7 +192,7 @@ def test_map_profiles_called_during_self_consistent(solver: TransportSolver):
         )
         expected = result["n_outer_converged"]
         assert mock_map.call_count == expected, (
-            f"Expected {expected} calls to map_profiles_to_2d, " f"got {mock_map.call_count}"
+            f"Expected {expected} calls to map_profiles_to_2d, got {mock_map.call_count}"
         )
         assert mock_map.call_count >= 1, "Should call map_profiles_to_2d at least once"
 
@@ -225,9 +225,9 @@ def test_solve_equilibrium_called_during_self_consistent(
             dt=0.01,
             psi_tol=1e-10,
         )
-        assert (
-            mock_eq.call_count == 2
-        ), f"Expected 2 calls to solve_equilibrium, got {mock_eq.call_count}"
+        assert mock_eq.call_count == 2, (
+            f"Expected 2 calls to solve_equilibrium, got {mock_eq.call_count}"
+        )
 
 
 # ── Backward compatibility ──────────────────────────────────────────

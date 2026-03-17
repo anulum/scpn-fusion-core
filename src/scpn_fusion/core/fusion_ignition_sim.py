@@ -156,7 +156,7 @@ def run_ignition_experiment():
     history_P_fus = []
 
     print(
-        f"{ 'Aux (MW)':<10} | { 'Fusion (MW)':<12} | { 'Alpha (MW)':<10} | { 'Q-Factor':<8} | {'Status'}"
+        f"{'Aux (MW)':<10} | {'Fusion (MW)':<12} | {'Alpha (MW)':<10} | {'Q-Factor':<8} | {'Status'}"
     )
     print("-" * 60)
 

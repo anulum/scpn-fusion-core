@@ -50,7 +50,7 @@ _MAX_SIGNAL_SAMPLES_PER_SHOT = 200_000
 def _load_json_text(path: Path) -> str:
     size = int(path.stat().st_size)
     if size > _MAX_JSON_BYTES:
-        raise ValueError(f"{path} exceeds max JSON size " f"({_MAX_JSON_BYTES} bytes).")
+        raise ValueError(f"{path} exceeds max JSON size ({_MAX_JSON_BYTES} bytes).")
     return path.read_text(encoding="utf-8")
 
 
@@ -80,7 +80,7 @@ def _parse_split_ids(name: str, value: Any) -> list[int]:
         raise ValueError(f"Split '{name}' must be a non-empty list of integer shot ids.")
     if len(value) > _MAX_SPLIT_IDS_PER_SET:
         raise ValueError(
-            f"Split '{name}' has {len(value)} ids, exceeding max " f"{_MAX_SPLIT_IDS_PER_SET}."
+            f"Split '{name}' has {len(value)} ids, exceeding max {_MAX_SPLIT_IDS_PER_SET}."
         )
     out: list[int] = []
     for i, item in enumerate(value):
@@ -140,7 +140,7 @@ def _load_samples(
         raise ValueError("Manifest must contain non-empty 'shots' list.")
     if len(items) > _MAX_MANIFEST_SHOTS:
         raise ValueError(
-            f"Manifest includes {len(items)} shots, exceeding max " f"{_MAX_MANIFEST_SHOTS}."
+            f"Manifest includes {len(items)} shots, exceeding max {_MAX_MANIFEST_SHOTS}."
         )
 
     loader = _load_payload_loader()

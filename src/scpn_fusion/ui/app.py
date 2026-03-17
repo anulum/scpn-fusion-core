@@ -159,7 +159,7 @@ with tab5:
     npz_files = sorted(_DISRUPTION_DIR.glob("*.npz")) if _DISRUPTION_DIR.is_dir() else []
 
     if not npz_files:
-        st.info("No disruption shot NPZ files found. Expected location: " f"`{_DISRUPTION_DIR}`")
+        st.info(f"No disruption shot NPZ files found. Expected location: `{_DISRUPTION_DIR}`")
     else:
         shot_names = [p.stem for p in npz_files]
         selected_shot = st.selectbox("Select Shot", shot_names, index=0)

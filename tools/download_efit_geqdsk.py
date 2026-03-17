@@ -291,7 +291,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "--cache-dir",
         type=Path,
         default=None,
-        help=("Directory to store/look for cached GEQDSK files. " f"Default: {DEFAULT_CACHE_DIR}"),
+        help=(f"Directory to store/look for cached GEQDSK files. Default: {DEFAULT_CACHE_DIR}"),
     )
     parser.add_argument(
         "--no-mdsplus",

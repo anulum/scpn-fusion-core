@@ -147,9 +147,9 @@ def test_optimize_respects_current_limits(kernel: FusionKernel):
     coils.current_limits = np.array([1e3, 1e3, 1e3, 1e3])
     target = np.array([100.0, 100.0, 100.0])  # large target to stress limits
     I_opt = kernel.optimize_coil_currents(coils, target)
-    assert np.all(
-        np.abs(I_opt) <= 1e3 + 1e-6
-    ), f"Current limits violated: max |I| = {np.max(np.abs(I_opt))}"
+    assert np.all(np.abs(I_opt) <= 1e3 + 1e-6), (
+        f"Current limits violated: max |I| = {np.max(np.abs(I_opt))}"
+    )
 
 
 def test_optimize_finite_currents(kernel: FusionKernel):
@@ -215,9 +215,9 @@ def test_optimize_reduces_residual(kernel: FusionKernel):
     flux_opt = M.T @ I_opt
     residual_opt = np.linalg.norm(flux_opt - target)
 
-    assert (
-        residual_opt <= residual_init + 1e-6
-    ), f"Optimised residual {residual_opt} worse than initial {residual_init}"
+    assert residual_opt <= residual_init + 1e-6, (
+        f"Optimised residual {residual_opt} worse than initial {residual_init}"
+    )
 
 
 # ── Bilinear interpolation ──────────────────────────────────────────
@@ -231,9 +231,9 @@ def test_interp_psi_at_grid_point(kernel: FusionKernel):
     Z_pt = kernel.Z[iz]
     psi_interp = kernel._interp_psi(R_pt, Z_pt)
     psi_exact = kernel.Psi[iz, ir]
-    assert (
-        abs(psi_interp - psi_exact) < 1e-10
-    ), f"Interpolation at grid point: {psi_interp} vs {psi_exact}"
+    assert abs(psi_interp - psi_exact) < 1e-10, (
+        f"Interpolation at grid point: {psi_interp} vs {psi_exact}"
+    )
 
 
 def test_interp_psi_finite(kernel: FusionKernel):
@@ -291,9 +291,9 @@ def test_solve_free_boundary_with_optimization(kernel: FusionKernel):
         optimize_shape=True,
     )
     # Currents should have been updated
-    assert not np.allclose(
-        result["coil_currents"], I_before
-    ), "Coil currents were not updated during shape optimisation"
+    assert not np.allclose(result["coil_currents"], I_before), (
+        "Coil currents were not updated during shape optimisation"
+    )
 
 
 def test_solve_free_boundary_uses_explicit_target_flux_values(

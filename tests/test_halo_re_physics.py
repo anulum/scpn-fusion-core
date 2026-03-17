@@ -189,7 +189,7 @@ class TestDisruptionEnsemble:
         assert report.ensemble_runs == 50
         assert report.prevention_rate >= 0.0
         # Report the actual prevention rate for documentation
-        print(f"\n=== Ensemble Prevention Rate: {report.prevention_rate*100:.1f}% ===")
+        print(f"\n=== Ensemble Prevention Rate: {report.prevention_rate * 100:.1f}% ===")
         print(f"    Mean halo peak: {report.mean_halo_peak_ma:.2f} MA")
         print(f"    P95 halo peak:  {report.p95_halo_peak_ma:.2f} MA")
         print(f"    Mean RE peak:   {report.mean_re_peak_ma:.4f} MA")

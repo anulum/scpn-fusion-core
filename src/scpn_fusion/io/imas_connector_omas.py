@@ -25,7 +25,7 @@ def ids_to_omas_equilibrium(ids_dict: Mapping[str, Any]) -> Any:
     """Convert an IMAS equilibrium IDS dict to an OMAS ODS."""
     if not HAS_OMAS or omas is None:
         raise ImportError(
-            "The 'omas' package is required for OMAS conversion. " "Install with: pip install omas"
+            "The 'omas' package is required for OMAS conversion. Install with: pip install omas"
         )
 
     ods = omas.ODS()

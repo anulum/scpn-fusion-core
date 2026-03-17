@@ -17,7 +17,6 @@ from scpn_fusion.engineering.balance_of_plant import PowerPlantModel
 
 
 class TestFusionSystem(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         # Create a mini config for fast testing

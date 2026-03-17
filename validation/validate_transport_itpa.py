@@ -137,7 +137,7 @@ def validate_against_itpa(
         lines.append(f"- **N shots**: {n}")
         lines.append(f"- **RMSE**: {rmse_val:.4f} s ({rmse_rel:.1%} relative)")
         lines.append(
-            f"- **Within 2-sigma**: {within_2sigma_count}/{n} ({within_2sigma_count/n:.0%})"
+            f"- **Within 2-sigma**: {within_2sigma_count}/{n} ({within_2sigma_count / n:.0%})"
         )
         lines.append("")
         lines.append("| Machine | Shot | tau_meas [s] | tau_pred [s] | Rel Error | 2-sigma |")

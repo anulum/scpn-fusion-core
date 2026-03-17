@@ -27,6 +27,7 @@ Disruption physics references:
 Seeding: each shot uses np.random.default_rng(shot_number) for full
 reproducibility.
 """
+
 from __future__ import annotations
 
 import argparse

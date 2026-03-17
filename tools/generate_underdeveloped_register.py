@@ -879,7 +879,7 @@ def main(argv: list[str] | None = None) -> int:
         "--scope",
         choices=("full", "source", "docs_claims"),
         default="full",
-        help=("Report scope: full (default), source (src/scpn_fusion only), " "or docs_claims."),
+        help=("Report scope: full (default), source (src/scpn_fusion only), or docs_claims."),
     )
     args = parser.parse_args(argv)
 
@@ -916,15 +916,14 @@ def main(argv: list[str] | None = None) -> int:
             shown = 0
             for i, (a, b) in enumerate(zip(cur_lines, rep_lines)):
                 if a != b and shown < 5:
-                    print(f"  line {i+1} committed: {a[:120]}")
-                    print(f"  line {i+1} generated: {b[:120]}")
+                    print(f"  line {i + 1} committed: {a[:120]}")
+                    print(f"  line {i + 1} generated: {b[:120]}")
                     shown += 1
             if len(cur_lines) != len(rep_lines):
                 print(f"  line count: committed={len(cur_lines)}, generated={len(rep_lines)}")
             return 1
         print(
-            f"Underdeveloped register is up to date ({len(entries)} entries, "
-            f"scope={args.scope})."
+            f"Underdeveloped register is up to date ({len(entries)} entries, scope={args.scope})."
         )
         return 0
 

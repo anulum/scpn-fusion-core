@@ -50,7 +50,7 @@ class ForceBalanceSolver:
         for iter in range(max_iterations):
             # 1. Calculate Current Force
             Fr, Fz, n_idx = self.analyzer.calculate_forces(target_R, target_Z, Ip)
-            print(f"Iter {iter}: Radial Force = {Fr/1e6:.2f} MN")
+            print(f"Iter {iter}: Radial Force = {Fr / 1e6:.2f} MN")
 
             if abs(Fr) < 1e4:  # Tolerance 10 kN
                 print("  -> CONVERGED. Force Balance Achieved.")
@@ -76,7 +76,7 @@ class ForceBalanceSolver:
 
             # Jacobian J = dF/dI (MN / MA)
             J = (Fr_new - Fr) / dI
-            print(f"  Jacobian dF/dI_PF34: {J/1e6:.2f} MN/MA")
+            print(f"  Jacobian dF/dI_PF34: {J / 1e6:.2f} MN/MA")
 
             # 3. Newton Step: I_new = I_old - F / J
             # We want F_target = 0

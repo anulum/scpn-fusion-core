@@ -246,9 +246,9 @@ def solovev_jphi(
 
     R_safe = np.maximum(R, 1e-10)
     J_phi = np.zeros_like(R, dtype=np.float64)
-    J_phi[plasma_mask] = 8.0 * Psi_0 * R_safe[plasma_mask] / (
-        eps_s * R0**2
-    ) ** 2 + 2.0 * Psi_0 / (R_safe[plasma_mask] * ka**2)
+    J_phi[plasma_mask] = 8.0 * Psi_0 * R_safe[plasma_mask] / (eps_s * R0**2) ** 2 + 2.0 * Psi_0 / (
+        R_safe[plasma_mask] * ka**2
+    )
     return J_phi
 
 

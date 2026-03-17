@@ -29,7 +29,6 @@ ITER_SCENARIO = PlasmaScenario(
 
 
 class TestIPB98Scaling:
-
     def test_iter_confinement_order_of_magnitude(self):
         """IPB98 should predict ITER tau_E ~ 3-5 s."""
         tau = ipb98_tau_e(ITER_SCENARIO)
@@ -100,7 +99,6 @@ class TestIPB98Scaling:
 
 
 class TestFusionPower:
-
     def test_positive_power(self):
         """Fusion power should be positive for ITER-like scenario."""
         tau = ipb98_tau_e(ITER_SCENARIO)
@@ -115,7 +113,6 @@ class TestFusionPower:
 
 
 class TestUQ:
-
     def test_deterministic_with_seed(self):
         """Same seed should give identical results."""
         r1 = quantify_uncertainty(ITER_SCENARIO, n_samples=500, seed=42)

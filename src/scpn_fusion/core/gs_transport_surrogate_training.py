@@ -170,7 +170,7 @@ def _generate_gs_transport_pairs(
 
     if len(x_list) == 0:
         raise RuntimeError(
-            "GS-transport pair generation produced 0 valid samples " f"out of {n_samples} attempts."
+            f"GS-transport pair generation produced 0 valid samples out of {n_samples} attempts."
         )
 
     logger.info(
@@ -402,8 +402,7 @@ def train_gs_transport_surrogate(
     history["machine_class_counts"] = machine_counts
 
     logger.info(
-        "GS-transport surrogate training complete: %d epochs, "
-        "best_val_mse=%.6f, test_rel_l2=%.4f",
+        "GS-transport surrogate training complete: %d epochs, best_val_mse=%.6f, test_rel_l2=%.4f",
         history["epochs_completed"],
         best_val,
         test_rel_l2,

@@ -107,9 +107,9 @@ class TestSORConvergence:
         fk = FusionKernel(config_file)
         result = fk.solve_equilibrium()
 
-        assert (
-            result["wall_time_s"] < 2.0
-        ), f"SOR took {result['wall_time_s']:.2f}s on {geqdsk_path.stem}"
+        assert result["wall_time_s"] < 2.0, (
+            f"SOR took {result['wall_time_s']:.2f}s on {geqdsk_path.stem}"
+        )
 
 
 class TestJacobiComparison:
@@ -144,7 +144,7 @@ class TestJacobiComparison:
         # a lower residual in the same iteration budget.
         if res_j["converged"] and res_s["converged"]:
             assert res_s["iterations"] <= res_j["iterations"], (
-                f"SOR ({res_s['iterations']}) did not beat " f"Jacobi ({res_j['iterations']})"
+                f"SOR ({res_s['iterations']}) did not beat Jacobi ({res_j['iterations']})"
             )
         else:
             # At least SOR residual should be lower
@@ -224,5 +224,5 @@ class TestResidualHistory:
             first_10 = np.mean(hist[:10])
             last_10 = np.mean(hist[-10:])
             assert last_10 < first_10, (
-                f"Residual not decreasing: first_10={first_10:.2e}, " f"last_10={last_10:.2e}"
+                f"Residual not decreasing: first_10={first_10:.2e}, last_10={last_10:.2e}"
             )

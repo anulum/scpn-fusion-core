@@ -417,11 +417,10 @@ class StochasticPetriNet:
                 raise RuntimeError("Compiled net is missing sparse matrices; re-run compile().")
             lines.append("")
             lines.append(
-                f"W_in  (nT={self.W_in.shape[0]}, nP={self.W_in.shape[1]})  " f"nnz={self.W_in.nnz}"
+                f"W_in  (nT={self.W_in.shape[0]}, nP={self.W_in.shape[1]})  nnz={self.W_in.nnz}"
             )
             lines.append(
-                f"W_out (nP={self.W_out.shape[0]}, nT={self.W_out.shape[1]})  "
-                f"nnz={self.W_out.nnz}"
+                f"W_out (nP={self.W_out.shape[0]}, nT={self.W_out.shape[1]})  nnz={self.W_out.nnz}"
             )
         return "\n".join(lines)
 
@@ -459,7 +458,6 @@ class StochasticPetriNet:
         for _ in range(n_trials):
             marking = self.get_initial_marking().copy()
             for _ in range(n_steps):
-
                 # Check enabling
                 thresholds = self.get_thresholds()
                 enabled = np.all(W_in_dense <= marking[np.newaxis, :] + 1e-9, axis=1)

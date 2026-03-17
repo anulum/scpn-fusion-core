@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-17T05:43:49.625476+00:00`
+- Generated at: `2026-03-17T18:43:09.268876+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 

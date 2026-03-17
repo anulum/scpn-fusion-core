@@ -102,9 +102,7 @@ def parse_newton_dispatch_config(cfg: dict[str, Any]) -> NewtonDispatchConfig:
     ):
         gmres_preconditioner_mode = "diagonal"
     if gmres_preconditioner_mode not in {"none", "diagonal", "ilu"}:
-        raise ValueError(
-            "solver.gmres_preconditioner must be one of " "{'none', 'diagonal', 'ilu'}"
-        )
+        raise ValueError("solver.gmres_preconditioner must be one of {'none', 'diagonal', 'ilu'}")
 
     ilu_drop_tol = float(solver_cfg.get("gmres_ilu_drop_tol", 1e-4))
     ilu_fill_factor = float(solver_cfg.get("gmres_ilu_fill_factor", 8.0))

@@ -532,7 +532,7 @@ def run_campaign(
 
     print("=== 1000-Shot Stress-Test Campaign ===")
     print(f"Episodes: {n_episodes} | Shot duration: {shot_duration}s")
-    print(f"Noise: {noise_level*100:.0f}% | Delay: {delay_ms:.0f}ms")
+    print(f"Noise: {noise_level * 100:.0f}% | Delay: {delay_ms:.0f}ms")
     print(f"Surrogate: {'Enabled' if surrogate else 'Disabled'}")
     print(
         "H-infinity research lane: "

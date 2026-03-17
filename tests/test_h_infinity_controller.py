@@ -51,7 +51,6 @@ def _vertical_stability_plant(
 
 
 class TestSynthesis:
-
     def test_synthesis_2x2(self) -> None:
         """Synthesize an H-infinity controller for a 2-state vertical stability model."""
         A, B1, B2, C1, C2 = _vertical_stability_plant(gamma_v=10.0)
@@ -76,7 +75,6 @@ class TestSynthesis:
 
 
 class TestGainShapes:
-
     def test_feedback_gain_shape(self) -> None:
         """F matrix shape is (m, n) where m=num controls, n=num states."""
         A, B1, B2, C1, C2 = _vertical_stability_plant(gamma_v=10.0)
@@ -109,7 +107,6 @@ class TestGainShapes:
 
 
 class TestClosedLoopStability:
-
     def test_closed_loop_stable(self) -> None:
         """Closed loop A_cl = A + B2*F should have all eigenvalues in LHP."""
         A, B1, B2, C1, C2 = _vertical_stability_plant(gamma_v=10.0)
@@ -167,7 +164,6 @@ class TestClosedLoopStability:
 
 
 class TestGammaFeasibility:
-
     def test_gamma_positive(self) -> None:
         """Synthesized gamma > 0 and > 1."""
         A, B1, B2, C1, C2 = _vertical_stability_plant(gamma_v=10.0)
@@ -198,7 +194,6 @@ class TestGammaFeasibility:
 
 
 class TestRiccatiResiduals:
-
     def test_riccati_residual_small(self) -> None:
         """X and Y Riccati solutions should have small residual norms."""
         ctrl = get_radial_robust_controller(gamma_growth=100.0)
@@ -221,7 +216,6 @@ class TestRiccatiResiduals:
 
 
 class TestRobustness:
-
     def test_perturbed_plant_10_percent(self) -> None:
         """Perturb A by 10%; closed-loop should still be stable."""
         A, B1, B2, C1, C2 = _vertical_stability_plant(gamma_v=10.0)
@@ -235,9 +229,9 @@ class TestRobustness:
         A_cl_perturbed = A_perturbed + B2 @ ctrl.F
         eigs = np.linalg.eigvals(A_cl_perturbed)
         # All eigenvalues should still have negative real parts
-        assert np.all(
-            np.real(eigs) < 0
-        ), f"Closed-loop unstable under 10% perturbation: eigs = {eigs}"
+        assert np.all(np.real(eigs) < 0), (
+            f"Closed-loop unstable under 10% perturbation: eigs = {eigs}"
+        )
 
     def test_perturbed_plant_simulation(self) -> None:
         """Simulate the controller (state feedback) on a 10% perturbed plant.
@@ -267,7 +261,6 @@ class TestRobustness:
 
 
 class TestInputValidation:
-
     def test_rejects_invalid_gamma(self) -> None:
         """gamma must be > 1.0 and finite."""
         A, B1, B2, C1, C2 = _vertical_stability_plant()
@@ -314,7 +307,6 @@ class TestInputValidation:
 
 
 class TestStateManagement:
-
     def test_reset_zeros_state(self) -> None:
         """reset() should zero the controller internal state."""
         ctrl = get_radial_robust_controller(gamma_growth=100.0)
@@ -344,7 +336,6 @@ class TestStateManagement:
 
 
 class TestEnforceRobustFeasibility:
-
     def test_strict_mode_rejects_infeasible(self) -> None:
         """enforce_robust_feasibility=True raises on infeasible synthesis."""
         # Use a pathologically ill-conditioned plant: huge disturbance gain
@@ -375,7 +366,6 @@ class TestEnforceRobustFeasibility:
 
 
 class TestAntiWindup:
-
     def test_anti_windup_reduces_overshoot_after_saturation(self) -> None:
         """After saturation, anti-windup correction prevents excessive overshoot."""
         ctrl = get_radial_robust_controller(gamma_growth=100.0)
@@ -393,9 +383,9 @@ class TestAntiWindup:
             peak_u = max(peak_u, abs(u))
 
         # With anti-windup, overshoot should not exceed 2x u_max
-        assert (
-            peak_u <= 2.0 * ctrl.u_max
-        ), f"Overshoot {peak_u} exceeds 2x u_max ({2.0 * ctrl.u_max})"
+        assert peak_u <= 2.0 * ctrl.u_max, (
+            f"Overshoot {peak_u} exceeds 2x u_max ({2.0 * ctrl.u_max})"
+        )
 
     def test_anti_windup_noop_when_no_saturation(self) -> None:
         """When no clipping occurs, anti-windup correction is zero (no change)."""
@@ -414,7 +404,6 @@ class TestAntiWindup:
 
 
 class TestPhaseMargin:
-
     def test_phase_margin_is_positive_for_stable_controller(self) -> None:
         """A stable controller should have positive phase margin."""
         ctrl = get_radial_robust_controller(gamma_growth=100.0)
@@ -433,7 +422,6 @@ class TestPhaseMargin:
 
 
 class TestDampingParameter:
-
     def test_factory_damping_parameter_changes_controller(self) -> None:
         """Different damping values produce different controller matrices."""
         ctrl_5 = get_radial_robust_controller(damping=5.0)
@@ -459,7 +447,6 @@ class TestDampingParameter:
 
 
 class TestFlightSimV2:
-
     def test_v2_synthesis_succeeds(self) -> None:
         ctrl = get_flight_sim_controller_v2(position_sensitivity=0.567, sample_dt=0.05)
         assert ctrl.n == 2
@@ -514,7 +501,6 @@ class TestFlightSimV2:
 
 
 class TestLQRController:
-
     def test_lqr_synthesis_succeeds(self) -> None:
         ctrl = get_flight_sim_lqr_controller(position_sensitivity=0.567, sample_dt=0.05)
         assert isinstance(ctrl, LQRController)

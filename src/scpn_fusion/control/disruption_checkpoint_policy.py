@@ -128,8 +128,7 @@ def _safe_torch_checkpoint_load(path: Path) -> Any:
             context={"path": str(path), "size_bytes": size},
         )
         raise RuntimeError(
-            "Checkpoint file exceeds safety size budget: "
-            f"{size} > {_MAX_CHECKPOINT_BYTES} bytes."
+            f"Checkpoint file exceeds safety size budget: {size} > {_MAX_CHECKPOINT_BYTES} bytes."
         )
     sha_allowlist = _parse_checkpoint_sha256_allowlist()
     if sha_allowlist:
@@ -139,9 +138,7 @@ def _safe_torch_checkpoint_load(path: Path) -> Any:
                 "checkpoint_sha256_allowlist_blocked",
                 context={"path": str(path), "sha256": digest},
             )
-            raise RuntimeError(
-                "Checkpoint SHA256 digest is not allowlisted by policy: " f"{digest}"
-            )
+            raise RuntimeError(f"Checkpoint SHA256 digest is not allowlisted by policy: {digest}")
     try:
         return torch.load(path, map_location="cpu", weights_only=True)
     except TypeError as exc:

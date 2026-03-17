@@ -33,9 +33,7 @@ def main() -> None:
     nb = nbf.read(src, as_version=4)
 
     # --- markdown cells ---
-    nb.cells[
-        0
-    ].source = """# Neuro-Symbolic Control Demo (Golden Base v2)
+    nb.cells[0].source = """# Neuro-Symbolic Control Demo (Golden Base v2)
 
 Version: v2 (2026-02-19)
 
@@ -65,17 +63,13 @@ Copyright clarity:
 ---
 """
 
-    nb.cells[
-        7
-    ].source = """## 3) Compile to SNN (Stochastic Path, Required)
+    nb.cells[7].source = """## 3) Compile to SNN (Stochastic Path, Required)
 
 Golden Base requires `sc_neurocore` stochastic execution.
 If stochastic path is unavailable, the notebook fails fast instead of silently falling back.
 """
 
-    nb.cells[
-        9
-    ].source = """## 4) DIII-D Disturbance Injection + Validation Link
+    nb.cells[9].source = """## 4) DIII-D Disturbance Injection + Validation Link
 
 This notebook loads disturbance data from:
 - `validation/reference_data/diiid/disruption_shots/`
@@ -85,9 +79,7 @@ Validation linkage:
 - `validation/full_validation_pipeline.py` (multi-lane empirical runner)
 """
 
-    nb.cells[
-        11
-    ].source = """## 5) FusionKernel Twin and Controllers
+    nb.cells[11].source = """## 5) FusionKernel Twin and Controllers
 
 The plant twin calls `FusionKernel.solve_equilibrium()` every control step.
 
@@ -98,9 +90,7 @@ Controllers:
 - **Open-loop**: fixed nominal actuation (no feedback), for visual contrast
 """
 
-    nb.cells[
-        13
-    ].source = """## 6) Closed-Loop Results: SNN vs PID vs MPC-lite
+    nb.cells[13].source = """## 6) Closed-Loop Results: SNN vs PID vs MPC-lite
 
 This section prints the metrics table and embeds trajectory plots:
 - plasma-state evolution (`n_e`, `I_p`, `beta_N`) with open-loop baseline
@@ -109,9 +99,7 @@ This section prints the metrics table and embeds trajectory plots:
 - safety traces (`q_min`) with disturbance risk profile
 """
 
-    nb.cells[
-        17
-    ].source = """## 8) Computational Cost and 3456x3456 Scaling
+    nb.cells[17].source = """## 8) Computational Cost and 3456x3456 Scaling
 
 This notebook reports both:
 - Controller-only latency
@@ -122,16 +110,12 @@ Computational-cost deployment note:
 - Full GS solve every fast control tick is too expensive for hard real-time.
 """
 
-    nb.cells[
-        19
-    ].source = """## 9) Artifact Export and Deterministic Replay
+    nb.cells[19].source = """## 9) Artifact Export and Deterministic Replay
 
 We export a deployment artifact, reload it, and verify deterministic replay consistency of the SNN closed-loop run.
 """
 
-    nb.cells[
-        21
-    ].source = """## Summary
+    nb.cells[21].source = """## Summary
 
 Golden Base now demonstrates:
 - stochastic-path SCPN/SNN execution (`sc_neurocore`)
@@ -146,9 +130,7 @@ Deployment realism:
 """
 
     # --- code cell 2: bootstrap sc_neurocore before importing scpn_fusion.scpn ---
-    nb.cells[
-        2
-    ].source = """# Imports, bootstrap, and deterministic setup
+    nb.cells[2].source = """# Imports, bootstrap, and deterministic setup
 import copy
 import hashlib
 import importlib
@@ -312,9 +294,7 @@ from scpn_fusion.core.fusion_kernel import FusionKernel as PyFusionKernel
     nb.cells[8].source = c8
 
     # --- code cell 10: add validation linkage and loader helper ---
-    nb.cells[
-        10
-    ].source = """# Load DIII-D shot disturbance from validation-linked storage
+    nb.cells[10].source = """# Load DIII-D shot disturbance from validation-linked storage
 try:
     import h5py  # type: ignore
     HAS_H5PY = True
@@ -478,8 +458,7 @@ if HAS_MPL:
     c12 = _replace_once(
         c12,
         "MPC_LITE_LAMBDA = 0.18\n",
-        "MPC_LITE_LAMBDA = 0.18\n"
-        "OPEN_LOOP_ACTION = np.array([0.5, 0.5, 0.5], dtype=np.float64)\n",
+        "MPC_LITE_LAMBDA = 0.18\nOPEN_LOOP_ACTION = np.array([0.5, 0.5, 0.5], dtype=np.float64)\n",
     )
     c12 = _replace_once(
         c12,
@@ -528,9 +507,7 @@ if HAS_MPL:
     nb.cells[12].source = c12
 
     # --- code cell 14: include open-loop and non-negotiable plots ---
-    nb.cells[
-        14
-    ].source = """results = {
+    nb.cells[14].source = """results = {
     "Open-loop": run_closed_loop("Open-loop", seed_offset=0),
     "SNN": run_closed_loop("SNN", seed_offset=0),
     "PID": run_closed_loop("PID", seed_offset=0),

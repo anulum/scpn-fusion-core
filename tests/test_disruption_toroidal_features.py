@@ -55,7 +55,7 @@ def test_build_disruption_feature_vector_rejects_invalid_signal(signal: np.ndarr
     ],
 )
 def test_build_disruption_feature_vector_rejects_non_finite_toroidal_observables(
-    observables: dict[str, float]
+    observables: dict[str, float],
 ) -> None:
     with pytest.raises(ValueError, match="toroidal observables"):
         build_disruption_feature_vector(np.linspace(0.2, 1.0, 32), observables)

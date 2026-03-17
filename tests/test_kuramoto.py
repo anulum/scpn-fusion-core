@@ -12,6 +12,7 @@ test_phase_kuramoto.py covers the basic happy paths and UPDE integration.
 This file targets edge cases, boundary conditions, and numerical properties
 that the existing file does not exercise.
 """
+
 from __future__ import annotations
 
 import numpy as np

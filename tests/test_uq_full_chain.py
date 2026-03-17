@@ -54,7 +54,6 @@ SPARC_SCENARIO = PlasmaScenario(
 
 
 class TestFullChainReturnShape:
-
     def test_full_chain_returns_expected_keys(self):
         """All band fields must be present on FullChainUQResult."""
         r = quantify_full_chain(ITER_SCENARIO, n_samples=200, seed=42)
@@ -86,7 +85,6 @@ class TestFullChainReturnShape:
 
 
 class TestITERScenario:
-
     def test_full_chain_iter_scenario(self):
         """ITER scenario: Q median 5-40, tau_E 2-8 s.
 
@@ -102,7 +100,6 @@ class TestITERScenario:
 
 
 class TestSPARCScenario:
-
     def test_full_chain_sparc_scenario(self):
         """SPARC scenario: positive Q and tau_E, with tau_E < ITER.
 
@@ -124,7 +121,6 @@ class TestSPARCScenario:
 
 
 class TestBandOrdering:
-
     def test_full_chain_bands_ordered(self):
         """5th percentile < 50th < 95th for all band quantities."""
         r = quantify_full_chain(ITER_SCENARIO, n_samples=3000, seed=99)
@@ -135,7 +131,6 @@ class TestBandOrdering:
 
 
 class TestReproducibility:
-
     def test_full_chain_reproducible(self):
         """Same seed must produce identical results."""
         r1 = quantify_full_chain(ITER_SCENARIO, n_samples=500, seed=42)
@@ -148,7 +143,6 @@ class TestReproducibility:
 
 
 class TestSampleConsistency:
-
     def test_full_chain_more_samples_consistent(self):
         """Sigma from 500 and 5000 samples should be within 50% of each other."""
         r_small = quantify_full_chain(ITER_SCENARIO, n_samples=500, seed=1)
@@ -158,7 +152,6 @@ class TestSampleConsistency:
 
 
 class TestInputValidation:
-
     @pytest.mark.parametrize("n_samples", [0, -5, 2.5, "100", True])
     def test_invalid_n_samples_rejected(self, n_samples):
         with pytest.raises(ValueError, match="n_samples"):
@@ -200,7 +193,6 @@ class TestInputValidation:
 
 
 class TestChiUncertaintyEffect:
-
     def test_chi_uncertainty_widens_tau_e_band(self):
         """Larger chi_gB_sigma should produce a wider tau_E band."""
         r_narrow = quantify_full_chain(
@@ -218,13 +210,11 @@ class TestChiUncertaintyEffect:
         width_narrow = r_narrow.tau_E_bands[2] - r_narrow.tau_E_bands[0]
         width_wide = r_wide.tau_E_bands[2] - r_wide.tau_E_bands[0]
         assert width_wide > width_narrow, (
-            f"Expected wider band with chi_sigma=0.6 ({width_wide:.3f}) "
-            f"vs 0.1 ({width_narrow:.3f})"
+            f"Expected wider band with chi_sigma=0.6 ({width_wide:.3f}) vs 0.1 ({width_narrow:.3f})"
         )
 
 
 class TestBoundaryUncertaintyEffect:
-
     def test_boundary_uncertainty_affects_psi(self):
         """Larger boundary_sigma should widen the psi_nrmse band."""
         r_tight = quantify_full_chain(
@@ -248,7 +238,6 @@ class TestBoundaryUncertaintyEffect:
 
 
 class TestSummarizeUQ:
-
     def test_summarize_uq_json_serializable(self):
         """summarize_uq() output must round-trip through json.dumps."""
         r = quantify_full_chain(ITER_SCENARIO, n_samples=200, seed=1)
@@ -267,7 +256,6 @@ class TestSummarizeUQ:
 
 
 class TestBackwardCompatibility:
-
     def test_basic_uq_still_works(self):
         """Existing quantify_uncertainty() must remain unchanged."""
         r = quantify_uncertainty(ITER_SCENARIO, n_samples=500, seed=42)
@@ -281,7 +269,6 @@ class TestBackwardCompatibility:
 
 
 class TestDataclassDefaults:
-
     def test_equilibrium_uncertainty_defaults(self):
         """EquilibriumUncertainty should construct with sensible defaults."""
         eq = EquilibriumUncertainty()

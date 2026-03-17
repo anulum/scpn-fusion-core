@@ -148,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
 
     g = report["gmvr_01"]
     print("GMVR-01 compact-constraint validation complete.")
-    print(f"feasible_count={g['feasible_count']}, " f"passes_thresholds={g['passes_thresholds']}")
+    print(f"feasible_count={g['feasible_count']}, passes_thresholds={g['passes_thresholds']}")
 
     if args.strict and not g["passes_thresholds"]:
         return 2

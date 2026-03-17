@@ -253,7 +253,7 @@ def main(argv: list[str] | None = None):
         print(
             f"  {'Machine':12s} {'Shot':12s} {'tau_meas':>10s} {'tau_IPB98':>10s} {'RelErr':>8s} {'H98_meas':>9s} {'H98_calc':>9s}"
         )
-        print(f"  {'-'*12} {'-'*12} {'-'*10} {'-'*10} {'-'*8} {'-'*9} {'-'*9}")
+        print(f"  {'-' * 12} {'-' * 12} {'-' * 10} {'-' * 10} {'-' * 8} {'-' * 9} {'-' * 9}")
         for r in results:
             print(
                 f"  {r['machine']:12s} {r['shot']:12s} "
@@ -288,10 +288,10 @@ def main(argv: list[str] | None = None):
             )
             if ref:
                 print(
-                    f"    Published: R={ref.get('R_major_m','?')}m, "
-                    f"B_T={ref.get('B_T','?')}T, "
-                    f"kappa={ref.get('kappa','?')}, "
-                    f"delta={ref.get('delta','?')}"
+                    f"    Published: R={ref.get('R_major_m', '?')}m, "
+                    f"B_T={ref.get('B_T', '?')}T, "
+                    f"kappa={ref.get('kappa', '?')}, "
+                    f"delta={ref.get('delta', '?')}"
                 )
             print()
 

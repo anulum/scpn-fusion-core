@@ -109,9 +109,7 @@ class TestTGLFOutputParser:
     def test_parse_key_value_output(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
-            out_path.write_text(
-                "CHI_I = 1.5\n" "CHI_E = 0.8\n" "GAMMA_MAX = 0.12\n" "OTHER = ignored\n"
-            )
+            out_path.write_text("CHI_I = 1.5\nCHI_E = 0.8\nGAMMA_MAX = 0.12\nOTHER = ignored\n")
             result = _parse_tglf_run_output(out_path, rho=0.5)
             assert result.rho == pytest.approx(0.5)
             assert result.chi_i == pytest.approx(1.5)
@@ -137,9 +135,7 @@ class TestTGLFOutputParser:
     def test_parse_malformed_lines(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
-            out_path.write_text(
-                "# comment\n" "no_equals_here\n" "CHI_I = notanumber\n" "CHI_E = 1.5\n"
-            )
+            out_path.write_text("# comment\nno_equals_here\nCHI_I = notanumber\nCHI_E = 1.5\n")
             result = _parse_tglf_run_output(out_path, rho=0.5)
             assert result.chi_i == 0.0  # couldn't parse
             assert result.chi_e == pytest.approx(1.5)
@@ -147,7 +143,7 @@ class TestTGLFOutputParser:
     def test_parse_non_finite_values(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
-            out_path.write_text("CHI_I = NaN\n" "CHI_E = Infinity\n" "GAMMA_MAX = -Infinity\n")
+            out_path.write_text("CHI_I = NaN\nCHI_E = Infinity\nGAMMA_MAX = -Infinity\n")
             result = _parse_tglf_run_output(out_path, rho=0.5)
             assert result.chi_i == 0.0
             assert result.chi_e == 0.0

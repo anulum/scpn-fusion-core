@@ -9,6 +9,7 @@ Focused tests for the UPDESystem class beyond what test_phase_kuramoto.py
 covers.  Emphasis on edge cases, K_override, actuation_gain, alpha/zeta
 interactions, and Lyapunov trajectory tracking.
 """
+
 from __future__ import annotations
 
 import numpy as np

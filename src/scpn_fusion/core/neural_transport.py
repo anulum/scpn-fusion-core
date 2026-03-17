@@ -210,7 +210,7 @@ def critical_gradient_model(
     """
     if not (_STIFFNESS_MIN <= stiffness <= _STIFFNESS_MAX):
         raise ValueError(
-            f"stiffness={stiffness} outside physical range " f"[{_STIFFNESS_MIN}, {_STIFFNESS_MAX}]"
+            f"stiffness={stiffness} outside physical range [{_STIFFNESS_MIN}, {_STIFFNESS_MAX}]"
         )
     eps = float(np.clip(inp.rho * inp.a_minor_m / max(inp.r_major_m, 1e-6), 0.0, 0.8))
     trapped_frac = float(np.clip(1.46 * np.sqrt(max(eps, 0.0)), 0.0, 1.0))
@@ -617,8 +617,8 @@ class NeuralTransportModel:
                     )
                     return
 
-                layers_w = [data[f"w{i+1}"] for i in range(n_layers)]
-                layers_b = [data[f"b{i+1}"] for i in range(n_layers)]
+                layers_w = [data[f"w{i + 1}"] for i in range(n_layers)]
+                layers_b = [data[f"b{i + 1}"] for i in range(n_layers)]
 
                 # Check for log-space transform flag
                 log_transform = (

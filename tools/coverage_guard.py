@@ -257,8 +257,7 @@ def evaluate(summary: CoverageSummary, thresholds: dict[str, object]) -> list[st
                 continue
             if observed < target:
                 failures.append(
-                    f"Domain '{domain}' branch coverage {observed:.2f}% < "
-                    f"threshold {target:.2f}%."
+                    f"Domain '{domain}' branch coverage {observed:.2f}% < threshold {target:.2f}%."
                 )
 
     file_min_branch = thresholds.get("file_min_branch_rate", {})
@@ -271,8 +270,7 @@ def evaluate(summary: CoverageSummary, thresholds: dict[str, object]) -> list[st
                 continue
             if observed < target:
                 failures.append(
-                    f"File '{filename}' branch coverage {observed:.2f}% < "
-                    f"threshold {target:.2f}%."
+                    f"File '{filename}' branch coverage {observed:.2f}% < threshold {target:.2f}%."
                 )
 
     return failures

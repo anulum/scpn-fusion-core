@@ -105,8 +105,8 @@ class StabilityAnalyzer:
         # 1. Base Forces
         Fr0, Fz0, n0 = self.calculate_forces(R_target, Z_target, Ip)
         print("Equilibrium Check:")
-        print(f"  Radial Force:   {Fr0/1e6:.2f} MN (Should be 0)")
-        print(f"  Vertical Force: {Fz0/1e6:.2f} MN (Should be 0)")
+        print(f"  Radial Force:   {Fr0 / 1e6:.2f} MN (Should be 0)")
+        print(f"  Vertical Force: {Fz0 / 1e6:.2f} MN (Should be 0)")
         print(f"  Field Index n:  {n0:.3f}")
 
         # 2. Build Stiffness Matrix K (Jacobian)
@@ -129,8 +129,8 @@ class StabilityAnalyzer:
         K_matrix = np.array([[K_RR, K_RZ], [K_ZR, K_ZZ]])
 
         print("\nStiffness Matrix K (MN/m):")
-        print(f"  [[ {K_RR/1e6:.2f}, {K_RZ/1e6:.2f} ]")
-        print(f"   [ {K_ZR/1e6:.2f}, {K_ZZ/1e6:.2f} ]]")
+        print(f"  [[ {K_RR / 1e6:.2f}, {K_RZ / 1e6:.2f} ]")
+        print(f"   [ {K_ZR / 1e6:.2f}, {K_ZZ / 1e6:.2f} ]]")
 
         # 3. Eigenvalues
         eigvals, eigvecs = np.linalg.eig(K_matrix)
@@ -139,7 +139,7 @@ class StabilityAnalyzer:
         for i, ev in enumerate(eigvals):
             status = "STABLE (Restoring Force)" if ev > 0 else "UNSTABLE (Exp Growth)"
             mode = "Radial" if abs(eigvecs[0, i]) > abs(eigvecs[1, i]) else "Vertical"
-            print(f"  Mode {mode}: Lambda={ev/1e6:.2f} -> {status}")
+            print(f"  Mode {mode}: Lambda={ev / 1e6:.2f} -> {status}")
 
         # Physics interpretation of n-index
         # Radial Stability requires: n < 1.5

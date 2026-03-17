@@ -213,8 +213,7 @@ def main(argv: list[str] | None = None) -> int:
         existing = manifest_path.read_text(encoding="utf-8")
         if existing != rendered:
             print(
-                "Shot manifest is stale. "
-                "Run tools/generate_disruption_shot_manifest.py to refresh."
+                "Shot manifest is stale. Run tools/generate_disruption_shot_manifest.py to refresh."
             )
             return 1
         print(f"Shot manifest is up to date: {manifest_path}")

@@ -159,7 +159,7 @@ def render_markdown(claims: tuple[ClaimSpec, ...], manifest_path: str) -> str:
             )
             for pattern in claim.evidence_patterns:
                 lines.append(
-                    f"| `{_escape_cell(pattern.file)}` | " f"`{_escape_cell(pattern.pattern)}` |"
+                    f"| `{_escape_cell(pattern.file)}` | `{_escape_cell(pattern.pattern)}` |"
                 )
         else:
             lines.append("- (none)")

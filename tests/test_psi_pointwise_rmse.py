@@ -191,9 +191,9 @@ class TestManufacturedSolve:
         # profile interpolation (p'/FF' from GEQDSK).  A value under 1.0
         # confirms the solver converges; under 0.1 would require higher-order
         # stencils or more SOR iterations than we allow in CI.
-        assert (
-            metrics["psi_relative_l2"] < 1.0
-        ), f"Relative L2 too large: {metrics['psi_relative_l2']}"
+        assert metrics["psi_relative_l2"] < 1.0, (
+            f"Relative L2 too large: {metrics['psi_relative_l2']}"
+        )
         assert np.isfinite(metrics["psi_rmse_norm"])
 
     def test_vectorised_solver_honours_tolerance_for_early_stop(self):

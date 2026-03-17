@@ -123,7 +123,7 @@ class FokkerPlanckSolver:
         Assumption: seed fraction fixed at 1e10 (t_quench/tau_coll dependence ignored).
         """
         p_th_init = np.sqrt(2 * T_initial_eV * E_CHARGE / (ME * C**2))
-        f_hottail = np.exp(-self.p**2 / (p_th_init**2))
+        f_hottail = np.exp(-(self.p**2) / (p_th_init**2))
         self.f = np.maximum(self.f, f_hottail * 1e10)
         logger.info("Hottail seed: %.2e m^-3", np.sum(self.f * self.dp))
 

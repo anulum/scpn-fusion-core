@@ -193,8 +193,8 @@ def _train_jax(
         key, k = random.split(key)
         fan_in = dims[i]
         scale = np.sqrt(2.0 / fan_in)
-        params[f"w{i+1}"] = random.normal(k, (dims[i], dims[i + 1])) * scale
-        params[f"b{i+1}"] = jnp.zeros(dims[i + 1])
+        params[f"w{i + 1}"] = random.normal(k, (dims[i], dims[i + 1])) * scale
+        params[f"b{i + 1}"] = jnp.zeros(dims[i + 1])
 
     # Normalization stats from training data
     input_mean = jnp.array(np.mean(X_train, axis=0))
@@ -226,13 +226,13 @@ def _train_jax(
         _has_flux = float(np.mean(np.sum(Y_train, axis=1) > 0.01))
         _gate_init = np.log(_has_flux / max(1.0 - _has_flux, 0.01))  # inv_sigmoid
         _full_bias = np.concatenate([_init_bias, np.full(OUTPUT_DIM, _gate_init)])
-        params[f"b{n_layers+1}"] = jnp.array(_full_bias)
+        params[f"b{n_layers + 1}"] = jnp.array(_full_bias)
         print(
             f"  Output bias init: flux={_init_bias}, gate={_gate_init:.2f} "
             f"(flux fraction={_has_flux:.2f}, target mean: {_y_mean})"
         )
     else:
-        params[f"b{n_layers+1}"] = jnp.array(_init_bias)
+        params[f"b{n_layers + 1}"] = jnp.array(_init_bias)
         print(f"  Output bias init: {_init_bias} (target mean: {_y_mean})")
 
     params["input_mean"] = input_mean
@@ -248,8 +248,8 @@ def _train_jax(
         """Shared backbone: input norm + hidden layers -> raw output."""
         h = (x - params["input_mean"]) / jnp.maximum(params["input_std"], 1e-8)
         for i in range(n_layers):
-            h = jax.nn.gelu(h @ params[f"w{i+1}"] + params[f"b{i+1}"])
-        return h @ params[f"w{n_layers+1}"] + params[f"b{n_layers+1}"]
+            h = jax.nn.gelu(h @ params[f"w{i + 1}"] + params[f"b{i + 1}"])
+        return h @ params[f"w{n_layers + 1}"] + params[f"b{n_layers + 1}"]
 
     @jit
     def forward(params, x):
@@ -574,8 +574,8 @@ def verify_and_save(
         h = (x - params["input_mean"]) / jnp.maximum(params["input_std"], 1e-8)
         n_layers_local = (len([k for k in params if k.startswith("w")])) - 1
         for i in range(n_layers_local):
-            h = jax.nn.gelu(h @ params[f"w{i+1}"] + params[f"b{i+1}"])
-        raw = h @ params[f"w{n_layers_local+1}"] + params[f"b{n_layers_local+1}"]
+            h = jax.nn.gelu(h @ params[f"w{i + 1}"] + params[f"b{i + 1}"])
+        raw = h @ params[f"w{n_layers_local + 1}"] + params[f"b{n_layers_local + 1}"]
         if gated:
             flux = jax.nn.softplus(raw[..., :OUTPUT_DIM]) * params["output_scale"]
             gate = jax.nn.sigmoid(raw[..., OUTPUT_DIM:])
@@ -623,7 +623,7 @@ def verify_and_save(
     if val_loss > train_loss * 3.0 and train_loss > 0:
         print(f"  WARN: val_loss ({val_loss:.6f}) > 3x train_loss ({train_loss:.6f})")
     else:
-        print(f"  PASS: no severe overfitting (val/train = {val_loss/max(train_loss, 1e-8):.2f})")
+        print(f"  PASS: no severe overfitting (val/train = {val_loss / max(train_loss, 1e-8):.2f})")
 
     # Gate 3: per-output relative L2 (always in linear space)
     for i, name in enumerate(output_names):
@@ -665,8 +665,8 @@ def verify_and_save(
     if is_residual and stiff_coeffs is not None:
         save_dict["stiff_coeffs"] = stiff_coeffs
     for i in range(n_layers + 1):
-        save_dict[f"w{i+1}"] = params[f"w{i+1}"]
-        save_dict[f"b{i+1}"] = params[f"b{i+1}"]
+        save_dict[f"w{i + 1}"] = params[f"w{i + 1}"]
+        save_dict[f"b{i + 1}"] = params[f"b{i + 1}"]
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     np.savez(output_path, **save_dict)
@@ -856,9 +856,9 @@ def main() -> None:
 
     print(f"\nData loaded: train={X_train.shape}, val={X_val.shape}, test={X_test.shape}")
     print(
-        f"Y ranges: chi_e=[{Y_train[:,0].min():.2f}, {Y_train[:,0].max():.2f}], "
-        f"chi_i=[{Y_train[:,1].min():.2f}, {Y_train[:,1].max():.2f}], "
-        f"D_e=[{Y_train[:,2].min():.2f}, {Y_train[:,2].max():.2f}]"
+        f"Y ranges: chi_e=[{Y_train[:, 0].min():.2f}, {Y_train[:, 0].max():.2f}], "
+        f"chi_i=[{Y_train[:, 1].min():.2f}, {Y_train[:, 1].max():.2f}], "
+        f"D_e=[{Y_train[:, 2].min():.2f}, {Y_train[:, 2].max():.2f}]"
     )
 
     # Target transformation
@@ -896,9 +896,9 @@ def main() -> None:
         print("\nLog-transform applied: training on log(1+Y)")
 
     print(
-        f"Y train ranges: [{Y_train[:,0].min():.3f}, {Y_train[:,0].max():.3f}], "
-        f"[{Y_train[:,1].min():.3f}, {Y_train[:,1].max():.3f}], "
-        f"[{Y_train[:,2].min():.3f}, {Y_train[:,2].max():.3f}]"
+        f"Y train ranges: [{Y_train[:, 0].min():.3f}, {Y_train[:, 0].max():.3f}], "
+        f"[{Y_train[:, 1].min():.3f}, {Y_train[:, 1].max():.3f}], "
+        f"[{Y_train[:, 2].min():.3f}, {Y_train[:, 2].max():.3f}]"
     )
 
     # Residual learning: subtract stiff-transport baseline
@@ -914,14 +914,14 @@ def main() -> None:
         print(f"\nResidual mode: stiff coefficients = {_stiff_coeffs}")
         print(
             f"  Baseline explains: "
-            f"chi_e={1 - np.var(Y_train[:,0]) / max(np.var(Y_train[:,0] + base_train[:,0]), 1e-8):.1%}, "
-            f"chi_i={1 - np.var(Y_train[:,1]) / max(np.var(Y_train[:,1] + base_train[:,1]), 1e-8):.1%}, "
-            f"D_e={1 - np.var(Y_train[:,2]) / max(np.var(Y_train[:,2] + base_train[:,2]), 1e-8):.1%}"
+            f"chi_e={1 - np.var(Y_train[:, 0]) / max(np.var(Y_train[:, 0] + base_train[:, 0]), 1e-8):.1%}, "
+            f"chi_i={1 - np.var(Y_train[:, 1]) / max(np.var(Y_train[:, 1] + base_train[:, 1]), 1e-8):.1%}, "
+            f"D_e={1 - np.var(Y_train[:, 2]) / max(np.var(Y_train[:, 2] + base_train[:, 2]), 1e-8):.1%}"
         )
         print(
-            f"  Residual ranges: [{Y_train[:,0].min():.2f}, {Y_train[:,0].max():.2f}], "
-            f"[{Y_train[:,1].min():.2f}, {Y_train[:,1].max():.2f}], "
-            f"[{Y_train[:,2].min():.2f}, {Y_train[:,2].max():.2f}]"
+            f"  Residual ranges: [{Y_train[:, 0].min():.2f}, {Y_train[:, 0].max():.2f}], "
+            f"[{Y_train[:, 1].min():.2f}, {Y_train[:, 1].max():.2f}], "
+            f"[{Y_train[:, 2].min():.2f}, {Y_train[:, 2].max():.2f}]"
         )
 
     # Train
