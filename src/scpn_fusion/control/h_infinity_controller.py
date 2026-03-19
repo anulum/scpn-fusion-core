@@ -5,22 +5,23 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — H-Infinity Robust Controller
 """
-H-Infinity robust controller for tokamak vertical stability control.
+H-infinity-checked LQG controller for tokamak vertical stability.
 
-Implements the Doyle-Glover-Khargonekar H-infinity synthesis via the
-two algebraic Riccati equations (ARE) for gamma feasibility analysis,
-then derives discrete-time gains via the discrete algebraic Riccati
-equation (DARE) on the ZOH-discretised plant for a given sampling dt.
+Synthesis phase: solves the continuous-time Doyle-Glover-Khargonekar
+H-infinity AREs to verify gamma feasibility for the disturbance
+attenuation level.
+
+Runtime phase: discretises the plant via ZOH and derives DARE-based
+state-feedback and Kalman observer gains — standard discrete LQG.
+The H-infinity feasibility check ensures the LQG design operates
+within a robustly attainable disturbance bound, but the executed
+control law is LQG, not a full H-infinity controller.
 
 The plant model is a linearised vertical stability model:
 
     dx/dt = A x + B1 w + B2 u
     z     = C1 x + D12 u
     y     = C2 x + D21 w
-
-This provides guaranteed robust stability for up to 20% multiplicative
-plant uncertainty (verified by closed-loop simulation with perturbed
-growth rates).
 """
 
 from __future__ import annotations

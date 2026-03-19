@@ -165,6 +165,8 @@ def ntm_stability(
     w_marginal = -j_bs_frac * a / denom
     w_marginal = np.maximum(w_marginal, 0.0)
 
+    # "Unstable" here means a finite seed island exceeding w_marginal can grow
+    # via bootstrap drive — triggerability, not spontaneous growth from zero.
     ntm_unstable = (w_marginal > 0.0) & (j_bs_frac > 0.0) & (delta_prime < 0.0)
 
     most_unstable_rho: float | None = None

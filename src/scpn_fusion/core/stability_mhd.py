@@ -241,7 +241,10 @@ def compute_q_profile(
 
 
 def mercier_stability(qp: QProfile) -> MercierResult:
-    """Evaluate the Mercier interchange stability criterion (Suydam form).
+    """Evaluate interchange stability using the Suydam approximation.
+
+    This is a low-order cylindrical proxy for the full Mercier criterion,
+    not a complete toroidal Mercier evaluation.
 
     D_M = s^2 / 4 - alpha_mhd
     Stable where D_M >= 0.

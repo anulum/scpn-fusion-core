@@ -88,7 +88,7 @@ class OODDetector:
     ----------
     mahalanobis_threshold : float
         Mahalanobis distance above which an input is flagged OOD.
-        Default 4.0 corresponds to ~99.99% chi-squared quantile for 10D.
+        Default 4.0 is a heuristic threshold; tune on held-out data.
     soft_sigma_threshold : float
         Number of training-set standard deviations for soft range check.
     ensemble_disagreement_threshold : float

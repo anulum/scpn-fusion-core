@@ -27,9 +27,9 @@ const R_SAFE_MIN: f64 = 1e-6;
 ///
 /// Returns `(B_R, B_Z)` as `[nz, nr]` arrays.
 ///
-/// NOTE: The Python code has swapped variable names (`dPsi_dR` is actually gradient
-/// along axis 0 = Z direction). The physics usage is correct because both assignments
-/// swap consistently. This Rust port uses correct naming from the start.
+/// NOTE: The Python code had a bug where np.gradient spacings (dR, dZ) were swapped
+/// relative to the array axes (Z=axis0, R=axis1), giving wrong magnitudes when dR!=dZ.
+/// Fixed in commit 96a9d5e+. This Rust port uses correct axis ordering.
 pub fn compute_b_field(
     psi: &Array2<f64>,
     grid: &Grid2D,

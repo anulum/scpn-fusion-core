@@ -125,7 +125,11 @@ def banana_plateau_chi(
     nu_star: float,
     z_eff: float,
 ) -> float:
-    """Compute banana-plateau neoclassical diffusivity with Z_eff dependence.
+    """Dimensionless banana-plateau neoclassical scaling factor.
+
+    Returns a dimensionless quantity proportional to the ion thermal
+    diffusivity in the banana-plateau regime. Multiply by rho_i^2 * v_ti / R
+    to obtain physical chi_i [m^2/s].
 
     Parameters
     ----------
@@ -221,6 +225,7 @@ def sauter_bootstrap(
             continue
 
         # j_bs ≈ -L31 (dp/dr) / B_pol, with dp/dr = (dp/dρ)/a
-        j_bs[i] = abs(L31 * grad_p / (a * B_pol))
+        # Sign preserved: negative grad_p (normal profile) gives positive j_bs
+        j_bs[i] = -L31 * grad_p / (a * B_pol)
 
     return j_bs

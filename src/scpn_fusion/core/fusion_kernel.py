@@ -266,8 +266,8 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
             return (0.0, 0.0), 0.0
         psi_safe = np.nan_to_num(psi_raw, nan=0.0, posinf=1e300, neginf=-1e300)
 
-        dPsi_dR, dPsi_dZ = np.gradient(psi_safe, self.dR, self.dZ)
-        # ``hypot`` avoids overflow/underflow in extreme gradient excursions.
+        # Psi is indexed (Z, R): axis-0 = Z, axis-1 = R
+        dPsi_dZ, dPsi_dR = np.gradient(psi_safe, self.dZ, self.dR)
         B_mag = np.hypot(dPsi_dR, dPsi_dZ)
 
         mask_divertor = (self.cfg["dimensions"]["Z_min"] * 0.5) > self.ZZ
@@ -443,7 +443,8 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
 
     def compute_b_field(self) -> None:
         """Derive the magnetic field components from the solved Psi."""
-        dPsi_dR, dPsi_dZ = np.gradient(self.Psi, self.dR, self.dZ)
+        # Psi is indexed (Z, R): axis-0 = Z, axis-1 = R
+        dPsi_dZ, dPsi_dR = np.gradient(self.Psi, self.dZ, self.dR)
         R_safe = np.maximum(self.RR, 1e-6)
         self.B_R = -(1.0 / R_safe) * dPsi_dZ
         self.B_Z = (1.0 / R_safe) * dPsi_dR

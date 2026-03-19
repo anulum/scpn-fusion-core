@@ -134,7 +134,8 @@ class RustAcceleratedKernel:
             )
         if not np.all(np.isfinite(self.Psi)):
             raise ValueError("Psi must contain finite values before B-field computation")
-        dPsi_dR, dPsi_dZ = np.gradient(self.Psi, self.dR, self.dZ)
+        # Psi is indexed (Z, R): axis-0 = Z, axis-1 = R
+        dPsi_dZ, dPsi_dR = np.gradient(self.Psi, self.dZ, self.dR)
         R_safe = np.maximum(self.RR, 1e-6)
         self.B_R = -(1.0 / R_safe) * dPsi_dZ
         self.B_Z = (1.0 / R_safe) * dPsi_dR
@@ -169,7 +170,8 @@ class RustAcceleratedKernel:
         Locate the null point (B=0) using local minimization.
         Matches Python FusionKernel.find_x_point() interface.
         """
-        dPsi_dR, dPsi_dZ = np.gradient(Psi, self.dR, self.dZ)
+        # Psi is indexed (Z, R): axis-0 = Z, axis-1 = R
+        dPsi_dZ, dPsi_dR = np.gradient(Psi, self.dZ, self.dR)
         B_mag = np.sqrt(dPsi_dR**2 + dPsi_dZ**2)
 
         mask_divertor = (self.cfg["dimensions"]["Z_min"] * 0.5) > self.ZZ

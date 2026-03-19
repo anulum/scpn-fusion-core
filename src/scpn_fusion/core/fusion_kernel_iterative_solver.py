@@ -167,7 +167,7 @@ class FusionKernelIterativeSolverMixin:
         coarse[0, :] = fine[0, ::2][:nr_c]
         coarse[-1, :] = fine[-1, ::2][:nr_c]
         coarse[:, 0] = fine[::2, 0][:nz_c]
-        coarse[:, -1] = fine[::2, -1][:nr_c]
+        coarse[:, -1] = fine[::2, -1][:nz_c]
 
         return coarse
 

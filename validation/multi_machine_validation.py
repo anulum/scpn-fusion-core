@@ -4,6 +4,11 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Multi-Machine Validation Campaign
+#
+# WARNING: This script uses synthetic diagnostics with random perturbations
+# and mock metrics. It is a smoke test for the validation pipeline, NOT
+# evidence of physics accuracy. Real validation is in validate_real_shots.py
+# and the benchmark suite (validation/benchmark_*.py).
 from __future__ import annotations
 
 import dataclasses

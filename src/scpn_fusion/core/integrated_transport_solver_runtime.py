@@ -327,9 +327,17 @@ class TransportSolverRuntimeMixin(
             e_keV_J = 1.602176634e-16
         dV = self._rho_volume_element()
 
-        W_before = 1.5 * np.sum(self.ne * 1e19 * Ti_old * e_keV_J * dV)
-        W_after = 1.5 * np.sum(self.ne * 1e19 * self.Ti * e_keV_J * dV)
-        dW_source = dt * 1.5 * np.sum(self.ne * 1e19 * net_source_i * e_keV_J * dV)
+        # Total thermal energy: ions + electrons (Te = Ti in single-ion mode)
+        if self.multi_ion:
+            W_before = 1.5 * np.sum(self.ne * 1e19 * (Ti_old + Te_old) * e_keV_J * dV)
+            W_after = 1.5 * np.sum(self.ne * 1e19 * (self.Ti + self.Te) * e_keV_J * dV)
+            dW_source = dt * 1.5 * np.sum(
+                self.ne * 1e19 * (net_source_i + net_source_e) * e_keV_J * dV
+            )
+        else:
+            W_before = 1.5 * np.sum(self.ne * 1e19 * Ti_old * e_keV_J * dV)
+            W_after = 1.5 * np.sum(self.ne * 1e19 * self.Ti * e_keV_J * dV)
+            dW_source = dt * 1.5 * np.sum(self.ne * 1e19 * net_source_i * e_keV_J * dV)
 
         dW_actual = W_after - W_before
         self._last_conservation_error = abs(dW_actual - dW_source) / max(abs(W_before), 1e-10)
