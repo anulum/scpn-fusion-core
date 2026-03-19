@@ -14,7 +14,7 @@ authors:
     given-names: "Miroslav"
     orcid: "https://orcid.org/0009-0009-3560-0851"
 version: "3.9.3"
-date-released: "2026-03-02"
+date-released: "2026-03-14"
 license: "AGPL-3.0-or-later"
 repository-code: "https://github.com/anulum/scpn-fusion-core"
 url: "https://www.anulum.li"

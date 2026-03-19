@@ -8,7 +8,6 @@ version = "3.9.3"
 description = "SCPN Fusion Core - Advanced Plasma Physics & Control Suite"
 authors = [
     {name = "Miroslav Sotek"},
-    {name = "Michal Reiprich"}
 ]
 license = {text = "AGPL-3.0-or-later"}
 classifiers = [

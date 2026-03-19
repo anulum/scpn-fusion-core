@@ -10,7 +10,7 @@ Requirements
 ------------
 
 - Python 3.9 or later
-- NumPy >= 1.22
+- NumPy >= 1.24
 - SciPy >= 1.8
 
 Optional runtime stacks are exposed via extras:
@@ -62,7 +62,7 @@ The ``[dev]`` extra installs test/type-check tooling only.
 Rust Kernel Build (Optional)
 -----------------------------
 
-The ``scpn-fusion-rs/`` directory contains a 10-crate Rust workspace
+The ``scpn-fusion-rs/`` directory contains a 11-crate Rust workspace
 that mirrors the Python package structure.  Building it provides 10--50x
 speedups for equilibrium solves, inverse reconstruction, and transport
 stepping.

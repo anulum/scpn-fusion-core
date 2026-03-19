@@ -14,7 +14,7 @@ first-principles transport/gyrokinetic code.
 | QLKNN-10D real-gyrokinetic transport surrogate | test_rel_L2 = 0.094 (1024×512×256 gated MLP, 500K samples, GPU L40S), Zenodo DOI 10.5281/zenodo.3497066 |
 | IPB98(y,2) confinement scaling on 53 shots / 24 machines | `validation/reference_data/itpa/hmode_confinement.csv` |
 | 8 SPARC EFIT GEQDSK equilibrium validation | `validation/reference_data/sparc/` (MIT, CFS) |
-| Solov'ev manufactured-source parity | **PASS** — ψ NRMSE 0.000 across 5 tokamak geometries (v3.9.4). 1/R stencil sign error fixed. |
+| Solov'ev manufactured-source parity | **PASS** — ψ NRMSE 0.000 across 5 tokamak geometries (v3.9.3). 1/R stencil sign error fixed. |
 | 0% disruption rate across 1,000-shot stress campaigns | `validation/stress_test_campaign.py` |
 | JAX-differentiable GS equilibrium (autodiff through Picard+SOR) | `core/jax_equilibrium_solver.py`, 9 tests |
 | Gymnasium RL environment for controller training | `control/gym_tokamak_env.py`, Stable-Baselines3/RLlib compatible |

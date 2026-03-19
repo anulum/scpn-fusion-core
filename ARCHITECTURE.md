@@ -4,7 +4,7 @@ SCPN Fusion Core is a three-tier plasma physics framework: a Rust GPU/WGPU
 compute engine, a Python equilibrium/transport/control layer, and a
 validation pipeline backed by real tokamak data.
 
-**Totals:** 234 Python source files, 62,570 lines, 11 Rust crates, 2859 tests.
+**Totals:** 236 Python source files, 65,664 lines, 11 Rust crates, 3,815 tests.
 
 ## Python Subsystems
 

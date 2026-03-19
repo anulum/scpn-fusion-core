@@ -132,3 +132,6 @@ run_audit.py
 run_audit_fast.py
 run_audit_fix.py
 pytest_results.log
+
+# Internal business docs — never commit
+docs/internal/

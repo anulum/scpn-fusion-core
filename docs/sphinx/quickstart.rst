@@ -192,11 +192,18 @@ Available Simulation Modes
 Tutorial Notebooks
 ------------------
 
-Six Jupyter notebooks are provided in ``examples/``:
+Fifteen Jupyter notebooks are provided in ``examples/``:
 
-1. ``01_compact_reactor_search`` -- MVR-0.96 optimizer walkthrough
-2. ``02_neuro_symbolic_compiler`` -- Petri net to SNN pipeline
-3. ``03_grad_shafranov_equilibrium`` -- Free-boundary equilibrium tutorial
-4. ``04_divertor_and_neutronics`` -- Divertor heat flux and TBR
-5. ``05_validation_against_experiments`` -- Cross-validation vs SPARC and ITPA
-6. ``06_inverse_and_transport_benchmarks`` -- Inverse solver and neural transport
+1. ``neuro_symbolic_control_demo_v2`` -- **Golden Base v2**: formal proofs, closed-loop control, shot replay
+2. ``01_compact_reactor_search`` -- MVR-0.96 compact reactor optimizer
+3. ``02_neuro_symbolic_compiler`` -- Petri net to SNN compilation pipeline
+4. ``03_grad_shafranov_equilibrium`` -- Free-boundary equilibrium solver
+5. ``04_divertor_and_neutronics`` -- Divertor heat flux and TBR
+6. ``05_validation_against_experiments`` -- Cross-validation vs SPARC and ITPA
+7. ``06_inverse_and_transport_benchmarks`` -- Inverse solver and neural transport
+8. ``07_multi_ion_transport`` -- D/T/He-ash multi-species transport evolution
+9. ``08_mhd_stability`` -- Mercier, ballooning, KS, Troyon, and NTM criteria
+10. ``09_coil_optimization`` -- Free-boundary coil current optimization (Tikhonov)
+11. ``10_uncertainty_quantification`` -- Full-chain Monte Carlo UQ
+12. ``Q10_closed_loop_demo`` -- ITER-like Q=10 closed-loop with PID/H-inf switching
+13. ``platinum_standard_demo_v1`` -- Vertical integration demo (NMPC, Rutherford MHD, SOC)

@@ -9,8 +9,8 @@ Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_
 
 | Area | Current State | Tracking / Gate |
 |---|---|---|
-| Source modules | **234 Python files**, 62,570 lines | `src/scpn_fusion/` |
-| Tests | **2882+ passing** (344 test files) | `pytest tests/ -v` |
+| Source modules | **236 Python files**, 65,664 lines | `src/scpn_fusion/` |
+| Tests | **3815 passing** (334 test files) | `pytest tests/ -v` |
 | Underdeveloped register | See `UNDERDEVELOPED_REGISTER.md` (auto-generated, CI-gated) | `tools/generate_underdeveloped_register.py --check` |
 | Pretrained surrogates | **5/8 shipped** (62.5%): ITPA MLP, Neural EQ, QLKNN, FNO JAX, FNO legacy (deprecated) | `weights/pretrained_surrogates_manifest.json` |
 | QLKNN transport surrogate | **test_rel_L2 = 0.094** (GPU L40S, 500K samples, gated 1024×512×256, 911 epochs) | `weights/neural_transport_qlknn.metrics.json` |
@@ -34,7 +34,7 @@ python tools/real_data_roadmap_non_regression_guard.py \
 
 ## Shipped
 
-### v3.9.4 (current)
+### v3.9.3 (current)
 
 - [x] **Phase 5 physics port** (8 modules): impurity transport, momentum transport, runaway electrons, Alfven eigenmodes, ELM model, pellet injection, plasma-wall interaction, kinetic EFIT
 - [x] **Phase 5 control port** (5 modules): free-boundary tracking, state estimator (EKF), volt-second manager, RWM feedback, mu-synthesis
@@ -46,7 +46,7 @@ python tools/real_data_roadmap_non_regression_guard.py \
 - [x] **Phase dynamics subpackage** (10 modules): Kuramoto UPDE, adaptive K_nm, GK-to-UPDE bridge, plasma K_nm, Lyapunov guard
 - [x] 9 new validation benchmarks
 - [x] CoilSet extended with `x_point_target`, `divertor_strike_points` fields
-- [x] 69 new modules total, 2859 tests, 234 source files
+- [x] 69 new modules total, 3815 tests, 236 source files
 
 ### v3.9.3
 

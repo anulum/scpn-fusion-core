@@ -1,12 +1,12 @@
 # SCPN Fusion Core
 
-**Full-stack neuro-symbolic tokamak control and physics simulation — 234 Python modules, 11 Rust crates, 62K lines of physics — with 0.52 us kernel latency, native gyrokinetic eigenvalue solver, and zero-disruption stress-test results.**
+**Full-stack neuro-symbolic tokamak control and physics simulation — 236 Python modules, 11 Rust crates, 65K lines of physics — with 0.52 us kernel latency, native gyrokinetic eigenvalue solver, and zero-disruption stress-test results.**
 
 <p align="center">
   <img src="docs/assets/repo_header.png" alt="SCPN Fusion Core -- Neuro-Symbolic Tokamak Control">
 </p>
 
-[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.9.3-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-3100%2B_Python_%7C_200%2B_Rust-green.svg) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12163/badge)](https://www.bestpractices.dev/projects/12163)
+[![CI](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/ci.yml) [![Docs](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml/badge.svg)](https://github.com/anulum/scpn-fusion-core/actions/workflows/docs.yml) [![Coverage](https://codecov.io/gh/anulum/scpn-fusion-core/branch/main/graph/badge.svg)](https://codecov.io/gh/anulum/scpn-fusion-core) [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://anulum.github.io/scpn-fusion-core/) [![PyPI](https://img.shields.io/pypi/v/scpn-fusion)](https://pypi.org/project/scpn-fusion/) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18820864.svg)](https://doi.org/10.5281/zenodo.18820864) [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/Version-3.9.3-brightgreen.svg) ![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg) ![Rust](https://img.shields.io/badge/Rust-1.75%2B-orange.svg) ![Tests](https://img.shields.io/badge/Tests-3800%2B_Python_%7C_200%2B_Rust-green.svg) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12163/badge)](https://www.bestpractices.dev/projects/12163)
 
 Most fusion codes are physics-first — solve equations, then bolt on control.
 SCPN Fusion Core inverts this: **control-first**. Express plasma control logic
@@ -31,7 +31,7 @@ Rust acceleration (6,600x speedup).
 | **I/O** | 15 | IMAS/OMAS adapter, GEQDSK, tokamak archive, logging |
 | **Rust Backend** | 11 crates | GS kernel (0.52 us), transport, control, ML inference, PyO3 bindings |
 
-**Total: 234 Python source files | 62,570 lines | 2,859 tests | 74 validation scripts | 11 Rust crates**
+**Total: 236 Python source files | 65,664 lines | 3,815 tests | 74 validation scripts | 11 Rust crates**
 
 ## Try in 45 Seconds
 
@@ -39,7 +39,7 @@ Rust acceleration (6,600x speedup).
 pip install -e .
 scpn-fusion kernel          # Grad-Shafranov equilibrium
 scpn-fusion flight          # Tokamak flight simulator
-pytest tests/ -x -q          # 2,859 tests
+pytest tests/ -x -q          # 3,815 tests
 ```
 
 ```bash
@@ -195,7 +195,7 @@ scpn-fusion-core/
 |       +-- fusion-control/       # PID, MPC, disruption
 |       +-- fusion-ml/            # Inference engine
 |       +-- fusion-python/        # PyO3 bindings
-+-- tests/               (334)    # 2,859 test functions (Hypothesis property tests)
++-- tests/               (334)    # 3,815 test functions (Hypothesis property tests)
 +-- validation/           (74)    # Benchmark pipeline + reference data
 +-- examples/             (16)    # 10 Jupyter notebooks + 6 scripts
 ```
@@ -395,9 +395,9 @@ module returns structured errors.
 
 | Metric | Value |
 |--------|-------|
-| Python source files | 234 |
-| Python lines of code | 62,570 |
-| Test functions | 2,859 |
+| Python source files | 236 |
+| Python lines of code | 65,664 |
+| Test functions | 3,815 |
 | Validation scripts | 74 |
 | Rust crates | 11 |
 | CI jobs | 24 |

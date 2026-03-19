@@ -5,7 +5,21 @@ Changelog
 The full changelog is maintained in the project root at
 ``CHANGELOG.md``.  Key releases are summarised below.
 
-v3.1.0 (Current)
+v3.9.3 (Current)
+------------------
+
+- **Phase 5/6 physics port**: 69 new modules (impurity transport, disruption chain,
+  GK three-path, JAX solvers, phase dynamics, runaway electrons, pellet injection,
+  VMEC-lite, blob transport, and more)
+- **Phase 5/6 control port**: free-boundary tracking, EKF state estimator,
+  volt-second manager, RWM feedback, mu-synthesis, detachment/density control
+- **GK three-path architecture**: native linear eigenvalue solver, quasilinear flux,
+  5 external GK interfaces, OOD detection, hybrid surrogate validation
+- **Hardening waves**: 263 tasks across 8 waves (S2-S4, H5-H8)
+- **3,815 tests** passing across 334 test files
+- **Ruff-only formatting** (black eliminated)
+
+v3.1.0
 ------------------
 
 - **TBR realism**: Port-coverage (0.80), streaming (0.85), blanket-fill correction factors

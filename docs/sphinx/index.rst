@@ -50,7 +50,7 @@ Key Features
   MLP, ML disruption predictor
 - **Digital twin** -- real-time twin with RL-trained MLP policy and chaos
   monkey fault injection
-- **Rust acceleration** -- 10-crate Rust workspace providing 10--50x
+- **Rust acceleration** -- 11-crate Rust workspace providing 10--50x
   speedups with pure-Python fallback
 - **Real data validation** -- SPARC GEQDSK, ITER 15 MA baseline, ITPA
   H-mode confinement database
@@ -110,6 +110,12 @@ Key Features
    api/scpn
    api/hpc
    api/io
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Example Notebooks
+
+   notebooks
 
 .. toctree::
    :maxdepth: 1
