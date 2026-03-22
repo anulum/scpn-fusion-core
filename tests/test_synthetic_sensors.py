@@ -1,11 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
-# ORCID: 0009-0009-3560-0851
-# Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Synthetic Sensors Tests
-"""Deterministic tests for synthetic sensor noise/control paths."""
-
+# SCPN Fusion Core — Synthetic Sensor Tests
 from __future__ import annotations
 
 import numpy as np
@@ -14,44 +8,89 @@ import pytest
 from scpn_fusion.diagnostics.synthetic_sensors import SensorSuite
 
 
-class _KernelStub:
-    def __init__(self) -> None:
-        self.NR = 33
-        self.NZ = 33
-        self.R = np.linspace(4.0, 8.0, self.NR)
-        self.Z = np.linspace(-2.0, 2.0, self.NZ)
-        self.dR = float(self.R[1] - self.R[0])
-        self.dZ = float(self.Z[1] - self.Z[0])
-        self.RR, self.ZZ = np.meshgrid(self.R, self.Z)
-        self.Psi = np.exp(-((self.RR - 6.0) ** 2 + self.ZZ**2))
+class _MockKernel:
+    """Minimal kernel mock for SensorSuite tests."""
+
+    NR = 33
+    NZ = 33
+    R = np.linspace(3.0, 9.0, NR)
+    Z = np.linspace(-3.5, 3.5, NZ)
+    dR = R[1] - R[0]
+    dZ = Z[1] - Z[0]
+    RR, ZZ = np.meshgrid(R, Z)
+    Psi = np.exp(-((RR - 6.0) ** 2 + ZZ**2) / 4.0)
+    B_R = np.zeros((NZ, NR))
+    B_Z = np.ones((NZ, NR)) * 0.1
+    J = np.exp(-((RR - 6.0) ** 2 + ZZ**2) / 2.0) * 1e6
+    J_phi = J
 
 
-def test_sensor_suite_seeded_noise_is_deterministic() -> None:
-    k1 = _KernelStub()
-    k2 = _KernelStub()
-    s1 = SensorSuite(k1, seed=123)
-    s2 = SensorSuite(k2, seed=123)
+class TestSensorSuiteInit:
+    def test_creates_with_kernel(self):
+        ss = SensorSuite(_MockKernel(), seed=42)
+        assert len(ss.wall_R) == 20
+        assert len(ss.bolo_chords) > 0
 
-    m1 = s1.measure_magnetics()
-    m2 = s2.measure_magnetics()
-    np.testing.assert_allclose(m1, m2, rtol=0.0, atol=0.0)
-
-    emission = np.exp(-((k1.RR - 6.0) ** 2 + k1.ZZ**2))
-    b1 = s1.measure_bolometer(emission)
-    b2 = s2.measure_bolometer(emission)
-    np.testing.assert_allclose(b1, b2, rtol=0.0, atol=0.0)
+    def test_seed_and_rng_exclusive(self):
+        with pytest.raises(ValueError, match="seed or rng"):
+            SensorSuite(_MockKernel(), seed=1, rng=np.random.default_rng(1))
 
 
-def test_sensor_suite_different_seeds_change_noise_realization() -> None:
-    k1 = _KernelStub()
-    k2 = _KernelStub()
-    s1 = SensorSuite(k1, seed=11)
-    s2 = SensorSuite(k2, seed=12)
-    m1 = s1.measure_magnetics()
-    m2 = s2.measure_magnetics()
-    assert not np.allclose(m1, m2)
+class TestMeasureMagnetics:
+    def test_returns_20_measurements(self):
+        ss = SensorSuite(_MockKernel(), seed=42)
+        meas = ss.measure_magnetics()
+        assert len(meas) == 20
+        assert np.all(np.isfinite(meas))
+
+    def test_deterministic_with_seed(self):
+        m1 = SensorSuite(_MockKernel(), seed=42).measure_magnetics()
+        m2 = SensorSuite(_MockKernel(), seed=42).measure_magnetics()
+        np.testing.assert_array_equal(m1, m2)
 
 
-def test_sensor_suite_rejects_seed_and_rng_together() -> None:
-    with pytest.raises(ValueError, match="either seed or rng"):
-        SensorSuite(_KernelStub(), seed=7, rng=np.random.default_rng(7))
+class TestMeasureBField:
+    def test_returns_br_bz(self):
+        ss = SensorSuite(_MockKernel(), seed=42)
+        Br, Bz = ss.measure_b_field()
+        assert len(Br) == 20
+        assert len(Bz) == 20
+        assert np.all(np.isfinite(Br))
+        assert np.all(np.isfinite(Bz))
+
+
+class TestMeasureBolometer:
+    def test_returns_signals(self):
+        ss = SensorSuite(_MockKernel(), seed=42)
+        emission = np.exp(-((ss.kernel.RR - 6.0) ** 2 + ss.kernel.ZZ**2) / 2.0)
+        signals = ss.measure_bolometer(emission)
+        assert len(signals) == len(ss.bolo_chords)
+        assert np.all(np.isfinite(signals))
+
+
+class TestMeasureInterferometer:
+    def test_returns_phases(self):
+        ss = SensorSuite(_MockKernel(), seed=42)
+        ne_profile = 10.0 * np.exp(-((ss.kernel.RR - 6.0) ** 2 + ss.kernel.ZZ**2) / 3.0)
+        phases = ss.measure_interferometer(ne_profile)
+        assert len(phases) > 0
+        assert np.all(np.isfinite(phases))
+
+
+class TestNoise:
+    def test_noise_with_rng(self):
+        ss = SensorSuite(_MockKernel(), seed=42)
+        n1 = ss._noise(0.1)
+        n2 = ss._noise(0.1)
+        assert n1 != n2
+        assert np.isfinite(n1)
+
+    def test_noise_zero_scale(self):
+        ss = SensorSuite(_MockKernel(), seed=42)
+        n = ss._noise(0.0)
+        assert n == 0.0
+
+    def test_noise_without_rng(self):
+        ss = SensorSuite(_MockKernel())
+        n = ss._noise(0.1)
+        assert np.isfinite(n)
