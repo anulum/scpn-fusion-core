@@ -25,7 +25,7 @@ def _bare_lab():
     lab.NR = 33
     lab.NZ = 33
     lab.RR, lab.ZZ = np.meshgrid(lab.R, lab.Z)
-    lab.Psi = np.exp(-((lab.RR - 5.0) ** 2 + lab.ZZ ** 2) / 4.0)
+    lab.Psi = np.exp(-((lab.RR - 5.0) ** 2 + lab.ZZ**2) / 4.0)
     lab.cfg = {"dimensions": {"R_min": 1.0, "R_max": 9.0, "Z_min": -5.0, "Z_max": 5.0}}
     return lab
 
