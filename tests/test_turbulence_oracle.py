@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from scpn_fusion.core.turbulence_oracle import DriftWavePhysics, OracleESN
 

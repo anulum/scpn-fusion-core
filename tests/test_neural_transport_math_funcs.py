@@ -60,7 +60,12 @@ class TestComputeNustar:
 
     def test_custom_geometry(self):
         nu = _compute_nustar(
-            te_kev=10.0, ne_19=10.0, q=1.5, rho=0.5,
-            r_major=1.85, a_minor=0.6, z_eff=2.0,
+            te_kev=10.0,
+            ne_19=10.0,
+            q=1.5,
+            rho=0.5,
+            r_major=1.85,
+            a_minor=0.6,
+            z_eff=2.0,
         )
         assert nu > 0

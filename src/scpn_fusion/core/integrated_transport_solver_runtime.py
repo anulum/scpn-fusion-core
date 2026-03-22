@@ -331,8 +331,8 @@ class TransportSolverRuntimeMixin(
         if self.multi_ion:
             W_before = 1.5 * np.sum(self.ne * 1e19 * (Ti_old + Te_old) * e_keV_J * dV)
             W_after = 1.5 * np.sum(self.ne * 1e19 * (self.Ti + self.Te) * e_keV_J * dV)
-            dW_source = dt * 1.5 * np.sum(
-                self.ne * 1e19 * (net_source_i + net_source_e) * e_keV_J * dV
+            dW_source = (
+                dt * 1.5 * np.sum(self.ne * 1e19 * (net_source_i + net_source_e) * e_keV_J * dV)
             )
         else:
             W_before = 1.5 * np.sum(self.ne * 1e19 * Ti_old * e_keV_J * dV)

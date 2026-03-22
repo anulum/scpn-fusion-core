@@ -2,7 +2,6 @@
 # SCPN Fusion Core — Stability Analyzer Tests
 import json
 import numpy as np
-import pytest
 
 from scpn_fusion.core.stability_analyzer import StabilityAnalyzer
 
@@ -51,16 +50,26 @@ class TestStabilityAnalyzer:
         cfg = _write_config(tmp_path)
         sa = StabilityAnalyzer(cfg)
         monkeypatch.setattr("matplotlib.pyplot.savefig", lambda *a, **kw: None)
-        monkeypatch.setattr("matplotlib.pyplot.subplots", lambda **kw: (None, type("A", (), {
-            "contour": lambda *a, **kw: type("C", (), {"collections": []})(),
-            "clabel": lambda *a, **kw: None,
-            "set_title": lambda *a: None,
-            "set_xlabel": lambda *a: None,
-            "set_ylabel": lambda *a: None,
-            "axvline": lambda *a, **kw: None,
-            "axhline": lambda *a, **kw: None,
-            "scatter": lambda *a, **kw: None,
-        })()))
+        monkeypatch.setattr(
+            "matplotlib.pyplot.subplots",
+            lambda **kw: (
+                None,
+                type(
+                    "A",
+                    (),
+                    {
+                        "contour": lambda *a, **kw: type("C", (), {"collections": []})(),
+                        "clabel": lambda *a, **kw: None,
+                        "set_title": lambda *a: None,
+                        "set_xlabel": lambda *a: None,
+                        "set_ylabel": lambda *a: None,
+                        "axvline": lambda *a, **kw: None,
+                        "axhline": lambda *a, **kw: None,
+                        "scatter": lambda *a, **kw: None,
+                    },
+                )(),
+            ),
+        )
         sa.analyze_stability(R_target=1.7, Z_target=0.0)
 
     def test_analyze_mhd_stability_default_profiles(self, tmp_path):

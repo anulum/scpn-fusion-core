@@ -2,7 +2,6 @@
 # SCPN Fusion Core — Global Design Scanner Tests
 from __future__ import annotations
 
-import numpy as np
 import pytest
 
 from scpn_fusion.core.global_design_scanner import GlobalDesignExplorer

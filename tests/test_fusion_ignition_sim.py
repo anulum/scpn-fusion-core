@@ -100,6 +100,7 @@ def test_plasma_volume():
 
 def test_rejects_nonpositive_params():
     import pytest as _pt
+
     with _pt.raises(ValueError):
         DynamicBurnModel(R0=0.0)
     with _pt.raises(ValueError):

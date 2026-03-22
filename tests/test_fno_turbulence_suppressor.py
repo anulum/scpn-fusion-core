@@ -39,8 +39,8 @@ class TestStep:
         for _ in range(20):
             gen1.step(dt=0.01, damping=0.0)
             gen2.step(dt=0.01, damping=0.9)
-        e1 = np.mean(gen1.field ** 2)
-        e2 = np.mean(gen2.field ** 2)
+        e1 = np.mean(gen1.field**2)
+        e2 = np.mean(gen2.field**2)
         assert e2 <= e1
 
     def test_deterministic_with_seed(self):

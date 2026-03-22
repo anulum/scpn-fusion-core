@@ -2,7 +2,6 @@
 # SCPN Fusion Core — PWI Erosion Tests
 from __future__ import annotations
 
-import numpy as np
 import pytest
 
 from scpn_fusion.nuclear.pwi_erosion import SputteringPhysics, run_pwi_demo
@@ -63,7 +62,14 @@ class TestCalculateErosionRate:
     def test_returns_expected_keys(self):
         sp = SputteringPhysics()
         result = sp.calculate_erosion_rate(1e24, T_ion_eV=50.0)
-        for key in ("Yield", "E_impact", "Net_Flux", "Redeposition", "Erosion_mm_year", "Impurity_Source"):
+        for key in (
+            "Yield",
+            "E_impact",
+            "Net_Flux",
+            "Redeposition",
+            "Erosion_mm_year",
+            "Impurity_Source",
+        ):
             assert key in result
 
     def test_zero_flux_zero_erosion(self):
@@ -94,6 +100,7 @@ class TestCalculateErosionRate:
 class TestRunPWIDemo:
     def test_returns_summary(self, monkeypatch):
         import matplotlib.pyplot as plt
+
         monkeypatch.setattr(plt, "savefig", lambda *a, **kw: None)
         result = run_pwi_demo(num_points=10, save_plot=False, verbose=False)
         assert isinstance(result, dict)
@@ -101,6 +108,7 @@ class TestRunPWIDemo:
 
     def test_carbon_material(self, monkeypatch):
         import matplotlib.pyplot as plt
+
         monkeypatch.setattr(plt, "savefig", lambda *a, **kw: None)
         result = run_pwi_demo(material="Carbon", num_points=10, save_plot=False, verbose=False)
         assert result["material"] == "Carbon"

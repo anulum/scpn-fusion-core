@@ -33,6 +33,7 @@ class TestTokamakPhysicsEngine:
     def test_solve_with_kernel_psi(self):
         class MockKernel:
             Psi = np.ones((32, 32)) * 0.5
+
         engine = TokamakPhysicsEngine(size=32, seed=42, kernel=MockKernel())
         density, psi = engine.solve_flux_surfaces()
         assert np.all(np.isfinite(psi))

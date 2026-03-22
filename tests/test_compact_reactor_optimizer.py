@@ -116,8 +116,15 @@ def test_find_minimum_reactor_solid_divertor(monkeypatch) -> None:
 def test_report_design_prints(capsys) -> None:
     arch = CompactReactorArchitect()
     design = {
-        "R": 1.5, "a": 0.5, "B0": 12.0, "B_coil": 18.0,
-        "P_fus": 50.0, "Vol": 10.0, "Ip": 3.0, "q_div": 5.0, "q_wall": 1.0,
+        "R": 1.5,
+        "a": 0.5,
+        "B0": 12.0,
+        "B_coil": 18.0,
+        "P_fus": 50.0,
+        "Vol": 10.0,
+        "Ip": 3.0,
+        "q_div": 5.0,
+        "q_wall": 1.0,
     }
     arch.report_design(design)
     out = capsys.readouterr().out

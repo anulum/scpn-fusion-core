@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from scpn_fusion.core.hall_mhd_discovery import HallMHD
 
@@ -60,8 +59,10 @@ class TestParameterSweep:
     def test_returns_results_dict(self):
         sim = HallMHD(N=8)
         results = sim.parameter_sweep(
-            eta_range=(1e-4, 1e-3), nu_range=(1e-4, 1e-3),
-            n_steps=2, sim_steps=20,
+            eta_range=(1e-4, 1e-3),
+            nu_range=(1e-4, 1e-3),
+            n_steps=2,
+            sim_steps=20,
         )
         assert "eta" in results
         assert "nu" in results
@@ -73,7 +74,9 @@ class TestTearingThreshold:
     def test_returns_threshold(self):
         sim = HallMHD(N=8)
         result = sim.find_tearing_threshold(
-            eta_range=(1e-5, 1e-2), n_bisect=3, sim_steps=30,
+            eta_range=(1e-5, 1e-2),
+            n_bisect=3,
+            sim_steps=30,
         )
         assert "threshold_eta" in result
         assert result["threshold_eta"] > 0
