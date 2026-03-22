@@ -100,3 +100,70 @@ class TestECRHValidation:
         ecrh = ECRHHeatingSystem()
         with pytest.raises(ValueError):
             ecrh.compute_deposition(launch_angle_deg=90.0)
+
+    def test_rejects_bad_density(self):
+        ecrh = ECRHHeatingSystem()
+        with pytest.raises(ValueError, match=">="):
+            ecrh.compute_deposition(n_e=0.0)
+
+    def test_rejects_bad_temperature(self):
+        ecrh = ECRHHeatingSystem()
+        with pytest.raises(ValueError, match=">="):
+            ecrh.compute_deposition(T_e_keV=0.0)
+
+
+class TestRequireHelpers:
+    def test_require_finite_accepts_valid(self):
+        from scpn_fusion.core.rf_heating import _require_finite_float
+
+        assert _require_finite_float("x", 3.14) == pytest.approx(3.14)
+
+    def test_require_finite_rejects_nan(self):
+        from scpn_fusion.core.rf_heating import _require_finite_float
+
+        with pytest.raises(ValueError, match="finite"):
+            _require_finite_float("x", float("nan"))
+
+    def test_require_finite_enforces_min(self):
+        from scpn_fusion.core.rf_heating import _require_finite_float
+
+        with pytest.raises(ValueError, match=">="):
+            _require_finite_float("x", -1.0, min_value=0.0)
+
+    def test_require_finite_enforces_max(self):
+        from scpn_fusion.core.rf_heating import _require_finite_float
+
+        with pytest.raises(ValueError, match="<="):
+            _require_finite_float("x", 10.0, max_value=5.0)
+
+    def test_require_int_rejects_bool(self):
+        from scpn_fusion.core.rf_heating import _require_int
+
+        with pytest.raises(ValueError, match="integer"):
+            _require_int("n", True, 1)
+
+    def test_require_int_rejects_below_minimum(self):
+        from scpn_fusion.core.rf_heating import _require_int
+
+        with pytest.raises(ValueError):
+            _require_int("n", 0, 1)
+
+
+class TestECRHEdgeCases:
+    def test_oblique_launch_affects_profile(self):
+        ecrh = ECRHHeatingSystem()
+        _, P0, _ = ecrh.compute_deposition(launch_angle_deg=0.0)
+        _, P45, _ = ecrh.compute_deposition(launch_angle_deg=45.0)
+        assert not np.allclose(P0, P45)
+
+    def test_sparc_parameters(self):
+        ecrh = ECRHHeatingSystem(b0_tesla=12.2, r0_major=1.85, freq_ghz=170.0, harmonic=2)
+        R_res = ecrh.resonance_radius()
+        assert R_res > 0
+        rho, P_dep, eff = ecrh.compute_deposition(P_ecrh_mw=10.0, T_e_keV=10.0)
+        assert np.all(np.isfinite(P_dep))
+
+    def test_small_bins(self):
+        ecrh = ECRHHeatingSystem()
+        rho, P_dep, eff = ecrh.compute_deposition(n_radial_bins=8)
+        assert len(rho) == 8
