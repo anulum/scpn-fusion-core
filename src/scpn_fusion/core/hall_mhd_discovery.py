@@ -22,14 +22,10 @@ def spitzer_resistivity(T_e_eV, Z_eff=1.0, ln_lambda=17.0):
 
 
 class HallMHD:
-    """
-    3D-like Reduced Hall-MHD.
-    Includes Magnetic Flutter (Psi perturbation) and Shear Flows.
-    Fields:
-      phi (Stream function / Potential)
-      psi (Magnetic Flux)
-      U   (Vorticity)
-      J   (Current Density)
+    """3D-like Reduced Hall-MHD with magnetic flutter and shear flows.
+
+    Fields: phi (stream function), psi (magnetic flux),
+    U (vorticity), J (current density).
     """
 
     def __init__(self, N=GRID, eta=None, nu=None):

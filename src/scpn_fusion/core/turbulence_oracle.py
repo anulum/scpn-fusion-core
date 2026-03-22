@@ -17,11 +17,9 @@ DT = 0.05
 
 
 class DriftWavePhysics:
-    """
-    Solves the 2D Hasegawa-Wakatani equations for Plasma Edge Turbulence.
-    Variables:
-      phi: Electrostatic potential (Stream function)
-      n:   Density fluctuation
+    """2D Hasegawa-Wakatani solver for plasma edge turbulence.
+
+    Variables: phi (electrostatic potential), n (density fluctuation).
     """
 
     def __init__(self, N=GRID):

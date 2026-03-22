@@ -4,9 +4,9 @@
    License: GNU AGPL v3 | Commercial licensing available
    -----------------------------------------------------------------------
 
-=============================================
+=====================================================
 Fault-Tolerant Control & Safe Reinforcement Learning
-=============================================
+=====================================================
 
 A tokamak control system must continue operating safely even when
 actuators degrade or fail.  This tutorial covers:

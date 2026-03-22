@@ -135,3 +135,4 @@ pytest_results.log
 
 # Internal business docs — never commit
 docs/internal/
+docs/_build/

@@ -291,7 +291,7 @@ class PhysicsInvariantViolation:
         Absolute distance between ``actual_value`` and the invariant
         ``threshold`` (always >= 0).
     severity : str
-        ``"warning"`` if margin <= 20 % of |threshold|,
+        ``"warning"`` if margin <= 20 % of abs(threshold),
         ``"critical"`` otherwise.
     """
 
@@ -386,7 +386,7 @@ def check_physics_invariant(
 
     Severity classification
     -----------------------
-    * ``"critical"`` — margin exceeds 20 % of ``|threshold|``
+    * ``"critical"`` — margin exceeds 20 % of ``abs(threshold)``
       (or 20 % of 1.0 when threshold == 0).
     * ``"warning"``  — violated but within the 20 % band.
 

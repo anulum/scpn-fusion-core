@@ -1,6 +1,6 @@
-==========
+===========
 Quick Start
-==========
+===========
 
 This guide walks through the essential operations: solving an equilibrium,
 running a validation suite, using the Rust accelerated kernel, and

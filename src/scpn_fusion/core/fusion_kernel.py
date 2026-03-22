@@ -549,7 +549,7 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
         max_outer_iter : int
             Maximum free-boundary iterations.
         tol : float
-            Convergence tolerance on max |delta psi|.
+            Convergence tolerance on max abs(delta psi).
         optimize_shape : bool
             When True, run coil-current optimisation at each outer step.
         tikhonov_alpha : float

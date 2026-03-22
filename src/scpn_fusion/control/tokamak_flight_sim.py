@@ -27,7 +27,7 @@ class FirstOrderActuator:
 
     Models a realistic coil power supply for tokamak control:
     - First-order lag: u_applied(s) = 1/(tau*s+1) * u_cmd
-    - Coil current rate limit: |du/dt| <= rate_limit [A/s]
+    - Coil current rate limit: abs(du/dt) <= rate_limit [A/s]
     - Sensor noise: additive Gaussian on measurement
     - Measurement delay: pure transport delay on feedback signal
 

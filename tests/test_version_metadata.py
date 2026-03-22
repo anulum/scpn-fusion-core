@@ -99,7 +99,7 @@ def test_release_docs_reference_current_version() -> None:
 
     changelog_text = CHANGELOG_PATH.read_text(encoding="utf-8")
     assert re.search(
-        rf"(?m)^## \[{re.escape(package_version)}\]\s+—\s+",
+        rf"(?m)^## \[{re.escape(package_version)}\]\s+[-—]\s+",
         changelog_text,
     )
 
