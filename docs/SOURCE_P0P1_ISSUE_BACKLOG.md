@@ -1,6 +1,6 @@
 # Source P0/P1 Issue Backlog
 
-- Generated at: `2026-03-17T18:43:15.993073+00:00`
+- Generated at: `2026-03-22T22:13:22.163266+00:00`
 - Generator: `tools/generate_source_p0p1_issue_backlog.py`
 - Scope: source files only (`src/scpn_fusion/**`) with P0/P1 severity
 
@@ -52,7 +52,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 - [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
 
 ### 2. [P0] Harden `src/scpn_fusion/control/free_boundary_tracking.py`
@@ -72,7 +72,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 - [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
 
 ### 3. [P0] Harden `src/scpn_fusion/core/integrated_transport_solver_model.py`
@@ -92,7 +92,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 - [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
 
 ### 4. [P0] Harden `src/scpn_fusion/core/neural_transport.py`
@@ -112,7 +112,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 - [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
 
 ### 5. [P0] Harden `src/scpn_fusion/control/nengo_snn_wrapper.py`
@@ -133,7 +133,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 - [ ] Deprecated-default-lane guard remains green (tools/deprecated_default_lane_guard.py).
 
 ### 6. [P0] Harden `src/scpn_fusion/core/gk_nonlinear.py`
@@ -155,7 +155,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 - [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
 
 ### 7. [P0] Harden `src/scpn_fusion/core/integrated_transport_solver.py`
@@ -195,7 +195,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 - [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
 
 ### 9. [P0] Harden `src/scpn_fusion/io/tokamak_archive.py`
@@ -235,7 +235,6 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 25.0% (tools/coverage_guard.py).
 
 ### 11. [P1] Harden `src/scpn_fusion/control/burn_controller.py`
 
@@ -255,7 +254,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 
 ### 12. [P1] Harden `src/scpn_fusion/control/controller_tuning.py`
 
@@ -275,7 +274,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 
 ### 13. [P1] Harden `src/scpn_fusion/control/density_controller.py`
 
@@ -295,7 +294,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 
 ### 14. [P1] Harden `src/scpn_fusion/control/mu_synthesis.py`
 
@@ -315,7 +314,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 
 ### 15. [P1] Harden `src/scpn_fusion/control/realtime_efit.py`
 
@@ -335,7 +334,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 
 ### 16. [P1] Harden `src/scpn_fusion/core/alfven_eigenmodes.py`
 
@@ -355,7 +354,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 17. [P1] Harden `src/scpn_fusion/core/disruption_sequence.py`
 
@@ -375,7 +374,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 18. [P1] Harden `src/scpn_fusion/core/elm_model.py`
 
@@ -395,7 +394,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 19. [P1] Harden `src/scpn_fusion/core/gk_eigenvalue.py`
 
@@ -415,7 +414,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 20. [P1] Harden `src/scpn_fusion/core/gk_geometry.py`
 
@@ -435,7 +434,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 21. [P1] Harden `src/scpn_fusion/core/gk_online_learner.py`
 
@@ -455,7 +454,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 22. [P1] Harden `src/scpn_fusion/core/gk_species.py`
 
@@ -475,7 +474,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 23. [P1] Harden `src/scpn_fusion/core/impurity_transport.py`
 
@@ -495,7 +494,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 24. [P1] Harden `src/scpn_fusion/core/integrated_scenario.py`
 
@@ -515,7 +514,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 25. [P1] Harden `src/scpn_fusion/core/lh_transition.py`
 
@@ -535,7 +534,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 26. [P1] Harden `src/scpn_fusion/core/locked_mode.py`
 
@@ -555,7 +554,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 27. [P1] Harden `src/scpn_fusion/core/momentum_transport.py`
 
@@ -575,7 +574,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 28. [P1] Harden `src/scpn_fusion/core/neoclassical.py`
 
@@ -583,7 +582,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - **Owner Hint**: Core Physics WG
 - **Priority Score**: `85`
 - **Markers**: `SIMPLIFIED`
-- **Trigger Lines**: `209`
+- **Trigger Lines**: `213`
 
 **Proposed Actions**
 - Upgrade with higher-fidelity closure or tighten domain contract.
@@ -595,7 +594,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 29. [P1] Harden `src/scpn_fusion/core/neural_turbulence.py`
 
@@ -615,7 +614,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 30. [P1] Harden `src/scpn_fusion/core/plasma_wall_interaction.py`
 
@@ -635,7 +634,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 31. [P1] Harden `src/scpn_fusion/core/stellarator_geometry.py`
 
@@ -655,7 +654,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
 ### 32. [P1] Harden `src/scpn_fusion/core/vmec_lite.py`
 
@@ -675,4 +674,4 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 
 **Closure Metrics**
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 70.0% (tools/coverage_guard.py).
+- [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
