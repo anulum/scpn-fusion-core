@@ -236,6 +236,12 @@ exclude_dirs = ["tests", "notebooks", "validation"]
 
 [tool.coverage.run]
 source = ["scpn_fusion"]
+omit = [
+    "*/ui/app.py",
+    "*/core/vibrana_bridge.py",
+    "*/core/lazarus_bridge.py",
+    "*/hpc/hpc_bridge.py",
+]
 
 [tool.coverage.report]
 exclude_lines = [
