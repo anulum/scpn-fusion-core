@@ -54,3 +54,53 @@ def test_calculate_thermodynamics_finite():
         assert np.all(np.isfinite(arr)), f"{key} contains non-finite values"
     assert result["Q_final"] >= 0.0
     assert result["T_final_keV"] > 0.0
+
+
+def test_h_mode_threshold():
+    model = DynamicBurnModel()
+    P_thr = model.h_mode_threshold_mw()
+    assert P_thr > 0
+    assert np.isfinite(P_thr)
+
+
+def test_h_mode_threshold_scales_with_field():
+    m_low = DynamicBurnModel(B_t=3.0)
+    m_high = DynamicBurnModel(B_t=12.0)
+    assert m_high.h_mode_threshold_mw() > m_low.h_mode_threshold_mw()
+
+
+def test_bosch_hale_peak_near_67_kev():
+    """D-T reactivity peaks near ~67 keV."""
+    model = DynamicBurnModel()
+    svs = [model.bosch_hale_dt(T) for T in np.linspace(10, 100, 50)]
+    peak_T = np.linspace(10, 100, 50)[np.argmax(svs)]
+    assert 50 < peak_T < 80
+
+
+def test_simulate_returns_q_and_power():
+    model = DynamicBurnModel()
+    result = model.simulate(P_aux_mw=50.0, duration_s=2.0, dt_s=0.1, warn_on_temperature_cap=False)
+    assert "Q" in result
+    assert "P_fus_MW" in result
+    assert result["Q_final"] >= 0.0
+
+
+def test_simulate_custom_params():
+    model = DynamicBurnModel(R0=1.85, a=0.6, B_t=12.2, I_p=8.7, kappa=1.97)
+    result = model.simulate(P_aux_mw=25.0, duration_s=0.5, dt_s=0.05, warn_on_temperature_cap=False)
+    assert result["Q_final"] >= 0.0
+
+
+def test_plasma_volume():
+    model = DynamicBurnModel(R0=6.2, a=2.0, kappa=1.7)
+    V = model.V_plasma
+    # V = 2 pi^2 R0 a^2 kappa = 2 * 9.87 * 6.2 * 4.0 * 1.7 ≈ 832
+    assert 800 < V < 900
+
+
+def test_rejects_nonpositive_params():
+    import pytest as _pt
+    with _pt.raises(ValueError):
+        DynamicBurnModel(R0=0.0)
+    with _pt.raises(ValueError):
+        DynamicBurnModel(B_t=-1.0)
