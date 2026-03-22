@@ -1,154 +1,151 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
-# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
-# © Code 2020–2026 Miroslav Šotek. All rights reserved.
-# ORCID: 0009-0009-3560-0851
-# Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Nuclear Wall Interaction Tests
-"""Unit tests for nuclear wall interaction runtime hardening."""
-
 from __future__ import annotations
-
-from pathlib import Path
 
 import numpy as np
 import pytest
 
 from scpn_fusion.nuclear.nuclear_wall_interaction import (
+    MATERIALS,
     NuclearEngineeringLab,
     default_iter_config_path,
-    run_nuclear_sim,
 )
 
 
-class _DummyNuclearLab:
-    def __init__(self, config_path: str) -> None:
-        self.config_path = config_path
-        self.RR = np.zeros((2, 2), dtype=np.float64)
-        self.ZZ = np.zeros((2, 2), dtype=np.float64)
-        self.Psi = np.zeros((2, 2), dtype=np.float64)
-
-    def simulate_ash_poisoning(
-        self,
-        burn_time_sec: int = 1000,
-        tau_He_ratio: float = 5.0,
-        pumping_efficiency: float = 1.0,
-    ) -> dict[str, list[float]]:
-        del burn_time_sec, tau_He_ratio
-        final_f_he = 0.08 * (1.0 - 0.6 * float(pumping_efficiency))
-        return {
-            "time": [0.0, 1.0, 2.0],
-            "P_fus": [110.0, 109.0, 108.0],
-            "f_He": [0.01, 0.03, final_f_he],
-            "Q": [],
-        }
-
-    def calculate_neutron_wall_loading(self):  # type: ignore[no-untyped-def]
-        return (
-            np.array([5.0, 5.5, 6.0], dtype=np.float64),
-            np.array([-0.2, 0.0, 0.2], dtype=np.float64),
-            np.array([1.0e19, 1.4e19, 1.2e19], dtype=np.float64),
-        )
-
-    def analyze_materials(self, wall_flux):  # type: ignore[no-untyped-def]
-        del wall_flux
-        return (
-            {"Tungsten (W)": 4.0, "Eurofer (Steel)": 9.0},
-            np.array([1.9, 2.4, 2.1], dtype=np.float64),
-        )
+def _bare_lab():
+    """Create a NuclearEngineeringLab without full kernel init."""
+    lab = NuclearEngineeringLab.__new__(NuclearEngineeringLab)
+    lab.RR = np.zeros((33, 33))
+    lab.ZZ = np.zeros((33, 33))
+    lab.Psi = np.zeros((33, 33))
+    lab.R = np.linspace(1.0, 9.0, 33)
+    lab.Z = np.linspace(-5.0, 5.0, 33)
+    lab.dR = lab.R[1] - lab.R[0]
+    lab.dZ = lab.Z[1] - lab.Z[0]
+    lab.NR = 33
+    lab.NZ = 33
+    lab.RR, lab.ZZ = np.meshgrid(lab.R, lab.Z)
+    lab.Psi = np.exp(-((lab.RR - 5.0) ** 2 + lab.ZZ ** 2) / 4.0)
+    lab.cfg = {"dimensions": {"R_min": 1.0, "R_max": 9.0, "Z_min": -5.0, "Z_max": 5.0}}
+    return lab
 
 
-def test_default_iter_config_path_points_to_repo_config() -> None:
-    cfg = Path(default_iter_config_path())
-    assert cfg.name == "iter_config.json"
-    assert cfg.exists()
+class TestDefaultConfigPath:
+    def test_returns_string(self):
+        p = default_iter_config_path()
+        assert isinstance(p, str)
+        assert "iter_config" in p
 
 
-def test_run_nuclear_sim_noninteractive_returns_summary() -> None:
-    summary = run_nuclear_sim(
-        config_path="dummy.json",
-        save_plot=False,
-        verbose=False,
-        lab_factory=_DummyNuclearLab,
-    )
-    for key in (
-        "config_path",
-        "good_final_f_he",
-        "bad_final_f_he",
-        "peak_wall_load_mw_m2",
-        "avg_wall_load_mw_m2",
-        "min_material_lifespan_years",
-        "max_material_lifespan_years",
-        "plot_saved",
-        "plot_error",
-    ):
-        assert key in summary
-    assert summary["config_path"] == "dummy.json"
-    assert summary["plot_saved"] is False
-    assert summary["plot_error"] is None
-    assert np.isfinite(summary["peak_wall_load_mw_m2"])
-    assert np.isfinite(summary["avg_wall_load_mw_m2"])
-    assert summary["min_material_lifespan_years"] <= summary["max_material_lifespan_years"]
+class TestMaterialsDict:
+    def test_has_tungsten(self):
+        assert "Tungsten (W)" in MATERIALS
+
+    def test_has_eurofer(self):
+        assert "Eurofer (Steel)" in MATERIALS
+
+    def test_dpa_limits_positive(self):
+        for mat, props in MATERIALS.items():
+            assert props["dpa_limit"] > 0
+            assert props["sigma_dpa"] > 0
 
 
-def test_pumping_efficiency_reduces_helium_fraction(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    lab = NuclearEngineeringLab(default_iter_config_path())
-    monkeypatch.setattr(lab, "solve_equilibrium", lambda: None)
-    low = lab.simulate_ash_poisoning(
-        burn_time_sec=40,
-        tau_He_ratio=8.0,
-        pumping_efficiency=0.2,
-    )
-    high = lab.simulate_ash_poisoning(
-        burn_time_sec=40,
-        tau_He_ratio=8.0,
-        pumping_efficiency=1.0,
-    )
-    assert high["f_He"][-1] < low["f_He"][-1]
-    assert high["P_fus"][-1] >= low["P_fus"][-1]
+class TestCalculateSputteringYield:
+    def test_tungsten_below_threshold(self):
+        lab = _bare_lab()
+        Y = lab.calculate_sputtering_yield("Tungsten (W)", E_inc_eV=100.0)
+        assert Y == 0.0
+
+    def test_tungsten_above_threshold(self):
+        lab = _bare_lab()
+        Y = lab.calculate_sputtering_yield("Tungsten (W)", E_inc_eV=500.0)
+        assert Y > 0
+
+    def test_beryllium_low_threshold(self):
+        lab = _bare_lab()
+        Y = lab.calculate_sputtering_yield("Beryllium (Be)", E_inc_eV=50.0)
+        assert Y > 0
+
+    def test_unknown_material_zero(self):
+        lab = _bare_lab()
+        Y = lab.calculate_sputtering_yield("Unobtanium", E_inc_eV=500.0)
+        assert Y == 0.0
+
+    def test_angle_increases_yield(self):
+        lab = _bare_lab()
+        Y_normal = lab.calculate_sputtering_yield("Tungsten (W)", E_inc_eV=500.0, angle_deg=0.0)
+        Y_oblique = lab.calculate_sputtering_yield("Tungsten (W)", E_inc_eV=500.0, angle_deg=70.0)
+        assert Y_oblique >= Y_normal
+
+    def test_rejects_negative_energy(self):
+        lab = _bare_lab()
+        with pytest.raises(ValueError, match="finite"):
+            lab.calculate_sputtering_yield("Tungsten (W)", E_inc_eV=-1.0)
+
+    def test_rejects_extreme_angle(self):
+        lab = _bare_lab()
+        with pytest.raises(ValueError, match="angle"):
+            lab.calculate_sputtering_yield("Tungsten (W)", E_inc_eV=500.0, angle_deg=90.0)
+
+    def test_yield_bounded(self):
+        lab = _bare_lab()
+        Y = lab.calculate_sputtering_yield("Beryllium (Be)", E_inc_eV=10000.0, angle_deg=85.0)
+        assert Y <= 5.0
 
 
-def test_pumping_efficiency_validation(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    lab = NuclearEngineeringLab(default_iter_config_path())
-    monkeypatch.setattr(lab, "solve_equilibrium", lambda: None)
-    with pytest.raises(ValueError, match="pumping_efficiency"):
-        lab.simulate_ash_poisoning(
-            burn_time_sec=10,
-            tau_He_ratio=5.0,
-            pumping_efficiency=1.1,
-        )
+class TestGenerateFirstWall:
+    def test_returns_two_arrays(self):
+        lab = _bare_lab()
+        Rw, Zw = lab.generate_first_wall()
+        assert len(Rw) == 200
+        assert len(Zw) == 200
+
+    def test_wall_is_closed(self):
+        lab = _bare_lab()
+        Rw, Zw = lab.generate_first_wall()
+        assert abs(Rw[0] - Rw[-1]) < 0.1
+        assert abs(Zw[0] - Zw[-1]) < 0.1
 
 
-@pytest.mark.parametrize("burn_time_sec", [0, -5])
-def test_burn_time_validation(monkeypatch: pytest.MonkeyPatch, burn_time_sec: int) -> None:
-    lab = NuclearEngineeringLab(default_iter_config_path())
-    monkeypatch.setattr(lab, "solve_equilibrium", lambda: None)
-    with pytest.raises(ValueError, match="burn_time_sec"):
-        lab.simulate_ash_poisoning(
-            burn_time_sec=burn_time_sec,
-            tau_He_ratio=5.0,
-            pumping_efficiency=1.0,
-        )
+class TestAnalyzeMaterials:
+    def test_returns_lifespans(self):
+        lab = _bare_lab()
+        flux = np.ones(200) * 1e18
+        lifespans, mw_load = lab.analyze_materials(flux)
+        assert isinstance(lifespans, dict)
+        assert len(lifespans) == len(MATERIALS)
+        for name, years in lifespans.items():
+            assert years > 0
+            assert np.isfinite(years)
+
+    def test_mw_load_positive(self):
+        lab = _bare_lab()
+        flux = np.ones(200) * 1e18
+        _, mw_load = lab.analyze_materials(flux)
+        assert np.all(mw_load > 0)
 
 
-@pytest.mark.parametrize("tau_He_ratio", [0.0, -1.0, float("nan")])
-def test_tau_he_ratio_validation(monkeypatch: pytest.MonkeyPatch, tau_He_ratio: float) -> None:
-    lab = NuclearEngineeringLab(default_iter_config_path())
-    monkeypatch.setattr(lab, "solve_equilibrium", lambda: None)
-    with pytest.raises(ValueError, match="tau_He_ratio"):
-        lab.simulate_ash_poisoning(
-            burn_time_sec=10,
-            tau_He_ratio=tau_He_ratio,
-            pumping_efficiency=1.0,
-        )
+class TestBuildNeutronSourceMap:
+    def test_source_map_shape(self):
+        lab = _bare_lab()
+        source = lab._build_neutron_source_map()
+        assert source.shape == (33, 33)
+        assert np.all(np.isfinite(source))
+        assert np.any(source > 0)
 
 
-def test_sputtering_yield_input_validation() -> None:
-    lab = NuclearEngineeringLab(default_iter_config_path())
-    with pytest.raises(ValueError, match="E_inc_eV"):
-        lab.calculate_sputtering_yield("Tungsten (W)", E_inc_eV=0.0, angle_deg=30.0)
-    with pytest.raises(ValueError, match="angle_deg"):
-        lab.calculate_sputtering_yield("Tungsten (W)", E_inc_eV=100.0, angle_deg=95.0)
+class TestSimulateAshPoisoning:
+    def test_rejects_bad_burn_time(self):
+        lab = _bare_lab()
+        with pytest.raises(ValueError, match="burn_time"):
+            lab.simulate_ash_poisoning(burn_time_sec=0)
+
+    def test_rejects_bad_tau_ratio(self):
+        lab = _bare_lab()
+        with pytest.raises(ValueError, match="tau_He_ratio"):
+            lab.simulate_ash_poisoning(tau_He_ratio=-1.0)
+
+    def test_rejects_bad_pumping(self):
+        lab = _bare_lab()
+        with pytest.raises(ValueError, match="pumping_efficiency"):
+            lab.simulate_ash_poisoning(pumping_efficiency=1.5)

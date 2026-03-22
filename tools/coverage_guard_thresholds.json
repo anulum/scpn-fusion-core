@@ -1,5 +1,5 @@
 {
-  "global_min_line_rate": 84.0,
+  "global_min_line_rate": 95.0,
   "global_min_branch_rate": 10.0,
   "domain_min_line_rate": {
     "cli.py": 80.0,
@@ -8,7 +8,7 @@
     "diagnostics": 73.0,
     "engineering": 66.0,
     "io": 79.0,
-    "nuclear": 36.0,
+    "nuclear": 95.0,
     "phase": 92.0,
     "scpn": 87.0
   },
