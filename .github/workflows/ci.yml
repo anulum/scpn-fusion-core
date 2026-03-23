@@ -308,7 +308,7 @@ jobs:
           "
       - name: Upload Python coverage to Codecov
         if: matrix.python-version == '3.12'
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de  # v5
+        uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad  # v5
         with:
           files: coverage-python.xml
           flags: python
@@ -789,7 +789,7 @@ jobs:
       - name: Generate coverage
         run: cargo tarpaulin --packages fusion-types fusion-math fusion-core fusion-physics fusion-nuclear fusion-engineering fusion-control fusion-diagnostics fusion-ml --run-types Lib --timeout 300 --out xml --output-dir coverage
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de  # v5
+        uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad  # v5
         with:
           files: scpn-fusion-rs/coverage/cobertura.xml
           flags: rust
