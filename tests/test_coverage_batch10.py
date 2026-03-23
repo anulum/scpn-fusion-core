@@ -30,4 +30,4 @@ class TestGKSpecies:
         from scpn_fusion.core.gk_species import electron
 
         e = electron()
-        assert e.charge == -1
+        assert e.charge_e == -1
