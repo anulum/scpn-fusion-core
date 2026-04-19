@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Commercial license available
 // © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
 // © Code 2020–2026 Miroslav Šotek. All rights reserved.
 // ORCID: 0009-0009-3560-0851
@@ -1649,6 +1650,55 @@ mod gpu_bindings {
 // ─── Module registration ───
 
 /// SCPN Fusion Core — Rust-accelerated plasma physics.
+use ndarray::{Ix3, Ix6};
+use numpy::{PyArrayDyn, PyReadonlyArrayDyn};
+use fusion_physics::gk_nonlinear::{NonlinearGKConfig, NonlinearGKState, NonlinearGKSolver};
+use num_complex::Complex64;
+
+#[pyclass]
+pub struct PyNonlinearGKSolver {
+    inner: NonlinearGKSolver,
+}
+
+#[pymethods]
+impl PyNonlinearGKSolver {
+    #[new]
+    fn new() -> PyResult<Self> {
+        let cfg = NonlinearGKConfig::default();
+        Ok(PyNonlinearGKSolver { inner: NonlinearGKSolver::new(cfg) })
+    }
+
+    fn step<'py>(
+        &self,
+        py: Python<'py>,
+        f_py: PyReadonlyArrayDyn<'py, Complex64>,
+        phi_py: PyReadonlyArrayDyn<'py, Complex64>,
+        time: f64,
+        dt: f64,
+    ) -> PyResult<(Bound<'py, PyArrayDyn<Complex64>>, Bound<'py, PyArrayDyn<Complex64>>)> {
+        let f = f_py
+            .as_array()
+            .into_dimensionality::<Ix6>()
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?
+            .to_owned();
+        let phi = phi_py
+            .as_array()
+            .into_dimensionality::<Ix3>()
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?
+            .to_owned();
+        let state = NonlinearGKState {
+            f,
+            phi,
+            time,
+            a_par: None,
+        };
+        let new_state = self.inner.rk4_step(&state, dt);
+        let f_out = new_state.f.into_dyn().into_pyarray(py);
+        let phi_out = new_state.phi.into_dyn().into_pyarray(py);
+        Ok((f_out, phi_out))
+    }
+}
+
 #[pymodule]
 fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyFusionKernel>()?;
@@ -1699,5 +1749,6 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_function(wrap_pyfunction!(gpu_bindings::py_gpu_available, m)?)?;
         m.add_function(wrap_pyfunction!(gpu_bindings::py_gpu_info, m)?)?;
     }
+        m.add_class::<PyNonlinearGKSolver>()?;
     Ok(())
 }

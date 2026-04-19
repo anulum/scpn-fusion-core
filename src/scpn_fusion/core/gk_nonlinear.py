@@ -1,4 +1,5 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
 # © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
@@ -857,9 +858,20 @@ class NonlinearGKSolver:
         time_t: NDArray[np.float64] = np.zeros(n_saves)
         save_idx = 0
 
+        from scpn_fusion.core._multi_compat import dispatch
+        
         for step in range(c.n_steps):
             dt = self._cfl_dt(state)
-            state = self._rk4_step(state, dt)
+            step_func = dispatch("gk_nonlinear_step")
+            
+            f_new, phi_new = step_func(self, state.f, state.phi, state.time, dt)
+            state.f = f_new
+            state.phi = phi_new
+            state.time += dt
+            
+            # Reconstruct A_par for EM if needed (skipped here for brevity as it's not in return tuple)
+            if c.electromagnetic:
+                state.A_par = self.ampere_solve(state.f)
 
             # Check for NaN
             if not np.all(np.isfinite(state.f)):
@@ -907,3 +919,30 @@ class NonlinearGKSolver:
             converged=converged,
             final_state=state,
         )
+
+
+# ---------------------------------------------------------------------------
+# Dispatcher wiring
+# ---------------------------------------------------------------------------
+
+from scpn_fusion.core._multi_compat import register_kernel, BackendTier
+
+def gk_nonlinear_step_numpy(solver: NonlinearGKSolver, f: NDArray[np.complex128], phi: NDArray[np.complex128], time: float, dt: float) -> tuple[NDArray[np.complex128], NDArray[np.complex128]]:
+    state = NonlinearGKState(f=f, phi=phi, time=time)
+    new_state = solver._rk4_step(state, dt)
+    return new_state.f, new_state.phi
+
+register_kernel("gk_nonlinear_step", BackendTier.NUMPY, gk_nonlinear_step_numpy)
+
+def gk_nonlinear_step_rust(solver: NonlinearGKSolver, f: NDArray[np.complex128], phi: NDArray[np.complex128], time: float, dt: float) -> tuple[NDArray[np.complex128], NDArray[np.complex128]]:
+    if getattr(solver, "_rust_solver", None) is None:
+        from scpn_fusion_rs import PyNonlinearGKSolver
+        solver._rust_solver = PyNonlinearGKSolver()
+    return solver._rust_solver.step(f, phi, time, dt)
+
+try:
+    import scpn_fusion_rs
+    register_kernel("gk_nonlinear_step", BackendTier.RUST, gk_nonlinear_step_rust)
+except ImportError:
+    pass
+

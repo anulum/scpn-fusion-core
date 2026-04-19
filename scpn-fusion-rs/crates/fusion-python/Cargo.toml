@@ -28,4 +28,5 @@ fusion-gpu = { path = "../fusion-gpu", optional = true }
 pyo3 = { workspace = true }
 numpy = { workspace = true }
 ndarray = { workspace = true }
+num-complex = { workspace = true }
 rand = { workspace = true }
