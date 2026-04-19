@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Commercial license available
 // © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
 // © Code 2020–2026 Miroslav Šotek. All rights reserved.
 // ORCID: 0009-0009-3560-0851
@@ -90,6 +91,117 @@ pub fn ifft2(input: &Array2<Complex64>) -> Array2<f64> {
 
     // Normalize and take real part
     data.mapv(|c| c.re * norm)
+}
+
+/// Forward 2D FFT on complex input. Matches `numpy.fft.fft2()` for complex arrays.
+///
+/// numpy does NOT normalize on forward FFT.
+pub fn cfft2(input: &Array2<Complex64>) -> Array2<Complex64> {
+    let (nrows, ncols) = input.dim();
+    let mut planner = FftPlanner::new();
+    let mut data = input.clone();
+
+    // FFT along each row (axis 1)
+    let fft_row = planner.plan_fft_forward(ncols);
+    for mut row in data.rows_mut() {
+        let slice = row.as_slice_mut().expect("row must be contiguous");
+        fft_row.process(slice);
+    }
+
+    // FFT along each column (axis 0) via transpose
+    let fft_col = planner.plan_fft_forward(nrows);
+    let mut transposed = Array2::zeros((ncols, nrows));
+    for i in 0..nrows {
+        for j in 0..ncols {
+            transposed[[j, i]] = data[[i, j]];
+        }
+    }
+    for mut row in transposed.rows_mut() {
+        let slice = row.as_slice_mut().expect("row must be contiguous");
+        fft_col.process(slice);
+    }
+    for i in 0..nrows {
+        for j in 0..ncols {
+            data[[i, j]] = transposed[[j, i]];
+        }
+    }
+
+    data
+}
+
+/// Inverse 2D FFT on complex input. Matches `numpy.fft.ifft2()` for complex arrays.
+///
+/// Applies 1/(nr*nz) normalization. Returns complex result.
+pub fn cifft2(input: &Array2<Complex64>) -> Array2<Complex64> {
+    let (nrows, ncols) = input.dim();
+    let mut planner = FftPlanner::new();
+    let norm = 1.0 / (nrows * ncols) as f64;
+    let mut data = input.clone();
+
+    // IFFT along each row
+    let ifft_row = planner.plan_fft_inverse(ncols);
+    for mut row in data.rows_mut() {
+        let slice = row.as_slice_mut().expect("row must be contiguous");
+        ifft_row.process(slice);
+    }
+
+    // IFFT along each column via transpose
+    let ifft_col = planner.plan_fft_inverse(nrows);
+    let mut transposed = Array2::zeros((ncols, nrows));
+    for i in 0..nrows {
+        for j in 0..ncols {
+            transposed[[j, i]] = data[[i, j]];
+        }
+    }
+    for mut row in transposed.rows_mut() {
+        let slice = row.as_slice_mut().expect("row must be contiguous");
+        ifft_col.process(slice);
+    }
+    for i in 0..nrows {
+        for j in 0..ncols {
+            data[[i, j]] = transposed[[j, i]] * norm;
+        }
+    }
+
+    data
+}
+
+/// Forward 1D FFT on complex input along axis 0 of a 2D array.
+///
+/// Equivalent to `numpy.fft.fft(data, axis=0)`.
+pub fn cfft_axis0(input: &Array2<Complex64>) -> Array2<Complex64> {
+    let (nrows, ncols) = input.dim();
+    let mut planner = FftPlanner::new();
+    let fft = planner.plan_fft_forward(nrows);
+    let mut data = input.clone();
+
+    // Process each column via transpose trick
+    for j in 0..ncols {
+        let mut col: Vec<Complex64> = (0..nrows).map(|i| data[[i, j]]).collect();
+        fft.process(&mut col);
+        for (i, &val) in col.iter().enumerate() {
+            data[[i, j]] = val;
+        }
+    }
+    data
+}
+
+/// Inverse 1D FFT on complex input along axis 0 of a 2D array.
+pub fn cifft_axis0(input: &Array2<Complex64>) -> Array2<Complex64> {
+    let (nrows, ncols) = input.dim();
+    let mut planner = FftPlanner::new();
+    let ifft = planner.plan_fft_inverse(nrows);
+    let norm = 1.0 / nrows as f64;
+    let mut data = input.clone();
+
+    for j in 0..ncols {
+        let mut col: Vec<Complex64> = (0..nrows).map(|i| data[[i, j]]).collect();
+        ifft.process(&mut col);
+        for (i, val) in col.into_iter().enumerate() {
+            data[[i, j]] = val * norm;
+        }
+    }
+    data
 }
 
 #[cfg(test)]

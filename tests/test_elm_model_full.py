@@ -1,4 +1,5 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
 # SCPN Fusion Core — ELM Model Full Coverage Tests
 from __future__ import annotations
 

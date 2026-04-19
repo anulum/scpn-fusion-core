@@ -1,4 +1,5 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
 # SCPN Fusion Core — Coverage Batch 9 (API-verified, passing only)
 from __future__ import annotations
 
