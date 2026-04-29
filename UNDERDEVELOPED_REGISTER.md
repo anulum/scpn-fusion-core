@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-04-29T21:45:31.695880+00:00`
+- Generated at: `2026-04-29T21:55:11.726186+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,12 +8,12 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 121 |
-| P0 + P1 entries | 40 |
-| Source-domain entries | 54 |
-| Source-domain P0 + P1 entries | 40 |
+| Total flagged entries | 120 |
+| P0 + P1 entries | 39 |
+| Source-domain entries | 53 |
+| Source-domain P0 + P1 entries | 39 |
 | Docs-claims entries | 67 |
-| Domains affected | 5 |
+| Domains affected | 4 |
 
 ## Marker Distribution
 
@@ -25,7 +25,6 @@
 | `EXPERIMENTAL` | 11 |
 | `DEPRECATED` | 5 |
 | `NOT_VALIDATED` | 2 |
-| `MONOLITH` | 1 |
 
 ## Domain Distribution
 
@@ -35,15 +34,13 @@
 | `core_physics` | 34 |
 | `validation` | 10 |
 | `control` | 9 |
-| `diagnostics_io` | 1 |
 
-## Source-Centric Priority Backlog (Top 40)
+## Source-Centric Priority Backlog (Top 39)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/burn_controller.py:139` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: rely on integral to find it |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/controller_tuning.py:62` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | action = kp * error # Simplified |
@@ -88,7 +85,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/burn_controller.py:139` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: rely on integral to find it |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/controller_tuning.py:62` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | action = kp * error # Simplified |
@@ -168,12 +164,12 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/competitive_analysis.md:188` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| No free-boundary tracking \| Direct kernel + supervisor + EKF + safe fallback \| `control/free_boundary_tracking.py` + supervisory \| |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/competitive_analysis.md:235` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | from repeated GS solves, with supervisory safe-fallback, disturbance |
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:16` | Docs WG | Replace default path or remove lane before next major release. | - Lock default turbulence path to non-deprecated lanes only. |
+| P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:17` | Docs WG | Replace default path or remove lane before next major release. | - Keep deprecated FNO paths non-default and explicitly gated. |
 
-## Full Register (Top 121)
+## Full Register (Top 120)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | module LOC=501 exceeds monolith threshold (500+). |
 | P0 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
 | P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/burn_controller.py:139` | # Simplified: rely on integral to find it |
 | P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/controller_tuning.py:62` | action = kp * error # Simplified |

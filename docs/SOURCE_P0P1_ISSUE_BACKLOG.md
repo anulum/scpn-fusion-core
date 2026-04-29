@@ -1,6 +1,6 @@
 # Source P0/P1 Issue Backlog
 
-- Generated at: `2026-04-29T21:45:31.696447+00:00`
+- Generated at: `2026-04-29T21:55:11.726449+00:00`
 - Generator: `tools/generate_source_p0p1_issue_backlog.py`
 - Scope: source files only (`src/scpn_fusion/**`) with P0/P1 severity
 
@@ -8,17 +8,16 @@
 
 | Metric | Value |
 |---|---:|
-| Source issue seeds | 23 |
-| P0 seeds | 1 |
+| Source issue seeds | 22 |
+| P0 seeds | 0 |
 | P1 seeds | 22 |
-| Domains represented | 3 |
+| Domains represented | 2 |
 
 ## Marker Distribution
 
 | Marker | Count |
 |---|---:|
 | `SIMPLIFIED` | 22 |
-| `MONOLITH` | 1 |
 
 ## Domain Distribution
 
@@ -26,33 +25,12 @@
 |---|---:|
 | `core_physics` | 17 |
 | `control` | 5 |
-| `diagnostics_io` | 1 |
 
 ## Auto-generated Issue Seeds
 
 _Each section below is ready to open as a GitHub issue with owner hints and closure criteria._
 
-### 1. [P0] Harden `src/scpn_fusion/io/tokamak_archive.py`
-
-- **Labels**: `hardening`, `underdeveloped`, `p0`, `diagnostics_io`
-- **Owner Hint**: Diagnostics/IO WG
-- **Priority Score**: `99`
-- **Markers**: `MONOLITH`
-- **Trigger Lines**: `1`
-
-**Proposed Actions**
-- Split module into focused subcomponents and lock interface contracts.
-
-**Acceptance Checklist**
-- [ ] Add or tighten regression tests for this module path and update coverage baselines.
-- [ ] Update claim/evidence references if behavior or metrics change.
-
-**Closure Metrics**
-- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
-- [ ] File line coverage in release lane is >= 79.0% (tools/coverage_guard.py).
-- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.
-
-### 2. [P1] Harden `src/scpn_fusion/control/burn_controller.py`
+### 1. [P1] Harden `src/scpn_fusion/control/burn_controller.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `control`
 - **Owner Hint**: Control WG
@@ -72,7 +50,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 
-### 3. [P1] Harden `src/scpn_fusion/control/controller_tuning.py`
+### 2. [P1] Harden `src/scpn_fusion/control/controller_tuning.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `control`
 - **Owner Hint**: Control WG
@@ -92,7 +70,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 
-### 4. [P1] Harden `src/scpn_fusion/control/density_controller.py`
+### 3. [P1] Harden `src/scpn_fusion/control/density_controller.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `control`
 - **Owner Hint**: Control WG
@@ -112,7 +90,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 
-### 5. [P1] Harden `src/scpn_fusion/control/mu_synthesis.py`
+### 4. [P1] Harden `src/scpn_fusion/control/mu_synthesis.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `control`
 - **Owner Hint**: Control WG
@@ -132,7 +110,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 
-### 6. [P1] Harden `src/scpn_fusion/control/realtime_efit.py`
+### 5. [P1] Harden `src/scpn_fusion/control/realtime_efit.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `control`
 - **Owner Hint**: Control WG
@@ -152,7 +130,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).
 
-### 7. [P1] Harden `src/scpn_fusion/core/alfven_eigenmodes.py`
+### 6. [P1] Harden `src/scpn_fusion/core/alfven_eigenmodes.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -172,7 +150,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 8. [P1] Harden `src/scpn_fusion/core/disruption_sequence.py`
+### 7. [P1] Harden `src/scpn_fusion/core/disruption_sequence.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -192,7 +170,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 9. [P1] Harden `src/scpn_fusion/core/elm_model.py`
+### 8. [P1] Harden `src/scpn_fusion/core/elm_model.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -212,7 +190,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 10. [P1] Harden `src/scpn_fusion/core/gk_eigenvalue.py`
+### 9. [P1] Harden `src/scpn_fusion/core/gk_eigenvalue.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -232,7 +210,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 11. [P1] Harden `src/scpn_fusion/core/gk_geometry.py`
+### 10. [P1] Harden `src/scpn_fusion/core/gk_geometry.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -252,7 +230,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 12. [P1] Harden `src/scpn_fusion/core/gk_online_learner.py`
+### 11. [P1] Harden `src/scpn_fusion/core/gk_online_learner.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -272,7 +250,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 13. [P1] Harden `src/scpn_fusion/core/gk_species.py`
+### 12. [P1] Harden `src/scpn_fusion/core/gk_species.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -292,7 +270,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 14. [P1] Harden `src/scpn_fusion/core/impurity_transport.py`
+### 13. [P1] Harden `src/scpn_fusion/core/impurity_transport.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -312,7 +290,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 15. [P1] Harden `src/scpn_fusion/core/integrated_scenario.py`
+### 14. [P1] Harden `src/scpn_fusion/core/integrated_scenario.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -332,7 +310,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 16. [P1] Harden `src/scpn_fusion/core/lh_transition.py`
+### 15. [P1] Harden `src/scpn_fusion/core/lh_transition.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -352,7 +330,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 17. [P1] Harden `src/scpn_fusion/core/locked_mode.py`
+### 16. [P1] Harden `src/scpn_fusion/core/locked_mode.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -372,7 +350,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 18. [P1] Harden `src/scpn_fusion/core/momentum_transport.py`
+### 17. [P1] Harden `src/scpn_fusion/core/momentum_transport.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -392,7 +370,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 19. [P1] Harden `src/scpn_fusion/core/neoclassical.py`
+### 18. [P1] Harden `src/scpn_fusion/core/neoclassical.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -412,7 +390,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 20. [P1] Harden `src/scpn_fusion/core/neural_turbulence.py`
+### 19. [P1] Harden `src/scpn_fusion/core/neural_turbulence.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -432,7 +410,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 21. [P1] Harden `src/scpn_fusion/core/plasma_wall_interaction.py`
+### 20. [P1] Harden `src/scpn_fusion/core/plasma_wall_interaction.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -452,7 +430,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 22. [P1] Harden `src/scpn_fusion/core/stellarator_geometry.py`
+### 21. [P1] Harden `src/scpn_fusion/core/stellarator_geometry.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG
@@ -472,7 +450,7 @@ _Each section below is ready to open as a GitHub issue with owner hints and clos
 - [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.
 - [ ] File line coverage in release lane is >= 78.0% (tools/coverage_guard.py).
 
-### 23. [P1] Harden `src/scpn_fusion/core/vmec_lite.py`
+### 22. [P1] Harden `src/scpn_fusion/core/vmec_lite.py`
 
 - **Labels**: `hardening`, `underdeveloped`, `p1`, `core_physics`
 - **Owner Hint**: Core Physics WG

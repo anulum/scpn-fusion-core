@@ -34,18 +34,16 @@ from scpn_fusion.io.tokamak_archive_profiles import (
     default_reference_data_root as _default_reference_data_root,
     default_synthetic_dir,
 )
-from scpn_fusion.io.tokamak_disruption_archive import (
-    list_disruption_shots as _list_disruption_shots_impl,
-    load_disruption_shot as _load_disruption_shot_impl,
+from scpn_fusion.io._tokamak_archive_shots import (
+    generate_synthetic_shot_database,
+    list_disruption_shots,
+    list_synthetic_shots,
+    load_disruption_shot,
+    load_synthetic_shot,
 )
 from scpn_fusion.io.tokamak_live_payload import (
     to_scalar as _to_scalar,
     to_trace as _to_trace,
-)
-from scpn_fusion.io.tokamak_synthetic_archive import (
-    generate_synthetic_shot_database as _generate_synthetic_shot_database_impl,
-    list_synthetic_shots as _list_synthetic_shots_impl,
-    load_synthetic_shot as _load_synthetic_shot_impl,
 )
 
 # Backward-compatible constants (resolved at import time).
@@ -53,6 +51,26 @@ DEFAULT_DIIID_DIR = default_diiid_dir()
 DEFAULT_DISRUPTION_DIR = default_disruption_dir()
 DEFAULT_ITPA_CSV = default_itpa_csv()
 DEFAULT_SYNTHETIC_DIR = default_synthetic_dir()
+
+__all__ = [
+    "DEFAULT_DIIID_DIR",
+    "DEFAULT_DISRUPTION_DIR",
+    "DEFAULT_ITPA_CSV",
+    "DEFAULT_MDSPLUS_NODE_MAP",
+    "DEFAULT_SYNTHETIC_DIR",
+    "TokamakProfile",
+    "default_reference_data_root",
+    "fetch_mdsplus_profiles",
+    "generate_synthetic_shot_database",
+    "list_disruption_shots",
+    "list_synthetic_shots",
+    "load_cmod_reference_profiles",
+    "load_diiid_reference_profiles",
+    "load_disruption_shot",
+    "load_machine_profiles",
+    "load_synthetic_shot",
+    "poll_mdsplus_feed",
+]
 
 
 def default_reference_data_root() -> Path:
@@ -410,160 +428,3 @@ def load_machine_profiles(
         "live_attempted": live_attempted,
         "live_error": live_error,
     }
-
-
-def list_disruption_shots(
-    *,
-    disruption_dir: Path | None = None,
-) -> list[str]:
-    """
-    Return the names of all available disruption shot NPZ files.
-
-    Each name corresponds to a file in ``disruption_dir`` (default:
-    ``validation/reference_data/diiid/disruption_shots/``).  The returned
-    names are *without* the ``.npz`` extension and sorted alphabetically.
-
-    Example::
-
-        >>> names = list_disruption_shots()
-        >>> names
-        ['shot_154406_hybrid', 'shot_155916_locked_mode', ...]
-    """
-    d = disruption_dir if disruption_dir is not None else default_disruption_dir()
-    return _list_disruption_shots_impl(disruption_dir=Path(d))
-
-
-def load_disruption_shot(
-    shot_name_or_path: str | Path,
-    *,
-    disruption_dir: Path | None = None,
-) -> dict[str, Any]:
-    """
-    Load a single disruption shot NPZ file and return its contents as a dict.
-
-    Parameters
-    ----------
-    shot_name_or_path
-        Either a bare shot name (e.g. ``"shot_155916_locked_mode"``) which
-        is resolved relative to *disruption_dir*, or an absolute/relative
-        path to a ``.npz`` file.
-    disruption_dir
-        Directory containing NPZ files.  Defaults to
-        ``validation/reference_data/diiid/disruption_shots/``.
-
-    Returns
-    -------
-    dict[str, Any]
-        Dictionary with keys: ``time_s``, ``Ip_MA``, ``BT_T``, ``beta_N``,
-        ``q95``, ``ne_1e19``, ``n1_amp``, ``n2_amp``, ``locked_mode_amp``,
-        ``dBdt_gauss_per_s``, ``vertical_position_m`` (all ``NDArray[float64]``
-        of shape ``(1000,)``), plus scalar metadata ``is_disruption`` (bool),
-        ``disruption_time_idx`` (int), and ``disruption_type`` (str).
-
-    Raises
-    ------
-    FileNotFoundError
-        If the NPZ file does not exist.
-    ValueError
-        If the file is missing required keys.
-    """
-    d = disruption_dir if disruption_dir is not None else default_disruption_dir()
-    return _load_disruption_shot_impl(shot_name_or_path, disruption_dir=Path(d))
-
-
-def generate_synthetic_shot_database(
-    *,
-    n_shots: int = 60,
-    output_dir: Path | None = None,
-    seed: int = 20260218,
-) -> list[dict[str, Any]]:
-    """
-    Generate synthetic-realistic tokamak shot profiles for ITER/SPARC/DIII-D/EAST.
-
-    Creates NPZ files with physically motivated profile data covering four
-    machine parameter ranges.  Approximately 20 %% of shots are flagged as
-    disruptions (elevated beta_N, lowered q95).
-
-    Parameters
-    ----------
-    n_shots
-        Minimum total number of shots to generate (default 60).  The actual
-        count may be slightly higher to satisfy per-machine minimums.
-    output_dir
-        Directory to write NPZ files into.  Defaults to
-        ``validation/reference_data/synthetic_shots/``.
-    seed
-        Random seed for reproducibility.
-
-    Returns
-    -------
-    list[dict[str, Any]]
-        One metadata dict per generated shot with keys: ``file``, ``machine``,
-        ``shot_id``, ``disruption_label``, ``Ip_MA``, ``BT_T``, ``ne0_1e19``,
-        ``Te0_keV``, ``q95``, ``beta_N``.
-    """
-    out_dir = Path(output_dir) if output_dir is not None else default_synthetic_dir()
-    return _generate_synthetic_shot_database_impl(
-        n_shots=n_shots,
-        output_dir=out_dir,
-        seed=seed,
-    )
-
-
-def list_synthetic_shots(
-    *,
-    synthetic_dir: Path | None = None,
-) -> list[str]:
-    """
-    Return names of all available synthetic shot NPZ files (without extension).
-
-    Parameters
-    ----------
-    synthetic_dir
-        Directory containing NPZ files.  Defaults to
-        ``validation/reference_data/synthetic_shots/``.
-
-    Returns
-    -------
-    list[str]
-        Sorted list of shot names (stem only).
-    """
-    d = Path(synthetic_dir) if synthetic_dir is not None else default_synthetic_dir()
-    return _list_synthetic_shots_impl(synthetic_dir=d)
-
-
-def load_synthetic_shot(
-    shot_name_or_path: str | Path,
-    *,
-    synthetic_dir: Path | None = None,
-) -> dict[str, Any]:
-    """
-    Load a single synthetic shot NPZ file and return its contents as a dict.
-
-    Parameters
-    ----------
-    shot_name_or_path
-        Either a bare shot name (e.g. ``"shot_ITER_0001"``) which is resolved
-        relative to *synthetic_dir*, or an absolute/relative path to a ``.npz``
-        file.
-    synthetic_dir
-        Directory containing NPZ files.  Defaults to
-        ``validation/reference_data/synthetic_shots/``.
-
-    Returns
-    -------
-    dict[str, Any]
-        Dictionary with keys: ``time_s``, ``Ip_MA``, ``BT_T``, ``ne_1e19``,
-        ``Te_keV``, ``Ti_keV``, ``q95``, ``beta_N`` (all ``NDArray[float64]``
-        of shape ``(1000,)``), plus ``disruption_label`` (bool) and
-        ``machine`` (str).
-
-    Raises
-    ------
-    FileNotFoundError
-        If the NPZ file does not exist.
-    ValueError
-        If the file is missing required keys.
-    """
-    d = Path(synthetic_dir) if synthetic_dir is not None else default_synthetic_dir()
-    return _load_synthetic_shot_impl(shot_name_or_path, synthetic_dir=d)

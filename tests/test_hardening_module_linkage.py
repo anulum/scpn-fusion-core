@@ -34,7 +34,9 @@ def test_hardening_split_modules_importable() -> None:
     import scpn_fusion.core.gk_nonlinear as gk_nonlinear
     import scpn_fusion.core.neural_transport as neural_transport
     import scpn_fusion.core.tglf_interface as tglf_interface
+    import scpn_fusion.io.tokamak_archive as tokamak_archive
     import scpn_fusion.io.tokamak_disruption_archive as disruption_archive
+    import scpn_fusion.io._tokamak_archive_shots as tokamak_archive_shots
     import scpn_fusion.io.tokamak_live_payload as live_payload
     import scpn_fusion.io.tokamak_synthetic_archive as synthetic_archive
     import scpn_fusion.scpn.controller_backend_mixin as controller_backend_mixin
@@ -63,7 +65,9 @@ def test_hardening_split_modules_importable() -> None:
         gk_nonlinear,
         neural_transport,
         tglf_interface,
+        tokamak_archive,
         disruption_archive,
+        tokamak_archive_shots,
         live_payload,
         synthetic_archive,
         controller_backend_mixin,
@@ -97,6 +101,8 @@ def test_hardening_split_modules_importable() -> None:
         tglf_interface.validate_reduced_transport_reference_case
         is tglf_reference.validate_reduced_transport_reference_case
     )
+    assert tokamak_archive.list_disruption_shots is tokamak_archive_shots.list_disruption_shots
+    assert tokamak_archive.load_synthetic_shot is tokamak_archive_shots.load_synthetic_shot
     assert gk_nonlinear.NonlinearGKConfig is gk_nonlinear_types.NonlinearGKConfig
     assert issubclass(
         gk_nonlinear.NonlinearGKSolver,
