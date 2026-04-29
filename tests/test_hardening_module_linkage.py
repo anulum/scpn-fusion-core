@@ -13,11 +13,15 @@ import numpy as np
 
 def test_hardening_split_modules_importable() -> None:
     import scpn_fusion.control.disruption_risk_runtime as disruption_risk_runtime
+    import scpn_fusion.core._neural_transport_analytic as neural_transport_analytic
+    import scpn_fusion.core._neural_transport_runtime as neural_transport_runtime
+    import scpn_fusion.core._neural_transport_types as neural_transport_types
     import scpn_fusion.core._integrated_transport_solver_model_backend as transport_backend
     import scpn_fusion.core._integrated_transport_solver_model_common as transport_common
     import scpn_fusion.core._integrated_transport_solver_model_pedestal as transport_pedestal
     import scpn_fusion.core.integrated_transport_solver_coupling as transport_coupling
     import scpn_fusion.core.integrated_transport_solver_model as transport_model
+    import scpn_fusion.core.neural_transport as neural_transport
     import scpn_fusion.io.tokamak_disruption_archive as disruption_archive
     import scpn_fusion.io.tokamak_live_payload as live_payload
     import scpn_fusion.io.tokamak_synthetic_archive as synthetic_archive
@@ -26,11 +30,15 @@ def test_hardening_split_modules_importable() -> None:
 
     modules = [
         disruption_risk_runtime,
+        neural_transport_analytic,
+        neural_transport_runtime,
+        neural_transport_types,
         transport_backend,
         transport_common,
         transport_pedestal,
         transport_coupling,
         transport_model,
+        neural_transport,
         disruption_archive,
         live_payload,
         synthetic_archive,
@@ -45,6 +53,12 @@ def test_hardening_split_modules_importable() -> None:
     assert issubclass(
         transport_model.TransportSolverModelMixin,
         transport_pedestal.TransportSolverPedestalMixin,
+    )
+    assert neural_transport.NeuralTransportModel is neural_transport_runtime.NeuralTransportModel
+    assert neural_transport.TransportInputs is neural_transport_types.TransportInputs
+    assert (
+        neural_transport.critical_gradient_model
+        is neural_transport_analytic.critical_gradient_model
     )
 
 
