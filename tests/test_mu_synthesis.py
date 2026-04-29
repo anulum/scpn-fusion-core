@@ -28,6 +28,15 @@ def test_uncertainty_structure():
     assert struct == [(1, "real_scalar"), (2, "complex_scalar")]
 
 
+def test_uncertainty_structure_rejects_invalid_blocks():
+    with np.testing.assert_raises(ValueError):
+        StructuredUncertainty([UncertaintyBlock("bad", 0, 0.1, "full")])
+    with np.testing.assert_raises(ValueError):
+        StructuredUncertainty([UncertaintyBlock("bad", 1, -0.1, "full")])
+    with np.testing.assert_raises(ValueError):
+        StructuredUncertainty([UncertaintyBlock("bad", 1, 0.1, "diagonal")])
+
+
 def test_compute_mu_upper_bound():
     # Construct a matrix where standard singular value > mu
     M = np.array([[2.0, 10.0], [0.0, 2.0]], dtype=complex)
@@ -54,8 +63,9 @@ def test_dk_iteration_convergence():
 
     K, mu, D_s = dk_iteration(plant, unc, n_iter=5)
 
-    assert mu < 1.0  # Simulated convergence
+    assert mu < 1.0  # Regularised synthesis reduces the structured bound.
     assert K is not None
+    assert np.all(D_s > 0.0)
 
 
 def test_mu_controller_robustness():
@@ -77,3 +87,25 @@ def test_mu_controller_robustness():
     u = ctrl.step(x, 0.1)
 
     assert u.shape == (2,)
+
+
+def test_mu_controller_uses_output_feedback_and_validates_state():
+    A = np.eye(2)
+    B = np.ones((2, 1))
+    C = np.array([[1.0, 0.0]])
+    D = np.zeros((1, 1))
+    plant = (A, B, C, D)
+    unc = StructuredUncertainty([UncertaintyBlock("full_state", 2, 0.1, "full")])
+    ctrl = MuSynthesisController(plant, unc)
+    ctrl.synthesize(n_dk_iter=2)
+
+    u_first = ctrl.step(np.array([1.0, 100.0]), 0.1)
+    ctrl.integral_error = 0.0
+    u_second = ctrl.step(np.array([1.0, -100.0]), 0.1)
+
+    assert u_first.shape == (1,)
+    assert np.allclose(u_first, u_second, rtol=1e-6, atol=1e-6)
+    with np.testing.assert_raises(ValueError):
+        ctrl.step(np.array([1.0]), 0.1)
+    with np.testing.assert_raises(ValueError):
+        ctrl.step(np.array([1.0, 0.0]), 0.0)

@@ -23,6 +23,13 @@ class UncertaintyBlock:
 
 class StructuredUncertainty:
     def __init__(self, blocks: list[UncertaintyBlock]):
+        for block in blocks:
+            if block.size < 1:
+                raise ValueError("uncertainty block size must be at least 1")
+            if block.bound < 0.0 or not np.isfinite(block.bound):
+                raise ValueError("uncertainty block bound must be finite and non-negative")
+            if block.block_type not in {"real_scalar", "complex_scalar", "full"}:
+                raise ValueError("unsupported uncertainty block type")
         self.blocks = blocks
 
     def build_Delta_structure(self) -> list[tuple[int, str]]:
@@ -37,7 +44,14 @@ def compute_mu_upper_bound(M: np.ndarray, delta_structure: list[tuple[int, str]]
     Compute upper bound on structured singular value mu using D-scaling.
     min_D sigma_max(D M D^-1)
     """
-    n = M.shape[0]
+    matrix = np.asarray(M, dtype=complex)
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("M must be a square matrix")
+    n = matrix.shape[0]
+    if sum(size for size, _ in delta_structure) != n:
+        raise ValueError("Delta structure size must match M")
+    if not delta_structure:
+        return float(np.max(np.linalg.svd(matrix)[1]))
 
     def apply_D(d_vec: np.ndarray) -> np.ndarray:
         D = np.zeros((n, n), dtype=complex)
@@ -52,11 +66,7 @@ def compute_mu_upper_bound(M: np.ndarray, delta_structure: list[tuple[int, str]]
     num_blocks = len(delta_structure)
     d_vec = np.ones(num_blocks)
 
-    # Very simple gradient descent on log(D) to minimize max singular value
-    # For a real implementation, LMI or specialized mu-tools are used.
-    # We mock a few iterations of a subgradient-like method.
-
-    best_mu = np.max(np.linalg.svd(M)[1])
+    best_mu = np.max(np.linalg.svd(matrix)[1])
     best_d = d_vec.copy()
 
     alpha = 0.1
@@ -64,7 +74,7 @@ def compute_mu_upper_bound(M: np.ndarray, delta_structure: list[tuple[int, str]]
         D = apply_D(d_vec)
         D_inv = np.linalg.inv(D)
 
-        M_scaled = D @ M @ D_inv
+        M_scaled = D @ matrix @ D_inv
         U, S, Vh = np.linalg.svd(M_scaled)
         mu = S[0]
 
@@ -78,15 +88,46 @@ def compute_mu_upper_bound(M: np.ndarray, delta_structure: list[tuple[int, str]]
             d_pert = d_vec.copy()
             d_pert[i] *= 1.01
             D_p = apply_D(d_pert)
-            M_p = D_p @ M @ np.linalg.inv(D_p)
+            M_p = D_p @ matrix @ np.linalg.inv(D_p)
             mu_p = np.max(np.linalg.svd(M_p)[1])
             grad[i] = (mu_p - mu) / 0.01
 
         d_vec = d_vec * np.exp(-alpha * grad)
-        # Normalize D to prevent drift (D M D^-1 is invariant to scalar scaling of D)
+        # Normalise D to prevent drift (D M D^-1 is invariant to scalar scaling of D)
         d_vec /= d_vec[0]
 
     return float(best_mu)
+
+
+def _validate_plant_ss(
+    plant_ss: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    A, B, C, D_mat = (np.asarray(mat, dtype=float) for mat in plant_ss)
+    if A.ndim != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError("A must be a square state matrix")
+    n_states = A.shape[0]
+    if B.ndim != 2 or B.shape[0] != n_states:
+        raise ValueError("B must have shape (n_states, n_inputs)")
+    if C.ndim != 2 or C.shape[1] != n_states:
+        raise ValueError("C must have shape (n_outputs, n_states)")
+    if D_mat.ndim != 2 or D_mat.shape != (C.shape[0], B.shape[1]):
+        raise ValueError("D must have shape (n_outputs, n_inputs)")
+    if not all(np.all(np.isfinite(mat)) for mat in (A, B, C, D_mat)):
+        raise ValueError("plant matrices must be finite")
+    return A, B, C, D_mat
+
+
+def _regularised_output_feedback_gain(
+    A: np.ndarray,
+    B: np.ndarray,
+    C: np.ndarray,
+    *,
+    regularisation: float,
+) -> np.ndarray:
+    n_inputs = B.shape[1]
+    gram = B.T @ B + regularisation * np.eye(n_inputs)
+    desired_output_map = A @ np.linalg.pinv(C)
+    return np.linalg.solve(gram, B.T @ desired_output_map)
 
 
 def dk_iteration(
@@ -96,19 +137,41 @@ def dk_iteration(
     gamma_bisect_tol: float = 0.01,
 ) -> tuple[Any, float, np.ndarray]:
     """
-    Mock D-K iteration loop.
-    In reality, involves synthesizing K using H-infinity, then fitting D(s) over frequency.
+    D-K iteration proxy using regularised output-feedback synthesis and D-scaling.
     """
-    A, B, C, D_mat = plant_ss
+    if n_iter < 1:
+        raise ValueError("n_iter must be at least 1")
+    if gamma_bisect_tol <= 0.0 or not np.isfinite(gamma_bisect_tol):
+        raise ValueError("gamma_bisect_tol must be finite and positive")
 
-    # Just mock convergence
-    mu_peak = 1.5
-    for _ in range(n_iter):
-        mu_peak *= 0.8  # Converge downwards
+    A, B, C, _D_mat = _validate_plant_ss(plant_ss)
+    delta_structure = uncertainty.build_Delta_structure()
+    if uncertainty.total_size() != A.shape[0]:
+        raise ValueError("uncertainty total size must match the plant state dimension")
 
-    # Return a dummy controller matrix K, mu_peak, and a dummy D scaling
+    max_bound = max((block.bound for block in uncertainty.blocks), default=0.0)
     K_controller = np.zeros((B.shape[1], C.shape[0]))
-    D_scalings = np.ones(len(uncertainty.blocks))
+    mu_peak = float("inf")
+
+    for idx in range(n_iter):
+        regularisation = gamma_bisect_tol + max_bound / (idx + 1)
+        K_candidate = _regularised_output_feedback_gain(
+            A,
+            B,
+            C,
+            regularisation=regularisation,
+        )
+        closed_loop = A - B @ K_candidate @ C
+        mu_candidate = compute_mu_upper_bound(closed_loop.astype(complex), delta_structure)
+        mu_candidate *= 1.0 + max_bound
+        if mu_candidate < mu_peak:
+            mu_peak = float(mu_candidate)
+            K_controller = K_candidate
+
+    D_scalings = np.asarray(
+        [1.0 / max(block.bound, gamma_bisect_tol) for block in uncertainty.blocks],
+        dtype=float,
+    )
 
     return K_controller, max(mu_peak, 0.9), D_scalings
 
@@ -129,26 +192,35 @@ class MuSynthesisController:
         self.mu_peak = float("inf")
         self.D_scalings: np.ndarray | None = None
 
-        # Simple state tracking for the test
+        # Integral channel suppresses steady output bias after synthesis.
         self.integral_error = 0.0
 
     def synthesize(self, n_dk_iter: int = 5) -> None:
-        """Run D-K iteration to synthesize K."""
+        """Run D-K iteration to synthesise K."""
         K, mu, D_s = dk_iteration(self.plant_ss, self.uncertainty, n_iter=n_dk_iter)
         self.K = K
         self.mu_peak = mu
         self.D_scalings = D_s
 
-        # Override K with something stabilizing for the simple tests
-        self.K = np.ones_like(K) * 0.1
-
     def step(self, x: np.ndarray, dt: float) -> np.ndarray:
-        """Apply synthesized controller."""
+        """Apply synthesised output-feedback controller."""
         if self.K is None:
-            raise RuntimeError("Controller not synthesized yet")
+            raise RuntimeError("Controller not synthesised yet")
+        dt = float(dt)
+        if dt <= 0.0 or not np.isfinite(dt):
+            raise ValueError("dt must be finite and positive")
 
-        # Simplified: u = -K * x
-        u = -self.K @ x
+        A, _B, C, _D_mat = _validate_plant_ss(self.plant_ss)
+        state = np.asarray(x, dtype=float)
+        if state.shape != (A.shape[0],):
+            raise ValueError("state vector must have shape (n_states,)")
+        if not np.all(np.isfinite(state)):
+            raise ValueError("state vector must be finite")
+
+        measured_output = C @ state
+        self.integral_error += float(np.mean(measured_output)) * dt
+        integral_bias = 0.05 * self.integral_error
+        u = -(self.K @ measured_output) - integral_bias
         return np.asarray(u)
 
     def robustness_margin(self) -> float:
