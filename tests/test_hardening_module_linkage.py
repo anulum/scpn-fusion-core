@@ -23,7 +23,9 @@ def test_hardening_split_modules_importable() -> None:
     import scpn_fusion.core._integrated_transport_solver_model_backend as transport_backend
     import scpn_fusion.core._integrated_transport_solver_model_common as transport_common
     import scpn_fusion.core._integrated_transport_solver_model_pedestal as transport_pedestal
+    import scpn_fusion.core._integrated_transport_solver_init as transport_solver_init
     import scpn_fusion.core.integrated_transport_solver_coupling as transport_coupling
+    import scpn_fusion.core.integrated_transport_solver as transport_solver
     import scpn_fusion.core.integrated_transport_solver_model as transport_model
     import scpn_fusion.core.gk_nonlinear as gk_nonlinear
     import scpn_fusion.core.neural_transport as neural_transport
@@ -45,7 +47,9 @@ def test_hardening_split_modules_importable() -> None:
         transport_backend,
         transport_common,
         transport_pedestal,
+        transport_solver_init,
         transport_coupling,
+        transport_solver,
         transport_model,
         gk_nonlinear,
         neural_transport,
@@ -63,6 +67,10 @@ def test_hardening_split_modules_importable() -> None:
     assert issubclass(
         transport_model.TransportSolverModelMixin,
         transport_pedestal.TransportSolverPedestalMixin,
+    )
+    assert issubclass(
+        transport_solver.TransportSolver,
+        transport_solver_init.TransportSolverInitializationMixin,
     )
     assert neural_transport.NeuralTransportModel is neural_transport_runtime.NeuralTransportModel
     assert neural_transport.TransportInputs is neural_transport_types.TransportInputs
