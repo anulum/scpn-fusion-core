@@ -13,6 +13,9 @@ import numpy as np
 
 def test_hardening_split_modules_importable() -> None:
     import scpn_fusion.control.disruption_risk_runtime as disruption_risk_runtime
+    import scpn_fusion.core._integrated_transport_solver_model_backend as transport_backend
+    import scpn_fusion.core._integrated_transport_solver_model_common as transport_common
+    import scpn_fusion.core._integrated_transport_solver_model_pedestal as transport_pedestal
     import scpn_fusion.core.integrated_transport_solver_coupling as transport_coupling
     import scpn_fusion.core.integrated_transport_solver_model as transport_model
     import scpn_fusion.io.tokamak_disruption_archive as disruption_archive
@@ -23,6 +26,9 @@ def test_hardening_split_modules_importable() -> None:
 
     modules = [
         disruption_risk_runtime,
+        transport_backend,
+        transport_common,
+        transport_pedestal,
         transport_coupling,
         transport_model,
         disruption_archive,
@@ -32,6 +38,14 @@ def test_hardening_split_modules_importable() -> None:
         controller_features_mixin,
     ]
     assert all(mod.__name__.startswith("scpn_fusion.") for mod in modules)
+    assert issubclass(
+        transport_model.TransportSolverModelMixin,
+        transport_backend.TransportSolverBackendMixin,
+    )
+    assert issubclass(
+        transport_model.TransportSolverModelMixin,
+        transport_pedestal.TransportSolverPedestalMixin,
+    )
 
 
 def test_hardening_split_modules_smoke(tmp_path: Path) -> None:
