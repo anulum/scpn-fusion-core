@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-04-29T11:40:10.612768+00:00`
+- Generated at: `2026-04-29T16:05:03.620525+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 129 |
-| P0 + P1 entries | 48 |
-| Source-domain entries | 62 |
-| Source-domain P0 + P1 entries | 48 |
+| Total flagged entries | 128 |
+| P0 + P1 entries | 47 |
+| Source-domain entries | 61 |
+| Source-domain P0 + P1 entries | 47 |
 | Docs-claims entries | 67 |
 | Domains affected | 5 |
 
@@ -23,8 +23,8 @@
 | `SIMPLIFIED` | 45 |
 | `PLANNED` | 13 |
 | `EXPERIMENTAL` | 11 |
-| `MONOLITH` | 7 |
 | `DEPRECATED` | 6 |
+| `MONOLITH` | 6 |
 | `NOT_VALIDATED` | 2 |
 
 ## Domain Distribution
@@ -33,17 +33,16 @@
 |---|---:|
 | `docs_claims` | 67 |
 | `core_physics` | 40 |
-| `control` | 11 |
+| `control` | 10 |
 | `validation` | 10 |
 | `diagnostics_io` | 1 |
 
-## Source-Centric Priority Backlog (Top 48)
+## Source-Centric Priority Backlog (Top 47)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 110 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_tracking.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1566 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=849 exceeds monolith threshold (500+). |
 | P0 | 107 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:374` | Control WG | Replace default path or remove lane before next major release. | "NengoSNNControllerStub is deprecated. " |
@@ -96,7 +95,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 110 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_tracking.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1566 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=849 exceeds monolith threshold (500+). |
 | P0 | 107 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:374` | Control WG | Replace default path or remove lane before next major release. | "NengoSNNControllerStub is deprecated. " |
@@ -145,9 +143,9 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified surrogate: stiff critical-gradient model.""" |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:72` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | path_lengths = np.ones(n_chords) # Simplified |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_supervisory_types.py:22` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback") |
+| P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_control.py:171` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | raise ValueError("fallback currents are not configured.") |
+| P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_shot.py:276` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | f"lag={max_abs_actuator_lag:.3e} \| fallback={fallback_active} \| " |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:12` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | rejection can ramp the coil set toward explicit safe fallback currents instead |
-| P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:997` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | raise ValueError("fallback currents are not configured.") |
-| P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:1429` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | f"lag={max_abs_actuator_lag:.3e} \| fallback={fallback_active} \| " |
 | P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/disruption_sequence.py:269` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | seed = 1e10 # Fallback |
 | P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gk_tglf.py:203` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | _logger.warning("TGLF binary not found, returning fallback") |
 | P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/jax_gs_solver.py:23` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | NumPy fallback provided when JAX is unavailable. |
@@ -176,12 +174,12 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/internal/gemini/rustification_audit.md:11` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - **Reason**: Fusion simulation requires extreme performance to match experimental timescales. |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Experimental Bridges |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/first_simulation.rst:191` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Step 7: Read Real Experimental Data |
+| P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/tokamak_physics_textbook.rst:55` | Docs WG | Gate behind explicit flag and define validation exit criteria. | :math:`F(\psi)` are constrained by experimental data (pressure profile and |
 
-## Full Register (Top 129)
+## Full Register (Top 128)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_tracking.py:1` | module LOC=1566 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | module LOC=849 exceeds monolith threshold (500+). |
 | P0 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:374` | "NengoSNNControllerStub is deprecated. " |
@@ -230,9 +228,9 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | """Simplified surrogate: stiff critical-gradient model.""" |
 | P1 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:72` | path_lengths = np.ones(n_chords) # Simplified |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_supervisory_types.py:22` | SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback") |
+| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_control.py:171` | raise ValueError("fallback currents are not configured.") |
+| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_shot.py:276` | f"lag={max_abs_actuator_lag:.3e} \| fallback={fallback_active} \| " |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:12` | rejection can ramp the coil set toward explicit safe fallback currents instead |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:997` | raise ValueError("fallback currents are not configured.") |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:1429` | f"lag={max_abs_actuator_lag:.3e} \| fallback={fallback_active} \| " |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/disruption_sequence.py:269` | seed = 1e10 # Fallback |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gk_tglf.py:203` | _logger.warning("TGLF binary not found, returning fallback") |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/jax_gs_solver.py:23` | NumPy fallback provided when JAX is unavailable. |

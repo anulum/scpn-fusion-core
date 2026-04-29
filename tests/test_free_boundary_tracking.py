@@ -15,11 +15,25 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import scpn_fusion.control._free_boundary_tracking_config as tracking_config
+import scpn_fusion.control._free_boundary_tracking_control as tracking_control
+import scpn_fusion.control._free_boundary_tracking_runtime as tracking_runtime
+import scpn_fusion.control._free_boundary_tracking_shot as tracking_shot
+import scpn_fusion.control._free_boundary_tracking_types as tracking_types
 from scpn_fusion.control.free_boundary_tracking import (
     FreeBoundaryTrackingController,
     run_free_boundary_tracking,
 )
 from scpn_fusion.core.fusion_kernel import CoilSet, FusionKernel
+
+
+def test_free_boundary_tracking_split_modules_preserve_public_api() -> None:
+    assert issubclass(FreeBoundaryTrackingController, tracking_config._FreeBoundaryTrackingConfigMixin)
+    assert issubclass(FreeBoundaryTrackingController, tracking_control._FreeBoundaryTrackingControlMixin)
+    assert issubclass(FreeBoundaryTrackingController, tracking_runtime._FreeBoundaryTrackingRuntimeMixin)
+    assert issubclass(FreeBoundaryTrackingController, tracking_shot._FreeBoundaryTrackingShotMixin)
+    assert tracking_types._ObjectiveBlock("x", 0, 1).name == "x"
+    assert callable(run_free_boundary_tracking)
 
 
 class _DummyFreeBoundaryKernel:
