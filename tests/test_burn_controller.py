@@ -83,8 +83,20 @@ def test_burn_controller():
     ctrl.integral_T = 0.0
     u_high = ctrl.step(Q_meas=10.0, T_meas_keV=25.0, P_alpha_MW=80.0, dt=0.1)
 
-    # K_T_p = -5, e_T = 5 => -25 MW. Base is 25. Total 0.
-    assert u_high == 0.0
+    # Feed-forward is 5 * P_alpha / Q_target = 40 MW.
+    # K_T_p = -5, e_T = 5 => -25 MW, plus integral correction -0.5 MW.
+    assert u_high == 14.5
+
+
+def test_burn_controller_uses_alpha_power_feedforward() -> None:
+    ctrl = BurnController(Q_target=10.0, T_target_keV=20.0, P_aux_max_MW=50.0)
+    assert ctrl.feedforward_power_MW(40.0) == 20.0
+
+    u_target = ctrl.step(Q_meas=10.0, T_meas_keV=20.0, P_alpha_MW=40.0, dt=0.1)
+    assert u_target == 20.0
+
+    u_clipped = ctrl.feedforward_power_MW(500.0)
+    assert u_clipped == 50.0
 
 
 def test_subignited_burn_point():

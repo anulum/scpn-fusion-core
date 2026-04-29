@@ -1,49 +1,8 @@
 {
-  "generated_at": "2026-04-29T21:55:11.734200+00:00",
+  "generated_at": "2026-04-29T21:58:49.071841+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
-  "issue_count": 22,
+  "issue_count": 21,
   "issues": [
-    {
-      "acceptance_checklist": [
-        "Add or tighten regression tests for this module path and update coverage baselines.",
-        "Update claim/evidence references if behavior or metrics change.",
-        "Document model-domain limits and tighten contract checks for out-of-domain inputs."
-      ],
-      "closure_metrics": [
-        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
-        "File line coverage in release lane is >= 80.0% (tools/coverage_guard.py)."
-      ],
-      "domain": "control",
-      "file_path": "src/scpn_fusion/control/burn_controller.py",
-      "github_body": "## Scope\n- File: `src/scpn_fusion/control/burn_controller.py`\n- Priority: `P1` (score `86`)\n- Domain: `control`\n- Owner hint: `Control WG`\n- Markers: `SIMPLIFIED`\n- Trigger lines: `139`\n\n## Proposed Actions\n- Upgrade with higher-fidelity closure or tighten domain contract.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n- [ ] Document model-domain limits and tighten contract checks for out-of-domain inputs.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).",
-      "github_labels": [
-        "hardening",
-        "underdeveloped",
-        "p1",
-        "control"
-      ],
-      "github_title": "[P1] Harden src/scpn_fusion/control/burn_controller.py",
-      "issue_slug": "p1-control-burn_controller",
-      "labels": [
-        "hardening",
-        "underdeveloped",
-        "p1",
-        "control"
-      ],
-      "markers": [
-        "SIMPLIFIED"
-      ],
-      "owner_hint": "Control WG",
-      "priority": "P1",
-      "proposed_actions": [
-        "Upgrade with higher-fidelity closure or tighten domain contract."
-      ],
-      "score": 86,
-      "title": "[P1] Harden src/scpn_fusion/control/burn_controller.py",
-      "trigger_lines": [
-        139
-      ]
-    },
     {
       "acceptance_checklist": [
         "Add or tighten regression tests for this module path and update coverage baselines.",

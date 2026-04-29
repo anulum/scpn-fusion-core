@@ -112,6 +112,10 @@ class BurnController:
     def __init__(
         self, Q_target: float = 10.0, T_target_keV: float = 20.0, P_aux_max_MW: float = 73.0
     ):
+        if Q_target <= 0.0:
+            raise ValueError("Q_target must be positive.")
+        if P_aux_max_MW <= 0.0:
+            raise ValueError("P_aux_max_MW must be positive.")
         self.Q_target = Q_target
         self.T_target = T_target_keV
         self.P_aux_max = P_aux_max_MW
@@ -122,6 +126,11 @@ class BurnController:
         self.K_T_i = -1.0  # MW/(keV·s) integral gain
 
         self.last_P_aux = P_aux_max_MW / 2.0
+
+    def feedforward_power_MW(self, P_alpha_MW: float) -> float:
+        """Auxiliary power that matches the configured DT fusion gain target."""
+        alpha = max(float(P_alpha_MW), 0.0)
+        return float(np.clip(5.0 * alpha / self.Q_target, 0.0, self.P_aux_max))
 
     def step(self, Q_meas: float, T_meas_keV: float, P_alpha_MW: float, dt: float) -> float:
         # Emergency cooling
@@ -136,9 +145,7 @@ class BurnController:
         # If we just want to stabilize T:
         P_fb = self.K_T_p * e_T + self.K_T_i * self.integral_T
 
-        # Base power to sustain target
-        # Simplified: rely on integral to find it
-        P_cmd = self.P_aux_max / 2.0 + P_fb
+        P_cmd = self.feedforward_power_MW(P_alpha_MW) + P_fb
 
         P_cmd = np.clip(P_cmd, 0.0, self.P_aux_max)
         self.last_P_aux = P_cmd
