@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-04-29T16:31:53.879138+00:00`
+- Generated at: `2026-04-29T16:42:19.156324+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 125 |
-| P0 + P1 entries | 44 |
-| Source-domain entries | 58 |
-| Source-domain P0 + P1 entries | 44 |
+| Total flagged entries | 123 |
+| P0 + P1 entries | 42 |
+| Source-domain entries | 56 |
+| Source-domain P0 + P1 entries | 42 |
 | Docs-claims entries | 67 |
 | Domains affected | 5 |
 
@@ -20,11 +20,11 @@
 | Key | Count |
 |---|---:|
 | `FALLBACK` | 45 |
-| `SIMPLIFIED` | 45 |
+| `SIMPLIFIED` | 44 |
 | `PLANNED` | 13 |
 | `EXPERIMENTAL` | 11 |
 | `DEPRECATED` | 5 |
-| `MONOLITH` | 4 |
+| `MONOLITH` | 3 |
 | `NOT_VALIDATED` | 2 |
 
 ## Domain Distribution
@@ -32,18 +32,17 @@
 | Key | Count |
 |---|---:|
 | `docs_claims` | 67 |
-| `core_physics` | 38 |
+| `core_physics` | 36 |
 | `validation` | 10 |
 | `control` | 9 |
 | `diagnostics_io` | 1 |
 
-## Source-Centric Priority Backlog (Top 44)
+## Source-Centric Priority Backlog (Top 42)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/gk_nonlinear.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=581 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
@@ -62,7 +61,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_eigenvalue.py:204` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Collision operator (simplified: nu_D * pitch-angle scattering applied to theta structure) |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:120` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Poloidal field: B_p = r / (q * R_s * \|J/r\|) — simplified |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:126` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # b . grad(theta) = B_p / (R_s * \|grad theta\|) ≈ 1 / (q * R_s) simplified |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_nonlinear.py:19` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | - Simplified Sugama collision operator |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_online_learner.py:137` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Backprop (simplified, output layer only for stability) |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:12` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | simplified Sugama model (pitch-angle scattering + energy diffusion). |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:156` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified Sugama model: |
@@ -92,7 +90,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/gk_nonlinear.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=581 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
@@ -111,7 +108,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_eigenvalue.py:204` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Collision operator (simplified: nu_D * pitch-angle scattering applied to theta structure) |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:120` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Poloidal field: B_p = r / (q * R_s * \|J/r\|) — simplified |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:126` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # b . grad(theta) = B_p / (R_s * \|grad theta\|) ≈ 1 / (q * R_s) simplified |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_nonlinear.py:19` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | - Simplified Sugama collision operator |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_online_learner.py:137` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Backprop (simplified, output layer only for stability) |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:12` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | simplified Sugama model (pitch-angle scattering + energy diffusion). |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:156` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified Sugama model: |
@@ -172,12 +168,13 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 47 | `docs_claims` | `FALLBACK` | `README.md:155` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:19` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | `freegs-strict` | FreeGS-only strict backend parity lane with runtime-fallback disallowed and artifact contract checks (`mode=freegs`, ... |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:29` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | `freegs-strict` (`freegs-strict.yml`, manual dispatch) | Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS referen... |
+| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:36` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | enforces a no-fallback contract when invoked. |
+| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/competitive_analysis.md:188` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| No free-boundary tracking \| Direct kernel + supervisor + EKF + safe fallback \| `control/free_boundary_tracking.py` + supervisory \| |
 
-## Full Register (Top 125)
+## Full Register (Top 123)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/gk_nonlinear.py:1` | module LOC=581 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | module LOC=501 exceeds monolith threshold (500+). |
@@ -196,7 +193,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_eigenvalue.py:204` | # Collision operator (simplified: nu_D * pitch-angle scattering applied to theta structure) |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:120` | # Poloidal field: B_p = r / (q * R_s * \|J/r\|) — simplified |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:126` | # b . grad(theta) = B_p / (R_s * \|grad theta\|) ≈ 1 / (q * R_s) simplified |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_nonlinear.py:19` | - Simplified Sugama collision operator |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_online_learner.py:137` | # Backprop (simplified, output layer only for stability) |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:12` | simplified Sugama model (pitch-angle scattering + energy diffusion). |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:156` | Simplified Sugama model: |

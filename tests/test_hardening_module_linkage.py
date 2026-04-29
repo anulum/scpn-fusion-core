@@ -13,6 +13,10 @@ import numpy as np
 
 def test_hardening_split_modules_importable() -> None:
     import scpn_fusion.control.disruption_risk_runtime as disruption_risk_runtime
+    import scpn_fusion.core._gk_nonlinear_operators as gk_nonlinear_operators
+    import scpn_fusion.core._gk_nonlinear_setup as gk_nonlinear_setup
+    import scpn_fusion.core._gk_nonlinear_time as gk_nonlinear_time
+    import scpn_fusion.core._gk_nonlinear_types as gk_nonlinear_types
     import scpn_fusion.core._neural_transport_analytic as neural_transport_analytic
     import scpn_fusion.core._neural_transport_runtime as neural_transport_runtime
     import scpn_fusion.core._neural_transport_types as neural_transport_types
@@ -21,6 +25,7 @@ def test_hardening_split_modules_importable() -> None:
     import scpn_fusion.core._integrated_transport_solver_model_pedestal as transport_pedestal
     import scpn_fusion.core.integrated_transport_solver_coupling as transport_coupling
     import scpn_fusion.core.integrated_transport_solver_model as transport_model
+    import scpn_fusion.core.gk_nonlinear as gk_nonlinear
     import scpn_fusion.core.neural_transport as neural_transport
     import scpn_fusion.io.tokamak_disruption_archive as disruption_archive
     import scpn_fusion.io.tokamak_live_payload as live_payload
@@ -30,6 +35,10 @@ def test_hardening_split_modules_importable() -> None:
 
     modules = [
         disruption_risk_runtime,
+        gk_nonlinear_operators,
+        gk_nonlinear_setup,
+        gk_nonlinear_time,
+        gk_nonlinear_types,
         neural_transport_analytic,
         neural_transport_runtime,
         neural_transport_types,
@@ -38,6 +47,7 @@ def test_hardening_split_modules_importable() -> None:
         transport_pedestal,
         transport_coupling,
         transport_model,
+        gk_nonlinear,
         neural_transport,
         disruption_archive,
         live_payload,
@@ -59,6 +69,19 @@ def test_hardening_split_modules_importable() -> None:
     assert (
         neural_transport.critical_gradient_model
         is neural_transport_analytic.critical_gradient_model
+    )
+    assert gk_nonlinear.NonlinearGKConfig is gk_nonlinear_types.NonlinearGKConfig
+    assert issubclass(
+        gk_nonlinear.NonlinearGKSolver,
+        gk_nonlinear_setup.NonlinearGKSetupMixin,
+    )
+    assert issubclass(
+        gk_nonlinear.NonlinearGKSolver,
+        gk_nonlinear_operators.NonlinearGKOperatorsMixin,
+    )
+    assert issubclass(
+        gk_nonlinear.NonlinearGKSolver,
+        gk_nonlinear_time.NonlinearGKTimeMixin,
     )
 
 
