@@ -17,6 +17,10 @@ def test_hardening_split_modules_importable() -> None:
     import scpn_fusion.core._gk_nonlinear_setup as gk_nonlinear_setup
     import scpn_fusion.core._gk_nonlinear_time as gk_nonlinear_time
     import scpn_fusion.core._gk_nonlinear_types as gk_nonlinear_types
+    import scpn_fusion.core._tglf_interface_benchmark as tglf_benchmark
+    import scpn_fusion.core._tglf_interface_reference as tglf_reference
+    import scpn_fusion.core._tglf_interface_runtime as tglf_runtime
+    import scpn_fusion.core._tglf_interface_types as tglf_types
     import scpn_fusion.core._neural_transport_analytic as neural_transport_analytic
     import scpn_fusion.core._neural_transport_runtime as neural_transport_runtime
     import scpn_fusion.core._neural_transport_types as neural_transport_types
@@ -29,6 +33,7 @@ def test_hardening_split_modules_importable() -> None:
     import scpn_fusion.core.integrated_transport_solver_model as transport_model
     import scpn_fusion.core.gk_nonlinear as gk_nonlinear
     import scpn_fusion.core.neural_transport as neural_transport
+    import scpn_fusion.core.tglf_interface as tglf_interface
     import scpn_fusion.io.tokamak_disruption_archive as disruption_archive
     import scpn_fusion.io.tokamak_live_payload as live_payload
     import scpn_fusion.io.tokamak_synthetic_archive as synthetic_archive
@@ -41,6 +46,10 @@ def test_hardening_split_modules_importable() -> None:
         gk_nonlinear_setup,
         gk_nonlinear_time,
         gk_nonlinear_types,
+        tglf_benchmark,
+        tglf_reference,
+        tglf_runtime,
+        tglf_types,
         neural_transport_analytic,
         neural_transport_runtime,
         neural_transport_types,
@@ -53,6 +62,7 @@ def test_hardening_split_modules_importable() -> None:
         transport_model,
         gk_nonlinear,
         neural_transport,
+        tglf_interface,
         disruption_archive,
         live_payload,
         synthetic_archive,
@@ -77,6 +87,15 @@ def test_hardening_split_modules_importable() -> None:
     assert (
         neural_transport.critical_gradient_model
         is neural_transport_analytic.critical_gradient_model
+    )
+    assert tglf_interface.TGLFInputDeck is tglf_types.TGLFInputDeck
+    assert tglf_interface.TGLFOutput is tglf_types.TGLFOutput
+    assert tglf_interface.TGLFBenchmark is tglf_benchmark.TGLFBenchmark
+    assert tglf_interface.run_tglf_binary is tglf_runtime.run_tglf_binary
+    assert tglf_interface.write_tglf_input_file is tglf_runtime.write_tglf_input_file
+    assert (
+        tglf_interface.validate_reduced_transport_reference_case
+        is tglf_reference.validate_reduced_transport_reference_case
     )
     assert gk_nonlinear.NonlinearGKConfig is gk_nonlinear_types.NonlinearGKConfig
     assert issubclass(

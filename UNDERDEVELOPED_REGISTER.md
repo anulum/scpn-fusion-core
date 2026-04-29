@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-04-29T16:50:21.525906+00:00`
+- Generated at: `2026-04-29T21:45:31.695880+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 122 |
-| P0 + P1 entries | 41 |
-| Source-domain entries | 55 |
-| Source-domain P0 + P1 entries | 41 |
+| Total flagged entries | 121 |
+| P0 + P1 entries | 40 |
+| Source-domain entries | 54 |
+| Source-domain P0 + P1 entries | 40 |
 | Docs-claims entries | 67 |
 | Domains affected | 5 |
 
@@ -24,26 +24,25 @@
 | `PLANNED` | 13 |
 | `EXPERIMENTAL` | 11 |
 | `DEPRECATED` | 5 |
-| `MONOLITH` | 2 |
 | `NOT_VALIDATED` | 2 |
+| `MONOLITH` | 1 |
 
 ## Domain Distribution
 
 | Key | Count |
 |---|---:|
 | `docs_claims` | 67 |
-| `core_physics` | 35 |
+| `core_physics` | 34 |
 | `validation` | 10 |
 | `control` | 9 |
 | `diagnostics_io` | 1 |
 
-## Source-Centric Priority Backlog (Top 41)
+## Source-Centric Priority Backlog (Top 40)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/burn_controller.py:139` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: rely on integral to find it |
@@ -89,7 +88,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/burn_controller.py:139` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: rely on integral to find it |
@@ -169,12 +167,12 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:36` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | enforces a no-fallback contract when invoked. |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/competitive_analysis.md:188` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| No free-boundary tracking \| Direct kernel + supervisor + EKF + safe fallback \| `control/free_boundary_tracking.py` + supervisory \| |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/competitive_analysis.md:235` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | from repeated GS solves, with supervisory safe-fallback, disturbance |
+| P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:16` | Docs WG | Replace default path or remove lane before next major release. | - Lock default turbulence path to non-deprecated lanes only. |
 
-## Full Register (Top 122)
+## Full Register (Top 121)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | module LOC=501 exceeds monolith threshold (500+). |
 | P0 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
 | P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/burn_controller.py:139` | # Simplified: rely on integral to find it |
