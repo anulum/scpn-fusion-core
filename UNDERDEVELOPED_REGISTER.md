@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-03-22T21:25:58.001922+00:00`
+- Generated at: `2026-04-29T11:40:10.612768+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,44 +8,41 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 126 |
-| P0 + P1 entries | 50 |
-| Source-domain entries | 64 |
-| Source-domain P0 + P1 entries | 50 |
-| Docs-claims entries | 62 |
-| Domains affected | 6 |
+| Total flagged entries | 129 |
+| P0 + P1 entries | 48 |
+| Source-domain entries | 62 |
+| Source-domain P0 + P1 entries | 48 |
+| Docs-claims entries | 67 |
+| Domains affected | 5 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
+| `FALLBACK` | 45 |
 | `SIMPLIFIED` | 45 |
-| `FALLBACK` | 41 |
 | `PLANNED` | 13 |
-| `EXPERIMENTAL` | 10 |
-| `MONOLITH` | 8 |
+| `EXPERIMENTAL` | 11 |
+| `MONOLITH` | 7 |
 | `DEPRECATED` | 6 |
 | `NOT_VALIDATED` | 2 |
-| `TEST_GAP` | 1 |
 
 ## Domain Distribution
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 62 |
+| `docs_claims` | 67 |
 | `core_physics` | 40 |
-| `control` | 12 |
+| `control` | 11 |
 | `validation` | 10 |
-| `compiler_runtime` | 1 |
 | `diagnostics_io` | 1 |
 
-## Source-Centric Priority Backlog (Top 50)
+## Source-Centric Priority Backlog (Top 48)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 110 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_supervisory_control.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1419 exceeds monolith threshold (500+). |
 | P0 | 110 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_tracking.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1566 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=849 exceeds monolith threshold (500+). |
@@ -54,7 +51,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
-| P0 | 98 | `compiler_runtime` | `TEST_GAP` | `src/scpn_fusion/hpc/hpc_bridge.py:1` | Runtime WG | Add direct module tests and eliminate allowlist-only linkage. | large source module without direct test import/stem linkage. |
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/burn_controller.py:139` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: rely on integral to find it |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/controller_tuning.py:62` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | action = kp * error # Simplified |
@@ -100,7 +96,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 110 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_supervisory_control.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1419 exceeds monolith threshold (500+). |
 | P0 | 110 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_tracking.py:1` | Control WG | Split module into focused subcomponents and lock interface contracts. | module LOC=1566 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | 109 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=849 exceeds monolith threshold (500+). |
@@ -109,7 +104,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | 99 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | Diagnostics/IO WG | Split module into focused subcomponents and lock interface contracts. | module LOC=501 exceeds monolith threshold (500+). |
-| P0 | 98 | `compiler_runtime` | `TEST_GAP` | `src/scpn_fusion/hpc/hpc_bridge.py:1` | Runtime WG | Add direct module tests and eliminate allowlist-only linkage. | large source module without direct test import/stem linkage. |
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/burn_controller.py:139` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: rely on integral to find it |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/controller_tuning.py:62` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | action = kp * error # Simplified |
@@ -150,7 +144,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/vmec_lite.py:52` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Highly simplified spectral 3D equilibrium solver mimicking VMEC principles. |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified surrogate: stiff critical-gradient model.""" |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:72` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | path_lengths = np.ones(n_chords) # Simplified |
-| P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_supervisory_control.py:34` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback") |
+| P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_supervisory_types.py:22` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback") |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:12` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | rejection can ramp the coil set toward explicit safe fallback currents instead |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:997` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | raise ValueError("fallback currents are not configured.") |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:1429` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | f"lag={max_abs_actuator_lag:.3e} \| fallback={fallback_active} \| " |
@@ -179,13 +173,14 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_METHODS_COMPLETE.md:643` | Docs WG | Gate behind explicit flag and define validation exit criteria. | [26] T. Pütterich et al., "Calculation and experimental test of the cooling factor of tungsten," *Nucl. Fusion* 50, 025012 (2010). doi:[1... |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:224` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Multi-Regime FNO \| `src/.../fno_training_multi_regime.py` \| NumPy \| Synthetic H-W \| 30-90 min \| Experimental \| |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:290` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 4. **Multi-Regime FNO** — experimental, synthetic data only. |
+| P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/internal/gemini/rustification_audit.md:11` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - **Reason**: Fusion simulation requires extreme performance to match experimental timescales. |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Experimental Bridges |
+| P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/first_simulation.rst:191` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Step 7: Read Real Experimental Data |
 
-## Full Register (Top 126)
+## Full Register (Top 129)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_supervisory_control.py:1` | module LOC=1419 exceeds monolith threshold (500+). |
 | P0 | `control` | `MONOLITH` | `src/scpn_fusion/control/free_boundary_tracking.py:1` | module LOC=1566 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver_model.py:1` | module LOC=884 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_transport.py:1` | module LOC=849 exceeds monolith threshold (500+). |
@@ -194,7 +189,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | module LOC=669 exceeds monolith threshold (500+). |
 | P0 | `diagnostics_io` | `MONOLITH` | `src/scpn_fusion/io/tokamak_archive.py:1` | module LOC=501 exceeds monolith threshold (500+). |
-| P0 | `compiler_runtime` | `TEST_GAP` | `src/scpn_fusion/hpc/hpc_bridge.py:1` | large source module without direct test import/stem linkage. |
 | P0 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
 | P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/burn_controller.py:139` | # Simplified: rely on integral to find it |
 | P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/controller_tuning.py:62` | action = kp * error # Simplified |
@@ -235,7 +229,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/vmec_lite.py:52` | Highly simplified spectral 3D equilibrium solver mimicking VMEC principles. |
 | P1 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | """Simplified surrogate: stiff critical-gradient model.""" |
 | P1 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:72` | path_lengths = np.ones(n_chords) # Simplified |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_supervisory_control.py:34` | SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback") |
+| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_supervisory_types.py:22` | SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback") |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:12` | rejection can ramp the coil set toward explicit safe fallback currents instead |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:997` | raise ValueError("fallback currents are not configured.") |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:1429` | f"lag={max_abs_actuator_lag:.3e} \| fallback={fallback_active} \| " |
@@ -264,6 +258,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_METHODS_COMPLETE.md:643` | [26] T. Pütterich et al., "Calculation and experimental test of the cooling factor of tungsten," *Nucl. Fusion* 50, 025012 (2010). doi:[1... |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:224` | \| Multi-Regime FNO \| `src/.../fno_training_multi_regime.py` \| NumPy \| Synthetic H-W \| 30-90 min \| Experimental \| |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:290` | 4. **Multi-Regime FNO** — experimental, synthetic data only. |
+| P3 | `docs_claims` | `EXPERIMENTAL` | `docs/internal/gemini/rustification_audit.md:11` | - **Reason**: Fusion simulation requires extreme performance to match experimental timescales. |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Experimental Bridges |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/first_simulation.rst:191` | Step 7: Read Real Experimental Data |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/tokamak_physics_textbook.rst:55` | :math:`F(\psi)` are constrained by experimental data (pressure profile and |
@@ -288,6 +283,10 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:740` | The "Tokens are Bits" philosophy creates a direct isomorphism between Petri Net semantics and stochastic computing primitives, guaranteei... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEXT_SPRINT_EXECUTION_QUEUE.md:37` | - Completed: `S1-003` (added low-point LCFS fallback regression test and VMEC-like geometry CI smoke coverage). |
 | P3 | `docs_claims` | `FALLBACK` | `docs/PHYSICS_VALIDATION_STATUS.md:13` | \| Solov'ev (fallback) \| psi_nrmse < 0.11 \| **PASS** (avg 0.076) \| |
+| P3 | `docs_claims` | `FALLBACK` | `docs/internal/gemini/infrastructure_strategy.md:13` | - **Fallback**: Mojo AOT Model -> Rust/ONNXRuntime -> Pure Python/JAX. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/internal/gemini/infrastructure_strategy.md:18` | - **Fallback**: Go Event Broker -> Python Multiprocessing Manager -> Synchronous Execution. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/internal/gemini/infrastructure_strategy.md:23` | - **Fallback**: Lean 4 Proof Extraction -> Rust `scpn-fusion-rs` -> Python `scipy.integrate`. |
+| P3 | `docs_claims` | `FALLBACK` | `docs/internal/gemini/infrastructure_strategy.md:28` | - **Fallback**: Julia SciML Solvers -> Rust Simulation Kernel -> Python / SciPy. |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:103` | - Transparent fallback to full physics solve when surrogate confidence is below threshold |

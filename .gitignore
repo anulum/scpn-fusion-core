@@ -136,3 +136,14 @@ pytest_results.log
 # Internal business docs — never commit
 docs/internal/
 docs/_build/
+
+# Local assistant config — never commit
+CLAUDE.md
+.claude/
+
+# Local backups — never committed
+BACKUP/
+ARCHIVE/
+
+# Internal audit scratch
+docs/internal/gemini/

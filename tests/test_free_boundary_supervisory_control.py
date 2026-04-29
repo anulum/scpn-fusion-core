@@ -12,6 +12,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
+import scpn_fusion.control._free_boundary_control_geometry as control_geometry
+import scpn_fusion.control._free_boundary_estimator as estimator_mod
+import scpn_fusion.control._free_boundary_plotting as plotting_mod
+import scpn_fusion.control._free_boundary_safety_supervisor as safety_mod
+import scpn_fusion.control._free_boundary_simulation as simulation_mod
+import scpn_fusion.control._free_boundary_simulation_arrays as simulation_arrays
+import scpn_fusion.control._free_boundary_simulation_summary as simulation_summary
+import scpn_fusion.control._free_boundary_supervisory_types as supervisory_types
 from scpn_fusion.control.free_boundary_supervisory_control import (
     FreeBoundarySafetySupervisor,
     FreeBoundaryStateEstimator,
@@ -21,6 +29,20 @@ from scpn_fusion.control.free_boundary_supervisory_control import (
     run_free_boundary_supervisory_simulation,
 )
 from scpn_fusion.control.fusion_sota_mpc import NeuralSurrogate
+
+
+def test_split_modules_preserve_public_supervisory_api() -> None:
+    assert supervisory_types.FreeBoundaryTarget is FreeBoundaryTarget
+    assert estimator_mod.FreeBoundaryStateEstimator is FreeBoundaryStateEstimator
+    assert safety_mod.FreeBoundarySafetySupervisor is FreeBoundarySafetySupervisor
+    assert control_geometry.extract_free_boundary_state is extract_free_boundary_state
+    assert (
+        simulation_mod.run_free_boundary_supervisory_simulation
+        is run_free_boundary_supervisory_simulation
+    )
+    assert callable(plotting_mod.plot_free_boundary_control)
+    assert callable(simulation_arrays.build_free_boundary_history_arrays)
+    assert callable(simulation_summary.build_free_boundary_simulation_summary)
 
 
 class _DivertedDummyKernel:

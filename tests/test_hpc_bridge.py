@@ -14,8 +14,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from scpn_fusion.core.hpc_bridge import HPCBridge, _as_contiguous_f64
-from scpn_fusion.core import hpc_bridge as hpc_mod
+from scpn_fusion.hpc.hpc_bridge import HPCBridge, _as_contiguous_f64
+from scpn_fusion.hpc import hpc_bridge as hpc_mod
 
 
 class _DummyLib:
@@ -331,9 +331,10 @@ def test_compile_cpp_requires_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_compile_cpp_builds_in_package_bin(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def _fake_run(cmd, check):  # type: ignore[no-untyped-def]
+    def _fake_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
         calls["cmd"] = list(cmd)
         calls["check"] = check
+        calls["timeout"] = timeout
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
     monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Linux")
@@ -344,6 +345,7 @@ def test_compile_cpp_builds_in_package_bin(monkeypatch: pytest.MonkeyPatch) -> N
     assert Path(out).name == "libscpn_solver.so"
     assert Path(out).parent.name == "bin"
     assert calls["check"] is True
+    assert calls["timeout"] == hpc_mod._CPP_BUILD_TIMEOUT_SECONDS
     assert isinstance(calls["cmd"], list)
     assert calls["cmd"][0] == "g++"
 
@@ -351,8 +353,10 @@ def test_compile_cpp_builds_in_package_bin(monkeypatch: pytest.MonkeyPatch) -> N
 def test_compile_cpp_windows_path(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
-    def _fake_run(cmd, check):  # type: ignore[no-untyped-def]
+    def _fake_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
         calls["cmd"] = list(cmd)
+        calls["check"] = check
+        calls["timeout"] = timeout
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
     monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Windows")
@@ -361,12 +365,14 @@ def test_compile_cpp_windows_path(monkeypatch: pytest.MonkeyPatch) -> None:
     out = hpc_mod.compile_cpp()
     assert out is not None
     assert Path(out).name == "scpn_solver.dll"
+    assert calls["check"] is True
+    assert calls["timeout"] == hpc_mod._CPP_BUILD_TIMEOUT_SECONDS
 
 
 def test_compile_cpp_handles_build_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     import subprocess
 
-    def _fail_run(cmd, check):  # type: ignore[no-untyped-def]
+    def _fail_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
         raise subprocess.CalledProcessError(1, cmd)
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
@@ -393,7 +399,7 @@ def test_solve_rejects_empty_input() -> None:
 
 
 def test_require_c_contiguous_f64_wrong_dtype() -> None:
-    from scpn_fusion.core.hpc_bridge import _require_c_contiguous_f64
+    from scpn_fusion.hpc.hpc_bridge import _require_c_contiguous_f64
 
     arr = np.zeros((3, 2), dtype=np.float32)
     with pytest.raises(ValueError, match="dtype float64"):
@@ -401,12 +407,19 @@ def test_require_c_contiguous_f64_wrong_dtype() -> None:
 
 
 def test_sanitize_convergence_params_valid() -> None:
-    from scpn_fusion.core.hpc_bridge import _sanitize_convergence_params
+    from scpn_fusion.hpc.hpc_bridge import _sanitize_convergence_params
 
     iters, tol, omega = _sanitize_convergence_params(100, 1e-6, 1.5)
     assert iters == 100
     assert abs(tol - 1e-6) < 1e-12
     assert abs(omega - 1.5) < 1e-12
+
+
+def test_core_hpc_bridge_compatibility_path_imports() -> None:
+    import scpn_fusion.core.hpc_bridge as core_hpc_bridge
+
+    assert core_hpc_bridge.HPCBridge.__name__ == "HPCBridge"
+    assert core_hpc_bridge.compile_cpp.__name__ == "compile_cpp"
 
 
 def test_close_noop_when_no_solver_ptr() -> None:

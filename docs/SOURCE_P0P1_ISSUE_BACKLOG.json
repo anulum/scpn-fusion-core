@@ -1,49 +1,8 @@
 {
-  "generated_at": "2026-03-22T22:13:22.170821+00:00",
+  "generated_at": "2026-04-29T11:40:21.017159+00:00",
   "generator": "tools/generate_source_p0p1_issue_backlog.py",
-  "issue_count": 32,
+  "issue_count": 30,
   "issues": [
-    {
-      "acceptance_checklist": [
-        "Add or tighten regression tests for this module path and update coverage baselines.",
-        "Update claim/evidence references if behavior or metrics change."
-      ],
-      "closure_metrics": [
-        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
-        "File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).",
-        "At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary."
-      ],
-      "domain": "control",
-      "file_path": "src/scpn_fusion/control/free_boundary_supervisory_control.py",
-      "github_body": "## Scope\n- File: `src/scpn_fusion/control/free_boundary_supervisory_control.py`\n- Priority: `P0` (score `110`)\n- Domain: `control`\n- Owner hint: `Control WG`\n- Markers: `MONOLITH`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Split module into focused subcomponents and lock interface contracts.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.\n- [ ] File line coverage in release lane is >= 80.0% (tools/coverage_guard.py).\n- [ ] At least one high-risk function path is extracted behind a unit-tested helper or submodule boundary.",
-      "github_labels": [
-        "hardening",
-        "underdeveloped",
-        "p0",
-        "control"
-      ],
-      "github_title": "[P0] Harden src/scpn_fusion/control/free_boundary_supervisory_control.py",
-      "issue_slug": "p0-control-free_boundary_supervisory_control",
-      "labels": [
-        "hardening",
-        "underdeveloped",
-        "p0",
-        "control"
-      ],
-      "markers": [
-        "MONOLITH"
-      ],
-      "owner_hint": "Control WG",
-      "priority": "P0",
-      "proposed_actions": [
-        "Split module into focused subcomponents and lock interface contracts."
-      ],
-      "score": 110,
-      "title": "[P0] Harden src/scpn_fusion/control/free_boundary_supervisory_control.py",
-      "trigger_lines": [
-        1
-      ]
-    },
     {
       "acceptance_checklist": [
         "Add or tighten regression tests for this module path and update coverage baselines.",
@@ -373,45 +332,6 @@
       ],
       "score": 99,
       "title": "[P0] Harden src/scpn_fusion/io/tokamak_archive.py",
-      "trigger_lines": [
-        1
-      ]
-    },
-    {
-      "acceptance_checklist": [
-        "Add or tighten regression tests for this module path and update coverage baselines.",
-        "Update claim/evidence references if behavior or metrics change."
-      ],
-      "closure_metrics": [
-        "Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration."
-      ],
-      "domain": "compiler_runtime",
-      "file_path": "src/scpn_fusion/hpc/hpc_bridge.py",
-      "github_body": "## Scope\n- File: `src/scpn_fusion/hpc/hpc_bridge.py`\n- Priority: `P0` (score `98`)\n- Domain: `compiler_runtime`\n- Owner hint: `Runtime WG`\n- Markers: `TEST_GAP`\n- Trigger lines: `1`\n\n## Proposed Actions\n- Add direct module tests and eliminate allowlist-only linkage.\n\n## Acceptance Checklist\n- [ ] Add or tighten regression tests for this module path and update coverage baselines.\n- [ ] Update claim/evidence references if behavior or metrics change.\n\n## Closure Metrics\n- [ ] Module no longer appears in docs/SOURCE_P0P1_ISSUE_BACKLOG after register regeneration.",
-      "github_labels": [
-        "hardening",
-        "underdeveloped",
-        "p0",
-        "compiler_runtime"
-      ],
-      "github_title": "[P0] Harden src/scpn_fusion/hpc/hpc_bridge.py",
-      "issue_slug": "p0-hpc-hpc_bridge",
-      "labels": [
-        "hardening",
-        "underdeveloped",
-        "p0",
-        "compiler_runtime"
-      ],
-      "markers": [
-        "TEST_GAP"
-      ],
-      "owner_hint": "Runtime WG",
-      "priority": "P0",
-      "proposed_actions": [
-        "Add direct module tests and eliminate allowlist-only linkage."
-      ],
-      "score": 98,
-      "title": "[P0] Harden src/scpn_fusion/hpc/hpc_bridge.py",
       "trigger_lines": [
         1
       ]
