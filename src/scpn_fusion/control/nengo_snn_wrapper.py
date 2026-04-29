@@ -367,11 +367,5 @@ class NengoSNNController:
         }
 
 
-class NengoSNNControllerStub:
-    """Backward-compat stub. No longer needed — controller always works."""
-
-    def __init__(self, *_args, **_kwargs) -> None:
-        raise ImportError(
-            "NengoSNNControllerStub is deprecated. "
-            "Use NengoSNNController directly — no external dependencies required."
-        )
+class NengoSNNControllerStub(NengoSNNController):
+    """Backward-compatible alias for the pure-NumPy controller."""

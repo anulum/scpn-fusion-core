@@ -230,6 +230,8 @@ def test_custom_channels() -> None:
     assert out.shape == (3,)
 
 
-def test_stub_raises() -> None:
-    with pytest.raises(ImportError, match="deprecated"):
-        NengoSNNControllerStub()
+def test_stub_alias_runs_controller() -> None:
+    ctrl = NengoSNNControllerStub(NengoSNNConfig(n_channels=1, n_neurons=50))
+    out = ctrl.step(np.array([0.1]))
+    assert isinstance(ctrl, NengoSNNController)
+    assert out.shape == (1,)

@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-04-29T16:24:37.302634+00:00`
+- Generated at: `2026-04-29T16:31:53.879138+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 126 |
-| P0 + P1 entries | 45 |
-| Source-domain entries | 59 |
-| Source-domain P0 + P1 entries | 45 |
+| Total flagged entries | 125 |
+| P0 + P1 entries | 44 |
+| Source-domain entries | 58 |
+| Source-domain P0 + P1 entries | 44 |
 | Docs-claims entries | 67 |
 | Domains affected | 5 |
 
@@ -23,7 +23,7 @@
 | `SIMPLIFIED` | 45 |
 | `PLANNED` | 13 |
 | `EXPERIMENTAL` | 11 |
-| `DEPRECATED` | 6 |
+| `DEPRECATED` | 5 |
 | `MONOLITH` | 4 |
 | `NOT_VALIDATED` | 2 |
 
@@ -33,17 +33,16 @@
 |---|---:|
 | `docs_claims` | 67 |
 | `core_physics` | 38 |
-| `control` | 10 |
 | `validation` | 10 |
+| `control` | 9 |
 | `diagnostics_io` | 1 |
 
-## Source-Centric Priority Backlog (Top 45)
+## Source-Centric Priority Backlog (Top 44)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 107 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:374` | Control WG | Replace default path or remove lane before next major release. | "NengoSNNControllerStub is deprecated. " |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/gk_nonlinear.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=581 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
@@ -93,7 +92,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 107 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:374` | Control WG | Replace default path or remove lane before next major release. | "NengoSNNControllerStub is deprecated. " |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/gk_nonlinear.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=581 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=669 exceeds monolith threshold (500+). |
@@ -173,12 +171,12 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/tokamak_physics_textbook.rst:55` | Docs WG | Gate behind explicit flag and define validation exit criteria. | :math:`F(\psi)` are constrained by experimental data (pressure profile and |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `README.md:155` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Graceful degradation \| Every path has a pure-Python fallback \| |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:19` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | `freegs-strict` | FreeGS-only strict backend parity lane with runtime-fallback disallowed and artifact contract checks (`mode=freegs`, ... |
+| P3 | 47 | `docs_claims` | `FALLBACK` | `docs/VALIDATION_GATE_MATRIX.md:29` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | `freegs-strict` (`freegs-strict.yml`, manual dispatch) | Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS referen... |
 
-## Full Register (Top 126)
+## Full Register (Top 125)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `control` | `DEPRECATED` | `src/scpn_fusion/control/nengo_snn_wrapper.py:374` | "NengoSNNControllerStub is deprecated. " |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/gk_nonlinear.py:1` | module LOC=581 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/integrated_transport_solver.py:1` | module LOC=526 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/tglf_interface.py:1` | module LOC=669 exceeds monolith threshold (500+). |
