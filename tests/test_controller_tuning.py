@@ -7,6 +7,8 @@
 # SCPN Fusion Core — Controller Tuning Tests
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -38,6 +40,68 @@ def test_tune_pid_returns_dict(monkeypatch):
     for key in ("Kp", "Ki", "Kd"):
         assert key in result
         assert result[key] > 0
+
+
+def test_tune_pid_validates_positive_trial_count():
+    with pytest.raises(ValueError, match="n_trials"):
+        tune_pid(None, n_trials=0)
+
+
+def test_tune_pid_requires_gym_like_environment(monkeypatch):
+    import scpn_fusion.control.controller_tuning as mod
+
+    monkeypatch.setattr(mod, "HAS_OPTUNA", True)
+    with pytest.raises(TypeError, match="reset"):
+        tune_pid(object(), n_trials=1)
+
+
+def test_tune_pid_objective_uses_integral_and_derivative_terms(monkeypatch):
+    import scpn_fusion.control.controller_tuning as mod
+
+    class FixedTrial:
+        values = {"Kp": 1.0, "Ki": 0.5, "Kd": 0.25}
+
+        def suggest_float(self, name, low, high, log=False):
+            return self.values[name]
+
+    class Study:
+        best_params: dict[str, float] = {}
+
+        def optimize(self, objective, n_trials):
+            assert n_trials == 1
+            objective(FixedTrial())
+            self.best_params = dict(FixedTrial.values)
+
+    class RecordingEnv:
+        def __init__(self):
+            self.actions: list[float] = []
+            self._next_errors = [0.5, 0.25, 0.125]
+
+        def reset(self):
+            self.actions.clear()
+            self._next_errors = [0.5, 0.25, 0.125]
+            return np.array([1.0]), {}
+
+        def step(self, action):
+            self.actions.append(float(action))
+            error = self._next_errors.pop(0)
+            terminated = not self._next_errors
+            return np.array([error]), -abs(error), terminated, False, {}
+
+    env = RecordingEnv()
+    monkeypatch.setattr(mod, "HAS_OPTUNA", True)
+    monkeypatch.setattr(
+        mod,
+        "optuna",
+        SimpleNamespace(create_study=lambda direction: Study()),
+        raising=False,
+    )
+
+    result = tune_pid(env, n_trials=1, n_episodes=1, max_steps=10)
+
+    assert result == FixedTrial.values
+    assert env.actions[0] == pytest.approx(1.5)
+    assert env.actions[1] == pytest.approx(1.125)
 
 
 @pytest.mark.skipif(not HAS_OPTUNA, reason="Optuna not installed")
