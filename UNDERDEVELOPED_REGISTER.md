@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-04-29T22:10:16.475313+00:00`
+- Generated at: `2026-04-29T22:17:54.170225+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 118 |
-| P0 + P1 entries | 37 |
-| Source-domain entries | 51 |
-| Source-domain P0 + P1 entries | 37 |
+| Total flagged entries | 117 |
+| P0 + P1 entries | 36 |
+| Source-domain entries | 50 |
+| Source-domain P0 + P1 entries | 36 |
 | Docs-claims entries | 67 |
 | Domains affected | 4 |
 
@@ -20,7 +20,7 @@
 | Key | Count |
 |---|---:|
 | `FALLBACK` | 45 |
-| `SIMPLIFIED` | 42 |
+| `SIMPLIFIED` | 41 |
 | `PLANNED` | 13 |
 | `EXPERIMENTAL` | 11 |
 | `DEPRECATED` | 5 |
@@ -33,16 +33,15 @@
 | `docs_claims` | 67 |
 | `core_physics` | 34 |
 | `validation` | 10 |
-| `control` | 7 |
+| `control` | 6 |
 
-## Source-Centric Priority Backlog (Top 37)
+## Source-Centric Priority Backlog (Top 36)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/density_controller.py:216` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified prediction: static + noise |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/mu_synthesis.py:149` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: u = -K * x |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/realtime_efit.py:98` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified real-time equilibrium reconstruction (EFIT).""" |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/alfven_eigenmodes.py:254` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | omega_BAE = 0.1 * v_A / R0 # Highly simplified |
@@ -84,7 +83,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/density_controller.py:216` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified prediction: static + noise |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/mu_synthesis.py:149` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified: u = -K * x |
 | P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/realtime_efit.py:98` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified real-time equilibrium reconstruction (EFIT).""" |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/alfven_eigenmodes.py:254` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | omega_BAE = 0.1 * v_A / R0 # Highly simplified |
@@ -163,13 +161,13 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 37 | `docs_claims` | `DEPRECATED` | `docs/HARDENING_30_DAY_EXECUTION_PLAN.md:17` | Docs WG | Replace default path or remove lane before next major release. | - Keep deprecated FNO paths non-default and explicitly gated. |
 | P3 | 37 | `docs_claims` | `PLANNED` | `docs/competitive_analysis.md:174` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| Stellarator geometry \| FUSE supports stellarator equilibria natively. SCPN is tokamak-only with stellarator planned. \| FUSE \| |
 | P3 | 29 | `docs_claims` | `FALLBACK` | `docs/3d_gaps.md:92` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - fallback if external dependency is unavailable. |
+| P3 | 29 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:93` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | │ ╱ Fallback (analytic) |
 
-## Full Register (Top 118)
+## Full Register (Top 117)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
 | P0 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/density_controller.py:216` | # Simplified prediction: static + noise |
 | P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/mu_synthesis.py:149` | # Simplified: u = -K * x |
 | P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/realtime_efit.py:98` | """Simplified real-time equilibrium reconstruction (EFIT).""" |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/alfven_eigenmodes.py:254` | omega_BAE = 0.1 * v_A / R0 # Highly simplified |

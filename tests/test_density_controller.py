@@ -105,6 +105,36 @@ def test_kalman_estimator():
     assert ne_upd.shape == (20,)
 
 
+def test_kalman_predict_advances_transport_profile():
+    est = KalmanDensityEstimator(
+        n_rho=20,
+        n_chords=5,
+        diffusivity_m2_s=0.5,
+        pinch_velocity_m_s=-0.02,
+    )
+    peaked = 1e18 + 4e19 * np.exp(-(est.rho / 0.25) ** 2)
+    before_trace = np.trace(est.P)
+
+    predicted = est.predict(peaked, dt=0.01)
+
+    assert predicted.shape == peaked.shape
+    assert np.all(predicted >= 1e16)
+    assert predicted[0] < peaked[0]
+    assert predicted[4] > peaked[4]
+    assert np.trace(est.P) > before_trace
+
+
+def test_kalman_predict_rejects_invalid_transport_domain():
+    est = KalmanDensityEstimator(n_rho=8, n_chords=3)
+
+    with np.testing.assert_raises(ValueError):
+        est.predict(np.ones(7), dt=0.01)
+    with np.testing.assert_raises(ValueError):
+        est.predict(np.ones(8), dt=-0.01)
+    with np.testing.assert_raises(ValueError):
+        est.set_transport(np.ones(7), np.ones(8))
+
+
 def test_fueling_optimizer():
     opt = FuelingOptimizer()
     sched = opt.optimize_pellet_sequence(np.zeros(10), np.ones(10), n_pellets=3, time_horizon=1.0)

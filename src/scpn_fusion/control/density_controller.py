@@ -33,8 +33,8 @@ class ParticleTransportModel:
         self.V_pinch = V_pinch
 
     def gas_puff_source(self, rate: float, penetration_depth: float = 0.03) -> np.ndarray:
-        """rate in particles/s. Source localized at edge."""
-        # Simple exponential decay from edge
+        """rate in particles/s. Source localised at edge."""
+        # Edge-localised exponential neutral-screening profile.
         decay = np.exp(-(1.0 - self.rho) / penetration_depth)
         decay /= np.sum(decay * self.V_prime * self.drho) + 1e-10
         return np.asarray(rate * decay)
@@ -42,7 +42,7 @@ class ParticleTransportModel:
     def pellet_source(
         self, speed_ms: float, radius_mm: float, launch_angle_deg: float = 0.0
     ) -> np.ndarray:
-        """Simple NGS mock. Penetrates deeper with higher speed and radius."""
+        """Neutral-gas-shielding inspired pellet deposition profile."""
         if radius_mm <= 0.0:
             return np.zeros(self.n_rho)
 
@@ -164,7 +164,7 @@ class DensityController:
         error = N_targ - N_meas
         self.integral_error += error * self.dt
 
-        # simple PI
+        # PI particle-inventory feedback.
         Kp = 10.0
         Ki = 1.0
         cmd = Kp * error + Ki * self.integral_error
@@ -192,15 +192,51 @@ class DensityController:
 
 
 class KalmanDensityEstimator:
-    def __init__(self, n_rho: int, n_chords: int = 8):
+    def __init__(
+        self,
+        n_rho: int,
+        n_chords: int = 8,
+        minor_radius_m: float = 2.0,
+        diffusivity_m2_s: float = 0.5,
+        pinch_velocity_m_s: float = -0.05,
+    ):
+        if n_rho < 3:
+            raise ValueError("n_rho must be at least 3 for radial transport prediction")
+        if n_chords < 1:
+            raise ValueError("n_chords must be at least 1")
+        if minor_radius_m <= 0.0:
+            raise ValueError("minor_radius_m must be positive")
+
         self.n_rho = n_rho
         self.n_chords = n_chords
+        self.a = float(minor_radius_m)
+        self.rho = np.linspace(0.0, 1.0, n_rho)
+        self.drho = float(self.rho[1] - self.rho[0])
         self.x = np.zeros(n_rho)
         self.P = np.eye(n_rho) * 1e38
+
+        self.set_transport(
+            diffusivity_m2_s=np.full(n_rho, diffusivity_m2_s, dtype=float),
+            pinch_velocity_m_s=np.full(n_rho, pinch_velocity_m_s, dtype=float),
+        )
 
         # Q and R
         self.Q = np.eye(n_rho) * 1e36  # Process noise
         self.R = np.eye(n_chords) * 1e34  # Meas noise
+
+    def set_transport(
+        self, diffusivity_m2_s: np.ndarray, pinch_velocity_m_s: np.ndarray
+    ) -> None:
+        D = np.asarray(diffusivity_m2_s, dtype=float)
+        V = np.asarray(pinch_velocity_m_s, dtype=float)
+        if D.shape != (self.n_rho,) or V.shape != (self.n_rho,):
+            raise ValueError("transport profiles must have shape (n_rho,)")
+        if not np.all(np.isfinite(D)) or np.any(D < 0.0):
+            raise ValueError("diffusivity profile must be finite and non-negative")
+        if not np.all(np.isfinite(V)):
+            raise ValueError("pinch velocity profile must be finite")
+        self.D = D
+        self.V_pinch = V
 
     def measurement_matrix(self, chord_angles: np.ndarray) -> np.ndarray:
         # Mock Abel transform matrix
@@ -214,10 +250,51 @@ class KalmanDensityEstimator:
         return C
 
     def predict(self, ne: np.ndarray, dt: float) -> np.ndarray:
-        # Simplified prediction: static + noise
-        self.x = ne
+        dt = float(dt)
+        if not math.isfinite(dt) or dt < 0.0:
+            raise ValueError("dt must be finite and non-negative")
+
+        profile = np.asarray(ne, dtype=float)
+        if profile.shape != (self.n_rho,):
+            raise ValueError("density profile must have shape (n_rho,)")
+        if not np.all(np.isfinite(profile)):
+            raise ValueError("density profile must be finite")
+
+        self.x = self._advance_transport(profile, dt)
         self.P = self.P + self.Q * dt
         return self.x
+
+    def _advance_transport(self, ne: np.ndarray, dt: float) -> np.ndarray:
+        if dt == 0.0:
+            return np.asarray(np.maximum(ne, 1e16), dtype=float)
+
+        D_max = float(np.max(self.D))
+        if D_max > 0.0:
+            dt_cfl = (self.drho * self.a) ** 2 / (2.0 * D_max)
+            n_substeps = max(1, int(math.ceil(dt / dt_cfl)))
+        else:
+            n_substeps = 1
+        dt_sub = dt / n_substeps
+
+        state = np.asarray(np.maximum(ne, 1e16), dtype=float)
+        for _ in range(n_substeps):
+            flux = np.zeros(self.n_rho + 1)
+            for i in range(1, self.n_rho):
+                grad_n = (state[i] - state[i - 1]) / self.drho
+                n_face = 0.5 * (state[i] + state[i - 1])
+                D_face = 0.5 * (self.D[i] + self.D[i - 1])
+                V_face = 0.5 * (self.V_pinch[i] + self.V_pinch[i - 1])
+                flux[i] = -D_face * grad_n / self.a + V_face * n_face
+
+            flux[0] = 0.0
+            flux[-1] = self.V_pinch[-1] * state[-1]
+
+            divergence = np.zeros(self.n_rho)
+            for i in range(self.n_rho):
+                divergence[i] = (flux[i + 1] - flux[i]) / (self.drho * self.a)
+            state = np.maximum(state - divergence * dt_sub, 1e16)
+
+        return np.asarray(state)
 
     def update(
         self, ne_pred: np.ndarray, measurements: np.ndarray, chord_angles: np.ndarray
@@ -248,7 +325,7 @@ class FuelingOptimizer:
     def optimize_pellet_sequence(
         self, ne_current: np.ndarray, ne_target: np.ndarray, n_pellets: int, time_horizon: float
     ) -> PelletSchedule:
-        # Simplistic shooting: spread pellets evenly
+        # Evenly spaced open-loop launch baseline.
         if n_pellets <= 0:
             return PelletSchedule([], [], [])
 
