@@ -46,6 +46,12 @@ _E_CHARGE = 1.602176634e-19  # C
 _logger = logging.getLogger(__name__)
 
 
+def _require_positive(name: str, value: float) -> float:
+    if not np.isfinite(value) or value <= 0.0:
+        raise ValueError(f"{name} must be finite and positive")
+    return float(value)
+
+
 @dataclass
 class EigenMode:
     """Single eigenmode at one k_y."""
@@ -142,6 +148,32 @@ def _parallel_streaming_matrix(
     return D
 
 
+def _sugama_effective_collision_rate(
+    nu_D: float,
+    nu_E: float,
+    nu_star: float,
+    energy_norm: float,
+    lam: float,
+    B_ratio_mean: float,
+) -> float:
+    """Velocity-local damping from pitch-angle and energy diffusion terms."""
+    energy_norm = _require_positive("energy_norm", energy_norm)
+    B_ratio_mean = _require_positive("B_ratio_mean", B_ratio_mean)
+    if not np.isfinite(lam) or lam < 0.0:
+        raise ValueError("lam must be finite and non-negative")
+    if not np.isfinite(nu_D) or nu_D < 0.0:
+        raise ValueError("nu_D must be finite and non-negative")
+    if not np.isfinite(nu_E) or nu_E < 0.0:
+        raise ValueError("nu_E must be finite and non-negative")
+    if not np.isfinite(nu_star) or nu_star < 0.0:
+        raise ValueError("nu_star must be finite and non-negative")
+
+    xi_sq = max(1.0 - lam * B_ratio_mean, 0.0)
+    pitch_scattering = nu_D * (1.0 - xi_sq)
+    energy_diffusion = nu_E * (energy_norm - 1.5) ** 2 / max(energy_norm, 1e-12)
+    return float(nu_star * (pitch_scattering + energy_diffusion))
+
+
 def solve_eigenvalue_single_ky(
     k_y_rho_s: float,
     species_list: list[GKSpecies],
@@ -202,9 +234,16 @@ def solve_eigenvalue_single_ky(
             # Parallel streaming
             D_par = _parallel_streaming_matrix(n_theta, geom, E_norm, lam_val, B_ratio)
 
-            # Collision operator (simplified: nu_D * pitch-angle scattering applied to theta structure)
             nu_D, _ = collision_frequencies(ion, ion.density_19, ion.temperature_keV, Z_eff)
-            nu_eff = nu_D * nu_star  # scale by collisionality parameter
+            _, nu_E = collision_frequencies(ion, ion.density_19, ion.temperature_keV, Z_eff)
+            nu_eff = _sugama_effective_collision_rate(
+                nu_D=nu_D,
+                nu_E=nu_E,
+                nu_star=nu_star,
+                energy_norm=E_norm,
+                lam=lam_val,
+                B_ratio_mean=float(np.mean(B_ratio)),
+            )
 
             # Response: for eigenvalue omega, g = (omega_star_full - omega_D) / (omega - omega_D - v_par*grad_par - nu) * J0 * phi
             # In matrix form: g = G(omega) . J0 . phi

@@ -118,14 +118,16 @@ def miller_geometry(
     # Toroidal field: B_phi = B0 * R0 / R (vacuum approximation)
     B_phi = B0 * R0 / R_s
 
-    # Poloidal field: B_p = r / (q * R_s * |J/r|) — simplified
-    abs_jac_over_r = np.abs(jac) / max(r, 1e-6)
-    B_p = 1.0 / (q * abs_jac_over_r + 1e-30)
+    # Poloidal field from q = r B_phi / (R B_p), corrected by local metric stretching.
+    theta_arc = np.sqrt(dR_dt**2 + dZ_dt**2)
+    circular_arc = max(r, 1e-6)
+    metric_stretch = theta_arc / circular_arc
+    B_p = np.abs(B_phi) * max(r, 1e-6) / (q * R_s * np.maximum(metric_stretch, 1e-12))
 
     B_mag = np.sqrt(B_phi**2 + B_p**2)
 
-    # b . grad(theta) = B_p / (R_s * |grad theta|) ≈ 1 / (q * R_s) simplified
-    b_dot_grad_theta = 1.0 / (q * R_s)
+    # Streaming metric along the ballooning angle.
+    b_dot_grad_theta = B_p / B_mag * np.sqrt(g_tt)
 
     # Curvature — Miller Eqs. (18)-(19)
     # Normal curvature kappa_n ≈ -(1/R)(cos(theta) + s_hat*theta*sin(theta))

@@ -13,6 +13,7 @@ import pytest
 from scpn_fusion.core.gk_eigenvalue import (
     EigenMode,
     LinearGKResult,
+    _sugama_effective_collision_rate,
     solve_eigenvalue_single_ky,
     solve_linear_gk,
 )
@@ -177,3 +178,36 @@ def test_custom_species_list():
         n_period=1,
     )
     assert len(result.modes) == 2
+
+
+def test_sugama_collision_rate_depends_on_pitch_and_energy():
+    passing = _sugama_effective_collision_rate(
+        nu_D=2.0,
+        nu_E=0.5,
+        nu_star=0.1,
+        energy_norm=1.0,
+        lam=0.1,
+        B_ratio_mean=1.0,
+    )
+    trapped = _sugama_effective_collision_rate(
+        nu_D=2.0,
+        nu_E=0.5,
+        nu_star=0.1,
+        energy_norm=1.0,
+        lam=0.95,
+        B_ratio_mean=1.0,
+    )
+    suprathermal = _sugama_effective_collision_rate(
+        nu_D=2.0,
+        nu_E=0.5,
+        nu_star=0.1,
+        energy_norm=4.0,
+        lam=0.95,
+        B_ratio_mean=1.0,
+    )
+
+    assert passing > 0.0
+    assert trapped > passing
+    assert suprathermal > trapped
+    with pytest.raises(ValueError, match="energy_norm"):
+        _sugama_effective_collision_rate(2.0, 0.5, 0.1, 0.0, 0.5, 1.0)

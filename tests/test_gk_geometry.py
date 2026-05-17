@@ -110,6 +110,44 @@ def test_b_dot_grad_theta_positive():
     assert np.all(geom.b_dot_grad_theta > 0)
 
 
+def test_poloidal_field_scales_with_toroidal_field_strength():
+    low_field = miller_geometry(
+        R0=2.78, a=1.0, rho=0.5, q=1.4, B0=2.0, n_theta=64, n_period=1
+    )
+    high_field = miller_geometry(
+        R0=2.78, a=1.0, rho=0.5, q=1.4, B0=4.0, n_theta=64, n_period=1
+    )
+
+    low_b_phi = 2.0 * 2.78 / low_field.R
+    high_b_phi = 4.0 * 2.78 / high_field.R
+    low_b_pol = np.sqrt(np.maximum(low_field.B_mag**2 - low_b_phi**2, 0.0))
+    high_b_pol = np.sqrt(np.maximum(high_field.B_mag**2 - high_b_phi**2, 0.0))
+
+    assert np.mean(high_b_pol / low_b_pol) == pytest.approx(2.0, rel=0.02)
+
+
+def test_b_dot_grad_theta_uses_local_metric_relation():
+    geom = miller_geometry(
+        R0=6.2,
+        a=2.0,
+        rho=0.65,
+        kappa=1.8,
+        delta=0.35,
+        q=3.0,
+        s_hat=1.1,
+        B0=5.3,
+        n_theta=96,
+        n_period=1,
+    )
+    b_phi = 5.3 * 6.2 / geom.R
+    b_pol = np.sqrt(np.maximum(geom.B_mag**2 - b_phi**2, 0.0))
+    expected = b_pol / geom.B_mag * np.sqrt(geom.g_tt)
+
+    np.testing.assert_allclose(geom.b_dot_grad_theta, expected, rtol=1e-10, atol=1e-12)
+    shortcut = 1.0 / (3.0 * geom.R)
+    assert np.max(np.abs(geom.b_dot_grad_theta - shortcut)) > 1e-3
+
+
 def test_miller_params_match_interface():
     """Verify miller_geometry accepts all GKLocalParams geometry fields."""
     geom = miller_geometry(
