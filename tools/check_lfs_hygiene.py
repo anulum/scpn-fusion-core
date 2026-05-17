@@ -18,9 +18,10 @@ Checks:
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import subprocess
 import sys
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -36,6 +37,7 @@ _LFS_REQUIRED_GLOBS = (
     "training_logs/**/*.npz",
     "training_logs/**/*.npy",
 )
+_LFS_POINTER_PREFIX = b"version https://git-lfs.github.com/spec/v1\n"
 
 
 def _git(*args: str) -> str:
@@ -55,8 +57,7 @@ def _tracked_files() -> list[str]:
 
 
 def _matches_required_glob(path: str) -> bool:
-    posix = PurePosixPath(path)
-    return any(posix.match(pattern) for pattern in _LFS_REQUIRED_GLOBS)
+    return any(fnmatch.fnmatchcase(path, pattern) for pattern in _LFS_REQUIRED_GLOBS)
 
 
 def _check_attr_filter(paths: list[str]) -> dict[str, str]:
@@ -78,6 +79,20 @@ def _check_attr_filter(paths: list[str]) -> dict[str, str]:
     return out
 
 
+def _index_blob_head(path: str, *, byte_count: int = 64) -> bytes:
+    result = subprocess.run(
+        ["git", "cat-file", "-p", f":{path}"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+    )
+    return result.stdout[:byte_count]
+
+
+def _is_lfs_pointer_blob(blob_head: bytes) -> bool:
+    return blob_head.startswith(_LFS_POINTER_PREFIX)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check Git LFS repository hygiene.")
     parser.add_argument(
@@ -97,6 +112,11 @@ def main(argv: list[str] | None = None) -> int:
     required = [p for p in tracked if _matches_required_glob(p)]
     attr_values = _check_attr_filter(required)
     missing_required = [p for p in required if attr_values.get(p) != "lfs"]
+    non_pointer_required = [
+        p
+        for p in required
+        if attr_values.get(p) == "lfs" and not _is_lfs_pointer_blob(_index_blob_head(p))
+    ]
 
     oversize_non_lfs: list[tuple[str, int, str]] = []
     candidate_binary = [p for p in tracked if Path(p).suffix.lower() in _BINARY_EXTENSIONS]
@@ -112,13 +132,21 @@ def main(argv: list[str] | None = None) -> int:
         if attr != "lfs":
             oversize_non_lfs.append((rel, size, attr))
 
-    if missing_required or oversize_non_lfs:
+    if missing_required or non_pointer_required or oversize_non_lfs:
         if missing_required:
             print(
                 "ERROR: Required model/data artifacts are not tracked via Git LFS:",
                 file=sys.stderr,
             )
             for rel in missing_required:
+                print(f"  - {rel}", file=sys.stderr)
+        if non_pointer_required:
+            print(
+                "ERROR: Required model/data artifacts have LFS attributes but "
+                "are committed as full blobs:",
+                file=sys.stderr,
+            )
+            for rel in non_pointer_required:
                 print(f"  - {rel}", file=sys.stderr)
         if oversize_non_lfs:
             threshold_mb = args.max_nonlfs_bytes / (1024 * 1024)
