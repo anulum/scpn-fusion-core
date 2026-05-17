@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-05-17T20:14:05.096039+00:00`
+- Generated at: `2026-05-17T21:26:11.642788+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 101 |
-| P0 + P1 entries | 25 |
-| Source-domain entries | 39 |
-| Source-domain P0 + P1 entries | 25 |
+| Total flagged entries | 79 |
+| P0 + P1 entries | 3 |
+| Source-domain entries | 17 |
+| Source-domain P0 + P1 entries | 3 |
 | Docs-claims entries | 62 |
 | Domains affected | 4 |
 
@@ -20,9 +20,9 @@
 | Key | Count |
 |---|---:|
 | `FALLBACK` | 41 |
-| `SIMPLIFIED` | 30 |
 | `PLANNED` | 13 |
 | `EXPERIMENTAL` | 10 |
+| `SIMPLIFIED` | 8 |
 | `DEPRECATED` | 5 |
 | `NOT_VALIDATED` | 2 |
 
@@ -31,69 +31,25 @@
 | Key | Count |
 |---|---:|
 | `docs_claims` | 62 |
-| `core_physics` | 25 |
 | `validation` | 10 |
 | `control` | 4 |
+| `core_physics` | 3 |
 
-## Source-Centric Priority Backlog (Top 25)
+## Source-Centric Priority Backlog (Top 3)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_online_learner.py:137` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Backprop (simplified, output layer only for stability) |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:12` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | simplified Sugama model (pitch-angle scattering + energy diffusion). |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:156` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified Sugama model: |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:165` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified to order-of-magnitude for the linearised operator |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:178` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | nu_E = nu_D # simplified: energy diffusion ~ pitch-angle for like-species |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/impurity_transport.py:173` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | rhs[-1] = s.source_rate * dt / dr # Very simplified edge source mapping |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_scenario.py:38` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # CD parameters (simplified) |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_scenario.py:248` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | j_bs = np.zeros(self.nr) # simplified |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_scenario.py:258` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | q_peak = sol_res.q_parallel_MW_m2 # simplified |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/lh_transition.py:51` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Drive scales with pressure gradient, simplified here to scale with p |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/lh_transition.py:152` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Highly simplified heuristic logic |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/locked_mode.py:35` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified linear correction |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/locked_mode.py:75` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Very simplified proxy formula retaining the B_res^2 scaling |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/momentum_transport.py:113` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified criterion: omega_phi * tau_wall > 1% of something? |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neoclassical.py:213` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified for this module |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neural_turbulence.py:180` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # highly simplified nu_star |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neural_turbulence.py:227` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Compute flux targets from simplified analytical quasilinear model. |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:31` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified threshold energy |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:47` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Using a simplified parameterized curve from Eckstein |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:181` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Highly simplified fatigue life mapping |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stellarator_geometry.py:154` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified analytic proxy: epsilon_eff ~ epsilon_h^(3/2) / sqrt(N_fp). |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/vmec_lite.py:52` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Highly simplified spectral 3D equilibrium solver mimicking VMEC principles. |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified surrogate: stiff critical-gradient model.""" |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:72` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | path_lengths = np.ones(n_chords) # Simplified |
 
-## Top Priority Backlog (Top 80)
+## Top Priority Backlog (Top 79)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_online_learner.py:137` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Backprop (simplified, output layer only for stability) |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:12` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | simplified Sugama model (pitch-angle scattering + energy diffusion). |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:156` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified Sugama model: |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:165` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified to order-of-magnitude for the linearised operator |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:178` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | nu_E = nu_D # simplified: energy diffusion ~ pitch-angle for like-species |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/impurity_transport.py:173` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | rhs[-1] = s.source_rate * dt / dr # Very simplified edge source mapping |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_scenario.py:38` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # CD parameters (simplified) |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_scenario.py:248` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | j_bs = np.zeros(self.nr) # simplified |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_scenario.py:258` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | q_peak = sol_res.q_parallel_MW_m2 # simplified |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/lh_transition.py:51` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Drive scales with pressure gradient, simplified here to scale with p |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/lh_transition.py:152` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Highly simplified heuristic logic |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/locked_mode.py:35` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified linear correction |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/locked_mode.py:75` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Very simplified proxy formula retaining the B_res^2 scaling |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/momentum_transport.py:113` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified criterion: omega_phi * tau_wall > 1% of something? |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neoclassical.py:213` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified for this module |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neural_turbulence.py:180` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # highly simplified nu_star |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neural_turbulence.py:227` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Compute flux targets from simplified analytical quasilinear model. |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:31` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified threshold energy |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:47` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Using a simplified parameterized curve from Eckstein |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:181` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Highly simplified fatigue life mapping |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stellarator_geometry.py:154` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Simplified analytic proxy: epsilon_eff ~ epsilon_h^(3/2) / sqrt(N_fp). |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/vmec_lite.py:52` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Highly simplified spectral 3D equilibrium solver mimicking VMEC principles. |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified surrogate: stiff critical-gradient model.""" |
 | P1 | 82 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:72` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | path_lengths = np.ones(n_chords) # Simplified |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_supervisory_types.py:22` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback") |
@@ -151,34 +107,33 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 29 | `docs_claims` | `FALLBACK` | `docs/PHYSICS_VALIDATION_STATUS.md:13` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Solov'ev (fallback) \| psi_nrmse < 0.11 \| **PASS** (avg 0.076) \| |
 | P3 | 28 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | Docs WG | Add real-data validation campaign and publish error bars. | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
 | P3 | 28 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | Docs WG | Add real-data validation campaign and publish error bars. | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
+| P3 | 19 | `docs_claims` | `FALLBACK` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:103` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback to full physics solve when surrogate confidence is below threshold |
+| P3 | 19 | `docs_claims` | `FALLBACK` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:276` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - f32 precision with tolerance-guarded fallback to f64 CPU path |
+| P3 | 19 | `docs_claims` | `PLANNED` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:690` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | **Packet C — `scpn/runtime.py` — PetriNetEngine** (planned): |
+| P3 | 19 | `docs_claims` | `PLANNED` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:704` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | **Packet D — `examples/01_traffic_light.py` — Hello World Demo** (planned): |
+| P3 | 19 | `docs_claims` | `FALLBACK` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:779` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | commit SC state (or oracle fallback) |
+| P3 | 19 | `docs_claims` | `FALLBACK` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:786` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | The oracle path is always available and always correct. The SC path currently returns the oracle result (fallback) but is structured so t... |
+| P3 | 19 | `docs_claims` | `FALLBACK` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1721` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | The untested lines in `artifact.py` are error-handling paths for malformed JSON that would require intentionally corrupted artifacts to e... |
+| P3 | 19 | `docs_claims` | `FALLBACK` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2904` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | 4. **Fallback policy.** If the divergence exceeds a threshold, the controller should revert to the oracle path. This provides a safety ne... |
+| P3 | 19 | `docs_claims` | `PLANNED` | `docs/VALIDATION_AGAINST_ITER.md:238` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | Planned follow-up after WP-E1: |
+| P3 | 19 | `docs_claims` | `FALLBACK` | `docs/promotions/HN_SHOW.md:11` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | SCPN Fusion Core is an open-source tokamak plasma physics simulator that covers the full lifecycle of a fusion reactor: Grad-Shafranov eq... |
+| P3 | 19 | `docs_claims` | `FALLBACK` | `docs/promotions/REDDIT_PROGRAMMING.md:13` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Transparent fallback: `try: import scpn_fusion_rs` -- if the Rust extension isn't built, NumPy kicks in |
+| P3 | 19 | `docs_claims` | `FALLBACK` | `docs/rfc/GPHY-06_RFC.md:70` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - add deterministic tests for cache reuse, hot-swap behavior, and identity fallback. |
+| P3 | 19 | `docs_claims` | `PLANNED` | `docs/sphinx/userguide/hpc.rst:6` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | native backend, C++ FFI bridge, and a planned GPU acceleration path. |
+| P3 | 19 | `docs_claims` | `PLANNED` | `docs/sphinx/userguide/hpc.rst:96` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | GPU support is planned in three phases (tracked in |
+| P3 | 9 | `docs_claims` | `PLANNED` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:284` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| Multigrid V-cycle (65x65) \| 10-30x \| Phase 3 planned \| |
+| P3 | 9 | `docs_claims` | `PLANNED` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:285` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| FNO turbulence (FFT, 64x64) \| 50-100x \| Phase 3 planned \| |
+| P3 | 9 | `docs_claims` | `PLANNED` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:286` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | \| MLP batch inference \| 2-5x \| Phase 3 planned \| |
+| P3 | 9 | `docs_claims` | `PLANNED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:212` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | > "Packet C — `scpn/runtime.py` — PetriNetEngine (planned): The runtime engine wraps the `CompiledNet` in a simulation loop." |
+| P3 | 9 | `docs_claims` | `PLANNED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2675` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | Online learning is planned as future work (Section 34) with appropriate safety constraints (bounded weight deltas, Lyapunov stability mon... |
+| P3 | 9 | `docs_claims` | `PLANNED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2684` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | Plant model integration is planned as future work (Section 31). |
+| P3 | 9 | `docs_claims` | `PLANNED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:2693` | Docs WG | Convert roadmap note into scheduled milestone task + owner. | Hierarchical multi-controller composition is planned as future work (Section 33). |
 
-## Full Register (Top 101)
+## Full Register (Top 79)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
 | P0 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_online_learner.py:137` | # Backprop (simplified, output layer only for stability) |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:12` | simplified Sugama model (pitch-angle scattering + energy diffusion). |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:156` | Simplified Sugama model: |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:165` | # Simplified to order-of-magnitude for the linearised operator |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_species.py:178` | nu_E = nu_D # simplified: energy diffusion ~ pitch-angle for like-species |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/impurity_transport.py:173` | rhs[-1] = s.source_rate * dt / dr # Very simplified edge source mapping |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_scenario.py:38` | # CD parameters (simplified) |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_scenario.py:248` | j_bs = np.zeros(self.nr) # simplified |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/integrated_scenario.py:258` | q_peak = sol_res.q_parallel_MW_m2 # simplified |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/lh_transition.py:51` | # Drive scales with pressure gradient, simplified here to scale with p |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/lh_transition.py:152` | # Highly simplified heuristic logic |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/locked_mode.py:35` | # Simplified linear correction |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/locked_mode.py:75` | # Very simplified proxy formula retaining the B_res^2 scaling |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/momentum_transport.py:113` | # Simplified criterion: omega_phi * tau_wall > 1% of something? |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neoclassical.py:213` | # Simplified for this module |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neural_turbulence.py:180` | # highly simplified nu_star |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/neural_turbulence.py:227` | Compute flux targets from simplified analytical quasilinear model. |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:31` | # Simplified threshold energy |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:47` | # Using a simplified parameterized curve from Eckstein |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/plasma_wall_interaction.py:181` | # Highly simplified fatigue life mapping |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/stellarator_geometry.py:154` | Simplified analytic proxy: epsilon_eff ~ epsilon_h^(3/2) / sqrt(N_fp). |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/vmec_lite.py:52` | Highly simplified spectral 3D equilibrium solver mimicking VMEC principles. |
 | P1 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | """Simplified surrogate: stiff critical-gradient model.""" |
 | P1 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:72` | path_lengths = np.ones(n_chords) # Simplified |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_supervisory_types.py:22` | SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback") |

@@ -19,6 +19,17 @@ class ImpuritySpecies:
     Z_nucleus: int
     mass_amu: float
     source_rate: float = 0.0
+    source_decay_width_rho: float = 0.05
+
+    def __post_init__(self) -> None:
+        if self.Z_nucleus < 1:
+            raise ValueError("Z_nucleus must be positive")
+        if not np.isfinite(self.mass_amu) or self.mass_amu <= 0.0:
+            raise ValueError("mass_amu must be finite and positive")
+        if not np.isfinite(self.source_rate) or self.source_rate < 0.0:
+            raise ValueError("source_rate must be finite and non-negative")
+        if not np.isfinite(self.source_decay_width_rho) or self.source_decay_width_rho <= 0.0:
+            raise ValueError("source_decay_width_rho must be finite and positive")
 
 
 class CoolingCurve:
@@ -30,19 +41,32 @@ class CoolingCurve:
         self.element = element
 
     def L_z(self, Te_eV: np.ndarray) -> np.ndarray:
-        log_Te = np.log(Te_eV)
+        Te = np.asarray(Te_eV, dtype=float)
+        valid = np.isfinite(Te) & (Te > 0.0)
+        if not np.any(valid):
+            return np.zeros_like(Te, dtype=float)
+
+        log_Te = np.zeros_like(Te, dtype=float)
+        log_Te[valid] = np.log(Te[valid])
         if self.element == "W":
             # Putterich et al. 2010 fit — peaks near 1500 eV and 50 eV
             L = 1e-31 * np.exp(-(((log_Te - np.log(1500.0)) / 1.5) ** 2))
             L += 3e-33 * np.exp(-(((log_Te - np.log(50.0)) / 1.0) ** 2))
+            L[~valid] = 0.0
             return np.asarray(L)
         if self.element == "C":
-            return np.asarray(1e-32 * np.exp(-(((log_Te - np.log(10.0)) / 0.5) ** 2)))
+            L = 1e-32 * np.exp(-(((log_Te - np.log(10.0)) / 0.5) ** 2))
+            L[~valid] = 0.0
+            return np.asarray(L)
         if self.element == "Ar":
-            return np.asarray(1e-32 * np.exp(-(((log_Te - np.log(200.0)) / 1.0) ** 2)))
+            L = 1e-32 * np.exp(-(((log_Te - np.log(200.0)) / 1.0) ** 2))
+            L[~valid] = 0.0
+            return np.asarray(L)
         if self.element == "Ne":
-            return np.asarray(1e-32 * np.exp(-(((log_Te - np.log(50.0)) / 1.0) ** 2)))
-        return np.zeros_like(Te_eV)
+            L = 1e-32 * np.exp(-(((log_Te - np.log(50.0)) / 1.0) ** 2))
+            L[~valid] = 0.0
+            return np.asarray(L)
+        return np.zeros_like(Te)
 
 
 def neoclassical_impurity_pinch(
@@ -125,13 +149,29 @@ def tungsten_accumulation_diagnostic(n_W: np.ndarray, ne: np.ndarray) -> dict[st
 
 class ImpurityTransportSolver:
     def __init__(self, rho: np.ndarray, R0: float, a: float, species: list[ImpuritySpecies]):
-        self.rho = rho
+        self.rho = np.asarray(rho, dtype=float)
         self.R0 = R0
         self.a = a
         self.species = species
 
-        self.nr = len(rho)
-        self.drho = rho[1] - rho[0]
+        self.nr = len(self.rho)
+        if self.nr < 3:
+            raise ValueError("rho must contain at least three radial points")
+        if not np.all(np.isfinite(self.rho)):
+            raise ValueError("rho must contain only finite values")
+        if not np.all(np.diff(self.rho) > 0.0):
+            raise ValueError("rho must be strictly increasing")
+        if not np.isclose(self.rho[0], 0.0) or not np.isclose(self.rho[-1], 1.0):
+            raise ValueError("rho must span the normalised interval [0, 1]")
+        if not np.isfinite(R0) or R0 <= 0.0:
+            raise ValueError("R0 must be finite and positive")
+        if not np.isfinite(a) or a <= 0.0:
+            raise ValueError("a must be finite and positive")
+
+        drho = np.diff(self.rho)
+        if not np.allclose(drho, drho[0], rtol=1e-6, atol=1e-12):
+            raise ValueError("rho grid must be uniformly spaced for the banded transport solve")
+        self.drho = float(drho[0])
 
         self.n_z = {s.element: np.zeros(self.nr) for s in species}
 
@@ -164,6 +204,7 @@ class ImpurityTransportSolver:
             upper = np.zeros(self.nr)
             lower = np.zeros(self.nr)
             rhs = np.zeros(self.nr)
+            source = self._edge_source_density(s)
 
             # Boundary conditions
             diag[0] = 1.0
@@ -171,7 +212,7 @@ class ImpurityTransportSolver:
             rhs[0] = 0.0  # dn/dr = 0 at axis
 
             diag[-1] = 1.0
-            rhs[-1] = s.source_rate * dt / dr  # Very simplified edge source mapping
+            rhs[-1] = n[-1] + dt * source[-1]
 
             # Interior
             for i in range(1, self.nr - 1):
@@ -196,7 +237,7 @@ class ImpurityTransportSolver:
                 diag[i] = 1.0 - dt * (coeff_D_0 + coeff_V_0)
                 upper[i] = -dt * (coeff_D_plus + coeff_V_plus)
 
-                rhs[i] = n[i]
+                rhs[i] = n[i] + dt * source[i]
 
             # Solve
             ab = np.zeros((3, self.nr))
@@ -210,3 +251,22 @@ class ImpurityTransportSolver:
             self.n_z[s.element] = np.maximum(n_new, 0.0)
 
         return self.n_z
+
+    def _edge_source_density(self, species: ImpuritySpecies) -> np.ndarray:
+        """Return a volume-normalised edge source density [m^-3 s^-1]."""
+        if species.source_rate == 0.0:
+            return np.zeros(self.nr)
+
+        width = max(species.source_decay_width_rho, self.drho)
+        profile = np.exp(-(1.0 - self.rho) / width)
+        profile[self.rho < max(0.0, 1.0 - 8.0 * width)] = 0.0
+
+        vol_element = 4.0 * np.pi**2 * self.R0 * self.a**2 * self.rho
+        _trapz: Any = getattr(np, "trapezoid", None) or getattr(np, "trapz", None)
+        profile_volume = float(_trapz(profile * vol_element, self.rho))
+        if profile_volume <= 0.0 or not np.isfinite(profile_volume):
+            raise ValueError("edge source profile has zero normalisation")
+
+        edge_area = 4.0 * np.pi**2 * self.R0 * self.a
+        total_particles_per_second = species.source_rate * edge_area
+        return np.asarray(profile * total_particles_per_second / profile_volume)

@@ -65,6 +65,41 @@ class StellaratorConfig:
     helical_excursion: float = 0.05
     name: str = "custom"
 
+    def __post_init__(self) -> None:
+        if not isinstance(self.N_fp, int) or self.N_fp < 1:
+            raise ValueError("N_fp must be an integer >= 1.")
+        for field_name in ("R0", "a", "B0"):
+            value = float(getattr(self, field_name))
+            if not np.isfinite(value) or value <= 0.0:
+                raise ValueError(f"{field_name} must be finite and positive.")
+        if self.a >= self.R0:
+            raise ValueError("a must be smaller than R0.")
+        for field_name in ("iota_0", "iota_a"):
+            value = float(getattr(self, field_name))
+            if not np.isfinite(value) or value <= 0.0:
+                raise ValueError(f"{field_name} must be finite and positive iota.")
+        if not np.isfinite(self.mirror_ratio) or not 0.0 <= self.mirror_ratio < 1.0:
+            raise ValueError("mirror_ratio must be finite and in [0, 1).")
+        if not np.isfinite(self.helical_excursion) or self.helical_excursion < 0.0:
+            raise ValueError("helical_excursion must be finite and non-negative.")
+        if self.helical_excursion + self.a >= self.R0:
+            raise ValueError("helical_excursion plus a must stay inside R0.")
+
+
+def _require_flux_label(name: str, s: float, *, include_axis: bool = False) -> float:
+    s_val = float(s)
+    lower_ok = s_val >= 0.0 if include_axis else s_val > 0.0
+    if not np.isfinite(s_val) or not lower_ok or s_val > 1.0:
+        interval = "[0, 1]" if include_axis else "(0, 1]"
+        raise ValueError(f"{name} must be finite and in {interval}.")
+    return s_val
+
+
+def _require_grid_resolution(name: str, value: int) -> int:
+    if not isinstance(value, int) or value < 8:
+        raise ValueError(f"{name} must be an integer >= 8.")
+    return value
+
 
 def w7x_config() -> StellaratorConfig:
     """Wendelstein 7-X standard configuration.
@@ -97,7 +132,10 @@ def iota_profile(
     s : float or array
         Normalised toroidal flux label, s in [0, 1].
     """
-    return config.iota_0 + (config.iota_a - config.iota_0) * np.asarray(s)
+    s_arr = np.asarray(s, dtype=float)
+    if not np.all(np.isfinite(s_arr)) or np.any(s_arr < 0.0) or np.any(s_arr > 1.0):
+        raise ValueError("s must be finite and in [0, 1].")
+    return config.iota_0 + (config.iota_a - config.iota_0) * s_arr
 
 
 def stellarator_flux_surface(
@@ -125,7 +163,9 @@ def stellarator_flux_surface(
     B : ndarray, shape (n_theta, n_phi)
         Magnetic field magnitude [T].
     """
-    s = require_positive_float("s", s)
+    s = _require_flux_label("s", s)
+    n_theta = _require_grid_resolution("n_theta", n_theta)
+    n_phi = _require_grid_resolution("n_phi", n_phi)
     r = config.a * np.sqrt(s)
     iota = float(iota_profile(config, s))
 
@@ -138,11 +178,15 @@ def stellarator_flux_surface(
     R = config.R0 + r * np.cos(TH) + delta_R
     Z = r * np.sin(TH) + config.helical_excursion * np.sin(config.N_fp * PH)
 
-    # |B| with toroidal and helical modulation
+    # |B| with toroidal, helical mirror, and helical-axis curvature modulation.
     epsilon_t = r / config.R0
     epsilon_h = config.mirror_ratio * np.sqrt(s)
+    axis_curvature = (config.helical_excursion / config.R0) * np.sqrt(s)
     B = config.B0 * (
-        1.0 - epsilon_t * np.cos(TH) - epsilon_h * np.cos(config.N_fp * PH - iota * TH)
+        1.0
+        - epsilon_t * np.cos(TH)
+        - epsilon_h * np.cos(config.N_fp * PH - iota * TH)
+        - axis_curvature * np.cos(config.N_fp * PH)
     )
 
     return R, Z, B
@@ -151,9 +195,12 @@ def stellarator_flux_surface(
 def effective_ripple(config: StellaratorConfig, s: float) -> float:
     """Effective helical ripple epsilon_eff for neoclassical transport.
 
-    Nemov et al., Phys. Plasmas 6 (1999) 4622, Eq. 30.
-    Simplified analytic proxy: epsilon_eff ~ epsilon_h^(3/2) / sqrt(N_fp).
-    Full computation requires field-line tracing (DKES/NEO-2).
+    Field-spectrum estimate inspired by Nemov et al., Phys. Plasmas 6 (1999)
+    4622.  The toroidally averaged field component is removed on each
+    poloidal ring, leaving the non-axisymmetric helical |B| spectrum that
+    drives 1/nu stellarator transport.  The returned scalar preserves the
+    expected zero-ripple axisymmetric limit, increases with radial flux label,
+    and responds to both mirror modulation and helical-axis excursion.
 
     Parameters
     ----------
@@ -166,9 +213,29 @@ def effective_ripple(config: StellaratorConfig, s: float) -> float:
     float
         Effective ripple epsilon_eff (dimensionless, 0 < eps_eff < 1).
     """
-    s = require_positive_float("s", s)
-    epsilon_h = config.mirror_ratio * np.sqrt(s)
-    eps_eff = epsilon_h**1.5 / np.sqrt(config.N_fp)
+    s = _require_flux_label("s", s)
+    if config.mirror_ratio == 0.0 and config.helical_excursion == 0.0:
+        return 0.0
+
+    _, _, B = stellarator_flux_surface(config, s, n_theta=96, n_phi=max(64, 16 * config.N_fp))
+    B_mean = float(np.mean(B))
+    if not np.isfinite(B_mean) or B_mean <= 0.0:
+        raise ValueError("computed magnetic field mean must be finite and positive.")
+
+    b_norm = B / B_mean - 1.0
+    axisymmetric_component = np.mean(b_norm, axis=1, keepdims=True)
+    nonaxisymmetric = b_norm - axisymmetric_component
+    rms_nonaxisymmetric = float(np.sqrt(np.mean(nonaxisymmetric**2)))
+
+    phi_spectrum = np.fft.rfft(nonaxisymmetric, axis=1)
+    harmonic_idx = min(config.N_fp, phi_spectrum.shape[1] - 1)
+    harmonic_power = float(np.mean(np.abs(phi_spectrum[:, harmonic_idx]) ** 2))
+    total_power = float(np.mean(np.sum(np.abs(phi_spectrum[:, 1:]) ** 2, axis=1)))
+    spectral_concentration = harmonic_power / max(total_power, 1e-30)
+
+    helical_strength = np.sqrt(2.0) * rms_nonaxisymmetric * np.sqrt(max(spectral_concentration, 0.0))
+    aspect_factor = np.sqrt(max(config.a / config.R0, 1e-12))
+    eps_eff = helical_strength**1.5 * aspect_factor / np.sqrt(config.N_fp)
     return float(np.clip(eps_eff, 0.0, 1.0))
 
 

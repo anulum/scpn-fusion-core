@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.plasma_wall_interaction import (
     DivertorLifetimeAssessment,
@@ -37,6 +38,34 @@ def test_sputtering_angular_dependence():
     assert Y_60 > Y_0
 
 
+def test_sputtering_rejects_unsupported_species_and_invalid_inputs():
+    with pytest.raises(ValueError, match="unsupported"):
+        SputteringYield(target="Unobtainium", projectile="D")
+
+    sputt = SputteringYield(target="W", projectile="D")
+    with pytest.raises(ValueError, match="finite"):
+        sputt.yield_at_energy(float("nan"))
+    with pytest.raises(ValueError, match="theta_deg"):
+        sputt.yield_at_energy(1000.0, theta_deg=-1.0)
+    with pytest.raises(ValueError, match="theta_deg"):
+        sputt.yield_at_energy(1000.0, theta_deg=90.0)
+
+
+def test_sputtering_material_projectile_database_changes_thresholds():
+    tungsten_d = SputteringYield(target="W", projectile="D")
+    tungsten_he = SputteringYield(target="W", projectile="He")
+    carbon_d = SputteringYield(target="C", projectile="D")
+
+    thresholds = {
+        round(tungsten_d.threshold_energy(), 6),
+        round(tungsten_he.threshold_energy(), 6),
+        round(carbon_d.threshold_energy(), 6),
+    }
+
+    assert min(thresholds) > 0.0
+    assert len(thresholds) == 3
+
+
 def test_erosion_model():
     erosion = ErosionModel()
 
@@ -47,6 +76,17 @@ def test_erosion_model():
 
     net = erosion.net_erosion_rate(gross, f_redeposition=0.99)
     assert np.isclose(net, gross * 0.01)
+
+
+def test_erosion_model_rejects_invalid_domain_values():
+    erosion = ErosionModel()
+
+    with pytest.raises(ValueError, match="ion_flux"):
+        erosion.gross_erosion_rate(-1.0, 1000.0)
+    with pytest.raises(ValueError, match="f_redeposition"):
+        erosion.net_erosion_rate(1.0e20, f_redeposition=1.2)
+    with pytest.raises(ValueError, match="wall_thickness_mm"):
+        erosion.lifetime_estimate(-1.0, 1.0e-9)
 
 
 def test_wall_thermal_steady_state():
@@ -76,6 +116,22 @@ def test_transient_thermal_load():
 
     # 20 MJ over 2 m2 in 0.25 ms is a massive load
     assert delta_T > 1000.0
+
+
+def test_fatigue_life_decreases_with_swing_and_base_temperature():
+    trans = TransientThermalLoad(WallThermalModel())
+
+    mild = trans.n_elm_cycles_to_fatigue(delta_T_K=300.0, T_base_K=500.0)
+    severe_swing = trans.n_elm_cycles_to_fatigue(delta_T_K=900.0, T_base_K=500.0)
+    hot_base = trans.n_elm_cycles_to_fatigue(delta_T_K=300.0, T_base_K=1200.0)
+
+    assert severe_swing < mild
+    assert hot_base < mild
+
+    with pytest.raises(ValueError, match="delta_T_K"):
+        trans.n_elm_cycles_to_fatigue(delta_T_K=float("nan"))
+    with pytest.raises(ValueError, match="T_base_K"):
+        trans.n_elm_cycles_to_fatigue(delta_T_K=300.0, T_base_K=-1.0)
 
 
 def test_divertor_lifetime_assessment():

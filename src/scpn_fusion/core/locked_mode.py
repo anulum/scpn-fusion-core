@@ -15,31 +15,47 @@ import numpy as np
 
 class ErrorFieldSpectrum:
     def __init__(self, B0: float, n_corrections: int = 0):
+        if not np.isfinite(B0) or B0 <= 0.0:
+            raise ValueError("B0 must be finite and positive")
+        if n_corrections < 0:
+            raise ValueError("n_corrections must be non-negative")
         self.B0 = B0
         self.n_corrections = n_corrections
         self.B_mn_components = {}
-        # Default simple intrinsic error field map
-        self.B_mn_components[(2, 1)] = 1e-4 * B0
-        self.B_mn_components[(3, 2)] = 5e-5 * B0
+        correction_factor = self._intrinsic_correction_factor()
+        self.B_mn_components[(2, 1)] = 1e-4 * B0 * correction_factor
+        self.B_mn_components[(3, 2)] = 5e-5 * B0 * correction_factor
+
+    def _intrinsic_correction_factor(self) -> float:
+        return float(1.0 / (1.0 + 0.35 * self.n_corrections))
 
     def set_coil_misalignment(self, delta_R_mm: float, delta_Z_mm: float) -> None:
+        if not np.isfinite(delta_R_mm) or not np.isfinite(delta_Z_mm):
+            raise ValueError("coil misalignment values must be finite")
         shift_mag = math.sqrt(delta_R_mm**2 + delta_Z_mm**2) / 1000.0
         # Heuristic error field scaling with shift
-        self.B_mn_components[(2, 1)] = 0.01 * self.B0 * shift_mag
-        self.B_mn_components[(3, 2)] = 0.005 * self.B0 * shift_mag
+        correction_factor = self._intrinsic_correction_factor()
+        self.B_mn_components[(2, 1)] = 0.01 * self.B0 * shift_mag * correction_factor
+        self.B_mn_components[(3, 2)] = 0.005 * self.B0 * shift_mag * correction_factor
 
     def B_mn(self, m: int, n: int) -> float:
         return self.B_mn_components.get((m, n), 0.0)
 
     def corrected_B_mn(self, m: int, n: int, I_correction: float) -> float:
+        if not np.isfinite(I_correction) or I_correction < 0.0:
+            raise ValueError("I_correction must be finite and non-negative")
         B_raw = self.B_mn(m, n)
-        # Simplified linear correction
-        B_corr = max(0.0, B_raw - 1e-5 * I_correction)
+        modal_efficiency = 1.0e-5 / max(float(m * n), 1.0)
+        B_corr = B_raw * math.exp(-modal_efficiency * I_correction / max(B_raw, 1e-12))
         return B_corr
 
 
 class ResonantFieldAmplification:
     def __init__(self, beta_N: float, beta_N_nowall: float):
+        if not np.isfinite(beta_N) or beta_N < 0.0:
+            raise ValueError("beta_N must be finite and non-negative")
+        if not np.isfinite(beta_N_nowall) or beta_N_nowall <= 0.0:
+            raise ValueError("beta_N_nowall must be finite and positive")
         self.beta_N = beta_N
         self.beta_N_nowall = beta_N_nowall
 
@@ -61,6 +77,15 @@ class RotationEvolution:
 
 class ModeLocking:
     def __init__(self, R0: float, a: float, B0: float, Ip_MA: float, omega_phi_0: float):
+        for name, value in {
+            "R0": R0,
+            "a": a,
+            "B0": B0,
+            "Ip_MA": Ip_MA,
+            "omega_phi_0": omega_phi_0,
+        }.items():
+            if not np.isfinite(value) or value <= 0.0:
+                raise ValueError(f"{name} must be finite and positive")
         self.R0 = R0
         self.a = a
         self.B0 = B0
@@ -71,15 +96,27 @@ class ModeLocking:
 
     def em_torque(self, B_res: float, r_s: float, m: int, n: int) -> float:
         """Electromagnetic braking torque [N m]."""
-        # T_em ~ B_res^2
+        if not np.isfinite(B_res) or B_res < 0.0:
+            raise ValueError("B_res must be finite and non-negative")
+        if not np.isfinite(r_s) or r_s <= 0.0:
+            raise ValueError("r_s must be finite and positive")
+        if m < 1 or n < 1:
+            raise ValueError("mode numbers m and n must be positive")
         mu_0 = 4.0 * math.pi * 1e-7
-        # Very simplified proxy formula retaining the B_res^2 scaling
-        torque = 4.0 * math.pi**2 * self.R0 * n * (m / max(r_s, 1e-3)) * (B_res**2) / mu_0
+        resonant_area = 4.0 * math.pi**2 * self.R0 * r_s
+        pitch_factor = (m / r_s) * n
+        torque = resonant_area * pitch_factor * (B_res**2) / mu_0
         return torque
 
     def evolve_rotation(
         self, B_res: float, r_s: float, tau_visc: float, dt: float, n_steps: int
     ) -> RotationEvolution:
+        if not np.isfinite(tau_visc) or tau_visc <= 0.0:
+            raise ValueError("tau_visc must be finite and positive")
+        if not np.isfinite(dt) or dt <= 0.0:
+            raise ValueError("dt must be finite and positive")
+        if n_steps < 1:
+            raise ValueError("n_steps must be positive")
         omega = self.omega_phi_0
         omega_trace = np.zeros(n_steps)
         locked = False

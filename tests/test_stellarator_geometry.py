@@ -35,6 +35,17 @@ def test_w7x_config_parameters():
     assert cfg.name == "W7-X"
 
 
+def test_config_rejects_invalid_geometry():
+    with pytest.raises(ValueError, match="N_fp"):
+        StellaratorConfig(N_fp=0)
+    with pytest.raises(ValueError, match="a"):
+        StellaratorConfig(R0=1.0, a=1.2)
+    with pytest.raises(ValueError, match="mirror_ratio"):
+        StellaratorConfig(mirror_ratio=-0.1)
+    with pytest.raises(ValueError, match="iota"):
+        StellaratorConfig(iota_0=float("nan"))
+
+
 # ── Flux surface shape ───────────────────────────────────────────────
 
 
@@ -67,6 +78,14 @@ def test_flux_surface_R_positive():
     cfg = w7x_config()
     R, _, _ = stellarator_flux_surface(cfg, s=0.9, n_theta=64, n_phi=64)
     assert np.all(R > 0)
+
+
+def test_flux_surface_rejects_out_of_domain_flux_label():
+    cfg = w7x_config()
+    with pytest.raises(ValueError, match="s"):
+        stellarator_flux_surface(cfg, s=0.0)
+    with pytest.raises(ValueError, match="s"):
+        stellarator_flux_surface(cfg, s=1.2)
 
 
 # ── Iota profile ─────────────────────────────────────────────────────
@@ -104,11 +123,51 @@ def test_effective_ripple_increases_with_s():
     assert eps_outer > eps_inner
 
 
+def test_effective_ripple_uses_field_spectrum_not_only_mirror_ratio():
+    base = StellaratorConfig(
+        N_fp=5,
+        R0=5.5,
+        a=0.53,
+        B0=2.5,
+        iota_0=0.87,
+        iota_a=1.0,
+        mirror_ratio=0.07,
+        helical_excursion=0.0,
+    )
+    shifted_axis = StellaratorConfig(
+        N_fp=5,
+        R0=5.5,
+        a=0.53,
+        B0=2.5,
+        iota_0=0.87,
+        iota_a=1.0,
+        mirror_ratio=0.07,
+        helical_excursion=0.12,
+    )
+
+    assert effective_ripple(shifted_axis, 0.6) > effective_ripple(base, 0.6)
+
+
 def test_axisymmetric_limit_ripple_vanishes():
-    """Large N_fp with zero mirror ratio -> epsilon_eff = 0."""
-    cfg = StellaratorConfig(N_fp=100, mirror_ratio=0.0, R0=6.0, a=2.0, B0=5.0)
+    """Zero helical mirror and axis excursion -> epsilon_eff = 0."""
+    cfg = StellaratorConfig(
+        N_fp=100,
+        mirror_ratio=0.0,
+        helical_excursion=0.0,
+        R0=6.0,
+        a=2.0,
+        B0=5.0,
+    )
     eps = effective_ripple(cfg, 0.5)
     assert eps == pytest.approx(0.0, abs=1e-15)
+
+
+def test_effective_ripple_rejects_invalid_flux_label():
+    cfg = w7x_config()
+    with pytest.raises(ValueError, match="s"):
+        effective_ripple(cfg, 0.0)
+    with pytest.raises(ValueError, match="s"):
+        effective_ripple(cfg, 1.5)
 
 
 # ── ISS04 scaling ────────────────────────────────────────────────────

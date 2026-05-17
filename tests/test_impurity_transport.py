@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.impurity_transport import (
     CoolingCurve,
@@ -19,6 +20,11 @@ from scpn_fusion.core.impurity_transport import (
 )
 
 
+def _toroidal_inventory(n_z: np.ndarray, rho: np.ndarray, R0: float, a: float) -> float:
+    vol_element = 4.0 * np.pi**2 * R0 * a**2 * rho
+    return float(np.trapezoid(n_z * vol_element, rho))
+
+
 def test_cooling_curves():
     c_W = CoolingCurve("W")
     L_W_core = c_W.L_z(np.array([1500.0]))[0]
@@ -26,6 +32,18 @@ def test_cooling_curves():
 
     assert L_W_core > L_W_edge
     assert L_W_core > 1e-32
+
+
+def test_cooling_curve_returns_zero_for_nonpositive_temperatures_without_warning():
+    curve = CoolingCurve("W")
+
+    with np.errstate(all="raise"):
+        values = curve.L_z(np.array([-10.0, 0.0, 1500.0]))
+
+    assert values[0] == 0.0
+    assert values[1] == 0.0
+    assert np.isfinite(values[2])
+    assert values[2] > 0.0
 
 
 def test_impurity_pinch():
@@ -74,6 +92,31 @@ def test_steady_source():
 
     # Should build up at the edge
     assert res["W"][-1] > 0.0
+
+
+def test_edge_source_is_volume_conservative_and_resolved():
+    rho = np.linspace(0.0, 1.0, 80)
+    R0 = 6.2
+    a = 2.0
+    dt = 0.2
+    source_rate = 1.0e16
+    species = [ImpuritySpecies("W", 74, 183.8, source_rate=source_rate)]
+    solver = ImpurityTransportSolver(rho, R0, a, species)
+
+    res = solver.step(
+        dt,
+        np.ones_like(rho) * 1.0e20,
+        np.ones_like(rho) * 1500.0,
+        np.ones_like(rho) * 1500.0,
+        0.0,
+        {"W": np.zeros_like(rho)},
+    )
+
+    expected_particles = source_rate * (4.0 * np.pi**2 * R0 * a) * dt
+    actual_particles = _toroidal_inventory(res["W"], rho, R0, a)
+    assert actual_particles == pytest.approx(expected_particles, rel=2e-2)
+    assert np.count_nonzero(res["W"] > 0.0) > 3
+    assert res["W"][-1] > res["W"][len(rho) // 2]
 
 
 def test_total_radiated_power():

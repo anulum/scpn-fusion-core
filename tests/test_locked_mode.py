@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.locked_mode import (
     ErrorFieldSpectrum,
@@ -31,6 +32,21 @@ def test_error_field_spectrum():
     assert np.isclose(B21_shift, 5e-4)
 
 
+def test_error_field_correction_channels_attenuate_intrinsic_spectrum():
+    uncorrected = ErrorFieldSpectrum(B0=5.0, n_corrections=0)
+    corrected = ErrorFieldSpectrum(B0=5.0, n_corrections=4)
+
+    assert corrected.B_mn(2, 1) < uncorrected.B_mn(2, 1)
+    assert corrected.B_mn(3, 2) < uncorrected.B_mn(3, 2)
+
+
+def test_error_field_spectrum_rejects_invalid_domain():
+    with pytest.raises(ValueError, match="B0"):
+        ErrorFieldSpectrum(B0=0.0)
+    with pytest.raises(ValueError, match="n_corrections"):
+        ErrorFieldSpectrum(B0=5.0, n_corrections=-1)
+
+
 def test_resonant_field_amplification():
     rfa = ResonantFieldAmplification(beta_N=2.5, beta_N_nowall=2.8)
 
@@ -41,6 +57,13 @@ def test_resonant_field_amplification():
     B_err = 1e-4
     B_res = rfa.resonant_field(B_err)
     assert B_res > B_err
+
+
+def test_resonant_field_amplification_rejects_invalid_beta_domain():
+    with pytest.raises(ValueError, match="beta_N_nowall"):
+        ResonantFieldAmplification(beta_N=2.0, beta_N_nowall=0.0)
+    with pytest.raises(ValueError, match="beta_N"):
+        ResonantFieldAmplification(beta_N=-1.0, beta_N_nowall=2.8)
 
 
 def test_mode_locking():
@@ -54,6 +77,17 @@ def test_mode_locking():
     ev2 = ml.evolve_rotation(B_res=1e-2, r_s=1.0, tau_visc=0.1, dt=0.001, n_steps=1000)
     assert ev2.locked
     assert ev2.omega_trace[-1] == 0.0
+
+
+def test_mode_locking_rejects_invalid_evolution_domain():
+    ml = ModeLocking(R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, omega_phi_0=1e4)
+
+    with pytest.raises(ValueError, match="B_res"):
+        ml.evolve_rotation(B_res=-1e-5, r_s=1.0, tau_visc=0.1, dt=0.001, n_steps=100)
+    with pytest.raises(ValueError, match="tau_visc"):
+        ml.evolve_rotation(B_res=1e-5, r_s=1.0, tau_visc=0.0, dt=0.001, n_steps=100)
+    with pytest.raises(ValueError, match="n_steps"):
+        ml.evolve_rotation(B_res=1e-5, r_s=1.0, tau_visc=0.1, dt=0.001, n_steps=0)
 
 
 def test_post_locking_island_growth():

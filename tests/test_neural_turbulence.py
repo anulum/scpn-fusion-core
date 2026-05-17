@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.neural_turbulence import (
     NeuralTransportTrainer,
@@ -40,6 +41,44 @@ def test_input_normalization():
     assert inputs.shape == (50, 10)
     # R/L_Te should be positive
     assert np.all(inputs[:, 1] >= 0.0)
+    assert np.all(np.isfinite(inputs[:, 7]))
+    assert np.all(inputs[:, 7] >= 0.0)
+
+
+def test_input_normalization_rejects_invalid_profiles():
+    norm = TransportInputNormalizer()
+    r = np.linspace(0.1, 2.0, 50)
+    Te = 10.0 * (1.0 - (r / 2.0) ** 2)
+    Ti = 10.0 * (1.0 - (r / 2.0) ** 2)
+    ne = 5.0 * (1.0 - (r / 2.0) ** 2)
+    q = 1.0 + 2.0 * (r / 2.0) ** 2
+
+    with pytest.raises(ValueError, match="same shape"):
+        norm.from_profiles(Te[:-1], Ti, ne, q, R0=6.2, a=2.0, B0=5.3, r=r)
+
+    Te_bad = Te.copy()
+    Te_bad[5] = np.nan
+    with pytest.raises(ValueError, match="finite"):
+        norm.from_profiles(Te_bad, Ti, ne, q, R0=6.2, a=2.0, B0=5.3, r=r)
+
+    with pytest.raises(ValueError, match="strictly increasing"):
+        norm.from_profiles(Te, Ti, ne, q, R0=6.2, a=2.0, B0=5.3, r=r[::-1])
+
+
+def test_input_normalization_collisionality_tracks_density_and_temperature():
+    norm = TransportInputNormalizer()
+    r = np.linspace(0.2, 1.8, 48)
+    q = np.linspace(1.1, 3.0, r.size)
+    Ti = np.full_like(r, 8.0)
+    base_te = np.full_like(r, 6.0)
+    base_ne = np.full_like(r, 4.0)
+
+    low_density = norm.from_profiles(base_te, Ti, base_ne, q, R0=6.2, a=2.0, B0=5.3, r=r)
+    high_density = norm.from_profiles(base_te, Ti, base_ne * 2.0, q, R0=6.2, a=2.0, B0=5.3, r=r)
+    hot_electrons = norm.from_profiles(base_te * 2.0, Ti, base_ne, q, R0=6.2, a=2.0, B0=5.3, r=r)
+
+    assert np.all(high_density[:, 7] > low_density[:, 7])
+    assert np.all(hot_electrons[:, 7] < low_density[:, 7])
 
 
 def test_analytic_targets_critical_gradient():
@@ -54,6 +93,32 @@ def test_analytic_targets_critical_gradient():
 
     assert y_sub[0, 0] == 0.0  # Q_i should be 0 below threshold
     assert y_super[0, 0] > 0.0  # Q_i > 0 above threshold
+
+
+def test_analytic_targets_collisionality_damps_tem_flux():
+    gen = TrainingDataGenerator()
+    # inputs = [R/L_Ti, R/L_Te, R/L_ne, q, s_hat, alpha_MHD, Ti/Te, nu_star, Z_eff, eps]
+    base = np.array([[4.0, 5.0, 6.0, 2.0, 0.6, 0.1, 1.0, 1e-3, 1.5, 0.12]])
+    collisional = base.copy()
+    collisional[0, 7] = 1.0
+
+    low_nu = gen.generate_analytic_targets(base)
+    high_nu = gen.generate_analytic_targets(collisional)
+
+    assert high_nu[0, 1] < low_nu[0, 1]
+    assert high_nu[0, 2] < low_nu[0, 2]
+
+
+def test_analytic_targets_reject_invalid_inputs():
+    gen = TrainingDataGenerator()
+
+    with pytest.raises(ValueError, match="shape"):
+        gen.generate_analytic_targets(np.ones((4, 9)))
+
+    invalid = np.ones((2, 10))
+    invalid[0, 3] = np.nan
+    with pytest.raises(ValueError, match="finite"):
+        gen.generate_analytic_targets(invalid)
 
 
 def test_neural_transport_trainer():

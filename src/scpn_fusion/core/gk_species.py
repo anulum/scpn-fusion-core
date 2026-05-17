@@ -9,8 +9,8 @@
 Species definitions and collision operator for the linear GK solver.
 
 Velocity-space discretisation uses (energy, lambda) coordinates with
-Gauss-Legendre quadrature.  The collision operator implements a
-simplified Sugama model (pitch-angle scattering + energy diffusion).
+Gauss-Legendre quadrature.  The collision operator implements a linearised
+Sugama-style diagonal pitch-angle and energy-diffusion closure.
 
 References:
   - Sugama & Watanabe, Phys. Plasmas 13 (2006) 012501
@@ -58,6 +58,15 @@ class GKSpecies:
     R_L_T: float
     R_L_n: float
     is_adiabatic: bool = False
+
+    def __post_init__(self) -> None:
+        _require_positive_finite("mass_amu", self.mass_amu)
+        _require_positive_finite("temperature_keV", self.temperature_keV)
+        _require_positive_finite("density_19", self.density_19)
+        _require_finite("R_L_T", self.R_L_T)
+        _require_finite("R_L_n", self.R_L_n)
+        if not np.isfinite(self.charge_e) or self.charge_e == 0.0:
+            raise ValueError("charge_e must be finite and non-zero")
 
     @property
     def mass_kg(self) -> float:
@@ -116,6 +125,11 @@ class VelocityGrid:
     n_lambda: int = 24
 
     def __post_init__(self) -> None:
+        if self.n_energy < 2:
+            raise ValueError("n_energy must be at least 2 for Gauss-Legendre quadrature")
+        if self.n_lambda < 3:
+            raise ValueError("n_lambda must be at least 3 for pitch-angle stencils")
+
         # Gauss-Legendre on [0, E_max] for energy (E_max ~ 6 T)
         e_nodes, e_weights = np.polynomial.legendre.leggauss(self.n_energy)
         self.E_max = 6.0
@@ -154,30 +168,55 @@ def collision_frequencies(
 
     Returns (nu_D, nu_E) normalised to v_th / R.
 
-    Simplified Sugama model:
-      nu_D = nu_ii for ions, nu_ei for electrons
-      nu_E = nu_D * (m_target / m_field) correction
+    Linearised Sugama-style diagonal closure:
+      nu_D follows the Braginskii small-angle deflection frequency for the
+      kinetic species against the electron background.
+      nu_E applies a field-particle mass and temperature relaxation correction
+      so energy diffusion is not collapsed onto pitch-angle scattering.
     """
+    _require_positive_finite("n_e_19", n_e_19)
+    _require_positive_finite("T_e_keV", T_e_keV)
+    _require_positive_finite("Z_eff", Z_eff)
+    _require_positive_finite("ln_lambda", ln_lambda)
+
     n_e = n_e_19 * 1e19  # m^-3
     T_e_J = T_e_keV * 1e3 * _E_CHARGE
     T_s_J = species.temperature_keV * 1e3 * _E_CHARGE
 
-    # Braginskii ion-ion: nu_ii = 4 sqrt(pi) n Z^4 e^4 ln(Lambda) / (3 m^0.5 (2T)^1.5)
-    # Simplified to order-of-magnitude for the linearised operator
-    v_th = species.thermal_speed
+    # Braginskii small-angle frequency in SI units for a Maxwellian background.
     eps_0 = 8.8541878128e-12
 
     q_s = abs(species.charge_e) * _E_CHARGE
+    coulomb_prefactor = 4.0 * np.sqrt(np.pi) / (3.0 * (4.0 * np.pi * eps_0) ** 2)
+    field_mass = _M_ELECTRON if species.charge_e > 0.0 else _M_PROTON
+    field_temperature_J = T_e_J if species.charge_e > 0.0 else T_s_J
+    reduced_mass = species.mass_kg * field_mass / (species.mass_kg + field_mass)
+    thermal_energy_sum = T_s_J / species.mass_kg + field_temperature_J / field_mass
+
     nu_ref = (
-        n_e
+        coulomb_prefactor
+        * n_e
         * q_s**4
         * ln_lambda
-        / (6.0 * np.pi**1.5 * eps_0**2 * species.mass_kg**0.5 * (2.0 * T_s_J) ** 1.5)
+        * Z_eff
+        / (reduced_mass**2 * thermal_energy_sum**1.5)
     )
 
-    nu_D = float(Z_eff * nu_ref)
-    nu_E = nu_D  # simplified: energy diffusion ~ pitch-angle for like-species
+    temperature_ratio = T_s_J / field_temperature_J
+    mass_relaxation = 2.0 * reduced_mass / (species.mass_kg + field_mass)
+    nu_D = float(nu_ref)
+    nu_E = float(nu_D * mass_relaxation * np.sqrt(temperature_ratio))
     return nu_D, nu_E
+
+
+def _require_finite(name: str, value: float) -> None:
+    if not np.isfinite(value):
+        raise ValueError(f"{name} must be finite")
+
+
+def _require_positive_finite(name: str, value: float) -> None:
+    if not np.isfinite(value) or value <= 0.0:
+        raise ValueError(f"{name} must be finite and positive")
 
 
 def pitch_angle_operator(

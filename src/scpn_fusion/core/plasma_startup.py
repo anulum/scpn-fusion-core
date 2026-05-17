@@ -210,6 +210,10 @@ class BurnThrough:
             dTe = dTe_J / 1.6e-19
 
             Te += dTe
+            if Te <= 0.0 or not np.isfinite(Te):
+                Te = 0.0
+                Te_trace[i:] = Te
+                break
 
             # Simple Ip ramp if Te rises
             if Te > 20.0:

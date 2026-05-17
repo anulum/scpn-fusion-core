@@ -12,6 +12,7 @@ Tests for neoclassical transport models and bootstrap current.
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.neoclassical import (
     chang_hinton_chi,
@@ -74,3 +75,47 @@ def test_bootstrap_gradient_direction():
     assert np.max(j_bs) > 0.0
     # Core should be zero due to zero gradients at rho=0
     assert j_bs[0] == 0.0
+
+
+def test_bootstrap_distinguishes_electron_and_ion_gradient_channels():
+    rho = np.linspace(0, 1, 80)
+    ne = np.full_like(rho, 5.0)
+    q = 1.0 + 2.0 * rho**2
+
+    te_gradient = sauter_bootstrap(
+        rho,
+        6.0 - 4.0 * rho**2,
+        np.full_like(rho, 4.0),
+        ne,
+        q,
+        R0=6.2,
+        a=2.0,
+    )
+    ti_gradient = sauter_bootstrap(
+        rho,
+        np.full_like(rho, 4.0),
+        6.0 - 4.0 * rho**2,
+        ne,
+        q,
+        R0=6.2,
+        a=2.0,
+    )
+
+    assert np.max(te_gradient) > 0.0
+    assert np.max(ti_gradient) > 0.0
+    assert not np.allclose(te_gradient, ti_gradient)
+
+
+def test_bootstrap_rejects_invalid_profiles_and_geometry():
+    rho = np.linspace(0, 1, 50)
+    good = np.ones_like(rho)
+    q = np.linspace(1.0, 3.0, 50)
+
+    with pytest.raises(ValueError, match="rho"):
+        sauter_bootstrap(rho[::-1], good, good, good, q, R0=6.2, a=2.0)
+    with pytest.raises(ValueError, match="Te"):
+        sauter_bootstrap(rho, np.full_like(rho, np.nan), good, good, q, R0=6.2, a=2.0)
+    with pytest.raises(ValueError, match="R0"):
+        sauter_bootstrap(rho, good, good, good, q, R0=0.0, a=2.0)
+    with pytest.raises(ValueError, match="z_eff"):
+        sauter_bootstrap(rho, good, good, good, q, R0=6.2, a=2.0, z_eff=0.0)

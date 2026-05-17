@@ -111,21 +111,38 @@ class RotationDiagnostics:
 
     @staticmethod
     def rwm_stabilization_criterion(omega_phi: np.ndarray, tau_wall: float) -> bool:
-        # Simplified criterion: omega_phi * tau_wall > 1% of something?
-        # Typically Omega * tau_wall > O(1) for stabilization
-        omega_core = np.abs(omega_phi[0])
-        return bool(omega_core * tau_wall > 0.01)
+        omega = np.asarray(omega_phi, dtype=float)
+        if omega.ndim != 1 or omega.size == 0 or not np.all(np.isfinite(omega)):
+            raise ValueError("omega_phi must be a finite one-dimensional profile")
+        if not np.isfinite(tau_wall) or tau_wall <= 0.0:
+            raise ValueError("tau_wall must be finite and positive")
+
+        core_count = max(1, min(omega.size // 5, omega.size))
+        omega_core = float(np.mean(np.abs(omega[:core_count])))
+        return bool(omega_core * tau_wall >= 1.0)
 
 
 class MomentumTransportSolver:
     def __init__(self, rho: np.ndarray, R0: float, a: float, B0: float, prandtl: float = 0.7):
-        self.rho = rho
+        self.rho = np.asarray(rho, dtype=float)
         self.R0 = R0
         self.a = a
         self.B0 = B0
         self.prandtl = prandtl
-        self.nr = len(rho)
-        self.drho = rho[1] - rho[0]
+        self.nr = len(self.rho)
+        if self.nr < 3:
+            raise ValueError("rho must contain at least three radial points")
+        if not np.all(np.isfinite(self.rho)) or not np.all(np.diff(self.rho) > 0.0):
+            raise ValueError("rho must be finite and strictly increasing")
+        if not np.isclose(self.rho[0], 0.0) or not np.isclose(self.rho[-1], 1.0):
+            raise ValueError("rho must span the normalised interval [0, 1]")
+        drho = np.diff(self.rho)
+        if not np.allclose(drho, drho[0], rtol=1e-6, atol=1e-12):
+            raise ValueError("rho grid must be uniformly spaced")
+        for name, value in {"R0": R0, "a": a, "B0": B0, "prandtl": prandtl}.items():
+            if not np.isfinite(value) or value <= 0.0:
+                raise ValueError(f"{name} must be finite and positive")
+        self.drho = float(drho[0])
 
         self.omega_phi = np.zeros(self.nr)
 
@@ -146,6 +163,14 @@ class MomentumTransportSolver:
         Assuming V_pinch = 0 for simplicity.
         """
         import scipy.linalg
+
+        if not np.isfinite(dt) or dt <= 0.0:
+            raise ValueError("dt must be finite and positive")
+        chi_i = self._require_profile("chi_i", chi_i, non_negative=True)
+        ne = self._require_profile("ne", ne, positive=True)
+        Ti_keV = self._require_profile("Ti_keV", Ti_keV, positive=True)
+        T_nbi = self._require_profile("T_nbi", T_nbi)
+        T_intrinsic = self._require_profile("T_intrinsic", T_intrinsic)
 
         chi_phi = self.prandtl * chi_i
 
@@ -196,3 +221,20 @@ class MomentumTransportSolver:
         self.omega_phi = L_new / np.maximum(rho_m * self.R0**2, 1e-12)
 
         return self.omega_phi
+
+    def _require_profile(
+        self,
+        name: str,
+        value: np.ndarray,
+        *,
+        non_negative: bool = False,
+        positive: bool = False,
+    ) -> np.ndarray:
+        arr = np.asarray(value, dtype=float)
+        if arr.shape != (self.nr,) or not np.all(np.isfinite(arr)):
+            raise ValueError(f"{name} must be a finite profile with shape ({self.nr},)")
+        if positive and np.any(arr <= 0.0):
+            raise ValueError(f"{name} must be positive")
+        if non_negative and np.any(arr < 0.0):
+            raise ValueError(f"{name} must be non-negative")
+        return arr

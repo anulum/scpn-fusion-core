@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.lh_transition import (
     IPhaseDetector,
@@ -35,6 +36,17 @@ def test_predator_prey_h_mode():
     # We should have triggered H-mode -> high V_ZF, low epsilon
     assert res.regime == "H_MODE"
     assert res.V_ZF_trace[-1] > 100.0
+
+
+def test_predator_prey_rejects_invalid_step_domain():
+    model = PredatorPreyModel()
+
+    with pytest.raises(ValueError, match="state"):
+        model.step(np.array([1.0, np.nan, 1.0]), dt=0.001, Q_heating=1.0)
+    with pytest.raises(ValueError, match="dt"):
+        model.step(np.array([1.0, 1.0, 1.0]), dt=0.0, Q_heating=1.0)
+    with pytest.raises(ValueError, match="Q_heating"):
+        model.step(np.array([1.0, 1.0, 1.0]), dt=0.001, Q_heating=-1.0)
 
 
 def test_lh_trigger_threshold():
@@ -81,3 +93,26 @@ def test_transition_controller():
     # Hit H-mode -> jump to target
     Q2 = ctrl.step(epsilon_measured=1e4, Q_current=20.0, dt=0.1)
     assert Q2 == 50.0
+
+
+def test_transition_controller_clamps_ramp_to_target():
+    model = PredatorPreyModel()
+    ctrl = LHTransitionController(model, Q_target=50.0)
+
+    Q_next = ctrl.step(epsilon_measured=1e5, Q_current=49.9, dt=1.0)
+
+    assert Q_next == 50.0
+
+
+def test_transition_controller_holds_during_i_phase():
+    model = PredatorPreyModel()
+    ctrl = LHTransitionController(model, Q_target=50.0)
+    oscillation = 1e5 * (1.0 + 0.4 * np.sin(np.linspace(0.0, 8.0 * np.pi, 120)))
+
+    Q = 20.0
+    for eps in oscillation:
+        Q = ctrl.step(epsilon_measured=float(eps), Q_current=Q, dt=0.01)
+
+    Q_hold = ctrl.step(epsilon_measured=1e4, Q_current=Q, dt=0.01)
+
+    assert Q_hold < 50.0

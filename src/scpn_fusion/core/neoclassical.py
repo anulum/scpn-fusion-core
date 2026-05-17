@@ -186,7 +186,16 @@ def sauter_bootstrap(
     -------
     np.ndarray — Bootstrap current density [A/m^2].
     """
+    rho = _require_radial_grid(rho)
     n = len(rho)
+    Te = _require_matching_profile("Te", Te, n, non_negative=True)
+    Ti = _require_matching_profile("Ti", Ti, n, non_negative=True)
+    ne = _require_matching_profile("ne", ne, n, non_negative=True)
+    q = _require_matching_profile("q", q, n, positive=True)
+    for name, value in {"R0": R0, "a": a, "B0": B0, "z_eff": z_eff}.items():
+        if not np.isfinite(value) or value <= 0.0:
+            raise ValueError(f"{name} must be finite and positive")
+
     j_bs = np.zeros(n)
 
     # Precompute gradients (central differences)
@@ -210,14 +219,21 @@ def sauter_bootstrap(
         )
         nu_star_e = nu_ee * q[i] * R0 / (eps**1.5 * v_the)
 
-        # Sauter coefficients alpha, L31, L32, L34 (approximate)
-        # Simplified for this module
-        X = f_t / (1.0 + (1.0 + 0.3 * np.sqrt(nu_star_e)) * nu_star_e)
-        L31 = X
+        collisionality_den = 1.0 + (1.0 + 0.3 * np.sqrt(nu_star_e)) * nu_star_e
+        X = f_t / collisionality_den
+        alpha = z_eff + 0.5 * (1.0 + Ti[i] / Te[i])
+        L31 = X * (1.0 + 1.4 / max(alpha, 1e-12))
+        L32 = X * (0.5 + 0.7 / max(alpha, 1e-12)) / (1.0 + 0.5 * nu_star_e)
+        L34 = X * (0.25 + 0.35 * z_eff / max(alpha, 1e-12)) / (
+            1.0 + 0.7 * nu_star_e
+        )
 
         # dp/dρ in Pa
-        grad_p = (Te[i] + Ti[i]) * 1.602e-16 * dne_drho[i] + ne[i] * 1e19 * 1.602e-16 * (
-            dTe_drho[i] + dTi_drho[i]
+        density_channel = (Te[i] + Ti[i]) * 1.602e-16 * dne_drho[i]
+        electron_temp_channel = ne[i] * 1e19 * 1.602e-16 * dTe_drho[i]
+        ion_temp_channel = ne[i] * 1e19 * 1.602e-16 * dTi_drho[i]
+        bootstrap_drive = (
+            L31 * density_channel + L32 * electron_temp_channel + L34 * ion_temp_channel
         )
 
         # B_pol ≈ B₀ ε / q  (from q = rB_T / (R₀B_θ))
@@ -227,6 +243,35 @@ def sauter_bootstrap(
 
         # j_bs ≈ -L31 (dp/dr) / B_pol, with dp/dr = (dp/dρ)/a
         # Sign preserved: negative grad_p (normal profile) gives positive j_bs
-        j_bs[i] = -L31 * grad_p / (a * B_pol)
+        j_bs[i] = -bootstrap_drive / (a * B_pol)
 
     return j_bs
+
+
+def _require_radial_grid(rho: np.ndarray) -> np.ndarray:
+    arr = np.asarray(rho, dtype=float)
+    if arr.ndim != 1 or arr.size < 3:
+        raise ValueError("rho must be a one-dimensional grid with at least three points")
+    if not np.all(np.isfinite(arr)) or not np.all(np.diff(arr) > 0.0):
+        raise ValueError("rho must be finite and strictly increasing")
+    if not np.isclose(arr[0], 0.0) or not np.isclose(arr[-1], 1.0):
+        raise ValueError("rho must span the normalised interval [0, 1]")
+    return arr
+
+
+def _require_matching_profile(
+    name: str,
+    value: np.ndarray,
+    n: int,
+    *,
+    non_negative: bool = False,
+    positive: bool = False,
+) -> np.ndarray:
+    arr = np.asarray(value, dtype=float)
+    if arr.shape != (n,) or not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must be a finite profile with shape ({n},)")
+    if positive and np.any(arr <= 0.0):
+        raise ValueError(f"{name} must be positive")
+    if non_negative and np.any(arr < 0.0):
+        raise ValueError(f"{name} must be non-negative")
+    return arr

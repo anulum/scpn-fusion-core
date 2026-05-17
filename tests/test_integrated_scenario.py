@@ -14,6 +14,7 @@ from scpn_fusion.core.integrated_scenario import (
     iter_hybrid_scenario,
     nstx_u_scenario,
 )
+from scpn_fusion.core.sol_model import peak_target_heat_flux
 
 
 class TestScenarioConfig:
@@ -76,6 +77,56 @@ class TestSimulatorInit:
         cfg = nstx_u_scenario()
         sim = IntegratedScenarioSimulator(cfg)
         assert sim.ntm_widths == {}
+
+    def test_initialize_computes_bootstrap_and_ohmic_current_profiles(self):
+        cfg = ScenarioConfig(
+            R0=6.2,
+            a=2.0,
+            B0=5.3,
+            kappa=1.7,
+            delta=0.33,
+            Ip_MA=15.0,
+            P_aux_MW=50.0,
+            P_eccd_MW=0.0,
+            P_nbi_MW=0.0,
+            include_sol=False,
+        )
+        sim = IntegratedScenarioSimulator(cfg)
+        rho = sim.rho
+        profiles = {
+            "Te": 9.0 - 7.0 * rho**2,
+            "Ti": 8.0 - 6.0 * rho**2,
+            "ne": 9.0 - 4.0 * rho**2,
+        }
+
+        state = sim.initialize(profiles)
+
+        assert np.max(state.j_bs) > 0.0
+        assert np.max(state.j_total - state.j_bs - state.j_cd) > 0.0
+        assert np.all(np.isfinite(state.j_total))
+
+    def test_sol_q_peak_uses_target_heat_flux_width(self):
+        cfg = ScenarioConfig(
+            R0=6.2,
+            a=2.0,
+            B0=5.3,
+            kappa=1.7,
+            delta=0.33,
+            Ip_MA=15.0,
+            P_aux_MW=50.0,
+            include_sol=True,
+        )
+        sim = IntegratedScenarioSimulator(cfg)
+        state = sim.initialize()
+        sol_res = sim.sol.solve(cfg.P_aux_MW, state.ne[-1], f_rad=0.3)
+        expected_q_peak = peak_target_heat_flux(
+            cfg.P_aux_MW * 0.7,
+            cfg.R0,
+            sol_res.lambda_q_mm * 1e-3,
+        )
+
+        assert state.q_peak == pytest.approx(expected_q_peak)
+        assert state.q_peak != pytest.approx(sol_res.q_parallel_MW_m2)
 
 
 class TestScenarioState:

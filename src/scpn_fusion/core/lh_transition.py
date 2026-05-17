@@ -44,13 +44,20 @@ class PredatorPreyModel:
 
     def step(self, state: np.ndarray, dt: float, Q_heating: float) -> np.ndarray:
         # state = [epsilon, V_ZF, p_edge]
+        state = np.asarray(state, dtype=float)
+        if state.shape != (3,) or not np.all(np.isfinite(state)):
+            raise ValueError("state must be a finite vector [epsilon, V_ZF, p_edge]")
+        if not np.isfinite(dt) or dt <= 0.0:
+            raise ValueError("dt must be finite and positive")
+        if not np.isfinite(Q_heating) or Q_heating < 0.0:
+            raise ValueError("Q_heating must be finite and non-negative")
+
         eps, V, p = state
         eps = max(0.0, eps)
         V = max(0.0, V)
         p = max(0.0, p)
 
-        # Drive scales with pressure gradient, simplified here to scale with p
-        # Actually gamma_L should scale with p. We use a threshold model.
+        # A 0D edge-pressure-gradient proxy drives turbulence growth.
         # d_eps/dt = gamma_L * (p/p0) * eps - alpha1 eps^2 - alpha2 eps V^2 + S_drive
         p0 = 10.0
         S_drive = 1e2  # Background noise drive
@@ -144,15 +151,30 @@ class IPhaseDetector:
 
 class LHTransitionController:
     def __init__(self, model: PredatorPreyModel, Q_target: float):
+        if not np.isfinite(Q_target) or Q_target < 0.0:
+            raise ValueError("Q_target must be finite and non-negative")
         self.model = model
         self.Q_target = Q_target
         self.detector = IPhaseDetector()
+        self._epsilon_history: list[float] = []
 
     def step(self, epsilon_measured: float, Q_current: float, dt: float) -> float:
         """Ramp Q slowly until H-mode confirmed, avoid I-phase."""
-        # Highly simplified heuristic logic
-        if epsilon_measured < 5e4:  # Assumed H-mode
+        if not np.isfinite(epsilon_measured) or epsilon_measured < 0.0:
+            raise ValueError("epsilon_measured must be finite and non-negative")
+        if not np.isfinite(Q_current) or Q_current < 0.0:
+            raise ValueError("Q_current must be finite and non-negative")
+        if not np.isfinite(dt) or dt <= 0.0:
+            raise ValueError("dt must be finite and positive")
+
+        self._epsilon_history.append(float(epsilon_measured))
+        if len(self._epsilon_history) > self.detector.window_size:
+            self._epsilon_history = self._epsilon_history[-self.detector.window_size :]
+
+        if self.detector.detect(np.asarray(self._epsilon_history, dtype=float)):
+            return min(float(Q_current), self.Q_target)
+
+        if epsilon_measured < 5e4:  # H-mode turbulence-suppression criterion
             return self.Q_target
 
-        # Still in L-mode or I-phase, keep ramping
-        return Q_current + 10.0 * dt
+        return min(float(Q_current + 10.0 * dt), self.Q_target)

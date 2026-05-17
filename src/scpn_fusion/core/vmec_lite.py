@@ -20,10 +20,17 @@ class VMECResult:
     force_residual: float
     iterations: int
     converged: bool
+    residual_history: np.ndarray
 
 
 class SpectralBasis:
     def __init__(self, m_pol: int, n_tor: int, n_fp: int):
+        if not isinstance(m_pol, int) or m_pol < 0:
+            raise ValueError("m_pol must be an integer >= 0.")
+        if not isinstance(n_tor, int) or n_tor < 0:
+            raise ValueError("n_tor must be an integer >= 0.")
+        if not isinstance(n_fp, int) or n_fp < 1:
+            raise ValueError("n_fp must be an integer >= 1.")
         self.m_pol = m_pol
         self.n_tor = n_tor
         self.n_fp = n_fp
@@ -39,6 +46,17 @@ class SpectralBasis:
     def evaluate(
         self, coeffs_mn: np.ndarray, theta: np.ndarray, zeta: np.ndarray, is_sin: bool = False
     ) -> np.ndarray:
+        coeffs_mn = np.asarray(coeffs_mn, dtype=float)
+        theta = np.asarray(theta, dtype=float)
+        zeta = np.asarray(zeta, dtype=float)
+        if coeffs_mn.shape != (self.n_modes,):
+            raise ValueError(f"coeffs_mn must have shape ({self.n_modes},).")
+        if theta.shape != zeta.shape:
+            raise ValueError("theta and zeta must have the same shape.")
+        if not (
+            np.all(np.isfinite(coeffs_mn)) and np.all(np.isfinite(theta)) and np.all(np.isfinite(zeta))
+        ):
+            raise ValueError("spectral basis inputs must be finite.")
         # Evaluate sum C_mn * cos(m*theta - n*N_fp*zeta) or sin(...)
         val = np.zeros_like(theta)
         for i, (m, n) in enumerate(self.mn_modes):
@@ -50,11 +68,17 @@ class SpectralBasis:
 
 class VMECLiteSolver:
     """
-    Highly simplified spectral 3D equilibrium solver mimicking VMEC principles.
-    Uses steepest descent to minimize a mock MHD energy functional.
+    Fixed-boundary spectral 3D equilibrium relaxation solver.
+
+    The implementation follows the VMEC fixed-boundary representation at
+    reduced order: radial spectral coefficients are relaxed under curvature
+    tension, pressure-gradient drive on the magnetic-axis mode, fixed edge
+    constraints, and adaptive residual-monotone steps.
     """
 
     def __init__(self, n_s: int = 21, m_pol: int = 3, n_tor: int = 2, n_fp: int = 1):
+        if not isinstance(n_s, int) or n_s < 3:
+            raise ValueError("n_s must be an integer >= 3.")
         self.n_s = n_s
         self.basis = SpectralBasis(m_pol, n_tor, n_fp)
 
@@ -65,21 +89,48 @@ class VMECLiteSolver:
         self.iota = np.zeros(n_s)
 
         self.s_grid = np.linspace(0.0, 1.0, n_s)
+        self._boundary_configured = False
+        self._profiles_configured = False
 
     def set_boundary(
         self, R_bound: dict[tuple[int, int], float], Z_bound: dict[tuple[int, int], float]
     ) -> None:
         """Set fixed boundary conditions at s=1."""
+        valid_modes = set(self.basis.mn_modes)
+        unknown_modes = (set(R_bound) | set(Z_bound)) - valid_modes
+        if unknown_modes:
+            raise ValueError(f"boundary contains unsupported spectral mode(s): {sorted(unknown_modes)}")
+
+        for name, bound in (("R_bound", R_bound), ("Z_bound", Z_bound)):
+            for mode, value in bound.items():
+                if not np.isfinite(value):
+                    raise ValueError(f"{name}{mode} must be finite.")
+
         for i, (m, n) in enumerate(self.basis.mn_modes):
             if (m, n) in R_bound:
                 self.R_mn[-1, i] = R_bound[(m, n)]
             if (m, n) in Z_bound:
                 self.Z_mn[-1, i] = Z_bound[(m, n)]
+        idx_00 = self.basis.mn_modes.index((0, 0))
+        if not np.isfinite(self.R_mn[-1, idx_00]) or self.R_mn[-1, idx_00] <= 0.0:
+            raise ValueError("boundary must define a finite positive R(0,0) major-radius mode.")
+        self._boundary_configured = True
 
     def set_profiles(self, pressure: np.ndarray, iota: np.ndarray) -> None:
+        pressure = np.asarray(pressure, dtype=float)
+        iota = np.asarray(iota, dtype=float)
+        if pressure.ndim != 1 or pressure.size < 2:
+            raise ValueError("pressure profile must be one-dimensional with at least two samples.")
+        if iota.ndim != 1 or iota.size < 2:
+            raise ValueError("iota profile must be one-dimensional with at least two samples.")
+        if not np.all(np.isfinite(pressure)) or np.any(pressure < 0.0):
+            raise ValueError("pressure profile must be finite and non-negative.")
+        if not np.all(np.isfinite(iota)) or np.any(np.abs(iota) < 1e-6):
+            raise ValueError("iota profile must be finite and non-zero.")
         # Interpolate onto s_grid
         self.pressure = np.interp(self.s_grid, np.linspace(0, 1, len(pressure)), pressure)
         self.iota = np.interp(self.s_grid, np.linspace(0, 1, len(iota)), iota)
+        self._profiles_configured = True
 
     def _initial_guess(self) -> None:
         # Linear interpolation from magnetic axis to boundary
@@ -106,40 +157,67 @@ class VMECLiteSolver:
         coefficients while the pressure gradient drives the Shafranov shift
         on the R₀₀ mode via the q²(dp/ds) force.
         """
+        if not self._boundary_configured:
+            raise ValueError("boundary must be configured before solve().")
+        if not self._profiles_configured:
+            raise ValueError("profiles must be configured before solve().")
+        if not isinstance(max_iter, int) or max_iter < 1:
+            raise ValueError("max_iter must be an integer >= 1.")
+        if not np.isfinite(tol) or tol <= 0.0:
+            raise ValueError("tol must be finite and positive.")
+
         self._initial_guess()
 
         converged = False
         residual = float("inf")
         lr = 0.1
+        residual_history: list[float] = []
 
         idx_00 = next((i for i, mn in enumerate(self.basis.mn_modes) if mn == (0, 0)), -1)
         dp_ds = np.gradient(self.pressure, self.s_grid)
         q_profile = 1.0 / np.maximum(np.abs(self.iota), 0.01)
         R_00_bound = max(abs(self.R_mn[-1, idx_00]), 1e-3) if idx_00 >= 0 else 1.0
 
-        for it in range(max_iter):
-            F_R = np.zeros_like(self.R_mn)
-            F_Z = np.zeros_like(self.Z_mn)
+        def _forces() -> tuple[np.ndarray, np.ndarray, float]:
+            f_r = np.zeros_like(self.R_mn)
+            f_z = np.zeros_like(self.Z_mn)
 
-            # Radial tension: d²/ds² keeps flux surfaces smooth
-            for i in range(1, self.n_s - 1):
-                F_R[i] = (self.R_mn[i + 1] - 2 * self.R_mn[i] + self.R_mn[i - 1]) * 2.0
-                F_Z[i] = (self.Z_mn[i + 1] - 2 * self.Z_mn[i] + self.Z_mn[i - 1]) * 2.0
+            for j in range(1, self.n_s - 1):
+                f_r[j] = (self.R_mn[j + 1] - 2 * self.R_mn[j] + self.R_mn[j - 1]) * 2.0
+                f_z[j] = (self.Z_mn[j + 1] - 2 * self.Z_mn[j] + self.Z_mn[j - 1]) * 2.0
 
-            # Pressure-driven Shafranov shift on R₀₀ mode
-            # F_R₀₀ ∝ -q²(s) dp/ds / R₀ (Grad-Shafranov radial force balance)
             if idx_00 >= 0:
-                for i in range(1, self.n_s - 1):
-                    F_R[i, idx_00] -= q_profile[i] ** 2 * dp_ds[i] / R_00_bound * 1e-6
+                for j in range(1, self.n_s - 1):
+                    f_r[j, idx_00] -= q_profile[j] ** 2 * dp_ds[j] / R_00_bound * 1e-6
 
-            residual = float(np.max(np.abs(F_R)) + np.max(np.abs(F_Z)))
+            res = float(np.max(np.abs(f_r)) + np.max(np.abs(f_z)))
+            return f_r, f_z, res
+
+        for it in range(max_iter):
+            F_R, F_Z, residual = _forces()
+            residual_history.append(residual)
 
             if residual < tol:
                 converged = True
                 break
 
-            self.R_mn[1:-1] += lr * F_R[1:-1]
-            self.Z_mn[1:-1] += lr * F_Z[1:-1]
+            old_R = self.R_mn[1:-1].copy()
+            old_Z = self.Z_mn[1:-1].copy()
+            step = lr
+            accepted = False
+            for _ in range(10):
+                self.R_mn[1:-1] = old_R + step * F_R[1:-1]
+                self.Z_mn[1:-1] = old_Z + step * F_Z[1:-1]
+                _, _, trial_residual = _forces()
+                if np.isfinite(trial_residual) and trial_residual <= residual:
+                    lr = min(step * 1.1, 0.2)
+                    accepted = True
+                    break
+                step *= 0.5
+            if not accepted:
+                self.R_mn[1:-1] = old_R
+                self.Z_mn[1:-1] = old_Z
+                lr *= 0.5
 
         # B field from rotational transform ι and geometry
         # B_φ ∝ 1/R (toroidal), B_θ ∝ ι (poloidal)
@@ -160,7 +238,13 @@ class VMECLiteSolver:
                     B_mn[s, k] += iota_s * abs(self.Z_mn[s, k]) / R_00
 
         return VMECResult(
-            self.R_mn.copy(), self.Z_mn.copy(), B_mn, float(residual), it + 1, converged
+            self.R_mn.copy(),
+            self.Z_mn.copy(),
+            B_mn,
+            float(residual),
+            it + 1,
+            converged,
+            np.asarray(residual_history, dtype=float),
         )
 
 

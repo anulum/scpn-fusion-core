@@ -12,6 +12,52 @@ from typing import Any
 
 import numpy as np
 
+_E_CHARGE = 1.602176634e-19
+_M_ELECTRON = 9.1093837015e-31
+_EPS0 = 8.8541878128e-12
+_LN_LAMBDA = 17.0
+
+
+def electron_collisionality_star(
+    ne_19: np.ndarray,
+    Te_keV: np.ndarray,
+    q: np.ndarray,
+    R0: float,
+    epsilon: np.ndarray,
+    z_eff: float | np.ndarray = 1.5,
+) -> np.ndarray:
+    """Electron banana-regime collisionality for QLKNN-class feature vectors."""
+    ne_19 = np.asarray(ne_19, dtype=float)
+    Te_keV = np.asarray(Te_keV, dtype=float)
+    q = np.asarray(q, dtype=float)
+    epsilon = np.asarray(epsilon, dtype=float)
+    z_eff = np.asarray(z_eff, dtype=float)
+
+    if not all(
+        np.all(np.isfinite(arr))
+        for arr in (ne_19, Te_keV, q, epsilon, z_eff)
+    ):
+        raise ValueError("collisionality inputs must be finite")
+    if R0 <= 0.0 or not np.isfinite(R0):
+        raise ValueError("R0 must be finite and positive")
+    if np.any(ne_19 < 0.0) or np.any(Te_keV < 0.0):
+        raise ValueError("density and temperature profiles must be non-negative")
+    if np.any(q <= 0.0) or np.any(epsilon <= 0.0):
+        raise ValueError("q and epsilon must be positive")
+
+    ne_m3 = ne_19 * 1e19
+    Te_J = np.maximum(Te_keV, 1e-3) * 1e3 * _E_CHARGE
+    v_the = np.sqrt(2.0 * Te_J / _M_ELECTRON)
+    nu_ee = (
+        ne_m3
+        * np.maximum(z_eff, 1.0)
+        * _E_CHARGE**4
+        * _LN_LAMBDA
+        / (12.0 * np.pi**1.5 * _EPS0**2 * np.sqrt(_M_ELECTRON) * Te_J**1.5)
+    )
+    nu_star = nu_ee * q * R0 / (np.maximum(epsilon, 1e-4) ** 1.5 * v_the)
+    return np.asarray(np.maximum(nu_star, 0.0))
+
 
 class QLKNNSurrogate:
     """
@@ -54,7 +100,10 @@ class QLKNNSurrogate:
 
     def _activate(self, x: np.ndarray) -> np.ndarray:
         if self.activation == "elu":
-            return np.asarray(np.where(x > 0, x, np.exp(x) - 1.0))
+            out = np.asarray(x, dtype=float).copy()
+            neg = out <= 0.0
+            out[neg] = np.exp(np.clip(out[neg], -80.0, 0.0)) - 1.0
+            return out
         if self.activation == "relu":
             return np.asarray(np.maximum(0, x))
         if self.activation == "tanh":
@@ -63,7 +112,10 @@ class QLKNNSurrogate:
 
     def _activate_deriv(self, x: np.ndarray) -> np.ndarray:
         if self.activation == "elu":
-            return np.where(x > 0, 1.0, np.exp(x))
+            deriv = np.ones_like(x, dtype=float)
+            neg = x <= 0.0
+            deriv[neg] = np.exp(np.clip(x[neg], -80.0, 0.0))
+            return deriv
         if self.activation == "relu":
             return np.where(x > 0, 1.0, 0.0)
         if self.activation == "tanh":
@@ -137,6 +189,15 @@ class QLKNNSurrogate:
 
 class TransportInputNormalizer:
     @staticmethod
+    def _as_valid_profile(name: str, values: np.ndarray, shape: tuple[int, ...]) -> np.ndarray:
+        arr = np.asarray(values, dtype=float)
+        if arr.shape != shape:
+            raise ValueError("Te, Ti, ne, q, and r profiles must have the same shape")
+        if not np.all(np.isfinite(arr)):
+            raise ValueError(f"{name} profile values must be finite")
+        return arr
+
+    @staticmethod
     def from_profiles(
         Te: np.ndarray,
         Ti: np.ndarray,
@@ -150,13 +211,30 @@ class TransportInputNormalizer:
         """
         Convert physical profiles into the 10 dimensionless QLKNN inputs.
         """
-        dr = r[1] - r[0] if len(r) > 1 else 0.1
+        r = np.asarray(r, dtype=float)
+        if r.ndim != 1 or r.size < 2:
+            raise ValueError("r profile must be a one-dimensional array with at least two points")
+        if not np.all(np.isfinite(r)):
+            raise ValueError("r profile values must be finite")
+        if np.any(np.diff(r) <= 0.0):
+            raise ValueError("r profile must be strictly increasing")
+        if R0 <= 0.0 or a <= 0.0 or B0 <= 0.0:
+            raise ValueError("R0, a, and B0 must be positive")
 
-        # Gradients (simple central difference)
-        grad_Te = np.gradient(Te, dr)
-        grad_Ti = np.gradient(Ti, dr)
-        grad_ne = np.gradient(ne, dr)
-        grad_q = np.gradient(q, dr)
+        Te = TransportInputNormalizer._as_valid_profile("Te", Te, r.shape)
+        Ti = TransportInputNormalizer._as_valid_profile("Ti", Ti, r.shape)
+        ne = TransportInputNormalizer._as_valid_profile("ne", ne, r.shape)
+        q = TransportInputNormalizer._as_valid_profile("q", q, r.shape)
+        if np.any(Te < 0.0) or np.any(Ti < 0.0) or np.any(ne < 0.0):
+            raise ValueError("Te, Ti, and ne profiles must be non-negative")
+        if np.any(q <= 0.0):
+            raise ValueError("q profile values must be positive")
+
+        edge_order = 2 if r.size > 2 else 1
+        grad_Te = np.gradient(Te, r, edge_order=edge_order)
+        grad_Ti = np.gradient(Ti, r, edge_order=edge_order)
+        grad_ne = np.gradient(ne, r, edge_order=edge_order)
+        grad_q = np.gradient(q, r, edge_order=edge_order)
 
         # 1. R/L_Ti
         R_L_Ti = -R0 / np.maximum(Ti, 1e-3) * grad_Ti
@@ -171,18 +249,16 @@ class TransportInputNormalizer:
         # 6. alpha_MHD (pressure gradient)
         # p = 2 * n_e * T_e (roughly)
         p = 2.0 * ne * 1e19 * Te * 1e3 * 1.602e-19
-        grad_p = np.gradient(p, dr)
+        grad_p = np.gradient(p, r, edge_order=edge_order)
         mu_0 = 4.0 * np.pi * 1e-7
         alpha_MHD = -(q**2) * R0 * grad_p * 2.0 * mu_0 / (B0**2)
         # 7. Ti/Te
         Ti_Te = Ti / np.maximum(Te, 1e-3)
         # 8. nu_star (collisionality)
         epsilon = r / R0
-        # highly simplified nu_star
-        Te_safe_nu = np.maximum(Te, 1e-3)
-        nu_star = 0.1 * ne / (Te_safe_nu**2 * np.maximum(epsilon, 1e-3) ** 1.5)
         # 9. Z_eff (assumed flat 1.5)
         Z_eff = np.ones_like(r) * 1.5
+        nu_star = electron_collisionality_star(ne, Te, q, R0, epsilon, z_eff=Z_eff)
         # 10. epsilon
         eps = epsilon
 
@@ -225,15 +301,24 @@ class TrainingDataGenerator:
     @staticmethod
     def generate_analytic_targets(inputs: np.ndarray) -> np.ndarray:
         """
-        Compute flux targets from simplified analytical quasilinear model.
+        Compute flux targets from a critical-gradient quasilinear closure.
         Returns [Q_i, Q_e, Gamma_e] in gyro-Bohm units.
         """
+        inputs = np.asarray(inputs, dtype=float)
+        if inputs.ndim != 2 or inputs.shape[1] != 10:
+            raise ValueError("inputs must have shape (n_samples, 10)")
+        if not np.all(np.isfinite(inputs)):
+            raise ValueError("inputs must be finite")
+        if np.any(inputs[:, 3] <= 0.0):
+            raise ValueError("q input column must be positive")
+        if np.any(inputs[:, 9] < 0.0):
+            raise ValueError("epsilon input column must be non-negative")
+
         n_samples = inputs.shape[0]
         y = np.zeros((n_samples, 3))
 
         for i in range(n_samples):
             R_L_Ti = inputs[i, 0]
-            R_L_Te = inputs[i, 1]
             R_L_ne = inputs[i, 2]
             q = inputs[i, 3]
             s_hat = inputs[i, 4]
@@ -259,8 +344,9 @@ class TrainingDataGenerator:
             if R_L_ne > R_L_ne_crit:
                 # TEM driven flux, collisionality dampens it
                 drive = R_L_ne - R_L_ne_crit
-                Q_e = 2.0 * drive * np.sqrt(max(nu_star, 1e-4))
-                Gamma_e = 1.0 * drive * np.sqrt(max(nu_star, 1e-4))
+                tem_damping = 1.0 / np.sqrt(1.0 + max(nu_star, 0.0))
+                Q_e = 2.0 * drive * tem_damping
+                Gamma_e = drive * tem_damping
 
             y[i, 0] = Q_i
             y[i, 1] = Q_e
@@ -272,7 +358,10 @@ class TrainingDataGenerator:
 class NeuralTransportTrainer:
     def _activate_deriv(self, x: np.ndarray, activation: str) -> np.ndarray:
         if activation == "elu":
-            return np.where(x > 0, 1.0, np.exp(x))
+            deriv = np.ones_like(x, dtype=float)
+            neg = x <= 0.0
+            deriv[neg] = np.exp(np.clip(x[neg], -80.0, 0.0))
+            return deriv
         if activation == "relu":
             return np.where(x > 0, 1.0, 0.0)
         if activation == "tanh":

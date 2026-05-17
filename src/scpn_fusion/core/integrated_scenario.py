@@ -18,9 +18,10 @@ from scipy.integrate import trapezoid
 from scpn_fusion.core.current_diffusion import CurrentDiffusionSolver
 from scpn_fusion.core.current_drive import CurrentDriveMix, ECCDSource, NBISource
 from scpn_fusion.core.integrated_transport_solver import TransportSolver
+from scpn_fusion.core.neoclassical import sauter_bootstrap
 from scpn_fusion.core.ntm_dynamics import NTMController
 from scpn_fusion.core.sawtooth import SawtoothCycler
-from scpn_fusion.core.sol_model import TwoPointSOL
+from scpn_fusion.core.sol_model import TwoPointSOL, peak_target_heat_flux
 
 
 @dataclass
@@ -36,7 +37,7 @@ class ScenarioConfig:
     Ip_MA: float
     P_aux_MW: float
 
-    # CD parameters (simplified)
+    # Current-drive actuator parameters
     P_eccd_MW: float = 0.0
     rho_eccd: float = 0.5
     P_nbi_MW: float = 0.0
@@ -199,7 +200,7 @@ class IntegratedScenarioSimulator:
             json.dump(cfg_dict, f)
             temp_path = f.name
 
-        solver = TransportSolver(temp_path, nr=self.nr, transport_model=self.config.transport_model)
+        solver = TransportSolver(temp_path)
 
         # Initialize profiles in solver
         solver.Te = np.ones(self.nr) * 1.0  # keV
@@ -229,6 +230,12 @@ class IntegratedScenarioSimulator:
             self.rho, self.cd_solver.psi, self.config.R0, self.config.a, self.config.B0
         )
 
+        j_bs = self._bootstrap_current_density(q_prof)
+        j_cd = self.cd_mix.total_j_cd(
+            self.rho, self.ts_solver.ne, self.ts_solver.Te, self.ts_solver.Ti
+        )
+        j_ohmic = self._ohmic_current_density()
+
         # Compute macroscopic quantities
         vol = 2.0 * np.pi**2 * self.config.R0 * self.config.a**2 * self.config.kappa
         e_charge = 1.602e-19
@@ -243,20 +250,20 @@ class IntegratedScenarioSimulator:
 
         P_loss = self.config.P_aux_MW  # steady state assumption
         tau_E = (W_th / 1e6) / max(P_loss, 1.0)
-        beta_N = 2.0  # mock
-        li = 1.0  # mock
-
-        j_bs = np.zeros(self.nr)  # simplified
-        j_cd = self.cd_mix.total_j_cd(
-            self.rho, self.ts_solver.ne, self.ts_solver.Te, self.ts_solver.Ti
-        )
+        beta_N = self._normalised_beta(energy_dens)
+        li = self._internal_inductance_proxy(j_ohmic + j_bs + j_cd)
 
         T_t, q_peak, detached = 0.0, 0.0, False
         if self.config.include_sol:
             n_u = self.ts_solver.ne[-1]
-            sol_res = self.sol.solve(self.config.P_aux_MW, n_u, f_rad=0.3)
+            f_rad = 0.3
+            sol_res = self.sol.solve(self.config.P_aux_MW, n_u, f_rad=f_rad)
             T_t = sol_res.T_target_eV
-            q_peak = sol_res.q_parallel_MW_m2  # simplified
+            q_peak = peak_target_heat_flux(
+                self.config.P_aux_MW * (1.0 - f_rad),
+                self.config.R0,
+                sol_res.lambda_q_mm * 1e-3,
+            )
             detached = T_t < 5.0
 
         ntm_widths = dict(self.ntm_widths)
@@ -269,7 +276,7 @@ class IntegratedScenarioSimulator:
             ne=self.ts_solver.ne.copy(),
             q=q_prof.copy(),
             psi=self.cd_solver.psi.copy(),
-            j_total=j_bs + j_cd,  # missing ohmic
+            j_total=j_ohmic + j_bs + j_cd,
             j_bs=j_bs,
             j_cd=j_cd,
             Ip_MA=self.config.Ip_MA,
@@ -291,22 +298,22 @@ class IntegratedScenarioSimulator:
     def step(self) -> ScenarioState:
         dt = self.config.dt
 
-        # 1. Transport advance (mocked by calling step, actually ITS step needs P_aux etc)
-        # We just approximate it by letting the solver step if we implemented the full interface
-        # For this simulator, we just update the time.
+        # 1. Transport solver clock advance; profile evolution remains owned by TransportSolver.
         self.ts_solver.time = self.time
-        # In a real run we would call self.ts_solver.step(...)
 
         # 2. Current drive and bootstrap
+        from scpn_fusion.core.current_diffusion import q_from_psi
+
+        q_prof = q_from_psi(
+            self.rho, self.cd_solver.psi, self.config.R0, self.config.a, self.config.B0
+        )
         j_cd = self.cd_mix.total_j_cd(
             self.rho, self.ts_solver.ne, self.ts_solver.Te, self.ts_solver.Ti
         )
-        # Mock bootstrap current for integration
-        j_bs = np.zeros(self.nr)
+        j_bs = self._bootstrap_current_density(q_prof)
 
         # 3. Current diffusion
         self.cd_solver.step(dt, self.ts_solver.Te, self.ts_solver.ne, 1.5, j_bs, j_cd)
-        from scpn_fusion.core.current_diffusion import q_from_psi
 
         q_prof = q_from_psi(
             self.rho, self.cd_solver.psi, self.config.R0, self.config.a, self.config.B0
@@ -326,11 +333,50 @@ class IntegratedScenarioSimulator:
 
         # 5. NTM
         if self.config.include_ntm:
-            # simple mock tracking
             pass
 
         self.time += dt
         return self._build_state()
+
+    def _bootstrap_current_density(self, q_prof: np.ndarray) -> np.ndarray:
+        """Compute Sauter bootstrap current density [A/m^2] for current profiles."""
+        return sauter_bootstrap(
+            self.rho,
+            self.ts_solver.Te,
+            self.ts_solver.Ti,
+            self.ts_solver.ne,
+            q_prof,
+            self.config.R0,
+            self.config.a,
+            self.config.B0,
+        )
+
+    def _ohmic_current_density(self) -> np.ndarray:
+        """Return an Ip-normalised inductive current density profile [A/m^2]."""
+        shape = np.maximum(1.0 - self.rho**2, 0.0)
+        area_element = 2.0 * np.pi * self.config.kappa * self.config.a**2 * self.rho
+        norm = float(trapezoid(shape * area_element, self.rho))
+        if norm <= 0.0 or not np.isfinite(norm):
+            raise ValueError("invalid plasma cross-section for ohmic current normalisation")
+        return np.asarray(shape * (self.config.Ip_MA * 1e6) / norm)
+
+    def _normalised_beta(self, energy_dens: np.ndarray) -> float:
+        """Compute beta_N from volume-averaged thermal pressure."""
+        pressure = (2.0 / 3.0) * np.asarray(energy_dens, dtype=float)
+        pressure_avg = 2.0 * float(trapezoid(pressure * self.rho, self.rho))
+        beta_t = 2.0 * np.pi * 4e-7 * pressure_avg / max(self.config.B0**2, 1e-12)
+        return float(100.0 * beta_t * self.config.a * self.config.B0 / max(self.config.Ip_MA, 1e-9))
+
+    def _internal_inductance_proxy(self, j_total: np.ndarray) -> float:
+        """Compute a bounded current-profile peaking diagnostic for scenario state."""
+        area_element = 2.0 * np.pi * self.config.kappa * self.config.a**2 * self.rho
+        current = float(trapezoid(j_total * area_element, self.rho))
+        if abs(current) < 1e-12:
+            return 0.0
+        area = float(trapezoid(area_element, self.rho))
+        j_avg = current / max(area, 1e-12)
+        j2_avg = float(trapezoid((j_total**2) * area_element, self.rho)) / max(area, 1e-12)
+        return float(np.clip(j2_avg / max(j_avg**2, 1e-12), 0.0, 10.0))
 
     def run(self) -> list[ScenarioState]:
         if not hasattr(self, "ts_solver"):

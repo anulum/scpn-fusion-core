@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 from scpn_fusion.core.gk_species import (
+    GKSpecies,
     VelocityGrid,
     bessel_j0,
     collision_frequencies,
@@ -53,6 +54,17 @@ def test_electron_thermal_speed_faster():
     assert e.thermal_speed > 40 * ion.thermal_speed  # sqrt(m_i/m_e) ~ 60
 
 
+def test_species_rejects_nonphysical_parameters():
+    with pytest.raises(ValueError, match="mass_amu"):
+        GKSpecies(0.0, 1.0, 8.0, 10.0, 6.9, 2.2)
+    with pytest.raises(ValueError, match="charge_e"):
+        GKSpecies(2.0, 0.0, 8.0, 10.0, 6.9, 2.2)
+    with pytest.raises(ValueError, match="temperature_keV"):
+        GKSpecies(2.0, 1.0, -1.0, 10.0, 6.9, 2.2)
+    with pytest.raises(ValueError, match="density_19"):
+        GKSpecies(2.0, 1.0, 8.0, np.nan, 6.9, 2.2)
+
+
 def test_velocity_grid_shape():
     vg = VelocityGrid(n_energy=16, n_lambda=24)
     assert len(vg.energy) == 16
@@ -78,6 +90,13 @@ def test_velocity_grid_weights_positive():
     vg = VelocityGrid()
     assert np.all(vg.energy_weights > 0)
     assert np.all(vg.lambda_weights > 0)
+
+
+def test_velocity_grid_rejects_underresolved_dimensions():
+    with pytest.raises(ValueError, match="n_energy"):
+        VelocityGrid(n_energy=1, n_lambda=4)
+    with pytest.raises(ValueError, match="n_lambda"):
+        VelocityGrid(n_energy=4, n_lambda=2)
 
 
 def test_bessel_j0_at_zero():
@@ -110,6 +129,33 @@ def test_collision_frequencies_scale_with_density():
     nu_lo, _ = collision_frequencies(ion, n_e_19=1.0, T_e_keV=8.0)
     nu_hi, _ = collision_frequencies(ion, n_e_19=10.0, T_e_keV=8.0)
     assert nu_hi > nu_lo
+
+
+def test_collision_frequencies_include_species_dependent_energy_diffusion():
+    ion = deuterium_ion(T_keV=8.0)
+    electron_species = electron(T_keV=8.0, adiabatic=False)
+
+    ion_nu_D, ion_nu_E = collision_frequencies(ion, n_e_19=10.0, T_e_keV=8.0)
+    elec_nu_D, elec_nu_E = collision_frequencies(
+        electron_species, n_e_19=10.0, T_e_keV=8.0
+    )
+
+    assert ion_nu_E != pytest.approx(ion_nu_D)
+    assert elec_nu_E != pytest.approx(elec_nu_D)
+    assert elec_nu_D > ion_nu_D
+    assert elec_nu_E > ion_nu_E
+
+
+def test_collision_frequencies_reject_invalid_plasma_domain():
+    ion = deuterium_ion()
+    with pytest.raises(ValueError, match="n_e_19"):
+        collision_frequencies(ion, n_e_19=0.0, T_e_keV=8.0)
+    with pytest.raises(ValueError, match="T_e_keV"):
+        collision_frequencies(ion, n_e_19=10.0, T_e_keV=-1.0)
+    with pytest.raises(ValueError, match="Z_eff"):
+        collision_frequencies(ion, n_e_19=10.0, T_e_keV=8.0, Z_eff=0.0)
+    with pytest.raises(ValueError, match="ln_lambda"):
+        collision_frequencies(ion, n_e_19=10.0, T_e_keV=8.0, ln_lambda=np.inf)
 
 
 def test_pitch_angle_operator_shape():

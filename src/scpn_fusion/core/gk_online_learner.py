@@ -48,6 +48,16 @@ class OnlineLearner:
 
     def __init__(self, config: LearnerConfig | None = None) -> None:
         self.config = config or LearnerConfig()
+        if self.config.buffer_size < 2:
+            raise ValueError("buffer_size must be at least 2 to allow a validation holdout")
+        if not 0.0 < self.config.validation_fraction < 1.0:
+            raise ValueError("validation_fraction must be strictly between 0 and 1")
+        if self.config.n_epochs < 1:
+            raise ValueError("n_epochs must be at least 1")
+        if self.config.learning_rate <= 0.0 or not np.isfinite(self.config.learning_rate):
+            raise ValueError("learning_rate must be a finite positive value")
+        if self.config.max_generations < 1:
+            raise ValueError("max_generations must be at least 1")
         self.buffer: list[TrainingSample] = []
         self.generation: int = 0
         self._best_val_loss: float = float("inf")
@@ -55,7 +65,19 @@ class OnlineLearner:
         self.retrain_history: list[dict] = []
 
     def add_sample(self, input_10d: NDArray[np.float64], target_3d: NDArray[np.float64]) -> None:
-        self.buffer.append(TrainingSample(input_10d=input_10d.copy(), target_3d=target_3d.copy()))
+        input_array = np.asarray(input_10d, dtype=np.float64)
+        target_array = np.asarray(target_3d, dtype=np.float64)
+        if input_array.shape != (10,):
+            raise ValueError(f"input_10d must have shape (10,), got {input_array.shape}")
+        if target_array.shape != (3,):
+            raise ValueError(f"target_3d must have shape (3,), got {target_array.shape}")
+        if not np.all(np.isfinite(input_array)):
+            raise ValueError("input_10d must contain only finite values")
+        if not np.all(np.isfinite(target_array)):
+            raise ValueError("target_3d must contain only finite values")
+        self.buffer.append(
+            TrainingSample(input_10d=input_array.copy(), target_3d=target_array.copy())
+        )
 
     @property
     def buffer_full(self) -> bool:
@@ -89,6 +111,8 @@ class OnlineLearner:
         n = len(self.buffer)
         n_val = max(int(n * self.config.validation_fraction), 1)
         n_train = n - n_val
+        if n_train < 1:
+            raise ValueError("buffer_size and validation_fraction leave no training samples")
 
         # Shuffle and split
         rng = np.random.default_rng(self.generation)
@@ -128,18 +152,31 @@ class OnlineLearner:
         best_val = float("inf")
         best_weights = None
 
-        for epoch in range(self.config.n_epochs):
+        for _ in range(self.config.n_epochs):
             # Forward pass (train)
-            h1 = np.maximum(0, X_train @ w1 + b1)
-            h2 = np.maximum(0, h1 @ w2 + b2)
+            z1 = X_train @ w1 + b1
+            h1 = np.maximum(0, z1)
+            z2 = h1 @ w2 + b2
+            h2 = np.maximum(0, z2)
             pred = h2 @ w3 + b3
-            loss_train = float(np.mean((pred - Y_train) ** 2))
 
-            # Backprop (simplified, output layer only for stability)
-            grad_out = 2.0 * (pred - Y_train) / n_train
+            # Full dense-network MSE backpropagation through both hidden layers.
+            grad_out = 2.0 * (pred - Y_train) / pred.size
             grad_w3 = h2.T @ grad_out
             grad_b3 = grad_out.sum(axis=0)
+            grad_h2 = grad_out @ w3.T
+            grad_z2 = grad_h2 * (z2 > 0.0)
+            grad_w2 = h1.T @ grad_z2
+            grad_b2 = grad_z2.sum(axis=0)
+            grad_h1 = grad_z2 @ w2.T
+            grad_z1 = grad_h1 * (z1 > 0.0)
+            grad_w1 = X_train.T @ grad_z1
+            grad_b1 = grad_z1.sum(axis=0)
 
+            w1 -= lr * grad_w1
+            b1 -= lr * grad_b1
+            w2 -= lr * grad_w2
+            b2 -= lr * grad_b2
             w3 -= lr * grad_w3
             b3 -= lr * grad_b3
 

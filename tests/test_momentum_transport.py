@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.momentum_transport import (
     MomentumTransportSolver,
@@ -108,3 +109,30 @@ def test_diagnostics():
 
     stab = diag.rwm_stabilization_criterion(omega, tau_wall=0.01)
     assert stab  # 10000 * 0.01 = 100 > 0.01
+
+
+def test_rwm_stabilization_requires_wall_time_order_unity_rotation():
+    omega = np.ones(50) * 50.0
+
+    assert not RotationDiagnostics.rwm_stabilization_criterion(omega, tau_wall=0.01)
+
+
+def test_rwm_stabilization_rejects_invalid_domain():
+    with pytest.raises(ValueError, match="omega_phi"):
+        RotationDiagnostics.rwm_stabilization_criterion(np.array([np.nan]), tau_wall=0.01)
+    with pytest.raises(ValueError, match="tau_wall"):
+        RotationDiagnostics.rwm_stabilization_criterion(np.ones(10), tau_wall=0.0)
+
+
+def test_momentum_solver_rejects_invalid_grid_and_step_domains():
+    with pytest.raises(ValueError, match="rho"):
+        MomentumTransportSolver(np.array([0.0, 1.0]), R0=6.2, a=2.0, B0=5.3)
+
+    rho = np.linspace(0.0, 1.0, 50)
+    solver = MomentumTransportSolver(rho, R0=6.2, a=2.0, B0=5.3)
+    good = np.ones(50)
+
+    with pytest.raises(ValueError, match="dt"):
+        solver.step(0.0, good, good, good, good, good)
+    with pytest.raises(ValueError, match="chi_i"):
+        solver.step(0.1, -good, good, good, good, good)

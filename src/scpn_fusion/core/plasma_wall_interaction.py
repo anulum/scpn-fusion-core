@@ -15,38 +15,127 @@ import numpy as np
 from scpn_fusion.core.sol_model import TwoPointSOL
 
 
+@dataclass(frozen=True)
+class _Species:
+    symbol: str
+    mass_amu: float
+    atomic_number: int
+
+
+@dataclass(frozen=True)
+class _TargetMaterial:
+    symbol: str
+    mass_amu: float
+    atomic_number: int
+    surface_binding_eV: float
+    atomic_density_m3: float
+
+
+@dataclass(frozen=True)
+class _SputteringFit:
+    q: float
+    gamma_shape: float
+    reduced_energy_scale_eV: float
+    angular_alpha: float = 1.5
+    angular_beta: float = 0.5
+
+
+_TARGETS = {
+    "W": _TargetMaterial("W", mass_amu=183.84, atomic_number=74, surface_binding_eV=8.68, atomic_density_m3=6.31e28),
+    "TUNGSTEN": _TargetMaterial(
+        "W", mass_amu=183.84, atomic_number=74, surface_binding_eV=8.68, atomic_density_m3=6.31e28
+    ),
+    "C": _TargetMaterial("C", mass_amu=12.011, atomic_number=6, surface_binding_eV=7.41, atomic_density_m3=1.13e29),
+    "CARBON": _TargetMaterial("C", mass_amu=12.011, atomic_number=6, surface_binding_eV=7.41, atomic_density_m3=1.13e29),
+}
+
+_PROJECTILES = {
+    "D": _Species("D", mass_amu=2.014, atomic_number=1),
+    "T": _Species("T", mass_amu=3.016, atomic_number=1),
+    "HE": _Species("He", mass_amu=4.003, atomic_number=2),
+}
+
+_SPUTTERING_FITS = {
+    ("W", "D"): _SputteringFit(q=0.09, gamma_shape=1.0, reduced_energy_scale_eV=5000.0),
+    ("W", "T"): _SputteringFit(q=0.11, gamma_shape=1.0, reduced_energy_scale_eV=4300.0),
+    ("W", "He"): _SputteringFit(q=0.16, gamma_shape=0.95, reduced_energy_scale_eV=2600.0),
+    ("C", "D"): _SputteringFit(q=0.075, gamma_shape=0.85, reduced_energy_scale_eV=900.0),
+    ("C", "T"): _SputteringFit(q=0.09, gamma_shape=0.85, reduced_energy_scale_eV=760.0),
+    ("C", "He"): _SputteringFit(q=0.13, gamma_shape=0.8, reduced_energy_scale_eV=520.0),
+}
+
+
+def _require_finite_positive(name: str, value: float) -> float:
+    value = float(value)
+    if not math.isfinite(value) or value <= 0.0:
+        raise ValueError(f"{name} must be finite and positive.")
+    return value
+
+
+def _normalize_target(target: str) -> _TargetMaterial:
+    key = target.strip().upper()
+    try:
+        return _TARGETS[key]
+    except KeyError as exc:
+        supported = ", ".join(sorted({material.symbol for material in _TARGETS.values()}))
+        raise ValueError(f"unsupported target material {target!r}; supported targets: {supported}") from exc
+
+
+def _normalize_projectile(projectile: str) -> _Species:
+    key = projectile.strip().upper()
+    try:
+        return _PROJECTILES[key]
+    except KeyError as exc:
+        supported = ", ".join(sorted(_PROJECTILES))
+        raise ValueError(f"unsupported projectile {projectile!r}; supported projectiles: {supported}") from exc
+
+
+def _threshold_energy_eV(projectile: _Species, target: _TargetMaterial) -> float:
+    energy_transfer = 4.0 * projectile.mass_amu * target.mass_amu / (projectile.mass_amu + target.mass_amu) ** 2
+    if energy_transfer <= 0.0:
+        raise ValueError("projectile-target energy transfer coefficient must be positive.")
+    if energy_transfer < 0.3:
+        return target.surface_binding_eV / (energy_transfer * (1.0 - energy_transfer))
+    return target.surface_binding_eV / energy_transfer
+
+
 class SputteringYield:
     """
     Physical sputtering yield [atoms/ion] based on Eckstein fits.
     """
 
     def __init__(self, target: str = "W", projectile: str = "D"):
-        self.target = target
-        self.projectile = projectile
+        self.target_material = _normalize_target(target)
+        self.projectile_species = _normalize_projectile(projectile)
+        self.target = self.target_material.symbol
+        self.projectile = self.projectile_species.symbol
 
-        # Eckstein parameters for D on W
-        # D -> W: M1=2, M2=183.8, Z1=1, Z2=74
-        self.E_s = 8.68  # eV (Surface binding energy for W)
-        self.M_ratio = 2.0 / 183.8
+        fit_key = (self.target, self.projectile)
+        try:
+            self.fit = _SPUTTERING_FITS[fit_key]
+        except KeyError as exc:
+            raise ValueError(f"unsupported sputtering pair target={self.target!r}, projectile={self.projectile!r}") from exc
 
-        # Simplified threshold energy
-        self.E_th_val = 8.0 * self.E_s * (2.0 / 183.8) ** (-0.5)  # Heuristic approx
-        self.E_th_val = 220.0  # Common accepted value for D -> W
-
-        # Eckstein fit parameters for D -> W
-        self.Q = 0.09
-        self.Gamma = 1.0
+        self.E_s = self.target_material.surface_binding_eV
+        self.M_ratio = self.projectile_species.mass_amu / self.target_material.mass_amu
+        self.E_th_val = _threshold_energy_eV(self.projectile_species, self.target_material)
+        self.Q = self.fit.q
+        self.Gamma = self.fit.gamma_shape
 
     def threshold_energy(self) -> float:
         return float(self.E_th_val)
 
     def yield_at_energy(self, E_ion_eV: float, theta_deg: float = 0.0) -> float:
+        if not math.isfinite(E_ion_eV):
+            raise ValueError("E_ion_eV must be finite.")
+        if not math.isfinite(theta_deg) or theta_deg < 0.0 or theta_deg >= 90.0:
+            raise ValueError("theta_deg must be finite and in the range [0, 90).")
+        if E_ion_eV < 0.0:
+            raise ValueError("E_ion_eV must be non-negative.")
         if E_ion_eV <= self.threshold_energy():
             return 0.0
 
-        # Reduced energy epsilon (proportional to E_ion)
-        # Using a simplified parameterized curve from Eckstein
-        eps = E_ion_eV / 5000.0  # Heuristic scaling
+        eps = E_ion_eV / self.fit.reduced_energy_scale_eV
 
         Y_0 = (
             self.Q
@@ -60,32 +149,46 @@ class SputteringYield:
         theta_rad = math.radians(min(theta_deg, 89.0))
         cos_theta = math.cos(theta_rad)
 
-        f_theta = cos_theta ** (-1.5) * math.exp(0.5 * (1.0 - 1.0 / cos_theta))
+        f_theta = cos_theta ** (-self.fit.angular_alpha) * math.exp(
+            self.fit.angular_beta * (1.0 - 1.0 / cos_theta)
+        )
 
         return max(0.0, float(Y_0 * f_theta))
 
 
 class ErosionModel:
     def __init__(self, material: str = "W", n_atom: float = 6.31e28):
-        self.material = material
-        self.n_atom = n_atom
+        target = _normalize_target(material)
+        self.material = target.symbol
+        self.n_atom = _require_finite_positive("n_atom", n_atom)
 
     def gross_erosion_rate(self, ion_flux: float, E_ion_eV: float, theta_deg: float = 0.0) -> float:
         """Rate in atoms/m^2/s."""
+        if not math.isfinite(ion_flux) or ion_flux < 0.0:
+            raise ValueError("ion_flux must be finite and non-negative.")
         sputt = SputteringYield(target=self.material)
         Y = sputt.yield_at_energy(E_ion_eV, theta_deg)
         return float(Y * ion_flux)
 
     def net_erosion_rate(self, gross_rate: float, f_redeposition: float = 0.97) -> float:
         """Rate in atoms/m^2/s."""
+        if not math.isfinite(gross_rate) or gross_rate < 0.0:
+            raise ValueError("gross_rate must be finite and non-negative.")
+        if not math.isfinite(f_redeposition) or not 0.0 <= f_redeposition <= 1.0:
+            raise ValueError("f_redeposition must be finite and in [0, 1].")
         return float(gross_rate * (1.0 - f_redeposition))
 
     def depth_rate(self, net_rate: float) -> float:
         """Rate in m/s."""
+        if not math.isfinite(net_rate) or net_rate < 0.0:
+            raise ValueError("net_rate must be finite and non-negative.")
         return float(net_rate / self.n_atom)
 
     def lifetime_estimate(self, wall_thickness_mm: float, net_rate_m_s: float) -> float:
         """Lifetime in years."""
+        wall_thickness_mm = _require_finite_positive("wall_thickness_mm", wall_thickness_mm)
+        if not math.isfinite(net_rate_m_s) or net_rate_m_s < 0.0:
+            raise ValueError("net_rate_m_s must be finite and non-negative.")
         if net_rate_m_s <= 0.0:
             return float("inf")
         seconds_per_year = 365.25 * 24 * 3600
@@ -177,11 +280,16 @@ class TransientThermalLoad:
 
     def n_elm_cycles_to_fatigue(self, delta_T_K: float, T_base_K: float = 600.0) -> int:
         """Coffin-Manson empirical rule for Tungsten."""
+        if not math.isfinite(delta_T_K) or delta_T_K < 0.0:
+            raise ValueError("delta_T_K must be finite and non-negative.")
+        if not math.isfinite(T_base_K) or T_base_K <= 0.0:
+            raise ValueError("T_base_K must be finite and positive.")
         if delta_T_K < 100.0:
             return 10000000
-        # Highly simplified fatigue life mapping
-        # E.g., at Delta T = 1000 K, cycles ~ 10^4
-        cycles = 10**4 * (1000.0 / delta_T_K) ** 3
+        base_temperature_penalty = max(T_base_K - 600.0, 0.0)
+        equivalent_swing = delta_T_K + 0.35 * base_temperature_penalty
+        creep_penalty = math.exp(-max(T_base_K - 800.0, 0.0) / 450.0)
+        cycles = 10**4 * (1000.0 / equivalent_swing) ** 3 * creep_penalty
         return int(max(1, cycles))
 
 
