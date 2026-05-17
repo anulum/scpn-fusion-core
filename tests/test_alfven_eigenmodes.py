@@ -14,6 +14,7 @@ from scpn_fusion.core.alfven_eigenmodes import (
     AlfvenStabilityAnalysis,
     FastParticleDrive,
     TAEMode,
+    bae_accumulation_frequency,
     rsae_frequency,
 )
 
@@ -105,3 +106,64 @@ def test_rsae_frequency():
 
     # As q_min approaches m/n=1, frequency drops toward BAE gap
     assert freq2 < freq1
+
+
+def test_bae_accumulation_frequency_uses_thermal_ion_physics():
+    base = bae_accumulation_frequency(
+        Ti_keV=10.0,
+        Te_keV=10.0,
+        m_i_amu=2.5,
+        R0=6.2,
+    )
+    hotter = bae_accumulation_frequency(
+        Ti_keV=40.0,
+        Te_keV=40.0,
+        m_i_amu=2.5,
+        R0=6.2,
+    )
+    colder_electrons = bae_accumulation_frequency(
+        Ti_keV=10.0,
+        Te_keV=5.0,
+        m_i_amu=2.5,
+        R0=6.2,
+    )
+
+    assert base > 0.0
+    assert np.isclose(hotter / base, 2.0, rtol=0.05)
+    assert colder_electrons < base
+
+
+def test_rsae_frequency_accepts_bae_physics_parameters():
+    near_rational = rsae_frequency(
+        q_min=1.01,
+        n=1,
+        m=1,
+        v_A=1.0e7,
+        R0=6.2,
+        Ti_keV=12.0,
+        Te_keV=8.0,
+        m_i_amu=2.5,
+    )
+    bae = bae_accumulation_frequency(Ti_keV=12.0, Te_keV=8.0, m_i_amu=2.5, R0=6.2)
+    far_from_rational = rsae_frequency(
+        q_min=1.4,
+        n=1,
+        m=1,
+        v_A=1.0e7,
+        R0=6.2,
+        Ti_keV=12.0,
+        Te_keV=8.0,
+        m_i_amu=2.5,
+    )
+
+    assert near_rational > bae
+    assert near_rational < 1.25 * bae
+    assert far_from_rational > near_rational
+
+
+def test_alfven_inputs_reject_nonphysical_values():
+    with np.testing.assert_raises(ValueError):
+        bae_accumulation_frequency(Ti_keV=0.0, Te_keV=10.0, m_i_amu=2.5, R0=6.2)
+
+    with np.testing.assert_raises(ValueError):
+        rsae_frequency(q_min=-1.0, n=1, m=1, v_A=1.0e7, R0=6.2)

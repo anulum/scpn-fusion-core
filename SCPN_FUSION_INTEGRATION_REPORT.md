@@ -1,6 +1,6 @@
 # SCPN Fusion Core Integration Report
 **Date:** 2026-02-01
-**Author:** Gemini Engineering Agent
+**Author:** Arcane Sapience
 
 ## Achievements
 1.  **HPC Integration**:

@@ -11,6 +11,9 @@ from dataclasses import dataclass
 
 import numpy as np
 
+_ELEMENTARY_CHARGE = 1.602176634e-19
+_ATOMIC_MASS_KG = 1.66053906660e-27
+
 
 @dataclass
 class AlfvenGap:
@@ -247,11 +250,62 @@ class AlfvenStabilityAnalysis:
         return float(loss)
 
 
-def rsae_frequency(q_min: float, n: int, m: int, v_A: float, R0: float) -> float:
+def _require_positive(name: str, value: float) -> float:
+    scalar = float(value)
+    if not np.isfinite(scalar) or scalar <= 0.0:
+        raise ValueError(f"{name} must be finite and positive.")
+    return scalar
+
+
+def bae_accumulation_frequency(
+    *,
+    Ti_keV: float,
+    Te_keV: float,
+    m_i_amu: float,
+    R0: float,
+) -> float:
+    """Return the kinetic BAE accumulation-point angular frequency.
+
+    Uses the large-aspect-ratio low-frequency estimate
+    omega_BAE = sqrt(7/4 + Te/Ti) * v_ti / R0, with
+    v_ti = sqrt(2 Ti / m_i). Temperatures are in keV and the result is rad/s.
+    """
+    Ti = _require_positive("Ti_keV", Ti_keV)
+    Te = _require_positive("Te_keV", Te_keV)
+    ion_mass = _require_positive("m_i_amu", m_i_amu) * _ATOMIC_MASS_KG
+    major_radius = _require_positive("R0", R0)
+    thermal_speed = np.sqrt(2.0 * Ti * 1.0e3 * _ELEMENTARY_CHARGE / ion_mass)
+    compressibility = np.sqrt(1.75 + Te / Ti)
+    return float(compressibility * thermal_speed / major_radius)
+
+
+def rsae_frequency(
+    q_min: float,
+    n: int,
+    m: int,
+    v_A: float,
+    R0: float,
+    *,
+    Ti_keV: float = 10.0,
+    Te_keV: float = 10.0,
+    m_i_amu: float = 2.5,
+) -> float:
     """
     RSAE frequency.
     omega_RSAE = omega_BAE + |n q_min - m| v_A / (q_min R0)
     """
-    omega_BAE = 0.1 * v_A / R0  # Highly simplified
-    omega_RSAE = omega_BAE + abs(n * q_min - m) * v_A / (q_min * R0)
+    q_minimum = _require_positive("q_min", q_min)
+    alfven_speed = _require_positive("v_A", v_A)
+    major_radius = _require_positive("R0", R0)
+    if n == 0:
+        raise ValueError("toroidal mode number n must be nonzero.")
+    omega_BAE = bae_accumulation_frequency(
+        Ti_keV=Ti_keV,
+        Te_keV=Te_keV,
+        m_i_amu=m_i_amu,
+        R0=major_radius,
+    )
+    omega_RSAE = omega_BAE + abs(n * q_minimum - m) * alfven_speed / (
+        q_minimum * major_radius
+    )
     return float(omega_RSAE)

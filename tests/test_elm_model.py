@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.elm_model import (
     ELMCrashModel,
@@ -30,6 +31,30 @@ def test_pb_boundary_supercritical():
     # High alpha
     assert pb.is_unstable(alpha_edge=25.0, j_edge=1e6, s_edge=2.0)
     assert pb.stability_margin(alpha_edge=25.0, j_edge=1e6, s_edge=2.0) < 0.0
+
+
+def test_peeling_limit_uses_mode_and_shape_terms():
+    round_low_mode = PeelingBallooningBoundary(q95=3.0, kappa=1.0, delta=0.0, a=2.0, R0=6.2)
+    shaped_high_mode = PeelingBallooningBoundary(q95=3.0, kappa=1.8, delta=0.4, a=2.0, R0=6.2)
+
+    low_mode_limit = round_low_mode.peeling_limit(j_edge=1e5, n_mode=5)
+    high_mode_limit = round_low_mode.peeling_limit(j_edge=1e5, n_mode=25)
+    shaped_limit = shaped_high_mode.peeling_limit(j_edge=1e5, n_mode=5)
+
+    assert high_mode_limit > low_mode_limit
+    assert shaped_limit > low_mode_limit
+    with pytest.raises(ValueError, match="n_mode"):
+        round_low_mode.peeling_limit(j_edge=1e5, n_mode=0)
+
+
+def test_pb_coupling_reduces_stability_margin_near_dual_drive():
+    pb = PeelingBallooningBoundary(q95=3.0, kappa=1.7, delta=0.3, a=2.0, R0=6.2)
+
+    j_crit = pb.peeling_limit(j_edge=1e5)
+    alpha_crit = pb.ballooning_limit(s_edge=2.0)
+
+    assert not pb.is_unstable(alpha_edge=0.4 * alpha_crit, j_edge=0.4 * j_crit, s_edge=2.0)
+    assert pb.is_unstable(alpha_edge=0.72 * alpha_crit, j_edge=0.72 * j_crit, s_edge=2.0)
 
 
 def test_elm_crash_model():
@@ -82,6 +107,20 @@ def test_rmp_suppression():
     chir2 = rmp.chirikov_parameter(q, rho, delta_B_r=1e-1, B0=5.3, R0=6.2)
     assert rmp.suppressed(chir2)
     assert rmp.density_pump_out(chir2) > 0.0
+
+
+def test_rmp_chirikov_counts_outer_resonance_overlap_and_validates_profiles():
+    rmp = RMPSuppression(n_toroidal=3)
+    rho = np.linspace(0.55, 1.0, 80)
+    q_sparse = 2.1 + 0.9 * (rho - rho[0]) / (rho[-1] - rho[0])
+    q_dense = 2.1 + 3.9 * (rho - rho[0]) / (rho[-1] - rho[0])
+
+    sparse = rmp.chirikov_parameter(q_sparse, rho, delta_B_r=2e-3, B0=5.3, R0=6.2)
+    dense = rmp.chirikov_parameter(q_dense, rho, delta_B_r=2e-3, B0=5.3, R0=6.2)
+
+    assert dense > sparse > 0.0
+    with pytest.raises(ValueError, match="monotonic"):
+        rmp.chirikov_parameter(q_dense[::-1], rho, delta_B_r=2e-3, B0=5.3, R0=6.2)
 
 
 def test_elm_cycler():

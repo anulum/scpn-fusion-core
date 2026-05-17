@@ -17,7 +17,7 @@ Execution detail: [`docs/HARDENING_30_DAY_EXECUTION_PLAN.md`](docs/HARDENING_30_
 | FNO turbulence (JAX) | **val_rel_L2 = 0.055** (4-layer, modes=24, width=128, 5-channel input, 5000 equilibria) | `weights/fno_turbulence_jax.metrics.json` |
 | Validation pipeline | **24/24 benchmarks passing** (15 legacy + 9 new) | `python validation/collect_results.py` |
 | Real-data roadmap progress | 18 equilibrium files, 8 SPARC, 53 transport shots, 24 machines, 16 disruption shots, 1 JET-DT | `tools/real_data_roadmap_progress.py` |
-| Enterprise hardening | **19/20 sections passing** (branch protection, labels, tool config, Docker healthcheck) | `.coordination/ENTERPRISE_REPO_HARDENING_CHECKLIST.md` |
+| Enterprise hardening | **19/20 sections passing** (branch protection, labels, tool config, Docker healthcheck) | Local-only enterprise hardening checklist |
 | DIII-D raw ingestion readiness | **Not ready yet** (strict lane blocks promotion) | `tools/run_real_data_strict_gate.py` + `real-data-strict.yml` |
 | FreeGS strict parity | Dedicated strict no-fallback lane available | `.github/workflows/freegs-strict.yml` |
 

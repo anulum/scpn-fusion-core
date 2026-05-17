@@ -38,6 +38,7 @@ EXCLUDED_DIR_NAMES = {
     "artifacts",
     "validation/reports",
     "docs/notebooks",
+    "docs/internal",
     "tests",
     "scpn-fusion-rs/target",
 }
@@ -94,7 +95,6 @@ NARRATIVE_DOC_PREFIXES = (
     "docs/HARDENING_30_DAY_EXECUTION_PLAN.md",
     "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
     "docs/PACKET_",
-    "docs/session_logs/",
 )
 
 

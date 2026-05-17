@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.disruption_sequence import (
     CurrentQuench,
@@ -58,6 +59,36 @@ def test_halo_currents():
 
     F_z = halo.vertical_force(f_halo, tpf)
     assert F_z > 10.0  # MN
+
+
+def test_post_tq_temperature_uses_quench_and_radiation_timescales():
+    tq = ThermalQuench(W_th_MJ=350.0, a=2.0, R0=6.2, q=3.0, B0=5.3)
+
+    fast_cooling = tq.post_tq_temperature(
+        Te_pre_keV=20.0, tau_tq_ms=0.5, tau_radiation_ms=0.25
+    )
+    slow_cooling = tq.post_tq_temperature(
+        Te_pre_keV=20.0, tau_tq_ms=0.5, tau_radiation_ms=5.0
+    )
+    long_quench = tq.post_tq_temperature(
+        Te_pre_keV=20.0, tau_tq_ms=5.0, tau_radiation_ms=0.25
+    )
+
+    assert 5.0 <= fast_cooling < slow_cooling < 20_000.0
+    assert long_quench < fast_cooling
+
+
+def test_halo_peaking_factor_depends_on_mode_and_validates_domain():
+    halo = HaloCurrentModel(Ip_MA=15.0, R0=6.2, B0=5.3, kappa=1.7)
+
+    n1_tpf = halo.toroidal_peaking_factor(n_mode=1)
+    n3_tpf = halo.toroidal_peaking_factor(n_mode=3)
+
+    assert 1.0 < n3_tpf < n1_tpf < 3.0
+    with pytest.raises(ValueError, match="n_mode"):
+        halo.toroidal_peaking_factor(n_mode=0)
+    with pytest.raises(ValueError, match="f_halo"):
+        halo.vertical_force(-0.1, n1_tpf)
 
 
 def test_disruption_sequence_unmitigated():

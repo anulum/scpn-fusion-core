@@ -15,6 +15,12 @@ import numpy as np
 from scpn_fusion.core.runaway_electrons import RunawayEvolution, RunawayParams
 
 
+def _require_positive(name: str, value: float) -> float:
+    if not math.isfinite(value) or value <= 0.0:
+        raise ValueError(f"{name} must be finite and positive")
+    return value
+
+
 @dataclass
 class DisruptionConfig:
     R0: float
@@ -112,12 +118,16 @@ class ThermalQuench:
         self, Te_pre_keV: float, tau_tq_ms: float, tau_radiation_ms: float = 0.5
     ) -> float:
         """Residual Te [eV] after quench and radiation cooling."""
-        # Extremely simplified mapping: drops to few eV via line radiation of impurities.
-        # Rapid drop, usually saturates between 5-50 eV
-        T_cold = 10.0  # eV
-        # To pass the hard drop test, we use a much faster radiative cooling heuristic
-        # associated with the violent TQ phase.
-        return T_cold + (Te_pre_keV * 1e3 - T_cold) * math.exp(-10.0)
+        Te_pre_eV = _require_positive("Te_pre_keV", Te_pre_keV) * 1e3
+        tau_tq_ms = _require_positive("tau_tq_ms", tau_tq_ms)
+        tau_radiation_ms = _require_positive("tau_radiation_ms", tau_radiation_ms)
+
+        cooling_exposure = tau_tq_ms / tau_radiation_ms
+        radiation_multiplier = 44.0
+        cold_floor_eV = 5.0 + 45.0 * math.exp(-cooling_exposure)
+        return cold_floor_eV + (Te_pre_eV - cold_floor_eV) * math.exp(
+            -radiation_multiplier * cooling_exposure
+        )
 
 
 class CurrentQuench:
@@ -205,11 +215,17 @@ class HaloCurrentModel:
 
     def toroidal_peaking_factor(self, n_mode: int = 1) -> float:
         """TPF for n=1 asymmetry"""
-        # Usually 1.2 to 2.5
-        return 1.5
+        if n_mode < 1:
+            raise ValueError("n_mode must be >= 1")
+        base_asymmetry = 1.45 / (n_mode**0.55)
+        elongation_drive = 0.18 * max(self.kappa - 1.0, 0.0)
+        return min(2.8, max(1.05, 1.0 + base_asymmetry + elongation_drive))
 
     def vertical_force(self, f_halo: float, tpf: float) -> float:
-        """F_z [MN] = I_halo * B_tor * 2pi R0 * TPF (simplified)"""
+        """Vertical vessel load from toroidal halo-current asymmetry."""
+        if not math.isfinite(f_halo) or not 0.0 <= f_halo <= 1.0:
+            raise ValueError("f_halo must be finite and within [0, 1]")
+        _require_positive("tpf", tpf)
         I_halo = f_halo * self.Ip_MA * 1e6
         F_N = I_halo * self.B0 * (2.0 * math.pi * self.R0) * tpf
         return F_N / 1e6

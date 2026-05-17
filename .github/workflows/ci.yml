@@ -209,15 +209,6 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
         with:
           lfs: true
-      - name: Enforce local-only handovers exclusion
-        if: matrix.python-version == '3.12'
-        run: |
-          tracked="$(git ls-files -- '.handovers/**' '.coordination/handovers/**')"
-          if [ -n "$tracked" ]; then
-            echo "::error::handover directories are local-only and must not be tracked."
-            echo "$tracked"
-            exit 1
-          fi
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with:

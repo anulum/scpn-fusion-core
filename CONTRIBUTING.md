@@ -288,10 +288,10 @@ Your PR will not be merged until all CI checks pass.
 
 ## Local Operational Artifacts
 
-Operational handover notes under `.handovers/` are strictly local-only working
+Operational handover notes are strictly local-only working
 artifacts and must not be committed or pushed to public remotes.
 
-If you generate local handover notes, keep them under `.handovers/` and verify
+If you generate local handover notes, keep them outside the public tree and verify
 they are excluded from `git status` before committing.
 
 ---
@@ -519,13 +519,10 @@ structure. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full crate map.
 
 ## Session Logs & Handovers
 
-All session logs and handover documents for this project are stored permanently in the monorepo's canonical location:
+All session logs and handover documents for this project are local-only operational records.
 
-- **Session logs:** `.coordination/sessions/SCPN-Fusion-Core/`
-- **Handovers:** `.coordination/handovers/SCPN-Fusion-Core/`
-
-**Do not** place session logs or handovers inside this project directory. They will be moved during consolidation.
+**Do not** place session logs or handovers in public documentation or release artifacts.
 
 These files are **permanent records** and must never be deleted, even if outdated.
 
-See [`.coordination/SESSION_AND_HANDOVER_POLICY.md`](../../.coordination/SESSION_AND_HANDOVER_POLICY.md) for naming conventions, templates, and the full policy.
+Follow the local coordination policy for naming conventions, templates, and retention.

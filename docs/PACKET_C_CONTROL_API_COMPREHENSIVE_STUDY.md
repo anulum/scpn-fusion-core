@@ -1851,7 +1851,7 @@ The `sc-neurocore` package provides the neuromorphic hardware simulation: `Stoch
 
 **Relationship to Packet C:** SC-NeuroCore is the computational substrate that Packet B compiles *to* and that Packet C's stochastic path executes *on*. The `_HAS_SC_NEUROCORE` flag pattern (try import, catch ImportError, set flag) ensures graceful degradation: when SC-NeuroCore is not available, the controller falls back to the oracle float path.
 
-**Rust migration context:** SC-NeuroCore is undergoing a migration from Python+Cython to Rust (tracked in `.coordination/handovers/CODEX_RUST_MIGRATION_HANDOVER_2026-02-10.md`). The Packet C artifact format is designed to be consumable by a Rust runtime (`serde` compatible JSON), so the SC path activation (currently `_sc_step` falls back to `_oracle_step`) will work when the Rust kernel exposes its Petri execution API.
+**Rust migration context:** SC-NeuroCore is undergoing a migration from Python+Cython to Rust. The Packet C artifact format is designed to be consumable by a Rust runtime (`serde` compatible JSON), so the SC path activation (currently `_sc_step` falls back to `_oracle_step`) will work when the Rust kernel exposes its Petri execution API.
 
 The critical interface is:
 ```
@@ -1875,7 +1875,7 @@ This document — the Packet C Comprehensive Study — sits alongside two other 
 
 Together, these three documents form a complete technical reference for the SCPN Fusion Core package. A reader wanting to understand the full system should read them in order: Comprehensive Study (big picture) → Compiler Report (compilation) → Control API Study (runtime and deployment).
 
-The *Session Log* (`SESSION_LOG_2026-02-10_PACKET_C_CONTROL_API.md`) is a separate document that records the operational history of the Packet C implementation session. It is an operational record, not a technical reference — it documents *what was done and in what order*, not *why it was done and what it means*.
+Operational session logs are kept outside the public technical reference. They record implementation history, while this document records the stable design and usage contract.
 
 ---
 
@@ -2903,7 +2903,7 @@ Activating the stochastic path requires:
 
 4. **Fallback policy.** If the divergence exceeds a threshold, the controller should revert to the oracle path. This provides a safety net during the SC path integration period.
 
-The SC path activation is tracked in the Rust migration handover document (`.coordination/handovers/CODEX_RUST_MIGRATION_HANDOVER_2026-02-10.md`).
+The SC path activation is tracked in private migration notes.
 
 ---
 
@@ -3167,7 +3167,6 @@ This is ambitious, but each step along the way produces independently valuable r
 | `controller.py` | `src/scpn_fusion/scpn/controller.py` | 207 | NeuroSymbolicController reference implementation |
 | `scpnctl.schema.json` | `schemas/scpnctl.schema.json` | ~230 | JSON Schema Draft 2020-12 |
 | `test_controller.py` | `tests/test_controller.py` | 520 | 24 tests across 5 verification levels |
-| `SESSION_LOG_*.md` | Root | ~300 | Implementation session log |
 | `PACKET_C_*.md` | `docs/` | ~2600 | This comprehensive study |
 
 ### A.2 Modified Files

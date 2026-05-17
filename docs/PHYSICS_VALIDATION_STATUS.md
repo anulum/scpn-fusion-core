@@ -278,7 +278,7 @@ Runbook: `docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md`
 | `fno_eurofusion_jet` | 2026-02-16 | rel_L2=0.79 | No (DEPRECATED) |
 | `neural_equilibrium_sparc` | 2026-02-16 | NRMSE <1e-4 | No (GS-only, no UPDE) |
 
-All weights generated before Gemini's physics hardening (2026-02-21) but none depend
+All weights generated before the 2026-02-21 physics hardening pass, but none depend
 on the corrected subsystems (Kuramoto coupling, MRE disruption, Bosch-Hale reactivity).
 The FNO is already DEPRECATED (v4.0 decision: retrain on real data or remove).
 

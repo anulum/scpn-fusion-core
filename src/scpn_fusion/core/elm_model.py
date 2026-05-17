@@ -12,6 +12,12 @@ from dataclasses import dataclass
 import numpy as np
 
 
+def _require_positive(name: str, value: float) -> float:
+    if not np.isfinite(value) or value <= 0.0:
+        raise ValueError(f"{name} must be finite and positive")
+    return float(value)
+
+
 class PeelingBallooningBoundary:
     """
     Evaluates stability against peeling-ballooning modes.
@@ -26,11 +32,18 @@ class PeelingBallooningBoundary:
 
     def peeling_limit(self, j_edge: float, n_mode: int = 10) -> float:
         """
-        Critical edge current density limit (simplified scaling).
-        In reality, depends strongly on q95 and collisionality.
+        Critical edge current density limit for peeling stability.
         """
-        # Critical j_edge ~ 1/q95
-        j_crit = 1.0e6 / max(self.q95, 2.0)
+        if n_mode < 1:
+            raise ValueError("n_mode must be >= 1")
+        q95 = _require_positive("q95", self.q95)
+        minor_radius = _require_positive("a", self.a)
+        major_radius = _require_positive("R0", self.R0)
+        aspect = major_radius / minor_radius
+        shaping = 1.0 + 0.22 * (self.kappa - 1.0) + 0.35 * self.delta**2
+        mode_factor = 1.0 + 0.08 * np.log1p(n_mode)
+        aspect_factor = np.sqrt(max(aspect, 1.0) / 3.0)
+        j_crit = 1.0e6 * shaping * mode_factor * aspect_factor / max(q95, 2.0)
         return float(j_crit)
 
     def ballooning_limit(self, s_edge: float) -> float:
@@ -54,8 +67,8 @@ class PeelingBallooningBoundary:
         j_norm = max(0.0, j_edge / j_crit)
         a_norm = max(0.0, alpha_edge / a_crit)
 
-        # Simplified PB boundary: j_norm^2 + a_norm^2 > 1
-        return (j_norm**2 + a_norm**2) > 1.0
+        coupling = 0.35 * j_norm * a_norm
+        return (j_norm**2 + a_norm**2 + coupling) > 1.0
 
     def stability_margin(self, alpha_edge: float, j_edge: float, s_edge: float) -> float:
         """
@@ -67,7 +80,8 @@ class PeelingBallooningBoundary:
         j_norm = max(0.0, j_edge / j_crit)
         a_norm = max(0.0, alpha_edge / a_crit)
 
-        return float(1.0 - np.sqrt(j_norm**2 + a_norm**2))
+        coupling = 0.35 * j_norm * a_norm
+        return float(1.0 - np.sqrt(j_norm**2 + a_norm**2 + coupling))
 
 
 @dataclass
@@ -146,27 +160,53 @@ class RMPSuppression:
         σ_Chir = sum (w_mn / dr_mn)
         w_mn = 4 * sqrt(R0 * q' * delta_B_r / (n * B0))
         """
-        # Very simplified representation of overlap across outer rational surfaces
-        q_edge = q_profile[-1]
+        q_profile = np.asarray(q_profile, dtype=float)
+        rho = np.asarray(rho, dtype=float)
+        if q_profile.ndim != 1 or rho.ndim != 1 or q_profile.size != rho.size:
+            raise ValueError("q_profile and rho must be one-dimensional arrays with equal length")
+        if q_profile.size < 3:
+            raise ValueError("q_profile and rho must contain at least three samples")
+        if not np.all(np.isfinite(q_profile)) or not np.all(np.isfinite(rho)):
+            raise ValueError("q_profile and rho must be finite")
+        if np.any(np.diff(rho) <= 0.0) or np.any(np.diff(q_profile) < 0.0):
+            raise ValueError("rho and q_profile must be monotonic increasing")
+        if delta_B_r <= 0.0 or B0 <= 0.0 or self.n_toroidal <= 0:
+            return 0.0
+        B0 = _require_positive("B0", B0)
+        R0 = _require_positive("R0", R0)
 
-        # Approximate shear at edge
-        if len(rho) > 1:
-            dq_drho = (q_profile[-1] - q_profile[-2]) / (rho[-1] - rho[-2])
-        else:
-            dq_drho = 10.0
-
-        shear = dq_drho * rho[-1] / q_edge
-
-        if delta_B_r <= 0.0 or B0 <= 0.0 or self.n_toroidal == 0:
+        q_min = float(q_profile[0])
+        q_max = float(q_profile[-1])
+        m_min = int(np.ceil(self.n_toroidal * q_min))
+        m_max = int(np.floor(self.n_toroidal * q_max))
+        if m_max < m_min:
             return 0.0
 
-        # Island width approximation (w_mn in rho space roughly)
-        w_mn = 4.0 * np.sqrt(R0 * shear * delta_B_r / (self.n_toroidal * B0))
+        dq_drho = np.gradient(q_profile, rho)
+        resonant_rho: list[float] = []
+        widths: list[float] = []
+        for m_mode in range(m_min, m_max + 1):
+            q_res = m_mode / self.n_toroidal
+            rho_res = float(np.interp(q_res, q_profile, rho))
+            shear = float(np.interp(rho_res, rho, np.abs(dq_drho)))
+            if shear <= 0.0:
+                continue
+            local_q = float(np.interp(rho_res, rho, q_profile))
+            width = 4.0 * np.sqrt(R0 * local_q * abs(delta_B_r) / (self.n_toroidal * B0 * shear))
+            resonant_rho.append(rho_res)
+            widths.append(float(width))
 
-        # Distance between resonances dr_mn ~ 1 / (n q')
-        dr_mn = 1.0 / (self.n_toroidal * max(dq_drho, 1e-3))
+        if len(widths) < 2:
+            return float(widths[0]) if widths else 0.0
 
-        return float(w_mn / dr_mn)
+        rho_arr = np.asarray(resonant_rho)
+        width_arr = np.asarray(widths)
+        spacing = np.empty_like(rho_arr)
+        spacing[0] = rho_arr[1] - rho_arr[0]
+        spacing[-1] = rho_arr[-1] - rho_arr[-2]
+        if len(rho_arr) > 2:
+            spacing[1:-1] = 0.5 * (rho_arr[2:] - rho_arr[:-2])
+        return float(np.sum(width_arr / np.maximum(spacing, 1e-6)))
 
     def suppressed(self, sigma_chir: float) -> bool:
         return sigma_chir > 1.0

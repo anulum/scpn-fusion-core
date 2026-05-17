@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-04-29T22:24:04.935948+00:00`
+- Generated at: `2026-05-17T20:01:29.214361+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,21 +8,21 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 116 |
-| P0 + P1 entries | 35 |
-| Source-domain entries | 49 |
-| Source-domain P0 + P1 entries | 35 |
-| Docs-claims entries | 67 |
+| Total flagged entries | 104 |
+| P0 + P1 entries | 28 |
+| Source-domain entries | 42 |
+| Source-domain P0 + P1 entries | 28 |
+| Docs-claims entries | 62 |
 | Domains affected | 4 |
 
 ## Marker Distribution
 
 | Key | Count |
 |---|---:|
-| `FALLBACK` | 45 |
-| `SIMPLIFIED` | 40 |
+| `FALLBACK` | 41 |
+| `SIMPLIFIED` | 33 |
 | `PLANNED` | 13 |
-| `EXPERIMENTAL` | 11 |
+| `EXPERIMENTAL` | 10 |
 | `DEPRECATED` | 5 |
 | `NOT_VALIDATED` | 2 |
 
@@ -30,25 +30,18 @@
 
 | Key | Count |
 |---|---:|
-| `docs_claims` | 67 |
-| `core_physics` | 34 |
+| `docs_claims` | 62 |
+| `core_physics` | 28 |
 | `validation` | 10 |
-| `control` | 5 |
+| `control` | 4 |
 
-## Source-Centric Priority Backlog (Top 35)
+## Source-Centric Priority Backlog (Top 28)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/realtime_efit.py:98` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified real-time equilibrium reconstruction (EFIT).""" |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/alfven_eigenmodes.py:254` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | omega_BAE = 0.1 * v_A / R0 # Highly simplified |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/disruption_sequence.py:114` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Extremely simplified mapping: drops to few eV via line radiation of impurities. |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/disruption_sequence.py:211` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | """F_z [MN] = I_halo * B_tor * 2pi R0 * TPF (simplified)""" |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/elm_model.py:28` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Critical edge current density limit (simplified scaling). |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/elm_model.py:56` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified PB boundary: j_norm^2 + a_norm^2 > 1 |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/elm_model.py:148` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Very simplified representation of overlap across outer rational surfaces |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_eigenvalue.py:204` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Collision operator (simplified: nu_D * pitch-angle scattering applied to theta structure) |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:120` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Poloidal field: B_p = r / (q * R_s * \|J/r\|) — simplified |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:126` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # b . grad(theta) = B_p / (R_s * \|grad theta\|) ≈ 1 / (q * R_s) simplified |
@@ -82,13 +75,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
 | P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/realtime_efit.py:98` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified real-time equilibrium reconstruction (EFIT).""" |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/alfven_eigenmodes.py:254` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | omega_BAE = 0.1 * v_A / R0 # Highly simplified |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/disruption_sequence.py:114` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Extremely simplified mapping: drops to few eV via line radiation of impurities. |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/disruption_sequence.py:211` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | """F_z [MN] = I_halo * B_tor * 2pi R0 * TPF (simplified)""" |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/elm_model.py:28` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | Critical edge current density limit (simplified scaling). |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/elm_model.py:56` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Simplified PB boundary: j_norm^2 + a_norm^2 > 1 |
-| P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/elm_model.py:148` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Very simplified representation of overlap across outer rational surfaces |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_eigenvalue.py:204` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Collision operator (simplified: nu_D * pitch-angle scattering applied to theta structure) |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:120` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # Poloidal field: B_p = r / (q * R_s * \|J/r\|) — simplified |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:126` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | # b . grad(theta) = B_p / (R_s * \|grad theta\|) ≈ 1 / (q * R_s) simplified |
@@ -120,7 +106,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_control.py:171` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | raise ValueError("fallback currents are not configured.") |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_shot.py:276` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | f"lag={max_abs_actuator_lag:.3e} \| fallback={fallback_active} \| " |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:12` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | rejection can ramp the coil set toward explicit safe fallback currents instead |
-| P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/disruption_sequence.py:269` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | seed = 1e10 # Fallback |
+| P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/disruption_sequence.py:285` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | seed = 1e10 # Fallback |
 | P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gk_tglf.py:203` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | _logger.warning("TGLF binary not found, returning fallback") |
 | P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/jax_gs_solver.py:23` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | NumPy fallback provided when JAX is unavailable. |
 | P2 | 73 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:234` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | logger.debug("tokamak_archive fallback failed: %s", exc) |
@@ -145,7 +131,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_METHODS_COMPLETE.md:643` | Docs WG | Gate behind explicit flag and define validation exit criteria. | [26] T. Pütterich et al., "Calculation and experimental test of the cooling factor of tungsten," *Nucl. Fusion* 50, 025012 (2010). doi:[1... |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:224` | Docs WG | Gate behind explicit flag and define validation exit criteria. | \| Multi-Regime FNO \| `src/.../fno_training_multi_regime.py` \| NumPy \| Synthetic H-W \| 30-90 min \| Experimental \| |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:290` | Docs WG | Gate behind explicit flag and define validation exit criteria. | 4. **Multi-Regime FNO** — experimental, synthetic data only. |
-| P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/internal/gemini/rustification_audit.md:11` | Docs WG | Gate behind explicit flag and define validation exit criteria. | - **Reason**: Fusion simulation requires extreme performance to match experimental timescales. |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Experimental Bridges |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/first_simulation.rst:191` | Docs WG | Gate behind explicit flag and define validation exit criteria. | Step 7: Read Real Experimental Data |
 | P3 | 52 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/tokamak_physics_textbook.rst:55` | Docs WG | Gate behind explicit flag and define validation exit criteria. | :math:`F(\psi)` are constrained by experimental data (pressure profile and |
@@ -161,19 +146,20 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 29 | `docs_claims` | `FALLBACK` | `docs/3d_gaps.md:92` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - fallback if external dependency is unavailable. |
 | P3 | 29 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:93` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | │ ╱ Fallback (analytic) |
 | P3 | 29 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:124` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Fallback vectorised \| ~2 ms \| ~7× slower \| |
+| P3 | 29 | `docs_claims` | `FALLBACK` | `docs/BENCHMARK_FIGURES.md:125` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Fallback point-by-point loop \| ~200 ms \| ~670× slower \| |
+| P3 | 29 | `docs_claims` | `FALLBACK` | `docs/CI_FAILURE_LEDGER.md:26` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | CI-2026-03-03-006 | 2026-03-03 19:18 | 22638800884 (Python 3.9/3.10) | `ModuleNotFoundError: No module named 'tomllib'` from `tools/che... |
+| P3 | 29 | `docs_claims` | `FALLBACK` | `docs/NEURAL_TRANSPORT_TRAINING.md:112` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - fallback to analytic critical-gradient model on any contract failure |
+| P3 | 29 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:337` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **`dense_forward_float(W, inputs)`** — The float path: a simple `W @ inputs` using numpy. Used for validation and as a fallback when sc_n... |
+| P3 | 29 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:502` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | **Rationale:** The Logic Compiler is a component of SCPN-Fusion-Core, which may be installed in environments where sc_neurocore is not pr... |
+| P3 | 29 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:660` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | | **Graceful sc_neurocore fallback** | SCPN-Fusion-Core may be used without neuromorphic hardware. The Petri Net API should always be ava... |
+| P3 | 29 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:740` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | The "Tokens are Bits" philosophy creates a direct isomorphism between Petri Net semantics and stochastic computing primitives, guaranteei... |
+| P3 | 29 | `docs_claims` | `FALLBACK` | `docs/NEXT_SPRINT_EXECUTION_QUEUE.md:37` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | - Completed: `S1-003` (added low-point LCFS fallback regression test and VMEC-like geometry CI smoke coverage). |
 
-## Full Register (Top 116)
+## Full Register (Top 104)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
 | P0 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/realtime_efit.py:98` | """Simplified real-time equilibrium reconstruction (EFIT).""" |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/alfven_eigenmodes.py:254` | omega_BAE = 0.1 * v_A / R0 # Highly simplified |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/disruption_sequence.py:114` | # Extremely simplified mapping: drops to few eV via line radiation of impurities. |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/disruption_sequence.py:211` | """F_z [MN] = I_halo * B_tor * 2pi R0 * TPF (simplified)""" |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/elm_model.py:28` | Critical edge current density limit (simplified scaling). |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/elm_model.py:56` | # Simplified PB boundary: j_norm^2 + a_norm^2 > 1 |
-| P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/elm_model.py:148` | # Very simplified representation of overlap across outer rational surfaces |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_eigenvalue.py:204` | # Collision operator (simplified: nu_D * pitch-angle scattering applied to theta structure) |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:120` | # Poloidal field: B_p = r / (q * R_s * \|J/r\|) — simplified |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/gk_geometry.py:126` | # b . grad(theta) = B_p / (R_s * \|grad theta\|) ≈ 1 / (q * R_s) simplified |
@@ -205,7 +191,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_control.py:171` | raise ValueError("fallback currents are not configured.") |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_shot.py:276` | f"lag={max_abs_actuator_lag:.3e} \| fallback={fallback_active} \| " |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:12` | rejection can ramp the coil set toward explicit safe fallback currents instead |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/disruption_sequence.py:269` | seed = 1e10 # Fallback |
+| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/disruption_sequence.py:285` | seed = 1e10 # Fallback |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gk_tglf.py:203` | _logger.warning("TGLF binary not found, returning fallback") |
 | P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/jax_gs_solver.py:23` | NumPy fallback provided when JAX is unavailable. |
 | P2 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:234` | logger.debug("tokamak_archive fallback failed: %s", exc) |
@@ -230,7 +216,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_METHODS_COMPLETE.md:643` | [26] T. Pütterich et al., "Calculation and experimental test of the cooling factor of tungsten," *Nucl. Fusion* 50, 025012 (2010). doi:[1... |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:224` | \| Multi-Regime FNO \| `src/.../fno_training_multi_regime.py` \| NumPy \| Synthetic H-W \| 30-90 min \| Experimental \| |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/PHYSICS_VALIDATION_STATUS.md:290` | 4. **Multi-Regime FNO** — experimental, synthetic data only. |
-| P3 | `docs_claims` | `EXPERIMENTAL` | `docs/internal/gemini/rustification_audit.md:11` | - **Reason**: Fusion simulation requires extreme performance to match experimental timescales. |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/api/core.rst:225` | Experimental Bridges |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/first_simulation.rst:191` | Step 7: Read Real Experimental Data |
 | P3 | `docs_claims` | `EXPERIMENTAL` | `docs/sphinx/learning/tokamak_physics_textbook.rst:55` | :math:`F(\psi)` are constrained by experimental data (pressure profile and |
@@ -255,10 +240,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md:740` | The "Tokens are Bits" philosophy creates a direct isomorphism between Petri Net semantics and stochastic computing primitives, guaranteei... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/NEXT_SPRINT_EXECUTION_QUEUE.md:37` | - Completed: `S1-003` (added low-point LCFS fallback regression test and VMEC-like geometry CI smoke coverage). |
 | P3 | `docs_claims` | `FALLBACK` | `docs/PHYSICS_VALIDATION_STATUS.md:13` | \| Solov'ev (fallback) \| psi_nrmse < 0.11 \| **PASS** (avg 0.076) \| |
-| P3 | `docs_claims` | `FALLBACK` | `docs/internal/gemini/infrastructure_strategy.md:13` | - **Fallback**: Mojo AOT Model -> Rust/ONNXRuntime -> Pure Python/JAX. |
-| P3 | `docs_claims` | `FALLBACK` | `docs/internal/gemini/infrastructure_strategy.md:18` | - **Fallback**: Go Event Broker -> Python Multiprocessing Manager -> Synchronous Execution. |
-| P3 | `docs_claims` | `FALLBACK` | `docs/internal/gemini/infrastructure_strategy.md:23` | - **Fallback**: Lean 4 Proof Extraction -> Rust `scpn-fusion-rs` -> Python `scipy.integrate`. |
-| P3 | `docs_claims` | `FALLBACK` | `docs/internal/gemini/infrastructure_strategy.md:28` | - **Fallback**: Julia SciML Solvers -> Rust Simulation Kernel -> Python / SciPy. |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:1731` | 3. **Schema validation.** The JSON Schema (`scpnctl.schema.json`) is not validated against the artifact files in the test suite. Schema v... |
 | P3 | `docs_claims` | `NOT_VALIDATED` | `docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md:3084` | 5. **No schema validation.** The JSON Schema exists but is not validated at load time. This means a malformed artifact that satisfies the... |
 | P3 | `docs_claims` | `FALLBACK` | `docs/DOE_ARPA_E_CONVERGENCE_PITCH.md:103` | - Transparent fallback to full physics solve when surrogate confidence is below threshold |

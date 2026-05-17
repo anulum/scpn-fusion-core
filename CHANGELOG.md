@@ -29,7 +29,7 @@
 - Tooling hardening: claims audit git file discovery now uses a bounded subprocess timeout with safe fallback.
 - CI hardening: `run_python_preflight.py` and `run_mypy_strict.py` now enforce bounded subprocess timeouts with explicit timeout exit handling.
 - Tooling hardening: notebook upgrade bootstrap now bounds `pip install -e` subprocess runtime.
-- Repo policy: local Claude command-permission settings (`.claude/settings.local.json`) are now explicitly local-only and git-ignored.
+- Repo policy: local command-permission settings are now explicitly local-only and git-ignored.
 - CI compatibility: `quantum_bridge` now uses postponed annotation evaluation to keep Python 3.9 import-safe while retaining modern union type hints.
 - CI stability: Task 4 quasi-3D threshold gating now applies tiny floating-point comparison tolerance to avoid Python-version edge drift at boundary values.
 - Runtime hardening: deprecated FNO suppressor now logs missing-weight fallback via standard `logging` without raising when optional weights are absent.
@@ -79,7 +79,7 @@
 - Runtime hardening: added `tools/runtime_parity_perf_guard.py` + thresholds config and new CI `Runtime Parity + Perf Gate` artifact contract.
 - Validation hardening: added `tools/real_shot_validation_guard.py` + thresholds config and CI guard summary artifact for strict real-shot coverage lanes.
 - Governance hardening: added `tools/generate_underdeveloped_scope_reports.py` and tracked split reports (`docs/UNDERDEVELOPED_SOURCE_REGISTER.md`, `docs/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md`, `docs/UNDERDEVELOPED_SCOPE_SUMMARY.json`).
-- Session logging: added `docs/session_logs/2026-03-01_h12_h17_hardening.md` with full H12-H17 execution record.
+- Session logging: moved detailed H12-H17 execution records to local-only coordination notes.
 - CI/runtime hardening: added `tools/deprecated_default_lane_guard.py` with regression tests and release-preflight integration.
 - Regression tests for expanded real-shot and FreeGS fallback-budget guard contracts.
 

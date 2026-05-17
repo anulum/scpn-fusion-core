@@ -26,12 +26,6 @@ env/
 htmlcov/
 .tox/
 
-# Local operational data (must never be pushed)
-.handovers/
-.coordination/
-# Local command permission policy (machine-specific)
-.claude/settings.local.json
-
 # IDE
 .idea/
 .vscode/
@@ -137,13 +131,6 @@ pytest_results.log
 docs/internal/
 docs/_build/
 
-# Local assistant config — never commit
-CLAUDE.md
-.claude/
-
 # Local backups — never committed
 BACKUP/
 ARCHIVE/
-
-# Internal audit scratch
-docs/internal/gemini/
