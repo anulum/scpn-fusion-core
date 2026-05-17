@@ -283,7 +283,6 @@ class FreeBoundaryTrackingController(
         }
 
 
-
 def run_free_boundary_tracking(
     config_file: str | None = None,
     *,

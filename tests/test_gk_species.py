@@ -136,9 +136,7 @@ def test_collision_frequencies_include_species_dependent_energy_diffusion():
     electron_species = electron(T_keV=8.0, adiabatic=False)
 
     ion_nu_D, ion_nu_E = collision_frequencies(ion, n_e_19=10.0, T_e_keV=8.0)
-    elec_nu_D, elec_nu_E = collision_frequencies(
-        electron_species, n_e_19=10.0, T_e_keV=8.0
-    )
+    elec_nu_D, elec_nu_E = collision_frequencies(electron_species, n_e_19=10.0, T_e_keV=8.0)
 
     assert ion_nu_E != pytest.approx(ion_nu_D)
     assert elec_nu_E != pytest.approx(elec_nu_D)

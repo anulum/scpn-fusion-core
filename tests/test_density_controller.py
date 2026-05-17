@@ -112,7 +112,7 @@ def test_kalman_predict_advances_transport_profile():
         diffusivity_m2_s=0.5,
         pinch_velocity_m_s=-0.02,
     )
-    peaked = 1e18 + 4e19 * np.exp(-(est.rho / 0.25) ** 2)
+    peaked = 1e18 + 4e19 * np.exp(-((est.rho / 0.25) ** 2))
     before_trace = np.trace(est.P)
 
     predicted = est.predict(peaked, dt=0.01)

@@ -111,12 +111,8 @@ def test_b_dot_grad_theta_positive():
 
 
 def test_poloidal_field_scales_with_toroidal_field_strength():
-    low_field = miller_geometry(
-        R0=2.78, a=1.0, rho=0.5, q=1.4, B0=2.0, n_theta=64, n_period=1
-    )
-    high_field = miller_geometry(
-        R0=2.78, a=1.0, rho=0.5, q=1.4, B0=4.0, n_theta=64, n_period=1
-    )
+    low_field = miller_geometry(R0=2.78, a=1.0, rho=0.5, q=1.4, B0=2.0, n_theta=64, n_period=1)
+    high_field = miller_geometry(R0=2.78, a=1.0, rho=0.5, q=1.4, B0=4.0, n_theta=64, n_period=1)
 
     low_b_phi = 2.0 * 2.78 / low_field.R
     high_b_phi = 4.0 * 2.78 / high_field.R

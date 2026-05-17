@@ -41,12 +41,18 @@ class _SputteringFit:
 
 
 _TARGETS = {
-    "W": _TargetMaterial("W", mass_amu=183.84, atomic_number=74, surface_binding_eV=8.68, atomic_density_m3=6.31e28),
+    "W": _TargetMaterial(
+        "W", mass_amu=183.84, atomic_number=74, surface_binding_eV=8.68, atomic_density_m3=6.31e28
+    ),
     "TUNGSTEN": _TargetMaterial(
         "W", mass_amu=183.84, atomic_number=74, surface_binding_eV=8.68, atomic_density_m3=6.31e28
     ),
-    "C": _TargetMaterial("C", mass_amu=12.011, atomic_number=6, surface_binding_eV=7.41, atomic_density_m3=1.13e29),
-    "CARBON": _TargetMaterial("C", mass_amu=12.011, atomic_number=6, surface_binding_eV=7.41, atomic_density_m3=1.13e29),
+    "C": _TargetMaterial(
+        "C", mass_amu=12.011, atomic_number=6, surface_binding_eV=7.41, atomic_density_m3=1.13e29
+    ),
+    "CARBON": _TargetMaterial(
+        "C", mass_amu=12.011, atomic_number=6, surface_binding_eV=7.41, atomic_density_m3=1.13e29
+    ),
 }
 
 _PROJECTILES = {
@@ -78,7 +84,9 @@ def _normalize_target(target: str) -> _TargetMaterial:
         return _TARGETS[key]
     except KeyError as exc:
         supported = ", ".join(sorted({material.symbol for material in _TARGETS.values()}))
-        raise ValueError(f"unsupported target material {target!r}; supported targets: {supported}") from exc
+        raise ValueError(
+            f"unsupported target material {target!r}; supported targets: {supported}"
+        ) from exc
 
 
 def _normalize_projectile(projectile: str) -> _Species:
@@ -87,11 +95,15 @@ def _normalize_projectile(projectile: str) -> _Species:
         return _PROJECTILES[key]
     except KeyError as exc:
         supported = ", ".join(sorted(_PROJECTILES))
-        raise ValueError(f"unsupported projectile {projectile!r}; supported projectiles: {supported}") from exc
+        raise ValueError(
+            f"unsupported projectile {projectile!r}; supported projectiles: {supported}"
+        ) from exc
 
 
 def _threshold_energy_eV(projectile: _Species, target: _TargetMaterial) -> float:
-    energy_transfer = 4.0 * projectile.mass_amu * target.mass_amu / (projectile.mass_amu + target.mass_amu) ** 2
+    energy_transfer = (
+        4.0 * projectile.mass_amu * target.mass_amu / (projectile.mass_amu + target.mass_amu) ** 2
+    )
     if energy_transfer <= 0.0:
         raise ValueError("projectile-target energy transfer coefficient must be positive.")
     if energy_transfer < 0.3:
@@ -114,7 +126,9 @@ class SputteringYield:
         try:
             self.fit = _SPUTTERING_FITS[fit_key]
         except KeyError as exc:
-            raise ValueError(f"unsupported sputtering pair target={self.target!r}, projectile={self.projectile!r}") from exc
+            raise ValueError(
+                f"unsupported sputtering pair target={self.target!r}, projectile={self.projectile!r}"
+            ) from exc
 
         self.E_s = self.target_material.surface_binding_eV
         self.M_ratio = self.projectile_species.mass_amu / self.target_material.mass_amu

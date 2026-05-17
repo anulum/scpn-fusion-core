@@ -224,9 +224,7 @@ def sauter_bootstrap(
         alpha = z_eff + 0.5 * (1.0 + Ti[i] / Te[i])
         L31 = X * (1.0 + 1.4 / max(alpha, 1e-12))
         L32 = X * (0.5 + 0.7 / max(alpha, 1e-12)) / (1.0 + 0.5 * nu_star_e)
-        L34 = X * (0.25 + 0.35 * z_eff / max(alpha, 1e-12)) / (
-            1.0 + 0.7 * nu_star_e
-        )
+        L34 = X * (0.25 + 0.35 * z_eff / max(alpha, 1e-12)) / (1.0 + 0.7 * nu_star_e)
 
         # dp/dρ in Pa
         density_channel = (Te[i] + Ti[i]) * 1.602e-16 * dne_drho[i]

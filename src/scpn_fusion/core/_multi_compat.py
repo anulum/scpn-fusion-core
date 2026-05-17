@@ -31,6 +31,7 @@ Usage::
     # → {'rust': True, 'mojo': False, 'julia': True, 'go': False,
     #    'jax': True, 'numpy': True}
 """
+
 from __future__ import annotations
 
 import logging
@@ -147,9 +148,7 @@ def _ensure_probed() -> None:
         _availability[BackendTier.JAX] = _probe_jax()
         _availability[BackendTier.NUMPY] = True  # always available
 
-        available = [
-            _TIER_NAMES[t] for t in sorted(_availability) if _availability[t]
-        ]
+        available = [_TIER_NAMES[t] for t in sorted(_availability) if _availability[t]]
         logger.info("Multi-backend probe: %s", ", ".join(available))
         _probed = True
 
@@ -287,8 +286,7 @@ def registered_kernels() -> dict[str, list[str]]:
         result: dict[str, list[str]] = {}
         for name, entries in sorted(_registry.items()):
             result[name] = [
-                f"{_TIER_NAMES[t]}{'*' if _availability.get(t, False) else ''}"
-                for t, _ in entries
+                f"{_TIER_NAMES[t]}{'*' if _availability.get(t, False) else ''}" for t, _ in entries
             ]
         return result
 
@@ -296,6 +294,7 @@ def registered_kernels() -> dict[str, list[str]]:
 # ---------------------------------------------------------------------------
 # Convenience: pre-register existing Rust and NumPy fallbacks
 # ---------------------------------------------------------------------------
+
 
 def _bootstrap_existing_backends() -> None:
     """Register kernels that already have Rust + Python implementations.
@@ -317,21 +316,15 @@ def _bootstrap_existing_backends() -> None:
             )
 
             register_kernel("shafranov_bv", BackendTier.RUST, rust_shafranov_bv)
-            register_kernel(
-                "solve_coil_currents", BackendTier.RUST, rust_solve_coil_currents
-            )
-            register_kernel(
-                "measure_magnetics", BackendTier.RUST, rust_measure_magnetics
-            )
+            register_kernel("solve_coil_currents", BackendTier.RUST, rust_solve_coil_currents)
+            register_kernel("measure_magnetics", BackendTier.RUST, rust_measure_magnetics)
             register_kernel(
                 "simulate_tearing_mode",
                 BackendTier.RUST,
                 rust_simulate_tearing_mode,
             )
             if rust_multigrid_vcycle is not None:
-                register_kernel(
-                    "multigrid_vcycle", BackendTier.RUST, rust_multigrid_vcycle
-                )
+                register_kernel("multigrid_vcycle", BackendTier.RUST, rust_multigrid_vcycle)
     except ImportError:
         pass
 

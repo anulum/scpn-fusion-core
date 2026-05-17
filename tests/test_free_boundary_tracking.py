@@ -28,9 +28,15 @@ from scpn_fusion.core.fusion_kernel import CoilSet, FusionKernel
 
 
 def test_free_boundary_tracking_split_modules_preserve_public_api() -> None:
-    assert issubclass(FreeBoundaryTrackingController, tracking_config._FreeBoundaryTrackingConfigMixin)
-    assert issubclass(FreeBoundaryTrackingController, tracking_control._FreeBoundaryTrackingControlMixin)
-    assert issubclass(FreeBoundaryTrackingController, tracking_runtime._FreeBoundaryTrackingRuntimeMixin)
+    assert issubclass(
+        FreeBoundaryTrackingController, tracking_config._FreeBoundaryTrackingConfigMixin
+    )
+    assert issubclass(
+        FreeBoundaryTrackingController, tracking_control._FreeBoundaryTrackingControlMixin
+    )
+    assert issubclass(
+        FreeBoundaryTrackingController, tracking_runtime._FreeBoundaryTrackingRuntimeMixin
+    )
     assert issubclass(FreeBoundaryTrackingController, tracking_shot._FreeBoundaryTrackingShotMixin)
     assert tracking_types._ObjectiveBlock("x", 0, 1).name == "x"
     assert callable(run_free_boundary_tracking)

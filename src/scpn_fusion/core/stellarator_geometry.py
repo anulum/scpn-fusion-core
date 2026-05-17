@@ -233,7 +233,9 @@ def effective_ripple(config: StellaratorConfig, s: float) -> float:
     total_power = float(np.mean(np.sum(np.abs(phi_spectrum[:, 1:]) ** 2, axis=1)))
     spectral_concentration = harmonic_power / max(total_power, 1e-30)
 
-    helical_strength = np.sqrt(2.0) * rms_nonaxisymmetric * np.sqrt(max(spectral_concentration, 0.0))
+    helical_strength = (
+        np.sqrt(2.0) * rms_nonaxisymmetric * np.sqrt(max(spectral_concentration, 0.0))
+    )
     aspect_factor = np.sqrt(max(config.a / config.R0, 1e-12))
     eps_eff = helical_strength**1.5 * aspect_factor / np.sqrt(config.N_fp)
     return float(np.clip(eps_eff, 0.0, 1.0))

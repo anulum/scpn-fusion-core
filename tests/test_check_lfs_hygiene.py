@@ -39,9 +39,7 @@ def _prepare_required_file(tmp_path: Path) -> Path:
     return artifact
 
 
-def test_lfs_hygiene_rejects_lfs_attr_full_blob(
-    tmp_path: Path, monkeypatch, capsys
-) -> None:
+def test_lfs_hygiene_rejects_lfs_attr_full_blob(tmp_path: Path, monkeypatch, capsys) -> None:
     module = _load_module()
     _prepare_required_file(tmp_path)
 

@@ -64,15 +64,9 @@ def test_halo_currents():
 def test_post_tq_temperature_uses_quench_and_radiation_timescales():
     tq = ThermalQuench(W_th_MJ=350.0, a=2.0, R0=6.2, q=3.0, B0=5.3)
 
-    fast_cooling = tq.post_tq_temperature(
-        Te_pre_keV=20.0, tau_tq_ms=0.5, tau_radiation_ms=0.25
-    )
-    slow_cooling = tq.post_tq_temperature(
-        Te_pre_keV=20.0, tau_tq_ms=0.5, tau_radiation_ms=5.0
-    )
-    long_quench = tq.post_tq_temperature(
-        Te_pre_keV=20.0, tau_tq_ms=5.0, tau_radiation_ms=0.25
-    )
+    fast_cooling = tq.post_tq_temperature(Te_pre_keV=20.0, tau_tq_ms=0.5, tau_radiation_ms=0.25)
+    slow_cooling = tq.post_tq_temperature(Te_pre_keV=20.0, tau_tq_ms=0.5, tau_radiation_ms=5.0)
+    long_quench = tq.post_tq_temperature(Te_pre_keV=20.0, tau_tq_ms=5.0, tau_radiation_ms=0.25)
 
     assert 5.0 <= fast_cooling < slow_cooling < 20_000.0
     assert long_quench < fast_cooling

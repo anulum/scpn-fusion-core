@@ -33,10 +33,7 @@ def electron_collisionality_star(
     epsilon = np.asarray(epsilon, dtype=float)
     z_eff = np.asarray(z_eff, dtype=float)
 
-    if not all(
-        np.all(np.isfinite(arr))
-        for arr in (ne_19, Te_keV, q, epsilon, z_eff)
-    ):
+    if not all(np.all(np.isfinite(arr)) for arr in (ne_19, Te_keV, q, epsilon, z_eff)):
         raise ValueError("collisionality inputs must be finite")
     if R0 <= 0.0 or not np.isfinite(R0):
         raise ValueError("R0 must be finite and positive")

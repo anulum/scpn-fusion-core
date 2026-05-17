@@ -224,9 +224,7 @@ class KalmanDensityEstimator:
         self.Q = np.eye(n_rho) * 1e36  # Process noise
         self.R = np.eye(n_chords) * 1e34  # Meas noise
 
-    def set_transport(
-        self, diffusivity_m2_s: np.ndarray, pinch_velocity_m_s: np.ndarray
-    ) -> None:
+    def set_transport(self, diffusivity_m2_s: np.ndarray, pinch_velocity_m_s: np.ndarray) -> None:
         D = np.asarray(diffusivity_m2_s, dtype=float)
         V = np.asarray(pinch_velocity_m_s, dtype=float)
         if D.shape != (self.n_rho,) or V.shape != (self.n_rho,):

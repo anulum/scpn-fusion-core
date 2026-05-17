@@ -1649,23 +1649,30 @@ mod gpu_bindings {
 
 // ─── Module registration ───
 
+use fusion_physics::gk_nonlinear::{NonlinearGKConfig, NonlinearGKSolver, NonlinearGKState};
 /// SCPN Fusion Core — Rust-accelerated plasma physics.
 use ndarray::{Ix3, Ix6};
-use numpy::{PyArrayDyn, PyReadonlyArrayDyn};
-use fusion_physics::gk_nonlinear::{NonlinearGKConfig, NonlinearGKState, NonlinearGKSolver};
 use num_complex::Complex64;
+use numpy::{PyArrayDyn, PyReadonlyArrayDyn};
 
 #[pyclass]
 pub struct PyNonlinearGKSolver {
     inner: NonlinearGKSolver,
 }
 
+type PyComplexFieldPair<'py> = (
+    Bound<'py, PyArrayDyn<Complex64>>,
+    Bound<'py, PyArrayDyn<Complex64>>,
+);
+
 #[pymethods]
 impl PyNonlinearGKSolver {
     #[new]
     fn new() -> PyResult<Self> {
         let cfg = NonlinearGKConfig::default();
-        Ok(PyNonlinearGKSolver { inner: NonlinearGKSolver::new(cfg) })
+        Ok(PyNonlinearGKSolver {
+            inner: NonlinearGKSolver::new(cfg),
+        })
     }
 
     fn step<'py>(
@@ -1675,7 +1682,7 @@ impl PyNonlinearGKSolver {
         phi_py: PyReadonlyArrayDyn<'py, Complex64>,
         time: f64,
         dt: f64,
-    ) -> PyResult<(Bound<'py, PyArrayDyn<Complex64>>, Bound<'py, PyArrayDyn<Complex64>>)> {
+    ) -> PyResult<PyComplexFieldPair<'py>> {
         let f = f_py
             .as_array()
             .into_dimensionality::<Ix6>()
@@ -1749,6 +1756,6 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m.add_function(wrap_pyfunction!(gpu_bindings::py_gpu_available, m)?)?;
         m.add_function(wrap_pyfunction!(gpu_bindings::py_gpu_info, m)?)?;
     }
-        m.add_class::<PyNonlinearGKSolver>()?;
+    m.add_class::<PyNonlinearGKSolver>()?;
     Ok(())
 }

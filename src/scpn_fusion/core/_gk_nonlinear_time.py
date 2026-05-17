@@ -68,9 +68,7 @@ class NonlinearGKTimeMixin:
                 diag_upper = alpha.copy().astype(complex)
                 diag_lower = -alpha.copy().astype(complex)
 
-                A = np.diag(diag_main) + np.diag(diag_upper[:-1], 1) + np.diag(
-                    diag_lower[1:], -1
-                )
+                A = np.diag(diag_main) + np.diag(diag_upper[:-1], 1) + np.diag(diag_lower[1:], -1)
                 A[0, -1] = diag_lower[0]
                 A[-1, 0] = diag_upper[-1]
 

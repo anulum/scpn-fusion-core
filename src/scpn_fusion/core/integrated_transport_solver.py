@@ -23,7 +23,6 @@ except ImportError:
 from scpn_fusion.core.integrated_transport_solver_adaptive import (
     AdaptiveTimeController,  # re-export for backward compatibility
 )
-from scpn_fusion.core.eped_pedestal import EpedPedestalModel
 from scpn_fusion.core.integrated_transport_solver_contracts import (
     coerce_matching_1d_profiles as _coerce_matching_1d_profiles,
     require_positive_finite_scalar as _require_positive_finite_scalar,

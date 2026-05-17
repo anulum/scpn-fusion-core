@@ -3,8 +3,6 @@
 # SCPN Fusion Core — Coverage Batch 12 (passing only)
 from __future__ import annotations
 
-import numpy as np
-
 
 class TestSlidingModeVertical:
     def test_super_twisting_init(self):

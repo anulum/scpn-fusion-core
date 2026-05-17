@@ -71,8 +71,7 @@ def build_free_boundary_history_arrays(
     }
     warmup = max(steps // 3, 1)
     arrays["stabilized"] = (
-        (arrays["axis_err_arr"][warmup:] <= 0.06)
-        & (arrays["xpoint_err_arr"][warmup:] <= 0.08)
+        (arrays["axis_err_arr"][warmup:] <= 0.06) & (arrays["xpoint_err_arr"][warmup:] <= 0.08)
         if arrays["axis_err_arr"].size > warmup
         else np.zeros(0, dtype=bool)
     )

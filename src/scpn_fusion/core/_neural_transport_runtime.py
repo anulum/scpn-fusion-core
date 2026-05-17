@@ -168,7 +168,9 @@ class NeuralTransportModel:
 
                 layers_w = [data[f"w{i + 1}"] for i in range(n_layers)]
                 layers_b = [data[f"b{i + 1}"] for i in range(n_layers)]
-                log_transform = bool(int(data["log_transform"])) if "log_transform" in data else False
+                log_transform = (
+                    bool(int(data["log_transform"])) if "log_transform" in data else False
+                )
                 gb_scale = bool(int(data["gb_scale"])) if "gb_scale" in data else False
                 gated = bool(int(data["gated"])) if "gated" in data else False
 

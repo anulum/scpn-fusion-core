@@ -63,7 +63,9 @@ class DiagnosticResponse:
         """Generate synthetic measurements from a given psi field."""
         from scipy.interpolate import RegularGridInterpolator
 
-        interp = RegularGridInterpolator((self.R, self.Z), psi, bounds_error=False, fill_value=np.nan)
+        interp = RegularGridInterpolator(
+            (self.R, self.Z), psi, bounds_error=False, fill_value=np.nan
+        )
 
         flux_vals = []
         for r, z in self.diagnostics.flux_loops:
@@ -211,7 +213,9 @@ class RealtimeEFIT:
         residual = np.concatenate((flux_residual, probe_residual))
         if np.all(np.isfinite(residual)):
             scale = max(
-                float(np.linalg.norm(np.concatenate((synthetic["flux_loops"], synthetic["b_probes"])))),
+                float(
+                    np.linalg.norm(np.concatenate((synthetic["flux_loops"], synthetic["b_probes"])))
+                ),
                 1.0,
             )
             chi_squared = float(np.dot(residual, residual) / scale**2)
@@ -245,10 +249,7 @@ class RealtimeEFIT:
 
         boundary = np.zeros_like(inside, dtype=bool)
         boundary[1:-1, 1:-1] = inside[1:-1, 1:-1] & (
-            ~inside[:-2, 1:-1]
-            | ~inside[2:, 1:-1]
-            | ~inside[1:-1, :-2]
-            | ~inside[1:-1, 2:]
+            ~inside[:-2, 1:-1] | ~inside[2:, 1:-1] | ~inside[1:-1, :-2] | ~inside[1:-1, 2:]
         )
         indices = np.argwhere(boundary)
         if len(indices) < 8:
@@ -321,5 +322,7 @@ class RealtimeEFIT:
         low = int(active[0])
         high = int(active[-1])
         lower = float(coords[max(low - 1, 0)] if low > 0 else coords[low])
-        upper = float(coords[min(high + 1, len(coords) - 1)] if high < len(coords) - 1 else coords[high])
+        upper = float(
+            coords[min(high + 1, len(coords) - 1)] if high < len(coords) - 1 else coords[high]
+        )
         return lower, upper

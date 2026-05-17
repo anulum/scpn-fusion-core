@@ -54,7 +54,9 @@ class SpectralBasis:
         if theta.shape != zeta.shape:
             raise ValueError("theta and zeta must have the same shape.")
         if not (
-            np.all(np.isfinite(coeffs_mn)) and np.all(np.isfinite(theta)) and np.all(np.isfinite(zeta))
+            np.all(np.isfinite(coeffs_mn))
+            and np.all(np.isfinite(theta))
+            and np.all(np.isfinite(zeta))
         ):
             raise ValueError("spectral basis inputs must be finite.")
         # Evaluate sum C_mn * cos(m*theta - n*N_fp*zeta) or sin(...)
@@ -99,7 +101,9 @@ class VMECLiteSolver:
         valid_modes = set(self.basis.mn_modes)
         unknown_modes = (set(R_bound) | set(Z_bound)) - valid_modes
         if unknown_modes:
-            raise ValueError(f"boundary contains unsupported spectral mode(s): {sorted(unknown_modes)}")
+            raise ValueError(
+                f"boundary contains unsupported spectral mode(s): {sorted(unknown_modes)}"
+            )
 
         for name, bound in (("R_bound", R_bound), ("Z_bound", Z_bound)):
             for mode, value in bound.items():

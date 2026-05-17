@@ -66,7 +66,7 @@ class FreeBoundaryStateEstimator:
         self,
         measurement: np.ndarray,
         applied_action: np.ndarray,
-        measured_actuator_action: Optional[np.ndarray] = None,
+        measured_actuator_action: np.ndarray | None = None,
     ) -> FreeBoundaryEstimate:
         meas = np.asarray(measurement, dtype=np.float64).reshape(-1)
         action = np.asarray(applied_action, dtype=np.float64).reshape(-1)

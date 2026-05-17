@@ -36,7 +36,9 @@ from validation.stellarator_control_replay_benchmark import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_CONFIG = ROOT / "validation" / "reference_data" / "stellarator_control_replay_public_config.json"
+PUBLIC_CONFIG = (
+    ROOT / "validation" / "reference_data" / "stellarator_control_replay_public_config.json"
+)
 
 
 def test_geometry_neutral_contracts_reject_invalid_actuator_limits() -> None:
@@ -117,7 +119,10 @@ def test_benchmark_report_is_deterministic_and_schema_valid() -> None:
     assert bench["schema_version"] == "stellarator-control-replay-benchmark.v1"
     assert bench["replay"]["deterministic"] is True
     assert bench["actuators"]["max_abs_current_A"] <= bench["thresholds"]["max_abs_current_A"]
-    assert bench["uncertainty"]["fieldline_spread_p95_high"] > bench["uncertainty"]["fieldline_spread_p95_low"]
+    assert (
+        bench["uncertainty"]["fieldline_spread_p95_high"]
+        > bench["uncertainty"]["fieldline_spread_p95_low"]
+    )
     assert bench["data_provenance"]["geometry"] == "public_synthetic"
 
 
@@ -137,7 +142,9 @@ def test_public_config_file_drives_geometry_and_report_provenance() -> None:
     assert "external_company_data" in json.dumps(report, sort_keys=True)
 
 
-def test_public_config_uses_named_primary_actuator_when_decoy_channel_is_first(tmp_path: Path) -> None:
+def test_public_config_uses_named_primary_actuator_when_decoy_channel_is_first(
+    tmp_path: Path,
+) -> None:
     payload = load_benchmark_config(PUBLIC_CONFIG)
     payload["actuators"].insert(
         0,
@@ -188,7 +195,9 @@ def test_invalid_config_rejects_unknown_nested_keys(tmp_path: Path) -> None:
     bad_config = tmp_path / "bad_nested_key_config.json"
     bad_config.write_text(json.dumps(payload), encoding="utf-8")
 
-    with pytest.raises(ValueError, match=r"unexpected config key: magnetic_configuration\.operator_notes"):
+    with pytest.raises(
+        ValueError, match=r"unexpected config key: magnetic_configuration\.operator_notes"
+    ):
         load_benchmark_config(bad_config)
 
 
@@ -218,7 +227,9 @@ def test_invalid_config_rejects_missing_actuator_required_key(tmp_path: Path) ->
     bad_config = tmp_path / "bad_missing_actuator_key_config.json"
     bad_config.write_text(json.dumps(payload), encoding="utf-8")
 
-    with pytest.raises(ValueError, match=r"missing required config key: actuators\[0\]\.slew_rate_per_s"):
+    with pytest.raises(
+        ValueError, match=r"missing required config key: actuators\[0\]\.slew_rate_per_s"
+    ):
         load_benchmark_config(bad_config)
 
 
@@ -245,7 +256,9 @@ def test_invalid_config_rejects_nonfinite_threshold(tmp_path: Path) -> None:
 
 def test_report_schema_rejects_unknown_top_level_key() -> None:
     report = generate_report(steps=7, seed=17, thresholds=DEFAULT_THRESHOLDS)
-    report["stellarator_control_replay_benchmark"]["operator_notes"] = "not part of the public report contract"
+    report["stellarator_control_replay_benchmark"]["operator_notes"] = (
+        "not part of the public report contract"
+    )
 
     with pytest.raises(ValueError, match="unexpected benchmark report key: operator_notes"):
         validate_report_against_schema(report, load_report_schema())
@@ -255,7 +268,9 @@ def test_report_schema_rejects_incomplete_trace_row() -> None:
     report = generate_report(steps=7, seed=17, thresholds=DEFAULT_THRESHOLDS)
     del report["stellarator_control_replay_benchmark"]["replay"]["trace"][0]["latency_us"]
 
-    with pytest.raises(ValueError, match=r"missing required benchmark report key: replay\.trace\[0\]\.latency_us"):
+    with pytest.raises(
+        ValueError, match=r"missing required benchmark report key: replay\.trace\[0\]\.latency_us"
+    ):
         validate_report_against_schema(report, load_report_schema())
 
 
@@ -263,15 +278,21 @@ def test_report_schema_rejects_missing_nested_required_key() -> None:
     report = generate_report(steps=7, seed=17, thresholds=DEFAULT_THRESHOLDS)
     del report["stellarator_control_replay_benchmark"]["uncertainty"]["samples"]
 
-    with pytest.raises(ValueError, match=r"missing required benchmark report key: uncertainty\.samples"):
+    with pytest.raises(
+        ValueError, match=r"missing required benchmark report key: uncertainty\.samples"
+    ):
         validate_report_against_schema(report, load_report_schema())
 
 
 def test_report_schema_rejects_extra_trace_row_key() -> None:
     report = generate_report(steps=7, seed=17, thresholds=DEFAULT_THRESHOLDS)
-    report["stellarator_control_replay_benchmark"]["replay"]["trace"][0]["operator_notes"] = "not part of the public report contract"
+    report["stellarator_control_replay_benchmark"]["replay"]["trace"][0]["operator_notes"] = (
+        "not part of the public report contract"
+    )
 
-    with pytest.raises(ValueError, match=r"unexpected benchmark report key: replay\.trace\[0\]\.operator_notes"):
+    with pytest.raises(
+        ValueError, match=r"unexpected benchmark report key: replay\.trace\[0\]\.operator_notes"
+    ):
         validate_report_against_schema(report, load_report_schema())
 
 
@@ -318,7 +339,9 @@ def test_module_cli_writes_json_and_markdown_outputs(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr + result.stdout
     payload = json.loads(output_json.read_text(encoding="utf-8"))
     validate_report_against_schema(payload, load_report_schema())
-    assert output_md.read_text(encoding="utf-8").startswith("# Stellarator Control Replay Benchmark")
+    assert output_md.read_text(encoding="utf-8").startswith(
+        "# Stellarator Control Replay Benchmark"
+    )
 
 
 def test_module_cli_accepts_public_config_file(tmp_path: Path) -> None:
@@ -346,5 +369,9 @@ def test_module_cli_accepts_public_config_file(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr + result.stdout
     payload = json.loads(output_json.read_text(encoding="utf-8"))
     bench = payload["stellarator_control_replay_benchmark"]
-    assert bench["benchmark_config"]["source_path"].endswith("stellarator_control_replay_public_config.json")
-    assert output_md.read_text(encoding="utf-8").startswith("# Stellarator Control Replay Benchmark")
+    assert bench["benchmark_config"]["source_path"].endswith(
+        "stellarator_control_replay_public_config.json"
+    )
+    assert output_md.read_text(encoding="utf-8").startswith(
+        "# Stellarator Control Replay Benchmark"
+    )

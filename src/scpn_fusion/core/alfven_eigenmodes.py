@@ -305,7 +305,5 @@ def rsae_frequency(
         m_i_amu=m_i_amu,
         R0=major_radius,
     )
-    omega_RSAE = omega_BAE + abs(n * q_minimum - m) * alfven_speed / (
-        q_minimum * major_radius
-    )
+    omega_RSAE = omega_BAE + abs(n * q_minimum - m) * alfven_speed / (q_minimum * major_radius)
     return float(omega_RSAE)

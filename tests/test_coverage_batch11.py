@@ -3,8 +3,6 @@
 # SCPN Fusion Core — Coverage Batch 11 (passing only)
 from __future__ import annotations
 
-import numpy as np
-
 
 class TestGKCorrector:
     def test_init(self):

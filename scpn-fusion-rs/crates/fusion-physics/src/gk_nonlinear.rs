@@ -8,10 +8,8 @@
 //! Nonlinear δf gyrokinetic solver in flux-tube geometry.
 
 use fusion_math::fft::{cfft2, cfft_axis0, cifft2, cifft_axis0};
-use ndarray::{s, Array1, Array2, Array3, Array4, Array5, Array6, Axis};
+use ndarray::{s, Array1, Array2, Array3, Array4, Array5, Array6};
 use num_complex::Complex64;
-use rand::Rng;
-use rand_distr::StandardNormal;
 use std::f64::consts::PI;
 
 pub const E_CHARGE: f64 = 1.602176634e-19;
@@ -128,16 +126,29 @@ pub struct MillerGeometry {
     pub b_dot_grad_theta: Array1<f64>,
 }
 
-pub fn circular_geometry(
-    r0: f64,
-    a: f64,
-    rho: f64,
-    q: f64,
-    s_hat: f64,
-    b0: f64,
-    n_theta: usize,
-    n_period: usize,
-) -> MillerGeometry {
+#[derive(Clone, Copy, Debug)]
+pub struct CircularGeometryParams {
+    pub r0: f64,
+    pub a: f64,
+    pub rho: f64,
+    pub q: f64,
+    pub s_hat: f64,
+    pub b0: f64,
+    pub n_theta: usize,
+    pub n_period: usize,
+}
+
+pub fn circular_geometry(params: CircularGeometryParams) -> MillerGeometry {
+    let CircularGeometryParams {
+        r0,
+        a,
+        rho,
+        q,
+        s_hat,
+        b0,
+        n_theta,
+        n_period,
+    } = params;
     let r = rho * a;
     let n_total = n_theta * n_period;
     let theta = Array1::linspace(
@@ -326,7 +337,16 @@ impl NonlinearGKSolver {
             dealias_mask: Array2::default((0, 0)),
             ball_phase_fwd: Array2::zeros((0, 0)),
             ball_phase_bwd: Array2::zeros((0, 0)),
-            geom: circular_geometry(2.78, 1.0, 0.5, 1.4, 0.78, 2.0, 64, 1),
+            geom: circular_geometry(CircularGeometryParams {
+                r0: 2.78,
+                a: 1.0,
+                rho: 0.5,
+                q: 1.4,
+                s_hat: 0.78,
+                b0: 2.0,
+                n_theta: 64,
+                n_period: 1,
+            }),
             b_dot_grad: Array1::zeros(0),
             kappa_n: Array1::zeros(0),
             kappa_g: Array1::zeros(0),
@@ -397,7 +417,7 @@ impl NonlinearGKSolver {
                 .mapv(|v| v.abs())
                 .iter()
                 .cloned()
-                .fold(0. / 0., f64::max)
+                .fold(f64::NAN, f64::max)
                 * 2.0
                 / 3.0;
             let ky_max = self
@@ -405,7 +425,7 @@ impl NonlinearGKSolver {
                 .mapv(|v| v.abs())
                 .iter()
                 .cloned()
-                .fold(0. / 0., f64::max)
+                .fold(f64::NAN, f64::max)
                 * 2.0
                 / 3.0;
             for i in 0..c.n_kx {
@@ -526,7 +546,16 @@ impl NonlinearGKSolver {
 
     fn setup_geometry(&mut self) {
         let c = &self.cfg;
-        self.geom = circular_geometry(c.r0, c.a, 0.5, c.q, c.s_hat, c.b0, c.n_theta, 1);
+        self.geom = circular_geometry(CircularGeometryParams {
+            r0: c.r0,
+            a: c.a,
+            rho: 0.5,
+            q: c.q,
+            s_hat: c.s_hat,
+            b0: c.b0,
+            n_theta: c.n_theta,
+            n_period: 1,
+        });
         self.b_dot_grad = self.geom.b_dot_grad_theta.clone();
         self.kappa_n = self.geom.kappa_n.clone();
         self.kappa_g = self.geom.kappa_g.clone();
@@ -1048,27 +1077,27 @@ impl NonlinearGKSolver {
             .mapv(|x| x.norm())
             .iter()
             .cloned()
-            .fold(0. / 0., f64::max)
+            .fold(f64::NAN, f64::max)
             + 1e-30;
         let kmax = self
             .kx
             .mapv(|x| x.abs())
             .iter()
             .cloned()
-            .fold(0. / 0., f64::max)
+            .fold(f64::NAN, f64::max)
             .max(
                 self.ky
                     .mapv(|x| x.abs())
                     .iter()
                     .cloned()
-                    .fold(0. / 0., f64::max),
+                    .fold(f64::NAN, f64::max),
             );
         let vmax = self
             .vpar
             .mapv(|x| x.abs())
             .iter()
             .cloned()
-            .fold(0. / 0., f64::max)
+            .fold(f64::NAN, f64::max)
             .max(1.0);
 
         let v_exb = kmax * phi_max;
@@ -1082,10 +1111,10 @@ impl NonlinearGKSolver {
             .mapv(|x| x.abs())
             .iter()
             .cloned()
-            .fold(0. / 0., f64::max);
+            .fold(f64::NAN, f64::max);
         let v_par_eff = vmax * v_scale * b_dot_max;
 
-        let kperp2_max = self.kperp2.iter().cloned().fold(0. / 0., f64::max);
+        let kperp2_max = self.kperp2.iter().cloned().fold(f64::NAN, f64::max);
         let v_hyper = c.hyper_coeff * kperp2_max.powi((c.hyper_order / 2) as i32);
 
         let dt_cfl = c.cfl_factor / (v_exb + v_par_eff + v_hyper).max(1e-30);

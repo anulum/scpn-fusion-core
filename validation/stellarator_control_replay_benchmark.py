@@ -35,7 +35,9 @@ from scpn_fusion.core.stellarator_geometry import (
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_VERSION = "stellarator-control-replay-benchmark.v1"
 CONFIG_SCHEMA_VERSION = "stellarator-control-replay-config.v1"
-DEFAULT_CONFIG_PATH = ROOT / "validation" / "reference_data" / "stellarator_control_replay_public_config.json"
+DEFAULT_CONFIG_PATH = (
+    ROOT / "validation" / "reference_data" / "stellarator_control_replay_public_config.json"
+)
 DEFAULT_THRESHOLDS: dict[str, float] = {
     "max_final_fieldline_spread": 0.024,
     "min_improvement_fraction": 0.28,
@@ -224,7 +226,9 @@ def _default_config_payload(*, steps: int, seed: int) -> dict[str, Any]:
             "fieldline_spread_sigma": 0.0025,
             "effective_ripple_sigma": 0.0008,
         },
-        "fault_schedule": [{"step": max(2, int(steps) // 2), "channel": "helical_trim_A", "mode": "stuck"}],
+        "fault_schedule": [
+            {"step": max(2, int(steps) // 2), "channel": "helical_trim_A", "mode": "stuck"}
+        ],
         "thresholds": dict(DEFAULT_THRESHOLDS),
         "data_provenance": {
             "geometry": "public_synthetic",
@@ -252,7 +256,9 @@ def _scenario_from_config(
         iota_0=_finite_positive("stellarator_parameters.iota_0", stellarator["iota_0"]),
         iota_a=_finite_positive("stellarator_parameters.iota_a", stellarator["iota_a"]),
         mirror_ratio=_finite("stellarator_parameters.mirror_ratio", stellarator["mirror_ratio"]),
-        helical_excursion=_finite("stellarator_parameters.helical_excursion", stellarator["helical_excursion"]),
+        helical_excursion=_finite(
+            "stellarator_parameters.helical_excursion", stellarator["helical_excursion"]
+        ),
         name=str(stellarator.get("name", "public_stellarator_config")),
     )
     magnetic_configuration = MagneticConfiguration(
@@ -263,7 +269,9 @@ def _scenario_from_config(
         reference=str(magnetic["reference"]),
     )
     if magnetic_configuration.field_periods != config.N_fp:
-        raise ValueError("magnetic_configuration.field_periods must match stellarator_parameters.N_fp.")
+        raise ValueError(
+            "magnetic_configuration.field_periods must match stellarator_parameters.N_fp."
+        )
     actuators = tuple(
         ActuatorChannel(
             name=str(entry["name"]),
@@ -286,9 +294,18 @@ def _scenario_from_config(
     except KeyError as exc:
         raise ValueError(f"unknown primary_control_actuator: {primary_actuator}") from exc
     objective = ControlObjective(
-        target_metrics={key: _finite(f"control_objective.target_metrics.{key}", value) for key, value in _require_mapping(objective_payload, "target_metrics").items()},
-        weights={key: _finite(f"control_objective.weights.{key}", value) for key, value in _require_mapping(objective_payload, "weights").items()},
-        constraints={key: _finite(f"control_objective.constraints.{key}", value) for key, value in _require_mapping(objective_payload, "constraints").items()},
+        target_metrics={
+            key: _finite(f"control_objective.target_metrics.{key}", value)
+            for key, value in _require_mapping(objective_payload, "target_metrics").items()
+        },
+        weights={
+            key: _finite(f"control_objective.weights.{key}", value)
+            for key, value in _require_mapping(objective_payload, "weights").items()
+        },
+        constraints={
+            key: _finite(f"control_objective.constraints.{key}", value)
+            for key, value in _require_mapping(objective_payload, "constraints").items()
+        },
     )
     initial_frame = DiagnosticFrame(
         step=0,
@@ -298,14 +315,20 @@ def _scenario_from_config(
                 name="fieldline_spread",
                 value=_open_loop_spread(config, 0.0, diagnostics),
                 unit="rad",
-                sigma=_finite("diagnostics.fieldline_spread_sigma", diagnostics["fieldline_spread_sigma"]),
+                sigma=_finite(
+                    "diagnostics.fieldline_spread_sigma", diagnostics["fieldline_spread_sigma"]
+                ),
                 provenance=str(_require_mapping(payload, "data_provenance")["diagnostics"]),
             ),
             DiagnosticChannel(
                 name="effective_ripple",
-                value=effective_ripple(config, _finite("diagnostics.flux_surface_s", diagnostics["flux_surface_s"])),
+                value=effective_ripple(
+                    config, _finite("diagnostics.flux_surface_s", diagnostics["flux_surface_s"])
+                ),
                 unit="dimensionless",
-                sigma=_finite("diagnostics.effective_ripple_sigma", diagnostics["effective_ripple_sigma"]),
+                sigma=_finite(
+                    "diagnostics.effective_ripple_sigma", diagnostics["effective_ripple_sigma"]
+                ),
                 provenance=str(_require_mapping(payload, "data_provenance")["diagnostics"]),
             ),
         ),
@@ -480,7 +503,9 @@ def validate_benchmark_config(payload: Mapping[str, Any], schema: Mapping[str, A
     provenance = _require_mapping(payload, "data_provenance")
     if str(provenance.get("external_company_data", "")).strip().lower() != "none":
         raise ValueError("external_company_data must be 'none'.")
-    payload_text = _stable_json({key: value for key, value in payload.items() if key != "source_path"}).lower()
+    payload_text = _stable_json(
+        {key: value for key, value in payload.items() if key != "source_path"}
+    ).lower()
     for marker in PRIVATE_DATA_MARKERS:
         if marker in payload_text:
             raise ValueError("config must not contain private or proprietary markers.")
@@ -497,12 +522,15 @@ def validate_benchmark_config(payload: Mapping[str, Any], schema: Mapping[str, A
             raise ValueError(f"thresholds.{key} must be > 0.")
 
 
-def _passes(summary: Mapping[str, float], uncertainty: Mapping[str, float], thresholds: Mapping[str, float]) -> bool:
+def _passes(
+    summary: Mapping[str, float], uncertainty: Mapping[str, float], thresholds: Mapping[str, float]
+) -> bool:
     return bool(
         float(summary["final_fieldline_spread"]) <= float(thresholds["max_final_fieldline_spread"])
         and float(summary["improvement_fraction"]) >= float(thresholds["min_improvement_fraction"])
         and float(summary["max_abs_current_A"]) <= float(thresholds["max_abs_current_A"])
-        and float(uncertainty["fieldline_spread_width"]) <= float(thresholds["max_uncertainty_width"])
+        and float(uncertainty["fieldline_spread_width"])
+        <= float(thresholds["max_uncertainty_width"])
         and float(summary["p95_latency_us"]) <= float(thresholds["max_p95_latency_us"])
     )
 
@@ -530,7 +558,9 @@ def generate_report(
         validate_benchmark_config(config_payload, load_config_schema())
     if int(config_payload["steps"]) < 4:
         raise ValueError("steps must be >= 4.")
-    active_thresholds = _normalise_thresholds(thresholds if thresholds is not None else _require_mapping(config_payload, "thresholds"))
+    active_thresholds = _normalise_thresholds(
+        thresholds if thresholds is not None else _require_mapping(config_payload, "thresholds")
+    )
     scenario, physics_config, diagnostic_settings = _scenario_from_config(config_payload)
     replay_a = _run_replay(scenario, config=physics_config, diagnostics=diagnostic_settings)
     replay_b = _run_replay(scenario, config=physics_config, diagnostics=diagnostic_settings)
@@ -545,9 +575,7 @@ def generate_report(
             "benchmark_id": "stellarator-control-replay-benchmark",
             "description": "Geometry-neutral reduced-order stellarator control replay benchmark.",
             "benchmark_config": {
-                key: value
-                for key, value in config_payload.items()
-                if key != "thresholds"
+                key: value for key, value in config_payload.items() if key != "thresholds"
             },
             "magnetic_configuration": scenario.magnetic_configuration.to_dict(),
             "control_objective": scenario.objective.to_dict(),
@@ -668,7 +696,12 @@ def validate_report_against_schema(report: Mapping[str, Any], schema: Mapping[st
     for key in required:
         if key not in bench:
             raise ValueError(f"missing required benchmark key: {key}")
-    if bench["schema_version"] != schema["properties"]["stellarator_control_replay_benchmark"]["properties"]["schema_version"]["const"]:
+    if (
+        bench["schema_version"]
+        != schema["properties"]["stellarator_control_replay_benchmark"]["properties"][
+            "schema_version"
+        ]["const"]
+    ):
         raise ValueError("unexpected schema_version")
     if not isinstance(bench["replay"]["trace"], list) or not bench["replay"]["trace"]:
         raise ValueError("replay.trace must be a non-empty list")
