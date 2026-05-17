@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anulum.github.io/scpn-fusion-core/schemas/stellarator_control_replay_benchmark.schema.json",
+  "title": "SCPN Fusion Core Stellarator Control Replay Benchmark Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["stellarator_control_replay_benchmark"],
+  "properties": {
+    "stellarator_control_replay_benchmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "benchmark_id",
+        "description",
+        "benchmark_config",
+        "magnetic_configuration",
+        "control_objective",
+        "actuators",
+        "replay",
+        "metrics",
+        "uncertainty",
+        "thresholds",
+        "passes_thresholds",
+        "data_provenance",
+        "physics_context",
+        "limitations"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "stellarator-control-replay-benchmark.v1"
+        },
+        "benchmark_id": {
+          "const": "stellarator-control-replay-benchmark"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "benchmark_config": {
+          "type": "object",
+          "required": ["schema_version", "name", "seed", "steps", "dt_s", "primary_control_actuator", "data_provenance"],
+          "properties": {
+            "schema_version": {
+              "const": "stellarator-control-replay-config.v1"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "seed": {
+              "type": "integer"
+            },
+            "steps": {
+              "type": "integer",
+              "minimum": 4
+            },
+            "dt_s": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "primary_control_actuator": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source_path": {
+              "type": "string"
+            },
+            "data_provenance": {
+              "type": "object",
+              "required": ["external_company_data"],
+              "properties": {
+                "external_company_data": {
+                  "const": "none"
+                }
+              }
+            }
+          }
+        },
+        "magnetic_configuration": {
+          "type": "object"
+        },
+        "control_objective": {
+          "type": "object"
+        },
+        "actuators": {
+          "type": "object"
+        },
+        "replay": {
+          "type": "object",
+          "required": ["deterministic", "signature", "steps", "dt_s", "trace"],
+          "properties": {
+            "deterministic": {"type": "boolean"},
+            "signature": {"type": "string", "minLength": 16, "maxLength": 16},
+            "steps": {"type": "integer", "minimum": 4},
+            "dt_s": {"type": "number", "exclusiveMinimum": 0},
+            "trace": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "step",
+                  "time_s",
+                  "fieldline_spread",
+                  "target_fieldline_spread",
+                  "requested_current_A",
+                  "applied_current_A",
+                  "uncertainty_sigma",
+                  "latency_us",
+                  "fault_active"
+                ],
+                "properties": {
+                  "step": {"type": "integer", "minimum": 0},
+                  "time_s": {"type": "number", "minimum": 0},
+                  "fieldline_spread": {"type": "number", "minimum": 0},
+                  "target_fieldline_spread": {"type": "number", "minimum": 0},
+                  "requested_current_A": {"type": "number"},
+                  "applied_current_A": {"type": "number"},
+                  "uncertainty_sigma": {"type": "number", "minimum": 0},
+                  "latency_us": {"type": "number", "minimum": 0},
+                  "fault_active": {"type": "boolean"}
+                }
+              }
+            }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "required": [
+            "initial_fieldline_spread",
+            "final_fieldline_spread",
+            "improvement_fraction",
+            "max_abs_current_A",
+            "p95_latency_us"
+          ],
+          "properties": {
+            "initial_fieldline_spread": {"type": "number"},
+            "final_fieldline_spread": {"type": "number"},
+            "improvement_fraction": {"type": "number"},
+            "max_abs_current_A": {"type": "number"},
+            "p95_latency_us": {"type": "number"}
+          }
+        },
+        "uncertainty": {
+          "type": "object",
+          "required": [
+            "method",
+            "fieldline_spread_p95_low",
+            "fieldline_spread_p95_high",
+            "fieldline_spread_width",
+            "samples"
+          ],
+          "properties": {
+            "method": {"type": "string"},
+            "fieldline_spread_p95_low": {"type": "number"},
+            "fieldline_spread_p95_high": {"type": "number"},
+            "fieldline_spread_width": {"type": "number"},
+            "samples": {"type": "integer", "minimum": 1}
+          }
+        },
+        "thresholds": {
+          "type": "object"
+        },
+        "passes_thresholds": {
+          "type": "boolean"
+        },
+        "data_provenance": {
+          "type": "object"
+        },
+        "physics_context": {
+          "type": "object"
+        },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

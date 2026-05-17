@@ -1,0 +1,77 @@
+{
+  "schema_version": "stellarator-control-replay-config.v1",
+  "name": "public_w7x_like_stellarator_replay",
+  "seed": 271828,
+  "steps": 16,
+  "dt_s": 0.001,
+  "primary_control_actuator": "helical_trim_A",
+  "magnetic_configuration": {
+    "name": "public_w7x_like_reduced_order",
+    "device_class": "stellarator",
+    "field_periods": 5,
+    "coordinate_system": "boozer_vmec_like",
+    "reference": "public synthetic W7-X-like reduced-order fixture"
+  },
+  "stellarator_parameters": {
+    "N_fp": 5,
+    "R0": 5.5,
+    "a": 0.53,
+    "B0": 2.5,
+    "iota_0": 0.87,
+    "iota_a": 1.0,
+    "mirror_ratio": 0.07,
+    "helical_excursion": 0.05,
+    "name": "public_w7x_like"
+  },
+  "actuators": [
+    {
+      "name": "helical_trim_A",
+      "unit": "A",
+      "min_value": -1200.0,
+      "max_value": 1200.0,
+      "slew_rate_per_s": 400000.0,
+      "latency_steps": 2,
+      "failure_mode": "stuck_supported"
+    }
+  ],
+  "control_objective": {
+    "target_metrics": {
+      "fieldline_spread": 0.015
+    },
+    "weights": {
+      "fieldline_spread": 1.0,
+      "actuator_margin": 0.15
+    },
+    "constraints": {
+      "max_abs_current_A": 1200.0,
+      "max_fieldline_spread": 0.024
+    }
+  },
+  "diagnostics": {
+    "flux_surface_s": 0.72,
+    "n_theta": 32,
+    "n_phi": 40,
+    "fieldline_spread_sigma": 0.0025,
+    "effective_ripple_sigma": 0.0008
+  },
+  "fault_schedule": [
+    {
+      "step": 8,
+      "channel": "helical_trim_A",
+      "mode": "stuck"
+    }
+  ],
+  "thresholds": {
+    "max_final_fieldline_spread": 0.024,
+    "min_improvement_fraction": 0.28,
+    "max_abs_current_A": 1200.0,
+    "max_uncertainty_width": 0.018,
+    "max_p95_latency_us": 1000.0
+  },
+  "data_provenance": {
+    "geometry": "public_synthetic",
+    "equilibrium": "reduced_order_vmec_like",
+    "diagnostics": "deterministic_seeded_synthetic",
+    "external_company_data": "none"
+  }
+}

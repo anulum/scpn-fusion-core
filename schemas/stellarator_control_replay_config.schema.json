@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anulum.github.io/scpn-fusion-core/schemas/stellarator_control_replay_config.schema.json",
+  "title": "SCPN Fusion Core Stellarator Control Replay Benchmark Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "name",
+    "seed",
+    "steps",
+    "dt_s",
+    "primary_control_actuator",
+    "magnetic_configuration",
+    "stellarator_parameters",
+    "actuators",
+    "control_objective",
+    "diagnostics",
+    "fault_schedule",
+    "thresholds",
+    "data_provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "stellarator-control-replay-config.v1"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "steps": {
+      "type": "integer",
+      "minimum": 4
+    },
+    "dt_s": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "primary_control_actuator": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_path": {
+      "type": "string"
+    },
+    "magnetic_configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "device_class", "field_periods", "coordinate_system", "reference"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "device_class": {"const": "stellarator"},
+        "field_periods": {"type": "integer", "minimum": 1},
+        "coordinate_system": {"type": "string", "minLength": 1},
+        "reference": {"type": "string", "minLength": 1}
+      }
+    },
+    "stellarator_parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["N_fp", "R0", "a", "B0", "iota_0", "iota_a", "mirror_ratio", "helical_excursion", "name"],
+      "properties": {
+        "N_fp": {"type": "integer", "minimum": 1},
+        "R0": {"type": "number", "exclusiveMinimum": 0},
+        "a": {"type": "number", "exclusiveMinimum": 0},
+        "B0": {"type": "number", "exclusiveMinimum": 0},
+        "iota_0": {"type": "number", "exclusiveMinimum": 0},
+        "iota_a": {"type": "number", "exclusiveMinimum": 0},
+        "mirror_ratio": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+        "helical_excursion": {"type": "number", "minimum": 0},
+        "name": {"type": "string", "minLength": 1}
+      }
+    },
+    "actuators": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "unit", "min_value", "max_value", "slew_rate_per_s", "latency_steps", "failure_mode"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "unit": {"type": "string", "minLength": 1},
+          "min_value": {"type": "number"},
+          "max_value": {"type": "number"},
+          "slew_rate_per_s": {"type": "number", "exclusiveMinimum": 0},
+          "latency_steps": {"type": "integer", "minimum": 0},
+          "failure_mode": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "control_objective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_metrics", "weights", "constraints"],
+      "properties": {
+        "target_metrics": {"type": "object"},
+        "weights": {"type": "object"},
+        "constraints": {"type": "object"}
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flux_surface_s", "n_theta", "n_phi", "fieldline_spread_sigma", "effective_ripple_sigma"],
+      "properties": {
+        "flux_surface_s": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "n_theta": {"type": "integer", "minimum": 8},
+        "n_phi": {"type": "integer", "minimum": 8},
+        "fieldline_spread_sigma": {"type": "number", "minimum": 0},
+        "effective_ripple_sigma": {"type": "number", "minimum": 0}
+      }
+    },
+    "fault_schedule": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["step", "channel", "mode"],
+        "properties": {
+          "step": {"type": "integer", "minimum": 0},
+          "channel": {"type": "string", "minLength": 1},
+          "mode": {"const": "stuck"}
+        }
+      }
+    },
+    "thresholds": {
+      "type": "object"
+    },
+    "data_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["geometry", "equilibrium", "diagnostics", "external_company_data"],
+      "properties": {
+        "geometry": {"type": "string", "minLength": 1},
+        "equilibrium": {"type": "string", "minLength": 1},
+        "diagnostics": {"type": "string", "minLength": 1},
+        "external_company_data": {"const": "none"}
+      }
+    }
+  }
+}

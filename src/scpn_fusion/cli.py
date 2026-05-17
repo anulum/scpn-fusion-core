@@ -73,6 +73,11 @@ MODE_SPECS: dict[str, ModeSpec] = {
     ),
     "sawtooth": ModeSpec("scpn_fusion.core.mhd_sawtooth", "public", "MHD sawtooth model"),
     "geometry": ModeSpec("scpn_fusion.core.geometry_3d", "public", "3D geometry"),
+    "stellarator-control-replay-benchmark": ModeSpec(
+        "validation.stellarator_control_replay_benchmark",
+        "public",
+        "Geometry-neutral stellarator control replay benchmark",
+    ),
     "spi": ModeSpec("scpn_fusion.control.spi_mitigation", "public", "SPI mitigation"),
     "scanner": ModeSpec(
         "scpn_fusion.core.global_design_scanner", "public", "Global design scanner"
