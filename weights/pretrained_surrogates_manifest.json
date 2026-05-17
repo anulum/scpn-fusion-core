@@ -1,6 +1,6 @@
 {
   "generated_at_utc": "2026-03-08T04:30:00+00:00",
-  "version": "task2-pretrained-v3-elite",
+  "version": "task2-pretrained-v3-release",
   "artifacts": {
     "mlp_itpa": "weights/pretrained_mlp_itpa.npz",
     "fno_eurofusion_jet": "weights/pretrained_fno_eurofusion_jet.npz",

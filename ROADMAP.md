@@ -57,7 +57,7 @@ python tools/real_data_roadmap_non_regression_guard.py \
 
 ## v4.0 — Validation-First Release (target: Q2 2026)
 
-### Retrain surrogates to elite accuracy
+### Retrain surrogates to release accuracy targets
 
 GPU-trained weights shipped in v3.9.2, retrained in v3.9.3. Status:
 
