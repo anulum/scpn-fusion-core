@@ -1,6 +1,7 @@
 # Physics Validation Status
 
-> Last updated: 2026-03-07. Comprehensive audit of all 4 validation areas.
+> Last updated: 2026-05-18. Documentation refresh for the EFIT/GEQDSK RMSE
+> benchmark gate and free-boundary adapter documentation.
 
 ## 1. FreeGS Parity
 
@@ -53,7 +54,12 @@ The threshold appears empirically set without a convergence study.
 - Calibrate FreeGS thresholds with convergence study (vary grid resolution, iterations).
 - Add convergence-required gate to Solov'ev lane (reject `converged=false` cases).
 - Run FreeGS strict lane on a machine with FreeGS installed to establish realistic baselines.
-- Target: NRMSE < 5% against EFIT on 10+ shots (v4.0 goal per ROADMAP.md).
+- The strict EFIT/GEQDSK benchmark gate now exists in
+  `validation/psi_pointwise_rmse.py`. The bundled 18-file report is
+  intentionally failing against the 5% target (`pass_count=0/18`,
+  `mean_psi_rmse_norm=2.289`, `worst_psi_rmse_norm=10.627`) and attributes all
+  rows to profile-source mismatch while the operator-source manufactured solve
+  remains near machine precision.
 
 ### Key Files
 
@@ -204,7 +210,8 @@ Does NOT depend on UPDE Kuramoto coupling (unaffected by prior bug fixes).
 | `src/scpn_fusion/core/neural_equilibrium_training.py` | Training entrypoint (125 lines) |
 | `src/scpn_fusion/core/neural_equilibrium_kernel.py` | FusionKernel drop-in replacement |
 | `validation/benchmark_sparc_geqdsk_rmse.py` | Benchmark script (386 lines) |
-| `validation/psi_pointwise_rmse.py` | Point-wise psi(R,Z) validation |
+| `validation/psi_pointwise_rmse.py` | Point-wise psi(R,Z) validation and strict EFIT/GEQDSK aggregate gate |
+| `validation/reports/psi_efit_nrmse_benchmark.json` | Latest strict 18-file EFIT/GEQDSK gate report |
 | `weights/neural_equilibrium_sparc.npz` | Pretrained weights |
 | `weights/pretrained_surrogates_manifest.json` | Training metadata |
 | `artifacts/sparc_geqdsk_rmse_benchmark.json` | Latest benchmark results |

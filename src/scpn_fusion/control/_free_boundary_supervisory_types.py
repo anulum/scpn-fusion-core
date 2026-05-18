@@ -4,6 +4,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core - Free-Boundary Supervisory Control Types
+"""Shared typed records and safety-margin estimators for free-boundary supervision."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -86,12 +88,16 @@ def _normalize_mask(
 
 @dataclass(frozen=True)
 class FreeBoundaryTarget:
+    """Reference magnetic-axis and X-point coordinates for supervisory tracking."""
+
     r_axis_m: float = 6.0
     z_axis_m: float = 0.0
     x_point_r_m: float = 5.0
     x_point_z_m: float = -3.5
 
     def as_vector(self) -> FloatArray:
+        """Return the target coordinates in controller state-vector order."""
+
         return np.array(
             [self.r_axis_m, self.z_axis_m, self.x_point_r_m, self.x_point_z_m],
             dtype=np.float64,
@@ -100,6 +106,8 @@ class FreeBoundaryTarget:
 
 @dataclass
 class FreeBoundaryEstimate:
+    """Bias-corrected observer state used by the supervisory controller."""
+
     state_hat: FloatArray
     bias_hat: FloatArray
     actuator_bias_hat: FloatArray
@@ -110,6 +118,8 @@ class FreeBoundaryEstimate:
 
 @dataclass
 class FreeBoundarySafetyMargins:
+    """Physics guard margins derived from q95, beta_N, and disruption-risk proxies."""
+
     signal_scalar: float
     q95: float
     beta_n: float
@@ -121,6 +131,8 @@ class FreeBoundarySafetyMargins:
 
 @dataclass
 class SafetyFilterResult:
+    """Full result packet emitted by the supervisory action safety filter."""
+
     action: FloatArray
     predicted_currents: FloatArray
     safe_target_ip_ma: float
@@ -183,6 +195,8 @@ def estimate_free_boundary_safety_margins(
     disruption_risk_ceiling: float,
     risk_signal_history: Optional[np.ndarray | list[float]] = None,
 ) -> FreeBoundarySafetyMargins:
+    """Estimate safety guard margins from geometry, coil currents, and target current."""
+
     corrected = np.asarray(corrected_state, dtype=np.float64).reshape(-1)
     target = np.asarray(target_state, dtype=np.float64).reshape(-1)
     bias = np.asarray(bias_hat, dtype=np.float64).reshape(-1)

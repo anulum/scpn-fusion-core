@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 
@@ -48,7 +50,7 @@ class AdaptiveTimeController:
 
     def estimate_error(
         self,
-        solver: "TransportSolver",
+        solver: Any,
         P_aux: float,
         *,
         enforce_numerical_recovery: bool = False,
@@ -58,7 +60,8 @@ class AdaptiveTimeController:
 
         Takes one full CN step of size dt and two half-steps of size dt/2,
         then compares.  The solver state is advanced by the *half-step*
-        result (more accurate).
+        result (more accurate).  ``solver`` must provide the
+        TransportSolver-compatible ``Ti``, ``Te`` and ``evolve_profiles`` API.
 
         Returns the estimated error norm.
         """
@@ -106,7 +109,7 @@ class AdaptiveTimeController:
     def adapt_dt(self, error: float) -> None:
         """Adjust dt using a PI controller.
 
-        dt *= min(2, safety * (tol/err)^(0.7/p) * (err_prev/err)^(0.4/p))
+        ``dt *= min(2, safety * (tol/err)^(0.7/p) * (err_prev/err)^(0.4/p))``
         """
         self.error_history.append(error)
         self.dt_history.append(self.dt)

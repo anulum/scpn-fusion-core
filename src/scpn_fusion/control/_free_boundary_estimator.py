@@ -4,6 +4,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core - Free-Boundary State Estimation
+"""Bias-aware state estimator for supervisory free-boundary control."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -52,6 +54,8 @@ class FreeBoundaryStateEstimator:
         self._initialized = False
 
     def reset(self, initial_state: np.ndarray | list[float] | tuple[float, ...]) -> None:
+        """Initialise the observer from a finite four-component geometry state."""
+
         state = np.asarray(initial_state, dtype=np.float64).reshape(-1)
         if state.size != 4 or not np.all(np.isfinite(state)):
             raise ValueError("initial_state must be a finite 4-vector.")
@@ -68,6 +72,8 @@ class FreeBoundaryStateEstimator:
         applied_action: np.ndarray,
         measured_actuator_action: np.ndarray | None = None,
     ) -> FreeBoundaryEstimate:
+        """Assimilate one measurement and return corrected geometry plus bias estimates."""
+
         meas = np.asarray(measurement, dtype=np.float64).reshape(-1)
         action = np.asarray(applied_action, dtype=np.float64).reshape(-1)
         measured_action = (

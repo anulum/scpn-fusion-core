@@ -4,6 +4,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core - Free-Boundary Simulation Summary
+"""Summary and trace-packet construction for free-boundary supervisory simulations."""
+
 from __future__ import annotations
 
 import hashlib
@@ -62,6 +64,8 @@ def build_free_boundary_simulation_summary(
     plot_error: Optional[str],
     return_trace: bool,
 ) -> dict[str, Any]:
+    """Build scalar metrics, replay signature, and optional trace data for one shot."""
+
     trace_hash = hashlib.sha256()
     for arr in (
         true_arr,

@@ -40,7 +40,9 @@ def mcnp_lite_tbr(
     be_multiplier_fraction: float,
     reflector_albedo: float,
     return_uncertainty: Literal[False] = False,
-) -> tuple[float, float]: ...
+) -> tuple[float, float]:
+    """Type overload for deterministic TBR proxy without uncertainty diagnostics."""
+    ...
 
 
 @overload
@@ -51,7 +53,9 @@ def mcnp_lite_tbr(
     be_multiplier_fraction: float,
     reflector_albedo: float,
     return_uncertainty: Literal[True],
-) -> tuple[float, float, dict[str, float]]: ...
+) -> tuple[float, float, dict[str, float]]:
+    """Type overload for deterministic TBR proxy with uncertainty diagnostics."""
+    ...
 
 
 def mcnp_lite_tbr(
@@ -62,6 +66,8 @@ def mcnp_lite_tbr(
     reflector_albedo: float,
     return_uncertainty: bool = False,
 ) -> tuple[float, float] | tuple[float, float, dict[str, float]]:
+    """Estimate a conservative tritium-breeding proxy and optional uncertainty envelope."""
+
     base_tbr = require_positive_float("base_tbr", base_tbr)
     li6_enrichment = require_finite_float("li6_enrichment", li6_enrichment)
     be_multiplier_fraction = require_finite_float("be_multiplier_fraction", be_multiplier_fraction)
@@ -115,6 +121,8 @@ def impurity_transport_response(
     disturbance: float,
     seed_shift: int,
 ) -> dict[str, float]:
+    """Return impurity retention, radiation, and effective-Z diagnostics after SPI."""
+
     n_steps = 240
     dt = 1.25e-4
     t = np.arange(n_steps, dtype=np.float64) * dt
@@ -164,6 +172,8 @@ def post_disruption_halo_runaway(
     mitigation_strength: float,
     zeff_eff: float,
 ) -> dict[str, float]:
+    """Simulate compact halo-current and runaway-beam post-disruption proxies."""
+
     dt = 1.0e-4
     steps = 320
     ip = float(pre_current_ma)

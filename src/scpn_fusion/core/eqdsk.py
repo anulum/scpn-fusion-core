@@ -12,21 +12,13 @@ The G-EQDSK format is the *de facto* standard for tokamak equilibrium
 data exchange.  It stores the poloidal flux map ψ(R,Z) on a uniform
 (R,Z) grid together with 1-D profile arrays and scalar quantities.
 
-References
-----------
-- Lao et al., Nucl. Fusion 25 (1985) 1611
-- FreeQDSK documentation: https://freeqdsk.readthedocs.io/
-- ITER IMAS Data Dictionary (equilibrium IDS)
+References include Lao et al., Nucl. Fusion 25 (1985) 1611, FreeQDSK
+documentation, and the ITER IMAS equilibrium IDS.
 
-Format specification
---------------------
-- Fortran fixed-width: 5 values per line, ``(5e16.9)``
-- Header line: 48-char description, 3 ints (idum, nw, nh)
-- Scalars block (20 values): rdim, zdim, rcentr, rleft, zmid,
-  rmaxis, zmaxis, simag, sibry, bcentr, current, …
-- 1-D arrays (each nw values): fpol, pres, ffprime, pprime, qpsi
-- 2-D array: psirz (nh × nw values, row-major)
-- Boundary & limiter point counts + (R,Z) pairs
+The parser expects the standard Fortran fixed-width layout: five values per
+line using ``(5e16.9)``, a 48-character header description followed by idum,
+``nw`` and ``nh``, the 20-scalar equilibrium block, five 1-D profile arrays,
+the row-major ``psirz`` flux map, and boundary/limiter ``(R, Z)`` point lists.
 """
 
 from __future__ import annotations

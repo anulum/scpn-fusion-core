@@ -31,7 +31,7 @@ from .contracts import (
 from .controller_backend_mixin import NeuroSymbolicControllerBackendMixin
 from .controller_features_mixin import NeuroSymbolicControllerFeaturesMixin
 from .controller_runtime_backend import probe_rust_runtime_bindings
-from scpn_fusion.fallback_telemetry import record_fallback_event
+from scpn_fusion.fallback_telemetry import record_fallback_event as _record_fallback_event
 
 FloatArray = NDArray[np.float64]
 
@@ -222,7 +222,7 @@ class NeuroSymbolicController(
                 self._runtime_backend = "rust"
             else:
                 self._runtime_backend = "numpy"
-                record_fallback_event(
+                _record_fallback_event(
                     "scpn_controller",
                     "rust_backend_unavailable",
                     context={"runtime_backend_request": "rust"},
@@ -230,7 +230,7 @@ class NeuroSymbolicController(
         else:
             self._runtime_backend = "rust" if rust_eligible else "numpy"
             if self._runtime_backend == "numpy" and not _HAS_RUST_SCPN_RUNTIME:
-                record_fallback_event(
+                _record_fallback_event(
                     "scpn_controller",
                     "auto_backend_numpy_due_to_missing_rust",
                     context={"problem_size": int(problem_size)},

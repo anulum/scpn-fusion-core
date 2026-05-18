@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 
 def _as_finite_vector(value: Any, *, name: str, length: int | None = None) -> FloatArray:
+    """Return ``value`` as a one-dimensional finite ``float64`` vector."""
     arr = np.asarray(value, dtype=np.float64).reshape(-1)
     if length is not None and arr.shape != (length,):
         raise ValueError(f"{name} must have length {length}.")
@@ -28,6 +29,7 @@ def _as_finite_vector(value: Any, *, name: str, length: int | None = None) -> Fl
 
 
 def _as_finite_points(value: Any, *, name: str) -> FloatArray:
+    """Return validated ``(R, Z)`` control or diagnostic points."""
     arr = np.asarray(value, dtype=np.float64)
     if arr.ndim != 2 or arr.shape[1] != 2 or arr.shape[0] < 1:
         raise ValueError(f"{name} must have shape (n_points, 2) with n_points > 0.")
@@ -37,7 +39,15 @@ def _as_finite_points(value: Any, *, name: str) -> FloatArray:
 
 
 def build_coilset_from_config(kernel: Any) -> CoilSet:
-    """Build a validated CoilSet from a FusionKernel configuration."""
+    """Build a validated :class:`~scpn_fusion.core.fusion_kernel.CoilSet`.
+
+    The configuration contract is intentionally strict because these values
+    feed the free-boundary least-squares and Green's-function paths directly.
+    Coil positions must be finite cylindrical ``(R, Z)`` coordinates with
+    ``R > 0``; turns must be positive integers; optional current limits must be
+    finite and positive; and every optional target or diagnostic vector must
+    have a length consistent with its associated point array.
+    """
     from scpn_fusion.core.fusion_kernel import CoilSet
 
     coil_cfg = kernel.cfg.get("coils", [])

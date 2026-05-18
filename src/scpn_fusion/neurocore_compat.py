@@ -42,6 +42,7 @@ class RNG:
         self._rng = np.random.default_rng(int(seed))
 
     def random(self, size: Optional[int | tuple[int, ...]] = None) -> Any:
+        """Return uniform samples from the wrapped generator."""
         return self._rng.random(size=size)
 
     def normal(
@@ -50,6 +51,7 @@ class RNG:
         scale: float = 1.0,
         size: Optional[int | tuple[int, ...]] = None,
     ) -> Any:
+        """Return normal samples from the wrapped generator."""
         return self._rng.normal(loc=loc, scale=scale, size=size)
 
 
@@ -83,6 +85,7 @@ def pack_bitstream(bitstream: NDArray[Any]) -> UInt64Array:
 
 
 def vec_and(a_packed: UInt64Array, b_packed: UInt64Array) -> UInt64Array:
+    """Apply bitwise AND to packed stochastic bitstream words."""
     return np.bitwise_and(
         np.asarray(a_packed, dtype=np.uint64),
         np.asarray(b_packed, dtype=np.uint64),
@@ -90,6 +93,7 @@ def vec_and(a_packed: UInt64Array, b_packed: UInt64Array) -> UInt64Array:
 
 
 def vec_popcount(packed: UInt64Array) -> int:
+    """Count set bits across packed stochastic bitstream words."""
     arr = np.asarray(packed, dtype=np.uint64).reshape(-1)
     if hasattr(np, "bit_count"):
         return int(np.bit_count(arr).sum(dtype=np.uint64))
@@ -109,9 +113,11 @@ class QuantumEntropySource:
         self._rng = np.random.default_rng(int(self.seed))
 
     def random(self) -> float:
+        """Return one uniform entropy sample in ``[0, 1)``."""
         return float(self._rng.random())
 
     def normal(self, loc: float = 0.0, scale: float = 1.0) -> float:
+        """Return one normal entropy sample."""
         return float(self._rng.normal(loc=loc, scale=scale))
 
 
@@ -162,6 +168,7 @@ class StochasticLIFNeuron:
         self._refractory_count = 0
 
     def step(self, input_current: float) -> bool:
+        """Advance the neuron by one time step and report whether it fired."""
         if self._refractory_count > 0:
             self._refractory_count -= 1
             return False

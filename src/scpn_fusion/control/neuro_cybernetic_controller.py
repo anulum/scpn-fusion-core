@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Neuro Cybernetic Controller
+"""Push-pull spiking controller for kernel-backed plasma axis control."""
+
 from __future__ import annotations
 
 import logging
@@ -161,6 +163,7 @@ class SpikingControllerPool:
         return n_fired
 
     def step(self, error_signal: float) -> float:
+        """Advance the push-pull populations and return one signed control command."""
         input_pos = max(0.0, float(error_signal)) * self._i_scale
         input_neg = max(0.0, -float(error_signal)) * self._i_scale
 
@@ -237,6 +240,7 @@ class NeuroCyberneticController:
         return allowed
 
     def initialize_brains(self, use_quantum: bool = False) -> None:
+        """Initialise radial and vertical spiking controller populations."""
         self.brain_R = SpikingControllerPool(
             n_neurons=50,
             gain=10.0,
@@ -259,6 +263,7 @@ class NeuroCyberneticController:
         verbose: bool = True,
         output_path: Optional[str] = None,
     ) -> Dict[str, Any]:
+        """Run a classical spiking-control shot and return telemetry metrics."""
         self.initialize_brains(use_quantum=False)
         return self._execute_simulation(
             "Neuro-Cybernetic (Classical SNN)",
@@ -275,6 +280,7 @@ class NeuroCyberneticController:
         verbose: bool = True,
         output_path: Optional[str] = None,
     ) -> Dict[str, Any]:
+        """Run a quantum-entropy-enabled spiking-control shot when available."""
         self.initialize_brains(use_quantum=True)
         return self._execute_simulation(
             "Quantum-Neuro Hybrid (QNN)",
@@ -443,6 +449,7 @@ class NeuroCyberneticController:
         output_path: Optional[str] = None,
         verbose: bool = True,
     ) -> str:
+        """Write control history plots and return the output image path."""
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
         ax1.set_title(f"{title} Control")

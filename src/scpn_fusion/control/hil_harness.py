@@ -52,10 +52,12 @@ class ADCConfig:
 
     @property
     def n_levels(self) -> int:
+        """Return the maximum integer ADC code for this resolution."""
         return (1 << self.resolution_bits) - 1
 
     @property
     def lsb_voltage(self) -> float:
+        """Return volts represented by one least-significant bit."""
         vmin, vmax = self.voltage_range
         return (vmax - vmin) / self.n_levels
 

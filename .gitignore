@@ -130,6 +130,7 @@ pytest_results.log
 # Internal business docs — never commit
 docs/internal/
 docs/_build/
+docs/sphinx/_build/
 
 # Local backups — never committed
 BACKUP/

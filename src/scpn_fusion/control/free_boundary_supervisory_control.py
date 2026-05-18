@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core - Free-Boundary Supervisory Control
+"""Public facade for free-boundary supervisory-control components."""
+
 from __future__ import annotations
 
 from scpn_fusion.control._free_boundary_control_geometry import (

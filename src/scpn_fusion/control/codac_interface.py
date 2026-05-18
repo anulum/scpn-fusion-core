@@ -149,9 +149,13 @@ class CODACInterface:
         self._step_k = 0
 
     def define_input_channels(self) -> list[EPICSChannel]:
+        """Return the configured EPICS input process-variable definitions."""
+
         return list(self._input_channels)
 
     def define_output_channels(self) -> list[EPICSChannel]:
+        """Return the configured EPICS output process-variable definitions."""
+
         return list(self._output_channels)
 
     def pack_observation(self, pv_values: Mapping[str, float]) -> ControlObservation:
@@ -248,6 +252,8 @@ class CycleTimer:
         self._elapsed_ns: int = 0
 
     def start_cycle(self) -> None:
+        """Mark the start timestamp for one controller cycle."""
+
         self._start_ns = time.perf_counter_ns()
 
     def end_cycle(self) -> float:

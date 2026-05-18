@@ -234,7 +234,7 @@ tolerance budgets.
 
 
 Design Philosophy
--------------------
+===================
 
 **Defence in depth:**
 
@@ -256,7 +256,7 @@ Design Philosophy
 
 
 Related Modules
------------------
+===============
 
 - :mod:`scpn_fusion.control.fault_tolerant_control` -- FDI + reconfiguration
 - :mod:`scpn_fusion.control.safe_rl_controller` -- Lagrangian PPO

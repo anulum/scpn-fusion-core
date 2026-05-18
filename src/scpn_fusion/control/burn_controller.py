@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Burn Control and Alpha Heating Feedback
+"""Burn-control utilities for DT alpha heating, gain targets, and subignited points."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -16,6 +18,8 @@ from scpn_fusion.core.uncertainty import bosch_hale_reactivity
 
 
 class AlphaHeating:
+    """Compute DT alpha-heating power for axisymmetric profile inputs."""
+
     def __init__(self, R0: float, a: float, kappa: float = 1.0):
         self.R0 = R0
         self.a = a
@@ -63,6 +67,8 @@ class AlphaHeating:
 
 
 class BurnStabilityAnalysis:
+    """Analyse local thermal stability from Bosch-Hale reactivity slope."""
+
     def __init__(self, alpha_heating: AlphaHeating):
         self.alpha_heating = alpha_heating
 
@@ -109,6 +115,8 @@ class BurnStabilityAnalysis:
 
 
 class BurnController:
+    """Auxiliary-heating feedback controller for Q-targeted DT burn operation."""
+
     def __init__(
         self, Q_target: float = 10.0, T_target_keV: float = 20.0, P_aux_max_MW: float = 73.0
     ):
@@ -133,6 +141,8 @@ class BurnController:
         return float(np.clip(5.0 * alpha / self.Q_target, 0.0, self.P_aux_max))
 
     def step(self, Q_meas: float, T_meas_keV: float, P_alpha_MW: float, dt: float) -> float:
+        """Return the bounded auxiliary-heating command for one burn-control interval."""
+
         # Emergency cooling
         if T_meas_keV > 30.0:
             self.last_P_aux = 0.0
@@ -155,6 +165,8 @@ class BurnController:
 
 @dataclass
 class BurnPoint:
+    """Candidate zero-dimensional burn equilibrium from an auxiliary-power scan."""
+
     Te_keV: float
     P_alpha_MW: float
     P_loss_MW: float
@@ -163,6 +175,8 @@ class BurnPoint:
 
 
 class SubignitedBurnPoint:
+    """Find subignited operating points where alpha plus auxiliary power balances losses."""
+
     def __init__(self, alpha_heating: AlphaHeating):
         self.alpha = alpha_heating
         self.stability = BurnStabilityAnalysis(alpha_heating)

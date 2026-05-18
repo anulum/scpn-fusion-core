@@ -96,7 +96,16 @@ Boundary Conditions
 
 The solver supports both fixed-boundary (Dirichlet) and free-boundary
 modes.  In free-boundary mode, the vacuum field from external coils is
-computed and matched at the computational boundary.
+computed from the circular-filament Green's function and matched at the
+computational boundary.  The free-boundary adapter validates configured
+coil positions, turns, current limits, flux-control points, X-point targets,
+and divertor strike-point targets before building the coil set.
+
+Shape-control operation can optionally solve a bounded least-squares problem
+for coil currents at target flux points.  Magnetic-diagnostic reconstruction
+uses the same Green's-function model to fit coil currents from flux loops and
+finite-difference magnetic-probe responses with optional measurement
+uncertainties and Tikhonov regularisation.
 
 Convergence Criteria
 ^^^^^^^^^^^^^^^^^^^^
@@ -104,7 +113,7 @@ Convergence Criteria
 Convergence is declared when the relative :math:`L^2` residual of the
 GS operator falls below a threshold (default :math:`10^{-6}`)::
 
-    ||Delta* psi + mu_0 R^2 p' + F F'||_2 / ||psi||_2 < tol
+   ||Delta* psi + mu_0 R^2 p' + F F'||_2 / ||psi||_2 < tol
 
 Solver Tuning
 --------------

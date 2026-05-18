@@ -26,6 +26,8 @@ from scpn_fusion.scpn.structure import StochasticPetriNet
 
 @dataclass(frozen=True)
 class FuelingSimResult:
+    """Deterministic fueling simulation result and full command/density traces."""
+
     final_density: float
     final_abs_error: float
     rmse: float
@@ -105,6 +107,7 @@ class IcePelletFuelingController:
         self.integrator = 0.0
 
     def step(self, density: float, k: int, dt_s: float) -> tuple[float, float]:
+        """Return one bounded fueling command and current density error."""
         error = self.target_density - float(density)
         self.integrator += error * dt_s
         self.integrator = float(np.clip(self.integrator, -0.5, 0.5))
@@ -134,6 +137,7 @@ def simulate_iter_density_control(
     steps: int = 3000,
     dt_s: float = 1e-3,
 ) -> FuelingSimResult:
+    """Run deterministic reduced ITER-like density control and return full traces."""
     steps = int(steps)
     if steps < 8:
         raise ValueError("steps must be >= 8.")

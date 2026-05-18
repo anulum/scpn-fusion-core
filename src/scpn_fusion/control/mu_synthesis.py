@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Mu-Synthesis (D-K Iteration)
+"""Structured uncertainty modelling and D-K iteration control synthesis."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,6 +17,8 @@ import numpy as np
 
 @dataclass
 class UncertaintyBlock:
+    """One structured uncertainty block with size, bound, and block family."""
+
     name: str
     size: int
     bound: float
@@ -22,6 +26,8 @@ class UncertaintyBlock:
 
 
 class StructuredUncertainty:
+    """Validated collection of structured uncertainty blocks."""
+
     def __init__(self, blocks: list[UncertaintyBlock]):
         for block in blocks:
             if block.size < 1:
@@ -33,9 +39,11 @@ class StructuredUncertainty:
         self.blocks = blocks
 
     def build_Delta_structure(self) -> list[tuple[int, str]]:
+        """Return the structured-Delta shape consumed by the mu upper-bound routine."""
         return [(b.size, b.block_type) for b in self.blocks]
 
     def total_size(self) -> int:
+        """Return the total state dimension represented by all uncertainty blocks."""
         return sum(b.size for b in self.blocks)
 
 

@@ -4,6 +4,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core - Free-Boundary Supervisory Simulation
+"""Deterministic supervisory free-boundary control simulation entry point."""
+
 from __future__ import annotations
 
 import logging
@@ -104,6 +106,8 @@ def run_free_boundary_supervisory_simulation(
     rng_seed: int = 42,
     kernel_factory: Callable[[str], Any] = FusionKernel,
 ) -> dict[str, Any]:
+    """Run a closed-loop free-boundary shot with estimator, controller, and safety layer."""
+
     steps = _require_positive_int("shot_length", shot_length)
     dt_s = _require_positive_finite("control_dt_s", control_dt_s)
     disturbance_start = _require_nonnegative_int("disturbance_start_step", disturbance_start_step)

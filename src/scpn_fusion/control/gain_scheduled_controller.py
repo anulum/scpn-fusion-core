@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Gain-Scheduled Multi-Regime Controller
+"""Gain-scheduled controllers and baseline discharge schedules."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -38,6 +40,8 @@ class RegimeController:
 
 
 class RegimeDetector:
+    """Hysteretic detector for tokamak operating regimes."""
+
     def __init__(self, thresholds: dict[str, float] | None = None):
         self.thresholds = thresholds or {
             "ramp_rate": 0.1,
@@ -79,6 +83,8 @@ class RegimeDetector:
 
 
 class GainScheduledController:
+    """PID controller bank with bumpless interpolation across regimes."""
+
     def __init__(self, controllers: dict[OperatingRegime, RegimeController]):
         self.controllers = controllers
         self.current_regime = OperatingRegime.RAMP_UP
@@ -177,6 +183,7 @@ class ScenarioSchedule:
 
 
 def iter_baseline_schedule() -> ScenarioSchedule:
+    """Return a reduced ITER-like baseline discharge schedule."""
     times = np.array([0, 10, 30, 60, 400, 430, 480], dtype=float)
     ip_vals = np.array([0.5, 5.0, 10.0, 15.0, 15.0, 10.0, 2.0])
     p_nbi = np.array([0.0, 0.0, 10.0, 33.0, 33.0, 10.0, 0.0])

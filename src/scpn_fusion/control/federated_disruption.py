@@ -285,6 +285,7 @@ class MachineClient:
         self._weights: dict[str, np.ndarray] = {}
 
     def get_data_size(self) -> int:
+        """Return the number of local training samples held by this machine client."""
         return int(self.X_train.shape[0])
 
     def local_train(

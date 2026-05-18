@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Disruption Checkpoint Policy Helpers
+"""Checkpoint loading policy helpers for disruption predictor recovery paths."""
+
 from __future__ import annotations
 
 import hashlib
@@ -34,6 +36,8 @@ def _repo_root() -> Path:
 
 
 def default_model_path(default_model_filename: str) -> Path:
+    """Return the repository-local artifact path for a default disruption model."""
+
     return _repo_root() / "artifacts" / default_model_filename
 
 

@@ -4,6 +4,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core - Free-Boundary Plotting
+"""Plotting helper for free-boundary supervisory simulation traces."""
+
 from __future__ import annotations
 
 from typing import Optional
@@ -22,6 +24,8 @@ def plot_free_boundary_control(
     actions: FloatArray,
     output_path: str,
 ) -> tuple[bool, Optional[str]]:
+    """Render axis, X-point, and coil-command histories to a plot file."""
+
     try:
         import matplotlib.pyplot as plt
     except Exception as exc:

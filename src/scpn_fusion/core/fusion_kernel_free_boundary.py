@@ -28,7 +28,13 @@ _MU0 = 4e-7 * np.pi
 
 
 def green_function(R_src: float, Z_src: float, R_obs: float, Z_obs: float) -> float:
-    """Toroidal Green's function using elliptic integrals (scalar entry point)."""
+    """Evaluate the axisymmetric circular-filament poloidal-flux Green's function.
+
+    Parameters are cylindrical source and observation coordinates in metres.
+    The return value is the flux linkage contribution per ampere-turn.  The
+    singular self-observation limit is regularised to zero because this helper
+    is used for external coil-to-grid coupling rather than coil self-inductance.
+    """
     denom = (R_obs + R_src) ** 2 + (Z_obs - Z_src) ** 2
     if denom < 1e-30:
         return 0.0
@@ -60,7 +66,7 @@ def _green_function_vectorised(
 
 
 def compute_external_flux(kernel: Any, coils: "CoilSet") -> FloatArray:
-    """Sum Green's function contributions on boundary from ``CoilSet``."""
+    """Sum external coil flux on the kernel's full ``(Z, R)`` grid."""
     NR, NZ = len(kernel.R), len(kernel.Z)
     psi_ext = np.zeros((NZ, NR))
     RR, ZZ = np.meshgrid(kernel.R, kernel.Z)
@@ -95,7 +101,7 @@ def build_mutual_inductance_matrix(
     coils: "CoilSet",
     obs_points: FloatArray,
 ) -> FloatArray:
-    """Build mutual-inductance matrix M[k, p] for coil optimisation."""
+    """Build the coil-to-point flux-response matrix ``M[coil, point]``."""
     n_coils = len(coils.positions)
     n_pts = obs_points.shape[0]
     R_obs = obs_points[:, 0]
@@ -110,7 +116,7 @@ def build_mutual_inductance_matrix(
 
 
 def sample_flux_at_points(kernel: Any, points: FloatArray) -> FloatArray:
-    """Sample kernel flux at validated ``(R, Z)`` points."""
+    """Sample the current kernel poloidal flux at finite ``(R, Z)`` points."""
     obs = _as_finite_points(points, name="points")
     return np.asarray([interp_psi(kernel, float(r), float(z)) for r, z in obs], dtype=np.float64)
 
@@ -165,7 +171,13 @@ def build_magnetic_probe_response_matrix(
     b_probe_points: FloatArray | None = None,
     b_probe_directions: list[str] | tuple[str, ...] | None = None,
 ) -> FloatArray:
-    """Build linear coil-current response rows for flux loops and B probes."""
+    """Build the diagnostic response matrix for coil-current reconstruction.
+
+    Flux-loop rows contain direct Green's-function flux response.  Magnetic
+    probe rows contain finite-difference ``B_R`` or ``B_Z`` response derived
+    from the same flux kernel, so inverse fitting uses one consistent magnetic
+    model for both diagnostic families.
+    """
     del kernel
     if len(coils.positions) < 1:
         raise ValueError("CoilSet.positions must contain at least one coil.")
@@ -224,7 +236,13 @@ def reconstruct_coil_currents_from_magnetic_probes(
     measurement_sigma: FloatArray | None = None,
     tikhonov_alpha: float = 1.0e-6,
 ) -> dict[str, Any]:
-    """Fit coil currents from magnetic flux-loop and B-probe measurements."""
+    """Fit bounded coil currents from flux-loop and magnetic-probe measurements.
+
+    The inverse problem solves a weighted Tikhonov-regularised least-squares
+    system around the prior coil currents and enforces ``CoilSet.current_limits``
+    when limits are present.  Returned diagnostics include raw and weighted
+    residuals, rank, condition number, and the number of active current bounds.
+    """
     response = build_magnetic_probe_response_matrix(
         kernel,
         coils,
@@ -327,7 +345,7 @@ def optimize_coil_currents(
     target_flux: FloatArray,
     tikhonov_alpha: float = 1e-4,
 ) -> FloatArray:
-    """Find coil currents that best reproduce target flux at control points."""
+    """Find bounded coil currents that reproduce target flux at control points."""
     from scipy.optimize import lsq_linear
 
     if coils.target_flux_points is None:
@@ -393,7 +411,7 @@ def optimize_coil_currents(
 
 
 def interp_psi(kernel: Any, R_pt: float, Z_pt: float) -> float:
-    """Bilinear interpolation of Psi at an arbitrary (R, Z) point."""
+    """Interpolate the kernel flux grid at an arbitrary cylindrical point."""
     ir = np.searchsorted(kernel.R, R_pt) - 1
     iz = np.searchsorted(kernel.Z, Z_pt) - 1
     ir = max(0, min(ir, kernel.NR - 2))
@@ -414,7 +432,7 @@ def interp_psi(kernel: Any, R_pt: float, Z_pt: float) -> float:
 
 
 def resolve_shape_target_flux(kernel: Any, coils: "CoilSet") -> FloatArray:
-    """Resolve target flux vector for shape optimisation control points."""
+    """Resolve shape-control target flux values at configured control points."""
     if coils.target_flux_points is None:
         raise ValueError("CoilSet.target_flux_points must be set for shape optimisation.")
 
@@ -446,7 +464,13 @@ def solve_free_boundary(
     optimize_shape: bool = False,
     tikhonov_alpha: float = 1e-4,
 ) -> dict[str, Any]:
-    """Free-boundary GS solve with external coil currents."""
+    """Solve the Grad-Shafranov system with externally driven coil boundary flux.
+
+    Each outer iteration applies coil-generated boundary flux, runs the kernel
+    equilibrium solve, and optionally re-optimises coil currents against the
+    configured shape-control points.  The result reports the outer iteration
+    count, the final maximum flux-grid change, and the final coil currents.
+    """
     if max_outer_iter < 1:
         raise ValueError("max_outer_iter must be >= 1.")
     if not np.isfinite(tol) or tol < 0.0:

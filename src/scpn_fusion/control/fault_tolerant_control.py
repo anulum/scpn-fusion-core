@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Fault-Tolerant Reconfigurable Control
+"""Fault detection, isolation, injection, and reconfigurable control utilities."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -187,6 +189,7 @@ class FaultInjector:
         self.severity = severity
 
     def inject(self, t: float, signals: np.ndarray) -> np.ndarray:
+        """Return a copied signal vector with the configured fault applied after fault_time."""
         if t < self.fault_time:
             return signals
 

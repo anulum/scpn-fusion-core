@@ -18,6 +18,8 @@ from numpy.typing import NDArray
 
 
 def require_finite_float(name: str, value: Any) -> float:
+    """Return a finite float or raise a named contract error."""
+
     out = float(value)
     if not np.isfinite(out):
         raise ValueError(f"{name} must be finite.")
@@ -25,6 +27,8 @@ def require_finite_float(name: str, value: Any) -> float:
 
 
 def require_positive_float(name: str, value: Any) -> float:
+    """Return a strictly positive finite float or raise a named contract error."""
+
     out = require_finite_float(name, value)
     if out <= 0.0:
         raise ValueError(f"{name} must be > 0.")
@@ -32,6 +36,8 @@ def require_positive_float(name: str, value: Any) -> float:
 
 
 def require_int(name: str, value: Any, minimum: int) -> int:
+    """Return an integer no smaller than the requested minimum."""
+
     if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
         raise ValueError(f"{name} must be an integer >= {minimum}.")
     out = int(value)
@@ -41,6 +47,8 @@ def require_int(name: str, value: Any, minimum: int) -> int:
 
 
 def require_fraction(name: str, value: Any) -> float:
+    """Return a finite scalar constrained to the closed unit interval."""
+
     out = require_finite_float(name, value)
     if out < 0.0 or out > 1.0:
         raise ValueError(f"{name} must be finite and in [0, 1].")
@@ -54,6 +62,8 @@ def require_1d_array(
     minimum_size: int = 1,
     expected_size: int | None = None,
 ) -> NDArray[np.float64]:
+    """Return a finite one-dimensional float array with size contract checks."""
+
     arr = np.asarray(value, dtype=np.float64)
     if arr.ndim != 1:
         raise ValueError(f"{name} must be a 1D array.")
@@ -74,6 +84,8 @@ def gaussian_interval(
     upper_bound: float | None = None,
     z_score: float = 1.96,
 ) -> tuple[float, float]:
+    """Return a clipped Gaussian confidence interval for a scalar estimate."""
+
     mean_f = require_finite_float("mean", mean)
     sigma_f = abs(require_finite_float("sigma", sigma))
     z_f = require_positive_float("z_score", z_score)

@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Fusion Control Room
+"""Deterministic control-room simulation with diagnostics, estimation, and rendering."""
+
 from __future__ import annotations
 
 import logging
@@ -132,6 +134,7 @@ class DiagnosticSystem:
         self._rng = rng
 
     def measure_position(self, true_z: float) -> float:
+        """Return a noisy vertical-position measurement from the supplied true state."""
         return float(true_z + self._rng.normal(0.0, 0.05))
 
 
@@ -196,6 +199,7 @@ class NeuralController:
         self.integral_limit = 2.0
 
     def compute_action(self, measured_z: float) -> tuple[float, float]:
+        """Map filtered vertical displacement to bounded top and bottom coil actions."""
         error = -float(measured_z)
 
         p_term = self.kp * error

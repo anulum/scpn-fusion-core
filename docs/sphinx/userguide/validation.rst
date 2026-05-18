@@ -98,12 +98,19 @@ Point-Wise Psi RMSE
 ^^^^^^^^^^^^^^^^^^^^^
 
 The ``psi_pointwise_rmse`` module performs point-wise :math:`\psi(R,Z)`
-reconstruction error analysis on SPARC equilibria:
+reconstruction error analysis on the bundled EFIT/GEQDSK equilibria:
 
 - Finite-difference GS operator :math:`\Delta^*\psi`
 - Relative :math:`L^2` and max-abs GS residuals
 - Manufactured-solution Red-Black SOR verification
 - Normalised :math:`\psi` RMSE on the plasma region
+- Strict 18-file aggregate gate with a 10-file minimum and 5% threshold
+
+The current bundled gate is intentionally reported as failing rather than
+hidden: all 18 rows are classified as profile-source mismatches, while the
+operator-source manufactured solve remains near machine precision.  This
+separates solver consistency from unresolved EFIT profile/source convention
+alignment.
 
 ITER Reference Scenarios
 --------------------------

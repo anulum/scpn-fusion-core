@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Fusion Optimal Control
+"""Bounded response-matrix optimal control for tokamak axis regulation."""
+
 from __future__ import annotations
 
 import logging
@@ -201,6 +203,7 @@ class OptimalController:
         save_plot: bool = True,
         output_path: str = "Optimal_Control_Result.png",
     ) -> Dict[str, Any]:
+        """Run one bounded optimal-control shot and return telemetry summary metrics."""
         self._log("\n--- INITIATING OPTIMAL CONTROL SHOT ---")
         if identify_first:
             self.identify_system()
@@ -284,6 +287,7 @@ class OptimalController:
         self,
         output_path: str = "Optimal_Control_Result.png",
     ) -> Tuple[bool, Optional[str]]:
+        """Render axis-tracking and final-plasma telemetry to a plot file."""
         try:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 

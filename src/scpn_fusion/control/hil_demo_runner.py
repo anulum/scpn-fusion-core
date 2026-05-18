@@ -34,10 +34,12 @@ class HILDemoRunner:
 
     @staticmethod
     def float_to_q16_16(x: float) -> int:
+        """Convert a floating-point value to unsigned Q16.16 register encoding."""
         return int(round(x * HILDemoRunner.Q16_SCALE)) & 0xFFFFFFFF
 
     @staticmethod
     def q16_16_to_float(x: int) -> float:
+        """Convert an unsigned Q16.16 register value back to floating point."""
         if x & 0x80000000:
             x -= 0x100000000
         return x / HILDemoRunner.Q16_SCALE
@@ -111,6 +113,7 @@ class HILDemoRunner:
             self.tmr_copies[0][neuron_idx] = new_val
 
     def run_episode(self, n_steps: int = 1000, inject_faults: bool = False) -> dict:
+        """Run a deterministic input episode and return the HIL telemetry report."""
         rng = np.random.default_rng(42)
         for t in range(n_steps):
             inputs = rng.normal(0, 0.1, size=self.n_inputs)
@@ -120,6 +123,7 @@ class HILDemoRunner:
         return self.report()
 
     def report(self) -> dict:
+        """Return aggregate latency and TMR-fault telemetry for executed steps."""
         lat = np.array(self.latency_cycles) if self.latency_cycles else np.array([0])
         return {
             "total_steps": self.total_steps,

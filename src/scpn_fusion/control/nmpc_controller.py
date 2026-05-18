@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Nonlinear Model Predictive Control
+"""Constrained nonlinear model predictive control for tokamak scenario states."""
+
 from __future__ import annotations
 
 import dataclasses
@@ -16,6 +18,8 @@ import numpy as np
 
 @dataclass
 class NMPCConfig:
+    """Weights, bounds, slew limits, and solver knobs for nonlinear MPC."""
+
     horizon: int = 20
     Q: np.ndarray = dataclasses.field(default_factory=lambda: np.eye(6))
     R: np.ndarray = dataclasses.field(default_factory=lambda: np.eye(3))
@@ -41,6 +45,8 @@ class NMPCConfig:
 
 
 class NonlinearMPC:
+    """Projected-gradient nonlinear MPC using finite-difference linearisation."""
+
     def __init__(
         self, plant_model: Callable[[np.ndarray, np.ndarray], np.ndarray], config: NMPCConfig
     ):
@@ -165,9 +171,11 @@ class NonlinearMPC:
         return dU
 
     def linearize(self, x0: np.ndarray, u0: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Return finite-difference state and input Jacobians around ``(x0, u0)``."""
         return self._linearize(x0, u0)
 
     def step(self, x: np.ndarray, x_ref: np.ndarray, u_prev: np.ndarray) -> np.ndarray:
+        """Solve one receding-horizon control update and return the first input."""
         # Warm start
         self.u_traj[:-1] = self.u_traj[1:]
         self.u_traj[-1] = self.u_traj[-2]

@@ -79,6 +79,7 @@ class LQRController:
         self._cached_dt = dt
 
     def step(self, error: float, dt: float) -> float:
+        """Advance the observer and return one scalar LQR command for the measured error."""
         if dt != self._cached_dt:
             self._update_discretization(dt)
 
@@ -90,6 +91,7 @@ class LQRController:
         return float(u[0]) if u.size > 1 else float(u.item())
 
     def reset(self) -> None:
+        """Reset the internal observer state to the origin."""
         self.state = np.zeros(self.n)
 
 

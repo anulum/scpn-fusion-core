@@ -32,6 +32,8 @@ _VALID_MACHINES = {"NSTX-U", "SPARC"}
 
 @dataclass(frozen=True)
 class TelemetryPacket:
+    """Single timestamped machine telemetry sample used by the digital-twin hook."""
+
     t_ms: int
     machine: str
     ip_ma: float
@@ -109,6 +111,8 @@ def generate_emulated_stream(
     dt_ms: int = 5,
     seed: int = 42,
 ) -> list[TelemetryPacket]:
+    """Generate deterministic machine telemetry packets for runtime replay tests."""
+
     machine_key = _normalize_machine(machine)
 
     rng = np.random.default_rng(int(seed))
@@ -160,6 +164,8 @@ class RealtimeTwinHook:
         self.controller = _build_snn_planner()
 
     def ingest(self, packet: TelemetryPacket) -> None:
+        """Append a telemetry packet while retaining only the configured ring buffer."""
+
         self.buffer.append(packet)
         if len(self.buffer) > self.max_buffer:
             self.buffer = self.buffer[-self.max_buffer :]
@@ -173,6 +179,8 @@ class RealtimeTwinHook:
         )
 
     def scenario_plan(self, *, horizon: int = 24) -> dict[str, float | bool]:
+        """Project near-term risk and return an SNN-derived mitigation plan summary."""
+
         if not self.buffer:
             raise RuntimeError("No telemetry packets ingested.")
         horizon = int(horizon)

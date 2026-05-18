@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Advanced SOC Fusion Learning
+"""Self-organised-criticality learning runtime for turbulence and shear control."""
+
 from __future__ import annotations
 
 import logging
@@ -84,9 +86,13 @@ class CoupledSandpileReactor:
         self.flow = 0.0
 
     def drive(self, amount: float = 1.0) -> None:
+        """Inject edge drive into the sandpile state with non-negative magnitude."""
+
         self.Z[0] += max(float(amount), 0.0)
 
     def step_physics(self, external_shear: float) -> tuple[int, float, float]:
+        """Advance one avalanche-relaxation step and return turbulence and flow diagnostics."""
+
         eff_shear = float(self.flow + float(external_shear))
         current_z_crit = float(self.z_crit_base + self.shear_efficiency * eff_shear)
         total_topple = 0
@@ -110,6 +116,8 @@ class CoupledSandpileReactor:
         return int(total_topple), float(self.flow), eff_shear
 
     def get_profile_energy(self) -> float:
+        """Return the core-side cumulative profile energy proxy."""
+
         self.h = np.cumsum(self.Z[::-1])[::-1]
         return float(self.h[0] if self.h.size else 0.0)
 
@@ -166,6 +174,8 @@ class FusionAIAgent:
         self.total_reward = 0.0
 
     def discretize_state(self, turb: float, flow: float) -> tuple[int, int]:
+        """Map continuous turbulence and flow diagnostics to Q-table state indices."""
+
         s_turb = min(int(np.log1p(max(float(turb), 0.0))), self.n_states_turb - 1)
         s_flow = min(int(max(float(flow), 0.0)), self.n_states_flow - 1)
         return s_turb, s_flow
@@ -175,11 +185,12 @@ class FusionAIAgent:
         state: tuple[int, int],
         rng: np.random.Generator,
     ) -> int:
+        """Choose an epsilon-greedy shear-control action for the current discrete state."""
+
         if float(rng.random()) < self.epsilon:
             return int(rng.integers(self.n_actions))
 
-        # Softmax selection or Argmax
-        # Here we use Argmax for simplicity but the Q-values are regularized
+        # Greedy action selection over the entropy-regularised Q-values.
         return int(np.argmax(self.q_table[state]))
 
     def learn(
@@ -304,7 +315,7 @@ def run_advanced_learning_sim(
     rng = np.random.default_rng(int(seed))
 
     if verbose:
-        logger.info("--- SCPN MASTERPIECE: Predator-Prey Physics + Q-Learning Control ---")
+        logger.info("--- SCPN SOC predator-prey physics with Q-learning control ---")
 
     reactor = CoupledSandpileReactor(size=int(size))
     brain = FusionAIAgent(epsilon=float(epsilon))

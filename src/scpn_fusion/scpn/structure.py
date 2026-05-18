@@ -10,9 +10,9 @@ Packet A — Stochastic Petri Net structure definition.
 
 Pure Python + numpy + scipy.  No sc_neurocore dependency.
 
-Builds two sparse matrices that encode the net topology:
-    W_in  : (n_transitions, n_places)  — input arc weights
-    W_out : (n_places, n_transitions)  — output arc weights
+Builds the ``W_in`` matrix of input arc weights with shape
+``(n_transitions, n_places)`` and the ``W_out`` matrix of output arc weights
+with shape ``(n_places, n_transitions)``.
 """
 
 from __future__ import annotations
@@ -244,13 +244,9 @@ class StochasticPetriNet:
     def validate_topology(self) -> Dict[str, object]:
         """Return topology diagnostics without mutating compiled matrices.
 
-        Diagnostics:
-        - ``dead_places``: places with zero total degree.
-        - ``dead_transitions``: transitions with zero total degree.
-        - ``unseeded_place_cycles``: place-level SCC cycles with no initial
-          token mass.
-        - ``input_weight_overflow_transitions``: transitions whose positive
-          input arc-weight sum exceeds 1.0.
+        The report includes dead places, dead transitions, unseeded place-level
+        strongly connected cycles, and transitions whose positive input
+        arc-weight sum exceeds 1.0.
         """
         place_in_deg = {p: 0 for p in self._places}
         place_out_deg = {p: 0 for p in self._places}

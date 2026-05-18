@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Disruption Predictor
+"""Transformer and deterministic-runtime interfaces for disruption-risk prediction."""
+
 from __future__ import annotations
 
 import logging
@@ -136,6 +138,8 @@ def train_predictor(
     seed=42,
     save_plot=True,
 ):
+    """Train and persist a disruption transformer on synthetic tearing-mode shots."""
+
     if torch is None or optim is None:
         raise RuntimeError("Torch is required for train_predictor().")
 
@@ -233,6 +237,8 @@ def load_or_train_predictor(
     train_if_missing=True,
     allow_fallback=True,
 ):
+    """Load a validated checkpoint or train/recover according to fallback policy."""
+
     recovery_allowed = _resolve_allow_fallback(bool(allow_fallback))
     if torch is None:
         if not recovery_allowed:

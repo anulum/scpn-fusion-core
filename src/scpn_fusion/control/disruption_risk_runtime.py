@@ -402,6 +402,8 @@ class HybridAnomalyDetector:
         self.initialized = False
 
     def score(self, signal, toroidal_observables=None) -> dict[str, float | bool]:
+        """Return fused supervised and anomaly-smoothed disruption-risk scores."""
+
         supervised = float(predict_disruption_risk(signal, toroidal_observables))
 
         if self.initialized:

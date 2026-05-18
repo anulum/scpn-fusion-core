@@ -30,15 +30,21 @@ if TYPE_CHECKING:
 
 
 class FusionKernelFreeBoundaryMixin:
-    """Expose free-boundary helpers on ``FusionKernel`` without bloating it."""
+    """Attach free-boundary operations to ``FusionKernel``.
+
+    The implementation lives in :mod:`scpn_fusion.core.fusion_kernel_free_boundary`
+    so the core kernel remains focused on grid state and equilibrium solving.
+    This mixin preserves the existing ``FusionKernel`` method API while routing
+    each operation to the validated adapter function used by tests and tooling.
+    """
 
     @staticmethod
     def _green_function(R_src: float, Z_src: float, R_obs: float, Z_obs: float) -> float:
-        """Toroidal Green's function using elliptic integrals."""
+        """Evaluate the scalar circular-filament flux Green's function."""
         return _green_function_runtime(R_src, Z_src, R_obs, Z_obs)
 
     def _compute_external_flux(self, coils: CoilSet) -> FloatArray:
-        """Sum Green's function contributions on boundary from CoilSet."""
+        """Sum external coil flux contributions on the kernel grid."""
         return _compute_external_flux_runtime(self, coils)
 
     def build_coilset_from_config(self) -> CoilSet:
@@ -50,7 +56,7 @@ class FusionKernelFreeBoundaryMixin:
         coils: CoilSet,
         obs_points: FloatArray,
     ) -> FloatArray:
-        """Build mutual-inductance matrix M[k, p] for coil optimisation."""
+        """Build the coil-to-control-point response matrix."""
         return _build_mutual_inductance_matrix_runtime(self, coils, obs_points)
 
     def _build_magnetic_probe_response_matrix(
@@ -101,7 +107,7 @@ class FusionKernelFreeBoundaryMixin:
         target_flux: FloatArray,
         tikhonov_alpha: float = 1e-4,
     ) -> FloatArray:
-        """Find bounded coil currents that best reproduce target flux."""
+        """Fit bounded coil currents for the requested target flux vector."""
         return _optimize_coil_currents_runtime(
             self,
             coils,
@@ -121,7 +127,7 @@ class FusionKernelFreeBoundaryMixin:
         optimize_shape: bool = False,
         tikhonov_alpha: float = 1e-4,
     ) -> dict[str, Any]:
-        """Free-boundary GS solve with external coil currents."""
+        """Run the free-boundary outer loop with optional coil optimisation."""
         return _solve_free_boundary_runtime(
             self,
             coils,

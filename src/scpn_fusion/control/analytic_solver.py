@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Analytic Solver
+"""Analytic vertical-field equilibrium helper for coil-current initialisation."""
+
 from __future__ import annotations
 
 import json
@@ -160,6 +162,8 @@ class AnalyticEquilibriumSolver:
         return np.asarray(currents, dtype=np.float64)
 
     def apply_currents(self, currents: np.ndarray) -> None:
+        """Write a coil-current vector into the solver kernel configuration."""
+
         arr = np.asarray(currents, dtype=np.float64).reshape(-1)
         coils = self.kernel.cfg.get("coils", [])
         if arr.size != len(coils):
@@ -172,6 +176,8 @@ class AnalyticEquilibriumSolver:
         currents: np.ndarray,
         output_path: Optional[str] = None,
     ) -> str:
+        """Apply coil currents and persist the resulting kernel configuration."""
+
         self.apply_currents(currents)
         if output_path is None:
             repo_root = Path(__file__).resolve().parents[3]

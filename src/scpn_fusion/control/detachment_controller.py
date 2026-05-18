@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Divertor Detachment Control
+"""Divertor detachment-state models and impurity-seeding controllers."""
+
 from __future__ import annotations
 
 import math
@@ -17,6 +19,8 @@ from scpn_fusion.core.sol_model import TwoPointSOL
 
 
 class DetachmentState(Enum):
+    """Discrete divertor operating states used by the seeding controllers."""
+
     ATTACHED = auto()
     PARTIALLY_DETACHED = auto()
     FULLY_DETACHED = auto()
@@ -24,6 +28,8 @@ class DetachmentState(Enum):
 
 
 class RadiationFrontModel:
+    """Estimate impurity radiation-front position and detachment degree."""
+
     def __init__(self, impurity: str, R0: float, a: float, q95: float):
         self.impurity = impurity
         self.R0 = R0
@@ -66,6 +72,8 @@ class RadiationFrontModel:
 
 
 class DetachmentController:
+    """PI impurity-seeding controller with X-point MARFE backoff."""
+
     def __init__(self, impurity: str = "N2", target_DOD: float = 3.0, target_T_t_eV: float = 3.0):
         self.impurity = impurity
         self.target_DOD = target_DOD
@@ -95,6 +103,8 @@ class DetachmentController:
         rho_front: float,
         dt: float,
     ) -> float:
+        """Return one impurity-seeding command from divertor diagnostics."""
+
         self.state = self._determine_state(T_t_measured, rho_front)
 
         # If X-point MARFE imminent, hard drop seeding
@@ -115,6 +125,8 @@ class DetachmentController:
 
 @dataclass
 class DetachmentPoint:
+    """Steady-state detachment scan point for one seeding rate."""
+
     seeding_rate: float
     T_target: float
     n_target: float
@@ -124,6 +136,8 @@ class DetachmentPoint:
 
 
 class DetachmentBifurcation:
+    """Scan impurity-seeding bifurcations with a two-point SOL model."""
+
     def __init__(self, sol: TwoPointSOL, impurity: str):
         self.sol = sol
         self.impurity = impurity
@@ -161,6 +175,8 @@ class DetachmentBifurcation:
     def scan_seeding(
         self, seeding_range: np.ndarray, P_SOL_MW: float, n_u_19: float
     ) -> list[DetachmentPoint]:
+        """Evaluate steady-state detachment points over a seeding-rate grid."""
+
         return [self._steady_state_target(sr, P_SOL_MW, n_u_19) for sr in seeding_range]
 
     def find_rollover_point(self, P_SOL_MW: float, n_u_19: float) -> float:
@@ -178,11 +194,15 @@ class DetachmentBifurcation:
 
 
 class MultiImpuritySeeding:
+    """Coordinate impurity-specific detachment controllers from shared diagnostics."""
+
     def __init__(self, impurities: list[str], controllers: dict[str, DetachmentController]):
         self.impurities = impurities
         self.controllers = controllers
 
     def step(self, diagnostics: dict[str, float], dt: float) -> dict[str, float]:
+        """Return per-impurity seeding rates for one control interval."""
+
         T_t = diagnostics.get("T_target_eV", 20.0)
         n_t = diagnostics.get("n_target_19", 10.0)
         P_rad = diagnostics.get("P_rad_MW", 10.0)

@@ -111,6 +111,7 @@ class TokamakEnv(gym.Env):
         seed: Optional[int] = None,
         options: Optional[Dict[str, Any]] = None,
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
+        """Reset the simulator and return the initial observation and info mapping."""
         super().reset(seed=seed)
 
         # Re-init controller/kernel
@@ -126,6 +127,7 @@ class TokamakEnv(gym.Env):
         return obs, {}
 
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+        """Advance the simulator by one normalised action and return Gymnasium outputs."""
         # Map normalized [-1, 1] to physical deltas
         scaled_action = action * self._action_scale
         pf1_delta, pf3_delta, pf5_delta, heating_delta = scaled_action
@@ -172,6 +174,7 @@ class TokamakEnv(gym.Env):
         return obs, float(reward), terminated, truncated, {"disrupted": disrupted}
 
     def render(self):
+        """Render the current environment state for human mode."""
         if self.render_mode == "human":
             # For now, just log state. In future, trigger visualize_flight.
             obs = self._get_obs()
@@ -186,6 +189,7 @@ class TokamakEnv(gym.Env):
 
 # Registration
 def register():
+    """Register the Tokamak-v0 Gymnasium environment."""
     gym.envs.registration.register(
         id="Tokamak-v0",
         entry_point="scpn_fusion.control.gym_tokamak_env:TokamakEnv",

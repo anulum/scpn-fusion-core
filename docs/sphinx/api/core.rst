@@ -13,6 +13,61 @@ Equilibrium Solver
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
+
+Free-Boundary Kernel Adapters
+------------------------------
+
+.. automodule:: scpn_fusion.core.fusion_kernel_free_boundary
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+.. automodule:: scpn_fusion.core.fusion_kernel_free_boundary_mixin
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+.. automodule:: scpn_fusion.core.fusion_kernel_coilset_config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+Fusion Kernel Solver Runtime
+-----------------------------
+
+.. automodule:: scpn_fusion.core.fusion_kernel_numerics
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+.. automodule:: scpn_fusion.core.fusion_kernel_iterative_solver
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+.. automodule:: scpn_fusion.core.fusion_kernel_newton_solver
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+.. automodule:: scpn_fusion.core.fusion_kernel_newton_runtime
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+.. automodule:: scpn_fusion.core.fusion_kernel_solver_runtime
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
 
 GEQDSK I/O
 ------------

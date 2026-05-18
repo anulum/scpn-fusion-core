@@ -9,9 +9,11 @@
 Packet B — FusionCompiler and CompiledNet.
 
 Compiles a ``StochasticPetriNet`` into sc_neurocore artifacts:
-    - One ``StochasticLIFNeuron`` per transition (pure threshold comparator).
-    - Pre-packed uint64 weight bitstreams for AND+popcount forward pass.
-    - Float-path compatibility route when sc_neurocore is not installed.
+
+- One ``StochasticLIFNeuron`` per transition, implemented as a pure threshold
+  comparator.
+- Pre-packed uint64 weight bitstreams for the AND/popcount forward pass.
+- Float-path compatibility route when sc_neurocore is not installed.
 """
 
 from __future__ import annotations

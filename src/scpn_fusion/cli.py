@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Unified CLI
+"""Command-line launcher for production, surrogate, and experimental modes."""
+
 from __future__ import annotations
 
 import logging
@@ -27,6 +29,8 @@ EXPERIMENTAL_ACK_TOKEN = "I_UNDERSTAND_EXPERIMENTAL"
 
 @dataclass(frozen=True)
 class ModeSpec:
+    """Launch metadata for a CLI mode."""
+
     module: str
     maturity: str
     description: str
@@ -428,6 +432,7 @@ def cli(
 
 
 def main() -> int:
+    """Run the Click CLI and return a process exit code."""
     try:
         cli.main(standalone_mode=False)
     except click.ClickException as exc:

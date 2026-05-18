@@ -4,6 +4,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core - Free-Boundary Safety Supervisor
+"""Safety filtering and alert-state management for free-boundary coil commands."""
+
 from __future__ import annotations
 
 from typing import Optional
@@ -103,6 +105,8 @@ class FreeBoundarySafetySupervisor:
         self._alert_recovery_steps = 0
 
     def reset(self) -> None:
+        """Clear fallback latches and alert-recovery state before a new shot."""
+
         self._fallback_steps_remaining = 0
         self._alert_level = 0
         self._alert_recovery_steps = 0
@@ -201,6 +205,8 @@ class FreeBoundarySafetySupervisor:
         diagnostic_dropout_active: bool = False,
         actuator_dropout_active: bool = False,
     ) -> SafetyFilterResult:
+        """Apply current, geometry, plasma-physics, and degraded-mode guards to an action."""
+
         action = np.asarray(proposed_action, dtype=np.float64).reshape(-1)
         corrected = np.asarray(corrected_state, dtype=np.float64).reshape(-1)
         target = np.asarray(target_state, dtype=np.float64).reshape(-1)

@@ -59,12 +59,14 @@ class DynamicsMLP:
         self.params = [self.W1, self.b1, self.W2, self.b2]
 
     def forward_numpy(self, x: FloatArray, u: FloatArray) -> FloatArray:
+        """Evaluate the surrogate dynamics with NumPy arrays."""
         xu = np.concatenate([x, u])
         h = np.tanh(self.W1 @ xu + self.b1)
         dxdt = self.W2 @ h + self.b2
         return dxdt
 
     def forward_jax(self, params: list[Any], x: Any, u: Any) -> Any:
+        """Evaluate the surrogate dynamics with JAX-compatible parameters."""
         W1, b1, W2, b2 = params
         xu = jnp.concatenate([x, u])
         h = jnp.tanh(jnp.dot(W1, xu) + b1)
@@ -77,6 +79,8 @@ NeuralODEDynamics = DynamicsMLP
 
 
 class NonlinearMPC:
+    """Finite-horizon nonlinear MPC planner with JAX and NumPy backends."""
+
     def __init__(
         self,
         dynamics: DynamicsMLP,

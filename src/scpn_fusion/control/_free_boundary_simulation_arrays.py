@@ -4,6 +4,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core - Free-Boundary Simulation Arrays
+"""Array normalisation for free-boundary supervisory simulation histories."""
+
 from __future__ import annotations
 
 from typing import Any, Mapping
@@ -16,6 +18,8 @@ def build_free_boundary_history_arrays(
     *,
     steps: int,
 ) -> dict[str, np.ndarray]:
+    """Convert shot history lists into typed arrays and derived stabilisation flags."""
+
     arrays = {
         "times_arr": np.asarray(histories["times"], dtype=np.float64),
         "true_arr": np.asarray(histories["true_states"], dtype=np.float64),

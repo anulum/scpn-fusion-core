@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Director Interface
+"""Director-layer supervisory interface for neuro-cybernetic fusion control."""
+
 from __future__ import annotations
 
 import logging
@@ -170,6 +172,8 @@ class DirectorInterface:
         output_path: str = "Director_Interface_Result.png",
         verbose: bool = True,
     ) -> dict[str, Any]:
+        """Run a supervised neuro-cybernetic control mission and return summary metrics."""
+
         duration = int(duration)
         if duration < 1:
             raise ValueError("duration must be >= 1.")
@@ -182,7 +186,7 @@ class DirectorInterface:
         rng = np.random.default_rng(int(rng_seed))
 
         if verbose:
-            logger.info("--- DIRECTOR-GHOSTED FUSION MISSION ---")
+            logger.info("--- DIRECTOR-SUPERVISED FUSION MISSION ---")
             logger.info("Layer 16 (Director) is now overseeing Layer 2 (Neurocore).")
             logger.info("Director backend: %s", self.director_backend)
 
@@ -275,6 +279,8 @@ class DirectorInterface:
         }
 
     def visualize(self, output_path: str = "Director_Interface_Result.png") -> str:
+        """Render mission current-target and radial-error histories to a plot file."""
+
         t = [x["t"] for x in self.log]
         ip = [x["Ip"] for x in self.log]
         err = [x["Err_R"] for x in self.log]

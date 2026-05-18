@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Fusion Sota MPC
+"""Surrogate-assisted model predictive control for tokamak trajectory tracking."""
+
 from __future__ import annotations
 
 import logging
@@ -49,6 +51,7 @@ class NeuralSurrogate:
             logger.info(message)
 
     def train_on_kernel(self, kernel: Any, perturbation: float = 1.0) -> None:
+        """Estimate the linear coil-response matrix by perturbing the supplied kernel."""
         self._log("[SOTA] Training Neural Surrogate on Physics Kernel...")
         kernel.solve_equilibrium()
         base_state = self.get_state(kernel)
@@ -68,6 +71,7 @@ class NeuralSurrogate:
         self._log("[SOTA] Surrogate Training Complete.")
 
     def get_state(self, kernel: Any) -> np.ndarray:
+        """Extract magnetic-axis and X-point state coordinates from a kernel snapshot."""
         idx_max = int(np.argmax(kernel.Psi))
         iz, ir = np.unravel_index(idx_max, kernel.Psi.shape)
         r_ax = float(kernel.R[ir])
@@ -76,6 +80,7 @@ class NeuralSurrogate:
         return np.array([r_ax, z_ax, float(xp_pos[0]), float(xp_pos[1])], dtype=np.float64)
 
     def predict(self, current_state: np.ndarray, action_delta: np.ndarray) -> np.ndarray:
+        """Predict the next surrogate state after one coil-current delta vector."""
         return np.asarray(current_state, dtype=np.float64) + (
             self.B @ np.asarray(action_delta, dtype=np.float64)
         )
@@ -121,6 +126,7 @@ class ModelPredictiveController:
         self.action_regularization = action_regularization
 
     def plan_trajectory(self, current_state: np.ndarray) -> np.ndarray:
+        """Optimize the finite-horizon action sequence and return the first action."""
         n_coils = int(self.model.B.shape[1])
         planned_actions = np.zeros((self.horizon, n_coils), dtype=np.float64)
         state0 = np.asarray(current_state, dtype=np.float64).reshape(-1)
@@ -190,6 +196,7 @@ def run_sota_simulation(
     verbose: bool = True,
     kernel_factory: Callable[[str], Any] = FusionKernel,
 ) -> Dict[str, Any]:
+    """Run the surrogate MPC simulation and return bounded telemetry metrics."""
     if config_file is None:
         repo_root = Path(__file__).resolve().parents[3]
         config_file = str(repo_root / "iter_config.json")

@@ -4,6 +4,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Free-Boundary Tracking Control
+"""Runtime observation, latency, actuator, and solver helpers for tracking control."""
+
 from __future__ import annotations
 
 from typing import Any, cast
