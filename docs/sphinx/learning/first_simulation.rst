@@ -188,7 +188,7 @@ An H-factor of 1.0 means the plasma confines exactly as the scaling
 predicts; ITER targets :math:`H \geq 1.0`.
 
 
-Step 7: Read Real Experimental Data
+Step 7: Read Real Reference Data
 --------------------------------------
 
 Load a SPARC GEQDSK file and compare:

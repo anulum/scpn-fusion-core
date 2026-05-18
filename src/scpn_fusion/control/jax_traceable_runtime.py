@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
@@ -188,7 +189,6 @@ def _simulate_jax(
 
 if _HAS_TORCH:
 
-    @torch.jit.script
     def _torchscript_rollout(
         cmd: torch.Tensor,
         initial_state: float,
@@ -205,7 +205,6 @@ if _HAS_TORCH:
             out[i] = state
         return out
 
-    @torch.jit.script
     def _torchscript_rollout_batch(
         cmd: torch.Tensor,
         initial_state: torch.Tensor,
@@ -222,6 +221,15 @@ if _HAS_TORCH:
             state = state + alpha * ((gain * u) - state)
             out[:, t] = state
         return out
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=r"`torch\.jit\.script`.*",
+            category=DeprecationWarning,
+        )
+        _torchscript_rollout = torch.jit.script(_torchscript_rollout)
+        _torchscript_rollout_batch = torch.jit.script(_torchscript_rollout_batch)
 
 else:
     _torchscript_rollout = None

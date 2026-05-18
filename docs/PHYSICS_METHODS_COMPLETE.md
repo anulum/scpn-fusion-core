@@ -92,7 +92,7 @@ $$\chi_i^{\rm nc} = 0.66\,(1 + 1.54\,\epsilon)\,\frac{q^2\,\rho_i^2\,\nu_{ii}}{\
 
 where $\epsilon = r/R_0$ is the inverse aspect ratio, $\rho_i$ is the ion Larmor radius, $\nu_{ii}$ is the ion-ion collision frequency from the NRL Plasma Formulary, and $\nu_* = \nu_{ii}\,q\,R_0 / (\epsilon^{3/2}\,v_{ti})$.
 
-Both a Python vectorised implementation and a Rust fast-path (via PyO3 `PyTransportSolver`) are available, with automatic fallback.
+Both a Python vectorised reference implementation and a Rust fast-path (via PyO3 `PyTransportSolver`) are available; production backend selection is explicit rather than silent.
 
 ### 3.4 Bootstrap current — Sauter model
 

@@ -101,7 +101,7 @@ class TestGsSolveNumpy:
 class TestGsSolvePublicAPI:
     """Test jax_gs_solve dispatches correctly."""
 
-    def test_numpy_fallback(self):
+    def test_numpy_reference_backend(self):
         psi = jax_gs_solve(
             R_MIN,
             R_MAX,
@@ -116,6 +116,24 @@ class TestGsSolvePublicAPI:
         )
         assert psi.shape == (NZ, NR)
         assert np.all(np.isfinite(psi))
+
+    def test_requested_jax_backend_fails_closed_when_unavailable(self, monkeypatch):
+        import scpn_fusion.core.jax_gs_solver as gs
+
+        monkeypatch.setattr(gs, "_HAS_JAX", False)
+        with pytest.raises(RuntimeError, match="JAX backend requested"):
+            gs.jax_gs_solve(
+                R_MIN,
+                R_MAX,
+                Z_MIN,
+                Z_MAX,
+                NR,
+                NZ,
+                IP_TARGET,
+                n_picard=N_PICARD,
+                n_jacobi=N_JACOBI,
+                use_jax=True,
+            )
 
     def test_boundary_zero_api(self):
         psi = jax_gs_solve(

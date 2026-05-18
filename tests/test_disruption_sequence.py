@@ -105,6 +105,41 @@ def test_disruption_sequence_unmitigated():
     assert res.halo_result.F_z_MN > 0.0
 
 
+def test_disruption_sequence_uses_hot_tail_seed_without_literal_backup(monkeypatch):
+    from scpn_fusion.core import disruption_sequence as ds
+
+    config = DisruptionConfig(
+        R0=6.2,
+        a=2.0,
+        B0=5.3,
+        kappa=1.7,
+        Ip_MA=15.0,
+        W_th_MJ=350.0,
+        Te_pre_keV=20.0,
+        ne_pre_20=1.0,
+        dBr_over_B_trigger=3e-3,
+    )
+    calls: list[tuple[float, float, float, float]] = []
+
+    def fake_hot_tail_seed(
+        Te_pre_keV: float,
+        Te_post_keV: float,
+        ne_20: float,
+        quench_time_ms: float,
+    ) -> float:
+        calls.append((Te_pre_keV, Te_post_keV, ne_20, quench_time_ms))
+        return 0.0
+
+    monkeypatch.setattr(ds, "hot_tail_seed", fake_hot_tail_seed)
+
+    res = ds.DisruptionSequence(config).run()
+
+    assert len(calls) == 1
+    assert calls[0][0] == config.Te_pre_keV
+    assert calls[0][2] == config.ne_pre_20
+    assert res.re_result.I_RE_MA >= 0.0
+
+
 def test_disruption_sequence_mitigated():
     config = DisruptionConfig(
         R0=6.2,

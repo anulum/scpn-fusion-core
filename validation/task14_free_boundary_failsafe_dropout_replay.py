@@ -283,7 +283,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Diagnostic dropout count: `{c['diagnostic_dropout_count']}` (threshold `>= {th['min_diagnostic_dropout_count']}`)",
         f"- Actuator dropout count: `{c['actuator_dropout_count']}` (threshold `>= {th['min_actuator_dropout_count']}`)",
         f"- Degraded mode count: `{c['degraded_mode_count']}` (threshold `>= {th['min_degraded_mode_count']}`)",
-        f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)",
+        f"- Recovery mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)",
         "",
         "## Fail-Safe Degradation",
         "",

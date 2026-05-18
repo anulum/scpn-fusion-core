@@ -7,7 +7,10 @@
 # SCPN Fusion Core — Gymnasium Tokamak Env Tests
 
 import numpy as np
-import gymnasium as gym
+
+import pytest
+
+gym = pytest.importorskip("gymnasium")
 from gymnasium.utils.env_checker import check_env
 from scpn_fusion.control.gym_tokamak_env import register
 

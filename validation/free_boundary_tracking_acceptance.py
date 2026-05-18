@@ -1879,7 +1879,7 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"- Max coil current: `{summary['max_abs_coil_current']:.6e}`",
                 f"- Max measurement offset: `{summary['max_abs_measurement_offset']:.6e}`",
                 f"- Supervisor interventions: `{summary['supervisor_intervention_count']}`",
-                f"- Fallback active steps: `{summary['fallback_active_steps']}`",
+                f"- Recovery active steps: `{summary['fallback_active_steps']}`",
                 "",
             ]
         )

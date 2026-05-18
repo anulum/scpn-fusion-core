@@ -320,6 +320,10 @@ class _FreeBoundaryTrackingShotMixin:
         coil_penalty_arr = np.asarray(self.history["max_coil_penalty"], dtype=np.float64)
         supervisor_arr = np.asarray(self.history["supervisor_intervened"], dtype=np.float64)
         fallback_arr = np.asarray(self.history["fallback_active"], dtype=np.float64)
+        fallback_mask = fallback_arr > 0.5
+        fallback_lag_arr = (
+            lag_arr[fallback_mask] if lag_arr.size == fallback_arr.size else lag_arr[:0]
+        )
         tolerance_block_arr = np.asarray(
             self.history["tolerance_regression_blocked"], dtype=np.float64
         )
@@ -436,6 +440,15 @@ class _FreeBoundaryTrackingShotMixin:
             "supervisor_intervention_count": int(np.sum(supervisor_arr)),
             "fallback_configured": bool(self.fallback_currents is not None),
             "fallback_active_steps": int(np.sum(fallback_arr)),
+            "fallback_activation_rate": (
+                float(np.mean(fallback_arr)) if fallback_arr.size else 0.0
+            ),
+            "max_abs_actuator_lag_during_fallback": (
+                float(np.max(fallback_lag_arr)) if fallback_lag_arr.size else 0.0
+            ),
+            "mean_abs_actuator_lag_during_fallback": (
+                float(np.mean(fallback_lag_arr)) if fallback_lag_arr.size else 0.0
+            ),
             "tolerance_regression_blocked_count": int(np.sum(tolerance_block_arr)),
             "hold_steps_after_reject": int(self.hold_steps_after_reject),
             "shape_rms": last_metrics["shape_rms"],

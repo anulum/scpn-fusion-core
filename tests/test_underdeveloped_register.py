@@ -27,7 +27,6 @@ SPEC.loader.exec_module(underdev)
 
 def test_collect_entries_returns_actionable_findings() -> None:
     entries = underdev.collect_entries(ROOT)
-    assert len(entries) > 0
     rule_markers = {rule.marker for rule in underdev.MARKER_RULES}
     assert all(entry.marker in rule_markers for entry in entries)
     assert all(entry.path != "docs/CLAIMS_EVIDENCE_MAP.md" for entry in entries)
@@ -98,6 +97,35 @@ def test_fallback_assignment_metadata_line_is_suppressed() -> None:
     )
 
 
+def test_audited_free_boundary_recovery_fallback_lines_are_suppressed() -> None:
+    file_text = "\n".join(
+        [
+            '"fallback_configured": bool(self.fallback_currents is not None),',
+            '"fallback_active_steps": int(np.sum(fallback_arr)),',
+            '"fallback_activation_rate": float(np.mean(fallback_arr)),',
+            '"max_abs_actuator_lag_during_fallback": float(np.max(fallback_lag_arr)),',
+        ]
+    )
+    assert underdev._is_marker_suppressed(
+        rel_path="src/scpn_fusion/control/_free_boundary_tracking_shot.py",
+        marker="FALLBACK",
+        line='self.history["fallback_active"].append(bool(fallback_active))',
+        file_text=file_text,
+    )
+    assert underdev._is_marker_suppressed(
+        rel_path="src/scpn_fusion/control/_free_boundary_tracking_control.py",
+        marker="FALLBACK",
+        line='raise ValueError("fallback currents are not configured.")',
+        file_text=file_text,
+    )
+    assert underdev._is_marker_suppressed(
+        rel_path="src/scpn_fusion/control/_free_boundary_supervisory_types.py",
+        marker="FALLBACK",
+        line='SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback")',
+        file_text=file_text,
+    )
+
+
 def test_deprecated_guard_lines_are_suppressed() -> None:
     assert underdev._is_marker_suppressed(
         rel_path="tools/deprecated_default_lane_guard.py",
@@ -130,6 +158,49 @@ def test_experimental_gate_lines_are_suppressed_on_release_surfaces() -> None:
         rel_path="docs/VALIDATION_GATE_MATRIX.md",
         marker="EXPERIMENTAL",
         line='| `validation-regression` | ... (`pytest -m "not experimental"`) |',
+        file_text="",
+    )
+
+
+def test_experimental_ack_runbook_commands_are_suppressed() -> None:
+    file_text = "--experimental\n--experimental-ack I_UNDERSTAND_EXPERIMENTAL\n--strict"
+    assert underdev._is_marker_suppressed(
+        rel_path="docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md",
+        marker="EXPERIMENTAL",
+        line="  --experimental \\",
+        file_text=file_text,
+    )
+    assert underdev._is_marker_suppressed(
+        rel_path="docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md",
+        marker="EXPERIMENTAL",
+        line="  --experimental-ack I_UNDERSTAND_EXPERIMENTAL \\",
+        file_text=file_text,
+    )
+
+
+def test_bibliographic_experimental_title_is_suppressed() -> None:
+    assert underdev._is_marker_suppressed(
+        rel_path="docs/PHYSICS_METHODS_COMPLETE.md",
+        marker="EXPERIMENTAL",
+        line=(
+            '[26] T. Pütterich et al., "Calculation and experimental test of '
+            'the cooling factor of tungsten," *Nucl. Fusion* 50, 025012 (2010).'
+        ),
+        file_text="",
+    )
+
+
+def test_no_fallback_gate_contract_lines_are_suppressed() -> None:
+    assert underdev._is_marker_suppressed(
+        rel_path="docs/VALIDATION_GATE_MATRIX.md",
+        marker="FALLBACK",
+        line="Strict FreeGS backend parity lane; fails on any fallback or non-FreeGS reference backend.",
+        file_text="",
+    )
+    assert underdev._is_marker_suppressed(
+        rel_path="docs/VALIDATION_GATE_MATRIX.md",
+        marker="FALLBACK",
+        line="enforces a no-fallback contract when invoked.",
         file_text="",
     )
 

@@ -608,6 +608,26 @@ def save_weights(
     print(f"  Metrics: {metrics_path}")
 
 
+def persist_training_artifacts(
+    save_path: Path,
+    *,
+    mlp: SimpleMLP,
+    pca: MinimalPCA,
+    input_mean: NDArray,
+    input_std: NDArray,
+    result: AugTrainingResult,
+    criteria_met: bool,
+) -> Path:
+    """Persist accepted weights to the requested path; quarantine failed runs."""
+    if criteria_met:
+        save_weights(save_path, mlp, pca, input_mean, input_std, result)
+        return save_path
+
+    rejected_path = save_path.with_stem(save_path.stem + "_rejected")
+    save_weights(rejected_path, mlp, pca, input_mean, input_std, result)
+    return rejected_path
+
+
 # ── Main ──────────────────────────────────────────────────────────────
 
 
@@ -735,15 +755,21 @@ def main() -> int:
             elif metrics["mean_rel_l2"] > 0.10:
                 print(f"\n  WARN: {machine} mean_rel_L2={metrics['mean_rel_l2']:.4f} > 0.10 target")
 
-    # Save
-    save_weights(save_path, mlp, pca, input_mean, input_std, result)
-    print(f"\nWeights: {save_path}")
+    # Save only accepted weights to the requested production path. Rejected runs are preserved
+    # under a quarantine suffix so downstream jobs cannot silently consume them.
+    persisted_path = persist_training_artifacts(
+        save_path,
+        mlp=mlp,
+        pca=pca,
+        input_mean=input_mean,
+        input_std=input_std,
+        result=result,
+        criteria_met=criteria_met,
+    )
+    print(f"\nWeights: {persisted_path}")
 
     if not criteria_met:
-        print("\n  ACCEPTANCE CRITERIA NOT MET — weights saved as experimental")
-        # Also save with _experimental suffix
-        exp_path = save_path.with_stem(save_path.stem + "_experimental")
-        save_weights(exp_path, mlp, pca, input_mean, input_std, result)
+        print("\n  ACCEPTANCE CRITERIA NOT MET — weights saved only as rejected artifacts")
         return 2
 
     print("\n  ALL ACCEPTANCE CRITERIA MET")

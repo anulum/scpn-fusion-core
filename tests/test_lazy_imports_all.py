@@ -23,6 +23,10 @@ def _collect_lazy_entries(package_path: str) -> list[tuple[str, str, str]]:
 CORE_ENTRIES = _collect_lazy_entries("scpn_fusion.core")
 CONTROL_ENTRIES = _collect_lazy_entries("scpn_fusion.control")
 
+OPTIONAL_IMPORT_DEPENDENCIES = {
+    ("scpn_fusion.control", "TokamakEnv"): "gymnasium",
+}
+
 
 @pytest.mark.parametrize(
     "pkg,name,target",
@@ -41,6 +45,9 @@ def test_core_lazy_import(pkg, name, target):
     ids=[e[1] for e in CONTROL_ENTRIES],
 )
 def test_control_lazy_import(pkg, name, target):
+    optional_dependency = OPTIONAL_IMPORT_DEPENDENCIES.get((pkg, name))
+    if optional_dependency is not None:
+        pytest.importorskip(optional_dependency)
     mod = importlib.import_module(pkg)
     obj = getattr(mod, name)
     assert obj is not None, f"{pkg}.{name} resolved to None"

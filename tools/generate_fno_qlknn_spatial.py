@@ -31,6 +31,7 @@ import logging
 import sys
 import time
 from pathlib import Path
+from typing import Any, Callable
 
 import numpy as np
 
@@ -39,6 +40,27 @@ logger = logging.getLogger(__name__)
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WEIGHTS = REPO_ROOT / "weights" / "neural_transport_qlknn.npz"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "data" / "fno_qlknn_spatial"
+
+
+def _require_neural_transport_oracle(
+    weights_path: Path | str,
+    *,
+    model_cls: Callable[[Path | str], Any] | None = None,
+) -> Any:
+    """Load the trained QLKNN neural transport oracle or fail closed."""
+    if model_cls is None:
+        sys.path.insert(0, str(REPO_ROOT / "src"))
+        from scpn_fusion.core.neural_transport import NeuralTransportModel
+
+        model_cls = NeuralTransportModel
+
+    model = model_cls(weights_path)
+    if not getattr(model, "is_neural", False) or getattr(model, "_weights", None) is None:
+        raise RuntimeError(
+            "FNO QLKNN spatial data generation requires trained QLKNN neural weights; "
+            f"could not load a neural oracle from {weights_path}."
+        )
+    return model
 
 
 def _make_tokamak_equilibrium(
@@ -150,14 +172,7 @@ def generate(
     """Generate FNO training data using QLKNN MLP as oracle."""
     rng = np.random.default_rng(seed)
 
-    # Load the trained QLKNN MLP
-    sys.path.insert(0, str(REPO_ROOT / "src"))
-    from scpn_fusion.core.neural_transport import NeuralTransportModel
-
-    model = NeuralTransportModel(weights_path)
-    if not model.is_neural:
-        print(f"WARNING: Could not load neural weights from {weights_path}.")
-        print("  Will use critical-gradient fallback (less accurate).")
+    model = _require_neural_transport_oracle(weights_path)
 
     print(f"Generating {n_equilibria} equilibria on {grid_size}x{grid_size} grids...")
 
@@ -242,32 +257,10 @@ def generate(
         tem_excess = np.maximum(0.0, ate - 5.0)
         x_batch = np.column_stack([x_batch, itg_excess, tem_excess])
 
-        # Query MLP for chi_i at each grid point
-        if model.is_neural and model._weights is not None:
-            from scpn_fusion.core.neural_transport import _mlp_forward
+        from scpn_fusion.core.neural_transport import _mlp_forward
 
-            out = _mlp_forward(x_batch, model._weights)  # (N, 3)
-            chi_i_2d = out[:, 1].reshape(grid_size, grid_size)
-        else:
-            # Fallback: use critical gradient model
-            from scpn_fusion.core.neural_transport import critical_gradient_model, TransportInputs
-
-            chi_i_flat = np.zeros(len(x_batch))
-            for j in range(len(x_batch)):
-                inp = TransportInputs(
-                    rho=x_batch[j, 0],
-                    te_kev=x_batch[j, 1],
-                    ti_kev=x_batch[j, 2],
-                    ne_19=x_batch[j, 3],
-                    grad_te=x_batch[j, 4],
-                    grad_ti=x_batch[j, 5],
-                    grad_ne=x_batch[j, 6],
-                    q=x_batch[j, 7],
-                    s_hat=x_batch[j, 8],
-                    beta_e=x_batch[j, 9],
-                )
-                chi_i_flat[j] = critical_gradient_model(inp).chi_i
-            chi_i_2d = chi_i_flat.reshape(grid_size, grid_size)
+        out = _mlp_forward(x_batch, model._weights)  # (N, 3)
+        chi_i_2d = out[:, 1].reshape(grid_size, grid_size)
 
         # Normalise to [0, 1] range for FNO
         psi_norm = psi / max(psi.max(), 1e-8)

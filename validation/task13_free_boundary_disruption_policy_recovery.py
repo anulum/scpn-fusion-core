@@ -276,7 +276,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- disruption-risk ceiling: `{s['disruption_risk_ceiling']:.2f}`",
         f"- warning mode count: `{c['warning_mode_count']}` (threshold `>= {th['min_warning_mode_count']}`)",
         f"- guarded mode count: `{c['guarded_mode_count']}` (threshold `>= {th['min_guarded_mode_count']}`)",
-        f"- fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)",
+        f"- recovery mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)",
         f"- peak alert level: `{c['peak_alert_level']}` (required `{th['required_peak_alert_level']}`)",
         f"- final alert level: `{c['final_alert_level']}` (threshold `<= {th['max_final_alert_level']}`)",
         f"- alert transitions: `{c['alert_transition_count']}` (threshold `>= {th['min_alert_transition_count']}`)",

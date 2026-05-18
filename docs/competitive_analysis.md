@@ -171,10 +171,10 @@ Y = implemented and tested. N = not present. P = partial.
 | JAX GPU training | TORAX trains end-to-end on GPU with JAX; SCPN uses JAX solvers but training was done offline on L40S | TORAX |
 | Production gyrokinetics | GENE and GS2 are the gold-standard nonlinear 5D Vlasov codes with decades of validation against experiment. SCPN's native GK solver is linear-only. | GENE, GS2, CGYRO |
 | Runaway electron physics | DREAM solves the full kinetic RE distribution including hot-tail, Dreicer, avalanche, and synchrotron radiation loss. SCPN's Fokker-Planck RE model covers the primary mechanisms but with reduced-order approximations. | DREAM |
-| Stellarator geometry | FUSE supports stellarator equilibria natively. SCPN is tokamak-only with stellarator planned. | FUSE |
+| Stellarator geometry | FUSE supports stellarator equilibria natively. SCPN Fusion Core is tokamak-only in the current public scope. | FUSE |
 | QLKNN accuracy | SCPN test_rel_L2 = 0.094. TORAX trains deeper networks with more data. | TORAX, FUSE |
 | Community size | Single-team development vs DeepMind (TORAX), General Atomics (FUSE), or IPP (GENE) resources. | All listed codes |
-| Experimental validation | Real data: 8 SPARC GEQDSKs + 53 ITPA discharges + DIII-D disruption templates. TORAX/FUSE have more extensive experimental cross-validation. | TORAX, FUSE |
+| Reference-data validation | Real data: 8 SPARC GEQDSKs + 53 ITPA discharges + DIII-D disruption templates. TORAX/FUSE have broader machine cross-validation. | TORAX, FUSE |
 
 ### Previously Listed Gaps -- Now Closed
 
@@ -185,7 +185,7 @@ Y = implemented and tested. N = not present. P = partial.
 | No RL integration | Gymnasium v0.29+ compliant `TokamakEnv` with SB3/RLlib support | `control/gym_tokamak_env.py` |
 | Single controller | PID, H-inf, LQR, NMPC, SNN all verified non-disrupting | `control/` suite |
 | No gyrokinetics | Native linear GK eigenvalue + 5 external GK interfaces + hybrid scheduler | `core/gk_*.py` (23 modules) |
-| No free-boundary tracking | Direct kernel + supervisor + EKF + safe fallback | `control/free_boundary_tracking.py` + supervisory |
+| No free-boundary tracking | Direct kernel + supervisor + EKF + bounded recovery mode | `control/free_boundary_tracking.py` + supervisory |
 
 ---
 
@@ -232,7 +232,7 @@ Six capabilities that no other open-source fusion code combines:
 
 5. **Free-boundary tracking controller (direct kernel + supervisor + EKF).**
    Closed-loop shape control re-identifies coil-to-objective response directly
-   from repeated GS solves, with supervisory safe-fallback, disturbance
+from repeated GS solves, with supervisory bounded recovery, disturbance
    observer, latency injection/compensation, and deterministic replay.
    No other open-source code ships a comparable free-boundary tracking stack.
 

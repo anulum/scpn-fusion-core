@@ -73,7 +73,7 @@ Each carries explicit fidelity limitations.
 
 | Module Area | What We Implement | What We Do Not |
 |-------------|-------------------|----------------|
-| Native linear GK | Simplified linear eigenvalue solver for ITG/TEM/ETG | Full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-Maxwell) |
+| Native linear GK | Reduced-order linear eigenvalue solver for ITG/TEM/ETG | Full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-Maxwell) |
 | Free-boundary tracking | Direct coil-response identification from equilibrium sensitivity | Inverse reconstruction from magnetic probes (EFIT, LIUQE) |
 | Disruption predictor | ML classifier trained on reconstructed profile features | Bayesian credibility intervals or physics-based disruption chain models |
 | Impurity transport | Banana-regime neoclassical (Pfirsch-Schluter + banana plateau) | Full Hirshman-Sigmar multi-species collisional operator |

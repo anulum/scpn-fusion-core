@@ -140,9 +140,8 @@ def test_tglf_solver_prepare_input(tmp_path, cyclone_params):
 def test_tglf_solver_run_binary_missing(tmp_path, cyclone_params):
     solver = TGLFSolver(binary="nonexistent_tglf_binary_xyz", work_dir=tmp_path)
     solver.prepare_input(cyclone_params)
-    result = solver.run(tmp_path)
-    assert result.converged is False
-    assert result.chi_i == 0.0
+    with pytest.raises(RuntimeError, match="TGLF binary not available"):
+        solver.run(tmp_path)
 
 
 @patch("shutil.which", return_value="/usr/bin/tglf")
@@ -170,11 +169,11 @@ def test_tglf_solver_run_mocked_success(mock_run, mock_which, tmp_path, cyclone_
 def test_tglf_solver_timeout_fallback(mock_run, mock_which, tmp_path, cyclone_params):
     solver = TGLFSolver(work_dir=tmp_path)
     solver.prepare_input(cyclone_params)
-    result = solver.run(tmp_path, timeout_s=1.0)
-    assert result.converged is False
+    with pytest.raises(RuntimeError, match="TGLF execution failed"):
+        solver.run(tmp_path, timeout_s=1.0)
 
 
 def test_tglf_solver_run_from_params(tmp_path, cyclone_params):
     solver = TGLFSolver(binary="nonexistent_tglf_binary_xyz", work_dir=tmp_path)
-    result = solver.run_from_params(cyclone_params)
-    assert result.converged is False
+    with pytest.raises(RuntimeError, match="TGLF binary not available"):
+        solver.run_from_params(cyclone_params)

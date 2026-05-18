@@ -185,7 +185,7 @@ def _save_to_cache(path: Path, signals: Dict[str, SignalResult]) -> None:
     logger.info("Cached %d signals to %s", len(signals), path)
 
 
-# ── Reference data fallback ─────────────────────────────────────────
+# ── Reference data lookup ───────────────────────────────────────────
 
 
 def _try_reference_data(
@@ -232,7 +232,7 @@ def _try_reference_data(
             if result:
                 return result
     except (ImportError, Exception) as exc:  # noqa: BLE001
-        logger.debug("tokamak_archive fallback failed: %s", exc)
+        logger.debug("tokamak_archive reference lookup failed: %s", exc)
 
     return None
 

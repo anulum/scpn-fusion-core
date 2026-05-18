@@ -89,7 +89,7 @@ Notes:
   - data source and license confirmation,
   - benchmark protocol,
   - target path mapping to existing modules,
-  - fallback if external dependency is unavailable.
+  - explicit contingency path if an external dependency is unavailable.
 
 ## Reclassified Backlog State
 

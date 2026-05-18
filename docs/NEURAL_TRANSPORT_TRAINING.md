@@ -109,7 +109,8 @@ Hardening checks enforced by loader:
 - `allow_pickle=False`
 - bounded file size
 - required-key and version validation
-- fallback to analytic critical-gradient model on any contract failure
+- contract failure invalidates the production artifact; the analytic
+  critical-gradient model remains a separate reference path
 
 ## 6. Reproducibility notes
 

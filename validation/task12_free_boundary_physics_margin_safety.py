@@ -244,7 +244,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- q95 guard count: `{c['q95_guard_count']}` (threshold `>= {th['min_q95_guard_count']}`)",
         f"- beta guard count: `{c['beta_guard_count']}` (threshold `>= {th['min_beta_guard_count']}`)",
         f"- risk guard count: `{c['risk_guard_count']}` (threshold `>= {th['min_risk_guard_count']}`)",
-        f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)",
+        f"- Recovery mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)",
         f"- Failsafe trip count: `{c['failsafe_trip_count']}` (threshold `<= {th['max_failsafe_trip_count']}`)",
         "",
         "## Closed-Loop Outcome",

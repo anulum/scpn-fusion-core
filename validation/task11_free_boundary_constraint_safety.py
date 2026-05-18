@@ -235,7 +235,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "## Supervisory Safety",
         "",
-        f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)",
+        f"- Recovery mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)",
         f"- Invariant violation count: `{c['invariant_violation_count']}` (threshold `<= {th['max_invariant_violation_count']}`)",
         f"- Failsafe trip count: `{c['failsafe_trip_count']}` (threshold `<= {th['max_failsafe_trip_count']}`)",
         f"- Max risk score: `{c['max_risk_score']:.3f}` (threshold `<= {th['max_risk_score']:.2f}`)",

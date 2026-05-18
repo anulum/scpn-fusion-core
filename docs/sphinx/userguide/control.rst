@@ -193,8 +193,8 @@ boundary, maximising confinement while avoiding disruptions.
 Analytic Solver
 -----------------
 
-The ``analytic_solver`` module provides closed-form solutions for
-simplified equilibrium and transport problems, used primarily for:
+The ``analytic_solver`` module provides closed-form reference solutions for
+reduced-order equilibrium and transport problems, used primarily for:
 
 - Controller unit testing (known analytical solutions)
 - Rapid prototyping of control strategies

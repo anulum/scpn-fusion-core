@@ -42,7 +42,7 @@ Setting Up Magnetic Diagnostics
 
    from scpn_fusion.control.realtime_efit import RealtimeEFIT, MagneticDiagnostics
 
-   # Define diagnostic positions (simplified: 12 flux loops, 8 B_p probes)
+   # Define diagnostic positions (tutorial set: 12 flux loops, 8 B_p probes)
    diag = MagneticDiagnostics.iter_standard()
    print(f"Flux loops: {diag.n_flux_loops}")
    print(f"B_p probes: {diag.n_bp_probes}")

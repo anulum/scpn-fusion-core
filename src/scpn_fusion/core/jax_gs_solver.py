@@ -21,7 +21,8 @@ where J_φ = R p'(ψ_norm) + FF'(ψ_norm) / (μ₀ R).
 Key function:
     jax_gs_solve — Fixed-boundary GS equilibrium, differentiable via jax.grad
 
-NumPy fallback provided when JAX is unavailable.
+An explicit NumPy reference backend is available via ``use_jax=False`` for
+CPU parity tests; requesting JAX without JAX installed fails closed.
 """
 
 from __future__ import annotations
@@ -48,7 +49,7 @@ def has_jax() -> bool:
     return _HAS_JAX
 
 
-# ── NumPy fallback ────────────────────────────────────────────────
+# ── NumPy reference backend ───────────────────────────────────────
 
 
 def _jacobi_gs_step_np(
@@ -131,7 +132,7 @@ def gs_solve_np(
     omega_j: float = 0.667,
     beta_mix: float = 0.5,
 ) -> NDArray:
-    """Fixed-boundary GS solve via Picard iteration (NumPy fallback).
+    """Fixed-boundary GS solve via Picard iteration (NumPy reference backend).
 
     Returns psi on the (NZ, NR) grid with zero Dirichlet boundary.
     """
@@ -292,9 +293,10 @@ def jax_gs_solve(
 ) -> NDArray:
     """Fixed-boundary Grad-Shafranov equilibrium solve.
 
-    Picard iteration with damped Jacobi inner sweeps. When JAX is
-    available, the solve is JIT-compiled and differentiable via
-    ``jax.grad``. Falls back to NumPy otherwise.
+    Picard iteration with damped Jacobi inner sweeps. With ``use_jax=True``,
+    the solve is JIT-compiled and differentiable via ``jax.grad``. If JAX is
+    unavailable, callers must opt into the NumPy reference backend with
+    ``use_jax=False``.
 
     Parameters
     ----------
@@ -308,13 +310,19 @@ def jax_gs_solve(
     alpha : Picard under-relaxation factor
     omega_j : Jacobi damping (2/3 standard, Hackbusch 1985 §4.3)
     beta_mix : pressure vs current profile weight
-    use_jax : attempt JAX backend
+    use_jax : require JAX backend when true; use NumPy reference backend when false
 
     Returns
     -------
     psi : (NZ, NR) poloidal flux, zero on boundary
     """
-    if use_jax and _HAS_JAX:
+    if use_jax and not _HAS_JAX:
+        raise RuntimeError(
+            "JAX backend requested for jax_gs_solve, but JAX is unavailable. "
+            "Pass use_jax=False only for the explicit NumPy reference backend."
+        )
+
+    if use_jax:
         R = jnp.linspace(R_min, R_max, NR)
         Z = jnp.linspace(Z_min, Z_max, NZ)
         RR, _ = jnp.meshgrid(R, Z)

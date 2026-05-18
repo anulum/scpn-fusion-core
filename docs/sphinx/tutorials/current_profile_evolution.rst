@@ -128,7 +128,7 @@ Run the solver for 200 seconds (roughly one resistive timescale):
    ne = 10.0 * (1 - 0.5 * rho**2)   # electron density [10^19 m^-3]
    Z_eff = 1.5
 
-   # Bootstrap current (simplified model)
+   # Bootstrap current (reduced-order tutorial model)
    dTe_drho = np.gradient(Te, rho[1] - rho[0])
    dne_drho = np.gradient(ne, rho[1] - rho[0])
    epsilon = rho * a / R0

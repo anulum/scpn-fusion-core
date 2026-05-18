@@ -32,7 +32,7 @@
     "packed_weights": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["shape", "data_u64"],
+      "required": ["shape"],
       "properties": {
         "shape": {
           "type": "array",
@@ -43,8 +43,24 @@
         "data_u64": {
           "type": "array",
           "items": { "type": "integer", "minimum": 0 }
+        },
+        "encoding": {
+          "type": "string",
+          "const": "u64-le-zlib-base64"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "data_u64_b64_zlib": {
+          "type": "string",
+          "minLength": 1
         }
-      }
+      },
+      "oneOf": [
+        { "required": ["shape", "data_u64"] },
+        { "required": ["shape", "encoding", "count", "data_u64_b64_zlib"] }
+      ]
     }
   },
   "properties": {
@@ -177,7 +193,8 @@
               "id": { "type": "integer", "minimum": 0 },
               "name": { "type": "string", "minLength": 1 },
               "threshold": { "type": "number", "minimum": 0, "maximum": 1 },
-              "margin": { "type": "number", "minimum": 0 }
+              "margin": { "type": "number", "minimum": 0 },
+              "delay_ticks": { "type": "integer", "minimum": 0 }
             }
           }
         }

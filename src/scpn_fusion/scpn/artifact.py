@@ -25,6 +25,7 @@ from scpn_fusion.scpn.artifact_codec import (
     decode_u64_compact_payload,
     encode_u64_compact_payload,
 )
+from scpn_fusion.scpn.artifact_schema import validate_raw_artifact_schema
 from scpn_fusion.scpn.artifact_validation import validate_artifact
 
 ARTIFACT_SCHEMA_VERSION = "1.0.0"
@@ -216,6 +217,7 @@ def load_artifact(path: Union[str, Path]) -> Artifact:
     """Parse a ``.scpnctl.json`` file into an ``Artifact`` dataclass."""
     with open(path, "r", encoding="utf-8") as f:
         obj = json.load(f)
+    validate_raw_artifact_schema(obj, error_type=ArtifactValidationError)
 
     # Meta
     m = obj["meta"]

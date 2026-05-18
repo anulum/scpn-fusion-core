@@ -20,6 +20,55 @@ from typing import Callable
 
 import numpy as np
 
+from scpn_fusion.diagnostics.forward import soft_xray_brightness
+
+
+def _radial_profiles_to_circular_maps(
+    Te: np.ndarray,
+    ne: np.ndarray,
+    rho: np.ndarray,
+    *,
+    minor_radius_m: float,
+    grid_size: int = 129,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    rho_axis = np.asarray(rho, dtype=np.float64).reshape(-1)
+    te_axis = np.asarray(Te, dtype=np.float64).reshape(-1)
+    ne_axis = np.asarray(ne, dtype=np.float64).reshape(-1)
+    a = float(minor_radius_m)
+    if rho_axis.size < 2 or te_axis.shape != rho_axis.shape or ne_axis.shape != rho_axis.shape:
+        raise ValueError("Te, ne, and rho must be same-length 1D arrays with at least two points.")
+    if not np.isfinite(a) or a <= 0.0:
+        raise ValueError("minor_radius_m must be finite and > 0.")
+    if not (
+        np.all(np.isfinite(rho_axis))
+        and np.all(np.isfinite(te_axis))
+        and np.all(np.isfinite(ne_axis))
+        and np.all(np.diff(rho_axis) > 0.0)
+    ):
+        raise ValueError("Te, ne, and rho must be finite with strictly increasing rho.")
+
+    r_grid = np.linspace(-a, a, int(grid_size), dtype=np.float64)
+    z_grid = np.linspace(-a, a, int(grid_size), dtype=np.float64)
+    rr, zz = np.meshgrid(r_grid, z_grid)
+    rho_map = np.sqrt(rr**2 + zz**2) / a
+
+    te_map = np.interp(np.clip(rho_map, rho_axis[0], rho_axis[-1]), rho_axis, te_axis)
+    ne_map = np.interp(np.clip(rho_map, rho_axis[0], rho_axis[-1]), rho_axis, ne_axis)
+    outside = rho_map > rho_axis[-1]
+    te_map[outside] = 0.0
+    ne_map[outside] = 0.0
+    return te_map, ne_map, r_grid, z_grid
+
+
+def _vertical_chords(
+    minor_radius_m: float, n_chords: int
+) -> list[tuple[tuple[float, float], tuple[float, float]]]:
+    a = float(minor_radius_m)
+    if int(n_chords) < 1:
+        raise ValueError("n_chords must be >= 1.")
+    impacts = np.linspace(0.0, 0.9 * a, int(n_chords), dtype=np.float64)
+    return [((float(impact), -a), (float(impact), a)) for impact in impacts]
+
 
 class SyntheticDiagnosticSuite:
     def thomson_scattering(
@@ -67,12 +116,22 @@ class SyntheticDiagnosticSuite:
     def soft_xray(
         self, Te: np.ndarray, ne: np.ndarray, rho: np.ndarray, n_chords: int = 40
     ) -> np.ndarray:
-        # Emissivity ~ n_e^2 * sqrt(Te)
-        emissivity = ne**2 * np.sqrt(Te)
-        avg_emis = np.mean(emissivity)
-        path_lengths = np.ones(n_chords)  # Simplified
-
-        meas = avg_emis * path_lengths * (1.0 + np.random.randn(n_chords) * 0.05)
+        minor_radius_m = 1.0
+        te_map, ne_map, r_grid, z_grid = _radial_profiles_to_circular_maps(
+            Te,
+            ne,
+            rho,
+            minor_radius_m=minor_radius_m,
+        )
+        ideal = soft_xray_brightness(
+            ne_map,
+            te_map,
+            r_grid,
+            z_grid,
+            _vertical_chords(minor_radius_m, n_chords),
+            enforce_domain_bounds=True,
+        )
+        meas = ideal * (1.0 + np.random.randn(n_chords) * 0.05)
         return meas
 
     def magnetics(self, R0: float, a: float) -> dict[str, np.ndarray]:

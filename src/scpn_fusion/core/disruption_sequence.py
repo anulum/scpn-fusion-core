@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from scpn_fusion.core.runaway_electrons import RunawayEvolution, RunawayParams
+from scpn_fusion.core.runaway_electrons import RunawayEvolution, RunawayParams, hot_tail_seed
 
 
 def _require_positive(name: str, value: float) -> float:
@@ -282,16 +282,8 @@ class DisruptionSequence:
         )
         re_model = RunawayEvolution(re_params)
 
-        # Initial seed from hot tail
-        seed = 1e10  # Fallback
-        try:
-            from scpn_fusion.core.runaway_electrons import hot_tail_seed
-
-            seed = hot_tail_seed(self.config.Te_pre_keV, post_T / 1000.0, ne_20, tau_tq_ms)
-        except ImportError:
-            pass
-
-        n_RE = seed
+        # Initial seed from the Smith hot-tail model.
+        n_RE = hot_tail_seed(self.config.Te_pre_keV, post_T / 1000.0, ne_20, tau_tq_ms)
 
         # Evolve REs using E_par from CQ
         for E_p in cq_res.E_par_trace:

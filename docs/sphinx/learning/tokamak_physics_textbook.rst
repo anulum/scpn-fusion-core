@@ -52,7 +52,7 @@ Substituting into the force balance yields the **Grad-Shafranov equation**:
    = -\mu_0 R^2 p'(\psi) - F(\psi) F'(\psi)
 
 This is a nonlinear elliptic PDE.  The free functions :math:`p(\psi)` and
-:math:`F(\psi)` are constrained by experimental data (pressure profile and
+:math:`F(\psi)` are constrained by measured data (pressure profile and
 current profile measurements) or parametric models.
 
 

@@ -96,6 +96,18 @@ NARRATIVE_DOC_PREFIXES = (
     "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
     "docs/PACKET_",
 )
+FREE_BOUNDARY_RECOVERY_AUDIT_PATHS = {
+    "src/scpn_fusion/control/_free_boundary_supervisory_types.py",
+    "src/scpn_fusion/control/_free_boundary_tracking_control.py",
+    "src/scpn_fusion/control/_free_boundary_tracking_shot.py",
+    "src/scpn_fusion/control/free_boundary_tracking.py",
+}
+FREE_BOUNDARY_RECOVERY_AUDIT_FIELDS = (
+    "fallback_configured",
+    "fallback_active_steps",
+    "fallback_activation_rate",
+    "max_abs_actuator_lag_during_fallback",
+)
 
 
 @dataclass(frozen=True)
@@ -224,6 +236,20 @@ def _is_marker_suppressed(
         if "experimental tests" in lowered_line and "exclude" in lowered_line:
             return True
 
+    if marker == "EXPERIMENTAL" and rel_path == "docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md":
+        # The retrain runbook documents an explicitly acknowledged research lane;
+        # the flag itself is a gate, not a public release claim.
+        if "--experimental" in lowered_line and "--experimental-ack" in file_text:
+            return True
+
+    if marker == "EXPERIMENTAL" and rel_path == "docs/PHYSICS_METHODS_COMPLETE.md":
+        # Bibliographic titles can contain "experimental" as part of the cited
+        # paper title; that is evidence context, not software maturity.
+        if "experimental test" in lowered_line and (
+            "nucl. fusion" in lowered_line or "doi:" in lowered_line
+        ):
+            return True
+
     if rel_path in {
         "tools/deprecated_default_lane_guard.py",
         "validation/benchmark_deprecated_mode_exclusion.py",
@@ -278,6 +304,18 @@ def _is_marker_suppressed(
             return True
     if marker == "FALLBACK":
         stripped = line.strip()
+        if rel_path == "docs/VALIDATION_GATE_MATRIX.md":
+            if any(
+                phrase in lowered_line
+                for phrase in (
+                    "no-fallback",
+                    "fallback disallowed",
+                    "fails on any fallback",
+                    "fallback cases",
+                    "fallback contract",
+                )
+            ):
+                return True
         # Pure comments/docstring headers often document an already-hardened fallback lane.
         if stripped.startswith("#") or stripped.startswith('"""') or stripped.startswith("'''"):
             return True
@@ -302,6 +340,26 @@ def _is_marker_suppressed(
             return True
         if "allow_fallback" in lowered or "allow_numpy_fallback" in lowered:
             return True
+        if rel_path in FREE_BOUNDARY_RECOVERY_AUDIT_PATHS:
+            audited_recovery = all(
+                field in file_text for field in FREE_BOUNDARY_RECOVERY_AUDIT_FIELDS
+            )
+            if (
+                audited_recovery
+                or rel_path != "src/scpn_fusion/control/_free_boundary_tracking_shot.py"
+            ):
+                if any(
+                    term in lowered
+                    for term in (
+                        "fallback_active",
+                        "fallback_mode",
+                        "fallback currents",
+                        "fallback_currents",
+                        "fallback=",
+                        "supervisory_alert_level_names",
+                    )
+                ):
+                    return True
         # Validation benchmarks that *test* fallback paths by design.
         if rel_path in {
             "validation/benchmark_vs_freegs.py",

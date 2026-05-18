@@ -581,6 +581,51 @@ class TestLevel0Static:
         finally:
             os.unlink(bad_path)
 
+    @pytest.mark.parametrize(
+        ("mutation", "match"),
+        [
+            (("root", "unexpected_root_field"), "unexpected property root.unexpected_root_field"),
+            (("meta", "unexpected_meta_field"), "unexpected property meta.unexpected_meta_field"),
+            (
+                ("readout", "limits", "unexpected_limit_field"),
+                "unexpected property readout.limits.unexpected_limit_field",
+            ),
+        ],
+    )
+    def test_load_artifact_rejects_schema_additional_properties(
+        self, artifact_path: str, mutation: tuple[str, ...], match: str
+    ) -> None:
+        obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
+        target: dict[str, object] = obj
+        if mutation[0] == "root":
+            target[mutation[1]] = True
+        else:
+            for key in mutation[:-1]:
+                target = target[key]  # type: ignore[index]
+            target[mutation[-1]] = True
+        fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
+        os.close(fd)
+        try:
+            Path(bad_path).write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
+            with pytest.raises(ArtifactValidationError, match=match):
+                load_artifact(bad_path)
+        finally:
+            os.unlink(bad_path)
+
+    def test_load_artifact_rejects_schema_missing_required_key(self, artifact_path: str) -> None:
+        obj = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
+        del obj["readout"]["limits"]["slew_per_s"]
+        fd, bad_path = tempfile.mkstemp(suffix=".scpnctl.json")
+        os.close(fd)
+        try:
+            Path(bad_path).write_text(json.dumps(obj, indent=2) + "\n", encoding="utf-8")
+            with pytest.raises(
+                ArtifactValidationError, match="missing required property readout.limits.slew_per_s"
+            ):
+                load_artifact(bad_path)
+        finally:
+            os.unlink(bad_path)
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # Level 1 — Determinism

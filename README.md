@@ -152,7 +152,7 @@ model for the controller to operate against.
 |----------|-----|
 | Formal verification | Contract checking preserves Petri net invariants (boundedness, liveness, reachability) |
 | Hardware targeting | Same Petri net compiles to NumPy, SC-NeuroCore (FPGA), or neuromorphic silicon |
-| Graceful degradation | Every path has a pure-Python fallback |
+| Explicit backend policy | Production solver lanes fail closed; reference backends require explicit opt-in |
 | Deterministic replay | Identical inputs produce identical outputs across platforms |
 
 ## Controller Stress-Test Campaign (1,000 shots)

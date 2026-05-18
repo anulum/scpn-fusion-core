@@ -9,9 +9,9 @@
 TGLF (Trapped Gyro-Landau Fluid) external solver interface.
 
 Generates TGLF input namelists, executes the ``tglf`` binary via
-subprocess, and parses growth-rate / flux output files.  Falls back
-to the built-in quasilinear dispersion solver when the binary is
-unavailable.
+subprocess, and parses growth-rate / flux output files. Missing or failed
+external TGLF execution is a hard error so zero-flux placeholders cannot enter
+production transport validation.
 
 Reference: Staebler et al., Phys. Plasmas 14 (2007) 055909.
 """
@@ -201,8 +201,10 @@ class TGLFSolver(GKSolverBase):
 
     def run(self, input_path: Path, *, timeout_s: float = 30.0) -> GKOutput:
         if not self.is_available():
-            _logger.warning("TGLF binary not found, returning fallback")
-            return self._fallback()
+            raise RuntimeError(
+                f"TGLF binary not available: {self.binary!r}. Install GACODE/TGLF or use an "
+                "explicit non-TGLF solver lane."
+            )
 
         try:
             subprocess.run(
@@ -213,11 +215,6 @@ class TGLFSolver(GKSolverBase):
                 check=True,
             )
         except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError) as exc:
-            _logger.warning("TGLF execution failed: %s", exc)
-            return self._fallback()
+            raise RuntimeError(f"TGLF execution failed: {exc}") from exc
 
         return parse_tglf_output(input_path)
-
-    @staticmethod
-    def _fallback() -> GKOutput:
-        return GKOutput(chi_i=0.0, chi_e=0.0, D_e=0.0, converged=False)

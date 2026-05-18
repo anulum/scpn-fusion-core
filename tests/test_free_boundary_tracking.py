@@ -704,6 +704,26 @@ def test_run_free_boundary_tracking_returns_bounded_converged_summary() -> None:
     assert summary["final_tracking_error_norm"] < 0.15
 
 
+def test_free_boundary_tracking_reports_recovery_activation_rate_and_lag() -> None:
+    summary = run_free_boundary_tracking(
+        config_file="dummy.json",
+        shot_steps=6,
+        gain=3.0,
+        verbose=False,
+        kernel_factory=_FallbackKernel,
+        supervisor_limits={"tracking_error_norm": 0.01},
+        stop_on_convergence=False,
+    )
+
+    assert summary["fallback_configured"] is True
+    assert summary["fallback_active_steps"] > 0
+    assert summary["fallback_activation_rate"] == pytest.approx(
+        summary["fallback_active_steps"] / summary["steps"]
+    )
+    assert summary["max_abs_actuator_lag_during_fallback"] <= summary["max_abs_actuator_lag"]
+    assert summary["mean_abs_actuator_lag_during_fallback"] <= summary["max_abs_actuator_lag"]
+
+
 def test_free_boundary_tracking_is_deterministic_for_fixed_inputs() -> None:
     kwargs = dict(
         config_file="dummy.json",

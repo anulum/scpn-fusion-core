@@ -27,16 +27,10 @@ from scpn_fusion.core.gk_species import deuterium_ion, electron
 from scpn_fusion.core.gk_verification_report import VerificationReport
 
 _REPORT_DIR = Path(__file__).parent / "reports"
-
-
-def _surrogate_chi(R_L_Ti: float) -> tuple[float, float, float]:
-    """Simplified surrogate: stiff critical-gradient model."""
-    crit = 4.0
-    excess = max(R_L_Ti - crit, 0.0)
-    chi_i = 0.5 * excess**2
-    chi_e = 0.3 * excess**2
-    D_e = chi_e / 3.0
-    return chi_i, chi_e, D_e
+_GK_CALIBRATION_R_L_TI = np.array([3.0, 4.5, 6.0, 7.5, 9.0], dtype=np.float64)
+_GK_TRANSPORT_CALIBRATION_CACHE: dict[
+    tuple[float, ...], tuple[np.ndarray, np.ndarray, np.ndarray]
+] = {}
 
 
 def _gk_chi(R_L_Ti: float) -> tuple[float, float, float]:
@@ -57,6 +51,40 @@ def _gk_chi(R_L_Ti: float) -> tuple[float, float, float]:
     return fluxes.chi_i, fluxes.chi_e, fluxes.D_e
 
 
+def _gk_transport_calibration(
+    calibration_points: np.ndarray = _GK_CALIBRATION_R_L_TI,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    key = tuple(float(x) for x in np.asarray(calibration_points, dtype=np.float64))
+    cached = _GK_TRANSPORT_CALIBRATION_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    records = np.asarray([_gk_chi(point) for point in key], dtype=np.float64)
+    if records.shape != (len(key), 3) or not np.all(np.isfinite(records)):
+        raise ValueError("GK calibration produced non-finite transport coefficients.")
+    if np.any(records < 0.0):
+        raise ValueError("GK calibration produced negative transport coefficients.")
+
+    chi_i = records[:, 0]
+    chi_e = records[:, 1]
+    d_e = records[:, 2]
+    _GK_TRANSPORT_CALIBRATION_CACHE[key] = (chi_i, chi_e, d_e)
+    return chi_i, chi_e, d_e
+
+
+def _gk_calibrated_transport_estimator(R_L_Ti: float) -> tuple[float, float, float]:
+    """Deterministic reduced-order transport estimate interpolated from GK calibration."""
+    rlt = float(R_L_Ti)
+    if not np.isfinite(rlt):
+        raise ValueError("R_L_Ti must be finite.")
+    chi_i_ref, chi_e_ref, d_e_ref = _gk_transport_calibration()
+    points = _GK_CALIBRATION_R_L_TI
+    chi_i = float(np.interp(rlt, points, chi_i_ref))
+    chi_e = float(np.interp(rlt, points, chi_e_ref))
+    d_e = float(np.interp(rlt, points, d_e_ref))
+    return chi_i, chi_e, d_e
+
+
 def run_hybrid_accuracy_benchmark(n_steps: int = 20) -> dict:
     """Simulate n_steps of hybrid transport with correction."""
     nr = 20
@@ -71,9 +99,13 @@ def run_hybrid_accuracy_benchmark(n_steps: int = 20) -> dict:
     corrected_errors = []
 
     for step in range(n_steps):
-        chi_i_surr = np.array([_surrogate_chi(rlt)[0] for rlt in R_L_Ti_profile])
-        chi_e_surr = np.array([_surrogate_chi(rlt)[1] for rlt in R_L_Ti_profile])
-        D_e_surr = np.array([_surrogate_chi(rlt)[2] for rlt in R_L_Ti_profile])
+        transport_estimates = np.asarray(
+            [_gk_calibrated_transport_estimator(rlt) for rlt in R_L_Ti_profile],
+            dtype=np.float64,
+        )
+        chi_i_surr = transport_estimates[:, 0]
+        chi_e_surr = transport_estimates[:, 1]
+        D_e_surr = transport_estimates[:, 2]
 
         req = scheduler.step(rho, chi_i_surr)
 
@@ -119,6 +151,8 @@ def run_hybrid_accuracy_benchmark(n_steps: int = 20) -> dict:
         "mean_corrected_error": float(np.mean(corrected_errors)),
         "final_surrogate_error": float(surrogate_errors[-1]),
         "final_corrected_error": float(corrected_errors[-1]),
+        "transport_estimator": "gk_calibrated_reference_interpolation",
+        "calibration_R_L_Ti": [float(x) for x in _GK_CALIBRATION_R_L_TI],
         "verification_report": report.to_dict(),
     }
 
