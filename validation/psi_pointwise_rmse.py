@@ -32,7 +32,7 @@ import json
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 import numpy as np
 from numpy.typing import NDArray
@@ -40,7 +40,16 @@ from numpy.typing import NDArray
 from scpn_fusion.core.eqdsk import GEqdsk, read_geqdsk
 
 ROOT = Path(__file__).resolve().parents[1]
+SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 SPARC_DIR = ROOT / "validation" / "reference_data" / "sparc"
+REFERENCE_DATA_DIR = ROOT / "validation" / "reference_data"
+EFIT_NRMSE_BENCHMARK_SCHEMA_VERSION = "efit-nrmse-benchmark.v1"
+OPERATOR_SOURCE_RMSE_THRESHOLD = 1e-6
+EFIT_BENCHMARK_MACHINE_PROVENANCE = {
+    "sparc": "real_public_design_reference",
+    "diiid": "synthetic_proxy_reference",
+    "jet": "synthetic_proxy_reference",
+}
 
 
 # ── Data containers ──────────────────────────────────────────────────
@@ -68,6 +77,35 @@ class PsiRMSEResult:
     sor_iterations: int
     sor_residual: float
     solve_time_ms: float
+    operator_source_psi_rmse_norm: float = float("nan")
+    operator_source_sor_iterations: int = 0
+    operator_source_sor_residual: float = float("nan")
+    source_consistency_class: str = "not_evaluated"
+    operator_source_norm: float = float("nan")
+    profile_source_norm: float = float("nan")
+    source_residual_l2: float = float("nan")
+    source_correlation: float = float("nan")
+    source_best_fit_scale: float = float("nan")
+    source_best_fit_offset: float = float("nan")
+    source_best_fit_relative_l2: float = float("nan")
+    plasma_mask_fraction: float = float("nan")
+    pressure_source_norm: float = float("nan")
+    ffprime_source_norm: float = float("nan")
+    total_source_norm: float = float("nan")
+    pressure_source_fraction: float = float("nan")
+    ffprime_source_fraction: float = float("nan")
+    source_plasma_residual_l2: float = float("nan")
+    source_vacuum_residual_l2: float = float("nan")
+    source_plasma_operator_norm: float = float("nan")
+    source_vacuum_operator_norm: float = float("nan")
+    source_plasma_point_count: float = float("nan")
+    source_vacuum_point_count: float = float("nan")
+    best_source_candidate: str = ""
+    best_source_candidate_residual_l2: float = float("nan")
+    profile_source_candidate_rank: int = 0
+    best_operator_candidate: str = ""
+    best_operator_candidate_residual_l2: float = float("nan")
+    delta_star_psi_candidate_rank: int = 0
 
 
 @dataclass
@@ -80,6 +118,29 @@ class PsiRMSESummary:
     mean_gs_residual_l2: float
     worst_psi_rmse_norm: float
     worst_file: str
+    rows: list[dict[str, Any]]
+
+
+@dataclass
+class EfitNRMSEBenchmarkGate:
+    """Strict 10+ file ψ_N RMSE benchmark gate over EFIT/GEQDSK references."""
+
+    schema_version: str
+    benchmark_id: str
+    count: int
+    min_required_files: int
+    threshold: float
+    pass_count: int
+    passes: bool
+    mean_psi_rmse_norm: float
+    worst_psi_rmse_norm: float
+    worst_file: str
+    count_by_machine: dict[str, int]
+    provenance_by_machine: dict[str, str]
+    source_consistency_counts: dict[str, int]
+    worst_source_residual_l2: float
+    worst_source_alignment_file: str
+    failure_reasons: list[str]
     rows: list[dict[str, Any]]
 
 
@@ -147,6 +208,11 @@ def compute_gs_source(
 
     Returns -μ₀·R·J_ϕ = -(μ₀·R²·p' + FF') which is the RHS of Δ*ψ = RHS.
     """
+    return compute_source_components(eq)["total_source"]
+
+
+def compute_source_components(eq: GEqdsk) -> dict[str, Any]:
+    """Split the GEQDSK-derived Grad-Shafranov source into profile components."""
     if eq.nw <= 0 or eq.nh <= 0:
         raise ValueError("eq.nw and eq.nh must be positive")
     if not np.isfinite(eq.simag) or not np.isfinite(eq.sibry):
@@ -186,7 +252,17 @@ def compute_gs_source(
     # Normalise reference psi
     denom = eq.sibry - eq.simag
     if abs(denom) < 1e-12:
-        return np.zeros((eq.nh, eq.nw))
+        zero = np.zeros((eq.nh, eq.nw), dtype=np.float64)
+        return {
+            "pressure_source": zero.copy(),
+            "ffprime_source": zero.copy(),
+            "total_source": zero.copy(),
+            "plasma_mask": np.zeros((eq.nh, eq.nw), dtype=bool),
+            "plasma_mask_fraction": 0.0,
+            "pressure_source_norm": 0.0,
+            "ffprime_source_norm": 0.0,
+            "total_source_norm": 0.0,
+        }
     psi_n = (psirz - eq.simag) / denom
 
     # Interpolate 1D profiles onto 2D grid
@@ -195,14 +271,25 @@ def compute_gs_source(
     ffprime_2d = np.interp(psi_n_clipped.ravel(), psi_norm_1d, ffprime).reshape(eq.nh, eq.nw)
 
     # Zero outside plasma
-    outside = (psi_n < 0) | (psi_n >= 1.0)
-    pprime_2d[outside] = 0.0
-    ffprime_2d[outside] = 0.0
+    plasma_mask = (psi_n >= 0) & (psi_n < 1.0)
+    pprime_2d[~plasma_mask] = 0.0
+    ffprime_2d[~plasma_mask] = 0.0
 
     mu0 = 4e-7 * np.pi
-    # RHS = -(mu0 * R^2 * p' + FF')
-    rhs = -(mu0 * RR**2 * pprime_2d + ffprime_2d)
-    return rhs
+    pressure_source = -(mu0 * RR**2 * pprime_2d)
+    ffprime_source = -ffprime_2d
+    total_source = pressure_source + ffprime_source
+    interior = (slice(1, -1), slice(1, -1))
+    return {
+        "pressure_source": pressure_source,
+        "ffprime_source": ffprime_source,
+        "total_source": total_source,
+        "plasma_mask": plasma_mask,
+        "plasma_mask_fraction": float(np.mean(plasma_mask[interior])),
+        "pressure_source_norm": float(np.linalg.norm(pressure_source[interior].ravel())),
+        "ffprime_source_norm": float(np.linalg.norm(ffprime_source[interior].ravel())),
+        "total_source_norm": float(np.linalg.norm(total_source[interior].ravel())),
+    }
 
 
 # ── GS residual ──────────────────────────────────────────────────────
@@ -226,6 +313,239 @@ def gs_residual(eq: GEqdsk) -> tuple[float, float]:
     rel_l2 = float(np.linalg.norm(residual.ravel()) / source_norm)
     max_abs = float(np.max(np.abs(residual)))
     return rel_l2, max_abs
+
+
+def compute_source_alignment(
+    eq: GEqdsk,
+    source: NDArray | None = None,
+) -> dict[str, float]:
+    """
+    Compare the profile-derived GS source against the discrete operator source.
+
+    The operator source is Δ*ψ_ref on the same grid.  If the profile source is
+    compatible with the reference flux and stencil, these fields should be
+    strongly correlated and the residual should be small.
+    """
+    operator_source = gs_operator(eq.psirz, eq.r, eq.z)
+    source_components = compute_source_components(eq)
+    plasma_mask_2d = np.asarray(source_components["plasma_mask"], dtype=bool)
+    if source is None:
+        profile_source = np.asarray(source_components["total_source"], dtype=np.float64)
+    else:
+        profile_source = np.asarray(source, dtype=np.float64)
+        if profile_source.shape != (eq.nh, eq.nw):
+            raise ValueError(f"source shape must be ({eq.nh}, {eq.nw}), got {profile_source.shape}")
+        if not np.all(np.isfinite(profile_source)):
+            raise ValueError("source must contain only finite values")
+
+    operator_interior = operator_source[1:-1, 1:-1]
+    profile_interior = profile_source[1:-1, 1:-1]
+    plasma_mask = plasma_mask_2d[1:-1, 1:-1]
+    operator_flat = operator_interior.ravel()
+    profile_flat = profile_interior.ravel()
+    finite_mask = np.isfinite(operator_flat) & np.isfinite(profile_flat)
+    operator_flat = operator_flat[finite_mask]
+    profile_flat = profile_flat[finite_mask]
+    if operator_flat.size == 0:
+        raise ValueError("source alignment requires at least one finite interior point")
+
+    operator_norm = float(np.linalg.norm(operator_flat))
+    profile_norm = float(np.linalg.norm(profile_flat))
+    residual_l2 = float(np.linalg.norm(operator_flat - profile_flat) / max(profile_norm, 1e-15))
+
+    operator_std = float(np.std(operator_flat))
+    profile_std = float(np.std(profile_flat))
+    if operator_std <= 1e-15 or profile_std <= 1e-15:
+        correlation = float("nan")
+    else:
+        correlation = float(np.corrcoef(operator_flat, profile_flat)[0, 1])
+
+    design = np.vstack([profile_flat, np.ones_like(profile_flat)]).T
+    scale, offset = np.linalg.lstsq(design, operator_flat, rcond=None)[0]
+    fitted = scale * profile_flat + offset
+    best_fit_relative_l2 = float(np.linalg.norm(operator_flat - fitted) / max(operator_norm, 1e-15))
+
+    def _masked_metrics(mask: NDArray[np.bool_]) -> tuple[float, float, int]:
+        finite = np.isfinite(operator_interior) & np.isfinite(profile_interior) & mask
+        count = int(np.count_nonzero(finite))
+        if count == 0:
+            return float("nan"), float("nan"), 0
+        op = operator_interior[finite]
+        prof = profile_interior[finite]
+        norm = float(np.linalg.norm(op))
+        profile_norm = float(np.linalg.norm(prof))
+        residual = float(np.linalg.norm(op - prof) / max(profile_norm, norm, 1e-15))
+        return residual, norm, count
+
+    plasma_residual, plasma_operator_norm, plasma_count = _masked_metrics(plasma_mask)
+    vacuum_residual, vacuum_operator_norm, vacuum_count = _masked_metrics(~plasma_mask)
+
+    return {
+        "operator_source_norm": operator_norm,
+        "profile_source_norm": profile_norm,
+        "source_residual_l2": residual_l2,
+        "source_correlation": correlation,
+        "source_best_fit_scale": float(scale),
+        "source_best_fit_offset": float(offset),
+        "source_best_fit_relative_l2": best_fit_relative_l2,
+        "source_plasma_residual_l2": plasma_residual,
+        "source_vacuum_residual_l2": vacuum_residual,
+        "source_plasma_operator_norm": plasma_operator_norm,
+        "source_vacuum_operator_norm": vacuum_operator_norm,
+        "source_plasma_point_count": float(plasma_count),
+        "source_vacuum_point_count": float(vacuum_count),
+    }
+
+
+def compute_source_candidate_rankings(eq: GEqdsk) -> list[dict[str, float | str]]:
+    """
+    Rank explicit source-convention candidates against Δ*ψ_ref.
+
+    This is diagnostic only.  It does not change the benchmark's canonical
+    profile-source solve or pass/fail gate.
+    """
+    components = compute_source_components(eq)
+    pressure = np.asarray(components["pressure_source"], dtype=np.float64)
+    ffprime = np.asarray(components["ffprime_source"], dtype=np.float64)
+    total = np.asarray(components["total_source"], dtype=np.float64)
+
+    candidates = {
+        "profile_source": total,
+        "negated_profile_source": -total,
+        "pressure_only": pressure,
+        "negated_pressure_only": -pressure,
+        "ffprime_only": ffprime,
+        "negated_ffprime_only": -ffprime,
+        "pressure_plus_negated_ffprime": pressure - ffprime,
+        "negated_pressure_plus_ffprime": -pressure + ffprime,
+    }
+
+    rows: list[dict[str, float | str]] = []
+    for name, source in candidates.items():
+        metrics = compute_source_alignment(eq, source=source)
+        rows.append(
+            {
+                "candidate": name,
+                "source_residual_l2": metrics["source_residual_l2"],
+                "source_correlation": metrics["source_correlation"],
+                "source_best_fit_scale": metrics["source_best_fit_scale"],
+                "source_best_fit_relative_l2": metrics["source_best_fit_relative_l2"],
+                "source_plasma_residual_l2": metrics["source_plasma_residual_l2"],
+                "source_vacuum_residual_l2": metrics["source_vacuum_residual_l2"],
+            }
+        )
+
+    return sorted(rows, key=lambda row: float(row["source_residual_l2"]))
+
+
+def _laplacian_operator_variant(
+    psi: NDArray,
+    R: NDArray,
+    Z: NDArray,
+    *,
+    curvature_sign: float,
+) -> NDArray:
+    """Evaluate d2R psi + sign*(1/R)dR psi + d2Z psi on the GEQDSK grid."""
+    psi_arr = np.asarray(psi, dtype=np.float64)
+    r_arr = np.asarray(R, dtype=np.float64)
+    z_arr = np.asarray(Z, dtype=np.float64)
+    if psi_arr.ndim != 2 or r_arr.ndim != 1 or z_arr.ndim != 1:
+        raise ValueError("psi must be 2D and R/Z must be 1D")
+    nz, nr = psi_arr.shape
+    if nz < 3 or nr < 3 or r_arr.size != nr or z_arr.size != nz:
+        raise ValueError("R/Z axis lengths must match a psi grid of at least 3x3")
+    if not np.all(np.isfinite(psi_arr)):
+        raise ValueError("psi must contain only finite values")
+    if not np.all(np.isfinite(r_arr)) or not np.all(np.isfinite(z_arr)):
+        raise ValueError("R and Z axes must contain only finite values")
+    if np.any(np.diff(r_arr) <= 0.0) or np.any(np.diff(z_arr) <= 0.0):
+        raise ValueError("R and Z axes must be strictly increasing")
+
+    dR = float(r_arr[1] - r_arr[0])
+    dZ = float(z_arr[1] - z_arr[0])
+    RR = r_arr[np.newaxis, :]
+    result = np.zeros_like(psi_arr)
+    d2R = (psi_arr[1:-1, 2:] - 2 * psi_arr[1:-1, 1:-1] + psi_arr[1:-1, :-2]) / dR**2
+    dR1 = (psi_arr[1:-1, 2:] - psi_arr[1:-1, :-2]) / (2 * dR)
+    d2Z = (psi_arr[2:, 1:-1] - 2 * psi_arr[1:-1, 1:-1] + psi_arr[:-2, 1:-1]) / dZ**2
+    R_interior = np.maximum(RR[:, 1:-1], 1e-6)
+    result[1:-1, 1:-1] = d2R + curvature_sign * dR1 / R_interior + d2Z
+    return result
+
+
+def compute_operator_candidate_rankings(eq: GEqdsk) -> list[dict[str, float | str]]:
+    """
+    Rank explicit operator and flux-normalisation candidates against profile source.
+
+    This diagnostic tests whether the profile-source mismatch is explained by
+    a simple Δ* sign, flux-span scaling, normalised-flux operator, or curvature
+    sign convention.  It does not alter the benchmark pass/fail gate.
+    """
+    components = compute_source_components(eq)
+    profile_source = np.asarray(components["total_source"], dtype=np.float64)
+    flux_span = float(eq.sibry - eq.simag)
+    psi_norm = (
+        np.zeros_like(eq.psirz, dtype=np.float64)
+        if abs(flux_span) < 1e-15
+        else (np.asarray(eq.psirz, dtype=np.float64) - float(eq.simag)) / flux_span
+    )
+
+    canonical = gs_operator(eq.psirz, eq.r, eq.z)
+    normalised_operator = gs_operator(psi_norm, eq.r, eq.z)
+    candidates = {
+        "delta_star_psi": canonical,
+        "negated_delta_star_psi": -canonical,
+        "delta_star_psi_over_flux_span": canonical / flux_span
+        if abs(flux_span) >= 1e-15
+        else np.zeros_like(canonical),
+        "delta_star_psi_times_flux_span": canonical * flux_span,
+        "delta_star_psi_norm": normalised_operator,
+        "negated_delta_star_psi_norm": -normalised_operator,
+        "operator_without_curvature": _laplacian_operator_variant(
+            eq.psirz,
+            eq.r,
+            eq.z,
+            curvature_sign=0.0,
+        ),
+        "operator_positive_curvature": _laplacian_operator_variant(
+            eq.psirz,
+            eq.r,
+            eq.z,
+            curvature_sign=1.0,
+        ),
+    }
+
+    profile_interior = profile_source[1:-1, 1:-1]
+    profile_flat = profile_interior.ravel()
+    rows: list[dict[str, float | str]] = []
+    for name, operator_source in candidates.items():
+        operator_interior = np.asarray(operator_source, dtype=np.float64)[1:-1, 1:-1]
+        operator_flat = operator_interior.ravel()
+        finite = np.isfinite(operator_flat) & np.isfinite(profile_flat)
+        if not np.any(finite):
+            raise ValueError("operator candidate ranking requires finite interior points")
+        op = operator_flat[finite]
+        profile = profile_flat[finite]
+        profile_norm = float(np.linalg.norm(profile))
+        operator_norm = float(np.linalg.norm(op))
+        residual_l2 = float(np.linalg.norm(op - profile) / max(profile_norm, 1e-15))
+        design = np.vstack([profile, np.ones_like(profile)]).T
+        scale, offset = np.linalg.lstsq(design, op, rcond=None)[0]
+        fitted = scale * profile + offset
+        best_fit_relative_l2 = float(np.linalg.norm(op - fitted) / max(operator_norm, 1e-15))
+        rows.append(
+            {
+                "candidate": name,
+                "profile_residual_l2": residual_l2,
+                "operator_norm": operator_norm,
+                "profile_norm": profile_norm,
+                "profile_best_fit_scale": float(scale),
+                "profile_best_fit_offset": float(offset),
+                "profile_best_fit_relative_l2": best_fit_relative_l2,
+            }
+        )
+
+    return sorted(rows, key=lambda row: float(row["profile_residual_l2"]))
 
 
 # ── Manufactured-source SOR solve ────────────────────────────────────
@@ -309,6 +629,7 @@ def manufactured_solve_vectorised(
     omega: float = 1.5,
     max_iter: int = 5000,
     tol: float = 1e-7,
+    source_override: NDArray | None = None,
 ) -> tuple[NDArray, int, float, float]:
     """
     Vectorised Red-Black SOR solve of Δ*ψ = S with reference BCs.
@@ -327,7 +648,16 @@ def manufactured_solve_vectorised(
     dR = float(R[1] - R[0])
     dZ = float(Z[1] - Z[0])
 
-    source = compute_gs_source(eq)
+    if source_override is None:
+        source = compute_gs_source(eq)
+    else:
+        source = np.asarray(source_override, dtype=np.float64)
+        if source.shape != (eq.nh, eq.nw):
+            raise ValueError(
+                f"source_override shape must be ({eq.nh}, {eq.nw}), got {source.shape}"
+            )
+        if not np.all(np.isfinite(source)):
+            raise ValueError("source_override must contain only finite values")
 
     # Initialise with reference boundary
     psi = eq.psirz.copy()  # start from reference as warm start
@@ -487,6 +817,42 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
 
     # 3. Point-wise RMSE
     metrics = compute_psi_rmse(eq, solver_psi)
+    source_components = compute_source_components(eq)
+    source_alignment = compute_source_alignment(eq)
+    source_candidates = compute_source_candidate_rankings(eq)
+    best_source_candidate = str(source_candidates[0]["candidate"])
+    best_source_candidate_residual = float(source_candidates[0]["source_residual_l2"])
+    profile_source_rank = next(
+        index
+        for index, candidate in enumerate(source_candidates, start=1)
+        if candidate["candidate"] == "profile_source"
+    )
+    operator_candidates = compute_operator_candidate_rankings(eq)
+    best_operator_candidate = str(operator_candidates[0]["candidate"])
+    best_operator_candidate_residual = float(operator_candidates[0]["profile_residual_l2"])
+    delta_star_psi_rank = next(
+        index
+        for index, candidate in enumerate(operator_candidates, start=1)
+        if candidate["candidate"] == "delta_star_psi"
+    )
+
+    operator_source = gs_operator(eq.psirz, eq.r, eq.z)
+    operator_psi, operator_iters, operator_res, _ = manufactured_solve_vectorised(
+        eq,
+        omega=omega_opt,
+        max_iter=50,
+        tol=1e-10,
+        source_override=operator_source,
+    )
+    operator_metrics = compute_psi_rmse(eq, operator_psi)
+    operator_rmse_norm = operator_metrics["psi_rmse_norm"]
+    if np.isfinite(operator_rmse_norm) and operator_rmse_norm <= OPERATOR_SOURCE_RMSE_THRESHOLD:
+        if np.isfinite(metrics["psi_rmse_norm"]) and metrics["psi_rmse_norm"] <= 0.05:
+            source_consistency_class = "profile_source_consistent"
+        else:
+            source_consistency_class = "profile_source_mismatch"
+    else:
+        source_consistency_class = "solver_consistency_failure"
 
     return PsiRMSEResult(
         file=path.name,
@@ -501,6 +867,41 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         sor_iterations=iters,
         sor_residual=res,
         solve_time_ms=t_ms,
+        operator_source_psi_rmse_norm=operator_rmse_norm,
+        operator_source_sor_iterations=operator_iters,
+        operator_source_sor_residual=operator_res,
+        source_consistency_class=source_consistency_class,
+        operator_source_norm=source_alignment["operator_source_norm"],
+        profile_source_norm=source_alignment["profile_source_norm"],
+        source_residual_l2=source_alignment["source_residual_l2"],
+        source_correlation=source_alignment["source_correlation"],
+        source_best_fit_scale=source_alignment["source_best_fit_scale"],
+        source_best_fit_offset=source_alignment["source_best_fit_offset"],
+        source_best_fit_relative_l2=source_alignment["source_best_fit_relative_l2"],
+        plasma_mask_fraction=float(source_components["plasma_mask_fraction"]),
+        pressure_source_norm=float(source_components["pressure_source_norm"]),
+        ffprime_source_norm=float(source_components["ffprime_source_norm"]),
+        total_source_norm=float(source_components["total_source_norm"]),
+        pressure_source_fraction=float(
+            source_components["pressure_source_norm"]
+            / max(source_components["total_source_norm"], 1e-15)
+        ),
+        ffprime_source_fraction=float(
+            source_components["ffprime_source_norm"]
+            / max(source_components["total_source_norm"], 1e-15)
+        ),
+        source_plasma_residual_l2=source_alignment["source_plasma_residual_l2"],
+        source_vacuum_residual_l2=source_alignment["source_vacuum_residual_l2"],
+        source_plasma_operator_norm=source_alignment["source_plasma_operator_norm"],
+        source_vacuum_operator_norm=source_alignment["source_vacuum_operator_norm"],
+        source_plasma_point_count=source_alignment["source_plasma_point_count"],
+        source_vacuum_point_count=source_alignment["source_vacuum_point_count"],
+        best_source_candidate=best_source_candidate,
+        best_source_candidate_residual_l2=best_source_candidate_residual,
+        profile_source_candidate_rank=profile_source_rank,
+        best_operator_candidate=best_operator_candidate,
+        best_operator_candidate_residual_l2=best_operator_candidate_residual,
+        delta_star_psi_candidate_rank=delta_star_psi_rank,
     )
 
 
@@ -550,6 +951,222 @@ def validate_all_sparc(sparc_dir: Path | None = None) -> PsiRMSESummary:
         worst_file=worst_file,
         rows=rows,
     )
+
+
+def _benchmark_reference_files(
+    reference_root: Path,
+    *,
+    include_proxy: bool,
+) -> list[tuple[str, Path]]:
+    machines = ("sparc", "diiid", "jet") if include_proxy else ("sparc",)
+    files: list[tuple[str, Path]] = []
+    for machine in machines:
+        machine_dir = reference_root / machine
+        if not machine_dir.exists():
+            continue
+        machine_files = sorted(machine_dir.glob("*.geqdsk")) + sorted(machine_dir.glob("*.eqdsk"))
+        files.extend((machine, path) for path in machine_files)
+    return files
+
+
+def validate_efit_nrmse_benchmark(
+    reference_root: Path | None = None,
+    *,
+    min_files: int = 10,
+    max_nrmse: float = 0.05,
+    include_proxy: bool = True,
+) -> EfitNRMSEBenchmarkGate:
+    """
+    Run a strict aggregate ψ_N RMSE gate over EFIT/GEQDSK reference equilibria.
+
+    SPARC entries are public design references.  Bundled DIII-D/JET entries are
+    synthetic proxy references, so the returned provenance must travel with any
+    public benchmark claim.
+    """
+    if min_files <= 0:
+        raise ValueError("min_files must be > 0")
+    if not np.isfinite(max_nrmse) or max_nrmse <= 0.0:
+        raise ValueError("max_nrmse must be finite and > 0")
+
+    if reference_root is None:
+        reference_root = REFERENCE_DATA_DIR
+
+    files = _benchmark_reference_files(reference_root, include_proxy=include_proxy)
+    if not files:
+        raise FileNotFoundError(f"No GEQDSK/EQDSK files in {reference_root}")
+
+    rows: list[dict[str, Any]] = []
+    count_by_machine: dict[str, int] = {}
+    finite_entries: list[tuple[str, float]] = []
+    pass_count = 0
+    failure_reasons: list[str] = []
+
+    for machine, path in files:
+        result = validate_file(path)
+        rel_path = f"{machine}/{path.name}"
+        rmse_norm = float(result.psi_rmse_norm)
+        provenance = EFIT_BENCHMARK_MACHINE_PROVENANCE[machine]
+
+        count_by_machine[machine] = count_by_machine.get(machine, 0) + 1
+        if np.isfinite(rmse_norm):
+            finite_entries.append((rel_path, rmse_norm))
+            if rmse_norm <= max_nrmse:
+                pass_count += 1
+        else:
+            failure_reasons.append(f"non-finite psi_rmse_norm in {rel_path}")
+
+        row = asdict(result)
+        row["file"] = rel_path
+        row["machine"] = machine
+        row["provenance"] = provenance
+        row["threshold"] = max_nrmse
+        row["passes_threshold"] = bool(np.isfinite(rmse_norm) and rmse_norm <= max_nrmse)
+        rows.append(row)
+
+    if finite_entries:
+        worst_file, worst_norm = max(finite_entries, key=lambda item: item[1])
+        mean_norm = float(np.mean([norm for _, norm in finite_entries]))
+    else:
+        worst_file = ""
+        worst_norm = float("nan")
+        mean_norm = float("nan")
+
+    source_consistency_counts: dict[str, int] = {}
+    source_residual_entries: list[tuple[str, float]] = []
+    for row in rows:
+        source_class = str(row["source_consistency_class"])
+        source_consistency_counts[source_class] = source_consistency_counts.get(source_class, 0) + 1
+        source_residual = float(row["source_residual_l2"])
+        if np.isfinite(source_residual):
+            source_residual_entries.append((str(row["file"]), source_residual))
+
+    if source_residual_entries:
+        worst_source_alignment_file, worst_source_residual = max(
+            source_residual_entries,
+            key=lambda item: item[1],
+        )
+    else:
+        worst_source_alignment_file = ""
+        worst_source_residual = float("nan")
+
+    if len(files) < min_files:
+        failure_reasons.append(f"count {len(files)} < required {min_files}")
+    if np.isfinite(worst_norm) and worst_norm > max_nrmse:
+        failure_reasons.append(f"worst psi_rmse_norm {worst_norm:.6g} > threshold {max_nrmse:.6g}")
+    source_mismatch_count = sum(
+        1 for row in rows if row["source_consistency_class"] == "profile_source_mismatch"
+    )
+    solver_failure_count = sum(
+        1 for row in rows if row["source_consistency_class"] == "solver_consistency_failure"
+    )
+    if source_mismatch_count:
+        failure_reasons.append(
+            f"profile-source mismatch attribution in {source_mismatch_count} rows"
+        )
+    if solver_failure_count:
+        failure_reasons.append(
+            f"operator-source solver consistency failure in {solver_failure_count} rows"
+        )
+
+    provenance_by_machine = {
+        machine: EFIT_BENCHMARK_MACHINE_PROVENANCE[machine] for machine in count_by_machine
+    }
+
+    return EfitNRMSEBenchmarkGate(
+        schema_version=EFIT_NRMSE_BENCHMARK_SCHEMA_VERSION,
+        benchmark_id="efit-nrmse-benchmark",
+        count=len(files),
+        min_required_files=min_files,
+        threshold=max_nrmse,
+        pass_count=pass_count,
+        passes=not failure_reasons,
+        mean_psi_rmse_norm=mean_norm,
+        worst_psi_rmse_norm=float(worst_norm),
+        worst_file=worst_file,
+        count_by_machine=count_by_machine,
+        provenance_by_machine=provenance_by_machine,
+        source_consistency_counts=source_consistency_counts,
+        worst_source_residual_l2=float(worst_source_residual),
+        worst_source_alignment_file=worst_source_alignment_file,
+        failure_reasons=failure_reasons,
+        rows=rows,
+    )
+
+
+def _contract_path(parent: str, key: str) -> str:
+    return key if not parent else f"{parent}.{key}"
+
+
+def _validate_schema_contract(
+    payload: Any,
+    schema: Mapping[str, Any],
+    *,
+    path: str,
+    label: str,
+) -> None:
+    """Enforce the required/no-extra-fields subset of local JSON-schema contracts."""
+    if schema.get("type") == "object":
+        if not isinstance(payload, Mapping):
+            return
+        properties = schema.get("properties", {})
+        if not isinstance(properties, Mapping):
+            return
+        for key in schema.get("required", []):
+            if key not in payload:
+                raise ValueError(f"missing required {label} key: {_contract_path(path, str(key))}")
+        if schema.get("additionalProperties") is False:
+            for key in payload:
+                if key not in properties:
+                    raise ValueError(f"unexpected {label} key: {_contract_path(path, str(key))}")
+        for key, child_schema in properties.items():
+            if key in payload and isinstance(child_schema, Mapping):
+                _validate_schema_contract(
+                    payload[key],
+                    child_schema,
+                    path=_contract_path(path, str(key)),
+                    label=label,
+                )
+    elif schema.get("type") == "array":
+        if not isinstance(payload, list):
+            return
+        item_schema = schema.get("items", {})
+        if not isinstance(item_schema, Mapping):
+            return
+        for index, item in enumerate(payload):
+            _validate_schema_contract(
+                item,
+                item_schema,
+                path=f"{path}[{index}]",
+                label=label,
+            )
+
+
+def load_efit_nrmse_benchmark_schema() -> dict[str, Any]:
+    """Load the public EFIT/GEQDSK ψ_N RMSE benchmark report schema."""
+    schema_path = SCHEMA_DIR / "efit_nrmse_benchmark.schema.json"
+    return json.loads(schema_path.read_text(encoding="utf-8"))
+
+
+def validate_efit_nrmse_benchmark_report(
+    report: Mapping[str, Any],
+    schema: Mapping[str, Any],
+) -> None:
+    """Validate the EFIT/GEQDSK benchmark report against the local schema contract."""
+    root_properties = schema["properties"]
+    for key in report:
+        if key not in root_properties:
+            raise ValueError(f"unexpected benchmark report key: {key}")
+    _validate_schema_contract(report, schema, path="", label="benchmark report")
+    for key in schema["required"]:
+        if key not in report:
+            raise ValueError(f"missing required benchmark report key: {key}")
+    expected_version = root_properties["schema_version"]["const"]
+    if report["schema_version"] != expected_version:
+        raise ValueError("unexpected schema_version")
+    if report["benchmark_id"] != root_properties["benchmark_id"]["const"]:
+        raise ValueError("unexpected benchmark_id")
+    if not isinstance(report["rows"], list) or not report["rows"]:
+        raise ValueError("rows must be a non-empty list")
 
 
 # ── For rmse_dashboard.py integration ────────────────────────────────
@@ -605,7 +1222,75 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w") as f:
         json.dump(asdict(summary), f, indent=2)
+        f.write("\n")
     print(f"\nJSON report: {out}")
+
+    print("\n" + "=" * 70)
+    print("EFIT/GEQDSK aggregate psi_N RMSE benchmark gate")
+    print("=" * 70)
+    benchmark = validate_efit_nrmse_benchmark()
+    print(f"Files validated:        {benchmark.count}")
+    print(f"Minimum required files: {benchmark.min_required_files}")
+    print(f"Threshold psi_N RMSE:   {benchmark.threshold:.6f}")
+    print(f"Rows under threshold:   {benchmark.pass_count}/{benchmark.count}")
+    print(
+        f"Worst file:             {benchmark.worst_file} "
+        f"(psi_N RMSE = {benchmark.worst_psi_rmse_norm:.6f})"
+    )
+    source_classes = ", ".join(
+        f"{name}={count}" for name, count in sorted(benchmark.source_consistency_counts.items())
+    )
+    print(f"Source classes:        {source_classes}")
+    print(
+        f"Worst source residual: {benchmark.worst_source_alignment_file} "
+        f"(relative L2 = {benchmark.worst_source_residual_l2:.6f})"
+    )
+    worst_source_row = next(
+        (row for row in benchmark.rows if row["file"] == benchmark.worst_source_alignment_file),
+        None,
+    )
+    if worst_source_row is not None:
+        print(
+            "Worst source components: "
+            f"pressure_fraction={worst_source_row['pressure_source_fraction']:.6f}, "
+            f"ffprime_fraction={worst_source_row['ffprime_source_fraction']:.6f}, "
+            f"plasma_mask_fraction={worst_source_row['plasma_mask_fraction']:.6f}"
+        )
+        print(
+            "Worst source masked residuals: "
+            f"plasma={worst_source_row['source_plasma_residual_l2']:.6f}, "
+            f"vacuum={worst_source_row['source_vacuum_residual_l2']:.6f}"
+        )
+        print(
+            "Best source candidate: "
+            f"{worst_source_row['best_source_candidate']} "
+            f"(relative L2 = {worst_source_row['best_source_candidate_residual_l2']:.6f}, "
+            f"profile rank = {worst_source_row['profile_source_candidate_rank']})"
+        )
+        print(
+            "Best operator candidate: "
+            f"{worst_source_row['best_operator_candidate']} "
+            f"(relative L2 = {worst_source_row['best_operator_candidate_residual_l2']:.6f}, "
+            f"delta_star_psi rank = {worst_source_row['delta_star_psi_candidate_rank']})"
+        )
+    print(f"Gate status:            {'PASS' if benchmark.passes else 'FAIL'}")
+    if benchmark.failure_reasons:
+        print("Failure reasons:")
+        for reason in benchmark.failure_reasons:
+            print(f"  - {reason}")
+    print("Provenance:")
+    for machine, provenance in benchmark.provenance_by_machine.items():
+        print(f"  - {machine}: {provenance}")
+
+    benchmark_out = ROOT / "validation" / "reports" / "psi_efit_nrmse_benchmark.json"
+    validate_efit_nrmse_benchmark_report(
+        asdict(benchmark),
+        load_efit_nrmse_benchmark_schema(),
+    )
+    with benchmark_out.open("w") as f:
+        json.dump(asdict(benchmark), f, indent=2)
+        f.write("\n")
+    print(f"\nBenchmark JSON report: {benchmark_out}")
 
     return 0
 

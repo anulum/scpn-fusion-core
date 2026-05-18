@@ -90,6 +90,74 @@ def test_coilset_with_target_flux_values():
     assert cs.target_flux_values.shape == (3,)
 
 
+def test_build_coilset_from_config_maps_free_boundary_contract(kernel: FusionKernel):
+    """FusionKernel should expose a real config-backed coil contract."""
+    kernel.cfg["coils"] = [
+        {"name": "PF1", "r": 3.0, "z": 2.0, "current": 2.5, "turns": 12},
+        {"name": "PF2", "r": 5.0, "z": -2.0, "current": -1.5, "turns": 8},
+    ]
+    kernel.cfg["free_boundary"] = {
+        "current_limits": [7.0, 9.0],
+        "target_flux_points": [[4.0, 0.0], [4.5, 0.2]],
+        "target_flux_values": [0.1, 0.2],
+        "x_point_target": [4.2, -1.1],
+        "x_point_flux_target": 0.05,
+        "divertor_strike_points": [[3.2, -2.2]],
+        "divertor_flux_values": [0.03],
+    }
+
+    coils = kernel.build_coilset_from_config()
+
+    assert coils.positions == [(3.0, 2.0), (5.0, -2.0)]
+    np.testing.assert_allclose(coils.currents, np.array([2.5, -1.5], dtype=np.float64))
+    assert coils.turns == [12, 8]
+    np.testing.assert_allclose(coils.current_limits, np.array([7.0, 9.0], dtype=np.float64))
+    np.testing.assert_allclose(
+        coils.target_flux_points,
+        np.array([[4.0, 0.0], [4.5, 0.2]], dtype=np.float64),
+    )
+    np.testing.assert_allclose(coils.target_flux_values, np.array([0.1, 0.2]))
+    np.testing.assert_allclose(coils.x_point_target, np.array([4.2, -1.1]))
+    assert coils.x_point_flux_target == pytest.approx(0.05)
+    np.testing.assert_allclose(coils.divertor_strike_points, np.array([[3.2, -2.2]]))
+    np.testing.assert_allclose(coils.divertor_flux_values, np.array([0.03]))
+
+
+def test_build_coilset_from_config_rejects_shape_mismatches(kernel: FusionKernel):
+    """Free-boundary config must fail before a control shot starts."""
+    kernel.cfg["coils"] = [
+        {"name": "PF1", "r": 3.0, "z": 2.0, "current": 2.5},
+        {"name": "PF2", "r": 5.0, "z": -2.0, "current": -1.5},
+    ]
+    kernel.cfg["free_boundary"] = {
+        "current_limits": [5.0],
+        "target_flux_points": [[4.0, 0.0], [4.5, 0.2]],
+        "target_flux_values": [0.1],
+    }
+
+    with pytest.raises(ValueError, match="current_limits"):
+        kernel.build_coilset_from_config()
+
+    kernel.cfg["free_boundary"]["current_limits"] = [5.0]
+    kernel.cfg["coils"] = [{"name": "PF1", "r": 3.0, "z": 2.0, "current": 2.5}]
+    with pytest.raises(ValueError, match="target_flux_values"):
+        kernel.build_coilset_from_config()
+
+
+def test_sample_flux_at_points_uses_kernel_interpolator(kernel: FusionKernel):
+    """Flux sampling should expose the same interpolation semantics as _interp_psi."""
+    kernel.Psi = kernel.RR + 2.0 * kernel.ZZ
+    points = np.array([[kernel.R[2], kernel.Z[3]], [kernel.R[4], kernel.Z[5]]])
+
+    samples = kernel._sample_flux_at_points(points)
+
+    expected = np.array(
+        [kernel._interp_psi(float(r_pt), float(z_pt)) for r_pt, z_pt in points],
+        dtype=np.float64,
+    )
+    np.testing.assert_allclose(samples, expected, atol=1e-12)
+
+
 # ── Mutual inductance matrix ────────────────────────────────────────
 
 

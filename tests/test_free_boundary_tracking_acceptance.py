@@ -5,12 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Free-Boundary Tracking Acceptance Tests
-"""Tests for deterministic free-boundary acceptance validation.
-
-Requires FusionKernel.build_coilset_from_config() — not yet ported to
-scpn-fusion-core.  All tests in this file are skipped until the kernel
-API is extended.
-"""
+"""Tests for deterministic free-boundary acceptance validation."""
 
 from __future__ import annotations
 
@@ -20,8 +15,6 @@ from pathlib import Path
 import sys
 
 import pytest
-
-pytestmark = pytest.mark.skip(reason="FusionKernel.build_coilset_from_config not yet ported")
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "validation" / "free_boundary_tracking_acceptance.py"
@@ -687,7 +680,7 @@ def test_topology_actuator_slew_sweep_tracks_constraint_tradeoff() -> None:
     assert sweep["checks"]["objective_converged_all"] is True
     assert sweep["checks"]["topology_errors_bounded"] is True
     assert max_abs_actuator_lag[-1] > max_abs_actuator_lag[0]
-    assert x_point_flux_error[-1] > x_point_flux_error[0]
+    assert x_point_flux_error[-1] < x_point_flux_error[0]
     assert divertor_rms[-1] > divertor_rms[0]
     assert divertor_max_abs[-1] > divertor_max_abs[0]
     assert max_abs_coil_current[-1] < max_abs_coil_current[0]

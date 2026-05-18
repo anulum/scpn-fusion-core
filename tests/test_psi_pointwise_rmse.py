@@ -14,6 +14,7 @@ RMSE metric computation on real SPARC GEQDSK files.
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -31,13 +32,22 @@ pytestmark = pytest.mark.skipif(
 import validation.psi_pointwise_rmse as psi_rmse_mod
 from scpn_fusion.core.eqdsk import read_geqdsk
 from validation.psi_pointwise_rmse import (
+    EFIT_BENCHMARK_MACHINE_PROVENANCE,
+    EfitNRMSEBenchmarkGate,
     PsiRMSEResult,
     compute_gs_source,
     compute_psi_rmse,
+    compute_operator_candidate_rankings,
+    compute_source_alignment,
+    compute_source_candidate_rankings,
+    compute_source_components,
     gs_operator,
     gs_residual,
+    load_efit_nrmse_benchmark_schema,
     manufactured_solve_vectorised,
     validate_all_sparc,
+    validate_efit_nrmse_benchmark_report,
+    validate_efit_nrmse_benchmark,
     validate_file,
 )
 
@@ -150,6 +160,97 @@ class TestComputeGSSource:
         with pytest.raises(ValueError, match="strictly increasing"):
             compute_gs_source(eq)
 
+    def test_source_components_recombine_to_gs_source(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+
+        components = compute_source_components(eq)
+        source = compute_gs_source(eq)
+
+        assert np.allclose(components["total_source"], source)
+        assert components["pressure_source"].shape == source.shape
+        assert components["ffprime_source"].shape == source.shape
+        assert components["plasma_mask"].shape == source.shape
+        assert 0.0 < components["plasma_mask_fraction"] < 1.0
+        assert components["pressure_source_norm"] >= 0.0
+        assert components["ffprime_source_norm"] >= 0.0
+        assert components["total_source_norm"] > 0.0
+
+    def test_source_components_reject_invalid_equilibrium_contract(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        eq.ffprime = eq.ffprime[:-1]
+        with pytest.raises(ValueError, match="ffprime"):
+            compute_source_components(eq)
+
+
+class TestComputeSourceAlignment:
+    """Source-attribution metrics for EFIT/GEQDSK profile-source mismatch."""
+
+    def test_operator_source_is_exactly_self_consistent(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        operator_source = gs_operator(eq.psirz, eq.r, eq.z)
+
+        metrics = compute_source_alignment(eq, source=operator_source)
+
+        assert metrics["source_residual_l2"] < 1e-12
+        assert metrics["source_correlation"] == pytest.approx(1.0)
+        assert metrics["source_best_fit_scale"] == pytest.approx(1.0)
+        assert abs(metrics["source_best_fit_offset"]) < 1e-12
+        assert metrics["source_best_fit_relative_l2"] < 1e-12
+        assert metrics["source_plasma_residual_l2"] < 1e-12
+        assert metrics["source_vacuum_residual_l2"] < 1e-12
+
+    def test_profile_source_mismatch_metrics_are_finite_on_sparc_reference(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+
+        metrics = compute_source_alignment(eq)
+
+        assert np.isfinite(metrics["operator_source_norm"])
+        assert np.isfinite(metrics["profile_source_norm"])
+        assert np.isfinite(metrics["source_residual_l2"])
+        assert np.isfinite(metrics["source_correlation"])
+        assert np.isfinite(metrics["source_best_fit_scale"])
+        assert np.isfinite(metrics["source_best_fit_offset"])
+        assert np.isfinite(metrics["source_best_fit_relative_l2"])
+        assert np.isfinite(metrics["source_plasma_residual_l2"])
+        assert np.isfinite(metrics["source_vacuum_residual_l2"])
+        assert np.isfinite(metrics["source_plasma_operator_norm"])
+        assert np.isfinite(metrics["source_vacuum_operator_norm"])
+        assert metrics["source_residual_l2"] > 1.0
+        assert metrics["source_plasma_point_count"] > 0
+        assert metrics["source_vacuum_point_count"] > 0
+        assert metrics["source_vacuum_residual_l2"] <= 10.0
+
+    def test_source_candidate_rankings_are_sorted_and_include_canonical_source(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+
+        candidates = compute_source_candidate_rankings(eq)
+
+        assert len(candidates) >= 6
+        names = [row["candidate"] for row in candidates]
+        assert "profile_source" in names
+        assert "negated_profile_source" in names
+        assert "pressure_plus_negated_ffprime" in names
+        residuals = [row["source_residual_l2"] for row in candidates]
+        assert residuals == sorted(residuals)
+        assert all(np.isfinite(row["source_residual_l2"]) for row in candidates)
+        assert candidates[0]["candidate"] != ""
+
+    def test_operator_candidate_rankings_are_sorted_and_include_normalization_variants(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+
+        candidates = compute_operator_candidate_rankings(eq)
+
+        assert len(candidates) >= 5
+        names = [row["candidate"] for row in candidates]
+        assert "delta_star_psi" in names
+        assert "delta_star_psi_over_flux_span" in names
+        assert "delta_star_psi_norm" in names
+        residuals = [row["profile_residual_l2"] for row in candidates]
+        assert residuals == sorted(residuals)
+        assert all(np.isfinite(row["profile_residual_l2"]) for row in candidates)
+        assert all(np.isfinite(row["profile_best_fit_relative_l2"]) for row in candidates)
+        assert candidates[0]["candidate"] != ""
+
 
 # ── Integration tests on SPARC data ─────────────────────────────────
 
@@ -223,6 +324,35 @@ class TestManufacturedSolve:
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
         with pytest.raises(ValueError, match=match):
             manufactured_solve_vectorised(eq, **kwargs)
+
+    def test_vectorised_solver_preserves_reference_for_operator_source(self):
+        """The reference ψ must be a fixed point when the source is Lψ_ref."""
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        operator_source = gs_operator(eq.psirz, eq.r, eq.z)
+
+        psi_sol, iters, res, _ = manufactured_solve_vectorised(
+            eq,
+            source_override=operator_source,
+            omega=1.3,
+            max_iter=20,
+            tol=1e-10,
+        )
+        metrics = compute_psi_rmse(eq, psi_sol)
+
+        assert iters == 10
+        assert res <= 1e-10
+        assert metrics["psi_rmse_norm"] < 1e-10
+
+    def test_vectorised_solver_rejects_invalid_source_override(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        bad_shape = np.zeros((eq.nh - 1, eq.nw), dtype=np.float64)
+        with pytest.raises(ValueError, match="source_override shape"):
+            manufactured_solve_vectorised(eq, source_override=bad_shape)
+
+        bad_value = np.zeros((eq.nh, eq.nw), dtype=np.float64)
+        bad_value[0, 0] = np.nan
+        with pytest.raises(ValueError, match="source_override must contain only finite values"):
+            manufactured_solve_vectorised(eq, source_override=bad_value)
 
 
 class TestComputePsiRMSE:
@@ -344,3 +474,308 @@ class TestValidateAllSPARC:
         assert summary.count == 2
         assert summary.worst_file == f_good.name
         assert summary.worst_psi_rmse_norm == pytest.approx(0.25)
+
+
+class TestValidateEFITNRMSEBenchmark:
+    """Strict aggregate gate for 10+ EFIT/GEQDSK reference equilibria."""
+
+    def _make_reference_tree(self, tmp_path: Path, count_by_machine: dict[str, int]) -> list[Path]:
+        files: list[Path] = []
+        for machine, count in count_by_machine.items():
+            machine_dir = tmp_path / machine
+            machine_dir.mkdir(parents=True, exist_ok=True)
+            for idx in range(count):
+                suffix = ".eqdsk" if machine == "sparc" and idx % 2 else ".geqdsk"
+                path = machine_dir / f"{machine}_{idx:02d}{suffix}"
+                path.write_text("placeholder", encoding="utf-8")
+                files.append(path)
+        return sorted(files)
+
+    def _install_fake_validate_file(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        rmse_by_name: dict[str, float],
+    ) -> None:
+        def _fake_validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
+            del warm_start
+            rmse = rmse_by_name.get(path.name, 0.01)
+            return PsiRMSEResult(
+                file=path.name,
+                grid="3x3",
+                gs_residual_l2=0.1,
+                gs_residual_max=0.2,
+                psi_rmse_wb=1e-3,
+                psi_rmse_norm=rmse,
+                psi_rmse_plasma_wb=1e-3,
+                psi_max_error_wb=2e-3,
+                psi_relative_l2=0.01,
+                sor_iterations=10,
+                sor_residual=1e-4,
+                solve_time_ms=1.0,
+                operator_source_psi_rmse_norm=rmse,
+                operator_source_sor_iterations=10,
+                operator_source_sor_residual=1e-4,
+                source_consistency_class="profile_source_consistent",
+                operator_source_norm=1.0,
+                profile_source_norm=1.0,
+                source_residual_l2=rmse,
+                source_correlation=1.0,
+                source_best_fit_scale=1.0,
+                source_best_fit_offset=0.0,
+                source_best_fit_relative_l2=0.0,
+                plasma_mask_fraction=0.5,
+                pressure_source_norm=0.7,
+                ffprime_source_norm=0.3,
+                total_source_norm=1.0,
+                pressure_source_fraction=0.7,
+                ffprime_source_fraction=0.3,
+                source_plasma_residual_l2=0.01,
+                source_vacuum_residual_l2=0.01,
+                source_plasma_operator_norm=0.5,
+                source_vacuum_operator_norm=0.5,
+                source_plasma_point_count=4.0,
+                source_vacuum_point_count=5.0,
+                best_source_candidate="profile_source",
+                best_source_candidate_residual_l2=rmse,
+                profile_source_candidate_rank=1,
+                best_operator_candidate="delta_star_psi",
+                best_operator_candidate_residual_l2=rmse,
+                delta_star_psi_candidate_rank=1,
+            )
+
+        monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)
+
+    def test_passes_when_minimum_count_and_all_rows_under_threshold(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        self._make_reference_tree(tmp_path, {"sparc": 4, "diiid": 3, "jet": 3})
+        self._install_fake_validate_file(monkeypatch, {})
+
+        gate = validate_efit_nrmse_benchmark(
+            tmp_path,
+            min_files=10,
+            max_nrmse=0.05,
+        )
+
+        assert isinstance(gate, EfitNRMSEBenchmarkGate)
+        assert gate.passes is True
+        assert gate.count == 10
+        assert gate.pass_count == 10
+        assert gate.worst_psi_rmse_norm == pytest.approx(0.01)
+        assert gate.count_by_machine == {"sparc": 4, "diiid": 3, "jet": 3}
+        assert gate.provenance_by_machine == EFIT_BENCHMARK_MACHINE_PROVENANCE
+        assert gate.source_consistency_counts == {"profile_source_consistent": 10}
+        assert gate.worst_source_alignment_file != ""
+        assert gate.worst_source_residual_l2 == pytest.approx(0.01)
+        assert all(row["best_source_candidate"] for row in gate.rows)
+        assert all(row["best_source_candidate_residual_l2"] >= 0.0 for row in gate.rows)
+        assert all(row["profile_source_candidate_rank"] >= 1 for row in gate.rows)
+        assert all(row["best_operator_candidate"] for row in gate.rows)
+        assert all(row["best_operator_candidate_residual_l2"] >= 0.0 for row in gate.rows)
+        assert all(row["delta_star_psi_candidate_rank"] >= 1 for row in gate.rows)
+        assert all(
+            row["source_consistency_class"] == "profile_source_consistent" for row in gate.rows
+        )
+        assert all(row["operator_source_psi_rmse_norm"] == pytest.approx(0.01) for row in gate.rows)
+
+    def test_fails_when_file_count_is_below_required_minimum(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        self._make_reference_tree(tmp_path, {"sparc": 3, "diiid": 3, "jet": 3})
+        self._install_fake_validate_file(monkeypatch, {})
+
+        gate = validate_efit_nrmse_benchmark(
+            tmp_path,
+            min_files=10,
+            max_nrmse=0.05,
+        )
+
+        assert gate.passes is False
+        assert gate.count == 9
+        assert gate.pass_count == 9
+        assert "count 9 < required 10" in gate.failure_reasons
+
+    def test_fails_when_any_finite_row_exceeds_threshold_and_reports_worst(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        files = self._make_reference_tree(tmp_path, {"sparc": 4, "diiid": 3, "jet": 3})
+        worst = files[-1]
+        self._install_fake_validate_file(monkeypatch, {worst.name: 0.075})
+
+        gate = validate_efit_nrmse_benchmark(
+            tmp_path,
+            min_files=10,
+            max_nrmse=0.05,
+        )
+
+        assert gate.passes is False
+        assert gate.pass_count == 9
+        assert gate.worst_file == f"{worst.parent.name}/{worst.name}"
+        assert gate.worst_psi_rmse_norm == pytest.approx(0.075)
+        assert "worst psi_rmse_norm 0.075 > threshold 0.05" in gate.failure_reasons
+
+    def test_aggregate_source_alignment_reports_worst_profile_mismatch(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        files = self._make_reference_tree(tmp_path, {"sparc": 4, "diiid": 3, "jet": 3})
+        worst = files[-1]
+
+        def _fake_validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
+            del warm_start
+            is_worst = path.name == worst.name
+            return PsiRMSEResult(
+                file=path.name,
+                grid="3x3",
+                gs_residual_l2=0.1,
+                gs_residual_max=0.2,
+                psi_rmse_wb=1e-3,
+                psi_rmse_norm=0.01,
+                psi_rmse_plasma_wb=1e-3,
+                psi_max_error_wb=2e-3,
+                psi_relative_l2=0.01,
+                sor_iterations=10,
+                sor_residual=1e-4,
+                solve_time_ms=1.0,
+                operator_source_psi_rmse_norm=1e-12,
+                operator_source_sor_iterations=10,
+                operator_source_sor_residual=1e-12,
+                source_consistency_class="profile_source_mismatch"
+                if is_worst
+                else "profile_source_consistent",
+                source_residual_l2=3.5 if is_worst else 0.01,
+                source_correlation=-0.2 if is_worst else 1.0,
+                source_best_fit_scale=-0.5 if is_worst else 1.0,
+                source_best_fit_offset=0.1 if is_worst else 0.0,
+                source_best_fit_relative_l2=0.9 if is_worst else 0.0,
+                plasma_mask_fraction=0.5,
+                pressure_source_norm=0.7,
+                ffprime_source_norm=0.3,
+                total_source_norm=1.0,
+                pressure_source_fraction=0.7,
+                ffprime_source_fraction=0.3,
+                source_plasma_residual_l2=2.0 if is_worst else 0.01,
+                source_vacuum_residual_l2=4.0 if is_worst else 0.01,
+                source_plasma_operator_norm=0.5,
+                source_vacuum_operator_norm=0.5,
+                source_plasma_point_count=4.0,
+                source_vacuum_point_count=5.0,
+                best_source_candidate="profile_source",
+                best_source_candidate_residual_l2=0.01,
+                profile_source_candidate_rank=1,
+                best_operator_candidate="delta_star_psi",
+                best_operator_candidate_residual_l2=0.01,
+                delta_star_psi_candidate_rank=1,
+            )
+
+        monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)
+
+        gate = validate_efit_nrmse_benchmark(tmp_path)
+
+        assert gate.passes is False
+        assert gate.source_consistency_counts == {
+            "profile_source_consistent": 9,
+            "profile_source_mismatch": 1,
+        }
+        assert gate.worst_source_alignment_file == f"{worst.parent.name}/{worst.name}"
+        assert gate.worst_source_residual_l2 == pytest.approx(3.5)
+        assert "profile-source mismatch attribution in 1 rows" in gate.failure_reasons
+
+    def test_fails_when_a_row_has_non_finite_normalized_rmse(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        files = self._make_reference_tree(tmp_path, {"sparc": 4, "diiid": 3, "jet": 3})
+        bad = files[0]
+        self._install_fake_validate_file(monkeypatch, {bad.name: float("nan")})
+
+        gate = validate_efit_nrmse_benchmark(
+            tmp_path,
+            min_files=10,
+            max_nrmse=0.05,
+        )
+
+        assert gate.passes is False
+        assert gate.pass_count == 9
+        assert gate.worst_file != f"{bad.parent.name}/{bad.name}"
+        assert f"non-finite psi_rmse_norm in {bad.parent.name}/{bad.name}" in gate.failure_reasons
+
+    def test_report_payload_is_schema_valid(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        self._make_reference_tree(tmp_path, {"sparc": 4, "diiid": 3, "jet": 3})
+        self._install_fake_validate_file(monkeypatch, {})
+
+        gate = validate_efit_nrmse_benchmark(tmp_path)
+        payload = asdict(gate)
+
+        validate_efit_nrmse_benchmark_report(
+            payload,
+            load_efit_nrmse_benchmark_schema(),
+        )
+        assert payload["schema_version"] == "efit-nrmse-benchmark.v1"
+        assert payload["benchmark_id"] == "efit-nrmse-benchmark"
+
+    def test_report_schema_rejects_unknown_top_level_key(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        self._make_reference_tree(tmp_path, {"sparc": 4, "diiid": 3, "jet": 3})
+        self._install_fake_validate_file(monkeypatch, {})
+        payload = asdict(validate_efit_nrmse_benchmark(tmp_path))
+        payload["operator_notes"] = "not part of the public report contract"
+
+        with pytest.raises(ValueError, match="unexpected benchmark report key: operator_notes"):
+            validate_efit_nrmse_benchmark_report(
+                payload,
+                load_efit_nrmse_benchmark_schema(),
+            )
+
+    def test_report_schema_rejects_missing_nested_row_key(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        self._make_reference_tree(tmp_path, {"sparc": 4, "diiid": 3, "jet": 3})
+        self._install_fake_validate_file(monkeypatch, {})
+        payload = asdict(validate_efit_nrmse_benchmark(tmp_path))
+        del payload["rows"][0]["provenance"]
+
+        with pytest.raises(
+            ValueError,
+            match=r"missing required benchmark report key: rows\[0\]\.provenance",
+        ):
+            validate_efit_nrmse_benchmark_report(
+                payload,
+                load_efit_nrmse_benchmark_schema(),
+            )
+
+    def test_report_schema_rejects_missing_source_attribution_key(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        self._make_reference_tree(tmp_path, {"sparc": 4, "diiid": 3, "jet": 3})
+        self._install_fake_validate_file(monkeypatch, {})
+        payload = asdict(validate_efit_nrmse_benchmark(tmp_path))
+        del payload["rows"][0]["source_consistency_class"]
+
+        with pytest.raises(
+            ValueError,
+            match=r"missing required benchmark report key: rows\[0\]\.source_consistency_class",
+        ):
+            validate_efit_nrmse_benchmark_report(
+                payload,
+                load_efit_nrmse_benchmark_schema(),
+            )

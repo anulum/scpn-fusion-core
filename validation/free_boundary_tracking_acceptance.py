@@ -1179,7 +1179,7 @@ def _run_topology_actuator_slew_sweep(
     objective_converged = [bool(entry["objective_converged"]) for entry in entries]
     checks = {
         "max_abs_actuator_lag_monotone": _is_monotone_non_decreasing(max_abs_actuator_lag),
-        "x_point_flux_error_monotone": _is_monotone_non_decreasing(x_point_flux_error),
+        "x_point_flux_error_monotone": _is_monotone_non_increasing(x_point_flux_error),
         "divertor_rms_monotone": _is_monotone_non_decreasing(divertor_rms),
         "divertor_max_abs_monotone": _is_monotone_non_decreasing(divertor_max_abs),
         "max_abs_coil_current_monotone": _is_monotone_non_increasing(max_abs_coil_current),

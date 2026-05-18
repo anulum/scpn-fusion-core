@@ -31,12 +31,16 @@ from scipy.special import ellipe, ellipk
 
 from scpn_fusion.core.config_schema import validate_config
 from scpn_fusion.core.fusion_kernel_free_boundary import (
+    build_coilset_from_config as _build_coilset_from_config_runtime,
+    build_magnetic_probe_response_matrix as _build_magnetic_probe_response_matrix_runtime,
     build_mutual_inductance_matrix as _build_mutual_inductance_matrix_runtime,
     compute_external_flux as _compute_external_flux_runtime,
     green_function as _green_function_runtime,
     interp_psi as _interp_psi_runtime,
     optimize_coil_currents as _optimize_coil_currents_runtime,
+    reconstruct_coil_currents_from_magnetic_probes as _reconstruct_coil_currents_from_magnetic_probes_runtime,
     resolve_shape_target_flux as _resolve_shape_target_flux_runtime,
+    sample_flux_at_points as _sample_flux_at_points_runtime,
     solve_free_boundary as _solve_free_boundary_runtime,
 )
 from scpn_fusion.core.fusion_kernel_iterative_solver import FusionKernelIterativeSolverMixin
@@ -459,6 +463,10 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
         """Sum Green's function contributions on boundary from CoilSet."""
         return _compute_external_flux_runtime(self, coils)
 
+    def build_coilset_from_config(self) -> CoilSet:
+        """Build a validated free-boundary coil set from ``self.cfg``."""
+        return _build_coilset_from_config_runtime(self)
+
     def _build_mutual_inductance_matrix(
         self,
         coils: CoilSet,
@@ -481,6 +489,48 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
         FloatArray, shape (n_coils, n_pts)
         """
         return _build_mutual_inductance_matrix_runtime(self, coils, obs_points)
+
+    def _build_magnetic_probe_response_matrix(
+        self,
+        coils: CoilSet,
+        *,
+        flux_points: FloatArray | None = None,
+        b_probe_points: FloatArray | None = None,
+        b_probe_directions: list[str] | tuple[str, ...] | None = None,
+    ) -> FloatArray:
+        """Build coil-current response rows for flux loops and magnetic probes."""
+        return _build_magnetic_probe_response_matrix_runtime(
+            self,
+            coils,
+            flux_points=flux_points,
+            b_probe_points=b_probe_points,
+            b_probe_directions=b_probe_directions,
+        )
+
+    def reconstruct_coil_currents_from_magnetic_probes(
+        self,
+        coils: CoilSet,
+        *,
+        flux_points: FloatArray | None = None,
+        flux_measurements: FloatArray | None = None,
+        b_probe_points: FloatArray | None = None,
+        b_probe_directions: list[str] | tuple[str, ...] | None = None,
+        b_probe_measurements: FloatArray | None = None,
+        measurement_sigma: FloatArray | None = None,
+        tikhonov_alpha: float = 1.0e-6,
+    ) -> dict[str, Any]:
+        """Fit free-boundary coil currents from magnetic diagnostic measurements."""
+        return _reconstruct_coil_currents_from_magnetic_probes_runtime(
+            self,
+            coils,
+            flux_points=flux_points,
+            flux_measurements=flux_measurements,
+            b_probe_points=b_probe_points,
+            b_probe_directions=b_probe_directions,
+            b_probe_measurements=b_probe_measurements,
+            measurement_sigma=measurement_sigma,
+            tikhonov_alpha=tikhonov_alpha,
+        )
 
     def optimize_coil_currents(
         self,
@@ -574,6 +624,10 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
     def _interp_psi(self, R_pt: float, Z_pt: float) -> float:
         """Bilinear interpolation of Psi at an arbitrary (R, Z) point."""
         return _interp_psi_runtime(self, R_pt, Z_pt)
+
+    def _sample_flux_at_points(self, points: FloatArray) -> FloatArray:
+        """Sample poloidal flux at validated ``(R, Z)`` points."""
+        return _sample_flux_at_points_runtime(self, points)
 
     def save_results(self, filename: str = "equilibrium_nonlinear.npz") -> None:
         """Save the equilibrium state to a compressed NumPy archive.

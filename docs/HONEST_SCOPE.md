@@ -14,6 +14,7 @@ first-principles transport/gyrokinetic code.
 | QLKNN-10D real-gyrokinetic transport surrogate | test_rel_L2 = 0.094 (1024×512×256 gated MLP, 500K samples, GPU L40S), Zenodo DOI 10.5281/zenodo.3497066 |
 | IPB98(y,2) confinement scaling on 53 shots / 24 machines | `validation/reference_data/itpa/hmode_confinement.csv` |
 | 8 SPARC EFIT GEQDSK equilibrium validation | `validation/reference_data/sparc/` (MIT, CFS) |
+| Strict EFIT/GEQDSK ψ_N RMSE benchmark gate | Implemented in `validation/psi_pointwise_rmse.py`; current bundled 18-file gate is intentionally reported as not passing the <5% target, with row-level profile-source mismatch attribution plus source/operator convention diagnostics |
 | Solov'ev manufactured-source parity | **PASS** — ψ NRMSE 0.000 across 5 tokamak geometries (v3.9.3). 1/R stencil sign error fixed. |
 | 0% disruption rate across 1,000-shot stress campaigns | `validation/stress_test_campaign.py` |
 | JAX-differentiable GS equilibrium (autodiff through Picard+SOR) | `core/jax_equilibrium_solver.py`, 9 tests |
@@ -34,7 +35,7 @@ first-principles transport/gyrokinetic code.
 
 | Module | Actual fidelity | Known limitations |
 |--------|----------------|-------------------|
-| Equilibrium | Picard + SOR/multigrid, converges on SPARC GEQDSKs; default 129×129 grid; free-boundary via Green's function + coil optimisation | Not EFIT-quality inverse reconstruction |
+| Equilibrium | Picard + SOR/multigrid, converges on SPARC GEQDSKs; default 129×129 grid; free-boundary via Green's function + coil optimisation plus bounded magnetic-diagnostic coil-current fitting; strict EFIT/GEQDSK ψ_N RMSE aggregate gate exists and separates operator-source solver consistency from profile-source mismatch. Current diagnostics show simple source sign/component variants do not explain the worst mismatch; the best tested operator variant is a flux-span-scaled Δ*ψ candidate but it remains inconsistent. | Not EFIT/LiUQE-quality full-profile inverse reconstruction; bundled 18-file aggregate does not yet meet <5% ψ_N RMSE |
 | Transport | 1.5D Bohm/gyro-Bohm + Chang-Hinton neoclassical | No ITG/TEM/ETG channels; no NBI slowing-down |
 | Neural equilibrium | PCA+MLP on 18 GEQDSK files (SPARC+DIII-D+JET) × 25 perturbations | Useful only for equilibrium families it was trained on |
 | FNO turbulence | QLKNN-oracle-trained (val_rel_L2 = 0.055); validated against QLKNN-10D test set | No direct gyrokinetic (GENE/CGYRO) validation |
@@ -74,7 +75,7 @@ Each carries explicit fidelity limitations.
 | Module Area | What We Implement | What We Do Not |
 |-------------|-------------------|----------------|
 | Native linear GK | Reduced-order linear eigenvalue solver for ITG/TEM/ETG | Full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-Maxwell) |
-| Free-boundary tracking | Direct coil-response identification from equilibrium sensitivity | Inverse reconstruction from magnetic probes (EFIT, LIUQE) |
+| Free-boundary tracking | Direct coil-response identification from equilibrium sensitivity plus bounded magnetic-probe coil-current fitting | Full EFIT/LiUQE-quality profile and boundary reconstruction |
 | Disruption predictor | ML classifier trained on reconstructed profile features | Bayesian credibility intervals or physics-based disruption chain models |
 | Impurity transport | Banana-regime neoclassical (Pfirsch-Schluter + banana plateau) | Full Hirshman-Sigmar multi-species collisional operator |
 | VMEC-lite | Reduced-order Fourier representation of 3D equilibria | Full VMEC variational energy minimization with free-boundary |

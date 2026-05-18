@@ -103,8 +103,10 @@ The Petri net -> SNN compiler targets NumPy today. v4.0 adds:
 
 - [x] CoilSet extended for free-boundary tracking (v3.9.4)
 - [x] Direct coil-response identification (v3.9.4)
-- [ ] FreeGS-compatible coil model
-- [ ] Inverse reconstruction mode (fit to magnetic probes)
+- [x] FreeGS-compatible coil model (config-backed CoilSet bridge)
+- [x] Inverse reconstruction mode (bounded coil-current fit to magnetic probes)
+- [x] Strict 10+ file EFIT/GEQDSK ψ_N RMSE benchmark gate with provenance labels and source-attribution diagnostics
+- [x] EFIT source/operator convention diagnostics: source sign/component sweep plus operator flux-span and curvature-variant sweep
 - [ ] Benchmark: NRMSE < 5% against EFIT on 10+ shots
 
 ## v4.1 — Community & Integration (target: Q3 2026)

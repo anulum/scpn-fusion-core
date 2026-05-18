@@ -1,0 +1,304 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anulum.github.io/scpn-fusion-core/schemas/efit_nrmse_benchmark.schema.json",
+  "title": "SCPN Fusion Core EFIT GEQDSK Normalized Psi RMSE Benchmark Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "benchmark_id",
+    "count",
+    "min_required_files",
+    "threshold",
+    "pass_count",
+    "passes",
+    "mean_psi_rmse_norm",
+    "worst_psi_rmse_norm",
+    "worst_file",
+    "count_by_machine",
+    "provenance_by_machine",
+    "source_consistency_counts",
+    "worst_source_residual_l2",
+    "worst_source_alignment_file",
+    "failure_reasons",
+    "rows"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "efit-nrmse-benchmark.v1"
+    },
+    "benchmark_id": {
+      "const": "efit-nrmse-benchmark"
+    },
+    "count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "min_required_files": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "threshold": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "passes": {
+      "type": "boolean"
+    },
+    "mean_psi_rmse_norm": {
+      "type": "number"
+    },
+    "worst_psi_rmse_norm": {
+      "type": "number"
+    },
+    "worst_file": {
+      "type": "string"
+    },
+    "count_by_machine": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "provenance_by_machine": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "source_consistency_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "worst_source_residual_l2": {
+      "type": "number"
+    },
+    "worst_source_alignment_file": {
+      "type": "string"
+    },
+    "failure_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "file",
+          "grid",
+          "machine",
+          "provenance",
+          "gs_residual_l2",
+          "gs_residual_max",
+          "psi_rmse_wb",
+          "psi_rmse_norm",
+          "psi_rmse_plasma_wb",
+          "psi_max_error_wb",
+          "psi_relative_l2",
+          "sor_iterations",
+          "sor_residual",
+          "solve_time_ms",
+          "operator_source_psi_rmse_norm",
+          "operator_source_sor_iterations",
+          "operator_source_sor_residual",
+          "source_consistency_class",
+          "operator_source_norm",
+          "profile_source_norm",
+          "source_residual_l2",
+          "source_correlation",
+          "source_best_fit_scale",
+          "source_best_fit_offset",
+          "source_best_fit_relative_l2",
+          "plasma_mask_fraction",
+          "pressure_source_norm",
+          "ffprime_source_norm",
+          "total_source_norm",
+          "pressure_source_fraction",
+          "ffprime_source_fraction",
+          "source_plasma_residual_l2",
+          "source_vacuum_residual_l2",
+          "source_plasma_operator_norm",
+          "source_vacuum_operator_norm",
+          "source_plasma_point_count",
+          "source_vacuum_point_count",
+          "best_source_candidate",
+          "best_source_candidate_residual_l2",
+          "profile_source_candidate_rank",
+          "best_operator_candidate",
+          "best_operator_candidate_residual_l2",
+          "delta_star_psi_candidate_rank",
+          "threshold",
+          "passes_threshold"
+        ],
+        "properties": {
+          "file": {
+            "type": "string",
+            "minLength": 1
+          },
+          "grid": {
+            "type": "string",
+            "minLength": 1
+          },
+          "machine": {
+            "type": "string",
+            "minLength": 1
+          },
+          "provenance": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gs_residual_l2": {
+            "type": "number"
+          },
+          "gs_residual_max": {
+            "type": "number"
+          },
+          "psi_rmse_wb": {
+            "type": "number"
+          },
+          "psi_rmse_norm": {
+            "type": "number"
+          },
+          "psi_rmse_plasma_wb": {
+            "type": "number"
+          },
+          "psi_max_error_wb": {
+            "type": "number"
+          },
+          "psi_relative_l2": {
+            "type": "number"
+          },
+          "sor_iterations": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sor_residual": {
+            "type": "number"
+          },
+          "solve_time_ms": {
+            "type": "number",
+            "minimum": 0
+          },
+          "operator_source_psi_rmse_norm": {
+            "type": "number"
+          },
+          "operator_source_sor_iterations": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "operator_source_sor_residual": {
+            "type": "number"
+          },
+          "source_consistency_class": {
+            "enum": [
+              "profile_source_consistent",
+              "profile_source_mismatch",
+              "solver_consistency_failure",
+              "not_evaluated"
+            ]
+          },
+          "operator_source_norm": {
+            "type": "number"
+          },
+          "profile_source_norm": {
+            "type": "number"
+          },
+          "source_residual_l2": {
+            "type": "number"
+          },
+          "source_correlation": {
+            "type": "number"
+          },
+          "source_best_fit_scale": {
+            "type": "number"
+          },
+          "source_best_fit_offset": {
+            "type": "number"
+          },
+          "source_best_fit_relative_l2": {
+            "type": "number"
+          },
+          "plasma_mask_fraction": {
+            "type": "number"
+          },
+          "pressure_source_norm": {
+            "type": "number"
+          },
+          "ffprime_source_norm": {
+            "type": "number"
+          },
+          "total_source_norm": {
+            "type": "number"
+          },
+          "pressure_source_fraction": {
+            "type": "number"
+          },
+          "ffprime_source_fraction": {
+            "type": "number"
+          },
+          "source_plasma_residual_l2": {
+            "type": "number"
+          },
+          "source_vacuum_residual_l2": {
+            "type": "number"
+          },
+          "source_plasma_operator_norm": {
+            "type": "number"
+          },
+          "source_vacuum_operator_norm": {
+            "type": "number"
+          },
+          "source_plasma_point_count": {
+            "type": "number"
+          },
+          "source_vacuum_point_count": {
+            "type": "number"
+          },
+          "best_source_candidate": {
+            "type": "string",
+            "minLength": 1
+          },
+          "best_source_candidate_residual_l2": {
+            "type": "number"
+          },
+          "profile_source_candidate_rank": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "best_operator_candidate": {
+            "type": "string",
+            "minLength": 1
+          },
+          "best_operator_candidate_residual_l2": {
+            "type": "number"
+          },
+          "delta_star_psi_candidate_rank": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "threshold": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "passes_threshold": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

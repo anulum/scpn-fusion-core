@@ -12,9 +12,11 @@ import numpy as np
 
 from scpn_fusion.core.fusion_kernel import CoilSet
 from scpn_fusion.core.fusion_kernel_free_boundary import (
+    build_magnetic_probe_response_matrix,
     green_function,
     interp_psi,
     optimize_coil_currents,
+    reconstruct_coil_currents_from_magnetic_probes,
     resolve_shape_target_flux,
     solve_free_boundary,
 )
@@ -81,6 +83,88 @@ def test_optimize_coil_currents_returns_finite_vector() -> None:
     )
     assert solution.shape == (1,)
     assert np.all(np.isfinite(solution))
+
+
+def test_inverse_magnetic_probe_reconstruction_recovers_synthetic_currents() -> None:
+    k = _KernelStub()
+    coils = CoilSet(
+        positions=[(5.1, -0.35), (5.9, 0.35)],
+        currents=np.array([0.0, 0.0], dtype=np.float64),
+        turns=[6, 8],
+        current_limits=np.array([2.0, 2.0], dtype=np.float64),
+    )
+    flux_points = np.array([[5.25, -0.15], [5.75, 0.15]], dtype=np.float64)
+    b_probe_points = np.array([[5.35, 0.0], [5.65, 0.0]], dtype=np.float64)
+    b_probe_directions = ["R", "Z"]
+    true_currents = np.array([0.55, -0.35], dtype=np.float64)
+    response = build_magnetic_probe_response_matrix(
+        k,
+        coils,
+        flux_points=flux_points,
+        b_probe_points=b_probe_points,
+        b_probe_directions=b_probe_directions,
+    )
+    measurements = response @ true_currents
+
+    result = reconstruct_coil_currents_from_magnetic_probes(
+        k,
+        coils,
+        flux_points=flux_points,
+        flux_measurements=measurements[: flux_points.shape[0]],
+        b_probe_points=b_probe_points,
+        b_probe_directions=b_probe_directions,
+        b_probe_measurements=measurements[flux_points.shape[0] :],
+        tikhonov_alpha=0.0,
+    )
+
+    np.testing.assert_allclose(result["coil_currents"], true_currents, atol=1e-9)
+    assert result["residual_rms"] < 1e-12
+    assert result["response_rank"] == 2
+
+
+def test_inverse_magnetic_probe_reconstruction_respects_current_limits() -> None:
+    k = _KernelStub()
+    coils = CoilSet(
+        positions=[(5.1, -0.35)],
+        currents=np.array([0.0], dtype=np.float64),
+        current_limits=np.array([0.2], dtype=np.float64),
+    )
+    flux_points = np.array([[5.25, -0.15]], dtype=np.float64)
+    result = reconstruct_coil_currents_from_magnetic_probes(
+        k,
+        coils,
+        flux_points=flux_points,
+        flux_measurements=np.array([1.0], dtype=np.float64),
+        tikhonov_alpha=0.0,
+    )
+
+    assert np.all(np.abs(result["coil_currents"]) <= coils.current_limits + 1e-12)
+    assert result["active_bounds"] >= 1
+
+
+def test_inverse_magnetic_probe_reconstruction_rejects_bad_probe_contract() -> None:
+    k = _KernelStub()
+    coils = CoilSet(
+        positions=[(5.1, -0.35)],
+        currents=np.array([0.0], dtype=np.float64),
+    )
+
+    with np.testing.assert_raises(ValueError):
+        reconstruct_coil_currents_from_magnetic_probes(
+            k,
+            coils,
+            flux_points=np.array([[5.25, -0.15]], dtype=np.float64),
+            flux_measurements=np.array([0.0, 1.0], dtype=np.float64),
+        )
+
+    with np.testing.assert_raises(ValueError):
+        reconstruct_coil_currents_from_magnetic_probes(
+            k,
+            coils,
+            b_probe_points=np.array([[5.25, -0.15]], dtype=np.float64),
+            b_probe_directions=["phi"],
+            b_probe_measurements=np.array([0.0], dtype=np.float64),
+        )
 
 
 def test_solve_free_boundary_returns_contract() -> None:

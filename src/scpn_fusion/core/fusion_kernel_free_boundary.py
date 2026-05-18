@@ -69,6 +69,134 @@ def compute_external_flux(kernel: Any, coils: "CoilSet") -> FloatArray:
     return psi_ext
 
 
+def _as_finite_vector(value: Any, *, name: str, length: int | None = None) -> FloatArray:
+    arr = np.asarray(value, dtype=np.float64).reshape(-1)
+    if length is not None and arr.shape != (length,):
+        raise ValueError(f"{name} must have length {length}.")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain finite values only.")
+    return arr
+
+
+def _as_finite_points(value: Any, *, name: str) -> FloatArray:
+    arr = np.asarray(value, dtype=np.float64)
+    if arr.ndim != 2 or arr.shape[1] != 2 or arr.shape[0] < 1:
+        raise ValueError(f"{name} must have shape (n_points, 2) with n_points > 0.")
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"{name} must contain finite values only.")
+    return arr
+
+
+def build_coilset_from_config(kernel: Any) -> "CoilSet":
+    """Build a validated :class:`CoilSet` from a FusionKernel configuration."""
+    from scpn_fusion.core.fusion_kernel import CoilSet
+
+    coil_cfg = kernel.cfg.get("coils", [])
+    if not isinstance(coil_cfg, list) or len(coil_cfg) < 1:
+        raise ValueError("coils must contain at least one external coil.")
+
+    positions: list[tuple[float, float]] = []
+    currents: list[float] = []
+    turns: list[int] = []
+    for idx, coil in enumerate(coil_cfg):
+        if not isinstance(coil, dict):
+            raise ValueError(f"coils[{idx}] must be an object.")
+        try:
+            r = float(coil["r"])
+            z = float(coil["z"])
+            current = float(coil.get("current", 0.0))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"coils[{idx}] must define finite r, z, and current fields.") from exc
+        if not np.isfinite(r) or r <= 0.0 or not np.isfinite(z) or not np.isfinite(current):
+            raise ValueError(f"coils[{idx}] must define finite r > 0, finite z, and current.")
+        raw_turns = coil.get("turns", 1)
+        if isinstance(raw_turns, bool):
+            raise ValueError(f"coils[{idx}].turns must be a positive integer.")
+        try:
+            n_turns = int(raw_turns)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"coils[{idx}].turns must be a positive integer.") from exc
+        if n_turns < 1 or float(n_turns) != float(raw_turns):
+            raise ValueError(f"coils[{idx}].turns must be a positive integer.")
+        positions.append((r, z))
+        currents.append(current)
+        turns.append(n_turns)
+
+    n_coils = len(positions)
+    fb_cfg = kernel.cfg.get("free_boundary", {})
+    if fb_cfg is None:
+        fb_cfg = {}
+    if not isinstance(fb_cfg, dict):
+        raise ValueError("free_boundary must be an object when provided.")
+
+    current_limits = None
+    if "current_limits" in fb_cfg and fb_cfg["current_limits"] is not None:
+        current_limits = _as_finite_vector(
+            fb_cfg["current_limits"], name="current_limits", length=n_coils
+        )
+        if np.any(current_limits <= 0.0):
+            raise ValueError("current_limits must contain finite positive values only.")
+
+    target_flux_points = None
+    if "target_flux_points" in fb_cfg and fb_cfg["target_flux_points"] is not None:
+        target_flux_points = _as_finite_points(
+            fb_cfg["target_flux_points"], name="target_flux_points"
+        )
+
+    target_flux_values = None
+    if "target_flux_values" in fb_cfg and fb_cfg["target_flux_values"] is not None:
+        if target_flux_points is None:
+            raise ValueError("target_flux_points must be set when target_flux_values is provided.")
+        target_flux_values = _as_finite_vector(
+            fb_cfg["target_flux_values"],
+            name="target_flux_values",
+            length=int(target_flux_points.shape[0]),
+        )
+
+    x_point_target = None
+    if "x_point_target" in fb_cfg and fb_cfg["x_point_target"] is not None:
+        x_point_target = _as_finite_vector(
+            fb_cfg["x_point_target"], name="x_point_target", length=2
+        )
+
+    x_point_flux_target = None
+    if "x_point_flux_target" in fb_cfg and fb_cfg["x_point_flux_target"] is not None:
+        x_point_flux_target = float(fb_cfg["x_point_flux_target"])
+        if not np.isfinite(x_point_flux_target):
+            raise ValueError("x_point_flux_target must be finite.")
+
+    divertor_strike_points = None
+    if "divertor_strike_points" in fb_cfg and fb_cfg["divertor_strike_points"] is not None:
+        divertor_strike_points = _as_finite_points(
+            fb_cfg["divertor_strike_points"], name="divertor_strike_points"
+        )
+
+    divertor_flux_values = None
+    if "divertor_flux_values" in fb_cfg and fb_cfg["divertor_flux_values"] is not None:
+        if divertor_strike_points is None:
+            raise ValueError(
+                "divertor_strike_points must be set when divertor_flux_values is provided."
+            )
+        divertor_flux_values = _as_finite_vector(
+            fb_cfg["divertor_flux_values"],
+            name="divertor_flux_values",
+            length=int(divertor_strike_points.shape[0]),
+        )
+
+    return CoilSet(
+        positions=positions,
+        currents=np.asarray(currents, dtype=np.float64),
+        turns=turns,
+        current_limits=current_limits,
+        target_flux_points=target_flux_points,
+        target_flux_values=target_flux_values,
+        x_point_target=x_point_target,
+        x_point_flux_target=x_point_flux_target,
+        divertor_strike_points=divertor_strike_points,
+        divertor_flux_values=divertor_flux_values,
+    )
+
+
 def build_mutual_inductance_matrix(
     kernel: Any,
     coils: "CoilSet",
@@ -86,6 +214,218 @@ def build_mutual_inductance_matrix(
         M[k, :] = turns * _green_function_vectorised(Rc, Zc, R_obs, Z_obs)
 
     return M
+
+
+def sample_flux_at_points(kernel: Any, points: FloatArray) -> FloatArray:
+    """Sample kernel flux at validated ``(R, Z)`` points."""
+    obs = _as_finite_points(points, name="points")
+    return np.asarray([interp_psi(kernel, float(r), float(z)) for r, z in obs], dtype=np.float64)
+
+
+def _validate_probe_directions(
+    directions: list[str] | tuple[str, ...], *, length: int
+) -> list[str]:
+    if len(directions) != length:
+        raise ValueError("b_probe_directions must have one entry per b_probe_point.")
+    out = [str(direction).upper() for direction in directions]
+    invalid = [direction for direction in out if direction not in {"R", "Z"}]
+    if invalid:
+        raise ValueError("b_probe_directions entries must be 'R' or 'Z'.")
+    return out
+
+
+def _unit_coil_flux_response(
+    r_coil: float,
+    z_coil: float,
+    turns: int,
+    r_obs: float,
+    z_obs: float,
+) -> float:
+    return float(turns) * green_function(r_coil, z_coil, r_obs, z_obs)
+
+
+def _unit_coil_b_probe_response(
+    r_coil: float,
+    z_coil: float,
+    turns: int,
+    r_obs: float,
+    z_obs: float,
+    direction: str,
+) -> float:
+    eps_r = max(1.0e-5, 1.0e-5 * abs(r_obs))
+    eps_z = max(1.0e-5, 1.0e-5 * (1.0 + abs(z_obs)))
+    r_safe = max(float(r_obs), eps_r)
+    if direction == "R":
+        plus = _unit_coil_flux_response(r_coil, z_coil, turns, r_safe, z_obs + eps_z)
+        minus = _unit_coil_flux_response(r_coil, z_coil, turns, r_safe, z_obs - eps_z)
+        return float(-(plus - minus) / (2.0 * eps_z * r_safe))
+    plus = _unit_coil_flux_response(r_coil, z_coil, turns, r_safe + eps_r, z_obs)
+    minus = _unit_coil_flux_response(r_coil, z_coil, turns, r_safe - eps_r, z_obs)
+    return float((plus - minus) / (2.0 * eps_r * r_safe))
+
+
+def build_magnetic_probe_response_matrix(
+    kernel: Any,
+    coils: "CoilSet",
+    *,
+    flux_points: FloatArray | None = None,
+    b_probe_points: FloatArray | None = None,
+    b_probe_directions: list[str] | tuple[str, ...] | None = None,
+) -> FloatArray:
+    """Build linear coil-current response rows for flux loops and B probes."""
+    del kernel
+    if len(coils.positions) < 1:
+        raise ValueError("CoilSet.positions must contain at least one coil.")
+    if len(coils.currents) != len(coils.positions):
+        raise ValueError("CoilSet.currents length must match number of coil positions.")
+
+    flux_obs = None if flux_points is None else _as_finite_points(flux_points, name="flux_points")
+    b_obs = (
+        None if b_probe_points is None else _as_finite_points(b_probe_points, name="b_probe_points")
+    )
+    if flux_obs is None and b_obs is None:
+        raise ValueError("At least one flux point or B probe point must be provided.")
+    directions: list[str] = []
+    if b_obs is not None:
+        if b_probe_directions is None:
+            raise ValueError("b_probe_directions must be provided with b_probe_points.")
+        directions = _validate_probe_directions(b_probe_directions, length=int(b_obs.shape[0]))
+
+    n_flux = 0 if flux_obs is None else int(flux_obs.shape[0])
+    n_b = 0 if b_obs is None else int(b_obs.shape[0])
+    n_coils = len(coils.positions)
+    response = np.zeros((n_flux + n_b, n_coils), dtype=np.float64)
+
+    for coil_idx, (r_coil, z_coil) in enumerate(coils.positions):
+        turns = coils.turns[coil_idx] if coil_idx < len(coils.turns) else 1
+        if flux_obs is not None:
+            for row_idx, (r_obs, z_obs) in enumerate(flux_obs):
+                response[row_idx, coil_idx] = _unit_coil_flux_response(
+                    float(r_coil), float(z_coil), int(turns), float(r_obs), float(z_obs)
+                )
+        if b_obs is not None:
+            for probe_idx, (r_obs, z_obs) in enumerate(b_obs):
+                response[n_flux + probe_idx, coil_idx] = _unit_coil_b_probe_response(
+                    float(r_coil),
+                    float(z_coil),
+                    int(turns),
+                    float(r_obs),
+                    float(z_obs),
+                    directions[probe_idx],
+                )
+
+    if not np.all(np.isfinite(response)):
+        raise ValueError("Magnetic probe response matrix contains non-finite entries.")
+    return response
+
+
+def reconstruct_coil_currents_from_magnetic_probes(
+    kernel: Any,
+    coils: "CoilSet",
+    *,
+    flux_points: FloatArray | None = None,
+    flux_measurements: FloatArray | None = None,
+    b_probe_points: FloatArray | None = None,
+    b_probe_directions: list[str] | tuple[str, ...] | None = None,
+    b_probe_measurements: FloatArray | None = None,
+    measurement_sigma: FloatArray | None = None,
+    tikhonov_alpha: float = 1.0e-6,
+) -> dict[str, Any]:
+    """Fit coil currents from magnetic flux-loop and B-probe measurements."""
+    response = build_magnetic_probe_response_matrix(
+        kernel,
+        coils,
+        flux_points=flux_points,
+        b_probe_points=b_probe_points,
+        b_probe_directions=b_probe_directions,
+    )
+
+    targets: list[np.ndarray] = []
+    if flux_points is not None:
+        if flux_measurements is None:
+            raise ValueError("flux_measurements must be provided with flux_points.")
+        n_flux = _as_finite_points(flux_points, name="flux_points").shape[0]
+        targets.append(
+            _as_finite_vector(flux_measurements, name="flux_measurements", length=n_flux)
+        )
+    elif flux_measurements is not None:
+        raise ValueError("flux_points must be provided with flux_measurements.")
+
+    if b_probe_points is not None:
+        if b_probe_measurements is None:
+            raise ValueError("b_probe_measurements must be provided with b_probe_points.")
+        n_probe = _as_finite_points(b_probe_points, name="b_probe_points").shape[0]
+        targets.append(
+            _as_finite_vector(b_probe_measurements, name="b_probe_measurements", length=n_probe)
+        )
+    elif b_probe_measurements is not None:
+        raise ValueError("b_probe_points must be provided with b_probe_measurements.")
+
+    if not targets:
+        raise ValueError("At least one measurement vector must be provided.")
+    target = np.concatenate(targets).astype(np.float64, copy=False)
+    if target.shape != (response.shape[0],):
+        raise ValueError("measurement vector length must match response rows.")
+
+    weights = np.ones(response.shape[0], dtype=np.float64)
+    if measurement_sigma is not None:
+        sigma = _as_finite_vector(
+            measurement_sigma, name="measurement_sigma", length=response.shape[0]
+        )
+        if np.any(sigma <= 0.0):
+            raise ValueError("measurement_sigma must contain finite positive values only.")
+        weights = 1.0 / sigma
+
+    alpha = float(tikhonov_alpha)
+    if not np.isfinite(alpha) or alpha < 0.0:
+        raise ValueError("tikhonov_alpha must be finite and non-negative.")
+    n_coils = len(coils.positions)
+    weighted_response = response * weights[:, None]
+    weighted_target = target * weights
+    prior = np.asarray(coils.currents, dtype=np.float64).reshape(-1)
+    if prior.shape != (n_coils,) or not np.all(np.isfinite(prior)):
+        raise ValueError("CoilSet.currents must be finite with one entry per coil.")
+
+    if alpha > 0.0:
+        reg = np.sqrt(alpha) * np.eye(n_coils, dtype=np.float64)
+        A = np.vstack([weighted_response, reg])
+        b = np.concatenate([weighted_target, np.sqrt(alpha) * prior])
+    else:
+        A = weighted_response
+        b = weighted_target
+
+    if coils.current_limits is not None:
+        limits = _as_finite_vector(coils.current_limits, name="current_limits", length=n_coils)
+        if np.any(limits <= 0.0):
+            raise ValueError("current_limits must contain finite positive values only.")
+        lb = -np.abs(limits)
+        ub = np.abs(limits)
+    else:
+        lb = -np.inf * np.ones(n_coils, dtype=np.float64)
+        ub = np.inf * np.ones(n_coils, dtype=np.float64)
+
+    from scipy.optimize import lsq_linear
+
+    result = lsq_linear(A, b, bounds=(lb, ub), method="trf")
+    if not bool(getattr(result, "success", False)) or not np.all(np.isfinite(result.x)):
+        raise RuntimeError(
+            f"Magnetic probe inverse reconstruction failed: {getattr(result, 'message', '')}"
+        )
+    currents = np.asarray(result.x, dtype=np.float64)
+    residual = response @ currents - target
+    weighted_residual = residual * weights
+    return {
+        "coil_currents": currents,
+        "residual": residual,
+        "weighted_residual": weighted_residual,
+        "residual_rms": float(np.sqrt(np.mean(residual**2))) if residual.size else 0.0,
+        "weighted_residual_rms": (
+            float(np.sqrt(np.mean(weighted_residual**2))) if weighted_residual.size else 0.0
+        ),
+        "response_rank": int(np.linalg.matrix_rank(response)),
+        "response_condition": float(np.linalg.cond(response)) if response.size else float("inf"),
+        "active_bounds": int(np.count_nonzero(np.isclose(currents, lb) | np.isclose(currents, ub))),
+    }
 
 
 def optimize_coil_currents(
