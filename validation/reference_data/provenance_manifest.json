@@ -77,7 +77,7 @@
       "license_redistributable": true,
       "source": "Derived coefficients/calibration artifacts from ITPA subset.",
       "source_type": "derived_calibration",
-      "total_bytes": 6092
+      "total_bytes": 6093
     },
     {
       "file_count": 1,
@@ -122,7 +122,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 9802
+      "total_bytes": 10104
     },
     {
       "file_count": 1,
@@ -146,7 +146,18 @@
       "license_redistributable": true,
       "source": "SPARC public design reference metadata.",
       "source_type": "reference_dataset_subset",
-      "total_bytes": 1941482
+      "total_bytes": 1941483
+    },
+    {
+      "file_count": 1,
+      "id": "stellarator_control_replay_fixture",
+      "license": "synthetic-v1",
+      "license_attribution_required": false,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "source": "Public synthetic W7-X-like reduced-order replay configuration generated in-repo.",
+      "source_type": "synthetic_generated",
+      "total_bytes": 1878
     },
     {
       "file_count": 2,
@@ -160,7 +171,7 @@
       "total_bytes": 3182
     }
   ],
-  "file_count": 52,
+  "file_count": 53,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -531,8 +542,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "itpa/gyro_bohm_coefficients.json",
-      "sha256": "5dce1a7fd8da29fa76fad5769e8b4fa1865413e5bc99d42beeec8d5c6cd08118",
-      "size_bytes": 729,
+      "sha256": "288d863fa5daf8733d5cf260d2d68ee8127577640e892a588f3bcbabee4aa61c",
+      "size_bytes": 730,
       "source": "Derived coefficients/calibration artifacts from ITPA subset.",
       "source_type": "derived_calibration"
     },
@@ -629,8 +640,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "fe3ca04e802ad070639a5dcb45be5109c3387ebb8354c9a30700f43922bc0715",
-      "size_bytes": 7171,
+      "sha256": "15db498d430bc9842351859e72b9e28138e01ddce24a5145350ced296b21afef",
+      "size_bytes": 7473,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -668,8 +679,8 @@
       "license_notice": "validation/reference_data/sparc/LICENSE",
       "license_redistributable": true,
       "path": "sparc/device_description.json",
-      "sha256": "74837c820e9867f80a2139e297b60ee214778dd09ea20dcf97b1721af86d57fd",
-      "size_bytes": 379205,
+      "sha256": "825b086160ac14cac63bb8acf0d9a4c02b779e554850254b57d21c77ac43ff18",
+      "size_bytes": 379206,
       "source": "SPARC public design reference metadata.",
       "source_type": "reference_dataset_subset"
     },
@@ -802,9 +813,21 @@
       "size_bytes": 426,
       "source": "Curated summary from SPARC public design publications.",
       "source_type": "published_reference_summary"
+    },
+    {
+      "dataset_id": "stellarator_control_replay_fixture",
+      "license": "synthetic-v1",
+      "license_attribution_required": false,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "path": "stellarator_control_replay_public_config.json",
+      "sha256": "f004678ab67a92d4c78d7c11a23a6f5689deeb459afd16e89b48f336081fd371",
+      "size_bytes": 1878,
+      "source": "Public synthetic W7-X-like reduced-order replay configuration generated in-repo.",
+      "source_type": "synthetic_generated"
     }
   ],
-  "generated_at_utc": "2026-03-05T19:31:18.822826+00:00",
+  "generated_at_utc": "2026-05-18T00:14:50.085118+00:00",
   "license_registry": [
     {
       "attribution_required": true,

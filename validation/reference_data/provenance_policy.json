@@ -88,6 +88,13 @@
       "license": "synthetic-v1"
     },
     {
+      "id": "stellarator_control_replay_fixture",
+      "glob": "stellarator_control_replay_public_config.json",
+      "source_type": "synthetic_generated",
+      "source": "Public synthetic W7-X-like reduced-order replay configuration generated in-repo.",
+      "license": "synthetic-v1"
+    },
+    {
       "id": "diiid_reference_equilibria",
       "glob": "diiid/*.geqdsk",
       "source_type": "reference_equilibrium_bundle",

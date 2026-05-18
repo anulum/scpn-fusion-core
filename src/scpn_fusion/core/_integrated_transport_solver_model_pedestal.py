@@ -14,6 +14,8 @@ from scpn_fusion.fallback_telemetry import record_fallback_event
 
 
 class TransportSolverPedestalMixin:
+    pedestal_model: EpedPedestalModel | None
+
     def _apply_transport_pedestal_modifier(
         self,
         *,

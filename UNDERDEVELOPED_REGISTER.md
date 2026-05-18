@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-05-17T21:26:11.642788+00:00`
+- Generated at: `2026-05-18T00:11:58.152863+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -41,31 +41,31 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified surrogate: stiff critical-gradient model.""" |
-| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:72` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | path_lengths = np.ones(n_chords) # Simplified |
+| P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:743` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
+| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:33` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified surrogate: stiff critical-gradient model.""" |
+| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:73` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | path_lengths = np.ones(n_chords) # Simplified |
 
 ## Top Priority Backlog (Top 79)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
-| P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified surrogate: stiff critical-gradient model.""" |
-| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:72` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | path_lengths = np.ones(n_chords) # Simplified |
+| P0 | 96 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:743` | Validation WG | Gate behind explicit flag and define validation exit criteria. | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
+| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:33` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified surrogate: stiff critical-gradient model.""" |
+| P1 | 82 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:73` | Validation WG | Upgrade with higher-fidelity closure or tighten domain contract. | path_lengths = np.ones(n_chords) # Simplified |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_supervisory_types.py:22` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback") |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_control.py:171` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | raise ValueError("fallback currents are not configured.") |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_shot.py:276` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | f"lag={max_abs_actuator_lag:.3e} \| fallback={fallback_active} \| " |
-| P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:12` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | rejection can ramp the coil set toward explicit safe fallback currents instead |
-| P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/disruption_sequence.py:285` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | seed = 1e10 # Fallback |
-| P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gk_tglf.py:203` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | _logger.warning("TGLF binary not found, returning fallback") |
-| P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/jax_gs_solver.py:23` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | NumPy fallback provided when JAX is unavailable. |
-| P2 | 73 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:234` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | logger.debug("tokamak_archive fallback failed: %s", exc) |
-| P2 | 73 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:159` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | print(" Will use critical-gradient fallback (less accurate).") |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/free_boundary_tracking_acceptance.py:1881` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- Fallback active steps: `{summary['fallback_active_steps']}`", |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/task11_free_boundary_constraint_safety.py:237` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/task12_free_boundary_physics_margin_safety.py:246` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/task13_free_boundary_disruption_policy_recovery.py:278` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
-| P2 | 73 | `validation` | `FALLBACK` | `validation/task14_free_boundary_failsafe_dropout_replay.py:285` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
+| P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:13` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | rejection can ramp the coil set toward explicit safe fallback currents instead |
+| P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/disruption_sequence.py:286` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | seed = 1e10 # Fallback |
+| P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gk_tglf.py:204` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | _logger.warning("TGLF binary not found, returning fallback") |
+| P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/jax_gs_solver.py:24` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | NumPy fallback provided when JAX is unavailable. |
+| P2 | 73 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:235` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | logger.debug("tokamak_archive fallback failed: %s", exc) |
+| P2 | 73 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:160` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | print(" Will use critical-gradient fallback (less accurate).") |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/free_boundary_tracking_acceptance.py:1882` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- Fallback active steps: `{summary['fallback_active_steps']}`", |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/task11_free_boundary_constraint_safety.py:238` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/task12_free_boundary_physics_margin_safety.py:247` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/task13_free_boundary_disruption_policy_recovery.py:279` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
+| P2 | 73 | `validation` | `FALLBACK` | `validation/task14_free_boundary_failsafe_dropout_replay.py:286` | Validation WG | Measure fallback hit-rate and retire fallback from default lane. | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
 | P2 | 70 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:177` | Docs WG | Gate behind explicit flag and define validation exit criteria. | | Experimental validation | Real data: 8 SPARC GEQDSKs + 53 ITPA discharges + DIII-D disruption templates. TORAX/FUSE have more extensive... |
 | P3 | 65 | `docs_claims` | `DEPRECATED` | `docs/PHYSICS_VALIDATION_STATUS.md:278` | Docs WG | Replace default path or remove lane before next major release. | \| `fno_eurofusion_jet` \| 2026-02-16 \| rel_L2=0.79 \| No (DEPRECATED) \| |
 | P3 | 65 | `docs_claims` | `DEPRECATED` | `docs/PHYSICS_VALIDATION_STATUS.md:283` | Docs WG | Replace default path or remove lane before next major release. | The FNO is already DEPRECATED (v4.0 decision: retrain on real data or remove). |
@@ -133,23 +133,23 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
-| P0 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:742` | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
-| P1 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:32` | """Simplified surrogate: stiff critical-gradient model.""" |
-| P1 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:72` | path_lengths = np.ones(n_chords) # Simplified |
+| P0 | `validation` | `EXPERIMENTAL` | `tools/train_neural_equilibrium_gpu.py:743` | print("\n ACCEPTANCE CRITERIA NOT MET — weights saved as experimental") |
+| P1 | `validation` | `SIMPLIFIED` | `validation/benchmark_hybrid_accuracy.py:33` | """Simplified surrogate: stiff critical-gradient model.""" |
+| P1 | `validation` | `SIMPLIFIED` | `validation/multi_machine_validation.py:73` | path_lengths = np.ones(n_chords) # Simplified |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_supervisory_types.py:22` | SUPERVISORY_ALERT_LEVEL_NAMES = ("nominal", "warning", "guarded", "fallback") |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_control.py:171` | raise ValueError("fallback currents are not configured.") |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/_free_boundary_tracking_shot.py:276` | f"lag={max_abs_actuator_lag:.3e} \| fallback={fallback_active} \| " |
-| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:12` | rejection can ramp the coil set toward explicit safe fallback currents instead |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/disruption_sequence.py:285` | seed = 1e10 # Fallback |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gk_tglf.py:203` | _logger.warning("TGLF binary not found, returning fallback") |
-| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/jax_gs_solver.py:23` | NumPy fallback provided when JAX is unavailable. |
-| P2 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:234` | logger.debug("tokamak_archive fallback failed: %s", exc) |
-| P2 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:159` | print(" Will use critical-gradient fallback (less accurate).") |
-| P2 | `validation` | `FALLBACK` | `validation/free_boundary_tracking_acceptance.py:1881` | f"- Fallback active steps: `{summary['fallback_active_steps']}`", |
-| P2 | `validation` | `FALLBACK` | `validation/task11_free_boundary_constraint_safety.py:237` | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
-| P2 | `validation` | `FALLBACK` | `validation/task12_free_boundary_physics_margin_safety.py:246` | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
-| P2 | `validation` | `FALLBACK` | `validation/task13_free_boundary_disruption_policy_recovery.py:278` | f"- fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
-| P2 | `validation` | `FALLBACK` | `validation/task14_free_boundary_failsafe_dropout_replay.py:285` | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
+| P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/free_boundary_tracking.py:13` | rejection can ramp the coil set toward explicit safe fallback currents instead |
+| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/disruption_sequence.py:286` | seed = 1e10 # Fallback |
+| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/gk_tglf.py:204` | _logger.warning("TGLF binary not found, returning fallback") |
+| P2 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/jax_gs_solver.py:24` | NumPy fallback provided when JAX is unavailable. |
+| P2 | `validation` | `FALLBACK` | `tools/download_diiid_data.py:235` | logger.debug("tokamak_archive fallback failed: %s", exc) |
+| P2 | `validation` | `FALLBACK` | `tools/generate_fno_qlknn_spatial.py:160` | print(" Will use critical-gradient fallback (less accurate).") |
+| P2 | `validation` | `FALLBACK` | `validation/free_boundary_tracking_acceptance.py:1882` | f"- Fallback active steps: `{summary['fallback_active_steps']}`", |
+| P2 | `validation` | `FALLBACK` | `validation/task11_free_boundary_constraint_safety.py:238` | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
+| P2 | `validation` | `FALLBACK` | `validation/task12_free_boundary_physics_margin_safety.py:247` | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
+| P2 | `validation` | `FALLBACK` | `validation/task13_free_boundary_disruption_policy_recovery.py:279` | f"- fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
+| P2 | `validation` | `FALLBACK` | `validation/task14_free_boundary_failsafe_dropout_replay.py:286` | f"- Fallback mode count: `{c['fallback_mode_count']}` (threshold `>= {th['min_fallback_mode_count']}`)", |
 | P2 | `docs_claims` | `EXPERIMENTAL` | `docs/competitive_analysis.md:177` | | Experimental validation | Real data: 8 SPARC GEQDSKs + 53 ITPA discharges + DIII-D disruption templates. TORAX/FUSE have more extensive... |
 | P3 | `docs_claims` | `DEPRECATED` | `docs/PHYSICS_VALIDATION_STATUS.md:278` | \| `fno_eurofusion_jet` \| 2026-02-16 \| rel_L2=0.79 \| No (DEPRECATED) \| |
 | P3 | `docs_claims` | `DEPRECATED` | `docs/PHYSICS_VALIDATION_STATUS.md:283` | The FNO is already DEPRECATED (v4.0 decision: retrain on real data or remove). |

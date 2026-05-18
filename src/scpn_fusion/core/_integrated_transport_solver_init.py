@@ -38,7 +38,7 @@ class TransportSolverInitializationMixin:
         self.n_impurity = np.zeros(self.nr)
 
         self.T_edge_keV = 0.08
-        self.pedestal_model = None
+        self.pedestal_model: EpedPedestalModel | None = None
         if self.cfg.get("physics", {}).get("pedestal_mode") == "eped":
             R0 = (self.cfg["dimensions"]["R_min"] + self.cfg["dimensions"]["R_max"]) / 2.0
             a = (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / 2.0

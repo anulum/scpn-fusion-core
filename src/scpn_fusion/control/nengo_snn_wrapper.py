@@ -25,6 +25,7 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -324,7 +325,7 @@ class NengoSNNController:
         path = Path(filename)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        payload: dict[str, NDArray] = {
+        payload: dict[str, Any] = {
             "n_neurons": np.array([self.cfg.n_neurons]),
             "n_channels": np.array([self.cfg.n_channels]),
             "dt": np.array([self.cfg.dt]),
