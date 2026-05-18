@@ -23,26 +23,13 @@ import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.special import ellipe, ellipk
 
 from scpn_fusion.core.config_schema import validate_config
-from scpn_fusion.core.fusion_kernel_free_boundary import (
-    build_coilset_from_config as _build_coilset_from_config_runtime,
-    build_magnetic_probe_response_matrix as _build_magnetic_probe_response_matrix_runtime,
-    build_mutual_inductance_matrix as _build_mutual_inductance_matrix_runtime,
-    compute_external_flux as _compute_external_flux_runtime,
-    green_function as _green_function_runtime,
-    interp_psi as _interp_psi_runtime,
-    optimize_coil_currents as _optimize_coil_currents_runtime,
-    reconstruct_coil_currents_from_magnetic_probes as _reconstruct_coil_currents_from_magnetic_probes_runtime,
-    resolve_shape_target_flux as _resolve_shape_target_flux_runtime,
-    sample_flux_at_points as _sample_flux_at_points_runtime,
-    solve_free_boundary as _solve_free_boundary_runtime,
-)
+from scpn_fusion.core.fusion_kernel_free_boundary_mixin import FusionKernelFreeBoundaryMixin
 from scpn_fusion.core.fusion_kernel_iterative_solver import FusionKernelIterativeSolverMixin
 from scpn_fusion.core.fusion_kernel_newton_solver import FusionKernelNewtonSolverMixin
 from scpn_fusion.core.fusion_kernel_numerics import (
@@ -110,7 +97,11 @@ class CoilSet:
     divertor_flux_values: NDArray[np.float64] | None = None
 
 
-class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMixin):
+class FusionKernel(
+    FusionKernelFreeBoundaryMixin,
+    FusionKernelNewtonSolverMixin,
+    FusionKernelIterativeSolverMixin,
+):
     """Non-linear free-boundary Grad-Shafranov equilibrium solver.
 
     Parameters
@@ -453,181 +444,6 @@ class FusionKernel(FusionKernelNewtonSolverMixin, FusionKernelIterativeSolverMix
         R_safe = np.maximum(self.RR, 1e-6)
         self.B_R = -(1.0 / R_safe) * dPsi_dZ
         self.B_Z = (1.0 / R_safe) * dPsi_dR
-
-    @staticmethod
-    def _green_function(R_src, Z_src, R_obs, Z_obs):
-        """Toroidal Green's function using elliptic integrals."""
-        return _green_function_runtime(R_src, Z_src, R_obs, Z_obs)
-
-    def _compute_external_flux(self, coils):
-        """Sum Green's function contributions on boundary from CoilSet."""
-        return _compute_external_flux_runtime(self, coils)
-
-    def build_coilset_from_config(self) -> CoilSet:
-        """Build a validated free-boundary coil set from ``self.cfg``."""
-        return _build_coilset_from_config_runtime(self)
-
-    def _build_mutual_inductance_matrix(
-        self,
-        coils: CoilSet,
-        obs_points: FloatArray,
-    ) -> FloatArray:
-        """Build mutual-inductance matrix M[k, p] for coil optimisation.
-
-        ``M[k, p]`` is the flux at observation point *p* due to unit current
-        in coil *k*.  Uses the toroidal Green's function.
-
-        Parameters
-        ----------
-        coils : CoilSet
-            Coil geometry.
-        obs_points : FloatArray, shape (n_pts, 2)
-            Observation points ``(R, Z)`` — typically the target separatrix.
-
-        Returns
-        -------
-        FloatArray, shape (n_coils, n_pts)
-        """
-        return _build_mutual_inductance_matrix_runtime(self, coils, obs_points)
-
-    def _build_magnetic_probe_response_matrix(
-        self,
-        coils: CoilSet,
-        *,
-        flux_points: FloatArray | None = None,
-        b_probe_points: FloatArray | None = None,
-        b_probe_directions: list[str] | tuple[str, ...] | None = None,
-    ) -> FloatArray:
-        """Build coil-current response rows for flux loops and magnetic probes."""
-        return _build_magnetic_probe_response_matrix_runtime(
-            self,
-            coils,
-            flux_points=flux_points,
-            b_probe_points=b_probe_points,
-            b_probe_directions=b_probe_directions,
-        )
-
-    def reconstruct_coil_currents_from_magnetic_probes(
-        self,
-        coils: CoilSet,
-        *,
-        flux_points: FloatArray | None = None,
-        flux_measurements: FloatArray | None = None,
-        b_probe_points: FloatArray | None = None,
-        b_probe_directions: list[str] | tuple[str, ...] | None = None,
-        b_probe_measurements: FloatArray | None = None,
-        measurement_sigma: FloatArray | None = None,
-        tikhonov_alpha: float = 1.0e-6,
-    ) -> dict[str, Any]:
-        """Fit free-boundary coil currents from magnetic diagnostic measurements."""
-        return _reconstruct_coil_currents_from_magnetic_probes_runtime(
-            self,
-            coils,
-            flux_points=flux_points,
-            flux_measurements=flux_measurements,
-            b_probe_points=b_probe_points,
-            b_probe_directions=b_probe_directions,
-            b_probe_measurements=b_probe_measurements,
-            measurement_sigma=measurement_sigma,
-            tikhonov_alpha=tikhonov_alpha,
-        )
-
-    def optimize_coil_currents(
-        self,
-        coils: CoilSet,
-        target_flux: FloatArray,
-        tikhonov_alpha: float = 1e-4,
-    ) -> FloatArray:
-        """Find coil currents that best reproduce *target_flux* at the control points.
-
-        Solves the bounded linear least-squares problem:
-
-            min_I || M^T I - target_flux ||^2 + alpha * ||I||^2
-            s.t.  -I_max <= I <= I_max  (per coil)
-
-        where ``M`` is the mutual-inductance matrix.
-
-        Parameters
-        ----------
-        coils : CoilSet
-            Must have ``target_flux_points`` set (shape ``(n_pts, 2)``).
-        target_flux : FloatArray, shape (n_pts,)
-            Desired poloidal flux at each control point.
-        tikhonov_alpha : float
-            Regularisation strength to penalise large currents.
-
-        Returns
-        -------
-        FloatArray, shape (n_coils,)
-            Optimised coil currents [A].
-        """
-        return _optimize_coil_currents_runtime(
-            self,
-            coils,
-            target_flux,
-            tikhonov_alpha=tikhonov_alpha,
-        )
-
-    def _resolve_shape_target_flux(self, coils: CoilSet) -> FloatArray:
-        """Resolve target flux vector for shape optimisation control points.
-
-        Priority:
-        1) ``coils.target_flux_values`` if provided and valid.
-        2) Inferred isoflux target from current interpolation over
-           ``coils.target_flux_points``.
-        """
-        return _resolve_shape_target_flux_runtime(self, coils)
-
-    def solve_free_boundary(
-        self,
-        coils: CoilSet,
-        max_outer_iter: int = 20,
-        tol: float = 1e-4,
-        optimize_shape: bool = False,
-        tikhonov_alpha: float = 1e-4,
-    ) -> dict[str, Any]:
-        """Free-boundary GS solve with external coil currents.
-
-        Iterates between updating boundary flux from coils and solving the
-        internal GS equation.  When ``optimize_shape=True`` and the coil set
-        has ``target_flux_points``, an additional outer loop optimises the
-        coil currents to match the desired plasma boundary shape.
-
-        Parameters
-        ----------
-        coils : CoilSet
-            External coil set.
-        max_outer_iter : int
-            Maximum free-boundary iterations.
-        tol : float
-            Convergence tolerance on max abs(delta psi).
-        optimize_shape : bool
-            When True, run coil-current optimisation at each outer step.
-        tikhonov_alpha : float
-            Tikhonov regularisation for coil optimisation.
-
-        Returns
-        -------
-        dict
-            ``{"outer_iterations": int, "final_diff": float,
-            "coil_currents": NDArray}``
-        """
-        return _solve_free_boundary_runtime(
-            self,
-            coils,
-            max_outer_iter=max_outer_iter,
-            tol=tol,
-            optimize_shape=optimize_shape,
-            tikhonov_alpha=tikhonov_alpha,
-        )
-
-    def _interp_psi(self, R_pt: float, Z_pt: float) -> float:
-        """Bilinear interpolation of Psi at an arbitrary (R, Z) point."""
-        return _interp_psi_runtime(self, R_pt, Z_pt)
-
-    def _sample_flux_at_points(self, points: FloatArray) -> FloatArray:
-        """Sample poloidal flux at validated ``(R, Z)`` points."""
-        return _sample_flux_at_points_runtime(self, points)
 
     def save_results(self, filename: str = "equilibrium_nonlinear.npz") -> None:
         """Save the equilibrium state to a compressed NumPy archive.

@@ -13,7 +13,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from scpn_fusion.core.fusion_kernel_coilset_config import build_coilset_from_config
 from scpn_fusion.core.fusion_kernel import FusionKernel, CoilSet
+from scpn_fusion.core.fusion_kernel_free_boundary_mixin import FusionKernelFreeBoundaryMixin
 
 MOCK_CONFIG = {
     "reactor_name": "Coil-Test",
@@ -107,9 +109,11 @@ def test_build_coilset_from_config_maps_free_boundary_contract(kernel: FusionKer
     }
 
     coils = kernel.build_coilset_from_config()
+    direct_coils = build_coilset_from_config(kernel)
 
     assert coils.positions == [(3.0, 2.0), (5.0, -2.0)]
     np.testing.assert_allclose(coils.currents, np.array([2.5, -1.5], dtype=np.float64))
+    np.testing.assert_allclose(direct_coils.currents, coils.currents)
     assert coils.turns == [12, 8]
     np.testing.assert_allclose(coils.current_limits, np.array([7.0, 9.0], dtype=np.float64))
     np.testing.assert_allclose(
@@ -146,6 +150,7 @@ def test_build_coilset_from_config_rejects_shape_mismatches(kernel: FusionKernel
 
 def test_sample_flux_at_points_uses_kernel_interpolator(kernel: FusionKernel):
     """Flux sampling should expose the same interpolation semantics as _interp_psi."""
+    assert isinstance(kernel, FusionKernelFreeBoundaryMixin)
     kernel.Psi = kernel.RR + 2.0 * kernel.ZZ
     points = np.array([[kernel.R[2], kernel.Z[3]], [kernel.R[4], kernel.Z[5]]])
 
