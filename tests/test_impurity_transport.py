@@ -22,7 +22,10 @@ from scpn_fusion.core.impurity_transport import (
 
 def _toroidal_inventory(n_z: np.ndarray, rho: np.ndarray, R0: float, a: float) -> float:
     vol_element = 4.0 * np.pi**2 * R0 * a**2 * rho
-    return float(np.trapezoid(n_z * vol_element, rho))
+    trapezoid = getattr(np, "trapezoid", None)
+    if trapezoid is None:
+        trapezoid = np.trapz
+    return float(trapezoid(n_z * vol_element, rho))
 
 
 def test_cooling_curves():

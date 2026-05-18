@@ -9,7 +9,7 @@ numerics), and a Docker-based install (zero local dependencies).
 Requirements
 ------------
 
-- Python 3.9 or later
+- Python 3.10 or later
 - NumPy >= 1.24
 - SciPy >= 1.8
 

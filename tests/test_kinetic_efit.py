@@ -31,6 +31,15 @@ def mock_kin_constraints() -> KineticConstraints:
     )
 
 
+def mock_measurements(diag: MagneticDiagnostics) -> dict[str, object]:
+    return {
+        "flux_loops": np.zeros(len(diag.flux_loops), dtype=float),
+        "b_probes": np.zeros(len(diag.b_probes), dtype=float),
+        "coil_currents": np.zeros(1, dtype=float),
+        "Ip": 15.0e6,
+    }
+
+
 def test_fast_ion_pressure():
     fi = FastIonPressure(E_fast_keV=100.0, n_fast_frac=0.1, anisotropy_sigma=0.2)
     rho = np.linspace(0, 1, 10)
@@ -58,7 +67,7 @@ def test_kinetic_efit_isotropic():
     Z = np.linspace(-3, 3, 33)
     kefit = KineticEFIT(diag, kin, fi, R, Z)
 
-    res = kefit.reconstruct({})
+    res = kefit.reconstruct(mock_measurements(diag))
 
     assert res.pressure_consistency == 0.1
     assert res.wall_time_ms < 200.0
@@ -74,7 +83,7 @@ def test_kinetic_efit_anisotropic():
     Z = np.linspace(-3, 3, 33)
     kefit = KineticEFIT(diag, kin, fi, R, Z)
 
-    res = kefit.reconstruct({})
+    res = kefit.reconstruct(mock_measurements(diag))
 
     assert res.pressure_consistency > 0.1  # slightly worse initially due to anisotropic terms
     assert np.all(res.sigma_anisotropy == 0.2)
@@ -95,8 +104,8 @@ def test_mse_constraint_q_profile():
     kin_no_mse.mse_points = []
     kefit_no_mse = KineticEFIT(diag, kin_no_mse, fi, R, Z)
 
-    res_mse = kefit_mse.reconstruct({})
-    res_no_mse = kefit_no_mse.reconstruct({})
+    res_mse = kefit_mse.reconstruct(mock_measurements(diag))
+    res_no_mse = kefit_no_mse.reconstruct(mock_measurements(diag))
 
     # MSE should constrain q to be closer to 1.0 at axis
     assert res_mse.q_profile[0] < res_no_mse.q_profile[0]

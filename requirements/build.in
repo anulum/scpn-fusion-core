@@ -4,3 +4,20 @@ build
 twine
 pip-audit
 cyclonedx-bom
+
+# Dependabot security floors for transitive build/audit tooling.
+GitPython>=3.1.50
+Pygments>=2.20.0
+cryptography>=46.0.7
+filelock>=3.20.3
+jupyter-server>=2.18.0
+jupyterlab>=4.5.7
+lxml>=6.1.0
+mistune>=3.2.1
+nbconvert>=7.17.1
+notebook>=7.5.6
+pillow>=12.2.0
+pip>=26.1
+pytest>=9.0.3
+requests>=2.33.0
+urllib3>=2.7.0

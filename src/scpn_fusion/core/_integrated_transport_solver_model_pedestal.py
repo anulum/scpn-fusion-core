@@ -9,6 +9,7 @@ from __future__ import annotations
 import numpy as np
 
 from scpn_fusion.core._integrated_transport_solver_model_common import _solver_module
+from scpn_fusion.core.eped_pedestal import EpedPedestalModel
 from scpn_fusion.fallback_telemetry import record_fallback_event
 
 
@@ -38,7 +39,7 @@ class TransportSolverPedestalMixin:
                 if self.pedestal_model is None or getattr(
                     self.pedestal_model, "_neo_params_hash", None
                 ) != id(self.neoclassical_params):
-                    eped = solver_mod.EpedPedestalModel(
+                    eped = EpedPedestalModel(
                         R0=p["R0"],
                         a=p["a"],
                         B0=p["B0"],

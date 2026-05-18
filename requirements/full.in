@@ -4,3 +4,11 @@
 streamlit
 nengo>=4.0
 freegs>=0.6
+
+# Dependabot security floors for optional full-profile transitive tooling.
+GitPython>=3.1.50
+Pygments>=2.20.0
+pillow>=12.2.0
+pytest>=9.0.3
+requests>=2.33.0
+urllib3>=2.7.0

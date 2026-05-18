@@ -1,5 +1,5 @@
 # CI test dependencies — runtime + dev extras + jax + gymnasium
-# Regenerate: bash tools/regenerate-requirements.sh  (produces ci-py39..ci-py312.txt)
+# Regenerate: bash tools/regenerate-requirements.sh  (produces ci-py310..ci-py312.txt)
 click>=8.1
 numpy<2.0
 matplotlib
@@ -15,3 +15,8 @@ bandit>=1.7
 pre-commit>=3.0
 jax[cpu]
 gymnasium
+
+# Dependabot security floors for CI transitive tooling.
+Pygments>=2.20.0
+pillow>=12.2.0
+pytest>=9.0.3

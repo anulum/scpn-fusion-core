@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # ci.in gets per-Python-version lock files (Linux platform)
-ci_versions=("3.9" "3.10" "3.11" "3.12")
+ci_versions=("3.10" "3.11" "3.12")
 for pyver in "${ci_versions[@]}"; do
     pytag="${pyver//.}"
     outfile="requirements/ci-py${pytag}.txt"

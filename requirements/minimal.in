@@ -6,3 +6,6 @@ matplotlib
 scipy
 pydantic>=2.0
 pandas>=1.5
+
+# Dependabot security floor for runtime plotting/image transitive tooling.
+pillow>=12.2.0

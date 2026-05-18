@@ -201,7 +201,7 @@ Y = implemented and tested. N = not present. P = partial.
 | Validation scripts | 74 |
 | CI jobs (ci.yml) | 16 + 11 auxiliary workflows |
 | CI workflows total | 12 |
-| Supported Python versions | 3.9, 3.10, 3.11, 3.12 |
+| Supported Python versions | 3.10, 3.11, 3.12 |
 
 ---
 
