@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Edge Localized Mode (ELM) Model
+"""Reduced peeling-ballooning, ELM crash, and RMP suppression models."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -86,6 +87,8 @@ class PeelingBallooningBoundary:
 
 @dataclass
 class ELMCrashResult:
+    """Pedestal state and heat-flux outputs from one ELM crash."""
+
     delta_W_MJ: float
     T_ped_post: float
     n_ped_post: float
@@ -102,6 +105,7 @@ class ELMCrashModel:
         self.f_elm_fraction = f_elm_fraction
 
     def crash(self, T_ped: float, n_ped: float, W_ped: float, A_wet: float = 1.0) -> ELMCrashResult:
+        """Apply a fractional Type-I ELM crash to pedestal scalar quantities."""
         delta_W_MJ = self.f_elm_fraction * W_ped
 
         # T and n drop proportionally
@@ -120,6 +124,7 @@ class ELMCrashModel:
     def apply_to_profiles(
         self, rho: np.ndarray, Te: np.ndarray, ne: np.ndarray, rho_ped: float
     ) -> tuple[np.ndarray, np.ndarray]:
+        """Apply the crash drop factor to profile samples outside the pedestal top."""
         Te_new = Te.copy()
         ne_new = ne.copy()
 
@@ -137,6 +142,8 @@ class ELMCrashModel:
 
 @dataclass
 class ELMEvent:
+    """Timestamped ELM event summary emitted by the pedestal cycler."""
+
     time: float
     delta_W_MJ: float
     f_elm_Hz: float
@@ -209,19 +216,23 @@ class RMPSuppression:
         return float(np.sum(width_arr / np.maximum(spacing, 1e-6)))
 
     def suppressed(self, sigma_chir: float) -> bool:
+        """Return whether Chirikov overlap is high enough for ELM suppression."""
         return sigma_chir > 1.0
 
     def pedestal_transport_enhancement(self, sigma_chir: float) -> float:
+        """Estimate pedestal transport increase from Chirikov overlap above unity."""
         alpha = 2.0
         return 1.0 + alpha * max(0.0, sigma_chir - 1.0)
 
     def density_pump_out(self, sigma_chir: float) -> float:
+        """Return the reduced-density fraction for suppressed RMP operation."""
         if sigma_chir > 1.0:
             return 0.2  # 20% reduction
         return 0.0
 
 
 def elm_power_balance_frequency(P_SOL_MW: float, W_ped_MJ: float, f_elm_fraction: float) -> float:
+    """Estimate ELM frequency from SOL power and fractional pedestal energy loss."""
     if W_ped_MJ <= 0.0 or f_elm_fraction <= 0.0:
         return 0.0
     return P_SOL_MW / (f_elm_fraction * W_ped_MJ)
@@ -248,6 +259,7 @@ class ELMCycler:
         n_ped: float,
         W_ped: float,
     ) -> ELMEvent | None:
+        """Advance time and emit an ELM event when the boundary is exceeded."""
         self.time += dt
 
         if self.pb.is_unstable(alpha_edge, j_edge, s_edge):
