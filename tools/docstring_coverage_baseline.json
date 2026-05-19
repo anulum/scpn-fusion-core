@@ -2,15 +2,15 @@
   "by_kind": {
     "class": 174,
     "function": 404,
-    "method": 308,
+    "method": 297,
     "module": 83
   },
-  "files_with_issues": 258,
+  "files_with_issues": 257,
   "schema_version": "docstring-coverage-baseline.v1",
   "scope": [
     "src",
     "validation",
     "tools"
   ],
-  "total_issues": 969
+  "total_issues": 958
 }

@@ -46,6 +46,7 @@ class MagneticConfiguration:
             raise ValueError("field_periods must be >= 1.")
 
     def to_dict(self) -> dict[str, object]:
+        """Serialise magnetic configuration metadata for benchmark reports."""
         return {
             "name": self.name,
             "device_class": self.device_class,
@@ -81,10 +82,12 @@ class ActuatorChannel:
             raise ValueError("latency_steps must be >= 0.")
 
     def clamp(self, value: float) -> float:
+        """Clamp a requested actuator value to the configured finite range."""
         value_f = _require_finite("actuator value", value)
         return min(max(value_f, float(self.min_value)), float(self.max_value))
 
     def apply_slew(self, previous: float, requested: float, dt_s: float) -> float:
+        """Apply actuator slew-rate limiting between previous and requested values."""
         previous_f = _require_finite("previous actuator value", previous)
         requested_f = self.clamp(requested)
         dt = _require_finite("dt_s", dt_s)
@@ -95,6 +98,7 @@ class ActuatorChannel:
         return self.clamp(previous_f + delta)
 
     def to_dict(self) -> dict[str, object]:
+        """Serialise actuator limits, slew rate, latency, and failure metadata."""
         return {
             "name": self.name,
             "unit": self.unit,
@@ -120,12 +124,14 @@ class ActuatorSet:
             raise ValueError("Actuator channel names must be unique.")
 
     def by_name(self, name: str) -> ActuatorChannel:
+        """Return the actuator channel with the requested name."""
         for channel in self.channels:
             if channel.name == name:
                 return channel
         raise KeyError(f"unknown actuator channel: {name}")
 
     def to_dict(self) -> dict[str, object]:
+        """Serialise all actuator channels in deterministic order."""
         return {"channels": [channel.to_dict() for channel in self.channels]}
 
 
@@ -149,6 +155,7 @@ class DiagnosticChannel:
             raise ValueError("sigma must be >= 0.")
 
     def to_dict(self) -> dict[str, object]:
+        """Serialise one diagnostic channel value and uncertainty."""
         return {
             "name": self.name,
             "value": float(self.value),
@@ -179,9 +186,11 @@ class DiagnosticFrame:
             raise ValueError("Diagnostic channel names must be unique.")
 
     def as_mapping(self) -> dict[str, float]:
+        """Return diagnostic values keyed by channel name."""
         return {channel.name: float(channel.value) for channel in self.channels}
 
     def to_dict(self) -> dict[str, object]:
+        """Serialise a replay diagnostic frame."""
         return {
             "step": int(self.step),
             "time_s": float(self.time_s),
@@ -210,6 +219,7 @@ class ControlObjective:
                 _require_finite(f"{group_name}.{key}", value)
 
     def to_dict(self) -> dict[str, object]:
+        """Serialise objective targets, weights, and constraints."""
         return {
             "target_metrics": {key: float(value) for key, value in self.target_metrics.items()},
             "weights": {key: float(value) for key, value in self.weights.items()},
@@ -245,6 +255,7 @@ class ReplayScenario:
                 self.actuator_set.by_name(channel_name)
 
     def to_dict(self) -> dict[str, object]:
+        """Serialise the complete replay scenario contract."""
         return {
             "name": self.name,
             "seed": int(self.seed),
