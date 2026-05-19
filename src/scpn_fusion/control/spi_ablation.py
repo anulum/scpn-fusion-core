@@ -57,6 +57,8 @@ class SpiFragment:
 
 
 class SpiAblationSolver:
+    """Track shattered-pellet fragments and radial ablation deposition."""
+
     def __init__(
         self,
         n_fragments: int = 100,

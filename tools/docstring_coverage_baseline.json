@@ -1,16 +1,16 @@
 {
   "by_kind": {
-    "class": 175,
-    "function": 406,
-    "method": 313,
-    "module": 86
+    "class": 174,
+    "function": 404,
+    "method": 308,
+    "module": 83
   },
-  "files_with_issues": 262,
+  "files_with_issues": 258,
   "schema_version": "docstring-coverage-baseline.v1",
   "scope": [
     "src",
     "validation",
     "tools"
   ],
-  "total_issues": 980
+  "total_issues": 969
 }

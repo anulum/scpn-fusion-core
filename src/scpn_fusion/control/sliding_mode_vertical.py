@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Super-Twisting Sliding Mode Control (Vertical)
+"""Super-twisting sliding-mode control utilities for vertical stabilisation."""
+
 from __future__ import annotations
 
 import math
