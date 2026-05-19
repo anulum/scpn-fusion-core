@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Tokamak Flight Sim
+"""Tokamak flight simulator with actuator dynamics and isoflux feedback."""
+
 from __future__ import annotations
 
 import logging
@@ -199,6 +201,7 @@ class IsoFluxController:
             logger.info(message)
 
     def pid_step(self, pid: Dict[str, float], error: float) -> float:
+        """Update one PID state dictionary and return its control command."""
         pid["err_sum"] += error
         d_err = error - pid["last_err"]
         pid["last_err"] = error
@@ -384,6 +387,7 @@ class IsoFluxController:
         self,
         output_path: str = "Tokamak_Flight_Report.png",
     ) -> Tuple[bool, Optional[str]]:
+        """Render the flight trajectory report plot when plotting is available."""
         try:
             import matplotlib.pyplot as plt
         except Exception as exc:

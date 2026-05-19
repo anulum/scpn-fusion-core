@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Tokamak Digital Twin
+"""Two-dimensional tokamak digital-twin runtime and neural policy model."""
+
 import logging
 from typing import Optional, Sequence
 
@@ -163,6 +165,7 @@ class SimpleNeuralNet:
         self.b2 = np.zeros((1, output_size))
 
     def forward(self, x):
+        """Evaluate the policy network for a batch of state vectors."""
         self.z1 = np.dot(x, self.W1) + self.b1
         self.a1 = np.tanh(self.z1)
         self.z2 = np.dot(self.a1, self.W2) + self.b2
