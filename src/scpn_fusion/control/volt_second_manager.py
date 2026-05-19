@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Volt-Second Management
+"""Volt-second budget, ramp, and flux-consumption utilities."""
+
 from __future__ import annotations
 
 import math
@@ -16,6 +18,8 @@ import numpy as np
 
 @dataclass
 class FluxStatus:
+    """Instantaneous central-solenoid flux-consumption status."""
+
     flux_consumed_Vs: float
     flux_remaining_Vs: float
     estimated_remaining_time_s: float
@@ -24,6 +28,8 @@ class FluxStatus:
 
 @dataclass
 class FluxReport:
+    """Scenario-level volt-second budget report."""
+
     ramp_flux: float
     flat_top_flux: float
     ramp_down_flux: float
@@ -33,30 +39,38 @@ class FluxReport:
 
 
 class FluxBudget:
+    """Central-solenoid flux budget with plasma inductive and resistive terms."""
+
     def __init__(self, Phi_CS_Vs: float, L_plasma_uH: float, R_plasma_uOhm: float):
         self.Phi_CS_Vs = Phi_CS_Vs
         self.L_plasma_H = L_plasma_uH * 1e-6
         self.R_plasma_Ohm = R_plasma_uOhm * 1e-6
 
     def inductive_flux(self, Ip_MA: float) -> float:
+        """Return inductive flux required to reach the target plasma current."""
         return self.L_plasma_H * (Ip_MA * 1e6)
 
     def resistive_flux_ramp(self, Ip_trace: np.ndarray, dt: float) -> float:
+        """Integrate resistive volt-second consumption over a current trace."""
         # Integral of R_p * I_p dt
         return float(np.sum(self.R_plasma_Ohm * (Ip_trace * 1e6) * dt))
 
     def remaining_flux(self, Ip_MA: float, ramp_flux: float) -> float:
+        """Return remaining central-solenoid flux after ramp consumption."""
         ind = self.inductive_flux(Ip_MA)
         consumed = ind + ramp_flux
         return max(0.0, self.Phi_CS_Vs - consumed)
 
     def max_flattop_duration(self, Ip_MA: float, I_bs_MA: float, ramp_flux: float) -> float:
+        """Estimate maximum flat-top duration from driven current demand."""
         rem = self.remaining_flux(Ip_MA, ramp_flux)
         I_driven = max((Ip_MA - I_bs_MA) * 1e6, 1e-6)
         return float(rem / (self.R_plasma_Ohm * I_driven))
 
 
 class VoltSecondOptimizer:
+    """Generate current-ramp candidates under a flux budget."""
+
     def __init__(self, flux_budget: FluxBudget, transport_model: Callable | None = None):
         self.budget = flux_budget
         self.transport_model = transport_model
@@ -64,6 +78,7 @@ class VoltSecondOptimizer:
     def optimize_ramp(
         self, Ip_target_MA: float, t_ramp_max: float, n_segments: int = 10
     ) -> np.ndarray:
+        """Return a deterministic plasma-current ramp to the target current."""
         # A simple optimal ramp: ramp as fast as possible, but we just generate a linear ramp for testing
         # Real optimization would consider CS stress and MHD stability (li limits)
         t_arr = np.linspace(0, t_ramp_max, n_segments)
@@ -72,6 +87,8 @@ class VoltSecondOptimizer:
 
 
 class BootstrapCurrentEstimate:
+    """Bootstrap-current proxy from pressure-gradient profiles."""
+
     @staticmethod
     def from_profiles(
         ne: np.ndarray,
@@ -82,6 +99,7 @@ class BootstrapCurrentEstimate:
         R0: float,
         a: float,
     ) -> float:
+        """Estimate bootstrap current from density, temperature, q, and geometry profiles."""
         # Simplistic proxy: I_bs scales with pressure gradient and epsilon^0.5
         # We assume a fixed profile and just return a scalable estimate
         epsilon = a / R0
@@ -97,11 +115,14 @@ class BootstrapCurrentEstimate:
 
 
 class FluxConsumptionMonitor:
+    """Online flux-consumption monitor for loop-voltage integration."""
+
     def __init__(self, flux_budget: FluxBudget):
         self.budget = flux_budget
         self.consumed = 0.0
 
     def step(self, Ip: float, V_loop: float, dt: float) -> FluxStatus:
+        """Advance the flux-consumption estimate by one loop-voltage sample."""
         self.consumed += V_loop * dt
         rem = self.budget.Phi_CS_Vs - self.consumed
 
@@ -118,12 +139,15 @@ class FluxConsumptionMonitor:
 
 
 class ScenarioFluxAnalysis:
+    """Compute scenario-level ramp, flat-top, and ramp-down flux use."""
+
     def __init__(self, flux_budget: FluxBudget):
         self.budget = flux_budget
 
     def analyze(
         self, ramp_dur: float, flat_dur: float, down_dur: float, Ip_MA: float, I_bs_MA: float
     ) -> FluxReport:
+        """Return a deterministic volt-second budget report for a discharge scenario."""
         # Mock scenario analysis
         L_term = self.budget.inductive_flux(Ip_MA)
 
