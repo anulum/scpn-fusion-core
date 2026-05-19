@@ -111,13 +111,13 @@ jobs:
       - name: Publish to PyPI (OIDC)
         id: publish_oidc
         continue-on-error: true
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e  # release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
         # Uses OIDC trusted publisher — no API token needed
         # Configure at: https://pypi.org/manage/project/scpn-fusion/settings/publishing/
       - name: Publish to PyPI (token fallback)
         id: publish_token
         if: ${{ steps.publish_oidc.outcome != 'success' }}
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e  # release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
       - name: Ensure publish succeeded
@@ -166,6 +166,6 @@ jobs:
           cd dist
           sha256sum -c SHA256SUMS
       - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e  # release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
