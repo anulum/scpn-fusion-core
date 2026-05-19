@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Rust Flight Sim Wrapper
+"""Command-line wrapper for the Rust-native tokamak flight simulator."""
+
 import logging
 import sys
 import argparse
@@ -13,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def run():
+    """Execute a Rust flight-simulation shot and log latency metrics."""
     try:
         import scpn_fusion_rs
     except ImportError:
