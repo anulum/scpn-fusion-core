@@ -601,6 +601,7 @@ def _readme_block_matches(
 
 
 def main(argv: Iterable[str] | None = None) -> int:
+    """Run capability manifest generation, validation, or drift checks."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=Path.cwd())
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)

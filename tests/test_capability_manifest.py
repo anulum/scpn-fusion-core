@@ -114,6 +114,7 @@ def test_readme_does_not_shadow_generated_inventory_with_manual_counts() -> None
 
 
 def test_readme_exposes_monthly_and_all_time_download_badges() -> None:
+    """Lock README package download badges to the published package name."""
     readme = (_repo_root() / "README.md").read_text(encoding="utf-8")
 
     assert "[![PyPI Downloads](https://img.shields.io/pypi/dm/scpn-fusion.svg)]" in readme
