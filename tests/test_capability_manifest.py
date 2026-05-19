@@ -113,6 +113,15 @@ def test_readme_does_not_shadow_generated_inventory_with_manual_counts() -> None
         assert re.search(pattern, public_text) is None, pattern
 
 
+def test_readme_exposes_monthly_and_all_time_download_badges() -> None:
+    readme = (_repo_root() / "README.md").read_text(encoding="utf-8")
+
+    assert "[![PyPI Downloads](https://img.shields.io/pypi/dm/scpn-fusion.svg)]" in readme
+    assert "(https://pypi.org/project/scpn-fusion/)" in readme
+    assert "[![All-time Downloads](https://static.pepy.tech/badge/scpn-fusion)]" in readme
+    assert "(https://pepy.tech/project/scpn-fusion)" in readme
+
+
 def test_manifest_validation_rejects_schema_and_type_drift() -> None:
     tool = _load_tool()
     manifest = tool.build_capability_manifest(_repo_root())
