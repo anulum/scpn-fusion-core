@@ -255,12 +255,16 @@ def run_benchmark(
         if oracle_sc_firing_deltas
         else 0.0
     )
+    stochastic_float_equivalence_error = float(
+        max(oracle_sc_mean_abs_delta, oracle_sc_firing_mean_abs_delta)
+    )
     p95_recovery_steps = float(np.percentile(np.asarray(recovery_steps, dtype=float), 95))
     p95_recovery_ms = p95_recovery_steps * float(dt_ms)
 
     thresholds = {
         "min_agreement": 0.95,
         "max_mean_abs_delta": 0.08,
+        "max_stochastic_float_equivalence_error": 0.05,
         "max_oracle_sc_mean_abs_delta": 0.05,
         "max_oracle_sc_firing_delta": 0.05,
         "max_recovery_ms_p95": 1.0,
@@ -268,6 +272,8 @@ def run_benchmark(
     passes = bool(
         agreement >= thresholds["min_agreement"]
         and mean_abs_delta <= thresholds["max_mean_abs_delta"]
+        and stochastic_float_equivalence_error
+        <= thresholds["max_stochastic_float_equivalence_error"]
         and oracle_sc_mean_abs_delta <= thresholds["max_oracle_sc_mean_abs_delta"]
         and oracle_sc_firing_mean_abs_delta <= thresholds["max_oracle_sc_firing_delta"]
         and p95_recovery_ms <= thresholds["max_recovery_ms_p95"]
@@ -282,6 +288,8 @@ def run_benchmark(
         "agreement_pct": agreement * 100.0,
         "torax_parity_estimate_pct": agreement * 100.0,
         "mean_abs_delta": mean_abs_delta,
+        "stochastic_float_equivalence_error": stochastic_float_equivalence_error,
+        "stochastic_float_equivalence_error_pct": stochastic_float_equivalence_error * 100.0,
         "oracle_sc_mean_abs_delta": oracle_sc_mean_abs_delta,
         "oracle_sc_firing_mean_abs_delta": oracle_sc_firing_mean_abs_delta,
         "recovery_steps_p95": p95_recovery_steps,
@@ -317,6 +325,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Agreement: `{b['agreement_pct']:.2f}%`",
         f"- TORAX parity estimate: `{b['torax_parity_estimate_pct']:.2f}%`",
         f"- Mean absolute risk delta: `{b['mean_abs_delta']:.6f}`",
+        "- Stochastic-vs-float equivalence error: "
+        f"`{b['stochastic_float_equivalence_error']:.6f}` "
+        f"(`{b['stochastic_float_equivalence_error_pct']:.2f}%`)",
         f"- Mean oracle-vs-SC marking delta: `{b['oracle_sc_mean_abs_delta']:.6f}`",
         f"- Mean oracle-vs-SC firing delta: `{b['oracle_sc_firing_mean_abs_delta']:.6f}`",
         f"- P95 recovery: `{b['recovery_ms_p95']:.3f} ms`",
@@ -326,6 +337,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         f"- Min agreement: `{b['thresholds']['min_agreement']}`",
         f"- Max mean abs delta: `{b['thresholds']['max_mean_abs_delta']}`",
+        "- Max stochastic-vs-float equivalence error: "
+        f"`{b['thresholds']['max_stochastic_float_equivalence_error']}`",
         f"- Max oracle-vs-SC marking delta: `{b['thresholds']['max_oracle_sc_mean_abs_delta']}`",
         f"- Max oracle-vs-SC firing delta: `{b['thresholds']['max_oracle_sc_firing_delta']}`",
         f"- Max P95 recovery ms: `{b['thresholds']['max_recovery_ms_p95']}`",
@@ -373,6 +386,8 @@ def main(argv: list[str] | None = None) -> int:
     print(
         "agreement_pct="
         f"{b['agreement_pct']:.2f}, mean_abs_delta={b['mean_abs_delta']:.6f}, "
+        "stochastic_float_equivalence_error="
+        f"{b['stochastic_float_equivalence_error']:.6f}, "
         f"recovery_ms_p95={b['recovery_ms_p95']:.3f}, passes_thresholds={b['passes_thresholds']}"
     )
     if args.strict and not b["passes_thresholds"]:
