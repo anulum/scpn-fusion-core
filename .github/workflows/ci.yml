@@ -308,7 +308,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload Python 3.12 coverage diagnostics
         if: matrix.python-version == '3.12' && always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: python312-coverage-diagnostics
           if-no-files-found: warn
@@ -322,7 +322,7 @@ jobs:
             artifacts/claim_range_guard_summary.json
       - name: Upload coverage guard summary
         if: matrix.python-version == '3.12' && always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: coverage-guard-summary
           if-no-files-found: warn
@@ -449,7 +449,7 @@ jobs:
       - name: RMSE regression gate
         run: python tools/ci_rmse_gate.py
       - name: Upload RMSE artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: rmse-dashboard-smoke
           path: |
@@ -500,7 +500,7 @@ jobs:
             --baseline-json tools/real_data_roadmap_baseline.json \
             --summary-json artifacts/real_data_roadmap_non_regression_summary.json
       - name: Upload validation artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: real-shot-validation
           path: |
@@ -599,7 +599,7 @@ jobs:
             --thresholds tools/fallback_budget_thresholds.json \
             --summary-json artifacts/fallback_budget_summary.json
       - name: Upload benchmark provenance artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: benchmark-provenance-smoke
           path: |
@@ -644,7 +644,7 @@ jobs:
             --thresholds tools/runtime_parity_perf_thresholds.json \
             --summary-json artifacts/runtime_parity_perf_guard_summary.json
       - name: Upload runtime parity/perf artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: runtime-parity-perf-gate
           path: |
@@ -846,7 +846,7 @@ jobs:
           fi
       - name: Upload benchmark artifacts
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: rust-benchmarks
           path: scpn-fusion-rs/benchmark-results/
