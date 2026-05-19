@@ -4,7 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Alfven Eigenmodes
+"""Shear Alfven continuum, TAE gap, and fast-particle drive utilities."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,6 +18,8 @@ _ATOMIC_MASS_KG = 1.66053906660e-27
 
 @dataclass
 class AlfvenGap:
+    """Radial location and frequency bounds for a toroidicity-induced gap."""
+
     rho_location: float
     omega_lower: float
     omega_upper: float
@@ -56,6 +59,7 @@ class AlfvenContinuum:
         self.v_A = B0 / np.sqrt(mu_0 * np.maximum(self.rho_mass, 1e-12))
 
     def alfven_speed(self, rho_eval: float) -> float:
+        """Interpolate local Alfven speed at the requested normalised radius."""
         return float(np.interp(rho_eval, self.rho, self.v_A))
 
     def continuum(self, m: int, n: int) -> np.ndarray:
@@ -107,6 +111,8 @@ class AlfvenContinuum:
 
 
 class TAEMode:
+    """Single toroidal Alfven eigenmode frequency estimate."""
+
     def __init__(self, n: int, q_rational: float, v_A: float, R0: float):
         self.n = n
         self.q = q_rational
@@ -114,13 +120,17 @@ class TAEMode:
         self.R0 = R0
 
     def frequency(self) -> float:
+        """Return angular TAE frequency in radians per second."""
         return self.v_A / (2.0 * self.q * self.R0)
 
     def frequency_kHz(self) -> float:
+        """Return cyclic TAE frequency in kilohertz."""
         return self.frequency() / (2.0 * np.pi * 1e3)
 
 
 class FastParticleDrive:
+    """Fast-particle pressure and resonance drive model for TAE stability."""
+
     def __init__(self, E_fast_keV: float, n_fast_frac: float, m_fast_amu: float = 4.0):
         self.E_fast_keV = E_fast_keV
         self.n_fast_frac = n_fast_frac
@@ -130,6 +140,7 @@ class FastParticleDrive:
         self.v_fast = np.sqrt(2.0 * E_J / self.m_fast)
 
     def beta_fast(self, ne_20: float, B0: float) -> float:
+        """Return fast-particle beta from electron density and magnetic field."""
         n_e = ne_20 * 1e20
         n_fast = n_e * self.n_fast_frac
         E_J = self.E_fast_keV * 1e3 * 1.602e-19
@@ -161,6 +172,8 @@ class FastParticleDrive:
 
 @dataclass
 class TAEStabilityResult:
+    """Net TAE drive and damping result for one mode candidate."""
+
     n: int
     m: int
     frequency_kHz: float
@@ -171,11 +184,14 @@ class TAEStabilityResult:
 
 
 class AlfvenStabilityAnalysis:
+    """Evaluate fast-particle drive against continuum TAE gaps."""
+
     def __init__(self, continuum: AlfvenContinuum, fast_params: FastParticleDrive):
         self.continuum = continuum
         self.fast_params = fast_params
 
     def tae_stability(self, n_range: range = range(1, 6)) -> list[TAEStabilityResult]:
+        """Return TAE stability estimates for all gaps in the requested n range."""
         results = []
         for n in n_range:
             gaps = self.continuum.find_gaps(n)
