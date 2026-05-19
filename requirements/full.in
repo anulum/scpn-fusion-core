@@ -4,6 +4,8 @@
 streamlit
 nengo>=4.0
 freegs>=0.6
+omas>=0.70
+maturin>=1.7,<2.0
 
 # Dependabot security floors for optional full-profile transitive tooling.
 GitPython>=3.1.50
