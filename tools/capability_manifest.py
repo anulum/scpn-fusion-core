@@ -410,7 +410,9 @@ def validate_manifest(payload: dict[str, Any]) -> dict[str, Any]:
             "python_capability_source_modules",
             capabilities.get("python_source_modules"),
         )
-        _check_count(errors, counts, "python_capability_classes", capabilities.get("python_classes"))
+        _check_count(
+            errors, counts, "python_capability_classes", capabilities.get("python_classes")
+        )
         _check_count(
             errors,
             counts,
@@ -503,7 +505,9 @@ def _python_capability_sources(roots: tuple[Path, ...], *, repo: Path) -> list[s
     for root in roots:
         if not root.exists():
             continue
-        rows.update(_rel(path, repo) for path in sorted(root.rglob("*.py")) if path.name != "__init__.py")
+        rows.update(
+            _rel(path, repo) for path in sorted(root.rglob("*.py")) if path.name != "__init__.py"
+        )
     return sorted(rows)
 
 

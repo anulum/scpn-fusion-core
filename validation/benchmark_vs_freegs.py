@@ -1004,11 +1004,11 @@ def run_benchmark(
     freegs_runtime_fallback_cases = int(
         sum(bool(r.get("freegs_fallback", False)) for r in case_results)
     )
-    unconverged_case_count = int(
-        sum(not bool(r.get("our_converged", False)) for r in case_results)
-    )
+    unconverged_case_count = int(sum(not bool(r.get("our_converged", False)) for r in case_results))
     all_cases_converged = bool(case_results) and unconverged_case_count == 0
-    overall_passes = bool(case_results) and all_cases_converged and all(r["passes"] for r in case_results)
+    overall_passes = (
+        bool(case_results) and all_cases_converged and all(r["passes"] for r in case_results)
+    )
     runtime = time.perf_counter() - t0
 
     thresholds: dict[str, float] = {

@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Compact Reactor Optimizer
 """Reduced compact-reactor design-space search and reporting utilities."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 

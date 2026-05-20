@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Current Drive Physics Module
 """Reduced ECCD, NBI, and LHCD current-drive source models."""
+
 from __future__ import annotations
 
 import numpy as np

@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Fusion Ignition Sim
 """Zero-dimensional ignition and dynamic burn calculations for equilibrium states."""
+
 from __future__ import annotations
 
 import warnings

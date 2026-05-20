@@ -83,14 +83,18 @@ def test_readme_snapshot_matches_generated_markdown() -> None:
     config = tool.load_config(_repo_root())
     readme = (_repo_root() / "README.md").read_text(encoding="utf-8")
 
-    block = readme.split(config.readme_marker_start, maxsplit=1)[1].split(
-        config.readme_marker_end,
-        maxsplit=1,
-    )[0].strip()
+    block = (
+        readme.split(config.readme_marker_start, maxsplit=1)[1]
+        .split(
+            config.readme_marker_end,
+            maxsplit=1,
+        )[0]
+        .strip()
+    )
 
-    assert block == tool.render_markdown_snapshot(
-        tool.build_capability_manifest(_repo_root())
-    ).strip()
+    assert (
+        block == tool.render_markdown_snapshot(tool.build_capability_manifest(_repo_root())).strip()
+    )
 
 
 def test_readme_does_not_shadow_generated_inventory_with_manual_counts() -> None:
@@ -146,8 +150,13 @@ def test_manifest_declares_committed_json_schema_contract() -> None:
     assert manifest["generated_from"]["schema"] == "schemas/capability_manifest.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
-    assert schema["$id"] == "https://anulum.github.io/scpn-fusion-core/schemas/capability_manifest.schema.json"
-    assert schema["properties"]["schema_version"]["const"] == tool.CAPABILITY_MANIFEST_SCHEMA_VERSION
+    assert (
+        schema["$id"]
+        == "https://anulum.github.io/scpn-fusion-core/schemas/capability_manifest.schema.json"
+    )
+    assert (
+        schema["properties"]["schema_version"]["const"] == tool.CAPABILITY_MANIFEST_SCHEMA_VERSION
+    )
     assert set(schema["properties"]["counts"]["required"]) == set(manifest["counts"])
     assert set(schema["properties"]["capabilities"]["required"]) == set(manifest["capabilities"])
 
@@ -274,9 +283,9 @@ def _write_portable_fixture(repo: Path) -> None:
     _write_file(repo / "docs/public.md", "# Public\n")
     _write_file(repo / "tests/test_portable.py", "def test_portable() -> None:\n    assert True\n")
     _write_file(repo / ".github/workflows/ci.yml", "name: CI\non: [push]\njobs: {}\n")
-    _write_file(repo / "fusion-rs/Cargo.toml", "[workspace]\nmembers = [\"a\", \"b\"]\n")
-    _write_file(repo / "fusion-rs/a/Cargo.toml", "[package]\nname = \"a\"\nversion = \"0.1.0\"\n")
-    _write_file(repo / "fusion-rs/b/Cargo.toml", "[package]\nname = \"b\"\nversion = \"0.1.0\"\n")
+    _write_file(repo / "fusion-rs/Cargo.toml", '[workspace]\nmembers = ["a", "b"]\n')
+    _write_file(repo / "fusion-rs/a/Cargo.toml", '[package]\nname = "a"\nversion = "0.1.0"\n')
+    _write_file(repo / "fusion-rs/b/Cargo.toml", '[package]\nname = "b"\nversion = "0.1.0"\n')
     _write_file(
         repo / "tools/capability_manifest.toml",
         "\n".join(

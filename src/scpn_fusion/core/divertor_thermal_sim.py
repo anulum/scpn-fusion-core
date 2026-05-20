@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Divertor Thermal Sim
 """Reduced divertor heat-exhaust model with tungsten and liquid-lithium lanes."""
+
 from __future__ import annotations
 
 import logging

@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — JAX Fourier Neural Operator (FNO) Training
 """JAX Fourier Neural Operator training and inference utilities for turbulence fields."""
+
 from __future__ import annotations
 
 import jax

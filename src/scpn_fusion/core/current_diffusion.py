@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Current Diffusion Equation
 """One-dimensional current-diffusion and safety-factor profile evolution tools."""
+
 from __future__ import annotations
 
 import numpy as np

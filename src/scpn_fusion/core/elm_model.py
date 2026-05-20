@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Edge Localized Mode (ELM) Model
 """Reduced peeling-ballooning, ELM crash, and RMP suppression models."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

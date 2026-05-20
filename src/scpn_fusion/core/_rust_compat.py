@@ -11,6 +11,7 @@ falls back to pure-Python implementations.
 Usage:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 """
+
 from __future__ import annotations
 
 import os

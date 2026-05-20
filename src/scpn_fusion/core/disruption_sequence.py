@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Disruption Sequence Model
 """Reduced disruption sequence model spanning TQ, CQ, runaway, and halo phases."""
+
 from __future__ import annotations
 
 import math

@@ -6,6 +6,7 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Force Balance
 """Newton-Raphson PF-coil force-balance adjustment for equilibrium configs."""
+
 from __future__ import annotations
 
 import numpy as np
