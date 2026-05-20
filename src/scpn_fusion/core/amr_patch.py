@@ -49,18 +49,22 @@ class AMRPatch:
 
     @property
     def dr(self) -> float:
+        """Radial grid spacing of this patch."""
         return (self.r_hi - self.r_lo) / max(self.nr - 1, 1)
 
     @property
     def dz(self) -> float:
+        """Vertical grid spacing of this patch."""
         return (self.z_hi - self.z_lo) / max(self.nz - 1, 1)
 
     @property
     def r_grid(self) -> FloatArray:
+        """One-dimensional radial coordinates for this patch."""
         return np.linspace(self.r_lo, self.r_hi, self.nr)
 
     @property
     def z_grid(self) -> FloatArray:
+        """One-dimensional vertical coordinates for this patch."""
         return np.linspace(self.z_lo, self.z_hi, self.nz)
 
 

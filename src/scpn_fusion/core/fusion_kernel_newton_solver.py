@@ -32,6 +32,8 @@ logger = logging.getLogger(__name__)
 
 
 class FusionKernelNewtonSolverMixin:
+    """Mixin providing Newton-Kantorovich equilibrium dispatch for FusionKernel."""
+
     # ── Newton-Kantorovich equilibrium solver ────────────────────────
 
     def _compute_gs_residual(self, Source: FloatArray) -> FloatArray:

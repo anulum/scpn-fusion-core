@@ -46,6 +46,8 @@ def evaluate(report: dict[str, Any]) -> dict[str, Any]:
         "runtime_fallback_disallowed": not bool(report.get("runtime_fallback_allowed", True)),
         "runtime_fallback_case_count_zero": int(report.get("freegs_runtime_fallback_cases", 0))
         == 0,
+        "unconverged_case_count_zero": int(report.get("unconverged_case_count", 0)) == 0,
+        "all_cases_converged": bool(report.get("all_cases_converged", False)),
         "all_cases_pass": all(bool(case.get("passes", False)) for case in cases),
         "all_reference_backends_freegs": all(
             str(case.get("reference_backend", "")).strip() == "freegs" for case in cases
@@ -66,6 +68,8 @@ def evaluate(report: dict[str, Any]) -> dict[str, Any]:
         "require_freegs_backend": bool(report.get("require_freegs_backend", False)),
         "runtime_fallback_allowed": bool(report.get("runtime_fallback_allowed", True)),
         "freegs_runtime_fallback_cases": int(report.get("freegs_runtime_fallback_cases", 0)),
+        "unconverged_case_count": int(report.get("unconverged_case_count", 0)),
+        "all_cases_converged": bool(report.get("all_cases_converged", False)),
     }
 
 

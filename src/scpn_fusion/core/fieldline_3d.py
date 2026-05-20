@@ -48,6 +48,7 @@ class ToroidalAsymmetryObservables3D:
     radial_spread: float
 
     def as_dict(self) -> dict[str, float]:
+        """Return controller-facing toroidal asymmetry observables by stable key."""
         return {
             "toroidal_n1_amp": self.n1_amp,
             "toroidal_n2_amp": self.n2_amp,

@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Fusion Ignition Sim
+"""Zero-dimensional ignition and dynamic burn calculations for equilibrium states."""
+
 from __future__ import annotations
 
 import warnings
@@ -144,6 +146,7 @@ class FusionBurnPhysics(FusionKernel):
 
 
 def run_ignition_experiment():
+    """Run the standalone auxiliary-power ignition scan and write its plot."""
     print("--- SCPN IGNITION EXPERIMENT: The Road to Q > 10 ---")
 
     config_path = "03_CODE/SCPN-Fusion-Core/iter_config.json"

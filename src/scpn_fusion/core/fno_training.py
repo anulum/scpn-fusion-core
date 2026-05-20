@@ -59,6 +59,7 @@ class AdamOptimizer:
         self.v: Dict[str, np.ndarray] = {}
 
     def step(self, params: Dict[str, np.ndarray], grads: Dict[str, np.ndarray], lr: float) -> None:
+        """Update parameters in place using bias-corrected Adam moments."""
         self.t += 1
         for key, param in params.items():
             grad = grads[key]
@@ -137,15 +138,18 @@ class MultiLayerFNO:
         return h
 
     def forward_with_hidden(self, x_field: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """Return the projected field and final hidden representation."""
         h = self._forward_hidden(x_field)
         y = np.tensordot(h, self.project_w, axes=([2], [0])) + self.project_b
         return y, h
 
     def forward(self, x_field: np.ndarray) -> np.ndarray:
+        """Evaluate the FNO field-to-field surrogate for one input field."""
         y, _ = self.forward_with_hidden(x_field)
         return y
 
     def save_weights(self, path: str | Path) -> None:
+        """Serialise FNO architecture metadata and NumPy weights to ``path``."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -168,6 +172,7 @@ class MultiLayerFNO:
         np.savez(path, **payload)
 
     def load_weights(self, path: str | Path) -> None:
+        """Load FNO architecture metadata and NumPy weights from ``path``."""
         path = Path(path)
         with np.load(path, allow_pickle=False) as data:
             self.modes = int(data["modes"][0])

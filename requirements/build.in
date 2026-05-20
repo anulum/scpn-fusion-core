@@ -10,6 +10,7 @@ GitPython>=3.1.50
 Pygments>=2.20.0
 cryptography>=46.0.7
 filelock>=3.20.3
+idna>=3.15
 jupyter-server>=2.18.0
 jupyterlab>=4.5.7
 lxml>=6.1.0

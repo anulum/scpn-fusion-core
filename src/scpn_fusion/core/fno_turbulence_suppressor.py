@@ -86,6 +86,7 @@ class SpectralTurbulenceGenerator:
         self.zonal_flow = 0.0  # Predator state
 
     def step(self, dt: float = 0.01, damping: float = 0.0) -> np.ndarray:
+        """Advance one deterministic spectral turbulence step and return the field."""
         kx = np.fft.fftfreq(self.size) * self.size
         ky = np.fft.fftfreq(self.size) * self.size
         kx_grid, ky_grid = np.meshgrid(kx, ky)
@@ -159,6 +160,7 @@ class FNO_Controller:
             )
 
     def load_weights(self, path: str) -> None:
+        """Load explicitly enabled legacy JAX-FNO weights from an ``.npz`` file."""
         if not _HAS_JAX:
             raise RuntimeError("JAX backend not available; cannot load legacy FNO weights.")
         with np.load(path, allow_pickle=False) as data:
@@ -176,6 +178,7 @@ class FNO_Controller:
         return np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
 
     def predict_and_suppress(self, field: np.ndarray) -> Tuple[float, np.ndarray]:
+        """Predict a bounded suppression command and postprocessed field response."""
         field_np = np.asarray(field, dtype=np.float64)
         if field_np.shape != (GRID_SIZE, GRID_SIZE):
             raise ValueError(
@@ -203,6 +206,7 @@ def run_fno_simulation(
     output_path: str = "FNO_Turbulence_Result.png",
     verbose: bool = True,
 ) -> dict[str, Any]:
+    """Run the seeded turbulence suppression loop and return deterministic metrics."""
     if verbose:
         print("--- SCPN FNO Compatibility: Spectral Turbulence Suppression ---")
 

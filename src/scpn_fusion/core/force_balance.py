@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Force Balance
+"""Newton-Raphson PF-coil force-balance adjustment for equilibrium configs."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -37,6 +39,7 @@ class ForceBalanceSolver:
         max_iterations: int = 10,
         jacobian_floor: float = 1e-12,
     ):
+        """Iteratively adjust paired PF currents until radial force is balanced."""
         print("--- FORCE BALANCE SOLVER (Newton-Raphson) ---")
         print(f"Target Equilibrium: R={target_R}m, Z={target_Z}m")
 
@@ -112,6 +115,7 @@ class ForceBalanceSolver:
         self.save_config()
 
     def save_config(self, output_path: str | Path | None = None):
+        """Write the current balanced kernel configuration to disk."""
         # Save to validation folder by default.
         repo_root = Path(__file__).resolve().parents[3]
         out_path = (

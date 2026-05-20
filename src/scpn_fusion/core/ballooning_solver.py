@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Full Ballooning Equation Solver
+"""Ideal-MHD ballooning stability utilities for reduced s-alpha scans."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

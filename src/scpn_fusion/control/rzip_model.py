@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — RZIP Rigid Plasma Response Model
+"""Rigid-plasma vertical response model with passive vessel coupling."""
+
 from __future__ import annotations
 
 
@@ -16,6 +18,8 @@ MU_0 = 4.0 * np.pi * 1e-7
 
 
 class RZIPModel:
+    """Rigid-plasma response model coupled to vessel and active-coil circuits."""
+
     def __init__(
         self,
         R0: float,
@@ -57,6 +61,7 @@ class RZIPModel:
         return (M_plus - M_minus) / (2.0 * dZ)
 
     def build_state_space(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Build continuous-time state-space matrices for vertical motion."""
         # x = [Z, dZ/dt, I_1, ..., I_n]
         n_states = 2 + self.n_circuits
         n_inputs = self.n_coils
@@ -123,22 +128,27 @@ class RZIPModel:
         return A, B, C, D
 
     def vertical_growth_rate(self) -> float:
+        """Return the maximum real eigenvalue of the open-loop model."""
         A, _, _, _ = self.build_state_space()
         eigvals = np.linalg.eigvals(A)
         return float(np.max(np.real(eigvals)))
 
     def vertical_growth_time(self) -> float:
+        """Return the open-loop vertical growth time in milliseconds."""
         gamma = self.vertical_growth_rate()
         if gamma <= 0.0:
             return float("inf")
         return 1000.0 / gamma  # in ms
 
     def stability_margin(self) -> float:
+        """Return the signed vertical stability margin proxy."""
         # Distance from marginality (n_index = 0 typically)
         return float(self.n_index)
 
 
 class VerticalStabilityAnalysis:
+    """Utility formulas for vertical stability index and feedback sizing."""
+
     @staticmethod
     def compute_n_index(psi: np.ndarray, R: np.ndarray, Z: np.ndarray, R0: float) -> float:
         """
@@ -149,14 +159,18 @@ class VerticalStabilityAnalysis:
 
     @staticmethod
     def passive_stability_margin(n_index: float, tau_wall: float) -> float:
+        """Return the passive stability margin for a wall time constant."""
         return n_index
 
     @staticmethod
     def required_feedback_gain(gamma: float, tau_wall: float, tau_controller: float) -> float:
+        """Return the proportional feedback gain required for stabilization."""
         return 1.0
 
 
 class RZIPController:
+    """LQR-style voltage controller for RZIP vertical-position states."""
+
     def __init__(self, rzip: RZIPModel, Kp: float, Kd: float):
         self.rzip = rzip
         self.Kp = max(Kp, 1.0)
@@ -181,6 +195,7 @@ class RZIPController:
             self.K_gain = np.zeros((B.shape[1], A.shape[1]))
 
     def step(self, dZ_measured: float, dt: float) -> np.ndarray:
+        """Compute active-coil voltage commands from a vertical displacement sample."""
         if dt > 0:
             dZ_dt = (dZ_measured - self.prev_Z) / dt
         else:
@@ -200,6 +215,7 @@ class RZIPController:
         return np.asarray(V_coils)
 
     def closed_loop_eigenvalues(self) -> np.ndarray:
+        """Return eigenvalues of the controller-closed RZIP state matrix."""
         A, B, C, D = self.rzip.build_state_space()
         A_cl = A - B @ self.K_gain
         return np.linalg.eigvals(A_cl)
