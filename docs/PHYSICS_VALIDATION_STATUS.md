@@ -1,7 +1,7 @@
 # Physics Validation Status
 
-> Last updated: 2026-05-18. Documentation refresh for the EFIT/GEQDSK RMSE
-> benchmark gate and free-boundary adapter documentation.
+> Last updated: 2026-05-20. Solov'ev benchmark aggregation now requires every
+> case to report solver convergence before the overall gate can pass.
 
 ## 1. FreeGS Parity
 
@@ -11,10 +11,10 @@ The benchmark (`validation/benchmark_vs_freegs.py`) operates in **two modes**:
 
 | Mode | Gate | Status |
 |------|------|--------|
-| Solov'ev analytic reference | psi_nrmse < 0.11 | **PASS** (avg 0.076) |
+| Solov'ev analytic reference | psi_nrmse < 0.11 + all cases converged | **PASS** (`unconverged_case_count=0`) |
 | FreeGS strict | psi_nrmse < 0.005 + 5 more gates | **Not run on CI** (opt-in) |
 
-Latest artifact (`artifacts/freegs_benchmark.json`, 2026-03-02):
+Latest artifact (`artifacts/freegs_benchmark.json`, 2026-05-20):
 
 | Case | Psi NRMSE | q NRMSE | Axis Err (m) | Sep NRMSE | Converged |
 |------|-----------|---------|--------------|-----------|-----------|
@@ -44,15 +44,17 @@ The threshold appears empirically set without a convergence study.
 
 ### Known Issues
 
-1. Spherical-tokamak case passes Solov'ev gate despite `converged=false`.
-2. FreeGS strict workflow is manual-dispatch only (`.github/workflows/freegs-strict.yml`).
-3. Normalization is correct (scale-invariant NRMSE), but the two lanes compare different
+1. FreeGS strict workflow is manual-dispatch only (`.github/workflows/freegs-strict.yml`).
+2. Normalization is correct (scale-invariant NRMSE), but the two lanes compare different
    problems — Solov'ev is a manufactured solution, FreeGS is a free-boundary solve.
+3. The convergence-required Solov'ev aggregate gate is now enforced, but the strict
+   FreeGS lane still needs a machine with FreeGS installed for routine baseline refresh.
 
 ### Roadmap Actions
 
 - Calibrate FreeGS thresholds with convergence study (vary grid resolution, iterations).
-- Add convergence-required gate to Solov'ev lane (reject `converged=false` cases).
+- Keep the Solov'ev lane convergence-required in CI/artifact checks; reject any future
+  case with `our_converged=false` even if `psi_nrmse` is below threshold.
 - Run FreeGS strict lane on a machine with FreeGS installed to establish realistic baselines.
 - The strict EFIT/GEQDSK benchmark gate now exists in
   `validation/psi_pointwise_rmse.py`. The bundled 18-file report is

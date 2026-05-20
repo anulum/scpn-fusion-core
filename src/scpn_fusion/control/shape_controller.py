@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Plasma Shape Controller (Jacobian + Tikhonov)
+"""Plasma shape-control targets, Jacobians, and Tikhonov feedback laws."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -148,6 +150,7 @@ class PlasmaShapeController:
 
 
 def iter_lower_single_null_target() -> ShapeTarget:
+    """Return an ITER-like lower-single-null plasma boundary target."""
     isoflux = []
     theta = np.linspace(0, 2 * np.pi, 30)
     for t in theta:

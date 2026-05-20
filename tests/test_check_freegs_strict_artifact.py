@@ -27,6 +27,8 @@ def test_evaluate_passes_for_strict_freegs_contract() -> None:
         "require_freegs_backend": True,
         "runtime_fallback_allowed": False,
         "freegs_runtime_fallback_cases": 0,
+        "unconverged_case_count": 0,
+        "all_cases_converged": True,
         "cases": [
             {"reference_backend": "freegs", "passes": True, "freegs_fallback": False},
             {"reference_backend": "freegs", "passes": True, "freegs_fallback": False},
@@ -53,6 +55,24 @@ def test_evaluate_fails_when_runtime_fallback_detected() -> None:
     assert "all_reference_backends_freegs" in summary["failed_checks"]
 
 
+def test_evaluate_fails_when_any_case_is_unconverged() -> None:
+    report = {
+        "mode": "freegs",
+        "require_freegs_backend": True,
+        "runtime_fallback_allowed": False,
+        "freegs_runtime_fallback_cases": 0,
+        "unconverged_case_count": 1,
+        "all_cases_converged": False,
+        "cases": [
+            {"reference_backend": "freegs", "passes": False, "freegs_fallback": False},
+        ],
+    }
+    summary = checker.evaluate(report)
+    assert summary["overall_pass"] is False
+    assert "all_cases_converged" in summary["failed_checks"]
+    assert "unconverged_case_count_zero" in summary["failed_checks"]
+
+
 def test_main_writes_summary_json(tmp_path: Path) -> None:
     report_path = tmp_path / "freegs.json"
     summary_path = tmp_path / "summary.json"
@@ -63,6 +83,8 @@ def test_main_writes_summary_json(tmp_path: Path) -> None:
                 "require_freegs_backend": True,
                 "runtime_fallback_allowed": False,
                 "freegs_runtime_fallback_cases": 0,
+                "unconverged_case_count": 0,
+                "all_cases_converged": True,
                 "cases": [
                     {
                         "reference_backend": "freegs",
