@@ -3,7 +3,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Integrated Transport Solver Model Mixins
+"""Pedestal correction mixin for integrated transport solver profiles."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -14,6 +15,8 @@ from scpn_fusion.fallback_telemetry import record_fallback_event
 
 
 class TransportSolverPedestalMixin:
+    """Apply EPED-derived or fallback pedestal suppression to edge transport."""
+
     pedestal_model: EpedPedestalModel | None
 
     def _apply_transport_pedestal_modifier(
@@ -24,6 +27,7 @@ class TransportSolverPedestalMixin:
         chi_turb_i: np.ndarray,
         d_turb: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Modify turbulent diffusivity profiles for H-mode pedestal conditions."""
         solver_mod = _solver_module()
         is_h_mode = P_aux > 30.0
         self._last_pedestal_contract = {

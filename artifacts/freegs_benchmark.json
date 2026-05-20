@@ -1,11 +1,13 @@
 {
-  "generated_at_utc": "2026-03-09T12:21:20.713996+00:00",
+  "generated_at_utc": "2026-05-20T00:03:11.001547+00:00",
   "mode": "solovev_manufactured_source",
-  "freegs_available": true,
+  "freegs_available": false,
   "force_solovev": true,
   "require_freegs_backend": false,
   "runtime_fallback_allowed": true,
   "freegs_runtime_fallback_cases": 0,
+  "unconverged_case_count": 0,
+  "all_cases_converged": true,
   "psi_nrmse_threshold": 0.11,
   "thresholds": {
     "psi_nrmse": 0.11
@@ -99,5 +101,5 @@
   ],
   "overall_psi_nrmse": 0.0,
   "passes": true,
-  "runtime_s": 3.302
+  "runtime_s": 2.07
 }

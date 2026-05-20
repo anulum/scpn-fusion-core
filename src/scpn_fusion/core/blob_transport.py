@@ -4,7 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — SOL Filament/Blob Transport
+"""SOL filament and blob transport utilities."""
+
 from __future__ import annotations
 
 import math
@@ -14,6 +15,8 @@ import numpy as np
 
 
 class BlobDynamics:
+    """Regime-dependent blob velocity model for scrape-off-layer filaments."""
+
     def __init__(self, R0: float, B0: float, Te_eV: float, Ti_eV: float, mi_amu: float = 2.0):
         self.R0 = R0
         self.B0 = B0
@@ -50,6 +53,7 @@ class BlobDynamics:
         return self.c_s * math.sqrt(2.0 * delta_b / self.R0)
 
     def blob_velocity(self, delta_b: float, n_e: float, L_parallel: float) -> tuple[float, str]:
+        """Return blob radial velocity and active sheath or inertial regime."""
         delta_star = self.critical_size(L_parallel)
 
         if delta_b < delta_star:
@@ -64,6 +68,8 @@ class BlobDynamics:
 
 @dataclass
 class BlobPopulation:
+    """Generated blob sizes, amplitudes, velocities, and event birth times."""
+
     sizes: np.ndarray
     amplitudes: np.ndarray
     velocities: np.ndarray
@@ -71,6 +77,8 @@ class BlobPopulation:
 
 
 class BlobEnsemble:
+    """Generate stochastic blob populations and aggregate radial fluxes."""
+
     def __init__(self, dynamics: BlobDynamics, n_blobs: int = 1000):
         self.dynamics = dynamics
         self.n_blobs = n_blobs
@@ -83,6 +91,7 @@ class BlobEnsemble:
         waiting_time_mean: float,
         rng: np.random.Generator,
     ) -> BlobPopulation:
+        """Generate a stochastic blob population from size and waiting-time laws."""
         # log-normal amplitudes
         mu_amp = math.log(amplitude_mean) - 0.5 * (0.5**2)  # assuming sigma_log ~ 0.5
         amps = rng.lognormal(mu_amp, 0.5, self.n_blobs)
@@ -104,6 +113,7 @@ class BlobEnsemble:
         return BlobPopulation(sizes, amps, vels, births)
 
     def radial_flux(self, population: BlobPopulation) -> float:
+        """Return time-averaged radial particle flux from the population."""
         # Gamma_blob = f_b * <delta n> * <v_b> * <delta_b> / normalization
         # We just compute the time-averaged flux over the generation window
         tot_time = population.birth_times[-1] if self.n_blobs > 0 else 1.0
@@ -113,15 +123,19 @@ class BlobEnsemble:
         return float(flux_sum / tot_time)
 
     def heat_flux(self, population: BlobPopulation, Te_eV: float) -> float:
+        """Return convective heat flux carried by the generated blob population."""
         gamma = self.radial_flux(population)
         return gamma * Te_eV * 1.602e-19 * 1.5  # ~ 3/2 k T
 
 
 class SOLBlobProfile:
+    """Analytic SOL profile estimates with blob-enhanced radial transport."""
+
     @staticmethod
     def radial_density(
         r: np.ndarray, Gamma_blob: float, D_perp: float, lambda_n: float
     ) -> np.ndarray:
+        """Return normalised radial density profile with blob transport broadening."""
         # Without blobs: n = n0 exp(-r / lambda_n)
         # With blobs, effective transport is enhanced, flattening profile
         # Simple analytic proxy
@@ -135,12 +149,15 @@ class SOLBlobProfile:
 
     @staticmethod
     def wall_flux(r_wall: float, Gamma_blob: float, lambda_n: float) -> float:
+        """Return attenuated blob flux reaching a wall radius."""
         eff_lambda = lambda_n * math.sqrt(1.0 + Gamma_blob * 1e-19)
         return float(Gamma_blob * math.exp(-r_wall / eff_lambda))
 
 
 @dataclass
 class BlobEvent:
+    """Detected blob event interval and derived amplitude, duration, and size."""
+
     start_idx: int
     end_idx: int
     peak_amplitude: float
@@ -149,9 +166,12 @@ class BlobEvent:
 
 
 class BlobDetector:
+    """Detect transient blob events and conditional-average their waveforms."""
+
     def detect_blobs(
         self, signal: np.ndarray, dt: float = 1e-6, threshold: float = 2.5
     ) -> list[BlobEvent]:
+        """Return threshold-crossing blob events from a one-dimensional signal."""
         mean_sig = np.mean(signal)
         std_sig = np.std(signal)
 
@@ -184,6 +204,7 @@ class BlobDetector:
     def conditional_average(
         self, signal: np.ndarray, events: list[BlobEvent], window: int = 50
     ) -> np.ndarray:
+        """Return event-centred conditional average over a symmetric sample window."""
         if not events:
             return np.zeros(2 * window + 1)
 

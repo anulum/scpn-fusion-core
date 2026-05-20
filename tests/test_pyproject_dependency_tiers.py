@@ -13,6 +13,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PYPROJECT = ROOT / "pyproject.toml"
+MAKEFILE = ROOT / "Makefile"
+DOCS_WORKFLOW = ROOT / ".github" / "workflows" / "docs.yml"
+FULL_REQUIREMENTS_IN = ROOT / "requirements" / "full.in"
 
 
 def _extract_array_block(content: str, key: str) -> list[str]:
@@ -48,3 +51,22 @@ def test_optional_dependency_groups_expose_ui_ml_rl_and_full() -> None:
     assert '"jax>=0.4.20"' in content
     assert '"jaxlib>=0.4.20"' in content
     assert '"gymnasium>=1.0.0"' in content
+
+
+def test_full_lock_source_covers_declared_heavy_extras() -> None:
+    pyproject = PYPROJECT.read_text(encoding="utf-8")
+    full_requirements = FULL_REQUIREMENTS_IN.read_text(encoding="utf-8")
+
+    for dependency in ("streamlit", "freegs>=0.6", "omas>=0.70", "maturin>=1.7,<2.0"):
+        assert dependency in pyproject
+        assert dependency in full_requirements
+
+
+def test_root_docs_targets_match_sphinx_ci_contract() -> None:
+    makefile = MAKEFILE.read_text(encoding="utf-8")
+    workflow = DOCS_WORKFLOW.read_text(encoding="utf-8")
+
+    assert "mkdocs" not in makefile.lower()
+    assert "docs-build:" in makefile
+    assert "PYTHONPATH=src $(SPHINXBUILD) -W -b html $(DOCS_SOURCE) $(DOCS_BUILD)" in makefile
+    assert "sphinx-build -b html docs/sphinx docs/sphinx/_build/html" in workflow

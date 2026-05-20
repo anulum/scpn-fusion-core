@@ -4,7 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Core Package Init
+"""Public core package exports for physics models, solvers, and utilities."""
+
 try:
     from ._rust_compat import FusionKernel, RUST_BACKEND
 except ImportError:

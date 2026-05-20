@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Constrained Safe Reinforcement Learning
+"""Constrained reinforcement-learning wrappers and tokamak safety costs."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -109,21 +111,25 @@ class LagrangianPPO:
 
 
 def q95_cost_fn(obs: np.ndarray, act: np.ndarray, next_obs: np.ndarray) -> float:
+    """Return violation cost for q95 dropping below the lower safety bound."""
     q95 = next_obs[2]
     return float(max(0.0, 2.0 - q95))
 
 
 def beta_n_cost_fn(obs: np.ndarray, act: np.ndarray, next_obs: np.ndarray) -> float:
+    """Return violation cost for beta_N exceeding the upper safety bound."""
     beta_N = next_obs[1]
     return float(max(0.0, beta_N - 3.5))
 
 
 def ip_cost_fn(obs: np.ndarray, act: np.ndarray, next_obs: np.ndarray) -> float:
+    """Return violation cost for non-positive plasma current."""
     Ip = next_obs[0]
     return float(max(0.0, -Ip))
 
 
 def default_safety_constraints() -> list[SafetyConstraint]:
+    """Return the default q95, beta_N, and plasma-current constraints."""
     return [
         SafetyConstraint("q95_lower_bound", q95_cost_fn, limit=0.0),
         SafetyConstraint("beta_n_upper_bound", beta_n_cost_fn, limit=0.0),

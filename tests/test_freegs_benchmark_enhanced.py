@@ -146,6 +146,48 @@ class TestFreeGSPassContract:
         assert report["thresholds"]["axis_error_m"] == pytest.approx(FREEGS_AXIS_ERROR_M)
         assert report["thresholds"]["separatrix_nrmse"] == pytest.approx(FREEGS_SEPARATRIX_NRMSE)
 
+    def test_report_fails_when_any_case_is_unconverged(self, monkeypatch):
+        results = iter(
+            [
+                {
+                    "name": "converged",
+                    "mode": "solovev_manufactured_source",
+                    "comparison_backend": "fusion_kernel_fixed_source",
+                    "reference_backend": "solovev_analytic",
+                    "psi_nrmse": 0.01,
+                    "q_profile_nrmse": 0.0,
+                    "axis_error_m": 0.0,
+                    "separatrix_nrmse": 0.0,
+                    "our_converged": True,
+                    "passes": True,
+                },
+                {
+                    "name": "unconverged",
+                    "mode": "solovev_manufactured_source",
+                    "comparison_backend": "fusion_kernel_fixed_source",
+                    "reference_backend": "solovev_analytic",
+                    "psi_nrmse": 0.01,
+                    "q_profile_nrmse": 0.0,
+                    "axis_error_m": 0.0,
+                    "separatrix_nrmse": 0.0,
+                    "our_converged": False,
+                    "passes": False,
+                },
+            ]
+        )
+
+        def _compare_case_stub(*_args, **_kwargs):  # type: ignore[no-untyped-def]
+            return next(results)
+
+        monkeypatch.setattr("benchmark_vs_freegs.CASES", CASES[:2])
+        monkeypatch.setattr("benchmark_vs_freegs.compare_case", _compare_case_stub)
+
+        report = run_benchmark(force_solovev=True)
+
+        assert report["unconverged_case_count"] == 1
+        assert report["all_cases_converged"] is False
+        assert report["passes"] is False
+
 
 # ── compare_separatrix ─────────────────────────────────────────────────
 

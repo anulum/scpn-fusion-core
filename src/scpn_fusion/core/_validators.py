@@ -16,6 +16,7 @@ from numpy.typing import NDArray
 
 
 def require_finite_float(name: str, value: Any) -> float:
+    """Return a finite scalar float or raise a named value error."""
     out = float(value)
     if not np.isfinite(out):
         raise ValueError(f"{name} must be finite.")
@@ -23,6 +24,7 @@ def require_finite_float(name: str, value: Any) -> float:
 
 
 def require_positive_float(name: str, value: Any) -> float:
+    """Return a finite scalar float strictly greater than zero."""
     out = require_finite_float(name, value)
     if out <= 0.0:
         raise ValueError(f"{name} must be > 0.")
@@ -30,6 +32,7 @@ def require_positive_float(name: str, value: Any) -> float:
 
 
 def require_int(name: str, value: Any, minimum: int | None = None) -> int:
+    """Return an integer value, optionally constrained by an inclusive minimum."""
     if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
         if minimum is None:
             raise ValueError(f"{name} must be an integer.")
@@ -41,6 +44,7 @@ def require_int(name: str, value: Any, minimum: int | None = None) -> int:
 
 
 def require_non_negative_float(name: str, value: Any) -> float:
+    """Return a finite scalar float greater than or equal to zero."""
     out = require_finite_float(name, value)
     if out < 0.0:
         raise ValueError(f"{name} must be >= 0.")
@@ -48,6 +52,7 @@ def require_non_negative_float(name: str, value: Any) -> float:
 
 
 def require_fraction(name: str, value: Any) -> float:
+    """Return a finite scalar fraction in the closed interval [0, 1]."""
     out = require_finite_float(name, value)
     if out < 0.0 or out > 1.0:
         raise ValueError(f"{name} must be finite and in [0, 1].")
@@ -60,6 +65,7 @@ def require_range(
     *,
     min_allowed: float = -np.inf,
 ) -> tuple[float, float]:
+    """Return a finite ordered range that respects the optional lower bound."""
     low = require_finite_float(f"{name}[0]", value[0])
     high = require_finite_float(f"{name}[1]", value[1])
     if low < min_allowed:
@@ -124,6 +130,7 @@ def require_1d_array(
     minimum_size: int = 1,
     expected_size: int | None = None,
 ) -> NDArray[np.float64]:
+    """Return a finite one-dimensional float array with size constraints."""
     arr = np.asarray(value, dtype=np.float64)
     if arr.ndim != 1:
         raise ValueError(f"{name} must be a 1D array.")

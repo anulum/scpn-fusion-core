@@ -212,6 +212,7 @@ class RunawayElectronModel:
         dt_s: float = 1e-5,
         seed_re_fraction: float = 1e-8,
     ) -> RunawayElectronResult:
+        """Integrate runaway electron generation through a current quench."""
         plasma_current_ma = _as_positive_float("plasma_current_ma", plasma_current_ma)
         tau_cq_s = _as_positive_float("tau_cq_s", tau_cq_s)
         t_e = _as_positive_float("T_e_quench_keV", T_e_quench_keV)

@@ -20,6 +20,8 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class Dimensions(BaseModel):
+    """Validated rectangular R-Z domain bounds."""
+
     model_config = ConfigDict(extra="allow")
     R_min: float = Field(..., gt=0)
     R_max: float = Field(..., gt=0)
@@ -29,12 +31,15 @@ class Dimensions(BaseModel):
     @field_validator("R_max")
     @classmethod
     def r_max_greater_than_min(cls, v: float, info):
+        """Reject domains whose maximum major radius is not above the minimum."""
         if "R_min" in info.data and v <= info.data["R_min"]:
             raise ValueError("R_max must be greater than R_min")
         return v
 
 
 class Coil(BaseModel):
+    """Validated axisymmetric coil position and current entry."""
+
     model_config = ConfigDict(extra="allow")
     name: str = "unnamed"
     r: float = Field(..., gt=0)
@@ -43,6 +48,8 @@ class Coil(BaseModel):
 
 
 class PhysicsParams(BaseModel):
+    """Validated physics-control parameters for equilibrium solves."""
+
     model_config = ConfigDict(extra="allow")
     plasma_current_target: float = Field(default=5.0)
     vacuum_permeability: float = Field(default=1.25663706e-6, ge=0)
@@ -52,6 +59,8 @@ class PhysicsParams(BaseModel):
 
 
 class SolverParams(BaseModel):
+    """Validated nonlinear solver controls."""
+
     model_config = ConfigDict(extra="allow")
     max_iterations: int = Field(default=1000, gt=0)
     convergence_threshold: float = Field(default=1e-4, gt=0)
@@ -59,6 +68,8 @@ class SolverParams(BaseModel):
 
 
 class ReactorConfig(BaseModel):
+    """Validated top-level reactor configuration contract."""
+
     model_config = ConfigDict(extra="allow")
 
     reactor_name: str = "Unnamed-Reactor"
@@ -71,6 +82,7 @@ class ReactorConfig(BaseModel):
     @field_validator("grid_resolution")
     @classmethod
     def check_resolution(cls, v: Tuple[int, int]):
+        """Reject grids that are too small for finite-difference stencils."""
         if v[0] < 4 or v[1] < 4:
             raise ValueError("Grid resolution must be at least 4x4")
         return v

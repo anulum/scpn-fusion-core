@@ -44,6 +44,7 @@ def _build_release_checks(
     skip_claims_audit: bool,
     skip_claim_range_guard: bool,
     skip_claims_map: bool,
+    skip_capability_manifest: bool,
     skip_underdeveloped_register: bool,
     skip_underdeveloped_scope_reports: bool,
     skip_release_delta_guard: bool,
@@ -147,6 +148,17 @@ def _build_release_checks(
                 [
                     sys.executable,
                     "tools/generate_claims_evidence_map.py",
+                    "--check",
+                ],
+            )
+        )
+    if not skip_capability_manifest:
+        checks.append(
+            (
+                "Capability manifest drift check",
+                [
+                    sys.executable,
+                    "tools/capability_manifest.py",
                     "--check",
                 ],
             )
@@ -432,6 +444,7 @@ def _build_checks(
     skip_claims_audit: bool,
     skip_claim_range_guard: bool,
     skip_claims_map: bool,
+    skip_capability_manifest: bool,
     skip_underdeveloped_register: bool,
     skip_underdeveloped_scope_reports: bool,
     skip_release_delta_guard: bool,
@@ -470,6 +483,7 @@ def _build_checks(
                 skip_claims_audit=skip_claims_audit,
                 skip_claim_range_guard=skip_claim_range_guard,
                 skip_claims_map=skip_claims_map,
+                skip_capability_manifest=skip_capability_manifest,
                 skip_underdeveloped_register=skip_underdeveloped_register,
                 skip_underdeveloped_scope_reports=skip_underdeveloped_scope_reports,
                 skip_release_delta_guard=skip_release_delta_guard,
@@ -573,6 +587,11 @@ def main(argv: list[str] | None = None) -> int:
         "--skip-claims-map",
         action="store_true",
         help="Skip tools/generate_claims_evidence_map.py --check",
+    )
+    parser.add_argument(
+        "--skip-capability-manifest",
+        action="store_true",
+        help="Skip tools/capability_manifest.py --check",
     )
     parser.add_argument(
         "--skip-underdeveloped-register",
@@ -756,6 +775,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_claims_audit=args.skip_claims_audit,
         skip_claim_range_guard=args.skip_claim_range_guard,
         skip_claims_map=args.skip_claims_map,
+        skip_capability_manifest=args.skip_capability_manifest,
         skip_underdeveloped_register=args.skip_underdeveloped_register,
         skip_underdeveloped_scope_reports=args.skip_underdeveloped_scope_reports,
         skip_release_delta_guard=args.skip_release_delta_guard,

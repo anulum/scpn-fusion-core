@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Divertor Thermal Sim
+"""Reduced divertor heat-exhaust model with tungsten and liquid-lithium lanes."""
+
 from __future__ import annotations
 
 import logging
@@ -242,6 +244,7 @@ class DivertorLab:
 
 
 def run_divertor_sim() -> None:
+    """Run the standalone divertor comparison and write the diagnostic plot."""
     print("\n--- SCPN HEAT EXHAUST: The Lithium Solution ---")
 
     lab = DivertorLab(P_sol_MW=80.0, R_major=2.1, B_pol=2.5)  # Compact Pilot parameters

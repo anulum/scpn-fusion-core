@@ -17,6 +17,8 @@ import numpy as np
 
 @dataclass(frozen=True)
 class NewtonDispatchConfig:
+    """Validated Newton-dispatch options extracted from kernel configuration."""
+
     max_iter: int
     tol: float
     picard_alpha: float
@@ -38,6 +40,8 @@ class NewtonDispatchConfig:
 
 @dataclass
 class GmresTelemetry:
+    """Track GMRES non-convergence and breakdown events during Newton solves."""
+
     nonconverged_count: int = 0
     breakdown_count: int = 0
     last_info: int = 0
@@ -50,6 +54,7 @@ class GmresTelemetry:
         fail_on_breakdown: bool,
         nonconverged_budget: int | None,
     ) -> None:
+        """Record one GMRES status code and enforce configured failure budgets."""
         self.last_info = int(info)
         if info == 0:
             return
