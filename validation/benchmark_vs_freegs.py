@@ -1004,8 +1004,11 @@ def run_benchmark(
     freegs_runtime_fallback_cases = int(
         sum(bool(r.get("freegs_fallback", False)) for r in case_results)
     )
-    converged_results = [r for r in case_results if r.get("our_converged", True)]
-    overall_passes = bool(converged_results) and all(r["passes"] for r in converged_results)
+    unconverged_case_count = int(
+        sum(not bool(r.get("our_converged", False)) for r in case_results)
+    )
+    all_cases_converged = bool(case_results) and unconverged_case_count == 0
+    overall_passes = bool(case_results) and all_cases_converged and all(r["passes"] for r in case_results)
     runtime = time.perf_counter() - t0
 
     thresholds: dict[str, float] = {
@@ -1030,6 +1033,8 @@ def run_benchmark(
         "require_freegs_backend": bool(require_freegs_backend),
         "runtime_fallback_allowed": bool(allow_runtime_fallback),
         "freegs_runtime_fallback_cases": freegs_runtime_fallback_cases,
+        "unconverged_case_count": unconverged_case_count,
+        "all_cases_converged": all_cases_converged,
         "psi_nrmse_threshold": thresholds["psi_nrmse"],
         "thresholds": thresholds,
         "cases": case_results,
