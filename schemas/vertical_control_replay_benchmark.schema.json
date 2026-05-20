@@ -1,0 +1,444 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anulum.github.io/scpn-fusion-core/schemas/vertical_control_replay_benchmark.schema.json",
+  "title": "SCPN Fusion Core Vertical Control Replay Benchmark",
+  "type": "object",
+  "required": ["SPDX-License-Identifier", "vertical_control_replay_benchmark"],
+  "properties": {
+    "SPDX-License-Identifier": {
+      "const": "AGPL-3.0-or-later"
+    },
+    "vertical_control_replay_benchmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "scenario",
+        "machine_profile",
+        "plant_contract",
+        "actuator_limits",
+        "thresholds",
+        "deterministic_replay_pass",
+        "controllers",
+        "controller_roles",
+        "controller_passes",
+        "fairness_report",
+        "trace_integrity",
+        "uncertainty_report",
+        "provenance",
+        "passes_thresholds"
+      ],
+      "properties": {
+        "schema_version": {"const": "1.0.0"},
+        "scenario": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "n_steps",
+            "dt_s",
+            "initial_z_m",
+            "initial_dz_dt_m_per_s",
+            "vertical_growth_rate_s_inv",
+            "damping_s_inv",
+            "actuator_gain_m_per_s2",
+            "disturbance_start_step",
+            "disturbance_stop_step",
+            "disturbance_accel_m_per_s2",
+            "uncertainty_scale"
+          ],
+          "properties": {
+            "n_steps": {"type": "integer", "minimum": 24},
+            "dt_s": {"type": "number", "exclusiveMinimum": 0.0},
+            "initial_z_m": {"type": "number"},
+            "initial_dz_dt_m_per_s": {"type": "number"},
+            "vertical_growth_rate_s_inv": {"type": "number"},
+            "damping_s_inv": {"type": "number", "minimum": 0.0},
+            "actuator_gain_m_per_s2": {"type": "number", "exclusiveMinimum": 0.0},
+            "disturbance_start_step": {"type": "integer", "minimum": 0},
+            "disturbance_stop_step": {"type": "integer", "minimum": 1},
+            "disturbance_accel_m_per_s2": {"type": "number"},
+            "uncertainty_scale": {"type": "number", "minimum": 0.0, "maximum": 1.0}
+          }
+        },
+        "actuator_limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_abs_command", "max_slew_per_step"],
+          "properties": {
+            "max_abs_command": {"type": "number", "exclusiveMinimum": 0.0},
+            "max_slew_per_step": {"type": "number", "exclusiveMinimum": 0.0}
+          }
+        },
+        "machine_profile": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "profile_id",
+            "provenance",
+            "plasma_current_MA",
+            "elongation",
+            "vertical_growth_rate_s_inv",
+            "actuator_gain_m_per_s2",
+            "damping_s_inv",
+            "wall_time_s"
+          ],
+          "properties": {
+            "profile_id": {
+              "type": "string",
+              "enum": ["iter_like", "diii_d_like", "compact_tokamak"]
+            },
+            "provenance": {"type": "string", "minLength": 1},
+            "plasma_current_MA": {"type": "number", "exclusiveMinimum": 0.0},
+            "elongation": {"type": "number", "minimum": 1.0},
+            "vertical_growth_rate_s_inv": {"type": "number", "exclusiveMinimum": 0.0},
+            "actuator_gain_m_per_s2": {"type": "number", "exclusiveMinimum": 0.0},
+            "damping_s_inv": {"type": "number", "minimum": 0.0},
+            "wall_time_s": {"type": "number", "exclusiveMinimum": 0.0}
+          }
+        },
+        "plant_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contract_id",
+            "source_module",
+            "state_variables",
+            "input_variables",
+            "state_space_checksum_sha256",
+            "open_loop_growth_rate_s_inv",
+            "effective_growth_rate_s_inv",
+            "effective_damping_s_inv",
+            "effective_actuator_gain_m_per_s2",
+            "deterministic_state_trajectory_checksum_sha256",
+            "repeat_state_trajectory_checksum_sha256",
+            "deterministic_state_trajectory_pass"
+          ],
+          "properties": {
+            "contract_id": {"const": "rzip_vertical_state_space_v1"},
+            "source_module": {"const": "scpn_fusion.control.rzip_model"},
+            "state_variables": {
+              "type": "array",
+              "prefixItems": [
+                {"const": "z_m"},
+                {"const": "dz_dt_m_per_s"}
+              ],
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "input_variables": {
+              "type": "array",
+              "prefixItems": [
+                {"const": "normalised_vertical_actuator_command"}
+              ],
+              "minItems": 1,
+              "maxItems": 1
+            },
+            "state_space_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "open_loop_growth_rate_s_inv": {"type": "number", "minimum": 0.0},
+            "effective_growth_rate_s_inv": {"type": "number", "exclusiveMinimum": 0.0},
+            "effective_damping_s_inv": {"type": "number", "minimum": 0.0},
+            "effective_actuator_gain_m_per_s2": {
+              "type": "number",
+              "exclusiveMinimum": 0.0
+            },
+            "deterministic_state_trajectory_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "repeat_state_trajectory_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "deterministic_state_trajectory_pass": {"type": "boolean"}
+          }
+        },
+        "thresholds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max_p95_abs_z_m",
+            "max_final_abs_z_m",
+            "max_abs_command",
+            "max_abs_slew"
+          ],
+          "properties": {
+            "max_p95_abs_z_m": {"type": "number", "minimum": 0.0},
+            "max_final_abs_z_m": {"type": "number", "minimum": 0.0},
+            "max_abs_command": {"type": "number", "exclusiveMinimum": 0.0},
+            "max_abs_slew": {"type": "number", "exclusiveMinimum": 0.0}
+          }
+        },
+        "deterministic_replay_pass": {"type": "boolean"},
+        "controllers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pid", "super_twisting", "sliding_mode_vertical", "no_control"],
+          "properties": {
+            "pid": {"$ref": "#/$defs/controller_result"},
+            "super_twisting": {"$ref": "#/$defs/controller_result"},
+            "sliding_mode_vertical": {"$ref": "#/$defs/controller_result"},
+            "no_control": {"$ref": "#/$defs/controller_result"}
+          }
+        },
+        "controller_roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pid", "super_twisting", "sliding_mode_vertical", "no_control"],
+          "properties": {
+            "pid": {"const": "primary"},
+            "super_twisting": {"const": "primary"},
+            "sliding_mode_vertical": {"const": "primary"},
+            "no_control": {"const": "diagnostic_only"}
+          }
+        },
+        "controller_passes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pid", "super_twisting", "sliding_mode_vertical", "no_control"],
+          "properties": {
+            "pid": {"type": "boolean"},
+            "super_twisting": {"type": "boolean"},
+            "sliding_mode_vertical": {"type": "boolean"},
+            "no_control": {"type": "boolean"}
+          }
+        },
+        "fairness_report": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "passes_fairness_checks",
+            "shared_initial_measurement",
+            "disturbance_trace_checksums",
+            "all_controllers_share_disturbance_trace",
+            "controller_state_reset_pass",
+            "actuator_limits_applied_after_controller_output",
+            "controller_trace_roles"
+          ],
+          "properties": {
+            "passes_fairness_checks": {"type": "boolean"},
+            "shared_initial_measurement": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["z_m", "dz_dt_m_per_s"],
+              "properties": {
+                "z_m": {"type": "number"},
+                "dz_dt_m_per_s": {"type": "number"}
+              }
+            },
+            "disturbance_trace_checksums": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["pid", "super_twisting", "sliding_mode_vertical", "no_control"],
+              "properties": {
+                "pid": {"$ref": "#/$defs/sha256"},
+                "super_twisting": {"$ref": "#/$defs/sha256"},
+                "sliding_mode_vertical": {"$ref": "#/$defs/sha256"},
+                "no_control": {"$ref": "#/$defs/sha256"}
+              }
+            },
+            "all_controllers_share_disturbance_trace": {"type": "boolean"},
+            "controller_state_reset_pass": {"type": "boolean"},
+            "actuator_limits_applied_after_controller_output": {"type": "boolean"},
+            "controller_trace_roles": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["pid", "super_twisting", "sliding_mode_vertical", "no_control"],
+              "properties": {
+                "pid": {"const": "primary"},
+                "super_twisting": {"const": "primary"},
+                "sliding_mode_vertical": {"const": "primary"},
+                "no_control": {"const": "diagnostic_only"}
+              }
+            }
+          }
+        },
+        "trace_integrity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state_trace_checksum_sha256",
+            "command_trace_checksum_sha256",
+            "disturbance_trace_checksum_sha256",
+            "controller_trace_count",
+            "samples_per_trace"
+          ],
+          "properties": {
+            "state_trace_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "command_trace_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "disturbance_trace_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "controller_trace_count": {"type": "integer", "minimum": 1},
+            "samples_per_trace": {"type": "integer", "minimum": 24}
+          }
+        },
+        "uncertainty_report": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "n_scenarios",
+            "grid_axes",
+            "max_p95_abs_z_m",
+            "p95_abs_z_m_p95",
+            "max_uncertain_abs_z_m",
+            "worst_case",
+            "uncertainty_scale"
+          ],
+          "properties": {
+            "n_scenarios": {"type": "integer", "minimum": 1},
+            "grid_axes": {
+              "type": "array",
+              "prefixItems": [
+                {"const": "growth_scale"},
+                {"const": "damping_scale"},
+                {"const": "actuator_scale"},
+                {"const": "sensor_bias_m"},
+                {"const": "latency_steps"}
+              ],
+              "minItems": 5,
+              "maxItems": 5
+            },
+            "max_p95_abs_z_m": {"type": "number", "minimum": 0.0},
+            "p95_abs_z_m_p95": {"type": "number", "minimum": 0.0},
+            "max_uncertain_abs_z_m": {"type": "number", "minimum": 0.0},
+            "worst_case": {"$ref": "#/$defs/uncertainty_worst_case"},
+            "uncertainty_scale": {"type": "number", "minimum": 0.0, "maximum": 1.0}
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_commit",
+            "python_version",
+            "platform",
+            "numpy_version",
+            "schema",
+            "schema_version",
+            "scenario_checksum_sha256",
+            "machine_profile_checksum_sha256",
+            "actuator_limits_checksum_sha256"
+          ],
+          "properties": {
+            "source_commit": {"type": "string", "minLength": 1},
+            "python_version": {"type": "string", "minLength": 1},
+            "platform": {"type": "string", "minLength": 1},
+            "numpy_version": {"type": "string", "minLength": 1},
+            "schema": {"const": "schemas/vertical_control_replay_benchmark.schema.json"},
+            "schema_version": {"const": "1.0.0"},
+            "scenario_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "machine_profile_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "actuator_limits_checksum_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "passes_thresholds": {"type": "boolean"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "controller_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "controller_id",
+        "n_steps",
+        "final_abs_z_m",
+        "p95_abs_z_m",
+        "max_abs_z_m",
+        "mean_abs_z_m",
+        "max_abs_command",
+        "max_abs_slew",
+        "final_command",
+        "actuator_limit_application",
+        "trace_checksums",
+        "uncertainty"
+      ],
+      "properties": {
+        "controller_id": {"type": "string", "minLength": 1},
+        "n_steps": {"type": "integer", "minimum": 24},
+        "final_abs_z_m": {"type": "number", "minimum": 0.0},
+        "p95_abs_z_m": {"type": "number", "minimum": 0.0},
+        "max_abs_z_m": {"type": "number", "minimum": 0.0},
+        "mean_abs_z_m": {"type": "number", "minimum": 0.0},
+        "max_abs_command": {"type": "number", "minimum": 0.0},
+        "max_abs_slew": {"type": "number", "minimum": 0.0},
+        "final_command": {"type": "number"},
+        "actuator_limit_application": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "applied_after_controller_output",
+            "max_raw_abs_command",
+            "max_bounded_abs_command",
+            "max_bounded_abs_slew",
+            "abs_command_clipped_samples",
+            "slew_limited_samples"
+          ],
+          "properties": {
+            "applied_after_controller_output": {"type": "boolean"},
+            "max_raw_abs_command": {"type": "number", "minimum": 0.0},
+            "max_bounded_abs_command": {"type": "number", "minimum": 0.0},
+            "max_bounded_abs_slew": {"type": "number", "minimum": 0.0},
+            "abs_command_clipped_samples": {"type": "integer", "minimum": 0},
+            "slew_limited_samples": {"type": "integer", "minimum": 0}
+          }
+        },
+        "trace_checksums": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state_z_m_sha256",
+            "raw_command_sha256",
+            "command_sha256",
+            "disturbance_sha256"
+          ],
+          "properties": {
+            "state_z_m_sha256": {"$ref": "#/$defs/sha256"},
+            "raw_command_sha256": {"$ref": "#/$defs/sha256"},
+            "command_sha256": {"$ref": "#/$defs/sha256"},
+            "disturbance_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "uncertainty": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cases",
+            "n_cases",
+            "nominal_abs_z_m",
+            "high_growth_abs_z_m",
+            "low_actuator_abs_z_m",
+            "max_abs_z_m",
+            "max_p95_abs_z_m",
+            "p95_abs_z_m_p95",
+            "worst_case"
+          ],
+          "properties": {
+            "cases": {
+              "type": "array",
+              "items": {"type": "string", "minLength": 1},
+              "minItems": 1
+            },
+            "n_cases": {"type": "integer", "minimum": 1},
+            "nominal_abs_z_m": {"type": "number", "minimum": 0.0},
+            "high_growth_abs_z_m": {"type": "number", "minimum": 0.0},
+            "low_actuator_abs_z_m": {"type": "number", "minimum": 0.0},
+            "max_abs_z_m": {"type": "number", "minimum": 0.0},
+            "max_p95_abs_z_m": {"type": "number", "minimum": 0.0},
+            "p95_abs_z_m_p95": {"type": "number", "minimum": 0.0},
+            "worst_case": {"$ref": "#/$defs/uncertainty_worst_case"}
+          }
+        }
+      }
+    },
+    "uncertainty_worst_case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "max_abs_z_m", "p95_abs_z_m"],
+      "properties": {
+        "controller_id": {"type": "string", "minLength": 1},
+        "case_id": {"type": "string", "minLength": 1},
+        "max_abs_z_m": {"type": "number", "minimum": 0.0},
+        "p95_abs_z_m": {"type": "number", "minimum": 0.0}
+      }
+    }
+  },
+  "additionalProperties": false
+}

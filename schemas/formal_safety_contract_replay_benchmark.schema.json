@@ -1,0 +1,193 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anulum.github.io/scpn-fusion-core/schemas/formal_safety_contract_replay_benchmark.schema.json",
+  "title": "SCPN Fusion Core Formal Safety Contract Replay Benchmark",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["SPDX-License-Identifier", "formal_safety_contract_replay_benchmark"],
+  "properties": {
+    "SPDX-License-Identifier": {
+      "const": "AGPL-3.0-or-later"
+    },
+    "formal_safety_contract_replay_benchmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "n_contracts",
+        "n_states",
+        "deterministic_replay_pass",
+        "contract_manifest",
+        "states",
+        "trace_integrity",
+        "violations",
+        "provenance",
+        "passes_thresholds"
+      ],
+      "properties": {
+        "schema_version": {"const": "1.0.0"},
+        "n_contracts": {"type": "integer", "minimum": 1},
+        "n_states": {"type": "integer", "minimum": 1},
+        "deterministic_replay_pass": {"type": "boolean"},
+        "contract_manifest": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/safety_contract"}
+        },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/state_row"}
+        },
+        "trace_integrity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "states_checksum_sha256",
+            "transition_enablement_checksum_sha256",
+            "tokens_checksum_sha256",
+            "state_count",
+            "safety_channel_count",
+            "control_transition_count"
+          ],
+          "properties": {
+            "states_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "transition_enablement_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "tokens_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "state_count": {"type": "integer", "minimum": 1},
+            "safety_channel_count": {"type": "integer", "minimum": 1},
+            "control_transition_count": {"type": "integer", "minimum": 1}
+          }
+        },
+        "violations": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_commit",
+            "python_version",
+            "platform",
+            "schema",
+            "schema_version",
+            "contract_manifest_checksum_sha256",
+            "replay_input_checksum_sha256"
+          ],
+          "properties": {
+            "source_commit": {"type": "string", "minLength": 1},
+            "python_version": {"type": "string", "minLength": 1},
+            "platform": {"type": "string", "minLength": 1},
+            "schema": {
+              "const": "schemas/formal_safety_contract_replay_benchmark.schema.json"
+            },
+            "schema_version": {"const": "1.0.0"},
+            "contract_manifest_checksum_sha256": {"$ref": "#/$defs/sha256"},
+            "replay_input_checksum_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "passes_thresholds": {"type": "boolean"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "safety_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["safety_place", "control_transition"],
+      "properties": {
+        "safety_place": {
+          "type": "string",
+          "enum": [
+            "thermal_limit",
+            "density_limit",
+            "beta_limit",
+            "current_limit",
+            "vertical_limit"
+          ]
+        },
+        "control_transition": {
+          "type": "string",
+          "enum": [
+            "heat_ramp",
+            "density_ramp",
+            "power_ramp",
+            "current_ramp",
+            "position_move"
+          ]
+        }
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "thermal_limit",
+        "density_limit",
+        "beta_limit",
+        "current_limit",
+        "vertical_limit"
+      ],
+      "properties": {
+        "thermal_limit": {"type": "number", "enum": [0.0, 1.0]},
+        "density_limit": {"type": "number", "enum": [0.0, 1.0]},
+        "beta_limit": {"type": "number", "enum": [0.0, 1.0]},
+        "current_limit": {"type": "number", "enum": [0.0, 1.0]},
+        "vertical_limit": {"type": "number", "enum": [0.0, 1.0]}
+      }
+    },
+    "transition_enablement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "heat_ramp",
+        "density_ramp",
+        "power_ramp",
+        "current_ramp",
+        "position_move"
+      ],
+      "properties": {
+        "heat_ramp": {"type": "boolean"},
+        "density_ramp": {"type": "boolean"},
+        "power_ramp": {"type": "boolean"},
+        "current_ramp": {"type": "boolean"},
+        "position_move": {"type": "boolean"}
+      }
+    },
+    "state_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state_id",
+        "tokens",
+        "transition_enabled",
+        "contract_violations"
+      ],
+      "properties": {
+        "state_id": {
+          "type": "string",
+          "enum": [
+            "nominal",
+            "thermal_limit",
+            "density_limit",
+            "beta_limit",
+            "current_limit",
+            "vertical_velocity_limit"
+          ]
+        },
+        "tokens": {"$ref": "#/$defs/tokens"},
+        "transition_enabled": {"$ref": "#/$defs/transition_enablement"},
+        "contract_violations": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  }
+}
