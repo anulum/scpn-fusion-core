@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Disruption Sequence Model
+"""Reduced disruption sequence model spanning TQ, CQ, runaway, and halo phases."""
+
 from __future__ import annotations
 
 import math
@@ -23,6 +25,8 @@ def _require_positive(name: str, value: float) -> float:
 
 @dataclass
 class DisruptionConfig:
+    """Input plasma and machine parameters for a disruption-sequence run."""
+
     R0: float
     a: float
     B0: float
@@ -36,6 +40,8 @@ class DisruptionConfig:
 
 @dataclass
 class TQResult:
+    """Thermal-quench duration, residual temperature, and wall heat load."""
+
     tau_tq_ms: float
     post_tq_Te_eV: float
     heat_load_MJ_m2: float
@@ -43,6 +49,8 @@ class TQResult:
 
 @dataclass
 class CQResult:
+    """Current-quench timescale and time traces for plasma current and electric field."""
+
     cq_duration_ms: float
     Ip_trace: np.ndarray
     E_par_trace: np.ndarray
@@ -50,6 +58,8 @@ class CQResult:
 
 @dataclass
 class REResult:
+    """Runaway-electron beam current, stored energy, and termination heat load."""
+
     I_RE_MA: float
     W_RE_MJ: float
     wall_heat_load_MJ_m2: float
@@ -57,6 +67,8 @@ class REResult:
 
 @dataclass
 class HaloResult:
+    """Halo-current force metrics and ITER-style load-limit status."""
+
     f_halo: float
     tpf: float
     F_z_MN: float
@@ -66,6 +78,8 @@ class HaloResult:
 
 @dataclass
 class DisruptionResult:
+    """Aggregated thermal, current, runaway, and halo disruption outputs."""
+
     tq_result: TQResult
     cq_result: CQResult
     re_result: REResult
@@ -76,6 +90,8 @@ class DisruptionResult:
 
 
 class ThermalQuench:
+    """Thermal-quench phase model based on stochastic magnetic transport."""
+
     def __init__(self, W_th_MJ: float, a: float, R0: float, q: float, B0: float):
         self.W_th_MJ = W_th_MJ
         self.a = a
@@ -131,6 +147,8 @@ class ThermalQuench:
 
 
 class CurrentQuench:
+    """Current-quench phase model using post-quench Spitzer resistance."""
+
     def __init__(self, Ip_MA: float, L_plasma_uH: float, R0: float, a: float, kappa: float = 1.0):
         self.Ip_MA = Ip_MA
         self.L_plasma_H = L_plasma_uH * 1e-6
@@ -159,6 +177,7 @@ class CurrentQuench:
         return self.L_plasma_H / (2.0 * math.pi * self.R0) * abs(dIp_dt)
 
     def evolve(self, Te_post_tq_eV: float, Z_eff: float, dt: float, n_steps: int) -> CQResult:
+        """Integrate exponential current decay and induced electric field traces."""
         tau_cq_ms = self.cq_timescale(Te_post_tq_eV, Z_eff)
         tau_cq_s = tau_cq_ms / 1000.0
 
@@ -176,6 +195,8 @@ class CurrentQuench:
 
 
 class REBeamPhase:
+    """Runaway-electron beam current, energy, and termination-load calculations."""
+
     def __init__(self, re_evolution: RunawayEvolution):
         self.re = re_evolution
 
@@ -193,12 +214,15 @@ class REBeamPhase:
         return W_J / 1e6
 
     def termination_heat_load(self, W_RE_MJ: float, A_deposition_m2: float) -> float:
+        """Return localized runaway-electron termination heat load in MJ/m^2."""
         if A_deposition_m2 <= 0.0:
             return float("inf")
         return W_RE_MJ / A_deposition_m2
 
 
 class HaloCurrentModel:
+    """Halo-current load model for vertical and asymmetric sideways vessel forces."""
+
     def __init__(self, Ip_MA: float, R0: float, B0: float, kappa: float):
         self.Ip_MA = Ip_MA
         self.R0 = R0
@@ -241,12 +265,15 @@ class HaloCurrentModel:
 
 
 class DisruptionSequence:
+    """End-to-end reduced disruption scenario executor."""
+
     def __init__(self, config: DisruptionConfig):
         self.config = config
         self.V_plasma = 2.0 * math.pi**2 * config.R0 * config.a**2 * config.kappa
         self.A_wall = 4.0 * math.pi**2 * config.R0 * config.a * config.kappa  # approx
 
     def run(self, spi_density_target: float | None = None) -> DisruptionResult:
+        """Run the disruption phases and optionally apply SPI density mitigation."""
         # Phase 1: TQ
         tq = ThermalQuench(self.config.W_th_MJ, self.config.a, self.config.R0, 3.0, self.config.B0)
         tau_tq_s = tq.quench_timescale(self.config.dBr_over_B_trigger, self.config.Te_pre_keV)
@@ -321,4 +348,5 @@ class DisruptionSequence:
         return DisruptionResult(tq_res, cq_res, re_res, halo_res, tot_dur, tot_heat, F_z)
 
     def with_mitigation(self, spi_density_target: float) -> DisruptionResult:
+        """Run the same sequence with a specified SPI density target."""
         return self.run(spi_density_target)

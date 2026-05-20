@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# Copyright (c) Concepts 1996-2026 Miroslav Sotek. All rights reserved.
+# Copyright (c) Code 2020-2026 Miroslav Sotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core capability manifest configuration
+
+project_label = "SCPN Fusion Core"
+schema_version = "capability-manifest.v1"
+exclude_doc_parts = ["internal", "_build", "_generated"]
+
+[paths]
+json_output = "docs/_generated/capability_manifest.json"
+markdown_output = "docs/_generated/capability_snapshot.md"
+package_root = "src/scpn_fusion"
+capability_sources = [
+  "src/scpn_fusion/core",
+  "src/scpn_fusion/control",
+  "src/scpn_fusion/phase",
+  "src/scpn_fusion/scpn",
+  "src/scpn_fusion/diagnostics",
+  "src/scpn_fusion/engineering",
+  "src/scpn_fusion/nuclear",
+  "src/scpn_fusion/io",
+  "src/scpn_fusion/hpc",
+  "src/scpn_fusion/ui",
+]
+capability_docs = "docs"
+tests_root = "tests"
+docs_root = "docs"
+workflows_root = ".github/workflows"
+rust_workspace = "scpn-fusion-rs"
+
+[readme]
+path = "README.md"
+marker_start = "<!-- capability-snapshot:start -->"
+marker_end = "<!-- capability-snapshot:end -->"
+
+[labels]
+version = "Package version"
+public_api_exports = "Public API exports"
+python_capability_source_modules = "Python capability source modules"
+python_capability_classes = "Python capability classes"
+capability_documentation_pages = "Capability documentation pages"
+rust_workspace_crates = "Rust workspace crates"
+optional_extras = "Optional extras"
+test_files = "Python test files"
+public_documentation_pages = "Public documentation pages"
+github_workflows = "GitHub Actions workflows"

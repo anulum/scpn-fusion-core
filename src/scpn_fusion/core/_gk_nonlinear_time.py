@@ -118,6 +118,7 @@ class NonlinearGKTimeMixin:
         return Q_i, Q_e
 
     def phi_rms(self, state: NonlinearGKState) -> float:
+        """RMS electrostatic potential amplitude across the spectral grid."""
         return float(np.sqrt(np.mean(np.abs(state.phi) ** 2)))
 
     def zonal_rms(self, state: NonlinearGKState) -> float:

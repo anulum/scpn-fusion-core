@@ -3,7 +3,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Integrated Transport Solver Model Mixins
+"""Transport-closure backend mixin for integrated solver profiles."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -16,6 +17,8 @@ from scpn_fusion.fallback_telemetry import record_fallback_event
 
 
 class TransportSolverBackendMixin:
+    """Resolve turbulent transport closures from analytic, neural, or TGLF backends."""
+
     def _compute_transport_backend_closure(
         self,
         *,
@@ -30,6 +33,7 @@ class TransportSolverBackendMixin:
         b_toroidal: float,
         q_profile_source: str,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Return electron, ion, and particle diffusivity profiles for the backend."""
         solver_mod = _solver_module()
         transport_backend_key = transport_backend.strip().lower()
         try:

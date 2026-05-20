@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — SPI Mitigation
+"""Shattered-pellet-injection mitigation models and runtime summaries."""
+
 from __future__ import annotations
 
 import logging
@@ -43,6 +45,7 @@ class ShatteredPelletInjection:
 
     @staticmethod
     def estimate_z_eff(neon_quantity_mol: float) -> float:
+        """Estimate effective charge for a neon-only SPI payload."""
         return ShatteredPelletInjection.estimate_z_eff_cocktail(
             neon_quantity_mol=neon_quantity_mol,
             argon_quantity_mol=0.0,
@@ -56,6 +59,7 @@ class ShatteredPelletInjection:
         argon_quantity_mol: float = 0.0,
         xenon_quantity_mol: float = 0.0,
     ) -> float:
+        """Estimate effective charge for a mixed neon/argon/xenon payload."""
         neon = ShatteredPelletInjection._require_non_negative(
             "neon_quantity_mol", neon_quantity_mol
         )
@@ -84,6 +88,7 @@ class ShatteredPelletInjection:
         disturbance: float,
         action_bias: float = 0.0,
     ) -> dict[str, float]:
+        """Choose a deterministic SPI gas cocktail from risk and disturbance inputs."""
         risk_raw = float(risk_score)
         dist_raw = float(disturbance)
         action_raw = float(action_bias)
@@ -123,6 +128,7 @@ class ShatteredPelletInjection:
 
     @staticmethod
     def estimate_tau_cq(te_keV: float, z_eff: float) -> float:
+        """Estimate current-quench time from electron temperature and effective charge."""
         te = max(float(te_keV), 0.01)
         zeff = max(float(z_eff), 1.0)
         tau = 0.02 * (2.0 / zeff) * ((te / 0.1) ** 0.25)
@@ -139,6 +145,7 @@ class ShatteredPelletInjection:
         dt_s: float = 1e-5,
         verbose: bool = True,
     ):
+        """Run the thermal/current quench mitigation time history."""
         neon = self._require_non_negative("neon_quantity_mol", neon_quantity_mol)
         argon = self._require_non_negative("argon_quantity_mol", argon_quantity_mol)
         xenon = self._require_non_negative("xenon_quantity_mol", xenon_quantity_mol)
@@ -331,6 +338,7 @@ def run_spi_mitigation(
 
 
 def run_spi_test() -> dict[str, Any]:
+    """Run the default SPI mitigation scenario with plotting enabled."""
     return run_spi_mitigation(save_plot=True, verbose=True)
 
 

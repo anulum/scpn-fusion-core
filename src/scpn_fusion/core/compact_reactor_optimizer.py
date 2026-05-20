@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Compact Reactor Optimizer
+"""Reduced compact-reactor design-space search and reporting utilities."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -21,6 +23,7 @@ class CompactReactorArchitect:
         self.fluence_limit = 5e22
 
     def plasma_physics_model(self, R, a, B0):
+        """Estimate fusion power, plasma current, and volume for a compact tokamak design."""
         if R <= 0 or a <= 0 or B0 <= 0:
             raise ValueError("R, a, and B0 must be > 0 for plasma_physics_model.")
         Vol = 2 * np.pi * R * np.pi * a**2
@@ -33,6 +36,7 @@ class CompactReactorArchitect:
         return P_fusion, I_p, Vol
 
     def radial_build_constraints(self, R, a, B0):
+        """Check simple inboard radial-build and high-field coil feasibility constraints."""
         if R <= 0 or a <= 0 or B0 <= 0:
             return False, 0
         d_shield = 0.10
@@ -50,6 +54,7 @@ class CompactReactorArchitect:
         return magnet_ok, B_coil
 
     def visualize_space(self, designs, label=""):
+        """Write a scatter plot of feasible compact-reactor designs for review."""
         if not designs:
             return
         Rs = [d["R"] for d in designs]
@@ -104,6 +109,7 @@ class CompactReactorArchitect:
         return coe, total_cap_m_usd
 
     def report_design(self, d):
+        """Print the engineering and economic summary for a selected reactor design."""
         coe, cap = self.calculate_economics(d)
         print("\n=== MINIMUM VIABLE REACTOR FOUND ===")
         print(f"Geometry:      R = {d['R']:.3f} m, a = {d['a']:.3f} m (A={d['R'] / d['a']:.1f})")
@@ -116,6 +122,7 @@ class CompactReactorArchitect:
         print("====================================")
 
     def find_minimum_reactor(self, target_power_MW=1.0, use_temhd=True):
+        """Search grid candidates and report the smallest design meeting the power target."""
         label = "TEMHD" if use_temhd else "Solid"
         print(f"--- SCPN COMPACT OPTIMIZER (Target: >{target_power_MW} MW, {label}, Detached) ---")
         best_R = 999.0

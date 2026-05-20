@@ -72,30 +72,37 @@ class MLPWeights:
 
     @property
     def w1(self) -> FloatArray:
+        """First hidden-layer weight matrix, or an empty matrix when absent."""
         return self.layers_w[0] if self.layers_w else np.zeros((0, 0))
 
     @property
     def b1(self) -> FloatArray:
+        """First hidden-layer bias vector, or an empty vector when absent."""
         return self.layers_b[0] if self.layers_b else np.zeros(0)
 
     @property
     def w2(self) -> FloatArray:
+        """Second hidden-layer weight matrix, or an empty matrix when absent."""
         return self.layers_w[1] if len(self.layers_w) > 1 else np.zeros((0, 0))
 
     @property
     def b2(self) -> FloatArray:
+        """Second hidden-layer bias vector, or an empty vector when absent."""
         return self.layers_b[1] if len(self.layers_b) > 1 else np.zeros(0)
 
     @property
     def w3(self) -> FloatArray:
+        """Third hidden-layer weight matrix, or an empty matrix when absent."""
         return self.layers_w[2] if len(self.layers_w) > 2 else np.zeros((0, 0))
 
     @property
     def b3(self) -> FloatArray:
+        """Third hidden-layer bias vector, or an empty vector when absent."""
         return self.layers_b[2] if len(self.layers_b) > 2 else np.zeros(0)
 
     @property
     def n_layers(self) -> int:
+        """Number of stored weight layers."""
         return len(self.layers_w)
 
 

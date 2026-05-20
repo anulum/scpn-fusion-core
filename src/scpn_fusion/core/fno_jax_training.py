@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — JAX Fourier Neural Operator (FNO) Training
+"""JAX Fourier Neural Operator training and inference utilities for turbulence fields."""
+
 from __future__ import annotations
 
 import jax
@@ -29,6 +31,7 @@ EPOCHS = 50
 
 
 def init_fno_params(key, modes, width):
+    """Initialise deterministic FNO parameter tensors from a JAX random key."""
     k1, k2, k3, k4 = random.split(key, 4)
 
     def xavier(k, shape):
@@ -47,6 +50,7 @@ def init_fno_params(key, modes, width):
 
 @jit
 def fno_layer(x, w_real, w_imag, linear, b):
+    """Apply one spectral-convolution FNO layer followed by GELU activation."""
     # x: (grid, grid, width)
     x_ft = jnp.fft.rfft2(x, axes=(0, 1))
     modes = w_real.shape[2]
@@ -67,6 +71,7 @@ def fno_layer(x, w_real, w_imag, linear, b):
 
 
 def model_forward(params, x):
+    """Run scalar FNO regression for a single two-dimensional input field."""
     # x: (grid, grid, 1)
     x = jnp.repeat(x, WIDTH, axis=-1)
     x = fno_layer(x, params["w1_real"], params["w1_imag"], params["linear1"], params["b1"])
@@ -81,12 +86,14 @@ def model_forward(params, x):
 
 
 def mse_loss(params, x_batch, y_batch):
+    """Compute mean-squared scalar regression loss for a batch of fields."""
     preds = vmap(lambda x: model_forward(params, x))(x_batch)
     return jnp.mean((preds - y_batch) ** 2)
 
 
 @jit
 def update_step(params, m, v, x_batch, y_batch, lr, t):
+    """Perform one clipped Adam optimisation step for the JAX FNO parameters."""
     b1, b2, eps = 0.9, 0.999, 1e-8
     loss, grads = value_and_grad(mse_loss)(params, x_batch, y_batch)
 
@@ -194,6 +201,7 @@ def train_fno_jax(
     save_path: str = "weights/fno_turbulence_jax.npz",
     seed: int = 42,
 ) -> dict[str, Any]:
+    """Train the JAX FNO lane from a validated dataset or generated benchmark fields."""
     logging.basicConfig(level=logging.INFO)
 
     if epochs < 1:

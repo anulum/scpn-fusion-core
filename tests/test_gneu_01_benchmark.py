@@ -36,6 +36,8 @@ def test_run_benchmark_meets_thresholds_on_smoke_config() -> None:
     out = gneu_01_benchmark.run_benchmark(seed=42, episodes=8, window=64)
     assert out["agreement"] >= 0.95
     assert out["mean_abs_delta"] <= 0.08
+    assert out["stochastic_float_equivalence_error"] <= 0.05
+    assert out["stochastic_float_equivalence_error_pct"] <= 5.0
     assert out["oracle_sc_mean_abs_delta"] <= 0.05
     assert out["oracle_sc_firing_mean_abs_delta"] <= 0.05
     assert out["recovery_ms_p95"] <= 1.0
@@ -53,6 +55,7 @@ def test_render_markdown_contains_key_sections() -> None:
     assert "# GNEU-01 Benchmark" in text
     assert "## Metrics" in text
     assert "TORAX parity estimate" in text
+    assert "stochastic-vs-float equivalence error" in text
     assert "oracle-vs-SC marking delta" in text
     assert "oracle-vs-SC firing delta" in text
 
@@ -78,3 +81,37 @@ def test_run_benchmark_firing_vector_metric_present() -> None:
     assert "oracle_sc_firing_mean_abs_delta" in out
     assert isinstance(out["oracle_sc_firing_mean_abs_delta"], float)
     assert out["oracle_sc_firing_mean_abs_delta"] <= 0.05
+
+
+def test_run_benchmark_exposes_stochastic_float_equivalence_gate() -> None:
+    out = gneu_01_benchmark.run_benchmark(seed=91, episodes=6, window=56)
+    assert out["stochastic_float_equivalence_error"] == max(
+        out["oracle_sc_mean_abs_delta"],
+        out["oracle_sc_firing_mean_abs_delta"],
+    )
+    assert out["stochastic_float_equivalence_error_pct"] == (
+        out["stochastic_float_equivalence_error"] * 100.0
+    )
+    assert out["thresholds"]["max_stochastic_float_equivalence_error"] == 0.05
+    assert out["passes_thresholds"] is True
+
+
+def test_main_prints_stochastic_float_equivalence_metric(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    rc = gneu_01_benchmark.main(
+        [
+            "--strict",
+            "--episodes",
+            "4",
+            "--window",
+            "40",
+            "--output-json",
+            str(tmp_path / "report.json"),
+            "--output-md",
+            str(tmp_path / "report.md"),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert "stochastic_float_equivalence_error=" in captured.out
