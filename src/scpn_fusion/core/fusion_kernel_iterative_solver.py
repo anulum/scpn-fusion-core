@@ -18,6 +18,8 @@ from scpn_fusion.core.fusion_kernel_numerics import (
 
 
 class FusionKernelIterativeSolverMixin:
+    """Mixin providing Jacobi, SOR, and multigrid sub-solvers for GS solves."""
+
     # ── elliptic sub-solvers ──────────────────────────────────────────
 
     def _jacobi_step(self, Psi: FloatArray, Source: FloatArray) -> FloatArray:

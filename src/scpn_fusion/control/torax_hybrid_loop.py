@@ -30,6 +30,8 @@ _predict_disruption_risk = cast(_PredictRiskFn, predict_disruption_risk)
 
 @dataclass(frozen=True)
 class ToraxPlasmaState:
+    """Reduced plasma state used by the synthetic TORAX-hybrid campaign."""
+
     beta_n: float
     q95: float
     li3: float
@@ -38,6 +40,8 @@ class ToraxPlasmaState:
 
 @dataclass(frozen=True)
 class ToraxHybridCampaignResult:
+    """Threshold summary for the NSTX-U-like TORAX-hybrid replay campaign."""
+
     episodes: int
     steps_per_episode: int
     disruption_avoidance_rate: float

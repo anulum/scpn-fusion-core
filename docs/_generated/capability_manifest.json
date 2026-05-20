@@ -1,0 +1,2841 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "capabilities": {
+    "documentation_pages": [
+      "docs/3d_gaps.md",
+      "docs/BENCHMARKS.md",
+      "docs/BENCHMARK_FIGURES.md",
+      "docs/CI_FAILURE_LEDGER.md",
+      "docs/CLAIMS_EVIDENCE_MAP.md",
+      "docs/COMPACT_REACTOR_FINDINGS.md",
+      "docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md",
+      "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
+      "docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md",
+      "docs/FUTURE_APPLICATIONS.md",
+      "docs/GPU_ACCELERATION_ROADMAP.md",
+      "docs/HARDENING_30_DAY_EXECUTION_PLAN.md",
+      "docs/HONEST_SCOPE.md",
+      "docs/NEURAL_TRANSPORT_TRAINING.md",
+      "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
+      "docs/NEXT_SPRINT_EXECUTION_QUEUE.md",
+      "docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md",
+      "docs/PERFORMANCE_METRIC_TAXONOMY.md",
+      "docs/PHASE1_3D_EXECUTION_PLAN.md",
+      "docs/PHASE2_ADVANCED_RFC_TEMPLATE.md",
+      "docs/PHASE2_ADVANCED_RFC_TRACKER.md",
+      "docs/PHASE3_EXECUTION_REGISTRY.md",
+      "docs/PHYSICS_METHODS_COMPLETE.md",
+      "docs/PHYSICS_VALIDATION_STATUS.md",
+      "docs/RELEASE_ACCEPTANCE_CHECKLIST.md",
+      "docs/SOLVER_TUNING_GUIDE.md",
+      "docs/SOURCE_P0P1_ISSUE_BACKLOG.md",
+      "docs/STREAMLIT_DEMO_PLAYBOOK.md",
+      "docs/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md",
+      "docs/UNDERDEVELOPED_SOURCE_REGISTER.md",
+      "docs/V3_6_MILESTONE_BOARD.md",
+      "docs/V3_9_3_RELEASE_CHECKLIST.md",
+      "docs/VALIDATION_AGAINST_ITER.md",
+      "docs/VALIDATION_GATE_MATRIX.md",
+      "docs/competitive_analysis.md",
+      "docs/formal_verification.md",
+      "docs/hil_demo.md",
+      "docs/notebooks/README.md",
+      "docs/promotions/HN_SHOW.md",
+      "docs/promotions/REDDIT_COMPILERS.md",
+      "docs/promotions/REDDIT_PROGRAMMING.md",
+      "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
+      "docs/rfc/GAI-01_RFC.md",
+      "docs/rfc/GAI-02_RFC.md",
+      "docs/rfc/GAI-03_RFC.md",
+      "docs/rfc/GDEP-01_RFC.md",
+      "docs/rfc/GDEP-02_RFC.md",
+      "docs/rfc/GDEP-03_RFC.md",
+      "docs/rfc/GDEP-05_RFC.md",
+      "docs/rfc/GMVR-01_RFC.md",
+      "docs/rfc/GMVR-02_RFC.md",
+      "docs/rfc/GMVR-03_RFC.md",
+      "docs/rfc/GNEU-01_RFC.md",
+      "docs/rfc/GPHY-01_RFC.md",
+      "docs/rfc/GPHY-02_RFC.md",
+      "docs/rfc/GPHY-03_RFC.md",
+      "docs/rfc/GPHY-04_RFC.md",
+      "docs/rfc/GPHY-05_RFC.md",
+      "docs/rfc/GPHY-06_RFC.md"
+    ],
+    "python_classes": [
+      {
+        "name": "ADCConfig",
+        "path": "src/scpn_fusion/control/hil_harness.py"
+      },
+      {
+        "name": "AMRPatch",
+        "path": "src/scpn_fusion/core/amr_patch.py"
+      },
+      {
+        "name": "ActionReadout",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "ActionSpec",
+        "path": "src/scpn_fusion/scpn/contracts.py"
+      },
+      {
+        "name": "ActuatorChannel",
+        "path": "src/scpn_fusion/control/stellarator_control_contracts.py"
+      },
+      {
+        "name": "ActuatorCommand",
+        "path": "src/scpn_fusion/control/density_controller.py"
+      },
+      {
+        "name": "ActuatorSet",
+        "path": "src/scpn_fusion/control/stellarator_control_contracts.py"
+      },
+      {
+        "name": "AdamOptimizer",
+        "path": "src/scpn_fusion/core/fno_training.py"
+      },
+      {
+        "name": "AdaptiveKnmConfig",
+        "path": "src/scpn_fusion/phase/adaptive_knm.py"
+      },
+      {
+        "name": "AdaptiveKnmEngine",
+        "path": "src/scpn_fusion/phase/adaptive_knm.py"
+      },
+      {
+        "name": "AdaptiveTimeController",
+        "path": "src/scpn_fusion/core/integrated_transport_solver_adaptive.py"
+      },
+      {
+        "name": "AlfvenContinuum",
+        "path": "src/scpn_fusion/core/alfven_eigenmodes.py"
+      },
+      {
+        "name": "AlfvenGap",
+        "path": "src/scpn_fusion/core/alfven_eigenmodes.py"
+      },
+      {
+        "name": "AlfvenStabilityAnalysis",
+        "path": "src/scpn_fusion/core/alfven_eigenmodes.py"
+      },
+      {
+        "name": "AlphaHeating",
+        "path": "src/scpn_fusion/control/burn_controller.py"
+      },
+      {
+        "name": "AnalyticEquilibriumSolver",
+        "path": "src/scpn_fusion/control/analytic_solver.py"
+      },
+      {
+        "name": "Artifact",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "ArtifactMeta",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "ArtifactValidationError",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "AvalancheResult",
+        "path": "src/scpn_fusion/core/plasma_startup.py"
+      },
+      {
+        "name": "AxisymmetricTokamakBoundary",
+        "path": "src/scpn_fusion/core/vmec_lite.py"
+      },
+      {
+        "name": "BackendTier",
+        "path": "src/scpn_fusion/core/_multi_compat.py"
+      },
+      {
+        "name": "BallooningEigenResult",
+        "path": "src/scpn_fusion/core/ballooning_solver.py"
+      },
+      {
+        "name": "BallooningEquation",
+        "path": "src/scpn_fusion/core/ballooning_solver.py"
+      },
+      {
+        "name": "BallooningResult",
+        "path": "src/scpn_fusion/core/stability_mhd.py"
+      },
+      {
+        "name": "BallooningStabilityAnalysis",
+        "path": "src/scpn_fusion/core/ballooning_solver.py"
+      },
+      {
+        "name": "BioHolonomicController",
+        "path": "src/scpn_fusion/control/bio_holonomic_controller.py"
+      },
+      {
+        "name": "BioTelemetrySnapshot",
+        "path": "src/scpn_fusion/control/bio_holonomic_controller.py"
+      },
+      {
+        "name": "BlobDetector",
+        "path": "src/scpn_fusion/core/blob_transport.py"
+      },
+      {
+        "name": "BlobDynamics",
+        "path": "src/scpn_fusion/core/blob_transport.py"
+      },
+      {
+        "name": "BlobEnsemble",
+        "path": "src/scpn_fusion/core/blob_transport.py"
+      },
+      {
+        "name": "BlobEvent",
+        "path": "src/scpn_fusion/core/blob_transport.py"
+      },
+      {
+        "name": "BlobPopulation",
+        "path": "src/scpn_fusion/core/blob_transport.py"
+      },
+      {
+        "name": "BootstrapCurrentEstimate",
+        "path": "src/scpn_fusion/control/volt_second_manager.py"
+      },
+      {
+        "name": "BreedingBlanket",
+        "path": "src/scpn_fusion/nuclear/blanket_neutronics.py"
+      },
+      {
+        "name": "BurnController",
+        "path": "src/scpn_fusion/control/burn_controller.py"
+      },
+      {
+        "name": "BurnPhysicsError",
+        "path": "src/scpn_fusion/core/fusion_ignition_sim.py"
+      },
+      {
+        "name": "BurnPoint",
+        "path": "src/scpn_fusion/control/burn_controller.py"
+      },
+      {
+        "name": "BurnStabilityAnalysis",
+        "path": "src/scpn_fusion/control/burn_controller.py"
+      },
+      {
+        "name": "BurnThrough",
+        "path": "src/scpn_fusion/core/plasma_startup.py"
+      },
+      {
+        "name": "BurnThroughResult",
+        "path": "src/scpn_fusion/core/plasma_startup.py"
+      },
+      {
+        "name": "CADLoadReport",
+        "path": "src/scpn_fusion/engineering/cad_raytrace.py"
+      },
+      {
+        "name": "CGYROSolver",
+        "path": "src/scpn_fusion/core/gk_cgyro.py"
+      },
+      {
+        "name": "CODACConfig",
+        "path": "src/scpn_fusion/control/codac_interface.py"
+      },
+      {
+        "name": "CODACInterface",
+        "path": "src/scpn_fusion/control/codac_interface.py"
+      },
+      {
+        "name": "CQResult",
+        "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "ChainResult",
+        "path": "src/scpn_fusion/core/locked_mode.py"
+      },
+      {
+        "name": "ChirikovOverlap",
+        "path": "src/scpn_fusion/core/tearing_mode_coupling.py"
+      },
+      {
+        "name": "Coil",
+        "path": "src/scpn_fusion/core/config_schema.py"
+      },
+      {
+        "name": "CoilSet",
+        "path": "src/scpn_fusion/control/shape_controller.py"
+      },
+      {
+        "name": "CoilSet",
+        "path": "src/scpn_fusion/core/fusion_kernel.py"
+      },
+      {
+        "name": "CompactReactorArchitect",
+        "path": "src/scpn_fusion/core/compact_reactor_optimizer.py"
+      },
+      {
+        "name": "CompiledNet",
+        "path": "src/scpn_fusion/scpn/compiler.py"
+      },
+      {
+        "name": "CompilerInfo",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "ConstrainedGymTokamakEnv",
+        "path": "src/scpn_fusion/control/safe_rl_controller.py"
+      },
+      {
+        "name": "ControlAction",
+        "path": "src/scpn_fusion/scpn/contracts.py"
+      },
+      {
+        "name": "ControlLoopMetrics",
+        "path": "src/scpn_fusion/control/hil_harness.py"
+      },
+      {
+        "name": "ControlObjective",
+        "path": "src/scpn_fusion/control/stellarator_control_contracts.py"
+      },
+      {
+        "name": "ControlObservation",
+        "path": "src/scpn_fusion/scpn/contracts.py"
+      },
+      {
+        "name": "ControlScales",
+        "path": "src/scpn_fusion/scpn/contracts.py"
+      },
+      {
+        "name": "ControlTargets",
+        "path": "src/scpn_fusion/scpn/contracts.py"
+      },
+      {
+        "name": "CoolantLoop",
+        "path": "src/scpn_fusion/engineering/thermal_hydraulics.py"
+      },
+      {
+        "name": "CoolingCurve",
+        "path": "src/scpn_fusion/core/impurity_transport.py"
+      },
+      {
+        "name": "CorrectionRecord",
+        "path": "src/scpn_fusion/core/gk_corrector.py"
+      },
+      {
+        "name": "CorrectorConfig",
+        "path": "src/scpn_fusion/core/gk_corrector.py"
+      },
+      {
+        "name": "CoupledResult",
+        "path": "src/scpn_fusion/core/tearing_mode_coupling.py"
+      },
+      {
+        "name": "CoupledSandpileReactor",
+        "path": "src/scpn_fusion/control/advanced_soc_fusion_learning.py"
+      },
+      {
+        "name": "CoupledTearingModes",
+        "path": "src/scpn_fusion/core/tearing_mode_coupling.py"
+      },
+      {
+        "name": "CurrentDiffusionSolver",
+        "path": "src/scpn_fusion/core/current_diffusion.py"
+      },
+      {
+        "name": "CurrentDriveMix",
+        "path": "src/scpn_fusion/core/current_drive.py"
+      },
+      {
+        "name": "CurrentQuench",
+        "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "CycleTimer",
+        "path": "src/scpn_fusion/control/codac_interface.py"
+      },
+      {
+        "name": "DACConfig",
+        "path": "src/scpn_fusion/control/hil_harness.py"
+      },
+      {
+        "name": "DashboardGenerator",
+        "path": "src/scpn_fusion/ui/dashboard_generator.py"
+      },
+      {
+        "name": "DensityController",
+        "path": "src/scpn_fusion/control/density_controller.py"
+      },
+      {
+        "name": "DensityLimitPredictor",
+        "path": "src/scpn_fusion/core/marfe.py"
+      },
+      {
+        "name": "DetachmentBifurcation",
+        "path": "src/scpn_fusion/control/detachment_controller.py"
+      },
+      {
+        "name": "DetachmentController",
+        "path": "src/scpn_fusion/control/detachment_controller.py"
+      },
+      {
+        "name": "DetachmentPoint",
+        "path": "src/scpn_fusion/control/detachment_controller.py"
+      },
+      {
+        "name": "DetachmentState",
+        "path": "src/scpn_fusion/control/detachment_controller.py"
+      },
+      {
+        "name": "DiagnosticChannel",
+        "path": "src/scpn_fusion/control/stellarator_control_contracts.py"
+      },
+      {
+        "name": "DiagnosticFrame",
+        "path": "src/scpn_fusion/control/stellarator_control_contracts.py"
+      },
+      {
+        "name": "DiagnosticResponse",
+        "path": "src/scpn_fusion/control/realtime_efit.py"
+      },
+      {
+        "name": "DiagnosticSnapshot",
+        "path": "src/scpn_fusion/phase/adaptive_knm.py"
+      },
+      {
+        "name": "DiagnosticSystem",
+        "path": "src/scpn_fusion/control/fusion_control_room.py"
+      },
+      {
+        "name": "Dimensions",
+        "path": "src/scpn_fusion/core/config_schema.py"
+      },
+      {
+        "name": "DirectorInterface",
+        "path": "src/scpn_fusion/control/director_interface.py"
+      },
+      {
+        "name": "DisruptionConfig",
+        "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "DisruptionMitigationReport",
+        "path": "src/scpn_fusion/control/halo_re_physics.py"
+      },
+      {
+        "name": "DisruptionPath",
+        "path": "src/scpn_fusion/core/tearing_mode_coupling.py"
+      },
+      {
+        "name": "DisruptionResult",
+        "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "DisruptionSequence",
+        "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "DisruptionTriggerAssessment",
+        "path": "src/scpn_fusion/core/tearing_mode_coupling.py"
+      },
+      {
+        "name": "DivertorLab",
+        "path": "src/scpn_fusion/core/divertor_thermal_sim.py"
+      },
+      {
+        "name": "DivertorLifetimeAssessment",
+        "path": "src/scpn_fusion/core/plasma_wall_interaction.py"
+      },
+      {
+        "name": "DriftWavePhysics",
+        "path": "src/scpn_fusion/core/turbulence_oracle.py"
+      },
+      {
+        "name": "DynamicBurnModel",
+        "path": "src/scpn_fusion/core/fusion_ignition_sim.py"
+      },
+      {
+        "name": "DynamicsMLP",
+        "path": "src/scpn_fusion/control/fusion_nmpc_jax.py"
+      },
+      {
+        "name": "ECCDSource",
+        "path": "src/scpn_fusion/core/current_drive.py"
+      },
+      {
+        "name": "ECRHHeatingSystem",
+        "path": "src/scpn_fusion/core/rf_heating.py"
+      },
+      {
+        "name": "ELMCrashModel",
+        "path": "src/scpn_fusion/core/elm_model.py"
+      },
+      {
+        "name": "ELMCrashResult",
+        "path": "src/scpn_fusion/core/elm_model.py"
+      },
+      {
+        "name": "ELMCycler",
+        "path": "src/scpn_fusion/core/elm_model.py"
+      },
+      {
+        "name": "ELMEvent",
+        "path": "src/scpn_fusion/core/elm_model.py"
+      },
+      {
+        "name": "EPICSChannel",
+        "path": "src/scpn_fusion/control/codac_interface.py"
+      },
+      {
+        "name": "EigenMode",
+        "path": "src/scpn_fusion/core/gk_eigenvalue.py"
+      },
+      {
+        "name": "EnsembleResult",
+        "path": "src/scpn_fusion/core/orbit_following.py"
+      },
+      {
+        "name": "EpedPedestalModel",
+        "path": "src/scpn_fusion/core/eped_pedestal.py"
+      },
+      {
+        "name": "EquilibriumIDS",
+        "path": "src/scpn_fusion/core/imas_adapter.py"
+      },
+      {
+        "name": "EquilibriumLatencyBenchmark",
+        "path": "src/scpn_fusion/core/gpu_runtime.py"
+      },
+      {
+        "name": "EquilibriumUncertainty",
+        "path": "src/scpn_fusion/core/uncertainty_full_chain.py"
+      },
+      {
+        "name": "ErosionModel",
+        "path": "src/scpn_fusion/core/plasma_wall_interaction.py"
+      },
+      {
+        "name": "ErrorFieldSpectrum",
+        "path": "src/scpn_fusion/core/locked_mode.py"
+      },
+      {
+        "name": "ErrorFieldToDisruptionChain",
+        "path": "src/scpn_fusion/core/locked_mode.py"
+      },
+      {
+        "name": "ExtendedKalmanFilter",
+        "path": "src/scpn_fusion/control/state_estimator.py"
+      },
+      {
+        "name": "FDIMonitor",
+        "path": "src/scpn_fusion/control/fault_tolerant_control.py"
+      },
+      {
+        "name": "FNO_Controller",
+        "path": "src/scpn_fusion/core/fno_turbulence_suppressor.py"
+      },
+      {
+        "name": "FPGARegisterMap",
+        "path": "src/scpn_fusion/control/hil_harness.py"
+      },
+      {
+        "name": "FPGASNNExport",
+        "path": "src/scpn_fusion/control/hil_harness.py"
+      },
+      {
+        "name": "FastIonPressure",
+        "path": "src/scpn_fusion/core/kinetic_efit.py"
+      },
+      {
+        "name": "FastParticleDrive",
+        "path": "src/scpn_fusion/core/alfven_eigenmodes.py"
+      },
+      {
+        "name": "FaultInjector",
+        "path": "src/scpn_fusion/control/fault_tolerant_control.py"
+      },
+      {
+        "name": "FaultReport",
+        "path": "src/scpn_fusion/control/fault_tolerant_control.py"
+      },
+      {
+        "name": "FaultType",
+        "path": "src/scpn_fusion/control/fault_tolerant_control.py"
+      },
+      {
+        "name": "FeatureAxisSpec",
+        "path": "src/scpn_fusion/scpn/contracts.py"
+      },
+      {
+        "name": "FederatedConfig",
+        "path": "src/scpn_fusion/control/federated_disruption.py"
+      },
+      {
+        "name": "FederatedServer",
+        "path": "src/scpn_fusion/control/federated_disruption.py"
+      },
+      {
+        "name": "FeedforwardController",
+        "path": "src/scpn_fusion/control/scenario_scheduler.py"
+      },
+      {
+        "name": "FieldLineTrace3D",
+        "path": "src/scpn_fusion/core/fieldline_3d.py"
+      },
+      {
+        "name": "FieldLineTracer3D",
+        "path": "src/scpn_fusion/core/fieldline_3d.py"
+      },
+      {
+        "name": "FirstOrderActuator",
+        "path": "src/scpn_fusion/control/tokamak_flight_sim.py"
+      },
+      {
+        "name": "FixedPoint",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "FluxBudget",
+        "path": "src/scpn_fusion/control/volt_second_manager.py"
+      },
+      {
+        "name": "FluxConsumptionMonitor",
+        "path": "src/scpn_fusion/control/volt_second_manager.py"
+      },
+      {
+        "name": "FluxReport",
+        "path": "src/scpn_fusion/control/volt_second_manager.py"
+      },
+      {
+        "name": "FluxStatus",
+        "path": "src/scpn_fusion/control/volt_second_manager.py"
+      },
+      {
+        "name": "FokkerPlanckSolver",
+        "path": "src/scpn_fusion/control/fokker_planck_re.py"
+      },
+      {
+        "name": "ForceBalance3D",
+        "path": "src/scpn_fusion/core/equilibrium_3d.py"
+      },
+      {
+        "name": "ForceBalanceResult",
+        "path": "src/scpn_fusion/core/equilibrium_3d.py"
+      },
+      {
+        "name": "ForceBalanceSolver",
+        "path": "src/scpn_fusion/core/force_balance.py"
+      },
+      {
+        "name": "ForwardDiagnosticChannels",
+        "path": "src/scpn_fusion/diagnostics/forward.py"
+      },
+      {
+        "name": "FourierMode3D",
+        "path": "src/scpn_fusion/core/equilibrium_3d.py"
+      },
+      {
+        "name": "FreeBoundaryEstimate",
+        "path": "src/scpn_fusion/control/_free_boundary_supervisory_types.py"
+      },
+      {
+        "name": "FreeBoundarySafetyMargins",
+        "path": "src/scpn_fusion/control/_free_boundary_supervisory_types.py"
+      },
+      {
+        "name": "FreeBoundarySafetySupervisor",
+        "path": "src/scpn_fusion/control/_free_boundary_safety_supervisor.py"
+      },
+      {
+        "name": "FreeBoundaryStateEstimator",
+        "path": "src/scpn_fusion/control/_free_boundary_estimator.py"
+      },
+      {
+        "name": "FreeBoundarySupervisoryController",
+        "path": "src/scpn_fusion/control/_free_boundary_control_geometry.py"
+      },
+      {
+        "name": "FreeBoundaryTarget",
+        "path": "src/scpn_fusion/control/_free_boundary_supervisory_types.py"
+      },
+      {
+        "name": "FreeBoundaryTrackingController",
+        "path": "src/scpn_fusion/control/free_boundary_tracking.py"
+      },
+      {
+        "name": "FuelingOptimizer",
+        "path": "src/scpn_fusion/control/density_controller.py"
+      },
+      {
+        "name": "FuelingSimResult",
+        "path": "src/scpn_fusion/control/fueling_mode.py"
+      },
+      {
+        "name": "FullChainUQResult",
+        "path": "src/scpn_fusion/core/uncertainty_full_chain.py"
+      },
+      {
+        "name": "FusionAIAgent",
+        "path": "src/scpn_fusion/control/advanced_soc_fusion_learning.py"
+      },
+      {
+        "name": "FusionAI_Agent",
+        "path": "src/scpn_fusion/control/advanced_soc_fusion_learning.py"
+      },
+      {
+        "name": "FusionBurnPhysics",
+        "path": "src/scpn_fusion/core/fusion_ignition_sim.py"
+      },
+      {
+        "name": "FusionCompiler",
+        "path": "src/scpn_fusion/scpn/compiler.py"
+      },
+      {
+        "name": "FusionJSONFormatter",
+        "path": "src/scpn_fusion/io/logging_config.py"
+      },
+      {
+        "name": "FusionKernel",
+        "path": "src/scpn_fusion/core/fusion_kernel.py"
+      },
+      {
+        "name": "FusionKernelFreeBoundaryMixin",
+        "path": "src/scpn_fusion/core/fusion_kernel_free_boundary_mixin.py"
+      },
+      {
+        "name": "FusionKernelIterativeSolverMixin",
+        "path": "src/scpn_fusion/core/fusion_kernel_iterative_solver.py"
+      },
+      {
+        "name": "FusionKernelNewtonSolverMixin",
+        "path": "src/scpn_fusion/core/fusion_kernel_newton_solver.py"
+      },
+      {
+        "name": "FusionState",
+        "path": "src/scpn_fusion/core/state_space.py"
+      },
+      {
+        "name": "GENESolver",
+        "path": "src/scpn_fusion/core/gk_gene.py"
+      },
+      {
+        "name": "GEqdsk",
+        "path": "src/scpn_fusion/core/eqdsk.py"
+      },
+      {
+        "name": "GKCorrector",
+        "path": "src/scpn_fusion/core/gk_corrector.py"
+      },
+      {
+        "name": "GKLocalParams",
+        "path": "src/scpn_fusion/core/gk_interface.py"
+      },
+      {
+        "name": "GKOutput",
+        "path": "src/scpn_fusion/core/gk_interface.py"
+      },
+      {
+        "name": "GKScheduler",
+        "path": "src/scpn_fusion/core/gk_scheduler.py"
+      },
+      {
+        "name": "GKSolverBase",
+        "path": "src/scpn_fusion/core/gk_interface.py"
+      },
+      {
+        "name": "GKSpecies",
+        "path": "src/scpn_fusion/core/gk_species.py"
+      },
+      {
+        "name": "GPURuntimeBridge",
+        "path": "src/scpn_fusion/core/gpu_runtime.py"
+      },
+      {
+        "name": "GS2Solver",
+        "path": "src/scpn_fusion/core/gk_gs2.py"
+      },
+      {
+        "name": "GainScheduledController",
+        "path": "src/scpn_fusion/control/gain_scheduled_controller.py"
+      },
+      {
+        "name": "GlobalDesignExplorer",
+        "path": "src/scpn_fusion/core/global_design_scanner.py"
+      },
+      {
+        "name": "GlobalPsiDriver",
+        "path": "src/scpn_fusion/phase/kuramoto.py"
+      },
+      {
+        "name": "GmresTelemetry",
+        "path": "src/scpn_fusion/core/fusion_kernel_newton_runtime.py"
+      },
+      {
+        "name": "GuidingCenterOrbit",
+        "path": "src/scpn_fusion/core/orbit_following.py"
+      },
+      {
+        "name": "GyroSwinLikeSurrogate",
+        "path": "src/scpn_fusion/core/gyro_swin_surrogate.py"
+      },
+      {
+        "name": "GyrokineticTransportModel",
+        "path": "src/scpn_fusion/core/gyrokinetic_transport.py"
+      },
+      {
+        "name": "GyrokineticsParams",
+        "path": "src/scpn_fusion/core/gyrokinetic_transport.py"
+      },
+      {
+        "name": "HILBenchmarkResult",
+        "path": "src/scpn_fusion/control/hil_harness.py"
+      },
+      {
+        "name": "HILControlLoop",
+        "path": "src/scpn_fusion/control/hil_harness.py"
+      },
+      {
+        "name": "HILDemoRunner",
+        "path": "src/scpn_fusion/control/hil_demo_runner.py"
+      },
+      {
+        "name": "HInfinityController",
+        "path": "src/scpn_fusion/control/h_infinity_controller.py"
+      },
+      {
+        "name": "HJB_Avalanche_Controller",
+        "path": "src/scpn_fusion/core/sandpile_fusion_reactor.py"
+      },
+      {
+        "name": "HPCBridge",
+        "path": "src/scpn_fusion/core/hpc_bridge.py"
+      },
+      {
+        "name": "HPCBridge",
+        "path": "src/scpn_fusion/hpc/hpc_bridge.py"
+      },
+      {
+        "name": "HallMHD",
+        "path": "src/scpn_fusion/core/hall_mhd_discovery.py"
+      },
+      {
+        "name": "HaloCurrentModel",
+        "path": "src/scpn_fusion/control/halo_re_physics.py"
+      },
+      {
+        "name": "HaloCurrentModel",
+        "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "HaloCurrentResult",
+        "path": "src/scpn_fusion/control/halo_re_physics.py"
+      },
+      {
+        "name": "HaloResult",
+        "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "HeatMLShadowSurrogate",
+        "path": "src/scpn_fusion/core/heat_ml_shadow_surrogate.py"
+      },
+      {
+        "name": "HybridAnomalyDetector",
+        "path": "src/scpn_fusion/control/disruption_risk_runtime.py"
+      },
+      {
+        "name": "IPhaseDetector",
+        "path": "src/scpn_fusion/core/lh_transition.py"
+      },
+      {
+        "name": "IcePelletFuelingController",
+        "path": "src/scpn_fusion/control/fueling_mode.py"
+      },
+      {
+        "name": "ImpuritySpecies",
+        "path": "src/scpn_fusion/core/impurity_transport.py"
+      },
+      {
+        "name": "ImpurityTransportSolver",
+        "path": "src/scpn_fusion/core/impurity_transport.py"
+      },
+      {
+        "name": "InitialState",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "IntegratedScenarioSimulator",
+        "path": "src/scpn_fusion/core/integrated_scenario.py"
+      },
+      {
+        "name": "IslandGrowth",
+        "path": "src/scpn_fusion/core/locked_mode.py"
+      },
+      {
+        "name": "IsoFluxController",
+        "path": "src/scpn_fusion/control/tokamak_flight_sim.py"
+      },
+      {
+        "name": "JaxNonlinearGKSolver",
+        "path": "src/scpn_fusion/core/jax_gk_nonlinear.py"
+      },
+      {
+        "name": "KalmanDensityEstimator",
+        "path": "src/scpn_fusion/control/density_controller.py"
+      },
+      {
+        "name": "KalmanObserver",
+        "path": "src/scpn_fusion/control/fusion_control_room.py"
+      },
+      {
+        "name": "KineticConstraints",
+        "path": "src/scpn_fusion/core/kinetic_efit.py"
+      },
+      {
+        "name": "KineticEFIT",
+        "path": "src/scpn_fusion/core/kinetic_efit.py"
+      },
+      {
+        "name": "KineticReconstructionResult",
+        "path": "src/scpn_fusion/core/kinetic_efit.py"
+      },
+      {
+        "name": "KnmSpec",
+        "path": "src/scpn_fusion/phase/knm.py"
+      },
+      {
+        "name": "KruskalShafranovResult",
+        "path": "src/scpn_fusion/core/stability_mhd.py"
+      },
+      {
+        "name": "LHCDSource",
+        "path": "src/scpn_fusion/core/current_drive.py"
+      },
+      {
+        "name": "LHTransitionController",
+        "path": "src/scpn_fusion/core/lh_transition.py"
+      },
+      {
+        "name": "LHTrigger",
+        "path": "src/scpn_fusion/core/lh_transition.py"
+      },
+      {
+        "name": "LQRController",
+        "path": "src/scpn_fusion/control/flight_sim_controllers.py"
+      },
+      {
+        "name": "LagrangianPPO",
+        "path": "src/scpn_fusion/control/safe_rl_controller.py"
+      },
+      {
+        "name": "LazarusBridge",
+        "path": "src/scpn_fusion/core/lazarus_bridge.py"
+      },
+      {
+        "name": "LearnerConfig",
+        "path": "src/scpn_fusion/core/gk_online_learner.py"
+      },
+      {
+        "name": "LifetimeReport",
+        "path": "src/scpn_fusion/core/plasma_wall_interaction.py"
+      },
+      {
+        "name": "LinearGKResult",
+        "path": "src/scpn_fusion/core/gk_eigenvalue.py"
+      },
+      {
+        "name": "LockedModeIsland",
+        "path": "src/scpn_fusion/core/locked_mode.py"
+      },
+      {
+        "name": "LyapunovGuard",
+        "path": "src/scpn_fusion/phase/lyapunov_guard.py"
+      },
+      {
+        "name": "LyapunovVerdict",
+        "path": "src/scpn_fusion/phase/lyapunov_guard.py"
+      },
+      {
+        "name": "MARFEFrontModel",
+        "path": "src/scpn_fusion/core/marfe.py"
+      },
+      {
+        "name": "MARFEStabilityDiagram",
+        "path": "src/scpn_fusion/core/marfe.py"
+      },
+      {
+        "name": "MLPSurrogate",
+        "path": "src/scpn_fusion/core/gs_transport_surrogate_training.py"
+      },
+      {
+        "name": "MLPWeights",
+        "path": "src/scpn_fusion/core/_neural_transport_types.py"
+      },
+      {
+        "name": "MachineClient",
+        "path": "src/scpn_fusion/control/federated_disruption.py"
+      },
+      {
+        "name": "MagneticConfiguration",
+        "path": "src/scpn_fusion/control/stellarator_control_contracts.py"
+      },
+      {
+        "name": "MagneticDiagnostics",
+        "path": "src/scpn_fusion/control/realtime_efit.py"
+      },
+      {
+        "name": "MartinThreshold",
+        "path": "src/scpn_fusion/core/lh_transition.py"
+      },
+      {
+        "name": "MercierResult",
+        "path": "src/scpn_fusion/core/stability_mhd.py"
+      },
+      {
+        "name": "MillerGeometry",
+        "path": "src/scpn_fusion/core/gk_geometry.py"
+      },
+      {
+        "name": "MinimalPCA",
+        "path": "src/scpn_fusion/core/neural_equilibrium.py"
+      },
+      {
+        "name": "ModeLocking",
+        "path": "src/scpn_fusion/core/locked_mode.py"
+      },
+      {
+        "name": "ModelPredictiveController",
+        "path": "src/scpn_fusion/control/fusion_sota_mpc.py"
+      },
+      {
+        "name": "MomentumTransportSolver",
+        "path": "src/scpn_fusion/core/momentum_transport.py"
+      },
+      {
+        "name": "MonteCarloEnsemble",
+        "path": "src/scpn_fusion/core/orbit_following.py"
+      },
+      {
+        "name": "MuSynthesisController",
+        "path": "src/scpn_fusion/control/mu_synthesis.py"
+      },
+      {
+        "name": "MultiGroupBlanket",
+        "path": "src/scpn_fusion/nuclear/blanket_neutronics.py"
+      },
+      {
+        "name": "MultiImpuritySeeding",
+        "path": "src/scpn_fusion/control/detachment_controller.py"
+      },
+      {
+        "name": "MultiLayerFNO",
+        "path": "src/scpn_fusion/core/fno_training.py"
+      },
+      {
+        "name": "NBISource",
+        "path": "src/scpn_fusion/core/current_drive.py"
+      },
+      {
+        "name": "NMPCConfig",
+        "path": "src/scpn_fusion/control/nmpc_controller.py"
+      },
+      {
+        "name": "NTMController",
+        "path": "src/scpn_fusion/core/ntm_dynamics.py"
+      },
+      {
+        "name": "NTMIslandDynamics",
+        "path": "src/scpn_fusion/core/ntm_dynamics.py"
+      },
+      {
+        "name": "NTMResult",
+        "path": "src/scpn_fusion/core/stability_mhd.py"
+      },
+      {
+        "name": "NengoSNNConfig",
+        "path": "src/scpn_fusion/control/nengo_snn_wrapper.py"
+      },
+      {
+        "name": "NengoSNNController",
+        "path": "src/scpn_fusion/control/nengo_snn_wrapper.py"
+      },
+      {
+        "name": "NengoSNNControllerStub",
+        "path": "src/scpn_fusion/control/nengo_snn_wrapper.py"
+      },
+      {
+        "name": "NeuralController",
+        "path": "src/scpn_fusion/control/fusion_control_room.py"
+      },
+      {
+        "name": "NeuralEqConfig",
+        "path": "src/scpn_fusion/core/neural_equilibrium.py"
+      },
+      {
+        "name": "NeuralEquilibriumAccelerator",
+        "path": "src/scpn_fusion/core/neural_equilibrium.py"
+      },
+      {
+        "name": "NeuralEquilibriumKernel",
+        "path": "src/scpn_fusion/core/neural_equilibrium_kernel.py"
+      },
+      {
+        "name": "NeuralSurrogate",
+        "path": "src/scpn_fusion/control/fusion_sota_mpc.py"
+      },
+      {
+        "name": "NeuralTransportModel",
+        "path": "src/scpn_fusion/core/_neural_transport_runtime.py"
+      },
+      {
+        "name": "NeuralTransportTrainer",
+        "path": "src/scpn_fusion/core/neural_turbulence.py"
+      },
+      {
+        "name": "NeuroCyberneticController",
+        "path": "src/scpn_fusion/control/neuro_cybernetic_controller.py"
+      },
+      {
+        "name": "NeuroSymbolicController",
+        "path": "src/scpn_fusion/scpn/controller.py"
+      },
+      {
+        "name": "NeuroSymbolicControllerBackendMixin",
+        "path": "src/scpn_fusion/scpn/controller_backend_mixin.py"
+      },
+      {
+        "name": "NeuroSymbolicControllerFeaturesMixin",
+        "path": "src/scpn_fusion/scpn/controller_features_mixin.py"
+      },
+      {
+        "name": "NewtonDispatchConfig",
+        "path": "src/scpn_fusion/core/fusion_kernel_newton_runtime.py"
+      },
+      {
+        "name": "NonlinearGKConfig",
+        "path": "src/scpn_fusion/core/_gk_nonlinear_types.py"
+      },
+      {
+        "name": "NonlinearGKOperatorsMixin",
+        "path": "src/scpn_fusion/core/_gk_nonlinear_operators.py"
+      },
+      {
+        "name": "NonlinearGKResult",
+        "path": "src/scpn_fusion/core/_gk_nonlinear_types.py"
+      },
+      {
+        "name": "NonlinearGKSetupMixin",
+        "path": "src/scpn_fusion/core/_gk_nonlinear_setup.py"
+      },
+      {
+        "name": "NonlinearGKSolver",
+        "path": "src/scpn_fusion/core/gk_nonlinear.py"
+      },
+      {
+        "name": "NonlinearGKState",
+        "path": "src/scpn_fusion/core/_gk_nonlinear_types.py"
+      },
+      {
+        "name": "NonlinearGKTimeMixin",
+        "path": "src/scpn_fusion/core/_gk_nonlinear_time.py"
+      },
+      {
+        "name": "NonlinearMPC",
+        "path": "src/scpn_fusion/control/fusion_nmpc_jax.py"
+      },
+      {
+        "name": "NonlinearMPC",
+        "path": "src/scpn_fusion/control/nmpc_controller.py"
+      },
+      {
+        "name": "NuclearEngineeringLab",
+        "path": "src/scpn_fusion/nuclear/nuclear_wall_interaction.py"
+      },
+      {
+        "name": "OODDetector",
+        "path": "src/scpn_fusion/core/gk_ood_detector.py"
+      },
+      {
+        "name": "OODResult",
+        "path": "src/scpn_fusion/core/gk_ood_detector.py"
+      },
+      {
+        "name": "OnlineLearner",
+        "path": "src/scpn_fusion/core/gk_online_learner.py"
+      },
+      {
+        "name": "OperatingRegime",
+        "path": "src/scpn_fusion/control/gain_scheduled_controller.py"
+      },
+      {
+        "name": "OptimalController",
+        "path": "src/scpn_fusion/control/fusion_optimal_control.py"
+      },
+      {
+        "name": "OracleESN",
+        "path": "src/scpn_fusion/core/turbulence_oracle.py"
+      },
+      {
+        "name": "OrbitClassifier",
+        "path": "src/scpn_fusion/core/orbit_following.py"
+      },
+      {
+        "name": "PackedWeights",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "PackedWeightsGroup",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "ParticleTransportModel",
+        "path": "src/scpn_fusion/control/density_controller.py"
+      },
+      {
+        "name": "PaschenBreakdown",
+        "path": "src/scpn_fusion/core/plasma_startup.py"
+      },
+      {
+        "name": "PedestalDomainAssessment",
+        "path": "src/scpn_fusion/core/eped_pedestal.py"
+      },
+      {
+        "name": "PedestalParams",
+        "path": "src/scpn_fusion/core/pedestal.py"
+      },
+      {
+        "name": "PedestalProfile",
+        "path": "src/scpn_fusion/core/pedestal.py"
+      },
+      {
+        "name": "PedestalResult",
+        "path": "src/scpn_fusion/core/eped_pedestal.py"
+      },
+      {
+        "name": "PeelingBallooningBoundary",
+        "path": "src/scpn_fusion/core/elm_model.py"
+      },
+      {
+        "name": "PeelingBallooningResult",
+        "path": "src/scpn_fusion/core/stability_mhd.py"
+      },
+      {
+        "name": "PelletFuelingController",
+        "path": "src/scpn_fusion/core/pellet_injection.py"
+      },
+      {
+        "name": "PelletInjectionCommand",
+        "path": "src/scpn_fusion/core/pellet_injection.py"
+      },
+      {
+        "name": "PelletParams",
+        "path": "src/scpn_fusion/core/pellet_injection.py"
+      },
+      {
+        "name": "PelletResult",
+        "path": "src/scpn_fusion/core/pellet_injection.py"
+      },
+      {
+        "name": "PelletSchedule",
+        "path": "src/scpn_fusion/control/density_controller.py"
+      },
+      {
+        "name": "PelletTrajectory",
+        "path": "src/scpn_fusion/core/pellet_injection.py"
+      },
+      {
+        "name": "PhaseStreamServer",
+        "path": "src/scpn_fusion/phase/ws_phase_stream.py"
+      },
+      {
+        "name": "PhysicsError",
+        "path": "src/scpn_fusion/core/integrated_transport_solver.py"
+      },
+      {
+        "name": "PhysicsInvariant",
+        "path": "src/scpn_fusion/scpn/contracts.py"
+      },
+      {
+        "name": "PhysicsInvariantViolation",
+        "path": "src/scpn_fusion/scpn/contracts.py"
+      },
+      {
+        "name": "PhysicsParams",
+        "path": "src/scpn_fusion/core/config_schema.py"
+      },
+      {
+        "name": "PipelineProfile",
+        "path": "src/scpn_fusion/control/hil_harness.py"
+      },
+      {
+        "name": "PlaceInjection",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "PlaceSpec",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "Plasma2D",
+        "path": "src/scpn_fusion/control/tokamak_digital_twin.py"
+      },
+      {
+        "name": "PlasmaScenario",
+        "path": "src/scpn_fusion/core/uncertainty.py"
+      },
+      {
+        "name": "PlasmaShapeController",
+        "path": "src/scpn_fusion/control/shape_controller.py"
+      },
+      {
+        "name": "PlasmaTomography",
+        "path": "src/scpn_fusion/diagnostics/tomography.py"
+      },
+      {
+        "name": "PoincareSection3D",
+        "path": "src/scpn_fusion/core/fieldline_3d.py"
+      },
+      {
+        "name": "PowerPlantModel",
+        "path": "src/scpn_fusion/engineering/balance_of_plant.py"
+      },
+      {
+        "name": "PredatorPreyModel",
+        "path": "src/scpn_fusion/core/lh_transition.py"
+      },
+      {
+        "name": "PredatorPreyResult",
+        "path": "src/scpn_fusion/core/lh_transition.py"
+      },
+      {
+        "name": "PretrainedMLPSurrogate",
+        "path": "src/scpn_fusion/core/pretrained_surrogates.py"
+      },
+      {
+        "name": "QLKNNSurrogate",
+        "path": "src/scpn_fusion/core/neural_turbulence.py"
+      },
+      {
+        "name": "QLKNNTransportModel",
+        "path": "src/scpn_fusion/core/neural_turbulence.py"
+      },
+      {
+        "name": "QProfile",
+        "path": "src/scpn_fusion/core/stability_mhd.py"
+      },
+      {
+        "name": "QuaLiKizSolver",
+        "path": "src/scpn_fusion/core/gk_qualikiz.py"
+      },
+      {
+        "name": "REBeamPhase",
+        "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "REResult",
+        "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "RFHeatingSystem",
+        "path": "src/scpn_fusion/core/rf_heating.py"
+      },
+      {
+        "name": "RMPSuppression",
+        "path": "src/scpn_fusion/core/elm_model.py"
+      },
+      {
+        "name": "RWMFeedbackController",
+        "path": "src/scpn_fusion/control/rwm_feedback.py"
+      },
+      {
+        "name": "RWMPhysics",
+        "path": "src/scpn_fusion/control/rwm_feedback.py"
+      },
+      {
+        "name": "RWMResult",
+        "path": "src/scpn_fusion/core/stability_mhd.py"
+      },
+      {
+        "name": "RWMStabilityAnalysis",
+        "path": "src/scpn_fusion/control/rwm_feedback.py"
+      },
+      {
+        "name": "RZIPController",
+        "path": "src/scpn_fusion/control/rzip_model.py"
+      },
+      {
+        "name": "RZIPModel",
+        "path": "src/scpn_fusion/control/rzip_model.py"
+      },
+      {
+        "name": "RadiationCondensation",
+        "path": "src/scpn_fusion/core/marfe.py"
+      },
+      {
+        "name": "RadiationFrontModel",
+        "path": "src/scpn_fusion/control/detachment_controller.py"
+      },
+      {
+        "name": "RationalSurface",
+        "path": "src/scpn_fusion/core/ntm_dynamics.py"
+      },
+      {
+        "name": "Reactor3DBuilder",
+        "path": "src/scpn_fusion/core/geometry_3d.py"
+      },
+      {
+        "name": "ReactorConfig",
+        "path": "src/scpn_fusion/core/config_schema.py"
+      },
+      {
+        "name": "Readout",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "RealtimeEFIT",
+        "path": "src/scpn_fusion/control/realtime_efit.py"
+      },
+      {
+        "name": "RealtimeMonitor",
+        "path": "src/scpn_fusion/phase/realtime_monitor.py"
+      },
+      {
+        "name": "RealtimeTwinHook",
+        "path": "src/scpn_fusion/control/digital_twin_ingest.py"
+      },
+      {
+        "name": "ReconfigurableController",
+        "path": "src/scpn_fusion/control/fault_tolerant_control.py"
+      },
+      {
+        "name": "ReconstructionResult",
+        "path": "src/scpn_fusion/control/realtime_efit.py"
+      },
+      {
+        "name": "ReducedMHD",
+        "path": "src/scpn_fusion/core/mhd_sawtooth.py"
+      },
+      {
+        "name": "RegimeController",
+        "path": "src/scpn_fusion/control/gain_scheduled_controller.py"
+      },
+      {
+        "name": "RegimeDetector",
+        "path": "src/scpn_fusion/control/gain_scheduled_controller.py"
+      },
+      {
+        "name": "ReplayScenario",
+        "path": "src/scpn_fusion/control/stellarator_control_contracts.py"
+      },
+      {
+        "name": "ResonantFieldAmplification",
+        "path": "src/scpn_fusion/core/locked_mode.py"
+      },
+      {
+        "name": "RotationDiagnostics",
+        "path": "src/scpn_fusion/core/momentum_transport.py"
+      },
+      {
+        "name": "RotationEvolution",
+        "path": "src/scpn_fusion/core/locked_mode.py"
+      },
+      {
+        "name": "RunawayElectronModel",
+        "path": "src/scpn_fusion/control/runaway_electron_model.py"
+      },
+      {
+        "name": "RunawayElectronResult",
+        "path": "src/scpn_fusion/control/runaway_electron_model.py"
+      },
+      {
+        "name": "RunawayElectronState",
+        "path": "src/scpn_fusion/control/fokker_planck_re.py"
+      },
+      {
+        "name": "RunawayEvolution",
+        "path": "src/scpn_fusion/core/runaway_electrons.py"
+      },
+      {
+        "name": "RunawayMitigationAssessment",
+        "path": "src/scpn_fusion/core/runaway_electrons.py"
+      },
+      {
+        "name": "RunawayParams",
+        "path": "src/scpn_fusion/core/runaway_electrons.py"
+      },
+      {
+        "name": "RuntimeBenchmark",
+        "path": "src/scpn_fusion/core/gpu_runtime.py"
+      },
+      {
+        "name": "RustAcceleratedKernel",
+        "path": "src/scpn_fusion/core/_rust_compat.py"
+      },
+      {
+        "name": "RustSnnController",
+        "path": "src/scpn_fusion/core/_rust_compat.py"
+      },
+      {
+        "name": "RustSnnPool",
+        "path": "src/scpn_fusion/core/_rust_compat.py"
+      },
+      {
+        "name": "SNNNeuronConfig",
+        "path": "src/scpn_fusion/control/hil_harness.py"
+      },
+      {
+        "name": "SOLBlobProfile",
+        "path": "src/scpn_fusion/core/blob_transport.py"
+      },
+      {
+        "name": "SOLSolution",
+        "path": "src/scpn_fusion/core/sol_model.py"
+      },
+      {
+        "name": "SafetyConstraint",
+        "path": "src/scpn_fusion/control/safe_rl_controller.py"
+      },
+      {
+        "name": "SafetyContract",
+        "path": "src/scpn_fusion/scpn/contracts.py"
+      },
+      {
+        "name": "SafetyFilterResult",
+        "path": "src/scpn_fusion/control/_free_boundary_supervisory_types.py"
+      },
+      {
+        "name": "SafetyInterlockRuntime",
+        "path": "src/scpn_fusion/scpn/safety_interlocks.py"
+      },
+      {
+        "name": "SafetyLimits",
+        "path": "src/scpn_fusion/scpn/safety_interlocks.py"
+      },
+      {
+        "name": "SawtoothCycler",
+        "path": "src/scpn_fusion/core/sawtooth.py"
+      },
+      {
+        "name": "SawtoothEvent",
+        "path": "src/scpn_fusion/core/sawtooth.py"
+      },
+      {
+        "name": "SawtoothMonitor",
+        "path": "src/scpn_fusion/core/sawtooth.py"
+      },
+      {
+        "name": "SawtoothNTMSeeding",
+        "path": "src/scpn_fusion/core/tearing_mode_coupling.py"
+      },
+      {
+        "name": "ScenarioConfig",
+        "path": "src/scpn_fusion/core/integrated_scenario.py"
+      },
+      {
+        "name": "ScenarioFluxAnalysis",
+        "path": "src/scpn_fusion/control/volt_second_manager.py"
+      },
+      {
+        "name": "ScenarioOptimizer",
+        "path": "src/scpn_fusion/control/scenario_scheduler.py"
+      },
+      {
+        "name": "ScenarioSchedule",
+        "path": "src/scpn_fusion/control/gain_scheduled_controller.py"
+      },
+      {
+        "name": "ScenarioSchedule",
+        "path": "src/scpn_fusion/control/scenario_scheduler.py"
+      },
+      {
+        "name": "ScenarioState",
+        "path": "src/scpn_fusion/core/integrated_scenario.py"
+      },
+      {
+        "name": "ScenarioWaveform",
+        "path": "src/scpn_fusion/control/gain_scheduled_controller.py"
+      },
+      {
+        "name": "ScenarioWaveform",
+        "path": "src/scpn_fusion/control/scenario_scheduler.py"
+      },
+      {
+        "name": "SchedulerConfig",
+        "path": "src/scpn_fusion/core/gk_scheduler.py"
+      },
+      {
+        "name": "SeedPolicy",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "SensorInterface",
+        "path": "src/scpn_fusion/control/hil_harness.py"
+      },
+      {
+        "name": "SensorSuite",
+        "path": "src/scpn_fusion/diagnostics/synthetic_sensors.py"
+      },
+      {
+        "name": "ShadowDataset",
+        "path": "src/scpn_fusion/core/heat_ml_shadow_surrogate.py"
+      },
+      {
+        "name": "ShapeControlResult",
+        "path": "src/scpn_fusion/control/shape_controller.py"
+      },
+      {
+        "name": "ShapeJacobian",
+        "path": "src/scpn_fusion/control/shape_controller.py"
+      },
+      {
+        "name": "ShapeParams",
+        "path": "src/scpn_fusion/control/realtime_efit.py"
+      },
+      {
+        "name": "ShapeTarget",
+        "path": "src/scpn_fusion/control/shape_controller.py"
+      },
+      {
+        "name": "ShatteredPelletInjection",
+        "path": "src/scpn_fusion/control/spi_mitigation.py"
+      },
+      {
+        "name": "SimpleMLP",
+        "path": "src/scpn_fusion/core/neural_equilibrium.py"
+      },
+      {
+        "name": "SimpleNeuralNet",
+        "path": "src/scpn_fusion/control/tokamak_digital_twin.py"
+      },
+      {
+        "name": "SlowingDown",
+        "path": "src/scpn_fusion/core/orbit_following.py"
+      },
+      {
+        "name": "SolverParams",
+        "path": "src/scpn_fusion/core/config_schema.py"
+      },
+      {
+        "name": "SpectralBasis",
+        "path": "src/scpn_fusion/core/vmec_lite.py"
+      },
+      {
+        "name": "SpectralTurbulenceGenerator",
+        "path": "src/scpn_fusion/core/fno_turbulence_suppressor.py"
+      },
+      {
+        "name": "SpectrumResult",
+        "path": "src/scpn_fusion/core/gyrokinetic_transport.py"
+      },
+      {
+        "name": "SpeedBenchmark",
+        "path": "src/scpn_fusion/core/gyro_swin_surrogate.py"
+      },
+      {
+        "name": "SpiAblationSolver",
+        "path": "src/scpn_fusion/control/spi_ablation.py"
+      },
+      {
+        "name": "SpiFragment",
+        "path": "src/scpn_fusion/control/spi_ablation.py"
+      },
+      {
+        "name": "SpikingControllerPool",
+        "path": "src/scpn_fusion/control/neuro_cybernetic_controller.py"
+      },
+      {
+        "name": "SpotCheckRequest",
+        "path": "src/scpn_fusion/core/gk_scheduler.py"
+      },
+      {
+        "name": "SputteringPhysics",
+        "path": "src/scpn_fusion/nuclear/pwi_erosion.py"
+      },
+      {
+        "name": "SputteringYield",
+        "path": "src/scpn_fusion/core/plasma_wall_interaction.py"
+      },
+      {
+        "name": "StabilityAnalyzer",
+        "path": "src/scpn_fusion/core/stability_analyzer.py"
+      },
+      {
+        "name": "StabilitySummary",
+        "path": "src/scpn_fusion/core/stability_mhd.py"
+      },
+      {
+        "name": "StartupCommand",
+        "path": "src/scpn_fusion/core/plasma_startup.py"
+      },
+      {
+        "name": "StartupController",
+        "path": "src/scpn_fusion/core/plasma_startup.py"
+      },
+      {
+        "name": "StartupPhase",
+        "path": "src/scpn_fusion/core/plasma_startup.py"
+      },
+      {
+        "name": "StartupResult",
+        "path": "src/scpn_fusion/core/plasma_startup.py"
+      },
+      {
+        "name": "StartupSequence",
+        "path": "src/scpn_fusion/core/plasma_startup.py"
+      },
+      {
+        "name": "StellaratorBoundary",
+        "path": "src/scpn_fusion/core/vmec_lite.py"
+      },
+      {
+        "name": "StellaratorConfig",
+        "path": "src/scpn_fusion/core/stellarator_geometry.py"
+      },
+      {
+        "name": "StochasticPetriNet",
+        "path": "src/scpn_fusion/scpn/structure.py"
+      },
+      {
+        "name": "StructuredUncertainty",
+        "path": "src/scpn_fusion/control/mu_synthesis.py"
+      },
+      {
+        "name": "SubignitedBurnPoint",
+        "path": "src/scpn_fusion/control/burn_controller.py"
+      },
+      {
+        "name": "SuperTwistingSMC",
+        "path": "src/scpn_fusion/control/sliding_mode_vertical.py"
+      },
+      {
+        "name": "TAEMode",
+        "path": "src/scpn_fusion/core/alfven_eigenmodes.py"
+      },
+      {
+        "name": "TAEStabilityResult",
+        "path": "src/scpn_fusion/core/alfven_eigenmodes.py"
+      },
+      {
+        "name": "TEMHD_Stabilizer",
+        "path": "src/scpn_fusion/nuclear/temhd_peltier.py"
+      },
+      {
+        "name": "TGLFBenchmark",
+        "path": "src/scpn_fusion/core/_tglf_interface_benchmark.py"
+      },
+      {
+        "name": "TGLFComparisonResult",
+        "path": "src/scpn_fusion/core/_tglf_interface_types.py"
+      },
+      {
+        "name": "TGLFDatasetGenerator",
+        "path": "src/scpn_fusion/core/tglf_surrogate_bridge.py"
+      },
+      {
+        "name": "TGLFInputDeck",
+        "path": "src/scpn_fusion/core/_tglf_interface_types.py"
+      },
+      {
+        "name": "TGLFNativeConfig",
+        "path": "src/scpn_fusion/core/gk_tglf_native.py"
+      },
+      {
+        "name": "TGLFNativeResult",
+        "path": "src/scpn_fusion/core/gk_tglf_native.py"
+      },
+      {
+        "name": "TGLFNativeSolver",
+        "path": "src/scpn_fusion/core/gk_tglf_native.py"
+      },
+      {
+        "name": "TGLFOutput",
+        "path": "src/scpn_fusion/core/_tglf_interface_types.py"
+      },
+      {
+        "name": "TGLFProfileScanResult",
+        "path": "src/scpn_fusion/core/_tglf_interface_types.py"
+      },
+      {
+        "name": "TGLFReferenceCaseResult",
+        "path": "src/scpn_fusion/core/_tglf_interface_types.py"
+      },
+      {
+        "name": "TGLFSolver",
+        "path": "src/scpn_fusion/core/gk_tglf.py"
+      },
+      {
+        "name": "TQResult",
+        "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "TearingModeStabilityMap",
+        "path": "src/scpn_fusion/core/tearing_mode_coupling.py"
+      },
+      {
+        "name": "TelemetryPacket",
+        "path": "src/scpn_fusion/control/digital_twin_ingest.py"
+      },
+      {
+        "name": "ThermalQuench",
+        "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "TokamakConfig",
+        "path": "src/scpn_fusion/core/tokamak_config.py"
+      },
+      {
+        "name": "TokamakEnv",
+        "path": "src/scpn_fusion/control/gym_tokamak_env.py"
+      },
+      {
+        "name": "TokamakPhysicsEngine",
+        "path": "src/scpn_fusion/control/fusion_control_room.py"
+      },
+      {
+        "name": "TokamakProfile",
+        "path": "src/scpn_fusion/io/tokamak_archive_profiles.py"
+      },
+      {
+        "name": "TokamakSandpile",
+        "path": "src/scpn_fusion/core/sandpile_fusion_reactor.py"
+      },
+      {
+        "name": "TokamakTopoloy",
+        "path": "src/scpn_fusion/control/tokamak_digital_twin.py"
+      },
+      {
+        "name": "Topology",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "ToraxHybridCampaignResult",
+        "path": "src/scpn_fusion/control/torax_hybrid_loop.py"
+      },
+      {
+        "name": "ToraxPlasmaState",
+        "path": "src/scpn_fusion/control/torax_hybrid_loop.py"
+      },
+      {
+        "name": "ToroidalAsymmetryObservables3D",
+        "path": "src/scpn_fusion/core/fieldline_3d.py"
+      },
+      {
+        "name": "TownsendAvalanche",
+        "path": "src/scpn_fusion/core/plasma_startup.py"
+      },
+      {
+        "name": "TraceableBackendParityReport",
+        "path": "src/scpn_fusion/control/jax_traceable_runtime.py"
+      },
+      {
+        "name": "TraceableRuntimeBatchResult",
+        "path": "src/scpn_fusion/control/jax_traceable_runtime.py"
+      },
+      {
+        "name": "TraceableRuntimeResult",
+        "path": "src/scpn_fusion/control/jax_traceable_runtime.py"
+      },
+      {
+        "name": "TraceableRuntimeSpec",
+        "path": "src/scpn_fusion/control/jax_traceable_runtime.py"
+      },
+      {
+        "name": "TrainingDataGenerator",
+        "path": "src/scpn_fusion/core/neural_turbulence.py"
+      },
+      {
+        "name": "TrainingResult",
+        "path": "src/scpn_fusion/core/neural_equilibrium.py"
+      },
+      {
+        "name": "TrainingSample",
+        "path": "src/scpn_fusion/core/gk_online_learner.py"
+      },
+      {
+        "name": "TrajectoryRecorder",
+        "path": "src/scpn_fusion/phase/realtime_monitor.py"
+      },
+      {
+        "name": "TransientThermalLoad",
+        "path": "src/scpn_fusion/core/plasma_wall_interaction.py"
+      },
+      {
+        "name": "TransitionSpec",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "TransportBenchmarkResult",
+        "path": "src/scpn_fusion/core/scaling_laws.py"
+      },
+      {
+        "name": "TransportFluxes",
+        "path": "src/scpn_fusion/core/_neural_transport_types.py"
+      },
+      {
+        "name": "TransportFluxes",
+        "path": "src/scpn_fusion/core/gyrokinetic_transport.py"
+      },
+      {
+        "name": "TransportFluxes",
+        "path": "src/scpn_fusion/core/neural_turbulence.py"
+      },
+      {
+        "name": "TransportInputNormalizer",
+        "path": "src/scpn_fusion/core/neural_turbulence.py"
+      },
+      {
+        "name": "TransportInputs",
+        "path": "src/scpn_fusion/core/_neural_transport_types.py"
+      },
+      {
+        "name": "TransportSolver",
+        "path": "src/scpn_fusion/core/integrated_transport_solver.py"
+      },
+      {
+        "name": "TransportSolverBackendMixin",
+        "path": "src/scpn_fusion/core/_integrated_transport_solver_model_backend.py"
+      },
+      {
+        "name": "TransportSolverCouplingMixin",
+        "path": "src/scpn_fusion/core/integrated_transport_solver_coupling.py"
+      },
+      {
+        "name": "TransportSolverInitializationMixin",
+        "path": "src/scpn_fusion/core/_integrated_transport_solver_init.py"
+      },
+      {
+        "name": "TransportSolverModelMixin",
+        "path": "src/scpn_fusion/core/integrated_transport_solver_model.py"
+      },
+      {
+        "name": "TransportSolverPedestalMixin",
+        "path": "src/scpn_fusion/core/_integrated_transport_solver_model_pedestal.py"
+      },
+      {
+        "name": "TransportSolverRuntimeMixin",
+        "path": "src/scpn_fusion/core/integrated_transport_solver_runtime.py"
+      },
+      {
+        "name": "TransportSolverRuntimePhysicsMixin",
+        "path": "src/scpn_fusion/core/integrated_transport_solver_runtime_physics.py"
+      },
+      {
+        "name": "TransportUncertainty",
+        "path": "src/scpn_fusion/core/uncertainty_full_chain.py"
+      },
+      {
+        "name": "TroyonResult",
+        "path": "src/scpn_fusion/core/stability_mhd.py"
+      },
+      {
+        "name": "TurbulenceDataset",
+        "path": "src/scpn_fusion/core/gyro_swin_surrogate.py"
+      },
+      {
+        "name": "TwoPointSOL",
+        "path": "src/scpn_fusion/core/sol_model.py"
+      },
+      {
+        "name": "UPDESystem",
+        "path": "src/scpn_fusion/phase/upde.py"
+      },
+      {
+        "name": "UQResult",
+        "path": "src/scpn_fusion/core/uncertainty.py"
+      },
+      {
+        "name": "UncertaintyBlock",
+        "path": "src/scpn_fusion/control/mu_synthesis.py"
+      },
+      {
+        "name": "VMECLiteSolver",
+        "path": "src/scpn_fusion/core/vmec_lite.py"
+      },
+      {
+        "name": "VMECResult",
+        "path": "src/scpn_fusion/core/vmec_lite.py"
+      },
+      {
+        "name": "VMECStyleEquilibrium3D",
+        "path": "src/scpn_fusion/core/equilibrium_3d.py"
+      },
+      {
+        "name": "VelocityGrid",
+        "path": "src/scpn_fusion/core/gk_species.py"
+      },
+      {
+        "name": "VerificationReport",
+        "path": "src/scpn_fusion/core/gk_verification_report.py"
+      },
+      {
+        "name": "VerticalStabilityAnalysis",
+        "path": "src/scpn_fusion/control/rzip_model.py"
+      },
+      {
+        "name": "VerticalStabilizer",
+        "path": "src/scpn_fusion/control/sliding_mode_vertical.py"
+      },
+      {
+        "name": "VesselElement",
+        "path": "src/scpn_fusion/core/vessel_model.py"
+      },
+      {
+        "name": "VesselModel",
+        "path": "src/scpn_fusion/core/vessel_model.py"
+      },
+      {
+        "name": "VibranaFusionBridge",
+        "path": "src/scpn_fusion/core/vibrana_bridge.py"
+      },
+      {
+        "name": "VoltSecondOptimizer",
+        "path": "src/scpn_fusion/control/volt_second_manager.py"
+      },
+      {
+        "name": "VolumetricBlanketReport",
+        "path": "src/scpn_fusion/nuclear/blanket_neutronics.py"
+      },
+      {
+        "name": "WallThermalModel",
+        "path": "src/scpn_fusion/core/plasma_wall_interaction.py"
+      },
+      {
+        "name": "WeightMatrix",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "Weights",
+        "path": "src/scpn_fusion/scpn/artifact.py"
+      },
+      {
+        "name": "WholeDeviceModel",
+        "path": "src/scpn_fusion/core/wdm_engine.py"
+      }
+    ],
+    "python_source_modules": [
+      "src/scpn_fusion/control/_free_boundary_control_geometry.py",
+      "src/scpn_fusion/control/_free_boundary_estimator.py",
+      "src/scpn_fusion/control/_free_boundary_plotting.py",
+      "src/scpn_fusion/control/_free_boundary_safety_supervisor.py",
+      "src/scpn_fusion/control/_free_boundary_simulation.py",
+      "src/scpn_fusion/control/_free_boundary_simulation_arrays.py",
+      "src/scpn_fusion/control/_free_boundary_simulation_summary.py",
+      "src/scpn_fusion/control/_free_boundary_supervisory_types.py",
+      "src/scpn_fusion/control/_free_boundary_tracking_config.py",
+      "src/scpn_fusion/control/_free_boundary_tracking_control.py",
+      "src/scpn_fusion/control/_free_boundary_tracking_runtime.py",
+      "src/scpn_fusion/control/_free_boundary_tracking_shot.py",
+      "src/scpn_fusion/control/_free_boundary_tracking_types.py",
+      "src/scpn_fusion/control/advanced_soc_fusion_learning.py",
+      "src/scpn_fusion/control/analytic_solver.py",
+      "src/scpn_fusion/control/bio_holonomic_controller.py",
+      "src/scpn_fusion/control/burn_controller.py",
+      "src/scpn_fusion/control/codac_interface.py",
+      "src/scpn_fusion/control/controller_tuning.py",
+      "src/scpn_fusion/control/density_controller.py",
+      "src/scpn_fusion/control/detachment_controller.py",
+      "src/scpn_fusion/control/digital_twin_ingest.py",
+      "src/scpn_fusion/control/director_interface.py",
+      "src/scpn_fusion/control/disruption_checkpoint_policy.py",
+      "src/scpn_fusion/control/disruption_contract_primitives.py",
+      "src/scpn_fusion/control/disruption_contracts.py",
+      "src/scpn_fusion/control/disruption_predictor.py",
+      "src/scpn_fusion/control/disruption_replay_contracts.py",
+      "src/scpn_fusion/control/disruption_risk_runtime.py",
+      "src/scpn_fusion/control/fault_tolerant_control.py",
+      "src/scpn_fusion/control/federated_disruption.py",
+      "src/scpn_fusion/control/flight_sim_controllers.py",
+      "src/scpn_fusion/control/fokker_planck_re.py",
+      "src/scpn_fusion/control/free_boundary_supervisory_control.py",
+      "src/scpn_fusion/control/free_boundary_tracking.py",
+      "src/scpn_fusion/control/fueling_mode.py",
+      "src/scpn_fusion/control/fusion_control_room.py",
+      "src/scpn_fusion/control/fusion_nmpc_jax.py",
+      "src/scpn_fusion/control/fusion_optimal_control.py",
+      "src/scpn_fusion/control/fusion_sota_mpc.py",
+      "src/scpn_fusion/control/gain_scheduled_controller.py",
+      "src/scpn_fusion/control/gym_tokamak_env.py",
+      "src/scpn_fusion/control/h_infinity_controller.py",
+      "src/scpn_fusion/control/halo_re_physics.py",
+      "src/scpn_fusion/control/hil_demo_runner.py",
+      "src/scpn_fusion/control/hil_harness.py",
+      "src/scpn_fusion/control/jax_traceable_runtime.py",
+      "src/scpn_fusion/control/mu_synthesis.py",
+      "src/scpn_fusion/control/nengo_snn_wrapper.py",
+      "src/scpn_fusion/control/neuro_cybernetic_controller.py",
+      "src/scpn_fusion/control/nmpc_controller.py",
+      "src/scpn_fusion/control/realtime_efit.py",
+      "src/scpn_fusion/control/replay_pipeline.py",
+      "src/scpn_fusion/control/runaway_electron_model.py",
+      "src/scpn_fusion/control/rust_flight_sim_wrapper.py",
+      "src/scpn_fusion/control/rwm_feedback.py",
+      "src/scpn_fusion/control/rzip_model.py",
+      "src/scpn_fusion/control/safe_rl_controller.py",
+      "src/scpn_fusion/control/scenario_scheduler.py",
+      "src/scpn_fusion/control/shape_controller.py",
+      "src/scpn_fusion/control/sliding_mode_vertical.py",
+      "src/scpn_fusion/control/spi_ablation.py",
+      "src/scpn_fusion/control/spi_mitigation.py",
+      "src/scpn_fusion/control/state_estimator.py",
+      "src/scpn_fusion/control/stellarator_control_contracts.py",
+      "src/scpn_fusion/control/tokamak_digital_twin.py",
+      "src/scpn_fusion/control/tokamak_flight_sim.py",
+      "src/scpn_fusion/control/torax_hybrid_loop.py",
+      "src/scpn_fusion/control/volt_second_manager.py",
+      "src/scpn_fusion/core/_gk_nonlinear_operators.py",
+      "src/scpn_fusion/core/_gk_nonlinear_setup.py",
+      "src/scpn_fusion/core/_gk_nonlinear_time.py",
+      "src/scpn_fusion/core/_gk_nonlinear_types.py",
+      "src/scpn_fusion/core/_integrated_transport_solver_init.py",
+      "src/scpn_fusion/core/_integrated_transport_solver_model_backend.py",
+      "src/scpn_fusion/core/_integrated_transport_solver_model_common.py",
+      "src/scpn_fusion/core/_integrated_transport_solver_model_pedestal.py",
+      "src/scpn_fusion/core/_multi_compat.py",
+      "src/scpn_fusion/core/_neural_transport_analytic.py",
+      "src/scpn_fusion/core/_neural_transport_runtime.py",
+      "src/scpn_fusion/core/_neural_transport_types.py",
+      "src/scpn_fusion/core/_rust_compat.py",
+      "src/scpn_fusion/core/_tglf_interface_benchmark.py",
+      "src/scpn_fusion/core/_tglf_interface_reference.py",
+      "src/scpn_fusion/core/_tglf_interface_runtime.py",
+      "src/scpn_fusion/core/_tglf_interface_types.py",
+      "src/scpn_fusion/core/_validators.py",
+      "src/scpn_fusion/core/alfven_eigenmodes.py",
+      "src/scpn_fusion/core/amr_patch.py",
+      "src/scpn_fusion/core/ballooning_solver.py",
+      "src/scpn_fusion/core/blob_transport.py",
+      "src/scpn_fusion/core/checkpoint.py",
+      "src/scpn_fusion/core/compact_reactor_optimizer.py",
+      "src/scpn_fusion/core/config_schema.py",
+      "src/scpn_fusion/core/current_diffusion.py",
+      "src/scpn_fusion/core/current_drive.py",
+      "src/scpn_fusion/core/disruption_sequence.py",
+      "src/scpn_fusion/core/divertor_thermal_sim.py",
+      "src/scpn_fusion/core/elm_model.py",
+      "src/scpn_fusion/core/eped_pedestal.py",
+      "src/scpn_fusion/core/eqdsk.py",
+      "src/scpn_fusion/core/equilibrium_3d.py",
+      "src/scpn_fusion/core/fieldline_3d.py",
+      "src/scpn_fusion/core/fno_jax_training.py",
+      "src/scpn_fusion/core/fno_training.py",
+      "src/scpn_fusion/core/fno_training_multi_regime.py",
+      "src/scpn_fusion/core/fno_turbulence_suppressor.py",
+      "src/scpn_fusion/core/force_balance.py",
+      "src/scpn_fusion/core/fusion_ignition_sim.py",
+      "src/scpn_fusion/core/fusion_kernel.py",
+      "src/scpn_fusion/core/fusion_kernel_coilset_config.py",
+      "src/scpn_fusion/core/fusion_kernel_free_boundary.py",
+      "src/scpn_fusion/core/fusion_kernel_free_boundary_mixin.py",
+      "src/scpn_fusion/core/fusion_kernel_iterative_solver.py",
+      "src/scpn_fusion/core/fusion_kernel_newton_runtime.py",
+      "src/scpn_fusion/core/fusion_kernel_newton_solver.py",
+      "src/scpn_fusion/core/fusion_kernel_numerics.py",
+      "src/scpn_fusion/core/fusion_kernel_solver_runtime.py",
+      "src/scpn_fusion/core/geometry_3d.py",
+      "src/scpn_fusion/core/gk_cgyro.py",
+      "src/scpn_fusion/core/gk_corrector.py",
+      "src/scpn_fusion/core/gk_eigenvalue.py",
+      "src/scpn_fusion/core/gk_gene.py",
+      "src/scpn_fusion/core/gk_geometry.py",
+      "src/scpn_fusion/core/gk_gs2.py",
+      "src/scpn_fusion/core/gk_interface.py",
+      "src/scpn_fusion/core/gk_nonlinear.py",
+      "src/scpn_fusion/core/gk_online_learner.py",
+      "src/scpn_fusion/core/gk_ood_detector.py",
+      "src/scpn_fusion/core/gk_qualikiz.py",
+      "src/scpn_fusion/core/gk_quasilinear.py",
+      "src/scpn_fusion/core/gk_scheduler.py",
+      "src/scpn_fusion/core/gk_species.py",
+      "src/scpn_fusion/core/gk_tglf.py",
+      "src/scpn_fusion/core/gk_tglf_native.py",
+      "src/scpn_fusion/core/gk_verification_report.py",
+      "src/scpn_fusion/core/global_design_scanner.py",
+      "src/scpn_fusion/core/gpu_runtime.py",
+      "src/scpn_fusion/core/gs_transport_surrogate_training.py",
+      "src/scpn_fusion/core/gyro_swin_surrogate.py",
+      "src/scpn_fusion/core/gyrokinetic_transport.py",
+      "src/scpn_fusion/core/hall_mhd_discovery.py",
+      "src/scpn_fusion/core/heat_ml_shadow_surrogate.py",
+      "src/scpn_fusion/core/heating_neutronics_contracts.py",
+      "src/scpn_fusion/core/hpc_bridge.py",
+      "src/scpn_fusion/core/imas_adapter.py",
+      "src/scpn_fusion/core/impurity_transport.py",
+      "src/scpn_fusion/core/integrated_scenario.py",
+      "src/scpn_fusion/core/integrated_transport_solver.py",
+      "src/scpn_fusion/core/integrated_transport_solver_adaptive.py",
+      "src/scpn_fusion/core/integrated_transport_solver_contracts.py",
+      "src/scpn_fusion/core/integrated_transport_solver_coupling.py",
+      "src/scpn_fusion/core/integrated_transport_solver_model.py",
+      "src/scpn_fusion/core/integrated_transport_solver_runtime.py",
+      "src/scpn_fusion/core/integrated_transport_solver_runtime_physics.py",
+      "src/scpn_fusion/core/integrated_transport_solver_runtime_utils.py",
+      "src/scpn_fusion/core/jax_equilibrium_solver.py",
+      "src/scpn_fusion/core/jax_gk_nonlinear.py",
+      "src/scpn_fusion/core/jax_gk_solver.py",
+      "src/scpn_fusion/core/jax_gs_solver.py",
+      "src/scpn_fusion/core/jax_neural_equilibrium.py",
+      "src/scpn_fusion/core/jax_solvers.py",
+      "src/scpn_fusion/core/jax_transport_solver.py",
+      "src/scpn_fusion/core/kinetic_efit.py",
+      "src/scpn_fusion/core/lazarus_bridge.py",
+      "src/scpn_fusion/core/lh_transition.py",
+      "src/scpn_fusion/core/locked_mode.py",
+      "src/scpn_fusion/core/marfe.py",
+      "src/scpn_fusion/core/mhd_sawtooth.py",
+      "src/scpn_fusion/core/momentum_transport.py",
+      "src/scpn_fusion/core/neoclassical.py",
+      "src/scpn_fusion/core/neural_equilibrium.py",
+      "src/scpn_fusion/core/neural_equilibrium_kernel.py",
+      "src/scpn_fusion/core/neural_equilibrium_training.py",
+      "src/scpn_fusion/core/neural_transport.py",
+      "src/scpn_fusion/core/neural_transport_math.py",
+      "src/scpn_fusion/core/neural_turbulence.py",
+      "src/scpn_fusion/core/ntm_dynamics.py",
+      "src/scpn_fusion/core/orbit_following.py",
+      "src/scpn_fusion/core/pedestal.py",
+      "src/scpn_fusion/core/pellet_injection.py",
+      "src/scpn_fusion/core/plasma_startup.py",
+      "src/scpn_fusion/core/plasma_wall_interaction.py",
+      "src/scpn_fusion/core/pretrained_surrogates.py",
+      "src/scpn_fusion/core/quantum_bridge.py",
+      "src/scpn_fusion/core/quasi_3d_contracts.py",
+      "src/scpn_fusion/core/rf_heating.py",
+      "src/scpn_fusion/core/runaway_electrons.py",
+      "src/scpn_fusion/core/sandpile_fusion_reactor.py",
+      "src/scpn_fusion/core/sawtooth.py",
+      "src/scpn_fusion/core/scaling_laws.py",
+      "src/scpn_fusion/core/sol_model.py",
+      "src/scpn_fusion/core/stability_analyzer.py",
+      "src/scpn_fusion/core/stability_mhd.py",
+      "src/scpn_fusion/core/stability_mhd_extended.py",
+      "src/scpn_fusion/core/state_space.py",
+      "src/scpn_fusion/core/stellarator_geometry.py",
+      "src/scpn_fusion/core/tearing_mode_coupling.py",
+      "src/scpn_fusion/core/tglf_interface.py",
+      "src/scpn_fusion/core/tglf_surrogate_bridge.py",
+      "src/scpn_fusion/core/tglf_validation_runtime.py",
+      "src/scpn_fusion/core/tokamak_config.py",
+      "src/scpn_fusion/core/turbulence_oracle.py",
+      "src/scpn_fusion/core/uncertainty.py",
+      "src/scpn_fusion/core/uncertainty_full_chain.py",
+      "src/scpn_fusion/core/vessel_model.py",
+      "src/scpn_fusion/core/vibrana_bridge.py",
+      "src/scpn_fusion/core/vmec_lite.py",
+      "src/scpn_fusion/core/wdm_engine.py",
+      "src/scpn_fusion/diagnostics/forward.py",
+      "src/scpn_fusion/diagnostics/run_diagnostics.py",
+      "src/scpn_fusion/diagnostics/synthetic_sensors.py",
+      "src/scpn_fusion/diagnostics/tomography.py",
+      "src/scpn_fusion/engineering/balance_of_plant.py",
+      "src/scpn_fusion/engineering/cad_raytrace.py",
+      "src/scpn_fusion/engineering/thermal_hydraulics.py",
+      "src/scpn_fusion/hpc/hpc_bridge.py",
+      "src/scpn_fusion/io/_tokamak_archive_shots.py",
+      "src/scpn_fusion/io/imas_connector.py",
+      "src/scpn_fusion/io/imas_connector_common.py",
+      "src/scpn_fusion/io/imas_connector_digital_twin.py",
+      "src/scpn_fusion/io/imas_connector_equilibrium.py",
+      "src/scpn_fusion/io/imas_connector_omas.py",
+      "src/scpn_fusion/io/imas_connector_storage.py",
+      "src/scpn_fusion/io/imas_connector_transport.py",
+      "src/scpn_fusion/io/imas_history_payloads.py",
+      "src/scpn_fusion/io/logging_config.py",
+      "src/scpn_fusion/io/tokamak_archive.py",
+      "src/scpn_fusion/io/tokamak_archive_profiles.py",
+      "src/scpn_fusion/io/tokamak_disruption_archive.py",
+      "src/scpn_fusion/io/tokamak_live_payload.py",
+      "src/scpn_fusion/io/tokamak_synthetic_archive.py",
+      "src/scpn_fusion/nuclear/blanket_neutronics.py",
+      "src/scpn_fusion/nuclear/nuclear_wall_interaction.py",
+      "src/scpn_fusion/nuclear/pwi_erosion.py",
+      "src/scpn_fusion/nuclear/temhd_peltier.py",
+      "src/scpn_fusion/phase/adaptive_knm.py",
+      "src/scpn_fusion/phase/gk_upde_bridge.py",
+      "src/scpn_fusion/phase/knm.py",
+      "src/scpn_fusion/phase/kuramoto.py",
+      "src/scpn_fusion/phase/lyapunov_guard.py",
+      "src/scpn_fusion/phase/plasma_knm.py",
+      "src/scpn_fusion/phase/realtime_monitor.py",
+      "src/scpn_fusion/phase/upde.py",
+      "src/scpn_fusion/phase/ws_phase_stream.py",
+      "src/scpn_fusion/scpn/artifact.py",
+      "src/scpn_fusion/scpn/artifact_codec.py",
+      "src/scpn_fusion/scpn/artifact_schema.py",
+      "src/scpn_fusion/scpn/artifact_validation.py",
+      "src/scpn_fusion/scpn/compiler.py",
+      "src/scpn_fusion/scpn/contracts.py",
+      "src/scpn_fusion/scpn/controller.py",
+      "src/scpn_fusion/scpn/controller_backend_mixin.py",
+      "src/scpn_fusion/scpn/controller_features_mixin.py",
+      "src/scpn_fusion/scpn/controller_runtime_backend.py",
+      "src/scpn_fusion/scpn/safety_interlocks.py",
+      "src/scpn_fusion/scpn/structure.py",
+      "src/scpn_fusion/ui/app.py",
+      "src/scpn_fusion/ui/dashboard_generator.py",
+      "src/scpn_fusion/ui/dashboard_launcher.py"
+    ],
+    "rust_workspace_crates": [
+      {
+        "name": "fusion-control",
+        "path": "scpn-fusion-rs/crates/fusion-control"
+      },
+      {
+        "name": "fusion-core",
+        "path": "scpn-fusion-rs/crates/fusion-core"
+      },
+      {
+        "name": "fusion-diagnostics",
+        "path": "scpn-fusion-rs/crates/fusion-diagnostics"
+      },
+      {
+        "name": "fusion-engineering",
+        "path": "scpn-fusion-rs/crates/fusion-engineering"
+      },
+      {
+        "name": "fusion-gpu",
+        "path": "scpn-fusion-rs/crates/fusion-gpu"
+      },
+      {
+        "name": "fusion-math",
+        "path": "scpn-fusion-rs/crates/fusion-math"
+      },
+      {
+        "name": "fusion-ml",
+        "path": "scpn-fusion-rs/crates/fusion-ml"
+      },
+      {
+        "name": "fusion-nuclear",
+        "path": "scpn-fusion-rs/crates/fusion-nuclear"
+      },
+      {
+        "name": "fusion-physics",
+        "path": "scpn-fusion-rs/crates/fusion-physics"
+      },
+      {
+        "name": "fusion-types",
+        "path": "scpn-fusion-rs/crates/fusion-types"
+      },
+      {
+        "name": "scpn-fusion-rs",
+        "path": "scpn-fusion-rs/crates/fusion-python"
+      }
+    ]
+  },
+  "counts": {
+    "capability_documentation_pages": 59,
+    "github_workflows": 12,
+    "optional_extras": 10,
+    "public_api_exports": 2,
+    "public_documentation_pages": 59,
+    "python_capability_classes": 486,
+    "python_capability_source_modules": 260,
+    "rust_workspace_crates": 11,
+    "test_files": 381
+  },
+  "documentation": {
+    "public_pages": [
+      "docs/3d_gaps.md",
+      "docs/BENCHMARKS.md",
+      "docs/BENCHMARK_FIGURES.md",
+      "docs/CI_FAILURE_LEDGER.md",
+      "docs/CLAIMS_EVIDENCE_MAP.md",
+      "docs/COMPACT_REACTOR_FINDINGS.md",
+      "docs/DEEP_AUDIT_AND_SOTA_PLAN_2026-03-01.md",
+      "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
+      "docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md",
+      "docs/FUTURE_APPLICATIONS.md",
+      "docs/GPU_ACCELERATION_ROADMAP.md",
+      "docs/HARDENING_30_DAY_EXECUTION_PLAN.md",
+      "docs/HONEST_SCOPE.md",
+      "docs/NEURAL_TRANSPORT_TRAINING.md",
+      "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
+      "docs/NEXT_SPRINT_EXECUTION_QUEUE.md",
+      "docs/PACKET_C_CONTROL_API_COMPREHENSIVE_STUDY.md",
+      "docs/PERFORMANCE_METRIC_TAXONOMY.md",
+      "docs/PHASE1_3D_EXECUTION_PLAN.md",
+      "docs/PHASE2_ADVANCED_RFC_TEMPLATE.md",
+      "docs/PHASE2_ADVANCED_RFC_TRACKER.md",
+      "docs/PHASE3_EXECUTION_REGISTRY.md",
+      "docs/PHYSICS_METHODS_COMPLETE.md",
+      "docs/PHYSICS_VALIDATION_STATUS.md",
+      "docs/RELEASE_ACCEPTANCE_CHECKLIST.md",
+      "docs/SOLVER_TUNING_GUIDE.md",
+      "docs/SOURCE_P0P1_ISSUE_BACKLOG.md",
+      "docs/STREAMLIT_DEMO_PLAYBOOK.md",
+      "docs/UNDERDEVELOPED_DOCS_CLAIMS_REGISTER.md",
+      "docs/UNDERDEVELOPED_SOURCE_REGISTER.md",
+      "docs/V3_6_MILESTONE_BOARD.md",
+      "docs/V3_9_3_RELEASE_CHECKLIST.md",
+      "docs/VALIDATION_AGAINST_ITER.md",
+      "docs/VALIDATION_GATE_MATRIX.md",
+      "docs/competitive_analysis.md",
+      "docs/formal_verification.md",
+      "docs/hil_demo.md",
+      "docs/notebooks/README.md",
+      "docs/promotions/HN_SHOW.md",
+      "docs/promotions/REDDIT_COMPILERS.md",
+      "docs/promotions/REDDIT_PROGRAMMING.md",
+      "docs/promotions/SOCIAL_MEDIA_DRAFT_2026-02-16.md",
+      "docs/rfc/GAI-01_RFC.md",
+      "docs/rfc/GAI-02_RFC.md",
+      "docs/rfc/GAI-03_RFC.md",
+      "docs/rfc/GDEP-01_RFC.md",
+      "docs/rfc/GDEP-02_RFC.md",
+      "docs/rfc/GDEP-03_RFC.md",
+      "docs/rfc/GDEP-05_RFC.md",
+      "docs/rfc/GMVR-01_RFC.md",
+      "docs/rfc/GMVR-02_RFC.md",
+      "docs/rfc/GMVR-03_RFC.md",
+      "docs/rfc/GNEU-01_RFC.md",
+      "docs/rfc/GPHY-01_RFC.md",
+      "docs/rfc/GPHY-02_RFC.md",
+      "docs/rfc/GPHY-03_RFC.md",
+      "docs/rfc/GPHY-04_RFC.md",
+      "docs/rfc/GPHY-05_RFC.md",
+      "docs/rfc/GPHY-06_RFC.md"
+    ]
+  },
+  "evidence_boundary": "Counts are file-system and static-source inventory only; benchmark, coverage, hardware, and scientific-fidelity claims remain governed by their dedicated evidence artifacts.",
+  "generated_from": {
+    "config": "tools/capability_manifest.toml",
+    "generator": "tools/capability_manifest.py",
+    "schema": "schemas/capability_manifest.schema.json"
+  },
+  "labels": {
+    "capability_documentation_pages": "Capability documentation pages",
+    "github_workflows": "GitHub Actions workflows",
+    "optional_extras": "Optional extras",
+    "public_api_exports": "Public API exports",
+    "public_documentation_pages": "Public documentation pages",
+    "python_capability_classes": "Python capability classes",
+    "python_capability_source_modules": "Python capability source modules",
+    "rust_workspace_crates": "Rust workspace crates",
+    "test_files": "Python test files",
+    "version": "Package version"
+  },
+  "package_exports": [
+    "__version__",
+    "setup_fusion_logging"
+  ],
+  "packaging": {
+    "optional_extras": [
+      "benchmark",
+      "dev",
+      "full",
+      "full-physics",
+      "gpu",
+      "ml",
+      "rl",
+      "rust",
+      "snn",
+      "ui"
+    ],
+    "shipped_package_data": []
+  },
+  "project": {
+    "license": {
+      "text": "AGPL-3.0-or-later"
+    },
+    "name": "scpn-fusion",
+    "readme": "README.md",
+    "requires_python": ">=3.10",
+    "version": "3.9.3"
+  },
+  "project_label": "SCPN Fusion Core",
+  "quality_gates": {
+    "github_workflows": [
+      ".github/workflows/ci.yml",
+      ".github/workflows/codeql.yml",
+      ".github/workflows/docs.yml",
+      ".github/workflows/freegs-strict.yml",
+      ".github/workflows/pre-commit.yml",
+      ".github/workflows/publish.yml",
+      ".github/workflows/real-data-strict.yml",
+      ".github/workflows/sbom.yml",
+      ".github/workflows/scorecard.yml",
+      ".github/workflows/security-audit.yml",
+      ".github/workflows/stale.yml",
+      ".github/workflows/wheels.yml"
+    ],
+    "test_files": [
+      "tests/run_all_tests.py",
+      "tests/test_adaptive_knm.py",
+      "tests/test_adaptive_transport.py",
+      "tests/test_advanced_soc_fusion_learning.py",
+      "tests/test_alfven_eigenmodes.py",
+      "tests/test_amr_equilibrium.py",
+      "tests/test_analytic_solver.py",
+      "tests/test_artifact_codec.py",
+      "tests/test_artifact_validation.py",
+      "tests/test_balance_of_plant.py",
+      "tests/test_ballooning_solver.py",
+      "tests/test_benchmark_disruption_replay_pipeline.py",
+      "tests/test_benchmark_disruption_transfer_generalization.py",
+      "tests/test_benchmark_disturbance_rejection_hardening.py",
+      "tests/test_benchmark_fairness.py",
+      "tests/test_benchmark_sparc_geqdsk_rmse.py",
+      "tests/test_benchmark_vs_torax.py",
+      "tests/test_bio_holonomic_controller.py",
+      "tests/test_blanket_neutronics.py",
+      "tests/test_blob_transport.py",
+      "tests/test_boris_pyo3_bridge.py",
+      "tests/test_burn_controller.py",
+      "tests/test_cad_raytrace.py",
+      "tests/test_capability_manifest.py",
+      "tests/test_check_disruption_shot_splits.py",
+      "tests/test_check_freegs_strict_artifact.py",
+      "tests/test_check_lfs_hygiene.py",
+      "tests/test_check_pypi_sync.py",
+      "tests/test_check_release_acceptance.py",
+      "tests/test_check_test_module_linkage.py",
+      "tests/test_checkpoint.py",
+      "tests/test_ci_rmse_gate.py",
+      "tests/test_claim_range_guard.py",
+      "tests/test_claims_audit.py",
+      "tests/test_cli_launcher.py",
+      "tests/test_cn_transport.py",
+      "tests/test_codac_interface.py",
+      "tests/test_coil_optimization.py",
+      "tests/test_compact_reactor_optimizer.py",
+      "tests/test_compiler_git_sha.py",
+      "tests/test_config_schema.py",
+      "tests/test_control_resilience_campaign.py",
+      "tests/test_controller.py",
+      "tests/test_controller_comparison.py",
+      "tests/test_controller_runtime_backend.py",
+      "tests/test_controller_tuning.py",
+      "tests/test_coverage_batch10.py",
+      "tests/test_coverage_batch11.py",
+      "tests/test_coverage_batch12.py",
+      "tests/test_coverage_batch13.py",
+      "tests/test_coverage_batch14.py",
+      "tests/test_coverage_batch2.py",
+      "tests/test_coverage_batch3.py",
+      "tests/test_coverage_batch4.py",
+      "tests/test_coverage_batch5.py",
+      "tests/test_coverage_batch6.py",
+      "tests/test_coverage_batch7.py",
+      "tests/test_coverage_batch8.py",
+      "tests/test_coverage_batch9.py",
+      "tests/test_coverage_delta_report.py",
+      "tests/test_coverage_gaps.py",
+      "tests/test_coverage_guard.py",
+      "tests/test_current_diffusion.py",
+      "tests/test_current_drive.py",
+      "tests/test_dashboard_generator.py",
+      "tests/test_dashboard_launcher.py",
+      "tests/test_density_controller.py",
+      "tests/test_deprecated_default_lane_guard.py",
+      "tests/test_detachment_controller.py",
+      "tests/test_diagnostics.py",
+      "tests/test_digital_twin_ingest_runtime.py",
+      "tests/test_diiid_jet_validation.py",
+      "tests/test_director_interface.py",
+      "tests/test_director_interface_hardened.py",
+      "tests/test_disruption_contract_primitives.py",
+      "tests/test_disruption_contracts.py",
+      "tests/test_disruption_model_checkpoint.py",
+      "tests/test_disruption_predictor_rng.py",
+      "tests/test_disruption_replay_contracts.py",
+      "tests/test_disruption_sequence.py",
+      "tests/test_disruption_sliding_window.py",
+      "tests/test_disruption_threshold_sweep.py",
+      "tests/test_disruption_toroidal_features.py",
+      "tests/test_docstring_coverage_tool.py",
+      "tests/test_elm_model.py",
+      "tests/test_elm_model_full.py",
+      "tests/test_eped_domain_contract_benchmark.py",
+      "tests/test_eped_pedestal.py",
+      "tests/test_eqdsk.py",
+      "tests/test_equilibrium_3d.py",
+      "tests/test_examples_minimal.py",
+      "tests/test_exceptions_hierarchy.py",
+      "tests/test_fallback_budget_guard.py",
+      "tests/test_fallback_telemetry.py",
+      "tests/test_fault_tolerant_control.py",
+      "tests/test_federated_disruption.py",
+      "tests/test_fieldline_3d.py",
+      "tests/test_flight_sim_controllers.py",
+      "tests/test_fno_external_retrain_tools.py",
+      "tests/test_fno_multi_regime.py",
+      "tests/test_fno_training.py",
+      "tests/test_fno_training_multi_regime_split.py",
+      "tests/test_fno_turbulence_suppressor.py",
+      "tests/test_fokker_planck.py",
+      "tests/test_force_balance.py",
+      "tests/test_force_balance_3d.py",
+      "tests/test_forward_diagnostics_extended.py",
+      "tests/test_forward_diagnostics_guards.py",
+      "tests/test_free_boundary_supervisory_control.py",
+      "tests/test_free_boundary_tracking.py",
+      "tests/test_free_boundary_tracking_acceptance.py",
+      "tests/test_freegs_benchmark.py",
+      "tests/test_freegs_benchmark_enhanced.py",
+      "tests/test_fueling_mode_runtime.py",
+      "tests/test_full_validation_pipeline.py",
+      "tests/test_fusion_control_room.py",
+      "tests/test_fusion_ignition_sim.py",
+      "tests/test_fusion_kernel_fail_on_diverge.py",
+      "tests/test_fusion_kernel_free_boundary.py",
+      "tests/test_fusion_kernel_newton_runtime.py",
+      "tests/test_fusion_kernel_solver_mixins.py",
+      "tests/test_fusion_kernel_solver_runtime.py",
+      "tests/test_fusion_optimal_control.py",
+      "tests/test_fusion_sota_mpc.py",
+      "tests/test_gai_01_turbulence_surrogate.py",
+      "tests/test_gai_02_torax_hybrid.py",
+      "tests/test_gai_03_heat_ml_shadow.py",
+      "tests/test_gain_scheduled_controller.py",
+      "tests/test_gdep_01_digital_twin_hook.py",
+      "tests/test_gdep_02_gpu_integration.py",
+      "tests/test_gdep_03_blind_validation.py",
+      "tests/test_gdep_05_release_readiness.py",
+      "tests/test_generate_claims_evidence_map.py",
+      "tests/test_generate_disruption_risk_calibration.py",
+      "tests/test_generate_disruption_shot_manifest.py",
+      "tests/test_generate_fno_qlknn_spatial.py",
+      "tests/test_generate_source_p0p1_issue_backlog.py",
+      "tests/test_generate_underdeveloped_scope_reports.py",
+      "tests/test_geometry_3d.py",
+      "tests/test_gk_cgyro.py",
+      "tests/test_gk_corrector.py",
+      "tests/test_gk_eigenvalue.py",
+      "tests/test_gk_gene.py",
+      "tests/test_gk_geometry.py",
+      "tests/test_gk_gs2.py",
+      "tests/test_gk_interface.py",
+      "tests/test_gk_nonlinear.py",
+      "tests/test_gk_online_learner.py",
+      "tests/test_gk_ood_detector.py",
+      "tests/test_gk_qualikiz.py",
+      "tests/test_gk_quasilinear.py",
+      "tests/test_gk_scheduler.py",
+      "tests/test_gk_species.py",
+      "tests/test_gk_tglf.py",
+      "tests/test_gk_tglf_native.py",
+      "tests/test_gk_upde_bridge.py",
+      "tests/test_gk_verification_report.py",
+      "tests/test_global_design_scanner.py",
+      "tests/test_gmvr_01_compact_constraints.py",
+      "tests/test_gmvr_02_temhd_divertor.py",
+      "tests/test_gmvr_03_stellarator_extension.py",
+      "tests/test_gneu_01_benchmark.py",
+      "tests/test_gneu_02_anomaly.py",
+      "tests/test_gneu_03_fueling_mode.py",
+      "tests/test_gpu_jax_backend.py",
+      "tests/test_gs_convergence.py",
+      "tests/test_gs_residual_gate.py",
+      "tests/test_gs_transport_coupling.py",
+      "tests/test_gs_transport_surrogate.py",
+      "tests/test_gym_tokamak_env.py",
+      "tests/test_gyrokinetic_transport.py",
+      "tests/test_h_infinity_closed_loop.py",
+      "tests/test_h_infinity_controller.py",
+      "tests/test_hall_mhd.py",
+      "tests/test_hall_mhd_discovery.py",
+      "tests/test_halo_re_physics.py",
+      "tests/test_hardening_module_linkage.py",
+      "tests/test_heating_neutronics_contracts.py",
+      "tests/test_heating_neutronics_q10.py",
+      "tests/test_hil_demo_runner.py",
+      "tests/test_hil_harness.py",
+      "tests/test_hpc_bridge.py",
+      "tests/test_hybrid_accuracy_benchmark_contract.py",
+      "tests/test_hypothesis_physics_models.py",
+      "tests/test_hypothesis_properties.py",
+      "tests/test_imas_adapter.py",
+      "tests/test_imas_conformance.py",
+      "tests/test_imas_connector.py",
+      "tests/test_imas_connector_split_modules.py",
+      "tests/test_imas_ids_standard.py",
+      "tests/test_imas_round_trip.py",
+      "tests/test_impurity_transport.py",
+      "tests/test_integrated_scenario.py",
+      "tests/test_integrated_transport_runtime_physics_hardening.py",
+      "tests/test_integrated_transport_solver.py",
+      "tests/test_integrated_transport_solver_adaptive.py",
+      "tests/test_integrated_transport_solver_contracts.py",
+      "tests/test_integrated_transport_solver_runtime.py",
+      "tests/test_integrated_transport_solver_runtime_physics.py",
+      "tests/test_integrated_transport_solver_runtime_utils.py",
+      "tests/test_ipb98y2_benchmark.py",
+      "tests/test_jacobi_sor_stencil_parity.py",
+      "tests/test_jax_equilibrium_solver.py",
+      "tests/test_jax_gk_solver.py",
+      "tests/test_jax_gs_solver.py",
+      "tests/test_jax_neural_equilibrium.py",
+      "tests/test_jax_solvers.py",
+      "tests/test_jax_traceable_runtime.py",
+      "tests/test_jax_transport_solver.py",
+      "tests/test_kinetic_efit.py",
+      "tests/test_knm.py",
+      "tests/test_kuramoto.py",
+      "tests/test_kuramoto_edge_paths.py",
+      "tests/test_lazarus_bridge.py",
+      "tests/test_lazy_imports_all.py",
+      "tests/test_lh_transition.py",
+      "tests/test_locked_mode.py",
+      "tests/test_logging_config.py",
+      "tests/test_lyapunov_guard.py",
+      "tests/test_marfe.py",
+      "tests/test_mc_dropout_uncertainty.py",
+      "tests/test_mhd_sawtooth.py",
+      "tests/test_mhd_stability.py",
+      "tests/test_momentum_transport.py",
+      "tests/test_mu_synthesis.py",
+      "tests/test_multi_compat.py",
+      "tests/test_multi_ion_transport.py",
+      "tests/test_multi_ion_transport_conservation_benchmark.py",
+      "tests/test_multi_machine_validation_physics_contracts.py",
+      "tests/test_nengo_snn_wrapper.py",
+      "tests/test_neoclassical.py",
+      "tests/test_neural_equilibrium.py",
+      "tests/test_neural_equilibrium_gpu_acceptance.py",
+      "tests/test_neural_equilibrium_kernel.py",
+      "tests/test_neural_equilibrium_training.py",
+      "tests/test_neural_transport.py",
+      "tests/test_neural_transport_math.py",
+      "tests/test_neural_transport_math_funcs.py",
+      "tests/test_neural_turbulence.py",
+      "tests/test_neuro_cybernetic_controller.py",
+      "tests/test_neuro_symbolic_control_demo_notebook.py",
+      "tests/test_neurocore_compat.py",
+      "tests/test_newton_equilibrium.py",
+      "tests/test_nmpc.py",
+      "tests/test_nmpc_controller.py",
+      "tests/test_ntm_dynamics.py",
+      "tests/test_nuclear_package_exports.py",
+      "tests/test_nuclear_wall_interaction.py",
+      "tests/test_omas_tglf_coupling.py",
+      "tests/test_onboard_diiid_raw_disruption_shots.py",
+      "tests/test_orbit_following.py",
+      "tests/test_packaging_contract.py",
+      "tests/test_pedestal.py",
+      "tests/test_pellet_injection.py",
+      "tests/test_phase0_physics_fixes.py",
+      "tests/test_phase1_hardening.py",
+      "tests/test_phase2_numerics.py",
+      "tests/test_phase_kuramoto.py",
+      "tests/test_phase_properties.py",
+      "tests/test_phase_properties_extended.py",
+      "tests/test_physics.py",
+      "tests/test_physics_edge_cases.py",
+      "tests/test_physics_invariants.py",
+      "tests/test_plasma_knm.py",
+      "tests/test_plasma_startup.py",
+      "tests/test_plasma_wall_interaction.py",
+      "tests/test_pretrained_surrogates.py",
+      "tests/test_psi_pointwise_rmse.py",
+      "tests/test_psi_pointwise_rmse_cli.py",
+      "tests/test_pwi_erosion.py",
+      "tests/test_pwi_erosion_runtime.py",
+      "tests/test_py39_annotation_compat.py",
+      "tests/test_pyo3_control_bridge.py",
+      "tests/test_pyo3_gpu_bridge.py",
+      "tests/test_pyo3_nuclear_bridge.py",
+      "tests/test_pyo3_physics_bridge.py",
+      "tests/test_pyo3_transport_bridge.py",
+      "tests/test_pyproject_dependency_tiers.py",
+      "tests/test_quantum_bridge.py",
+      "tests/test_quasi_3d_contracts.py",
+      "tests/test_real_data_roadmap_non_regression_guard.py",
+      "tests/test_real_data_roadmap_progress.py",
+      "tests/test_real_shot_validation_guard.py",
+      "tests/test_realtime_efit.py",
+      "tests/test_realtime_monitor.py",
+      "tests/test_realtime_monitor_h5py.py",
+      "tests/test_reference_data_provenance_manifest.py",
+      "tests/test_release_checksums_tools.py",
+      "tests/test_release_delta_guard.py",
+      "tests/test_replay_pipeline.py",
+      "tests/test_rf_heating.py",
+      "tests/test_rmse_dashboard.py",
+      "tests/test_run_diagnostics.py",
+      "tests/test_run_real_data_strict_gate.py",
+      "tests/test_runaway_electron_model_module.py",
+      "tests/test_runaway_electrons.py",
+      "tests/test_runtime_parity_perf_guard.py",
+      "tests/test_rust_compat_solver_method.py",
+      "tests/test_rust_compat_wrapper.py",
+      "tests/test_rust_flight_sim_wrapper.py",
+      "tests/test_rust_multigrid_wiring.py",
+      "tests/test_rust_python_parity.py",
+      "tests/test_rwm_feedback.py",
+      "tests/test_rzip_model.py",
+      "tests/test_safe_rl_controller.py",
+      "tests/test_safety_interlocks.py",
+      "tests/test_sandpile_fusion_reactor.py",
+      "tests/test_sawtooth.py",
+      "tests/test_scaling_laws.py",
+      "tests/test_scenario_scheduler.py",
+      "tests/test_scpn_compiler.py",
+      "tests/test_scpn_end_to_end_latency.py",
+      "tests/test_scpn_pid_mpc_benchmark.py",
+      "tests/test_security_runtime_policies.py",
+      "tests/test_shape_controller.py",
+      "tests/test_sliding_mode_vertical.py",
+      "tests/test_snn_pyo3_bridge.py",
+      "tests/test_sol_model.py",
+      "tests/test_spi_ablation.py",
+      "tests/test_spi_mitigation.py",
+      "tests/test_spi_mitigation_runtime.py",
+      "tests/test_stability_analyzer.py",
+      "tests/test_stability_mhd_extended.py",
+      "tests/test_state_estimator.py",
+      "tests/test_state_space.py",
+      "tests/test_stellarator_control_replay_benchmark.py",
+      "tests/test_stellarator_geometry.py",
+      "tests/test_stress_campaign.py",
+      "tests/test_sweep_disruption_threshold_tool.py",
+      "tests/test_sync_metadata.py",
+      "tests/test_synthetic_sensors.py",
+      "tests/test_synthetic_shots.py",
+      "tests/test_task10_free_boundary_state_estimation_disturbance.py",
+      "tests/test_task11_free_boundary_constraint_safety.py",
+      "tests/test_task12_free_boundary_physics_margin_safety.py",
+      "tests/test_task13_free_boundary_disruption_policy_recovery.py",
+      "tests/test_task14_free_boundary_failsafe_dropout_replay.py",
+      "tests/test_task2_pretrained_surrogates_benchmark.py",
+      "tests/test_task3_error_handling_audit.py",
+      "tests/test_task4_quasi_3d_modeling.py",
+      "tests/test_task5_disruption_mitigation_integration.py",
+      "tests/test_task6_heating_neutronics_realism.py",
+      "tests/test_task7_hil_testing.py",
+      "tests/test_task8_free_boundary_supervisory_control.py",
+      "tests/test_task9_free_boundary_replay_hil.py",
+      "tests/test_tearing_mode_coupling.py",
+      "tests/test_temhd_peltier.py",
+      "tests/test_temhd_peltier_runtime.py",
+      "tests/test_tglf_interface.py",
+      "tests/test_tglf_surrogate_bridge.py",
+      "tests/test_tglf_validation_runtime.py",
+      "tests/test_thermal_hydraulics.py",
+      "tests/test_tokamak_archive.py",
+      "tests/test_tokamak_archive_profiles.py",
+      "tests/test_tokamak_config.py",
+      "tests/test_tokamak_digital_twin.py",
+      "tests/test_tokamak_flight_sim.py",
+      "tests/test_tomography.py",
+      "tests/test_tools_run_mypy_strict.py",
+      "tests/test_tools_run_python_preflight.py",
+      "tests/test_traceable_runtime_parity_cli.py",
+      "tests/test_training_tool_npz_hardening.py",
+      "tests/test_transport_power_balance_benchmark.py",
+      "tests/test_transport_uncertainty_envelope_benchmark.py",
+      "tests/test_turbulence_oracle.py",
+      "tests/test_uncertainty.py",
+      "tests/test_underdeveloped_register.py",
+      "tests/test_upde.py",
+      "tests/test_uq_full_chain.py",
+      "tests/test_validate_real_shots_payload.py",
+      "tests/test_validation_experimental_guards.py",
+      "tests/test_validation_regression.py",
+      "tests/test_validators.py",
+      "tests/test_verify_10khz_rust.py",
+      "tests/test_version_metadata.py",
+      "tests/test_vessel_model.py",
+      "tests/test_vibrana_bridge.py",
+      "tests/test_vmec_lite.py",
+      "tests/test_volt_second_manager.py",
+      "tests/test_wdm_engine.py",
+      "tests/test_ws_phase_stream.py"
+    ]
+  },
+  "schema_version": "capability-manifest.v1"
+}

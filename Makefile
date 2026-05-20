@@ -1,5 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-.PHONY: test lint fmt docs bench clean build preflight bandit sast install-hooks
+.PHONY: test lint fmt docs docs-build docs-serve bench clean build preflight bandit sast install-hooks
+
+PYTHON ?= python
+SPHINXBUILD ?= sphinx-build
+DOCS_SOURCE ?= docs/sphinx
+DOCS_BUILD ?= docs/sphinx/_build/html
 
 test:
 	pytest tests/ -v --cov=scpn_fusion --cov-report=term
@@ -29,10 +34,13 @@ preflight-fast:
 	python tools/run_python_preflight.py --no-tests
 
 docs:
-	mkdocs serve
+	$(MAKE) docs-build
 
 docs-build:
-	mkdocs build --strict
+	PYTHONPATH=src $(SPHINXBUILD) -W -b html $(DOCS_SOURCE) $(DOCS_BUILD)
+
+docs-serve: docs-build
+	$(PYTHON) -m http.server --directory $(DOCS_BUILD) 8000
 
 bench:
 	python validation/full_validation_pipeline.py

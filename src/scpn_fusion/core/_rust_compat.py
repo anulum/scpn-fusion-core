@@ -4,9 +4,6 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Rust Compat
-from __future__ import annotations
-
 """
 Backward compatibility layer: imports from Rust (scpn_fusion_rs) if available,
 falls back to pure-Python implementations.
@@ -14,6 +11,9 @@ falls back to pure-Python implementations.
 Usage:
     from scpn_fusion.core._rust_compat import FusionKernel, RUST_BACKEND
 """
+
+from __future__ import annotations
+
 import os
 import logging
 from collections import deque
@@ -316,14 +316,17 @@ class RustSnnPool:
 
     @property
     def n_neurons(self) -> int:
+        """Number of neurons in the active pool backend."""
         return self._inner.n_neurons
 
     @property
     def gain(self) -> float:
+        """Controller gain used by the active pool backend."""
         return self._inner.gain
 
     @property
     def backend(self) -> str:
+        """Name of the active SNN pool backend."""
         return self._backend
 
     def __repr__(self) -> str:
@@ -381,14 +384,17 @@ class RustSnnController:
 
     @property
     def target_r(self) -> float:
+        """Target major-radius position passed to the active backend."""
         return self._inner.target_r
 
     @property
     def target_z(self) -> float:
+        """Target vertical position passed to the active backend."""
         return self._inner.target_z
 
     @property
     def backend(self) -> str:
+        """Name of the active SNN controller backend."""
         return self._backend
 
     def __repr__(self) -> str:

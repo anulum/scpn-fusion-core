@@ -1,0 +1,265 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anulum.github.io/scpn-fusion-core/schemas/capability_manifest.schema.json",
+  "title": "SCPN Fusion Core Capability Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "SPDX-License-Identifier",
+    "schema_version",
+    "project_label",
+    "generated_from",
+    "project",
+    "labels",
+    "counts",
+    "package_exports",
+    "capabilities",
+    "packaging",
+    "quality_gates",
+    "documentation",
+    "evidence_boundary"
+  ],
+  "properties": {
+    "SPDX-License-Identifier": {
+      "const": "AGPL-3.0-or-later"
+    },
+    "schema_version": {
+      "const": "capability-manifest.v1"
+    },
+    "project_label": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_from": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "config",
+        "generator",
+        "schema"
+      ],
+      "properties": {
+        "config": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generator": {
+          "const": "tools/capability_manifest.py"
+        },
+        "schema": {
+          "const": "schemas/capability_manifest.schema.json"
+        }
+      }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "license",
+        "name",
+        "readme",
+        "requires_python",
+        "version"
+      ],
+      "properties": {
+        "license": {
+          "type": "object"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "readme": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requires_python": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "public_api_exports",
+        "python_capability_source_modules",
+        "python_capability_classes",
+        "capability_documentation_pages",
+        "rust_workspace_crates",
+        "optional_extras",
+        "test_files",
+        "public_documentation_pages",
+        "github_workflows"
+      ],
+      "properties": {
+        "public_api_exports": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "python_capability_source_modules": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "python_capability_classes": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "capability_documentation_pages": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "rust_workspace_crates": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "optional_extras": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "test_files": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "public_documentation_pages": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "github_workflows": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        }
+      }
+    },
+    "package_exports": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "python_source_modules",
+        "python_classes",
+        "documentation_pages",
+        "rust_workspace_crates"
+      ],
+      "properties": {
+        "python_source_modules": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "python_classes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "path"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "documentation_pages": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "rust_workspace_crates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "path"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "packaging": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "optional_extras",
+        "shipped_package_data"
+      ],
+      "properties": {
+        "optional_extras": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "shipped_package_data": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "quality_gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "github_workflows",
+        "test_files"
+      ],
+      "properties": {
+        "github_workflows": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "test_files": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "documentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "public_pages"
+      ],
+      "properties": {
+        "public_pages": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "evidence_boundary": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
