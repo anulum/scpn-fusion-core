@@ -28,6 +28,7 @@ from scpn_fusion.core.stability_mhd import (
     kruskal_shafranov_stability,
     troyon_beta_limit,
     ntm_stability,
+    rwm_stability,
     peeling_ballooning_stability,
     run_full_stability_check,
 )
@@ -356,6 +357,13 @@ def test_troyon_beta_n_formula():
     assert tr.beta_N == pytest.approx(beta_N_expected, rel=1e-6)
 
 
+def test_troyon_rejects_invalid_g_domain() -> None:
+    with pytest.raises(ValueError, match="g_nowall"):
+        troyon_beta_limit(0.02, 10.0, 2.0, 5.0, g_nowall=0.0, g_wall=3.5)
+    with pytest.raises(ValueError, match="g_wall must be greater"):
+        troyon_beta_limit(0.02, 10.0, 2.0, 5.0, g_nowall=3.5, g_wall=3.5)
+
+
 # ── NTM stability tests ────────────────────────────────────────────
 
 
@@ -404,6 +412,26 @@ def test_ntm_classically_unstable_no_ntm():
     # but the NTM bootstrap mechanism flag should not trigger
     ntm = ntm_stability(qp, j_bs, j_total, a=A, r_s_delta_prime=2.0)
     assert not np.any(ntm.ntm_unstable), "Classically unstable (delta'>0) should not flag as NTM"
+
+
+def test_ntm_rejects_malformed_qprofile_and_nonfinite_delta_prime() -> None:
+    rho = np.linspace(0.0, 1.0, 10)
+    q = np.linspace(1.0, 2.0, 10)
+    bad_qp = QProfile(
+        rho=rho,
+        q=q,
+        shear=np.zeros_like(q),
+        alpha_mhd=np.zeros_like(q),
+        q_min=1.0,
+        q_min_rho=0.0,
+        q_edge=1.5,
+    )
+    with pytest.raises(ValueError, match="q_edge must match"):
+        ntm_stability(bad_qp, np.ones(10), np.ones(10), a=A)
+    ne, Ti, Te = _parabolic_profiles()
+    qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA)
+    with pytest.raises(ValueError, match="r_s_delta_prime must be finite"):
+        ntm_stability(qp, np.ones(NR), np.ones(NR), a=A, r_s_delta_prime=float("nan"))
 
 
 # ── Full stability check tests ─────────────────────────────────────
@@ -576,6 +604,22 @@ def test_pb_normalised_coordinates_positive():
     )
     assert pb.j_edge_norm >= 0.0
     assert pb.alpha_edge_norm >= 0.0
+
+
+def test_pb_rejects_invalid_geometry_domain() -> None:
+    ne, Ti, Te = _parabolic_profiles()
+    qp = compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA)
+    with pytest.raises(ValueError, match="delta"):
+        peeling_ballooning_stability(qp, 1e5, 1e4, R0, A, B0, delta=1.0)
+    with pytest.raises(ValueError, match="R0"):
+        peeling_ballooning_stability(qp, 1e5, 1e4, 0.0, A, B0)
+    with pytest.raises(ValueError, match="p_ped_Pa"):
+        peeling_ballooning_stability(qp, 1e5, -1.0, R0, A, B0)
+
+
+def test_rwm_rejects_invalid_wall_ordering() -> None:
+    with pytest.raises(ValueError, match="g_wall must be greater"):
+        rwm_stability(3.0, g_nowall=3.5, g_wall=3.0)
 
 
 def test_full_stability_with_pb():

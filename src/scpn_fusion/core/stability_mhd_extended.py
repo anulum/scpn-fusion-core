@@ -33,6 +33,32 @@ from .stability_mhd import (
 )
 
 
+def _validate_qp_basic(qp: QProfile) -> None:
+    rho = np.asarray(qp.rho, dtype=np.float64)
+    q = np.asarray(qp.q, dtype=np.float64)
+    shear = np.asarray(qp.shear, dtype=np.float64)
+    alpha = np.asarray(qp.alpha_mhd, dtype=np.float64)
+    if rho.ndim != 1 or rho.size < 3:
+        raise ValueError("qp.rho must be one-dimensional with at least 3 points.")
+    if not (q.shape == shear.shape == alpha.shape == rho.shape):
+        raise ValueError("qp arrays must share the same one-dimensional shape.")
+    if (
+        not np.all(np.isfinite(rho))
+        or not np.all(np.isfinite(q))
+        or not np.all(np.isfinite(shear))
+        or not np.all(np.isfinite(alpha))
+    ):
+        raise ValueError("qp arrays must contain finite values.")
+    if not np.all(np.diff(rho) > 0.0):
+        raise ValueError("qp.rho must be strictly increasing.")
+    if np.any(q <= 0.0):
+        raise ValueError("qp.q must be strictly positive.")
+    if not np.isfinite(float(qp.q_edge)) or float(qp.q_edge) <= 0.0:
+        raise ValueError("qp.q_edge must be finite and > 0.")
+    if not np.isclose(float(qp.q_edge), float(q[-1]), rtol=1e-12, atol=1e-12):
+        raise ValueError("qp.q_edge must match qp.q[-1].")
+
+
 def troyon_beta_limit(
     beta_t: float,
     Ip_MA: float,
@@ -80,13 +106,22 @@ def troyon_beta_limit(
             raise ValueError(f"{name} must be > 0.")
         if name == "beta_t" and val < 0.0:
             raise ValueError("beta_t must be >= 0.")
+    for name, value in {"g_nowall": g_nowall, "g_wall": g_wall}.items():
+        val = float(value)
+        if not np.isfinite(val) or val <= 0.0:
+            raise ValueError(f"{name} must be finite and > 0.")
+    g_nowall = float(g_nowall)
+    g_wall = float(g_wall)
+    if g_wall <= g_nowall:
+        raise ValueError("g_wall must be greater than g_nowall.")
+
     beta_t = float(beta_t)
     Ip_MA = float(Ip_MA)
     a = float(a)
     B0 = float(B0)
 
-    I_N = Ip_MA / max(a * B0, 1e-10)
-    beta_N = 100.0 * beta_t / max(I_N, 1e-10)
+    I_N = Ip_MA / (a * B0)
+    beta_N = 100.0 * beta_t / I_N
 
     beta_N_crit_nw = g_nowall
     beta_N_crit_w = g_wall
@@ -146,6 +181,7 @@ def ntm_stability(
     La Haye, Phys. Plasmas 13:055501 (2006)
     Sauter et al., Phys. Plasmas 4:1654 (1997)
     """
+    _validate_qp_basic(qp)
     j_bs = np.asarray(j_bs, dtype=np.float64)
     j_total = np.asarray(j_total, dtype=np.float64)
     if j_bs.shape != qp.rho.shape or j_total.shape != qp.rho.shape:
@@ -155,11 +191,14 @@ def ntm_stability(
     a = float(a)
     if not np.isfinite(a) or a <= 0.0:
         raise ValueError("a must be finite and > 0.")
+    rdp = float(r_s_delta_prime)
+    if not np.isfinite(rdp):
+        raise ValueError("r_s_delta_prime must be finite.")
 
     j_total_safe = np.where(np.abs(j_total) > 1e-6, j_total, 1e-6)
     j_bs_frac = j_bs / j_total_safe
 
-    delta_prime = np.full_like(qp.rho, r_s_delta_prime)
+    delta_prime = np.full_like(qp.rho, rdp)
     j_bs_drive = j_bs_frac.copy()
 
     denom = np.where(np.abs(delta_prime) > 1e-10, delta_prime, -1e-10)
@@ -206,18 +245,30 @@ def rwm_stability(
     -------
     RWMResult
     """
-    stable = beta_N < g_nowall
+    beta_n = float(beta_N)
+    g_nw = float(g_nowall)
+    g_w = float(g_wall)
+    if not np.isfinite(beta_n):
+        raise ValueError("beta_N must be finite.")
+    if not np.isfinite(g_nw) or g_nw <= 0.0:
+        raise ValueError("g_nowall must be finite and > 0.")
+    if not np.isfinite(g_w) or g_w <= 0.0:
+        raise ValueError("g_wall must be finite and > 0.")
+    if g_w <= g_nw:
+        raise ValueError("g_wall must be greater than g_nowall.")
 
-    if beta_N > g_nowall:
-        denom = max(g_wall - beta_N, 0.01)
-        growth_rate = (beta_N - g_nowall) / denom
+    stable = beta_n < g_nw
+
+    if beta_n > g_nw:
+        denom = max(g_w - beta_n, 0.01)
+        growth_rate = (beta_n - g_nw) / denom
     else:
         growth_rate = 0.0
 
     return RWMResult(
-        beta_N=beta_N,
-        beta_N_crit_nowall=g_nowall,
-        beta_N_crit_wall=g_wall,
+        beta_N=beta_n,
+        beta_N_crit_nowall=g_nw,
+        beta_N_crit_wall=g_w,
         stable=stable,
         mode_growth_rate=float(growth_rate),
     )
@@ -262,17 +313,35 @@ def peeling_ballooning_stability(
     Snyder et al., Phys. Plasmas 9:2037 (2002)
     Snyder et al., Nucl. Fusion 51:103016 (2011)
     """
+    _validate_qp_basic(qp)
+    edge_current = float(j_edge)
+    p_ped = float(p_ped_Pa)
+    r_major = float(R0)
+    r_minor = float(a)
+    b_axis = float(B0)
+    elongation = float(kappa)
+    triangularity = float(delta)
+    if not np.isfinite(edge_current):
+        raise ValueError("j_edge must be finite.")
+    if not np.isfinite(p_ped) or p_ped < 0.0:
+        raise ValueError("p_ped_Pa must be finite and >= 0.")
+    for name, value in {"R0": r_major, "a": r_minor, "B0": b_axis, "kappa": elongation}.items():
+        if not np.isfinite(value) or value <= 0.0:
+            raise ValueError(f"{name} must be finite and > 0.")
+    if not np.isfinite(triangularity) or abs(triangularity) >= 1.0:
+        raise ValueError("delta must be finite with |delta| < 1.")
+
     mu0 = 4.0 * np.pi * 1e-7
     q_edge = max(qp.q_edge, 1.01)
 
     # Shaping factor: Snyder 2002 Fig. 5 + Snyder 2011 EPED calibration
-    f_shape = (1.0 + 0.5 * (kappa - 1.0)) * (1.0 + 0.8 * delta)
+    f_shape = (1.0 + 0.5 * (elongation - 1.0)) * (1.0 + 0.8 * triangularity)
 
-    B_pol_denom = 2.0 * np.pi * a * np.sqrt((1.0 + kappa**2) / 2.0)
-    Ip_approx = 2.0 * np.pi * a * B0 / (mu0 * q_edge * R0)
+    B_pol_denom = 2.0 * np.pi * r_minor * np.sqrt((1.0 + elongation**2) / 2.0)
+    Ip_approx = 2.0 * np.pi * r_minor * b_axis / (mu0 * q_edge * r_major)
     B_pol = mu0 * Ip_approx / B_pol_denom
 
-    j_crit = 2.0 * B_pol * f_shape / (mu0 * q_edge**2 * R0)
+    j_crit = 2.0 * B_pol * f_shape / (mu0 * q_edge**2 * r_major)
     j_crit = max(j_crit, 1e-6)
 
     s_edge = float(qp.shear[-1]) if len(qp.shear) > 0 else 2.0
@@ -281,14 +350,14 @@ def peeling_ballooning_stability(
         alpha_crit_base = s_edge * (1.0 - s_edge / 2.0)
     else:
         alpha_crit_base = 0.6 * s_edge
-    alpha_crit = max(alpha_crit_base * (1.0 + 0.3 * (kappa - 1.0)), 0.01)
+    alpha_crit = max(alpha_crit_base * (1.0 + 0.3 * (elongation - 1.0)), 0.01)
 
     # Pedestal alpha_MHD with Delta_ped ~ 0.05
     Delta_ped = 0.05
-    dp_dr = p_ped_Pa / max(Delta_ped * a, 1e-3)
-    alpha_ped = 2.0 * mu0 * R0 * q_edge**2 / (B0**2) * dp_dr
+    dp_dr = p_ped / max(Delta_ped * r_minor, 1e-3)
+    alpha_ped = 2.0 * mu0 * r_major * q_edge**2 / (b_axis**2) * dp_dr
 
-    j_norm = abs(j_edge) / j_crit
+    j_norm = abs(edge_current) / j_crit
     alpha_norm = alpha_ped / alpha_crit
 
     pb_radius = float(np.sqrt(j_norm**2 + alpha_norm**2))
