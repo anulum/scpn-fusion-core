@@ -161,13 +161,22 @@ class RunawayEvolution:
         self.params = params
 
     def step(self, dt: float, n_RE: float, E_par: float) -> float:
+        dt_s = float(dt)
+        n_re = float(n_RE)
+        e_par = float(E_par)
+        if not np.isfinite(dt_s) or dt_s <= 0.0:
+            raise ValueError("dt must be finite and > 0.")
+        if not np.isfinite(n_re) or n_re < 0.0:
+            raise ValueError("n_RE must be finite and >= 0.")
+        if not np.isfinite(e_par):
+            raise ValueError("E_par must be finite.")
         self.params.E_par = E_par
 
         rate_D = dreicer_generation_rate(self.params)
-        rate_A = avalanche_growth_rate(self.params, n_RE)
+        rate_A = avalanche_growth_rate(self.params, n_re)
 
-        dn_RE = (rate_D + rate_A) * dt
-        return float(n_RE + dn_RE)
+        dn_RE = (rate_D + rate_A) * dt_s
+        return float(max(n_re + dn_RE, 0.0))
 
     def evolve(
         self,
@@ -176,26 +185,47 @@ class RunawayEvolution:
         t_span: tuple[float, float],
         dt: float,
     ) -> tuple[np.ndarray, np.ndarray]:
-        t_start, t_end = t_span
-        n_steps = int(np.ceil((t_end - t_start) / dt))
+        if not isinstance(t_span, tuple) or len(t_span) != 2:
+            raise ValueError("t_span must be a (t_start, t_end) tuple.")
+        t_start, t_end = float(t_span[0]), float(t_span[1])
+        dt_s = float(dt)
+        n0 = float(n_RE_0)
+        if not np.isfinite(dt_s) or dt_s <= 0.0:
+            raise ValueError("dt must be finite and > 0.")
+        if not np.isfinite(t_start) or not np.isfinite(t_end) or t_end <= t_start:
+            raise ValueError("t_span must be finite with t_end > t_start.")
+        if not np.isfinite(n0) or n0 < 0.0:
+            raise ValueError("n_RE_0 must be finite and >= 0.")
+
+        n_steps = int(np.ceil((t_end - t_start) / dt_s))
+        if n_steps < 1:
+            raise ValueError("integration requires at least one time step.")
 
         t_arr = np.linspace(t_start, t_end, n_steps + 1)
         n_RE_arr = np.zeros(n_steps + 1)
-        n_RE_arr[0] = n_RE_0
+        n_RE_arr[0] = n0
 
         for i in range(n_steps):
             E_par = E_par_profile(t_arr[i])
-            n_RE_arr[i + 1] = self.step(dt, n_RE_arr[i], E_par)
+            if not np.isfinite(E_par):
+                raise ValueError("E_par_profile must return finite values.")
+            n_RE_arr[i + 1] = self.step(dt_s, n_RE_arr[i], float(E_par))
 
         return t_arr, n_RE_arr
 
     def current_fraction(self, n_RE: float, I_p_MA: float) -> float:
         """Fraction of total plasma current carried by REs (v ≈ c)."""
-        if I_p_MA <= 0.0:
+        n_re = float(n_RE)
+        i_p_ma = float(I_p_MA)
+        if not np.isfinite(n_re) or n_re < 0.0:
+            raise ValueError("n_RE must be finite and >= 0.")
+        if not np.isfinite(i_p_ma):
+            raise ValueError("I_p_MA must be finite.")
+        if i_p_ma <= 0.0:
             return 0.0
-        j_RE = E_CHARGE * n_RE * C_LIGHT
+        j_RE = E_CHARGE * n_re * C_LIGHT
         I_RE = j_RE * np.pi * self.params.a**2
-        return float(min(1.0, I_RE / (I_p_MA * 1e6)))
+        return float(min(1.0, I_RE / (i_p_ma * 1e6)))
 
 
 class RunawayMitigationAssessment:

@@ -102,6 +102,35 @@ def test_runaway_evolution():
     assert n[-1] > n[0]  # Should grow exponentially
 
 
+def test_runaway_evolution_step_rejects_invalid_domain() -> None:
+    params = RunawayParams(ne_20=1.0, Te_keV=0.01, E_par=0.0, Z_eff=1.5, B0=5.3, R0=6.2)
+    ev = RunawayEvolution(params)
+    with np.testing.assert_raises(ValueError):
+        ev.step(dt=0.0, n_RE=1e10, E_par=5.0)
+    with np.testing.assert_raises(ValueError):
+        ev.step(dt=1e-3, n_RE=-1.0, E_par=5.0)
+    with np.testing.assert_raises(ValueError):
+        ev.step(dt=1e-3, n_RE=1e10, E_par=float("nan"))
+
+
+def test_runaway_evolution_evolve_rejects_invalid_domain() -> None:
+    params = RunawayParams(ne_20=1.0, Te_keV=0.01, E_par=0.0, Z_eff=1.5, B0=5.3, R0=6.2)
+    ev = RunawayEvolution(params)
+    with np.testing.assert_raises(ValueError):
+        ev.evolve(n_RE_0=1e10, E_par_profile=lambda _: 5.0, t_span=(0.1, 0.0), dt=0.01)
+    with np.testing.assert_raises(ValueError):
+        ev.evolve(n_RE_0=1e10, E_par_profile=lambda _: 5.0, t_span=(0.0, 0.1), dt=0.0)
+    with np.testing.assert_raises(ValueError):
+        ev.evolve(n_RE_0=-1.0, E_par_profile=lambda _: 5.0, t_span=(0.0, 0.1), dt=0.01)
+    with np.testing.assert_raises(ValueError):
+        ev.evolve(
+            n_RE_0=1e10,
+            E_par_profile=lambda _: float("inf"),
+            t_span=(0.0, 0.1),
+            dt=0.01,
+        )
+
+
 def test_mitigation_assessment():
     mit = RunawayMitigationAssessment()
 
@@ -116,6 +145,18 @@ def test_mitigation_assessment():
 
     load = mit.wall_heat_load(n_RE=1e16, E_max_MeV=E_max, A_wet=10.0)
     assert load > 0.0
+
+
+def test_current_fraction_is_bounded_and_rejects_invalid_domain() -> None:
+    params = RunawayParams(ne_20=1.0, Te_keV=0.01, E_par=0.0, Z_eff=1.5, B0=5.3, R0=6.2)
+    ev = RunawayEvolution(params)
+    assert 0.0 <= ev.current_fraction(n_RE=1e20, I_p_MA=15.0) <= 1.0
+    assert ev.current_fraction(n_RE=1e30, I_p_MA=0.0) == 0.0
+    assert ev.current_fraction(n_RE=1e30, I_p_MA=15.0) == 1.0
+    with np.testing.assert_raises(ValueError):
+        ev.current_fraction(n_RE=-1.0, I_p_MA=15.0)
+    with np.testing.assert_raises(ValueError):
+        ev.current_fraction(n_RE=1e20, I_p_MA=float("nan"))
 
 
 def test_maximum_re_energy_scales_with_density_and_pitch() -> None:
