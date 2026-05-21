@@ -170,6 +170,8 @@ def _validate_q_profile(qp: QProfile) -> None:
         raise ValueError("qp arrays must contain finite values.")
     if not np.all(np.diff(rho) > 0.0):
         raise ValueError("qp.rho must be strictly increasing.")
+    if rho[0] < 0.0 or rho[-1] > 1.0:
+        raise ValueError("qp.rho must lie within [0, 1].")
     if np.any(q <= 0.0):
         raise ValueError("qp.q must be strictly positive.")
     if not np.isfinite(qp.q_edge) or qp.q_edge <= 0.0:
@@ -180,6 +182,11 @@ def _validate_q_profile(qp: QProfile) -> None:
         raise ValueError("qp.q_min must be finite and > 0.")
     if not np.isfinite(qp.q_min_rho):
         raise ValueError("qp.q_min_rho must be finite.")
+    q_min_ref = float(np.min(q))
+    if not np.isclose(float(qp.q_min), q_min_ref, rtol=1e-12, atol=1e-12):
+        raise ValueError("qp.q_min must match min(qp.q).")
+    if float(qp.q_min_rho) < float(rho[0]) or float(qp.q_min_rho) > float(rho[-1]):
+        raise ValueError("qp.q_min_rho must lie within qp.rho bounds.")
 
 
 # ── Q-profile computation ───────────────────────────────────────────

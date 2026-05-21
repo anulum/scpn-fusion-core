@@ -168,6 +168,30 @@ def test_stability_entrypoints_reject_malformed_qprofile() -> None:
     with pytest.raises(ValueError, match="q_edge must match"):
         run_full_stability_check(bad_qp)
 
+    bad_qmin_qp = QProfile(
+        rho=rho,
+        q=q,
+        shear=np.zeros_like(q),
+        alpha_mhd=np.zeros_like(q),
+        q_min=1.1,  # actual min(q)=1.0
+        q_min_rho=0.0,
+        q_edge=2.0,
+    )
+    with pytest.raises(ValueError, match="q_min must match"):
+        mercier_stability(bad_qmin_qp)
+
+    bad_qmin_rho_qp = QProfile(
+        rho=rho,
+        q=q,
+        shear=np.zeros_like(q),
+        alpha_mhd=np.zeros_like(q),
+        q_min=1.0,
+        q_min_rho=2.0,
+        q_edge=2.0,
+    )
+    with pytest.raises(ValueError, match="q_min_rho must lie"):
+        ballooning_stability(bad_qmin_rho_qp)
+
 
 # ── Mercier tests ────────────────────────────────────────────────
 
