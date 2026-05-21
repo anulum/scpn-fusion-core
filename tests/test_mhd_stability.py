@@ -115,6 +115,46 @@ def test_q_profile_shape_correction_changes_q_level():
     assert qp_shaped.q_min > qp_cyl.q_min
 
 
+def test_q_profile_rejects_non_monotonic_grid() -> None:
+    ne, Ti, Te = _parabolic_profiles()
+    rho_bad = RHO.copy()
+    rho_bad[10] = rho_bad[9]
+    with pytest.raises(ValueError, match="strictly increasing"):
+        compute_q_profile(rho_bad, ne, Ti, Te, R0, A, B0, IP_MA)
+
+
+def test_q_profile_rejects_shape_mismatch_and_nonphysical_geometry() -> None:
+    ne, Ti, Te = _parabolic_profiles()
+    with pytest.raises(ValueError, match="match rho shape"):
+        compute_q_profile(RHO, ne[:-1], Ti, Te, R0, A, B0, IP_MA)
+    with pytest.raises(ValueError, match="R0"):
+        compute_q_profile(RHO, ne, Ti, Te, 0.0, A, B0, IP_MA)
+    with pytest.raises(ValueError, match="delta"):
+        compute_q_profile(RHO, ne, Ti, Te, R0, A, B0, IP_MA, delta=1.0)
+
+
+def test_stability_entrypoints_reject_malformed_qprofile() -> None:
+    rho = np.linspace(0.0, 1.0, 10)
+    q = np.linspace(1.0, 2.0, 10)
+    bad_qp = QProfile(
+        rho=rho,
+        q=q,
+        shear=np.zeros_like(q),
+        alpha_mhd=np.zeros_like(q),
+        q_min=1.0,
+        q_min_rho=0.0,
+        q_edge=1.5,  # mismatches q[-1]
+    )
+    with pytest.raises(ValueError, match="q_edge must match"):
+        mercier_stability(bad_qp)
+    with pytest.raises(ValueError, match="q_edge must match"):
+        ballooning_stability(bad_qp)
+    with pytest.raises(ValueError, match="q_edge must match"):
+        kruskal_shafranov_stability(bad_qp)
+    with pytest.raises(ValueError, match="q_edge must match"):
+        run_full_stability_check(bad_qp)
+
+
 # ── Mercier tests ────────────────────────────────────────────────
 
 

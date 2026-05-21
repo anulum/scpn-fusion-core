@@ -150,6 +150,38 @@ class StabilitySummary:
     overall_stable: bool
 
 
+def _validate_q_profile(qp: QProfile) -> None:
+    if not isinstance(qp, QProfile):
+        raise TypeError("qp must be a QProfile.")
+    rho = np.asarray(qp.rho, dtype=np.float64)
+    q = np.asarray(qp.q, dtype=np.float64)
+    shear = np.asarray(qp.shear, dtype=np.float64)
+    alpha = np.asarray(qp.alpha_mhd, dtype=np.float64)
+    if rho.ndim != 1 or rho.size < 3:
+        raise ValueError("qp.rho must be one-dimensional with at least 3 points.")
+    if not (q.shape == shear.shape == alpha.shape == rho.shape):
+        raise ValueError("qp arrays must share the same one-dimensional shape.")
+    if (
+        not np.all(np.isfinite(rho))
+        or not np.all(np.isfinite(q))
+        or not np.all(np.isfinite(shear))
+        or not np.all(np.isfinite(alpha))
+    ):
+        raise ValueError("qp arrays must contain finite values.")
+    if not np.all(np.diff(rho) > 0.0):
+        raise ValueError("qp.rho must be strictly increasing.")
+    if np.any(q <= 0.0):
+        raise ValueError("qp.q must be strictly positive.")
+    if not np.isfinite(qp.q_edge) or qp.q_edge <= 0.0:
+        raise ValueError("qp.q_edge must be finite and > 0.")
+    if not np.isclose(qp.q_edge, float(q[-1]), rtol=1e-12, atol=1e-12):
+        raise ValueError("qp.q_edge must match qp.q[-1].")
+    if not np.isfinite(qp.q_min) or qp.q_min <= 0.0:
+        raise ValueError("qp.q_min must be finite and > 0.")
+    if not np.isfinite(qp.q_min_rho):
+        raise ValueError("qp.q_min_rho must be finite.")
+
+
 # ── Q-profile computation ───────────────────────────────────────────
 
 
@@ -186,6 +218,34 @@ def compute_q_profile(
     -------
     QProfile
     """
+    rho = np.asarray(rho, dtype=np.float64)
+    ne = np.asarray(ne, dtype=np.float64)
+    Ti = np.asarray(Ti, dtype=np.float64)
+    Te = np.asarray(Te, dtype=np.float64)
+    if rho.ndim != 1:
+        raise ValueError("rho must be one-dimensional.")
+    if rho.size < 3:
+        raise ValueError("rho must contain at least 3 points.")
+    if not (ne.shape == Ti.shape == Te.shape == rho.shape):
+        raise ValueError("ne, Ti, and Te must match rho shape.")
+    if not np.all(np.isfinite(rho)) or not np.all(np.isfinite(ne)) or not np.all(np.isfinite(Ti)) or not np.all(np.isfinite(Te)):
+        raise ValueError("profiles must contain only finite values.")
+    if np.any(ne < 0.0) or np.any(Ti < 0.0) or np.any(Te < 0.0):
+        raise ValueError("ne, Ti, and Te must be non-negative.")
+    if not np.all(np.diff(rho) > 0.0):
+        raise ValueError("rho must be strictly increasing.")
+    for name, value in {
+        "R0": R0,
+        "a": a,
+        "B0": B0,
+        "Ip_MA": Ip_MA,
+        "kappa": kappa,
+    }.items():
+        if not np.isfinite(value) or value <= 0.0:
+            raise ValueError(f"{name} must be finite and > 0.")
+    if not np.isfinite(delta) or abs(delta) >= 1.0:
+        raise ValueError("delta must be finite with |delta| < 1.")
+
     mu0 = 4.0 * np.pi * 1e-7
     Ip = Ip_MA * 1e6  # MA -> A
     epsilon = a / R0
@@ -250,6 +310,7 @@ def mercier_stability(qp: QProfile) -> MercierResult:
     D_M = s^2 / 4 - alpha_mhd
     Stable where D_M >= 0.
     """
+    _validate_q_profile(qp)
     s = qp.shear
     alpha = qp.alpha_mhd
 
@@ -291,6 +352,7 @@ def ballooning_stability(qp: QProfile) -> BallooningResult:
     -------
     BallooningResult
     """
+    _validate_q_profile(qp)
     s = qp.shear
     alpha = qp.alpha_mhd
 
@@ -332,6 +394,7 @@ def kruskal_shafranov_stability(qp: QProfile) -> KruskalShafranovResult:
     Kruskal & Schwarzschild, Proc. R. Soc. Lond. A 223:348 (1954)
     Shafranov, Sov. Phys. Tech. Phys. 15:175 (1970)
     """
+    _validate_q_profile(qp)
     stable = qp.q_edge > 1.0
     margin = qp.q_edge - 1.0
     return KruskalShafranovResult(
@@ -395,6 +458,7 @@ def run_full_stability_check(
     -------
     StabilitySummary
     """
+    _validate_q_profile(qp)
     mr = mercier_stability(qp)
     br = ballooning_stability(qp)
     ks = kruskal_shafranov_stability(qp)
