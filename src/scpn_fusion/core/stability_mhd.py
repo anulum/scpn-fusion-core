@@ -234,6 +234,8 @@ def compute_q_profile(
         raise ValueError("ne, Ti, and Te must be non-negative.")
     if not np.all(np.diff(rho) > 0.0):
         raise ValueError("rho must be strictly increasing.")
+    if rho[0] < 0.0 or rho[-1] > 1.0:
+        raise ValueError("rho must lie within [0, 1].")
     for name, value in {
         "R0": R0,
         "a": a,

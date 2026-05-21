@@ -124,6 +124,19 @@ def test_q_profile_rejects_non_monotonic_grid() -> None:
         compute_q_profile(rho_bad, ne, Ti, Te, R0, A, B0, IP_MA)
 
 
+def test_q_profile_rejects_out_of_bounds_normalised_radius() -> None:
+    ne, Ti, Te = _parabolic_profiles()
+    rho_low = RHO.copy()
+    rho_low[0] = -1e-6
+    with pytest.raises(ValueError, match=r"within \[0, 1\]"):
+        compute_q_profile(rho_low, ne, Ti, Te, R0, A, B0, IP_MA)
+
+    rho_high = RHO.copy()
+    rho_high[-1] = 1.0001
+    with pytest.raises(ValueError, match=r"within \[0, 1\]"):
+        compute_q_profile(rho_high, ne, Ti, Te, R0, A, B0, IP_MA)
+
+
 def test_q_profile_rejects_shape_mismatch_and_nonphysical_geometry() -> None:
     ne, Ti, Te = _parabolic_profiles()
     with pytest.raises(ValueError, match="match rho shape"):
