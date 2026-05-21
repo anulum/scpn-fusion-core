@@ -40,13 +40,27 @@ class AlfvenContinuum:
         R0: float,
         m_i_amu: float = 2.5,
         a: float = 2.0,
+        kappa: float = 1.7,
+        gap_width_scale: float = 1.0,
     ):
+        if not np.isfinite(B0) or B0 <= 0.0:
+            raise ValueError("B0 must be finite and > 0.")
+        if not np.isfinite(R0) or R0 <= 0.0:
+            raise ValueError("R0 must be finite and > 0.")
+        if not np.isfinite(a) or a <= 0.0:
+            raise ValueError("a must be finite and > 0.")
+        if not np.isfinite(kappa) or kappa <= 0.0:
+            raise ValueError("kappa must be finite and > 0.")
+        if not np.isfinite(gap_width_scale) or gap_width_scale <= 0.0:
+            raise ValueError("gap_width_scale must be finite and > 0.")
         self.rho = rho
         self.q = q
         self.ne = ne
         self.B0 = B0
         self.R0 = R0
         self.a = a
+        self.kappa = float(kappa)
+        self.gap_width_scale = float(gap_width_scale)
 
         m_i = m_i_amu * 1.67e-27
         m_e = 9.11e-31
@@ -93,10 +107,12 @@ class AlfvenContinuum:
                 v_A_gap = self.alfven_speed(rho_gap)
                 omega_0 = v_A_gap / (2.0 * q_gap * self.R0)
 
-                # Gap width proxy (depends on inverse aspect ratio epsilon)
+                # Shaping-aware toroidicity gap width model.
                 eps = rho_gap * self.a / self.R0
-                omega_lower = omega_0 * (1.0 - eps)
-                omega_upper = omega_0 * (1.0 + eps)
+                delta_gap = self.gap_width_scale * eps * np.sqrt(self.kappa)
+                delta_gap = float(np.clip(delta_gap, 1.0e-6, 0.9))
+                omega_lower = omega_0 * (1.0 - delta_gap)
+                omega_upper = omega_0 * (1.0 + delta_gap)
 
                 gaps.append(
                     AlfvenGap(
@@ -131,10 +147,28 @@ class TAEMode:
 class FastParticleDrive:
     """Fast-particle pressure and resonance drive model for TAE stability."""
 
-    def __init__(self, E_fast_keV: float, n_fast_frac: float, m_fast_amu: float = 4.0):
+    def __init__(
+        self,
+        E_fast_keV: float,
+        n_fast_frac: float,
+        m_fast_amu: float = 4.0,
+        *,
+        main_resonance_width: float = 0.2,
+        sideband_resonance_width: float = 0.1,
+        sideband_weight: float = 0.5,
+    ):
         self.E_fast_keV = E_fast_keV
         self.n_fast_frac = n_fast_frac
         self.m_fast = m_fast_amu * 1.67e-27
+        self.main_resonance_width = float(main_resonance_width)
+        self.sideband_resonance_width = float(sideband_resonance_width)
+        self.sideband_weight = float(sideband_weight)
+        if not np.isfinite(self.main_resonance_width) or self.main_resonance_width <= 0.0:
+            raise ValueError("main_resonance_width must be finite and > 0.")
+        if not np.isfinite(self.sideband_resonance_width) or self.sideband_resonance_width <= 0.0:
+            raise ValueError("sideband_resonance_width must be finite and > 0.")
+        if not np.isfinite(self.sideband_weight) or self.sideband_weight < 0.0:
+            raise ValueError("sideband_weight must be finite and >= 0.")
 
         E_J = E_fast_keV * 1e3 * 1.602e-19
         self.v_fast = np.sqrt(2.0 * E_J / self.m_fast)
@@ -155,10 +189,15 @@ class FastParticleDrive:
         """
         F(v_f / v_A) peaking near 1 or 1/3 (for sidebands).
         """
+        if not np.isfinite(v_fast) or v_fast <= 0.0:
+            raise ValueError("v_fast must be finite and > 0.")
+        if not np.isfinite(v_A) or v_A <= 0.0:
+            raise ValueError("v_A must be finite and > 0.")
         x = v_fast / v_A
-        # Simple heuristic resonance curve peaking at x=1 and x=1/3
-        f_main = np.exp(-(((x - 1.0) / 0.2) ** 2))
-        f_side = 0.5 * np.exp(-(((x - 0.33) / 0.1) ** 2))
+        f_main = np.exp(-(((x - 1.0) / self.main_resonance_width) ** 2))
+        f_side = self.sideband_weight * np.exp(
+            -(((x - 1.0 / 3.0) / self.sideband_resonance_width) ** 2)
+        )
         return float(f_main + f_side)
 
     def growth_rate(self, tae: TAEMode, beta_fast: float) -> float:
@@ -234,36 +273,54 @@ class AlfvenStabilityAnalysis:
 
     def critical_beta_fast(self, n: int) -> float:
         """Find beta_fast where gamma_net = 0 for the most unstable mode."""
-        res = self.tae_stability(range(n, n + 1))
-        if not res:
+        if not isinstance(n, int) or n <= 0:
+            raise ValueError("n must be a positive integer.")
+        gaps = self.continuum.find_gaps(n)
+        if not gaps:
             return float("inf")
+        beta_crit_best = float("inf")
+        for gap in gaps:
+            q_gap = (2.0 * gap.m_coupling + 1.0) / (2.0 * n)
+            v_A = self.continuum.alfven_speed(gap.rho_location)
+            resonance = self.fast_params.resonance_function(self.fast_params.v_fast, v_A)
+            coeff = q_gap**2 * resonance
+            if coeff <= 0.0:
+                continue
+            # From gamma_drive = omega*beta_f*q^2*F and gamma_damp = 0.01*omega:
+            # beta_crit = 0.01 / (q^2 F).
+            beta_crit = 0.01 / coeff
+            if beta_crit < beta_crit_best:
+                beta_crit_best = beta_crit
+        return float(beta_crit_best)
 
-        # Find mode with best resonance
-        best_mode = max(res, key=lambda r: r.gamma_drive)
-        if best_mode.gamma_drive == 0:
-            return float("inf")
-
-        # beta_crit = b_fast * (gamma_damp / gamma_drive)
-        # We need the current beta_fast used to compute it.
-        # But gamma_drive is linear in beta_fast in our model: gamma = C * beta
-        # So beta_crit = gamma_damp / C = gamma_damp / (gamma_drive / beta_current)
-
-        v_A = self.continuum.alfven_speed(0.5)  # rough
-        b_current = self.fast_params.beta_fast(1.0, self.continuum.B0)  # nominal
-
-        if b_current == 0:
-            return float("inf")
-
-        return float(b_current * (best_mode.gamma_damp / best_mode.gamma_drive))
-
-    def alpha_particle_loss_estimate(self, gamma_net: float, tau_sd: float = 0.5) -> float:
+    def alpha_particle_loss_estimate(
+        self,
+        gamma_net: float,
+        tau_sd: float = 0.5,
+        *,
+        nonlinear_saturation: float = 1.0e-4,
+        transport_threshold: float = 1.0,
+    ) -> float:
         """Fraction of alpha power lost."""
-        if gamma_net <= 0:
+        gamma = float(gamma_net)
+        tau = float(tau_sd)
+        sat = float(nonlinear_saturation)
+        threshold = float(transport_threshold)
+        if not np.isfinite(gamma):
+            raise ValueError("gamma_net must be finite.")
+        if not np.isfinite(tau) or tau <= 0.0:
+            raise ValueError("tau_sd must be finite and > 0.")
+        if not np.isfinite(sat) or sat <= 0.0:
+            raise ValueError("nonlinear_saturation must be finite and > 0.")
+        if not np.isfinite(threshold) or threshold <= 0.0:
+            raise ValueError("transport_threshold must be finite and > 0.")
+        if gamma <= 0.0:
             return 0.0
 
-        # Simple heuristic: loss scales with gamma * tau_slowing_down
-        loss = min(1.0, 1e-4 * gamma_net * tau_sd)
-        return float(loss)
+        drive = gamma * tau / threshold
+        # Saturating transport-loss model: 1-exp(-sat*drive)
+        loss = 1.0 - np.exp(-sat * drive)
+        return float(np.clip(loss, 0.0, 1.0))
 
 
 def _require_positive(name: str, value: float) -> float:

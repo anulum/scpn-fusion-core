@@ -14,12 +14,29 @@ import numpy as np
 
 
 class ErrorFieldSpectrum:
-    def __init__(self, B0: float, n_corrections: int = 0):
+    def __init__(
+        self,
+        B0: float,
+        n_corrections: int = 0,
+        *,
+        R0: float = 6.2,
+        alignment_sensitivity_21: float = 0.01,
+        alignment_sensitivity_32: float = 0.005,
+    ):
         if not np.isfinite(B0) or B0 <= 0.0:
             raise ValueError("B0 must be finite and positive")
         if n_corrections < 0:
             raise ValueError("n_corrections must be non-negative")
+        if not np.isfinite(R0) or R0 <= 0.0:
+            raise ValueError("R0 must be finite and positive")
+        if not np.isfinite(alignment_sensitivity_21) or alignment_sensitivity_21 <= 0.0:
+            raise ValueError("alignment_sensitivity_21 must be finite and positive")
+        if not np.isfinite(alignment_sensitivity_32) or alignment_sensitivity_32 <= 0.0:
+            raise ValueError("alignment_sensitivity_32 must be finite and positive")
         self.B0 = B0
+        self.R0 = float(R0)
+        self.alignment_sensitivity_21 = float(alignment_sensitivity_21)
+        self.alignment_sensitivity_32 = float(alignment_sensitivity_32)
         self.n_corrections = n_corrections
         self.B_mn_components = {}
         correction_factor = self._intrinsic_correction_factor()
@@ -33,10 +50,17 @@ class ErrorFieldSpectrum:
         if not np.isfinite(delta_R_mm) or not np.isfinite(delta_Z_mm):
             raise ValueError("coil misalignment values must be finite")
         shift_mag = math.sqrt(delta_R_mm**2 + delta_Z_mm**2) / 1000.0
-        # Heuristic error field scaling with shift
+        if shift_mag < 0.0:
+            raise ValueError("coil misalignment magnitude must be non-negative")
+        # Geometry-normalised shift coupling.
+        rel_shift = shift_mag / self.R0
         correction_factor = self._intrinsic_correction_factor()
-        self.B_mn_components[(2, 1)] = 0.01 * self.B0 * shift_mag * correction_factor
-        self.B_mn_components[(3, 2)] = 0.005 * self.B0 * shift_mag * correction_factor
+        self.B_mn_components[(2, 1)] = (
+            self.alignment_sensitivity_21 * self.B0 * rel_shift * correction_factor
+        )
+        self.B_mn_components[(3, 2)] = (
+            self.alignment_sensitivity_32 * self.B0 * rel_shift * correction_factor
+        )
 
     def B_mn(self, m: int, n: int) -> float:
         return self.B_mn_components.get((m, n), 0.0)
@@ -44,10 +68,15 @@ class ErrorFieldSpectrum:
     def corrected_B_mn(self, m: int, n: int, I_correction: float) -> float:
         if not np.isfinite(I_correction) or I_correction < 0.0:
             raise ValueError("I_correction must be finite and non-negative")
+        if m < 1 or n < 1:
+            raise ValueError("mode numbers m and n must be positive")
         B_raw = self.B_mn(m, n)
-        modal_efficiency = 1.0e-5 / max(float(m * n), 1.0)
-        B_corr = B_raw * math.exp(-modal_efficiency * I_correction / max(B_raw, 1e-12))
-        return B_corr
+        if B_raw <= 0.0:
+            return 0.0
+        # Coil correction transfer: higher (m,n) has weaker coupling.
+        i_scale = 50.0 * float(m * n)
+        attenuation = 1.0 / (1.0 + I_correction / max(i_scale, 1e-9))
+        return float(B_raw * attenuation)
 
 
 class ResonantFieldAmplification:
@@ -76,7 +105,19 @@ class RotationEvolution:
 
 
 class ModeLocking:
-    def __init__(self, R0: float, a: float, B0: float, Ip_MA: float, omega_phi_0: float):
+    def __init__(
+        self,
+        R0: float,
+        a: float,
+        B0: float,
+        Ip_MA: float,
+        omega_phi_0: float,
+        *,
+        n_e19: float = 8.0,
+        kappa: float = 1.7,
+        inertia_factor: float = 1.0,
+        I_eff_override: float | None = None,
+    ):
         for name, value in {
             "R0": R0,
             "a": a,
@@ -86,13 +127,37 @@ class ModeLocking:
         }.items():
             if not np.isfinite(value) or value <= 0.0:
                 raise ValueError(f"{name} must be finite and positive")
+        if not np.isfinite(n_e19) or n_e19 <= 0.0:
+            raise ValueError("n_e19 must be finite and positive")
+        if not np.isfinite(kappa) or kappa <= 0.0:
+            raise ValueError("kappa must be finite and positive")
+        if not np.isfinite(inertia_factor) or inertia_factor <= 0.0:
+            raise ValueError("inertia_factor must be finite and positive")
+        if I_eff_override is not None and (not np.isfinite(I_eff_override) or I_eff_override <= 0.0):
+            raise ValueError("I_eff_override must be finite and positive when provided")
         self.R0 = R0
         self.a = a
         self.B0 = B0
         self.Ip = Ip_MA * 1e6
         self.omega_phi_0 = omega_phi_0
+        self.n_e19 = float(n_e19)
+        self.kappa = float(kappa)
+        self.inertia_factor = float(inertia_factor)
 
-        self.I_eff = 0.01  # Moment of inertia proxy [kg m^2]
+        self.I_eff = (
+            float(I_eff_override)
+            if I_eff_override is not None
+            else self._estimate_effective_inertia()
+        )
+
+    def _estimate_effective_inertia(self) -> float:
+        """Estimate effective toroidal rotation inertia from plasma mass and geometry."""
+        m_ion = 2.5 * 1.67e-27
+        m_e = 9.11e-31
+        n_m3 = self.n_e19 * 1.0e19
+        volume = 2.0 * math.pi**2 * self.R0 * self.a**2 * self.kappa
+        mass = n_m3 * (m_ion + m_e) * volume
+        return float(max(self.inertia_factor * mass * self.R0**2, 1e-8))
 
     def em_torque(self, B_res: float, r_s: float, m: int, n: int) -> float:
         """Electromagnetic braking torque [N m]."""

@@ -29,12 +29,32 @@ class PredatorPreyModel:
         alpha2: float = 2e-8,
         alpha3: float = 1e-8,
         gamma_damp: float = 1e3,
+        p0: float = 10.0,
+        drive_gain: float = 100.0,
     ):
         self.gamma_L = gamma_L
         self.alpha1 = alpha1
         self.alpha2 = alpha2
         self.alpha3 = alpha3
         self.gamma_damp = gamma_damp
+        self.p0 = float(p0)
+        self.drive_gain = float(drive_gain)
+        if not np.isfinite(self.p0) or self.p0 <= 0.0:
+            raise ValueError("p0 must be finite and > 0.")
+        if not np.isfinite(self.drive_gain) or self.drive_gain < 0.0:
+            raise ValueError("drive_gain must be finite and >= 0.")
+
+    def turbulence_drive(self, p_edge: float, Q_heating: float) -> float:
+        """Return non-negative background turbulence forcing S_drive."""
+        p = float(p_edge)
+        qh = float(Q_heating)
+        if not np.isfinite(p) or p < 0.0:
+            raise ValueError("p_edge must be finite and non-negative.")
+        if not np.isfinite(qh) or qh < 0.0:
+            raise ValueError("Q_heating must be finite and non-negative.")
+        pressure_factor = p / (self.p0 + p)
+        heating_factor = qh / (1.0 + qh)
+        return float(self.drive_gain * pressure_factor * heating_factor)
 
     def confinement_time(self, epsilon: float) -> float:
         # tau_E = tau_E0 / (1 + C * epsilon)
@@ -57,12 +77,10 @@ class PredatorPreyModel:
         V = max(0.0, V)
         p = max(0.0, p)
 
-        # A 0D edge-pressure-gradient proxy drives turbulence growth.
         # d_eps/dt = gamma_L * (p/p0) * eps - alpha1 eps^2 - alpha2 eps V^2 + S_drive
-        p0 = 10.0
-        S_drive = 1e2  # Background noise drive
+        S_drive = self.turbulence_drive(p, Q_heating)
         d_eps = (
-            self.gamma_L * (p / p0) * eps
+            self.gamma_L * (p / self.p0) * eps
             - self.alpha1 * eps**2
             - self.alpha2 * eps * V**2
             + S_drive
@@ -133,28 +151,59 @@ class MartinThreshold:
 
 
 class IPhaseDetector:
-    def __init__(self, window_size: int = 100):
+    def __init__(
+        self,
+        window_size: int = 100,
+        *,
+        relative_std_threshold: float = 0.1,
+        min_absolute_std: float = 1.0e-6,
+    ):
+        if not isinstance(window_size, int) or window_size < 2:
+            raise ValueError("window_size must be an integer >= 2.")
         self.window_size = window_size
+        self.relative_std_threshold = float(relative_std_threshold)
+        self.min_absolute_std = float(min_absolute_std)
+        if not np.isfinite(self.relative_std_threshold) or self.relative_std_threshold <= 0.0:
+            raise ValueError("relative_std_threshold must be finite and > 0.")
+        if not np.isfinite(self.min_absolute_std) or self.min_absolute_std < 0.0:
+            raise ValueError("min_absolute_std must be finite and >= 0.")
 
     def detect(self, epsilon_trace: np.ndarray) -> bool:
         """True if limit cycle oscillations detected."""
-        if len(epsilon_trace) < self.window_size:
+        arr = np.asarray(epsilon_trace, dtype=float).reshape(-1)
+        if arr.size < self.window_size:
             return False
+        if not np.all(np.isfinite(arr)):
+            raise ValueError("epsilon_trace must contain only finite values.")
 
-        recent = epsilon_trace[-self.window_size :]
-        # Simple heuristic: strong oscillation -> std > 10% of mean
+        recent = arr[-self.window_size :]
         mean_val = np.mean(recent)
         std_val = np.std(recent)
+        if std_val < self.min_absolute_std:
+            return False
 
-        return bool(mean_val > 0 and std_val / mean_val > 0.1)
+        return bool(mean_val > 0 and std_val / mean_val > self.relative_std_threshold)
 
 
 class LHTransitionController:
-    def __init__(self, model: PredatorPreyModel, Q_target: float):
+    def __init__(
+        self,
+        model: PredatorPreyModel,
+        Q_target: float,
+        *,
+        epsilon_hmode_threshold: float = 5.0e4,
+        q_ramp_rate: float = 10.0,
+    ):
         if not np.isfinite(Q_target) or Q_target < 0.0:
             raise ValueError("Q_target must be finite and non-negative")
+        if not np.isfinite(epsilon_hmode_threshold) or epsilon_hmode_threshold <= 0.0:
+            raise ValueError("epsilon_hmode_threshold must be finite and > 0.")
+        if not np.isfinite(q_ramp_rate) or q_ramp_rate <= 0.0:
+            raise ValueError("q_ramp_rate must be finite and > 0.")
         self.model = model
         self.Q_target = Q_target
+        self.epsilon_hmode_threshold = float(epsilon_hmode_threshold)
+        self.q_ramp_rate = float(q_ramp_rate)
         self.detector = IPhaseDetector()
         self._epsilon_history: list[float] = []
 
@@ -174,7 +223,7 @@ class LHTransitionController:
         if self.detector.detect(np.asarray(self._epsilon_history, dtype=float)):
             return min(float(Q_current), self.Q_target)
 
-        if epsilon_measured < 5e4:  # H-mode turbulence-suppression criterion
+        if epsilon_measured < self.epsilon_hmode_threshold:
             return self.Q_target
 
-        return min(float(Q_current + 10.0 * dt), self.Q_target)
+        return min(float(Q_current + self.q_ramp_rate * dt), self.Q_target)

@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.alfven_eigenmodes import (
     AlfvenContinuum,
@@ -167,3 +168,116 @@ def test_alfven_inputs_reject_nonphysical_values():
 
     with np.testing.assert_raises(ValueError):
         rsae_frequency(q_min=-1.0, n=1, m=1, v_A=1.0e7, R0=6.2)
+
+
+def test_fast_particle_drive_rejects_invalid_resonance_params() -> None:
+    with np.testing.assert_raises(ValueError):
+        FastParticleDrive(E_fast_keV=3500.0, n_fast_frac=0.01, main_resonance_width=0.0)
+    with np.testing.assert_raises(ValueError):
+        FastParticleDrive(E_fast_keV=3500.0, n_fast_frac=0.01, sideband_resonance_width=-0.1)
+    with np.testing.assert_raises(ValueError):
+        FastParticleDrive(E_fast_keV=3500.0, n_fast_frac=0.01, sideband_weight=-1.0)
+
+
+def test_resonance_response_width_controls_off_resonant_suppression() -> None:
+    broad = FastParticleDrive(
+        E_fast_keV=3500.0,
+        n_fast_frac=0.01,
+        main_resonance_width=0.35,
+        sideband_resonance_width=0.2,
+    )
+    narrow = FastParticleDrive(
+        E_fast_keV=3500.0,
+        n_fast_frac=0.01,
+        main_resonance_width=0.1,
+        sideband_resonance_width=0.05,
+    )
+    v_a = 1.0e7
+    v_off = 0.75e7
+    f_broad = broad.resonance_function(v_off, v_a)
+    f_narrow = narrow.resonance_function(v_off, v_a)
+    assert f_narrow < f_broad
+
+
+def test_alpha_particle_loss_estimate_is_bounded_and_monotone() -> None:
+    rho = np.linspace(0, 1, 64)
+    q = np.linspace(1.0, 3.0, 64)
+    ne = np.full(64, 5.0)
+    cont = AlfvenContinuum(rho, q, ne, B0=5.3, R0=6.2)
+    drive = FastParticleDrive(E_fast_keV=3500.0, n_fast_frac=0.02, m_fast_amu=4.0)
+    analysis = AlfvenStabilityAnalysis(cont, drive)
+
+    loss_small = analysis.alpha_particle_loss_estimate(gamma_net=100.0, tau_sd=0.5)
+    loss_large = analysis.alpha_particle_loss_estimate(gamma_net=2000.0, tau_sd=0.5)
+    assert 0.0 <= loss_small <= 1.0
+    assert 0.0 <= loss_large <= 1.0
+    assert loss_large > loss_small
+    assert analysis.alpha_particle_loss_estimate(gamma_net=-1.0, tau_sd=0.5) == 0.0
+
+
+def test_alpha_particle_loss_estimate_rejects_invalid_inputs() -> None:
+    rho = np.linspace(0, 1, 16)
+    q = np.linspace(1.0, 3.0, 16)
+    ne = np.full(16, 5.0)
+    cont = AlfvenContinuum(rho, q, ne, B0=5.3, R0=6.2)
+    drive = FastParticleDrive(E_fast_keV=3500.0, n_fast_frac=0.02, m_fast_amu=4.0)
+    analysis = AlfvenStabilityAnalysis(cont, drive)
+
+    with np.testing.assert_raises(ValueError):
+        analysis.alpha_particle_loss_estimate(gamma_net=np.nan, tau_sd=0.5)
+    with np.testing.assert_raises(ValueError):
+        analysis.alpha_particle_loss_estimate(gamma_net=1.0, tau_sd=0.0)
+
+
+def test_tae_gap_width_increases_with_shaping_and_inverse_aspect_ratio() -> None:
+    rho = np.linspace(0, 1, 100)
+    q = np.linspace(1.0, 3.0, 100)
+    ne = np.full(100, 5.0)
+    base = AlfvenContinuum(rho, q, ne, B0=5.3, R0=6.2, a=1.5, kappa=1.3)
+    shaped = AlfvenContinuum(rho, q, ne, B0=5.3, R0=6.2, a=2.2, kappa=2.0)
+    g_base = next(g for g in base.find_gaps(n=1) if g.m_coupling == 1)
+    g_shaped = next(g for g in shaped.find_gaps(n=1) if g.m_coupling == 1)
+    w_base = g_base.omega_upper - g_base.omega_lower
+    w_shaped = g_shaped.omega_upper - g_shaped.omega_lower
+    assert w_shaped > w_base
+
+
+def test_alfven_continuum_rejects_invalid_geometry_and_gap_scale() -> None:
+    rho = np.linspace(0, 1, 10)
+    q = np.linspace(1.0, 2.0, 10)
+    ne = np.full(10, 5.0)
+    with np.testing.assert_raises(ValueError):
+        AlfvenContinuum(rho, q, ne, B0=5.3, R0=0.0)
+    with np.testing.assert_raises(ValueError):
+        AlfvenContinuum(rho, q, ne, B0=5.3, R0=6.2, gap_width_scale=0.0)
+
+
+def test_critical_beta_fast_rejects_invalid_mode_number() -> None:
+    rho = np.linspace(0, 1, 64)
+    q = np.linspace(1.0, 3.0, 64)
+    ne = np.full(64, 5.0)
+    cont = AlfvenContinuum(rho, q, ne, B0=5.3, R0=6.2)
+    drive = FastParticleDrive(E_fast_keV=3500.0, n_fast_frac=0.02, m_fast_amu=4.0)
+    analysis = AlfvenStabilityAnalysis(cont, drive)
+    with np.testing.assert_raises(ValueError):
+        analysis.critical_beta_fast(n=0)
+
+
+def test_critical_beta_fast_matches_mode_local_formula() -> None:
+    rho = np.linspace(0, 1, 64)
+    q = np.linspace(1.0, 3.0, 64)
+    ne = np.full(64, 5.0)
+    drive = FastParticleDrive(E_fast_keV=3500.0, n_fast_frac=0.02, m_fast_amu=4.0)
+    analysis = AlfvenStabilityAnalysis(AlfvenContinuum(rho, q, ne, B0=5.3, R0=6.2), drive)
+    beta_crit = analysis.critical_beta_fast(n=1)
+    assert beta_crit > 0.0
+
+    manual = float("inf")
+    for gap in analysis.continuum.find_gaps(1):
+        q_gap = (2.0 * gap.m_coupling + 1.0) / 2.0
+        v_a = analysis.continuum.alfven_speed(gap.rho_location)
+        resonance = drive.resonance_function(drive.v_fast, v_a)
+        coeff = q_gap**2 * resonance
+        if coeff > 0.0:
+            manual = min(manual, 0.01 / coeff)
+    assert beta_crit == pytest.approx(manual)

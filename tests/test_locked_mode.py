@@ -20,7 +20,7 @@ from scpn_fusion.core.locked_mode import (
 
 
 def test_error_field_spectrum():
-    spec = ErrorFieldSpectrum(B0=5.0)
+    spec = ErrorFieldSpectrum(B0=5.0, R0=5.0)
 
     B21_nom = spec.B_mn(2, 1)
     assert B21_nom == 5e-4
@@ -28,8 +28,8 @@ def test_error_field_spectrum():
     spec.set_coil_misalignment(10.0, 0.0)  # 10mm shift
     B21_shift = spec.B_mn(2, 1)
 
-    # 0.01 * 5.0 * 0.01 = 5e-4
-    assert np.isclose(B21_shift, 5e-4)
+    # sensitivity * B0 * (shift/R0) = 0.01 * 5 * (0.01/5) = 1e-4
+    assert np.isclose(B21_shift, 1e-4)
 
 
 def test_error_field_correction_channels_attenuate_intrinsic_spectrum():
@@ -45,6 +45,43 @@ def test_error_field_spectrum_rejects_invalid_domain():
         ErrorFieldSpectrum(B0=0.0)
     with pytest.raises(ValueError, match="n_corrections"):
         ErrorFieldSpectrum(B0=5.0, n_corrections=-1)
+    with pytest.raises(ValueError, match="R0"):
+        ErrorFieldSpectrum(B0=5.0, R0=0.0)
+
+
+def test_error_field_geometry_scaling_reduces_field_for_larger_machine() -> None:
+    compact = ErrorFieldSpectrum(B0=5.0, R0=2.5)
+    large = ErrorFieldSpectrum(B0=5.0, R0=10.0)
+    compact.set_coil_misalignment(10.0, 0.0)
+    large.set_coil_misalignment(10.0, 0.0)
+    assert compact.B_mn(2, 1) > large.B_mn(2, 1)
+
+
+def test_corrected_error_field_is_monotone_with_correction_current() -> None:
+    spec = ErrorFieldSpectrum(B0=5.0, R0=5.0)
+    spec.set_coil_misalignment(10.0, 0.0)
+    b0 = spec.corrected_B_mn(2, 1, I_correction=0.0)
+    b50 = spec.corrected_B_mn(2, 1, I_correction=50.0)
+    b200 = spec.corrected_B_mn(2, 1, I_correction=200.0)
+    assert b0 > b50 > b200 >= 0.0
+
+
+def test_corrected_error_field_mode_order_has_weaker_high_mn_correction() -> None:
+    spec = ErrorFieldSpectrum(B0=5.0, R0=5.0)
+    spec.set_coil_misalignment(10.0, 0.0)
+    b21 = spec.corrected_B_mn(2, 1, I_correction=100.0)
+    b32 = spec.corrected_B_mn(3, 2, I_correction=100.0)
+    raw21 = spec.B_mn(2, 1)
+    raw32 = spec.B_mn(3, 2)
+    frac21 = b21 / raw21 if raw21 > 0 else 0.0
+    frac32 = b32 / raw32 if raw32 > 0 else 0.0
+    assert frac32 > frac21
+
+
+def test_corrected_error_field_rejects_invalid_mode_numbers() -> None:
+    spec = ErrorFieldSpectrum(B0=5.0)
+    with pytest.raises(ValueError, match="mode numbers"):
+        spec.corrected_B_mn(0, 1, I_correction=10.0)
 
 
 def test_resonant_field_amplification():
@@ -88,6 +125,31 @@ def test_mode_locking_rejects_invalid_evolution_domain():
         ml.evolve_rotation(B_res=1e-5, r_s=1.0, tau_visc=0.0, dt=0.001, n_steps=100)
     with pytest.raises(ValueError, match="n_steps"):
         ml.evolve_rotation(B_res=1e-5, r_s=1.0, tau_visc=0.1, dt=0.001, n_steps=0)
+
+
+def test_mode_locking_rejects_invalid_inertia_parameters():
+    with pytest.raises(ValueError, match="n_e19"):
+        ModeLocking(R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, omega_phi_0=1e4, n_e19=0.0)
+    with pytest.raises(ValueError, match="inertia_factor"):
+        ModeLocking(R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, omega_phi_0=1e4, inertia_factor=0.0)
+    with pytest.raises(ValueError, match="I_eff_override"):
+        ModeLocking(R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, omega_phi_0=1e4, I_eff_override=0.0)
+
+
+def test_mode_locking_inertia_controls_locking_latency():
+    low_inertia = ModeLocking(
+        R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, omega_phi_0=1e4, I_eff_override=0.01
+    )
+    high_inertia = ModeLocking(
+        R0=6.2, a=2.0, B0=5.3, Ip_MA=15.0, omega_phi_0=1e4, I_eff_override=0.05
+    )
+    ev_low = low_inertia.evolve_rotation(B_res=1e-2, r_s=1.0, tau_visc=0.1, dt=0.001, n_steps=1000)
+    ev_high = high_inertia.evolve_rotation(
+        B_res=1e-2, r_s=1.0, tau_visc=0.1, dt=0.001, n_steps=1000
+    )
+    assert ev_low.locked
+    assert ev_high.locked
+    assert ev_low.lock_time <= ev_high.lock_time
 
 
 def test_post_locking_island_growth():

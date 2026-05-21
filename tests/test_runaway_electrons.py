@@ -70,6 +70,27 @@ def test_hot_tail():
     assert n_seed > 1e10  # Substantial seed
 
 
+def test_hot_tail_seed_is_higher_for_faster_quench() -> None:
+    fast = hot_tail_seed(Te_pre_keV=10.0, Te_post_keV=0.01, ne_20=1.0, quench_time_ms=0.2)
+    slow = hot_tail_seed(Te_pre_keV=10.0, Te_post_keV=0.01, ne_20=1.0, quench_time_ms=5.0)
+    assert fast > slow
+
+
+def test_hot_tail_seed_rejects_invalid_domain() -> None:
+    with np.testing.assert_raises(ValueError):
+        hot_tail_seed(Te_pre_keV=0.0, Te_post_keV=0.01, ne_20=1.0, quench_time_ms=1.0)
+    with np.testing.assert_raises(ValueError):
+        hot_tail_seed(Te_pre_keV=10.0, Te_post_keV=0.01, ne_20=1.0, quench_time_ms=0.0)
+    with np.testing.assert_raises(ValueError):
+        hot_tail_seed(
+            Te_pre_keV=10.0,
+            Te_post_keV=0.01,
+            ne_20=1.0,
+            quench_time_ms=1.0,
+            vc_vte_ref=0.0,
+        )
+
+
 def test_runaway_evolution():
     params = RunawayParams(ne_20=1.0, Te_keV=0.01, E_par=0.0, Z_eff=1.5, B0=5.3, R0=6.2)
     ev = RunawayEvolution(params)
@@ -91,8 +112,45 @@ def test_mitigation_assessment():
     assert ne_req > 100.0
 
     E_max = mit.maximum_re_energy(B0=5.3, R0=6.2)
-    # e * 5.3 * 6.2 * 3e8 = 9.8e-12 J -> ~60 MeV (prompt said 25, formula gives ~60, close enough for order of magnitude)
     assert 10.0 < E_max < 100.0
 
     load = mit.wall_heat_load(n_RE=1e16, E_max_MeV=E_max, A_wet=10.0)
     assert load > 0.0
+
+
+def test_maximum_re_energy_scales_with_density_and_pitch() -> None:
+    mit = RunawayMitigationAssessment()
+    base = mit.maximum_re_energy(B0=5.3, R0=6.2, ne_20=1.0, Z_eff=1.5, pitch_angle_rad=0.35)
+    high_density = mit.maximum_re_energy(
+        B0=5.3, R0=6.2, ne_20=4.0, Z_eff=1.5, pitch_angle_rad=0.35
+    )
+    high_pitch = mit.maximum_re_energy(
+        B0=5.3, R0=6.2, ne_20=1.0, Z_eff=1.5, pitch_angle_rad=0.7
+    )
+    assert high_density < base
+    assert high_pitch < base
+
+
+def test_maximum_re_energy_rejects_invalid_inputs() -> None:
+    mit = RunawayMitigationAssessment()
+    with np.testing.assert_raises(ValueError):
+        mit.maximum_re_energy(B0=0.0, R0=6.2)
+    with np.testing.assert_raises(ValueError):
+        mit.maximum_re_energy(B0=5.3, R0=6.2, ne_20=0.0)
+    with np.testing.assert_raises(ValueError):
+        mit.maximum_re_energy(B0=5.3, R0=6.2, pitch_angle_rad=0.0)
+
+
+def test_required_density_for_suppression_uses_zeff_scaling() -> None:
+    mit = RunawayMitigationAssessment()
+    n_low_zeff = mit.required_density_for_suppression(E_par=20.0, Z_eff=1.0)
+    n_high_zeff = mit.required_density_for_suppression(E_par=20.0, Z_eff=4.0)
+    assert n_high_zeff < n_low_zeff
+
+
+def test_required_density_for_suppression_rejects_invalid_domain() -> None:
+    mit = RunawayMitigationAssessment()
+    with np.testing.assert_raises(ValueError):
+        mit.required_density_for_suppression(E_par=20.0, Z_eff=0.0)
+    with np.testing.assert_raises(ValueError):
+        mit.required_density_for_suppression(E_par=20.0, Z_eff=2.0, coulomb_log=0.0)

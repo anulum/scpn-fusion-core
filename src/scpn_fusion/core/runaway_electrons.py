@@ -109,22 +109,45 @@ def avalanche_growth_rate(params: RunawayParams, n_RE: float, coulomb_log: float
 
 
 def hot_tail_seed(
-    Te_pre_keV: float, Te_post_keV: float, ne_20: float, quench_time_ms: float
+    Te_pre_keV: float,
+    Te_post_keV: float,
+    ne_20: float,
+    quench_time_ms: float,
+    *,
+    vc_vte_ref: float = 4.0,
+    quench_exponent: float = 0.2,
 ) -> float:
     """
     Seed RE density from thermal quench hot-tail mechanism [m^-3].
     Smith, H.M. et al., Phys. Plasmas 15, 072502 (2008).
     Faster TQ → lower v_c/v_te → more seed electrons.
     """
-    if Te_post_keV >= Te_pre_keV or Te_post_keV <= 0:
+    te_pre = float(Te_pre_keV)
+    te_post = float(Te_post_keV)
+    ne = float(ne_20)
+    tau_q = float(quench_time_ms)
+    vc_ref = float(vc_vte_ref)
+    q_exp = float(quench_exponent)
+    if not np.isfinite(te_pre) or te_pre <= 0.0:
+        raise ValueError("Te_pre_keV must be finite and > 0.")
+    if not np.isfinite(te_post) or te_post <= 0.0:
+        raise ValueError("Te_post_keV must be finite and > 0.")
+    if not np.isfinite(ne) or ne <= 0.0:
+        raise ValueError("ne_20 must be finite and > 0.")
+    if not np.isfinite(tau_q) or tau_q <= 0.0:
+        raise ValueError("quench_time_ms must be finite and > 0.")
+    if not np.isfinite(vc_ref) or vc_ref <= 0.0:
+        raise ValueError("vc_vte_ref must be finite and > 0.")
+    if not np.isfinite(q_exp) or q_exp <= 0.0:
+        raise ValueError("quench_exponent must be finite and > 0.")
+    if te_post >= te_pre:
         return 0.0
 
-    ratio = Te_pre_keV / Te_post_keV
+    ratio = te_pre / te_post
     # v_c/v_te parametric fit to Smith 2008 Fig. 3
-    V_C_V_TE_REF = 4.0  # at τ_q = 1 ms reference
-    v_c_v_te = V_C_V_TE_REF * (quench_time_ms / 1.0) ** 0.2
+    v_c_v_te = vc_ref * (tau_q / 1.0) ** q_exp
 
-    n_e = ne_20 * 1e20
+    n_e = ne * 1e20
     exponent = -(v_c_v_te**2)
     if exponent < -500:
         return 0.0
@@ -183,20 +206,62 @@ class RunawayMitigationAssessment:
         """
         Density [10^20 m^-3] needed to make E_c > E_par.
         """
-        if E_par <= 0.0:
+        e_par = float(E_par)
+        z_eff = float(Z_eff)
+        ln_lambda = float(coulomb_log)
+        if not np.isfinite(e_par) or e_par <= 0.0:
             return 0.0
+        if not np.isfinite(z_eff) or z_eff <= 0.0:
+            raise ValueError("Z_eff must be finite and > 0.")
+        if not np.isfinite(ln_lambda) or ln_lambda <= 0.0:
+            raise ValueError("coulomb_log must be finite and > 0.")
         # E_c = n_e * e^3 lnL / (4 pi eps0^2 m_e c^2)
+        # Effective collisional drag scales with impurity content.
+        collision_multiplier = 0.5 * (1.0 + z_eff)
+        coeff = collision_multiplier * E_CHARGE**3 * ln_lambda
         # n_e = E_par * (4 pi eps0^2 m_e c^2) / (e^3 lnL)
-        n_e_m3 = E_par * (4.0 * np.pi * EPS_0**2 * M_E * C_LIGHT**2) / (E_CHARGE**3 * coulomb_log)
+        n_e_m3 = e_par * (4.0 * np.pi * EPS_0**2 * M_E * C_LIGHT**2) / coeff
         return float(n_e_m3 / 1e20)
 
     @staticmethod
-    def maximum_re_energy(B0: float, R0: float) -> float:
-        """Maximum RE energy [MeV] limited by synchrotron radiation or drift orbit."""
-        # While the runaway orbit limit is E ~ e B0 R0 c (which is ~10 GeV for ITER),
-        # synchrotron radiation limits the maximum energy to ~25-30 MeV in ITER.
-        # We return a heuristic based on this limit.
-        return 25.0
+    def maximum_re_energy(
+        B0: float,
+        R0: float,
+        *,
+        ne_20: float = 1.0,
+        Z_eff: float = 1.5,
+        pitch_angle_rad: float = 0.35,
+    ) -> float:
+        """Maximum RE energy [MeV] from orbit and synchrotron limits."""
+        b = float(B0)
+        r = float(R0)
+        ne = float(ne_20)
+        zeff = float(Z_eff)
+        pitch = float(pitch_angle_rad)
+        if not np.isfinite(b) or b <= 0.0:
+            raise ValueError("B0 must be finite and > 0.")
+        if not np.isfinite(r) or r <= 0.0:
+            raise ValueError("R0 must be finite and > 0.")
+        if not np.isfinite(ne) or ne <= 0.0:
+            raise ValueError("ne_20 must be finite and > 0.")
+        if not np.isfinite(zeff) or zeff <= 0.0:
+            raise ValueError("Z_eff must be finite and > 0.")
+        if not np.isfinite(pitch) or pitch <= 0.0 or pitch >= (0.5 * np.pi):
+            raise ValueError("pitch_angle_rad must be finite and in (0, pi/2).")
+
+        # Drift-orbit limit: E_orbit[eV] ~ B[T] R[m] c[m/s].
+        orbit_limit_mev = (b * r * C_LIGHT) * 1.0e-6
+
+        # Synchrotron-loss constrained practical limit around ITER conditions.
+        sin_pitch = np.sin(pitch)
+        synch_limit_mev = 28.0
+        synch_limit_mev *= (b / 5.3) ** (1.0 / 3.0)
+        synch_limit_mev *= (r / 6.2) ** (2.0 / 3.0)
+        synch_limit_mev *= (ne / 1.0) ** (-1.0 / 6.0)
+        synch_limit_mev *= (zeff / 1.5) ** (-1.0 / 6.0)
+        synch_limit_mev *= (max(sin_pitch, 1e-3) / np.sin(0.35)) ** (-1.0 / 3.0)
+
+        return float(max(0.1, min(orbit_limit_mev, synch_limit_mev)))
 
     @staticmethod
     def wall_heat_load(n_RE: float, E_max_MeV: float, A_wet: float, volume: float = 800.0) -> float:

@@ -116,3 +116,81 @@ def test_transition_controller_holds_during_i_phase():
     Q_hold = ctrl.step(epsilon_measured=1e4, Q_current=Q, dt=0.01)
 
     assert Q_hold < 50.0
+
+
+def test_predator_prey_rejects_invalid_drive_parameters() -> None:
+    with pytest.raises(ValueError, match="p0"):
+        PredatorPreyModel(p0=0.0)
+    with pytest.raises(ValueError, match="drive_gain"):
+        PredatorPreyModel(drive_gain=-1.0)
+
+
+def test_turbulence_drive_increases_with_heating_and_pressure() -> None:
+    model = PredatorPreyModel(p0=10.0, drive_gain=100.0)
+    s_low = model.turbulence_drive(p_edge=2.0, Q_heating=1.0)
+    s_hi_q = model.turbulence_drive(p_edge=2.0, Q_heating=20.0)
+    s_hi_p = model.turbulence_drive(p_edge=20.0, Q_heating=20.0)
+    assert s_hi_q > s_low
+    assert s_hi_p > s_hi_q
+
+
+def test_step_is_sensitive_to_drive_gain() -> None:
+    state = np.array([1e4, 1.0, 2.0], dtype=float)
+    weak = PredatorPreyModel(drive_gain=10.0)
+    strong = PredatorPreyModel(drive_gain=400.0)
+    next_weak = weak.step(state, dt=1e-4, Q_heating=10.0)
+    next_strong = strong.step(state, dt=1e-4, Q_heating=10.0)
+    assert next_strong[0] > next_weak[0]
+
+
+def test_i_phase_detector_rejects_invalid_configuration_and_trace() -> None:
+    with pytest.raises(ValueError, match="window_size"):
+        IPhaseDetector(window_size=1)
+    with pytest.raises(ValueError, match="relative_std_threshold"):
+        IPhaseDetector(relative_std_threshold=0.0)
+    with pytest.raises(ValueError, match="min_absolute_std"):
+        IPhaseDetector(min_absolute_std=-1.0)
+
+    det = IPhaseDetector(window_size=10)
+    bad_trace = np.ones(20)
+    bad_trace[3] = np.nan
+    with pytest.raises(ValueError, match="finite"):
+        det.detect(bad_trace)
+
+
+def test_i_phase_detector_threshold_parameter_controls_detection() -> None:
+    t = np.linspace(0, 6.0 * np.pi, 200)
+    trace = 1e4 * (1.0 + 0.18 * np.sin(t))
+    strict = IPhaseDetector(window_size=100, relative_std_threshold=0.15)
+    permissive = IPhaseDetector(window_size=100, relative_std_threshold=0.05)
+    assert not strict.detect(trace)
+    assert permissive.detect(trace)
+
+
+def test_transition_controller_rejects_invalid_hmode_threshold_and_ramp() -> None:
+    model = PredatorPreyModel()
+    with pytest.raises(ValueError, match="epsilon_hmode_threshold"):
+        LHTransitionController(model, Q_target=50.0, epsilon_hmode_threshold=0.0)
+    with pytest.raises(ValueError, match="q_ramp_rate"):
+        LHTransitionController(model, Q_target=50.0, q_ramp_rate=0.0)
+
+
+def test_transition_controller_hmode_threshold_and_ramp_are_configurable() -> None:
+    model = PredatorPreyModel()
+    slow = LHTransitionController(
+        model, Q_target=50.0, epsilon_hmode_threshold=2.0e4, q_ramp_rate=5.0
+    )
+    fast = LHTransitionController(
+        model, Q_target=50.0, epsilon_hmode_threshold=8.0e4, q_ramp_rate=20.0
+    )
+    # same measured epsilon above low threshold but below high threshold:
+    # fast controller should classify as H-mode and jump to target.
+    q_slow = slow.step(epsilon_measured=5.0e4, Q_current=10.0, dt=0.1)
+    q_fast = fast.step(epsilon_measured=5.0e4, Q_current=10.0, dt=0.1)
+    assert q_slow > 10.0 and q_slow < 50.0
+    assert q_fast == 50.0
+
+    # both in ramp regime, faster ramp should increase more per step.
+    q_slow_ramp = slow.step(epsilon_measured=9.0e4, Q_current=10.0, dt=0.1)
+    q_fast_ramp = fast.step(epsilon_measured=9.0e4, Q_current=10.0, dt=0.1)
+    assert q_fast_ramp > q_slow_ramp
