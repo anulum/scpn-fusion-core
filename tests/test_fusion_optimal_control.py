@@ -49,6 +49,13 @@ class _DummyKernel:
         self.J_phi = np.exp(-((self.RR - center_r) ** 2 + ((self.ZZ - center_z) / 1.5) ** 2))
 
 
+class _PeakedEdgeCurrentKernel(_DummyKernel):
+    def solve_equilibrium(self) -> None:
+        super().solve_equilibrium()
+        edge_mask = np.abs(self.RR - float(np.mean(self.R))) > 0.15
+        self.J_phi = np.where(edge_mask, self.J_phi * 2.5, self.J_phi * 0.5)
+
+
 def test_run_optimal_control_returns_finite_bounded_summary() -> None:
     summary = run_optimal_control(
         config_file="dummy.json",
@@ -204,3 +211,39 @@ def test_optimal_controller_rejects_invalid_limits_and_knobs() -> None:
             np.array([6.0, 0.0], dtype=np.float64),
             regularization_limit=-1.0,
         )
+
+
+def test_shafranov_shift_increases_with_more_edge_peaked_current_profile() -> None:
+    baseline = OptimalController(
+        "dummy.json",
+        kernel_factory=_DummyKernel,
+        verbose=False,
+    )
+    edge_peaked = OptimalController(
+        "dummy.json",
+        kernel_factory=_PeakedEdgeCurrentKernel,
+        verbose=False,
+    )
+    base_shift = baseline.get_shafranov_shift()
+    edge_shift = edge_peaked.get_shafranov_shift()
+    assert edge_shift > base_shift
+
+
+def test_shafranov_shift_rejects_non_finite_inputs() -> None:
+    pilot = OptimalController(
+        "dummy.json",
+        kernel_factory=_DummyKernel,
+        verbose=False,
+    )
+    pilot.kernel.cfg["physics"]["beta_p"] = float("nan")
+    with pytest.raises(ValueError, match="beta_p"):
+        pilot.get_shafranov_shift()
+
+    pilot = OptimalController(
+        "dummy.json",
+        kernel_factory=_DummyKernel,
+        verbose=False,
+    )
+    pilot.kernel.cfg["physics"]["internal_inductance"] = float("nan")
+    with pytest.raises(ValueError, match="internal_inductance"):
+        pilot.get_shafranov_shift()

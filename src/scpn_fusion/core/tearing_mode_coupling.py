@@ -239,18 +239,52 @@ class DisruptionTriggerAssessment:
 
 
 class TearingModeStabilityMap:
-    def scan_beta_li(self, beta_N_range: np.ndarray, li_range: np.ndarray) -> np.ndarray:
-        # Mock mapping
-        # Higher beta -> higher j_bs/j_phi -> more drive
-        # Lower li -> broader current profile -> r_s moves outward -> Delta' changes
-        res = np.zeros((len(beta_N_range), len(li_range)))
+    def __init__(
+        self,
+        *,
+        mode1: tuple[int, int] = (3, 2),
+        mode2: tuple[int, int] = (2, 1),
+        r_s1: float = 0.5,
+        r_s2: float = 0.8,
+        a: float = 2.0,
+        R0: float = 6.2,
+        B0: float = 5.3,
+    ):
+        self.coupled = CoupledTearingModes(mode1, mode2, r_s1, r_s2, a, R0, B0)
 
-        for i, b in enumerate(beta_N_range):
-            for j, li in enumerate(li_range):
-                # Stability heuristic: beta_N * li < 3.0 is stable
-                if b * max(li, 0.1) > 3.0:
-                    res[i, j] = -1
-                else:
-                    res[i, j] = 1
+    def scan_beta_li(self, beta_N_range: np.ndarray, li_range: np.ndarray) -> np.ndarray:
+        beta_arr = np.asarray(beta_N_range, dtype=float)
+        li_arr = np.asarray(li_range, dtype=float)
+        if beta_arr.ndim != 1 or li_arr.ndim != 1:
+            raise ValueError("beta_N_range and li_range must be one-dimensional arrays.")
+        if beta_arr.size == 0 or li_arr.size == 0:
+            raise ValueError("beta_N_range and li_range must not be empty.")
+        if np.any(~np.isfinite(beta_arr)) or np.any(~np.isfinite(li_arr)):
+            raise ValueError("beta_N_range and li_range must contain finite values.")
+        if np.any(beta_arr < 0.0) or np.any(li_arr <= 0.0):
+            raise ValueError("beta_N_range must be >= 0 and li_range must be > 0.")
+
+        res = np.zeros((beta_arr.size, li_arr.size))
+
+        for i, b in enumerate(beta_arr):
+            for j, li in enumerate(li_arr):
+                j_phi = 1.0e6 * float(np.clip(li, 0.25, 3.0))
+                # Bootstrap drive increases with beta and current peaking.
+                drive_ratio = float(np.clip(0.18 * b * li, 0.0, 2.5))
+                j_bs = j_phi * drive_ratio
+                seed_amp = 0.02 + 0.015 * float(np.clip(b, 0.0, 8.0))
+
+                out = self.coupled.evolve(
+                    w1_0=1e-6,
+                    w2_0=1e-6,
+                    j_bs=j_bs,
+                    j_phi=j_phi,
+                    eta=1e-7,
+                    dt=0.01,
+                    n_steps=400,
+                    seed_time=0.1,
+                    seed_amplitude=seed_amp,
+                )
+                res[i, j] = -1 if out.disruption else 1
 
         return res

@@ -114,7 +114,7 @@ class OptimalController:
 
     def get_shafranov_shift(self) -> float:
         """
-        Calculates the Shafranov Shift (Delta R) heuristic.
+        Calculates the Shafranov Shift (Delta R).
         Delta R ~ (a^2 / 2R) * (beta_p + li/2)
         """
         dims = self.kernel.cfg.get("dimensions")
@@ -130,11 +130,49 @@ class OptimalController:
         if R0 <= 0.0:
             return 0.0
 
-        beta_p = self.kernel.cfg["physics"].get("beta_p", 0.5)
-        li = 0.8  # Internal inductance proxy
+        beta_p = float(self.kernel.cfg["physics"].get("beta_p", 0.5))
+        if not np.isfinite(beta_p) or beta_p < 0.0:
+            raise ValueError("physics.beta_p must be finite and >= 0.")
+        li = self._estimate_internal_inductance()
 
         shift = (a**2 / (2.0 * R0)) * (beta_p + li / 2.0)
         return float(shift)
+
+    def _estimate_internal_inductance(self) -> float:
+        """
+        Estimate li from the radial current-density profile on the magnetic axis plane.
+        Falls back to validated configured li when profile inference is unavailable.
+        """
+        cfg_li = float(self.kernel.cfg.get("physics", {}).get("internal_inductance", 0.8))
+        if not np.isfinite(cfg_li) or cfg_li < 0.0:
+            raise ValueError("physics.internal_inductance must be finite and >= 0.")
+        if not hasattr(self.kernel, "J_phi"):
+            return cfg_li
+
+        j_phi = np.asarray(self.kernel.J_phi, dtype=np.float64)
+        if j_phi.shape != self.kernel.Psi.shape or j_phi.ndim != 2 or j_phi.size == 0:
+            return cfg_li
+        if not np.all(np.isfinite(j_phi)):
+            raise ValueError("J_phi must contain finite values.")
+
+        iz_axis, _ = np.unravel_index(int(np.argmax(self.kernel.Psi)), self.kernel.Psi.shape)
+        radial_profile = np.maximum(j_phi[iz_axis, :], 0.0)
+        if float(np.max(radial_profile)) <= 0.0:
+            return cfg_li
+
+        r = np.asarray(self.kernel.R, dtype=np.float64)
+        if r.ndim != 1 or r.size != radial_profile.size or not np.all(np.isfinite(r)):
+            return cfg_li
+        weight = np.abs(r - float(np.mean(r)))
+        profile_weight = radial_profile * (1.0 + weight / max(float(np.ptp(r)), 1e-9))
+        numerator = float(np.trapz(profile_weight**2, r))
+        denominator = float(np.trapz(radial_profile**2, r))
+        if denominator <= 0.0:
+            return cfg_li
+
+        # Dimensionless shape factor: peaking above ~1 increases li estimate.
+        shape_factor = max(numerator / denominator, 1.0)
+        return float(cfg_li * shape_factor)
 
     def get_plasma_pos(self) -> np.ndarray:
         """

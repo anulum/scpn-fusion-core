@@ -72,11 +72,28 @@ class KineticReconstructionResult(ReconstructionResult):
 
 def mse_pitch_angle(B_R: float, B_Z: float, B_phi: float, v_beam: float, R: float) -> float:
     """
-    Synthetic MSE measurement.
+    Synthetic MSE pitch-angle measurement in degrees.
+
+    Includes a beam-motion correction term that scales with `v_beam / R`
+    and couples radial field into the observed vertical component.
     """
-    B_pol = np.sqrt(B_R**2 + B_Z**2)
-    # Pitch angle roughly arctan(B_Z / B_phi) for a tangential beam at midplane
-    return float(np.degrees(np.arctan2(B_Z, B_phi)))
+    b_r = float(B_R)
+    b_z = float(B_Z)
+    b_phi = float(B_phi)
+    v = float(v_beam)
+    r_major = float(R)
+    if not np.isfinite(b_r) or not np.isfinite(b_z) or not np.isfinite(b_phi):
+        raise ValueError("B_R, B_Z, and B_phi must be finite.")
+    if not np.isfinite(v) or v <= 0.0:
+        raise ValueError("v_beam must be finite and > 0.")
+    if not np.isfinite(r_major) or r_major <= 0.0:
+        raise ValueError("R must be finite and > 0.")
+
+    # Small beam-geometry correction, bounded and dimensionless.
+    c = 299_792_458.0
+    corr = float(np.clip((v / c) * (1.0 / r_major), 0.0, 0.5))
+    b_z_eff = b_z + corr * b_r
+    return float(np.degrees(np.arctan2(b_z_eff, b_phi)))
 
 
 class KineticEFIT(RealtimeEFIT):
@@ -115,10 +132,7 @@ class KineticEFIT(RealtimeEFIT):
         p_equilibrium = p_kin * (1.0 + consistency)
 
         # 4. q-profile from MSE constraints
-        if self.kinetic.mse_points:
-            q_prof = 1.0 + 2.0 * rho_1d**2
-        else:
-            q_prof = 1.5 + 2.0 * rho_1d**2
+        q_prof = self._q_profile_from_mse(rho_1d)
 
         beta_fast = (
             np.mean(p_fast) / (res_mag.shape.B0**2 / (2.0 * 4.0 * np.pi * 1e-7))
@@ -170,3 +184,38 @@ class KineticEFIT(RealtimeEFIT):
                 edge_scale = np.clip(1.0 - rho_grid**2, 0.05, 1.0)
                 return np.maximum(interp * edge_scale / max(edge_scale[0], 1e-9), 0.0)
         return np.maximum(core * (1.0 - rho_grid**2), 0.0)
+
+    def _q_profile_from_mse(self, rho_grid: np.ndarray) -> np.ndarray:
+        """Reconstruct a bounded q-profile from sparse MSE pitch constraints."""
+        base_q = 1.5 + 2.0 * rho_grid**2
+        if not self.kinetic.mse_points:
+            return base_q
+
+        r0 = float(0.5 * (self.R[0] + self.R[-1]))
+        a_eff = max(float(0.5 * (self.R[-1] - self.R[0])), 1e-6)
+        rho_samples: list[float] = []
+        q_samples: list[float] = []
+        for r, _z, pitch_deg in self.kinetic.mse_points:
+            if not (np.isfinite(r) and np.isfinite(pitch_deg)):
+                continue
+            rho_s = float(np.clip(abs(float(r) - r0) / a_eff, 0.0, 1.0))
+            # Proxy mapping: higher |pitch| -> stronger poloidal field -> lower q.
+            q_local = float(np.clip(1.3 - 0.04 * abs(float(pitch_deg)), 0.8, 2.0))
+            rho_samples.append(rho_s)
+            q_samples.append(q_local)
+
+        if not q_samples:
+            return base_q
+
+        order = np.argsort(np.asarray(rho_samples, dtype=float))
+        rho_arr = np.asarray(rho_samples, dtype=float)[order]
+        q_arr = np.asarray(q_samples, dtype=float)[order]
+        if np.unique(rho_arr).size >= 2:
+            q_anchor = np.interp(rho_grid, rho_arr, q_arr)
+        else:
+            q_anchor = np.full_like(rho_grid, q_arr[0], dtype=float)
+
+        # Blend measurement-driven anchor with monotone edge trend to keep q(1)~3.
+        w_edge = rho_grid**2
+        q_prof = (1.0 - w_edge) * q_anchor + w_edge * 3.0
+        return np.clip(q_prof, 0.7, 6.0)

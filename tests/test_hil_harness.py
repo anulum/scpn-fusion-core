@@ -130,6 +130,8 @@ class TestFPGASNNExport:
         assert "N_NEURONS" in verilog
         assert "CLK_HZ" in verilog
         assert "v_mem" in verilog
+        assert "always @(posedge clk)" in verilog
+        assert "placeholder" not in verilog
         assert "endmodule" in verilog
 
     def test_neuron_configs(self):

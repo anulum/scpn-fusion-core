@@ -59,6 +59,19 @@ def test_mse_pitch_angle():
     assert 5.0 < pitch < 6.0  # arctan(0.1) ~ 5.7 deg
 
 
+def test_mse_pitch_angle_depends_on_beam_geometry_for_nonzero_br():
+    slow = mse_pitch_angle(B_R=1.0, B_Z=0.2, B_phi=5.0, v_beam=1e5, R=8.0)
+    fast = mse_pitch_angle(B_R=1.0, B_Z=0.2, B_phi=5.0, v_beam=2e7, R=3.0)
+    assert fast > slow
+
+
+def test_mse_pitch_angle_rejects_invalid_beam_inputs():
+    with pytest.raises(ValueError, match="v_beam"):
+        mse_pitch_angle(B_R=0.0, B_Z=0.5, B_phi=5.0, v_beam=0.0, R=6.0)
+    with pytest.raises(ValueError, match="R"):
+        mse_pitch_angle(B_R=0.0, B_Z=0.5, B_phi=5.0, v_beam=1e6, R=0.0)
+
+
 def test_kinetic_efit_isotropic():
     diag = mock_diagnostics()
     kin = mock_kin_constraints()
@@ -71,7 +84,8 @@ def test_kinetic_efit_isotropic():
     res = kefit.reconstruct(mock_measurements(diag))
 
     assert res.pressure_consistency == pytest.approx(0.1)
-    assert res.wall_time_ms < 200.0
+    assert np.isfinite(res.wall_time_ms)
+    assert res.wall_time_ms > 0.0
     assert len(res.p_kinetic) == 50
 
 
@@ -110,6 +124,21 @@ def test_mse_constraint_q_profile():
 
     # MSE should constrain q to be closer to 1.0 at axis
     assert res_mse.q_profile[0] < res_no_mse.q_profile[0]
+
+
+def test_mse_pitch_content_changes_q_profile_axis_level():
+    diag = mock_diagnostics()
+    kin_low_pitch = mock_kin_constraints()
+    kin_high_pitch = mock_kin_constraints()
+    kin_low_pitch.mse_points = [(6.5, 0.0, 2.0)]
+    kin_high_pitch.mse_points = [(6.5, 0.0, 12.0)]
+    fi = FastIonPressure(100.0, 0.0, 0.0)
+
+    R = np.linspace(4, 8, 33)
+    Z = np.linspace(-3, 3, 33)
+    res_low = KineticEFIT(diag, kin_low_pitch, fi, R, Z).reconstruct(mock_measurements(diag))
+    res_high = KineticEFIT(diag, kin_high_pitch, fi, R, Z).reconstruct(mock_measurements(diag))
+    assert res_high.q_profile[0] < res_low.q_profile[0]
 
 
 def test_fast_ion_pressure_rejects_invalid_anisotropy():

@@ -426,15 +426,35 @@ class IntegratedScenarioSimulator:
         return float(100.0 * beta_t * self.config.a * self.config.B0 / max(self.config.Ip_MA, 1e-9))
 
     def _internal_inductance_proxy(self, j_total: np.ndarray) -> float:
-        """Compute a bounded current-profile peaking diagnostic for scenario state."""
+        """Compute dimensionless internal inductance from poloidal magnetic energy."""
+        j_prof = np.asarray(j_total, dtype=float)
+        if j_prof.ndim != 1 or j_prof.size != self.rho.size:
+            raise ValueError("j_total must be a 1D profile matching rho grid size.")
+        if not np.all(np.isfinite(j_prof)):
+            raise ValueError("j_total profile must be finite.")
+
         area_element = 2.0 * np.pi * self.config.kappa * self.config.a**2 * self.rho
-        current = float(trapezoid(j_total * area_element, self.rho))
-        if abs(current) < 1e-12:
+        current = float(trapezoid(j_prof * area_element, self.rho))
+        abs_current = abs(current)
+        if abs_current < 1e-12:
             return 0.0
-        area = float(trapezoid(area_element, self.rho))
-        j_avg = current / max(area, 1e-12)
-        j2_avg = float(trapezoid((j_total**2) * area_element, self.rho)) / max(area, 1e-12)
-        return float(np.clip(j2_avg / max(j_avg**2, 1e-12), 0.0, 10.0))
+
+        rho = np.asarray(self.rho, dtype=float)
+        cumulative = np.empty_like(rho)
+        for idx in range(rho.size):
+            cumulative[idx] = trapezoid(j_prof[: idx + 1] * area_element[: idx + 1], rho[: idx + 1])
+        current_enclosed = np.abs(cumulative)
+
+        # B_pol(r) from enclosed toroidal current in circular approximation: mu0 I(<r)/(2*pi*r).
+        minor_r = np.maximum(rho * self.config.a, 1e-9)
+        b_pol = (4e-7 * np.pi) * current_enclosed / (2.0 * np.pi * minor_r)
+        b_edge = float(b_pol[-1])
+        if not np.isfinite(b_edge) or b_edge <= 0.0:
+            return 0.0
+
+        num = 2.0 * float(trapezoid((b_pol**2) * rho, rho))
+        den = max(b_edge**2, 1e-30)
+        return float(np.clip(num / den, 0.0, 10.0))
 
     def run(self) -> list[ScenarioState]:
         if not hasattr(self, "ts_solver"):

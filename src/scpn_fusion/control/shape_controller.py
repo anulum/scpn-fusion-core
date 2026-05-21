@@ -214,18 +214,93 @@ class PlasmaShapeController:
 
     def _compute_shape_error(self, psi: np.ndarray) -> np.ndarray:
         """Evaluate [isoflux; gap; X-point; strike-point] error vector from psi."""
-        e_iso = np.zeros(self.jacobian.n_isoflux)
-        e_gap = np.zeros(self.jacobian.n_gaps)
-        e_xp = np.zeros(self.jacobian.n_xpoint)
-        e_sp = np.zeros(self.jacobian.n_strike)
+        field = np.asarray(psi, dtype=float)
+        if field.ndim != 2:
+            raise ValueError("psi must be a 2D array.")
+        if not np.all(np.isfinite(field)):
+            raise ValueError("psi must contain finite values.")
 
-        if np.max(psi) > 0:
-            e_iso += 0.01
-            e_gap += 0.05
-            if self.jacobian.n_xpoint > 0:
-                e_xp += 0.02
+        nr, nz = field.shape
+        if nr < 3 or nz < 3:
+            raise ValueError("psi grid must be at least 3x3.")
+
+        # Normalise by peak magnitude to keep error scales stable.
+        scale = max(float(np.max(np.abs(field))), 1e-12)
+        f = field / scale
+        grad_r, grad_z = np.gradient(f)
+        h_rr = np.gradient(grad_r, axis=0)
+        h_zz = np.gradient(grad_z, axis=1)
+        h_rz = np.gradient(grad_r, axis=1)
+
+        e_iso = np.zeros(self.jacobian.n_isoflux, dtype=float)
+        e_gap = np.zeros(self.jacobian.n_gaps, dtype=float)
+        e_xp = np.zeros(self.jacobian.n_xpoint, dtype=float)
+        e_sp = np.zeros(self.jacobian.n_strike, dtype=float)
+
+        # Isoflux target in normalised flux space is zero (LCFS-like level set).
+        for i, (r_t, z_t) in enumerate(self.target.isoflux_points):
+            ir, iz = self._map_point_to_index(r_t, z_t, nr, nz)
+            e_iso[i] = f[ir, iz]
+
+        for i, (r_t, z_t, n_r, n_z) in enumerate(self.target.gap_points):
+            ir, iz = self._map_point_to_index(r_t, z_t, nr, nz)
+            n_vec = np.array([float(n_r), float(n_z)], dtype=float)
+            n_norm = float(np.linalg.norm(n_vec))
+            if n_norm <= 1e-12:
+                raise ValueError("gap normal vector must be non-zero.")
+            n_hat = n_vec / n_norm
+            local_grad = np.array([grad_r[ir, iz], grad_z[ir, iz]], dtype=float)
+            signed_gap_proxy = float(np.dot(local_grad, n_hat))
+            target_gap = float(self.target.gap_targets[i]) if i < len(self.target.gap_targets) else 0.0
+            e_gap[i] = signed_gap_proxy - target_gap
+
+        if self.target.xpoint_target and self.jacobian.n_xpoint > 0:
+            ir, iz = self._map_point_to_index(self.target.xpoint_target[0], self.target.xpoint_target[1], nr, nz)
+            # Saddle-point proxy: gradient should vanish.
+            e_xp[0] = grad_r[ir, iz]
+            if self.jacobian.n_xpoint > 1:
+                e_xp[1] = grad_z[ir, iz]
+
+            # If gradients are near zero but local curvature is not saddle-like,
+            # inject curvature residual to avoid silent false-zero x-point error.
+            if float(np.linalg.norm(e_xp)) < 1e-6:
+                det_h = h_rr[ir, iz] * h_zz[ir, iz] - h_rz[ir, iz] ** 2
+                e_xp[0] = det_h + 1e-3
+                if self.jacobian.n_xpoint > 1:
+                    e_xp[1] = h_rr[ir, iz] + h_zz[ir, iz]
+
+        if self.target.strike_point_targets and self.jacobian.n_strike > 0:
+            for i, (r_t, z_t) in enumerate(self.target.strike_point_targets):
+                ir, iz = self._map_point_to_index(r_t, z_t, nr, nz)
+                e_sp[2 * i] = grad_r[ir, iz]
+                e_sp[2 * i + 1] = grad_z[ir, iz]
 
         return np.concatenate([e_iso, e_gap, e_xp, e_sp])
+
+    def _map_point_to_index(self, r_t: float, z_t: float, nr: int, nz: int) -> tuple[int, int]:
+        """Map physical target coordinates into psi-grid index space deterministically."""
+        all_r = [p[0] for p in self.target.isoflux_points] + [p[0] for p in self.target.gap_points]
+        all_z = [p[1] for p in self.target.isoflux_points] + [p[1] for p in self.target.gap_points]
+        if self.target.xpoint_target:
+            all_r.append(self.target.xpoint_target[0])
+            all_z.append(self.target.xpoint_target[1])
+        if self.target.strike_point_targets:
+            all_r.extend(p[0] for p in self.target.strike_point_targets)
+            all_z.extend(p[1] for p in self.target.strike_point_targets)
+
+        if not all_r or not all_z:
+            return nr // 2, nz // 2
+
+        r_min, r_max = float(min(all_r)), float(max(all_r))
+        z_min, z_max = float(min(all_z)), float(max(all_z))
+        r_span = max(r_max - r_min, 1e-9)
+        z_span = max(z_max - z_min, 1e-9)
+
+        rr = float(np.clip((float(r_t) - r_min) / r_span, 0.0, 1.0))
+        zz = float(np.clip((float(z_t) - z_min) / z_span, 0.0, 1.0))
+        ir = int(np.clip(round(rr * (nr - 1)), 0, nr - 1))
+        iz = int(np.clip(round(zz * (nz - 1)), 0, nz - 1))
+        return ir, iz
 
     def step(self, psi: np.ndarray, coil_currents: np.ndarray) -> np.ndarray:
         """Compute coil current changes to correct shape errors."""
@@ -253,7 +328,12 @@ class PlasmaShapeController:
         e_xp = e_shape[idx2:idx3]
         e_sp = e_shape[idx3:]
 
-        min_g = np.min(self.target.gap_targets) - np.max(np.abs(e_gap)) if len(e_gap) > 0 else 0.1
+        if len(e_gap) > 0:
+            # Only inward-closure residuals consume safety margin.
+            inward_closure = np.maximum(e_gap, 0.0)
+            min_g = np.min(self.target.gap_targets) - np.max(inward_closure)
+        else:
+            min_g = 0.1
 
         return ShapeControlResult(
             isoflux_error=float(np.max(np.abs(e_iso))) if len(e_iso) > 0 else 0.0,

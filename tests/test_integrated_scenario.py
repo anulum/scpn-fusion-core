@@ -209,3 +209,25 @@ def test_to_json_writes_config_and_states(tmp_path) -> None:
     assert "states" in payload
     assert len(payload["states"]) >= 1
     assert "ntm_island_widths" in payload["states"][0]
+
+
+def test_internal_inductance_increases_for_core_peaked_profile() -> None:
+    cfg = iter_baseline_scenario()
+    sim = IntegratedScenarioSimulator(cfg)
+    core_peaked = np.maximum(1.0 - sim.rho**2, 0.0)
+    edge_peaked = np.maximum(sim.rho, 0.0)
+    li_core = sim._internal_inductance_proxy(core_peaked)
+    li_edge = sim._internal_inductance_proxy(edge_peaked)
+    assert li_core > li_edge
+    assert li_core > 0.0
+
+
+def test_internal_inductance_rejects_nonfinite_or_wrong_shape() -> None:
+    cfg = iter_baseline_scenario()
+    sim = IntegratedScenarioSimulator(cfg)
+    with pytest.raises(ValueError, match="rho grid size"):
+        sim._internal_inductance_proxy(np.ones((2, sim.rho.size)))
+    bad = np.ones_like(sim.rho)
+    bad[0] = np.nan
+    with pytest.raises(ValueError, match="finite"):
+        sim._internal_inductance_proxy(bad)

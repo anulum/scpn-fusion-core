@@ -154,7 +154,15 @@ class DensityLimitPredictor:
 
 
 class MARFEStabilityDiagram:
-    def __init__(self, R0: float, a: float, q95: float, impurity: str, Ip_MA: float = 15.0):
+    def __init__(
+        self,
+        R0: float,
+        a: float,
+        q95: float,
+        impurity: str,
+        Ip_MA: float = 15.0,
+        f_imp: float = 1e-4,
+    ):
         if not np.isfinite(R0) or float(R0) <= 0.0:
             raise ValueError("R0 must be finite and > 0.")
         if not np.isfinite(a) or float(a) <= 0.0:
@@ -163,11 +171,14 @@ class MARFEStabilityDiagram:
             raise ValueError("q95 must be finite and > 0.")
         if not np.isfinite(Ip_MA) or float(Ip_MA) <= 0.0:
             raise ValueError("Ip_MA must be finite and > 0.")
+        if not np.isfinite(f_imp) or float(f_imp) <= 0.0:
+            raise ValueError("f_imp must be finite and > 0.")
         self.R0 = R0
         self.a = a
         self.q95 = q95
         self.impurity = impurity
         self.Ip_MA = float(Ip_MA)
+        self.f_imp = float(f_imp)
 
     def scan_density_power(self, ne_range: np.ndarray, P_SOL_range: np.ndarray) -> np.ndarray:
         ne_arr = np.asarray(ne_range, dtype=float)
@@ -189,7 +200,9 @@ class MARFEStabilityDiagram:
         for i, ne in enumerate(ne_arr):
             for j, P in enumerate(psol_arr):
                 n_crit = (
-                    DensityLimitPredictor.marfe_limit(self.Ip_MA, self.a, float(P), self.impurity, 1e-4)
+                    DensityLimitPredictor.marfe_limit(
+                        self.Ip_MA, self.a, float(P), self.impurity, self.f_imp
+                    )
                     * q95_scale
                 )
                 if ne > n_crit:

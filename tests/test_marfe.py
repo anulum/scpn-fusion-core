@@ -94,9 +94,24 @@ def test_marfe_stability_diagram_current_sensitivity():
     assert np.sum(high_map == 1) >= np.sum(low_map == 1)
 
 
+def test_marfe_stability_diagram_impurity_fraction_sensitivity():
+    ne_range = np.linspace(0.1, 20.0, 10)
+    p_sol_range = np.linspace(10.0, 100.0, 10)
+
+    clean = MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="W", f_imp=1e-5)
+    dirty = MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="W", f_imp=1e-3)
+
+    clean_map = clean.scan_density_power(ne_range, p_sol_range)
+    dirty_map = dirty.scan_density_power(ne_range, p_sol_range)
+    # Dirtier plasma should not increase the stable region.
+    assert np.sum(dirty_map == 1) <= np.sum(clean_map == 1)
+
+
 def test_marfe_stability_diagram_rejects_invalid_inputs():
     with pytest.raises(ValueError, match="Ip_MA"):
         MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="W", Ip_MA=0.0)
+    with pytest.raises(ValueError, match="f_imp"):
+        MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="W", f_imp=0.0)
 
     diag = MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="W")
     with pytest.raises(ValueError, match="one-dimensional"):
