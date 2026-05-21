@@ -32,20 +32,28 @@ class StabilityAnalyzer:
         Bz = 1/R * dPsi/dR
         Br = -1/R * dPsi/dZ
         """
+        r = float(R)
+        z = float(Z)
+        if not np.isfinite(r) or r <= 0.0:
+            raise ValueError("R must be finite and > 0.")
+        if not np.isfinite(z):
+            raise ValueError("Z must be finite.")
+
         # Simple Bilinear interpolation or Grid lookup
         # Map R,Z to grid indices
-        ir = (R - self.kernel.R[0]) / self.kernel.dR
-        iz = (Z - self.kernel.Z[0]) / self.kernel.dZ
+        ir = (r - self.kernel.R[0]) / self.kernel.dR
+        iz = (z - self.kernel.Z[0]) / self.kernel.dZ
 
-        ir0 = int(np.clip(ir, 0, self.kernel.NR - 2))
-        iz0 = int(np.clip(iz, 0, self.kernel.NZ - 2))
+        # Central differences require ±1 neighbours; avoid wrapped negative indexing.
+        ir0 = int(np.clip(ir, 1, self.kernel.NR - 2))
+        iz0 = int(np.clip(iz, 1, self.kernel.NZ - 2))
 
         # Gradients on grid
         dPsi_dR = (self.Psi_vac[iz0, ir0 + 1] - self.Psi_vac[iz0, ir0 - 1]) / (2 * self.kernel.dR)
         dPsi_dZ = (self.Psi_vac[iz0 + 1, ir0] - self.Psi_vac[iz0 - 1, ir0]) / (2 * self.kernel.dZ)
 
-        Bz = (1.0 / R) * dPsi_dR
-        Br = -(1.0 / R) * dPsi_dZ
+        Bz = (1.0 / r) * dPsi_dR
+        Br = -(1.0 / r) * dPsi_dZ
 
         # Calculate Decay Index 'n' (Field curvature)
         # n = - (R/Bz) * (dBz/dR)
@@ -54,9 +62,9 @@ class StabilityAnalyzer:
         d2Psi_dR2 = (
             self.Psi_vac[iz0, ir0 + 1] - 2 * self.Psi_vac[iz0, ir0] + self.Psi_vac[iz0, ir0 - 1]
         ) / (self.kernel.dR**2)
-        dBz_dR = (1.0 / R) * d2Psi_dR2 - (1.0 / R**2) * dPsi_dR
+        dBz_dR = (1.0 / r) * d2Psi_dR2 - (1.0 / r**2) * dPsi_dR
 
-        n_index = -(R / (Bz + 1e-9)) * dBz_dR
+        n_index = -(r / (Bz + 1e-9)) * dBz_dR
 
         return Bz, Br, n_index
 
@@ -66,31 +74,41 @@ class StabilityAnalyzer:
         F_R = F_Hoop + F_Lorentz_R
         F_Z = F_Lorentz_Z
         """
-        Bz, Br, n_idx = self.get_vacuum_field_at(R, Z)
+        r = float(R)
+        z = float(Z)
+        ip = float(Ip)
+        if not np.isfinite(r) or r <= 0.0:
+            raise ValueError("R must be finite and > 0.")
+        if not np.isfinite(z):
+            raise ValueError("Z must be finite.")
+        if not np.isfinite(ip):
+            raise ValueError("Ip must be finite.")
+
+        Bz, Br, n_idx = self.get_vacuum_field_at(r, z)
 
         # 1. Hoop Force (Expansion)
         # Shafranov Formula
         mu0 = 4 * np.pi * 1e-7
         # Need 'a' (minor radius) and 'li' (inductance).
         # Approx: a ~ R/3, li ~ 0.8
-        a = R / 3.0
+        a = r / 3.0
         li = 0.8
         beta_p = 0.5  # Assumed poloidal beta
 
         # F_hoop = (mu0 * I^2 / 2) * (ln(8R/a) + beta_p + li/2 - 1.5) / R
         # Note: Ip is in MA in kernel, convert to Amps
-        Ip_A = Ip * 1e6
+        Ip_A = ip * 1e6
 
-        term = np.log(8 * R / a) + beta_p + (li / 2.0) - 1.5
-        F_hoop = (mu0 * Ip_A**2 / 2.0) * term / R
+        term = np.log(8 * r / a) + beta_p + (li / 2.0) - 1.5
+        F_hoop = (mu0 * Ip_A**2 / 2.0) * term / r
 
         # 2. Lorentz Force (Confining)
         # F = I x B
         # F_R = I_phi * B_z (length 2*pi*R)
-        F_Lorentz_R = Ip_A * Bz * (2 * np.pi * R)
+        F_Lorentz_R = Ip_A * Bz * (2 * np.pi * r)
 
         # F_Z = - I_phi * B_r
-        F_Lorentz_Z = -Ip_A * Br * (2 * np.pi * R)
+        F_Lorentz_Z = -Ip_A * Br * (2 * np.pi * r)
 
         F_total_R = F_hoop + F_Lorentz_R
         F_total_Z = F_Lorentz_Z
@@ -189,6 +207,11 @@ class StabilityAnalyzer:
         )
 
         if transport_solver is not None:
+            required = ("rho", "ne", "Ti", "Te")
+            missing = [name for name in required if not hasattr(transport_solver, name)]
+            if missing:
+                missing_list = ", ".join(missing)
+                raise TypeError(f"transport_solver is missing required profile fields: {missing_list}")
             rho = transport_solver.rho
             ne = transport_solver.ne
             Ti = transport_solver.Ti
@@ -208,7 +231,8 @@ class StabilityAnalyzer:
 
     def plot_stability_landscape(self, R0, Z0):
         # Scan grid around target
-        r_range = np.linspace(R0 - 2, R0 + 2, 50)
+        r_min = max(1e-3, R0 - 2)
+        r_range = np.linspace(r_min, R0 + 2, 50)
         z_range = np.linspace(Z0 - 2, Z0 + 2, 50)
         RR, ZZ = np.meshgrid(r_range, z_range)
 

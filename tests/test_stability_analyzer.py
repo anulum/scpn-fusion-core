@@ -3,6 +3,7 @@
 # SCPN Fusion Core — Stability Analyzer Tests
 import json
 import numpy as np
+import pytest
 
 from scpn_fusion.core.stability_analyzer import StabilityAnalyzer
 
@@ -39,6 +40,24 @@ class TestStabilityAnalyzer:
         assert np.isfinite(Br)
         assert np.isfinite(n_idx)
 
+    def test_vacuum_field_rejects_invalid_domain(self, tmp_path):
+        cfg = _write_config(tmp_path)
+        sa = StabilityAnalyzer(cfg)
+        with pytest.raises(ValueError, match="R must be finite and > 0"):
+            sa.get_vacuum_field_at(0.0, 0.0)
+        with pytest.raises(ValueError, match="Z must be finite"):
+            sa.get_vacuum_field_at(1.7, float("nan"))
+
+    def test_vacuum_field_edge_sampling_is_finite(self, tmp_path):
+        cfg = _write_config(tmp_path)
+        sa = StabilityAnalyzer(cfg)
+        r_min = float(sa.kernel.R[0])
+        z_min = float(sa.kernel.Z[0])
+        bz, br, n_idx = sa.get_vacuum_field_at(r_min, z_min)
+        assert np.isfinite(bz)
+        assert np.isfinite(br)
+        assert np.isfinite(n_idx)
+
     def test_calculate_forces(self, tmp_path):
         cfg = _write_config(tmp_path)
         sa = StabilityAnalyzer(cfg)
@@ -46,6 +65,14 @@ class TestStabilityAnalyzer:
         assert np.isfinite(Fr)
         assert np.isfinite(Fz)
         assert np.isfinite(n_idx)
+
+    def test_calculate_forces_rejects_invalid_domain(self, tmp_path):
+        cfg = _write_config(tmp_path)
+        sa = StabilityAnalyzer(cfg)
+        with pytest.raises(ValueError, match="R must be finite and > 0"):
+            sa.calculate_forces(-1.0, 0.0, 1.0)
+        with pytest.raises(ValueError, match="Ip must be finite"):
+            sa.calculate_forces(1.7, 0.0, float("nan"))
 
     def test_analyze_stability_runs(self, tmp_path, monkeypatch):
         cfg = _write_config(tmp_path)
@@ -97,6 +124,23 @@ class TestStabilityAnalyzer:
             R0=1.7, a=0.5, B0=2.0, Ip_MA=1.0, transport_solver=FakeSolver()
         )
         assert "q_profile" in result
+
+    def test_analyze_mhd_stability_rejects_solver_with_missing_profiles(self, tmp_path):
+        cfg = _write_config(tmp_path)
+        sa = StabilityAnalyzer(cfg)
+
+        class IncompleteSolver:
+            rho = np.linspace(0, 1, 30)
+            ne = np.ones(30)
+
+        with pytest.raises(TypeError, match="missing required profile fields"):
+            sa.analyze_mhd_stability(
+                R0=1.7,
+                a=0.5,
+                B0=2.0,
+                Ip_MA=1.0,
+                transport_solver=IncompleteSolver(),
+            )
 
     def test_field_index_values(self, tmp_path):
         cfg = _write_config(tmp_path)
