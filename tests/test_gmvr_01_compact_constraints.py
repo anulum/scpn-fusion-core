@@ -64,3 +64,9 @@ def test_run_scan_rejects_invalid_bounds() -> None:
     explorer = GlobalDesignExplorer("dummy")
     with pytest.raises(ValueError, match="r_bounds"):
         explorer.run_scan(n_samples=10, r_bounds=(2.0, 2.0))
+
+
+def test_run_scan_rejects_low_q95_margin() -> None:
+    explorer = GlobalDesignExplorer("dummy")
+    with pytest.raises(ValueError, match="q95_min"):
+        explorer.run_scan(n_samples=10, q95_min=0.8)

@@ -20,6 +20,7 @@ from scpn_fusion.core.current_drive import CurrentDriveMix, ECCDSource, NBISourc
 from scpn_fusion.core.integrated_transport_solver import TransportSolver
 from scpn_fusion.core.neoclassical import sauter_bootstrap
 from scpn_fusion.core.ntm_dynamics import NTMController
+from scpn_fusion.core.ntm_dynamics import NTMIslandDynamics, find_rational_surfaces
 from scpn_fusion.core.sawtooth import SawtoothCycler
 from scpn_fusion.core.sol_model import TwoPointSOL, peak_target_heat_flux
 
@@ -172,6 +173,7 @@ class IntegratedScenarioSimulator:
         # NTMs (Track q=2/1 and q=3/2)
         self.ntm_widths: dict[str, float] = {}  # island name → width [m]
         self.ntm_controller = NTMController()
+        self._last_states: list[ScenarioState] = []
 
     def _setup_transport_solver(self) -> TransportSolver:
         # Create a temporary config for TransportSolver
@@ -333,10 +335,66 @@ class IntegratedScenarioSimulator:
 
         # 5. NTM
         if self.config.include_ntm:
-            pass
+            self._update_ntm_dynamics(q_prof=q_prof, j_bs=j_bs, j_cd=j_cd)
 
         self.time += dt
-        return self._build_state()
+        out = self._build_state()
+        self._last_states.append(out)
+        return out
+
+    def _update_ntm_dynamics(self, q_prof: np.ndarray, j_bs: np.ndarray, j_cd: np.ndarray) -> None:
+        """Advance selected tearing islands (2/1, 3/2) by one scenario timestep."""
+        surfaces = find_rational_surfaces(
+            q=np.asarray(q_prof, dtype=float), rho=self.rho, a=self.config.a, m_max=3, n_max=2
+        )
+        if not surfaces:
+            return
+
+        dt = float(self.config.dt)
+        j_phi_prof = self._ohmic_current_density() + np.asarray(j_bs, dtype=float) + np.asarray(
+            j_cd, dtype=float
+        )
+        allowed_modes = {(2, 1), (3, 2)}
+
+        for surf in surfaces:
+            mode = (surf.m, surf.n)
+            if mode not in allowed_modes:
+                continue
+
+            key = f"{surf.m}/{surf.n}"
+            w0 = float(self.ntm_widths.get(key, 1e-6))
+            j_bs_loc = float(np.interp(surf.rho, self.rho, j_bs))
+            j_phi_loc = float(np.interp(surf.rho, self.rho, j_phi_prof))
+            j_cd_loc = float(np.interp(surf.rho, self.rho, j_cd))
+
+            eccd_request_mw = float(
+                self.ntm_controller.step(
+                    w=w0,
+                    rho_rs=float(surf.rho),
+                    max_power=max(float(self.config.P_eccd_MW), 0.0),
+                )
+            )
+            # Convert requested ECCD MW to a local equivalent current-drive increment.
+            j_cd_ctrl = j_cd_loc + eccd_request_mw * 1e4
+
+            dyn = NTMIslandDynamics(
+                r_s=float(surf.r_s),
+                m=int(surf.m),
+                n=int(surf.n),
+                a=float(self.config.a),
+                R0=float(self.config.R0),
+                B0=float(self.config.B0),
+            )
+            _, w_arr = dyn.evolve(
+                w0=w0,
+                t_span=(0.0, dt),
+                dt=dt,
+                j_bs=j_bs_loc,
+                j_phi=j_phi_loc,
+                j_cd=j_cd_ctrl,
+                eta=1e-7,
+            )
+            self.ntm_widths[key] = float(np.clip(w_arr[-1], 1e-6, 0.5 * self.config.a))
 
     def _bootstrap_current_density(self, q_prof: np.ndarray) -> np.ndarray:
         """Compute Sauter bootstrap current density [A/m^2] for current profiles."""
@@ -385,8 +443,66 @@ class IntegratedScenarioSimulator:
         n_steps = int((self.config.t_end - self.config.t_start) / self.config.dt)
         for _ in range(n_steps):
             states.append(self.step())
+        self._last_states = list(states)
         return states
 
     def to_json(self, path: Path) -> None:
-        # serialization
-        pass
+        path = Path(path)
+        if path.suffix.lower() != ".json":
+            raise ValueError("Scenario output path must use .json extension.")
+        if not self._last_states:
+            self.run()
+
+        payload = {
+            "config": {
+                "R0": float(self.config.R0),
+                "a": float(self.config.a),
+                "B0": float(self.config.B0),
+                "kappa": float(self.config.kappa),
+                "delta": float(self.config.delta),
+                "Ip_MA": float(self.config.Ip_MA),
+                "P_aux_MW": float(self.config.P_aux_MW),
+                "P_eccd_MW": float(self.config.P_eccd_MW),
+                "rho_eccd": float(self.config.rho_eccd),
+                "P_nbi_MW": float(self.config.P_nbi_MW),
+                "E_nbi_keV": float(self.config.E_nbi_keV),
+                "t_start": float(self.config.t_start),
+                "t_end": float(self.config.t_end),
+                "dt": float(self.config.dt),
+                "transport_model": self.config.transport_model,
+                "include_sawteeth": bool(self.config.include_sawteeth),
+                "include_ntm": bool(self.config.include_ntm),
+                "include_sol": bool(self.config.include_sol),
+            },
+            "states": [
+                {
+                    "time": float(s.time),
+                    "rho": np.asarray(s.rho, dtype=float).tolist(),
+                    "Te": np.asarray(s.Te, dtype=float).tolist(),
+                    "Ti": np.asarray(s.Ti, dtype=float).tolist(),
+                    "ne": np.asarray(s.ne, dtype=float).tolist(),
+                    "q": np.asarray(s.q, dtype=float).tolist(),
+                    "psi": np.asarray(s.psi, dtype=float).tolist(),
+                    "j_total": np.asarray(s.j_total, dtype=float).tolist(),
+                    "j_bs": np.asarray(s.j_bs, dtype=float).tolist(),
+                    "j_cd": np.asarray(s.j_cd, dtype=float).tolist(),
+                    "Ip_MA": float(s.Ip_MA),
+                    "beta_N": float(s.beta_N),
+                    "tau_E": float(s.tau_E),
+                    "P_loss": float(s.P_loss),
+                    "W_thermal": float(s.W_thermal),
+                    "li": float(s.li),
+                    "ballooning_stable": bool(s.ballooning_stable),
+                    "troyon_stable": bool(s.troyon_stable),
+                    "ntm_island_widths": dict(s.ntm_island_widths),
+                    "T_target": float(s.T_target),
+                    "q_peak": float(s.q_peak),
+                    "detached": bool(s.detached),
+                    "last_crash_time": float(s.last_crash_time),
+                    "n_crashes": int(s.n_crashes),
+                }
+                for s in self._last_states
+            ],
+        }
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

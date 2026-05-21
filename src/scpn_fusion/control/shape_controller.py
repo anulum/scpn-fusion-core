@@ -60,16 +60,81 @@ class ShapeJacobian:
 
         self.n_errors = self.n_isoflux + self.n_gaps + self.n_xpoint + self.n_strike
 
-        np.random.seed(42)
-        self.J = np.random.randn(self.n_errors, coil_set.n_coils) * 1e-4
+        rng = np.random.default_rng(42)
+        self.J = rng.standard_normal((self.n_errors, coil_set.n_coils)) * 1e-4
+        self._reference_J = np.array(self.J, copy=True)
 
     def compute(self) -> np.ndarray:
         """Return the shape Jacobian matrix d(e_shape)/dI_coils."""
-        return self.J
+        return np.array(self.J, copy=True)
 
     def update(self, state: dict[str, Any]) -> None:
-        """Re-linearize the Jacobian around a new operating point (stub)."""
-        pass
+        """
+        Re-linearize Jacobian around a new operating point.
+
+        Supported state paths:
+        - `jacobian`: explicit updated matrix with shape `(n_errors, n_coils)`.
+        - multiplicative scaling from baseline via:
+          `plasma_current_ma`, `beta_p`, `coil_coupling`, `error_coupling`.
+        """
+        if not isinstance(state, dict):
+            raise TypeError("state must be a dictionary.")
+
+        if "jacobian" in state:
+            j_new = np.asarray(state["jacobian"], dtype=float)
+            expected = (self.n_errors, self.coil_set.n_coils)
+            if j_new.shape != expected:
+                raise ValueError(f"state['jacobian'] must have shape {expected}.")
+            if not np.all(np.isfinite(j_new)):
+                raise ValueError("state['jacobian'] must be finite.")
+            self.J = np.array(j_new, copy=True)
+            return
+
+        scale = 1.0
+        used_scaling = False
+
+        if "plasma_current_ma" in state:
+            ip_ma = float(state["plasma_current_ma"])
+            if not np.isfinite(ip_ma) or ip_ma <= 0.0:
+                raise ValueError("plasma_current_ma must be finite and > 0.")
+            scale *= ip_ma / 15.0
+            used_scaling = True
+
+        if "beta_p" in state:
+            beta_p = float(state["beta_p"])
+            if not np.isfinite(beta_p) or beta_p <= 0.0:
+                raise ValueError("beta_p must be finite and > 0.")
+            scale *= 1.0 + 0.25 * (beta_p - 1.0)
+            used_scaling = True
+
+        j_new = np.array(self._reference_J * scale, copy=True)
+
+        if "coil_coupling" in state:
+            coil_coupling = np.asarray(state["coil_coupling"], dtype=float)
+            if coil_coupling.shape != (self.coil_set.n_coils,):
+                raise ValueError("coil_coupling must have shape (n_coils,).")
+            if np.any(~np.isfinite(coil_coupling)) or np.any(coil_coupling <= 0.0):
+                raise ValueError("coil_coupling entries must be finite and > 0.")
+            j_new *= coil_coupling[np.newaxis, :]
+            used_scaling = True
+
+        if "error_coupling" in state:
+            error_coupling = np.asarray(state["error_coupling"], dtype=float)
+            if error_coupling.shape != (self.n_errors,):
+                raise ValueError("error_coupling must have shape (n_errors,).")
+            if np.any(~np.isfinite(error_coupling)) or np.any(error_coupling <= 0.0):
+                raise ValueError("error_coupling entries must be finite and > 0.")
+            j_new *= error_coupling[:, np.newaxis]
+            used_scaling = True
+
+        if not used_scaling:
+            raise ValueError(
+                "state must provide either 'jacobian' or re-linearisation scalars/vectors."
+            )
+
+        if np.any(~np.isfinite(j_new)):
+            raise ValueError("Re-linearised Jacobian contains non-finite values.")
+        self.J = j_new
 
 
 class PlasmaShapeController:

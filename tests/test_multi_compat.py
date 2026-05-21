@@ -8,6 +8,9 @@
 
 from __future__ import annotations
 
+import sys
+import types
+
 import pytest
 
 from scpn_fusion.core import _multi_compat as multi
@@ -70,3 +73,20 @@ def test_dispatch_raises_when_all_registered_tiers_are_unavailable(kernel_name: 
 
     with pytest.raises(RuntimeError, match="All registered backends"):
         multi.dispatch(kernel_name)
+
+
+def test_dispatch_fallback_survives_telemetry_failure(
+    kernel_name: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake_mod = types.ModuleType("scpn_fusion.fallback_telemetry")
+
+    def _raise(*_args, **_kwargs):
+        raise RuntimeError("telemetry unavailable")
+
+    fake_mod.record_fallback_event = _raise
+    monkeypatch.setitem(sys.modules, "scpn_fusion.fallback_telemetry", fake_mod)
+
+    multi.register_kernel(kernel_name, multi.BackendTier.MOJO, lambda: "mojo")
+    multi.register_kernel(kernel_name, multi.BackendTier.NUMPY, lambda: "numpy")
+
+    assert multi.dispatch(kernel_name)() == "numpy"

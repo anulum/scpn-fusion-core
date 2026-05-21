@@ -69,13 +69,27 @@ class CoupledTearingModes:
         self.mu_0 = 4.0 * np.pi * 1e-7
 
     def coupling_coefficient(self, m1: int, n1: int, m2: int, n2: int) -> float:
-        """Heuristic toroidal coupling coefficient."""
-        if n1 != n2:
-            # Different toroidal mode numbers generally don't couple linearly
-            # But they can couple non-linearly through n=0. We'll simplify.
-            pass
-        # 3/2 and 2/1 couple strongly via 1/1
-        return 0.5 * (self.a / self.R0)
+        """
+        Spectral-coupling coefficient for mode interaction.
+
+        Same-`n` modes couple strongly through resonant toroidal harmonics.
+        Cross-`n` modes retain weaker nonlinear coupling via sidebands.
+        """
+        if self.R0 <= 0.0 or self.a <= 0.0:
+            raise ValueError("R0 and a must be > 0 for mode-coupling evaluation.")
+        if m1 <= 0 or m2 <= 0 or n1 <= 0 or n2 <= 0:
+            raise ValueError("Mode numbers m,n must be strictly positive integers.")
+
+        base = 0.5 * (self.a / self.R0)
+        delta_m = abs(int(m1) - int(m2))
+        delta_n = abs(int(n1) - int(n2))
+
+        # Harmonic mismatch attenuation: nearest harmonics couple most strongly.
+        spectral_penalty = np.exp(-0.4 * delta_m - 1.2 * delta_n)
+        # Same toroidal family is more strongly phase-coupled.
+        toroidal_factor = 1.0 if n1 == n2 else 0.25
+        coeff = base * toroidal_factor * float(spectral_penalty)
+        return float(max(coeff, 0.0))
 
     def delta_prime_1(self, w1: float, w2: float) -> float:
         # Base stability + nonlinear modification from w2
@@ -99,6 +113,18 @@ class CoupledTearingModes:
         seed_time: float = -1.0,
         seed_amplitude: float = 0.0,
     ) -> CoupledResult:
+        if int(n_steps) < 1:
+            raise ValueError("n_steps must be >= 1.")
+        if not np.isfinite(dt) or float(dt) <= 0.0:
+            raise ValueError("dt must be finite and > 0.")
+        if not np.isfinite(eta) or float(eta) <= 0.0:
+            raise ValueError("eta must be finite and > 0.")
+        if not np.isfinite(j_phi) or float(j_phi) <= 0.0:
+            raise ValueError("j_phi must be finite and > 0.")
+        if not np.isfinite(j_bs) or float(j_bs) < 0.0:
+            raise ValueError("j_bs must be finite and >= 0.")
+
+        n_steps = int(n_steps)
         w1 = max(w1_0, 1e-6)
         w2 = max(w2_0, 1e-6)
 

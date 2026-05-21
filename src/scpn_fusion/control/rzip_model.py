@@ -152,10 +152,50 @@ class VerticalStabilityAnalysis:
     @staticmethod
     def compute_n_index(psi: np.ndarray, R: np.ndarray, Z: np.ndarray, R0: float) -> float:
         """
-        n_index = -(R0/Bz) * dBz/dR
-        For testing purposes, we just return a stub value based on kappa.
+        Compute the local vertical stability index on the mid-plane:
+            n = -(R0 / Bz) * dBz/dR
+        with Bz = (1 / R) * dpsi/dR in axisymmetric geometry.
         """
-        return -1.0  # Just a stub
+        psi_arr = np.asarray(psi, dtype=float)
+        r_arr = np.asarray(R, dtype=float)
+        z_arr = np.asarray(Z, dtype=float)
+
+        if psi_arr.ndim != 2:
+            raise ValueError("psi must be a 2D array with shape (len(Z), len(R)).")
+        if r_arr.ndim != 1 or z_arr.ndim != 1:
+            raise ValueError("R and Z must be 1D coordinate arrays.")
+        if psi_arr.shape != (z_arr.size, r_arr.size):
+            raise ValueError("psi shape must equal (len(Z), len(R)).")
+        if r_arr.size < 3:
+            raise ValueError("R must contain at least 3 points for gradients.")
+        if z_arr.size < 1:
+            raise ValueError("Z must not be empty.")
+        if not np.all(np.isfinite(psi_arr)) or not np.all(np.isfinite(r_arr)) or not np.all(
+            np.isfinite(z_arr)
+        ):
+            raise ValueError("psi, R, and Z must be finite.")
+        if np.any(r_arr <= 0.0):
+            raise ValueError("R coordinates must be strictly positive.")
+        if not np.all(np.diff(r_arr) > 0.0):
+            raise ValueError("R must be strictly increasing.")
+
+        z0_idx = int(np.argmin(np.abs(z_arr)))
+        psi_mid = psi_arr[z0_idx, :]
+        dpsi_dR = np.gradient(psi_mid, r_arr, edge_order=2)
+        bz_profile = dpsi_dR / r_arr
+
+        dbz_dR = np.gradient(bz_profile, r_arr, edge_order=2)
+        r0_idx = int(np.argmin(np.abs(r_arr - float(R0))))
+        bz_local = float(bz_profile[r0_idx])
+        dbz_local = float(dbz_dR[r0_idx])
+
+        if not np.isfinite(bz_local) or not np.isfinite(dbz_local):
+            raise ValueError("Computed Bz profile is non-finite near R0.")
+        eps = 1e-12
+        if abs(bz_local) < eps:
+            raise ValueError("Bz near R0 is too small for a stable n-index estimate.")
+
+        return float(-(float(R0) / bz_local) * dbz_local)
 
     @staticmethod
     def passive_stability_margin(n_index: float, tau_wall: float) -> float:
@@ -164,8 +204,27 @@ class VerticalStabilityAnalysis:
 
     @staticmethod
     def required_feedback_gain(gamma: float, tau_wall: float, tau_controller: float) -> float:
-        """Return the proportional feedback gain required for stabilization."""
-        return 1.0
+        """
+        Return a minimum dimensionless loop-gain proxy for vertical stabilization.
+
+        Uses an additive lag model:
+            g_min = gamma * (tau_wall + tau_controller)
+        where `gamma` is the open-loop growth rate (s^-1).
+        """
+        gamma_f = float(gamma)
+        tau_wall_f = float(tau_wall)
+        tau_ctrl_f = float(tau_controller)
+
+        if not np.isfinite(gamma_f) or not np.isfinite(tau_wall_f) or not np.isfinite(tau_ctrl_f):
+            raise ValueError("gamma, tau_wall, and tau_controller must be finite.")
+        if gamma_f <= 0.0:
+            raise ValueError("gamma must be strictly positive for unstable-mode compensation.")
+        if tau_wall_f <= 0.0:
+            raise ValueError("tau_wall must be strictly positive.")
+        if tau_ctrl_f <= 0.0:
+            raise ValueError("tau_controller must be strictly positive.")
+
+        return float(gamma_f * (tau_wall_f + tau_ctrl_f))
 
 
 class RZIPController:

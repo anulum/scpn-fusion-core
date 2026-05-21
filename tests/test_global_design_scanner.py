@@ -48,6 +48,7 @@ class TestEvaluateDesign:
         assert "R" in result
         assert "B" in result
         assert "Cost" in result
+        assert result["Model_Regime"] == "physics_scaling_surrogate"
 
     def test_evaluate_rejects_nonpositive(self, tmp_path):
         cfg = tmp_path / "cfg.json"
@@ -55,3 +56,11 @@ class TestEvaluateDesign:
         explorer = GlobalDesignExplorer(str(cfg))
         with pytest.raises(ValueError):
             explorer.evaluate_design(R_maj=0, B_field=10, I_plasma=5)
+
+
+class TestConstructorContracts:
+    def test_constructor_rejects_invalid_zeff_cap(self, tmp_path):
+        cfg = tmp_path / "cfg.json"
+        cfg.write_text('{"dummy": true}')
+        with pytest.raises(ValueError, match="zeff_cap"):
+            GlobalDesignExplorer(str(cfg), zeff_cap=1.2)

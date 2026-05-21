@@ -177,6 +177,35 @@ _registry: dict[str, list[tuple[BackendTier, Callable[..., Any]]]] = {}
 _dispatch_cache: dict[str, tuple[BackendTier, Callable[..., Any]]] = {}
 
 
+def _record_fallback_event_safe(
+    *,
+    kernel: str,
+    selected_tier: str,
+    fastest_tier: str,
+) -> None:
+    """Best-effort telemetry emission for backend fallback events."""
+    try:
+        from scpn_fusion.fallback_telemetry import record_fallback_event
+
+        record_fallback_event(
+            "multi_backend",
+            f"{kernel}_fallback_to_{selected_tier}",
+            context={
+                "kernel": kernel,
+                "selected_tier": selected_tier,
+                "fastest_tier": fastest_tier,
+            },
+        )
+    except Exception as exc:
+        logger.debug(
+            "Fallback telemetry skipped for kernel=%s selected=%s: %s",
+            kernel,
+            selected_tier,
+            exc,
+            exc_info=True,
+        )
+
+
 def register_kernel(
     name: str,
     tier: BackendTier,
@@ -238,22 +267,11 @@ def dispatch(name: str) -> Callable[..., Any]:
                 # Record the backend selection via fallback telemetry
                 # (only if not the fastest tier, i.e. a fallback occurred)
                 if tier != entries[0][0]:
-                    try:
-                        from scpn_fusion.fallback_telemetry import (
-                            record_fallback_event,
-                        )
-
-                        record_fallback_event(
-                            "multi_backend",
-                            f"{name}_fallback_to_{tier_name}",
-                            context={
-                                "kernel": name,
-                                "selected_tier": tier_name,
-                                "fastest_tier": _TIER_NAMES[entries[0][0]],
-                            },
-                        )
-                    except Exception:
-                        pass  # telemetry must never block dispatch
+                    _record_fallback_event_safe(
+                        kernel=name,
+                        selected_tier=tier_name,
+                        fastest_tier=_TIER_NAMES[entries[0][0]],
+                    )
 
                 return impl
 
@@ -325,8 +343,8 @@ def _bootstrap_existing_backends() -> None:
             )
             if rust_multigrid_vcycle is not None:
                 register_kernel("multigrid_vcycle", BackendTier.RUST, rust_multigrid_vcycle)
-    except ImportError:
-        pass
+    except ImportError as exc:
+        logger.debug("Rust compatibility module not importable during bootstrap: %s", exc)
 
 
 # Run bootstrap on import

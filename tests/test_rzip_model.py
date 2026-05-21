@@ -10,7 +10,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from scpn_fusion.control.rzip_model import RZIPController, RZIPModel
+from scpn_fusion.control.rzip_model import (
+    RZIPController,
+    RZIPModel,
+    VerticalStabilityAnalysis,
+)
 from scpn_fusion.core.vessel_model import VesselElement, VesselModel
 
 
@@ -124,3 +128,57 @@ def test_feedback_stabilization(active_coils):
 
     max_real = np.max(np.real(eigvals))
     assert max_real < rzip.vertical_growth_rate()  # Growth rate should at least decrease
+
+
+def test_compute_n_index_tracks_radial_gradient_sign() -> None:
+    r = np.linspace(1.0, 3.0, 129)
+    z = np.linspace(-1.0, 1.0, 65)
+    rr, zz = np.meshgrid(r, z)
+    # Bz = (1/R) dpsi/dR = 3R for psi = R^3 => dBz/dR > 0 => n < 0
+    psi = rr**3 + 0.2 * zz**2
+
+    n_idx = VerticalStabilityAnalysis.compute_n_index(psi, r, z, R0=2.0)
+    assert np.isfinite(n_idx)
+    assert n_idx < 0.0
+
+
+def test_required_feedback_gain_scales_with_growth_rate() -> None:
+    g_low = VerticalStabilityAnalysis.required_feedback_gain(
+        gamma=50.0,
+        tau_wall=0.03,
+        tau_controller=2.0e-4,
+    )
+    g_high = VerticalStabilityAnalysis.required_feedback_gain(
+        gamma=120.0,
+        tau_wall=0.03,
+        tau_controller=2.0e-4,
+    )
+    assert np.isfinite(g_low)
+    assert np.isfinite(g_high)
+    assert g_low > 0.0
+    assert g_high > g_low
+
+
+def test_compute_n_index_rejects_invalid_coordinate_grid() -> None:
+    r = np.array([1.0, 1.0, 2.0])  # not strictly increasing
+    z = np.linspace(-1.0, 1.0, 5)
+    psi = np.ones((z.size, r.size))
+
+    with pytest.raises(ValueError, match="strictly increasing"):
+        VerticalStabilityAnalysis.compute_n_index(psi, r, z, R0=1.5)
+
+
+def test_required_feedback_gain_rejects_non_positive_parameters() -> None:
+    with pytest.raises(ValueError, match="strictly positive"):
+        VerticalStabilityAnalysis.required_feedback_gain(
+            gamma=0.0,
+            tau_wall=0.03,
+            tau_controller=2.0e-4,
+        )
+
+    with pytest.raises(ValueError, match="tau_wall must be strictly positive"):
+        VerticalStabilityAnalysis.required_feedback_gain(
+            gamma=50.0,
+            tau_wall=-0.03,
+            tau_controller=2.0e-4,
+        )

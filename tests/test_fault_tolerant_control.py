@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.control.fault_tolerant_control import (
     FDIMonitor,
@@ -101,3 +102,31 @@ def test_controllability_check():
 
     sd = ctrl.graceful_shutdown()
     assert np.all(sd == 0.0)
+
+
+def test_sensor_fault_dropout_zeroes_faulted_measurement_weight():
+    J = np.eye(3)
+    ctrl = ReconfigurableController(None, J, 3, 3)
+    ctrl.handle_sensor_fault(1, FaultType.SENSOR_DROPOUT)
+
+    assert np.isclose(ctrl.W[1, 1], 0.0)
+    assert 1 in ctrl.faulted_sensors
+
+
+def test_sensor_fault_noise_and_drift_apply_distinct_weights():
+    J = np.eye(4)
+    ctrl = ReconfigurableController(None, J, 4, 4)
+
+    ctrl.handle_sensor_fault(2, FaultType.SENSOR_NOISE_INCREASE)
+    ctrl.handle_sensor_fault(3, FaultType.SENSOR_DRIFT)
+
+    assert np.isclose(ctrl.W[2, 2], 0.2)
+    assert np.isclose(ctrl.W[3, 3], 0.5)
+
+
+def test_sensor_fault_out_of_range_rejected():
+    J = np.eye(2)
+    ctrl = ReconfigurableController(None, J, 2, 2)
+
+    with pytest.raises(IndexError, match="out of range"):
+        ctrl.handle_sensor_fault(5, FaultType.SENSOR_DROPOUT)

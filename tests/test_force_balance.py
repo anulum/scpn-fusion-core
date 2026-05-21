@@ -70,7 +70,7 @@ def test_solve_for_equilibrium_converges_with_dummy_analyzer(
         saved["called"] = True
 
     monkeypatch.setattr(solver, "save_config", _mark_saved)
-    solver.solve_for_equilibrium(target_R=6.2, target_Z=0.0)
+    summary = solver.solve_for_equilibrium(target_R=6.2, target_Z=0.0)
 
     i_pf3 = float(solver.analyzer.kernel.cfg["coils"][2]["current"])
     i_pf4 = float(solver.analyzer.kernel.cfg["coils"][3]["current"])
@@ -78,6 +78,8 @@ def test_solve_for_equilibrium_converges_with_dummy_analyzer(
     assert i_pf4 == pytest.approx(1.0, abs=1e-6)
     assert saved["called"] is True
     assert solver.analyzer.kernel.vacuum_recompute_count > 0
+    assert summary["converged"] is True
+    assert float(summary["final_radial_force_n"]) == pytest.approx(0.0, abs=1e-6)
 
 
 def test_solve_for_equilibrium_handles_singular_jacobian(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -90,10 +92,11 @@ def test_solve_for_equilibrium_handles_singular_jacobian(monkeypatch: pytest.Mon
         saved["called"] = True
 
     monkeypatch.setattr(solver, "save_config", _mark_saved)
-    solver.solve_for_equilibrium(max_iterations=2)
+    summary = solver.solve_for_equilibrium(max_iterations=2)
     assert saved["called"] is True
     i_pf3 = float(solver.analyzer.kernel.cfg["coils"][2]["current"])
     assert i_pf3 < 0.0
+    assert summary["converged"] is False
 
 
 def test_save_config_writes_json(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -104,3 +107,16 @@ def test_save_config_writes_json(tmp_path, monkeypatch: pytest.MonkeyPatch) -> N
     payload = json.loads(out_path.read_text(encoding="utf-8"))
     assert "physics" in payload
     assert "coils" in payload
+
+
+def test_solve_for_equilibrium_rejects_invalid_runtime_parameters(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(force_balance, "StabilityAnalyzer", _DummyAnalyzer)
+    solver = force_balance.ForceBalanceSolver("dummy.json")
+
+    with pytest.raises(ValueError, match="max_iterations must be >= 1"):
+        solver.solve_for_equilibrium(max_iterations=0)
+
+    with pytest.raises(ValueError, match="jacobian_floor must be finite and > 0"):
+        solver.solve_for_equilibrium(jacobian_floor=0.0)

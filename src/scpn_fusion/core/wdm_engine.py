@@ -9,10 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:
-    pass
 from scpn_fusion.core.integrated_transport_solver import TransportSolver
 from scpn_fusion.nuclear.pwi_erosion import SputteringPhysics
 
@@ -29,19 +25,35 @@ class WholeDeviceModel:
 
         self.transport.solve_equilibrium()
 
+    @staticmethod
+    def _require_finite_non_negative(name: str, value: float) -> float:
+        out = float(value)
+        if not np.isfinite(out) or out < 0.0:
+            raise ValueError(f"{name} must be finite and >= 0.")
+        return out
+
+    @staticmethod
+    def _require_finite_positive(name: str, value: float) -> float:
+        out = float(value)
+        if not np.isfinite(out) or out <= 0.0:
+            raise ValueError(f"{name} must be finite and > 0.")
+        return out
+
     def thomas_fermi_pressure(self, n_e_m3, T_eV):
         """
         Hardened Thomas-Fermi Equation of State (EOS) heuristic.
         Accounts for electron degeneracy pressure in the WDM regime.
         P_total = P_ideal + P_deg
         """
-        p_ideal = n_e_m3 * (T_eV * 1.602e-19)  # Boltzmann
+        n_e = self._require_finite_positive("n_e_m3", n_e_m3)
+        t_ev = self._require_finite_non_negative("T_eV", T_eV)
+        p_ideal = n_e * (t_ev * 1.602e-19)  # Boltzmann
 
         h_bar = 1.054e-34
         m_e = 9.109e-31
-        p_deg = (h_bar**2 / m_e) * (n_e_m3 ** (5.0 / 3.0))  # Fermi degeneracy
+        p_deg = (h_bar**2 / m_e) * (n_e ** (5.0 / 3.0))  # Fermi degeneracy
 
-        return p_ideal + p_deg
+        return float(p_ideal + p_deg)
 
     def calculate_redeposition_fraction(self, T_edge_eV, B_field_T):
         """
@@ -52,17 +64,20 @@ class WholeDeviceModel:
         # Ionization mean free path lambda_ion ~ v_thermal / (n_e * <sigma_v>_ion)
         # Larmor radius rho_L = m*v / qB
         # Heuristic for W: f_redep increases with density and B-field
-        n_e_edge = self.transport.ne[-1] * 1e19
+        self._require_finite_non_negative("T_edge_eV", T_edge_eV)
+        b_field = self._require_finite_positive("B_field_T", B_field_T)
+        n_e_edge = self._require_finite_positive("edge_density", self.transport.ne[-1] * 1e19)
 
         # Scaling based on impurity transport benchmarks
-        f_redep = 0.95 * (1.0 - np.exp(-(B_field_T / 5.0) * (n_e_edge / 1e19)))
+        f_redep = 0.95 * (1.0 - np.exp(-(b_field / 5.0) * (n_e_edge / 1e19)))
         return float(np.clip(f_redep, 0.0, 0.99))
 
-    def run_discharge(self, duration_sec=10.0):
+    def run_discharge(self, duration_sec=10.0) -> list[dict[str, float | str]]:
+        duration_sec = self._require_finite_positive("duration_sec", duration_sec)
         print(f"--- SCPN WDM: WHOLE DEVICE SIMULATION ({duration_sec}s) ---")
 
         dt = 0.01
-        steps = int(duration_sec / dt)
+        steps = max(1, int(np.ceil(duration_sec / dt)))
 
         history = []
 
@@ -73,9 +88,10 @@ class WholeDeviceModel:
 
         for t in range(steps):
             avg_T, core_T = self.transport.evolve_profiles(dt, P_aux)
+            core_t = self._require_finite_non_negative("core_T", core_T)
 
-            n_edge = self.transport.ne[-1] * 1e19
-            T_edge = self.transport.Te[-1] * 1000  # eV
+            n_edge = self._require_finite_positive("n_edge", self.transport.ne[-1] * 1e19)
+            T_edge = self._require_finite_non_negative("T_edge", self.transport.Te[-1] * 1000)  # eV
             B_edge = 5.0  # T
 
             # Sound speed at edge
@@ -83,7 +99,9 @@ class WholeDeviceModel:
             flux_wall = n_edge * cs
 
             erosion = self.pwi.calculate_erosion_rate(flux_wall, T_edge)
-            gross_impurity_flux = erosion["Impurity_Source"]
+            gross_impurity_flux = self._require_finite_non_negative(
+                "Impurity_Source", erosion["Impurity_Source"]
+            )
 
             f_redep = self.calculate_redeposition_fraction(T_edge, B_edge)
             net_impurity_flux = gross_impurity_flux * (1.0 - f_redep)
@@ -96,27 +114,31 @@ class WholeDeviceModel:
                 self.transport.solve_equilibrium()
 
             status = "OK"
-            if core_T < 0.5:
+            if core_t < 0.5:
                 status = "COLLAPSE"
 
             state = {
                 "time": t * dt,
-                "Te_core": core_T,
+                "Te_core": core_t,
                 "W_impurity": np.sum(self.transport.n_impurity),
                 "P_rad": np.max(self.transport.n_impurity) * 100,  # Approx metric
+                "status": status,
             }
             history.append(state)
 
             if t % 50 == 0:
-                print(f"{t * dt:<6.2f} | {core_T:<8.2f} | {state['W_impurity']:<8.2e} | {status}")
+                print(f"{t * dt:<6.2f} | {core_t:<8.2f} | {state['W_impurity']:<8.2e} | {status}")
 
             if status == "COLLAPSE":
                 print(f"!!! RADIATIVE COLLAPSE DETECTED AT t={t * dt:.2f}s !!!")
                 break
 
         self.plot_results(history)
+        return history
 
     def plot_results(self, history):
+        if len(history) == 0:
+            raise ValueError("history must not be empty.")
         df = pd.DataFrame(history)
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))

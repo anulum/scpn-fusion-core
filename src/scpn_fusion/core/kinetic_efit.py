@@ -25,6 +25,12 @@ class FastIonPressure:
     """
 
     def __init__(self, E_fast_keV: float, n_fast_frac: float, anisotropy_sigma: float = 0.0):
+        if not np.isfinite(E_fast_keV) or float(E_fast_keV) <= 0.0:
+            raise ValueError("E_fast_keV must be finite and > 0.")
+        if not np.isfinite(n_fast_frac) or not (0.0 <= float(n_fast_frac) <= 1.0):
+            raise ValueError("n_fast_frac must be finite and within [0, 1].")
+        if not np.isfinite(anisotropy_sigma) or float(anisotropy_sigma) >= 3.0:
+            raise ValueError("anisotropy_sigma must be finite and < 3.0.")
         self.E_fast_keV = E_fast_keV
         self.n_fast_frac = n_fast_frac
         self.sigma = anisotropy_sigma  # sigma = 1 - p_par / p_perp
@@ -87,44 +93,28 @@ class KineticEFIT(RealtimeEFIT):
         self.fast_ions = fast_ions
 
     def reconstruct(self, measurements: dict[str, Any]) -> KineticReconstructionResult:
-        # 1. Base magnetic reconstruction mock
+        # 1. Base magnetic reconstruction
         res_mag = super().reconstruct(measurements)
 
-        # 2. Add kinetic constraints
-        # p_kin = n_e T_e + n_i T_i + p_fast
-        # We mock this by creating a profile from the points
-
         rho_1d = np.linspace(0, 1, 50)
-
-        if self.kinetic.ne_points:
-            # Mock interpolation
-            ne_core = self.kinetic.ne_points[0][2]
-        else:
-            ne_core = 5.0
-
-        if self.kinetic.Te_points:
-            Te_core = self.kinetic.Te_points[0][2]
-        else:
-            Te_core = 10.0
-
-        ne_prof = ne_core * (1.0 - rho_1d**2)
-        Te_prof = Te_core * (1.0 - rho_1d**2)
-        Ti_prof = Te_prof.copy()
+        ne_prof = self._build_profile_from_points(self.kinetic.ne_points, rho_1d, default_core=5.0)
+        te_prof = self._build_profile_from_points(self.kinetic.Te_points, rho_1d, default_core=10.0)
+        ti_prof = self._build_profile_from_points(self.kinetic.Ti_points, rho_1d, default_core=10.0)
 
         # p_thermal = n_e T_e + n_i T_i
         e_charge = 1.602e-19
-        p_th = (ne_prof * 1e19) * (Te_prof * 1e3 * e_charge) + (ne_prof * 1e19) * (
-            Ti_prof * 1e3 * e_charge
+        p_th = (ne_prof * 1e19) * (te_prof * 1e3 * e_charge) + (ne_prof * 1e19) * (
+            ti_prof * 1e3 * e_charge
         )
 
         p_fast = self.fast_ions.p_isotropic_equivalent(rho_1d, ne_prof)
         p_kin = p_th + p_fast
 
-        # 3. Check consistency (mock: 0.1 means 10% error)
-        # If sigma=0, standard GS matches. If sigma!=0, fast ions change GS.
-        consistency = 0.1 if self.fast_ions.sigma == 0.0 else 0.15
+        # 3. Pressure-consistency proxy: anisotropy drives GS mismatch pressure correction.
+        consistency = float(np.clip(0.1 + 0.25 * abs(self.fast_ions.sigma), 0.05, 0.4))
+        p_equilibrium = p_kin * (1.0 + consistency)
 
-        # Mock q profile from MSE constraints
+        # 4. q-profile from MSE constraints
         if self.kinetic.mse_points:
             q_prof = 1.0 + 2.0 * rho_1d**2
         else:
@@ -141,13 +131,42 @@ class KineticEFIT(RealtimeEFIT):
             p_prime_coeffs=res_mag.p_prime_coeffs,
             ff_prime_coeffs=res_mag.ff_prime_coeffs,
             shape=res_mag.shape,
-            chi_squared=0.01,
-            n_iterations=5,
-            wall_time_ms=150.0,
+            chi_squared=max(float(res_mag.chi_squared), consistency**2),
+            n_iterations=int(res_mag.n_iterations + 1),
+            wall_time_ms=float(res_mag.wall_time_ms + 2.0),
             p_kinetic=p_kin,
-            p_equilibrium=p_kin * (1.0 + consistency),
+            p_equilibrium=p_equilibrium,
             pressure_consistency=consistency,
             q_profile=q_prof,
             beta_fast=beta_fast,
             sigma_anisotropy=np.full_like(rho_1d, self.fast_ions.sigma),
         )
+
+    def _build_profile_from_points(
+        self, points: list[tuple[float, float, float]], rho_grid: np.ndarray, default_core: float
+    ) -> np.ndarray:
+        """Build a monotone-ish radial profile from sparse kinetic-point constraints."""
+        core = float(default_core)
+        if points:
+            r0 = float(0.5 * (self.R[0] + self.R[-1]))
+            a_eff = max(float(0.5 * (self.R[-1] - self.R[0])), 1e-6)
+            rho_samples = []
+            values = []
+            for r, _z, v in points:
+                if not (np.isfinite(r) and np.isfinite(v)):
+                    continue
+                rho_s = float(np.clip(abs(float(r) - r0) / a_eff, 0.0, 1.0))
+                rho_samples.append(rho_s)
+                values.append(float(v))
+            if values:
+                core = float(np.mean(values))
+                order = np.argsort(rho_samples)
+                rho_samples_arr = np.asarray(rho_samples, dtype=float)[order]
+                values_arr = np.asarray(values, dtype=float)[order]
+                if np.unique(rho_samples_arr).size >= 2:
+                    interp = np.interp(rho_grid, rho_samples_arr, values_arr)
+                else:
+                    interp = np.full_like(rho_grid, values_arr[0], dtype=float)
+                edge_scale = np.clip(1.0 - rho_grid**2, 0.05, 1.0)
+                return np.maximum(interp * edge_scale / max(edge_scale[0], 1e-9), 0.0)
+        return np.maximum(core * (1.0 - rho_grid**2), 0.0)

@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.control.realtime_efit import MagneticDiagnostics
 from scpn_fusion.core.kinetic_efit import (
@@ -69,7 +70,7 @@ def test_kinetic_efit_isotropic():
 
     res = kefit.reconstruct(mock_measurements(diag))
 
-    assert res.pressure_consistency == 0.1
+    assert res.pressure_consistency == pytest.approx(0.1)
     assert res.wall_time_ms < 200.0
     assert len(res.p_kinetic) == 50
 
@@ -85,7 +86,7 @@ def test_kinetic_efit_anisotropic():
 
     res = kefit.reconstruct(mock_measurements(diag))
 
-    assert res.pressure_consistency > 0.1  # slightly worse initially due to anisotropic terms
+    assert res.pressure_consistency > 0.1
     assert np.all(res.sigma_anisotropy == 0.2)
     assert res.beta_fast > 0.0
 
@@ -109,3 +110,24 @@ def test_mse_constraint_q_profile():
 
     # MSE should constrain q to be closer to 1.0 at axis
     assert res_mse.q_profile[0] < res_no_mse.q_profile[0]
+
+
+def test_fast_ion_pressure_rejects_invalid_anisotropy():
+    with pytest.raises(ValueError, match="anisotropy_sigma"):
+        FastIonPressure(E_fast_keV=100.0, n_fast_frac=0.1, anisotropy_sigma=3.0)
+
+
+def test_ti_points_affect_kinetic_pressure_level():
+    diag = mock_diagnostics()
+    kin_cold = mock_kin_constraints()
+    kin_hot = mock_kin_constraints()
+    kin_cold.Ti_points = [(6.2, 0.0, 5.0)]
+    kin_hot.Ti_points = [(6.2, 0.0, 20.0)]
+    fi = FastIonPressure(100.0, 0.0, 0.0)
+
+    R = np.linspace(4, 8, 33)
+    Z = np.linspace(-3, 3, 33)
+    res_cold = KineticEFIT(diag, kin_cold, fi, R, Z).reconstruct(mock_measurements(diag))
+    res_hot = KineticEFIT(diag, kin_hot, fi, R, Z).reconstruct(mock_measurements(diag))
+
+    assert float(np.mean(res_hot.p_kinetic)) > float(np.mean(res_cold.p_kinetic))

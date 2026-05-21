@@ -105,6 +105,7 @@ class ReconfigurableController:
         self.n_sensors = n_sensors
 
         self.faulted_coils: set[int] = set()
+        self.faulted_sensors: set[int] = set()
         self.stuck_values: dict[int, float] = {}
 
         self.W = np.eye(jacobian.shape[0])
@@ -145,8 +146,39 @@ class ReconfigurableController:
         self.K = self._compute_gain()
 
     def handle_sensor_fault(self, sensor_index: int, fault_type: FaultType) -> None:
-        """Placeholder for sensor fault accommodation (e.g. observer reconfiguration)."""
-        pass
+        """
+        Accommodate sensor faults by reducing/removing affected measurement rows.
+
+        This controller uses a weighted least-squares allocation with `W`; sensor
+        faults are represented by adapting row weights that participate in the
+        control solve.
+        """
+        if sensor_index < 0 or sensor_index >= self.n_sensors:
+            raise IndexError(f"sensor_index {sensor_index} out of range [0, {self.n_sensors - 1}]")
+        if sensor_index in self.faulted_sensors:
+            return
+
+        row_idx = sensor_index
+        if row_idx >= self.W.shape[0]:
+            raise IndexError(
+                f"sensor_index {sensor_index} cannot be mapped to Jacobian row space of size "
+                f"{self.W.shape[0]}"
+            )
+
+        self.faulted_sensors.add(sensor_index)
+
+        if fault_type == FaultType.SENSOR_DROPOUT:
+            weight = 0.0
+        elif fault_type == FaultType.SENSOR_NOISE_INCREASE:
+            weight = 0.2
+        elif fault_type == FaultType.SENSOR_DRIFT:
+            weight = 0.5
+        else:
+            # Unknown sensor-class mode: keep some authority but downweight.
+            weight = 0.5
+
+        self.W[row_idx, row_idx] = weight
+        self.K = self._compute_gain()
 
     def step(self, error: np.ndarray, dt: float) -> np.ndarray:
         """Compute coil current corrections, compensating stuck-actuator offsets."""

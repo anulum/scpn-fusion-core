@@ -338,11 +338,41 @@ class NengoSNNController:
         logger.info("Exported FPGA weights to %s", path)
 
     def export_loihi(self, filename: str | Path) -> None:
-        """Loihi export requires the original nengo + nengo_loihi packages."""
-        raise NotImplementedError(
-            "Loihi export requires nengo + nengo_loihi. "
-            "Use export_fpga_weights() for hardware deployment."
-        )
+        """
+        Export a deterministic Loihi-compatible weight package as `.npz`.
+
+        This emits quantised arrays and per-array scales required for fixed-point
+        deployment pipelines. It does not require external Loihi SDK bindings.
+        """
+        path = Path(filename)
+        if path.suffix.lower() != ".npz":
+            raise ValueError("Loihi export path must use .npz extension.")
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        weights = self.export_weights()
+        payload: dict[str, Any] = {
+            "format": np.array(["loihi_quantized_v1"]),
+            "n_neurons": np.array([self.cfg.n_neurons], dtype=np.int32),
+            "n_channels": np.array([self.cfg.n_channels], dtype=np.int32),
+            "dt": np.array([self.cfg.dt], dtype=np.float64),
+            "tau_synapse": np.array([self.cfg.tau_synapse], dtype=np.float64),
+            "tau_mem": np.array([self.cfg.tau_mem], dtype=np.float64),
+            "gain": np.array([self.cfg.gain], dtype=np.float64),
+        }
+
+        qmax = 32767.0
+        for key, arr in weights.items():
+            arr_f = np.asarray(arr, dtype=np.float64)
+            if not np.all(np.isfinite(arr_f)):
+                raise ValueError(f"Non-finite values in weight array: {key}")
+            max_abs = float(np.max(np.abs(arr_f))) if arr_f.size else 0.0
+            scale = max_abs / qmax if max_abs > 0.0 else 1.0
+            quant = np.rint(arr_f / scale).astype(np.int16)
+            payload[f"{key}_scale"] = np.array([scale], dtype=np.float64)
+            payload[f"{key}_q"] = quant
+
+        np.savez(str(path), **payload)
+        logger.info("Exported Loihi-compatible quantized package to %s", path)
 
     def benchmark(self, n_steps: int = 1000) -> dict[str, float]:
         """Measure per-step latency.

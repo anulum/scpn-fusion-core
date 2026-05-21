@@ -13,10 +13,6 @@ import numpy as np
 import json
 from pathlib import Path
 
-try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:
-    pass
 from scpn_fusion.core.stability_analyzer import StabilityAnalyzer
 
 
@@ -30,6 +26,21 @@ class ForceBalanceSolver:
     def __init__(self, config_path):
         self.config_path = config_path
         self.analyzer = StabilityAnalyzer(config_path)
+        self._control_indices = (2, 3)
+
+    def _validate_kernel_config(self) -> None:
+        cfg = self.analyzer.kernel.cfg
+        if "physics" not in cfg or "plasma_current_target" not in cfg["physics"]:
+            raise ValueError("Kernel config missing physics.plasma_current_target.")
+        coils = cfg.get("coils")
+        if not isinstance(coils, list) or len(coils) <= max(self._control_indices):
+            raise ValueError(
+                "Kernel config must define at least 4 coils for PF3/PF4 force-balance control."
+            )
+        for idx in self._control_indices:
+            cur = float(coils[idx]["current"])
+            if not np.isfinite(cur):
+                raise ValueError(f"Coil current at index {idx} must be finite.")
 
     def solve_for_equilibrium(
         self,
@@ -38,26 +49,42 @@ class ForceBalanceSolver:
         *,
         max_iterations: int = 10,
         jacobian_floor: float = 1e-12,
-    ):
+    ) -> dict[str, float | int | bool]:
         """Iteratively adjust paired PF currents until radial force is balanced."""
+        self._validate_kernel_config()
+        if int(max_iterations) < 1:
+            raise ValueError("max_iterations must be >= 1.")
+        max_iterations = int(max_iterations)
+        jacobian_floor = float(jacobian_floor)
+        if not np.isfinite(jacobian_floor) or jacobian_floor <= 0.0:
+            raise ValueError("jacobian_floor must be finite and > 0.")
+        target_R = float(target_R)
+        target_Z = float(target_Z)
+        if not np.isfinite(target_R) or not np.isfinite(target_Z):
+            raise ValueError("target_R and target_Z must be finite.")
+
         print("--- FORCE BALANCE SOLVER (Newton-Raphson) ---")
         print(f"Target Equilibrium: R={target_R}m, Z={target_Z}m")
 
-        # We control PF3 and PF4 (Outer coils) to control Radial Position
-        # We assume Up-Down symmetry for now (PF3=PF4)
-        control_indices = [2, 3]  # PF3, PF4 indexes in coil list
+        # We control PF3 and PF4 (outer coils), constrained symmetrically.
+        i_pf3, i_pf4 = self._control_indices
 
         # Load Physics Params
         Ip = self.analyzer.kernel.cfg["physics"]["plasma_current_target"]
+        converged = False
+        final_fr = float("nan")
+        last_delta_i = 0.0
 
         # Newton Loop
         for iter in range(max_iterations):
             # 1. Calculate Current Force
             Fr, Fz, n_idx = self.analyzer.calculate_forces(target_R, target_Z, Ip)
+            final_fr = float(Fr)
             print(f"Iter {iter}: Radial Force = {Fr / 1e6:.2f} MN")
 
             if abs(Fr) < 1e4:  # Tolerance 10 kN
                 print("  -> CONVERGED. Force Balance Achieved.")
+                converged = True
                 break
 
             # 2. Calculate Jacobian dF/dI (Numerical Derivative)
@@ -66,11 +93,11 @@ class ForceBalanceSolver:
 
             # Apply perturbation
             currents = [c["current"] for c in self.analyzer.kernel.cfg["coils"]]
-            original_I3 = currents[2]
+            original_I3 = float(currents[i_pf3])
 
             # Modify config in memory
-            self.analyzer.kernel.cfg["coils"][2]["current"] += dI
-            self.analyzer.kernel.cfg["coils"][3]["current"] += dI
+            self.analyzer.kernel.cfg["coils"][i_pf3]["current"] = original_I3 + dI
+            self.analyzer.kernel.cfg["coils"][i_pf4]["current"] = original_I3 + dI
 
             # Recalculate Vacuum Field (Expensive part, but necessary)
             self.analyzer.Psi_vac = self.analyzer.kernel.calculate_vacuum_field()
@@ -98,6 +125,7 @@ class ForceBalanceSolver:
 
             # Safety Clamp (don't jump more than 5 MA at once)
             delta_I = np.clip(delta_I, -5.0, 5.0)
+            last_delta_i = float(delta_I)
 
             print(f"  Correction: Delta I = {delta_I:.3f} MA")
 
@@ -105,14 +133,22 @@ class ForceBalanceSolver:
             new_I = original_I3 + delta_I
 
             # Reset Config to new values
-            self.analyzer.kernel.cfg["coils"][2]["current"] = new_I
-            self.analyzer.kernel.cfg["coils"][3]["current"] = new_I
+            self.analyzer.kernel.cfg["coils"][i_pf3]["current"] = float(new_I)
+            self.analyzer.kernel.cfg["coils"][i_pf4]["current"] = float(new_I)
 
             # Update Vacuum field for next iteration base
             self.analyzer.Psi_vac = self.analyzer.kernel.calculate_vacuum_field()
 
         # Save Result
         self.save_config()
+        return {
+            "converged": converged,
+            "iterations_executed": iter + 1,
+            "final_radial_force_n": final_fr,
+            "last_delta_i_ma": last_delta_i,
+            "pf3_current_ma": float(self.analyzer.kernel.cfg["coils"][i_pf3]["current"]),
+            "pf4_current_ma": float(self.analyzer.kernel.cfg["coils"][i_pf4]["current"]),
+        }
 
     def save_config(self, output_path: str | Path | None = None):
         """Write the current balanced kernel configuration to disk."""

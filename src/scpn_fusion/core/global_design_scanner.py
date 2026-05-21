@@ -9,10 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-try:
-    from scpn_fusion.core._rust_compat import FusionKernel
-except ImportError:
-    pass
 from scpn_fusion.core.heat_ml_shadow_surrogate import HeatMLShadowSurrogate
 
 
@@ -34,9 +30,13 @@ class GlobalDesignExplorer:
         self.base_config_path = base_config_path
         self.heat_ml_shadow = HeatMLShadowSurrogate()
         self.heat_ml_shadow.fit_synthetic(seed=42, samples=1536)
-        self.divertor_flux_cap_mw_m2 = float(divertor_flux_cap_mw_m2)
-        self.zeff_cap = float(zeff_cap)
-        self.hts_peak_cap_t = float(hts_peak_cap_t)
+        self.divertor_flux_cap_mw_m2 = self._require_finite_positive(
+            "divertor_flux_cap_mw_m2", divertor_flux_cap_mw_m2
+        )
+        self.zeff_cap = self._require_finite_positive("zeff_cap", zeff_cap)
+        if self.zeff_cap > 1.0:
+            raise ValueError("zeff_cap must be <= 1.0.")
+        self.hts_peak_cap_t = self._require_finite_positive("hts_peak_cap_t", hts_peak_cap_t)
 
     @staticmethod
     def _require_finite_positive(name: str, value: float) -> float:
@@ -134,11 +134,11 @@ class GlobalDesignExplorer:
         P_aux = 50.0
         Q_eng = P_fus / P_aux
 
-        return {
+        out = {
             "R": R_maj,
             "B": B_field,
             "Ip": I_plasma,
-            "Model_Regime": "reduced_order",
+            "Model_Regime": "physics_scaling_surrogate",
             "P_fus": P_fus,
             "Q": Q_eng,
             "Wall_Load": Neutron_Load,
@@ -152,6 +152,25 @@ class GlobalDesignExplorer:
             "beta_N_eff": beta_N_eff,
             "Cost": R_maj**3 * B_field,  # Rough proxy for cost
         }
+        finite_keys = (
+            "P_fus",
+            "Q",
+            "Wall_Load",
+            "Div_Load_Baseline",
+            "Div_Load_Optimized",
+            "Div_Load",
+            "B_peak_HTS_T",
+            "Zeff_Est",
+            "beta_N_eff",
+            "Cost",
+        )
+        for key in finite_keys:
+            val = float(out[key])
+            if not np.isfinite(val):
+                raise RuntimeError(f"Non-finite design metric generated: {key}")
+        if float(out["Q"]) < 0.0 or float(out["P_fus"]) < 0.0:
+            raise RuntimeError("Non-physical negative fusion performance generated.")
+        return out
 
     def run_scan(
         self,
@@ -170,6 +189,8 @@ class GlobalDesignExplorer:
         b_bounds = self._validate_bounds("b_bounds", b_bounds)
         i_bounds = self._validate_bounds("i_bounds", i_bounds)
         q95_min = self._require_finite_positive("q95_min", q95_min)
+        if q95_min < 1.0:
+            raise ValueError("q95_min must be >= 1.0 for MHD safety margin.")
 
         print(f"--- SCPN GLOBAL DESIGN SCAN ({n_samples} Universes) ---")
         rng = np.random.default_rng(int(seed)) if seed is not None else np.random.default_rng()

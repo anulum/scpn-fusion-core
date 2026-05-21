@@ -3,6 +3,7 @@
 # SCPN Fusion Core — Integrated Scenario Tests
 from __future__ import annotations
 
+import json
 import numpy as np
 import pytest
 
@@ -160,3 +161,51 @@ class TestScenarioState:
         assert state.Ip_MA == 15.0
         assert state.ballooning_stable is True
         assert len(state.rho) == 10
+
+
+def test_step_with_ntm_updates_island_widths() -> None:
+    cfg = ScenarioConfig(
+        R0=6.2,
+        a=2.0,
+        B0=5.3,
+        kappa=1.7,
+        delta=0.33,
+        Ip_MA=15.0,
+        P_aux_MW=50.0,
+        P_eccd_MW=10.0,
+        include_ntm=True,
+        include_sol=False,
+        dt=0.05,
+    )
+    sim = IntegratedScenarioSimulator(cfg)
+    sim.initialize()
+    state = sim.step()
+
+    assert isinstance(state.ntm_island_widths, dict)
+    assert len(state.ntm_island_widths) >= 1
+    assert all(v > 0.0 for v in state.ntm_island_widths.values())
+
+
+def test_to_json_writes_config_and_states(tmp_path) -> None:
+    cfg = ScenarioConfig(
+        R0=6.2,
+        a=2.0,
+        B0=5.3,
+        kappa=1.7,
+        delta=0.33,
+        Ip_MA=15.0,
+        P_aux_MW=50.0,
+        include_ntm=True,
+        include_sol=False,
+        t_end=0.2,
+        dt=0.1,
+    )
+    sim = IntegratedScenarioSimulator(cfg)
+    out = tmp_path / "scenario.json"
+    sim.to_json(out)
+
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert "config" in payload
+    assert "states" in payload
+    assert len(payload["states"]) >= 1
+    assert "ntm_island_widths" in payload["states"][0]

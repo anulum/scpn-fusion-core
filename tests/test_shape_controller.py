@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.control.shape_controller import (
     CoilSet,
@@ -77,3 +78,48 @@ def test_shape_performance_metrics():
     assert len(res.gap_errors) == 3
     assert res.min_gap > 0.0
     assert res.xpoint_error > 0.0
+
+
+def test_shape_jacobian_update_accepts_explicit_matrix():
+    target = iter_lower_single_null_target()
+    coils = CoilSet(n_coils=10)
+    ctrl = PlasmaShapeController(target, coils, kernel=None)
+
+    new_j = np.ones((ctrl.jacobian.n_errors, coils.n_coils)) * 2.5e-4
+    ctrl.jacobian.update({"jacobian": new_j})
+
+    got = ctrl.jacobian.compute()
+    assert np.allclose(got, new_j)
+    assert got is not new_j
+
+
+def test_shape_jacobian_update_scales_with_operating_point_state():
+    target = iter_lower_single_null_target()
+    coils = CoilSet(n_coils=10)
+    ctrl = PlasmaShapeController(target, coils, kernel=None)
+
+    j_ref = ctrl.jacobian.compute()
+    ctrl.jacobian.update(
+        {
+            "plasma_current_ma": 30.0,
+            "beta_p": 1.2,
+            "coil_coupling": np.ones(coils.n_coils) * 1.1,
+            "error_coupling": np.ones(ctrl.jacobian.n_errors) * 0.9,
+        }
+    )
+    j_upd = ctrl.jacobian.compute()
+
+    expected_scale = (30.0 / 15.0) * (1.0 + 0.25 * (1.2 - 1.0)) * 1.1 * 0.9
+    assert np.allclose(j_upd, j_ref * expected_scale)
+
+
+def test_shape_jacobian_update_rejects_missing_or_invalid_payload():
+    target = iter_lower_single_null_target()
+    coils = CoilSet(n_coils=10)
+    ctrl = PlasmaShapeController(target, coils, kernel=None)
+
+    with pytest.raises(ValueError, match="must provide either 'jacobian'"):
+        ctrl.jacobian.update({})
+
+    with pytest.raises(ValueError, match="must have shape"):
+        ctrl.jacobian.update({"jacobian": np.ones((2, 2))})

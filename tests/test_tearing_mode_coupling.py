@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.tearing_mode_coupling import (
     ChirikovOverlap,
@@ -84,3 +85,24 @@ def test_stability_map():
     assert res.shape == (10, 10)
     assert res[0, 0] == 1  # Low beta, low li -> stable
     assert res[-1, -1] == -1  # High beta, high li -> unstable
+
+
+def test_coupling_coefficient_penalizes_mode_mismatch():
+    c = CoupledTearingModes((3, 2), (2, 1), 0.5, 0.8, 2.0, 6.2, 5.3)
+
+    same_n = c.coupling_coefficient(3, 2, 2, 2)
+    cross_n = c.coupling_coefficient(3, 2, 2, 1)
+
+    assert same_n > 0.0
+    assert cross_n > 0.0
+    assert same_n > cross_n
+
+
+def test_evolve_rejects_invalid_inputs():
+    c = CoupledTearingModes((3, 2), (2, 1), 0.5, 0.8, 2.0, 6.2, 5.3)
+
+    with pytest.raises(ValueError, match="n_steps"):
+        c.evolve(1e-6, 1e-6, j_bs=1e5, j_phi=1e6, eta=1e-7, dt=0.01, n_steps=0)
+
+    with pytest.raises(ValueError, match="eta"):
+        c.evolve(1e-6, 1e-6, j_bs=1e5, j_phi=1e6, eta=0.0, dt=0.01, n_steps=10)

@@ -209,10 +209,22 @@ def test_export_fpga_weights(tmp_path) -> None:
     assert "ch0_D_gain" in loaded
 
 
-def test_export_loihi_raises() -> None:
+def test_export_loihi_writes_quantized_package(tmp_path) -> None:
     ctrl = NengoSNNController()
-    with pytest.raises(NotImplementedError, match="Loihi export"):
-        ctrl.export_loihi("out.npz")
+    out = tmp_path / "loihi_weights.npz"
+    ctrl.export_loihi(out)
+    assert out.exists()
+    loaded = np.load(str(out))
+    assert loaded["format"][0] == "loihi_quantized_v1"
+    assert "ch0_D_gain_q" in loaded
+    assert "ch0_D_gain_scale" in loaded
+    assert loaded["ch0_D_gain_q"].dtype == np.int16
+
+
+def test_export_loihi_rejects_non_npz_extension(tmp_path) -> None:
+    ctrl = NengoSNNController()
+    with pytest.raises(ValueError, match=".npz"):
+        ctrl.export_loihi(tmp_path / "loihi_weights.bin")
 
 
 def test_benchmark_stats() -> None:
