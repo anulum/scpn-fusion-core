@@ -44,6 +44,11 @@ class DivertorLab:
         T_u = (7/2 * L_c * q_par / kappa0)^(2/7)
         n_u determines if we are in sheath-limited or conduction-limited regime.
         """
+        if not np.isfinite(expansion_factor) or expansion_factor <= 0.0:
+            raise ValueError("expansion_factor must be finite and > 0.")
+        if not np.isfinite(f_rad) or f_rad < 0.0 or f_rad >= 1.0:
+            raise ValueError("f_rad must be finite and in [0, 1).")
+
         q95 = 3.0
         L_c = np.pi * self.R * q95
 
@@ -56,9 +61,9 @@ class DivertorLab:
 
         q_target = self.q_parallel * (1.0 - f_rad) / expansion_factor
 
-        # Stangeby 2PM heuristic: T_t = T_u * ((1-f_rad) * 0.1)^2
-        T_t_eV = T_u_eV * ((1.0 - f_rad) * 0.1) ** 2
-        T_t_eV = max(T_t_eV, 1.0)
+        # Conduction-limited 2PM at target: T_t = (3.5 q_t L_c / kappa0)^(2/7)
+        T_t_eV = (3.5 * q_target * L_c / k0) ** (2.0 / 7.0)
+        T_t_eV = float(np.clip(T_t_eV, 1.0, T_u_eV))
 
         self.q_target_solid = q_target
         return T_u_eV, T_t_eV

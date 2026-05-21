@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.blob_transport import (
     BlobDetector,
@@ -71,6 +72,29 @@ def test_sol_blob_profile() -> None:
     wall_dirty = SOLBlobProfile.wall_flux(r_wall=0.1, Gamma_blob=1e20, lambda_n=0.02)
 
     assert wall_dirty > wall_clean
+
+
+def test_sol_blob_profile_rejects_invalid_inputs() -> None:
+    with pytest.raises(ValueError, match="D_perp"):
+        SOLBlobProfile.radial_density(
+            r=np.array([0.0, 0.1]), Gamma_blob=1e19, D_perp=0.0, lambda_n=0.02
+        )
+    with pytest.raises(ValueError, match="n_sep"):
+        SOLBlobProfile.radial_density(
+            r=np.array([0.0, 0.1]), Gamma_blob=1e19, D_perp=1.0, lambda_n=0.02, n_sep=0.0
+        )
+    with pytest.raises(ValueError, match="r_wall"):
+        SOLBlobProfile.wall_flux(r_wall=-0.1, Gamma_blob=1e19, lambda_n=0.02)
+
+
+def test_wall_flux_decreases_with_higher_diffusion_at_fixed_blob_flux() -> None:
+    low_diff = SOLBlobProfile.wall_flux(
+        r_wall=0.08, Gamma_blob=3.0e19, lambda_n=0.02, D_perp=0.5
+    )
+    high_diff = SOLBlobProfile.wall_flux(
+        r_wall=0.08, Gamma_blob=3.0e19, lambda_n=0.02, D_perp=2.0
+    )
+    assert high_diff < low_diff
 
 
 def test_blob_detector():

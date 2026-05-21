@@ -133,25 +133,68 @@ class SOLBlobProfile:
 
     @staticmethod
     def radial_density(
-        r: np.ndarray, Gamma_blob: float, D_perp: float, lambda_n: float
+        r: np.ndarray,
+        Gamma_blob: float,
+        D_perp: float,
+        lambda_n: float,
+        *,
+        n_sep: float = 1.0e19,
     ) -> np.ndarray:
         """Return normalised radial density profile with blob transport broadening."""
-        # Without blobs: n = n0 exp(-r / lambda_n)
-        # With blobs, effective transport is enhanced, flattening profile
-        # Simple analytic proxy
-        if D_perp <= 0:
-            return np.asarray(np.exp(-r / lambda_n))
+        r_arr = np.asarray(r, dtype=float)
+        gamma = float(Gamma_blob)
+        d_perp = float(D_perp)
+        lam = float(lambda_n)
+        n_ref = float(n_sep)
+        if r_arr.ndim != 1:
+            raise ValueError("r must be a one-dimensional radial grid.")
+        if not np.all(np.isfinite(r_arr)):
+            raise ValueError("r must contain finite values.")
+        if not np.isfinite(gamma) or gamma < 0.0:
+            raise ValueError("Gamma_blob must be finite and >= 0.")
+        if not np.isfinite(d_perp) or d_perp <= 0.0:
+            raise ValueError("D_perp must be finite and > 0.")
+        if not np.isfinite(lam) or lam <= 0.0:
+            raise ValueError("lambda_n must be finite and > 0.")
+        if not np.isfinite(n_ref) or n_ref <= 0.0:
+            raise ValueError("n_sep must be finite and > 0.")
 
-        blob_enhancement = 1.0 + Gamma_blob / (D_perp + 1e-6) * 1e-19
-        eff_lambda = lambda_n * math.sqrt(blob_enhancement)
-
-        return np.asarray(np.exp(-r / eff_lambda))
+        # Transport broadening from a dimensionless radial Péclet number:
+        # Pe_r = (Gamma_blob / n_sep) * lambda_n / D_perp.
+        # Effective decay length grows with convective blob transport.
+        pe_r = max((gamma / n_ref) * lam / d_perp, 0.0)
+        eff_lambda = lam * math.sqrt(1.0 + pe_r)
+        return np.asarray(np.exp(-r_arr / eff_lambda))
 
     @staticmethod
-    def wall_flux(r_wall: float, Gamma_blob: float, lambda_n: float) -> float:
+    def wall_flux(
+        r_wall: float,
+        Gamma_blob: float,
+        lambda_n: float,
+        *,
+        n_sep: float = 1.0e19,
+        D_perp: float = 1.0,
+    ) -> float:
         """Return attenuated blob flux reaching a wall radius."""
-        eff_lambda = lambda_n * math.sqrt(1.0 + Gamma_blob * 1e-19)
-        return float(Gamma_blob * math.exp(-r_wall / eff_lambda))
+        r_w = float(r_wall)
+        gamma = float(Gamma_blob)
+        lam = float(lambda_n)
+        n_ref = float(n_sep)
+        d_perp = float(D_perp)
+        if not np.isfinite(r_w) or r_w < 0.0:
+            raise ValueError("r_wall must be finite and >= 0.")
+        if not np.isfinite(gamma) or gamma < 0.0:
+            raise ValueError("Gamma_blob must be finite and >= 0.")
+        if not np.isfinite(lam) or lam <= 0.0:
+            raise ValueError("lambda_n must be finite and > 0.")
+        if not np.isfinite(n_ref) or n_ref <= 0.0:
+            raise ValueError("n_sep must be finite and > 0.")
+        if not np.isfinite(d_perp) or d_perp <= 0.0:
+            raise ValueError("D_perp must be finite and > 0.")
+
+        pe_r = max((gamma / n_ref) * lam / d_perp, 0.0)
+        eff_lambda = lam * math.sqrt(1.0 + pe_r)
+        return float(gamma * math.exp(-r_w / eff_lambda))
 
 
 @dataclass
