@@ -46,7 +46,7 @@ class CoilSet:
 
 
 class ShapeJacobian:
-    """d(e_shape)/dI_coils via GS perturbation (mock for testing)."""
+    """d(e_shape)/dI_coils sensitivity matrix with deterministic geometry basis."""
 
     def __init__(self, kernel: Any, coil_set: CoilSet, target: ShapeTarget):
         self.kernel = kernel
@@ -60,9 +60,59 @@ class ShapeJacobian:
 
         self.n_errors = self.n_isoflux + self.n_gaps + self.n_xpoint + self.n_strike
 
-        rng = np.random.default_rng(42)
-        self.J = rng.standard_normal((self.n_errors, coil_set.n_coils)) * 1e-4
+        self.J = self._build_reference_jacobian()
         self._reference_J = np.array(self.J, copy=True)
+
+    def _build_reference_jacobian(self) -> np.ndarray:
+        """
+        Build deterministic, full-rank baseline sensitivities.
+
+        The matrix uses smooth Fourier-like coil basis functions modulated by
+        feature groups (isoflux/gap/x-point/strike) so it is reproducible and
+        structured for re-linearisation updates.
+        """
+        n_coils = self.coil_set.n_coils
+        n_err = self.n_errors
+        if n_coils < 1 or n_err < 1:
+            raise ValueError("ShapeJacobian requires at least one coil and one error channel.")
+
+        # Coil phase basis over a notional toroidal/poloidal ordering.
+        coil_phase = np.linspace(0.0, 2.0 * np.pi, n_coils, endpoint=False)
+        mat = np.zeros((n_err, n_coils), dtype=float)
+
+        row = 0
+        for i in range(self.n_isoflux):
+            mode = 1 + (i % 4)
+            mat[row, :] = (1.0 + 0.08 * i) * np.cos(mode * coil_phase) + 0.35 * np.sin(
+                (mode + 1) * coil_phase
+            )
+            row += 1
+        for i in range(self.n_gaps):
+            mode = 2 + (i % 3)
+            mat[row, :] = (0.9 + 0.06 * i) * np.sin(mode * coil_phase) + 0.25 * np.cos(
+                (mode + 1) * coil_phase
+            )
+            row += 1
+        for i in range(self.n_xpoint):
+            mode = 3 + i
+            mat[row, :] = 1.4 * np.cos(mode * coil_phase) - 0.5 * np.sin((mode + 1) * coil_phase)
+            row += 1
+        for i in range(self.n_strike):
+            mode = 1 + (i % 5)
+            mat[row, :] = 0.7 * np.cos(mode * coil_phase) + 0.45 * np.sin((mode + 2) * coil_phase)
+            row += 1
+
+        # Ensure deterministic non-degenerate column scaling.
+        col_scale = 1.0 + 0.03 * np.arange(n_coils, dtype=float)
+        mat *= col_scale[np.newaxis, :]
+
+        # Guarantee full column rank by embedding a direct control basis in the
+        # first min(n_err, n_coils) rows.
+        for c in range(min(n_err, n_coils)):
+            mat[c, c] += 2.0
+
+        # Controller uses small-signal derivatives [shape_error / A].
+        return mat * 1e-4
 
     def compute(self) -> np.ndarray:
         """Return the shape Jacobian matrix d(e_shape)/dI_coils."""

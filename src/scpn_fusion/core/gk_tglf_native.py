@@ -20,6 +20,8 @@ References:
 
 from __future__ import annotations
 
+import json
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import cast
@@ -301,10 +303,56 @@ class TGLFNativeSolver(GKSolverBase):
         return True
 
     def prepare_input(self, params: GKLocalParams) -> Path:
-        raise NotImplementedError("Native solver; use run_from_params()")
+        payload = {
+            "params": {
+                "R_L_Ti": float(params.R_L_Ti),
+                "R_L_Te": float(params.R_L_Te),
+                "R_L_ne": float(params.R_L_ne),
+                "q": float(params.q),
+                "s_hat": float(params.s_hat),
+                "alpha_MHD": float(params.alpha_MHD),
+                "Te_Ti": float(params.Te_Ti),
+                "Z_eff": float(params.Z_eff),
+                "nu_star": float(params.nu_star),
+                "beta_e": float(params.beta_e),
+                "epsilon": float(params.epsilon),
+                "kappa": float(params.kappa),
+                "delta": float(params.delta),
+                "rho": float(params.rho),
+                "R0": float(params.R0),
+                "a": float(params.a),
+                "B0": float(params.B0),
+                "n_e": float(params.n_e),
+                "T_e_keV": float(params.T_e_keV),
+                "T_i_keV": float(params.T_i_keV),
+            },
+            "config": {
+                "sat_model": self.config.sat_model,
+                "exb_shear_model": self.config.exb_shear_model,
+                "multiscale": bool(self.config.multiscale),
+                "n_ky_ion": int(self.config.n_ky_ion),
+                "n_ky_etg": int(self.config.n_ky_etg),
+                "n_theta": int(self.config.n_theta),
+                "alpha_exb": float(self.config.alpha_exb),
+                "alpha_cs": float(self.config.alpha_cs),
+            },
+        }
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", prefix="tglf_native_", suffix=".json", delete=False
+        ) as handle:
+            json.dump(payload, handle)
+            return Path(handle.name)
 
     def run(self, input_path: Path, *, timeout_s: float = 30.0) -> GKOutput:
-        raise NotImplementedError("Native solver; use run_from_params()")
+        path = Path(input_path)
+        if path.suffix.lower() != ".json":
+            raise ValueError("input_path must point to a .json native input deck.")
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        params_dict = payload.get("params")
+        if not isinstance(params_dict, dict):
+            raise ValueError("native input deck missing 'params' object.")
+        params = GKLocalParams(**params_dict)
+        return self.run_from_params(params, timeout_s=timeout_s)
 
     def run_from_params(self, params: GKLocalParams, *, timeout_s: float = 30.0) -> GKOutput:
         r = self.solve(params)

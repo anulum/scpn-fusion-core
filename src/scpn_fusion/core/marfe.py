@@ -154,21 +154,44 @@ class DensityLimitPredictor:
 
 
 class MARFEStabilityDiagram:
-    def __init__(self, R0: float, a: float, q95: float, impurity: str):
+    def __init__(self, R0: float, a: float, q95: float, impurity: str, Ip_MA: float = 15.0):
+        if not np.isfinite(R0) or float(R0) <= 0.0:
+            raise ValueError("R0 must be finite and > 0.")
+        if not np.isfinite(a) or float(a) <= 0.0:
+            raise ValueError("a must be finite and > 0.")
+        if not np.isfinite(q95) or float(q95) <= 0.0:
+            raise ValueError("q95 must be finite and > 0.")
+        if not np.isfinite(Ip_MA) or float(Ip_MA) <= 0.0:
+            raise ValueError("Ip_MA must be finite and > 0.")
         self.R0 = R0
         self.a = a
         self.q95 = q95
         self.impurity = impurity
+        self.Ip_MA = float(Ip_MA)
 
     def scan_density_power(self, ne_range: np.ndarray, P_SOL_range: np.ndarray) -> np.ndarray:
+        ne_arr = np.asarray(ne_range, dtype=float)
+        psol_arr = np.asarray(P_SOL_range, dtype=float)
+        if ne_arr.ndim != 1 or psol_arr.ndim != 1:
+            raise ValueError("ne_range and P_SOL_range must be one-dimensional arrays.")
+        if ne_arr.size == 0 or psol_arr.size == 0:
+            raise ValueError("ne_range and P_SOL_range must not be empty.")
+        if np.any(~np.isfinite(ne_arr)) or np.any(~np.isfinite(psol_arr)):
+            raise ValueError("ne_range and P_SOL_range must be finite.")
+        if np.any(ne_arr < 0.0) or np.any(psol_arr <= 0.0):
+            raise ValueError("ne_range must be >= 0 and P_SOL_range must be > 0.")
+
         result = np.zeros((len(ne_range), len(P_SOL_range)))
 
         # Simple heuristic limit:
         # If n > n_marfe_crit(P) -> unstable (-1)
-        for i, ne in enumerate(ne_range):
-            for j, P in enumerate(P_SOL_range):
-                # mock Ip=15 MA
-                n_crit = DensityLimitPredictor.marfe_limit(15.0, self.a, P, self.impurity, 1e-4)
+        q95_scale = float(np.sqrt(np.clip(self.q95 / 3.0, 0.5, 2.0)))
+        for i, ne in enumerate(ne_arr):
+            for j, P in enumerate(psol_arr):
+                n_crit = (
+                    DensityLimitPredictor.marfe_limit(self.Ip_MA, self.a, float(P), self.impurity, 1e-4)
+                    * q95_scale
+                )
                 if ne > n_crit:
                     result[i, j] = -1
                 else:

@@ -8,6 +8,7 @@
 """Unit tests for 3D flux-surface mesh generation."""
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.equilibrium_3d import VMECStyleEquilibrium3D
 from scpn_fusion.core.geometry_3d import Reactor3DBuilder
@@ -152,10 +153,22 @@ def test_geometry_lcfs_sparse_crossings_fallback() -> None:
 def test_generate_coil_mesh_placeholders() -> None:
     kernel = _DummyKernel()
     builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
-    coils = builder.generate_coil_meshes()
+    coils = builder.generate_coil_meshes(n_toroidal_samples=36)
     assert len(coils) == 2
     assert coils[0]["name"] == "PF1"
     assert "R" in coils[0] and "Z" in coils[0]
+    assert coils[0]["coil_type"] == "toroidal_loop"
+    verts = coils[0]["vertices_xyz"]
+    assert isinstance(verts, np.ndarray)
+    assert verts.shape == (36, 3)
+    assert float(coils[0]["centerline_length_m"]) > 0.0
+
+
+def test_generate_coil_mesh_rejects_too_few_samples() -> None:
+    kernel = _DummyKernel()
+    builder = Reactor3DBuilder(kernel=kernel, solve_equilibrium=False)
+    with pytest.raises(ValueError, match="n_toroidal_samples"):
+        builder.generate_coil_meshes(n_toroidal_samples=8)
 
 
 def test_geometry_lcfs_low_point_edge_case_fallback() -> None:

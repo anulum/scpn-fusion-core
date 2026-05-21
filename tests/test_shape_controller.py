@@ -34,6 +34,14 @@ def test_jacobian_full_rank():
     assert rank == coils.n_coils
 
 
+def test_jacobian_is_deterministic_for_same_target_and_coils():
+    target = iter_lower_single_null_target()
+    coils = CoilSet(n_coils=10)
+    c1 = PlasmaShapeController(target, coils, kernel=None)
+    c2 = PlasmaShapeController(target, coils, kernel=None)
+    np.testing.assert_allclose(c1.jacobian.compute(), c2.jacobian.compute())
+
+
 def test_shape_controller_step():
     target = iter_lower_single_null_target()
     coils = CoilSet(n_coils=10)

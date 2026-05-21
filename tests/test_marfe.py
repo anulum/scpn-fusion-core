@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.marfe import (
     DensityLimitPredictor,
@@ -78,3 +79,25 @@ def test_marfe_stability_diagram():
     assert res[0, -1] == 1
     # High density, low power should be unstable (-1)
     assert res[-1, 0] == -1
+
+
+def test_marfe_stability_diagram_current_sensitivity():
+    ne_range = np.linspace(0.1, 50.0, 10)
+    p_sol_range = np.linspace(10.0, 100.0, 10)
+
+    low_ip = MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="W", Ip_MA=8.0)
+    high_ip = MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="W", Ip_MA=20.0)
+
+    low_map = low_ip.scan_density_power(ne_range, p_sol_range)
+    high_map = high_ip.scan_density_power(ne_range, p_sol_range)
+    # Higher plasma current should not reduce the stable region under this model.
+    assert np.sum(high_map == 1) >= np.sum(low_map == 1)
+
+
+def test_marfe_stability_diagram_rejects_invalid_inputs():
+    with pytest.raises(ValueError, match="Ip_MA"):
+        MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="W", Ip_MA=0.0)
+
+    diag = MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="W")
+    with pytest.raises(ValueError, match="one-dimensional"):
+        diag.scan_density_power(np.zeros((2, 2)), np.array([10.0, 20.0]))

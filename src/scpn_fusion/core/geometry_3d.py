@@ -325,18 +325,39 @@ class Reactor3DBuilder:
             toroidal_modes=modes,
         )
 
-    def generate_coil_meshes(self) -> list[dict[str, float | str]]:
-        """Return compact metadata for external coil geometry placeholders."""
+    def generate_coil_meshes(self, *, n_toroidal_samples: int = 72) -> list[dict[str, object]]:
+        """Generate external coil centreline geometry as sampled 3D loops."""
         if self.kernel is None:
             return []
+        if int(n_toroidal_samples) < 16:
+            raise ValueError("n_toroidal_samples must be >= 16.")
+        n_toroidal_samples = int(n_toroidal_samples)
 
-        meshes: list[dict[str, float | str]] = []
-        for coil in self.kernel.cfg["coils"]:
+        meshes: list[dict[str, object]] = []
+        phi = np.linspace(0.0, 2.0 * np.pi, n_toroidal_samples, endpoint=False)
+        for idx, coil in enumerate(self.kernel.cfg["coils"]):
+            name = str(coil.get("name", f"coil_{idx}"))
+            r_major = float(coil.get("r"))
+            z_pos = float(coil.get("z"))
+            if not np.isfinite(r_major) or r_major <= 0.0:
+                raise ValueError(f"Coil {name} has invalid major radius.")
+            if not np.isfinite(z_pos):
+                raise ValueError(f"Coil {name} has invalid vertical position.")
+            x = r_major * np.cos(phi)
+            y = r_major * np.sin(phi)
+            z = np.full_like(phi, z_pos, dtype=float)
+            vertices = np.column_stack((x, y, z))
+            segment = np.linalg.norm(np.roll(vertices, -1, axis=0) - vertices, axis=1)
+            centerline_length_m = float(np.sum(segment))
             meshes.append(
                 {
-                    "name": coil["name"],
-                    "R": float(coil["r"]),
-                    "Z": float(coil["z"]),
+                    "name": name,
+                    "R": r_major,
+                    "Z": z_pos,
+                    "coil_type": "toroidal_loop",
+                    "n_vertices": int(n_toroidal_samples),
+                    "centerline_length_m": centerline_length_m,
+                    "vertices_xyz": vertices,
                 }
             )
         return meshes

@@ -361,3 +361,16 @@ class TestPhysicsValidation:
     def test_is_available(self):
         solver = TGLFNativeSolver()
         assert solver.is_available()
+
+    def test_prepare_input_writes_json_deck(self):
+        solver = TGLFNativeSolver(TGLFNativeConfig(n_ky_ion=8, n_theta=32))
+        deck = solver.prepare_input(_CBC)
+        assert deck.exists()
+        assert deck.suffix == ".json"
+
+    def test_run_consumes_json_deck(self):
+        solver = TGLFNativeSolver(TGLFNativeConfig(n_ky_ion=8, n_theta=32))
+        deck = solver.prepare_input(_CBC)
+        out = solver.run(deck, timeout_s=1.0)
+        assert isinstance(out, GKOutput)
+        assert np.isfinite(out.chi_i)
