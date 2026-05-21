@@ -162,12 +162,8 @@ def test_current_fraction_is_bounded_and_rejects_invalid_domain() -> None:
 def test_maximum_re_energy_scales_with_density_and_pitch() -> None:
     mit = RunawayMitigationAssessment()
     base = mit.maximum_re_energy(B0=5.3, R0=6.2, ne_20=1.0, Z_eff=1.5, pitch_angle_rad=0.35)
-    high_density = mit.maximum_re_energy(
-        B0=5.3, R0=6.2, ne_20=4.0, Z_eff=1.5, pitch_angle_rad=0.35
-    )
-    high_pitch = mit.maximum_re_energy(
-        B0=5.3, R0=6.2, ne_20=1.0, Z_eff=1.5, pitch_angle_rad=0.7
-    )
+    high_density = mit.maximum_re_energy(B0=5.3, R0=6.2, ne_20=4.0, Z_eff=1.5, pitch_angle_rad=0.35)
+    high_pitch = mit.maximum_re_energy(B0=5.3, R0=6.2, ne_20=1.0, Z_eff=1.5, pitch_angle_rad=0.7)
     assert high_density < base
     assert high_pitch < base
 

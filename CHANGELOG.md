@@ -83,7 +83,7 @@
 - CI/runtime hardening: added `tools/deprecated_default_lane_guard.py` with regression tests and release-preflight integration.
 - Regression tests for expanded real-shot and FreeGS fallback-budget guard contracts.
 
-## [3.9.4] - 2026-05-21
+## [3.9.3] - 2026-05-21
 
 ### Changed
 - Physics hardening: runaway-electron evolution now enforces strict finite-domain contracts for step integration, replay evolution, and current-fraction reporting.

@@ -7,7 +7,7 @@
 # SCPN Fusion Core
 """Top-level package exports for SCPN Fusion Core."""
 
-__version__ = "3.9.4"
+__version__ = "3.9.3"
 
 from scpn_fusion.io.logging_config import setup_fusion_logging
 

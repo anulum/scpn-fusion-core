@@ -170,8 +170,10 @@ class VerticalStabilityAnalysis:
             raise ValueError("R must contain at least 3 points for gradients.")
         if z_arr.size < 1:
             raise ValueError("Z must not be empty.")
-        if not np.all(np.isfinite(psi_arr)) or not np.all(np.isfinite(r_arr)) or not np.all(
-            np.isfinite(z_arr)
+        if (
+            not np.all(np.isfinite(psi_arr))
+            or not np.all(np.isfinite(r_arr))
+            or not np.all(np.isfinite(z_arr))
         ):
             raise ValueError("psi, R, and Z must be finite.")
         if np.any(r_arr <= 0.0):

@@ -211,7 +211,9 @@ class StabilityAnalyzer:
             missing = [name for name in required if not hasattr(transport_solver, name)]
             if missing:
                 missing_list = ", ".join(missing)
-                raise TypeError(f"transport_solver is missing required profile fields: {missing_list}")
+                raise TypeError(
+                    f"transport_solver is missing required profile fields: {missing_list}"
+                )
             rho = transport_solver.rho
             ne = transport_solver.ne
             Ti = transport_solver.Ti

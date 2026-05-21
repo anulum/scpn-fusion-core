@@ -329,9 +329,7 @@ class GyrokineticTransportModel:
         # Collisionality estimate
         # nu_star ~ R * q / (v_te * tau_e * eps^1.5)
         # We can just use a proxy or 0.1 if not fully provided
-        nu_star = self._infer_nu_star(
-            profiles, R0=R0, q=q, Te_keV=Te, ne_1e19=ne, epsilon=epsilon
-        )
+        nu_star = self._infer_nu_star(profiles, R0=R0, q=q, Te_keV=Te, ne_1e19=ne, epsilon=epsilon)
         beta_e = profiles.get("beta_e", 0.01)
         alpha_MHD = profiles.get("alpha_MHD", 0.0)
 

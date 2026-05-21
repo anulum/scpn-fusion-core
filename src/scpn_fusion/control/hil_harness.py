@@ -398,7 +398,9 @@ class FPGASNNExport:
         lines.append("            // Per-channel signed spike-rate accumulators")
         for ch, port in enumerate(reg_map.output_ports):
             lines.append(f"            {port} <= 16'sd0;")
-            lines.append(f"            for (i = {ch * self.n_neurons}; i < {(ch + 1) * self.n_neurons}; i = i + 1) begin")
+            lines.append(
+                f"            for (i = {ch * self.n_neurons}; i < {(ch + 1) * self.n_neurons}; i = i + 1) begin"
+            )
             lines.append("                if (v_mem[i] >= V_THRESHOLD) begin")
             lines.append(f"                    {port} <= {port} + 16'sd1;")
             lines.append("                end")

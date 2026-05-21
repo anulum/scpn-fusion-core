@@ -351,8 +351,10 @@ class IntegratedScenarioSimulator:
             return
 
         dt = float(self.config.dt)
-        j_phi_prof = self._ohmic_current_density() + np.asarray(j_bs, dtype=float) + np.asarray(
-            j_cd, dtype=float
+        j_phi_prof = (
+            self._ohmic_current_density()
+            + np.asarray(j_bs, dtype=float)
+            + np.asarray(j_cd, dtype=float)
         )
         allowed_modes = {(2, 1), (3, 2)}
 

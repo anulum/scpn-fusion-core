@@ -133,7 +133,9 @@ class ModeLocking:
             raise ValueError("kappa must be finite and positive")
         if not np.isfinite(inertia_factor) or inertia_factor <= 0.0:
             raise ValueError("inertia_factor must be finite and positive")
-        if I_eff_override is not None and (not np.isfinite(I_eff_override) or I_eff_override <= 0.0):
+        if I_eff_override is not None and (
+            not np.isfinite(I_eff_override) or I_eff_override <= 0.0
+        ):
             raise ValueError("I_eff_override must be finite and positive when provided")
         self.R0 = R0
         self.a = a

@@ -235,7 +235,12 @@ def compute_q_profile(
         raise ValueError("rho must contain at least 3 points.")
     if not (ne.shape == Ti.shape == Te.shape == rho.shape):
         raise ValueError("ne, Ti, and Te must match rho shape.")
-    if not np.all(np.isfinite(rho)) or not np.all(np.isfinite(ne)) or not np.all(np.isfinite(Ti)) or not np.all(np.isfinite(Te)):
+    if (
+        not np.all(np.isfinite(rho))
+        or not np.all(np.isfinite(ne))
+        or not np.all(np.isfinite(Ti))
+        or not np.all(np.isfinite(Te))
+    ):
         raise ValueError("profiles must contain only finite values.")
     if np.any(ne < 0.0) or np.any(Ti < 0.0) or np.any(Te < 0.0):
         raise ValueError("ne, Ti, and Te must be non-negative.")

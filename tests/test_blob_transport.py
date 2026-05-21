@@ -88,12 +88,8 @@ def test_sol_blob_profile_rejects_invalid_inputs() -> None:
 
 
 def test_wall_flux_decreases_with_higher_diffusion_at_fixed_blob_flux() -> None:
-    low_diff = SOLBlobProfile.wall_flux(
-        r_wall=0.08, Gamma_blob=3.0e19, lambda_n=0.02, D_perp=0.5
-    )
-    high_diff = SOLBlobProfile.wall_flux(
-        r_wall=0.08, Gamma_blob=3.0e19, lambda_n=0.02, D_perp=2.0
-    )
+    low_diff = SOLBlobProfile.wall_flux(r_wall=0.08, Gamma_blob=3.0e19, lambda_n=0.02, D_perp=0.5)
+    high_diff = SOLBlobProfile.wall_flux(r_wall=0.08, Gamma_blob=3.0e19, lambda_n=0.02, D_perp=2.0)
     assert high_diff < low_diff
 
 

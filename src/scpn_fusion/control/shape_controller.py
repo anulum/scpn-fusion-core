@@ -251,11 +251,15 @@ class PlasmaShapeController:
             n_hat = n_vec / n_norm
             local_grad = np.array([grad_r[ir, iz], grad_z[ir, iz]], dtype=float)
             signed_gap_proxy = float(np.dot(local_grad, n_hat))
-            target_gap = float(self.target.gap_targets[i]) if i < len(self.target.gap_targets) else 0.0
+            target_gap = (
+                float(self.target.gap_targets[i]) if i < len(self.target.gap_targets) else 0.0
+            )
             e_gap[i] = signed_gap_proxy - target_gap
 
         if self.target.xpoint_target and self.jacobian.n_xpoint > 0:
-            ir, iz = self._map_point_to_index(self.target.xpoint_target[0], self.target.xpoint_target[1], nr, nz)
+            ir, iz = self._map_point_to_index(
+                self.target.xpoint_target[0], self.target.xpoint_target[1], nr, nz
+            )
             # Saddle-point proxy: gradient should vanish.
             e_xp[0] = grad_r[ir, iz]
             if self.jacobian.n_xpoint > 1:
