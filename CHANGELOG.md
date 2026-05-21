@@ -83,6 +83,16 @@
 - CI/runtime hardening: added `tools/deprecated_default_lane_guard.py` with regression tests and release-preflight integration.
 - Regression tests for expanded real-shot and FreeGS fallback-budget guard contracts.
 
+## [3.9.4] - 2026-05-21
+
+### Changed
+- Physics hardening: runaway-electron evolution now enforces strict finite-domain contracts for step integration, replay evolution, and current-fraction reporting.
+- Physics hardening: MHD q-profile and stability criteria now enforce strict structural and physical-domain invariants (normalised-radius bounds, q-profile consistency, and fail-fast malformed-profile rejection across Mercier/ballooning/KS/full checks).
+- Physics hardening: extended MHD criteria (Troyon, NTM, RWM, peeling-ballooning) now enforce validated parameter domains with deterministic fail-fast rejection of malformed inputs.
+- Runtime hardening: stability-analyser gradient sampling now uses boundary-safe central-difference indexing and positive-radius scan bounds, removing silent edge wrap behaviour.
+- Documentation hardening: Sphinx core API index now explicitly includes `stability_mhd`, `stability_mhd_extended`, and `runaway_electrons` so API docs track current hardened physics surfaces.
+- Release metadata sync: package, citation, and README version surfaces aligned to `3.9.4`.
+
 ---
 
 ## [3.9.3] - 2026-03-14

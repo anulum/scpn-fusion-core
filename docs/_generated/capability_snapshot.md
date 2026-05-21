@@ -5,14 +5,14 @@
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 3.9.3 |
+| Package version | 3.9.4 |
 | Public API exports | 2 |
 | Python capability source modules | 260 |
 | Python capability classes | 486 |
 | Capability documentation pages | 59 |
 | Rust workspace crates | 11 |
 | Optional extras | 10 |
-| Python test files | 381 |
+| Python test files | 384 |
 | Public documentation pages | 59 |
 | GitHub Actions workflows | 12 |
 

@@ -141,6 +141,27 @@ Stability Analyser
    :undoc-members:
    :show-inheritance:
 
+MHD Stability Criteria
+-----------------------
+
+.. automodule:: scpn_fusion.core.stability_mhd
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: scpn_fusion.core.stability_mhd_extended
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Runaway Electron Dynamics
+--------------------------
+
+.. automodule:: scpn_fusion.core.runaway_electrons
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Neural Equilibrium
 --------------------
 

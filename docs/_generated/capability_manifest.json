@@ -2326,7 +2326,7 @@
     "python_capability_classes": 486,
     "python_capability_source_modules": 260,
     "rust_workspace_crates": 11,
-    "test_files": 381
+    "test_files": 384
   },
   "documentation": {
     "public_pages": [
@@ -2435,7 +2435,7 @@
     "name": "scpn-fusion",
     "readme": "README.md",
     "requires_python": ">=3.10",
-    "version": "3.9.3"
+    "version": "3.9.4"
   },
   "project_label": "SCPN Fusion Core",
   "quality_gates": {
@@ -2537,6 +2537,7 @@
       "tests/test_disruption_sliding_window.py",
       "tests/test_disruption_threshold_sweep.py",
       "tests/test_disruption_toroidal_features.py",
+      "tests/test_divertor_thermal_sim.py",
       "tests/test_docstring_coverage_tool.py",
       "tests/test_elm_model.py",
       "tests/test_elm_model_full.py",
@@ -2560,6 +2561,7 @@
       "tests/test_fokker_planck.py",
       "tests/test_force_balance.py",
       "tests/test_force_balance_3d.py",
+      "tests/test_formal_safety_contract_replay_benchmark.py",
       "tests/test_forward_diagnostics_extended.py",
       "tests/test_forward_diagnostics_guards.py",
       "tests/test_free_boundary_supervisory_control.py",
@@ -2829,6 +2831,7 @@
       "tests/test_validators.py",
       "tests/test_verify_10khz_rust.py",
       "tests/test_version_metadata.py",
+      "tests/test_vertical_control_replay_benchmark.py",
       "tests/test_vessel_model.py",
       "tests/test_vibrana_bridge.py",
       "tests/test_vmec_lite.py",
