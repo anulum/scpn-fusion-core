@@ -250,6 +250,45 @@ class GyrokineticTransportModel:
         # Typical tuning constant for macroscopic match
         self.c_tune = 0.5
 
+    @staticmethod
+    def _infer_nu_star(
+        profiles: dict[str, Any],
+        *,
+        R0: float,
+        q: float,
+        Te_keV: float,
+        ne_1e19: float,
+        epsilon: float,
+    ) -> float:
+        nu_user = profiles.get("nu_star")
+        if nu_user is not None:
+            nu_star = float(nu_user)
+            if not np.isfinite(nu_star) or nu_star < 0.0:
+                raise ValueError("nu_star must be finite and >= 0.")
+            return nu_star
+
+        ln_lambda = float(profiles.get("ln_lambda", 17.0))
+        if not np.isfinite(ln_lambda) or ln_lambda <= 0.0:
+            raise ValueError("ln_lambda must be finite and > 0.")
+        if not np.isfinite(ne_1e19) or ne_1e19 <= 0.0:
+            raise ValueError("ne must be finite and > 0 for nu_star inference.")
+        if not np.isfinite(Te_keV) or Te_keV <= 0.0:
+            raise ValueError("Te must be finite and > 0 for nu_star inference.")
+        if not np.isfinite(R0) or R0 <= 0.0:
+            raise ValueError("R0 must be finite and > 0 for nu_star inference.")
+        if not np.isfinite(epsilon) or epsilon <= 0.0:
+            raise ValueError("epsilon must be finite and > 0 for nu_star inference.")
+
+        # Normalised electron collisionality scaling:
+        # nu_* ~ C * (R[m] q n_e[1e19] Z_eff lnLambda) / (Te[keV]^2 epsilon^(3/2))
+        z_eff = float(profiles.get("Z_eff", 1.5))
+        if not np.isfinite(z_eff) or z_eff <= 0.0:
+            raise ValueError("Z_eff must be finite and > 0.")
+        coeff = 6.921e-5
+        nu_star = coeff * R0 * q * ne_1e19 * z_eff * ln_lambda / (max(Te_keV, 1e-9) ** 2)
+        nu_star /= max(epsilon**1.5, 1e-12)
+        return float(max(nu_star, 0.0))
+
     def evaluate(self, rho: float, profiles: dict[str, Any]) -> tuple[float, float, float]:
         """
         Evaluate transport coefficients at a single radial point.
@@ -290,7 +329,9 @@ class GyrokineticTransportModel:
         # Collisionality estimate
         # nu_star ~ R * q / (v_te * tau_e * eps^1.5)
         # We can just use a proxy or 0.1 if not fully provided
-        nu_star = profiles.get("nu_star", 0.1)
+        nu_star = self._infer_nu_star(
+            profiles, R0=R0, q=q, Te_keV=Te, ne_1e19=ne, epsilon=epsilon
+        )
         beta_e = profiles.get("beta_e", 0.01)
         alpha_MHD = profiles.get("alpha_MHD", 0.0)
 
@@ -361,11 +402,20 @@ class GyrokineticTransportModel:
                 "dTe_dr": profiles["dTe_dr"][i] if "dTe_dr" in profiles else 0.0,
                 "dTi_dr": profiles["dTi_dr"][i] if "dTi_dr" in profiles else 0.0,
                 "dne_dr": profiles["dne_dr"][i] if "dne_dr" in profiles else 0.0,
-                "nu_star": profiles["nu_star"][i] if "nu_star" in profiles else 0.1,
                 "beta_e": profiles["beta_e"][i] if "beta_e" in profiles else 0.01,
                 "alpha_MHD": profiles["alpha_MHD"][i] if "alpha_MHD" in profiles else 0.0,
                 "Z_eff": profiles["Z_eff"][i] if "Z_eff" in profiles else 1.5,
             }
+            if "nu_star" in profiles:
+                nu_src = profiles["nu_star"]
+                local_profs["nu_star"] = (
+                    nu_src[i] if isinstance(nu_src, np.ndarray) else float(nu_src)
+                )
+            if "ln_lambda" in profiles:
+                ln_src = profiles["ln_lambda"]
+                local_profs["ln_lambda"] = (
+                    ln_src[i] if isinstance(ln_src, np.ndarray) else float(ln_src)
+                )
             ci, ce, de = self.evaluate(rho[i], local_profs)
             chi_i[i] = ci
             chi_e[i] = ce

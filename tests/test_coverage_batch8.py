@@ -73,3 +73,22 @@ class TestSimulateTearingMode:
 
         result = simulate_tearing_mode(steps=50)
         assert result is not None
+
+    def test_beta_p_parameter_changes_growth_trajectory(self):
+        from scpn_fusion.control.disruption_risk_runtime import simulate_tearing_mode
+
+        low_signal, _, _ = simulate_tearing_mode(
+            steps=120, rng=np.random.default_rng(123), beta_p=0.2
+        )
+        high_signal, _, _ = simulate_tearing_mode(
+            steps=120, rng=np.random.default_rng(123), beta_p=1.2
+        )
+        assert float(np.mean(high_signal)) > float(np.mean(low_signal))
+
+    def test_rejects_invalid_beta_and_wcrit(self):
+        from scpn_fusion.control.disruption_risk_runtime import simulate_tearing_mode
+
+        with pytest.raises(ValueError, match="beta_p"):
+            simulate_tearing_mode(steps=64, beta_p=float("nan"))
+        with pytest.raises(ValueError, match="w_crit"):
+            simulate_tearing_mode(steps=64, w_crit=0.0)

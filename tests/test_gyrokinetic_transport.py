@@ -220,3 +220,38 @@ def test_transport_model_eval_profile():
     assert len(D_e) == 10
     assert np.all(chi_i >= 0.0)
     assert chi_i[0] == 0.01  # boundary handling
+
+
+def test_transport_model_infers_collisionality_from_profiles() -> None:
+    model = GyrokineticTransportModel()
+    base = {
+        "Z_eff": 1.5,
+        "ln_lambda": 17.0,
+    }
+    nu_low = model._infer_nu_star(base, R0=2.0, q=1.5, Te_keV=5.0, ne_1e19=2.0, epsilon=0.125)
+    nu_high = model._infer_nu_star(base, R0=2.0, q=1.5, Te_keV=5.0, ne_1e19=10.0, epsilon=0.125)
+    assert nu_low > 0.0
+    assert nu_high > nu_low
+
+
+def test_transport_model_rejects_invalid_collisionality_inputs() -> None:
+    model = GyrokineticTransportModel()
+    rho = 0.5
+    profiles = {
+        "R0": 2.0,
+        "a": 0.5,
+        "B0": 5.0,
+        "q": 1.5,
+        "s_hat": 1.0,
+        "Te": 5.0,
+        "Ti": 5.0,
+        "ne": 5.0,
+        "dTe_dr": -50.0,
+        "dTi_dr": -50.0,
+        "dne_dr": -50.0,
+        "ln_lambda": 0.0,
+    }
+    import pytest
+
+    with pytest.raises(ValueError, match="ln_lambda"):
+        model.evaluate(rho, profiles)

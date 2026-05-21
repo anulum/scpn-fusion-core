@@ -45,6 +45,8 @@ def simulate_tearing_mode(
     steps=1000,
     *,
     rng: Optional[np.random.Generator] = None,
+    beta_p: float = 0.8,
+    w_crit: float = 0.05,
 ):
     """
     Generates synthetic shot data.
@@ -57,15 +59,18 @@ def simulate_tearing_mode(
     dt = 0.01
     w = 0.01  # Island width
     local_rng = rng if rng is not None else np.random.default_rng()
+    beta_p_f = float(beta_p)
+    w_crit_f = float(w_crit)
+    if not np.isfinite(beta_p_f) or beta_p_f < 0.0:
+        raise ValueError("beta_p must be finite and >= 0.")
+    if not np.isfinite(w_crit_f) or w_crit_f <= 0.0:
+        raise ValueError("w_crit must be finite and > 0.")
 
     is_disruptive = float(local_rng.random()) > 0.5
     trigger_time = int(local_rng.integers(200, 800)) if is_disruptive else 9999
 
     delta_prime = -0.5
     w_history = []
-
-    beta_p = 0.8  # poloidal beta proxy
-    w_crit = 0.05  # island stabilisation threshold
 
     for t in range(steps):
         if t > trigger_time:
@@ -75,7 +80,7 @@ def simulate_tearing_mode(
 
         # Modified Rutherford Equation: dw/dt = Delta' + Delta'_BS
         # Delta'_BS = beta_p * w / (w^2 + w_crit^2)
-        f_bs = beta_p * (w / (w**2 + w_crit**2))
+        f_bs = beta_p_f * (w / (w**2 + w_crit_f**2))
 
         dw = (delta_prime + f_bs) * (1.0 - w / 12.0) * dt
         w += dw
