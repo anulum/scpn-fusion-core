@@ -15,6 +15,7 @@ bandit>=1.7
 pre-commit>=3.0
 jax[cpu]
 gymnasium
+jsonschema>=4.26.0
 
 # Dependabot security floors for CI transitive tooling.
 Pygments>=2.20.0
