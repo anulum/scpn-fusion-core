@@ -118,6 +118,17 @@ jobs:
           print("CI chain guard passed: no duplicate in-progress runs found.")
           PY
 
+  github-token-format-guard:
+    name: GitHub Token Format Guard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [ci-chain-guard]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+      - name: Validate token format assumptions
+        run: python tools/github_token_format_guard.py
+
   smoke-install:
     name: Install Smoke (${{ matrix.os }} / ${{ matrix.profile }})
     runs-on: ${{ matrix.os }}
