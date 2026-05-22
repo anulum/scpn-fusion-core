@@ -32,7 +32,7 @@ Rust acceleration (6,600x speedup).
 | Capability documentation pages | 59 |
 | Rust workspace crates | 11 |
 | Optional extras | 10 |
-| Python test files | 384 |
+| Python test files | 385 |
 | Public documentation pages | 59 |
 | GitHub Actions workflows | 12 |
 

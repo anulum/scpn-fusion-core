@@ -2326,7 +2326,7 @@
     "python_capability_classes": 486,
     "python_capability_source_modules": 260,
     "rust_workspace_crates": 11,
-    "test_files": 384
+    "test_files": 385
   },
   "documentation": {
     "public_pages": [
@@ -2595,6 +2595,7 @@
       "tests/test_generate_source_p0p1_issue_backlog.py",
       "tests/test_generate_underdeveloped_scope_reports.py",
       "tests/test_geometry_3d.py",
+      "tests/test_github_token_format_guard.py",
       "tests/test_gk_cgyro.py",
       "tests/test_gk_corrector.py",
       "tests/test_gk_eigenvalue.py",

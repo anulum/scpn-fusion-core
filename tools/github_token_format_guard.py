@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import re
 import subprocess
-import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +18,6 @@ TRACKED_TEXT_GLOBS = (
     ".github/workflows/",
     "tools/",
     "src/",
-    "tests/",
 )
 
 
