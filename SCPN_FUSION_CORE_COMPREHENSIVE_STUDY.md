@@ -2075,7 +2075,7 @@ A 2025 benchmarking study in the Journal of Computational Physics demonstrated t
 
 **Concurrency**: The Grad-Shafranov solver, spectral turbulence code, and ray-tracing neutronics calculations are all amenable to data parallelism. Rust's `rayon` crate provides effortless thread parallelism with compile-time data race prevention — a significant advantage over Python's GIL (Global Interpreter Lock) limitation.
 
-**Modern Tooling**: Rust's Cargo build system, integrated testing framework, documentation generation, and dependency management provide a development experience qualitatively superior to the Makefiles, CMake configurations, and manual dependency management typical of legacy Fortran/C++ fusion codes.
+**Modern Tooling**: Rust's Cargo build system, integrated testing framework, documentation generation, and dependency management provide a development experience with stronger automation than the Makefiles, CMake configurations, and manual dependency management typical of legacy Fortran/C++ fusion codes.
 
 **Python Interoperability**: PyO3 provides zero-copy NumPy array interoperability, meaning the Rust backend can accept and return NumPy arrays without serialization overhead. This enables a seamless transition where existing Python analysis scripts, Jupyter notebooks, and visualization code continue to work unchanged.
 

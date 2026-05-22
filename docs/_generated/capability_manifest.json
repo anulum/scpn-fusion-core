@@ -2326,7 +2326,7 @@
     "python_capability_classes": 486,
     "python_capability_source_modules": 260,
     "rust_workspace_crates": 11,
-    "test_files": 385
+    "test_files": 372
   },
   "documentation": {
     "public_pages": [
@@ -2500,19 +2500,6 @@
       "tests/test_controller_comparison.py",
       "tests/test_controller_runtime_backend.py",
       "tests/test_controller_tuning.py",
-      "tests/test_coverage_batch10.py",
-      "tests/test_coverage_batch11.py",
-      "tests/test_coverage_batch12.py",
-      "tests/test_coverage_batch13.py",
-      "tests/test_coverage_batch14.py",
-      "tests/test_coverage_batch2.py",
-      "tests/test_coverage_batch3.py",
-      "tests/test_coverage_batch4.py",
-      "tests/test_coverage_batch5.py",
-      "tests/test_coverage_batch6.py",
-      "tests/test_coverage_batch7.py",
-      "tests/test_coverage_batch8.py",
-      "tests/test_coverage_batch9.py",
       "tests/test_coverage_delta_report.py",
       "tests/test_coverage_gaps.py",
       "tests/test_coverage_guard.py",

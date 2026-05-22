@@ -3,7 +3,7 @@
 Figure: Picard iteration convergence — residual vs iteration number.
 
 Compares SOR and multigrid V-cycle inner solvers on 65x65 and 128x128 grids.
-Log-scale y-axis, linear x-axis.  Demonstrates multigrid's superior
+Log-scale y-axis, linear x-axis.  Demonstrates multigrid's improved
 convergence rate (O(N) vs O(N^2) effective complexity).
 
 Output: fig_gs_convergence.pdf / .png

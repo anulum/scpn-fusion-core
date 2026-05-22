@@ -3116,7 +3116,7 @@ The immediate path forward has three parallel tracks:
 4. Compare performance against a conventional PID controller on the same plant model.
 5. Publish the comparison results.
 
-**Expected outcome:** Demonstration that the neuro-symbolic controller can stabilise plasma position with comparable or superior performance to PID, with the additional benefits of formal specification and embedded safety.
+**Expected outcome:** Demonstration that the neuro-symbolic controller can stabilise plasma position with performance at least comparable to PID, with the additional benefits of formal specification and embedded safety.
 
 ### Track 2: Rust SC Kernel Activation (Priority: Medium)
 
