@@ -136,3 +136,17 @@ def test_momentum_solver_rejects_invalid_grid_and_step_domains():
         solver.step(0.0, good, good, good, good, good)
     with pytest.raises(ValueError, match="chi_i"):
         solver.step(0.1, -good, good, good, good, good)
+
+
+def test_intrinsic_rotation_torque_tracks_ion_temperature_gradient_direction() -> None:
+    """Residual-stress torque vanishes for flat Ti and reverses with Ti gradient."""
+    from scpn_fusion.core.momentum_transport import intrinsic_rotation_torque
+
+    grad_ne = np.zeros(5)
+    flat = intrinsic_rotation_torque(np.zeros(5), grad_ne, R0=6.2, a=2.0)
+    inward_hotter = intrinsic_rotation_torque(np.linspace(-4.0, -1.0, 5), grad_ne, R0=6.2, a=2.0)
+    outward_hotter = intrinsic_rotation_torque(np.linspace(1.0, 4.0, 5), grad_ne, R0=6.2, a=2.0)
+
+    np.testing.assert_allclose(flat, 0.0)
+    assert np.all(inward_hotter > 0.0)
+    assert np.all(outward_hotter < 0.0)

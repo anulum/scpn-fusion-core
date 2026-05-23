@@ -70,3 +70,14 @@ def test_stable_shot_hash_and_synthetic_contour_range() -> None:
     assert np.all(np.isfinite(psi))
     assert float(np.min(psi)) >= 0.0
     assert float(np.max(psi)) <= 1.0
+
+
+def test_default_diiid_directory_is_anchored_under_reference_data_root(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The DIII-D archive directory follows the configured reference-data root."""
+    from scpn_fusion.io.tokamak_archive_profiles import default_diiid_dir
+
+    monkeypatch.setenv("SCPN_DATA_DIR", "/tmp/scpn_reference_data")
+
+    assert default_diiid_dir().as_posix() == "/tmp/scpn_reference_data/diiid"

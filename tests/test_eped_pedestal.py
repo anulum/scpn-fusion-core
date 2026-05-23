@@ -107,3 +107,19 @@ def test_predict_rejects_invalid_domain_mode() -> None:
     model = EpedPedestalModel(**_valid_model_kwargs())
     with pytest.raises(ValueError, match="domain_mode"):
         model.predict(n_ped_1e19=8.0, T_ped_guess_keV=3.0, domain_mode="bad")
+
+
+def test_domain_violation_helper_is_zero_inside_and_fractional_outside_domain() -> None:
+    """EPED domain scoring is zero in-range and normalised outside bounds."""
+    from scpn_fusion.core.eped_pedestal import (
+        _normalized_domain_violation,
+        _require_positive_finite,
+    )
+
+    assert _require_positive_finite("pressure", 3.0) == pytest.approx(3.0)
+    with pytest.raises(ValueError, match="pressure"):
+        _require_positive_finite("pressure", 0.0)
+
+    assert _normalized_domain_violation(5.0, lower=0.0, upper=10.0) == 0.0
+    assert _normalized_domain_violation(15.0, lower=0.0, upper=10.0) == pytest.approx(0.5)
+    assert _normalized_domain_violation(-2.0, lower=0.0, upper=10.0) == pytest.approx(0.2)

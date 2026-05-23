@@ -60,3 +60,16 @@ def test_reactor_config_coils_default_is_not_shared() -> None:
     cfg1.coils.append({"name": "PFX", "r": 2.0, "z": 0.0, "current": 0.1})  # type: ignore[arg-type]
     assert len(cfg1.coils) == 1
     assert len(cfg2.coils) == 0
+
+
+def test_dimensions_and_coil_models_preserve_geometry_and_current_units() -> None:
+    """Config schema primitives retain explicit geometry and PF current values."""
+    from scpn_fusion.core.config_schema import Coil, Dimensions
+
+    dimensions = Dimensions(R_min=1.0, R_max=9.0, Z_min=-5.0, Z_max=5.0)
+    coil = Coil(name="PF_mid", r=6.2, z=0.0, current=5.0)
+
+    assert dimensions.R_min == pytest.approx(1.0)
+    assert dimensions.R_max == pytest.approx(9.0)
+    assert coil.r == pytest.approx(6.2)
+    assert coil.current == pytest.approx(5.0)

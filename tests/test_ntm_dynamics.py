@@ -111,3 +111,29 @@ def test_polarization_threshold():
 
     dw_dt_small = ntm.dw_dt(w0_small, j_bs, j_phi, 0.0, eta, w_d=1e-3, w_pol=5e-4)
     assert dw_dt_small <= 0.0
+
+
+def test_rational_surface_record_preserves_mode_numbers_and_shear() -> None:
+    """Rational-surface records keep the q=m/n geometry used by NTM control."""
+    from scpn_fusion.core.ntm_dynamics import RationalSurface
+
+    surface = RationalSurface(rho=0.5, r_s=1.0, m=2, n=1, q=2.0, shear=1.5)
+
+    assert surface.q == surface.m / surface.n
+    assert surface.r_s == surface.rho * 2.0
+    assert surface.shear > 0.0
+
+
+def test_ntm_controller_latches_and_clears_eccd_request_at_width_thresholds() -> None:
+    """ECCD request activates above onset and clears below target island width."""
+    from scpn_fusion.core.ntm_dynamics import NTMController
+
+    controller = NTMController(w_onset=0.02, w_target=0.005)
+
+    assert controller.step(w=0.01, rho_rs=0.4, max_power=12.0) == 0.0
+    assert controller.active is False
+    assert np.isclose(controller.step(w=0.03, rho_rs=0.45, max_power=12.0), 12.0)
+    assert controller.active is True
+    assert np.isclose(controller.target_rho, 0.45)
+    assert controller.step(w=0.004, rho_rs=0.5, max_power=12.0) == 0.0
+    assert controller.active is False

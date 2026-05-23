@@ -157,3 +157,16 @@ class TestInputValidation:
     def test_h_factor_zero_denominator(self):
         h = compute_h_factor(1.0, 0.0)
         assert h == float("inf")
+
+
+def test_scalar_validators_preserve_numeric_metadata_and_reject_invalid_values() -> None:
+    """Scaling-law validators reject invalid coefficients before physics evaluation."""
+    from scpn_fusion.core.scaling_laws import _require_finite_number, _require_positive_finite
+
+    assert _require_positive_finite("Ip", 15.0) == pytest.approx(15.0)
+    assert _require_finite_number("exponent", "0.93") == pytest.approx(0.93)
+
+    with pytest.raises(ValueError, match="Ip"):
+        _require_positive_finite("Ip", -1.0)
+    with pytest.raises(ValueError, match="exponent"):
+        _require_finite_number("exponent", float("nan"))

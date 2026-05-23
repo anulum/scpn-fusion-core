@@ -191,3 +191,14 @@ def test_required_density_for_suppression_rejects_invalid_domain() -> None:
         mit.required_density_for_suppression(E_par=20.0, Z_eff=0.0)
     with np.testing.assert_raises(ValueError):
         mit.required_density_for_suppression(E_par=20.0, Z_eff=2.0, coulomb_log=0.0)
+
+
+def test_dreicer_field_exceeds_critical_field_by_thermal_energy_ratio() -> None:
+    """At 10 keV the Dreicer-to-critical field ratio remains in the expected range."""
+    from scpn_fusion.core.runaway_electrons import dreicer_field
+
+    e_d = dreicer_field(ne_20=1.0, Te_keV=10.0)
+    e_c = critical_field(ne_20=1.0)
+
+    assert e_d > e_c > 0.0
+    assert 40.0 < e_d / e_c < 60.0

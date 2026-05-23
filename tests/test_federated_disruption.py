@@ -250,3 +250,19 @@ class TestSerialisation:
                 atol=1e-12,
             )
         assert restored.config.aggregation == "fedavg"
+
+
+def test_sigmoid_clips_extreme_logits_and_bce_penalizes_confident_errors() -> None:
+    """MLP primitives remain bounded and penalize confident wrong disruption labels."""
+    from scpn_fusion.control.federated_disruption import _binary_cross_entropy, _sigmoid
+
+    probabilities = _sigmoid(np.array([-1.0e6, 0.0, 1.0e6]))
+    assert probabilities[0] > 0.0
+    assert probabilities[1] == pytest.approx(0.5)
+    assert probabilities[2] < 1.0
+
+    correct = _binary_cross_entropy(np.array([0.99]), np.array([1.0]))
+    wrong = _binary_cross_entropy(np.array([0.01]), np.array([1.0]))
+    assert np.isfinite(correct)
+    assert np.isfinite(wrong)
+    assert wrong > correct

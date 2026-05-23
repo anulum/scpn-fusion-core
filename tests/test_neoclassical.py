@@ -119,3 +119,17 @@ def test_bootstrap_rejects_invalid_profiles_and_geometry():
         sauter_bootstrap(rho, good, good, good, q, R0=0.0, a=2.0)
     with pytest.raises(ValueError, match="z_eff"):
         sauter_bootstrap(rho, good, good, good, q, R0=6.2, a=2.0, z_eff=0.0)
+
+
+def test_banana_plateau_chi_handles_axis_limit_and_collisionality_scaling() -> None:
+    """Banana-plateau factor vanishes on-axis and decreases with collisionality."""
+    from scpn_fusion.core.neoclassical import banana_plateau_chi
+
+    assert banana_plateau_chi(q=2.0, epsilon=1e-7, nu_star=0.1, z_eff=1.0) == 0.0
+
+    low_collisionality = banana_plateau_chi(q=2.0, epsilon=0.3, nu_star=0.1, z_eff=2.0)
+    high_collisionality = banana_plateau_chi(q=2.0, epsilon=0.3, nu_star=100.0, z_eff=2.0)
+
+    assert np.isfinite(low_collisionality)
+    assert np.isfinite(high_collisionality)
+    assert low_collisionality > high_collisionality > 0.0

@@ -66,3 +66,18 @@ def test_run_fueling_mode_rejects_invalid_inputs() -> None:
         run_fueling_mode(initial_density=-0.1)
     with pytest.raises(ValueError, match="dt_s"):
         run_fueling_mode(dt_s=0.0)
+
+
+def test_ice_pellet_controller_command_changes_direction_across_target() -> None:
+    """The fueling command adds particles below target and withdraws above target."""
+    from scpn_fusion.control.fueling_mode import IcePelletFuelingController
+
+    controller = IcePelletFuelingController(target_density=1.0)
+
+    below_command, below_error = controller.step(density=0.9, k=0, dt_s=0.01)
+    above_command, above_error = controller.step(density=1.1, k=1, dt_s=0.01)
+
+    assert below_error > 0.0
+    assert above_error < 0.0
+    assert below_command > 0.0
+    assert above_command < below_command

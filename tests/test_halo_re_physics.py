@@ -225,3 +225,29 @@ class TestDisruptionEnsemble:
             run_disruption_ensemble(plasma_current_range=(16.0, 12.0))
         with pytest.raises(ValueError):
             run_disruption_ensemble(neon_range=(-0.1, 0.2))
+
+
+def test_scalar_coercion_helpers_reject_non_physical_control_inputs() -> None:
+    """Halo/RE scalar guards reject NaN, negative, bool, and low integer values."""
+    from scpn_fusion.control.halo_re_physics import (
+        _as_finite_float,
+        _as_int,
+        _as_non_negative_float,
+        _as_positive_float,
+    )
+
+    assert _as_finite_float("field", 3.14) == pytest.approx(3.14)
+    assert _as_positive_float("field", 5.0) == pytest.approx(5.0)
+    assert _as_non_negative_float("inventory", 0.0) == pytest.approx(0.0)
+    assert _as_int("runs", np.int64(5), minimum=1) == 5
+
+    with pytest.raises(ValueError, match="field"):
+        _as_finite_float("field", float("nan"))
+    with pytest.raises(ValueError, match="field"):
+        _as_positive_float("field", 0.0)
+    with pytest.raises(ValueError, match="inventory"):
+        _as_non_negative_float("inventory", -0.1)
+    with pytest.raises(ValueError, match="runs"):
+        _as_int("runs", True, minimum=1)
+    with pytest.raises(ValueError, match="runs"):
+        _as_int("runs", 0, minimum=1)
