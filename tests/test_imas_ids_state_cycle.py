@@ -4,8 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — IMAS IDS Round-trip Tests
-"""Round-trip: state -> IDS -> state for all supported IDS types."""
+# SCPN Fusion Core — IMAS IDS State Cycle Tests
+"""State-cycle contract tests for supported IMAS IDS conversions."""
 
 from __future__ import annotations
 
@@ -48,8 +48,8 @@ def _base_state():
     return s
 
 
-class TestSummaryRoundTrip:
-    def test_summary_round_trip(self):
+class TestSummaryStateCycle:
+    def test_summary_state_cycle(self):
         original = _base_summary()
         ids = digital_twin_summary_to_ids(original)
         recovered = ids_to_digital_twin_summary(ids)
@@ -58,8 +58,8 @@ class TestSummaryRoundTrip:
         assert abs(recovered["final_avg_temp"] - original["final_avg_temp"]) < 1e-10
 
 
-class TestStateRoundTrip:
-    def test_state_with_profiles_round_trip(self):
+class TestStateCycle:
+    def test_state_with_profiles_cycle(self):
         original = _base_state()
         ids = digital_twin_state_to_ids(original)
         recovered = ids_to_digital_twin_state(ids)
@@ -76,7 +76,7 @@ class TestStateRoundTrip:
         )
 
 
-class TestCoreProfilesRoundTrip:
+class TestCoreProfilesStateCycle:
     def test_core_profiles_has_correct_units(self):
         state = _base_state()
         ids = state_to_imas_core_profiles(state)
@@ -95,8 +95,8 @@ class TestCoreProfilesRoundTrip:
         )
 
 
-class TestCoreTransportRoundTrip:
-    def test_core_transport_round_trip(self):
+class TestCoreTransportStateCycle:
+    def test_core_transport_state_cycle(self):
         rho = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
         state = {
             "rho_norm": rho,
