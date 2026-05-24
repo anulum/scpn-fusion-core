@@ -121,6 +121,7 @@ class GyroSwinLikeSurrogate:
         return np.column_stack([np.ones(x.shape[0]), x, physics_terms, rff])
 
     def fit(self, features: np.ndarray, targets: np.ndarray) -> None:
+        """Fit random-feature ridge weights to turbulence targets."""
         phi = self._feature_map(features)
         y = np.asarray(targets, dtype=np.float64).reshape(-1)
         if phi.shape[0] != y.shape[0]:
@@ -130,6 +131,7 @@ class GyroSwinLikeSurrogate:
         self._weights = np.linalg.solve(lhs, rhs)
 
     def predict(self, features: np.ndarray) -> np.ndarray:
+        """Predict non-negative ion heat diffusivity for feature rows."""
         if self._weights is None:
             raise RuntimeError("Surrogate is not fit. Call fit() first.")
         phi = self._feature_map(features)
@@ -166,6 +168,7 @@ def gene_proxy_predict(features: np.ndarray, iterations: int = 800) -> np.ndarra
 
 
 def rmse_percent(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Return RMSE as a percentage of mean absolute reference value."""
     y_t = np.asarray(y_true, dtype=np.float64).reshape(-1)
     y_p = np.asarray(y_pred, dtype=np.float64).reshape(-1)
     if y_t.size == 0 or y_t.shape != y_p.shape:
