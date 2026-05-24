@@ -199,6 +199,96 @@
           "pattern": "__version__\\s*=\\s*\"3\\.9\\.5\""
         }
       ]
+    },
+    {
+      "id": "readme_free_boundary_reduced_fidelity_boundary",
+      "source_file": "README.md",
+      "source_pattern": "Free-boundary GS solve \\| Reduced direct solve; FreeGS parity currently \\*\\*FAIL\\*\\*",
+      "evidence_files": [
+        "docs/HONEST_SCOPE.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "docs/HONEST_SCOPE.md",
+          "pattern": "Not EFIT/LiUQE-quality full-profile inverse reconstruction"
+        },
+        {
+          "file": "docs/HONEST_SCOPE.md",
+          "pattern": "bundled 18-file aggregate does not yet meet <5% \u03c8_N RMSE"
+        }
+      ]
+    },
+    {
+      "id": "readme_native_gk_linear_scope_boundary",
+      "source_file": "README.md",
+      "source_pattern": "Native GK eigenvalue solver \\| Linear eigenvalue only; no nonlinear 5D Vlasov-Maxwell",
+      "evidence_files": [
+        "docs/HONEST_SCOPE.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "docs/HONEST_SCOPE.md",
+          "pattern": "Reduced-order linear eigenvalue solver for ITG/TEM/ETG"
+        },
+        {
+          "file": "docs/HONEST_SCOPE.md",
+          "pattern": "Full nonlinear gyrokinetic \\(GENE, GS2, CGYRO solve 5D Vlasov-Maxwell\\)"
+        }
+      ]
+    },
+    {
+      "id": "readme_runaway_0d_scope_boundary",
+      "source_file": "README.md",
+      "source_pattern": "Runaway electron dynamics \\| 0D rates only; no DREAM-level kinetic Fokker-Planck distribution",
+      "evidence_files": [
+        "docs/HONEST_SCOPE.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "docs/HONEST_SCOPE.md",
+          "pattern": "Dreicer \\+ hot-tail generation rates, 0D avalanche model"
+        },
+        {
+          "file": "docs/HONEST_SCOPE.md",
+          "pattern": "Kinetic runaway distribution \\(CODE/DREAM-level Fokker-Planck\\)"
+        }
+      ]
+    },
+    {
+      "id": "readme_elm_proxy_scope_boundary",
+      "source_file": "README.md",
+      "source_pattern": "ELM model \\+ RMP suppression \\| Peeling-ballooning proxy; no nonlinear MHD ELM simulation",
+      "evidence_files": [
+        "docs/HONEST_SCOPE.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "docs/HONEST_SCOPE.md",
+          "pattern": "Peeling-ballooning stability proxy with crash operator"
+        },
+        {
+          "file": "docs/HONEST_SCOPE.md",
+          "pattern": "Nonlinear MHD ELM simulation \\(JOREK, BOUT\\+\\+\\)"
+        }
+      ]
+    },
+    {
+      "id": "readme_impurity_reduced_scope_boundary",
+      "source_file": "README.md",
+      "source_pattern": "Impurity transport \\(neoclassical\\) \\| Reduced neoclassical/diffusion; no STRAHL/JINTRAC collisional operator",
+      "evidence_files": [
+        "docs/HONEST_SCOPE.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "docs/HONEST_SCOPE.md",
+          "pattern": "Complete impurity transport"
+        },
+        {
+          "file": "docs/HONEST_SCOPE.md",
+          "pattern": "Full Hirshman-Sigmar multi-species collisional operator"
+        }
+      ]
     }
   ]
 }

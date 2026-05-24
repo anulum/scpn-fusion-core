@@ -4,7 +4,7 @@ Auto-generated map from `validation/claims_manifest.json` linking headline claim
 to concrete evidence files and patterns.
 
 - Manifest: `validation/claims_manifest.json`
-- Claims tracked: `13`
+- Claims tracked: `18`
 
 ## Summary
 
@@ -23,6 +23,11 @@ to concrete evidence files and patterns.
 | `results_threshold_sweep_dataset_size` | `RESULTS.md` | 1 | 1 |
 | `results_threshold_sweep_fpr` | `RESULTS.md` | 1 | 1 |
 | `security_current_supported_release` | `SECURITY.md` | 2 | 2 |
+| `readme_free_boundary_reduced_fidelity_boundary` | `README.md` | 1 | 2 |
+| `readme_native_gk_linear_scope_boundary` | `README.md` | 1 | 2 |
+| `readme_runaway_0d_scope_boundary` | `README.md` | 1 | 2 |
+| `readme_elm_proxy_scope_boundary` | `README.md` | 1 | 2 |
+| `readme_impurity_reduced_scope_boundary` | `README.md` | 1 | 2 |
 
 ## Claim Details
 
@@ -212,3 +217,78 @@ Evidence pattern checks:
 |---|---|
 | `pyproject.toml` | `version\s*=\s*"3\.9\.5"` |
 | `src/scpn_fusion/__init__.py` | `__version__\s*=\s*"3\.9\.5"` |
+
+### `readme_free_boundary_reduced_fidelity_boundary`
+
+- Source file: `README.md`
+- Source pattern: `Free-boundary GS solve \| Reduced direct solve; FreeGS parity currently \*\*FAIL\*\*`
+
+Evidence files:
+- `docs/HONEST_SCOPE.md`
+
+Evidence pattern checks:
+
+| File | Pattern |
+|---|---|
+| `docs/HONEST_SCOPE.md` | `Not EFIT/LiUQE-quality full-profile inverse reconstruction` |
+| `docs/HONEST_SCOPE.md` | `bundled 18-file aggregate does not yet meet <5% ψ_N RMSE` |
+
+### `readme_native_gk_linear_scope_boundary`
+
+- Source file: `README.md`
+- Source pattern: `Native GK eigenvalue solver \| Linear eigenvalue only; no nonlinear 5D Vlasov-Maxwell`
+
+Evidence files:
+- `docs/HONEST_SCOPE.md`
+
+Evidence pattern checks:
+
+| File | Pattern |
+|---|---|
+| `docs/HONEST_SCOPE.md` | `Reduced-order linear eigenvalue solver for ITG/TEM/ETG` |
+| `docs/HONEST_SCOPE.md` | `Full nonlinear gyrokinetic \(GENE, GS2, CGYRO solve 5D Vlasov-Maxwell\)` |
+
+### `readme_runaway_0d_scope_boundary`
+
+- Source file: `README.md`
+- Source pattern: `Runaway electron dynamics \| 0D rates only; no DREAM-level kinetic Fokker-Planck distribution`
+
+Evidence files:
+- `docs/HONEST_SCOPE.md`
+
+Evidence pattern checks:
+
+| File | Pattern |
+|---|---|
+| `docs/HONEST_SCOPE.md` | `Dreicer \+ hot-tail generation rates, 0D avalanche model` |
+| `docs/HONEST_SCOPE.md` | `Kinetic runaway distribution \(CODE/DREAM-level Fokker-Planck\)` |
+
+### `readme_elm_proxy_scope_boundary`
+
+- Source file: `README.md`
+- Source pattern: `ELM model \+ RMP suppression \| Peeling-ballooning proxy; no nonlinear MHD ELM simulation`
+
+Evidence files:
+- `docs/HONEST_SCOPE.md`
+
+Evidence pattern checks:
+
+| File | Pattern |
+|---|---|
+| `docs/HONEST_SCOPE.md` | `Peeling-ballooning stability proxy with crash operator` |
+| `docs/HONEST_SCOPE.md` | `Nonlinear MHD ELM simulation \(JOREK, BOUT\+\+\)` |
+
+### `readme_impurity_reduced_scope_boundary`
+
+- Source file: `README.md`
+- Source pattern: `Impurity transport \(neoclassical\) \| Reduced neoclassical/diffusion; no STRAHL/JINTRAC collisional operator`
+
+Evidence files:
+- `docs/HONEST_SCOPE.md`
+
+Evidence pattern checks:
+
+| File | Pattern |
+|---|---|
+| `docs/HONEST_SCOPE.md` | `Complete impurity transport` |
+| `docs/HONEST_SCOPE.md` | `Full Hirshman-Sigmar multi-species collisional operator` |

@@ -128,20 +128,20 @@ Top limitations:
 
 | Capability | SCPN Fusion Core | TORAX | FUSE | FreeGS | DREAM |
 |-----------|:---:|:---:|:---:|:---:|:---:|
-| Free-boundary GS solve | **Y** | N | N | Y | N |
+| Free-boundary GS solve | Reduced direct solve; FreeGS parity currently **FAIL** | N | N | Y | N |
 | 1.5D coupled transport | **Y** | Y | Y | N | N |
 | Neural transport surrogate | **Y** (QLKNN-10D) | N | N | N | N |
-| Native GK eigenvalue solver | **Y** | N | N | N | N |
+| Native GK eigenvalue solver | Linear eigenvalue only; no nonlinear 5D Vlasov-Maxwell | N | N | N | N |
 | External GK coupling (5 codes) | **Y** | TGLF only | TGLF only | N | N |
 | Neuro-symbolic SNN compiler | **Y** | N | N | N | N |
 | Real-time control (<1 us) | **Y** (0.52 us Rust) | N | N | N | N |
 | H-infinity robust control | **Y** | N | N | N | N |
-| Free-boundary tracking | **Y** (direct kernel + supervisor) | N | N | N | N |
-| Disruption chain (TQ+CQ+RE+halo) | **Y** | N | N | N | Y |
-| ELM model + RMP suppression | **Y** | N | Y | N | N |
-| Runaway electron dynamics | **Y** | N | N | N | Y |
+| Free-boundary tracking | Direct kernel + supervisor; not EFIT/LiUQE-grade inverse reconstruction | N | N | N | N |
+| Disruption chain (TQ+CQ+RE+halo) | Reduced chain with 0D runaway rates | N | N | N | Y |
+| ELM model + RMP suppression | Peeling-ballooning proxy; no nonlinear MHD ELM simulation | N | Y | N | N |
+| Runaway electron dynamics | 0D rates only; no DREAM-level kinetic Fokker-Planck distribution | N | N | N | Y |
 | Pellet injection (Parks-Turnbull) | **Y** | N | N | N | N |
-| Impurity transport (neoclassical) | **Y** | N | N | N | N |
+| Impurity transport (neoclassical) | Reduced neoclassical/diffusion; no STRAHL/JINTRAC collisional operator | N | N | N | N |
 | Momentum transport (ExB shearing) | **Y** | N | partial | N | N |
 | MHD stability (7 criteria) | **Y** | N | N | N | N |
 | Digital twin + HIL testing | **Y** | N | N | N | N |
