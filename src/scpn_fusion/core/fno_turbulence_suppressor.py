@@ -39,6 +39,7 @@ except ImportError:
 
 DEFAULT_JAX_WEIGHTS = Path("weights/fno_turbulence_jax.npz")
 LEGACY_ENABLE_ENV = "SCPN_ENABLE_LEGACY_FNO"
+MAX_FNO_WEIGHT_BYTES = 32 * 1024 * 1024
 
 
 MODES = 12
@@ -164,7 +165,7 @@ class FNO_Controller:
         """Load explicitly enabled legacy JAX-FNO weights from an ``.npz`` file."""
         if not _HAS_JAX:
             raise RuntimeError("JAX backend not available; cannot load legacy FNO weights.")
-        with checked_np_load(path, allow_pickle=False) as data:
+        with checked_np_load(path, max_bytes=MAX_FNO_WEIGHT_BYTES) as data:
             self.params = {k: jnp.array(data[k]) for k in data.files}
         self.loaded_weights = True
 
