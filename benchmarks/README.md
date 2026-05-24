@@ -36,6 +36,11 @@ native nonlinear gyrokinetic APIs on a compact fixed grid and writes:
 | `validation/reports/gk_nonlinear_solver_comparison.json` | NumPy/JAX Krook and Sugama timing plus transport diagnostics |
 | `validation/reports/gk_nonlinear_solver_comparison.md` | Human-readable benchmark table and Sugama moment residuals |
 
+Adiabatic-electron benchmark cases keep the historical `chi_e = 0.5 * chi_i`
+diagnostic convention. Kinetic-electron cases compute `chi_e` from the
+electron distribution moment, so sign and magnitude are species-resolved rather
+than inferred from the ion heat flux.
+
 ## Criterion Benchmarks
 
 Three benchmark suites are defined in the Rust workspace:

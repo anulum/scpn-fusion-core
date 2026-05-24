@@ -103,18 +103,23 @@ class NonlinearGKTimeMixin:
     def compute_fluxes(self, state: NonlinearGKState) -> tuple[float, float]:
         """Ion and electron heat flux in gyro-Bohm units."""
         phi = state.phi
-        f_ion = state.f[0]
 
         vpar2 = self.vpar[None, None, None, :, None] ** 2
         mu_val = self.mu[None, None, None, None, :]
         energy = 0.5 * vpar2 + mu_val
-        p_ion = np.sum(energy * f_ion, axis=(-2, -1)) * self.dvpar * self.dmu
 
         ky_pos = self.ky > 1e-10
         ky_vals = self.ky[ky_pos]
-        flux_k = 1j * ky_vals[None, :, None] * np.conj(phi[:, ky_pos, :]) * p_ion[:, ky_pos, :]
-        Q_i = float(np.real(np.sum(flux_k)))
-        Q_e = 0.5 * Q_i
+
+        def heat_flux(f_s: NDArray[np.complex128]) -> float:
+            pressure = np.sum(energy * f_s, axis=(-2, -1)) * self.dvpar * self.dmu
+            flux_k = (
+                1j * ky_vals[None, :, None] * np.conj(phi[:, ky_pos, :]) * pressure[:, ky_pos, :]
+            )
+            return float(np.real(np.sum(flux_k)))
+
+        Q_i = heat_flux(state.f[0])
+        Q_e = heat_flux(state.f[1]) if self.cfg.kinetic_electrons else 0.5 * Q_i
         return Q_i, Q_e
 
     def phi_rms(self, state: NonlinearGKState) -> float:

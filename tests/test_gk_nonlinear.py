@@ -396,6 +396,41 @@ class TestFluxDiagnostics:
         assert np.isfinite(Q_i)
         assert np.isfinite(Q_e)
 
+    def test_kinetic_electron_flux_uses_electron_distribution(self):
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=4,
+            n_vpar=4,
+            n_mu=3,
+            n_species=2,
+            kinetic_electrons=True,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        phi = np.zeros((cfg.n_kx, cfg.n_ky, cfg.n_theta), dtype=np.complex128)
+        phi[:, 1, :] = 1.0
+        f = np.zeros(
+            (cfg.n_species, cfg.n_kx, cfg.n_ky, cfg.n_theta, cfg.n_vpar, cfg.n_mu),
+            dtype=np.complex128,
+        )
+        f[0, :, 1, :, :, :] = -1j
+        f[1, :, 1, :, :, :] = -3j
+        state = solver.init_state(amplitude=0.0)
+        state = state.__class__(f=f, phi=phi, time=0.0)
+
+        Q_i, Q_e = solver.compute_fluxes(state)
+        vpar2 = solver.vpar[None, None, None, :, None] ** 2
+        mu_val = solver.mu[None, None, None, None, :]
+        energy = 0.5 * vpar2 + mu_val
+        p_e = np.sum(energy * f[1], axis=(-2, -1)) * solver.dvpar * solver.dmu
+        expected_e = float(
+            np.real(np.sum(1j * solver.ky[1] * np.conj(phi[:, 1, :]) * p_e[:, 1, :]))
+        )
+
+        assert Q_e == expected_e
+        assert Q_e != 0.5 * Q_i
+
     def test_phi_rms_positive(self):
         solver = NonlinearGKSolver(_FAST_CFG)
         state = solver.init_state()

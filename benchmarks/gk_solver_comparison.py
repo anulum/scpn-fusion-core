@@ -143,6 +143,8 @@ def _write_reports(report: dict[str, Any]) -> None:
         f"- Python: `{report['python']}`",
         f"- Platform: `{report['platform']}`",
         f"- JAX available: `{report['jax_available']}`",
+        "- Diagnostic contract: adiabatic-electron cases report `chi_e = 0.5 * chi_i`; "
+        "kinetic-electron cases compute `chi_e` from the electron distribution moment.",
         "",
         "| Collision model | Backend | Elapsed s | Converged | chi_i | chi_e | phi_rms_final |",
         "|---|---:|---:|---:|---:|---:|---:|",
