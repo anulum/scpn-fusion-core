@@ -73,7 +73,9 @@ class PelletTrajectory:
         # sets ablation exposure time, while only the inward radial component
         # advances the pellet across flux surfaces.
         radial_velocity = self.params.v_p_m_s * np.cos(np.radians(self.params.injection_angle_deg))
-        if not np.isfinite(radial_velocity) or radial_velocity <= 1e-9 * max(self.params.v_p_m_s, 1.0):
+        if not np.isfinite(radial_velocity) or radial_velocity <= 1e-9 * max(
+            self.params.v_p_m_s, 1.0
+        ):
             raise ValueError("injection_angle_deg must provide positive inward radial velocity")
 
         # We integrate over time steps

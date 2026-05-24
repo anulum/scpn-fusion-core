@@ -47,7 +47,9 @@ def test_vessel_step_remains_stable_for_large_resistive_step() -> None:
     inductance = 1e-6
     resistance = 1e-3
     tau = inductance / resistance
-    element = VesselElement(R=1.0, Z=0.0, resistance=resistance, cross_section=0.01, inductance=inductance)
+    element = VesselElement(
+        R=1.0, Z=0.0, resistance=resistance, cross_section=0.01, inductance=inductance
+    )
     model = VesselModel([element])
     model.I = np.array([1000.0])
 

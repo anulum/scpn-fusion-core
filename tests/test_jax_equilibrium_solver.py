@@ -45,8 +45,12 @@ def test_elliptic_integrals_match_scipy_reference_across_green_function_domain()
     m = jnp.array([0.0, 1.0e-9, 1.0e-4, 0.01, 0.5, 0.9, 0.99, 0.999999])
     m_np = np.asarray(m)
 
-    np.testing.assert_allclose(np.asarray(_ellipk_approx(m)), ellipk(m_np), rtol=1.0e-8, atol=1.0e-8)
-    np.testing.assert_allclose(np.asarray(_ellipe_approx(m)), ellipe(m_np), rtol=1.0e-8, atol=1.0e-8)
+    np.testing.assert_allclose(
+        np.asarray(_ellipk_approx(m)), ellipk(m_np), rtol=1.0e-8, atol=1.0e-8
+    )
+    np.testing.assert_allclose(
+        np.asarray(_ellipe_approx(m)), ellipe(m_np), rtol=1.0e-8, atol=1.0e-8
+    )
 
 
 # ── Green's function ─────────────────────────────────────────────

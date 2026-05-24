@@ -54,8 +54,12 @@ def test_pellet_injection_angle_increases_ablation_exposure() -> None:
     ne = np.ones(50) * 5.0
     Te = np.ones(50) * 10000.0
 
-    radial = PelletTrajectory(PelletParams(r_p_mm=1.0, v_p_m_s=500.0, injection_angle_deg=0.0), 6.2, 2.0, 5.3)
-    oblique = PelletTrajectory(PelletParams(r_p_mm=1.0, v_p_m_s=500.0, injection_angle_deg=60.0), 6.2, 2.0, 5.3)
+    radial = PelletTrajectory(
+        PelletParams(r_p_mm=1.0, v_p_m_s=500.0, injection_angle_deg=0.0), 6.2, 2.0, 5.3
+    )
+    oblique = PelletTrajectory(
+        PelletParams(r_p_mm=1.0, v_p_m_s=500.0, injection_angle_deg=60.0), 6.2, 2.0, 5.3
+    )
 
     radial_result = radial.simulate(rho, ne, Te)
     oblique_result = oblique.simulate(rho, ne, Te)

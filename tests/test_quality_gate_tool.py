@@ -128,7 +128,9 @@ def test_main_rejects_report_below_global_domain_and_file_thresholds(tmp_path: P
     assert rc == 1
 
 
-def test_main_rejects_missing_branch_evidence_when_branch_threshold_is_required(tmp_path: Path) -> None:
+def test_main_rejects_missing_branch_evidence_when_branch_threshold_is_required(
+    tmp_path: Path,
+) -> None:
     """A branch threshold without branch evidence is a failing gate condition."""
     quality_xml = tmp_path / "quality.xml"
     thresholds = tmp_path / "thresholds.json"
