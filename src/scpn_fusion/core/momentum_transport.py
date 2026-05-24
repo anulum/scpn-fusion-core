@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Momentum Transport
+"""Momentum transport, rotation diagnostics, and ExB shear helper models."""
+
 from __future__ import annotations
 
 
@@ -78,11 +80,19 @@ def radial_electric_field(
     R0: float,
     rho: np.ndarray,
     a: float,
+    v_theta: np.ndarray | None = None,
 ) -> np.ndarray:
     """
     E_r [V/m] from radial force balance (neoclassical).
-    E_r = (1/Z_i e n_i) dp_i/dr + v_φ B_θ (v_θ ≈ 0).
+    E_r = (1/Z_i e n_i) dp_i/dr + v_φ B_θ - v_θ B_φ.
     """
+    if v_theta is None:
+        v_theta_arr = np.zeros_like(omega_phi, dtype=float)
+    else:
+        v_theta_arr = np.asarray(v_theta, dtype=float)
+        if v_theta_arr.shape != np.asarray(omega_phi).shape or not np.all(np.isfinite(v_theta_arr)):
+            raise ValueError("v_theta must be a finite profile matching omega_phi")
+
     e_charge = 1.602e-19
     p_i = ne * 1e19 * Ti_keV * 1e3 * e_charge
 
@@ -94,14 +104,17 @@ def radial_electric_field(
 
     # v_phi = R0 * omega_phi
     v_phi = R0 * omega_phi
-    term2 = v_phi * B_theta
+    term2 = v_phi * B_theta - v_theta_arr * B0
 
     return np.asarray(term1 + term2)
 
 
 class RotationDiagnostics:
+    """Diagnostics for toroidal rotation and RWM stabilisation margin."""
+
     @staticmethod
     def mach_number(omega_phi: np.ndarray, Ti_keV: np.ndarray, R0: float) -> np.ndarray:
+        """Return toroidal Mach number from angular rotation and ion temperature."""
         v_phi = omega_phi * R0
         e_charge = 1.602e-19
         m_i = 2.0 * 1.67e-27
@@ -111,6 +124,7 @@ class RotationDiagnostics:
 
     @staticmethod
     def rwm_stabilization_criterion(omega_phi: np.ndarray, tau_wall: float) -> bool:
+        """Return whether core rotation satisfies the wall-time stabilisation rule."""
         omega = np.asarray(omega_phi, dtype=float)
         if omega.ndim != 1 or omega.size == 0 or not np.all(np.isfinite(omega)):
             raise ValueError("omega_phi must be a finite one-dimensional profile")
@@ -123,7 +137,10 @@ class RotationDiagnostics:
 
 
 class MomentumTransportSolver:
+    """Implicit radial angular-momentum transport solver."""
+
     def __init__(self, rho: np.ndarray, R0: float, a: float, B0: float, prandtl: float = 0.7):
+        """Initialise geometry, magnetic field, transport grid, and rotation state."""
         self.rho = np.asarray(rho, dtype=float)
         self.R0 = R0
         self.a = a

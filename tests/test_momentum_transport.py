@@ -97,6 +97,48 @@ def test_radial_electric_field():
     assert len(Er) == 50
 
 
+def test_radial_electric_field_includes_poloidal_flow_force_balance_term() -> None:
+    """Poloidal flow contributes the v_theta B_phi term in radial force balance."""
+    rho = np.linspace(0.0, 1.0, 5)
+    ne = np.full(5, 5.0)
+    ti = np.full(5, 4.0)
+    omega = np.zeros(5)
+    b_theta = np.full(5, 0.4)
+    v_theta = np.full(5, 2_000.0)
+
+    er = radial_electric_field(
+        ne,
+        ti,
+        omega,
+        b_theta,
+        B0=5.0,
+        R0=6.0,
+        rho=rho,
+        a=2.0,
+        v_theta=v_theta,
+    )
+
+    np.testing.assert_allclose(er, -10_000.0)
+
+
+def test_radial_electric_field_rejects_invalid_poloidal_flow_profile() -> None:
+    rho = np.linspace(0.0, 1.0, 5)
+    profile = np.ones(5)
+
+    with pytest.raises(ValueError, match="v_theta"):
+        radial_electric_field(
+            profile,
+            profile,
+            profile,
+            profile,
+            B0=5.0,
+            R0=6.0,
+            rho=rho,
+            a=2.0,
+            v_theta=np.ones(4),
+        )
+
+
 def test_diagnostics():
     omega = np.ones(50) * 1e4
     Ti = np.ones(50) * 10.0
