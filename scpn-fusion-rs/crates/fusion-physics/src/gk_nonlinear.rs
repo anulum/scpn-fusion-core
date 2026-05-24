@@ -8,6 +8,7 @@
 //! Nonlinear δf gyrokinetic solver in flux-tube geometry.
 
 use fusion_math::fft::{cfft2, cfft_axis0, cifft2, cifft_axis0};
+use nalgebra::{Matrix3, Vector3};
 use ndarray::{s, Array1, Array2, Array3, Array4, Array5, Array6};
 use num_complex::Complex64;
 use std::f64::consts::PI;
@@ -99,6 +100,60 @@ impl Default for NonlinearGKConfig {
             r_l_ti: 6.9,
             r_l_te: 6.9,
             r_l_ne: 2.2,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sugama_collision_conserves_discrete_density_momentum_energy() {
+        let cfg = NonlinearGKConfig {
+            n_kx: 4,
+            n_ky: 4,
+            n_theta: 8,
+            n_vpar: 8,
+            n_mu: 6,
+            n_species: 2,
+            collision_model: "sugama".to_string(),
+            ..NonlinearGKConfig::default()
+        };
+        let solver = NonlinearGKSolver::new(cfg.clone());
+        let f = Array5::from_shape_fn(
+            (cfg.n_kx, cfg.n_ky, cfg.n_theta, cfg.n_vpar, cfg.n_mu),
+            |(i, j, t, v, m)| {
+                let re = ((i + 2 * j + 3 * t + 5 * v + 7 * m) as f64).sin() * 1e-4;
+                let im = ((2 * i + 3 * j + 5 * t + 7 * v + 11 * m) as f64).cos() * 1e-4;
+                Complex64::new(re, im)
+            },
+        );
+
+        let collision = solver.collide(&f);
+        let dv = solver.dvpar * solver.dmu;
+
+        for i in 0..cfg.n_kx {
+            for j in 0..cfg.n_ky {
+                for t in 0..cfg.n_theta {
+                    let mut density = Complex64::new(0.0, 0.0);
+                    let mut momentum = Complex64::new(0.0, 0.0);
+                    let mut energy_moment = Complex64::new(0.0, 0.0);
+                    for v in 0..cfg.n_vpar {
+                        let vpar = solver.vpar[v];
+                        for m in 0..cfg.n_mu {
+                            let energy = 0.5 * vpar.powi(2) + solver.mu[m];
+                            let value = collision[[i, j, t, v, m]] * dv;
+                            density += value;
+                            momentum += value * vpar;
+                            energy_moment += value * energy;
+                        }
+                    }
+                    assert!(density.norm() < 1e-11);
+                    assert!(momentum.norm() < 1e-11);
+                    assert!(energy_moment.norm() < 1e-11);
+                }
+            }
         }
     }
 }
@@ -838,7 +893,13 @@ impl NonlinearGKSolver {
     }
 
     pub fn collide(&self, f_s: &Array5<Complex64>) -> Array5<Complex64> {
-        // Simple Krook for now
+        if self.cfg.collision_model == "sugama" {
+            return self.collide_sugama(f_s);
+        }
+        self.collide_krook(f_s)
+    }
+
+    fn collide_krook(&self, f_s: &Array5<Complex64>) -> Array5<Complex64> {
         let c = &self.cfg;
         let nu = c.nu_collision;
         let mut coll = Array5::zeros((c.n_kx, c.n_ky, c.n_theta, c.n_vpar, c.n_mu));
@@ -855,6 +916,87 @@ impl NonlinearGKSolver {
             }
         }
         coll
+    }
+
+    fn collide_sugama(&self, f_s: &Array5<Complex64>) -> Array5<Complex64> {
+        let c = &self.cfg;
+        let nu = c.nu_collision;
+        let dv = self.dvpar * self.dmu;
+        let mut cf = Array5::zeros((c.n_kx, c.n_ky, c.n_theta, c.n_vpar, c.n_mu));
+
+        for i in 0..c.n_kx {
+            for j in 0..c.n_ky {
+                for t in 0..c.n_theta {
+                    for v in 1..c.n_vpar.saturating_sub(1) {
+                        let vpar = self.vpar[v];
+                        for m in 0..c.n_mu {
+                            let mu = self.mu[m];
+                            let d2f = (f_s[[i, j, t, v + 1, m]]
+                                - Complex64::new(2.0, 0.0) * f_s[[i, j, t, v, m]]
+                                + f_s[[i, j, t, v - 1, m]])
+                                / self.dvpar.powi(2);
+                            let v2 = vpar.powi(2) + 2.0 * mu;
+                            let pitch = 2.0 * mu / v2.max(0.01);
+                            let nu_v = nu * (1.0 / v2.max(0.1).powf(1.5)).min(10.0);
+                            cf[[i, j, t, v, m]] = nu_v * pitch * d2f;
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut gram = Matrix3::<f64>::zeros();
+        for v in 0..c.n_vpar {
+            let vpar = self.vpar[v];
+            for m in 0..c.n_mu {
+                let mu = self.mu[m];
+                let energy = 0.5 * vpar.powi(2) + mu;
+                let fm = (-energy).exp() / PI.powf(1.5);
+                let basis = [1.0, vpar, energy];
+                for a in 0..3 {
+                    for b in 0..3 {
+                        gram[(a, b)] += basis[a] * basis[b] * fm * dv;
+                    }
+                }
+            }
+        }
+        let gram_inv = gram
+            .try_inverse()
+            .unwrap_or_else(|| (gram + Matrix3::identity() * 1e-14).try_inverse().unwrap());
+
+        let mut out = cf.clone();
+        for i in 0..c.n_kx {
+            for j in 0..c.n_ky {
+                for t in 0..c.n_theta {
+                    let mut moments = Vector3::<Complex64>::zeros();
+                    for v in 0..c.n_vpar {
+                        let vpar = self.vpar[v];
+                        for m in 0..c.n_mu {
+                            let mu = self.mu[m];
+                            let energy = 0.5 * vpar.powi(2) + mu;
+                            let value = cf[[i, j, t, v, m]] * dv;
+                            moments[0] += value;
+                            moments[1] += value * vpar;
+                            moments[2] += value * energy;
+                        }
+                    }
+
+                    let coeffs = gram_inv.map(Complex64::from) * moments;
+                    for v in 0..c.n_vpar {
+                        let vpar = self.vpar[v];
+                        for m in 0..c.n_mu {
+                            let mu = self.mu[m];
+                            let energy = 0.5 * vpar.powi(2) + mu;
+                            let fm = (-energy).exp() / PI.powf(1.5);
+                            let correction =
+                                (coeffs[0] + coeffs[1] * vpar + coeffs[2] * energy) * fm;
+                            out[[i, j, t, v, m]] = cf[[i, j, t, v, m]] - correction;
+                        }
+                    }
+                }
+            }
+        }
+        out
     }
 
     pub fn gradient_drive(

@@ -193,6 +193,37 @@ class TestEnergyConservation:
         assert E1 < E0 * 10.0  # generous bound — no unbounded growth
 
 
+class TestSugamaCollisionProjection:
+    def test_sugama_collision_conserves_discrete_density_momentum_energy(self):
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=8,
+            n_mu=6,
+            n_species=2,
+            collisions=True,
+            collision_model="sugama",
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-4, seed=7)
+        collision = solver.collide(state.f[0])
+
+        vpar = solver.vpar[None, None, None, :, None]
+        mu = solver.mu[None, None, None, None, :]
+        energy = 0.5 * vpar**2 + mu
+        dv = solver.dvpar * solver.dmu
+
+        density_moment = np.sum(collision * dv, axis=(-2, -1))
+        momentum_moment = np.sum(collision * vpar * dv, axis=(-2, -1))
+        energy_moment = np.sum(collision * energy * dv, axis=(-2, -1))
+
+        np.testing.assert_allclose(density_moment, 0.0, atol=1e-12)
+        np.testing.assert_allclose(momentum_moment, 0.0, atol=1e-12)
+        np.testing.assert_allclose(energy_moment, 0.0, atol=1e-12)
+
+
 # ── Linear recovery ──────────────────────────────────────────────────
 
 

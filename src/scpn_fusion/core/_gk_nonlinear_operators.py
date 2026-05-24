@@ -158,19 +158,21 @@ class NonlinearGKOperatorsMixin:
         vpar_5d = self.vpar[None, None, None, :, None]
         dv = dvp * dmu
 
-        m0 = np.sum(Cf * dv, axis=(-2, -1), keepdims=True)
-        m1 = np.sum(Cf * vpar_5d * dv, axis=(-2, -1), keepdims=True)
-        m2 = np.sum(Cf * energy * dv, axis=(-2, -1), keepdims=True)
-
-        n0 = np.sum(FM * dv, axis=(-2, -1), keepdims=True)
-        n1 = np.sum(FM * vpar_5d**2 * dv, axis=(-2, -1), keepdims=True)
-        n2 = np.sum(FM * energy**2 * dv, axis=(-2, -1), keepdims=True)
-
-        a0 = m0 / np.maximum(n0, 1e-30)
-        a1 = m1 / np.maximum(n1, 1e-30)
-        a2 = m2 / np.maximum(n2, 1e-30)
-
-        correction = (a0 + a1 * vpar_5d + a2 * energy) * FM
+        basis = (np.ones_like(energy), vpar_5d, energy)
+        moments = np.stack(
+            [np.sum(Cf * b * dv, axis=(-2, -1)) for b in basis],
+            axis=0,
+        )
+        gram = np.array(
+            [[np.sum(a * b * FM * dv) for b in basis] for a in basis],
+            dtype=np.float64,
+        )
+        coeffs = np.tensordot(np.linalg.inv(gram), moments, axes=(1, 0))
+        correction = (
+            coeffs[0, ..., None, None]
+            + coeffs[1, ..., None, None] * vpar_5d
+            + coeffs[2, ..., None, None] * energy
+        ) * FM
         return np.asarray(Cf - correction, dtype=np.complex128)
 
     def gradient_drive(
