@@ -25,7 +25,7 @@ Rust acceleration (6,600x speedup).
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 3.9.3 |
+| Package version | 3.9.4 |
 | Public API exports | 2 |
 | Python capability source modules | 260 |
 | Python capability classes | 486 |
