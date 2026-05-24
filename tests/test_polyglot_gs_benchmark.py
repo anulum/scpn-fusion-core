@@ -58,6 +58,27 @@ def test_axis_midplane_offset_counts_cells_from_symmetric_midplane() -> None:
     assert benchmark._axis_midplane_offset_cells(shifted) == 1
 
 
+def test_negative_flux_overshoot_metric_reports_maximum_negative_well() -> None:
+    """Benchmark reports must expose nonphysical negative-flux overshoot."""
+    nonnegative = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+    overshoot = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.0, -0.25, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+
+    assert benchmark._negative_flux_abs_max(nonnegative) == 0.0
+    assert benchmark._negative_flux_abs_max(overshoot) == 0.25
+
+
 def test_rust_benchmark_executes_compiled_release_solver(monkeypatch) -> None:
     """Rust timing must measure the compiled solver binary, not Cargo orchestration."""
     calls: list[tuple[list[str], object]] = []

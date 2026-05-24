@@ -182,6 +182,10 @@ def _axis_midplane_offset_cells(psi: np.ndarray) -> int:
     return abs(axis_z_index - midplane_index)
 
 
+def _negative_flux_abs_max(psi: np.ndarray) -> float:
+    return float(max(0.0, -np.min(psi)))
+
+
 def _relative_l2(candidate: np.ndarray, reference: np.ndarray) -> float:
     denominator = float(np.linalg.norm(reference[1:-1, 1:-1])) + 1e-30
     return float(np.linalg.norm(candidate[1:-1, 1:-1] - reference[1:-1, 1:-1])) / denominator
@@ -201,24 +205,28 @@ def main() -> None:
             "boundary_abs_max": _boundary_abs_max(julia_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(julia_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(julia_psi),
+            "negative_flux_abs_max": _negative_flux_abs_max(julia_psi),
         },
         "Go": {
             "relative_l2_interior": _relative_l2(go_psi, python_psi),
             "boundary_abs_max": _boundary_abs_max(go_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(go_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(go_psi),
+            "negative_flux_abs_max": _negative_flux_abs_max(go_psi),
         },
         "Rust": {
             "relative_l2_interior": _relative_l2(rust_psi, python_psi),
             "boundary_abs_max": _boundary_abs_max(rust_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(rust_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(rust_psi),
+            "negative_flux_abs_max": _negative_flux_abs_max(rust_psi),
         },
         "Lean": {
             "relative_l2_interior": _relative_l2(lean_psi, python_psi),
             "boundary_abs_max": _boundary_abs_max(lean_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(lean_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(lean_psi),
+            "negative_flux_abs_max": _negative_flux_abs_max(lean_psi),
         },
     }
 
@@ -241,6 +249,7 @@ def main() -> None:
                 "wall_time_s": python_seconds,
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(python_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(python_psi),
+                "negative_flux_abs_max": _negative_flux_abs_max(python_psi),
             },
             {
                 "language": "Julia",
@@ -248,6 +257,7 @@ def main() -> None:
                 "wall_time_s": julia_seconds,
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(julia_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(julia_psi),
+                "negative_flux_abs_max": _negative_flux_abs_max(julia_psi),
             },
             {
                 "language": "Go",
@@ -255,6 +265,7 @@ def main() -> None:
                 "wall_time_s": go_seconds,
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(go_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(go_psi),
+                "negative_flux_abs_max": _negative_flux_abs_max(go_psi),
             },
             {
                 "language": "Rust",
@@ -262,6 +273,7 @@ def main() -> None:
                 "wall_time_s": rust_seconds,
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(rust_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(rust_psi),
+                "negative_flux_abs_max": _negative_flux_abs_max(rust_psi),
             },
             {
                 "language": "Lean",
@@ -269,6 +281,7 @@ def main() -> None:
                 "wall_time_s": lean_seconds,
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(lean_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(lean_psi),
+                "negative_flux_abs_max": _negative_flux_abs_max(lean_psi),
             },
         ],
         "parity": {"by_language": parity_by_language, "shape": list(python_psi.shape)},
@@ -331,14 +344,14 @@ def main() -> None:
             "",
             "## Physics Invariants",
             "",
-            "| Language | Vertical symmetry absolute maximum | Axis midplane offset (cells) |",
-            "|----------|------------------------------------|------------------------------|",
+            "| Language | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Negative flux absolute maximum |",
+            "|----------|------------------------------------|------------------------------|--------------------------------|",
         ]
     )
     for row in report["solvers"]:
         lines.append(
             f"| {row['language']} | {row['vertical_symmetry_abs_max']:.6e} | "
-            f"{row['axis_midplane_offset_cells']} |"
+            f"{row['axis_midplane_offset_cells']} | {row['negative_flux_abs_max']:.6e} |"
         )
     lines.extend(
         [
