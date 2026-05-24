@@ -17,6 +17,8 @@ import numpy as np
 
 @dataclass(frozen=True)
 class ShadowDataset:
+    """Synthetic magnetic-shadow training features and target fractions."""
+
     features: np.ndarray
     shadow_fraction: np.ndarray
 
@@ -47,6 +49,7 @@ def synthetic_shadow_reference(features: np.ndarray) -> np.ndarray:
 
 
 def generate_shadow_dataset(seed: int, samples: int) -> ShadowDataset:
+    """Generate a deterministic synthetic HEAT-ML shadow training dataset."""
     if samples < 8:
         raise ValueError("samples must be >= 8")
     rng = np.random.default_rng(seed)
@@ -87,6 +90,7 @@ class HeatMLShadowSurrogate:
         return phi
 
     def fit(self, features: np.ndarray, target: np.ndarray) -> None:
+        """Fit ridge-regularised polynomial weights to shadow fractions."""
         phi = self._feature_map(features)
         y = np.asarray(target, dtype=np.float64).reshape(-1)
         if y.shape[0] != phi.shape[0]:
@@ -96,10 +100,12 @@ class HeatMLShadowSurrogate:
         self._weights = np.linalg.solve(lhs, rhs)
 
     def fit_synthetic(self, seed: int = 42, samples: int = 2048) -> None:
+        """Fit the surrogate on a deterministic synthetic reference dataset."""
         ds = generate_shadow_dataset(seed=seed, samples=samples)
         self.fit(ds.features, ds.shadow_fraction)
 
     def predict_shadow_fraction(self, features: np.ndarray) -> np.ndarray:
+        """Predict clipped magnetic-shadow fractions for divertor feature rows."""
         if self._weights is None:
             raise RuntimeError("Model is not fit. Call fit() first.")
         phi = self._feature_map(features)
@@ -111,6 +117,7 @@ class HeatMLShadowSurrogate:
         q_div_baseline_w_m2: np.ndarray | float,
         features: np.ndarray,
     ) -> np.ndarray:
+        """Apply predicted magnetic-shadow attenuation to baseline divertor flux."""
         q = np.asarray(q_div_baseline_w_m2, dtype=np.float64)
         shadow = self.predict_shadow_fraction(features)
         # Map shadow fraction to effective heat-load attenuation.
@@ -119,6 +126,7 @@ class HeatMLShadowSurrogate:
 
 
 def rmse_percent(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Return RMSE as a percentage of mean absolute reference magnitude."""
     yt = np.asarray(y_true, dtype=np.float64).reshape(-1)
     yp = np.asarray(y_pred, dtype=np.float64).reshape(-1)
     if yt.size == 0 or yt.shape != yp.shape:
@@ -129,6 +137,7 @@ def rmse_percent(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 
 
 def benchmark_inference_seconds(model: HeatMLShadowSurrogate, samples: int = 200_000) -> float:
+    """Measure vectorised shadow-fraction inference time for synthetic samples."""
     rng = np.random.default_rng(123)
     feats = np.column_stack(
         [
