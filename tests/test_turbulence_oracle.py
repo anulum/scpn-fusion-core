@@ -83,6 +83,12 @@ class TestDriftWavePhysics:
         assert hw.k[8] == np.fft.fftfreq(16, d=10.0 / (2 * np.pi * 16))[8]
         assert hw.k[8] < 0.0
 
+    def test_zero_mode_has_no_hyperviscous_dissipation(self):
+        hw = DriftWavePhysics(N=16, seed=1729)
+
+        assert hw.k2[0, 0] == 0.0
+        assert hw.spectral_dissipation_multiplier(hw.k2)[0, 0] == 0.0
+
 
 class TestOracleESN:
     def test_init(self):

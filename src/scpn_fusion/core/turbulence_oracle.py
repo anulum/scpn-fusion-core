@@ -30,7 +30,8 @@ class DriftWavePhysics:
         self.k = np.fft.fftfreq(N, d=L / (2 * np.pi * N))
         self.kx, self.ky = np.meshgrid(self.k, self.k)
         self.k2 = self.kx**2 + self.ky**2
-        self.k2[0, 0] = 1.0  # Avoid division by zero
+        self.k2_safe = self.k2.copy()
+        self.k2_safe[0, 0] = 1.0  # Avoid division by zero in phi inversion only.
 
         # De-aliasing mask (2/3 rule)
         # Filters out high-k modes that cause spectral blocking explosion
@@ -102,7 +103,7 @@ class DriftWavePhysics:
             dw_dt = -brack_phi_w + coupling - dissip_w
 
             # Invert to get d(phi)/dt: dphi = -dw / k^2
-            dp_dt = -dw_dt / self.k2
+            dp_dt = -dw_dt / self.k2_safe
             dp_dt[0, 0] = 0.0  # Zero mean
 
             dn_dt = -brack_phi_n + coupling - KAPPA * (1j * self.ky * p_in) - dissip_n

@@ -640,6 +640,14 @@ mod tests {
     }
 
     #[test]
+    fn test_hw_zero_mode_has_no_hyperviscous_dissipation() {
+        let hw = DriftWavePhysics::with_seed(16, 1729);
+
+        assert_eq!(hw.k2[[0, 0]], 0.0);
+        assert_eq!(spectral_dissipation_multiplier(hw.k2[[0, 0]]), 0.0);
+    }
+
+    #[test]
     fn test_esn_creation() {
         let esn = OracleESN::new(N_PROBES, RESERVOIR_SIZE);
         assert_eq!(esn.reservoir_size, RESERVOIR_SIZE);
