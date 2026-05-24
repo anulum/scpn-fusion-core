@@ -11,7 +11,9 @@ Community code timings are from published literature (references at end).
 SCPN timings are CI-verified on GitHub Actions ubuntu-latest unless noted.
 Latency IDs are defined in `docs/PERFORMANCE_METRIC_TAXONOMY.md`; this table
 reports `control.pid_kernel_step_us` (Rust kernel) and
-`control.closed_loop_step_us` (full Python+Rust loop).
+`control.closed_loop_step_us` (controller loop with explicit plant-update
+mode). Reduced-order surrogate and full-physics paths are not treated as
+same-work speedup pairs.
 
 ---
 
@@ -19,19 +21,26 @@ reports `control.pid_kernel_step_us` (Rust kernel) and
 
 | Code | Control Freq | Step Latency | Language | Source |
 |------|-------------|-------------|----------|--------|
-| **SCPN v3.9.5 (Rust kernel)** | **~2 MHz** | **0.52 us P50 / 0.70 us P99** | Rust | Criterion + `stress_test_campaign.json` |
-| **SCPN v3.9.5 (full loop)** | **10--30 kHz** | **23.8 us P50 / 122 us P99** | Rust + Python | CI (`control.closed_loop_step_us`) |
+| **SCPN v3.9.5 (Rust reduced-order kernel)** | **~2 MHz** | **0.52 us P50 / 0.70 us P99** | Rust | Committed Rust-extension campaign artifact |
+| **SCPN v3.9.5 (controller loop, surrogate plant)** | **>10 kHz** | **PID p95 0.012 ms; SNN p95 0.284 ms** | Python | `validation/reports/scpn_end_to_end_latency.md` |
+| **SCPN v3.9.5 (controller loop, full-mode plant)** | **>10 kHz** | **PID p95 0.047 ms; SNN p95 0.294 ms** | Python | `validation/reports/scpn_end_to_end_latency.md` |
 | DIII-D PCS (production) | 4--10 kHz | 100--250 us per physics cycle | C / Fortran | Penaflor 2024; Barr 2024 |
 | ITER CODAC (spec) | ~1 kHz | ~1 ms processing budget | TBD | ITER RTF design docs |
 | P-EFIT (GPU) | N/A (reconstruction) | 300--375 us per iter (129x129) | Fortran + CUDA | Sabbagh 2023 |
 | TORAX | N/A (offline sim) | ~ms per timestep | Python / JAX | Citrin 2024 |
 | FUSE | N/A (design code) | N/A | Julia | Meneghini 2024 |
 
-The Rust PID kernel (0.52 us P50) is measured via `validation/verify_10khz_rust.py`
-and the Criterion microbenchmark suite. The full closed-loop measurement (23.8 us)
-includes Python sensor read, Rust kernel invocation via PyO3, and actuator write.
-Both are faster than any published DIII-D physics control loop and operate without
-dedicated FPGA or InfiniBand hardware.
+The Rust PID kernel (0.52 us P50) is a reduced-order control-kernel artifact,
+not a same-work comparison against Python Grad-Shafranov solving. The
+end-to-end latency benchmark separately reports surrogate and full-mode plant
+updates in one Python harness; use those rows for controller-loop comparison.
+
+Full-order Rust equilibrium component timings are now also tracked: 33x33
+Grad-Shafranov SOR is 413 us, 33x33 Picard multigrid is 845 us, and six-coil
+vacuum-field assembly is 140 us at 33x33 / 489 us at 65x65 on an Intel
+i5-11600K. These values are competitive for low-resolution control-support
+physics, but they are intentionally not compared against the reduced-order
+Rust flight-simulator kernel.
 
 ---
 
@@ -228,11 +237,11 @@ Six capabilities that no other open-source fusion code combines:
    dynamics via Kuramoto coupling, enabling physics-informed state-space
    representation that bridges turbulence to control.
 
-4. **Fastest open-source control kernel: 0.52 us P50 Rust PID.**
-   Measured via Criterion microbenchmark and stress-test campaign
-   (`validation/reports/stress_test_campaign.json`). The full closed-loop
-   at 23.8 us P50 is still faster than any published DIII-D physics loop,
-   without FPGA or InfiniBand.
+4. **Fast reduced-order control kernel: 0.52 us P50 Rust PID.**
+   Measured in the committed Rust-extension campaign artifact. This is a
+   reduced-order kernel metric, not a same-work speedup over Python
+   Grad-Shafranov solving. Same-harness controller-loop timings are reported
+   by `validation/reports/scpn_end_to_end_latency.md`.
 
 5. **Free-boundary tracking controller (direct kernel + supervisor + EKF).**
    Closed-loop shape control re-identifies coil-to-objective response directly

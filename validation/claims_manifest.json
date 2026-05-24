@@ -2,20 +2,21 @@
   "version": "claims-audit-v2",
   "claims": [
     {
-      "id": "readme_rust_speedup_claim",
+      "id": "readme_control_latency_scope_claim",
       "source_file": "README.md",
-      "source_pattern": "6,600x speedup",
+      "source_pattern": "metric-scoped and are not same-work Rust-versus-Python physics speedups",
       "evidence_files": [
-        "validation/reports/stress_test_campaign.json"
+        "docs/PERFORMANCE_METRIC_TAXONOMY.md",
+        "validation/reports/scpn_end_to_end_latency.md"
       ],
       "evidence_patterns": [
         {
-          "file": "validation/reports/stress_test_campaign.json",
-          "pattern": "\"PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*[0-9eE+\\-.]+"
+          "file": "docs/PERFORMANCE_METRIC_TAXONOMY.md",
+          "pattern": "mixed-fidelity throughput ratio, not a\\s+same-work Rust-versus-Python speedup"
         },
         {
-          "file": "validation/reports/stress_test_campaign.json",
-          "pattern": "\"Rust-PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*[0-9eE+\\-.]+"
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "Overall pass: `YES`"
         }
       ]
     },

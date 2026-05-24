@@ -44,7 +44,27 @@ Three benchmark suites are defined in the Rust workspace:
 |-------|-------|------------------|
 | `sor_bench` | fusion-math | SOR step at 65x65 and 128x128, Chebyshev vs fixed |
 | `inverse_bench` | fusion-core | Full LM reconstruction (FD vs analytical Jacobian) |
+| `picard_bench` | fusion-core | Full-order Grad-Shafranov Picard/SOR and Picard/multigrid solves |
+| `vacuum_bench` | fusion-core | Full-order vacuum-field solve from ITER-like PF coil set |
 | `neural_transport_bench` | fusion-ml | MLP inference single-point and 50-point batch |
+
+## Latest Local Rust Equilibrium Numbers
+
+Measured on 2026-05-24 with `cargo bench` on the local workstation:
+Intel Core i5-11600K (6C/12T), 31.1 GB RAM, Linux 6.17.0-29-generic,
+Rust 1.95.0, Python 3.12.3, NVIDIA GTX 1060 6GB present for JAX/CUDA
+comparisons. Rust benches used the release profile with fat LTO.
+
+| Benchmark | Scope | Criterion centre estimate |
+|-----------|-------|---------------------------|
+| `picard_gs_solve/sor_33x33` | Full-order Grad-Shafranov SOR, 33x33 grid, 10 Picard iterations | 412.83 us |
+| `picard_multigrid_solve/multigrid_33x33` | Full-order Grad-Shafranov Picard multigrid, 33x33 grid, 10 Picard iterations | 844.59 us |
+| `vacuum_field_33x33_6coils` | Vacuum field from six ITER-like coils, 33x33 grid | 139.55 us |
+| `vacuum_field_65x65_6coils` | Vacuum field from six ITER-like coils, 65x65 grid | 488.86 us |
+
+These are full-order Rust equilibrium component timings. They are separate
+from the reduced-order Rust flight-simulator kernel measured by
+`validation/verify_10khz_rust.py`.
 
 ## Comparing Results
 

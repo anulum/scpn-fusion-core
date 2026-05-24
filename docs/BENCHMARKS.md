@@ -304,6 +304,37 @@ The targeted quadtree AMR is simpler than JOREK's h-p adaptivity but
 sufficient for equilibrium and transport applications where steep gradients
 are localised near the pedestal and X-point regions.
 
+## Rust Full-Order Equilibrium Benchmarks
+
+Rust full-order equilibrium timings are reported separately from the
+reduced-order Rust flight-simulator control kernel. The control kernel is a
+linearised plant surrogate for fast controller-loop studies; the benchmarks
+below exercise Grad-Shafranov and vacuum-field work in `fusion-core`.
+
+Local run on 2026-05-24:
+
+| Parameter | Value |
+|-----------|-------|
+| **CPU** | Intel Core i5-11600K, 6C/12T |
+| **RAM** | 31.1 GB |
+| **OS** | Linux 6.17.0-29-generic x86_64, glibc 2.39 |
+| **Rust** | 1.95.0 |
+| **Python** | 3.12.3 (`/home/anulum/.local/bin/python`) |
+| **GPU** | NVIDIA GeForce GTX 1060 6GB, driver 580.159.03 |
+| **Command** | `cargo bench -p fusion-core --bench picard_bench`; `cargo bench -p fusion-core --bench vacuum_bench` |
+
+| Benchmark | Physics scope | Grid | Criterion centre estimate |
+|-----------|---------------|------|---------------------------|
+| `picard_gs_solve/sor_33x33` | Full-order Grad-Shafranov SOR solve, 10 Picard iterations | 33x33 | 412.83 us |
+| `picard_multigrid_solve/multigrid_33x33` | Full-order Grad-Shafranov Picard multigrid solve, 10 Picard iterations | 33x33 | 844.59 us |
+| `vacuum_field_33x33_6coils` | Vacuum flux from six ITER-like coils | 33x33 | 139.55 us |
+| `vacuum_field_65x65_6coils` | Vacuum flux from six ITER-like coils | 65x65 | 488.86 us |
+
+Interpretation: the 33x33 Rust full-order equilibrium path is sub-millisecond
+and therefore competitive for low-resolution control-support updates and
+surrogate calibration loops. It is not the same benchmark as the reduced-order
+Rust flight simulator, and it is not EFIT-grade reconstruction parity evidence.
+
 ## Benchmark Environment
 
 All timing numbers in this document were measured on the following hardware

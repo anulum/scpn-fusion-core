@@ -12,7 +12,8 @@ Most fusion codes are physics-first — solve equations, then bolt on control.
 SCPN Fusion Core inverts this: **control-first**. Express plasma control logic
 as stochastic Petri nets, compile to spiking neural networks, execute at
 **10 kHz+** against physics-informed plant models. Pure Python with optional
-Rust acceleration (6,600x speedup).
+Rust acceleration for reduced-order control kernels; latency claims are
+metric-scoped and are not same-work Rust-versus-Python physics speedups.
 
 > **Minimal control-only package:** [`scpn-control`](https://github.com/anulum/scpn-control) (98 modules, pip-installable).
 > This repo is the full physics + research suite.
@@ -85,6 +86,8 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 |--------|-------|-----------------|
 | Rust PID kernel latency | **0.52 us P50** | `validation/verify_10khz_rust.py` |
 | Closed-loop HIL latency | **10.5 us P50** | `python validation/collect_results.py` |
+| Rust full-order GS solve | **413 us** SOR / **845 us** multigrid (33x33) | `cargo bench -p fusion-core --bench picard_bench` |
+| Rust vacuum field solve | **140 us** (33x33) / **489 us** (65x65) | `cargo bench -p fusion-core --bench vacuum_bench` |
 | QLKNN-10D transport surrogate | test rel_L2 = **0.094** | `weights/neural_transport_qlknn.metrics.json` |
 | FNO turbulence surrogate | val rel_L2 = **0.055** | `weights/fno_turbulence_jax.metrics.json` |
 | Disruption rate (1,000-shot sim campaign) | **0%** (Rust-PID) | `validation/stress_test_campaign.py` |
@@ -94,7 +97,12 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | TBR | 1.14 (0D 3-group blanket) | `RESULTS.md` |
 | FreeGS equilibrium parity | **FAIL** (psi NRMSE 1.80) | `validation/benchmark_vs_freegs.py` |
 
-Latency taxonomy: `control.pid_kernel_step_us` (0.52 us P50), `control.closed_loop_step_us` (23.8 us P50 / 122 us P99), `control.hil_loop_us` (10.5 us P50). Full definitions: [`docs/PERFORMANCE_METRIC_TAXONOMY.md`](docs/PERFORMANCE_METRIC_TAXONOMY.md).
+Latency taxonomy: `control.pid_kernel_step_us` (Rust reduced-order kernel),
+`control.closed_loop_step_us` (controller loop with explicit surrogate/full
+physics mode), and `control.hil_loop_us` (hardware-in-the-loop integration
+path). Current local end-to-end benchmark: PID surrogate p95 0.012 ms, PID
+full-mode p95 0.047 ms; full definitions:
+[`docs/PERFORMANCE_METRIC_TAXONOMY.md`](docs/PERFORMANCE_METRIC_TAXONOMY.md).
 
 Full numbers: [`RESULTS.md`](RESULTS.md) — re-run `python validation/collect_results.py` to reproduce.
 
@@ -184,13 +192,39 @@ model for the controller to operate against.
 
 ## Controller Stress-Test Campaign (1,000 shots)
 
-| Controller | P50 Latency | P95 Latency | Disruption Rate |
-|-----------|------------|------------|-----------------|
-| **Rust-PID** | **0.52 us** | 0.67 us | **0%** |
-| PID (Python) | 3,431 us | 3,624 us | 0% |
-| H-infinity | 3,227 us | 3,607 us | 100% |
-| NMPC-JAX | 45,450 us | 49,773 us | 0% |
-| Nengo-SNN | 23,573 us | 24,736 us | 0% |
+The campaign table is a mixed-fidelity controller benchmark, not an
+apples-to-apples language benchmark. `Rust-PID` uses the Rust
+`PyRustFlightSim` reduced-order linearised plasma surrogate. The Python PID,
+H-infinity, NMPC-JAX, and Nengo-SNN rows run through the Python flight-sim
+control path; the non-surrogate PID lane performs Grad-Shafranov equilibrium
+work inside the loop. Therefore the Rust/Python latency ratio measures a
+physics-scope change plus implementation overhead, not "Rust is N times faster
+for the same work".
+
+| Controller | Physics/control scope | P50 Latency | P95 Latency | Disruption Rate |
+|-----------|------------------------|------------|------------|-----------------|
+| **Rust-PID** | Reduced-order linearised plasma surrogate in Rust | **0.52 us** | 0.67 us | **0%** |
+| PID (Python) | Python flight-sim path with Grad-Shafranov equilibrium work | 3,431 us | 3,624 us | 0% |
+| H-infinity | Python flight-sim research lane | 3,227 us | 3,607 us | 100% |
+| NMPC-JAX | Python/JAX NMPC lane | 45,450 us | 49,773 us | 0% |
+| Nengo-SNN | Python/Nengo SNN lane | 23,573 us | 24,736 us | 0% |
+
+For same-harness controller-loop timings with explicit surrogate versus full
+physics modes, use `validation/scpn_end_to_end_latency.py`. Latest local run
+on 2026-05-24 passed with PID p95 latency 0.012 ms in surrogate mode and
+0.047 ms in full mode; see
+`validation/reports/scpn_end_to_end_latency.md`.
+
+Rust full-order equilibrium benchmarks are tracked separately from the
+reduced-order control kernel. On 2026-05-24, local Criterion runs on an
+Intel i5-11600K workstation measured 33x33 Grad-Shafranov SOR at 413 us,
+33x33 Picard multigrid at 845 us, vacuum field 33x33 at 140 us, and vacuum
+field 65x65 at 489 us. Local hardware: Linux 6.17, 31.1 GB RAM, Rust 1.95.0,
+Python 3.12.3, NVIDIA GTX 1060 6GB available for JAX/CUDA tests. These numbers
+are competitive for sub-millisecond low-resolution equilibrium/control-support
+updates, but they are not EFIT-grade reconstruction parity evidence and should
+not be compared with the reduced-order 0.16-0.52 us Rust flight-simulator
+kernel.
 
 H-infinity is a research lane (reduced-order 2x2 robust model) and is not
 part of production release acceptance criteria.

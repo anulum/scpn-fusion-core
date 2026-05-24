@@ -10,7 +10,7 @@ to concrete evidence files and patterns.
 
 | Claim ID | Source | Evidence Files | Pattern Checks |
 |---|---|---:|---:|
-| `readme_rust_speedup_claim` | `README.md` | 1 | 2 |
+| `readme_control_latency_scope_claim` | `README.md` | 2 | 2 |
 | `readme_rust_control_loop_latency_claim` | `README.md` | 1 | 1 |
 | `readme_qlknn_transport_claim` | `README.md` | 1 | 1 |
 | `readme_zero_disruption_rust_pid_claim` | `README.md` | 1 | 1 |
@@ -31,20 +31,21 @@ to concrete evidence files and patterns.
 
 ## Claim Details
 
-### `readme_rust_speedup_claim`
+### `readme_control_latency_scope_claim`
 
 - Source file: `README.md`
-- Source pattern: `6,600x speedup`
+- Source pattern: `metric-scoped and are not same-work Rust-versus-Python physics speedups`
 
 Evidence files:
-- `validation/reports/stress_test_campaign.json`
+- `docs/PERFORMANCE_METRIC_TAXONOMY.md`
+- `validation/reports/scpn_end_to_end_latency.md`
 
 Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `validation/reports/stress_test_campaign.json` | `"PID"[\s\S]*"p50_latency_us"\s*:\s*[0-9eE+\-.]+` |
-| `validation/reports/stress_test_campaign.json` | `"Rust-PID"[\s\S]*"p50_latency_us"\s*:\s*[0-9eE+\-.]+` |
+| `docs/PERFORMANCE_METRIC_TAXONOMY.md` | `mixed-fidelity throughput ratio, not a\s+same-work Rust-versus-Python speedup` |
+| `validation/reports/scpn_end_to_end_latency.md` | `Overall pass: \`YES\`` |
 
 ### `readme_rust_control_loop_latency_claim`
 
