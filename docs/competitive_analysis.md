@@ -19,8 +19,8 @@ reports `control.pid_kernel_step_us` (Rust kernel) and
 
 | Code | Control Freq | Step Latency | Language | Source |
 |------|-------------|-------------|----------|--------|
-| **SCPN v3.9.3 (Rust kernel)** | **~2 MHz** | **0.52 us P50 / 0.70 us P99** | Rust | Criterion + `stress_test_campaign.json` |
-| **SCPN v3.9.3 (full loop)** | **10--30 kHz** | **23.8 us P50 / 122 us P99** | Rust + Python | CI (`control.closed_loop_step_us`) |
+| **SCPN v3.9.4 (Rust kernel)** | **~2 MHz** | **0.52 us P50 / 0.70 us P99** | Rust | Criterion + `stress_test_campaign.json` |
+| **SCPN v3.9.4 (full loop)** | **10--30 kHz** | **23.8 us P50 / 122 us P99** | Rust + Python | CI (`control.closed_loop_step_us`) |
 | DIII-D PCS (production) | 4--10 kHz | 100--250 us per physics cycle | C / Fortran | Penaflor 2024; Barr 2024 |
 | ITER CODAC (spec) | ~1 kHz | ~1 ms processing budget | TBD | ITER RTF design docs |
 | P-EFIT (GPU) | N/A (reconstruction) | 300--375 us per iter (129x129) | Fortran + CUDA | Sabbagh 2023 |
@@ -61,9 +61,9 @@ points, and `gk_corrector` applies delta corrections when the surrogate drifts.
 | JINTRAC + QLKNN | NN surrogate | ~2 hours (1 core) | ML surrogate | van de Plassche 2020 |
 | TORAX | 1D JAX | ~30 s (GPU) / minutes (CPU) | QLKNN10D | Citrin 2024 |
 | FUSE | 1D Julia | ~25 ms per step (TJLF) | TJLF surrogate | Meneghini 2024 |
-| **SCPN v3.9.3 (1.5D step)** | **1.5D coupled** | **1.5--5.5 us per step** | Crit-gradient + neoclassical | CI Criterion |
-| **SCPN v3.9.3 (MLP)** | Neural surrogate | **~24 ns single-point** | Trained QLKNN-10D surrogate | CI Criterion |
-| **SCPN v3.9.3 (native GK)** | Linear eigenvalue | **~0.3 s/surface** | Ballooning, Sugama collisions | Measured |
+| **SCPN v3.9.4 (1.5D step)** | **1.5D coupled** | **1.5--5.5 us per step** | Crit-gradient + neoclassical | CI Criterion |
+| **SCPN v3.9.4 (MLP)** | Neural surrogate | **~24 ns single-point** | Trained QLKNN-10D surrogate | CI Criterion |
+| **SCPN v3.9.4 (native GK)** | Linear eigenvalue | **~0.3 s/surface** | Ballooning, Sugama collisions | Measured |
 | QLKNN (TensorFlow) | NN inference | ~100 us (25 outputs) | Surrogate | van de Plassche 2020 |
 
 The MLP surrogate is trained on 500K QLKNN-10D gyrokinetic data points
@@ -84,9 +84,9 @@ solver uses the response-matrix formulation with Miller geometry
 | HELENA | 201 flux | Isoparametric | ~10 s | Huysmans 1991 |
 | FreeGS | Variable | Picard + multigrid | ~seconds | FreeGS GitHub |
 | FreeGSNKE | Variable | Newton-Krylov | Faster than FreeGS | FreeGSNKE 2024 |
-| **SCPN v3.9.3 (Rust)** | 65x65 | Picard + SOR | **~100 ms** | Measured |
-| **SCPN v3.9.3 (Neural)** | 129x129 | PCA + MLP surrogate | **0.39 ms mean** | CI verified |
-| **SCPN v3.9.3 (Multigrid)** | 65x65 | V-cycle | **~15 ms** | Projected |
+| **SCPN v3.9.4 (Rust)** | 65x65 | Picard + SOR | **~100 ms** | Measured |
+| **SCPN v3.9.4 (Neural)** | 129x129 | PCA + MLP surrogate | **0.39 ms mean** | CI verified |
+| **SCPN v3.9.4 (Multigrid)** | 65x65 | V-cycle | **~15 ms** | Projected |
 
 The Neural Equilibrium Kernel achieves P-EFIT-class speed (0.39 ms) on CPU only,
 without requiring CUDA or GPU hardware. Trained on 18 GEQDSK files across SPARC,

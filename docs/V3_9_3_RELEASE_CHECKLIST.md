@@ -1,4 +1,4 @@
-# v3.9.3 Release Checklist (Hardening Wave)
+# v3.9.4 Release Checklist (Hardening Wave)
 
 Release objective:
 - Ship hardening and credibility improvements without scope creep.
@@ -35,7 +35,7 @@ Release objective:
 ## 5) Versioning and Release Notes
 
 - [ ] Finalize `CHANGELOG.md` entries under `Unreleased`.
-- [ ] Tag release as `v3.9.3` with summary of hardening deltas and remaining known gaps.
+- [ ] Tag release as `v3.9.4` with summary of hardening deltas and known gaps.
 - [ ] Attach benchmark/regression artifacts to the release notes.
 
 ## 6) Exit Gates

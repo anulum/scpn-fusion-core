@@ -10,6 +10,16 @@
 
 ## [Unreleased]
 
+## [3.9.4] - 2026-05-24
+
+### Changed
+- Physics hardening: integrated transport bootstrap current now uses the full Sauter path by default.
+- Physics hardening: Miller geometry metrics now include elongation and triangularity shear in radial derivatives.
+- Physics hardening: JAX gyrokinetic Bessel and equilibrium elliptic kernels now match SciPy reference contracts across operational domains.
+- Physics hardening: alpha slowing-down deposition now uses exact first-order relaxation to preserve non-negative deposited power.
+- Release readiness: metadata and release acceptance surfaces now target `v3.9.4`.
+
+
 ### Changed
 - Validation governance hardening (Wave A): release preflight now enforces source P0/P1 issue-backlog drift checks and untested-module linkage guard checks.
 - Governance hardening: refreshed `UNDERDEVELOPED_REGISTER.md` from the current codebase snapshot and removed stale hard-coded underdeveloped counts from README/ROADMAP/CONTRIBUTING/HONEST_SCOPE (docs now reference live register summary).
@@ -91,7 +101,7 @@
 - Physics hardening: extended MHD criteria (Troyon, NTM, RWM, peeling-ballooning) now enforce validated parameter domains with deterministic fail-fast rejection of malformed inputs.
 - Runtime hardening: stability-analyser gradient sampling now uses boundary-safe central-difference indexing and positive-radius scan bounds, removing silent edge wrap behaviour.
 - Documentation hardening: Sphinx core API index now explicitly includes `stability_mhd`, `stability_mhd_extended`, and `runaway_electrons` so API docs track current hardened physics surfaces.
-- Release metadata sync: package, citation, and README version surfaces aligned to `3.9.4`.
+- Release metadata sync: package, citation, and README version surfaces aligned to `3.9.3`.
 
 ---
 
