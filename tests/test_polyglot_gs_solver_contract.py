@@ -204,6 +204,9 @@ def _assert_matches_case(candidate_psi: np.ndarray, case: dict[str, float | int]
     midplane = candidate_psi[axis_z_index, :]
     assert np.all(np.diff(midplane[: axis_r_index + 1]) >= -1e-14)
     assert np.all(np.diff(midplane[axis_r_index:]) <= 1e-14)
+    axis_column = candidate_psi[:, axis_r_index]
+    assert np.all(np.diff(axis_column[: axis_z_index + 1]) >= -1e-14)
+    assert np.all(np.diff(axis_column[axis_z_index:]) <= 1e-14)
     assert float(np.min(candidate_psi)) >= -1e-14
     assert float(np.max(candidate_psi[1:-1, 1:-1])) > 1e-8
 

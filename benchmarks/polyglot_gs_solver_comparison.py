@@ -225,6 +225,19 @@ def _midplane_radial_monotonicity_violations(psi: np.ndarray) -> int:
     return violations
 
 
+def _axis_column_vertical_monotonicity_violations(psi: np.ndarray) -> int:
+    axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
+    axis_column = psi[:, axis_r_index]
+    violations = 0
+    for iz in range(1, axis_z_index + 1):
+        if axis_column[iz] + 1e-14 < axis_column[iz - 1]:
+            violations += 1
+    for iz in range(axis_z_index + 1, psi.shape[0]):
+        if axis_column[iz] > axis_column[iz - 1] + 1e-14:
+            violations += 1
+    return violations
+
+
 def _negative_flux_abs_max(psi: np.ndarray) -> float:
     return float(max(0.0, -np.min(psi)))
 
@@ -259,6 +272,9 @@ def main() -> None:
             "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
                 julia_psi
             ),
+            "axis_column_vertical_monotonicity_violations": _axis_column_vertical_monotonicity_violations(
+                julia_psi
+            ),
             "negative_flux_abs_max": _negative_flux_abs_max(julia_psi),
         },
         "Go": {
@@ -271,6 +287,9 @@ def main() -> None:
             "axis_boundary_distance_cells": _axis_boundary_distance_cells(go_psi),
             "axis_local_dominance_margin": _axis_local_dominance_margin(go_psi),
             "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
+                go_psi
+            ),
+            "axis_column_vertical_monotonicity_violations": _axis_column_vertical_monotonicity_violations(
                 go_psi
             ),
             "negative_flux_abs_max": _negative_flux_abs_max(go_psi),
@@ -287,6 +306,9 @@ def main() -> None:
             "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
                 rust_psi
             ),
+            "axis_column_vertical_monotonicity_violations": _axis_column_vertical_monotonicity_violations(
+                rust_psi
+            ),
             "negative_flux_abs_max": _negative_flux_abs_max(rust_psi),
         },
         "Lean": {
@@ -299,6 +321,9 @@ def main() -> None:
             "axis_boundary_distance_cells": _axis_boundary_distance_cells(lean_psi),
             "axis_local_dominance_margin": _axis_local_dominance_margin(lean_psi),
             "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
+                lean_psi
+            ),
+            "axis_column_vertical_monotonicity_violations": _axis_column_vertical_monotonicity_violations(
                 lean_psi
             ),
             "negative_flux_abs_max": _negative_flux_abs_max(lean_psi),
@@ -330,6 +355,9 @@ def main() -> None:
                 "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
                     python_psi
                 ),
+                "axis_column_vertical_monotonicity_violations": _axis_column_vertical_monotonicity_violations(
+                    python_psi
+                ),
                 "negative_flux_abs_max": _negative_flux_abs_max(python_psi),
             },
             {
@@ -342,6 +370,9 @@ def main() -> None:
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(julia_psi),
                 "axis_local_dominance_margin": _axis_local_dominance_margin(julia_psi),
                 "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
+                    julia_psi
+                ),
+                "axis_column_vertical_monotonicity_violations": _axis_column_vertical_monotonicity_violations(
                     julia_psi
                 ),
                 "negative_flux_abs_max": _negative_flux_abs_max(julia_psi),
@@ -358,6 +389,9 @@ def main() -> None:
                 "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
                     go_psi
                 ),
+                "axis_column_vertical_monotonicity_violations": _axis_column_vertical_monotonicity_violations(
+                    go_psi
+                ),
                 "negative_flux_abs_max": _negative_flux_abs_max(go_psi),
             },
             {
@@ -372,6 +406,9 @@ def main() -> None:
                 "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
                     rust_psi
                 ),
+                "axis_column_vertical_monotonicity_violations": _axis_column_vertical_monotonicity_violations(
+                    rust_psi
+                ),
                 "negative_flux_abs_max": _negative_flux_abs_max(rust_psi),
             },
             {
@@ -384,6 +421,9 @@ def main() -> None:
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(lean_psi),
                 "axis_local_dominance_margin": _axis_local_dominance_margin(lean_psi),
                 "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
+                    lean_psi
+                ),
+                "axis_column_vertical_monotonicity_violations": _axis_column_vertical_monotonicity_violations(
                     lean_psi
                 ),
                 "negative_flux_abs_max": _negative_flux_abs_max(lean_psi),
@@ -450,8 +490,8 @@ def main() -> None:
             "",
             "## Physics Invariants",
             "",
-            "| Language | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Axis local dominance margin | Midplane radial monotonicity violations | Negative flux absolute maximum |",
-            "|----------|------------------------------------|------------------------------|------------------------------------|--------------------------------|------------------------------|-------------------------------------------|--------------------------------|",
+            "| Language | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Axis local dominance margin | Midplane radial monotonicity violations | Axis-column vertical monotonicity violations | Negative flux absolute maximum |",
+            "|----------|------------------------------------|------------------------------|------------------------------------|--------------------------------|------------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------|",
         ]
     )
     for row in report["solvers"]:
@@ -460,6 +500,7 @@ def main() -> None:
             f"{row['axis_midplane_offset_cells']} | {row['axis_radial_center_offset_cells']} | "
             f"{row['axis_boundary_distance_cells']} | {row['axis_local_dominance_margin']:.6e} | "
             f"{row['midplane_radial_monotonicity_violations']} | "
+            f"{row['axis_column_vertical_monotonicity_violations']} | "
             f"{row['negative_flux_abs_max']:.6e} |"
         )
     lines.extend(
