@@ -42,6 +42,8 @@ from scpn_fusion.hpc.hpc_bridge import HPCBridge
 
 logger = logging.getLogger(__name__)
 
+MAX_CONFIG_BYTES = 10 * 1024 * 1024
+
 
 def _sanitize_numeric_array(arr: FloatArray, *, cap: float = _NUMERIC_SANITIZE_CAP) -> FloatArray:
     """Return finite array with values clipped to ``[-cap, cap]``."""
@@ -136,7 +138,14 @@ class FusionKernel(
         path : str | Path
             Filesystem path to the configuration JSON.
         """
-        with open(path, "r") as f:
+        config_path = Path(path)
+        size = config_path.stat().st_size
+        if size > MAX_CONFIG_BYTES:
+            raise ValueError(
+                f"configuration file exceeds {MAX_CONFIG_BYTES} byte limit: {config_path}"
+            )
+
+        with config_path.open("r", encoding="utf-8") as f:
             raw_cfg = json.load(f)
 
         # Hardening: Strict schema validation at the entry point

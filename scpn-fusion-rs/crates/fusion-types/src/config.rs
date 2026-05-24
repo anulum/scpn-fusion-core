@@ -7,6 +7,8 @@
 // SCPN Fusion Core — Config
 use serde::{Deserialize, Serialize};
 
+pub const MAX_CONFIG_BYTES: u64 = 10 * 1024 * 1024;
+
 /// Top-level reactor configuration.
 /// Maps 1:1 to iter_config.json schema.
 /// Must deserialize ALL 6 existing JSON config files without modification.
@@ -121,6 +123,12 @@ fn default_sor_omega() -> f64 {
 impl ReactorConfig {
     /// Load from JSON file. Must succeed for all 6 existing configs.
     pub fn from_file(path: &str) -> crate::error::FusionResult<Self> {
+        let metadata = std::fs::metadata(path)?;
+        if metadata.len() > MAX_CONFIG_BYTES {
+            return Err(crate::error::FusionError::ConfigError(format!(
+                "configuration file exceeds {MAX_CONFIG_BYTES} byte limit: {path}"
+            )));
+        }
         let contents = std::fs::read_to_string(path)?;
         let config: Self = serde_json::from_str(&contents)?;
         Ok(config)
@@ -204,6 +212,23 @@ mod tests {
             let result = ReactorConfig::from_file(&path);
             assert!(result.is_ok(), "Failed to load config: {}", path);
         }
+    }
+
+    #[test]
+    fn test_rejects_oversized_config_before_reading() {
+        let path = std::env::temp_dir().join(format!(
+            "scpn_oversized_config_{}_{}.json",
+            std::process::id(),
+            "reactor"
+        ));
+        let file = std::fs::File::create(&path).unwrap();
+        file.set_len(MAX_CONFIG_BYTES + 1).unwrap();
+
+        let result = ReactorConfig::from_file(path.to_str().unwrap());
+
+        std::fs::remove_file(&path).unwrap();
+        assert!(result.is_err());
+        assert!(format!("{}", result.unwrap_err()).contains("configuration file exceeds"));
     }
 
     #[test]
