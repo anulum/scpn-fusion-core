@@ -831,6 +831,29 @@ class TestNeoclassical:
         assert j_bs[0] == 0.0
         assert j_bs[-1] == 0.0
 
+    def test_solver_bootstrap_uses_full_sauter_without_neoclassical_params(
+        self, solver: TransportSolver
+    ) -> None:
+        """Public bootstrap path should not fall back to calibrated heuristic physics."""
+        solver.neoclassical_params = None
+        b_pol = np.linspace(0.2, 1.0, solver.nr)
+        q_profile = 1.0 + 2.0 * solver.rho**2
+        expected = calculate_sauter_bootstrap_current_full(
+            solver.rho,
+            solver.Te,
+            solver.Ti,
+            solver.ne,
+            q_profile,
+            R0=6.2,
+            a=2.0,
+            B0=5.3,
+            Z_eff=1.5,
+        )
+
+        actual = solver.calculate_bootstrap_current(R0=6.2, B_pol=b_pol)
+
+        np.testing.assert_allclose(actual, expected, rtol=0.0, atol=0.0)
+
     def test_bootstrap_rejects_invalid_geometry(self) -> None:
         rho = np.linspace(0, 1, 50)
         Te = np.ones(50)

@@ -327,21 +327,24 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
         return j_bs
 
     def calculate_bootstrap_current(self, R0: float, B_pol: np.ndarray) -> np.ndarray:
-        """Calculate bootstrap current; uses full Sauter when configured."""
+        """Calculate bootstrap current with the full Sauter kernel."""
         solver_mod = _solver_module()
-        if hasattr(self, "neoclassical_params") and self.neoclassical_params is not None:
-            return solver_mod.calculate_sauter_bootstrap_current_full(
-                self.rho,
-                self.Te,
-                self.Ti,
-                self.ne,
-                self.neoclassical_params.get("q_profile", np.linspace(1, 4, len(self.rho))),
-                R0,
-                self.neoclassical_params.get("a", 2.0),
-                self.neoclassical_params.get("B0", 5.3),
-                self.neoclassical_params.get("Z_eff", 1.5),
-            )
-        return self.calculate_bootstrap_current_simple(R0, B_pol)
+        params = self.neoclassical_params if self.neoclassical_params is not None else {}
+        q_profile = np.asarray(params.get("q_profile", 1.0 + 2.0 * self.rho**2), dtype=np.float64)
+        if q_profile.shape != self.rho.shape:
+            q_profile = 1.0 + 2.0 * self.rho**2
+        a_default = (self.cfg["dimensions"]["R_max"] - self.cfg["dimensions"]["R_min"]) / 2.0
+        return solver_mod.calculate_sauter_bootstrap_current_full(
+            self.rho,
+            self.Te,
+            self.Ti,
+            self.ne,
+            q_profile,
+            R0,
+            params.get("a", a_default),
+            params.get("B0", 5.3),
+            params.get("Z_eff", getattr(self, "_Z_eff", 1.5)),
+        )
 
     def _gyro_bohm_chi(self) -> np.ndarray:
         """Gyro-Bohm anomalous transport diffusivity [m^2/s]."""
