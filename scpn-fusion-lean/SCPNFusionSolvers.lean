@@ -90,6 +90,18 @@ def parseNatValue (raw : String) : Except String Nat :=
   | some value => pure value
   | none => throw ("invalid natural value: " ++ raw)
 
+def requiredCaseFields : List String :=
+  [ "R_min", "R_max", "Z_min", "Z_max", "NR", "NZ", "Ip_target", "mu0",
+    "n_picard", "n_jacobi", "alpha", "omega_j", "beta_mix" ]
+
+def hasField (fields : List String) (target : String) : Bool :=
+  fields.any (fun field => field == target)
+
+def validateRequiredFields (fields : List String) : Except String Unit := do
+  for required in requiredCaseFields do
+    if !hasField fields required then
+      throw ("missing required Grad-Shafranov case field: " ++ required)
+
 def referenceCase : GradShafranovCase :=
   { rMin := 1.0, rMax := 3.0, zMin := -1.2, zMax := 1.2, nr := 17, nz := 17,
     ipTarget := 1000000.0, mu0 := 1.2566370614359173e-6, nPicard := 8,
@@ -128,6 +140,7 @@ def caseFromToml (path : System.FilePath) : IO (Except String GradShafranovCase)
   let content ← IO.FS.readFile path
   let mut inSection := false
   let mut c := referenceCase
+  let mut seenFields : List String := []
   for rawLine in content.splitOn "\n" do
     let line := stripComment rawLine
     if line == "" then
@@ -137,10 +150,16 @@ def caseFromToml (path : System.FilePath) : IO (Except String GradShafranovCase)
     else if inSection then
       match line.splitOn "=" with
       | key :: value :: [] =>
-          match updateCaseField c key.trimAscii.toString value.trimAscii.toString with
+          let field := key.trimAscii.toString
+          match updateCaseField c field value.trimAscii.toString with
           | Except.ok next => c := next
           | Except.error err => return Except.error err
+          if hasField requiredCaseFields field && !hasField seenFields field then
+            seenFields := field :: seenFields
       | _ => return Except.error ("invalid TOML assignment: " ++ line)
+  match validateRequiredFields seenFields with
+  | Except.error err => return Except.error err
+  | Except.ok _ => pure ()
   match validateCase c with
   | Except.ok _ => return Except.ok c
   | Except.error err => return Except.error err

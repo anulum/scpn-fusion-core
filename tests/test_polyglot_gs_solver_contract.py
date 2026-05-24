@@ -162,3 +162,41 @@ def test_native_lean_grad_shafranov_uses_requested_case_file(tmp_path: Path) -> 
     )
 
     _assert_matches_case(_run_lean_case(case_path), _ALTERNATE_CASE)
+
+
+def test_native_lean_grad_shafranov_rejects_missing_required_case_field(
+    tmp_path: Path,
+) -> None:
+    """Lean native GS case loading must fail closed when a required physics field is absent."""
+    case_path = tmp_path / "lean_missing_beta_mix.toml"
+    case_path.write_text(
+        "\n".join(
+            [
+                "[grad_shafranov]",
+                "R_min = 1.0",
+                "R_max = 3.0",
+                "Z_min = -1.2",
+                "Z_max = 1.2",
+                "NR = 17",
+                "NZ = 17",
+                "Ip_target = 1.0e6",
+                "mu0 = 1.2566370614359173e-6",
+                "n_picard = 8",
+                "n_jacobi = 16",
+                "alpha = 0.1",
+                "omega_j = 0.6666666666666666",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        ["lake", "exe", "gs_picard_csv", str(case_path)],
+        cwd=_REPO / "scpn-fusion-lean",
+        text=True,
+        capture_output=True,
+    )
+
+    assert completed.returncode != 0
+    assert "missing required Grad-Shafranov case field: beta_mix" in completed.stderr
