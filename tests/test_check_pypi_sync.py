@@ -89,3 +89,31 @@ def test_main_detects_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
         ]
     )
     assert rc == 1
+
+
+def test_main_retries_transient_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
+    versions = iter(["3.9.2", "3.9.5"])
+    sleeps: list[float] = []
+
+    monkeypatch.setattr(
+        check_pypi_sync,
+        "fetch_pypi_version",
+        lambda package, timeout: next(versions),
+    )
+    monkeypatch.setattr(check_pypi_sync.time, "sleep", sleeps.append)
+
+    rc = check_pypi_sync.main(
+        [
+            "--local-version",
+            "3.9.5",
+            "--mode",
+            "equal",
+            "--retries",
+            "2",
+            "--retry-delay",
+            "0.25",
+        ]
+    )
+
+    assert rc == 0
+    assert sleeps == [0.25]

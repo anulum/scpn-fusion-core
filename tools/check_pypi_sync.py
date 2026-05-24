@@ -164,16 +164,22 @@ def main(argv: list[str] | None = None) -> int:
     attempts = max(1, int(args.retries))
     remote_raw: str | None = None
     last_error: Exception | None = None
+    last_detail: str | None = None
 
     for attempt in range(1, attempts + 1):
         try:
             remote_raw = fetch_pypi_version(args.package, timeout=float(args.timeout))
+            remote = normalize_version(remote_raw, strip_v_prefix=args.strip_v_prefix)
+            ok, detail = compare_versions(local, remote, mode=args.mode)
+            if ok:
+                print(f"OK: {detail}")
+                return 0
+            last_detail = detail
             last_error = None
-            break
         except Exception as exc:  # noqa: BLE001 - preserve user-facing diagnostics
             last_error = exc
-            if attempt < attempts:
-                time.sleep(max(0.0, float(args.retry_delay)))
+        if attempt < attempts:
+            time.sleep(max(0.0, float(args.retry_delay)))
 
     if remote_raw is None:
         message = (
@@ -187,12 +193,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: {message}")
         return 2
 
-    remote = normalize_version(remote_raw, strip_v_prefix=args.strip_v_prefix)
-    ok, detail = compare_versions(local, remote, mode=args.mode)
-    if ok:
-        print(f"OK: {detail}")
-        return 0
-    print(f"ERROR: {detail}")
+    print(f"ERROR: {last_detail}")
     return 1
 
 
