@@ -32,11 +32,11 @@ Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-b
 
 | Language | Implementation | Wall time (s) |
 |----------|----------------|---------------|
-| Python | `gs_solve_np` | 0.011900 |
-| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 7.856331 |
-| Go | `gssolver.Solve` | 0.013930 |
-| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.003895 |
-| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.502537 |
+| Python | `gs_solve_np` | 0.005618 |
+| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 9.484979 |
+| Go | `gssolver.Solve` | 0.004084 |
+| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.002829 |
+| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.499880 |
 
 ## Numerical Parity
 
@@ -49,12 +49,12 @@ Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-b
 
 ## Physics Invariants
 
-| Language | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Axis local dominance margin | Midplane radial monotonicity violations | Axis-column vertical monotonicity violations | Negative flux absolute maximum |
-|----------|------------------------------------|------------------------------|------------------------------------|--------------------------------|------------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------|
-| Python | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | 0 | 0 | 0.000000e+00 |
-| Julia | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | 0 | 0 | 0.000000e+00 |
-| Go | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | 0 | 0 | 0.000000e+00 |
-| Rust | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | 0 | 0 | 0.000000e+00 |
-| Lean | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | 0 | 0 | 0.000000e+00 |
+| Language | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Axis local dominance margin | Axis discrete Laplacian | Midplane radial monotonicity violations | Axis-column vertical monotonicity violations | Negative flux absolute maximum |
+|----------|------------------------------------|------------------------------|------------------------------------|--------------------------------|------------------------------|--------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------|
+| Python | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 0 | 0 | 0.000000e+00 |
+| Julia | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 0 | 0 | 0.000000e+00 |
+| Go | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 0 | 0 | 0.000000e+00 |
+| Rust | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 0 | 0 | 0.000000e+00 |
+| Lean | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 0 | 0 | 0.000000e+00 |
 
 These local timings include process start-up for CLI paths. The Go and Rust rows build solver binaries before timing and exclude toolchain orchestration from the measured solver invocation. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.

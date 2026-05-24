@@ -100,6 +100,27 @@ def test_axis_local_dominance_margin_detects_flat_axis_plateau() -> None:
     assert benchmark._axis_local_dominance_margin(plateau) == 0.0
 
 
+def test_axis_discrete_laplacian_detects_peak_curvature_sign() -> None:
+    """Benchmark reports must expose the local curvature sign at the magnetic axis."""
+    peaked = np.array(
+        [
+            [0.0, 1.0, 0.0],
+            [1.0, 3.0, 1.0],
+            [0.0, 1.0, 0.0],
+        ]
+    )
+    broad = np.array(
+        [
+            [0.0, 2.0, 0.0],
+            [2.0, 3.0, 2.0],
+            [0.0, 2.0, 0.0],
+        ]
+    )
+
+    assert benchmark._axis_discrete_laplacian(peaked) == -8.0
+    assert benchmark._axis_discrete_laplacian(broad) == -4.0
+
+
 def test_midplane_radial_monotonicity_violation_count_detects_oscillations() -> None:
     """Benchmark reports must expose radial flux oscillations away from the axis."""
     monotone = np.array(
