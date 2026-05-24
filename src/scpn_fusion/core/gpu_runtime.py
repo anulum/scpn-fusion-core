@@ -31,6 +31,8 @@ except Exception:  # pragma: no cover - optional dependency path
 
 @dataclass(frozen=True)
 class RuntimeBenchmark:
+    """Latency summary for multigrid and SNN benchmark lanes."""
+
     backend: str
     multigrid_p95_ms_est: float
     snn_p95_ms_est: float
@@ -40,6 +42,8 @@ class RuntimeBenchmark:
 
 @dataclass(frozen=True)
 class EquilibriumLatencyBenchmark:
+    """Equilibrium-kernel latency summary with nominal and faulted runs."""
+
     backend: str
     trials: int
     grid_size: int
@@ -143,6 +147,7 @@ class GPURuntimeBridge:
 
     @staticmethod
     def available_equilibrium_backends() -> tuple[str, ...]:
+        """Return equilibrium latency backends available in the current runtime."""
         backends = ["cpu", "gpu_sim"]
         if torch is not None:
             backends.append("torch_fallback")
@@ -175,6 +180,7 @@ class GPURuntimeBridge:
         return float(batch * (n_in * n_hidden + n_hidden * n_out))
 
     def benchmark(self, *, backend: str, trials: int = 64, grid_size: int = 64) -> RuntimeBenchmark:
+        """Benchmark deterministic multigrid and SNN kernels for one backend."""
         if backend not in {"cpu", "gpu_sim"}:
             raise ValueError("backend must be 'cpu' or 'gpu_sim'")
 
@@ -223,6 +229,7 @@ class GPURuntimeBridge:
     def benchmark_pair(
         self, *, trials: int = 64, grid_size: int = 64
     ) -> dict[str, float | dict[str, float]]:
+        """Benchmark CPU and GPU-sim lanes and return estimated speedups."""
         cpu = self.benchmark(backend="cpu", trials=trials, grid_size=grid_size)
         gpu = self.benchmark(backend="gpu_sim", trials=trials, grid_size=grid_size)
         return {
@@ -279,6 +286,7 @@ class GPURuntimeBridge:
         bit_flips_per_run: int = 3,
         seed: int = 42,
     ) -> EquilibriumLatencyBenchmark:
+        """Measure equilibrium-kernel latency under nominal and injected-fault inputs."""
         if backend not in {"auto", "cpu", "gpu_sim", "torch_fallback", "jax"}:
             raise ValueError("backend must be one of: auto, cpu, gpu_sim, torch_fallback, jax.")
         if backend == "auto":
