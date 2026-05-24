@@ -15,6 +15,7 @@ import json
 import platform
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -102,7 +103,16 @@ def _run_julia() -> tuple[np.ndarray, float]:
 
 
 def _run_go() -> tuple[np.ndarray, float]:
-    return _run_command(["go", "run", "./cmd/gs_picard_csv", str(_CASE_PATH)], _GO_PROJECT)
+    with tempfile.TemporaryDirectory() as build_dir:
+        binary = Path(build_dir) / "gs_picard_csv"
+        subprocess.run(
+            ["go", "build", "-o", str(binary), "./cmd/gs_picard_csv"],
+            cwd=_GO_PROJECT,
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+        return _run_command([str(binary), str(_CASE_PATH)], _GO_PROJECT)
 
 
 def _build_rust_binary() -> None:
@@ -283,7 +293,7 @@ def main() -> None:
     lines.extend(
         [
             "",
-            "These local timings include process start-up for CLI paths. The Rust row builds the release binary before timing and excludes Cargo orchestration from the measured solver invocation. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.",
+            "These local timings include process start-up for CLI paths. The Go and Rust rows build solver binaries before timing and exclude toolchain orchestration from the measured solver invocation. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.",
         ]
     )
     _REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")

@@ -61,27 +61,27 @@
     {
       "implementation": "gs_solve_np",
       "language": "Python",
-      "wall_time_s": 0.0042059579864144325
+      "wall_time_s": 0.0036149029911030084
     },
     {
       "implementation": "SCPNFusionSolvers.solve_grad_shafranov",
       "language": "Julia",
-      "wall_time_s": 4.948613059998024
+      "wall_time_s": 6.837463475996628
     },
     {
       "implementation": "gssolver.Solve",
       "language": "Go",
-      "wall_time_s": 0.06443182099610567
+      "wall_time_s": 0.0024293040041811764
     },
     {
       "implementation": "fusion_polyglot::solve_grad_shafranov",
       "language": "Rust",
-      "wall_time_s": 0.004737533017760143
+      "wall_time_s": 0.004890072013949975
     },
     {
       "implementation": "SCPNFusionSolvers.solveGradShafranov",
       "language": "Lean",
-      "wall_time_s": 1.278443593007978
+      "wall_time_s": 2.458736486994894
     }
   ]
 }

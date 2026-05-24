@@ -40,3 +40,43 @@ def test_rust_benchmark_executes_compiled_release_solver(monkeypatch) -> None:
         str(benchmark._CASE_PATH),
     ]
     assert calls[1][1] == benchmark._RUST_PROJECT
+
+
+def test_go_benchmark_executes_compiled_solver_binary(monkeypatch) -> None:
+    """Go timing must measure the compiled solver binary, not go run orchestration."""
+    calls: list[tuple[list[str], object]] = []
+
+    class FakeTemporaryDirectory:
+        def __enter__(self) -> str:
+            return "/tmp/scpn-fusion-go-benchmark"
+
+        def __exit__(self, exc_type, exc, traceback) -> bool:
+            return False
+
+    def fake_run(command, cwd, check, text, capture_output):
+        calls.append((list(command), cwd))
+        if command[0] == "go":
+            return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+        stdout = "0,0,0\n0,1,0\n0,0,0\n"
+        return subprocess.CompletedProcess(command, 0, stdout=stdout, stderr="")
+
+    monkeypatch.setattr(benchmark.tempfile, "TemporaryDirectory", FakeTemporaryDirectory)
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    psi, wall_seconds = benchmark._run_go()
+
+    assert psi.shape == (3, 3)
+    assert np.isfinite(wall_seconds)
+    assert calls[0][0] == [
+        "go",
+        "build",
+        "-o",
+        "/tmp/scpn-fusion-go-benchmark/gs_picard_csv",
+        "./cmd/gs_picard_csv",
+    ]
+    assert calls[0][1] == benchmark._GO_PROJECT
+    assert calls[1][0] == [
+        "/tmp/scpn-fusion-go-benchmark/gs_picard_csv",
+        str(benchmark._CASE_PATH),
+    ]
+    assert calls[1][1] == benchmark._GO_PROJECT

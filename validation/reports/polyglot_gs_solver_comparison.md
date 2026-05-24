@@ -32,11 +32,11 @@ Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-b
 
 | Language | Implementation | Wall time (s) |
 |----------|----------------|---------------|
-| Python | `gs_solve_np` | 0.004206 |
-| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 4.948613 |
-| Go | `gssolver.Solve` | 0.064432 |
-| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.004738 |
-| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.278444 |
+| Python | `gs_solve_np` | 0.003615 |
+| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 6.837463 |
+| Go | `gssolver.Solve` | 0.002429 |
+| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.004890 |
+| Lean | `SCPNFusionSolvers.solveGradShafranov` | 2.458736 |
 
 ## Numerical Parity
 
@@ -47,4 +47,4 @@ Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-b
 | Rust | 5.906398e-16 | 0.000000e+00 |
 | Lean | 1.123308e-14 | 0.000000e+00 |
 
-These local timings include process start-up for CLI paths. The Rust row builds the release binary before timing and excludes Cargo orchestration from the measured solver invocation. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.
+These local timings include process start-up for CLI paths. The Go and Rust rows build solver binaries before timing and exclude toolchain orchestration from the measured solver invocation. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.
