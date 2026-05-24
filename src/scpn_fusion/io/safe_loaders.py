@@ -44,12 +44,12 @@ def checked_np_load(
     path: str | Path,
     *,
     max_bytes: int = MAX_NPZ_BYTES,
-    allow_pickle: bool = False,
     **kwargs: Any,
 ) -> Any:
     """Open a NumPy archive after enforcing a byte-size bound and disabling pickle."""
     path_obj = require_file_size_at_most(path, max_bytes=max_bytes, label="NumPy archive")
-    return np.load(str(path_obj), allow_pickle=allow_pickle, **kwargs)
+    kwargs.pop("allow_pickle", None)
+    return np.load(str(path_obj), allow_pickle=False, **kwargs)
 
 
 __all__ = [
