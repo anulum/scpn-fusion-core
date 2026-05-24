@@ -79,6 +79,27 @@ def test_negative_flux_overshoot_metric_reports_maximum_negative_well() -> None:
     assert benchmark._negative_flux_abs_max(overshoot) == 0.25
 
 
+def test_axis_boundary_distance_counts_cells_to_nearest_wall() -> None:
+    """Benchmark reports must expose whether the magnetic axis is confined."""
+    confined = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.0, 2.0, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+    wall_axis = np.array(
+        [
+            [0.0, 3.0, 0.0],
+            [0.0, 2.0, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+
+    assert benchmark._axis_boundary_distance_cells(confined) == 1
+    assert benchmark._axis_boundary_distance_cells(wall_axis) == 0
+
+
 def test_rust_benchmark_executes_compiled_release_solver(monkeypatch) -> None:
     """Rust timing must measure the compiled solver binary, not Cargo orchestration."""
     calls: list[tuple[list[str], object]] = []

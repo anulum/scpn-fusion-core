@@ -36,6 +36,7 @@
   "parity": {
     "by_language": {
       "Go": {
+        "axis_boundary_distance_cells": 8,
         "axis_midplane_offset_cells": 0,
         "boundary_abs_max": 0.0,
         "negative_flux_abs_max": 0.0,
@@ -43,6 +44,7 @@
         "vertical_symmetry_abs_max": 0.0
       },
       "Julia": {
+        "axis_boundary_distance_cells": 8,
         "axis_midplane_offset_cells": 0,
         "boundary_abs_max": 0.0,
         "negative_flux_abs_max": 0.0,
@@ -50,6 +52,7 @@
         "vertical_symmetry_abs_max": 0.0
       },
       "Lean": {
+        "axis_boundary_distance_cells": 8,
         "axis_midplane_offset_cells": 0,
         "boundary_abs_max": 0.0,
         "negative_flux_abs_max": 0.0,
@@ -57,6 +60,7 @@
         "vertical_symmetry_abs_max": 0.0
       },
       "Rust": {
+        "axis_boundary_distance_cells": 8,
         "axis_midplane_offset_cells": 0,
         "boundary_abs_max": 0.0,
         "negative_flux_abs_max": 0.0,
@@ -71,44 +75,49 @@
   },
   "solvers": [
     {
+      "axis_boundary_distance_cells": 8,
       "axis_midplane_offset_cells": 0,
       "implementation": "gs_solve_np",
       "language": "Python",
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.004708901979029179
+      "wall_time_s": 0.0034759720147121698
     },
     {
+      "axis_boundary_distance_cells": 8,
       "axis_midplane_offset_cells": 0,
       "implementation": "SCPNFusionSolvers.solve_grad_shafranov",
       "language": "Julia",
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 4.248065847001271
+      "wall_time_s": 4.2170035259914584
     },
     {
+      "axis_boundary_distance_cells": 8,
       "axis_midplane_offset_cells": 0,
       "implementation": "gssolver.Solve",
       "language": "Go",
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.00264061099733226
+      "wall_time_s": 0.004752565000671893
     },
     {
+      "axis_boundary_distance_cells": 8,
       "axis_midplane_offset_cells": 0,
       "implementation": "fusion_polyglot::solve_grad_shafranov",
       "language": "Rust",
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.0020069150195922703
+      "wall_time_s": 0.002826473006280139
     },
     {
+      "axis_boundary_distance_cells": 8,
       "axis_midplane_offset_cells": 0,
       "implementation": "SCPNFusionSolvers.solveGradShafranov",
       "language": "Lean",
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.9669279180234298
+      "wall_time_s": 0.9987362380197737
     }
   ]
 }
