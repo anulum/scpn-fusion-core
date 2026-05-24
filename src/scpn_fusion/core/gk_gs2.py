@@ -29,7 +29,13 @@ _logger = logging.getLogger(__name__)
 def generate_gs2_input(params: GKLocalParams) -> str:
     """Render a local Miller-geometry GS2 input namelist."""
     R0_over_a = params.R0 / max(params.a, 0.01)
+    n_radial_modes = params.n_radial_modes if params.requires_nonlinear_solver else 1
+    n_binormal_modes = params.n_binormal_modes if params.requires_nonlinear_solver else 1
+    nonlinear_mode = "on" if params.requires_nonlinear_solver else "off"
     return f"""\
+&nonlinear_terms_knobs
+ nonlinear_mode = '{nonlinear_mode}'
+/
 &theta_grid_eik_knobs
  itor = 1
  iflux = 0
@@ -37,8 +43,9 @@ def generate_gs2_input(params: GKLocalParams) -> str:
  local_eq = .true.
  bishop = 4
  s_hat_input = {params.s_hat:.6f}
- beta_prime_input = 0.0
- ntheta = 32
+ beta_prime_input = {params.beta_e:.6e}
+ beta = {params.beta_e:.6e}
+ ntheta = {params.n_parallel_grid}
  nperiod = 1
 /
 &theta_grid_parameters
@@ -72,11 +79,19 @@ def generate_gs2_input(params: GKLocalParams) -> str:
  type = 'electron'
 /
 &kt_grids_knobs
- grid_option = 'single'
+ grid_option = '{"box" if params.requires_nonlinear_solver else "single"}'
 /
 &kt_grids_single_parameters
  aky = 0.3
  theta0 = 0.0
+/
+&kt_grids_box_parameters
+ nx = {n_radial_modes}
+ ny = {n_binormal_modes}
+/
+&dist_fn_knobs
+ nenergy = {params.n_mu_grid}
+ nlambda = {params.n_vpar_grid}
 /
 """
 

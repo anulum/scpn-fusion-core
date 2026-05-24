@@ -37,20 +37,21 @@ _GENE_TEMPLATE = """\
 
 &box
  n_spec = 2
- nx0 = 16
- nky0 = 1
- nz0 = 32
- nv0 = 32
- nw0 = 8
+ nx0 = {n_radial_modes}
+ nky0 = {n_binormal_modes}
+ nz0 = {n_parallel_grid}
+ nv0 = {n_vpar_grid}
+ nw0 = {n_mu_grid}
  ky0_ind = 1
 /
 
 &general
- nonlinear = .false.
+ nonlinear = {nonlinear_flag}
  comp_type = 'IV'
  timelim = 300
- simtimelim = 100.0
+ simtimelim = {simulation_time:.6f}
  calc_dt = .true.
+ beta = {beta_e:.6e}
 /
 
 &geometry
@@ -89,7 +90,17 @@ _GENE_TEMPLATE = """\
 def generate_gene_input(params: GKLocalParams) -> str:
     """Render a GENE ``parameters`` namelist from local plasma parameters."""
     R0_over_a = params.R0 / max(params.a, 0.01)
+    n_radial_modes = params.n_radial_modes if params.requires_nonlinear_solver else 16
+    n_binormal_modes = params.n_binormal_modes if params.requires_nonlinear_solver else 1
     return _GENE_TEMPLATE.format(
+        n_radial_modes=n_radial_modes,
+        n_binormal_modes=n_binormal_modes,
+        n_parallel_grid=params.n_parallel_grid,
+        n_vpar_grid=params.n_vpar_grid,
+        n_mu_grid=params.n_mu_grid,
+        nonlinear_flag=".true." if params.requires_nonlinear_solver else ".false.",
+        simulation_time=params.simulation_time,
+        beta_e=params.beta_e,
         q=params.q,
         s_hat=params.s_hat,
         epsilon=params.epsilon,

@@ -54,7 +54,7 @@ def test_honest_scope_names_first_principles_comparators() -> None:
 
     required_phrases = [
         "not a replacement for TRANSP, JINTRAC, GENE, or any",
-        "Full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-Maxwell)",
+        "full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-Maxwell)",
         "Full EFIT/LiUQE-quality profile and boundary reconstruction",
         "Full Hirshman-Sigmar multi-species collisional operator",
         "Kinetic runaway distribution (CODE/DREAM-level Fokker-Planck)",

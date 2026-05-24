@@ -20,6 +20,8 @@ def test_gk_local_params_defaults():
     assert p.delta == 0.0
     assert p.R0 == 6.2
     assert p.epsilon == 0.1
+    assert p.physics_model == "linear_electrostatic"
+    assert p.phase_space_dimensions == 3
 
 
 def test_gk_local_params_all_fields():
@@ -44,9 +46,47 @@ def test_gk_local_params_all_fields():
         n_e=10.0,
         T_e_keV=8.0,
         T_i_keV=7.3,
+        physics_model="nonlinear_electromagnetic",
+        n_radial_modes=32,
+        n_binormal_modes=24,
+        n_parallel_grid=64,
+        n_vpar_grid=48,
+        n_mu_grid=16,
+        simulation_time=200.0,
     )
     assert p.kappa == 1.7
     assert p.T_i_keV == 7.3
+    assert p.phase_space_dimensions == 5
+    assert p.requires_nonlinear_solver is True
+
+
+def test_nonlinear_gk_params_require_resolved_five_dimensional_grid():
+    with pytest.raises(ValueError, match="5D"):
+        GKLocalParams(
+            R_L_Ti=6.9,
+            R_L_Te=6.9,
+            R_L_ne=2.2,
+            q=1.4,
+            s_hat=0.78,
+            physics_model="nonlinear_electromagnetic",
+            n_radial_modes=1,
+            n_binormal_modes=16,
+            n_parallel_grid=32,
+            n_vpar_grid=24,
+            n_mu_grid=8,
+        )
+
+
+def test_invalid_gk_physics_model_rejected():
+    with pytest.raises(ValueError, match="physics_model"):
+        GKLocalParams(
+            R_L_Ti=6.9,
+            R_L_Te=6.9,
+            R_L_ne=2.2,
+            q=1.4,
+            s_hat=0.78,
+            physics_model="fluid_proxy",
+        )
 
 
 def test_gk_output_defaults():

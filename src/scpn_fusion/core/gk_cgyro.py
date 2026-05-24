@@ -29,6 +29,9 @@ _logger = logging.getLogger(__name__)
 def generate_cgyro_input(params: GKLocalParams) -> str:
     """Render a linear CGYRO input deck from local gyrokinetic parameters."""
     R0_over_a = params.R0 / max(params.a, 0.01)
+    nonlinear_flag = 1 if params.requires_nonlinear_solver else 0
+    n_radial = params.n_radial_modes if params.requires_nonlinear_solver else 1
+    n_toroidal = params.n_binormal_modes if params.requires_nonlinear_solver else 1
     return f"""\
 # CGYRO input.cgyro
 EQUILIBRIUM_MODEL=2
@@ -55,8 +58,13 @@ DLNTDR_2={params.R_L_Te:.6f}
 DLNNDR_1={params.R_L_ne:.6f}
 DLNNDR_2={params.R_L_ne:.6f}
 KY=0.3
-NONLINEAR_FLAG=0
-N_RADIAL=1
+NONLINEAR_FLAG={nonlinear_flag}
+N_RADIAL={n_radial}
+N_TOROIDAL={n_toroidal}
+N_THETA={params.n_parallel_grid}
+N_XI={params.n_vpar_grid}
+N_ENERGY={params.n_mu_grid}
+MAX_TIME={params.simulation_time:.6f}
 """
 
 

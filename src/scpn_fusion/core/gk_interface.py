@@ -23,6 +23,15 @@ from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
 
+_SUPPORTED_PHYSICS_MODELS = frozenset(
+    {
+        "linear_electrostatic",
+        "linear_electromagnetic",
+        "nonlinear_electrostatic",
+        "nonlinear_electromagnetic",
+    }
+)
+
 
 @dataclass
 class GKLocalParams:
@@ -62,6 +71,53 @@ class GKLocalParams:
     n_e: float = 10.0  # electron density [10^19 m^-3]
     T_e_keV: float = 8.0  # electron temperature [keV]
     T_i_keV: float = 8.0  # ion temperature [keV]
+
+    # External high-fidelity solver contract
+    physics_model: str = "linear_electrostatic"
+    n_radial_modes: int = 16
+    n_binormal_modes: int = 1
+    n_parallel_grid: int = 32
+    n_vpar_grid: int = 32
+    n_mu_grid: int = 8
+    simulation_time: float = 100.0
+
+    def __post_init__(self) -> None:
+        """Validate solver-fidelity metadata before writing external decks."""
+        if self.physics_model not in _SUPPORTED_PHYSICS_MODELS:
+            raise ValueError(
+                f"physics_model must be one of {', '.join(sorted(_SUPPORTED_PHYSICS_MODELS))}"
+            )
+
+        grid_fields = {
+            "n_radial_modes": self.n_radial_modes,
+            "n_binormal_modes": self.n_binormal_modes,
+            "n_parallel_grid": self.n_parallel_grid,
+            "n_vpar_grid": self.n_vpar_grid,
+            "n_mu_grid": self.n_mu_grid,
+        }
+        for name, value in grid_fields.items():
+            if value < 1:
+                raise ValueError(f"{name} must be positive.")
+        if self.simulation_time <= 0.0:
+            raise ValueError("simulation_time must be positive.")
+
+        if self.requires_nonlinear_solver and min(grid_fields.values()) < 2:
+            raise ValueError("Nonlinear GK requests must define a resolved 5D phase-space grid.")
+
+    @property
+    def requires_nonlinear_solver(self) -> bool:
+        """Return whether the request needs nonlinear distribution evolution."""
+        return self.physics_model.startswith("nonlinear_")
+
+    @property
+    def is_electromagnetic(self) -> bool:
+        """Return whether the request includes electromagnetic field dynamics."""
+        return self.physics_model.endswith("_electromagnetic")
+
+    @property
+    def phase_space_dimensions(self) -> int:
+        """Return reduced linear dimensionality or full nonlinear 5D dimensionality."""
+        return 5 if self.requires_nonlinear_solver else 3
 
 
 @dataclass

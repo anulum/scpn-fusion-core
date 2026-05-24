@@ -45,10 +45,14 @@ SCPN ships three fidelity tiers for transport, selectable per-surface and per-ti
 |------|----------|-------|---------|
 | **A: Critical-gradient + QLKNN-10D** | Surrogate | ~24 ns/point (MLP), ~1.5--5.5 us/step (1.5D) | `neural_transport`, `integrated_transport_solver` |
 | **B: Native linear GK eigenvalue** | High | ~0.3 s/surface | `gk_eigenvalue`, `gk_quasilinear` (Miller geometry, Sugama collisions) |
-| **C: External full GK** | Production GK | Minutes per surface (code-dependent) | `gk_gene`, `gk_cgyro`, `gk_gs2`, `gk_tglf`, `gk_qualikiz` |
+| **C: External full GK** | Production GK when installed | Minutes to CPU-hours (code-dependent) | `gk_gene`, `gk_cgyro`, `gk_gs2`, `gk_tglf`, `gk_qualikiz` |
 
 Path selection is managed by `gk_scheduler` and `gk_ood_detector`: out-of-distribution
 inputs detected by the OOD monitor trigger automatic fallback from Path A to B or C.
+The Path C GENE/GS2/CGYRO adapters carry explicit model-fidelity metadata and
+can generate nonlinear electrostatic or electromagnetic 5D input decks for
+site-installed production solvers. The repository does not bundle those solvers
+or claim native parity with their nonlinear turbulence engines.
 Online learning via `gk_online_learner` retrains the surrogate from newly computed GK
 points, and `gk_corrector` applies delta corrections when the surrogate drifts.
 
@@ -169,7 +173,7 @@ Y = implemented and tested. N = not present. P = partial.
 | Area | Detail | Who Does It Better |
 |------|--------|-------------------|
 | JAX GPU training | TORAX trains end-to-end on GPU with JAX; SCPN uses JAX solvers but training was done offline on L40S | TORAX |
-| Production gyrokinetics | GENE and GS2 are the gold-standard nonlinear 5D Vlasov codes with decades of validation against experiment. SCPN's native GK solver is linear-only. | GENE, GS2, CGYRO |
+| Production gyrokinetics | GENE and GS2 are gold-standard nonlinear 5D Vlasov codes with decades of validation against experiment. SCPN's native production path remains linear/reduced-order; full nonlinear production fidelity is reached through external solver decks and site installations. | GENE, GS2, CGYRO |
 | Runaway electron physics | DREAM solves the full kinetic RE distribution including hot-tail, Dreicer, avalanche, and synchrotron radiation loss. SCPN's Fokker-Planck RE model covers the primary mechanisms but with reduced-order approximations. | DREAM |
 | Stellarator geometry | FUSE supports stellarator equilibria natively. SCPN Fusion Core is tokamak-only in the current public scope. | FUSE |
 | QLKNN accuracy | SCPN test_rel_L2 = 0.094. TORAX trains deeper networks with more data. | TORAX, FUSE |
@@ -277,8 +281,10 @@ The GK three-path design is central to SCPN's transport strategy:
 **Path A** runs in real-time loops. **Path B** runs for offline verification or
 when the OOD detector flags surrogate unreliability. **Path C** dispatches to
 external production GK codes when available on the system. All three paths share
-the same `GKLocalParams`/`GKOutput` interface (`gk_interface.py`), so switching
-fidelity requires no code changes in the transport solver.
+the same `GKLocalParams`/`GKOutput` interface (`gk_interface.py`), including
+the `physics_model` and 5D grid metadata needed to request nonlinear
+electrostatic or electromagnetic external runs without changing transport-solver
+call sites.
 
 ---
 

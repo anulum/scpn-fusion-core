@@ -246,7 +246,7 @@ Evidence pattern checks:
 | File | Pattern |
 |---|---|
 | `docs/HONEST_SCOPE.md` | `Reduced-order linear eigenvalue solver for ITG/TEM/ETG` |
-| `docs/HONEST_SCOPE.md` | `Full nonlinear gyrokinetic \(GENE, GS2, CGYRO solve 5D Vlasov-Maxwell\)` |
+| `docs/HONEST_SCOPE.md` | `full nonlinear gyrokinetic \(GENE, GS2, CGYRO solve 5D Vlasov-Maxwell\)` |
 
 ### `readme_runaway_0d_scope_boundary`
 

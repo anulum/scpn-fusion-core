@@ -54,6 +54,28 @@ class TestGenerateGeneInput:
         text = generate_gene_input(default_params)
         assert "nonlinear = .false." in text
 
+    def test_full_nonlinear_request_writes_5d_vlasov_maxwell_deck(self, default_params):
+        params = GKLocalParams(
+            **{
+                **default_params.__dict__,
+                "physics_model": "nonlinear_electromagnetic",
+                "n_radial_modes": 24,
+                "n_binormal_modes": 16,
+                "n_parallel_grid": 64,
+                "n_vpar_grid": 48,
+                "n_mu_grid": 16,
+                "simulation_time": 250.0,
+            }
+        )
+        text = generate_gene_input(params)
+        assert "nonlinear = .true." in text
+        assert "nx0 = 24" in text
+        assert "nky0 = 16" in text
+        assert "nz0 = 64" in text
+        assert "nv0 = 48" in text
+        assert "nw0 = 16" in text
+        assert "beta = " in text
+
     def test_miller_geometry(self, default_params):
         text = generate_gene_input(default_params)
         assert "magn_geometry = 'miller'" in text

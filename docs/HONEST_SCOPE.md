@@ -74,7 +74,8 @@ Each carries explicit fidelity limitations.
 
 | Module Area | What We Implement | What We Do Not |
 |-------------|-------------------|----------------|
-| Native linear GK | Reduced-order linear eigenvalue solver for ITG/TEM/ETG | Full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-Maxwell) |
+| Native linear GK | Reduced-order linear eigenvalue solver for ITG/TEM/ETG | Native replacement for full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-Maxwell) engines |
+| External full GK adapters | GENE/GS2/CGYRO deck generation with explicit linear/nonlinear and electrostatic/electromagnetic 5D request metadata | Bundled solver binaries, site validation data, or a native substitute for production nonlinear turbulence codes |
 | Free-boundary tracking | Direct coil-response identification from equilibrium sensitivity plus bounded magnetic-probe coil-current fitting | Full EFIT/LiUQE-quality profile and boundary reconstruction |
 | Disruption predictor | ML classifier trained on reconstructed profile features | Bayesian credibility intervals or physics-based disruption chain models |
 | Impurity transport | Banana-regime neoclassical (Pfirsch-Schluter + banana plateau) | Full Hirshman-Sigmar multi-species collisional operator |

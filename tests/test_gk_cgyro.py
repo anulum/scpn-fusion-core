@@ -68,6 +68,28 @@ class TestGenerateCgyroInput:
         assert "DLNTDR_1=6.000000" in text
         assert "DLNTDR_2=6.000000" in text
 
+    def test_full_nonlinear_request_writes_5d_vlasov_maxwell_deck(self, default_params):
+        params = GKLocalParams(
+            **{
+                **default_params.__dict__,
+                "physics_model": "nonlinear_electromagnetic",
+                "n_radial_modes": 24,
+                "n_binormal_modes": 16,
+                "n_parallel_grid": 64,
+                "n_vpar_grid": 48,
+                "n_mu_grid": 16,
+                "simulation_time": 250.0,
+            }
+        )
+        text = generate_cgyro_input(params)
+        assert "NONLINEAR_FLAG=1" in text
+        assert "N_RADIAL=24" in text
+        assert "N_TOROIDAL=16" in text
+        assert "N_THETA=64" in text
+        assert "N_XI=48" in text
+        assert "N_ENERGY=16" in text
+        assert "MAX_TIME=250.000000" in text
+
 
 # ── parse_cgyro_output ──────────────────────────────────────────────
 

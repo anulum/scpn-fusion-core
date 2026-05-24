@@ -104,11 +104,15 @@ No other fusion code offers all three gyrokinetic transport tiers in one framewo
 
 | Path | Fidelity | Speed | Module |
 |------|----------|-------|--------|
-| **A: External GK** | Reference | minutes | `gk_tglf`, `gk_gene`, `gk_gs2`, `gk_cgyro`, `gk_qualikiz` |
+| **A: External GK** | Reference when installed | minutes to CPU-hours | `gk_tglf`, `gk_gene`, `gk_gs2`, `gk_cgyro`, `gk_qualikiz` |
 | **B: Native Linear GK** | High | ~0.3 s/surface | `gk_eigenvalue` + `gk_quasilinear` (Miller geometry, Sugama collisions) |
 | **C: Hybrid Surrogate+GK** | Adaptive | ~24 ns/point | `gk_ood_detector` + `gk_corrector` + `gk_scheduler` + `gk_online_learner` |
 
-The hybrid layer validates QLKNN surrogates against GK spot-checks in real time, triggering full GK solves only when the surrogate is out-of-distribution.
+The hybrid layer validates QLKNN surrogates against GK spot-checks in real time.
+External GENE/GS2/CGYRO adapters now carry explicit linear versus nonlinear
+electrostatic/electromagnetic model metadata and can emit nonlinear 5D deck
+requests for installed production solvers; SCPN does not bundle or replace
+those solvers.
 
 ## Honest Scope
 
@@ -295,7 +299,7 @@ cargo bench                      # Criterion benchmarks
 | `gk_eigenvalue` | Native linear GK solver (ballooning, Sugama collisions) |
 | `gk_quasilinear` | Mixing-length saturation -> chi_i, chi_e, D_e |
 | `gyrokinetic_transport` | TGLF-10 input, ITG/TEM/ETG mode identification |
-| `gk_tglf` / `gk_gene` / `gk_gs2` / `gk_cgyro` / `gk_qualikiz` | 5 external GK solver interfaces |
+| `gk_tglf` / `gk_gene` / `gk_gs2` / `gk_cgyro` / `gk_qualikiz` | External GK solver interfaces; GENE/GS2/CGYRO support explicit nonlinear 5D deck metadata when the external binaries are installed |
 | `gk_ood_detector` + `gk_corrector` + `gk_scheduler` | Hybrid surrogate validation |
 
 ### Disruption & Edge Physics

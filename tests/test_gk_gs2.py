@@ -63,6 +63,30 @@ class TestGenerateGS2Input:
         text = generate_gs2_input(default_params)
         assert "aky = 0.3" in text
 
+    def test_full_nonlinear_request_writes_5d_vlasov_maxwell_deck(self, default_params):
+        params = GKLocalParams(
+            **{
+                **default_params.__dict__,
+                "physics_model": "nonlinear_electromagnetic",
+                "n_radial_modes": 24,
+                "n_binormal_modes": 16,
+                "n_parallel_grid": 64,
+                "n_vpar_grid": 48,
+                "n_mu_grid": 16,
+                "simulation_time": 250.0,
+            }
+        )
+        text = generate_gs2_input(params)
+        assert "nonlinear_mode = 'on'" in text
+        assert "grid_option = 'box'" in text
+        assert "&kt_grids_box_parameters" in text
+        assert "nx = 24" in text
+        assert "ny = 16" in text
+        assert "ntheta = 64" in text
+        assert "nenergy = 16" in text
+        assert "nlambda = 48" in text
+        assert "beta = " in text
+
     def test_small_a_safe(self):
         params = GKLocalParams(R_L_Ti=5.0, R_L_Te=5.0, R_L_ne=2.0, q=1.4, s_hat=0.8, a=0.0)
         text = generate_gs2_input(params)
