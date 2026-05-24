@@ -38,6 +38,58 @@ def fmax (a b : Float) : Float :=
 def fmin (a b : Float) : Float :=
   if a <= b then a else b
 
+def pow10Float : Nat → Float
+  | 0 => 1.0
+  | n + 1 => 10.0 * pow10Float n
+
+def stripComment (line : String) : String :=
+  match line.splitOn "#" with
+  | head :: _ => head.trimAscii.toString
+  | [] => ""
+
+def parseUnsignedDecimal (raw : String) : Except String Float :=
+  match raw.splitOn "." with
+  | whole :: [] =>
+      match whole.toNat? with
+      | some value => pure (Float.ofNat value)
+      | none => throw ("invalid decimal value: " ++ raw)
+  | whole :: frac :: [] =>
+      match whole.toNat?, frac.toNat? with
+      | some wholeValue, some fracValue =>
+          pure (Float.ofNat wholeValue + Float.ofNat fracValue / pow10Float frac.length)
+      | _, _ => throw ("invalid decimal value: " ++ raw)
+  | _ => throw ("invalid decimal value: " ++ raw)
+
+def applyScientificExponent (value : Float) (exponent : Int) : Float :=
+  if exponent < 0 then
+    match (-exponent).toNat? with
+    | some n => value / pow10Float n
+    | none => value
+  else
+    match exponent.toNat? with
+    | some n => value * pow10Float n
+    | none => value
+
+def parseFloatValue (raw : String) : Except String Float := do
+  let stripped := raw.trimAscii.toString
+  let sign := if stripped.startsWith "-" then -1.0 else 1.0
+  let unsigned := if stripped.startsWith "-" || stripped.startsWith "+" then (stripped.drop 1).toString else stripped
+  let parts := unsigned.splitOn "e"
+  let parts := if parts.length == 1 then unsigned.splitOn "E" else parts
+  match parts with
+  | mantissa :: [] =>
+      return sign * (← parseUnsignedDecimal mantissa)
+  | mantissa :: exponentText :: [] =>
+      match exponentText.toInt? with
+      | some exponent => return sign * applyScientificExponent (← parseUnsignedDecimal mantissa) exponent
+      | none => throw ("invalid exponent value: " ++ raw)
+  | _ => throw ("invalid float value: " ++ raw)
+
+def parseNatValue (raw : String) : Except String Nat :=
+  match raw.trimAscii.toString.toNat? with
+  | some value => pure value
+  | none => throw ("invalid natural value: " ++ raw)
+
 def referenceCase : GradShafranovCase :=
   { rMin := 1.0, rMax := 3.0, zMin := -1.2, zMax := 1.2, nr := 17, nz := 17,
     ipTarget := 1000000.0, mu0 := 1.2566370614359173e-6, nPicard := 8,
@@ -54,6 +106,44 @@ def validateCase (c : GradShafranovCase) : Except String Unit :=
     throw "invalid relaxation or profile scalar"
   else
     pure ()
+
+def updateCaseField (c : GradShafranovCase) (key value : String) : Except String GradShafranovCase := do
+  match key with
+  | "R_min" => pure { c with rMin := ← parseFloatValue value }
+  | "R_max" => pure { c with rMax := ← parseFloatValue value }
+  | "Z_min" => pure { c with zMin := ← parseFloatValue value }
+  | "Z_max" => pure { c with zMax := ← parseFloatValue value }
+  | "NR" => pure { c with nr := ← parseNatValue value }
+  | "NZ" => pure { c with nz := ← parseNatValue value }
+  | "Ip_target" => pure { c with ipTarget := ← parseFloatValue value }
+  | "mu0" => pure { c with mu0 := ← parseFloatValue value }
+  | "n_picard" => pure { c with nPicard := ← parseNatValue value }
+  | "n_jacobi" => pure { c with nJacobi := ← parseNatValue value }
+  | "alpha" => pure { c with alpha := ← parseFloatValue value }
+  | "omega_j" => pure { c with omegaJ := ← parseFloatValue value }
+  | "beta_mix" => pure { c with betaMix := ← parseFloatValue value }
+  | _ => pure c
+
+def caseFromToml (path : System.FilePath) : IO (Except String GradShafranovCase) := do
+  let content ← IO.FS.readFile path
+  let mut inSection := false
+  let mut c := referenceCase
+  for rawLine in content.splitOn "\n" do
+    let line := stripComment rawLine
+    if line == "" then
+      pure ()
+    else if line.startsWith "[" && line.endsWith "]" then
+      inSection := line == "[grad_shafranov]"
+    else if inSection then
+      match line.splitOn "=" with
+      | key :: value :: [] =>
+          match updateCaseField c key.trimAscii.toString value.trimAscii.toString with
+          | Except.ok next => c := next
+          | Except.error err => return Except.error err
+      | _ => return Except.error ("invalid TOML assignment: " ++ line)
+  match validateCase c with
+  | Except.ok _ => return Except.ok c
+  | Except.error err => return Except.error err
 
 def zeros (nz nr : Nat) : Matrix :=
   Array.replicate nz (Array.replicate nr 0.0)

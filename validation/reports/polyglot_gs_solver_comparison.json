@@ -56,22 +56,22 @@
     {
       "implementation": "gs_solve_np",
       "language": "Python",
-      "wall_time_s": 0.005572267022216693
+      "wall_time_s": 0.008693990996107459
     },
     {
       "implementation": "SCPNFusionSolvers.solve_grad_shafranov",
       "language": "Julia",
-      "wall_time_s": 6.489915776008274
+      "wall_time_s": 5.004875337996054
     },
     {
       "implementation": "gssolver.Solve",
       "language": "Go",
-      "wall_time_s": 0.058843373000854626
+      "wall_time_s": 0.052236309013096616
     },
     {
       "implementation": "SCPNFusionSolvers.solveGradShafranov",
       "language": "Lean",
-      "wall_time_s": 1.5276610779983457
+      "wall_time_s": 1.101992201001849
     }
   ]
 }

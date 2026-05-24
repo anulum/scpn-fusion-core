@@ -28,7 +28,13 @@ def main (args : List String) : IO UInt32 := do
   if args.length != 1 then
     IO.eprintln "usage: gs_picard_csv CASE.toml"
     return 2
-  match solveGradShafranov referenceCase with
+  let casePath := System.FilePath.mk (args.head!)
+  match ← caseFromToml casePath with
+  | Except.error err =>
+      IO.eprintln err
+      return 1
+  | Except.ok requestedCase =>
+  match solveGradShafranov requestedCase with
   | Except.error err =>
       IO.eprintln err
       return 1

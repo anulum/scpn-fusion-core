@@ -31,10 +31,10 @@ Local workstation benchmark for native Python, Julia, Go, and Lean fixed-boundar
 
 | Language | Implementation | Wall time (s) |
 |----------|----------------|---------------|
-| Python | `gs_solve_np` | 0.005572 |
-| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 6.489916 |
-| Go | `gssolver.Solve` | 0.058843 |
-| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.527661 |
+| Python | `gs_solve_np` | 0.008694 |
+| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 5.004875 |
+| Go | `gssolver.Solve` | 0.052236 |
+| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.101992 |
 
 ## Numerical Parity
 

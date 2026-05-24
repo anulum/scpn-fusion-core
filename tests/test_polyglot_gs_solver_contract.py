@@ -42,6 +42,21 @@ _CASE = {
     "omega_j": 2.0 / 3.0,
     "beta_mix": 0.5,
 }
+_ALTERNATE_CASE = {
+    "R_min": 0.9,
+    "R_max": 2.7,
+    "Z_min": -1.0,
+    "Z_max": 1.0,
+    "NR": 13,
+    "NZ": 15,
+    "Ip_target": 7.5e5,
+    "mu0": 4.0e-7 * np.pi,
+    "n_picard": 6,
+    "n_jacobi": 9,
+    "alpha": 0.12,
+    "omega_j": 0.7,
+    "beta_mix": 0.35,
+}
 
 
 def _run_julia_case() -> np.ndarray:
@@ -74,9 +89,9 @@ def _run_go_case() -> np.ndarray:
     return np.asarray(rows, dtype=float)
 
 
-def _run_lean_case() -> np.ndarray:
+def _run_lean_case(case_path: Path = _REFERENCE_CASE) -> np.ndarray:
     completed = subprocess.run(
-        ["lake", "exe", "gs_picard_csv", str(_REFERENCE_CASE)],
+        ["lake", "exe", "gs_picard_csv", str(case_path)],
         check=True,
         cwd=_REPO / "scpn-fusion-lean",
         text=True,
@@ -87,7 +102,11 @@ def _run_lean_case() -> np.ndarray:
 
 
 def _assert_matches_python_reference(candidate_psi: np.ndarray) -> None:
-    python_psi = gs_solve_np(**_CASE)
+    _assert_matches_case(candidate_psi, _CASE)
+
+
+def _assert_matches_case(candidate_psi: np.ndarray, case: dict[str, float | int]) -> None:
+    python_psi = gs_solve_np(**case)
 
     assert candidate_psi.shape == python_psi.shape
     assert np.all(np.isfinite(candidate_psi))
@@ -114,3 +133,32 @@ def test_native_go_grad_shafranov_matches_python_reference() -> None:
 def test_native_lean_grad_shafranov_matches_python_reference() -> None:
     """Lean native GS solve preserves the Python reference physics contract."""
     _assert_matches_python_reference(_run_lean_case())
+
+
+def test_native_lean_grad_shafranov_uses_requested_case_file(tmp_path: Path) -> None:
+    """Lean native GS solve must consume the requested case file, not a built-in case."""
+    case_path = tmp_path / "lean_alt_case.toml"
+    case_path.write_text(
+        "\n".join(
+            [
+                "[grad_shafranov]",
+                f"R_min = {_ALTERNATE_CASE['R_min']}",
+                f"R_max = {_ALTERNATE_CASE['R_max']}",
+                f"Z_min = {_ALTERNATE_CASE['Z_min']}",
+                f"Z_max = {_ALTERNATE_CASE['Z_max']}",
+                f"NR = {_ALTERNATE_CASE['NR']}",
+                f"NZ = {_ALTERNATE_CASE['NZ']}",
+                f"Ip_target = {_ALTERNATE_CASE['Ip_target']}",
+                f"mu0 = {_ALTERNATE_CASE['mu0']}",
+                f"n_picard = {_ALTERNATE_CASE['n_picard']}",
+                f"n_jacobi = {_ALTERNATE_CASE['n_jacobi']}",
+                f"alpha = {_ALTERNATE_CASE['alpha']}",
+                f"omega_j = {_ALTERNATE_CASE['omega_j']}",
+                f"beta_mix = {_ALTERNATE_CASE['beta_mix']}",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    _assert_matches_case(_run_lean_case(case_path), _ALTERNATE_CASE)
