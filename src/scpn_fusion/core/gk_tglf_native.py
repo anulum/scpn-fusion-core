@@ -293,6 +293,7 @@ class TGLFNativeSolver(GKSolverBase):
     """
 
     def __init__(self, config: TGLFNativeConfig | None = None):
+        """Initialize native TGLF configuration and enable ETG scales for SAT2."""
         self.config = config or TGLFNativeConfig()
         if self.config.sat_model == "SAT2":
             self.config.multiscale = True
@@ -300,9 +301,11 @@ class TGLFNativeSolver(GKSolverBase):
                 self.config.n_ky_etg = 8
 
     def is_available(self) -> bool:
+        """Return availability for the pure-Python native solver."""
         return True
 
     def prepare_input(self, params: GKLocalParams) -> Path:
+        """Serialise native solver parameters and configuration to a JSON deck."""
         payload = {
             "params": {
                 "R_L_Ti": float(params.R_L_Ti),
@@ -344,6 +347,7 @@ class TGLFNativeSolver(GKSolverBase):
             return Path(handle.name)
 
     def run(self, input_path: Path, *, timeout_s: float = 30.0) -> GKOutput:
+        """Load a native JSON deck, solve it, and return the GK adapter output."""
         path = Path(input_path)
         if path.suffix.lower() != ".json":
             raise ValueError("input_path must point to a .json native input deck.")
@@ -355,6 +359,7 @@ class TGLFNativeSolver(GKSolverBase):
         return self.run_from_params(params, timeout_s=timeout_s)
 
     def run_from_params(self, params: GKLocalParams, *, timeout_s: float = 30.0) -> GKOutput:
+        """Solve directly from local GK parameters and adapt to ``GKOutput``."""
         r = self.solve(params)
         return GKOutput(
             chi_i=r.chi_i,
@@ -369,6 +374,7 @@ class TGLFNativeSolver(GKSolverBase):
         )
 
     def solve(self, params: GKLocalParams) -> TGLFNativeResult:
+        """Compute native SAT transport fluxes from local GK parameters."""
         cfg = self.config
 
         ion = deuterium_ion(
