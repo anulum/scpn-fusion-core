@@ -840,6 +840,39 @@ def run_benchmark(
     }
 
 
+def run_profile_suite() -> dict[str, Any]:
+    """Run the vertical-control replay benchmark across committed profiles."""
+
+    profiles = machine_profiles()
+    profile_ids = sorted(profiles)
+    reports = {
+        profile_id: run_benchmark(machine_profile=profiles[profile_id])[
+            "vertical_control_replay_benchmark"
+        ]
+        for profile_id in profile_ids
+    }
+    return {
+        "SPDX-License-Identifier": "AGPL-3.0-or-later",
+        "vertical_control_replay_profile_suite": {
+            "schema_version": SCHEMA_VERSION,
+            "profile_ids": profile_ids,
+            "reports": reports,
+            "all_profiles_pass": all(
+                bool(report["passes_thresholds"]) for report in reports.values()
+            ),
+            "trace_integrity": {
+                "profile_trace_checksum_sha256": _sha256_json(
+                    {
+                        profile_id: report["trace_integrity"]["state_trace_checksum_sha256"]
+                        for profile_id, report in reports.items()
+                    }
+                ),
+                "profile_count": len(profile_ids),
+            },
+        },
+    }
+
+
 def render_markdown(report: dict[str, Any]) -> str:
     """Render a compact benchmark report for operator review."""
 
@@ -897,6 +930,33 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def render_profile_suite_markdown(report: dict[str, Any]) -> str:
+    """Render a compact multi-profile benchmark report."""
+
+    suite = report["vertical_control_replay_profile_suite"]
+    lines = [
+        "# Vertical Control Replay Benchmark",
+        "",
+        "## Profile suite",
+        "",
+        f"- Schema version: `{suite['schema_version']}`",
+        f"- Profiles: `{', '.join(suite['profile_ids'])}`",
+        f"- Overall pass: `{'YES' if suite['all_profiles_pass'] else 'NO'}`",
+        f"- Profile trace checksum: `{suite['trace_integrity']['profile_trace_checksum_sha256']}`",
+        "",
+        "| Profile | Max P95 |z| (m) | Max uncertain |z| (m) | Pass |",
+        "|---------|----------------|-----------------------|------|",
+    ]
+    for profile_id in suite["profile_ids"]:
+        bench = suite["reports"][profile_id]
+        lines.append(
+            f"| {profile_id} | {bench['uncertainty_report']['max_p95_abs_z_m']:.6f} | "
+            f"{bench['uncertainty_report']['max_uncertain_abs_z_m']:.6f} | "
+            f"{'YES' if bench['passes_thresholds'] else 'NO'} |"
+        )
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -907,16 +967,37 @@ def main(argv: list[str] | None = None) -> int:
         "--output-md",
         default=str(ROOT / "validation" / "reports" / "vertical_control_replay_benchmark.md"),
     )
+    parser.add_argument(
+        "--all-profiles",
+        action="store_true",
+        help="Run all committed machine profiles and write a profile-suite report.",
+    )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)
 
-    report = run_benchmark()
+    report = run_profile_suite() if args.all_profiles else run_benchmark()
     out_json = Path(args.output_json)
     out_md = Path(args.output_md)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    out_md.write_text(render_markdown(report), encoding="utf-8")
+    out_md.write_text(
+        render_profile_suite_markdown(report) if args.all_profiles else render_markdown(report),
+        encoding="utf-8",
+    )
+
+    if args.all_profiles:
+        suite = report["vertical_control_replay_profile_suite"]
+        print("Vertical control replay profile suite complete.")
+        print(
+            "profiles={profiles}, pass={passed}".format(
+                profiles=",".join(suite["profile_ids"]),
+                passed=suite["all_profiles_pass"],
+            )
+        )
+        if args.strict and not suite["all_profiles_pass"]:
+            return 2
+        return 0
 
     bench = report["vertical_control_replay_benchmark"]
     print("Vertical control replay benchmark complete.")

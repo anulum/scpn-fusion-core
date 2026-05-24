@@ -87,6 +87,7 @@ to prove that the acceptance gate is sensitive to missing control action.
 | Deterministic replay | Repeat controller traces and RZIP state trajectory checksums must match | `python validation/vertical_control_replay_benchmark.py --strict` |
 | Actuator bounds | Commands are clipped after controller output and must respect amplitude and slew limits | same |
 | Post-disturbance relaxation | Primary controllers must reduce vertical displacement after the disturbance window ends | same |
+| Multi-profile replay | ITER-like, DIII-D-like, and compact-tokamak reduced-order plant profiles must pass | `python validation/vertical_control_replay_benchmark.py --all-profiles --strict` |
 | Uncertainty envelope | Growth, damping, actuator, sensor-bias, and one-step latency perturbations are replayed | same |
 
 ### Equilibrium Solver Convergence

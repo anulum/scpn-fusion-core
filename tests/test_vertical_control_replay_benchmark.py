@@ -264,3 +264,31 @@ def test_cli_writes_json_and_markdown_reports(tmp_path: Path) -> None:
     payload = json.loads(out_json.read_text(encoding="utf-8"))
     assert payload["vertical_control_replay_benchmark"]["passes_thresholds"] is True
     assert "# Vertical Control Replay Benchmark" in out_md.read_text(encoding="utf-8")
+
+
+def test_cli_all_profiles_writes_multi_profile_report(tmp_path: Path) -> None:
+    out_json = tmp_path / "vertical_control_replay_profiles.json"
+    out_md = tmp_path / "vertical_control_replay_profiles.md"
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(MODULE_PATH),
+            "--all-profiles",
+            "--output-json",
+            str(out_json),
+            "--output-md",
+            str(out_md),
+            "--strict",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert proc.returncode == 0, proc.stderr
+    payload = json.loads(out_json.read_text(encoding="utf-8"))
+    suite = payload["vertical_control_replay_profile_suite"]
+    assert suite["profile_ids"] == ["compact_tokamak", "diii_d_like", "iter_like"]
+    assert suite["all_profiles_pass"] is True
+    assert set(suite["reports"]) == set(suite["profile_ids"])
+    assert "## Profile suite" in out_md.read_text(encoding="utf-8")
