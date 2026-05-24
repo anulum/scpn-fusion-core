@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.pellet_injection import (
     PelletFuelingController,
@@ -46,6 +47,32 @@ def test_pellet_trajectory_penetration():
 
     # A faster pellet will always reach a *smaller* or equal final rho.
     assert res2.penetration_depth <= res1.penetration_depth
+
+
+def test_pellet_injection_angle_increases_ablation_exposure() -> None:
+    rho = np.linspace(0, 1, 50)
+    ne = np.ones(50) * 5.0
+    Te = np.ones(50) * 10000.0
+
+    radial = PelletTrajectory(PelletParams(r_p_mm=1.0, v_p_m_s=500.0, injection_angle_deg=0.0), 6.2, 2.0, 5.3)
+    oblique = PelletTrajectory(PelletParams(r_p_mm=1.0, v_p_m_s=500.0, injection_angle_deg=60.0), 6.2, 2.0, 5.3)
+
+    radial_result = radial.simulate(rho, ne, Te)
+    oblique_result = oblique.simulate(rho, ne, Te)
+
+    assert oblique_result.total_particles > radial_result.total_particles
+
+
+def test_pellet_injection_rejects_non_entering_angle() -> None:
+    rho = np.linspace(0, 1, 50)
+    ne = np.ones(50) * 5.0
+    Te = np.ones(50) * 5000.0
+    trajectory = PelletTrajectory(
+        PelletParams(r_p_mm=4.0, v_p_m_s=500.0, injection_angle_deg=90.0), 6.2, 2.0, 5.3
+    )
+
+    with pytest.raises(ValueError, match="injection_angle_deg"):
+        trajectory.simulate(rho, ne, Te)
 
 
 def test_pellet_drift():

@@ -69,9 +69,12 @@ class PelletTrajectory:
         N_p = self.N_initial
         r_p_m = self.params.r_p_mm * 1e-3
 
-        # Path simulation
-        # Assume it travels strictly radially for simplicity: s = a * (1 - rho)
-        # So v_p = ds/dt = -a * drho/dt
+        # Path simulation in normalised minor radius.  The full pellet speed
+        # sets ablation exposure time, while only the inward radial component
+        # advances the pellet across flux surfaces.
+        radial_velocity = self.params.v_p_m_s * np.cos(np.radians(self.params.injection_angle_deg))
+        if not np.isfinite(radial_velocity) or radial_velocity <= 1e-9 * max(self.params.v_p_m_s, 1.0):
+            raise ValueError("injection_angle_deg must provide positive inward radial velocity")
 
         # We integrate over time steps
         dt = 1e-5
@@ -79,7 +82,7 @@ class PelletTrajectory:
         deposition = np.zeros_like(rho)
 
         current_rho = 1.0  # start at edge
-        dr_dt = -self.params.v_p_m_s / self.a
+        dr_dt = -radial_velocity / self.a
 
         while N_p > 0 and current_rho > 0.0:
             # Interpolate plasma parameters
