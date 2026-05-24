@@ -60,6 +60,7 @@ def _build_release_checks(
     skip_disruption_transfer_generalization: bool,
     skip_eped_domain_contract: bool,
     skip_transport_uncertainty: bool,
+    skip_vertical_control_replay: bool,
     skip_torax_strict_backend: bool,
     skip_sparc_strict_backend: bool,
     skip_freegs_strict_backend: bool,
@@ -327,6 +328,18 @@ def _build_release_checks(
                 ],
             )
         )
+    if not skip_vertical_control_replay:
+        checks.append(
+            (
+                "Vertical-control replay profile-suite benchmark",
+                [
+                    sys.executable,
+                    "validation/vertical_control_replay_benchmark.py",
+                    "--all-profiles",
+                    "--strict",
+                ],
+            )
+        )
     if enable_strict_backend_checks and not skip_torax_strict_backend:
         checks.append(
             (
@@ -460,6 +473,7 @@ def _build_checks(
     skip_disruption_transfer_generalization: bool,
     skip_eped_domain_contract: bool,
     skip_transport_uncertainty: bool,
+    skip_vertical_control_replay: bool,
     skip_torax_strict_backend: bool,
     skip_sparc_strict_backend: bool,
     skip_freegs_strict_backend: bool,
@@ -499,6 +513,7 @@ def _build_checks(
                 skip_disruption_transfer_generalization=skip_disruption_transfer_generalization,
                 skip_eped_domain_contract=skip_eped_domain_contract,
                 skip_transport_uncertainty=skip_transport_uncertainty,
+                skip_vertical_control_replay=skip_vertical_control_replay,
                 skip_torax_strict_backend=skip_torax_strict_backend,
                 skip_sparc_strict_backend=skip_sparc_strict_backend,
                 skip_freegs_strict_backend=skip_freegs_strict_backend,
@@ -669,6 +684,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip validation/benchmark_transport_uncertainty_envelope.py --strict",
     )
     parser.add_argument(
+        "--skip-vertical-control-replay",
+        action="store_true",
+        help="Skip validation/vertical_control_replay_benchmark.py --all-profiles --strict",
+    )
+    parser.add_argument(
         "--skip-torax-strict-backend",
         action="store_true",
         help="Skip validation/benchmark_vs_torax.py --strict-backend",
@@ -791,6 +811,7 @@ def main(argv: list[str] | None = None) -> int:
         skip_disruption_transfer_generalization=args.skip_disruption_transfer_generalization,
         skip_eped_domain_contract=args.skip_eped_domain_contract,
         skip_transport_uncertainty=args.skip_transport_uncertainty,
+        skip_vertical_control_replay=args.skip_vertical_control_replay,
         skip_torax_strict_backend=args.skip_torax_strict_backend,
         skip_sparc_strict_backend=args.skip_sparc_strict_backend,
         skip_freegs_strict_backend=args.skip_freegs_strict_backend,
