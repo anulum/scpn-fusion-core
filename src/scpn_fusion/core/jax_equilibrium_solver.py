@@ -35,29 +35,91 @@ from jax import jit
 # mu_0 = 4pi x 1e-7 H/m, but configs use normalized units (mu_0=1)
 _MU0_NORM = 1.0
 
-# ── Elliptic integral approximations (Hastings, Abramowitz & Stegun) ──
+# ── Complete elliptic integrals for the toroidal Green function ──────
+
+
+def _polyval(coeffs: jnp.ndarray, x: jnp.ndarray) -> jnp.ndarray:
+    value = jnp.zeros_like(x)
+    for coeff in coeffs:
+        value = value * x + coeff
+    return value
 
 
 @jit
 def _ellipk_approx(m: jnp.ndarray) -> jnp.ndarray:
-    """Complete elliptic integral K(m), Abramowitz & Stegun 17.3.34."""
-    m1 = 1.0 - m
-    m1 = jnp.clip(m1, 1e-12, 1.0)
-    a = jnp.array([1.3862944, 0.1119723, 0.0725296])
-    b = jnp.array([0.5, 0.1213478, 0.0288729])
-    ln_m1 = jnp.log(1.0 / m1)
-    return (a[0] + a[1] * m1 + a[2] * m1**2) + (b[0] + b[1] * m1 + b[2] * m1**2) * ln_m1
+    """Complete elliptic integral K(m) using the Cephes rational form."""
+    x = jnp.clip(1.0 - m, 1.0e-16, 1.0)
+    p = jnp.array(
+        [
+            1.3798286460627324e-4,
+            2.2802572400587557e-3,
+            7.974040132204152e-3,
+            9.85821379021226e-3,
+            6.874896874499499e-3,
+            6.189010336376876e-3,
+            8.790782739527438e-3,
+            1.4938044891680525e-2,
+            3.08851465246712e-2,
+            9.657359028116901e-2,
+            1.3862943611198906,
+        ],
+        dtype=x.dtype,
+    )
+    q = jnp.array(
+        [
+            2.940789550485985e-5,
+            9.141847238659172e-4,
+            5.940583037531678e-3,
+            1.548505166497624e-2,
+            2.390896027159249e-2,
+            3.0120471522760405e-2,
+            3.737743141738232e-2,
+            4.8828034757099824e-2,
+            7.031249969639575e-2,
+            1.2499999999987082e-1,
+            5.0e-1,
+        ],
+        dtype=x.dtype,
+    )
+    return _polyval(p, x) - jnp.log(x) * _polyval(q, x)
 
 
 @jit
 def _ellipe_approx(m: jnp.ndarray) -> jnp.ndarray:
-    """Complete elliptic integral E(m), Abramowitz & Stegun 17.3.36."""
-    m1 = 1.0 - m
-    m1 = jnp.clip(m1, 1e-12, 1.0)
-    a = jnp.array([1.0, 0.4630151, 0.1077812])
-    b = jnp.array([0.0, 0.2452727, 0.0412496])
-    ln_m1 = jnp.log(1.0 / m1)
-    return (a[0] + a[1] * m1 + a[2] * m1**2) + (b[0] + b[1] * m1 + b[2] * m1**2) * ln_m1
+    """Complete elliptic integral E(m) using the Cephes rational form."""
+    x = jnp.clip(1.0 - m, 1.0e-16, 1.0)
+    p = jnp.array(
+        [
+            1.535525773010133e-4,
+            2.5088849216360206e-3,
+            8.687868165658896e-3,
+            1.073509490560762e-2,
+            7.773954925167871e-3,
+            7.583952894135147e-3,
+            1.1568843681057413e-2,
+            2.1831799601555725e-2,
+            5.680519456178606e-2,
+            4.4314718056099085e-1,
+            1.0,
+        ],
+        dtype=x.dtype,
+    )
+    q = jnp.array(
+        [
+            3.2795489857648587e-5,
+            1.0096279267935672e-3,
+            6.506094899769275e-3,
+            1.6886216399331132e-2,
+            2.6176974245449366e-2,
+            3.348339048882249e-2,
+            4.271809265189315e-2,
+            5.8593663447110106e-2,
+            9.374999971976443e-2,
+            2.4999999999988831e-1,
+        ],
+        dtype=x.dtype,
+    )
+    return _polyval(p, x) - x * jnp.log(x) * _polyval(q, x)
 
 
 # ── Toroidal Green's function ──────────────────────────────────────

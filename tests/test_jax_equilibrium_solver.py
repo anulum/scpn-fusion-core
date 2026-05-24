@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 import pytest
+import numpy as np
+from scipy.special import ellipe, ellipk
 
 jax = pytest.importorskip("jax")
 jnp = pytest.importorskip("jax.numpy")
@@ -36,6 +38,15 @@ def test_ellipe_known_values():
     """E(0) = π/2, E(0.5) ≈ 1.3506."""
     assert abs(float(_ellipe_approx(jnp.array(0.0))) - 1.5708) < 0.01
     assert abs(float(_ellipe_approx(jnp.array(0.5))) - 1.3506) < 0.02
+
+
+def test_elliptic_integrals_match_scipy_reference_across_green_function_domain():
+    """Complete elliptic integrals should match reference values used by coil Green kernels."""
+    m = jnp.array([0.0, 1.0e-9, 1.0e-4, 0.01, 0.5, 0.9, 0.99, 0.999999])
+    m_np = np.asarray(m)
+
+    np.testing.assert_allclose(np.asarray(_ellipk_approx(m)), ellipk(m_np), rtol=1.0e-8, atol=1.0e-8)
+    np.testing.assert_allclose(np.asarray(_ellipe_approx(m)), ellipe(m_np), rtol=1.0e-8, atol=1.0e-8)
 
 
 # ── Green's function ─────────────────────────────────────────────
