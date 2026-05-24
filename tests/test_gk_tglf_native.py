@@ -18,6 +18,7 @@ from scpn_fusion.core.gk_tglf_native import (
     TGLFNativeConfig,
     TGLFNativeSolver,
     exb_shear_rate,
+    gamma_0_flr,
     quasilinear_weights,
     sat0,
     sat1,
@@ -116,6 +117,13 @@ class TestTrappedParticle:
             R_L_Ti=6.9, R_L_Te=6.9, R_L_ne=2.2, q=1.4, s_hat=0.78, nu_star=0.5, epsilon=0.18
         )
         assert trapped_particle_damping(p) < 1.0
+
+
+def test_gamma_0_flr_matches_exact_modified_bessel_form() -> None:
+    b = np.array([0.0, 0.5, 1.0, 3.0, 8.0])
+    expected = np.i0(b) * np.exp(-b)
+
+    np.testing.assert_allclose(gamma_0_flr(b), expected, rtol=1e-12, atol=1e-14)
 
 
 # ── SAT0 ──────────────────────────────────────────────────────────────

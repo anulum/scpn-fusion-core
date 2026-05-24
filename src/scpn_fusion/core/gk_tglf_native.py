@@ -28,6 +28,7 @@ from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.special import i0e
 
 from scpn_fusion.core.gk_eigenvalue import LinearGKResult, solve_linear_gk
 from scpn_fusion.core.gk_interface import GKLocalParams, GKOutput, GKSolverBase
@@ -114,8 +115,8 @@ def trapped_particle_damping(params: GKLocalParams) -> float:
 
 
 def gamma_0_flr(b: NDArray[np.float64]) -> NDArray[np.float64]:
-    """Γ₀(b) = I₀(b)e^{-b} ≈ 1/(1+b).  Padé approximant, <5% error for b<3."""
-    return cast(NDArray[np.float64], 1.0 / (1.0 + np.maximum(b, 0.0)))
+    """Γ₀(b) = I₀(b)e^{-b} finite-Larmor-radius factor."""
+    return cast(NDArray[np.float64], i0e(np.maximum(b, 0.0)))
 
 
 def spectral_weight(
