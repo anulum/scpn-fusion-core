@@ -223,6 +223,10 @@ def _axis_discrete_laplacian(psi: np.ndarray) -> float:
     )
 
 
+def _axis_flux_value(psi: np.ndarray) -> float:
+    return float(np.max(psi))
+
+
 def _midplane_radial_monotonicity_violations(psi: np.ndarray) -> int:
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     midplane = psi[axis_z_index, :]
@@ -274,6 +278,7 @@ def main() -> None:
         "Julia": {
             "relative_l2_interior": _relative_l2(julia_psi, python_psi),
             "max_abs_error_interior": _interior_max_abs_error(julia_psi, python_psi),
+            "axis_flux_abs_error": abs(_axis_flux_value(julia_psi) - _axis_flux_value(python_psi)),
             "boundary_abs_max": _boundary_abs_max(julia_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(julia_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(julia_psi),
@@ -292,6 +297,7 @@ def main() -> None:
         "Go": {
             "relative_l2_interior": _relative_l2(go_psi, python_psi),
             "max_abs_error_interior": _interior_max_abs_error(go_psi, python_psi),
+            "axis_flux_abs_error": abs(_axis_flux_value(go_psi) - _axis_flux_value(python_psi)),
             "boundary_abs_max": _boundary_abs_max(go_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(go_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(go_psi),
@@ -310,6 +316,7 @@ def main() -> None:
         "Rust": {
             "relative_l2_interior": _relative_l2(rust_psi, python_psi),
             "max_abs_error_interior": _interior_max_abs_error(rust_psi, python_psi),
+            "axis_flux_abs_error": abs(_axis_flux_value(rust_psi) - _axis_flux_value(python_psi)),
             "boundary_abs_max": _boundary_abs_max(rust_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(rust_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(rust_psi),
@@ -328,6 +335,7 @@ def main() -> None:
         "Lean": {
             "relative_l2_interior": _relative_l2(lean_psi, python_psi),
             "max_abs_error_interior": _interior_max_abs_error(lean_psi, python_psi),
+            "axis_flux_abs_error": abs(_axis_flux_value(lean_psi) - _axis_flux_value(python_psi)),
             "boundary_abs_max": _boundary_abs_max(lean_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(lean_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(lean_psi),
@@ -362,6 +370,7 @@ def main() -> None:
                 "language": "Python",
                 "implementation": "gs_solve_np",
                 "wall_time_s": python_seconds,
+                "axis_flux_value": _axis_flux_value(python_psi),
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(python_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(python_psi),
                 "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(python_psi),
@@ -380,6 +389,7 @@ def main() -> None:
                 "language": "Julia",
                 "implementation": "SCPNFusionSolvers.solve_grad_shafranov",
                 "wall_time_s": julia_seconds,
+                "axis_flux_value": _axis_flux_value(julia_psi),
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(julia_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(julia_psi),
                 "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(julia_psi),
@@ -398,6 +408,7 @@ def main() -> None:
                 "language": "Go",
                 "implementation": "gssolver.Solve",
                 "wall_time_s": go_seconds,
+                "axis_flux_value": _axis_flux_value(go_psi),
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(go_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(go_psi),
                 "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(go_psi),
@@ -416,6 +427,7 @@ def main() -> None:
                 "language": "Rust",
                 "implementation": "fusion_polyglot::solve_grad_shafranov",
                 "wall_time_s": rust_seconds,
+                "axis_flux_value": _axis_flux_value(rust_psi),
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(rust_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(rust_psi),
                 "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(rust_psi),
@@ -434,6 +446,7 @@ def main() -> None:
                 "language": "Lean",
                 "implementation": "SCPNFusionSolvers.solveGradShafranov",
                 "wall_time_s": lean_seconds,
+                "axis_flux_value": _axis_flux_value(lean_psi),
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(lean_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(lean_psi),
                 "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(lean_psi),
@@ -496,27 +509,29 @@ def main() -> None:
             "",
             "## Numerical Parity",
             "",
-            "| Language | Interior relative L2 vs Python | Interior max abs error vs Python | Boundary absolute maximum |",
-            "|----------|--------------------------------|----------------------------------|---------------------------|",
+            "| Language | Interior relative L2 vs Python | Interior max abs error vs Python | Axis flux abs error vs Python | Boundary absolute maximum |",
+            "|----------|--------------------------------|----------------------------------|-------------------------------|---------------------------|",
         ]
     )
     for language, parity in parity_by_language.items():
         lines.append(
             f"| {language} | {parity['relative_l2_interior']:.6e} | "
-            f"{parity['max_abs_error_interior']:.6e} | {parity['boundary_abs_max']:.6e} |"
+            f"{parity['max_abs_error_interior']:.6e} | {parity['axis_flux_abs_error']:.6e} | "
+            f"{parity['boundary_abs_max']:.6e} |"
         )
     lines.extend(
         [
             "",
             "## Physics Invariants",
             "",
-            "| Language | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Axis local dominance margin | Axis discrete Laplacian | Midplane radial monotonicity violations | Axis-column vertical monotonicity violations | Negative flux absolute maximum |",
-            "|----------|------------------------------------|------------------------------|------------------------------------|--------------------------------|------------------------------|--------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------|",
+            "| Language | Axis flux value | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Axis local dominance margin | Axis discrete Laplacian | Midplane radial monotonicity violations | Axis-column vertical monotonicity violations | Negative flux absolute maximum |",
+            "|----------|-----------------|------------------------------------|------------------------------|------------------------------------|--------------------------------|------------------------------|--------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------|",
         ]
     )
     for row in report["solvers"]:
         lines.append(
-            f"| {row['language']} | {row['vertical_symmetry_abs_max']:.6e} | "
+            f"| {row['language']} | {row['axis_flux_value']:.6e} | "
+            f"{row['vertical_symmetry_abs_max']:.6e} | "
             f"{row['axis_midplane_offset_cells']} | {row['axis_radial_center_offset_cells']} | "
             f"{row['axis_boundary_distance_cells']} | {row['axis_local_dominance_margin']:.6e} | "
             f"{row['axis_discrete_laplacian']:.6e} | "

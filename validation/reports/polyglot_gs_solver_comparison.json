@@ -39,6 +39,7 @@
         "axis_boundary_distance_cells": 8,
         "axis_column_vertical_monotonicity_violations": 0,
         "axis_discrete_laplacian": -0.0023217583747222603,
+        "axis_flux_abs_error": 0.0,
         "axis_local_dominance_margin": 0.0001368323896359866,
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
@@ -53,6 +54,7 @@
         "axis_boundary_distance_cells": 8,
         "axis_column_vertical_monotonicity_violations": 0,
         "axis_discrete_laplacian": -0.002321758374722316,
+        "axis_flux_abs_error": 0.0,
         "axis_local_dominance_margin": 0.00013683238963600047,
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
@@ -67,6 +69,7 @@
         "axis_boundary_distance_cells": 8,
         "axis_column_vertical_monotonicity_violations": 0,
         "axis_discrete_laplacian": -0.0023217583747220105,
+        "axis_flux_abs_error": 2.8449465006019636e-16,
         "axis_local_dominance_margin": 0.00013683238963600047,
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
@@ -81,6 +84,7 @@
         "axis_boundary_distance_cells": 8,
         "axis_column_vertical_monotonicity_violations": 0,
         "axis_discrete_laplacian": -0.002321758374722288,
+        "axis_flux_abs_error": 3.469446951953614e-17,
         "axis_local_dominance_margin": 0.00013683238963600047,
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
@@ -102,6 +106,7 @@
       "axis_boundary_distance_cells": 8,
       "axis_column_vertical_monotonicity_violations": 0,
       "axis_discrete_laplacian": -0.002321758374722288,
+      "axis_flux_value": 0.042651828900105285,
       "axis_local_dominance_margin": 0.00013683238963599353,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
@@ -110,12 +115,13 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.0056184159766417
+      "wall_time_s": 0.0046587910037487745
     },
     {
       "axis_boundary_distance_cells": 8,
       "axis_column_vertical_monotonicity_violations": 0,
       "axis_discrete_laplacian": -0.002321758374722316,
+      "axis_flux_value": 0.042651828900105285,
       "axis_local_dominance_margin": 0.00013683238963600047,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
@@ -124,12 +130,13 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 9.484978786000283
+      "wall_time_s": 3.967224858002737
     },
     {
       "axis_boundary_distance_cells": 8,
       "axis_column_vertical_monotonicity_violations": 0,
       "axis_discrete_laplacian": -0.0023217583747222603,
+      "axis_flux_value": 0.042651828900105285,
       "axis_local_dominance_margin": 0.0001368323896359866,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
@@ -138,12 +145,13 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.0040840379951987416
+      "wall_time_s": 0.004454153997357935
     },
     {
       "axis_boundary_distance_cells": 8,
       "axis_column_vertical_monotonicity_violations": 0,
       "axis_discrete_laplacian": -0.002321758374722288,
+      "axis_flux_value": 0.04265182890010525,
       "axis_local_dominance_margin": 0.00013683238963600047,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
@@ -152,12 +160,13 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.00282915000570938
+      "wall_time_s": 0.0019295189995318651
     },
     {
       "axis_boundary_distance_cells": 8,
       "axis_column_vertical_monotonicity_violations": 0,
       "axis_discrete_laplacian": -0.0023217583747220105,
+      "axis_flux_value": 0.042651828900105,
       "axis_local_dominance_margin": 0.00013683238963600047,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
@@ -166,7 +175,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 1.4998802260088269
+      "wall_time_s": 1.0001346619974356
     }
   ]
 }

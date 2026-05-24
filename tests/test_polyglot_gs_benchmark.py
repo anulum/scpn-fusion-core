@@ -121,6 +121,19 @@ def test_axis_discrete_laplacian_detects_peak_curvature_sign() -> None:
     assert benchmark._axis_discrete_laplacian(broad) == -4.0
 
 
+def test_axis_flux_value_returns_magnetic_axis_amplitude() -> None:
+    """Benchmark reports must expose the magnetic-axis flux amplitude."""
+    psi = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.0, 2.5, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+
+    assert benchmark._axis_flux_value(psi) == 2.5
+
+
 def test_midplane_radial_monotonicity_violation_count_detects_oscillations() -> None:
     """Benchmark reports must expose radial flux oscillations away from the axis."""
     monotone = np.array(
