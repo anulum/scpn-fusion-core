@@ -585,6 +585,15 @@ mod tests {
     }
 
     #[test]
+    fn test_zero_reservoir_spectral_radius_is_finite() {
+        let w_res = Array2::<f64>::zeros((4, 4));
+        let rho = spectral_radius_estimate(&w_res, 30);
+
+        assert!(rho.is_finite());
+        assert_eq!(rho, 0.0);
+    }
+
+    #[test]
     fn test_cholesky_solve_identity() {
         let n = 5;
         let a = Array2::from_shape_fn((n, n), |(i, j)| if i == j { 1.0 } else { 0.0 });

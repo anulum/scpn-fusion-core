@@ -135,7 +135,9 @@ class OracleESN:
 
         # Scale spectral radius
         eigenvalues = np.linalg.eigvals(self.W_res)
-        self.W_res *= spectral_radius / np.max(np.abs(eigenvalues))
+        radius = float(np.max(np.abs(eigenvalues)))
+        if np.isfinite(radius) and radius > 1.0e-12:
+            self.W_res *= spectral_radius / radius
 
         self.state = np.zeros(reservoir_size)
         self.W_out = None  # Trained later

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import numpy as np
 
+import scpn_fusion.core.turbulence_oracle as turbulence_oracle
 from scpn_fusion.core.turbulence_oracle import DriftWavePhysics, OracleESN
 
 
@@ -79,3 +80,15 @@ class TestOracleESN:
         esn = OracleESN(input_dim=2, reservoir_size=20, spectral_radius=0.9)
         eigvals = np.linalg.eigvals(esn.W_res)
         assert np.max(np.abs(eigvals)) <= 1.0
+
+    def test_degenerate_sparse_reservoir_keeps_finite_weights(self, monkeypatch):
+        class ZeroSparseMatrix:
+            def toarray(self):
+                return np.zeros((4, 4), dtype=float)
+
+        monkeypatch.setattr(turbulence_oracle, "rand", lambda *args, **kwargs: ZeroSparseMatrix())
+
+        esn = OracleESN(input_dim=2, reservoir_size=4, spectral_radius=0.9)
+
+        assert np.all(np.isfinite(esn.W_res))
+        assert np.max(np.abs(esn.W_res)) == 0.0
