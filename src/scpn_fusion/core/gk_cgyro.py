@@ -27,6 +27,7 @@ _logger = logging.getLogger(__name__)
 
 
 def generate_cgyro_input(params: GKLocalParams) -> str:
+    """Render a linear CGYRO input deck from local gyrokinetic parameters."""
     R0_over_a = params.R0 / max(params.a, 0.01)
     return f"""\
 # CGYRO input.cgyro
@@ -60,6 +61,7 @@ N_RADIAL=1
 
 
 def parse_cgyro_output(run_dir: Path) -> GKOutput:
+    """Parse CGYRO frequency output into a transport-oriented GK result."""
     out_file = run_dir / "out.cgyro.freq"
     if out_file.exists():
         try:
@@ -86,19 +88,23 @@ class CGYROSolver(GKSolverBase):
     """CGYRO external solver."""
 
     def __init__(self, binary: str = "cgyro", work_dir: Path | None = None) -> None:
+        """Configure the CGYRO executable and optional persistent work directory."""
         self.binary = binary
         self.work_dir = work_dir
 
     def is_available(self) -> bool:
+        """Return whether the configured CGYRO executable is on ``PATH``."""
         return shutil.which(self.binary) is not None
 
     def prepare_input(self, params: GKLocalParams) -> Path:
+        """Create a CGYRO run directory containing ``input.cgyro``."""
         base = self.work_dir or Path(tempfile.mkdtemp(prefix="cgyro_"))
         base.mkdir(parents=True, exist_ok=True)
         (base / "input.cgyro").write_text(generate_cgyro_input(params))
         return base
 
     def run(self, input_path: Path, *, timeout_s: float = 30.0) -> GKOutput:
+        """Execute CGYRO for a prepared input directory and parse its output."""
         if not self.is_available():
             return GKOutput(chi_i=0.0, chi_e=0.0, D_e=0.0, converged=False)
         try:

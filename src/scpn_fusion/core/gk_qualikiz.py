@@ -58,10 +58,12 @@ class QuaLiKizSolver(GKSolverBase):
     """QuaLiKiz solver via Python API or subprocess fallback."""
 
     def __init__(self, binary: str = "qualikiz", work_dir: Path | None = None) -> None:
+        """Configure QuaLiKiz access and optional persistent work directory."""
         self.binary = binary
         self.work_dir = work_dir
 
     def is_available(self) -> bool:
+        """Return whether the QuaLiKiz Python interface can be imported."""
         try:
             import qualikiz_tools  # type: ignore[import-not-found]  # noqa: F401
 
@@ -70,6 +72,7 @@ class QuaLiKizSolver(GKSolverBase):
             return False
 
     def prepare_input(self, params: GKLocalParams) -> Path:
+        """Create a QuaLiKiz work directory and cache parameters for execution."""
         base = self.work_dir or Path(tempfile.mkdtemp(prefix="qualikiz_"))
         base.mkdir(parents=True, exist_ok=True)
         # Store params for Python API path
@@ -77,6 +80,7 @@ class QuaLiKizSolver(GKSolverBase):
         return base
 
     def run(self, input_path: Path, *, timeout_s: float = 30.0) -> GKOutput:
+        """Run QuaLiKiz through the Python API when cached parameters exist."""
         params = getattr(self, "_last_params", None)
         if params is not None:
             result = _try_qualikiz_python(params)

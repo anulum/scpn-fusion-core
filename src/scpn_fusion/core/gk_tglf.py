@@ -190,9 +190,11 @@ class TGLFSolver(GKSolverBase):
         self.work_dir = work_dir
 
     def is_available(self) -> bool:
+        """Return whether the configured TGLF executable is on ``PATH``."""
         return shutil.which(self.binary) is not None
 
     def prepare_input(self, params: GKLocalParams) -> Path:
+        """Create a TGLF run directory containing ``input.tglf``."""
         base = self.work_dir or Path(tempfile.mkdtemp(prefix="tglf_"))
         base.mkdir(parents=True, exist_ok=True)
         input_file = base / "input.tglf"
@@ -200,6 +202,7 @@ class TGLFSolver(GKSolverBase):
         return base
 
     def run(self, input_path: Path, *, timeout_s: float = 30.0) -> GKOutput:
+        """Execute TGLF for a prepared input directory and parse transport output."""
         if not self.is_available():
             raise RuntimeError(
                 f"TGLF binary not available: {self.binary!r}. Install GACODE/TGLF or use an "

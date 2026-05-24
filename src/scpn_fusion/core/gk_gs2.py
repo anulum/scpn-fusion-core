@@ -27,6 +27,7 @@ _logger = logging.getLogger(__name__)
 
 
 def generate_gs2_input(params: GKLocalParams) -> str:
+    """Render a local Miller-geometry GS2 input namelist."""
     R0_over_a = params.R0 / max(params.a, 0.01)
     return f"""\
 &theta_grid_eik_knobs
@@ -108,19 +109,23 @@ class GS2Solver(GKSolverBase):
     """GS2 external solver."""
 
     def __init__(self, binary: str = "gs2", work_dir: Path | None = None) -> None:
+        """Configure the GS2 executable and optional persistent work directory."""
         self.binary = binary
         self.work_dir = work_dir
 
     def is_available(self) -> bool:
+        """Return whether the configured GS2 executable is on ``PATH``."""
         return shutil.which(self.binary) is not None
 
     def prepare_input(self, params: GKLocalParams) -> Path:
+        """Create a GS2 run directory containing ``gs2.in``."""
         base = self.work_dir or Path(tempfile.mkdtemp(prefix="gs2_"))
         base.mkdir(parents=True, exist_ok=True)
         (base / "gs2.in").write_text(generate_gs2_input(params))
         return base
 
     def run(self, input_path: Path, *, timeout_s: float = 30.0) -> GKOutput:
+        """Execute GS2 for a prepared input directory and parse omega output."""
         if not self.is_available():
             return GKOutput(chi_i=0.0, chi_e=0.0, D_e=0.0, converged=False)
         try:

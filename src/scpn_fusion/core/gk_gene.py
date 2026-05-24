@@ -87,6 +87,7 @@ _GENE_TEMPLATE = """\
 
 
 def generate_gene_input(params: GKLocalParams) -> str:
+    """Render a GENE ``parameters`` namelist from local plasma parameters."""
     R0_over_a = params.R0 / max(params.a, 0.01)
     return _GENE_TEMPLATE.format(
         q=params.q,
@@ -135,19 +136,23 @@ class GENESolver(GKSolverBase):
     """GENE external solver via ``gene`` binary."""
 
     def __init__(self, binary: str = "gene", work_dir: Path | None = None) -> None:
+        """Configure the GENE executable and optional persistent work directory."""
         self.binary = binary
         self.work_dir = work_dir
 
     def is_available(self) -> bool:
+        """Return whether the configured GENE executable is on ``PATH``."""
         return shutil.which(self.binary) is not None
 
     def prepare_input(self, params: GKLocalParams) -> Path:
+        """Create a GENE run directory containing the ``parameters`` file."""
         base = self.work_dir or Path(tempfile.mkdtemp(prefix="gene_"))
         base.mkdir(parents=True, exist_ok=True)
         (base / "parameters").write_text(generate_gene_input(params))
         return base
 
     def run(self, input_path: Path, *, timeout_s: float = 30.0) -> GKOutput:
+        """Execute GENE for a prepared input directory and parse latest ``nrg`` output."""
         if not self.is_available():
             return GKOutput(chi_i=0.0, chi_e=0.0, D_e=0.0, converged=False)
         try:
