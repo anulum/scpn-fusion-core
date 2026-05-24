@@ -134,6 +134,36 @@ class JaxNonlinearGKSolver:
 
         return bracket_k.reshape(shape5)
 
+    def _jax_collide_sugama(self, f_s: jnp.ndarray) -> jnp.ndarray:
+        """JAX Sugama-like collision projection conserving three discrete moments."""
+        c = self.cfg
+        dv = self._np_solver.dvpar * self._np_solver.dmu
+        d2f = (jnp.roll(f_s, -1, axis=3) - 2.0 * f_s + jnp.roll(f_s, 1, axis=3)) / (
+            self._np_solver.dvpar**2
+        )
+        d2f = d2f.at[:, :, :, 0, :].set(0.0)
+        d2f = d2f.at[:, :, :, -1, :].set(0.0)
+
+        vpar = self._vpar_j[None, None, None, :, None]
+        mu = self._mu_j[None, None, None, None, :]
+        v2 = vpar**2 + 2.0 * mu
+        energy = 0.5 * vpar**2 + mu
+        nu_v = c.nu_collision * jnp.minimum(1.0 / jnp.maximum(v2, 0.1) ** 1.5, 10.0)
+        pitch = 2.0 * mu / jnp.maximum(v2, 0.01)
+        cf = nu_v * pitch * d2f
+
+        fm = jnp.exp(-energy) / jnp.pi**1.5
+        basis = (jnp.ones_like(energy), vpar, energy)
+        moments = jnp.stack([jnp.sum(cf * b * dv, axis=(-2, -1)) for b in basis], axis=0)
+        gram = jnp.asarray([[jnp.sum(a * b * fm * dv) for b in basis] for a in basis])
+        coeffs = jnp.tensordot(jnp.linalg.inv(gram), moments, axes=(1, 0))
+        correction = (
+            coeffs[0, ..., None, None]
+            + coeffs[1, ..., None, None] * vpar
+            + coeffs[2, ..., None, None] * energy
+        ) * fm
+        return jnp.asarray(cf - correction)
+
     # ------------------------------------------------------------------
     # JAX RHS
     # ------------------------------------------------------------------
@@ -175,8 +205,11 @@ class JaxNonlinearGKSolver:
 
         # Collisions
         if c.collisions:
-            kp2 = self._kperp2_j[:, :, None, None, None]
-            terms = terms - c.nu_collision * kp2 * f_s
+            if c.collision_model == "sugama":
+                terms = terms + self._jax_collide_sugama(f_s)
+            else:
+                kp2 = self._kperp2_j[:, :, None, None, None]
+                terms = terms - c.nu_collision * kp2 * f_s
 
         # Hyperdiffusion
         kp2 = self._kperp2_j[:, :, None, None, None]

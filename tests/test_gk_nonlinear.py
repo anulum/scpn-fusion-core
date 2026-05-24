@@ -425,3 +425,36 @@ class TestJaxFallback:
         from scpn_fusion.core.jax_gk_nonlinear import jax_available
 
         assert isinstance(jax_available(), bool)
+
+    def test_jax_sugama_collision_conserves_discrete_moments_or_falls_back(self):
+        from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available
+
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=8,
+            n_mu=6,
+            n_species=2,
+            collisions=True,
+            collision_model="sugama",
+            cfl_adapt=False,
+        )
+        solver = JaxNonlinearGKSolver(cfg)
+        state = solver._np_solver.init_state(amplitude=1e-4, seed=11)
+
+        if jax_available():
+            import jax.numpy as jnp
+
+            collision = np.asarray(solver._jax_collide_sugama(jnp.asarray(state.f[0])))
+        else:
+            collision = solver._np_solver.collide(state.f[0])
+
+        vpar = solver._np_solver.vpar[None, None, None, :, None]
+        mu = solver._np_solver.mu[None, None, None, None, :]
+        energy = 0.5 * vpar**2 + mu
+        dv = solver._np_solver.dvpar * solver._np_solver.dmu
+
+        np.testing.assert_allclose(np.sum(collision * dv, axis=(-2, -1)), 0.0, atol=1e-12)
+        np.testing.assert_allclose(np.sum(collision * vpar * dv, axis=(-2, -1)), 0.0, atol=1e-12)
+        np.testing.assert_allclose(np.sum(collision * energy * dv, axis=(-2, -1)), 0.0, atol=1e-12)

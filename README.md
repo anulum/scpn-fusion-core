@@ -381,6 +381,7 @@ cargo bench                      # Criterion benchmarks
 python validation/validate_real_shots.py        # real-shot gate
 python validation/collect_results.py            # full 15-lane benchmark
 python validation/benchmark_gk_linear.py        # GK eigenvalue benchmark
+PYTHONPATH=src python benchmarks/gk_solver_comparison.py  # nonlinear GK NumPy/JAX comparison
 ```
 
 </details>

@@ -26,6 +26,16 @@ This will:
 | `kernel_solve.prof` | Python cProfile binary (loadable with `snakeviz`) |
 | `kernel_solve.txt` | Top-N hotspots from cProfile |
 
+## Nonlinear GK Benchmark
+
+`PYTHONPATH=src python benchmarks/gk_solver_comparison.py` runs the current
+native nonlinear gyrokinetic APIs on a compact fixed grid and writes:
+
+| File | Contents |
+|------|----------|
+| `validation/reports/gk_nonlinear_solver_comparison.json` | NumPy/JAX Krook and Sugama timing plus transport diagnostics |
+| `validation/reports/gk_nonlinear_solver_comparison.md` | Human-readable benchmark table and Sugama moment residuals |
+
 ## Criterion Benchmarks
 
 Three benchmark suites are defined in the Rust workspace:
