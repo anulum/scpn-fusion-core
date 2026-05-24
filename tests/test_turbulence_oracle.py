@@ -127,3 +127,10 @@ class TestOracleESN:
 
         assert not np.allclose(first.W_in, second.W_in, rtol=0.0, atol=0.0)
         assert not np.allclose(first.W_res, second.W_res, rtol=0.0, atol=0.0)
+
+    def test_sparse_reservoir_weights_are_centred_around_zero(self):
+        esn = OracleESN(input_dim=3, reservoir_size=64, seed=2718)
+        nonzero_weights = esn.W_res[np.abs(esn.W_res) > 0.0]
+
+        assert np.any(nonzero_weights < 0.0)
+        assert np.any(nonzero_weights > 0.0)

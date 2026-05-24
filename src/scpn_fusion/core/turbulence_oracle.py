@@ -140,10 +140,17 @@ class OracleESN:
         if seed is None:
             self.W_in = np.random.uniform(-1, 1, (reservoir_size, input_dim))
             random_state = None
+
+            def reservoir_values(size):
+                return np.random.uniform(-1, 1, size)
+
         else:
             rng = np.random.default_rng(seed)
             self.W_in = rng.uniform(-1, 1, (reservoir_size, input_dim))
             random_state = seed
+
+            def reservoir_values(size):
+                return rng.uniform(-1, 1, size)
 
         # Sparse Reservoir
         self.W_res = rand(
@@ -152,6 +159,8 @@ class OracleESN:
             density=0.1,
             random_state=random_state,
         ).toarray()
+        nonzero = self.W_res != 0.0
+        self.W_res[nonzero] = reservoir_values(np.count_nonzero(nonzero))
 
         # Scale spectral radius
         eigenvalues = np.linalg.eigvals(self.W_res)

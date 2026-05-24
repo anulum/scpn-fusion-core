@@ -643,6 +643,15 @@ mod tests {
     }
 
     #[test]
+    fn test_esn_sparse_reservoir_weights_are_centred_around_zero() {
+        let esn = OracleESN::with_seed(N_PROBES, 64, 2718);
+        let weights: Vec<f64> = esn.w_res.iter().copied().filter(|v| *v != 0.0).collect();
+
+        assert!(weights.iter().any(|v| *v < 0.0));
+        assert!(weights.iter().any(|v| *v > 0.0));
+    }
+
+    #[test]
     fn test_zero_reservoir_spectral_radius_is_finite() {
         let w_res = Array2::<f64>::zeros((4, 4));
         let rho = spectral_radius_estimate(&w_res, 30);
