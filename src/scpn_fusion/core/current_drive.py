@@ -169,10 +169,28 @@ class CurrentDriveMix:
         return p_tot
 
     def total_driven_current(
-        self, rho: np.ndarray, ne: np.ndarray, Te: np.ndarray, Ti: np.ndarray
+        self,
+        rho: np.ndarray,
+        ne: np.ndarray,
+        Te: np.ndarray,
+        Ti: np.ndarray,
+        *,
+        elongation: float | np.ndarray = 1.0,
     ) -> float:
-        """Integrate total driven current [A] assuming circular cross-section."""
+        """Integrate total driven current [A] over circular or elongated area."""
         j_tot = self.total_j_cd(rho, ne, Te, Ti)
         drho = rho[1] - rho[0] if len(rho) > 1 else 0.0
-        dA = 2.0 * np.pi * rho * self.a**2 * drho
+        if np.isscalar(elongation):
+            kappa = float(elongation)
+            if not np.isfinite(kappa) or kappa <= 0.0:
+                raise ValueError("elongation must be finite and positive")
+            dA = 2.0 * np.pi * kappa * rho * self.a**2 * drho
+        else:
+            kappa_profile = np.asarray(elongation, dtype=float)
+            if kappa_profile.shape != rho.shape or np.any(~np.isfinite(kappa_profile)):
+                raise ValueError("elongation profile must match rho and be finite")
+            if np.any(kappa_profile <= 0.0):
+                raise ValueError("elongation must be positive")
+            area = np.pi * self.a**2 * kappa_profile * rho**2
+            dA = np.gradient(area, rho) * drho
         return float(np.sum(j_tot * dA))

@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.current_drive import (
     CurrentDriveMix,
@@ -118,3 +119,48 @@ def test_current_drive_efficiency():
 
     I_cd = mix.total_driven_current(rho, ne, Te, Ti)
     assert I_cd > 1000.0
+
+
+def test_total_driven_current_scales_with_constant_elongation() -> None:
+    rho = np.linspace(0.0, 1.0, 200)
+    ne = np.ones(200)
+    Te = np.ones(200)
+    Ti = np.ones(200)
+
+    eccd = ECCDSource(P_ec_MW=10.0, rho_dep=0.5, sigma_rho=0.05)
+    mix = CurrentDriveMix(a=1.0)
+    mix.add_source(eccd)
+
+    circular = mix.total_driven_current(rho, ne, Te, Ti)
+    elongated = mix.total_driven_current(rho, ne, Te, Ti, elongation=1.8)
+
+    assert elongated == pytest.approx(1.8 * circular, rel=1e-12)
+
+
+def test_total_driven_current_uses_profile_elongation_area_derivative() -> None:
+    rho = np.linspace(0.0, 1.0, 200)
+    ne = np.ones(200)
+    Te = np.ones(200)
+    Ti = np.ones(200)
+    elongation = 1.0 + 0.6 * rho
+
+    eccd = ECCDSource(P_ec_MW=10.0, rho_dep=0.8, sigma_rho=0.04)
+    mix = CurrentDriveMix(a=1.0)
+    mix.add_source(eccd)
+
+    shaped = mix.total_driven_current(rho, ne, Te, Ti, elongation=elongation)
+    circular = mix.total_driven_current(rho, ne, Te, Ti)
+
+    assert shaped > circular
+
+
+def test_total_driven_current_rejects_invalid_elongation() -> None:
+    rho = np.linspace(0.0, 1.0, 20)
+    profile = np.ones(20)
+    mix = CurrentDriveMix(a=1.0)
+
+    with pytest.raises(ValueError, match="elongation"):
+        mix.total_driven_current(rho, profile, profile, profile, elongation=-1.0)
+
+    with pytest.raises(ValueError, match="elongation"):
+        mix.total_driven_current(rho, profile, profile, profile, elongation=np.ones(19))
