@@ -184,7 +184,7 @@
     {
       "id": "security_current_supported_release",
       "source_file": "SECURITY.md",
-      "source_pattern": "\\| 3\\.9\\.4\\s+\\| :white_check_mark:",
+      "source_pattern": "\\| 3\\.9\\.5\\s+\\| :white_check_mark:",
       "evidence_files": [
         "pyproject.toml",
         "src/scpn_fusion/__init__.py"
@@ -192,11 +192,11 @@
       "evidence_patterns": [
         {
           "file": "pyproject.toml",
-          "pattern": "version\\s*=\\s*\"3\\.9\\.4\""
+          "pattern": "version\\s*=\\s*\"3\\.9\\.5\""
         },
         {
           "file": "src/scpn_fusion/__init__.py",
-          "pattern": "__version__\\s*=\\s*\"3\\.9\\.4\""
+          "pattern": "__version__\\s*=\\s*\"3\\.9\\.5\""
         }
       ]
     }

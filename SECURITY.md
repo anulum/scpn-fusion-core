@@ -4,7 +4,8 @@
 
 | Version | Supported          | Notes |
 |---------|--------------------|-------|
-| 3.9.4   | :white_check_mark: | Current stable — hardening/governance wave |
+| 3.9.5   | :white_check_mark: | Current stable - physics hardening and release-evidence wave |
+| 3.9.4   | :white_check_mark: | Previous stable - hardening/governance wave |
 | 3.9.3   | :white_check_mark: | Previous stable — validation-first release line |
 | 3.1.0   | :x:                | Superseded (Phase 0 physics hardening) |
 | 3.0.0   | :x:                | Superseded (Rust SNN, full-chain UQ, shot replay) |
@@ -45,7 +46,7 @@ configuration. Security concerns are primarily:
 
 ## Hardening Measures in Place
 
-### Input Validation (v1.0.2 — v3.9.4)
+### Input Validation (v1.0.2 — v3.9.5)
 Over 30 hardening commits add runtime guards across all physics and control
 modules: array shape/dtype checks, non-finite rejection, range clamping,
 and constructor parameter validation. See the git log for commits prefixed

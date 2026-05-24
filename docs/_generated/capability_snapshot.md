@@ -5,7 +5,7 @@
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 3.9.4 |
+| Package version | 3.9.5 |
 | Public API exports | 2 |
 | Python capability source modules | 260 |
 | Python capability classes | 486 |

@@ -10,14 +10,14 @@
 
 ## [Unreleased]
 
-## [3.9.4] - 2026-05-24
+## [3.9.5] - 2026-05-24
 
 ### Changed
 - Physics hardening: integrated transport bootstrap current now uses the full Sauter path by default.
 - Physics hardening: Miller geometry metrics now include elongation and triangularity shear in radial derivatives.
 - Physics hardening: JAX gyrokinetic Bessel and equilibrium elliptic kernels now match SciPy reference contracts across operational domains.
 - Physics hardening: alpha slowing-down deposition now uses exact first-order relaxation to preserve non-negative deposited power.
-- Release readiness: metadata and release acceptance surfaces now target `v3.9.4`.
+- Release readiness: metadata and release acceptance surfaces now target `v3.9.5`.
 
 
 ### Changed

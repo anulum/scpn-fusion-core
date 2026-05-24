@@ -200,7 +200,7 @@ Evidence pattern checks:
 ### `security_current_supported_release`
 
 - Source file: `SECURITY.md`
-- Source pattern: `\| 3\.9\.4\s+\| :white_check_mark:`
+- Source pattern: `\| 3\.9\.5\s+\| :white_check_mark:`
 
 Evidence files:
 - `pyproject.toml`
@@ -210,5 +210,5 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `pyproject.toml` | `version\s*=\s*"3\.9\.4"` |
-| `src/scpn_fusion/__init__.py` | `__version__\s*=\s*"3\.9\.4"` |
+| `pyproject.toml` | `version\s*=\s*"3\.9\.5"` |
+| `src/scpn_fusion/__init__.py` | `__version__\s*=\s*"3\.9\.5"` |

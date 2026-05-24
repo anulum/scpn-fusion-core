@@ -11,4 +11,4 @@ Package-level entry for SCPN validation and benchmarking tools.
 
 from __future__ import annotations
 
-__version__ = "3.9.4"
+__version__ = "3.9.5"
