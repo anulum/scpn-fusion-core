@@ -430,6 +430,7 @@ class Reactor3DBuilder:
         faces: np.ndarray,
         filename: str | Path = "plasma.obj",
     ) -> Path:
+        """Write a triangular plasma mesh to Wavefront OBJ format."""
         output_path = Path(filename)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -498,6 +499,7 @@ def _default_config_path() -> Path:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
+    """Run the command-line OBJ mesh export workflow."""
     parser = argparse.ArgumentParser(description="Generate SCPN 3D plasma OBJ mesh.")
     parser.add_argument(
         "--config",
