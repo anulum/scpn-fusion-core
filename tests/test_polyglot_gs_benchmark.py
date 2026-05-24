@@ -16,6 +16,27 @@ import numpy as np
 import benchmarks.polyglot_gs_solver_comparison as benchmark
 
 
+def test_vertical_symmetry_metric_detects_up_down_asymmetry() -> None:
+    """Benchmark reports must expose up-down symmetry residuals for symmetric GS cases."""
+    symmetric = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+    asymmetric = np.array(
+        [
+            [0.0, 0.2, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+
+    assert benchmark._vertical_symmetry_abs_max(symmetric) == 0.0
+    assert benchmark._vertical_symmetry_abs_max(asymmetric) == 0.2
+
+
 def test_rust_benchmark_executes_compiled_release_solver(monkeypatch) -> None:
     """Rust timing must measure the compiled solver binary, not Cargo orchestration."""
     calls: list[tuple[list[str], object]] = []

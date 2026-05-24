@@ -37,19 +37,23 @@
     "by_language": {
       "Go": {
         "boundary_abs_max": 0.0,
-        "relative_l2_interior": 1.7906252983703998e-16
+        "relative_l2_interior": 1.7906252983703998e-16,
+        "vertical_symmetry_abs_max": 0.0
       },
       "Julia": {
         "boundary_abs_max": 0.0,
-        "relative_l2_interior": 8.983124920046824e-17
+        "relative_l2_interior": 8.983124920046824e-17,
+        "vertical_symmetry_abs_max": 0.0
       },
       "Lean": {
         "boundary_abs_max": 0.0,
-        "relative_l2_interior": 1.1233083104582504e-14
+        "relative_l2_interior": 1.1233083104582504e-14,
+        "vertical_symmetry_abs_max": 0.0
       },
       "Rust": {
         "boundary_abs_max": 0.0,
-        "relative_l2_interior": 5.906398378511105e-16
+        "relative_l2_interior": 5.906398378511105e-16,
+        "vertical_symmetry_abs_max": 0.0
       }
     },
     "shape": [
@@ -61,27 +65,32 @@
     {
       "implementation": "gs_solve_np",
       "language": "Python",
-      "wall_time_s": 0.0036149029911030084
+      "vertical_symmetry_abs_max": 0.0,
+      "wall_time_s": 0.004566724004689604
     },
     {
       "implementation": "SCPNFusionSolvers.solve_grad_shafranov",
       "language": "Julia",
-      "wall_time_s": 6.837463475996628
+      "vertical_symmetry_abs_max": 0.0,
+      "wall_time_s": 5.287138384999707
     },
     {
       "implementation": "gssolver.Solve",
       "language": "Go",
-      "wall_time_s": 0.0024293040041811764
+      "vertical_symmetry_abs_max": 0.0,
+      "wall_time_s": 0.002816138992784545
     },
     {
       "implementation": "fusion_polyglot::solve_grad_shafranov",
       "language": "Rust",
-      "wall_time_s": 0.004890072013949975
+      "vertical_symmetry_abs_max": 0.0,
+      "wall_time_s": 0.002817151020281017
     },
     {
       "implementation": "SCPNFusionSolvers.solveGradShafranov",
       "language": "Lean",
-      "wall_time_s": 2.458736486994894
+      "vertical_symmetry_abs_max": 0.0,
+      "wall_time_s": 1.063282529998105
     }
   ]
 }
