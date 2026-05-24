@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.runaway_electrons import (
     RunawayEvolution,
@@ -145,6 +146,25 @@ def test_mitigation_assessment():
 
     load = mit.wall_heat_load(n_RE=1e16, E_max_MeV=E_max, A_wet=10.0)
     assert load > 0.0
+
+
+def test_wall_heat_load_accepts_explicit_mean_energy() -> None:
+    mit = RunawayMitigationAssessment()
+    load = mit.wall_heat_load(
+        n_RE=1.0e16,
+        E_max_MeV=30.0,
+        A_wet=10.0,
+        volume=100.0,
+        mean_energy_MeV=20.0,
+    )
+    expected = 1.0e16 * 100.0 * 20.0e6 * 1.602176634e-19 / 1.0e6 / 10.0
+    assert load == pytest.approx(expected)
+
+
+def test_wall_heat_load_rejects_invalid_energy_domain() -> None:
+    mit = RunawayMitigationAssessment()
+    with pytest.raises(ValueError, match="mean_energy_MeV"):
+        mit.wall_heat_load(n_RE=1.0e16, E_max_MeV=30.0, A_wet=10.0, mean_energy_MeV=40.0)
 
 
 def test_current_fraction_is_bounded_and_rejects_invalid_domain() -> None:

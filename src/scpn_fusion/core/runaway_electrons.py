@@ -294,15 +294,37 @@ class RunawayMitigationAssessment:
         return float(max(0.1, min(orbit_limit_mev, synch_limit_mev)))
 
     @staticmethod
-    def wall_heat_load(n_RE: float, E_max_MeV: float, A_wet: float, volume: float = 800.0) -> float:
-        """Deposited energy density [MJ/m^2] assuming instant loss."""
-        # Total energy = n_RE * Volume * E_avg
-        # Assume E_avg ~ E_max / 2
-        E_avg_J = (E_max_MeV / 2.0) * 1e6 * E_CHARGE
-        W_total_J = n_RE * volume * E_avg_J
+    def wall_heat_load(
+        n_RE: float,
+        E_max_MeV: float,
+        A_wet: float,
+        volume: float = 800.0,
+        *,
+        mean_energy_MeV: float | None = None,
+    ) -> float:
+        """Deposited runaway-electron beam energy density [MJ/m^2]."""
+        n_re = float(n_RE)
+        e_max = float(E_max_MeV)
+        area = float(A_wet)
+        vol = float(volume)
+        if not np.isfinite(n_re) or n_re < 0.0:
+            raise ValueError("n_RE must be finite and >= 0.")
+        if not np.isfinite(e_max) or e_max <= 0.0:
+            raise ValueError("E_max_MeV must be finite and > 0.")
+        if not np.isfinite(vol) or vol <= 0.0:
+            raise ValueError("volume must be finite and > 0.")
+        if mean_energy_MeV is None:
+            e_mean = 0.5 * e_max
+        else:
+            e_mean = float(mean_energy_MeV)
+            if not np.isfinite(e_mean) or e_mean <= 0.0 or e_mean > e_max:
+                raise ValueError("mean_energy_MeV must be finite and within (0, E_max_MeV]")
 
-        if A_wet <= 0.0:
+        E_avg_J = e_mean * 1e6 * E_CHARGE
+        W_total_J = n_re * vol * E_avg_J
+
+        if area <= 0.0:
             return float("inf")
 
-        load_MJ_m2 = (W_total_J / 1e6) / A_wet
+        load_MJ_m2 = (W_total_J / 1e6) / area
         return float(load_MJ_m2)
