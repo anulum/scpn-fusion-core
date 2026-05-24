@@ -481,6 +481,8 @@ class TestJaxFallback:
         result = solver.run()
         assert result.converged or len(result.Q_i_t) > 0
         assert np.all(np.isfinite(result.Q_i_t))
+        expected_chi_i_gB = result.chi_i / max(_FAST_CFG.R_L_Ti, 0.01)
+        assert result.chi_i_gB == expected_chi_i_gB
 
     def test_jax_available_bool(self):
         from scpn_fusion.core.jax_gk_nonlinear import jax_available

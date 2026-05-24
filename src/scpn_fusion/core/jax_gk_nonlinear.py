@@ -354,6 +354,7 @@ class JaxNonlinearGKSolver:
         n_half = max(len(Q_i_t) // 2, 1)
         chi_i = float(np.mean(Q_i_t[n_half:])) if len(Q_i_t) > 0 else 0.0
         chi_e = float(np.mean(Q_e_t[n_half:])) if len(Q_e_t) > 0 else 0.0
+        chi_i_gB = chi_i / max(c.R_L_Ti, 0.01)
 
         f_np = np.asarray(f)
         phi_np = np.asarray(self._jax_field_solve(f))
@@ -362,6 +363,7 @@ class JaxNonlinearGKSolver:
         return NonlinearGKResult(
             chi_i=chi_i,
             chi_e=chi_e,
+            chi_i_gB=chi_i_gB,
             Q_i_t=Q_i_t,
             Q_e_t=Q_e_t,
             phi_rms_t=phi_rms_t,
