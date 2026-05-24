@@ -68,7 +68,7 @@ class _Lowpass:
         self._val = np.zeros(n)
 
     def step(self, x: NDArray) -> NDArray:
-        self._val = self._decay * self._val + (1.0 - self._decay) * x
+        self._val[:] = self._decay * self._val + (1.0 - self._decay) * x
         return self._val
 
     def reset(self) -> None:
@@ -121,7 +121,7 @@ class _LIFPopulation:
         spiked = self.voltage >= 1.0
         self.voltage[spiked] = 0.0
         self.ref_time[spiked] = self.tau_ref
-        self.ref_time = np.maximum(self.ref_time - self.dt, 0.0)
+        self.ref_time[:] = np.maximum(self.ref_time - self.dt, 0.0)
 
         return spiked.astype(np.float64) / self.dt
 
@@ -268,9 +268,11 @@ class NengoSNNController:
             raise RuntimeError("Network not built.")
 
         error = np.asarray(state, dtype=float).ravel()[: self.cfg.n_channels]
-        output = np.array([ch.step(error[i]) for i, ch in enumerate(self._channels)])
+        output = np.asarray(
+            [ch.step(error[i]) for i, ch in enumerate(self._channels)], dtype=np.float64
+        )
         self._step_count += 1
-        self._last_output = output
+        self._last_output[:] = output
 
         probe_out = self._output_probe_filt.step(output)
         self._output_history.append(probe_out.copy())

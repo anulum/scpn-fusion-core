@@ -26,7 +26,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import IO, Union
+from typing import IO, Union, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -82,17 +82,20 @@ class GEqdsk:
     @property
     def r(self) -> NDArray[np.float64]:
         """1-D array of R grid values."""
-        return np.linspace(self.rleft, self.rleft + self.rdim, self.nw)
+        return cast(NDArray[np.float64], np.linspace(self.rleft, self.rleft + self.rdim, self.nw))
 
     @property
     def z(self) -> NDArray[np.float64]:
         """1-D array of Z grid values."""
-        return np.linspace(self.zmid - self.zdim / 2, self.zmid + self.zdim / 2, self.nh)
+        return cast(
+            NDArray[np.float64],
+            np.linspace(self.zmid - self.zdim / 2, self.zmid + self.zdim / 2, self.nh),
+        )
 
     @property
     def psi_norm(self) -> NDArray[np.float64]:
         """Normalised poloidal flux ψ_N ∈ [0, 1] (axis=0, boundary=1)."""
-        return np.linspace(0.0, 1.0, self.nw)
+        return cast(NDArray[np.float64], np.linspace(0.0, 1.0, self.nw))
 
     def psi_to_norm(self, psi: NDArray[np.float64]) -> NDArray[np.float64]:
         """Map raw ψ to normalised ψ_N."""

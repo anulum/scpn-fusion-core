@@ -29,7 +29,7 @@ from __future__ import annotations
 import logging
 import numpy as np
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, cast
 
 logger = logging.getLogger(__name__)
 
@@ -236,7 +236,7 @@ class FokkerPlanckSolver:
         # Sources
         f_new[1 : N - 1] += dt * (S_av[1 : N - 1] + S_dr[1 : N - 1] + S_ko[1 : N - 1])
 
-        self.f = np.maximum(0, f_new)
+        self.f = cast(np.ndarray, np.maximum(0.0, f_new))
         self.time += dt
 
         dp = self.dp

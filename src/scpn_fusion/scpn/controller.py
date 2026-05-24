@@ -179,13 +179,17 @@ class NeuroSymbolicController(
         )
         self._delay_delayed_idx = np.flatnonzero(self._delay_ticks > 0).astype(np.int64, copy=False)
         if self._delay_delayed_idx.size:
-            self._delay_delayed_offsets = np.asarray(
-                self._delay_ticks[self._delay_delayed_idx], dtype=np.int64
+            self._delay_delayed_offsets = cast(
+                NDArray[np.int64],
+                np.asarray(self._delay_ticks[self._delay_delayed_idx], dtype=np.int64),
             )
-            self._tmp_delay_slots = np.zeros(self._delay_delayed_idx.size, dtype=np.int64)
+            self._tmp_delay_slots = cast(
+                NDArray[np.int64],
+                np.zeros(self._delay_delayed_idx.size, dtype=np.int64),
+            )
         else:
-            self._delay_delayed_offsets = np.asarray([], dtype=np.int64)
-            self._tmp_delay_slots = np.asarray([], dtype=np.int64)
+            self._delay_delayed_offsets = cast(NDArray[np.int64], np.asarray([], dtype=np.int64))
+            self._tmp_delay_slots = cast(NDArray[np.int64], np.asarray([], dtype=np.int64))
         self._max_delay_ticks = int(np.max(self._delay_ticks)) if self._delay_ticks.size else 0
         pending_len = self._max_delay_ticks + 1
         self._oracle_pending = np.zeros((pending_len, self._nT), dtype=np.float64)

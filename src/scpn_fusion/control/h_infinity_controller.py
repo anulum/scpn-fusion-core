@@ -348,7 +348,9 @@ class HInfinityController:
         # The last term corrects for integrator wind-up when the output saturates.
         innovation = y - self.C2 @ self.state
         aw_correction = self._Bd_u @ (u - u_raw)
-        self.state = self._Ad @ self.state + self._Bd_u @ u + self._Ld @ innovation + aw_correction
+        self.state[:] = (
+            self._Ad @ self.state + self._Bd_u @ u + self._Ld @ innovation + aw_correction
+        )
 
         return float(u[0]) if u.size > 1 else float(u.item())
 

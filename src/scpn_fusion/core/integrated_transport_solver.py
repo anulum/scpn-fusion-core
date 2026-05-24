@@ -456,7 +456,7 @@ def calculate_sauter_bootstrap_current_full(rho, Te, Ti, ne, q, R0, a, B0, Z_eff
     j_val = np.where(dr_ok & B_ok & np.isfinite(j_val), j_val, 0.0)
     j_bs[i_full] = j_val
 
-    j_bs = np.nan_to_num(j_bs, nan=0.0, posinf=0.0, neginf=0.0)
+    j_bs[:] = np.nan_to_num(j_bs, nan=0.0, posinf=0.0, neginf=0.0)
     j_bs[0] = 0.0
     j_bs[-1] = 0.0
     return j_bs

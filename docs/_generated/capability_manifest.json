@@ -2308,6 +2308,10 @@
         "path": "scpn-fusion-rs/crates/fusion-physics"
       },
       {
+        "name": "fusion-polyglot",
+        "path": "scpn-fusion-rs/crates/fusion-polyglot"
+      },
+      {
         "name": "fusion-types",
         "path": "scpn-fusion-rs/crates/fusion-types"
       },
@@ -2325,8 +2329,8 @@
     "public_documentation_pages": 61,
     "python_capability_classes": 485,
     "python_capability_source_modules": 262,
-    "rust_workspace_crates": 11,
-    "test_files": 377
+    "rust_workspace_crates": 12,
+    "test_files": 379
   },
   "documentation": {
     "public_pages": [
@@ -2714,6 +2718,8 @@
       "tests/test_plasma_knm.py",
       "tests/test_plasma_startup.py",
       "tests/test_plasma_wall_interaction.py",
+      "tests/test_polyglot_gs_benchmark.py",
+      "tests/test_polyglot_gs_solver_contract.py",
       "tests/test_pretrained_surrogates.py",
       "tests/test_psi_pointwise_rmse.py",
       "tests/test_psi_pointwise_rmse_cli.py",

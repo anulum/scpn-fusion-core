@@ -31,9 +31,9 @@ metric-scoped and are not same-work Rust-versus-Python physics speedups.
 | Python capability source modules | 262 |
 | Python capability classes | 485 |
 | Capability documentation pages | 61 |
-| Rust workspace crates | 11 |
+| Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 377 |
+| Python test files | 379 |
 | Public documentation pages | 61 |
 | GitHub Actions workflows | 12 |
 

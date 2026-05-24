@@ -137,9 +137,9 @@ class NonlinearMPC:
         """Optimise action sequence and return the first action u_0."""
         action_dim = self.dynamics.action_dim
         if u_guess is None:
-            U = np.zeros((self.horizon, action_dim))
+            U: FloatArray = np.zeros((self.horizon, action_dim), dtype=np.float64)
         else:
-            U = u_guess.copy()
+            U = np.asarray(u_guess, dtype=np.float64).copy()
 
         if _HAS_JAX:
             self.last_backend = "jax"

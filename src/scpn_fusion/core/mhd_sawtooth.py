@@ -41,7 +41,7 @@ class ReducedMHD:
         self.eta = 1.0 / self.S
         self.nu = 1e-4  # viscosity
 
-        self.psi_11 = 1e-4 * self.r * (1 - self.r) * (1 + 1j)
+        self.psi_11[:] = 1e-4 * self.r * (1 - self.r) * (1 + 1j)
 
     def laplacian(self, f: np.ndarray, m: int = 1) -> np.ndarray:
         """Radial Laplacian: 1/r d/dr (r df/dr) - m^2/r^2 f"""
