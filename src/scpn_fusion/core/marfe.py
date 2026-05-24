@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — MARFE Radiation Front Stability
+"""MARFE radiation-condensation, front evolution, and density-limit helpers."""
+
 from __future__ import annotations
 
 import math
@@ -15,7 +17,10 @@ from scpn_fusion.core.impurity_transport import CoolingCurve
 
 
 class RadiationCondensation:
+    """Local radiation-condensation growth model for impurity-cooled plasma."""
+
     def __init__(self, impurity: str, ne_20: float, f_imp: float):
+        """Initialize impurity cooling curve and density/fraction parameters."""
         self.impurity = impurity
         self.ne_20 = ne_20
         self.f_imp = f_imp
@@ -47,6 +52,7 @@ class RadiationCondensation:
         return float(gamma)
 
     def is_unstable(self, Te_eV: float, k_par: float, kappa_par: float) -> bool:
+        """Return whether the condensation growth rate is positive."""
         return self.growth_rate(Te_eV, k_par, kappa_par) > 0.0
 
     def critical_density(self, Te_eV: float, k_par: float, kappa_par: float) -> float:
@@ -63,7 +69,10 @@ class RadiationCondensation:
 
 
 class MARFEFrontModel:
+    """One-dimensional parallel heat-balance model for a MARFE front."""
+
     def __init__(self, L_par: float, kappa_par: float, q_perp: float, impurity: str, f_imp: float):
+        """Initialize parallel grid, heat conduction, heating, and impurity state."""
         self.L_par = L_par
         self.kappa_par = kappa_par
         self.q_perp = q_perp
@@ -77,6 +86,7 @@ class MARFEFrontModel:
         self.curve = CoolingCurve(impurity)
 
     def step(self, dt: float, ne_20: float) -> np.ndarray:
+        """Advance the parallel temperature profile by one implicit step."""
         import scipy.linalg
 
         ne = ne_20 * 1e20
@@ -121,11 +131,13 @@ class MARFEFrontModel:
         return self.T
 
     def equilibrium(self, ne_20: float) -> np.ndarray:
+        """Relax the front model toward a steady temperature profile."""
         for _ in range(1000):
             self.step(1e-4, ne_20)
         return self.T
 
     def is_marfe(self) -> bool:
+        """Return whether the current profile contains a collapsed cold front."""
         # A MARFE is a localized cold spot.
         # If the minimum T is < 20 eV and there is a steep gradient, it's collapsed.
         min_T = np.min(self.T)
@@ -134,6 +146,8 @@ class MARFEFrontModel:
 
 
 class DensityLimitPredictor:
+    """Greenwald and MARFE density-limit scaling helpers."""
+
     @staticmethod
     def greenwald_limit(Ip_MA: float, a: float) -> float:
         """n_GW in 10^20 m^-3."""
@@ -154,6 +168,8 @@ class DensityLimitPredictor:
 
 
 class MARFEStabilityDiagram:
+    """Density-power stability map for MARFE onset."""
+
     def __init__(
         self,
         R0: float,
@@ -163,6 +179,7 @@ class MARFEStabilityDiagram:
         Ip_MA: float = 15.0,
         f_imp: float = 1e-4,
     ):
+        """Initialize tokamak geometry, current, q95, and impurity parameters."""
         if not np.isfinite(R0) or float(R0) <= 0.0:
             raise ValueError("R0 must be finite and > 0.")
         if not np.isfinite(a) or float(a) <= 0.0:
@@ -181,6 +198,7 @@ class MARFEStabilityDiagram:
         self.f_imp = float(f_imp)
 
     def scan_density_power(self, ne_range: np.ndarray, P_SOL_range: np.ndarray) -> np.ndarray:
+        """Classify density-power grid points as MARFE-stable or unstable."""
         ne_arr = np.asarray(ne_range, dtype=float)
         psol_arr = np.asarray(P_SOL_range, dtype=float)
         if ne_arr.ndim != 1 or psol_arr.ndim != 1:
