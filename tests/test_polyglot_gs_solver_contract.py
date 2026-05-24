@@ -193,6 +193,14 @@ def _assert_matches_case(candidate_psi: np.ndarray, case: dict[str, float | int]
     assert axis_r_index == candidate_psi.shape[1] // 2
     assert 0 < axis_z_index < candidate_psi.shape[0] - 1
     assert 0 < axis_r_index < candidate_psi.shape[1] - 1
+    axis_value = candidate_psi[axis_z_index, axis_r_index]
+    nearest_neighbors = [
+        candidate_psi[axis_z_index - 1, axis_r_index],
+        candidate_psi[axis_z_index + 1, axis_r_index],
+        candidate_psi[axis_z_index, axis_r_index - 1],
+        candidate_psi[axis_z_index, axis_r_index + 1],
+    ]
+    assert axis_value - max(nearest_neighbors) > 1e-6
     assert float(np.min(candidate_psi)) >= -1e-14
     assert float(np.max(candidate_psi[1:-1, 1:-1])) > 1e-8
 

@@ -79,6 +79,27 @@ def test_axis_radial_center_offset_counts_cells_from_geometric_center() -> None:
     assert benchmark._axis_radial_center_offset_cells(shifted) == 1
 
 
+def test_axis_local_dominance_margin_detects_flat_axis_plateau() -> None:
+    """Benchmark reports must expose whether the magnetic axis is a strict local maximum."""
+    dominant = np.array(
+        [
+            [0.0, 1.0, 0.0],
+            [1.0, 3.0, 1.5],
+            [0.0, 1.0, 0.0],
+        ]
+    )
+    plateau = np.array(
+        [
+            [0.0, 1.0, 0.0],
+            [1.0, 2.0, 2.0],
+            [0.0, 1.0, 0.0],
+        ]
+    )
+
+    assert benchmark._axis_local_dominance_margin(dominant) == 1.5
+    assert benchmark._axis_local_dominance_margin(plateau) == 0.0
+
+
 def test_negative_flux_overshoot_metric_reports_maximum_negative_well() -> None:
     """Benchmark reports must expose nonphysical negative-flux overshoot."""
     nonnegative = np.array(
