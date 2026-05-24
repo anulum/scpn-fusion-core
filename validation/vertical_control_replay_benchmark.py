@@ -83,6 +83,7 @@ class BenchmarkThresholds:
     max_final_abs_z_m: float = 0.004
     max_abs_command: float = 0.45
     max_abs_slew: float = 0.035
+    max_post_disturbance_decay_ratio: float = 0.75
 
 
 class Controller(Protocol):
@@ -459,6 +460,7 @@ def _simulate(
     *,
     scenario: ReplayScenario,
     limits: ActuatorLimits,
+    thresholds: BenchmarkThresholds,
     plant_contract: VerticalPlantContract,
     growth_scale: float = 1.0,
     damping_scale: float = 1.0,
@@ -511,6 +513,12 @@ def _simulate(
     raw_exceeds_abs = np.abs(raw_commands) > limits.max_abs_command + 1.0e-12
     raw_slew = np.diff(np.asarray([0.0, *raw_command_trace], dtype=np.float64))
     raw_exceeds_slew = np.abs(raw_slew) > limits.max_slew_per_step + 1.0e-12
+    relaxation_start_index = min(
+        max(0, int(scenario.disturbance_stop_step)), max(0, len(z_trace) - 1)
+    )
+    relaxation_start_abs = float(abs_z[relaxation_start_index])
+    relaxation_end_abs = float(abs_z[-1])
+    relaxation_ratio = relaxation_end_abs / max(relaxation_start_abs, 1.0e-12)
     return {
         "n_steps": int(scenario.n_steps),
         "final_abs_z_m": float(abs_z[-1]),
@@ -527,6 +535,16 @@ def _simulate(
             "max_bounded_abs_slew": float(np.max(slews)),
             "abs_command_clipped_samples": int(np.count_nonzero(raw_exceeds_abs)),
             "slew_limited_samples": int(np.count_nonzero(raw_exceeds_slew)),
+        },
+        "post_disturbance_relaxation": {
+            "start_step": int(scenario.disturbance_stop_step),
+            "start_abs_z_m": relaxation_start_abs,
+            "end_abs_z_m": relaxation_end_abs,
+            "displacement_decay_ratio": float(relaxation_ratio),
+            "max_decay_ratio": float(thresholds.max_post_disturbance_decay_ratio),
+            "passes": bool(
+                relaxation_ratio <= thresholds.max_post_disturbance_decay_ratio + 1.0e-12
+            ),
         },
         "trace_checksums": {
             "state_z_m_sha256": _sha256_json(z_trace),
@@ -580,18 +598,21 @@ def _run_controller(
     *,
     scenario: ReplayScenario,
     limits: ActuatorLimits,
+    thresholds: BenchmarkThresholds,
     plant_contract: VerticalPlantContract,
 ) -> dict[str, Any]:
     nominal = _simulate(
         _controller_factory(controller_id),
         scenario=scenario,
         limits=limits,
+        thresholds=thresholds,
         plant_contract=plant_contract,
     )
     high_growth = _simulate(
         _controller_factory(controller_id),
         scenario=scenario,
         limits=limits,
+        thresholds=thresholds,
         plant_contract=plant_contract,
         growth_scale=1.0 + scenario.uncertainty_scale,
     )
@@ -599,6 +620,7 @@ def _run_controller(
         _controller_factory(controller_id),
         scenario=scenario,
         limits=limits,
+        thresholds=thresholds,
         plant_contract=plant_contract,
         actuator_scale=1.0 - scenario.uncertainty_scale,
     )
@@ -609,6 +631,7 @@ def _run_controller(
                 _controller_factory(controller_id),
                 scenario=scenario,
                 limits=limits,
+                thresholds=thresholds,
                 plant_contract=plant_contract,
                 growth_scale=float(case["growth_scale"]),
                 damping_scale=float(case["damping_scale"]),
@@ -656,6 +679,7 @@ def _passes(
         <= min(thresholds.max_abs_command, limits.max_abs_command) + 1.0e-12
         and result["max_abs_slew"]
         <= min(thresholds.max_abs_slew, limits.max_slew_per_step) + 1.0e-12
+        and result["post_disturbance_relaxation"]["passes"]
     )
 
 
@@ -716,6 +740,7 @@ def run_benchmark(
             cid,
             scenario=scenario,
             limits=actuator_limits,
+            thresholds=thresholds,
             plant_contract=plant_contract,
         )
         for cid in CONTROLLER_IDS
@@ -725,6 +750,7 @@ def run_benchmark(
             cid,
             scenario=scenario,
             limits=actuator_limits,
+            thresholds=thresholds,
             plant_contract=plant_contract,
         )
         for cid in CONTROLLER_IDS
@@ -836,6 +862,27 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"| {cid} | {result['p95_abs_z_m']:.6f} | {result['final_abs_z_m']:.6f} | "
             f"{result['max_abs_command']:.6f} | {result['max_abs_slew']:.6f} | "
             f"{'YES' if bench['controller_passes'][cid] else 'NO'} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Post-disturbance relaxation",
+            "",
+            "- Primary controllers must reduce vertical displacement after the "
+            "disturbance window ends.",
+            f"- Maximum accepted final/start ratio: "
+            f"`{bench['thresholds']['max_post_disturbance_decay_ratio']:.3f}`",
+            "",
+            "| Controller | Start |z| (m) | Final/start ratio | Pass |",
+            "|------------|----------------|-------------------|------|",
+        ]
+    )
+    for cid, result in bench["controllers"].items():
+        relaxation = result["post_disturbance_relaxation"]
+        lines.append(
+            f"| {cid} | {relaxation['start_abs_z_m']:.6f} | "
+            f"{relaxation['displacement_decay_ratio']:.6f} | "
+            f"{'YES' if relaxation['passes'] else 'NO'} |"
         )
     lines.extend(
         [

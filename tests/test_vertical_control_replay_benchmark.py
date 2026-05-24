@@ -84,9 +84,15 @@ def test_controller_results_include_replay_metrics_and_uncertainty() -> None:
         assert result["n_steps"] == bench["scenario"]["n_steps"]
         assert result["max_abs_command"] <= bench["actuator_limits"]["max_abs_command"] + 1.0e-12
         assert result["max_abs_slew"] <= bench["actuator_limits"]["max_slew_per_step"] + 1.0e-12
+        relaxation = result["post_disturbance_relaxation"]
+        assert relaxation["start_step"] == bench["scenario"]["disturbance_stop_step"]
+        assert relaxation["end_abs_z_m"] == pytest.approx(result["final_abs_z_m"])
+        assert relaxation["max_decay_ratio"] == pytest.approx(0.75)
         if bench["controller_roles"][controller_id] == "primary":
             assert result["p95_abs_z_m"] <= bench["thresholds"]["max_p95_abs_z_m"]
             assert result["final_abs_z_m"] <= bench["thresholds"]["max_final_abs_z_m"]
+            assert relaxation["passes"] is True
+            assert relaxation["displacement_decay_ratio"] <= relaxation["max_decay_ratio"]
         assert result["uncertainty"]["max_abs_z_m"] >= result["uncertainty"]["nominal_abs_z_m"]
         assert result["uncertainty"]["n_cases"] == bench["uncertainty_report"]["n_scenarios"]
         assert result["uncertainty"]["p95_abs_z_m_p95"] <= max(

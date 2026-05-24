@@ -154,13 +154,19 @@
             "max_p95_abs_z_m",
             "max_final_abs_z_m",
             "max_abs_command",
-            "max_abs_slew"
+            "max_abs_slew",
+            "max_post_disturbance_decay_ratio"
           ],
           "properties": {
             "max_p95_abs_z_m": {"type": "number", "minimum": 0.0},
             "max_final_abs_z_m": {"type": "number", "minimum": 0.0},
             "max_abs_command": {"type": "number", "exclusiveMinimum": 0.0},
-            "max_abs_slew": {"type": "number", "exclusiveMinimum": 0.0}
+            "max_abs_slew": {"type": "number", "exclusiveMinimum": 0.0},
+            "max_post_disturbance_decay_ratio": {
+              "type": "number",
+              "exclusiveMinimum": 0.0,
+              "maximum": 1.0
+            }
           }
         },
         "deterministic_replay_pass": {"type": "boolean"},
@@ -347,6 +353,7 @@
         "max_abs_slew",
         "final_command",
         "actuator_limit_application",
+        "post_disturbance_relaxation",
         "trace_checksums",
         "uncertainty"
       ],
@@ -378,6 +385,30 @@
             "max_bounded_abs_slew": {"type": "number", "minimum": 0.0},
             "abs_command_clipped_samples": {"type": "integer", "minimum": 0},
             "slew_limited_samples": {"type": "integer", "minimum": 0}
+          }
+        },
+        "post_disturbance_relaxation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "start_step",
+            "start_abs_z_m",
+            "end_abs_z_m",
+            "displacement_decay_ratio",
+            "max_decay_ratio",
+            "passes"
+          ],
+          "properties": {
+            "start_step": {"type": "integer", "minimum": 0},
+            "start_abs_z_m": {"type": "number", "minimum": 0.0},
+            "end_abs_z_m": {"type": "number", "minimum": 0.0},
+            "displacement_decay_ratio": {"type": "number", "minimum": 0.0},
+            "max_decay_ratio": {
+              "type": "number",
+              "exclusiveMinimum": 0.0,
+              "maximum": 1.0
+            },
+            "passes": {"type": "boolean"}
           }
         },
         "trace_checksums": {

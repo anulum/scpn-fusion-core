@@ -75,6 +75,20 @@ is benchmarked with deterministic reconstruction checks:
 | Max relative power-balance error | 2.4e-16 | same |
 | Threshold | <= 1e-6 | same |
 
+### Vertical-Control Replay Contract
+
+The vertical-control replay benchmark exercises deterministic RZIP-backed
+vertical-axis plant dynamics across PID, super-twisting, and repository
+sliding-mode controller lanes, with a `no_control` diagnostic lane retained
+to prove that the acceptance gate is sensitive to missing control action.
+
+| Contract | Acceptance evidence | Command |
+|----------|---------------------|---------|
+| Deterministic replay | Repeat controller traces and RZIP state trajectory checksums must match | `python validation/vertical_control_replay_benchmark.py --strict` |
+| Actuator bounds | Commands are clipped after controller output and must respect amplitude and slew limits | same |
+| Post-disturbance relaxation | Primary controllers must reduce vertical displacement after the disturbance window ends | same |
+| Uncertainty envelope | Growth, damping, actuator, sensor-bias, and one-step latency perturbations are replayed | same |
+
 ### Equilibrium Solver Convergence
 
 **Current production path (Picard + Red-Black SOR):**
