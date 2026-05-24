@@ -130,18 +130,18 @@ impl DriftWavePhysics {
                 },
             );
 
-        let phi_k = Array2::from_shape_fn((n, n), |_| {
-            Complex64::new(
-                rng.sample::<f64, _>(StandardNormal) * 0.01,
-                rng.sample::<f64, _>(StandardNormal) * 0.01,
-            )
-        });
-        let n_k = Array2::from_shape_fn((n, n), |_| {
-            Complex64::new(
-                rng.sample::<f64, _>(StandardNormal) * 0.01,
-                rng.sample::<f64, _>(StandardNormal) * 0.01,
-            )
-        });
+        let phi_real =
+            Array2::from_shape_fn((n, n), |_| rng.sample::<f64, _>(StandardNormal) * 0.01);
+        let n_real = Array2::from_shape_fn((n, n), |_| rng.sample::<f64, _>(StandardNormal) * 0.01);
+        let mut phi_k = fft2(&phi_real);
+        let mut n_k = fft2(&n_real);
+        for i in 0..n {
+            for j in 0..n {
+                let mask_value = Complex64::new(mask[[i, j]], 0.0);
+                phi_k[[i, j]] *= mask_value;
+                n_k[[i, j]] *= mask_value;
+            }
+        }
 
         // Evenly spaced probes
         let stride = (n * n) / N_PROBES;
@@ -614,6 +614,20 @@ mod tests {
 
         assert_ne!(first.phi_k, second.phi_k);
         assert_ne!(first.n_k, second.n_k);
+    }
+
+    #[test]
+    fn test_hw_initial_spectra_reconstruct_real_fields() {
+        let hw = DriftWavePhysics::with_seed(32, 1729);
+
+        for i in 0..hw.n {
+            for j in 0..hw.n {
+                let mirror_i = (hw.n - i) % hw.n;
+                let mirror_j = (hw.n - j) % hw.n;
+                assert!((hw.phi_k[[i, j]] - hw.phi_k[[mirror_i, mirror_j]].conj()).norm() < 1e-12);
+                assert!((hw.n_k[[i, j]] - hw.n_k[[mirror_i, mirror_j]].conj()).norm() < 1e-12);
+            }
+        }
     }
 
     #[test]

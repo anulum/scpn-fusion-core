@@ -71,6 +71,12 @@ class TestDriftWavePhysics:
         assert not np.allclose(first.phi_k, second.phi_k, rtol=0.0, atol=0.0)
         assert not np.allclose(first.n_k, second.n_k, rtol=0.0, atol=0.0)
 
+    def test_initial_spectra_reconstruct_real_fields(self):
+        hw = DriftWavePhysics(N=16, seed=1729)
+
+        np.testing.assert_allclose(np.fft.ifft2(hw.phi_k).imag, 0.0, atol=1.0e-15)
+        np.testing.assert_allclose(np.fft.ifft2(hw.n_k).imag, 0.0, atol=1.0e-15)
+
 
 class TestOracleESN:
     def test_init(self):
