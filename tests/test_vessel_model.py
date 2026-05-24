@@ -42,6 +42,32 @@ def test_vessel_current_decay():
     assert model.I[0] == pytest.approx(expected, rel=0.01)
 
 
+def test_vessel_step_remains_stable_for_large_resistive_step() -> None:
+    """Backward circuit solve damps eddy current without sign reversal."""
+    inductance = 1e-6
+    resistance = 1e-3
+    tau = inductance / resistance
+    element = VesselElement(R=1.0, Z=0.0, resistance=resistance, cross_section=0.01, inductance=inductance)
+    model = VesselModel([element])
+    model.I = np.array([1000.0])
+
+    model.step(2.0 * tau, np.array([0.0]))
+
+    assert model.I[0] == pytest.approx(1000.0 / 3.0)
+    assert model.I[0] > 0.0
+
+
+def test_vessel_step_rejects_invalid_flux_drive() -> None:
+    element = VesselElement(R=1.0, Z=0.0, resistance=1e-3, cross_section=0.01, inductance=1e-6)
+    model = VesselModel([element])
+
+    with pytest.raises(ValueError, match="dphi_ext_dt"):
+        model.step(1e-6, np.array([0.0, 1.0]))
+
+    with pytest.raises(ValueError, match="dphi_ext_dt"):
+        model.step(1e-6, np.array([np.nan]))
+
+
 def test_vessel_symmetry():
     """Verify that a symmetric vessel responds symmetrically to symmetric drive."""
     # Two symmetric elements at +/- Z

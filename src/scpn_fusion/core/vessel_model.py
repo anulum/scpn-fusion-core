@@ -106,8 +106,9 @@ class VesselModel:
     def step(self, dt: float, dphi_ext_dt: np.ndarray) -> np.ndarray:
         """Advance eddy currents by one time step.
 
-        M * dI/dt + R * I = -dPhi_ext/dt
-        dI/dt = M^-1 * (-R*I - dPhi_ext/dt)
+        M * dI/dt + R * I = -dPhi_ext/dt.
+        The update uses a backward Euler circuit solve:
+        (M + dt R) I_{n+1} = M I_n - dt dPhi_ext/dt.
 
         Parameters
         ----------
@@ -124,10 +125,13 @@ class VesselModel:
         if dt <= 0:
             return self.I
 
-        # Explicit Euler for simplicity (or Trapezoidal if needed)
-        # V_ind = -dphi_ext_dt
-        dI_dt = self.M_inv @ (-self.R_mat @ self.I - dphi_ext_dt)
-        self.I += dI_dt * dt
+        drive = np.asarray(dphi_ext_dt, dtype=float)
+        if drive.shape != (self.n_elements,) or not np.all(np.isfinite(drive)):
+            raise ValueError(f"dphi_ext_dt must be finite with shape ({self.n_elements},)")
+
+        lhs = self.M + dt * self.R_mat
+        rhs = self.M @ self.I - dt * drive
+        self.I = np.linalg.solve(lhs, rhs)
         return self.I
 
     def psi_vessel(self, R: np.ndarray, Z: np.ndarray) -> np.ndarray:
