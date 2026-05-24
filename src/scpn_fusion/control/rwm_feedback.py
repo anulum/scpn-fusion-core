@@ -19,6 +19,7 @@ class RWMPhysics:
     """
 
     def __init__(self, beta_n: float, beta_n_nowall: float, beta_n_wall: float, tau_wall: float):
+        """Initialize normalized-beta limits and the resistive-wall time constant."""
         self.beta_n = beta_n
         self.beta_n_nowall = beta_n_nowall
         self.beta_n_wall = beta_n_wall
@@ -67,6 +68,7 @@ class RWMFeedbackController:
         tau_controller: float = 1e-4,
         M_coil: float = 1.0,
     ):
+        """Initialize sensor/coil dimensions and proportional-derivative gains."""
         self.n_sensors = n_sensors
         self.n_coils = n_coils
         self.G_p = G_p

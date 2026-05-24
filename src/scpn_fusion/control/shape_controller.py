@@ -41,6 +41,7 @@ class CoilSet:
     """PF coil geometry and current limits."""
 
     def __init__(self, n_coils: int = 10):
+        """Initialize an idealized PF coil set with symmetric current limits."""
         self.n_coils = n_coils
         self.max_currents = np.ones(n_coils) * 50e3
 
@@ -49,6 +50,7 @@ class ShapeJacobian:
     """d(e_shape)/dI_coils sensitivity matrix with deterministic geometry basis."""
 
     def __init__(self, kernel: Any, coil_set: CoilSet, target: ShapeTarget):
+        """Initialize the shape-error sensitivity model for a target and coil set."""
         self.kernel = kernel
         self.coil_set = coil_set
         self.target = target
@@ -191,6 +193,7 @@ class PlasmaShapeController:
     """Real-time shape controller using Tikhonov-regularized pseudoinverse."""
 
     def __init__(self, target: ShapeTarget, coil_set: CoilSet, kernel: Any):
+        """Initialize target weighting, Jacobian state, and regularized shape gain."""
         self.target = target
         self.coil_set = coil_set
         self.kernel = kernel

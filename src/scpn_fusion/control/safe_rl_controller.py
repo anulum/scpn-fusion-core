@@ -28,6 +28,7 @@ class ConstrainedGymTokamakEnv:
     """Wrapper to compute and report constraint costs."""
 
     def __init__(self, base_env: Any, constraints: list[SafetyConstraint]):
+        """Wrap a Gym-like environment with named safety constraints."""
         self.base_env = base_env
         self.constraints = constraints
         self.n_constraints = len(constraints)
@@ -60,6 +61,7 @@ class LagrangianPPO:
     """PPO augmented with Lagrangian multipliers for constrained RL."""
 
     def __init__(self, env: ConstrainedGymTokamakEnv, lambda_lr: float = 0.01, gamma: float = 0.99):
+        """Initialize constrained-policy state and dual update hyperparameters."""
         self.env = env
         self.n_constraints = env.n_constraints
         self.lambdas = np.zeros(self.n_constraints)

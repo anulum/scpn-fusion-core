@@ -32,6 +32,7 @@ class ScenarioSchedule:
     """Collection of named waveforms defining a tokamak discharge scenario."""
 
     def __init__(self, waveforms: dict[str, ScenarioWaveform]):
+        """Initialize the schedule from actuator or reference-state waveforms."""
         self.waveforms = waveforms
 
     def evaluate(self, t: float) -> dict[str, float]:
@@ -67,6 +68,7 @@ class FeedforwardController:
     """Combines pre-computed feedforward trajectories with a feedback trim."""
 
     def __init__(self, schedule: ScenarioSchedule, feedback: Callable):
+        """Bind a scenario schedule to a feedback correction callback."""
         self.schedule = schedule
         self.feedback = feedback
 
@@ -93,6 +95,7 @@ class ScenarioOptimizer:
     def __init__(
         self, plant_model: Callable, target_state: np.ndarray, T_total: float, dt: float = 0.5
     ):
+        """Initialize an offline waveform optimizer for a target terminal state."""
         self.plant_model = plant_model
         self.target_state = target_state
         self.T_total = T_total

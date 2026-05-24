@@ -72,6 +72,7 @@ class RunawayElectronModel:
         neon_mol: float = 0.0,
         runaway_beam_radius_m: float = 0.02,
     ) -> None:
+        """Initialize plasma, impurity, and beam-radius parameters for RE evolution."""
         self.n_e_free = _as_positive_float("n_e", n_e)
         self.T_e0 = _as_positive_float("T_e_keV", T_e_keV)
         self.R0 = _as_positive_float("major_radius_m", major_radius_m)

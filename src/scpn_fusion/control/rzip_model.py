@@ -31,6 +31,7 @@ class RZIPModel:
         vessel: VesselModel,
         active_coils: list[VesselElement] | None = None,
     ):
+        """Initialize rigid-plasma, vessel, and active-coil circuit parameters."""
         self.R0 = R0
         self.a = a
         self.kappa = kappa
@@ -233,6 +234,7 @@ class RZIPController:
     """LQR-style voltage controller for RZIP vertical-position states."""
 
     def __init__(self, rzip: RZIPModel, Kp: float, Kd: float):
+        """Initialize feedback weights and precompute the controller gain matrix."""
         self.rzip = rzip
         self.Kp = max(Kp, 1.0)
         self.Kd = max(Kd, 1.0)
