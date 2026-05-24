@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Multi-Species Impurity Transport
+"""Multi-species impurity transport, cooling, radiation, and accumulation diagnostics."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,6 +17,8 @@ import numpy as np
 
 @dataclass
 class ImpuritySpecies:
+    """Impurity species metadata and edge source parameters."""
+
     element: str
     Z_nucleus: int
     mass_amu: float
@@ -41,6 +45,7 @@ class CoolingCurve:
         self.element = element
 
     def L_z(self, Te_eV: np.ndarray) -> np.ndarray:
+        """Evaluate the element cooling curve for electron temperatures."""
         Te = np.asarray(Te_eV, dtype=float)
         valid = np.isfinite(Te) & (Te > 0.0)
         if not np.any(valid):
@@ -127,6 +132,7 @@ def total_radiated_power(
 
 
 def tungsten_accumulation_diagnostic(n_W: np.ndarray, ne: np.ndarray) -> dict[str, Any]:
+    """Return core/edge tungsten concentration and accumulation danger level."""
     c_W_core = float(n_W[0] / max(ne[0], 1e-6))
     c_W_edge = float(n_W[-1] / max(ne[-1], 1e-6))
 
@@ -148,7 +154,10 @@ def tungsten_accumulation_diagnostic(n_W: np.ndarray, ne: np.ndarray) -> dict[st
 
 
 class ImpurityTransportSolver:
+    """Implicit radial impurity transport solver for multiple species."""
+
     def __init__(self, rho: np.ndarray, R0: float, a: float, species: list[ImpuritySpecies]):
+        """Initialize geometry, species inventory, and radial impurity state."""
         self.rho = np.asarray(rho, dtype=float)
         self.R0 = R0
         self.a = a
