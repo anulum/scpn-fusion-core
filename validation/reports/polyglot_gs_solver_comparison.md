@@ -32,20 +32,20 @@ Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-b
 
 | Language | Implementation | Wall time (s) |
 |----------|----------------|---------------|
-| Python | `gs_solve_np` | 0.006087 |
-| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 7.813054 |
-| Go | `gssolver.Solve` | 0.002794 |
-| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.003788 |
-| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.876890 |
+| Python | `gs_solve_np` | 0.004760 |
+| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 4.874313 |
+| Go | `gssolver.Solve` | 0.002540 |
+| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.001926 |
+| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.135636 |
 
 ## Numerical Parity
 
-| Language | Interior relative L2 vs Python | Boundary absolute maximum |
-|----------|--------------------------------|---------------------------|
-| Julia | 8.983125e-17 | 0.000000e+00 |
-| Go | 1.790625e-16 | 0.000000e+00 |
-| Rust | 5.906398e-16 | 0.000000e+00 |
-| Lean | 1.123308e-14 | 0.000000e+00 |
+| Language | Interior relative L2 vs Python | Interior max abs error vs Python | Boundary absolute maximum |
+|----------|--------------------------------|----------------------------------|---------------------------|
+| Julia | 8.983125e-17 | 1.387779e-17 | 0.000000e+00 |
+| Go | 1.790625e-16 | 1.387779e-17 | 0.000000e+00 |
+| Rust | 5.906398e-16 | 4.163336e-17 | 0.000000e+00 |
+| Lean | 1.123308e-14 | 4.857226e-16 | 0.000000e+00 |
 
 ## Physics Invariants
 

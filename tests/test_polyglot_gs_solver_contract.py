@@ -197,8 +197,10 @@ def _assert_matches_case(candidate_psi: np.ndarray, case: dict[str, float | int]
     assert float(np.max(candidate_psi[1:-1, 1:-1])) > 1e-8
 
     denominator = np.linalg.norm(python_psi[1:-1, 1:-1]) + 1e-30
-    relative_l2 = np.linalg.norm(candidate_psi[1:-1, 1:-1] - python_psi[1:-1, 1:-1]) / denominator
+    interior_error = candidate_psi[1:-1, 1:-1] - python_psi[1:-1, 1:-1]
+    relative_l2 = np.linalg.norm(interior_error) / denominator
     assert relative_l2 < 5e-12
+    assert np.max(np.abs(interior_error)) < 5e-12
 
 
 def test_native_julia_grad_shafranov_matches_python_reference() -> None:

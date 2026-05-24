@@ -100,6 +100,26 @@ def test_negative_flux_overshoot_metric_reports_maximum_negative_well() -> None:
     assert benchmark._negative_flux_abs_max(overshoot) == 0.25
 
 
+def test_interior_max_abs_error_excludes_dirichlet_boundary() -> None:
+    """Benchmark parity must expose localized interior solver error."""
+    reference = np.array(
+        [
+            [9.0, 9.0, 9.0],
+            [9.0, 1.0, 9.0],
+            [9.0, 9.0, 9.0],
+        ]
+    )
+    candidate = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.0, 1.25, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+
+    assert benchmark._interior_max_abs_error(candidate, reference) == 0.25
+
+
 def test_axis_boundary_distance_counts_cells_to_nearest_wall() -> None:
     """Benchmark reports must expose whether the magnetic axis is confined."""
     confined = np.array(

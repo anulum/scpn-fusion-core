@@ -209,6 +209,10 @@ def _relative_l2(candidate: np.ndarray, reference: np.ndarray) -> float:
     return float(np.linalg.norm(candidate[1:-1, 1:-1] - reference[1:-1, 1:-1])) / denominator
 
 
+def _interior_max_abs_error(candidate: np.ndarray, reference: np.ndarray) -> float:
+    return float(np.max(np.abs(candidate[1:-1, 1:-1] - reference[1:-1, 1:-1])))
+
+
 def main() -> None:
     case = _read_case(_CASE_PATH)
     python_psi, python_seconds = _run_python(case)
@@ -220,6 +224,7 @@ def main() -> None:
     parity_by_language = {
         "Julia": {
             "relative_l2_interior": _relative_l2(julia_psi, python_psi),
+            "max_abs_error_interior": _interior_max_abs_error(julia_psi, python_psi),
             "boundary_abs_max": _boundary_abs_max(julia_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(julia_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(julia_psi),
@@ -229,6 +234,7 @@ def main() -> None:
         },
         "Go": {
             "relative_l2_interior": _relative_l2(go_psi, python_psi),
+            "max_abs_error_interior": _interior_max_abs_error(go_psi, python_psi),
             "boundary_abs_max": _boundary_abs_max(go_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(go_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(go_psi),
@@ -238,6 +244,7 @@ def main() -> None:
         },
         "Rust": {
             "relative_l2_interior": _relative_l2(rust_psi, python_psi),
+            "max_abs_error_interior": _interior_max_abs_error(rust_psi, python_psi),
             "boundary_abs_max": _boundary_abs_max(rust_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(rust_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(rust_psi),
@@ -247,6 +254,7 @@ def main() -> None:
         },
         "Lean": {
             "relative_l2_interior": _relative_l2(lean_psi, python_psi),
+            "max_abs_error_interior": _interior_max_abs_error(lean_psi, python_psi),
             "boundary_abs_max": _boundary_abs_max(lean_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(lean_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(lean_psi),
@@ -367,13 +375,14 @@ def main() -> None:
             "",
             "## Numerical Parity",
             "",
-            "| Language | Interior relative L2 vs Python | Boundary absolute maximum |",
-            "|----------|--------------------------------|---------------------------|",
+            "| Language | Interior relative L2 vs Python | Interior max abs error vs Python | Boundary absolute maximum |",
+            "|----------|--------------------------------|----------------------------------|---------------------------|",
         ]
     )
     for language, parity in parity_by_language.items():
         lines.append(
-            f"| {language} | {parity['relative_l2_interior']:.6e} | {parity['boundary_abs_max']:.6e} |"
+            f"| {language} | {parity['relative_l2_interior']:.6e} | "
+            f"{parity['max_abs_error_interior']:.6e} | {parity['boundary_abs_max']:.6e} |"
         )
     lines.extend(
         [

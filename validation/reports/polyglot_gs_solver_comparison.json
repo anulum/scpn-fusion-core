@@ -40,6 +40,7 @@
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
         "boundary_abs_max": 0.0,
+        "max_abs_error_interior": 1.3877787807814457e-17,
         "negative_flux_abs_max": 0.0,
         "relative_l2_interior": 1.7906252983703998e-16,
         "vertical_symmetry_abs_max": 0.0
@@ -49,6 +50,7 @@
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
         "boundary_abs_max": 0.0,
+        "max_abs_error_interior": 1.3877787807814457e-17,
         "negative_flux_abs_max": 0.0,
         "relative_l2_interior": 8.983124920046824e-17,
         "vertical_symmetry_abs_max": 0.0
@@ -58,6 +60,7 @@
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
         "boundary_abs_max": 0.0,
+        "max_abs_error_interior": 4.85722573273506e-16,
         "negative_flux_abs_max": 0.0,
         "relative_l2_interior": 1.1233083104582504e-14,
         "vertical_symmetry_abs_max": 0.0
@@ -67,6 +70,7 @@
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
         "boundary_abs_max": 0.0,
+        "max_abs_error_interior": 4.163336342344337e-17,
         "negative_flux_abs_max": 0.0,
         "relative_l2_interior": 5.906398378511105e-16,
         "vertical_symmetry_abs_max": 0.0
@@ -86,7 +90,7 @@
       "language": "Python",
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.006087424990255386
+      "wall_time_s": 0.004759850999107584
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -96,7 +100,7 @@
       "language": "Julia",
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 7.813053869991563
+      "wall_time_s": 4.874312540981919
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -106,7 +110,7 @@
       "language": "Go",
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.002793644991470501
+      "wall_time_s": 0.002539501991122961
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -116,7 +120,7 @@
       "language": "Rust",
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.0037882300093770027
+      "wall_time_s": 0.0019258670217823237
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -126,7 +130,7 @@
       "language": "Lean",
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 1.8768904120079242
+      "wall_time_s": 1.1356360919889994
     }
   ]
 }
