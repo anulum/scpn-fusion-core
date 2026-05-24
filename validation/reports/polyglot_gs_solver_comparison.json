@@ -36,21 +36,25 @@
   "parity": {
     "by_language": {
       "Go": {
+        "axis_midplane_offset_cells": 0,
         "boundary_abs_max": 0.0,
         "relative_l2_interior": 1.7906252983703998e-16,
         "vertical_symmetry_abs_max": 0.0
       },
       "Julia": {
+        "axis_midplane_offset_cells": 0,
         "boundary_abs_max": 0.0,
         "relative_l2_interior": 8.983124920046824e-17,
         "vertical_symmetry_abs_max": 0.0
       },
       "Lean": {
+        "axis_midplane_offset_cells": 0,
         "boundary_abs_max": 0.0,
         "relative_l2_interior": 1.1233083104582504e-14,
         "vertical_symmetry_abs_max": 0.0
       },
       "Rust": {
+        "axis_midplane_offset_cells": 0,
         "boundary_abs_max": 0.0,
         "relative_l2_interior": 5.906398378511105e-16,
         "vertical_symmetry_abs_max": 0.0
@@ -63,34 +67,39 @@
   },
   "solvers": [
     {
+      "axis_midplane_offset_cells": 0,
       "implementation": "gs_solve_np",
       "language": "Python",
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.004566724004689604
+      "wall_time_s": 0.0033020940027199686
     },
     {
+      "axis_midplane_offset_cells": 0,
       "implementation": "SCPNFusionSolvers.solve_grad_shafranov",
       "language": "Julia",
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 5.287138384999707
+      "wall_time_s": 3.7988412929989863
     },
     {
+      "axis_midplane_offset_cells": 0,
       "implementation": "gssolver.Solve",
       "language": "Go",
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.002816138992784545
+      "wall_time_s": 0.004722464014776051
     },
     {
+      "axis_midplane_offset_cells": 0,
       "implementation": "fusion_polyglot::solve_grad_shafranov",
       "language": "Rust",
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.002817151020281017
+      "wall_time_s": 0.0016731490031816065
     },
     {
+      "axis_midplane_offset_cells": 0,
       "implementation": "SCPNFusionSolvers.solveGradShafranov",
       "language": "Lean",
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 1.063282529998105
+      "wall_time_s": 0.8915353380143642
     }
   ]
 }

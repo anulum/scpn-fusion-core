@@ -186,6 +186,8 @@ def _assert_matches_case(candidate_psi: np.ndarray, case: dict[str, float | int]
     assert np.max(np.abs(candidate_psi[:, 0])) < 1e-14
     assert np.max(np.abs(candidate_psi[:, -1])) < 1e-14
     assert np.max(np.abs(candidate_psi - np.flipud(candidate_psi))) < 5e-13
+    axis_z_index = int(np.unravel_index(np.argmax(candidate_psi), candidate_psi.shape)[0])
+    assert axis_z_index == candidate_psi.shape[0] // 2
 
     denominator = np.linalg.norm(python_psi[1:-1, 1:-1]) + 1e-30
     relative_l2 = np.linalg.norm(candidate_psi[1:-1, 1:-1] - python_psi[1:-1, 1:-1]) / denominator

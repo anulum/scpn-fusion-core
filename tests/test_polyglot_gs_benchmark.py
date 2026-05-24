@@ -37,6 +37,27 @@ def test_vertical_symmetry_metric_detects_up_down_asymmetry() -> None:
     assert benchmark._vertical_symmetry_abs_max(asymmetric) == 0.2
 
 
+def test_axis_midplane_offset_counts_cells_from_symmetric_midplane() -> None:
+    """Benchmark reports must expose magnetic-axis displacement from the midplane."""
+    centered = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.0, 2.0, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+    shifted = np.array(
+        [
+            [0.0, 3.0, 0.0],
+            [0.0, 2.0, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+
+    assert benchmark._axis_midplane_offset_cells(centered) == 0
+    assert benchmark._axis_midplane_offset_cells(shifted) == 1
+
+
 def test_rust_benchmark_executes_compiled_release_solver(monkeypatch) -> None:
     """Rust timing must measure the compiled solver binary, not Cargo orchestration."""
     calls: list[tuple[list[str], object]] = []
