@@ -327,7 +327,16 @@ pub struct OracleESN {
 impl OracleESN {
     pub fn new(input_dim: usize, reservoir_size: usize) -> Self {
         let mut rng = rand::thread_rng();
+        Self::from_rng(input_dim, reservoir_size, &mut rng)
+    }
 
+    /// Construct a deterministic ESN reservoir from a fixed seed.
+    pub fn with_seed(input_dim: usize, reservoir_size: usize, seed: u64) -> Self {
+        let mut rng = StdRng::seed_from_u64(seed);
+        Self::from_rng(input_dim, reservoir_size, &mut rng)
+    }
+
+    fn from_rng<R: Rng + ?Sized>(input_dim: usize, reservoir_size: usize, rng: &mut R) -> Self {
         // Input weights: uniform [-1, 1]
         let w_in = Array2::from_shape_fn((reservoir_size, input_dim), |_| rng.gen_range(-1.0..1.0));
 
@@ -612,6 +621,25 @@ mod tests {
         let esn = OracleESN::new(N_PROBES, RESERVOIR_SIZE);
         assert_eq!(esn.reservoir_size, RESERVOIR_SIZE);
         assert_eq!(esn.input_dim, N_PROBES);
+    }
+
+    #[test]
+    fn test_esn_seeded_replay_is_deterministic() {
+        let first = OracleESN::with_seed(N_PROBES, 32, 2718);
+        let second = OracleESN::with_seed(N_PROBES, 32, 2718);
+
+        assert_eq!(first.w_in, second.w_in);
+        assert_eq!(first.w_res, second.w_res);
+        assert_eq!(first.state, second.state);
+    }
+
+    #[test]
+    fn test_esn_distinct_seeds_create_distinct_weights() {
+        let first = OracleESN::with_seed(N_PROBES, 32, 2718);
+        let second = OracleESN::with_seed(N_PROBES, 32, 2719);
+
+        assert_ne!(first.w_in, second.w_in);
+        assert_ne!(first.w_res, second.w_res);
     }
 
     #[test]

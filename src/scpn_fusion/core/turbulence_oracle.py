@@ -133,13 +133,25 @@ class OracleESN:
     """
     Echo State Network (Reservoir Computing).
     Specialized for predicting chaotic time series.
+    Pass ``seed`` for reproducible reservoir construction.
     """
 
-    def __init__(self, input_dim, reservoir_size=500, spectral_radius=0.95):
-        self.W_in = np.random.uniform(-1, 1, (reservoir_size, input_dim))
+    def __init__(self, input_dim, reservoir_size=500, spectral_radius=0.95, seed=None):
+        if seed is None:
+            self.W_in = np.random.uniform(-1, 1, (reservoir_size, input_dim))
+            random_state = None
+        else:
+            rng = np.random.default_rng(seed)
+            self.W_in = rng.uniform(-1, 1, (reservoir_size, input_dim))
+            random_state = seed
 
         # Sparse Reservoir
-        self.W_res = rand(reservoir_size, reservoir_size, density=0.1).toarray()
+        self.W_res = rand(
+            reservoir_size,
+            reservoir_size,
+            density=0.1,
+            random_state=random_state,
+        ).toarray()
 
         # Scale spectral radius
         eigenvalues = np.linalg.eigvals(self.W_res)

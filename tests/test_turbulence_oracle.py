@@ -112,3 +112,18 @@ class TestOracleESN:
 
         assert np.all(np.isfinite(esn.W_res))
         assert np.max(np.abs(esn.W_res)) == 0.0
+
+    def test_seeded_reservoir_replay_is_deterministic(self):
+        first = OracleESN(input_dim=3, reservoir_size=12, seed=2718)
+        second = OracleESN(input_dim=3, reservoir_size=12, seed=2718)
+
+        np.testing.assert_allclose(first.W_in, second.W_in, rtol=0.0, atol=0.0)
+        np.testing.assert_allclose(first.W_res, second.W_res, rtol=0.0, atol=0.0)
+        np.testing.assert_allclose(first.state, second.state, rtol=0.0, atol=0.0)
+
+    def test_distinct_reservoir_seeds_produce_distinct_weights(self):
+        first = OracleESN(input_dim=3, reservoir_size=12, seed=2718)
+        second = OracleESN(input_dim=3, reservoir_size=12, seed=2719)
+
+        assert not np.allclose(first.W_in, second.W_in, rtol=0.0, atol=0.0)
+        assert not np.allclose(first.W_res, second.W_res, rtol=0.0, atol=0.0)
