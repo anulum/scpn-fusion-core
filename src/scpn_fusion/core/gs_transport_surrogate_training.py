@@ -205,6 +205,7 @@ class MLPSurrogate:
         self.b3 = np.zeros(input_dim, dtype=np.float64)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
+        """Evaluate the MLP transport surrogate for one or more profiles."""
         h = _gelu(x @ self.W1 + self.b1)
         h = _gelu(h @ self.W2 + self.b2)
         return h @ self.W3 + self.b3
@@ -220,11 +221,13 @@ class MLPSurrogate:
         }
 
     def save_weights(self, path: str | Path) -> None:
+        """Save all MLP parameter arrays to an ``.npz`` weight file."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         np.savez(path, **self._params_dict())
 
     def load_weights(self, path: str | Path) -> None:
+        """Load MLP parameter arrays from an ``.npz`` weight file."""
         path = Path(path)
         with np.load(path, allow_pickle=False) as data:
             self.W1 = np.array(data["W1"], dtype=np.float64)
