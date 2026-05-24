@@ -7,13 +7,13 @@
 |---|---:|
 | Package version | 3.9.5 |
 | Public API exports | 2 |
-| Python capability source modules | 260 |
-| Python capability classes | 486 |
-| Capability documentation pages | 59 |
+| Python capability source modules | 262 |
+| Python capability classes | 485 |
+| Capability documentation pages | 61 |
 | Rust workspace crates | 11 |
-| Optional extras | 10 |
-| Python test files | 372 |
-| Public documentation pages | 59 |
+| Optional extras | 11 |
+| Python test files | 377 |
+| Public documentation pages | 61 |
 | GitHub Actions workflows | 12 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.

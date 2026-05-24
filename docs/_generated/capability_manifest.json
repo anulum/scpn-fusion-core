@@ -60,7 +60,9 @@
       "docs/rfc/GPHY-03_RFC.md",
       "docs/rfc/GPHY-04_RFC.md",
       "docs/rfc/GPHY-05_RFC.md",
-      "docs/rfc/GPHY-06_RFC.md"
+      "docs/rfc/GPHY-06_RFC.md",
+      "docs/security/FUZZING.md",
+      "docs/security/THIRD_PARTY_AUDIT_SCOPE.md"
     ],
     "python_classes": [
       {
@@ -802,10 +804,6 @@
       {
         "name": "HJB_Avalanche_Controller",
         "path": "src/scpn_fusion/core/sandpile_fusion_reactor.py"
-      },
-      {
-        "name": "HPCBridge",
-        "path": "src/scpn_fusion/core/hpc_bridge.py"
       },
       {
         "name": "HPCBridge",
@@ -2236,6 +2234,7 @@
       "src/scpn_fusion/io/imas_connector_transport.py",
       "src/scpn_fusion/io/imas_history_payloads.py",
       "src/scpn_fusion/io/logging_config.py",
+      "src/scpn_fusion/io/safe_loaders.py",
       "src/scpn_fusion/io/tokamak_archive.py",
       "src/scpn_fusion/io/tokamak_archive_profiles.py",
       "src/scpn_fusion/io/tokamak_disruption_archive.py",
@@ -2268,7 +2267,8 @@
       "src/scpn_fusion/scpn/structure.py",
       "src/scpn_fusion/ui/app.py",
       "src/scpn_fusion/ui/dashboard_generator.py",
-      "src/scpn_fusion/ui/dashboard_launcher.py"
+      "src/scpn_fusion/ui/dashboard_launcher.py",
+      "src/scpn_fusion/ui/security_headers.py"
     ],
     "rust_workspace_crates": [
       {
@@ -2318,15 +2318,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 59,
+    "capability_documentation_pages": 61,
     "github_workflows": 12,
-    "optional_extras": 10,
+    "optional_extras": 11,
     "public_api_exports": 2,
-    "public_documentation_pages": 59,
-    "python_capability_classes": 486,
-    "python_capability_source_modules": 260,
+    "public_documentation_pages": 61,
+    "python_capability_classes": 485,
+    "python_capability_source_modules": 262,
     "rust_workspace_crates": 11,
-    "test_files": 372
+    "test_files": 377
   },
   "documentation": {
     "public_pages": [
@@ -2388,7 +2388,9 @@
       "docs/rfc/GPHY-03_RFC.md",
       "docs/rfc/GPHY-04_RFC.md",
       "docs/rfc/GPHY-05_RFC.md",
-      "docs/rfc/GPHY-06_RFC.md"
+      "docs/rfc/GPHY-06_RFC.md",
+      "docs/security/FUZZING.md",
+      "docs/security/THIRD_PARTY_AUDIT_SCOPE.md"
     ]
   },
   "evidence_boundary": "Counts are file-system and static-source inventory only; benchmark, coverage, hardware, and scientific-fidelity claims remain governed by their dedicated evidence artifacts.",
@@ -2419,6 +2421,7 @@
       "dev",
       "full",
       "full-physics",
+      "fuzz",
       "gpu",
       "ml",
       "rl",
@@ -2557,6 +2560,7 @@
       "tests/test_full_validation_pipeline.py",
       "tests/test_fusion_control_room.py",
       "tests/test_fusion_ignition_sim.py",
+      "tests/test_fusion_kernel.py",
       "tests/test_fusion_kernel_fail_on_diverge.py",
       "tests/test_fusion_kernel_free_boundary.py",
       "tests/test_fusion_kernel_newton_runtime.py",
@@ -2564,6 +2568,7 @@
       "tests/test_fusion_kernel_solver_runtime.py",
       "tests/test_fusion_optimal_control.py",
       "tests/test_fusion_sota_mpc.py",
+      "tests/test_fuzz_harness_entrypoints.py",
       "tests/test_gai_01_turbulence_surrogate.py",
       "tests/test_gai_02_torax_hybrid.py",
       "tests/test_gai_03_heat_ml_shadow.py",
@@ -2704,6 +2709,7 @@
       "tests/test_phase_properties_extended.py",
       "tests/test_physics.py",
       "tests/test_physics_edge_cases.py",
+      "tests/test_physics_fidelity_claims.py",
       "tests/test_physics_invariants.py",
       "tests/test_plasma_knm.py",
       "tests/test_plasma_startup.py",
@@ -2748,6 +2754,7 @@
       "tests/test_rust_python_parity.py",
       "tests/test_rwm_feedback.py",
       "tests/test_rzip_model.py",
+      "tests/test_safe_loaders.py",
       "tests/test_safe_rl_controller.py",
       "tests/test_safety_interlocks.py",
       "tests/test_sandpile_fusion_reactor.py",
@@ -2757,6 +2764,7 @@
       "tests/test_scpn_compiler.py",
       "tests/test_scpn_end_to_end_latency.py",
       "tests/test_scpn_pid_mpc_benchmark.py",
+      "tests/test_security_headers.py",
       "tests/test_security_runtime_policies.py",
       "tests/test_shape_controller.py",
       "tests/test_sliding_mode_vertical.py",
