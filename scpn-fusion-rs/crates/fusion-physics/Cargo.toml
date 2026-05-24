@@ -9,6 +9,7 @@ description = "SCPN Fusion Core - Standalone physics modules"
 [dependencies]
 fusion-types = { path = "../fusion-types" }
 fusion-math = { path = "../fusion-math" }
+nalgebra = { workspace = true }
 ndarray = { workspace = true }
 rayon = { workspace = true }
 num-complex = { workspace = true }

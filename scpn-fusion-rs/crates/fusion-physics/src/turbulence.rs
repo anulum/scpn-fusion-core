@@ -11,6 +11,7 @@
 //! 2D drift wave turbulence with ESN-based prediction.
 
 use fusion_math::fft::{fft2, ifft2};
+use nalgebra::{ComplexField, DMatrix};
 use ndarray::Array2;
 use num_complex::Complex64;
 use rand::rngs::StdRng;
@@ -480,39 +481,23 @@ impl OracleESN {
     }
 }
 
-/// Estimate spectral radius via power iteration.
-fn spectral_radius_estimate(m: &Array2<f64>, iterations: usize) -> f64 {
+/// Estimate spectral radius from eigenvalues.
+fn spectral_radius_estimate(m: &Array2<f64>, _iterations: usize) -> f64 {
     let n = m.nrows();
-    let mut v = vec![1.0; n];
-    let norm: f64 = (n as f64).sqrt();
-    for x in &mut v {
-        *x /= norm;
+    if n == 0 {
+        return 0.0;
     }
+    if m.iter().all(|value| *value == 0.0) {
+        return 0.0;
+    }
+    let values: Vec<f64> = m.iter().copied().collect();
+    let matrix = DMatrix::from_row_slice(n, n, &values);
 
-    for _ in 0..iterations {
-        let mut new_v = vec![0.0; n];
-        for i in 0..n {
-            for j in 0..n {
-                new_v[i] += m[[i, j]] * v[j];
-            }
-        }
-        let mag = new_v.iter().map(|x| x * x).sum::<f64>().sqrt();
-        if mag > 1e-15 {
-            for x in &mut new_v {
-                *x /= mag;
-            }
-        }
-        v = new_v;
-    }
-
-    // Rayleigh quotient: v^T M v
-    let mut mv = vec![0.0; n];
-    for i in 0..n {
-        for j in 0..n {
-            mv[i] += m[[i, j]] * v[j];
-        }
-    }
-    mv.iter().map(|x| x * x).sum::<f64>().sqrt()
+    matrix
+        .complex_eigenvalues()
+        .iter()
+        .map(|value| value.modulus())
+        .fold(0.0_f64, f64::max)
 }
 
 /// Solve AX = B where A is symmetric positive definite (Cholesky).
@@ -689,6 +674,17 @@ mod tests {
 
         assert!(rho.is_finite());
         assert_eq!(rho, 0.0);
+    }
+
+    #[test]
+    fn test_nonnormal_reservoir_spectral_radius_uses_eigenvalues() {
+        let mut w_res = Array2::<f64>::zeros((2, 2));
+        w_res[[0, 1]] = 10.0;
+        w_res[[1, 0]] = -0.1;
+
+        let rho = spectral_radius_estimate(&w_res, 30);
+
+        assert!((rho - 1.0).abs() < 1e-12);
     }
 
     #[test]
