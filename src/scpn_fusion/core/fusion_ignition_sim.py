@@ -394,9 +394,8 @@ class DynamicBurnModel:
         f_he = float(f_he_initial)
         W_thermal = 1.5 * n_e * T * 1e3 * 1.602e-19 * self.V_plasma  # J
 
-        # Delayed Alpha Heating Buffer (Slowing down heuristic)
-        # alpha_power_buffer[t] holds power generated at t that will be dumped later
-        alpha_power_delay_buffer = []
+        # Delayed alpha heating from collisional slowing down.
+        # The deposited channel follows dP_dep/dt = (P_born - P_dep) / tau_s.
 
         # Histories
         time_s = []
@@ -432,16 +431,14 @@ class DynamicBurnModel:
             tau_s_alpha = 0.012 * (max(T, 0.1) ** 1.5) / (self.n_e20 * 10.0)
             tau_s_alpha = np.clip(tau_s_alpha, 0.01, 2.0)
 
-            # Simple First-Order delay for P_alpha_deposited
+            # Exact first-order relaxation for P_alpha_deposited.  This preserves
+            # positivity and boundedness even when dt_s exceeds tau_s_alpha.
             if step == 0:
                 P_alpha_dep = P_alpha_born
             else:
-                # dP_dep/dt = (P_born - P_dep) / tau_s
-                # P_dep_new = P_dep + dt * (P_born - P_dep) / tau_s
-                P_alpha_dep = (
-                    P_alpha_hist[-1] * 1e6
-                    + dt_s * (P_alpha_born - P_alpha_hist[-1] * 1e6) / tau_s_alpha
-                )
+                prev_alpha_dep = P_alpha_hist[-1] * 1e6
+                relaxation = 1.0 - np.exp(-dt_s / tau_s_alpha)
+                P_alpha_dep = prev_alpha_dep + relaxation * (P_alpha_born - prev_alpha_dep)
 
             # Losses
             P_total_heating = P_alpha_dep + P_aux_mw * 1e6

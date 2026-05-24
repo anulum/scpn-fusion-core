@@ -86,6 +86,22 @@ def test_simulate_returns_q_and_power():
     assert result["Q_final"] >= 0.0
 
 
+def test_alpha_deposition_remains_nonnegative_for_coarse_burn_timestep():
+    """Alpha slowing-down deposition must preserve non-negative deposited power."""
+    model = DynamicBurnModel()
+    result = model.simulate(
+        P_aux_mw=0.0,
+        T_initial_keV=5.0,
+        duration_s=5.0,
+        dt_s=0.05,
+        warn_on_temperature_cap=False,
+    )
+
+    p_alpha = np.asarray(result["P_alpha_MW"])
+    assert np.all(np.isfinite(p_alpha))
+    assert np.all(p_alpha >= 0.0)
+
+
 def test_simulate_custom_params():
     model = DynamicBurnModel(R0=1.85, a=0.6, B_t=12.2, I_p=8.7, kappa=1.97)
     result = model.simulate(P_aux_mw=25.0, duration_s=0.5, dt_s=0.05, warn_on_temperature_cap=False)
