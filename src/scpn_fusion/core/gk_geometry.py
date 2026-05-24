@@ -86,6 +86,9 @@ def miller_geometry(
     n_period : int
         Number of poloidal periods (ballooning copies).
     """
+    if not np.isfinite(delta) or abs(delta) >= 1.0:
+        raise ValueError("delta must be finite with |delta| < 1")
+
     r = rho * a
     theta = np.linspace(-n_period * np.pi, n_period * np.pi, n_theta * n_period, endpoint=False)
 
@@ -98,9 +101,17 @@ def miller_geometry(
     dR_dt = -r * np.sin(theta + delta_angle * np.sin(theta)) * (1 + delta_angle * np.cos(theta))
     dZ_dt = kappa * r * np.cos(theta)
 
-    # Derivatives w.r.t. r (at constant theta)
-    dR_dr_tot = np.cos(theta + delta_angle * np.sin(theta)) + dR_dr
-    dZ_dr_r = kappa * np.sin(theta)
+    # Derivatives w.r.t. r (at constant theta), including Miller shaping shear.
+    # s_kappa = (r / kappa) d kappa / dr and s_delta = (r / delta) d delta / dr.
+    delta_angle_shear = 0.0
+    if delta != 0.0:
+        delta_angle_shear = s_delta * delta / np.sqrt(1.0 - delta**2)
+    dR_dr_tot = (
+        np.cos(theta + delta_angle * np.sin(theta))
+        + dR_dr
+        - np.sin(theta + delta_angle * np.sin(theta)) * np.sin(theta) * delta_angle_shear
+    )
+    dZ_dr_r = kappa * (1.0 + s_kappa) * np.sin(theta)
 
     # Jacobian of (r, theta) → (R, Z): J = dR/dr * dZ/dtheta - dR/dtheta * dZ/dr
     jac = dR_dr_tot * dZ_dt - dR_dt * dZ_dr_r

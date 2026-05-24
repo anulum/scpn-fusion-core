@@ -163,3 +163,36 @@ def test_miller_params_match_interface():
         n_period=1,
     )
     assert len(geom.theta) == 32
+
+
+def test_miller_kappa_shear_enters_radial_metric_derivatives():
+    """Elongation shear must affect Miller radial derivatives without moving the surface."""
+    base = miller_geometry(
+        R0=6.2,
+        a=2.0,
+        rho=0.5,
+        kappa=2.0,
+        delta=0.0,
+        s_kappa=0.0,
+        q=2.0,
+        n_theta=4,
+        n_period=1,
+    )
+    sheared = miller_geometry(
+        R0=6.2,
+        a=2.0,
+        rho=0.5,
+        kappa=2.0,
+        delta=0.0,
+        s_kappa=0.5,
+        q=2.0,
+        n_theta=4,
+        n_period=1,
+    )
+
+    np.testing.assert_allclose(sheared.R, base.R, rtol=0.0, atol=0.0)
+    np.testing.assert_allclose(sheared.Z, base.Z, rtol=0.0, atol=0.0)
+    upper_midplane = int(np.argmin(np.abs(sheared.theta - 0.5 * np.pi)))
+    expected_jacobian = 2.0 * 0.5 * 2.0 * (1.0 + 0.5)
+    assert sheared.jacobian[upper_midplane] == pytest.approx(expected_jacobian, rel=1e-12)
+    assert sheared.jacobian[upper_midplane] != pytest.approx(base.jacobian[upper_midplane])
