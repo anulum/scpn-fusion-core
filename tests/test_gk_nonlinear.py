@@ -402,6 +402,32 @@ class TestFluxDiagnostics:
         assert solver.phi_rms(state) > 0
 
 
+class TestElectromagneticDrive:
+    def test_kinetic_electron_drive_uses_effective_potential(self):
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=8,
+            n_mu=4,
+            n_species=2,
+            kinetic_electrons=True,
+            electromagnetic=True,
+            collisions=False,
+            hyper_coeff=0.0,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        phi = np.ones((cfg.n_kx, cfg.n_ky, cfg.n_theta), dtype=np.complex128) * (1.0 + 0.25j)
+        a_par = np.ones_like(phi) * (0.2 - 0.1j)
+
+        electrostatic = solver.gradient_drive(phi, None)
+        electromagnetic = solver.gradient_drive(phi, a_par)
+
+        assert np.max(np.abs(electromagnetic[0] - electrostatic[0])) > 0.0
+        assert np.max(np.abs(electromagnetic[1] - electrostatic[1])) > 0.0
+
+
 # ── JAX fallback ─────────────────────────────────────────────────────
 
 

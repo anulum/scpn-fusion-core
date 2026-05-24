@@ -156,6 +156,42 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn kinetic_electron_drive_uses_effective_potential() {
+        let cfg = NonlinearGKConfig {
+            n_kx: 4,
+            n_ky: 4,
+            n_theta: 8,
+            n_vpar: 8,
+            n_mu: 4,
+            n_species: 2,
+            kinetic_electrons: true,
+            electromagnetic: true,
+            collisions: false,
+            hyper_coeff: 0.0,
+            cfl_adapt: false,
+            ..NonlinearGKConfig::default()
+        };
+        let solver = NonlinearGKSolver::new(cfg.clone());
+        let phi = Array3::from_elem((cfg.n_kx, cfg.n_ky, cfg.n_theta), Complex64::new(1.0, 0.25));
+        let a_par = Array3::from_elem((cfg.n_kx, cfg.n_ky, cfg.n_theta), Complex64::new(0.2, -0.1));
+
+        let electrostatic = solver.gradient_drive(&phi, None);
+        let electromagnetic = solver.gradient_drive(&phi, Some(&a_par));
+
+        let ion_delta = (&electromagnetic.slice(s![0, .., .., .., .., ..])
+            - &electrostatic.slice(s![0, .., .., .., .., ..]))
+            .mapv(|v| v.norm())
+            .sum();
+        let electron_delta = (&electromagnetic.slice(s![1, .., .., .., .., ..])
+            - &electrostatic.slice(s![1, .., .., .., .., ..]))
+            .mapv(|v| v.norm())
+            .sum();
+
+        assert!(ion_delta > 0.0);
+        assert!(electron_delta > 0.0);
+    }
 }
 
 #[derive(Clone)]
@@ -1051,7 +1087,7 @@ impl NonlinearGKSolver {
                                 };
                                 let omega_star_e = -ky * c.r_l_ne * (1.0 + eta_e * (energy - 1.5));
                                 drive[[1, i, j, t, v, m]] =
-                                    Complex64::new(0.0, -1.0) * omega_star_e * phi_val * fm;
+                                    Complex64::new(0.0, -1.0) * omega_star_e * phi_eff * fm;
                             }
                         }
                     }

@@ -209,7 +209,7 @@ class NonlinearGKOperatorsMixin:
         if c.kinetic_electrons:
             eta_e = c.R_L_Te / max(c.R_L_ne, 0.1) if c.R_L_ne > 0 else 0.0
             omega_star_e = -ky_5d * c.R_L_ne * (1.0 + eta_e * (energy - 1.5))
-            drive[1] = -1j * omega_star_e * phi_5d * FM
+            drive[1] = -1j * omega_star_e * phi_eff * FM
 
         return drive
 

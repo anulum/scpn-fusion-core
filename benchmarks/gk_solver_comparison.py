@@ -46,6 +46,15 @@ def _benchmark_config(collision_model: str) -> NonlinearGKConfig:
     )
 
 
+def _electromagnetic_benchmark_config() -> NonlinearGKConfig:
+    cfg = _benchmark_config("sugama")
+    cfg.kinetic_electrons = True
+    cfg.electromagnetic = True
+    cfg.beta_e = 0.02
+    cfg.mass_ratio_me_mi = 1.0 / 400.0
+    return cfg
+
+
 def _run_numpy(cfg: NonlinearGKConfig) -> dict[str, Any]:
     solver = NonlinearGKSolver(cfg)
     t0 = time.perf_counter()
@@ -106,6 +115,14 @@ def run_benchmark() -> dict[str, Any]:
         if collision_model == "sugama":
             cases[collision_model]["moment_residuals"] = _sugama_moment_residuals(cfg)
 
+    em_cfg = _electromagnetic_benchmark_config()
+    cases["sugama_electromagnetic_kinetic"] = {
+        "config": asdict(em_cfg),
+        "numpy": _run_numpy(em_cfg),
+        "jax": _run_jax(em_cfg),
+        "moment_residuals": _sugama_moment_residuals(em_cfg),
+    }
+
     return {
         "benchmark": "gk_nonlinear_solver_comparison",
         "python": sys.version.split()[0],
@@ -146,7 +163,7 @@ def _write_reports(report: dict[str, Any]) -> None:
                 )
             )
 
-    residuals = report["cases"]["sugama"]["moment_residuals"]
+    residuals = report["cases"]["sugama_electromagnetic_kinetic"]["moment_residuals"]
     lines.extend(
         [
             "",
