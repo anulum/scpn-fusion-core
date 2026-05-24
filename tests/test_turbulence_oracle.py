@@ -51,6 +51,26 @@ class TestDriftWavePhysics:
 
         assert high / low == (high_k2 / low_k2) ** 2
 
+    def test_seeded_initial_conditions_replay_identically(self):
+        first = DriftWavePhysics(N=16, seed=1729)
+        second = DriftWavePhysics(N=16, seed=1729)
+
+        np.testing.assert_allclose(first.phi_k, second.phi_k, rtol=0.0, atol=0.0)
+        np.testing.assert_allclose(first.n_k, second.n_k, rtol=0.0, atol=0.0)
+
+        first_phi, first_n = first.step()
+        second_phi, second_n = second.step()
+
+        np.testing.assert_allclose(first_phi, second_phi, rtol=0.0, atol=0.0)
+        np.testing.assert_allclose(first_n, second_n, rtol=0.0, atol=0.0)
+
+    def test_distinct_seeds_produce_distinct_initial_spectra(self):
+        first = DriftWavePhysics(N=16, seed=1729)
+        second = DriftWavePhysics(N=16, seed=1730)
+
+        assert not np.allclose(first.phi_k, second.phi_k, rtol=0.0, atol=0.0)
+        assert not np.allclose(first.n_k, second.n_k, rtol=0.0, atol=0.0)
+
 
 class TestOracleESN:
     def test_init(self):

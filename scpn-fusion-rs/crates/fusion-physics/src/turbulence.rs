@@ -13,7 +13,8 @@
 use fusion_math::fft::{fft2, ifft2};
 use ndarray::Array2;
 use num_complex::Complex64;
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use rand_distr::StandardNormal;
 
 /// Grid size. Python: GRID=64.
@@ -85,6 +86,16 @@ pub struct DriftWavePhysics {
 impl DriftWavePhysics {
     pub fn new(n: usize) -> Self {
         let mut rng = rand::thread_rng();
+        Self::from_rng(n, &mut rng)
+    }
+
+    /// Construct a deterministic Hasegawa-Wakatani replay from a fixed seed.
+    pub fn with_seed(n: usize, seed: u64) -> Self {
+        let mut rng = StdRng::seed_from_u64(seed);
+        Self::from_rng(n, &mut rng)
+    }
+
+    fn from_rng<R: Rng + ?Sized>(n: usize, rng: &mut R) -> Self {
         let dk = 2.0 * std::f64::consts::PI / DOMAIN_L;
 
         let kx = Array2::from_shape_fn((n, n), |(_, j)| {
@@ -575,6 +586,25 @@ mod tests {
         let high = spectral_dissipation_multiplier(high_k2);
 
         assert!((high / low - (high_k2 / low_k2).powi(2)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_hw_seeded_replay_is_deterministic() {
+        let mut first = DriftWavePhysics::with_seed(32, 1729);
+        let mut second = DriftWavePhysics::with_seed(32, 1729);
+
+        assert_eq!(first.phi_k, second.phi_k);
+        assert_eq!(first.n_k, second.n_k);
+        assert_eq!(first.step(), second.step());
+    }
+
+    #[test]
+    fn test_hw_distinct_seeds_create_distinct_spectra() {
+        let first = DriftWavePhysics::with_seed(32, 1729);
+        let second = DriftWavePhysics::with_seed(32, 1730);
+
+        assert_ne!(first.phi_k, second.phi_k);
+        assert_ne!(first.n_k, second.n_k);
     }
 
     #[test]

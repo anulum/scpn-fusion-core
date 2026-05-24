@@ -1324,11 +1324,13 @@ struct PyDriftWave {
 #[pymethods]
 impl PyDriftWave {
     #[new]
-    #[pyo3(signature = (n=64))]
-    fn new(n: usize) -> Self {
-        Self {
-            inner: DriftWavePhysics::new(n),
-        }
+    #[pyo3(signature = (n=64, seed=None))]
+    fn new(n: usize, seed: Option<u64>) -> Self {
+        let inner = match seed {
+            Some(seed) => DriftWavePhysics::with_seed(n, seed),
+            None => DriftWavePhysics::new(n),
+        };
+        Self { inner }
     }
 
     fn step<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {

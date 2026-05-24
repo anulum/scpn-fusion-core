@@ -22,9 +22,10 @@ class DriftWavePhysics:
     """2D Hasegawa-Wakatani solver for plasma edge turbulence.
 
     Variables: phi (electrostatic potential), n (density fluctuation).
+    Pass ``seed`` for reproducible stochastic initial conditions.
     """
 
-    def __init__(self, N=GRID):
+    def __init__(self, N=GRID, seed=None):
         self.N = N
         self.k = np.fft.fftfreq(N, d=L / (2 * np.pi * N))
         self.kx, self.ky = np.meshgrid(self.k, self.k)
@@ -37,8 +38,15 @@ class DriftWavePhysics:
         self.mask = np.where(self.k2 < (2.0 / 3.0 * k_max) ** 2, 1.0, 0.0)
 
         # Init State (Random Noise)
-        self.phi_k = np.fft.fft2(np.random.randn(N, N) * 0.01) * self.mask
-        self.n_k = np.fft.fft2(np.random.randn(N, N) * 0.01) * self.mask
+        if seed is None:
+            phi_noise = np.random.randn(N, N) * 0.01
+            n_noise = np.random.randn(N, N) * 0.01
+        else:
+            rng = np.random.default_rng(seed)
+            phi_noise = rng.normal(size=(N, N)) * 0.01
+            n_noise = rng.normal(size=(N, N)) * 0.01
+        self.phi_k = np.fft.fft2(phi_noise) * self.mask
+        self.n_k = np.fft.fft2(n_noise) * self.mask
 
     def bracket(self, A_k, B_k):
         """Calculates Poisson Bracket [A, B] with de-aliasing"""

@@ -139,3 +139,9 @@ class TestPyDriftWave:
         for _ in range(100):
             result = dw.step()
             assert np.all(np.isfinite(result))
+
+    def test_seeded_replay_matches_rust_bridge_contract(self):
+        first = scpn_fusion_rs.PyDriftWave(32, seed=1729)
+        second = scpn_fusion_rs.PyDriftWave(32, seed=1729)
+
+        np.testing.assert_allclose(first.step(), second.step(), rtol=0.0, atol=0.0)
