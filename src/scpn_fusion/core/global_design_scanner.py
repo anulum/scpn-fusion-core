@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Global Design Scanner
+"""Monte Carlo reactor-design scans with heat-exhaust and magnet constraints."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -182,6 +184,7 @@ class GlobalDesignExplorer:
         seed=None,
         q95_min=3.0,
     ):
+        """Sample the global reactor design space and return valid design metrics."""
         if isinstance(n_samples, bool) or int(n_samples) < 1:
             raise ValueError("n_samples must be an integer >= 1.")
         n_samples = int(n_samples)
@@ -241,6 +244,7 @@ class GlobalDesignExplorer:
         return df
 
     def run_compact_scan(self, n_samples=2000, seed=42):
+        """Run the compact-reactor search envelope with deterministic sampling."""
         return self.run_scan(
             n_samples=n_samples,
             r_bounds=(1.1, 1.9),
@@ -251,6 +255,7 @@ class GlobalDesignExplorer:
         )
 
     def analyze_pareto(self, df):
+        """Print and plot the viable Pareto region for a design-scan dataframe."""
         # Filter: Viable Reactors
         # Q > 2 (Pilot Goal), Wall Load < 5.0 + active engineering constraints.
         viable = df[(df["Q"] > 2.0) & (df["Wall_Load"] < 5.0) & (df["Constraint_OK"])]
