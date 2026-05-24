@@ -100,6 +100,27 @@ def test_axis_local_dominance_margin_detects_flat_axis_plateau() -> None:
     assert benchmark._axis_local_dominance_margin(plateau) == 0.0
 
 
+def test_midplane_radial_monotonicity_violation_count_detects_oscillations() -> None:
+    """Benchmark reports must expose radial flux oscillations away from the axis."""
+    monotone = np.array(
+        [
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 3.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+        ]
+    )
+    oscillatory = np.array(
+        [
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 3.0, 1.5, 1.75],
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+        ]
+    )
+
+    assert benchmark._midplane_radial_monotonicity_violations(monotone) == 0
+    assert benchmark._midplane_radial_monotonicity_violations(oscillatory) == 1
+
+
 def test_negative_flux_overshoot_metric_reports_maximum_negative_well() -> None:
     """Benchmark reports must expose nonphysical negative-flux overshoot."""
     nonnegative = np.array(
