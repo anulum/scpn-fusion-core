@@ -65,6 +65,24 @@ def test_density_limit_predictor():
     assert n_marfe_dirty < n_marfe
 
 
+def test_density_limit_predictor_can_use_condensation_threshold() -> None:
+    rc = RadiationCondensation("W", ne_20=1.0, f_imp=1e-4)
+    expected = rc.critical_density(Te_eV=2000.0, k_par=0.01, kappa_par=2000.0)
+
+    actual = DensityLimitPredictor.marfe_limit(
+        15.0,
+        2.0,
+        P_SOL_MW=100.0,
+        impurity="W",
+        f_imp=1e-4,
+        Te_eV=2000.0,
+        k_par=0.01,
+        kappa_par=2000.0,
+    )
+
+    assert actual == pytest.approx(expected)
+
+
 def test_marfe_stability_diagram():
     diag = MARFEStabilityDiagram(R0=6.2, a=2.0, q95=3.0, impurity="W")
 

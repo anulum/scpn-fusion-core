@@ -156,8 +156,24 @@ class DensityLimitPredictor:
         return float(Ip_MA / (math.pi * a**2))
 
     @staticmethod
-    def marfe_limit(Ip_MA: float, a: float, P_SOL_MW: float, impurity: str, f_imp: float) -> float:
-        """Heuristic scaling mapping P_SOL and f_imp to a density limit."""
+    def marfe_limit(
+        Ip_MA: float,
+        a: float,
+        P_SOL_MW: float,
+        impurity: str,
+        f_imp: float,
+        *,
+        Te_eV: float | None = None,
+        k_par: float | None = None,
+        kappa_par: float | None = None,
+    ) -> float:
+        """Return MARFE density limit from condensation physics when local data exist."""
+        if Te_eV is not None or k_par is not None or kappa_par is not None:
+            if Te_eV is None or k_par is None or kappa_par is None:
+                raise ValueError("Te_eV, k_par, and kappa_par must be supplied together")
+            rc = RadiationCondensation(impurity, ne_20=1.0, f_imp=f_imp)
+            return rc.critical_density(Te_eV=Te_eV, k_par=k_par, kappa_par=kappa_par)
+
         # Typically n_crit ~ sqrt(P_SOL / f_imp)
         # We tie it to Greenwald scaling
         n_gw = DensityLimitPredictor.greenwald_limit(Ip_MA, a)
