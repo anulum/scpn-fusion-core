@@ -110,20 +110,47 @@ jobs:
           cd dist
           sha256sum -c SHA256SUMS
           rm SHA256SUMS
+      - name: Detect existing PyPI distribution
+        id: existing_pypi
+        run: |
+          python - <<'PY' >>"$GITHUB_OUTPUT"
+          import json
+          import re
+          import urllib.request
+          from pathlib import Path
+
+          wheels = sorted(Path("dist").glob("scpn_fusion-*.whl"))
+          if not wheels:
+              raise SystemExit("No scpn_fusion wheel found in dist/")
+          match = re.match(r"^scpn_fusion-(?P<version>[^-]+)-", wheels[0].name)
+          if match is None:
+              raise SystemExit(f"Unable to parse version from {wheels[0].name}")
+          version = match.group("version")
+          req = urllib.request.Request(
+              "https://pypi.org/pypi/scpn-fusion/json",
+              headers={"Accept": "application/json", "Cache-Control": "no-cache"},
+          )
+          with urllib.request.urlopen(req, timeout=30) as response:
+              payload = json.load(response)
+          exists = bool(payload.get("releases", {}).get(version))
+          print(f"version={version}")
+          print(f"exists={'true' if exists else 'false'}")
+          PY
       - name: Publish to PyPI (OIDC)
         id: publish_oidc
+        if: ${{ steps.existing_pypi.outputs.exists != 'true' }}
         continue-on-error: true
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
         # Uses OIDC trusted publisher — no API token needed
         # Configure at: https://pypi.org/manage/project/scpn-fusion/settings/publishing/
       - name: Publish to PyPI (token fallback)
         id: publish_token
-        if: ${{ steps.publish_oidc.outcome != 'success' }}
+        if: ${{ steps.existing_pypi.outputs.exists != 'true' && steps.publish_oidc.outcome != 'success' }}
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
       - name: Ensure publish succeeded
-        if: ${{ steps.publish_oidc.outcome != 'success' && steps.publish_token.outcome != 'success' }}
+        if: ${{ steps.existing_pypi.outputs.exists != 'true' && steps.publish_oidc.outcome != 'success' && steps.publish_token.outcome != 'success' }}
         run: |
           echo "PyPI publish failed for both OIDC and token fallback."
           exit 1
