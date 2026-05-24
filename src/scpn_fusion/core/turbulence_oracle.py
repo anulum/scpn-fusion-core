@@ -184,12 +184,11 @@ class OracleESN:
 
         S = np.array(states)  # [Time, Reservoir]
 
-        # Solve W_out * S.T = Targets.T
-        # W_out = Targets.T * S * inv(S.T * S + beta*I)
+        # Solve W_out * (S.T S + beta I) = Targets.T * S without forming inverse.
         reg = 1e-4
-        self.W_out = np.dot(
-            np.dot(targets.T, S), np.linalg.inv(np.dot(S.T, S) + reg * np.eye(S.shape[1]))
-        )
+        system = np.dot(S.T, S) + reg * np.eye(S.shape[1])
+        rhs = np.dot(targets.T, S)
+        self.W_out = np.linalg.solve(system.T, rhs.T).T
 
         print("[Oracle] Mental Model Formed.")
 

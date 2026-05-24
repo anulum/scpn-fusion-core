@@ -114,6 +114,23 @@ class TestOracleESN:
         assert preds.shape == (10, dim)
         assert np.all(np.isfinite(preds))
 
+    def test_training_solves_ill_conditioned_ridge_system_directly(self):
+        rng = np.random.default_rng(42)
+        esn = OracleESN(input_dim=1, reservoir_size=20, seed=2718)
+        esn.W_res[:] = 0.0
+        esn.W_in[:, 0] = 1.0 + 1.0e-8 * np.arange(esn.W_in.shape[0])
+        inputs = rng.normal(size=(40, 1))
+        targets = rng.normal(size=(40, 3))
+
+        reservoir_states = np.tanh(inputs @ esn.W_in.T)
+        system = reservoir_states.T @ reservoir_states + 1.0e-4 * np.eye(reservoir_states.shape[1])
+        rhs = targets.T @ reservoir_states
+
+        esn.train(inputs, targets)
+
+        residual = np.linalg.norm(esn.W_out @ system - rhs) / np.linalg.norm(rhs)
+        assert residual < 1.0e-13
+
     def test_spectral_radius_scaled(self):
         esn = OracleESN(input_dim=2, reservoir_size=20, spectral_radius=0.9)
         eigvals = np.linalg.eigvals(esn.W_res)

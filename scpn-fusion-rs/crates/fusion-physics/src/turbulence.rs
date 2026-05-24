@@ -745,4 +745,58 @@ mod tests {
             "ESN should predict > 0 Lyapunov time: mse_first={mse_first}, mse_last={mse_last}"
         );
     }
+
+    #[test]
+    fn test_esn_training_solves_ill_conditioned_ridge_system_directly() {
+        let mut esn = OracleESN::with_seed(1, 20, 2718);
+        esn.w_res.fill(0.0);
+        for i in 0..esn.reservoir_size {
+            esn.w_in[[i, 0]] = 1.0 + 1.0e-8 * i as f64;
+        }
+
+        let inputs: Vec<Vec<f64>> = (0..40).map(|i| vec![(0.1 * i as f64).sin()]).collect();
+        let targets: Vec<Vec<f64>> = inputs
+            .iter()
+            .enumerate()
+            .map(|(i, input)| vec![input[0].cos(), (i as f64 * 0.03).sin(), input[0] * input[0]])
+            .collect();
+
+        let states: Vec<Vec<f64>> = inputs
+            .iter()
+            .map(|input| {
+                (0..esn.reservoir_size)
+                    .map(|row| (esn.w_in[[row, 0]] * input[0]).tanh())
+                    .collect()
+            })
+            .collect();
+
+        let mut system = Array2::<f64>::zeros((esn.reservoir_size, esn.reservoir_size));
+        for row in 0..esn.reservoir_size {
+            for col in 0..esn.reservoir_size {
+                system[[row, col]] = states
+                    .iter()
+                    .map(|state| state[row] * state[col])
+                    .sum::<f64>();
+            }
+            system[[row, row]] += RIDGE_REG;
+        }
+        let mut rhs = Array2::<f64>::zeros((targets[0].len(), esn.reservoir_size));
+        for output in 0..targets[0].len() {
+            for col in 0..esn.reservoir_size {
+                rhs[[output, col]] = targets
+                    .iter()
+                    .zip(states.iter())
+                    .map(|(target, state)| target[output] * state[col])
+                    .sum::<f64>();
+            }
+        }
+
+        esn.train(&inputs, &targets);
+        let w_out = esn.w_out.as_ref().expect("training should set W_out");
+        let residual = w_out.dot(&system) - &rhs;
+        let residual_norm = residual.iter().map(|v| v * v).sum::<f64>().sqrt();
+        let rhs_norm = rhs.iter().map(|v| v * v).sum::<f64>().sqrt();
+
+        assert!(residual_norm / rhs_norm < 1.0e-10);
+    }
 }
