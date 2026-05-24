@@ -484,6 +484,30 @@ class TestJaxFallback:
         expected_chi_i_gB = result.chi_i / max(_FAST_CFG.R_L_Ti, 0.01)
         assert result.chi_i_gB == expected_chi_i_gB
 
+    def test_jax_parallel_streaming_matches_numpy_ballooning_connection(self):
+        from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available
+
+        assert jax_available()
+        import jax.numpy as jnp
+
+        cfg = NonlinearGKConfig(
+            n_kx=4,
+            n_ky=4,
+            n_theta=8,
+            n_vpar=4,
+            n_mu=3,
+            n_species=2,
+            s_hat=0.9,
+            cfl_adapt=False,
+        )
+        solver = JaxNonlinearGKSolver(cfg)
+        state = solver._np_solver.init_state(amplitude=1e-4, seed=31)
+
+        expected = solver._np_solver.parallel_streaming(state.f[0])
+        actual = np.asarray(solver._jax_parallel_streaming(jnp.asarray(state.f[0])))
+
+        np.testing.assert_allclose(actual, expected, rtol=1e-10, atol=1e-10)
+
     def test_jax_available_bool(self):
         from scpn_fusion.core.jax_gk_nonlinear import jax_available
 

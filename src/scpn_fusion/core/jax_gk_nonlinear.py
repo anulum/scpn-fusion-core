@@ -34,6 +34,8 @@ _logger = logging.getLogger(__name__)
 
 try:
     import jax
+
+    jax.config.update("jax_enable_x64", True)
     import jax.numpy as jnp
 
     _HAS_JAX = True
@@ -71,6 +73,8 @@ class JaxNonlinearGKSolver:
         self._vpar_j = jnp.array(self._np_solver.vpar)
         self._mu_j = jnp.array(self._np_solver.mu)
         self._theta_j = jnp.array(self._np_solver.theta)
+        self._ball_phase_fwd_j = jnp.array(self._np_solver._ball_phase_fwd)
+        self._ball_phase_bwd_j = jnp.array(self._np_solver._ball_phase_bwd)
 
     # ------------------------------------------------------------------
     # JAX field solve
@@ -164,6 +168,52 @@ class JaxNonlinearGKSolver:
         ) * fm
         return jnp.asarray(cf - correction)
 
+    def _jax_apply_kx_shift(self, f_slice: jnp.ndarray, phase: jnp.ndarray) -> jnp.ndarray:
+        """Apply one ballooning-boundary kx phase shift to a theta slice."""
+        shape = f_slice.shape
+        n_batch = shape[2] * shape[3] if len(shape) == 4 else 1
+        f_flat = f_slice.reshape(self.cfg.n_kx, self.cfg.n_ky, n_batch)
+        f_x = jnp.fft.ifft(f_flat, axis=0)
+        f_x = f_x * phase[:, :, None]
+        return jnp.fft.fft(f_x, axis=0).reshape(shape)
+
+    def _jax_roll_ballooning(self, f_s: jnp.ndarray, shift: int) -> jnp.ndarray:
+        """Roll theta with the same ballooning connection as the NumPy solver."""
+        if shift > 0:
+            rolled = jnp.concatenate((f_s[:, :, -shift:], f_s[:, :, :-shift]), axis=2)
+        elif shift < 0:
+            n_shift = abs(shift)
+            rolled = jnp.concatenate((f_s[:, :, n_shift:], f_s[:, :, :n_shift]), axis=2)
+        else:
+            rolled = f_s
+        n_theta = self.cfg.n_theta
+
+        if shift > 0:
+            for j in range(shift):
+                shifted = self._jax_apply_kx_shift(rolled[:, :, j], self._ball_phase_bwd_j)
+                rolled = rolled.at[:, :, j].set(shifted)
+        elif shift < 0:
+            for j in range(abs(shift)):
+                idx = n_theta - 1 - j
+                shifted = self._jax_apply_kx_shift(rolled[:, :, idx], self._ball_phase_fwd_j)
+                rolled = rolled.at[:, :, idx].set(shifted)
+
+        return rolled
+
+    def _jax_parallel_streaming(self, f_s: jnp.ndarray) -> jnp.ndarray:
+        """Fourth-order theta derivative with ballooning connection boundary conditions."""
+        h = self._np_solver.dtheta
+        dfdt = (
+            -self._jax_roll_ballooning(f_s, -2)
+            + 8.0 * self._jax_roll_ballooning(f_s, -1)
+            - 8.0 * self._jax_roll_ballooning(f_s, 1)
+            + self._jax_roll_ballooning(f_s, 2)
+        ) / (12.0 * h)
+
+        vpar_5d = self._vpar_j[None, None, None, :, None]
+        bdg_5d = self._b_dot_grad_j[None, None, :, None, None]
+        return jnp.asarray(vpar_5d * bdg_5d * dfdt)
+
     # ------------------------------------------------------------------
     # JAX RHS
     # ------------------------------------------------------------------
@@ -181,16 +231,7 @@ class JaxNonlinearGKSolver:
             terms = terms - self._jax_exb_bracket(phi, f_s)
 
         # Parallel streaming (scaled by v_th for electrons)
-        h = self._np_solver.dtheta
-        dfdt = (
-            -jnp.roll(f_s, -2, axis=2)
-            + 8 * jnp.roll(f_s, -1, axis=2)
-            - 8 * jnp.roll(f_s, 1, axis=2)
-            + jnp.roll(f_s, 2, axis=2)
-        ) / (12.0 * h)
-        vpar_5d = self._vpar_j[None, None, None, :, None]
-        bdg_5d = self._b_dot_grad_j[None, None, :, None, None]
-        terms = terms - v_scale * vpar_5d * bdg_5d * dfdt
+        terms = terms - v_scale * self._jax_parallel_streaming(f_s)
 
         # Magnetic drift (charge sign flips for electrons)
         vpar2 = self._vpar_j[None, None, None, :, None] ** 2
