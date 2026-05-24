@@ -6,7 +6,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Polyglot Grad-Shafranov Benchmark
-"""Benchmark native Python and Julia fixed-boundary Grad-Shafranov solvers."""
+"""Benchmark native Python, Julia, Go, and Lean Grad-Shafranov solvers."""
 
 from __future__ import annotations
 
@@ -28,6 +28,8 @@ from scpn_fusion.core.jax_gs_solver import gs_solve_np
 
 _CASE_PATH = _REPO / "validation" / "polyglot" / "gs_picard_reference.toml"
 _JULIA_PROJECT = _REPO / "scpn-fusion-jl"
+_GO_PROJECT = _REPO / "scpn-fusion-go"
+_LEAN_PROJECT = _REPO / "scpn-fusion-lean"
 _REPORT_JSON = _REPO / "validation" / "reports" / "polyglot_gs_solver_comparison.json"
 _REPORT_MD = _REPO / "validation" / "reports" / "polyglot_gs_solver_comparison.md"
 
@@ -61,31 +63,55 @@ def _read_case(path: Path) -> dict[str, Any]:
     return values
 
 
+def _matrix_from_csv(stdout: str) -> np.ndarray:
+    rows = [[float(cell) for cell in row] for row in csv.reader(stdout.splitlines())]
+    return np.asarray(rows, dtype=float)
+
+
 def _run_python(case: dict[str, Any]) -> tuple[np.ndarray, float]:
     t0 = time.perf_counter()
     psi = gs_solve_np(**case)
     return psi, time.perf_counter() - t0
 
 
-def _run_julia() -> tuple[np.ndarray, float]:
-    command = [
-        "julia",
-        f"--project={_JULIA_PROJECT}",
-        "--startup-file=no",
-        str(_JULIA_PROJECT / "bin" / "gs_picard_csv.jl"),
-        str(_CASE_PATH),
-    ]
+def _run_command(command: list[str], cwd: Path) -> tuple[np.ndarray, float]:
     t0 = time.perf_counter()
     completed = subprocess.run(
         command,
-        cwd=_REPO,
+        cwd=cwd,
         check=True,
         text=True,
         capture_output=True,
     )
-    elapsed = time.perf_counter() - t0
-    rows = [[float(cell) for cell in row] for row in csv.reader(completed.stdout.splitlines())]
-    return np.asarray(rows, dtype=float), elapsed
+    return _matrix_from_csv(completed.stdout), time.perf_counter() - t0
+
+
+def _run_julia() -> tuple[np.ndarray, float]:
+    return _run_command(
+        [
+            "julia",
+            f"--project={_JULIA_PROJECT}",
+            "--startup-file=no",
+            str(_JULIA_PROJECT / "bin" / "gs_picard_csv.jl"),
+            str(_CASE_PATH),
+        ],
+        _REPO,
+    )
+
+
+def _run_go() -> tuple[np.ndarray, float]:
+    return _run_command(["go", "run", "./cmd/gs_picard_csv", str(_CASE_PATH)], _GO_PROJECT)
+
+
+def _run_lean() -> tuple[np.ndarray, float]:
+    return _run_command(["lake", "exe", "gs_picard_csv", str(_CASE_PATH)], _LEAN_PROJECT)
+
+
+def _tool_version(command: list[str]) -> str:
+    try:
+        return subprocess.run(command, check=True, text=True, capture_output=True).stdout.strip()
+    except (OSError, subprocess.SubprocessError) as exc:
+        return f"unavailable: {exc}"
 
 
 def _hardware_metadata() -> dict[str, str]:
@@ -96,37 +122,54 @@ def _hardware_metadata() -> dict[str, str]:
             if line.lower().startswith("model name") and ":" in line:
                 cpu_model = line.split(":", 1)[1].strip()
                 break
-    try:
-        julia_version = subprocess.run(
-            ["julia", "--version"], check=True, text=True, capture_output=True
-        ).stdout.strip()
-    except (OSError, subprocess.SubprocessError) as exc:
-        julia_version = f"unavailable: {exc}"
     return {
         "cpu_model": cpu_model,
         "machine": platform.machine(),
         "python": platform.python_version(),
-        "julia": julia_version,
+        "julia": _tool_version(["julia", "--version"]),
+        "go": _tool_version(["go", "version"]),
+        "lean": _tool_version(["lean", "--version"]),
         "os": platform.platform(),
     }
+
+
+def _boundary_abs_max(psi: np.ndarray) -> float:
+    return float(
+        max(
+            np.max(np.abs(psi[0, :])),
+            np.max(np.abs(psi[-1, :])),
+            np.max(np.abs(psi[:, 0])),
+            np.max(np.abs(psi[:, -1])),
+        )
+    )
+
+
+def _relative_l2(candidate: np.ndarray, reference: np.ndarray) -> float:
+    denominator = float(np.linalg.norm(reference[1:-1, 1:-1])) + 1e-30
+    return float(np.linalg.norm(candidate[1:-1, 1:-1] - reference[1:-1, 1:-1])) / denominator
 
 
 def main() -> None:
     case = _read_case(_CASE_PATH)
     python_psi, python_seconds = _run_python(case)
     julia_psi, julia_seconds = _run_julia()
+    go_psi, go_seconds = _run_go()
+    lean_psi, lean_seconds = _run_lean()
 
-    rel_l2 = float(np.linalg.norm(julia_psi[1:-1, 1:-1] - python_psi[1:-1, 1:-1])) / (
-        float(np.linalg.norm(python_psi[1:-1, 1:-1])) + 1e-30
-    )
-    boundary_max = float(
-        max(
-            np.max(np.abs(julia_psi[0, :])),
-            np.max(np.abs(julia_psi[-1, :])),
-            np.max(np.abs(julia_psi[:, 0])),
-            np.max(np.abs(julia_psi[:, -1])),
-        )
-    )
+    parity_by_language = {
+        "Julia": {
+            "relative_l2_interior": _relative_l2(julia_psi, python_psi),
+            "boundary_abs_max": _boundary_abs_max(julia_psi),
+        },
+        "Go": {
+            "relative_l2_interior": _relative_l2(go_psi, python_psi),
+            "boundary_abs_max": _boundary_abs_max(go_psi),
+        },
+        "Lean": {
+            "relative_l2_interior": _relative_l2(lean_psi, python_psi),
+            "boundary_abs_max": _boundary_abs_max(lean_psi),
+        },
+    }
 
     report = {
         "_metadata": {
@@ -147,12 +190,14 @@ def main() -> None:
                 "implementation": "SCPNFusionSolvers.solve_grad_shafranov",
                 "wall_time_s": julia_seconds,
             },
+            {"language": "Go", "implementation": "gssolver.Solve", "wall_time_s": go_seconds},
+            {
+                "language": "Lean",
+                "implementation": "SCPNFusionSolvers.solveGradShafranov",
+                "wall_time_s": lean_seconds,
+            },
         ],
-        "parity": {
-            "relative_l2_interior": rel_l2,
-            "julia_boundary_abs_max": boundary_max,
-            "shape": list(julia_psi.shape),
-        },
+        "parity": {"by_language": parity_by_language, "shape": list(python_psi.shape)},
     }
     _REPORT_JSON.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -167,7 +212,7 @@ def main() -> None:
         "",
         "# Polyglot Grad-Shafranov Solver Benchmark",
         "",
-        "Local workstation benchmark for native Python and native Julia fixed-boundary Grad-Shafranov Picard/Jacobi solvers. The Julia path executes the `SCPNFusionSolvers` package directly; it is not a Python FFI wrapper.",
+        "Local workstation benchmark for native Python, Julia, Go, and Lean fixed-boundary Grad-Shafranov Picard/Jacobi solvers. Each non-Python path executes its own implementation rather than a Python FFI wrapper.",
         "",
         "## Hardware",
         "",
@@ -176,6 +221,8 @@ def main() -> None:
         f"- OS: {report['hardware']['os']}",
         f"- Python: {report['hardware']['python']}",
         f"- Julia: {report['hardware']['julia']}",
+        f"- Go: {report['hardware']['go']}",
+        f"- Lean: {report['hardware']['lean']}",
         "",
         "## Case",
         "",
@@ -196,10 +243,18 @@ def main() -> None:
             "",
             "## Numerical Parity",
             "",
-            f"- Interior relative L2 error, Julia vs Python: {rel_l2:.6e}",
-            f"- Julia boundary absolute maximum: {boundary_max:.6e}",
+            "| Language | Interior relative L2 vs Python | Boundary absolute maximum |",
+            "|----------|--------------------------------|---------------------------|",
+        ]
+    )
+    for language, parity in parity_by_language.items():
+        lines.append(
+            f"| {language} | {parity['relative_l2_interior']:.6e} | {parity['boundary_abs_max']:.6e} |"
+        )
+    lines.extend(
+        [
             "",
-            "These local timings include process start-up for the Julia CLI path. Use cloud or long-lived process benchmarks for throughput comparisons.",
+            "These local timings include process start-up and compilation-cache checks for CLI paths. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.",
         ]
     )
     _REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")

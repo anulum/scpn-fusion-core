@@ -4,6 +4,8 @@ target/
 Cargo.lock
 !scpn-fusion-rs/Cargo.lock
 scpn-fusion-jl/Manifest.toml
+scpn-fusion-lean/.lake/
+scpn-fusion-lean/lake-manifest.json
 
 # Python
 __pycache__/

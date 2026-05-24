@@ -45,9 +45,10 @@ than inferred from the ion heat flux.
 
 `PYTHONPATH=src python benchmarks/polyglot_gs_solver_comparison.py` runs the
 shared fixed-boundary Grad-Shafranov Picard/Jacobi case through the native
-Python reference and the native Julia `SCPNFusionSolvers` package. The Julia
-path is a full implementation of the stencil, nonlinear source construction,
-Picard loop, and boundary handling; it is not a Python FFI wrapper.
+Python reference plus native Julia, Go, and Lean solver packages. Each
+non-Python path implements the stencil, nonlinear source construction, Picard
+loop, and boundary handling in its own language; these paths are not Python FFI
+wrappers.
 
 | File | Contents |
 |------|----------|
@@ -55,8 +56,9 @@ Picard loop, and boundary handling; it is not a Python FFI wrapper.
 | `validation/reports/polyglot_gs_solver_comparison.json` | Hardware metadata, solver timings, and parity metrics |
 | `validation/reports/polyglot_gs_solver_comparison.md` | Human-readable timing and parity report |
 
-The local CLI benchmark includes Julia process start-up time. Use long-lived
-processes or cloud GPU/CPU runners for throughput comparisons.
+The local CLI benchmark includes process start-up and compilation-cache checks
+for language CLI paths. Use long-lived processes or cloud GPU/CPU runners for
+throughput comparisons.
 
 ## Criterion Benchmarks
 

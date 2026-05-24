@@ -8,7 +8,7 @@
 
 # Polyglot Grad-Shafranov Solver Benchmark
 
-Local workstation benchmark for native Python and native Julia fixed-boundary Grad-Shafranov Picard/Jacobi solvers. The Julia path executes the `SCPNFusionSolvers` package directly; it is not a Python FFI wrapper.
+Local workstation benchmark for native Python, Julia, Go, and Lean fixed-boundary Grad-Shafranov Picard/Jacobi solvers. Each non-Python path executes its own implementation rather than a Python FFI wrapper.
 
 ## Hardware
 
@@ -17,6 +17,8 @@ Local workstation benchmark for native Python and native Julia fixed-boundary Gr
 - OS: Linux-6.17.0-29-generic-x86_64-with-glibc2.39
 - Python: 3.12.3
 - Julia: julia version 1.12.6
+- Go: go version go1.26.2 linux/amd64
+- Lean: Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)
 
 ## Case
 
@@ -29,12 +31,17 @@ Local workstation benchmark for native Python and native Julia fixed-boundary Gr
 
 | Language | Implementation | Wall time (s) |
 |----------|----------------|---------------|
-| Python | `gs_solve_np` | 0.007014 |
-| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 9.161843 |
+| Python | `gs_solve_np` | 0.005572 |
+| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 6.489916 |
+| Go | `gssolver.Solve` | 0.058843 |
+| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.527661 |
 
 ## Numerical Parity
 
-- Interior relative L2 error, Julia vs Python: 8.983125e-17
-- Julia boundary absolute maximum: 0.000000e+00
+| Language | Interior relative L2 vs Python | Boundary absolute maximum |
+|----------|--------------------------------|---------------------------|
+| Julia | 8.983125e-17 | 0.000000e+00 |
+| Go | 1.790625e-16 | 0.000000e+00 |
+| Lean | 1.123308e-14 | 0.000000e+00 |
 
-These local timings include process start-up for the Julia CLI path. Use cloud or long-lived process benchmarks for throughput comparisons.
+These local timings include process start-up and compilation-cache checks for CLI paths. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.

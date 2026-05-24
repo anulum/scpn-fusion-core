@@ -1,0 +1,188 @@
+/-
+SPDX-License-Identifier: AGPL-3.0-or-later
+Commercial license available
+© Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+© Code 2020–2026 Miroslav Šotek. All rights reserved.
+ORCID: 0009-0009-3560-0851
+Contact: www.anulum.li | protoscience@anulum.li
+SCPN Fusion Core — Native Lean Solvers
+-/
+namespace SCPNFusionSolvers
+
+structure GradShafranovCase where
+  rMin : Float
+  rMax : Float
+  zMin : Float
+  zMax : Float
+  nr : Nat
+  nz : Nat
+  ipTarget : Float
+  mu0 : Float
+  nPicard : Nat
+  nJacobi : Nat
+  alpha : Float
+  omegaJ : Float
+  betaMix : Float
+  deriving Repr
+
+structure GradShafranovResult where
+  psi : Array (Array Float)
+  residualHistory : Array Float
+  deriving Repr
+
+abbrev Matrix := Array (Array Float)
+
+def fmax (a b : Float) : Float :=
+  if a >= b then a else b
+
+def fmin (a b : Float) : Float :=
+  if a <= b then a else b
+
+def referenceCase : GradShafranovCase :=
+  { rMin := 1.0, rMax := 3.0, zMin := -1.2, zMax := 1.2, nr := 17, nz := 17,
+    ipTarget := 1000000.0, mu0 := 1.2566370614359173e-6, nPicard := 8,
+    nJacobi := 16, alpha := 0.1, omegaJ := 0.6666666666666666, betaMix := 0.5 }
+
+def validateCase (c : GradShafranovCase) : Except String Unit :=
+  if !(c.rMax > c.rMin) || !(c.zMax > c.zMin) then
+    throw "invalid domain bounds"
+  else if c.nr < 3 || c.nz < 3 then
+    throw "grid dimensions must be at least 3"
+  else if !(c.mu0 > 0.0) || c.nPicard < 1 || c.nJacobi < 1 then
+    throw "invalid positive solver scalar"
+  else if !(c.alpha > 0.0 && c.alpha <= 1.0) || !(c.omegaJ > 0.0 && c.omegaJ < 2.0) || !(c.betaMix >= 0.0 && c.betaMix <= 1.0) then
+    throw "invalid relaxation or profile scalar"
+  else
+    pure ()
+
+def zeros (nz nr : Nat) : Matrix :=
+  Array.replicate nz (Array.replicate nr 0.0)
+
+def get2D (m : Matrix) (iz ir : Nat) : Float :=
+  match m[iz]? with
+  | some row => row.getD ir 0.0
+  | none => 0.0
+
+def set2D (m : Matrix) (iz ir : Nat) (value : Float) : Matrix :=
+  match m[iz]? with
+  | some row => m.set! iz (row.set! ir value)
+  | none => m
+
+def linspace (start stop : Float) (count : Nat) : Array Float := Id.run do
+  let step := (stop - start) / Float.ofNat (count - 1)
+  let mut out := #[]
+  for i in List.range count do
+    out := out.push (start + step * Float.ofNat i)
+  return out
+
+def rGrid (c : GradShafranovCase) : Matrix := Id.run do
+  let r := linspace c.rMin c.rMax c.nr
+  let mut rr := zeros c.nz c.nr
+  for iz in List.range c.nz do
+    for ir in List.range c.nr do
+      rr := set2D rr iz ir (r.getD ir 0.0)
+  return rr
+
+def applyZeroBoundary (psi : Matrix) : Matrix := Id.run do
+  let nz := psi.size
+  let nr := match psi[0]? with | some row => row.size | none => 0
+  let mut out := psi
+  for ir in List.range nr do
+    out := set2D out 0 ir 0.0
+    out := set2D out (nz - 1) ir 0.0
+  for iz in List.range nz do
+    out := set2D out iz 0 0.0
+    out := set2D out iz (nr - 1) 0.0
+  return out
+
+def initialPsi (c : GradShafranovCase) (rr : Matrix) : Matrix := Id.run do
+  let rCenter := 0.5 * (c.rMin + c.rMax)
+  let mut psi := zeros c.nz c.nr
+  for iz in List.range c.nz do
+    for ir in List.range c.nr do
+      let delta := get2D rr iz ir - rCenter
+      psi := set2D psi iz ir (Float.exp (-(delta * delta) / 0.5) * 0.01)
+  return applyZeroBoundary psi
+
+def maxInterior (psi : Matrix) (nz nr : Nat) : Float := Id.run do
+  let mut best := get2D psi 1 1
+  for iz in List.range nz do
+    if iz > 0 && iz + 1 < nz then
+      for ir in List.range nr do
+        if ir > 0 && ir + 1 < nr then
+          best := fmax best (get2D psi iz ir)
+  return best
+
+def computeSource (c : GradShafranovCase) (psi rr : Matrix) (dR dZ : Float) : Matrix := Id.run do
+  let psiAxis := maxInterior psi c.nz c.nr
+  let mut denom := -psiAxis
+  if Float.abs denom < 1.0e-9 then
+    denom := if denom == 0.0 then 1.0e-9 else if denom < 0.0 then -1.0e-9 else 1.0e-9
+  let mut jRaw := zeros c.nz c.nr
+  let mut current := 0.0
+  for iz in List.range c.nz do
+    for ir in List.range c.nr do
+      let psiNorm0 := (get2D psi iz ir - psiAxis) / denom
+      let psiNorm := fmin 1.0 (fmax 0.0 psiNorm0)
+      let profile := if psiNorm >= 0.0 && psiNorm < 1.0 then 1.0 - psiNorm else 0.0
+      let rVal := get2D rr iz ir
+      let rSafe := fmax rVal 1.0e-10
+      let jP := rVal * profile
+      let jF := profile / (c.mu0 * rSafe)
+      let j := c.betaMix * jP + (1.0 - c.betaMix) * jF
+      jRaw := set2D jRaw iz ir j
+      current := current + j * dR * dZ
+  let scale := c.ipTarget / fmax (Float.abs current) 1.0e-9
+  let mut source := zeros c.nz c.nr
+  for iz in List.range c.nz do
+    for ir in List.range c.nr do
+      source := set2D source iz ir (-c.mu0 * get2D rr iz ir * get2D jRaw iz ir * scale)
+  return source
+
+def jacobiStep (c : GradShafranovCase) (psi source rr : Matrix) (dR dZ : Float) : Matrix := Id.run do
+  let dR2 := dR * dR
+  let dZ2 := dZ * dZ
+  let aNS := 1.0 / dZ2
+  let aC := 2.0 / dR2 + 2.0 / dZ2
+  let mut out := psi
+  for iz in List.range c.nz do
+    if iz > 0 && iz + 1 < c.nz then
+      for ir in List.range c.nr do
+        if ir > 0 && ir + 1 < c.nr then
+          let rSafe := fmax (get2D rr iz ir) 1.0e-10
+          let aE := 1.0 / dR2 - 1.0 / (2.0 * rSafe * dR)
+          let aW := 1.0 / dR2 + 1.0 / (2.0 * rSafe * dR)
+          let update := (aE * get2D psi iz (ir + 1) + aW * get2D psi iz (ir - 1) + aNS * (get2D psi (iz - 1) ir + get2D psi (iz + 1) ir) - get2D source iz ir) / aC
+          out := set2D out iz ir ((1.0 - c.omegaJ) * get2D psi iz ir + c.omegaJ * update)
+  return out
+
+def maxChange (a b : Matrix) : Float := Id.run do
+  let nz := a.size
+  let nr := match a[0]? with | some row => row.size | none => 0
+  let mut best := 0.0
+  for iz in List.range nz do
+    for ir in List.range nr do
+      best := fmax best (Float.abs (get2D a iz ir - get2D b iz ir))
+  return best
+
+def solveGradShafranov (c : GradShafranovCase) : Except String GradShafranovResult := do
+  validateCase c
+  let rr := rGrid c
+  let dR := (c.rMax - c.rMin) / Float.ofNat (c.nr - 1)
+  let dZ := (c.zMax - c.zMin) / Float.ofNat (c.nz - 1)
+  let mut psi := initialPsi c rr
+  let mut residuals := #[]
+  for _ in List.range c.nPicard do
+    let source := computeSource c psi rr dR dZ
+    let mut psiElliptic := psi
+    for _ in List.range c.nJacobi do
+      psiElliptic := jacobiStep c psiElliptic source rr dR dZ
+    let mut psiNext := zeros c.nz c.nr
+    for iz in List.range c.nz do
+      for ir in List.range c.nr do
+        psiNext := set2D psiNext iz ir ((1.0 - c.alpha) * get2D psi iz ir + c.alpha * get2D psiElliptic iz ir)
+    residuals := residuals.push (maxChange psiNext psi)
+    psi := psiNext
+  return { psi := applyZeroBoundary psi, residualHistory := residuals }
+
+end SCPNFusionSolvers

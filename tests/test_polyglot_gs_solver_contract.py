@@ -62,18 +62,55 @@ def _run_julia_case() -> np.ndarray:
     return np.asarray(rows, dtype=float)
 
 
-def test_native_julia_grad_shafranov_matches_python_reference() -> None:
-    """Julia native GS solve preserves the Python reference physics contract."""
-    python_psi = gs_solve_np(**_CASE)
-    julia_psi = _run_julia_case()
+def _run_go_case() -> np.ndarray:
+    completed = subprocess.run(
+        ["go", "run", "./cmd/gs_picard_csv", str(_REFERENCE_CASE)],
+        check=True,
+        cwd=_REPO / "scpn-fusion-go",
+        text=True,
+        capture_output=True,
+    )
+    rows = [[float(cell) for cell in row] for row in csv.reader(completed.stdout.splitlines())]
+    return np.asarray(rows, dtype=float)
 
-    assert julia_psi.shape == python_psi.shape
-    assert np.all(np.isfinite(julia_psi))
-    assert np.max(np.abs(julia_psi[0, :])) < 1e-14
-    assert np.max(np.abs(julia_psi[-1, :])) < 1e-14
-    assert np.max(np.abs(julia_psi[:, 0])) < 1e-14
-    assert np.max(np.abs(julia_psi[:, -1])) < 1e-14
+
+def _run_lean_case() -> np.ndarray:
+    completed = subprocess.run(
+        ["lake", "exe", "gs_picard_csv", str(_REFERENCE_CASE)],
+        check=True,
+        cwd=_REPO / "scpn-fusion-lean",
+        text=True,
+        capture_output=True,
+    )
+    rows = [[float(cell) for cell in row] for row in csv.reader(completed.stdout.splitlines())]
+    return np.asarray(rows, dtype=float)
+
+
+def _assert_matches_python_reference(candidate_psi: np.ndarray) -> None:
+    python_psi = gs_solve_np(**_CASE)
+
+    assert candidate_psi.shape == python_psi.shape
+    assert np.all(np.isfinite(candidate_psi))
+    assert np.max(np.abs(candidate_psi[0, :])) < 1e-14
+    assert np.max(np.abs(candidate_psi[-1, :])) < 1e-14
+    assert np.max(np.abs(candidate_psi[:, 0])) < 1e-14
+    assert np.max(np.abs(candidate_psi[:, -1])) < 1e-14
 
     denominator = np.linalg.norm(python_psi[1:-1, 1:-1]) + 1e-30
-    relative_l2 = np.linalg.norm(julia_psi[1:-1, 1:-1] - python_psi[1:-1, 1:-1]) / denominator
+    relative_l2 = np.linalg.norm(candidate_psi[1:-1, 1:-1] - python_psi[1:-1, 1:-1]) / denominator
     assert relative_l2 < 5e-12
+
+
+def test_native_julia_grad_shafranov_matches_python_reference() -> None:
+    """Julia native GS solve preserves the Python reference physics contract."""
+    _assert_matches_python_reference(_run_julia_case())
+
+
+def test_native_go_grad_shafranov_matches_python_reference() -> None:
+    """Go native GS solve preserves the Python reference physics contract."""
+    _assert_matches_python_reference(_run_go_case())
+
+
+def test_native_lean_grad_shafranov_matches_python_reference() -> None:
+    """Lean native GS solve preserves the Python reference physics contract."""
+    _assert_matches_python_reference(_run_lean_case())
