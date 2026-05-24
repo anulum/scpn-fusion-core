@@ -14,6 +14,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from scpn_fusion.io.safe_loaders import checked_json_load
 from scpn_fusion.core._tglf_interface_types import (
     TGLFReferenceCaseResult,
     TGLF_REF_DIR,
@@ -89,8 +90,7 @@ def validate_reduced_transport_reference_case(
 ) -> TGLFReferenceCaseResult:
     """Compare the reduced transport closure against a canonical TGLF regime."""
     ref_path = Path(ref_dir) / _reference_case_filename(case_name)
-    with open(ref_path, encoding="utf-8") as f:
-        payload = json.load(f)
+    payload = checked_json_load(ref_path)
 
     inp = _reference_case_to_transport_input(payload, ti_kev=ti_kev)
     fluxes = critical_gradient_model(inp)

@@ -8,6 +8,9 @@
 from __future__ import annotations
 
 import ctypes
+import hashlib
+import hmac
+import json
 import logging
 import math
 import numpy as np
@@ -21,6 +24,7 @@ from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 _CPP_BUILD_TIMEOUT_SECONDS = 300.0
+_SHA256_HEX_LEN = 64
 
 
 try:
@@ -76,6 +80,77 @@ def _sanitize_convergence_params(
     return max_iters, tol_safe, omega_safe
 
 
+def _normalise_sha256(value: str) -> str:
+    digest = value.strip().split()[0].lower()
+    if len(digest) != _SHA256_HEX_LEN or any(c not in "0123456789abcdef" for c in digest):
+        raise ValueError("trusted native library digest must be a SHA-256 hex string")
+    return digest
+
+
+def _sha256_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def _sidecar_digest(path: Path) -> str | None:
+    sidecar = path.with_suffix(path.suffix + ".sha256")
+    if not sidecar.exists():
+        return None
+    return _normalise_sha256(sidecar.read_text(encoding="utf-8"))
+
+
+def _manifest_digest(path: Path) -> str | None:
+    manifest_path = os.environ.get("SCPN_SOLVER_TRUST_MANIFEST")
+    if not manifest_path:
+        return None
+    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+    if isinstance(manifest, dict) and "libraries" in manifest:
+        manifest = manifest["libraries"]
+    if not isinstance(manifest, dict):
+        raise ValueError("native library trust manifest must be a JSON object")
+    keys = (str(path), str(path.resolve()), path.name)
+    for key in keys:
+        if key in manifest:
+            value = manifest[key]
+            if not isinstance(value, str):
+                raise ValueError("native library trust manifest digest must be a string")
+            return _normalise_sha256(value)
+    return None
+
+
+def _expected_library_digest(path: Path) -> str | None:
+    env_digest = os.environ.get("SCPN_SOLVER_LIB_SHA256")
+    if env_digest:
+        return _normalise_sha256(env_digest)
+    manifest = _manifest_digest(path)
+    if manifest:
+        return manifest
+    return _sidecar_digest(path)
+
+
+def _verify_native_library_trust(path: Path) -> str:
+    digest = _sha256_file(path)
+    expected = _expected_library_digest(path)
+    if expected is None:
+        raise ValueError(
+            "native solver library trust metadata is required; provide "
+            "SCPN_SOLVER_LIB_SHA256, SCPN_SOLVER_TRUST_MANIFEST, or a .sha256 sidecar"
+        )
+    if not hmac.compare_digest(digest, expected):
+        raise ValueError("native solver library SHA-256 does not match trusted metadata")
+    return digest
+
+
+def _write_sha256_sidecar(path: Path) -> None:
+    path.with_suffix(path.suffix + ".sha256").write_text(
+        f"{_sha256_file(path)}  {path.name}\n",
+        encoding="utf-8",
+    )
+
+
 class HPCBridge:
     """Interface between Python and the compiled C++ Grad-Shafranov solver.
 
@@ -99,6 +174,7 @@ class HPCBridge:
         self.load_error: Optional[str] = None
         self.close_error: Optional[str] = None
         self.close_error_count: int = 0
+        self.lib_sha256: Optional[str] = None
         self._destroy_symbol: Optional[str] = None
         self._has_converged_api: bool = False
         self._has_boundary_api: bool = False
@@ -124,10 +200,16 @@ class HPCBridge:
         self.lib_path = str(lib_path)
 
         try:
+            lib_file = Path(self.lib_path)
+            if lib_file.exists():
+                self.lib_sha256 = _verify_native_library_trust(lib_file)
             self.lib = ctypes.CDLL(self.lib_path)
             self._setup_signatures()
             logger.info("Loaded C++ accelerator: %s", self.lib_path)
             self.loaded = True
+        except ValueError as exc:
+            self.load_error = str(exc)
+            logger.warning("Refusing untrusted C++ accelerator at %s: %s", self.lib_path, exc)
         except OSError as exc:
             self.load_error = str(exc)
             logger.debug(
@@ -472,6 +554,7 @@ def compile_cpp() -> Optional[str]:
         return None
 
     logger.info("Compilation succeeded: %s", out)
+    _write_sha256_sidecar(out)
     return str(out)
 
 

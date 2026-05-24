@@ -19,7 +19,6 @@ the Rust multigrid backend when available.
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -39,6 +38,7 @@ from scpn_fusion.core.fusion_kernel_numerics import (
     stable_rms as _stable_rms_impl,
 )
 from scpn_fusion.hpc.hpc_bridge import HPCBridge
+from scpn_fusion.io.safe_loaders import checked_json_load
 
 logger = logging.getLogger(__name__)
 
@@ -145,8 +145,7 @@ class FusionKernel(
                 f"configuration file exceeds {MAX_CONFIG_BYTES} byte limit: {config_path}"
             )
 
-        with config_path.open("r", encoding="utf-8") as f:
-            raw_cfg = json.load(f)
+        raw_cfg = checked_json_load(config_path, max_bytes=MAX_CONFIG_BYTES)
 
         # Hardening: Strict schema validation at the entry point
         validated_cfg = validate_config(raw_cfg)

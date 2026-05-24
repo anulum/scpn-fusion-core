@@ -24,6 +24,7 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
+from scpn_fusion.io.safe_loaders import checked_json_load
 from scpn_fusion.core._tglf_interface_benchmark import TGLFBenchmark
 from scpn_fusion.core._tglf_interface_reference import (
     REFERENCE_CASES,
@@ -256,8 +257,7 @@ def parse_tglf_output(output_dir: str | Path) -> list[TGLFOutput]:
 
     for f in sorted(output_dir.glob("*.json")):
         try:
-            with open(f, encoding="utf-8") as fp:
-                data = json.load(fp)
+            data = checked_json_load(f)
         except (OSError, json.JSONDecodeError):
             logger.warning("Skipping malformed TGLF output file: %s", f)
             continue

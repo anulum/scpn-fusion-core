@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_np_load
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +230,7 @@ class MLPSurrogate:
     def load_weights(self, path: str | Path) -> None:
         """Load MLP parameter arrays from an ``.npz`` weight file."""
         path = Path(path)
-        with np.load(path, allow_pickle=False) as data:
+        with checked_np_load(path, allow_pickle=False) as data:
             self.W1 = np.array(data["W1"], dtype=np.float64)
             self.b1 = np.array(data["b1"], dtype=np.float64)
             self.W2 = np.array(data["W2"], dtype=np.float64)

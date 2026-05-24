@@ -21,6 +21,7 @@ from typing import Any, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_np_load
 
 logger = logging.getLogger(__name__)
 
@@ -163,7 +164,7 @@ class FNO_Controller:
         """Load explicitly enabled legacy JAX-FNO weights from an ``.npz`` file."""
         if not _HAS_JAX:
             raise RuntimeError("JAX backend not available; cannot load legacy FNO weights.")
-        with np.load(path, allow_pickle=False) as data:
+        with checked_np_load(path, allow_pickle=False) as data:
             self.params = {k: jnp.array(data[k]) for k in data.files}
         self.loaded_weights = True
 

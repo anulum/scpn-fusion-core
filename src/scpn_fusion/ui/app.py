@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt
 import os
 from pathlib import Path
 
+from scpn_fusion.ui.security_headers import install_tornado_security_headers
+
+install_tornado_security_headers()
+
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
 except ImportError:

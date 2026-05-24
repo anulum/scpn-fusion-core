@@ -81,6 +81,33 @@ with `Harden`.
 - **Local command policy:** machine-local command-permission settings are
   excluded from version control.
 
+### File-Loader Bounds
+- JSON, G-EQDSK, and NumPy archive production loaders enforce 10 MiB size
+  gates before parsing untrusted files.
+- NumPy archive loaders use `allow_pickle=False` through a shared bounded
+  loader helper.
+- G-EQDSK parsing rejects unsafe grid and contour counts before array
+  allocation.
+
+### Native Library Loading
+- The optional HPC solver bridge refuses existing native libraries unless
+  their SHA-256 digest matches trusted metadata from
+  `SCPN_SOLVER_LIB_SHA256`, `SCPN_SOLVER_TRUST_MANIFEST`, or a `.sha256`
+  sidecar.
+- Native builds write a SHA-256 sidecar beside the compiled library.
+
+### Dashboard Browser Headers
+- The Streamlit dashboard installs response security headers in the Tornado
+  request handler path, including Content-Security-Policy,
+  X-Content-Type-Options, X-Frame-Options, and Referrer-Policy.
+- The dashboard launcher also enables CORS and XSRF protection in the
+  Streamlit runtime configuration.
+
+### Fuzzing
+- Atheris-compatible fuzz targets are available for GEQDSK, FusionKernel JSON
+  configuration, and disruption-shot NPZ loading under `fuzz/`.
+- See `docs/security/FUZZING.md` for commands and target scope.
+
 ### RNG Isolation
 Global NumPy RNG state is never mutated by library code. All stochastic
 modules use scoped `numpy.random.Generator` instances seeded explicitly,
@@ -89,11 +116,9 @@ and `Stop global RNG mutation`.
 
 ## Known Limitations
 
-- **No fuzzing harness yet.** Property-based testing via Hypothesis covers
-  many input paths, but dedicated fuzzing (e.g., `cargo-fuzz` for Rust,
-  `atheris` for Python) has not been set up.
-- **No third-party security audit.** The codebase has not been reviewed by
-  an external security firm.
+- **No completed third-party security audit.** The codebase has not yet been
+  reviewed by an external security firm. The audit scope and required
+  deliverables are tracked in `docs/security/THIRD_PARTY_AUDIT_SCOPE.md`.
 - **No CVE history.** No vulnerabilities have been reported to date.
 
 Contributions to improve security coverage (fuzzing harnesses, static

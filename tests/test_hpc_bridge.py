@@ -328,15 +328,19 @@ def test_compile_cpp_requires_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
     assert hpc_mod.compile_cpp() is None
 
 
-def test_compile_cpp_builds_in_package_bin(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_compile_cpp_builds_in_package_bin(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
     def _fake_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
         calls["cmd"] = list(cmd)
         calls["check"] = check
         calls["timeout"] = timeout
+        Path(cmd[cmd.index("-o") + 1]).write_bytes(b"compiled-native-linux")
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
+    module_file = tmp_path / "hpc_bridge.py"
+    module_file.write_text("# test module\n", encoding="utf-8")
+    monkeypatch.setattr(hpc_mod, "__file__", str(module_file))
     monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Linux")
     monkeypatch.setattr(hpc_mod.subprocess, "run", _fake_run)
 
@@ -350,15 +354,19 @@ def test_compile_cpp_builds_in_package_bin(monkeypatch: pytest.MonkeyPatch) -> N
     assert calls["cmd"][0] == "g++"
 
 
-def test_compile_cpp_windows_path(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_compile_cpp_windows_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     calls: dict[str, object] = {}
 
     def _fake_run(cmd, check, timeout):  # type: ignore[no-untyped-def]
         calls["cmd"] = list(cmd)
         calls["check"] = check
         calls["timeout"] = timeout
+        Path(cmd[cmd.index("-o") + 1]).write_bytes(b"compiled-native-windows")
 
     monkeypatch.setenv("SCPN_ALLOW_NATIVE_BUILD", "1")
+    module_file = tmp_path / "hpc_bridge.py"
+    module_file.write_text("# test module\n", encoding="utf-8")
+    monkeypatch.setattr(hpc_mod, "__file__", str(module_file))
     monkeypatch.setattr(hpc_mod.platform, "system", lambda: "Windows")
     monkeypatch.setattr(hpc_mod.subprocess, "run", _fake_run)
 
@@ -434,3 +442,66 @@ def test_close_noop_when_not_loaded() -> None:
     bridge.loaded = False
     bridge.close()
     assert bridge.lib.destroyed is None
+
+
+def test_init_rejects_env_library_without_trust_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    lib = tmp_path / "libscpn_solver.so"
+    lib.write_bytes(b"native payload")
+    calls: list[str] = []
+
+    def _fake_cdll(path: str):
+        calls.append(path)
+        raise AssertionError("unsigned library must not be loaded")
+
+    monkeypatch.setenv("SCPN_SOLVER_LIB", str(lib))
+    monkeypatch.delenv("SCPN_SOLVER_LIB_SHA256", raising=False)
+    monkeypatch.delenv("SCPN_SOLVER_TRUST_MANIFEST", raising=False)
+    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _fake_cdll)
+
+    bridge = HPCBridge()
+
+    assert not bridge.loaded
+    assert bridge.load_error is not None
+    assert "trust" in bridge.load_error.lower()
+    assert calls == []
+
+
+def test_init_loads_env_library_when_sha256_matches(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    lib = tmp_path / "libscpn_solver.so"
+    payload = b"native payload"
+    lib.write_bytes(payload)
+    digest = hpc_mod.hashlib.sha256(payload).hexdigest()
+    calls: list[str] = []
+
+    class _NativeFunction:
+        argtypes = None
+        restype = None
+
+        def __call__(self, *args: object, **kwargs: object) -> None:
+            return None
+
+    class _LoadedLib:
+        def __init__(self) -> None:
+            self.create_solver = _NativeFunction()
+            self.run_step = _NativeFunction()
+            self.run_step_converged = _NativeFunction()
+            self.set_boundary_dirichlet = _NativeFunction()
+            self.destroy_solver = _NativeFunction()
+
+    def _fake_cdll(path: str):
+        calls.append(path)
+        return _LoadedLib()
+
+    monkeypatch.setenv("SCPN_SOLVER_LIB", str(lib))
+    monkeypatch.setenv("SCPN_SOLVER_LIB_SHA256", digest)
+    monkeypatch.delenv("SCPN_SOLVER_TRUST_MANIFEST", raising=False)
+    monkeypatch.setattr(hpc_mod.ctypes, "CDLL", _fake_cdll)
+
+    bridge = HPCBridge()
+
+    assert calls == [str(lib)]
+    assert bridge.lib_sha256 == digest

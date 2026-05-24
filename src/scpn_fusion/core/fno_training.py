@@ -22,6 +22,7 @@ from typing import Dict, List, Tuple
 import logging
 
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_np_load
 from scpn_fusion.core.fno_training_multi_regime import (
     SPARC_REGIMES,  # noqa: F401 - re-exported compatibility surface
     _generate_multi_regime_pairs,  # noqa: F401 - re-exported compatibility surface
@@ -174,7 +175,7 @@ class MultiLayerFNO:
     def load_weights(self, path: str | Path) -> None:
         """Load FNO architecture metadata and NumPy weights from ``path``."""
         path = Path(path)
-        with np.load(path, allow_pickle=False) as data:
+        with checked_np_load(path, allow_pickle=False) as data:
             self.modes = int(data["modes"][0])
             self.width = int(data["width"][0])
             self.n_layers = int(data["n_layers"][0])

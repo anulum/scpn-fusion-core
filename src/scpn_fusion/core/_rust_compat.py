@@ -19,6 +19,7 @@ import logging
 from collections import deque
 from typing import Optional
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_json_load
 
 logger = logging.getLogger(__name__)
 
@@ -89,10 +90,7 @@ class RustAcceleratedKernel:
         self._rust = PyFusionKernel(self._config_path)
 
         # Also load JSON config for attribute access (bridges read .cfg directly)
-        import json
-
-        with open(config_path, "r", encoding="utf-8") as f:
-            self.cfg = json.load(f)
+        self.cfg = checked_json_load(config_path)
 
         # Mirror grid attributes
         nr, nz = self._rust.grid_shape()

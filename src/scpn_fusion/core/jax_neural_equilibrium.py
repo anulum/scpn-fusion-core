@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_np_load
 from numpy.typing import NDArray
 
 try:
@@ -71,7 +72,7 @@ def load_weights_as_jax(
     if not _HAS_JAX:
         raise RuntimeError("JAX not available")
 
-    with np.load(path, allow_pickle=False) as data:
+    with checked_np_load(path, allow_pickle=False) as data:
         n_layers = int(data["n_layers"][0])
         ws = tuple(jnp.asarray(data[f"w{i}"], dtype=jnp.float64) for i in range(n_layers))
         bs = tuple(jnp.asarray(data[f"b{i}"], dtype=jnp.float64) for i in range(n_layers))

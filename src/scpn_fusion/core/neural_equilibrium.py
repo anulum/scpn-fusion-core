@@ -32,6 +32,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_np_load
 from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
@@ -561,7 +562,7 @@ class NeuralEquilibriumAccelerator:
     def load_weights(self, path: str | Path = DEFAULT_WEIGHTS_PATH) -> None:
         """Load model from .npz."""
         path = Path(path)
-        with np.load(path, allow_pickle=False) as data:
+        with checked_np_load(path, allow_pickle=False) as data:
             self.cfg.n_components = int(data["n_components"][0])
             self.cfg.grid_shape = (int(data["grid_nh"][0]), int(data["grid_nw"][0]))
             self.cfg.n_input_features = int(data["n_input_features"][0])

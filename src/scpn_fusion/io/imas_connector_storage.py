@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_json_load
 
 _VALID_IDS_TYPES = ("equilibrium", "core_profiles", "core_transport", "summary")
 
@@ -48,8 +49,7 @@ def read_ids(path: str | Path) -> dict[str, Any]:
     """Read an IDS JSON file and validate minimal schema."""
     path_obj = Path(path)
     try:
-        with path_obj.open("r", encoding="utf-8") as f:
-            data = json.load(f)
+        data = checked_json_load(path_obj)
     except json.JSONDecodeError as exc:
         raise ValueError(f"Corrupt IDS JSON file: {exc}") from exc
 

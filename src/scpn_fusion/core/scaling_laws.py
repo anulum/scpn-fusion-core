@@ -25,7 +25,6 @@ Coefficients are loaded from the JSON file shipped in
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -33,6 +32,7 @@ from typing import Any, Optional
 import warnings
 
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_json_load
 
 logger = logging.getLogger(__name__)
 
@@ -178,8 +178,7 @@ def load_ipb98y2_coefficients(
         Parsed JSON with keys ``"C"``, ``"exponents"``, etc.
     """
     p = Path(path) if path else _DEFAULT_COEFF_PATH
-    with open(p, encoding="utf-8") as f:
-        raw = json.load(f)
+    raw = checked_json_load(p)
     return _validate_ipb98y2_coefficients(raw)
 
 

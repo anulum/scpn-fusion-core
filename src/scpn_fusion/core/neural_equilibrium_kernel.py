@@ -13,7 +13,6 @@ This module isolates runtime/orchestration concerns from training code.
 
 from __future__ import annotations
 
-import json
 import logging
 import time
 from pathlib import Path
@@ -21,6 +20,8 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
+
+from scpn_fusion.io.safe_loaders import checked_json_load
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +45,7 @@ class NeuralEquilibriumKernel:
         from .neural_equilibrium import DEFAULT_WEIGHTS_PATH, NeuralEquilibriumAccelerator
 
         self.config_path = Path(config_path)
-        with open(self.config_path, "r", encoding="utf-8") as f:
-            self.cfg = json.load(f)
+        self.cfg = checked_json_load(self.config_path)
 
         resolved_weights_path = (
             Path(weights_path) if weights_path is not None else DEFAULT_WEIGHTS_PATH

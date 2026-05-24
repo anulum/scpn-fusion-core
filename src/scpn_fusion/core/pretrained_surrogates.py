@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_np_load
 from numpy.typing import NDArray
 
 from scpn_fusion.core.eqdsk import read_geqdsk
@@ -386,7 +387,7 @@ def save_pretrained_mlp(model: PretrainedMLPSurrogate, path: Path = DEFAULT_MLP_
 
 
 def load_pretrained_mlp(path: Path = DEFAULT_MLP_PATH) -> PretrainedMLPSurrogate:
-    with np.load(path, allow_pickle=False) as data:
+    with checked_np_load(path, allow_pickle=False) as data:
         return PretrainedMLPSurrogate(
             feature_mean=np.asarray(data["feature_mean"], dtype=np.float64),
             feature_std=np.asarray(data["feature_std"], dtype=np.float64),

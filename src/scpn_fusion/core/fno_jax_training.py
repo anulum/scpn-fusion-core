@@ -13,6 +13,7 @@ import jax
 import jax.numpy as jnp
 from jax import jit, vmap, value_and_grad, random
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_np_load
 from pathlib import Path
 import time
 import logging
@@ -128,7 +129,7 @@ def load_gene_binary(file_path: str) -> tuple[np.ndarray, np.ndarray]:
     if path.suffix.lower() != ".npz":
         raise ValueError("Unsupported GENE dataset format. Provide an .npz containing 'X' and 'Y'.")
 
-    with np.load(path, allow_pickle=False) as data:
+    with checked_np_load(path, allow_pickle=False) as data:
         if "X" not in data or "Y" not in data:
             raise ValueError("Dataset .npz must contain 'X' and 'Y' arrays.")
         x_np = np.asarray(data["X"], dtype=np.float32)
@@ -307,7 +308,7 @@ def fno_predict_jit(params, x):
 
 def load_fno_params(path="weights/fno_turbulence_jax.npz"):
     """Load FNO params from .npz into JAX arrays."""
-    with np.load(path, allow_pickle=False) as data:
+    with checked_np_load(path, allow_pickle=False) as data:
         return {k: jnp.asarray(data[k]) for k in data.files}
 
 

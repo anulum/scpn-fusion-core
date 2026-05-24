@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_np_load
 
 _E_CHARGE = 1.602176634e-19
 _M_ELECTRON = 9.1093837015e-31
@@ -172,7 +173,7 @@ class QLKNNSurrogate:
         return np.asarray(out)
 
     def load_weights(self, path: str) -> None:
-        data = np.load(path, allow_pickle=False)
+        data = checked_np_load(path, allow_pickle=False)
         self.weights = [data[f"w{i}"] for i in range(len(self.weights))]
         self.biases = [data[f"b{i}"] for i in range(len(self.biases))]
 

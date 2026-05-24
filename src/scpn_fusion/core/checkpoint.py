@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_json_load
 
 
 def save_checkpoint(
@@ -78,8 +79,7 @@ def load_checkpoint(path: Path | str) -> tuple[dict[str, Any], int, dict[str, An
         (solver_state, episode, metrics)
     """
     path = Path(path)
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    data = checked_json_load(path)
 
     # Convert lists back to numpy arrays where appropriate
     def _restore(obj: Any) -> Any:

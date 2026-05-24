@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from scpn_fusion.exceptions import FusionCoreError as _FusionCoreError
+from scpn_fusion.io.safe_loaders import checked_json_load
 from typing import Any, Dict, List, Optional, Union
 from scpn_fusion.scpn.artifact_codec import (
     decode_u64_compact_payload,
@@ -215,8 +216,7 @@ def _validate(artifact: Artifact) -> None:
 
 def load_artifact(path: Union[str, Path]) -> Artifact:
     """Parse a ``.scpnctl.json`` file into an ``Artifact`` dataclass."""
-    with open(path, "r", encoding="utf-8") as f:
-        obj = json.load(f)
+    obj = checked_json_load(path)
     validate_raw_artifact_schema(obj, error_type=ArtifactValidationError)
 
     # Meta

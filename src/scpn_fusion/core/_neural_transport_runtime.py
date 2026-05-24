@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_np_load
 from numpy.typing import NDArray
 
 from ._neural_transport_analytic import (
@@ -140,7 +141,7 @@ class NeuralTransportModel:
             return
 
         try:
-            with np.load(self.weights_path, allow_pickle=False) as data:
+            with checked_np_load(self.weights_path, allow_pickle=False) as data:
                 n_layers = 0
                 while f"w{n_layers + 1}" in data and f"b{n_layers + 1}" in data:
                     n_layers += 1

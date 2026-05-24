@@ -196,3 +196,22 @@ class TestGEqdskProperties:
         assert cfg["reactor_name"] == "test-reactor"
         assert cfg["grid_resolution"] == [eq.nw, eq.nh]
         assert cfg["physics"]["plasma_current_target"] == pytest.approx(15.0, abs=0.1)
+
+
+class TestGEqdskParserHardening:
+    """Malformed GEQDSK inputs must fail before large allocation."""
+
+    def test_read_geqdsk_rejects_oversized_file_before_read(self, tmp_path: Path) -> None:
+        path = tmp_path / "huge.geqdsk"
+        with path.open("wb") as handle:
+            handle.truncate(11 * 1024 * 1024)
+
+        with pytest.raises(ValueError, match="GEQDSK file too large"):
+            read_geqdsk(path)
+
+    def test_read_geqdsk_rejects_absurd_grid_dimensions(self, tmp_path: Path) -> None:
+        path = tmp_path / "absurd.geqdsk"
+        path.write_text("absurd 0 1000000 1000000\n", encoding="utf-8")
+
+        with pytest.raises(ValueError, match="grid dimensions"):
+            read_geqdsk(path)

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scpn_fusion.io.safe_loaders import checked_np_load
 
 
 def list_disruption_shots(
@@ -40,7 +41,7 @@ def load_disruption_shot(
     if not p.exists():
         raise FileNotFoundError(f"Disruption shot file not found: {p}")
 
-    with np.load(str(p), allow_pickle=False) as raw:
+    with checked_np_load(str(p), allow_pickle=False) as raw:
         required_array_keys = {
             "time_s",
             "Ip_MA",

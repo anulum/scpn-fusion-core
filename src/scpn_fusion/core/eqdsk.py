@@ -31,6 +31,10 @@ from typing import IO, Union
 import numpy as np
 from numpy.typing import NDArray
 
+MAX_GEQDSK_BYTES = 10 * 1024 * 1024
+MAX_GEQDSK_GRID_POINTS = 1_000_000
+MAX_GEQDSK_CONTOUR_POINTS = 100_000
+
 
 # ── Data container ────────────────────────────────────────────────────
 
@@ -136,10 +140,28 @@ def _split_fortran(line: str) -> list[str]:
 def _parse_header(line: str) -> tuple[str, int, int]:
     """Parse the first line: 48-char description + idum nw nh."""
     parts = line.split()
+    if len(parts) < 3:
+        raise ValueError("GEQDSK header must contain idum, nw, and nh")
     nh = int(parts[-1])
     nw = int(parts[-2])
     desc = " ".join(parts[:-3]) if len(parts) > 3 else ""
     return desc, nw, nh
+
+
+def _validate_dimensions(nw: int, nh: int) -> None:
+    if nw < 2 or nh < 2:
+        raise ValueError(f"GEQDSK grid dimensions must be >= 2x2, got {(nw, nh)}")
+    if nw * nh > MAX_GEQDSK_GRID_POINTS:
+        raise ValueError(
+            f"GEQDSK grid dimensions exceed safety limit {MAX_GEQDSK_GRID_POINTS}: got {nw}x{nh}"
+        )
+
+
+def _validate_contour_count(name: str, value: int) -> None:
+    if value < 0:
+        raise ValueError(f"GEQDSK {name} count must be non-negative")
+    if value > MAX_GEQDSK_CONTOUR_POINTS:
+        raise ValueError(f"GEQDSK {name} count exceeds safety limit {MAX_GEQDSK_CONTOUR_POINTS}")
 
 
 def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
@@ -161,11 +183,17 @@ def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
         Parsed equilibrium data.
     """
     path = Path(path)
-    with open(path, "r") as f:
+    size = path.stat().st_size
+    if size > MAX_GEQDSK_BYTES:
+        raise ValueError(f"GEQDSK file too large: {size} bytes exceeds {MAX_GEQDSK_BYTES}")
+    with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
+    if not lines:
+        raise ValueError("GEQDSK file is empty")
 
     # Parse header
     desc, nw, nh = _parse_header(lines[0])
+    _validate_dimensions(nw, nh)
 
     # Gather all numeric tokens using Fortran-aware splitting
     tokens: list[str] = []
@@ -176,12 +204,18 @@ def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
 
     def _next() -> float:
         nonlocal idx
+        if idx >= len(tokens):
+            raise ValueError("GEQDSK file ended before all required values were present")
         val = float(tokens[idx].replace("D", "E").replace("d", "e"))
         idx += 1
         return val
 
     def _read_array(n: int) -> NDArray[np.float64]:
         nonlocal idx
+        if n < 0:
+            raise ValueError("GEQDSK array length must be non-negative")
+        if idx + n > len(tokens):
+            raise ValueError("GEQDSK file ended before all required array values were present")
         arr = np.array(
             [float(tokens[idx + i].replace("D", "E").replace("d", "e")) for i in range(n)]
         )
@@ -225,6 +259,8 @@ def read_geqdsk(path: Union[str, Path]) -> GEqdsk:
     # Boundary and limiter
     nbdry = int(_next())
     nlim = int(_next())
+    _validate_contour_count("boundary", nbdry)
+    _validate_contour_count("limiter", nlim)
 
     rbdry = np.zeros(nbdry)
     zbdry = np.zeros(nbdry)

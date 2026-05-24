@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from scpn_fusion.exceptions import FusionCoreError as _FusionCoreError
+from scpn_fusion.io.safe_loaders import checked_json_load
 
 try:
     from scpn_fusion.core._rust_compat import FusionKernel
@@ -124,8 +125,7 @@ def _load_gyro_bohm_coefficient_with_contract(
         "error": None,
     }
     try:
-        with open(p, encoding="utf-8") as f:
-            data = json.load(f)
+        data = checked_json_load(p)
         c_gB = float(data["c_gB"])
         if (not np.isfinite(c_gB)) or c_gB <= 0.0:
             raise ValueError(f"Invalid c_gB={c_gB!r}")
