@@ -29,6 +29,7 @@ const N_LAYERS: usize = 4;
 const GRID_SIZE: usize = 64;
 /// Cap for reduced toroidal-harmonic spectral coupling.
 const TOROIDAL_COUPLING_MAX_FACTOR: f64 = 2.5;
+const MAX_NPZ_BYTES: u64 = 10 * 1024 * 1024;
 
 fn gelu(x: f64) -> f64 {
     0.5 * x * (1.0 + ((2.0 / PI).sqrt() * (x + 0.044_715 * x.powi(3))).tanh())
@@ -109,6 +110,12 @@ impl FnoWeights {
     }
 
     pub fn load_weights_npz(path: &str) -> FusionResult<Self> {
+        let metadata = std::fs::metadata(path)?;
+        if metadata.len() > MAX_NPZ_BYTES {
+            return Err(FusionError::ConfigError(format!(
+                "NPZ archive exceeds {MAX_NPZ_BYTES} byte limit: {path}"
+            )));
+        }
         let file = File::open(path)?;
         let mut npz = NpzReader::new(file).map_err(|e| {
             FusionError::ConfigError(format!("Failed to open FNO weight archive '{path}': {e}"))
@@ -731,6 +738,27 @@ mod tests {
         assert!(err < 1e-12, "Roundtrip mismatch: relative error={err:.3e}");
 
         std::fs::remove_file(path).ok();
+    }
+
+    #[test]
+    fn test_fno_weight_loader_rejects_oversized_npz_before_opening_archive() {
+        let ts = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "fusion_fno_weights_oversized_{}_{}.npz",
+            std::process::id(),
+            ts
+        ));
+        let file = File::create(&path).expect("create oversized npz placeholder");
+        file.set_len(10 * 1024 * 1024 + 1).unwrap();
+
+        let result = FnoWeights::load_weights_npz(path.to_str().unwrap());
+
+        std::fs::remove_file(&path).unwrap();
+        assert!(result.is_err());
+        assert!(format!("{}", result.unwrap_err()).contains("NPZ archive exceeds"));
     }
 
     #[test]

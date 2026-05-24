@@ -17,6 +17,7 @@ const HIDDEN1: usize = 64;
 const HIDDEN2: usize = 32;
 const OUTPUT_DIM: usize = 3;
 const EPS_STD: f64 = 1e-8;
+const MAX_NPZ_BYTES: u64 = 10 * 1024 * 1024;
 
 #[derive(Debug, Clone)]
 pub struct NeuralTransportWeights {
@@ -50,6 +51,12 @@ impl NeuralTransportModel {
 
     /// Load neural transport weights from a NumPy `.npz` archive.
     pub fn from_npz(path: &str) -> FusionResult<Self> {
+        let metadata = std::fs::metadata(path)?;
+        if metadata.len() > MAX_NPZ_BYTES {
+            return Err(FusionError::ConfigError(format!(
+                "NPZ archive exceeds {MAX_NPZ_BYTES} byte limit: {path}"
+            )));
+        }
         let file = File::open(path)?;
         let mut npz = NpzReader::new(file)
             .map_err(|e| FusionError::ConfigError(format!("Failed to open npz '{path}': {e}")))?;
@@ -343,5 +350,26 @@ mod tests {
         }
 
         std::fs::remove_file(path).ok();
+    }
+
+    #[test]
+    fn test_weight_loader_rejects_oversized_npz_before_opening_archive() {
+        let epoch_ns = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "fusion_neural_transport_oversized_{}_{}.npz",
+            std::process::id(),
+            epoch_ns
+        ));
+        let file = File::create(&path).unwrap();
+        file.set_len(10 * 1024 * 1024 + 1).unwrap();
+
+        let result = NeuralTransportModel::from_npz(path.to_str().unwrap());
+
+        std::fs::remove_file(&path).unwrap();
+        assert!(result.is_err());
+        assert!(format!("{}", result.unwrap_err()).contains("NPZ archive exceeds"));
     }
 }
