@@ -182,6 +182,12 @@ def _axis_midplane_offset_cells(psi: np.ndarray) -> int:
     return abs(axis_z_index - midplane_index)
 
 
+def _axis_radial_center_offset_cells(psi: np.ndarray) -> int:
+    axis_r_index = int(np.unravel_index(np.argmax(psi), psi.shape)[1])
+    radial_center_index = psi.shape[1] // 2
+    return abs(axis_r_index - radial_center_index)
+
+
 def _axis_boundary_distance_cells(psi: np.ndarray) -> int:
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     return int(
@@ -217,6 +223,7 @@ def main() -> None:
             "boundary_abs_max": _boundary_abs_max(julia_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(julia_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(julia_psi),
+            "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(julia_psi),
             "axis_boundary_distance_cells": _axis_boundary_distance_cells(julia_psi),
             "negative_flux_abs_max": _negative_flux_abs_max(julia_psi),
         },
@@ -225,6 +232,7 @@ def main() -> None:
             "boundary_abs_max": _boundary_abs_max(go_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(go_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(go_psi),
+            "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(go_psi),
             "axis_boundary_distance_cells": _axis_boundary_distance_cells(go_psi),
             "negative_flux_abs_max": _negative_flux_abs_max(go_psi),
         },
@@ -233,6 +241,7 @@ def main() -> None:
             "boundary_abs_max": _boundary_abs_max(rust_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(rust_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(rust_psi),
+            "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(rust_psi),
             "axis_boundary_distance_cells": _axis_boundary_distance_cells(rust_psi),
             "negative_flux_abs_max": _negative_flux_abs_max(rust_psi),
         },
@@ -241,6 +250,7 @@ def main() -> None:
             "boundary_abs_max": _boundary_abs_max(lean_psi),
             "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(lean_psi),
             "axis_midplane_offset_cells": _axis_midplane_offset_cells(lean_psi),
+            "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(lean_psi),
             "axis_boundary_distance_cells": _axis_boundary_distance_cells(lean_psi),
             "negative_flux_abs_max": _negative_flux_abs_max(lean_psi),
         },
@@ -265,6 +275,7 @@ def main() -> None:
                 "wall_time_s": python_seconds,
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(python_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(python_psi),
+                "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(python_psi),
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(python_psi),
                 "negative_flux_abs_max": _negative_flux_abs_max(python_psi),
             },
@@ -274,6 +285,7 @@ def main() -> None:
                 "wall_time_s": julia_seconds,
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(julia_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(julia_psi),
+                "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(julia_psi),
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(julia_psi),
                 "negative_flux_abs_max": _negative_flux_abs_max(julia_psi),
             },
@@ -283,6 +295,7 @@ def main() -> None:
                 "wall_time_s": go_seconds,
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(go_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(go_psi),
+                "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(go_psi),
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(go_psi),
                 "negative_flux_abs_max": _negative_flux_abs_max(go_psi),
             },
@@ -292,6 +305,7 @@ def main() -> None:
                 "wall_time_s": rust_seconds,
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(rust_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(rust_psi),
+                "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(rust_psi),
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(rust_psi),
                 "negative_flux_abs_max": _negative_flux_abs_max(rust_psi),
             },
@@ -301,6 +315,7 @@ def main() -> None:
                 "wall_time_s": lean_seconds,
                 "vertical_symmetry_abs_max": _vertical_symmetry_abs_max(lean_psi),
                 "axis_midplane_offset_cells": _axis_midplane_offset_cells(lean_psi),
+                "axis_radial_center_offset_cells": _axis_radial_center_offset_cells(lean_psi),
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(lean_psi),
                 "negative_flux_abs_max": _negative_flux_abs_max(lean_psi),
             },
@@ -365,14 +380,15 @@ def main() -> None:
             "",
             "## Physics Invariants",
             "",
-            "| Language | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis boundary distance (cells) | Negative flux absolute maximum |",
-            "|----------|------------------------------------|------------------------------|--------------------------------|--------------------------------|",
+            "| Language | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Negative flux absolute maximum |",
+            "|----------|------------------------------------|------------------------------|------------------------------------|--------------------------------|--------------------------------|",
         ]
     )
     for row in report["solvers"]:
         lines.append(
             f"| {row['language']} | {row['vertical_symmetry_abs_max']:.6e} | "
-            f"{row['axis_midplane_offset_cells']} | {row['axis_boundary_distance_cells']} | "
+            f"{row['axis_midplane_offset_cells']} | {row['axis_radial_center_offset_cells']} | "
+            f"{row['axis_boundary_distance_cells']} | "
             f"{row['negative_flux_abs_max']:.6e} |"
         )
     lines.extend(

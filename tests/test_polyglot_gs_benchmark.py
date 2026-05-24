@@ -58,6 +58,27 @@ def test_axis_midplane_offset_counts_cells_from_symmetric_midplane() -> None:
     assert benchmark._axis_midplane_offset_cells(shifted) == 1
 
 
+def test_axis_radial_center_offset_counts_cells_from_geometric_center() -> None:
+    """Benchmark reports must expose magnetic-axis radial displacement."""
+    centered = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.0, 2.0, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+    shifted = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.0, 2.0, 3.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+
+    assert benchmark._axis_radial_center_offset_cells(centered) == 0
+    assert benchmark._axis_radial_center_offset_cells(shifted) == 1
+
+
 def test_negative_flux_overshoot_metric_reports_maximum_negative_well() -> None:
     """Benchmark reports must expose nonphysical negative-flux overshoot."""
     nonnegative = np.array(

@@ -32,11 +32,11 @@ Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-b
 
 | Language | Implementation | Wall time (s) |
 |----------|----------------|---------------|
-| Python | `gs_solve_np` | 0.003476 |
-| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 4.217004 |
-| Go | `gssolver.Solve` | 0.004753 |
-| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.002826 |
-| Lean | `SCPNFusionSolvers.solveGradShafranov` | 0.998736 |
+| Python | `gs_solve_np` | 0.006087 |
+| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 7.813054 |
+| Go | `gssolver.Solve` | 0.002794 |
+| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.003788 |
+| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.876890 |
 
 ## Numerical Parity
 
@@ -49,12 +49,12 @@ Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-b
 
 ## Physics Invariants
 
-| Language | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis boundary distance (cells) | Negative flux absolute maximum |
-|----------|------------------------------------|------------------------------|--------------------------------|--------------------------------|
-| Python | 0.000000e+00 | 0 | 8 | 0.000000e+00 |
-| Julia | 0.000000e+00 | 0 | 8 | 0.000000e+00 |
-| Go | 0.000000e+00 | 0 | 8 | 0.000000e+00 |
-| Rust | 0.000000e+00 | 0 | 8 | 0.000000e+00 |
-| Lean | 0.000000e+00 | 0 | 8 | 0.000000e+00 |
+| Language | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Negative flux absolute maximum |
+|----------|------------------------------------|------------------------------|------------------------------------|--------------------------------|--------------------------------|
+| Python | 0.000000e+00 | 0 | 0 | 8 | 0.000000e+00 |
+| Julia | 0.000000e+00 | 0 | 0 | 8 | 0.000000e+00 |
+| Go | 0.000000e+00 | 0 | 0 | 8 | 0.000000e+00 |
+| Rust | 0.000000e+00 | 0 | 0 | 8 | 0.000000e+00 |
+| Lean | 0.000000e+00 | 0 | 0 | 8 | 0.000000e+00 |
 
 These local timings include process start-up for CLI paths. The Go and Rust rows build solver binaries before timing and exclude toolchain orchestration from the measured solver invocation. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.
