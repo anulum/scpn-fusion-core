@@ -19,6 +19,45 @@ from scpn_fusion.core.disruption_sequence import (
 )
 
 
+def test_disruption_sequence_wall_area_uses_elliptic_cross_section() -> None:
+    config = DisruptionConfig(
+        R0=6.2,
+        a=2.0,
+        B0=5.3,
+        kappa=1.7,
+        Ip_MA=15.0,
+        W_th_MJ=350.0,
+        Te_pre_keV=20.0,
+        ne_pre_20=1.0,
+        dBr_over_B_trigger=3e-3,
+    )
+    seq = DisruptionSequence(config)
+
+    from scipy.special import ellipe
+
+    vertical_radius = config.a * config.kappa
+    eccentricity_sq = 1.0 - (config.a / vertical_radius) ** 2
+    expected = 2.0 * np.pi * config.R0 * (4.0 * vertical_radius * ellipe(eccentricity_sq))
+
+    assert seq.A_wall == pytest.approx(expected, rel=1e-12)
+
+
+def test_disruption_sequence_wall_area_preserves_circular_limit() -> None:
+    config = DisruptionConfig(
+        R0=6.2,
+        a=2.0,
+        B0=5.3,
+        kappa=1.0,
+        Ip_MA=15.0,
+        W_th_MJ=350.0,
+        Te_pre_keV=20.0,
+        ne_pre_20=1.0,
+        dBr_over_B_trigger=3e-3,
+    )
+
+    assert DisruptionSequence(config).A_wall == pytest.approx(4.0 * np.pi**2 * config.R0 * config.a)
+
+
 def test_thermal_quench():
     tq = ThermalQuench(W_th_MJ=350.0, a=2.0, R0=6.2, q=3.0, B0=5.3)
 

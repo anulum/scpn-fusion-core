@@ -13,6 +13,7 @@ import math
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.special import ellipe
 
 from scpn_fusion.core.runaway_electrons import RunawayEvolution, RunawayParams, hot_tail_seed
 
@@ -270,7 +271,21 @@ class DisruptionSequence:
     def __init__(self, config: DisruptionConfig):
         self.config = config
         self.V_plasma = 2.0 * math.pi**2 * config.R0 * config.a**2 * config.kappa
-        self.A_wall = 4.0 * math.pi**2 * config.R0 * config.a * config.kappa  # approx
+        self.A_wall = self._elliptic_torus_area(config.R0, config.a, config.kappa)
+
+    @staticmethod
+    def _elliptic_torus_area(R0: float, a: float, kappa: float) -> float:
+        """Return toroidal area from the exact perimeter of an elliptical cross-section."""
+        _require_positive("R0", R0)
+        _require_positive("a", a)
+        _require_positive("kappa", kappa)
+        minor = a
+        vertical = a * kappa
+        major_axis = max(minor, vertical)
+        minor_axis = min(minor, vertical)
+        eccentricity_sq = 1.0 - (minor_axis / major_axis) ** 2
+        perimeter = 4.0 * major_axis * float(ellipe(eccentricity_sq))
+        return 2.0 * math.pi * R0 * perimeter
 
     def run(self, spi_density_target: float | None = None) -> DisruptionResult:
         """Run the disruption phases and optionally apply SPI density mitigation."""
