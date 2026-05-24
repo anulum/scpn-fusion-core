@@ -22,6 +22,7 @@ _TBR_EQUIVALENCE_SCALE = 1.45
 
 
 def require_int(name: str, value: Any, minimum: int) -> int:
+    """Return ``value`` as an integer after enforcing a minimum bound."""
     if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
         raise ValueError(f"{name} must be an integer >= {minimum}.")
     out = int(value)
@@ -31,6 +32,7 @@ def require_int(name: str, value: Any, minimum: int) -> int:
 
 
 def require_fraction(name: str, value: Any) -> float:
+    """Return ``value`` as a finite fraction in the closed interval [0, 1]."""
     out = float(value)
     if not np.isfinite(out) or out < 0.0 or out > 1.0:
         raise ValueError(f"{name} must be finite and in [0, 1].")
@@ -48,6 +50,7 @@ def genray_like_heating_proxy(
     n_rays: int = 96,
     n_steps: int = 120,
 ) -> dict[str, float]:
+    """Estimate RF/NBI absorption with a deterministic ray-path proxy."""
     t = np.linspace(0.0, 1.0, int(n_steps), dtype=np.float64)
     rf_sigma = 0.12 + 0.02 * max(elongation - 1.6, 0.0)
     nbi_sigma = 0.16 + 0.03 * max(2.0 - elongation, 0.0)
@@ -115,6 +118,7 @@ def aries_at_q_proxy(
     ip_ma: float,
     absorbed_heating_mw: float,
 ) -> float:
+    """Estimate ARIES-AT-like fusion gain from size, field, current, and heating."""
     return float(
         5.8
         * (major_radius_m / 6.2) ** 0.62
@@ -131,6 +135,7 @@ def mcnp_lite_tbr(
     be_multiplier_fraction: float,
     reflector_albedo: float,
 ) -> tuple[float, float]:
+    """Project raw breeding ratio into engineering-equivalent TBR space."""
     factor = float(
         1.11
         + 0.22 * require_fraction("be_multiplier_fraction", be_multiplier_fraction)
@@ -151,6 +156,7 @@ def mcnp_lite_transport_tbr(
     be_multiplier_fraction: float,
     reflector_albedo: float,
 ) -> dict[str, float]:
+    """Run a lightweight stochastic neutron-transport estimate for TBR."""
     n_hist = require_int("histories", histories, 200)
     thick = float(thickness_cm)
     if not np.isfinite(thick) or thick <= 1.0:
@@ -219,6 +225,7 @@ def quick_candidate(
     base_tbr: float,
     explorer: GlobalDesignExplorer,
 ) -> dict[str, float]:
+    """Sample and score one heating/neutronics reactor candidate."""
     major_radius_m = float(rng.uniform(4.0, 7.4))
     b_t = float(rng.uniform(5.0, 8.2))
     ip_ma = float(rng.uniform(8.0, 18.5))
@@ -292,6 +299,7 @@ def quick_candidate(
 
 
 def refine_candidate_tbr(candidate: dict[str, float]) -> dict[str, float]:
+    """Refine a sampled candidate with blanket and transport TBR estimates."""
     raw_tbr = float(
         BreedingBlanket(
             thickness_cm=float(candidate["blanket_thickness_cm"]),
