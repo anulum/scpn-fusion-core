@@ -41,6 +41,23 @@ diagnostic convention. Kinetic-electron cases compute `chi_e` from the
 electron distribution moment, so sign and magnitude are species-resolved rather
 than inferred from the ion heat flux.
 
+## Polyglot Grad-Shafranov Benchmark
+
+`PYTHONPATH=src python benchmarks/polyglot_gs_solver_comparison.py` runs the
+shared fixed-boundary Grad-Shafranov Picard/Jacobi case through the native
+Python reference and the native Julia `SCPNFusionSolvers` package. The Julia
+path is a full implementation of the stencil, nonlinear source construction,
+Picard loop, and boundary handling; it is not a Python FFI wrapper.
+
+| File | Contents |
+|------|----------|
+| `validation/polyglot/gs_picard_reference.toml` | Shared cross-language case definition |
+| `validation/reports/polyglot_gs_solver_comparison.json` | Hardware metadata, solver timings, and parity metrics |
+| `validation/reports/polyglot_gs_solver_comparison.md` | Human-readable timing and parity report |
+
+The local CLI benchmark includes Julia process start-up time. Use long-lived
+processes or cloud GPU/CPU runners for throughput comparisons.
+
 ## Criterion Benchmarks
 
 Three benchmark suites are defined in the Rust workspace:

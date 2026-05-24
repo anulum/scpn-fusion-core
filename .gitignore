@@ -3,6 +3,7 @@ target/
 .tmp_cargo_target*/
 Cargo.lock
 !scpn-fusion-rs/Cargo.lock
+scpn-fusion-jl/Manifest.toml
 
 # Python
 __pycache__/
