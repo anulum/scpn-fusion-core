@@ -30,6 +30,7 @@ _CASE_PATH = _REPO / "validation" / "polyglot" / "gs_picard_reference.toml"
 _JULIA_PROJECT = _REPO / "scpn-fusion-jl"
 _GO_PROJECT = _REPO / "scpn-fusion-go"
 _RUST_PROJECT = _REPO / "scpn-fusion-rs"
+_RUST_RELEASE_BINARY = _RUST_PROJECT / "target" / "release" / "gs_picard_csv"
 _LEAN_PROJECT = _REPO / "scpn-fusion-lean"
 _REPORT_JSON = _REPO / "validation" / "reports" / "polyglot_gs_solver_comparison.json"
 _REPORT_MD = _REPO / "validation" / "reports" / "polyglot_gs_solver_comparison.md"
@@ -104,22 +105,19 @@ def _run_go() -> tuple[np.ndarray, float]:
     return _run_command(["go", "run", "./cmd/gs_picard_csv", str(_CASE_PATH)], _GO_PROJECT)
 
 
-def _run_rust() -> tuple[np.ndarray, float]:
-    return _run_command(
-        [
-            "cargo",
-            "run",
-            "--release",
-            "-q",
-            "-p",
-            "fusion-polyglot",
-            "--bin",
-            "gs_picard_csv",
-            "--",
-            str(_CASE_PATH),
-        ],
-        _RUST_PROJECT,
+def _build_rust_binary() -> None:
+    subprocess.run(
+        ["cargo", "build", "--release", "-q", "-p", "fusion-polyglot"],
+        cwd=_RUST_PROJECT,
+        check=True,
+        text=True,
+        capture_output=True,
     )
+
+
+def _run_rust() -> tuple[np.ndarray, float]:
+    _build_rust_binary()
+    return _run_command([str(_RUST_RELEASE_BINARY), str(_CASE_PATH)], _RUST_PROJECT)
 
 
 def _run_lean() -> tuple[np.ndarray, float]:
@@ -285,7 +283,7 @@ def main() -> None:
     lines.extend(
         [
             "",
-            "These local timings include process start-up and compilation-cache checks for CLI paths. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.",
+            "These local timings include process start-up for CLI paths. The Rust row builds the release binary before timing and excludes Cargo orchestration from the measured solver invocation. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.",
         ]
     )
     _REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
