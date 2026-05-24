@@ -15,6 +15,7 @@ ALPHA = 0.1  # Adiabaticity parameter
 KAPPA = 0.5  # Density gradient drive
 NU = 0.01  # Viscosity
 DT = 0.05
+HYPERVISCOSITY_ORDER = 4
 
 
 class DriftWavePhysics:
@@ -53,6 +54,12 @@ class DriftWavePhysics:
         # Back to spectral + De-aliasing
         return np.fft.fft2(nonlin) * self.mask
 
+    @staticmethod
+    def spectral_dissipation_multiplier(k2):
+        """Return the Hasegawa-Wakatani fourth-order hyperviscous multiplier."""
+
+        return NU * np.asarray(k2, dtype=np.float64) ** (HYPERVISCOSITY_ORDER // 2)
+
     def step(self):
         """Runge-Kutta 4th Order Step with Stability Clamp"""
         p = self.phi_k
@@ -79,9 +86,10 @@ class DriftWavePhysics:
 
             coupling = ALPHA * (p_in - n_in)
 
-            # Viscosity (Hyper-viscosity k^4 often used, here k^2 for simplicity)
-            dissip_w = NU * self.k2 * w_in
-            dissip_n = NU * self.k2 * n_in
+            # Fourth-order hyperviscosity: nu * k^4.
+            dissip = self.spectral_dissipation_multiplier(self.k2)
+            dissip_w = dissip * w_in
+            dissip_n = dissip * n_in
 
             dw_dt = -brack_phi_w + coupling - dissip_w
 

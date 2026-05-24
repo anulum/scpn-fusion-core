@@ -40,6 +40,16 @@ class TestDriftWavePhysics:
         assert hw.mask.shape == (16, 16)
         assert hw.mask[0, 0] == 1.0  # Low-k preserved
 
+    def test_hasegawa_wakatani_uses_fourth_order_hyperviscosity(self):
+        hw = DriftWavePhysics(N=16)
+        low_k2 = 2.0
+        high_k2 = 4.0
+
+        low = hw.spectral_dissipation_multiplier(low_k2)
+        high = hw.spectral_dissipation_multiplier(high_k2)
+
+        assert high / low == (high_k2 / low_k2) ** 2
+
 
 class TestOracleESN:
     def test_init(self):

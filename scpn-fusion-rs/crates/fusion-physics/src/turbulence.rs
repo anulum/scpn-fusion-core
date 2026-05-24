@@ -32,6 +32,9 @@ const KAPPA_DRIVE: f64 = 0.5;
 /// Viscosity. Python: NU=0.01.
 const NU: f64 = 0.01;
 
+/// Hyperviscosity order. Python: HYPERVISCOSITY_ORDER=4.
+const HYPERVISCOSITY_ORDER: i32 = 4;
+
 /// Sub-timestep for integration. Python uses dt=0.01 inside step().
 const SUB_DT: f64 = 0.01;
 
@@ -53,6 +56,11 @@ const RESERVOIR_DENSITY: f64 = 0.1;
 
 /// Ridge regression regularization. Python: 1e-4.
 const RIDGE_REG: f64 = 1e-4;
+
+/// Hasegawa-Wakatani fourth-order hyperviscous dissipation multiplier.
+fn spectral_dissipation_multiplier(k2: f64) -> f64 {
+    NU * k2.powi(HYPERVISCOSITY_ORDER / 2)
+}
 
 /// Hasegawa-Wakatani 2D drift wave simulator.
 pub struct DriftWavePhysics {
@@ -193,11 +201,11 @@ impl DriftWavePhysics {
         let bracket_phi_w = self.bracket(phi_k, &w_k);
         let bracket_phi_n = self.bracket(phi_k, n_k);
 
-        // dw/dt = -[φ,w] + α(φ-n) - ν·k²·w
+        // dw/dt = -[φ,w] + α(φ-n) - ν·k⁴·w
         let dw_k = Array2::from_shape_fn((n, n), |(i, j)| {
-            let k2v = self.k2[[i, j]];
+            let dissip = spectral_dissipation_multiplier(self.k2[[i, j]]);
             -bracket_phi_w[[i, j]] + Complex64::new(ALPHA, 0.0) * (phi_k[[i, j]] - n_k[[i, j]])
-                - Complex64::new(NU * k2v, 0.0) * w_k[[i, j]]
+                - Complex64::new(dissip, 0.0) * w_k[[i, j]]
         });
 
         // dφ/dt = -dw/dt / k²
@@ -210,16 +218,16 @@ impl DriftWavePhysics {
             }
         });
 
-        // dn/dt = -[φ,n] + α(φ-n) - κ·iky·φ - ν·k²·n
+        // dn/dt = -[φ,n] + α(φ-n) - κ·iky·φ - ν·k⁴·n
         let dn_k = Array2::from_shape_fn((n, n), |(i, j)| {
-            let k2v = self.k2[[i, j]];
+            let dissip = spectral_dissipation_multiplier(self.k2[[i, j]]);
             let iu = Complex64::new(0.0, 1.0);
             -bracket_phi_n[[i, j]] + Complex64::new(ALPHA, 0.0) * (phi_k[[i, j]] - n_k[[i, j]])
                 - Complex64::new(KAPPA_DRIVE, 0.0)
                     * iu
                     * Complex64::new(self.ky[[i, j]], 0.0)
                     * phi_k[[i, j]]
-                - Complex64::new(NU * k2v, 0.0) * n_k[[i, j]]
+                - Complex64::new(dissip, 0.0) * n_k[[i, j]]
         });
 
         (dphi_k, dn_k)
@@ -557,6 +565,16 @@ mod tests {
             probes.iter().all(|v| v.is_finite()),
             "Probe values should be finite"
         );
+    }
+
+    #[test]
+    fn test_hw_uses_fourth_order_hyperviscosity() {
+        let low_k2: f64 = 2.0;
+        let high_k2: f64 = 4.0;
+        let low = spectral_dissipation_multiplier(low_k2);
+        let high = spectral_dissipation_multiplier(high_k2);
+
+        assert!((high / low - (high_k2 / low_k2).powi(2)).abs() < 1e-12);
     }
 
     #[test]
