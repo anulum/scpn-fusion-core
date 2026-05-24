@@ -5,6 +5,8 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Zonal Flow Predator-Prey Model for L-H Transition
+"""Predator-prey L-H transition model, threshold estimates, and control helpers."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -14,6 +16,8 @@ import numpy as np
 
 @dataclass
 class PredatorPreyResult:
+    """Time traces and classified confinement regime from a predator-prey run."""
+
     epsilon_trace: np.ndarray
     V_ZF_trace: np.ndarray
     p_trace: np.ndarray
@@ -22,6 +26,8 @@ class PredatorPreyResult:
 
 
 class PredatorPreyModel:
+    """Zonal-flow predator-prey model for L-H transition dynamics."""
+
     def __init__(
         self,
         gamma_L: float = 5e4,
@@ -32,6 +38,7 @@ class PredatorPreyModel:
         p0: float = 10.0,
         drive_gain: float = 100.0,
     ):
+        """Initialize turbulence, zonal-flow, damping, and heating-drive parameters."""
         self.gamma_L = gamma_L
         self.alpha1 = alpha1
         self.alpha2 = alpha2
@@ -57,12 +64,14 @@ class PredatorPreyModel:
         return float(self.drive_gain * pressure_factor * heating_factor)
 
     def confinement_time(self, epsilon: float) -> float:
+        """Return confinement time as turbulence energy suppresses transport."""
         # tau_E = tau_E0 / (1 + C * epsilon)
         tau_E0 = 1.0  # 1 second baseline
         C = 1e-4
         return tau_E0 / (1.0 + C * max(0.0, epsilon))
 
     def step(self, state: np.ndarray, dt: float, Q_heating: float) -> np.ndarray:
+        """Advance turbulence, zonal-flow, and edge-pressure state by one step."""
         # state = [epsilon, V_ZF, p_edge]
         state = np.asarray(state, dtype=float)
         if state.shape != (3,) or not np.all(np.isfinite(state)):
@@ -99,6 +108,7 @@ class PredatorPreyModel:
     def evolve(
         self, Q_heating: float, t_span: tuple[float, float], dt: float
     ) -> PredatorPreyResult:
+        """Integrate the predator-prey model and classify the resulting regime."""
         n_steps = int((t_span[1] - t_span[0]) / dt)
         t_arr = np.linspace(t_span[0], t_span[1], n_steps)
 
@@ -127,7 +137,10 @@ class PredatorPreyModel:
 
 
 class LHTrigger:
+    """Threshold search helper for L-to-H bifurcation scans."""
+
     def __init__(self, model: PredatorPreyModel):
+        """Bind a predator-prey model used for threshold scans."""
         self.model = model
 
     def find_threshold(self, Q_range: np.ndarray) -> float:
@@ -140,6 +153,8 @@ class LHTrigger:
 
 
 class MartinThreshold:
+    """Martin scaling-law estimate for L-H power threshold."""
+
     @staticmethod
     def power_threshold_MW(ne_19: float, B_T: float, S_m2: float) -> float:
         """
@@ -151,6 +166,8 @@ class MartinThreshold:
 
 
 class IPhaseDetector:
+    """Detect I-phase oscillations from recent turbulence-energy history."""
+
     def __init__(
         self,
         window_size: int = 100,
@@ -158,6 +175,7 @@ class IPhaseDetector:
         relative_std_threshold: float = 0.1,
         min_absolute_std: float = 1.0e-6,
     ):
+        """Initialize rolling-window and oscillation sensitivity parameters."""
         if not isinstance(window_size, int) or window_size < 2:
             raise ValueError("window_size must be an integer >= 2.")
         self.window_size = window_size
@@ -186,6 +204,8 @@ class IPhaseDetector:
 
 
 class LHTransitionController:
+    """Heating-command controller for H-mode access while avoiding I-phase."""
+
     def __init__(
         self,
         model: PredatorPreyModel,
@@ -194,6 +214,7 @@ class LHTransitionController:
         epsilon_hmode_threshold: float = 5.0e4,
         q_ramp_rate: float = 10.0,
     ):
+        """Initialize target heating, H-mode threshold, and ramp-rate limits."""
         if not np.isfinite(Q_target) or Q_target < 0.0:
             raise ValueError("Q_target must be finite and non-negative")
         if not np.isfinite(epsilon_hmode_threshold) or epsilon_hmode_threshold <= 0.0:
