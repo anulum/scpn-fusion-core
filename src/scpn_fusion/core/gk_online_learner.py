@@ -47,6 +47,7 @@ class OnlineLearner:
     """Accumulate GK data and fine-tune the surrogate when ready."""
 
     def __init__(self, config: LearnerConfig | None = None) -> None:
+        """Initialize validation-guarded online retraining state."""
         self.config = config or LearnerConfig()
         if self.config.buffer_size < 2:
             raise ValueError("buffer_size must be at least 2 to allow a validation holdout")
@@ -65,6 +66,7 @@ class OnlineLearner:
         self.retrain_history: list[dict] = []
 
     def add_sample(self, input_10d: NDArray[np.float64], target_3d: NDArray[np.float64]) -> None:
+        """Validate and append one 10D GK training sample to the buffer."""
         input_array = np.asarray(input_10d, dtype=np.float64)
         target_array = np.asarray(target_3d, dtype=np.float64)
         if input_array.shape != (10,):
@@ -81,6 +83,7 @@ class OnlineLearner:
 
     @property
     def buffer_full(self) -> bool:
+        """Return whether buffered samples have reached the retraining trigger."""
         return len(self.buffer) >= self.config.buffer_size
 
     def try_retrain(
@@ -219,6 +222,7 @@ class OnlineLearner:
         return best_weights
 
     def reset(self) -> None:
+        """Clear buffered data, accepted-generation state, and retraining history."""
         self.buffer.clear()
         self.generation = 0
         self._best_val_loss = float("inf")

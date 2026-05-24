@@ -105,6 +105,7 @@ class OODDetector:
         training_mean: NDArray[np.float64] | None = None,
         training_cov_inv: NDArray[np.float64] | None = None,
     ) -> None:
+        """Initialize OOD thresholds and training-distribution statistics."""
         self.mahalanobis_threshold = mahalanobis_threshold
         self.soft_sigma_threshold = soft_sigma_threshold
         self.ensemble_disagreement_threshold = ensemble_disagreement_threshold
@@ -122,6 +123,7 @@ class OODDetector:
         return float(np.sqrt(diff @ self._cov_inv @ diff))
 
     def check_mahalanobis(self, x: NDArray[np.float64]) -> OODResult:
+        """Check an input vector against the Mahalanobis-distance threshold."""
         d_m = self.mahalanobis_distance(x)
         is_ood = d_m > self.mahalanobis_threshold
         confidence = (

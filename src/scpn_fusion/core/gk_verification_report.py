@@ -36,23 +36,27 @@ class VerificationReport:
 
     @property
     def verification_fraction(self) -> float:
+        """Return the fraction of transport steps with GK verification."""
         if self.total_steps == 0:
             return 0.0
         return self.steps_verified / self.total_steps
 
     @property
     def max_rel_error(self) -> float:
+        """Return the maximum absolute ion-diffusivity relative error."""
         if not self.records:
             return 0.0
         return max(abs(r.rel_error_chi_i) for r in self.records)
 
     @property
     def mean_rel_error(self) -> float:
+        """Return the mean absolute ion-diffusivity relative error."""
         if not self.records:
             return 0.0
         return float(np.mean([abs(r.rel_error_chi_i) for r in self.records]))
 
     def add_step(self, verified: bool, n_spot_checks: int = 0, n_ood: int = 0) -> None:
+        """Accumulate one transport-step verification summary."""
         self.total_steps += 1
         if verified:
             self.steps_verified += 1
@@ -60,12 +64,15 @@ class VerificationReport:
         self.ood_triggers += n_ood
 
     def add_records(self, records: list[CorrectionRecord]) -> None:
+        """Append spot-check correction records to the report."""
         self.records.extend(records)
 
     def add_correction_factor(self, factor: float) -> None:
+        """Append one aggregate correction-factor magnitude."""
         self.correction_factors.append(factor)
 
     def to_dict(self) -> dict:
+        """Return a JSON-serialisable verification summary dictionary."""
         return {
             "total_steps": self.total_steps,
             "steps_verified": self.steps_verified,
@@ -83,6 +90,7 @@ class VerificationReport:
         }
 
     def to_json(self, path: str | Path | None = None) -> str:
+        """Serialise the verification summary and optionally write it to disk."""
         text = json.dumps(self.to_dict(), indent=2)
         if path is not None:
             Path(path).write_text(text)

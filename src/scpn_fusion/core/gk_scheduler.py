@@ -49,6 +49,7 @@ class GKScheduler:
     """Spot-check scheduler for hybrid surrogate+GK transport."""
 
     def __init__(self, config: SchedulerConfig | None = None) -> None:
+        """Initialize scheduler state for the selected spot-check strategy."""
         self.config = config or SchedulerConfig()
         self._step = 0
         self._prev_chi_i: NDArray[np.float64] | None = None
@@ -138,5 +139,6 @@ class GKScheduler:
         )
 
     def reset(self) -> None:
+        """Reset step count and previous diffusivity state."""
         self._step = 0
         self._prev_chi_i = None

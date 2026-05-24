@@ -37,12 +37,14 @@ class CorrectionRecord:
 
     @property
     def rel_error_chi_i(self) -> float:
+        """Return signed relative ion-diffusivity error versus GK reference."""
         if abs(self.chi_i_gk) < 1e-10:
             return 0.0
         return (self.chi_i_surrogate - self.chi_i_gk) / self.chi_i_gk
 
     @property
     def rel_error_chi_e(self) -> float:
+        """Return signed relative electron-diffusivity error versus GK reference."""
         if abs(self.chi_e_gk) < 1e-10:
             return 0.0
         return (self.chi_e_surrogate - self.chi_e_gk) / self.chi_e_gk
@@ -146,6 +148,7 @@ class GKCorrector:
 
     @property
     def max_correction_factor(self) -> float:
+        """Return the largest absolute transport correction-factor departure."""
         return float(
             np.max(
                 np.abs(
@@ -161,6 +164,7 @@ class GKCorrector:
 
     @property
     def mean_correction_factor(self) -> float:
+        """Return the mean absolute transport correction-factor departure."""
         return float(
             np.mean(
                 np.abs(

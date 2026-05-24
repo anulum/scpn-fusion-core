@@ -70,6 +70,7 @@ class GKSpecies:
 
     @property
     def mass_kg(self) -> float:
+        """Return species mass in kilograms."""
         return self.mass_amu * _M_PROTON
 
     @property
@@ -90,6 +91,7 @@ class GKSpecies:
 def deuterium_ion(
     T_keV: float = 8.0, n_19: float = 10.0, R_L_T: float = 6.9, R_L_n: float = 2.2
 ) -> GKSpecies:
+    """Construct a kinetic deuterium ion species for GK calculations."""
     return GKSpecies(
         mass_amu=2.0, charge_e=1.0, temperature_keV=T_keV, density_19=n_19, R_L_T=R_L_T, R_L_n=R_L_n
     )
@@ -102,6 +104,7 @@ def electron(
     R_L_n: float = 2.2,
     adiabatic: bool = True,
 ) -> GKSpecies:
+    """Construct an electron species with kinetic or adiabatic response."""
     mass_amu = _M_ELECTRON / _M_PROTON
     return GKSpecies(
         mass_amu=mass_amu,
@@ -143,6 +146,7 @@ class VelocityGrid:
 
     @property
     def n_total(self) -> int:
+        """Return the total number of energy-lambda quadrature points."""
         return self.n_energy * self.n_lambda
 
 
