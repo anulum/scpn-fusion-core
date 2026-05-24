@@ -30,7 +30,8 @@
     "lean": "Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)",
     "machine": "x86_64",
     "os": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
-    "python": "3.12.3"
+    "python": "3.12.3",
+    "rust": "rustc 1.95.0 (59807616e 2026-04-14)"
   },
   "parity": {
     "by_language": {
@@ -45,6 +46,10 @@
       "Lean": {
         "boundary_abs_max": 0.0,
         "relative_l2_interior": 1.1233083104582504e-14
+      },
+      "Rust": {
+        "boundary_abs_max": 0.0,
+        "relative_l2_interior": 5.906398378511105e-16
       }
     },
     "shape": [
@@ -56,22 +61,27 @@
     {
       "implementation": "gs_solve_np",
       "language": "Python",
-      "wall_time_s": 0.0032963299890980124
+      "wall_time_s": 0.004972301016096026
     },
     {
       "implementation": "SCPNFusionSolvers.solve_grad_shafranov",
       "language": "Julia",
-      "wall_time_s": 5.87106393702561
+      "wall_time_s": 4.9566188259923365
     },
     {
       "implementation": "gssolver.Solve",
       "language": "Go",
-      "wall_time_s": 0.06916121699032374
+      "wall_time_s": 0.08469317201524973
+    },
+    {
+      "implementation": "fusion_polyglot::solve_grad_shafranov",
+      "language": "Rust",
+      "wall_time_s": 4.8752460530085955
     },
     {
       "implementation": "SCPNFusionSolvers.solveGradShafranov",
       "language": "Lean",
-      "wall_time_s": 1.0924613999959547
+      "wall_time_s": 0.8322276239923667
     }
   ]
 }

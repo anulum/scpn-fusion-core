@@ -7,10 +7,10 @@
 # SCPN Fusion Core — Polyglot Grad-Shafranov Contract Tests
 """Polyglot fixed-boundary Grad-Shafranov solver workflow contract.
 
-This workflow test verifies that the native Julia implementation solves the
-same fixed-boundary Picard/Jacobi Grad-Shafranov contract as the Python
-reference implementation. The Julia path is executed as a native Julia package,
-not through Python FFI.
+This workflow test verifies that the native Julia, Go, Rust, and Lean
+implementations solve the same fixed-boundary Picard/Jacobi Grad-Shafranov
+contract as the Python reference implementation. Each path is executed through
+its native toolchain, not through Python FFI.
 """
 
 from __future__ import annotations
@@ -89,6 +89,28 @@ def _run_go_case() -> np.ndarray:
     return np.asarray(rows, dtype=float)
 
 
+def _run_rust_case() -> np.ndarray:
+    completed = subprocess.run(
+        [
+            "cargo",
+            "run",
+            "-q",
+            "-p",
+            "fusion-polyglot",
+            "--bin",
+            "gs_picard_csv",
+            "--",
+            str(_REFERENCE_CASE),
+        ],
+        check=True,
+        cwd=_REPO / "scpn-fusion-rs",
+        text=True,
+        capture_output=True,
+    )
+    rows = [[float(cell) for cell in row] for row in csv.reader(completed.stdout.splitlines())]
+    return np.asarray(rows, dtype=float)
+
+
 def _run_lean_case(case_path: Path = _REFERENCE_CASE) -> np.ndarray:
     completed = subprocess.run(
         ["lake", "exe", "gs_picard_csv", str(case_path)],
@@ -128,6 +150,11 @@ def test_native_julia_grad_shafranov_matches_python_reference() -> None:
 def test_native_go_grad_shafranov_matches_python_reference() -> None:
     """Go native GS solve preserves the Python reference physics contract."""
     _assert_matches_python_reference(_run_go_case())
+
+
+def test_native_rust_grad_shafranov_matches_python_reference() -> None:
+    """Rust native GS solve preserves the Python reference physics contract."""
+    _assert_matches_python_reference(_run_rust_case())
 
 
 def test_native_lean_grad_shafranov_matches_python_reference() -> None:

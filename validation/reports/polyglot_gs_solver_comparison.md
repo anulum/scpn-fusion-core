@@ -8,7 +8,7 @@
 
 # Polyglot Grad-Shafranov Solver Benchmark
 
-Local workstation benchmark for native Python, Julia, Go, and Lean fixed-boundary Grad-Shafranov Picard/Jacobi solvers. Each non-Python path executes its own implementation rather than a Python FFI wrapper.
+Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-boundary Grad-Shafranov Picard/Jacobi solvers. Each non-Python path executes its own implementation rather than a Python FFI wrapper.
 
 ## Hardware
 
@@ -18,6 +18,7 @@ Local workstation benchmark for native Python, Julia, Go, and Lean fixed-boundar
 - Python: 3.12.3
 - Julia: julia version 1.12.6
 - Go: go version go1.26.2 linux/amd64
+- Rust: rustc 1.95.0 (59807616e 2026-04-14)
 - Lean: Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)
 
 ## Case
@@ -31,10 +32,11 @@ Local workstation benchmark for native Python, Julia, Go, and Lean fixed-boundar
 
 | Language | Implementation | Wall time (s) |
 |----------|----------------|---------------|
-| Python | `gs_solve_np` | 0.003296 |
-| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 5.871064 |
-| Go | `gssolver.Solve` | 0.069161 |
-| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.092461 |
+| Python | `gs_solve_np` | 0.004972 |
+| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 4.956619 |
+| Go | `gssolver.Solve` | 0.084693 |
+| Rust | `fusion_polyglot::solve_grad_shafranov` | 4.875246 |
+| Lean | `SCPNFusionSolvers.solveGradShafranov` | 0.832228 |
 
 ## Numerical Parity
 
@@ -42,6 +44,7 @@ Local workstation benchmark for native Python, Julia, Go, and Lean fixed-boundar
 |----------|--------------------------------|---------------------------|
 | Julia | 8.983125e-17 | 0.000000e+00 |
 | Go | 1.790625e-16 | 0.000000e+00 |
+| Rust | 5.906398e-16 | 0.000000e+00 |
 | Lean | 1.123308e-14 | 0.000000e+00 |
 
 These local timings include process start-up and compilation-cache checks for CLI paths. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.

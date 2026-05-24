@@ -3,6 +3,7 @@ members = [
     "crates/fusion-types",
     "crates/fusion-math",
     "crates/fusion-core",
+    "crates/fusion-polyglot",
     "crates/fusion-physics",
     "crates/fusion-nuclear",
     "crates/fusion-engineering",

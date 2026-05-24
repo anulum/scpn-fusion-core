@@ -6,7 +6,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Polyglot Grad-Shafranov Benchmark
-"""Benchmark native Python, Julia, Go, and Lean Grad-Shafranov solvers."""
+"""Benchmark native Python, Julia, Go, Rust, and Lean Grad-Shafranov solvers."""
 
 from __future__ import annotations
 
@@ -29,6 +29,7 @@ from scpn_fusion.core.jax_gs_solver import gs_solve_np
 _CASE_PATH = _REPO / "validation" / "polyglot" / "gs_picard_reference.toml"
 _JULIA_PROJECT = _REPO / "scpn-fusion-jl"
 _GO_PROJECT = _REPO / "scpn-fusion-go"
+_RUST_PROJECT = _REPO / "scpn-fusion-rs"
 _LEAN_PROJECT = _REPO / "scpn-fusion-lean"
 _REPORT_JSON = _REPO / "validation" / "reports" / "polyglot_gs_solver_comparison.json"
 _REPORT_MD = _REPO / "validation" / "reports" / "polyglot_gs_solver_comparison.md"
@@ -103,6 +104,24 @@ def _run_go() -> tuple[np.ndarray, float]:
     return _run_command(["go", "run", "./cmd/gs_picard_csv", str(_CASE_PATH)], _GO_PROJECT)
 
 
+def _run_rust() -> tuple[np.ndarray, float]:
+    return _run_command(
+        [
+            "cargo",
+            "run",
+            "--release",
+            "-q",
+            "-p",
+            "fusion-polyglot",
+            "--bin",
+            "gs_picard_csv",
+            "--",
+            str(_CASE_PATH),
+        ],
+        _RUST_PROJECT,
+    )
+
+
 def _run_lean() -> tuple[np.ndarray, float]:
     return _run_command(["lake", "exe", "gs_picard_csv", str(_CASE_PATH)], _LEAN_PROJECT)
 
@@ -128,6 +147,7 @@ def _hardware_metadata() -> dict[str, str]:
         "python": platform.python_version(),
         "julia": _tool_version(["julia", "--version"]),
         "go": _tool_version(["go", "version"]),
+        "rust": _tool_version(["rustc", "--version"]),
         "lean": _tool_version(["lean", "--version"]),
         "os": platform.platform(),
     }
@@ -154,6 +174,7 @@ def main() -> None:
     python_psi, python_seconds = _run_python(case)
     julia_psi, julia_seconds = _run_julia()
     go_psi, go_seconds = _run_go()
+    rust_psi, rust_seconds = _run_rust()
     lean_psi, lean_seconds = _run_lean()
 
     parity_by_language = {
@@ -164,6 +185,10 @@ def main() -> None:
         "Go": {
             "relative_l2_interior": _relative_l2(go_psi, python_psi),
             "boundary_abs_max": _boundary_abs_max(go_psi),
+        },
+        "Rust": {
+            "relative_l2_interior": _relative_l2(rust_psi, python_psi),
+            "boundary_abs_max": _boundary_abs_max(rust_psi),
         },
         "Lean": {
             "relative_l2_interior": _relative_l2(lean_psi, python_psi),
@@ -192,6 +217,11 @@ def main() -> None:
             },
             {"language": "Go", "implementation": "gssolver.Solve", "wall_time_s": go_seconds},
             {
+                "language": "Rust",
+                "implementation": "fusion_polyglot::solve_grad_shafranov",
+                "wall_time_s": rust_seconds,
+            },
+            {
                 "language": "Lean",
                 "implementation": "SCPNFusionSolvers.solveGradShafranov",
                 "wall_time_s": lean_seconds,
@@ -212,7 +242,7 @@ def main() -> None:
         "",
         "# Polyglot Grad-Shafranov Solver Benchmark",
         "",
-        "Local workstation benchmark for native Python, Julia, Go, and Lean fixed-boundary Grad-Shafranov Picard/Jacobi solvers. Each non-Python path executes its own implementation rather than a Python FFI wrapper.",
+        "Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-boundary Grad-Shafranov Picard/Jacobi solvers. Each non-Python path executes its own implementation rather than a Python FFI wrapper.",
         "",
         "## Hardware",
         "",
@@ -222,6 +252,7 @@ def main() -> None:
         f"- Python: {report['hardware']['python']}",
         f"- Julia: {report['hardware']['julia']}",
         f"- Go: {report['hardware']['go']}",
+        f"- Rust: {report['hardware']['rust']}",
         f"- Lean: {report['hardware']['lean']}",
         "",
         "## Case",

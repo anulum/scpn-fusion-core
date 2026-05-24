@@ -617,6 +617,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "fusion-polyglot"
+version = "0.1.0"
+
+[[package]]
 name = "fusion-types"
 version = "0.1.0"
 dependencies = [
