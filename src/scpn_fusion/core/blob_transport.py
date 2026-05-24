@@ -90,11 +90,16 @@ class BlobEnsemble:
         amplitude_mean: float,
         waiting_time_mean: float,
         rng: np.random.Generator,
+        *,
+        amplitude_sigma_log: float = 0.5,
     ) -> BlobPopulation:
         """Generate a stochastic blob population from size and waiting-time laws."""
         # log-normal amplitudes
-        mu_amp = math.log(amplitude_mean) - 0.5 * (0.5**2)  # assuming sigma_log ~ 0.5
-        amps = rng.lognormal(mu_amp, 0.5, self.n_blobs)
+        sigma_amp = float(amplitude_sigma_log)
+        if not np.isfinite(sigma_amp) or sigma_amp <= 0.0:
+            raise ValueError("amplitude_sigma_log must be finite and positive")
+        mu_amp = math.log(amplitude_mean) - 0.5 * sigma_amp**2
+        amps = rng.lognormal(mu_amp, sigma_amp, self.n_blobs)
 
         # normal sizes
         sizes = rng.normal(delta_b_mean, delta_b_sigma, self.n_blobs)

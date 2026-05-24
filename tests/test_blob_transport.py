@@ -57,6 +57,36 @@ def test_blob_ensemble_generation():
     assert q > 0.0
 
 
+def test_blob_ensemble_amplitude_sigma_controls_intermittency() -> None:
+    dyn = BlobDynamics(R0=6.2, B0=5.3, Te_eV=20.0, Ti_eV=20.0, mi_amu=2.0)
+    low_spread = BlobEnsemble(dyn, n_blobs=2000).generate(
+        0.01,
+        0.002,
+        1.0,
+        1e-4,
+        np.random.default_rng(7),
+        amplitude_sigma_log=0.1,
+    )
+    high_spread = BlobEnsemble(dyn, n_blobs=2000).generate(
+        0.01,
+        0.002,
+        1.0,
+        1e-4,
+        np.random.default_rng(7),
+        amplitude_sigma_log=1.0,
+    )
+
+    assert np.std(np.log(high_spread.amplitudes)) > 5.0 * np.std(np.log(low_spread.amplitudes))
+
+
+def test_blob_ensemble_rejects_invalid_amplitude_sigma() -> None:
+    dyn = BlobDynamics(R0=6.2, B0=5.3, Te_eV=20.0, Ti_eV=20.0, mi_amu=2.0)
+    ens = BlobEnsemble(dyn, n_blobs=10)
+
+    with pytest.raises(ValueError, match="amplitude_sigma_log"):
+        ens.generate(0.01, 0.002, 1.0, 1e-4, np.random.default_rng(7), amplitude_sigma_log=0.0)
+
+
 def test_sol_blob_profile() -> None:
     # Without blobs
     r_arr = np.array([0.05])
