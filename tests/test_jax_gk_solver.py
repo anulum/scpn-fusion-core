@@ -17,6 +17,7 @@ from scpn_fusion.core.gk_geometry import circular_geometry
 from scpn_fusion.core.gk_species import VelocityGrid, deuterium_ion, electron
 from scpn_fusion.core.jax_gk_solver import (
     _HAS_JAX,
+    _bessel_j0_jax,
     has_jax,
     solve_linear_gk_jax,
     transport_stiffness_jax,
@@ -37,6 +38,22 @@ def small_grid_params():
 
 def test_has_jax():
     assert has_jax() is True
+
+
+def test_jax_bessel_j0_matches_reference_and_has_regular_axis_derivative():
+    """JAX FLR Bessel kernel should match J0 and stay differentiable at k_perp rho=0."""
+    import jax
+    import jax.numpy as jnp
+    from scipy.special import j0
+
+    x = jnp.array([0.0, 1.0e-8, 1.0e-3, 0.5, 2.4048255577, 8.0, 20.0])
+    actual = np.asarray(_bessel_j0_jax(x))
+    expected = j0(np.asarray(x))
+
+    np.testing.assert_allclose(actual, expected, rtol=5.0e-7, atol=5.0e-7)
+    axis_derivative = float(jax.grad(lambda value: _bessel_j0_jax(value))(0.0))
+    assert np.isfinite(axis_derivative)
+    assert axis_derivative == pytest.approx(0.0, abs=1.0e-12)
 
 
 def test_jax_solver_finite_gamma(cbc_params, small_grid_params):

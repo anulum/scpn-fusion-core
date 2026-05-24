@@ -58,41 +58,48 @@ def _require_jax() -> None:
         )
 
 
-# ── JAX Bessel J0 approximation ─────────────────────────────────────
-# Abramowitz & Stegun 9.4.1 / 9.4.3 — max error < 5e-8.
+# ── JAX Bessel J0 kernel ────────────────────────────────────────────
+# Rational forms from the Cephes/Numerical Recipes J0 implementation.
 
 
 def _bessel_j0_jax(x: Any) -> Any:
-    """J_0(x) via rational Chebyshev approximation, differentiable under JAX."""
+    """Evaluate J_0(x) with a JAX-differentiable Cephes rational form."""
     ax = jnp.abs(x)
+    y = x * x
 
-    y = (ax / 3.0) ** 2
-    small = 1.0 + y * (
-        -2.2499997
-        + y * (1.2656208 + y * (-0.3163866 + y * (0.0444479 + y * (-0.0039444 + y * 0.0002100))))
-    )
-
-    y3 = 3.0 / ax
-    p0 = 0.79788456 + y3 * (
-        -0.00000077
-        + y3
+    small_num = 57568490574.0 + y * (
+        -13362590354.0
+        + y
         * (
-            -0.00552740
-            + y3 * (-0.00009512 + y3 * (0.00137237 + y3 * (-0.00072805 + y3 * 0.00014476)))
+            651619640.7
+            + y * (-11214424.18 + y * (77392.33017 + y * (-184.9052456)))
         )
     )
-    q0 = y3 * (
-        -0.04166397
-        + y3
-        * (
-            -0.00003954
-            + y3 * (0.00262573 + y3 * (-0.00054125 + y3 * (-0.00029333 + y3 * 0.00013558)))
-        )
+    small_den = 57568490411.0 + y * (
+        1029532985.0
+        + y * (9494680.718 + y * (59272.64853 + y * (267.8532712 + y)))
     )
-    theta0 = ax - 0.78539816  # ax - pi/4
-    large = p0 * jnp.cos(theta0 - q0) / jnp.sqrt(ax + 1e-30)
+    small = small_num / small_den
 
-    return jnp.where(ax <= 3.0, small, large)
+    ax_safe = jnp.maximum(ax, 1.0e-30)
+    z = 8.0 / ax_safe
+    y_large = z * z
+    phase = ax_safe - 0.785398164
+    large_cos = 1.0 + y_large * (
+        -0.1098628627e-2
+        + y_large
+        * (0.2734510407e-4 + y_large * (-0.2073370639e-5 + y_large * 0.2093887211e-6))
+    )
+    large_sin = -0.1562499995e-1 + y_large * (
+        0.1430488765e-3
+        + y_large
+        * (-0.6911147651e-5 + y_large * (0.7621095161e-6 - y_large * 0.934945152e-7))
+    )
+    large = jnp.sqrt(0.636619772 / ax_safe) * (
+        jnp.cos(phase) * large_cos - z * jnp.sin(phase) * large_sin
+    )
+
+    return jnp.where(ax < 8.0, small, large)
 
 
 # ── Core JAX kernels ────────────────────────────────────────────────
