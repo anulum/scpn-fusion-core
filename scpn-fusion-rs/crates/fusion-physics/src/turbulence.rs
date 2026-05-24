@@ -99,7 +99,7 @@ impl DriftWavePhysics {
         let dk = 2.0 * std::f64::consts::PI / DOMAIN_L;
 
         let kx = Array2::from_shape_fn((n, n), |(_, j)| {
-            let freq = if j <= n / 2 {
+            let freq = if j < n / 2 {
                 j as f64
             } else {
                 j as f64 - n as f64
@@ -107,7 +107,7 @@ impl DriftWavePhysics {
             freq * dk
         });
         let ky = Array2::from_shape_fn((n, n), |(i, _)| {
-            let freq = if i <= n / 2 {
+            let freq = if i < n / 2 {
                 i as f64
             } else {
                 i as f64 - n as f64
@@ -628,6 +628,15 @@ mod tests {
                 assert!((hw.n_k[[i, j]] - hw.n_k[[mirror_i, mirror_j]].conj()).norm() < 1e-12);
             }
         }
+    }
+
+    #[test]
+    fn test_hw_even_grid_nyquist_wavenumber_uses_numpy_fft_convention() {
+        let hw = DriftWavePhysics::with_seed(16, 1729);
+        let dk = 2.0 * std::f64::consts::PI / DOMAIN_L;
+
+        assert!((hw.kx[[0, 8]] + 8.0 * dk).abs() < 1e-12);
+        assert!((hw.ky[[8, 0]] + 8.0 * dk).abs() < 1e-12);
     }
 
     #[test]

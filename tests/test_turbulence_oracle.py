@@ -77,6 +77,12 @@ class TestDriftWavePhysics:
         np.testing.assert_allclose(np.fft.ifft2(hw.phi_k).imag, 0.0, atol=1.0e-15)
         np.testing.assert_allclose(np.fft.ifft2(hw.n_k).imag, 0.0, atol=1.0e-15)
 
+    def test_even_grid_nyquist_wavenumber_uses_numpy_fft_convention(self):
+        hw = DriftWavePhysics(N=16, seed=1729)
+
+        assert hw.k[8] == np.fft.fftfreq(16, d=10.0 / (2 * np.pi * 16))[8]
+        assert hw.k[8] < 0.0
+
 
 class TestOracleESN:
     def test_init(self):
