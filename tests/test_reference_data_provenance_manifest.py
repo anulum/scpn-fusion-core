@@ -771,6 +771,67 @@ def test_build_manifest_rejects_mixed_equilibrium_dataset_id(
         prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
 
 
+def test_build_manifest_rejects_reference_equilibrium_namespace_mismatch(
+    tmp_path: Path,
+) -> None:
+    public_root = tmp_path / "public_reference_data"
+    (public_root / "diiid").mkdir(parents=True)
+    (public_root / "diiid" / "case.eqdsk").write_text("diiid\n", encoding="utf-8")
+    public_policy = public_root / "provenance_policy.json"
+    public_manifest = public_root / "provenance_manifest.json"
+    public_rule = {
+        "id": "diiid_public_efit_equilibria",
+        "glob": "diiid/*.eqdsk",
+        "source_type": "reference_equilibrium_bundle",
+        "source": "DIII-D public equilibrium references.",
+        "license": "see-file",
+        "license_notice": "validation/reference_data/diiid/LICENSE",
+        "reference_class": "public_efit_reference",
+        "reference_role": "gate",
+        "reference_expected_contract": "public_efit_geqdsk_operator_and_profile_source_contract",
+        "reference_expected_convention": "raw_canonical_strict_unless_named_adapter_passes",
+    }
+    proxy_rule = {
+        "id": "sparc_proxy_equilibria",
+        "glob": "sparc/*.eqdsk",
+        "source_type": "reference_equilibrium_bundle",
+        "source": "Synthetic SPARC-like proxy equilibria.",
+        "license": "synthetic-v1",
+        "reference_class": "synthetic_proxy_reference",
+        "reference_role": "diagnostic",
+        "reference_expected_contract": "synthetic_solovev_geqdsk_diagnostic_contract",
+        "reference_expected_convention": "synthetic_proxy_profile_source",
+    }
+    policy_rule = {
+        "id": "policy",
+        "glob": "provenance_policy.json",
+        "source_type": "documentation",
+        "source": "policy",
+        "license": "AGPL-3.0-or-later",
+    }
+
+    _write_json(public_policy, _policy_with_rules([public_rule, policy_rule]))
+    with pytest.raises(ValueError, match="public EFIT references must live under"):
+        prov.build_manifest(
+            root=public_root,
+            policy_path=public_policy,
+            manifest_path=public_manifest,
+        )
+
+    proxy_root = tmp_path / "proxy_reference_data"
+    (proxy_root / "sparc").mkdir(parents=True)
+    (proxy_root / "sparc" / "case.eqdsk").write_text("sparc\n", encoding="utf-8")
+    proxy_policy = proxy_root / "provenance_policy.json"
+    proxy_manifest = proxy_root / "provenance_manifest.json"
+    _write_json(proxy_policy, _policy_with_rules([proxy_rule, policy_rule]))
+    with pytest.raises(ValueError, match="synthetic proxy references cannot live under"):
+        prov.build_manifest(
+            root=proxy_root,
+            policy_path=proxy_policy,
+            manifest_path=proxy_manifest,
+        )
+
+
 def test_build_manifest_rejects_mismatched_reference_contracts_and_conventions(
     tmp_path: Path,
 ) -> None:

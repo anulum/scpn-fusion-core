@@ -39,6 +39,7 @@ REFERENCE_EXPECTED_CONVENTIONS = {
     "raw_canonical_strict_unless_named_adapter_passes",
     "synthetic_proxy_profile_source",
 }
+PUBLIC_EFIT_REFERENCE_PREFIXES = ("sparc/",)
 
 
 def _content_bytes(path: Path) -> bytes:
@@ -329,6 +330,19 @@ def build_manifest(
 
         rule = _match_rule(rel, rules)
         license_meta = license_registry[rule["license"]]
+        if rule["source_type"] == REFERENCE_EQUILIBRIUM_SOURCE_TYPE:
+            is_public_namespace = rel.startswith(PUBLIC_EFIT_REFERENCE_PREFIXES)
+            reference_class = rule["reference_class"]
+            if reference_class == "public_efit_reference" and not is_public_namespace:
+                prefixes = ", ".join(PUBLIC_EFIT_REFERENCE_PREFIXES)
+                raise ValueError(
+                    f"public EFIT references must live under public reference namespace(s): "
+                    f"{prefixes}"
+                )
+            if reference_class == "synthetic_proxy_reference" and is_public_namespace:
+                raise ValueError(
+                    "synthetic proxy references cannot live under public reference namespace(s)."
+                )
         content = _content_bytes(path)
         size_bytes = int(len(content))
         sha256 = _sha256(content)
