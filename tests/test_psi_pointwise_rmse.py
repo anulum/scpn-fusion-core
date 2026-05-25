@@ -181,6 +181,24 @@ class TestComputeGSSource:
         assert components["ffprime_source_norm"] >= 0.0
         assert components["total_source_norm"] > 0.0
 
+    def test_flux_profile_interpolation_is_quadratic_exact_and_masks_boundaries(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        profile = eq.psi_norm**2 + 0.25 * eq.psi_norm + 0.5
+        psi_n = np.linspace(0.0, 1.0, 31)
+
+        interpolated = psi_rmse_mod.interpolate_flux_profile_second_order(psi_n, profile)
+
+        expected = psi_n**2 + 0.25 * psi_n + 0.5
+        assert np.max(np.abs(interpolated - expected)) < 1.0e-12
+
+        components = compute_source_components(eq)
+        for source_key in ("pressure_source", "ffprime_source", "total_source"):
+            source_component = components[source_key]
+            assert np.all(source_component[0, :] == 0.0)
+            assert np.all(source_component[-1, :] == 0.0)
+            assert np.all(source_component[:, 0] == 0.0)
+            assert np.all(source_component[:, -1] == 0.0)
+
     def test_source_components_reject_invalid_equilibrium_contract(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
         eq.ffprime = eq.ffprime[:-1]

@@ -273,6 +273,44 @@ def compute_gs_source(
     return compute_source_components(eq)["total_source"]
 
 
+def interpolate_flux_profile_second_order(
+    psi_norm: NDArray,
+    profile: NDArray,
+) -> NDArray:
+    """
+    Interpolate a GEQDSK flux profile with local quadratic Lagrange stencils.
+
+    GEQDSK pprime/ffprime profiles are sampled on a uniform normalised-flux
+    axis.  This routine is exact for quadratic profile data on that axis and
+    uses one-sided quadratic stencils near the magnetic axis and separatrix.
+    """
+    psi_arr = np.asarray(psi_norm, dtype=np.float64)
+    profile_arr = np.asarray(profile, dtype=np.float64)
+    if profile_arr.ndim != 1:
+        raise ValueError("profile must be 1D")
+    if profile_arr.size < 3:
+        raise ValueError("profile must contain at least three flux samples")
+    if not np.all(np.isfinite(psi_arr)) or not np.all(np.isfinite(profile_arr)):
+        raise ValueError("psi_norm and profile must contain only finite values")
+
+    axis = np.linspace(0.0, 1.0, profile_arr.size, dtype=np.float64)
+    flat = np.clip(psi_arr, 0.0, 1.0).ravel()
+    idx = np.searchsorted(axis, flat, side="right") - 1
+    idx = np.clip(idx, 1, profile_arr.size - 2)
+
+    x0 = axis[idx - 1]
+    x1 = axis[idx]
+    x2 = axis[idx + 1]
+    y0 = profile_arr[idx - 1]
+    y1 = profile_arr[idx]
+    y2 = profile_arr[idx + 1]
+
+    term0 = y0 * (flat - x1) * (flat - x2) / ((x0 - x1) * (x0 - x2))
+    term1 = y1 * (flat - x0) * (flat - x2) / ((x1 - x0) * (x1 - x2))
+    term2 = y2 * (flat - x0) * (flat - x1) / ((x2 - x0) * (x2 - x1))
+    return (term0 + term1 + term2).reshape(psi_arr.shape)
+
+
 def compute_source_components(eq: GEqdsk) -> dict[str, Any]:
     """Split the GEQDSK-derived Grad-Shafranov source into profile components."""
     if eq.nw <= 0 or eq.nh <= 0:
@@ -308,7 +346,6 @@ def compute_source_components(eq: GEqdsk) -> dict[str, Any]:
     if np.any(np.diff(Z) <= 0.0):
         raise ValueError("Z axis must be strictly increasing")
 
-    psi_norm_1d = np.linspace(0.0, 1.0, eq.nw)
     RR, _ = np.meshgrid(R, Z)
 
     # Normalise reference psi
@@ -329,13 +366,17 @@ def compute_source_components(eq: GEqdsk) -> dict[str, Any]:
 
     # Interpolate 1D profiles onto 2D grid
     psi_n_clipped = np.clip(psi_n, 0.0, 1.0)
-    pprime_2d = np.interp(psi_n_clipped.ravel(), psi_norm_1d, pprime).reshape(eq.nh, eq.nw)
-    ffprime_2d = np.interp(psi_n_clipped.ravel(), psi_norm_1d, ffprime).reshape(eq.nh, eq.nw)
+    pprime_2d = interpolate_flux_profile_second_order(psi_n_clipped, pprime)
+    ffprime_2d = interpolate_flux_profile_second_order(psi_n_clipped, ffprime)
 
     # Zero outside plasma
     plasma_mask = (psi_n >= 0) & (psi_n < 1.0)
     pprime_2d[~plasma_mask] = 0.0
     ffprime_2d[~plasma_mask] = 0.0
+    pprime_2d[[0, -1], :] = 0.0
+    pprime_2d[:, [0, -1]] = 0.0
+    ffprime_2d[[0, -1], :] = 0.0
+    ffprime_2d[:, [0, -1]] = 0.0
 
     mu0 = 4e-7 * np.pi
     pressure_source = -(mu0 * RR**2 * pprime_2d)
