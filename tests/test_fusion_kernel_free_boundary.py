@@ -234,4 +234,8 @@ def test_solve_free_boundary_returns_contract() -> None:
     assert result["outer_iterations"] == 1
     assert "final_diff" in result
     assert "coil_currents" in result
+    assert result["vacuum_boundary_abs_error"] == 0.0
+    assert result["boundary_reconstruction"]["point_count"] == 4 * (k.NR - 1)
+    assert result["boundary_reconstruction"]["coil_count"] == 1
+    assert result["boundary_reconstruction"]["max_abs_error"] == 0.0
     assert k.solve_calls == 1

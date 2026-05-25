@@ -562,6 +562,21 @@ def resolve_shape_target_flux(kernel: Any, coils: "CoilSet") -> FloatArray:
     return np.full(n_pts, iso_level, dtype=np.float64)
 
 
+def _kernel_boundary_points(kernel: Any) -> FloatArray:
+    """Return unique computational-boundary points in ``(R, Z)`` order."""
+    r = np.asarray(kernel.R, dtype=np.float64)
+    z = np.asarray(kernel.Z, dtype=np.float64)
+    if r.ndim != 1 or z.ndim != 1 or r.size < 2 or z.size < 2:
+        raise ValueError("kernel R/Z axes must be one-dimensional with at least two points.")
+    if not np.all(np.isfinite(r)) or not np.all(np.isfinite(z)):
+        raise ValueError("kernel R/Z axes must contain finite values only.")
+    bottom = np.column_stack([r, np.full(r.shape, z[0])])
+    right = np.column_stack([np.full(z[1:].shape, r[-1]), z[1:]])
+    top = np.column_stack([r[-2::-1], np.full(r[-2::-1].shape, z[-1])])
+    left = np.column_stack([np.full(z[-2:0:-1].shape, r[0]), z[-2:0:-1]])
+    return np.vstack([bottom, right, top, left]).astype(np.float64, copy=False)
+
+
 def solve_free_boundary(
     kernel: Any,
     coils: "CoilSet",
@@ -617,10 +632,28 @@ def solve_free_boundary(
             logger.info("Free-boundary converged at outer iter %d (diff=%.2e)", outer, diff)
             break
 
+    boundary_points = _kernel_boundary_points(kernel)
+    boundary_target = np.concatenate(
+        [
+            psi_ext[0, :],
+            psi_ext[1:, -1],
+            psi_ext[-1, -2::-1],
+            psi_ext[-2:0:-1, 0],
+        ]
+    ).astype(np.float64, copy=False)
+    boundary_reconstruction = reconstruct_boundary_flux_from_coils(
+        kernel,
+        coils,
+        boundary_points=boundary_points,
+        target_flux=boundary_target,
+    )
+
     return {
         "outer_iterations": outer + 1,
         "final_diff": diff,
         "coil_currents": coils.currents.copy(),
+        "vacuum_boundary_abs_error": boundary_reconstruction["max_abs_error"],
+        "boundary_reconstruction": boundary_reconstruction,
     }
 
 
@@ -630,6 +663,7 @@ __all__ = [
     "green_function",
     "interp_psi",
     "optimize_coil_currents",
+    "reconstruct_boundary_flux_from_coils",
     "resolve_shape_target_flux",
     "solve_free_boundary",
 ]

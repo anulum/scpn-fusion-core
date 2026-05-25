@@ -111,6 +111,13 @@ def run_free_boundary_benchmark() -> dict:
                 and np.isfinite(boundary_reconstruction["axis_flux"])
             ),
         }
+        solve_contract = kernel.solve_free_boundary(coils, max_outer_iter=1, tol=0.0)
+        results["solve_free_boundary_vacuum_reconstruction"] = {
+            "outer_iterations": int(solve_contract["outer_iterations"]),
+            "boundary_point_count": int(solve_contract["boundary_reconstruction"]["point_count"]),
+            "vacuum_boundary_abs_error": float(solve_contract["vacuum_boundary_abs_error"]),
+            "pass": bool(solve_contract["vacuum_boundary_abs_error"] < 1.0e-12),
+        }
 
         # 2. Helmholtz Pair Field
         # R=1.0, Z= +/- 0.5. Field at axis (R=0) should be uniform.
@@ -277,6 +284,15 @@ def main():
         f.write(
             "| Boundary Green reconstruction | Min limiter clearance | "
             f"{br['min_limiter_distance_m']:.6f} m | {br['pass']} |\n"
+        )
+        solver_fb = res["solve_free_boundary_vacuum_reconstruction"]
+        f.write(
+            "| Solver free-boundary contract | Vacuum boundary abs error | "
+            f"{solver_fb['vacuum_boundary_abs_error']:.2e} | {solver_fb['pass']} |\n"
+        )
+        f.write(
+            "| Solver free-boundary contract | Boundary points | "
+            f"{solver_fb['boundary_point_count']} over {solver_fb['outer_iterations']} outer iter | N/A |\n"
         )
         hm = res["helmholtz"]
         f.write(f"| Helmholtz | B_z Axis Ref | {hm['bz_axis_ref']:.4f} T | N/A |\n")

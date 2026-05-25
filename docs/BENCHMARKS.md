@@ -555,6 +555,10 @@ Latest local result: boundary Green reconstruction RMSE `0.00e+00`, max
 absolute error `0.00e+00`, response rank `1/1` coils over `5` contour points,
 `4` limiter points, `2` X-points, axis flux `2.589381e-01`, minimum limiter
 clearance `0.380789 m`, status `PASS`.
+The actual `solve_free_boundary` path now returns the same coil/vacuum
+reconstruction diagnostic on its computational boundary; latest local solver
+contract result: vacuum-boundary absolute error `0.00e+00` over `256` boundary
+points in `1` outer iteration, status `PASS`.
 
 GEQDSK-to-native configuration now preserves free-boundary geometry metadata:
 `GEqdsk.to_config()` exports the parsed plasma boundary as isoflux target

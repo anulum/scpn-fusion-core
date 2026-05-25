@@ -19,6 +19,12 @@
     "max_abs_x_point_flux": 0.12291045919919759,
     "pass": true
   },
+  "solve_free_boundary_vacuum_reconstruction": {
+    "outer_iterations": 1,
+    "boundary_point_count": 256,
+    "vacuum_boundary_abs_error": 0.0,
+    "pass": true
+  },
   "helmholtz": {
     "bz_axis_ref": 0.8991762855732129,
     "bz_at_min_r": 0.8917274402773225,
@@ -36,7 +42,7 @@
     "grid": "33x33",
     "picard_iterations": 10,
     "sor_sweeps_per_picard": 10,
-    "wall_time_s": 0.7131151889916509,
+    "wall_time_s": 1.1163599410210736,
     "vacuum_boundary_abs_error": 7.105427357601002e-15,
     "vacuum_boundary_flux_level": 16.551065542554525,
     "interior_axis_flux": 66.04980778478084,
