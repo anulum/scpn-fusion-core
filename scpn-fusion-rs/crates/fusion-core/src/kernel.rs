@@ -26,7 +26,7 @@ use fusion_math::sor::sor_solve;
 use fusion_types::config::ReactorConfig;
 use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::{EquilibriumResult, Grid2D, PlasmaState};
-use ndarray::{Array1, Array2};
+use ndarray::{s, Array1, Array2};
 
 /// Gaussian sigma for seed current distribution (Python line 193: `sigma = 1.0`).
 const SEED_GAUSSIAN_SIGMA: f64 = 1.0;
@@ -89,6 +89,130 @@ fn sor_step_python(psi: &mut Array2<f64>, source: &Array2<f64>, grid: &Grid2D, o
             }
         }
     }
+}
+
+fn validate_operator_inputs(
+    psi: &Array2<f64>,
+    grid: &Grid2D,
+    mu0: Option<f64>,
+) -> FusionResult<()> {
+    if psi.dim() != (grid.nz, grid.nr) {
+        return Err(FusionError::ConfigError(format!(
+            "psi shape mismatch: expected ({}, {}), got {:?}",
+            grid.nz,
+            grid.nr,
+            psi.dim()
+        )));
+    }
+    if grid.nr < 3 || grid.nz < 3 {
+        return Err(FusionError::ConfigError(
+            "grid must be at least 3x3 for centered GS diagnostics".to_string(),
+        ));
+    }
+    if !(grid.dr.is_finite() && grid.dr > 0.0 && grid.dz.is_finite() && grid.dz > 0.0) {
+        return Err(FusionError::ConfigError(
+            "grid spacing must be finite and positive".to_string(),
+        ));
+    }
+    if grid.r.len() != grid.nr || grid.z.len() != grid.nz {
+        return Err(FusionError::ConfigError(
+            "grid axis lengths must match grid dimensions".to_string(),
+        ));
+    }
+    if grid
+        .r
+        .iter()
+        .any(|value| !value.is_finite() || *value <= 0.0)
+        || grid.z.iter().any(|value| !value.is_finite())
+    {
+        return Err(FusionError::ConfigError(
+            "grid coordinates must be finite and R must remain positive".to_string(),
+        ));
+    }
+    if psi.iter().any(|value| !value.is_finite()) {
+        return Err(FusionError::PhysicsViolation(
+            "psi must contain only finite values".to_string(),
+        ));
+    }
+    if let Some(mu0_value) = mu0 {
+        if !(mu0_value.is_finite() && mu0_value > 0.0) {
+            return Err(FusionError::ConfigError(
+                "mu0 must be finite and positive".to_string(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Return the native cylindrical Grad-Shafranov operator Delta*psi.
+///
+/// The centered finite-difference operator is:
+///
+/// `d2psi/dR2 - (1/R)dpsi/dR + d2psi/dZ2`.
+///
+/// Boundary cells are returned as zero because the stencil is defined on the
+/// interior only.
+pub fn grad_shafranov_delta_star(psi: &Array2<f64>, grid: &Grid2D) -> FusionResult<Array2<f64>> {
+    validate_operator_inputs(psi, grid, None)?;
+    let mut delta_star = Array2::<f64>::zeros((grid.nz, grid.nr));
+    let dr2 = grid.dr * grid.dr;
+    let dz2 = grid.dz * grid.dz;
+
+    for iz in 1..(grid.nz - 1) {
+        for ir in 1..(grid.nr - 1) {
+            let r = grid.rr[[iz, ir]];
+            if !(r.is_finite() && r > 0.0) {
+                return Err(FusionError::ConfigError(format!(
+                    "grid R coordinate must be finite and positive at ({iz}, {ir})"
+                )));
+            }
+            let d2_dr2 = (psi[[iz, ir + 1]] - 2.0 * psi[[iz, ir]] + psi[[iz, ir - 1]]) / dr2;
+            let d_dr_over_r = (psi[[iz, ir + 1]] - psi[[iz, ir - 1]]) / (2.0 * grid.dr * r);
+            let d2_dz2 = (psi[[iz + 1, ir]] - 2.0 * psi[[iz, ir]] + psi[[iz - 1, ir]]) / dz2;
+            delta_star[[iz, ir]] = d2_dr2 - d_dr_over_r + d2_dz2;
+        }
+    }
+
+    Ok(delta_star)
+}
+
+/// Return J_phi implied by a flux grid through Delta*psi = -mu0 R J_phi.
+pub fn toroidal_current_density_from_flux(
+    psi: &Array2<f64>,
+    grid: &Grid2D,
+    mu0: f64,
+) -> FusionResult<Array2<f64>> {
+    validate_operator_inputs(psi, grid, Some(mu0))?;
+    let delta_star = grad_shafranov_delta_star(psi, grid)?;
+    let mut current_density = Array2::<f64>::zeros((grid.nz, grid.nr));
+
+    for iz in 1..(grid.nz - 1) {
+        for ir in 1..(grid.nr - 1) {
+            current_density[[iz, ir]] = -delta_star[[iz, ir]] / (mu0 * grid.rr[[iz, ir]]);
+        }
+    }
+
+    Ok(current_density)
+}
+
+/// Integrate J_phi implied by a flux grid over the native R-Z grid.
+pub fn total_toroidal_current_from_flux(
+    psi: &Array2<f64>,
+    grid: &Grid2D,
+    mu0: f64,
+) -> FusionResult<f64> {
+    let current_density = toroidal_current_density_from_flux(psi, grid, mu0)?;
+    let total = current_density
+        .slice(s![1..(grid.nz - 1), 1..(grid.nr - 1)])
+        .sum()
+        * grid.dr
+        * grid.dz;
+    if !total.is_finite() {
+        return Err(FusionError::PhysicsViolation(
+            "integrated toroidal current became non-finite".to_string(),
+        ));
+    }
+    Ok(total)
 }
 
 /// Selects the inner linear solver used in Picard iteration.
@@ -899,6 +1023,59 @@ mod tests {
         assert!(result.iterations > 0);
         assert!(result.residual.is_finite());
         assert!(!kernel.psi().iter().any(|v| !v.is_finite()));
+    }
+
+    #[test]
+    fn test_operator_current_density_matches_z_quadratic_manufactured_solution() {
+        let grid = Grid2D::new(17, 19, 1.0, 3.0, -1.0, 1.0);
+        let coeff = -0.25_f64;
+        let mu0 = 4.0 * std::f64::consts::PI * 1.0e-7;
+        let psi = Array2::from_shape_fn((grid.nz, grid.nr), |(iz, _ir)| {
+            coeff * grid.z[iz] * grid.z[iz]
+        });
+
+        let delta_star = grad_shafranov_delta_star(&psi, &grid).unwrap();
+        let current_density = toroidal_current_density_from_flux(&psi, &grid, mu0).unwrap();
+
+        for iz in 1..(grid.nz - 1) {
+            for ir in 1..(grid.nr - 1) {
+                assert!((delta_star[[iz, ir]] - 2.0 * coeff).abs() < 1.0e-12);
+                let expected = -2.0 * coeff / (mu0 * grid.rr[[iz, ir]]);
+                assert!((current_density[[iz, ir]] - expected).abs() < 1.0e-6);
+            }
+        }
+
+        assert!(delta_star.row(0).iter().all(|value| *value == 0.0));
+        assert!(delta_star
+            .row(grid.nz - 1)
+            .iter()
+            .all(|value| *value == 0.0));
+        assert!(delta_star.column(0).iter().all(|value| *value == 0.0));
+        assert!(delta_star
+            .column(grid.nr - 1)
+            .iter()
+            .all(|value| *value == 0.0));
+    }
+
+    #[test]
+    fn test_total_current_integrates_manufactured_current_closure() {
+        let grid = Grid2D::new(19, 21, 1.0, 3.0, -1.0, 1.0);
+        let coeff = -0.125_f64;
+        let mu0 = 4.0 * std::f64::consts::PI * 1.0e-7;
+        let psi = Array2::from_shape_fn((grid.nz, grid.nr), |(iz, _ir)| {
+            coeff * grid.z[iz] * grid.z[iz]
+        });
+
+        let total_current = total_toroidal_current_from_flux(&psi, &grid, mu0).unwrap();
+        let mut expected_total = 0.0;
+        for iz in 1..(grid.nz - 1) {
+            for ir in 1..(grid.nr - 1) {
+                expected_total += -2.0 * coeff / (mu0 * grid.rr[[iz, ir]]);
+            }
+        }
+        expected_total *= grid.dr * grid.dz;
+
+        assert!((total_current - expected_total).abs() / expected_total.abs() < 1.0e-12);
     }
 
     #[test]

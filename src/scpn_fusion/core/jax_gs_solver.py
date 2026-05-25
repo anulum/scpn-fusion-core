@@ -164,6 +164,89 @@ def gs_solve_np(
     return result
 
 
+def _validate_operator_inputs_np(
+    psi: NDArray,
+    R_min: float,
+    R_max: float,
+    Z_min: float,
+    Z_max: float,
+) -> tuple[NDArray, int, int, float, float, NDArray]:
+    """Validate a flux grid before applying the native GS operator."""
+    psi_arr = np.asarray(psi, dtype=float)
+    if psi_arr.ndim != 2:
+        raise ValueError("psi must be a two-dimensional array")
+    NZ, NR = psi_arr.shape
+    if NR < 3 or NZ < 3:
+        raise ValueError("psi shape must be at least 3x3 for centered GS diagnostics")
+    if not (np.isfinite(R_min) and np.isfinite(R_max) and 0.0 < R_min < R_max):
+        raise ValueError("R_min and R_max must be finite, positive, increasing values")
+    if not (np.isfinite(Z_min) and np.isfinite(Z_max) and Z_min < Z_max):
+        raise ValueError("Z_min and Z_max must be finite, increasing values")
+    if not np.all(np.isfinite(psi_arr)):
+        raise ValueError("psi must contain only finite values")
+
+    dR = (R_max - R_min) / (NR - 1)
+    dZ = (Z_max - Z_min) / (NZ - 1)
+    R = np.linspace(R_min, R_max, NR)
+    return psi_arr, NR, NZ, dR, dZ, R
+
+
+def gs_delta_star_np(
+    psi: NDArray,
+    R_min: float,
+    R_max: float,
+    Z_min: float,
+    Z_max: float,
+) -> NDArray:
+    r"""Evaluate the native cylindrical Grad-Shafranov operator ``Delta* psi``.
+
+    The centered finite-difference operator is
+    ``d2psi/dR2 - (1/R) dpsi/dR + d2psi/dZ2``. Boundary cells are returned as
+    zero because the centered stencil is defined on the interior only.
+    """
+    psi_arr, NR, NZ, dR, dZ, R = _validate_operator_inputs_np(psi, R_min, R_max, Z_min, Z_max)
+    delta_star = np.zeros_like(psi_arr, dtype=float)
+
+    d2_dR2 = (psi_arr[1:-1, 2:] - 2.0 * psi_arr[1:-1, 1:-1] + psi_arr[1:-1, :-2]) / (dR * dR)
+    d_dR_over_R = (psi_arr[1:-1, 2:] - psi_arr[1:-1, :-2]) / (2.0 * dR * R[None, 1:-1])
+    d2_dZ2 = (psi_arr[2:, 1:-1] - 2.0 * psi_arr[1:-1, 1:-1] + psi_arr[:-2, 1:-1]) / (dZ * dZ)
+
+    delta_star[1 : NZ - 1, 1 : NR - 1] = d2_dR2 - d_dR_over_R + d2_dZ2
+    return delta_star
+
+
+def gs_toroidal_current_density_np(
+    psi: NDArray,
+    R_min: float,
+    R_max: float,
+    Z_min: float,
+    Z_max: float,
+    mu0: float = 4e-7 * np.pi,
+) -> NDArray:
+    r"""Return ``J_phi`` implied by ``Delta*psi = -mu0 R J_phi``."""
+    if not (np.isfinite(mu0) and mu0 > 0.0):
+        raise ValueError("mu0 must be finite and positive")
+    psi_arr, NR, NZ, _dR, _dZ, R = _validate_operator_inputs_np(psi, R_min, R_max, Z_min, Z_max)
+    delta_star = gs_delta_star_np(psi_arr, R_min, R_max, Z_min, Z_max)
+    current_density = np.zeros_like(psi_arr, dtype=float)
+    current_density[1 : NZ - 1, 1 : NR - 1] = -delta_star[1:-1, 1:-1] / (mu0 * R[None, 1:-1])
+    return current_density
+
+
+def gs_total_toroidal_current_np(
+    psi: NDArray,
+    R_min: float,
+    R_max: float,
+    Z_min: float,
+    Z_max: float,
+    mu0: float = 4e-7 * np.pi,
+) -> float:
+    """Integrate the toroidal current density implied by a flux grid."""
+    _psi_arr, _NR, _NZ, dR, dZ, _R = _validate_operator_inputs_np(psi, R_min, R_max, Z_min, Z_max)
+    current_density = gs_toroidal_current_density_np(psi, R_min, R_max, Z_min, Z_max, mu0=mu0)
+    return float(np.sum(current_density[1:-1, 1:-1]) * dR * dZ)
+
+
 def gs_equation_residual_np(
     psi: NDArray,
     R_min: float,

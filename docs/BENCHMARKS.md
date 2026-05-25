@@ -13,7 +13,7 @@ Comparison of SCPN Fusion Core against established fusion simulation codes.
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |
 |--------|------------------------|---------------|-------|---------|
 | **Control loop freq** | **10–30 kHz (Verified)** | 100 Hz | 50 Hz | 4–10 kHz (physics loops) |
-| **Step compute time** | **0.3 μs (Elite)** | 10 ms | ~1 ms | 100–250 μs |
+| **Step compute time** | **0.3 μs** | 10 ms | ~1 ms | 100–250 μs |
 | **Equilibrium solver** | Picard + SOR / Multigrid | Jacobi + Picard | JAX autodiff | rtEFIT |
 | **Turbulence model** | JAX-FNO (synthetic-data surrogate) | FNO (Legacy) | QLKNN | N/A |
 | **Language** | Rust + Python | Python | Python/JAX | C / Fortran |
@@ -79,6 +79,30 @@ On the current local run, 5 of 18 aggregate rows close operator-derived current
 within 5% of the declared GEQDSK current. Four high-current public SPARC EQDSK
 rows close within `6.4e-5` relative error, while the profile-source RMSE gate
 still fails and remains documented as debt in the benchmark report.
+
+### Native Grad-Shafranov operator-current closure
+
+`validation/benchmark_gs_operator_current_closure.py` validates the native
+non-reduced cylindrical operator contract on manufactured fields:
+`psi(R, Z) = c Z^2`, `Delta*psi = 2c`, and
+`J_phi = -Delta*psi / (mu0 R)`. This benchmark is separate from EFIT inverse
+reconstruction: it proves the native operator/current diagnostic obeys the
+Grad-Shafranov current relation on the local grid.
+
+Local run on this machine:
+
+- Platform: Linux 6.17.0-29-generic x86_64
+- CPU count: 12
+- Python: 3.12.3
+- NumPy: 2.2.6
+
+| Grid | coeff | elapsed s | max Delta* abs error | max J rel error | total current rel error |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 17x19 | -0.25 | 2.400550e-04 | 5.662137e-15 | 1.138333e-14 | 1.523927e-16 |
+| 33x35 | -0.125 | 1.734650e-04 | 7.827072e-15 | 3.140702e-14 | 4.276956e-16 |
+
+Status: PASS against thresholds `Delta* <= 1e-10`, `J_rel <= 1e-12`,
+`I_total_rel <= 1e-12`.
 
 ### Transport Source Power-Balance Contract
 

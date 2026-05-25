@@ -17,8 +17,11 @@ import numpy as np
 import pytest
 
 from scpn_fusion.core.jax_gs_solver import (
+    gs_delta_star_np,
     gs_equation_residual_np,
     gs_solve_np,
+    gs_toroidal_current_density_np,
+    gs_total_toroidal_current_np,
     has_jax,
     jax_gs_solve,
 )
@@ -130,6 +133,64 @@ class TestGsSolveNumpy:
         bad[1, 1] = np.nan
         with pytest.raises(ValueError, match="finite"):
             gs_equation_residual_np(bad, 1.0, 3.0, -1.0, 1.0, 3, 3, 0.0)
+
+    def test_current_density_matches_manufactured_z_quadratic_flux(self):
+        """The native GS operator recovers J_phi = -Delta*psi/(mu0 R)."""
+        nr, nz = 11, 13
+        r_min, r_max = 1.0, 3.0
+        z_min, z_max = -1.0, 1.0
+        coeff = -0.25
+
+        r = np.linspace(r_min, r_max, nr)
+        z = np.linspace(z_min, z_max, nz)
+        _, zz = np.meshgrid(r, z)
+        psi = coeff * zz**2
+
+        delta_star = gs_delta_star_np(psi, r_min, r_max, z_min, z_max)
+        current_density = gs_toroidal_current_density_np(psi, r_min, r_max, z_min, z_max)
+
+        np.testing.assert_allclose(
+            delta_star[1:-1, 1:-1],
+            2.0 * coeff,
+            rtol=1.0e-12,
+            atol=1.0e-12,
+        )
+        np.testing.assert_allclose(delta_star[0, :], 0.0, atol=0.0)
+        np.testing.assert_allclose(delta_star[-1, :], 0.0, atol=0.0)
+        np.testing.assert_allclose(delta_star[:, 0], 0.0, atol=0.0)
+        np.testing.assert_allclose(delta_star[:, -1], 0.0, atol=0.0)
+
+        expected_j = np.broadcast_to(
+            -2.0 * coeff / (MU0 * r[None, 1:-1]),
+            current_density[1:-1, 1:-1].shape,
+        )
+        np.testing.assert_allclose(
+            current_density[1:-1, 1:-1],
+            expected_j,
+            rtol=1.0e-12,
+            atol=1.0e-6,
+        )
+
+    def test_total_current_integrates_manufactured_current_closure(self):
+        """The native current diagnostic conserves the discrete toroidal current."""
+        nr, nz = 17, 19
+        r_min, r_max = 1.0, 3.0
+        z_min, z_max = -1.0, 1.0
+        coeff = -0.125
+
+        r = np.linspace(r_min, r_max, nr)
+        z = np.linspace(z_min, z_max, nz)
+        _, zz = np.meshgrid(r, z)
+        psi = coeff * zz**2
+        dr = (r_max - r_min) / (nr - 1)
+        dz = (z_max - z_min) / (nz - 1)
+
+        expected_density = -2.0 * coeff / (MU0 * r[None, 1:-1])
+        expected_total = float(np.sum(expected_density) * (nz - 2) * dr * dz)
+
+        total_current = gs_total_toroidal_current_np(psi, r_min, r_max, z_min, z_max)
+
+        assert total_current == pytest.approx(expected_total, rel=1.0e-12)
 
 
 class TestGsSolvePublicAPI:

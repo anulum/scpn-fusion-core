@@ -1,0 +1,45 @@
+{
+  "benchmark": "gs_operator_current_closure",
+  "cases": [
+    {
+      "coeff": -0.25,
+      "current_density_max_abs_error": 3.958120942115784e-09,
+      "current_density_max_relative_error": 1.1383331304297586e-14,
+      "delta_star_max_abs_error": 5.662137425588298e-15,
+      "elapsed_s": 0.00024005500017665327,
+      "expected_total_current": 763916.5051522637,
+      "nr": 17,
+      "nz": 19,
+      "total_current": 763916.5051522638,
+      "total_current_relative_error": 1.5239273015017648e-16
+    },
+    {
+      "coeff": -0.125,
+      "current_density_max_abs_error": 5.8498699218034744e-09,
+      "current_density_max_relative_error": 3.140702251426683e-14,
+      "delta_star_max_abs_error": 7.827072323607354e-15,
+      "elapsed_s": 0.0001734649995341897,
+      "expected_total_current": 408288.01624164375,
+      "nr": 33,
+      "nz": 35,
+      "total_current": 408288.0162416436,
+      "total_current_relative_error": 4.276955869237471e-16
+    }
+  ],
+  "machine": {
+    "cpu_count": 12,
+    "machine": "x86_64",
+    "numpy": "2.2.6",
+    "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python": "3.12.3",
+    "release": "6.17.0-29-generic",
+    "system": "Linux"
+  },
+  "passed": true,
+  "thresholds": {
+    "current_density_max_relative_error": 1e-12,
+    "delta_star_max_abs_error": 1e-10,
+    "total_current_relative_error": 1e-12
+  }
+}
