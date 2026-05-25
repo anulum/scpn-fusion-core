@@ -23,11 +23,11 @@ to concrete evidence files and patterns.
 | `results_threshold_sweep_dataset_size` | `RESULTS.md` | 1 | 1 |
 | `results_threshold_sweep_fpr` | `RESULTS.md` | 1 | 1 |
 | `security_current_supported_release` | `SECURITY.md` | 2 | 2 |
-| `readme_free_boundary_reduced_fidelity_boundary` | `README.md` | 1 | 2 |
-| `readme_native_gk_linear_scope_boundary` | `README.md` | 1 | 2 |
-| `readme_runaway_0d_scope_boundary` | `README.md` | 1 | 2 |
+| `readme_free_boundary_scope_boundary` | `README.md` | 1 | 2 |
+| `readme_native_gk_scope_boundary` | `README.md` | 1 | 2 |
+| `readme_runaway_scope_boundary` | `README.md` | 1 | 2 |
 | `readme_elm_proxy_scope_boundary` | `README.md` | 1 | 2 |
-| `readme_impurity_reduced_scope_boundary` | `README.md` | 1 | 2 |
+| `readme_impurity_scope_boundary` | `README.md` | 1 | 2 |
 
 ## Claim Details
 
@@ -219,10 +219,10 @@ Evidence pattern checks:
 | `pyproject.toml` | `version\s*=\s*"3\.9\.5"` |
 | `src/scpn_fusion/__init__.py` | `__version__\s*=\s*"3\.9\.5"` |
 
-### `readme_free_boundary_reduced_fidelity_boundary`
+### `readme_free_boundary_scope_boundary`
 
 - Source file: `README.md`
-- Source pattern: `Free-boundary GS solve \| Reduced direct solve; FreeGS parity currently \*\*FAIL\*\*`
+- Source pattern: `Free-boundary GS solve \| Public GEQDSK gate passes; FreeGS strict backend opt-in; not EFIT-grade inverse reconstruction`
 
 Evidence files:
 - `docs/HONEST_SCOPE.md`
@@ -231,13 +231,13 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `docs/HONEST_SCOPE.md` | `Not EFIT/LiUQE-quality full-profile inverse reconstruction` |
-| `docs/HONEST_SCOPE.md` | `bundled 18-file aggregate does not yet meet <5% ψ_N RMSE` |
+| `docs/HONEST_SCOPE.md` | `Public SPARC GEQDSK validation gates` |
+| `docs/HONEST_SCOPE.md` | `Full EFIT/LiUQE-quality profile and boundary reconstruction` |
 
-### `readme_native_gk_linear_scope_boundary`
+### `readme_native_gk_scope_boundary`
 
 - Source file: `README.md`
-- Source pattern: `Native GK eigenvalue solver \| Linear eigenvalue only; no nonlinear 5D Vlasov-Maxwell`
+- Source pattern: `Native GK solver \| Linear eigenvalue plus nonlinear 5D operator/invariant benchmarks; not GENE/CGYRO-class production turbulence`
 
 Evidence files:
 - `docs/HONEST_SCOPE.md`
@@ -246,23 +246,23 @@ Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `docs/HONEST_SCOPE.md` | `Reduced-order linear eigenvalue solver for ITG/TEM/ETG` |
-| `docs/HONEST_SCOPE.md` | `full nonlinear gyrokinetic \(GENE, GS2, CGYRO solve 5D Vlasov-Maxwell\)` |
+| `docs/HONEST_SCOPE.md` | `Linear eigenvalue solver plus bounded nonlinear 5D operator and invariant benchmarks` |
+| `docs/HONEST_SCOPE.md` | `Production nonlinear turbulence replacement for GENE, GS2, or CGYRO` |
 
-### `readme_runaway_0d_scope_boundary`
+### `readme_runaway_scope_boundary`
 
 - Source file: `README.md`
-- Source pattern: `Runaway electron dynamics \| 0D rates only; no DREAM-level kinetic Fokker-Planck distribution`
+- Source pattern: `Runaway electron dynamics \| DREAM-style fluid balance and 1D momentum Fokker-Planck contracts; no multidimensional DREAM kinetic-distribution parity`
 
 Evidence files:
-- `docs/HONEST_SCOPE.md`
+- `docs/PHYSICS_METHODS_COMPLETE.md`
 
 Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `docs/HONEST_SCOPE.md` | `Dreicer \+ hot-tail generation rates, 0D avalanche model` |
-| `docs/HONEST_SCOPE.md` | `Kinetic runaway distribution \(CODE/DREAM-level Fokker-Planck\)` |
+| `docs/PHYSICS_METHODS_COMPLETE.md` | `DREAM-style fluid density balance` |
+| `docs/PHYSICS_METHODS_COMPLETE.md` | `does not\s+claim parity with DREAM's kinetic momentum-space distribution solver` |
 
 ### `readme_elm_proxy_scope_boundary`
 
@@ -279,17 +279,17 @@ Evidence pattern checks:
 | `docs/HONEST_SCOPE.md` | `Peeling-ballooning stability proxy with crash operator` |
 | `docs/HONEST_SCOPE.md` | `Nonlinear MHD ELM simulation \(JOREK, BOUT\+\+\)` |
 
-### `readme_impurity_reduced_scope_boundary`
+### `readme_impurity_scope_boundary`
 
 - Source file: `README.md`
-- Source pattern: `Impurity transport \(neoclassical\) \| Reduced neoclassical/diffusion; no STRAHL/JINTRAC collisional operator`
+- Source pattern: `Impurity transport \(neoclassical\) \| Trace radial transport with source conservation and neoclassical pinch contracts; no STRAHL/JINTRAC collisional-operator parity`
 
 Evidence files:
-- `docs/HONEST_SCOPE.md`
+- `docs/PHYSICS_METHODS_COMPLETE.md`
 
 Evidence pattern checks:
 
 | File | Pattern |
 |---|---|
-| `docs/HONEST_SCOPE.md` | `Complete impurity transport` |
-| `docs/HONEST_SCOPE.md` | `Full Hirshman-Sigmar multi-species collisional operator` |
+| `docs/PHYSICS_METHODS_COMPLETE.md` | `Trace radial impurity transport` |
+| `docs/PHYSICS_METHODS_COMPLETE.md` | `does not claim STRAHL/JINTRAC collisional-operator parity` |
