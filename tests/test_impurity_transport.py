@@ -52,31 +52,45 @@ def test_cooling_curve_returns_zero_for_nonpositive_temperatures_without_warning
 def test_impurity_pinch():
     rho = np.linspace(0, 1, 50)
     # Peaked density
-    ne = 1e20 * (1.0 - rho**2)
+    ne = 1e20 * (1.0 - 0.8 * rho**2)
     # Flat Ti
     Ti = 5000.0 * np.ones(50)
     q = np.ones(50)
-    eps = 0.3 * rho
+    eps = 0.2 + 0.2 * rho
 
     V_W = neoclassical_impurity_pinch(74, ne, 5000.0 * np.ones(50), Ti, q, rho, 6.2, 2.0, eps)
 
-    # Since grad_ne is negative, grad_ne_over_n is negative.
-    # V = -Z * D * Z * grad_n/n.
-    # So V > 0 ? Wait. Z is 74. grad_n is negative.
-    # V_neo = -Z * D * Z * (negative) -> positive?
-    # Let's trace it:
-    # grad_n/n is negative
-    # (Z/2 - H_z) * grad_T/T is zero (flat Ti)
-    # Bracket sum is negative.
-    # V_neo = -Z * D * (negative) = positive (outward)?
-    # Wait, the prompt formula:
-    # V_neo,Z = -Z D_neo * [Z grad_n/n + (Z/2 - H_z) grad_T/T]
-    # If grad_n is negative (peaked profile), V_neo is POSITIVE?
-    # Usually "density gradient drives inward pinch".
-    # So V_neo must be negative when grad_n is negative.
-    # Ah, the formula in literature usually has a different sign convention for gradients (L_n = -n/grad_n).
-    # If the code implemented it verbatim from prompt, V_neo will be positive. Let's check what it does.
-    assert V_W[25] > 0.0  # Our code currently makes it positive
+    # With radial coordinate increasing outward, a peaked density has 1/L_n > 0.
+    # The trace neoclassical pinch should therefore point inward: V_r < 0.
+    assert V_W[25] < 0.0
+
+
+def test_impurity_pinch_temperature_screening_contract():
+    rho = np.linspace(0, 1, 50)
+    ne = 1e20 * np.ones(50)
+    Ti_hot_core = 5000.0 * (1.0 - 0.6 * rho**2)
+    q = 1.0 + rho
+    eps = 0.2 + 0.2 * rho
+
+    V_W = neoclassical_impurity_pinch(74, ne, 5000.0 * np.ones(50), Ti_hot_core, q, rho, 6.2, 2.0, eps)
+
+    assert V_W[25] < 0.0
+    assert abs(V_W[-2]) > abs(V_W[2])
+
+
+def test_impurity_pinch_rejects_invalid_domain():
+    rho = np.linspace(0, 1, 50)
+    ne = np.ones(50) * 1e20
+    Ti = np.ones(50) * 5000.0
+    q = np.ones(50)
+    eps = 0.2 + 0.2 * rho
+
+    with pytest.raises(ValueError, match="Z"):
+        neoclassical_impurity_pinch(0, ne, Ti, Ti, q, rho, 6.2, 2.0, eps)
+    with pytest.raises(ValueError, match="ne"):
+        neoclassical_impurity_pinch(74, np.zeros(50), Ti, Ti, q, rho, 6.2, 2.0, eps)
+    with pytest.raises(ValueError, match="matching shapes"):
+        neoclassical_impurity_pinch(74, ne[:-1], Ti, Ti, q, rho, 6.2, 2.0, eps)
 
 
 def test_zero_source():

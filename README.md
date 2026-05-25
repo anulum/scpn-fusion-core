@@ -153,7 +153,7 @@ Top limitations:
 | ELM model + RMP suppression | Peeling-ballooning proxy; no nonlinear MHD ELM simulation | N | Y | N | N |
 | Runaway electron dynamics | DREAM-style fluid balance and 1D momentum Fokker-Planck contracts; no multidimensional DREAM kinetic-distribution parity | N | N | N | Y |
 | Pellet injection (Parks-Turnbull) | **Y** | N | N | N | N |
-| Impurity transport (neoclassical) | Reduced neoclassical/diffusion; no STRAHL/JINTRAC collisional operator | N | N | N | N |
+| Impurity transport (neoclassical) | Trace radial transport with source conservation and neoclassical pinch contracts; no STRAHL/JINTRAC collisional-operator parity | N | N | N | N |
 | Momentum transport (ExB shearing) | **Y** | N | partial | N | N |
 | MHD stability (7 criteria) | **Y** | N | N | N | N |
 | Digital twin + HIL testing | **Y** | N | N | N | N |

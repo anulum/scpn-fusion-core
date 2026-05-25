@@ -352,9 +352,21 @@ Per-cell Bremsstrahlung: $P_{\rm brem} = 5.35 \times 10^{-37}\,Z_{\rm eff}\,n_e^
 
 The impurity cocktail estimator (`ShatteredPelletInjection.estimate_mitigation_cocktail`) computes Ne/Ar/Xe mole fractions as a function of disruption risk and disturbance amplitude, with empirical $Z_{\rm eff}$ weighting: $Z_{\rm eff} = (1 - f_{\rm imp}) + f_{\rm imp}\,\langle Z^2 \rangle$ where $\langle Z^2 \rangle$ is the mass-weighted average over impurity species.
 
-**Key files:** `core/integrated_transport_solver.py` (multi-ion mode), `control/spi_mitigation.py`.
+### 10.4 Trace radial impurity transport
 
-**Validation:** `tests/test_multi_ion_transport.py`, `validation/benchmark_multi_ion_transport_conservation.py`.
+The trace impurity solver advances species densities with implicit radial
+diffusion, volume-normalised edge sources, and a Hirshman-Sigmar-style
+neoclassical pinch using inverse scale lengths:
+
+$$V_Z = -D_{\rm neo}\left[\frac{Z}{L_n} + \left(\frac{Z}{2} - H_Z\right)\frac{1}{L_{T_i}}\right],\quad \frac{1}{L_x}=-\frac{d\ln x}{dr}$$
+
+The native benchmark validates source conservation, positivity, inward pinch
+for peaked profiles, and monotonic radiated power. This is a trace transport
+contract and does not claim STRAHL/JINTRAC collisional-operator parity.
+
+**Key files:** `core/impurity_transport.py`, `core/integrated_transport_solver.py` (multi-ion mode), `control/spi_mitigation.py`.
+
+**Validation:** `tests/test_impurity_transport.py`, `tests/test_multi_ion_transport.py`, `validation/benchmark_impurity_transport_contract.py`, `validation/benchmark_multi_ion_transport_conservation.py`.
 
 ---
 

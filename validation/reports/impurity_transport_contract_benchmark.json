@@ -1,0 +1,23 @@
+{
+  "benchmark": "impurity_transport_contract",
+  "description": "Trace impurity transport contract; not Aurora/STRAHL/JINTRAC collisional-operator parity.",
+  "invariants": {
+    "edge_source_conservation": true,
+    "inward_pinch_midradius": true,
+    "positivity": true,
+    "radiation_monotonicity": true
+  },
+  "metrics": {
+    "actual_particles": 9.790647565880643e+17,
+    "edge_density_m3": 2.0933367531619228e+16,
+    "expected_particles": 9.790647565880644e+17,
+    "high_radiated_power_mw": 39.217850922494925,
+    "low_radiated_power_mw": 3.921785092249493,
+    "midradius_pinch_m_s": -8.68341083344053,
+    "relative_conservation_error": 1.3073701115140358e-16
+  },
+  "passed": true,
+  "thresholds": {
+    "max_relative_conservation_error": 0.02
+  }
+}
