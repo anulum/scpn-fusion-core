@@ -84,6 +84,8 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
         pass_count=0,
         gate_row_count=1,
         gate_pass_count=0,
+        gate_worst_psi_rmse_norm=0.125,
+        gate_worst_file="sparc/sample.geqdsk",
         passes=False,
         mean_psi_rmse_norm=0.125,
         worst_psi_rmse_norm=0.125,

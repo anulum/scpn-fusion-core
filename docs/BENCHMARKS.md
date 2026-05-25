@@ -79,6 +79,8 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 > 'synthetic_proxy_reference': 10}`.
 > It also emits `gate_row_count` and `gate_pass_count`, so public EFIT parity
 > numerators are machine-readable without counting synthetic proxy diagnostics.
+> Public-gate worst-row evidence is likewise separate via
+> `gate_worst_file` and `gate_worst_psi_rmse_norm`.
 > It also reports `solver_mode_counts` for the three profile-source lanes:
 > raw GEQDSK profile-source fixed-boundary, operator-source fixed-boundary, and
 > adapted GEQDSK profile-source fixed-boundary each have `18` labelled rows.

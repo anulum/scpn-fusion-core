@@ -749,6 +749,8 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.pass_count == 10
         assert gate.gate_row_count == 4
         assert gate.gate_pass_count == 4
+        assert gate.gate_worst_psi_rmse_norm == pytest.approx(0.01)
+        assert gate.gate_worst_file.startswith("sparc/")
         assert gate.reference_role_counts == {"diagnostic": 6, "gate": 4}
         assert gate.reference_class_counts == {
             "public_efit_reference": 4,

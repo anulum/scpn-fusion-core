@@ -205,6 +205,8 @@ class EfitNRMSEBenchmarkGate:
     pass_count: int
     gate_row_count: int
     gate_pass_count: int
+    gate_worst_psi_rmse_norm: float
+    gate_worst_file: str
     passes: bool
     mean_psi_rmse_norm: float
     worst_psi_rmse_norm: float
@@ -1619,6 +1621,7 @@ def validate_efit_nrmse_benchmark(
     rows: list[dict[str, Any]] = []
     count_by_machine: dict[str, int] = {}
     finite_entries: list[tuple[str, float]] = []
+    gate_entries: list[tuple[str, float]] = []
     operator_source_entries: list[tuple[str, float]] = []
     adapted_profile_entries: list[tuple[str, float]] = []
     pass_count = 0
@@ -1642,6 +1645,8 @@ def validate_efit_nrmse_benchmark(
         count_by_machine[machine] = count_by_machine.get(machine, 0) + 1
         if np.isfinite(rmse_norm):
             finite_entries.append((rel_path, rmse_norm))
+            if is_gate_row:
+                gate_entries.append((rel_path, rmse_norm))
             if rmse_norm <= max_nrmse:
                 pass_count += 1
                 if is_gate_row:
@@ -1695,6 +1700,12 @@ def validate_efit_nrmse_benchmark(
     else:
         operator_source_worst_file = ""
         operator_source_worst_norm = float("nan")
+
+    if gate_entries:
+        gate_worst_file, gate_worst_norm = max(gate_entries, key=lambda item: item[1])
+    else:
+        gate_worst_file = ""
+        gate_worst_norm = float("nan")
 
     if adapted_profile_entries:
         adapted_profile_worst_file, adapted_profile_worst_norm = max(
@@ -1795,6 +1806,8 @@ def validate_efit_nrmse_benchmark(
         pass_count=pass_count,
         gate_row_count=gate_row_count,
         gate_pass_count=gate_pass_count,
+        gate_worst_psi_rmse_norm=float(gate_worst_norm),
+        gate_worst_file=gate_worst_file,
         passes=not failure_reasons,
         mean_psi_rmse_norm=mean_norm,
         worst_psi_rmse_norm=float(worst_norm),
@@ -1966,6 +1979,11 @@ def main() -> int:
     print(
         f"Public gate rows under threshold: {benchmark.gate_pass_count}/{benchmark.gate_row_count}"
     )
+    if benchmark.gate_worst_file:
+        print(
+            f"Worst public gate file: {benchmark.gate_worst_file} "
+            f"(psi_N RMSE = {benchmark.gate_worst_psi_rmse_norm:.6f})"
+        )
     print(
         f"Worst file:             {benchmark.worst_file} "
         f"(psi_N RMSE = {benchmark.worst_psi_rmse_norm:.6f})"

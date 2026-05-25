@@ -18,6 +18,8 @@
     "pass_count",
     "gate_row_count",
     "gate_pass_count",
+    "gate_worst_psi_rmse_norm",
+    "gate_worst_file",
     "passes",
     "mean_psi_rmse_norm",
     "worst_psi_rmse_norm",
@@ -90,6 +92,12 @@
     "gate_pass_count": {
       "type": "integer",
       "minimum": 0
+    },
+    "gate_worst_psi_rmse_norm": {
+      "type": "number"
+    },
+    "gate_worst_file": {
+      "type": "string"
     },
     "passes": {
       "type": "boolean"
