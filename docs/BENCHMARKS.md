@@ -217,6 +217,11 @@ source-convention adapter contract as the Python benchmark path: canonical,
 negated, `2*pi`, inverse-`2*pi`, and flux-span transforms are ranked as named
 transforms only, with no fitted scale accepted as a pass. Local verification:
 `cargo test -p fusion-core geqdsk_source_convention --lib` (`3 passed`).
+Free-boundary coil/vacuum parity is intentionally narrower: Python and Rust
+now expose native circular-filament Green-function reconstruction contracts,
+while Go, Julia, and Lean currently expose fixed-boundary/operator-current
+surfaces only. No Go/Julia/Lean free-boundary wrappers are claimed as parity
+until those languages grow equivalent native coil/vacuum solver logic.
 
 Local verification commands:
 
@@ -567,6 +572,9 @@ residual, RMSE, max absolute error, point count, coil count, limiter flux,
 minimum limiter clearance, axis flux, and X-point flux. This is a full Rust
 implementation using the same circular-filament Green function, not a wrapper
 around the Python benchmark path.
+Go, Julia, and Lean are not listed as free-boundary parity surfaces here because
+their current native packages do not expose equivalent coil Green-function,
+limiter, axis, or X-point reconstruction logic.
 
 GEQDSK-to-native configuration now preserves free-boundary geometry metadata:
 `GEqdsk.to_config()` exports the parsed plasma boundary as isoflux target
