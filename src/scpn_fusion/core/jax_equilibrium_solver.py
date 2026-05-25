@@ -204,13 +204,20 @@ def _plasma_source(
 
 @jit
 def _sor_step(
-    psi: jnp.ndarray, source: jnp.ndarray, R_grid: jnp.ndarray, dR: float, dZ: float, omega: float
+    psi: jnp.ndarray,
+    source: jnp.ndarray,
+    R_grid: jnp.ndarray,
+    dR: float,
+    dZ: float,
+    omega: float,
+    psi_boundary: jnp.ndarray,
 ) -> jnp.ndarray:
     """One full SOR sweep for the GS operator Δ*ψ = S.
 
     Δ*ψ = ∂²ψ/∂R² - (1/R)∂ψ/∂R + ∂²ψ/∂Z²
 
-    5-point stencil with cylindrical 1/R correction.
+    5-point stencil with cylindrical 1/R correction.  The boundary is the
+    external vacuum/coils flux for free-boundary solves, not a zero wall value.
     """
     NZ, NR = psi.shape
     dR2 = dR * dR
@@ -232,11 +239,11 @@ def _sor_step(
 
     new_psi = (1.0 - omega) * psi + omega * psi_gs
 
-    # Zero Dirichlet boundary
-    new_psi = new_psi.at[0, :].set(0.0)
-    new_psi = new_psi.at[-1, :].set(0.0)
-    new_psi = new_psi.at[:, 0].set(0.0)
-    new_psi = new_psi.at[:, -1].set(0.0)
+    # Free-boundary Dirichlet boundary from external vacuum coils.
+    new_psi = new_psi.at[0, :].set(psi_boundary[0, :])
+    new_psi = new_psi.at[-1, :].set(psi_boundary[-1, :])
+    new_psi = new_psi.at[:, 0].set(psi_boundary[:, 0])
+    new_psi = new_psi.at[:, -1].set(psi_boundary[:, -1])
     return new_psi
 
 
@@ -288,7 +295,7 @@ def solve_equilibrium_jax(
         src = _plasma_source(psi_curr, R_grid, Ip, psi_axis, psi_bnd)
 
         def sor_body(p, __):
-            return _sor_step(p, src, R_grid, dR, dZ, 1.5), None
+            return _sor_step(p, src, R_grid, dR, dZ, 1.5, psi_vac), None
 
         psi_relaxed, _ = jax.lax.scan(sor_body, psi_curr, None, length=sor_per_picard)
         # Picard blending: mix relaxed solution with vacuum

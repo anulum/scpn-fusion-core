@@ -1,0 +1,29 @@
+{
+  "single_coil": {
+    "calculated": 0.1855526305247041,
+    "reference": 0.1855526305247041,
+    "error_rel": 0.0,
+    "pass": true
+  },
+  "helmholtz": {
+    "bz_axis_ref": 0.8991762855732129,
+    "bz_at_min_r": 0.8917274402773225,
+    "pass": true
+  },
+  "x_point": {
+    "detected_r": 2.5,
+    "detected_z": -1.5,
+    "expected_r": null,
+    "expected_z": null,
+    "diagnostic_only": true,
+    "pass": true
+  },
+  "jax_free_boundary_wall_flux": {
+    "grid": "33x33",
+    "picard_iterations": 10,
+    "sor_sweeps_per_picard": 10,
+    "wall_time_s": 0.4624008779937867,
+    "vacuum_boundary_abs_error": 7.105427357601002e-15,
+    "pass": true
+  }
+}

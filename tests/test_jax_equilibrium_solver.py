@@ -106,6 +106,51 @@ def test_solve_equilibrium_converges():
     assert -4.0 < float(Z_ax) < 4.0
 
 
+def test_free_boundary_solve_preserves_vacuum_flux_boundary():
+    """Free-boundary Picard/SOR must keep external coil flux on the wall."""
+    R = jnp.linspace(2.0, 10.0, 17)
+    Z = jnp.linspace(-4.0, 4.0, 17)
+    coil_R = jnp.array([3.5, 8.0, 9.5])
+    coil_Z = jnp.array([3.0, -3.0, 0.0])
+    coil_I = jnp.array([-1.0, 4.0, 6.0])
+
+    psi_vac = vacuum_field(R, Z, coil_R, coil_Z, coil_I)
+    psi = solve_equilibrium_jax(
+        R, Z, coil_R, coil_Z, coil_I, Ip=15.0, max_picard=4, sor_per_picard=4
+    )
+
+    np.testing.assert_allclose(np.asarray(psi[0, :]), np.asarray(psi_vac[0, :]), rtol=0.0, atol=1e-12)
+    np.testing.assert_allclose(
+        np.asarray(psi[-1, :]), np.asarray(psi_vac[-1, :]), rtol=0.0, atol=1e-12
+    )
+    np.testing.assert_allclose(np.asarray(psi[:, 0]), np.asarray(psi_vac[:, 0]), rtol=0.0, atol=1e-12)
+    np.testing.assert_allclose(
+        np.asarray(psi[:, -1]), np.asarray(psi_vac[:, -1]), rtol=0.0, atol=1e-12
+    )
+
+
+def test_free_boundary_solve_responds_to_coil_boundary_shift():
+    """Changing PF coil currents must change the free-boundary wall flux."""
+    R = jnp.linspace(2.0, 10.0, 17)
+    Z = jnp.linspace(-4.0, 4.0, 17)
+    coil_R = jnp.array([3.5, 8.0, 9.5])
+    coil_Z = jnp.array([3.0, -3.0, 0.0])
+    coil_I = jnp.array([-1.0, 4.0, 6.0])
+    shifted_I = coil_I.at[2].set(8.0)
+
+    psi = solve_equilibrium_jax(
+        R, Z, coil_R, coil_Z, coil_I, Ip=15.0, max_picard=4, sor_per_picard=4
+    )
+    shifted = solve_equilibrium_jax(
+        R, Z, coil_R, coil_Z, shifted_I, Ip=15.0, max_picard=4, sor_per_picard=4
+    )
+
+    boundary_delta = np.max(
+        np.abs(np.asarray(shifted[[0, -1], :]) - np.asarray(psi[[0, -1], :]))
+    )
+    assert boundary_delta > 1e-6
+
+
 # ── Autodiff through equilibrium ─────────────────────────────────
 
 
