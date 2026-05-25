@@ -16,6 +16,7 @@ from scpn_fusion.core.runaway_electrons import (
     RunawayParams,
     avalanche_growth_rate,
     critical_field,
+    dream_fluid_density_balance,
     dreicer_generation_rate,
     hot_tail_seed,
 )
@@ -101,6 +102,51 @@ def test_runaway_evolution():
 
     assert len(t) == 11
     assert n[-1] > n[0]  # Should grow exponentially
+
+
+def test_dream_fluid_balance_matches_density_equation_contract():
+    params = RunawayParams(ne_20=1.0, Te_keV=0.04, E_par=8.0, Z_eff=2.0, B0=5.0, R0=6.0)
+    n_re = 2.0e12
+
+    balance = dream_fluid_density_balance(params, n_re, loss_time_s=0.2)
+
+    assert balance.dreicer_source > 0.0
+    assert balance.avalanche_source > 0.0
+    assert balance.loss_source == pytest.approx(n_re / 0.2)
+    assert balance.total_source == pytest.approx(
+        balance.dreicer_source + balance.avalanche_source - balance.loss_source
+    )
+    assert balance.runaway_fraction == pytest.approx(n_re / 1.0e20)
+    assert balance.growth_time_s == pytest.approx(n_re / balance.total_source)
+
+
+def test_dream_fluid_balance_keeps_avalanche_threshold_contract():
+    params = RunawayParams(ne_20=1.0, Te_keV=0.04, E_par=0.5 * critical_field(1.0), Z_eff=2.0, B0=5.0, R0=6.0)
+
+    balance = dream_fluid_density_balance(params, 1.0e12)
+
+    assert balance.avalanche_source == 0.0
+    assert balance.total_source == pytest.approx(balance.dreicer_source)
+
+
+def test_runaway_evolution_step_applies_density_cap():
+    params = RunawayParams(ne_20=1.0, Te_keV=0.02, E_par=50.0, Z_eff=2.0, B0=5.0, R0=6.0)
+    ev = RunawayEvolution(params)
+
+    capped = ev.step(1.0, 9.0e13, 50.0, max_runaway_fraction=1.0e-6)
+
+    assert capped == pytest.approx(1.0e14)
+
+
+def test_dream_fluid_balance_rejects_invalid_contract_domain():
+    params = RunawayParams(ne_20=1.0, Te_keV=0.04, E_par=8.0, Z_eff=2.0, B0=5.0, R0=6.0)
+
+    with pytest.raises(ValueError, match="loss_time_s"):
+        dream_fluid_density_balance(params, 1.0e12, loss_time_s=0.0)
+    with pytest.raises(ValueError, match="max_runaway_fraction"):
+        dream_fluid_density_balance(params, 1.0e12, max_runaway_fraction=1.5)
+    with pytest.raises(ValueError, match="density cap"):
+        dream_fluid_density_balance(params, 2.0e15, max_runaway_fraction=1.0e-6)
 
 
 def test_runaway_evolution_step_rejects_invalid_domain() -> None:

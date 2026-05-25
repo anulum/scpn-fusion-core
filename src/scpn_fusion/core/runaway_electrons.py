@@ -30,6 +30,18 @@ class RunawayParams:
     a: float = 2.0  # minor radius [m]
 
 
+@dataclass(frozen=True)
+class DreamFluidBalance:
+    """DREAM-style fluid runaway density balance for a single plasma state."""
+
+    dreicer_source: float
+    avalanche_source: float
+    loss_source: float
+    total_source: float
+    runaway_fraction: float
+    growth_time_s: float
+
+
 def dreicer_field(ne_20: float, Te_keV: float, coulomb_log: float = 15.0) -> float:
     """
     Dreicer field E_D = n_e e^3 lnΛ / (4π ε₀² T_e).
@@ -156,11 +168,81 @@ def hot_tail_seed(
     return float(max(0.0, n_seed))
 
 
+def dream_fluid_density_balance(
+    params: RunawayParams,
+    n_RE: float,
+    *,
+    loss_time_s: float = np.inf,
+    max_runaway_fraction: float = 1.0,
+    coulomb_log: float = 15.0,
+) -> DreamFluidBalance:
+    """Evaluate the scalar density balance used by DREAM-style fluid runs.
+
+    The contract is ``dn_RE/dt = S_Dreicer + gamma_avalanche n_RE - n_RE/tau_loss``.
+    It is a fluid benchmark contract, not a kinetic DREAM distribution solver.
+    """
+    n_re = float(n_RE)
+    tau_loss = float(loss_time_s)
+    max_fraction = float(max_runaway_fraction)
+    if not np.isfinite(n_re) or n_re < 0.0:
+        raise ValueError("n_RE must be finite and >= 0.")
+    if not np.isfinite(max_fraction) or max_fraction <= 0.0 or max_fraction > 1.0:
+        raise ValueError("max_runaway_fraction must be finite and in (0, 1].")
+    if np.isnan(tau_loss) or tau_loss <= 0.0:
+        raise ValueError("loss_time_s must be positive or infinite.")
+
+    n_e = params.ne_20 * 1e20
+    if not np.isfinite(n_e) or n_e <= 0.0:
+        raise ValueError("electron density must be finite and > 0.")
+    if n_re > n_e * max_fraction:
+        raise ValueError("n_RE exceeds the configured runaway density cap.")
+
+    dreicer_source = dreicer_generation_rate(params, coulomb_log)
+    avalanche_source = avalanche_growth_rate(params, n_re, coulomb_log)
+    loss_source = 0.0 if np.isinf(tau_loss) else n_re / tau_loss
+    total_source = dreicer_source + avalanche_source - loss_source
+    growth_time_s = n_re / total_source if total_source > 0.0 and n_re > 0.0 else np.inf
+
+    return DreamFluidBalance(
+        dreicer_source=float(dreicer_source),
+        avalanche_source=float(avalanche_source),
+        loss_source=float(loss_source),
+        total_source=float(total_source),
+        runaway_fraction=float(n_re / n_e),
+        growth_time_s=float(growth_time_s),
+    )
+
+
 class RunawayEvolution:
     def __init__(self, params: RunawayParams):
         self.params = params
 
-    def step(self, dt: float, n_RE: float, E_par: float) -> float:
+    def balance(
+        self,
+        n_RE: float,
+        E_par: float,
+        *,
+        loss_time_s: float = np.inf,
+        max_runaway_fraction: float = 1.0,
+    ) -> DreamFluidBalance:
+        """Return the instantaneous DREAM-style fluid density balance."""
+        self.params.E_par = float(E_par)
+        return dream_fluid_density_balance(
+            self.params,
+            n_RE,
+            loss_time_s=loss_time_s,
+            max_runaway_fraction=max_runaway_fraction,
+        )
+
+    def step(
+        self,
+        dt: float,
+        n_RE: float,
+        E_par: float,
+        *,
+        loss_time_s: float = np.inf,
+        max_runaway_fraction: float = 1.0,
+    ) -> float:
         dt_s = float(dt)
         n_re = float(n_RE)
         e_par = float(E_par)
@@ -170,13 +252,16 @@ class RunawayEvolution:
             raise ValueError("n_RE must be finite and >= 0.")
         if not np.isfinite(e_par):
             raise ValueError("E_par must be finite.")
-        self.params.E_par = E_par
 
-        rate_D = dreicer_generation_rate(self.params)
-        rate_A = avalanche_growth_rate(self.params, n_re)
+        balance = self.balance(
+            n_re,
+            e_par,
+            loss_time_s=loss_time_s,
+            max_runaway_fraction=max_runaway_fraction,
+        )
+        n_cap = self.params.ne_20 * 1e20 * float(max_runaway_fraction)
 
-        dn_RE = (rate_D + rate_A) * dt_s
-        return float(max(n_re + dn_RE, 0.0))
+        return float(min(n_cap, max(n_re + balance.total_source * dt_s, 0.0)))
 
     def evolve(
         self,

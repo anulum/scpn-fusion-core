@@ -1,0 +1,49 @@
+{
+  "benchmark": "runaway_dream_contract",
+  "cases": [
+    {
+      "avalanche_source_m3_s": 0.0,
+      "case": "subcritical_no_avalanche",
+      "dreicer_source_m3_s": 0.0,
+      "growth_time_s": null,
+      "loss_source_m3_s": 0.0,
+      "runaway_fraction": 1e-08,
+      "total_source_m3_s": 0.0,
+      "wall_time_s": 3.1962001230567694e-05
+    },
+    {
+      "avalanche_source_m3_s": 9297121226692284.0,
+      "case": "supercritical_growth",
+      "dreicer_source_m3_s": 29187292.987616524,
+      "growth_time_s": 0.00021512035230638555,
+      "loss_source_m3_s": 0.0,
+      "runaway_fraction": 2e-08,
+      "total_source_m3_s": 9297121255879576.0,
+      "wall_time_s": 1.940698712132871e-05
+    },
+    {
+      "avalanche_source_m3_s": 9297121226692284.0,
+      "case": "mitigated_loss_accounting",
+      "dreicer_source_m3_s": 29187292.987616524,
+      "growth_time_s": 0.0002153519852811033,
+      "loss_source_m3_s": 10000000000000.0,
+      "runaway_fraction": 2e-08,
+      "total_source_m3_s": 9287121255879576.0,
+      "wall_time_s": 1.2495991541072726e-05
+    }
+  ],
+  "description": "DREAM-style fluid runaway density-balance contract; not kinetic DREAM parity.",
+  "invariants": {
+    "density_cap_enforced": true,
+    "loss_accounting_exact": true,
+    "subcritical_avalanche_zero": true,
+    "supercritical_avalanche_positive": true
+  },
+  "passed": true,
+  "timing": {
+    "max_balance_wall_time_s": 1.453500590287149e-05,
+    "median_balance_wall_time_s": 7.672992069274187e-06,
+    "min_balance_wall_time_s": 7.411988917738199e-06,
+    "repeats": 25
+  }
+}

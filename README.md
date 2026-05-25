@@ -151,7 +151,7 @@ Top limitations:
 | Free-boundary tracking | Direct kernel + supervisor; not EFIT/LiUQE-grade inverse reconstruction | N | N | N | N |
 | Disruption chain (TQ+CQ+RE+halo) | Reduced chain with 0D runaway rates | N | N | N | Y |
 | ELM model + RMP suppression | Peeling-ballooning proxy; no nonlinear MHD ELM simulation | N | Y | N | N |
-| Runaway electron dynamics | 0D rates only; no DREAM-level kinetic Fokker-Planck distribution | N | N | N | Y |
+| Runaway electron dynamics | DREAM-style fluid balance and 1D momentum Fokker-Planck contracts; no multidimensional DREAM kinetic-distribution parity | N | N | N | Y |
 | Pellet injection (Parks-Turnbull) | **Y** | N | N | N | N |
 | Impurity transport (neoclassical) | Reduced neoclassical/diffusion; no STRAHL/JINTRAC collisional operator | N | N | N | N |
 | Momentum transport (ExB shearing) | **Y** | N | partial | N | N |

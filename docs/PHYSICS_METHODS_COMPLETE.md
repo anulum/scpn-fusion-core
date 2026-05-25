@@ -430,11 +430,20 @@ $$\dot{n}_{\rm RE}^{\rm aval} = n_{\rm RE}\,\frac{(E/E_c - 1)}{\tau_{\rm av}\,\l
 
 Ref: Rosenbluth, M.N. & Putvinski, S.V. *Nucl. Fusion* 37, 1355 (1997), Eq. 19 and 66.
 
-### 13.4 Hot-tail seed
+### 13.4 DREAM-style fluid density balance
+
+$$\frac{dn_{\rm RE}}{dt} = S_{\rm Dreicer} + \gamma_{\rm aval} n_{\rm RE} - \frac{n_{\rm RE}}{\tau_{\rm loss}},\quad 0 \le n_{\rm RE} \le f_{\rm cap} n_e$$
+
+The native contract validates the scalar density balance used by DREAM fluid
+runs, including subcritical avalanche suppression, mitigation loss accounting,
+and density-cap enforcement. It is a fluid benchmark contract and does not
+claim parity with DREAM's kinetic momentum-space distribution solver.
+
+### 13.5 Hot-tail seed
 
 Gaussian tail from rapid thermal quench: $f_{\rm hottail}(p) \propto \exp(-p^2/p_{\rm th,initial}^2)$, per Aleynikov & Breizman, *Phys. Rev. Lett.* 114, 155001 (2015). The seed amplitude is fixed at $10^{10}\;\text{m}^{-3}$ (quench-time dependence ignored; stated assumption).
 
-### 13.5 Fokker-Planck solver
+### 13.6 Fokker-Planck solver
 
 The 1D-in-momentum kinetic equation for $f(p, t)$:
 
@@ -446,9 +455,9 @@ $$\frac{\partial f}{\partial t} + \frac{\partial}{\partial p}\!\left[(F_{\rm acc
 
 Ref: Hesslow et al., *J. Plasma Phys.* 85, 475850601 (2019).
 
-**Key files:** `control/fokker_planck_re.py` (`FokkerPlanckSolver`), `control/halo_re_physics.py` (`RunawayElectronModel`), `control/runaway_electron_model.py`.
+**Key files:** `core/runaway_electrons.py` (fluid source terms and density balance), `control/fokker_planck_re.py` (`FokkerPlanckSolver`), `control/halo_re_physics.py` (`RunawayElectronModel`), `control/runaway_electron_model.py`.
 
-**Validation:** `tests/test_fokker_planck.py`, `tests/test_halo_re_physics.py`.
+**Validation:** `tests/test_runaway_electrons.py`, `tests/test_fokker_planck.py`, `tests/test_halo_re_physics.py`, `validation/benchmark_runaway_dream_contract.py`.
 
 ---
 
