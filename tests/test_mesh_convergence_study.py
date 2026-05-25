@@ -33,6 +33,25 @@ def test_add_convergence_rates_recovers_second_order_solovev_scaling():
     assert rows[1].get("convergence_rate") is None
 
 
+def test_add_convergence_rates_rejects_non_refining_or_non_positive_rows():
+    """Convergence order is undefined without positive errors and decreasing h."""
+    with pytest.raises(ValueError, match="strictly decreasing positive h"):
+        add_convergence_rates(
+            [
+                {"nr": 17, "nz": 17, "h": 0.0625, "nrmse": 4.0e-4},
+                {"nr": 33, "nz": 33, "h": 0.125, "nrmse": 1.0e-4},
+            ]
+        )
+
+    with pytest.raises(ValueError, match="positive finite nrmse"):
+        add_convergence_rates(
+            [
+                {"nr": 17, "nz": 17, "h": 0.125, "nrmse": 4.0e-4},
+                {"nr": 33, "nz": 33, "h": 0.0625, "nrmse": 0.0},
+            ]
+        )
+
+
 def test_summarise_convergence_contract_rejects_subsecond_order_solver():
     """A first-order error trend is a solver-fidelity regression."""
     rows = add_convergence_rates(

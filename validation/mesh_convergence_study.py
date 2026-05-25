@@ -118,8 +118,17 @@ def run_solovev_benchmark(nr: int, nz: int, max_iter: int = 25000, tol: float = 
 def add_convergence_rates(results: list[dict]) -> list[dict]:
     """Return benchmark rows annotated with adjacent-grid convergence rates."""
     rated = [dict(row) for row in results]
+    for row in rated:
+        h = float(row["h"])
+        nrmse = float(row["nrmse"])
+        if not np.isfinite(h) or h <= 0.0:
+            raise ValueError("convergence rows require strictly decreasing positive h")
+        if not np.isfinite(nrmse) or nrmse <= 0.0:
+            raise ValueError("convergence rows require positive finite nrmse")
     for i in range(1, len(rated)):
         h_ratio = rated[i - 1]["h"] / rated[i]["h"]
+        if not np.isfinite(h_ratio) or h_ratio <= 1.0:
+            raise ValueError("convergence rows require strictly decreasing positive h")
         err_ratio = rated[i - 1]["nrmse"] / rated[i]["nrmse"]
         rated[i]["convergence_rate"] = float(np.log(err_ratio) / np.log(h_ratio))
     return rated
