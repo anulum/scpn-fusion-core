@@ -153,6 +153,11 @@ artifacts/efit_nrmse_benchmark.md`. Result: strict EFIT/GEQDSK gate remains
 `jet/jet_lmode_2MA.geqdsk` at `10.627063`, and `18/18` rows classified as
 `profile_source_mismatch`. The new convention classifier is report evidence
 for diagnosing those failures, not a relaxation of the native source contract.
+The same report now carries a separate operator-source elliptic-solver gate:
+`18/18` rows reproduce `Delta*psi_ref` below `psi_N RMSE <= 1e-6`, with worst
+operator-source row `sparc/lmode_vh.geqdsk` at `2.05e-14`. This isolates the
+current benchmark debt to profile-source/GEQDSK convention compatibility rather
+than the SOR elliptic solve itself.
 
 Polyglot status: the native Julia, Go, Rust, and Lean solver packages expose
 the same operator-current surfaces. Julia, Go, and Rust package tests validate

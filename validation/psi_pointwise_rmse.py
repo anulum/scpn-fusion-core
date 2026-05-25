@@ -147,6 +147,10 @@ class EfitNRMSEBenchmarkGate:
     count_by_machine: dict[str, int]
     provenance_by_machine: dict[str, str]
     source_consistency_counts: dict[str, int]
+    operator_source_threshold: float
+    operator_source_pass_count: int
+    operator_source_worst_psi_rmse_norm: float
+    operator_source_worst_file: str
     worst_source_residual_l2: float
     worst_source_alignment_file: str
     failure_reasons: list[str]
@@ -1081,7 +1085,9 @@ def validate_efit_nrmse_benchmark(
     rows: list[dict[str, Any]] = []
     count_by_machine: dict[str, int] = {}
     finite_entries: list[tuple[str, float]] = []
+    operator_source_entries: list[tuple[str, float]] = []
     pass_count = 0
+    operator_source_pass_count = 0
     failure_reasons: list[str] = []
 
     for machine, path in files:
@@ -1098,6 +1104,14 @@ def validate_efit_nrmse_benchmark(
         else:
             failure_reasons.append(f"non-finite psi_rmse_norm in {rel_path}")
 
+        operator_source_rmse = float(result.operator_source_psi_rmse_norm)
+        if np.isfinite(operator_source_rmse):
+            operator_source_entries.append((rel_path, operator_source_rmse))
+            if operator_source_rmse <= OPERATOR_SOURCE_RMSE_THRESHOLD:
+                operator_source_pass_count += 1
+        else:
+            failure_reasons.append(f"non-finite operator_source_psi_rmse_norm in {rel_path}")
+
         row = asdict(result)
         row["file"] = rel_path
         row["machine"] = machine
@@ -1113,6 +1127,15 @@ def validate_efit_nrmse_benchmark(
         worst_file = ""
         worst_norm = float("nan")
         mean_norm = float("nan")
+
+    if operator_source_entries:
+        operator_source_worst_file, operator_source_worst_norm = max(
+            operator_source_entries,
+            key=lambda item: item[1],
+        )
+    else:
+        operator_source_worst_file = ""
+        operator_source_worst_norm = float("nan")
 
     source_consistency_counts: dict[str, int] = {}
     source_residual_entries: list[tuple[str, float]] = []
@@ -1136,6 +1159,16 @@ def validate_efit_nrmse_benchmark(
         failure_reasons.append(f"count {len(files)} < required {min_files}")
     if np.isfinite(worst_norm) and worst_norm > max_nrmse:
         failure_reasons.append(f"worst psi_rmse_norm {worst_norm:.6g} > threshold {max_nrmse:.6g}")
+    if len(operator_source_entries) != len(files):
+        missing = len(files) - len(operator_source_entries)
+        failure_reasons.append(f"operator-source solver gate missing finite RMSE in {missing} rows")
+    if np.isfinite(operator_source_worst_norm) and (
+        operator_source_worst_norm > OPERATOR_SOURCE_RMSE_THRESHOLD
+    ):
+        failure_reasons.append(
+            "operator-source psi_rmse_norm "
+            f"{operator_source_worst_norm:.6g} > threshold {OPERATOR_SOURCE_RMSE_THRESHOLD:.6g}"
+        )
     source_mismatch_count = sum(
         1 for row in rows if row["source_consistency_class"] == "profile_source_mismatch"
     )
@@ -1169,6 +1202,10 @@ def validate_efit_nrmse_benchmark(
         count_by_machine=count_by_machine,
         provenance_by_machine=provenance_by_machine,
         source_consistency_counts=source_consistency_counts,
+        operator_source_threshold=OPERATOR_SOURCE_RMSE_THRESHOLD,
+        operator_source_pass_count=operator_source_pass_count,
+        operator_source_worst_psi_rmse_norm=float(operator_source_worst_norm),
+        operator_source_worst_file=operator_source_worst_file,
         worst_source_residual_l2=float(worst_source_residual),
         worst_source_alignment_file=worst_source_alignment_file,
         failure_reasons=failure_reasons,

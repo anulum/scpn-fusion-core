@@ -18,6 +18,10 @@
     "count_by_machine",
     "provenance_by_machine",
     "source_consistency_counts",
+    "operator_source_threshold",
+    "operator_source_pass_count",
+    "operator_source_worst_psi_rmse_norm",
+    "operator_source_worst_file",
     "worst_source_residual_l2",
     "worst_source_alignment_file",
     "failure_reasons",
@@ -78,6 +82,20 @@
         "type": "integer",
         "minimum": 0
       }
+    },
+    "operator_source_threshold": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "operator_source_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "operator_source_worst_psi_rmse_norm": {
+      "type": "number"
+    },
+    "operator_source_worst_file": {
+      "type": "string"
     },
     "worst_source_residual_l2": {
       "type": "number"

@@ -547,7 +547,7 @@ class TestValidateEFITNRMSEBenchmark:
                 sor_iterations=10,
                 sor_residual=1e-4,
                 solve_time_ms=1.0,
-                operator_source_psi_rmse_norm=rmse,
+                operator_source_psi_rmse_norm=1.0e-12,
                 operator_source_sor_iterations=10,
                 operator_source_sor_residual=1e-4,
                 source_consistency_class="profile_source_consistent",
@@ -605,6 +605,12 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.passes is True
         assert gate.count == 10
         assert gate.pass_count == 10
+        assert gate.operator_source_pass_count == 10
+        assert gate.operator_source_threshold == pytest.approx(
+            psi_rmse_mod.OPERATOR_SOURCE_RMSE_THRESHOLD
+        )
+        assert gate.operator_source_worst_psi_rmse_norm == pytest.approx(1.0e-12)
+        assert gate.operator_source_worst_file
         assert gate.worst_psi_rmse_norm == pytest.approx(0.01)
         assert gate.count_by_machine == {"sparc": 4, "diiid": 3, "jet": 3}
         assert gate.provenance_by_machine == EFIT_BENCHMARK_MACHINE_PROVENANCE
@@ -622,7 +628,9 @@ class TestValidateEFITNRMSEBenchmark:
         assert all(
             row["source_consistency_class"] == "profile_source_consistent" for row in gate.rows
         )
-        assert all(row["operator_source_psi_rmse_norm"] == pytest.approx(0.01) for row in gate.rows)
+        assert all(
+            row["operator_source_psi_rmse_norm"] == pytest.approx(1.0e-12) for row in gate.rows
+        )
 
     def test_fails_when_file_count_is_below_required_minimum(
         self,
@@ -738,6 +746,79 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.worst_source_alignment_file == f"{worst.parent.name}/{worst.name}"
         assert gate.worst_source_residual_l2 == pytest.approx(3.5)
         assert "profile-source mismatch attribution in 1 rows" in gate.failure_reasons
+
+    def test_aggregate_operator_source_gate_reports_solver_failure(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        files = self._make_reference_tree(tmp_path, {"sparc": 4, "diiid": 3, "jet": 3})
+        worst = files[-1]
+
+        def _fake_validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
+            del warm_start
+            operator_rmse = 2.0e-6 if path.name == worst.name else 1.0e-12
+            return PsiRMSEResult(
+                file=path.name,
+                grid="3x3",
+                gs_residual_l2=0.1,
+                gs_residual_max=0.2,
+                psi_rmse_wb=1e-3,
+                psi_rmse_norm=0.01,
+                psi_rmse_plasma_wb=1e-3,
+                psi_max_error_wb=2e-3,
+                psi_relative_l2=0.01,
+                sor_iterations=10,
+                sor_residual=1e-4,
+                solve_time_ms=1.0,
+                operator_source_psi_rmse_norm=operator_rmse,
+                operator_source_sor_iterations=10,
+                operator_source_sor_residual=1e-12,
+                source_consistency_class="solver_consistency_failure"
+                if path.name == worst.name
+                else "profile_source_consistent",
+                source_residual_l2=0.01,
+                source_correlation=1.0,
+                source_best_fit_scale=1.0,
+                source_best_fit_offset=0.0,
+                source_best_fit_relative_l2=0.0,
+                source_best_fit_convention="canonical",
+                plasma_mask_fraction=0.5,
+                pressure_source_norm=0.7,
+                ffprime_source_norm=0.3,
+                total_source_norm=1.0,
+                pressure_source_fraction=0.7,
+                ffprime_source_fraction=0.3,
+                source_plasma_residual_l2=0.01,
+                source_vacuum_residual_l2=0.01,
+                source_plasma_operator_norm=0.5,
+                source_vacuum_operator_norm=0.5,
+                source_plasma_point_count=4.0,
+                source_vacuum_point_count=5.0,
+                best_source_candidate="profile_source",
+                best_source_candidate_residual_l2=0.01,
+                profile_source_candidate_rank=1,
+                best_operator_candidate="delta_star_psi",
+                best_operator_candidate_residual_l2=0.01,
+                delta_star_psi_candidate_rank=1,
+                declared_toroidal_current_A=-8.7e6,
+                operator_toroidal_current_A=-8.6995e6,
+                profile_toroidal_current_A=-1.5e6,
+                operator_current_relative_error=5.0e-5,
+                profile_current_relative_error=0.8,
+                operator_current_closure_pass=True,
+            )
+
+        monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)
+
+        gate = validate_efit_nrmse_benchmark(tmp_path)
+
+        assert gate.passes is False
+        assert gate.operator_source_pass_count == 9
+        assert gate.operator_source_worst_file == f"{worst.parent.name}/{worst.name}"
+        assert gate.operator_source_worst_psi_rmse_norm == pytest.approx(2.0e-6)
+        assert "operator-source psi_rmse_norm 2e-06 > threshold 1e-06" in gate.failure_reasons
+        assert "operator-source solver consistency failure in 1 rows" in gate.failure_reasons
 
     def test_fails_when_a_row_has_non_finite_normalized_rmse(
         self,
