@@ -32,13 +32,22 @@ def test_reduced_order_competitive_claims_disclose_actual_fidelity() -> None:
     readme = README.read_text(encoding="utf-8")
 
     required_boundaries = {
-        "Free-boundary GS solve": ("Reduced", "FreeGS parity currently **FAIL**"),
-        "Native GK eigenvalue solver": ("Linear eigenvalue only", "no nonlinear 5D"),
+        "Free-boundary GS solve": ("Public GEQDSK gate passes", "not EFIT-grade"),
+        "Native GK solver": (
+            "Linear eigenvalue plus nonlinear 5D operator/invariant benchmarks",
+            "not GENE/CGYRO-class",
+        ),
         "Free-boundary tracking": ("not EFIT/LiUQE-grade", "inverse reconstruction"),
         "Disruption chain (TQ+CQ+RE+halo)": ("Reduced chain", "0D runaway rates"),
         "ELM model + RMP suppression": ("Peeling-ballooning proxy", "no nonlinear MHD"),
-        "Runaway electron dynamics": ("0D rates only", "no DREAM-level kinetic"),
-        "Impurity transport (neoclassical)": ("Reduced neoclassical", "no STRAHL/JINTRAC"),
+        "Runaway electron dynamics": (
+            "DREAM-style fluid balance",
+            "no multidimensional DREAM kinetic-distribution parity",
+        ),
+        "Impurity transport (neoclassical)": (
+            "Trace radial transport",
+            "no STRAHL/JINTRAC collisional-operator parity",
+        ),
     }
 
     for capability, phrases in required_boundaries.items():

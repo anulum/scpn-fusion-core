@@ -247,7 +247,7 @@ Evidence pattern checks:
 | File | Pattern |
 |---|---|
 | `docs/HONEST_SCOPE.md` | `Linear eigenvalue solver plus bounded nonlinear 5D operator and invariant benchmarks` |
-| `docs/HONEST_SCOPE.md` | `Production nonlinear turbulence replacement for GENE, GS2, or CGYRO` |
+| `docs/HONEST_SCOPE.md` | `Production nonlinear turbulence replacement for full nonlinear gyrokinetic \(GENE, GS2, CGYRO solve 5D Vlasov-Maxwell\) engines` |
 
 ### `readme_runaway_scope_boundary`
 

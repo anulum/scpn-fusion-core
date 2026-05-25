@@ -126,6 +126,12 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
                 "best_operator_candidate": "delta_star_psi",
                 "best_operator_candidate_residual_l2": 2.5,
                 "delta_star_psi_candidate_rank": 1,
+                "declared_toroidal_current_A": -8.7e6,
+                "operator_toroidal_current_A": -8.69e6,
+                "profile_toroidal_current_A": -7.95e6,
+                "operator_current_relative_error": 0.00115,
+                "profile_current_relative_error": 0.0862,
+                "operator_current_closure_pass": True,
                 "threshold": 0.05,
                 "passes_threshold": False,
             }

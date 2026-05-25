@@ -326,6 +326,7 @@ class DisruptionSequence:
 
         # Initial seed from the Smith hot-tail model.
         n_RE = hot_tail_seed(self.config.Te_pre_keV, post_T / 1000.0, ne_20, tau_tq_ms)
+        n_RE = min(n_RE, ne_20 * 1e20)
 
         # Evolve REs using E_par from CQ
         for E_p in cq_res.E_par_trace:

@@ -74,7 +74,7 @@ Each carries explicit fidelity limitations.
 
 | Module Area | What We Implement | What We Do Not |
 |-------------|-------------------|----------------|
-| Native GK | Linear eigenvalue solver plus bounded nonlinear 5D operator and invariant benchmarks | Production nonlinear turbulence replacement for GENE, GS2, or CGYRO |
+| Native GK | Linear eigenvalue solver plus bounded nonlinear 5D operator and invariant benchmarks | Production nonlinear turbulence replacement for full nonlinear gyrokinetic (GENE, GS2, CGYRO solve 5D Vlasov-Maxwell) engines |
 | External full GK adapters | GENE/GS2/CGYRO deck generation with explicit linear/nonlinear and electrostatic/electromagnetic 5D request metadata | Bundled solver binaries, site validation data, or a native substitute for production nonlinear turbulence codes |
 | Free-boundary tracking | Public SPARC GEQDSK validation gates plus direct coil-response identification from equilibrium sensitivity and bounded magnetic-probe coil-current fitting | Full EFIT/LiUQE-quality profile and boundary reconstruction |
 | Disruption predictor | ML classifier trained on reconstructed profile features | Bayesian credibility intervals or physics-based disruption chain models |

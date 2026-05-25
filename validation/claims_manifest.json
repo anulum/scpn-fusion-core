@@ -233,7 +233,7 @@
         },
         {
           "file": "docs/HONEST_SCOPE.md",
-          "pattern": "Production nonlinear turbulence replacement for GENE, GS2, or CGYRO"
+          "pattern": "Production nonlinear turbulence replacement for full nonlinear gyrokinetic \\(GENE, GS2, CGYRO solve 5D Vlasov-Maxwell\\) engines"
         }
       ]
     },
