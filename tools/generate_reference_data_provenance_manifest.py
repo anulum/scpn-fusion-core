@@ -158,6 +158,8 @@ def _normalize_rules(
             reference_role = curation["reference_role"]
             expected_contract = curation["reference_expected_contract"]
             expected_convention = curation["reference_expected_convention"]
+            if reference_class not in {"public_efit_reference", "synthetic_proxy_reference"}:
+                raise ValueError(f"rule {dataset_id} unknown reference_class: {reference_class}")
             if reference_class == "public_efit_reference" and not expected_contract.startswith(
                 "public_efit_"
             ):
