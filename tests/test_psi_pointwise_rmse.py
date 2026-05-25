@@ -233,12 +233,24 @@ class TestComputeSourceAlignment:
         names = [row["candidate"] for row in candidates]
         assert "profile_source" in names
         assert "negated_profile_source" in names
+        assert "profile_source_scaled_by_2pi" in names
+        assert "profile_source_scaled_by_inv_2pi" in names
+        assert "profile_source_times_flux_span" in names
+        assert "profile_source_over_flux_span" in names
         assert "pressure_plus_negated_ffprime" in names
         residuals = [row["source_residual_l2"] for row in candidates]
         assert residuals == sorted(residuals)
         assert all(np.isfinite(row["source_residual_l2"]) for row in candidates)
         assert all(row["source_best_fit_convention"] != "" for row in candidates)
         assert candidates[0]["candidate"] != ""
+
+    def test_scaled_source_candidate_identifies_high_current_sparc_convention(self):
+        eq = read_geqdsk(SPARC_DIR / "sparc_1310.eqdsk")
+
+        candidates = compute_source_candidate_rankings(eq)
+
+        assert candidates[0]["candidate"] == "profile_source_scaled_by_2pi"
+        assert candidates[0]["source_residual_l2"] < 0.15
 
     def test_source_scale_convention_classifier_covers_common_geqdsk_factors(self):
         assert classify_source_scale_convention(1.0) == "canonical"

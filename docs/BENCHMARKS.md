@@ -158,6 +158,18 @@ The same report now carries a separate operator-source elliptic-solver gate:
 operator-source row `sparc/lmode_vh.geqdsk` at `2.05e-14`. This isolates the
 current benchmark debt to profile-source/GEQDSK convention compatibility rather
 than the SOR elliptic solve itself.
+The diagnostic source ranking now evaluates explicit scale candidates
+(`2*pi`, `1/(2*pi)`, and physical-flux-span transforms). Latest candidate
+distribution across all 18 rows: `profile_source_scaled_by_2pi=5`,
+`profile_source_scaled_by_minus_2pi=3`, `pressure_only=4`,
+`negated_profile_source_over_flux_span=2`,
+`profile_source_over_flux_span=1`, `profile_source=1`,
+`pressure_plus_negated_ffprime=1`, and
+`negated_profile_source_times_flux_span=1`. On the public high-current SPARC
+EQDSK rows, the explicit `2*pi` profile-source candidate is now selected
+directly with relative L2 `0.067-0.139`, while `sparc_1300` remains a
+flux-span candidate with relative L2 `4.043` and is not accepted as strict
+native source-contract evidence.
 
 Polyglot status: the native Julia, Go, Rust, and Lean solver packages expose
 the same operator-current surfaces. Julia, Go, and Rust package tests validate

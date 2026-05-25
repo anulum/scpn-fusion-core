@@ -484,10 +484,15 @@ def compute_source_candidate_rankings(eq: GEqdsk) -> list[dict[str, float | str]
     pressure = np.asarray(components["pressure_source"], dtype=np.float64)
     ffprime = np.asarray(components["ffprime_source"], dtype=np.float64)
     total = np.asarray(components["total_source"], dtype=np.float64)
+    flux_span = float(eq.sibry - eq.simag)
 
     candidates = {
         "profile_source": total,
         "negated_profile_source": -total,
+        "profile_source_scaled_by_2pi": (2.0 * np.pi) * total,
+        "profile_source_scaled_by_minus_2pi": -(2.0 * np.pi) * total,
+        "profile_source_scaled_by_inv_2pi": total / (2.0 * np.pi),
+        "profile_source_scaled_by_minus_inv_2pi": -total / (2.0 * np.pi),
         "pressure_only": pressure,
         "negated_pressure_only": -pressure,
         "ffprime_only": ffprime,
@@ -495,6 +500,15 @@ def compute_source_candidate_rankings(eq: GEqdsk) -> list[dict[str, float | str]
         "pressure_plus_negated_ffprime": pressure - ffprime,
         "negated_pressure_plus_ffprime": -pressure + ffprime,
     }
+    if abs(flux_span) >= 1e-15:
+        candidates.update(
+            {
+                "profile_source_times_flux_span": flux_span * total,
+                "profile_source_over_flux_span": total / flux_span,
+                "negated_profile_source_times_flux_span": -(flux_span * total),
+                "negated_profile_source_over_flux_span": -(total / flux_span),
+            }
+        )
 
     rows: list[dict[str, float | str]] = []
     for name, source in candidates.items():
