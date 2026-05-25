@@ -7,6 +7,11 @@
   "required": [
     "schema_version",
     "benchmark_id",
+    "benchmark_scope",
+    "benchmark_contract",
+    "raw_profile_solver_mode",
+    "operator_source_solver_mode",
+    "adapted_profile_solver_mode",
     "count",
     "min_required_files",
     "threshold",
@@ -36,10 +41,26 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "efit-nrmse-benchmark.v1"
+      "const": "efit-nrmse-benchmark.v2"
     },
     "benchmark_id": {
       "const": "efit-nrmse-benchmark"
+    },
+    "benchmark_scope": {
+      "const": "profile_source_fixed_boundary_reconstruction"
+    },
+    "benchmark_contract": {
+      "type": "string",
+      "minLength": 1
+    },
+    "raw_profile_solver_mode": {
+      "const": "raw_geqdsk_profile_source_fixed_boundary"
+    },
+    "operator_source_solver_mode": {
+      "const": "operator_source_fixed_boundary_delta_star_psi"
+    },
+    "adapted_profile_solver_mode": {
+      "const": "adapted_geqdsk_profile_source_fixed_boundary"
     },
     "count": {
       "type": "integer",
@@ -156,6 +177,9 @@
           "grid",
           "machine",
           "provenance",
+          "raw_profile_solver_mode",
+          "operator_source_solver_mode",
+          "adapted_profile_solver_mode",
           "reference_class",
           "reference_role",
           "reference_dataset_id",
@@ -237,6 +261,15 @@
           "provenance": {
             "type": "string",
             "minLength": 1
+          },
+          "raw_profile_solver_mode": {
+            "const": "raw_geqdsk_profile_source_fixed_boundary"
+          },
+          "operator_source_solver_mode": {
+            "const": "operator_source_fixed_boundary_delta_star_psi"
+          },
+          "adapted_profile_solver_mode": {
+            "const": "adapted_geqdsk_profile_source_fixed_boundary"
           },
           "reference_class": {
             "enum": [

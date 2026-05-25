@@ -43,7 +43,15 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 SPARC_DIR = ROOT / "validation" / "reference_data" / "sparc"
 REFERENCE_DATA_DIR = ROOT / "validation" / "reference_data"
-EFIT_NRMSE_BENCHMARK_SCHEMA_VERSION = "efit-nrmse-benchmark.v1"
+EFIT_NRMSE_BENCHMARK_SCHEMA_VERSION = "efit-nrmse-benchmark.v2"
+EFIT_BENCHMARK_SCOPE = "profile_source_fixed_boundary_reconstruction"
+EFIT_BENCHMARK_CONTRACT = (
+    "Strict raw GEQDSK profile-source fixed-boundary reconstruction gate with separate "
+    "operator-source solver and named-adapter profile-source diagnostics."
+)
+RAW_PROFILE_SOLVER_MODE = "raw_geqdsk_profile_source_fixed_boundary"
+OPERATOR_SOURCE_SOLVER_MODE = "operator_source_fixed_boundary_delta_star_psi"
+ADAPTED_PROFILE_SOLVER_MODE = "adapted_geqdsk_profile_source_fixed_boundary"
 OPERATOR_SOURCE_RMSE_THRESHOLD = 1e-6
 OPERATOR_CURRENT_CLOSURE_THRESHOLD = 0.05
 SOURCE_CONVENTION_DISTANCE_THRESHOLD = 0.15
@@ -178,6 +186,11 @@ class EfitNRMSEBenchmarkGate:
 
     schema_version: str
     benchmark_id: str
+    benchmark_scope: str
+    benchmark_contract: str
+    raw_profile_solver_mode: str
+    operator_source_solver_mode: str
+    adapted_profile_solver_mode: str
     count: int
     min_required_files: int
     threshold: float
@@ -1585,6 +1598,9 @@ def validate_efit_nrmse_benchmark(
         row["file"] = rel_path
         row["machine"] = machine
         row["provenance"] = provenance
+        row["raw_profile_solver_mode"] = RAW_PROFILE_SOLVER_MODE
+        row["operator_source_solver_mode"] = OPERATOR_SOURCE_SOLVER_MODE
+        row["adapted_profile_solver_mode"] = ADAPTED_PROFILE_SOLVER_MODE
         row.update(reference_contract)
         row["threshold"] = max_nrmse
         row["passes_threshold"] = bool(np.isfinite(rmse_norm) and rmse_norm <= max_nrmse)
@@ -1681,6 +1697,11 @@ def validate_efit_nrmse_benchmark(
     return EfitNRMSEBenchmarkGate(
         schema_version=EFIT_NRMSE_BENCHMARK_SCHEMA_VERSION,
         benchmark_id="efit-nrmse-benchmark",
+        benchmark_scope=EFIT_BENCHMARK_SCOPE,
+        benchmark_contract=EFIT_BENCHMARK_CONTRACT,
+        raw_profile_solver_mode=RAW_PROFILE_SOLVER_MODE,
+        operator_source_solver_mode=OPERATOR_SOURCE_SOLVER_MODE,
+        adapted_profile_solver_mode=ADAPTED_PROFILE_SOLVER_MODE,
         count=len(files),
         min_required_files=min_files,
         threshold=max_nrmse,

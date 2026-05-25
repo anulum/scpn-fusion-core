@@ -723,6 +723,11 @@ class TestValidateEFITNRMSEBenchmark:
         )
 
         assert isinstance(gate, EfitNRMSEBenchmarkGate)
+        assert gate.schema_version == "efit-nrmse-benchmark.v2"
+        assert gate.benchmark_scope == "profile_source_fixed_boundary_reconstruction"
+        assert gate.raw_profile_solver_mode == "raw_geqdsk_profile_source_fixed_boundary"
+        assert gate.operator_source_solver_mode == "operator_source_fixed_boundary_delta_star_psi"
+        assert gate.adapted_profile_solver_mode == "adapted_geqdsk_profile_source_fixed_boundary"
         assert gate.passes is True
         assert gate.count == 10
         assert gate.pass_count == 10
@@ -759,6 +764,18 @@ class TestValidateEFITNRMSEBenchmark:
         } == {"diagnostic"}
         assert all(row["reference_expected_contract"] for row in gate.rows)
         assert all(row["reference_expected_convention"] for row in gate.rows)
+        assert all(
+            row["raw_profile_solver_mode"] == "raw_geqdsk_profile_source_fixed_boundary"
+            for row in gate.rows
+        )
+        assert all(
+            row["operator_source_solver_mode"] == "operator_source_fixed_boundary_delta_star_psi"
+            for row in gate.rows
+        )
+        assert all(
+            row["adapted_profile_solver_mode"] == "adapted_geqdsk_profile_source_fixed_boundary"
+            for row in gate.rows
+        )
         assert gate.source_consistency_counts == {"profile_source_consistent": 10}
         assert gate.worst_source_alignment_file != ""
         assert gate.worst_source_residual_l2 == pytest.approx(0.01)
@@ -1107,8 +1124,9 @@ class TestValidateEFITNRMSEBenchmark:
             payload,
             load_efit_nrmse_benchmark_schema(),
         )
-        assert payload["schema_version"] == "efit-nrmse-benchmark.v1"
+        assert payload["schema_version"] == "efit-nrmse-benchmark.v2"
         assert payload["benchmark_id"] == "efit-nrmse-benchmark"
+        assert payload["benchmark_scope"] == "profile_source_fixed_boundary_reconstruction"
 
     def test_report_schema_rejects_unknown_top_level_key(
         self,

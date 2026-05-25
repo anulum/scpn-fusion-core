@@ -157,6 +157,12 @@ artifacts/efit_nrmse_benchmark.md`. Result: strict EFIT/GEQDSK gate remains
 `jet/jet_lmode_2MA.geqdsk` at `10.626997`, and `18/18` rows classified as
 `profile_source_mismatch`. The new convention classifier is report evidence
 for diagnosing those failures, not a relaxation of the native source contract.
+The tracked JSON report is now schema `efit-nrmse-benchmark.v2` and declares
+`benchmark_scope = profile_source_fixed_boundary_reconstruction` with explicit
+raw-profile, operator-source, and adapted-profile `solver_mode` fields at both
+top level and row level. These labels keep the strict profile-source gate,
+operator-source elliptic-solver gate, and adapted-profile reconstruction gate
+machine-separable from free-boundary coil/vacuum reconstruction benchmarks.
 The same report now carries a separate operator-source elliptic-solver gate:
 `18/18` rows reproduce `Delta*psi_ref` below `psi_N RMSE <= 1e-6`, with worst
 operator-source row `sparc/lmode_vh.geqdsk` at `2.05e-14`. This isolates the
