@@ -167,10 +167,10 @@ fn compute_residual_vector(psi: &Array2<f64>, source: &Array2<f64>, grid: &Grid2
             let c_z = 1.0 / dz_sq;
             let center = 2.0 / dr_sq + 2.0 / dz_sq;
 
-            let lhs = center * psi[[iz, ir]]
-                - c_z * (psi[[iz + 1, ir]] + psi[[iz - 1, ir]])
-                - c_r_plus * psi[[iz, ir + 1]]
-                - c_r_minus * psi[[iz, ir - 1]];
+            let lhs = c_z * (psi[[iz + 1, ir]] + psi[[iz - 1, ir]])
+                + c_r_plus * psi[[iz, ir + 1]]
+                + c_r_minus * psi[[iz, ir - 1]]
+                - center * psi[[iz, ir]];
 
             residual[[iz, ir]] = source[[iz, ir]] - lhs;
         }

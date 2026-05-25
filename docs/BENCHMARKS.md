@@ -435,6 +435,23 @@ and therefore competitive for low-resolution control-support updates and
 surrogate calibration loops. It is not the same benchmark as the reduced-order
 Rust flight simulator, and it is not EFIT-grade reconstruction parity evidence.
 
+### Rust `fusion-math` SOR kernel source-convention benchmark
+
+Local run on 2026-05-25 after aligning the Rust `fusion-math` SOR, multigrid,
+and GMRES kernels to the Python native convention `Delta*psi = source`:
+
+| Benchmark | Physics scope | Grid | Criterion centre estimate |
+|-----------|---------------|------|---------------------------|
+| `sor_step_33x33` | One red-black cylindrical GS SOR sweep | 33x33 | 3.37 us |
+| `sor_solve_33x33_500iter` | 500 red-black cylindrical GS SOR sweeps | 33x33 | 1.59 ms |
+| `sor_solve_65x65_500iter` | 500 red-black cylindrical GS SOR sweeps | 65x65 | 6.62 ms |
+| `sor_residual_65x65` | Cylindrical GS residual evaluation | 65x65 | 10.53 us |
+
+Verification paired with this benchmark:
+`cargo test -p fusion-math` passed unit tests, property tests, and doc-tests;
+`python -m pytest tests/test_fusion_kernel_solver_mixins.py -q` passed the
+Python counterpart fixed-point contracts.
+
 ## Benchmark Environment
 
 All timing numbers in this document were measured on the following hardware

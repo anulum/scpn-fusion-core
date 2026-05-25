@@ -11,7 +11,7 @@
 //! corrections for the Grad-Shafranov equation in (R, Z) coordinates.
 //!
 //! The Grad-Shafranov operator in cylindrical coordinates is:
-//!   R d/dR(1/R dPsi/dR) + d²Psi/dZ² = -mu0 R J_phi
+//!   R d/dR(1/R dPsi/dR) + d²Psi/dZ² = source
 //!
 //! Discretized with the stencil from solver.cpp lines 70-86.
 
@@ -100,10 +100,8 @@ pub fn sor_residual(psi: &Array2<f64>, source: &Array2<f64>, grid: &Grid2D) -> f
             let p_right = psi[[iz, ir + 1]];
             let p_left = psi[[iz, ir - 1]];
 
-            let lhs = center * psi[[iz, ir]]
-                - c_z * (p_up + p_down)
-                - c_r_plus * p_right
-                - c_r_minus * p_left;
+            let lhs = c_z * (p_up + p_down) + c_r_plus * p_right + c_r_minus * p_left
+                - center * psi[[iz, ir]];
 
             let residual = (lhs - source[[iz, ir]]).abs();
             max_res = max_res.max(residual);
@@ -144,9 +142,9 @@ fn update_point(
     let p_left = psi[[iz, ir - 1]];
 
     // Gauss-Seidel prediction
-    let p_star =
-        (source[[iz, ir]] + c_z * (p_up + p_down) + c_r_plus * p_right + c_r_minus * p_left)
-            / center;
+    let p_star = (c_z * (p_up + p_down) + c_r_plus * p_right + c_r_minus * p_left
+        - source[[iz, ir]])
+        / center;
 
     // SOR update
     psi[[iz, ir]] = (1.0 - omega) * psi[[iz, ir]] + omega * p_star;
@@ -242,5 +240,54 @@ mod tests {
         let source = Array2::zeros((8, 8));
 
         sor_solve(&mut psi, &source, &grid, f64::NAN, 1);
+    }
+
+    fn manufactured_flux(grid: &Grid2D) -> Array2<f64> {
+        let mut psi = Array2::zeros((grid.nz, grid.nr));
+        for iz in 0..grid.nz {
+            for ir in 0..grid.nr {
+                let r = grid.rr[[iz, ir]];
+                let z = grid.zz[[iz, ir]];
+                psi[[iz, ir]] =
+                    0.03125 * r.powi(4) - 0.125 * z.powi(2) + 0.05 * r.powi(2) * z.powi(2);
+            }
+        }
+        psi
+    }
+
+    fn discrete_gs_source(psi: &Array2<f64>, grid: &Grid2D) -> Array2<f64> {
+        let mut source = Array2::zeros((grid.nz, grid.nr));
+        let dr_sq = grid.dr * grid.dr;
+        let dz_sq = grid.dz * grid.dz;
+        for iz in 1..grid.nz - 1 {
+            for ir in 1..grid.nr - 1 {
+                let r = grid.rr[[iz, ir]];
+                let d2r = (psi[[iz, ir + 1]] - 2.0 * psi[[iz, ir]] + psi[[iz, ir - 1]]) / dr_sq;
+                let d1r = (psi[[iz, ir + 1]] - psi[[iz, ir - 1]]) / (2.0 * grid.dr);
+                let d2z = (psi[[iz + 1, ir]] - 2.0 * psi[[iz, ir]] + psi[[iz - 1, ir]]) / dz_sq;
+                source[[iz, ir]] = d2r - d1r / r + d2z;
+            }
+        }
+        source
+    }
+
+    #[test]
+    fn test_sor_step_preserves_exact_discrete_grad_shafranov_fixed_point() {
+        let grid = Grid2D::new(9, 9, 1.0, 2.0, -0.5, 0.5);
+        let expected = manufactured_flux(&grid);
+        let mut psi = expected.clone();
+        let source = discrete_gs_source(&expected, &grid);
+
+        sor_step(&mut psi, &source, &grid, 1.4);
+
+        let max_error = psi
+            .iter()
+            .zip(expected.iter())
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0_f64, f64::max);
+        assert!(
+            max_error < 1e-12,
+            "exact GS fixed point changed by {max_error}"
+        );
     }
 }

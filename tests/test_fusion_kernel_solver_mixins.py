@@ -65,3 +65,45 @@ def test_multigrid_smoother_rejects_unstable_relaxation_factor(omega: float) -> 
 
     with pytest.raises(ValueError, match="omega"):
         kernel._mg_smooth(psi, source, kernel.RR, kernel.dR, kernel.dZ, omega, n_sweeps=1)
+
+
+def _discrete_gs_source(kernel: _IterativeKernelStub, psi: np.ndarray) -> np.ndarray:
+    source = np.zeros_like(psi)
+    dR2 = kernel.dR**2
+    dZ2 = kernel.dZ**2
+    r_int = kernel.RR[1:-1, 1:-1]
+    d2r = (psi[1:-1, 2:] - 2.0 * psi[1:-1, 1:-1] + psi[1:-1, :-2]) / dR2
+    d1r = (psi[1:-1, 2:] - psi[1:-1, :-2]) / (2.0 * kernel.dR)
+    d2z = (psi[2:, 1:-1] - 2.0 * psi[1:-1, 1:-1] + psi[:-2, 1:-1]) / dZ2
+    source[1:-1, 1:-1] = d2r - d1r / r_int + d2z
+    return source
+
+
+def _manufactured_flux(kernel: _IterativeKernelStub) -> np.ndarray:
+    rr = kernel.RR
+    zz = kernel.ZZ
+    return 0.03125 * rr**4 - 0.125 * zz**2 + 0.05 * rr**2 * zz**2
+
+
+def test_sor_step_preserves_exact_discrete_grad_shafranov_fixed_point() -> None:
+    """An exact discrete GS solution must be a fixed point of one SOR sweep."""
+    kernel = _IterativeKernelStub()
+    psi = _manufactured_flux(kernel)
+    source = _discrete_gs_source(kernel, psi)
+
+    updated = kernel._sor_step(psi, source, omega=1.4)
+
+    assert np.max(np.abs(updated - psi)) < 1e-12
+
+
+def test_multigrid_smoother_preserves_exact_discrete_grad_shafranov_fixed_point() -> None:
+    """The multigrid smoother must share the native GS source sign convention."""
+    kernel = _IterativeKernelStub()
+    psi = _manufactured_flux(kernel)
+    source = _discrete_gs_source(kernel, psi)
+
+    updated = kernel._mg_smooth(
+        psi.copy(), source, kernel.RR, kernel.dR, kernel.dZ, omega=1.4, n_sweeps=2
+    )
+
+    assert np.max(np.abs(updated - psi)) < 1e-12

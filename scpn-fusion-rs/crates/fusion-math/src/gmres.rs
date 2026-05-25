@@ -129,8 +129,9 @@ fn vec_to_grid(v: &[f64], arr: &mut Array2<f64>, nz: usize, nr: usize) {
 ///   - `c_r_minus = 1/dr² + 1/(2R·dr)`
 ///   - `c_z       = 1/dz²`
 ///   - `center    = 2/dr² + 2/dz²`
-///   - `(A·x)_ij  = center·x_ij - c_z·(x_{i+1,j}+x_{i-1,j})
-///                   - c_r_plus·x_{i,j+1} - c_r_minus·x_{i,j-1}`
+///   - `(A·x)_ij  = c_z·(x_{i+1,j}+x_{i-1,j})
+///                   + c_r_plus·x_{i,j+1} + c_r_minus·x_{i,j-1}
+///                   - center·x_ij`
 fn gs_matvec(x_grid: &Array2<f64>, grid: &Grid2D, out: &mut [f64]) {
     let nz = grid.nz;
     let nr = grid.nr;
@@ -148,10 +149,10 @@ fn gs_matvec(x_grid: &Array2<f64>, grid: &Grid2D, out: &mut [f64]) {
             let c_z = 1.0 / dz_sq;
             let center = 2.0 / dr_sq + 2.0 / dz_sq;
 
-            let val = center * x_grid[[iz, ir]]
-                - c_z * (x_grid[[iz + 1, ir]] + x_grid[[iz - 1, ir]])
-                - c_r_plus * x_grid[[iz, ir + 1]]
-                - c_r_minus * x_grid[[iz, ir - 1]];
+            let val = c_z * (x_grid[[iz + 1, ir]] + x_grid[[iz - 1, ir]])
+                + c_r_plus * x_grid[[iz, ir + 1]]
+                + c_r_minus * x_grid[[iz, ir - 1]]
+                - center * x_grid[[iz, ir]];
 
             out[flat_index(iz, ir, nr)] = val;
         }

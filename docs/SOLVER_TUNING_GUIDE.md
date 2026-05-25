@@ -57,6 +57,12 @@ Python and Rust native solver paths:
 1.0 <= sor_omega < 2.0
 ```
 
+Both native paths use the same source convention for the elliptic update:
+`Delta*psi = source`, where `Delta*` is the cylindrical Grad-Shafranov
+operator including the `-(1/R) dpsi/dR` term. Manufactured discrete fixed-point
+tests enforce that an exact discrete solution is unchanged by one SOR sweep in
+both Python and Rust.
+
 `1.0` is Gauss-Seidel. Values above `1.0` over-relax the elliptic update and
 can reduce iteration count, but values at or above `2.0`, non-finite values,
 and values below `1.0` are rejected because they can destabilise the
