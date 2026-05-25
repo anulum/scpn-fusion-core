@@ -1,0 +1,58 @@
+{
+  "_metadata": {
+    "code_copyright": "Code 2020-2026 Miroslav Sotek. All rights reserved.",
+    "commercial_license": "Commercial license available",
+    "concepts_copyright": "Concepts 1996-2026 Miroslav Sotek. All rights reserved.",
+    "contact": "www.anulum.li | protoscience@anulum.li",
+    "orcid": "0009-0009-3560-0851",
+    "project": "SCPN Fusion Core - Persistent GPU SOR Benchmark",
+    "spdx_license": "AGPL-3.0-or-later"
+  },
+  "benchmark": "fusion_gpu_persistent_sor",
+  "host": {
+    "driver": "595.71.05",
+    "gpu": "NVIDIA L4",
+    "provider": "UpCloud",
+    "zone": "fi-hel2"
+  },
+  "interpretation": "persistent-buffer solve timing excludes per-run upload and measures synchronised compute; download is measured separately after the run loop",
+  "rows": [
+    {
+      "checksum": 1402.614821947,
+      "download_ms": 0.053754,
+      "grid": [
+        129,
+        129
+      ],
+      "iterations": 20,
+      "persistent_solve_median_ms": 0.760128,
+      "persistent_solve_p95_ms": 2.94071,
+      "runs": 100
+    },
+    {
+      "checksum": 2881.328624131,
+      "download_ms": 0.165949,
+      "grid": [
+        257,
+        257
+      ],
+      "iterations": 20,
+      "persistent_solve_median_ms": 0.764012,
+      "persistent_solve_p95_ms": 2.897592,
+      "runs": 100
+    },
+    {
+      "checksum": 2039.66179066,
+      "download_ms": 0.343303,
+      "grid": [
+        513,
+        513
+      ],
+      "iterations": 20,
+      "persistent_solve_median_ms": 0.861687,
+      "persistent_solve_p95_ms": 3.009115,
+      "runs": 50
+    }
+  ],
+  "run_date": "2026-05-26"
+}

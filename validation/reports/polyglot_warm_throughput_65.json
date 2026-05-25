@@ -9,7 +9,7 @@
   },
   "benchmark": "polyglot_warm_throughput_65",
   "case": "65x65",
-  "lean_status": "not_executed_startup_excluded_surface_missing",
+  "lean_status": "executed_startup_excluded_lake_env_lean_run",
   "rows": [
     {
       "grid": "65x65",
@@ -37,6 +37,13 @@
       "language": "Julia",
       "median_ms": 1.663381,
       "p95_ms": 3.752034,
+      "runs": 100
+    },
+    {
+      "grid": "65x65",
+      "language": "Lean",
+      "median_ms": 1503.0,
+      "p95_ms": 1593.0,
       "runs": 100
     }
   ]

@@ -1758,12 +1758,20 @@
     }
   },
   "freegs_strict_backend": {
+    "_metadata": {
+      "code_copyright": "Code 2020-2026 Miroslav Sotek. All rights reserved.",
+      "commercial_license": "Commercial license available",
+      "concepts_copyright": "Concepts 1996-2026 Miroslav Sotek. All rights reserved.",
+      "contact": "www.anulum.li | protoscience@anulum.li",
+      "orcid": "0009-0009-3560-0851",
+      "spdx_license": "AGPL-3.0-or-later"
+    },
     "all_cases_converged": false,
     "cases": [
       {
         "axis_error_m": NaN,
         "comparison_backend": "fusion_kernel_nonlinear",
-        "error": "FreeGS strict backend runtime failure for case 'ITER-like': setting an array element with a sequence.",
+        "error": "FreeGS strict backend runtime failure for case 'ITER-like': No O-points found!",
         "flux_area_rel_error": NaN,
         "mode": "freegs",
         "name": "ITER-like",
@@ -1776,7 +1784,7 @@
       {
         "axis_error_m": NaN,
         "comparison_backend": "fusion_kernel_nonlinear",
-        "error": "FreeGS strict backend runtime failure for case 'SPARC-like': setting an array element with a sequence.",
+        "error": "FreeGS strict backend runtime failure for case 'SPARC-like': No O-points found!",
         "flux_area_rel_error": NaN,
         "mode": "freegs",
         "name": "SPARC-like",
@@ -1789,7 +1797,7 @@
       {
         "axis_error_m": NaN,
         "comparison_backend": "fusion_kernel_nonlinear",
-        "error": "FreeGS strict backend runtime failure for case 'Spherical-tokamak': setting an array element with a sequence.",
+        "error": "FreeGS strict backend runtime failure for case 'Spherical-tokamak': Picard iteration failed to converge (too many iterations)",
         "flux_area_rel_error": NaN,
         "mode": "freegs",
         "name": "Spherical-tokamak",
@@ -1802,7 +1810,7 @@
       {
         "axis_error_m": NaN,
         "comparison_backend": "fusion_kernel_nonlinear",
-        "error": "FreeGS strict backend runtime failure for case 'KSTAR-like': setting an array element with a sequence.",
+        "error": "FreeGS strict backend runtime failure for case 'KSTAR-like': Picard iteration failed to converge (too many iterations)",
         "flux_area_rel_error": NaN,
         "mode": "freegs",
         "name": "KSTAR-like",
@@ -1815,7 +1823,7 @@
       {
         "axis_error_m": NaN,
         "comparison_backend": "fusion_kernel_nonlinear",
-        "error": "FreeGS strict backend runtime failure for case 'SPARC-high-kappa': setting an array element with a sequence.",
+        "error": "FreeGS strict backend runtime failure for case 'SPARC-high-kappa': Picard iteration failed to converge (too many iterations)",
         "flux_area_rel_error": NaN,
         "mode": "freegs",
         "name": "SPARC-high-kappa",
@@ -1829,7 +1837,7 @@
     "force_solovev": false,
     "freegs_available": true,
     "freegs_runtime_fallback_cases": 0,
-    "generated_at_utc": "2026-05-25T21:54:01.323639+00:00",
+    "generated_at_utc": "2026-05-25T22:11:51.736342+00:00",
     "grid_convergence": null,
     "mode": "freegs",
     "overall_psi_nrmse": NaN,
@@ -1837,7 +1845,7 @@
     "psi_nrmse_threshold": 0.005,
     "require_freegs_backend": true,
     "runtime_fallback_allowed": false,
-    "runtime_s": 1.411,
+    "runtime_s": 12.078,
     "thresholds": {
       "axis_error_m": 0.1,
       "flux_area_rel_error": 0.12,
@@ -1847,6 +1855,64 @@
       "separatrix_nrmse": 0.05
     },
     "unconverged_case_count": 5
+  },
+  "fusion_gpu_persistent_sor": {
+    "_metadata": {
+      "code_copyright": "Code 2020-2026 Miroslav Sotek. All rights reserved.",
+      "commercial_license": "Commercial license available",
+      "concepts_copyright": "Concepts 1996-2026 Miroslav Sotek. All rights reserved.",
+      "contact": "www.anulum.li | protoscience@anulum.li",
+      "orcid": "0009-0009-3560-0851",
+      "project": "SCPN Fusion Core - Persistent GPU SOR Benchmark",
+      "spdx_license": "AGPL-3.0-or-later"
+    },
+    "benchmark": "fusion_gpu_persistent_sor",
+    "host": {
+      "driver": "595.71.05",
+      "gpu": "NVIDIA L4",
+      "provider": "UpCloud",
+      "zone": "fi-hel2"
+    },
+    "interpretation": "persistent-buffer solve timing excludes per-run upload and measures synchronised compute; download is measured separately after the run loop",
+    "rows": [
+      {
+        "checksum": 1402.614821947,
+        "download_ms": 0.053754,
+        "grid": [
+          129,
+          129
+        ],
+        "iterations": 20,
+        "persistent_solve_median_ms": 0.760128,
+        "persistent_solve_p95_ms": 2.94071,
+        "runs": 100
+      },
+      {
+        "checksum": 2881.328624131,
+        "download_ms": 0.165949,
+        "grid": [
+          257,
+          257
+        ],
+        "iterations": 20,
+        "persistent_solve_median_ms": 0.764012,
+        "persistent_solve_p95_ms": 2.897592,
+        "runs": 100
+      },
+      {
+        "checksum": 2039.66179066,
+        "download_ms": 0.343303,
+        "grid": [
+          513,
+          513
+        ],
+        "iterations": 20,
+        "persistent_solve_median_ms": 0.861687,
+        "persistent_solve_p95_ms": 3.009115,
+        "runs": 50
+      }
+    ],
+    "run_date": "2026-05-26"
   },
   "gk_cuda_jax": {
     "benchmark": "gk_nonlinear_solver_comparison",
@@ -2388,9 +2454,17 @@
     }
   ],
   "polyglot_warm_throughput_65": {
+    "_metadata": {
+      "code_copyright": "Code 2020-2026 Miroslav Sotek. All rights reserved.",
+      "commercial_license": "Commercial license available",
+      "concepts_copyright": "Concepts 1996-2026 Miroslav Sotek. All rights reserved.",
+      "contact": "www.anulum.li | protoscience@anulum.li",
+      "orcid": "0009-0009-3560-0851",
+      "spdx_license": "AGPL-3.0-or-later"
+    },
     "benchmark": "polyglot_warm_throughput_65",
     "case": "65x65",
-    "lean_status": "not_executed_startup_excluded_surface_missing",
+    "lean_status": "executed_startup_excluded_lake_env_lean_run",
     "rows": [
       {
         "grid": "65x65",
@@ -2418,6 +2492,13 @@
         "language": "Julia",
         "median_ms": 1.663381,
         "p95_ms": 3.752034,
+        "runs": 100
+      },
+      {
+        "grid": "65x65",
+        "language": "Lean",
+        "median_ms": 1503.0,
+        "p95_ms": 1593.0,
         "runs": 100
       }
     ]

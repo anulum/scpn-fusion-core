@@ -59,6 +59,38 @@ try:
 except ImportError:
     HAS_FREEGS = False
 
+
+def _patch_freegs_find_critical_scalar_derivative(freegs_module: Any) -> None:
+    """Patch FreeGS 0.8.2 scalar derivative extraction for SciPy 1.17.
+
+    FreeGS 0.8.2 assigns ``f(R1, Z1, dx=2) / R1`` into a scalar Jacobian slot
+    inside ``freegs.critical.find_critical``. With current SciPy this derivative
+    call returns a 1x1 array, while the adjacent derivative calls in the same
+    function already extract ``[0][0]``. The guarded patch below rewrites only
+    that exact known source pattern before benchmark execution. If FreeGS has
+    already fixed the source, no patch is applied.
+    """
+
+    critical = getattr(freegs_module, "critical", None)
+    if critical is None or not hasattr(critical, "find_critical"):
+        return
+
+    func = critical.find_critical
+    try:
+        source = inspect.getsource(func)
+    except (OSError, TypeError):
+        return
+
+    needle = "f(R1, Z1, dx=2) / R1"
+    replacement = "f(R1, Z1, dx=2)[0][0] / R1"
+    if needle not in source or replacement in source:
+        return
+
+    patched_source = source.replace(needle, replacement, 1)
+    namespace = dict(func.__globals__)
+    exec(compile(patched_source, func.__code__.co_filename, "exec"), namespace)
+    critical.find_critical = namespace["find_critical"]
+
 # ── NRMSE utility ────────────────────────────────────────────────────
 
 PSI_NRMSE_THRESHOLD = 0.11  # 11 %
@@ -624,6 +656,8 @@ def run_freegs_case(
     Returns dict with: psi, R, Z, R_axis, Z_axis, q_proxy
     """
     import freegs  # type: ignore[import-untyped]
+
+    _patch_freegs_find_critical_scalar_derivative(freegs)
 
     # Profiles
     axis_pressure_pa = estimate_axis_pressure_pa(case)

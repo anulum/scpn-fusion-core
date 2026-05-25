@@ -12,7 +12,7 @@
     {
       "axis_error_m": NaN,
       "comparison_backend": "fusion_kernel_nonlinear",
-      "error": "FreeGS strict backend runtime failure for case 'ITER-like': setting an array element with a sequence.",
+      "error": "FreeGS strict backend runtime failure for case 'ITER-like': No O-points found!",
       "flux_area_rel_error": NaN,
       "mode": "freegs",
       "name": "ITER-like",
@@ -25,7 +25,7 @@
     {
       "axis_error_m": NaN,
       "comparison_backend": "fusion_kernel_nonlinear",
-      "error": "FreeGS strict backend runtime failure for case 'SPARC-like': setting an array element with a sequence.",
+      "error": "FreeGS strict backend runtime failure for case 'SPARC-like': No O-points found!",
       "flux_area_rel_error": NaN,
       "mode": "freegs",
       "name": "SPARC-like",
@@ -38,7 +38,7 @@
     {
       "axis_error_m": NaN,
       "comparison_backend": "fusion_kernel_nonlinear",
-      "error": "FreeGS strict backend runtime failure for case 'Spherical-tokamak': setting an array element with a sequence.",
+      "error": "FreeGS strict backend runtime failure for case 'Spherical-tokamak': Picard iteration failed to converge (too many iterations)",
       "flux_area_rel_error": NaN,
       "mode": "freegs",
       "name": "Spherical-tokamak",
@@ -51,7 +51,7 @@
     {
       "axis_error_m": NaN,
       "comparison_backend": "fusion_kernel_nonlinear",
-      "error": "FreeGS strict backend runtime failure for case 'KSTAR-like': setting an array element with a sequence.",
+      "error": "FreeGS strict backend runtime failure for case 'KSTAR-like': Picard iteration failed to converge (too many iterations)",
       "flux_area_rel_error": NaN,
       "mode": "freegs",
       "name": "KSTAR-like",
@@ -64,7 +64,7 @@
     {
       "axis_error_m": NaN,
       "comparison_backend": "fusion_kernel_nonlinear",
-      "error": "FreeGS strict backend runtime failure for case 'SPARC-high-kappa': setting an array element with a sequence.",
+      "error": "FreeGS strict backend runtime failure for case 'SPARC-high-kappa': Picard iteration failed to converge (too many iterations)",
       "flux_area_rel_error": NaN,
       "mode": "freegs",
       "name": "SPARC-high-kappa",
@@ -78,7 +78,7 @@
   "force_solovev": false,
   "freegs_available": true,
   "freegs_runtime_fallback_cases": 0,
-  "generated_at_utc": "2026-05-25T21:54:01.323639+00:00",
+  "generated_at_utc": "2026-05-25T22:11:51.736342+00:00",
   "grid_convergence": null,
   "mode": "freegs",
   "overall_psi_nrmse": NaN,
@@ -86,7 +86,7 @@
   "psi_nrmse_threshold": 0.005,
   "require_freegs_backend": true,
   "runtime_fallback_allowed": false,
-  "runtime_s": 1.411,
+  "runtime_s": 12.078,
   "thresholds": {
     "axis_error_m": 0.1,
     "flux_area_rel_error": 0.12,

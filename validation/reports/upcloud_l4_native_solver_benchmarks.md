@@ -48,10 +48,18 @@
 | Go | 4.022329 | 4.808413 |
 | Rust | 1.302658 | 1.878885 |
 | Julia | 1.663381 | 3.752034 |
+| Lean | 1503.000000 | 1593.000000 |
 
-Lean startup-excluded timing was not executed because the current Lean surface
-is exposed through the Lake executable rather than a long-lived benchmark
-entrypoint.
+Lean was executed with a single `lake env lean --run` process and `100` solves
+inside that process.
+
+## Persistent-buffer GPU SOR timing
+
+| Grid | Runs | Persistent solve median ms | Persistent solve P95 ms | Download ms |
+|---|---:|---:|---:|---:|
+| `129x129` | 100 | 0.760128 | 2.940710 | 0.053754 |
+| `257x257` | 100 | 0.764012 | 2.897592 | 0.165949 |
+| `513x513` | 50 | 0.861687 | 3.009115 | 0.343303 |
 
 ## CUDA-JAX nonlinear GK
 
@@ -71,7 +79,7 @@ entrypoint.
 | Contract | Status | Evidence |
 |---|---|---|
 | Free-boundary coil/vacuum benchmark | PASS | `validation/reports/free_boundary_benchmark.json` |
-| FreeGS strict backend comparison | FAIL | FreeGS runtime shape error in all five configured cases |
+| FreeGS strict backend comparison | FAIL | scalar derivative compatibility patched; FreeGS now fails with no O-points or Picard non-convergence in all five configured cases |
 | EFIT/GEQDSK raw profile-source gate | FAIL | public rows `0/8` under `psi_N RMSE <= 0.05`, worst `jet/jet_lmode_2MA.geqdsk` |
 | Operator-source gate | PASS | public rows `8/8` under `1e-6` |
 | Adapted profile-source gate | PASS | accepted adapter rows `4/4` under `psi_N RMSE <= 0.05` |

@@ -105,10 +105,26 @@ warm-up solves on the `65x65` case.
 | Julia | `1.663381 ms` | `3.752034 ms` |
 | Python | `3.680793 ms` | `4.109378 ms` |
 | Go | `4.022329 ms` | `4.808413 ms` |
+| Lean | `1503.000000 ms` | `1593.000000 ms` |
 
-Lean startup-excluded timing is still missing because the current Lean surface
-is exposed through the Lake executable rather than a long-lived benchmark
-entrypoint.
+Lean was measured with a single `lake env lean --run` process and `100` solves
+inside that process. It is startup-excluded but remains much slower than the
+compiled Rust, Julia, Python, and Go runtime surfaces.
+
+### Persistent-buffer GPU SOR timing
+
+Persistent-buffer timing uploads the source once, warms the GPU, then measures
+synchronised `solve()` calls separately from a final download. This isolates
+GPU compute dispatch from per-run host/device transfer.
+
+| Grid | Runs | Persistent solve median | Persistent solve P95 | Final download |
+|---|---:|---:|---:|---:|
+| `129x129` | `100` | `0.760128 ms` | `2.940710 ms` | `0.053754 ms` |
+| `257x257` | `100` | `0.764012 ms` | `2.897592 ms` | `0.165949 ms` |
+| `513x513` | `50` | `0.861687 ms` | `3.009115 ms` | `0.343303 ms` |
+
+The persistent-buffer result is the correct GPU throughput baseline. The
+`solve_full` rows above remain the correct end-to-end latency baseline.
 
 ### CUDA-JAX nonlinear gyrokinetic benchmark
 
@@ -130,7 +146,7 @@ required before any CUDA throughput claim.
 |---|---|---|
 | Free-boundary coil/vacuum benchmark | PASS | `validation/reports/free_boundary_benchmark.json` |
 | Solov'ev manufactured-source FreeGS fallback | PASS | `artifacts/freegs_benchmark.json` on the GPU host |
-| Strict FreeGS backend comparison | FAIL | FreeGS runtime shape error in all five configured cases |
+| Strict FreeGS backend comparison | FAIL | FreeGS 0.8.2 scalar-derivative compatibility was patched in the benchmark harness; the benchmark now reaches FreeGS solve setup but still fails with no O-points or Picard non-convergence in all five configured cases |
 | EFIT/GEQDSK raw profile-source gate | FAIL | `0/18` rows under `psi_N RMSE <= 0.05`; worst `jet/jet_lmode_2MA.geqdsk` at `10.626997` |
 | Public operator-source gate | PASS | `8/8` public rows under `psi_N RMSE <= 1e-6` |
 | Adapted profile-source gate | PASS | `4/4` accepted adapter rows under `psi_N RMSE <= 0.05` |
