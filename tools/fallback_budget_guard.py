@@ -79,6 +79,11 @@ def _rate_for_backend(
     return float(preferred_hits / len(cases))
 
 
+def _all_gated_cases_pass(cases: list[dict[str, Any]]) -> bool:
+    """Return whether all benchmark rows that contribute to a gate passed."""
+    return all(bool(case.get("passes", False)) for case in cases if bool(case.get("gated", True)))
+
+
 def evaluate(
     *,
     torax: dict[str, Any],
@@ -192,7 +197,7 @@ def evaluate(
             else torax_backend_requirement_rate >= 1.0
         )
         and (
-            all(bool(c.get("passes", False)) for c in torax_cases)
+            _all_gated_cases_pass(torax_cases)
             if bool(torax_cfg.get("require_all_cases_pass", True))
             else True
         )
@@ -212,7 +217,7 @@ def evaluate(
             else sparc_backend_requirement_rate >= 1.0
         )
         and (
-            all(bool(c.get("passes", False)) for c in sparc_cases)
+            _all_gated_cases_pass(sparc_cases)
             if bool(sparc_cfg.get("require_all_cases_pass", True))
             else True
         )
@@ -221,7 +226,7 @@ def evaluate(
         len(freegs_cases) >= freegs_min_cases
         and set(freegs_modes).issubset(freegs_allowed_modes)
         and (
-            all(bool(c.get("passes", False)) for c in freegs_cases)
+            _all_gated_cases_pass(freegs_cases)
             if bool(freegs_cfg.get("require_all_cases_pass", True))
             else True
         )

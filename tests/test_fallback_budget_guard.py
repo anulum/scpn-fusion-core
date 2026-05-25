@@ -71,6 +71,48 @@ def test_evaluate_passes_when_all_budgets_satisfied() -> None:
     assert summary["freegs"]["passes"] is True
 
 
+def test_evaluate_ignores_diagnostic_non_gated_case_failures() -> None:
+    summary = guard.evaluate(
+        torax={"cases": [{"transport_backend": "neural_transport", "passes": True}]},
+        sparc={
+            "cases": [
+                {
+                    "surrogate_backend": "neural_equilibrium",
+                    "gated": True,
+                    "passes": True,
+                },
+                {
+                    "surrogate_backend": "reduced_order_proxy",
+                    "gated": False,
+                    "passes": False,
+                },
+            ]
+        },
+        freegs={"cases": [{"mode": "solovev_manufactured_source", "passes": True}]},
+        thresholds={
+            "torax": {
+                "preferred_backend": "neural_transport",
+                "allowed_backends": ["neural_transport"],
+                "max_fallback_rate": 0.0,
+                "require_all_cases_pass": True,
+            },
+            "sparc": {
+                "preferred_backend": "neural_equilibrium",
+                "allowed_backends": ["neural_equilibrium", "reduced_order_proxy"],
+                "max_fallback_rate": 1.0,
+                "require_all_cases_pass": True,
+            },
+            "freegs": {
+                "allowed_modes": ["solovev_manufactured_source", "freegs"],
+                "require_all_cases_pass": True,
+            },
+        },
+    )
+
+    assert summary["sparc"]["passes"] is True
+    assert summary["overall_pass"] is True
+
+
 def test_evaluate_fails_when_torax_fallback_exceeds_budget() -> None:
     summary = guard.evaluate(
         torax={"cases": [{"transport_backend": "analytic_fallback", "passes": True}]},
