@@ -209,6 +209,8 @@ class EfitNRMSEBenchmarkGate:
     worst_file: str
     count_by_machine: dict[str, int]
     provenance_by_machine: dict[str, str]
+    reference_role_counts: dict[str, int]
+    reference_class_counts: dict[str, int]
     source_consistency_counts: dict[str, int]
     operator_source_threshold: float
     operator_source_pass_count: int
@@ -1695,6 +1697,8 @@ def validate_efit_nrmse_benchmark(
 
     source_consistency_counts: dict[str, int] = {}
     source_convention_adapter_counts: dict[str, int] = {}
+    reference_role_counts: dict[str, int] = {}
+    reference_class_counts: dict[str, int] = {}
     source_residual_entries: list[tuple[str, float]] = []
     for row in rows:
         source_class = str(row["source_consistency_class"])
@@ -1703,6 +1707,10 @@ def validate_efit_nrmse_benchmark(
         source_convention_adapter_counts[source_adapter] = (
             source_convention_adapter_counts.get(source_adapter, 0) + 1
         )
+        reference_role = str(row["reference_role"])
+        reference_role_counts[reference_role] = reference_role_counts.get(reference_role, 0) + 1
+        reference_class = str(row["reference_class"])
+        reference_class_counts[reference_class] = reference_class_counts.get(reference_class, 0) + 1
         source_residual = float(row["source_residual_l2"])
         if np.isfinite(source_residual):
             source_residual_entries.append((str(row["file"]), source_residual))
@@ -1773,6 +1781,8 @@ def validate_efit_nrmse_benchmark(
         worst_file=worst_file,
         count_by_machine=count_by_machine,
         provenance_by_machine=provenance_by_machine,
+        reference_role_counts=reference_role_counts,
+        reference_class_counts=reference_class_counts,
         source_consistency_counts=source_consistency_counts,
         operator_source_threshold=OPERATOR_SOURCE_RMSE_THRESHOLD,
         operator_source_pass_count=operator_source_pass_count,

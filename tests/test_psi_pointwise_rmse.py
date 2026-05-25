@@ -747,6 +747,11 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.passes is True
         assert gate.count == 10
         assert gate.pass_count == 10
+        assert gate.reference_role_counts == {"diagnostic": 6, "gate": 4}
+        assert gate.reference_class_counts == {
+            "public_efit_reference": 4,
+            "synthetic_proxy_reference": 6,
+        }
         assert gate.operator_source_pass_count == 10
         assert gate.operator_source_threshold == pytest.approx(
             psi_rmse_mod.OPERATOR_SOURCE_RMSE_THRESHOLD

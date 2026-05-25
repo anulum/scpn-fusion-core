@@ -22,6 +22,8 @@
     "worst_file",
     "count_by_machine",
     "provenance_by_machine",
+    "reference_role_counts",
+    "reference_class_counts",
     "source_consistency_counts",
     "operator_source_threshold",
     "operator_source_pass_count",
@@ -102,6 +104,42 @@
       "additionalProperties": {
         "type": "string",
         "minLength": 1
+      }
+    },
+    "reference_role_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate",
+        "diagnostic"
+      ],
+      "properties": {
+        "gate": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "diagnostic": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "reference_class_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "public_efit_reference",
+        "synthetic_proxy_reference"
+      ],
+      "properties": {
+        "public_efit_reference": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "synthetic_proxy_reference": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "source_consistency_counts": {

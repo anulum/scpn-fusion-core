@@ -72,6 +72,11 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 > `reference_class=public_efit_reference` and `reference_role=gate` for SPARC,
 > versus `reference_class=synthetic_proxy_reference` and
 > `reference_role=diagnostic` for bundled DIII-D/JET proxy GEQDSK files.
+> The aggregate report also carries summary counts so public gates and proxy
+> diagnostics cannot be mixed accidentally: current local
+> `reference_role_counts={'gate': 8, 'diagnostic': 10}` and
+> `reference_class_counts={'public_efit_reference': 8,
+> 'synthetic_proxy_reference': 10}`.
 
 ### GEQDSK current-closure diagnostics
 

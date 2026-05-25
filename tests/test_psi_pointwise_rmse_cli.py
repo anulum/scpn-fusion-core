@@ -88,6 +88,8 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
         worst_file="sparc/sample.geqdsk",
         count_by_machine={"sparc": 1},
         provenance_by_machine={"sparc": "real_public_design_reference"},
+        reference_role_counts={"gate": 1, "diagnostic": 0},
+        reference_class_counts={"public_efit_reference": 1, "synthetic_proxy_reference": 0},
         source_consistency_counts={"profile_source_mismatch": 1},
         operator_source_threshold=1e-6,
         operator_source_pass_count=1,
