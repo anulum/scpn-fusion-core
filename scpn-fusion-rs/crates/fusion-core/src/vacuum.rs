@@ -259,6 +259,8 @@ pub struct BoundaryFluxReconstruction {
     pub limiter_flux: Vec<f64>,
     pub limiter_point_count: usize,
     pub min_limiter_distance_m: Option<f64>,
+    pub boundary_containment_fraction: Option<f64>,
+    pub boundary_containment_pass: Option<bool>,
     pub axis_flux: Option<f64>,
     pub x_point_flux: Vec<f64>,
     pub x_point_count: usize,
@@ -272,6 +274,38 @@ pub struct BoundaryFluxMetadata<'a> {
     pub limiter_points: Option<&'a [(f64, f64)]>,
     pub axis_point: Option<(f64, f64)>,
     pub x_points: Option<&'a [(f64, f64)]>,
+}
+
+fn point_inside_polygon(point: (f64, f64), polygon: &[(f64, f64)]) -> bool {
+    let (r, z) = point;
+    let mut inside = false;
+    let mut previous = polygon.len() - 1;
+    for current in 0..polygon.len() {
+        let (ri, zi) = polygon[current];
+        let (rj, zj) = polygon[previous];
+        if (zi > z) != (zj > z) {
+            let edge_r = (rj - ri) * (z - zi) / (zj - zi) + ri;
+            if r < edge_r {
+                inside = !inside;
+            }
+        }
+        previous = current;
+    }
+    inside
+}
+
+fn boundary_containment_fraction(
+    boundary_points: &[(f64, f64)],
+    limiter_points: &[(f64, f64)],
+) -> Option<f64> {
+    if limiter_points.len() < 3 {
+        return None;
+    }
+    let contained = boundary_points
+        .iter()
+        .filter(|point| point_inside_polygon(**point, limiter_points))
+        .count();
+    Some(contained as f64 / boundary_points.len() as f64)
 }
 
 /// Reconstruct boundary-contour vacuum flux from coil Green functions.
@@ -349,6 +383,10 @@ pub fn reconstruct_boundary_flux_from_coils_with_metadata(
             })
             .fold(f64::INFINITY, f64::min)
     });
+    let boundary_containment_fraction = metadata
+        .limiter_points
+        .and_then(|points| boundary_containment_fraction(boundary_points, points));
+    let boundary_containment_pass = boundary_containment_fraction.map(|fraction| fraction >= 1.0);
     let axis_flux = if let Some(axis) = metadata.axis_point {
         Some(calculate_vacuum_flux_at_points(&[axis], coils, mu0)?[0])
     } else {
@@ -393,6 +431,8 @@ pub fn reconstruct_boundary_flux_from_coils_with_metadata(
         limiter_point_count: limiter_flux.len(),
         limiter_flux,
         min_limiter_distance_m,
+        boundary_containment_fraction,
+        boundary_containment_pass,
         axis_flux,
         x_point_count: x_point_flux.len(),
         x_point_flux,
@@ -647,6 +687,41 @@ mod tests {
                 .expect("limiter clearance")
                 > 0.0
         );
+    }
+
+    #[test]
+    fn test_boundary_flux_reconstruction_reports_limiter_containment_fraction() {
+        let coils = vec![CoilConfig {
+            name: "pf".to_string(),
+            r: 5.0,
+            z: 0.0,
+            current: 2.0,
+        }];
+        let boundary_points = vec![(4.5, -0.5), (5.5, -0.5), (6.5, 0.5), (8.0, 0.5)];
+        let limiter_points = vec![(4.0, -1.0), (7.0, -1.0), (7.0, 1.0), (4.0, 1.0)];
+
+        let reconstruction = reconstruct_boundary_flux_from_coils_with_metadata(
+            &boundary_points,
+            &coils,
+            None,
+            1.0,
+            BoundaryFluxMetadata {
+                limiter_points: Some(&limiter_points),
+                axis_point: None,
+                x_points: None,
+            },
+        )
+        .expect("valid limiter containment reconstruction");
+
+        assert_eq!(
+            reconstruction
+                .boundary_containment_fraction
+                .expect("containment fraction"),
+            0.75
+        );
+        assert!(!reconstruction
+            .boundary_containment_pass
+            .expect("containment pass"));
     }
 
     #[test]

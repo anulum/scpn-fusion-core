@@ -588,7 +588,7 @@ points exactly on a source filament return zero to exclude coil self-inductance
 from the vacuum boundary map; self-inductance belongs in a separate coil-circuit
 model. Local contract checks passed with
 `python -m pytest tests/test_coil_optimization.py -q` (`33 passed`) and
-`cargo test -p fusion-core vacuum::tests` (`9 passed`).
+`cargo test -p fusion-core vacuum::tests --lib` (`11 passed`).
 The vacuum benchmark row was rerun locally with
 `cargo bench -p fusion-core --bench vacuum_bench -- --sample-size 10` after the
 self-observation fix; Criterion centre estimates were `121.47 us` for 33x33 and
