@@ -446,6 +446,10 @@
         "path": "src/scpn_fusion/core/plasma_wall_interaction.py"
       },
       {
+        "name": "DreamFluidBalance",
+        "path": "src/scpn_fusion/core/runaway_electrons.py"
+      },
+      {
         "name": "DriftWavePhysics",
         "path": "src/scpn_fusion/core/turbulence_oracle.py"
       },
@@ -1107,6 +1111,10 @@
       },
       {
         "name": "NonlinearGKConfig",
+        "path": "src/scpn_fusion/core/_gk_nonlinear_types.py"
+      },
+      {
+        "name": "NonlinearGKInvariantDiagnostics",
         "path": "src/scpn_fusion/core/_gk_nonlinear_types.py"
       },
       {
@@ -2327,7 +2335,7 @@
     "optional_extras": 11,
     "public_api_exports": 2,
     "public_documentation_pages": 61,
-    "python_capability_classes": 485,
+    "python_capability_classes": 487,
     "python_capability_source_modules": 262,
     "rust_workspace_crates": 12,
     "test_files": 379
