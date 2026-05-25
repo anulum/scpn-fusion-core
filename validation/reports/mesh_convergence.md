@@ -8,7 +8,7 @@ Determines the spatial order of accuracy for the Grad-Shafranov elliptic solver.
 - Status: PASS
 - Required minimum adjacent-grid rate: 1.80
 - Minimum observed adjacent-grid rate: 1.992859
-- Rated grid transitions: 3
+- Rated grid transitions: 3 (required: 2)
 
 ## Machine
 
@@ -21,7 +21,7 @@ Determines the spatial order of accuracy for the Grad-Shafranov elliptic solver.
 
 | Grid | h | NRMSE | Rate | Time (s) | Iters |
 |------|---|-------|------|----------|-------|
-| 17x17 | 1.2500e-01 | 8.1756e-05 | N/A | 0.0890 | 801 |
-| 33x33 | 6.2500e-02 | 1.9818e-05 | 2.04 | 0.6779 | 2601 |
-| 65x65 | 3.1250e-02 | 4.8780e-06 | 2.02 | 4.6114 | 10001 |
-| 129x129 | 1.5625e-02 | 1.2256e-06 | 1.99 | 23.8719 | 25000 |
+| 17x17 | 1.2500e-01 | 8.1756e-05 | N/A | 0.1133 | 801 |
+| 33x33 | 6.2500e-02 | 1.9818e-05 | 2.04 | 0.8425 | 2601 |
+| 65x65 | 3.1250e-02 | 4.8780e-06 | 2.02 | 6.3576 | 10001 |
+| 129x129 | 1.5625e-02 | 1.2256e-06 | 1.99 | 33.2110 | 25000 |

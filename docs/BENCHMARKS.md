@@ -291,8 +291,8 @@ Local verification commands:
 `validation/mesh_convergence_study.py` now reports an explicit solver-fidelity
 contract for the fixed-boundary manufactured Solov'ev solve. The benchmark
 solves the elliptic Grad-Shafranov equation on successively refined grids with
-analytic Dirichlet boundaries and rejects regressions unless the adjacent-grid
-NRMSE trend remains second-order within the configured floor.
+analytic Dirichlet boundaries and rejects regressions unless at least two
+adjacent-grid transitions remain second-order within the configured floor.
 
 Local run on this machine:
 
@@ -303,13 +303,13 @@ Local run on this machine:
 
 | Grid | h | NRMSE | adjacent-grid rate | time s | iterations |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 17x17 | 1.2500e-01 | 8.1756e-05 | N/A | 0.0890 | 801 |
-| 33x33 | 6.2500e-02 | 1.9818e-05 | 2.04 | 0.6779 | 2601 |
-| 65x65 | 3.1250e-02 | 4.8780e-06 | 2.02 | 4.6114 | 10001 |
-| 129x129 | 1.5625e-02 | 1.2256e-06 | 1.99 | 23.8719 | 25000 |
+| 17x17 | 1.2500e-01 | 8.1756e-05 | N/A | 0.1133 | 801 |
+| 33x33 | 6.2500e-02 | 1.9818e-05 | 2.04 | 0.8425 | 2601 |
+| 65x65 | 3.1250e-02 | 4.8780e-06 | 2.02 | 6.3576 | 10001 |
+| 129x129 | 1.5625e-02 | 1.2256e-06 | 1.99 | 33.2110 | 25000 |
 
 Status: PASS. The measured minimum adjacent-grid rate is `1.992859` against the
-required floor `1.80`.
+required floor `1.80`, with `3` rated transitions against the required `2`.
 
 ### Transport Source Power-Balance Contract
 

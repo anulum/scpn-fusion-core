@@ -70,6 +70,22 @@ def test_summarise_convergence_contract_rejects_subsecond_order_solver():
     assert summary["rated_grid_count"] == 2
 
 
+def test_summarise_convergence_contract_requires_multiple_refinements():
+    """A single grid-spacing ratio is not enough evidence for mesh convergence."""
+    rows = add_convergence_rates(
+        [
+            {"nr": 33, "nz": 33, "h": 0.0625, "nrmse": 1.0e-4},
+            {"nr": 65, "nz": 65, "h": 0.03125, "nrmse": 2.5e-5},
+        ]
+    )
+
+    summary = summarise_convergence_contract(rows, min_rate=1.8)
+
+    assert summary["passed"] is False
+    assert summary["rated_grid_count"] == 1
+    assert summary["required_rated_grid_count"] == 2
+
+
 def test_summarise_convergence_contract_passes_second_order_solver():
     """The manufactured Solov'ev benchmark contract is second-order or better."""
     rows = add_convergence_rates(

@@ -4,7 +4,8 @@
     "passed": true,
     "required_min_rate": 1.8,
     "min_convergence_rate": 1.992859096673309,
-    "rated_grid_count": 3
+    "rated_grid_count": 3,
+    "required_rated_grid_count": 2
   },
   "machine": {
     "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
@@ -20,7 +21,7 @@
       "nrmse": 8.175639486580185e-05,
       "rmse": 0.0009095398928820455,
       "max_err": 0.0015079630280725453,
-      "wall_time_s": 0.0889903079951182,
+      "wall_time_s": 0.11325789999682456,
       "iterations": 801
     },
     {
@@ -30,7 +31,7 @@
       "nrmse": 1.9817516123695923e-05,
       "rmse": 0.00022046986687611716,
       "max_err": 0.0003780931271779586,
-      "wall_time_s": 0.6778844089712948,
+      "wall_time_s": 0.8425406260066666,
       "iterations": 2601,
       "convergence_rate": 2.0445554303393982
     },
@@ -41,7 +42,7 @@
       "nrmse": 4.878036313848205e-06,
       "rmse": 5.426815399156128e-05,
       "max_err": 9.458833762154839e-05,
-      "wall_time_s": 4.611436146020424,
+      "wall_time_s": 6.357561107957736,
       "iterations": 10001,
       "convergence_rate": 2.0224037469589655
     },
@@ -52,7 +53,7 @@
       "nrmse": 1.2255602422578548e-06,
       "rmse": 1.3634357695118634e-05,
       "max_err": 2.4001045434651758e-05,
-      "wall_time_s": 23.871874543023296,
+      "wall_time_s": 33.21098778699525,
       "iterations": 25000,
       "convergence_rate": 1.992859096673309
     }

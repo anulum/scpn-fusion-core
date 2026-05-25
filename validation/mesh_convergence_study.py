@@ -27,6 +27,7 @@ REPORT_JSON = REPORT_DIR / "mesh_convergence.json"
 REPORT_MD = REPORT_DIR / "mesh_convergence.md"
 DEFAULT_RESOLUTIONS = (17, 33, 65, 129)
 DEFAULT_MIN_CONVERGENCE_RATE = 1.8
+DEFAULT_MIN_RATED_GRID_COUNT = 2
 
 
 def run_solovev_benchmark(nr: int, nz: int, max_iter: int = 25000, tol: float = 1e-10) -> dict:
@@ -135,22 +136,27 @@ def add_convergence_rates(results: list[dict]) -> list[dict]:
 
 
 def summarise_convergence_contract(
-    results: list[dict], min_rate: float = DEFAULT_MIN_CONVERGENCE_RATE
+    results: list[dict],
+    min_rate: float = DEFAULT_MIN_CONVERGENCE_RATE,
+    min_rated_grid_count: int = DEFAULT_MIN_RATED_GRID_COUNT,
 ) -> dict:
     """Summarise whether the manufactured GS solve is at least second-order."""
+    if min_rated_grid_count < 1:
+        raise ValueError("min_rated_grid_count must be at least one")
     rates = [
         float(row["convergence_rate"])
         for row in results
         if "convergence_rate" in row and np.isfinite(row["convergence_rate"])
     ]
     min_observed = min(rates) if rates else float("nan")
-    passed = bool(rates) and min_observed >= min_rate
+    passed = len(rates) >= min_rated_grid_count and min_observed >= min_rate
     return {
         "contract": "fixed-boundary manufactured Solov'ev GS solve shows second-order mesh convergence",
         "passed": passed,
         "required_min_rate": float(min_rate),
         "min_convergence_rate": float(min_observed),
         "rated_grid_count": len(rates),
+        "required_rated_grid_count": int(min_rated_grid_count),
     }
 
 
@@ -198,7 +204,10 @@ def main() -> int:
         f.write(f"- Status: {'PASS' if summary['passed'] else 'FAIL'}\n")
         f.write(f"- Required minimum adjacent-grid rate: {summary['required_min_rate']:.2f}\n")
         f.write(f"- Minimum observed adjacent-grid rate: {summary['min_convergence_rate']:.6f}\n")
-        f.write(f"- Rated grid transitions: {summary['rated_grid_count']}\n\n")
+        f.write(
+            f"- Rated grid transitions: {summary['rated_grid_count']} "
+            f"(required: {summary['required_rated_grid_count']})\n\n"
+        )
         f.write("## Machine\n\n")
         f.write(f"- Platform: {machine['platform']}\n")
         f.write(f"- CPU count: {machine['cpu_count']}\n")
