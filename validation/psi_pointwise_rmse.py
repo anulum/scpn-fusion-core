@@ -235,6 +235,8 @@ class EfitNRMSEBenchmarkGate:
     adapted_profile_worst_file: str
     worst_source_residual_l2: float
     worst_source_alignment_file: str
+    gate_worst_source_residual_l2: float
+    gate_worst_source_alignment_file: str
     failure_reasons: list[str]
     rows: list[dict[str, Any]]
 
@@ -1748,6 +1750,7 @@ def validate_efit_nrmse_benchmark(
     reference_class_counts: dict[str, int] = {}
     solver_mode_counts: dict[str, int] = {}
     source_residual_entries: list[tuple[str, float]] = []
+    gate_source_residual_entries: list[tuple[str, float]] = []
     for row in rows:
         for key in (
             "raw_profile_solver_mode",
@@ -1769,6 +1772,8 @@ def validate_efit_nrmse_benchmark(
         source_residual = float(row["source_residual_l2"])
         if np.isfinite(source_residual):
             source_residual_entries.append((str(row["file"]), source_residual))
+            if row["reference_role"] == "gate":
+                gate_source_residual_entries.append((str(row["file"]), source_residual))
 
     if source_residual_entries:
         worst_source_alignment_file, worst_source_residual = max(
@@ -1778,6 +1783,15 @@ def validate_efit_nrmse_benchmark(
     else:
         worst_source_alignment_file = ""
         worst_source_residual = float("nan")
+
+    if gate_source_residual_entries:
+        gate_worst_source_alignment_file, gate_worst_source_residual = max(
+            gate_source_residual_entries,
+            key=lambda item: item[1],
+        )
+    else:
+        gate_worst_source_alignment_file = ""
+        gate_worst_source_residual = float("nan")
 
     if len(files) < min_files:
         failure_reasons.append(f"count {len(files)} < required {min_files}")
@@ -1862,6 +1876,8 @@ def validate_efit_nrmse_benchmark(
         adapted_profile_worst_file=adapted_profile_worst_file,
         worst_source_residual_l2=float(worst_source_residual),
         worst_source_alignment_file=worst_source_alignment_file,
+        gate_worst_source_residual_l2=float(gate_worst_source_residual),
+        gate_worst_source_alignment_file=gate_worst_source_alignment_file,
         failure_reasons=failure_reasons,
         rows=rows,
     )
@@ -2027,6 +2043,12 @@ def main() -> int:
         f"Worst source residual: {benchmark.worst_source_alignment_file} "
         f"(relative L2 = {benchmark.worst_source_residual_l2:.6f})"
     )
+    if benchmark.gate_worst_source_alignment_file:
+        print(
+            "Worst public source residual: "
+            f"{benchmark.gate_worst_source_alignment_file} "
+            f"(relative L2 = {benchmark.gate_worst_source_residual_l2:.6f})"
+        )
     print(
         "Public operator-source gate: "
         f"{benchmark.gate_operator_source_pass_count}/{benchmark.gate_row_count} public rows "

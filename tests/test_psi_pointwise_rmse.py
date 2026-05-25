@@ -814,6 +814,8 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.source_consistency_counts == {"profile_source_consistent": 10}
         assert gate.worst_source_alignment_file != ""
         assert gate.worst_source_residual_l2 == pytest.approx(0.01)
+        assert gate.gate_worst_source_alignment_file.startswith("sparc/")
+        assert gate.gate_worst_source_residual_l2 == pytest.approx(0.01)
         assert all(row["best_source_candidate"] for row in gate.rows)
         assert all(row["best_source_candidate_residual_l2"] >= 0.0 for row in gate.rows)
         assert all(row["profile_source_candidate_rank"] >= 1 for row in gate.rows)

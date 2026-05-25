@@ -48,6 +48,8 @@
     "adapted_profile_worst_file",
     "worst_source_residual_l2",
     "worst_source_alignment_file",
+    "gate_worst_source_residual_l2",
+    "gate_worst_source_alignment_file",
     "failure_reasons",
     "rows"
   ],
@@ -261,6 +263,12 @@
       "type": "number"
     },
     "worst_source_alignment_file": {
+      "type": "string"
+    },
+    "gate_worst_source_residual_l2": {
+      "type": "number"
+    },
+    "gate_worst_source_alignment_file": {
       "type": "string"
     },
     "failure_reasons": {

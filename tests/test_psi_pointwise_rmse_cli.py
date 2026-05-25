@@ -118,6 +118,8 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
         adapted_profile_worst_file="",
         worst_source_residual_l2=2.5,
         worst_source_alignment_file="sparc/sample.geqdsk",
+        gate_worst_source_residual_l2=2.5,
+        gate_worst_source_alignment_file="sparc/sample.geqdsk",
         failure_reasons=["profile-source mismatch attribution in 1 rows"],
         rows=[
             {
