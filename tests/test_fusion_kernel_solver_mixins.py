@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
 from scpn_fusion.core.fusion_kernel_iterative_solver import (
@@ -33,3 +34,34 @@ def test_numeric_helpers_are_stable_on_non_finite_inputs() -> None:
     assert np.all(np.isfinite(sanitized))
     assert float(np.max(np.abs(sanitized))) <= NUMERIC_SANITIZE_CAP
     assert stable_rms(sanitized) >= 0.0
+
+
+class _IterativeKernelStub(FusionKernelIterativeSolverMixin):
+    def __init__(self) -> None:
+        self.dR = 0.25
+        self.dZ = 0.25
+        r = np.linspace(1.0, 2.0, 5)
+        z = np.linspace(-0.5, 0.5, 5)
+        self.RR, self.ZZ = np.meshgrid(r, z)
+
+
+@pytest.mark.parametrize("omega", [0.0, 0.999999, 2.0, np.inf, np.nan])
+def test_sor_step_rejects_unstable_relaxation_factor(omega: float) -> None:
+    """SOR must reject relaxation factors outside the stable GS interval."""
+    kernel = _IterativeKernelStub()
+    psi = np.zeros((5, 5), dtype=np.float64)
+    source = np.zeros_like(psi)
+
+    with pytest.raises(ValueError, match="omega"):
+        kernel._sor_step(psi, source, omega=omega)
+
+
+@pytest.mark.parametrize("omega", [0.0, 0.999999, 2.0, np.inf, np.nan])
+def test_multigrid_smoother_rejects_unstable_relaxation_factor(omega: float) -> None:
+    """The multigrid smoother shares the same SOR relaxation contract."""
+    kernel = _IterativeKernelStub()
+    psi = np.zeros((5, 5), dtype=np.float64)
+    source = np.zeros_like(psi)
+
+    with pytest.raises(ValueError, match="omega"):
+        kernel._mg_smooth(psi, source, kernel.RR, kernel.dR, kernel.dZ, omega, n_sweeps=1)

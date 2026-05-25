@@ -47,7 +47,33 @@ missing or zero, both solvers fall back to 0.1.
 
 ---
 
-## 2. Tikhonov Regularisation (`tikhonov`)
+## 2. SOR Relaxation Factor (`sor_omega`)
+
+The fixed-boundary elliptic sub-solver uses red-black SOR for both the direct
+SOR path and the multigrid smoother. The accepted interval is enforced in the
+Python and Rust native solver paths:
+
+```text
+1.0 <= sor_omega < 2.0
+```
+
+`1.0` is Gauss-Seidel. Values above `1.0` over-relax the elliptic update and
+can reduce iteration count, but values at or above `2.0`, non-finite values,
+and values below `1.0` are rejected because they can destabilise the
+Grad-Shafranov solve instead of producing a controlled convergence failure.
+
+Recommended values:
+
+| Value | Behaviour | When to use |
+|-------|-----------|-------------|
+| **1.0** | Most conservative Gauss-Seidel update | Debugging, difficult shaped cases |
+| **1.2–1.5** | Conservative SOR | Robust default for new validation cases |
+| **1.6–1.8** | Faster convergence on regular grids | Established fixed-boundary or benchmark cases |
+| **>= 2.0** | Rejected | Numerically unstable SOR regime |
+
+---
+
+## 3. Tikhonov Regularisation (`tikhonov`)
 
 Tikhonov regularisation adds a penalty `alpha * ||x - x0||^2` to the
 inverse solver cost function and `alpha * I` to the normal matrix. This
@@ -85,7 +111,7 @@ let config = InverseConfig {
 
 ---
 
-## 3. Huber Robust Loss (`loss`)
+## 4. Huber Robust Loss (`loss`)
 
 The Huber loss function reduces the influence of outlier measurements.
 For residuals with `|r| <= delta` it behaves like least-squares; for
@@ -121,7 +147,7 @@ let config = InverseConfig {
 
 ---
 
-## 4. Measurement Weights (`sigma`)
+## 5. Measurement Weights (`sigma`)
 
 Per-probe inverse-variance weighting: residuals are divided by sigma_i,
 so noisier probes contribute less to the fit. This is standard
@@ -145,7 +171,7 @@ weighted least-squares.
 
 ---
 
-## 5. Grid Resolution vs Speed
+## 6. Grid Resolution vs Speed
 
 | Grid | Python (NumPy) | Rust (release) | Rust (GPU projected) | Use case |
 |------|---------------|----------------|---------------------|----------|
@@ -165,7 +191,7 @@ weighted least-squares.
 
 ---
 
-## 6. Inverse Solver: Jacobian Parallelism
+## 7. Inverse Solver: Jacobian Parallelism
 
 As of the latest release, the Rust inverse solver computes the 8 Jacobian
 finite-difference columns in parallel using `rayon`. Each column runs an

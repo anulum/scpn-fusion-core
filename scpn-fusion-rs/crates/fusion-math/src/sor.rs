@@ -18,6 +18,13 @@
 use fusion_types::state::Grid2D;
 use ndarray::Array2;
 
+fn validate_sor_omega(omega: f64) {
+    assert!(
+        omega.is_finite() && (1.0..2.0).contains(&omega),
+        "omega must be finite and satisfy 1.0 <= omega < 2.0"
+    );
+}
+
 /// Perform one Red-Black SOR iteration.
 ///
 /// `psi`: mutable [nz, nr] flux array
@@ -27,6 +34,7 @@ use ndarray::Array2;
 ///
 /// Boundary rows/columns (first/last row and column) are NOT updated.
 pub fn sor_step(psi: &mut Array2<f64>, source: &Array2<f64>, grid: &Grid2D, omega: f64) {
+    validate_sor_omega(omega);
     let nz = grid.nz;
     let nr = grid.nr;
     let dr = grid.dr;
@@ -61,6 +69,7 @@ pub fn sor_solve(
     omega: f64,
     iterations: usize,
 ) {
+    validate_sor_omega(omega);
     for _ in 0..iterations {
         sor_step(psi, source, grid, omega);
     }
@@ -213,5 +222,25 @@ mod tests {
             assert!(psi[[iz, 0]].abs() < 1e-15, "Left boundary should be 0");
             assert!(psi[[iz, 15]].abs() < 1e-15, "Right boundary should be 0");
         }
+    }
+
+    #[test]
+    #[should_panic(expected = "omega must be finite and satisfy 1.0 <= omega < 2.0")]
+    fn test_sor_step_rejects_unstable_omega() {
+        let grid = Grid2D::new(8, 8, 1.0, 9.0, -5.0, 5.0);
+        let mut psi = Array2::zeros((8, 8));
+        let source = Array2::zeros((8, 8));
+
+        sor_step(&mut psi, &source, &grid, 2.0);
+    }
+
+    #[test]
+    #[should_panic(expected = "omega must be finite and satisfy 1.0 <= omega < 2.0")]
+    fn test_sor_solve_rejects_nonfinite_omega() {
+        let grid = Grid2D::new(8, 8, 1.0, 9.0, -5.0, 5.0);
+        let mut psi = Array2::zeros((8, 8));
+        let source = Array2::zeros((8, 8));
+
+        sor_solve(&mut psi, &source, &grid, f64::NAN, 1);
     }
 }

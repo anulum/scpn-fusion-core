@@ -22,6 +22,14 @@ class FusionKernelIterativeSolverMixin:
 
     # ── elliptic sub-solvers ──────────────────────────────────────────
 
+    @staticmethod
+    def _validate_sor_omega(omega: float) -> float:
+        """Validate the SOR relaxation factor for elliptic GS solves."""
+        omega_value = float(omega)
+        if not np.isfinite(omega_value) or omega_value < 1.0 or omega_value >= 2.0:
+            raise ValueError("omega must be finite and satisfy 1.0 <= omega < 2.0")
+        return omega_value
+
     def _jacobi_step(self, Psi: FloatArray, Source: FloatArray) -> FloatArray:
         """Perform one cylindrical Jacobi iteration on the interior grid.
 
@@ -95,6 +103,7 @@ class FusionKernelIterativeSolverMixin:
         FloatArray
             Updated flux array after one full red-black sweep.
         """
+        omega = self._validate_sor_omega(omega)
         Psi_new = _sanitize_numeric_array(Psi)
         Source = _sanitize_numeric_array(Source)
         NZ, NR = Psi.shape
@@ -224,6 +233,7 @@ class FusionKernelIterativeSolverMixin:
 
         Works on arbitrary grid sizes (not just the root grid).
         """
+        omega = self._validate_sor_omega(omega)
         NZ, NR = Psi.shape
         dR2 = dR**2
         dZ2 = dZ**2
