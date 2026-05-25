@@ -127,6 +127,31 @@ Local verification commands:
 - `cargo test -p fusion-polyglot operator_current_closure`
 - `lake build`
 
+### Native Grad-Shafranov mesh-convergence contract
+
+`validation/mesh_convergence_study.py` now reports an explicit solver-fidelity
+contract for the fixed-boundary manufactured Solov'ev solve. The benchmark
+solves the elliptic Grad-Shafranov equation on successively refined grids with
+analytic Dirichlet boundaries and rejects regressions unless the adjacent-grid
+NRMSE trend remains second-order within the configured floor.
+
+Local run on this machine:
+
+- Platform: Linux-6.17.0-29-generic-x86_64-with-glibc2.39
+- CPU count: 12
+- Python: 3.12.3
+- NumPy: 2.2.6
+
+| Grid | h | NRMSE | adjacent-grid rate | time s | iterations |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 17x17 | 1.2500e-01 | 8.1756e-05 | N/A | 0.0791 | 801 |
+| 33x33 | 6.2500e-02 | 1.9818e-05 | 2.04 | 0.6244 | 2601 |
+| 65x65 | 3.1250e-02 | 4.8780e-06 | 2.02 | 4.2237 | 10001 |
+| 129x129 | 1.5625e-02 | 1.2256e-06 | 1.99 | 21.3941 | 25000 |
+
+Status: PASS. The measured minimum adjacent-grid rate is `1.992859` against the
+required floor `1.80`.
+
 ### Transport Source Power-Balance Contract
 
 Auxiliary-heating source normalisation (MW -> volumetric W/m^3 -> keV/s)

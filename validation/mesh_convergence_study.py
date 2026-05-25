@@ -15,10 +15,18 @@ determine the spatial order of accuracy.
 from __future__ import annotations
 
 import json
+import os
+import platform
 import time
 from pathlib import Path
 
 import numpy as np
+
+REPORT_DIR = Path("validation/reports")
+REPORT_JSON = REPORT_DIR / "mesh_convergence.json"
+REPORT_MD = REPORT_DIR / "mesh_convergence.md"
+DEFAULT_RESOLUTIONS = (17, 33, 65, 129)
+DEFAULT_MIN_CONVERGENCE_RATE = 1.8
 
 
 def run_solovev_benchmark(nr: int, nz: int, max_iter: int = 25000, tol: float = 1e-10) -> dict:
@@ -107,8 +115,47 @@ def run_solovev_benchmark(nr: int, nz: int, max_iter: int = 25000, tol: float = 
     }
 
 
-def main():
-    resolutions = [17, 33, 65, 129]
+def add_convergence_rates(results: list[dict]) -> list[dict]:
+    """Return benchmark rows annotated with adjacent-grid convergence rates."""
+    rated = [dict(row) for row in results]
+    for i in range(1, len(rated)):
+        h_ratio = rated[i - 1]["h"] / rated[i]["h"]
+        err_ratio = rated[i - 1]["nrmse"] / rated[i]["nrmse"]
+        rated[i]["convergence_rate"] = float(np.log(err_ratio) / np.log(h_ratio))
+    return rated
+
+
+def summarise_convergence_contract(
+    results: list[dict], min_rate: float = DEFAULT_MIN_CONVERGENCE_RATE
+) -> dict:
+    """Summarise whether the manufactured GS solve is at least second-order."""
+    rates = [
+        float(row["convergence_rate"])
+        for row in results
+        if "convergence_rate" in row and np.isfinite(row["convergence_rate"])
+    ]
+    min_observed = min(rates) if rates else float("nan")
+    passed = bool(rates) and min_observed >= min_rate
+    return {
+        "contract": "fixed-boundary manufactured Solov'ev GS solve shows second-order mesh convergence",
+        "passed": passed,
+        "required_min_rate": float(min_rate),
+        "min_convergence_rate": float(min_observed),
+        "rated_grid_count": len(rates),
+    }
+
+
+def _machine_context() -> dict:
+    return {
+        "platform": platform.platform(),
+        "cpu_count": int(os.cpu_count() or 0),
+        "python": platform.python_version(),
+        "numpy": np.__version__,
+    }
+
+
+def main() -> int:
+    resolutions = list(DEFAULT_RESOLUTIONS)
     results = []
 
     print(f"{'Grid':<10} {'h':<12} {'NRMSE':<12} {'Time (s)':<10} {'Iters':<10}")
@@ -122,26 +169,33 @@ def main():
             f"{res_data['wall_time_s']:<10.4f} {res_data['iterations']:<10}"
         )
 
-    # Compute convergence rates
-    for i in range(1, len(results)):
-        h_ratio = results[i - 1]["h"] / results[i]["h"]
-        err_ratio = results[i - 1]["nrmse"] / results[i]["nrmse"]
-        rate = np.log(err_ratio) / np.log(h_ratio)
-        results[i]["convergence_rate"] = float(rate)
+    results = add_convergence_rates(results)
+    summary = summarise_convergence_contract(results)
+    machine = _machine_context()
 
-    report_dir = Path("validation/reports")
-    report_dir.mkdir(parents=True, exist_ok=True)
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
-    json_path = report_dir / "mesh_convergence.json"
-    with open(json_path, "w") as f:
-        json.dump(results, f, indent=2)
+    with open(REPORT_JSON, "w") as f:
+        json.dump({"summary": summary, "machine": machine, "results": results}, f, indent=2)
+        f.write("\n")
 
-    md_path = report_dir / "mesh_convergence.md"
-    with open(md_path, "w") as f:
+    with open(REPORT_MD, "w") as f:
         f.write("# GS Solver Mesh Convergence Study\n\n")
         f.write(
             "Determines the spatial order of accuracy for the Grad-Shafranov elliptic solver.\n\n"
         )
+        f.write("## Contract\n\n")
+        f.write(f"- Contract: {summary['contract']}\n")
+        f.write(f"- Status: {'PASS' if summary['passed'] else 'FAIL'}\n")
+        f.write(f"- Required minimum adjacent-grid rate: {summary['required_min_rate']:.2f}\n")
+        f.write(f"- Minimum observed adjacent-grid rate: {summary['min_convergence_rate']:.6f}\n")
+        f.write(f"- Rated grid transitions: {summary['rated_grid_count']}\n\n")
+        f.write("## Machine\n\n")
+        f.write(f"- Platform: {machine['platform']}\n")
+        f.write(f"- CPU count: {machine['cpu_count']}\n")
+        f.write(f"- Python: {machine['python']}\n")
+        f.write(f"- NumPy: {machine['numpy']}\n\n")
+        f.write("## Results\n\n")
         f.write("| Grid | h | NRMSE | Rate | Time (s) | Iters |\n")
         f.write("|------|---|-------|------|----------|-------|\n")
         for r in results:
@@ -151,8 +205,10 @@ def main():
                 f"{rate_str} | {r['wall_time_s']:.4f} | {r['iterations']} |\n"
             )
 
-    print(f"\nResults saved to {json_path} and {md_path}")
+    print(f"\nContract status: {'PASS' if summary['passed'] else 'FAIL'}")
+    print(f"Results saved to {REPORT_JSON} and {REPORT_MD}")
+    return 0 if summary["passed"] else 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
