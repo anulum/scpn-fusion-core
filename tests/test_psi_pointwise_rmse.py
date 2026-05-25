@@ -768,11 +768,13 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.operator_source_worst_psi_rmse_norm == pytest.approx(1.0e-12)
         assert gate.operator_source_worst_file
         assert gate.source_convention_adapter_pass_count == 10
+        assert gate.gate_source_convention_adapter_pass_count == 4
         assert gate.source_convention_adapter_threshold == pytest.approx(
             psi_rmse_mod.SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD
         )
         assert gate.source_convention_adapter_counts == {"canonical": 10}
         assert gate.adapted_profile_pass_count == 10
+        assert gate.gate_adapted_profile_pass_count == 4
         assert gate.adapted_profile_threshold == pytest.approx(
             psi_rmse_mod.ADAPTED_PROFILE_RMSE_THRESHOLD
         )

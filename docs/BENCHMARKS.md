@@ -81,6 +81,10 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 > numerators are machine-readable without counting synthetic proxy diagnostics.
 > Public-gate worst-row evidence is likewise separate via
 > `gate_worst_file` and `gate_worst_psi_rmse_norm`.
+> Adapter evidence is also split with
+> `gate_source_convention_adapter_pass_count` and
+> `gate_adapted_profile_pass_count`, preventing accepted public SPARC adapter
+> rows from being conflated with synthetic diagnostics.
 > It also reports `solver_mode_counts` for the three profile-source lanes:
 > raw GEQDSK profile-source fixed-boundary, operator-source fixed-boundary, and
 > adapted GEQDSK profile-source fixed-boundary each have `18` labelled rows.

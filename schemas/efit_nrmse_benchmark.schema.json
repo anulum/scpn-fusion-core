@@ -36,9 +36,11 @@
     "operator_source_worst_file",
     "source_convention_adapter_threshold",
     "source_convention_adapter_pass_count",
+    "gate_source_convention_adapter_pass_count",
     "source_convention_adapter_counts",
     "adapted_profile_threshold",
     "adapted_profile_pass_count",
+    "gate_adapted_profile_pass_count",
     "adapted_profile_worst_psi_rmse_norm",
     "adapted_profile_worst_file",
     "worst_source_residual_l2",
@@ -213,6 +215,10 @@
       "type": "integer",
       "minimum": 0
     },
+    "gate_source_convention_adapter_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
     "source_convention_adapter_counts": {
       "type": "object",
       "additionalProperties": {
@@ -225,6 +231,10 @@
       "exclusiveMinimum": 0
     },
     "adapted_profile_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate_adapted_profile_pass_count": {
       "type": "integer",
       "minimum": 0
     },

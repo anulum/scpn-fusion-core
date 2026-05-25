@@ -223,9 +223,11 @@ class EfitNRMSEBenchmarkGate:
     operator_source_worst_file: str
     source_convention_adapter_threshold: float
     source_convention_adapter_pass_count: int
+    gate_source_convention_adapter_pass_count: int
     source_convention_adapter_counts: dict[str, int]
     adapted_profile_threshold: float
     adapted_profile_pass_count: int
+    gate_adapted_profile_pass_count: int
     adapted_profile_worst_psi_rmse_norm: float
     adapted_profile_worst_file: str
     worst_source_residual_l2: float
@@ -1628,6 +1630,8 @@ def validate_efit_nrmse_benchmark(
     operator_source_pass_count = 0
     source_convention_adapter_pass_count = 0
     adapted_profile_pass_count = 0
+    gate_source_convention_adapter_pass_count = 0
+    gate_adapted_profile_pass_count = 0
     gate_row_count = 0
     gate_pass_count = 0
     failure_reasons: list[str] = []
@@ -1664,11 +1668,15 @@ def validate_efit_nrmse_benchmark(
 
         if result.source_convention_adapter_pass:
             source_convention_adapter_pass_count += 1
+            if is_gate_row:
+                gate_source_convention_adapter_pass_count += 1
             adapted_profile_rmse = float(result.adapted_profile_psi_rmse_norm)
             if np.isfinite(adapted_profile_rmse):
                 adapted_profile_entries.append((rel_path, adapted_profile_rmse))
                 if result.adapted_profile_pass:
                     adapted_profile_pass_count += 1
+                    if is_gate_row:
+                        gate_adapted_profile_pass_count += 1
             else:
                 failure_reasons.append(f"non-finite adapted_profile_psi_rmse_norm in {rel_path}")
 
@@ -1824,9 +1832,11 @@ def validate_efit_nrmse_benchmark(
         operator_source_worst_file=operator_source_worst_file,
         source_convention_adapter_threshold=SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD,
         source_convention_adapter_pass_count=source_convention_adapter_pass_count,
+        gate_source_convention_adapter_pass_count=gate_source_convention_adapter_pass_count,
         source_convention_adapter_counts=source_convention_adapter_counts,
         adapted_profile_threshold=ADAPTED_PROFILE_RMSE_THRESHOLD,
         adapted_profile_pass_count=adapted_profile_pass_count,
+        gate_adapted_profile_pass_count=gate_adapted_profile_pass_count,
         adapted_profile_worst_psi_rmse_norm=float(adapted_profile_worst_norm),
         adapted_profile_worst_file=adapted_profile_worst_file,
         worst_source_residual_l2=float(worst_source_residual),
@@ -2000,6 +2010,11 @@ def main() -> int:
         f"Adapted profile gate: {benchmark.adapted_profile_pass_count}/"
         f"{benchmark.source_convention_adapter_pass_count} accepted adapter rows "
         f"under psi_N RMSE <= {benchmark.adapted_profile_threshold:.6f}"
+    )
+    print(
+        "Public adapted profile gate: "
+        f"{benchmark.gate_adapted_profile_pass_count}/"
+        f"{benchmark.gate_source_convention_adapter_pass_count} public accepted adapter rows"
     )
     if benchmark.adapted_profile_worst_file:
         print(
