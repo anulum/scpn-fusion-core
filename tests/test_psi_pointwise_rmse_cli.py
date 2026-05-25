@@ -82,6 +82,8 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
         min_required_files=1,
         threshold=0.05,
         pass_count=0,
+        gate_row_count=1,
+        gate_pass_count=0,
         passes=False,
         mean_psi_rmse_norm=0.125,
         worst_psi_rmse_norm=0.125,

@@ -16,6 +16,8 @@
     "min_required_files",
     "threshold",
     "pass_count",
+    "gate_row_count",
+    "gate_pass_count",
     "passes",
     "mean_psi_rmse_norm",
     "worst_psi_rmse_norm",
@@ -78,6 +80,14 @@
       "exclusiveMinimum": 0
     },
     "pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate_row_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate_pass_count": {
       "type": "integer",
       "minimum": 0
     },

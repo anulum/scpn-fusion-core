@@ -77,6 +77,8 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 > `reference_role_counts={'gate': 8, 'diagnostic': 10}` and
 > `reference_class_counts={'public_efit_reference': 8,
 > 'synthetic_proxy_reference': 10}`.
+> It also emits `gate_row_count` and `gate_pass_count`, so public EFIT parity
+> numerators are machine-readable without counting synthetic proxy diagnostics.
 > It also reports `solver_mode_counts` for the three profile-source lanes:
 > raw GEQDSK profile-source fixed-boundary, operator-source fixed-boundary, and
 > adapted GEQDSK profile-source fixed-boundary each have `18` labelled rows.

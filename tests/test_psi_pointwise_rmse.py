@@ -747,6 +747,8 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.passes is True
         assert gate.count == 10
         assert gate.pass_count == 10
+        assert gate.gate_row_count == 4
+        assert gate.gate_pass_count == 4
         assert gate.reference_role_counts == {"diagnostic": 6, "gate": 4}
         assert gate.reference_class_counts == {
             "public_efit_reference": 4,

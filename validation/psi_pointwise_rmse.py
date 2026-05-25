@@ -203,6 +203,8 @@ class EfitNRMSEBenchmarkGate:
     min_required_files: int
     threshold: float
     pass_count: int
+    gate_row_count: int
+    gate_pass_count: int
     passes: bool
     mean_psi_rmse_norm: float
     worst_psi_rmse_norm: float
@@ -1623,6 +1625,8 @@ def validate_efit_nrmse_benchmark(
     operator_source_pass_count = 0
     source_convention_adapter_pass_count = 0
     adapted_profile_pass_count = 0
+    gate_row_count = 0
+    gate_pass_count = 0
     failure_reasons: list[str] = []
 
     for machine, path in files:
@@ -1631,12 +1635,17 @@ def validate_efit_nrmse_benchmark(
         rmse_norm = float(result.psi_rmse_norm)
         provenance = EFIT_BENCHMARK_MACHINE_PROVENANCE[machine]
         reference_contract = _reference_case_contract(machine, rel_path)
+        is_gate_row = reference_contract["reference_role"] == "gate"
+        if is_gate_row:
+            gate_row_count += 1
 
         count_by_machine[machine] = count_by_machine.get(machine, 0) + 1
         if np.isfinite(rmse_norm):
             finite_entries.append((rel_path, rmse_norm))
             if rmse_norm <= max_nrmse:
                 pass_count += 1
+                if is_gate_row:
+                    gate_pass_count += 1
         else:
             failure_reasons.append(f"non-finite psi_rmse_norm in {rel_path}")
 
@@ -1784,6 +1793,8 @@ def validate_efit_nrmse_benchmark(
         min_required_files=min_files,
         threshold=max_nrmse,
         pass_count=pass_count,
+        gate_row_count=gate_row_count,
+        gate_pass_count=gate_pass_count,
         passes=not failure_reasons,
         mean_psi_rmse_norm=mean_norm,
         worst_psi_rmse_norm=float(worst_norm),
@@ -1952,6 +1963,9 @@ def main() -> int:
     print(f"Minimum required files: {benchmark.min_required_files}")
     print(f"Threshold psi_N RMSE:   {benchmark.threshold:.6f}")
     print(f"Rows under threshold:   {benchmark.pass_count}/{benchmark.count}")
+    print(
+        f"Public gate rows under threshold: {benchmark.gate_pass_count}/{benchmark.gate_row_count}"
+    )
     print(
         f"Worst file:             {benchmark.worst_file} "
         f"(psi_N RMSE = {benchmark.worst_psi_rmse_norm:.6f})"
