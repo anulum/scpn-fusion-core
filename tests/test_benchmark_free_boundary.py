@@ -21,10 +21,15 @@ def test_free_boundary_benchmark_reports_explicit_solver_modes() -> None:
         report["boundary_flux_reconstruction"]["solver_mode"]
         == "coil_green_boundary_reconstruction"
     )
+    assert report["boundary_flux_reconstruction"]["boundary_containment_fraction"] == 1.0
     assert (
         report["solve_free_boundary_vacuum_reconstruction"]["solver_mode"]
         == "free_boundary_solver_with_coil_vacuum_boundary"
     )
+    assert (
+        report["solve_free_boundary_vacuum_reconstruction"]["boundary_containment_fraction"] == 0.0
+    )
+    assert report["solve_free_boundary_vacuum_reconstruction"]["pass"] is True
     assert (
         report["jax_free_boundary_wall_flux"]["solver_mode"]
         == "jax_free_boundary_wall_flux_contract"

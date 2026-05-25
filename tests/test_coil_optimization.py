@@ -220,6 +220,28 @@ def test_external_flux_is_linear_and_regularises_self_grid_point(kernel: FusionK
     np.testing.assert_allclose(psi_scaled, 3.0 * psi, rtol=1e-12, atol=1e-18)
 
 
+def test_boundary_reconstruction_reports_limiter_containment(kernel: FusionKernel):
+    """Free-boundary contour diagnostics should prove limiter containment."""
+    coils = _make_coils(4)
+    boundary_points = np.array(
+        [[5.0, -1.0], [6.5, -0.5], [7.0, 0.0], [6.5, 0.5], [5.0, 1.0]],
+        dtype=np.float64,
+    )
+    limiter_points = np.array(
+        [[4.5, -1.5], [7.5, -1.5], [7.5, 1.5], [4.5, 1.5]],
+        dtype=np.float64,
+    )
+
+    reconstruction = kernel.reconstruct_boundary_flux_from_coils(
+        coils,
+        boundary_points=boundary_points,
+        limiter_points=limiter_points,
+    )
+
+    assert reconstruction["boundary_containment_fraction"] == pytest.approx(1.0)
+    assert reconstruction["boundary_containment_pass"] is True
+
+
 # ── Coil current optimization ───────────────────────────────────────
 
 

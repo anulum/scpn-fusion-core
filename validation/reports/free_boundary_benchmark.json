@@ -22,6 +22,7 @@
     "rmse": 0.0,
     "max_abs_error": 0.0,
     "min_limiter_distance_m": 0.3807886552931955,
+    "boundary_containment_fraction": 1.0,
     "axis_flux": 0.25893813455196313,
     "max_abs_limiter_flux": 0.08536357521981727,
     "max_abs_x_point_flux": 0.12291045919919759,
@@ -36,6 +37,7 @@
     "x_point_count": 2,
     "axis_flux": 0.25893813455196313,
     "vacuum_boundary_abs_error": 0.0,
+    "boundary_containment_fraction": 0.0,
     "pass": true
   },
   "helmholtz": {
@@ -57,7 +59,7 @@
     "grid": "33x33",
     "picard_iterations": 10,
     "sor_sweeps_per_picard": 10,
-    "wall_time_s": 0.7249060160247609,
+    "wall_time_s": 0.6805331240175292,
     "vacuum_boundary_abs_error": 7.105427357601002e-15,
     "vacuum_boundary_flux_level": 16.551065542554525,
     "interior_axis_flux": 66.04980778478084,

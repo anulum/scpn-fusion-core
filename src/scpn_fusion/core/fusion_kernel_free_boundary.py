@@ -110,6 +110,29 @@ def _as_finite_points(value: Any, *, name: str) -> FloatArray:
     return arr
 
 
+def _points_inside_polygon(points: FloatArray, polygon: FloatArray) -> np.ndarray:
+    """Return point-in-polygon containment mask for finite ``(R, Z)`` contours."""
+    pts = _as_finite_points(points, name="points")
+    poly = _as_finite_points(polygon, name="polygon")
+    if poly.shape[0] < 3:
+        raise ValueError("polygon must contain at least three points.")
+
+    x = pts[:, 0]
+    y = pts[:, 1]
+    x0 = poly[:, 0]
+    y0 = poly[:, 1]
+    x1 = np.roll(x0, -1)
+    y1 = np.roll(y0, -1)
+
+    inside = np.zeros(pts.shape[0], dtype=bool)
+    for xa, ya, xb, yb in zip(x0, y0, x1, y1):
+        intersects = ((ya > y) != (yb > y)) & (
+            x < (xb - xa) * (y - ya) / max(abs(yb - ya), 1.0e-300) + xa
+        )
+        inside ^= intersects
+    return inside
+
+
 def build_mutual_inductance_matrix(
     kernel: Any,
     coils: "CoilSet",
@@ -184,12 +207,16 @@ def reconstruct_boundary_flux_from_coils(
         limiter_response = build_mutual_inductance_matrix(kernel, coils, limiter_obs)
         limiter_flux = limiter_response.T @ currents
         distances = np.linalg.norm(limiter_obs[:, None, :] - obs[None, :, :], axis=2)
+        containment_mask = _points_inside_polygon(obs, limiter_obs)
+        containment_fraction = float(np.mean(containment_mask)) if containment_mask.size else 0.0
         diagnostics.update(
             {
                 "limiter_points": limiter_obs,
                 "limiter_flux": limiter_flux,
                 "limiter_point_count": int(limiter_obs.shape[0]),
                 "min_limiter_distance_m": float(np.min(distances)),
+                "boundary_containment_fraction": containment_fraction,
+                "boundary_containment_pass": bool(containment_fraction >= 1.0),
             }
         )
     if axis_point is not None:

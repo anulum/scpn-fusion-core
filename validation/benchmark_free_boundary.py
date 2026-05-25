@@ -113,6 +113,9 @@ def run_free_boundary_benchmark() -> dict:
             "rmse": float(boundary_reconstruction["rmse"]),
             "max_abs_error": float(boundary_reconstruction["max_abs_error"]),
             "min_limiter_distance_m": float(boundary_reconstruction["min_limiter_distance_m"]),
+            "boundary_containment_fraction": float(
+                boundary_reconstruction["boundary_containment_fraction"]
+            ),
             "axis_flux": float(boundary_reconstruction["axis_flux"]),
             "max_abs_limiter_flux": float(np.max(np.abs(boundary_reconstruction["limiter_flux"]))),
             "max_abs_x_point_flux": float(np.max(np.abs(boundary_reconstruction["x_point_flux"]))),
@@ -120,6 +123,7 @@ def run_free_boundary_benchmark() -> dict:
                 boundary_reconstruction["rmse"] < 1.0e-12
                 and boundary_reconstruction["max_abs_error"] < 1.0e-12
                 and boundary_reconstruction["min_limiter_distance_m"] > 0.0
+                and boundary_reconstruction["boundary_containment_pass"]
                 and np.isfinite(boundary_reconstruction["axis_flux"])
             ),
         }
@@ -142,6 +146,9 @@ def run_free_boundary_benchmark() -> dict:
             "x_point_count": int(solve_contract["boundary_reconstruction"]["x_point_count"]),
             "axis_flux": float(solve_contract["boundary_reconstruction"]["axis_flux"]),
             "vacuum_boundary_abs_error": float(solve_contract["vacuum_boundary_abs_error"]),
+            "boundary_containment_fraction": float(
+                solve_contract["boundary_reconstruction"]["boundary_containment_fraction"]
+            ),
             "pass": bool(
                 solve_contract["vacuum_boundary_abs_error"] < 1.0e-12
                 and solve_contract["boundary_reconstruction"]["limiter_point_count"] == 4
@@ -320,6 +327,10 @@ def main():
             "| Boundary Green reconstruction | Min limiter clearance | "
             f"{br['min_limiter_distance_m']:.6f} m | {br['pass']} |\n"
         )
+        f.write(
+            "| Boundary Green reconstruction | Limiter containment | "
+            f"{br['boundary_containment_fraction']:.3f} | {br['pass']} |\n"
+        )
         solver_fb = res["solve_free_boundary_vacuum_reconstruction"]
         f.write(
             "| Solver free-boundary contract | Vacuum boundary abs error | "
@@ -333,6 +344,10 @@ def main():
             "| Solver free-boundary contract | Topology metadata | "
             f"{solver_fb['limiter_point_count']} limiter, {solver_fb['x_point_count']} X-points, "
             f"axis flux {solver_fb['axis_flux']:.6e} | {solver_fb['pass']} |\n"
+        )
+        f.write(
+            "| Solver free-boundary contract | Limiter containment | "
+            f"{solver_fb['boundary_containment_fraction']:.3f} | {solver_fb['pass']} |\n"
         )
         hm = res["helmholtz"]
         f.write(f"| Helmholtz | B_z Axis Ref | {hm['bz_axis_ref']:.4f} T | N/A |\n")

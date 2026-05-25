@@ -569,7 +569,7 @@ Green's-function convention for external free-boundary coupling. Observation
 points exactly on a source filament return zero to exclude coil self-inductance
 from the vacuum boundary map; self-inductance belongs in a separate coil-circuit
 model. Local contract checks passed with
-`python -m pytest tests/test_coil_optimization.py -q` (`32 passed`) and
+`python -m pytest tests/test_coil_optimization.py -q` (`33 passed`) and
 `cargo test -p fusion-core vacuum::tests` (`9 passed`).
 The vacuum benchmark row was rerun locally with
 `cargo bench -p fusion-core --bench vacuum_bench -- --sample-size 10` after the
@@ -589,12 +589,14 @@ operator-source solves.
 Latest local result: boundary Green reconstruction RMSE `0.00e+00`, max
 absolute error `0.00e+00`, response rank `1/1` coils over `5` contour points,
 `4` limiter points, `2` X-points, axis flux `2.589381e-01`, minimum limiter
-clearance `0.380789 m`, status `PASS`.
+clearance `0.380789 m`, limiter containment fraction `1.000`, status `PASS`.
 The actual `solve_free_boundary` path now returns the same coil/vacuum
 reconstruction diagnostic on its computational boundary; latest local solver
 contract result: vacuum-boundary absolute error `0.00e+00` over `256` boundary
 points in `1` outer iteration, with `4` limiter points, `2` X-points, and
-axis flux `2.589381e-01`, status `PASS`.
+axis flux `2.589381e-01`, computational-boundary containment fraction `0.000`
+(diagnostic-only because the computational wall is outside the limiter), status
+`PASS`.
 Rust `fusion-core::vacuum` now exposes the same native boundary-flux
 reconstruction contract through `reconstruct_boundary_flux_from_coils` and
 `reconstruct_boundary_flux_from_coils_with_metadata`, including optional target
