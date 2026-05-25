@@ -171,6 +171,10 @@ class PsiRMSEResult:
 class PsiRMSESummary:
     """Aggregate over all files."""
 
+    benchmark_id: str
+    benchmark_scope: str
+    benchmark_contract: str
+    solver_mode: str
     count: int
     mean_psi_rmse_norm: float
     mean_psi_relative_l2: float
@@ -1469,6 +1473,9 @@ def validate_all_sparc(sparc_dir: Path | None = None) -> PsiRMSESummary:
         results.append(r)
 
     rows = [asdict(r) for r in results]
+    for row in rows:
+        row["benchmark_scope"] = EFIT_BENCHMARK_SCOPE
+        row["solver_mode"] = RAW_PROFILE_SOLVER_MODE
 
     finite_norm_entries = [
         (idx, r.psi_rmse_norm) for idx, r in enumerate(results) if np.isfinite(r.psi_rmse_norm)
@@ -1485,6 +1492,14 @@ def validate_all_sparc(sparc_dir: Path | None = None) -> PsiRMSESummary:
         worst_file = ""
 
     return PsiRMSESummary(
+        benchmark_id="sparc-pointwise-rmse",
+        benchmark_scope=EFIT_BENCHMARK_SCOPE,
+        benchmark_contract=(
+            "SPARC-only raw GEQDSK profile-source fixed-boundary pointwise psi(R,Z) "
+            "RMSE diagnostic; not an operator-source solve, free-boundary reconstruction, "
+            "or reduced-order surrogate."
+        ),
+        solver_mode=RAW_PROFILE_SOLVER_MODE,
         count=len(results),
         mean_psi_rmse_norm=float(np.mean(norms)) if norms else float("nan"),
         mean_psi_relative_l2=float(np.mean(rel_l2s)),

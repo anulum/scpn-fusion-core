@@ -44,6 +44,10 @@ class _AsciiStrictStdout:
 
 def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
     summary = PsiRMSESummary(
+        benchmark_id="sparc-pointwise-rmse",
+        benchmark_scope="profile_source_fixed_boundary_reconstruction",
+        benchmark_contract="test contract",
+        solver_mode="raw_geqdsk_profile_source_fixed_boundary",
         count=1,
         mean_psi_rmse_norm=0.125,
         mean_psi_relative_l2=0.05,
@@ -54,6 +58,8 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
             {
                 "file": "sample.geqdsk",
                 "grid": "9x9",
+                "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
+                "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
                 "psi_rmse_norm": 0.125,
                 "psi_relative_l2": 0.05,
                 "gs_residual_l2": 0.01,

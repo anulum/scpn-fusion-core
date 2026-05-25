@@ -163,6 +163,11 @@ raw-profile, operator-source, and adapted-profile `solver_mode` fields at both
 top level and row level. These labels keep the strict profile-source gate,
 operator-source elliptic-solver gate, and adapted-profile reconstruction gate
 machine-separable from free-boundary coil/vacuum reconstruction benchmarks.
+The SPARC point-wise JSON report likewise declares `benchmark_id =
+sparc-pointwise-rmse`, the same fixed-boundary profile-source scope, and row
+`solver_mode = raw_geqdsk_profile_source_fixed_boundary`, so it is not
+machine-readable as an operator-source, free-boundary, or reduced-order
+surrogate result.
 The same report now carries a separate operator-source elliptic-solver gate:
 `18/18` rows reproduce `Delta*psi_ref` below `psi_N RMSE <= 1e-6`, with worst
 operator-source row `sparc/lmode_vh.geqdsk` at `2.05e-14`. This isolates the

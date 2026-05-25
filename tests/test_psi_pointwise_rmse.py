@@ -616,6 +616,10 @@ class TestValidateAllSPARC:
 
         monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)
         summary = psi_rmse_mod.validate_all_sparc(tmp_path)
+        assert summary.benchmark_id == "sparc-pointwise-rmse"
+        assert summary.benchmark_scope == "profile_source_fixed_boundary_reconstruction"
+        assert summary.solver_mode == "raw_geqdsk_profile_source_fixed_boundary"
+        assert summary.rows[0]["solver_mode"] == "raw_geqdsk_profile_source_fixed_boundary"
         assert summary.count == 2
         assert summary.worst_file == f_good.name
         assert summary.worst_psi_rmse_norm == pytest.approx(0.25)

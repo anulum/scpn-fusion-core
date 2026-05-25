@@ -1,4 +1,8 @@
 {
+  "benchmark_id": "sparc-pointwise-rmse",
+  "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
+  "benchmark_contract": "SPARC-only raw GEQDSK profile-source fixed-boundary pointwise psi(R,Z) RMSE diagnostic; not an operator-source solve, free-boundary reconstruction, or reduced-order surrogate.",
+  "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
   "count": 8,
   "mean_psi_rmse_norm": 0.9280474023438736,
   "mean_psi_relative_l2": 0.8033651354163247,
@@ -18,7 +22,7 @@
       "psi_relative_l2": 0.8070388123082192,
       "sor_iterations": 540,
       "sor_residual": 5.4497055756996815e-09,
-      "solve_time_ms": 324.04259796021506,
+      "solve_time_ms": 321.40314899152145,
       "operator_source_psi_rmse_norm": 1.9573675325104596e-14,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 7.063372109428201e-11,
@@ -65,7 +69,9 @@
       "profile_toroidal_current_A": 34448540.3719544,
       "operator_current_relative_error": 0.0457062278098773,
       "profile_current_relative_error": 3.0527694555240465,
-      "operator_current_closure_pass": true
+      "operator_current_closure_pass": true,
+      "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary"
     },
     {
       "file": "lmode_vh.geqdsk",
@@ -79,7 +85,7 @@
       "psi_relative_l2": 0.8264407326366348,
       "sor_iterations": 540,
       "sor_residual": 5.610996112181965e-09,
-      "solve_time_ms": 311.6036819992587,
+      "solve_time_ms": 294.434096023906,
       "operator_source_psi_rmse_norm": 2.0496217029259177e-14,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 7.141487401440827e-11,
@@ -126,7 +132,9 @@
       "profile_toroidal_current_A": 41799220.154567964,
       "operator_current_relative_error": 0.2883083121824858,
       "profile_current_relative_error": 3.9175553123021136,
-      "operator_current_closure_pass": false
+      "operator_current_closure_pass": false,
+      "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary"
     },
     {
       "file": "lmode_vv.geqdsk",
@@ -140,7 +148,7 @@
       "psi_relative_l2": 0.830435902400969,
       "sor_iterations": 540,
       "sor_residual": 5.459814211850045e-09,
-      "solve_time_ms": 321.37114205397666,
+      "solve_time_ms": 294.88020204007626,
       "operator_source_psi_rmse_norm": 2.0064315774428646e-14,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 7.024381076803365e-11,
@@ -187,7 +195,9 @@
       "profile_toroidal_current_A": 40284911.29198977,
       "operator_current_relative_error": 0.22231710996708526,
       "profile_current_relative_error": 3.739401328469385,
-      "operator_current_closure_pass": false
+      "operator_current_closure_pass": false,
+      "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary"
     },
     {
       "file": "sparc_1300.eqdsk",
@@ -201,7 +211,7 @@
       "psi_relative_l2": 0.8509447050526601,
       "sor_iterations": 480,
       "sor_residual": 5.751190149116958e-09,
-      "solve_time_ms": 149.67557397903875,
+      "solve_time_ms": 143.3902700082399,
       "operator_source_psi_rmse_norm": 1.5983781943182805e-15,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 2.4018564914740637e-12,
@@ -248,7 +258,9 @@
       "profile_toroidal_current_A": -51041.27633668607,
       "operator_current_relative_error": 2.184689374914063,
       "profile_current_relative_error": 0.7447936183165696,
-      "operator_current_closure_pass": false
+      "operator_current_closure_pass": false,
+      "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary"
     },
     {
       "file": "sparc_1305.eqdsk",
@@ -262,7 +274,7 @@
       "psi_relative_l2": 0.782568544969324,
       "sor_iterations": 500,
       "sor_residual": 5.157912083553207e-09,
-      "solve_time_ms": 147.41812500869855,
+      "solve_time_ms": 142.51269900705665,
       "operator_source_psi_rmse_norm": 5.852001445235515e-16,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 2.1425750063031046e-11,
@@ -309,7 +321,9 @@
       "profile_toroidal_current_A": -822911.0440161487,
       "operator_current_relative_error": 6.344223317261786e-05,
       "profile_current_relative_error": 0.8354177911967702,
-      "operator_current_closure_pass": true
+      "operator_current_closure_pass": true,
+      "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary"
     },
     {
       "file": "sparc_1310.eqdsk",
@@ -323,7 +337,7 @@
       "psi_relative_l2": 0.7692672012870916,
       "sor_iterations": 500,
       "sor_residual": 7.3054291505059155e-09,
-      "solve_time_ms": 151.61961101694033,
+      "solve_time_ms": 144.5328359841369,
       "operator_source_psi_rmse_norm": 5.777912869437937e-16,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 2.7123553403285428e-11,
@@ -370,7 +384,9 @@
       "profile_toroidal_current_A": -1523079.5711621786,
       "operator_current_relative_error": 6.004256731605735e-05,
       "profile_current_relative_error": 0.8249333826250369,
-      "operator_current_closure_pass": true
+      "operator_current_closure_pass": true,
+      "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary"
     },
     {
       "file": "sparc_1315.eqdsk",
@@ -384,7 +400,7 @@
       "psi_relative_l2": 0.7686138754336519,
       "sor_iterations": 500,
       "sor_residual": 7.033270410516934e-09,
-      "solve_time_ms": 142.4595849821344,
+      "solve_time_ms": 144.83594900229946,
       "operator_source_psi_rmse_norm": 6.6810531751828e-16,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 2.7536639635172833e-11,
@@ -431,7 +447,9 @@
       "profile_toroidal_current_A": -1532537.502040259,
       "operator_current_relative_error": 6.013878676612144e-05,
       "profile_current_relative_error": 0.8238462641333035,
-      "operator_current_closure_pass": true
+      "operator_current_closure_pass": true,
+      "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary"
     },
     {
       "file": "sparc_1349.eqdsk",
@@ -445,7 +463,7 @@
       "psi_relative_l2": 0.7916113092420478,
       "sor_iterations": 500,
       "sor_residual": 7.348958663833116e-09,
-      "solve_time_ms": 146.23403799487278,
+      "solve_time_ms": 150.07244498701766,
       "operator_source_psi_rmse_norm": 8.495677460722121e-16,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 2.698974377324248e-11,
@@ -492,7 +510,9 @@
       "profile_toroidal_current_A": -1349829.549754179,
       "operator_current_relative_error": 5.520041036140174e-05,
       "profile_current_relative_error": 0.8312713062807277,
-      "operator_current_closure_pass": true
+      "operator_current_closure_pass": true,
+      "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary"
     }
   ]
 }
