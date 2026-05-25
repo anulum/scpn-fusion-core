@@ -22,6 +22,9 @@
     "operator_source_pass_count",
     "operator_source_worst_psi_rmse_norm",
     "operator_source_worst_file",
+    "source_convention_adapter_threshold",
+    "source_convention_adapter_pass_count",
+    "source_convention_adapter_counts",
     "worst_source_residual_l2",
     "worst_source_alignment_file",
     "failure_reasons",
@@ -97,6 +100,21 @@
     "operator_source_worst_file": {
       "type": "string"
     },
+    "source_convention_adapter_threshold": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "source_convention_adapter_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "source_convention_adapter_counts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
     "worst_source_residual_l2": {
       "type": "number"
     },
@@ -142,6 +160,9 @@
           "source_best_fit_offset",
           "source_best_fit_relative_l2",
           "source_best_fit_convention",
+          "source_convention_adapter",
+          "source_convention_adapter_residual_l2",
+          "source_convention_adapter_pass",
           "plasma_mask_fraction",
           "pressure_source_norm",
           "ffprime_source_norm",
@@ -269,6 +290,27 @@
               "non_finite_scale",
               "not_evaluated"
             ]
+          },
+          "source_convention_adapter": {
+            "enum": [
+              "canonical",
+              "negated",
+              "scaled_by_2pi",
+              "scaled_by_minus_2pi",
+              "scaled_by_inv_2pi",
+              "scaled_by_minus_inv_2pi",
+              "times_flux_span",
+              "over_flux_span",
+              "negated_times_flux_span",
+              "negated_over_flux_span",
+              "not_evaluated"
+            ]
+          },
+          "source_convention_adapter_residual_l2": {
+            "type": "number"
+          },
+          "source_convention_adapter_pass": {
+            "type": "boolean"
           },
           "plasma_mask_fraction": {
             "type": "number"

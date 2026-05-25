@@ -170,6 +170,17 @@ EQDSK rows, the explicit `2*pi` profile-source candidate is now selected
 directly with relative L2 `0.067-0.139`, while `sparc_1300` remains a
 flux-span candidate with relative L2 `4.043` and is not accepted as strict
 native source-contract evidence.
+An explicit GEQDSK convention adapter contract is now part of the aggregate
+schema. It accepts only named transforms, not fitted least-squares scales, and
+uses residual threshold `0.15`. Latest local report:
+`source_convention_adapter_pass_count=4/18`, with accepted rows limited to
+`sparc_1305`, `sparc_1310`, `sparc_1315`, and `sparc_1349`, all under the
+explicit `scaled_by_2pi` adapter. Adapter counts were
+`scaled_by_2pi=5`, `scaled_by_minus_2pi=3`, `over_flux_span=1`,
+`negated_over_flux_span=4`, `canonical=4`, and
+`negated_times_flux_span=1`; only the four high-current SPARC `scaled_by_2pi`
+rows are below the adapter residual threshold. The raw canonical gate remains
+strict and failing.
 
 Polyglot status: the native Julia, Go, Rust, and Lean solver packages expose
 the same operator-current surfaces. Julia, Go, and Rust package tests validate

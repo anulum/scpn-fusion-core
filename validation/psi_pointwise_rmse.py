@@ -47,6 +47,7 @@ EFIT_NRMSE_BENCHMARK_SCHEMA_VERSION = "efit-nrmse-benchmark.v1"
 OPERATOR_SOURCE_RMSE_THRESHOLD = 1e-6
 OPERATOR_CURRENT_CLOSURE_THRESHOLD = 0.05
 SOURCE_CONVENTION_DISTANCE_THRESHOLD = 0.15
+SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD = 0.15
 EFIT_BENCHMARK_MACHINE_PROVENANCE = {
     "sparc": "real_public_design_reference",
     "diiid": "synthetic_proxy_reference",
@@ -91,6 +92,9 @@ class PsiRMSEResult:
     source_best_fit_offset: float = float("nan")
     source_best_fit_relative_l2: float = float("nan")
     source_best_fit_convention: str = "not_evaluated"
+    source_convention_adapter: str = "not_evaluated"
+    source_convention_adapter_residual_l2: float = float("nan")
+    source_convention_adapter_pass: bool = False
     plasma_mask_fraction: float = float("nan")
     pressure_source_norm: float = float("nan")
     ffprime_source_norm: float = float("nan")
@@ -151,6 +155,9 @@ class EfitNRMSEBenchmarkGate:
     operator_source_pass_count: int
     operator_source_worst_psi_rmse_norm: float
     operator_source_worst_file: str
+    source_convention_adapter_threshold: float
+    source_convention_adapter_pass_count: int
+    source_convention_adapter_counts: dict[str, int]
     worst_source_residual_l2: float
     worst_source_alignment_file: str
     failure_reasons: list[str]
@@ -347,6 +354,47 @@ def classify_source_scale_convention(scale: float) -> str:
     return convention
 
 
+def source_convention_multiplier(convention: str, flux_span: float) -> float:
+    """Return the explicit multiplier for a named GEQDSK source convention."""
+    if convention == "canonical":
+        return 1.0
+    if convention == "negated":
+        return -1.0
+    if convention == "scaled_by_2pi":
+        return 2.0 * np.pi
+    if convention == "scaled_by_minus_2pi":
+        return -2.0 * np.pi
+    if convention == "scaled_by_inv_2pi":
+        return 1.0 / (2.0 * np.pi)
+    if convention == "scaled_by_minus_inv_2pi":
+        return -1.0 / (2.0 * np.pi)
+    if not np.isfinite(flux_span) or abs(flux_span) < 1e-15:
+        raise ValueError("flux-span source conventions require a finite non-zero flux span")
+    if convention == "times_flux_span":
+        return flux_span
+    if convention == "over_flux_span":
+        return 1.0 / flux_span
+    if convention == "negated_times_flux_span":
+        return -flux_span
+    if convention == "negated_over_flux_span":
+        return -1.0 / flux_span
+    raise ValueError(f"unsupported GEQDSK source convention: {convention}")
+
+
+def apply_source_convention(
+    source: NDArray,
+    *,
+    convention: str,
+    flux_span: float,
+) -> NDArray:
+    """Apply an explicit, documented GEQDSK source convention transform."""
+    source_arr = np.asarray(source, dtype=np.float64)
+    if not np.all(np.isfinite(source_arr)):
+        raise ValueError("source must contain only finite values")
+    multiplier = source_convention_multiplier(convention, flux_span)
+    return multiplier * source_arr
+
+
 def compute_source_alignment(
     eq: GEqdsk,
     source: NDArray | None = None,
@@ -486,29 +534,38 @@ def compute_source_candidate_rankings(eq: GEqdsk) -> list[dict[str, float | str]
     total = np.asarray(components["total_source"], dtype=np.float64)
     flux_span = float(eq.sibry - eq.simag)
 
-    candidates = {
-        "profile_source": total,
-        "negated_profile_source": -total,
-        "profile_source_scaled_by_2pi": (2.0 * np.pi) * total,
-        "profile_source_scaled_by_minus_2pi": -(2.0 * np.pi) * total,
-        "profile_source_scaled_by_inv_2pi": total / (2.0 * np.pi),
-        "profile_source_scaled_by_minus_inv_2pi": -total / (2.0 * np.pi),
-        "pressure_only": pressure,
-        "negated_pressure_only": -pressure,
-        "ffprime_only": ffprime,
-        "negated_ffprime_only": -ffprime,
-        "pressure_plus_negated_ffprime": pressure - ffprime,
-        "negated_pressure_plus_ffprime": -pressure + ffprime,
+    source_conventions = {
+        "profile_source": "canonical",
+        "negated_profile_source": "negated",
+        "profile_source_scaled_by_2pi": "scaled_by_2pi",
+        "profile_source_scaled_by_minus_2pi": "scaled_by_minus_2pi",
+        "profile_source_scaled_by_inv_2pi": "scaled_by_inv_2pi",
+        "profile_source_scaled_by_minus_inv_2pi": "scaled_by_minus_inv_2pi",
     }
     if abs(flux_span) >= 1e-15:
-        candidates.update(
+        source_conventions.update(
             {
-                "profile_source_times_flux_span": flux_span * total,
-                "profile_source_over_flux_span": total / flux_span,
-                "negated_profile_source_times_flux_span": -(flux_span * total),
-                "negated_profile_source_over_flux_span": -(total / flux_span),
+                "profile_source_times_flux_span": "times_flux_span",
+                "profile_source_over_flux_span": "over_flux_span",
+                "negated_profile_source_times_flux_span": "negated_times_flux_span",
+                "negated_profile_source_over_flux_span": "negated_over_flux_span",
             }
         )
+
+    candidates = {
+        name: apply_source_convention(total, convention=convention, flux_span=flux_span)
+        for name, convention in source_conventions.items()
+    }
+    candidates.update(
+        {
+            "pressure_only": pressure,
+            "negated_pressure_only": -pressure,
+            "ffprime_only": ffprime,
+            "negated_ffprime_only": -ffprime,
+            "pressure_plus_negated_ffprime": pressure - ffprime,
+            "negated_pressure_plus_ffprime": -pressure + ffprime,
+        }
+    )
 
     rows: list[dict[str, float | str]] = []
     for name, source in candidates.items():
@@ -516,6 +573,7 @@ def compute_source_candidate_rankings(eq: GEqdsk) -> list[dict[str, float | str]
         rows.append(
             {
                 "candidate": name,
+                "source_convention": source_conventions.get(name, "not_profile_source_convention"),
                 "source_residual_l2": metrics["source_residual_l2"],
                 "source_correlation": metrics["source_correlation"],
                 "source_best_fit_scale": metrics["source_best_fit_scale"],
@@ -527,6 +585,37 @@ def compute_source_candidate_rankings(eq: GEqdsk) -> list[dict[str, float | str]
         )
 
     return sorted(rows, key=lambda row: float(row["source_residual_l2"]))
+
+
+def select_source_convention_adapter(eq: GEqdsk) -> dict[str, float | bool | str]:
+    """
+    Select the best explicit profile-source convention without accepting fitted scales.
+
+    The raw canonical source contract remains strict elsewhere.  This adapter
+    contract only reports whether a named, reproducible GEQDSK transform explains
+    the operator source within the declared residual threshold.
+    """
+    candidates = [
+        row
+        for row in compute_source_candidate_rankings(eq)
+        if row["source_convention"] != "not_profile_source_convention"
+    ]
+    if not candidates:
+        return {
+            "source_convention_adapter": "not_evaluated",
+            "source_convention_adapter_residual_l2": float("nan"),
+            "source_convention_adapter_pass": False,
+        }
+    best = candidates[0]
+    residual = float(best["source_residual_l2"])
+    convention = str(best["source_convention"])
+    return {
+        "source_convention_adapter": convention,
+        "source_convention_adapter_residual_l2": residual,
+        "source_convention_adapter_pass": bool(
+            np.isfinite(residual) and residual <= SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD
+        ),
+    }
 
 
 def _laplacian_operator_variant(
@@ -912,6 +1001,7 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
     source_alignment = compute_source_alignment(eq)
     current_consistency = compute_toroidal_current_consistency(eq)
     source_candidates = compute_source_candidate_rankings(eq)
+    source_convention_adapter = select_source_convention_adapter(eq)
     best_source_candidate = str(source_candidates[0]["candidate"])
     best_source_candidate_residual = float(source_candidates[0]["source_residual_l2"])
     profile_source_rank = next(
@@ -971,6 +1061,13 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         source_best_fit_offset=source_alignment["source_best_fit_offset"],
         source_best_fit_relative_l2=source_alignment["source_best_fit_relative_l2"],
         source_best_fit_convention=str(source_alignment["source_best_fit_convention"]),
+        source_convention_adapter=str(source_convention_adapter["source_convention_adapter"]),
+        source_convention_adapter_residual_l2=float(
+            source_convention_adapter["source_convention_adapter_residual_l2"]
+        ),
+        source_convention_adapter_pass=bool(
+            source_convention_adapter["source_convention_adapter_pass"]
+        ),
         plasma_mask_fraction=float(source_components["plasma_mask_fraction"]),
         pressure_source_norm=float(source_components["pressure_source_norm"]),
         ffprime_source_norm=float(source_components["ffprime_source_norm"]),
@@ -1102,6 +1199,7 @@ def validate_efit_nrmse_benchmark(
     operator_source_entries: list[tuple[str, float]] = []
     pass_count = 0
     operator_source_pass_count = 0
+    source_convention_adapter_pass_count = 0
     failure_reasons: list[str] = []
 
     for machine, path in files:
@@ -1125,6 +1223,9 @@ def validate_efit_nrmse_benchmark(
                 operator_source_pass_count += 1
         else:
             failure_reasons.append(f"non-finite operator_source_psi_rmse_norm in {rel_path}")
+
+        if result.source_convention_adapter_pass:
+            source_convention_adapter_pass_count += 1
 
         row = asdict(result)
         row["file"] = rel_path
@@ -1152,10 +1253,15 @@ def validate_efit_nrmse_benchmark(
         operator_source_worst_norm = float("nan")
 
     source_consistency_counts: dict[str, int] = {}
+    source_convention_adapter_counts: dict[str, int] = {}
     source_residual_entries: list[tuple[str, float]] = []
     for row in rows:
         source_class = str(row["source_consistency_class"])
         source_consistency_counts[source_class] = source_consistency_counts.get(source_class, 0) + 1
+        source_adapter = str(row["source_convention_adapter"])
+        source_convention_adapter_counts[source_adapter] = (
+            source_convention_adapter_counts.get(source_adapter, 0) + 1
+        )
         source_residual = float(row["source_residual_l2"])
         if np.isfinite(source_residual):
             source_residual_entries.append((str(row["file"]), source_residual))
@@ -1220,6 +1326,9 @@ def validate_efit_nrmse_benchmark(
         operator_source_pass_count=operator_source_pass_count,
         operator_source_worst_psi_rmse_norm=float(operator_source_worst_norm),
         operator_source_worst_file=operator_source_worst_file,
+        source_convention_adapter_threshold=SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD,
+        source_convention_adapter_pass_count=source_convention_adapter_pass_count,
+        source_convention_adapter_counts=source_convention_adapter_counts,
         worst_source_residual_l2=float(worst_source_residual),
         worst_source_alignment_file=worst_source_alignment_file,
         failure_reasons=failure_reasons,

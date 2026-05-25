@@ -43,10 +43,13 @@ from validation.psi_pointwise_rmse import (
     compute_source_candidate_rankings,
     compute_source_components,
     compute_toroidal_current_consistency,
+    apply_source_convention,
     gs_operator,
     gs_residual,
     load_efit_nrmse_benchmark_schema,
     manufactured_solve_vectorised,
+    select_source_convention_adapter,
+    source_convention_multiplier,
     validate_all_sparc,
     validate_efit_nrmse_benchmark_report,
     validate_efit_nrmse_benchmark,
@@ -241,6 +244,7 @@ class TestComputeSourceAlignment:
         residuals = [row["source_residual_l2"] for row in candidates]
         assert residuals == sorted(residuals)
         assert all(np.isfinite(row["source_residual_l2"]) for row in candidates)
+        assert all(row["source_convention"] != "" for row in candidates)
         assert all(row["source_best_fit_convention"] != "" for row in candidates)
         assert candidates[0]["candidate"] != ""
 
@@ -251,6 +255,38 @@ class TestComputeSourceAlignment:
 
         assert candidates[0]["candidate"] == "profile_source_scaled_by_2pi"
         assert candidates[0]["source_residual_l2"] < 0.15
+
+    def test_source_convention_adapter_accepts_high_current_sparc_2pi_contract(self):
+        eq = read_geqdsk(SPARC_DIR / "sparc_1310.eqdsk")
+
+        adapter = select_source_convention_adapter(eq)
+
+        assert adapter["source_convention_adapter"] == "scaled_by_2pi"
+        assert adapter["source_convention_adapter_pass"] is True
+        assert adapter["source_convention_adapter_residual_l2"] < 0.15
+
+    def test_source_convention_adapter_keeps_lmode_diagnostic_only(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+
+        adapter = select_source_convention_adapter(eq)
+
+        assert adapter["source_convention_adapter"] == "scaled_by_minus_2pi"
+        assert adapter["source_convention_adapter_pass"] is False
+        assert adapter["source_convention_adapter_residual_l2"] > 0.15
+
+    def test_source_convention_transform_is_named_and_rejects_unknown_modes(self):
+        source = np.ones((3, 3), dtype=np.float64)
+        assert source_convention_multiplier("canonical", 0.5) == pytest.approx(1.0)
+        assert source_convention_multiplier("scaled_by_2pi", 0.5) == pytest.approx(2.0 * np.pi)
+        assert source_convention_multiplier("over_flux_span", 0.5) == pytest.approx(2.0)
+        assert np.allclose(
+            apply_source_convention(source, convention="scaled_by_minus_2pi", flux_span=0.5),
+            -(2.0 * np.pi) * source,
+        )
+        with pytest.raises(ValueError, match="unsupported GEQDSK source convention"):
+            source_convention_multiplier("least_squares_fit", 0.5)
+        with pytest.raises(ValueError, match="flux-span source conventions"):
+            source_convention_multiplier("over_flux_span", 0.0)
 
     def test_source_scale_convention_classifier_covers_common_geqdsk_factors(self):
         assert classify_source_scale_convention(1.0) == "canonical"
@@ -571,6 +607,9 @@ class TestValidateEFITNRMSEBenchmark:
                 source_best_fit_offset=0.0,
                 source_best_fit_relative_l2=0.0,
                 source_best_fit_convention="canonical",
+                source_convention_adapter="canonical",
+                source_convention_adapter_residual_l2=rmse,
+                source_convention_adapter_pass=True,
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,
@@ -623,6 +662,11 @@ class TestValidateEFITNRMSEBenchmark:
         )
         assert gate.operator_source_worst_psi_rmse_norm == pytest.approx(1.0e-12)
         assert gate.operator_source_worst_file
+        assert gate.source_convention_adapter_pass_count == 10
+        assert gate.source_convention_adapter_threshold == pytest.approx(
+            psi_rmse_mod.SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD
+        )
+        assert gate.source_convention_adapter_counts == {"canonical": 10}
         assert gate.worst_psi_rmse_norm == pytest.approx(0.01)
         assert gate.count_by_machine == {"sparc": 4, "diiid": 3, "jet": 3}
         assert gate.provenance_by_machine == EFIT_BENCHMARK_MACHINE_PROVENANCE
@@ -720,6 +764,9 @@ class TestValidateEFITNRMSEBenchmark:
                 source_best_fit_offset=0.1 if is_worst else 0.0,
                 source_best_fit_relative_l2=0.9 if is_worst else 0.0,
                 source_best_fit_convention="unclassified_global_scale" if is_worst else "canonical",
+                source_convention_adapter="negated" if is_worst else "canonical",
+                source_convention_adapter_residual_l2=0.9 if is_worst else 0.01,
+                source_convention_adapter_pass=not is_worst,
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,
@@ -795,6 +842,9 @@ class TestValidateEFITNRMSEBenchmark:
                 source_best_fit_offset=0.0,
                 source_best_fit_relative_l2=0.0,
                 source_best_fit_convention="canonical",
+                source_convention_adapter="canonical",
+                source_convention_adapter_residual_l2=0.01,
+                source_convention_adapter_pass=True,
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,
