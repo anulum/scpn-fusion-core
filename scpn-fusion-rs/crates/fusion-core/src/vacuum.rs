@@ -247,6 +247,70 @@ pub fn calculate_vacuum_flux_at_points(
     Ok(flux)
 }
 
+/// Diagnostics from reconstructing free-boundary contour flux from coils.
+#[derive(Debug, Clone)]
+pub struct BoundaryFluxReconstruction {
+    pub reconstructed_flux: Vec<f64>,
+    pub residual: Option<Vec<f64>>,
+    pub rmse: Option<f64>,
+    pub max_abs_error: Option<f64>,
+    pub point_count: usize,
+    pub coil_count: usize,
+}
+
+/// Reconstruct boundary-contour vacuum flux from coil Green functions.
+///
+/// This is the Rust counterpart of the Python free-boundary forward contract:
+/// it evaluates external coil flux on explicit boundary or limiter points and,
+/// when a target vector is supplied, reports residual diagnostics without
+/// fitting a scale or replaying fixed Dirichlet values.
+pub fn reconstruct_boundary_flux_from_coils(
+    boundary_points: &[(f64, f64)],
+    coils: &[CoilConfig],
+    target_flux: Option<&[f64]>,
+    mu0: f64,
+) -> FusionResult<BoundaryFluxReconstruction> {
+    let reconstructed_flux = calculate_vacuum_flux_at_points(boundary_points, coils, mu0)?;
+    let point_count = reconstructed_flux.len();
+    let mut residual = None;
+    let mut rmse = None;
+    let mut max_abs_error = None;
+
+    if let Some(target) = target_flux {
+        if target.len() != point_count {
+            return Err(FusionError::ConfigError(format!(
+                "target_flux length must match boundary point count: got {}, expected {}",
+                target.len(),
+                point_count
+            )));
+        }
+        if target.iter().any(|v| !v.is_finite()) {
+            return Err(FusionError::ConfigError(
+                "target_flux must contain finite values only".to_string(),
+            ));
+        }
+        let values: Vec<f64> = reconstructed_flux
+            .iter()
+            .zip(target.iter())
+            .map(|(observed, expected)| observed - expected)
+            .collect();
+        let mean_square = values.iter().map(|v| v * v).sum::<f64>() / point_count as f64;
+        let max_error = values.iter().map(|v| v.abs()).fold(0.0, f64::max);
+        residual = Some(values);
+        rmse = Some(mean_square.sqrt());
+        max_abs_error = Some(max_error);
+    }
+
+    Ok(BoundaryFluxReconstruction {
+        reconstructed_flux,
+        residual,
+        rmse,
+        max_abs_error,
+        point_count,
+        coil_count: coils.len(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -419,5 +483,41 @@ mod tests {
         assert!((point_flux[0] - psi[[3, 4]]).abs() < 1.0e-12);
         assert!((point_flux[1] - psi[[8, 8]]).abs() < 1.0e-12);
         assert!((point_flux[2] - psi[[12, 11]]).abs() < 1.0e-12);
+    }
+
+    #[test]
+    fn test_boundary_flux_reconstruction_reports_residual_contract() {
+        let coils = vec![
+            CoilConfig {
+                name: "upper".to_string(),
+                r: 5.0,
+                z: 1.5,
+                current: 2.0,
+            },
+            CoilConfig {
+                name: "lower".to_string(),
+                r: 6.0,
+                z: -1.0,
+                current: -0.75,
+            },
+        ];
+        let boundary_points = vec![(4.5, -1.0), (5.5, -1.25), (6.5, 0.25), (5.5, 1.25)];
+        let target = calculate_vacuum_flux_at_points(&boundary_points, &coils, 1.0)
+            .expect("valid target flux");
+
+        let reconstruction =
+            reconstruct_boundary_flux_from_coils(&boundary_points, &coils, Some(&target), 1.0)
+                .expect("valid boundary reconstruction");
+
+        assert_eq!(reconstruction.point_count, boundary_points.len());
+        assert_eq!(reconstruction.coil_count, coils.len());
+        assert!(reconstruction
+            .residual
+            .as_ref()
+            .expect("target residual")
+            .iter()
+            .all(|v| v.abs() < 1.0e-12));
+        assert!(reconstruction.rmse.expect("rmse") < 1.0e-12);
+        assert!(reconstruction.max_abs_error.expect("max error") < 1.0e-12);
     }
 }

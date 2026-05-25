@@ -540,7 +540,7 @@ points exactly on a source filament return zero to exclude coil self-inductance
 from the vacuum boundary map; self-inductance belongs in a separate coil-circuit
 model. Local contract checks passed with
 `python -m pytest tests/test_coil_optimization.py -q` (`32 passed`) and
-`cargo test -p fusion-core vacuum::tests` (`7 passed`).
+`cargo test -p fusion-core vacuum::tests` (`8 passed`).
 The vacuum benchmark row was rerun locally with
 `cargo bench -p fusion-core --bench vacuum_bench -- --sample-size 10` after the
 self-observation fix; Criterion centre estimates were `121.47 us` for 33x33 and
@@ -560,6 +560,11 @@ reconstruction diagnostic on its computational boundary; latest local solver
 contract result: vacuum-boundary absolute error `0.00e+00` over `256` boundary
 points in `1` outer iteration, with `4` limiter points, `2` X-points, and
 axis flux `2.589381e-01`, status `PASS`.
+Rust `fusion-core::vacuum` now exposes the same native boundary-flux
+reconstruction contract through `reconstruct_boundary_flux_from_coils`,
+including optional target residual, RMSE, max absolute error, point count, and
+coil count. This is a full Rust implementation using the same circular-filament
+Green function, not a wrapper around the Python benchmark path.
 
 GEQDSK-to-native configuration now preserves free-boundary geometry metadata:
 `GEqdsk.to_config()` exports the parsed plasma boundary as isoflux target
