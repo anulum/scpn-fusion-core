@@ -211,6 +211,7 @@ class EfitNRMSEBenchmarkGate:
     provenance_by_machine: dict[str, str]
     reference_role_counts: dict[str, int]
     reference_class_counts: dict[str, int]
+    solver_mode_counts: dict[str, int]
     source_consistency_counts: dict[str, int]
     operator_source_threshold: float
     operator_source_pass_count: int
@@ -1699,8 +1700,16 @@ def validate_efit_nrmse_benchmark(
     source_convention_adapter_counts: dict[str, int] = {}
     reference_role_counts: dict[str, int] = {}
     reference_class_counts: dict[str, int] = {}
+    solver_mode_counts: dict[str, int] = {}
     source_residual_entries: list[tuple[str, float]] = []
     for row in rows:
+        for key in (
+            "raw_profile_solver_mode",
+            "operator_source_solver_mode",
+            "adapted_profile_solver_mode",
+        ):
+            solver_mode = str(row[key])
+            solver_mode_counts[solver_mode] = solver_mode_counts.get(solver_mode, 0) + 1
         source_class = str(row["source_consistency_class"])
         source_consistency_counts[source_class] = source_consistency_counts.get(source_class, 0) + 1
         source_adapter = str(row["source_convention_adapter"])
@@ -1783,6 +1792,7 @@ def validate_efit_nrmse_benchmark(
         provenance_by_machine=provenance_by_machine,
         reference_role_counts=reference_role_counts,
         reference_class_counts=reference_class_counts,
+        solver_mode_counts=solver_mode_counts,
         source_consistency_counts=source_consistency_counts,
         operator_source_threshold=OPERATOR_SOURCE_RMSE_THRESHOLD,
         operator_source_pass_count=operator_source_pass_count,

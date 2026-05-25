@@ -752,6 +752,11 @@ class TestValidateEFITNRMSEBenchmark:
             "public_efit_reference": 4,
             "synthetic_proxy_reference": 6,
         }
+        assert gate.solver_mode_counts == {
+            "raw_geqdsk_profile_source_fixed_boundary": 10,
+            "operator_source_fixed_boundary_delta_star_psi": 10,
+            "adapted_geqdsk_profile_source_fixed_boundary": 10,
+        }
         assert gate.operator_source_pass_count == 10
         assert gate.operator_source_threshold == pytest.approx(
             psi_rmse_mod.OPERATOR_SOURCE_RMSE_THRESHOLD

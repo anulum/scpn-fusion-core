@@ -24,6 +24,7 @@
     "provenance_by_machine",
     "reference_role_counts",
     "reference_class_counts",
+    "solver_mode_counts",
     "source_consistency_counts",
     "operator_source_threshold",
     "operator_source_pass_count",
@@ -147,6 +148,29 @@
       "additionalProperties": {
         "type": "integer",
         "minimum": 0
+      }
+    },
+    "solver_mode_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_geqdsk_profile_source_fixed_boundary",
+        "operator_source_fixed_boundary_delta_star_psi",
+        "adapted_geqdsk_profile_source_fixed_boundary"
+      ],
+      "properties": {
+        "raw_geqdsk_profile_source_fixed_boundary": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "operator_source_fixed_boundary_delta_star_psi": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "adapted_geqdsk_profile_source_fixed_boundary": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "operator_source_threshold": {
