@@ -207,10 +207,7 @@ def _plasma_source(
 def _boundary_flux_level(psi: jnp.ndarray) -> float:
     """Mean wall flux level for free-boundary source normalization."""
     boundary_total = (
-        jnp.sum(psi[0, :])
-        + jnp.sum(psi[-1, :])
-        + jnp.sum(psi[1:-1, 0])
-        + jnp.sum(psi[1:-1, -1])
+        jnp.sum(psi[0, :]) + jnp.sum(psi[-1, :]) + jnp.sum(psi[1:-1, 0]) + jnp.sum(psi[1:-1, -1])
     )
     boundary_count = 2 * psi.shape[1] + 2 * jnp.maximum(psi.shape[0] - 2, 0)
     return boundary_total / jnp.maximum(boundary_count, 1)

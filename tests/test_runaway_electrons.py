@@ -121,7 +121,9 @@ def test_dream_fluid_balance_matches_density_equation_contract():
 
 
 def test_dream_fluid_balance_keeps_avalanche_threshold_contract():
-    params = RunawayParams(ne_20=1.0, Te_keV=0.04, E_par=0.5 * critical_field(1.0), Z_eff=2.0, B0=5.0, R0=6.0)
+    params = RunawayParams(
+        ne_20=1.0, Te_keV=0.04, E_par=0.5 * critical_field(1.0), Z_eff=2.0, B0=5.0, R0=6.0
+    )
 
     balance = dream_fluid_density_balance(params, 1.0e12)
 

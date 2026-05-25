@@ -221,9 +221,7 @@ def _assert_matches_case(candidate_psi: np.ndarray, case: dict[str, float | int]
     assert relative_l2 < 5e-12
     assert np.max(np.abs(interior_error)) < 5e-12
 
-    python_gs_residual_relative_max = benchmark._gs_equation_residual_relative_max(
-        python_psi, case
-    )
+    python_gs_residual_relative_max = benchmark._gs_equation_residual_relative_max(python_psi, case)
     gs_residual_relative_max = benchmark._gs_equation_residual_relative_max(candidate_psi, case)
     assert abs(gs_residual_relative_max - python_gs_residual_relative_max) < 5e-12
     assert gs_residual_relative_max < 0.95

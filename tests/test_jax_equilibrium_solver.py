@@ -179,11 +179,15 @@ def test_free_boundary_solve_preserves_vacuum_flux_boundary():
         R, Z, coil_R, coil_Z, coil_I, Ip=15.0, max_picard=4, sor_per_picard=4
     )
 
-    np.testing.assert_allclose(np.asarray(psi[0, :]), np.asarray(psi_vac[0, :]), rtol=0.0, atol=1e-12)
+    np.testing.assert_allclose(
+        np.asarray(psi[0, :]), np.asarray(psi_vac[0, :]), rtol=0.0, atol=1e-12
+    )
     np.testing.assert_allclose(
         np.asarray(psi[-1, :]), np.asarray(psi_vac[-1, :]), rtol=0.0, atol=1e-12
     )
-    np.testing.assert_allclose(np.asarray(psi[:, 0]), np.asarray(psi_vac[:, 0]), rtol=0.0, atol=1e-12)
+    np.testing.assert_allclose(
+        np.asarray(psi[:, 0]), np.asarray(psi_vac[:, 0]), rtol=0.0, atol=1e-12
+    )
     np.testing.assert_allclose(
         np.asarray(psi[:, -1]), np.asarray(psi_vac[:, -1]), rtol=0.0, atol=1e-12
     )
@@ -205,9 +209,7 @@ def test_free_boundary_solve_responds_to_coil_boundary_shift():
         R, Z, coil_R, coil_Z, shifted_I, Ip=15.0, max_picard=4, sor_per_picard=4
     )
 
-    boundary_delta = np.max(
-        np.abs(np.asarray(shifted[[0, -1], :]) - np.asarray(psi[[0, -1], :]))
-    )
+    boundary_delta = np.max(np.abs(np.asarray(shifted[[0, -1], :]) - np.asarray(psi[[0, -1], :])))
     assert boundary_delta > 1e-6
 
 

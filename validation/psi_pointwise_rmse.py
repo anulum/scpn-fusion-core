@@ -433,7 +433,9 @@ def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
     scale = max(abs(declared_current), 1.0)
     operator_error = abs(abs(operator_current) - abs(declared_current)) / scale
     profile_error = abs(abs(profile_current) - abs(declared_current)) / scale
-    operator_pass = bool(np.isfinite(operator_error) and operator_error <= OPERATOR_CURRENT_CLOSURE_THRESHOLD)
+    operator_pass = bool(
+        np.isfinite(operator_error) and operator_error <= OPERATOR_CURRENT_CLOSURE_THRESHOLD
+    )
     return {
         "declared_toroidal_current_A": declared_current,
         "operator_toroidal_current_A": operator_current,

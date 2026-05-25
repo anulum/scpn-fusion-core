@@ -259,7 +259,9 @@ def _geqdsk_contract_metrics(eq: Any) -> dict[str, Any]:
         "axis_error_m": axis_error,
         "axis_tolerance_m": axis_tolerance,
         "axis_psi_error_fraction": axis_psi_error_fraction,
-        "axis_index_interior": bool(0 < axis_idx[0] < psi.shape[0] - 1 and 0 < axis_idx[1] < psi.shape[1] - 1),
+        "axis_index_interior": bool(
+            0 < axis_idx[0] < psi.shape[0] - 1 and 0 < axis_idx[1] < psi.shape[1] - 1
+        ),
         "boundary_inside_grid": boundary_inside,
         "profiles_finite": profiles_finite,
         "q_finite_nonzero": q_finite_nonzero,

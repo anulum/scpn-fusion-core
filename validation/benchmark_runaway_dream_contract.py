@@ -37,7 +37,9 @@ def _json_float(value: float) -> float | None:
     return float(value) if np.isfinite(value) else None
 
 
-def _case_result(name: str, params: RunawayParams, n_re: float, loss_time_s: float) -> dict[str, object]:
+def _case_result(
+    name: str, params: RunawayParams, n_re: float, loss_time_s: float
+) -> dict[str, object]:
     start = time.perf_counter()
     balance = dream_fluid_density_balance(params, n_re, loss_time_s=loss_time_s)
     wall_time_s = time.perf_counter() - start

@@ -72,7 +72,9 @@ def test_impurity_pinch_temperature_screening_contract():
     q = 1.0 + rho
     eps = 0.2 + 0.2 * rho
 
-    V_W = neoclassical_impurity_pinch(74, ne, 5000.0 * np.ones(50), Ti_hot_core, q, rho, 6.2, 2.0, eps)
+    V_W = neoclassical_impurity_pinch(
+        74, ne, 5000.0 * np.ones(50), Ti_hot_core, q, rho, 6.2, 2.0, eps
+    )
 
     assert V_W[25] < 0.0
     assert abs(V_W[-2]) > abs(V_W[2])
