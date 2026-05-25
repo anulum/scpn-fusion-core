@@ -13,6 +13,7 @@ import types
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from validation import benchmark_sparc_geqdsk_rmse
 
@@ -183,6 +184,9 @@ def test_geqdsk_contract_metrics_validate_axis_and_boundary() -> None:
     assert metrics["q_finite_nonzero"] is True
     assert metrics["gs_profile_source_ok"] is True
     assert metrics["gs_profile_source_rel_l2"] <= metrics["gs_profile_source_threshold"]
+    assert metrics["gs_profile_source_best_fit_convention"] == "canonical"
+    assert metrics["gs_profile_source_best_fit_scale"] == pytest.approx(1.0)
+    assert metrics["gs_profile_source_best_fit_rel_l2"] < 1e-12
 
 
 def test_geqdsk_contract_metrics_reject_inconsistent_profile_source() -> None:
@@ -219,6 +223,43 @@ def test_geqdsk_contract_metrics_reject_inconsistent_profile_source() -> None:
     assert metrics["geqdsk_source_contract_pass"] is False
     assert metrics["gs_profile_source_ok"] is False
     assert metrics["gs_profile_source_rel_l2"] > metrics["gs_profile_source_threshold"]
+
+
+def test_geqdsk_contract_metrics_attributes_two_pi_source_scale() -> None:
+    from scpn_fusion.core.eqdsk import GEqdsk
+
+    r = np.linspace(1.0, 2.0, 9)
+    z = np.linspace(-0.5, 0.5, 9)
+    _rr, zz = np.meshgrid(r, z)
+    psi = 0.25 * zz**2
+    eq = GEqdsk(
+        nw=9,
+        nh=9,
+        rdim=1.0,
+        zdim=1.0,
+        rleft=1.0,
+        zmid=0.0,
+        rmaxis=1.5,
+        zmaxis=0.0,
+        simag=0.0,
+        sibry=float(np.max(psi)),
+        psirz=psi,
+        fpol=np.ones(9),
+        pres=np.linspace(1.0, 0.0, 9),
+        ffprime=np.full(9, -0.5 / (2.0 * np.pi)),
+        pprime=np.zeros(9),
+        qpsi=np.linspace(1.0, 3.0, 9),
+        rbdry=np.array([1.25, 1.75, 1.75, 1.25]),
+        zbdry=np.array([-0.25, -0.25, 0.25, 0.25]),
+    )
+
+    metrics = benchmark_sparc_geqdsk_rmse._geqdsk_contract_metrics(eq)
+
+    assert metrics["geqdsk_contract_pass"] is True
+    assert metrics["geqdsk_source_contract_pass"] is False
+    assert metrics["gs_profile_source_best_fit_convention"] == "scaled_by_2pi"
+    assert metrics["gs_profile_source_best_fit_scale"] == pytest.approx(2.0 * np.pi)
+    assert metrics["gs_profile_source_best_fit_rel_l2"] < 1e-12
 
 
 def test_run_benchmark_strict_source_contract_enforces_geqdsk_pde(monkeypatch) -> None:

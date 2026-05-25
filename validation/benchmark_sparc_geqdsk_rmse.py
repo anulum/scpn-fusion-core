@@ -47,6 +47,48 @@ def nrmse(y_true: FloatArray, y_pred: FloatArray) -> float:
     return float(np.sqrt(np.mean((y_true - y_pred) ** 2)) / rng)
 
 
+def _source_best_fit_attribution(
+    operator_source: FloatArray,
+    profile_source: FloatArray,
+) -> dict[str, Any]:
+    """Attribute profile-source mismatch to simple global convention factors."""
+    op = np.asarray(operator_source, dtype=np.float64).ravel()
+    src = np.asarray(profile_source, dtype=np.float64).ravel()
+    finite = np.isfinite(op) & np.isfinite(src)
+    op = op[finite]
+    src = src[finite]
+    if op.size == 0:
+        return {
+            "best_fit_scale": float("nan"),
+            "best_fit_rel_l2": float("inf"),
+            "best_fit_convention": "no_finite_points",
+        }
+
+    op_norm = max(float(np.linalg.norm(op)), 1.0e-30)
+    src_norm_sq = max(float(np.dot(src, src)), 1.0e-30)
+    scale = float(np.dot(op, src) / src_norm_sq)
+    residual = float(np.linalg.norm(op - scale * src) / op_norm)
+
+    candidates = {
+        "canonical": 1.0,
+        "negated": -1.0,
+        "scaled_by_2pi": 2.0 * np.pi,
+        "scaled_by_minus_2pi": -2.0 * np.pi,
+        "scaled_by_inv_2pi": 1.0 / (2.0 * np.pi),
+        "scaled_by_minus_inv_2pi": -1.0 / (2.0 * np.pi),
+    }
+    convention = min(candidates, key=lambda name: abs(scale - candidates[name]))
+    relative_distance = abs(scale - candidates[convention]) / max(abs(candidates[convention]), 1.0)
+    if relative_distance > 0.15:
+        convention = "unclassified_global_scale"
+
+    return {
+        "best_fit_scale": scale,
+        "best_fit_rel_l2": residual,
+        "best_fit_convention": convention,
+    }
+
+
 def _build_sparc_like_equilibrium(
     NR: int = 129,
     NZ: int = 129,
@@ -241,6 +283,11 @@ def _geqdsk_contract_metrics(eq: Any) -> dict[str, Any]:
     profile_source_abs_max = float("inf")
     profile_source_points = 0
     profile_source_ok = False
+    source_best_fit = {
+        "best_fit_scale": float("nan"),
+        "best_fit_rel_l2": float("inf"),
+        "best_fit_convention": "not_evaluated",
+    }
     if (
         psi.ndim == 2
         and psi.shape[0] >= 3
@@ -280,12 +327,14 @@ def _geqdsk_contract_metrics(eq: Any) -> dict[str, Any]:
                 float(z[-1]),
             )
             rhs = -MU0 * rr * rr * pprime_grid - ffprime_grid
-            residual = delta_star[1:-1, 1:-1][mask] - rhs[1:-1, 1:-1][mask]
-            reference = rhs[1:-1, 1:-1][mask]
+            operator_values = delta_star[1:-1, 1:-1][mask]
+            source_values = rhs[1:-1, 1:-1][mask]
+            residual = operator_values - source_values
             profile_source_abs_max = float(np.max(np.abs(residual)))
             profile_source_rel_l2 = float(
-                np.linalg.norm(residual) / max(np.linalg.norm(reference), 1.0e-30)
+                np.linalg.norm(residual) / max(np.linalg.norm(source_values), 1.0e-30)
             )
+            source_best_fit = _source_best_fit_attribution(operator_values, source_values)
             profile_source_ok = bool(
                 np.isfinite(profile_source_rel_l2)
                 and profile_source_rel_l2 <= GEQDSK_GS_SOURCE_REL_L2_THRESHOLD
@@ -328,6 +377,9 @@ def _geqdsk_contract_metrics(eq: Any) -> dict[str, Any]:
         "gs_profile_source_points": profile_source_points,
         "gs_profile_source_threshold": GEQDSK_GS_SOURCE_REL_L2_THRESHOLD,
         "gs_profile_source_ok": profile_source_ok,
+        "gs_profile_source_best_fit_scale": source_best_fit["best_fit_scale"],
+        "gs_profile_source_best_fit_rel_l2": source_best_fit["best_fit_rel_l2"],
+        "gs_profile_source_best_fit_convention": source_best_fit["best_fit_convention"],
     }
 
 

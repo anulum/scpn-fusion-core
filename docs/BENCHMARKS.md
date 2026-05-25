@@ -124,13 +124,22 @@ cylindrical operator and checks the EFIT profile-source convention:
 `Delta*psi = -mu0 R^2 p'(psi_N) - FF'(psi_N)`.
 
 The gate records magnetic-axis location error, boundary containment, finite
-profile/q arrays, in-plasma source sample count, absolute source residual, and
-source-relative L2 residual. The current source-rel-L2 threshold is `5e-2`.
+profile/q arrays, in-plasma source sample count, absolute source residual,
+source-relative L2 residual, and best-fit convention attribution for global
+source scaling (`canonical`, sign flips, `2π`, and inverse-`2π`). The current
+source-rel-L2 threshold is `5e-2`.
 The source contract is available as a strict gate via
 `python validation/benchmark_sparc_geqdsk_rmse.py --strict-source-contract`.
 The default benchmark records these metrics without failing mixed-convention
 public files, so profile-inconsistent references are visible but do not hide
 the standard point-wise `psi` benchmark status.
+
+Local source-convention attribution on the bundled public SPARC rows shows
+four high-current cases (`sparc_1305`, `sparc_1310`, `sparc_1315`,
+`sparc_1349`) are explained by a near-`2π` global source scale
+(`best_fit_scale = 6.16–6.25`, best-fit relative L2 `0.067–0.139`). The
+`lmode_*` rows and `sparc_1300` remain unclassified, so they are not accepted
+as strict native source-contract evidence.
 
 Polyglot status: the native Julia, Go, Rust, and Lean solver packages expose
 the same operator-current surfaces. Julia, Go, and Rust package tests validate
