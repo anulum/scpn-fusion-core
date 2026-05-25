@@ -623,6 +623,41 @@ def test_build_manifest_rejects_inconsistent_reference_equilibrium_curation(
         prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
 
 
+def test_build_manifest_requires_synthetic_license_for_proxy_equilibria(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "reference_data"
+    (root / "diiid").mkdir(parents=True)
+    (root / "diiid" / "case.geqdsk").write_text("diiid\n", encoding="utf-8")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    rules = [
+        {
+            "id": "diiid_reference_equilibria",
+            "glob": "diiid/*.geqdsk",
+            "source_type": "reference_equilibrium_bundle",
+            "source": "Bundled DIII-D-like equilibrium references for validation lanes.",
+            "license": "see-file",
+            "license_notice": "validation/reference_data/diiid/LICENSE",
+            "reference_class": "synthetic_proxy_reference",
+            "reference_role": "diagnostic",
+            "reference_expected_contract": "synthetic_solovev_geqdsk_diagnostic_contract",
+            "reference_expected_convention": "synthetic_proxy_profile_source",
+        },
+        {
+            "id": "policy",
+            "glob": "provenance_policy.json",
+            "source_type": "documentation",
+            "source": "policy",
+            "license": "AGPL-3.0-or-later",
+        },
+    ]
+    _write_json(policy, _policy_with_rules(rules))
+
+    with pytest.raises(ValueError, match="synthetic proxy references require synthetic license"):
+        prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+
+
 def test_build_manifest_rejects_mismatched_reference_contracts_and_conventions(
     tmp_path: Path,
 ) -> None:

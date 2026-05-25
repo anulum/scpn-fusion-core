@@ -195,6 +195,10 @@ def _normalize_rules(
                 raise ValueError(
                     f"rule {dataset_id} synthetic proxy references must be diagnostic."
                 )
+            if reference_class == "synthetic_proxy_reference" and license_name != "synthetic-v1":
+                raise ValueError(
+                    f"rule {dataset_id} synthetic proxy references require synthetic license."
+                )
             if (
                 reference_class == "synthetic_proxy_reference"
                 and expected_contract != "synthetic_solovev_geqdsk_diagnostic_contract"
