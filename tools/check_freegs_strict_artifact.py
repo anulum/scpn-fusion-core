@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,15 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORT = REPO_ROOT / "artifacts" / "freegs_benchmark.json"
 DEFAULT_SUMMARY = REPO_ROOT / "artifacts" / "freegs_strict_guard_summary.json"
+REQUIRED_FINITE_CASE_METRICS = (
+    "psi_nrmse",
+    "psi_nrmse_normalized",
+    "q_profile_nrmse",
+    "axis_error_m",
+    "separatrix_nrmse",
+    "flux_area_rel_error",
+    "invariant_pass_fraction",
+)
 
 
 def _resolve(path_value: str) -> Path:
@@ -32,6 +42,10 @@ def _load_json(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"{path}: expected JSON object payload")
     return payload
+
+
+def _finite_number(value: Any) -> bool:
+    return isinstance(value, int | float) and math.isfinite(float(value))
 
 
 def evaluate(report: dict[str, Any]) -> dict[str, Any]:
@@ -56,6 +70,13 @@ def evaluate(report: dict[str, Any]) -> dict[str, Any]:
             not bool(case.get("freegs_fallback", False)) for case in cases
         ),
         "no_case_level_errors": all("error" not in case for case in cases),
+        "all_required_metrics_present": all(
+            all(metric in case for metric in REQUIRED_FINITE_CASE_METRICS) for case in cases
+        ),
+        "all_required_metrics_finite": all(
+            all(_finite_number(case.get(metric)) for metric in REQUIRED_FINITE_CASE_METRICS)
+            for case in cases
+        ),
     }
 
     failed_checks = [key for key, value in checks.items() if not bool(value)]

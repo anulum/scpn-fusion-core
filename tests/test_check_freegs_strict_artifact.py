@@ -12,6 +12,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "tools" / "check_freegs_strict_artifact.py"
@@ -30,8 +32,30 @@ def test_evaluate_passes_for_strict_freegs_contract() -> None:
         "unconverged_case_count": 0,
         "all_cases_converged": True,
         "cases": [
-            {"reference_backend": "freegs", "passes": True, "freegs_fallback": False},
-            {"reference_backend": "freegs", "passes": True, "freegs_fallback": False},
+            {
+                "reference_backend": "freegs",
+                "passes": True,
+                "freegs_fallback": False,
+                "psi_nrmse": 0.01,
+                "psi_nrmse_normalized": 0.01,
+                "q_profile_nrmse": 0.01,
+                "axis_error_m": 0.01,
+                "separatrix_nrmse": 0.01,
+                "flux_area_rel_error": 0.01,
+                "invariant_pass_fraction": 1.0,
+            },
+            {
+                "reference_backend": "freegs",
+                "passes": True,
+                "freegs_fallback": False,
+                "psi_nrmse": 0.02,
+                "psi_nrmse_normalized": 0.02,
+                "q_profile_nrmse": 0.02,
+                "axis_error_m": 0.02,
+                "separatrix_nrmse": 0.02,
+                "flux_area_rel_error": 0.02,
+                "invariant_pass_fraction": 1.0,
+            },
         ],
     }
     summary = checker.evaluate(report)
@@ -73,6 +97,61 @@ def test_evaluate_fails_when_any_case_is_unconverged() -> None:
     assert "unconverged_case_count_zero" in summary["failed_checks"]
 
 
+@pytest.mark.parametrize("bad_value", [float("nan"), float("inf")])
+def test_evaluate_fails_when_strict_metric_is_nonfinite(bad_value: float) -> None:
+    report = {
+        "mode": "freegs",
+        "require_freegs_backend": True,
+        "runtime_fallback_allowed": False,
+        "freegs_runtime_fallback_cases": 0,
+        "unconverged_case_count": 0,
+        "all_cases_converged": True,
+        "cases": [
+            {
+                "reference_backend": "freegs",
+                "passes": True,
+                "freegs_fallback": False,
+                "psi_nrmse": bad_value,
+                "psi_nrmse_normalized": 0.01,
+                "q_profile_nrmse": 0.01,
+                "axis_error_m": 0.01,
+                "separatrix_nrmse": 0.01,
+                "flux_area_rel_error": 0.01,
+                "invariant_pass_fraction": 1.0,
+            }
+        ],
+    }
+
+    summary = checker.evaluate(report)
+
+    assert summary["overall_pass"] is False
+    assert "all_required_metrics_finite" in summary["failed_checks"]
+
+
+def test_evaluate_fails_when_strict_metric_is_missing() -> None:
+    report = {
+        "mode": "freegs",
+        "require_freegs_backend": True,
+        "runtime_fallback_allowed": False,
+        "freegs_runtime_fallback_cases": 0,
+        "unconverged_case_count": 0,
+        "all_cases_converged": True,
+        "cases": [
+            {
+                "reference_backend": "freegs",
+                "passes": True,
+                "freegs_fallback": False,
+                "psi_nrmse": 0.01,
+            }
+        ],
+    }
+
+    summary = checker.evaluate(report)
+
+    assert summary["overall_pass"] is False
+    assert "all_required_metrics_present" in summary["failed_checks"]
+
+
 def test_main_writes_summary_json(tmp_path: Path) -> None:
     report_path = tmp_path / "freegs.json"
     summary_path = tmp_path / "summary.json"
@@ -90,6 +169,13 @@ def test_main_writes_summary_json(tmp_path: Path) -> None:
                         "reference_backend": "freegs",
                         "passes": True,
                         "freegs_fallback": False,
+                        "psi_nrmse": 0.01,
+                        "psi_nrmse_normalized": 0.01,
+                        "q_profile_nrmse": 0.01,
+                        "axis_error_m": 0.01,
+                        "separatrix_nrmse": 0.01,
+                        "flux_area_rel_error": 0.01,
+                        "invariant_pass_fraction": 1.0,
                     }
                 ],
             }
