@@ -140,6 +140,16 @@ def _radial_convergence_order(cases: list[dict[str, Any]]) -> float | None:
     )
 
 
+def _radial_total_current_relative_error_max(cases: list[dict[str, Any]]) -> float:
+    """Return the worst total-current closure error over radial-quartic grids."""
+    radial_errors = [
+        float(case["total_current_relative_error"])
+        for case in cases
+        if case["case"].startswith("radial_quartic")
+    ]
+    return max(radial_errors) if radial_errors else float("inf")
+
+
 def _write_markdown(report: dict[str, Any]) -> None:
     lines = [
         "# Grad-Shafranov Operator Current Closure Benchmark",
@@ -195,6 +205,10 @@ def _write_markdown(report: dict[str, Any]) -> None:
                 "The radial-quartic analytic error measures the expected centered-stencil "
                 "truncation against the continuous `Delta*` operator. The measured "
                 f"order from the two finest radial grids is `{report['radial_convergence_order']:.6f}`.",
+                "",
+                "The radial-quartic total-current closure stability gate reports the "
+                "worst relative current error across the refinement sequence: "
+                f"`{report['radial_total_current_relative_error_max']:.6e}`.",
             ]
         )
     lines.extend(
@@ -213,6 +227,7 @@ def main() -> int:
         "delta_star_max_abs_error": 1.0e-10,
         "current_density_max_relative_error": 1.0e-11,
         "total_current_relative_error": 1.0e-12,
+        "radial_total_current_relative_error_max": 1.0e-12,
     }
     cases = [
         _run_case("vertical_quadratic", 17, 19, 0.0, -0.25),
@@ -222,6 +237,10 @@ def main() -> int:
         _run_case("mixed_solovev", 29, 31, 0.0, -0.125, 0.05),
     ]
     radial_convergence_order = _radial_convergence_order(cases)
+    radial_current_error_max = _radial_total_current_relative_error_max(cases)
+    radial_current_closure_stability_pass = bool(
+        radial_current_error_max <= thresholds["radial_total_current_relative_error_max"]
+    )
     passed = (
         all(
             case["delta_star_max_abs_error"] <= thresholds["delta_star_max_abs_error"]
@@ -232,6 +251,7 @@ def main() -> int:
         )
         and radial_convergence_order is not None
         and 1.99 <= radial_convergence_order <= 2.01
+        and radial_current_closure_stability_pass
     )
     report = {
         "benchmark": "gs_operator_current_closure",
@@ -239,6 +259,8 @@ def main() -> int:
         "thresholds": thresholds,
         "cases": cases,
         "radial_convergence_order": radial_convergence_order,
+        "radial_total_current_relative_error_max": radial_current_error_max,
+        "radial_current_closure_stability_pass": radial_current_closure_stability_pass,
         "passed": passed,
     }
     REPORT_DIR.mkdir(parents=True, exist_ok=True)

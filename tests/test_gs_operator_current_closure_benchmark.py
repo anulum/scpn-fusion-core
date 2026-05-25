@@ -32,3 +32,15 @@ def test_benchmark_report_includes_mixed_solovev_operator_case() -> None:
     report = json.loads(REPORT_JSON.read_text(encoding="utf-8"))
 
     assert "mixed_solovev" in {case["case"] for case in report["cases"]}
+
+
+def test_benchmark_report_gates_radial_current_closure_stability() -> None:
+    """Radial grid refinement should expose a total-current closure stability gate."""
+    assert run_benchmark() == 0
+    report = json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+
+    assert (
+        report["radial_total_current_relative_error_max"]
+        <= report["thresholds"]["radial_total_current_relative_error_max"]
+    )
+    assert report["radial_current_closure_stability_pass"] is True

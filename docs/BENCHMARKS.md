@@ -114,9 +114,12 @@ Local run on this machine:
 The radial-quartic analytic error equals the expected second-order centered
 stencil truncation `2a dR^2`. The measured order from the two finest grids is
 `1.999999977`; the discrete-contract error remains near machine precision.
+The radial refinement sequence now also gates total-current closure stability:
+worst radial-quartic total-current relative error is `8.311852886233243e-16`
+against threshold `1e-12`.
 
 Status: PASS against thresholds `Delta* <= 1e-10`, `J_rel <= 1e-11`,
-`I_total_rel <= 1e-12`.
+`I_total_rel <= 1e-12`, and radial current-closure stability `<= 1e-12`.
 
 ### GEQDSK Grad-Shafranov source contract
 
