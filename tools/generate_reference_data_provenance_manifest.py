@@ -184,6 +184,10 @@ def _normalize_rules(
                 raise ValueError(
                     f"rule {dataset_id} public EFIT references require public EFIT contract."
                 )
+            if reference_class == "public_efit_reference" and license_name == "synthetic-v1":
+                raise ValueError(
+                    f"rule {dataset_id} public EFIT references cannot use synthetic license."
+                )
             if (
                 reference_class == "public_efit_reference"
                 and expected_convention != "raw_canonical_strict_unless_named_adapter_passes"

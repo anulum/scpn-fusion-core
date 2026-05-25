@@ -619,7 +619,7 @@ def test_build_manifest_rejects_inconsistent_reference_equilibrium_curation(
     rules[0]["reference_expected_convention"] = "raw_canonical_strict_unless_named_adapter_passes"
     _write_json(policy, _policy_with_rules(rules))
 
-    with pytest.raises(ValueError, match="gate reference equilibria cannot use synthetic"):
+    with pytest.raises(ValueError, match="public EFIT references cannot use synthetic license"):
         prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
 
 
@@ -655,6 +655,40 @@ def test_build_manifest_requires_synthetic_license_for_proxy_equilibria(
     _write_json(policy, _policy_with_rules(rules))
 
     with pytest.raises(ValueError, match="synthetic proxy references require synthetic license"):
+        prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+
+
+def test_build_manifest_rejects_synthetic_license_for_public_efit_equilibria(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "reference_data"
+    (root / "sparc").mkdir(parents=True)
+    (root / "sparc" / "case.eqdsk").write_text("sparc\n", encoding="utf-8")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    rules = [
+        {
+            "id": "sparc_reference_bundle",
+            "glob": "sparc/*.eqdsk",
+            "source_type": "reference_equilibrium_bundle",
+            "source": "SPARC public equilibrium references.",
+            "license": "synthetic-v1",
+            "reference_class": "public_efit_reference",
+            "reference_role": "diagnostic",
+            "reference_expected_contract": "public_efit_geqdsk_operator_and_profile_source_contract",
+            "reference_expected_convention": "raw_canonical_strict_unless_named_adapter_passes",
+        },
+        {
+            "id": "policy",
+            "glob": "provenance_policy.json",
+            "source_type": "documentation",
+            "source": "policy",
+            "license": "AGPL-3.0-or-later",
+        },
+    ]
+    _write_json(policy, _policy_with_rules(rules))
+
+    with pytest.raises(ValueError, match="public EFIT references cannot use synthetic license"):
         prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
 
 
