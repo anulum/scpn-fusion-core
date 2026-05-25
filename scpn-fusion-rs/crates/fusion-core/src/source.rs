@@ -61,6 +61,29 @@ impl GeqdskSourceConvention {
     }
 }
 
+impl TryFrom<&str> for GeqdskSourceConvention {
+    type Error = FusionError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "canonical" => Ok(Self::Canonical),
+            "negated" => Ok(Self::Negated),
+            "scaled_by_2pi" => Ok(Self::ScaledByTwoPi),
+            "scaled_by_minus_2pi" => Ok(Self::ScaledByMinusTwoPi),
+            "scaled_by_inv_2pi" => Ok(Self::ScaledByInvTwoPi),
+            "scaled_by_minus_inv_2pi" => Ok(Self::ScaledByMinusInvTwoPi),
+            "times_flux_span" => Ok(Self::TimesFluxSpan),
+            "over_flux_span" => Ok(Self::OverFluxSpan),
+            "negated_times_flux_span" => Ok(Self::NegatedTimesFluxSpan),
+            "negated_over_flux_span" => Ok(Self::NegatedOverFluxSpan),
+            "not_evaluated" => Ok(Self::NotEvaluated),
+            other => Err(FusionError::ConfigError(format!(
+                "unknown GEQDSK source convention '{other}'"
+            ))),
+        }
+    }
+}
+
 /// Result of ranking named GEQDSK source-convention transforms against an operator source.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GeqdskSourceConventionAdapter {
@@ -747,6 +770,33 @@ mod tests {
             apply_geqdsk_source_convention(&source, GeqdskSourceConvention::OverFluxSpan, 0.0,)
                 .is_err()
         );
+    }
+
+    #[test]
+    fn test_geqdsk_source_convention_names_round_trip_strictly() {
+        let conventions = [
+            GeqdskSourceConvention::Canonical,
+            GeqdskSourceConvention::Negated,
+            GeqdskSourceConvention::ScaledByTwoPi,
+            GeqdskSourceConvention::ScaledByMinusTwoPi,
+            GeqdskSourceConvention::ScaledByInvTwoPi,
+            GeqdskSourceConvention::ScaledByMinusInvTwoPi,
+            GeqdskSourceConvention::TimesFluxSpan,
+            GeqdskSourceConvention::OverFluxSpan,
+            GeqdskSourceConvention::NegatedTimesFluxSpan,
+            GeqdskSourceConvention::NegatedOverFluxSpan,
+            GeqdskSourceConvention::NotEvaluated,
+        ];
+
+        for convention in conventions {
+            let parsed = GeqdskSourceConvention::try_from(convention.as_str())
+                .expect("documented convention labels should parse");
+            assert_eq!(parsed, convention);
+        }
+
+        let err = GeqdskSourceConvention::try_from("least_squares_fit")
+            .expect_err("fitted conventions are not executable native adapters");
+        assert!(matches!(err, FusionError::ConfigError(_)));
     }
 
     #[test]
