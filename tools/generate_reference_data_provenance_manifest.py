@@ -30,6 +30,15 @@ REFERENCE_CURATION_FIELDS = (
     "reference_expected_convention",
 )
 REFERENCE_EQUILIBRIUM_SOURCE_TYPE = "reference_equilibrium_bundle"
+REFERENCE_CLASSES = {"public_efit_reference", "synthetic_proxy_reference"}
+REFERENCE_EXPECTED_CONTRACTS = {
+    "public_efit_geqdsk_operator_and_profile_source_contract",
+    "synthetic_solovev_geqdsk_diagnostic_contract",
+}
+REFERENCE_EXPECTED_CONVENTIONS = {
+    "raw_canonical_strict_unless_named_adapter_passes",
+    "synthetic_proxy_profile_source",
+}
 
 
 def _content_bytes(path: Path) -> bytes:
@@ -158,16 +167,26 @@ def _normalize_rules(
             reference_role = curation["reference_role"]
             expected_contract = curation["reference_expected_contract"]
             expected_convention = curation["reference_expected_convention"]
-            if reference_class not in {"public_efit_reference", "synthetic_proxy_reference"}:
+            if reference_class not in REFERENCE_CLASSES:
                 raise ValueError(f"rule {dataset_id} unknown reference_class: {reference_class}")
-            if reference_class == "public_efit_reference" and not expected_contract.startswith(
-                "public_efit_"
+            if expected_contract not in REFERENCE_EXPECTED_CONTRACTS:
+                raise ValueError(
+                    f"rule {dataset_id} unknown reference_expected_contract: {expected_contract}"
+                )
+            if expected_convention not in REFERENCE_EXPECTED_CONVENTIONS:
+                raise ValueError(
+                    f"rule {dataset_id} unknown reference_expected_convention: {expected_convention}"
+                )
+            if (
+                reference_class == "public_efit_reference"
+                and expected_contract != "public_efit_geqdsk_operator_and_profile_source_contract"
             ):
                 raise ValueError(
                     f"rule {dataset_id} public EFIT references require public EFIT contract."
                 )
-            if reference_class == "public_efit_reference" and not expected_convention.startswith(
-                "raw_canonical_"
+            if (
+                reference_class == "public_efit_reference"
+                and expected_convention != "raw_canonical_strict_unless_named_adapter_passes"
             ):
                 raise ValueError(
                     f"rule {dataset_id} public EFIT references require raw canonical convention."
@@ -176,8 +195,9 @@ def _normalize_rules(
                 raise ValueError(
                     f"rule {dataset_id} synthetic proxy references must be diagnostic."
                 )
-            if reference_class == "synthetic_proxy_reference" and not expected_contract.startswith(
-                "synthetic_"
+            if (
+                reference_class == "synthetic_proxy_reference"
+                and expected_contract != "synthetic_solovev_geqdsk_diagnostic_contract"
             ):
                 raise ValueError(
                     f"rule {dataset_id} synthetic proxy references require synthetic contract."

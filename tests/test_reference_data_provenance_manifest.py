@@ -715,6 +715,50 @@ def test_build_manifest_rejects_unknown_reference_equilibrium_class(
         prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
 
 
+def test_build_manifest_rejects_noncanonical_reference_contract_labels(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "reference_data"
+    (root / "sparc").mkdir(parents=True)
+    (root / "sparc" / "case.eqdsk").write_text("sparc\n", encoding="utf-8")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    rules = [
+        {
+            "id": "sparc_reference_bundle",
+            "glob": "sparc/*.eqdsk",
+            "source_type": "reference_equilibrium_bundle",
+            "source": "SPARC public equilibrium references.",
+            "license": "see-file",
+            "license_notice": "validation/reference_data/sparc/LICENSE",
+            "reference_class": "public_efit_reference",
+            "reference_role": "gate",
+            "reference_expected_contract": "public_efit_fake_contract",
+            "reference_expected_convention": "raw_canonical_strict_unless_named_adapter_passes",
+        },
+        {
+            "id": "policy",
+            "glob": "provenance_policy.json",
+            "source_type": "documentation",
+            "source": "policy",
+            "license": "AGPL-3.0-or-later",
+        },
+    ]
+    _write_json(policy, _policy_with_rules(rules))
+
+    with pytest.raises(ValueError, match="unknown reference_expected_contract"):
+        prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+
+    rules[0]["reference_expected_contract"] = (
+        "public_efit_geqdsk_operator_and_profile_source_contract"
+    )
+    rules[0]["reference_expected_convention"] = "raw_canonical_unreviewed"
+    _write_json(policy, _policy_with_rules(rules))
+
+    with pytest.raises(ValueError, match="unknown reference_expected_convention"):
+        prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+
+
 def test_build_manifest_requires_curation_metadata_for_reference_equilibria(
     tmp_path: Path,
 ) -> None:
