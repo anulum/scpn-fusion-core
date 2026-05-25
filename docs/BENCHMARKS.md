@@ -558,7 +558,8 @@ clearance `0.380789 m`, status `PASS`.
 The actual `solve_free_boundary` path now returns the same coil/vacuum
 reconstruction diagnostic on its computational boundary; latest local solver
 contract result: vacuum-boundary absolute error `0.00e+00` over `256` boundary
-points in `1` outer iteration, status `PASS`.
+points in `1` outer iteration, with `4` limiter points, `2` X-points, and
+axis flux `2.589381e-01`, status `PASS`.
 
 GEQDSK-to-native configuration now preserves free-boundary geometry metadata:
 `GEqdsk.to_config()` exports the parsed plasma boundary as isoflux target

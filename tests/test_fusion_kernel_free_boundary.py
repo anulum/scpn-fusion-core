@@ -230,7 +230,18 @@ def test_solve_free_boundary_returns_contract() -> None:
         positions=[(5.2, 0.0)],
         currents=np.array([0.0], dtype=np.float64),
     )
-    result = solve_free_boundary(k, coils, max_outer_iter=1, tol=0.0)
+    limiter_points = np.array([[5.0, -0.5], [6.0, -0.5], [6.0, 0.5], [5.0, 0.5]], dtype=np.float64)
+    axis_point = np.array([5.5, 0.0], dtype=np.float64)
+    x_points = np.array([[5.25, -0.45]], dtype=np.float64)
+    result = solve_free_boundary(
+        k,
+        coils,
+        max_outer_iter=1,
+        tol=0.0,
+        limiter_points=limiter_points,
+        axis_point=axis_point,
+        x_points=x_points,
+    )
     assert result["outer_iterations"] == 1
     assert "final_diff" in result
     assert "coil_currents" in result
@@ -238,4 +249,7 @@ def test_solve_free_boundary_returns_contract() -> None:
     assert result["boundary_reconstruction"]["point_count"] == 4 * (k.NR - 1)
     assert result["boundary_reconstruction"]["coil_count"] == 1
     assert result["boundary_reconstruction"]["max_abs_error"] == 0.0
+    assert result["boundary_reconstruction"]["limiter_point_count"] == 4
+    assert result["boundary_reconstruction"]["x_point_count"] == 1
+    assert result["boundary_reconstruction"]["axis_flux"] is not None
     assert k.solve_calls == 1

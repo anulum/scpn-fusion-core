@@ -148,6 +148,9 @@ class FusionKernelFreeBoundaryMixin:
         tol: float = 1e-4,
         optimize_shape: bool = False,
         tikhonov_alpha: float = 1e-4,
+        limiter_points: FloatArray | None = None,
+        axis_point: FloatArray | None = None,
+        x_points: FloatArray | None = None,
     ) -> dict[str, Any]:
         """Run the free-boundary outer loop with optional coil optimisation."""
         return _solve_free_boundary_runtime(
@@ -157,6 +160,9 @@ class FusionKernelFreeBoundaryMixin:
             tol=tol,
             optimize_shape=optimize_shape,
             tikhonov_alpha=tikhonov_alpha,
+            limiter_points=limiter_points,
+            axis_point=axis_point,
+            x_points=x_points,
         )
 
     def _interp_psi(self, R_pt: float, Z_pt: float) -> float:

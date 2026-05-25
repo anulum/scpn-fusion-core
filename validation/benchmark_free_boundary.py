@@ -111,12 +111,28 @@ def run_free_boundary_benchmark() -> dict:
                 and np.isfinite(boundary_reconstruction["axis_flux"])
             ),
         }
-        solve_contract = kernel.solve_free_boundary(coils, max_outer_iter=1, tol=0.0)
+        solve_contract = kernel.solve_free_boundary(
+            coils,
+            max_outer_iter=1,
+            tol=0.0,
+            limiter_points=limiter_points,
+            axis_point=axis_point,
+            x_points=x_points,
+        )
         results["solve_free_boundary_vacuum_reconstruction"] = {
             "outer_iterations": int(solve_contract["outer_iterations"]),
             "boundary_point_count": int(solve_contract["boundary_reconstruction"]["point_count"]),
+            "limiter_point_count": int(
+                solve_contract["boundary_reconstruction"]["limiter_point_count"]
+            ),
+            "x_point_count": int(solve_contract["boundary_reconstruction"]["x_point_count"]),
+            "axis_flux": float(solve_contract["boundary_reconstruction"]["axis_flux"]),
             "vacuum_boundary_abs_error": float(solve_contract["vacuum_boundary_abs_error"]),
-            "pass": bool(solve_contract["vacuum_boundary_abs_error"] < 1.0e-12),
+            "pass": bool(
+                solve_contract["vacuum_boundary_abs_error"] < 1.0e-12
+                and solve_contract["boundary_reconstruction"]["limiter_point_count"] == 4
+                and solve_contract["boundary_reconstruction"]["x_point_count"] == 2
+            ),
         }
 
         # 2. Helmholtz Pair Field
@@ -293,6 +309,11 @@ def main():
         f.write(
             "| Solver free-boundary contract | Boundary points | "
             f"{solver_fb['boundary_point_count']} over {solver_fb['outer_iterations']} outer iter | N/A |\n"
+        )
+        f.write(
+            "| Solver free-boundary contract | Topology metadata | "
+            f"{solver_fb['limiter_point_count']} limiter, {solver_fb['x_point_count']} X-points, "
+            f"axis flux {solver_fb['axis_flux']:.6e} | {solver_fb['pass']} |\n"
         )
         hm = res["helmholtz"]
         f.write(f"| Helmholtz | B_z Axis Ref | {hm['bz_axis_ref']:.4f} T | N/A |\n")

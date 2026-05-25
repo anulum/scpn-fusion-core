@@ -584,6 +584,9 @@ def solve_free_boundary(
     tol: float = 1e-4,
     optimize_shape: bool = False,
     tikhonov_alpha: float = 1e-4,
+    limiter_points: FloatArray | None = None,
+    axis_point: FloatArray | None = None,
+    x_points: FloatArray | None = None,
 ) -> dict[str, Any]:
     """Solve the Grad-Shafranov system with externally driven coil boundary flux.
 
@@ -645,6 +648,9 @@ def solve_free_boundary(
         kernel,
         coils,
         boundary_points=boundary_points,
+        limiter_points=limiter_points,
+        axis_point=axis_point,
+        x_points=x_points,
         target_flux=boundary_target,
     )
 
