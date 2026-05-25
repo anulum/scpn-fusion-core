@@ -242,6 +242,30 @@ def test_boundary_reconstruction_reports_limiter_containment(kernel: FusionKerne
     assert reconstruction["boundary_containment_pass"] is True
 
 
+def test_boundary_reconstruction_reports_x_point_topology_residual(kernel: FusionKernel):
+    """Symmetric X-point metadata should produce a bounded vacuum-flux residual."""
+    coils = CoilSet(
+        positions=[(5.5, 0.0)],
+        currents=np.array([1.0e4], dtype=np.float64),
+        turns=[50],
+    )
+    boundary_points = np.array(
+        [[5.0, -1.0], [6.0, -0.5], [6.5, 0.0], [6.0, 0.5], [5.0, 1.0]],
+        dtype=np.float64,
+    )
+    x_points = np.array([[6.0, -0.75], [6.0, 0.75]], dtype=np.float64)
+
+    reconstruction = kernel.reconstruct_boundary_flux_from_coils(
+        coils,
+        boundary_points=boundary_points,
+        axis_point=np.array([5.5, 0.0], dtype=np.float64),
+        x_points=x_points,
+    )
+
+    assert reconstruction["x_point_flux_span"] == pytest.approx(0.0, abs=1.0e-18)
+    assert reconstruction["x_point_pair_symmetry_abs_error"] == pytest.approx(0.0, abs=1.0e-18)
+
+
 # ── Coil current optimization ───────────────────────────────────────
 
 

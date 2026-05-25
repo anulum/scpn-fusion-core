@@ -201,6 +201,8 @@ def reconstruct_boundary_flux_from_coils(
         "axis_flux": None,
         "x_point_count": 0,
         "x_point_flux": np.array([], dtype=np.float64),
+        "x_point_flux_span": None,
+        "x_point_pair_symmetry_abs_error": None,
     }
     if limiter_points is not None:
         limiter_obs = _as_finite_points(limiter_points, name="limiter_points")
@@ -233,11 +235,24 @@ def reconstruct_boundary_flux_from_coils(
     if x_points is not None:
         x_obs = _as_finite_points(x_points, name="x_points")
         x_response = build_mutual_inductance_matrix(kernel, coils, x_obs)
+        x_flux = x_response.T @ currents
+        x_flux_span = float(np.max(x_flux) - np.min(x_flux)) if x_flux.size else None
+        x_pair_symmetry_error = None
+        axis_for_symmetry = diagnostics.get("axis_point")
+        if axis_for_symmetry is not None and x_obs.shape[0] == 2:
+            same_major_radius = abs(float(x_obs[0, 0] - x_obs[1, 0])) <= 1.0e-9
+            mirrored_about_axis = (
+                abs(float(x_obs[0, 1] + x_obs[1, 1] - 2.0 * axis_for_symmetry[1])) <= 1.0e-9
+            )
+            if same_major_radius and mirrored_about_axis:
+                x_pair_symmetry_error = float(abs(x_flux[0] - x_flux[1]))
         diagnostics.update(
             {
                 "x_points": x_obs,
-                "x_point_flux": x_response.T @ currents,
+                "x_point_flux": x_flux,
                 "x_point_count": int(x_obs.shape[0]),
+                "x_point_flux_span": x_flux_span,
+                "x_point_pair_symmetry_abs_error": x_pair_symmetry_error,
             }
         )
     if target_flux is not None:

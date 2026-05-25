@@ -589,21 +589,23 @@ operator-source solves.
 Latest local result: boundary Green reconstruction RMSE `0.00e+00`, max
 absolute error `0.00e+00`, response rank `1/1` coils over `5` contour points,
 `4` limiter points, `2` X-points, axis flux `2.589381e-01`, minimum limiter
-clearance `0.380789 m`, limiter containment fraction `1.000`, status `PASS`.
+clearance `0.380789 m`, limiter containment fraction `1.000`, symmetric
+X-point pair flux residual `0.00e+00`, status `PASS`.
 The actual `solve_free_boundary` path now returns the same coil/vacuum
 reconstruction diagnostic on its computational boundary; latest local solver
 contract result: vacuum-boundary absolute error `0.00e+00` over `256` boundary
 points in `1` outer iteration, with `4` limiter points, `2` X-points, and
 axis flux `2.589381e-01`, computational-boundary containment fraction `0.000`
-(diagnostic-only because the computational wall is outside the limiter), status
-`PASS`.
+(diagnostic-only because the computational wall is outside the limiter),
+symmetric X-point pair flux residual `0.00e+00`, status `PASS`.
 Rust `fusion-core::vacuum` now exposes the same native boundary-flux
 reconstruction contract through `reconstruct_boundary_flux_from_coils` and
 `reconstruct_boundary_flux_from_coils_with_metadata`, including optional target
 residual, RMSE, max absolute error, point count, coil count, limiter flux,
-minimum limiter clearance, axis flux, and X-point flux. This is a full Rust
-implementation using the same circular-filament Green function, not a wrapper
-around the Python benchmark path.
+minimum limiter clearance, axis flux, X-point flux, X-point flux span, and
+symmetric X-point pair flux residual. This is a full Rust implementation using
+the same circular-filament Green function, not a wrapper around the Python
+benchmark path.
 Go, Julia, and Lean are not listed as free-boundary parity surfaces here because
 their current native packages do not expose equivalent coil Green-function,
 limiter, axis, or X-point reconstruction logic.

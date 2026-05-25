@@ -262,6 +262,8 @@ pub struct BoundaryFluxReconstruction {
     pub axis_flux: Option<f64>,
     pub x_point_flux: Vec<f64>,
     pub x_point_count: usize,
+    pub x_point_flux_span: Option<f64>,
+    pub x_point_pair_symmetry_abs_error: Option<f64>,
 }
 
 /// Optional topology metadata for free-boundary contour reconstruction.
@@ -357,6 +359,29 @@ pub fn reconstruct_boundary_flux_from_coils_with_metadata(
     } else {
         Vec::new()
     };
+    let x_point_flux_span = if x_point_flux.is_empty() {
+        None
+    } else {
+        let min_flux = x_point_flux.iter().copied().fold(f64::INFINITY, f64::min);
+        let max_flux = x_point_flux
+            .iter()
+            .copied()
+            .fold(f64::NEG_INFINITY, f64::max);
+        Some(max_flux - min_flux)
+    };
+    let x_point_pair_symmetry_abs_error =
+        if let (Some(axis), Some(points)) = (metadata.axis_point, metadata.x_points) {
+            if points.len() == 2
+                && (points[0].0 - points[1].0).abs() <= 1.0e-9
+                && (points[0].1 + points[1].1 - 2.0 * axis.1).abs() <= 1.0e-9
+            {
+                Some((x_point_flux[0] - x_point_flux[1]).abs())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
     Ok(BoundaryFluxReconstruction {
         reconstructed_flux,
@@ -371,6 +396,8 @@ pub fn reconstruct_boundary_flux_from_coils_with_metadata(
         axis_flux,
         x_point_count: x_point_flux.len(),
         x_point_flux,
+        x_point_flux_span,
+        x_point_pair_symmetry_abs_error,
     })
 }
 
@@ -619,6 +646,43 @@ mod tests {
                 .min_limiter_distance_m
                 .expect("limiter clearance")
                 > 0.0
+        );
+    }
+
+    #[test]
+    fn test_boundary_flux_reconstruction_reports_x_point_topology_residual() {
+        let coils = vec![CoilConfig {
+            name: "pf".to_string(),
+            r: 5.0,
+            z: 0.0,
+            current: 2.0,
+        }];
+        let boundary_points = vec![(4.5, -1.0), (5.5, -1.25), (6.5, 0.25), (5.5, 1.25)];
+        let x_points = vec![(6.0, -0.75), (6.0, 0.75)];
+
+        let reconstruction = reconstruct_boundary_flux_from_coils_with_metadata(
+            &boundary_points,
+            &coils,
+            None,
+            1.0,
+            BoundaryFluxMetadata {
+                limiter_points: None,
+                axis_point: Some((5.0, 0.0)),
+                x_points: Some(&x_points),
+            },
+        )
+        .expect("valid topology reconstruction");
+
+        assert!(
+            reconstruction.x_point_flux_span.expect("X-point span") < 1.0e-14,
+            "symmetric X-point pair should have equal vacuum flux"
+        );
+        assert!(
+            reconstruction
+                .x_point_pair_symmetry_abs_error
+                .expect("X-point pair symmetry")
+                < 1.0e-14,
+            "symmetric X-point pair should report a bounded topology residual"
         );
     }
 }
