@@ -201,6 +201,9 @@ dataset id, provenance class, gate role, expected contract, and expected
 source convention. Public SPARC files are gate rows; synthetic DIII-D/JET
 GEQDSK files are diagnostic rows only and cannot be accidentally counted as
 public EFIT parity evidence.
+The reference-data provenance manifest now emits the same curation fields for
+GEQDSK/EQDSK equilibrium files, so benchmark inputs are also separable before
+they are consumed by the EFIT/GEQDSK reports.
 
 The same report now includes an adapted profile-source reconstruction gate for
 rows where that explicit named adapter is accepted. This is not a replacement

@@ -5,6 +5,12 @@ simulation outputs against real tokamak parameters.
 
 ## Datasets
 
+`provenance_manifest.json` is the machine-readable source-of-truth for
+benchmark reference curation. GEQDSK/EQDSK equilibrium rows declare whether a
+case is a public EFIT gate or a synthetic diagnostic proxy, plus the expected
+solver contract and source convention. Public SPARC equilibrium rows are gate
+references; synthetic DIII-D/JET equilibrium rows are diagnostic-only proxies.
+
 ### SPARC (Commonwealth Fusion Systems)
 
 Equilibrium files from the [SPARCPublic](https://github.com/cfs-energy/SPARCPublic)

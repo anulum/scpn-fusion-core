@@ -23,6 +23,13 @@ DEFAULT_ROOT = REPO_ROOT / "validation" / "reference_data"
 DEFAULT_POLICY = DEFAULT_ROOT / "provenance_policy.json"
 DEFAULT_MANIFEST = DEFAULT_ROOT / "provenance_manifest.json"
 _BINARY_SUFFIXES = {".npz"}
+REFERENCE_CURATION_FIELDS = (
+    "reference_class",
+    "reference_role",
+    "reference_expected_contract",
+    "reference_expected_convention",
+)
+REFERENCE_EQUILIBRIUM_SOURCE_TYPE = "reference_equilibrium_bundle"
 
 
 def _content_bytes(path: Path) -> bytes:
@@ -130,17 +137,33 @@ def _normalize_rules(
             raise ValueError(
                 f"rule {dataset_id} uses license '{license_name}' which requires license_notice."
             )
-        out.append(
-            {
-                "id": dataset_id,
-                "glob": glob_pat,
-                "source": source,
-                "license": license_name,
-                "source_type": source_type,
-                "citation": citation,
-                "license_notice": license_notice,
-            }
-        )
+        curation = {field: str(raw.get(field, "")).strip() for field in REFERENCE_CURATION_FIELDS}
+        missing_curation = [
+            field
+            for field, value in curation.items()
+            if source_type == REFERENCE_EQUILIBRIUM_SOURCE_TYPE and not value
+        ]
+        if missing_curation:
+            missing = ", ".join(missing_curation)
+            raise ValueError(
+                f"reference equilibrium rule {dataset_id} missing curation field(s): {missing}"
+            )
+        if curation["reference_role"] and curation["reference_role"] not in {
+            "gate",
+            "diagnostic",
+        }:
+            raise ValueError(f"rule {dataset_id} reference_role must be 'gate' or 'diagnostic'.")
+        rule = {
+            "id": dataset_id,
+            "glob": glob_pat,
+            "source": source,
+            "license": license_name,
+            "source_type": source_type,
+            "citation": citation,
+            "license_notice": license_notice,
+        }
+        rule.update(curation)
+        out.append(rule)
     return out
 
 
@@ -256,6 +279,9 @@ def build_manifest(
             row["citation"] = rule["citation"]
         if rule["license_notice"]:
             row["license_notice"] = rule["license_notice"]
+        for field in REFERENCE_CURATION_FIELDS:
+            if rule[field]:
+                row[field] = rule[field]
         file_rows.append(row)
 
         acc = dataset_rows.get(rule["id"])
@@ -275,6 +301,9 @@ def build_manifest(
                 acc["citation"] = rule["citation"]
             if rule["license_notice"]:
                 acc["license_notice"] = rule["license_notice"]
+            for field in REFERENCE_CURATION_FIELDS:
+                if rule[field]:
+                    acc[field] = rule[field]
             dataset_rows[rule["id"]] = acc
         else:
             if str(acc.get("license", "")) != rule["license"]:
@@ -282,6 +311,14 @@ def build_manifest(
                     f"dataset id {rule['id']} maps to multiple licenses: "
                     f"{acc.get('license')} vs {rule['license']}"
                 )
+            for field in REFERENCE_CURATION_FIELDS:
+                if rule[field] and not str(acc.get(field, "")):
+                    acc[field] = rule[field]
+                elif rule[field] and str(acc.get(field, "")) != rule[field]:
+                    raise ValueError(
+                        f"dataset id {rule['id']} maps to multiple {field} values: "
+                        f"{acc.get(field)} vs {rule[field]}"
+                    )
         acc["file_count"] = int(acc["file_count"]) + 1
         acc["total_bytes"] = int(acc["total_bytes"]) + size_bytes
 

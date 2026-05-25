@@ -516,3 +516,95 @@ def test_build_manifest_emits_license_policy_metadata(tmp_path: Path) -> None:
     assert sparc_file["license"] == "see-file"
     assert sparc_file["license_notice"] == "validation/reference_data/sparc/LICENSE"
     assert sparc_file["license_attribution_required"] is True
+
+
+def test_build_manifest_emits_reference_equilibrium_curation_metadata(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "reference_data"
+    (root / "sparc").mkdir(parents=True)
+    (root / "diiid").mkdir(parents=True)
+    (root / "sparc" / "case.eqdsk").write_text("sparc\n", encoding="utf-8")
+    (root / "diiid" / "case.geqdsk").write_text("diiid\n", encoding="utf-8")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    rules = [
+        {
+            "id": "sparc_reference_bundle",
+            "glob": "sparc/*.eqdsk",
+            "source_type": "reference_equilibrium_bundle",
+            "source": "SPARC public equilibrium references.",
+            "license": "see-file",
+            "license_notice": "validation/reference_data/sparc/LICENSE",
+            "reference_class": "public_efit_reference",
+            "reference_role": "gate",
+            "reference_expected_contract": "public_efit_geqdsk_operator_and_profile_source_contract",
+            "reference_expected_convention": "raw_canonical_strict_unless_named_adapter_passes",
+        },
+        {
+            "id": "diiid_reference_equilibria",
+            "glob": "diiid/*.geqdsk",
+            "source_type": "reference_equilibrium_bundle",
+            "source": "Bundled DIII-D-like equilibrium references for validation lanes.",
+            "license": "synthetic-v1",
+            "reference_class": "synthetic_proxy_reference",
+            "reference_role": "diagnostic",
+            "reference_expected_contract": "synthetic_solovev_geqdsk_diagnostic_contract",
+            "reference_expected_convention": "synthetic_proxy_profile_source",
+        },
+        {
+            "id": "policy",
+            "glob": "provenance_policy.json",
+            "source_type": "documentation",
+            "source": "policy",
+            "license": "AGPL-3.0-or-later",
+        },
+    ]
+    _write_json(policy, _policy_with_rules(rules))
+
+    payload = prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+    sparc_file = next(row for row in payload["files"] if row["path"] == "sparc/case.eqdsk")
+    diiid_file = next(row for row in payload["files"] if row["path"] == "diiid/case.geqdsk")
+    sparc_dataset = next(
+        row for row in payload["datasets"] if row["id"] == "sparc_reference_bundle"
+    )
+
+    assert sparc_file["reference_class"] == "public_efit_reference"
+    assert sparc_file["reference_role"] == "gate"
+    assert sparc_file["reference_expected_convention"] == (
+        "raw_canonical_strict_unless_named_adapter_passes"
+    )
+    assert diiid_file["reference_class"] == "synthetic_proxy_reference"
+    assert diiid_file["reference_role"] == "diagnostic"
+    assert sparc_dataset["reference_role"] == "gate"
+
+
+def test_build_manifest_requires_curation_metadata_for_reference_equilibria(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "reference_data"
+    (root / "sparc").mkdir(parents=True)
+    (root / "sparc" / "case.eqdsk").write_text("sparc\n", encoding="utf-8")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    rules = [
+        {
+            "id": "sparc_reference_bundle",
+            "glob": "sparc/*.eqdsk",
+            "source_type": "reference_equilibrium_bundle",
+            "source": "SPARC public equilibrium references.",
+            "license": "see-file",
+            "license_notice": "validation/reference_data/sparc/LICENSE",
+        },
+        {
+            "id": "policy",
+            "glob": "provenance_policy.json",
+            "source_type": "documentation",
+            "source": "policy",
+            "license": "AGPL-3.0-or-later",
+        },
+    ]
+    _write_json(policy, _policy_with_rules(rules))
+
+    with pytest.raises(ValueError, match="reference equilibrium rule .* missing"):
+        prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)

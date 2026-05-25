@@ -99,7 +99,11 @@
       "glob": "diiid/*.geqdsk",
       "source_type": "reference_equilibrium_bundle",
       "source": "Bundled DIII-D-like equilibrium references for validation lanes.",
-      "license": "synthetic-v1"
+      "license": "synthetic-v1",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "reference_expected_contract": "synthetic_solovev_geqdsk_diagnostic_contract",
+      "reference_expected_convention": "synthetic_proxy_profile_source"
     },
     {
       "id": "diiid_disruption_calibration",
@@ -164,7 +168,11 @@
       "glob": "jet/*.geqdsk",
       "source_type": "reference_equilibrium_bundle",
       "source": "Bundled JET-like equilibrium references for validation lanes.",
-      "license": "synthetic-v1"
+      "license": "synthetic-v1",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "reference_expected_contract": "synthetic_solovev_geqdsk_diagnostic_contract",
+      "reference_expected_convention": "synthetic_proxy_profile_source"
     },
     {
       "id": "sparc_license_file",
@@ -196,7 +204,11 @@
       "source_type": "reference_equilibrium_bundle",
       "source": "SPARC public equilibrium references.",
       "license": "see-file",
-      "license_notice": "validation/reference_data/sparc/LICENSE"
+      "license_notice": "validation/reference_data/sparc/LICENSE",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "reference_expected_contract": "public_efit_geqdsk_operator_and_profile_source_contract",
+      "reference_expected_convention": "raw_canonical_strict_unless_named_adapter_passes"
     },
     {
       "id": "sparc_reference_bundle",
@@ -204,7 +216,11 @@
       "source_type": "reference_equilibrium_bundle",
       "source": "SPARC public equilibrium references.",
       "license": "see-file",
-      "license_notice": "validation/reference_data/sparc/LICENSE"
+      "license_notice": "validation/reference_data/sparc/LICENSE",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "reference_expected_contract": "public_efit_geqdsk_operator_and_profile_source_contract",
+      "reference_expected_convention": "raw_canonical_strict_unless_named_adapter_passes"
     }
   ]
 }
