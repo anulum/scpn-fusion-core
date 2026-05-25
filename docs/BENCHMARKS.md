@@ -556,6 +556,11 @@ Free-boundary contour reconstruction now has a native Green-function gate:
 point set directly from coil currents and the circular-filament response
 matrix, without replaying fixed Dirichlet values. The same gate now samples
 limiter, magnetic-axis, and X-point metadata with the same vacuum response.
+The tracked JSON report declares `benchmark_id =
+free_boundary_coil_vacuum_reconstruction`, `benchmark_scope =
+free_boundary_reconstruction`, and per-lane `physics_scope`/`solver_mode`
+fields so it cannot be confused with fixed-boundary profile-source or
+operator-source solves.
 Latest local result: boundary Green reconstruction RMSE `0.00e+00`, max
 absolute error `0.00e+00`, response rank `1/1` coils over `5` contour points,
 `4` limiter points, `2` X-points, axis flux `2.589381e-01`, minimum limiter

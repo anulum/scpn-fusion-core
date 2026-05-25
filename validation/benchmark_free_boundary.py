@@ -38,7 +38,15 @@ def jackson_psi(Rc: float, Zc: float, R: float, Z: float, I: float = 1.0) -> flo
 
 
 def run_free_boundary_benchmark() -> dict:
-    results = {}
+    results = {
+        "schema_version": 2,
+        "benchmark_id": "free_boundary_coil_vacuum_reconstruction",
+        "benchmark_scope": "free_boundary_reconstruction",
+        "benchmark_contract": (
+            "External coil Green-function vacuum flux on boundary, limiter, axis, and X-point "
+            "metadata; not a fixed-boundary Dirichlet replay or reduced-order surrogate."
+        ),
+    }
 
     # Setup a minimal kernel
     cfg = {
@@ -64,6 +72,8 @@ def run_free_boundary_benchmark() -> dict:
         val_ref = jackson_psi(1.0, 0.0, kernel.R[ir], kernel.Z[iz], 1e6)
 
         results["single_coil"] = {
+            "physics_scope": "external_coil_vacuum_flux",
+            "solver_mode": "analytic_circular_filament_green_function",
             "calculated": float(val_calc),
             "reference": float(val_ref),
             "error_rel": float(abs(val_calc - val_ref) / val_ref),
@@ -93,6 +103,8 @@ def run_free_boundary_benchmark() -> dict:
             target_flux=target_flux,
         )
         results["boundary_flux_reconstruction"] = {
+            "physics_scope": "external_coil_boundary_vacuum_flux",
+            "solver_mode": "coil_green_boundary_reconstruction",
             "point_count": int(boundary_reconstruction["point_count"]),
             "limiter_point_count": int(boundary_reconstruction["limiter_point_count"]),
             "x_point_count": int(boundary_reconstruction["x_point_count"]),
@@ -120,6 +132,8 @@ def run_free_boundary_benchmark() -> dict:
             x_points=x_points,
         )
         results["solve_free_boundary_vacuum_reconstruction"] = {
+            "physics_scope": "free_boundary_coil_vacuum_boundary",
+            "solver_mode": "free_boundary_solver_with_coil_vacuum_boundary",
             "outer_iterations": int(solve_contract["outer_iterations"]),
             "boundary_point_count": int(solve_contract["boundary_reconstruction"]["point_count"]),
             "limiter_point_count": int(
@@ -247,6 +261,8 @@ def run_free_boundary_benchmark() -> dict:
             int(Z.shape[0]) - 1 - axis_z_index,
         )
         results["jax_free_boundary_wall_flux"] = {
+            "physics_scope": "free_boundary_wall_flux_contract",
+            "solver_mode": "jax_free_boundary_wall_flux_contract",
             "grid": "33x33",
             "picard_iterations": 10,
             "sor_sweeps_per_picard": 10,
@@ -282,6 +298,9 @@ def main():
 
     with open(report_dir / "free_boundary_benchmark.md", "w") as f:
         f.write("# Free-Boundary Validation Benchmark\n\n")
+        f.write(f"- Benchmark ID: `{res['benchmark_id']}`\n")
+        f.write(f"- Benchmark scope: `{res['benchmark_scope']}`\n")
+        f.write(f"- Contract: {res['benchmark_contract']}\n\n")
         f.write("| Test | Metric | Result | Pass |\n")
         f.write("|------|--------|--------|------|\n")
         sc = res["single_coil"]

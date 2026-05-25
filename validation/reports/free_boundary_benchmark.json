@@ -1,11 +1,19 @@
 {
+  "schema_version": 2,
+  "benchmark_id": "free_boundary_coil_vacuum_reconstruction",
+  "benchmark_scope": "free_boundary_reconstruction",
+  "benchmark_contract": "External coil Green-function vacuum flux on boundary, limiter, axis, and X-point metadata; not a fixed-boundary Dirichlet replay or reduced-order surrogate.",
   "single_coil": {
+    "physics_scope": "external_coil_vacuum_flux",
+    "solver_mode": "analytic_circular_filament_green_function",
     "calculated": 0.1855526305247041,
     "reference": 0.1855526305247041,
     "error_rel": 0.0,
     "pass": true
   },
   "boundary_flux_reconstruction": {
+    "physics_scope": "external_coil_boundary_vacuum_flux",
+    "solver_mode": "coil_green_boundary_reconstruction",
     "point_count": 5,
     "limiter_point_count": 4,
     "x_point_count": 2,
@@ -20,6 +28,8 @@
     "pass": true
   },
   "solve_free_boundary_vacuum_reconstruction": {
+    "physics_scope": "free_boundary_coil_vacuum_boundary",
+    "solver_mode": "free_boundary_solver_with_coil_vacuum_boundary",
     "outer_iterations": 1,
     "boundary_point_count": 256,
     "limiter_point_count": 4,
@@ -42,10 +52,12 @@
     "pass": true
   },
   "jax_free_boundary_wall_flux": {
+    "physics_scope": "free_boundary_wall_flux_contract",
+    "solver_mode": "jax_free_boundary_wall_flux_contract",
     "grid": "33x33",
     "picard_iterations": 10,
     "sor_sweeps_per_picard": 10,
-    "wall_time_s": 1.1074175500543788,
+    "wall_time_s": 0.7249060160247609,
     "vacuum_boundary_abs_error": 7.105427357601002e-15,
     "vacuum_boundary_flux_level": 16.551065542554525,
     "interior_axis_flux": 66.04980778478084,
