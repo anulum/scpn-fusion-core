@@ -30,3 +30,26 @@ end
     @test_throws ArgumentError GradShafranovCase(; omega_j=2.0)
     @test_throws ArgumentError GradShafranovCase(; beta_mix=1.5)
 end
+
+@testset "operator-current closure" begin
+    case = GradShafranovCase(; R_min=1.0, R_max=3.0, Z_min=-1.0, Z_max=1.0,
+        NR=17, NZ=19, Ip_target=1.0e6, n_picard=2, n_jacobi=2)
+    z = range(case.Z_min, case.Z_max; length=case.NZ)
+    dR = (case.R_max - case.R_min) / (case.NR - 1)
+    dZ = (case.Z_max - case.Z_min) / (case.NZ - 1)
+    coeff = -0.25
+    psi = [coeff * z[iz]^2 for iz in 1:case.NZ, _ in 1:case.NR]
+
+    delta_star = grad_shafranov_delta_star(case, psi)
+    current_density = toroidal_current_density_from_flux(case, psi)
+    total_current = total_toroidal_current_from_flux(case, psi)
+
+    expected_total = 0.0
+    for iz in 2:case.NZ-1, ir in 2:case.NR-1
+        expected_j = -2.0 * coeff / (case.mu0 * (case.R_min + (ir - 1) * dR))
+        @test abs(delta_star[iz, ir] - 2.0 * coeff) < 1.0e-12
+        @test abs(current_density[iz, ir] - expected_j) < 1.0e-6
+        expected_total += expected_j * dR * dZ
+    end
+    @test abs((total_current - expected_total) / expected_total) < 1.0e-12
+end

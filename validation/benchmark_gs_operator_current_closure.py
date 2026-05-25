@@ -101,8 +101,7 @@ def _write_markdown(report: dict[str, Any]) -> None:
     lines = [
         "# Grad-Shafranov Operator Current Closure Benchmark",
         "",
-        "Manufactured contract: `psi(R, Z) = c Z^2`, `Delta*psi = 2c`, "
-        "`J_phi = -2c / (mu0 R)`.",
+        "Manufactured contract: `psi(R, Z) = c Z^2`, `Delta*psi = 2c`, `J_phi = -2c / (mu0 R)`.",
         "",
         "## Local machine",
         "",
@@ -158,8 +157,7 @@ def main() -> int:
         case["delta_star_max_abs_error"] <= thresholds["delta_star_max_abs_error"]
         and case["current_density_max_relative_error"]
         <= thresholds["current_density_max_relative_error"]
-        and case["total_current_relative_error"]
-        <= thresholds["total_current_relative_error"]
+        and case["total_current_relative_error"] <= thresholds["total_current_relative_error"]
         for case in cases
     )
     report = {
@@ -170,7 +168,7 @@ def main() -> int:
         "passed": passed,
     }
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    REPORT_JSON.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    REPORT_JSON.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     _write_markdown(report)
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0 if passed else 1

@@ -98,11 +98,24 @@ Local run on this machine:
 
 | Grid | coeff | elapsed s | max Delta* abs error | max J rel error | total current rel error |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 17x19 | -0.25 | 2.400550e-04 | 5.662137e-15 | 1.138333e-14 | 1.523927e-16 |
-| 33x35 | -0.125 | 1.734650e-04 | 7.827072e-15 | 3.140702e-14 | 4.276956e-16 |
+| 17x19 | -0.25 | 3.641140e-04 | 5.662137e-15 | 1.138333e-14 | 1.523927e-16 |
+| 33x35 | -0.125 | 3.287330e-04 | 7.827072e-15 | 3.140702e-14 | 4.276956e-16 |
 
 Status: PASS against thresholds `Delta* <= 1e-10`, `J_rel <= 1e-12`,
 `I_total_rel <= 1e-12`.
+
+Polyglot status: the native Julia, Go, Rust, and Lean solver packages expose
+the same operator-current surfaces. Julia, Go, and Rust package tests validate
+manufactured `psi(R, Z) = c Z^2` closure; Lean builds the corresponding
+`deltaStar`, `toroidalCurrentDensityFromFlux`, and
+`totalToroidalCurrentFromFlux` definitions as part of `lake build`.
+
+Local verification commands:
+
+- `julia --project=scpn-fusion-jl scpn-fusion-jl/test/runtests.jl`
+- `go test ./gssolver`
+- `cargo test -p fusion-polyglot operator_current_closure`
+- `lake build`
 
 ### Transport Source Power-Balance Contract
 

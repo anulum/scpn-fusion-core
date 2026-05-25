@@ -274,6 +274,47 @@ def maxChange (a b : Matrix) : Float := Id.run do
       best := fmax best (Float.abs (get2D a iz ir - get2D b iz ir))
   return best
 
+def deltaStar (c : GradShafranovCase) (psi : Matrix) : Matrix := Id.run do
+  let r := linspace c.rMin c.rMax c.nr
+  let dR := (c.rMax - c.rMin) / Float.ofNat (c.nr - 1)
+  let dZ := (c.zMax - c.zMin) / Float.ofNat (c.nz - 1)
+  let dR2 := dR * dR
+  let dZ2 := dZ * dZ
+  let mut out := zeros c.nz c.nr
+  for iz in List.range c.nz do
+    if iz > 0 && iz + 1 < c.nz then
+      for ir in List.range c.nr do
+        if ir > 0 && ir + 1 < c.nr then
+          let radius := r.getD ir 1.0
+          let d2DR2 := (get2D psi iz (ir + 1) - 2.0 * get2D psi iz ir + get2D psi iz (ir - 1)) / dR2
+          let dDROverR := (get2D psi iz (ir + 1) - get2D psi iz (ir - 1)) / (2.0 * dR * radius)
+          let d2DZ2 := (get2D psi (iz + 1) ir - 2.0 * get2D psi iz ir + get2D psi (iz - 1) ir) / dZ2
+          out := set2D out iz ir (d2DR2 - dDROverR + d2DZ2)
+  return out
+
+def toroidalCurrentDensityFromFlux (c : GradShafranovCase) (psi : Matrix) : Matrix := Id.run do
+  let r := linspace c.rMin c.rMax c.nr
+  let delta := deltaStar c psi
+  let mut out := zeros c.nz c.nr
+  for iz in List.range c.nz do
+    if iz > 0 && iz + 1 < c.nz then
+      for ir in List.range c.nr do
+        if ir > 0 && ir + 1 < c.nr then
+          out := set2D out iz ir (-(get2D delta iz ir) / (c.mu0 * r.getD ir 1.0))
+  return out
+
+def totalToroidalCurrentFromFlux (c : GradShafranovCase) (psi : Matrix) : Float := Id.run do
+  let currentDensity := toroidalCurrentDensityFromFlux c psi
+  let dR := (c.rMax - c.rMin) / Float.ofNat (c.nr - 1)
+  let dZ := (c.zMax - c.zMin) / Float.ofNat (c.nz - 1)
+  let mut total := 0.0
+  for iz in List.range c.nz do
+    if iz > 0 && iz + 1 < c.nz then
+      for ir in List.range c.nr do
+        if ir > 0 && ir + 1 < c.nr then
+          total := total + get2D currentDensity iz ir * dR * dZ
+  return total
+
 def solveGradShafranov (c : GradShafranovCase) : Except String GradShafranovResult := do
   validateCase c
   let rr := rGrid c

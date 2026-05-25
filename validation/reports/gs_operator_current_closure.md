@@ -17,8 +17,8 @@ Manufactured contract: `psi(R, Z) = c Z^2`, `Delta*psi = 2c`, `J_phi = -2c / (mu
 
 | Grid | coeff | elapsed s | max Delta* abs error | max J rel error | total current rel error |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 17x19 | -0.25 | 2.400550e-04 | 5.662137e-15 | 1.138333e-14 | 1.523927e-16 |
-| 33x35 | -0.125 | 1.734650e-04 | 7.827072e-15 | 3.140702e-14 | 4.276956e-16 |
+| 17x19 | -0.25 | 3.641140e-04 | 5.662137e-15 | 1.138333e-14 | 1.523927e-16 |
+| 33x35 | -0.125 | 3.287330e-04 | 7.827072e-15 | 3.140702e-14 | 4.276956e-16 |
 
 Pass threshold: `{'delta_star_max_abs_error': 1e-10, 'current_density_max_relative_error': 1e-12, 'total_current_relative_error': 1e-12}`.
 Overall status: `PASS`.

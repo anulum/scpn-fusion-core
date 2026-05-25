@@ -295,6 +295,83 @@ fn enforce_boundary(psi: &mut [Vec<f64>]) {
     }
 }
 
+fn validate_flux_matrix(case: &GradShafranovCase, psi: &[Vec<f64>]) -> Result<(), String> {
+    validate_case(case)?;
+    if psi.len() != case.nz {
+        return Err("psi row count must match Grad-Shafranov case grid".to_string());
+    }
+    for row in psi {
+        if row.len() != case.nr {
+            return Err("psi column count must match Grad-Shafranov case grid".to_string());
+        }
+        if row.iter().any(|value| !value.is_finite()) {
+            return Err("psi must contain only finite values".to_string());
+        }
+    }
+    Ok(())
+}
+
+/// Evaluate the cylindrical Grad-Shafranov operator Delta*psi on the native grid.
+pub fn grad_shafranov_delta_star(
+    case: &GradShafranovCase,
+    psi: &[Vec<f64>],
+) -> Result<Vec<Vec<f64>>, String> {
+    validate_flux_matrix(case, psi)?;
+    let r = linspace(case.r_min, case.r_max, case.nr);
+    let dr = (case.r_max - case.r_min) / ((case.nr - 1) as f64);
+    let dz = (case.z_max - case.z_min) / ((case.nz - 1) as f64);
+    let dr2 = dr * dr;
+    let dz2 = dz * dz;
+    let mut delta_star = vec![vec![0.0; case.nr]; case.nz];
+
+    for iz in 1..(case.nz - 1) {
+        for (ir, radius) in r.iter().enumerate().take(case.nr - 1).skip(1) {
+            let d2_dr2 = (psi[iz][ir + 1] - 2.0 * psi[iz][ir] + psi[iz][ir - 1]) / dr2;
+            let d_dr_over_r = (psi[iz][ir + 1] - psi[iz][ir - 1]) / (2.0 * dr * radius);
+            let d2_dz2 = (psi[iz + 1][ir] - 2.0 * psi[iz][ir] + psi[iz - 1][ir]) / dz2;
+            delta_star[iz][ir] = d2_dr2 - d_dr_over_r + d2_dz2;
+        }
+    }
+    Ok(delta_star)
+}
+
+/// Return J_phi implied by Delta*psi = -mu0 R J_phi.
+pub fn toroidal_current_density_from_flux(
+    case: &GradShafranovCase,
+    psi: &[Vec<f64>],
+) -> Result<Vec<Vec<f64>>, String> {
+    validate_flux_matrix(case, psi)?;
+    let r = linspace(case.r_min, case.r_max, case.nr);
+    let delta_star = grad_shafranov_delta_star(case, psi)?;
+    let mut current_density = vec![vec![0.0; case.nr]; case.nz];
+    for iz in 1..(case.nz - 1) {
+        for (ir, radius) in r.iter().enumerate().take(case.nr - 1).skip(1) {
+            current_density[iz][ir] = -delta_star[iz][ir] / (case.mu0 * radius);
+        }
+    }
+    Ok(current_density)
+}
+
+/// Integrate J_phi implied by a flux grid over the native R-Z grid.
+pub fn total_toroidal_current_from_flux(
+    case: &GradShafranovCase,
+    psi: &[Vec<f64>],
+) -> Result<f64, String> {
+    let current_density = toroidal_current_density_from_flux(case, psi)?;
+    let dr = (case.r_max - case.r_min) / ((case.nr - 1) as f64);
+    let dz = (case.z_max - case.z_min) / ((case.nz - 1) as f64);
+    let mut total = 0.0;
+    for row in current_density.iter().take(case.nz - 1).skip(1) {
+        for value in row.iter().take(case.nr - 1).skip(1) {
+            total += value * dr * dz;
+        }
+    }
+    if !total.is_finite() {
+        return Err("integrated toroidal current became non-finite".to_string());
+    }
+    Ok(total)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -360,5 +437,38 @@ omega_j = 0.6666666666666666
 ";
         let err = parse_case(text).expect_err("missing beta_mix must fail closed");
         assert!(err.contains("missing required Grad-Shafranov case field: beta_mix"));
+    }
+
+    #[test]
+    fn operator_current_closure_matches_z_quadratic_manufactured_solution() {
+        let mut case = reference_case();
+        case.z_min = -1.0;
+        case.z_max = 1.0;
+        case.nr = 17;
+        case.nz = 19;
+        let z = linspace(case.z_min, case.z_max, case.nz);
+        let coeff = -0.25_f64;
+        let psi: Vec<Vec<f64>> = z
+            .iter()
+            .map(|z_value| vec![coeff * z_value * z_value; case.nr])
+            .collect();
+
+        let delta_star = grad_shafranov_delta_star(&case, &psi).unwrap();
+        let current_density = toroidal_current_density_from_flux(&case, &psi).unwrap();
+        let total_current = total_toroidal_current_from_flux(&case, &psi).unwrap();
+        let dr = (case.r_max - case.r_min) / ((case.nr - 1) as f64);
+        let dz = (case.z_max - case.z_min) / ((case.nz - 1) as f64);
+
+        let mut expected_total = 0.0;
+        for iz in 1..(case.nz - 1) {
+            for ir in 1..(case.nr - 1) {
+                let r = case.r_min + (ir as f64) * dr;
+                let expected_j = -2.0 * coeff / (case.mu0 * r);
+                assert!((delta_star[iz][ir] - 2.0 * coeff).abs() < 1.0e-12);
+                assert!((current_density[iz][ir] - expected_j).abs() < 1.0e-6);
+                expected_total += expected_j * dr * dz;
+            }
+        }
+        assert!(((total_current - expected_total) / expected_total).abs() < 1.0e-12);
     }
 }

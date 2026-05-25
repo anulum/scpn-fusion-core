@@ -7,7 +7,9 @@
 # SCPN Fusion Core — Native Julia Solvers
 module SCPNFusionSolvers
 
-export GradShafranovCase, GradShafranovResult, case_from_toml, solve_grad_shafranov
+export GradShafranovCase, GradShafranovResult, case_from_toml,
+    grad_shafranov_delta_star, solve_grad_shafranov,
+    toroidal_current_density_from_flux, total_toroidal_current_from_flux
 
 using TOML
 
@@ -141,6 +143,51 @@ function _jacobi_step(psi::Matrix{Float64}, source::Matrix{Float64}, rr::Matrix{
         psi_new[iz, ir] = (1.0 - omega_j) * psi[iz, ir] + omega_j * update
     end
     return psi_new
+end
+
+function _validate_flux_matrix(case::GradShafranovCase, psi::Matrix{Float64})::Nothing
+    _validate_case(case)
+    size(psi) == (case.NZ, case.NR) || throw(ArgumentError(
+        "psi shape must match the Grad-Shafranov case grid"))
+    all(isfinite, psi) || throw(ArgumentError("psi must contain only finite values"))
+    return nothing
+end
+
+"""Evaluate the cylindrical Grad-Shafranov operator Delta*psi on the native grid."""
+function grad_shafranov_delta_star(case::GradShafranovCase, psi::Matrix{Float64})::Matrix{Float64}
+    _validate_flux_matrix(case, psi)
+    r, _, _, dR, dZ = _r_grid(case)
+    delta_star = zeros(Float64, case.NZ, case.NR)
+    dR2 = dR * dR
+    dZ2 = dZ * dZ
+
+    for iz in 2:case.NZ-1, ir in 2:case.NR-1
+        d2_dR2 = (psi[iz, ir + 1] - 2.0 * psi[iz, ir] + psi[iz, ir - 1]) / dR2
+        d_dR_over_R = (psi[iz, ir + 1] - psi[iz, ir - 1]) / (2.0 * dR * r[ir])
+        d2_dZ2 = (psi[iz + 1, ir] - 2.0 * psi[iz, ir] + psi[iz - 1, ir]) / dZ2
+        delta_star[iz, ir] = d2_dR2 - d_dR_over_R + d2_dZ2
+    end
+    return delta_star
+end
+
+"""Return J_phi implied by Delta*psi = -mu0 R J_phi."""
+function toroidal_current_density_from_flux(case::GradShafranovCase, psi::Matrix{Float64})::Matrix{Float64}
+    _validate_flux_matrix(case, psi)
+    r, _, _, _, _ = _r_grid(case)
+    delta_star = grad_shafranov_delta_star(case, psi)
+    current_density = zeros(Float64, case.NZ, case.NR)
+    for iz in 2:case.NZ-1, ir in 2:case.NR-1
+        current_density[iz, ir] = -delta_star[iz, ir] / (case.mu0 * r[ir])
+    end
+    return current_density
+end
+
+"""Integrate J_phi implied by a flux grid over the native R-Z grid."""
+function total_toroidal_current_from_flux(case::GradShafranovCase, psi::Matrix{Float64})::Float64
+    _validate_flux_matrix(case, psi)
+    _, _, _, dR, dZ = _r_grid(case)
+    current_density = toroidal_current_density_from_flux(case, psi)
+    return sum(@view current_density[2:end-1, 2:end-1]) * dR * dZ
 end
 
 function _max_change(a::Matrix{Float64}, b::Matrix{Float64})::Float64

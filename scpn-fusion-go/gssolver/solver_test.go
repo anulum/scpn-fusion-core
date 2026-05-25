@@ -59,3 +59,50 @@ func TestCaseValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestOperatorCurrentClosureManufacturedZQuadratic(t *testing.T) {
+	c := referenceCase()
+	c.ZMin = -1.0
+	c.ZMax = 1.0
+	c.NR = 17
+	c.NZ = 19
+	_, z, _, dR, dZ := grid(c)
+	coeff := -0.25
+	psi := zeros(c.NZ, c.NR)
+	for iz := 0; iz < c.NZ; iz++ {
+		for ir := 0; ir < c.NR; ir++ {
+			psi[iz][ir] = coeff * z[iz] * z[iz]
+		}
+	}
+
+	deltaStar, err := DeltaStar(c, psi)
+	if err != nil {
+		t.Fatal(err)
+	}
+	currentDensity, err := ToroidalCurrentDensityFromFlux(c, psi)
+	if err != nil {
+		t.Fatal(err)
+	}
+	totalCurrent, err := TotalToroidalCurrentFromFlux(c, psi)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedTotal := 0.0
+	for iz := 1; iz < c.NZ-1; iz++ {
+		for ir := 1; ir < c.NR-1; ir++ {
+			r := c.RMin + float64(ir)*dR
+			expectedJ := -2.0 * coeff / (c.Mu0 * r)
+			if math.Abs(deltaStar[iz][ir]-2.0*coeff) > 1.0e-12 {
+				t.Fatalf("unexpected Delta* at (%d, %d): %.17g", iz, ir, deltaStar[iz][ir])
+			}
+			if math.Abs(currentDensity[iz][ir]-expectedJ) > 1.0e-6 {
+				t.Fatalf("unexpected J_phi at (%d, %d): %.17g", iz, ir, currentDensity[iz][ir])
+			}
+			expectedTotal += expectedJ * dR * dZ
+		}
+	}
+	if math.Abs((totalCurrent-expectedTotal)/expectedTotal) > 1.0e-12 {
+		t.Fatalf("unexpected total current: got %.17g expected %.17g", totalCurrent, expectedTotal)
+	}
+}

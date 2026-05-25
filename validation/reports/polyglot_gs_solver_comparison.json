@@ -125,7 +125,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.0052412730001378804
+      "wall_time_s": 0.004863932001171634
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -142,7 +142,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 3.840212673996575
+      "wall_time_s": 3.8565967400209047
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -159,7 +159,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.0023510869941674173
+      "wall_time_s": 0.0023499449889641255
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -176,7 +176,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.0013292660005390644
+      "wall_time_s": 0.0013449540128931403
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -193,7 +193,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 1.3682095330150332
+      "wall_time_s": 1.3821006630023476
     }
   ]
 }

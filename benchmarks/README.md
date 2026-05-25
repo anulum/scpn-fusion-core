@@ -50,6 +50,13 @@ non-Python path implements the stencil, nonlinear source construction, Picard
 loop, and boundary handling in its own language; these paths are not Python FFI
 wrappers.
 
+The polyglot packages also expose native Grad-Shafranov operator-current
+diagnostics where applicable: `Delta*psi`, `J_phi = -Delta*psi/(mu0 R)`, and
+the integrated toroidal current. Julia, Go, Rust, and Lean implement this
+operator in their own language surfaces; package tests exercise manufactured
+`psi(R, Z) = c Z^2` closure for Julia, Go, and Rust, while Lean is covered by
+the package build surface.
+
 | File | Contents |
 |------|----------|
 | `validation/polyglot/gs_picard_reference.toml` | Shared cross-language case definition |

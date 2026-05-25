@@ -289,3 +289,78 @@ func jacobiStep(c Case, psi, source, rr [][]float64, dR, dZ float64) [][]float64
 	}
 	return out
 }
+
+func validateFluxMatrix(c Case, psi [][]float64) error {
+	if err := c.Validate(); err != nil {
+		return err
+	}
+	if len(psi) != c.NZ {
+		return fmt.Errorf("psi row count mismatch")
+	}
+	for _, row := range psi {
+		if len(row) != c.NR {
+			return fmt.Errorf("psi column count mismatch")
+		}
+		for _, value := range row {
+			if math.IsNaN(value) || math.IsInf(value, 0) {
+				return fmt.Errorf("psi contains non-finite value")
+			}
+		}
+	}
+	return nil
+}
+
+func DeltaStar(c Case, psi [][]float64) ([][]float64, error) {
+	if err := validateFluxMatrix(c, psi); err != nil {
+		return nil, err
+	}
+	r, _, _, dR, dZ := grid(c)
+	deltaStar := zeros(c.NZ, c.NR)
+	dR2 := dR * dR
+	dZ2 := dZ * dZ
+	for iz := 1; iz < c.NZ-1; iz++ {
+		for ir := 1; ir < c.NR-1; ir++ {
+			d2DR2 := (psi[iz][ir+1] - 2*psi[iz][ir] + psi[iz][ir-1]) / dR2
+			dDROverR := (psi[iz][ir+1] - psi[iz][ir-1]) / (2 * dR * r[ir])
+			d2DZ2 := (psi[iz+1][ir] - 2*psi[iz][ir] + psi[iz-1][ir]) / dZ2
+			deltaStar[iz][ir] = d2DR2 - dDROverR + d2DZ2
+		}
+	}
+	return deltaStar, nil
+}
+
+func ToroidalCurrentDensityFromFlux(c Case, psi [][]float64) ([][]float64, error) {
+	if err := validateFluxMatrix(c, psi); err != nil {
+		return nil, err
+	}
+	r, _, _, _, _ := grid(c)
+	deltaStar, err := DeltaStar(c, psi)
+	if err != nil {
+		return nil, err
+	}
+	currentDensity := zeros(c.NZ, c.NR)
+	for iz := 1; iz < c.NZ-1; iz++ {
+		for ir := 1; ir < c.NR-1; ir++ {
+			currentDensity[iz][ir] = -deltaStar[iz][ir] / (c.Mu0 * r[ir])
+		}
+	}
+	return currentDensity, nil
+}
+
+func TotalToroidalCurrentFromFlux(c Case, psi [][]float64) (float64, error) {
+	currentDensity, err := ToroidalCurrentDensityFromFlux(c, psi)
+	if err != nil {
+		return 0, err
+	}
+	_, _, _, dR, dZ := grid(c)
+	total := 0.0
+	for iz := 1; iz < c.NZ-1; iz++ {
+		for ir := 1; ir < c.NR-1; ir++ {
+			total += currentDensity[iz][ir] * dR * dZ
+		}
+	}
+	if math.IsNaN(total) || math.IsInf(total, 0) {
+		return 0, fmt.Errorf("integrated toroidal current became non-finite")
+	}
+	return total, nil
+}
