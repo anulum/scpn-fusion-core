@@ -55,14 +55,15 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 | DIII-D | 3 | 0.10–0.18 | 0.09–0.17 | 6–10% |
 | ASDEX-U | 3 | 0.05–0.12 | 0.05–0.11 | 4–9% |
 | C-Mod | 2 | 0.02–0.04 | 0.02–0.04 | 3–7% |
-| SPARC | 8 GEQDSK | B=12.2 T, I_p=8.7 MA | Topology checks pass | Axis pos., q monotonicity |
+| SPARC | 8 GEQDSK/EQDSK | B=12.2 T, I_p=8.7 MA | Public-case contract checks pass | ψ NRMSE, axis metadata, boundary containment, signed-q finite profile |
 
 > **Note on confinement accuracy:** The JET/DIII-D/ASDEX-U/C-Mod error
 > percentages above are computed by the IPB98(y,2) scaling law implementation
 > against the ITPA H-mode dataset. These are **scaling law errors**, not
-> full-profile RMSE comparisons. The SPARC validation checks equilibrium
-> topology (axis position, safety factor monotonicity, GS operator sign) but
-> does not compute point-wise RMSE against reference psi fields.
+> full-profile RMSE comparisons. The SPARC validation checks point-wise ψ NRMSE
+> on the bundled public GEQDSK/EQDSK grids and GEQDSK compatibility invariants:
+> finite non-degenerate ψ, declared-axis consistency, boundary containment, and
+> finite signed-q profiles.
 
 ### Transport Source Power-Balance Contract
 

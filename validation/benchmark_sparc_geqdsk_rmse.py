@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 # NRMSE threshold — Eq. surrogate must reproduce ψ grid within 5%
 NRMSE_THRESHOLD = 0.05
 SPARC_REFERENCE_DIR = REPO_ROOT / "validation" / "reference_data" / "sparc"
+GEQDSK_EXTENSIONS = ("*.geqdsk", "*.eqdsk")
 
 
 def nrmse(y_true: FloatArray, y_pred: FloatArray) -> float:
@@ -167,6 +168,90 @@ def _build_neural_feature_vector(eq: dict[str, Any], n_input_features: int) -> F
     return out
 
 
+def _sparc_geqdsk_paths() -> list[Path]:
+    """Return bundled public SPARC GEQDSK/EQDSK reference cases."""
+    files: list[Path] = []
+    for pattern in GEQDSK_EXTENSIONS:
+        files.extend(SPARC_REFERENCE_DIR.glob(pattern))
+    return sorted(files)
+
+
+def _geqdsk_contract_metrics(eq: Any) -> dict[str, Any]:
+    """Evaluate FreeGS/GEQDSK-compatible equilibrium invariants."""
+    psi = np.asarray(eq.psirz, dtype=np.float64)
+    r = np.asarray(eq.r, dtype=np.float64)
+    z = np.asarray(eq.z, dtype=np.float64)
+    psi_span = float(np.max(psi) - np.min(psi))
+    axis_idx = (
+        int(np.argmin(np.abs(z - float(eq.zmaxis)))),
+        int(np.argmin(np.abs(r - float(eq.rmaxis)))),
+    )
+    axis_r = float(r[axis_idx[1]])
+    axis_z = float(z[axis_idx[0]])
+    d_r = float(np.max(np.diff(r))) if r.size > 1 else float("inf")
+    d_z = float(np.max(np.diff(z))) if z.size > 1 else float("inf")
+    axis_error = float(np.hypot(axis_r - float(eq.rmaxis), axis_z - float(eq.zmaxis)))
+    axis_tolerance = float(1.5 * np.hypot(d_r, d_z))
+    axis_psi_error_fraction = float(abs(psi[axis_idx] - float(eq.simag)) / max(psi_span, 1e-30))
+
+    boundary_inside = True
+    if len(eq.rbdry) > 0 and len(eq.zbdry) > 0:
+        rbdry = np.asarray(eq.rbdry, dtype=np.float64)
+        zbdry = np.asarray(eq.zbdry, dtype=np.float64)
+        boundary_inside = bool(
+            np.all(np.isfinite(rbdry))
+            and np.all(np.isfinite(zbdry))
+            and np.min(rbdry) >= r[0] - d_r
+            and np.max(rbdry) <= r[-1] + d_r
+            and np.min(zbdry) >= z[0] - d_z
+            and np.max(zbdry) <= z[-1] + d_z
+        )
+
+    profiles_finite = bool(
+        np.all(np.isfinite(np.asarray(eq.fpol, dtype=np.float64)))
+        and np.all(np.isfinite(np.asarray(eq.pres, dtype=np.float64)))
+        and np.all(np.isfinite(np.asarray(eq.ffprime, dtype=np.float64)))
+        and np.all(np.isfinite(np.asarray(eq.pprime, dtype=np.float64)))
+        and np.all(np.isfinite(np.asarray(eq.qpsi, dtype=np.float64)))
+    )
+    q_finite_nonzero = bool(
+        len(eq.qpsi) > 0
+        and np.all(np.isfinite(np.asarray(eq.qpsi, dtype=np.float64)))
+        and abs(float(np.nanmedian(np.asarray(eq.qpsi, dtype=np.float64)))) > 1e-12
+    )
+
+    pass_contract = bool(
+        psi.ndim == 2
+        and psi.shape == (int(eq.nh), int(eq.nw))
+        and np.all(np.isfinite(psi))
+        and psi_span > 0.0
+        and np.isfinite(float(eq.simag))
+        and np.isfinite(float(eq.sibry))
+        and abs(float(eq.sibry) - float(eq.simag)) > 0.0
+        and 0 < axis_idx[0] < psi.shape[0] - 1
+        and 0 < axis_idx[1] < psi.shape[1] - 1
+        and axis_error <= axis_tolerance
+        and axis_psi_error_fraction <= 1e-2
+        and boundary_inside
+        and profiles_finite
+        and q_finite_nonzero
+    )
+
+    return {
+        "geqdsk_contract_pass": pass_contract,
+        "psi_span": psi_span,
+        "axis_r_m": axis_r,
+        "axis_z_m": axis_z,
+        "axis_error_m": axis_error,
+        "axis_tolerance_m": axis_tolerance,
+        "axis_psi_error_fraction": axis_psi_error_fraction,
+        "axis_index_interior": bool(0 < axis_idx[0] < psi.shape[0] - 1 and 0 < axis_idx[1] < psi.shape[1] - 1),
+        "boundary_inside_grid": boundary_inside,
+        "profiles_finite": profiles_finite,
+        "q_finite_nonzero": q_finite_nonzero,
+    }
+
+
 def _run_neural_surrogate(eq: dict[str, Any]) -> tuple[FloatArray, str, str | None]:
     """Run neural equilibrium accelerator on the reference grid.
 
@@ -210,9 +295,8 @@ def _load_sparc_geqdsk_cases() -> list[dict[str, Any]]:
         logger.warning("Failed to import GEQDSK reader: %s", exc)
         return []
 
-    files = sorted(SPARC_REFERENCE_DIR.glob("*.geqdsk"))
     cases: list[dict[str, Any]] = []
-    for path in files:
+    for path in _sparc_geqdsk_paths():
         try:
             eq = read_geqdsk(path)
         except Exception as exc:  # pragma: no cover - malformed files are skipped
@@ -224,6 +308,7 @@ def _load_sparc_geqdsk_cases() -> list[dict[str, Any]]:
             logger.warning("Skipping GEQDSK '%s': invalid psi grid shape %s", path.name, psi.shape)
             continue
 
+        contract = _geqdsk_contract_metrics(eq)
         kappa = 1.7
         if hasattr(eq, "rbbbs") and eq.rbbbs is not None and len(eq.rbbbs) > 3:
             r_span = float(np.max(eq.rbbbs) - np.min(eq.rbbbs))
@@ -261,6 +346,7 @@ def _load_sparc_geqdsk_cases() -> list[dict[str, Any]]:
                 "B0": float(eq.bcentr),
                 "R0": float(eq.rmaxis),
                 "kappa": float(kappa),
+                "geqdsk_contract": contract,
             }
         )
     return cases
@@ -332,6 +418,13 @@ def run_benchmark(
             }
             if "source_file" in eq_ref:
                 row["source_file"] = str(eq_ref["source_file"])
+            if "geqdsk_contract" in eq_ref:
+                contract = dict(eq_ref["geqdsk_contract"])
+                row["geqdsk_contract_pass"] = bool(contract["geqdsk_contract_pass"])
+                row["geqdsk_contract"] = contract
+                if not bool(contract["geqdsk_contract_pass"]):
+                    passes = False
+                    row["passes"] = False
             cases.append(row)
             if not passes:
                 all_pass = False
@@ -340,6 +433,7 @@ def run_benchmark(
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "reference_geqdsk" if using_reference_data else "synthetic_fallback",
+        "reference_case_count": len(reference_cases),
         "nrmse_threshold": NRMSE_THRESHOLD,
         "require_neural_backend": bool(require_neural_backend),
         "all_cases_neural_backend": bool(all_cases_neural_backend),

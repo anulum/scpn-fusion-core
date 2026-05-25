@@ -85,6 +85,7 @@ def test_run_benchmark_uses_reference_geqdsk_mode_when_cases_available(monkeypat
                 "B0": -12.2,
                 "R0": 1.85,
                 "kappa": 1.8,
+                "geqdsk_contract": {"geqdsk_contract_pass": True, "psi_span": 1.0},
             }
         ],
     )
@@ -96,5 +97,59 @@ def test_run_benchmark_uses_reference_geqdsk_mode_when_cases_available(monkeypat
     result = benchmark_sparc_geqdsk_rmse.run_benchmark(grid_sizes=[9], require_neural_backend=False)
 
     assert result["mode"] == "reference_geqdsk"
+    assert result["reference_case_count"] == 1
     assert len(result["cases"]) == 1
     assert result["cases"][0]["source_file"] == "sparc_ref_case.geqdsk"
+    assert result["cases"][0]["geqdsk_contract_pass"] is True
+
+
+def test_sparc_loader_includes_geqdsk_and_eqdsk_extensions(monkeypatch, tmp_path) -> None:
+    ref_dir = tmp_path / "sparc"
+    ref_dir.mkdir()
+    geqdsk_path = ref_dir / "case_a.geqdsk"
+    eqdsk_path = ref_dir / "case_b.eqdsk"
+    geqdsk_path.write_text("stub", encoding="utf-8")
+    eqdsk_path.write_text("stub", encoding="utf-8")
+    monkeypatch.setattr(benchmark_sparc_geqdsk_rmse, "SPARC_REFERENCE_DIR", ref_dir)
+
+    paths = benchmark_sparc_geqdsk_rmse._sparc_geqdsk_paths()
+
+    assert [path.name for path in paths] == ["case_a.geqdsk", "case_b.eqdsk"]
+
+
+def test_geqdsk_contract_metrics_validate_axis_and_boundary() -> None:
+    from scpn_fusion.core.eqdsk import GEqdsk
+
+    r = np.linspace(1.0, 2.0, 9)
+    z = np.linspace(-0.5, 0.5, 9)
+    rr, zz = np.meshgrid(r, z)
+    psi = (rr - 1.5) ** 2 + zz**2
+    eq = GEqdsk(
+        nw=9,
+        nh=9,
+        rdim=1.0,
+        zdim=1.0,
+        rleft=1.0,
+        zmid=0.0,
+        rmaxis=1.5,
+        zmaxis=0.0,
+        simag=0.0,
+        sibry=0.25,
+        psirz=psi,
+        fpol=np.ones(9),
+        pres=np.linspace(1.0, 0.0, 9),
+        ffprime=np.ones(9),
+        pprime=np.ones(9),
+        qpsi=np.linspace(1.0, 3.0, 9),
+        rbdry=np.array([1.25, 1.75, 1.75, 1.25]),
+        zbdry=np.array([-0.25, -0.25, 0.25, 0.25]),
+    )
+
+    metrics = benchmark_sparc_geqdsk_rmse._geqdsk_contract_metrics(eq)
+
+    assert metrics["geqdsk_contract_pass"] is True
+    assert metrics["axis_index_interior"] is True
+    assert metrics["boundary_inside_grid"] is True
+    assert metrics["axis_error_m"] <= metrics["axis_tolerance_m"]
+    assert metrics["axis_psi_error_fraction"] <= 1e-2
+    assert metrics["q_finite_nonzero"] is True
