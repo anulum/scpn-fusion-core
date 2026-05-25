@@ -137,6 +137,8 @@ def run_free_boundary_benchmark() -> dict:
         import jax.numpy as jnp
 
         from scpn_fusion.core.jax_equilibrium_solver import (
+            _boundary_flux_level,
+            _interior_axis_flux,
             find_axis,
             solve_equilibrium_jax,
             vacuum_field,
@@ -181,10 +183,17 @@ def run_free_boundary_benchmark() -> dict:
             "sor_sweeps_per_picard": 10,
             "wall_time_s": float(wall_time_s),
             "vacuum_boundary_abs_error": float(wall_error),
+            "vacuum_boundary_flux_level": float(_boundary_flux_level(psi_vac)),
+            "interior_axis_flux": float(_interior_axis_flux(psi_jax)),
             "axis_r_m": float(r_axis),
             "axis_z_m": float(z_axis),
             "axis_boundary_distance_cells": int(axis_boundary_distance),
-            "pass": bool(wall_error < 1e-12),
+            "pass": bool(
+                wall_error < 1e-12
+                and axis_boundary_distance > 0
+                and np.isfinite(float(_interior_axis_flux(psi_jax)))
+                and abs(float(_interior_axis_flux(psi_jax))) < 1.0e12
+            ),
         }
 
         return results
@@ -225,6 +234,14 @@ def main():
             "| JAX free-boundary axis | Boundary distance | "
             f"{jax_fb['axis_boundary_distance_cells']} cells | "
             f"{jax_fb['axis_boundary_distance_cells'] > 0} |\n"
+        )
+        f.write(
+            "| JAX free-boundary source | Vacuum boundary flux level | "
+            f"{jax_fb['vacuum_boundary_flux_level']:.6e} | N/A |\n"
+        )
+        f.write(
+            "| JAX free-boundary source | Interior axis flux | "
+            f"{jax_fb['interior_axis_flux']:.6e} | N/A |\n"
         )
 
     print(f"Results saved to {report_dir}")

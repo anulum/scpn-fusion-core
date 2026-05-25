@@ -16,6 +16,9 @@ jnp = pytest.importorskip("jax.numpy")
 from scpn_fusion.core.jax_equilibrium_solver import (
     _ellipk_approx,
     _ellipe_approx,
+    _boundary_flux_level,
+    _interior_axis_flux,
+    _plasma_source,
     greens_psi,
     vacuum_field,
     solve_equilibrium_jax,
@@ -138,6 +141,29 @@ def test_find_axis_supports_negative_flux_well_convention():
 
     assert float(R_ax) == pytest.approx(3.0)
     assert float(Z_ax) == pytest.approx(0.0)
+
+
+def test_free_boundary_source_uses_nonzero_wall_flux_level():
+    """Source normalization must use the actual free-boundary wall-flux level."""
+    psi = jnp.full((5, 5), 10.0)
+    psi = psi.at[2, 2].set(6.0)
+    psi = psi.at[1, 2].set(8.0)
+    psi = psi.at[3, 2].set(8.0)
+    psi = psi.at[2, 1].set(8.0)
+    psi = psi.at[2, 3].set(8.0)
+
+    assert float(_boundary_flux_level(psi)) == pytest.approx(10.0)
+    assert float(_interior_axis_flux(psi)) == pytest.approx(6.0)
+
+
+def test_plasma_source_remains_bounded_for_near_degenerate_flux_span():
+    """Near-equal wall and axis flux must not explode the source normalization."""
+    R = jnp.linspace(2.0, 4.0, 5)
+    psi = jnp.ones((5, 5)) * 10.0
+    source = _plasma_source(psi, R, Ip=15.0, psi_axis=10.0, psi_boundary=10.0 + 1e-14)
+
+    assert jnp.all(jnp.isfinite(source))
+    assert float(jnp.max(jnp.abs(source))) < 1.0e3
 
 
 def test_free_boundary_solve_preserves_vacuum_flux_boundary():

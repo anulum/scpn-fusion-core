@@ -22,11 +22,13 @@
     "grid": "33x33",
     "picard_iterations": 10,
     "sor_sweeps_per_picard": 10,
-    "wall_time_s": 0.445326629007468,
+    "wall_time_s": 1.327743364003254,
     "vacuum_boundary_abs_error": 7.105427357601002e-15,
-    "axis_r_m": 8.249886847367584,
-    "axis_z_m": 2.000436385523641,
-    "axis_boundary_distance_cells": 7,
+    "vacuum_boundary_flux_level": 16.551065542554525,
+    "interior_axis_flux": 66.04980778478084,
+    "axis_r_m": 9.479736386087598,
+    "axis_z_m": 0.006153907545734815,
+    "axis_boundary_distance_cells": 2,
     "pass": true
   }
 }

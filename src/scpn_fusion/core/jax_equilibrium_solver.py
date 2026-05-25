@@ -192,11 +192,49 @@ def _plasma_source(
 
     Normalized so ∫ J_phi dA ≈ Ip.
     """
-    dpsi = jnp.where(jnp.abs(psi_boundary - psi_axis) > 1e-12, psi_boundary - psi_axis, 1.0)
+    raw_dpsi = psi_boundary - psi_axis
+    flux_scale = jnp.maximum(jnp.maximum(jnp.max(jnp.abs(psi)), jnp.abs(psi_boundary)), 1.0)
+    min_dpsi = 1.0e-6 * flux_scale
+    dpsi_sign = jnp.where(raw_dpsi < 0.0, -1.0, 1.0)
+    dpsi = jnp.where(jnp.abs(raw_dpsi) > min_dpsi, raw_dpsi, dpsi_sign * min_dpsi)
     psi_n = jnp.clip((psi - psi_axis) / dpsi, 0.0, 1.0)
     j_profile = 1.0 - psi_n**2
     R2d = R_grid[jnp.newaxis, :]
     return -_MU0_NORM * R2d * j_profile * Ip
+
+
+@jit
+def _boundary_flux_level(psi: jnp.ndarray) -> float:
+    """Mean wall flux level for free-boundary source normalization."""
+    boundary_total = (
+        jnp.sum(psi[0, :])
+        + jnp.sum(psi[-1, :])
+        + jnp.sum(psi[1:-1, 0])
+        + jnp.sum(psi[1:-1, -1])
+    )
+    boundary_count = 2 * psi.shape[1] + 2 * jnp.maximum(psi.shape[0] - 2, 0)
+    return boundary_total / jnp.maximum(boundary_count, 1)
+
+
+@jit
+def _interior_axis_flux(psi: jnp.ndarray) -> float:
+    """Interior axis flux value compatible with positive or negative psi conventions."""
+    center = psi[1:-1, 1:-1]
+    neighbor_max = jnp.maximum(
+        jnp.maximum(psi[:-2, 1:-1], psi[2:, 1:-1]),
+        jnp.maximum(psi[1:-1, :-2], psi[1:-1, 2:]),
+    )
+    neighbor_min = jnp.minimum(
+        jnp.minimum(psi[:-2, 1:-1], psi[2:, 1:-1]),
+        jnp.minimum(psi[1:-1, :-2], psi[1:-1, 2:]),
+    )
+    peak_margin = center - neighbor_max
+    well_margin = neighbor_min - center
+    local_score = jnp.maximum(jnp.maximum(peak_margin, well_margin), 0.0)
+    fallback_score = jnp.abs(center - _boundary_flux_level(psi))
+    score = jnp.where(jnp.max(local_score) > 0.0, local_score, fallback_score)
+    flat_index = jnp.argmax(score)
+    return center.reshape(-1)[flat_index]
 
 
 # ── SOR relaxation step ───────────────────────────────────────────
@@ -261,6 +299,7 @@ def solve_equilibrium_jax(
     omega: float = 0.1,
     max_picard: int = 30,
     sor_per_picard: int = 20,
+    sor_omega: float = 0.8,
 ) -> jnp.ndarray:
     """Solve free-boundary GS equilibrium via Picard + SOR.
 
@@ -275,6 +314,8 @@ def solve_equilibrium_jax(
     omega : SOR relaxation factor (0.1 for under-relaxation)
     max_picard : number of Picard outer iterations
     sor_per_picard : SOR sweeps per Picard step
+    sor_omega : damped inner relaxation factor. Values above 1 can be unstable
+        when the free-boundary wall flux is nonzero.
 
     Returns
     -------
@@ -290,12 +331,12 @@ def solve_equilibrium_jax(
 
     def picard_body(carry, _):
         psi_curr = carry
-        psi_axis = jnp.max(psi_curr)
-        psi_bnd = 0.0
+        psi_axis = _interior_axis_flux(psi_curr)
+        psi_bnd = _boundary_flux_level(psi_vac)
         src = _plasma_source(psi_curr, R_grid, Ip, psi_axis, psi_bnd)
 
         def sor_body(p, __):
-            return _sor_step(p, src, R_grid, dR, dZ, 1.5, psi_vac), None
+            return _sor_step(p, src, R_grid, dR, dZ, sor_omega, psi_vac), None
 
         psi_relaxed, _ = jax.lax.scan(sor_body, psi_curr, None, length=sor_per_picard)
         # Picard blending: mix relaxed solution with vacuum
