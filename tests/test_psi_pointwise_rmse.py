@@ -762,6 +762,7 @@ class TestValidateEFITNRMSEBenchmark:
             "adapted_geqdsk_profile_source_fixed_boundary": 10,
         }
         assert gate.operator_source_pass_count == 10
+        assert gate.gate_operator_source_pass_count == 4
         assert gate.operator_source_threshold == pytest.approx(
             psi_rmse_mod.OPERATOR_SOURCE_RMSE_THRESHOLD
         )

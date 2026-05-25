@@ -32,6 +32,7 @@
     "source_consistency_counts",
     "operator_source_threshold",
     "operator_source_pass_count",
+    "gate_operator_source_pass_count",
     "operator_source_worst_psi_rmse_norm",
     "operator_source_worst_file",
     "source_convention_adapter_threshold",
@@ -198,6 +199,10 @@
       "exclusiveMinimum": 0
     },
     "operator_source_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate_operator_source_pass_count": {
       "type": "integer",
       "minimum": 0
     },

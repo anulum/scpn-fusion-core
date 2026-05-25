@@ -85,6 +85,8 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 > `gate_source_convention_adapter_pass_count` and
 > `gate_adapted_profile_pass_count`, preventing accepted public SPARC adapter
 > rows from being conflated with synthetic diagnostics.
+> Operator-source solver evidence is split the same way with
+> `gate_operator_source_pass_count`.
 > It also reports `solver_mode_counts` for the three profile-source lanes:
 > raw GEQDSK profile-source fixed-boundary, operator-source fixed-boundary, and
 > adapted GEQDSK profile-source fixed-boundary each have `18` labelled rows.

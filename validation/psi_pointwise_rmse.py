@@ -219,6 +219,7 @@ class EfitNRMSEBenchmarkGate:
     source_consistency_counts: dict[str, int]
     operator_source_threshold: float
     operator_source_pass_count: int
+    gate_operator_source_pass_count: int
     operator_source_worst_psi_rmse_norm: float
     operator_source_worst_file: str
     source_convention_adapter_threshold: float
@@ -1628,6 +1629,7 @@ def validate_efit_nrmse_benchmark(
     adapted_profile_entries: list[tuple[str, float]] = []
     pass_count = 0
     operator_source_pass_count = 0
+    gate_operator_source_pass_count = 0
     source_convention_adapter_pass_count = 0
     adapted_profile_pass_count = 0
     gate_source_convention_adapter_pass_count = 0
@@ -1663,6 +1665,8 @@ def validate_efit_nrmse_benchmark(
             operator_source_entries.append((rel_path, operator_source_rmse))
             if operator_source_rmse <= OPERATOR_SOURCE_RMSE_THRESHOLD:
                 operator_source_pass_count += 1
+                if is_gate_row:
+                    gate_operator_source_pass_count += 1
         else:
             failure_reasons.append(f"non-finite operator_source_psi_rmse_norm in {rel_path}")
 
@@ -1828,6 +1832,7 @@ def validate_efit_nrmse_benchmark(
         source_consistency_counts=source_consistency_counts,
         operator_source_threshold=OPERATOR_SOURCE_RMSE_THRESHOLD,
         operator_source_pass_count=operator_source_pass_count,
+        gate_operator_source_pass_count=gate_operator_source_pass_count,
         operator_source_worst_psi_rmse_norm=float(operator_source_worst_norm),
         operator_source_worst_file=operator_source_worst_file,
         source_convention_adapter_threshold=SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD,
@@ -2005,6 +2010,11 @@ def main() -> int:
     print(
         f"Worst source residual: {benchmark.worst_source_alignment_file} "
         f"(relative L2 = {benchmark.worst_source_residual_l2:.6f})"
+    )
+    print(
+        "Public operator-source gate: "
+        f"{benchmark.gate_operator_source_pass_count}/{benchmark.gate_row_count} public rows "
+        f"under psi_N RMSE <= {benchmark.operator_source_threshold:.6g}"
     )
     print(
         f"Adapted profile gate: {benchmark.adapted_profile_pass_count}/"
