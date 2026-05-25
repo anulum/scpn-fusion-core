@@ -314,9 +314,9 @@ impl FusionKernel {
                 "solver.relaxation_factor must be finite and in (0,1], got {alpha}"
             )));
         }
-        if !sor_omega.is_finite() || sor_omega <= 0.0 || sor_omega >= 2.0 {
+        if !sor_omega.is_finite() || !(1.0..2.0).contains(&sor_omega) {
             return Err(FusionError::ConfigError(format!(
-                "solver.sor_omega must be finite and in (0,2), got {sor_omega}"
+                "solver.sor_omega must be finite and in [1,2), got {sor_omega}"
             )));
         }
         if nz < 2 || nr < 2 {
@@ -1128,6 +1128,61 @@ mod tests {
         }
     }
 
+    fn manufactured_mixed_flux(grid: &Grid2D) -> Array2<f64> {
+        Array2::from_shape_fn((grid.nz, grid.nr), |(iz, ir)| {
+            0.03125 * grid.r[ir].powi(4) - 0.125 * grid.z[iz].powi(2)
+                + 0.05 * grid.r[ir].powi(2) * grid.z[iz].powi(2)
+        })
+    }
+
+    fn discrete_gs_source(psi: &Array2<f64>, grid: &Grid2D) -> Array2<f64> {
+        grad_shafranov_delta_star(psi, grid).expect("manufactured flux and grid are valid")
+    }
+
+    #[test]
+    fn test_python_parity_sor_preserves_discrete_grad_shafranov_fixed_point() {
+        let grid = Grid2D::new(9, 9, 1.0, 2.0, -0.5, 0.5);
+        let expected = manufactured_mixed_flux(&grid);
+        let source = discrete_gs_source(&expected, &grid);
+        let mut psi = expected.clone();
+
+        sor_step_python(&mut psi, &source, &grid, 1.4);
+
+        let max_error = psi
+            .iter()
+            .zip(expected.iter())
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0_f64, f64::max);
+        assert!(
+            max_error < 1.0e-12,
+            "fusion-core SOR changed an exact discrete GS fixed point by {max_error}"
+        );
+    }
+
+    #[test]
+    fn test_fusion_math_multigrid_preserves_discrete_grad_shafranov_fixed_point() {
+        let grid = Grid2D::new(9, 9, 1.0, 2.0, -0.5, 0.5);
+        let expected = manufactured_mixed_flux(&grid);
+        let source = discrete_gs_source(&expected, &grid);
+        let mut psi = expected.clone();
+        let config = MultigridConfig {
+            omega: 1.4,
+            ..MultigridConfig::default()
+        };
+
+        let _result = multigrid_solve(&mut psi, &source, &grid, &config, 1, 0.0);
+
+        let max_error = psi
+            .iter()
+            .zip(expected.iter())
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0_f64, f64::max);
+        assert!(
+            max_error < 1.0e-12,
+            "fusion-core multigrid path changed an exact discrete GS fixed point by {max_error}"
+        );
+    }
+
     #[test]
     fn test_full_equilibrium_iter_config() {
         let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
@@ -1657,6 +1712,19 @@ mod tests {
         match err {
             FusionError::ConfigError(msg) => {
                 assert!(msg.contains("convergence_threshold"));
+            }
+            other => panic!("Unexpected error: {other:?}"),
+        }
+
+        let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
+        kernel.config.solver.sor_omega = 0.5;
+        let err = kernel
+            .solve_equilibrium()
+            .expect_err("sub-Gauss-Seidel sor_omega must fail");
+        match err {
+            FusionError::ConfigError(msg) => {
+                assert!(msg.contains("sor_omega"));
+                assert!(msg.contains("[1,2)"));
             }
             other => panic!("Unexpected error: {other:?}"),
         }
