@@ -197,6 +197,11 @@ the same operator-current surfaces. Julia, Go, and Rust package tests validate
 manufactured `Z^2`, `R^4 + Z^2`, and mixed `R^2 Z^2` closure; Lean builds the corresponding
 `deltaStar`, `toroidalCurrentDensityFromFlux`, and
 `totalToroidalCurrentFromFlux` definitions as part of `lake build`.
+Rust `fusion-core::source` also exposes the same accepted GEQDSK
+source-convention adapter contract as the Python benchmark path: canonical,
+negated, `2*pi`, inverse-`2*pi`, and flux-span transforms are ranked as named
+transforms only, with no fitted scale accepted as a pass. Local verification:
+`cargo test -p fusion-core geqdsk_source_convention --lib` (`3 passed`).
 
 Local verification commands:
 

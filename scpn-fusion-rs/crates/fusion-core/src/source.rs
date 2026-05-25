@@ -27,6 +27,48 @@ const MIN_FLUX_DENOMINATOR: f64 = 1e-9;
 /// Python line 165: `if abs(I_current) > 1e-9:`
 const MIN_CURRENT_INTEGRAL: f64 = 1e-9;
 
+/// Explicit GEQDSK profile-source convention transforms accepted by the native solver.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GeqdskSourceConvention {
+    Canonical,
+    Negated,
+    ScaledByTwoPi,
+    ScaledByMinusTwoPi,
+    ScaledByInvTwoPi,
+    ScaledByMinusInvTwoPi,
+    TimesFluxSpan,
+    OverFluxSpan,
+    NegatedTimesFluxSpan,
+    NegatedOverFluxSpan,
+    NotEvaluated,
+}
+
+impl GeqdskSourceConvention {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Canonical => "canonical",
+            Self::Negated => "negated",
+            Self::ScaledByTwoPi => "scaled_by_2pi",
+            Self::ScaledByMinusTwoPi => "scaled_by_minus_2pi",
+            Self::ScaledByInvTwoPi => "scaled_by_inv_2pi",
+            Self::ScaledByMinusInvTwoPi => "scaled_by_minus_inv_2pi",
+            Self::TimesFluxSpan => "times_flux_span",
+            Self::OverFluxSpan => "over_flux_span",
+            Self::NegatedTimesFluxSpan => "negated_times_flux_span",
+            Self::NegatedOverFluxSpan => "negated_over_flux_span",
+            Self::NotEvaluated => "not_evaluated",
+        }
+    }
+}
+
+/// Result of ranking named GEQDSK source-convention transforms against an operator source.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct GeqdskSourceConventionAdapter {
+    pub convention: GeqdskSourceConvention,
+    pub residual_l2: f64,
+    pub pass: bool,
+}
+
 /// mTanh profile parameters used by inverse reconstruction.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ProfileParams {
@@ -148,6 +190,172 @@ fn validate_profile_params(params: &ProfileParams, label: &str) -> FusionResult<
         )));
     }
     Ok(())
+}
+
+/// Return the explicit multiplier for a named GEQDSK source convention.
+pub fn geqdsk_source_convention_multiplier(
+    convention: GeqdskSourceConvention,
+    flux_span: f64,
+) -> FusionResult<f64> {
+    match convention {
+        GeqdskSourceConvention::Canonical => Ok(1.0),
+        GeqdskSourceConvention::Negated => Ok(-1.0),
+        GeqdskSourceConvention::ScaledByTwoPi => Ok(2.0 * std::f64::consts::PI),
+        GeqdskSourceConvention::ScaledByMinusTwoPi => Ok(-2.0 * std::f64::consts::PI),
+        GeqdskSourceConvention::ScaledByInvTwoPi => Ok(1.0 / (2.0 * std::f64::consts::PI)),
+        GeqdskSourceConvention::ScaledByMinusInvTwoPi => Ok(-1.0 / (2.0 * std::f64::consts::PI)),
+        GeqdskSourceConvention::TimesFluxSpan => checked_flux_span_multiplier(flux_span, false),
+        GeqdskSourceConvention::OverFluxSpan => {
+            checked_inverse_flux_span_multiplier(flux_span, false)
+        }
+        GeqdskSourceConvention::NegatedTimesFluxSpan => {
+            checked_flux_span_multiplier(flux_span, true)
+        }
+        GeqdskSourceConvention::NegatedOverFluxSpan => {
+            checked_inverse_flux_span_multiplier(flux_span, true)
+        }
+        GeqdskSourceConvention::NotEvaluated => Err(FusionError::ConfigError(
+            "not_evaluated is not an executable GEQDSK source convention".to_string(),
+        )),
+    }
+}
+
+fn checked_flux_span_multiplier(flux_span: f64, negated: bool) -> FusionResult<f64> {
+    if !flux_span.is_finite() || flux_span.abs() < 1.0e-15 {
+        return Err(FusionError::ConfigError(
+            "flux-span source conventions require a finite non-zero flux span".to_string(),
+        ));
+    }
+    Ok(if negated { -flux_span } else { flux_span })
+}
+
+fn checked_inverse_flux_span_multiplier(flux_span: f64, negated: bool) -> FusionResult<f64> {
+    if !flux_span.is_finite() || flux_span.abs() < 1.0e-15 {
+        return Err(FusionError::ConfigError(
+            "flux-span source conventions require a finite non-zero flux span".to_string(),
+        ));
+    }
+    Ok(if negated {
+        -1.0 / flux_span
+    } else {
+        1.0 / flux_span
+    })
+}
+
+/// Apply an explicit, documented GEQDSK source convention transform.
+pub fn apply_geqdsk_source_convention(
+    source: &Array2<f64>,
+    convention: GeqdskSourceConvention,
+    flux_span: f64,
+) -> FusionResult<Array2<f64>> {
+    if source.iter().any(|value| !value.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "GEQDSK source convention input must contain only finite values".to_string(),
+        ));
+    }
+    let multiplier = geqdsk_source_convention_multiplier(convention, flux_span)?;
+    let transformed = source.mapv(|value| value * multiplier);
+    if transformed.iter().any(|value| !value.is_finite()) {
+        return Err(FusionError::ConfigError(format!(
+            "GEQDSK source convention {} produced non-finite values",
+            convention.as_str()
+        )));
+    }
+    Ok(transformed)
+}
+
+fn source_relative_l2(
+    operator_source: &Array2<f64>,
+    candidate_source: &Array2<f64>,
+) -> FusionResult<f64> {
+    if operator_source.dim() != candidate_source.dim() {
+        return Err(FusionError::ConfigError(format!(
+            "source convention shape mismatch: operator {:?}, candidate {:?}",
+            operator_source.dim(),
+            candidate_source.dim()
+        )));
+    }
+    if operator_source.iter().any(|value| !value.is_finite())
+        || candidate_source.iter().any(|value| !value.is_finite())
+    {
+        return Err(FusionError::ConfigError(
+            "source convention arrays must contain only finite values".to_string(),
+        ));
+    }
+    let operator_norm = operator_source
+        .iter()
+        .map(|value| value * value)
+        .sum::<f64>()
+        .sqrt();
+    if !operator_norm.is_finite() || operator_norm <= 1.0e-15 {
+        return Err(FusionError::ConfigError(
+            "source convention operator norm must be finite and non-zero".to_string(),
+        ));
+    }
+    let residual = operator_source
+        .iter()
+        .zip(candidate_source.iter())
+        .map(|(operator, candidate)| {
+            let diff = operator - candidate;
+            diff * diff
+        })
+        .sum::<f64>()
+        .sqrt()
+        / operator_norm;
+    if !residual.is_finite() {
+        return Err(FusionError::ConfigError(
+            "source convention residual became non-finite".to_string(),
+        ));
+    }
+    Ok(residual)
+}
+
+/// Select the best named GEQDSK source convention without accepting fitted scales.
+pub fn select_geqdsk_source_convention_adapter(
+    operator_source: &Array2<f64>,
+    profile_source: &Array2<f64>,
+    flux_span: f64,
+    residual_threshold: f64,
+) -> FusionResult<GeqdskSourceConventionAdapter> {
+    if !residual_threshold.is_finite() || residual_threshold <= 0.0 {
+        return Err(FusionError::ConfigError(
+            "source convention residual threshold must be finite and positive".to_string(),
+        ));
+    }
+    let mut conventions = vec![
+        GeqdskSourceConvention::Canonical,
+        GeqdskSourceConvention::Negated,
+        GeqdskSourceConvention::ScaledByTwoPi,
+        GeqdskSourceConvention::ScaledByMinusTwoPi,
+        GeqdskSourceConvention::ScaledByInvTwoPi,
+        GeqdskSourceConvention::ScaledByMinusInvTwoPi,
+    ];
+    if flux_span.is_finite() && flux_span.abs() >= 1.0e-15 {
+        conventions.extend([
+            GeqdskSourceConvention::TimesFluxSpan,
+            GeqdskSourceConvention::OverFluxSpan,
+            GeqdskSourceConvention::NegatedTimesFluxSpan,
+            GeqdskSourceConvention::NegatedOverFluxSpan,
+        ]);
+    }
+
+    let mut best = GeqdskSourceConventionAdapter {
+        convention: GeqdskSourceConvention::NotEvaluated,
+        residual_l2: f64::INFINITY,
+        pass: false,
+    };
+    for convention in conventions {
+        let candidate = apply_geqdsk_source_convention(profile_source, convention, flux_span)?;
+        let residual = source_relative_l2(operator_source, &candidate)?;
+        if residual < best.residual_l2 {
+            best = GeqdskSourceConventionAdapter {
+                convention,
+                residual_l2: residual,
+                pass: residual <= residual_threshold,
+            };
+        }
+    }
+    Ok(best)
 }
 
 /// mTanh profile:
@@ -494,6 +702,51 @@ mod tests {
         let i_actual: f64 = j.iter().sum::<f64>() * grid.dr * grid.dz;
         let rel_error = ((i_actual - 15e6) / 15e6).abs();
         assert!(rel_error < 1e-10, "Current mismatch after renormalization");
+    }
+
+    #[test]
+    fn test_geqdsk_source_convention_adapter_accepts_named_2pi_contract() {
+        let profile_source =
+            Array2::from_shape_fn((5, 5), |(iz, ir)| 0.25 + iz as f64 + 0.5 * ir as f64);
+        let operator_source = profile_source.mapv(|value| value * 2.0 * std::f64::consts::PI);
+
+        let adapter =
+            select_geqdsk_source_convention_adapter(&operator_source, &profile_source, 0.4, 0.15)
+                .expect("finite source arrays should rank source conventions");
+
+        assert_eq!(adapter.convention, GeqdskSourceConvention::ScaledByTwoPi);
+        assert!(adapter.pass);
+        assert!(adapter.residual_l2 < 1.0e-14);
+    }
+
+    #[test]
+    fn test_geqdsk_source_convention_adapter_rejects_unclassified_scale() {
+        let profile_source = Array2::from_shape_fn((5, 5), |(iz, ir)| 1.0 + iz as f64 + ir as f64);
+        let operator_source = profile_source.mapv(|value| value * 3.0);
+
+        let adapter =
+            select_geqdsk_source_convention_adapter(&operator_source, &profile_source, 0.4, 0.15)
+                .expect("finite source arrays should rank source conventions");
+
+        assert_ne!(adapter.convention, GeqdskSourceConvention::NotEvaluated);
+        assert!(!adapter.pass);
+        assert!(adapter.residual_l2 > 0.15);
+    }
+
+    #[test]
+    fn test_geqdsk_source_convention_transform_supports_flux_span_and_rejects_degenerate_span() {
+        let source = Array2::from_elem((3, 3), 2.0);
+        let transformed =
+            apply_geqdsk_source_convention(&source, GeqdskSourceConvention::OverFluxSpan, 0.5)
+                .expect("non-degenerate flux span should be accepted");
+
+        assert!(transformed
+            .iter()
+            .all(|value| (*value - 4.0).abs() < 1.0e-15));
+        assert!(
+            apply_geqdsk_source_convention(&source, GeqdskSourceConvention::OverFluxSpan, 0.0,)
+                .is_err()
+        );
     }
 
     #[test]
