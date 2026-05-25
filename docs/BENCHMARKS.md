@@ -68,6 +68,10 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 > synthetic diagnostics; they are reported by
 > `validation/benchmark_sparc_geqdsk_rmse.py` but are not counted as public
 > EFIT parity gates.
+> The aggregate EFIT report also records this curation per row:
+> `reference_class=public_efit_reference` and `reference_role=gate` for SPARC,
+> versus `reference_class=synthetic_proxy_reference` and
+> `reference_role=diagnostic` for bundled DIII-D/JET proxy GEQDSK files.
 
 ### GEQDSK current-closure diagnostics
 
@@ -181,6 +185,11 @@ explicit `scaled_by_2pi` adapter. Adapter counts were
 `negated_times_flux_span=1`; only the four high-current SPARC `scaled_by_2pi`
 rows are below the adapter residual threshold. The raw canonical gate remains
 strict and failing.
+Reference-case curation is enforced in the same schema: every row declares its
+dataset id, provenance class, gate role, expected contract, and expected
+source convention. Public SPARC files are gate rows; synthetic DIII-D/JET
+GEQDSK files are diagnostic rows only and cannot be accidentally counted as
+public EFIT parity evidence.
 
 The same report now includes an adapted profile-source reconstruction gate for
 rows where that explicit named adapter is accepted. This is not a replacement

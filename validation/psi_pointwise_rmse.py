@@ -54,6 +54,35 @@ EFIT_BENCHMARK_MACHINE_PROVENANCE = {
     "diiid": "synthetic_proxy_reference",
     "jet": "synthetic_proxy_reference",
 }
+EFIT_REFERENCE_MACHINE_CONTRACTS = {
+    "sparc": {
+        "reference_class": "public_efit_reference",
+        "reference_role": "gate",
+        "reference_dataset_id": "sparc_reference_bundle",
+        "reference_expected_contract": "public_efit_geqdsk_operator_and_profile_source_contract",
+        "reference_expected_convention": "raw_canonical_strict_unless_named_adapter_passes",
+    },
+    "diiid": {
+        "reference_class": "synthetic_proxy_reference",
+        "reference_role": "diagnostic",
+        "reference_dataset_id": "diiid_reference_equilibria",
+        "reference_expected_contract": "synthetic_solovev_geqdsk_diagnostic_contract",
+        "reference_expected_convention": "synthetic_proxy_profile_source",
+    },
+    "jet": {
+        "reference_class": "synthetic_proxy_reference",
+        "reference_role": "diagnostic",
+        "reference_dataset_id": "jet_reference_equilibria",
+        "reference_expected_contract": "synthetic_solovev_geqdsk_diagnostic_contract",
+        "reference_expected_convention": "synthetic_proxy_profile_source",
+    },
+}
+EFIT_REFERENCE_CASE_CONVENTIONS = {
+    "sparc/sparc_1305.eqdsk": "scaled_by_2pi_adapter_gate",
+    "sparc/sparc_1310.eqdsk": "scaled_by_2pi_adapter_gate",
+    "sparc/sparc_1315.eqdsk": "scaled_by_2pi_adapter_gate",
+    "sparc/sparc_1349.eqdsk": "scaled_by_2pi_adapter_gate",
+}
 
 
 # ── Data containers ──────────────────────────────────────────────────
@@ -1373,6 +1402,19 @@ def _benchmark_reference_files(
     return files
 
 
+def _reference_case_contract(machine: str, rel_path: str) -> dict[str, str]:
+    """Return machine-readable provenance and gate-role metadata for a benchmark case."""
+    try:
+        contract = dict(EFIT_REFERENCE_MACHINE_CONTRACTS[machine])
+    except KeyError as exc:
+        raise ValueError(f"unknown EFIT reference machine: {machine}") from exc
+    contract["reference_expected_convention"] = EFIT_REFERENCE_CASE_CONVENTIONS.get(
+        rel_path,
+        contract["reference_expected_convention"],
+    )
+    return contract
+
+
 def validate_efit_nrmse_benchmark(
     reference_root: Path | None = None,
     *,
@@ -1415,6 +1457,7 @@ def validate_efit_nrmse_benchmark(
         rel_path = f"{machine}/{path.name}"
         rmse_norm = float(result.psi_rmse_norm)
         provenance = EFIT_BENCHMARK_MACHINE_PROVENANCE[machine]
+        reference_contract = _reference_case_contract(machine, rel_path)
 
         count_by_machine[machine] = count_by_machine.get(machine, 0) + 1
         if np.isfinite(rmse_norm):
@@ -1446,6 +1489,7 @@ def validate_efit_nrmse_benchmark(
         row["file"] = rel_path
         row["machine"] = machine
         row["provenance"] = provenance
+        row.update(reference_contract)
         row["threshold"] = max_nrmse
         row["passes_threshold"] = bool(np.isfinite(rmse_norm) and rmse_norm <= max_nrmse)
         rows.append(row)

@@ -711,6 +711,19 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.worst_psi_rmse_norm == pytest.approx(0.01)
         assert gate.count_by_machine == {"sparc": 4, "diiid": 3, "jet": 3}
         assert gate.provenance_by_machine == EFIT_BENCHMARK_MACHINE_PROVENANCE
+        assert all(row["reference_dataset_id"] for row in gate.rows)
+        assert {row["reference_class"] for row in gate.rows if row["machine"] == "sparc"} == {
+            "public_efit_reference"
+        }
+        assert {row["reference_role"] for row in gate.rows if row["machine"] == "sparc"} == {"gate"}
+        assert {
+            row["reference_class"] for row in gate.rows if row["machine"] in {"diiid", "jet"}
+        } == {"synthetic_proxy_reference"}
+        assert {
+            row["reference_role"] for row in gate.rows if row["machine"] in {"diiid", "jet"}
+        } == {"diagnostic"}
+        assert all(row["reference_expected_contract"] for row in gate.rows)
+        assert all(row["reference_expected_convention"] for row in gate.rows)
         assert gate.source_consistency_counts == {"profile_source_consistent": 10}
         assert gate.worst_source_alignment_file != ""
         assert gate.worst_source_residual_l2 == pytest.approx(0.01)
@@ -1091,6 +1104,25 @@ class TestValidateEFITNRMSEBenchmark:
         with pytest.raises(
             ValueError,
             match=r"missing required benchmark report key: rows\[0\]\.provenance",
+        ):
+            validate_efit_nrmse_benchmark_report(
+                payload,
+                load_efit_nrmse_benchmark_schema(),
+            )
+
+    def test_report_schema_rejects_missing_reference_curation_key(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        self._make_reference_tree(tmp_path, {"sparc": 4, "diiid": 3, "jet": 3})
+        self._install_fake_validate_file(monkeypatch, {})
+        payload = asdict(validate_efit_nrmse_benchmark(tmp_path))
+        del payload["rows"][0]["reference_role"]
+
+        with pytest.raises(
+            ValueError,
+            match=r"missing required benchmark report key: rows\[0\]\.reference_role",
         ):
             validate_efit_nrmse_benchmark_report(
                 payload,

@@ -156,6 +156,11 @@
           "grid",
           "machine",
           "provenance",
+          "reference_class",
+          "reference_role",
+          "reference_dataset_id",
+          "reference_expected_contract",
+          "reference_expected_convention",
           "gs_residual_l2",
           "gs_residual_max",
           "psi_rmse_wb",
@@ -230,6 +235,30 @@
             "minLength": 1
           },
           "provenance": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reference_class": {
+            "enum": [
+              "public_efit_reference",
+              "synthetic_proxy_reference"
+            ]
+          },
+          "reference_role": {
+            "enum": [
+              "gate",
+              "diagnostic"
+            ]
+          },
+          "reference_dataset_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reference_expected_contract": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reference_expected_convention": {
             "type": "string",
             "minLength": 1
           },
