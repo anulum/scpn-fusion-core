@@ -337,6 +337,11 @@ pub fn reconstruct_boundary_flux_from_coils_with_metadata(
     mu0: f64,
     metadata: BoundaryFluxMetadata<'_>,
 ) -> FusionResult<BoundaryFluxReconstruction> {
+    if coils.is_empty() {
+        return Err(FusionError::ConfigError(
+            "free-boundary reconstruction requires at least one external coil".to_string(),
+        ));
+    }
     let reconstructed_flux = calculate_vacuum_flux_at_points(boundary_points, coils, mu0)?;
     let point_count = reconstructed_flux.len();
     let mut residual = None;
@@ -649,6 +654,16 @@ mod tests {
             .all(|v| v.abs() < 1.0e-12));
         assert!(reconstruction.rmse.expect("rmse") < 1.0e-12);
         assert!(reconstruction.max_abs_error.expect("max error") < 1.0e-12);
+    }
+
+    #[test]
+    fn test_boundary_flux_reconstruction_rejects_empty_coil_set() {
+        let boundary_points = vec![(4.5, -1.0), (5.5, -1.25), (6.5, 0.25), (5.5, 1.25)];
+
+        let err = reconstruct_boundary_flux_from_coils(&boundary_points, &[], None, 1.0)
+            .expect_err("free-boundary reconstruction requires at least one external coil");
+
+        assert!(matches!(err, FusionError::ConfigError(_)));
     }
 
     #[test]
