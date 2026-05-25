@@ -32,11 +32,11 @@ Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-b
 
 | Language | Implementation | Wall time (s) |
 |----------|----------------|---------------|
-| Python | `gs_solve_np` | 0.003065 |
-| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 3.038036 |
-| Go | `gssolver.Solve` | 0.001963 |
-| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.001385 |
-| Lean | `SCPNFusionSolvers.solveGradShafranov` | 0.881879 |
+| Python | `gs_solve_np` | 0.005241 |
+| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 3.840213 |
+| Go | `gssolver.Solve` | 0.002351 |
+| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.001329 |
+| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.368210 |
 
 ## Numerical Parity
 

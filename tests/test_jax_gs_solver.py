@@ -17,6 +17,7 @@ import numpy as np
 import pytest
 
 from scpn_fusion.core.jax_gs_solver import (
+    gs_equation_residual_np,
     gs_solve_np,
     has_jax,
     jax_gs_solve,
@@ -96,6 +97,39 @@ class TestGsSolveNumpy:
         )
         assert psi.shape == (33, 33)
         assert np.all(np.isfinite(psi))
+
+    def test_equation_residual_reports_discrete_pde_imbalance(self):
+        """Residual diagnostic catches fields that do not satisfy the GS stencil."""
+        balanced = np.zeros((3, 3))
+        imbalanced = np.array(
+            [
+                [0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0],
+            ]
+        )
+
+        balanced_metrics = gs_equation_residual_np(
+            balanced, 1.0, 3.0, -1.0, 1.0, 3, 3, 0.0, MU0, 0.5
+        )
+        imbalanced_metrics = gs_equation_residual_np(
+            imbalanced, 1.0, 3.0, -1.0, 1.0, 3, 3, 0.0, MU0, 0.5
+        )
+
+        assert balanced_metrics["abs_max"] == 0.0
+        assert imbalanced_metrics["abs_max"] == pytest.approx(4.0)
+        assert imbalanced_metrics["relative_max"] > 1.0
+
+    def test_equation_residual_rejects_malformed_candidate(self):
+        """Residual diagnostic fails closed on shape/domain contract violations."""
+        with pytest.raises(ValueError, match="psi shape"):
+            gs_equation_residual_np(np.zeros((4, 3)), 1.0, 3.0, -1.0, 1.0, 3, 3, 0.0)
+        with pytest.raises(ValueError, match="positive, increasing"):
+            gs_equation_residual_np(np.zeros((3, 3)), 0.0, 3.0, -1.0, 1.0, 3, 3, 0.0)
+        bad = np.zeros((3, 3))
+        bad[1, 1] = np.nan
+        with pytest.raises(ValueError, match="finite"):
+            gs_equation_residual_np(bad, 1.0, 3.0, -1.0, 1.0, 3, 3, 0.0)
 
 
 class TestGsSolvePublicAPI:

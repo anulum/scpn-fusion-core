@@ -25,7 +25,7 @@ import numpy as np
 _REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO / "src"))
 
-from scpn_fusion.core.jax_gs_solver import gs_solve_np
+from scpn_fusion.core.jax_gs_solver import gs_equation_residual_np, gs_solve_np
 
 _CASE_PATH = _REPO / "validation" / "polyglot" / "gs_picard_reference.toml"
 _JULIA_PROJECT = _REPO / "scpn-fusion-jl"
@@ -257,58 +257,34 @@ def _negative_flux_abs_max(psi: np.ndarray) -> float:
     return float(max(0.0, -np.min(psi)))
 
 
-def _gs_source_from_solution(psi: np.ndarray, case: dict[str, Any]) -> np.ndarray:
-    r = np.linspace(float(case["R_min"]), float(case["R_max"]), int(case["NR"]))
-    z = np.linspace(float(case["Z_min"]), float(case["Z_max"]), int(case["NZ"]))
-    rr, _ = np.meshgrid(r, z)
-    dr = r[1] - r[0]
-    dz = z[1] - z[0]
-    mu0 = float(case["mu0"])
-    ip_target = float(case["Ip_target"])
-    beta_mix = float(case["beta_mix"])
-
-    psi_axis = float(np.max(psi[1:-1, 1:-1]))
-    denominator = -psi_axis
-    if abs(denominator) < 1.0e-9:
-        denominator = np.sign(denominator) * 1.0e-9 if denominator != 0.0 else 1.0e-9
-
-    psi_norm = np.clip((psi - psi_axis) / denominator, 0.0, 1.0)
-    profile = np.where((psi_norm >= 0.0) & (psi_norm < 1.0), 1.0 - psi_norm, 0.0)
-    r_safe = np.maximum(rr, 1.0e-10)
-    j_p = rr * profile
-    j_f = profile / (mu0 * r_safe)
-    j_raw = beta_mix * j_p + (1.0 - beta_mix) * j_f
-    current = float(np.sum(j_raw) * dr * dz)
-    scale = ip_target / max(abs(current), 1.0e-9)
-    return -mu0 * rr * j_raw * scale
-
-
 def _gs_equation_residual_abs_max(psi: np.ndarray, case: dict[str, Any]) -> float:
-    r = np.linspace(float(case["R_min"]), float(case["R_max"]), int(case["NR"]))
-    dr = r[1] - r[0]
-    dz = (float(case["Z_max"]) - float(case["Z_min"])) / (int(case["NZ"]) - 1)
-    source = _gs_source_from_solution(psi, case)
-    dr2 = dr * dr
-    dz2 = dz * dz
-    r_interior = np.maximum(r[1:-1], 1.0e-10)[None, :]
-    a_e = 1.0 / dr2 - 1.0 / (2.0 * r_interior * dr)
-    a_w = 1.0 / dr2 + 1.0 / (2.0 * r_interior * dr)
-    a_ns = 1.0 / dz2
-    a_c = 2.0 / dr2 + 2.0 / dz2
-    residual = (
-        a_e * psi[1:-1, 2:]
-        + a_w * psi[1:-1, :-2]
-        + a_ns * (psi[:-2, 1:-1] + psi[2:, 1:-1])
-        - a_c * psi[1:-1, 1:-1]
-        - source[1:-1, 1:-1]
-    )
-    return float(np.max(np.abs(residual)))
+    return gs_equation_residual_np(
+        psi,
+        float(case["R_min"]),
+        float(case["R_max"]),
+        float(case["Z_min"]),
+        float(case["Z_max"]),
+        int(case["NR"]),
+        int(case["NZ"]),
+        float(case["Ip_target"]),
+        float(case["mu0"]),
+        float(case["beta_mix"]),
+    )["abs_max"]
 
 
 def _gs_equation_residual_relative_max(psi: np.ndarray, case: dict[str, Any]) -> float:
-    source = _gs_source_from_solution(psi, case)
-    scale = float(np.max(np.abs(source[1:-1, 1:-1]))) + 1.0e-30
-    return _gs_equation_residual_abs_max(psi, case) / scale
+    return gs_equation_residual_np(
+        psi,
+        float(case["R_min"]),
+        float(case["R_max"]),
+        float(case["Z_min"]),
+        float(case["Z_max"]),
+        int(case["NR"]),
+        int(case["NZ"]),
+        float(case["Ip_target"]),
+        float(case["mu0"]),
+        float(case["beta_mix"]),
+    )["relative_max"]
 
 
 def _relative_l2(candidate: np.ndarray, reference: np.ndarray) -> float:

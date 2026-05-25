@@ -164,6 +164,72 @@ def gs_solve_np(
     return result
 
 
+def gs_equation_residual_np(
+    psi: NDArray,
+    R_min: float,
+    R_max: float,
+    Z_min: float,
+    Z_max: float,
+    NR: int,
+    NZ: int,
+    Ip_target: float,
+    mu0: float = 4e-7 * np.pi,
+    beta_mix: float = 0.5,
+) -> dict[str, float]:
+    """Evaluate the discrete fixed-boundary Grad-Shafranov equation residual.
+
+    The residual is evaluated with the same cylindrical GS* stencil and
+    nonlinear source normalization used by ``gs_solve_np``:
+
+        a_E psi_E + a_W psi_W + a_NS (psi_N + psi_S) - a_C psi_C - source = 0
+
+    Returns absolute max, source-normalized max, and source-normalized L2
+    residuals on the interior grid. This is a diagnostic for equation
+    imbalance; low-iteration Picard/Jacobi runs can be physically consistent
+    across implementations while still reporting a nonzero residual.
+    """
+    psi_array = np.asarray(psi, dtype=float)
+    if psi_array.shape != (NZ, NR):
+        raise ValueError(f"psi shape must be (NZ, NR)=({NZ}, {NR}), got {psi_array.shape}")
+    if NR < 3 or NZ < 3:
+        raise ValueError("Grad-Shafranov residual requires at least a 3 x 3 grid")
+    if R_min <= 0.0 or R_max <= R_min or Z_max <= Z_min:
+        raise ValueError("Grad-Shafranov residual requires positive, increasing R and Z bounds")
+    if not np.all(np.isfinite(psi_array)):
+        raise ValueError("psi must contain only finite values")
+
+    R = np.linspace(R_min, R_max, NR)
+    Z = np.linspace(Z_min, Z_max, NZ)
+    RR, _ = np.meshgrid(R, Z)
+    dR = R[1] - R[0]
+    dZ = Z[1] - Z[0]
+    source = _compute_source_np(psi_array, RR, mu0, Ip_target, beta_mix, dR, dZ)
+
+    dR2 = dR * dR
+    dZ2 = dZ * dZ
+    R_interior = np.maximum(R[1:-1], 1.0e-10)[None, :]
+    a_e = 1.0 / dR2 - 1.0 / (2.0 * R_interior * dR)
+    a_w = 1.0 / dR2 + 1.0 / (2.0 * R_interior * dR)
+    a_ns = 1.0 / dZ2
+    a_c = 2.0 / dR2 + 2.0 / dZ2
+    residual = (
+        a_e * psi_array[1:-1, 2:]
+        + a_w * psi_array[1:-1, :-2]
+        + a_ns * (psi_array[:-2, 1:-1] + psi_array[2:, 1:-1])
+        - a_c * psi_array[1:-1, 1:-1]
+        - source[1:-1, 1:-1]
+    )
+    source_interior = source[1:-1, 1:-1]
+    source_abs_max = float(np.max(np.abs(source_interior))) + 1.0e-30
+    source_l2 = float(np.linalg.norm(source_interior)) + 1.0e-30
+    residual_abs_max = float(np.max(np.abs(residual)))
+    return {
+        "abs_max": residual_abs_max,
+        "relative_max": residual_abs_max / source_abs_max,
+        "relative_l2": float(np.linalg.norm(residual)) / source_l2,
+    }
+
+
 # ── JAX implementation ────────────────────────────────────────────
 
 if _HAS_JAX:
