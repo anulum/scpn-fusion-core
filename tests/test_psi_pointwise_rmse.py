@@ -199,6 +199,23 @@ class TestComputeGSSource:
             assert np.all(source_component[:, 0] == 0.0)
             assert np.all(source_component[:, -1] == 0.0)
 
+    def test_flux_profile_interpolation_preserves_weighted_current_integral(self):
+        psi_n = np.linspace(0.0, 1.0, 17).reshape(1, -1)
+        profile = np.sin(np.linspace(0.0, np.pi, 9)) + 0.5
+        weights = np.linspace(1.0, 2.0, psi_n.size).reshape(psi_n.shape)
+        mask = np.ones(psi_n.shape, dtype=bool)
+
+        interpolated = psi_rmse_mod.interpolate_flux_profile_current_conserving(
+            psi_n, profile, weights, mask
+        )
+
+        linear_reference = np.interp(
+            psi_n.ravel(), np.linspace(0.0, 1.0, profile.size), profile
+        ).reshape(psi_n.shape)
+        expected_integral = float(np.sum(linear_reference[mask] * weights[mask]))
+        observed_integral = float(np.sum(interpolated[mask] * weights[mask]))
+        assert observed_integral == pytest.approx(expected_integral, rel=1.0e-13, abs=1.0e-13)
+
     def test_source_components_reject_invalid_equilibrium_contract(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
         eq.ffprime = eq.ffprime[:-1]

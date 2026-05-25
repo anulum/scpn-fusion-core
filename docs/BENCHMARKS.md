@@ -154,7 +154,7 @@ SPARC benchmark reports aligned. Latest local aggregate run:
 artifacts/efit_nrmse_benchmark.json --output-md
 artifacts/efit_nrmse_benchmark.md`. Result: strict EFIT/GEQDSK gate remains
 `FAIL`, with `0/18` rows below `psi_N RMSE <= 0.05`, worst row
-`jet/jet_lmode_2MA.geqdsk` at `10.627107`, and `18/18` rows classified as
+`jet/jet_lmode_2MA.geqdsk` at `10.626997`, and `18/18` rows classified as
 `profile_source_mismatch`. The new convention classifier is report evidence
 for diagnosing those failures, not a relaxation of the native source contract.
 The same report now carries a separate operator-source elliptic-solver gate:
@@ -197,13 +197,15 @@ for raw canonical mode: rows without a passing adapter stay diagnostic-only for
 this gate, and the raw `psi_N` RMSE gate remains unchanged. Latest local result:
 `adapted_profile_pass_count=4/4` accepted adapter rows at threshold
 `psi_N RMSE <= 0.05`, worst accepted row `sparc/sparc_1315.eqdsk` at
-`0.012944`. Each adapted row also reports axis error, boundary contour
+`0.012696`. Each adapted row also reports axis error, boundary contour
 containment, boundary-flux RMSE, SOR residual, and q-profile sanity so the
 result is a reconstruction contract rather than a scale-factor diagnostic.
 Profile-source interpolation now uses a second-order flux-normalized
-quadratic stencil and explicitly masks boundary rows and columns before source
-assembly. This is a numerical interpolation and boundary-treatment hardening;
-it does not relax raw canonical GEQDSK convention semantics.
+quadratic stencil, preserves the masked current-relevant weighted integral of
+the established linear GEQDSK profile contract, and explicitly masks boundary
+rows and columns before source assembly. This is a numerical interpolation and
+boundary-treatment hardening; it does not relax raw canonical GEQDSK convention
+semantics.
 
 Polyglot status: the native Julia, Go, Rust, and Lean solver packages expose
 the same operator-current surfaces. Julia, Go, and Rust package tests validate

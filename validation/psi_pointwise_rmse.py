@@ -311,6 +311,53 @@ def interpolate_flux_profile_second_order(
     return (term0 + term1 + term2).reshape(psi_arr.shape)
 
 
+def interpolate_flux_profile_current_conserving(
+    psi_norm: NDArray,
+    profile: NDArray,
+    weights: NDArray,
+    mask: NDArray,
+) -> NDArray:
+    """
+    Interpolate a flux profile with local quadratic accuracy while preserving
+    its masked weighted integral from the linear GEQDSK profile contract.
+
+    The weighted integral is the discrete current contribution used by the
+    Grad-Shafranov source components: p' uses an R weight and FF' uses a 1/R
+    weight after division by mu0 R. Preserving that integral prevents the
+    higher-order interpolation stencil from adding hidden net-current drift.
+    """
+    psi_arr = np.asarray(psi_norm, dtype=np.float64)
+    profile_arr = np.asarray(profile, dtype=np.float64)
+    weights_arr = np.asarray(weights, dtype=np.float64)
+    mask_arr = np.asarray(mask, dtype=bool)
+    if weights_arr.shape != psi_arr.shape:
+        raise ValueError("weights shape must match psi_norm shape")
+    if mask_arr.shape != psi_arr.shape:
+        raise ValueError("mask shape must match psi_norm shape")
+    if not np.all(np.isfinite(weights_arr)):
+        raise ValueError("weights must contain only finite values")
+    if np.any(weights_arr[mask_arr] < 0.0):
+        raise ValueError("weights must be non-negative on the masked domain")
+
+    quadratic = interpolate_flux_profile_second_order(psi_arr, profile_arr)
+    if not np.any(mask_arr):
+        return quadratic
+
+    linear = np.interp(
+        np.clip(psi_arr, 0.0, 1.0).ravel(),
+        np.linspace(0.0, 1.0, profile_arr.size, dtype=np.float64),
+        profile_arr,
+    ).reshape(psi_arr.shape)
+    target_integral = float(np.sum(linear[mask_arr] * weights_arr[mask_arr]))
+    observed_integral = float(np.sum(quadratic[mask_arr] * weights_arr[mask_arr]))
+    scale = max(abs(target_integral), 1.0)
+    if abs(target_integral) <= 1.0e-15 and abs(observed_integral) <= 1.0e-15:
+        return quadratic
+    if abs(observed_integral) <= 1.0e-15 * scale:
+        raise ValueError("quadratic profile interpolation has zero weighted integral")
+    return quadratic * (target_integral / observed_integral)
+
+
 def compute_source_components(eq: GEqdsk) -> dict[str, Any]:
     """Split the GEQDSK-derived Grad-Shafranov source into profile components."""
     if eq.nw <= 0 or eq.nh <= 0:
@@ -364,19 +411,27 @@ def compute_source_components(eq: GEqdsk) -> dict[str, Any]:
         }
     psi_n = (psirz - eq.simag) / denom
 
-    # Interpolate 1D profiles onto 2D grid
     psi_n_clipped = np.clip(psi_n, 0.0, 1.0)
-    pprime_2d = interpolate_flux_profile_second_order(psi_n_clipped, pprime)
-    ffprime_2d = interpolate_flux_profile_second_order(psi_n_clipped, ffprime)
-
-    # Zero outside plasma
     plasma_mask = (psi_n >= 0) & (psi_n < 1.0)
-    pprime_2d[~plasma_mask] = 0.0
-    ffprime_2d[~plasma_mask] = 0.0
-    pprime_2d[[0, -1], :] = 0.0
-    pprime_2d[:, [0, -1]] = 0.0
-    ffprime_2d[[0, -1], :] = 0.0
-    ffprime_2d[:, [0, -1]] = 0.0
+    source_mask = plasma_mask.copy()
+    source_mask[[0, -1], :] = False
+    source_mask[:, [0, -1]] = False
+
+    # Interpolate 1D profiles onto the 2D grid while preserving the masked
+    # current-relevant weighted integral of the established linear profile
+    # contract.
+    rr_safe = np.maximum(RR, 1.0e-12)
+    pprime_2d = interpolate_flux_profile_current_conserving(
+        psi_n_clipped, pprime, rr_safe, source_mask
+    )
+    ffprime_2d = interpolate_flux_profile_current_conserving(
+        psi_n_clipped, ffprime, 1.0 / rr_safe, source_mask
+    )
+
+    # Zero outside the physical plasma source domain and on Dirichlet boundary
+    # rows/columns.
+    pprime_2d[~source_mask] = 0.0
+    ffprime_2d[~source_mask] = 0.0
 
     mu0 = 4e-7 * np.pi
     pressure_source = -(mu0 * RR**2 * pprime_2d)
