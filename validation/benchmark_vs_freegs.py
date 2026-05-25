@@ -91,6 +91,7 @@ def _patch_freegs_find_critical_scalar_derivative(freegs_module: Any) -> None:
     exec(compile(patched_source, func.__code__.co_filename, "exec"), namespace)
     critical.find_critical = namespace["find_critical"]
 
+
 # ── NRMSE utility ────────────────────────────────────────────────────
 
 PSI_NRMSE_THRESHOLD = 0.11  # 11 %
