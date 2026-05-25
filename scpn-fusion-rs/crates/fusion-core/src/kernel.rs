@@ -1104,6 +1104,31 @@ mod tests {
     }
 
     #[test]
+    fn test_operator_current_density_matches_mixed_solovev_manufactured_solution() {
+        let grid = Grid2D::new(15, 17, 1.0, 3.0, -1.0, 1.0);
+        let mixed_coeff = 0.05_f64;
+        let vertical_coeff = -0.125_f64;
+        let mu0 = 4.0 * std::f64::consts::PI * 1.0e-7;
+        let psi = Array2::from_shape_fn((grid.nz, grid.nr), |(iz, ir)| {
+            mixed_coeff * grid.r[ir].powi(2) * grid.z[iz].powi(2)
+                + vertical_coeff * grid.z[iz].powi(2)
+        });
+
+        let delta_star = grad_shafranov_delta_star(&psi, &grid).unwrap();
+        let current_density = toroidal_current_density_from_flux(&psi, &grid, mu0).unwrap();
+
+        for iz in 1..(grid.nz - 1) {
+            for ir in 1..(grid.nr - 1) {
+                let r = grid.rr[[iz, ir]];
+                let expected_delta = 2.0 * mixed_coeff * r * r + 2.0 * vertical_coeff;
+                let expected_j = -expected_delta / (mu0 * r);
+                assert!((delta_star[[iz, ir]] - expected_delta).abs() < 1.0e-12);
+                assert!((current_density[[iz, ir]] - expected_j).abs() < 1.0e-6);
+            }
+        }
+    }
+
+    #[test]
     fn test_full_equilibrium_iter_config() {
         let mut kernel = FusionKernel::from_file(&config_path("iter_config.json")).unwrap();
         let result = kernel.solve_equilibrium().unwrap();

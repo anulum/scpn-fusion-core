@@ -68,4 +68,17 @@ end
         @test abs(delta_star_radial[iz, ir] - expected_delta) < 1.0e-12
         @test abs(current_density_radial[iz, ir] - expected_j) < 1.0e-6
     end
+
+    mixed_coeff = 0.05
+    psi_mixed = [mixed_coeff * r[ir]^2 * z[iz]^2 + vertical_coeff * z[iz]^2
+                 for iz in 1:case.NZ, ir in 1:case.NR]
+    delta_star_mixed = grad_shafranov_delta_star(case, psi_mixed)
+    current_density_mixed = toroidal_current_density_from_flux(case, psi_mixed)
+
+    for iz in 2:case.NZ-1, ir in 2:case.NR-1
+        expected_delta = 2.0 * mixed_coeff * r[ir]^2 + 2.0 * vertical_coeff
+        expected_j = -expected_delta / (case.mu0 * r[ir])
+        @test abs(delta_star_mixed[iz, ir] - expected_delta) < 1.0e-12
+        @test abs(current_density_mixed[iz, ir] - expected_j) < 1.0e-6
+    end
 end

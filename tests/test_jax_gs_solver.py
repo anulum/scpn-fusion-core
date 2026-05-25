@@ -229,6 +229,38 @@ class TestGsSolveNumpy:
             atol=1.0e-6,
         )
 
+    def test_delta_star_matches_mixed_solovev_manufactured_flux(self):
+        """Mixed R^2 Z^2 flux verifies cylindrical radial cancellation."""
+        nr, nz = 15, 17
+        r_min, r_max = 1.0, 3.0
+        z_min, z_max = -1.0, 1.0
+        mixed_coeff = 0.05
+        vertical_coeff = -0.125
+
+        r = np.linspace(r_min, r_max, nr)
+        z = np.linspace(z_min, z_max, nz)
+        rr, zz = np.meshgrid(r, z)
+        psi = mixed_coeff * rr**2 * zz**2 + vertical_coeff * zz**2
+
+        delta_star = gs_delta_star_np(psi, r_min, r_max, z_min, z_max)
+        current_density = gs_toroidal_current_density_np(psi, r_min, r_max, z_min, z_max)
+
+        expected_delta = 2.0 * mixed_coeff * rr[1:-1, 1:-1] ** 2 + 2.0 * vertical_coeff
+        expected_j = -expected_delta / (MU0 * rr[1:-1, 1:-1])
+
+        np.testing.assert_allclose(
+            delta_star[1:-1, 1:-1],
+            expected_delta,
+            rtol=1.0e-12,
+            atol=1.0e-12,
+        )
+        np.testing.assert_allclose(
+            current_density[1:-1, 1:-1],
+            expected_j,
+            rtol=1.0e-12,
+            atol=1.0e-6,
+        )
+
 
 class TestGsSolvePublicAPI:
     """Test jax_gs_solve dispatches correctly."""

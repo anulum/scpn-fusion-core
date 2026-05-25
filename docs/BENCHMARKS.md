@@ -84,9 +84,11 @@ still fails and remains documented as debt in the benchmark report.
 
 `validation/benchmark_gs_operator_current_closure.py` validates the native
 non-reduced cylindrical operator contract on manufactured fields:
-`psi(R, Z) = a R^4 + b Z^2`, `Delta*psi = 8aR^2 + 2b`, and
+`psi(R, Z) = a R^4 + b Z^2 + c R^2 Z^2`,
+`Delta*psi = 8aR^2 + 2b + 2cR^2`, and
 `J_phi = -Delta*psi / (mu0 R)`. The radial-quartic case explicitly exercises
-the cylindrical `-(1/R)dpsi/dR` term. This benchmark is separate from EFIT
+the cylindrical `-(1/R)dpsi/dR` term, and the mixed Solov'ev-style case verifies
+the radial cancellation in `R^2 Z^2`. This benchmark is separate from EFIT
 inverse reconstruction: it proves the native operator/current diagnostic obeys
 the Grad-Shafranov current relation on the local grid.
 
@@ -97,12 +99,13 @@ Local run on this machine:
 - Python: 3.12.3
 - NumPy: 2.2.6
 
-| Case | Grid | a | b | elapsed s | max discrete Delta* abs error | analytic Delta* error | max J rel error | total current rel error |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| vertical_quadratic | 17x19 | 0 | -0.25 | 2.069140e-04 | 5.662137e-15 | 5.662137e-15 | 1.138333e-14 | 1.523927e-16 |
-| radial_quartic_17 | 17x19 | 0.03125 | -0.125 | 1.412020e-04 | 3.330669e-14 | 9.765625e-04 | 4.338971e-14 | 0.000000e+00 |
-| radial_quartic_33 | 33x35 | 0.03125 | -0.125 | 1.717630e-04 | 2.380318e-13 | 2.441406e-04 | 1.901481e-13 | 0.000000e+00 |
-| radial_quartic_65 | 65x67 | 0.03125 | -0.125 | 2.971440e-04 | 1.027178e-12 | 6.103516e-05 | 3.028695e-12 | 8.311853e-16 |
+| Case | Grid | a | b | c | elapsed s | max discrete Delta* abs error | analytic Delta* error | max J rel error | total current rel error |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| vertical_quadratic | 17x19 | 0 | -0.25 | 0 | 2.400220e-04 | 5.662137e-15 | 5.662137e-15 | 1.138333e-14 | 1.523927e-16 |
+| radial_quartic_17 | 17x19 | 0.03125 | -0.125 | 0 | 1.361470e-04 | 3.330669e-14 | 9.765625e-04 | 4.338971e-14 | 0.000000e+00 |
+| radial_quartic_33 | 33x35 | 0.03125 | -0.125 | 0 | 1.663470e-04 | 2.380318e-13 | 2.441406e-04 | 1.901481e-13 | 0.000000e+00 |
+| radial_quartic_65 | 65x67 | 0.03125 | -0.125 | 0 | 3.110590e-04 | 1.027178e-12 | 6.103516e-05 | 3.028695e-12 | 8.311853e-16 |
+| mixed_solovev | 29x31 | 0 | -0.125 | 0.05 | 1.633400e-04 | 5.545564e-14 | 5.545564e-14 | 1.119700e-12 | 9.237473e-16 |
 
 The radial-quartic analytic error equals the expected second-order centered
 stencil truncation `2a dR^2`. The measured order from the two finest grids is
@@ -113,7 +116,7 @@ Status: PASS against thresholds `Delta* <= 1e-10`, `J_rel <= 1e-11`,
 
 Polyglot status: the native Julia, Go, Rust, and Lean solver packages expose
 the same operator-current surfaces. Julia, Go, and Rust package tests validate
-manufactured `psi(R, Z) = c Z^2` closure; Lean builds the corresponding
+manufactured `Z^2`, `R^4 + Z^2`, and mixed `R^2 Z^2` closure; Lean builds the corresponding
 `deltaStar`, `toroidalCurrentDensityFromFlux`, and
 `totalToroidalCurrentFromFlux` definitions as part of `lake build`.
 

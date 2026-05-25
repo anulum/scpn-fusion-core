@@ -4,9 +4,9 @@
 This benchmark uses manufactured flux fields with an analytic cylindrical
 Grad-Shafranov operator:
 
-    psi(R, Z) = a R^4 + b Z^2
-    analytic Delta*psi = 8 a R^2 + 2 b
-    centered-stencil Delta*psi = 8 a R^2 + 2 b - 2 a dR^2
+    psi(R, Z) = a R^4 + b Z^2 + c R^2 Z^2
+    analytic Delta*psi = 8 a R^2 + 2 b + 2 c R^2
+    centered-stencil Delta*psi = 8 a R^2 + 2 b + 2 c R^2 - 2 a dR^2
     J_phi = -Delta*psi / (mu0 R)
 
 It validates the non-reduced operator-current relation rather than comparing
@@ -63,13 +63,14 @@ def _run_case(
     nz: int,
     radial_coeff: float,
     vertical_coeff: float,
+    mixed_coeff: float = 0.0,
 ) -> dict[str, Any]:
     r_min, r_max = 1.0, 3.0
     z_min, z_max = -1.0, 1.0
     r = np.linspace(r_min, r_max, nr)
     z = np.linspace(z_min, z_max, nz)
     rr, zz = np.meshgrid(r, z)
-    psi = radial_coeff * rr**4 + vertical_coeff * zz**2
+    psi = radial_coeff * rr**4 + vertical_coeff * zz**2 + mixed_coeff * rr**2 * zz**2
     dr = (r_max - r_min) / (nr - 1)
     dz = (z_max - z_min) / (nz - 1)
 
@@ -79,7 +80,11 @@ def _run_case(
     total_current = gs_total_toroidal_current_np(psi, r_min, r_max, z_min, z_max)
     elapsed_s = time.perf_counter() - start
 
-    expected_analytic_delta = 8.0 * radial_coeff * rr[1:-1, 1:-1] ** 2 + 2.0 * vertical_coeff
+    expected_analytic_delta = (
+        8.0 * radial_coeff * rr[1:-1, 1:-1] ** 2
+        + 2.0 * vertical_coeff
+        + 2.0 * mixed_coeff * rr[1:-1, 1:-1] ** 2
+    )
     expected_delta = expected_analytic_delta - 2.0 * radial_coeff * dr**2
     expected_density = np.broadcast_to(
         -expected_delta / (MU0 * rr[1:-1, 1:-1]),
@@ -99,6 +104,7 @@ def _run_case(
         "nz": nz,
         "radial_coeff": radial_coeff,
         "vertical_coeff": vertical_coeff,
+        "mixed_coeff": mixed_coeff,
         "dr": dr,
         "elapsed_s": elapsed_s,
         "delta_star_max_abs_error": float(np.max(delta_error)),
@@ -138,8 +144,8 @@ def _write_markdown(report: dict[str, Any]) -> None:
     lines = [
         "# Grad-Shafranov Operator Current Closure Benchmark",
         "",
-        "Manufactured contracts: `psi(R, Z) = a R^4 + b Z^2`, "
-        "`Delta*psi = 8aR^2 + 2b`, and `J_phi = -Delta*psi / (mu0 R)`.",
+        "Manufactured contracts: `psi(R, Z) = a R^4 + b Z^2 + c R^2 Z^2`, "
+        "`Delta*psi = 8aR^2 + 2b + 2cR^2`, and `J_phi = -Delta*psi / (mu0 R)`.",
         "",
         "For radial-quartic terms the centered second-order stencil has exact "
         "discrete truncation `-2a dR^2`; the benchmark reports both the "
@@ -165,14 +171,15 @@ def _write_markdown(report: dict[str, Any]) -> None:
             "",
             "## Results",
             "",
-            "| Case | Grid | a | b | elapsed s | max discrete Delta* abs error | analytic Delta* error | max J rel error | total current rel error |",
-            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            "| Case | Grid | a | b | c | elapsed s | max discrete Delta* abs error | analytic Delta* error | max J rel error | total current rel error |",
+            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
     for case in report["cases"]:
         lines.append(
             f"| {case['case']} | {case['nr']}x{case['nz']} | "
             f"{case['radial_coeff']:.6g} | {case['vertical_coeff']:.6g} | "
+            f"{case['mixed_coeff']:.6g} | "
             f"{case['elapsed_s']:.6e} | "
             f"{case['delta_star_max_abs_error']:.6e} | "
             f"{case['analytic_delta_star_max_abs_error']:.6e} | "
@@ -212,6 +219,7 @@ def main() -> int:
         _run_case("radial_quartic_17", 17, 19, 0.03125, -0.125),
         _run_case("radial_quartic_33", 33, 35, 0.03125, -0.125),
         _run_case("radial_quartic_65", 65, 67, 0.03125, -0.125),
+        _run_case("mixed_solovev", 29, 31, 0.0, -0.125, 0.05),
     ]
     radial_convergence_order = _radial_convergence_order(cases)
     passed = (

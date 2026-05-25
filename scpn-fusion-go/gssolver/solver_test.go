@@ -136,4 +136,34 @@ func TestOperatorCurrentClosureManufacturedZQuadratic(t *testing.T) {
 			}
 		}
 	}
+
+	mixedCoeff := 0.05
+	psiMixed := zeros(c.NZ, c.NR)
+	for iz := 0; iz < c.NZ; iz++ {
+		for ir := 0; ir < c.NR; ir++ {
+			r := c.RMin + float64(ir)*dR
+			psiMixed[iz][ir] = mixedCoeff*r*r*z[iz]*z[iz] + verticalCoeff*z[iz]*z[iz]
+		}
+	}
+	deltaStarMixed, err := DeltaStar(c, psiMixed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	currentDensityMixed, err := ToroidalCurrentDensityFromFlux(c, psiMixed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for iz := 1; iz < c.NZ-1; iz++ {
+		for ir := 1; ir < c.NR-1; ir++ {
+			r := c.RMin + float64(ir)*dR
+			expectedDelta := 2.0*mixedCoeff*r*r + 2.0*verticalCoeff
+			expectedJ := -expectedDelta / (c.Mu0 * r)
+			if math.Abs(deltaStarMixed[iz][ir]-expectedDelta) > 1.0e-12 {
+				t.Fatalf("unexpected mixed Delta* at (%d, %d): %.17g", iz, ir, deltaStarMixed[iz][ir])
+			}
+			if math.Abs(currentDensityMixed[iz][ir]-expectedJ) > 1.0e-6 {
+				t.Fatalf("unexpected mixed J_phi at (%d, %d): %.17g", iz, ir, currentDensityMixed[iz][ir])
+			}
+		}
+	}
 }

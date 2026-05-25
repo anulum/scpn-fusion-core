@@ -498,5 +498,30 @@ omega_j = 0.6666666666666666
                 assert!((current_density_radial[iz][ir] - expected_j).abs() < 1.0e-6);
             }
         }
+
+        let mixed_coeff = 0.05_f64;
+        let psi_mixed: Vec<Vec<f64>> = z
+            .iter()
+            .map(|z_value| {
+                r.iter()
+                    .map(|r_value| {
+                        mixed_coeff * r_value.powi(2) * z_value.powi(2)
+                            + vertical_coeff * z_value.powi(2)
+                    })
+                    .collect()
+            })
+            .collect();
+        let delta_star_mixed = grad_shafranov_delta_star(&case, &psi_mixed).unwrap();
+        let current_density_mixed = toroidal_current_density_from_flux(&case, &psi_mixed).unwrap();
+
+        for iz in 1..(case.nz - 1) {
+            for ir in 1..(case.nr - 1) {
+                let r_value = r[ir];
+                let expected_delta = 2.0 * mixed_coeff * r_value * r_value + 2.0 * vertical_coeff;
+                let expected_j = -expected_delta / (case.mu0 * r_value);
+                assert!((delta_star_mixed[iz][ir] - expected_delta).abs() < 1.0e-12);
+                assert!((current_density_mixed[iz][ir] - expected_j).abs() < 1.0e-6);
+            }
+        }
     }
 }
