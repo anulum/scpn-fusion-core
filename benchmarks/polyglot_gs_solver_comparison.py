@@ -257,6 +257,60 @@ def _negative_flux_abs_max(psi: np.ndarray) -> float:
     return float(max(0.0, -np.min(psi)))
 
 
+def _gs_source_from_solution(psi: np.ndarray, case: dict[str, Any]) -> np.ndarray:
+    r = np.linspace(float(case["R_min"]), float(case["R_max"]), int(case["NR"]))
+    z = np.linspace(float(case["Z_min"]), float(case["Z_max"]), int(case["NZ"]))
+    rr, _ = np.meshgrid(r, z)
+    dr = r[1] - r[0]
+    dz = z[1] - z[0]
+    mu0 = float(case["mu0"])
+    ip_target = float(case["Ip_target"])
+    beta_mix = float(case["beta_mix"])
+
+    psi_axis = float(np.max(psi[1:-1, 1:-1]))
+    denominator = -psi_axis
+    if abs(denominator) < 1.0e-9:
+        denominator = np.sign(denominator) * 1.0e-9 if denominator != 0.0 else 1.0e-9
+
+    psi_norm = np.clip((psi - psi_axis) / denominator, 0.0, 1.0)
+    profile = np.where((psi_norm >= 0.0) & (psi_norm < 1.0), 1.0 - psi_norm, 0.0)
+    r_safe = np.maximum(rr, 1.0e-10)
+    j_p = rr * profile
+    j_f = profile / (mu0 * r_safe)
+    j_raw = beta_mix * j_p + (1.0 - beta_mix) * j_f
+    current = float(np.sum(j_raw) * dr * dz)
+    scale = ip_target / max(abs(current), 1.0e-9)
+    return -mu0 * rr * j_raw * scale
+
+
+def _gs_equation_residual_abs_max(psi: np.ndarray, case: dict[str, Any]) -> float:
+    r = np.linspace(float(case["R_min"]), float(case["R_max"]), int(case["NR"]))
+    dr = r[1] - r[0]
+    dz = (float(case["Z_max"]) - float(case["Z_min"])) / (int(case["NZ"]) - 1)
+    source = _gs_source_from_solution(psi, case)
+    dr2 = dr * dr
+    dz2 = dz * dz
+    r_interior = np.maximum(r[1:-1], 1.0e-10)[None, :]
+    a_e = 1.0 / dr2 - 1.0 / (2.0 * r_interior * dr)
+    a_w = 1.0 / dr2 + 1.0 / (2.0 * r_interior * dr)
+    a_ns = 1.0 / dz2
+    a_c = 2.0 / dr2 + 2.0 / dz2
+    residual = (
+        a_e * psi[1:-1, 2:]
+        + a_w * psi[1:-1, :-2]
+        + a_ns * (psi[:-2, 1:-1] + psi[2:, 1:-1])
+        - a_c * psi[1:-1, 1:-1]
+        - source[1:-1, 1:-1]
+    )
+    return float(np.max(np.abs(residual)))
+
+
+def _gs_equation_residual_relative_max(psi: np.ndarray, case: dict[str, Any]) -> float:
+    source = _gs_source_from_solution(psi, case)
+    scale = float(np.max(np.abs(source[1:-1, 1:-1]))) + 1.0e-30
+    return _gs_equation_residual_abs_max(psi, case) / scale
+
+
 def _relative_l2(candidate: np.ndarray, reference: np.ndarray) -> float:
     denominator = float(np.linalg.norm(reference[1:-1, 1:-1])) + 1e-30
     return float(np.linalg.norm(candidate[1:-1, 1:-1] - reference[1:-1, 1:-1])) / denominator
@@ -293,6 +347,10 @@ def main() -> None:
                 julia_psi
             ),
             "negative_flux_abs_max": _negative_flux_abs_max(julia_psi),
+            "gs_equation_residual_abs_max": _gs_equation_residual_abs_max(julia_psi, case),
+            "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(
+                julia_psi, case
+            ),
         },
         "Go": {
             "relative_l2_interior": _relative_l2(go_psi, python_psi),
@@ -312,6 +370,8 @@ def main() -> None:
                 go_psi
             ),
             "negative_flux_abs_max": _negative_flux_abs_max(go_psi),
+            "gs_equation_residual_abs_max": _gs_equation_residual_abs_max(go_psi, case),
+            "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(go_psi, case),
         },
         "Rust": {
             "relative_l2_interior": _relative_l2(rust_psi, python_psi),
@@ -331,6 +391,10 @@ def main() -> None:
                 rust_psi
             ),
             "negative_flux_abs_max": _negative_flux_abs_max(rust_psi),
+            "gs_equation_residual_abs_max": _gs_equation_residual_abs_max(rust_psi, case),
+            "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(
+                rust_psi, case
+            ),
         },
         "Lean": {
             "relative_l2_interior": _relative_l2(lean_psi, python_psi),
@@ -350,6 +414,10 @@ def main() -> None:
                 lean_psi
             ),
             "negative_flux_abs_max": _negative_flux_abs_max(lean_psi),
+            "gs_equation_residual_abs_max": _gs_equation_residual_abs_max(lean_psi, case),
+            "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(
+                lean_psi, case
+            ),
         },
     }
 
@@ -377,6 +445,10 @@ def main() -> None:
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(python_psi),
                 "axis_local_dominance_margin": _axis_local_dominance_margin(python_psi),
                 "axis_discrete_laplacian": _axis_discrete_laplacian(python_psi),
+                "gs_equation_residual_abs_max": _gs_equation_residual_abs_max(python_psi, case),
+                "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(
+                    python_psi, case
+                ),
                 "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
                     python_psi
                 ),
@@ -396,6 +468,10 @@ def main() -> None:
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(julia_psi),
                 "axis_local_dominance_margin": _axis_local_dominance_margin(julia_psi),
                 "axis_discrete_laplacian": _axis_discrete_laplacian(julia_psi),
+                "gs_equation_residual_abs_max": _gs_equation_residual_abs_max(julia_psi, case),
+                "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(
+                    julia_psi, case
+                ),
                 "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
                     julia_psi
                 ),
@@ -415,6 +491,10 @@ def main() -> None:
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(go_psi),
                 "axis_local_dominance_margin": _axis_local_dominance_margin(go_psi),
                 "axis_discrete_laplacian": _axis_discrete_laplacian(go_psi),
+                "gs_equation_residual_abs_max": _gs_equation_residual_abs_max(go_psi, case),
+                "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(
+                    go_psi, case
+                ),
                 "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
                     go_psi
                 ),
@@ -434,6 +514,10 @@ def main() -> None:
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(rust_psi),
                 "axis_local_dominance_margin": _axis_local_dominance_margin(rust_psi),
                 "axis_discrete_laplacian": _axis_discrete_laplacian(rust_psi),
+                "gs_equation_residual_abs_max": _gs_equation_residual_abs_max(rust_psi, case),
+                "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(
+                    rust_psi, case
+                ),
                 "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
                     rust_psi
                 ),
@@ -453,6 +537,10 @@ def main() -> None:
                 "axis_boundary_distance_cells": _axis_boundary_distance_cells(lean_psi),
                 "axis_local_dominance_margin": _axis_local_dominance_margin(lean_psi),
                 "axis_discrete_laplacian": _axis_discrete_laplacian(lean_psi),
+                "gs_equation_residual_abs_max": _gs_equation_residual_abs_max(lean_psi, case),
+                "gs_equation_residual_relative_max": _gs_equation_residual_relative_max(
+                    lean_psi, case
+                ),
                 "midplane_radial_monotonicity_violations": _midplane_radial_monotonicity_violations(
                     lean_psi
                 ),
@@ -524,8 +612,8 @@ def main() -> None:
             "",
             "## Physics Invariants",
             "",
-            "| Language | Axis flux value | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Axis local dominance margin | Axis discrete Laplacian | Midplane radial monotonicity violations | Axis-column vertical monotonicity violations | Negative flux absolute maximum |",
-            "|----------|-----------------|------------------------------------|------------------------------|------------------------------------|--------------------------------|------------------------------|--------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------|",
+            "| Language | Axis flux value | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Axis local dominance margin | Axis discrete Laplacian | GS residual absolute maximum | GS residual relative maximum | Midplane radial monotonicity violations | Axis-column vertical monotonicity violations | Negative flux absolute maximum |",
+            "|----------|-----------------|------------------------------------|------------------------------|------------------------------------|--------------------------------|------------------------------|--------------------------|------------------------------|------------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------|",
         ]
     )
     for row in report["solvers"]:
@@ -535,6 +623,8 @@ def main() -> None:
             f"{row['axis_midplane_offset_cells']} | {row['axis_radial_center_offset_cells']} | "
             f"{row['axis_boundary_distance_cells']} | {row['axis_local_dominance_margin']:.6e} | "
             f"{row['axis_discrete_laplacian']:.6e} | "
+            f"{row['gs_equation_residual_abs_max']:.6e} | "
+            f"{row['gs_equation_residual_relative_max']:.6e} | "
             f"{row['midplane_radial_monotonicity_violations']} | "
             f"{row['axis_column_vertical_monotonicity_violations']} | "
             f"{row['negative_flux_abs_max']:.6e} |"

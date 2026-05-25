@@ -32,29 +32,29 @@ Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-b
 
 | Language | Implementation | Wall time (s) |
 |----------|----------------|---------------|
-| Python | `gs_solve_np` | 0.004659 |
-| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 3.967225 |
-| Go | `gssolver.Solve` | 0.004454 |
-| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.001930 |
-| Lean | `SCPNFusionSolvers.solveGradShafranov` | 1.000135 |
+| Python | `gs_solve_np` | 0.003065 |
+| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 3.038036 |
+| Go | `gssolver.Solve` | 0.001963 |
+| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.001385 |
+| Lean | `SCPNFusionSolvers.solveGradShafranov` | 0.881879 |
 
 ## Numerical Parity
 
 | Language | Interior relative L2 vs Python | Interior max abs error vs Python | Axis flux abs error vs Python | Boundary absolute maximum |
 |----------|--------------------------------|----------------------------------|-------------------------------|---------------------------|
-| Julia | 8.983125e-17 | 1.387779e-17 | 0.000000e+00 | 0.000000e+00 |
-| Go | 1.790625e-16 | 1.387779e-17 | 0.000000e+00 | 0.000000e+00 |
-| Rust | 5.906398e-16 | 4.163336e-17 | 3.469447e-17 | 0.000000e+00 |
-| Lean | 1.123308e-14 | 4.857226e-16 | 2.844947e-16 | 0.000000e+00 |
+| Julia | 9.018854e-17 | 1.387779e-17 | 0.000000e+00 | 0.000000e+00 |
+| Go | 1.790487e-16 | 1.387779e-17 | 0.000000e+00 | 0.000000e+00 |
+| Rust | 5.911966e-16 | 4.163336e-17 | 3.469447e-17 | 0.000000e+00 |
+| Lean | 1.123319e-14 | 4.857226e-16 | 2.844947e-16 | 0.000000e+00 |
 
 ## Physics Invariants
 
-| Language | Axis flux value | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Axis local dominance margin | Axis discrete Laplacian | Midplane radial monotonicity violations | Axis-column vertical monotonicity violations | Negative flux absolute maximum |
-|----------|-----------------|------------------------------------|------------------------------|------------------------------------|--------------------------------|------------------------------|--------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------|
-| Python | 4.265183e-02 | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 0 | 0 | 0.000000e+00 |
-| Julia | 4.265183e-02 | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 0 | 0 | 0.000000e+00 |
-| Go | 4.265183e-02 | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 0 | 0 | 0.000000e+00 |
-| Rust | 4.265183e-02 | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 0 | 0 | 0.000000e+00 |
-| Lean | 4.265183e-02 | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 0 | 0 | 0.000000e+00 |
+| Language | Axis flux value | Vertical symmetry absolute maximum | Axis midplane offset (cells) | Axis radial-center offset (cells) | Axis boundary distance (cells) | Axis local dominance margin | Axis discrete Laplacian | GS residual absolute maximum | GS residual relative maximum | Midplane radial monotonicity violations | Axis-column vertical monotonicity violations | Negative flux absolute maximum |
+|----------|-----------------|------------------------------------|------------------------------|------------------------------------|--------------------------------|------------------------------|--------------------------|------------------------------|------------------------------|-------------------------------------------|-----------------------------------------------|--------------------------------|
+| Python | 4.265183e-02 | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 9.034946e-01 | 8.617210e-01 | 0 | 0 | 0.000000e+00 |
+| Julia | 4.265183e-02 | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 9.034946e-01 | 8.617210e-01 | 0 | 0 | 0.000000e+00 |
+| Go | 4.265183e-02 | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 9.034946e-01 | 8.617210e-01 | 0 | 0 | 0.000000e+00 |
+| Rust | 4.265183e-02 | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 9.034946e-01 | 8.617210e-01 | 0 | 0 | 0.000000e+00 |
+| Lean | 4.265183e-02 | 0.000000e+00 | 0 | 0 | 8 | 1.368324e-04 | -2.321758e-03 | 9.034946e-01 | 8.617210e-01 | 0 | 0 | 0.000000e+00 |
 
 These local timings include process start-up for CLI paths. The Go and Rust rows build solver binaries before timing and exclude toolchain orchestration from the measured solver invocation. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.

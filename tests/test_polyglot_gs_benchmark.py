@@ -201,6 +201,32 @@ def test_negative_flux_overshoot_metric_reports_maximum_negative_well() -> None:
     assert benchmark._negative_flux_abs_max(overshoot) == 0.25
 
 
+def test_gs_equation_residual_metric_detects_discrete_pde_imbalance() -> None:
+    """Benchmark reports must expose imbalance in the discretized GS equation."""
+    case = {
+        "R_min": 1.0,
+        "R_max": 3.0,
+        "Z_min": -1.0,
+        "Z_max": 1.0,
+        "NR": 3,
+        "NZ": 3,
+        "Ip_target": 0.0,
+        "mu0": 4.0e-7 * np.pi,
+        "beta_mix": 0.5,
+    }
+    balanced = np.zeros((3, 3))
+    imbalanced = np.array(
+        [
+            [0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+
+    assert benchmark._gs_equation_residual_abs_max(balanced, case) == 0.0
+    assert benchmark._gs_equation_residual_relative_max(imbalanced, case) > 1.0
+
+
 def test_interior_max_abs_error_excludes_dirichlet_boundary() -> None:
     """Benchmark parity must expose localized interior solver error."""
     reference = np.array(

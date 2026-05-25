@@ -44,10 +44,12 @@
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
         "boundary_abs_max": 0.0,
+        "gs_equation_residual_abs_max": 0.9034945604966909,
+        "gs_equation_residual_relative_max": 0.8617210268428003,
         "max_abs_error_interior": 1.3877787807814457e-17,
         "midplane_radial_monotonicity_violations": 0,
         "negative_flux_abs_max": 0.0,
-        "relative_l2_interior": 1.7906252983703998e-16,
+        "relative_l2_interior": 1.7904871381681672e-16,
         "vertical_symmetry_abs_max": 0.0
       },
       "Julia": {
@@ -59,10 +61,12 @@
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
         "boundary_abs_max": 0.0,
+        "gs_equation_residual_abs_max": 0.9034945604966895,
+        "gs_equation_residual_relative_max": 0.8617210268427986,
         "max_abs_error_interior": 1.3877787807814457e-17,
         "midplane_radial_monotonicity_violations": 0,
         "negative_flux_abs_max": 0.0,
-        "relative_l2_interior": 8.983124920046824e-17,
+        "relative_l2_interior": 9.018854179614561e-17,
         "vertical_symmetry_abs_max": 0.0
       },
       "Lean": {
@@ -74,10 +78,12 @@
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
         "boundary_abs_max": 0.0,
+        "gs_equation_residual_abs_max": 0.9034945604967026,
+        "gs_equation_residual_relative_max": 0.8617210268428164,
         "max_abs_error_interior": 4.85722573273506e-16,
         "midplane_radial_monotonicity_violations": 0,
         "negative_flux_abs_max": 0.0,
-        "relative_l2_interior": 1.1233083104582504e-14,
+        "relative_l2_interior": 1.1233193438119962e-14,
         "vertical_symmetry_abs_max": 0.0
       },
       "Rust": {
@@ -89,10 +95,12 @@
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
         "boundary_abs_max": 0.0,
+        "gs_equation_residual_abs_max": 0.9034945604966926,
+        "gs_equation_residual_relative_max": 0.8617210268428019,
         "max_abs_error_interior": 4.163336342344337e-17,
         "midplane_radial_monotonicity_violations": 0,
         "negative_flux_abs_max": 0.0,
-        "relative_l2_interior": 5.906398378511105e-16,
+        "relative_l2_interior": 5.91196632650529e-16,
         "vertical_symmetry_abs_max": 0.0
       }
     },
@@ -110,12 +118,14 @@
       "axis_local_dominance_margin": 0.00013683238963599353,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
+      "gs_equation_residual_abs_max": 0.9034945604966895,
+      "gs_equation_residual_relative_max": 0.8617210268427986,
       "implementation": "gs_solve_np",
       "language": "Python",
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.0046587910037487745
+      "wall_time_s": 0.003064582997467369
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -125,12 +135,14 @@
       "axis_local_dominance_margin": 0.00013683238963600047,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
+      "gs_equation_residual_abs_max": 0.9034945604966895,
+      "gs_equation_residual_relative_max": 0.8617210268427986,
       "implementation": "SCPNFusionSolvers.solve_grad_shafranov",
       "language": "Julia",
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 3.967224858002737
+      "wall_time_s": 3.038035774981836
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -140,12 +152,14 @@
       "axis_local_dominance_margin": 0.0001368323896359866,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
+      "gs_equation_residual_abs_max": 0.9034945604966909,
+      "gs_equation_residual_relative_max": 0.8617210268428003,
       "implementation": "gssolver.Solve",
       "language": "Go",
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.004454153997357935
+      "wall_time_s": 0.001963351998711005
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -155,12 +169,14 @@
       "axis_local_dominance_margin": 0.00013683238963600047,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
+      "gs_equation_residual_abs_max": 0.9034945604966926,
+      "gs_equation_residual_relative_max": 0.8617210268428019,
       "implementation": "fusion_polyglot::solve_grad_shafranov",
       "language": "Rust",
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.0019295189995318651
+      "wall_time_s": 0.0013854109856765717
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -170,12 +186,14 @@
       "axis_local_dominance_margin": 0.00013683238963600047,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
+      "gs_equation_residual_abs_max": 0.9034945604967026,
+      "gs_equation_residual_relative_max": 0.8617210268428164,
       "implementation": "SCPNFusionSolvers.solveGradShafranov",
       "language": "Lean",
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 1.0001346619974356
+      "wall_time_s": 0.8818789329961874
     }
   ]
 }

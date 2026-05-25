@@ -21,6 +21,7 @@ from pathlib import Path
 
 import numpy as np
 
+import benchmarks.polyglot_gs_solver_comparison as benchmark
 from scpn_fusion.core.jax_gs_solver import gs_solve_np
 
 
@@ -219,6 +220,13 @@ def _assert_matches_case(candidate_psi: np.ndarray, case: dict[str, float | int]
     relative_l2 = np.linalg.norm(interior_error) / denominator
     assert relative_l2 < 5e-12
     assert np.max(np.abs(interior_error)) < 5e-12
+
+    python_gs_residual_relative_max = benchmark._gs_equation_residual_relative_max(
+        python_psi, case
+    )
+    gs_residual_relative_max = benchmark._gs_equation_residual_relative_max(candidate_psi, case)
+    assert abs(gs_residual_relative_max - python_gs_residual_relative_max) < 5e-12
+    assert gs_residual_relative_max < 0.95
 
 
 def test_native_julia_grad_shafranov_matches_python_reference() -> None:
