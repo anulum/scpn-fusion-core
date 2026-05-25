@@ -123,6 +123,7 @@
           "source_best_fit_scale",
           "source_best_fit_offset",
           "source_best_fit_relative_l2",
+          "source_best_fit_convention",
           "plasma_mask_fraction",
           "pressure_source_norm",
           "ffprime_source_norm",
@@ -237,6 +238,19 @@
           },
           "source_best_fit_relative_l2": {
             "type": "number"
+          },
+          "source_best_fit_convention": {
+            "enum": [
+              "canonical",
+              "negated",
+              "scaled_by_2pi",
+              "scaled_by_minus_2pi",
+              "scaled_by_inv_2pi",
+              "scaled_by_minus_inv_2pi",
+              "unclassified_global_scale",
+              "non_finite_scale",
+              "not_evaluated"
+            ]
           },
           "plasma_mask_fraction": {
             "type": "number"

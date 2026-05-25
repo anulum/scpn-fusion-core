@@ -141,6 +141,19 @@ four high-current cases (`sparc_1305`, `sparc_1310`, `sparc_1315`,
 `lmode_*` rows and `sparc_1300` remain unclassified, so they are not accepted
 as strict native source-contract evidence.
 
+The aggregate EFIT/GEQDSK point-wise RMSE report
+(`validation/psi_pointwise_rmse.py`) records the same convention classifier in
+each row as `source_best_fit_convention`, keeping the strict aggregate and
+SPARC benchmark reports aligned. Latest local aggregate run:
+`PYTHONPATH=src python validation/psi_pointwise_rmse.py --mode benchmark
+--reference-root validation/reference_data --output-json
+artifacts/efit_nrmse_benchmark.json --output-md
+artifacts/efit_nrmse_benchmark.md`. Result: strict EFIT/GEQDSK gate remains
+`FAIL`, with `0/18` rows below `psi_N RMSE <= 0.05`, worst row
+`jet/jet_lmode_2MA.geqdsk` at `10.627063`, and `18/18` rows classified as
+`profile_source_mismatch`. The new convention classifier is report evidence
+for diagnosing those failures, not a relaxation of the native source contract.
+
 Polyglot status: the native Julia, Go, Rust, and Lean solver packages expose
 the same operator-current surfaces. Julia, Go, and Rust package tests validate
 manufactured `Z^2`, `R^4 + Z^2`, and mixed `R^2 Z^2` closure; Lean builds the corresponding

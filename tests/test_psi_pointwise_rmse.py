@@ -35,6 +35,7 @@ from validation.psi_pointwise_rmse import (
     EFIT_BENCHMARK_MACHINE_PROVENANCE,
     EfitNRMSEBenchmarkGate,
     PsiRMSEResult,
+    classify_source_scale_convention,
     compute_gs_source,
     compute_psi_rmse,
     compute_operator_candidate_rankings,
@@ -197,6 +198,7 @@ class TestComputeSourceAlignment:
         assert metrics["source_best_fit_scale"] == pytest.approx(1.0)
         assert abs(metrics["source_best_fit_offset"]) < 1e-12
         assert metrics["source_best_fit_relative_l2"] < 1e-12
+        assert metrics["source_best_fit_convention"] == "canonical"
         assert metrics["source_plasma_residual_l2"] < 1e-12
         assert metrics["source_vacuum_residual_l2"] < 1e-12
 
@@ -212,6 +214,7 @@ class TestComputeSourceAlignment:
         assert np.isfinite(metrics["source_best_fit_scale"])
         assert np.isfinite(metrics["source_best_fit_offset"])
         assert np.isfinite(metrics["source_best_fit_relative_l2"])
+        assert metrics["source_best_fit_convention"] != ""
         assert np.isfinite(metrics["source_plasma_residual_l2"])
         assert np.isfinite(metrics["source_vacuum_residual_l2"])
         assert np.isfinite(metrics["source_plasma_operator_norm"])
@@ -234,7 +237,17 @@ class TestComputeSourceAlignment:
         residuals = [row["source_residual_l2"] for row in candidates]
         assert residuals == sorted(residuals)
         assert all(np.isfinite(row["source_residual_l2"]) for row in candidates)
+        assert all(row["source_best_fit_convention"] != "" for row in candidates)
         assert candidates[0]["candidate"] != ""
+
+    def test_source_scale_convention_classifier_covers_common_geqdsk_factors(self):
+        assert classify_source_scale_convention(1.0) == "canonical"
+        assert classify_source_scale_convention(-1.0) == "negated"
+        assert classify_source_scale_convention(2.0 * np.pi) == "scaled_by_2pi"
+        assert classify_source_scale_convention(-2.0 * np.pi) == "scaled_by_minus_2pi"
+        assert classify_source_scale_convention(1.0 / (2.0 * np.pi)) == "scaled_by_inv_2pi"
+        assert classify_source_scale_convention(float("nan")) == "non_finite_scale"
+        assert classify_source_scale_convention(3.0) == "unclassified_global_scale"
 
     def test_operator_candidate_rankings_are_sorted_and_include_normalization_variants(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
@@ -545,6 +558,7 @@ class TestValidateEFITNRMSEBenchmark:
                 source_best_fit_scale=1.0,
                 source_best_fit_offset=0.0,
                 source_best_fit_relative_l2=0.0,
+                source_best_fit_convention="canonical",
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,
@@ -685,6 +699,7 @@ class TestValidateEFITNRMSEBenchmark:
                 source_best_fit_scale=-0.5 if is_worst else 1.0,
                 source_best_fit_offset=0.1 if is_worst else 0.0,
                 source_best_fit_relative_l2=0.9 if is_worst else 0.0,
+                source_best_fit_convention="unclassified_global_scale" if is_worst else "canonical",
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,

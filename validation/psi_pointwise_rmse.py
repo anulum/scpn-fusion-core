@@ -46,6 +46,7 @@ REFERENCE_DATA_DIR = ROOT / "validation" / "reference_data"
 EFIT_NRMSE_BENCHMARK_SCHEMA_VERSION = "efit-nrmse-benchmark.v1"
 OPERATOR_SOURCE_RMSE_THRESHOLD = 1e-6
 OPERATOR_CURRENT_CLOSURE_THRESHOLD = 0.05
+SOURCE_CONVENTION_DISTANCE_THRESHOLD = 0.15
 EFIT_BENCHMARK_MACHINE_PROVENANCE = {
     "sparc": "real_public_design_reference",
     "diiid": "synthetic_proxy_reference",
@@ -89,6 +90,7 @@ class PsiRMSEResult:
     source_best_fit_scale: float = float("nan")
     source_best_fit_offset: float = float("nan")
     source_best_fit_relative_l2: float = float("nan")
+    source_best_fit_convention: str = "not_evaluated"
     plasma_mask_fraction: float = float("nan")
     pressure_source_norm: float = float("nan")
     ffprime_source_norm: float = float("nan")
@@ -322,6 +324,25 @@ def gs_residual(eq: GEqdsk) -> tuple[float, float]:
     return rel_l2, max_abs
 
 
+def classify_source_scale_convention(scale: float) -> str:
+    """Classify a global source scale against common GEQDSK convention factors."""
+    if not np.isfinite(scale):
+        return "non_finite_scale"
+    candidates = {
+        "canonical": 1.0,
+        "negated": -1.0,
+        "scaled_by_2pi": 2.0 * np.pi,
+        "scaled_by_minus_2pi": -2.0 * np.pi,
+        "scaled_by_inv_2pi": 1.0 / (2.0 * np.pi),
+        "scaled_by_minus_inv_2pi": -1.0 / (2.0 * np.pi),
+    }
+    convention = min(candidates, key=lambda name: abs(scale - candidates[name]))
+    relative_distance = abs(scale - candidates[convention]) / max(abs(candidates[convention]), 1.0)
+    if relative_distance > SOURCE_CONVENTION_DISTANCE_THRESHOLD:
+        return "unclassified_global_scale"
+    return convention
+
+
 def compute_source_alignment(
     eq: GEqdsk,
     source: NDArray | None = None,
@@ -371,6 +392,7 @@ def compute_source_alignment(
     scale, offset = np.linalg.lstsq(design, operator_flat, rcond=None)[0]
     fitted = scale * profile_flat + offset
     best_fit_relative_l2 = float(np.linalg.norm(operator_flat - fitted) / max(operator_norm, 1e-15))
+    best_fit_convention = classify_source_scale_convention(float(scale))
 
     def _masked_metrics(mask: NDArray[np.bool_]) -> tuple[float, float, int]:
         finite = np.isfinite(operator_interior) & np.isfinite(profile_interior) & mask
@@ -395,6 +417,7 @@ def compute_source_alignment(
         "source_best_fit_scale": float(scale),
         "source_best_fit_offset": float(offset),
         "source_best_fit_relative_l2": best_fit_relative_l2,
+        "source_best_fit_convention": best_fit_convention,
         "source_plasma_residual_l2": plasma_residual,
         "source_vacuum_residual_l2": vacuum_residual,
         "source_plasma_operator_norm": plasma_operator_norm,
@@ -479,6 +502,7 @@ def compute_source_candidate_rankings(eq: GEqdsk) -> list[dict[str, float | str]
                 "source_correlation": metrics["source_correlation"],
                 "source_best_fit_scale": metrics["source_best_fit_scale"],
                 "source_best_fit_relative_l2": metrics["source_best_fit_relative_l2"],
+                "source_best_fit_convention": metrics["source_best_fit_convention"],
                 "source_plasma_residual_l2": metrics["source_plasma_residual_l2"],
                 "source_vacuum_residual_l2": metrics["source_vacuum_residual_l2"],
             }
@@ -928,6 +952,7 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         source_best_fit_scale=source_alignment["source_best_fit_scale"],
         source_best_fit_offset=source_alignment["source_best_fit_offset"],
         source_best_fit_relative_l2=source_alignment["source_best_fit_relative_l2"],
+        source_best_fit_convention=str(source_alignment["source_best_fit_convention"]),
         plasma_mask_fraction=float(source_components["plasma_mask_fraction"]),
         pressure_source_norm=float(source_components["pressure_source_norm"]),
         ffprime_source_norm=float(source_components["ffprime_source_norm"]),
