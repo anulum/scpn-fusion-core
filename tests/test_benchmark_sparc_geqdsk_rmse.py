@@ -98,7 +98,9 @@ def test_run_benchmark_uses_reference_geqdsk_mode_when_cases_available(monkeypat
 
     assert result["mode"] == "reference_geqdsk"
     assert result["reference_case_count"] == 1
+    assert result["machine_counts"] == {"synthetic": 1}
     assert len(result["cases"]) == 1
+    assert result["cases"][0]["machine"] == "synthetic"
     assert result["cases"][0]["source_file"] == "sparc_ref_case.geqdsk"
     assert result["cases"][0]["geqdsk_contract_pass"] is True
 
@@ -115,6 +117,30 @@ def test_sparc_loader_includes_geqdsk_and_eqdsk_extensions(monkeypatch, tmp_path
     paths = benchmark_sparc_geqdsk_rmse._sparc_geqdsk_paths()
 
     assert [path.name for path in paths] == ["case_a.geqdsk", "case_b.eqdsk"]
+
+
+def test_reference_loader_preserves_machine_provenance(monkeypatch, tmp_path) -> None:
+    sparc_dir = tmp_path / "sparc"
+    diiid_dir = tmp_path / "diiid"
+    jet_dir = tmp_path / "jet"
+    for directory in (sparc_dir, diiid_dir, jet_dir):
+        directory.mkdir()
+    (sparc_dir / "sparc_case.eqdsk").write_text("stub", encoding="utf-8")
+    (diiid_dir / "diiid_case.geqdsk").write_text("stub", encoding="utf-8")
+    (jet_dir / "jet_case.geqdsk").write_text("stub", encoding="utf-8")
+    monkeypatch.setattr(
+        benchmark_sparc_geqdsk_rmse,
+        "REFERENCE_MACHINE_DIRS",
+        {"sparc": sparc_dir, "diiid": diiid_dir, "jet": jet_dir},
+    )
+
+    paths = benchmark_sparc_geqdsk_rmse._reference_geqdsk_paths()
+
+    assert [(machine, path.name) for machine, path in paths] == [
+        ("diiid", "diiid_case.geqdsk"),
+        ("jet", "jet_case.geqdsk"),
+        ("sparc", "sparc_case.eqdsk"),
+    ]
 
 
 def test_geqdsk_contract_metrics_validate_axis_and_boundary() -> None:

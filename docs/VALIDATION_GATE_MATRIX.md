@@ -16,6 +16,7 @@ This document defines the split between release-grade validation and research-on
 | `research` | Research-only pytest lane (`pytest -m experimental` marker). | `python tools/run_python_preflight.py --gate research` |
 | `all` | Release + research profiles in sequence. | `python tools/run_python_preflight.py --gate all` |
 | `real-data-strict` | End-to-end real-shot validation + guard + roadmap checks with raw-ingestion readiness enforcement (`require_disruption_raw_ingestion_ready=true`). | `python tools/run_real_data_strict_gate.py --thresholds tools/real_shot_validation_thresholds_raw_ready.json` |
+| `geqdsk-public` | Public SPARC GEQDSK/EQDSK gated rows plus DIII-D/JET synthetic diagnostic rows; only public SPARC rows count toward the pass/fail gate. | `PYTHONPATH=src python validation/benchmark_sparc_geqdsk_rmse.py` |
 | `freegs-strict` | FreeGS-only strict backend parity lane with runtime-fallback disallowed and artifact contract checks (`mode=freegs`, no fallback cases, `unconverged_case_count=0`, `all_cases_converged=true`). | `python validation/benchmark_vs_freegs.py --strict-backend && python tools/check_freegs_strict_artifact.py --report artifacts/freegs_benchmark.json` |
 
 ## CI Mapping

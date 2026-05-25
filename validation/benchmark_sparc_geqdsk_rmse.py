@@ -4,8 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — SPARC GEQDSK Point-wise RMSE Validation
-"""Point-wise ψ(R,Z) NRMSE gate for the neural equilibrium surrogate."""
+# SCPN Fusion Core — GEQDSK Point-wise RMSE Validation
+"""Point-wise ψ(R,Z) NRMSE and GEQDSK contract gate."""
 
 from __future__ import annotations
 
@@ -30,6 +30,11 @@ logger = logging.getLogger(__name__)
 # NRMSE threshold — Eq. surrogate must reproduce ψ grid within 5%
 NRMSE_THRESHOLD = 0.05
 SPARC_REFERENCE_DIR = REPO_ROOT / "validation" / "reference_data" / "sparc"
+REFERENCE_MACHINE_DIRS = {
+    "sparc": SPARC_REFERENCE_DIR,
+    "diiid": REPO_ROOT / "validation" / "reference_data" / "diiid",
+    "jet": REPO_ROOT / "validation" / "reference_data" / "jet",
+}
 GEQDSK_EXTENSIONS = ("*.geqdsk", "*.eqdsk")
 
 
@@ -176,6 +181,15 @@ def _sparc_geqdsk_paths() -> list[Path]:
     return sorted(files)
 
 
+def _reference_geqdsk_paths() -> list[tuple[str, Path]]:
+    """Return all bundled GEQDSK/EQDSK references with machine provenance."""
+    files: list[tuple[str, Path]] = []
+    for machine, directory in REFERENCE_MACHINE_DIRS.items():
+        for pattern in GEQDSK_EXTENSIONS:
+            files.extend((machine, path) for path in sorted(directory.glob(pattern)))
+    return sorted(files, key=lambda item: (item[0], item[1].name))
+
+
 def _geqdsk_contract_metrics(eq: Any) -> dict[str, Any]:
     """Evaluate FreeGS/GEQDSK-compatible equilibrium invariants."""
     psi = np.asarray(eq.psirz, dtype=np.float64)
@@ -288,7 +302,7 @@ def _run_neural_surrogate(eq: dict[str, Any]) -> tuple[FloatArray, str, str | No
 
 
 def _load_sparc_geqdsk_cases() -> list[dict[str, Any]]:
-    """Load SPARC GEQDSK references and derive feature vectors for surrogate inference."""
+    """Load bundled GEQDSK references and derive feature vectors for surrogate inference."""
     try:
         from scpn_fusion.core.eqdsk import read_geqdsk
     except Exception as exc:  # pragma: no cover - import failure handled via synthetic fallback
@@ -296,7 +310,7 @@ def _load_sparc_geqdsk_cases() -> list[dict[str, Any]]:
         return []
 
     cases: list[dict[str, Any]] = []
-    for path in _sparc_geqdsk_paths():
+    for machine, path in _reference_geqdsk_paths():
         try:
             eq = read_geqdsk(path)
         except Exception as exc:  # pragma: no cover - malformed files are skipped
@@ -339,6 +353,7 @@ def _load_sparc_geqdsk_cases() -> list[dict[str, Any]]:
         cases.append(
             {
                 "name": path.stem,
+                "machine": machine,
                 "source_file": path.name,
                 "psi": psi,
                 "feature_vector_full": feature_vector_full,
@@ -405,9 +420,15 @@ def run_benchmark(
             backend_ok = backend == "neural_equilibrium"
             passes = (err < NRMSE_THRESHOLD) and (backend_ok or not require_neural_backend)
             all_cases_neural_backend = all_cases_neural_backend and backend_ok
+            machine = str(eq_ref.get("machine", "synthetic"))
+            reference_class = "public" if machine == "sparc" else "synthetic"
+            gated = (not using_reference_data) or reference_class == "public"
 
             row = {
                 "name": str(eq_ref.get("name", "unknown")),
+                "machine": machine,
+                "reference_class": reference_class,
+                "gated": gated,
                 "grid": f"{gs}x{gs}",
                 "nrmse": round(err, 6),
                 "threshold": NRMSE_THRESHOLD,
@@ -426,14 +447,19 @@ def run_benchmark(
                     passes = False
                     row["passes"] = False
             cases.append(row)
-            if not passes:
+            if gated and not passes:
                 all_pass = False
 
+    reference_machines = [str(case.get("machine", "synthetic")) for case in reference_cases]
     elapsed = time.time() - t0
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "reference_geqdsk" if using_reference_data else "synthetic_fallback",
         "reference_case_count": len(reference_cases),
+        "machine_counts": {
+            machine: sum(1 for case_machine in reference_machines if case_machine == machine)
+            for machine in sorted(set(reference_machines))
+        },
         "nrmse_threshold": NRMSE_THRESHOLD,
         "require_neural_backend": bool(require_neural_backend),
         "all_cases_neural_backend": bool(all_cases_neural_backend),
@@ -460,12 +486,15 @@ def main() -> int:
     out_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
 
     for case in result["cases"]:
-        status = "PASS" if case["passes"] else "FAIL"
+        if not case.get("gated", True):
+            status = "DIAG"
+        else:
+            status = "PASS" if case["passes"] else "FAIL"
         print(f"  [{status}] {case['name']} {case['grid']}: NRMSE={case['nrmse']:.4f}")
 
     if result["passes"]:
         print(
-            f"\nAll cases pass (threshold={NRMSE_THRESHOLD}, "
+            f"\nAll gated cases pass (threshold={NRMSE_THRESHOLD}, "
             f"strict_backend={bool(args.strict_backend)})"
         )
         return 0

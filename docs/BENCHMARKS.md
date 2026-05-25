@@ -55,7 +55,8 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 | DIII-D | 3 | 0.10–0.18 | 0.09–0.17 | 6–10% |
 | ASDEX-U | 3 | 0.05–0.12 | 0.05–0.11 | 4–9% |
 | C-Mod | 2 | 0.02–0.04 | 0.02–0.04 | 3–7% |
-| SPARC | 8 GEQDSK/EQDSK | B=12.2 T, I_p=8.7 MA | Public-case contract checks pass | ψ NRMSE, axis metadata, boundary containment, signed-q finite profile |
+| SPARC | 8 GEQDSK/EQDSK | B=12.2 T, I_p=8.7 MA | 16 public-case gated rows pass at 65x65 and 129x129 | ψ NRMSE, axis metadata, boundary containment, signed-q finite profile |
+| DIII-D/JET synthetic GEQDSK | 10 GEQDSK | synthetic Solov'ev references | diagnostic rows, not public EFIT gate | ψ NRMSE and GEQDSK scalar/contour diagnostics |
 
 > **Note on confinement accuracy:** The JET/DIII-D/ASDEX-U/C-Mod error
 > percentages above are computed by the IPB98(y,2) scaling law implementation
@@ -63,7 +64,10 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 > full-profile RMSE comparisons. The SPARC validation checks point-wise ψ NRMSE
 > on the bundled public GEQDSK/EQDSK grids and GEQDSK compatibility invariants:
 > finite non-degenerate ψ, declared-axis consistency, boundary containment, and
-> finite signed-q profiles.
+> finite signed-q profiles. The DIII-D/JET GEQDSK files in this repository are
+> synthetic diagnostics; they are reported by
+> `validation/benchmark_sparc_geqdsk_rmse.py` but are not counted as public
+> EFIT parity gates.
 
 ### Transport Source Power-Balance Contract
 

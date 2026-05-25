@@ -92,10 +92,10 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | FNO turbulence surrogate | val rel_L2 = **0.055** | `weights/fno_turbulence_jax.metrics.json` |
 | Disruption rate (1,000-shot sim campaign) | **0%** (Rust-PID) | `validation/stress_test_campaign.py` |
 | ITPA H-mode confinement | 53 shots / 24 machines | `validation/reference_data/itpa/` |
-| SPARC GEQDSK validation | 8 EFIT equilibria (MIT, CFS) | `validation/reference_data/sparc/` |
+| SPARC GEQDSK validation | 8 public EFIT equilibria, 16 gated rows pass | `validation/benchmark_sparc_geqdsk_rmse.py` |
 | Q >= 10 operating point | Q = 15 (0D power balance) | `RESULTS.md` |
 | TBR | 1.14 (0D 3-group blanket) | `RESULTS.md` |
-| FreeGS equilibrium parity | **FAIL** (psi NRMSE 1.80) | `validation/benchmark_vs_freegs.py` |
+| Free-boundary equilibrium validation | GEQDSK public gate passes; FreeGS strict backend remains opt-in evidence | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/benchmark_vs_freegs.py` |
 
 Latency taxonomy: `control.pid_kernel_step_us` (Rust reduced-order kernel),
 `control.closed_loop_step_us` (controller loop with explicit surrogate/full
@@ -134,13 +134,13 @@ for every claim mapped to its evidence artifact.
 Top limitations:
 - No GENE/CGYRO-class full nonlinear 5D turbulence campaign in-loop; native nonlinear GK is a bounded NumPy/JAX research solver with explicit invariant benchmarks.
 - No full 3D nonlinear MHD stack in-loop (external coupling required for that fidelity).
-- Free-boundary equilibrium/inverse reconstruction is not yet EFIT-grade.
+- Free-boundary equilibrium/inverse reconstruction is not yet EFIT-grade; public SPARC GEQDSK gates pass, while FreeGS strict-backend parity remains opt-in evidence.
 
 ## Competitive Position
 
 | Capability | SCPN Fusion Core | TORAX | FUSE | FreeGS | DREAM |
 |-----------|:---:|:---:|:---:|:---:|:---:|
-| Free-boundary GS solve | Reduced direct solve; FreeGS parity currently **FAIL** | N | N | Y | N |
+| Free-boundary GS solve | Public GEQDSK gate passes; FreeGS strict backend opt-in; not EFIT-grade inverse reconstruction | N | N | Y | N |
 | 1.5D coupled transport | **Y** | Y | Y | N | N |
 | Neural transport surrogate | **Y** (QLKNN-10D) | N | N | N | N |
 | Native GK solver | Linear eigenvalue plus nonlinear 5D operator/invariant benchmarks; not GENE/CGYRO-class production turbulence | N | N | N | N |
@@ -406,7 +406,7 @@ cargo bench                      # Criterion benchmarks
 
 | Dataset | Source | Contents |
 |---------|--------|----------|
-| **SPARC GEQDSK** | [SPARCPublic](https://github.com/cfs-energy/SPARCPublic) (MIT) | 8 EFIT equilibria (B=12.2 T, Ip up to 8.7 MA) |
+| **SPARC GEQDSK** | [SPARCPublic](https://github.com/cfs-energy/SPARCPublic) (MIT) | 8 public EFIT equilibria (B=12.2 T, Ip up to 8.7 MA); 16 gated benchmark rows pass at 65x65 and 129x129 |
 | **ITPA H-mode** | Verdoolaege et al., NF 61 (2021) | 53 shots from 24 machines |
 | **DIII-D disruptions** | Reference profiles (16 shots) | Locked mode, VDE, tearing, density, beta |
 | **Multi-machine GEQDSK** | Synthetic Solov'ev | 100 equilibria (DIII-D, JET, EAST, KSTAR, ASDEX-U) |
