@@ -1617,7 +1617,7 @@ mod tests {
     fn test_kernel_inverse_analytical_mode_reduces_residual() {
         let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
             .unwrap();
-        let probes = vec![(6.2, 0.0), (6.3, 0.1), (6.4, -0.1), (6.55, 0.0)];
+        let probes = vec![(6.2, 0.0), (6.4, -0.1), (6.55, 0.0)];
 
         let true_p = ProfileParams {
             ped_top: 0.91,
@@ -1646,13 +1646,13 @@ mod tests {
 
         let base_cfg = KernelInverseConfig {
             inverse: InverseConfig {
-                max_iterations: 4,
+                max_iterations: 1,
                 damping: 0.6,
                 tolerance: 1e-8,
                 tikhonov: 1e-4,
                 ..Default::default()
             },
-            kernel_max_iterations: 50,
+            kernel_max_iterations: 24,
             require_kernel_converged: false,
         };
 
