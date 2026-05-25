@@ -12,7 +12,11 @@ import logging
 import numpy as np
 from numpy.typing import NDArray
 
-from scpn_fusion.core._gk_nonlinear_types import NonlinearGKResult, NonlinearGKState
+from scpn_fusion.core._gk_nonlinear_types import (
+    NonlinearGKInvariantDiagnostics,
+    NonlinearGKResult,
+    NonlinearGKState,
+)
 
 
 _logger = logging.getLogger(__name__)
@@ -134,6 +138,42 @@ class NonlinearGKTimeMixin:
     def total_energy(self, state: NonlinearGKState) -> float:
         """Total delta-f squared energy for conservation diagnostics."""
         return float(np.sum(np.abs(state.f) ** 2) * self.dvpar * self.dmu * self.dtheta)
+
+    def nonlinear_invariant_diagnostics(
+        self, state: NonlinearGKState
+    ) -> NonlinearGKInvariantDiagnostics:
+        """Check discrete nonlinear E x B free-energy and dealiasing invariants."""
+        c = self.cfg
+        active_species = c.n_species if c.kinetic_electrons else min(c.n_species, 1)
+        production = 0.0
+        norm_f_sq = 0.0
+        norm_b_sq = 0.0
+        high_k_max = 0.0
+
+        for species_idx in range(active_species):
+            f_s = state.f[species_idx]
+            bracket = self.exb_bracket(state.phi, f_s)
+            production += float(np.real(np.sum(np.conj(f_s) * bracket)))
+            norm_f_sq += float(np.sum(np.abs(f_s) ** 2))
+            norm_b_sq += float(np.sum(np.abs(bracket) ** 2))
+            if np.any(~self.dealias_mask):
+                high_k = np.abs(bracket[~self.dealias_mask, ...])
+                if high_k.size:
+                    high_k_max = max(high_k_max, float(np.max(high_k)))
+
+        phase_volume = self.dvpar * self.dmu * self.dtheta
+        production *= phase_volume
+        norm_scale = max(np.sqrt(norm_f_sq * norm_b_sq) * phase_volume, 1e-30)
+        relative = abs(production) / norm_scale
+        finite = bool(np.isfinite(production) and np.isfinite(relative) and np.isfinite(high_k_max))
+        passes = bool(finite and abs(production) <= 1e-8 and high_k_max <= 1e-12)
+        return NonlinearGKInvariantDiagnostics(
+            exb_free_energy_production=production,
+            exb_relative_free_energy_production=float(relative),
+            dealiased_high_k_max_abs=high_k_max,
+            finite=finite,
+            passes=passes,
+        )
 
     def init_state(self, amplitude: float = 1e-5, seed: int = 42) -> NonlinearGKState:
         """Random small-amplitude initial perturbation."""

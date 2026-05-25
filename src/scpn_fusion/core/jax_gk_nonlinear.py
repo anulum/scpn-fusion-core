@@ -25,6 +25,7 @@ import numpy as np
 
 from scpn_fusion.core.gk_nonlinear import (
     NonlinearGKConfig,
+    NonlinearGKInvariantDiagnostics,
     NonlinearGKResult,
     NonlinearGKSolver,
     NonlinearGKState,
@@ -323,6 +324,45 @@ class JaxNonlinearGKSolver:
         k4 = rhs_ckpt(f + dt * k3)
 
         return jnp.asarray(f + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4))
+
+    def nonlinear_invariant_diagnostics(
+        self, state: NonlinearGKState
+    ) -> NonlinearGKInvariantDiagnostics:
+        """Check JAX nonlinear E x B invariant diagnostics against the same contract."""
+        if not _HAS_JAX:
+            return self._np_solver.nonlinear_invariant_diagnostics(state)
+
+        c = self.cfg
+        active_species = c.n_species if c.kinetic_electrons else min(c.n_species, 1)
+        phi = jnp.asarray(state.phi)
+        production = 0.0
+        norm_f_sq = 0.0
+        norm_b_sq = 0.0
+        high_k_max = 0.0
+
+        for species_idx in range(active_species):
+            f_s = jnp.asarray(state.f[species_idx])
+            bracket = self._jax_exb_bracket(phi, f_s)
+            production += float(jnp.real(jnp.sum(jnp.conj(f_s) * bracket)))
+            norm_f_sq += float(jnp.sum(jnp.abs(f_s) ** 2))
+            norm_b_sq += float(jnp.sum(jnp.abs(bracket) ** 2))
+            high_k = np.abs(np.asarray(bracket)[~self._np_solver.dealias_mask, ...])
+            if high_k.size:
+                high_k_max = max(high_k_max, float(np.max(high_k)))
+
+        phase_volume = self._np_solver.dvpar * self._np_solver.dmu * self._np_solver.dtheta
+        production *= phase_volume
+        norm_scale = max(np.sqrt(norm_f_sq * norm_b_sq) * phase_volume, 1e-30)
+        relative = abs(production) / norm_scale
+        finite = bool(np.isfinite(production) and np.isfinite(relative) and np.isfinite(high_k_max))
+        passes = bool(finite and abs(production) <= 1e-8 and high_k_max <= 1e-12)
+        return NonlinearGKInvariantDiagnostics(
+            exb_free_energy_production=production,
+            exb_relative_free_energy_production=float(relative),
+            dealiased_high_k_max_abs=high_k_max,
+            finite=finite,
+            passes=passes,
+        )
 
     # ------------------------------------------------------------------
     # Run

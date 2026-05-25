@@ -108,12 +108,12 @@ Full numbers: [`RESULTS.md`](RESULTS.md) — re-run `python validation/collect_r
 
 ## Gyrokinetic Three-Path Architecture
 
-No other fusion code offers all three gyrokinetic transport tiers in one framework:
+SCPN exposes three gyrokinetic transport lanes with explicit fidelity limits:
 
 | Path | Fidelity | Speed | Module |
 |------|----------|-------|--------|
 | **A: External GK** | Reference when installed | minutes to CPU-hours | `gk_tglf`, `gk_gene`, `gk_gs2`, `gk_cgyro`, `gk_qualikiz` |
-| **B: Native Linear GK** | High | ~0.3 s/surface | `gk_eigenvalue` + `gk_quasilinear` (Miller geometry, Sugama collisions) |
+| **B: Native GK** | Linear transport plus nonlinear 5D operator contracts | ~0.3 s/surface for linear eigenvalue; local nonlinear benchmark in `validation/reports/gk_nonlinear_solver_comparison.md` | `gk_eigenvalue`, `gk_quasilinear`, `gk_nonlinear` |
 | **C: Hybrid Surrogate+GK** | Adaptive | ~24 ns/point | `gk_ood_detector` + `gk_corrector` + `gk_scheduler` + `gk_online_learner` |
 
 The hybrid layer validates QLKNN surrogates against GK spot-checks in real time.
@@ -132,7 +132,7 @@ assessment, and [`docs/CLAIMS_EVIDENCE_MAP.md`](docs/CLAIMS_EVIDENCE_MAP.md)
 for every claim mapped to its evidence artifact.
 
 Top limitations:
-- No full 5D gyrokinetic turbulence solve in-loop (native linear GK + surrogate + reduced-order).
+- No GENE/CGYRO-class full nonlinear 5D turbulence campaign in-loop; native nonlinear GK is a bounded NumPy/JAX research solver with explicit invariant benchmarks.
 - No full 3D nonlinear MHD stack in-loop (external coupling required for that fidelity).
 - Free-boundary equilibrium/inverse reconstruction is not yet EFIT-grade.
 
@@ -143,7 +143,7 @@ Top limitations:
 | Free-boundary GS solve | Reduced direct solve; FreeGS parity currently **FAIL** | N | N | Y | N |
 | 1.5D coupled transport | **Y** | Y | Y | N | N |
 | Neural transport surrogate | **Y** (QLKNN-10D) | N | N | N | N |
-| Native GK eigenvalue solver | Linear eigenvalue only; no nonlinear 5D Vlasov-Maxwell | N | N | N | N |
+| Native GK solver | Linear eigenvalue plus nonlinear 5D operator/invariant benchmarks; not GENE/CGYRO-class production turbulence | N | N | N | N |
 | External GK coupling (5 codes) | **Y** | TGLF only | TGLF only | N | N |
 | Neuro-symbolic SNN compiler | **Y** | N | N | N | N |
 | Real-time control (<1 us) | **Y** (0.52 us Rust) | N | N | N | N |
@@ -436,6 +436,7 @@ All numbers are internal measurements. Reproduce with `cargo bench` and
 | Neural transport MLP | ~5 us/point | `neural_transport_bench.rs` |
 | JAX GS solve (33x33) | ~50 ms | `jax_gs_solver.py` |
 | Native GK eigenvalue | ~0.3 s/surface | `gk_eigenvalue.py` |
+| Native nonlinear GK invariant benchmark | local report | `validation/reports/gk_nonlinear_solver_comparison.md` |
 | QLKNN single-point | ~24 ns | `neural_transport.py` |
 
 ### Community context (not direct comparisons)

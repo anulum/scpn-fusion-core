@@ -188,6 +188,18 @@ Key properties:
 
 *Reference: van de Plassche, K.L. et al. (2020). Phys. Plasmas 27, 022310.*
 
+## Native Nonlinear Gyrokinetic Contract
+
+The native nonlinear gyrokinetic benchmark is a bounded 5D delta-f NumPy/JAX
+contract, not a replacement for production GENE or CGYRO turbulence campaigns.
+`benchmarks/gk_solver_comparison.py` records transport diagnostics, Sugama
+moment residuals, and the nonlinear E x B invariant diagnostic. The invariant
+requires zero high-k leakage outside the 2/3 dealiased spectral mask and no
+free-energy injection from the undriven collisionless nonlinear bracket.
+
+Latest local results are written to
+`validation/reports/gk_nonlinear_solver_comparison.md`.
+
 ## Extended Community Baseline Comparison
 
 Comparison against established equilibrium, transport, and integrated

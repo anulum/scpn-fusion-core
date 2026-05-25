@@ -103,6 +103,13 @@ def _sugama_moment_residuals(cfg: NonlinearGKConfig) -> dict[str, float]:
     }
 
 
+def _exb_invariant_diagnostics(cfg: NonlinearGKConfig) -> dict[str, Any]:
+    solver = NonlinearGKSolver(cfg)
+    state = solver.init_state(amplitude=1e-4, seed=123)
+    diagnostics = solver.nonlinear_invariant_diagnostics(state)
+    return asdict(diagnostics)
+
+
 def run_benchmark() -> dict[str, Any]:
     cases: dict[str, Any] = {}
     for collision_model in ("krook", "sugama"):
@@ -111,6 +118,7 @@ def run_benchmark() -> dict[str, Any]:
             "config": asdict(cfg),
             "numpy": _run_numpy(cfg),
             "jax": _run_jax(cfg),
+            "exb_invariants": _exb_invariant_diagnostics(cfg),
         }
         if collision_model == "sugama":
             cases[collision_model]["moment_residuals"] = _sugama_moment_residuals(cfg)
@@ -121,6 +129,7 @@ def run_benchmark() -> dict[str, Any]:
         "numpy": _run_numpy(em_cfg),
         "jax": _run_jax(em_cfg),
         "moment_residuals": _sugama_moment_residuals(em_cfg),
+        "exb_invariants": _exb_invariant_diagnostics(em_cfg),
     }
 
     return {
@@ -178,6 +187,31 @@ def _write_reports(report: dict[str, Any]) -> None:
             f"| energy | {residuals['energy_max_abs']:.6e} |",
         ]
     )
+    lines.extend(
+        [
+            "",
+            "## Nonlinear E x B Invariant Contract",
+            "",
+            "The diagnostic contracts the dealiased nonlinear bracket with the 5D "
+            "distribution. In an undriven collisionless nonlinear step this term "
+            "must not inject free energy, and all bracket energy outside the "
+            "2/3 spectral mask must remain zero.",
+            "",
+            "| Case | Free-energy production | Relative production | High-k max abs | Pass |",
+            "|---|---:|---:|---:|---:|",
+        ]
+    )
+    for name, case in report["cases"].items():
+        invariants = case["exb_invariants"]
+        lines.append(
+            "| {name} | {prod:.6e} | {rel:.6e} | {high_k:.6e} | {passes} |".format(
+                name=name,
+                prod=invariants["exb_free_energy_production"],
+                rel=invariants["exb_relative_free_energy_production"],
+                high_k=invariants["dealiased_high_k_max_abs"],
+                passes=invariants["passes"],
+            )
+        )
     REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

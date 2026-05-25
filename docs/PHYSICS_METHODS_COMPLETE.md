@@ -120,9 +120,18 @@ The transport closure separates three operational lanes with strict provenance t
 
 Input-deck generation and output parsing for TGLF, GENE, GS2, GKW, and CGYRO. The `TGLFInputDeck` builder in `core/tglf_interface.py` constructs a complete TGLF input from the `TransportSolver` state. Reference data is stored in `validation/tglf_reference/` for ITG-dominated, TEM-dominated, and ETG-dominated regimes.
 
-### Path B: Native reduced linear eigenvalue
+### Path B: Native gyrokinetic solvers
 
-A reduced multichannel model in `core/neural_transport.py::critical_gradient_model()` resolves three branches:
+The native path has two distinct surfaces. `core/gk_eigenvalue.py` and
+`core/gk_quasilinear.py` provide the linear eigenvalue and quasilinear
+transport lane. `core/gk_nonlinear.py` provides a bounded 5D delta-f nonlinear
+operator research solver with NumPy and JAX execution paths. It now reports an
+explicit E x B invariant contract: the dealiased nonlinear bracket must not
+inject free energy in an undriven collisionless step, and all bracket energy
+outside the 2/3 spectral mask must remain zero. This is not a replacement for
+GENE or CGYRO nonlinear turbulence campaigns.
+
+The reduced multichannel model in `core/neural_transport.py::critical_gradient_model()` resolves three branches:
 
 - **ITG**: $\chi_i^{\rm ITG} = \chi_{\rm gB}\,\left(\max(R/L_{T_i} - R/L_{T_i}^{\rm crit},\,0)\right)^\alpha\,f_s\,f_\beta$
 - **TEM**: $\chi_e^{\rm TEM} = \chi_{\rm gB}\,\left(\max(R/L_{T_e} - R/L_{T_e}^{\rm crit},\,0)\right)^\alpha\,f_t\,f_{\nu_*}\,f_\beta\,f_n$

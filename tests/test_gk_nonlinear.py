@@ -463,6 +463,34 @@ class TestElectromagneticDrive:
         assert np.max(np.abs(electromagnetic[1] - electrostatic[1])) > 0.0
 
 
+class TestNonlinearInvariantDiagnostics:
+    def test_exb_nonlinearity_preserves_free_energy_contract(self):
+        cfg = NonlinearGKConfig(
+            n_kx=8,
+            n_ky=8,
+            n_theta=8,
+            n_vpar=4,
+            n_mu=3,
+            n_species=2,
+            nonlinear=True,
+            collisions=False,
+            hyper_coeff=0.0,
+            R_L_Ti=0.0,
+            R_L_Te=0.0,
+            R_L_ne=0.0,
+            cfl_adapt=False,
+        )
+        solver = NonlinearGKSolver(cfg)
+        state = solver.init_state(amplitude=1e-4, seed=123)
+
+        diagnostics = solver.nonlinear_invariant_diagnostics(state)
+
+        assert diagnostics.finite
+        assert diagnostics.passes
+        assert abs(diagnostics.exb_free_energy_production) <= 1e-8
+        assert diagnostics.dealiased_high_k_max_abs <= 1e-12
+
+
 # ── JAX fallback ─────────────────────────────────────────────────────
 
 
@@ -545,3 +573,31 @@ class TestJaxFallback:
         np.testing.assert_allclose(np.sum(collision * dv, axis=(-2, -1)), 0.0, atol=1e-12)
         np.testing.assert_allclose(np.sum(collision * vpar * dv, axis=(-2, -1)), 0.0, atol=1e-12)
         np.testing.assert_allclose(np.sum(collision * energy * dv, axis=(-2, -1)), 0.0, atol=1e-12)
+
+    def test_jax_exb_invariant_diagnostics_match_contract_or_fall_back(self):
+        from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver
+
+        cfg = NonlinearGKConfig(
+            n_kx=8,
+            n_ky=8,
+            n_theta=8,
+            n_vpar=4,
+            n_mu=3,
+            n_species=2,
+            nonlinear=True,
+            collisions=False,
+            hyper_coeff=0.0,
+            R_L_Ti=0.0,
+            R_L_Te=0.0,
+            R_L_ne=0.0,
+            cfl_adapt=False,
+        )
+        solver = JaxNonlinearGKSolver(cfg)
+        state = solver._np_solver.init_state(amplitude=1e-4, seed=123)
+
+        diagnostics = solver.nonlinear_invariant_diagnostics(state)
+
+        assert diagnostics.finite
+        assert diagnostics.passes
+        assert abs(diagnostics.exb_free_energy_production) <= 1e-8
+        assert diagnostics.dealiased_high_k_max_abs <= 1e-12

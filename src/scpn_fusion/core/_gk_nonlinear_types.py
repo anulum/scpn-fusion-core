@@ -91,8 +91,20 @@ class NonlinearGKResult:
     final_state: NonlinearGKState | None = None
 
 
+@dataclass(frozen=True)
+class NonlinearGKInvariantDiagnostics:
+    """Discrete nonlinear-operator invariant diagnostics."""
+
+    exb_free_energy_production: float
+    exb_relative_free_energy_production: float
+    dealiased_high_k_max_abs: float
+    finite: bool
+    passes: bool
+
+
 __all__ = [
     "NonlinearGKConfig",
+    "NonlinearGKInvariantDiagnostics",
     "NonlinearGKResult",
     "NonlinearGKState",
     "_E_CHARGE",

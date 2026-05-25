@@ -39,12 +39,19 @@
         "save_interval": 4,
         "vpar_max": 3.0
       },
+      "exb_invariants": {
+        "dealiased_high_k_max_abs": 0.0,
+        "exb_free_energy_production": 2.6113586472680837e-12,
+        "exb_relative_free_energy_production": 0.015120697167641053,
+        "finite": true,
+        "passes": true
+      },
       "jax": {
         "backend": "jax",
         "chi_e": 3.385913883788605e-11,
         "chi_i": 6.77182776757721e-11,
         "converged": true,
-        "elapsed_s": 6.8722178839962,
+        "elapsed_s": 5.988251188013237,
         "phi_rms_final": 0.0017320379735007382
       },
       "numpy": {
@@ -52,7 +59,7 @@
         "chi_e": 3.385913881662565e-11,
         "chi_i": 6.77182776332513e-11,
         "converged": true,
-        "elapsed_s": 0.10850848499103449,
+        "elapsed_s": 0.05804222699953243,
         "phi_rms_final": 0.0017090879429649377
       }
     },
@@ -94,12 +101,19 @@
         "save_interval": 4,
         "vpar_max": 3.0
       },
+      "exb_invariants": {
+        "dealiased_high_k_max_abs": 0.0,
+        "exb_free_energy_production": 2.6113586472680837e-12,
+        "exb_relative_free_energy_production": 0.015120697167641053,
+        "finite": true,
+        "passes": true
+      },
       "jax": {
         "backend": "jax",
         "chi_e": 3.3859137558332986e-11,
         "chi_i": 6.771827511666597e-11,
         "converged": true,
-        "elapsed_s": 6.744162185990717,
+        "elapsed_s": 3.2455446740204934,
         "phi_rms_final": 0.0017320437668675512
       },
       "moment_residuals": {
@@ -112,7 +126,7 @@
         "chi_e": 3.385913753707138e-11,
         "chi_i": 6.771827507414276e-11,
         "converged": true,
-        "elapsed_s": 0.057618187012849376,
+        "elapsed_s": 0.05376730998978019,
         "phi_rms_final": 0.0017090936596847984
       }
     },
@@ -154,12 +168,19 @@
         "save_interval": 4,
         "vpar_max": 3.0
       },
+      "exb_invariants": {
+        "dealiased_high_k_max_abs": 0.0,
+        "exb_free_energy_production": 2.2122987384379288e-11,
+        "exb_relative_free_energy_production": 0.026428714317949575,
+        "finite": true,
+        "passes": true
+      },
       "jax": {
         "backend": "jax",
         "chi_e": -6.507130425745714e-07,
         "chi_i": 6.13856908241856e-07,
         "converged": true,
-        "elapsed_s": 7.274340350995772,
+        "elapsed_s": 3.3799295549979433,
         "phi_rms_final": 0.0031706435332602366
       },
       "moment_residuals": {
@@ -172,7 +193,7 @@
         "chi_e": -6.507130423634978e-07,
         "chi_i": 6.13856908020201e-07,
         "converged": true,
-        "elapsed_s": 0.21586467800079845,
+        "elapsed_s": 0.11140573100419715,
         "phi_rms_final": 0.003146493138925403
       }
     }
