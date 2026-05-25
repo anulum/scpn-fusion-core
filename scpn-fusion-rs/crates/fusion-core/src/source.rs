@@ -92,6 +92,13 @@ pub struct GeqdskSourceConventionAdapter {
     pub pass: bool,
 }
 
+/// Residual-ranked executable GEQDSK source-convention candidate.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct GeqdskSourceConventionCandidate {
+    pub convention: GeqdskSourceConvention,
+    pub residual_l2: f64,
+}
+
 /// mTanh profile parameters used by inverse reconstruction.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ProfileParams {
@@ -333,18 +340,7 @@ fn source_relative_l2(
     Ok(residual)
 }
 
-/// Select the best named GEQDSK source convention without accepting fitted scales.
-pub fn select_geqdsk_source_convention_adapter(
-    operator_source: &Array2<f64>,
-    profile_source: &Array2<f64>,
-    flux_span: f64,
-    residual_threshold: f64,
-) -> FusionResult<GeqdskSourceConventionAdapter> {
-    if !residual_threshold.is_finite() || residual_threshold <= 0.0 {
-        return Err(FusionError::ConfigError(
-            "source convention residual threshold must be finite and positive".to_string(),
-        ));
-    }
+fn executable_geqdsk_source_conventions(flux_span: f64) -> Vec<GeqdskSourceConvention> {
     let mut conventions = vec![
         GeqdskSourceConvention::Canonical,
         GeqdskSourceConvention::Negated,
@@ -361,24 +357,65 @@ pub fn select_geqdsk_source_convention_adapter(
             GeqdskSourceConvention::NegatedOverFluxSpan,
         ]);
     }
+    conventions
+}
 
-    let mut best = GeqdskSourceConventionAdapter {
-        convention: GeqdskSourceConvention::NotEvaluated,
-        residual_l2: f64::INFINITY,
-        pass: false,
-    };
-    for convention in conventions {
+/// Rank executable named GEQDSK source-convention transforms by relative L2 residual.
+///
+/// This mirrors the Python benchmark adapter's audit surface: only documented
+/// named transforms are ranked, flux-span transforms are omitted unless the
+/// physical flux span is finite and non-zero, and fitted scales are not
+/// represented as executable candidates.
+pub fn rank_geqdsk_source_convention_candidates(
+    operator_source: &Array2<f64>,
+    profile_source: &Array2<f64>,
+    flux_span: f64,
+) -> FusionResult<Vec<GeqdskSourceConventionCandidate>> {
+    let mut candidates = Vec::new();
+    for convention in executable_geqdsk_source_conventions(flux_span) {
         let candidate = apply_geqdsk_source_convention(profile_source, convention, flux_span)?;
-        let residual = source_relative_l2(operator_source, &candidate)?;
-        if residual < best.residual_l2 {
-            best = GeqdskSourceConventionAdapter {
-                convention,
-                residual_l2: residual,
-                pass: residual <= residual_threshold,
-            };
-        }
+        let residual_l2 = source_relative_l2(operator_source, &candidate)?;
+        candidates.push(GeqdskSourceConventionCandidate {
+            convention,
+            residual_l2,
+        });
     }
-    Ok(best)
+    candidates.sort_by(|left, right| {
+        left.residual_l2
+            .partial_cmp(&right.residual_l2)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    Ok(candidates)
+}
+
+/// Select the best named GEQDSK source convention without accepting fitted scales.
+pub fn select_geqdsk_source_convention_adapter(
+    operator_source: &Array2<f64>,
+    profile_source: &Array2<f64>,
+    flux_span: f64,
+    residual_threshold: f64,
+) -> FusionResult<GeqdskSourceConventionAdapter> {
+    if !residual_threshold.is_finite() || residual_threshold <= 0.0 {
+        return Err(FusionError::ConfigError(
+            "source convention residual threshold must be finite and positive".to_string(),
+        ));
+    }
+    let Some(best) =
+        rank_geqdsk_source_convention_candidates(operator_source, profile_source, flux_span)?
+            .into_iter()
+            .next()
+    else {
+        return Ok(GeqdskSourceConventionAdapter {
+            convention: GeqdskSourceConvention::NotEvaluated,
+            residual_l2: f64::INFINITY,
+            pass: false,
+        });
+    };
+    Ok(GeqdskSourceConventionAdapter {
+        convention: best.convention,
+        residual_l2: best.residual_l2,
+        pass: best.residual_l2 <= residual_threshold,
+    })
 }
 
 /// mTanh profile:
@@ -754,6 +791,38 @@ mod tests {
         assert_ne!(adapter.convention, GeqdskSourceConvention::NotEvaluated);
         assert!(!adapter.pass);
         assert!(adapter.residual_l2 > 0.15);
+    }
+
+    #[test]
+    fn test_geqdsk_source_convention_rankings_expose_named_candidates_only() {
+        let profile_source =
+            Array2::from_shape_fn((4, 4), |(iz, ir)| 0.5 + iz as f64 + 0.25 * ir as f64);
+        let operator_source = profile_source.mapv(|value| value / 0.5);
+
+        let ranked =
+            rank_geqdsk_source_convention_candidates(&operator_source, &profile_source, 0.5)
+                .expect("finite source arrays should rank executable source conventions");
+
+        assert_eq!(ranked[0].convention, GeqdskSourceConvention::OverFluxSpan);
+        assert!(ranked[0].residual_l2 < 1.0e-14);
+        assert_eq!(ranked.len(), 10);
+        assert!(!ranked
+            .iter()
+            .any(|candidate| candidate.convention == GeqdskSourceConvention::NotEvaluated));
+
+        let degenerate_flux_span =
+            rank_geqdsk_source_convention_candidates(&operator_source, &profile_source, 0.0)
+                .expect("degenerate flux span should still rank finite non-flux conventions");
+        assert_eq!(degenerate_flux_span.len(), 6);
+        assert!(!degenerate_flux_span.iter().any(|candidate| {
+            matches!(
+                candidate.convention,
+                GeqdskSourceConvention::TimesFluxSpan
+                    | GeqdskSourceConvention::OverFluxSpan
+                    | GeqdskSourceConvention::NegatedTimesFluxSpan
+                    | GeqdskSourceConvention::NegatedOverFluxSpan
+            )
+        }));
     }
 
     #[test]

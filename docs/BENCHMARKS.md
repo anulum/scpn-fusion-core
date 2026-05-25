@@ -253,10 +253,13 @@ Rust `fusion-core::source` also exposes the same accepted GEQDSK
 source-convention adapter contract as the Python benchmark path: canonical,
 negated, `2*pi`, inverse-`2*pi`, and flux-span transforms are ranked as named
 transforms only, with no fitted scale accepted as a pass. Local verification:
-`cargo test -p fusion-core geqdsk_source_convention --lib` (`4 passed`).
+`cargo test -p fusion-core geqdsk_source_convention --lib` (`5 passed`).
 The Rust surface now strictly round-trips the same GEQDSK convention labels
 used by the Python reports and rejects fitted/unknown convention names instead
-of accepting an implicit scale.
+of accepting an implicit scale. It also exposes residual-ranked executable
+candidate rows so Rust audits can distinguish evaluated named transforms from
+non-executable fitted-scale diagnostics; flux-span candidates are emitted only
+when the physical flux span is finite and non-zero.
 Free-boundary coil/vacuum parity is intentionally narrower: Python and Rust
 now expose native circular-filament Green-function reconstruction contracts,
 while Go, Julia, and Lean currently expose fixed-boundary/operator-current
