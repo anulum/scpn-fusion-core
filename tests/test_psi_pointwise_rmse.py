@@ -323,6 +323,10 @@ class TestComputeSourceAlignment:
         assert np.isfinite(reconstruction["adapted_profile_axis_error_m"])
         assert np.isfinite(reconstruction["adapted_profile_boundary_psi_rmse_norm"])
         assert reconstruction["q_profile_sanity_pass"] is True
+        assert reconstruction["q_profile_finite_fraction"] == pytest.approx(1.0)
+        assert reconstruction["q_profile_min_abs"] > 0.0
+        assert reconstruction["q_profile_sign_changes"] == 0
+        assert 0.0 <= reconstruction["q_profile_monotonic_fraction"] <= 1.0
 
     def test_adapted_profile_reconstruction_leaves_failed_adapter_diagnostic_only(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
@@ -334,6 +338,10 @@ class TestComputeSourceAlignment:
         assert np.isnan(reconstruction["adapted_profile_psi_rmse_norm"])
         assert reconstruction["adapted_profile_sor_iterations"] == 0
         assert reconstruction["q_profile_sanity_pass"] is False
+        assert reconstruction["q_profile_finite_fraction"] == 0.0
+        assert np.isnan(reconstruction["q_profile_min_abs"])
+        assert reconstruction["q_profile_sign_changes"] == 0
+        assert reconstruction["q_profile_monotonic_fraction"] == 0.0
         assert reconstruction["adapted_profile_pass"] is False
 
     def test_source_convention_transform_is_named_and_rejects_unknown_modes(self):
@@ -683,6 +691,10 @@ class TestValidateEFITNRMSEBenchmark:
                 adapted_profile_boundary_containment_fraction=1.0,
                 adapted_profile_boundary_psi_rmse_norm=0.01,
                 q_profile_sanity_pass=True,
+                q_profile_finite_fraction=1.0,
+                q_profile_min_abs=1.0,
+                q_profile_sign_changes=0,
+                q_profile_monotonic_fraction=1.0,
                 adapted_profile_pass=True,
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,
@@ -791,6 +803,10 @@ class TestValidateEFITNRMSEBenchmark:
         assert all(row["delta_star_psi_candidate_rank"] >= 1 for row in gate.rows)
         assert all(row["operator_current_closure_pass"] for row in gate.rows)
         assert all(row["operator_current_relative_error"] < 0.05 for row in gate.rows)
+        assert all(row["q_profile_finite_fraction"] == pytest.approx(1.0) for row in gate.rows)
+        assert all(row["q_profile_min_abs"] > 0.0 for row in gate.rows)
+        assert all(row["q_profile_sign_changes"] == 0 for row in gate.rows)
+        assert all(0.0 <= row["q_profile_monotonic_fraction"] <= 1.0 for row in gate.rows)
         assert all(
             row["source_consistency_class"] == "profile_source_consistent" for row in gate.rows
         )
@@ -885,6 +901,10 @@ class TestValidateEFITNRMSEBenchmark:
                 adapted_profile_boundary_containment_fraction=float("nan") if is_worst else 1.0,
                 adapted_profile_boundary_psi_rmse_norm=float("nan") if is_worst else 0.01,
                 q_profile_sanity_pass=not is_worst,
+                q_profile_finite_fraction=0.0 if is_worst else 1.0,
+                q_profile_min_abs=float("nan") if is_worst else 1.0,
+                q_profile_sign_changes=0,
+                q_profile_monotonic_fraction=0.0 if is_worst else 1.0,
                 adapted_profile_pass=not is_worst,
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,
@@ -971,6 +991,10 @@ class TestValidateEFITNRMSEBenchmark:
                 adapted_profile_boundary_containment_fraction=1.0,
                 adapted_profile_boundary_psi_rmse_norm=0.01,
                 q_profile_sanity_pass=True,
+                q_profile_finite_fraction=1.0,
+                q_profile_min_abs=1.0,
+                q_profile_sign_changes=0,
+                q_profile_monotonic_fraction=1.0,
                 adapted_profile_pass=True,
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,
@@ -1053,6 +1077,10 @@ class TestValidateEFITNRMSEBenchmark:
                 adapted_profile_boundary_containment_fraction=1.0,
                 adapted_profile_boundary_psi_rmse_norm=adapted_rmse,
                 q_profile_sanity_pass=True,
+                q_profile_finite_fraction=1.0,
+                q_profile_min_abs=1.0,
+                q_profile_sign_changes=0,
+                q_profile_monotonic_fraction=1.0,
                 adapted_profile_pass=adapted_rmse <= psi_rmse_mod.ADAPTED_PROFILE_RMSE_THRESHOLD,
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,

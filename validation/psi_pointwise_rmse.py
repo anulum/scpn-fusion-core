@@ -140,6 +140,10 @@ class PsiRMSEResult:
     adapted_profile_boundary_containment_fraction: float = float("nan")
     adapted_profile_boundary_psi_rmse_norm: float = float("nan")
     q_profile_sanity_pass: bool = False
+    q_profile_finite_fraction: float = float("nan")
+    q_profile_min_abs: float = float("nan")
+    q_profile_sign_changes: int = 0
+    q_profile_monotonic_fraction: float = float("nan")
     adapted_profile_pass: bool = False
     plasma_mask_fraction: float = float("nan")
     pressure_source_norm: float = float("nan")
@@ -1200,12 +1204,34 @@ def compute_reconstruction_geometry_contracts(
         boundary_rmse_norm = float("nan")
 
     q = np.asarray(eq.qpsi, dtype=np.float64)
-    finite_q = q[np.isfinite(q)]
+    finite_mask = np.isfinite(q)
+    finite_q = q[finite_mask]
+    finite_fraction = float(np.count_nonzero(finite_mask) / q.size) if q.size else 0.0
+    if finite_q.size:
+        q_min_abs = float(np.min(np.abs(finite_q)))
+    else:
+        q_min_abs = float("nan")
+    sign_changes = 0
+    monotonic_fraction = 0.0
+    if finite_q.size > 1:
+        q_signs = np.sign(finite_q)
+        nonzero_signs = q_signs[q_signs != 0.0]
+        if nonzero_signs.size > 1:
+            sign_changes = int(np.count_nonzero(nonzero_signs[1:] != nonzero_signs[:-1]))
+        dq = np.diff(finite_q)
+        monotonic_fraction = float(
+            max(
+                np.count_nonzero(dq >= -1.0e-12),
+                np.count_nonzero(dq <= 1.0e-12),
+            )
+            / dq.size
+        )
     q_profile_sanity_pass = bool(
         finite_q.size == q.size
         and finite_q.size > 1
         and np.all(np.abs(finite_q) > 1e-12)
         and (np.all(finite_q > 0.0) or np.all(finite_q < 0.0))
+        and sign_changes == 0
     )
 
     return {
@@ -1213,6 +1239,10 @@ def compute_reconstruction_geometry_contracts(
         "adapted_profile_boundary_containment_fraction": containment,
         "adapted_profile_boundary_psi_rmse_norm": float(boundary_rmse_norm),
         "q_profile_sanity_pass": q_profile_sanity_pass,
+        "q_profile_finite_fraction": finite_fraction,
+        "q_profile_min_abs": q_min_abs,
+        "q_profile_sign_changes": sign_changes,
+        "q_profile_monotonic_fraction": monotonic_fraction,
     }
 
 
@@ -1238,6 +1268,10 @@ def compute_adapted_profile_reconstruction(
             "adapted_profile_boundary_containment_fraction": float("nan"),
             "adapted_profile_boundary_psi_rmse_norm": float("nan"),
             "q_profile_sanity_pass": False,
+            "q_profile_finite_fraction": 0.0,
+            "q_profile_min_abs": float("nan"),
+            "q_profile_sign_changes": 0,
+            "q_profile_monotonic_fraction": 0.0,
             "adapted_profile_pass": False,
         }
 
@@ -1274,6 +1308,10 @@ def compute_adapted_profile_reconstruction(
         "adapted_profile_boundary_containment_fraction": containment,
         "adapted_profile_boundary_psi_rmse_norm": boundary_rmse,
         "q_profile_sanity_pass": bool(geometry["q_profile_sanity_pass"]),
+        "q_profile_finite_fraction": float(geometry["q_profile_finite_fraction"]),
+        "q_profile_min_abs": float(geometry["q_profile_min_abs"]),
+        "q_profile_sign_changes": int(geometry["q_profile_sign_changes"]),
+        "q_profile_monotonic_fraction": float(geometry["q_profile_monotonic_fraction"]),
         "adapted_profile_pass": adapted_pass,
     }
 
@@ -1415,6 +1453,14 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
             adapted_profile_reconstruction["adapted_profile_boundary_psi_rmse_norm"]
         ),
         q_profile_sanity_pass=bool(adapted_profile_reconstruction["q_profile_sanity_pass"]),
+        q_profile_finite_fraction=float(
+            adapted_profile_reconstruction["q_profile_finite_fraction"]
+        ),
+        q_profile_min_abs=float(adapted_profile_reconstruction["q_profile_min_abs"]),
+        q_profile_sign_changes=int(adapted_profile_reconstruction["q_profile_sign_changes"]),
+        q_profile_monotonic_fraction=float(
+            adapted_profile_reconstruction["q_profile_monotonic_fraction"]
+        ),
         adapted_profile_pass=bool(adapted_profile_reconstruction["adapted_profile_pass"]),
         plasma_mask_fraction=float(source_components["plasma_mask_fraction"]),
         pressure_source_norm=float(source_components["pressure_source_norm"]),

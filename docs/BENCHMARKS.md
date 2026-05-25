@@ -222,6 +222,10 @@ this gate, and the raw `psi_N` RMSE gate remains unchanged. Latest local result:
 `0.012696`. Each adapted row also reports axis error, boundary contour
 containment, boundary-flux RMSE, SOR residual, and q-profile sanity so the
 result is a reconstruction contract rather than a scale-factor diagnostic.
+The q-profile sanity gate is machine-readable rather than boolean-only:
+accepted-adapter rows report finite fraction `1.000`, minimum `|q|` in
+`[0.9939342073, 1.002669677]`, zero sign changes, and monotonic fraction in
+`[0.95, 1.00]`.
 Profile-source interpolation now uses a second-order flux-normalized
 quadratic stencil, preserves the masked current-relevant weighted integral of
 the established linear GEQDSK profile contract, and explicitly masks boundary

@@ -217,6 +217,10 @@
           "adapted_profile_boundary_containment_fraction",
           "adapted_profile_boundary_psi_rmse_norm",
           "q_profile_sanity_pass",
+          "q_profile_finite_fraction",
+          "q_profile_min_abs",
+          "q_profile_sign_changes",
+          "q_profile_monotonic_fraction",
           "adapted_profile_pass",
           "plasma_mask_fraction",
           "pressure_source_norm",
@@ -421,6 +425,23 @@
           },
           "q_profile_sanity_pass": {
             "type": "boolean"
+          },
+          "q_profile_finite_fraction": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "q_profile_min_abs": {
+            "type": "number"
+          },
+          "q_profile_sign_changes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "q_profile_monotonic_fraction": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
           },
           "adapted_profile_pass": {
             "type": "boolean"
