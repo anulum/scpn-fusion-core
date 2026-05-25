@@ -136,7 +136,11 @@ def run_free_boundary_benchmark() -> dict:
         # reduction and breaks FreeGS/GEQDSK-compatible free-boundary physics.
         import jax.numpy as jnp
 
-        from scpn_fusion.core.jax_equilibrium_solver import solve_equilibrium_jax, vacuum_field
+        from scpn_fusion.core.jax_equilibrium_solver import (
+            find_axis,
+            solve_equilibrium_jax,
+            vacuum_field,
+        )
 
         R = jnp.linspace(2.0, 10.0, 33)
         Z = jnp.linspace(-4.0, 4.0, 33)
@@ -162,12 +166,24 @@ def run_free_boundary_benchmark() -> dict:
             float(np.max(np.abs(np.asarray(psi_jax[:, 0]) - np.asarray(psi_vac[:, 0])))),
             float(np.max(np.abs(np.asarray(psi_jax[:, -1]) - np.asarray(psi_vac[:, -1])))),
         )
+        r_axis, z_axis = find_axis(psi_jax, R, Z)
+        axis_r_index = int(np.argmin(np.abs(np.asarray(R) - float(r_axis))))
+        axis_z_index = int(np.argmin(np.abs(np.asarray(Z) - float(z_axis))))
+        axis_boundary_distance = min(
+            axis_r_index,
+            axis_z_index,
+            int(R.shape[0]) - 1 - axis_r_index,
+            int(Z.shape[0]) - 1 - axis_z_index,
+        )
         results["jax_free_boundary_wall_flux"] = {
             "grid": "33x33",
             "picard_iterations": 10,
             "sor_sweeps_per_picard": 10,
             "wall_time_s": float(wall_time_s),
             "vacuum_boundary_abs_error": float(wall_error),
+            "axis_r_m": float(r_axis),
+            "axis_z_m": float(z_axis),
+            "axis_boundary_distance_cells": int(axis_boundary_distance),
             "pass": bool(wall_error < 1e-12),
         }
 
@@ -204,6 +220,11 @@ def main():
         f.write(
             "| JAX free-boundary wall flux | 33x33 solve wall time | "
             f"{jax_fb['wall_time_s']:.6f} s | N/A |\n"
+        )
+        f.write(
+            "| JAX free-boundary axis | Boundary distance | "
+            f"{jax_fb['axis_boundary_distance_cells']} cells | "
+            f"{jax_fb['axis_boundary_distance_cells'] > 0} |\n"
         )
 
     print(f"Results saved to {report_dir}")

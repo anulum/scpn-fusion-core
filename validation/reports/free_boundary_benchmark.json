@@ -22,8 +22,11 @@
     "grid": "33x33",
     "picard_iterations": 10,
     "sor_sweeps_per_picard": 10,
-    "wall_time_s": 0.4624008779937867,
+    "wall_time_s": 0.445326629007468,
     "vacuum_boundary_abs_error": 7.105427357601002e-15,
+    "axis_r_m": 8.249886847367584,
+    "axis_z_m": 2.000436385523641,
+    "axis_boundary_distance_cells": 7,
     "pass": true
   }
 }

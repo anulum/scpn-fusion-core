@@ -106,6 +106,40 @@ def test_solve_equilibrium_converges():
     assert -4.0 < float(Z_ax) < 4.0
 
 
+def test_find_axis_ignores_free_boundary_wall_flux_maximum():
+    """PF-coil wall flux must not be reported as the plasma magnetic axis."""
+    R = jnp.linspace(1.0, 5.0, 5)
+    Z = jnp.linspace(-2.0, 2.0, 5)
+    psi = jnp.zeros((5, 5))
+    psi = psi.at[0, :].set(100.0)
+    psi = psi.at[-1, :].set(100.0)
+    psi = psi.at[:, 0].set(100.0)
+    psi = psi.at[:, -1].set(100.0)
+    psi = psi.at[2, 2].set(1.0)
+
+    R_ax, Z_ax = find_axis(psi, R, Z)
+
+    assert float(R_ax) == pytest.approx(3.0)
+    assert float(Z_ax) == pytest.approx(0.0)
+
+
+def test_find_axis_supports_negative_flux_well_convention():
+    """GEQDSK-like decreasing-psi conventions still have an interior axis."""
+    R = jnp.linspace(1.0, 5.0, 5)
+    Z = jnp.linspace(-2.0, 2.0, 5)
+    psi = jnp.zeros((5, 5))
+    psi = psi.at[2, 2].set(-4.0)
+    psi = psi.at[2, 1].set(-1.0)
+    psi = psi.at[2, 3].set(-1.0)
+    psi = psi.at[1, 2].set(-1.0)
+    psi = psi.at[3, 2].set(-1.0)
+
+    R_ax, Z_ax = find_axis(psi, R, Z)
+
+    assert float(R_ax) == pytest.approx(3.0)
+    assert float(Z_ax) == pytest.approx(0.0)
+
+
 def test_free_boundary_solve_preserves_vacuum_flux_boundary():
     """Free-boundary Picard/SOR must keep external coil flux on the wall."""
     R = jnp.linspace(2.0, 10.0, 17)

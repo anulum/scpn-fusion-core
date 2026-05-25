@@ -311,8 +311,34 @@ def solve_equilibrium_jax(
 
 @jit
 def find_axis(psi: jnp.ndarray, R_grid: jnp.ndarray, Z_grid: jnp.ndarray) -> tuple[float, float]:
-    """Find magnetic axis via argmax + parabolic sub-grid interpolation."""
-    idx = jnp.argmax(psi)
+    """Find the interior magnetic axis by flux extremum relative to wall flux.
+
+    Free-boundary PF coils can make the computational wall flux larger than
+    the plasma flux.  The magnetic axis is therefore selected from the interior
+    grid by the largest absolute departure from the wall-flux level, not by a
+    full-domain raw maximum.  This supports both increasing- and decreasing-psi
+    conventions used by GEQDSK/FreeGS-style equilibria.
+    """
+    center = psi[1:-1, 1:-1]
+    neighbor_max = jnp.maximum(
+        jnp.maximum(psi[:-2, 1:-1], psi[2:, 1:-1]),
+        jnp.maximum(psi[1:-1, :-2], psi[1:-1, 2:]),
+    )
+    neighbor_min = jnp.minimum(
+        jnp.minimum(psi[:-2, 1:-1], psi[2:, 1:-1]),
+        jnp.minimum(psi[1:-1, :-2], psi[1:-1, 2:]),
+    )
+    peak_margin = center - neighbor_max
+    well_margin = neighbor_min - center
+    local_score = jnp.maximum(jnp.maximum(peak_margin, well_margin), 0.0)
+    local_axis_score = jnp.full_like(psi, -jnp.inf)
+    local_axis_score = local_axis_score.at[1:-1, 1:-1].set(local_score)
+
+    fallback_axis_score = jnp.full_like(psi, -jnp.inf)
+    fallback_axis_score = fallback_axis_score.at[1:-1, 1:-1].set(jnp.abs(center))
+    has_local_extremum = jnp.max(local_score) > 0.0
+    axis_score = jnp.where(has_local_extremum, local_axis_score, fallback_axis_score)
+    idx = jnp.argmax(axis_score)
     iz = idx // psi.shape[1]
     ir = idx % psi.shape[1]
     R_ax = R_grid[ir]
