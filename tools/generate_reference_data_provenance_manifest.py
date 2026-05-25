@@ -184,6 +184,8 @@ def _normalize_rules(
                 raise ValueError(
                     f"rule {dataset_id} public EFIT references require public EFIT contract."
                 )
+            if reference_class == "public_efit_reference" and reference_role != "gate":
+                raise ValueError(f"rule {dataset_id} public EFIT references must be gate rows.")
             if reference_class == "public_efit_reference" and license_name == "synthetic-v1":
                 raise ValueError(
                     f"rule {dataset_id} public EFIT references cannot use synthetic license."
