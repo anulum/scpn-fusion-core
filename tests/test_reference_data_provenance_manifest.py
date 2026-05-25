@@ -579,6 +579,49 @@ def test_build_manifest_emits_reference_equilibrium_curation_metadata(
     assert sparc_dataset["reference_role"] == "gate"
 
 
+def test_build_manifest_rejects_inconsistent_reference_equilibrium_curation(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "reference_data"
+    (root / "diiid").mkdir(parents=True)
+    (root / "diiid" / "case.geqdsk").write_text("diiid\n", encoding="utf-8")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    rules = [
+        {
+            "id": "diiid_reference_equilibria",
+            "glob": "diiid/*.geqdsk",
+            "source_type": "reference_equilibrium_bundle",
+            "source": "Bundled DIII-D-like equilibrium references for validation lanes.",
+            "license": "synthetic-v1",
+            "reference_class": "synthetic_proxy_reference",
+            "reference_role": "gate",
+            "reference_expected_contract": "synthetic_solovev_geqdsk_diagnostic_contract",
+            "reference_expected_convention": "synthetic_proxy_profile_source",
+        },
+        {
+            "id": "policy",
+            "glob": "provenance_policy.json",
+            "source_type": "documentation",
+            "source": "policy",
+            "license": "AGPL-3.0-or-later",
+        },
+    ]
+    _write_json(policy, _policy_with_rules(rules))
+
+    with pytest.raises(ValueError, match="synthetic proxy references must be diagnostic"):
+        prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+
+    rules[0]["reference_class"] = "public_efit_reference"
+    rules[0]["reference_expected_contract"] = (
+        "public_efit_geqdsk_operator_and_profile_source_contract"
+    )
+    _write_json(policy, _policy_with_rules(rules))
+
+    with pytest.raises(ValueError, match="gate reference equilibria cannot use synthetic"):
+        prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+
+
 def test_build_manifest_requires_curation_metadata_for_reference_equilibria(
     tmp_path: Path,
 ) -> None:

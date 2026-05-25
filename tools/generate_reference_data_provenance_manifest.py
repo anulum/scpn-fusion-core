@@ -153,6 +153,17 @@ def _normalize_rules(
             "diagnostic",
         }:
             raise ValueError(f"rule {dataset_id} reference_role must be 'gate' or 'diagnostic'.")
+        if source_type == REFERENCE_EQUILIBRIUM_SOURCE_TYPE:
+            reference_class = curation["reference_class"]
+            reference_role = curation["reference_role"]
+            if reference_class == "synthetic_proxy_reference" and reference_role != "diagnostic":
+                raise ValueError(
+                    f"rule {dataset_id} synthetic proxy references must be diagnostic."
+                )
+            if reference_role == "gate" and license_name == "synthetic-v1":
+                raise ValueError(
+                    f"rule {dataset_id} gate reference equilibria cannot use synthetic license."
+                )
         rule = {
             "id": dataset_id,
             "glob": glob_pat,
