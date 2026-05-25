@@ -220,6 +220,8 @@ class EfitNRMSEBenchmarkGate:
     operator_source_threshold: float
     operator_source_pass_count: int
     gate_operator_source_pass_count: int
+    gate_operator_source_worst_psi_rmse_norm: float
+    gate_operator_source_worst_file: str
     operator_source_worst_psi_rmse_norm: float
     operator_source_worst_file: str
     source_convention_adapter_threshold: float
@@ -1626,6 +1628,7 @@ def validate_efit_nrmse_benchmark(
     finite_entries: list[tuple[str, float]] = []
     gate_entries: list[tuple[str, float]] = []
     operator_source_entries: list[tuple[str, float]] = []
+    gate_operator_source_entries: list[tuple[str, float]] = []
     adapted_profile_entries: list[tuple[str, float]] = []
     pass_count = 0
     operator_source_pass_count = 0
@@ -1663,6 +1666,8 @@ def validate_efit_nrmse_benchmark(
         operator_source_rmse = float(result.operator_source_psi_rmse_norm)
         if np.isfinite(operator_source_rmse):
             operator_source_entries.append((rel_path, operator_source_rmse))
+            if is_gate_row:
+                gate_operator_source_entries.append((rel_path, operator_source_rmse))
             if operator_source_rmse <= OPERATOR_SOURCE_RMSE_THRESHOLD:
                 operator_source_pass_count += 1
                 if is_gate_row:
@@ -1712,6 +1717,15 @@ def validate_efit_nrmse_benchmark(
     else:
         operator_source_worst_file = ""
         operator_source_worst_norm = float("nan")
+
+    if gate_operator_source_entries:
+        gate_operator_source_worst_file, gate_operator_source_worst_norm = max(
+            gate_operator_source_entries,
+            key=lambda item: item[1],
+        )
+    else:
+        gate_operator_source_worst_file = ""
+        gate_operator_source_worst_norm = float("nan")
 
     if gate_entries:
         gate_worst_file, gate_worst_norm = max(gate_entries, key=lambda item: item[1])
@@ -1833,6 +1847,8 @@ def validate_efit_nrmse_benchmark(
         operator_source_threshold=OPERATOR_SOURCE_RMSE_THRESHOLD,
         operator_source_pass_count=operator_source_pass_count,
         gate_operator_source_pass_count=gate_operator_source_pass_count,
+        gate_operator_source_worst_psi_rmse_norm=float(gate_operator_source_worst_norm),
+        gate_operator_source_worst_file=gate_operator_source_worst_file,
         operator_source_worst_psi_rmse_norm=float(operator_source_worst_norm),
         operator_source_worst_file=operator_source_worst_file,
         source_convention_adapter_threshold=SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD,
@@ -2016,6 +2032,12 @@ def main() -> int:
         f"{benchmark.gate_operator_source_pass_count}/{benchmark.gate_row_count} public rows "
         f"under psi_N RMSE <= {benchmark.operator_source_threshold:.6g}"
     )
+    if benchmark.gate_operator_source_worst_file:
+        print(
+            "Worst public operator-source row: "
+            f"{benchmark.gate_operator_source_worst_file} "
+            f"(psi_N RMSE = {benchmark.gate_operator_source_worst_psi_rmse_norm:.6g})"
+        )
     print(
         f"Adapted profile gate: {benchmark.adapted_profile_pass_count}/"
         f"{benchmark.source_convention_adapter_pass_count} accepted adapter rows "

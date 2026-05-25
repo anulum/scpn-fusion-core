@@ -103,6 +103,8 @@ def test_main_is_ascii_stdout_safe(tmp_path: Path, monkeypatch) -> None:
         operator_source_threshold=1e-6,
         operator_source_pass_count=1,
         gate_operator_source_pass_count=1,
+        gate_operator_source_worst_psi_rmse_norm=1e-12,
+        gate_operator_source_worst_file="sparc/sample.geqdsk",
         operator_source_worst_psi_rmse_norm=1e-12,
         operator_source_worst_file="sparc/sample.geqdsk",
         source_convention_adapter_threshold=0.15,

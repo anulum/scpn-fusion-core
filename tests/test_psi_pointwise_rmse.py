@@ -766,6 +766,8 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.operator_source_threshold == pytest.approx(
             psi_rmse_mod.OPERATOR_SOURCE_RMSE_THRESHOLD
         )
+        assert gate.gate_operator_source_worst_psi_rmse_norm == pytest.approx(1.0e-12)
+        assert gate.gate_operator_source_worst_file.startswith("sparc/")
         assert gate.operator_source_worst_psi_rmse_norm == pytest.approx(1.0e-12)
         assert gate.operator_source_worst_file
         assert gate.source_convention_adapter_pass_count == 10
