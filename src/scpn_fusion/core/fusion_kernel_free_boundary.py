@@ -35,9 +35,15 @@ def green_function(R_src: float, Z_src: float, R_obs: float, Z_obs: float) -> fl
     singular self-observation limit is regularised to zero because this helper
     is used for external coil-to-grid coupling rather than coil self-inductance.
     """
-    denom = (R_obs + R_src) ** 2 + (Z_obs - Z_src) ** 2
-    if denom < 1e-30:
+    values = np.asarray([R_src, Z_src, R_obs, Z_obs], dtype=np.float64)
+    if not np.all(np.isfinite(values)):
+        raise ValueError("Green's-function coordinates must be finite.")
+    if R_src <= 0.0 or R_obs <= 0.0:
+        raise ValueError("Green's-function radii must be positive.")
+    distance_sq = (R_obs - R_src) ** 2 + (Z_obs - Z_src) ** 2
+    if distance_sq < 1e-24:
         return 0.0
+    denom = (R_obs + R_src) ** 2 + (Z_obs - Z_src) ** 2
     k2 = 4.0 * R_obs * R_src / denom
     k2 = np.clip(k2, 1e-12, 1.0 - 1e-12)
     k = np.sqrt(k2)
@@ -55,6 +61,13 @@ def _green_function_vectorised(
     Z_obs: FloatArray,
 ) -> FloatArray:
     """Vectorised toroidal Green's function over observation grid arrays."""
+    if not np.isfinite(R_src) or not np.isfinite(Z_src) or R_src <= 0.0:
+        raise ValueError("source coil coordinates must be finite with R_src > 0.")
+    if not np.all(np.isfinite(R_obs)) or not np.all(np.isfinite(Z_obs)):
+        raise ValueError("observation coordinates must be finite.")
+    if np.any(R_obs <= 0.0):
+        raise ValueError("observation radii must be positive.")
+    self_mask = (R_obs - R_src) ** 2 + (Z_obs - Z_src) ** 2 < 1e-24
     denom = (R_obs + R_src) ** 2 + (Z_obs - Z_src) ** 2
     k2 = np.where(denom > 1e-30, 4.0 * R_obs * R_src / np.maximum(denom, 1e-30), 0.0)
     k2 = np.clip(k2, 1e-12, 1.0 - 1e-12)
@@ -62,7 +75,8 @@ def _green_function_vectorised(
     K_val = ellipk(k2)
     E_val = ellipe(k2)
     prefactor = _MU0 / (2.0 * np.pi) * np.sqrt(R_obs * R_src)
-    return prefactor * ((2.0 - k2) * K_val - 2.0 * E_val) / k
+    flux = prefactor * ((2.0 - k2) * K_val - 2.0 * E_val) / k
+    return np.where(self_mask, 0.0, flux)
 
 
 def compute_external_flux(kernel: Any, coils: "CoilSet") -> FloatArray:

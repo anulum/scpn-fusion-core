@@ -501,8 +501,20 @@ Local run on 2026-05-24:
 |-----------|---------------|------|---------------------------|
 | `picard_gs_solve/sor_33x33` | Full-order Grad-Shafranov SOR solve, 10 Picard iterations | 33x33 | 412.83 us |
 | `picard_multigrid_solve/multigrid_33x33` | Full-order Grad-Shafranov Picard multigrid solve, 10 Picard iterations | 33x33 | 844.59 us |
-| `vacuum_field_33x33_6coils` | Vacuum flux from six ITER-like coils | 33x33 | 139.55 us |
-| `vacuum_field_65x65_6coils` | Vacuum flux from six ITER-like coils | 65x65 | 488.86 us |
+| `vacuum_field_33x33_6coils` | Vacuum flux from six ITER-like coils | 33x33 | 121.47 us |
+| `vacuum_field_65x65_6coils` | Vacuum flux from six ITER-like coils | 65x65 | 543.69 us |
+
+Vacuum-field contract: Python and Rust now use the same circular-filament
+Green's-function convention for external free-boundary coupling. Observation
+points exactly on a source filament return zero to exclude coil self-inductance
+from the vacuum boundary map; self-inductance belongs in a separate coil-circuit
+model. Local contract checks passed with
+`python -m pytest tests/test_coil_optimization.py -q` (`32 passed`) and
+`cargo test -p fusion-core vacuum --lib` (`6 passed`).
+The vacuum benchmark row was rerun locally with
+`cargo bench -p fusion-core --bench vacuum_bench -- --sample-size 10` after the
+self-observation fix; Criterion centre estimates were `121.47 us` for 33x33 and
+`543.69 us` for 65x65.
 
 Interpretation: the 33x33 Rust full-order equilibrium path is sub-millisecond
 and therefore competitive for low-resolution control-support updates and

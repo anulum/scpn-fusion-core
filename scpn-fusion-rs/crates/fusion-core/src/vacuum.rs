@@ -17,6 +17,87 @@ use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::Grid2D;
 use ndarray::Array2;
 
+/// Evaluate the circular-filament poloidal-flux Green's function per ampere.
+///
+/// This external-coupling kernel deliberately excludes coil self-inductance:
+/// an observation exactly on the source filament returns zero instead of a
+/// clipped singular value.  Self-inductance belongs in the coil-circuit model,
+/// not in the free-boundary vacuum-flux map.
+pub fn circular_filament_green_function(
+    r_src: f64,
+    z_src: f64,
+    r_obs: f64,
+    z_obs: f64,
+    mu0: f64,
+) -> FusionResult<f64> {
+    if !mu0.is_finite() || mu0 <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "vacuum permeability mu0 must be finite and > 0, got {mu0}"
+        )));
+    }
+    if !r_src.is_finite() || r_src <= 0.0 || !r_obs.is_finite() || r_obs <= 0.0 {
+        return Err(FusionError::ConfigError(
+            "Green-function radii must be finite and > 0".to_string(),
+        ));
+    }
+    if !z_src.is_finite() || !z_obs.is_finite() {
+        return Err(FusionError::ConfigError(
+            "Green-function vertical coordinates must be finite".to_string(),
+        ));
+    }
+
+    circular_filament_green_function_unchecked(r_src, z_src, r_obs, z_obs, mu0)
+}
+
+fn circular_filament_green_function_unchecked(
+    r_src: f64,
+    z_src: f64,
+    r_obs: f64,
+    z_obs: f64,
+    mu0: f64,
+) -> FusionResult<f64> {
+    let dz = z_obs - z_src;
+    let distance_sq = (r_obs - r_src).powi(2) + dz * dz;
+    if distance_sq < 1.0e-24 {
+        return Ok(0.0);
+    }
+
+    let r_plus_rc = r_obs + r_src;
+    let denom = r_plus_rc * r_plus_rc + dz * dz;
+    if !denom.is_finite() || denom <= 0.0 {
+        return Err(FusionError::ConfigError(
+            "vacuum field denominator became non-finite or non-positive".to_string(),
+        ));
+    }
+
+    let k2_raw = (4.0 * r_obs * r_src) / denom;
+    if !k2_raw.is_finite() {
+        return Err(FusionError::ConfigError(
+            "vacuum field k^2 became non-finite".to_string(),
+        ));
+    }
+    let k2 = k2_raw.clamp(1e-12, 1.0 - 1e-12);
+    let k_val = ellipk(k2);
+    let e_val = ellipe(k2);
+    if !k_val.is_finite() || !e_val.is_finite() {
+        return Err(FusionError::ConfigError(
+            "vacuum field elliptic integrals became non-finite".to_string(),
+        ));
+    }
+
+    let prefactor = mu0 / (2.0 * std::f64::consts::PI);
+    let sqrt_term = (r_obs * r_src).sqrt();
+    let k = k2.sqrt();
+    let term = ((2.0 - k2) * k_val - 2.0 * e_val) / k;
+    let flux = prefactor * sqrt_term * term;
+    if !flux.is_finite() {
+        return Err(FusionError::ConfigError(
+            "vacuum field coil flux contribution became non-finite".to_string(),
+        ));
+    }
+    Ok(flux)
+}
+
 /// Calculate vacuum magnetic flux from coils using the toroidal Green's function.
 ///
 /// For each coil at `(Rc, Zc)` with current `I`, the flux contribution is:
@@ -97,45 +178,8 @@ pub fn calculate_vacuum_field(
                 let r = grid.rr[[iz, ir]];
                 let z = grid.zz[[iz, ir]];
 
-                let dz = z - zc;
-                let r_plus_rc = r + rc;
-                let r_plus_rc_sq = r_plus_rc * r_plus_rc;
-                let denom = r_plus_rc_sq + dz * dz;
-                if !denom.is_finite() || denom <= 0.0 {
-                    return Err(FusionError::ConfigError(
-                        "vacuum field denominator became non-finite or non-positive".to_string(),
-                    ));
-                }
-
-                // k² parameter
-                let k2_raw = (4.0 * r * rc) / denom;
-                if !k2_raw.is_finite() {
-                    return Err(FusionError::ConfigError(
-                        "vacuum field k^2 became non-finite".to_string(),
-                    ));
-                }
-                let mut k2 = k2_raw;
-                // CRITICAL: clip to avoid singularity at ellipk(1.0) and division by k2=0
-                k2 = k2.clamp(1e-9, 0.999999);
-
-                let k_val = ellipk(k2);
-                let e_val = ellipe(k2);
-                if !k_val.is_finite() || !e_val.is_finite() {
-                    return Err(FusionError::ConfigError(
-                        "vacuum field elliptic integrals became non-finite".to_string(),
-                    ));
-                }
-
-                let sqrt_term = (r * rc).sqrt();
-                let k = k2.sqrt();
-                let term = ((2.0 - k2) * k_val - 2.0 * e_val) / k;
-                let coil_flux = prefactor * sqrt_term * term;
-                if !coil_flux.is_finite() {
-                    return Err(FusionError::ConfigError(
-                        "vacuum field coil flux contribution became non-finite".to_string(),
-                    ));
-                }
-
+                let coil_flux =
+                    current * circular_filament_green_function_unchecked(rc, zc, r, z, mu0)?;
                 psi_vac[[iz, ir]] += coil_flux;
             }
         }
@@ -260,5 +304,36 @@ mod tests {
         };
         assert!(calculate_vacuum_field(&grid, &[bad_coil], 1.0).is_err());
         assert!(calculate_vacuum_field(&grid, &[], f64::NAN).is_err());
+    }
+
+    #[test]
+    fn test_green_function_self_observation_is_regularised() {
+        let flux = circular_filament_green_function(5.0, 0.0, 5.0, 0.0, 1.0)
+            .expect("self-observation should regularise");
+        assert_eq!(flux, 0.0);
+    }
+
+    #[test]
+    fn test_vacuum_field_is_linear_in_current_and_self_regularised() {
+        let grid = Grid2D::new(17, 17, 1.0, 9.0, -4.0, 4.0);
+        let coil = CoilConfig {
+            name: "self".to_string(),
+            r: 5.0,
+            z: 0.0,
+            current: 2.0,
+        };
+        let mut scaled = coil.clone();
+        scaled.current = 6.0;
+
+        let psi = calculate_vacuum_field(&grid, &[coil], 1.0).expect("valid vacuum field");
+        let psi_scaled =
+            calculate_vacuum_field(&grid, &[scaled], 1.0).expect("valid scaled vacuum field");
+
+        assert_eq!(psi[[8, 8]], 0.0);
+        for iz in 0..17 {
+            for ir in 0..17 {
+                assert!((psi_scaled[[iz, ir]] - 3.0 * psi[[iz, ir]]).abs() < 1.0e-12);
+            }
+        }
     }
 }

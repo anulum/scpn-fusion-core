@@ -15,6 +15,7 @@ import pytest
 
 from scpn_fusion.core.fusion_kernel_coilset_config import build_coilset_from_config
 from scpn_fusion.core.fusion_kernel import FusionKernel, CoilSet
+from scpn_fusion.core.fusion_kernel_free_boundary import green_function
 from scpn_fusion.core.fusion_kernel_free_boundary_mixin import FusionKernelFreeBoundaryMixin
 
 MOCK_CONFIG = {
@@ -189,6 +190,34 @@ def test_mutual_inductance_symmetry(kernel: FusionKernel):
     M = kernel._build_mutual_inductance_matrix(coils, obs)
     # Coils 0,1 have same R but ±Z → same flux at Z=0
     assert abs(M[0, 0] - M[1, 0]) < 1e-8, "Symmetric coils should produce same flux at Z=0"
+
+
+def test_green_function_self_observation_is_regularised():
+    """External-coil Green's function must not inject coil self-inductance."""
+    assert green_function(5.0, 0.0, 5.0, 0.0) == 0.0
+
+
+def test_green_function_rejects_nonphysical_coordinates():
+    """Vacuum Green's function should fail before invalid geometry enters solve."""
+    with pytest.raises(ValueError, match="radii"):
+        green_function(0.0, 0.0, 5.0, 0.0)
+    with pytest.raises(ValueError, match="finite"):
+        green_function(5.0, np.nan, 6.0, 0.0)
+
+
+def test_external_flux_is_linear_and_regularises_self_grid_point(kernel: FusionKernel):
+    """Vacuum boundary source should be linear in current and zero at coil self-point."""
+    kernel.cfg["coils"] = [
+        {"name": "SELF", "r": float(kernel.R[3]), "z": float(kernel.Z[4]), "current": 2.0},
+    ]
+    coils = kernel.build_coilset_from_config()
+
+    psi = kernel._compute_external_flux(coils)
+    coils.currents = 3.0 * coils.currents
+    psi_scaled = kernel._compute_external_flux(coils)
+
+    assert psi[4, 3] == pytest.approx(0.0, abs=0.0)
+    np.testing.assert_allclose(psi_scaled, 3.0 * psi, rtol=1e-12, atol=1e-18)
 
 
 # ── Coil current optimization ───────────────────────────────────────
