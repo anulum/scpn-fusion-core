@@ -197,29 +197,26 @@ weighted least-squares.
 
 ---
 
-## 7. Inverse Solver: Jacobian Parallelism
+## 7. Inverse Solver: Full-Kernel Jacobian Fidelity
 
-As of the latest release, the Rust inverse solver computes the 8 Jacobian
-finite-difference columns in parallel using `rayon`. Each column runs an
-independent forward solve on a cloned kernel, so the wall time for one LM
-iteration drops from ~0.8 s to ~0.15 s on an 8-core machine.
+The Rust inverse module has two distinct surfaces:
 
-No configuration is needed — parallelism is automatic. To control the
-thread count, set the `RAYON_NUM_THREADS` environment variable:
+| Surface | Coordinates | Jacobian behavior |
+|---------|-------------|-------------------|
+| `reconstruct_equilibrium` | normalized probe flux | selectable closed-form mtanh or finite difference |
+| `reconstruct_equilibrium_with_kernel` | physical `(R, Z)` probes | full nonlinear forward-solve finite difference |
 
-```bash
-# Limit to 4 threads (useful on shared machines)
-RAYON_NUM_THREADS=4 cargo run --release
-```
+For the full-kernel path, each Levenberg-Marquardt iteration evaluates one
+baseline Grad-Shafranov solve plus eight perturbed solves, one for each mtanh
+profile parameter. This is intentionally more expensive than the internal
+linearized sensitivity helper, but it preserves fidelity with the native
+Grad-Shafranov solver and avoids reduced-order inverse updates.
 
-### Expected speedup
-
-| Cores | Speedup (8 columns) | Notes |
-|-------|---------------------|-------|
-| 1 | 1× (serial fallback) | Same as before |
-| 4 | ~3.5× | Some overhead from cloning |
-| 8 | ~5–6× | Matches column count |
-| 16 | ~5–6× | No benefit beyond 8 columns |
+`kernel_cfg.inverse.jacobian_mode` is accepted for API compatibility. In the
+full-kernel API both `Analytical` and `FiniteDifference` currently use the same
+nonlinear forward-solve finite-difference contract. Use the normalized
+profile-space API only when the closed-form mtanh response model, not the
+full equilibrium kernel, is the intended inverse model.
 
 ---
 

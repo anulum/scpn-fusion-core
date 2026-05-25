@@ -202,15 +202,21 @@ to prove that the acceptance gate is sensitive to missing control action.
 
 ## Inverse Reconstruction Performance
 
-The Levenberg-Marquardt inverse solver calls the forward Grad-Shafranov
-equilibrium solver 8 times per iteration (1 baseline + 7 Jacobian columns
-for the mtanh profile parameters).  The forward solve dominates wall time;
+The full-kernel Levenberg-Marquardt inverse solver calls the forward
+Grad-Shafranov equilibrium solver 9 times per iteration: 1 baseline solve plus
+8 finite-difference Jacobian columns for the mtanh pressure and FF profile
+parameters. The forward solve dominates wall time;
 Tikhonov regularisation, Huber robust loss, and per-probe σ-weighting add
 negligible overhead.
 
+The normalized profile-space inverse still exposes a closed-form mtanh
+Jacobian. The physical `(R, Z)` kernel inverse does not use that reduced
+response model; both accepted Jacobian modes route to full nonlinear
+forward-solve finite differences.
+
 | Configuration | Overhead per LM iter | Notes |
 |---------------|---------------------|-------|
-| Default (LS) | 8 forward solves + Cholesky | baseline |
+| Full-kernel default | 9 forward solves + damped least squares | baseline |
 | + Tikhonov (α=0.1) | same + N_PARAMS additions | negligible overhead |
 | + Huber (δ=0.1) | same + IRLS weights | negligible overhead |
 | + σ weights | same + per-probe division | negligible overhead |

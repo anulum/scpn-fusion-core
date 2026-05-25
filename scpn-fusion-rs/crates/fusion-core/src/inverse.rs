@@ -5,11 +5,21 @@
 // ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
 // SCPN Fusion Core — Inverse Profile Reconstruction
-//! Inverse reconstruction module with selectable Jacobian mode.
+//! Inverse reconstruction module with selectable profile-space Jacobian mode.
+//!
+//! `reconstruct_equilibrium` operates on normalized probe-space responses and
+//! supports either closed-form mtanh Jacobians or finite differences. The
+//! full-kernel API, `reconstruct_equilibrium_with_kernel`, evaluates residuals
+//! by running the Grad-Shafranov solver at physical `(R, Z)` probes. That path
+//! always builds its Jacobian from full nonlinear forward solves so the inverse
+//! update is consistent with the native equilibrium solver rather than a
+//! reduced local sensitivity surrogate.
 
 use crate::jacobian::{compute_analytical_jacobian, compute_fd_jacobian, forward_model_response};
 use crate::kernel::FusionKernel;
-use crate::source::{mtanh_profile, mtanh_profile_derivatives, ProfileParams};
+use crate::source::ProfileParams;
+#[cfg(test)]
+use crate::source::{mtanh_profile, mtanh_profile_derivatives};
 use fusion_math::linalg::pinv_svd;
 use fusion_types::config::ReactorConfig;
 use fusion_types::error::{FusionError, FusionResult};
@@ -17,10 +27,15 @@ use fusion_types::state::Grid2D;
 use ndarray::{Array1, Array2};
 
 const N_PARAMS: usize = 8;
+#[cfg(test)]
 const SOURCE_BETA_MIX: f64 = 0.5;
+#[cfg(test)]
 const MIN_FLUX_DENOMINATOR: f64 = 1e-9;
+#[cfg(test)]
 const MIN_CURRENT_INTEGRAL: f64 = 1e-9;
+#[cfg(test)]
 const MIN_RADIUS: f64 = 1e-9;
+#[cfg(test)]
 const SENSITIVITY_RELAXATION: f64 = 0.8;
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -156,6 +171,7 @@ fn to_array2(jac: &[Vec<f64>], expected_cols: usize, label: &str) -> FusionResul
     Ok(out)
 }
 
+#[cfg(test)]
 fn validate_flux_denom(flux_denom: f64) -> FusionResult<f64> {
     if !flux_denom.is_finite() || flux_denom.abs() <= MIN_FLUX_DENOMINATOR {
         return Err(FusionError::ConfigError(format!(
@@ -165,6 +181,7 @@ fn validate_flux_denom(flux_denom: f64) -> FusionResult<f64> {
     Ok(flux_denom)
 }
 
+#[cfg(test)]
 fn validate_radius(radius_m: f64, label: &str) -> FusionResult<f64> {
     if !radius_m.is_finite() || radius_m <= MIN_RADIUS {
         return Err(FusionError::ConfigError(format!(
@@ -394,6 +411,7 @@ fn compute_lm_delta(
     Ok(delta)
 }
 
+#[cfg(test)]
 fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
     let mut best_idx = 0usize;
     let mut best_dist = f64::INFINITY;
@@ -407,6 +425,7 @@ fn nearest_index(axis: &Array1<f64>, value: f64) -> usize {
     best_idx
 }
 
+#[cfg(test)]
 fn probe_indices(grid: &Grid2D, probes_rz: &[(f64, f64)]) -> Vec<(usize, usize)> {
     probes_rz
         .iter()
@@ -414,6 +433,7 @@ fn probe_indices(grid: &Grid2D, probes_rz: &[(f64, f64)]) -> Vec<(usize, usize)>
         .collect()
 }
 
+#[cfg(test)]
 fn mtanh_profile_dpsi_norm(
     psi_norm: f64,
     params: &ProfileParams,
@@ -517,6 +537,7 @@ fn kernel_forward_observables(
     Ok(observables)
 }
 
+#[cfg(test)]
 fn solve_linearized_sensitivity(
     grid: &Grid2D,
     ds_dx: &Array2<f64>,
@@ -609,6 +630,7 @@ fn solve_linearized_sensitivity(
     Ok(delta)
 }
 
+#[cfg(test)]
 fn kernel_analytical_forward_and_jacobian(
     reactor_config: &ReactorConfig,
     probes_rz: &[(f64, f64)],
@@ -793,6 +815,26 @@ fn kernel_fd_jacobian_from_base(
     Ok(jac)
 }
 
+fn kernel_full_forward_and_jacobian(
+    reactor_config: &ReactorConfig,
+    probes_rz: &[(f64, f64)],
+    params_p: ProfileParams,
+    params_ff: ProfileParams,
+    kernel_cfg: &KernelInverseConfig,
+) -> FusionResult<(Vec<f64>, Vec<Vec<f64>>)> {
+    let pred =
+        kernel_forward_observables(reactor_config, probes_rz, params_p, params_ff, kernel_cfg)?;
+    let jac = kernel_fd_jacobian_from_base(
+        reactor_config,
+        probes_rz,
+        params_p,
+        params_ff,
+        kernel_cfg,
+        &pred,
+    )?;
+    Ok((pred, jac))
+}
+
 /// Reconstruct profile parameters from probe-space measurements.
 pub fn reconstruct_equilibrium(
     probe_psi_norm: &[f64],
@@ -905,6 +947,11 @@ pub fn reconstruct_equilibrium(
 ///
 /// This API evaluates residuals at physical probe coordinates `(R, Z)` by running
 /// the Grad-Shafranov kernel with candidate profile parameters.
+///
+/// Unlike the normalized profile-space inverse, this full-kernel path always
+/// computes Jacobian columns with nonlinear forward-solve finite differences.
+/// `kernel_cfg.inverse.jacobian_mode` is accepted for API compatibility, but it
+/// does not select the internal linearized sensitivity approximation.
 pub fn reconstruct_equilibrium_with_kernel(
     reactor_config: &ReactorConfig,
     probes_rz: &[(f64, f64)],
@@ -939,33 +986,13 @@ pub fn reconstruct_equilibrium_with_kernel(
 
     for iter in 0..kernel_cfg.inverse.max_iterations {
         let (params_p, params_ff) = unpack_params(&x);
-        let (prediction, jac) = match kernel_cfg.inverse.jacobian_mode {
-            JacobianMode::Analytical => kernel_analytical_forward_and_jacobian(
-                reactor_config,
-                probes_rz,
-                params_p,
-                params_ff,
-                kernel_cfg,
-            )?,
-            JacobianMode::FiniteDifference => {
-                let pred = kernel_forward_observables(
-                    reactor_config,
-                    probes_rz,
-                    params_p,
-                    params_ff,
-                    kernel_cfg,
-                )?;
-                let jac = kernel_fd_jacobian_from_base(
-                    reactor_config,
-                    probes_rz,
-                    params_p,
-                    params_ff,
-                    kernel_cfg,
-                    &pred,
-                )?;
-                (pred, jac)
-            }
-        };
+        let (prediction, jac) = kernel_full_forward_and_jacobian(
+            reactor_config,
+            probes_rz,
+            params_p,
+            params_ff,
+            kernel_cfg,
+        )?;
         let residual_vec: Vec<f64> = prediction
             .iter()
             .zip(measurements.iter())
@@ -1478,7 +1505,7 @@ mod tests {
     }
 
     #[test]
-    fn test_kernel_analytical_jacobian_computes() {
+    fn test_kernel_linearized_sensitivity_jacobian_computes() {
         let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
             .unwrap();
         let probes = vec![(6.2, 0.0), (6.35, 0.1), (6.45, -0.15)];
@@ -1514,7 +1541,7 @@ mod tests {
     }
 
     #[test]
-    fn test_kernel_analytical_jacobian_tracks_fd() {
+    fn test_kernel_linearized_sensitivity_jacobian_tracks_fd() {
         let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
             .unwrap();
         let probes = vec![(6.2, 0.0), (6.3, 0.08), (6.4, -0.12), (6.5, 0.0)];
@@ -1574,7 +1601,7 @@ mod tests {
         let nrmse = (num / den.max(1e-14)).sqrt();
         let sign_match = same_sign as f64 / comparable.max(1) as f64;
 
-        // The analytical kernel Jacobian uses a linearized local sensitivity model.
+        // The internal local sensitivity model is intentionally approximate.
         // It should track FD directionality and scale well enough for LM updates.
         assert!(
             nrmse < 1.5,
@@ -1660,5 +1687,84 @@ mod tests {
             init_residual,
             result.residual
         );
+    }
+
+    #[test]
+    fn test_kernel_inverse_uses_full_forward_fd_for_all_jacobian_modes() {
+        let cfg = ReactorConfig::from_file(&config_path("validation/iter_validated_config.json"))
+            .unwrap();
+        let probes = vec![(6.2, 0.0), (6.3, 0.1), (6.4, -0.1), (6.55, 0.0)];
+
+        let true_p = ProfileParams {
+            ped_top: 0.91,
+            ped_width: 0.08,
+            ped_height: 1.15,
+            core_alpha: 0.28,
+        };
+        let true_ff = ProfileParams {
+            ped_top: 0.85,
+            ped_width: 0.06,
+            ped_height: 0.92,
+            core_alpha: 0.14,
+        };
+        let init_p = ProfileParams {
+            ped_top: 0.78,
+            ped_width: 0.12,
+            ped_height: 0.7,
+            core_alpha: 0.03,
+        };
+        let init_ff = ProfileParams {
+            ped_top: 0.74,
+            ped_width: 0.11,
+            ped_height: 0.65,
+            core_alpha: 0.02,
+        };
+
+        let base_cfg = KernelInverseConfig {
+            inverse: InverseConfig {
+                max_iterations: 1,
+                damping: 0.6,
+                tolerance: 1e-8,
+                tikhonov: 1e-4,
+                fd_step: 1e-5,
+                ..Default::default()
+            },
+            kernel_max_iterations: 50,
+            require_kernel_converged: false,
+        };
+
+        let measurements =
+            kernel_forward_observables(&cfg, &probes, true_p, true_ff, &base_cfg).unwrap();
+
+        let mut fd_cfg = base_cfg.clone();
+        fd_cfg.inverse.jacobian_mode = JacobianMode::FiniteDifference;
+        let fd_result = reconstruct_equilibrium_with_kernel(
+            &cfg,
+            &probes,
+            &measurements,
+            init_p,
+            init_ff,
+            &fd_cfg,
+        )
+        .unwrap();
+
+        let mut analytical_cfg = base_cfg;
+        analytical_cfg.inverse.jacobian_mode = JacobianMode::Analytical;
+        let analytical_result = reconstruct_equilibrium_with_kernel(
+            &cfg,
+            &probes,
+            &measurements,
+            init_p,
+            init_ff,
+            &analytical_cfg,
+        )
+        .unwrap();
+
+        assert_eq!(fd_result.iterations, analytical_result.iterations);
+        assert_eq!(
+            fd_result.residual_history,
+            analytical_result.residual_history
+        );
+        assert!((fd_result.residual - analytical_result.residual).abs() < 1e-14);
     }
 }
