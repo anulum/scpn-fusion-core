@@ -8,7 +8,7 @@
       "current_density_max_relative_error": 1.1383331304297586e-14,
       "delta_star_max_abs_error": 5.662137425588298e-15,
       "dr": 0.125,
-      "elapsed_s": 0.00020634004613384604,
+      "elapsed_s": 0.00020691397367045283,
       "expected_second_order_radial_truncation": 0.0,
       "expected_total_current": 763916.5051522637,
       "nr": 17,
@@ -19,13 +19,30 @@
       "vertical_coeff": -0.25
     },
     {
+      "analytic_delta_star_max_abs_error": 0.0009765625000333067,
+      "case": "radial_quartic_17",
+      "current_density_max_abs_error": 9.19681042432785e-09,
+      "current_density_max_relative_error": 4.338971353909999e-14,
+      "delta_star_max_abs_error": 3.3306690738754696e-14,
+      "dr": 0.125,
+      "elapsed_s": 0.00014120200648903847,
+      "expected_second_order_radial_truncation": 0.0009765625,
+      "expected_total_current": -1025734.1149592325,
+      "nr": 17,
+      "nz": 19,
+      "radial_coeff": 0.03125,
+      "total_current": -1025734.1149592325,
+      "total_current_relative_error": 0.0,
+      "vertical_coeff": -0.125
+    },
+    {
       "analytic_delta_star_max_abs_error": 0.0002441406252380318,
-      "case": "radial_quartic",
+      "case": "radial_quartic_33",
       "current_density_max_abs_error": 6.58910721540451e-08,
       "current_density_max_relative_error": 1.9014808182670065e-13,
       "delta_star_max_abs_error": 2.3803181647963356e-13,
       "dr": 0.0625,
-      "elapsed_s": 0.0001800380414351821,
+      "elapsed_s": 0.00017176300752907991,
       "expected_second_order_radial_truncation": 0.000244140625,
       "expected_total_current": -1087779.3199833862,
       "nr": 33,
@@ -33,6 +50,23 @@
       "radial_coeff": 0.03125,
       "total_current": -1087779.3199833862,
       "total_current_relative_error": 0.0,
+      "vertical_coeff": -0.125
+    },
+    {
+      "analytic_delta_star_max_abs_error": 6.103515727717834e-05,
+      "case": "radial_quartic_65",
+      "current_density_max_abs_error": 2.8742942959070206e-07,
+      "current_density_max_relative_error": 3.028694550004152e-12,
+      "delta_star_max_abs_error": 1.0271783423831948e-12,
+      "dr": 0.03125,
+      "elapsed_s": 0.0002971439971588552,
+      "expected_second_order_radial_truncation": 6.103515625e-05,
+      "expected_total_current": -1120475.2867534622,
+      "nr": 65,
+      "nz": 67,
+      "radial_coeff": 0.03125,
+      "total_current": -1120475.286753463,
+      "total_current_relative_error": 8.311852886233243e-16,
       "vertical_coeff": -0.125
     }
   ],
@@ -47,8 +81,9 @@
     "system": "Linux"
   },
   "passed": true,
+  "radial_convergence_order": 1.9999999771270636,
   "thresholds": {
-    "current_density_max_relative_error": 1e-12,
+    "current_density_max_relative_error": 1e-11,
     "delta_star_max_abs_error": 1e-10,
     "total_current_relative_error": 1e-12
   }

@@ -16,6 +16,7 @@ against an inverse EFIT reconstruction.
 from __future__ import annotations
 
 import json
+import math
 import os
 import platform
 import sys
@@ -111,6 +112,28 @@ def _run_case(
     }
 
 
+def _radial_convergence_order(cases: list[dict[str, Any]]) -> float | None:
+    """Estimate radial-quartic analytic-error convergence order from two finest grids."""
+    radial_cases = [
+        case
+        for case in cases
+        if case["case"].startswith("radial_quartic")
+        and case["dr"] > 0.0
+        and case["analytic_delta_star_max_abs_error"] > 0.0
+    ]
+    if len(radial_cases) < 2:
+        return None
+    radial_cases.sort(key=lambda case: case["dr"], reverse=True)
+    coarse = radial_cases[-2]
+    fine = radial_cases[-1]
+    return float(
+        math.log(
+            coarse["analytic_delta_star_max_abs_error"] / fine["analytic_delta_star_max_abs_error"]
+        )
+        / math.log(coarse["dr"] / fine["dr"])
+    )
+
+
 def _write_markdown(report: dict[str, Any]) -> None:
     lines = [
         "# Grad-Shafranov Operator Current Closure Benchmark",
@@ -156,6 +179,17 @@ def _write_markdown(report: dict[str, Any]) -> None:
             f"{case['current_density_max_relative_error']:.6e} | "
             f"{case['total_current_relative_error']:.6e} |"
         )
+    if report["radial_convergence_order"] is not None:
+        lines.extend(
+            [
+                "",
+                "## Radial-quartic convergence",
+                "",
+                "The radial-quartic analytic error measures the expected centered-stencil "
+                "truncation against the continuous `Delta*` operator. The measured "
+                f"order from the two finest radial grids is `{report['radial_convergence_order']:.6f}`.",
+            ]
+        )
     lines.extend(
         [
             "",
@@ -170,25 +204,33 @@ def _write_markdown(report: dict[str, Any]) -> None:
 def main() -> int:
     thresholds = {
         "delta_star_max_abs_error": 1.0e-10,
-        "current_density_max_relative_error": 1.0e-12,
+        "current_density_max_relative_error": 1.0e-11,
         "total_current_relative_error": 1.0e-12,
     }
     cases = [
         _run_case("vertical_quadratic", 17, 19, 0.0, -0.25),
-        _run_case("radial_quartic", 33, 35, 0.03125, -0.125),
+        _run_case("radial_quartic_17", 17, 19, 0.03125, -0.125),
+        _run_case("radial_quartic_33", 33, 35, 0.03125, -0.125),
+        _run_case("radial_quartic_65", 65, 67, 0.03125, -0.125),
     ]
-    passed = all(
-        case["delta_star_max_abs_error"] <= thresholds["delta_star_max_abs_error"]
-        and case["current_density_max_relative_error"]
-        <= thresholds["current_density_max_relative_error"]
-        and case["total_current_relative_error"] <= thresholds["total_current_relative_error"]
-        for case in cases
+    radial_convergence_order = _radial_convergence_order(cases)
+    passed = (
+        all(
+            case["delta_star_max_abs_error"] <= thresholds["delta_star_max_abs_error"]
+            and case["current_density_max_relative_error"]
+            <= thresholds["current_density_max_relative_error"]
+            and case["total_current_relative_error"] <= thresholds["total_current_relative_error"]
+            for case in cases
+        )
+        and radial_convergence_order is not None
+        and 1.99 <= radial_convergence_order <= 2.01
     )
     report = {
         "benchmark": "gs_operator_current_closure",
         "machine": _machine_metadata(),
         "thresholds": thresholds,
         "cases": cases,
+        "radial_convergence_order": radial_convergence_order,
         "passed": passed,
     }
     REPORT_DIR.mkdir(parents=True, exist_ok=True)

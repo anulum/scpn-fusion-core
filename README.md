@@ -33,7 +33,7 @@ metric-scoped and are not same-work Rust-versus-Python physics speedups.
 | Capability documentation pages | 61 |
 | Rust workspace crates | 12 |
 | Optional extras | 11 |
-| Python test files | 379 |
+| Python test files | 380 |
 | Public documentation pages | 61 |
 | GitHub Actions workflows | 12 |
 

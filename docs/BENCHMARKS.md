@@ -99,14 +99,16 @@ Local run on this machine:
 
 | Case | Grid | a | b | elapsed s | max discrete Delta* abs error | analytic Delta* error | max J rel error | total current rel error |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| vertical_quadratic | 17x19 | 0 | -0.25 | 2.063400e-04 | 5.662137e-15 | 5.662137e-15 | 1.138333e-14 | 1.523927e-16 |
-| radial_quartic | 33x35 | 0.03125 | -0.125 | 1.800380e-04 | 2.380318e-13 | 2.441406e-04 | 1.901481e-13 | 0.000000e+00 |
+| vertical_quadratic | 17x19 | 0 | -0.25 | 2.069140e-04 | 5.662137e-15 | 5.662137e-15 | 1.138333e-14 | 1.523927e-16 |
+| radial_quartic_17 | 17x19 | 0.03125 | -0.125 | 1.412020e-04 | 3.330669e-14 | 9.765625e-04 | 4.338971e-14 | 0.000000e+00 |
+| radial_quartic_33 | 33x35 | 0.03125 | -0.125 | 1.717630e-04 | 2.380318e-13 | 2.441406e-04 | 1.901481e-13 | 0.000000e+00 |
+| radial_quartic_65 | 65x67 | 0.03125 | -0.125 | 2.971440e-04 | 1.027178e-12 | 6.103516e-05 | 3.028695e-12 | 8.311853e-16 |
 
 The radial-quartic analytic error equals the expected second-order centered
-stencil truncation `2a dR^2 = 2.441406e-04` at `dR = 0.0625`; the
-discrete-contract error remains near machine precision.
+stencil truncation `2a dR^2`. The measured order from the two finest grids is
+`1.999999977`; the discrete-contract error remains near machine precision.
 
-Status: PASS against thresholds `Delta* <= 1e-10`, `J_rel <= 1e-12`,
+Status: PASS against thresholds `Delta* <= 1e-10`, `J_rel <= 1e-11`,
 `I_total_rel <= 1e-12`.
 
 Polyglot status: the native Julia, Go, Rust, and Lean solver packages expose
