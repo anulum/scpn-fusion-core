@@ -148,6 +148,37 @@ def test_boundary_flux_reconstruction_uses_coil_green_functions() -> None:
     assert result["point_count"] == boundary_points.shape[0]
 
 
+def test_boundary_flux_reconstruction_reports_limiter_and_topology_metadata() -> None:
+    k = _KernelStub()
+    coils = CoilSet(
+        positions=[(5.1, -0.35), (5.9, 0.35)],
+        currents=np.array([0.55, -0.35], dtype=np.float64),
+        turns=[6, 8],
+    )
+    boundary_points = np.array([[5.2, -0.4], [5.8, 0.4]], dtype=np.float64)
+    limiter_points = np.array([[5.0, -0.5], [6.0, -0.5], [6.0, 0.5], [5.0, 0.5]], dtype=np.float64)
+    axis_point = np.array([5.5, 0.0], dtype=np.float64)
+    x_points = np.array([[5.25, -0.45], [5.75, 0.45]], dtype=np.float64)
+
+    result = reconstruct_boundary_flux_from_coils(
+        k,
+        coils,
+        boundary_points=boundary_points,
+        limiter_points=limiter_points,
+        axis_point=axis_point,
+        x_points=x_points,
+    )
+
+    assert result["limiter_point_count"] == limiter_points.shape[0]
+    assert result["x_point_count"] == x_points.shape[0]
+    assert result["axis_flux"] is not None
+    assert result["limiter_flux"].shape == (limiter_points.shape[0],)
+    assert result["x_point_flux"].shape == (x_points.shape[0],)
+    assert result["min_limiter_distance_m"] > 0.0
+    assert np.all(np.isfinite(result["limiter_flux"]))
+    assert np.all(np.isfinite(result["x_point_flux"]))
+
+
 def test_inverse_magnetic_probe_reconstruction_respects_current_limits() -> None:
     k = _KernelStub()
     coils = CoilSet(

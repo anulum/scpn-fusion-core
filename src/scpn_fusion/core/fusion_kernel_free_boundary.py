@@ -140,15 +140,20 @@ def reconstruct_boundary_flux_from_coils(
     coils: "CoilSet",
     *,
     boundary_points: FloatArray,
+    limiter_points: FloatArray | None = None,
+    axis_point: FloatArray | None = None,
+    x_points: FloatArray | None = None,
     target_flux: FloatArray | None = None,
 ) -> dict[str, Any]:
     """Reconstruct free-boundary contour flux directly from coil Green functions.
 
     This is the forward free-boundary vacuum contract: it evaluates external
     coil flux on a named boundary/limiter contour using the same circular
-    filament Green's function as the grid vacuum solve.  If ``target_flux`` is
+    filament Green's function as the grid vacuum solve. If ``target_flux`` is
     provided, diagnostics report pointwise residuals without fitting a scale or
-    replaying Dirichlet boundary values.
+    replaying Dirichlet boundary values. Optional limiter, magnetic-axis, and
+    X-point metadata are sampled with the same response matrix convention so
+    diagnostics cover topology surfaces instead of only the LCFS contour.
     """
     obs = _as_finite_points(boundary_points, name="boundary_points")
     if len(coils.positions) < 1:
@@ -166,7 +171,48 @@ def reconstruct_boundary_flux_from_coils(
         "response_rank": int(np.linalg.matrix_rank(response)),
         "point_count": int(obs.shape[0]),
         "coil_count": int(len(coils.positions)),
+        "limiter_point_count": 0,
+        "limiter_flux": np.array([], dtype=np.float64),
+        "min_limiter_distance_m": None,
+        "axis_point": None,
+        "axis_flux": None,
+        "x_point_count": 0,
+        "x_point_flux": np.array([], dtype=np.float64),
     }
+    if limiter_points is not None:
+        limiter_obs = _as_finite_points(limiter_points, name="limiter_points")
+        limiter_response = build_mutual_inductance_matrix(kernel, coils, limiter_obs)
+        limiter_flux = limiter_response.T @ currents
+        distances = np.linalg.norm(limiter_obs[:, None, :] - obs[None, :, :], axis=2)
+        diagnostics.update(
+            {
+                "limiter_points": limiter_obs,
+                "limiter_flux": limiter_flux,
+                "limiter_point_count": int(limiter_obs.shape[0]),
+                "min_limiter_distance_m": float(np.min(distances)),
+            }
+        )
+    if axis_point is not None:
+        axis_obs = _as_finite_points(
+            np.asarray(axis_point, dtype=np.float64).reshape(1, 2), name="axis_point"
+        )
+        axis_response = build_mutual_inductance_matrix(kernel, coils, axis_obs)
+        diagnostics.update(
+            {
+                "axis_point": axis_obs[0],
+                "axis_flux": float((axis_response.T @ currents)[0]),
+            }
+        )
+    if x_points is not None:
+        x_obs = _as_finite_points(x_points, name="x_points")
+        x_response = build_mutual_inductance_matrix(kernel, coils, x_obs)
+        diagnostics.update(
+            {
+                "x_points": x_obs,
+                "x_point_flux": x_response.T @ currents,
+                "x_point_count": int(x_obs.shape[0]),
+            }
+        )
     if target_flux is not None:
         target = _as_finite_vector(target_flux, name="target_flux", length=int(obs.shape[0]))
         residual = reconstructed - target

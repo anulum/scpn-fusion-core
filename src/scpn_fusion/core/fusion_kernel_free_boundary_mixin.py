@@ -107,6 +107,9 @@ class FusionKernelFreeBoundaryMixin:
         coils: CoilSet,
         *,
         boundary_points: FloatArray,
+        limiter_points: FloatArray | None = None,
+        axis_point: FloatArray | None = None,
+        x_points: FloatArray | None = None,
         target_flux: FloatArray | None = None,
     ) -> dict[str, Any]:
         """Reconstruct boundary-contour vacuum flux from coil Green functions."""
@@ -114,6 +117,9 @@ class FusionKernelFreeBoundaryMixin:
             self,
             coils,
             boundary_points=boundary_points,
+            limiter_points=limiter_points,
+            axis_point=axis_point,
+            x_points=x_points,
             target_flux=target_flux,
         )
 

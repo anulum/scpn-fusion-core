@@ -75,6 +75,11 @@ def run_free_boundary_benchmark() -> dict:
             [[0.75, -1.0], [1.5, -1.25], [2.25, 0.0], [1.5, 1.25], [0.75, 1.0]],
             dtype=np.float64,
         )
+        limiter_points = np.array(
+            [[0.6, -1.35], [2.4, -1.35], [2.4, 1.35], [0.6, 1.35]], dtype=np.float64
+        )
+        axis_point = np.array([1.5, 0.0], dtype=np.float64)
+        x_points = np.array([[2.25, -0.75], [2.25, 0.75]], dtype=np.float64)
         coils = kernel.build_coilset_from_config()
         response = build_mutual_inductance_matrix(kernel, coils, boundary_points)
         target_flux = response.T @ coils.currents
@@ -82,17 +87,28 @@ def run_free_boundary_benchmark() -> dict:
             kernel,
             coils,
             boundary_points=boundary_points,
+            limiter_points=limiter_points,
+            axis_point=axis_point,
+            x_points=x_points,
             target_flux=target_flux,
         )
         results["boundary_flux_reconstruction"] = {
             "point_count": int(boundary_reconstruction["point_count"]),
+            "limiter_point_count": int(boundary_reconstruction["limiter_point_count"]),
+            "x_point_count": int(boundary_reconstruction["x_point_count"]),
             "coil_count": int(boundary_reconstruction["coil_count"]),
             "response_rank": int(boundary_reconstruction["response_rank"]),
             "rmse": float(boundary_reconstruction["rmse"]),
             "max_abs_error": float(boundary_reconstruction["max_abs_error"]),
+            "min_limiter_distance_m": float(boundary_reconstruction["min_limiter_distance_m"]),
+            "axis_flux": float(boundary_reconstruction["axis_flux"]),
+            "max_abs_limiter_flux": float(np.max(np.abs(boundary_reconstruction["limiter_flux"]))),
+            "max_abs_x_point_flux": float(np.max(np.abs(boundary_reconstruction["x_point_flux"]))),
             "pass": bool(
                 boundary_reconstruction["rmse"] < 1.0e-12
                 and boundary_reconstruction["max_abs_error"] < 1.0e-12
+                and boundary_reconstruction["min_limiter_distance_m"] > 0.0
+                and np.isfinite(boundary_reconstruction["axis_flux"])
             ),
         }
 
@@ -252,6 +268,15 @@ def main():
         f.write(
             "| Boundary Green reconstruction | Response rank | "
             f"{br['response_rank']}/{br['coil_count']} coils, {br['point_count']} points | N/A |\n"
+        )
+        f.write(
+            "| Boundary Green reconstruction | Limiter/topology metadata | "
+            f"{br['limiter_point_count']} limiter, {br['x_point_count']} X-points, "
+            f"axis flux {br['axis_flux']:.6e} | {br['pass']} |\n"
+        )
+        f.write(
+            "| Boundary Green reconstruction | Min limiter clearance | "
+            f"{br['min_limiter_distance_m']:.6f} m | {br['pass']} |\n"
         )
         hm = res["helmholtz"]
         f.write(f"| Helmholtz | B_z Axis Ref | {hm['bz_axis_ref']:.4f} T | N/A |\n")

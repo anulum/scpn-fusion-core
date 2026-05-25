@@ -549,9 +549,12 @@ self-observation fix; Criterion centre estimates were `121.47 us` for 33x33 and
 Free-boundary contour reconstruction now has a native Green-function gate:
 `validation/benchmark_free_boundary.py` reconstructs flux on a named boundary
 point set directly from coil currents and the circular-filament response
-matrix, without replaying fixed Dirichlet values. Latest local result:
-boundary Green reconstruction RMSE `0.00e+00`, max absolute error `0.00e+00`,
-response rank `1/1` coils over `5` contour points, status `PASS`.
+matrix, without replaying fixed Dirichlet values. The same gate now samples
+limiter, magnetic-axis, and X-point metadata with the same vacuum response.
+Latest local result: boundary Green reconstruction RMSE `0.00e+00`, max
+absolute error `0.00e+00`, response rank `1/1` coils over `5` contour points,
+`4` limiter points, `2` X-points, axis flux `2.589381e-01`, minimum limiter
+clearance `0.380789 m`, status `PASS`.
 
 GEQDSK-to-native configuration now preserves free-boundary geometry metadata:
 `GEqdsk.to_config()` exports the parsed plasma boundary as isoflux target
