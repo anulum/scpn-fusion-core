@@ -105,4 +105,35 @@ func TestOperatorCurrentClosureManufacturedZQuadratic(t *testing.T) {
 	if math.Abs((totalCurrent-expectedTotal)/expectedTotal) > 1.0e-12 {
 		t.Fatalf("unexpected total current: got %.17g expected %.17g", totalCurrent, expectedTotal)
 	}
+
+	radialCoeff := 0.03125
+	verticalCoeff := -0.125
+	psiRadial := zeros(c.NZ, c.NR)
+	for iz := 0; iz < c.NZ; iz++ {
+		for ir := 0; ir < c.NR; ir++ {
+			r := c.RMin + float64(ir)*dR
+			psiRadial[iz][ir] = radialCoeff*r*r*r*r + verticalCoeff*z[iz]*z[iz]
+		}
+	}
+	deltaStarRadial, err := DeltaStar(c, psiRadial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	currentDensityRadial, err := ToroidalCurrentDensityFromFlux(c, psiRadial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for iz := 1; iz < c.NZ-1; iz++ {
+		for ir := 1; ir < c.NR-1; ir++ {
+			r := c.RMin + float64(ir)*dR
+			expectedDelta := 8.0*radialCoeff*r*r + 2.0*verticalCoeff - 2.0*radialCoeff*dR*dR
+			expectedJ := -expectedDelta / (c.Mu0 * r)
+			if math.Abs(deltaStarRadial[iz][ir]-expectedDelta) > 1.0e-12 {
+				t.Fatalf("unexpected radial Delta* at (%d, %d): %.17g", iz, ir, deltaStarRadial[iz][ir])
+			}
+			if math.Abs(currentDensityRadial[iz][ir]-expectedJ) > 1.0e-6 {
+				t.Fatalf("unexpected radial J_phi at (%d, %d): %.17g", iz, ir, currentDensityRadial[iz][ir])
+			}
+		}
+	}
 }

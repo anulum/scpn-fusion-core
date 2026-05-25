@@ -84,10 +84,11 @@ still fails and remains documented as debt in the benchmark report.
 
 `validation/benchmark_gs_operator_current_closure.py` validates the native
 non-reduced cylindrical operator contract on manufactured fields:
-`psi(R, Z) = c Z^2`, `Delta*psi = 2c`, and
-`J_phi = -Delta*psi / (mu0 R)`. This benchmark is separate from EFIT inverse
-reconstruction: it proves the native operator/current diagnostic obeys the
-Grad-Shafranov current relation on the local grid.
+`psi(R, Z) = a R^4 + b Z^2`, `Delta*psi = 8aR^2 + 2b`, and
+`J_phi = -Delta*psi / (mu0 R)`. The radial-quartic case explicitly exercises
+the cylindrical `-(1/R)dpsi/dR` term. This benchmark is separate from EFIT
+inverse reconstruction: it proves the native operator/current diagnostic obeys
+the Grad-Shafranov current relation on the local grid.
 
 Local run on this machine:
 
@@ -96,10 +97,14 @@ Local run on this machine:
 - Python: 3.12.3
 - NumPy: 2.2.6
 
-| Grid | coeff | elapsed s | max Delta* abs error | max J rel error | total current rel error |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| 17x19 | -0.25 | 3.641140e-04 | 5.662137e-15 | 1.138333e-14 | 1.523927e-16 |
-| 33x35 | -0.125 | 3.287330e-04 | 7.827072e-15 | 3.140702e-14 | 4.276956e-16 |
+| Case | Grid | a | b | elapsed s | max discrete Delta* abs error | analytic Delta* error | max J rel error | total current rel error |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| vertical_quadratic | 17x19 | 0 | -0.25 | 2.063400e-04 | 5.662137e-15 | 5.662137e-15 | 1.138333e-14 | 1.523927e-16 |
+| radial_quartic | 33x35 | 0.03125 | -0.125 | 1.800380e-04 | 2.380318e-13 | 2.441406e-04 | 1.901481e-13 | 0.000000e+00 |
+
+The radial-quartic analytic error equals the expected second-order centered
+stencil truncation `2a dR^2 = 2.441406e-04` at `dR = 0.0625`; the
+discrete-contract error remains near machine precision.
 
 Status: PASS against thresholds `Delta* <= 1e-10`, `J_rel <= 1e-12`,
 `I_total_rel <= 1e-12`.

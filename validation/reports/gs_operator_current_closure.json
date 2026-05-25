@@ -2,28 +2,38 @@
   "benchmark": "gs_operator_current_closure",
   "cases": [
     {
-      "coeff": -0.25,
+      "analytic_delta_star_max_abs_error": 5.662137425588298e-15,
+      "case": "vertical_quadratic",
       "current_density_max_abs_error": 3.958120942115784e-09,
       "current_density_max_relative_error": 1.1383331304297586e-14,
       "delta_star_max_abs_error": 5.662137425588298e-15,
-      "elapsed_s": 0.00036411400651559234,
+      "dr": 0.125,
+      "elapsed_s": 0.00020634004613384604,
+      "expected_second_order_radial_truncation": 0.0,
       "expected_total_current": 763916.5051522637,
       "nr": 17,
       "nz": 19,
+      "radial_coeff": 0.0,
       "total_current": 763916.5051522638,
-      "total_current_relative_error": 1.5239273015017648e-16
+      "total_current_relative_error": 1.5239273015017648e-16,
+      "vertical_coeff": -0.25
     },
     {
-      "coeff": -0.125,
-      "current_density_max_abs_error": 5.8498699218034744e-09,
-      "current_density_max_relative_error": 3.140702251426683e-14,
-      "delta_star_max_abs_error": 7.827072323607354e-15,
-      "elapsed_s": 0.0003287330036982894,
-      "expected_total_current": 408288.01624164375,
+      "analytic_delta_star_max_abs_error": 0.0002441406252380318,
+      "case": "radial_quartic",
+      "current_density_max_abs_error": 6.58910721540451e-08,
+      "current_density_max_relative_error": 1.9014808182670065e-13,
+      "delta_star_max_abs_error": 2.3803181647963356e-13,
+      "dr": 0.0625,
+      "elapsed_s": 0.0001800380414351821,
+      "expected_second_order_radial_truncation": 0.000244140625,
+      "expected_total_current": -1087779.3199833862,
       "nr": 33,
       "nz": 35,
-      "total_current": 408288.0162416436,
-      "total_current_relative_error": 4.276955869237471e-16
+      "radial_coeff": 0.03125,
+      "total_current": -1087779.3199833862,
+      "total_current_relative_error": 0.0,
+      "vertical_coeff": -0.125
     }
   ],
   "machine": {

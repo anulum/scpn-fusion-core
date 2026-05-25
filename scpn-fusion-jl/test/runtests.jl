@@ -52,4 +52,20 @@ end
         expected_total += expected_j * dR * dZ
     end
     @test abs((total_current - expected_total) / expected_total) < 1.0e-12
+
+    radial_coeff = 0.03125
+    vertical_coeff = -0.125
+    r = range(case.R_min, case.R_max; length=case.NR)
+    psi_radial = [radial_coeff * r[ir]^4 + vertical_coeff * z[iz]^2
+                  for iz in 1:case.NZ, ir in 1:case.NR]
+    delta_star_radial = grad_shafranov_delta_star(case, psi_radial)
+    current_density_radial = toroidal_current_density_from_flux(case, psi_radial)
+
+    for iz in 2:case.NZ-1, ir in 2:case.NR-1
+        expected_delta = 8.0 * radial_coeff * r[ir]^2 + 2.0 * vertical_coeff -
+                         2.0 * radial_coeff * dR^2
+        expected_j = -expected_delta / (case.mu0 * r[ir])
+        @test abs(delta_star_radial[iz, ir] - expected_delta) < 1.0e-12
+        @test abs(current_density_radial[iz, ir] - expected_j) < 1.0e-6
+    end
 end
