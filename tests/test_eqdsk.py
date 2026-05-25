@@ -196,6 +196,34 @@ class TestGEqdskProperties:
         assert cfg["reactor_name"] == "test-reactor"
         assert cfg["grid_resolution"] == [eq.nw, eq.nh]
         assert cfg["physics"]["plasma_current_target"] == pytest.approx(15.0, abs=0.1)
+        fb = cfg["free_boundary"]
+        np.testing.assert_allclose(
+            fb["target_flux_points"],
+            np.column_stack([eq.rbdry, eq.zbdry]),
+            atol=0.0,
+        )
+        np.testing.assert_allclose(
+            fb["target_flux_values"],
+            np.full(eq.rbdry.shape[0], eq.sibry),
+            atol=0.0,
+        )
+        np.testing.assert_allclose(fb["limiter_points"], np.column_stack([eq.rlim, eq.zlim]))
+        assert fb["magnetic_axis"] == [pytest.approx(eq.rmaxis), pytest.approx(eq.zmaxis)]
+        assert fb["psi_axis"] == pytest.approx(eq.simag)
+        assert fb["psi_boundary"] == pytest.approx(eq.sibry)
+        assert fb["boundary_source"] == "geqdsk_rbdry_zbdry"
+
+    def test_to_config_rejects_invalid_boundary_metadata(self):
+        eq = _make_synthetic()
+        eq.zbdry = eq.zbdry[:-1]
+        with pytest.raises(ValueError, match="boundary R/Z arrays"):
+            eq.to_config()
+
+        eq = _make_synthetic()
+        eq.rlim = eq.rlim.copy()
+        eq.rlim[0] = np.nan
+        with pytest.raises(ValueError, match="limiter contour"):
+            eq.to_config()
 
 
 class TestGEqdskParserHardening:

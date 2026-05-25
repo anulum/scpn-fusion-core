@@ -102,9 +102,43 @@ class GEqdsk:
         return (psi - self.simag) / (self.sibry - self.simag)
 
     def to_config(self, name: str = "eqdsk") -> dict[str, object]:
-        """Convert to FusionKernel JSON config dict (approximate)."""
+        """Convert to a FusionKernel JSON config with GEQDSK shape metadata.
+
+        GEQDSK files do not contain an external-coil set, so the returned
+        ``coils`` list remains empty.  They do contain plasma-boundary and
+        limiter contours; those are exported into ``free_boundary`` so native
+        free-boundary workflows can use the EFIT boundary as an isoflux shape
+        contract instead of silently discarding it.
+        """
         r = self.r
         z = self.z
+        free_boundary: dict[str, object] = {
+            "magnetic_axis": [float(self.rmaxis), float(self.zmaxis)],
+            "psi_axis": float(self.simag),
+            "psi_boundary": float(self.sibry),
+            "boundary_source": "geqdsk_rbdry_zbdry",
+        }
+        if self.rbdry.size and self.zbdry.size:
+            if self.rbdry.shape != self.zbdry.shape:
+                raise ValueError("GEQDSK boundary R/Z arrays must have matching lengths.")
+            if not np.all(np.isfinite(self.rbdry)) or not np.all(np.isfinite(self.zbdry)):
+                raise ValueError("GEQDSK boundary contour must contain finite values only.")
+            boundary_points = np.column_stack([self.rbdry, self.zbdry]).astype(np.float64)
+            free_boundary["target_flux_points"] = boundary_points.tolist()
+            free_boundary["target_flux_values"] = np.full(
+                boundary_points.shape[0],
+                float(self.sibry),
+                dtype=np.float64,
+            ).tolist()
+        if self.rlim.size or self.zlim.size:
+            if self.rlim.shape != self.zlim.shape:
+                raise ValueError("GEQDSK limiter R/Z arrays must have matching lengths.")
+            if not np.all(np.isfinite(self.rlim)) or not np.all(np.isfinite(self.zlim)):
+                raise ValueError("GEQDSK limiter contour must contain finite values only.")
+            free_boundary["limiter_points"] = (
+                np.column_stack([self.rlim, self.zlim]).astype(np.float64).tolist()
+            )
+
         return {
             "reactor_name": name,
             "grid_resolution": [self.nw, self.nh],
@@ -119,6 +153,7 @@ class GEqdsk:
                 "vacuum_permeability": 1.0,
             },
             "coils": [],  # not stored in GEQDSK
+            "free_boundary": free_boundary,
             "solver": {
                 "max_iterations": 1000,
                 "convergence_threshold": 1e-4,

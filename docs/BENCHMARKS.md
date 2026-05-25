@@ -516,6 +516,14 @@ The vacuum benchmark row was rerun locally with
 self-observation fix; Criterion centre estimates were `121.47 us` for 33x33 and
 `543.69 us` for 65x65.
 
+GEQDSK-to-native configuration now preserves free-boundary geometry metadata:
+`GEqdsk.to_config()` exports the parsed plasma boundary as isoflux target
+points at `psi_boundary`, carries limiter points, and records magnetic-axis
+metadata. A local SPARC `lmode_vv.geqdsk` conversion exported `177` boundary
+points and `178` limiter points. This wires public EFIT contours into native
+free-boundary workflows; it is still not a full free-boundary reconstruction
+pass because GEQDSK does not include external coil currents.
+
 Interpretation: the 33x33 Rust full-order equilibrium path is sub-millisecond
 and therefore competitive for low-resolution control-support updates and
 surrogate calibration loops. It is not the same benchmark as the reduced-order
