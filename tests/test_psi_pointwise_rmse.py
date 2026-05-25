@@ -37,6 +37,7 @@ from validation.psi_pointwise_rmse import (
     PsiRMSEResult,
     classify_source_scale_convention,
     compute_gs_source,
+    compute_adapted_profile_reconstruction,
     compute_psi_rmse,
     compute_operator_candidate_rankings,
     compute_source_alignment,
@@ -273,6 +274,32 @@ class TestComputeSourceAlignment:
         assert adapter["source_convention_adapter"] == "scaled_by_minus_2pi"
         assert adapter["source_convention_adapter_pass"] is False
         assert adapter["source_convention_adapter_residual_l2"] > 0.15
+
+    def test_adapted_profile_reconstruction_reports_geometry_for_accepted_adapter(self):
+        eq = read_geqdsk(SPARC_DIR / "sparc_1310.eqdsk")
+        n_eff = max(eq.nw, eq.nh)
+        omega = 2.0 / (1.0 + np.sin(np.pi / n_eff))
+
+        reconstruction = compute_adapted_profile_reconstruction(eq, omega=omega)
+
+        assert np.isfinite(reconstruction["adapted_profile_psi_rmse_norm"])
+        assert reconstruction["adapted_profile_sor_iterations"] > 0
+        assert reconstruction["adapted_profile_boundary_containment_fraction"] == pytest.approx(1.0)
+        assert np.isfinite(reconstruction["adapted_profile_axis_error_m"])
+        assert np.isfinite(reconstruction["adapted_profile_boundary_psi_rmse_norm"])
+        assert reconstruction["q_profile_sanity_pass"] is True
+
+    def test_adapted_profile_reconstruction_leaves_failed_adapter_diagnostic_only(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        n_eff = max(eq.nw, eq.nh)
+        omega = 2.0 / (1.0 + np.sin(np.pi / n_eff))
+
+        reconstruction = compute_adapted_profile_reconstruction(eq, omega=omega)
+
+        assert np.isnan(reconstruction["adapted_profile_psi_rmse_norm"])
+        assert reconstruction["adapted_profile_sor_iterations"] == 0
+        assert reconstruction["q_profile_sanity_pass"] is False
+        assert reconstruction["adapted_profile_pass"] is False
 
     def test_source_convention_transform_is_named_and_rejects_unknown_modes(self):
         source = np.ones((3, 3), dtype=np.float64)
@@ -610,6 +637,14 @@ class TestValidateEFITNRMSEBenchmark:
                 source_convention_adapter="canonical",
                 source_convention_adapter_residual_l2=rmse,
                 source_convention_adapter_pass=True,
+                adapted_profile_psi_rmse_norm=0.01,
+                adapted_profile_sor_iterations=10,
+                adapted_profile_sor_residual=1e-4,
+                adapted_profile_axis_error_m=0.0,
+                adapted_profile_boundary_containment_fraction=1.0,
+                adapted_profile_boundary_psi_rmse_norm=0.01,
+                q_profile_sanity_pass=True,
+                adapted_profile_pass=True,
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,
@@ -667,6 +702,12 @@ class TestValidateEFITNRMSEBenchmark:
             psi_rmse_mod.SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD
         )
         assert gate.source_convention_adapter_counts == {"canonical": 10}
+        assert gate.adapted_profile_pass_count == 10
+        assert gate.adapted_profile_threshold == pytest.approx(
+            psi_rmse_mod.ADAPTED_PROFILE_RMSE_THRESHOLD
+        )
+        assert gate.adapted_profile_worst_psi_rmse_norm == pytest.approx(0.01)
+        assert gate.adapted_profile_worst_file
         assert gate.worst_psi_rmse_norm == pytest.approx(0.01)
         assert gate.count_by_machine == {"sparc": 4, "diiid": 3, "jet": 3}
         assert gate.provenance_by_machine == EFIT_BENCHMARK_MACHINE_PROVENANCE
@@ -687,6 +728,7 @@ class TestValidateEFITNRMSEBenchmark:
         assert all(
             row["operator_source_psi_rmse_norm"] == pytest.approx(1.0e-12) for row in gate.rows
         )
+        assert all(row["adapted_profile_pass"] for row in gate.rows)
 
     def test_fails_when_file_count_is_below_required_minimum(
         self,
@@ -767,6 +809,14 @@ class TestValidateEFITNRMSEBenchmark:
                 source_convention_adapter="negated" if is_worst else "canonical",
                 source_convention_adapter_residual_l2=0.9 if is_worst else 0.01,
                 source_convention_adapter_pass=not is_worst,
+                adapted_profile_psi_rmse_norm=float("nan") if is_worst else 0.01,
+                adapted_profile_sor_iterations=0 if is_worst else 10,
+                adapted_profile_sor_residual=float("nan") if is_worst else 1e-12,
+                adapted_profile_axis_error_m=float("nan") if is_worst else 0.0,
+                adapted_profile_boundary_containment_fraction=float("nan") if is_worst else 1.0,
+                adapted_profile_boundary_psi_rmse_norm=float("nan") if is_worst else 0.01,
+                q_profile_sanity_pass=not is_worst,
+                adapted_profile_pass=not is_worst,
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,
@@ -845,6 +895,14 @@ class TestValidateEFITNRMSEBenchmark:
                 source_convention_adapter="canonical",
                 source_convention_adapter_residual_l2=0.01,
                 source_convention_adapter_pass=True,
+                adapted_profile_psi_rmse_norm=0.01,
+                adapted_profile_sor_iterations=10,
+                adapted_profile_sor_residual=1e-12,
+                adapted_profile_axis_error_m=0.0,
+                adapted_profile_boundary_containment_fraction=1.0,
+                adapted_profile_boundary_psi_rmse_norm=0.01,
+                q_profile_sanity_pass=True,
+                adapted_profile_pass=True,
                 plasma_mask_fraction=0.5,
                 pressure_source_norm=0.7,
                 ffprime_source_norm=0.3,
@@ -881,6 +939,90 @@ class TestValidateEFITNRMSEBenchmark:
         assert gate.operator_source_worst_psi_rmse_norm == pytest.approx(2.0e-6)
         assert "operator-source psi_rmse_norm 2e-06 > threshold 1e-06" in gate.failure_reasons
         assert "operator-source solver consistency failure in 1 rows" in gate.failure_reasons
+
+    def test_aggregate_adapted_profile_gate_reports_failed_reconstruction(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        files = self._make_reference_tree(tmp_path, {"sparc": 4, "diiid": 3, "jet": 3})
+        worst = files[-1]
+
+        def _fake_validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
+            del warm_start
+            adapted_rmse = 0.075 if path.name == worst.name else 0.01
+            return PsiRMSEResult(
+                file=path.name,
+                grid="3x3",
+                gs_residual_l2=0.1,
+                gs_residual_max=0.2,
+                psi_rmse_wb=1e-3,
+                psi_rmse_norm=0.01,
+                psi_rmse_plasma_wb=1e-3,
+                psi_max_error_wb=2e-3,
+                psi_relative_l2=0.01,
+                sor_iterations=10,
+                sor_residual=1e-4,
+                solve_time_ms=1.0,
+                operator_source_psi_rmse_norm=1e-12,
+                operator_source_sor_iterations=10,
+                operator_source_sor_residual=1e-12,
+                source_consistency_class="profile_source_consistent",
+                source_residual_l2=0.01,
+                source_correlation=1.0,
+                source_best_fit_scale=1.0,
+                source_best_fit_offset=0.0,
+                source_best_fit_relative_l2=0.0,
+                source_best_fit_convention="canonical",
+                source_convention_adapter="canonical",
+                source_convention_adapter_residual_l2=0.01,
+                source_convention_adapter_pass=True,
+                adapted_profile_psi_rmse_norm=adapted_rmse,
+                adapted_profile_sor_iterations=10,
+                adapted_profile_sor_residual=1e-12,
+                adapted_profile_axis_error_m=0.0,
+                adapted_profile_boundary_containment_fraction=1.0,
+                adapted_profile_boundary_psi_rmse_norm=adapted_rmse,
+                q_profile_sanity_pass=True,
+                adapted_profile_pass=adapted_rmse <= psi_rmse_mod.ADAPTED_PROFILE_RMSE_THRESHOLD,
+                plasma_mask_fraction=0.5,
+                pressure_source_norm=0.7,
+                ffprime_source_norm=0.3,
+                total_source_norm=1.0,
+                pressure_source_fraction=0.7,
+                ffprime_source_fraction=0.3,
+                source_plasma_residual_l2=0.01,
+                source_vacuum_residual_l2=0.01,
+                source_plasma_operator_norm=0.5,
+                source_vacuum_operator_norm=0.5,
+                source_plasma_point_count=4.0,
+                source_vacuum_point_count=5.0,
+                best_source_candidate="profile_source",
+                best_source_candidate_residual_l2=0.01,
+                profile_source_candidate_rank=1,
+                best_operator_candidate="delta_star_psi",
+                best_operator_candidate_residual_l2=0.01,
+                delta_star_psi_candidate_rank=1,
+                declared_toroidal_current_A=-8.7e6,
+                operator_toroidal_current_A=-8.6995e6,
+                profile_toroidal_current_A=-1.5e6,
+                operator_current_relative_error=5.0e-5,
+                profile_current_relative_error=0.8,
+                operator_current_closure_pass=True,
+            )
+
+        monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)
+
+        gate = validate_efit_nrmse_benchmark(tmp_path)
+
+        assert gate.passes is False
+        assert gate.adapted_profile_pass_count == 9
+        assert gate.adapted_profile_worst_file == f"{worst.parent.name}/{worst.name}"
+        assert gate.adapted_profile_worst_psi_rmse_norm == pytest.approx(0.075)
+        assert (
+            "adapted-profile reconstruction gate failed in 1/10 accepted adapter rows"
+            in gate.failure_reasons
+        )
 
     def test_fails_when_a_row_has_non_finite_normalized_rmse(
         self,

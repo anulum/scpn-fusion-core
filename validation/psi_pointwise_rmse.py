@@ -48,6 +48,7 @@ OPERATOR_SOURCE_RMSE_THRESHOLD = 1e-6
 OPERATOR_CURRENT_CLOSURE_THRESHOLD = 0.05
 SOURCE_CONVENTION_DISTANCE_THRESHOLD = 0.15
 SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD = 0.15
+ADAPTED_PROFILE_RMSE_THRESHOLD = 0.05
 EFIT_BENCHMARK_MACHINE_PROVENANCE = {
     "sparc": "real_public_design_reference",
     "diiid": "synthetic_proxy_reference",
@@ -95,6 +96,14 @@ class PsiRMSEResult:
     source_convention_adapter: str = "not_evaluated"
     source_convention_adapter_residual_l2: float = float("nan")
     source_convention_adapter_pass: bool = False
+    adapted_profile_psi_rmse_norm: float = float("nan")
+    adapted_profile_sor_iterations: int = 0
+    adapted_profile_sor_residual: float = float("nan")
+    adapted_profile_axis_error_m: float = float("nan")
+    adapted_profile_boundary_containment_fraction: float = float("nan")
+    adapted_profile_boundary_psi_rmse_norm: float = float("nan")
+    q_profile_sanity_pass: bool = False
+    adapted_profile_pass: bool = False
     plasma_mask_fraction: float = float("nan")
     pressure_source_norm: float = float("nan")
     ffprime_source_norm: float = float("nan")
@@ -158,6 +167,10 @@ class EfitNRMSEBenchmarkGate:
     source_convention_adapter_threshold: float
     source_convention_adapter_pass_count: int
     source_convention_adapter_counts: dict[str, int]
+    adapted_profile_threshold: float
+    adapted_profile_pass_count: int
+    adapted_profile_worst_psi_rmse_norm: float
+    adapted_profile_worst_file: str
     worst_source_residual_l2: float
     worst_source_alignment_file: str
     failure_reasons: list[str]
@@ -955,6 +968,174 @@ def compute_psi_rmse(
     }
 
 
+def _bilinear_sample_grid(
+    r_axis: NDArray,
+    z_axis: NDArray,
+    values: NDArray,
+    points: NDArray,
+) -> tuple[NDArray, NDArray]:
+    """Sample a rectilinear ``values[Z, R]`` grid at ``(R, Z)`` points."""
+    r_arr = np.asarray(r_axis, dtype=np.float64)
+    z_arr = np.asarray(z_axis, dtype=np.float64)
+    value_arr = np.asarray(values, dtype=np.float64)
+    point_arr = np.asarray(points, dtype=np.float64)
+    if value_arr.shape != (z_arr.size, r_arr.size):
+        raise ValueError("values must have shape (len(z_axis), len(r_axis))")
+    if point_arr.ndim != 2 or point_arr.shape[1] != 2:
+        raise ValueError("points must have shape (N, 2)")
+    if r_arr.size < 2 or z_arr.size < 2:
+        raise ValueError("grid axes must contain at least two points")
+    if np.any(np.diff(r_arr) <= 0.0) or np.any(np.diff(z_arr) <= 0.0):
+        raise ValueError("grid axes must be strictly increasing")
+
+    r_pts = point_arr[:, 0]
+    z_pts = point_arr[:, 1]
+    inside = (r_pts >= r_arr[0]) & (r_pts <= r_arr[-1]) & (z_pts >= z_arr[0]) & (z_pts <= z_arr[-1])
+    samples = np.full(point_arr.shape[0], np.nan, dtype=np.float64)
+    if not np.any(inside):
+        return samples, inside
+
+    r_inside = np.clip(r_pts[inside], r_arr[0], r_arr[-1])
+    z_inside = np.clip(z_pts[inside], z_arr[0], z_arr[-1])
+    ir = np.clip(np.searchsorted(r_arr, r_inside, side="right") - 1, 0, r_arr.size - 2)
+    iz = np.clip(np.searchsorted(z_arr, z_inside, side="right") - 1, 0, z_arr.size - 2)
+    r0 = r_arr[ir]
+    r1 = r_arr[ir + 1]
+    z0 = z_arr[iz]
+    z1 = z_arr[iz + 1]
+    tr = (r_inside - r0) / np.maximum(r1 - r0, 1e-15)
+    tz = (z_inside - z0) / np.maximum(z1 - z0, 1e-15)
+    v00 = value_arr[iz, ir]
+    v10 = value_arr[iz, ir + 1]
+    v01 = value_arr[iz + 1, ir]
+    v11 = value_arr[iz + 1, ir + 1]
+    samples[inside] = (
+        (1.0 - tr) * (1.0 - tz) * v00
+        + tr * (1.0 - tz) * v10
+        + (1.0 - tr) * tz * v01
+        + tr * tz * v11
+    )
+    return samples, inside
+
+
+def compute_reconstruction_geometry_contracts(
+    eq: GEqdsk, solver_psi: NDArray
+) -> dict[str, float | bool]:
+    """Report axis, boundary-containment, boundary-flux, and q-profile sanity checks."""
+    if solver_psi.shape != eq.psirz.shape:
+        raise ValueError("solver_psi shape must match the GEQDSK psi grid")
+    if not np.all(np.isfinite(solver_psi)):
+        raise ValueError("solver_psi must contain only finite values")
+
+    axis_index = np.unravel_index(
+        int(np.argmin(np.abs(solver_psi - float(eq.simag)))),
+        solver_psi.shape,
+    )
+    axis_r = float(eq.r[axis_index[1]])
+    axis_z = float(eq.z[axis_index[0]])
+    axis_error_m = float(np.hypot(axis_r - float(eq.rmaxis), axis_z - float(eq.zmaxis)))
+
+    boundary_points = np.column_stack(
+        [np.asarray(eq.rbdry, dtype=np.float64), np.asarray(eq.zbdry, dtype=np.float64)]
+    )
+    if boundary_points.size:
+        boundary_samples, boundary_inside = _bilinear_sample_grid(
+            eq.r,
+            eq.z,
+            solver_psi,
+            boundary_points,
+        )
+        containment = float(np.count_nonzero(boundary_inside) / boundary_inside.size)
+        finite_boundary = boundary_inside & np.isfinite(boundary_samples)
+        if np.any(finite_boundary):
+            boundary_error = boundary_samples[finite_boundary] - float(eq.sibry)
+            boundary_rmse = float(np.sqrt(np.mean(boundary_error**2)))
+            boundary_rmse_norm = boundary_rmse / max(abs(float(eq.sibry) - float(eq.simag)), 1e-15)
+        else:
+            boundary_rmse_norm = float("nan")
+    else:
+        containment = 0.0
+        boundary_rmse_norm = float("nan")
+
+    q = np.asarray(eq.qpsi, dtype=np.float64)
+    finite_q = q[np.isfinite(q)]
+    q_profile_sanity_pass = bool(
+        finite_q.size == q.size
+        and finite_q.size > 1
+        and np.all(np.abs(finite_q) > 1e-12)
+        and (np.all(finite_q > 0.0) or np.all(finite_q < 0.0))
+    )
+
+    return {
+        "adapted_profile_axis_error_m": axis_error_m,
+        "adapted_profile_boundary_containment_fraction": containment,
+        "adapted_profile_boundary_psi_rmse_norm": float(boundary_rmse_norm),
+        "q_profile_sanity_pass": q_profile_sanity_pass,
+    }
+
+
+def compute_adapted_profile_reconstruction(
+    eq: GEqdsk,
+    *,
+    omega: float,
+    adapter: Mapping[str, float | bool | str] | None = None,
+) -> dict[str, float | bool | int]:
+    """
+    Reconstruct ψ from physical profiles after a passing named GEQDSK convention adapter.
+
+    Non-passing adapters are diagnostic-only and intentionally return non-finite
+    reconstruction metrics so raw canonical failures cannot be silently relaxed.
+    """
+    source_adapter = adapter if adapter is not None else select_source_convention_adapter(eq)
+    if not bool(source_adapter["source_convention_adapter_pass"]):
+        return {
+            "adapted_profile_psi_rmse_norm": float("nan"),
+            "adapted_profile_sor_iterations": 0,
+            "adapted_profile_sor_residual": float("nan"),
+            "adapted_profile_axis_error_m": float("nan"),
+            "adapted_profile_boundary_containment_fraction": float("nan"),
+            "adapted_profile_boundary_psi_rmse_norm": float("nan"),
+            "q_profile_sanity_pass": False,
+            "adapted_profile_pass": False,
+        }
+
+    adapted_source = apply_source_convention(
+        compute_gs_source(eq),
+        convention=str(source_adapter["source_convention_adapter"]),
+        flux_span=float(eq.sibry - eq.simag),
+    )
+    adapted_psi, adapted_iters, adapted_res, _ = manufactured_solve_vectorised(
+        eq,
+        omega=omega,
+        max_iter=5000,
+        tol=1e-8,
+        source_override=adapted_source,
+    )
+    adapted_metrics = compute_psi_rmse(eq, adapted_psi)
+    geometry = compute_reconstruction_geometry_contracts(eq, adapted_psi)
+    adapted_rmse = float(adapted_metrics["psi_rmse_norm"])
+    boundary_rmse = float(geometry["adapted_profile_boundary_psi_rmse_norm"])
+    containment = float(geometry["adapted_profile_boundary_containment_fraction"])
+    adapted_pass = bool(
+        np.isfinite(adapted_rmse)
+        and adapted_rmse <= ADAPTED_PROFILE_RMSE_THRESHOLD
+        and np.isfinite(boundary_rmse)
+        and boundary_rmse <= ADAPTED_PROFILE_RMSE_THRESHOLD
+        and containment >= 0.999
+        and bool(geometry["q_profile_sanity_pass"])
+    )
+    return {
+        "adapted_profile_psi_rmse_norm": adapted_rmse,
+        "adapted_profile_sor_iterations": int(adapted_iters),
+        "adapted_profile_sor_residual": float(adapted_res),
+        "adapted_profile_axis_error_m": float(geometry["adapted_profile_axis_error_m"]),
+        "adapted_profile_boundary_containment_fraction": containment,
+        "adapted_profile_boundary_psi_rmse_norm": boundary_rmse,
+        "q_profile_sanity_pass": bool(geometry["q_profile_sanity_pass"]),
+        "adapted_profile_pass": adapted_pass,
+    }
+
+
 # ── Per-file validation ──────────────────────────────────────────────
 
 
@@ -1002,6 +1183,11 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
     current_consistency = compute_toroidal_current_consistency(eq)
     source_candidates = compute_source_candidate_rankings(eq)
     source_convention_adapter = select_source_convention_adapter(eq)
+    adapted_profile_reconstruction = compute_adapted_profile_reconstruction(
+        eq,
+        omega=omega_opt,
+        adapter=source_convention_adapter,
+    )
     best_source_candidate = str(source_candidates[0]["candidate"])
     best_source_candidate_residual = float(source_candidates[0]["source_residual_l2"])
     profile_source_rank = next(
@@ -1068,6 +1254,26 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         source_convention_adapter_pass=bool(
             source_convention_adapter["source_convention_adapter_pass"]
         ),
+        adapted_profile_psi_rmse_norm=float(
+            adapted_profile_reconstruction["adapted_profile_psi_rmse_norm"]
+        ),
+        adapted_profile_sor_iterations=int(
+            adapted_profile_reconstruction["adapted_profile_sor_iterations"]
+        ),
+        adapted_profile_sor_residual=float(
+            adapted_profile_reconstruction["adapted_profile_sor_residual"]
+        ),
+        adapted_profile_axis_error_m=float(
+            adapted_profile_reconstruction["adapted_profile_axis_error_m"]
+        ),
+        adapted_profile_boundary_containment_fraction=float(
+            adapted_profile_reconstruction["adapted_profile_boundary_containment_fraction"]
+        ),
+        adapted_profile_boundary_psi_rmse_norm=float(
+            adapted_profile_reconstruction["adapted_profile_boundary_psi_rmse_norm"]
+        ),
+        q_profile_sanity_pass=bool(adapted_profile_reconstruction["q_profile_sanity_pass"]),
+        adapted_profile_pass=bool(adapted_profile_reconstruction["adapted_profile_pass"]),
         plasma_mask_fraction=float(source_components["plasma_mask_fraction"]),
         pressure_source_norm=float(source_components["pressure_source_norm"]),
         ffprime_source_norm=float(source_components["ffprime_source_norm"]),
@@ -1197,9 +1403,11 @@ def validate_efit_nrmse_benchmark(
     count_by_machine: dict[str, int] = {}
     finite_entries: list[tuple[str, float]] = []
     operator_source_entries: list[tuple[str, float]] = []
+    adapted_profile_entries: list[tuple[str, float]] = []
     pass_count = 0
     operator_source_pass_count = 0
     source_convention_adapter_pass_count = 0
+    adapted_profile_pass_count = 0
     failure_reasons: list[str] = []
 
     for machine, path in files:
@@ -1226,6 +1434,13 @@ def validate_efit_nrmse_benchmark(
 
         if result.source_convention_adapter_pass:
             source_convention_adapter_pass_count += 1
+            adapted_profile_rmse = float(result.adapted_profile_psi_rmse_norm)
+            if np.isfinite(adapted_profile_rmse):
+                adapted_profile_entries.append((rel_path, adapted_profile_rmse))
+                if result.adapted_profile_pass:
+                    adapted_profile_pass_count += 1
+            else:
+                failure_reasons.append(f"non-finite adapted_profile_psi_rmse_norm in {rel_path}")
 
         row = asdict(result)
         row["file"] = rel_path
@@ -1251,6 +1466,15 @@ def validate_efit_nrmse_benchmark(
     else:
         operator_source_worst_file = ""
         operator_source_worst_norm = float("nan")
+
+    if adapted_profile_entries:
+        adapted_profile_worst_file, adapted_profile_worst_norm = max(
+            adapted_profile_entries,
+            key=lambda item: item[1],
+        )
+    else:
+        adapted_profile_worst_file = ""
+        adapted_profile_worst_norm = float("nan")
 
     source_consistency_counts: dict[str, int] = {}
     source_convention_adapter_counts: dict[str, int] = {}
@@ -1303,6 +1527,12 @@ def validate_efit_nrmse_benchmark(
         failure_reasons.append(
             f"operator-source solver consistency failure in {solver_failure_count} rows"
         )
+    if adapted_profile_entries and adapted_profile_pass_count != len(adapted_profile_entries):
+        failure_reasons.append(
+            "adapted-profile reconstruction gate failed in "
+            f"{len(adapted_profile_entries) - adapted_profile_pass_count}/"
+            f"{len(adapted_profile_entries)} accepted adapter rows"
+        )
 
     provenance_by_machine = {
         machine: EFIT_BENCHMARK_MACHINE_PROVENANCE[machine] for machine in count_by_machine
@@ -1329,6 +1559,10 @@ def validate_efit_nrmse_benchmark(
         source_convention_adapter_threshold=SOURCE_CONVENTION_ADAPTER_RESIDUAL_THRESHOLD,
         source_convention_adapter_pass_count=source_convention_adapter_pass_count,
         source_convention_adapter_counts=source_convention_adapter_counts,
+        adapted_profile_threshold=ADAPTED_PROFILE_RMSE_THRESHOLD,
+        adapted_profile_pass_count=adapted_profile_pass_count,
+        adapted_profile_worst_psi_rmse_norm=float(adapted_profile_worst_norm),
+        adapted_profile_worst_file=adapted_profile_worst_file,
         worst_source_residual_l2=float(worst_source_residual),
         worst_source_alignment_file=worst_source_alignment_file,
         failure_reasons=failure_reasons,
@@ -1488,6 +1722,16 @@ def main() -> int:
         f"Worst source residual: {benchmark.worst_source_alignment_file} "
         f"(relative L2 = {benchmark.worst_source_residual_l2:.6f})"
     )
+    print(
+        f"Adapted profile gate: {benchmark.adapted_profile_pass_count}/"
+        f"{benchmark.source_convention_adapter_pass_count} accepted adapter rows "
+        f"under psi_N RMSE <= {benchmark.adapted_profile_threshold:.6f}"
+    )
+    if benchmark.adapted_profile_worst_file:
+        print(
+            f"Worst adapted profile: {benchmark.adapted_profile_worst_file} "
+            f"(psi_N RMSE = {benchmark.adapted_profile_worst_psi_rmse_norm:.6f})"
+        )
     worst_source_row = next(
         (row for row in benchmark.rows if row["file"] == benchmark.worst_source_alignment_file),
         None,

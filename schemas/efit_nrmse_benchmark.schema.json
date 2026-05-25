@@ -25,6 +25,10 @@
     "source_convention_adapter_threshold",
     "source_convention_adapter_pass_count",
     "source_convention_adapter_counts",
+    "adapted_profile_threshold",
+    "adapted_profile_pass_count",
+    "adapted_profile_worst_psi_rmse_norm",
+    "adapted_profile_worst_file",
     "worst_source_residual_l2",
     "worst_source_alignment_file",
     "failure_reasons",
@@ -115,6 +119,20 @@
         "minimum": 0
       }
     },
+    "adapted_profile_threshold": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "adapted_profile_pass_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "adapted_profile_worst_psi_rmse_norm": {
+      "type": "number"
+    },
+    "adapted_profile_worst_file": {
+      "type": "string"
+    },
     "worst_source_residual_l2": {
       "type": "number"
     },
@@ -163,6 +181,14 @@
           "source_convention_adapter",
           "source_convention_adapter_residual_l2",
           "source_convention_adapter_pass",
+          "adapted_profile_psi_rmse_norm",
+          "adapted_profile_sor_iterations",
+          "adapted_profile_sor_residual",
+          "adapted_profile_axis_error_m",
+          "adapted_profile_boundary_containment_fraction",
+          "adapted_profile_boundary_psi_rmse_norm",
+          "q_profile_sanity_pass",
+          "adapted_profile_pass",
           "plasma_mask_fraction",
           "pressure_source_norm",
           "ffprime_source_norm",
@@ -310,6 +336,31 @@
             "type": "number"
           },
           "source_convention_adapter_pass": {
+            "type": "boolean"
+          },
+          "adapted_profile_psi_rmse_norm": {
+            "type": "number"
+          },
+          "adapted_profile_sor_iterations": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "adapted_profile_sor_residual": {
+            "type": "number"
+          },
+          "adapted_profile_axis_error_m": {
+            "type": "number"
+          },
+          "adapted_profile_boundary_containment_fraction": {
+            "type": "number"
+          },
+          "adapted_profile_boundary_psi_rmse_norm": {
+            "type": "number"
+          },
+          "q_profile_sanity_pass": {
+            "type": "boolean"
+          },
+          "adapted_profile_pass": {
             "type": "boolean"
           },
           "plasma_mask_fraction": {

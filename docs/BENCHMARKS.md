@@ -182,6 +182,16 @@ explicit `scaled_by_2pi` adapter. Adapter counts were
 rows are below the adapter residual threshold. The raw canonical gate remains
 strict and failing.
 
+The same report now includes an adapted profile-source reconstruction gate for
+rows where that explicit named adapter is accepted. This is not a replacement
+for raw canonical mode: rows without a passing adapter stay diagnostic-only for
+this gate, and the raw `psi_N` RMSE gate remains unchanged. Latest local result:
+`adapted_profile_pass_count=4/4` accepted adapter rows at threshold
+`psi_N RMSE <= 0.05`, worst accepted row `sparc/sparc_1315.eqdsk` at
+`0.012641`. Each adapted row also reports axis error, boundary contour
+containment, boundary-flux RMSE, SOR residual, and q-profile sanity so the
+result is a reconstruction contract rather than a scale-factor diagnostic.
+
 Polyglot status: the native Julia, Go, Rust, and Lean solver packages expose
 the same operator-current surfaces. Julia, Go, and Rust package tests validate
 manufactured `Z^2`, `R^4 + Z^2`, and mixed `R^2 Z^2` closure; Lean builds the corresponding
