@@ -381,6 +381,15 @@ def build_manifest(
                     f"dataset id {rule['id']} maps to multiple licenses: "
                     f"{acc.get('license')} vs {rule['license']}"
                 )
+            acc_is_equilibrium = (
+                str(acc.get("source_type", "")) == REFERENCE_EQUILIBRIUM_SOURCE_TYPE
+            )
+            rule_is_equilibrium = rule["source_type"] == REFERENCE_EQUILIBRIUM_SOURCE_TYPE
+            if acc_is_equilibrium != rule_is_equilibrium:
+                raise ValueError(
+                    f"dataset id {rule['id']} mixes reference-equilibrium and "
+                    "non-equilibrium provenance rows; use separate dataset ids."
+                )
             for field in REFERENCE_CURATION_FIELDS:
                 if rule[field] and not str(acc.get(field, "")):
                     acc[field] = rule[field]

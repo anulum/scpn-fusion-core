@@ -199,7 +199,7 @@
       "license_notice": "validation/reference_data/sparc/LICENSE"
     },
     {
-      "id": "sparc_reference_bundle",
+      "id": "sparc_public_efit_equilibria",
       "glob": "sparc/*.geqdsk",
       "source_type": "reference_equilibrium_bundle",
       "source": "SPARC public equilibrium references.",
@@ -211,7 +211,7 @@
       "reference_expected_convention": "raw_canonical_strict_unless_named_adapter_passes"
     },
     {
-      "id": "sparc_reference_bundle",
+      "id": "sparc_public_efit_equilibria",
       "glob": "sparc/*.eqdsk",
       "source_type": "reference_equilibrium_bundle",
       "source": "SPARC public equilibrium references.",

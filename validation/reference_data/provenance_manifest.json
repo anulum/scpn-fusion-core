@@ -130,7 +130,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 11142
+      "total_bytes": 11539
     },
     {
       "file_count": 1,
@@ -145,8 +145,8 @@
       "total_bytes": 1217
     },
     {
-      "file_count": 10,
-      "id": "sparc_reference_bundle",
+      "file_count": 8,
+      "id": "sparc_public_efit_equilibria",
       "license": "see-file",
       "license_attribution_required": true,
       "license_citation_required": false,
@@ -156,9 +156,21 @@
       "reference_expected_contract": "public_efit_geqdsk_operator_and_profile_source_contract",
       "reference_expected_convention": "raw_canonical_strict_unless_named_adapter_passes",
       "reference_role": "gate",
+      "source": "SPARC public equilibrium references.",
+      "source_type": "reference_equilibrium_bundle",
+      "total_bytes": 1561887
+    },
+    {
+      "file_count": 2,
+      "id": "sparc_reference_bundle",
+      "license": "see-file",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_notice": "validation/reference_data/sparc/LICENSE",
+      "license_redistributable": true,
       "source": "SPARC public design reference metadata.",
       "source_type": "reference_dataset_subset",
-      "total_bytes": 1941483
+      "total_bytes": 379596
     },
     {
       "file_count": 1,
@@ -192,8 +204,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "README.md",
-      "sha256": "0ca88bf3acbff563bfba0584a62723822ef7839882845398f3f7bdd983b0c90b",
-      "size_bytes": 2631,
+      "sha256": "f22a6d71d8d66e1a49be88a0f7bc0f64f18b748cbe40f2741b8ac9f8348658ee",
+      "size_bytes": 3016,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation"
     },
@@ -692,8 +704,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "372d36edd4042f54d6320b8490acd22f45b93adbbc82615d22649b408f6e7b64",
-      "size_bytes": 8511,
+      "sha256": "e453551c682682e8c9b388c0ca496dc83861d01f501a8af3ec93bf9fcfce1d5c",
+      "size_bytes": 8523,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -737,7 +749,7 @@
       "source_type": "reference_dataset_subset"
     },
     {
-      "dataset_id": "sparc_reference_bundle",
+      "dataset_id": "sparc_public_efit_equilibria",
       "license": "see-file",
       "license_attribution_required": true,
       "license_citation_required": false,
@@ -754,7 +766,7 @@
       "source_type": "reference_equilibrium_bundle"
     },
     {
-      "dataset_id": "sparc_reference_bundle",
+      "dataset_id": "sparc_public_efit_equilibria",
       "license": "see-file",
       "license_attribution_required": true,
       "license_citation_required": false,
@@ -771,7 +783,7 @@
       "source_type": "reference_equilibrium_bundle"
     },
     {
-      "dataset_id": "sparc_reference_bundle",
+      "dataset_id": "sparc_public_efit_equilibria",
       "license": "see-file",
       "license_attribution_required": true,
       "license_citation_required": false,
@@ -801,7 +813,7 @@
       "source_type": "reference_dataset_subset"
     },
     {
-      "dataset_id": "sparc_reference_bundle",
+      "dataset_id": "sparc_public_efit_equilibria",
       "license": "see-file",
       "license_attribution_required": true,
       "license_citation_required": false,
@@ -818,7 +830,7 @@
       "source_type": "reference_equilibrium_bundle"
     },
     {
-      "dataset_id": "sparc_reference_bundle",
+      "dataset_id": "sparc_public_efit_equilibria",
       "license": "see-file",
       "license_attribution_required": true,
       "license_citation_required": false,
@@ -835,7 +847,7 @@
       "source_type": "reference_equilibrium_bundle"
     },
     {
-      "dataset_id": "sparc_reference_bundle",
+      "dataset_id": "sparc_public_efit_equilibria",
       "license": "see-file",
       "license_attribution_required": true,
       "license_citation_required": false,
@@ -852,7 +864,7 @@
       "source_type": "reference_equilibrium_bundle"
     },
     {
-      "dataset_id": "sparc_reference_bundle",
+      "dataset_id": "sparc_public_efit_equilibria",
       "license": "see-file",
       "license_attribution_required": true,
       "license_citation_required": false,
@@ -869,7 +881,7 @@
       "source_type": "reference_equilibrium_bundle"
     },
     {
-      "dataset_id": "sparc_reference_bundle",
+      "dataset_id": "sparc_public_efit_equilibria",
       "license": "see-file",
       "license_attribution_required": true,
       "license_citation_required": false,
@@ -911,7 +923,7 @@
       "source_type": "synthetic_generated"
     }
   ],
-  "generated_at_utc": "2026-05-25T18:49:58.279185+00:00",
+  "generated_at_utc": "2026-05-25T20:42:03.314955+00:00",
   "license_registry": [
     {
       "attribution_required": true,

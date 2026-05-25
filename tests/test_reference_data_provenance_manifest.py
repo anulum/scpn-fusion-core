@@ -727,6 +727,50 @@ def test_build_manifest_requires_gate_role_for_public_efit_equilibria(
         prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
 
 
+def test_build_manifest_rejects_mixed_equilibrium_dataset_id(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "reference_data"
+    (root / "sparc").mkdir(parents=True)
+    (root / "sparc" / "profiles.csv").write_text("rho,pprime\n0,1\n", encoding="utf-8")
+    (root / "sparc" / "case.eqdsk").write_text("sparc\n", encoding="utf-8")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    rules = [
+        {
+            "id": "sparc_reference_bundle",
+            "glob": "sparc/*.csv",
+            "source_type": "reference_dataset_subset",
+            "source": "SPARC public design reference tables.",
+            "license": "see-file",
+            "license_notice": "validation/reference_data/sparc/LICENSE",
+        },
+        {
+            "id": "sparc_reference_bundle",
+            "glob": "sparc/*.eqdsk",
+            "source_type": "reference_equilibrium_bundle",
+            "source": "SPARC public equilibrium references.",
+            "license": "see-file",
+            "license_notice": "validation/reference_data/sparc/LICENSE",
+            "reference_class": "public_efit_reference",
+            "reference_role": "gate",
+            "reference_expected_contract": "public_efit_geqdsk_operator_and_profile_source_contract",
+            "reference_expected_convention": "raw_canonical_strict_unless_named_adapter_passes",
+        },
+        {
+            "id": "policy",
+            "glob": "provenance_policy.json",
+            "source_type": "documentation",
+            "source": "policy",
+            "license": "AGPL-3.0-or-later",
+        },
+    ]
+    _write_json(policy, _policy_with_rules(rules))
+
+    with pytest.raises(ValueError, match="mixes reference-equilibrium"):
+        prov.build_manifest(root=root, policy_path=policy, manifest_path=manifest)
+
+
 def test_build_manifest_rejects_mismatched_reference_contracts_and_conventions(
     tmp_path: Path,
 ) -> None:
