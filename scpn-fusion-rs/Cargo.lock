@@ -555,6 +555,8 @@ name = "fusion-gpu"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
+ "criterion",
+ "fusion-math",
  "fusion-types",
  "log",
  "ndarray",

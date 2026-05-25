@@ -1,0 +1,212 @@
+{
+  "_metadata": {
+    "code_copyright": "Code 2020-2026 Miroslav Sotek. All rights reserved.",
+    "commercial_license": "Commercial license available",
+    "concepts_copyright": "Concepts 1996-2026 Miroslav Sotek. All rights reserved.",
+    "contact": "www.anulum.li | protoscience@anulum.li",
+    "orcid": "0009-0009-3560-0851",
+    "spdx_license": "AGPL-3.0-or-later"
+  },
+  "benchmark": "gk_nonlinear_solver_comparison",
+  "cases": {
+    "krook": {
+      "config": {
+        "B0": 2.0,
+        "Lx": 80.0,
+        "Ly": 62.83,
+        "R0": 2.78,
+        "R_L_Te": 6.9,
+        "R_L_Ti": 6.9,
+        "R_L_ne": 2.2,
+        "a": 1.0,
+        "beta_e": 0.01,
+        "cfl_adapt": false,
+        "cfl_factor": 0.5,
+        "collision_model": "krook",
+        "collisions": true,
+        "dealiasing": "2/3",
+        "dt": 0.01,
+        "electromagnetic": false,
+        "hyper_coeff": 0.05,
+        "hyper_order": 4,
+        "implicit_electrons": false,
+        "kinetic_electrons": false,
+        "mass_ratio_me_mi": 0.0025,
+        "mu_max": 9.0,
+        "n_kx": 4,
+        "n_ky": 4,
+        "n_mu": 6,
+        "n_species": 2,
+        "n_steps": 8,
+        "n_theta": 8,
+        "n_vpar": 8,
+        "nonlinear": true,
+        "nu_collision": 0.01,
+        "q": 1.4,
+        "s_hat": 0.78,
+        "save_interval": 4,
+        "vpar_max": 3.0
+      },
+      "exb_invariants": {
+        "dealiased_high_k_max_abs": 0.0,
+        "exb_free_energy_production": 2.6113586472680837e-12,
+        "exb_relative_free_energy_production": 0.015120697167641053,
+        "finite": true,
+        "passes": true
+      },
+      "jax": {
+        "backend": "jax",
+        "chi_e": 3.385913883788605e-11,
+        "chi_i": 6.77182776757721e-11,
+        "converged": true,
+        "elapsed_s": 4.051153520999833,
+        "phi_rms_final": 0.0017320379735007382
+      },
+      "numpy": {
+        "backend": "numpy",
+        "chi_e": 3.385913881662565e-11,
+        "chi_i": 6.77182776332513e-11,
+        "converged": true,
+        "elapsed_s": 0.02094709499988312,
+        "phi_rms_final": 0.0017090879429649377
+      }
+    },
+    "sugama": {
+      "config": {
+        "B0": 2.0,
+        "Lx": 80.0,
+        "Ly": 62.83,
+        "R0": 2.78,
+        "R_L_Te": 6.9,
+        "R_L_Ti": 6.9,
+        "R_L_ne": 2.2,
+        "a": 1.0,
+        "beta_e": 0.01,
+        "cfl_adapt": false,
+        "cfl_factor": 0.5,
+        "collision_model": "sugama",
+        "collisions": true,
+        "dealiasing": "2/3",
+        "dt": 0.01,
+        "electromagnetic": false,
+        "hyper_coeff": 0.05,
+        "hyper_order": 4,
+        "implicit_electrons": false,
+        "kinetic_electrons": false,
+        "mass_ratio_me_mi": 0.0025,
+        "mu_max": 9.0,
+        "n_kx": 4,
+        "n_ky": 4,
+        "n_mu": 6,
+        "n_species": 2,
+        "n_steps": 8,
+        "n_theta": 8,
+        "n_vpar": 8,
+        "nonlinear": true,
+        "nu_collision": 0.01,
+        "q": 1.4,
+        "s_hat": 0.78,
+        "save_interval": 4,
+        "vpar_max": 3.0
+      },
+      "exb_invariants": {
+        "dealiased_high_k_max_abs": 0.0,
+        "exb_free_energy_production": 2.6113586472680837e-12,
+        "exb_relative_free_energy_production": 0.015120697167641053,
+        "finite": true,
+        "passes": true
+      },
+      "jax": {
+        "backend": "jax",
+        "chi_e": 3.3859137558332986e-11,
+        "chi_i": 6.771827511666597e-11,
+        "converged": true,
+        "elapsed_s": 1.648905368999749,
+        "phi_rms_final": 0.0017320437668675512
+      },
+      "moment_residuals": {
+        "density_max_abs": 1.6100938354645392e-22,
+        "energy_max_abs": 3.1763735522036263e-22,
+        "parallel_momentum_max_abs": 5.918822653883155e-23
+      },
+      "numpy": {
+        "backend": "numpy",
+        "chi_e": 3.385913753707138e-11,
+        "chi_i": 6.771827507414276e-11,
+        "converged": true,
+        "elapsed_s": 0.022761649000131,
+        "phi_rms_final": 0.0017090936596847984
+      }
+    },
+    "sugama_electromagnetic_kinetic": {
+      "config": {
+        "B0": 2.0,
+        "Lx": 80.0,
+        "Ly": 62.83,
+        "R0": 2.78,
+        "R_L_Te": 6.9,
+        "R_L_Ti": 6.9,
+        "R_L_ne": 2.2,
+        "a": 1.0,
+        "beta_e": 0.02,
+        "cfl_adapt": false,
+        "cfl_factor": 0.5,
+        "collision_model": "sugama",
+        "collisions": true,
+        "dealiasing": "2/3",
+        "dt": 0.01,
+        "electromagnetic": true,
+        "hyper_coeff": 0.05,
+        "hyper_order": 4,
+        "implicit_electrons": false,
+        "kinetic_electrons": true,
+        "mass_ratio_me_mi": 0.0025,
+        "mu_max": 9.0,
+        "n_kx": 4,
+        "n_ky": 4,
+        "n_mu": 6,
+        "n_species": 2,
+        "n_steps": 8,
+        "n_theta": 8,
+        "n_vpar": 8,
+        "nonlinear": true,
+        "nu_collision": 0.01,
+        "q": 1.4,
+        "s_hat": 0.78,
+        "save_interval": 4,
+        "vpar_max": 3.0
+      },
+      "exb_invariants": {
+        "dealiased_high_k_max_abs": 0.0,
+        "exb_free_energy_production": 2.2122987384379288e-11,
+        "exb_relative_free_energy_production": 0.026428714317949575,
+        "finite": true,
+        "passes": true
+      },
+      "jax": {
+        "backend": "jax",
+        "chi_e": -6.507130425745714e-07,
+        "chi_i": 6.13856908241856e-07,
+        "converged": true,
+        "elapsed_s": 1.6629501040001742,
+        "phi_rms_final": 0.0031706435332602366
+      },
+      "moment_residuals": {
+        "density_max_abs": 1.6100938354645392e-22,
+        "energy_max_abs": 3.1763735522036263e-22,
+        "parallel_momentum_max_abs": 5.918822653883155e-23
+      },
+      "numpy": {
+        "backend": "numpy",
+        "chi_e": -6.507130423634978e-07,
+        "chi_i": 6.13856908020201e-07,
+        "converged": true,
+        "elapsed_s": 0.04514070200002607,
+        "phi_rms_final": 0.003146493138925403
+      }
+    }
+  },
+  "jax_available": true,
+  "platform": "Linux-6.8.0-117-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3"
+}

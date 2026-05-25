@@ -8,6 +8,137 @@ Comparison of SCPN Fusion Core against established fusion simulation codes.
 > Community code timings are from published literature (see references below).
 > We encourage independent reproduction — see [`benchmarks/`](../benchmarks/).
 
+## UpCloud L4 Native Solver Benchmark Bundle (2026-05-25)
+
+Fresh GPU-host run:
+
+- Provider/zone: UpCloud `fi-hel2`
+- GPU: NVIDIA L4, driver `595.71.05`, `23034 MiB`
+- CPU: `8x AMD EPYC 9575F 64-Core Processor`
+- RAM: `62 GiB`
+- OS: Linux `6.8.0-117-generic` x86_64
+- Evidence bundle: [`validation/reports/upcloud_l4_native_solver_benchmarks.md`](../validation/reports/upcloud_l4_native_solver_benchmarks.md)
+- Machine-readable bundle: [`validation/reports/upcloud_l4_native_solver_benchmarks.json`](../validation/reports/upcloud_l4_native_solver_benchmarks.json)
+
+### Rust CPU/GPU Grad-Shafranov SOR, apples-to-apples
+
+Tracked benchmark target:
+
+`cd scpn-fusion-rs && cargo bench -p fusion-gpu --bench gpu_sor_bench -- --sample-size 10`
+
+The CPU and GPU rows use the same grids, sinusoidal source, `20` SOR
+iterations, and `omega = 1.3`. These numbers are end-to-end `solve_full`
+GPU timings, including upload, synchronised compute, and download.
+
+| Grid | CPU SOR median | GPU SOR `solve_full` median | Status |
+|---|---:|---:|---|
+| `33x33` | `45.215 us` | `965.68 us` | CPU faster; GPU launch/readback dominated |
+| `65x65` | `177.11 us` | `965.96 us` | CPU faster; GPU launch/readback dominated |
+| `129x129` | `709.97 us` | `984.41 us` | Near crossover, but CPU still faster |
+
+This benchmark is the official tracked GPU baseline. It does **not** support a
+GPU speedup claim at these grid sizes; it shows the workload is too small to
+amortise launch and transfer overhead. Larger grids and persistent-buffer
+timing remain required before making throughput claims.
+
+### Native Rust solver kernels
+
+| Benchmark | Median |
+|---|---:|
+| `picard_gs_solve/sor_33x33` | `194.08 us` |
+| `picard_multigrid_solve/multigrid_33x33` | `408.26 us` |
+| `vacuum_field_33x33_6coils` | `73.153 us` |
+| `vacuum_field_65x65_6coils` | `277.52 us` |
+| `sor_step_33x33` | `1.8483 us` |
+| `sor_solve_33x33_500iter` | `921.00 us` |
+| `sor_solve_65x65_500iter` | `3.7896 ms` |
+| `sor_residual_65x65` | `8.0632 us` |
+| `gmres_33x33` | `203.79 us` |
+| `gmres_65x65` | `1.2071 ms` |
+| `multigrid_33x33` | `404.59 us` |
+| `multigrid_65x65` | `1.5946 ms` |
+| `fft2_real_64x64` | `18.660 us` |
+| `ifft2_real_64x64` | `21.421 us` |
+| `cfft2_cifft2_complex_64x64` | `41.566 us` |
+| `inverse_reconstruct_analytic_60probes` | `42.133 us` |
+| `finite_difference_60probes` | `520.29 us` |
+| `analytical_60probes` | `338.89 us` |
+| `transport_step/lmode_single_step` | `754.06 ns` |
+| `transport_step/hmode_single_step` | `866.43 ns` |
+| `transport_step/hmode_neoclassical_single_step` | `3.4128 us` |
+| `chang_hinton_chi_50pts` | `1.3872 us` |
+| `bench_hall_mhd_step_64` | `864.60 us` |
+| `bench_hall_mhd_step_128` | `5.2128 ms` |
+| `bench_hall_mhd_run_100_64` | `82.088 ms` |
+
+### Polyglot Grad-Shafranov scaling
+
+The polyglot benchmark executes independent Python, Julia, Go, Rust, and Lean
+implementations, not wrappers. These timings include the benchmark driver's
+process invocation cost for CLI implementations, so Julia and Lean are
+startup-dominated in this mode.
+
+| Grid | Python | Go | Rust | Julia | Lean |
+|---|---:|---:|---:|---:|---:|
+| `17x17` | `1.983 ms` | `1.771 ms` | `1.257 ms` | `1387.005 ms` | `2145.238 ms` |
+| `33x33` | `2.393 ms` | `2.761 ms` | `1.527 ms` | `990.421 ms` | `645.246 ms` |
+| `65x65` | `4.030 ms` | `10.574 ms` | `3.018 ms` | `997.984 ms` | `670.504 ms` |
+
+Numerical parity stayed near machine precision:
+
+- `33x33`: Rust relative L2 `6.18e-16`, Go `1.69e-16`, Julia `1.06e-16`, Lean `2.45e-14`
+- `65x65`: Rust relative L2 `5.02e-16`, Go `3.74e-16`, Julia `7.89e-17`, Lean `3.68e-14`
+
+Startup-excluded in-process Lean timing is still missing; without that surface,
+the Lean process-startup row above must not be interpreted as steady-state
+solver throughput.
+
+### Polyglot warm-throughput timing
+
+Warm-throughput timing excludes language/tool startup for Python, Go, Rust, and
+Julia by running `100` solves in a single long-lived process after `5`
+warm-up solves on the `65x65` case.
+
+| Language | Median | P95 |
+|---|---:|---:|
+| Rust | `1.302658 ms` | `1.878885 ms` |
+| Julia | `1.663381 ms` | `3.752034 ms` |
+| Python | `3.680793 ms` | `4.109378 ms` |
+| Go | `4.022329 ms` | `4.808413 ms` |
+
+Lean startup-excluded timing is still missing because the current Lean surface
+is exposed through the Lake executable rather than a long-lived benchmark
+entrypoint.
+
+### CUDA-JAX nonlinear gyrokinetic benchmark
+
+CUDA-enabled JAX was installed and detected one `CudaDevice(id=0)`.
+
+| Case | NumPy elapsed | JAX/CUDA elapsed | Converged |
+|---|---:|---:|---:|
+| `krook` | `0.020947 s` | `4.051154 s` | true |
+| `sugama` | `0.022762 s` | `1.648905 s` | true |
+| `sugama_electromagnetic_kinetic` | `0.045141 s` | `1.662950 s` | true |
+
+The CUDA-JAX rows are currently slower because this benchmark is tiny and
+includes compilation/dispatch overhead. A separate warm JIT timing loop is
+required before any CUDA throughput claim.
+
+### Equilibrium reconstruction gates
+
+| Contract | Status | Evidence |
+|---|---|---|
+| Free-boundary coil/vacuum benchmark | PASS | `validation/reports/free_boundary_benchmark.json` |
+| Solov'ev manufactured-source FreeGS fallback | PASS | `artifacts/freegs_benchmark.json` on the GPU host |
+| Strict FreeGS backend comparison | FAIL | FreeGS runtime shape error in all five configured cases |
+| EFIT/GEQDSK raw profile-source gate | FAIL | `0/18` rows under `psi_N RMSE <= 0.05`; worst `jet/jet_lmode_2MA.geqdsk` at `10.626997` |
+| Public operator-source gate | PASS | `8/8` public rows under `psi_N RMSE <= 1e-6` |
+| Adapted profile-source gate | PASS | `4/4` accepted adapter rows under `psi_N RMSE <= 0.05` |
+| Native operator/current closure | PASS | radial convergence order `2.000000`, worst radial current closure `8.31e-16` |
+
+The raw profile-source and strict FreeGS failures are open benchmark blockers.
+They are not CI or harness failures and must not be hidden by fallback rows.
+
 ## Solver Performance
 
 | Metric | SCPN Fusion Core (Rust) | SCPN (Python) | TORAX | DIII-D (PCS) |

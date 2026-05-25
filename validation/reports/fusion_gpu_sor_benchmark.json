@@ -1,0 +1,64 @@
+{
+  "_metadata": {
+    "code_copyright": "Code 2020-2026 Miroslav Sotek. All rights reserved.",
+    "commercial_license": "Commercial license available",
+    "concepts_copyright": "Concepts 1996-2026 Miroslav Sotek. All rights reserved.",
+    "contact": "www.anulum.li | protoscience@anulum.li",
+    "orcid": "0009-0009-3560-0851",
+    "project": "SCPN Fusion Core - UpCloud L4 Native Solver Benchmark Bundle",
+    "spdx_license": "AGPL-3.0-or-later"
+  },
+  "benchmark": "fusion_gpu_sor_apples_to_apples",
+  "host": {
+    "cpu": "8x AMD EPYC 9575F 64-Core Processor",
+    "driver": "595.71.05",
+    "gpu": "NVIDIA L4",
+    "gpu_memory_mib": 23034,
+    "os": "Linux 6.8.0-117-generic x86_64",
+    "provider": "UpCloud",
+    "ram_gib": 62,
+    "zone": "fi-hel2"
+  },
+  "interpretation": "small-grid GPU timings are launch/readback dominated; no speedup claim is supported at these grid sizes",
+  "iterations": 20,
+  "omega": 1.3,
+  "rows": [
+    {
+      "benchmark": "cpu_sor_solve_33x33_20iter",
+      "high": "47.272 \u00b5s",
+      "low": "43.505 \u00b5s",
+      "median": "45.215 \u00b5s"
+    },
+    {
+      "benchmark": "gpu_sor_solve_full_33x33_20iter",
+      "high": "967.51 \u00b5s",
+      "low": "964.26 \u00b5s",
+      "median": "965.68 \u00b5s"
+    },
+    {
+      "benchmark": "cpu_sor_solve_65x65_20iter",
+      "high": "179.19 \u00b5s",
+      "low": "175.61 \u00b5s",
+      "median": "177.11 \u00b5s"
+    },
+    {
+      "benchmark": "gpu_sor_solve_full_65x65_20iter",
+      "high": "969.68 \u00b5s",
+      "low": "961.68 \u00b5s",
+      "median": "965.96 \u00b5s"
+    },
+    {
+      "benchmark": "cpu_sor_solve_129x129_20iter",
+      "high": "716.33 \u00b5s",
+      "low": "701.17 \u00b5s",
+      "median": "709.97 \u00b5s"
+    },
+    {
+      "benchmark": "gpu_sor_solve_full_129x129_20iter",
+      "high": "986.54 \u00b5s",
+      "low": "981.46 \u00b5s",
+      "median": "984.41 \u00b5s"
+    }
+  ],
+  "run_date": "2026-05-25"
+}

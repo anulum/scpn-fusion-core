@@ -1,0 +1,43 @@
+{
+  "_metadata": {
+    "code_copyright": "Code 2020-2026 Miroslav Sotek. All rights reserved.",
+    "commercial_license": "Commercial license available",
+    "concepts_copyright": "Concepts 1996-2026 Miroslav Sotek. All rights reserved.",
+    "contact": "www.anulum.li | protoscience@anulum.li",
+    "orcid": "0009-0009-3560-0851",
+    "spdx_license": "AGPL-3.0-or-later"
+  },
+  "benchmark": "polyglot_warm_throughput_65",
+  "case": "65x65",
+  "lean_status": "not_executed_startup_excluded_surface_missing",
+  "rows": [
+    {
+      "grid": "65x65",
+      "language": "Python",
+      "median_ms": 3.680793000057747,
+      "p95_ms": 4.109377999611752,
+      "runs": 100
+    },
+    {
+      "grid": "65x65",
+      "language": "Go",
+      "median_ms": 4.022329,
+      "p95_ms": 4.808413,
+      "runs": 100
+    },
+    {
+      "grid": "65x65",
+      "language": "Rust",
+      "median_ms": 1.302658,
+      "p95_ms": 1.878885,
+      "runs": 100
+    },
+    {
+      "grid": "65x65",
+      "language": "Julia",
+      "median_ms": 1.663381,
+      "p95_ms": 3.752034,
+      "runs": 100
+    }
+  ]
+}
