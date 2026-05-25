@@ -216,6 +216,17 @@ class TestComputeGSSource:
         observed_integral = float(np.sum(interpolated[mask] * weights[mask]))
         assert observed_integral == pytest.approx(expected_integral, rel=1.0e-13, abs=1.0e-13)
 
+    def test_current_conserving_interpolation_rejects_non_boolean_masks(self):
+        psi_n = np.linspace(0.0, 1.0, 5).reshape(1, -1)
+        profile = np.linspace(1.0, 2.0, 5)
+        weights = np.ones_like(psi_n)
+        numeric_mask = np.full(psi_n.shape, 0.5, dtype=np.float64)
+
+        with pytest.raises(ValueError, match="mask must be boolean"):
+            psi_rmse_mod.interpolate_flux_profile_current_conserving(
+                psi_n, profile, weights, numeric_mask
+            )
+
     def test_source_components_reject_invalid_equilibrium_contract(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
         eq.ffprime = eq.ffprime[:-1]

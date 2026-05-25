@@ -364,7 +364,10 @@ def interpolate_flux_profile_current_conserving(
     psi_arr = np.asarray(psi_norm, dtype=np.float64)
     profile_arr = np.asarray(profile, dtype=np.float64)
     weights_arr = np.asarray(weights, dtype=np.float64)
-    mask_arr = np.asarray(mask, dtype=bool)
+    mask_raw = np.asarray(mask)
+    if mask_raw.dtype != np.bool_:
+        raise ValueError("mask must be boolean")
+    mask_arr = mask_raw.astype(bool, copy=False)
     if weights_arr.shape != psi_arr.shape:
         raise ValueError("weights shape must match psi_norm shape")
     if mask_arr.shape != psi_arr.shape:
