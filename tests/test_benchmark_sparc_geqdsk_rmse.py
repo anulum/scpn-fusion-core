@@ -78,6 +78,7 @@ def test_run_benchmark_uses_reference_geqdsk_mode_when_cases_available(monkeypat
         lambda: [
             {
                 "name": "sparc_ref_case",
+                "machine": "sparc",
                 "source_file": "sparc_ref_case.geqdsk",
                 "psi": psi,
                 "feature_vector_full": np.array([-8.7, -12.2, 1.85, 0.0, 1.0, 1.0, 0.0, 2.37]),
@@ -98,9 +99,9 @@ def test_run_benchmark_uses_reference_geqdsk_mode_when_cases_available(monkeypat
 
     assert result["mode"] == "reference_geqdsk"
     assert result["reference_case_count"] == 1
-    assert result["machine_counts"] == {"synthetic": 1}
+    assert result["machine_counts"] == {"sparc": 1}
     assert len(result["cases"]) == 1
-    assert result["cases"][0]["machine"] == "synthetic"
+    assert result["cases"][0]["machine"] == "sparc"
     assert result["cases"][0]["source_file"] == "sparc_ref_case.geqdsk"
     assert result["cases"][0]["geqdsk_contract_pass"] is True
 
@@ -148,8 +149,8 @@ def test_geqdsk_contract_metrics_validate_axis_and_boundary() -> None:
 
     r = np.linspace(1.0, 2.0, 9)
     z = np.linspace(-0.5, 0.5, 9)
-    rr, zz = np.meshgrid(r, z)
-    psi = (rr - 1.5) ** 2 + zz**2
+    _rr, zz = np.meshgrid(r, z)
+    psi = 0.25 * zz**2
     eq = GEqdsk(
         nw=9,
         nh=9,
@@ -160,12 +161,12 @@ def test_geqdsk_contract_metrics_validate_axis_and_boundary() -> None:
         rmaxis=1.5,
         zmaxis=0.0,
         simag=0.0,
-        sibry=0.25,
+        sibry=float(np.max(psi)),
         psirz=psi,
         fpol=np.ones(9),
         pres=np.linspace(1.0, 0.0, 9),
-        ffprime=np.ones(9),
-        pprime=np.ones(9),
+        ffprime=np.full(9, -0.5),
+        pprime=np.zeros(9),
         qpsi=np.linspace(1.0, 3.0, 9),
         rbdry=np.array([1.25, 1.75, 1.75, 1.25]),
         zbdry=np.array([-0.25, -0.25, 0.25, 0.25]),
@@ -174,8 +175,91 @@ def test_geqdsk_contract_metrics_validate_axis_and_boundary() -> None:
     metrics = benchmark_sparc_geqdsk_rmse._geqdsk_contract_metrics(eq)
 
     assert metrics["geqdsk_contract_pass"] is True
+    assert metrics["geqdsk_source_contract_pass"] is True
     assert metrics["axis_index_interior"] is True
     assert metrics["boundary_inside_grid"] is True
     assert metrics["axis_error_m"] <= metrics["axis_tolerance_m"]
     assert metrics["axis_psi_error_fraction"] <= 1e-2
     assert metrics["q_finite_nonzero"] is True
+    assert metrics["gs_profile_source_ok"] is True
+    assert metrics["gs_profile_source_rel_l2"] <= metrics["gs_profile_source_threshold"]
+
+
+def test_geqdsk_contract_metrics_reject_inconsistent_profile_source() -> None:
+    from scpn_fusion.core.eqdsk import GEqdsk
+
+    r = np.linspace(1.0, 2.0, 9)
+    z = np.linspace(-0.5, 0.5, 9)
+    _rr, zz = np.meshgrid(r, z)
+    psi = 0.25 * zz**2
+    eq = GEqdsk(
+        nw=9,
+        nh=9,
+        rdim=1.0,
+        zdim=1.0,
+        rleft=1.0,
+        zmid=0.0,
+        rmaxis=1.5,
+        zmaxis=0.0,
+        simag=0.0,
+        sibry=float(np.max(psi)),
+        psirz=psi,
+        fpol=np.ones(9),
+        pres=np.linspace(1.0, 0.0, 9),
+        ffprime=np.zeros(9),
+        pprime=np.zeros(9),
+        qpsi=np.linspace(1.0, 3.0, 9),
+        rbdry=np.array([1.25, 1.75, 1.75, 1.25]),
+        zbdry=np.array([-0.25, -0.25, 0.25, 0.25]),
+    )
+
+    metrics = benchmark_sparc_geqdsk_rmse._geqdsk_contract_metrics(eq)
+
+    assert metrics["geqdsk_contract_pass"] is True
+    assert metrics["geqdsk_source_contract_pass"] is False
+    assert metrics["gs_profile_source_ok"] is False
+    assert metrics["gs_profile_source_rel_l2"] > metrics["gs_profile_source_threshold"]
+
+
+def test_run_benchmark_strict_source_contract_enforces_geqdsk_pde(monkeypatch) -> None:
+    psi = np.eye(9, dtype=np.float64)
+
+    monkeypatch.setattr(
+        benchmark_sparc_geqdsk_rmse,
+        "_load_sparc_geqdsk_cases",
+        lambda: [
+            {
+                "name": "sparc_ref_case",
+                "machine": "sparc",
+                "source_file": "sparc_ref_case.geqdsk",
+                "psi": psi,
+                "feature_vector_full": np.array([-8.7, -12.2, 1.85, 0.0, 1.0, 1.0, 0.0, 2.37]),
+                "Ip": -8.7,
+                "B0": -12.2,
+                "R0": 1.85,
+                "kappa": 1.8,
+                "geqdsk_contract": {
+                    "geqdsk_contract_pass": True,
+                    "geqdsk_source_contract_pass": False,
+                    "psi_span": 1.0,
+                },
+            }
+        ],
+    )
+
+    def _proxy_only(eq):  # type: ignore[no-untyped-def]
+        return np.asarray(eq["psi"], dtype=np.float64), "reduced_order_proxy", "unit-test"
+
+    monkeypatch.setattr(benchmark_sparc_geqdsk_rmse, "_run_neural_surrogate", _proxy_only)
+    relaxed = benchmark_sparc_geqdsk_rmse.run_benchmark(
+        grid_sizes=[9],
+        strict_source_contract=False,
+    )
+    strict = benchmark_sparc_geqdsk_rmse.run_benchmark(
+        grid_sizes=[9],
+        strict_source_contract=True,
+    )
+
+    assert relaxed["passes"] is True
+    assert strict["passes"] is False
+    assert strict["cases"][0]["geqdsk_source_contract_pass"] is False

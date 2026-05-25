@@ -29,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 # NRMSE threshold — Eq. surrogate must reproduce ψ grid within 5%
 NRMSE_THRESHOLD = 0.05
+MU0 = 4.0e-7 * np.pi
+GEQDSK_GS_SOURCE_REL_L2_THRESHOLD = 5.0e-2
 SPARC_REFERENCE_DIR = REPO_ROOT / "validation" / "reference_data" / "sparc"
 REFERENCE_MACHINE_DIRS = {
     "sparc": SPARC_REFERENCE_DIR,
@@ -192,6 +194,8 @@ def _reference_geqdsk_paths() -> list[tuple[str, Path]]:
 
 def _geqdsk_contract_metrics(eq: Any) -> dict[str, Any]:
     """Evaluate FreeGS/GEQDSK-compatible equilibrium invariants."""
+    from scpn_fusion.core.jax_gs_solver import gs_delta_star_np
+
     psi = np.asarray(eq.psirz, dtype=np.float64)
     r = np.asarray(eq.r, dtype=np.float64)
     z = np.asarray(eq.z, dtype=np.float64)
@@ -233,6 +237,59 @@ def _geqdsk_contract_metrics(eq: Any) -> dict[str, Any]:
         and np.all(np.isfinite(np.asarray(eq.qpsi, dtype=np.float64)))
         and abs(float(np.nanmedian(np.asarray(eq.qpsi, dtype=np.float64)))) > 1e-12
     )
+    profile_source_rel_l2 = float("inf")
+    profile_source_abs_max = float("inf")
+    profile_source_points = 0
+    profile_source_ok = False
+    if (
+        psi.ndim == 2
+        and psi.shape[0] >= 3
+        and psi.shape[1] >= 3
+        and r.size == psi.shape[1]
+        and z.size == psi.shape[0]
+        and len(eq.pprime) == psi.shape[1]
+        and len(eq.ffprime) == psi.shape[1]
+        and np.all(np.isfinite(psi))
+        and abs(float(eq.sibry) - float(eq.simag)) > 0.0
+    ):
+        psi_norm = (psi - float(eq.simag)) / (float(eq.sibry) - float(eq.simag))
+        interior_psi_norm = psi_norm[1:-1, 1:-1]
+        mask = (
+            np.isfinite(interior_psi_norm) & (interior_psi_norm >= 0.0) & (interior_psi_norm <= 1.0)
+        )
+        profile_source_points = int(np.count_nonzero(mask))
+        if profile_source_points > 0:
+            rr, _zz = np.meshgrid(r, z)
+            profile_axis = np.linspace(0.0, 1.0, psi.shape[1], dtype=np.float64)
+            clipped_psi_n = np.clip(psi_norm, 0.0, 1.0)
+            pprime_grid = np.interp(
+                clipped_psi_n.ravel(),
+                profile_axis,
+                np.asarray(eq.pprime, dtype=np.float64),
+            ).reshape(psi.shape)
+            ffprime_grid = np.interp(
+                clipped_psi_n.ravel(),
+                profile_axis,
+                np.asarray(eq.ffprime, dtype=np.float64),
+            ).reshape(psi.shape)
+            delta_star = gs_delta_star_np(
+                psi,
+                float(r[0]),
+                float(r[-1]),
+                float(z[0]),
+                float(z[-1]),
+            )
+            rhs = -MU0 * rr * rr * pprime_grid - ffprime_grid
+            residual = delta_star[1:-1, 1:-1][mask] - rhs[1:-1, 1:-1][mask]
+            reference = rhs[1:-1, 1:-1][mask]
+            profile_source_abs_max = float(np.max(np.abs(residual)))
+            profile_source_rel_l2 = float(
+                np.linalg.norm(residual) / max(np.linalg.norm(reference), 1.0e-30)
+            )
+            profile_source_ok = bool(
+                np.isfinite(profile_source_rel_l2)
+                and profile_source_rel_l2 <= GEQDSK_GS_SOURCE_REL_L2_THRESHOLD
+            )
 
     pass_contract = bool(
         psi.ndim == 2
@@ -265,6 +322,12 @@ def _geqdsk_contract_metrics(eq: Any) -> dict[str, Any]:
         "boundary_inside_grid": boundary_inside,
         "profiles_finite": profiles_finite,
         "q_finite_nonzero": q_finite_nonzero,
+        "geqdsk_source_contract_pass": profile_source_ok,
+        "gs_profile_source_rel_l2": profile_source_rel_l2,
+        "gs_profile_source_abs_max": profile_source_abs_max,
+        "gs_profile_source_points": profile_source_points,
+        "gs_profile_source_threshold": GEQDSK_GS_SOURCE_REL_L2_THRESHOLD,
+        "gs_profile_source_ok": profile_source_ok,
     }
 
 
@@ -373,6 +436,7 @@ def run_benchmark(
     grid_sizes: list[int] | None = None,
     *,
     require_neural_backend: bool = False,
+    strict_source_contract: bool = False,
 ) -> dict[str, Any]:
     if grid_sizes is None:
         grid_sizes = [65, 129]
@@ -444,8 +508,16 @@ def run_benchmark(
             if "geqdsk_contract" in eq_ref:
                 contract = dict(eq_ref["geqdsk_contract"])
                 row["geqdsk_contract_pass"] = bool(contract["geqdsk_contract_pass"])
+                row["geqdsk_source_contract_pass"] = bool(
+                    contract.get("geqdsk_source_contract_pass", True)
+                )
                 row["geqdsk_contract"] = contract
                 if not bool(contract["geqdsk_contract_pass"]):
+                    passes = False
+                    row["passes"] = False
+                if strict_source_contract and not bool(
+                    contract.get("geqdsk_source_contract_pass", True)
+                ):
                     passes = False
                     row["passes"] = False
             cases.append(row)
@@ -464,6 +536,7 @@ def run_benchmark(
         },
         "nrmse_threshold": NRMSE_THRESHOLD,
         "require_neural_backend": bool(require_neural_backend),
+        "strict_source_contract": bool(strict_source_contract),
         "all_cases_neural_backend": bool(all_cases_neural_backend),
         "cases": cases,
         "passes": all_pass,
@@ -478,9 +551,20 @@ def main() -> int:
         action="store_true",
         help="Fail if neural equilibrium backend is unavailable in any case.",
     )
+    parser.add_argument(
+        "--strict-source-contract",
+        action="store_true",
+        help=(
+            "Fail if GEQDSK profile arrays do not satisfy the native "
+            "Delta*psi = -mu0 R^2 p' - FF' source contract."
+        ),
+    )
     args = parser.parse_args()
 
-    result = run_benchmark(require_neural_backend=bool(args.strict_backend))
+    result = run_benchmark(
+        require_neural_backend=bool(args.strict_backend),
+        strict_source_contract=bool(args.strict_source_contract),
+    )
 
     out_dir = REPO_ROOT / "artifacts"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -497,13 +581,15 @@ def main() -> int:
     if result["passes"]:
         print(
             f"\nAll gated cases pass (threshold={NRMSE_THRESHOLD}, "
-            f"strict_backend={bool(args.strict_backend)})"
+            f"strict_backend={bool(args.strict_backend)}, "
+            f"strict_source_contract={bool(args.strict_source_contract)})"
         )
         return 0
     else:
         print(
             f"\nSome cases FAILED (threshold={NRMSE_THRESHOLD}, "
-            f"strict_backend={bool(args.strict_backend)})"
+            f"strict_backend={bool(args.strict_backend)}, "
+            f"strict_source_contract={bool(args.strict_source_contract)})"
         )
         return 1
 

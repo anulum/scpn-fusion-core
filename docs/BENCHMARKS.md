@@ -114,6 +114,24 @@ stencil truncation `2a dR^2`. The measured order from the two finest grids is
 Status: PASS against thresholds `Delta* <= 1e-10`, `J_rel <= 1e-11`,
 `I_total_rel <= 1e-12`.
 
+### GEQDSK Grad-Shafranov source contract
+
+`validation/benchmark_sparc_geqdsk_rmse.py` now gates bundled GEQDSK/EQDSK
+references on the native Grad-Shafranov PDE relation, not only point-wise
+`psi` RMSE. For every public reference, the benchmark evaluates the centered
+cylindrical operator and checks the EFIT profile-source convention:
+
+`Delta*psi = -mu0 R^2 p'(psi_N) - FF'(psi_N)`.
+
+The gate records magnetic-axis location error, boundary containment, finite
+profile/q arrays, in-plasma source sample count, absolute source residual, and
+source-relative L2 residual. The current source-rel-L2 threshold is `5e-2`.
+The source contract is available as a strict gate via
+`python validation/benchmark_sparc_geqdsk_rmse.py --strict-source-contract`.
+The default benchmark records these metrics without failing mixed-convention
+public files, so profile-inconsistent references are visible but do not hide
+the standard point-wise `psi` benchmark status.
+
 Polyglot status: the native Julia, Go, Rust, and Lean solver packages expose
 the same operator-current surfaces. Julia, Go, and Rust package tests validate
 manufactured `Z^2`, `R^4 + Z^2`, and mixed `R^2 Z^2` closure; Lean builds the corresponding
