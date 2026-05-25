@@ -156,9 +156,36 @@ def _normalize_rules(
         if source_type == REFERENCE_EQUILIBRIUM_SOURCE_TYPE:
             reference_class = curation["reference_class"]
             reference_role = curation["reference_role"]
+            expected_contract = curation["reference_expected_contract"]
+            expected_convention = curation["reference_expected_convention"]
+            if reference_class == "public_efit_reference" and not expected_contract.startswith(
+                "public_efit_"
+            ):
+                raise ValueError(
+                    f"rule {dataset_id} public EFIT references require public EFIT contract."
+                )
+            if reference_class == "public_efit_reference" and not expected_convention.startswith(
+                "raw_canonical_"
+            ):
+                raise ValueError(
+                    f"rule {dataset_id} public EFIT references require raw canonical convention."
+                )
             if reference_class == "synthetic_proxy_reference" and reference_role != "diagnostic":
                 raise ValueError(
                     f"rule {dataset_id} synthetic proxy references must be diagnostic."
+                )
+            if reference_class == "synthetic_proxy_reference" and not expected_contract.startswith(
+                "synthetic_"
+            ):
+                raise ValueError(
+                    f"rule {dataset_id} synthetic proxy references require synthetic contract."
+                )
+            if (
+                reference_class == "synthetic_proxy_reference"
+                and expected_convention != "synthetic_proxy_profile_source"
+            ):
+                raise ValueError(
+                    f"rule {dataset_id} synthetic proxy references require synthetic convention."
                 )
             if reference_role == "gate" and license_name == "synthetic-v1":
                 raise ValueError(
