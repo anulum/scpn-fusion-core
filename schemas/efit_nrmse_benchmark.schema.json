@@ -141,6 +141,12 @@
           "best_operator_candidate",
           "best_operator_candidate_residual_l2",
           "delta_star_psi_candidate_rank",
+          "declared_toroidal_current_A",
+          "operator_toroidal_current_A",
+          "profile_toroidal_current_A",
+          "operator_current_relative_error",
+          "profile_current_relative_error",
+          "operator_current_closure_pass",
           "threshold",
           "passes_threshold"
         ],
@@ -289,6 +295,24 @@
           "delta_star_psi_candidate_rank": {
             "type": "integer",
             "minimum": 1
+          },
+          "declared_toroidal_current_A": {
+            "type": "number"
+          },
+          "operator_toroidal_current_A": {
+            "type": "number"
+          },
+          "profile_toroidal_current_A": {
+            "type": "number"
+          },
+          "operator_current_relative_error": {
+            "type": "number"
+          },
+          "profile_current_relative_error": {
+            "type": "number"
+          },
+          "operator_current_closure_pass": {
+            "type": "boolean"
           },
           "threshold": {
             "type": "number",

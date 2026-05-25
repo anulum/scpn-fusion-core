@@ -41,6 +41,7 @@ from validation.psi_pointwise_rmse import (
     compute_source_alignment,
     compute_source_candidate_rankings,
     compute_source_components,
+    compute_toroidal_current_consistency,
     gs_operator,
     gs_residual,
     load_efit_nrmse_benchmark_schema,
@@ -250,6 +251,27 @@ class TestComputeSourceAlignment:
         assert all(np.isfinite(row["profile_residual_l2"]) for row in candidates)
         assert all(np.isfinite(row["profile_best_fit_relative_l2"]) for row in candidates)
         assert candidates[0]["candidate"] != ""
+
+
+class TestToroidalCurrentConsistency:
+    """Toroidal-current closure diagnostics for GEQDSK equilibria."""
+
+    def test_operator_current_closes_high_current_public_sparc_eqdsk(self):
+        eq = read_geqdsk(SPARC_DIR / "sparc_1310.eqdsk")
+
+        metrics = compute_toroidal_current_consistency(eq)
+
+        assert metrics["operator_current_closure_pass"] is True
+        assert abs(metrics["operator_current_relative_error"]) < 1e-3
+        assert np.sign(metrics["operator_toroidal_current_A"]) == np.sign(eq.current)
+        assert np.isfinite(metrics["profile_current_relative_error"])
+
+    def test_current_consistency_rejects_invalid_grid(self):
+        eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
+        eq.rdim = -abs(eq.rdim)
+
+        with pytest.raises(ValueError, match="strictly increasing"):
+            compute_toroidal_current_consistency(eq)
 
 
 # ── Integration tests on SPARC data ─────────────────────────────────
@@ -541,6 +563,12 @@ class TestValidateEFITNRMSEBenchmark:
                 best_operator_candidate="delta_star_psi",
                 best_operator_candidate_residual_l2=rmse,
                 delta_star_psi_candidate_rank=1,
+                declared_toroidal_current_A=-8.7e6,
+                operator_toroidal_current_A=-8.6995e6,
+                profile_toroidal_current_A=-1.5e6,
+                operator_current_relative_error=5.0e-5,
+                profile_current_relative_error=0.8,
+                operator_current_closure_pass=True,
             )
 
         monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)
@@ -575,6 +603,8 @@ class TestValidateEFITNRMSEBenchmark:
         assert all(row["best_operator_candidate"] for row in gate.rows)
         assert all(row["best_operator_candidate_residual_l2"] >= 0.0 for row in gate.rows)
         assert all(row["delta_star_psi_candidate_rank"] >= 1 for row in gate.rows)
+        assert all(row["operator_current_closure_pass"] for row in gate.rows)
+        assert all(row["operator_current_relative_error"] < 0.05 for row in gate.rows)
         assert all(
             row["source_consistency_class"] == "profile_source_consistent" for row in gate.rows
         )
@@ -673,6 +703,12 @@ class TestValidateEFITNRMSEBenchmark:
                 best_operator_candidate="delta_star_psi",
                 best_operator_candidate_residual_l2=0.01,
                 delta_star_psi_candidate_rank=1,
+                declared_toroidal_current_A=-8.7e6,
+                operator_toroidal_current_A=-8.6995e6,
+                profile_toroidal_current_A=-1.5e6,
+                operator_current_relative_error=5.0e-5,
+                profile_current_relative_error=0.8,
+                operator_current_closure_pass=True,
             )
 
         monkeypatch.setattr(psi_rmse_mod, "validate_file", _fake_validate_file)

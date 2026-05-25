@@ -95,7 +95,7 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | SPARC GEQDSK validation | 8 public EFIT equilibria, 16 gated rows pass | `validation/benchmark_sparc_geqdsk_rmse.py` |
 | Q >= 10 operating point | Q = 15 (0D power balance) | `RESULTS.md` |
 | TBR | 1.14 (0D 3-group blanket) | `RESULTS.md` |
-| Free-boundary equilibrium validation | GEQDSK public gate passes; FreeGS strict backend remains opt-in evidence | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/benchmark_vs_freegs.py` |
+| Free-boundary equilibrium validation | GEQDSK public gate passes; 5/18 operator-current diagnostic rows close within 5%; FreeGS strict backend remains opt-in evidence | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py`, `validation/benchmark_vs_freegs.py` |
 
 Latency taxonomy: `control.pid_kernel_step_us` (Rust reduced-order kernel),
 `control.closed_loop_step_us` (controller loop with explicit surrogate/full

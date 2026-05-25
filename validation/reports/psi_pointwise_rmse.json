@@ -18,7 +18,7 @@
       "psi_relative_l2": 0.8069833784393026,
       "sor_iterations": 540,
       "sor_residual": 5.453146989520263e-09,
-      "solve_time_ms": 418.82323898607865,
+      "solve_time_ms": 346.8854039965663,
       "operator_source_psi_rmse_norm": 1.9573675325104596e-14,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 7.063372109428201e-11,
@@ -47,7 +47,13 @@
       "profile_source_candidate_rank": 4,
       "best_operator_candidate": "negated_delta_star_psi_norm",
       "best_operator_candidate_residual_l2": 1.282655705975636,
-      "delta_star_psi_candidate_rank": 6
+      "delta_star_psi_candidate_rank": 6,
+      "declared_toroidal_current_A": -8500000.0,
+      "operator_toroidal_current_A": 8111497.063616043,
+      "profile_toroidal_current_A": 34939908.77265946,
+      "operator_current_relative_error": 0.0457062278098773,
+      "profile_current_relative_error": 3.1105775026658185,
+      "operator_current_closure_pass": true
     },
     {
       "file": "lmode_vh.geqdsk",
@@ -61,7 +67,7 @@
       "psi_relative_l2": 0.8263978274343944,
       "sor_iterations": 540,
       "sor_residual": 5.6169544571105234e-09,
-      "solve_time_ms": 410.7778280158527,
+      "solve_time_ms": 342.7990069903899,
       "operator_source_psi_rmse_norm": 2.0496217029259177e-14,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 7.141487401440827e-11,
@@ -90,7 +96,13 @@
       "profile_source_candidate_rank": 4,
       "best_operator_candidate": "negated_delta_star_psi_norm",
       "best_operator_candidate_residual_l2": 1.1771095514084633,
-      "delta_star_psi_candidate_rank": 6
+      "delta_star_psi_candidate_rank": 6,
+      "declared_toroidal_current_A": -8500000.0,
+      "operator_toroidal_current_A": 6049379.34644887,
+      "profile_toroidal_current_A": 42265567.57510881,
+      "operator_current_relative_error": 0.2883083121824858,
+      "profile_current_relative_error": 3.9724197147186837,
+      "operator_current_closure_pass": false
     },
     {
       "file": "lmode_vv.geqdsk",
@@ -104,7 +116,7 @@
       "psi_relative_l2": 0.8303890978638094,
       "sor_iterations": 540,
       "sor_residual": 5.413955950217542e-09,
-      "solve_time_ms": 443.57791799120605,
+      "solve_time_ms": 362.80319999787025,
       "operator_source_psi_rmse_norm": 2.0064315774428646e-14,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 7.024381076803365e-11,
@@ -133,7 +145,13 @@
       "profile_source_candidate_rank": 4,
       "best_operator_candidate": "negated_delta_star_psi_norm",
       "best_operator_candidate_residual_l2": 1.2180195763469666,
-      "delta_star_psi_candidate_rank": 6
+      "delta_star_psi_candidate_rank": 6,
+      "declared_toroidal_current_A": -8500000.0,
+      "operator_toroidal_current_A": 6610304.565279775,
+      "profile_toroidal_current_A": 40860002.863698475,
+      "operator_current_relative_error": 0.22231710996708526,
+      "profile_current_relative_error": 3.8070591604351147,
+      "operator_current_closure_pass": false
     },
     {
       "file": "sparc_1300.eqdsk",
@@ -147,7 +165,7 @@
       "psi_relative_l2": 0.8509447364688567,
       "sor_iterations": 480,
       "sor_residual": 5.7510764622792365e-09,
-      "solve_time_ms": 316.0364620271139,
+      "solve_time_ms": 204.53285702387802,
       "operator_source_psi_rmse_norm": 1.5983781943182805e-15,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 2.4018564914740637e-12,
@@ -176,7 +194,13 @@
       "profile_source_candidate_rank": 1,
       "best_operator_candidate": "delta_star_psi_times_flux_span",
       "best_operator_candidate_residual_l2": 4.042751464009184,
-      "delta_star_psi_candidate_rank": 2
+      "delta_star_psi_candidate_rank": 2,
+      "declared_toroidal_current_A": -200000.0,
+      "operator_toroidal_current_A": 636937.8749828126,
+      "profile_toroidal_current_A": -51669.21826298256,
+      "operator_current_relative_error": 2.184689374914063,
+      "profile_current_relative_error": 0.7416539086850872,
+      "operator_current_closure_pass": false
     },
     {
       "file": "sparc_1305.eqdsk",
@@ -190,7 +214,7 @@
       "psi_relative_l2": 0.7825707791480618,
       "sor_iterations": 500,
       "sor_residual": 5.1593521122050845e-09,
-      "solve_time_ms": 239.70732602174394,
+      "solve_time_ms": 151.60879702307284,
       "operator_source_psi_rmse_norm": 5.852001445235515e-16,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 2.1425750063031046e-11,
@@ -219,7 +243,13 @@
       "profile_source_candidate_rank": 1,
       "best_operator_candidate": "delta_star_psi_norm",
       "best_operator_candidate_residual_l2": 2.938353169859649,
-      "delta_star_psi_candidate_rank": 4
+      "delta_star_psi_candidate_rank": 4,
+      "declared_toroidal_current_A": -5000000.0,
+      "operator_toroidal_current_A": -4999682.788834137,
+      "profile_toroidal_current_A": -833589.714608822,
+      "operator_current_relative_error": 6.344223317261786e-05,
+      "profile_current_relative_error": 0.8332820570782355,
+      "operator_current_closure_pass": true
     },
     {
       "file": "sparc_1310.eqdsk",
@@ -233,7 +263,7 @@
       "psi_relative_l2": 0.7692139054655321,
       "sor_iterations": 500,
       "sor_residual": 7.298175563885678e-09,
-      "solve_time_ms": 215.6308100093156,
+      "solve_time_ms": 160.03037299378775,
       "operator_source_psi_rmse_norm": 5.777912869437937e-16,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 2.7123553403285428e-11,
@@ -262,7 +292,13 @@
       "profile_source_candidate_rank": 1,
       "best_operator_candidate": "delta_star_psi_over_flux_span",
       "best_operator_candidate_residual_l2": 1.6968022430825829,
-      "delta_star_psi_candidate_rank": 4
+      "delta_star_psi_candidate_rank": 4,
+      "declared_toroidal_current_A": -8700000.0,
+      "operator_toroidal_current_A": -8699477.62966435,
+      "profile_toroidal_current_A": -1543827.0294308772,
+      "operator_current_relative_error": 6.004256731605735e-05,
+      "profile_current_relative_error": 0.8225486173067957,
+      "operator_current_closure_pass": true
     },
     {
       "file": "sparc_1315.eqdsk",
@@ -276,7 +312,7 @@
       "psi_relative_l2": 0.7685456244580154,
       "sor_iterations": 500,
       "sor_residual": 7.029393567226094e-09,
-      "solve_time_ms": 184.60654601221904,
+      "solve_time_ms": 166.64150200085714,
       "operator_source_psi_rmse_norm": 6.6810531751828e-16,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 2.7536639635172833e-11,
@@ -305,7 +341,13 @@
       "profile_source_candidate_rank": 1,
       "best_operator_candidate": "delta_star_psi_norm",
       "best_operator_candidate_residual_l2": 1.8064181674778803,
-      "delta_star_psi_candidate_rank": 4
+      "delta_star_psi_candidate_rank": 4,
+      "declared_toroidal_current_A": -8700000.0,
+      "operator_toroidal_current_A": -8699476.792555135,
+      "profile_toroidal_current_A": -1557129.8920512781,
+      "operator_current_relative_error": 6.013878676612144e-05,
+      "profile_current_relative_error": 0.8210195526377841,
+      "operator_current_closure_pass": true
     },
     {
       "file": "sparc_1349.eqdsk",
@@ -319,7 +361,7 @@
       "psi_relative_l2": 0.7915526869274138,
       "sor_iterations": 500,
       "sor_residual": 7.343626706735051e-09,
-      "solve_time_ms": 173.36538201197982,
+      "solve_time_ms": 150.96115099731833,
       "operator_source_psi_rmse_norm": 8.495677460722121e-16,
       "operator_source_sor_iterations": 10,
       "operator_source_sor_residual": 2.698974377324248e-11,
@@ -348,7 +390,13 @@
       "profile_source_candidate_rank": 1,
       "best_operator_candidate": "delta_star_psi_over_flux_span",
       "best_operator_candidate_residual_l2": 1.941121046875691,
-      "delta_star_psi_candidate_rank": 4
+      "delta_star_psi_candidate_rank": 4,
+      "declared_toroidal_current_A": -8000000.0,
+      "operator_toroidal_current_A": -7999558.396717109,
+      "profile_toroidal_current_A": -1366524.6886627178,
+      "operator_current_relative_error": 5.520041036140174e-05,
+      "profile_current_relative_error": 0.8291844139171602,
+      "operator_current_closure_pass": true
     }
   ]
 }

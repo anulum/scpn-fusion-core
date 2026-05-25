@@ -45,6 +45,7 @@ SPARC_DIR = ROOT / "validation" / "reference_data" / "sparc"
 REFERENCE_DATA_DIR = ROOT / "validation" / "reference_data"
 EFIT_NRMSE_BENCHMARK_SCHEMA_VERSION = "efit-nrmse-benchmark.v1"
 OPERATOR_SOURCE_RMSE_THRESHOLD = 1e-6
+OPERATOR_CURRENT_CLOSURE_THRESHOLD = 0.05
 EFIT_BENCHMARK_MACHINE_PROVENANCE = {
     "sparc": "real_public_design_reference",
     "diiid": "synthetic_proxy_reference",
@@ -106,6 +107,12 @@ class PsiRMSEResult:
     best_operator_candidate: str = ""
     best_operator_candidate_residual_l2: float = float("nan")
     delta_star_psi_candidate_rank: int = 0
+    declared_toroidal_current_A: float = float("nan")
+    operator_toroidal_current_A: float = float("nan")
+    profile_toroidal_current_A: float = float("nan")
+    operator_current_relative_error: float = float("nan")
+    profile_current_relative_error: float = float("nan")
+    operator_current_closure_pass: bool = False
 
 
 @dataclass
@@ -394,6 +401,46 @@ def compute_source_alignment(
         "source_vacuum_operator_norm": vacuum_operator_norm,
         "source_plasma_point_count": float(plasma_count),
         "source_vacuum_point_count": float(vacuum_count),
+    }
+
+
+def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
+    """Compare declared plasma current with operator- and profile-derived currents."""
+    if eq.nw < 3 or eq.nh < 3:
+        raise ValueError("toroidal current consistency requires a grid of at least 3x3")
+    r = np.asarray(eq.r, dtype=np.float64)
+    z = np.asarray(eq.z, dtype=np.float64)
+    if np.any(np.diff(r) <= 0.0) or np.any(np.diff(z) <= 0.0):
+        raise ValueError("R and Z axes must be strictly increasing")
+
+    mu0 = 4e-7 * np.pi
+    d_r = float(r[1] - r[0])
+    d_z = float(z[1] - z[0])
+    rr = np.maximum(r[np.newaxis, :], 1e-12)
+    cell_area = d_r * d_z
+
+    operator_source = gs_operator(eq.psirz, r, z)
+    operator_jphi = -operator_source / (mu0 * rr)
+    operator_current = float(np.sum(operator_jphi[1:-1, 1:-1]) * cell_area)
+
+    source_components = compute_source_components(eq)
+    profile_source = np.asarray(source_components["total_source"], dtype=np.float64)
+    plasma_mask = np.asarray(source_components["plasma_mask"], dtype=bool)
+    profile_jphi = -profile_source / (mu0 * rr)
+    profile_current = float(np.sum(profile_jphi[plasma_mask]) * cell_area)
+
+    declared_current = float(eq.current)
+    scale = max(abs(declared_current), 1.0)
+    operator_error = abs(abs(operator_current) - abs(declared_current)) / scale
+    profile_error = abs(abs(profile_current) - abs(declared_current)) / scale
+    operator_pass = bool(np.isfinite(operator_error) and operator_error <= OPERATOR_CURRENT_CLOSURE_THRESHOLD)
+    return {
+        "declared_toroidal_current_A": declared_current,
+        "operator_toroidal_current_A": operator_current,
+        "profile_toroidal_current_A": profile_current,
+        "operator_current_relative_error": float(operator_error),
+        "profile_current_relative_error": float(profile_error),
+        "operator_current_closure_pass": operator_pass,
     }
 
 
@@ -819,6 +866,7 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
     metrics = compute_psi_rmse(eq, solver_psi)
     source_components = compute_source_components(eq)
     source_alignment = compute_source_alignment(eq)
+    current_consistency = compute_toroidal_current_consistency(eq)
     source_candidates = compute_source_candidate_rankings(eq)
     best_source_candidate = str(source_candidates[0]["candidate"])
     best_source_candidate_residual = float(source_candidates[0]["source_residual_l2"])
@@ -902,6 +950,14 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         best_operator_candidate=best_operator_candidate,
         best_operator_candidate_residual_l2=best_operator_candidate_residual,
         delta_star_psi_candidate_rank=delta_star_psi_rank,
+        declared_toroidal_current_A=float(current_consistency["declared_toroidal_current_A"]),
+        operator_toroidal_current_A=float(current_consistency["operator_toroidal_current_A"]),
+        profile_toroidal_current_A=float(current_consistency["profile_toroidal_current_A"]),
+        operator_current_relative_error=float(
+            current_consistency["operator_current_relative_error"]
+        ),
+        profile_current_relative_error=float(current_consistency["profile_current_relative_error"]),
+        operator_current_closure_pass=bool(current_consistency["operator_current_closure_pass"]),
     )
 
 

@@ -69,6 +69,17 @@ Validation against the ITPA H-mode confinement database (20 entries, 10 machines
 > `validation/benchmark_sparc_geqdsk_rmse.py` but are not counted as public
 > EFIT parity gates.
 
+### GEQDSK current-closure diagnostics
+
+`validation/psi_pointwise_rmse.py` now records toroidal-current closure from
+two independent sources: the discrete operator current
+`j_phi = -Delta*psi/(mu0 R)` and the profile-derived current from pprime/FFprime.
+This is diagnostic evidence, not an EFIT-grade inverse-reconstruction claim.
+On the current local run, 5 of 18 aggregate rows close operator-derived current
+within 5% of the declared GEQDSK current. Four high-current public SPARC EQDSK
+rows close within `6.4e-5` relative error, while the profile-source RMSE gate
+still fails and remains documented as debt in the benchmark report.
+
 ### Transport Source Power-Balance Contract
 
 Auxiliary-heating source normalisation (MW -> volumetric W/m^3 -> keV/s)
