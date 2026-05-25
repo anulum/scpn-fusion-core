@@ -135,6 +135,52 @@ def sample_flux_at_points(kernel: Any, points: FloatArray) -> FloatArray:
     return np.asarray([interp_psi(kernel, float(r), float(z)) for r, z in obs], dtype=np.float64)
 
 
+def reconstruct_boundary_flux_from_coils(
+    kernel: Any,
+    coils: "CoilSet",
+    *,
+    boundary_points: FloatArray,
+    target_flux: FloatArray | None = None,
+) -> dict[str, Any]:
+    """Reconstruct free-boundary contour flux directly from coil Green functions.
+
+    This is the forward free-boundary vacuum contract: it evaluates external
+    coil flux on a named boundary/limiter contour using the same circular
+    filament Green's function as the grid vacuum solve.  If ``target_flux`` is
+    provided, diagnostics report pointwise residuals without fitting a scale or
+    replaying Dirichlet boundary values.
+    """
+    obs = _as_finite_points(boundary_points, name="boundary_points")
+    if len(coils.positions) < 1:
+        raise ValueError("CoilSet.positions must contain at least one coil.")
+    currents = _as_finite_vector(coils.currents, name="currents", length=len(coils.positions))
+    response = build_mutual_inductance_matrix(kernel, coils, obs)
+    reconstructed = response.T @ currents
+    if not np.all(np.isfinite(reconstructed)):
+        raise ValueError("reconstructed boundary flux contains non-finite values.")
+
+    diagnostics: dict[str, Any] = {
+        "boundary_points": obs,
+        "reconstructed_flux": reconstructed,
+        "response_matrix": response,
+        "response_rank": int(np.linalg.matrix_rank(response)),
+        "point_count": int(obs.shape[0]),
+        "coil_count": int(len(coils.positions)),
+    }
+    if target_flux is not None:
+        target = _as_finite_vector(target_flux, name="target_flux", length=int(obs.shape[0]))
+        residual = reconstructed - target
+        diagnostics.update(
+            {
+                "target_flux": target,
+                "residual": residual,
+                "rmse": float(np.sqrt(np.mean(residual**2))) if residual.size else 0.0,
+                "max_abs_error": float(np.max(np.abs(residual))) if residual.size else 0.0,
+            }
+        )
+    return diagnostics
+
+
 def _validate_probe_directions(
     directions: list[str] | tuple[str, ...], *, length: int
 ) -> list[str]:

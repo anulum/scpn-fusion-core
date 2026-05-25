@@ -25,7 +25,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
-from scpn_fusion.core.fusion_kernel_free_boundary import green_function
+from scpn_fusion.core.fusion_kernel_free_boundary import (
+    build_mutual_inductance_matrix,
+    green_function,
+    reconstruct_boundary_flux_from_coils,
+)
 
 
 def jackson_psi(Rc: float, Zc: float, R: float, Z: float, I: float = 1.0) -> float:
@@ -64,6 +68,32 @@ def run_free_boundary_benchmark() -> dict:
             "reference": float(val_ref),
             "error_rel": float(abs(val_calc - val_ref) / val_ref),
             "pass": bool(abs(val_calc - val_ref) / val_ref < 1e-6),
+        }
+
+        # 1b. Boundary-contour vacuum reconstruction from coil Green functions.
+        boundary_points = np.array(
+            [[0.75, -1.0], [1.5, -1.25], [2.25, 0.0], [1.5, 1.25], [0.75, 1.0]],
+            dtype=np.float64,
+        )
+        coils = kernel.build_coilset_from_config()
+        response = build_mutual_inductance_matrix(kernel, coils, boundary_points)
+        target_flux = response.T @ coils.currents
+        boundary_reconstruction = reconstruct_boundary_flux_from_coils(
+            kernel,
+            coils,
+            boundary_points=boundary_points,
+            target_flux=target_flux,
+        )
+        results["boundary_flux_reconstruction"] = {
+            "point_count": int(boundary_reconstruction["point_count"]),
+            "coil_count": int(boundary_reconstruction["coil_count"]),
+            "response_rank": int(boundary_reconstruction["response_rank"]),
+            "rmse": float(boundary_reconstruction["rmse"]),
+            "max_abs_error": float(boundary_reconstruction["max_abs_error"]),
+            "pass": bool(
+                boundary_reconstruction["rmse"] < 1.0e-12
+                and boundary_reconstruction["max_abs_error"] < 1.0e-12
+            ),
         }
 
         # 2. Helmholtz Pair Field
@@ -217,6 +247,12 @@ def main():
         f.write("|------|--------|--------|------|\n")
         sc = res["single_coil"]
         f.write(f"| Single Coil | Rel Error | {sc['error_rel']:.2e} | {sc['pass']} |\n")
+        br = res["boundary_flux_reconstruction"]
+        f.write(f"| Boundary Green reconstruction | RMSE | {br['rmse']:.2e} | {br['pass']} |\n")
+        f.write(
+            "| Boundary Green reconstruction | Response rank | "
+            f"{br['response_rank']}/{br['coil_count']} coils, {br['point_count']} points | N/A |\n"
+        )
         hm = res["helmholtz"]
         f.write(f"| Helmholtz | B_z Axis Ref | {hm['bz_axis_ref']:.4f} T | N/A |\n")
         xp = res["x_point"]

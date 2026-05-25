@@ -18,6 +18,7 @@ from scpn_fusion.core.fusion_kernel_free_boundary import (
     green_function as _green_function_runtime,
     interp_psi as _interp_psi_runtime,
     optimize_coil_currents as _optimize_coil_currents_runtime,
+    reconstruct_boundary_flux_from_coils as _reconstruct_boundary_flux_from_coils_runtime,
     reconstruct_coil_currents_from_magnetic_probes as _reconstruct_coil_currents_from_magnetic_probes_runtime,
     resolve_shape_target_flux as _resolve_shape_target_flux_runtime,
     sample_flux_at_points as _sample_flux_at_points_runtime,
@@ -99,6 +100,21 @@ class FusionKernelFreeBoundaryMixin:
             b_probe_measurements=b_probe_measurements,
             measurement_sigma=measurement_sigma,
             tikhonov_alpha=tikhonov_alpha,
+        )
+
+    def reconstruct_boundary_flux_from_coils(
+        self,
+        coils: CoilSet,
+        *,
+        boundary_points: FloatArray,
+        target_flux: FloatArray | None = None,
+    ) -> dict[str, Any]:
+        """Reconstruct boundary-contour vacuum flux from coil Green functions."""
+        return _reconstruct_boundary_flux_from_coils_runtime(
+            self,
+            coils,
+            boundary_points=boundary_points,
+            target_flux=target_flux,
         )
 
     def optimize_coil_currents(

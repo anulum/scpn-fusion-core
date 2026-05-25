@@ -310,7 +310,7 @@ cargo bench                      # Criterion benchmarks
 ### Equilibrium & Stability
 | Module | Physics |
 |--------|---------|
-| `fusion_kernel` | Nonlinear free-boundary Grad-Shafranov (Newton/Picard/SOR/multigrid) |
+| `fusion_kernel` | Nonlinear Grad-Shafranov solves with Picard/SOR/multigrid plus external-coil vacuum/free-boundary boundary coupling |
 | `jax_gs_solver` | JAX-differentiable GS solver (Picard + damped Jacobi) |
 | `force_balance` | Force balance verification (J x B = grad p) |
 | `stability_mhd` | 7-criterion suite: Mercier, ballooning, K-S, Troyon, NTM, RWM, peeling-ballooning |

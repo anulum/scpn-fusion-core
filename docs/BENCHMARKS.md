@@ -540,11 +540,18 @@ points exactly on a source filament return zero to exclude coil self-inductance
 from the vacuum boundary map; self-inductance belongs in a separate coil-circuit
 model. Local contract checks passed with
 `python -m pytest tests/test_coil_optimization.py -q` (`32 passed`) and
-`cargo test -p fusion-core vacuum --lib` (`6 passed`).
+`cargo test -p fusion-core vacuum::tests` (`7 passed`).
 The vacuum benchmark row was rerun locally with
 `cargo bench -p fusion-core --bench vacuum_bench -- --sample-size 10` after the
 self-observation fix; Criterion centre estimates were `121.47 us` for 33x33 and
 `543.69 us` for 65x65.
+
+Free-boundary contour reconstruction now has a native Green-function gate:
+`validation/benchmark_free_boundary.py` reconstructs flux on a named boundary
+point set directly from coil currents and the circular-filament response
+matrix, without replaying fixed Dirichlet values. Latest local result:
+boundary Green reconstruction RMSE `0.00e+00`, max absolute error `0.00e+00`,
+response rank `1/1` coils over `5` contour points, status `PASS`.
 
 GEQDSK-to-native configuration now preserves free-boundary geometry metadata:
 `GEqdsk.to_config()` exports the parsed plasma boundary as isoflux target

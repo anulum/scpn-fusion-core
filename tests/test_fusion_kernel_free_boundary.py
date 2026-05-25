@@ -13,9 +13,11 @@ import numpy as np
 from scpn_fusion.core.fusion_kernel import CoilSet
 from scpn_fusion.core.fusion_kernel_free_boundary import (
     build_magnetic_probe_response_matrix,
+    build_mutual_inductance_matrix,
     green_function,
     interp_psi,
     optimize_coil_currents,
+    reconstruct_boundary_flux_from_coils,
     reconstruct_coil_currents_from_magnetic_probes,
     resolve_shape_target_flux,
     solve_free_boundary,
@@ -120,6 +122,30 @@ def test_inverse_magnetic_probe_reconstruction_recovers_synthetic_currents() -> 
     np.testing.assert_allclose(result["coil_currents"], true_currents, atol=1e-9)
     assert result["residual_rms"] < 1e-12
     assert result["response_rank"] == 2
+
+
+def test_boundary_flux_reconstruction_uses_coil_green_functions() -> None:
+    k = _KernelStub()
+    coils = CoilSet(
+        positions=[(5.1, -0.35), (5.9, 0.35)],
+        currents=np.array([0.55, -0.35], dtype=np.float64),
+        turns=[6, 8],
+    )
+    boundary_points = np.array(
+        [[5.15, -0.45], [5.45, -0.48], [5.85, 0.42], [5.55, 0.47]], dtype=np.float64
+    )
+    response = build_mutual_inductance_matrix(k, coils, boundary_points)
+    target_flux = response.T @ coils.currents
+
+    result = reconstruct_boundary_flux_from_coils(
+        k, coils, boundary_points=boundary_points, target_flux=target_flux
+    )
+
+    np.testing.assert_allclose(result["reconstructed_flux"], target_flux, atol=1e-13)
+    assert result["rmse"] < 1e-13
+    assert result["max_abs_error"] < 1e-13
+    assert result["response_rank"] == 2
+    assert result["point_count"] == boundary_points.shape[0]
 
 
 def test_inverse_magnetic_probe_reconstruction_respects_current_limits() -> None:

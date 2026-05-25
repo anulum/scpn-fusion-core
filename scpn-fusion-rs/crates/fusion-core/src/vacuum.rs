@@ -194,6 +194,59 @@ pub fn calculate_vacuum_field(
     Ok(psi_vac)
 }
 
+/// Calculate vacuum poloidal flux at explicit boundary or limiter points.
+///
+/// This is the Rust free-boundary point-response counterpart to the full-grid
+/// vacuum solve. It uses the same circular-filament Green's function and does
+/// not replay fixed Dirichlet values.
+pub fn calculate_vacuum_flux_at_points(
+    points: &[(f64, f64)],
+    coils: &[CoilConfig],
+    mu0: f64,
+) -> FusionResult<Vec<f64>> {
+    if !mu0.is_finite() || mu0 <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "vacuum permeability mu0 must be finite and > 0, got {mu0}"
+        )));
+    }
+    if points.is_empty() {
+        return Err(FusionError::ConfigError(
+            "vacuum flux point list must not be empty".to_string(),
+        ));
+    }
+    let mut flux = vec![0.0; points.len()];
+    for (idx, (r_obs, z_obs)) in points.iter().enumerate() {
+        if !r_obs.is_finite() || *r_obs <= 0.0 || !z_obs.is_finite() {
+            return Err(FusionError::ConfigError(
+                "vacuum flux points must be finite with R > 0".to_string(),
+            ));
+        }
+        let mut value = 0.0;
+        for coil in coils {
+            if !coil.r.is_finite() || coil.r <= 0.0 {
+                return Err(FusionError::ConfigError(format!(
+                    "coil radius must be finite and > 0, got {}",
+                    coil.r
+                )));
+            }
+            if !coil.z.is_finite() || !coil.current.is_finite() {
+                return Err(FusionError::ConfigError(
+                    "coil z/current must be finite".to_string(),
+                ));
+            }
+            value += coil.current
+                * circular_filament_green_function_unchecked(coil.r, coil.z, *r_obs, *z_obs, mu0)?;
+        }
+        if !value.is_finite() {
+            return Err(FusionError::ConfigError(
+                "vacuum point flux became non-finite".to_string(),
+            ));
+        }
+        flux[idx] = value;
+    }
+    Ok(flux)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -335,5 +388,36 @@ mod tests {
                 assert!((psi_scaled[[iz, ir]] - 3.0 * psi[[iz, ir]]).abs() < 1.0e-12);
             }
         }
+    }
+
+    #[test]
+    fn test_vacuum_flux_at_points_matches_grid_values() {
+        let grid = Grid2D::new(17, 17, 1.0, 9.0, -4.0, 4.0);
+        let coils = vec![
+            CoilConfig {
+                name: "upper".to_string(),
+                r: 5.0,
+                z: 1.5,
+                current: 2.0,
+            },
+            CoilConfig {
+                name: "lower".to_string(),
+                r: 6.0,
+                z: -1.0,
+                current: -0.75,
+            },
+        ];
+        let psi = calculate_vacuum_field(&grid, &coils, 1.0).expect("valid vacuum field");
+        let points = vec![
+            (grid.rr[[3, 4]], grid.zz[[3, 4]]),
+            (grid.rr[[8, 8]], grid.zz[[8, 8]]),
+            (grid.rr[[12, 11]], grid.zz[[12, 11]]),
+        ];
+        let point_flux =
+            calculate_vacuum_flux_at_points(&points, &coils, 1.0).expect("valid point flux");
+
+        assert!((point_flux[0] - psi[[3, 4]]).abs() < 1.0e-12);
+        assert!((point_flux[1] - psi[[8, 8]]).abs() < 1.0e-12);
+        assert!((point_flux[2] - psi[[12, 11]]).abs() < 1.0e-12);
     }
 }
