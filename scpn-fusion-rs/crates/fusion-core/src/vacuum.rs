@@ -256,6 +256,20 @@ pub struct BoundaryFluxReconstruction {
     pub max_abs_error: Option<f64>,
     pub point_count: usize,
     pub coil_count: usize,
+    pub limiter_flux: Vec<f64>,
+    pub limiter_point_count: usize,
+    pub min_limiter_distance_m: Option<f64>,
+    pub axis_flux: Option<f64>,
+    pub x_point_flux: Vec<f64>,
+    pub x_point_count: usize,
+}
+
+/// Optional topology metadata for free-boundary contour reconstruction.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct BoundaryFluxMetadata<'a> {
+    pub limiter_points: Option<&'a [(f64, f64)]>,
+    pub axis_point: Option<(f64, f64)>,
+    pub x_points: Option<&'a [(f64, f64)]>,
 }
 
 /// Reconstruct boundary-contour vacuum flux from coil Green functions.
@@ -269,6 +283,23 @@ pub fn reconstruct_boundary_flux_from_coils(
     coils: &[CoilConfig],
     target_flux: Option<&[f64]>,
     mu0: f64,
+) -> FusionResult<BoundaryFluxReconstruction> {
+    reconstruct_boundary_flux_from_coils_with_metadata(
+        boundary_points,
+        coils,
+        target_flux,
+        mu0,
+        BoundaryFluxMetadata::default(),
+    )
+}
+
+/// Reconstruct boundary-contour flux and optional topology metadata.
+pub fn reconstruct_boundary_flux_from_coils_with_metadata(
+    boundary_points: &[(f64, f64)],
+    coils: &[CoilConfig],
+    target_flux: Option<&[f64]>,
+    mu0: f64,
+    metadata: BoundaryFluxMetadata<'_>,
 ) -> FusionResult<BoundaryFluxReconstruction> {
     let reconstructed_flux = calculate_vacuum_flux_at_points(boundary_points, coils, mu0)?;
     let point_count = reconstructed_flux.len();
@@ -301,6 +332,32 @@ pub fn reconstruct_boundary_flux_from_coils(
         max_abs_error = Some(max_error);
     }
 
+    let limiter_flux = if let Some(points) = metadata.limiter_points {
+        calculate_vacuum_flux_at_points(points, coils, mu0)?
+    } else {
+        Vec::new()
+    };
+    let min_limiter_distance_m = metadata.limiter_points.map(|points| {
+        points
+            .iter()
+            .flat_map(|(rl, zl)| {
+                boundary_points
+                    .iter()
+                    .map(move |(rb, zb)| ((*rl - *rb).powi(2) + (*zl - *zb).powi(2)).sqrt())
+            })
+            .fold(f64::INFINITY, f64::min)
+    });
+    let axis_flux = if let Some(axis) = metadata.axis_point {
+        Some(calculate_vacuum_flux_at_points(&[axis], coils, mu0)?[0])
+    } else {
+        None
+    };
+    let x_point_flux = if let Some(points) = metadata.x_points {
+        calculate_vacuum_flux_at_points(points, coils, mu0)?
+    } else {
+        Vec::new()
+    };
+
     Ok(BoundaryFluxReconstruction {
         reconstructed_flux,
         residual,
@@ -308,6 +365,12 @@ pub fn reconstruct_boundary_flux_from_coils(
         max_abs_error,
         point_count,
         coil_count: coils.len(),
+        limiter_point_count: limiter_flux.len(),
+        limiter_flux,
+        min_limiter_distance_m,
+        axis_flux,
+        x_point_count: x_point_flux.len(),
+        x_point_flux,
     })
 }
 
@@ -519,5 +582,43 @@ mod tests {
             .all(|v| v.abs() < 1.0e-12));
         assert!(reconstruction.rmse.expect("rmse") < 1.0e-12);
         assert!(reconstruction.max_abs_error.expect("max error") < 1.0e-12);
+    }
+
+    #[test]
+    fn test_boundary_flux_reconstruction_reports_topology_metadata() {
+        let coils = vec![CoilConfig {
+            name: "pf".to_string(),
+            r: 5.0,
+            z: 0.5,
+            current: 2.0,
+        }];
+        let boundary_points = vec![(4.5, -1.0), (5.5, -1.25), (6.5, 0.25), (5.5, 1.25)];
+        let limiter_points = vec![(4.25, -1.5), (6.75, -1.5), (6.75, 1.5), (4.25, 1.5)];
+        let x_points = vec![(6.0, -0.75), (6.0, 0.75)];
+
+        let reconstruction = reconstruct_boundary_flux_from_coils_with_metadata(
+            &boundary_points,
+            &coils,
+            None,
+            1.0,
+            BoundaryFluxMetadata {
+                limiter_points: Some(&limiter_points),
+                axis_point: Some((5.5, 0.0)),
+                x_points: Some(&x_points),
+            },
+        )
+        .expect("valid topology reconstruction");
+
+        assert_eq!(reconstruction.limiter_point_count, limiter_points.len());
+        assert_eq!(reconstruction.x_point_count, x_points.len());
+        assert!(reconstruction.axis_flux.expect("axis flux").is_finite());
+        assert_eq!(reconstruction.limiter_flux.len(), limiter_points.len());
+        assert_eq!(reconstruction.x_point_flux.len(), x_points.len());
+        assert!(
+            reconstruction
+                .min_limiter_distance_m
+                .expect("limiter clearance")
+                > 0.0
+        );
     }
 }
