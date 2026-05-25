@@ -70,6 +70,8 @@ FREEGS_AXIS_ERROR_M = 0.10  # 10 cm axis position error
 FREEGS_SEPARATRIX_NRMSE = 0.05  # 5% separatrix boundary
 FREEGS_FLUX_AREA_REL_ERROR = 0.12  # 12% mid-surface area parity
 FREEGS_PSI_NORM_NRMSE_THRESHOLD = 0.06  # 6% after independent field normalization
+SOLOVEV_GRID_CONVERGENCE_MIN_ORDER = 1.5
+SOLOVEV_GRID_CONVERGENCE_FINE_TO_COARSE_MAX_RATIO = 0.35
 
 
 def _stable_rmse(delta: NDArray[np.float64]) -> float:
@@ -269,6 +271,103 @@ def compute_discrete_gs_source(
     source[1:-1, 1:-1] = d2_r - d1_r / r_safe + d2_z
 
     return source
+
+
+def solovev_continuous_gs_source(
+    R: NDArray[np.float64],
+    Z: NDArray[np.float64],
+    R0: float,
+    a: float,
+    kappa: float,
+    Psi_0: float = 1.0,
+) -> NDArray[np.float64]:
+    """Analytic ``Delta* Psi`` source for the smooth Solov'ev plasma core."""
+    eps_s = ((R0 + a) ** 2 - R0**2) / R0**2
+    ka = kappa * a
+    source = np.zeros_like(R, dtype=np.float64)
+    u = (R**2 - R0**2) / (eps_s * R0**2)
+    v = Z / ka
+    core_mask = (u**2 + v**2) <= 0.55
+    source[core_mask] = -8.0 * Psi_0 * R[core_mask] ** 2 / ((eps_s * R0**2) ** 2) - 2.0 * Psi_0 / (
+        ka**2
+    )
+    return source
+
+
+def evaluate_solovev_grid_convergence(
+    case: TokamakCase,
+    *,
+    grid_sizes: tuple[int, ...] = (33, 65, 129),
+) -> dict[str, Any]:
+    """Evaluate second-order GS source convergence on a manufactured solution."""
+    if len(grid_sizes) < 2:
+        raise ValueError("At least two grid sizes are required for convergence evaluation.")
+
+    rows: list[dict[str, Any]] = []
+    for grid_size in grid_sizes:
+        if grid_size < 9:
+            raise ValueError("Grid sizes must be >= 9 for interior source convergence.")
+        grid_case = case._replace(NR=int(grid_size), NZ=int(grid_size))
+        cfg = build_config(grid_case)
+        dims = cfg["dimensions"]
+        r_1d = np.linspace(dims["R_min"], dims["R_max"], grid_case.NR)
+        z_1d = np.linspace(dims["Z_min"], dims["Z_max"], grid_case.NZ)
+        rr, zz = np.meshgrid(r_1d, z_1d)
+        psi = solovev_psi(rr, zz, grid_case.R0, grid_case.a, grid_case.kappa)
+        d_r = float(r_1d[1] - r_1d[0])
+        d_z = float(z_1d[1] - z_1d[0])
+        discrete = compute_discrete_gs_source(psi, rr, d_r, d_z)
+        analytic = solovev_continuous_gs_source(
+            rr,
+            zz,
+            grid_case.R0,
+            grid_case.a,
+            grid_case.kappa,
+        )
+        core = np.abs(analytic) > 0.0
+        numerator = float(np.linalg.norm((discrete - analytic)[core]))
+        denominator = float(np.linalg.norm(analytic[core]))
+        residual = numerator / max(denominator, 1e-12)
+        rows.append(
+            {
+                "grid": int(grid_size),
+                "dR": d_r,
+                "dZ": d_z,
+                "source_residual_l2": float(residual),
+                "core_sample_count": int(np.count_nonzero(core)),
+            }
+        )
+
+    coarse = rows[0]
+    fine = rows[-1]
+    observed_order = float(
+        np.log(coarse["source_residual_l2"] / max(fine["source_residual_l2"], 1e-16))
+        / np.log(coarse["dR"] / fine["dR"])
+    )
+    monotonic = all(
+        rows[idx + 1]["source_residual_l2"] < rows[idx]["source_residual_l2"]
+        for idx in range(len(rows) - 1)
+    )
+    fine_to_coarse_ratio = float(
+        fine["source_residual_l2"] / max(coarse["source_residual_l2"], 1e-16)
+    )
+    passes = bool(
+        monotonic
+        and observed_order >= SOLOVEV_GRID_CONVERGENCE_MIN_ORDER
+        and fine_to_coarse_ratio <= SOLOVEV_GRID_CONVERGENCE_FINE_TO_COARSE_MAX_RATIO
+    )
+
+    return {
+        "case": case.name,
+        "contract": "manufactured_solovev_gs_source_grid_convergence",
+        "min_observed_order": SOLOVEV_GRID_CONVERGENCE_MIN_ORDER,
+        "fine_to_coarse_max_ratio": SOLOVEV_GRID_CONVERGENCE_FINE_TO_COARSE_MAX_RATIO,
+        "observed_order": observed_order,
+        "fine_to_coarse_ratio": fine_to_coarse_ratio,
+        "monotonic": monotonic,
+        "passes": passes,
+        "rows": rows,
+    }
 
 
 # ── Config builder ───────────────────────────────────────────────────
@@ -1010,6 +1109,11 @@ def run_benchmark(
         bool(case_results) and all_cases_converged and all(r["passes"] for r in case_results)
     )
     runtime = time.perf_counter() - t0
+    grid_convergence = (
+        evaluate_solovev_grid_convergence(CASES[0]) if not use_freegs and CASES else None
+    )
+    if grid_convergence is not None:
+        overall_passes = bool(overall_passes and grid_convergence["passes"])
 
     thresholds: dict[str, float] = {
         "psi_nrmse": FREEGS_PSI_NRMSE_THRESHOLD if use_freegs else PSI_NRMSE_THRESHOLD,
@@ -1039,6 +1143,7 @@ def run_benchmark(
         "thresholds": thresholds,
         "cases": case_results,
         "overall_psi_nrmse": round(overall_psi_nrmse, 6),
+        "grid_convergence": grid_convergence,
         "passes": overall_passes,
         "runtime_s": round(runtime, 3),
     }

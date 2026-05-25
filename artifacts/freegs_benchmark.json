@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-05-20T00:03:11.001547+00:00",
+  "generated_at_utc": "2026-05-25T18:55:26.430839+00:00",
   "mode": "solovev_manufactured_source",
   "freegs_available": false,
   "force_solovev": true,
@@ -100,6 +100,39 @@
     }
   ],
   "overall_psi_nrmse": 0.0,
+  "grid_convergence": {
+    "case": "ITER-like",
+    "contract": "manufactured_solovev_gs_source_grid_convergence",
+    "min_observed_order": 1.5,
+    "fine_to_coarse_max_ratio": 0.35,
+    "observed_order": 1.9982248391391895,
+    "fine_to_coarse_ratio": 0.06265399537375797,
+    "monotonic": true,
+    "passes": true,
+    "rows": [
+      {
+        "grid": 33,
+        "dR": 0.25,
+        "dZ": 0.4249999999999998,
+        "source_residual_l2": 0.00027931438366516807,
+        "core_sample_count": 131
+      },
+      {
+        "grid": 65,
+        "dR": 0.125,
+        "dZ": 0.21250000000000036,
+        "source_residual_l2": 6.98575646675518e-05,
+        "core_sample_count": 527
+      },
+      {
+        "grid": 129,
+        "dR": 0.0625,
+        "dZ": 0.10625000000000018,
+        "source_residual_l2": 1.75001621019815e-05,
+        "core_sample_count": 2122
+      }
+    ]
+  },
   "passes": true,
-  "runtime_s": 2.07
+  "runtime_s": 1.93
 }

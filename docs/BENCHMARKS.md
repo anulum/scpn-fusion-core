@@ -204,6 +204,14 @@ public EFIT parity evidence.
 The reference-data provenance manifest now emits the same curation fields for
 GEQDSK/EQDSK equilibrium files, so benchmark inputs are also separable before
 they are consumed by the EFIT/GEQDSK reports.
+The FreeGS/Solov'ev manufactured-solution report now includes a separate
+`manufactured_solovev_gs_source_grid_convergence` contract that checks
+monotonic finite-difference GS source convergence across `33`, `65`, and
+`129` point grids, requiring observed order at least `1.5` and fine/coarse
+source residual ratio no worse than `0.35`.
+Latest local result in `artifacts/freegs_benchmark.json`: observed order
+`1.998225`, fine/coarse ratio `0.062654`, residuals `2.7931e-4`, `6.986e-5`,
+and `1.75e-5`; the convergence contract passed.
 
 The same report now includes an adapted profile-source reconstruction gate for
 rows where that explicit named adapter is accepted. This is not a replacement

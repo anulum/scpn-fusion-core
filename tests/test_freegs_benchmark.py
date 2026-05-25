@@ -45,6 +45,7 @@ build_config = benchmark_vs_freegs.build_config
 run_solovev_case = benchmark_vs_freegs.run_solovev_case
 compare_case = benchmark_vs_freegs.compare_case
 run_solovev_benchmark = benchmark_vs_freegs.run_solovev_benchmark
+evaluate_solovev_grid_convergence = benchmark_vs_freegs.evaluate_solovev_grid_convergence
 HAS_FREEGS = benchmark_vs_freegs.HAS_FREEGS
 PSI_NRMSE_THRESHOLD = benchmark_vs_freegs.PSI_NRMSE_THRESHOLD
 FREEGS_FLUX_AREA_REL_ERROR = benchmark_vs_freegs.FREEGS_FLUX_AREA_REL_ERROR
@@ -219,6 +220,21 @@ class TestSolovevBenchmarkIntegration:
         # Round-trip
         parsed = json.loads(text)
         assert parsed["mode"] == "solovev_manufactured_source"
+
+    def test_solovev_grid_convergence_reports_decreasing_source_residual(self) -> None:
+        """Manufactured GS source residual should decrease under grid refinement."""
+        case = TokamakCase("convergence", R0=2.2, a=0.6, B0=4.0, Ip=2.0, kappa=1.6)
+        report = evaluate_solovev_grid_convergence(case, grid_sizes=(33, 65, 129))
+
+        assert report["case"] == "convergence"
+        assert report["passes"] is True
+        assert report["observed_order"] > 1.5
+        residuals = [row["source_residual_l2"] for row in report["rows"]]
+        assert residuals == sorted(residuals, reverse=True)
+        assert (
+            report["rows"][-1]["source_residual_l2"]
+            < 0.35 * report["rows"][0]["source_residual_l2"]
+        )
 
 
 class TestStrictBackendControls:
