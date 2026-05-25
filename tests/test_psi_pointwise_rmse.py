@@ -369,6 +369,27 @@ class TestComputeSourceAlignment:
         with pytest.raises(ValueError, match="flux-span source conventions"):
             source_convention_multiplier("over_flux_span", 0.0)
 
+    def test_source_convention_adapter_rejects_unsupported_candidate_label(self, monkeypatch):
+        eq = read_geqdsk(SPARC_DIR / "sparc_1305.eqdsk")
+
+        monkeypatch.setattr(
+            psi_rmse_mod,
+            "compute_source_candidate_rankings",
+            lambda _eq: [
+                {
+                    "candidate": "fitted_profile_source",
+                    "source_convention": "least_squares_fit",
+                    "source_residual_l2": 0.0,
+                }
+            ],
+        )
+
+        adapter = select_source_convention_adapter(eq)
+
+        assert adapter["source_convention_adapter"] == "not_evaluated"
+        assert np.isnan(adapter["source_convention_adapter_residual_l2"])
+        assert adapter["source_convention_adapter_pass"] is False
+
     def test_source_scale_convention_classifier_covers_common_geqdsk_factors(self):
         assert classify_source_scale_convention(1.0) == "canonical"
         assert classify_source_scale_convention(-1.0) == "negated"

@@ -771,11 +771,17 @@ def select_source_convention_adapter(eq: GEqdsk) -> dict[str, float | bool | str
     contract only reports whether a named, reproducible GEQDSK transform explains
     the operator source within the declared residual threshold.
     """
-    candidates = [
-        row
-        for row in compute_source_candidate_rankings(eq)
-        if row["source_convention"] != "not_profile_source_convention"
-    ]
+    flux_span = float(eq.sibry - eq.simag)
+    candidates: list[dict[str, float | str]] = []
+    for row in compute_source_candidate_rankings(eq):
+        convention = str(row["source_convention"])
+        if convention == "not_profile_source_convention":
+            continue
+        try:
+            source_convention_multiplier(convention, flux_span)
+        except ValueError:
+            continue
+        candidates.append(row)
     if not candidates:
         return {
             "source_convention_adapter": "not_evaluated",
