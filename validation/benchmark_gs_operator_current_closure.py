@@ -120,16 +120,20 @@ def _run_case(
 
 def _radial_convergence_order(cases: list[dict[str, Any]]) -> float | None:
     """Estimate radial-quartic analytic-error convergence order from two finest grids."""
-    radial_cases = [
-        case
-        for case in cases
-        if case["case"].startswith("radial_quartic")
-        and case["dr"] > 0.0
-        and case["analytic_delta_star_max_abs_error"] > 0.0
-    ]
+    radial_cases = [case for case in cases if case["case"].startswith("radial_quartic")]
     if len(radial_cases) < 2:
         return None
     radial_cases.sort(key=lambda case: case["dr"], reverse=True)
+    for case in radial_cases:
+        dr = float(case["dr"])
+        error = float(case["analytic_delta_star_max_abs_error"])
+        if not math.isfinite(dr) or dr <= 0.0:
+            raise ValueError("radial-quartic rows require strictly decreasing positive dr")
+        if not math.isfinite(error) or error <= 0.0:
+            raise ValueError("radial-quartic rows require positive finite analytic Delta error")
+    for coarse, fine in zip(radial_cases, radial_cases[1:]):
+        if float(coarse["dr"]) <= float(fine["dr"]):
+            raise ValueError("radial-quartic rows require strictly decreasing positive dr")
     coarse = radial_cases[-2]
     fine = radial_cases[-1]
     return float(

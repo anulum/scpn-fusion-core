@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from validation.benchmark_gs_operator_current_closure import _radial_convergence_order
 from validation.benchmark_gs_operator_current_closure import REPORT_JSON
 from validation.benchmark_gs_operator_current_closure import main as run_benchmark
@@ -24,6 +26,41 @@ def test_radial_quartic_convergence_order_reports_second_order_decay() -> None:
     order = _radial_convergence_order(cases)
 
     assert order == 2.0
+
+
+def test_radial_quartic_convergence_order_rejects_invalid_radial_rows() -> None:
+    """Radial-quartic convergence gates must reject invalid rows, not filter them."""
+    with pytest.raises(ValueError, match="strictly decreasing positive dr"):
+        _radial_convergence_order(
+            [
+                {
+                    "case": "radial_quartic_17",
+                    "dr": 0.0625,
+                    "analytic_delta_star_max_abs_error": 2.44140625e-4,
+                },
+                {
+                    "case": "radial_quartic_33",
+                    "dr": 0.0625,
+                    "analytic_delta_star_max_abs_error": 9.765625e-4,
+                },
+            ]
+        )
+
+    with pytest.raises(ValueError, match="positive finite analytic Delta"):
+        _radial_convergence_order(
+            [
+                {
+                    "case": "radial_quartic_17",
+                    "dr": 0.125,
+                    "analytic_delta_star_max_abs_error": 9.765625e-4,
+                },
+                {
+                    "case": "radial_quartic_33",
+                    "dr": 0.0625,
+                    "analytic_delta_star_max_abs_error": 0.0,
+                },
+            ]
+        )
 
 
 def test_benchmark_report_includes_mixed_solovev_operator_case() -> None:
