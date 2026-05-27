@@ -58,6 +58,25 @@ def load_jet_solps_reference_profile(
     reference_dir: Path,
     toroidal_points: int,
 ) -> tuple[NDArray[np.float64], dict[str, Any]]:
+    """Load a synthetic SOLPS-like toroidal reference heat-flux profile from GEQDSK data.
+
+    The implementation currently derives a deterministic surrogate profile from
+    available JET references to retain parity with the quasi-3D benchmark
+    contract when external SOLPS assets are unavailable.
+
+    Parameters
+    ----------
+    reference_dir
+        Directory containing reference files.
+    toroidal_points
+        Number of toroidal sample points in the returned profile.
+
+    Returns
+    -------
+    tuple[NDArray[np.float64], dict[str, Any]]
+        ``(profile_w_m2, metadata)`` where metadata includes counts and profile
+        statistics.
+    """
     points = _require_int("toroidal_points", toroidal_points, 16)
     files = sorted(Path(reference_dir).glob("*.geqdsk"))
     if not files:
@@ -109,6 +128,20 @@ def build_quasi_3d_force_balance(
     seed: int,
     samples: int,
 ) -> dict[str, Any]:
+    """Build a quasi-3D force-balance diagnostic and return summary observables.
+
+    Parameters
+    ----------
+    seed
+        RNG seed for reproducible stochastic sampling.
+    samples
+        Number of diagnostic sample points generated on paired equilibria.
+
+    Returns
+    -------
+    dict[str, Any]
+        Force-balance RMSE and asymmetry observables.
+    """
     rng = np.random.default_rng(int(seed))
 
     base_eq = VMECStyleEquilibrium3D(
@@ -171,6 +204,24 @@ def hall_mhd_zonal_ratio(
     steps: int,
     fallback_asymmetry: float,
 ) -> dict[str, Any]:
+    """Estimate the Zonal-to-total energy ratio with optional Hall-MHD backend.
+
+    Parameters
+    ----------
+    seed
+        RNG seed for reproducible Hall-MHD stepping.
+    grid
+        Hall-MHD grid size.
+    steps
+        Number of integration steps.
+    fallback_asymmetry
+        Asymmetry fallback coefficient used if Hall-MHD backend is unavailable.
+
+    Returns
+    -------
+    dict[str, Any]
+        Backend identifier and estimated zonal ratio.
+    """
     grid_n = _require_int("grid", grid, 8)
     steps_n = _require_int("steps", steps, 1)
     asymmetry_proxy = _require_finite_float("fallback_asymmetry", fallback_asymmetry)
@@ -209,6 +260,28 @@ def solve_quasi_3d_force_residual(
     toroidal_points: int = 48,
     iterations: int = 14,
 ) -> dict[str, float]:
+    """Solve a small fixed-point residual problem over toroidal-poloidal grid.
+
+    Parameters
+    ----------
+    asymmetry_index
+        Scalar asymmetry proxy.
+    n1_amp
+        First harmonic perturbation amplitude.
+    n2_amp
+        Second harmonic perturbation amplitude.
+    poloidal_points
+        Number of poloidal discretisation points (>=16).
+    toroidal_points
+        Number of toroidal discretisation points (>=16).
+    iterations
+        Fixed-point iterations used in residual relaxation.
+
+    Returns
+    -------
+    dict[str, float]
+        Mean and 95th percentile force residuals in percent.
+    """
     n_theta = _require_int("poloidal_points", poloidal_points, 16)
     n_phi = _require_int("toroidal_points", toroidal_points, 16)
     iters = _require_int("iterations", iterations, 2)
@@ -248,6 +321,21 @@ def two_fluid_temhd_coupled_profile(
     raw_heat_flux_w_m2: NDArray[np.float64],
     zonal_ratio: float,
 ) -> tuple[NDArray[np.float64], dict[str, float]]:
+    """Couple electron-ion two-fluid thermal evolution with TEMHD cooling effects.
+
+    Parameters
+    ----------
+    raw_heat_flux_w_m2
+        Input profile in W/m².
+    zonal_ratio
+        Estimated zonal ratio coefficient controlling coupling strength.
+
+    Returns
+    -------
+    tuple[NDArray[np.float64], dict[str, float]]
+        ``(coupled_profile_w_m2, diagnostics)`` where diagnostics expose
+        temperature split metrics.
+    """
     raw = np.asarray(raw_heat_flux_w_m2, dtype=np.float64)
     if raw.ndim != 1 or raw.size < 16:
         raise ValueError("raw_heat_flux_w_m2 must be a 1D array with at least 16 points.")
@@ -293,6 +381,7 @@ def build_divertor_profiles(
     reference_profile_w_m2: NDArray[np.float64],
     toroidal_points: int,
 ) -> dict[str, Any]:
+    """Build divertor heat-load profiles including TEMHD cooling and two-fluid effects."""
     with contextlib.redirect_stdout(io.StringIO()):
         lab = DivertorLab(P_sol_MW=42.0, R_major=2.95, B_pol=1.3)
         divertor_state = lab.simulate_temhd_liquid_metal(
@@ -347,6 +436,22 @@ def calibrate_tbr_with_erosion(
     thickness_cm: float,
     asdex_erosion_ref_mm_year: float,
 ) -> dict[str, Any]:
+    """Calibrate TBR estimate against erosion trend curves from reference data.
+
+    Parameters
+    ----------
+    mean_heat_flux_w_m2
+        Representative divertor heat-flux level in W/m².
+    thickness_cm
+        Blanket thickness used in the TBR model.
+    asdex_erosion_ref_mm_year
+        Reference erosion level used to shape the calibration.
+
+    Returns
+    -------
+    dict[str, Any]
+        Includes raw/calibrated TBR, erosion rates, and calibration diagnostics.
+    """
     pwi = SputteringPhysics(material="Tungsten", redeposition_factor=0.97)
     particle_flux = max(1.0e21, (float(mean_heat_flux_w_m2) / 1.2e6) * 2.0e21)
     angles = np.asarray([15.0, 30.0, 45.0, 60.0, 75.0], dtype=np.float64)
