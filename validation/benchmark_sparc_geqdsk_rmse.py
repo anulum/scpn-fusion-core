@@ -41,6 +41,7 @@ GEQDSK_EXTENSIONS = ("*.geqdsk", "*.eqdsk")
 
 
 def nrmse(y_true: FloatArray, y_pred: FloatArray) -> float:
+    """Compute normalised RMSE relative to data range."""
     rng = float(np.max(y_true) - np.min(y_true))
     if rng < 1e-30:
         return 0.0
@@ -490,6 +491,7 @@ def run_benchmark(
     require_neural_backend: bool = False,
     strict_source_contract: bool = False,
 ) -> dict[str, Any]:
+    """Run SPARC/GEQDSK ψ reconstruction benchmark across configured grids."""
     if grid_sizes is None:
         grid_sizes = [65, 129]
 
@@ -597,6 +599,7 @@ def run_benchmark(
 
 
 def main() -> int:
+    """Execute GEQDSK RMSE benchmark, write artifact, and return status code."""
     parser = argparse.ArgumentParser(description="SPARC GEQDSK RMSE benchmark")
     parser.add_argument(
         "--strict-backend",
