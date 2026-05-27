@@ -97,6 +97,18 @@ def evaluate(
     claims_tracked: int,
     require_positive_delta: bool,
 ) -> dict[str, Any]:
+    """Compare current release-delta metrics to a pinned baseline.
+
+    Args:
+        baseline: Baseline metrics from release pin.
+        current: Current metrics derived from underdeveloped summary.
+        claims_tracked: Current count of tracked claims.
+        require_positive_delta: Require at least one metric to improve.
+
+    Returns:
+        Dictionary describing deltas, pass/fail checks, optional positive
+        improvement flags, and aggregate `overall_pass`.
+    """
     required_keys = (
         "source_total",
         "source_p0p1",
@@ -151,6 +163,14 @@ def evaluate(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run release-delta guard checks and write a JSON summary.
+
+    Args:
+        argv: Optional CLI args. If omitted, parse process arguments.
+
+    Returns:
+        ``0`` when all checks pass, ``1`` otherwise.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--baseline",
