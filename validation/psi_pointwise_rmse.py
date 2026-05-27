@@ -502,7 +502,7 @@ def gs_residual(eq: GEqdsk) -> tuple[float, float]:
     source = compute_gs_source(eq)
 
     residual = L_psi[1:-1, 1:-1] - source[1:-1, 1:-1]
-    source_norm = np.linalg.norm(source[1:-1, 1:-1].ravel())
+    source_norm = float(np.linalg.norm(source[1:-1, 1:-1].ravel()))
     if source_norm < 1e-15:
         source_norm = 1.0
 
@@ -574,7 +574,7 @@ def apply_source_convention(
 def compute_source_alignment(
     eq: GEqdsk,
     source: NDArray | None = None,
-) -> dict[str, float]:
+) -> tuple[dict[str, float], str]:
     """
     Compare the profile-derived GS source against the discrete operator source.
 
@@ -637,7 +637,7 @@ def compute_source_alignment(
     plasma_residual, plasma_operator_norm, plasma_count = _masked_metrics(plasma_mask)
     vacuum_residual, vacuum_operator_norm, vacuum_count = _masked_metrics(~plasma_mask)
 
-    return {
+    metrics: dict[str, float] = {
         "operator_source_norm": operator_norm,
         "profile_source_norm": profile_norm,
         "source_residual_l2": residual_l2,
@@ -645,7 +645,6 @@ def compute_source_alignment(
         "source_best_fit_scale": float(scale),
         "source_best_fit_offset": float(offset),
         "source_best_fit_relative_l2": best_fit_relative_l2,
-        "source_best_fit_convention": best_fit_convention,
         "source_plasma_residual_l2": plasma_residual,
         "source_vacuum_residual_l2": vacuum_residual,
         "source_plasma_operator_norm": plasma_operator_norm,
@@ -653,6 +652,7 @@ def compute_source_alignment(
         "source_plasma_point_count": float(plasma_count),
         "source_vacuum_point_count": float(vacuum_count),
     }
+    return metrics, best_fit_convention
 
 
 def compute_toroidal_current_consistency(eq: GEqdsk) -> dict[str, float | bool]:
@@ -745,7 +745,7 @@ def compute_source_candidate_rankings(eq: GEqdsk) -> list[dict[str, float | str]
 
     rows: list[dict[str, float | str]] = []
     for name, source in candidates.items():
-        metrics = compute_source_alignment(eq, source=source)
+        metrics, best_fit_convention = compute_source_alignment(eq, source=source)
         rows.append(
             {
                 "candidate": name,
@@ -754,7 +754,7 @@ def compute_source_candidate_rankings(eq: GEqdsk) -> list[dict[str, float | str]
                 "source_correlation": metrics["source_correlation"],
                 "source_best_fit_scale": metrics["source_best_fit_scale"],
                 "source_best_fit_relative_l2": metrics["source_best_fit_relative_l2"],
-                "source_best_fit_convention": metrics["source_best_fit_convention"],
+                "source_best_fit_convention": best_fit_convention,
                 "source_plasma_residual_l2": metrics["source_plasma_residual_l2"],
                 "source_vacuum_residual_l2": metrics["source_vacuum_residual_l2"],
             }
@@ -1101,7 +1101,7 @@ def compute_psi_rmse(
     max_err = float(np.max(np.abs(diff)))
 
     # Relative L2
-    ref_norm = np.linalg.norm(ref.ravel())
+    ref_norm = float(np.linalg.norm(ref.ravel()))
     rel_l2 = float(np.linalg.norm(diff.ravel()) / max(ref_norm, 1e-15))
 
     # Normalised ψ
@@ -1382,7 +1382,7 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
     # 3. Point-wise RMSE
     metrics = compute_psi_rmse(eq, solver_psi)
     source_components = compute_source_components(eq)
-    source_alignment = compute_source_alignment(eq)
+    source_alignment, source_alignment_best_fit_convention = compute_source_alignment(eq)
     current_consistency = compute_toroidal_current_consistency(eq)
     source_candidates = compute_source_candidate_rankings(eq)
     source_convention_adapter = select_source_convention_adapter(eq)
@@ -1449,7 +1449,7 @@ def validate_file(path: Path, warm_start: bool = True) -> PsiRMSEResult:
         source_best_fit_scale=source_alignment["source_best_fit_scale"],
         source_best_fit_offset=source_alignment["source_best_fit_offset"],
         source_best_fit_relative_l2=source_alignment["source_best_fit_relative_l2"],
-        source_best_fit_convention=str(source_alignment["source_best_fit_convention"]),
+        source_best_fit_convention=source_alignment_best_fit_convention,
         source_convention_adapter=str(source_convention_adapter["source_convention_adapter"]),
         source_convention_adapter_residual_l2=float(
             source_convention_adapter["source_convention_adapter_residual_l2"]
@@ -1986,6 +1986,13 @@ def sparc_psi_rmse(sparc_dir: Path) -> dict[str, Any]:
 
 
 def main() -> int:
+    """Run full point-wise psi(R,Z) RMSE and EFIT/GEQDSK benchmark validation.
+
+    Returns
+    -------
+    int
+        Zero when validation contracts pass, one otherwise.
+    """
     print("=" * 70)
     print("SCPN Fusion Core - Point-wise psi(R,Z) RMSE Validation")
     print("=" * 70)

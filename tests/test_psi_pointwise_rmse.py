@@ -241,21 +241,21 @@ class TestComputeSourceAlignment:
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
         operator_source = gs_operator(eq.psirz, eq.r, eq.z)
 
-        metrics = compute_source_alignment(eq, source=operator_source)
+        metrics, best_fit_convention = compute_source_alignment(eq, source=operator_source)
 
         assert metrics["source_residual_l2"] < 1e-12
         assert metrics["source_correlation"] == pytest.approx(1.0)
         assert metrics["source_best_fit_scale"] == pytest.approx(1.0)
         assert abs(metrics["source_best_fit_offset"]) < 1e-12
         assert metrics["source_best_fit_relative_l2"] < 1e-12
-        assert metrics["source_best_fit_convention"] == "canonical"
+        assert best_fit_convention == "canonical"
         assert metrics["source_plasma_residual_l2"] < 1e-12
         assert metrics["source_vacuum_residual_l2"] < 1e-12
 
     def test_profile_source_mismatch_metrics_are_finite_on_sparc_reference(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
 
-        metrics = compute_source_alignment(eq)
+        metrics, best_fit_convention = compute_source_alignment(eq)
 
         assert np.isfinite(metrics["operator_source_norm"])
         assert np.isfinite(metrics["profile_source_norm"])
@@ -264,7 +264,7 @@ class TestComputeSourceAlignment:
         assert np.isfinite(metrics["source_best_fit_scale"])
         assert np.isfinite(metrics["source_best_fit_offset"])
         assert np.isfinite(metrics["source_best_fit_relative_l2"])
-        assert metrics["source_best_fit_convention"] != ""
+        assert best_fit_convention != ""
         assert np.isfinite(metrics["source_plasma_residual_l2"])
         assert np.isfinite(metrics["source_vacuum_residual_l2"])
         assert np.isfinite(metrics["source_plasma_operator_norm"])
@@ -301,7 +301,7 @@ class TestComputeSourceAlignment:
         candidates = compute_source_candidate_rankings(eq)
 
         assert candidates[0]["candidate"] == "profile_source_scaled_by_2pi"
-        assert candidates[0]["source_residual_l2"] < 0.15
+        assert float(candidates[0]["source_residual_l2"]) < 0.15
 
     def test_source_convention_adapter_accepts_high_current_sparc_2pi_contract(self):
         eq = read_geqdsk(SPARC_DIR / "sparc_1310.eqdsk")
@@ -310,7 +310,7 @@ class TestComputeSourceAlignment:
 
         assert adapter["source_convention_adapter"] == "scaled_by_2pi"
         assert adapter["source_convention_adapter_pass"] is True
-        assert adapter["source_convention_adapter_residual_l2"] < 0.15
+        assert float(adapter["source_convention_adapter_residual_l2"]) < 0.15
 
     def test_source_convention_adapter_keeps_lmode_diagnostic_only(self):
         eq = read_geqdsk(SPARC_DIR / "lmode_vv.geqdsk")
@@ -319,7 +319,7 @@ class TestComputeSourceAlignment:
 
         assert adapter["source_convention_adapter"] == "scaled_by_minus_2pi"
         assert adapter["source_convention_adapter_pass"] is False
-        assert adapter["source_convention_adapter_residual_l2"] > 0.15
+        assert float(adapter["source_convention_adapter_residual_l2"]) > 0.15
 
     def test_adapted_profile_reconstruction_reports_geometry_for_accepted_adapter(self):
         eq = read_geqdsk(SPARC_DIR / "sparc_1310.eqdsk")
