@@ -92,6 +92,7 @@ def build_report(
     summary: dict[str, Any],
     thresholds: dict[str, Any],
 ) -> dict[str, Any]:
+    """Compute pass/fail deltas between observed coverage and configured thresholds."""
     line_rate = summary.get("line_rate_pct")
     branch_rate = summary.get("branch_rate_pct")
     domain_line = _to_float_map(summary.get("domain_line_rate_pct"), label="domain_line_rate_pct")
@@ -213,6 +214,7 @@ def _render_section(title: str, rows: list[dict[str, Any]]) -> list[str]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render a human-readable markdown coverage delta report."""
     lines: list[str] = [
         "# Coverage Delta Report",
         "",
@@ -243,6 +245,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Generate JSON/markdown coverage delta reports and optional strict exit semantics."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--coverage-summary",

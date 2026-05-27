@@ -25,12 +25,14 @@ _GIT_LS_FILES_TIMEOUT_SECONDS = 5.0
 
 @dataclass(frozen=True)
 class EvidencePattern:
+    """Evidence filename and pattern pair required by a claim."""
     file: str
     pattern: str
 
 
 @dataclass(frozen=True)
 class ClaimSpec:
+    """Parsed claim definition and linked evidence spec."""
     claim_id: str
     source_file: str
     source_pattern: str
@@ -72,6 +74,7 @@ def _parse_evidence_patterns(value: Any) -> tuple[EvidencePattern, ...]:
 
 
 def load_manifest(path: Path) -> tuple[ClaimSpec, ...]:
+    """Load and validate claim manifest entries into canonical claim specs."""
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError("Claims manifest must be a JSON object.")
@@ -130,6 +133,7 @@ def run_audit(
     *,
     tracked_files: set[str] | None = None,
 ) -> list[str]:
+    """Check each claim has source and evidence evidence matching expected patterns."""
     errors: list[str] = []
     tracked = tracked_files if tracked_files is not None else _git_tracked_files(repo_root)
     for claim in claims:
@@ -176,6 +180,7 @@ def run_audit(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the claims audit against the selected manifest."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--manifest",

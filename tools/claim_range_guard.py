@@ -26,12 +26,14 @@ PathToken = Union[str, int]
 
 @dataclass(frozen=True)
 class RatioPath:
+    """Path pair defining a numerator/denominator lookup in JSON payloads."""
     numerator: Tuple[PathToken, ...]
     denominator: Tuple[PathToken, ...]
 
 
 @dataclass(frozen=True)
 class RangeCheck:
+    """Parsed normalized contract for one claim-range check."""
     check_id: str
     file: str
     path: Optional[Tuple[PathToken, ...]]
@@ -140,6 +142,7 @@ def _parse_check(index: int, value: Any) -> RangeCheck:
 
 
 def load_checks(config_path: Path) -> Tuple[RangeCheck, ...]:
+    """Load and validate the claim-range config into normalized check objects."""
     payload = json.loads(config_path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("Claim range config must be a JSON object.")
@@ -191,6 +194,7 @@ def run_checks(
     *,
     repo_root: Path = REPO_ROOT,
 ) -> Tuple[list[str], dict[str, Any]]:
+    """Execute configured checks against artifact JSON and return failures and summary."""
     errors: list[str] = []
     summary_rows: list[dict[str, Any]] = []
     json_cache: dict[Path, Any] = {}
@@ -284,6 +288,7 @@ def run_checks(
 
 
 def main(argv: Optional[list[str]] = None) -> int:
+    """Run claim-range guard and optionally write summary JSON."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--config",
