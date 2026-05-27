@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Balance Of Plant
+"""Balance-of-plant performance model for conversion efficiency and parasitic loads."""
 import matplotlib.pyplot as plt
 
 from scpn_fusion.engineering.thermal_hydraulics import CoolantLoop
