@@ -67,6 +67,20 @@ def _display_path(path: Path) -> str:
 
 
 def verify_manifest(*, dist_dir: Path, manifest: Path) -> dict[str, Any]:
+    """Verify all declared checksums in a SHA256SUMS-style manifest.
+
+    Parameters
+    ----------
+    dist_dir:
+        Directory containing release artifacts.
+    manifest:
+        Manifest path with ``<sha256> <filename>`` lines.
+
+    Returns
+    -------
+    dict[str, Any]
+        Verification summary including pass/fail state and per-file metadata.
+    """
     entries = _parse_manifest(manifest)
     failures: list[str] = []
     verified: list[dict[str, Any]] = []
@@ -109,6 +123,7 @@ def verify_manifest(*, dist_dir: Path, manifest: Path) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entrypoint for checksum verification and optional summary writeout."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dist-dir", default=str(DEFAULT_DIST))
     parser.add_argument("--manifest", default=str(DEFAULT_MANIFEST))
