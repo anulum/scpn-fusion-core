@@ -145,8 +145,13 @@ SCENARIO_DURATIONS = {
 class ControllerProtocol(Protocol):
     """Minimal controller interface."""
 
-    def step(self, error: float, dt: float) -> float: ...
-    def reset(self) -> None: ...
+    def step(self, error: float, dt: float) -> float:
+        """Apply one control step for the supplied tracking error."""
+        ...
+
+    def reset(self) -> None:
+        """Reset internal state to initial conditions."""
+        ...
 
 
 # -------------------------------------------------------------------
@@ -177,6 +182,7 @@ class PIDController:
         self._first_step = True
 
     def step(self, error: float, dt: float) -> float:
+        """Compute one control output from tracking error."""
         e = float(error)
         dt = float(dt)
 
@@ -200,6 +206,7 @@ class PIDController:
         return u_sat
 
     def reset(self) -> None:
+        """Reset PID internal state."""
         self._integral = 0.0
         self._prev_error = 0.0
         self._first_step = True
@@ -262,6 +269,7 @@ class LQRRobustController:
         self._is_stable = bool(np.all(np.real(cl_eigs) < 0))
 
     def step(self, error: float, dt: float) -> float:
+        """Update observer/state estimate and return robust control command."""
         z_meas = -float(error)
         y = np.array([z_meas])
         y_hat = self.C @ self.x_hat
@@ -278,10 +286,12 @@ class LQRRobustController:
         return u
 
     def reset(self) -> None:
+        """Reset observer state to zero."""
         self.x_hat = np.zeros(self.n)
 
     @property
     def is_stable(self) -> bool:
+        """Return whether closed-loop pole set is strictly stable."""
         return self._is_stable
 
 
@@ -351,6 +361,7 @@ class MPCController:
         self._cached_dt = dt
 
     def step(self, error: float, dt: float) -> float:
+        """Compute MPC control action from the current error measurement."""
         e = float(error)
         dt_f = float(dt)
 
@@ -370,6 +381,7 @@ class MPCController:
         return float(np.clip(u_raw, -self.u_max, self.u_max))
 
     def reset(self) -> None:
+        """Clear controller recursion state."""
         self._prev_error = 0.0
         self._first_step = True
 
@@ -406,11 +418,13 @@ class SNNControllerWrapper:
         self._gain = float(gain)
 
     def step(self, error: float, dt: float) -> float:
+        """Execute one SNN control step and scale raw firing-rate output."""
         # The pool expects a raw error signal; we scale output for plant
         raw = self._pool.step(float(error))
         return raw * self._gain
 
     def reset(self) -> None:
+        """Reset SNN history and membrane voltages."""
         # Re-initialise spike history
         for _ in range(self._pool.window_size):
             self._pool.history_pos.append(0)
@@ -461,13 +475,16 @@ class LinearPlant:
 
     @property
     def z(self) -> float:
+        """Current vertical position state."""
         return float(self.x[0])
 
     @property
     def dz(self) -> float:
+        """Current vertical velocity state."""
         return float(self.x[1])
 
     def reset(self, x0: Optional[np.ndarray] = None) -> None:
+        """Reset plant state to equilibrium or a provided initial vector."""
         if x0 is not None:
             self.x = np.array(x0, dtype=float)
         else:
@@ -579,6 +596,7 @@ class ScenarioMetrics:
     stable: bool  # True if plant stayed bounded
 
     def to_dict(self) -> Dict[str, Any]:
+        """Serialize metrics into a JSON-serialisable dictionary."""
         return asdict(self)
 
 

@@ -54,6 +54,7 @@ def _run_case(
 
 
 def run_benchmark() -> dict[str, Any]:
+    """Evaluate EPED domain boundaries on in-domain and out-of-domain cases."""
     base_model = {
         "R0": 6.2,
         "a": 2.0,
@@ -147,6 +148,11 @@ def run_benchmark() -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the EPED benchmark report as markdown.
+
+    Produces a compact table with contract pass/fail signals for both
+    in-domain and extrapolated cases.
+    """
     g = report["eped_domain_contract_benchmark"]
     lines = [
         "# EPED Domain Contract Benchmark",
@@ -172,6 +178,10 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main() -> int:
+    """Run EPED domain contract benchmark and write JSON + markdown artifacts.
+
+    Returns ``0`` on pass and ``2`` on strict mode failure.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output-json",
