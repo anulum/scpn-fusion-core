@@ -82,6 +82,11 @@ class LyapunovGuard:
         self._consecutive = 0
 
     def reset(self) -> None:
+        """Reset internal detector state.
+
+        Clears the Lyapunov window and violation counter so the next call to
+        :meth:`check` starts a fresh stability trajectory.
+        """
         self._v_buffer.clear()
         self._consecutive = 0
 

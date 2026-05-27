@@ -22,6 +22,18 @@ class FusionJSONFormatter(logging.Formatter):
     """
 
     def format(self, record: logging.LogRecord) -> str:
+        """Serialize a ``LogRecord`` into a deterministic JSON payload.
+
+        The payload includes UTC timestamp, logger level, module provenance, source
+        position, rendered message, optional physics context, and optional
+        exception tracebacks.  This guarantees that log emitters on control-path
+        automation can be streamed into machine parsers without schema guessing.
+
+        Returns
+        -------
+        str
+            Compact JSON document for the incoming record.
+        """
         log_data: Dict[str, Any] = {
             "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
             "level": record.levelname,

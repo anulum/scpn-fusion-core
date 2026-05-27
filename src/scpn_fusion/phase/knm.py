@@ -80,6 +80,13 @@ class KnmSpec:
 
     @property
     def L(self) -> int:
+        """Number of Kuramoto layers in this specification.
+
+        Returns
+        -------
+        int
+            Number of sources/targets (matrix width and height) for ``K``.
+        """
         return int(np.asarray(self.K).shape[0])
 
 

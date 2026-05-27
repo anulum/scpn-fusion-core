@@ -55,6 +55,12 @@ class TrajectoryRecorder:
     Psi_global: list[float] = field(default_factory=list)
 
     def record(self, snap: dict) -> None:
+        """Append one validated monitor snapshot to in-memory trace buffers.
+
+        Required fields are normalised and retained as lists for fast post-run
+        export. Missing required keys are intentionally surfaced as ``KeyError``/
+        ``TypeError`` to fail fast in live pipelines.
+        """
         self.R_global.append(snap["R_global"])
         self.R_layer.append(snap["R_layer"])
         self.V_global.append(snap["V_global"])
@@ -65,6 +71,11 @@ class TrajectoryRecorder:
         self.Psi_global.append(snap["Psi_global"])
 
     def clear(self) -> None:
+        """Clear all trajectory buffers.
+
+        This is intentionally O(n) in retained length and should be used after
+        :meth:`record` output has been persisted (CSV/NPZ/HDF5 path).
+        """
         for lst in (
             self.R_global,
             self.R_layer,
@@ -79,6 +90,7 @@ class TrajectoryRecorder:
 
     @property
     def n_ticks(self) -> int:
+        """Number of recorded trajectory ticks."""
         return len(self.R_global)
 
 
@@ -241,6 +253,11 @@ class RealtimeMonitor:
 
     @property
     def recorder(self) -> TrajectoryRecorder:
+        """Return the active recorder for read-only callers.
+
+        The recorder exposes mutable internals; callers should avoid in-place
+        mutation outside explicit reset workflows.
+        """
         return self._recorder
 
     def reset(self, seed: int = 42) -> None:

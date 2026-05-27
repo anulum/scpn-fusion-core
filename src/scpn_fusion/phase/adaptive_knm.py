@@ -140,6 +140,14 @@ class AdaptiveKnmEngine:
 
     @property
     def K_current(self) -> NDArray[np.float64]:
+        """Current coupling matrix used for the next UPDE tick.
+
+        Returns
+        -------
+        NDArray[np.float64]
+            A copy of the currently active symmetric non-negative ``K`` matrix
+            after adaptation, rate limiting, and invariant projection.
+        """
         return self._K_current.copy()
 
     @property

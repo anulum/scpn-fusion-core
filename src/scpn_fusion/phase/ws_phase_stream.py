@@ -100,6 +100,12 @@ class PhaseStreamServer:
 
 
 def main() -> None:
+    """Run the async WebSocket phase-stream server from CLI.
+
+    The server publishes one JSON snapshot per active WebSocket client per tick.
+    Use :mod:`argparse` options to control topology, discretisation, and
+    coupling intensity for reproducible replay.
+    """
     import argparse
 
     parser = argparse.ArgumentParser(description="SCPN Phase Sync WebSocket Stream")

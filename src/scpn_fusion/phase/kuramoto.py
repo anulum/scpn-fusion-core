@@ -76,6 +76,21 @@ class GlobalPsiDriver:
     mode: str = "external"
 
     def resolve(self, theta: FloatArray, psi_external: float | None) -> float:
+        """Resolve the global driver phase Ψ for the current tick.
+
+        Parameters
+        ----------
+        theta:
+            Current oscillator phase vector.
+        psi_external:
+            Required when ``mode`` is ``"external"`` and interpreted as carrier
+            phase injected from supervisory policy.
+
+        Returns
+        -------
+        float
+            The resolved ``Psi`` to be used by :func:`kuramoto_sakaguchi_step`.
+        """
         if self.mode == "external":
             if psi_external is None:
                 raise ValueError("psi_external required when mode='external'")
