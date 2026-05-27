@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Stability Analyzer
+"""Reduced-order equilibrium force and MHD stability diagnostics."""
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -116,6 +117,7 @@ class StabilityAnalyzer:
         return F_total_R, F_total_Z, n_idx
 
     def analyze_stability(self, R_target=6.2, Z_target=0.0):
+        """Run force-balance linearization and print eigenvalue stability summary."""
         print("--- EIGENVALUE STABILITY ANALYSIS ---")
         print(f"Checking Point: R={R_target}m, Z={Z_target}m")
 
@@ -232,6 +234,7 @@ class StabilityAnalyzer:
         return {"q_profile": qp, "mercier": mr, "ballooning": br}
 
     def plot_stability_landscape(self, R0, Z0):
+        """Generate and persist a radial-force contour landscape around (R0, Z0)."""
         # Scan grid around target
         r_min = max(1e-3, R0 - 2)
         r_range = np.linspace(r_min, R0 + 2, 50)
