@@ -22,6 +22,7 @@ from scpn_fusion.control.fusion_nmpc_jax import get_nmpc_controller
 
 
 def run_benchmark():
+    """Benchmark NMPC planning latency and tracking cost against baseline setup."""
     print("--- NMPC vs Linear Baseline Benchmark ---")
 
     # 1. Setup
