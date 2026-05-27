@@ -62,6 +62,7 @@ class PaschenBreakdown:
 
 @dataclass
 class AvalancheResult:
+    """Avalanche trajectory outputs."""
     ne_trace: np.ndarray
     Te_trace: np.ndarray
     time_to_full_ionization_ms: float
@@ -133,6 +134,7 @@ class TownsendAvalanche:
 
 @dataclass
 class BurnThroughResult:
+    """Burn-through integration outputs."""
     Te_trace: np.ndarray
     success: bool
     time_to_burn_through_ms: float
@@ -296,6 +298,7 @@ class StartupSequence:
 
 
 class StartupPhase(Enum):
+    """Phase states for the startup finite-state controller."""
     GAS_PUFF = auto()
     BREAKDOWN = auto()
     BURN_THROUGH = auto()

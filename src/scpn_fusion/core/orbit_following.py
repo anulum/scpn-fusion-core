@@ -122,6 +122,7 @@ class OrbitClassifier:
         R_wall: float,
         Z_wall_upper: float,
     ) -> str:
+        """Classify orbit as lost, trapped, or passing from traces."""
         # Check lost
         if (
             np.any(orbit_R > R_wall)
