@@ -122,6 +122,23 @@ def process(
     regime_balanced: bool = False,
     gb_normalized: bool = True,
 ) -> None:
+    """Convert raw QLKNN-10D files into shuffled train/val/test NPZ splits.
+
+    The loader reads supported HDF5/NetCDF files, applies deterministic filtering
+    and augmentation, and persists ``train.npz``, ``val.npz` and ``test.npz``
+    to ``output_dir``.
+
+    Args:
+        input_dir: Directory containing source ``.h5/.hdf5/.nc`` payloads.
+        output_dir: Destination directory for ``train.npz``/``val.npz``/``test.npz``.
+        max_samples: Cap on total samples after filtering.
+        seed: RNG seed for subsampling and permutation.
+        regime_balanced: Reserved for future regime-balancing mode.
+        gb_normalized: If true, keeps GB-normalized flux outputs.
+
+    Returns:
+        None. Writes NPZ artifacts to ``output_dir``.
+    """
     rng = np.random.default_rng(seed)
     fmt, files = _detect_format(input_dir)
     total_rows = sum(_get_total_rows_hdf5(f) for f in files)
@@ -232,6 +249,14 @@ def process(
 
 
 def main():
+    """CLI entrypoint for converting QLKNN-10D data to training NPZ.
+
+    Returns:
+        ``None``. Uses ``sys.exit`` via normal script execution.
+
+    Raises:
+        SystemExit: If CLI argument parsing fails.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-samples", type=int, default=500000)
     parser.add_argument(
