@@ -227,6 +227,10 @@ def _write_markdown(report: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    """Run Grad-Shafranov current-closure benchmark and write reports.
+
+    Returns ``0`` when all convergence and current-closure gates are satisfied.
+    """
     thresholds = {
         "delta_star_max_abs_error": 1.0e-10,
         "current_density_max_relative_error": 1.0e-11,
