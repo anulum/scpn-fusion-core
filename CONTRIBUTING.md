@@ -245,7 +245,7 @@ python tools/run_python_preflight.py --gate all
 ### Local CI-First Rules (Mandatory)
 
 1. Never push without a green local preflight gate (`release` at minimum).
-2. Never use `--no-verify` to bypass hooks except for incident recovery; if used, document reason in `docs/CI_FAILURE_LEDGER.md`.
+2. Never use `--no-verify` to bypass hooks except for incident recovery; if used, document reason in `docs/internal/CI_FAILURE_LEDGER.md`.
 3. Treat `drift detected` and `manifest is stale` as local process failures; regenerate artifacts and re-run preflight before push.
 4. Treat infrastructure-only errors (e.g., upstream HTTP 500 from GitHub services) as transient and re-run CI before changing code.
 5. Keep `core.hooksPath=.githooks` configured in every local clone.

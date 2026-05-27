@@ -22,7 +22,7 @@ This registry tracks the high-impact enhancement backlog imported after Phase 2 
 | SCPN compiler enhancement plan | 25 |
 | Total imported Phase 3 backlog | 85 |
 
-Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks complete (`Done`).
+Current tracker baseline (`docs/internal/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks complete (`Done`).
 
 ## Prioritization Guardrails
 
@@ -44,7 +44,7 @@ Current tracker baseline (`docs/PHASE2_ADVANCED_RFC_TRACKER.md`): 20/20 tasks co
 | S2-004 | P1 | Control | Add robust model-loading fallback path in disruption predictor | `src/scpn_fusion/control/disruption_predictor.py`, `tests/` | Missing-model path no longer crashes and emits deterministic fallback score | `python -m pytest tests/test_gneu_02_anomaly.py -v` |
 | S2-005 | P1 | Nuclear | Increase PWI coverage for angle-energy invariants + redeposition bounds | `src/scpn_fusion/nuclear/pwi_erosion.py`, `tests/test_pwi_erosion.py` | Invariants captured in tests with deterministic tolerances | `python -m pytest tests/test_pwi_erosion.py -v` |
 | S2-006 | P1 | Nuclear | Extend TEMHD solver regression with pathological edge cases | `src/scpn_fusion/nuclear/temhd_peltier.py`, `tests/test_temhd_peltier.py` | Singular/near-singular stability behavior documented and tested | `python -m pytest tests/test_temhd_peltier.py -v` |
-| S2-007 | P2 | Docs | Normalize path mappings for all imported tasks to repository modules | `docs/3d_gaps.md`, `docs/PHASE3_EXECUTION_REGISTRY.md` | Every queued task maps to real paths only | Docs review |
+| S2-007 | P2 | Docs | Normalize path mappings for all imported tasks to repository modules | `docs/3d_gaps.md`, `docs/internal/PHASE3_EXECUTION_REGISTRY.md` | Every queued task maps to real paths only | Docs review |
 | S2-008 | P2 | Release | Add queue-level release gate summary for S2 | `validation/gdep_05_release_readiness.py`, `tests/test_gdep_05_release_readiness.py` | Report includes S2 queue health section without breaking current checks | `python -m pytest tests/test_gdep_05_release_readiness.py -v` |
 
 ## Sprint S3 Execution Queue (Ordered)

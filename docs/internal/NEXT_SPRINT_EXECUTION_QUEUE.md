@@ -28,7 +28,7 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 | S1-002 | P0 | Implement toroidal asymmetry instability observables (`G3D-07`) | `src/scpn_fusion/core/fieldline_3d.py`, `src/scpn_fusion/control/disruption_predictor.py`, `scpn-fusion-rs/crates/fusion-ml/src/disruption.rs` | Observable vector includes toroidal asymmetry terms and is consumed by disruption path in both Python and Rust lanes | `python -m pytest -v`, `cargo test -p fusion-ml` |
 | S1-003 | P1 | Harden 3D geometry extraction regressions | `src/scpn_fusion/core/geometry_3d.py`, `tests/test_geometry_3d.py`, `.github/workflows/ci.yml` | LCFS extraction robustness tests include low-point edge cases; CI validates both axisymmetric and VMEC-like smoke paths | `python -m pytest tests/test_geometry_3d.py -v`, `python examples/run_3d_flux_quickstart.py --toroidal 12 --poloidal 12 --output artifacts/ci_3d_smoke.obj` |
 | S1-004 | P1 | Add control fault/noise resilience campaign baseline (`GDEP-04`, scoped) | `src/scpn_fusion/control/disruption_predictor.py`, `scpn-fusion-rs/crates/fusion-control/src/digital_twin.rs`, `scpn-fusion-rs/crates/fusion-control/src/mpc.rs`, `validation/` | Deterministic synthetic fault/noise campaign with summary metrics and regression thresholds | `python -m pytest -v`, `cargo test -p fusion-control` |
-| S1-005 | P2 | Backlog normalization RFC for advanced tracks | `docs/3d_gaps.md`, `docs/PHASE2_ADVANCED_RFC_TEMPLATE.md` | RFC template added; each deferred item has required data/licensing/benchmark checklist | Docs review + CI docs job |
+| S1-005 | P2 | Backlog normalization RFC for advanced tracks | `docs/3d_gaps.md`, `docs/internal/PHASE2_ADVANCED_RFC_TEMPLATE.md` | RFC template added; each deferred item has required data/licensing/benchmark checklist | Docs review + CI docs job |
 
 ## Progress Update (2026-02-13)
 
@@ -36,7 +36,7 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - Completed: `S1-002` (toroidal asymmetry observables + disruption-path integration in Python and Rust).
 - Completed: `S1-003` (added low-point LCFS regression coverage and VMEC-like geometry CI smoke coverage).
 - Completed: `S1-004` (deterministic control fault/noise resilience baseline in Python + Rust with campaign reporting and thresholds).
-- Completed: `S1-005` (RFC template + tracker: `docs/PHASE2_ADVANCED_RFC_TEMPLATE.md`, `docs/PHASE2_ADVANCED_RFC_TRACKER.md`).
+- Completed: `S1-005` (RFC template + tracker: `docs/internal/PHASE2_ADVANCED_RFC_TEMPLATE.md`, `docs/internal/PHASE2_ADVANCED_RFC_TRACKER.md`).
 - Completed: `GAI-01` (synthetic GyroSwin-like turbulence surrogate benchmark lane + strict RMSE/speedup validation).
 - Completed: `GAI-02` (synthetic TORAX-hybrid realtime loop lane + NSTX-U-like disturbance campaign thresholds).
 - Completed: `GAI-03` (HEAT-ML magnetic-shadow surrogate integrated into MVR scanner with strict runtime/accuracy gates).
@@ -53,7 +53,7 @@ Sprint theme: close baseline 3D physics gaps without destabilizing CI.
 - Completed: `GPHY-04` (reduced IGA/NURBS boundary lane with smooth first-wall contour generation and regression checks).
 - Completed: `GPHY-05` (latency-aware control lane with vector OU noise, actuator delay-line, and lagged MPC rollout).
 - Completed: `GPHY-06` (reduced runtime regime-specialized kernel cache/hot-swap lane in `fusion-core`).
-- Next active task: moved to `docs/PHASE3_EXECUTION_REGISTRY.md` (S4 baseline queue closed).
+- Next active task: moved to `docs/internal/PHASE3_EXECUTION_REGISTRY.md` (S4 baseline queue closed).
 
 ## Explicitly Deferred (Not In Sprint S1)
 

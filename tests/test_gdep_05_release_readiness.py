@@ -23,7 +23,7 @@ SPEC.loader.exec_module(gdep_05_release_readiness)
 
 def test_tracker_parser_extracts_known_statuses() -> None:
     statuses = gdep_05_release_readiness.parse_tracker_statuses(
-        ROOT / "docs" / "PHASE2_ADVANCED_RFC_TRACKER.md"
+        ROOT / "docs" / "internal" / "PHASE2_ADVANCED_RFC_TRACKER.md"
     )
     assert statuses.get("GDEP-05") == "Done"
     assert statuses.get("GDEP-03") == "Done"
@@ -31,7 +31,7 @@ def test_tracker_parser_extracts_known_statuses() -> None:
 
 def test_phase3_parser_extracts_s2_s3_s4_statuses() -> None:
     statuses = gdep_05_release_readiness.parse_phase3_active_statuses(
-        ROOT / "docs" / "PHASE3_EXECUTION_REGISTRY.md"
+        ROOT / "docs" / "internal" / "PHASE3_EXECUTION_REGISTRY.md"
     )
     assert statuses.get("S2-001") == "Completed"
     assert statuses.get("S2-008") in {"Completed", "In progress"}

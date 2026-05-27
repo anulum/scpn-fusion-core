@@ -62,7 +62,7 @@ The following high-impact instruction packs have been normalized to existing rep
 
 Notes:
 - Source instruction documents under `03_CODE/SCPN-Fusion-Core/src/scpn_fusion/*/Enhancement Plan*.md` are local coordination inputs and are not mirrored to GitHub.
-- Execution queue authority remains `docs/PHASE3_EXECUTION_REGISTRY.md`.
+- Execution queue authority remains `docs/internal/PHASE3_EXECUTION_REGISTRY.md`.
 
 ## Restructured Phase 2 Tracks
 
@@ -101,8 +101,8 @@ Notes:
 
 ## Next Sprint Queue
 
-Execution queue is defined in `docs/NEXT_SPRINT_EXECUTION_QUEUE.md`.
-Advanced-task RFC tracking is maintained in `docs/PHASE2_ADVANCED_RFC_TRACKER.md`.
+Execution queue is defined in `docs/internal/NEXT_SPRINT_EXECUTION_QUEUE.md`.
+Advanced-task RFC tracking is maintained in `docs/internal/PHASE2_ADVANCED_RFC_TRACKER.md`.
 
 Only items in that queue are considered in-sprint active work.
 

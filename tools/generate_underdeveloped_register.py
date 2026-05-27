@@ -90,7 +90,7 @@ RELEASE_CLAIM_SURFACES = {
 NARRATIVE_DOC_PREFIXES = (
     "docs/promotions/",
     "docs/rfc/",
-    "docs/PHASE3_EXECUTION_REGISTRY.md",
+    "docs/internal/PHASE3_EXECUTION_REGISTRY.md",
     "docs/DEEP_AUDIT_AND_SOTA_PLAN_",
     "docs/HARDENING_30_DAY_EXECUTION_PLAN.md",
     "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
@@ -384,7 +384,7 @@ def _is_marker_suppressed(
         return True
 
     # Execution registry entries describe completed hardening items.
-    if rel_path == "docs/PHASE3_EXECUTION_REGISTRY.md":
+    if rel_path == "docs/internal/PHASE3_EXECUTION_REGISTRY.md":
         return True
 
     # Audit/governance tools that reference marker names as strings are

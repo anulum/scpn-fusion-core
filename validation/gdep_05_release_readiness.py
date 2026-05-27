@@ -19,8 +19,8 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TRACKER_PATH = ROOT / "docs" / "PHASE2_ADVANCED_RFC_TRACKER.md"
-PHASE3_QUEUE_PATH = ROOT / "docs" / "PHASE3_EXECUTION_REGISTRY.md"
+TRACKER_PATH = ROOT / "docs" / "internal" / "PHASE2_ADVANCED_RFC_TRACKER.md"
+PHASE3_QUEUE_PATH = ROOT / "docs" / "internal" / "PHASE3_EXECUTION_REGISTRY.md"
 CHANGELOG_PATH = ROOT / "CHANGELOG.md"
 
 REQUIRED_DONE_TASKS = (
@@ -46,6 +46,7 @@ REQUIRED_CHANGELOG_PHRASE = (
 
 
 def parse_tracker_statuses(path: Path) -> dict[str, str]:
+    """Parse task-status rows from the phase-2 tracker markdown table."""
     statuses: dict[str, str] = {}
     pattern = re.compile(r"^\|\s*([A-Z]+-\d{2})\s*\|\s*([^|]+?)\s*\|")
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -59,6 +60,7 @@ def parse_tracker_statuses(path: Path) -> dict[str, str]:
 
 
 def parse_phase3_active_statuses(path: Path) -> dict[str, str]:
+    """Parse Phase-3 active task states from the execution registry markdown list."""
     statuses: dict[str, str] = {}
     pattern = re.compile(r"^\-\s*(Completed|In progress):\s*`(S\d-\d{3})`")
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -94,6 +96,7 @@ def run_campaign(
     phase3_queue_path: Path = PHASE3_QUEUE_PATH,
     changelog_path: Path = CHANGELOG_PATH,
 ) -> dict[str, Any]:
+    """Evaluate tracker/changelog readiness gate across required release tasks."""
     t0 = time.perf_counter()
     statuses = parse_tracker_statuses(tracker_path)
     phase3_statuses = parse_phase3_active_statuses(phase3_queue_path)
@@ -132,6 +135,7 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
+    """Generate the full GDEP-05 report payload from a campaign run."""
     return {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "gdep_05": run_campaign(**kwargs),
@@ -139,6 +143,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render the GDEP-05 release-readiness report as markdown."""
     g = report["gdep_05"]
     lines = [
         "# GDEP-05 Release Readiness",
@@ -177,6 +182,7 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments for release-readiness execution."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tracker-path", default=str(TRACKER_PATH))
     parser.add_argument("--phase3-queue-path", default=str(PHASE3_QUEUE_PATH))
@@ -194,6 +200,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point for running GDEP-05 and exporting JSON/Markdown outputs."""
     args = parse_args(argv)
     report = generate_report(
         tracker_path=Path(args.tracker_path),

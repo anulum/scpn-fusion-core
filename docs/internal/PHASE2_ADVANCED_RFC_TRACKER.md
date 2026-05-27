@@ -8,7 +8,7 @@ License: GNU AGPL v3 | Commercial licensing available
 
 # Phase 2 Advanced RFC Tracker
 
-Use together with `docs/PHASE2_ADVANCED_RFC_TEMPLATE.md`.
+Use together with `docs/internal/PHASE2_ADVANCED_RFC_TEMPLATE.md`.
 
 Legend:
 - `Pending` = not ready for implementation

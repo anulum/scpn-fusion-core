@@ -24,7 +24,7 @@ Source: `SCPN Fusion Core with Enhanced 3D Capabilities.md`
 | P1-002 | Add deterministic 3D unit tests | Done | `tests/test_geometry_3d.py` |
 | P1-003 | Add "run in 5 mins" 3D quickstart | Done | `examples/run_3d_flux_quickstart.py` |
 | P1-004 | Document 3D extension gaps | Done | `docs/3d_gaps.md` |
-| P1-005 | Define sequenced Phase 1 plan | Done | `docs/PHASE1_3D_EXECUTION_PLAN.md` |
+| P1-005 | Define sequenced Phase 1 plan | Done | `docs/internal/PHASE1_3D_EXECUTION_PLAN.md` |
 
 ## Phase 1 Follow-Up Items (Executed)
 
@@ -42,7 +42,7 @@ Source: `SCPN Fusion Core with Enhanced 3D Capabilities.md`
 ## Next Queue (Phase 1)
 
 All currently scoped Phase 1 items (`P1-001` through `P1-013`) are complete.
-Phase 2 execution is tracked in `docs/NEXT_SPRINT_EXECUTION_QUEUE.md` and normalized by `docs/3d_gaps.md`.
+Phase 2 execution is tracked in `docs/internal/NEXT_SPRINT_EXECUTION_QUEUE.md` and normalized by `docs/3d_gaps.md`.
 
 ## Verification Commands
 
