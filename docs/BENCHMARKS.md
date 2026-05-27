@@ -471,10 +471,11 @@ is benchmarked with deterministic reconstruction checks:
 
 ### Vertical-Control Replay Contract
 
-The vertical-control replay benchmark exercises deterministic RZIP-backed
-vertical-axis plant dynamics across PID, super-twisting, and repository
-sliding-mode controller lanes, with a `no_control` diagnostic lane retained
-to prove that the acceptance gate is sensitive to missing control action.
+The vertical-control replay benchmark is a deterministic replay scaffold
+exercising reduced-order RZIP-backed vertical-axis plant dynamics across
+PID, super-twisting, and repository sliding-mode controller lanes, with a
+`no_control` diagnostic lane retained to prove that the acceptance gate is
+sensitive to missing control action.
 
 | Contract | Acceptance evidence | Command |
 |----------|---------------------|---------|

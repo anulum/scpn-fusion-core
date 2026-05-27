@@ -558,6 +558,13 @@ jobs:
           python validation/benchmark_sparc_geqdsk_rmse.py
           python validation/benchmark_vs_freegs.py --force-solovev
           python validation/benchmark_disruption_transfer_generalization.py --strict
+          python validation/vertical_control_replay_benchmark.py \
+            --output-json artifacts/vertical_control_replay_benchmark.json \
+            --output-md artifacts/vertical_control_replay_benchmark.md
+          python validation/vertical_control_replay_benchmark.py \
+            --all-profiles \
+            --output-json artifacts/vertical_control_replay_profiles.json \
+            --output-md artifacts/vertical_control_replay_profiles.md
       - name: Verify provenance fields
         run: |
           python - <<'PY'
@@ -568,6 +575,8 @@ jobs:
           sparc = json.loads(Path("artifacts/sparc_geqdsk_rmse_benchmark.json").read_text(encoding="utf-8"))
           freegs = json.loads(Path("artifacts/freegs_benchmark.json").read_text(encoding="utf-8"))
           transfer = json.loads(Path("artifacts/disruption_transfer_generalization.json").read_text(encoding="utf-8"))
+          vertical = json.loads(Path("artifacts/vertical_control_replay_benchmark.json").read_text(encoding="utf-8"))
+          vertical_profiles = json.loads(Path("artifacts/vertical_control_replay_profiles.json").read_text(encoding="utf-8"))
 
           torax_cases = torax.get("cases", [])
           sparc_cases = sparc.get("cases", [])
@@ -604,6 +613,14 @@ jobs:
                   raise SystemExit(f"transfer source_group missing key: {key}")
               if key not in transfer["target_group"]:
                   raise SystemExit(f"transfer target_group missing key: {key}")
+          if "vertical_control_replay_benchmark" not in vertical:
+              raise SystemExit("vertical_control_replay_benchmark payload missing section")
+          if "vertical_control_replay_profile_suite" not in vertical_profiles:
+              raise SystemExit("vertical_control_replay_profiles payload missing profile suite section")
+          if not vertical["vertical_control_replay_benchmark"]["passes_thresholds"]:
+              raise SystemExit("vertical control benchmark did not pass acceptance thresholds")
+          if not vertical_profiles["vertical_control_replay_profile_suite"]["all_profiles_pass"]:
+              raise SystemExit("vertical control profile suite did not pass acceptance thresholds")
 
           print(
               "Benchmark provenance OK: "
@@ -611,6 +628,12 @@ jobs:
               f"sparc_cases={len(sparc_cases)} "
               f"freegs_cases={len(freegs_cases)} "
               f"transfer_pass={transfer.get('passes')}"
+          )
+          print(
+              "Vertical control replay OK: "
+              f"passes={vertical['vertical_control_replay_benchmark']['passes_thresholds']}, "
+              f"profiles={len(vertical_profiles['vertical_control_replay_profile_suite']['profile_ids'])}, "
+              f"all_profiles_pass={vertical_profiles['vertical_control_replay_profile_suite']['all_profiles_pass']}"
           )
           PY
       - name: Fallback budget guard
@@ -632,6 +655,10 @@ jobs:
             artifacts/fallback_budget_summary.json
             artifacts/disruption_transfer_generalization.json
             artifacts/disruption_transfer_generalization.md
+            artifacts/vertical_control_replay_benchmark.json
+            artifacts/vertical_control_replay_benchmark.md
+            artifacts/vertical_control_replay_profiles.json
+            artifacts/vertical_control_replay_profiles.md
 
   runtime-parity-perf-gate:
     name: Runtime Parity + Perf Gate
