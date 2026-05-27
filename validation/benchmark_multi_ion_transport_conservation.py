@@ -49,6 +49,7 @@ def run_benchmark(
     dt_s: float = 0.1,
     p_aux_mw: float = 30.0,
 ) -> dict[str, Any]:
+    """Run multi-ion transport conservation contract and return pass metrics."""
     cfg_path = Path(config_path) if config_path is not None else ROOT / "iter_config.json"
     solver = TransportSolver(str(cfg_path), multi_ion=True)
     solver.Ti = 5.0 * (1.0 - solver.rho**2)
@@ -145,6 +146,7 @@ def run_benchmark(
 
 
 def render_markdown(report: dict[str, Any]) -> str:
+    """Render a markdown summary for the multi-ion transport report."""
     g = report["multi_ion_transport_conservation_benchmark"]
     m = g["metrics"]
     t = g["thresholds"]
@@ -180,6 +182,10 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def main() -> int:
+    """Execute the multi-ion transport benchmark and persist outputs.
+
+    Returns ``0`` on pass, ``1`` on failure, and ``2`` for strict-mode failure.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default=str(ROOT / "iter_config.json"))
     parser.add_argument("--steps", type=int, default=30)
