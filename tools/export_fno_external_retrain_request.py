@@ -88,6 +88,7 @@ def _extract_retrain_context(report: dict[str, Any], *, report_found: bool) -> d
 
 
 def build_request_payload(report: dict[str, Any], *, report_found: bool) -> dict[str, Any]:
+    """Build a structured external-retrain request payload from validation context."""
     version = _load_project_version()
     return {
         "schema_version": "1.0",
@@ -119,6 +120,7 @@ def build_request_payload(report: dict[str, Any], *, report_found: bool) -> dict
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Generate and persist external FNO retrain request JSON payload."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--validation-report", default=str(DEFAULT_VALIDATION_REPORT))
     parser.add_argument("--output-json", default=str(DEFAULT_OUTPUT))

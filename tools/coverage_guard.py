@@ -25,6 +25,7 @@ DEFAULT_THRESHOLDS = REPO_ROOT / "tools" / "coverage_guard_thresholds.json"
 
 @dataclass(frozen=True)
 class CoverageSummary:
+    """Parsed coverage summary extracted from Cobertura XML for gating decisions."""
     line_rate_pct: float
     branch_rate_pct: float | None
     file_line_rate_pct: dict[str, float]
@@ -45,6 +46,7 @@ def _resolve(path_value: str) -> Path:
 
 
 def _validate_percent(value: float, *, label: str) -> float:
+    """Validate and normalise percentage-like numeric inputs."""
     numeric = float(value)
     if not math.isfinite(numeric):
         raise ValueError(f"{label} must be finite.")
@@ -76,6 +78,7 @@ def _parse_condition_coverage(value: str) -> tuple[int, int] | None:
 
 
 def load_coverage(path: Path) -> CoverageSummary:
+    """Load Cobertura XML and return normalized coverage rates and counters."""
     if not path.exists():
         raise FileNotFoundError(f"Coverage XML not found: {path}")
     root = ET.parse(path).getroot()
@@ -174,6 +177,7 @@ def load_coverage(path: Path) -> CoverageSummary:
 
 
 def load_thresholds(path: Path) -> dict[str, object]:
+    """Load and validate JSON coverage threshold configuration."""
     if not path.exists():
         raise FileNotFoundError(f"Coverage threshold config not found: {path}")
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -202,6 +206,7 @@ def load_thresholds(path: Path) -> dict[str, object]:
 
 
 def evaluate(summary: CoverageSummary, thresholds: dict[str, object]) -> list[str]:
+    """Evaluate all configured thresholds and return a list of failure messages."""
     failures: list[str] = []
 
     global_min = float(thresholds["global_min_line_rate"])
@@ -278,6 +283,7 @@ def evaluate(summary: CoverageSummary, thresholds: dict[str, object]) -> list[st
 
 
 def _write_summary(path: Path, summary: CoverageSummary) -> None:
+    """Serialize coverage summary payload for downstream artifact checks."""
     payload = {
         "line_rate_pct": summary.line_rate_pct,
         "branch_rate_pct": summary.branch_rate_pct,
@@ -295,6 +301,7 @@ def _write_summary(path: Path, summary: CoverageSummary) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run coverage parsing/evaluation and print pass-fail results."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--coverage-xml",

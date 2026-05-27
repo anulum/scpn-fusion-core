@@ -253,6 +253,7 @@ def check(output_dir: Path) -> bool:
 
 
 def main() -> None:
+    """Run dataset download or invoke offline verification depending on flags."""
     parser = argparse.ArgumentParser(description="Download the QLKNN-10D dataset from Zenodo.")
     parser.add_argument(
         "--output-dir",

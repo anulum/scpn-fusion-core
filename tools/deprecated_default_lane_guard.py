@@ -59,6 +59,7 @@ def evaluate(
     default_modes: list[str],
     release_commands: list[str],
 ) -> dict[str, Any]:
+    """Validate default and public lane specs against deprecated FNO policy."""
     default_modules = [str(mode_specs.get(mode, {}).get("module", "")) for mode in default_modes]
     default_has_deprecated = any(
         _contains_deprecated_fno_token(module) for module in default_modules
@@ -132,6 +133,7 @@ def _load_release_commands() -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run deprecated-lane guard and persist a JSON summary of findings."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--summary-json", default=str(DEFAULT_SUMMARY))
     args = parser.parse_args(argv)
