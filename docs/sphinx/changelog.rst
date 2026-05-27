@@ -5,7 +5,7 @@ Changelog
 The full changelog is maintained in the project root at
 ``CHANGELOG.md``.  Key releases are summarised below.
 
-v3.9.3 (Current)
+v3.9.5 (Current)
 ------------------
 
 - **Phase 5/6 physics port**: 69 new modules (impurity transport, disruption chain,
@@ -16,7 +16,7 @@ v3.9.3 (Current)
 - **GK three-path architecture**: native linear eigenvalue solver, quasilinear flux,
   5 external GK interfaces, OOD detection, hybrid surrogate validation
 - **Hardening waves**: 263 tasks across 8 waves (S2-S4, H5-H8)
-- **3,815 tests** passing across 334 test files
+- **3,817 tests** passing across 382 test files
 - **Ruff-only formatting** (black eliminated)
 
 v3.1.0

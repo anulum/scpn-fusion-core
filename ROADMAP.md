@@ -89,7 +89,7 @@ Runbook: [`docs/FNO_EXTERNAL_RETRAIN_RUNBOOK.md`](docs/FNO_EXTERNAL_RETRAIN_RUNB
 ### Reduce underdeveloped flag count
 
 Current totals are tracked in `UNDERDEVELOPED_REGISTER.md` (auto-generated each
-hardening wave). As of 2026-03-14: **115 total flags**, 0 P0/P1.
+hardening wave). As of 2026-05-27: **18 total flags**, 8 P0/P1.
 Target for v4.0: resolve all P0/P1 flags, reduce total below 80.
 
 ### FPGA deployment path

@@ -5,7 +5,7 @@
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 
-**Version:** 3.9.3 | **Last updated:** 2026-03-14
+**Version:** 3.9.5 | **Last updated:** 2026-05-24
 
 Community code timings are from published literature (references at end).
 SCPN timings are CI-verified on GitHub Actions ubuntu-latest unless noted.
@@ -206,11 +206,11 @@ Y = implemented and tested. N = not present. P = partial.
 
 | Metric | Value |
 |--------|-------|
-| Python modules (src/) | 234 |
-| Lines of Python (src/) | 62,570 |
+| Python modules (src/) | 277 |
+| Lines of Python (src/) | 73,552 |
 | Rust crates | 11 |
-| Test files | 334 |
-| Individual test functions | 2,862 |
+| Test files | 382 |
+| Individual test functions | 3,817 |
 | Validation scripts | 74 |
 | CI jobs (ci.yml) | 16 + 11 auxiliary workflows |
 | CI workflows total | 12 |
