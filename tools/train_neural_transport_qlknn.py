@@ -704,6 +704,7 @@ def verify_and_save(
 
 
 def main() -> None:
+    """CLI entrypoint for training neural transport surrogate on QLKNN-10D data."""
     parser = argparse.ArgumentParser(
         description="Train neural transport surrogate on real QLKNN-10D data."
     )
