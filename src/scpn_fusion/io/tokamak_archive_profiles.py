@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Tokamak Archive Profile Utilities
+"""Helpers for synthetic and reference tokamak profile construction."""
 from __future__ import annotations
 
 import math
@@ -23,7 +24,11 @@ _DATA_ROOT_ENV = "SCPN_DATA_DIR"
 
 
 def default_reference_data_root() -> Path:
-    """Return the base directory for reference data assets."""
+    """Return the base directory for reference data assets.
+
+    The path is overridable through ``SCPN_DATA_DIR``; otherwise a repository
+    default under ``validation/reference_data`` is used.
+    """
     env = os.environ.get(_DATA_ROOT_ENV, "").strip()
     if env:
         return Path(env).expanduser()
@@ -31,23 +36,28 @@ def default_reference_data_root() -> Path:
 
 
 def default_diiid_dir() -> Path:
+    """Return the default DIII-D reference directory."""
     return default_reference_data_root() / "diiid"
 
 
 def default_disruption_dir() -> Path:
+    """Return the default disruption-shot directory."""
     return default_diiid_dir() / "disruption_shots"
 
 
 def default_itpa_csv() -> Path:
+    """Return the default ITPA CSV lookup file path."""
     return default_reference_data_root() / "itpa" / "hmode_confinement.csv"
 
 
 def default_synthetic_dir() -> Path:
+    """Return the default synthetic-shot archive path."""
     return default_reference_data_root() / "synthetic_shots"
 
 
 @dataclass(frozen=True)
 class TokamakProfile:
+    """Immutable profile record carrying tokamak observables and trace fields."""
     machine: str
     shot: int
     time_ms: float
@@ -63,6 +73,7 @@ class TokamakProfile:
 
 
 def _profile_key(profile: TokamakProfile) -> tuple[str, int, int]:
+    """Return a deduplication key for a profile tuple."""
     return (
         profile.machine,
         int(profile.shot),
@@ -71,6 +82,7 @@ def _profile_key(profile: TokamakProfile) -> tuple[str, int, int]:
 
 
 def _normalize_machine(machine: str) -> str:
+    """Normalize user machine aliases into canonical internal labels."""
     text = machine.strip().lower()
     if text in {"diii-d", "diiid"}:
         return "DIII-D"
@@ -80,6 +92,7 @@ def _normalize_machine(machine: str) -> str:
 
 
 def _coerce_int(name: str, value: Any, minimum: int | None = None) -> int:
+    """Coerce a value to integer and enforce optional lower bound."""
     if isinstance(value, bool) or not isinstance(value, (int, np.integer)):
         raise ValueError(f"{name} must be an integer.")
     out = int(value)
@@ -89,6 +102,7 @@ def _coerce_int(name: str, value: Any, minimum: int | None = None) -> int:
 
 
 def _coerce_finite(name: str, value: Any, minimum: float | None = None) -> float:
+    """Coerce a value to finite float and enforce optional lower bound."""
     if isinstance(value, bool) or not isinstance(value, (int, float, np.floating)):
         raise ValueError(f"{name} must be a finite number.")
     out = float(value)
@@ -100,6 +114,7 @@ def _coerce_finite(name: str, value: Any, minimum: float | None = None) -> float
 
 
 def _resample_1d(vec: NDArray[np.float64], points: int) -> NDArray[np.float64]:
+    """Resample a 1-D vector to a fixed number of points."""
     if vec.ndim != 1 or vec.size < 2:
         raise ValueError("Expected a 1D array with at least 2 values.")
     x = np.linspace(0.0, 1.0, vec.size, dtype=np.float64)
@@ -112,6 +127,7 @@ def _build_sensor_trace(
     points: int,
     seed: int,
 ) -> NDArray[np.float64]:
+    """Build a synthetic sensor trace from a contour and seed."""
     rng = np.random.default_rng(int(seed))
     grad = np.gradient(psi_contour)
     base = np.concatenate((psi_contour, grad), axis=0)
@@ -131,6 +147,7 @@ def _profile_from_geqdsk(
     contour_points: int,
     sensor_points: int,
 ) -> TokamakProfile:
+    """Construct a canonical :class:`TokamakProfile` from a GEQDSK file."""
     eq = read_geqdsk(path)
     psi_mid = np.asarray(eq.psirz[eq.nh // 2, :], dtype=np.float64)
     denom = float(eq.sibry - eq.simag)
@@ -170,6 +187,7 @@ def _profile_from_geqdsk(
 
 
 def _stable_shot_from_text(text: str) -> int:
+    """Derive a deterministic synthetic shot number from arbitrary text."""
     acc = 0
     for ch in text:
         acc = (acc * 131 + ord(ch)) % 900_000
@@ -177,6 +195,7 @@ def _stable_shot_from_text(text: str) -> int:
 
 
 def _synthetic_cmod_psi_contour(kappa: float, delta: float, points: int) -> NDArray[np.float64]:
+    """Generate a deterministic synthetic C-Mod-like poloidal contour."""
     theta = np.linspace(0.0, 2.0 * np.pi, int(points), endpoint=False, dtype=np.float64)
     r = 0.55 + 0.20 * np.cos(theta + 0.35 * delta) + 0.08 * np.sin(2.0 * theta)
     z = 0.45 * kappa * np.sin(theta)

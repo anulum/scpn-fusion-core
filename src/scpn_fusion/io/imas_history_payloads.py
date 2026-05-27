@@ -23,16 +23,25 @@ REQUIRED_IDS_PULSE_KEYS = (
 
 def _connector():
     # Local import keeps this module acyclic with ``imas_connector``.
+    """Return lazily imported canonical IMAS converter module."""
     from scpn_fusion.io import imas_connector
 
     return imas_connector
 
 
 def _has_all_keys(mapping: Mapping[str, Any], keys: tuple[str, ...]) -> bool:
+    """Return ``True`` when all keys are present in ``mapping``."""
     return all(key in mapping for key in keys)
 
 
 def validate_ids_payload_sequence(payloads: Sequence[Mapping[str, Any]]) -> None:
+    """Validate a strictly monotonic sequence of IDS payloads.
+
+    The function enforces:
+    - required payload schema fields
+    - shared machine / shot / run identity across the sequence
+    - strictly increasing time index and time value
+    """
     c = _connector()
     if isinstance(payloads, (str, bytes, bytearray)) or not isinstance(payloads, Sequence):
         raise ValueError("payloads must be a sequence of IDS payload mappings.")
@@ -94,6 +103,7 @@ def digital_twin_history_to_ids(
     shot: int = 0,
     run: int = 0,
 ) -> list[dict[str, Any]]:
+    """Convert a local digital-twin history into IDS payload sequence form."""
     c = _connector()
     if isinstance(history, (str, bytes, bytearray)) or not isinstance(history, Sequence):
         raise ValueError("history must be a sequence of digital twin snapshots.")
@@ -144,6 +154,7 @@ def digital_twin_history_to_ids(
 def ids_to_digital_twin_history(
     payloads: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
+    """Convert a sequence of IDS payloads back to digital-twin snapshots."""
     c = _connector()
     validate_ids_payload_sequence(payloads)
     out: list[dict[str, Any]] = []
@@ -157,6 +168,7 @@ def ids_to_digital_twin_history(
 
 
 def validate_ids_pulse_payload(pulse: Mapping[str, Any]) -> None:
+    """Validate IDS pulse payload integrity and consistency constraints."""
     c = _connector()
     if not isinstance(pulse, Mapping):
         raise ValueError("IDS pulse payload must be a mapping.")
@@ -202,6 +214,7 @@ def digital_twin_history_to_ids_pulse(
     shot: int = 0,
     run: int = 0,
 ) -> dict[str, Any]:
+    """Convert digital-twin history into a single IDS pulse payload."""
     payloads = digital_twin_history_to_ids(
         history,
         machine=machine,
@@ -220,6 +233,7 @@ def digital_twin_history_to_ids_pulse(
 
 
 def ids_pulse_to_digital_twin_history(pulse: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Convert IDS pulse payload into a sequence of digital-twin snapshots."""
     validate_ids_pulse_payload(pulse)
     slices = pulse.get("time_slices")
     if not isinstance(slices, Sequence):

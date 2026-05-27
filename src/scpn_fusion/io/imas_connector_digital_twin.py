@@ -24,6 +24,13 @@ from scpn_fusion.io.imas_connector_common import (
 
 
 def validate_ids_payload(payload: Mapping[str, Any]) -> None:
+    """Validate a complete IDS payload shape and units.
+
+    Ensures required top-level fields, nested structures, and numeric coercion
+    constraints are satisfied. This function performs strict checks for
+    time-slice ordering at the millisecond level and required equilibrium /
+    performance keys.
+    """
     if isinstance(payload, bool) or not isinstance(payload, Mapping):
         raise ValueError("IDS payload must be a mapping.")
     missing = [key for key in REQUIRED_IDS_KEYS if key not in payload]
@@ -101,7 +108,11 @@ def digital_twin_summary_to_ids(
     shot: int = 0,
     run: int = 0,
 ) -> dict[str, Any]:
-    """Map internal digital-twin summary into IDS-like payload."""
+    """Map an internal digital-twin summary into an IDS-like payload.
+
+    Returns a shallow canonicalised mapping that includes the equilibrium and
+    performance fields required by :func:`validate_ids_payload`.
+    """
     if isinstance(summary, bool) or not isinstance(summary, Mapping):
         raise ValueError("summary must be a mapping.")
     missing_summary = _missing_required_keys(summary, REQUIRED_DIGITAL_TWIN_SUMMARY_KEYS)
@@ -165,7 +176,12 @@ def digital_twin_state_to_ids(
     shot: int = 0,
     run: int = 0,
 ) -> dict[str, Any]:
-    """Map detailed digital-twin state + profiles into IDS-like payload."""
+    """Map a detailed digital-twin state + profiles into an IDS-like payload.
+
+    Accepts full internal state records, including optional 1-D profile fields,
+    and delegates to :func:`digital_twin_summary_to_ids` before attaching the
+    validated ``equilibrium.profiles_1d`` payload.
+    """
     if isinstance(state, bool) or not isinstance(state, Mapping):
         raise ValueError("state must be a mapping.")
     missing_state = _missing_required_keys(state, REQUIRED_DIGITAL_TWIN_STATE_KEYS)
@@ -187,7 +203,7 @@ def digital_twin_state_to_ids(
 
 
 def ids_to_digital_twin_summary(payload: Mapping[str, Any]) -> dict[str, Any]:
-    """Map IDS-like payload back to internal digital-twin summary shape."""
+    """Convert an IDS-like payload into internal digital-twin summary shape."""
     validate_ids_payload(payload)
     equilibrium = payload["equilibrium"]
     performance = payload["performance"]
@@ -234,7 +250,7 @@ def ids_to_digital_twin_summary(payload: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def ids_to_digital_twin_state(payload: Mapping[str, Any]) -> dict[str, Any]:
-    """Map IDS payload back to detailed digital-twin state with optional profiles."""
+    """Convert IDS payload into detailed digital-twin state with optional profiles."""
     summary = ids_to_digital_twin_summary(payload)
     equilibrium = payload.get("equilibrium", {})
     if not isinstance(equilibrium, Mapping):

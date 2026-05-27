@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Structured Logging Configuration
+"""Structured logging helpers for SCPN Fusion Core."""
 from __future__ import annotations
 
 import json
@@ -44,7 +45,16 @@ def setup_fusion_logging(
     level: int = logging.INFO, json_output: bool = True, log_file: str | None = None
 ) -> None:
     """
-    Initializes structured logging for the entire SCPN Fusion Core.
+    Initialize structured logging for ``scpn_fusion``.
+
+    Parameters
+    ----------
+    level:
+        Log level passed to the package root logger.
+    json_output:
+        When true, emit JSON records; when false, emit formatted text.
+    log_file:
+        Optional path for a second output sink.
     """
     root_logger = logging.getLogger("scpn_fusion")
     root_logger.setLevel(level)

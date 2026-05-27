@@ -98,6 +98,7 @@ def load_diiid_reference_profiles(
     contour_points: int = 64,
     sensor_points: int = 96,
 ) -> list[TokamakProfile]:
+    """Load DIII-D GEQDSK reference profiles from the configured reference folder."""
     ref_dir = reference_dir if reference_dir is not None else default_diiid_dir()
     files = sorted(Path(ref_dir).glob("*.geqdsk"))
     profiles: list[TokamakProfile] = []
@@ -124,6 +125,7 @@ def load_cmod_reference_profiles(
     contour_points: int = 64,
     sensor_points: int = 96,
 ) -> list[TokamakProfile]:
+    """Load C-Mod profile samples from the optional ITPA CSV reference set."""
     csv_path = itpa_csv_path if itpa_csv_path is not None else default_itpa_csv()
     rows: list[TokamakProfile] = []
     with Path(csv_path).open("r", encoding="utf-8", newline="") as fh:
@@ -186,6 +188,10 @@ def fetch_mdsplus_profiles(
     sensor_points: int = 96,
     allow_partial: bool = True,
 ) -> list[TokamakProfile]:
+    """Fetch live tokamak profiles from MDSplus shots with optional partial tolerance.
+
+    If the optional MDSplus dependency is unavailable, a runtime error is raised.
+    """
     if not shots:
         raise ValueError("shots must be non-empty.")
     try:
@@ -358,6 +364,11 @@ def load_machine_profiles(
     contour_points: int = 64,
     sensor_points: int = 96,
 ) -> tuple[list[TokamakProfile], dict[str, Any]]:
+    """Load machine profiles, preferring live feed when requested.
+
+    The function merges live profiles with reference fallbacks and returns both
+    profile data and a concise provenance metadata dictionary.
+    """
     normalized_machine = _normalize_machine(machine)
     if normalized_machine == "DIII-D":
         ref = load_diiid_reference_profiles(
