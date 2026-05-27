@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Coupled Tearing Mode Dynamics
+"""Coupled tearing-mode and NTM trigger chain contracts for reduced-order stability studies."""
 from __future__ import annotations
 
 import math
@@ -17,6 +18,7 @@ from scpn_fusion.core.sawtooth import SawtoothCycler
 
 @dataclass
 class CoupledResult:
+    """Time-series result container from coupled island-width evolution."""
     w1_trace: np.ndarray
     w2_trace: np.ndarray
     chirikov_trace: np.ndarray
@@ -25,18 +27,23 @@ class CoupledResult:
 
 
 class ChirikovOverlap:
+    """Minimal Chirikov overlap utilities for mode overlap heuristics."""
+
     @staticmethod
     def parameter(w1: float, w2: float, delta_r: float) -> float:
+        """Return the Chirikov overlap parameter :math:`\\Sigma` for two islands."""
         if delta_r <= 0.0:
             return float("inf")
         return (w1 + w2) / (2.0 * delta_r)
 
     @staticmethod
     def is_stochastic(sigma: float) -> bool:
+        """Return true when stochastic field-lines are expected."""
         return sigma > 1.0
 
     @staticmethod
     def stochastic_region_width(w1: float, w2: float, delta_r: float) -> float:
+        """Estimate effective stochastic radial width from overlap width and gap."""
         sigma = ChirikovOverlap.parameter(w1, w2, delta_r)
         if sigma > 1.0:
             return delta_r + w1 / 2.0 + w2 / 2.0
@@ -44,6 +51,7 @@ class ChirikovOverlap:
 
 
 class CoupledTearingModes:
+    """Coupled-mode reduced MRE engine for two interacting islands."""
     def __init__(
         self,
         mode1: tuple[int, int],
@@ -92,12 +100,14 @@ class CoupledTearingModes:
         return float(max(coeff, 0.0))
 
     def delta_prime_1(self, w1: float, w2: float) -> float:
+        """Evaluate mode-1 tearing stability index with mode-2 coupling."""
         # Base stability + nonlinear modification from w2
         # Typically linearly stable
         dp0 = -2.0 * self.m1 / max(self.r_s1, 1e-3)
         return dp0 + 0.5 * w2 / self.a
 
     def delta_prime_2(self, w1: float, w2: float) -> float:
+        """Evaluate mode-2 tearing stability index with mode-1 coupling."""
         dp0 = -2.0 * self.m2 / max(self.r_s2, 1e-3)
         return dp0 + 0.5 * w1 / self.a
 
@@ -113,6 +123,32 @@ class CoupledTearingModes:
         seed_time: float = -1.0,
         seed_amplitude: float = 0.0,
     ) -> CoupledResult:
+        """Integrate coupled island-width dynamics over time.
+
+        Parameters
+        ----------
+        w1_0, w2_0
+            Initial island widths.
+        j_bs
+            Bootstrap current component.
+        j_phi
+            Total plasma current density proxy.
+        eta
+            Plasma resistivity proxy (>0).
+        dt
+            Time step size.
+        n_steps
+            Number of integration steps.
+        seed_time
+            Optional seed injection time.
+        seed_amplitude
+            Optional seed island width at ``seed_time``.
+
+        Returns
+        -------
+        CoupledResult
+            Evolution traces and disruption flag.
+        """
         if int(n_steps) < 1:
             raise ValueError("n_steps must be >= 1.")
         if not np.isfinite(dt) or float(dt) <= 0.0:
@@ -185,6 +221,7 @@ class CoupledTearingModes:
 
 
 class SawtoothNTMSeeding:
+    """Sawtooth-NTM seeding heuristics."""
     def __init__(self, sawtooth_cycler: SawtoothCycler | None):
         self.st = sawtooth_cycler
 
@@ -194,6 +231,7 @@ class SawtoothNTMSeeding:
         return 0.05 * math.sqrt(max(0.0, crash_energy_MJ))
 
     def seed_probability(self, crash_energy: float, threshold: float) -> float:
+        """Compute probability of NTM seeding from sawtooth crash energy."""
         if crash_energy < threshold:
             return 0.0
         prob = 1.0 - math.exp(-(crash_energy - threshold))
@@ -202,17 +240,32 @@ class SawtoothNTMSeeding:
 
 @dataclass
 class DisruptionPath:
+    """Result type for disruption forecast scenario runs."""
     warning_time_ms: float
     avoidable: bool
 
 
 class DisruptionTriggerAssessment:
+    """Scenario assessment for coupled tearing-mode disruption with/without control."""
     def __init__(self, coupled: CoupledTearingModes):
         self.coupled = coupled
 
     def run_scenario(
         self, j_bs: float, j_phi: float, omega_phi: float, seed_energy: float
     ) -> DisruptionPath:
+        """Run an NTM-triggering scenario and assess avoidability.
+
+        Parameters
+        ----------
+        j_bs
+            Bootstrap current proxy.
+        j_phi
+            Total current proxy.
+        omega_phi
+            Toroidal rotation proxy (reserved for interface parity).
+        seed_energy
+            Sawtooth-seeded perturbation energy.
+        """
         st_seed = SawtoothNTMSeeding(None)
         amp = st_seed.seed_amplitude(seed_energy, self.coupled.r_s1)
 
@@ -239,6 +292,7 @@ class DisruptionTriggerAssessment:
 
 
 class TearingModeStabilityMap:
+    """Parameter scan helper for coupled tearing-mode disruption risk mapping."""
     def __init__(
         self,
         *,
@@ -253,6 +307,7 @@ class TearingModeStabilityMap:
         self.coupled = CoupledTearingModes(mode1, mode2, r_s1, r_s2, a, R0, B0)
 
     def scan_beta_li(self, beta_N_range: np.ndarray, li_range: np.ndarray) -> np.ndarray:
+        """Scan disruption risk across beta and internal inductance grids."""
         beta_arr = np.asarray(beta_N_range, dtype=float)
         li_arr = np.asarray(li_range, dtype=float)
         if beta_arr.ndim != 1 or li_arr.ndim != 1:
