@@ -166,7 +166,8 @@ class RWMStabilityAnalysis:
             M_coil: Effective coil coupling factor.
 
         Returns:
-            Minimum ``G_p`` that makes ``gamma_eff < 0`` under the simplified model.
+            Minimum ``G_p`` that makes ``gamma_eff < 0`` under this control
+            contract.
 
         Raises:
             ValueError: Through the underlying :class:`RWMPhysics` calculations

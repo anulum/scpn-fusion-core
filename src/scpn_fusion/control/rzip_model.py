@@ -260,7 +260,8 @@ class VerticalStabilityAnalysis:
             tau_controller: Controller lag in seconds.
 
         Returns:
-            Minimum dimensionless gain proxy required by the simplified model.
+            Minimum dimensionless gain proxy required by the deterministic
+            control-contract model.
 
         Raises:
             ValueError: If any argument is non-finite or non-positive.

@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-05-27T17:55:23.564904+00:00`
+- Generated at: `2026-05-27T17:56:10.040965+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: production code + docs claims markers (tests/reports/html excluded)
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 20 |
-| P0 + P1 entries | 10 |
-| Source-domain entries | 17 |
-| Source-domain P0 + P1 entries | 10 |
+| Total flagged entries | 18 |
+| P0 + P1 entries | 8 |
+| Source-domain entries | 15 |
+| Source-domain P0 + P1 entries | 8 |
 | Docs-claims entries | 2 |
 | Domains affected | 5 |
 
@@ -21,7 +21,7 @@
 |---|---:|
 | `FALLBACK` | 10 |
 | `MONOLITH` | 5 |
-| `SIMPLIFIED` | 4 |
+| `SIMPLIFIED` | 2 |
 | `NOT_VALIDATED` | 1 |
 
 ## Domain Distribution
@@ -29,12 +29,12 @@
 | Key | Count |
 |---|---:|
 | `core_physics` | 13 |
-| `control` | 3 |
 | `docs_claims` | 2 |
 | `compiler_runtime` | 1 |
+| `control` | 1 |
 | `other` | 1 |
 
-## Source-Centric Priority Backlog (Top 10)
+## Source-Centric Priority Backlog (Top 8)
 
 _Filtered to implementation domains to reduce docs/claims noise during hardening triage._
 
@@ -46,12 +46,10 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=507 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/pretrained_surrogates.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=584 exceeds monolith threshold (500+). |
 | P0 | 96 | `compiler_runtime` | `NOT_VALIDATED` | `src/scpn_fusion/scpn/structure.py:379` | Runtime WG | Add real-data validation campaign and publish error bars. | """Return the latest validation report, or ``None`` if not validated yet.""" |
-| P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/rwm_feedback.py:169` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | Minimum ``G_p`` that makes ``gamma_eff < 0`` under the simplified model. |
-| P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/rzip_model.py:263` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | Minimum dimensionless gain proxy required by the simplified model. |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/orbit_following.py:234` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified alpha slowing-down analytic helpers.""" |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/rf_heating.py:8` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | """RF heating workflows with simplified ICRH/ECRH ray-tracing examples.""" |
 
-## Top Priority Backlog (Top 20)
+## Top Priority Backlog (Top 18)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
@@ -61,8 +59,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=507 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/pretrained_surrogates.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=584 exceeds monolith threshold (500+). |
 | P0 | 96 | `compiler_runtime` | `NOT_VALIDATED` | `src/scpn_fusion/scpn/structure.py:379` | Runtime WG | Add real-data validation campaign and publish error bars. | """Return the latest validation report, or ``None`` if not validated yet.""" |
-| P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/rwm_feedback.py:169` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | Minimum ``G_p`` that makes ``gamma_eff < 0`` under the simplified model. |
-| P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/rzip_model.py:263` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | Minimum dimensionless gain proxy required by the simplified model. |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/orbit_following.py:234` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified alpha slowing-down analytic helpers.""" |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/rf_heating.py:8` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | """RF heating workflows with simplified ICRH/ECRH ray-tracing examples.""" |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/runaway_electron_model.py:218` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | The integration advances a coupled Dreicer + avalanche + fallback-loss |
@@ -76,7 +72,7 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:148` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | \| Solov'ev manufactured-source FreeGS fallback \| PASS \| `artifacts/freegs_benchmark.json` on the GPU host \| |
 | P3 | 47 | `docs_claims` | `FALLBACK` | `docs/BENCHMARKS.md:156` | Docs WG | Measure fallback hit-rate and retire fallback from default lane. | They are not CI or harness failures and must not be hidden by fallback rows. |
 
-## Full Register (Top 20)
+## Full Register (Top 18)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -86,8 +82,6 @@ _Filtered to implementation domains to reduce docs/claims noise during hardening
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | module LOC=507 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/pretrained_surrogates.py:1` | module LOC=584 exceeds monolith threshold (500+). |
 | P0 | `compiler_runtime` | `NOT_VALIDATED` | `src/scpn_fusion/scpn/structure.py:379` | """Return the latest validation report, or ``None`` if not validated yet.""" |
-| P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/rwm_feedback.py:169` | Minimum ``G_p`` that makes ``gamma_eff < 0`` under the simplified model. |
-| P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/rzip_model.py:263` | Minimum dimensionless gain proxy required by the simplified model. |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/orbit_following.py:234` | """Simplified alpha slowing-down analytic helpers.""" |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/rf_heating.py:8` | """RF heating workflows with simplified ICRH/ECRH ray-tracing examples.""" |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/runaway_electron_model.py:218` | The integration advances a coupled Dreicer + avalanche + fallback-loss |

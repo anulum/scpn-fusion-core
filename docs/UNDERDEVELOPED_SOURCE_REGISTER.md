@@ -1,6 +1,6 @@
 # Underdeveloped Register
 
-- Generated at: `2026-05-27T17:55:24.837482+00:00`
+- Generated at: `2026-05-27T17:56:11.357689+00:00`
 - Generator: `tools/generate_underdeveloped_register.py`
 - Scope: source-only (`src/scpn_fusion/**`) markers
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |---|---:|
-| Total flagged entries | 18 |
-| P0 + P1 entries | 10 |
-| Source-domain entries | 17 |
-| Source-domain P0 + P1 entries | 10 |
+| Total flagged entries | 16 |
+| P0 + P1 entries | 8 |
+| Source-domain entries | 15 |
+| Source-domain P0 + P1 entries | 8 |
 | Docs-claims entries | 0 |
 | Domains affected | 4 |
 
@@ -21,7 +21,7 @@
 |---|---:|
 | `FALLBACK` | 8 |
 | `MONOLITH` | 5 |
-| `SIMPLIFIED` | 4 |
+| `SIMPLIFIED` | 2 |
 | `NOT_VALIDATED` | 1 |
 
 ## Domain Distribution
@@ -29,11 +29,11 @@
 | Key | Count |
 |---|---:|
 | `core_physics` | 13 |
-| `control` | 3 |
 | `compiler_runtime` | 1 |
+| `control` | 1 |
 | `other` | 1 |
 
-## Top Priority Backlog (Top 18)
+## Top Priority Backlog (Top 16)
 
 | Priority | Score | Domain | Marker | Location | Owner | Proposed Action | Snippet |
 |---|---:|---|---|---|---|---|---|
@@ -43,8 +43,6 @@
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=507 exceeds monolith threshold (500+). |
 | P0 | 101 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/pretrained_surrogates.py:1` | Core Physics WG | Split module into focused subcomponents and lock interface contracts. | module LOC=584 exceeds monolith threshold (500+). |
 | P0 | 96 | `compiler_runtime` | `NOT_VALIDATED` | `src/scpn_fusion/scpn/structure.py:379` | Runtime WG | Add real-data validation campaign and publish error bars. | """Return the latest validation report, or ``None`` if not validated yet.""" |
-| P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/rwm_feedback.py:169` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | Minimum ``G_p`` that makes ``gamma_eff < 0`` under the simplified model. |
-| P1 | 86 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/rzip_model.py:263` | Control WG | Upgrade with higher-fidelity closure or tighten domain contract. | Minimum dimensionless gain proxy required by the simplified model. |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/orbit_following.py:234` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | """Simplified alpha slowing-down analytic helpers.""" |
 | P1 | 85 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/rf_heating.py:8` | Core Physics WG | Upgrade with higher-fidelity closure or tighten domain contract. | """RF heating workflows with simplified ICRH/ECRH ray-tracing examples.""" |
 | P2 | 77 | `control` | `FALLBACK` | `src/scpn_fusion/control/runaway_electron_model.py:218` | Control WG | Measure fallback hit-rate and retire fallback from default lane. | The integration advances a coupled Dreicer + avalanche + fallback-loss |
@@ -56,7 +54,7 @@
 | P2 | 76 | `core_physics` | `FALLBACK` | `src/scpn_fusion/core/quasi_3d_contracts.py:218` | Core Physics WG | Measure fallback hit-rate and retire fallback from default lane. | Asymmetry fallback coefficient used if Hall-MHD backend is unavailable. |
 | P3 | 65 | `other` | `FALLBACK` | `src/scpn_fusion/ui/app.py:29` | Architecture WG | Measure fallback hit-rate and retire fallback from default lane. | except ImportError: # pragma: no cover - platform fallback |
 
-## Full Register (Top 18)
+## Full Register (Top 16)
 
 | Priority | Domain | Marker | Location | Snippet |
 |---|---|---|---|---|
@@ -66,8 +64,6 @@
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/neural_equilibrium.py:1` | module LOC=507 exceeds monolith threshold (500+). |
 | P0 | `core_physics` | `MONOLITH` | `src/scpn_fusion/core/pretrained_surrogates.py:1` | module LOC=584 exceeds monolith threshold (500+). |
 | P0 | `compiler_runtime` | `NOT_VALIDATED` | `src/scpn_fusion/scpn/structure.py:379` | """Return the latest validation report, or ``None`` if not validated yet.""" |
-| P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/rwm_feedback.py:169` | Minimum ``G_p`` that makes ``gamma_eff < 0`` under the simplified model. |
-| P1 | `control` | `SIMPLIFIED` | `src/scpn_fusion/control/rzip_model.py:263` | Minimum dimensionless gain proxy required by the simplified model. |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/orbit_following.py:234` | """Simplified alpha slowing-down analytic helpers.""" |
 | P1 | `core_physics` | `SIMPLIFIED` | `src/scpn_fusion/core/rf_heating.py:8` | """RF heating workflows with simplified ICRH/ECRH ray-tracing examples.""" |
 | P2 | `control` | `FALLBACK` | `src/scpn_fusion/control/runaway_electron_model.py:218` | The integration advances a coupled Dreicer + avalanche + fallback-loss |
