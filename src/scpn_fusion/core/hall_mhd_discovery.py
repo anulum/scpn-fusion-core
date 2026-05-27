@@ -5,6 +5,16 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Hall MHD Discovery
+"""Reduced Hall-MHD discovery workflow for zonal-flow and tearing diagnostics.
+
+The implementation is intentionally lightweight and deterministic so that CI and
+local benchmark tasks can exercise a full discovery-style simulation path:
+
+* semi-spectral Hall-MHD dynamics in periodic geometry,
+* short parameter sweeps for ``eta``/``nu`` response grids,
+* bisection-style tearing threshold search, and
+* automated visual output for inspection.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fftpack import fft2, ifft2
@@ -57,6 +67,18 @@ class HallMHD:
         self.energy_history = []
 
     def poisson_bracket(self, A_k, B_k):
+        """Compute the 2D Poisson bracket ``[A, B]`` in spectral space.
+
+        The bracket uses FFT-domain derivatives and returns the transformed commutator
+        ``dxA * dyB - dyA * dxB``.
+
+        Args:
+            A_k: Real- or complex-valued spectral field ``A(kx, ky)``.
+            B_k: Real- or complex-valued spectral field ``B(kx, ky)``.
+
+        Returns:
+            Fourier representation of the Poisson bracket ``[A, B]``.
+        """
         # [A, B] = dxA dyB - dyA dxB
         dxA = ifft2(1j * self.kx * A_k)
         dyA = ifft2(1j * self.ky * A_k)
@@ -100,6 +122,14 @@ class HallMHD:
         return dphi_dt, dpsi_dt
 
     def step(self):
+        """Advance one reduced Hall-MHD pseudo-time step (RK2).
+
+        Returns:
+            ``(total_energy, zonal_energy)`` for the post-step state in spectral
+            coordinates. ``total_energy`` is the total potential energy proxy from
+            spectral coefficients; ``zonal_energy`` accumulates non-zero ky=0
+            modes as a zonal-flow metric.
+        """
         # RK2 Time stepping
         dp1, ds1 = self.dynamics(self.phi_k, self.psi_k)
 
@@ -161,6 +191,13 @@ class HallMHD:
 
 
 def run_discovery_sim():
+    """Run the standalone Hall-MHD discovery demo and emit figure artifacts.
+
+    Side effects:
+        - prints periodic progress snapshots,
+        - writes ``Hall_MHD_Discovery.png``,
+        - writes ``Hall_MHD_Structure.png``.
+    """
     print("--- SCPN HALL-MHD: ZONAL FLOW DISCOVERY ---")
     print("Searching for spontaneous H-Mode transition...")
 

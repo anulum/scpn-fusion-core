@@ -5,6 +5,20 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Quasilinear Gyrokinetic Transport Model
+"""Quasilinear gyrokinetic transport surrogates for reduced plasma-scale transport.
+
+The module exposes a compact closure-based workflow:
+
+1. map normalized plasma profiles into local gyrokinetic parameters,
+2. scan ``k_theta rho_s`` modes for linear growth/damping branches,
+3. convert saturated mode amplitudes into quasilinear heat and particle flux
+   proxies, and
+4. evaluate single-point or profile-level transport coefficients.
+
+The implementation is a surrogate model used for contract testing, workflow
+prototyping, and offline benchmarking where deterministic performance is
+preferred over first-principles fidelity.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -131,7 +145,17 @@ def compute_spectrum(
     params: GyrokineticsParams, n_modes: int = 16, include_etg: bool = False
 ) -> SpectrumResult:
     """
-    Scan k_theta rho_s and compute growth rate spectrum.
+    Scan perpendicular wavenumber space and compute a quasilinear spectrum.
+
+    Args:
+        params: Gyrokinetic local parameters describing gradients and dimensionless
+            equilibrium state.
+        n_modes: Number of spectral samples per branch (ion/electron blocks).
+        include_etg: When ``True``, append electron-scale ETG branch samples.
+
+    Returns:
+        SpectrumResult with sampled ``k_y`` grid, linear growth rates, real
+        frequencies, and mode labels.
     """
     k_y_list = []
     gamma_list = []
@@ -172,7 +196,15 @@ def compute_spectrum(
 
 def quasilinear_fluxes(params: GyrokineticsParams, spectrum: SpectrumResult) -> TransportFluxes:
     """
-    Apply saturation rule and return effective diffusivities.
+    Apply a saturation model and return effective transport diffusivities.
+
+    Args:
+        params: Gyrokinetic parameters used to evaluate branch-dependent scaling.
+        spectrum: Precomputed linear response from :func:`compute_spectrum`.
+
+    Returns:
+        TransportFluxes containing normalized effective ``chi_i``, ``chi_e``,
+        and electron particle diffusivity ``D_e``.
     """
     # gamma_max = c_s / (q R) => normalized gamma_max = 1 / q
     gamma_max = 1.0 / max(params.q, 0.1)
@@ -245,6 +277,7 @@ class GyrokineticTransportModel:
     """
 
     def __init__(self, n_modes: int = 16, include_etg: bool = False):
+        """Initialize the transport model with scan resolution and branch toggles."""
         self.n_modes = n_modes
         self.include_etg = include_etg
         # Typical tuning constant for macroscopic match
@@ -291,7 +324,19 @@ class GyrokineticTransportModel:
 
     def evaluate(self, rho: float, profiles: dict[str, Any]) -> tuple[float, float, float]:
         """
-        Evaluate transport coefficients at a single radial point.
+        Evaluate transport coefficients at one normalized radius coordinate.
+
+        The method builds a local gradient-normalized parameter set, performs a
+        spectral scan, then converts the dimensionless quasilinear fluxes to
+        physical diffusivity units via a gyro-Bohm scaling.
+
+        Args:
+            rho: Radial coordinate in ``[0, 1]``.
+            profiles: Local profile dictionary with keys such as ``R0``, ``a``,
+                ``q``, ``s_hat``, ``Te``, ``Ti``, ``ne`` and derivatives.
+
+        Returns:
+            Tuple ``(chi_i, chi_e, D_e)`` in SI-like diffusion units.
         """
         if rho <= 0.05:
             # Axis boundary
@@ -370,7 +415,15 @@ class GyrokineticTransportModel:
         self, rho: np.ndarray, profiles: dict[str, np.ndarray]
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Evaluate full radial profile.
+        Evaluate transport profiles over an entire flux-surface grid.
+
+        Args:
+            rho: 1D array of normalized radius coordinates (``rho_tor``).
+            profiles: Radial profile dictionary where each key maps to an array
+                aligned with ``rho``.
+
+        Returns:
+            Tuple of arrays ``(chi_i_profile, chi_e_profile, D_e_profile)``.
         """
         nr = len(rho)
         chi_i = np.zeros(nr)
