@@ -5,6 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — SOL Two-Point Model (Eich heat flux scaling)
+"""SOL two-point closure models using Eich scaling and simple Spitzer-Harm balance."""
 from __future__ import annotations
 
 from dataclasses import dataclass
