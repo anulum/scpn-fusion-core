@@ -4,6 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
+"""Compose and execute release/research preflight command sequences."""
 from __future__ import annotations
 
 import argparse
@@ -552,6 +553,15 @@ def _run_check(name: str, cmd: list[str], *, timeout_seconds: float) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run selected preflight gate checks and stop on first critical failure.
+
+    Args:
+        argv: Optional argument list (defaults to ``sys.argv[1:]``).
+
+    Returns:
+        ``0`` when all selected checks pass, ``1`` when any check fails or a
+        timeout occurs.
+    """
     parser = argparse.ArgumentParser(
         description=(
             "Run local/CI Python preflight checks with gate profiles (release, research, or both)."
