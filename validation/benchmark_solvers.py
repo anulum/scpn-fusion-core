@@ -205,6 +205,7 @@ def build_json_summary(results: list[dict], config_path: str) -> list[dict]:
 
 
 def main():
+    """Run solver benchmark matrix and optionally write JSON summary."""
     import argparse
 
     parser = argparse.ArgumentParser(description="Benchmark SOR vs Multigrid solvers")
